@@ -51,27 +51,71 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
   vercel: 355,
 };
 
+/**
+ * `unmodel/chat`'s budget, measured the same way and pinned separately because
+ * it is not a provider entry: it is the one entry that carries a catalog
+ * covering *every* provider.
+ *
+ * 558 KiB measured, of which 433 KiB is `src/catalog/chat-profiles.gen.ts`
+ * inlined — the slim per-model profile table (324 KB of source) that makes
+ * `chat()` catalog-aware without a subpath the caller has to know about. The
+ * remaining ~125 KiB is the three dialect codecs, the translation hub, the four
+ * constraint tables and the pipeline. Headroom is ~8%, matching the provider
+ * budgets: a failure here means a real addition, and the routine legitimate
+ * cause is a models.dev refresh growing the profile table.
+ *
+ * The number is only half the guarantee. `chat entry's graph` below pins the
+ * *composition* — no per-provider catalog, no availability data — which is what
+ * stops the budget from being met by luck while the wrong modules are inside.
+ */
+const CHAT_BUDGET_KIB = 600;
+
 const FROM_IMPORT = /^[ \t]*(?:import|export)\s[^;]*?\sfrom\s*["']([^"']+)["']/gm;
 
-/** Total bytes of an entry chunk plus every chunk it statically pulls in. */
-function transitiveBytes(entry: string): number {
+/** Every dist chunk an entry statically pulls in, the entry included. */
+function transitiveChunks(entry: string): string[] {
   const seen = new Set<string>();
-  const visit = (file: string): number => {
-    if (seen.has(file)) return 0;
+  const visit = (file: string): void => {
+    if (seen.has(file)) return;
     seen.add(file);
-    let bytes = statSync(file).size;
     for (const match of readFileSync(file, "utf8").matchAll(FROM_IMPORT)) {
       const specifier = match[1] as string;
       // Bare specifiers are externals (`zod`, `node:*`) — not our weight.
       if (!specifier.startsWith(".")) continue;
-      bytes += visit(resolve(dirname(file), specifier));
+      visit(resolve(dirname(file), specifier));
     }
-    return bytes;
   };
-  return visit(entry);
+  visit(entry);
+  return [...seen];
+}
+
+/** Total bytes of an entry chunk plus every chunk it statically pulls in. */
+function transitiveBytes(entry: string): number {
+  return transitiveChunks(entry).reduce((total, file) => total + statSync(file).size, 0);
+}
+
+/**
+ * The `src/` modules an entry's chunks were built from.
+ *
+ * rolldown emits a `//#region <source path>` marker ahead of every module it
+ * inlines, which is a far better handle than chunk filenames: a generated
+ * catalog small enough to be merged into its consumer leaves no `*.gen-*.js`
+ * file behind, and a filename-only check would call that a pass.
+ */
+const REGION = /^\/\/#region (src\/.+)$/gm;
+
+function sourceModulesOf(entry: string): string[] {
+  const modules = new Set<string>();
+  for (const chunk of transitiveChunks(entry)) {
+    for (const match of readFileSync(chunk, "utf8").matchAll(REGION)) {
+      modules.add(match[1] as string);
+    }
+  }
+  return [...modules].sort();
 }
 
 const entryFile = (id: string): string => join(DIST, "providers", id, "index.js");
+const chatEntry = (): string => join(DIST, "chat", "index.js");
 
 // CI runs `bun test` before `bun run build`, and `dist/` is gitignored, so the
 // suite builds on demand rather than depending on run order. `clean: true` in
@@ -99,5 +143,56 @@ describe("per-entry bundle budgets", () => {
     const lean = transitiveBytes(entryFile("cerebras"));
     const withCodec = transitiveBytes(entryFile("deepinfra"));
     expect(lean).toBeLessThan(withCodec);
+  });
+});
+
+describe("unmodel/chat", () => {
+  test(`stays under ${CHAT_BUDGET_KIB} KiB`, () => {
+    expect(existsSync(chatEntry()), "dist entry for chat").toBe(true);
+    const kib = transitiveBytes(chatEntry()) / 1024;
+    expect(kib, `chat is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(CHAT_BUDGET_KIB);
+  });
+
+  /**
+   * The composition assertion, and the reason the number above means anything.
+   *
+   * `unmodel/chat` carries one catalog on purpose — the slim `chat-profiles`
+   * table. Two other kinds of generated data are one careless import away and
+   * would each be invisible in a passing budget for a while:
+   *
+   * - **a per-provider full catalog** (`src/catalog/<id>.gen.ts`). The near
+   *   miss is real: wiring google's chat constraint table pulled
+   *   `src/catalog/google.gen.ts` in for 44 KiB and zero findings, which is
+   *   what this test caught.
+   * - **the availability layer** (`src/catalog/availability/**`, ~290 KB in
+   *   total). `unmodel/chat` has no `.toApi`, so any of it here is pure weight.
+   */
+  test("its graph contains no availability data and no per-provider catalog", () => {
+    const modules = sourceModulesOf(chatEntry());
+    // A vacuous scan would be worse than no scan.
+    expect(modules).toContain("src/chat/index.ts");
+    expect(modules).toContain("src/catalog/chat-profiles.gen.ts");
+
+    expect(modules.filter((m) => m.startsWith("src/catalog/availability/"))).toEqual([]);
+
+    const CHAT_TABLES = new Set([
+      "src/catalog/chat-profiles.gen.ts",
+      "src/catalog/chat-refs.gen.ts",
+    ]);
+    const catalogs = modules.filter(
+      (m) => /^src\/catalog\/.*\.gen\.ts$/.test(m) && !CHAT_TABLES.has(m),
+    );
+    expect(catalogs).toEqual([]);
+  });
+
+  test("it reaches exactly three codecs — one per dialect it compiles to", () => {
+    // Each codec is ~20 KiB. A fourth means a dialect was added (fine, update
+    // this) or a provider barrel leaked in (not fine).
+    const codecs = sourceModulesOf(chatEntry()).filter((m) => m.endsWith("/interop.ts"));
+    expect(codecs.sort()).toEqual([
+      "src/providers/anthropic/interop.ts",
+      "src/providers/google/interop.ts",
+      "src/providers/openai-compatible/interop.ts",
+    ]);
   });
 });

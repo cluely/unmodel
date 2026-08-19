@@ -1,0 +1,32 @@
+{
+  "$comment": [
+    "`output: { type: \"error-text\" }` is the unified spelling of a failed tool call. It maps to",
+    "the IR's text output plus `isError`, which is why it converges with Anthropic's",
+    "`is_error: true` — and why the chat-completions target still has to prefix \"Error: \"."
+  ],
+  "model": "anthropic/claude-opus-5",
+  "messages": [
+    { "role": "user", "content": "Get the weather." },
+    {
+      "role": "assistant",
+      "content": [
+        { "type": "tool-call", "toolCallId": "call_9", "toolName": "get_weather", "input": {} }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": [
+        {
+          "type": "tool-result",
+          "toolCallId": "call_9",
+          "toolName": "get_weather",
+          "output": { "type": "error-text", "value": "upstream 503" }
+        }
+      ]
+    }
+  ],
+  "maxOutputTokens": 512,
+  "tools": {
+    "get_weather": { "inputSchema": { "type": "object", "properties": {} } }
+  }
+}

@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   DEFAULT_ENDPOINT_ID,
   ENDPOINTS,
+  endpointStreamUrl,
   endpointUrl,
   isFactoryEndpoint,
   resolveEndpoint,
@@ -158,6 +159,38 @@ describe("agreement with provider modules", () => {
     for (const model of ["gemini-3-pro", "models/gemini-3-pro"]) {
       expect(endpointUrl(endpoint, model)).toBe(generateContentUrl(model));
     }
+  });
+});
+
+describe("endpointStreamUrl", () => {
+  // Gemini is the one surface where streaming is a different *method*, so it
+  // is the only entry that declares a `streamUrl`; the `?alt=sse` suffix is
+  // load-bearing (without it the method returns a JSON array, not a stream).
+  test("google.chat streams from :streamGenerateContent?alt=sse", () => {
+    const endpoint = resolveEndpoint("google") as TargetEndpoint;
+    expect(endpointStreamUrl(endpoint, "gemini-3-pro")).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro:streamGenerateContent?alt=sse",
+    );
+    // The same "models/" tolerance the non-streaming builder has.
+    expect(endpointStreamUrl(endpoint, "models/gemini-3-pro")).toBe(
+      endpointStreamUrl(endpoint, "gemini-3-pro"),
+    );
+  });
+
+  test("in-body streamers fall back to their plain URL", () => {
+    // openai-chat and anthropic-messages both carry `stream: true` on the body
+    // and post to the same place, so declaring a streamUrl for them would be
+    // duplication that can drift.
+    for (const provider of ["openai", "groq", "anthropic"]) {
+      const endpoint = resolveEndpoint(provider) as TargetEndpoint;
+      expect(endpoint.streamUrl).toBeUndefined();
+      expect(endpointStreamUrl(endpoint, "m")).toBe(endpointUrl(endpoint, "m"));
+    }
+  });
+
+  test("is undefined for factory targets, exactly like endpointUrl", () => {
+    const vertex = ENDPOINTS["google-vertex.chat"] as TargetEndpoint;
+    expect(endpointStreamUrl(vertex, "gemini-3-pro")).toBeUndefined();
   });
 });
 

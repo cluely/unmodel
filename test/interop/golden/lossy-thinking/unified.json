@@ -1,0 +1,30 @@
+{
+  "$comment": [
+    "`reasoning: { effort, budgetTokens }` — both given — is the portable spelling: dialects",
+    "with a real token budget (anthropic-messages, gemini) take the budget, dialects without",
+    "one (openai-chat) take the effort bucket. Nothing is approximated by that split, so it",
+    "warns nowhere; what DOES warn is the bucket itself, since \"max\" is Anthropic vocabulary",
+    "and chat-completions tops out at \"high\" — see unified-warnings.json.",
+    "",
+    "`providerOptions.anthropic` is the live bucket only when the target IS anthropic, which is",
+    "exactly this case's source dialect. Compiled for any other target it is inert and silent,",
+    "which is why the pipeline here cannot reproduce to-openai-chat.json's `container` warning."
+  ],
+  "model": "anthropic/claude-opus-5",
+  "system": [{ "text": "You are careful.", "cache": true }],
+  "messages": [
+    { "role": "user", "content": "Think it through: 17*23?" },
+    {
+      "role": "assistant",
+      "content": [
+        { "type": "reasoning", "text": "17*23 = 391", "signature": "sig-abc" },
+        { "type": "text", "text": "391" }
+      ]
+    },
+    { "role": "user", "content": "Now double it." }
+  ],
+  "maxOutputTokens": 2048,
+  "topK": 40,
+  "reasoning": { "effort": "max", "budgetTokens": 1024 },
+  "providerOptions": { "anthropic": { "container": "container-123" } }
+}

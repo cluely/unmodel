@@ -47,6 +47,10 @@
       "types": "./dist/catalog/index.d.ts",
       "default": "./dist/catalog/index.js"
     },
+    "./chat": {
+      "types": "./dist/chat/index.d.ts",
+      "default": "./dist/chat/index.js"
+    },
     "./alibaba": {
       "types": "./dist/providers/alibaba/index.d.ts",
       "default": "./dist/providers/alibaba/index.js"

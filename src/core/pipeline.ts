@@ -7,7 +7,16 @@ import type { ModelInfo } from "./catalog-types";
 import type { EndpointConstraints, FamilyRule } from "./constraint-types";
 import { heuristicTokenizer, type Tokenizer } from "./tokens";
 
-const DEFAULT_SEVERITY: Record<IssueCode, IssueSeverity> = {
+/**
+ * Every issue code's severity when nothing overrides it.
+ *
+ * Exported (additively) so alternative pipelines — `unmodel/chat` runs its own
+ * four layers over a compiled body rather than the caller's params — inherit
+ * these semantics instead of re-deciding them. A second table that disagreed
+ * about, say, whether `unknown_model` fails a request would be a difference
+ * nobody would notice until it bit them.
+ */
+export const DEFAULT_SEVERITY: Record<IssueCode, IssueSeverity> = {
   invalid_shape: "error",
   unknown_param: "warning",
   unknown_model: "warning",
@@ -45,6 +54,39 @@ export interface PipelineContext {
   readonly tokenizer: Tokenizer;
   /** Records an issue; severity comes from defaults + the user's overrides. */
   report(issue: IssueInput): void;
+}
+
+/**
+ * The severity-resolving collector every layer reports into: defaults, then
+ * the rule's own override (deny rules flagged `ignored`), then the user's
+ * `options.severity` — which wins, including `"off"`, which drops the issue.
+ *
+ * Extracted from `createValidator` so `unmodel/chat`'s pipeline shares the
+ * exact resolution order rather than reimplementing it. `issues` is the live
+ * array; pair it with {@link partition} at the end.
+ */
+export interface IssueSink {
+  readonly issues: Issue[];
+  report(input: IssueInput): void;
+}
+
+export function createIssueSink(options: ValidateOptions): IssueSink {
+  const issues: Issue[] = [];
+  return {
+    issues,
+    report(input) {
+      const override = options.severity?.[input.code];
+      if (override === "off") return;
+      issues.push({
+        severity: override ?? input.severity ?? DEFAULT_SEVERITY[input.code],
+        code: input.code,
+        path: input.path ?? [],
+        message: input.message,
+        ...(input.model !== undefined && { model: input.model }),
+        ...(input.meta !== undefined && { meta: input.meta }),
+      });
+    },
+  };
 }
 
 export interface PipelineSpec<P, V = P> {
@@ -96,23 +138,13 @@ export function constraintsFor(
 
 export function createValidator<P, V = P>(spec: PipelineSpec<P, V>): Validator<P, V> {
   function safe(params: P, options: ValidateOptions = {}): ValidateResult<V> {
-    const issues: Issue[] = [];
+    const sink = createIssueSink(options);
+    const issues = sink.issues;
     const ctx: PipelineContext = {
       endpoint: spec.endpoint,
       options,
       tokenizer: options.tokenizer ?? heuristicTokenizer,
-      report(input) {
-        const override = options.severity?.[input.code];
-        if (override === "off") return;
-        issues.push({
-          severity: override ?? input.severity ?? DEFAULT_SEVERITY[input.code],
-          code: input.code,
-          path: input.path ?? [],
-          message: input.message,
-          ...(input.model !== undefined && { model: input.model }),
-          ...(input.meta !== undefined && { meta: input.meta }),
-        });
-      },
+      report: (input) => sink.report(input),
     };
 
     // Layer 1: shape.
@@ -261,7 +293,8 @@ export function createValidator<P, V = P>(spec: PipelineSpec<P, V>): Validator<P
   return validator;
 }
 
-function partition(issues: Issue[]): { errors: Issue[]; warnings: Issue[] } {
+/** Splits a collected issue list into the two arrays `ValidateResult` carries. */
+export function partition(issues: Issue[]): { errors: Issue[]; warnings: Issue[] } {
   return {
     errors: issues.filter((i) => i.severity === "error"),
     warnings: issues.filter((i) => i.severity === "warning"),
@@ -276,7 +309,23 @@ function inspectionFailureMessage(err: unknown): string {
   return `unmodel could not safely inspect these params (${String(err)}) — this is likely a malformed request; if the request is valid, please file a bug`;
 }
 
-function reportUnknownTopLevelKeys(schema: z.ZodType, params: unknown, ctx: PipelineContext): void {
+/**
+ * Warns about top-level keys the schema's shape does not declare.
+ *
+ * Every wire schema is deliberately loose (unknown keys pass through, because
+ * providers ship params faster than unmodel tracks them), so this is what keeps
+ * "loose" from meaning "silent": a typo'd key is still delivered to the API,
+ * and the caller is told which one it was.
+ *
+ * The context parameter is structural rather than a full `PipelineContext` so
+ * `unmodel/chat` — which reports into its own sink — can reuse the behaviour
+ * verbatim instead of forking the message.
+ */
+export function reportUnknownTopLevelKeys(
+  schema: z.ZodType,
+  params: unknown,
+  ctx: { readonly endpoint: string; report(issue: IssueInput): void },
+): void {
   if (!(schema instanceof z.ZodObject)) return;
   if (typeof params !== "object" || params === null) return;
   const known = new Set(Object.keys(schema.shape));

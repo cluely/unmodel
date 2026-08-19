@@ -1,0 +1,26 @@
+{
+  "$comment": [
+    "`data: { fileId, provider }` is the unified spelling of a provider file handle. Recording",
+    "the provider is the whole point: it resolves to the gemini dialect, so a google target",
+    "re-emits it verbatim and every other target drops it with a named warning instead of",
+    "emitting a URL it cannot fetch."
+  ],
+  "model": "google/gemini-2.5-flash",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Describe this." },
+        {
+          "type": "file",
+          "mediaType": "image/png",
+          "data": {
+            "fileId": "https://generativelanguage.googleapis.com/v1beta/files/abc123",
+            "provider": "google"
+          }
+        }
+      ]
+    }
+  ],
+  "maxOutputTokens": 512
+}

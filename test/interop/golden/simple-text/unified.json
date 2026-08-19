@@ -1,0 +1,7 @@
+{
+  "model": "anthropic/claude-opus-5",
+  "system": "You are terse.",
+  "messages": [{ "role": "user", "content": "Hello" }],
+  "maxOutputTokens": 1024,
+  "temperature": 0.5
+}

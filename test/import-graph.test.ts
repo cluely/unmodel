@@ -258,6 +258,181 @@ describe("retarget", () => {
   });
 });
 
+/**
+ * Amendment A1 — `src/chat/**`, the unified `unmodel/chat` entry.
+ *
+ * No existing rule constrained this directory (rule 4 is scoped to
+ * `src/retarget/**`), and it is the one entry that speaks about *every*
+ * provider at once — so it is also the one place where reaching for a
+ * provider barrel or the full catalog is both tempting and catastrophic:
+ * `src/catalog/index.ts` alone is ~800 KB of generated data, against the
+ * ~330 KB slim table this entry is designed around.
+ *
+ * The allowance is deliberately the same shape as the retarget rule (rule 4):
+ * core, the two chat-scoped generated tables, `src/retarget/dialects.ts`
+ * (type-only — it is the shared dialect→body map, built from type-only wire
+ * leaves), provider *leaves* only, and its own directory. A provider
+ * `index.ts` or validator never becomes allowed.
+ *
+ * A1 is completed by three sharper pins, each catching a failure the broad
+ * rule above would let through:
+ *
+ * - **A2** the provider leaves are an enumerated set, not merely "leaves". A
+ *   codec or a constraint table is a real bundle cost, so a fourth one showing
+ *   up is a failing diff with a name on it — mirroring the cross-dialect pin
+ *   in `cross-provider imports`.
+ * - **A3** `chat-profiles.gen.ts` has exactly one production owner. It is 324 KB
+ *   of generated data; the moment a second entry imports it, that entry's
+ *   budget silently triples.
+ * - **A4** nothing under `src/chat` touches `src/catalog/availability/**`.
+ *   `unmodel/chat` has no `.toApi`, so the availability layer is pure weight
+ *   here — and it is ~290 KB of it.
+ */
+describe("chat (amendment A1)", () => {
+  const CHAT_CATALOG_TABLES = new Set([
+    "src/catalog/chat-refs.gen.ts",
+    "src/catalog/chat-profiles.gen.ts",
+  ]);
+
+  /**
+   * A2 — the exact provider modules `src/chat` may reach, and why each is
+   * there. Three codecs (one per dialect it compiles to) and four constraint
+   * tables (the providers with hand-written chat deny/enum rules).
+   */
+  const CHAT_PROVIDER_LEAVES = new Set([
+    "src/providers/anthropic/interop.ts", // anthropic-messages decoder
+    "src/providers/google/interop.ts", // gemini decoder
+    "src/providers/openai-compatible/interop.ts", // openai-chat decoder (30 providers)
+    // Four constraint tables, not five: google's chat rules carry no deny or
+    // enum entry and its module reads a generated catalog, so wiring it in
+    // costs 44 KiB to contribute nothing. See src/chat/constraints.ts.
+    "src/providers/anthropic/constraints.ts",
+    "src/providers/groq/constraints.ts",
+    "src/providers/openai/constraints.ts",
+    "src/providers/upstage/constraints.ts",
+  ]);
+
+  test("reaches only core, the chat tables, pinned provider leaves and itself", () => {
+    const chatFiles = FILES.filter((f) => under(f, "src/chat"));
+    // A rule that scans an empty set passes by saying nothing.
+    expect(chatFiles.length).toBeGreaterThanOrEqual(8);
+
+    const violations: string[] = [];
+    for (const file of chatFiles) {
+      for (const ref of importsOf(file)) {
+        if (ref.specifier === "zod") continue;
+        if (under(ref.target, "src/core")) continue;
+        if (under(ref.target, "src/chat")) continue;
+        if (CHAT_CATALOG_TABLES.has(ref.target)) continue;
+        // The dialect→body map. Type-only, and it must stay that way: it is
+        // the one module outside core/chat this entry names at all.
+        if (ref.target === "src/retarget/dialects.ts") {
+          if (!ref.typeOnly) {
+            violations.push(
+              violation(file, ref, "src/retarget/dialects.ts is a type map — use `import type`"),
+            );
+          }
+          continue;
+        }
+        if (under(ref.target, "src/providers")) {
+          if (CHAT_PROVIDER_LEAVES.has(ref.target)) continue;
+          const basename = ref.target.slice(ref.target.lastIndexOf("/") + 1);
+          violations.push(
+            violation(
+              file,
+              ref,
+              basename === "index.ts" || !PROVIDER_LEAF_BASENAMES.has(basename)
+                ? `only ${[...PROVIDER_LEAF_BASENAMES].join(" / ")} may be imported from a provider ` +
+                    "directory — a barrel or validator drags that provider's schema, catalog and " +
+                    "checks into the one entry that already carries every provider's profile"
+                : "a leaf, but not one of one of the pinned seven (A2) — a new codec or constraint table " +
+                    "is a real bundle cost, so add it to CHAT_PROVIDER_LEAVES deliberately",
+            ),
+          );
+          continue;
+        }
+        if (isCatalogGen(ref.target) || ref.target === "src/catalog/index.ts") {
+          violations.push(
+            violation(
+              file,
+              ref,
+              "unmodel/chat pays for the slim src/catalog/chat-profiles.gen.ts and nothing else; " +
+                "a per-provider catalog or the full registry is the weight that table exists to avoid",
+            ),
+          );
+          continue;
+        }
+        violations.push(
+          violation(
+            file,
+            ref,
+            "src/chat may import only src/core/**, src/catalog/chat-*.gen.ts, " +
+              "type-only src/retarget/dialects.ts, the seven pinned provider leaves, zod, " +
+              "and its own directory",
+          ),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("A2 — every pinned provider leaf is actually reached (no dead pins)", () => {
+    const reached = new Set<string>();
+    for (const file of FILES.filter((f) => under(f, "src/chat"))) {
+      for (const ref of importsOf(file)) {
+        if (CHAT_PROVIDER_LEAVES.has(ref.target)) reached.add(ref.target);
+      }
+    }
+    expect([...reached].sort()).toEqual([...CHAT_PROVIDER_LEAVES].sort());
+  });
+
+  test("A3 — the profile table has exactly one production importer: src/chat", () => {
+    // 324 KB of generated data. A second entry importing it does not fail any
+    // type check and does not fail any existing test — it just triples that
+    // entry's bundle. This is the only thing that catches it.
+    const importers = FILES.filter((file) =>
+      importsOf(file).some((ref) => ref.target === "src/catalog/chat-profiles.gen.ts"),
+    );
+    expect(importers.length).toBeGreaterThanOrEqual(1);
+    expect(importers.filter((file) => !under(file, "src/chat"))).toEqual([]);
+  });
+
+  test("A4 — src/chat never reaches the availability layer", () => {
+    // `unmodel/chat` has no `.toApi`, so the ~290 KB of generated retarget
+    // tables would be pure weight. The `only a provider module may import its
+    // own table` rule below already forbids it; asserted here too because this
+    // is the entry where someone would try.
+    const violations: string[] = [];
+    for (const file of FILES.filter((f) => under(f, "src/chat"))) {
+      for (const ref of importsOf(file)) {
+        if (under(ref.target, "src/catalog/availability")) {
+          violations.push(violation(file, ref, "unmodel/chat has no .toApi and pays for no availability data"));
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("the type-only ref table stays type-only at every call site", () => {
+    // `chat-refs.gen.ts` is ~52 KB of string-literal union and zero runtime
+    // values. A value import of it would be a no-op today and a bundling
+    // hazard the moment anything is added to it.
+    const violations: string[] = [];
+    let importers = 0;
+    for (const file of FILES) {
+      for (const ref of importsOf(file)) {
+        if (ref.target !== "src/catalog/chat-refs.gen.ts") continue;
+        importers += 1;
+        if (!ref.typeOnly) {
+          violations.push(violation(file, ref, "the chat ref union is type-only — use `import type`"));
+        }
+      }
+    }
+    expect(importers).toBeGreaterThanOrEqual(1);
+    expect(violations).toEqual([]);
+  });
+});
+
 describe("cross-provider imports", () => {
   /**
    * The two structural exceptions, enumerated so adding a third is a

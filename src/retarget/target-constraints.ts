@@ -39,6 +39,27 @@
  *   sit behind. Left to xai's own validator.
  * - **Nested checks.** Groq's `messages[].name` rule is an `extraCheck`, not a
  *   deny table, and target-side re-validation runs deny/enum tables only.
+ *
+ * ## Why `src/chat/constraints.ts` exists alongside this
+ *
+ * `unmodel/chat` runs the same layer against its compiled body and keeps its
+ * own, larger table. That is not duplication anyone forgot to collapse — it is
+ * forced by who imports what.
+ *
+ * **This module is imported by every chat endpoint module**: each one passes
+ * `targetValidationFor` to `createToApi`, so ~35 provider bundles pay for
+ * whatever appears in `TABLES` below. It is deliberately two entries wide, and
+ * both are pure-literal leaves of a few hundred bytes.
+ *
+ * `unmodel/chat` needs anthropic's, openai's and google's chat tables too,
+ * because it compiles bodies *for* those providers rather than merely
+ * retargeting into them. Adding them here to share one table would push
+ * openai's 617-line constraints module (and google's, which reads a generated
+ * catalog) into all ~35 per-provider bundles to serve a single entry — blowing
+ * every budget in `test/bundle-budget.test.ts` for the sake of not writing a
+ * second 90-line file. So the chat entry keeps its own, and
+ * `test/chat/providers.test.ts` asserts it is a superset of this one wherever
+ * the two overlap.
  */
 import type { EndpointConstraints } from "../core/constraint-types";
 import type { TargetEndpoint } from "../core/translate/endpoints";

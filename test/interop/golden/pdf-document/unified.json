@@ -1,0 +1,17 @@
+{
+  "$comment": [
+    "The `data:` URL form of ChatFilePart.data — the media type comes from the URL header, so",
+    "`mediaType` is redundant here and omitted. vision-base64 exercises the bare-bytes form."
+  ],
+  "model": "anthropic/claude-opus-5",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Summarize this." },
+        { "type": "file", "data": "data:application/pdf;base64,JVBERi0xLjQK" }
+      ]
+    }
+  ],
+  "maxOutputTokens": 900
+}

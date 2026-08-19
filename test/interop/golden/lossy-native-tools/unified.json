@@ -1,0 +1,23 @@
+{
+  "$comment": [
+    "Provider-defined tools never cross dialects, so `nativeTools` records the provider that",
+    "owns each one. The encoder resolves \"anthropic\" to the anthropic-messages dialect and",
+    "reads the tool's name off `definition.name`, which is what lets a foreign decoder warn",
+    "`dropped_tool` naming \"web_search\" instead of discarding an anonymous object."
+  ],
+  "model": "anthropic/claude-opus-5",
+  "messages": [{ "role": "user", "content": "Search for the news." }],
+  "maxOutputTokens": 512,
+  "tools": {
+    "note": {
+      "description": "Save a note.",
+      "inputSchema": { "type": "object", "properties": { "text": { "type": "string" } } }
+    }
+  },
+  "nativeTools": [
+    {
+      "provider": "anthropic",
+      "definition": { "type": "web_search_20250305", "name": "web_search", "max_uses": 3 }
+    }
+  ]
+}

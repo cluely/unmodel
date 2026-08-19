@@ -42,6 +42,10 @@ import type { ChatIR, DecodeContext } from "../../src/core/translate/ir";
 import type { DialectId } from "../../src/core/translate/endpoints";
 import type { TranslationWarning, Warn } from "../../src/core/translate/warnings";
 import { createWarningSink } from "../../src/core/translate/warnings";
+// `convergent` / `comparableWarnings` live in ./ir-compare.ts because
+// test/chat/golden.test.ts asserts the *same* projection for unified → dialect
+// convergence; two copies would let one suite drift into ignoring a field.
+import { comparableWarnings, convergent, sortedExpectedWarnings } from "./ir-compare";
 import { encodeAnthropic, decodeAnthropic } from "../../src/providers/anthropic/interop";
 import { encodeGemini, decodeGemini } from "../../src/providers/google/interop";
 import {
@@ -90,28 +94,8 @@ function run<T>(fn: (warn: Warn) => T): { value: T; warnings: TranslationWarning
   return { value: fn(sink.warn), warnings: sink.warnings };
 }
 
-/** The comparable core of an IR — see the header for what is ignored and why. */
-function convergent(ir: ChatIR): unknown {
-  const { source: _source, passthrough: _passthrough, model: _model, settings, ...rest } = ir;
-  const { temperatureMax: _max, ...comparableSettings } = settings;
-  return { ...rest, settings: comparableSettings };
-}
-
-/** `{code, path, meta}` sorted stably, which is what the fixtures commit. */
-function comparableWarnings(warnings: readonly TranslationWarning[]): unknown[] {
-  return warnings
-    .map((w) => ({ code: w.code, path: w.path, ...(w.meta !== undefined && { meta: w.meta }) }))
-    .sort((a, b) => `${a.code}|${a.path.join(".")}`.localeCompare(`${b.code}|${b.path.join(".")}`));
-}
-
 function expectedFor(fixture: { warnings?: unknown[] }): unknown[] {
-  return [...(fixture.warnings ?? [])].sort((a, b) => {
-    const key = (w: unknown): string => {
-      const { code, path } = w as { code: string; path: Array<string | number> };
-      return `${code}|${path.join(".")}`;
-    };
-    return key(a).localeCompare(key(b));
-  });
+  return sortedExpectedWarnings(fixture.warnings ?? []);
 }
 
 /** Every fixture body minus the model id, for comparing a decode's output. */

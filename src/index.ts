@@ -120,6 +120,35 @@ export type {
   StaticApiTargetId,
 } from "./retarget";
 
+/**
+ * The unified chat vocabulary, **type-only**.
+ *
+ * `unmodel/chat`'s runtime lives behind its own subpath because it bundles the
+ * slim profile table for every chat model — several hundred kilobytes that this
+ * entry must never acquire. The *types* cost nothing, and `ChatParams` is
+ * exactly the sort of thing an application declares in a shared module far away
+ * from the call that validates it, so `import type { ChatParams } from
+ * "unmodel"` should work without reaching for the subpath.
+ */
+export type {
+  ChatCache,
+  ChatFilePart,
+  ChatMessage,
+  ChatModelRef,
+  ChatNativeTool,
+  ChatParams,
+  ChatProviderId,
+  ChatReasoning,
+  ChatReasoningEffort,
+  ChatReasoningPart,
+  ChatResponseFormat,
+  ChatTextPart,
+  ChatToolCallPart,
+  ChatToolChoice,
+  ChatToolResultPart,
+  ChatToolSpec,
+} from "./chat/types";
+
 export { resolveModelInfo } from "./core/catalog-lookup";
 
 export { createValidator, constraintsFor } from "./core/pipeline";

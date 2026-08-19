@@ -1,0 +1,55 @@
+{
+  "$comment": [
+    "The tool-call ids are Gemini's synthesized spellings on purpose. Gemini's wire format",
+    "carries no ids at all, so `encodeGemini` invents `gemini_call_<msg>_<part>`; using the same",
+    "ids here is what makes the unified request converge with the Gemini fixture's IR, and the",
+    "gemini decoder strips them again on the way out (they are its own bookkeeping)."
+  ],
+  "model": "google/gemini-2.5-flash",
+  "messages": [
+    { "role": "user", "content": "Weather in Paris and Rome?" },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool-call",
+          "toolCallId": "gemini_call_1_0",
+          "toolName": "get_weather",
+          "input": { "location": "Paris" }
+        },
+        {
+          "type": "tool-call",
+          "toolCallId": "gemini_call_1_1",
+          "toolName": "get_weather",
+          "input": { "location": "Rome" }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": [
+        {
+          "type": "tool-result",
+          "toolCallId": "gemini_call_1_0",
+          "toolName": "get_weather",
+          "output": { "type": "text", "value": "18C" }
+        },
+        {
+          "type": "tool-result",
+          "toolCallId": "gemini_call_1_1",
+          "toolName": "get_weather",
+          "output": { "type": "text", "value": "24C" }
+        }
+      ]
+    }
+  ],
+  "maxOutputTokens": 256,
+  "tools": {
+    "get_weather": {
+      "inputSchema": {
+        "type": "object",
+        "properties": { "location": { "type": "string" } }
+      }
+    }
+  }
+}

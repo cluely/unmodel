@@ -271,10 +271,27 @@ export const NO_HEADERS: Record<string, string> = Object.freeze({});
  * the validator only ever sees the wire body — but at the type level they are
  * excess keys, and without this exemption "just pass it to the target
  * validator" would be advice that does not compile. The cost is that these
- * six names are no longer caught as typos in a request literal, which is a
+ * seven names are no longer caught as typos in a request literal, which is a
  * trade worth making: none of them is a wire param on any endpoint.
+ *
+ * `modelId` joined the list with `unmodel/chat`. Its result carries the *bare*
+ * model id non-enumerably because the ref (`"google/gemini-3-pro"`) is not what
+ * any wire body says, and the gemini dialect strips the id into the URL — so
+ * composing a compiled chat result into google's own validator reads
+ * `chat({ model: result.modelId, ...result })`, which only compiles if
+ * `modelId` is exempt here. `target` was already exempt for the same reason;
+ * `provider` deliberately is **not** and must never be added: openrouter takes
+ * a real wire param called `provider` (its routing block), so exempting it
+ * would silence a genuine typo on a real endpoint.
  */
-type ValidatedMember = "toSdk" | "toApi" | "toApiSafe" | "request" | "warnings" | "target";
+type ValidatedMember =
+  | "toSdk"
+  | "toApi"
+  | "toApiSafe"
+  | "request"
+  | "warnings"
+  | "target"
+  | "modelId";
 
 /**
  * Rejects top-level keys that are not part of the endpoint's wire shape.

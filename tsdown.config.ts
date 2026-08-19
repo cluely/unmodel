@@ -6,6 +6,7 @@ export default defineConfig({
     cli: "src/cli.ts",
     "ai-sdk/index": "src/ai-sdk/index.ts",
     "catalog/index": "src/catalog/index.ts",
+    "chat/index": "src/chat/index.ts",
     "providers/alibaba/index": "src/providers/alibaba/index.ts",
     "providers/amazon-bedrock/index": "src/providers/amazon-bedrock/index.ts",
     "providers/anthropic/index": "src/providers/anthropic/index.ts",

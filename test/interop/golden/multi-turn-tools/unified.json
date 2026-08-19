@@ -1,0 +1,47 @@
+{
+  "$comment": [
+    "The `tool` role does not become an IR message of its own: its results are held and",
+    "prepended to the next user turn (here there is none, so they flush into a trailing user",
+    "message). That is the IR's shape — Anthropic's and Bedrock's — and it is why this",
+    "three-message unified request converges with the three-message Anthropic fixture and the",
+    "three-message OpenAI one alike."
+  ],
+  "model": "anthropic/claude-opus-5",
+  "messages": [
+    { "role": "user", "content": "What is the weather in Paris?" },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool-call",
+          "toolCallId": "call_1",
+          "toolName": "get_weather",
+          "input": { "location": "Paris" }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": [
+        {
+          "type": "tool-result",
+          "toolCallId": "call_1",
+          "toolName": "get_weather",
+          "output": { "type": "text", "value": "18C and clear" }
+        }
+      ]
+    }
+  ],
+  "maxOutputTokens": 1024,
+  "tools": {
+    "get_weather": {
+      "description": "Look up the weather.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "location": { "type": "string" } },
+        "required": ["location"]
+      }
+    }
+  },
+  "toolChoice": "auto"
+}

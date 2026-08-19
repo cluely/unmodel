@@ -45,6 +45,18 @@ export interface TargetEndpoint {
    */
   readonly url?: string | ((modelId: string) => string);
   /**
+   * The POST URL when the caller asked to **stream**, for the surfaces where
+   * streaming is a different *method* rather than a body flag.
+   *
+   * Only Gemini needs it: `openai-chat` and `anthropic-messages` both stream
+   * in-body (`stream: true`) and post to the same URL, so they leave this
+   * absent and `endpointStreamUrl` falls back to {@link endpointUrl}. Google
+   * instead exposes `:streamGenerateContent?alt=sse`, and a body flag there is
+   * simply ignored — which is why the unified encoder withholds `stream` from
+   * the Gemini IR and the compile step swaps the URL instead.
+   */
+  readonly streamUrl?: string | ((modelId: string) => string);
+  /**
    * Non-empty when the endpoint is factory-configured: its URL embeds a
    * region / project / resource endpoint / account id that a one-arg
    * `.toApi(provider)` call never supplied. These targets are excluded from
@@ -143,6 +155,11 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
         headers: JSON_ONLY,
         url: (modelId: string) =>
           `https://generativelanguage.googleapis.com/v1beta/models/${stripModelsPrefix(modelId)}:generateContent`,
+        // `?alt=sse` is not optional decoration: without it the streaming
+        // method returns a JSON *array* of chunks rather than an SSE stream,
+        // which every streaming client in the ecosystem mis-parses.
+        streamUrl: (modelId: string) =>
+          `https://generativelanguage.googleapis.com/v1beta/models/${stripModelsPrefix(modelId)}:streamGenerateContent?alt=sse`,
       } satisfies TargetEndpoint,
     ],
 
@@ -248,6 +265,24 @@ export function endpointUrl(endpoint: TargetEndpoint, modelId: string): string |
   const { url } = endpoint;
   if (url === undefined) return undefined;
   return typeof url === "function" ? url(modelId) : url;
+}
+
+/**
+ * The POST URL for `endpoint` when serving `modelId` **as a stream**.
+ *
+ * Falls back to {@link endpointUrl} whenever the endpoint declares no
+ * `streamUrl`, which is the common case: chat-completions and
+ * `/v1/messages` both stream from the same URL with `stream: true` in the
+ * body. Callers therefore never need to branch on the dialect — they branch on
+ * whether the caller asked to stream.
+ */
+export function endpointStreamUrl(
+  endpoint: TargetEndpoint,
+  modelId: string,
+): string | undefined {
+  const { streamUrl } = endpoint;
+  if (streamUrl === undefined) return endpointUrl(endpoint, modelId);
+  return typeof streamUrl === "function" ? streamUrl(modelId) : streamUrl;
 }
 
 /** True when the endpoint needs per-instance config and so has no static URL. */

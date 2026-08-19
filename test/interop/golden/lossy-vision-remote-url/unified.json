@@ -1,0 +1,18 @@
+{
+  "$comment": [
+    "A plain public URL, which every dialect but Gemini references directly. Compiling this for",
+    "google is the approximation the committed to-gemini.json fixture describes — the encoder",
+    "itself has nothing to warn about, which is why unified-warnings.json is absent here."
+  ],
+  "model": "google/gemini-2.5-flash",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Describe this." },
+        { "type": "file", "data": "https://example.com/cat.png" }
+      ]
+    }
+  ],
+  "maxOutputTokens": 512
+}

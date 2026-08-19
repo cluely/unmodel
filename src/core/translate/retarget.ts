@@ -17,8 +17,9 @@
  * all. Only the remaining ~8% pay for an encode/decode pair.
  */
 import type { ZodType } from "zod";
-import type { Issue, IssueSeverity } from "../issues";
-import type { EndpointConstraints, FamilyRule } from "../constraint-types";
+import type { Issue } from "../issues";
+import type { EndpointConstraints } from "../constraint-types";
+import { checkConstraints } from "./constraint-check";
 import type { ValidateResult } from "../result";
 import type { ApiRetargetOutcome, ApiRetargeter, RequestMeta, SdkFormatters } from "../request";
 import { toValidated } from "../request";
@@ -124,7 +125,8 @@ function defaultSdkFor(
   }
 }
 
-const DEFAULT_SEVERITY = { deny: "error", enums: "error", schema: "error" } as const;
+/** A target-side shape failure is never a warning: the body would 400. */
+const SCHEMA_SEVERITY = "error" as const;
 
 /** Runs validation layer 1 (shape) against the target dialect's schema. */
 function checkSchema(schema: ZodType | undefined, body: object, out: Issue[]): void {
@@ -133,7 +135,7 @@ function checkSchema(schema: ZodType | undefined, body: object, out: Issue[]): v
   if (parsed.success) return;
   for (const issue of parsed.error.issues) {
     out.push({
-      severity: DEFAULT_SEVERITY.schema,
+      severity: SCHEMA_SEVERITY,
       code: "invalid_shape",
       path: issue.path.filter(
         (segment): segment is string | number =>
@@ -145,56 +147,13 @@ function checkSchema(schema: ZodType | undefined, body: object, out: Issue[]): v
 }
 
 /**
- * Runs validation layer 3 (the target's hand-written deny/enum tables). This
- * is the layer that catches the case the whole feature exists for: retarget an
- * `openai.chat` body carrying `logprobs` to groq and you get a named error
- * citing groq's compatibility doc, instead of a 400 from the wire.
+ * Validation layer 3 (the target's hand-written deny/enum tables) lives in
+ * `./constraint-check.ts` and is re-exported here, where the retarget engine's
+ * readers expect to find it. `unmodel/chat` runs the identical check against
+ * its compiled body and imports that module directly, so the two paths cannot
+ * disagree about what a deny rule means.
  */
-function checkConstraints(
-  constraints: readonly EndpointConstraints[] | undefined,
-  body: object,
-  modelId: string,
-  out: Issue[],
-): void {
-  if (constraints === undefined) return;
-  const record = body as Record<string, unknown>;
-  for (const table of constraints) {
-    // A `FamilyRule` narrows its table to the models it matches. Duck-typed
-    // rather than discriminated because `TargetValidation.constraints` is
-    // declared as the base `EndpointConstraints[]`, which `FamilyRule[]`
-    // widens into — and applying a family's denies to every model would
-    // reject requests the target accepts, which is worse than not checking.
-    const match = (table as Partial<FamilyRule>).match;
-    if (typeof match === "function" && !match(modelId)) continue;
-    for (const [param, rule] of Object.entries(table.deny ?? {})) {
-      // Explicit `null` means "provider default" on these APIs, so it is unset.
-      if (record[param] == null) continue;
-      const ignored = rule.ignored === true;
-      out.push({
-        severity: (ignored ? "warning" : DEFAULT_SEVERITY.deny) as IssueSeverity,
-        code: "unsupported_param",
-        path: [param],
-        model: modelId,
-        message: ignored
-          ? `\`${param}\` is silently ignored by the API for "${modelId}": ${rule.reason}`
-          : `\`${param}\` is not supported by "${modelId}": ${rule.reason}`,
-        meta: { source: rule.source, ...(ignored && { ignored: true }) },
-      });
-    }
-    for (const [param, allowed] of Object.entries(table.enums ?? {})) {
-      const value = record[param];
-      if (value == null || allowed.includes(value as string | number)) continue;
-      out.push({
-        severity: DEFAULT_SEVERITY.enums,
-        code: "invalid_enum_value",
-        path: [param],
-        model: modelId,
-        message: `\`${param}\` must be one of ${allowed.map((v) => JSON.stringify(v)).join(", ")} for "${modelId}"; got ${JSON.stringify(value)}.`,
-        meta: { allowed: [...allowed], value },
-      });
-    }
-  }
-}
+export { checkConstraints } from "./constraint-check";
 
 /** Turns the generated `narrows` metadata into warnings, no target catalog needed. */
 function pushNarrowingWarnings(

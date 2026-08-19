@@ -1,0 +1,15 @@
+{
+  "$comment": [
+    "Warnings `encodeUnified` itself emits, keyed by target dialect. Absent dialects (and an",
+    "absent file) mean warning-free. anthropic-messages and gemini both have token budgets, so",
+    "the budget wins there and nothing is approximated; only chat-completions falls back to the",
+    "effort bucket, and \"max\" is not one of its levels."
+  ],
+  "openai-chat": [
+    {
+      "code": "approximated_param",
+      "path": ["reasoning", "effort"],
+      "meta": { "from": "max", "to": "high", "dialect": "openai-chat" }
+    }
+  ]
+}

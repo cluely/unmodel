@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
   GENERATE_CONTENT_BASE_URL,
-  generateContent,
+  chat,
   generateContentUrl,
   type GenerateContentBody,
   type GoogleGenerationConfig,
   type GoogleModality,
-} from "./generate-content";
+} from "./chat";
 import {
   GEMINI_IMAGE_ASPECT_RATIOS,
   GEMINI_IMAGE_ASPECT_RATIO_ENUM_NAMES,
@@ -16,9 +16,9 @@ import {
   INLINE_PDF_MAX_BYTES,
 } from "./constraints";
 // The enum-name unions live on the wire leaf and are not re-exported through
-// generate-content.ts; a test may reach the leaf directly.
+// chat.ts; a test may reach the leaf directly.
 import type { GoogleImageAspectRatioEnumName, GoogleImageSizeEnumName } from "./wire";
-import { generateContentModels } from "./tts-models";
+import { chatModels } from "./tts-models";
 import { models } from "../../catalog/google.gen";
 import type { Issue } from "../../core/issues";
 import type { ValidateResult } from "../../core/result";
@@ -45,7 +45,7 @@ function expectOk<V>(result: ValidateResult<V>) {
 
 describe("wire purity", () => {
   test("model is stripped from the body and JSON output; URL carries it", () => {
-    const validated = generateContent({ model: "gemini-2.5-flash", contents: HELLO });
+    const validated = chat({ model: "gemini-2.5-flash", contents: HELLO });
     expect(Object.keys(validated)).toEqual(["contents"]);
     const json = JSON.parse(JSON.stringify(validated));
     expect("model" in json).toBe(false);
@@ -58,15 +58,15 @@ describe("wire purity", () => {
   });
 
   test("toSdk and request are non-enumerable but callable", () => {
-    const validated = generateContent({ model: "gemini-2.5-flash", contents: HELLO });
+    const validated = chat({ model: "gemini-2.5-flash", contents: HELLO });
     expect(Object.getOwnPropertyDescriptor(validated, "toSdk")?.enumerable).toBe(false);
     expect(Object.getOwnPropertyDescriptor(validated, "request")?.enumerable).toBe(false);
     expect(typeof validated.toSdk).toBe("function");
   });
 
   test('a leading "models/" is stripped: both forms yield the same URL and catalog hit', () => {
-    const bare = generateContent.safe({ model: "gemini-2.5-flash", contents: HELLO });
-    const prefixed = generateContent.safe({ model: "models/gemini-2.5-flash", contents: HELLO });
+    const bare = chat.safe({ model: "gemini-2.5-flash", contents: HELLO });
+    const prefixed = chat.safe({ model: "models/gemini-2.5-flash", contents: HELLO });
     if (!bare.ok || !prefixed.ok) throw new Error("expected both forms to validate");
     expect(prefixed.params.request.url).toBe(bare.params.request.url);
     expect(prefixed.params.request.url).toBe(
@@ -88,7 +88,7 @@ describe("wire purity", () => {
 
 describe("toSdk mapping", () => {
   test("generationConfig flattens into config; siblings move under config", () => {
-    const validated = generateContent({
+    const validated = chat({
       model: "gemini-2.5-flash",
       contents: HELLO,
       systemInstruction: { parts: [{ text: "Be brief." }] },
@@ -115,12 +115,12 @@ describe("toSdk mapping", () => {
   });
 
   test("config is omitted when nothing feeds it", () => {
-    const validated = generateContent({ model: "gemini-2.5-flash", contents: HELLO });
+    const validated = chat({ model: "gemini-2.5-flash", contents: HELLO });
     expect(validated.toSdk("google")).toEqual({ model: "gemini-2.5-flash", contents: HELLO });
   });
 
   test("serviceTier moves under config; store stays wire-only", () => {
-    const validated = generateContent({
+    const validated = chat({
       model: "gemini-2.5-flash",
       contents: HELLO,
       serviceTier: "flex",
@@ -141,15 +141,15 @@ describe("toSdk mapping", () => {
   });
 
   test("toSdk names the available targets when handed an unknown one", () => {
-    const validated = generateContent({ model: "gemini-2.5-flash", contents: HELLO });
+    const validated = chat({ model: "gemini-2.5-flash", contents: HELLO });
     expect(() => (validated.toSdk as (t: string) => unknown)("google-vertex")).toThrow(
       /"google-vertex" is not an SDK target for this endpoint\. Available: google, ai-sdk\./,
     );
   });
 });
 
-describe("google.generateContent toApi", () => {
-  const gemini = () => generateContent({ model: "gemini-2.5-flash", contents: HELLO });
+describe("google.chat toApi", () => {
+  const gemini = () => chat({ model: "gemini-2.5-flash", contents: HELLO });
 
   test("toApi/toApiSafe are attached and non-enumerable", () => {
     const validated = gemini();
@@ -193,12 +193,12 @@ describe("google.generateContent toApi", () => {
 
 describe("shape checks", () => {
   test("empty contents fails", () => {
-    const result = generateContent.safe({ model: "gemini-2.5-flash", contents: [] });
+    const result = chat.safe({ model: "gemini-2.5-flash", contents: [] });
     expectError(result, "invalid_shape");
   });
 
   test("wrong role fails", () => {
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-2.5-flash",
       contents: [{ role: "assistant", parts: [{ text: "hi" }] }],
     } as unknown as GenerateContentBody);
@@ -206,7 +206,7 @@ describe("shape checks", () => {
   });
 
   test("a part with two kinds fails; the path names the part", () => {
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-2.5-flash",
       contents: [
         { role: "user", parts: [{ text: "hi", inlineData: { mimeType: "image/png", data: PNG_1X1 } }] },
@@ -217,7 +217,7 @@ describe("shape checks", () => {
   });
 
   test("a part with no kind fails", () => {
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-2.5-flash",
       contents: [{ role: "user", parts: [{ thought: true }] }],
     });
@@ -226,14 +226,14 @@ describe("shape checks", () => {
 
   test("unknown top-level keys warn as unknown_param", () => {
     const result = expectOk(
-      generateContent.safe({ model: "gemini-2.5-flash", contents: HELLO, foo: 1 } as GenerateContentBody),
+      chat.safe({ model: "gemini-2.5-flash", contents: HELLO, foo: 1 } as GenerateContentBody),
     );
     expect(result.warnings.some((w) => w.code === "unknown_param" && w.path[0] === "foo")).toBe(true);
   });
 
   test("serviceTier and store are known wire fields (no unknown_param)", () => {
     const result = expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         serviceTier: "priority",
@@ -245,7 +245,7 @@ describe("shape checks", () => {
 
   test("a part with only toolCall or toolResponse is a valid oneof member", () => {
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: [
           { role: "model", parts: [{ toolCall: { id: "tc-1", toolType: "GOOGLE_SEARCH_WEB", args: { q: "x" } } }] },
@@ -256,7 +256,7 @@ describe("shape checks", () => {
   });
 
   test("unknown model warns but validates", () => {
-    const result = expectOk(generateContent.safe({ model: "gemini-99-ultra", contents: HELLO }));
+    const result = expectOk(chat.safe({ model: "gemini-99-ultra", contents: HELLO }));
     expect(result.warnings.some((w) => w.code === "unknown_model")).toBe(true);
   });
 });
@@ -264,7 +264,7 @@ describe("shape checks", () => {
 describe("capability checks (real catalog ids)", () => {
   test("tools on a model without toolCall", () => {
     expect(models["gemini-2.5-flash-image"].toolCall).toBe(false);
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-2.5-flash-image",
       contents: HELLO,
       tools: [{ functionDeclarations: [{ name: "f" }] }],
@@ -275,7 +275,7 @@ describe("capability checks (real catalog ids)", () => {
 
   test("responseSchema on a model without structuredOutput", () => {
     expect(models["gemini-3.1-flash-lite-image"].structuredOutput).toBe(false);
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-3.1-flash-lite-image",
       contents: HELLO,
       generationConfig: { responseMimeType: "application/json", responseSchema: { type: "OBJECT" } },
@@ -287,7 +287,7 @@ describe("capability checks (real catalog ids)", () => {
   test("responseSchema on a structuredOutput model passes", () => {
     expect(models["gemini-2.5-flash"].structuredOutput).toBe(true);
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { responseMimeType: "application/json", responseSchema: { type: "OBJECT" } },
@@ -297,7 +297,7 @@ describe("capability checks (real catalog ids)", () => {
 
   test("temperature on a temperature:false model", () => {
     expect(models["gemini-embedding-001"].temperature).toBe(false);
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-embedding-001",
       contents: HELLO,
       generationConfig: { temperature: 0.5 },
@@ -308,7 +308,7 @@ describe("capability checks (real catalog ids)", () => {
 
   test("thinkingConfig on a non-reasoning model", () => {
     expect(models["gemini-2.5-flash-preview-tts"].reasoning).toBe(false);
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-2.5-flash-preview-tts",
       contents: HELLO,
       generationConfig: { thinkingConfig: { thinkingBudget: 1024 } },
@@ -319,7 +319,7 @@ describe("capability checks (real catalog ids)", () => {
 
   test("maxOutputTokens above the model's output limit", () => {
     const limit = models["gemini-2.5-flash"].limit.output!;
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-2.5-flash",
       contents: HELLO,
       generationConfig: { maxOutputTokens: limit + 1 },
@@ -332,7 +332,7 @@ describe("capability checks (real catalog ids)", () => {
 describe("media checks", () => {
   test("video sent to a model without video input modality", () => {
     expect(models["gemini-2.5-computer-use-preview-10-2025"].modalities.input).toEqual(["text", "image"]);
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-2.5-computer-use-preview-10-2025",
       contents: [
         {
@@ -346,7 +346,7 @@ describe("media checks", () => {
   });
 
   test("undocumented image mime subtype is rejected", () => {
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-2.5-flash",
       contents: [{ role: "user", parts: [{ inlineData: { mimeType: "image/bmp", data: "AAAAAAAAAAAA" } }] }],
     });
@@ -358,7 +358,7 @@ describe("media checks", () => {
     // The mime label says bmp (disallowed) but the bytes sniff as png
     // (allowed): the sniffed truth wins, so no format issue fires.
     const result = expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ inlineData: { mimeType: "image/bmp", data: PNG_1X1 } }] }],
       }),
@@ -368,7 +368,7 @@ describe("media checks", () => {
 
   test("gif is an accepted image format (Blob.mimeType reference)", () => {
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ inlineData: { mimeType: "image/gif", data: GIF_1X1 } }] }],
       }),
@@ -377,7 +377,7 @@ describe("media checks", () => {
 
   test("avif is accepted via the declared mime (not sniffable)", () => {
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ inlineData: { mimeType: "image/avif", data: "AAAAAAAAAAAA" } }] }],
       }),
@@ -386,7 +386,7 @@ describe("media checks", () => {
 
   test("displayName on inlineData/fileData warns as a Vertex-only field", () => {
     const result = expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: [
           {
@@ -406,7 +406,7 @@ describe("media checks", () => {
 
   test("a valid inline png passes", () => {
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: [
           { role: "user", parts: [{ text: "what is this?" }, { inlineData: { mimeType: "image/png", data: PNG_1X1 } }] },
@@ -418,13 +418,13 @@ describe("media checks", () => {
   test("inline cap is 100MB (50MB for PDFs) per the current files docs", () => {
     expect(INLINE_MEDIA_MAX_BYTES).toBe(100 * 1024 * 1024);
     expect(INLINE_PDF_MAX_BYTES).toBe(50 * 1024 * 1024);
-    const rules = generateContent.constraintsFor("gemini-2.5-flash");
+    const rules = chat.constraintsFor("gemini-2.5-flash");
     expect(rules.some((r) => r.media?.image?.maxBytes === INLINE_MEDIA_MAX_BYTES)).toBe(true);
     expect(rules.some((r) => r.media?.video?.maxBytes === INLINE_MEDIA_MAX_BYTES)).toBe(true);
   });
 
   test("declared bytes over the inline cap on an inlineData part -> media_too_large", () => {
-    const result = generateContent.safe(
+    const result = chat.safe(
       {
         model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ inlineData: { mimeType: "video/mp4", data: "AAAAAAAAAAAA" } }] }],
@@ -447,7 +447,7 @@ describe("media checks", () => {
     // Files API media may be up to 2GB; declared bytes must not trip the
     // inline cap when the part is a fileData reference.
     const result = expectOk(
-      generateContent.safe(
+      chat.safe(
         {
           model: "gemini-2.5-flash",
           contents: [
@@ -480,7 +480,7 @@ describe("media checks", () => {
 
   test("an inline PDF over 50MB encoded -> media_too_large", () => {
     expect(models["gemini-2.5-flash"].modalities.input).toContain("pdf");
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-2.5-flash",
       contents: [
         {
@@ -511,19 +511,19 @@ describe("video duration declarations", () => {
   test("catalog gate: gemini-2.5-flash is a 1M-context video model", () => {
     expect(models["gemini-2.5-flash"].limit.context).toBeGreaterThanOrEqual(1_000_000);
     expect(models["gemini-2.5-flash"].modalities.input).toContain("video");
-    const rules = generateContent.constraintsFor("gemini-2.5-flash");
+    const rules = chat.constraintsFor("gemini-2.5-flash");
     expect(rules.some((r) => r.media?.video?.maxDurationSeconds === 3600)).toBe(true);
   });
 
   test("no declaration -> media_duration_undeclared warning", () => {
-    const result = expectOk(generateContent.safe(videoParams));
+    const result = expectOk(chat.safe(videoParams));
     const warning = result.warnings.find((w) => w.code === "media_duration_undeclared");
     expect(warning).toBeDefined();
     expect(warning!.path).toEqual(["contents", 0, "parts", 1]);
   });
 
   test("declared duration over the limit -> media_duration_exceeded error", () => {
-    const result = generateContent.safe(videoParams, {
+    const result = chat.safe(videoParams, {
       media: [{ path: ["contents", 0, "parts", 1], durationSeconds: 7200 }],
     });
     const issue = expectError(result, "media_duration_exceeded");
@@ -537,12 +537,12 @@ describe("video duration declarations", () => {
     };
     // 2h video: over the default 1h cap, but fine at low media resolution.
     expectOk(
-      generateContent.safe(lowRes, {
+      chat.safe(lowRes, {
         media: [{ path: ["contents", 0, "parts", 1], durationSeconds: 7200 }],
       }),
     );
     // 3h30m is over even the low-resolution cap.
-    const over = generateContent.safe(lowRes, {
+    const over = chat.safe(lowRes, {
       media: [{ path: ["contents", 0, "parts", 1], durationSeconds: 12600 }],
     });
     const issue = expectError(over, "media_duration_exceeded");
@@ -551,7 +551,7 @@ describe("video duration declarations", () => {
 
   test("declared duration within the limit -> no duration issues", () => {
     const result = expectOk(
-      generateContent.safe(videoParams, {
+      chat.safe(videoParams, {
         media: [{ path: ["contents", 0, "parts", 1], durationSeconds: 1800 }],
       }),
     );
@@ -560,7 +560,7 @@ describe("video duration declarations", () => {
 
   test("declaration for a different path does not match", () => {
     const result = expectOk(
-      generateContent.safe(videoParams, {
+      chat.safe(videoParams, {
         media: [{ path: ["contents", 0, "parts", 0], durationSeconds: 7200 }],
       }),
     );
@@ -571,7 +571,7 @@ describe("video duration declarations", () => {
 describe("estimate and budget", () => {
   test("text + image tokens: per-content overhead, ~4 chars/token, 258/image", () => {
     const result = expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: [
           { role: "user", parts: [{ text: "aaaa" }, { inlineData: { mimeType: "image/png", data: PNG_1X1 } }] },
@@ -583,7 +583,7 @@ describe("estimate and budget", () => {
   });
 
   test("worst-case cost uses maxOutputTokens; maxCostUSD enforces budget", () => {
-    const result = generateContent.safe(
+    const result = chat.safe(
       {
         model: "gemini-2.5-flash",
         contents: HELLO,
@@ -598,7 +598,7 @@ describe("estimate and budget", () => {
 
   test("over_context fires from the estimate", () => {
     const context = models["gemini-2.5-flash-image"].limit.context;
-    const result = generateContent.safe({
+    const result = chat.safe({
       model: "gemini-2.5-flash-image",
       contents: [{ role: "user", parts: [{ text: "x".repeat(context * 5) }] }],
     });
@@ -609,7 +609,7 @@ describe("estimate and budget", () => {
 describe("throwing form", () => {
   test("invalid params throw UnmodelValidationError", () => {
     expect(() =>
-      generateContent({
+      chat({
         model: "gemini-2.5-flash-image",
         contents: HELLO,
         tools: [{ functionDeclarations: [{ name: "f" }] }],
@@ -626,7 +626,7 @@ describe("generationConfig ranges and enums", () => {
   test("temperature outside the documented [0, 2] range fails", () => {
     for (const temperature of [-0.1, 2.5]) {
       const issue = expectError(
-        generateContent.safe({
+        chat.safe({
           model: "gemini-2.5-flash",
           contents: HELLO,
           generationConfig: { temperature },
@@ -641,7 +641,7 @@ describe("generationConfig ranges and enums", () => {
   test("the range boundaries themselves pass", () => {
     for (const temperature of [0, 2]) {
       expectOk(
-        generateContent.safe({
+        chat.safe({
           model: "gemini-2.5-flash",
           contents: HELLO,
           generationConfig: { temperature },
@@ -652,7 +652,7 @@ describe("generationConfig ranges and enums", () => {
 
   test("topP and topK stay permissive (no documented range)", () => {
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { topP: 0.95, topK: 512 },
@@ -662,7 +662,7 @@ describe("generationConfig ranges and enums", () => {
 
   test("logprobs above 20 fails, and logprobs without responseLogprobs fails", () => {
     expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { logprobs: 21, responseLogprobs: true },
@@ -670,7 +670,7 @@ describe("generationConfig ranges and enums", () => {
       "invalid_enum_value",
     );
     const issue = expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { logprobs: 5 },
@@ -682,7 +682,7 @@ describe("generationConfig ranges and enums", () => {
 
   test("more than 5 stopSequences fails", () => {
     const issue = expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { stopSequences: ["a", "b", "c", "d", "e", "f"] },
@@ -694,7 +694,7 @@ describe("generationConfig ranges and enums", () => {
 
   test("an unknown responseModalities value fails; documented ones (any case) pass", () => {
     expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { responseModalities: ["VIDEO" as never] },
@@ -702,7 +702,7 @@ describe("generationConfig ranges and enums", () => {
       "invalid_enum_value",
     );
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash-image",
         contents: HELLO,
         generationConfig: { responseModalities: ["Text", "Image"] },
@@ -712,7 +712,7 @@ describe("generationConfig ranges and enums", () => {
 
   test("an unknown thinkingLevel or mediaResolution fails", () => {
     expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { thinkingConfig: { thinkingLevel: "EXTREME" } },
@@ -720,7 +720,7 @@ describe("generationConfig ranges and enums", () => {
       "invalid_enum_value",
     );
     expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { mediaResolution: "MEDIA_RESOLUTION_ULTRA" as never },
@@ -728,7 +728,7 @@ describe("generationConfig ranges and enums", () => {
       "invalid_enum_value",
     );
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { thinkingConfig: { thinkingLevel: "HIGH" } },
@@ -738,7 +738,7 @@ describe("generationConfig ranges and enums", () => {
 
   test("a model that cannot return the requested modality fails", () => {
     const issue = expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { responseModalities: ["IMAGE"] },
@@ -769,7 +769,7 @@ describe("image generation config", () => {
     for (const generationConfig of configs) {
       // 1:8 is documented for 3.1 Flash Image …
       expectOk(
-        generateContent.safe({
+        chat.safe({
           model: "gemini-3.1-flash-image",
           contents: HELLO,
           generationConfig,
@@ -777,7 +777,7 @@ describe("image generation config", () => {
       );
       // … but not for Nano Banana Pro, whose table lists 10 ratios.
       expectError(
-        generateContent.safe({ model: "gemini-3-pro-image", contents: HELLO, generationConfig }),
+        chat.safe({ model: "gemini-3-pro-image", contents: HELLO, generationConfig }),
         "invalid_enum_value",
       );
     }
@@ -785,7 +785,7 @@ describe("image generation config", () => {
 
   test("the proto enum spelling of an allowed ratio passes too", () => {
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-3-pro-image",
         contents: HELLO,
         generationConfig: {
@@ -806,7 +806,7 @@ describe("image generation config", () => {
       const enumName = GEMINI_IMAGE_ASPECT_RATIO_ENUM_NAMES[ratio] as GoogleImageAspectRatioEnumName;
       for (const aspectRatio of [ratio, enumName]) {
         const result = expectOk(
-          generateContent.safe({
+          chat.safe({
             model,
             contents: HELLO,
             generationConfig: { responseModalities: TEXT_IMAGE, imageConfig: { aspectRatio } },
@@ -819,7 +819,7 @@ describe("image generation config", () => {
       const enumName = GEMINI_IMAGE_SIZE_ENUM_NAMES[size] as GoogleImageSizeEnumName;
       for (const imageSize of [size, enumName]) {
         const result = expectOk(
-          generateContent.safe({
+          chat.safe({
             model,
             contents: HELLO,
             generationConfig: { responseModalities: TEXT_IMAGE, imageConfig: { imageSize } },
@@ -861,14 +861,14 @@ describe("image generation config", () => {
 
   test("imageSize is per-model: Lite stops at 1K, Pro has no 512, 2.5 Flash takes none", () => {
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-3.1-flash-image",
         contents: HELLO,
         generationConfig: { imageConfig: { imageSize: "4K" } },
       }),
     );
     expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-3.1-flash-lite-image",
         contents: HELLO,
         generationConfig: { imageConfig: { imageSize: "4K" } },
@@ -876,7 +876,7 @@ describe("image generation config", () => {
       "invalid_enum_value",
     );
     expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-3-pro-image",
         contents: HELLO,
         generationConfig: { imageConfig: { imageSize: "512" } },
@@ -884,7 +884,7 @@ describe("image generation config", () => {
       "invalid_enum_value",
     );
     const issue = expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash-image",
         contents: HELLO,
         generationConfig: { imageConfig: { imageSize: "2K" } },
@@ -896,7 +896,7 @@ describe("image generation config", () => {
 
   test("imageConfig on a text-only model is rejected", () => {
     const issue = expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: { imageConfig: { aspectRatio: "16:9" } },
@@ -908,7 +908,7 @@ describe("image generation config", () => {
 
   test("Vertex-only imageConfig keys are rejected", () => {
     const issue = expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-3.1-flash-image",
         contents: HELLO,
         generationConfig: { imageConfig: { outputMimeType: "image/png" as never } },
@@ -920,7 +920,7 @@ describe("image generation config", () => {
 
   test("an uncataloged image model keeps unknown_model semantics (no ratio enforcement)", () => {
     const result = expectOk(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-9.9-flash-image",
         contents: HELLO,
         // `as never`: 13:7 is not a documented ratio in either spelling, so it
@@ -942,7 +942,7 @@ describe("speech generation config", () => {
 
   test("single-speaker TTS validates", () => {
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: TTS_MODEL,
         contents: HELLO,
         generationConfig: {
@@ -955,7 +955,7 @@ describe("speech generation config", () => {
 
   test("an unlisted voice name fails", () => {
     const issue = expectError(
-      generateContent.safe({
+      chat.safe({
         model: TTS_MODEL,
         contents: HELLO,
         generationConfig: {
@@ -970,7 +970,7 @@ describe("speech generation config", () => {
 
   test("voiceConfig and multiSpeakerVoiceConfig are mutually exclusive", () => {
     expectError(
-      generateContent.safe({
+      chat.safe({
         model: TTS_MODEL,
         contents: HELLO,
         generationConfig: {
@@ -995,7 +995,7 @@ describe("speech generation config", () => {
       voiceConfig: { prebuiltVoiceConfig: { voiceName } },
     });
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: TTS_MODEL,
         contents: HELLO,
         generationConfig: {
@@ -1009,7 +1009,7 @@ describe("speech generation config", () => {
       }),
     );
     const issue = expectError(
-      generateContent.safe({
+      chat.safe({
         model: TTS_MODEL,
         contents: HELLO,
         generationConfig: {
@@ -1032,7 +1032,7 @@ describe("speech generation config", () => {
 
   test("a TTS model that does not request AUDIO fails", () => {
     const issue = expectError(
-      generateContent.safe({ model: TTS_MODEL, contents: HELLO }),
+      chat.safe({ model: TTS_MODEL, contents: HELLO }),
       "unsupported_capability",
     );
     expect(issue.path).toEqual(["generationConfig", "responseModalities"]);
@@ -1040,7 +1040,7 @@ describe("speech generation config", () => {
 
   test("speechConfig on a non-audio model is rejected", () => {
     const issue = expectError(
-      generateContent.safe({
+      chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: {
@@ -1053,11 +1053,11 @@ describe("speech generation config", () => {
   });
 
   test("the documented 32k TTS context window beats models.dev's 8192", () => {
-    expect(generateContentModels[TTS_MODEL]?.limit.context).toBe(32768);
+    expect(chatModels[TTS_MODEL]?.limit.context).toBe(32768);
     expect(models[TTS_MODEL].limit.context).toBe(8192);
     // ~20k tokens: over the generated 8192, inside the documented 32k.
     expectOk(
-      generateContent.safe({
+      chat.safe({
         model: TTS_MODEL,
         contents: [{ role: "user", parts: [{ text: "word ".repeat(20000) }] }],
         generationConfig: {

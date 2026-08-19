@@ -1,10 +1,10 @@
 export {
   GENERATE_CONTENT_BASE_URL,
-  generateContent,
+  chat,
   generateContentUrl,
   type GenerateContentBody,
   type GenerateContentSdkParams,
-  type GenerateContentSdkTargets,
+  type ChatSdkTargets,
   type GoogleCodeExecutionResult,
   type GoogleContent,
   type GoogleExecutableCode,
@@ -43,7 +43,7 @@ export {
   type GoogleToolConfig,
   type GoogleToolResponse,
   type GoogleVideoMetadata,
-} from "./generate-content";
+} from "./chat";
 export {
   GENERATE_VIDEOS_BASE_URL,
   VEO_RESOLUTION_RATE_OVERRIDES,
@@ -94,8 +94,8 @@ export {
   imagenModels,
   type GoogleImagenModelId,
 } from "./imagen-models";
-export { generateContentModels, ttsModelOverrides } from "./tts-models";
-export { checkGenerateContent, type GenerateContentResponseLike } from "./check";
+export { chatModels, ttsModelOverrides } from "./tts-models";
+export { checkChat, type ChatResponseLike } from "./check";
 export {
   GEMINI_1M_VIDEO_MAX_DURATION_SECONDS,
   GEMINI_AUDIO_FORMATS,
@@ -134,8 +134,8 @@ export {
   INLINE_PDF_MAX_BYTES,
   VEO_2_IMAGE_MAX_BYTES,
   VEO_DOCS_URL,
-  generateContentConstraints,
-  generateContentFamilyRules,
+  chatConstraints,
+  chatFamilyRules,
   generateImagesConstraints,
   generateImagesFamilyRules,
   generateVideosConstraints,

@@ -6,10 +6,10 @@ export {
   checkMessageContent,
   checkPromptResourceParams,
   CONVERSE_DOCS,
-} from "./converse";
+} from "./chat";
 export type {
   AmazonBedrockConfig,
-  AmazonBedrockConverse,
+  AmazonBedrockChat,
   AmazonBedrockProvider,
   ConverseParams,
   BedrockMessage,
@@ -35,9 +35,9 @@ export type {
   BedrockInferenceConfig,
   BedrockGuardrailConfig,
   BedrockOutputConfig,
-} from "./converse";
+} from "./chat";
 
-export { checkConverse } from "./check";
+export { checkChat } from "./check";
 export type { ConverseResponseLike, ConverseUsageLike } from "./check";
 
 export { models, provider } from "../../catalog/amazon-bedrock.gen";

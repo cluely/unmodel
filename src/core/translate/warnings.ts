@@ -37,7 +37,7 @@ export interface TranslationWarning {
   code: TranslationWarningCode;
   /** Path in the SOURCE body, e.g. `["messages", 3, "content", 0]`. */
   path: Array<string | number>;
-  /** Source endpoint id, e.g. `"anthropic.messages"`. */
+  /** Source endpoint id, e.g. `"anthropic.chat"`. */
   from: string;
   /** Target endpoint id, e.g. `"openrouter.chat"`. */
   to: string;

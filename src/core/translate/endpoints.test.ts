@@ -145,14 +145,14 @@ describe("agreement with provider modules", () => {
     }
   });
 
-  test("anthropic.messages matches MESSAGES_URL and requires anthropic-version", () => {
+  test("anthropic.chat matches MESSAGES_URL and requires anthropic-version", () => {
     const endpoint = resolveEndpoint("anthropic") as TargetEndpoint;
     expect(endpoint.dialect).toBe("anthropic-messages");
     expect(endpointUrl(endpoint, "claude-opus-5")).toBe(MESSAGES_URL);
     expect(endpoint.headers["anthropic-version"]).toBe(ANTHROPIC_VERSION);
   });
 
-  test("google.generateContent builds the same per-model URL as the provider", () => {
+  test("google.chat builds the same per-model URL as the provider", () => {
     const endpoint = resolveEndpoint("google") as TargetEndpoint;
     expect(endpoint.dialect).toBe("gemini");
     for (const model of ["gemini-3-pro", "models/gemini-3-pro"]) {
@@ -163,11 +163,11 @@ describe("agreement with provider modules", () => {
 
 describe("factory targets", () => {
   const FACTORY_IDS = [
-    "amazon-bedrock.converse",
+    "amazon-bedrock.chat",
     "azure.chat",
     "cloudflare-workers-ai.chat",
     "google-vertex.chat",
-    "google-vertex.generateContent",
+    "google-vertex.chatMaas",
   ];
 
   test("are exactly the entries with no static URL", () => {
@@ -187,13 +187,13 @@ describe("factory targets", () => {
   // `.toApi` union, so each one must line up with the argument its provider's
   // real factory takes.
   test("their config keys match what each provider's factory needs", () => {
-    expect(ENDPOINTS["amazon-bedrock.converse"]?.config).toEqual(["region"]);
+    expect(ENDPOINTS["amazon-bedrock.chat"]?.config).toEqual(["region"]);
     expect(converseUrl("us-east-1", "anthropic.claude-opus-5")).toContain("us-east-1");
 
     expect(ENDPOINTS["azure.chat"]?.config).toEqual(["endpoint"]);
     expect(azureChatCompletionsUrl("https://acme.openai.azure.com")).toContain("acme");
 
-    expect(ENDPOINTS["google-vertex.generateContent"]?.config).toEqual(["project", "location"]);
+    expect(ENDPOINTS["google-vertex.chat"]?.config).toEqual(["project", "location"]);
     expect(vertexGenerateContentUrl("p1", "us-central1", "gemini-3-pro")).toContain("p1");
 
     expect(ENDPOINTS["cloudflare-workers-ai.chat"]?.config).toEqual(["accountId"]);
@@ -204,12 +204,12 @@ describe("factory targets", () => {
 describe("resolveEndpoint", () => {
   test("falls back to the provider's default surface", () => {
     expect(resolveEndpoint("groq")?.id).toBe("groq.chat");
-    expect(resolveEndpoint("google")?.id).toBe("google.generateContent");
+    expect(resolveEndpoint("google")?.id).toBe("google.chat");
   });
 
   test("honours the explicit endpoint id the availability data carries", () => {
     // The `*-maas` rows point here: same provider, different dialect.
-    const maas = resolveEndpoint("google-vertex", "google-vertex.chat");
+    const maas = resolveEndpoint("google-vertex", "google-vertex.chatMaas");
     expect(maas?.dialect).toBe("openai-chat");
     expect(resolveEndpoint("google-vertex")?.dialect).toBe("gemini");
   });

@@ -2,12 +2,12 @@ import type { ResponseReport } from "../../core/report";
 import { resolveModelInfo } from "../../core/catalog-lookup";
 import { computeCostUSD } from "../../core/cost";
 import {
-  checkGenerateContent as checkGoogleGenerateContent,
-  type GenerateContentResponseLike,
+  checkChat as checkGoogleChat,
+  type ChatResponseLike,
 } from "../google";
 import { models } from "../../catalog/google-vertex.gen";
 
-export type { GenerateContentResponseLike };
+export type { ChatResponseLike };
 
 /**
  * Post-generation report for a Vertex generateContent response. Never throws.
@@ -18,8 +18,8 @@ export type { GenerateContentResponseLike };
  * google-vertex catalog rates — the google-priced `costUSD` is dropped and
  * recomputed here from the response's `modelVersion`.
  */
-export function checkGenerateContent(response: GenerateContentResponseLike): ResponseReport {
-  const { costUSD: _googlePriced, ...report } = checkGoogleGenerateContent(response);
+export function checkChat(response: ChatResponseLike): ResponseReport {
+  const { costUSD: _googlePriced, ...report } = checkGoogleChat(response);
 
   const info =
     response.modelVersion === undefined ? undefined : resolveModelInfo(models, response.modelVersion);

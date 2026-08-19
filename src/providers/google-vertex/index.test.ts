@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { checkGenerateContent, createGoogleVertex, generateContentUrl } from "./index";
+import { checkChat, createGoogleVertex, generateContentUrl } from "./index";
 import { TranslationUnavailableError } from "../../core/translate/errors";
 import type { ValidateResult } from "../../core/result";
 
@@ -11,7 +11,7 @@ function textContents(text: string) {
 
 describe("google-vertex URL construction", () => {
   test("regional endpoint interpolates location, project, and model", () => {
-    const v = vertex.generateContent({ model: "gemini-2.5-flash", contents: textContents("hi") });
+    const v = vertex.chat({ model: "gemini-2.5-flash", contents: textContents("hi") });
     expect(v.request.url).toBe(
       "https://us-central1-aiplatform.googleapis.com/v1/projects/my-project/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent",
     );
@@ -21,7 +21,7 @@ describe("google-vertex URL construction", () => {
 
   test('location "global" uses the global aiplatform host', () => {
     const global = createGoogleVertex({ project: "p", location: "global" });
-    const v = global.generateContent({ model: "gemini-2.5-flash", contents: textContents("hi") });
+    const v = global.chat({ model: "gemini-2.5-flash", contents: textContents("hi") });
     expect(v.request.url).toBe(
       "https://aiplatform.googleapis.com/v1/projects/p/locations/global/publishers/google/models/gemini-2.5-flash:generateContent",
     );
@@ -34,7 +34,7 @@ describe("google-vertex URL construction", () => {
   });
 
   test("prefixed model ids still resolve in the catalog (no unknown_model)", () => {
-    const r = vertex.generateContent.safe({
+    const r = vertex.chat.safe({
       model: "publishers/google/models/gemini-2.5-flash",
       contents: textContents("hi"),
     });
@@ -45,7 +45,7 @@ describe("google-vertex URL construction", () => {
 
 describe("google-vertex wire body (Gemini generateContent dialect)", () => {
   test("enumerable props are the exact body with model stripped into the URL", () => {
-    const v = vertex.generateContent({
+    const v = vertex.chat({
       model: "gemini-2.5-flash",
       contents: textContents("hi"),
       systemInstruction: { parts: [{ text: "be brief" }] },
@@ -62,7 +62,7 @@ describe("google-vertex wire body (Gemini generateContent dialect)", () => {
   });
 
   test('toSdk("google-vertex") nests config for @google/genai (vertexai: true), labels included', () => {
-    const v = vertex.generateContent({
+    const v = vertex.chat({
       model: "gemini-2.5-flash",
       contents: textContents("hi"),
       systemInstruction: { parts: [{ text: "be brief" }] },
@@ -81,12 +81,12 @@ describe("google-vertex wire body (Gemini generateContent dialect)", () => {
   });
 
   test('toSdk("google-vertex") omits config when only model + contents are set', () => {
-    const v = vertex.generateContent({ model: "gemini-2.5-flash", contents: textContents("hi") });
+    const v = vertex.chat({ model: "gemini-2.5-flash", contents: textContents("hi") });
     expect(v.toSdk("google-vertex")).toEqual({ model: "gemini-2.5-flash", contents: textContents("hi") });
   });
 
   test("toSdk names the available targets when handed an unknown one", () => {
-    const v = vertex.generateContent({ model: "gemini-2.5-flash", contents: textContents("hi") });
+    const v = vertex.chat({ model: "gemini-2.5-flash", contents: textContents("hi") });
     expect(() => (v.toSdk as (t: string) => unknown)("google")).toThrow(
       /"google" is not an SDK target for this endpoint\. Available: google-vertex, ai-sdk\./,
     );
@@ -97,18 +97,18 @@ describe("google-vertex wire body (Gemini generateContent dialect)", () => {
       model: "gemini-2.5-flash",
       contents: textContents("hi"),
       store: true,
-    } as unknown as Parameters<typeof vertex.generateContent.safe>[0];
-    const r = vertex.generateContent.safe(params);
+    } as unknown as Parameters<typeof vertex.chat.safe>[0];
+    const r = vertex.chat.safe(params);
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.warnings.map((w) => w.code)).toEqual(["unknown_param"]);
       expect(r.warnings[0]?.path).toEqual(["store"]);
-      expect(r.warnings[0]?.message).toContain("google-vertex.generateContent");
+      expect(r.warnings[0]?.message).toContain("google-vertex.chat");
     }
   });
 
   test("parts must set exactly one kind key", () => {
-    const r = vertex.generateContent.safe({
+    const r = vertex.chat.safe({
       model: "gemini-2.5-flash",
       contents: [{ role: "user", parts: [{}] }],
     });
@@ -120,7 +120,7 @@ describe("google-vertex wire body (Gemini generateContent dialect)", () => {
   });
 
   test("typo'd top-level keys are a compile error (ExactKeys)", () => {
-    const r = vertex.generateContent.safe({
+    const r = vertex.chat.safe({
       model: "gemini-2.5-flash",
       contents: textContents("hi"),
       // @ts-expect-error — `generation_config` is a typo of `generationConfig`
@@ -132,7 +132,7 @@ describe("google-vertex wire body (Gemini generateContent dialect)", () => {
 
 describe("google-vertex catalog wiring", () => {
   test("unknown models warn and name the google-vertex catalog", () => {
-    const r = vertex.generateContent.safe({ model: "gemini-99-ultra", contents: textContents("hi") });
+    const r = vertex.chat.safe({ model: "gemini-99-ultra", contents: textContents("hi") });
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
@@ -141,7 +141,7 @@ describe("google-vertex catalog wiring", () => {
   });
 
   test("tools on a model without tool calling is unsupported_capability", () => {
-    const r = vertex.generateContent.safe({
+    const r = vertex.chat.safe({
       model: "gemini-2.5-flash-image",
       contents: textContents("hi"),
       tools: [{ functionDeclarations: [{ name: "f" }] }],
@@ -154,7 +154,7 @@ describe("google-vertex catalog wiring", () => {
   });
 
   test("maxOutputTokens over the catalog output limit is over_output_limit", () => {
-    const r = vertex.generateContent.safe({
+    const r = vertex.chat.safe({
       model: "gemini-2.5-flash",
       contents: textContents("hi"),
       generationConfig: { maxOutputTokens: 65537 },
@@ -168,7 +168,7 @@ describe("google-vertex catalog wiring", () => {
 
   test("media kinds outside the model's input modalities error", () => {
     // gemini-2.5-flash-image accepts text + image only.
-    const r = vertex.generateContent.safe({
+    const r = vertex.chat.safe({
       model: "gemini-2.5-flash-image",
       contents: [
         { role: "user", parts: [{ inlineData: { mimeType: "video/mp4", data: "AAAA" } }] },
@@ -184,7 +184,7 @@ describe("google-vertex catalog wiring", () => {
 
   test("estimate prices tokens from the google-vertex catalog", () => {
     // "hello world!" = 3 heuristic tokens + 4 per-message overhead = 7.
-    const r = vertex.generateContent.safe({
+    const r = vertex.chat.safe({
       model: "gemini-2.5-flash",
       contents: textContents("hello world!"),
       generationConfig: { maxOutputTokens: 100 },
@@ -198,9 +198,9 @@ describe("google-vertex catalog wiring", () => {
   });
 });
 
-describe("google-vertex checkGenerateContent", () => {
+describe("google-vertex checkChat", () => {
   test("maps usage and prices with google-vertex catalog rates", () => {
-    const report = checkGenerateContent({
+    const report = checkChat({
       modelVersion: "gemini-2.5-flash",
       candidates: [{ finishReason: "STOP" }],
       usageMetadata: { promptTokenCount: 1_000_000, candidatesTokenCount: 0, totalTokenCount: 1_000_000 },
@@ -211,14 +211,14 @@ describe("google-vertex checkGenerateContent", () => {
   });
 
   test("MAX_TOKENS truncation warns (delegated to the shared dialect checker)", () => {
-    const report = checkGenerateContent({ candidates: [{ finishReason: "MAX_TOKENS" }] });
+    const report = checkChat({ candidates: [{ finishReason: "MAX_TOKENS" }] });
     expect(report.warnings).toHaveLength(1);
     expect(report.warnings[0]?.meta?.kind).toBe("truncated");
     expect(report.costUSD).toBeUndefined();
   });
 
   test("unknown modelVersion yields no cost, never a throw", () => {
-    const report = checkGenerateContent({
+    const report = checkChat({
       modelVersion: "not-a-gemini",
       usageMetadata: { promptTokenCount: 10 },
     });
@@ -227,7 +227,7 @@ describe("google-vertex checkGenerateContent", () => {
   });
 
   test("thoughts are billed at the output rate", () => {
-    const report = checkGenerateContent({
+    const report = checkChat({
       modelVersion: "gemini-2.5-flash",
       usageMetadata: { promptTokenCount: 0, candidatesTokenCount: 100, thoughtsTokenCount: 900 },
     });
@@ -237,9 +237,9 @@ describe("google-vertex checkGenerateContent", () => {
   });
 });
 
-describe("google-vertex.generateContent toApi", () => {
+describe("google-vertex.chat toApi", () => {
   const gemini = () =>
-    vertex.generateContent({
+    vertex.chat({
       model: "gemini-2.5-flash",
       contents: textContents("hi"),
       generationConfig: { temperature: 0.2 },

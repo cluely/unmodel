@@ -195,8 +195,8 @@ test("validate with an unknown endpoint lists available targets and exits 1", as
   expect(exitCode).toBe(1);
   expect(stderr).toContain("unknown endpoint");
   expect(stderr).toContain("openai.chat");
-  expect(stderr).toContain("anthropic.messages");
-  expect(stderr).toContain("google.generateContent");
+  expect(stderr).toContain("anthropic.chat");
+  expect(stderr).toContain("google.chat");
   expect(stderr).toContain("groq.chat");
 });
 
@@ -206,9 +206,9 @@ test("validate with malformed JSON input exits 1", async () => {
   expect(stderr).toContain("could not read params JSON");
 });
 
-test("validate anthropic.messages via the registry", async () => {
+test("validate anthropic.chat via the registry", async () => {
   const { stdout, exitCode } = await runCli(
-    ["validate", "anthropic.messages"],
+    ["validate", "anthropic.chat"],
     JSON.stringify({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
@@ -216,7 +216,7 @@ test("validate anthropic.messages via the registry", async () => {
     }),
   );
   expect(exitCode).toBe(0);
-  expect(stdout).toContain("ok: anthropic.messages");
+  expect(stdout).toContain("ok: anthropic.chat");
 });
 
 test("validate flags a multipart endpoint so the body is not posted as JSON", async () => {

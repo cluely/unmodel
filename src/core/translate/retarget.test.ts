@@ -18,7 +18,7 @@ const AVAILABILITY = {
     cerebras: { id: "gpt-oss-120b", narrows: { context: 64000, drops: ["image"] } },
     // Vertex serves this model on its OpenAI-compatible MaaS surface, not on
     // generateContent — the availability data says so explicitly.
-    "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chat" },
+    "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chatMaas" },
     anthropic: "claude-nonsense",
   },
 } as const satisfies AvailabilityMap;
@@ -114,7 +114,7 @@ describe("same-dialect retarget (the 92.2% path)", () => {
     // rather than the provider is what makes that possible — and vertex being
     // factory-configured is what makes it unavailable to a one-arg call.
     expect(() => validate(BODY).toApi("google-vertex")).toThrow(
-      /google-vertex\.chat is not available through one-argument/,
+      /google-vertex\.chatMaas is not available through one-argument/,
     );
   });
 });
@@ -330,7 +330,7 @@ describe("factory targets are excluded from the one-arg call", () => {
     "claude-opus-5": { "amazon-bedrock": "anthropic.claude-opus-5" },
   } as const satisfies AvailabilityMap;
   const retarget = createToApi(
-    baseSpec({ from: "anthropic-messages", endpoint: "anthropic.messages", availability }),
+    baseSpec({ from: "anthropic-messages", endpoint: "anthropic.chat", availability }),
   )({ ...BODY, model: "claude-opus-5" });
 
   test("the failure names the config the call never supplied", () => {

@@ -2,7 +2,7 @@
  * The flagship path, end to end: **a Claude request, retargeted to OpenRouter.**
  *
  * ```ts
- * const claude = messages({ model: "claude-opus-5", … });
+ * const claude = anthropicChat({ model: "claude-opus-5", … });
  * const routed = claude.toApi("openrouter");
  * ```
  *
@@ -21,10 +21,9 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { messages } from "../../src/providers/anthropic";
-import { messages as anthropicMessages } from "../../src/providers/anthropic";
+import { chat as anthropicChat } from "../../src/providers/anthropic";
 import { UnmodelValidationError } from "../../src/core/issues";
-import { generateContent as googleGenerateContent } from "../../src/providers/google";
+import { chat as googleChat } from "../../src/providers/google";
 import { chat as openrouterChat } from "../../src/providers/openrouter";
 import { chat as vercelChat } from "../../src/providers/vercel";
 import { chat as deepinfraChat } from "../../src/providers/deepinfra";
@@ -53,7 +52,7 @@ import { availability as groqAvailability } from "../../src/catalog/availability
  * boundary costs — not a happy-path demo.
  */
 function claude() {
-  return messages({
+  return anthropicChat({
     model: "claude-opus-5",
     max_tokens: 2048,
     system: [
@@ -140,7 +139,7 @@ describe("claude → openrouter", () => {
     ]);
 
     for (const warning of routed.warnings) {
-      expect(warning.from).toBe("anthropic.messages");
+      expect(warning.from).toBe("anthropic.chat");
       expect(warning.to).toBe("openrouter.chat");
       expect(warning.message.length).toBeGreaterThan(20);
     }
@@ -388,8 +387,8 @@ describe("every declared .toApi edge has a codec", () => {
   };
 
   const ENDPOINTS: ReadonlyArray<[string, Chat, Record<string, Record<string, unknown>>]> = [
-    ["anthropic.messages", anthropicMessages as unknown as Chat, anthropicAvailability],
-    ["google.generateContent", googleGenerateContent as unknown as Chat, googleAvailability],
+    ["anthropic.chat", anthropicChat as unknown as Chat, anthropicAvailability],
+    ["google.chat", googleChat as unknown as Chat, googleAvailability],
     ["openrouter.chat", openrouterChat as unknown as Chat, openrouterAvailability],
     ["vercel.chat", vercelChat as unknown as Chat, vercelAvailability],
     ["deepinfra.chat", deepinfraChat as unknown as Chat, deepinfraAvailability],
@@ -403,10 +402,14 @@ describe("every declared .toApi edge has a codec", () => {
 
   /** A minimal valid request for each dialect, carrying only the model id. */
   function request(endpoint: string, model: string): never {
-    if (endpoint === "anthropic.messages") {
+    if (endpoint === "anthropic.chat") {
       return { model, max_tokens: 16, messages: [{ role: "user", content: "hi" }] } as never;
     }
-    if (endpoint.endsWith(".generateContent")) {
+    // The gemini-dialect endpoints in the table above. Listed explicitly: the
+    // endpoint ids are all `<provider>.chat` now, so no suffix test can
+    // distinguish a dialect — a stale predicate would silently fall through to
+    // the chat-completions shape below and validate the wrong body.
+    if (endpoint === "google.chat") {
       return { model, contents: [{ role: "user", parts: [{ text: "hi" }] }] } as never;
     }
     return { model, messages: [{ role: "user", content: "hi" }] } as never;

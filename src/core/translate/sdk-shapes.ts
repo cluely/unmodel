@@ -14,9 +14,9 @@
  * reasons: it is a fact about the *dialect*, not about the provider (Vertex
  * speaks it too), and `core/translate/retarget.ts` needs it while being
  * forbidden from importing `src/providers/**` (import-graph rule 1).
- * `providers/google/generate-content.ts` imports it back, so there is exactly
+ * `providers/google/chat.ts` imports it back, so there is exactly
  * one implementation and a retargeted `.toSdk("google")` cannot drift from the
- * one `google.generateContent` hands out.
+ * one `google.chat` hands out.
  */
 
 /** The gemini wire body, minus the model id (which travels in the URL path). */

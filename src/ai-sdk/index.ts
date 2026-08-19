@@ -15,10 +15,10 @@
  * ```ts
  * import { generateText, jsonSchema } from "ai";
  * import { openai } from "@ai-sdk/openai";
- * import { messages } from "unmodel/anthropic";
+ * import { chat } from "unmodel/anthropic";
  * import { withJsonSchemaTools } from "unmodel/ai-sdk";
  *
- * const v = messages({ model: "claude-opus-5", max_tokens: 1024, messages: [...], tools: [...] });
+ * const v = chat({ model: "claude-opus-5", max_tokens: 1024, messages: [...], tools: [...] });
  *
  * await generateText({
  *   model: openai("gpt-5.4"),

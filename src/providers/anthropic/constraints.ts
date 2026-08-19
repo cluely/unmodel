@@ -29,7 +29,7 @@ const GEN_4_7_PLUS: EndpointConstraints = {
   imageTokens: 4784,
 };
 
-export const messagesConstraints = {
+export const chatConstraints = {
   "claude-fable-5": GEN_4_7_PLUS,
   "claude-opus-4-7": GEN_4_7_PLUS,
   "claude-opus-4-8": GEN_4_7_PLUS,
@@ -46,7 +46,7 @@ export const messagesConstraints = {
  * high-resolution models override it to 4784 via their per-model
  * constraints above.
  */
-export const messagesFamilyRules: readonly FamilyRule[] = [
+export const chatFamilyRules: readonly FamilyRule[] = [
   {
     family: "Claude models",
     match: (modelId) => modelId.startsWith("claude"),

@@ -7,11 +7,11 @@ import type {
   GenerateImagesParameters,
   GenerateVideosParameters,
 } from "@google/genai";
-import { generateContent, generateImages, generateVideos } from "../../src/providers/google";
+import { chat, generateImages, generateVideos } from "../../src/providers/google";
 import type { GoogleTextModelId } from "../../src/catalog/google.gen";
 import { expectAssignable } from "./helpers";
 
-const validated = generateContent({
+const validated = chat({
   model: "gemini-2.5-flash",
   contents: [{ role: "user", parts: [{ text: "hi" }] }],
   systemInstruction: { parts: [{ text: "be brief" }] },
@@ -29,7 +29,7 @@ expectAssignable<GenerateContentParameters>(validated.toSdk("google"));
 
 // A bare request (no config-feeding keys) is assignable too.
 expectAssignable<GenerateContentParameters>(
-  generateContent({
+  chat({
     model: "gemini-2.5-flash",
     contents: [{ parts: [{ text: "hi" }] }],
   }).toSdk("google"),
@@ -39,8 +39,8 @@ expectAssignable<GenerateContentParameters>(
 // (HarmCategory, HarmBlockThreshold, MediaResolution, ThinkingLevel, …).
 // Wire string literals are runtime-identical but nominally incompatible, so
 // toSdk("google") output carrying such fields needs the documented cast at the SDK
-// call site (see the SDK-view comment in generate-content.ts).
-const withSafety = generateContent({
+// call site (see the SDK-view comment in chat.ts).
+const withSafety = chat({
   model: "gemini-2.5-flash",
   contents: [{ role: "user", parts: [{ text: "hi" }] }],
   safetySettings: [
@@ -56,7 +56,7 @@ expectAssignable<GenerateContentParameters>(
 
 // serviceTier is a first-class wire field and lands under config in the SDK
 // view; store is wire-only (dropped by toSdk("google")).
-const withTier = generateContent({
+const withTier = chat({
   model: "gemini-2.5-flash",
   contents: [{ role: "user", parts: [{ text: "hi" }] }],
   serviceTier: "flex",
@@ -66,7 +66,7 @@ expectAssignable<{ config?: { serviceTier: "flex" } }>(withTier.toSdk("google"))
 
 // Typo'd top-level keys are a compile error (ExactKeys guard), not a silent
 // runtime warning.
-generateContent({
+chat({
   model: "gemini-2.5-flash",
   contents: [{ role: "user", parts: [{ text: "hi" }] }],
   // @ts-expect-error excess (typo'd) top-level key
@@ -86,7 +86,7 @@ expectAssignable<GoogleTextModelId>("gemini-2.5-flash");
 expectAssignable<GoogleTextModelId>("gpt-4o");
 
 // Roles are only "user" | "model" on the wire.
-generateContent({
+chat({
   model: "gemini-2.5-flash",
   contents: [
     {
@@ -231,7 +231,7 @@ imagen.model;
 // generateContent: the image/speech generation configs.
 // ---------------------------------------------------------------------------
 
-const nanoBanana = generateContent({
+const nanoBanana = chat({
   model: "gemini-3.1-flash-image",
   contents: [{ role: "user", parts: [{ text: "a nano banana dish" }] }],
   generationConfig: {
@@ -244,7 +244,7 @@ expectAssignable<GenerateContentParameters>(nanoBanana.toSdk("google"));
 
 // … and the responseFormat spelling the current guide's REST samples use.
 expectAssignable<GenerateContentParameters>(
-  generateContent({
+  chat({
     model: "gemini-3.1-flash-image",
     contents: [{ parts: [{ text: "hi" }] }],
     generationConfig: {
@@ -256,7 +256,7 @@ expectAssignable<GenerateContentParameters>(
 
 // The REST reference types aspectRatio/imageSize as proto enums while the
 // guide's samples pass "16:9"/"2K"; both spellings validate, so both compile.
-generateContent({
+chat({
   model: "gemini-3.1-flash-image",
   contents: [{ parts: [{ text: "hi" }] }],
   generationConfig: {
@@ -266,7 +266,7 @@ generateContent({
     },
   },
 });
-generateContent({
+chat({
   model: "gemini-3.1-flash-image",
   contents: [{ parts: [{ text: "hi" }] }],
   generationConfig: {
@@ -277,19 +277,19 @@ generateContent({
 });
 
 // Junk no longer slips through the old `(string & {})` tail.
-generateContent({
+chat({
   model: "gemini-3.1-flash-image",
   contents: [{ parts: [{ text: "hi" }] }],
   // @ts-expect-error banana is not an aspect ratio in either spelling
   generationConfig: { imageConfig: { aspectRatio: "banana" } },
 });
-generateContent({
+chat({
   model: "gemini-3.1-flash-image",
   contents: [{ parts: [{ text: "hi" }] }],
   // @ts-expect-error the empty string used to compile through `(string & {})`
   generationConfig: { imageConfig: { imageSize: "" } },
 });
-generateContent({
+chat({
   model: "gemini-3.1-flash-image",
   contents: [{ parts: [{ text: "hi" }] }],
   // @ts-expect-error responseFormat.image is narrowed identically to imageConfig
@@ -297,7 +297,7 @@ generateContent({
 });
 
 // Vertex-only ImageConfig leaves are compile errors ("not supported in Gemini API").
-generateContent({
+chat({
   model: "gemini-3.1-flash-image",
   contents: [{ parts: [{ text: "hi" }] }],
   generationConfig: {
@@ -308,7 +308,7 @@ generateContent({
 
 // TTS rides generateContent: speechConfig is fully typed, single or multi-speaker.
 expectAssignable<GenerateContentParameters>(
-  generateContent({
+  chat({
     model: "gemini-3.1-flash-tts-preview",
     contents: [{ parts: [{ text: "Say cheerfully: have a wonderful day!" }] }],
     generationConfig: {
@@ -318,7 +318,7 @@ expectAssignable<GenerateContentParameters>(
   }).toSdk("google"),
 );
 expectAssignable<GenerateContentParameters>(
-  generateContent({
+  chat({
     model: "gemini-3.1-flash-tts-preview",
     contents: [{ parts: [{ text: "Joe: hi\nJane: hello" }] }],
     generationConfig: {
@@ -336,7 +336,7 @@ expectAssignable<GenerateContentParameters>(
 );
 
 // speakerVoiceConfigs entries require both documented fields.
-generateContent({
+chat({
   model: "gemini-3.1-flash-tts-preview",
   contents: [{ parts: [{ text: "hi" }] }],
   generationConfig: {

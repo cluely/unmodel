@@ -12,7 +12,7 @@ import type { MessagesBody } from "./wire";
  */
 
 function encode(body: MessagesBody): { ir: ChatIR; warnings: TranslationWarning[] } {
-  const sink = createWarningSink("anthropic.messages", "x");
+  const sink = createWarningSink("anthropic.chat", "x");
   return { ir: encodeAnthropic(body, sink.warn), warnings: sink.warnings };
 }
 
@@ -20,7 +20,7 @@ function decode(ir: ChatIR, ctx?: DecodeContext): {
   body: MessagesBody;
   warnings: TranslationWarning[];
 } {
-  const sink = createWarningSink("x", "anthropic.messages");
+  const sink = createWarningSink("x", "anthropic.chat");
   return { body: decodeAnthropic(ir, sink.warn, ctx), warnings: sink.warnings };
 }
 

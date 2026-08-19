@@ -8,8 +8,8 @@
  * provider modules' public casts** — which is the only way to catch a wiring
  * mistake in an endpoint's `sdk` / `api` literals.
  */
-import { messages } from "../../src/providers/anthropic";
-import { generateContent } from "../../src/providers/google";
+import { chat as anthropicChat } from "../../src/providers/anthropic";
+import { chat as googleChat } from "../../src/providers/google";
 import { chat as openaiChat } from "../../src/providers/openai";
 import { chat as openrouterChat } from "../../src/providers/openrouter";
 import { videos } from "../../src/providers/openai/videos";
@@ -56,12 +56,12 @@ expectTrue<IsNever<KeyIn<ReturnType<typeof decodeGemini>, "model">>>();
 // AI SDK cannot actually serve.
 // ---------------------------------------------------------------------------
 
-const claude = messages({
+const claude = anthropicChat({
   model: "claude-opus-5",
   max_tokens: 1024,
   messages: [{ role: "user", content: "hi" }],
 });
-const gemini = generateContent({
+const gemini = googleChat({
   model: "gemini-2.5-flash",
   contents: [{ role: "user", parts: [{ text: "hi" }] }],
 });
@@ -109,7 +109,7 @@ expectAssignable<{ model: "anthropic/claude-opus-5" | (string & {}) }>(claude.to
 // digit-dot-digit, the two never joined, `ApiTargetsFor` resolved to `never`,
 // and both lines below were compile errors reading "not assignable to
 // parameter of type 'never'" — on models OpenRouter demonstrably serves.
-const dottedClaude = messages({
+const dottedClaude = anthropicChat({
   model: "claude-opus-4-7",
   max_tokens: 1024,
   messages: [{ role: "user", content: "hi" }],
@@ -122,7 +122,7 @@ expectAssignable<{ model: "anthropic/claude-opus-4.7" | (string & {}) }>(
 );
 // The alias-linked flagship pair resolves the same way.
 expectAssignable<{ model: "anthropic/claude-haiku-4.5" | (string & {}) }>(
-  messages({
+  anthropicChat({
     model: "claude-haiku-4-5",
     max_tokens: 1024,
     messages: [{ role: "user", content: "hi" }],
@@ -141,8 +141,8 @@ expectAssignable<"anthropic/claude-opus-5" | (string & {})>(
   openrouterChat(claude.toApi("openrouter")).model,
 );
 // …and the reverse crossing, which lands on Anthropic's own required shape.
-expectAssignable<Parameters<typeof messages>[0]>(routed.toApi("anthropic"));
-expectAssignable<number>(messages(routed.toApi("anthropic")).max_tokens);
+expectAssignable<Parameters<typeof anthropicChat>[0]>(routed.toApi("anthropic"));
+expectAssignable<number>(anthropicChat(routed.toApi("anthropic")).max_tokens);
 
 // A retargeted result offers the TARGET dialect's SDK targets, and no second hop.
 claude.toApi("openrouter").toSdk("openai");

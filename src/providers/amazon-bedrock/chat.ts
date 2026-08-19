@@ -403,19 +403,19 @@ export interface AmazonBedrockConfig {
  * throws. It lands with the bedrock-converse codec, and needs no codegen
  * change when it does — the data is already generated.
  */
-export type ConverseSdkTargets<T extends ConverseParams = ConverseParams> = {
+export type ChatSdkTargets<T extends ConverseParams = ConverseParams> = {
   "amazon-bedrock": () => T;
 };
 
-export interface AmazonBedrockConverse {
+export interface AmazonBedrockChat {
   <T extends ConverseParams>(
     params: T & ExactKeys<T, ConverseParams>,
     options?: ValidateOptions,
-  ): Validated<Omit<T, "modelId">, ConverseSdkTargets<T>>;
+  ): Validated<Omit<T, "modelId">, ChatSdkTargets<T>>;
   safe<T extends ConverseParams>(
     params: T & ExactKeys<T, ConverseParams>,
     options?: ValidateOptions,
-  ): ValidateResult<Validated<Omit<T, "modelId">, ConverseSdkTargets<T>>>;
+  ): ValidateResult<Validated<Omit<T, "modelId">, ChatSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 }
 
@@ -432,7 +432,7 @@ export interface AmazonBedrockProvider {
    * wants base64 strings). Auth is your job: SigV4-sign the request (or use
    * an `authorization: Bearer` token where supported) when fetching.
    */
-  converse: AmazonBedrockConverse;
+  chat: AmazonBedrockChat;
   /** The Converse endpoint URL for a model id in this provider's region. */
   converseUrl(modelId: string): string;
   region: string;
@@ -440,7 +440,7 @@ export interface AmazonBedrockProvider {
 
 export function createAmazonBedrock(config: AmazonBedrockConfig): AmazonBedrockProvider {
   const validator = createValidator<ConverseParams, unknown>({
-    endpoint: "amazon-bedrock.converse",
+    endpoint: "amazon-bedrock.chat",
     schema: converseSchema,
     // Regional-prefix/version-suffix/ARN forms resolve to the canonical
     // catalog id so model-dependent checks still apply.
@@ -462,7 +462,7 @@ export function createAmazonBedrock(config: AmazonBedrockConfig): AmazonBedrockP
   });
 
   return {
-    converse: validator as unknown as AmazonBedrockConverse,
+    chat: validator as unknown as AmazonBedrockChat,
     converseUrl: (modelId) => converseUrl(config.region, modelId),
     region: config.region,
   };

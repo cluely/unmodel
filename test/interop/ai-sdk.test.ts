@@ -10,16 +10,16 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { messages } from "../../src/providers/anthropic";
-import { generateContent } from "../../src/providers/google";
+import { chat as anthropicChat } from "../../src/providers/anthropic";
+import { chat as googleChat } from "../../src/providers/google";
 import { chat as openaiChat } from "../../src/providers/openai";
 import { chat as groqChat } from "../../src/providers/groq";
 import { withJsonSchemaTools } from "../../src/ai-sdk";
 import type { AiSdkChatOptions } from "../../src/core/translate/ai-sdk";
 
 describe("every chat endpoint family declares the target", () => {
-  test("anthropic.messages", () => {
-    const options = messages({
+  test("anthropic.chat", () => {
+    const options = anthropicChat({
       model: "claude-opus-5",
       max_tokens: 4096,
       system: "Be brief.",
@@ -37,8 +37,8 @@ describe("every chat endpoint family declares the target", () => {
     });
   });
 
-  test("google.generateContent", () => {
-    const options = generateContent({
+  test("google.chat", () => {
+    const options = googleChat({
       model: "gemini-2.5-flash",
       contents: [{ role: "user", parts: [{ text: "Hello" }] }],
       generationConfig: { maxOutputTokens: 512, temperature: 0.7 },
@@ -78,7 +78,7 @@ describe("every chat endpoint family declares the target", () => {
   });
 
   test("the target is named when an unknown one is asked for", () => {
-    const validated = messages({
+    const validated = anthropicChat({
       model: "claude-opus-5",
       max_tokens: 16,
       messages: [{ role: "user", content: "hi" }],
@@ -91,7 +91,7 @@ describe("every chat endpoint family declares the target", () => {
 
 describe("warnings", () => {
   test("ride non-enumerably, so spreading into generateText carries options only", () => {
-    const options = messages({
+    const options = anthropicChat({
       model: "claude-opus-5",
       max_tokens: 1024,
       messages: [{ role: "user", content: [{ type: "text", text: "Search please." }] }],
@@ -107,7 +107,7 @@ describe("warnings", () => {
 });
 
 describe("withJsonSchemaTools", () => {
-  const validated = messages({
+  const validated = anthropicChat({
     model: "claude-opus-5",
     max_tokens: 1024,
     messages: [{ role: "user", content: [{ type: "text", text: "Note this." }] }],
@@ -143,7 +143,7 @@ describe("withJsonSchemaTools", () => {
   });
 
   test("a request without tools passes through untouched — no adapter needed", () => {
-    const plain = messages({
+    const plain = anthropicChat({
       model: "claude-opus-5",
       max_tokens: 32,
       messages: [{ role: "user", content: "hi" }],

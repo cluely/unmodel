@@ -13,7 +13,7 @@ import type { GenerateContentBody } from "./wire";
  */
 
 function encode(body: GenerateContentBody): { ir: ChatIR; warnings: TranslationWarning[] } {
-  const sink = createWarningSink("google.generateContent", "x");
+  const sink = createWarningSink("google.chat", "x");
   return { ir: encodeGemini(body, sink.warn), warnings: sink.warnings };
 }
 
@@ -21,7 +21,7 @@ function decode(ir: ChatIR, ctx?: DecodeContext): {
   body: Omit<GenerateContentBody, "model">;
   warnings: TranslationWarning[];
 } {
-  const sink = createWarningSink("x", "google.generateContent");
+  const sink = createWarningSink("x", "google.chat");
   return { body: decodeGemini(ir, sink.warn, ctx), warnings: sink.warnings };
 }
 

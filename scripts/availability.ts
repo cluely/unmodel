@@ -194,10 +194,10 @@ export function normalizeName(raw: string): string {
 
 /** The endpoint a provider's models sit on unless a surface rule says otherwise. */
 const DEFAULT_ENDPOINT: Readonly<Record<string, string>> = {
-  anthropic: "anthropic.messages",
-  "amazon-bedrock": "amazon-bedrock.converse",
-  google: "google.generateContent",
-  "google-vertex": "google-vertex.generateContent",
+  anthropic: "anthropic.chat",
+  "amazon-bedrock": "amazon-bedrock.chat",
+  google: "google.chat",
+  "google-vertex": "google-vertex.chat",
 };
 
 /** Falls back to `<provider>.chat` — the OpenAI-compatible fleet plus openai itself. */
@@ -226,8 +226,8 @@ interface SurfaceRule {
  */
 const SURFACE_RULES: Readonly<Record<string, readonly SurfaceRule[]>> = {
   "google-vertex": [
-    { match: /-maas$/, endpoint: "google-vertex.chat" },
-    { match: /claude/, endpoint: "google-vertex.messages" },
+    { match: /-maas$/, endpoint: "google-vertex.chatMaas" },
+    { match: /claude/, endpoint: "google-vertex.chatRawPredict" },
   ],
 };
 

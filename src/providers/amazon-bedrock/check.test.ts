@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { checkConverse } from "./check";
+import { checkChat } from "./check";
 
 // anthropic.claude-sonnet-4-5-20250929-v1:0 catalog rates (USD per 1M):
 //   input 3, output 15, cacheRead 0.3, cacheWrite 3.75
 const SONNET = "anthropic.claude-sonnet-4-5-20250929-v1:0";
 
-describe("amazon-bedrock.checkConverse", () => {
+describe("amazon-bedrock.checkChat", () => {
   test("clean response: usage mapped, no warnings, cost from catalog", () => {
-    const report = checkConverse(
+    const report = checkChat(
       {
         stopReason: "end_turn",
         usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
@@ -22,36 +22,36 @@ describe("amazon-bedrock.checkConverse", () => {
   });
 
   test("max_tokens stopReason warns over_output_limit", () => {
-    const report = checkConverse({ stopReason: "max_tokens" });
+    const report = checkChat({ stopReason: "max_tokens" });
     expect(report.warnings.map((w) => w.code)).toEqual(["over_output_limit"]);
     expect(report.finishReason).toBe("max_tokens");
   });
 
   test("guardrail_intervened and content_filtered warn", () => {
-    expect(checkConverse({ stopReason: "guardrail_intervened" }).warnings[0]?.code).toBe(
+    expect(checkChat({ stopReason: "guardrail_intervened" }).warnings[0]?.code).toBe(
       "unsupported_capability",
     );
-    expect(checkConverse({ stopReason: "content_filtered" }).warnings[0]?.code).toBe(
+    expect(checkChat({ stopReason: "content_filtered" }).warnings[0]?.code).toBe(
       "unsupported_capability",
     );
   });
 
   test("model_context_window_exceeded warns over_context", () => {
-    const report = checkConverse({ stopReason: "model_context_window_exceeded" });
+    const report = checkChat({ stopReason: "model_context_window_exceeded" });
     expect(report.warnings[0]?.code).toBe("over_context");
   });
 
   test("malformed output stopReasons warn invalid_shape", () => {
-    expect(checkConverse({ stopReason: "malformed_model_output" }).warnings[0]?.code).toBe(
+    expect(checkChat({ stopReason: "malformed_model_output" }).warnings[0]?.code).toBe(
       "invalid_shape",
     );
-    expect(checkConverse({ stopReason: "malformed_tool_use" }).warnings[0]?.code).toBe(
+    expect(checkChat({ stopReason: "malformed_tool_use" }).warnings[0]?.code).toBe(
       "invalid_shape",
     );
   });
 
   test("cache reads are folded back into inputTokens and re-rated", () => {
-    const report = checkConverse(
+    const report = checkChat(
       {
         stopReason: "end_turn",
         usage: {
@@ -77,7 +77,7 @@ describe("amazon-bedrock.checkConverse", () => {
   });
 
   test("regional-prefix and ARN model ids still price via resolution", () => {
-    const report = checkConverse(
+    const report = checkChat(
       { usage: { inputTokens: 1_000_000, outputTokens: 0, totalTokens: 1_000_000 } },
       `arn:aws:bedrock:us-east-1::foundation-model/${SONNET}`,
     );
@@ -85,9 +85,9 @@ describe("amazon-bedrock.checkConverse", () => {
   });
 
   test("no modelId → usage but no costUSD; never throws on junk", () => {
-    const report = checkConverse({ usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 } });
+    const report = checkChat({ usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 } });
     expect(report.costUSD).toBeUndefined();
-    expect(checkConverse({}).usage).toEqual({});
-    expect(checkConverse({ stopReason: null, usage: null }).warnings).toEqual([]);
+    expect(checkChat({}).usage).toEqual({});
+    expect(checkChat({ stopReason: null, usage: null }).warnings).toEqual([]);
   });
 });

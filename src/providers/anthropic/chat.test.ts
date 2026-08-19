@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
-  messages,
+  chat,
   checkCapabilities,
   checkThinkingCompatibility,
   ANTHROPIC_VERSION,
   MESSAGES_URL,
-} from "./messages";
-import type { MessagesBody } from "./messages";
+} from "./chat";
+import type { MessagesBody } from "./chat";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { PipelineContext, IssueInput } from "../../core/pipeline";
 import { heuristicTokenizer } from "../../core/tokens";
@@ -22,7 +22,7 @@ import type { ValidateResult } from "../../core/result";
 const HI: MessagesBody["messages"] = [{ role: "user", content: "hi" }];
 
 function invalid(params: unknown) {
-  return messages.safe(params as MessagesBody);
+  return chat.safe(params as MessagesBody);
 }
 
 // A real 1x1 PNG (from the Anthropic vision docs).
@@ -52,10 +52,10 @@ function imageMessage(data: string): MessagesBody["messages"] {
   ];
 }
 
-describe("anthropic.messages happy path", () => {
+describe("anthropic.chat happy path", () => {
   test("enumerable output is the exact wire body", () => {
     const params = { model: "claude-sonnet-4-5", max_tokens: 1024, messages: HI } as const;
-    const validated = messages(params);
+    const validated = chat(params);
 
     expect(Object.keys(validated).sort()).toEqual(["max_tokens", "messages", "model"]);
     expect(JSON.parse(JSON.stringify(validated))).toEqual({
@@ -66,7 +66,7 @@ describe("anthropic.messages happy path", () => {
   });
 
   test("request meta carries url, method, and the anthropic-version header", () => {
-    const validated = messages({ model: "claude-sonnet-4-5", max_tokens: 1024, messages: HI });
+    const validated = chat({ model: "claude-sonnet-4-5", max_tokens: 1024, messages: HI });
     expect(validated.request.url).toBe(MESSAGES_URL);
     expect(validated.request.method).toBe("POST");
     expect(validated.request.headers["anthropic-version"]).toBe(ANTHROPIC_VERSION);
@@ -74,7 +74,7 @@ describe("anthropic.messages happy path", () => {
   });
 
   test('toSdk("anthropic") returns the same wire shape', () => {
-    const validated = messages({ model: "claude-sonnet-4-5", max_tokens: 1024, messages: HI });
+    const validated = chat({ model: "claude-sonnet-4-5", max_tokens: 1024, messages: HI });
     expect(validated.toSdk("anthropic")).toEqual({
       model: "claude-sonnet-4-5",
       max_tokens: 1024,
@@ -83,14 +83,14 @@ describe("anthropic.messages happy path", () => {
   });
 
   test("toSdk names the available targets when handed an unknown one", () => {
-    const validated = messages({ model: "claude-sonnet-4-5", max_tokens: 1024, messages: HI });
+    const validated = chat({ model: "claude-sonnet-4-5", max_tokens: 1024, messages: HI });
     expect(() => (validated.toSdk as (t: string) => unknown)("openai")).toThrow(
       /"openai" is not an SDK target for this endpoint\. Available: anthropic, ai-sdk\./,
     );
   });
 
   test("safe() succeeds with no warnings and an estimate", () => {
-    const result = messages.safe({ model: "claude-sonnet-4-5", max_tokens: 1000, messages: HI });
+    const result = chat.safe({ model: "claude-sonnet-4-5", max_tokens: 1000, messages: HI });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.warnings).toEqual([]);
@@ -102,8 +102,8 @@ describe("anthropic.messages happy path", () => {
   });
 });
 
-describe("anthropic.messages toApi", () => {
-  const claude = () => messages({ model: "claude-opus-5", max_tokens: 1024, messages: HI });
+describe("anthropic.chat toApi", () => {
+  const claude = () => chat({ model: "claude-opus-5", max_tokens: 1024, messages: HI });
 
   test("toApi/toApiSafe are attached and non-enumerable", () => {
     const validated = claude();
@@ -146,12 +146,12 @@ describe("anthropic.messages toApi", () => {
   });
 
   test("a dialect this endpoint declares no decoder for is a named failure", () => {
-    // anthropic.messages declares exactly one decoder (openai-chat), because
+    // anthropic.chat declares exactly one decoder (openai-chat), because
     // that is the only dialect its availability data can statically reach.
     // Anything else must fail by name, never as a silently wrong body.
     const spec = {
       from: "anthropic-messages" as const,
-      endpoint: "anthropic.messages",
+      endpoint: "anthropic.chat",
       modelId: () => "claude-opus-5",
       availability: { "claude-opus-5": { google: "gemini-3-pro" } },
       encode: () => ({ source: "anthropic-messages" as const, model: "x", messages: [], settings: {} }),
@@ -183,7 +183,7 @@ describe("anthropic.messages toApi", () => {
   });
 });
 
-describe("anthropic.messages shape", () => {
+describe("anthropic.chat shape", () => {
   test("missing max_tokens is invalid_shape", () => {
     const result = invalid({ model: "claude-sonnet-4-5", messages: HI });
     expect(result.ok).toBe(false);
@@ -200,7 +200,7 @@ describe("anthropic.messages shape", () => {
   });
 
   test("first message must have role user", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [{ role: "assistant", content: "hello" }],
@@ -214,7 +214,7 @@ describe("anthropic.messages shape", () => {
   });
 
   test("thinking budget_tokens below 1024 is invalid_shape", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 2048,
       messages: HI,
@@ -228,7 +228,7 @@ describe("anthropic.messages shape", () => {
   });
 
   test("thinking budget_tokens >= max_tokens is invalid_shape", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 2048,
       messages: HI,
@@ -245,7 +245,7 @@ describe("anthropic.messages shape", () => {
   });
 
   test("budget_tokens strictly below max_tokens passes", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 4096,
       messages: HI,
@@ -255,7 +255,7 @@ describe("anthropic.messages shape", () => {
   });
 
   test("trailing assistant prefill with thinking on is invalid_shape", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 4096,
       messages: [
@@ -273,7 +273,7 @@ describe("anthropic.messages shape", () => {
   });
 
   test("trailing assistant prefill without thinking passes", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -285,11 +285,11 @@ describe("anthropic.messages shape", () => {
   });
 });
 
-describe("anthropic.messages crash safety on malformed blocks", () => {
+describe("anthropic.chat crash safety on malformed blocks", () => {
   test("{type:'text'} without text never throws", () => {
     let result: unknown;
     expect(() => {
-      result = messages.safe({
+      result = chat.safe({
         model: "claude-sonnet-4-5",
         max_tokens: 100,
         messages: [{ role: "user", content: [{ type: "text" }] }],
@@ -301,7 +301,7 @@ describe("anthropic.messages crash safety on malformed blocks", () => {
   test("{type:'document'} without source never throws", () => {
     let result: unknown;
     expect(() => {
-      result = messages.safe({
+      result = chat.safe({
         model: "claude-sonnet-4-5",
         max_tokens: 100,
         messages: [{ role: "user", content: [{ type: "document" }] }],
@@ -311,7 +311,7 @@ describe("anthropic.messages crash safety on malformed blocks", () => {
   });
 
   test("assorted payload-less blocks contribute 0 tokens and never throw", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -333,7 +333,7 @@ describe("anthropic.messages crash safety on malformed blocks", () => {
   });
 });
 
-describe("anthropic.messages tool_use/tool_result pairing", () => {
+describe("anthropic.chat tool_use/tool_result pairing", () => {
   const toolUseTurn: MessagesBody["messages"] = [
     { role: "user", content: "weather in Paris?" },
     {
@@ -343,7 +343,7 @@ describe("anthropic.messages tool_use/tool_result pairing", () => {
   ];
 
   test("tool_result immediately following its tool_use passes", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -358,7 +358,7 @@ describe("anthropic.messages tool_use/tool_result pairing", () => {
   });
 
   test("text AFTER the tool_result in the same user message passes", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -376,7 +376,7 @@ describe("anthropic.messages tool_use/tool_result pairing", () => {
   });
 
   test("tool_result with an unknown tool_use_id is invalid_shape", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -399,7 +399,7 @@ describe("anthropic.messages tool_use/tool_result pairing", () => {
   });
 
   test("tool_result referencing a LATER tool_use is invalid_shape", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -419,7 +419,7 @@ describe("anthropic.messages tool_use/tool_result pairing", () => {
   test("tool_result answering an EARLIER (not immediately preceding) assistant turn fails", () => {
     // [user, assistant(tool_use), user(text), assistant, user(tool_result)]
     // 400s on the API: results must immediately follow their tool use turn.
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -443,7 +443,7 @@ describe("anthropic.messages tool_use/tool_result pairing", () => {
   });
 
   test("unanswered tool_use followed by a text-only user message fails", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [...toolUseTurn, { role: "user", content: "never mind" }],
@@ -456,7 +456,7 @@ describe("anthropic.messages tool_use/tool_result pairing", () => {
   });
 
   test("tool_result placed after a text block is invalid_shape (results must come first)", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -481,7 +481,7 @@ describe("anthropic.messages tool_use/tool_result pairing", () => {
   });
 
   test("duplicate tool_result for the same tool_use id is invalid_shape", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -508,7 +508,7 @@ describe("anthropic.messages tool_use/tool_result pairing", () => {
   });
 
   test("parallel tool_use ids all answered in the next user message passes", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -533,14 +533,14 @@ describe("anthropic.messages tool_use/tool_result pairing", () => {
   });
 });
 
-describe("anthropic.messages max_tokens: 0 (prompt-cache pre-warm)", () => {
+describe("anthropic.chat max_tokens: 0 (prompt-cache pre-warm)", () => {
   test("max_tokens: 0 alone is valid", () => {
-    const result = messages.safe({ model: "claude-sonnet-4-5", max_tokens: 0, messages: HI });
+    const result = chat.safe({ model: "claude-sonnet-4-5", max_tokens: 0, messages: HI });
     expect(result.ok).toBe(true);
   });
 
   test("max_tokens: 0 with stream: true is invalid_shape", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 0,
       messages: HI,
@@ -554,7 +554,7 @@ describe("anthropic.messages max_tokens: 0 (prompt-cache pre-warm)", () => {
   });
 
   test("max_tokens: 0 with extended thinking is invalid_shape", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 0,
       messages: HI,
@@ -567,7 +567,7 @@ describe("anthropic.messages max_tokens: 0 (prompt-cache pre-warm)", () => {
   });
 
   test("max_tokens: 0 with output_config.format is invalid_shape", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 0,
       messages: HI,
@@ -580,7 +580,7 @@ describe("anthropic.messages max_tokens: 0 (prompt-cache pre-warm)", () => {
   });
 
   test("max_tokens: 0 with forced tool_choice is invalid_shape", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 0,
       messages: HI,
@@ -594,9 +594,9 @@ describe("anthropic.messages max_tokens: 0 (prompt-cache pre-warm)", () => {
   });
 });
 
-describe("anthropic.messages catalog + constraints", () => {
+describe("anthropic.chat catalog + constraints", () => {
   test("unknown model is a warning, not an error", () => {
-    const result = messages.safe({ model: "claude-next-9000", max_tokens: 100, messages: HI });
+    const result = chat.safe({ model: "claude-next-9000", max_tokens: 100, messages: HI });
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
@@ -616,7 +616,7 @@ describe("anthropic.messages catalog + constraints", () => {
   });
 
   test("temperature on claude-opus-5 is unsupported_param", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-opus-5",
       max_tokens: 100,
       messages: HI,
@@ -631,7 +631,7 @@ describe("anthropic.messages catalog + constraints", () => {
   });
 
   test("top_p 0.9 and top_k on claude-opus-5 are unsupported_param", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-opus-5",
       max_tokens: 100,
       messages: HI,
@@ -650,7 +650,7 @@ describe("anthropic.messages catalog + constraints", () => {
   test("documented backwards-compatible defaults pass on claude-opus-5", () => {
     // API deprecation notes: temperature 1.0 and top_p >= 0.99 remain accepted
     // on sampling-removed generations.
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-opus-5",
       max_tokens: 100,
       messages: HI,
@@ -661,7 +661,7 @@ describe("anthropic.messages catalog + constraints", () => {
   });
 
   test("top_k on claude-opus-5 rejects ANY value, including with thinking (no duplicates)", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-opus-5",
       max_tokens: 4096,
       messages: HI,
@@ -679,7 +679,7 @@ describe("anthropic.messages catalog + constraints", () => {
   });
 
   test("temperature on claude-sonnet-4-5 is fine", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: HI,
@@ -689,7 +689,7 @@ describe("anthropic.messages catalog + constraints", () => {
   });
 
   test("max_tokens over the model output limit is over_output_limit", () => {
-    const result = messages.safe({ model: "claude-haiku-4-5", max_tokens: 70000, messages: HI });
+    const result = chat.safe({ model: "claude-haiku-4-5", max_tokens: 70000, messages: HI });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors[0]?.code).toBe("over_output_limit");
@@ -699,12 +699,12 @@ describe("anthropic.messages catalog + constraints", () => {
   });
 });
 
-describe("anthropic.messages thinking compatibility", () => {
+describe("anthropic.chat thinking compatibility", () => {
   const base = { model: "claude-sonnet-4-5", max_tokens: 4096, messages: HI } as const;
   const thinking = { type: "enabled", budget_tokens: 2048 } as const;
 
   test("temperature with thinking enabled is rejected", () => {
-    const result = messages.safe({ ...base, thinking, temperature: 0.5 });
+    const result = chat.safe({ ...base, thinking, temperature: 0.5 });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toHaveLength(1);
@@ -715,22 +715,22 @@ describe("anthropic.messages thinking compatibility", () => {
   });
 
   test("top_k with thinking enabled is rejected", () => {
-    const result = messages.safe({ ...base, thinking, top_k: 40 });
+    const result = chat.safe({ ...base, thinking, top_k: 40 });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.errors[0]?.path).toEqual(["top_k"]);
   });
 
   test("top_p below 0.95 with thinking is rejected; 0.97 passes", () => {
-    const bad = messages.safe({ ...base, thinking, top_p: 0.9 });
+    const bad = chat.safe({ ...base, thinking, top_p: 0.9 });
     expect(bad.ok).toBe(false);
     if (!bad.ok) expect(bad.errors[0]?.path).toEqual(["top_p"]);
 
-    const good = messages.safe({ ...base, thinking, top_p: 0.97 });
+    const good = chat.safe({ ...base, thinking, top_p: 0.97 });
     expect(good.ok).toBe(true);
   });
 
   test("forced tool_choice with manual extended thinking is rejected", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       ...base,
       thinking,
       tools: [{ name: "f", input_schema: { type: "object" } }],
@@ -744,12 +744,12 @@ describe("anthropic.messages thinking compatibility", () => {
   });
 
   test("thinking without sampling params passes", () => {
-    const result = messages.safe({ ...base, thinking });
+    const result = chat.safe({ ...base, thinking });
     expect(result.ok).toBe(true);
   });
 
   test("thinking disabled on claude-fable-5 is rejected (cannot be turned off)", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-fable-5",
       max_tokens: 1024,
       messages: HI,
@@ -764,7 +764,7 @@ describe("anthropic.messages thinking compatibility", () => {
   });
 
   test("thinking disabled at effort xhigh on claude-opus-5 is rejected", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-opus-5",
       max_tokens: 1024,
       messages: HI,
@@ -778,7 +778,7 @@ describe("anthropic.messages thinking compatibility", () => {
   });
 
   test("thinking disabled at effort high on claude-opus-5 passes", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-opus-5",
       max_tokens: 1024,
       messages: HI,
@@ -789,9 +789,9 @@ describe("anthropic.messages thinking compatibility", () => {
   });
 });
 
-describe("anthropic.messages image media rules", () => {
+describe("anthropic.chat image media rules", () => {
   test("a small real PNG passes", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: imageMessage(TINY_PNG),
@@ -800,7 +800,7 @@ describe("anthropic.messages image media rules", () => {
   });
 
   test("image estimation adds the standard-tier per-image token cap (1568)", () => {
-    const withImage = messages.safe({
+    const withImage = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: imageMessage(TINY_PNG),
@@ -813,7 +813,7 @@ describe("anthropic.messages image media rules", () => {
   });
 
   test("high-resolution models estimate 4784 tokens per image", () => {
-    const withImage = messages.safe({
+    const withImage = chat.safe({
       model: "claude-opus-5",
       max_tokens: 100,
       messages: imageMessage(TINY_PNG),
@@ -823,7 +823,7 @@ describe("anthropic.messages image media rules", () => {
   });
 
   test("URL and file image sources pass without byte inspection", () => {
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [
@@ -842,7 +842,7 @@ describe("anthropic.messages image media rules", () => {
   });
 
   test("declared metadata for a URL image source is enforced", () => {
-    const result = messages.safe(
+    const result = chat.safe(
       {
         model: "claude-sonnet-4-5",
         max_tokens: 100,
@@ -866,7 +866,7 @@ describe("anthropic.messages image media rules", () => {
 
   test("images above 8000x8000 px are media_dimensions_exceeded", () => {
     const huge = Buffer.from(pngBytes(9000, 9000)).toString("base64");
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: imageMessage(huge),
@@ -880,7 +880,7 @@ describe("anthropic.messages image media rules", () => {
 
   test("images above 10MB base64-encoded are media_too_large", () => {
     const big = Buffer.from(pngBytes(10, 10, 8 * 1024 * 1024)).toString("base64");
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: imageMessage(big),
@@ -895,7 +895,7 @@ describe("anthropic.messages image media rules", () => {
       type: "image",
       source: { type: "base64", media_type: "image/png", data: wide },
     } as const;
-    const twentyOne = messages.safe({
+    const twentyOne = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [{ role: "user", content: Array.from({ length: 21 }, () => image) }],
@@ -907,7 +907,7 @@ describe("anthropic.messages image media rules", () => {
     }
 
     // The same images in a 20-image request are fine (2100px < 8000px).
-    const twenty = messages.safe({
+    const twenty = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [{ role: "user", content: Array.from({ length: 20 }, () => image) }],
@@ -920,7 +920,7 @@ describe("anthropic.messages image media rules", () => {
       type: "image",
       source: { type: "base64", media_type: "image/png", data: TINY_PNG },
     } as const;
-    const result = messages.safe({
+    const result = chat.safe({
       model: "claude-haiku-4-5",
       max_tokens: 100,
       messages: [{ role: "user", content: Array.from({ length: 101 }, () => image) }],
@@ -933,7 +933,7 @@ describe("anthropic.messages image media rules", () => {
     }
 
     // 101 images are fine on a 1M-context model (cap 600).
-    const bigContext = messages.safe({
+    const bigContext = chat.safe({
       model: "claude-sonnet-4-5",
       max_tokens: 100,
       messages: [{ role: "user", content: Array.from({ length: 101 }, () => image) }],
@@ -942,9 +942,9 @@ describe("anthropic.messages image media rules", () => {
   });
 });
 
-describe("anthropic.messages budget", () => {
+describe("anthropic.chat budget", () => {
   test("maxCostUSD below the estimate is over_budget", () => {
-    const result = messages.safe(
+    const result = chat.safe(
       { model: "claude-sonnet-4-5", max_tokens: 8192, messages: HI },
       { maxCostUSD: 0.0001 },
     );
@@ -953,7 +953,7 @@ describe("anthropic.messages budget", () => {
   });
 
   test("severity overrides can silence a code", () => {
-    const result = messages.safe(
+    const result = chat.safe(
       { model: "claude-next-9000", max_tokens: 100, messages: HI },
       { severity: { unknown_model: "off" } },
     );
@@ -964,7 +964,7 @@ describe("anthropic.messages budget", () => {
 
 // All catalog Anthropic models support tools/vision/thinking, so the
 // unsupported_capability branches are exercised with a synthetic ModelInfo.
-describe("anthropic.messages capability checks (synthetic model)", () => {
+describe("anthropic.chat capability checks (synthetic model)", () => {
   const textOnly: ModelInfo = {
     id: "text-only",
     name: "Text Only",
@@ -980,7 +980,7 @@ describe("anthropic.messages capability checks (synthetic model)", () => {
   function run(params: MessagesBody, info: ModelInfo): IssueInput[] {
     const issues: IssueInput[] = [];
     const ctx: PipelineContext = {
-      endpoint: "anthropic.messages",
+      endpoint: "anthropic.chat",
       options: {},
       tokenizer: heuristicTokenizer,
       report: (issue) => issues.push(issue),
@@ -1056,15 +1056,15 @@ describe("anthropic.messages capability checks (synthetic model)", () => {
   });
 });
 
-describe("anthropic.messages constraintsFor", () => {
+describe("anthropic.chat constraintsFor", () => {
   test("exposes the family media rule and per-model denies", () => {
-    const opus = messages.constraintsFor("claude-opus-5");
+    const opus = chat.constraintsFor("claude-opus-5");
     expect(opus.some((c) => c.deny?.top_k !== undefined)).toBe(true);
     expect(opus.some((c) => c.media?.image?.maxWidth === 8000)).toBe(true);
     // High-resolution vision tier.
     expect(opus.some((c) => c.imageTokens === 4784)).toBe(true);
 
-    const sonnet = messages.constraintsFor("claude-sonnet-4-5");
+    const sonnet = chat.constraintsFor("claude-sonnet-4-5");
     expect(sonnet.some((c) => c.deny?.top_k !== undefined)).toBe(false);
     expect(sonnet.some((c) => c.imageTokens === 1568)).toBe(true);
   });

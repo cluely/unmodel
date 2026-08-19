@@ -47,7 +47,7 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { stripModelsPrefix } from "./generate-content";
+import { stripModelsPrefix } from "./chat";
 import {
   IMAGEN_DOCS_URL,
   generateImagesConstraints,

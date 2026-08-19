@@ -100,7 +100,7 @@ type ToApiMember<Avail, Model extends string> = [Avail] extends [never]
  *
  * Four type parameters, and `Model` is separate from `Body` on purpose:
  * `toApi`'s union depends on the model id, and the model id is not always on
- * the body — `google.generateContent` and `elevenlabs.textToSpeech` strip it
+ * the body — `google.chat` and `elevenlabs.textToSpeech` strip it
  * into `.request.url`. `Validated<Body>` with one argument still means "wire
  * body + `.request`, no targets".
  */
@@ -116,7 +116,7 @@ export type Validated<
 
 /** One target's retarget outcome, as produced by `createToApi`. */
 export interface ApiRetargetOutcome {
-  /** `"anthropic.messages → openrouter.chat"` — the label on thrown errors. */
+  /** `"anthropic.chat → openrouter.chat"` — the label on thrown errors. */
   route: string;
   result: ValidateResult<object>;
   /**
@@ -263,7 +263,7 @@ export const NO_HEADERS: Record<string, string> = Object.freeze({});
  * feeds one result straight into another validator:
  *
  * ```ts
- * const routed = messages({ model: "claude-opus-5", … }).toApi("openrouter");
+ * const routed = chat({ model: "claude-opus-5", … }).toApi("openrouter");
  * const checked = openrouterChat(routed);   // full catalog-aware pass
  * ```
  *

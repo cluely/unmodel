@@ -1,7 +1,7 @@
 /**
  * The **anthropic-messages** dialect codec.
  *
- * This is the spoke behind the flagship path — `messages({model:"claude-opus-5"})
+ * This is the spoke behind the flagship path — `chat({model:"claude-opus-5"})
  * .toApi("openrouter")` — so three of its rules are worth stating where they
  * can be read next to the code:
  *

@@ -5,12 +5,12 @@
  * src/ never imports it (its bundled types drag node:* into dist d.ts).
  */
 import type { MessageCreateParams } from "@anthropic-ai/sdk/resources/messages";
-import { messages } from "../../src/providers/anthropic";
+import { chat } from "../../src/providers/anthropic";
 import type { MessagesBody } from "../../src/providers/anthropic";
 import type { EndpointConstraints } from "../../src/core/constraint-types";
 import { expectAssignable } from "./helpers";
 
-const validated = messages({
+const validated = chat({
   model: "claude-sonnet-4-5",
   max_tokens: 1024,
   messages: [{ role: "user", content: "hi" }],
@@ -33,7 +33,7 @@ expectAssignable<number>(validated.max_tokens);
 expectAssignable<string>(validated.request.url);
 
 // safe() narrows to the same Validated shape.
-const result = messages.safe({
+const result = chat.safe({
   model: "claude-sonnet-4-5",
   max_tokens: 1024,
   messages: [{ role: "user", content: "hi" }],
@@ -46,7 +46,7 @@ if (result.ok) expectAssignable<MessageCreateParams>(result.params.toSdk("anthro
 // properties against the mechanism in isolation).
 // ---------------------------------------------------------------------------
 
-const opus = messages({
+const opus = chat({
   model: "claude-opus-5",
   max_tokens: 1024,
   messages: [{ role: "user", content: "hi" }],
@@ -68,7 +68,7 @@ expectAssignable<"anthropic/claude-opus-5" | (string & {})>(opus.toApi("openrout
 opus.toApi("openrouter").toApi("groq");
 
 // safe() results carry the same retarget surface.
-const opusSafe = messages.safe({
+const opusSafe = chat.safe({
   model: "claude-opus-5",
   max_tokens: 1024,
   messages: [{ role: "user", content: "hi" }],
@@ -78,25 +78,25 @@ if (opusSafe.ok) {
   if (routed.ok) expectAssignable<string>(routed.params.request.url);
 }
 
-expectAssignable<EndpointConstraints[]>(messages.constraintsFor("claude-opus-5"));
+expectAssignable<EndpointConstraints[]>(chat.constraintsFor("claude-opus-5"));
 
 // @ts-expect-error — max_tokens is required on the wire.
-messages({ model: "claude-sonnet-4-5", messages: [{ role: "user", content: "hi" }] });
+chat({ model: "claude-sonnet-4-5", messages: [{ role: "user", content: "hi" }] });
 
 // Model id autocomplete sanity: strict catalog ids and free-form strings both work.
 expectAssignable<MessagesBody["model"]>("claude-opus-4-6");
 expectAssignable<MessagesBody["model"]>("claude-future-model");
-messages({ model: "claude-opus-4-6", max_tokens: 1, messages: [{ role: "user", content: "x" }] });
-messages({ model: "claude-future-model", max_tokens: 1, messages: [{ role: "user", content: "x" }] });
+chat({ model: "claude-opus-4-6", max_tokens: 1, messages: [{ role: "user", content: "x" }] });
+chat({ model: "claude-future-model", max_tokens: 1, messages: [{ role: "user", content: "x" }] });
 
-messages({
+chat({
   model: "claude-sonnet-4-5",
   max_tokens: 1,
   // @ts-expect-error — role must be "user" | "assistant".
   messages: [{ role: "system", content: "x" }],
 });
 
-messages({
+chat({
   model: "claude-sonnet-4-5",
   max_tokens: 1,
   messages: [{ role: "user", content: "x" }],
@@ -104,7 +104,7 @@ messages({
   thinking: { type: "enabled" },
 });
 
-messages({
+chat({
   model: "claude-sonnet-4-5",
   max_tokens: 1,
   messages: [{ role: "user", content: "x" }],
@@ -114,14 +114,14 @@ messages({
 
 // `display` is accepted on both the enabled and adaptive thinking variants,
 // and top-level cache_control (automatic prompt caching) is a GA body param.
-messages({
+chat({
   model: "claude-sonnet-4-5",
   max_tokens: 2048,
   messages: [{ role: "user", content: "x" }],
   thinking: { type: "enabled", budget_tokens: 1024, display: "omitted" },
   cache_control: { type: "ephemeral", ttl: "5m" },
 });
-messages({
+chat({
   model: "claude-opus-5",
   max_tokens: 2048,
   messages: [{ role: "user", content: "x" }],

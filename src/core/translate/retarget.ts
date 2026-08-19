@@ -67,7 +67,7 @@ export type Encoder<Body, IR> = (body: Body, warn: Warn) => IR;
 export interface RetargetSpec<Body extends object, IR = unknown> {
   /** The dialect this endpoint's body is written in. */
   from: DialectId;
-  /** Source endpoint id, e.g. `"anthropic.messages"`. */
+  /** Source endpoint id, e.g. `"anthropic.chat"`. */
   endpoint: string;
   /** Reads the source model id off the body (or out of the closure). */
   modelId: (body: Body) => string | undefined;
@@ -77,7 +77,7 @@ export interface RetargetSpec<Body extends object, IR = unknown> {
    * Writes the target's spelling of the model id into a same-dialect copy of
    * the body. Defaults to `{ ...body, model }`, which is correct for every
    * dialect that carries `model` on the wire; endpoints that strip the model
-   * into the URL (google.generateContent) must supply their own.
+   * into the URL (google.chat) must supply their own.
    */
   withModelId?: (body: Body, targetModelId: string) => object;
   /** IR encoder. Required for cross-dialect retargets; omit for fleet-only endpoints. */
@@ -99,7 +99,7 @@ export interface RetargetSpec<Body extends object, IR = unknown> {
  * `openai-chat` and `anthropic-messages` get an identity formatter because
  * those SDKs' param objects *are* the wire body. Gemini needs real shaping
  * (`{ model, contents, config }`), which `geminiSdkParams` supplies — the same
- * function `google.generateContent`'s own `toSdk("google")` uses, so the two
+ * function `google.chat`'s own `toSdk("google")` uses, so the two
  * cannot drift.
  *
  * `bedrock-converse` still gets none, and deliberately: a `toSdk` target that
@@ -291,7 +291,7 @@ export function createToApi<Body extends object, IR = unknown>(
 ): (body: Body) => ApiRetargeter {
   /**
    * The provider this endpoint belongs to, read off its id
-   * (`"anthropic.messages"` → `"anthropic"`). Provider ids never contain a
+   * (`"anthropic.chat"` → `"anthropic"`). Provider ids never contain a
    * dot; endpoint ids always do.
    */
   const homeProvider = spec.endpoint.slice(0, spec.endpoint.indexOf("."));

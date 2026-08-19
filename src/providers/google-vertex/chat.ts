@@ -58,7 +58,7 @@ export type VertexGenerateContentSdkParams<T extends VertexGenerateContentBody> 
 // constraint tables (formats/durations/inline caps) are sourced from Gemini
 // API docs (ai.google.dev) and are deliberately NOT applied here: the Vertex
 // docs were not re-verified for those limits, and unproven facts stay out.
-// checkCapabilities is duplicated from google/generate-content.ts (private
+// checkCapabilities is duplicated from google/chat.ts (private
 // there; see the schema note in ./wire.ts).
 // ---------------------------------------------------------------------------
 
@@ -174,7 +174,7 @@ function checkMediaModalities(
 }
 
 // ---------------------------------------------------------------------------
-// Estimation — mirrors google/generate-content.ts (private there), minus the
+// Estimation — mirrors google/chat.ts (private there), minus the
 // per-model imageTokens constraint lookup: the flat GEMINI_IMAGE_TOKENS
 // heuristic is used for every image part.
 // ---------------------------------------------------------------------------
@@ -254,7 +254,7 @@ export interface GoogleVertexConfig {
  * `vertexai: true`, whose params are the same `{ model, contents, config }`
  * shape as the Gemini API client's.
  */
-export type VertexGenerateContentSdkTargets<
+export type VertexChatSdkTargets<
   T extends VertexGenerateContentBody = VertexGenerateContentBody,
 > =
   {
@@ -270,13 +270,13 @@ export type VertexGenerateContentSdkTargets<
  * models.dev id).
  */
 const toAiSdk = createAiSdkChat<VertexGenerateContentBody>({
-  endpoint: "google-vertex.generateContent",
+  endpoint: "google-vertex.chat",
   provider: "google-vertex",
   encode: (body, warn) => encodeGemini(body as unknown as GenerateContentBody, warn),
 });
 
 /**
- * `.toApi(provider)` for `google-vertex.generateContent`.
+ * `.toApi(provider)` for `google-vertex.chat`.
  *
  * Unlike the other endpoints migrated in this phase, this one has a *working*
  * v1 edge: the generated availability data maps every Vertex Gemini id to
@@ -284,13 +284,13 @@ const toAiSdk = createAiSdkChat<VertexGenerateContentBody>({
  * static URL — so `retargetSameDialect` handles it with no codec, no IR and no
  * round-trip risk.
  *
- * As with `google.generateContent`, the spec's `Body` is the *unstripped*
+ * As with `google.chat`, the spec's `Body` is the *unstripped*
  * params (so `modelId` can read `model`) and `withModelId` drops it again,
  * because the model id belongs in the URL path, not the body.
  */
 const retargetGenerateContent = createToApi<VertexGenerateContentBody>({
   from: "gemini",
-  endpoint: "google-vertex.generateContent",
+  endpoint: "google-vertex.chat",
   modelId: (params) => stripModelPath(params.model),
   availability,
   withModelId: ({ model: _model, ...body }) => body,
@@ -299,16 +299,16 @@ const retargetGenerateContent = createToApi<VertexGenerateContentBody>({
 });
 
 /**
- * The generateContent validator surface, with `model` narrowed to the
+ * The chat validator surface, with `model` narrowed to the
  * google-vertex catalog union.
  */
-export type GoogleVertexGenerateContent = {
+export type GoogleVertexChat = {
   <T extends VertexGenerateContentBody>(
     params: T & ExactKeys<T, VertexGenerateContentBody>,
     options?: ValidateOptions,
   ): Validated<
     Omit<T, "model">,
-    VertexGenerateContentSdkTargets<T>,
+    VertexChatSdkTargets<T>,
     GoogleVertexAvailability,
     T["model"] & string
   >;
@@ -318,7 +318,7 @@ export type GoogleVertexGenerateContent = {
   ): ValidateResult<
     Validated<
       Omit<T, "model">,
-      VertexGenerateContentSdkTargets<T>,
+      VertexChatSdkTargets<T>,
       GoogleVertexAvailability,
       T["model"] & string
     >
@@ -327,13 +327,13 @@ export type GoogleVertexGenerateContent = {
 };
 
 /**
- * Builds the generateContent validator bound to one project + location.
+ * Builds the chat validator bound to one project + location.
  * Targets `publishers/google/models/{model}` — Gemini models only (partner
  * models like Claude on Vertex use different endpoints/dialects).
  */
-export function createGenerateContent(config: GoogleVertexConfig): GoogleVertexGenerateContent {
+export function createChat(config: GoogleVertexConfig): GoogleVertexChat {
   const validator = createValidator<VertexGenerateContentBody, unknown>({
-    endpoint: "google-vertex.generateContent",
+    endpoint: "google-vertex.chat",
     schema: vertexGenerateContentSchema,
     modelId: (params) => stripModelPath(params.model),
     catalog: models,
@@ -359,5 +359,5 @@ export function createGenerateContent(config: GoogleVertexConfig): GoogleVertexG
       });
     },
   });
-  return validator as unknown as GoogleVertexGenerateContent;
+  return validator as unknown as GoogleVertexChat;
 }

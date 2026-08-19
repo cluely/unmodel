@@ -9,7 +9,7 @@ import { join, dirname, relative, resolve as resolvePath } from "node:path";
  * consumers of a shared translation layer, which is only acyclic if the layer
  * depends on *leaf* modules — the wire types + zod schema of a dialect —
  * rather than on the validator modules that own them. That is not something
- * the type checker can enforce: a cycle back into `anthropic/messages.ts`
+ * the type checker can enforce: a cycle back into `anthropic/chat.ts`
  * type-checks fine, it just quietly drags the pipeline, the catalog and every
  * check into any bundle that touches translation.
  *
@@ -30,7 +30,7 @@ import { join, dirname, relative, resolve as resolvePath } from "node:path";
  *  6. A provider **endpoint** module may reach another provider's directory
  *     only through its `interop.ts` — never `index.ts`, a validator, a
  *     `constraints.ts` or a `catalog/<other>.gen`. This is the rule that
- *     makes cross-dialect retargeting affordable: `anthropic/messages.ts`
+ *     makes cross-dialect retargeting affordable: `anthropic/chat.ts`
  *     importing `openai-compatible/interop.ts` pulls in one codec module and
  *     its type-only wire imports, not that provider's zod schema, catalog or
  *     checks. Two dialect-base exceptions are allowed and enumerated below.
@@ -57,15 +57,15 @@ const PROVIDER_LEAF_BASENAMES = new Set(["wire.ts", "constraints.ts", "interop.t
  * silently vacuous test.
  */
 const DIALECT_LEAVES: ReadonlyArray<{ wire: string; validator: string }> = [
-  { wire: "src/providers/anthropic/wire.ts", validator: "src/providers/anthropic/messages.ts" },
-  { wire: "src/providers/google/wire.ts", validator: "src/providers/google/generate-content.ts" },
+  { wire: "src/providers/anthropic/wire.ts", validator: "src/providers/anthropic/chat.ts" },
+  { wire: "src/providers/google/wire.ts", validator: "src/providers/google/chat.ts" },
   {
     wire: "src/providers/google-vertex/wire.ts",
-    validator: "src/providers/google-vertex/generate-content.ts",
+    validator: "src/providers/google-vertex/chat.ts",
   },
   {
     wire: "src/providers/amazon-bedrock/wire.ts",
-    validator: "src/providers/amazon-bedrock/converse.ts",
+    validator: "src/providers/amazon-bedrock/chat.ts",
   },
   {
     wire: "src/providers/openai-compatible/wire.ts",
@@ -304,11 +304,11 @@ describe("cross-provider imports", () => {
     // A codec import is a real bundle cost, so the set of modules that pay it
     // is pinned here: a new one shows up as a failing diff with a name on it.
     const expected = new Set([
-      "src/providers/anthropic/messages.ts", // → openai-chat (the flagship path)
-      "src/providers/google/generate-content.ts", // → openai-chat
+      "src/providers/anthropic/chat.ts", // → openai-chat (the flagship path)
+      "src/providers/google/chat.ts", // → openai-chat
       // Vertex speaks the Gemini dialect, so it re-uses that codec for
       // `toSdk("ai-sdk")` rather than forking one.
-      "src/providers/google-vertex/generate-content.ts", // → gemini
+      "src/providers/google-vertex/chat.ts", // → gemini
       "src/providers/openrouter/index.ts", // → gemini + anthropic-messages
       "src/providers/vercel/index.ts", // → gemini + anthropic-messages
       // The seven fleet overlays whose generated availability data names

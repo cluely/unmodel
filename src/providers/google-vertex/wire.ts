@@ -7,7 +7,7 @@ import type { GoogleVertexTextModelId } from "../../catalog/google-vertex.gen";
 // and nothing else. This module imports only zod, type-only catalog ids, and
 // the sibling Gemini wire leaf — no pipeline, no validator, no checks — so
 // retarget/translate machinery can depend on the dialect without creating a
-// cycle back through ./generate-content.ts. Enforced by
+// cycle back through ./chat.ts. Enforced by
 // test/import-graph.test.ts.
 // ---------------------------------------------------------------------------
 
@@ -15,7 +15,7 @@ import type { GoogleVertexTextModelId } from "../../catalog/google-vertex.gen";
 // Wire types — Gemini generateContent on Vertex AI:
 // POST https://{location}-aiplatform.googleapis.com/v1/projects/{project}/locations/{location}/publishers/google/models/{model}:generateContent
 // The body is the same camelCase wire dialect as the Gemini API
-// (src/providers/google/generate-content.ts) with two verified differences:
+// (src/providers/google/chat.ts) with two verified differences:
 // Vertex has no `store` / `serviceTier` fields and adds `labels`.
 // Reference: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference
 // (checked 2026-08-13; request fields: contents, systemInstruction, tools,

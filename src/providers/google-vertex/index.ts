@@ -21,7 +21,7 @@
  *
  * ```ts
  * const vertex = createGoogleVertex({ project: "my-project", location: "us-central1" });
- * const params = vertex.generateContent({ model: "gemini-2.5-flash", contents: [...] });
+ * const params = vertex.chat({ model: "gemini-2.5-flash", contents: [...] });
  * await fetch(params.request.url, {
  *   method: params.request.method,
  *   headers: { ...params.request.headers, authorization: `Bearer ${accessToken}` },
@@ -32,11 +32,11 @@
  * ```
  */
 import {
-  createGenerateContent,
+  createChat,
   type GoogleVertexConfig,
-  type GoogleVertexGenerateContent,
-} from "./generate-content";
-import { checkGenerateContent } from "./check";
+  type GoogleVertexChat,
+} from "./chat";
+import { checkChat } from "./check";
 
 export interface GoogleVertexProvider {
   /**
@@ -47,34 +47,34 @@ export interface GoogleVertexProvider {
    * (`vertexai: true`); `.toApi("google")` retargets the same Gemini request
    * at the AI Studio endpoint (same dialect, so it is a URL swap).
    */
-  generateContent: GoogleVertexGenerateContent;
+  chat: GoogleVertexChat;
   /** Post-generation response inspection + usage pricing. Never throws. */
-  checkGenerateContent: typeof checkGenerateContent;
+  checkChat: typeof checkChat;
 }
 
 /** Builds the validator surface bound to one Google Cloud project + location. */
 export function createGoogleVertex(config: GoogleVertexConfig): GoogleVertexProvider {
   return {
-    generateContent: createGenerateContent(config),
-    checkGenerateContent,
+    chat: createChat(config),
+    checkChat,
   };
 }
 
-export { checkGenerateContent } from "./check";
+export { checkChat } from "./check";
 export {
-  createGenerateContent,
+  createChat,
   generateContentUrl,
   type GoogleVertexConfig,
-  type GoogleVertexGenerateContent,
+  type GoogleVertexChat,
   type VertexGenerateContentBody,
   type VertexGenerateContentSdkParams,
-  type VertexGenerateContentSdkTargets,
-} from "./generate-content";
+  type VertexChatSdkTargets,
+} from "./chat";
 
 // The wire dialect types are unmodel/google's — re-exported so callers don't
 // need a second import.
 export type {
-  GenerateContentResponseLike,
+  ChatResponseLike,
   GoogleCodeExecutionResult,
   GoogleContent,
   GoogleExecutableCode,

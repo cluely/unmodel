@@ -9,7 +9,7 @@ import { models } from "../../catalog/google.gen";
  * Structural subset of a generateContent response — the parsed wire JSON and
  * @google/genai's `GenerateContentResponse` are both assignable.
  */
-export interface GenerateContentResponseLike {
+export interface ChatResponseLike {
   candidates?: Array<{
     finishReason?: string;
   }>;
@@ -68,7 +68,7 @@ function modelInfoFor(modelVersion: string | undefined): ModelInfo | undefined {
  * - `costUSD` is priced from catalog rates via the response's `modelVersion`
  *   (prefix fallback); undefined when the model is unknown.
  */
-export function checkGenerateContent(response: GenerateContentResponseLike): ResponseReport {
+export function checkChat(response: ChatResponseLike): ResponseReport {
   const warnings: Issue[] = [];
   const finishReason = response.candidates?.[0]?.finishReason;
 

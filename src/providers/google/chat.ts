@@ -28,7 +28,7 @@ import { estimateToolDefinitionTokens, PER_MESSAGE_TOKEN_OVERHEAD } from "../../
 import { toBytes } from "../../core/media/bytes";
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
 import { sniffImage, type SniffedImage } from "../../core/media/image";
-import { generateContentModels } from "./tts-models";
+import { chatModels } from "./tts-models";
 import {
   GEMINI_IMAGE_ASPECT_RATIOS,
   GEMINI_IMAGE_ASPECT_RATIO_ENUM_NAMES,
@@ -51,8 +51,8 @@ import {
   GENERATE_CONTENT_API_DOCS_URL,
   GOOGLE_MEDIA_DOC_URLS,
   INLINE_PDF_MAX_BYTES,
-  generateContentConstraints,
-  generateContentFamilyRules,
+  chatConstraints,
+  chatFamilyRules,
 } from "./constraints";
 import { generateContentSchema } from "./wire";
 import type { GenerateContentBody, GoogleContent, GooglePart, GoogleVoiceConfig } from "./wire";
@@ -145,8 +145,8 @@ export function stripModelsPrefix(model: string): string {
 }
 
 const GENERATE_CONTENT_RULES = {
-  constraints: generateContentConstraints,
-  familyRules: generateContentFamilyRules,
+  constraints: chatConstraints,
+  familyRules: chatFamilyRules,
 } as const;
 
 function mediaKindOf(mimeType: string): MediaKind | undefined {
@@ -868,13 +868,13 @@ function buildSdkParams(model: string, body: Omit<GenerateContentBody, "model">)
  * `ai.models.generateContent()`, whose params re-nest the wire body into
  * `{ model, contents, config }` (see `buildSdkParams`).
  */
-export type GenerateContentSdkTargets<T extends GenerateContentBody = GenerateContentBody> = {
+export type ChatSdkTargets<T extends GenerateContentBody = GenerateContentBody> = {
   google: () => GenerateContentSdkParams<T>;
   "ai-sdk": () => AiSdkChatResult;
 };
 
 /**
- * `.toApi(provider)` for `google.generateContent`.
+ * `.toApi(provider)` for `google.chat`.
  *
  * The spec's `Body` is the *unstripped* params so `modelId` can read `model`
  * off it; `withModelId` then drops it again, because Gemini puts the model id
@@ -890,7 +890,7 @@ export type GenerateContentSdkTargets<T extends GenerateContentBody = GenerateCo
  */
 const retargetGenerateContent = createToApi<GenerateContentBody, ChatIR>({
   from: "gemini",
-  endpoint: "google.generateContent",
+  endpoint: "google.chat",
   modelId: (params) => stripModelsPrefix(params.model),
   availability,
   withModelId: ({ model: _model, ...body }) => body,
@@ -902,7 +902,7 @@ const retargetGenerateContent = createToApi<GenerateContentBody, ChatIR>({
 
 /** `.toSdk("ai-sdk")`: the same encoder, decoded to `generateText` options. */
 const toAiSdk = createAiSdkChat<GenerateContentBody>({
-  endpoint: "google.generateContent",
+  endpoint: "google.chat",
   provider: "google",
   encode: encodeGemini,
 });
@@ -929,12 +929,12 @@ function finalize(params: GenerateContentBody): unknown {
 }
 
 const validator = createValidator<GenerateContentBody, unknown>({
-  endpoint: "google.generateContent",
+  endpoint: "google.chat",
   schema: generateContentSchema,
   modelId: (params) => stripModelsPrefix(params.model),
-  catalog: generateContentModels,
-  constraints: generateContentConstraints,
-  familyRules: generateContentFamilyRules,
+  catalog: chatModels,
+  constraints: chatConstraints,
+  familyRules: chatFamilyRules,
   checks: [
     checkCapabilities,
     checkGenerationConfigRanges,
@@ -960,7 +960,7 @@ const validator = createValidator<GenerateContentBody, unknown>({
  * `?key=`) when fetching.
  *
  * ```ts
- * const params = google.generateContent({ model: "gemini-2.5-flash", contents: [...] });
+ * const params = google.chat({ model: "gemini-2.5-flash", contents: [...] });
  * await fetch(params.request.url, {
  *   method: params.request.method,
  *   headers: { ...params.request.headers, "x-goog-api-key": process.env.GEMINI_API_KEY! },
@@ -968,13 +968,13 @@ const validator = createValidator<GenerateContentBody, unknown>({
  * });
  * ```
  */
-export const generateContent = validator as unknown as {
+export const chat = validator as unknown as {
   <T extends GenerateContentBody>(
     params: T & ExactKeys<T, GenerateContentBody>,
     options?: ValidateOptions,
   ): Validated<
     Omit<T, "model">,
-    GenerateContentSdkTargets<T>,
+    ChatSdkTargets<T>,
     GoogleAvailability,
     T["model"] & string
   >;
@@ -982,7 +982,7 @@ export const generateContent = validator as unknown as {
     params: T & ExactKeys<T, GenerateContentBody>,
     options?: ValidateOptions,
   ): ValidateResult<
-    Validated<Omit<T, "model">, GenerateContentSdkTargets<T>, GoogleAvailability, T["model"] & string>
+    Validated<Omit<T, "model">, ChatSdkTargets<T>, GoogleAvailability, T["model"] & string>
   >;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

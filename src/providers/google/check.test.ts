@@ -1,16 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import { checkGenerateContent } from "./check";
+import { checkChat } from "./check";
 import { models } from "../../catalog/google.gen";
 
 describe("finish reasons", () => {
   test("STOP produces no warnings", () => {
-    const report = checkGenerateContent({ candidates: [{ finishReason: "STOP" }] });
+    const report = checkChat({ candidates: [{ finishReason: "STOP" }] });
     expect(report.warnings).toEqual([]);
     expect(report.finishReason).toBe("STOP");
   });
 
   test("MAX_TOKENS -> truncated warning", () => {
-    const report = checkGenerateContent({ candidates: [{ finishReason: "MAX_TOKENS" }] });
+    const report = checkChat({ candidates: [{ finishReason: "MAX_TOKENS" }] });
     expect(report.finishReason).toBe("MAX_TOKENS");
     expect(report.warnings).toHaveLength(1);
     expect(report.warnings[0]!.meta?.kind).toBe("truncated");
@@ -26,7 +26,7 @@ describe("finish reasons", () => {
     "IMAGE_PROHIBITED_CONTENT",
     "IMAGE_RECITATION",
   ])("%s -> content_filtered warning", (reason) => {
-    const report = checkGenerateContent({ candidates: [{ finishReason: reason }] });
+    const report = checkChat({ candidates: [{ finishReason: reason }] });
     expect(report.warnings).toHaveLength(1);
     expect(report.warnings[0]!.code).toBe("unsupported_capability");
     expect(report.warnings[0]!.meta?.kind).toBe("content_filtered");
@@ -34,13 +34,13 @@ describe("finish reasons", () => {
   });
 
   test("an unrecognized finishReason is not treated as filtering", () => {
-    const report = checkGenerateContent({ candidates: [{ finishReason: "OTHER" }] });
+    const report = checkChat({ candidates: [{ finishReason: "OTHER" }] });
     expect(report.warnings).toEqual([]);
     expect(report.finishReason).toBe("OTHER");
   });
 
   test("promptFeedback.blockReason -> content_filtered (prompt blocked, empty candidates)", () => {
-    const report = checkGenerateContent({ promptFeedback: { blockReason: "SAFETY" }, candidates: [] });
+    const report = checkChat({ promptFeedback: { blockReason: "SAFETY" }, candidates: [] });
     expect(report.finishReason).toBeUndefined();
     expect(report.warnings).toHaveLength(1);
     expect(report.warnings[0]!.meta?.kind).toBe("content_filtered");
@@ -48,7 +48,7 @@ describe("finish reasons", () => {
   });
 
   test("BLOCK_REASON_UNSPECIFIED is not a block", () => {
-    const report = checkGenerateContent({
+    const report = checkChat({
       candidates: [{ finishReason: "STOP" }],
       promptFeedback: { blockReason: "BLOCK_REASON_UNSPECIFIED" },
     });
@@ -58,7 +58,7 @@ describe("finish reasons", () => {
 
 describe("usage mapping", () => {
   test("wire field names map onto UsageReport", () => {
-    const report = checkGenerateContent({
+    const report = checkChat({
       candidates: [{ finishReason: "STOP" }],
       usageMetadata: {
         promptTokenCount: 1000,
@@ -78,7 +78,7 @@ describe("usage mapping", () => {
   });
 
   test("missing usageMetadata yields an empty usage report", () => {
-    const report = checkGenerateContent({ candidates: [{ finishReason: "STOP" }] });
+    const report = checkChat({ candidates: [{ finishReason: "STOP" }] });
     expect(report.usage).toEqual({});
     expect(report.costUSD).toBeUndefined();
   });
@@ -88,7 +88,7 @@ describe("costUSD", () => {
   const cost = models["gemini-2.5-flash"].cost!;
 
   test("prices via exact modelVersion; cached re-rated, thoughts billed as output", () => {
-    const report = checkGenerateContent({
+    const report = checkChat({
       modelVersion: "gemini-2.5-flash",
       candidates: [{ finishReason: "STOP" }],
       usageMetadata: {
@@ -105,7 +105,7 @@ describe("costUSD", () => {
   });
 
   test("prefix fallback: dated preview version resolves to the catalog id", () => {
-    const report = checkGenerateContent({
+    const report = checkChat({
       modelVersion: "gemini-2.5-flash-preview-05-20",
       candidates: [{ finishReason: "STOP" }],
       usageMetadata: { promptTokenCount: 1_000_000, candidatesTokenCount: 0 },
@@ -115,7 +115,7 @@ describe("costUSD", () => {
   });
 
   test("models/ prefix is stripped", () => {
-    const report = checkGenerateContent({
+    const report = checkChat({
       modelVersion: "models/gemini-2.5-flash",
       usageMetadata: { promptTokenCount: 1_000_000, candidatesTokenCount: 0 },
     });
@@ -123,7 +123,7 @@ describe("costUSD", () => {
   });
 
   test("unknown modelVersion -> costUSD undefined", () => {
-    const report = checkGenerateContent({
+    const report = checkChat({
       modelVersion: "gemini-unreleased-42",
       usageMetadata: { promptTokenCount: 1000, candidatesTokenCount: 10 },
     });

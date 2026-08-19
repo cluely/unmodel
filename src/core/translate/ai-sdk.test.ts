@@ -19,8 +19,8 @@ function decode(
   input: ChatIR,
   provider = "anthropic",
 ): { options: ReturnType<typeof toAiSdkChat>; warnings: TranslationWarning[] } {
-  const sink = createWarningSink("anthropic.messages", "ai-sdk");
-  const options = toAiSdkChat(input, { provider, endpoint: "anthropic.messages" }, sink.warn as Warn);
+  const sink = createWarningSink("anthropic.chat", "ai-sdk");
+  const options = toAiSdkChat(input, { provider, endpoint: "anthropic.chat" }, sink.warn as Warn);
   return { options, warnings: sink.warnings };
 }
 
@@ -263,7 +263,7 @@ describe("settings", () => {
 
 describe("createAiSdkChat", () => {
   const format = createAiSdkChat<{ text: string }>({
-    endpoint: "anthropic.messages",
+    endpoint: "anthropic.chat",
     provider: "anthropic",
     encode: (body, warn) => {
       warn({ code: "dropped_param", path: ["demo"], message: "the encoder can report losses too" });

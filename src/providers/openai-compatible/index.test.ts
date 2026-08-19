@@ -433,7 +433,7 @@ describe("createOpenAICompatible toApi", () => {
     // exactly that rather than silently emitting an OpenAI body to /v1/messages.
     expect(() => routed.chat(params).toApi("anthropic")).toThrow(TranslationUnavailableError);
     expect(() => routed.chat(params).toApi("anthropic")).toThrow(
-      /acme\.chat → anthropic\.messages crosses wire dialects/,
+      /acme\.chat → anthropic\.chat crosses wire dialects/,
     );
   });
 

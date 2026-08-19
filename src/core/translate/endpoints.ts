@@ -31,7 +31,7 @@ export type DialectId = "openai-chat" | "anthropic-messages" | "gemini" | "bedro
 export type EndpointConfigKey = "region" | "project" | "location" | "endpoint" | "accountId";
 
 export interface TargetEndpoint {
-  /** `"<provider>.<endpoint>"`, e.g. `"anthropic.messages"`. */
+  /** `"<provider>.<endpoint>"`, e.g. `"anthropic.chat"`. */
   readonly id: string;
   /** models.dev provider id, e.g. `"anthropic"`. */
   readonly provider: string;
@@ -117,16 +117,16 @@ const OPENAI_CHAT_ENTRIES: ReadonlyArray<readonly [string, TargetEndpoint]> = Ob
  * Every endpoint a retarget may land on, keyed by `"<provider>.<endpoint>"`.
  * The generated availability data names an entry here whenever a model is not
  * on its target provider's default surface (today: the `*-maas` rows on
- * `google-vertex.chat`).
+ * `google-vertex.chatMaas`).
  */
 export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze(
   Object.fromEntries([
     ...OPENAI_CHAT_ENTRIES,
 
     [
-      "anthropic.messages",
+      "anthropic.chat",
       {
-        id: "anthropic.messages",
+        id: "anthropic.chat",
         provider: "anthropic",
         dialect: "anthropic-messages",
         headers: ANTHROPIC_HEADERS,
@@ -135,9 +135,9 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
     ],
 
     [
-      "google.generateContent",
+      "google.chat",
       {
-        id: "google.generateContent",
+        id: "google.chat",
         provider: "google",
         dialect: "gemini",
         headers: JSON_ONLY,
@@ -153,9 +153,9 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
     // ---------------------------------------------------------------------
 
     [
-      "amazon-bedrock.converse",
+      "amazon-bedrock.chat",
       {
-        id: "amazon-bedrock.converse",
+        id: "amazon-bedrock.chat",
         provider: "amazon-bedrock",
         dialect: "bedrock-converse",
         headers: JSON_ONLY,
@@ -164,9 +164,9 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
     ],
 
     [
-      "google-vertex.generateContent",
+      "google-vertex.chat",
       {
-        id: "google-vertex.generateContent",
+        id: "google-vertex.chat",
         provider: "google-vertex",
         dialect: "gemini",
         headers: JSON_ONLY,
@@ -177,9 +177,9 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
     // Vertex's OpenAI-compatible MaaS surface — the `*-maas` rows in the
     // generated availability data point here explicitly.
     [
-      "google-vertex.chat",
+      "google-vertex.chatMaas",
       {
-        id: "google-vertex.chat",
+        id: "google-vertex.chatMaas",
         provider: "google-vertex",
         dialect: "openai-chat",
         headers: JSON_ONLY,
@@ -214,14 +214,14 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
 /**
  * Provider id → the endpoint id a retarget lands on when the availability
  * entry does not name one. Every provider in `ENDPOINTS` has exactly one
- * default; `google-vertex.chat` is the one non-default surface today.
+ * default; `google-vertex.chatMaas` is the one non-default surface today.
  */
 export const DEFAULT_ENDPOINT_ID: Readonly<Record<string, string>> = Object.freeze({
   ...Object.fromEntries(Object.keys(OPENAI_CHAT_URLS).map((p) => [p, `${p}.chat`])),
-  anthropic: "anthropic.messages",
-  google: "google.generateContent",
-  "amazon-bedrock": "amazon-bedrock.converse",
-  "google-vertex": "google-vertex.generateContent",
+  anthropic: "anthropic.chat",
+  google: "google.chat",
+  "amazon-bedrock": "amazon-bedrock.chat",
+  "google-vertex": "google-vertex.chat",
   azure: "azure.chat",
   "cloudflare-workers-ai": "cloudflare-workers-ai.chat",
 });

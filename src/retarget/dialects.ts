@@ -37,7 +37,7 @@ export type MessagesBodyFor<M extends string> = Omit<MessagesBody, "model"> & {
  * `GenerateContentBody` **without** `model` — Gemini puts the model id in the
  * URL path (`models/{model}:generateContent`), so a body carrying it would
  * break the "enumerable properties are exactly the wire body" invariant. The
- * id is on `.request.url`, exactly as `google.generateContent`'s own result
+ * id is on `.request.url`, exactly as `google.chat`'s own result
  * has it.
  */
 export type GenerateContentBodyFor<_M extends string> = Omit<GenerateContentBody, "model">;
@@ -56,7 +56,7 @@ export type DialectBody<D, M extends string> = D extends "openai-chat"
  * `anthropic` and `openai` are identity formatters — those SDKs' param objects
  * *are* the wire body. `google` is a real shaping (`{ model, contents, config }`),
  * supplied by `core/translate/sdk-shapes.ts`, which is the same function
- * `google.generateContent`'s own `toSdk("google")` uses.
+ * `google.chat`'s own `toSdk("google")` uses.
  *
  * `bedrock-converse` maps to `never` on purpose: nothing in v1 can retarget
  * *into* it (amazon-bedrock is factory-configured and outside the one-argument

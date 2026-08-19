@@ -68,9 +68,9 @@ error rather than a wrongly-shaped object:
 | Endpoint family | `.toSdk` targets |
 | --- | --- |
 | `openai.chat` and every OpenAI-compatible overlay (`unmodel/groq`, `unmodel/openrouter`, `unmodel/togetherai`, …) | `"openai"`, `"ai-sdk"` |
-| `anthropic.messages` | `"anthropic"`, `"ai-sdk"` |
-| `google.generateContent`, `google-vertex.generateContent` | `"google"`, `"ai-sdk"` |
-| `amazon-bedrock.converse` | `"amazon-bedrock"` (Converse command input) |
+| `anthropic.chat` | `"anthropic"`, `"ai-sdk"` |
+| `google.chat`, `google-vertex.chat` | `"google"`, `"ai-sdk"` |
+| `amazon-bedrock.chat` | `"amazon-bedrock"` (Converse command input) |
 | `cohere.chat` | `"cohere"` |
 | image / speech / video endpoints | that provider's own SDK id |
 
@@ -89,9 +89,9 @@ everything non-portable routed into `providerOptions`:
 ```ts
 import { generateText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
-import { messages } from "unmodel/anthropic";
+import { chat } from "unmodel/anthropic";
 
-const v = messages({
+const v = chat({
   model: "claude-opus-5",
   max_tokens: 1024,
   messages: [{ role: "user", content: "Hello!" }],
@@ -134,9 +134,9 @@ format when the target speaks a different dialect, and respelling the model id,
 because providers do not agree on what a model is called:
 
 ```ts
-import { messages } from "unmodel/anthropic";
+import { chat } from "unmodel/anthropic";
 
-const req = messages({
+const req = chat({
   model: "claude-opus-5",
   max_tokens: 4096,
   thinking: { type: "enabled", budget_tokens: 2048 },
@@ -263,7 +263,7 @@ const checked = openrouterChat(body);
   already in the generated availability data, and a two-argument overload —
   `toApi("amazon-bedrock", { region })` — is reserved as a non-breaking
   follow-up. Until then use those providers' own factories
-  (`createAmazonBedrock({ region }).converse(…)`), which are the first-class
+  (`createAmazonBedrock({ region }).chat(…)`), which are the first-class
   path anyway.
 - **A few edges are denied on purpose.** Claude on Azure and Claude on Vertex
   are in the catalog but their wire surfaces are unverified (Vertex serves
@@ -278,8 +278,8 @@ const checked = openrouterChat(body);
 | Subpath | Validators |
 | --- | --- |
 | `unmodel/openai` | `chat`, `checkChat`, `realtimeSession` (session config) — the image, speech and video validators are listed in their own sections below |
-| `unmodel/anthropic` | `messages`, `checkMessages` |
-| `unmodel/google` | `generateContent`, `checkGenerateContent` — Imagen and Veo below |
+| `unmodel/anthropic` | `chat`, `checkChat` |
+| `unmodel/google` | `chat`, `checkChat` — Imagen and Veo below |
 | `unmodel/cohere` | `chat` (v2 Chat API), `checkChat` |
 
 Some endpoints have no provider-wide static URL — the URL embeds your cloud
@@ -289,8 +289,8 @@ same validator surface bound to your endpoint:
 | Subpath | Factory | Validators returned |
 | --- | --- | --- |
 | `unmodel/azure` | `createAzure({ endpoint })` | `chat`, `checkChat`, `estimateChatTokens` (Azure OpenAI v1; `model` = your deployment name) |
-| `unmodel/google-vertex` | `createGoogleVertex({ project, location })` | `generateContent`, `checkGenerateContent` (Gemini on Vertex AI) |
-| `unmodel/amazon-bedrock` | `createAmazonBedrock({ region })` | `converse`, `checkConverse` (Bedrock Converse; `modelId` moves into `.request.url`) |
+| `unmodel/google-vertex` | `createGoogleVertex({ project, location })` | `chat`, `checkChat` (Gemini on Vertex AI) |
+| `unmodel/amazon-bedrock` | `createAmazonBedrock({ region })` | `chat`, `checkChat` (Bedrock Converse; `modelId` moves into `.request.url`) |
 | `unmodel/cloudflare-workers-ai` | `createCloudflare(accountId)` | `chat`, `checkChat`, `estimateChatTokens` (Workers AI, OpenAI-compatible) |
 
 ### Chat — OpenAI-compatible fleet
@@ -615,9 +615,9 @@ if (result.ok) {
 
 ```ts
 import { checkChat } from "unmodel/openai";
-// also: checkImages, checkMessages (unmodel/anthropic), checkGenerateContent
-// (unmodel/google, unmodel/google-vertex), checkConverse (unmodel/amazon-bedrock),
-// checkChat on unmodel/cohere and every OpenAI-compatible overlay, and the
+// also: checkImages, and checkChat on unmodel/anthropic, unmodel/google,
+// unmodel/google-vertex, unmodel/amazon-bedrock, unmodel/cohere and every
+// OpenAI-compatible overlay, and the
 // speech checkers — checkTranscription (unmodel/elevenlabs, unmodel/soniox,
 // unmodel/mistral), checkStt (unmodel/cartesia), checkListen (unmodel/deepgram),
 // checkTranscript (unmodel/assemblyai), checkPreRecorded (unmodel/gladia),
@@ -743,7 +743,7 @@ and a URL swap, no codec at all.
 Current coverage: 153 request validators across 70 provider subpaths.
 
 - **OpenAI** — Chat Completions, Images + image edits, Speech (TTS), Transcription (STT), Sora videos, Realtime session config.
-- **Anthropic** Messages; **Google** `generateContent`, Imagen `generateImages`, Veo `generateVideos`; **Cohere** v2 Chat.
+- **Anthropic** Messages; **Google** Gemini `chat`, Imagen `generateImages`, Veo `generateVideos`; **Cohere** v2 Chat.
 - **Cloud-endpoint factories** for Azure OpenAI, Vertex AI, Amazon Bedrock (Converse), and Cloudflare Workers AI.
 - **A 29-provider OpenAI-compatible chat fleet** (Groq, xAI, Mistral, DeepSeek, OpenRouter, …).
 - **TTS** — OpenAI, Cartesia, Deepgram (Aura), ElevenLabs, Fish Audio, Hume (Octave), Inworld, LMNT, MiniMax (T2A v2), Murf, Resemble, Rime, Smallest AI, Speechify.

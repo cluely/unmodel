@@ -194,9 +194,9 @@ describe("availability — normalization", () => {
   });
 
   test("defaultEndpointOf falls back to <provider>.chat", () => {
-    expect(defaultEndpointOf("anthropic")).toBe("anthropic.messages");
-    expect(defaultEndpointOf("google")).toBe("google.generateContent");
-    expect(defaultEndpointOf("amazon-bedrock")).toBe("amazon-bedrock.converse");
+    expect(defaultEndpointOf("anthropic")).toBe("anthropic.chat");
+    expect(defaultEndpointOf("google")).toBe("google.chat");
+    expect(defaultEndpointOf("amazon-bedrock")).toBe("amazon-bedrock.chat");
     expect(defaultEndpointOf("groq")).toBe("groq.chat");
   });
 });
@@ -303,12 +303,12 @@ describe("availability — generation", () => {
     // Claude on Vertex is the Anthropic-shaped rawPredict surface.
     expect(b.providers.get("anthropic")!["claude-opus-5"]?.["google-vertex"]).toEqual({
       id: "claude-opus-5@default",
-      endpoint: "google-vertex.messages",
+      endpoint: "google-vertex.chatRawPredict",
     });
     // MaaS models are on an OpenAI-compatible chat surface.
     expect(
       targetsOf(b, "groq", "openai/gpt-oss-120b")!["google-vertex"],
-    ).toEqual({ id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chat" });
+    ).toEqual({ id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chatMaas" });
   });
 
   test("narrowing metadata — smaller context and lost input modalities", () => {
@@ -480,7 +480,7 @@ describe("availability — rendering", () => {
       '"cerebras": "gpt-oss-120b",',
     );
     expect(renderAvailabilityFile("groq", b.providers.get("groq")!, "")).toContain(
-      '"google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chat" },',
+      '"google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chatMaas" },',
     );
     expect(renderAvailabilityFile("alibaba", b.providers.get("alibaba")!, "")).toContain(
       '"deepinfra": { id: "Qwen/Qwen3.6-27B", narrows: { context: 131072, drops: ["image", "audio", "video"] } },',
@@ -660,7 +660,7 @@ describe("availability — real snapshot invariants", () => {
         }
       }
     }
-    expect([...endpoints]).toEqual(["google-vertex.chat"]);
+    expect([...endpoints]).toEqual(["google-vertex.chatMaas"]);
   });
 
   test("the anthropic table carries the flagship claude-opus-5 row", () => {
@@ -683,9 +683,7 @@ describe("availability — real snapshot invariants", () => {
       // The factory itself is not a provider.
       if (entry.name === "openai-compatible") continue;
       const files = await readdir(`${providersDir}${entry.name}`);
-      const hasDedicatedChat = files.some((f) =>
-        ["chat.ts", "messages.ts", "generate-content.ts", "converse.ts"].includes(f),
-      );
+      const hasDedicatedChat = files.some((f) => ["chat.ts"].includes(f));
       const index = Bun.file(`${providersDir}${entry.name}/index.ts`);
       const usesFleetFactory =
         (await index.exists()) && (await index.text()).includes("createOpenAICompatible");

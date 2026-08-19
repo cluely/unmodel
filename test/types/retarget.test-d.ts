@@ -169,7 +169,7 @@ expectAssignable<{ messages: unknown[] }>(claude.toSdk("ai-sdk"));
 
 // ---------------------------------------------------------------------------
 // The model id flows independently of the body — required because
-// google.generateContent strips `model` into `.request.url`.
+// google.chat strips `model` into `.request.url`.
 // ---------------------------------------------------------------------------
 
 declare const gemini: Validated<

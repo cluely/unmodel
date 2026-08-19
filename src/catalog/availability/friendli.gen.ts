@@ -36,7 +36,7 @@ export const availability = {
     "azure": { id: "deepseek-v3.2", narrows: { context: 128000 } },
     "deepinfra": "deepseek-ai/DeepSeek-V3.2",
     "friendli": "deepseek-ai/DeepSeek-V3.2",
-    "google-vertex": { id: "deepseek-ai/deepseek-v3.2-maas", endpoint: "google-vertex.chat" },
+    "google-vertex": { id: "deepseek-ai/deepseek-v3.2-maas", endpoint: "google-vertex.chatMaas" },
     "huggingface": "deepseek-ai/DeepSeek-V3.2",
     "nebius": { id: "deepseek-ai/DeepSeek-V3.2", narrows: { context: 163000 } },
     "novita-ai": "deepseek/deepseek-v3.2",

@@ -54,7 +54,7 @@ export interface TargetConstraints {
  * Endpoint id → the target's hand-written deny/enum tables.
  *
  * Keyed by endpoint rather than provider because a provider can serve more
- * than one wire surface (`google-vertex.chat` vs `google-vertex.generateContent`),
+ * than one wire surface (`google-vertex.chatMaas` vs `google-vertex.chat`),
  * and a deny table is a property of the surface.
  */
 const TABLES: Readonly<Record<string, readonly EndpointConstraints[]>> = Object.freeze({

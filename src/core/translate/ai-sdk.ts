@@ -223,7 +223,7 @@ function filePart(
 export interface AiSdkDecodeOptions {
   /** models.dev provider id of the SOURCE endpoint, for `providerOptions` keying. */
   provider: string;
-  /** Source endpoint id, e.g. `"anthropic.messages"` — used in warning routes. */
+  /** Source endpoint id, e.g. `"anthropic.chat"` — used in warning routes. */
   endpoint: string;
 }
 
@@ -233,7 +233,7 @@ export interface AiSdkDecodeOptions {
  *
  * ```ts
  * const toAiSdk = createAiSdkChat({
- *   endpoint: "anthropic.messages", provider: "anthropic", encode: encodeAnthropic,
+ *   endpoint: "anthropic.chat", provider: "anthropic", encode: encodeAnthropic,
  * });
  * // …
  * sdk: { anthropic: () => body, "ai-sdk": () => toAiSdk(body) }

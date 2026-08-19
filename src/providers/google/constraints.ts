@@ -93,7 +93,7 @@ export const GEMINI_VIDEO_FORMATS = [
  * pipeline's generic Layer-3 pass (top-level keys only) never sees — they are
  * applied by dedicated checks in ./generate-content.
  */
-export const generateContentConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {};
+export const chatConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {};
 
 // ---------------------------------------------------------------------------
 // generationConfig — documented numeric ranges and enums.
@@ -105,7 +105,7 @@ export const generateContentConstraints: Readonly<Partial<Record<string, Endpoin
 // stay permissive.
 // ---------------------------------------------------------------------------
 
-/** REST reference for generateContent (GenerationConfig, SpeechConfig, ImageConfig, …). */
+/** REST reference for chat (GenerationConfig, SpeechConfig, ImageConfig, …). */
 export const GENERATE_CONTENT_API_DOCS_URL = "https://ai.google.dev/api/generate-content";
 
 /** "Values can range from [0.0, 2.0]." — GenerationConfig.temperature */
@@ -607,7 +607,7 @@ export const generateVideosFamilyRules: readonly FamilyRule[] = [
   },
 ];
 
-export const generateContentFamilyRules: readonly FamilyRule[] = [
+export const chatFamilyRules: readonly FamilyRule[] = [
   {
     // "Models with a 1M context window can process videos up to 1 hour long
     // at default media resolution" — https://ai.google.dev/gemini-api/docs/video-understanding

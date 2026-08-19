@@ -6,7 +6,7 @@ import type { AmazonBedrockModelId } from "../../catalog/amazon-bedrock.gen";
 // schema, and nothing else. This module imports only zod and type-only
 // catalog ids — no pipeline, no validator, no checks — so retarget/translate
 // machinery can depend on the Converse dialect without creating a cycle back
-// through ./converse.ts. Enforced by test/import-graph.test.ts.
+// through ./chat.ts. Enforced by test/import-graph.test.ts.
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------

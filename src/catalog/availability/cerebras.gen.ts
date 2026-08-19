@@ -28,7 +28,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
     "fireworks-ai": "accounts/fireworks/models/gpt-oss-120b",
-    "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chat" },
+    "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chatMaas" },
     "groq": "openai/gpt-oss-120b",
     "huggingface": "openai/gpt-oss-120b",
     "nebius": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },

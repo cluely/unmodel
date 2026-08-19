@@ -1,4 +1,4 @@
-export { messages, MESSAGES_URL, ANTHROPIC_VERSION } from "./messages";
+export { chat, MESSAGES_URL, ANTHROPIC_VERSION } from "./chat";
 export type {
   MessagesBody,
   MessageParam,
@@ -22,10 +22,10 @@ export type {
   ServerTool,
   ToolChoice,
   ThinkingConfig,
-} from "./messages";
-export { checkMessages } from "./check";
+} from "./chat";
+export { checkChat } from "./check";
 export type { MessageLike, MessageUsage } from "./check";
-export { messagesConstraints, messagesFamilyRules } from "./constraints";
+export { chatConstraints, chatFamilyRules } from "./constraints";
 
 export { models, provider } from "../../catalog/anthropic.gen";
 export type {

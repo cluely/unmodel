@@ -26,7 +26,7 @@ const catalog = models as Record<string, ModelInfo>;
  * Post-generation report for a /v1/messages response: truncation/refusal
  * warnings, normalized usage, and actual cost from catalog rates. Never throws.
  */
-export function checkMessages(response: MessageLike): ResponseReport {
+export function checkChat(response: MessageLike): ResponseReport {
   const warnings: Issue[] = [];
   const finishReason = response.stop_reason ?? undefined;
   const model = response.model;
@@ -83,7 +83,7 @@ export function checkMessages(response: MessageLike): ResponseReport {
       : undefined;
 
   // Build usage field-by-field so absent counts stay absent keys (matching
-  // checkChat/checkGenerateContent) instead of explicitly-undefined ones.
+  // the other providers' checkChat) instead of explicitly-undefined ones.
   const usage: UsageReport = {};
   if (inputTokens !== undefined) usage.inputTokens = inputTokens;
   if (outputTokens !== undefined) usage.outputTokens = outputTokens;

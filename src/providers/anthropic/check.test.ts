@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { checkMessages } from "./check";
+import { checkChat } from "./check";
 
-describe("anthropic.checkMessages", () => {
+describe("anthropic.checkChat", () => {
   test("clean end_turn response has no warnings", () => {
-    const report = checkMessages({
+    const report = checkChat({
       model: "claude-sonnet-4-5",
       stop_reason: "end_turn",
       usage: { input_tokens: 10, output_tokens: 20 },
@@ -13,7 +13,7 @@ describe("anthropic.checkMessages", () => {
   });
 
   test("max_tokens stop reason warns about truncation", () => {
-    const report = checkMessages({ model: "claude-sonnet-4-5", stop_reason: "max_tokens" });
+    const report = checkChat({ model: "claude-sonnet-4-5", stop_reason: "max_tokens" });
     expect(report.warnings).toHaveLength(1);
     expect(report.warnings[0]?.severity).toBe("warning");
     expect(report.warnings[0]?.code).toBe("over_output_limit");
@@ -21,19 +21,19 @@ describe("anthropic.checkMessages", () => {
   });
 
   test("refusal stop reason warns", () => {
-    const report = checkMessages({ model: "claude-opus-5", stop_reason: "refusal" });
+    const report = checkChat({ model: "claude-opus-5", stop_reason: "refusal" });
     expect(report.warnings).toHaveLength(1);
     expect(report.warnings[0]?.message).toContain("refusal");
     expect(report.warnings[0]?.meta?.stopReason).toBe("refusal");
   });
 
   test("model_context_window_exceeded warns as over_context", () => {
-    const report = checkMessages({ stop_reason: "model_context_window_exceeded" });
+    const report = checkChat({ stop_reason: "model_context_window_exceeded" });
     expect(report.warnings[0]?.code).toBe("over_context");
   });
 
   test("usage folds cache reads into inputTokens (Anthropic reports them separately)", () => {
-    const report = checkMessages({
+    const report = checkChat({
       model: "claude-sonnet-4-5",
       stop_reason: "end_turn",
       usage: {
@@ -52,7 +52,7 @@ describe("anthropic.checkMessages", () => {
 
   test("costUSD prices each bucket at its own rate", () => {
     // claude-sonnet-4-5: input $3/M, output $15/M, cacheRead $0.3/M, cacheWrite $3.75/M
-    const report = checkMessages({
+    const report = checkChat({
       model: "claude-sonnet-4-5",
       stop_reason: "end_turn",
       usage: {
@@ -68,7 +68,7 @@ describe("anthropic.checkMessages", () => {
 
   test("dated model ids fall back to their catalog prefix", () => {
     // Not in the catalog verbatim; strips to claude-opus-4-6 (input $5/M, output $25/M).
-    const report = checkMessages({
+    const report = checkChat({
       model: "claude-opus-4-6-20260204",
       stop_reason: "end_turn",
       usage: { input_tokens: 1_000_000, output_tokens: 0 },
@@ -77,7 +77,7 @@ describe("anthropic.checkMessages", () => {
   });
 
   test("unknown model yields no cost", () => {
-    const report = checkMessages({
+    const report = checkChat({
       model: "totally-unknown",
       stop_reason: "end_turn",
       usage: { input_tokens: 100, output_tokens: 100 },
@@ -87,7 +87,7 @@ describe("anthropic.checkMessages", () => {
   });
 
   test("never throws on empty responses", () => {
-    const report = checkMessages({});
+    const report = checkChat({});
     expect(report.warnings).toEqual([]);
     expect(report.finishReason).toBeUndefined();
     expect(report.usage.inputTokens).toBeUndefined();
@@ -95,7 +95,7 @@ describe("anthropic.checkMessages", () => {
   });
 
   test("absent fields are absent KEYS, not explicit undefined (parity with other providers)", () => {
-    const report = checkMessages({});
+    const report = checkChat({});
     expect(Object.keys(report)).toEqual(["warnings", "usage"]);
     expect(Object.keys(report.usage)).toEqual([]);
     expect("finishReason" in report).toBe(false);
@@ -103,7 +103,7 @@ describe("anthropic.checkMessages", () => {
   });
 
   test("dated -YYYY-MM-DD model ids also resolve via the shared catalog lookup", () => {
-    const report = checkMessages({
+    const report = checkChat({
       model: "claude-opus-4-6-2026-02-04",
       stop_reason: "end_turn",
       usage: { input_tokens: 1_000_000, output_tokens: 0 },

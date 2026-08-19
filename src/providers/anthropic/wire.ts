@@ -6,7 +6,7 @@ import type { AnthropicModelId } from "../../catalog/anthropic.gen";
 // nothing else. This module imports only zod and type-only catalog ids — no
 // pipeline, no validator, no checks — so retarget/translate machinery can
 // depend on the Anthropic dialect without creating a cycle back through
-// ./messages.ts. Enforced by test/import-graph.test.ts.
+// ./chat.ts. Enforced by test/import-graph.test.ts.
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------

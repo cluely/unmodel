@@ -64,7 +64,7 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import type { GoogleVideoModelId } from "../../catalog/google.gen";
-import { stripModelsPrefix } from "./generate-content";
+import { stripModelsPrefix } from "./chat";
 import {
   generateVideosConstraints,
   generateVideosDocsUrl,

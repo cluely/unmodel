@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { createAmazonBedrock, converseUrl, resolveBedrockModelInfo } from "./converse";
-import type { ConverseParams, BedrockMessage } from "./converse";
+import { createAmazonBedrock, converseUrl, resolveBedrockModelInfo } from "./chat";
+import type { ConverseParams, BedrockMessage } from "./chat";
 
 // Real catalog ids used throughout:
 //   amazon.nova-lite-v1:0    — text+image+video input, toolCall, 8192 output, $0.06/$0.24 per M
@@ -13,7 +13,7 @@ const bedrock = createAmazonBedrock({ region: "us-east-1" });
 const HI: BedrockMessage[] = [{ role: "user", content: [{ text: "hi" }] }];
 
 function invalid(params: unknown) {
-  return bedrock.converse.safe(params as ConverseParams);
+  return bedrock.chat.safe(params as ConverseParams);
 }
 
 /** Builds base64 bytes with a valid PNG header claiming the given dimensions. */
@@ -27,9 +27,9 @@ function pngBase64(width: number, height: number): string {
   return Buffer.from(bytes).toString("base64");
 }
 
-describe("amazon-bedrock.converse happy path", () => {
+describe("amazon-bedrock.chat happy path", () => {
   test("enumerable output is the exact wire body without modelId", () => {
-    const validated = bedrock.converse({
+    const validated = bedrock.chat({
       modelId: "amazon.nova-lite-v1:0",
       messages: HI,
       inferenceConfig: { maxTokens: 512 },
@@ -42,7 +42,7 @@ describe("amazon-bedrock.converse happy path", () => {
   });
 
   test("request meta carries the regioned, model-scoped URL", () => {
-    const validated = bedrock.converse({ modelId: "amazon.nova-lite-v1:0", messages: HI });
+    const validated = bedrock.chat({ modelId: "amazon.nova-lite-v1:0", messages: HI });
     expect(validated.request.url).toBe(
       "https://bedrock-runtime.us-east-1.amazonaws.com/model/amazon.nova-lite-v1%3A0/converse",
     );
@@ -59,7 +59,7 @@ describe("amazon-bedrock.converse happy path", () => {
   });
 
   test('toSdk("amazon-bedrock") returns ConverseCommandInput shape: { modelId, ...body }', () => {
-    const validated = bedrock.converse({
+    const validated = bedrock.chat({
       modelId: "amazon.nova-lite-v1:0",
       messages: HI,
       inferenceConfig: { temperature: 0.5 },
@@ -72,14 +72,14 @@ describe("amazon-bedrock.converse happy path", () => {
   });
 
   test("toSdk names the available targets when handed an unknown one", () => {
-    const validated = bedrock.converse({ modelId: "amazon.nova-lite-v1:0", messages: HI });
+    const validated = bedrock.chat({ modelId: "amazon.nova-lite-v1:0", messages: HI });
     expect(() => (validated.toSdk as (t: string) => unknown)("anthropic")).toThrow(
       /"anthropic" is not an SDK target for this endpoint\. Available: amazon-bedrock\./,
     );
   });
 
   test("converse declares no .toApi targets in v1 (every edge crosses dialects)", () => {
-    const validated = bedrock.converse({ modelId: "amazon.nova-lite-v1:0", messages: HI });
+    const validated = bedrock.chat({ modelId: "amazon.nova-lite-v1:0", messages: HI });
     // `Avail` stays `never`, so `.toApi` does not exist as a type OR at
     // runtime — a missing method beats one that throws on every target.
     expect("toApi" in validated).toBe(false);
@@ -87,7 +87,7 @@ describe("amazon-bedrock.converse happy path", () => {
   });
 
   test("safe() succeeds with an estimate priced from catalog rates", () => {
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "amazon.nova-lite-v1:0",
       messages: HI,
       inferenceConfig: { maxTokens: 1000 },
@@ -103,7 +103,7 @@ describe("amazon-bedrock.converse happy path", () => {
   });
 
   test("over_budget fires via options.maxCostUSD", () => {
-    const result = bedrock.converse.safe(
+    const result = bedrock.chat.safe(
       {
         modelId: "amazon.nova-lite-v1:0",
         messages: HI,
@@ -118,7 +118,7 @@ describe("amazon-bedrock.converse happy path", () => {
 
 describe("amazon-bedrock model resolution", () => {
   test("regional inference-profile ids hit the catalog directly", () => {
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
       messages: HI,
     });
@@ -141,7 +141,7 @@ describe("amazon-bedrock model resolution", () => {
   });
 
   test("unknown model warns and names the amazon-bedrock catalog", () => {
-    const result = bedrock.converse.safe({ modelId: "acme.frontier-v9:0", messages: HI });
+    const result = bedrock.chat.safe({ modelId: "acme.frontier-v9:0", messages: HI });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
@@ -150,7 +150,7 @@ describe("amazon-bedrock model resolution", () => {
   });
 });
 
-describe("amazon-bedrock.converse shape", () => {
+describe("amazon-bedrock.chat shape", () => {
   test("temperature above 1 is invalid_shape", () => {
     const result = invalid({
       modelId: "amazon.nova-lite-v1:0",
@@ -228,9 +228,9 @@ describe("amazon-bedrock.converse shape", () => {
   });
 });
 
-describe("amazon-bedrock.converse capabilities", () => {
+describe("amazon-bedrock.chat capabilities", () => {
   test("toolConfig on a toolCall-less model is unsupported_capability", () => {
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "google.gemma-3-12b-it",
       messages: HI,
       toolConfig: { tools: [{ toolSpec: { name: "t", inputSchema: { json: {} } } }] },
@@ -243,7 +243,7 @@ describe("amazon-bedrock.converse capabilities", () => {
   });
 
   test("maxTokens above the model's output limit is over_output_limit", () => {
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "amazon.nova-lite-v1:0",
       messages: HI,
       inferenceConfig: { maxTokens: 10_000 },
@@ -257,7 +257,7 @@ describe("amazon-bedrock.converse capabilities", () => {
   });
 
   test("image blocks on a text-only model are unsupported_capability", () => {
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "amazon.nova-micro-v1:0",
       messages: [
         {
@@ -277,7 +277,7 @@ describe("amazon-bedrock.converse capabilities", () => {
   });
 
   test("video blocks nested in toolResult content are modality-checked too", () => {
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "amazon.nova-micro-v1:0",
       messages: [
         { role: "user", content: [{ text: "run the tool" }] },
@@ -308,9 +308,9 @@ describe("amazon-bedrock.converse capabilities", () => {
   });
 });
 
-describe("amazon-bedrock.converse message content rules", () => {
+describe("amazon-bedrock.chat message content rules", () => {
   test("images in an assistant message are rejected (user-only rule)", () => {
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "amazon.nova-lite-v1:0",
       messages: [
         { role: "user", content: [{ text: "hi" }] },
@@ -329,7 +329,7 @@ describe("amazon-bedrock.converse message content rules", () => {
 
   test("more than 20 images in one message is rejected", () => {
     const image = { image: { format: "png" as const, source: { bytes: pngBase64(8, 8) } } };
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "amazon.nova-lite-v1:0",
       messages: [{ role: "user", content: [...Array.from({ length: 21 }, () => image), { text: "hi" }] }],
     });
@@ -342,7 +342,7 @@ describe("amazon-bedrock.converse message content rules", () => {
   });
 
   test("an image wider than 8000px is media_dimensions_exceeded", () => {
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "amazon.nova-lite-v1:0",
       messages: [
         {
@@ -362,7 +362,7 @@ describe("amazon-bedrock.converse message content rules", () => {
   });
 
   test("a document block without a text block is rejected", () => {
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "amazon.nova-lite-v1:0",
       messages: [
         {
@@ -381,7 +381,7 @@ describe("amazon-bedrock.converse message content rules", () => {
   });
 
   test("s3-hosted image checked via options.media declaration", () => {
-    const result = bedrock.converse.safe(
+    const result = bedrock.chat.safe(
       {
         modelId: "amazon.nova-lite-v1:0",
         messages: [
@@ -401,9 +401,9 @@ describe("amazon-bedrock.converse message content rules", () => {
   });
 });
 
-describe("amazon-bedrock.converse prompt resources", () => {
+describe("amazon-bedrock.chat prompt resources", () => {
   test("inferenceConfig/system/toolConfig are rejected with a prompt ARN", () => {
-    const result = bedrock.converse.safe({
+    const result = bedrock.chat.safe({
       modelId: "arn:aws:bedrock:us-west-2:123456789012:prompt/PROMPT12345:1",
       promptVariables: { genre: { text: "pop" } },
       inferenceConfig: { maxTokens: 100 },

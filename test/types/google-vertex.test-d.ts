@@ -3,7 +3,7 @@
  * type-checked by `bun run check` (tsc --noEmit).
  *
  * Vertex is the one endpoint in the native-chat set whose `.toApi` has a
- * *working* v1 edge: `google-vertex.generateContent → google.generateContent`
+ * *working* v1 edge: `google-vertex.chat → google.chat`
  * is same-dialect, so it needs no codec. That makes it the right place to
  * assert the whole mechanism end to end through a public cast.
  */
@@ -14,7 +14,7 @@ import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helper
 
 const vertex = createGoogleVertex({ project: "my-project", location: "us-central1" });
 
-const validated = vertex.generateContent({
+const validated = vertex.chat({
   model: "gemini-2.5-flash",
   contents: [{ role: "user", parts: [{ text: "hi" }] }],
   generationConfig: { temperature: 0.2 },
@@ -75,7 +75,7 @@ validated.toApi("google-ai-studio");
 viaGoogle.toApi("vercel");
 
 // safe() carries the same surface.
-const result = vertex.generateContent.safe({
+const result = vertex.chat.safe({
   model: "gemini-2.5-flash",
   contents: [{ role: "user", parts: [{ text: "hi" }] }],
 });
@@ -86,7 +86,7 @@ if (result.ok) {
 
 // A model the catalog has not caught up on degrades to permissive + a runtime
 // check, matching the library's "unknown model is a warning" philosophy.
-const future = vertex.generateContent({
+const future = vertex.chat({
   model: "gemini-99-ultra",
   contents: [{ role: "user", parts: [{ text: "hi" }] }],
 });

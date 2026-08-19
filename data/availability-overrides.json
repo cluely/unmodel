@@ -67,7 +67,7 @@
 
   "$denyNotes": {
     "azure:*claude*": "azure lists 11 claude-* models but models.dev records api: null for azure and unmodel's azure module is OpenAI-compatible only. Nobody has verified which wire surface Azure exposes Claude on, so these rows ship no edges in either direction rather than a guessed dialect.",
-    "google-vertex:*claude*": "Vertex serves Claude through an Anthropic-shaped rawPredict surface that unmodel has no module for (models.dev also carries a separate google-vertex-anthropic provider unmodel does not implement). Deny until that endpoint exists; the google-vertex.messages surface rule in scripts/availability.ts is already in place for when it does."
+    "google-vertex:*claude*": "Vertex serves Claude through an Anthropic-shaped rawPredict surface that unmodel has no module for (models.dev also carries a separate google-vertex-anthropic provider unmodel does not implement). Deny until that endpoint exists; the google-vertex.chatRawPredict surface rule in scripts/availability.ts is already in place for when it does."
   },
 
   "force": []

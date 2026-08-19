@@ -9,7 +9,7 @@ import {
 
 describe("createWarningSink", () => {
   test("stamps the route onto every warning so codecs need not know it", () => {
-    const sink = createWarningSink("anthropic.messages", "openrouter.chat");
+    const sink = createWarningSink("anthropic.chat", "openrouter.chat");
 
     sink.push({ code: "dropped_param", path: ["thinking"], message: "no equivalent" });
     // A codec only ever supplies code/path/message — `Warn` does not accept
@@ -22,7 +22,7 @@ describe("createWarningSink", () => {
 
     expect(sink.warnings).toHaveLength(2);
     for (const warning of sink.warnings) {
-      expect(warning.from).toBe("anthropic.messages");
+      expect(warning.from).toBe("anthropic.chat");
       expect(warning.to).toBe("openrouter.chat");
     }
   });
@@ -37,7 +37,7 @@ describe("attachWarnings", () => {
     {
       code: "id_respelled",
       path: ["model"],
-      from: "anthropic.messages",
+      from: "anthropic.chat",
       to: "openrouter.chat",
       message: '"claude-opus-5" is spelled "anthropic/claude-opus-5" on openrouter.',
     },
@@ -86,12 +86,12 @@ test("formatTranslationWarnings names the code and both endpoints", () => {
       {
         code: "dropped_param",
         path: ["thinking"],
-        from: "anthropic.messages",
+        from: "anthropic.chat",
         to: "openrouter.chat",
         message: "`thinking` has no chat-completions equivalent.",
       },
     ]),
   ).toBe(
-    "  - [dropped_param] anthropic.messages → openrouter.chat: `thinking` has no chat-completions equivalent.",
+    "  - [dropped_param] anthropic.chat → openrouter.chat: `thinking` has no chat-completions equivalent.",
   );
 });

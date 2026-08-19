@@ -6,7 +6,7 @@ import type { GoogleTextModelId } from "../../catalog/google.gen";
 // the zod schema, and nothing else. This module imports only zod and
 // type-only catalog ids — no pipeline, no validator, no checks — so
 // retarget/translate machinery can depend on the Gemini dialect without
-// creating a cycle back through ./generate-content.ts. Enforced by
+// creating a cycle back through ./chat.ts. Enforced by
 // test/import-graph.test.ts.
 // ---------------------------------------------------------------------------
 

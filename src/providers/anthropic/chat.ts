@@ -27,7 +27,7 @@ import { sniffImage } from "../../core/media/image";
 import type { SniffedImage } from "../../core/media/image";
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
 import type { MediaDeclaration } from "../../core/options";
-import { messagesConstraints, messagesFamilyRules, THINKING_DOCS, VISION_DOCS } from "./constraints";
+import { chatConstraints, chatFamilyRules, THINKING_DOCS, VISION_DOCS } from "./constraints";
 import { messagesSchema } from "./wire";
 import type { MessagesBody } from "./wire";
 
@@ -68,7 +68,7 @@ export const ANTHROPIC_VERSION = "2023-06-01";
 // Checks
 // ---------------------------------------------------------------------------
 
-const constraintSpec = { constraints: messagesConstraints, familyRules: messagesFamilyRules };
+const constraintSpec = { constraints: chatConstraints, familyRules: chatFamilyRules };
 
 /** True when `modelId` is `base` or a dated/suffixed snapshot of it. */
 function isModelOrSnapshot(modelId: string, base: string): boolean {
@@ -499,19 +499,19 @@ function estimateMessages(
  * inherit a string index signature and collapse `keyof` to `string`, making
  * `.toSdk("anything")` type-check. See `SdkFormatters` in core/request.ts.
  */
-export type MessagesSdkTargets<T extends MessagesBody = MessagesBody> = {
+export type ChatSdkTargets<T extends MessagesBody = MessagesBody> = {
   anthropic: () => T;
   "ai-sdk": () => AiSdkChatResult;
 };
 
 /**
- * `.toApi(provider)` for `anthropic.messages`, built once from the generated
+ * `.toApi(provider)` for `anthropic.chat`, built once from the generated
  * availability table.
  *
  * Every static target anthropic's availability data names (openrouter,
  * vercel) speaks the OpenAI chat-completions dialect, so this endpoint
  * declares exactly one decoder — which is the flagship path:
- * `messages({ model: "claude-opus-5", … }).toApi("openrouter")` respells the
+ * `chat({ model: "claude-opus-5", … }).toApi("openrouter")` respells the
  * id to `anthropic/claude-opus-5`, translates the body to chat-completions,
  * and lists what the crossing cost on `.warnings`.
  *
@@ -521,7 +521,7 @@ export type MessagesSdkTargets<T extends MessagesBody = MessagesBody> = {
  */
 const retargetMessages = createToApi<MessagesBody, ChatIR>({
   from: "anthropic-messages",
-  endpoint: "anthropic.messages",
+  endpoint: "anthropic.chat",
   modelId: (body) => body.model,
   availability,
   encode: encodeAnthropic,
@@ -534,12 +534,12 @@ const retargetMessages = createToApi<MessagesBody, ChatIR>({
 
 /** `.toSdk("ai-sdk")`: the same encoder, decoded to `generateText` options. */
 const toAiSdk = createAiSdkChat<MessagesBody>({
-  endpoint: "anthropic.messages",
+  endpoint: "anthropic.chat",
   provider: "anthropic",
   encode: encodeAnthropic,
 });
 
-function finalize(params: MessagesBody): Validated<MessagesBody, MessagesSdkTargets> {
+function finalize(params: MessagesBody): Validated<MessagesBody, ChatSdkTargets> {
   const body = { ...params };
   const request: RequestMeta = {
     url: MESSAGES_URL,
@@ -552,13 +552,13 @@ function finalize(params: MessagesBody): Validated<MessagesBody, MessagesSdkTarg
   });
 }
 
-const validator = createValidator<MessagesBody, Validated<MessagesBody, MessagesSdkTargets>>({
-  endpoint: "anthropic.messages",
+const validator = createValidator<MessagesBody, Validated<MessagesBody, ChatSdkTargets>>({
+  endpoint: "anthropic.chat",
   schema: messagesSchema,
   modelId: (params) => params.model,
   catalog: models,
-  constraints: messagesConstraints,
-  familyRules: messagesFamilyRules,
+  constraints: chatConstraints,
+  familyRules: chatFamilyRules,
   checks: [checkCapabilities, checkThinkingCompatibility, checkImageMedia],
   estimate: estimateMessages,
   finalize,
@@ -580,14 +580,14 @@ const validator = createValidator<MessagesBody, Validated<MessagesBody, Messages
  * error — and translates the body into the target's dialect, listing what the
  * crossing cost on the non-enumerable `.warnings`.
  */
-export const messages = validator as unknown as {
+export const chat = validator as unknown as {
   <T extends MessagesBody>(
     params: T & ExactKeys<T, MessagesBody>,
     options?: ValidateOptions,
-  ): Validated<T, MessagesSdkTargets<T>, AnthropicAvailability, T["model"] & string>;
+  ): Validated<T, ChatSdkTargets<T>, AnthropicAvailability, T["model"] & string>;
   safe<T extends MessagesBody>(
     params: T & ExactKeys<T, MessagesBody>,
     options?: ValidateOptions,
-  ): ValidateResult<Validated<T, MessagesSdkTargets<T>, AnthropicAvailability, T["model"] & string>>;
+  ): ValidateResult<Validated<T, ChatSdkTargets<T>, AnthropicAvailability, T["model"] & string>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

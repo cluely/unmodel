@@ -26,9 +26,8 @@ const asCli = (validator: unknown): CliValidator => validator as CliValidator;
 export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
   // Core chat endpoints (native wire formats)
   "openai.chat": () => import("./providers/openai").then((m) => asCli(m.chat)),
-  "anthropic.messages": () => import("./providers/anthropic").then((m) => asCli(m.messages)),
-  "google.generateContent": () =>
-    import("./providers/google").then((m) => asCli(m.generateContent)),
+  "anthropic.chat": () => import("./providers/anthropic").then((m) => asCli(m.chat)),
+  "google.chat": () => import("./providers/google").then((m) => asCli(m.chat)),
   "cohere.chat": () => import("./providers/cohere").then((m) => asCli(m.chat)),
 
   // Image generation

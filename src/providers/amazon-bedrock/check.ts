@@ -1,7 +1,7 @@
 import type { Issue } from "../../core/issues";
 import type { ResponseReport, UsageReport } from "../../core/report";
 import { computeCostUSD } from "../../core/cost";
-import { resolveBedrockModelInfo } from "./converse";
+import { resolveBedrockModelInfo } from "./chat";
 
 /** The `usage` object of a Converse response (API_runtime_TokenUsage). */
 export interface ConverseUsageLike {
@@ -30,7 +30,7 @@ export interface ConverseResponseLike {
  * requested to get `costUSD`; without it only warnings and usage are
  * reported.
  */
-export function checkConverse(response: ConverseResponseLike, modelId?: string): ResponseReport {
+export function checkChat(response: ConverseResponseLike, modelId?: string): ResponseReport {
   const warnings: Issue[] = [];
   const finishReason = response.stopReason ?? undefined;
 

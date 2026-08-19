@@ -30,7 +30,7 @@ export const ttsModelOverrides: Record<string, ModelInfo> = Object.fromEntries(
  * Catalog consumed by the generateContent validator: the generated google
  * catalog with the doc-sourced TTS context limits layered on top.
  */
-export const generateContentModels: Record<string, ModelInfo> = {
+export const chatModels: Record<string, ModelInfo> = {
   ...models,
   ...ttsModelOverrides,
 };

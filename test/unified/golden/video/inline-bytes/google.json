@@ -1,0 +1,18 @@
+{
+  "ref": "google/veo-3.1-generate-preview",
+  "params": {
+    "instances": [
+      {
+        "prompt": "the fox turns and walks into the snow",
+        "image": {
+          "bytesBase64Encoded": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+          "mimeType": "image/png"
+        }
+      }
+    ],
+    "parameters": {
+      "durationSeconds": 8
+    }
+  },
+  "url": "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning"
+}

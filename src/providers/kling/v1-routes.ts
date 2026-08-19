@@ -7,9 +7,9 @@
  *
  * These routes take the model as a `model_name` BODY field (`kling-v3`,
  * `kling-v2-6`, …) and are the corroborated ones, so they back the PRIMARY
- * `kling.textToVideo` / `kling.imageToVideo` validators. "v1" here is the
+ * `kling.video` / `kling.videoFromImage` validators. "v1" here is the
  * route version (`/v1/videos/…`), not a quality judgement: the uncorroborated
- * path-addressed family in ./text-to-video.ts is the EXPERIMENTAL one.
+ * path-addressed family in ./video-v3.ts is the EXPERIMENTAL one.
  */
 
 import { z } from "zod";
@@ -162,7 +162,7 @@ export type KlingV1Duration = (typeof THREE_TO_FIFTEEN)[number];
  * Note one documented discrepancy: the capability map gives `kling-v2-6` a
  * "3~10s" generation range while the current `POST /text-to-video/kling-2.6`
  * route offers only 5s and 10s. Each route is checked against its own source,
- * so the wider range applies here and the narrower one in ./text-to-video.ts.
+ * so the wider range applies here and the narrower one in ./video-v3.ts.
  */
 export const V1_MODEL_RULES: Readonly<Record<string, V1ModelRules>> = {
   "kling-v3": {

@@ -1,8 +1,8 @@
-export { textToVideo, TEXT_TO_VIDEO_URL, textToVideoConstraints } from "./text-to-video";
-export type { TextToVideoParams } from "./text-to-video";
+export { video, TEXT_TO_VIDEO_URL, videoConstraints } from "./video";
+export type { TextToVideoParams } from "./video";
 
-export { imageToVideo, IMAGE_TO_VIDEO_URL } from "./image-to-video";
-export type { ImageToVideoParams } from "./image-to-video";
+export { videoFromImage, IMAGE_TO_VIDEO_URL } from "./video-from-image";
+export type { ImageToVideoParams } from "./video-from-image";
 
 export {
   PIXVERSE_BASE_URL,

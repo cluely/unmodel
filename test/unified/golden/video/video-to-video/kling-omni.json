@@ -1,0 +1,19 @@
+{
+  "ref": "kling/kling-3.0-omni",
+  "params": {
+    "contents": [
+      {
+        "type": "prompt",
+        "text": "restyle the clip as a pencil sketch"
+      },
+      {
+        "type": "base_video",
+        "url": "https://example.com/clip.mp4"
+      }
+    ],
+    "settings": {
+      "duration": 5
+    }
+  },
+  "url": "https://api-singapore.klingai.com/omni-video/kling-3.0-omni"
+}

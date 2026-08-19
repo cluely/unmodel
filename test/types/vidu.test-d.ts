@@ -6,31 +6,31 @@
  * documented tier (each route's support table narrows it per model at
  * runtime), and imageFromReference has its OWN, differently-spelled spaces.
  */
-import { text2video, img2video, reference2video, imageFromReference } from "../../src/providers/vidu";
+import { video, videoFromImage, videoFromReference, imageFromReference } from "../../src/providers/vidu";
 import { expectAssignable } from "./helpers";
 
 function videoResolutionTypeTests(): void {
-  const v = text2video({ model: "viduq3-pro", prompt: "hi", resolution: "1080p", duration: 8 });
+  const v = video({ model: "viduq3-pro", prompt: "hi", resolution: "1080p", duration: 8 });
   expectAssignable<{ prompt: string }>(v);
   expectAssignable<string>(v.request.url);
-  text2video({ model: "viduq3-pro", prompt: "hi", resolution: "540p" });
+  video({ model: "viduq3-pro", prompt: "hi", resolution: "540p" });
   // @ts-expect-error "" is not a resolution (was a bare `string`)
-  text2video({ model: "viduq3-pro", prompt: "hi", resolution: "" });
+  video({ model: "viduq3-pro", prompt: "hi", resolution: "" });
   // @ts-expect-error 4K is the imageFromReference spelling, not a video tier
-  text2video({ model: "viduq3-pro", prompt: "hi", resolution: "4K" });
+  video({ model: "viduq3-pro", prompt: "hi", resolution: "4K" });
 
-  img2video({ model: "vidu2.0", images: ["https://e.com/a.png"], resolution: "360p", duration: 4 });
-  img2video({ model: "viduq3-pro", images: ["https://e.com/a.png"], resolution: "1080p" });
+  videoFromImage({ model: "vidu2.0", images: ["https://e.com/a.png"], resolution: "360p", duration: 4 });
+  videoFromImage({ model: "viduq3-pro", images: ["https://e.com/a.png"], resolution: "1080p" });
   // @ts-expect-error banana is not a resolution (was a bare `string`)
-  img2video({ model: "viduq3-pro", images: ["https://e.com/a.png"], resolution: "banana" });
+  videoFromImage({ model: "viduq3-pro", images: ["https://e.com/a.png"], resolution: "banana" });
 
-  reference2video({ model: "viduq3", prompt: "hi", images: ["https://e.com/a.png"], resolution: "720p" });
-  reference2video({ model: "vidu2.0", prompt: "hi", images: ["https://e.com/a.png"], resolution: "360p" });
+  videoFromReference({ model: "viduq3", prompt: "hi", images: ["https://e.com/a.png"], resolution: "720p" });
+  videoFromReference({ model: "vidu2.0", prompt: "hi", images: ["https://e.com/a.png"], resolution: "360p" });
   // @ts-expect-error "" is not a resolution (was a bare `string`)
-  reference2video({ model: "viduq3", prompt: "hi", images: ["https://e.com/a.png"], resolution: "" });
+  videoFromReference({ model: "viduq3", prompt: "hi", images: ["https://e.com/a.png"], resolution: "" });
 
   // Model ids keep their escape hatch: unknown ids stay legal and warn at runtime.
-  text2video({ model: "viduq9", prompt: "hi", resolution: "720p" });
+  video({ model: "viduq9", prompt: "hi", resolution: "720p" });
 }
 
 function referenceImageTypeTests(): void {

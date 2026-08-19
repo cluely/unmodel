@@ -47,13 +47,13 @@ export {
 export {
   GENERATE_VIDEOS_BASE_URL,
   VEO_RESOLUTION_RATE_OVERRIDES,
-  generateVideos,
+  video,
   generateVideosUrl,
   type GenerateVideosBody,
   type GenerateVideosSdkConfig,
   type GenerateVideosSdkImage,
   type GenerateVideosSdkParams,
-  type GenerateVideosSdkTargets,
+  type VideoSdkTargets,
   type GenerateVideosSdkReferenceImage,
   type GenerateVideosSdkVideo,
   type GoogleVeoImage,
@@ -61,7 +61,7 @@ export {
   type GoogleVeoParameters,
   type GoogleVeoReferenceImage,
   type GoogleVeoVideo,
-} from "./generate-videos";
+} from "./video";
 export {
   GENERATE_IMAGES_BASE_URL,
   IMAGEN_DEFAULT_SAMPLE_COUNT,
@@ -84,7 +84,7 @@ export {
   type UnknownImagenBody,
 } from "./image";
 export {
-  generateVideosModels,
+  videoModels,
   veoSupplementModels,
   VEO_3_PROMPT_MAX_TOKENS,
   type GoogleVeoSupplementModelId,
@@ -138,8 +138,8 @@ export {
   chatFamilyRules,
   imageConstraints,
   imageFamilyRules,
-  generateVideosConstraints,
-  generateVideosFamilyRules,
+  videoConstraints,
+  videoFamilyRules,
   type GeminiImageRule,
 } from "./constraints";
 

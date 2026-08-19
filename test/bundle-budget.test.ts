@@ -88,20 +88,20 @@ const CHAT_BUDGET_KIB = 600;
  * bad trade, and the composition test below is the assertion doing the real
  * work anyway.)
  *
- * `speech` and `image` are deliberately **not** in this list any more: they are
- * the categories that ship a ready-made pack, so their entries legitimately
- * import fourteen and fifteen adapters. Each gets its own budget and its own,
- * stricter composition test below — the point of which is that the *rest* of
- * the rule still holds (exactly those providers, no catalogs, no availability
- * data), so "the entry imports providers now" cannot quietly become "the entry
- * imports anything".
+ * `speech`, `image` and `video` are deliberately **not** in this list any more:
+ * they are the categories that ship a ready-made pack, so their entries
+ * legitimately import fourteen, fifteen and ten adapters. Each gets its own
+ * budget and its own, stricter composition test below — the point of which is
+ * that the *rest* of the rule still holds (exactly those providers, no
+ * catalogs beyond the load-bearing ones, no availability data), so "the entry
+ * imports providers now" cannot quietly become "the entry imports anything".
  */
 const UNIFIED_BUDGET_KIB = 18;
 
-const UNIFIED_ENTRIES: string[] = ["image-edit", "video", "transcribe", "music"];
+const UNIFIED_ENTRIES: string[] = ["image-edit", "transcribe", "music"];
 
 /** Every category entry, packs included — for the "it was built at all" check. */
-const ALL_UNIFIED_ENTRIES: string[] = [...UNIFIED_ENTRIES, "speech", "image"];
+const ALL_UNIFIED_ENTRIES: string[] = [...UNIFIED_ENTRIES, "speech", "image", "video"];
 
 /**
  * `unmodel/speech`'s budget: the kernel plus fourteen TTS providers — each
@@ -143,6 +143,46 @@ const IMAGE_PACK_BUDGET_KIB = 740;
  * means a provider barrel leaked in, which is the failure this pins.
  */
 const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog/openai.gen.ts"];
+
+/**
+ * `unmodel/video`'s budget: the kernel plus ten video providers — twenty-one
+ * endpoint modules between them, because six of the ten serve more than one
+ * route and Kling alone contributes five.
+ *
+ * 556 KiB measured, pinned at 610 with the same ~10% headroom as everything
+ * above. It sits between the speech and image packs and for the same structural
+ * reason the image one is large: video providers carry *size* tables (per-model
+ * ratio enums with 30 pixel-pair members, resolution casings, duration × tier
+ * matrices) on top of the usual deny rules, and this pack pays for every route
+ * of every provider rather than one route each. `createVideo([…])` is the way
+ * to pay for two providers instead of ten.
+ */
+const VIDEO_PACK_BUDGET_KIB = 610;
+
+/**
+ * The two generated catalogs this pack legitimately reaches.
+ *
+ * Both are load-bearing rather than leaked, and both for the same reason as in
+ * the image pack: `google/veo-models.ts` supplements `src/catalog/google.gen.ts`
+ * (models.dev carries only the veo-3.1 family) and `openai/videos-models.ts`
+ * merges the hand-written Sora rows over `src/catalog/openai.gen.ts`. A *third*
+ * entry here means a provider barrel leaked in.
+ */
+const VIDEO_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog/openai.gen.ts"];
+
+/** The ten providers `unmodel/video`'s ready-made pack is allowed to reach. */
+const VIDEO_PACK_PROVIDERS: string[] = [
+  "bytedance",
+  "google",
+  "kling",
+  "lightricks",
+  "luma",
+  "minimax",
+  "openai",
+  "pixverse",
+  "runway",
+  "vidu",
+];
 
 /**
  * The fifteen providers `unmodel/image`'s ready-made pack is allowed to reach.
@@ -401,10 +441,12 @@ describe("unmodel/speech (the first ready-made pack)", () => {
     expect(providers).toEqual(SPEECH_PACK_PROVIDERS);
 
     // One adapter leaf per provider, and it is what pulled the provider in.
-    // openai serves two categories, so its adapter is split per category and
-    // this pack imports only the speech half — see the independence test below.
+    // openai and minimax serve more than one category, so their adapters are
+    // split per category and this pack imports only the speech half — see the
+    // independence test below.
+    const SPLIT = new Set(["openai", "minimax"]);
     for (const provider of SPEECH_PACK_PROVIDERS) {
-      const leaf = provider === "openai" ? "unified-speech" : "unified";
+      const leaf = SPLIT.has(provider) ? "unified-speech" : "unified";
       expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
       expect(modules).toContain(`src/providers/${provider}/speech.ts`);
     }
@@ -453,15 +495,27 @@ describe("unmodel/image (the second ready-made pack)", () => {
     expect(providers).toEqual(IMAGE_PACK_PROVIDERS);
 
     // One adapter leaf per provider, and it is what pulled the provider in.
-    // openai is the exception and the reason the exception exists: it serves
-    // two categories, so its adapter is split per category and each pack
-    // imports only its own half.
+    // The seven providers that serve more than one category split their
+    // adapter per category, and each pack imports only its own half — which is
+    // what the independence test below is measuring in bytes.
+    const SPLIT = new Set([
+      "bytedance",
+      "google",
+      "kling",
+      "luma",
+      "openai",
+      "runway",
+      "vidu",
+    ]);
     for (const provider of IMAGE_PACK_PROVIDERS) {
-      if (provider === "openai") continue;
-      expect(modules).toContain(`src/providers/${provider}/unified.ts`);
+      const leaf = SPLIT.has(provider) ? "unified-image" : "unified";
+      expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
+      // The barrel is never in a pack's graph: importing it would pull the
+      // other categories' adapters — and their catalogs — in with it.
+      if (SPLIT.has(provider)) {
+        expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
+      }
     }
-    expect(modules).toContain("src/providers/openai/unified-image.ts");
-    expect(modules).not.toContain("src/providers/openai/unified.ts");
     // Every provider's generation endpoint module is addressed as `image.ts`,
     // which is the rename made structural: the pack cannot reach a provider
     // except through a file with the uniform name.
@@ -500,5 +554,82 @@ describe("unmodel/image (the second ready-made pack)", () => {
     expect(image).not.toContain("src/providers/openai/speech.ts");
     expect(speech).not.toContain("src/providers/openai/image.ts");
     expect(speech.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
+  });
+});
+
+describe("unmodel/video (the third ready-made pack)", () => {
+  test(`stays under ${VIDEO_PACK_BUDGET_KIB} KiB`, () => {
+    const kib = transitiveBytes(unifiedEntry("video")) / 1024;
+    expect(kib, `unified/video is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
+      VIDEO_PACK_BUDGET_KIB,
+    );
+  });
+
+  /**
+   * The composition assertion. This pack is the one where "exactly these
+   * providers" is doing the most work: seven of the ten also serve an image or
+   * speech surface, so an adapter that imported its provider's barrel instead
+   * of the video leaf would drag a second category's validators and catalogs in
+   * without changing a single import in `src/unified/video.ts`.
+   */
+  test("it reaches exactly the ten video providers, through their adapters", () => {
+    const modules = sourceModulesOf(unifiedEntry("video"));
+    expect(modules).toContain("src/unified/video.ts");
+    expect(modules).toContain("src/core/unified/kernel.ts");
+
+    const providers = [
+      ...new Set(
+        modules
+          .filter((m) => m.startsWith("src/providers/"))
+          .map((m) => m.split("/")[2] as string),
+      ),
+    ].sort();
+    expect(providers).toEqual(VIDEO_PACK_PROVIDERS);
+
+    // pixverse and lightricks serve video only, so their adapter is the
+    // unsuffixed leaf; the other eight split per category.
+    const SINGLE = new Set(["pixverse", "lightricks"]);
+    for (const provider of VIDEO_PACK_PROVIDERS) {
+      const leaf = SINGLE.has(provider) ? "unified" : "unified-video";
+      expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
+      if (!SINGLE.has(provider)) {
+        expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
+      }
+      // Every provider's primary generation endpoint is addressed as
+      // `video.ts`, which is the rename made structural: the pack cannot reach
+      // a provider except through a file with the uniform name.
+      expect(modules).toContain(`src/providers/${provider}/video.ts`);
+    }
+  });
+
+  test("its graph carries exactly two catalogs, and no availability or retarget layer", () => {
+    const modules = sourceModulesOf(unifiedEntry("video"));
+    expect(modules.filter((m) => m.startsWith("src/catalog/")).sort()).toEqual(VIDEO_PACK_CATALOGS);
+    expect(modules.filter((m) => m.startsWith("src/catalog/availability/"))).toEqual([]);
+    expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
+    expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
+    expect(modules).not.toContain("src/providers/google/chat.ts");
+    // …but the four-layer engine IS here: the pack ends in the providers' own
+    // validators.
+    expect(modules).toContain("src/core/pipeline.ts");
+  });
+
+  test("the three packs are independent — none pulls another's endpoints in", () => {
+    const video = sourceModulesOf(unifiedEntry("video"));
+    const image = sourceModulesOf(unifiedEntry("image"));
+    const speech = sourceModulesOf(unifiedEntry("speech"));
+    for (const other of ["image", "speech"]) {
+      expect(video).not.toContain(`src/unified/${other}.ts`);
+    }
+    expect(image).not.toContain("src/unified/video.ts");
+    expect(speech).not.toContain("src/unified/video.ts");
+    // The seven shared providers contribute one category each, per pack.
+    for (const shared of ["openai", "google", "luma", "kling", "runway", "vidu", "bytedance"]) {
+      expect(video).not.toContain(`src/providers/${shared}/image.ts`);
+      expect(image).not.toContain(`src/providers/${shared}/video.ts`);
+    }
+    expect(video).not.toContain("src/providers/openai/speech.ts");
+    expect(video).not.toContain("src/providers/minimax/speech.ts");
+    expect(speech).not.toContain("src/providers/minimax/video.ts");
   });
 });

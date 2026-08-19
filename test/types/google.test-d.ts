@@ -7,7 +7,7 @@ import type {
   GenerateImagesParameters,
   GenerateVideosParameters,
 } from "@google/genai";
-import { chat, image, generateVideos } from "../../src/providers/google";
+import { chat, image, video } from "../../src/providers/google";
 import type { GoogleTextModelId } from "../../src/catalog/google.gen";
 import { expectAssignable } from "./helpers";
 
@@ -98,10 +98,10 @@ chat({
 });
 
 // ---------------------------------------------------------------------------
-// generateVideos (Veo) — toSdk("google") targets ai.models.generateVideos().
+// video (Veo) — toSdk("google") targets ai.models.generateVideos().
 // ---------------------------------------------------------------------------
 
-const veo = generateVideos({
+const veo = video({
   model: "veo-3.1-generate-preview",
   instances: [
     {
@@ -120,14 +120,14 @@ const veo = generateVideos({
   },
 });
 
-// The SDK re-shape is directly usable as ai.models.generateVideos(...) input
+// The SDK re-shape is directly usable as ai.models.video(...) input
 // (GenerateVideosConfig's leaves are plain string/number-typed).
 expectAssignable<GenerateVideosParameters>(veo.toSdk("google"));
 
 // referenceType is the one enum-typed leaf (VideoGenerationReferenceType) —
 // the wire literal needs the documented cast at the SDK call site, exactly
 // like the generateContent safety enums above.
-const veoWithReferences = generateVideos({
+const veoWithReferences = video({
   model: "veo-3.1-generate-preview",
   instances: [
     {
@@ -144,7 +144,7 @@ expectAssignable<GenerateVideosParameters>(
 );
 
 // Typo'd top-level keys are a compile error (ExactKeys guard).
-generateVideos({
+video({
   model: "veo-3.1-generate-preview",
   instances: [{ prompt: "hi" }],
   // @ts-expect-error excess (typo'd) top-level key
@@ -350,9 +350,9 @@ chat({
   },
 });
 
-// generateVideos: `seed` is a documented Veo 3 parameter (the SDK rejects it).
+// video: `seed` is a documented Veo 3 parameter (the SDK rejects it).
 expectAssignable<{ instances: unknown }>(
-  generateVideos({
+  video({
     model: "veo-3.1-generate-preview",
     instances: [{ prompt: "a hummingbird" }],
     parameters: { seed: 42 },
@@ -396,11 +396,11 @@ geminiRouted.toApi("vercel");
 // that is how ~106 endpoints opt out at zero type cost (`Avail = never`).
 // ---------------------------------------------------------------------------
 
-const veoForApi = generateVideos({
+const veoForApi = video({
   model: "veo-3.1-generate-preview",
   instances: [{ prompt: "a hummingbird" }],
 });
-// @ts-expect-error — generateVideos declares no `.toApi` targets.
+// @ts-expect-error — video declares no `.toApi` targets.
 veoForApi.toApi("vercel");
 // @ts-expect-error — nor `.toApiSafe`.
 veoForApi.toApiSafe("vercel");

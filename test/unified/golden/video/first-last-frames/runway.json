@@ -1,0 +1,19 @@
+{
+  "ref": "runway/seedance2",
+  "params": {
+    "model": "seedance2",
+    "promptText": "the fox walks from one bank to the other",
+    "duration": 5,
+    "promptImage": [
+      {
+        "uri": "https://example.com/frame.png",
+        "position": "first"
+      },
+      {
+        "uri": "https://example.com/last.png",
+        "position": "last"
+      }
+    ]
+  },
+  "url": "https://api.dev.runwayml.com/v1/image_to_video"
+}

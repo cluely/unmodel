@@ -1,0 +1,10 @@
+{
+  "ref": "runway/seedance2",
+  "params": {
+    "model": "seedance2",
+    "promptText": "restyle the clip as a pencil sketch",
+    "duration": 5,
+    "promptVideo": "https://example.com/clip.mp4"
+  },
+  "url": "https://api.dev.runwayml.com/v1/video_to_video"
+}

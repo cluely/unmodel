@@ -24,7 +24,7 @@
  */
 import { createImage, image } from "../../src/unified/image";
 import { image as blackForestLabsImage } from "../../src/providers/black-forest-labs/unified";
-import { image as googleImage } from "../../src/providers/google/unified";
+import { image as googleImage } from "../../src/providers/google/unified-image";
 import { image as ideogramImage } from "../../src/providers/ideogram/unified";
 import { image as openaiImage } from "../../src/providers/openai/unified-image";
 import type { UnifiedRef } from "../../src/core/unified/types";

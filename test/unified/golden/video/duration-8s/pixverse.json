@@ -1,0 +1,11 @@
+{
+  "ref": "pixverse/v6",
+  "params": {
+    "model": "v6",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "aspect_ratio": "16:9",
+    "duration": 8,
+    "quality": "1080p"
+  },
+  "url": "https://app-api.pixverse.ai/openapi/v2/video/text/generate"
+}

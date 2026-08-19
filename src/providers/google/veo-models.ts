@@ -26,7 +26,7 @@
 // pipeline's context-window checks are skipped (HAND_CATALOGS.md rule). The
 // documented per-request PROMPT cap rides on `limit.input` instead: the docs'
 // "Text input: 1,024 tokens" beats models.dev's stale 480 for the veo-3.1
-// entries, and ./generate-videos checks it. Veo 2 documents "Text input: N/A",
+// entries, and ./video checks it. Veo 2 documents "Text input: N/A",
 // so it carries no `input` bound.
 
 import type { ModelInfo } from "../../core/catalog-types";
@@ -35,7 +35,7 @@ import { models } from "../../catalog/google.gen";
 /**
  * "Text input: 1,024 tokens" — the Veo 3.x entries of the "Model versions"
  * section on https://ai.google.dev/gemini-api/docs/veo. Rides on
- * `limit.input`, which ./generate-videos checks against the prompt. Veo 2's
+ * `limit.input`, which ./video checks against the prompt. Veo 2's
  * text input limit is documented as "N/A", so it carries no `input` bound.
  */
 export const VEO_3_PROMPT_MAX_TOKENS = 1024;
@@ -99,14 +99,14 @@ export const veoSupplementModels = {
 const VEO_3_1_LIMIT = { context: 0, input: VEO_3_PROMPT_MAX_TOKENS } as const;
 
 /**
- * Catalog used by the generateVideos validator: the full generated google
+ * Catalog used by the video validator: the full generated google
  * catalog, plus the hand entries above, plus 720p per-second pricing and the
  * documented prompt limit supplemented onto the generated veo-3.1 entries
  * (models.dev carries no cost for them, and a stale 480-token context). If the
  * generated file ever grows real cost data, drop these overrides — they would
  * shadow it.
  */
-export const generateVideosModels: Record<string, ModelInfo> = {
+export const videoModels: Record<string, ModelInfo> = {
   ...models,
   "veo-3.1-generate-preview": {
     ...models["veo-3.1-generate-preview"],

@@ -4,7 +4,7 @@ import {
   IMAGE_GENERATIONS_URL,
   DEFAULT_IMAGE_MODEL_ID,
 } from "./image";
-import { GENERATIONS_URL } from "./generations";
+import { GENERATIONS_URL } from "./video";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 

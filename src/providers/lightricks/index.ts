@@ -1,29 +1,29 @@
 export {
-  textToVideo,
+  video,
   TEXT_TO_VIDEO_URL,
   TEXT_TO_VIDEO_V1_URL,
   TEXT_TO_VIDEO_ENDPOINT,
-} from "./text-to-video";
-export type { TextToVideoParams } from "./text-to-video";
+} from "./video";
+export type { TextToVideoParams } from "./video";
 
 export {
-  imageToVideo,
+  videoFromImage,
   IMAGE_TO_VIDEO_URL,
   IMAGE_TO_VIDEO_V1_URL,
   IMAGE_TO_VIDEO_ENDPOINT,
   NO_LAST_FRAME_MODELS,
-} from "./image-to-video";
-export type { ImageToVideoParams } from "./image-to-video";
+} from "./video-from-image";
+export type { ImageToVideoParams } from "./video-from-image";
 
 export {
-  audioToVideo,
+  videoFromAudio,
   AUDIO_TO_VIDEO_URL,
   AUDIO_TO_VIDEO_V1_URL,
   AUDIO_TO_VIDEO_ENDPOINT,
   AUDIO_TO_VIDEO_RESOLUTIONS,
   DEFAULT_AUDIO_TO_VIDEO_MODEL,
-} from "./audio-to-video";
-export type { AudioToVideoParams } from "./audio-to-video";
+} from "./video-from-audio";
+export type { AudioToVideoParams } from "./video-from-audio";
 
 export {
   LTX_BASE_URL,

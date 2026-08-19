@@ -1,0 +1,24 @@
+{
+  "ref": "minimax/MiniMax-Hailuo-02",
+  "params": {
+    "model": "MiniMax-Hailuo-02",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": 6,
+    "resolution": "768P"
+  },
+  "url": "https://api.minimax.io/v1/video_generation",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "resolution"
+      ],
+      "meta": {
+        "requested": "720p",
+        "achieved": "768P",
+        "lines": 768,
+        "source": "https://platform.minimax.io/docs/api-reference/video-generation-t2v"
+      }
+    }
+  ]
+}

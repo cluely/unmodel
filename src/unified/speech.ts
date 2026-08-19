@@ -51,7 +51,7 @@ import { speech as fishAudio } from "../providers/fish-audio/unified";
 import { speech as hume } from "../providers/hume/unified";
 import { speech as inworld } from "../providers/inworld/unified";
 import { speech as lmnt } from "../providers/lmnt/unified";
-import { speech as minimax } from "../providers/minimax/unified";
+import { speech as minimax } from "../providers/minimax/unified-speech";
 import { speech as murf } from "../providers/murf/unified";
 import { speech as openai } from "../providers/openai/unified-speech";
 import { speech as resemble } from "../providers/resemble/unified";

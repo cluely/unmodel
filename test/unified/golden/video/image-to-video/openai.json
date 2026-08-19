@@ -1,0 +1,12 @@
+{
+  "ref": "openai/sora-2",
+  "params": {
+    "model": "sora-2",
+    "prompt": "the fox turns and walks into the snow",
+    "seconds": "8",
+    "input_reference": {
+      "image_url": "https://example.com/frame.png"
+    }
+  },
+  "url": "https://api.openai.com/v1/videos"
+}

@@ -1,0 +1,10 @@
+{
+  "ref": "openai/sora-2-pro",
+  "params": {
+    "model": "sora-2-pro",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "seconds": "8",
+    "size": "1920x1080"
+  },
+  "url": "https://api.openai.com/v1/videos"
+}

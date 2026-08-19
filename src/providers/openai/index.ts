@@ -121,12 +121,12 @@ export type {
 } from "./audio-models";
 
 export {
-  videos,
+  video,
   VIDEOS_URL,
   DEFAULT_VIDEO_MODEL_ID,
   DEFAULT_VIDEO_SECONDS,
   DEFAULT_VIDEO_SIZE,
-} from "./videos";
+} from "./video";
 export type {
   VideosBody,
   VideoInputReference,
@@ -140,7 +140,7 @@ export type {
   Sora2ProSnapshot20251006Body,
   DefaultVideoModelBody,
   UnknownVideoModelBody,
-} from "./videos";
+} from "./video";
 export { SORA_MODELS, SORA_RATE_PER_SECOND } from "./videos-models";
 export type { SoraModelId } from "./videos-models";
 
@@ -181,7 +181,7 @@ export {
   transcriptionFamilyRules,
   chatConstraints,
   chatFamilyRules,
-  videosConstraints,
+  videoConstraints,
   SPEECH_RESPONSE_FORMATS,
   SPEECH_VOICES,
   TTS_1_VOICES,

@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { reframeVideo, REFRAME_VIDEO_URL } from "./reframe-video";
+import { videoReframe, REFRAME_VIDEO_URL } from "./video-reframe";
 import { reframeImage, REFRAME_IMAGE_URL } from "./reframe-image";
 import { LUMA_VIDEO_DIMENSIONS, LUMA_IMAGE_DIMENSIONS } from "./pricing";
-import { LUMA_ASPECT_RATIOS } from "./generations";
+import { LUMA_ASPECT_RATIOS } from "./video";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 
-const safeVideoUnchecked = reframeVideo.safe as unknown as (
+const safeVideoUnchecked = videoReframe.safe as unknown as (
   params: unknown,
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
@@ -18,9 +18,9 @@ const safeImageUnchecked = reframeImage.safe as unknown as (
 const VIDEO = { url: "https://example.com/video.mp4" };
 const IMAGE = { url: "https://example.com/image.jpg" };
 
-describe("luma.reframeVideo", () => {
+describe("luma.videoReframe", () => {
   test("returns a wire-pure body with URL and method", () => {
-    const v = reframeVideo({
+    const v = videoReframe({
       model: "ray-2",
       media: VIDEO,
       aspect_ratio: "21:9",
@@ -38,7 +38,7 @@ describe("luma.reframeVideo", () => {
 
   test("aspect_ratio is the documented closed enum", () => {
     for (const ratio of LUMA_ASPECT_RATIOS) {
-      expect(reframeVideo.safe({ model: "ray-2", media: VIDEO, aspect_ratio: ratio }).ok).toBe(true);
+      expect(videoReframe.safe({ model: "ray-2", media: VIDEO, aspect_ratio: ratio }).ok).toBe(true);
     }
     const r = safeVideoUnchecked({ model: "ray-2", media: VIDEO, aspect_ratio: "5:4" });
     expect(r.ok).toBe(false);
@@ -46,7 +46,7 @@ describe("luma.reframeVideo", () => {
   });
 
   test("geometry fields pass through as integers", () => {
-    const v = reframeVideo({
+    const v = videoReframe({
       model: "ray-flash-2",
       media: VIDEO,
       aspect_ratio: "16:9",
@@ -71,7 +71,7 @@ describe("luma.reframeVideo", () => {
   });
 
   test("a photon model on the video route warns as unknown_model", () => {
-    const r = reframeVideo.safe({ model: "photon-1", media: VIDEO, aspect_ratio: "16:9" });
+    const r = videoReframe.safe({ model: "photon-1", media: VIDEO, aspect_ratio: "16:9" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });

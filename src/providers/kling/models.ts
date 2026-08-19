@@ -27,7 +27,7 @@
 //     confirmed: the endpoint line on `apiReference/model/textToVideo` reads
 //     `POST https://api-singapore.klingai.com/v1/videos/text2video`, and the
 //     polling route is `GET /v1/videos/text2video/{task_id}`. These are the
-//     primary exports — `kling.textToVideo` / `kling.imageToVideo`.
+//     primary exports — `kling.video` / `kling.videoFromImage`.
 //   - EXPERIMENTAL — a path-addressed family (`POST /text-to-video/kling-3.0`,
 //     `/omni-video/kling-o1`, polled via `GET /tasks`) keyed by the path
 //     segment (`pathVideoModels`). Its route shapes were recovered by
@@ -35,8 +35,8 @@
 //     no independent source corroborates them (the doc site answers HTTP 446
 //     to every non-browser client and serves one byte-identical SPA shell to
 //     curl, so no fetch can ever confirm or refute them). Exported under the
-//     experimental names `kling.textToVideoV3` / `kling.imageToVideoV3` /
-//     `kling.omniVideo` — see those modules' EXPERIMENTAL notes.
+//     experimental names `kling.videoV3` / `kling.videoV3FromImage` /
+//     `kling.videoOmni` — see those modules' EXPERIMENTAL notes.
 // Both spellings name the same weights; ./pricing.ts normalizes them so a
 // request priced through either route lands on the same rate.
 //
@@ -170,7 +170,7 @@ export const pathVideoModels = {
 
 /**
  * `model_name` values on the corroborated `POST /v1/videos/*` routes — the
- * id space `kling.textToVideo` and `kling.imageToVideo` validate against.
+ * id space `kling.video` and `kling.videoFromImage` validate against.
  */
 export const v1VideoModels = {
   "kling-v3": {

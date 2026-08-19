@@ -1,0 +1,12 @@
+{
+  "ref": "vidu/viduq3-turbo",
+  "params": {
+    "model": "viduq3-turbo",
+    "prompt": "the fox turns and walks into the snow",
+    "duration": 8,
+    "images": [
+      "https://example.com/frame.png"
+    ]
+  },
+  "url": "https://api.vidu.com/ent/v2/img2video"
+}

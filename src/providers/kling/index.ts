@@ -1,40 +1,40 @@
 // The corroborated `POST /v1/videos/*` family — the primary video validators.
 // `model_name` is a body field; both routes are documented on Kling's own
 // apiReference pages (see ./models.ts for the provenance of both families).
-export { textToVideo, TEXT2VIDEO_URL, TEXT2VIDEO_MODELS } from "./text2video";
-export type { TextToVideoParams } from "./text2video";
+export { video, TEXT2VIDEO_URL, TEXT2VIDEO_MODELS } from "./video";
+export type { TextToVideoParams } from "./video";
 
 export {
-  imageToVideo,
+  videoFromImage,
   IMAGE2VIDEO_URL,
   IMAGE2VIDEO_MODELS,
   MAX_ELEMENT_LIST,
   MAX_VOICE_LIST,
-} from "./image2video";
+} from "./video-from-image";
 export type {
   ImageToVideoParams,
   KlingDynamicMask,
   KlingTrajectoryPoint,
-} from "./image2video";
+} from "./video-from-image";
 
 // EXPERIMENTAL — the path-addressed family (`POST /text-to-video/{model}`,
 // `/image-to-video/{model}`, `/omni-video/{model}`), recovered from the doc
 // site's JS bundle and corroborated by nothing. Each module carries the full
-// EXPERIMENTAL note; prefer `textToVideo` / `imageToVideo` above.
-export { textToVideoV3, textToVideoV3Url, TEXT_TO_VIDEO_V3_RULES } from "./text-to-video";
-export type { TextToVideoV3Params, TextToVideoV3Settings } from "./text-to-video";
+// EXPERIMENTAL note; prefer `video` / `videoFromImage` above.
+export { videoV3, textToVideoV3Url, TEXT_TO_VIDEO_V3_RULES } from "./video-v3";
+export type { TextToVideoV3Params, TextToVideoV3Settings } from "./video-v3";
 
-export { imageToVideoV3, imageToVideoV3Url, IMAGE_TO_VIDEO_V3_RULES } from "./image-to-video";
-export type { ImageToVideoV3Params, ImageToVideoV3Settings } from "./image-to-video";
+export { videoV3FromImage, imageToVideoV3Url, IMAGE_TO_VIDEO_V3_RULES } from "./video-v3-from-image";
+export type { ImageToVideoV3Params, ImageToVideoV3Settings } from "./video-v3-from-image";
 
 export {
-  omniVideo,
+  videoOmni,
   omniVideoUrl,
   OMNI_VIDEO_MODELS,
   OMNI_VIDEO_RULES,
   VIDEO_INPUT_TYPES,
-} from "./omni-video";
-export type { OmniVideoParams, OmniVideoSettings, KlingOmniVideoModelId } from "./omni-video";
+} from "./video-omni";
+export type { OmniVideoParams, OmniVideoSettings, KlingOmniVideoModelId } from "./video-omni";
 
 export {
   image,

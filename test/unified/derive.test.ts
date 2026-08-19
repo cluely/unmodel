@@ -37,6 +37,11 @@ import {
   toDurationString,
   toDurationSuffixedString,
   toPixels,
+  requireInlineBytes,
+  requireMediaUrl,
+  resolveImageSlots,
+  resolveVideoRoute,
+  toMediaUri,
   toRatioEnum,
   toRatioString,
   toSizeEnum,
@@ -44,6 +49,8 @@ import {
   toSpeed,
   toSpeedPercentDelta,
   toTier,
+  videoRoute,
+  VIDEO_ROUTE_LABELS,
   type DeriveContext,
 } from "../../src/core/unified/derive";
 
@@ -520,6 +527,150 @@ describe("durations", () => {
     const ctx = ctxAt("duration");
     toDurationNumber(8, SORA, ctx);
     toDurationNumber(6, SORA, ctx);
+    expect(ctx.warnings).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Video inputs — the route a request derives, and how each input is encoded
+// ---------------------------------------------------------------------------
+
+const URL_REF = { url: "https://example.com/a.png" };
+
+describe("videoRoute", () => {
+  test("the four routes, derived from the inputs and nothing else", () => {
+    expect(videoRoute({})).toBe("text");
+    expect(videoRoute({ image: URL_REF })).toBe("image");
+    expect(videoRoute({ image: [URL_REF] })).toBe("image");
+    expect(videoRoute({ image: { ...URL_REF, role: "last" } })).toBe("image");
+    expect(videoRoute({ image: { ...URL_REF, role: "reference" } })).toBe("reference");
+    expect(videoRoute({ video: { url: "https://example.com/a.mp4" } })).toBe("video");
+  });
+
+  test("a clip wins over a still, and a reference over a keyframe", () => {
+    // Every provider that takes both treats the clip as the subject…
+    expect(videoRoute({ image: URL_REF, video: { url: "x" } })).toBe("video");
+    // …and a mixed array is a reference request, because that is the endpoint
+    // it would have to go to; the adapter says what happens to the keyframe.
+    expect(videoRoute({ image: [URL_REF, { ...URL_REF, role: "reference" }] })).toBe("reference");
+  });
+
+  test("an empty array is a text request, not an image one", () => {
+    expect(videoRoute({ image: [] })).toBe("text");
+  });
+});
+
+describe("resolveVideoRoute", () => {
+  test("a route the model serves passes through with no issues", () => {
+    const out = resolveVideoRoute(
+      { image: URL_REF },
+      { model: "gen4_turbo", routes: ["image"] },
+      ctxAt("image"),
+    );
+    expect(out).toEqual({ value: "image", issues: [] });
+  });
+
+  test("a route it does not serve names the derivation, the alternatives and the fix", () => {
+    const out = resolveVideoRoute({}, { model: "gen4_turbo", routes: ["image"] }, ctxAt("image"));
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]).toMatchObject({
+      code: "unsupported_capability",
+      // The error lands on the field that DECIDED the route, which for a text
+      // request is the absence of the other two.
+      path: ["prompt"],
+      meta: { route: "text", routes: ["image"] },
+    });
+    expect(out.issues[0]!.message).toBe(
+      '"gen4_turbo" has no text-to-video route; it serves image-to-video — pass `image`.',
+    );
+  });
+
+  test("several alternatives are listed in the order the adapter declared them", () => {
+    const out = resolveVideoRoute(
+      { video: { url: "x" } },
+      { model: "kling-v3", routes: ["text", "image"], source: "https://example.com/docs" },
+      ctxAt("video"),
+    );
+    expect(out.issues[0]!.path).toEqual(["video"]);
+    expect(out.issues[0]!.message).toContain("it serves text-to-video and image-to-video");
+    expect(out.issues[0]!.message).toContain("drop `image`/`video` for a text-only request, or pass `image`");
+    expect(out.issues[0]!.meta).toMatchObject({ source: "https://example.com/docs" });
+  });
+
+  test("every route has a label, so no message can render `undefined`", () => {
+    expect(Object.keys(VIDEO_ROUTE_LABELS).sort()).toEqual(["image", "reference", "text", "video"]);
+  });
+});
+
+describe("resolveImageSlots", () => {
+  test("an omitted role is the first frame — what an unlabelled image means", () => {
+    const out = resolveImageSlots(URL_REF, ctxAt("image"));
+    expect(out.value).toEqual({ first: URL_REF, references: [] });
+  });
+
+  test("splits the three jobs an image can have", () => {
+    const last = { ...URL_REF, role: "last" } as const;
+    const reference = { ...URL_REF, role: "reference" } as const;
+    const out = resolveImageSlots([URL_REF, last, reference, reference], ctxAt("image"));
+    expect(out.value).toEqual({ first: URL_REF, last, references: [reference, reference] });
+  });
+
+  test("two images claiming one slot is an error naming the index", () => {
+    const out = resolveImageSlots([URL_REF, URL_REF], ctxAt("image"));
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]).toMatchObject({ code: "invalid_shape", path: ["image", 1] });
+    expect(out.issues[0]!.message).toContain('two images claim the "first" frame');
+  });
+
+  test("no images at all is an empty set, not a failure", () => {
+    expect(resolveImageSlots(undefined, ctxAt("image")).value).toEqual({ references: [] });
+  });
+});
+
+describe("media references", () => {
+  test("toMediaUri passes a URL through and builds a data URI from bytes", () => {
+    expect(toMediaUri(URL_REF, ctxAt("image")).value).toBe(URL_REF.url);
+    expect(toMediaUri({ data: "AAAA", mimeType: "image/png" }, ctxAt("image")).value).toBe(
+      "data:image/png;base64,AAAA",
+    );
+    // Bytes that already carry the envelope are the same value, spelled the
+    // way the caller happened to have it.
+    expect(toMediaUri({ data: "data:image/png;base64,AAAA" }, ctxAt("image")).value).toBe(
+      "data:image/png;base64,AAAA",
+    );
+  });
+
+  test("toMediaUri refuses bytes with no media type rather than inventing one", () => {
+    const out = toMediaUri({ data: "AAAA" }, ctxAt("image"));
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("invalid_shape");
+    expect(out.issues[0]!.message).toContain("`mimeType`");
+  });
+
+  test("requireMediaUrl refuses inline bytes and quotes the provider's fix", () => {
+    expect(requireMediaUrl(URL_REF, "Upload first.", ctxAt("image")).value).toBe(URL_REF.url);
+    const out = requireMediaUrl({ data: "AAAA", mimeType: "image/png" }, "Upload first.", ctxAt("image"));
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]).toMatchObject({ code: "unsupported_param", path: ["image"] });
+    expect(out.issues[0]!.message).toEndWith("Upload first.");
+  });
+
+  test("requireInlineBytes refuses a URL and unwraps a data URI", () => {
+    expect(requireInlineBytes({ data: "AAAA", mimeType: "image/png" }, "x", ctxAt("image")).value)
+      .toEqual({ data: "AAAA", mimeType: "image/png" });
+    // The field wants the payload, not the envelope.
+    expect(requireInlineBytes({ data: "data:image/jpeg;base64,BBBB" }, "x", ctxAt("image")).value)
+      .toEqual({ data: "BBBB", mimeType: "image/jpeg" });
+    const out = requireInlineBytes(URL_REF, "Read the file.", ctxAt("image"));
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]).toMatchObject({ code: "unsupported_param", meta: { url: URL_REF.url } });
+  });
+
+  test("none of the media derivations warns — a reference either fits or it does not", () => {
+    const ctx = ctxAt("image");
+    toMediaUri(URL_REF, ctx);
+    requireMediaUrl({ data: "AAAA" }, "x", ctx);
+    requireInlineBytes(URL_REF, "x", ctx);
     expect(ctx.warnings).toEqual([]);
   });
 });

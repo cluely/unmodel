@@ -92,41 +92,41 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
   "reve.remix": () => import("./providers/reve").then((m) => asCli(m.remix)),
 
   // Video generation and post-production
-  "openai.videos": () => import("./providers/openai").then((m) => asCli(m.videos)),
-  "google.generateVideos": () =>
-    import("./providers/google").then((m) => asCli(m.generateVideos)),
-  "runway.textToVideo": () => import("./providers/runway").then((m) => asCli(m.textToVideo)),
-  "runway.imageToVideo": () => import("./providers/runway").then((m) => asCli(m.imageToVideo)),
-  "runway.videoToVideo": () => import("./providers/runway").then((m) => asCli(m.videoToVideo)),
-  "luma.generations": () => import("./providers/luma").then((m) => asCli(m.generations)),
-  "luma.modifyVideo": () => import("./providers/luma").then((m) => asCli(m.modifyVideo)),
-  "luma.reframeVideo": () => import("./providers/luma").then((m) => asCli(m.reframeVideo)),
-  "luma.upscale": () => import("./providers/luma").then((m) => asCli(m.upscale)),
-  "luma.addAudio": () => import("./providers/luma").then((m) => asCli(m.addAudio)),
-  "bytedance.contentGenerationTasks": () =>
-    import("./providers/bytedance").then((m) => asCli(m.contentGenerationTasks)),
-  "kling.textToVideo": () => import("./providers/kling").then((m) => asCli(m.textToVideo)),
-  "kling.imageToVideo": () => import("./providers/kling").then((m) => asCli(m.imageToVideo)),
+  "openai.video": () => import("./providers/openai").then((m) => asCli(m.video)),
+  "google.video": () =>
+    import("./providers/google").then((m) => asCli(m.video)),
+  "runway.video": () => import("./providers/runway").then((m) => asCli(m.video)),
+  "runway.videoFromImage": () => import("./providers/runway").then((m) => asCli(m.videoFromImage)),
+  "runway.videoFromVideo": () => import("./providers/runway").then((m) => asCli(m.videoFromVideo)),
+  "luma.video": () => import("./providers/luma").then((m) => asCli(m.video)),
+  "luma.videoModify": () => import("./providers/luma").then((m) => asCli(m.videoModify)),
+  "luma.videoReframe": () => import("./providers/luma").then((m) => asCli(m.videoReframe)),
+  "luma.videoUpscale": () => import("./providers/luma").then((m) => asCli(m.videoUpscale)),
+  "luma.videoAddAudio": () => import("./providers/luma").then((m) => asCli(m.videoAddAudio)),
+  "bytedance.video": () =>
+    import("./providers/bytedance").then((m) => asCli(m.video)),
+  "kling.video": () => import("./providers/kling").then((m) => asCli(m.video)),
+  "kling.videoFromImage": () => import("./providers/kling").then((m) => asCli(m.videoFromImage)),
   // EXPERIMENTAL path-addressed family — uncorroborated routes, see
   // src/providers/kling/models.ts.
-  "kling.textToVideoV3": () => import("./providers/kling").then((m) => asCli(m.textToVideoV3)),
-  "kling.imageToVideoV3": () => import("./providers/kling").then((m) => asCli(m.imageToVideoV3)),
-  "kling.omniVideo": () => import("./providers/kling").then((m) => asCli(m.omniVideo)),
-  "lightricks.textToVideo": () =>
-    import("./providers/lightricks").then((m) => asCli(m.textToVideo)),
-  "lightricks.imageToVideo": () =>
-    import("./providers/lightricks").then((m) => asCli(m.imageToVideo)),
-  "lightricks.audioToVideo": () =>
-    import("./providers/lightricks").then((m) => asCli(m.audioToVideo)),
-  "minimax.videoGeneration": () =>
-    import("./providers/minimax").then((m) => asCli(m.videoGeneration)),
-  "minimax.videoGenerationV2": () =>
-    import("./providers/minimax").then((m) => asCli(m.videoGenerationV2)),
-  "pixverse.textToVideo": () => import("./providers/pixverse").then((m) => asCli(m.textToVideo)),
-  "pixverse.imageToVideo": () => import("./providers/pixverse").then((m) => asCli(m.imageToVideo)),
-  "vidu.text2video": () => import("./providers/vidu").then((m) => asCli(m.text2video)),
-  "vidu.img2video": () => import("./providers/vidu").then((m) => asCli(m.img2video)),
-  "vidu.reference2video": () => import("./providers/vidu").then((m) => asCli(m.reference2video)),
+  "kling.videoV3": () => import("./providers/kling").then((m) => asCli(m.videoV3)),
+  "kling.videoV3FromImage": () => import("./providers/kling").then((m) => asCli(m.videoV3FromImage)),
+  "kling.videoOmni": () => import("./providers/kling").then((m) => asCli(m.videoOmni)),
+  "lightricks.video": () =>
+    import("./providers/lightricks").then((m) => asCli(m.video)),
+  "lightricks.videoFromImage": () =>
+    import("./providers/lightricks").then((m) => asCli(m.videoFromImage)),
+  "lightricks.videoFromAudio": () =>
+    import("./providers/lightricks").then((m) => asCli(m.videoFromAudio)),
+  "minimax.video": () =>
+    import("./providers/minimax").then((m) => asCli(m.video)),
+  "minimax.videoV2": () =>
+    import("./providers/minimax").then((m) => asCli(m.videoV2)),
+  "pixverse.video": () => import("./providers/pixverse").then((m) => asCli(m.video)),
+  "pixverse.videoFromImage": () => import("./providers/pixverse").then((m) => asCli(m.videoFromImage)),
+  "vidu.video": () => import("./providers/vidu").then((m) => asCli(m.video)),
+  "vidu.videoFromImage": () => import("./providers/vidu").then((m) => asCli(m.videoFromImage)),
+  "vidu.videoFromReference": () => import("./providers/vidu").then((m) => asCli(m.videoFromReference)),
 
   // Music / audio generation
   "elevenlabs.music": () => import("./providers/elevenlabs").then((m) => asCli(m.music)),
@@ -244,12 +244,13 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
  * `cli.test.ts` — which asserts REGISTRY names exactly the module-level
  * provider validators — either wrong or full of exceptions.
  *
- * `speech` and `image` are here today: they are the categories with a
- * ready-made pack. The other four land as their packs do.
+ * `speech`, `image` and `video` are here today: they are the categories with a
+ * ready-made pack. The other three land as their packs do.
  */
 export const UNIFIED: Record<string, () => Promise<CliValidator>> = {
   "unified.image": () => import("./unified/image").then((m) => asCli(m.image)),
   "unified.speech": () => import("./unified/speech").then((m) => asCli(m.speech)),
+  "unified.video": () => import("./unified/video").then((m) => asCli(m.video)),
 };
 
 /**

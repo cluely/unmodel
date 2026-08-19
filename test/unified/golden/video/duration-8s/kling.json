@@ -1,0 +1,11 @@
+{
+  "ref": "kling/kling-v3",
+  "params": {
+    "model_name": "kling-v3",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": "8",
+    "mode": "pro",
+    "aspect_ratio": "16:9"
+  },
+  "url": "https://api-singapore.klingai.com/v1/videos/text2video"
+}

@@ -269,7 +269,7 @@ const GENERATE_IMAGES_RULES = {
  * Applies the deny/enum constraint tables to the nested `parameters` object.
  * The pipeline's generic Layer-3 pass only sees top-level keys, which for this
  * body are model/instances/parameters — so the tables are re-applied here at
- * their real depth (same arrangement as ./generate-videos).
+ * their real depth (same arrangement as ./video).
  */
 function checkImagenParameters(
   params: GenerateImagesBody,

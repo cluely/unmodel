@@ -1,0 +1,12 @@
+{
+  "ref": "vidu/viduq2-pro",
+  "params": {
+    "model": "viduq2-pro",
+    "prompt": "restyle the clip as a pencil sketch",
+    "duration": 5,
+    "videos": [
+      "https://example.com/clip.mp4"
+    ]
+  },
+  "url": "https://api.vidu.com/ent/v2/reference2video"
+}

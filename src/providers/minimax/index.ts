@@ -60,7 +60,7 @@ export type {
 
 // --- Video (v1 Hailuo / 01 routes) ----------------------------------------
 export {
-  videoGeneration,
+  video,
   videoQueryUrl,
   videoPriceUSD,
   VIDEO_GENERATION_URL,
@@ -70,16 +70,16 @@ export {
   VIDEO_PRICE_USD,
   VIDEO_PROMPT_MAX_CHARACTERS,
   DEFAULT_VIDEO_DURATION,
-} from "./video-generation";
+} from "./video";
 export type {
   VideoGenerationParams,
   MinimaxSubjectReference,
   MinimaxVideoResolution,
-} from "./video-generation";
+} from "./video";
 
 // --- Video V2 (MiniMax-H3) ------------------------------------------------
 export {
-  videoGenerationV2,
+  videoV2,
   videoV2QueryUrl,
   VIDEO_GENERATION_V2_URL,
   VIDEO_V2_QUERY_URL,
@@ -96,7 +96,7 @@ export {
   VIDEO_V2_USD_PER_SECOND,
   VIDEO_V2_FREE_IMAGES,
   VIDEO_V2_USD_PER_EXTRA_IMAGE,
-} from "./video-generation-v2";
+} from "./video-v2";
 export type {
   VideoGenerationV2Params,
   MinimaxV2ContentItem,
@@ -104,7 +104,7 @@ export type {
   MinimaxVideoV2Resolution,
   MinimaxVideoV2Duration,
   MinimaxVideoV2Ratio,
-} from "./video-generation-v2";
+} from "./video-v2";
 
 // Hand-maintained speech + video catalog (the generated `models` above is the
 // TEXT catalog; models.dev carries no MiniMax media models).

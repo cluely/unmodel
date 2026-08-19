@@ -19,9 +19,9 @@ provider — not their quality ranking.
 
 | Provider | Categories | API style | Tier | models.dev | Notes |
 |---|---|---|---|---|---|
-| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + images + imageEdit + speech + transcription + videos + realtime session done) | ✅ | complete for the documented REST surface |
+| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + images + imageEdit + speech + transcription + video + realtime session done) | ✅ | complete for the documented REST surface |
 | anthropic | llm | native (the reference) | **native** (done) | ✅ | |
-| google | llm, image, video, tts, stt | native | **native** (generateContent + Imagen generateImages + Veo generateVideos done) | ✅ | Gemini TTS is validated inside `generateContent` (`responseModalities: ["AUDIO"]` + `speechConfig`); STT likewise via inline/file audio parts |
+| google | llm, image, video, tts, stt | native | **native** (generateContent + Imagen image + Veo video done) | ✅ | Gemini TTS is validated inside `generateContent` (`responseModalities: ["AUDIO"]` + `speechConfig`); STT likewise via inline/file audio parts |
 | xai (grok) | llm, image, video, stt | openai-compatible (+anthropic-compat) | **oai-base** (live) | ✅ (`xai`) | grok-imagine image/video are native-style, later |
 | groq | inference (chat + Whisper STT) | openai-compatible | **oai-base** (live) | ✅ | Whisper STT covered by speech wave via oai audio shape |
 | cerebras | inference | openai-compatible | **oai-base** (live) | ✅ | |
@@ -56,7 +56,7 @@ Native-API exceptions: **cohere** — now **native** (v2 Chat live, `unmodel/coh
 **amazon** (Nova — reachable via the Bedrock Converse factory); catalog-only:
 **ibm** (Granite/watsonx), **naver**, **snowflake**.
 Mixed-tier: **minimax** and **mistral** are oai-base for chat *and* native for their media
-routes on the same subpath (`minimax.speech` / `videoGeneration` / `videoGenerationV2`,
+routes on the same subpath (`minimax.speech` / `video` / `videoV2`,
 `mistral.transcription`). **bytedance** is a separate native subpath for the BytePlus
 ModelArk image/video routes — the Doubao chat overlay above is still to do.
 
@@ -121,15 +121,16 @@ deepseek (Janus — weights only).
 
 ## Video / music wave
 
-**Video — live:** openai (Sora 2, `videos` at /v1/videos), google (Veo,
-`generateVideos`), bytedance (`contentGenerationTasks`, Seedance / Dreamina Seedance),
-kling (`textToVideo` / `imageToVideo` on `POST /v1/videos/*`, plus the EXPERIMENTAL
-path-addressed `textToVideoV3` / `imageToVideoV3` / `omniVideo`), lightricks (LTX-2: `textToVideo` / `imageToVideo` / `audioToVideo`),
-minimax (`videoGeneration` Hailuo + `videoGenerationV2` MiniMax-H3), pixverse
-(`textToVideo` + `imageToVideo`), runway (`textToVideo` + `imageToVideo` +
-`videoToVideo`), luma (Ray, `generations`, plus post-production `modifyVideo` /
-`reframeVideo` / `upscale` / `addAudio`), vidu (`text2video` / `img2video` /
-`reference2video`).
+**Video — live:** openai (Sora 2, `video` at /v1/videos), google (Veo, `video`),
+bytedance (`video`, Seedance / Dreamina Seedance), kling (`video` /
+`videoFromImage` on `POST /v1/videos/*`, plus the EXPERIMENTAL path-addressed
+`videoV3` / `videoV3FromImage` / `videoOmni`), lightricks (LTX-2: `video` /
+`videoFromImage` / `videoFromAudio`), minimax (`video` Hailuo + `videoV2`
+MiniMax-H3), pixverse (`video` + `videoFromImage`), runway (`video` +
+`videoFromImage` + `videoFromVideo`), luma (Ray, `video`, plus post-production
+`videoModify` / `videoReframe` / `videoUpscale` / `videoAddAudio`), vidu
+(`video` / `videoFromImage` / `videoFromReference`). All ten are reachable
+through one canonical `video()` at `unmodel/video`.
 Remaining (first-party APIs): alibaba (Wan), xai (grok-imagine), tencent (HunyuanVideo).
 Several of these are already reachable as hosted routes on `unmodel/runway`
 (`hailuo3`, `seedance2*`, `gemini_omni_flash`, `grok_imagine_1_5`).

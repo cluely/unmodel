@@ -1,0 +1,21 @@
+{
+  "ref": "bytedance/dreamina-seedance-2-0-260128",
+  "params": {
+    "model": "dreamina-seedance-2-0-260128",
+    "content": [
+      {
+        "type": "text",
+        "text": "restyle the clip as a pencil sketch"
+      },
+      {
+        "type": "video_url",
+        "video_url": {
+          "url": "https://example.com/clip.mp4"
+        },
+        "role": "reference_video"
+      }
+    ],
+    "duration": 5
+  },
+  "url": "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks"
+}

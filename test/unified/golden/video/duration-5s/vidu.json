@@ -1,0 +1,11 @@
+{
+  "ref": "vidu/viduq3-turbo",
+  "params": {
+    "model": "viduq3-turbo",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "9:16"
+  },
+  "url": "https://api.vidu.com/ent/v2/text2video"
+}

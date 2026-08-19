@@ -1,0 +1,10 @@
+{
+  "prompt": "@fox trots through the same snowfield at dusk",
+  "image": [
+    {
+      "url": "https://example.com/frame.png",
+      "role": "reference"
+    }
+  ],
+  "duration": 5
+}

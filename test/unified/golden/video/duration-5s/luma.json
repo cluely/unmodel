@@ -1,0 +1,11 @@
+{
+  "ref": "luma/ray-2",
+  "params": {
+    "model": "ray-2",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": "5s",
+    "resolution": "720p",
+    "aspect_ratio": "9:16"
+  },
+  "url": "https://api.lumalabs.ai/dream-machine/v1/generations"
+}

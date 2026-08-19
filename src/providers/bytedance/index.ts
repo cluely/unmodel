@@ -18,11 +18,11 @@ export type {
 } from "./image";
 
 export {
-  contentGenerationTasks,
+  video,
   contentGenerationTasksUrl,
   contentGenerationTaskUrl,
   CONTENT_GENERATION_TASKS_URL,
-} from "./content-generation-tasks";
+} from "./video";
 export type {
   ContentGenerationTasksBody,
   DreaminaSeedance25Body,
@@ -41,7 +41,7 @@ export type {
   ArkOmniContent,
   ArkVideoRatio,
   ArkContentRole,
-} from "./content-generation-tasks";
+} from "./video";
 
 export {
   ARK_AP_SOUTHEAST_BASE_URL,
@@ -53,7 +53,7 @@ export type { ArkRegion, ArkImageRule } from "./shared";
 
 export {
   imageConstraints,
-  contentGenerationTasksConstraints,
+  videoConstraints,
   imageShapeRules,
   videoShapeRules,
   IMAGE_RESPONSE_FORMATS,

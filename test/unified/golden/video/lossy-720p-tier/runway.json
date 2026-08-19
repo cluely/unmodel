@@ -1,0 +1,24 @@
+{
+  "ref": "runway/hailuo3",
+  "params": {
+    "model": "hailuo3",
+    "promptText": "a drone shot over a fjord at sunrise",
+    "duration": 6,
+    "resolution": "768P"
+  },
+  "url": "https://api.dev.runwayml.com/v1/text_to_video",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "resolution"
+      ],
+      "meta": {
+        "requested": "720p",
+        "achieved": "768P",
+        "lines": 768,
+        "source": "https://docs.dev.runwayml.com/api#tag/Start-generating/paths/~1v1~1text_to_video/post"
+      }
+    }
+  ]
+}

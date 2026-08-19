@@ -1,0 +1,10 @@
+{
+  "ref": "kling/kling-v3",
+  "params": {
+    "model_name": "kling-v3",
+    "prompt": "the fox turns and walks into the snow",
+    "duration": "8",
+    "image": "https://example.com/frame.png"
+  },
+  "url": "https://api-singapore.klingai.com/v1/videos/image2video"
+}

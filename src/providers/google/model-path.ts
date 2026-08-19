@@ -3,7 +3,7 @@
  *
  * Every Gemini-API route is `models/{model}:{method}` against the same v1beta
  * base, so all three endpoint modules in this directory (`chat.ts`,
- * `generate-images.ts`, `generate-videos.ts`) need the same two things: the
+ * `image.ts`, `video.ts`) need the same two things: the
  * `models/` prefix stripped, and that path assembled.
  *
  * It lives in its own module because of what sharing it used to cost.

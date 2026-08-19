@@ -1,0 +1,32 @@
+{
+  "ref": "lightricks/ltx-2-5-fast",
+  "params": {
+    "model": "ltx-2-5-fast",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": null,
+    "resolution": "1920x1080"
+  },
+  "url": "https://api.ltx.io/v2/text-to-video",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "resolution"
+      ],
+      "meta": {
+        "achieved": "1920x1080",
+        "source": "https://docs.ltx.io/models"
+      }
+    },
+    {
+      "code": "approximated_param",
+      "path": [
+        "duration"
+      ],
+      "meta": {
+        "achieved": null,
+        "source": "https://docs.ltx.io/models"
+      }
+    }
+  ]
+}

@@ -48,6 +48,7 @@
 import type { AudioContainer, AudioFormat, AudioFormatCodec, AudioFormatRequest } from "./vocabulary/audio";
 import type { AspectRatio, Dimensions, ResolutionTier } from "./vocabulary/common";
 import type { Voice } from "./vocabulary/speech";
+import type { VideoImageInput, VideoInput } from "./vocabulary/video";
 import type { CompileIssue, Derived } from "./types";
 import type { Warn } from "../translate/warnings";
 
@@ -367,9 +368,19 @@ function snap(value: number, grid: number, rules: PixelRules): number {
  * The inner keys are canonical `"W:H"` spellings; they are re-parsed and
  * reduced on lookup, so a table may write `"16:9"` and match a caller's
  * `"32:18"`.
+ *
+ * `Tier` is a parameter, defaulting to the image vocabulary's `1k`/`2k`/`4k`.
+ * The video vocabulary names its sizes `480p`…`4k` instead, and the arithmetic
+ * below cares about neither: a tier is a key into the provider's table and the
+ * *value* is what carries meaning. One parameterised table type rather than two
+ * is what keeps Sora's `size` lookup and DALL·E's the same code — including the
+ * drift measurement, which is the part worth sharing. The functions take the
+ * tier as a bare `string` for the same reason ratios are bare strings here (see
+ * the file header): an adapter passes its vocabulary's type and loses nothing,
+ * and the invalid case stays reachable so it stays tested.
  */
-export type SizeTable = Readonly<
-  Partial<Record<ResolutionTier, Readonly<Record<string, string>>>>
+export type SizeTable<Tier extends string = ResolutionTier> = Readonly<
+  Partial<Record<Tier, Readonly<Record<string, string>>>>
 >;
 
 /**
@@ -397,11 +408,11 @@ export type SizeTable = Readonly<
  */
 export function toSizeEnum(
   ratio: string,
-  tier: ResolutionTier,
-  table: SizeTable,
+  tier: string,
+  table: SizeTable<string>,
   ctx: DeriveContext,
 ): Derived<string> {
-  const tiers = Object.keys(table) as ResolutionTier[];
+  const tiers = Object.keys(table);
   const row = table[tier];
   if (row === undefined) {
     return bad(ctx, {
@@ -447,7 +458,7 @@ function warnSizeDrift(
   size: string,
   requested: number,
   spelling: string,
-  tier: ResolutionTier,
+  tier: string,
   ctx: DeriveContext,
 ): void {
   const match = PIXEL_PAIR.exec(size);
@@ -578,7 +589,13 @@ export function toRatioString(
 // ---------------------------------------------------------------------------
 
 /**
- * **S6.** Tier → the provider's own name for it (`"1K"`, `1024`, `"hd"`).
+ * **S6.** Tier → the provider's own name for it (`"1K"`, `1024`, `"hd"`,
+ * `"768P"`).
+ *
+ * Serves both size vocabularies: the image tiers (`1k`/`2k`/`4k`) and the video
+ * ones (`480p`…`4k`), which is why the key is a bare `string` — the table an
+ * adapter declares is what says which tiers exist, and the message quotes that
+ * table's own keys.
  *
  * A missing tier is an `invalid_enum_value` naming the tiers that exist, and
  * **never** a downgrade to the next one down. Silently serving 1k for a 4k
@@ -587,8 +604,8 @@ export function toRatioString(
  * caller finds out when someone looks at the output.
  */
 export function toTier<T>(
-  tier: ResolutionTier,
-  table: Readonly<Partial<Record<ResolutionTier, T>>>,
+  tier: string,
+  table: Readonly<Partial<Record<string, T>>>,
   ctx: DeriveContext,
 ): Derived<T> {
   const value = table[tier];
@@ -844,6 +861,259 @@ export function toDurationSuffixedString(
 ): Derived<string> {
   const issues = checkDuration(seconds, allowed, ctx);
   return issues.length > 0 ? { issues } : ok(`${seconds}${suffix}`);
+}
+
+// ---------------------------------------------------------------------------
+// Video inputs — the route a request derives, and how each input is encoded
+// ---------------------------------------------------------------------------
+
+/**
+ * Which generation route a video request *is*, derived from its inputs rather
+ * than chosen by the caller.
+ *
+ * This is the one rule the whole category rests on, so it lives here and not in
+ * ten adapters:
+ *
+ * | the request carries | the route |
+ * |---|---|
+ * | `video` | `"video"` — extend / restyle / edit a clip |
+ * | `image` tagged `role: "reference"` | `"reference"` — carry a subject or style forward |
+ * | any other `image` | `"image"` — first frame, or first *and* last |
+ * | none of those | `"text"` |
+ *
+ * `video` wins over `image` because every provider that takes both treats the
+ * clip as the subject and the stills as guidance, and `reference` is checked
+ * before the plain image case because it is a different *endpoint* at four of
+ * the ten providers — which is precisely why the caller tags the role rather
+ * than picking a function name.
+ *
+ * A mixed array (one reference plus one first frame) resolves to `"reference"`,
+ * and the adapter for a provider whose reference route has no first-frame slot
+ * says so at `image` — a better error than silently dropping one of them.
+ */
+export type VideoRoute = "text" | "image" | "reference" | "video";
+
+/** What each route is called in prose, for the message below. */
+export const VIDEO_ROUTE_LABELS: Readonly<Record<VideoRoute, string>> = Object.freeze({
+  text: "text-to-video",
+  image: "image-to-video",
+  reference: "reference-to-video",
+  video: "video-to-video",
+});
+
+/** The canonical field that decided a route — where its error belongs. */
+const ROUTE_PATH: Readonly<Record<VideoRoute, string>> = Object.freeze({
+  text: "prompt",
+  image: "image",
+  reference: "image",
+  video: "video",
+});
+
+/** What to do instead, per route a model *does* serve. */
+const ROUTE_FIX: Readonly<Record<VideoRoute, string>> = Object.freeze({
+  text: "drop `image`/`video` for a text-only request",
+  image: "pass `image`",
+  reference: 'pass `image` with `role: "reference"`',
+  video: "pass `video`",
+});
+
+/** The inputs a route is derived from — the two fields, and nothing else. */
+export interface VideoRouteInputs {
+  image?: VideoImageInput | readonly VideoImageInput[];
+  video?: VideoInput;
+}
+
+/** The route a request derives to. Pure: it reports nothing and cannot fail. */
+export function videoRoute(input: VideoRouteInputs): VideoRoute {
+  if (input.video !== undefined) return "video";
+  const images = input.image === undefined ? [] : toImageArray(input.image);
+  if (images.length === 0) return "text";
+  return images.some((image) => image.role === "reference") ? "reference" : "image";
+}
+
+/**
+ * The route a request derives to, checked against the routes this model serves.
+ *
+ * The error names the derivation rather than the field: a caller who passed an
+ * image to `runway/gen4.5` and one who passed none are making different
+ * mistakes, and "has no text-to-video route; it serves image-to-video — pass
+ * `image`" tells the second one what to type. Which routes a model serves is
+ * per model at six of the ten providers, so it is the adapter's table.
+ */
+export function resolveVideoRoute(
+  input: VideoRouteInputs,
+  spec: { model: string; routes: readonly VideoRoute[]; source?: string },
+  ctx: DeriveContext,
+): Derived<VideoRoute> {
+  const route = videoRoute(input);
+  if (spec.routes.includes(route)) return ok(route);
+  const served = spec.routes.map((r) => VIDEO_ROUTE_LABELS[r]);
+  const fixes = spec.routes.map((r) => ROUTE_FIX[r]);
+  return {
+    issues: [
+      {
+        code: "unsupported_capability",
+        path: [ROUTE_PATH[route]],
+        message:
+          `"${spec.model}" has no ${VIDEO_ROUTE_LABELS[route]} route; it serves ` +
+          `${served.length === 0 ? "no video route at all" : served.join(" and ")}` +
+          `${fixes.length === 0 ? "" : ` — ${fixes.join(", or ")}`}.`,
+        meta: {
+          route,
+          routes: [...spec.routes],
+          ...(spec.source !== undefined && { source: spec.source }),
+        },
+      },
+    ],
+  };
+}
+
+/** `image` in either of its two spellings, always as an array. */
+export function toImageArray(
+  image: VideoImageInput | readonly VideoImageInput[],
+): readonly VideoImageInput[] {
+  return Array.isArray(image) ? image : [image as VideoImageInput];
+}
+
+/**
+ * The `image` field, split into the three slots a provider has wire fields for.
+ *
+ * An omitted `role` is `"first"`, which is what an unlabelled image means
+ * everywhere — and two images claiming the same slot is an error, not a
+ * last-one-wins: a caller who passed two first frames meant something the
+ * request cannot express, and picking one silently discards the other.
+ */
+export interface ImageSlots {
+  first?: VideoImageInput;
+  last?: VideoImageInput;
+  references: readonly VideoImageInput[];
+}
+
+export function resolveImageSlots(
+  image: VideoImageInput | readonly VideoImageInput[] | undefined,
+  ctx: DeriveContext,
+): Derived<ImageSlots> {
+  const references: VideoImageInput[] = [];
+  let first: VideoImageInput | undefined;
+  let last: VideoImageInput | undefined;
+  if (image === undefined) return ok({ references });
+  for (const [index, entry] of toImageArray(image).entries()) {
+    const role = entry.role ?? "first";
+    if (role === "reference") {
+      references.push(entry);
+      continue;
+    }
+    const taken = role === "first" ? first : last;
+    if (taken !== undefined) {
+      return {
+        issues: [
+          {
+            code: "invalid_shape",
+            path: [...ctx.path, index],
+            message:
+              `two images claim the ${JSON.stringify(role)} frame; a video has one of each. ` +
+              'Use `role: "reference"` for the images that are not keyframes.',
+            meta: { role },
+          },
+        ],
+      };
+    }
+    if (role === "first") first = entry;
+    else last = entry;
+  }
+  return ok({ ...(first !== undefined && { first }), ...(last !== undefined && { last }), references });
+}
+
+/** A slot the provider has no wire field for. */
+export function unsupportedSlot(
+  slot: "last" | "reference",
+  model: string,
+  reason: string,
+  ctx: DeriveContext,
+): Derived<never> {
+  return bad(ctx, {
+    code: "unsupported_param",
+    message:
+      slot === "last"
+        ? `\`role: "last"\` has no wire field on "${model}": ${reason}`
+        : `\`role: "reference"\` has no wire field on "${model}": ${reason}`,
+    meta: { slot },
+  });
+}
+
+/**
+ * A media reference as the string a provider that documents "a URL or a base64
+ * data URI" wants.
+ *
+ * Inline bytes need a media type to become a data URI, and the canonical
+ * `mimeType` is where it comes from — so bytes without one are an
+ * `invalid_shape` naming the field rather than a `data:;base64,` string that
+ * every one of these APIs rejects. Bytes that already carry a `data:` prefix
+ * pass through untouched: that is the same value, spelled the way the caller
+ * happened to have it.
+ */
+export function toMediaUri(
+  ref: { url: string } | { data: string; mimeType?: string },
+  ctx: DeriveContext,
+): Derived<string> {
+  if ("url" in ref) return ok(ref.url);
+  if (ref.data.startsWith("data:")) return ok(ref.data);
+  if (ref.mimeType === undefined) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` was given as inline bytes with no \`mimeType\`, and this model takes ` +
+        "a URL or a `data:` URI — which cannot be built without the media type. Add `mimeType`, " +
+        "or pass a `url`.",
+      meta: {},
+    });
+  }
+  return ok(`data:${ref.mimeType};base64,${ref.data}`);
+}
+
+/**
+ * A media reference at a provider whose field is a **URL only** — no inline
+ * bytes anywhere on the route.
+ *
+ * An error rather than a data URI, because a `data:` string in a field the API
+ * fetches as a URL is a 400 with a confusing message; naming the upload the
+ * provider does document is the fix the caller can act on.
+ */
+export function requireMediaUrl(
+  ref: { url: string } | { data: string; mimeType?: string },
+  hint: string,
+  ctx: DeriveContext,
+): Derived<string> {
+  if ("url" in ref) return ok(ref.url);
+  if (ref.data.startsWith("http://") || ref.data.startsWith("https://")) return ok(ref.data);
+  return bad(ctx, {
+    code: "unsupported_param",
+    message: `\`${paramOf(ctx)}\` must be a URL on this model — inline bytes have no wire field. ${hint}`,
+    meta: {},
+  });
+}
+
+/** Inline bytes at a provider whose field is **base64 only** — no URL form. */
+export function requireInlineBytes(
+  ref: { url: string } | { data: string; mimeType?: string },
+  hint: string,
+  ctx: DeriveContext,
+): Derived<{ data: string; mimeType?: string }> {
+  if (!("url" in ref)) {
+    // A `data:` URI the caller happened to have: unwrap it, because the field
+    // wants the payload and not the envelope.
+    const match = /^data:([^;,]*)(?:;[^,]*)*,(.*)$/s.exec(ref.data);
+    if (match !== null) {
+      const mimeType = match[1] === undefined || match[1] === "" ? ref.mimeType : match[1];
+      return ok({ data: match[2] ?? "", ...(mimeType !== undefined && { mimeType }) });
+    }
+    return ok({ data: ref.data, ...(ref.mimeType !== undefined && { mimeType: ref.mimeType }) });
+  }
+  return bad(ctx, {
+    code: "unsupported_param",
+    message: `\`${paramOf(ctx)}\` must be inline bytes on this model — a URL has no wire field. ${hint}`,
+    meta: { url: ref.url },
+  });
 }
 
 // ---------------------------------------------------------------------------

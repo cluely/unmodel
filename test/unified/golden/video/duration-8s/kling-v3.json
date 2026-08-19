@@ -1,0 +1,12 @@
+{
+  "ref": "kling/kling-3.0",
+  "params": {
+    "prompt": "a drone shot over a fjord at sunrise",
+    "settings": {
+      "duration": 8,
+      "resolution": "1080p",
+      "aspect_ratio": "16:9"
+    }
+  },
+  "url": "https://api-singapore.klingai.com/text-to-video/kling-3.0"
+}

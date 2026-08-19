@@ -364,8 +364,46 @@ test("validate unified.image reports a provider gap at the canonical path", asyn
   expect(stderr).toContain("seed");
 });
 
+test("validate unified.video compiles one canonical request through the ref's provider", async () => {
+  const { stdout, exitCode } = await runCli(
+    ["validate", "unified.video", "--json"],
+    JSON.stringify({
+      model: "openai/sora-2",
+      prompt: "a red fox trotting through fresh snow",
+      duration: 8,
+      aspectRatio: "16:9",
+    }),
+  );
+  expect(exitCode).toBe(0);
+  const result = JSON.parse(stdout) as {
+    ok: boolean;
+    params: Record<string, unknown>;
+    request: { url: string };
+  };
+  expect(result.ok).toBe(true);
+  // Sora's own body: `duration: 8` became the string `seconds`, and the shape
+  // plus Sora's own default tier became one `size` enum member.
+  expect(result.params).toEqual({
+    model: "sora-2",
+    prompt: "a red fox trotting through fresh snow",
+    seconds: "8",
+    size: "1280x720",
+  });
+  expect(result.request.url).toBe("https://api.openai.com/v1/videos");
+});
+
+test("validate unified.video reports a route the model does not serve", async () => {
+  const { stderr, exitCode } = await runCli(
+    ["validate", "unified.video"],
+    JSON.stringify({ model: "runway/gen4_turbo", prompt: "hi", duration: 5 }),
+  );
+  expect(exitCode).toBe(1);
+  expect(stderr).toContain("no text-to-video route");
+  expect(stderr).toContain("pass `image`");
+});
+
 test("the unified map names one target per shipped pack", () => {
-  expect(Object.keys(UNIFIED)).toEqual(["unified.image", "unified.speech"]);
+  expect(Object.keys(UNIFIED)).toEqual(["unified.image", "unified.speech", "unified.video"]);
   // Never both maps: a `unified.*` id is not a provider endpoint.
   expect(Object.keys(REGISTRY).filter((id) => id.startsWith("unified."))).toEqual([]);
 });

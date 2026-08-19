@@ -1,0 +1,23 @@
+{
+  "ref": "bytedance/dreamina-seedance-2-0-260128",
+  "params": {
+    "model": "dreamina-seedance-2-0-260128",
+    "content": [
+      {
+        "type": "text",
+        "text": "the fox turns and walks into the snow"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "https://example.com/frame.png"
+        },
+        "role": "first_frame"
+      }
+    ],
+    "duration": 8,
+    "resolution": "1080p",
+    "ratio": "16:9"
+  },
+  "url": "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks"
+}

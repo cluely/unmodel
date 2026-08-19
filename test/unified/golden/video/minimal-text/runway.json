@@ -1,0 +1,8 @@
+{
+  "ref": "runway/seedance2",
+  "params": {
+    "model": "seedance2",
+    "promptText": "a drone shot over a fjord at sunrise"
+  },
+  "url": "https://api.dev.runwayml.com/v1/text_to_video"
+}

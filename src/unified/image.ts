@@ -56,19 +56,19 @@ import type { AnyUnifiedAdapter, UnifiedValidator } from "../core/unified/types"
 import type { ImageParams } from "../core/unified/vocabulary/image";
 import { image as blackForestLabs } from "../providers/black-forest-labs/unified";
 import { image as bria } from "../providers/bria/unified";
-import { image as bytedance } from "../providers/bytedance/unified";
-import { image as google } from "../providers/google/unified";
+import { image as bytedance } from "../providers/bytedance/unified-image";
+import { image as google } from "../providers/google/unified-image";
 import { image as ideogram } from "../providers/ideogram/unified";
-import { image as kling } from "../providers/kling/unified";
+import { image as kling } from "../providers/kling/unified-image";
 import { image as krea } from "../providers/krea/unified";
 import { image as leonardo } from "../providers/leonardo/unified";
-import { image as luma } from "../providers/luma/unified";
+import { image as luma } from "../providers/luma/unified-image";
 import { image as openai } from "../providers/openai/unified-image";
 import { image as recraft } from "../providers/recraft/unified";
 import { image as reve } from "../providers/reve/unified";
-import { image as runway } from "../providers/runway/unified";
+import { image as runway } from "../providers/runway/unified-image";
 import { image as stability } from "../providers/stability/unified";
-import { image as vidu } from "../providers/vidu/unified";
+import { image as vidu } from "../providers/vidu/unified-image";
 
 /**
  * An adapter for this category. Provider adapters live at

@@ -1,0 +1,16 @@
+{
+  "ref": "bytedance/dreamina-seedance-2-0-260128",
+  "params": {
+    "model": "dreamina-seedance-2-0-260128",
+    "content": [
+      {
+        "type": "text",
+        "text": "a drone shot over a fjord at sunrise"
+      }
+    ],
+    "duration": 5,
+    "resolution": "720p",
+    "ratio": "9:16"
+  },
+  "url": "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks"
+}

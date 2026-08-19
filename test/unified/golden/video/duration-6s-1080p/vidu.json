@@ -1,0 +1,10 @@
+{
+  "ref": "vidu/viduq3-pro",
+  "params": {
+    "model": "viduq3-pro",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": 6,
+    "resolution": "1080p"
+  },
+  "url": "https://api.vidu.com/ent/v2/text2video"
+}

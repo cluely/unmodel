@@ -42,7 +42,7 @@ import { speech as fishAudio } from "../../src/providers/fish-audio/unified";
 import { speech as hume } from "../../src/providers/hume/unified";
 import { speech as inworld } from "../../src/providers/inworld/unified";
 import { speech as lmnt } from "../../src/providers/lmnt/unified";
-import { speech as minimax } from "../../src/providers/minimax/unified";
+import { speech as minimax } from "../../src/providers/minimax/unified-speech";
 import { speech as murf } from "../../src/providers/murf/unified";
 import { speech as openai } from "../../src/providers/openai/unified";
 import { speech as resemble } from "../../src/providers/resemble/unified";

@@ -556,11 +556,11 @@ const SORA_PRO_ENUMS: EndpointConstraints["enums"] = {
 };
 
 /**
- * Per-model constraint table for openai.videos, verified 2026-08-13 against
+ * Per-model constraint table for openai.video, verified 2026-08-13 against
  * the create API reference, the video-generation guide, and the pricing page
  * (URLs on the enum constants above). Dated snapshots follow their family.
  */
-export const videosConstraints = {
+export const videoConstraints = {
   "sora-2": { enums: SORA_BASE_ENUMS },
   "sora-2-2025-10-06": { enums: SORA_BASE_ENUMS },
   "sora-2-2025-12-08": { enums: SORA_BASE_ENUMS },

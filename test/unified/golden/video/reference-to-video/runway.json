@@ -1,0 +1,14 @@
+{
+  "ref": "runway/seedance2",
+  "params": {
+    "model": "seedance2",
+    "promptText": "@fox trots through the same snowfield at dusk",
+    "duration": 5,
+    "references": [
+      {
+        "uri": "https://example.com/frame.png"
+      }
+    ]
+  },
+  "url": "https://api.dev.runwayml.com/v1/text_to_video"
+}

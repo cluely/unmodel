@@ -1,0 +1,11 @@
+{
+  "ref": "lightricks/ltx-2-5-fast",
+  "params": {
+    "model": "ltx-2-5-fast",
+    "prompt": "the fox turns and walks into the snow",
+    "duration": 8,
+    "resolution": "1920x1080",
+    "image_uri": "https://example.com/frame.png"
+  },
+  "url": "https://api.ltx.io/v2/image-to-video"
+}

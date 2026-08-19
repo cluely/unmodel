@@ -1,0 +1,12 @@
+{
+  "ref": "vidu/viduq3-turbo",
+  "params": {
+    "model": "viduq3-turbo",
+    "prompt": "@fox trots through the same snowfield at dusk",
+    "duration": 5,
+    "images": [
+      "https://example.com/frame.png"
+    ]
+  },
+  "url": "https://api.vidu.com/ent/v2/reference2video"
+}

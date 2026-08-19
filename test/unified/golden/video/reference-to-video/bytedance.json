@@ -1,0 +1,21 @@
+{
+  "ref": "bytedance/dreamina-seedance-2-0-260128",
+  "params": {
+    "model": "dreamina-seedance-2-0-260128",
+    "content": [
+      {
+        "type": "text",
+        "text": "@fox trots through the same snowfield at dusk"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "https://example.com/frame.png"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "duration": 5
+  },
+  "url": "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks"
+}

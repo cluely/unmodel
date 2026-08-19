@@ -1,11 +1,11 @@
 export {
-  generations,
+  video,
   GENERATIONS_URL,
   CONCEPTS_LIST_URL,
   LUMA_ASPECT_RATIOS,
   LUMA_VIDEO_DURATIONS,
   LUMA_VIDEO_RESOLUTIONS,
-} from "./generations";
+} from "./video";
 export type {
   GenerationsParams,
   LumaAspectRatio,
@@ -14,7 +14,7 @@ export type {
   LumaKeyframe,
   LumaKeyframes,
   LumaConcept,
-} from "./generations";
+} from "./video";
 
 export {
   image,
@@ -30,25 +30,25 @@ export type {
 } from "./image";
 
 export {
-  modifyVideo,
+  videoModify,
   MODIFY_VIDEO_URL,
   MODIFY_VIDEO_DOCS,
   LUMA_MODIFY_MODES,
-  modifyVideoConstraints,
-} from "./modify-video";
-export type { ModifyVideoParams, LumaModifyMode } from "./modify-video";
+  videoModifyConstraints,
+} from "./video-modify";
+export type { ModifyVideoParams, LumaModifyMode } from "./video-modify";
 
-export { reframeVideo, REFRAME_VIDEO_URL } from "./reframe-video";
-export type { ReframeVideoParams } from "./reframe-video";
+export { videoReframe, REFRAME_VIDEO_URL } from "./video-reframe";
+export type { ReframeVideoParams } from "./video-reframe";
 
 export { reframeImage, REFRAME_IMAGE_URL } from "./reframe-image";
 export type { ReframeImageParams } from "./reframe-image";
 
-export { upscale, upscaleUrl } from "./upscale";
-export type { UpscaleParams } from "./upscale";
+export { videoUpscale, upscaleUrl } from "./video-upscale";
+export type { UpscaleParams } from "./video-upscale";
 
-export { addAudio, addAudioUrl } from "./add-audio";
-export type { AddAudioParams } from "./add-audio";
+export { videoAddAudio, addAudioUrl } from "./video-add-audio";
+export type { AddAudioParams } from "./video-add-audio";
 
 export {
   DREAM_MACHINE_BASE_URL,

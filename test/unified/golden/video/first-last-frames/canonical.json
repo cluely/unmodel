@@ -1,0 +1,13 @@
+{
+  "prompt": "the fox walks from one bank to the other",
+  "image": [
+    {
+      "url": "https://example.com/frame.png"
+    },
+    {
+      "url": "https://example.com/last.png",
+      "role": "last"
+    }
+  ],
+  "duration": 5
+}

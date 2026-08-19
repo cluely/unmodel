@@ -239,7 +239,7 @@ export type RunwayVideoResolution =
  * Fields each model's arm marks as required (beyond `model` and the
  * schema-level `promptImage`), enforced by a checker in image-to-video.ts.
  */
-export const imageToVideoRequired: Readonly<Partial<Record<string, readonly string[]>>> = {
+export const videoFromImageRequired: Readonly<Partial<Record<string, readonly string[]>>> = {
   "gen4.5": ["promptText", "ratio", "duration"],
   gen4_turbo: ["ratio"],
   "veo3.1": ["ratio"],
@@ -254,7 +254,7 @@ export const imageToVideoRequired: Readonly<Partial<Record<string, readonly stri
  * up to two with "first"/"last"; the seedance family takes an unbounded array
  * with optional positions; hailuo3 takes up to 9 with no position schema.
  */
-export const imageToVideoShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>> = {
+export const videoFromImageShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>> = {
   "gen4.5": {
     promptText: PT_1K,
     arrays: { promptImage: { min: 1, max: 1 } },
@@ -323,7 +323,7 @@ export const imageToVideoShapeRules: Readonly<Partial<Record<string, ModelShapeR
   },
 };
 
-export const imageToVideoConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+export const videoFromImageConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   "gen4.5": {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
@@ -476,7 +476,7 @@ export const imageToVideoConstraints: Readonly<Partial<Record<string, EndpointCo
  * checker in text-to-video.ts. Every arm requires `promptText` except
  * seedance2_5, whose arm marks nothing else required.
  */
-export const textToVideoRequired: Readonly<Partial<Record<string, readonly string[]>>> = {
+export const videoRequired: Readonly<Partial<Record<string, readonly string[]>>> = {
   "gen4.5": ["promptText", "ratio", "duration"],
   "veo3.1": ["promptText", "ratio"],
   "veo3.1_fast": ["promptText", "ratio"],
@@ -490,7 +490,7 @@ export const textToVideoRequired: Readonly<Partial<Record<string, readonly strin
 };
 
 /** Prompt-length caps and reference-array caps for text_to_video. */
-export const textToVideoShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>> = {
+export const videoShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>> = {
   "gen4.5": { promptText: PT_1K },
   "veo3.1": { promptText: PT_1K },
   "veo3.1_fast": { promptText: PT_1K },
@@ -522,7 +522,7 @@ export const textToVideoShapeRules: Readonly<Partial<Record<string, ModelShapeRu
   gemini_omni_flash: { promptText: PT_4K },
 };
 
-export const textToVideoConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+export const videoConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   "gen4.5": {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
@@ -698,7 +698,7 @@ export const ALEPH2_TARGET_ASPECT_RATIOS = [
 export type RunwayTargetAspectRatio = (typeof ALEPH2_TARGET_ASPECT_RATIOS)[number];
 
 /** Fields each model's video_to_video arm marks required (beyond `model`). */
-export const videoToVideoRequired: Readonly<Partial<Record<string, readonly string[]>>> = {
+export const videoFromVideoRequired: Readonly<Partial<Record<string, readonly string[]>>> = {
   aleph2: ["videoUri"],
   hailuo3: ["promptVideo", "promptText"],
   seedance2: ["promptVideo"],
@@ -708,7 +708,7 @@ export const videoToVideoRequired: Readonly<Partial<Record<string, readonly stri
   gemini_omni_flash: ["videoUri", "promptText"],
 };
 
-export const videoToVideoShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>> = {
+export const videoFromVideoShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>> = {
   aleph2: { promptText: PT_1K, arrays: { keyframes: { min: 1, max: 5 } } },
   hailuo3: {
     promptText: PT_6K,
@@ -733,7 +733,7 @@ export const videoToVideoShapeRules: Readonly<Partial<Record<string, ModelShapeR
   gemini_omni_flash: { promptText: PT_4K, arrays: { references: { max: 5 } } },
 };
 
-export const videoToVideoConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+export const videoFromVideoConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   aleph2: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "audio",

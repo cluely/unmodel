@@ -1,0 +1,31 @@
+{
+  "ref": "runway/gen4.5",
+  "params": {
+    "model": "gen4.5",
+    "promptText": "the fox turns and walks into the snow",
+    "duration": 5,
+    "ratio": "1104:832",
+    "promptImage": [
+      {
+        "uri": "https://example.com/frame.png",
+        "position": "first"
+      }
+    ]
+  },
+  "url": "https://api.dev.runwayml.com/v1/image_to_video",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "aspectRatio"
+      ],
+      "meta": {
+        "width": 4,
+        "height": 3,
+        "ratio": "4:3",
+        "chosen": "1104:832",
+        "distance": 0.004819286435948883
+      }
+    }
+  ]
+}

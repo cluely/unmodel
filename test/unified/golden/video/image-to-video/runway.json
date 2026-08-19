@@ -1,0 +1,15 @@
+{
+  "ref": "runway/seedance2",
+  "params": {
+    "model": "seedance2",
+    "promptText": "the fox turns and walks into the snow",
+    "duration": 8,
+    "promptImage": [
+      {
+        "uri": "https://example.com/frame.png",
+        "position": "first"
+      }
+    ]
+  },
+  "url": "https://api.dev.runwayml.com/v1/image_to_video"
+}

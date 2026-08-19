@@ -1,0 +1,16 @@
+{
+  "ref": "google/veo-3.1-generate-preview",
+  "params": {
+    "instances": [
+      {
+        "prompt": "a drone shot over a fjord at sunrise"
+      }
+    ],
+    "parameters": {
+      "durationSeconds": 8,
+      "resolution": "1080p",
+      "aspectRatio": "16:9"
+    }
+  },
+  "url": "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning"
+}

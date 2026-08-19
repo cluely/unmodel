@@ -251,7 +251,7 @@ const checked = openrouterChat(body);
 ### Scope
 
 - **Chat only.** Media endpoints (`image`, `speech`, `transcription`,
-  `videos`, …) have `.toSdk` but no `.toApi`. That asymmetry is a scope
+  `video`, …) have `.toSdk` but no `.toApi`. That asymmetry is a scope
   decision, not an oversight: across the providers unmodel implements there are
   exactly five multi-provider media model groups in the catalog, and their wire
   formats share no dialect to translate through. The moment cross-provider
@@ -538,28 +538,38 @@ const res = await fetch(validated.request.url, {
 
 | Subpath | Validators |
 | --- | --- |
-| `unmodel/openai` | `videos` (Sora 2) |
-| `unmodel/google` | `generateVideos` (Veo) |
-| `unmodel/bytedance` | `contentGenerationTasks` (Seedance / Dreamina Seedance on BytePlus ModelArk) |
-| `unmodel/kling` | `textToVideo`, `imageToVideo` (`POST /v1/videos/*`) — plus the EXPERIMENTAL path-addressed `textToVideoV3`, `imageToVideoV3`, `omniVideo` |
-| `unmodel/lightricks` | `textToVideo`, `imageToVideo`, `audioToVideo` (LTX-2 family) |
-| `unmodel/luma` | `generations` (Ray) — plus the post-production routes `modifyVideo`, `reframeVideo`, `upscale`, `addAudio` |
-| `unmodel/minimax` | `videoGeneration` (Hailuo), `videoGenerationV2` (MiniMax-H3) |
-| `unmodel/pixverse` | `textToVideo`, `imageToVideo` |
-| `unmodel/runway` | `textToVideo`, `imageToVideo`, `videoToVideo` (Aleph 2 and the hosted Hailuo/Seedance routes) |
-| `unmodel/vidu` | `text2video`, `img2video`, `reference2video` |
+| `unmodel/openai` | `video` (Sora 2) |
+| `unmodel/google` | `video` (Veo) |
+| `unmodel/bytedance` | `video` (Seedance / Dreamina Seedance on BytePlus ModelArk) |
+| `unmodel/kling` | `video`, `videoFromImage` (`POST /v1/videos/*`) — plus the EXPERIMENTAL path-addressed `videoV3`, `videoV3FromImage`, `videoOmni` |
+| `unmodel/lightricks` | `video`, `videoFromImage`, `videoFromAudio` (LTX-2 family) |
+| `unmodel/luma` | `video` (Ray) — plus the post-production routes `videoModify`, `videoReframe`, `videoUpscale`, `videoAddAudio` |
+| `unmodel/minimax` | `video` (Hailuo), `videoV2` (MiniMax-H3) |
+| `unmodel/pixverse` | `video`, `videoFromImage` |
+| `unmodel/runway` | `video`, `videoFromImage`, `videoFromVideo` (Aleph 2 and the hosted Hailuo/Seedance routes) |
+| `unmodel/vidu` | `video`, `videoFromImage`, `videoFromReference` |
+
+Every generation route above is addressed as `video` whatever the wire calls it
+(`/v1/videos`, `:predictLongRunning`, `/v1/videos/text2video`, `/ent/v2/text2video`,
+`/api/v3/contents/generations/tasks`); a provider with more than one video route
+qualifies the extras by what makes them different — what the clip is made from
+(`videoFromImage`, `videoFromVideo`, `videoFromReference`, `videoFromAudio`),
+which route family serves it (`videoV2`, `videoV3`, `videoOmni`), or what it does
+to a finished clip (`videoModify`, `videoUpscale`). The URL constants and wire
+types keep their wire spelling. One canonical `video()` over all ten lives at
+[`unmodel/video`](#unified-media-one-vocabulary-per-category).
 
 ```ts
-import { videos } from "unmodel/openai";
+import { video } from "unmodel/openai";
 
-const validated = videos({
+const validated = video({
   model: "sora-2",
   prompt: "a red fox trotting through fresh snow, golden hour",
   seconds: "8",       // strings on the wire
   size: "1280x720",   // sora-2-pro unlocks 1024p/1080p sizes — typed per model
 });
 
-// Priced per second of output: on the ok branch, videos.safe(params) estimates { costUSD: 0.8 }
+// Priced per second of output: on the ok branch, video.safe(params) estimates { costUSD: 0.8 }
 const res = await fetch(validated.request.url, {
   method: validated.request.method, // POST https://api.openai.com/v1/videos
   headers: {
@@ -585,9 +595,9 @@ submit request; polling and downloads are transport, so they stay your job.
 
 Everything above is a provider's **own** wire format, which is the point of this
 library — but sometimes you want to write one request and point it at any
-provider. `unmodel/image` and `unmodel/speech` are that: one canonical
-camelCase vocabulary per media category, compiled to whichever provider the
-`"provider/model"` ref names.
+provider. `unmodel/image`, `unmodel/speech` and `unmodel/video` are that: one
+canonical camelCase vocabulary per media category, compiled to whichever
+provider the `"provider/model"` ref names.
 
 ```ts
 import { image } from "unmodel/image";
@@ -637,9 +647,31 @@ image({ model: "openai/gpt-image-1", prompt: "…", seed: 7 });
 | --- | --- | --- |
 | `unmodel/image` | 15 | `prompt`, `aspectRatio` XOR `dimensions`, `resolution` tier, `n`, `seed`, `negativePrompt`, `outputFormat`, `outputDelivery` |
 | `unmodel/speech` | 14 | `text`, `voice`, `outputFormat`, `speed`, `language` |
+| `unmodel/video` | 10 | `prompt`, `duration` (seconds), `resolution` tier, `aspectRatio`, `image` (first / last / reference), `video`, `negativePrompt`, `seed`, `n` |
 
-The other four categories (`image-edit`, `video`, `transcribe`, `music`) ship
-the factory and their vocabulary today; their packs land as their adapters do.
+The other three categories (`image-edit`, `transcribe`, `music`) ship the
+factory and their vocabulary today; their packs land as their adapters do.
+
+**In `unmodel/video`, the inputs choose the endpoint.** A prompt is
+text-to-video; adding `image` makes it image-to-video; tagging that image
+`role: "reference"` makes it reference-to-video; and `video` makes it
+video-to-video. At four of the ten providers those are four different URLs, and
+a model with no arm for the route you derived says so in those words:
+
+```ts
+import { video } from "unmodel/video";
+
+video({ model: "kling/kling-v3", prompt: "a fox in snow", duration: 5, resolution: "1080p" });
+// → POST /v1/videos/text2video  { duration: "5", mode: "pro", … }   — seconds as a STRING
+video({ model: "luma/ray-2",     prompt: "a fox in snow", duration: 5, resolution: "1080p" });
+// → POST /generations           { duration: "5s", resolution: "1080p" }
+video({ model: "openai/sora-2",  prompt: "a fox in snow", duration: 8, aspectRatio: "16:9" });
+// → POST /v1/videos             { seconds: "8", size: "1280x720" }
+
+video({ model: "runway/gen4_turbo", prompt: "a fox in snow", duration: 5 });
+// throws: "gen4_turbo" has no text-to-video route; it serves image-to-video —
+// pass `image`.
+```
 
 Anything genuinely one-off rides in `providerOptions`, keyed by provider and
 deep-merged over the compiled body **before** validation — so it is checked by
@@ -767,8 +799,8 @@ unmodel validate groq.chat params.json --max-cost 0.05
 
 # Media endpoints are addressed the same way: <provider>.<validator>.
 echo '{"model":"sora-2","prompt":"a red fox in snow","seconds":"8","size":"1280x720"}' \
-  | unmodel validate openai.videos
-# ok: openai.videos params are valid
+  | unmodel validate openai.video
+# ok: openai.video params are valid
 # estimate: max cost ~$0.8
 
 # Pass an unknown target to print every registered endpoint.
@@ -831,7 +863,7 @@ Every provider lives on its own subpath; importing one pulls in nothing from the
 | `unmodel/catalog` | models.dev snapshot: `catalog`, `getProvider`, `getModel` |
 | `unmodel/ai-sdk` | The `withJsonSchemaTools` adapter for `.toSdk("ai-sdk")` — types plus one pure function, no dependency on `ai` |
 | `unmodel/<provider>/unified` | One provider's adapters for the [unified media surfaces](#unified-media-one-vocabulary-per-category) — that provider's endpoint module and the kernel, nothing else |
-| `unmodel/image`, `unmodel/speech` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createSpeech([…])` is how you pay for two instead of fifteen |
+| `unmodel/image`, `unmodel/speech`, `unmodel/video` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createSpeech([…])` / `createVideo([…])` is how you pay for two instead of fifteen |
 
 Retargeting keeps that story intact. The wire-format **codecs** are per dialect
 (four of them), not per provider, so `unmodel/anthropic` reaches
@@ -843,17 +875,18 @@ and a URL swap, no codec at all.
 ## Status
 
 Current coverage: 153 request validators across 70 provider subpaths, plus two
-unified media surfaces (`unmodel/image` over 15 providers, `unmodel/speech` over 14).
+unified media surfaces (`unmodel/image` over 15 providers, `unmodel/speech` over 14,
+`unmodel/video` over 10).
 
 - **OpenAI** — Chat Completions, Images + image edits, Speech (TTS), Transcription (STT), Sora videos, Realtime session config.
-- **Anthropic** Messages; **Google** Gemini `chat`, Imagen `image`, Veo `generateVideos`; **Cohere** v2 Chat.
+- **Anthropic** Messages; **Google** Gemini `chat`, Imagen `image`, Veo `video`; **Cohere** v2 Chat.
 - **Cloud-endpoint factories** for Azure OpenAI, Vertex AI, Amazon Bedrock (Converse), and Cloudflare Workers AI.
 - **A 29-provider OpenAI-compatible chat fleet** (Groq, xAI, Mistral, DeepSeek, OpenRouter, …).
 - **TTS** — OpenAI, Cartesia, Deepgram (Aura), ElevenLabs, Fish Audio, Hume (Octave), Inworld, LMNT, MiniMax (T2A v2), Murf, Resemble, Rime, Smallest AI, Speechify.
 - **STT** — OpenAI, AssemblyAI, Cartesia, Deepgram, ElevenLabs (Scribe), Gladia, Inworld (inline base64 audio), Mistral (Voxtral), Rev AI, Soniox, Speechmatics.
 - **Realtime session configs** — OpenAI (GA session), Cartesia (TTS + STT sockets), Deepgram (Live, Flux, Aura streaming), ElevenLabs (stream-input TTS, Scribe v2 Realtime), Inworld (STT + TTS bidirectional), Soniox. The config objects only; socket lifecycle stays out of scope.
 - **Image** — Black Forest Labs (FLUX.2, FLUX 1.x, Kontext, FLUX Tools), Bria (FIBO), ByteDance (Seedream), Ideogram (v3 + v4), Kling, Krea, Leonardo, Luma (Photon), Recraft, Reve (v1 + v2), Runway, Stability (generate + the six edit routes), Vidu.
-- **Video** — Sora, Veo, ByteDance (Seedance), Kling, Lightricks (LTX-2), Luma (Ray + `modifyVideo`/`reframeVideo`/`upscale`/`addAudio`), MiniMax (Hailuo + H3), PixVerse, Runway (text/image/video-to-video), Vidu.
+- **Video** — Sora, Veo, ByteDance (Seedance), Kling, Lightricks (LTX-2), Luma (Ray + `videoModify`/`videoReframe`/`videoUpscale`/`videoAddAudio`), MiniMax (Hailuo + H3), PixVerse, Runway (text/image/video-to-video), Vidu.
 - **Music / audio** — ElevenLabs (Eleven Music), Stability (Stable Audio 2.x).
 
 More endpoints (embeddings, further realtime surfaces) are coming — see `docs/providers.md` for the roadmap. If a validator sees a model it doesn't know, it warns (`unknown_model`) and validates what it can — it never blocks you from using a brand-new model.

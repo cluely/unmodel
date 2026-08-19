@@ -1,0 +1,11 @@
+{
+  "ref": "google/veo-3.1-generate-preview",
+  "params": {
+    "instances": [
+      {
+        "prompt": "a drone shot over a fjord at sunrise"
+      }
+    ]
+  },
+  "url": "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning"
+}

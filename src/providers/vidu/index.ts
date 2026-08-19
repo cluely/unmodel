@@ -1,18 +1,18 @@
-export { text2video, TEXT2VIDEO_URL, TEXT2VIDEO_SUPPORT, text2videoConstraints } from "./text2video";
-export type { Text2VideoParams } from "./text2video";
+export { video, TEXT2VIDEO_URL, TEXT2VIDEO_SUPPORT, videoConstraints } from "./video";
+export type { Text2VideoParams } from "./video";
 
-export { img2video, IMG2VIDEO_URL, IMG2VIDEO_SUPPORT, img2videoConstraints } from "./img2video";
-export type { Img2VideoParams } from "./img2video";
+export { videoFromImage, IMG2VIDEO_URL, IMG2VIDEO_SUPPORT, videoFromImageConstraints } from "./video-from-image";
+export type { Img2VideoParams } from "./video-from-image";
 
 export {
-  reference2video,
+  videoFromReference,
   REFERENCE2VIDEO_URL,
   REFERENCE2VIDEO_SUPPORT,
   SUBJECTS_MODELS,
   VIDEO_REFERENCE_MODEL,
-  reference2videoConstraints,
-} from "./reference2video";
-export type { Reference2VideoParams, ViduSubject } from "./reference2video";
+  videoFromReferenceConstraints,
+} from "./video-from-reference";
+export type { Reference2VideoParams, ViduSubject } from "./video-from-reference";
 
 export {
   imageFromReference,

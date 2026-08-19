@@ -16,7 +16,7 @@ import {
   imageEdit,
   speech,
   transcription,
-  videos,
+  video,
   realtimeSession,
   type OpenaiChatModelId,
 } from "../../src/providers/openai";
@@ -242,11 +242,11 @@ function imagesTypeTests(): void {
   image({ model: "dall-e-2", prompt: "x", size: "1024x1536" });
 }
 
-function videosTypeTests(): void {
+function videoTypeTests(): void {
   // SDK-known enum values keep the validated body SDK-assignable. (The SDK's
   // seconds/size enums lag the current docs — "16"/"20" and 1080p sizes are
   // documented but absent from openai@7.4.0 — so only overlap is asserted.)
-  const clip = videos({
+  const clip = video({
     model: "sora-2",
     prompt: "a calico cat pounces through tall grass",
     size: "1280x720",
@@ -262,24 +262,24 @@ function videosTypeTests(): void {
   clip.toSdk("ai-sdk");
 
   // Model omitted defaults to sora-2 → base sizes apply.
-  videos({ prompt: "x", size: "720x1280" });
+  video({ prompt: "x", size: "720x1280" });
   // Pro renders 1024p and 1080p.
-  videos({ model: "sora-2-pro", prompt: "x", size: "1792x1024" });
-  videos({ model: "sora-2-pro", prompt: "x", size: "1920x1080" });
+  video({ model: "sora-2-pro", prompt: "x", size: "1792x1024" });
+  video({ model: "sora-2-pro", prompt: "x", size: "1920x1080" });
   // Unknown models fall back to the loose escape arm.
-  videos({ model: "sora-3", prompt: "x", some_future_param: true });
+  video({ model: "sora-3", prompt: "x", some_future_param: true });
 
   // @ts-expect-error — sora-2 renders 720p only; 1080p needs sora-2-pro
-  videos({ model: "sora-2", prompt: "x", size: "1920x1080" });
+  video({ model: "sora-2", prompt: "x", size: "1920x1080" });
 
   // @ts-expect-error — model omitted means sora-2, so 1024p is rejected
-  videos({ prompt: "x", size: "1024x1792" });
+  video({ prompt: "x", size: "1024x1792" });
 
   // @ts-expect-error — seconds is a string enum on the wire
-  videos({ model: "sora-2", prompt: "x", seconds: 8 });
+  video({ model: "sora-2", prompt: "x", seconds: 8 });
 
   // @ts-expect-error — bogus top-level param on a known arm
-  videos({ model: "sora-2-pro", prompt: "x", bogus_thing: 1 });
+  video({ model: "sora-2-pro", prompt: "x", bogus_thing: 1 });
 }
 
 function realtimeSessionTypeTests(): void {
@@ -475,5 +475,5 @@ void imagesTypeTests;
 void imageEditTypeTests;
 void speechTypeTests;
 void transcriptionTypeTests;
-void videosTypeTests;
+void videoTypeTests;
 void realtimeSessionTypeTests;

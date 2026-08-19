@@ -1,0 +1,43 @@
+{
+  "ref": "pixverse/v6",
+  "params": {
+    "model": "v6",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "aspect_ratio": "16:9",
+    "duration": 5,
+    "quality": "540p"
+  },
+  "url": "https://app-api.pixverse.ai/openapi/v2/video/text/generate",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "aspectRatio"
+      ],
+      "meta": {
+        "achieved": "16:9",
+        "source": "https://docs.platform.pixverse.ai/text-to-video-generation-13016634e0"
+      }
+    },
+    {
+      "code": "approximated_param",
+      "path": [
+        "duration"
+      ],
+      "meta": {
+        "achieved": 5,
+        "source": "https://docs.platform.pixverse.ai/text-to-video-generation-13016634e0"
+      }
+    },
+    {
+      "code": "approximated_param",
+      "path": [
+        "resolution"
+      ],
+      "meta": {
+        "achieved": "540p",
+        "source": "https://docs.platform.pixverse.ai/text-to-video-generation-13016634e0"
+      }
+    }
+  ]
+}

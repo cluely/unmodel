@@ -1,0 +1,11 @@
+{
+  "ref": "kling/kling-v3",
+  "params": {
+    "model_name": "kling-v3",
+    "prompt": "the fox walks from one bank to the other",
+    "duration": "5",
+    "image": "https://example.com/frame.png",
+    "image_tail": "https://example.com/last.png"
+  },
+  "url": "https://api-singapore.klingai.com/v1/videos/image2video"
+}

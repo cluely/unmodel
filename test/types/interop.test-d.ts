@@ -12,7 +12,7 @@ import { chat as anthropicChat } from "../../src/providers/anthropic";
 import { chat as googleChat } from "../../src/providers/google";
 import { chat as openaiChat } from "../../src/providers/openai";
 import { chat as openrouterChat } from "../../src/providers/openrouter";
-import { videos } from "../../src/providers/openai/videos";
+import { video } from "../../src/providers/openai/video";
 import { withJsonSchemaTools } from "../../src/ai-sdk";
 import type { AiSdkChatOptions, AiSdkChatResult } from "../../src/core/translate/ai-sdk";
 import type { ChatIR, DecodeContext } from "../../src/core/translate/ir";
@@ -95,7 +95,7 @@ claude.toSdk();
 // @ts-expect-error an endpoint offers only the targets it declares
 claude.toSdk("openai");
 // @ts-expect-error the AI SDK's video primitive is experimental; v1 declares no target
-videos({ model: "sora-2", prompt: "a cat" }).toSdk("ai-sdk");
+video({ model: "sora-2", prompt: "a cat" }).toSdk("ai-sdk");
 
 // ---------------------------------------------------------------------------
 // `.toApi` through the real public casts.

@@ -1,0 +1,28 @@
+{
+  "ref": "bytedance/dreamina-seedance-2-0-260128",
+  "params": {
+    "model": "dreamina-seedance-2-0-260128",
+    "content": [
+      {
+        "type": "text",
+        "text": "the fox walks from one bank to the other"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "https://example.com/frame.png"
+        },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "https://example.com/last.png"
+        },
+        "role": "last_frame"
+      }
+    ],
+    "duration": 5
+  },
+  "url": "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks"
+}

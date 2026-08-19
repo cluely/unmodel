@@ -32,8 +32,8 @@ const EXPECTED_IDS: readonly string[] = [
   "bria.image",
   "bria.imageEdit",
   "bria.imageLite",
-  "bytedance.contentGenerationTasks",
   "bytedance.image",
+  "bytedance.video",
   "cartesia.speech",
   "cartesia.stt",
   "cartesia.sttWebsocket",
@@ -58,8 +58,8 @@ const EXPECTED_IDS: readonly string[] = [
   "friendli.chat",
   "gladia.preRecorded",
   "google.chat",
-  "google.generateVideos",
   "google.image",
+  "google.video",
   "groq.chat",
   "huggingface.chat",
   "hume.speech",
@@ -76,31 +76,31 @@ const EXPECTED_IDS: readonly string[] = [
   "inworld.transcribe",
   "kling.image",
   "kling.imageOmni",
-  "kling.imageToVideo",
-  "kling.imageToVideoV3",
-  "kling.omniVideo",
-  "kling.textToVideo",
-  "kling.textToVideoV3",
+  "kling.video",
+  "kling.videoFromImage",
+  "kling.videoOmni",
+  "kling.videoV3",
+  "kling.videoV3FromImage",
   "krea.image",
   "leonardo.image",
-  "lightricks.audioToVideo",
-  "lightricks.imageToVideo",
-  "lightricks.textToVideo",
+  "lightricks.video",
+  "lightricks.videoFromAudio",
+  "lightricks.videoFromImage",
   "lmnt.speech",
   "lmnt.speechDetailed",
   "longcat.chat",
-  "luma.addAudio",
-  "luma.generations",
   "luma.image",
-  "luma.modifyVideo",
   "luma.reframeImage",
-  "luma.reframeVideo",
-  "luma.upscale",
+  "luma.video",
+  "luma.videoAddAudio",
+  "luma.videoModify",
+  "luma.videoReframe",
+  "luma.videoUpscale",
   "meta.chat",
   "minimax.chat",
   "minimax.speech",
-  "minimax.videoGeneration",
-  "minimax.videoGenerationV2",
+  "minimax.video",
+  "minimax.videoV2",
   "mistral.chat",
   "mistral.transcription",
   "moonshotai.chat",
@@ -115,11 +115,11 @@ const EXPECTED_IDS: readonly string[] = [
   "openai.realtimeSession",
   "openai.speech",
   "openai.transcription",
-  "openai.videos",
+  "openai.video",
   "openrouter.chat",
   "perplexity.chat",
-  "pixverse.imageToVideo",
-  "pixverse.textToVideo",
+  "pixverse.video",
+  "pixverse.videoFromImage",
   "recraft.generateBackground",
   "recraft.image",
   "recraft.imageToImage",
@@ -135,9 +135,9 @@ const EXPECTED_IDS: readonly string[] = [
   "reve.remix",
   "rime.speech",
   "runway.image",
-  "runway.imageToVideo",
-  "runway.textToVideo",
-  "runway.videoToVideo",
+  "runway.video",
+  "runway.videoFromImage",
+  "runway.videoFromVideo",
   "sarvam.chat",
   "scaleway.chat",
   "siliconflow.chat",
@@ -164,9 +164,9 @@ const EXPECTED_IDS: readonly string[] = [
   "upstage.chat",
   "vercel.chat",
   "vidu.imageFromReference",
-  "vidu.img2video",
-  "vidu.reference2video",
-  "vidu.text2video",
+  "vidu.video",
+  "vidu.videoFromImage",
+  "vidu.videoFromReference",
   "xai.chat",
   "zhipuai.chat",
 ];
@@ -199,11 +199,9 @@ test("the chat-category endpoints all use the uniform `chat` verb", () => {
 
 /**
  * The image-generation half of the same law, written out because the category
- * cannot be derived from an id: `luma.generations` is *video* and keeps its
- * name until that wave, so a "no endpoint is called `generations`" assertion
- * would be wrong rather than strict. This lists the text-to-image routes
- * instead, and asserts both halves — the new names exist, and the old ones do
- * not survive anywhere the registry can see.
+ * cannot be derived from an id. This lists the text-to-image routes and
+ * asserts both halves — the new names exist, and the old ones do not survive
+ * anywhere the registry can see.
  */
 const IMAGE_GENERATION_IDS: readonly string[] = [
   "black-forest-labs.image",
@@ -261,6 +259,94 @@ test("the image-generation endpoints all use the uniform `image` verb", () => {
     "stability.stableImageSd3",
     "stability.stableImageUltra",
     "vidu.reference2image",
+  ];
+  for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
+ * The video half of the law, and the widest application of it: eleven wire
+ * spellings (`videos`, `generateVideos`, `text2video`, `img2video`,
+ * `contentGenerationTasks`, `generations`, `videoGeneration`, …) collapse onto
+ * one verb, with every extra route qualified by what makes it different —
+ * *what it is made from* (`videoFromImage`, `videoFromVideo`,
+ * `videoFromReference`, `videoFromAudio`), *which route family serves it*
+ * (`videoV3`, `videoV2`, `videoOmni`), or *what it does to a finished clip*
+ * (`videoModify`, `videoReframe`, `videoUpscale`, `videoAddAudio`).
+ *
+ * Written out rather than derived for the same reason as the image list: an id
+ * does not carry its category, and `luma.reframeImage` is an *edit* route that
+ * must keep its name until that wave.
+ */
+const VIDEO_IDS: readonly string[] = [
+  "bytedance.video",
+  "google.video",
+  "kling.video",
+  "kling.videoFromImage",
+  "kling.videoOmni",
+  "kling.videoV3",
+  "kling.videoV3FromImage",
+  "lightricks.video",
+  "lightricks.videoFromAudio",
+  "lightricks.videoFromImage",
+  "luma.video",
+  "luma.videoAddAudio",
+  "luma.videoModify",
+  "luma.videoReframe",
+  "luma.videoUpscale",
+  "minimax.video",
+  "minimax.videoV2",
+  "openai.video",
+  "pixverse.video",
+  "pixverse.videoFromImage",
+  "runway.video",
+  "runway.videoFromImage",
+  "runway.videoFromVideo",
+  "vidu.video",
+  "vidu.videoFromImage",
+  "vidu.videoFromReference",
+];
+
+test("the video-category endpoints all use the uniform `video` verb", () => {
+  for (const id of VIDEO_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    // A provider's primary generation route is bare `video`; every other route
+    // qualifies (`videoFromImage`, `videoV3`, `videoUpscale`), and no route is
+    // named for its wire spelling.
+    expect(id.split(".")[1] ?? "").toMatch(/^video([A-Z]|$)/);
+  }
+  // Every provider that ships a video route ships a bare `video` one, so the
+  // ref a caller reaches for first is the same word everywhere.
+  const providers = [...new Set(VIDEO_IDS.map((id) => id.split(".")[0] as string))].sort();
+  for (const provider of providers) expect(VIDEO_IDS).toContain(`${provider}.video`);
+  expect(providers).toHaveLength(10);
+
+  const retired = [
+    "bytedance.contentGenerationTasks",
+    "google.generateVideos",
+    "kling.imageToVideo",
+    "kling.imageToVideoV3",
+    "kling.omniVideo",
+    "kling.textToVideo",
+    "kling.textToVideoV3",
+    "lightricks.audioToVideo",
+    "lightricks.imageToVideo",
+    "lightricks.textToVideo",
+    "luma.addAudio",
+    "luma.generations",
+    "luma.modifyVideo",
+    "luma.reframeVideo",
+    "luma.upscale",
+    "minimax.videoGeneration",
+    "minimax.videoGenerationV2",
+    "openai.videos",
+    "pixverse.imageToVideo",
+    "pixverse.textToVideo",
+    "runway.imageToVideo",
+    "runway.textToVideo",
+    "runway.videoToVideo",
+    "vidu.img2video",
+    "vidu.reference2video",
+    "vidu.text2video",
   ];
   for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
 });

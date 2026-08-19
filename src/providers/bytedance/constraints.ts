@@ -414,7 +414,7 @@ const seedance10Deny: Record<string, DenyRule> = {
   ...denyTable(AUDIO_ONLY, VIDEO_API_SOURCE),
 };
 
-export const contentGenerationTasksConstraints: Readonly<
+export const videoConstraints: Readonly<
   Partial<Record<string, EndpointConstraints>>
 > = {
   "dreamina-seedance-2-5-260628": {

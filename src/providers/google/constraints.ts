@@ -1,7 +1,7 @@
 import type { EndpointConstraints, FamilyRule } from "../../core/constraint-types";
 import type { ModelInfo } from "../../core/catalog-types";
 import { models } from "../../catalog/google.gen";
-import { generateVideosModels } from "./veo-models";
+import { videoModels } from "./veo-models";
 
 const catalog: Record<string, ModelInfo> = models;
 
@@ -468,12 +468,12 @@ export const imageFamilyRules: readonly FamilyRule[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Veo (generateVideos / models.{model}:predictLongRunning) constraints.
+// Veo (video / models.{model}:predictLongRunning) constraints.
 //
 // NOTE: these deny/enum tables target keys of the nested `parameters` wire
 // object, not top-level body keys — the pipeline's generic Layer-3 pass never
 // sees them (top-level keys are only model/instances/parameters/webhookConfig),
-// so ./generate-videos applies them to `parameters` in a dedicated check.
+// so ./video applies them to `parameters` in a dedicated check.
 // ---------------------------------------------------------------------------
 
 /** Veo docs backing every Veo constraint below. */
@@ -522,7 +522,7 @@ export const VEO_2_IMAGE_MAX_BYTES = 20 * 1024 * 1024;
  *   allows 1 or 2.
  * - `media.image`: Veo 2's documented 20MB input-image cap.
  */
-export const generateVideosConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+export const videoConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   "veo-2.0-generate-001": {
     deny: {
       resolution: {
@@ -569,11 +569,11 @@ export const generateVideosConstraints: Readonly<Partial<Record<string, Endpoint
 };
 
 /**
- * Docs URL backing the `parameters` tables of a generateVideos model — used as
- * `meta.source` on the issues ./generate-videos raises, so an Omni issue does
+ * Docs URL backing the `parameters` tables of a video model — used as
+ * `meta.source` on the issues ./video raises, so an Omni issue does
  * not cite the Veo page.
  */
-export function generateVideosDocsUrl(modelId: string): string {
+export function videoDocsUrl(modelId: string): string {
   return modelId.startsWith("gemini-omni-flash") ? GEMINI_OMNI_FLASH_DOCS_URL : VEO_DOCS_URL;
 }
 
@@ -581,18 +581,18 @@ export function generateVideosDocsUrl(modelId: string): string {
 /**
  * NOTE: both rules below are PREFIX-matched on `veo-`, so they bound only the
  * Veo line. Non-Veo video models (today: `gemini-omni-flash-preview`) must
- * carry a per-model entry in `generateVideosConstraints` above, and
- * ./generate-videos raises `unsupported_capability` for any catalogued
+ * carry a per-model entry in `videoConstraints` above, and
+ * ./video raises `unsupported_capability` for any catalogued
  * video-output id that ends up with no applicable constraints at all — so a
  * future non-Veo id fails visibly rather than validating anything.
  */
-export const generateVideosFamilyRules: readonly FamilyRule[] = [
+export const videoFamilyRules: readonly FamilyRule[] = [
   {
     // Duration / person / videos-per-request rules shared by every Veo 3.x
     // model. Matches only cataloged ids so genuinely unknown models keep the
     // "model-dependent checks were skipped" semantics of unknown_model.
     family: "Veo 3.x video models",
-    match: (modelId) => generateVideosModels[modelId] !== undefined && modelId.startsWith("veo-3"),
+    match: (modelId) => videoModels[modelId] !== undefined && modelId.startsWith("veo-3"),
     enums: {
       durationSeconds: [4, 6, 8],
       personGeneration: ["allow_all", "allow_adult"],
@@ -602,7 +602,7 @@ export const generateVideosFamilyRules: readonly FamilyRule[] = [
   {
     // Every Veo model generates 16:9 (default) or 9:16 — source: VEO_DOCS_URL.
     family: "Veo video models",
-    match: (modelId) => generateVideosModels[modelId] !== undefined && modelId.startsWith("veo-"),
+    match: (modelId) => videoModels[modelId] !== undefined && modelId.startsWith("veo-"),
     enums: { aspectRatio: [...VEO_ASPECT_RATIOS] },
   },
 ];

@@ -1,0 +1,19 @@
+{
+  "ref": "luma/ray-2",
+  "params": {
+    "model": "ray-2",
+    "prompt": "the fox walks from one bank to the other",
+    "duration": "5s",
+    "keyframes": {
+      "frame0": {
+        "type": "image",
+        "url": "https://example.com/frame.png"
+      },
+      "frame1": {
+        "type": "image",
+        "url": "https://example.com/last.png"
+      }
+    }
+  },
+  "url": "https://api.lumalabs.ai/dream-machine/v1/generations"
+}

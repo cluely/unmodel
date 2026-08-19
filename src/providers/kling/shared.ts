@@ -4,11 +4,11 @@
  * render from Kling's own OpenAPI data) — verified 2026-08-13.
  *
  * TWO ROUTE FAMILIES. The corroborated one is `POST /v1/videos/text2video` /
- * `/v1/videos/image2video` with `model_name` in the BODY (`kling.textToVideo`
- * / `kling.imageToVideo`); the path-addressed one (`POST /text-to-video/
+ * `/v1/videos/image2video` with `model_name` in the BODY (`kling.video`
+ * / `kling.videoFromImage`); the path-addressed one (`POST /text-to-video/
  * {model}`, `/omni-video/{model}`) was recovered from the doc site's JS bundle
  * and is corroborated by nothing, so it ships EXPERIMENTAL as
- * `kling.textToVideoV3` / `kling.imageToVideoV3` / `kling.omniVideo`. The
+ * `kling.videoV3` / `kling.videoV3FromImage` / `kling.videoOmni`. The
  * constants below marked "current routes" belong to that experimental family;
  * ./models.ts records the full provenance of both.
  *

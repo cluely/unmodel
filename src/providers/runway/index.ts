@@ -1,15 +1,15 @@
-export { imageToVideo, IMAGE_TO_VIDEO_URL } from "./image-to-video";
-export type { ImageToVideoParams } from "./image-to-video";
+export { videoFromImage, IMAGE_TO_VIDEO_URL } from "./video-from-image";
+export type { ImageToVideoParams } from "./video-from-image";
 
-export { textToVideo, TEXT_TO_VIDEO_URL } from "./text-to-video";
-export type { TextToVideoParams } from "./text-to-video";
+export { video, TEXT_TO_VIDEO_URL } from "./video";
+export type { TextToVideoParams } from "./video";
 
-export { videoToVideo, VIDEO_TO_VIDEO_URL } from "./video-to-video";
+export { videoFromVideo, VIDEO_TO_VIDEO_URL } from "./video-from-video";
 export type {
   VideoToVideoParams,
   RunwayVideoKeyframe,
   RunwayKeyframeRange,
-} from "./video-to-video";
+} from "./video-from-video";
 
 export { image, TEXT_TO_IMAGE_URL, REFERENCE_IMAGE_TAG_PATTERN } from "./image";
 export type { TextToImageParams, RunwayReferenceImage } from "./image";
@@ -31,13 +31,13 @@ export type {
 } from "./shared";
 
 export {
-  imageToVideoConstraints,
-  textToVideoConstraints,
-  videoToVideoConstraints,
+  videoFromImageConstraints,
+  videoConstraints,
+  videoFromVideoConstraints,
   imageConstraints,
-  imageToVideoShapeRules,
-  textToVideoShapeRules,
-  videoToVideoShapeRules,
+  videoFromImageShapeRules,
+  videoShapeRules,
+  videoFromVideoShapeRules,
   imageShapeRules,
   IMAGE_TO_VIDEO_MODELS,
   TEXT_TO_VIDEO_MODELS,

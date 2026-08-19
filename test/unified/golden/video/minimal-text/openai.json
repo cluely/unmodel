@@ -1,0 +1,8 @@
+{
+  "ref": "openai/sora-2",
+  "params": {
+    "model": "sora-2",
+    "prompt": "a drone shot over a fjord at sunrise"
+  },
+  "url": "https://api.openai.com/v1/videos"
+}

@@ -39,19 +39,19 @@ import type { ImageParams } from "../../src/core/unified/vocabulary/image";
 import { image } from "../../src/unified/image";
 import { image as blackForestLabs } from "../../src/providers/black-forest-labs/unified";
 import { image as bria } from "../../src/providers/bria/unified";
-import { image as bytedance } from "../../src/providers/bytedance/unified";
-import { image as google } from "../../src/providers/google/unified";
+import { image as bytedance } from "../../src/providers/bytedance/unified-image";
+import { image as google } from "../../src/providers/google/unified-image";
 import { image as ideogram } from "../../src/providers/ideogram/unified";
-import { image as kling } from "../../src/providers/kling/unified";
+import { image as kling } from "../../src/providers/kling/unified-image";
 import { image as krea } from "../../src/providers/krea/unified";
 import { image as leonardo } from "../../src/providers/leonardo/unified";
-import { image as luma } from "../../src/providers/luma/unified";
+import { image as luma } from "../../src/providers/luma/unified-image";
 import { image as openai } from "../../src/providers/openai/unified";
 import { image as recraft } from "../../src/providers/recraft/unified";
 import { image as reve } from "../../src/providers/reve/unified";
-import { image as runway } from "../../src/providers/runway/unified";
+import { image as runway } from "../../src/providers/runway/unified-image";
 import { image as stability } from "../../src/providers/stability/unified";
-import { image as vidu } from "../../src/providers/vidu/unified";
+import { image as vidu } from "../../src/providers/vidu/unified-image";
 
 type Support = "native" | "derived" | "implicit" | "declared" | "refused";
 

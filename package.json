@@ -263,6 +263,10 @@
       "types": "./dist/providers/lightricks/index.d.ts",
       "default": "./dist/providers/lightricks/index.js"
     },
+    "./lightricks/unified": {
+      "types": "./dist/providers/lightricks/unified.d.ts",
+      "default": "./dist/providers/lightricks/unified.js"
+    },
     "./lmnt": {
       "types": "./dist/providers/lmnt/index.d.ts",
       "default": "./dist/providers/lmnt/index.js"
@@ -346,6 +350,10 @@
     "./pixverse": {
       "types": "./dist/providers/pixverse/index.d.ts",
       "default": "./dist/providers/pixverse/index.js"
+    },
+    "./pixverse/unified": {
+      "types": "./dist/providers/pixverse/unified.d.ts",
+      "default": "./dist/providers/pixverse/unified.js"
     },
     "./recraft": {
       "types": "./dist/providers/recraft/index.d.ts",

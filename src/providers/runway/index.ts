@@ -11,8 +11,8 @@ export type {
   RunwayKeyframeRange,
 } from "./video-to-video";
 
-export { textToImage, TEXT_TO_IMAGE_URL, REFERENCE_IMAGE_TAG_PATTERN } from "./text-to-image";
-export type { TextToImageParams, RunwayReferenceImage } from "./text-to-image";
+export { image, TEXT_TO_IMAGE_URL, REFERENCE_IMAGE_TAG_PATTERN } from "./image";
+export type { TextToImageParams, RunwayReferenceImage } from "./image";
 
 export {
   RUNWAY_BASE_URL,
@@ -34,11 +34,11 @@ export {
   imageToVideoConstraints,
   textToVideoConstraints,
   videoToVideoConstraints,
-  textToImageConstraints,
+  imageConstraints,
   imageToVideoShapeRules,
   textToVideoShapeRules,
   videoToVideoShapeRules,
-  textToImageShapeRules,
+  imageShapeRules,
   IMAGE_TO_VIDEO_MODELS,
   TEXT_TO_VIDEO_MODELS,
   VIDEO_TO_VIDEO_MODELS,

@@ -11,7 +11,7 @@ const ENDPOINTS_DOCS_URL = "https://www.recraft.ai/docs/api-reference/endpoints"
  * states "Styles are not yet supported for V4 models" (which covers the whole
  * V4/V4.1 line, per its model-by-model list).
  */
-export const generationsFamilyRules: readonly FamilyRule[] = [
+export const imageFamilyRules: readonly FamilyRule[] = [
   {
     family: "Recraft V4 / V4.1 models",
     match: (modelId) => modelId.startsWith("recraftv4"),

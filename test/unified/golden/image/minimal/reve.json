@@ -1,0 +1,8 @@
+{
+  "ref": "reve/reve-v2-create",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "version": "latest"
+  },
+  "url": "https://api.reve.com/v2/image/create"
+}

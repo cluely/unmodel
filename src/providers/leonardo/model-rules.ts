@@ -5,7 +5,7 @@
  * ~74 `…GenerationRequest` schemas, each with its OWN `parameters` object.
  * Because the differing params are nested under `parameters` (not top-level),
  * they cannot ride on the pipeline's generic `EndpointConstraints` deny/enum
- * tables — this file holds the equivalent data and generations.ts applies it.
+ * tables — this file holds the equivalent data and image.ts applies it.
  *
  * Ground truth: the OpenAPI v2 spec embedded in
  * https://docs.leonardo.ai/reference/creategeneration-1 (fetch the raw
@@ -63,7 +63,7 @@ export type LeonardoGuidanceStrength = (typeof LEONARDO_GUIDANCE_STRENGTHS)[numb
  * ADVISORY, not a wire constraint. The OpenAPI document embedded in
  * LEONARDO_DOCS_URL gives `style_ids` an `items.enum` but NO `maxItems` (210
  * `maxItems` occurrences in that document, none of them on any of the 58
- * `style_ids` schemas), so the API accepts a longer array. generations.ts
+ * `style_ids` schemas), so the API accepts a longer array. image.ts
  * therefore reports going over this as a WARNING, and cites the prose page —
  * the reference page does not support the claim.
  */

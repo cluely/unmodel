@@ -1,0 +1,9 @@
+{
+  "ref": "vidu/viduq2",
+  "params": {
+    "model": "viduq2",
+    "prompt": "a lighthouse in fog",
+    "aspect_ratio": "16:9"
+  },
+  "url": "https://api.vidu.com/ent/v2/reference2image"
+}

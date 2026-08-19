@@ -6,51 +6,51 @@
  * both the generations route and the outpaint route, so junk compiled and the
  * documented per-model size tables were invisible.
  */
-import { generations, outpaint } from "../../src/providers/recraft";
+import { image, outpaint } from "../../src/providers/recraft";
 import { expectAssignable } from "./helpers";
 
-declare const image: Blob;
+declare const imageBlob: Blob;
 
 function generationsSizeTypeTests(): void {
   // Aspect ratios — the same 14 apply to every model.
-  const v = generations({ prompt: "a lighthouse", model: "recraftv3", size: "16:9" });
+  const v = image({ prompt: "a lighthouse", model: "recraftv3", size: "16:9" });
   expectAssignable<"16:9">(v.size);
-  generations({ prompt: "hi", model: "recraftv2_vector", size: "6:10" });
+  image({ prompt: "hi", model: "recraftv2_vector", size: "6:10" });
 
   // Explicit WxH — the appendix's per-model tables, per model group.
-  generations({ prompt: "hi", model: "recraftv4_1", size: "1344x768" });
-  generations({ prompt: "hi", model: "recraftv4_1_pro", size: "2048x2048" });
-  generations({ prompt: "hi", model: "recraftv3", size: "1820x1024" });
+  image({ prompt: "hi", model: "recraftv4_1", size: "1344x768" });
+  image({ prompt: "hi", model: "recraftv4_1_pro", size: "2048x2048" });
+  image({ prompt: "hi", model: "recraftv3", size: "1820x1024" });
   // The transpose the appendix attributes to no model; passed through.
-  generations({ prompt: "hi", model: "recraftv3", size: "1707x1024" });
+  image({ prompt: "hi", model: "recraftv3", size: "1707x1024" });
 
   // The free-form tail stays, narrowed to the two documented wire shapes: the
   // vector models are listed with aspect ratios only and checkSize passes
   // unattributed WxH values through, so closing the union would reject sizes
   // the API accepts.
-  generations({ prompt: "hi", model: "recraftv3_vector", size: "1234x777" });
-  generations({ prompt: "hi", model: "recraftv3", size: "7:5" });
+  image({ prompt: "hi", model: "recraftv3_vector", size: "1234x777" });
+  image({ prompt: "hi", model: "recraftv3", size: "7:5" });
 
   // @ts-expect-error — junk no longer compiles (`size` was a bare `string`)
-  generations({ prompt: "hi", size: "banana" });
+  image({ prompt: "hi", size: "banana" });
   // @ts-expect-error — the empty string is not a size
-  generations({ prompt: "hi", size: "" });
+  image({ prompt: "hi", size: "" });
 
   // null still means "let Recraft pick from the prompt".
-  generations({ prompt: "hi", size: null });
+  image({ prompt: "hi", size: null });
 }
 
 function outpaintSizeTypeTests(): void {
   // The outpaint route shares the RecraftSize vocabulary; it is
   // recraftv3 / recraftv3_vector only, so the V2/V3 table and the shared
   // aspect ratios are the meaningful presets.
-  outpaint({ image, prompt: "wider", size: "1024x1024" });
-  outpaint({ image, prompt: "wider", size: "3:2" });
+  outpaint({ image: imageBlob, prompt: "wider", size: "1024x1024" });
+  outpaint({ image: imageBlob, prompt: "wider", size: "3:2" });
 
   // @ts-expect-error — junk no longer compiles (`size` was a bare `string`)
-  outpaint({ image, prompt: "wider", size: "banana" });
+  outpaint({ image: imageBlob, prompt: "wider", size: "banana" });
   // @ts-expect-error — the empty string is not a size
-  outpaint({ image, prompt: "wider", size: "" });
+  outpaint({ image: imageBlob, prompt: "wider", size: "" });
 }
 
 export { generationsSizeTypeTests, outpaintSizeTypeTests };

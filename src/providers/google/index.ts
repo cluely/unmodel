@@ -65,12 +65,12 @@ export {
 export {
   GENERATE_IMAGES_BASE_URL,
   IMAGEN_DEFAULT_SAMPLE_COUNT,
-  generateImages,
+  image,
   generateImagesUrl,
   type GenerateImagesBody,
   type GenerateImagesSdkConfig,
   type GenerateImagesSdkParams,
-  type GenerateImagesSdkTargets,
+  type ImageSdkTargets,
   type GoogleImagenAspectRatio,
   type GoogleImagenFastParameters,
   type GoogleImagenImageSize,
@@ -82,7 +82,7 @@ export {
   type ImagenStandardBody,
   type ImagenUltraBody,
   type UnknownImagenBody,
-} from "./generate-images";
+} from "./image";
 export {
   generateVideosModels,
   veoSupplementModels,
@@ -90,7 +90,7 @@ export {
   type GoogleVeoSupplementModelId,
 } from "./veo-models";
 export {
-  generateImagesModels,
+  imageModels,
   imagenModels,
   type GoogleImagenModelId,
 } from "./imagen-models";
@@ -136,8 +136,8 @@ export {
   VEO_DOCS_URL,
   chatConstraints,
   chatFamilyRules,
-  generateImagesConstraints,
-  generateImagesFamilyRules,
+  imageConstraints,
+  imageFamilyRules,
   generateVideosConstraints,
   generateVideosFamilyRules,
   type GeminiImageRule,

@@ -1,0 +1,7 @@
+{
+  "ref": "black-forest-labs/flux-2-pro",
+  "params": {
+    "prompt": "a lighthouse in fog"
+  },
+  "url": "https://api.bfl.ai/v1/flux-2-pro"
+}

@@ -451,17 +451,22 @@ describe("chat (amendment A1)", () => {
  *   is a value import after one refactor, and the rule that admits neither is
  *   the rule nobody has to think about.
  * - **A6** a category entry (`src/unified/**`) sees the kernel, its own
- *   directory, and provider `unified.ts` adapter leaves — nothing else in a
- *   provider directory, ever. This is what makes the ready-made pack in a
- *   later commit cost exactly its adapters.
- * - **A7** an adapter (`src/providers/<p>/unified.ts`) sees its own provider
- *   directory, the kernel and the translation warning types. Scoped to the
- *   files that exist, so it is inert until adapters land and applies the
- *   moment the first one does.
+ *   directory, and provider adapter leaves — nothing else in a provider
+ *   directory, ever. This is what makes a ready-made pack cost exactly its
+ *   adapters.
+ * - **A7** an adapter sees its own provider directory, the kernel and the
+ *   translation warning types.
+ *
+ * An adapter leaf is `unified.ts`, or `unified-<category>.ts` for a provider
+ * that serves more than one. The suffixed form is not a convenience: a single
+ * module exporting two categories' adapters is a single *build entry* holding
+ * both, so `unmodel/speech` paid for OpenAI's image catalog until the two were
+ * split. One module per category is what makes A6's promise true in bytes and
+ * not just in imports.
  */
 describe("unified media surfaces (amendment A5)", () => {
   const isUnifiedAdapter = (file: string): boolean =>
-    /^src\/providers\/[^/]+\/unified\.ts$/.test(file);
+    /^src\/providers\/[^/]+\/unified(-[a-z-]+)?\.ts$/.test(file);
 
   test("A5 — the kernel imports only src/core/** and zod", () => {
     const kernelFiles = FILES.filter((f) => under(f, "src/core/unified"));
@@ -517,10 +522,11 @@ describe("unified media surfaces (amendment A5)", () => {
 
   test("A7 — an adapter imports only its own provider, the kernel, and warning types", () => {
     const adapters = FILES.filter(isUnifiedAdapter);
-    // The fourteen speech adapters. A rule that scans an empty set passes by
+    // Fourteen speech adapters plus fifteen image ones, minus the barrel
+    // openai keeps for its subpath. A rule that scans an empty set passes by
     // saying nothing, and this one is the reason a category entry can import
-    // `providers/<p>/unified.ts` without dragging that provider's neighbours in.
-    expect(adapters.length).toBeGreaterThanOrEqual(14);
+    // an adapter leaf without dragging that provider's neighbours in.
+    expect(adapters.length).toBeGreaterThanOrEqual(29);
 
     const violations: string[] = [];
     for (const file of adapters) {

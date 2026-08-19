@@ -1,0 +1,8 @@
+{
+  "ref": "bria/FIBO",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "aspect_ratio": "16:9"
+  },
+  "url": "https://engine.prod.bria-api.com/v2/image/generate"
+}

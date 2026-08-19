@@ -17,17 +17,17 @@ export type {
 } from "./generations";
 
 export {
-  imageGenerations,
+  image,
   IMAGE_GENERATIONS_URL,
   DEFAULT_IMAGE_MODEL_ID,
   LUMA_MAX_IMAGE_REFS,
   LUMA_MAX_IDENTITY_IMAGES,
-} from "./image-generations";
+} from "./image";
 export type {
   ImageGenerationsParams,
   LumaImageRef,
   LumaCharacterRef,
-} from "./image-generations";
+} from "./image";
 
 export {
   modifyVideo,

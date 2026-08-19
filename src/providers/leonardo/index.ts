@@ -1,4 +1,4 @@
-export { generations, LEONARDO_API_BASE_URL, LEONARDO_GENERATIONS_URL } from "./generations";
+export { image, LEONARDO_API_BASE_URL, LEONARDO_GENERATIONS_URL } from "./image";
 export type {
   GenerationsBody,
   LucidOriginBody,
@@ -12,7 +12,7 @@ export type {
   LeonardoStyleGuidance,
   LeonardoContentGuidance,
   LeonardoImageToImageGuidance,
-} from "./generations";
+} from "./image";
 
 export {
   LEONARDO_MODEL_RULES,

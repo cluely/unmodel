@@ -6,11 +6,11 @@
  * none of them carries a `(string & {})` tail: a non-member is a hard
  * `invalid_enum_value`, and these tests pin that it is a compile error first.
  */
-import { imageGenerate, imageGenerateLite, imageEdit } from "../../src/providers/bria";
+import { image, imageLite, imageEdit } from "../../src/providers/bria";
 import { expectAssignable } from "./helpers";
 
 function generateEnumTypeTests(): void {
-  const v = imageGenerate({
+  const v = image({
     prompt: "a photorealistic rendering of balloon lettering on a white backdrop",
     aspect_ratio: "16:9",
     resolution: "4MP",
@@ -20,24 +20,24 @@ function generateEnumTypeTests(): void {
   expectAssignable<"4MP">(v.resolution);
   expectAssignable<"png">(v.output_type);
 
-  imageGenerate({ prompt: "hi", aspect_ratio: "4:5", resolution: "1MP", output_type: "jpeg" });
-  imageGenerateLite({ prompt: "hi", aspect_ratio: "9:16", output_type: "jpeg" });
+  image({ prompt: "hi", aspect_ratio: "4:5", resolution: "1MP", output_type: "jpeg" });
+  imageLite({ prompt: "hi", aspect_ratio: "9:16", output_type: "jpeg" });
 
   // @ts-expect-error aspect_ratio is CLOSED — 21:9 is not one of the 9 values
-  imageGenerate({ prompt: "hi", aspect_ratio: "21:9" });
+  image({ prompt: "hi", aspect_ratio: "21:9" });
   // @ts-expect-error the empty string is not a ratio
-  imageGenerateLite({ prompt: "hi", aspect_ratio: "" });
+  imageLite({ prompt: "hi", aspect_ratio: "" });
   // @ts-expect-error resolution is CLOSED — 1MP | 4MP
-  imageGenerate({ prompt: "hi", resolution: "2MP" });
+  image({ prompt: "hi", resolution: "2MP" });
   // @ts-expect-error the empty string is not a resolution
-  imageGenerate({ prompt: "hi", resolution: "" });
+  image({ prompt: "hi", resolution: "" });
   // @ts-expect-error output_type is CLOSED — png | jpeg, no webp
-  imageGenerate({ prompt: "hi", output_type: "webp" });
+  image({ prompt: "hi", output_type: "webp" });
   // @ts-expect-error the empty string is not an output type
-  imageGenerate({ prompt: "hi", output_type: "" });
+  image({ prompt: "hi", output_type: "" });
 
   // model_version keeps its escape hatch — model ids stay open on purpose.
-  imageGenerate({ prompt: "hi", model_version: "FIBO-next" });
+  image({ prompt: "hi", model_version: "FIBO-next" });
 }
 
 function editEnumTypeTests(): void {

@@ -26,7 +26,7 @@ export type {
   ChatWebSearchOptions,
 } from "./chat";
 
-export { images, IMAGES_GENERATIONS_URL } from "./images";
+export { image, IMAGES_GENERATIONS_URL } from "./image";
 export type {
   ImagesBody,
   GptImage1Body,
@@ -38,7 +38,7 @@ export type {
   DallE2Body,
   DallE3Body,
   UnknownImageModelBody,
-} from "./images";
+} from "./image";
 
 // Both multipart endpoints ship their own form-data builder (the field rules
 // differ: image[] parts here, repeated name[] parts for transcription), so
@@ -174,7 +174,7 @@ export { checkChat, checkImages } from "./check";
 export type { ChatCompletionLike, ChatChoiceLike, ImagesResponseLike } from "./check";
 
 export {
-  imagesConstraints,
+  imageConstraints,
   imagesEditConstraints,
   speechConstraints,
   transcriptionConstraints,

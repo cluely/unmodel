@@ -15,17 +15,17 @@ export {
 export type { Reference2VideoParams, ViduSubject } from "./reference2video";
 
 export {
-  reference2image,
+  imageFromReference,
   REFERENCE2IMAGE_URL,
   IMAGE_ASPECT_RATIOS,
   IMAGE_RESOLUTIONS,
   IMAGE_COUNTS,
-} from "./reference2image";
+} from "./image-from-reference";
 export type {
   Reference2ImageParams,
   ViduImageAspectRatio,
   ViduImageResolution,
-} from "./reference2image";
+} from "./image-from-reference";
 
 export {
   VIDU_BASE_URL,

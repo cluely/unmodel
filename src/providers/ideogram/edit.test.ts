@@ -9,7 +9,7 @@ import {
   IDEOGRAM_V3_REFRAME_URL,
   IDEOGRAM_V3_REPLACE_BACKGROUND_URL,
 } from "./edit";
-import { toFormData } from "./generate";
+import { toFormData } from "./image";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 

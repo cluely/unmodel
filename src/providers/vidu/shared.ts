@@ -45,7 +45,7 @@ export type ViduStyle = (typeof VIDU_STYLES)[number];
 
 /** Documented `prompt` ceiling on the video routes. */
 export const PROMPT_MAX_CHARS = 5000;
-/** Documented `prompt` ceiling on reference2image. */
+/** Documented `prompt` ceiling on imageFromReference. */
 export const IMAGE_PROMPT_MAX_CHARS = 2000;
 /** Documented `payload` ceiling. */
 export const PAYLOAD_MAX_CHARS = 1_048_576;

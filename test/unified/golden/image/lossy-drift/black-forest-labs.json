@@ -1,0 +1,26 @@
+{
+  "ref": "black-forest-labs/flux-pro-1.1",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "width": 1344,
+    "height": 768
+  },
+  "url": "https://api.bfl.ai/v1/flux-pro-1.1",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "aspectRatio"
+      ],
+      "meta": {
+        "requested": "16:9",
+        "width": 1344,
+        "height": 768,
+        "requestedRatio": 1.7777777777777777,
+        "achievedRatio": 1.75,
+        "grid": 32,
+        "source": "https://api.bfl.ai/openapi.json#/components/schemas/FluxPro11Inputs"
+      }
+    }
+  ]
+}

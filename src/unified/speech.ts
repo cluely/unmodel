@@ -53,7 +53,7 @@ import { speech as inworld } from "../providers/inworld/unified";
 import { speech as lmnt } from "../providers/lmnt/unified";
 import { speech as minimax } from "../providers/minimax/unified";
 import { speech as murf } from "../providers/murf/unified";
-import { speech as openai } from "../providers/openai/unified";
+import { speech as openai } from "../providers/openai/unified-speech";
 import { speech as resemble } from "../providers/resemble/unified";
 import { speech as rime } from "../providers/rime/unified";
 import { speech as smallestAi } from "../providers/smallest-ai/unified";

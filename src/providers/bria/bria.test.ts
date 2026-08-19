@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
-  imageGenerate,
-  imageGenerateLite,
+  image,
+  imageLite,
   BRIA_IMAGE_GENERATE_URL,
   BRIA_IMAGE_GENERATE_LITE_URL,
-} from "./generate";
+} from "./image";
 import { imageEdit, BRIA_IMAGE_EDIT_URL } from "./edit";
 import { models } from "./models";
 import { BRIA_ASPECT_RATIOS, BRIA_RESOLUTIONS, BRIA_OUTPUT_TYPES } from "./shared";
@@ -14,15 +14,15 @@ import type { ValidateResult } from "../../core/result";
 type Unchecked = (params: unknown, options?: ValidateOptions) => ValidateResult<
   Record<string, unknown>
 >;
-const generateUnchecked = imageGenerate.safe as unknown as Unchecked;
-const liteUnchecked = imageGenerateLite.safe as unknown as Unchecked;
+const generateUnchecked = image.safe as unknown as Unchecked;
+const liteUnchecked = imageLite.safe as unknown as Unchecked;
 const editUnchecked = imageEdit.safe as unknown as Unchecked;
 
 const STRUCTURED_PROMPT = JSON.stringify({ short_description: "an owl at night" });
 
-describe("bria.imageGenerate", () => {
+describe("bria.image", () => {
   test("validates and targets the v2 generate route", () => {
-    const v = imageGenerate({
+    const v = image({
       prompt: "a photorealistic rendering of balloon lettering on a white backdrop",
       aspect_ratio: "16:9",
       resolution: "4MP",
@@ -34,15 +34,15 @@ describe("bria.imageGenerate", () => {
   });
 
   test("prices one image at the published FIBO rate", () => {
-    const r = imageGenerate.safe({ prompt: "x" });
+    const r = image.safe({ prompt: "x" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.03, 10);
 
-    const lite = imageGenerateLite.safe({ prompt: "x" });
+    const lite = imageLite.safe({ prompt: "x" });
     expect(lite.ok).toBe(true);
     if (lite.ok) expect(lite.estimate.costUSD).toBeCloseTo(0.02, 10);
 
-    const budget = imageGenerate.safe({ prompt: "x" }, { maxCostUSD: 0.02 });
+    const budget = image.safe({ prompt: "x" }, { maxCostUSD: 0.02 });
     expect(budget.ok).toBe(false);
     if (!budget.ok) expect(budget.errors[0]?.code).toBe("over_budget");
   });
@@ -52,7 +52,7 @@ describe("bria.imageGenerate", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.message).toContain("structured_prompt");
 
-    expect(imageGenerate.safe({ images: ["https://example.com/ref.jpg"] }).ok).toBe(true);
+    expect(image.safe({ images: ["https://example.com/ref.jpg"] }).ok).toBe(true);
   });
 
   test("images + structured_prompt is not a documented combination", () => {
@@ -73,7 +73,7 @@ describe("bria.imageGenerate", () => {
     const notJson = generateUnchecked({ structured_prompt: "an owl at night", seed: 7 });
     expect(notJson.ok).toBe(false);
 
-    const noSeed = imageGenerate.safe({ structured_prompt: STRUCTURED_PROMPT });
+    const noSeed = image.safe({ structured_prompt: STRUCTURED_PROMPT });
     expect(noSeed.ok).toBe(true);
     if (noSeed.ok) expect(noSeed.warnings.some((w) => w.path[0] === "seed")).toBe(true);
   });
@@ -104,11 +104,11 @@ describe("bria.imageGenerate", () => {
   test("every BriaAspectRatio preset validates on both generate routes", () => {
     // Keep in sync with BriaAspectRatio
     for (const aspect_ratio of BRIA_ASPECT_RATIOS) {
-      const full = imageGenerate.safe({ prompt: "x", aspect_ratio });
+      const full = image.safe({ prompt: "x", aspect_ratio });
       expect(full.ok, `generate should accept ${aspect_ratio}`).toBe(true);
       if (full.ok) expect(full.warnings, `${aspect_ratio} should be warning-free`).toEqual([]);
 
-      const lite = imageGenerateLite.safe({ prompt: "x", aspect_ratio });
+      const lite = imageLite.safe({ prompt: "x", aspect_ratio });
       expect(lite.ok, `generate/lite should accept ${aspect_ratio}`).toBe(true);
       if (lite.ok) expect(lite.warnings, `${aspect_ratio} should be warning-free`).toEqual([]);
     }
@@ -117,7 +117,7 @@ describe("bria.imageGenerate", () => {
   test("every BriaResolution preset validates", () => {
     // Keep in sync with BriaResolution
     for (const resolution of BRIA_RESOLUTIONS) {
-      const r = imageGenerate.safe({ prompt: "x", resolution });
+      const r = image.safe({ prompt: "x", resolution });
       expect(r.ok, `resolution ${resolution} should validate`).toBe(true);
       if (r.ok) expect(r.warnings, `${resolution} should be warning-free`).toEqual([]);
     }
@@ -127,11 +127,11 @@ describe("bria.imageGenerate", () => {
     // Keep in sync with BriaOutputType — it lives on BriaCommonParams, so it is
     // shared by generate, generate/lite and edit.
     for (const output_type of BRIA_OUTPUT_TYPES) {
-      const full = imageGenerate.safe({ prompt: "x", output_type });
+      const full = image.safe({ prompt: "x", output_type });
       expect(full.ok, `generate should accept ${output_type}`).toBe(true);
       if (full.ok) expect(full.warnings, `${output_type} should be warning-free`).toEqual([]);
 
-      const lite = imageGenerateLite.safe({ prompt: "x", output_type });
+      const lite = imageLite.safe({ prompt: "x", output_type });
       expect(lite.ok, `generate/lite should accept ${output_type}`).toBe(true);
       if (lite.ok) expect(lite.warnings, `${output_type} should be warning-free`).toEqual([]);
 
@@ -150,7 +150,7 @@ describe("bria.imageGenerate", () => {
     expect(generateUnchecked({ prompt: "x", resolution: "2MP" }).ok).toBe(false);
     expect(generateUnchecked({ prompt: "x", output_type: "webp" }).ok).toBe(false);
     expect(generateUnchecked({ prompt: "x", steps_num: 20 }).ok).toBe(false);
-    expect(imageGenerate.safe({ prompt: "x", steps_num: 35 }).ok).toBe(true);
+    expect(image.safe({ prompt: "x", steps_num: 35 }).ok).toBe(true);
 
     const version = generateUnchecked({ prompt: "x", model_version: "FIBO-edit" });
     expect(version.ok).toBe(false);
@@ -161,9 +161,9 @@ describe("bria.imageGenerate", () => {
   });
 });
 
-describe("bria.imageGenerateLite", () => {
+describe("bria.imageLite", () => {
   test("targets the lite route", () => {
-    const v = imageGenerateLite({ prompt: "a ring on a marble table", aspect_ratio: "4:5" });
+    const v = imageLite({ prompt: "a ring on a marble table", aspect_ratio: "4:5" });
     expect(Object.keys(v)).toEqual(["prompt", "aspect_ratio"]);
     expect(v.request.url).toBe(BRIA_IMAGE_GENERATE_LITE_URL);
     expect(v.request.headers).toEqual({ "content-type": "application/json" });

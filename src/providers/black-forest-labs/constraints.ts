@@ -82,7 +82,7 @@ const flux2KleinDeny: Record<string, DenyRule> = {
   },
 };
 
-export const flux2Constraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+export const imageConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   "flux-2-pro": { deny: flux2ProMaxDeny },
   "flux-2-max": { deny: flux2ProMaxDeny },
   "flux-2-pro-preview": { deny: flux2ProMaxDeny },
@@ -173,7 +173,7 @@ const fluxUltraFinetunedDeny: Record<string, DenyRule> = {
   guidance: fluxUltraDeny.guidance as DenyRule,
 };
 
-export const flux1Constraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+export const imageFlux1Constraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   "flux-pro-1.1": { deny: fluxPro11Deny },
   "flux-dev": { deny: fluxDevDeny },
   "flux-pro-1.1-ultra": { deny: fluxUltraDeny },

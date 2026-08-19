@@ -88,20 +88,20 @@ const CHAT_BUDGET_KIB = 600;
  * bad trade, and the composition test below is the assertion doing the real
  * work anyway.)
  *
- * `speech` is deliberately **not** in this list any more: it is the first
- * category to ship a ready-made pack, so its entry legitimately imports
- * fourteen adapters. It gets its own budget and its own, stricter composition
- * test below — the point of which is that the *rest* of the rule still holds
- * (exactly those fourteen providers, no catalogs, no availability data), so
- * "the entry imports providers now" cannot quietly become "the entry imports
- * anything".
+ * `speech` and `image` are deliberately **not** in this list any more: they are
+ * the categories that ship a ready-made pack, so their entries legitimately
+ * import fourteen and fifteen adapters. Each gets its own budget and its own,
+ * stricter composition test below — the point of which is that the *rest* of
+ * the rule still holds (exactly those providers, no catalogs, no availability
+ * data), so "the entry imports providers now" cannot quietly become "the entry
+ * imports anything".
  */
 const UNIFIED_BUDGET_KIB = 18;
 
-const UNIFIED_ENTRIES: string[] = ["image", "image-edit", "video", "transcribe", "music"];
+const UNIFIED_ENTRIES: string[] = ["image-edit", "video", "transcribe", "music"];
 
 /** Every category entry, packs included — for the "it was built at all" check. */
-const ALL_UNIFIED_ENTRIES: string[] = [...UNIFIED_ENTRIES, "speech"];
+const ALL_UNIFIED_ENTRIES: string[] = [...UNIFIED_ENTRIES, "speech", "image"];
 
 /**
  * `unmodel/speech`'s budget: the kernel plus fourteen TTS providers — each
@@ -117,6 +117,58 @@ const ALL_UNIFIED_ENTRIES: string[] = [...UNIFIED_ENTRIES, "speech"];
  * own pack with `createSpeech([…])` and pays 40–60 KiB.
  */
 const SPEECH_PACK_BUDGET_KIB = 360;
+
+/**
+ * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
+ * each one's validator, zod schema, constraint table and catalog.
+ *
+ * 670 KiB measured, pinned at 740 with the same ~10% headroom as everything
+ * above. It is twice the speech pack, and the reason is structural rather than
+ * careless: the image providers carry *size* tables (per-model pixel grids,
+ * resolution enums, 69-value size lists, style vocabularies) on top of the
+ * usual deny rules, several of them serve two generation routes from one
+ * adapter, and two of them key off a generated catalog rather than a
+ * hand-written one (see `IMAGE_PACK_CATALOGS`). A caller who wants two
+ * providers builds their own pack with `createImage([…])` and pays 40–80 KiB.
+ */
+const IMAGE_PACK_BUDGET_KIB = 740;
+
+/**
+ * The two generated catalogs this pack legitimately reaches, and nothing else.
+ *
+ * Both are load-bearing rather than leaked: `openai/images-models.ts` builds
+ * the image catalog by supplementing `src/catalog/openai.gen.ts` (models.dev no
+ * longer tracks dall-e), and `google/constraints.ts` — which `google/image.ts`
+ * has always imported — reads `src/catalog/google.gen.ts`. A *third* entry here
+ * means a provider barrel leaked in, which is the failure this pins.
+ */
+const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog/openai.gen.ts"];
+
+/**
+ * The fifteen providers `unmodel/image`'s ready-made pack is allowed to reach.
+ *
+ * google is on this list for its Imagen adapter only: `google/unified.ts`
+ * imports `./image` and `./constraints`, never `.`, so the gemini chat codec
+ * and the translate layer stay out — which the composition test below is what
+ * actually holds down.
+ */
+const IMAGE_PACK_PROVIDERS: string[] = [
+  "black-forest-labs",
+  "bria",
+  "bytedance",
+  "google",
+  "ideogram",
+  "kling",
+  "krea",
+  "leonardo",
+  "luma",
+  "openai",
+  "recraft",
+  "reve",
+  "runway",
+  "stability",
+  "vidu",
+];
 
 /** The fourteen providers `unmodel/speech`'s ready-made pack is allowed to reach. */
 const SPEECH_PACK_PROVIDERS: string[] = [
@@ -266,6 +318,7 @@ describe("unmodel/chat", () => {
 
 describe("unified media entries", () => {
   test("all six are built, so the assertions below assert something", () => {
+    expect(ALL_UNIFIED_ENTRIES).toHaveLength(6);
     for (const name of ALL_UNIFIED_ENTRIES) {
       expect(existsSync(unifiedEntry(name)), `dist entry for unified/${name}`).toBe(true);
     }
@@ -348,8 +401,11 @@ describe("unmodel/speech (the first ready-made pack)", () => {
     expect(providers).toEqual(SPEECH_PACK_PROVIDERS);
 
     // One adapter leaf per provider, and it is what pulled the provider in.
+    // openai serves two categories, so its adapter is split per category and
+    // this pack imports only the speech half — see the independence test below.
     for (const provider of SPEECH_PACK_PROVIDERS) {
-      expect(modules).toContain(`src/providers/${provider}/unified.ts`);
+      const leaf = provider === "openai" ? "unified-speech" : "unified";
+      expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
       expect(modules).toContain(`src/providers/${provider}/speech.ts`);
     }
   });
@@ -365,5 +421,84 @@ describe("unmodel/speech (the first ready-made pack)", () => {
     // …but the four-layer engine IS here now, unlike in a kernel-only entry:
     // the pack's whole point is ending in the providers' own validators.
     expect(modules).toContain("src/core/pipeline.ts");
+  });
+});
+
+describe("unmodel/image (the second ready-made pack)", () => {
+  test(`stays under ${IMAGE_PACK_BUDGET_KIB} KiB`, () => {
+    const kib = transitiveBytes(unifiedEntry("image")) / 1024;
+    expect(kib, `unified/image is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
+      IMAGE_PACK_BUDGET_KIB,
+    );
+  });
+
+  /**
+   * The composition assertion, and the one doing the real work: a pack that
+   * reaches a sixteenth provider, or that drags in a generated catalog because
+   * someone imported `providers/<p>/index.ts` instead of the adapter leaf,
+   * fails here in the diff that causes it.
+   */
+  test("it reaches exactly the fifteen image providers, through their adapters", () => {
+    const modules = sourceModulesOf(unifiedEntry("image"));
+    expect(modules).toContain("src/unified/image.ts");
+    expect(modules).toContain("src/core/unified/kernel.ts");
+
+    const providers = [
+      ...new Set(
+        modules
+          .filter((m) => m.startsWith("src/providers/"))
+          .map((m) => m.split("/")[2] as string),
+      ),
+    ].sort();
+    expect(providers).toEqual(IMAGE_PACK_PROVIDERS);
+
+    // One adapter leaf per provider, and it is what pulled the provider in.
+    // openai is the exception and the reason the exception exists: it serves
+    // two categories, so its adapter is split per category and each pack
+    // imports only its own half.
+    for (const provider of IMAGE_PACK_PROVIDERS) {
+      if (provider === "openai") continue;
+      expect(modules).toContain(`src/providers/${provider}/unified.ts`);
+    }
+    expect(modules).toContain("src/providers/openai/unified-image.ts");
+    expect(modules).not.toContain("src/providers/openai/unified.ts");
+    // Every provider's generation endpoint module is addressed as `image.ts`,
+    // which is the rename made structural: the pack cannot reach a provider
+    // except through a file with the uniform name.
+    for (const provider of IMAGE_PACK_PROVIDERS) {
+      if (provider === "vidu") continue; // its route file is image-from-reference.ts
+      expect(modules).toContain(`src/providers/${provider}/image.ts`);
+    }
+    expect(modules).toContain("src/providers/vidu/image-from-reference.ts");
+  });
+
+  test("its graph carries exactly two catalogs, and no availability or retarget layer", () => {
+    const modules = sourceModulesOf(unifiedEntry("image"));
+    // The failure this pins is a provider barrel: `google/unified.ts` importing
+    // `.` instead of `./image` would put the gemini chat codec, the translate
+    // hub and three more catalogs into a pack that can never call them.
+    expect(modules.filter((m) => m.startsWith("src/catalog/")).sort()).toEqual(IMAGE_PACK_CATALOGS);
+    expect(modules.filter((m) => m.startsWith("src/catalog/availability/"))).toEqual([]);
+    expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
+    expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
+    expect(modules).not.toContain("src/providers/google/chat.ts");
+    // …but the four-layer engine IS here: the pack ends in the providers' own
+    // validators.
+    expect(modules).toContain("src/core/pipeline.ts");
+  });
+
+  test("the two packs are independent — neither pulls the other in", () => {
+    const image = sourceModulesOf(unifiedEntry("image"));
+    const speech = sourceModulesOf(unifiedEntry("speech"));
+    expect(image).not.toContain("src/unified/speech.ts");
+    expect(speech).not.toContain("src/unified/image.ts");
+    // openai is in both packs and must contribute only the endpoint each pack
+    // needs. This is what the per-category adapter split buys, and it is worth
+    // 39 KiB: one module exporting both adapters is one *entry* chunk holding
+    // both, so `unmodel/speech` carried OpenAI's image catalog — and the
+    // generated `src/catalog/openai.gen.ts` behind it — for nothing.
+    expect(image).not.toContain("src/providers/openai/speech.ts");
+    expect(speech).not.toContain("src/providers/openai/image.ts");
+    expect(speech.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
   });
 });

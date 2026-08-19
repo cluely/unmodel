@@ -1,0 +1,22 @@
+{
+  "ref": "google/imagen-4.0-generate-001",
+  "params": {
+    "instances": [
+      {
+        "prompt": "a lighthouse in fog"
+      }
+    ],
+    "parameters": {
+      "aspectRatio": "16:9"
+    }
+  },
+  "url": "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict",
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
+  ]
+}

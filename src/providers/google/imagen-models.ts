@@ -18,7 +18,7 @@
 //
 // `limit.context: 0` — Imagen is not a token-context model (HAND_CATALOGS.md
 // rule). The documented prompt cap ("Maximum prompt length is 480 tokens")
-// rides on `limit.input`, which ./generate-images checks.
+// rides on `limit.input`, which ./image checks.
 
 import type { ModelInfo } from "../../core/catalog-types";
 
@@ -62,8 +62,8 @@ export const imagenModels = {
   },
 } as const satisfies Record<string, ModelInfo>;
 
-/** Catalog consumed by the generateImages validator. */
-export const generateImagesModels: Record<string, ModelInfo> = imagenModels;
+/** Catalog consumed by the image validator. */
+export const imageModels: Record<string, ModelInfo> = imagenModels;
 
 /** Imagen model ids servable by `models.{model}:predict`. */
 export type GoogleImagenModelId = keyof typeof imagenModels;

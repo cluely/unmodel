@@ -1,10 +1,10 @@
 export {
-  flux2,
+  image,
   bflModelUrl,
   BFL_API_BASE_URL,
   BFL_GET_RESULT_URL,
   BFL_OUTPUT_FORMATS,
-} from "./flux2";
+} from "./image";
 export type {
   Flux2Body,
   Flux2ProBody,
@@ -16,7 +16,7 @@ export type {
   Flux2Klein4bBody,
   UnknownFlux2ModelBody,
   BflOutputFormat,
-} from "./flux2";
+} from "./image";
 
 export { fluxKontext } from "./kontext";
 export type { FluxKontextParams } from "./kontext";
@@ -24,11 +24,11 @@ export type { FluxKontextParams } from "./kontext";
 export type { BflAspectRatio } from "./aspect";
 
 export {
-  flux1,
+  imageFlux1,
   FLUX1_DIMENSION_MULTIPLE,
   FLUX1_MIN_DIMENSION,
   FLUX1_MAX_DIMENSION,
-} from "./flux1";
+} from "./image-flux1";
 export type {
   Flux1Body,
   FluxPro11Body,
@@ -36,7 +36,7 @@ export type {
   FluxUltraBody,
   FluxUltraFinetunedBody,
   UnknownFlux1ModelBody,
-} from "./flux1";
+} from "./image-flux1";
 
 export { fluxFill, fluxExpand, DEFAULT_EXPAND_MODEL_ID, FLUX_EXPAND_MAX_PIXELS } from "./edit";
 export type {
@@ -71,7 +71,7 @@ export type {
   FluxVtoParams,
 } from "./tools";
 
-export { flux2Constraints, flux1Constraints } from "./constraints";
+export { imageConstraints, imageFlux1Constraints } from "./constraints";
 
 // No response checker: the submit POST returns an async job envelope
 // ({ id, polling_url }), and polling GET /v1/get_result is transport —

@@ -95,14 +95,18 @@ nvidia, gradium, reson8, modulate, cohere (transcribe).
 
 ## Image wave (native APIs unless noted)
 
-**Live — generation:** openai gpt-image + DALL·E (at /v1/images), google (Imagen 4 via
-`generateImages`; Nano Banana / gemini-*-image via `generateContent`), black-forest-labs
-(FLUX.2, FLUX 1.x, Kontext — api.bfl.ai, `unmodel/black-forest-labs`), bria (`imageGenerate`
-+ `imageGenerateLite`, FIBO), bytedance (`imageGenerations`, Seedream on BytePlus ModelArk),
-kling (`imageGenerations` + `omniImage`), krea (`krea2`), leonardo (`generations`, Lucid /
-Phoenix), recraft (`generations`), ideogram (v3 `generate` + v4 `generateV4`), reve (`create`
-+ `createV2`), stability (Stable Image ultra/core/sd3), luma (Photon `imageGenerations`),
-runway (`textToImage`), vidu (`reference2image`).
+**Live — generation:** every text-to-image route is addressed as `<provider>.image`,
+whatever the wire calls it; a provider with more than one generation route qualifies the
+extras (`imageCore`, `imageV4`, `imageFlux1`) and never the primary one. openai gpt-image +
+DALL·E (`image`, at /v1/images), google (Imagen 4 via `image` → `:predict`; Nano Banana /
+gemini-*-image via `chat`), black-forest-labs (FLUX.2 `image`, FLUX 1.x `imageFlux1`,
+Kontext — api.bfl.ai, `unmodel/black-forest-labs`), bria (`image` + `imageLite`, FIBO),
+bytedance (`image`, Seedream on BytePlus ModelArk), kling (`image` + `imageOmni`), krea
+(`image`), leonardo (`image`, Lucid / Phoenix), recraft (`image`), ideogram (v3 `image` + v4
+`imageV4`), reve (`image` + `imageV2`), stability (Stable Image `image` / `imageCore` /
+`imageSd3`), luma (Photon `image`), runway (`image`), vidu (`imageFromReference`).
+All fifteen also ship a unified adapter at `unmodel/<provider>/unified`, and
+`unmodel/image` carries the ready-made pack over all of them.
 **Live — editing:** openai (`imageEdit`), black-forest-labs (`fluxFill`, `fluxExpand`,
 FLUX Tools `fluxOutpainting`/`fluxErase`/`fluxDeblur`/`fluxVto`), bria (`imageEdit`), recraft
 (`imageToImage`, `inpaint`, `outpaint`, `generateBackground`, `replaceBackground`), ideogram

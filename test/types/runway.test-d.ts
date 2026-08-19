@@ -6,7 +6,7 @@
  * compile error, the `safe<T>` overload carrying the same guard, and the fact
  * that this endpoint strips NOTHING (the wire body keeps `model`).
  */
-import { textToVideo, imageToVideo, videoToVideo, textToImage } from "../../src/providers/runway";
+import { textToVideo, imageToVideo, videoToVideo, image } from "../../src/providers/runway";
 import type { EndpointConstraints } from "../../src/core/constraint-types";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
@@ -115,14 +115,14 @@ function sizingTypeTests(): void {
   // @ts-expect-error targetAspectRatio is aleph2's closed 8-value enum
   videoToVideo({ model: "aleph2", videoUri: "https://x/a.mp4", targetAspectRatio: "5:4" });
 
-  textToImage({ model: "gpt_image_2", promptText: "hi", ratio: "3840:2160", quality: "high" });
-  textToImage({ model: "seedream5_pro", promptText: "hi", ratio: "auto_2k", outputFormat: "jpeg" });
+  image({ model: "gpt_image_2", promptText: "hi", ratio: "3840:2160", quality: "high" });
+  image({ model: "seedream5_pro", promptText: "hi", ratio: "auto_2k", outputFormat: "jpeg" });
   // @ts-expect-error "" is not a ratio
-  textToImage({ model: "gen4_image", promptText: "hi", ratio: "" });
+  image({ model: "gen4_image", promptText: "hi", ratio: "" });
   // @ts-expect-error quality is a closed four-step scale
-  textToImage({ model: "gpt_image_2", promptText: "hi", ratio: "2560:1440", quality: "ultra" });
+  image({ model: "gpt_image_2", promptText: "hi", ratio: "2560:1440", quality: "ultra" });
   // @ts-expect-error outputFormat is png | jpeg on this route
-  textToImage({ model: "seedream5_pro", promptText: "hi", ratio: "auto_1k", outputFormat: "webp" });
+  image({ model: "seedream5_pro", promptText: "hi", ratio: "auto_1k", outputFormat: "webp" });
 }
 
 export { textToVideoTypeTests, sizingTypeTests };

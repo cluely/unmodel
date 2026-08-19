@@ -1,0 +1,26 @@
+{
+  "ref": "openai/gpt-image-2",
+  "params": {
+    "model": "gpt-image-2",
+    "prompt": "a lighthouse in fog",
+    "size": "1552x656"
+  },
+  "url": "https://api.openai.com/v1/images/generations",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "aspectRatio"
+      ],
+      "meta": {
+        "requested": "21:9",
+        "width": 1552,
+        "height": 656,
+        "requestedRatio": 2.3333333333333335,
+        "achievedRatio": 2.3658536585365852,
+        "grid": 16,
+        "source": "https://developers.openai.com/api/docs/guides/image-generation"
+      }
+    }
+  ]
+}

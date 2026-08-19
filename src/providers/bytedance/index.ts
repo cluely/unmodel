@@ -1,8 +1,8 @@
 export {
-  imageGenerations,
+  image,
   imageGenerationsUrl,
   IMAGE_GENERATIONS_URL,
-} from "./image-generations";
+} from "./image";
 export type {
   BytedanceImageSize,
   ImageGenerationsBody,
@@ -15,7 +15,7 @@ export type {
   OptimizePromptOptions,
   StandardOnlyOptimizePromptOptions,
   SequentialImageGenerationOptions,
-} from "./image-generations";
+} from "./image";
 
 export {
   contentGenerationTasks,
@@ -52,7 +52,7 @@ export {
 export type { ArkRegion, ArkImageRule } from "./shared";
 
 export {
-  imageGenerationsConstraints,
+  imageConstraints,
   contentGenerationTasksConstraints,
   imageShapeRules,
   videoShapeRules,

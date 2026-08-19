@@ -4,9 +4,9 @@
  * first-party SDK, so these tests exercise the curated preset unions on the
  * wire params: `resolution` on the video routes is autocomplete over every
  * documented tier (each route's support table narrows it per model at
- * runtime), and reference2image has its OWN, differently-spelled spaces.
+ * runtime), and imageFromReference has its OWN, differently-spelled spaces.
  */
-import { text2video, img2video, reference2video, reference2image } from "../../src/providers/vidu";
+import { text2video, img2video, reference2video, imageFromReference } from "../../src/providers/vidu";
 import { expectAssignable } from "./helpers";
 
 function videoResolutionTypeTests(): void {
@@ -16,7 +16,7 @@ function videoResolutionTypeTests(): void {
   text2video({ model: "viduq3-pro", prompt: "hi", resolution: "540p" });
   // @ts-expect-error "" is not a resolution (was a bare `string`)
   text2video({ model: "viduq3-pro", prompt: "hi", resolution: "" });
-  // @ts-expect-error 4K is the reference2image spelling, not a video tier
+  // @ts-expect-error 4K is the imageFromReference spelling, not a video tier
   text2video({ model: "viduq3-pro", prompt: "hi", resolution: "4K" });
 
   img2video({ model: "vidu2.0", images: ["https://e.com/a.png"], resolution: "360p", duration: 4 });
@@ -34,19 +34,19 @@ function videoResolutionTypeTests(): void {
 }
 
 function referenceImageTypeTests(): void {
-  const v = reference2image({ model: "viduq2", prompt: "hi", aspect_ratio: "21:9", resolution: "4K" });
+  const v = imageFromReference({ model: "viduq2", prompt: "hi", aspect_ratio: "21:9", resolution: "4K" });
   expectAssignable<{ prompt: string }>(v);
-  reference2image({ model: "viduq2", prompt: "hi", aspect_ratio: "auto", resolution: "1080p" });
+  imageFromReference({ model: "viduq2", prompt: "hi", aspect_ratio: "auto", resolution: "1080p" });
   // @ts-expect-error banana is not an aspect ratio (was a bare `string`)
-  reference2image({ model: "viduq2", prompt: "hi", aspect_ratio: "banana" });
+  imageFromReference({ model: "viduq2", prompt: "hi", aspect_ratio: "banana" });
   // @ts-expect-error 16x9 is the wrong wire shape for a ratio field
-  reference2image({ model: "viduq2", prompt: "hi", aspect_ratio: "16x9" });
+  imageFromReference({ model: "viduq2", prompt: "hi", aspect_ratio: "16x9" });
   // @ts-expect-error "" is not a resolution (was a bare `string`)
-  reference2image({ model: "viduq2", prompt: "hi", resolution: "" });
+  imageFromReference({ model: "viduq2", prompt: "hi", resolution: "" });
   // @ts-expect-error this route spells its tiers with an uppercase K ("2K")
-  reference2image({ model: "viduq2", prompt: "hi", resolution: "2k" });
+  imageFromReference({ model: "viduq2", prompt: "hi", resolution: "2k" });
   // @ts-expect-error the video routes' 720p tier has no arm on the image route
-  reference2image({ model: "viduq2", prompt: "hi", resolution: "720p" });
+  imageFromReference({ model: "viduq2", prompt: "hi", resolution: "720p" });
 }
 
 export { videoResolutionTypeTests, referenceImageTypeTests };

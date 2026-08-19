@@ -1,0 +1,9 @@
+{
+  "ref": "ideogram/ideogram-3.0-quality",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "rendering_speed": "QUALITY",
+    "resolution": "1344x768"
+  },
+  "url": "https://api.ideogram.ai/v1/ideogram-v3/generate"
+}

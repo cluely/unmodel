@@ -1,7 +1,7 @@
 export {
-  stableImageUltra,
-  stableImageCore,
-  stableImageSd3,
+  image,
+  imageCore,
+  imageSd3,
   toFormData,
   STABLE_IMAGE_ULTRA_URL,
   STABLE_IMAGE_CORE_URL,
@@ -11,7 +11,7 @@ export {
   STABILITY_ASPECT_RATIOS,
   STABILITY_STYLE_PRESETS,
   STABILITY_OUTPUT_FORMATS,
-} from "./generate";
+} from "./image";
 export type {
   StableImageUltraParams,
   StableImageCoreParams,
@@ -19,7 +19,7 @@ export type {
   StabilityAspectRatio,
   StabilityStylePreset,
   StabilityOutputFormat,
-} from "./generate";
+} from "./image";
 
 export {
   stableImageErase,

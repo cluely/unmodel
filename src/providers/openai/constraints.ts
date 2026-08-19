@@ -98,13 +98,13 @@ const GPT_IMAGE_2_ENUMS: EndpointConstraints["enums"] = {
 };
 
 /**
- * Per-model constraint table for openai.images (POST /v1/images/generations),
+ * Per-model constraint table for openai.image (POST /v1/images/generations),
  * audited param-by-param against the create API reference and the
  * image-generation guide on 2026-08-13. Enum narrowing and deny rules both
  * come from the documented per-model applicability notes; the deny reasons
  * quote them.
  */
-export const imagesConstraints = {
+export const imageConstraints = {
   "gpt-image-1": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_ENUMS },
   "gpt-image-1-mini": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_ENUMS },
   "gpt-image-1.5": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_ENUMS },

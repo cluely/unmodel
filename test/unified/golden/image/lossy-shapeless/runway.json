@@ -1,0 +1,22 @@
+{
+  "ref": "runway/gen4_image",
+  "params": {
+    "model": "gen4_image",
+    "promptText": "a lighthouse in fog",
+    "ratio": "1024:1024"
+  },
+  "url": "https://api.dev.runwayml.com/v1/text_to_image",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "aspectRatio"
+      ],
+      "meta": {
+        "achieved": "1024:1024",
+        "tier": "1k",
+        "source": "https://docs.dev.runwayml.com/api#tag/Start-generating/paths/~1v1~1text_to_image/post"
+      }
+    }
+  ]
+}

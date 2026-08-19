@@ -1,0 +1,8 @@
+{
+  "ref": "black-forest-labs/flux-pro-1.1-ultra",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "aspect_ratio": "7:3"
+  },
+  "url": "https://api.bfl.ai/v1/flux-pro-1.1-ultra"
+}

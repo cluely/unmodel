@@ -1,0 +1,8 @@
+{
+  "ref": "openai/gpt-image-2",
+  "params": {
+    "model": "gpt-image-2",
+    "prompt": "a lighthouse in fog"
+  },
+  "url": "https://api.openai.com/v1/images/generations"
+}

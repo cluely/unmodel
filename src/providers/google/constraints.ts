@@ -363,10 +363,10 @@ export const GEMINI_TTS_CONTEXT_TOKENS = 32768;
 export const GEMINI_TTS_STREAMING_MODEL_IDS = ["gemini-3.1-flash-tts-preview"] as const;
 
 // ---------------------------------------------------------------------------
-// Imagen (generateImages / models.{model}:predict) constraints.
+// Imagen (image / models.{model}:predict) constraints.
 //
 // NOTE: like the Veo tables below, these deny/enum entries target keys of the
-// nested `parameters` wire object, so ./generate-images applies them in a
+// nested `parameters` wire object, so ./image applies them in a
 // dedicated check rather than through the pipeline's Layer-3 pass.
 // ---------------------------------------------------------------------------
 
@@ -441,7 +441,7 @@ const IMAGEN_VERTEX_ONLY_DENY: Record<string, { reason: string; source: string }
  * — the SDK's `GenerateImagesConfig.imageSize` docstring allows it for every
  * Imagen 4 model, so the Fast deny below is a documented NARROWING.
  */
-export const generateImagesConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+export const imageConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   "imagen-4.0-fast-generate-001": {
     deny: {
       sampleImageSize: {
@@ -453,7 +453,7 @@ export const generateImagesConstraints: Readonly<Partial<Record<string, Endpoint
   },
 };
 
-export const generateImagesFamilyRules: readonly FamilyRule[] = [
+export const imageFamilyRules: readonly FamilyRule[] = [
   {
     family: "Imagen models",
     match: (modelId) => modelId.startsWith("imagen-"),

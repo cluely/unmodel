@@ -4,7 +4,7 @@
  *
  * Wire notes (verified against the authoritative OpenAPI spec at
  * https://developer.ideogram.ai/openapi.json on 2026-08-13):
- * - All four are multipart/form-data, exactly like `generate`: the validated
+ * - All four are multipart/form-data, exactly like `image`: the validated
  *   output's enumerable props are the validated params (including Blobs), and
  *   the raw-fetch path is `.request.url` + `toFormData(params)` as the body.
  *   `.request.headers` stays empty so fetch derives the boundary. Auth is an
@@ -19,7 +19,7 @@
  *     replace-background   image + prompt; NO resolution/aspect_ratio,
  *                          NO style_type, NO negative_prompt
  * - `style_codes` cannot be combined with `style_reference_images` (nor with
- *   `style_type` on the two routes that expose it) — same rule as generate.
+ *   `style_type` on the two routes that expose it) — same rule as image.
  * - Reference images: ≤ 25MB each, whole request ≤ 50MB;
  *   `character_reference_images` currently supports exactly 1 image and its
  *   optional mask array must match in length.
@@ -28,7 +28,7 @@
  *   routes reuse the rendering-speed pseudo-models and the character-reference
  *   surcharge table from models.ts.
  * - `seed` and `num_images` carry no upper bound in the current spec, so only
- *   their floors are enforced (see generate.ts).
+ *   their floors are enforced (see image.ts).
  */
 
 import { z } from "zod";
@@ -53,7 +53,7 @@ import {
   type IdeogramResolution,
   type IdeogramStylePreset,
   type IdeogramStyleType,
-} from "./generate";
+} from "./image";
 
 const V3_BASE_URL = "https://api.ideogram.ai/v1/ideogram-v3";
 
@@ -72,7 +72,7 @@ const MAX_REQUEST_BYTES = 50 * 1024 * 1024;
 // Wire types
 // ---------------------------------------------------------------------------
 
-/** Fields the editing routes share with `generate`. */
+/** Fields the editing routes share with `image`. */
 interface IdeogramEditCommon {
   /** The image being edited (≤ 25MB; JPEG/PNG/WebP). REQUIRED. */
   image: Blob;
@@ -346,7 +346,7 @@ function checkImageSizes(params: object, _info: ModelInfo | undefined, ctx: Pipe
 }
 
 // ---------------------------------------------------------------------------
-// Estimation — same per-image rates as generate; the character-reference
+// Estimation — same per-image rates as image; the character-reference
 // surcharge applies on the routes that accept character references.
 // ---------------------------------------------------------------------------
 

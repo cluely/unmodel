@@ -250,7 +250,7 @@ const checked = openrouterChat(body);
 
 ### Scope
 
-- **Chat only.** Media endpoints (`images`, `speech`, `transcription`,
+- **Chat only.** Media endpoints (`image`, `speech`, `transcription`,
   `videos`, …) have `.toSdk` but no `.toApi`. That asymmetry is a scope
   decision, not an oversight: across the providers unmodel implements there are
   exactly five multi-provider media model groups in the catalog, and their wire
@@ -344,7 +344,8 @@ Every provider addresses its synthesis route as `speech` — the wire spellings
 (`/v1/text-to-speech/{voice_id}`, `/tts/bytes`, `/v1/speak`, `/v1/t2a_v2`,
 `/synthesize`) survive on the URL constants and the wire types, not on the
 export you call. All fourteen also ship a `unified.ts` adapter, so the same
-request can be written once against `unmodel/speech`.
+request can be written once against
+[`unmodel/speech`](#unified-media-one-vocabulary-per-category).
 
 | Subpath | Validators |
 | --- | --- |
@@ -478,34 +479,42 @@ credit-based) pricing:
 
 | Subpath | Generation | Editing |
 | --- | --- | --- |
-| `unmodel/openai` | `images` (gpt-image + DALL·E), `checkImages` | `imageEdit` + `imageEditToFormData` |
-| `unmodel/google` | `generateImages` (Imagen 4 fast/standard/ultra) | — (Gemini image editing goes through `generateContent`) |
-| `unmodel/black-forest-labs` | `flux2` (FLUX.2 route family), `flux1` (FLUX 1.1 / dev / ultra), `fluxKontext` | `fluxFill`, `fluxExpand`, `fluxOutpainting`, `fluxErase`, `fluxDeblur`, `fluxVto` |
-| `unmodel/bria` | `imageGenerate`, `imageGenerateLite` (FIBO / Fibo Lite) | `imageEdit` |
-| `unmodel/bytedance` | `imageGenerations` (Seedream 4.x/5.x on BytePlus ModelArk — reference images ride the same route) | — |
-| `unmodel/kling` | `imageGenerations`, `omniImage` | — |
-| `unmodel/krea` | `krea2` | — |
-| `unmodel/leonardo` | `generations` (Lucid Origin/Realism, Phoenix) | — |
-| `unmodel/recraft` | `generations` | `imageToImage`, `inpaint`, `outpaint`, `generateBackground`, `replaceBackground` (+ `toFormData`) |
-| `unmodel/ideogram` (+ `toFormData`) | `generate` (v3), `generateV4` | `edit`, `remix`, `reframe`, `replaceBackground` |
-| `unmodel/reve` | `create` (v1), `createV2` | `edit`, `remix` |
-| `unmodel/stability` (+ `toFormData`) | `stableImageUltra`, `stableImageCore`, `stableImageSd3` | `stableImageErase`, `stableImageInpaint`, `stableImageOutpaint`, `stableImageSearchAndReplace`, `stableImageSearchAndRecolor`, `stableImageRemoveBackground` |
-| `unmodel/luma` | `imageGenerations` (Photon) | `reframeImage` |
-| `unmodel/runway` | `textToImage` | — |
-| `unmodel/vidu` | `reference2image` | — |
+| `unmodel/openai` | `image` (gpt-image + DALL·E), `checkImages` | `imageEdit` + `imageEditToFormData` |
+| `unmodel/google` | `image` (Imagen 4 fast/standard/ultra) | — (Gemini image editing goes through `chat`) |
+| `unmodel/black-forest-labs` | `image` (FLUX.2 route family), `imageFlux1` (FLUX 1.1 / dev / ultra), `fluxKontext` | `fluxFill`, `fluxExpand`, `fluxOutpainting`, `fluxErase`, `fluxDeblur`, `fluxVto` |
+| `unmodel/bria` | `image`, `imageLite` (FIBO / Fibo Lite) | `imageEdit` |
+| `unmodel/bytedance` | `image` (Seedream 4.x/5.x on BytePlus ModelArk — reference images ride the same route) | — |
+| `unmodel/kling` | `image`, `imageOmni` | — |
+| `unmodel/krea` | `image` | — |
+| `unmodel/leonardo` | `image` (Lucid Origin/Realism, Phoenix) | — |
+| `unmodel/recraft` | `image` | `imageToImage`, `inpaint`, `outpaint`, `generateBackground`, `replaceBackground` (+ `toFormData`) |
+| `unmodel/ideogram` (+ `toFormData`) | `image` (v3), `imageV4` | `edit`, `remix`, `reframe`, `replaceBackground` |
+| `unmodel/reve` | `image` (v1), `imageV2` | `edit`, `remix` |
+| `unmodel/stability` (+ `toFormData`) | `image` (Ultra), `imageCore`, `imageSd3` | `stableImageErase`, `stableImageInpaint`, `stableImageOutpaint`, `stableImageSearchAndReplace`, `stableImageSearchAndRecolor`, `stableImageRemoveBackground` |
+| `unmodel/luma` | `image` (Photon) | `reframeImage` |
+| `unmodel/runway` | `image` | — |
+| `unmodel/vidu` | `imageFromReference` | — |
+
+Every generation route above is addressed as `image` whatever the wire calls it
+(`/v1/images/generations`, `:predict`, `/v1/ideogram-v3/generate`,
+`/v1/text_to_image`, `/ent/v2/reference2image`); a provider with more than one
+generation route qualifies the extras (`imageCore`, `imageV4`, `imageFlux1`) and
+never the primary one. The URL constants and wire types keep their wire
+spelling. One canonical `image()` over all fifteen lives at
+[`unmodel/image`](#unified-media-one-vocabulary-per-category).
 
 `toFormData` sits on the subpath, not on one route: Ideogram's and Stability's
 image routes are multipart end to end, so the same helper builds the body for
 every validator in those rows (and for Stability's audio routes below).
-Recraft's is listed with the edit routes because `generations` is plain JSON —
+Recraft's is listed with the edit routes because `image` is plain JSON —
 only the transform routes switch to multipart, and only when you pass a `Blob`.
 
 ```ts
-import { flux2 } from "unmodel/black-forest-labs";
+import { image } from "unmodel/black-forest-labs";
 
 // BFL has no `model` body field — the model IS the route. unmodel strips it
 // from the wire body and interpolates it into .request.url.
-const validated = flux2({
+const validated = image({
   model: "flux-2-pro",
   prompt: "a watercolor fox in the snow",
   width: 1024,
@@ -572,6 +581,91 @@ submit request; polling and downloads are transport, so they stay your job.
 | `unmodel/elevenlabs` | `music` (Eleven Music — prompt or composition plan, priced per audio minute) |
 | `unmodel/stability` (+ `toFormData`) | `stableAudioTextToAudio`, `stableAudioAudioToAudio`, `stableAudioInpaint` (Stable Audio 2.x, credit-priced) |
 
+## Unified media: one vocabulary per category
+
+Everything above is a provider's **own** wire format, which is the point of this
+library — but sometimes you want to write one request and point it at any
+provider. `unmodel/image` and `unmodel/speech` are that: one canonical
+camelCase vocabulary per media category, compiled to whichever provider the
+`"provider/model"` ref names.
+
+```ts
+import { image } from "unmodel/image";
+
+const req = image({
+  model: "openai/gpt-image-2",
+  prompt: "a lighthouse in fog",
+  aspectRatio: "16:9",
+  resolution: "1k",
+});
+
+await fetch(req.request.url, {
+  method: req.request.method,
+  headers: { ...req.request.headers, authorization: `Bearer ${key}` },
+  body: JSON.stringify(req),          // enumerable props ARE the wire body
+});
+```
+
+Change the ref to `"google/imagen-4.0-generate-001"` and the same object
+compiles to an Imagen `:predict` body; to `"black-forest-labs/flux-2-pro"` and
+it becomes a grid-snapped `width`/`height` pair; to `"ideogram/ideogram-3.0-quality"`
+and the ref itself chooses both the route and its `rendering_speed`.
+
+**What you get back is a provider result.** `image()` does not validate the
+request itself. It compiles the canonical params to the provider's wire params
+and then runs **the provider's own validator** — the same `image()` from
+`unmodel/openai` you would have called by hand, with its catalog, its
+constraint tables, its media limits and its cost estimate. There is no second
+definition of what a valid request is, so the two cannot disagree.
+
+**The loss contract is the product.** A param a provider cannot express is an
+**error** naming what it does offer; a value it can only express approximately
+is an `approximated_param` **warning** naming both the requested and the
+achieved value. So `warnings.length === 0` *means* the request mapped exactly:
+
+```ts
+image({ model: "black-forest-labs/flux-pro-1.1", prompt: "…", aspectRatio: "16:9", resolution: "1k" }).warnings;
+// [approximated_param] `aspectRatio` 16:9 at 1k does not land on this model's
+// 32px grid: 1344×768 (1.750:1, requested 1.778:1).
+
+image({ model: "openai/gpt-image-1", prompt: "…", seed: 7 });
+// throws: `seed` is not supported by "openai/gpt-image-1" — POST
+// /v1/images/generations has no seed field, so a seed could only be dropped.
+```
+
+| Entry | Providers | Vocabulary |
+| --- | --- | --- |
+| `unmodel/image` | 15 | `prompt`, `aspectRatio` XOR `dimensions`, `resolution` tier, `n`, `seed`, `negativePrompt`, `outputFormat`, `outputDelivery` |
+| `unmodel/speech` | 14 | `text`, `voice`, `outputFormat`, `speed`, `language` |
+
+The other four categories (`image-edit`, `video`, `transcribe`, `music`) ship
+the factory and their vocabulary today; their packs land as their adapters do.
+
+Anything genuinely one-off rides in `providerOptions`, keyed by provider and
+deep-merged over the compiled body **before** validation — so it is checked by
+the provider's own four layers rather than smuggled past them:
+
+```ts
+image({
+  model: "vidu/viduq1",
+  prompt: "…",
+  aspectRatio: "16:9",
+  providerOptions: { vidu: { images: ["https://example.com/reference.png"] } },
+});
+```
+
+Importing a pack costs all of its providers. To pay for two instead of fifteen,
+build your own from the adapter leaves — the refs that autocomplete and the
+return type narrow with it:
+
+```ts
+import { createImage } from "unmodel/image";
+import { image as openai } from "unmodel/openai/unified";
+import { image as ideogram } from "unmodel/ideogram/unified";
+
+const image = createImage([openai, ideogram]);
+```
+
 ## Catching what SDKs let through
 
 unmodel's types are written from the provider's **documentation**, not from its SDK — so they narrow where the SDK is too loose *and* widen where it is too tight.
@@ -579,23 +673,23 @@ unmodel's types are written from the provider's **documentation**, not from its 
 **Narrowed.** The OpenAI SDK types `background` identically for every gpt-image model, but the image-generation guide says `gpt-image-2` errors on `transparent`. unmodel makes that a compile error *and* a runtime issue, while leaving the values the docs do allow:
 
 ```ts
-import { images } from "unmodel/openai";
+import { image } from "unmodel/openai";
 
-images({
+image({
   model: "gpt-image-2",
   prompt: "a watercolor fox",
   background: "transparent", // ✗ compile error; runtime invalid_enum_value
 });
 
-images({ model: "gpt-image-2", prompt: "a watercolor fox", background: "opaque" }); // ✓
-images({ model: "gpt-image-1", prompt: "a watercolor fox", background: "transparent" }); // ✓
+image({ model: "gpt-image-2", prompt: "a watercolor fox", background: "opaque" }); // ✓
+image({ model: "gpt-image-1", prompt: "a watercolor fox", background: "transparent" }); // ✓
 ```
 
 **Widened.** The same SDK types `size` as a three-value enum. The docs say `gpt-image-2` takes free-form `WIDTHxHEIGHT` — both edges divisible by 16, long:short at most 3:1, edges up to 3840px. unmodel accepts the documented range at the type level and enforces the bounds at runtime:
 
 ```ts
-images({ model: "gpt-image-2", prompt: "a watercolor fox", size: "1808x1024" }); // ✓
-images({ model: "gpt-image-2", prompt: "a watercolor fox", size: "1810x1024" }); // ✗ not divisible by 16
+image({ model: "gpt-image-2", prompt: "a watercolor fox", size: "1808x1024" }); // ✓
+image({ model: "gpt-image-2", prompt: "a watercolor fox", size: "1810x1024" }); // ✗ not divisible by 16
 ```
 
 Every such deviation carries the doc URL that justifies it, in the constraint's `source` field.
@@ -736,6 +830,8 @@ Every provider lives on its own subpath; importing one pulls in nothing from the
 | `unmodel/openai-compatible` | The `createOpenAICompatible` factory and shared Chat Completions dialect pieces |
 | `unmodel/catalog` | models.dev snapshot: `catalog`, `getProvider`, `getModel` |
 | `unmodel/ai-sdk` | The `withJsonSchemaTools` adapter for `.toSdk("ai-sdk")` — types plus one pure function, no dependency on `ai` |
+| `unmodel/<provider>/unified` | One provider's adapters for the [unified media surfaces](#unified-media-one-vocabulary-per-category) — that provider's endpoint module and the kernel, nothing else |
+| `unmodel/image`, `unmodel/speech` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createSpeech([…])` is how you pay for two instead of fifteen |
 
 Retargeting keeps that story intact. The wire-format **codecs** are per dialect
 (four of them), not per provider, so `unmodel/anthropic` reaches
@@ -746,10 +842,11 @@ and a URL swap, no codec at all.
 
 ## Status
 
-Current coverage: 153 request validators across 70 provider subpaths.
+Current coverage: 153 request validators across 70 provider subpaths, plus two
+unified media surfaces (`unmodel/image` over 15 providers, `unmodel/speech` over 14).
 
 - **OpenAI** — Chat Completions, Images + image edits, Speech (TTS), Transcription (STT), Sora videos, Realtime session config.
-- **Anthropic** Messages; **Google** Gemini `chat`, Imagen `generateImages`, Veo `generateVideos`; **Cohere** v2 Chat.
+- **Anthropic** Messages; **Google** Gemini `chat`, Imagen `image`, Veo `generateVideos`; **Cohere** v2 Chat.
 - **Cloud-endpoint factories** for Azure OpenAI, Vertex AI, Amazon Bedrock (Converse), and Cloudflare Workers AI.
 - **A 29-provider OpenAI-compatible chat fleet** (Groq, xAI, Mistral, DeepSeek, OpenRouter, …).
 - **TTS** — OpenAI, Cartesia, Deepgram (Aura), ElevenLabs, Fish Audio, Hume (Octave), Inworld, LMNT, MiniMax (T2A v2), Murf, Resemble, Rime, Smallest AI, Speechify.

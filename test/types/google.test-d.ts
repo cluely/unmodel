@@ -7,7 +7,7 @@ import type {
   GenerateImagesParameters,
   GenerateVideosParameters,
 } from "@google/genai";
-import { chat, generateImages, generateVideos } from "../../src/providers/google";
+import { chat, image, generateVideos } from "../../src/providers/google";
 import type { GoogleTextModelId } from "../../src/catalog/google.gen";
 import { expectAssignable } from "./helpers";
 
@@ -162,7 +162,7 @@ expectAssignable<{ instances: unknown }>(veo);
 // generateImages (Imagen) — toSdk("google") targets ai.models.generateImages().
 // ---------------------------------------------------------------------------
 
-const imagen = generateImages({
+const imagen = image({
   model: "imagen-4.0-generate-001",
   instances: [{ prompt: "Robot holding a red skateboard" }],
   parameters: { sampleCount: 4, aspectRatio: "16:9", sampleImageSize: "2K" },
@@ -172,13 +172,13 @@ const imagen = generateImages({
 expectAssignable<GenerateImagesParameters>(imagen.toSdk("google"));
 
 // Vertex-only knobs have no Gemini API wire form: `never` makes them compile errors.
-generateImages({
+image({
   model: "imagen-4.0-generate-001",
   instances: [{ prompt: "hi" }],
   // @ts-expect-error negativePrompt is Vertex AI-only
   parameters: { negativePrompt: "blurry" },
 });
-generateImages({
+image({
   model: "imagen-4.0-generate-001",
   instances: [{ prompt: "hi" }],
   // @ts-expect-error seed is Vertex AI-only
@@ -187,7 +187,7 @@ generateImages({
 
 // GROUND TRUTH: `sampleImageSize` (SDK imageSize) is Standard/Ultra only —
 // the SDK's own config type allows it for every Imagen model.
-generateImages({
+image({
   model: "imagen-4.0-fast-generate-001",
   instances: [{ prompt: "hi" }],
   // @ts-expect-error sampleImageSize is not supported by the Fast model
@@ -195,7 +195,7 @@ generateImages({
 });
 
 // Imagen's aspect ratios are the narrow five, not Nano Banana's fourteen.
-generateImages({
+image({
   model: "imagen-4.0-generate-001",
   instances: [{ prompt: "hi" }],
   // @ts-expect-error 21:9 is a Nano Banana ratio; Imagen documents five
@@ -204,7 +204,7 @@ generateImages({
 
 // personGeneration is one of the SDK's TS-enum leaves, so a request carrying
 // it needs the documented cast at the SDK call site.
-const imagenWithPerson = generateImages({
+const imagenWithPerson = image({
   model: "imagen-4.0-generate-001",
   instances: [{ prompt: "a crowd" }],
   parameters: { personGeneration: "allow_adult" },
@@ -216,7 +216,7 @@ expectAssignable<GenerateImagesParameters>(
 );
 
 // Typo'd top-level keys are a compile error (ExactKeys guard).
-generateImages({
+image({
   model: "imagen-4.0-generate-001",
   instances: [{ prompt: "hi" }],
   // @ts-expect-error excess (typo'd) top-level key
@@ -407,9 +407,9 @@ veoForApi.toApiSafe("vercel");
 // @ts-expect-error — and no "ai-sdk" target: experimental_generateVideo is not stable.
 veoForApi.toSdk("ai-sdk");
 
-const imagenForApi = generateImages({
+const imagenForApi = image({
   model: "imagen-4.0-generate-001",
   instances: [{ prompt: "a robot" }],
 });
-// @ts-expect-error — generateImages declares no `.toApi` targets either.
+// @ts-expect-error — image declares no `.toApi` targets either.
 imagenForApi.toApi("vercel");

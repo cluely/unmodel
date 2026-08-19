@@ -1,0 +1,9 @@
+{
+  "ref": "krea/krea-2/large",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "aspect_ratio": "16:9",
+    "resolution": "1K"
+  },
+  "url": "https://api.krea.ai/generate/image/krea/krea-2/large"
+}

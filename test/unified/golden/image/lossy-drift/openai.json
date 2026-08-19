@@ -1,0 +1,26 @@
+{
+  "ref": "openai/dall-e-3",
+  "params": {
+    "model": "dall-e-3",
+    "prompt": "a lighthouse in fog",
+    "size": "1792x1024"
+  },
+  "url": "https://api.openai.com/v1/images/generations",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "aspectRatio"
+      ],
+      "meta": {
+        "requested": "16:9",
+        "achieved": "1792x1024",
+        "width": 1792,
+        "height": 1024,
+        "requestedRatio": 1.7777777777777777,
+        "achievedRatio": 1.75,
+        "tier": "1k"
+      }
+    }
+  ]
+}

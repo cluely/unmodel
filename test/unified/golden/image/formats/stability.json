@@ -1,0 +1,9 @@
+{
+  "ref": "stability/stable-image-ultra",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "aspect_ratio": "1:1",
+    "output_format": "png"
+  },
+  "url": "https://api.stability.ai/v2beta/stable-image/generate/ultra"
+}

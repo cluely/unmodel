@@ -8,7 +8,7 @@ import {
   FLUX_DEBLUR_URL,
   FLUX_OUTPAINTING_URL,
 } from "./tools";
-import { BFL_API_BASE_URL } from "./flux2";
+import { BFL_API_BASE_URL } from "./image";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 

@@ -1,0 +1,9 @@
+{
+  "ref": "runway/gen4_image",
+  "params": {
+    "model": "gen4_image",
+    "promptText": "a lighthouse in fog",
+    "ratio": "1280:720"
+  },
+  "url": "https://api.dev.runwayml.com/v1/text_to_image"
+}

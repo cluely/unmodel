@@ -9,7 +9,7 @@ import {
   STABLE_AUDIO_INPAINT_URL,
   STABILITY_USD_PER_CREDIT,
 } from "./audio";
-import { toFormData } from "./generate";
+import { toFormData } from "./image";
 import { models } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";

@@ -1,5 +1,5 @@
 export {
-  generations,
+  image,
   IMAGES_GENERATIONS_URL,
   DEFAULT_MODEL_ID,
   ASPECT_RATIOS,
@@ -11,7 +11,7 @@ export {
   IMAGE_FORMATS,
   UPSCALE_MODES,
   CREATIVITY_LEVELS,
-} from "./generations";
+} from "./image";
 export type {
   GenerationsParams,
   RecraftColor,
@@ -22,7 +22,7 @@ export type {
   RecraftImageFormat,
   RecraftUpscaleMode,
   RecraftCreativity,
-} from "./generations";
+} from "./image";
 
 export {
   imageToImage,
@@ -49,7 +49,7 @@ export type {
   ReplaceBackgroundParams,
 } from "./transform";
 
-export { generationsFamilyRules } from "./constraints";
+export { imageFamilyRules } from "./constraints";
 
 export {
   STYLE_NAMES_BY_MODEL,

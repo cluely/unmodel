@@ -30,40 +30,40 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
   "google.chat": () => import("./providers/google").then((m) => asCli(m.chat)),
   "cohere.chat": () => import("./providers/cohere").then((m) => asCli(m.chat)),
 
-  // Image generation
-  "openai.images": () => import("./providers/openai").then((m) => asCli(m.images)),
-  "google.generateImages": () =>
-    import("./providers/google").then((m) => asCli(m.generateImages)),
-  "black-forest-labs.flux1": () =>
-    import("./providers/black-forest-labs").then((m) => asCli(m.flux1)),
-  "black-forest-labs.flux2": () =>
-    import("./providers/black-forest-labs").then((m) => asCli(m.flux2)),
+  // Image generation. Every provider addresses its text-to-image route as
+  // `image` (the address-vs-wire law): the wire spellings differ wildly
+  // (/v1/images/generations, :predict, /v1/ideogram-v3/generate,
+  // /v1/text_to_image, /ent/v2/reference2image), and the URL constants and
+  // wire types keep them — but the endpoint id a caller types is uniform. A
+  // provider with more than one generation route qualifies the extra ones
+  // (`imageCore`, `imageV4`, `imageFlux1`), never the primary one.
+  "openai.image": () => import("./providers/openai").then((m) => asCli(m.image)),
+  "google.image": () => import("./providers/google").then((m) => asCli(m.image)),
+  "black-forest-labs.imageFlux1": () =>
+    import("./providers/black-forest-labs").then((m) => asCli(m.imageFlux1)),
+  "black-forest-labs.image": () =>
+    import("./providers/black-forest-labs").then((m) => asCli(m.image)),
   "black-forest-labs.fluxKontext": () =>
     import("./providers/black-forest-labs").then((m) => asCli(m.fluxKontext)),
-  "ideogram.generate": () => import("./providers/ideogram").then((m) => asCli(m.generate)),
-  "ideogram.generateV4": () => import("./providers/ideogram").then((m) => asCli(m.generateV4)),
-  "recraft.generations": () => import("./providers/recraft").then((m) => asCli(m.generations)),
-  "stability.stableImageUltra": () =>
-    import("./providers/stability").then((m) => asCli(m.stableImageUltra)),
-  "stability.stableImageCore": () =>
-    import("./providers/stability").then((m) => asCli(m.stableImageCore)),
-  "stability.stableImageSd3": () =>
-    import("./providers/stability").then((m) => asCli(m.stableImageSd3)),
-  "luma.imageGenerations": () => import("./providers/luma").then((m) => asCli(m.imageGenerations)),
-  "runway.textToImage": () => import("./providers/runway").then((m) => asCli(m.textToImage)),
-  "bria.imageGenerate": () => import("./providers/bria").then((m) => asCli(m.imageGenerate)),
-  "bria.imageGenerateLite": () =>
-    import("./providers/bria").then((m) => asCli(m.imageGenerateLite)),
-  "bytedance.imageGenerations": () =>
-    import("./providers/bytedance").then((m) => asCli(m.imageGenerations)),
-  "kling.imageGenerations": () =>
-    import("./providers/kling").then((m) => asCli(m.imageGenerations)),
-  "kling.omniImage": () => import("./providers/kling").then((m) => asCli(m.omniImage)),
-  "krea.krea2": () => import("./providers/krea").then((m) => asCli(m.krea2)),
-  "leonardo.generations": () => import("./providers/leonardo").then((m) => asCli(m.generations)),
-  "reve.create": () => import("./providers/reve").then((m) => asCli(m.create)),
-  "reve.createV2": () => import("./providers/reve").then((m) => asCli(m.createV2)),
-  "vidu.reference2image": () => import("./providers/vidu").then((m) => asCli(m.reference2image)),
+  "ideogram.image": () => import("./providers/ideogram").then((m) => asCli(m.image)),
+  "ideogram.imageV4": () => import("./providers/ideogram").then((m) => asCli(m.imageV4)),
+  "recraft.image": () => import("./providers/recraft").then((m) => asCli(m.image)),
+  "stability.image": () => import("./providers/stability").then((m) => asCli(m.image)),
+  "stability.imageCore": () => import("./providers/stability").then((m) => asCli(m.imageCore)),
+  "stability.imageSd3": () => import("./providers/stability").then((m) => asCli(m.imageSd3)),
+  "luma.image": () => import("./providers/luma").then((m) => asCli(m.image)),
+  "runway.image": () => import("./providers/runway").then((m) => asCli(m.image)),
+  "bria.image": () => import("./providers/bria").then((m) => asCli(m.image)),
+  "bria.imageLite": () => import("./providers/bria").then((m) => asCli(m.imageLite)),
+  "bytedance.image": () => import("./providers/bytedance").then((m) => asCli(m.image)),
+  "kling.image": () => import("./providers/kling").then((m) => asCli(m.image)),
+  "kling.imageOmni": () => import("./providers/kling").then((m) => asCli(m.imageOmni)),
+  "krea.image": () => import("./providers/krea").then((m) => asCli(m.image)),
+  "leonardo.image": () => import("./providers/leonardo").then((m) => asCli(m.image)),
+  "reve.image": () => import("./providers/reve").then((m) => asCli(m.image)),
+  "reve.imageV2": () => import("./providers/reve").then((m) => asCli(m.imageV2)),
+  "vidu.imageFromReference": () =>
+    import("./providers/vidu").then((m) => asCli(m.imageFromReference)),
 
   // Image editing (URL/base64 image inputs — the multipart-only editors are
   // listed under MULTIPART_ONLY below)
@@ -244,10 +244,11 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
  * `cli.test.ts` — which asserts REGISTRY names exactly the module-level
  * provider validators — either wrong or full of exceptions.
  *
- * Only `speech` is here today: it is the one category with a ready-made pack.
- * The other five land as their packs do.
+ * `speech` and `image` are here today: they are the categories with a
+ * ready-made pack. The other four land as their packs do.
  */
 export const UNIFIED: Record<string, () => Promise<CliValidator>> = {
+  "unified.image": () => import("./unified/image").then((m) => asCli(m.image)),
   "unified.speech": () => import("./unified/speech").then((m) => asCli(m.speech)),
 };
 

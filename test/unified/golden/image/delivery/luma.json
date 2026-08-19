@@ -1,0 +1,9 @@
+{
+  "ref": "luma/photon-1",
+  "params": {
+    "model": "photon-1",
+    "prompt": "a lighthouse in fog",
+    "aspect_ratio": "1:1"
+  },
+  "url": "https://api.lumalabs.ai/dream-machine/v1/generations/image"
+}

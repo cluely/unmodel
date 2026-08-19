@@ -53,7 +53,7 @@ import {
   type RevePostprocessingOperation,
   type ReveV1AspectRatio,
 } from "./shared";
-import { REVE_V1_PROMPT_MAX_LENGTH } from "./create";
+import { REVE_V1_PROMPT_MAX_LENGTH } from "./image";
 
 export const REVE_EDIT_URL = `${REVE_API_BASE_URL}/v1/image/edit`;
 export const REVE_REMIX_URL = `${REVE_API_BASE_URL}/v1/image/remix`;

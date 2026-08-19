@@ -1,0 +1,7 @@
+{
+  "ref": "stability/stable-image-ultra",
+  "params": {
+    "prompt": "a lighthouse in fog"
+  },
+  "url": "https://api.stability.ai/v2beta/stable-image/generate/ultra"
+}

@@ -37,29 +37,29 @@ export {
 export type { OmniVideoParams, OmniVideoSettings, KlingOmniVideoModelId } from "./omni-video";
 
 export {
-  imageGenerations,
+  image,
   IMAGE_GENERATIONS_URL,
   DEFAULT_IMAGE_MODEL,
   KLING_IMAGE_ASPECT_RATIOS,
   KLING_IMAGE_RESOLUTIONS,
   KLING_IMAGE_REFERENCES,
-} from "./image-generations";
+} from "./image";
 export type {
   ImageGenerationsParams,
   KlingImageAspectRatio,
   KlingImageResolution,
-} from "./image-generations";
+} from "./image";
 
 export {
-  omniImage,
+  imageOmni,
   OMNI_IMAGE_URL,
   DEFAULT_OMNI_IMAGE_MODEL,
   OMNI_IMAGE_RESOLUTIONS,
   OMNI_IMAGE_ASPECT_RATIOS,
   OMNI_RESULT_TYPES,
   OMNI_SERIES_AMOUNTS,
-} from "./omni-image";
-export type { OmniImageParams, KlingOmniImageResolution } from "./omni-image";
+} from "./image-omni";
+export type { OmniImageParams, KlingOmniImageResolution } from "./image-omni";
 
 export {
   KLING_BASE_URL,

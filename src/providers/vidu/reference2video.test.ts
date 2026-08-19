@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { reference2video, REFERENCE2VIDEO_URL } from "./reference2video";
-import { reference2image, REFERENCE2IMAGE_URL } from "./reference2image";
+import { imageFromReference, REFERENCE2IMAGE_URL } from "./image-from-reference";
 
 describe("vidu.reference2video", () => {
   test("accepts the named-subjects form", () => {
@@ -153,9 +153,9 @@ describe("vidu.reference2video", () => {
   });
 });
 
-describe("vidu.reference2image", () => {
+describe("vidu.imageFromReference", () => {
   test("text-to-image needs no references on viduq2", () => {
-    const v = reference2image({
+    const v = imageFromReference({
       model: "viduq2",
       prompt: "a lighthouse at dusk",
       resolution: "2K",
@@ -165,13 +165,13 @@ describe("vidu.reference2image", () => {
   });
 
   test("viduq1 requires at least one reference", () => {
-    const r = reference2image.safe({ model: "viduq1", prompt: "hi" });
+    const r = imageFromReference.safe({ model: "viduq1", prompt: "hi" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors.find((e) => e.code === "invalid_shape")?.meta?.min).toBe(1);
   });
 
   test("viduq1 is 1080p-only", () => {
-    const r = reference2image.safe({
+    const r = imageFromReference.safe({
       model: "viduq1",
       prompt: "hi",
       images: ["https://example.com/a.png"],
@@ -186,33 +186,33 @@ describe("vidu.reference2image", () => {
   });
 
   test("video-only model ids warn as unknown here", () => {
-    const r = reference2image.safe({ model: "viduq3-pro", prompt: "hi" });
+    const r = imageFromReference.safe({ model: "viduq3-pro", prompt: "hi" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
 
   test("every ViduImageAspectRatio and ViduImageResolution preset validates", () => {
     // Keep in sync with ViduImageAspectRatio / ViduImageResolution in
-    // reference2image.ts — viduq2 is the wider arm and accepts both sets
+    // image-from-reference.ts — viduq2 is the wider arm and accepts both sets
     // whole; checkModelRules narrows them for viduq1 (no 21:9 / 2:3 / 3:2,
     // 1080p only).
     const ratios = [
       "16:9", "9:16", "1:1", "3:4", "4:3", "21:9", "2:3", "3:2", "auto",
     ] as const;
     for (const aspect_ratio of ratios) {
-      const r = reference2image.safe({ model: "viduq2", prompt: "hi", aspect_ratio });
+      const r = imageFromReference.safe({ model: "viduq2", prompt: "hi", aspect_ratio });
       expect(r.ok, `aspect_ratio ${aspect_ratio} should validate`).toBe(true);
       if (r.ok) expect(r.warnings, `aspect_ratio ${aspect_ratio}`).toEqual([]);
     }
     for (const resolution of ["1080p", "2K", "4K"] as const) {
-      const r = reference2image.safe({ model: "viduq2", prompt: "hi", resolution });
+      const r = imageFromReference.safe({ model: "viduq2", prompt: "hi", resolution });
       expect(r.ok, `resolution ${resolution} should validate`).toBe(true);
       if (r.ok) expect(r.warnings, `resolution ${resolution}`).toEqual([]);
     }
   });
 
   test("per-image price follows the reference count band", () => {
-    const few = reference2image.safe({
+    const few = imageFromReference.safe({
       model: "viduq2",
       prompt: "hi",
       images: ["https://example.com/a.png"],
@@ -221,7 +221,7 @@ describe("vidu.reference2image", () => {
     expect(few.ok).toBe(true);
     if (few.ok) expect(few.estimate.costUSD).toBeCloseTo(0.1, 10);
 
-    const many = reference2image.safe({
+    const many = imageFromReference.safe({
       model: "viduq2",
       prompt: "hi",
       images: Array.from({ length: 5 }, (_, i) => `https://example.com/${i}.png`),
@@ -232,7 +232,7 @@ describe("vidu.reference2image", () => {
   });
 
   test("prompt caps at 2000 characters on the image route", () => {
-    const r = reference2image.safe({ model: "viduq2", prompt: "a".repeat(2001) });
+    const r = imageFromReference.safe({ model: "viduq2", prompt: "a".repeat(2001) });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["prompt"]);
   });

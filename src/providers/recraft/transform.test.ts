@@ -13,7 +13,7 @@ import {
   GENERATE_BACKGROUND_URL,
   MAX_INPUT_IMAGE_BYTES,
 } from "./transform";
-import { ASPECT_RATIOS, V2_V3_SIZES, UNATTRIBUTED_SIZE_VALUES } from "./generations";
+import { ASPECT_RATIOS, V2_V3_SIZES, UNATTRIBUTED_SIZE_VALUES } from "./image";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 
@@ -218,7 +218,7 @@ describe("recraft.outpaint", () => {
   });
 
   test("every RecraftSize preset this v3-only route can take validates", () => {
-    // Keep in sync with RecraftSize (generations.ts). Outpaint is
+    // Keep in sync with RecraftSize (image.ts). Outpaint is
     // recraftv3 / recraftv3_vector only, so the meaningful arms are the 14
     // shared aspect ratios plus the V2/V3 WxH table and the unattributed
     // pass-through size. The route carries no per-VALUE size rule (only the

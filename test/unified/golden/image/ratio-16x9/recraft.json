@@ -1,0 +1,9 @@
+{
+  "ref": "recraft/recraftv4_1",
+  "params": {
+    "model": "recraftv4_1",
+    "prompt": "a lighthouse in fog",
+    "size": "16:9"
+  },
+  "url": "https://external.api.recraft.ai/v1/images/generations"
+}

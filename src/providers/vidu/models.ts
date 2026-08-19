@@ -3,7 +3,7 @@
 //   https://platform.vidu.com/docs/image-to-video      (img2video wire schema)
 //   https://platform.vidu.com/docs/start-end-to-video  (start-end2video)
 //   https://platform.vidu.com/docs/reference-to-video  (reference2video, both forms)
-//   https://platform.vidu.com/docs/reference-to-image  (reference2image)
+//   https://platform.vidu.com/docs/reference-to-image  (imageFromReference)
 //   https://platform.vidu.com/docs/pricing             (credit price + per-model rates)
 // Verified 2026-08-13.
 //
@@ -34,7 +34,7 @@
 // (`viduq3-pro`), Q3 Turbo (`viduq3-turbo`), Q2 (`viduq2`), Q2 Pro
 // (`viduq2-pro`), Q2 Turbo (`viduq2-turbo`) and Q1 (`viduq1`) are all
 // documented API ids and all appear below, as does the census's image entry
-// (Vidu Q2 → `viduq2` on reference2image).
+// (Vidu Q2 → `viduq2` on imageFromReference).
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -127,7 +127,7 @@ export const videoModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    // text2video, reference2video — and reference2image.
+    // text2video, reference2video — and imageFromReference.
     modalities: { input: ["text", "image"], output: ["video", "image"] },
     limit: { context: 0 },
     // Video: tiered "starts at N, +M/s" curve → no per-second number (see
@@ -180,7 +180,7 @@ export const videoModels = {
     modalities: { input: ["text", "image"], output: ["video", "image"] },
     limit: { context: 0 },
     // Video: 80 credits ($0.40) per 5s 1080p generation → $0.08/s.
-    // Image: 20 credits ($0.10) per reference2image output.
+    // Image: 20 credits ($0.10) per imageFromReference output.
     cost: { perVideoSecond: 0.08, perImage: 0.1 },
   },
   "viduq1-classic": {

@@ -27,7 +27,7 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type BflKontextModelId } from "./models";
-import { bflModelUrl, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./flux2";
+import { bflModelUrl, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
 import { checkAspectRatioRange, type BflAspectRatio } from "./aspect";
 
 const KONTEXT_SCHEMA_URL = "https://api.bfl.ai/openapi.json#/components/schemas/FluxKontextProInputs";

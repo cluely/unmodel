@@ -379,6 +379,21 @@ export type SizeTable = Readonly<
  * Two ways to miss, and they are different mistakes with different fixes, so
  * they get different messages: a tier the model has no sizes for at all, and a
  * ratio that tier does not offer. Neither falls back.
+ *
+ * ## The row key is a label; the pixels are the truth
+ *
+ * A provider's size enum is *not* obliged to be honest about its own shapes.
+ * DALL·E 3 documents `1792x1024` as its landscape size and everyone calls it
+ * 16:9 — but 1792 ÷ 1024 is 1.750, not 1.778. A table that keys that entry
+ * `"16:9"` (which it must, or a caller asking for 16:9 could not reach it) is
+ * therefore promising a shape the pixels do not deliver, and a silent match
+ * would break the one equivalence the whole surface rests on.
+ *
+ * So the chosen value is measured: if it parses as `WxH` and its real ratio
+ * drifts from the requested one by more than {@link RATIO_DRIFT_TOLERANCE},
+ * the difference is an `approximated_param` naming both numbers. Enum values
+ * that are not pixel pairs (`"1K"`, `"square_hd"`) carry no measurable ratio
+ * and are matched on their key alone, as before.
  */
 export function toSizeEnum(
   ratio: string,
@@ -405,7 +420,9 @@ export function toSizeEnum(
   }
   for (const [key, size] of Object.entries(row)) {
     const candidate = parseRatio(key);
-    if (candidate !== undefined && sameRatio(parsed, candidate)) return ok(size);
+    if (candidate === undefined || !sameRatio(parsed, candidate)) continue;
+    warnSizeDrift(size, ratioValue(parsed), ratio, tier, ctx);
+    return ok(size);
   }
   const offered = Object.keys(row);
   return bad(ctx, {
@@ -414,6 +431,48 @@ export function toSizeEnum(
       `\`${paramOf(ctx)}\` must be one of ${list(offered)} at ${tier} for this model; ` +
       `got ${JSON.stringify(ratio)}.`,
     meta: { allowed: offered, value: ratio, tier },
+  });
+}
+
+const PIXEL_PAIR = /^(\d+)\s*[x×*]\s*(\d+)$/i;
+
+/**
+ * Warns when a size enum's pixels are a different shape from the ratio its row
+ * is keyed by — the DALL·E 3 `1792x1024` case explained on {@link toSizeEnum}.
+ *
+ * Silent for values that are not pixel pairs, and silent inside the tolerance:
+ * a table is allowed to round, it is not allowed to round *invisibly*.
+ */
+function warnSizeDrift(
+  size: string,
+  requested: number,
+  spelling: string,
+  tier: ResolutionTier,
+  ctx: DeriveContext,
+): void {
+  const match = PIXEL_PAIR.exec(size);
+  if (match === null) return;
+  const width = Number(match[1]);
+  const height = Number(match[2]);
+  if (!(width > 0) || !(height > 0)) return;
+  const achieved = width / height;
+  if (ratioDistance(achieved, requested) <= RATIO_DRIFT_TOLERANCE) return;
+  ctx.warn({
+    code: "approximated_param",
+    path: [...ctx.path],
+    message:
+      `\`${paramOf(ctx)}\` ${spelling} at ${tier} has no exact size on this model: ` +
+      `${JSON.stringify(size)} was sent, which is ${achieved.toFixed(3)}:1 ` +
+      `(requested ${requested.toFixed(3)}:1).`,
+    meta: {
+      requested: spelling,
+      achieved: size,
+      width,
+      height,
+      requestedRatio: requested,
+      achievedRatio: achieved,
+      tier,
+    },
   });
 }
 
@@ -469,6 +528,19 @@ export interface RatioStringRules {
  * spellings has an enum whether or not its schema says so, and belongs in
  * {@link toRatioEnum} — which returns that provider's own spelling verbatim.
  */
+/**
+ * A ratio bound, rendered the way the value beside it is.
+ *
+ * The bounds are stored as the numbers they are — `9 / 21` and `21 / 9`, so the
+ * comparison is exact at the boundary the provider itself accepts — and a raw
+ * `0.42857142857142855` in an error message is noise that makes a real limit
+ * look like a bug. Three decimals, matching the `toFixed(3)` the message uses
+ * for the value being rejected.
+ */
+function bound(value: number | undefined, fallback: number | string): number | string {
+  return value === undefined ? fallback : Number(value.toFixed(3));
+}
+
 export function toRatioString(
   ratio: string,
   rules: RatioStringRules,
@@ -487,7 +559,7 @@ export function toRatioString(
     return bad(ctx, {
       code: "invalid_shape",
       message:
-        `\`${paramOf(ctx)}\` must be between ${rules.min ?? 0} and ${rules.max ?? "∞"} ` +
+        `\`${paramOf(ctx)}\` must be between ${bound(rules.min, 0)} and ${bound(rules.max, "∞")} ` +
         `(width ÷ height); ${ratio} is ${value.toFixed(3)}.`,
       meta: {
         min: rules.min,
@@ -664,6 +736,36 @@ export function resolveSizing(
   if (hasRatio) return ok({ kind: "ratio", aspectRatio: input.aspectRatio as AspectRatio });
   if (hasDimensions) return ok({ kind: "dimensions", dimensions: input.dimensions as Dimensions });
   return ok({ kind: "unset" });
+}
+
+/**
+ * The answer to `dimensions` **and** `resolution`, at a provider whose size
+ * field takes pixels.
+ *
+ * The two are not the XOR pair — that is `aspectRatio` versus `dimensions`, and
+ * {@link resolveSizing} owns it. This is the other overlap, and whether it is a
+ * conflict depends entirely on what the provider's size vocabulary is:
+ *
+ * - At a provider that takes a **shape** (`aspect_ratio` + a tier name), the two
+ *   are complementary: the pixels supply the shape, the tier supplies the size,
+ *   and both are used. Nothing to reject.
+ * - At a provider that takes **pixels**, `dimensions` has already said
+ *   everything a tier could say, and the two can disagree — 1024×1024 with
+ *   `resolution: "4k"` is a request with two different answers in it.
+ *
+ * Only the second kind calls this. Ignoring the tier there is the exact failure
+ * the loss contract exists to prevent: a caller who wrote `4k` and got 1 MP has
+ * no warning, no error, and no way to find out except by looking at the output.
+ */
+export function redundantTier(tier: ResolutionTier, ctx: DeriveContext): Derived<never> {
+  return bad(ctx, {
+    code: "invalid_shape",
+    message:
+      `\`resolution\` ${JSON.stringify(tier)} has nothing to add beside \`dimensions\` on this ` +
+      "model, whose size field takes pixels — the pixel count is already fixed, and the two can " +
+      "disagree. Drop `resolution`, or use `aspectRatio` to size by tier instead.",
+    meta: { value: tier },
+  });
 }
 
 // ---------------------------------------------------------------------------

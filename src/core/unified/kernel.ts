@@ -236,8 +236,17 @@ export function runUnified(
   // --- The provider's own validator ----------------------------------------
   const result = call.validate(merged, options);
   const remap = (issue: Issue): void => {
-    const { path, unmapped } = canonicalPath(provenance, issue.path);
-    const viaOptions = unmapped && typeof issue.path[0] === "string" && overridden.has(issue.path[0]);
+    // A wire key the caller supplied through `providerOptions` is theirs, not
+    // the adapter's — whatever provenance the adapter declared for it describes
+    // a value that this request does not contain. Remapping it would report a
+    // canonical field the caller may never have written, and blame the compiler
+    // for a value they typed by hand, so the escape hatch wins over the
+    // declaration and the wire spelling is left exactly as they wrote it.
+    const supplied = typeof issue.path[0] === "string" && overridden.has(issue.path[0]);
+    const { path, unmapped } = supplied
+      ? { path: [...issue.path], unmapped: true }
+      : canonicalPath(provenance, issue.path);
+    const viaOptions = unmapped && supplied;
     sink.report({
       code: issue.code,
       path,

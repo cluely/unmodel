@@ -1,5 +1,5 @@
-export { create, REVE_CREATE_URL, REVE_V1_PROMPT_MAX_LENGTH } from "./create";
-export type { CreateParams } from "./create";
+export { image, REVE_CREATE_URL, REVE_V1_PROMPT_MAX_LENGTH } from "./image";
+export type { CreateParams } from "./image";
 
 export {
   edit,
@@ -12,18 +12,18 @@ export {
 export type { EditParams, RemixParams } from "./edit";
 
 export {
-  createV2,
+  imageV2,
   REVE_V2_CREATE_URL,
   REVE_V2_RESPONSE_URL,
   REVE_V2_PROMPT_MAX_LENGTH,
   REVE_ASYNC_IMAGE_FORMATS,
-} from "./v2-create";
+} from "./image-v2";
 export type {
   CreateV2Params,
   ReveAsyncImageFormat,
   ReveAsyncOptions,
   ReveImageInput,
-} from "./v2-create";
+} from "./image-v2";
 
 export {
   reveCreditsToUSD,

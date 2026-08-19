@@ -178,7 +178,7 @@ const OUTPUT_FORMAT_ONLY = {
     "`output_format` is supported by Seedream 5.0 pro and Seedream 5.0 lite only; this model always returns jpeg",
 } as const;
 
-export const imageGenerationsConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+export const imageConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   "dola-seedream-5-0-pro-260628": {
     deny: denyTable(SEQUENTIAL_ONLY, IMAGE_API_SOURCE),
     enums: {

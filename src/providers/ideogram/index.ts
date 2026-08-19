@@ -1,5 +1,5 @@
 export {
-  generate,
+  image,
   toFormData,
   IDEOGRAM_V3_GENERATE_URL,
   RENDERING_SPEEDS,
@@ -9,7 +9,7 @@ export {
   RESOLUTIONS,
   STYLE_PRESETS,
   COLOR_PALETTE_PRESETS,
-} from "./generate";
+} from "./image";
 export type {
   GenerateParams,
   IdeogramRenderingSpeed,
@@ -21,14 +21,14 @@ export type {
   IdeogramColorPalettePreset,
   IdeogramColorPalette,
   IdeogramColorPaletteMember,
-} from "./generate";
+} from "./image";
 
 export {
-  generateV4,
+  imageV4,
   IDEOGRAM_V4_GENERATE_URL,
   RESOLUTIONS_V4,
   V4_RENDERING_SPEEDS,
-} from "./generate-v4";
+} from "./image-v4";
 export type {
   GenerateV4Params,
   IdeogramResolutionV4,
@@ -37,7 +37,7 @@ export type {
   V4StyleDescription,
   V4CompositionalDeconstruction,
   V4PromptElement,
-} from "./generate-v4";
+} from "./image-v4";
 
 export {
   edit,

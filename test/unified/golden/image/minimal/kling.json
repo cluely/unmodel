@@ -1,0 +1,8 @@
+{
+  "ref": "kling/kling-v2-1",
+  "params": {
+    "model_name": "kling-v2-1",
+    "prompt": "a lighthouse in fog"
+  },
+  "url": "https://api-singapore.klingai.com/v1/images/generations"
+}

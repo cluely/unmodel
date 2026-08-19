@@ -1,5 +1,5 @@
 export {
-  krea2,
+  image,
   krea2Url,
   krea2BillingTier,
   KREA_API_BASE_URL,
@@ -12,7 +12,7 @@ export {
   KREA_MAX_STYLE_REFERENCES,
   KREA_MAX_MOODBOARDS,
   KREA_MAX_IMAGE_URL_LENGTH,
-} from "./krea-2";
+} from "./image";
 export type {
   Krea2Params,
   KreaAspectRatio,
@@ -21,7 +21,7 @@ export type {
   KreaStyleRef,
   KreaImageStyleReference,
   KreaMoodboardRef,
-} from "./krea-2";
+} from "./image";
 
 // No response checker: the submit POST returns an async job envelope
 // ({ job_id, status, … }), and polling GET /jobs/{id} is transport — out of

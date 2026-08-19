@@ -51,7 +51,7 @@ import {
   type RecraftModelId,
 } from "./models";
 import { STYLE_NAMES_BY_MODEL, type RecraftStyleName } from "./styles";
-import type { RecraftControls, RecraftSize, RecraftTextLayoutElement } from "./generations";
+import type { RecraftControls, RecraftSize, RecraftTextLayoutElement } from "./image";
 
 const IMAGES_BASE_URL = "https://external.api.recraft.ai/v1/images";
 

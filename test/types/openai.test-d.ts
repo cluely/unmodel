@@ -12,7 +12,7 @@ import type { RealtimeSessionCreateRequest } from "openai/resources/realtime/rea
 import type { ClientSecretCreateParams } from "openai/resources/realtime/client-secrets";
 import {
   chat,
-  images,
+  image,
   imageEdit,
   speech,
   transcription,
@@ -169,7 +169,7 @@ function chatModelUnionTests(): void {
 }
 
 function imagesTypeTests(): void {
-  const img = images({
+  const img = image({
     model: "gpt-image-1.5",
     prompt: "a red panda",
     size: "1024x1024",
@@ -188,7 +188,7 @@ function imagesTypeTests(): void {
   // @ts-expect-error — `.toSdk()` now requires a target
   img.toSdk();
 
-  const dalle = images({
+  const dalle = image({
     model: "dall-e-3",
     prompt: "a lighthouse",
     n: 1,
@@ -201,45 +201,45 @@ function imagesTypeTests(): void {
   expectAssignable<"dall-e-3">(dalle.model);
 
   // gpt-image-2 takes free-form sizes.
-  images({ model: "gpt-image-2", prompt: "x", size: "1536x864" });
+  image({ model: "gpt-image-2", prompt: "x", size: "1536x864" });
   // The preset union autocompletes the documented rule space: 4K, 2:1, 3:1…
-  images({ model: "gpt-image-2", prompt: "x", size: "3840x2160" });
-  images({ model: "gpt-image-2", prompt: "x", size: "2048x1024" });
-  images({ model: "gpt-image-2", prompt: "x", size: "3840x1280" });
+  image({ model: "gpt-image-2", prompt: "x", size: "3840x2160" });
+  image({ model: "gpt-image-2", prompt: "x", size: "2048x1024" });
+  image({ model: "gpt-image-2", prompt: "x", size: "3840x1280" });
   // @ts-expect-error — non-size strings are compile errors (was silently accepted as (string & {}))
-  images({ model: "gpt-image-2", prompt: "x", size: "" });
+  image({ model: "gpt-image-2", prompt: "x", size: "" });
   // @ts-expect-error — aspect-ratio strings are not the wire format; sizes are "WIDTHxHEIGHT"
-  images({ model: "gpt-image-2", prompt: "x", size: "2:1" });
+  image({ model: "gpt-image-2", prompt: "x", size: "2:1" });
   // Unknown models fall back to the loose escape arm.
-  images({ model: "gpt-image-9", prompt: "x", some_future_param: true });
+  image({ model: "gpt-image-9", prompt: "x", some_future_param: true });
 
   // gpt-image-2 accepts the two non-transparent background values.
-  images({ model: "gpt-image-2", prompt: "x", background: "auto" });
-  images({ model: "gpt-image-2-2026-04-21", prompt: "x", background: "opaque" });
+  image({ model: "gpt-image-2", prompt: "x", background: "auto" });
+  image({ model: "gpt-image-2-2026-04-21", prompt: "x", background: "opaque" });
 
   // @ts-expect-error — GROUND TRUTH: gpt-image-2 has no transparent background
-  images({ model: "gpt-image-2", prompt: "x", background: "transparent" });
+  image({ model: "gpt-image-2", prompt: "x", background: "transparent" });
 
   // @ts-expect-error — the dated gpt-image-2 snapshot rejects `transparent` too
-  images({ model: "gpt-image-2-2026-04-21", prompt: "x", background: "transparent" });
+  image({ model: "gpt-image-2-2026-04-21", prompt: "x", background: "transparent" });
 
   // @ts-expect-error — `style` is dall-e-3 only
-  images({ model: "gpt-image-1", prompt: "x", style: "vivid" });
+  image({ model: "gpt-image-1", prompt: "x", style: "vivid" });
 
   // @ts-expect-error — `response_format` is dall-e only; GPT image models always return base64
-  images({ model: "gpt-image-1.5", prompt: "x", response_format: "url" });
+  image({ model: "gpt-image-1.5", prompt: "x", response_format: "url" });
 
   // @ts-expect-error — `output_format` is for GPT image models, not dall-e-2
-  images({ model: "dall-e-2", prompt: "x", output_format: "png" });
+  image({ model: "dall-e-2", prompt: "x", output_format: "png" });
 
   // @ts-expect-error — dall-e-3 only supports n: 1
-  images({ model: "dall-e-3", prompt: "x", n: 2 });
+  image({ model: "dall-e-3", prompt: "x", n: 2 });
 
   // @ts-expect-error — bogus top-level param on a known arm
-  images({ model: "gpt-image-1", prompt: "x", bogus_thing: 1 });
+  image({ model: "gpt-image-1", prompt: "x", bogus_thing: 1 });
 
   // @ts-expect-error — size outside the dall-e-2 set
-  images({ model: "dall-e-2", prompt: "x", size: "1024x1536" });
+  image({ model: "dall-e-2", prompt: "x", size: "1024x1536" });
 }
 
 function videosTypeTests(): void {

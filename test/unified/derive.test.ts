@@ -253,6 +253,39 @@ describe("S3 · toSizeEnum", () => {
     expect(out.issues[0]!.message).toContain("at 2k");
     expect(out.issues[0]!.meta).toMatchObject({ allowed: ["1:1"], tier: "2k" });
   });
+
+  /**
+   * The DALL·E 3 case. A row keyed `"16:9"` whose value is `1792x1024` is
+   * 1.750:1 — everybody calls it 16:9 and the pixels disagree, so matching it
+   * silently would break "zero warnings means exact" for the single most
+   * common ratio there is.
+   */
+  test("a row whose pixels are not the shape its key claims warns, naming both", () => {
+    const ctx = ctxAt("aspectRatio");
+    const table = { "1k": { "1:1": "1024x1024", "16:9": "1792x1024" } } as const;
+    expect(toSizeEnum("16:9", "1k", table, ctx).value).toBe("1792x1024");
+    expect(ctx.warnings).toHaveLength(1);
+    expect(ctx.warnings[0]!.code).toBe("approximated_param");
+    expect(ctx.warnings[0]!.message).toContain("1.750:1");
+    expect(ctx.warnings[0]!.message).toContain("requested 1.778:1");
+    expect(ctx.warnings[0]!.meta).toMatchObject({
+      requested: "16:9",
+      achieved: "1792x1024",
+      width: 1792,
+      height: 1024,
+      tier: "1k",
+    });
+  });
+
+  test("an exact row and a non-pixel row are both silent", () => {
+    const ctx = ctxAt("aspectRatio");
+    // 1536x1024 IS 3:2, to the last pixel.
+    expect(toSizeEnum("3:2", "1k", TABLE, ctx).value).toBe("1536x1024");
+    // A value that is not a pixel pair carries no measurable ratio.
+    const named = { "1k": { "16:9": "landscape_hd" } } as const;
+    expect(toSizeEnum("16:9", "1k", named, ctx).value).toBe("landscape_hd");
+    expect(ctx.warnings).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------

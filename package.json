@@ -103,13 +103,25 @@
       "types": "./dist/providers/black-forest-labs/index.d.ts",
       "default": "./dist/providers/black-forest-labs/index.js"
     },
+    "./black-forest-labs/unified": {
+      "types": "./dist/providers/black-forest-labs/unified.d.ts",
+      "default": "./dist/providers/black-forest-labs/unified.js"
+    },
     "./bria": {
       "types": "./dist/providers/bria/index.d.ts",
       "default": "./dist/providers/bria/index.js"
     },
+    "./bria/unified": {
+      "types": "./dist/providers/bria/unified.d.ts",
+      "default": "./dist/providers/bria/unified.js"
+    },
     "./bytedance": {
       "types": "./dist/providers/bytedance/index.d.ts",
       "default": "./dist/providers/bytedance/index.js"
+    },
+    "./bytedance/unified": {
+      "types": "./dist/providers/bytedance/unified.d.ts",
+      "default": "./dist/providers/bytedance/unified.js"
     },
     "./cartesia": {
       "types": "./dist/providers/cartesia/index.d.ts",
@@ -179,6 +191,10 @@
       "types": "./dist/providers/google/index.d.ts",
       "default": "./dist/providers/google/index.js"
     },
+    "./google/unified": {
+      "types": "./dist/providers/google/unified.d.ts",
+      "default": "./dist/providers/google/unified.js"
+    },
     "./google-vertex": {
       "types": "./dist/providers/google-vertex/index.d.ts",
       "default": "./dist/providers/google-vertex/index.js"
@@ -203,6 +219,10 @@
       "types": "./dist/providers/ideogram/index.d.ts",
       "default": "./dist/providers/ideogram/index.js"
     },
+    "./ideogram/unified": {
+      "types": "./dist/providers/ideogram/unified.d.ts",
+      "default": "./dist/providers/ideogram/unified.js"
+    },
     "./inception": {
       "types": "./dist/providers/inception/index.d.ts",
       "default": "./dist/providers/inception/index.js"
@@ -219,13 +239,25 @@
       "types": "./dist/providers/kling/index.d.ts",
       "default": "./dist/providers/kling/index.js"
     },
+    "./kling/unified": {
+      "types": "./dist/providers/kling/unified.d.ts",
+      "default": "./dist/providers/kling/unified.js"
+    },
     "./krea": {
       "types": "./dist/providers/krea/index.d.ts",
       "default": "./dist/providers/krea/index.js"
     },
+    "./krea/unified": {
+      "types": "./dist/providers/krea/unified.d.ts",
+      "default": "./dist/providers/krea/unified.js"
+    },
     "./leonardo": {
       "types": "./dist/providers/leonardo/index.d.ts",
       "default": "./dist/providers/leonardo/index.js"
+    },
+    "./leonardo/unified": {
+      "types": "./dist/providers/leonardo/unified.d.ts",
+      "default": "./dist/providers/leonardo/unified.js"
     },
     "./lightricks": {
       "types": "./dist/providers/lightricks/index.d.ts",
@@ -246,6 +278,10 @@
     "./luma": {
       "types": "./dist/providers/luma/index.d.ts",
       "default": "./dist/providers/luma/index.js"
+    },
+    "./luma/unified": {
+      "types": "./dist/providers/luma/unified.d.ts",
+      "default": "./dist/providers/luma/unified.js"
     },
     "./meta": {
       "types": "./dist/providers/meta/index.d.ts",
@@ -315,6 +351,10 @@
       "types": "./dist/providers/recraft/index.d.ts",
       "default": "./dist/providers/recraft/index.js"
     },
+    "./recraft/unified": {
+      "types": "./dist/providers/recraft/unified.d.ts",
+      "default": "./dist/providers/recraft/unified.js"
+    },
     "./resemble": {
       "types": "./dist/providers/resemble/index.d.ts",
       "default": "./dist/providers/resemble/index.js"
@@ -331,6 +371,10 @@
       "types": "./dist/providers/reve/index.d.ts",
       "default": "./dist/providers/reve/index.js"
     },
+    "./reve/unified": {
+      "types": "./dist/providers/reve/unified.d.ts",
+      "default": "./dist/providers/reve/unified.js"
+    },
     "./rime": {
       "types": "./dist/providers/rime/index.d.ts",
       "default": "./dist/providers/rime/index.js"
@@ -342,6 +386,10 @@
     "./runway": {
       "types": "./dist/providers/runway/index.d.ts",
       "default": "./dist/providers/runway/index.js"
+    },
+    "./runway/unified": {
+      "types": "./dist/providers/runway/unified.d.ts",
+      "default": "./dist/providers/runway/unified.js"
     },
     "./sarvam": {
       "types": "./dist/providers/sarvam/index.d.ts",
@@ -383,6 +431,10 @@
       "types": "./dist/providers/stability/index.d.ts",
       "default": "./dist/providers/stability/index.js"
     },
+    "./stability/unified": {
+      "types": "./dist/providers/stability/unified.d.ts",
+      "default": "./dist/providers/stability/unified.js"
+    },
     "./stepfun": {
       "types": "./dist/providers/stepfun/index.d.ts",
       "default": "./dist/providers/stepfun/index.js"
@@ -402,6 +454,10 @@
     "./vidu": {
       "types": "./dist/providers/vidu/index.d.ts",
       "default": "./dist/providers/vidu/index.js"
+    },
+    "./vidu/unified": {
+      "types": "./dist/providers/vidu/unified.d.ts",
+      "default": "./dist/providers/vidu/unified.js"
     },
     "./xai": {
       "types": "./dist/providers/xai/index.d.ts",

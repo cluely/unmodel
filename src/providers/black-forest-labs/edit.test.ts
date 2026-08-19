@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { fluxFill, fluxExpand } from "./edit";
-import { BFL_API_BASE_URL } from "./flux2";
+import { BFL_API_BASE_URL } from "./image";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 

@@ -1122,7 +1122,7 @@ export type RunwayImageOutputFormat = (typeof IMAGE_OUTPUT_FORMATS)[number];
  * `promptText` + `ratio` (all arms require those), enforced by a checker in
  * text-to-image.ts.
  */
-export const textToImageRequired: Readonly<Partial<Record<string, readonly string[]>>> = {
+export const imageRequired: Readonly<Partial<Record<string, readonly string[]>>> = {
   gen4_image_turbo: ["referenceImages"],
 };
 
@@ -1132,7 +1132,7 @@ export const textToImageRequired: Readonly<Partial<Record<string, readonly strin
  * arms; `subject` exists only on the gemini_image3 family; the seedream and
  * grok arms take bare `{ uri }` objects and reject both.
  */
-export const textToImageShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>> = {
+export const imageShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>> = {
   gen4_image: {
     promptText: PT_1K,
     arrays: { referenceImages: { max: 3 } },
@@ -1180,7 +1180,7 @@ export const textToImageShapeRules: Readonly<Partial<Record<string, ModelShapeRu
   },
 };
 
-export const textToImageConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+export const imageConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   gen4_image: {
     deny: notInSchema("text_to_image", TEXT_TO_IMAGE_SOURCE, [
       "background",

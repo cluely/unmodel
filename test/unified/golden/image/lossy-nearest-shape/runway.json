@@ -1,0 +1,24 @@
+{
+  "ref": "runway/gemini_image3_pro",
+  "params": {
+    "model": "gemini_image3_pro",
+    "promptText": "a lighthouse in fog",
+    "ratio": "1344:768"
+  },
+  "url": "https://api.dev.runwayml.com/v1/text_to_image",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "aspectRatio"
+      ],
+      "meta": {
+        "width": 16,
+        "height": 9,
+        "ratio": "16:9",
+        "chosen": "1344:768",
+        "distance": 0.015748356968139168
+      }
+    }
+  ]
+}

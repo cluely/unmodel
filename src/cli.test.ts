@@ -221,11 +221,11 @@ test("validate anthropic.chat via the registry", async () => {
 
 test("validate flags a multipart endpoint so the body is not posted as JSON", async () => {
   const { stdout, exitCode } = await runCli(
-    ["validate", "stability.stableImageUltra"],
+    ["validate", "stability.image"],
     JSON.stringify({ prompt: "a fox" }),
   );
   expect(exitCode).toBe(0);
-  expect(stdout).toContain("ok: stability.stableImageUltra");
+  expect(stdout).toContain("ok: stability.image");
   expect(stdout).toContain("multipart/form-data");
   expect(stdout).toContain("toFormData(validated)");
   expect(stdout).toContain('"unmodel/stability"');
@@ -233,7 +233,7 @@ test("validate flags a multipart endpoint so the body is not posted as JSON", as
 
 test("validate --json carries the multipart transport hint", async () => {
   const { stdout, exitCode } = await runCli(
-    ["validate", "ideogram.generate", "--json"],
+    ["validate", "ideogram.image", "--json"],
     JSON.stringify({ prompt: "a fox" }),
   );
   expect(exitCode).toBe(0);
@@ -250,7 +250,7 @@ test("validate --json carries the multipart transport hint", async () => {
 
 test("JSON-bodied endpoints carry no multipart hint", async () => {
   const { stdout } = await runCli(
-    ["validate", "recraft.generations", "--json"],
+    ["validate", "recraft.image", "--json"],
     JSON.stringify({ prompt: "a fox", model: "recraftv4_1" }),
   );
   const result = JSON.parse(stdout) as {
@@ -327,8 +327,45 @@ test("validate unified.speech reports a provider gap at the canonical path", asy
   expect(stderr).toContain("speed");
 });
 
+test("validate unified.image compiles one canonical request through the ref's provider", async () => {
+  const { stdout, exitCode } = await runCli(
+    ["validate", "unified.image", "--json"],
+    JSON.stringify({
+      model: "ideogram/ideogram-3.0-quality",
+      prompt: "a lighthouse in fog",
+      aspectRatio: "16:9",
+      resolution: "1k",
+    }),
+  );
+  expect(exitCode).toBe(0);
+  const result = JSON.parse(stdout) as {
+    ok: boolean;
+    params: Record<string, unknown>;
+    request: { url: string };
+  };
+  expect(result.ok).toBe(true);
+  // Ideogram's own body, in Ideogram's own spellings: the ref chose the route
+  // AND the rendering speed, and `16:9` came back as this provider's `16x9`.
+  expect(result.params).toEqual({
+    prompt: "a lighthouse in fog",
+    rendering_speed: "QUALITY",
+    aspect_ratio: "16x9",
+  });
+  expect(result.request.url).toBe("https://api.ideogram.ai/v1/ideogram-v3/generate");
+});
+
+test("validate unified.image reports a provider gap at the canonical path", async () => {
+  const { stderr, exitCode } = await runCli(
+    ["validate", "unified.image"],
+    JSON.stringify({ model: "openai/gpt-image-1", prompt: "hi", seed: 7 }),
+  );
+  expect(exitCode).toBe(1);
+  expect(stderr).toContain("unsupported_param");
+  expect(stderr).toContain("seed");
+});
+
 test("the unified map names one target per shipped pack", () => {
-  expect(Object.keys(UNIFIED)).toEqual(["unified.speech"]);
+  expect(Object.keys(UNIFIED)).toEqual(["unified.image", "unified.speech"]);
   // Never both maps: a `unified.*` id is not a provider endpoint.
   expect(Object.keys(REGISTRY).filter((id) => id.startsWith("unified."))).toEqual([]);
 });

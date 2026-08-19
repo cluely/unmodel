@@ -2,11 +2,7 @@
  * `unmodel/image` — one `image()` for every text-to-image provider.
  *
  * ```ts
- * import { createImage } from "unmodel/image";
- * import { openaiImage } from "unmodel/openai";
- * import { googleImage } from "unmodel/google";
- *
- * const image = createImage([openaiImage, googleImage]);
+ * import { image } from "unmodel/image";
  *
  * const req = image({
  *   model: "openai/gpt-image-1",
@@ -35,18 +31,44 @@
  * enumerable, `.request` and `.toSdk` not, plus `warnings` describing what
  * compiling cost. Zero warnings means the request mapped exactly.
  *
- * ## Why you assemble the pack yourself
+ * ## Why you might assemble the pack yourself
  *
- * `createImage([...])` takes the adapters you name, and the bundle contains
- * those providers and no others — which is the difference between a 40 KiB
- * entry and a 900 KiB one for someone who ships to a browser. The adapters
- * also decide the *types*: the refs that autocomplete are exactly the models
- * the adapters you passed declare, and the return type is that provider's own
- * body.
+ * That `image` is the ready-made pack: all fifteen providers, and therefore all
+ * fifteen providers' catalogs and validators, in one bundle. `createImage([…])`
+ * takes the adapters you name instead, and the bundle contains those providers
+ * and no others — which is the difference between a 40 KiB entry and a 500 KiB
+ * one for someone who ships to a browser:
+ *
+ * ```ts
+ * import { createImage } from "unmodel/image";
+ * import { image as openai } from "unmodel/openai/unified";
+ * import { image as ideogram } from "unmodel/ideogram/unified";
+ *
+ * const image = createImage([openai, ideogram]);
+ * ```
+ *
+ * The adapters also decide the *types*: the refs that autocomplete are exactly
+ * the models the adapters you passed declare, and the return type is that
+ * provider's own body.
  */
 import { createUnified } from "../core/unified/kernel";
 import type { AnyUnifiedAdapter, UnifiedValidator } from "../core/unified/types";
 import type { ImageParams } from "../core/unified/vocabulary/image";
+import { image as blackForestLabs } from "../providers/black-forest-labs/unified";
+import { image as bria } from "../providers/bria/unified";
+import { image as bytedance } from "../providers/bytedance/unified";
+import { image as google } from "../providers/google/unified";
+import { image as ideogram } from "../providers/ideogram/unified";
+import { image as kling } from "../providers/kling/unified";
+import { image as krea } from "../providers/krea/unified";
+import { image as leonardo } from "../providers/leonardo/unified";
+import { image as luma } from "../providers/luma/unified";
+import { image as openai } from "../providers/openai/unified-image";
+import { image as recraft } from "../providers/recraft/unified";
+import { image as reve } from "../providers/reve/unified";
+import { image as runway } from "../providers/runway/unified";
+import { image as stability } from "../providers/stability/unified";
+import { image as vidu } from "../providers/vidu/unified";
 
 /**
  * An adapter for this category. Provider adapters live at
@@ -72,25 +94,46 @@ export function createImage<A extends ImageAdapter>(
 }
 
 /**
- * ## The ready-made pack
+ * Every image adapter unmodel ships, assembled by hand.
  *
- * A zero-argument `image()` carrying every image adapter unmodel ships lands
- * here once there are adapters to carry — it is deliberately **not** part of
- * this commit, because a convenience export that imports forty provider
- * modules is the one thing that would undo the layering above.
+ * By hand, and in one array, because that array is three things at once: the
+ * runtime registry, the `"provider/model"` ref union an editor autocompletes,
+ * and the return type of a call (each provider's own `Validated`). A generated
+ * or dynamically-loaded registry would keep the first and lose the other two.
  *
- * The layering, so the placeholder is not mysterious:
+ * One adapter per provider, always — a ref resolves to exactly one, and
+ * `createUnified` throws on a second claiming the same id. Five providers here
+ * have more than one generation route (black-forest-labs' two FLUX
+ * generations, ideogram's 3.0 and 4.0, stability's ultra/core/sd3, bria's full
+ * and lite, kling's standard and omni, reve's v1 and v2), and every one of them
+ * dispatches inside `compile` on the bare model id and returns *that route's*
+ * own validator. Which is the right shape anyway: `flux-2-pro` and
+ * `flux-pro-1.1-ultra` are the same kind of thing to someone choosing a model,
+ * and the difference between them belongs in the warnings rather than in which
+ * import you remembered.
  *
- * - `src/core/unified/**` is the kernel. It imports nothing from
- *   `src/providers/**`, ever, and the import-graph suite enforces it.
- * - `src/providers/<p>/unified.ts` is one provider's adapter. It may see its
- *   own directory, the kernel, and the translation warning types.
- * - **this file** is the category entry. Today it exports only the factory, so
- *   its bundle is the kernel and nothing else — which is what the 15 KiB
- *   budget in `test/bundle-budget.test.ts` pins. When the pack arrives, that
- *   budget stays and the pack ships as a separate named export whose weight is
- *   the caller's explicit choice.
+ * The cost is honest and measured: importing this pulls in fifteen provider
+ * validators, their schemas and their catalogs, pinned in
+ * `test/bundle-budget.test.ts`. `createImage([…])` above is the way to pay for
+ * two providers instead of fifteen.
  */
+export const image = createImage([
+  openai,
+  google,
+  blackForestLabs,
+  ideogram,
+  recraft,
+  stability,
+  luma,
+  bytedance,
+  runway,
+  kling,
+  vidu,
+  bria,
+  leonardo,
+  krea,
+  reve,
+]);
 
 export type {
   AspectRatio,

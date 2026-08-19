@@ -1,0 +1,9 @@
+{
+  "ref": "bytedance/seedream-4-0-250828",
+  "params": {
+    "model": "seedream-4-0-250828",
+    "prompt": "a lighthouse in fog",
+    "size": "1344x768"
+  },
+  "url": "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations"
+}

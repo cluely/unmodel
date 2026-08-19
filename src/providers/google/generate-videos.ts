@@ -64,7 +64,7 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import type { GoogleVideoModelId } from "../../catalog/google.gen";
-// `./model-path`, not `./chat` — see the note in ./generate-images.ts: the
+// `./model-path`, not `./chat` — see the note in ./image.ts: the
 // shared id normalization is a leaf, so this entry pays for Veo and nothing
 // else.
 import { GOOGLE_MODELS_BASE_URL, googleModelUrl, stripModelsPrefix } from "./model-path";

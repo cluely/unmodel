@@ -5,9 +5,9 @@
  * and the ExactKeys typo guard.
  */
 import {
-  stableImageUltra,
-  stableImageCore,
-  stableImageSd3,
+  image,
+  imageCore,
+  imageSd3,
   toFormData,
 } from "../../src/providers/stability";
 import { expectAssignable } from "./helpers";
@@ -15,7 +15,7 @@ import { expectAssignable } from "./helpers";
 declare const imageBlob: Blob;
 
 function ultraTypeTests(): void {
-  const v = stableImageUltra({
+  const v = image({
     prompt: "a lighthouse at dawn",
     negative_prompt: "fog",
     aspect_ratio: "16:9",
@@ -29,15 +29,15 @@ function ultraTypeTests(): void {
   expectAssignable<FormData>(toFormData(v));
 
   // @ts-expect-error ExactKeys rejects typo'd keys
-  stableImageUltra({ prompt: "hi", negativeprompt: "fog" });
+  image({ prompt: "hi", negativeprompt: "fog" });
   // @ts-expect-error style presets are a closed enum
-  stableImageUltra({ prompt: "hi", style_preset: "pixelart" });
+  image({ prompt: "hi", style_preset: "pixelart" });
   // @ts-expect-error image must be a Blob (binary multipart part), not a URL string
-  stableImageUltra({ prompt: "hi", image: "https://example.com/a.png", strength: 0.5 });
+  image({ prompt: "hi", image: "https://example.com/a.png", strength: 0.5 });
 }
 
 function coreTypeTests(): void {
-  const v = stableImageCore({
+  const v = imageCore({
     prompt: "hi",
     aspect_ratio: "21:9",
     style_preset: "pixel-art",
@@ -47,13 +47,13 @@ function coreTypeTests(): void {
   expectAssignable<FormData>(toFormData(v));
 
   // @ts-expect-error core has no image field (text-to-image only)
-  stableImageCore({ prompt: "hi", image: imageBlob });
+  imageCore({ prompt: "hi", image: imageBlob });
   // @ts-expect-error core has no strength field
-  stableImageCore({ prompt: "hi", strength: 0.5 });
+  imageCore({ prompt: "hi", strength: 0.5 });
 }
 
 function sd3TypeTests(): void {
-  const v = stableImageSd3({
+  const v = imageSd3({
     prompt: "hi",
     mode: "image-to-image",
     image: imageBlob,
@@ -69,12 +69,12 @@ function sd3TypeTests(): void {
   expectAssignable<FormData>(toFormData(v));
 
   // Unknown model ids stay assignable (string & {}) — validated at runtime.
-  stableImageSd3({ prompt: "hi", model: "sd4-large" });
+  imageSd3({ prompt: "hi", model: "sd4-large" });
 
   // @ts-expect-error mode is a closed enum
-  stableImageSd3({ prompt: "hi", mode: "img2img" });
+  imageSd3({ prompt: "hi", mode: "img2img" });
   // @ts-expect-error ExactKeys rejects typo'd keys
-  stableImageSd3({ prompt: "hi", modle: "sd3.5-flash" });
+  imageSd3({ prompt: "hi", modle: "sd3.5-flash" });
 }
 
 export { ultraTypeTests, coreTypeTests, sd3TypeTests };

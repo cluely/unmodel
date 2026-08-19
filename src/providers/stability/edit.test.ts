@@ -13,7 +13,7 @@ import {
   STABLE_IMAGE_SEARCH_AND_RECOLOR_URL,
   STABLE_IMAGE_REMOVE_BACKGROUND_URL,
 } from "./edit";
-import { toFormData } from "./generate";
+import { toFormData } from "./image";
 import { models } from "./models";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";

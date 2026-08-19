@@ -1,0 +1,10 @@
+{
+  "ref": "kling/kling-v2-1",
+  "params": {
+    "model_name": "kling-v2-1",
+    "prompt": "a lighthouse in fog",
+    "aspect_ratio": "16:9",
+    "resolution": "1k"
+  },
+  "url": "https://api-singapore.klingai.com/v1/images/generations"
+}

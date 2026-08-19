@@ -1,17 +1,17 @@
 export {
-  imageGenerate,
-  imageGenerateLite,
+  image,
+  imageLite,
   BRIA_IMAGE_GENERATE_URL,
   BRIA_IMAGE_GENERATE_LITE_URL,
   BRIA_GENERATE_MODEL_VERSIONS,
   BRIA_GENERATE_STEPS_MIN,
   BRIA_GENERATE_STEPS_MAX,
-} from "./generate";
+} from "./image";
 export type {
   ImageGenerateParams,
   ImageGenerateLiteParams,
   BriaGenerateModelVersion,
-} from "./generate";
+} from "./image";
 
 export {
   imageEdit,

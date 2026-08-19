@@ -12,8 +12,8 @@ import {
   textToVideoV3,
   imageToVideoV3,
   omniVideo,
-  imageGenerations,
-  omniImage,
+  image,
+  imageOmni,
 } from "../../src/providers/kling";
 import { expectAssignable } from "./helpers";
 
@@ -79,18 +79,18 @@ function pathRouteSettingsTypeTests(): void {
 }
 
 function imageRouteTypeTests(): void {
-  const v = imageGenerations({ model_name: "kling-v2-1", prompt: "hi", resolution: "1k" });
+  const v = image({ model_name: "kling-v2-1", prompt: "hi", resolution: "1k" });
   expectAssignable<{ prompt: string }>(v);
-  imageGenerations({ model_name: "kling-v2-1", prompt: "hi", resolution: "2k" });
+  image({ model_name: "kling-v2-1", prompt: "hi", resolution: "2k" });
   // @ts-expect-error "" is not a resolution (was a bare `string`)
-  imageGenerations({ model_name: "kling-v2-1", prompt: "hi", resolution: "" });
+  image({ model_name: "kling-v2-1", prompt: "hi", resolution: "" });
   // @ts-expect-error the 4K tier belongs to the omni-image route
-  imageGenerations({ model_name: "kling-v2-1", prompt: "hi", resolution: "4k" });
+  image({ model_name: "kling-v2-1", prompt: "hi", resolution: "4k" });
 
-  omniImage({ prompt: "hi", resolution: "2k" });
-  omniImage({ model_name: "kling-v3-omni", prompt: "hi", resolution: "4k" });
+  imageOmni({ prompt: "hi", resolution: "2k" });
+  imageOmni({ model_name: "kling-v3-omni", prompt: "hi", resolution: "4k" });
   // @ts-expect-error banana is not a resolution (was a bare `string`)
-  omniImage({ prompt: "hi", resolution: "banana" });
+  imageOmni({ prompt: "hi", resolution: "banana" });
 }
 
 export { v1DurationTypeTests, pathRouteSettingsTypeTests, imageRouteTypeTests };

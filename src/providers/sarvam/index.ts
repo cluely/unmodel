@@ -16,14 +16,23 @@
 import { createOpenAICompatible } from "../openai-compatible";
 import { models, provider } from "../../catalog/sarvam.gen";
 import type { SarvamTextModelId } from "../../catalog/sarvam.gen";
+import { availability } from "../../catalog/availability/sarvam.gen";
 
-const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<SarvamTextModelId>({
+const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
+  SarvamTextModelId,
+  typeof availability
+>({
   id: provider.id,
   // Documented OpenAI-compatible base URL (https://docs.sarvam.ai/api/
   // api-guides-tutorials/chat-completion/overview); matches the generated
   // catalog's `api` field.
   baseUrl: "https://api.sarvam.ai/v1",
   catalog: models,
+  // No other provider in scope serves a Sarvam model, so this table is the
+  // identity edges only — `.toApi("sarvam")` on a Sarvam model. That is worth
+  // wiring anyway: it types the target union as exactly "sarvam" instead of
+  // letting it degrade to the permissive `StaticApiTargetId` arm.
+  availability,
 });
 
 /** POST https://api.sarvam.ai/v1/chat/completions */

@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve nvidia's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve nvidia's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * nvidia itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("nvidia")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,7 +19,14 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "abacusai/dracarys-llama-3.1-70b-instruct": {
+    "nvidia": "abacusai/dracarys-llama-3.1-70b-instruct",
+  },
+  "baai/bge-m3": {
+    "nvidia": "baai/bge-m3",
+  },
   "bytedance/seed-oss-36b-instruct": {
+    "nvidia": "bytedance/seed-oss-36b-instruct",
     "siliconflow": "ByteDance-Seed/Seed-OSS-36B-Instruct",
   },
   "deepseek-ai/deepseek-v4-flash": {
@@ -26,6 +37,7 @@ export const availability = {
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
     "nebius": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 131072 } },
     "novita-ai": "deepseek/deepseek-v4-flash",
+    "nvidia": "deepseek-ai/deepseek-v4-flash",
     "openrouter": "deepseek/deepseek-v4-flash",
     "siliconflow": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 1000000 } },
     "vercel": { id: "deepseek/deepseek-v4-flash", narrows: { context: 1000000 } },
@@ -39,41 +51,73 @@ export const availability = {
     "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
     "nebius": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 1000000 } },
     "novita-ai": "deepseek/deepseek-v4-pro",
+    "nvidia": "deepseek-ai/deepseek-v4-pro",
     "openrouter": "deepseek/deepseek-v4-pro",
     "siliconflow": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 1000000 } },
     "togetherai": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 512000 } },
     "vercel": "deepseek/deepseek-v4-pro",
   },
+  "google/gemma-2-2b-it": {
+    "nvidia": "google/gemma-2-2b-it",
+  },
+  "google/gemma-3-12b-it": {
+    "nvidia": "google/gemma-3-12b-it",
+  },
   "google/gemma-3-4b-it": {
     "amazon-bedrock": { id: "google.gemma-3-4b-it", narrows: { context: 128000 } },
+    "nvidia": "google/gemma-3-4b-it",
+  },
+  "google/gemma-3n-e2b-it": {
+    "nvidia": "google/gemma-3n-e2b-it",
+  },
+  "google/gemma-3n-e4b-it": {
+    "nvidia": "google/gemma-3n-e4b-it",
   },
   "google/gemma-4-31b-it": {
     "deepinfra": "google/gemma-4-31B-it",
     "friendli": { id: "google/gemma-4-31B-it", narrows: { drops: ["video"] } },
     "google": { id: "gemma-4-31b-it", narrows: { drops: ["video"] } },
     "huggingface": { id: "google/gemma-4-31B-it", narrows: { drops: ["video"] } },
+    "nvidia": "google/gemma-4-31b-it",
     "openrouter": "google/gemma-4-31b-it",
     "siliconflow": { id: "google/gemma-4-31B-it", narrows: { drops: ["image", "video"] } },
     "vercel": { id: "google/gemma-4-31b-it", narrows: { drops: ["video"] } },
   },
+  "google/google-paligemma": {
+    "nvidia": "google/google-paligemma",
+  },
+  "meta/esm2-650m": {
+    "nvidia": "meta/esm2-650m",
+  },
+  "meta/esmfold": {
+    "nvidia": "meta/esmfold",
+  },
   "meta/llama-3.1-70b-instruct": {
+    "nvidia": "meta/llama-3.1-70b-instruct",
     "openrouter": "meta-llama/llama-3.1-70b-instruct",
   },
   "meta/llama-3.1-8b-instruct": {
     "novita-ai": "meta-llama/llama-3.1-8b-instruct",
+    "nvidia": "meta/llama-3.1-8b-instruct",
     "openrouter": "meta-llama/llama-3.1-8b-instruct",
   },
   "meta/llama-3.2-11b-vision-instruct": {
     "cloudflare-workers-ai": "@cf/meta/llama-3.2-11b-vision-instruct",
+    "nvidia": "meta/llama-3.2-11b-vision-instruct",
   },
   "meta/llama-3.2-1b-instruct": {
     "cloudflare-workers-ai": { id: "@cf/meta/llama-3.2-1b-instruct", narrows: { context: 60000 } },
+    "nvidia": "meta/llama-3.2-1b-instruct",
     "openrouter": { id: "meta-llama/llama-3.2-1b-instruct", narrows: { context: 60000 } },
   },
   "meta/llama-3.2-3b-instruct": {
     "cloudflare-workers-ai": "@cf/meta/llama-3.2-3b-instruct",
     "novita-ai": "meta-llama/llama-3.2-3b-instruct",
+    "nvidia": "meta/llama-3.2-3b-instruct",
     "openrouter": "meta-llama/llama-3.2-3b-instruct",
+  },
+  "meta/llama-3.2-90b-vision-instruct": {
+    "nvidia": "meta/llama-3.2-90b-vision-instruct",
   },
   "meta/llama-3.3-70b-instruct": {
     "azure": "llama-3.3-70b-instruct",
@@ -81,20 +125,30 @@ export const availability = {
     "huggingface": "meta-llama/Llama-3.3-70B-Instruct",
     "nebius": "meta-llama/Llama-3.3-70B-Instruct",
     "novita-ai": "meta-llama/llama-3.3-70b-instruct",
+    "nvidia": "meta/llama-3.3-70b-instruct",
     "openrouter": "meta-llama/llama-3.3-70b-instruct",
     "scaleway": { id: "llama-3.3-70b-instruct", narrows: { context: 100000 } },
   },
   "meta/llama-4-maverick-17b-128e-instruct": {
     "google-vertex": { id: "meta/llama-4-maverick-17b-128e-instruct-maas", endpoint: "google-vertex.chat" },
+    "nvidia": "meta/llama-4-maverick-17b-128e-instruct",
   },
   "meta/llama-guard-4-12b": {
+    "nvidia": "meta/llama-guard-4-12b",
     "openrouter": "meta-llama/llama-guard-4-12b",
+  },
+  "microsoft/phi-4-mini-instruct": {
+    "nvidia": "microsoft/phi-4-mini-instruct",
+  },
+  "microsoft/phi-4-multimodal-instruct": {
+    "nvidia": "microsoft/phi-4-multimodal-instruct",
   },
   "minimaxai/minimax-m2.7": {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M2.7", narrows: { context: 196608 } },
     "huggingface": "MiniMaxAI/MiniMax-M2.7",
     "minimax": "MiniMax-M2.7",
     "novita-ai": "minimax/minimax-m2.7",
+    "nvidia": "minimaxai/minimax-m2.7",
     "openrouter": "minimax/minimax-m2.7",
     "togetherai": { id: "MiniMaxAI/MiniMax-M2.7", narrows: { context: 202752 } },
     "vercel": "minimax/minimax-m2.7",
@@ -105,12 +159,44 @@ export const availability = {
     "huggingface": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288, drops: ["video"] } },
     "minimax": "MiniMax-M3",
     "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image", "video"] } },
+    "nvidia": "minimaxai/minimax-m3",
     "openrouter": "minimax/minimax-m3",
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288, drops: ["video"] } },
     "vercel": { id: "minimax/minimax-m3", narrows: { drops: ["video"] } },
   },
+  "mistralai/magistral-small-2506": {
+    "nvidia": "mistralai/magistral-small-2506",
+  },
+  "mistralai/ministral-14b-instruct-2512": {
+    "nvidia": "mistralai/ministral-14b-instruct-2512",
+  },
+  "mistralai/mistral-7b-instruct-v0.3": {
+    "nvidia": "mistralai/mistral-7b-instruct-v0.3",
+  },
+  "mistralai/mistral-large-3-675b-instruct-2512": {
+    "nvidia": "mistralai/mistral-large-3-675b-instruct-2512",
+  },
+  "mistralai/mistral-medium-3-instruct": {
+    "nvidia": "mistralai/mistral-medium-3-instruct",
+  },
+  "mistralai/mistral-medium-3.5-128b": {
+    "nvidia": "mistralai/mistral-medium-3.5-128b",
+  },
+  "mistralai/mistral-nemotron": {
+    "nvidia": "mistralai/mistral-nemotron",
+  },
+  "mistralai/mistral-small-4-119b-2603": {
+    "nvidia": "mistralai/mistral-small-4-119b-2603",
+  },
   "mistralai/mixtral-8x22b-instruct": {
+    "nvidia": "mistralai/mixtral-8x22b-instruct",
     "openrouter": "mistralai/mixtral-8x22b-instruct",
+  },
+  "mistralai/mixtral-8x7b-instruct": {
+    "nvidia": "mistralai/mixtral-8x7b-instruct",
+  },
+  "moonshotai/kimi-k2-instruct-0905": {
+    "nvidia": "moonshotai/kimi-k2-instruct-0905",
   },
   "moonshotai/kimi-k2.6": {
     "azure": { id: "kimi-k2.6", narrows: { drops: ["video"] } },
@@ -120,27 +206,123 @@ export const availability = {
     "huggingface": "moonshotai/Kimi-K2.6",
     "moonshotai": "kimi-k2.6",
     "novita-ai": "moonshotai/kimi-k2.6",
+    "nvidia": "moonshotai/kimi-k2.6",
     "openrouter": { id: "moonshotai/kimi-k2.6", narrows: { drops: ["video"] } },
     "togetherai": "moonshotai/Kimi-K2.6",
     "vercel": { id: "moonshotai/kimi-k2.6", narrows: { context: 262000, drops: ["video"] } },
   },
+  "nvidia/active-speaker-detection": {
+    "nvidia": "nvidia/active-speaker-detection",
+  },
+  "nvidia/bevformer": {
+    "nvidia": "nvidia/bevformer",
+  },
+  "nvidia/cosmos-reason2-8b": {
+    "nvidia": "nvidia/cosmos-reason2-8b",
+  },
+  "nvidia/gliner-pii": {
+    "nvidia": "nvidia/gliner-pii",
+  },
+  "nvidia/llama-3.1-nemotron-70b-instruct": {
+    "nvidia": "nvidia/llama-3.1-nemotron-70b-instruct",
+  },
+  "nvidia/llama-3.1-nemotron-nano-8b-v1": {
+    "nvidia": "nvidia/llama-3.1-nemotron-nano-8b-v1",
+  },
+  "nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
+    "nvidia": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+  },
+  "nvidia/llama-3.1-nemotron-safety-guard-8b-v3": {
+    "nvidia": "nvidia/llama-3.1-nemotron-safety-guard-8b-v3",
+  },
+  "nvidia/llama-3.1-nemotron-ultra-253b-v1": {
+    "nvidia": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+  },
+  "nvidia/llama-3.3-nemotron-super-49b-v1": {
+    "nvidia": "nvidia/llama-3.3-nemotron-super-49b-v1",
+  },
   "nvidia/llama-3.3-nemotron-super-49b-v1.5": {
     "deepinfra": "nvidia/Llama-3.3-Nemotron-Super-49B-v1.5",
+    "nvidia": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+  },
+  "nvidia/llama-3_2-nemoretriever-300m-embed-v1": {
+    "nvidia": "nvidia/llama-3_2-nemoretriever-300m-embed-v1",
+  },
+  "nvidia/llama-nemotron-embed-vl-1b-v2": {
+    "nvidia": "nvidia/llama-nemotron-embed-vl-1b-v2",
+  },
+  "nvidia/llama-nemotron-rerank-vl-1b-v2": {
+    "nvidia": "nvidia/llama-nemotron-rerank-vl-1b-v2",
+  },
+  "nvidia/nemotron-3-content-safety": {
+    "nvidia": "nvidia/nemotron-3-content-safety",
   },
   "nvidia/nemotron-3-nano-30b-a3b": {
     "deepinfra": "nvidia/Nemotron-3-Nano-30B-A3B",
+    "nvidia": "nvidia/nemotron-3-nano-30b-a3b",
     "openrouter": "nvidia/nemotron-3-nano-30b-a3b",
     "vercel": "nvidia/nemotron-3-nano-30b-a3b",
   },
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
+    "nvidia": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
     "openrouter": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
   },
   "nvidia/nemotron-3-super-120b-a12b": {
+    "nvidia": "nvidia/nemotron-3-super-120b-a12b",
     "openrouter": "nvidia/nemotron-3-super-120b-a12b:free",
   },
   "nvidia/nemotron-3-ultra-550b-a55b": {
+    "nvidia": "nvidia/nemotron-3-ultra-550b-a55b",
     "openrouter": { id: "nvidia/nemotron-3-ultra-550b-a55b", narrows: { context: 512288 } },
     "togetherai": { id: "nvidia/nemotron-3-ultra-550b-a55b", narrows: { context: 512300 } },
+  },
+  "nvidia/nemotron-3.5-lightning-30b-a3b": {
+    "nvidia": "nvidia/nemotron-3.5-lightning-30b-a3b",
+  },
+  "nvidia/nemotron-content-safety-reasoning-4b": {
+    "nvidia": "nvidia/nemotron-content-safety-reasoning-4b",
+  },
+  "nvidia/nemotron-mini-4b-instruct": {
+    "nvidia": "nvidia/nemotron-mini-4b-instruct",
+  },
+  "nvidia/nemotron-nano-12b-v2-vl": {
+    "nvidia": "nvidia/nemotron-nano-12b-v2-vl",
+  },
+  "nvidia/nemotron-voicechat": {
+    "nvidia": "nvidia/nemotron-voicechat",
+  },
+  "nvidia/nv-embed-v1": {
+    "nvidia": "nvidia/nv-embed-v1",
+  },
+  "nvidia/nv-embedcode-7b-v1": {
+    "nvidia": "nvidia/nv-embedcode-7b-v1",
+  },
+  "nvidia/nvidia-nemotron-nano-9b-v2": {
+    "nvidia": "nvidia/nvidia-nemotron-nano-9b-v2",
+  },
+  "nvidia/rerank-qa-mistral-4b": {
+    "nvidia": "nvidia/rerank-qa-mistral-4b",
+  },
+  "nvidia/riva-translate-4b-instruct-v1.1": {
+    "nvidia": "nvidia/riva-translate-4b-instruct-v1.1",
+  },
+  "nvidia/sparsedrive": {
+    "nvidia": "nvidia/sparsedrive",
+  },
+  "nvidia/streampetr": {
+    "nvidia": "nvidia/streampetr",
+  },
+  "nvidia/studiovoice": {
+    "nvidia": "nvidia/studiovoice",
+  },
+  "nvidia/synthetic-video-detector": {
+    "nvidia": "nvidia/synthetic-video-detector",
+  },
+  "nvidia/usdcode": {
+    "nvidia": "nvidia/usdcode",
+  },
+  "nvidia/usdvalidate": {
+    "nvidia": "nvidia/usdvalidate",
   },
   "openai/gpt-oss-120b": {
     "amazon-bedrock": "openai.gpt-oss-120b",
@@ -152,6 +334,7 @@ export const availability = {
     "groq": "openai/gpt-oss-120b",
     "huggingface": "openai/gpt-oss-120b",
     "nebius": "openai/gpt-oss-120b",
+    "nvidia": "openai/gpt-oss-120b",
     "openrouter": "openai/gpt-oss-120b",
     "scaleway": "gpt-oss-120b",
     "togetherai": "openai/gpt-oss-120b",
@@ -166,26 +349,34 @@ export const availability = {
     "groq": "openai/gpt-oss-20b",
     "huggingface": "openai/gpt-oss-20b",
     "novita-ai": "openai/gpt-oss-20b",
+    "nvidia": "openai/gpt-oss-20b",
     "openrouter": "openai/gpt-oss-20b",
     "togetherai": "openai/gpt-oss-20b",
     "vercel": "openai/gpt-oss-20b",
   },
+  "openai/whisper-large-v3": {
+    "nvidia": "openai/whisper-large-v3",
+  },
   "poolside/laguna-xs-2.1": {
+    "nvidia": "poolside/laguna-xs-2.1",
     "openrouter": "poolside/laguna-xs-2.1",
   },
   "qwen/qwen2.5-coder-32b-instruct": {
     "cloudflare-workers-ai": { id: "@cf/qwen/qwen2.5-coder-32b-instruct", narrows: { context: 32768 } },
+    "nvidia": "qwen/qwen2.5-coder-32b-instruct",
   },
   "qwen/qwen3-coder-480b-a35b-instruct": {
     "alibaba": "qwen3-coder-480b-a35b-instruct",
     "huggingface": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
     "novita-ai": "qwen/qwen3-coder-480b-a35b-instruct",
+    "nvidia": "qwen/qwen3-coder-480b-a35b-instruct",
   },
   "qwen/qwen3-next-80b-a3b-instruct": {
     "alibaba": { id: "qwen3-next-80b-a3b-instruct", narrows: { context: 131072 } },
     "deepinfra": "Qwen/Qwen3-Next-80B-A3B-Instruct",
     "huggingface": "Qwen/Qwen3-Next-80B-A3B-Instruct",
     "novita-ai": { id: "qwen/qwen3-next-80b-a3b-instruct", narrows: { context: 131072 } },
+    "nvidia": "qwen/qwen3-next-80b-a3b-instruct",
     "openrouter": "qwen/qwen3-next-80b-a3b-instruct",
     "vercel": { id: "alibaba/qwen3-next-80b-a3b-instruct", narrows: { context: 131072 } },
   },
@@ -194,6 +385,7 @@ export const availability = {
     "deepinfra": "Qwen/Qwen3.5-122B-A10B",
     "huggingface": { id: "Qwen/Qwen3.5-122B-A10B", narrows: { drops: ["video", "audio"] } },
     "novita-ai": { id: "qwen/qwen3.5-122b-a10b", narrows: { drops: ["audio"] } },
+    "nvidia": "qwen/qwen3.5-122b-a10b",
     "openrouter": { id: "qwen/qwen3.5-122b-a10b", narrows: { drops: ["audio"] } },
     "siliconflow": { id: "Qwen/Qwen3.5-122B-A10B", narrows: { drops: ["image", "video", "audio"] } },
   },
@@ -203,19 +395,25 @@ export const availability = {
     "huggingface": "Qwen/Qwen3.5-397B-A17B",
     "nebius": { id: "Qwen/Qwen3.5-397B-A17B", narrows: { drops: ["image"] } },
     "novita-ai": "qwen/qwen3.5-397b-a17b",
+    "nvidia": "qwen/qwen3.5-397b-a17b",
     "openrouter": "qwen/qwen3.5-397b-a17b",
     "scaleway": { id: "qwen3.5-397b-a17b", narrows: { context: 256000 } },
     "siliconflow": { id: "Qwen/Qwen3.5-397B-A17B", narrows: { drops: ["image"] } },
     "togetherai": "Qwen/Qwen3.5-397B-A17B",
   },
+  "sarvamai/sarvam-m": {
+    "nvidia": "sarvamai/sarvam-m",
+  },
   "stepfun-ai/step-3.5-flash": {
     "huggingface": "stepfun-ai/Step-3.5-Flash",
+    "nvidia": "stepfun-ai/step-3.5-flash",
     "openrouter": "stepfun/step-3.5-flash",
     "stepfun": "step-3.5-flash",
   },
   "stepfun-ai/step-3.7-flash": {
     "deepinfra": "stepfun-ai/Step-3.7-Flash",
     "huggingface": "stepfun-ai/Step-3.7-Flash",
+    "nvidia": "stepfun-ai/step-3.7-flash",
     "openrouter": "stepfun/step-3.7-flash",
     "stepfun": "step-3.7-flash",
     "vercel": "stepfun/step-3.7-flash",
@@ -224,9 +422,13 @@ export const availability = {
     "baseten": { id: "thinkingmachines/inkling", narrows: { drops: ["audio"] } },
     "deepinfra": { id: "thinkingmachines/Inkling", narrows: { context: 524288 } },
     "huggingface": { id: "thinkingmachines/Inkling", narrows: { drops: ["audio"] } },
+    "nvidia": "thinkingmachines/inkling",
     "openrouter": "thinkingmachines/inkling",
     "togetherai": { id: "thinkingmachines/Inkling", narrows: { context: 524288 } },
     "vercel": { id: "thinkingmachines/inkling", narrows: { context: 256000, drops: ["audio"] } },
+  },
+  "upstage/solar-10.7b-instruct": {
+    "nvidia": "upstage/solar-10.7b-instruct",
   },
   "z-ai/glm-5.2": {
     "alibaba": "glm-5.2",
@@ -237,6 +439,7 @@ export const availability = {
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
     "nebius": { id: "zai-org/GLM-5.2", narrows: { context: 432000 } },
     "novita-ai": "zai-org/glm-5.2",
+    "nvidia": "z-ai/glm-5.2",
     "openrouter": "z-ai/glm-5.2",
     "scaleway": { id: "glm-5.2", narrows: { context: 256000 } },
     "siliconflow": "zai-org/GLM-5.2",

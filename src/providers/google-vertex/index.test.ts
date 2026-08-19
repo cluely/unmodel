@@ -258,11 +258,12 @@ describe("google-vertex.generateContent toApi", () => {
     expect(routed.target).toBe("google");
   });
 
-  test("the id respelling is always audited, even when the spelling is identical", () => {
+  test("an identical spelling is not audited — nothing about the model changed", () => {
+    // Vertex and the Gemini API both call this model `gemini-2.5-flash`, so
+    // there is no respelling to record. `warnings` is an inventory of what the
+    // translation cost, so an entry saying "x is spelled x" is noise.
     const routed = gemini().toApi("google");
-    expect(routed.warnings.map((w) => w.code)).toEqual(["id_respelled"]);
-    expect(routed.warnings[0]?.from).toBe("google-vertex.generateContent");
-    expect(routed.warnings[0]?.to).toBe("google.generateContent");
+    expect(routed.warnings).toEqual([]);
   });
 
   test("toApi/toApiSafe/warnings/target are non-enumerable", () => {

@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve anthropic's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve anthropic's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * anthropic itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("anthropic")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -17,65 +21,78 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
 export const availability = {
   "claude-fable-5": {
     "amazon-bedrock": "anthropic.claude-fable-5",
+    "anthropic": "claude-fable-5",
     "openrouter": "anthropic/claude-fable-5",
     "vercel": "anthropic/claude-fable-5",
   },
   "claude-haiku-4-5": {
     "amazon-bedrock": "anthropic.claude-haiku-4-5-20251001-v1:0",
+    "anthropic": "claude-haiku-4-5",
     "openrouter": "anthropic/claude-haiku-4.5",
     "vercel": "anthropic/claude-haiku-4.5",
   },
   "claude-haiku-4-5-20251001": {
     "amazon-bedrock": "anthropic.claude-haiku-4-5-20251001-v1:0",
+    "anthropic": "claude-haiku-4-5-20251001",
     "openrouter": "anthropic/claude-haiku-4.5",
     "vercel": "anthropic/claude-haiku-4.5",
   },
   "claude-opus-4-5": {
     "amazon-bedrock": "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic": "claude-opus-4-5",
     "openrouter": "anthropic/claude-opus-4.5",
     "vercel": "anthropic/claude-opus-4.5",
   },
   "claude-opus-4-5-20251101": {
     "amazon-bedrock": "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic": "claude-opus-4-5-20251101",
     "openrouter": "anthropic/claude-opus-4.5",
     "vercel": "anthropic/claude-opus-4.5",
   },
   "claude-opus-4-6": {
+    "anthropic": "claude-opus-4-6",
     "openrouter": "anthropic/claude-opus-4.6",
     "vercel": "anthropic/claude-opus-4.6",
   },
   "claude-opus-4-7": {
     "amazon-bedrock": "anthropic.claude-opus-4-7",
+    "anthropic": "claude-opus-4-7",
     "openrouter": "anthropic/claude-opus-4.7",
     "vercel": "anthropic/claude-opus-4.7",
   },
   "claude-opus-4-8": {
     "amazon-bedrock": "anthropic.claude-opus-4-8",
+    "anthropic": "claude-opus-4-8",
     "openrouter": "anthropic/claude-opus-4.8",
     "vercel": "anthropic/claude-opus-4.8",
   },
   "claude-opus-5": {
     "amazon-bedrock": "anthropic.claude-opus-5",
+    "anthropic": "claude-opus-5",
     "openrouter": "anthropic/claude-opus-5",
     "vercel": "anthropic/claude-opus-5",
   },
   "claude-sonnet-4-5": {
     "amazon-bedrock": { id: "anthropic.claude-sonnet-4-5-20250929-v1:0", narrows: { context: 200000 } },
+    "anthropic": "claude-sonnet-4-5",
     "openrouter": "anthropic/claude-sonnet-4.5",
     "vercel": "anthropic/claude-sonnet-4.5",
   },
   "claude-sonnet-4-5-20250929": {
     "amazon-bedrock": { id: "anthropic.claude-sonnet-4-5-20250929-v1:0", narrows: { context: 200000 } },
+    "anthropic": "claude-sonnet-4-5-20250929",
     "openrouter": "anthropic/claude-sonnet-4.5",
     "vercel": "anthropic/claude-sonnet-4.5",
   },
   "claude-sonnet-4-6": {
     "amazon-bedrock": "anthropic.claude-sonnet-4-6",
+    "anthropic": "claude-sonnet-4-6",
     "openrouter": "anthropic/claude-sonnet-4.6",
     "vercel": "anthropic/claude-sonnet-4.6",
   },
   "claude-sonnet-5": {
     "amazon-bedrock": "anthropic.claude-sonnet-5",
+    "anthropic": "claude-sonnet-5",
     "openrouter": "anthropic/claude-sonnet-5",
     "vercel": "anthropic/claude-sonnet-5",
   },

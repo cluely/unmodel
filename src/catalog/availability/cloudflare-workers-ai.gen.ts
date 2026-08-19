@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve cloudflare-workers-ai's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve cloudflare-workers-ai's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * cloudflare-workers-ai itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("cloudflare-workers-ai")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,10 +19,15 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "@cf/aisingapore/gemma-sea-lion-v4-27b-it": {
+    "cloudflare-workers-ai": "@cf/aisingapore/gemma-sea-lion-v4-27b-it",
+  },
   "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": {
+    "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
     "novita-ai": { id: "deepseek/deepseek-r1-distill-qwen-32b", narrows: { context: 64000 } },
   },
   "@cf/google/gemma-4-26b-a4b-it": {
+    "cloudflare-workers-ai": "@cf/google/gemma-4-26b-a4b-it",
     "deepinfra": "google/gemma-4-26B-A4B-it",
     "google": "gemma-4-26b-a4b-it",
     "huggingface": "google/gemma-4-26B-A4B-it",
@@ -27,24 +36,44 @@ export const availability = {
     "siliconflow": { id: "google/gemma-4-26B-A4B-it", narrows: { drops: ["image"] } },
     "vercel": "google/gemma-4-26b-a4b-it",
   },
+  "@cf/ibm-granite/granite-4.0-h-micro": {
+    "cloudflare-workers-ai": "@cf/ibm-granite/granite-4.0-h-micro",
+  },
+  "@cf/meta/llama-3.1-8b-instruct-fp8": {
+    "cloudflare-workers-ai": "@cf/meta/llama-3.1-8b-instruct-fp8",
+  },
   "@cf/meta/llama-3.2-11b-vision-instruct": {
+    "cloudflare-workers-ai": "@cf/meta/llama-3.2-11b-vision-instruct",
     "nvidia": "meta/llama-3.2-11b-vision-instruct",
   },
   "@cf/meta/llama-3.2-1b-instruct": {
+    "cloudflare-workers-ai": "@cf/meta/llama-3.2-1b-instruct",
     "nvidia": "meta/llama-3.2-1b-instruct",
     "openrouter": "meta-llama/llama-3.2-1b-instruct",
   },
   "@cf/meta/llama-3.2-3b-instruct": {
+    "cloudflare-workers-ai": "@cf/meta/llama-3.2-3b-instruct",
     "novita-ai": { id: "meta-llama/llama-3.2-3b-instruct", narrows: { context: 32768 } },
     "nvidia": { id: "meta/llama-3.2-3b-instruct", narrows: { context: 32768 } },
     "openrouter": "meta-llama/llama-3.2-3b-instruct",
   },
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+    "cloudflare-workers-ai": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  },
   "@cf/meta/llama-4-scout-17b-16e-instruct": {
     "azure": { id: "llama-4-scout-17b-16e-instruct", narrows: { context: 128000 } },
+    "cloudflare-workers-ai": "@cf/meta/llama-4-scout-17b-16e-instruct",
+  },
+  "@cf/meta/llama-guard-3-8b": {
+    "cloudflare-workers-ai": "@cf/meta/llama-guard-3-8b",
+  },
+  "@cf/mistralai/mistral-small-3.1-24b-instruct": {
+    "cloudflare-workers-ai": "@cf/mistralai/mistral-small-3.1-24b-instruct",
   },
   "@cf/moonshotai/kimi-k2.6": {
     "azure": "kimi-k2.6",
     "baseten": { id: "moonshotai/Kimi-K2.6", narrows: { context: 262000 } },
+    "cloudflare-workers-ai": "@cf/moonshotai/kimi-k2.6",
     "deepinfra": "moonshotai/Kimi-K2.6",
     "huggingface": "moonshotai/Kimi-K2.6",
     "moonshotai": "kimi-k2.6",
@@ -57,6 +86,7 @@ export const availability = {
   "@cf/moonshotai/kimi-k2.7-code": {
     "azure": "kimi-k2.7-code",
     "baseten": { id: "moonshotai/Kimi-K2.7-Code", narrows: { context: 262000 } },
+    "cloudflare-workers-ai": "@cf/moonshotai/kimi-k2.7-code",
     "deepinfra": "moonshotai/Kimi-K2.7-Code",
     "huggingface": "moonshotai/Kimi-K2.7-Code",
     "moonshotai": "kimi-k2.7-code",
@@ -66,9 +96,13 @@ export const availability = {
     "togetherai": { id: "moonshotai/Kimi-K2.7-Code", narrows: { drops: ["image"] } },
     "vercel": { id: "moonshotai/kimi-k2.7-code", narrows: { context: 256000 } },
   },
+  "@cf/nvidia/nemotron-3-120b-a12b": {
+    "cloudflare-workers-ai": "@cf/nvidia/nemotron-3-120b-a12b",
+  },
   "@cf/openai/gpt-oss-120b": {
     "amazon-bedrock": "openai.gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
+    "cloudflare-workers-ai": "@cf/openai/gpt-oss-120b",
     "deepinfra": "openai/gpt-oss-120b",
     "fireworks-ai": "accounts/fireworks/models/gpt-oss-120b",
     "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chat" },
@@ -83,6 +117,7 @@ export const availability = {
   },
   "@cf/openai/gpt-oss-20b": {
     "amazon-bedrock": "openai.gpt-oss-20b",
+    "cloudflare-workers-ai": "@cf/openai/gpt-oss-20b",
     "deepinfra": "openai/gpt-oss-20b",
     "fireworks-ai": "accounts/fireworks/models/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chat" },
@@ -95,10 +130,18 @@ export const availability = {
     "vercel": "openai/gpt-oss-20b",
   },
   "@cf/qwen/qwen2.5-coder-32b-instruct": {
+    "cloudflare-workers-ai": "@cf/qwen/qwen2.5-coder-32b-instruct",
     "nvidia": "qwen/qwen2.5-coder-32b-instruct",
+  },
+  "@cf/qwen/qwen3-30b-a3b-fp8": {
+    "cloudflare-workers-ai": "@cf/qwen/qwen3-30b-a3b-fp8",
+  },
+  "@cf/qwen/qwq-32b": {
+    "cloudflare-workers-ai": "@cf/qwen/qwq-32b",
   },
   "@cf/zai-org/glm-4.7-flash": {
     "amazon-bedrock": "zai.glm-4.7-flash",
+    "cloudflare-workers-ai": "@cf/zai-org/glm-4.7-flash",
     "deepinfra": "zai-org/GLM-4.7-Flash",
     "huggingface": "zai-org/GLM-4.7-Flash",
     "novita-ai": "zai-org/glm-4.7-flash",
@@ -109,6 +152,7 @@ export const availability = {
   "@cf/zai-org/glm-5.2": {
     "alibaba": "glm-5.2",
     "baseten": "zai-org/GLM-5.2",
+    "cloudflare-workers-ai": "@cf/zai-org/glm-5.2",
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
     "huggingface": "zai-org/GLM-5.2",

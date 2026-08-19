@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve friendli's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve friendli's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * friendli itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("friendli")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -19,6 +23,7 @@ export const availability = {
     "amazon-bedrock": "minimax.minimax-m2.5",
     "baseten": "MiniMaxAI/MiniMax-M2.5",
     "deepinfra": "MiniMaxAI/MiniMax-M2.5",
+    "friendli": "MiniMaxAI/MiniMax-M2.5",
     "huggingface": "MiniMaxAI/MiniMax-M2.5",
     "minimax": "MiniMax-M2.5",
     "nebius": "MiniMaxAI/MiniMax-M2.5",
@@ -30,6 +35,7 @@ export const availability = {
   "deepseek-ai/DeepSeek-V3.2": {
     "azure": { id: "deepseek-v3.2", narrows: { context: 128000 } },
     "deepinfra": "deepseek-ai/DeepSeek-V3.2",
+    "friendli": "deepseek-ai/DeepSeek-V3.2",
     "google-vertex": { id: "deepseek-ai/deepseek-v3.2-maas", endpoint: "google-vertex.chat" },
     "huggingface": "deepseek-ai/DeepSeek-V3.2",
     "nebius": { id: "deepseek-ai/DeepSeek-V3.2", narrows: { context: 163000 } },
@@ -39,6 +45,7 @@ export const availability = {
   },
   "google/gemma-4-31B-it": {
     "deepinfra": "google/gemma-4-31B-it",
+    "friendli": "google/gemma-4-31B-it",
     "google": "gemma-4-31b-it",
     "huggingface": "google/gemma-4-31B-it",
     "nvidia": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
@@ -49,6 +56,7 @@ export const availability = {
   "zai-org/GLM-5.1": {
     "baseten": "zai-org/GLM-5.1",
     "deepinfra": "zai-org/GLM-5.1",
+    "friendli": "zai-org/GLM-5.1",
     "huggingface": "zai-org/GLM-5.1",
     "novita-ai": "zai-org/glm-5.1",
     "openrouter": "z-ai/glm-5.1",
@@ -61,6 +69,7 @@ export const availability = {
     "baseten": "zai-org/GLM-5.2",
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.2", narrows: { context: 262144 } },
     "deepinfra": "zai-org/GLM-5.2",
+    "friendli": "zai-org/GLM-5.2",
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
     "nebius": { id: "zai-org/GLM-5.2", narrows: { context: 432000 } },
     "novita-ai": "zai-org/glm-5.2",

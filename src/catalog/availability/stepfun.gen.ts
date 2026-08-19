@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve stepfun's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve stepfun's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * stepfun itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("stepfun")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,17 +19,31 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "step-1-32k": {
+    "stepfun": "step-1-32k",
+  },
+  "step-2-16k": {
+    "stepfun": "step-2-16k",
+  },
   "step-3.5-flash": {
     "huggingface": "stepfun-ai/Step-3.5-Flash",
     "nvidia": "stepfun-ai/step-3.5-flash",
     "openrouter": "stepfun/step-3.5-flash",
+    "stepfun": "step-3.5-flash",
+  },
+  "step-3.5-flash-2603": {
+    "stepfun": "step-3.5-flash-2603",
   },
   "step-3.7-flash": {
     "deepinfra": "stepfun-ai/Step-3.7-Flash",
     "huggingface": "stepfun-ai/Step-3.7-Flash",
     "nvidia": { id: "stepfun-ai/step-3.7-flash", narrows: { drops: ["video"] } },
     "openrouter": "stepfun/step-3.7-flash",
+    "stepfun": "step-3.7-flash",
     "vercel": { id: "stepfun/step-3.7-flash", narrows: { drops: ["video"] } },
+  },
+  "stepaudio-2.5-asr": {
+    "stepfun": "stepaudio-2.5-asr",
   },
 } as const satisfies AvailabilityMap;
 

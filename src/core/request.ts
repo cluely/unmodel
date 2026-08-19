@@ -69,8 +69,9 @@ type ToApiMember<Avail, Model extends string> = [Avail] extends [never]
   ? unknown
   : {
       /**
-       * Retargets this request to another provider that serves the same
-       * model, returning a fetch-ready body for the target's dialect.
+       * Retargets this request to any provider that serves the same model —
+       * its own included, where the retarget is the identity — returning a
+       * fetch-ready body for the target's dialect.
        *
        * Throws `UnmodelValidationError` when the target's own re-validation
        * fails (schema + constraint layers — see `TargetValidation`), and
@@ -94,8 +95,8 @@ type ToApiMember<Avail, Model extends string> = [Avail] extends [never]
  * `JSON.stringify` or spread — `toSdk` / `toApi` / `toApiSafe` / `request` are
  * all non-enumerable), `.toSdk(target)` re-shapes it for one of the endpoint's
  * declared SDK targets, `.request` carries the fetch URL/method/static
- * headers, and `.toApi(provider)` retargets to another provider that serves
- * the same model.
+ * headers, and `.toApi(provider)` retargets to any provider that serves the
+ * same model (the home provider included, as the identity retarget).
  *
  * Four type parameters, and `Model` is separate from `Body` on purpose:
  * `toApi`'s union depends on the model id, and the model id is not always on

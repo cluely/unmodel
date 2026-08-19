@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve meta's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve meta's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * meta itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("meta")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -16,14 +20,17 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  */
 export const availability = {
   "muse-spark-1.1": {
+    "meta": "muse-spark-1.1",
     "openrouter": "meta/muse-spark-1.1",
     "vercel": { id: "meta/muse-spark-1.1", narrows: { drops: ["video"] } },
   },
   "muse-spark-1.2": {
+    "meta": "muse-spark-1.2",
     "openrouter": "meta/muse-spark-1.2",
     "vercel": { id: "meta/muse-spark-1.2", narrows: { drops: ["video", "audio"] } },
   },
   "muse-spark-1.2-contributor": {
+    "meta": "muse-spark-1.2-contributor",
     "vercel": { id: "meta/muse-spark-1.2-contributor", narrows: { drops: ["video", "audio"] } },
   },
 } as const satisfies AvailabilityMap;

@@ -7,7 +7,7 @@ unmodel does **not** perform generation and never touches your API keys. You bui
 - **Wire-format params.** Params mirror each provider's raw REST body exactly — no unified cross-provider format to learn or debug through.
 - **Catalog-aware.** Backed by a generated [models.dev](https://models.dev) catalog: context windows, output limits, per-token pricing, capabilities, deprecations.
 - **Types that beat the SDK.** Params are typed from each provider's current **documentation**, not from its SDK: narrowed where the SDK permits what the API rejects, widened where the SDK's enum is a subset of the documented reality. Every deviation cites the doc URL it came from.
-- **Retarget, don't rewrite.** `.toApi(provider)` moves a validated chat request to another provider that serves the same model — translating the wire format and respelling the model id. Which providers those are is typed per model, so the wrong destination is a compile error rather than a 404.
+- **Retarget, don't rewrite.** `.toApi(provider)` moves a validated chat request to any provider that serves the same model — translating the wire format and respelling the model id. Which providers those are is typed per model, so the wrong destination is a compile error rather than a 404. The model's home provider is always among them, as the identity retarget, so a provider-generic call site needs no special case for "the provider I already am".
 - **Zero provider dependencies.** Provider SDKs are never imported at runtime. `zod` is the only dependency of the library entry points — including the Vercel AI SDK adapter, which takes `ai`'s `jsonSchema` as an argument instead of importing it.
 
 Runtime-agnostic: Node ≥ 20, Bun, Cloudflare Workers.
@@ -129,9 +129,9 @@ Requests without tools need no adapter at all.
 ## Retargeting: `.toApi(provider)`
 
 Chat validators also carry `.toApi(provider)`, which rewrites a validated
-request for another provider that serves the same model — translating the wire
-format when the target speaks a different dialect, and always respelling the
-model id, because providers do not agree on what a model is called:
+request for any provider that serves the same model — translating the wire
+format when the target speaks a different dialect, and respelling the model id,
+because providers do not agree on what a model is called:
 
 ```ts
 import { messages } from "unmodel/anthropic";
@@ -157,14 +157,23 @@ error, not a 404 three seconds into a request:
 ```ts
 req.toApi("openai");
 //         ~~~~~~~~ Argument of type '"openai"' is not assignable to
-//                  '"openrouter" | "vercel"'. OpenAI does not serve Claude.
+//                  '"anthropic" | "openrouter" | "vercel"'.
+//                  OpenAI does not serve Claude.
 ```
+
+**A model's home provider is always a valid target**, as the identity retarget:
+`.toApi("anthropic")` on a Claude request — or `.toApi("openai")` on
+`chat({ model: "gpt-5.2" })` — returns the same wire body at the same URL, with
+no warnings. It is there so a provider-generic call site
+(`req.toApi(providerFromConfig)`) does not need a special case for the provider
+it already is, and so a model nobody else serves still gets a target union of
+exactly one id instead of degrading to "every provider, runtime-checked".
 
 The table is per provider on purpose: `unmodel/anthropic` carries availability
 for Anthropic's own models — a dozen entries — not for the ~6,000
 provider×model pairs in the catalog. A single global map measured at +29,000
 types and 1.39 MB of `.d.ts` on *every* subpath consumer; the per-provider one
-is 2 KB.
+is 4 KB.
 
 The result is a one-hop `Validated`: enumerable properties are the target's
 wire body, plus non-enumerable `.request`, `.toSdk(target)`, `.target` and
@@ -190,8 +199,11 @@ for (const w of viaOpenRouter.warnings) console.warn(w.code, w.message);
 //                    which the target sizes on its own terms.
 ```
 
-`id_respelled` is always present — it is the record of the model-id swap — so
-**a translation whose only warning is `id_respelled` is lossless.** Anything
+`id_respelled` is present whenever the two providers spell the model
+differently — it is the record of the swap — so **a translation whose only
+warning is `id_respelled` is lossless**, and one with *no* warnings at all
+(the identity retarget, or a hop where both ends use the same id) changed
+nothing whatsoever. Anything
 else (`dropped_param`, `approximated_param`, `dropped_content`, `dropped_tool`,
 `synthesized_tool_call_id`, `capability_narrowed`) names the param, both
 dialects, and why.

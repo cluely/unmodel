@@ -54,6 +54,13 @@ export type FactoryApiTargetId = (typeof FACTORY_API_TARGET_IDS)[number];
  * Every catalog provider that appears as a `.toApi` destination in the
  * generated availability data, factory-configured ones included: the data
  * carries them so the phase-3 two-arg overload needs no codegen change.
+ *
+ * Every provider with a generated source table is necessarily in here too,
+ * because each of its rows carries the **identity** target — a provider serves
+ * its own models by definition, so `.toApi(home)` is always a valid retarget.
+ * That is what puts `sarvam` on the list: nobody else in scope serves a Sarvam
+ * model, so before identity targets existed it was a source with no edges and
+ * never appeared as a destination.
  */
 export const API_TARGET_IDS = [
   "alibaba",
@@ -83,6 +90,7 @@ export const API_TARGET_IDS = [
   "openai",
   "openrouter",
   "perplexity",
+  "sarvam",
   "scaleway",
   "siliconflow",
   "stepfun",
@@ -212,9 +220,14 @@ export type SdkTargetId = (typeof SDK_TARGET_IDS)[number];
  * making `.toApi` uncallable for a model the catalog has not caught up on
  * would be worse than a clear runtime throw.
  *
+ * The home provider is always in the union: it serves its own models by
+ * definition, so `.toApi("anthropic")` on a Claude request is the identity
+ * retarget — the same wire body, unchanged — which is what makes a
+ * provider-generic call site (`req.toApi(userChosenProvider)`) writable.
+ *
  * | the caller wrote | resolves to |
  * |---|---|
- * | `model: "claude-opus-5"` | `"openrouter" \| "vercel"` (factory targets filtered out) |
+ * | `model: "claude-opus-5"` | `"anthropic" \| "openrouter" \| "vercel"` (factory targets filtered out) |
  * | `model: "claude-future-99"` | `StaticApiTargetId` — permissive, runtime-checked |
  * | `model: someRuntimeString` | `StaticApiTargetId` — permissive, runtime-checked |
  *

@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve baseten's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve baseten's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * baseten itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("baseten")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -17,6 +21,7 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
 export const availability = {
   "MiniMaxAI/MiniMax-M2.5": {
     "amazon-bedrock": { id: "minimax.minimax-m2.5", narrows: { context: 196608 } },
+    "baseten": "MiniMaxAI/MiniMax-M2.5",
     "deepinfra": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
     "friendli": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
     "huggingface": "MiniMaxAI/MiniMax-M2.5",
@@ -28,6 +33,7 @@ export const availability = {
     "vercel": "minimax/minimax-m2.5",
   },
   "deepseek-ai/DeepSeek-V3.1": {
+    "baseten": "deepseek-ai/DeepSeek-V3.1",
     "deepinfra": { id: "deepseek-ai/DeepSeek-V3.1", narrows: { context: 163840 } },
     "google-vertex": { id: "deepseek-ai/deepseek-v3.1-maas", endpoint: "google-vertex.chat", narrows: { context: 163840 } },
     "huggingface": { id: "deepseek-ai/DeepSeek-V3.1", narrows: { context: 131072 } },
@@ -37,6 +43,7 @@ export const availability = {
   },
   "deepseek-ai/DeepSeek-V4-Flash-0731": {
     "alibaba": { id: "deepseek-v4-flash-0731", narrows: { context: 1000000 } },
+    "baseten": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "fireworks-ai": { id: "accounts/fireworks/models/deepseek-v4-flash-0731", narrows: { context: 1000000 } },
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
@@ -46,6 +53,7 @@ export const availability = {
   },
   "deepseek-ai/DeepSeek-V4-Pro": {
     "azure": "deepseek-v4-pro",
+    "baseten": "deepseek-ai/DeepSeek-V4-Pro",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Pro",
     "deepseek": "deepseek-v4-pro",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-pro",
@@ -60,6 +68,7 @@ export const availability = {
   },
   "moonshotai/Kimi-K2.5": {
     "azure": "kimi-k2.5",
+    "baseten": "moonshotai/Kimi-K2.5",
     "deepinfra": "moonshotai/Kimi-K2.5",
     "huggingface": "moonshotai/Kimi-K2.5",
     "moonshotai": "kimi-k2.5",
@@ -71,6 +80,7 @@ export const availability = {
   },
   "moonshotai/Kimi-K2.6": {
     "azure": "kimi-k2.6",
+    "baseten": "moonshotai/Kimi-K2.6",
     "cloudflare-workers-ai": "@cf/moonshotai/kimi-k2.6",
     "deepinfra": "moonshotai/Kimi-K2.6",
     "huggingface": "moonshotai/Kimi-K2.6",
@@ -83,6 +93,7 @@ export const availability = {
   },
   "moonshotai/Kimi-K2.7-Code": {
     "azure": "kimi-k2.7-code",
+    "baseten": "moonshotai/Kimi-K2.7-Code",
     "cloudflare-workers-ai": "@cf/moonshotai/kimi-k2.7-code",
     "deepinfra": "moonshotai/Kimi-K2.7-Code",
     "huggingface": "moonshotai/Kimi-K2.7-Code",
@@ -94,6 +105,7 @@ export const availability = {
     "vercel": { id: "moonshotai/kimi-k2.7-code", narrows: { context: 256000 } },
   },
   "moonshotai/Kimi-K3": {
+    "baseten": "moonshotai/Kimi-K3",
     "deepinfra": "moonshotai/Kimi-K3",
     "fireworks-ai": "accounts/fireworks/models/kimi-k3",
     "huggingface": { id: "moonshotai/Kimi-K3", narrows: { context: 1000000 } },
@@ -104,7 +116,17 @@ export const availability = {
     "togetherai": "moonshotai/Kimi-K3",
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000 } },
   },
+  "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": {
+    "baseten": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+  },
+  "nvidia/Nemotron-120B-A12B": {
+    "baseten": "nvidia/Nemotron-120B-A12B",
+  },
+  "openai/gpt-oss-120b": {
+    "baseten": "openai/gpt-oss-120b",
+  },
   "thinkingmachines/inkling": {
+    "baseten": "thinkingmachines/inkling",
     "deepinfra": { id: "thinkingmachines/Inkling", narrows: { context: 524288 } },
     "huggingface": "thinkingmachines/Inkling",
     "nvidia": "thinkingmachines/inkling",
@@ -113,6 +135,7 @@ export const availability = {
     "vercel": { id: "thinkingmachines/inkling", narrows: { context: 256000 } },
   },
   "thinkingmachines/inkling-small": {
+    "baseten": "thinkingmachines/inkling-small",
     "deepinfra": { id: "thinkingmachines/Inkling-Small", narrows: { context: 524288 } },
     "huggingface": { id: "thinkingmachines/Inkling-Small", narrows: { context: 524288 } },
     "openrouter": { id: "thinkingmachines/inkling-small", narrows: { context: 524288 } },
@@ -120,6 +143,7 @@ export const availability = {
   },
   "zai-org/GLM-4.7": {
     "amazon-bedrock": "zai.glm-4.7",
+    "baseten": "zai-org/GLM-4.7",
     "deepinfra": "zai-org/GLM-4.7",
     "google-vertex": { id: "zai-org/glm-4.7-maas", endpoint: "google-vertex.chat" },
     "huggingface": "zai-org/GLM-4.7",
@@ -130,6 +154,7 @@ export const availability = {
   },
   "zai-org/GLM-5": {
     "amazon-bedrock": { id: "zai.glm-5", narrows: { context: 202752 } },
+    "baseten": "zai-org/GLM-5",
     "deepinfra": { id: "zai-org/GLM-5", narrows: { context: 202752 } },
     "google-vertex": { id: "zai-org/glm-5-maas", endpoint: "google-vertex.chat", narrows: { context: 202752 } },
     "huggingface": { id: "zai-org/GLM-5", narrows: { context: 202752 } },
@@ -141,6 +166,7 @@ export const availability = {
     "zhipuai": "glm-5",
   },
   "zai-org/GLM-5.1": {
+    "baseten": "zai-org/GLM-5.1",
     "deepinfra": { id: "zai-org/GLM-5.1", narrows: { context: 202752 } },
     "friendli": { id: "zai-org/GLM-5.1", narrows: { context: 202752 } },
     "huggingface": { id: "zai-org/GLM-5.1", narrows: { context: 202752 } },
@@ -152,6 +178,7 @@ export const availability = {
   },
   "zai-org/GLM-5.2": {
     "alibaba": { id: "glm-5.2", narrows: { context: 1000000 } },
+    "baseten": "zai-org/GLM-5.2",
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.2", narrows: { context: 262144 } },
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": { id: "zai-org/GLM-5.2", narrows: { context: 1000000 } },
@@ -167,6 +194,7 @@ export const availability = {
     "zhipuai": { id: "glm-5.2", narrows: { context: 1000000 } },
   },
   "zai-org/GLM-5.2-Fast": {
+    "baseten": "zai-org/GLM-5.2-Fast",
     "vercel": { id: "zai/glm-5.2-fast", narrows: { context: 1000000 } },
   },
 } as const satisfies AvailabilityMap;

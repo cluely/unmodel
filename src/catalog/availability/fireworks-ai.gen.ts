@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve fireworks-ai's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve fireworks-ai's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * fireworks-ai itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("fireworks-ai")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -19,6 +23,7 @@ export const availability = {
     "azure": "deepseek-v4-flash",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash",
     "deepseek": "deepseek-v4-flash",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
     "nebius": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 131072 } },
     "novita-ai": "deepseek/deepseek-v4-flash",
@@ -31,6 +36,7 @@ export const availability = {
     "alibaba": "deepseek-v4-flash-0731",
     "baseten": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-0731",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "openrouter": "deepseek/deepseek-v4-flash-0731",
     "togetherai": "deepseek-ai/DeepSeek-V4-Flash-0731",
@@ -41,6 +47,7 @@ export const availability = {
     "baseten": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 262144 } },
     "deepinfra": "deepseek-ai/DeepSeek-V4-Pro",
     "deepseek": "deepseek-v4-pro",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-pro",
     "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
     "nebius": "deepseek-ai/DeepSeek-V4-Pro",
     "novita-ai": "deepseek/deepseek-v4-pro",
@@ -50,11 +57,15 @@ export const availability = {
     "togetherai": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 512000 } },
     "vercel": "deepseek/deepseek-v4-pro",
   },
+  "accounts/fireworks/models/glm-5p2": {
+    "fireworks-ai": "accounts/fireworks/models/glm-5p2",
+  },
   "accounts/fireworks/models/gpt-oss-120b": {
     "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
     "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
+    "fireworks-ai": "accounts/fireworks/models/gpt-oss-120b",
     "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chat" },
     "groq": "openai/gpt-oss-120b",
     "huggingface": "openai/gpt-oss-120b",
@@ -69,6 +80,7 @@ export const availability = {
     "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-20b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-20b",
+    "fireworks-ai": "accounts/fireworks/models/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chat" },
     "groq": "openai/gpt-oss-20b",
     "huggingface": "openai/gpt-oss-20b",
@@ -78,9 +90,16 @@ export const availability = {
     "togetherai": "openai/gpt-oss-20b",
     "vercel": "openai/gpt-oss-20b",
   },
+  "accounts/fireworks/models/kimi-k2p6": {
+    "fireworks-ai": "accounts/fireworks/models/kimi-k2p6",
+  },
+  "accounts/fireworks/models/kimi-k2p7-code": {
+    "fireworks-ai": "accounts/fireworks/models/kimi-k2p7-code",
+  },
   "accounts/fireworks/models/kimi-k3": {
     "baseten": "moonshotai/Kimi-K3",
     "deepinfra": "moonshotai/Kimi-K3",
+    "fireworks-ai": "accounts/fireworks/models/kimi-k3",
     "huggingface": { id: "moonshotai/Kimi-K3", narrows: { context: 1000000 } },
     "moonshotai": "kimi-k3",
     "nebius": { id: "moonshotai/Kimi-K3", narrows: { drops: ["image"] } },
@@ -89,8 +108,12 @@ export const availability = {
     "togetherai": "moonshotai/Kimi-K3",
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000 } },
   },
+  "accounts/fireworks/models/minimax-m2p7": {
+    "fireworks-ai": "accounts/fireworks/models/minimax-m2p7",
+  },
   "accounts/fireworks/models/minimax-m3": {
     "deepinfra": "MiniMaxAI/MiniMax-M3",
+    "fireworks-ai": "accounts/fireworks/models/minimax-m3",
     "huggingface": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["video"] } },
     "minimax": "MiniMax-M3",
     "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image", "video"] } },
@@ -99,7 +122,23 @@ export const availability = {
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["video"] } },
     "vercel": { id: "minimax/minimax-m3", narrows: { drops: ["video"] } },
   },
+  "accounts/fireworks/models/qwen3p7-plus": {
+    "fireworks-ai": "accounts/fireworks/models/qwen3p7-plus",
+  },
+  "accounts/fireworks/routers/glm-5p2-fast": {
+    "fireworks-ai": "accounts/fireworks/routers/glm-5p2-fast",
+  },
+  "accounts/fireworks/routers/kimi-k2p6-fast": {
+    "fireworks-ai": "accounts/fireworks/routers/kimi-k2p6-fast",
+  },
+  "accounts/fireworks/routers/kimi-k2p6-turbo": {
+    "fireworks-ai": "accounts/fireworks/routers/kimi-k2p6-turbo",
+  },
+  "accounts/fireworks/routers/kimi-k2p7-code-fast": {
+    "fireworks-ai": "accounts/fireworks/routers/kimi-k2p7-code-fast",
+  },
   "accounts/fireworks/routers/kimi-k3-fast": {
+    "fireworks-ai": "accounts/fireworks/routers/kimi-k3-fast",
     "vercel": { id: "moonshotai/kimi-k3-fast", narrows: { context: 1000000 } },
   },
 } as const satisfies AvailabilityMap;

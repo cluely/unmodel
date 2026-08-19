@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve alibaba's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve alibaba's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * alibaba itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("alibaba")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -16,6 +20,7 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  */
 export const availability = {
   "deepseek-v4-flash-0731": {
+    "alibaba": "deepseek-v4-flash-0731",
     "baseten": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-0731",
@@ -25,6 +30,7 @@ export const availability = {
     "vercel": "deepseek/deepseek-v4-flash-0731",
   },
   "glm-5.2": {
+    "alibaba": "glm-5.2",
     "baseten": "zai-org/GLM-5.2",
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.2", narrows: { context: 262144 } },
     "deepinfra": "zai-org/GLM-5.2",
@@ -40,28 +46,83 @@ export const availability = {
     "vercel": "zai/glm-5.2",
     "zhipuai": "glm-5.2",
   },
+  "qvq-max": {
+    "alibaba": "qvq-max",
+  },
+  "qwen-flash": {
+    "alibaba": "qwen-flash",
+  },
+  "qwen-max": {
+    "alibaba": "qwen-max",
+  },
   "qwen-mt-plus": {
+    "alibaba": "qwen-mt-plus",
     "novita-ai": "qwen/qwen-mt-plus",
   },
+  "qwen-mt-turbo": {
+    "alibaba": "qwen-mt-turbo",
+  },
+  "qwen-omni-turbo": {
+    "alibaba": "qwen-omni-turbo",
+  },
+  "qwen-omni-turbo-realtime": {
+    "alibaba": "qwen-omni-turbo-realtime",
+  },
   "qwen-plus": {
+    "alibaba": "qwen-plus",
     "openrouter": "qwen/qwen-plus",
   },
+  "qwen-plus-character-ja": {
+    "alibaba": "qwen-plus-character-ja",
+  },
+  "qwen-turbo": {
+    "alibaba": "qwen-turbo",
+  },
+  "qwen-vl-max": {
+    "alibaba": "qwen-vl-max",
+  },
+  "qwen-vl-ocr": {
+    "alibaba": "qwen-vl-ocr",
+  },
+  "qwen-vl-plus": {
+    "alibaba": "qwen-vl-plus",
+  },
+  "qwen2-5-14b-instruct": {
+    "alibaba": "qwen2-5-14b-instruct",
+  },
+  "qwen2-5-32b-instruct": {
+    "alibaba": "qwen2-5-32b-instruct",
+  },
+  "qwen2-5-72b-instruct": {
+    "alibaba": "qwen2-5-72b-instruct",
+  },
   "qwen2-5-7b-instruct": {
+    "alibaba": "qwen2-5-7b-instruct",
     "novita-ai": { id: "qwen/qwen2.5-7b-instruct", narrows: { context: 32000 } },
   },
+  "qwen2-5-omni-7b": {
+    "alibaba": "qwen2-5-omni-7b",
+  },
   "qwen2-5-vl-72b-instruct": {
+    "alibaba": "qwen2-5-vl-72b-instruct",
     "nebius": { id: "Qwen/Qwen2.5-VL-72B-Instruct", narrows: { context: 128000 } },
     "novita-ai": { id: "qwen/qwen2.5-vl-72b-instruct", narrows: { context: 32768 } },
     "openrouter": { id: "qwen/qwen2.5-vl-72b-instruct", narrows: { context: 128000 } },
   },
+  "qwen2-5-vl-7b-instruct": {
+    "alibaba": "qwen2-5-vl-7b-instruct",
+  },
   "qwen3-14b": {
+    "alibaba": "qwen3-14b",
     "openrouter": "qwen/qwen3-14b",
   },
   "qwen3-235b-a22b": {
+    "alibaba": "qwen3-235b-a22b",
     "huggingface": { id: "Qwen/Qwen3-235B-A22B", narrows: { context: 40960 } },
     "openrouter": "qwen/qwen3-235b-a22b",
   },
   "qwen3-32b": {
+    "alibaba": "qwen3-32b",
     "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 16384 } },
     "deepinfra": { id: "Qwen/Qwen3-32B", narrows: { context: 40960 } },
     "huggingface": "Qwen/Qwen3-32B",
@@ -69,33 +130,43 @@ export const availability = {
     "openrouter": "qwen/qwen3-32b",
   },
   "qwen3-8b": {
+    "alibaba": "qwen3-8b",
     "openrouter": "qwen/qwen3-8b",
   },
+  "qwen3-asr-flash": {
+    "alibaba": "qwen3-asr-flash",
+  },
   "qwen3-coder-30b-a3b-instruct": {
+    "alibaba": "qwen3-coder-30b-a3b-instruct",
     "huggingface": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
     "novita-ai": { id: "qwen/qwen3-coder-30b-a3b-instruct", narrows: { context: 160000 } },
     "openrouter": "qwen/qwen3-coder-30b-a3b-instruct",
     "scaleway": { id: "qwen3-coder-30b-a3b-instruct", narrows: { context: 128000 } },
   },
   "qwen3-coder-480b-a35b-instruct": {
+    "alibaba": "qwen3-coder-480b-a35b-instruct",
     "huggingface": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
     "novita-ai": "qwen/qwen3-coder-480b-a35b-instruct",
     "nvidia": "qwen/qwen3-coder-480b-a35b-instruct",
   },
   "qwen3-coder-flash": {
+    "alibaba": "qwen3-coder-flash",
     "openrouter": "qwen/qwen3-coder-flash",
   },
   "qwen3-coder-plus": {
+    "alibaba": "qwen3-coder-plus",
     "openrouter": { id: "qwen/qwen3-coder-plus", narrows: { context: 1000000 } },
     "vercel": { id: "alibaba/qwen3-coder-plus", narrows: { context: 1000000 } },
   },
   "qwen3-max": {
+    "alibaba": "qwen3-max",
     "deepinfra": { id: "Qwen/Qwen3-Max", narrows: { context: 256000 } },
     "novita-ai": "qwen/qwen3-max",
     "openrouter": "qwen/qwen3-max",
     "vercel": "alibaba/qwen3-max",
   },
   "qwen3-next-80b-a3b-instruct": {
+    "alibaba": "qwen3-next-80b-a3b-instruct",
     "deepinfra": "Qwen/Qwen3-Next-80B-A3B-Instruct",
     "huggingface": "Qwen/Qwen3-Next-80B-A3B-Instruct",
     "novita-ai": "qwen/qwen3-next-80b-a3b-instruct",
@@ -104,9 +175,26 @@ export const availability = {
     "vercel": "alibaba/qwen3-next-80b-a3b-instruct",
   },
   "qwen3-next-80b-a3b-thinking": {
+    "alibaba": "qwen3-next-80b-a3b-thinking",
     "openrouter": "qwen/qwen3-next-80b-a3b-thinking",
   },
+  "qwen3-omni-flash": {
+    "alibaba": "qwen3-omni-flash",
+  },
+  "qwen3-omni-flash-realtime": {
+    "alibaba": "qwen3-omni-flash-realtime",
+  },
+  "qwen3-vl-235b-a22b": {
+    "alibaba": "qwen3-vl-235b-a22b",
+  },
+  "qwen3-vl-30b-a3b": {
+    "alibaba": "qwen3-vl-30b-a3b",
+  },
+  "qwen3-vl-plus": {
+    "alibaba": "qwen3-vl-plus",
+  },
   "qwen3.5-122b-a10b": {
+    "alibaba": "qwen3.5-122b-a10b",
     "deepinfra": "Qwen/Qwen3.5-122B-A10B",
     "huggingface": { id: "Qwen/Qwen3.5-122B-A10B", narrows: { drops: ["video", "audio"] } },
     "novita-ai": { id: "qwen/qwen3.5-122b-a10b", narrows: { drops: ["audio"] } },
@@ -115,6 +203,7 @@ export const availability = {
     "siliconflow": { id: "Qwen/Qwen3.5-122B-A10B", narrows: { drops: ["image", "video", "audio"] } },
   },
   "qwen3.5-27b": {
+    "alibaba": "qwen3.5-27b",
     "deepinfra": "Qwen/Qwen3.5-27B",
     "huggingface": { id: "Qwen/Qwen3.5-27B", narrows: { drops: ["video", "audio"] } },
     "novita-ai": { id: "qwen/qwen3.5-27b", narrows: { drops: ["audio"] } },
@@ -122,6 +211,7 @@ export const availability = {
     "siliconflow": { id: "Qwen/Qwen3.5-27B", narrows: { drops: ["image", "video", "audio"] } },
   },
   "qwen3.5-35b-a3b": {
+    "alibaba": "qwen3.5-35b-a3b",
     "deepinfra": { id: "Qwen/Qwen3.5-35B-A3B", narrows: { drops: ["audio"] } },
     "huggingface": { id: "Qwen/Qwen3.5-35B-A3B", narrows: { drops: ["video", "audio"] } },
     "novita-ai": { id: "qwen/qwen3.5-35b-a3b", narrows: { drops: ["audio"] } },
@@ -129,6 +219,7 @@ export const availability = {
     "siliconflow": { id: "Qwen/Qwen3.5-35B-A3B", narrows: { drops: ["image", "video", "audio"] } },
   },
   "qwen3.5-397b-a17b": {
+    "alibaba": "qwen3.5-397b-a17b",
     "deepinfra": { id: "Qwen/Qwen3.5-397B-A17B", narrows: { drops: ["audio"] } },
     "huggingface": { id: "Qwen/Qwen3.5-397B-A17B", narrows: { drops: ["video", "audio"] } },
     "nebius": { id: "Qwen/Qwen3.5-397B-A17B", narrows: { drops: ["image", "video", "audio"] } },
@@ -140,9 +231,11 @@ export const availability = {
     "togetherai": { id: "Qwen/Qwen3.5-397B-A17B", narrows: { drops: ["video", "audio"] } },
   },
   "qwen3.5-plus": {
+    "alibaba": "qwen3.5-plus",
     "vercel": { id: "alibaba/qwen3.5-plus", narrows: { drops: ["video"] } },
   },
   "qwen3.6-27b": {
+    "alibaba": "qwen3.6-27b",
     "deepinfra": "Qwen/Qwen3.6-27B",
     "groq": { id: "qwen/qwen3.6-27b", narrows: { context: 131072, drops: ["video", "audio"] } },
     "huggingface": { id: "Qwen/Qwen3.6-27B", narrows: { drops: ["video", "audio"] } },
@@ -151,6 +244,7 @@ export const availability = {
     "vercel": { id: "alibaba/qwen3.6-27b", narrows: { context: 256000, drops: ["video", "audio"] } },
   },
   "qwen3.6-35b-a3b": {
+    "alibaba": "qwen3.6-35b-a3b",
     "deepinfra": { id: "Qwen/Qwen3.6-35B-A3B", narrows: { drops: ["audio"] } },
     "huggingface": { id: "Qwen/Qwen3.6-35B-A3B", narrows: { drops: ["video", "audio"] } },
     "openrouter": { id: "qwen/qwen3.6-35b-a3b", narrows: { drops: ["audio"] } },
@@ -158,17 +252,21 @@ export const availability = {
     "siliconflow": { id: "Qwen/Qwen3.6-35B-A3B", narrows: { drops: ["image", "video", "audio"] } },
   },
   "qwen3.6-flash": {
+    "alibaba": "qwen3.6-flash",
     "openrouter": "qwen/qwen3.6-flash",
   },
   "qwen3.6-max-preview": {
+    "alibaba": "qwen3.6-max-preview",
     "openrouter": "qwen/qwen3.6-max-preview",
   },
   "qwen3.6-plus": {
+    "alibaba": "qwen3.6-plus",
     "openrouter": "qwen/qwen3.6-plus",
     "togetherai": { id: "Qwen/Qwen3.6-Plus", narrows: { drops: ["image", "video"] } },
     "vercel": { id: "alibaba/qwen3.6-plus", narrows: { drops: ["video"] } },
   },
   "qwen3.7-max": {
+    "alibaba": "qwen3.7-max",
     "deepinfra": { id: "Qwen/Qwen3.7-Max", narrows: { context: 256000 } },
     "novita-ai": "qwen/qwen3.7-max",
     "openrouter": "qwen/qwen3.7-max",
@@ -176,13 +274,18 @@ export const availability = {
     "vercel": { id: "alibaba/qwen3.7-max", narrows: { context: 991000 } },
   },
   "qwen3.7-plus": {
+    "alibaba": "qwen3.7-plus",
     "openrouter": { id: "qwen/qwen3.7-plus", narrows: { drops: ["video"] } },
     "vercel": { id: "alibaba/qwen3.7-plus", narrows: { drops: ["video"] } },
   },
   "qwen3.8-max": {
+    "alibaba": "qwen3.8-max",
     "deepinfra": { id: "Qwen/Qwen3.8-Max", narrows: { context: 256000 } },
     "openrouter": { id: "qwen/qwen3.8-max", narrows: { drops: ["pdf"] } },
     "vercel": { id: "alibaba/qwen3.8-max", narrows: { drops: ["video", "pdf"] } },
+  },
+  "qwq-plus": {
+    "alibaba": "qwq-plus",
   },
 } as const satisfies AvailabilityMap;
 

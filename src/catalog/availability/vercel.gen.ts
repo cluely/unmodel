@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve vercel's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve vercel's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * vercel itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("vercel")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,27 +19,65 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "alibaba/qwen-3-14b": {
+    "vercel": "alibaba/qwen-3-14b",
+  },
+  "alibaba/qwen-3-235b": {
+    "vercel": "alibaba/qwen-3-235b",
+  },
+  "alibaba/qwen-3-30b": {
+    "vercel": "alibaba/qwen-3-30b",
+  },
+  "alibaba/qwen-3-32b": {
+    "vercel": "alibaba/qwen-3-32b",
+  },
+  "alibaba/qwen-3.6-max-preview": {
+    "vercel": "alibaba/qwen-3.6-max-preview",
+  },
+  "alibaba/qwen3-235b-a22b-thinking": {
+    "vercel": "alibaba/qwen3-235b-a22b-thinking",
+  },
+  "alibaba/qwen3-coder": {
+    "vercel": "alibaba/qwen3-coder",
+  },
   "alibaba/qwen3-coder-30b-a3b": {
     "amazon-bedrock": "qwen.qwen3-coder-30b-a3b-v1:0",
+    "vercel": "alibaba/qwen3-coder-30b-a3b",
   },
   "alibaba/qwen3-coder-next": {
     "amazon-bedrock": { id: "qwen.qwen3-coder-next", narrows: { context: 131072 } },
     "huggingface": "Qwen/Qwen3-Coder-Next",
     "novita-ai": "qwen/qwen3-coder-next",
     "openrouter": "qwen/qwen3-coder-next",
+    "vercel": "alibaba/qwen3-coder-next",
   },
   "alibaba/qwen3-coder-plus": {
     "alibaba": "qwen3-coder-plus",
     "openrouter": "qwen/qwen3-coder-plus",
+    "vercel": "alibaba/qwen3-coder-plus",
+  },
+  "alibaba/qwen3-embedding-0.6b": {
+    "vercel": "alibaba/qwen3-embedding-0.6b",
+  },
+  "alibaba/qwen3-embedding-4b": {
+    "vercel": "alibaba/qwen3-embedding-4b",
+  },
+  "alibaba/qwen3-embedding-8b": {
+    "vercel": "alibaba/qwen3-embedding-8b",
   },
   "alibaba/qwen3-max": {
     "alibaba": "qwen3-max",
     "deepinfra": { id: "Qwen/Qwen3-Max", narrows: { context: 256000 } },
     "novita-ai": "qwen/qwen3-max",
     "openrouter": "qwen/qwen3-max",
+    "vercel": "alibaba/qwen3-max",
+  },
+  "alibaba/qwen3-max-preview": {
+    "vercel": "alibaba/qwen3-max-preview",
   },
   "alibaba/qwen3-max-thinking": {
     "openrouter": "qwen/qwen3-max-thinking",
+    "vercel": "alibaba/qwen3-max-thinking",
   },
   "alibaba/qwen3-next-80b-a3b-instruct": {
     "alibaba": "qwen3-next-80b-a3b-instruct",
@@ -44,18 +86,31 @@ export const availability = {
     "novita-ai": "qwen/qwen3-next-80b-a3b-instruct",
     "nvidia": "qwen/qwen3-next-80b-a3b-instruct",
     "openrouter": "qwen/qwen3-next-80b-a3b-instruct",
+    "vercel": "alibaba/qwen3-next-80b-a3b-instruct",
   },
   "alibaba/qwen3-next-80b-a3b-thinking": {
     "huggingface": "Qwen/Qwen3-Next-80B-A3B-Thinking",
     "nebius": { id: "Qwen/Qwen3-Next-80B-A3B-Thinking", narrows: { context: 128000 } },
     "novita-ai": "qwen/qwen3-next-80b-a3b-thinking",
+    "vercel": "alibaba/qwen3-next-80b-a3b-thinking",
   },
   "alibaba/qwen3-vl-235b-a22b-instruct": {
     "novita-ai": "qwen/qwen3-vl-235b-a22b-instruct",
     "openrouter": "qwen/qwen3-vl-235b-a22b-instruct",
+    "vercel": "alibaba/qwen3-vl-235b-a22b-instruct",
+  },
+  "alibaba/qwen3-vl-instruct": {
+    "vercel": "alibaba/qwen3-vl-instruct",
+  },
+  "alibaba/qwen3-vl-thinking": {
+    "vercel": "alibaba/qwen3-vl-thinking",
+  },
+  "alibaba/qwen3.5-flash": {
+    "vercel": "alibaba/qwen3.5-flash",
   },
   "alibaba/qwen3.5-plus": {
     "alibaba": { id: "qwen3.5-plus", narrows: { drops: ["pdf"] } },
+    "vercel": "alibaba/qwen3.5-plus",
   },
   "alibaba/qwen3.6-27b": {
     "alibaba": { id: "qwen3.6-27b", narrows: { drops: ["pdf"] } },
@@ -64,14 +119,17 @@ export const availability = {
     "huggingface": { id: "Qwen/Qwen3.6-27B", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "qwen/qwen3.6-27b", narrows: { drops: ["pdf"] } },
     "siliconflow": { id: "Qwen/Qwen3.6-27B", narrows: { drops: ["image", "pdf"] } },
+    "vercel": "alibaba/qwen3.6-27b",
   },
   "alibaba/qwen3.6-plus": {
     "alibaba": { id: "qwen3.6-plus", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "qwen/qwen3.6-plus", narrows: { drops: ["pdf"] } },
     "togetherai": { id: "Qwen/Qwen3.6-Plus", narrows: { drops: ["image", "pdf"] } },
+    "vercel": "alibaba/qwen3.6-plus",
   },
   "alibaba/qwen3.7-flash": {
     "openrouter": { id: "qwen/qwen3.7-flash", narrows: { drops: ["pdf"] } },
+    "vercel": "alibaba/qwen3.7-flash",
   },
   "alibaba/qwen3.7-max": {
     "alibaba": "qwen3.7-max",
@@ -79,103 +137,155 @@ export const availability = {
     "novita-ai": "qwen/qwen3.7-max",
     "openrouter": "qwen/qwen3.7-max",
     "togetherai": "Qwen/Qwen3.7-Max",
+    "vercel": "alibaba/qwen3.7-max",
   },
   "alibaba/qwen3.7-plus": {
     "alibaba": { id: "qwen3.7-plus", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "qwen/qwen3.7-plus", narrows: { drops: ["pdf"] } },
+    "vercel": "alibaba/qwen3.7-plus",
   },
   "alibaba/qwen3.8-max": {
     "alibaba": "qwen3.8-max",
     "deepinfra": { id: "Qwen/Qwen3.8-Max", narrows: { context: 256000 } },
     "openrouter": "qwen/qwen3.8-max",
+    "vercel": "alibaba/qwen3.8-max",
   },
   "amazon/nova-2-lite": {
     "amazon-bedrock": { id: "amazon.nova-2-lite-v1:0", narrows: { context: 128000, drops: ["pdf"] } },
+    "vercel": "amazon/nova-2-lite",
   },
   "amazon/nova-lite": {
     "amazon-bedrock": "amazon.nova-lite-v1:0",
+    "vercel": "amazon/nova-lite",
   },
   "amazon/nova-micro": {
     "amazon-bedrock": "amazon.nova-micro-v1:0",
+    "vercel": "amazon/nova-micro",
   },
   "amazon/nova-pro": {
     "amazon-bedrock": "amazon.nova-pro-v1:0",
+    "vercel": "amazon/nova-pro",
+  },
+  "amazon/titan-embed-text-v2": {
+    "vercel": "amazon/titan-embed-text-v2",
+  },
+  "anthropic/claude-3-haiku": {
+    "vercel": "anthropic/claude-3-haiku",
   },
   "anthropic/claude-fable-5": {
     "amazon-bedrock": "anthropic.claude-fable-5",
     "anthropic": "claude-fable-5",
     "openrouter": "anthropic/claude-fable-5",
+    "vercel": "anthropic/claude-fable-5",
   },
   "anthropic/claude-haiku-4.5": {
     "amazon-bedrock": "anthropic.claude-haiku-4-5-20251001-v1:0",
     "anthropic": "claude-haiku-4-5",
     "openrouter": "anthropic/claude-haiku-4.5",
+    "vercel": "anthropic/claude-haiku-4.5",
   },
   "anthropic/claude-opus-4": {
     "openrouter": "anthropic/claude-opus-4",
+    "vercel": "anthropic/claude-opus-4",
   },
   "anthropic/claude-opus-4.5": {
     "amazon-bedrock": "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic": "claude-opus-4-5",
     "openrouter": "anthropic/claude-opus-4.5",
+    "vercel": "anthropic/claude-opus-4.5",
   },
   "anthropic/claude-opus-4.6": {
     "anthropic": "claude-opus-4-6",
     "openrouter": "anthropic/claude-opus-4.6",
+    "vercel": "anthropic/claude-opus-4.6",
   },
   "anthropic/claude-opus-4.7": {
     "amazon-bedrock": "anthropic.claude-opus-4-7",
     "anthropic": "claude-opus-4-7",
     "openrouter": "anthropic/claude-opus-4.7",
+    "vercel": "anthropic/claude-opus-4.7",
   },
   "anthropic/claude-opus-4.8": {
     "amazon-bedrock": "anthropic.claude-opus-4-8",
     "anthropic": "claude-opus-4-8",
     "openrouter": "anthropic/claude-opus-4.8",
+    "vercel": "anthropic/claude-opus-4.8",
   },
   "anthropic/claude-opus-4.8-fast": {
     "openrouter": "anthropic/claude-opus-4.8-fast",
+    "vercel": "anthropic/claude-opus-4.8-fast",
   },
   "anthropic/claude-opus-5": {
     "amazon-bedrock": "anthropic.claude-opus-5",
     "anthropic": "claude-opus-5",
     "openrouter": "anthropic/claude-opus-5",
+    "vercel": "anthropic/claude-opus-5",
   },
   "anthropic/claude-opus-5-fast": {
     "openrouter": "anthropic/claude-opus-5-fast",
+    "vercel": "anthropic/claude-opus-5-fast",
   },
   "anthropic/claude-sonnet-4": {
     "openrouter": "anthropic/claude-sonnet-4",
+    "vercel": "anthropic/claude-sonnet-4",
   },
   "anthropic/claude-sonnet-4.5": {
     "amazon-bedrock": { id: "anthropic.claude-sonnet-4-5-20250929-v1:0", narrows: { context: 200000 } },
     "anthropic": "claude-sonnet-4-5",
     "openrouter": "anthropic/claude-sonnet-4.5",
+    "vercel": "anthropic/claude-sonnet-4.5",
   },
   "anthropic/claude-sonnet-4.6": {
     "amazon-bedrock": "anthropic.claude-sonnet-4-6",
     "anthropic": "claude-sonnet-4-6",
     "openrouter": "anthropic/claude-sonnet-4.6",
+    "vercel": "anthropic/claude-sonnet-4.6",
   },
   "anthropic/claude-sonnet-5": {
     "amazon-bedrock": "anthropic.claude-sonnet-5",
     "anthropic": "claude-sonnet-5",
     "openrouter": "anthropic/claude-sonnet-5",
+    "vercel": "anthropic/claude-sonnet-5",
   },
   "arcee-ai/trinity-large-thinking": {
     "openrouter": "arcee-ai/trinity-large-thinking",
+    "vercel": "arcee-ai/trinity-large-thinking",
+  },
+  "arcee-ai/trinity-mini": {
+    "vercel": "arcee-ai/trinity-mini",
   },
   "bytedance/seed-1.6": {
     "openrouter": "bytedance-seed/seed-1.6",
+    "vercel": "bytedance/seed-1.6",
+  },
+  "bytedance/seed-1.8": {
+    "vercel": "bytedance/seed-1.8",
   },
   "cohere/command-a": {
     "openrouter": "cohere/command-a",
+    "vercel": "cohere/command-a",
+  },
+  "cohere/embed-v4.0": {
+    "vercel": "cohere/embed-v4.0",
+  },
+  "cohere/rerank-v3.5": {
+    "vercel": "cohere/rerank-v3.5",
+  },
+  "cohere/rerank-v4-fast": {
+    "vercel": "cohere/rerank-v4-fast",
+  },
+  "cohere/rerank-v4-pro": {
+    "vercel": "cohere/rerank-v4-pro",
   },
   "deepseek/deepseek-r1": {
     "azure": "deepseek-r1",
     "huggingface": { id: "deepseek-ai/DeepSeek-R1", narrows: { context: 64000 } },
     "openrouter": "deepseek/deepseek-r1",
     "togetherai": "deepseek-ai/DeepSeek-R1",
+    "vercel": "deepseek/deepseek-r1",
+  },
+  "deepseek/deepseek-v3": {
+    "vercel": "deepseek/deepseek-v3",
   },
   "deepseek/deepseek-v3.1": {
     "baseten": "deepseek-ai/DeepSeek-V3.1",
@@ -184,10 +294,12 @@ export const availability = {
     "huggingface": { id: "deepseek-ai/DeepSeek-V3.1", narrows: { context: 131072 } },
     "novita-ai": { id: "deepseek/deepseek-v3.1", narrows: { context: 131072 } },
     "togetherai": { id: "deepseek-ai/DeepSeek-V3-1", narrows: { context: 131072 } },
+    "vercel": "deepseek/deepseek-v3.1",
   },
   "deepseek/deepseek-v3.1-terminus": {
     "novita-ai": "deepseek/deepseek-v3.1-terminus",
     "openrouter": "deepseek/deepseek-v3.1-terminus",
+    "vercel": "deepseek/deepseek-v3.1-terminus",
   },
   "deepseek/deepseek-v3.2": {
     "azure": "deepseek-v3.2",
@@ -198,6 +310,10 @@ export const availability = {
     "nebius": "deepseek-ai/DeepSeek-V3.2",
     "novita-ai": "deepseek/deepseek-v3.2",
     "openrouter": "deepseek/deepseek-v3.2",
+    "vercel": "deepseek/deepseek-v3.2",
+  },
+  "deepseek/deepseek-v3.2-thinking": {
+    "vercel": "deepseek/deepseek-v3.2-thinking",
   },
   "deepseek/deepseek-v4-flash": {
     "azure": "deepseek-v4-flash",
@@ -210,6 +326,7 @@ export const availability = {
     "nvidia": "deepseek-ai/deepseek-v4-flash",
     "openrouter": "deepseek/deepseek-v4-flash",
     "siliconflow": "deepseek-ai/DeepSeek-V4-Flash",
+    "vercel": "deepseek/deepseek-v4-flash",
   },
   "deepseek/deepseek-v4-flash-0731": {
     "alibaba": "deepseek-v4-flash-0731",
@@ -219,6 +336,7 @@ export const availability = {
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "openrouter": "deepseek/deepseek-v4-flash-0731",
     "togetherai": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "vercel": "deepseek/deepseek-v4-flash-0731",
   },
   "deepseek/deepseek-v4-pro": {
     "azure": { id: "deepseek-v4-pro", narrows: { context: 1000000 } },
@@ -233,64 +351,98 @@ export const availability = {
     "openrouter": { id: "deepseek/deepseek-v4-pro", narrows: { context: 1048576 } },
     "siliconflow": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 1000000 } },
     "togetherai": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 512000 } },
+    "vercel": "deepseek/deepseek-v4-pro",
   },
   "deepseek/deepseek-v4-pro-0813": {
     "openrouter": "deepseek/deepseek-v4-pro-0813",
+    "vercel": "deepseek/deepseek-v4-pro-0813",
+  },
+  "fish-audio/transcribe-1": {
+    "vercel": "fish-audio/transcribe-1",
   },
   "google/gemini-2.5-flash": {
     "google": "gemini-2.5-flash",
     "google-vertex": "gemini-2.5-flash",
     "openrouter": "google/gemini-2.5-flash",
+    "vercel": "google/gemini-2.5-flash",
   },
   "google/gemini-2.5-flash-image": {
     "google": "gemini-2.5-flash-image",
     "google-vertex": "gemini-2.5-flash-image",
     "openrouter": "google/gemini-2.5-flash-image",
+    "vercel": "google/gemini-2.5-flash-image",
   },
   "google/gemini-2.5-flash-lite": {
     "google": "gemini-2.5-flash-lite",
     "google-vertex": "gemini-2.5-flash-lite",
     "openrouter": "google/gemini-2.5-flash-lite",
+    "vercel": "google/gemini-2.5-flash-lite",
   },
   "google/gemini-2.5-pro": {
     "google": "gemini-2.5-pro",
     "google-vertex": "gemini-2.5-pro",
     "openrouter": "google/gemini-2.5-pro",
+    "vercel": "google/gemini-2.5-pro",
+  },
+  "google/gemini-3-flash": {
+    "vercel": "google/gemini-3-flash",
   },
   "google/gemini-3-pro-image": {
     "google": "gemini-3-pro-image",
     "google-vertex": "gemini-3-pro-image",
     "openrouter": "google/gemini-3-pro-image",
+    "vercel": "google/gemini-3-pro-image",
   },
   "google/gemini-3.1-flash-image": {
     "google": { id: "gemini-3.1-flash-image", narrows: { context: 65536 } },
     "google-vertex": "gemini-3.1-flash-image",
     "openrouter": "google/gemini-3.1-flash-image",
+    "vercel": "google/gemini-3.1-flash-image",
+  },
+  "google/gemini-3.1-flash-image-preview": {
+    "vercel": "google/gemini-3.1-flash-image-preview",
   },
   "google/gemini-3.1-flash-lite": {
     "google": "gemini-3.1-flash-lite",
     "google-vertex": "gemini-3.1-flash-lite",
     "openrouter": "google/gemini-3.1-flash-lite",
+    "vercel": "google/gemini-3.1-flash-lite",
+  },
+  "google/gemini-3.1-flash-lite-image": {
+    "vercel": "google/gemini-3.1-flash-lite-image",
   },
   "google/gemini-3.1-pro-preview": {
     "google": "gemini-3.1-pro-preview",
     "google-vertex": "gemini-3.1-pro-preview",
     "openrouter": "google/gemini-3.1-pro-preview",
+    "vercel": "google/gemini-3.1-pro-preview",
   },
   "google/gemini-3.5-flash": {
     "google": "gemini-3.5-flash",
     "google-vertex": "gemini-3.5-flash",
     "openrouter": "google/gemini-3.5-flash",
+    "vercel": "google/gemini-3.5-flash",
   },
   "google/gemini-3.5-flash-lite": {
     "google": "gemini-3.5-flash-lite",
     "google-vertex": "gemini-3.5-flash-lite",
     "openrouter": "google/gemini-3.5-flash-lite",
+    "vercel": "google/gemini-3.5-flash-lite",
   },
   "google/gemini-3.6-flash": {
     "google": "gemini-3.6-flash",
     "google-vertex": "gemini-3.6-flash",
     "openrouter": "google/gemini-3.6-flash",
+    "vercel": "google/gemini-3.6-flash",
+  },
+  "google/gemini-embedding-001": {
+    "vercel": "google/gemini-embedding-001",
+  },
+  "google/gemini-embedding-2": {
+    "vercel": "google/gemini-embedding-2",
+  },
+  "google/gemini-omni-flash-preview": {
+    "vercel": "google/gemini-omni-flash-preview",
   },
   "google/gemma-4-26b-a4b-it": {
     "cloudflare-workers-ai": { id: "@cf/google/gemma-4-26b-a4b-it", narrows: { context: 256000, drops: ["pdf"] } },
@@ -300,6 +452,7 @@ export const availability = {
     "openrouter": { id: "google/gemma-4-26b-a4b-it", narrows: { drops: ["pdf"] } },
     "scaleway": { id: "gemma-4-26b-a4b-it", narrows: { context: 256000, drops: ["pdf"] } },
     "siliconflow": { id: "google/gemma-4-26B-A4B-it", narrows: { drops: ["image", "pdf"] } },
+    "vercel": "google/gemma-4-26b-a4b-it",
   },
   "google/gemma-4-31b-it": {
     "deepinfra": { id: "google/gemma-4-31B-it", narrows: { drops: ["pdf"] } },
@@ -309,36 +462,79 @@ export const availability = {
     "nvidia": { id: "google/gemma-4-31b-it", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "google/gemma-4-31b-it", narrows: { drops: ["pdf"] } },
     "siliconflow": { id: "google/gemma-4-31B-it", narrows: { drops: ["image", "pdf"] } },
+    "vercel": "google/gemma-4-31b-it",
+  },
+  "google/text-embedding-005": {
+    "vercel": "google/text-embedding-005",
+  },
+  "google/text-multilingual-embedding-002": {
+    "vercel": "google/text-multilingual-embedding-002",
   },
   "inception/mercury-2": {
     "inception": "mercury-2",
     "openrouter": "inception/mercury-2",
+    "vercel": "inception/mercury-2",
+  },
+  "inception/mercury-coder-small": {
+    "vercel": "inception/mercury-coder-small",
   },
   "inclusionai/ling-3.0-flash": {
     "openrouter": "inclusionai/ling-3.0-flash",
+    "vercel": "inclusionai/ling-3.0-flash",
+  },
+  "inclusionai/ling-3.0-tiny-free": {
+    "vercel": "inclusionai/ling-3.0-tiny-free",
+  },
+  "interfaze/interfaze-beta": {
+    "vercel": "interfaze/interfaze-beta",
   },
   "kwaipilot/kat-coder-air-v2.5": {
     "openrouter": { id: "kwaipilot/kat-coder-air-v2.5", narrows: { drops: ["image"] } },
+    "vercel": "kwaipilot/kat-coder-air-v2.5",
+  },
+  "kwaipilot/kat-coder-pro-v1": {
+    "vercel": "kwaipilot/kat-coder-pro-v1",
   },
   "kwaipilot/kat-coder-pro-v2": {
     "openrouter": "kwaipilot/kat-coder-pro-v2",
+    "vercel": "kwaipilot/kat-coder-pro-v2",
   },
   "kwaipilot/kat-coder-pro-v2.5": {
     "openrouter": { id: "kwaipilot/kat-coder-pro-v2.5", narrows: { drops: ["image"] } },
+    "vercel": "kwaipilot/kat-coder-pro-v2.5",
+  },
+  "meta/llama-3.1-70b": {
+    "vercel": "meta/llama-3.1-70b",
+  },
+  "meta/llama-3.1-8b": {
+    "vercel": "meta/llama-3.1-8b",
+  },
+  "meta/llama-3.3-70b": {
+    "vercel": "meta/llama-3.3-70b",
+  },
+  "meta/llama-4-maverick": {
+    "vercel": "meta/llama-4-maverick",
+  },
+  "meta/llama-4-scout": {
+    "vercel": "meta/llama-4-scout",
   },
   "meta/muse-glimmer-30b": {
     "openrouter": "meta/muse-glimmer-30b",
+    "vercel": "meta/muse-glimmer-30b",
   },
   "meta/muse-spark-1.1": {
     "meta": { id: "muse-spark-1.1", narrows: { context: 1000000 } },
     "openrouter": "meta/muse-spark-1.1",
+    "vercel": "meta/muse-spark-1.1",
   },
   "meta/muse-spark-1.2": {
     "meta": "muse-spark-1.2",
     "openrouter": "meta/muse-spark-1.2",
+    "vercel": "meta/muse-spark-1.2",
   },
   "meta/muse-spark-1.2-contributor": {
     "meta": "muse-spark-1.2-contributor",
+    "vercel": "meta/muse-spark-1.2-contributor",
   },
   "minimax/minimax-m2": {
     "amazon-bedrock": { id: "minimax.minimax-m2", narrows: { context: 204608 } },
@@ -346,6 +542,7 @@ export const availability = {
     "minimax": { id: "MiniMax-M2", narrows: { context: 196608 } },
     "novita-ai": { id: "minimax/minimax-m2", narrows: { context: 204800 } },
     "openrouter": { id: "minimax/minimax-m2", narrows: { context: 204800 } },
+    "vercel": "minimax/minimax-m2",
   },
   "minimax/minimax-m2.1": {
     "amazon-bedrock": "minimax.minimax-m2.1",
@@ -353,6 +550,10 @@ export const availability = {
     "minimax": "MiniMax-M2.1",
     "novita-ai": "minimax/minimax-m2.1",
     "openrouter": "minimax/minimax-m2.1",
+    "vercel": "minimax/minimax-m2.1",
+  },
+  "minimax/minimax-m2.1-lightning": {
+    "vercel": "minimax/minimax-m2.1-lightning",
   },
   "minimax/minimax-m2.5": {
     "amazon-bedrock": { id: "minimax.minimax-m2.5", narrows: { context: 196608 } },
@@ -365,10 +566,12 @@ export const availability = {
     "novita-ai": "minimax/minimax-m2.5",
     "openrouter": "minimax/minimax-m2.5",
     "togetherai": "MiniMaxAI/MiniMax-M2.5",
+    "vercel": "minimax/minimax-m2.5",
   },
   "minimax/minimax-m2.5-highspeed": {
     "minimax": "MiniMax-M2.5-highspeed",
     "novita-ai": "minimax/minimax-m2.5-highspeed",
+    "vercel": "minimax/minimax-m2.5-highspeed",
   },
   "minimax/minimax-m2.7": {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M2.7", narrows: { context: 196608 } },
@@ -378,10 +581,12 @@ export const availability = {
     "nvidia": "minimaxai/minimax-m2.7",
     "openrouter": "minimax/minimax-m2.7",
     "togetherai": { id: "MiniMaxAI/MiniMax-M2.7", narrows: { context: 202752 } },
+    "vercel": "minimax/minimax-m2.7",
   },
   "minimax/minimax-m2.7-highspeed": {
     "minimax": "MiniMax-M2.7-highspeed",
     "novita-ai": "minimax/minimax-m2.7-highspeed",
+    "vercel": "minimax/minimax-m2.7-highspeed",
   },
   "minimax/minimax-m3": {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288, drops: ["pdf"] } },
@@ -392,20 +597,64 @@ export const availability = {
     "nvidia": { id: "minimaxai/minimax-m3", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "minimax/minimax-m3", narrows: { drops: ["pdf"] } },
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288, drops: ["pdf"] } },
+    "vercel": "minimax/minimax-m3",
+  },
+  "mistral/codestral": {
+    "vercel": "mistral/codestral",
+  },
+  "mistral/codestral-embed": {
+    "vercel": "mistral/codestral-embed",
+  },
+  "mistral/devstral-2": {
+    "vercel": "mistral/devstral-2",
+  },
+  "mistral/devstral-small-2": {
+    "vercel": "mistral/devstral-small-2",
+  },
+  "mistral/magistral-medium": {
+    "vercel": "mistral/magistral-medium",
   },
   "mistral/magistral-small": {
     "mistral": "magistral-small",
+    "vercel": "mistral/magistral-small",
+  },
+  "mistral/ministral-14b": {
+    "vercel": "mistral/ministral-14b",
   },
   "mistral/ministral-3b": {
     "azure": "ministral-3b",
+    "vercel": "mistral/ministral-3b",
+  },
+  "mistral/ministral-8b": {
+    "vercel": "mistral/ministral-8b",
+  },
+  "mistral/mistral-embed": {
+    "vercel": "mistral/mistral-embed",
+  },
+  "mistral/mistral-large-3": {
+    "vercel": "mistral/mistral-large-3",
+  },
+  "mistral/mistral-medium": {
+    "vercel": "mistral/mistral-medium",
+  },
+  "mistral/mistral-medium-3.5": {
+    "vercel": "mistral/mistral-medium-3.5",
   },
   "mistral/mistral-nemo": {
     "mistral": { id: "mistral-nemo", narrows: { drops: ["image"] } },
     "novita-ai": { id: "mistralai/mistral-nemo", narrows: { context: 60288, drops: ["image"] } },
     "openrouter": { id: "mistralai/mistral-nemo", narrows: { drops: ["image"] } },
+    "vercel": "mistral/mistral-nemo",
+  },
+  "mistral/mistral-small": {
+    "vercel": "mistral/mistral-small",
   },
   "mistral/pixtral-12b": {
     "mistral": "pixtral-12b",
+    "vercel": "mistral/pixtral-12b",
+  },
+  "moonshotai/kimi-k2": {
+    "vercel": "moonshotai/kimi-k2",
   },
   "moonshotai/kimi-k2-thinking": {
     "amazon-bedrock": "moonshot.kimi-k2-thinking",
@@ -414,6 +663,7 @@ export const availability = {
     "moonshotai": "kimi-k2-thinking",
     "novita-ai": "moonshotai/kimi-k2-thinking",
     "openrouter": "moonshotai/kimi-k2-thinking",
+    "vercel": "moonshotai/kimi-k2-thinking",
   },
   "moonshotai/kimi-k2.5": {
     "azure": "kimi-k2.5",
@@ -425,6 +675,7 @@ export const availability = {
     "novita-ai": "moonshotai/kimi-k2.5",
     "openrouter": "moonshotai/kimi-k2.5",
     "togetherai": "moonshotai/Kimi-K2.5",
+    "vercel": "moonshotai/kimi-k2.5",
   },
   "moonshotai/kimi-k2.6": {
     "azure": "kimi-k2.6",
@@ -437,6 +688,7 @@ export const availability = {
     "nvidia": "moonshotai/kimi-k2.6",
     "openrouter": "moonshotai/kimi-k2.6",
     "togetherai": "moonshotai/Kimi-K2.6",
+    "vercel": "moonshotai/kimi-k2.6",
   },
   "moonshotai/kimi-k2.7-code": {
     "azure": { id: "kimi-k2.7-code", narrows: { drops: ["pdf"] } },
@@ -449,9 +701,11 @@ export const availability = {
     "novita-ai": { id: "moonshotai/kimi-k2.7-code", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "moonshotai/kimi-k2.7-code", narrows: { drops: ["pdf"] } },
     "togetherai": { id: "moonshotai/Kimi-K2.7-Code", narrows: { drops: ["image", "pdf"] } },
+    "vercel": "moonshotai/kimi-k2.7-code",
   },
   "moonshotai/kimi-k2.7-code-highspeed": {
     "moonshotai": { id: "kimi-k2.7-code-highspeed", narrows: { drops: ["pdf"] } },
+    "vercel": "moonshotai/kimi-k2.7-code-highspeed",
   },
   "moonshotai/kimi-k3": {
     "baseten": { id: "moonshotai/Kimi-K3", narrows: { drops: ["pdf"] } },
@@ -463,158 +717,213 @@ export const availability = {
     "novita-ai": { id: "moonshotai/kimi-k3", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "moonshotai/kimi-k3", narrows: { drops: ["pdf"] } },
     "togetherai": { id: "moonshotai/Kimi-K3", narrows: { drops: ["pdf"] } },
+    "vercel": "moonshotai/kimi-k3",
   },
   "moonshotai/kimi-k3-fast": {
     "fireworks-ai": { id: "accounts/fireworks/routers/kimi-k3-fast", narrows: { drops: ["pdf"] } },
+    "vercel": "moonshotai/kimi-k3-fast",
   },
   "morph/morph-v3-fast": {
     "openrouter": "morph/morph-v3-fast",
+    "vercel": "morph/morph-v3-fast",
   },
   "morph/morph-v3-large": {
     "openrouter": "morph/morph-v3-large",
+    "vercel": "morph/morph-v3-large",
   },
   "nvidia/nemotron-3-nano-30b-a3b": {
     "deepinfra": "nvidia/Nemotron-3-Nano-30B-A3B",
     "nvidia": { id: "nvidia/nemotron-3-nano-30b-a3b", narrows: { context: 131072 } },
     "openrouter": "nvidia/nemotron-3-nano-30b-a3b",
+    "vercel": "nvidia/nemotron-3-nano-30b-a3b",
+  },
+  "nvidia/nemotron-3-super-120b-a12b": {
+    "vercel": "nvidia/nemotron-3-super-120b-a12b",
   },
   "nvidia/nemotron-3-ultra-550b-a55b": {
     "openrouter": "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "vercel": "nvidia/nemotron-3-ultra-550b-a55b",
+  },
+  "nvidia/nemotron-nano-12b-v2-vl": {
+    "vercel": "nvidia/nemotron-nano-12b-v2-vl",
   },
   "nvidia/nemotron-nano-9b-v2": {
     "amazon-bedrock": { id: "nvidia.nemotron-nano-9b-v2", narrows: { context: 128000 } },
+    "vercel": "nvidia/nemotron-nano-9b-v2",
   },
   "openai/gpt-3.5-turbo": {
     "openai": "gpt-3.5-turbo",
     "openrouter": "openai/gpt-3.5-turbo",
+    "vercel": "openai/gpt-3.5-turbo",
   },
   "openai/gpt-4-turbo": {
     "azure": "gpt-4-turbo",
     "openai": "gpt-4-turbo",
     "openrouter": "openai/gpt-4-turbo",
+    "vercel": "openai/gpt-4-turbo",
   },
   "openai/gpt-4.1": {
     "azure": { id: "gpt-4.1", narrows: { drops: ["pdf"] } },
     "openai": "gpt-4.1",
     "openrouter": "openai/gpt-4.1",
+    "vercel": "openai/gpt-4.1",
   },
   "openai/gpt-4.1-mini": {
     "azure": { id: "gpt-4.1-mini", narrows: { drops: ["pdf"] } },
     "openai": "gpt-4.1-mini",
     "openrouter": "openai/gpt-4.1-mini",
+    "vercel": "openai/gpt-4.1-mini",
   },
   "openai/gpt-4.1-nano": {
     "azure": "gpt-4.1-nano",
     "openai": "gpt-4.1-nano",
     "openrouter": "openai/gpt-4.1-nano",
+    "vercel": "openai/gpt-4.1-nano",
   },
   "openai/gpt-4o": {
     "azure": { id: "gpt-4o", narrows: { drops: ["pdf"] } },
     "openai": "gpt-4o",
     "openrouter": "openai/gpt-4o",
+    "vercel": "openai/gpt-4o",
   },
   "openai/gpt-4o-mini": {
     "azure": { id: "gpt-4o-mini", narrows: { drops: ["pdf"] } },
     "openai": "gpt-4o-mini",
     "openrouter": "openai/gpt-4o-mini",
+    "vercel": "openai/gpt-4o-mini",
+  },
+  "openai/gpt-4o-mini-search-preview": {
+    "vercel": "openai/gpt-4o-mini-search-preview",
+  },
+  "openai/gpt-4o-mini-transcribe": {
+    "vercel": "openai/gpt-4o-mini-transcribe",
+  },
+  "openai/gpt-4o-transcribe": {
+    "vercel": "openai/gpt-4o-transcribe",
   },
   "openai/gpt-5": {
     "azure": "gpt-5",
     "openai": "gpt-5",
     "openrouter": "openai/gpt-5",
+    "vercel": "openai/gpt-5",
   },
   "openai/gpt-5-codex": {
     "azure": { id: "gpt-5-codex", narrows: { drops: ["pdf"] } },
+    "vercel": "openai/gpt-5-codex",
   },
   "openai/gpt-5-mini": {
     "azure": "gpt-5-mini",
     "openai": "gpt-5-mini",
     "openrouter": "openai/gpt-5-mini",
+    "vercel": "openai/gpt-5-mini",
   },
   "openai/gpt-5-nano": {
     "azure": "gpt-5-nano",
     "openai": "gpt-5-nano",
     "openrouter": "openai/gpt-5-nano",
+    "vercel": "openai/gpt-5-nano",
   },
   "openai/gpt-5-pro": {
     "azure": { id: "gpt-5-pro", narrows: { drops: ["pdf"] } },
     "openai": { id: "gpt-5-pro", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5-pro",
+    "vercel": "openai/gpt-5-pro",
   },
   "openai/gpt-5.1-codex": {
     "azure": { id: "gpt-5.1-codex", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "openai/gpt-5.1-codex", narrows: { drops: ["pdf"] } },
+    "vercel": "openai/gpt-5.1-codex",
   },
   "openai/gpt-5.1-codex-max": {
     "azure": { id: "gpt-5.1-codex-max", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "openai/gpt-5.1-codex-max", narrows: { drops: ["pdf"] } },
+    "vercel": "openai/gpt-5.1-codex-max",
   },
   "openai/gpt-5.1-codex-mini": {
     "azure": { id: "gpt-5.1-codex-mini", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "openai/gpt-5.1-codex-mini", narrows: { drops: ["pdf"] } },
+    "vercel": "openai/gpt-5.1-codex-mini",
+  },
+  "openai/gpt-5.1-thinking": {
+    "vercel": "openai/gpt-5.1-thinking",
   },
   "openai/gpt-5.2": {
     "azure": { id: "gpt-5.2", narrows: { drops: ["pdf"] } },
     "openai": { id: "gpt-5.2", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5.2",
+    "vercel": "openai/gpt-5.2",
   },
   "openai/gpt-5.2-codex": {
     "azure": { id: "gpt-5.2-codex", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "openai/gpt-5.2-codex", narrows: { drops: ["pdf"] } },
+    "vercel": "openai/gpt-5.2-codex",
+  },
+  "openai/gpt-5.2-pro": {
+    "vercel": "openai/gpt-5.2-pro",
   },
   "openai/gpt-5.3-codex": {
     "azure": { id: "gpt-5.3-codex", narrows: { drops: ["pdf"] } },
     "openai": "gpt-5.3-codex",
     "openrouter": "openai/gpt-5.3-codex",
+    "vercel": "openai/gpt-5.3-codex",
   },
   "openai/gpt-5.4": {
     "amazon-bedrock": { id: "openai.gpt-5.4", narrows: { context: 272000 } },
     "azure": "gpt-5.4",
     "openai": "gpt-5.4",
     "openrouter": "openai/gpt-5.4",
+    "vercel": "openai/gpt-5.4",
   },
   "openai/gpt-5.4-mini": {
     "azure": "gpt-5.4-mini",
     "openai": { id: "gpt-5.4-mini", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5.4-mini",
+    "vercel": "openai/gpt-5.4-mini",
   },
   "openai/gpt-5.4-nano": {
     "azure": "gpt-5.4-nano",
     "openai": { id: "gpt-5.4-nano", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5.4-nano",
+    "vercel": "openai/gpt-5.4-nano",
   },
   "openai/gpt-5.4-pro": {
     "azure": { id: "gpt-5.4-pro", narrows: { drops: ["pdf"] } },
     "openai": { id: "gpt-5.4-pro", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5.4-pro",
+    "vercel": "openai/gpt-5.4-pro",
   },
   "openai/gpt-5.5": {
     "amazon-bedrock": { id: "openai.gpt-5.5", narrows: { context: 272000 } },
     "azure": "gpt-5.5",
     "openai": "gpt-5.5",
     "openrouter": "openai/gpt-5.5",
+    "vercel": "openai/gpt-5.5",
   },
   "openai/gpt-5.5-pro": {
     "openai": "gpt-5.5-pro",
     "openrouter": "openai/gpt-5.5-pro",
+    "vercel": "openai/gpt-5.5-pro",
   },
   "openai/gpt-5.6-luna": {
     "amazon-bedrock": "openai.gpt-5.6-luna",
     "azure": "gpt-5.6-luna",
     "openai": "gpt-5.6-luna",
     "openrouter": "openai/gpt-5.6-luna",
+    "vercel": "openai/gpt-5.6-luna",
   },
   "openai/gpt-5.6-sol": {
     "amazon-bedrock": "openai.gpt-5.6-sol",
     "azure": "gpt-5.6-sol",
     "openai": "gpt-5.6-sol",
     "openrouter": "openai/gpt-5.6-sol",
+    "vercel": "openai/gpt-5.6-sol",
   },
   "openai/gpt-5.6-terra": {
     "amazon-bedrock": "openai.gpt-5.6-terra",
     "azure": "gpt-5.6-terra",
     "openai": "gpt-5.6-terra",
     "openrouter": "openai/gpt-5.6-terra",
+    "vercel": "openai/gpt-5.6-terra",
   },
   "openai/gpt-oss-120b": {
     "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
@@ -630,6 +939,7 @@ export const availability = {
     "openrouter": "openai/gpt-oss-120b",
     "scaleway": { id: "gpt-oss-120b", narrows: { context: 128000 } },
     "togetherai": "openai/gpt-oss-120b",
+    "vercel": "openai/gpt-oss-120b",
   },
   "openai/gpt-oss-20b": {
     "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
@@ -643,52 +953,97 @@ export const availability = {
     "nvidia": "openai/gpt-oss-20b",
     "openrouter": "openai/gpt-oss-20b",
     "togetherai": "openai/gpt-oss-20b",
+    "vercel": "openai/gpt-oss-20b",
   },
   "openai/gpt-oss-safeguard-20b": {
     "amazon-bedrock": { id: "openai.gpt-oss-safeguard-20b", narrows: { context: 128000 } },
     "openrouter": "openai/gpt-oss-safeguard-20b",
+    "vercel": "openai/gpt-oss-safeguard-20b",
+  },
+  "openai/gpt-realtime-whisper": {
+    "vercel": "openai/gpt-realtime-whisper",
   },
   "openai/o1": {
     "azure": { id: "o1", narrows: { drops: ["pdf"] } },
     "openai": "o1",
     "openrouter": "openai/o1",
+    "vercel": "openai/o1",
   },
   "openai/o3": {
     "azure": { id: "o3", narrows: { drops: ["pdf"] } },
     "openai": "o3",
     "openrouter": "openai/o3",
+    "vercel": "openai/o3",
+  },
+  "openai/o3-deep-research": {
+    "vercel": "openai/o3-deep-research",
   },
   "openai/o3-mini": {
     "azure": "o3-mini",
     "openai": "o3-mini",
     "openrouter": "openai/o3-mini",
+    "vercel": "openai/o3-mini",
   },
   "openai/o3-pro": {
     "openai": { id: "o3-pro", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/o3-pro",
+    "vercel": "openai/o3-pro",
   },
   "openai/o4-mini": {
     "azure": "o4-mini",
     "openai": "o4-mini",
     "openrouter": "openai/o4-mini",
+    "vercel": "openai/o4-mini",
+  },
+  "openai/text-embedding-3-large": {
+    "vercel": "openai/text-embedding-3-large",
+  },
+  "openai/text-embedding-3-small": {
+    "vercel": "openai/text-embedding-3-small",
+  },
+  "openai/text-embedding-ada-002": {
+    "vercel": "openai/text-embedding-ada-002",
+  },
+  "openai/whisper-1": {
+    "vercel": "openai/whisper-1",
+  },
+  "perplexity/pplx-embed-v1-0.6b": {
+    "vercel": "perplexity/pplx-embed-v1-0.6b",
+  },
+  "perplexity/pplx-embed-v1-4b": {
+    "vercel": "perplexity/pplx-embed-v1-4b",
   },
   "perplexity/sonar": {
     "openrouter": "perplexity/sonar",
     "perplexity": { id: "sonar", narrows: { drops: ["image"] } },
+    "vercel": "perplexity/sonar",
   },
   "perplexity/sonar-pro": {
     "openrouter": "perplexity/sonar-pro",
     "perplexity": "sonar-pro",
+    "vercel": "perplexity/sonar-pro",
   },
   "perplexity/sonar-reasoning-pro": {
     "openrouter": "perplexity/sonar-reasoning-pro",
     "perplexity": "sonar-reasoning-pro",
+    "vercel": "perplexity/sonar-reasoning-pro",
   },
   "poolside/laguna-s-2.1": {
     "openrouter": "poolside/laguna-s-2.1",
+    "vercel": "poolside/laguna-s-2.1",
+  },
+  "poolside/laguna-s-2.1-free": {
+    "vercel": "poolside/laguna-s-2.1-free",
   },
   "sakana/fugu-ultra": {
     "openrouter": "sakana/fugu-ultra",
+    "vercel": "sakana/fugu-ultra",
+  },
+  "sakana/namazu": {
+    "vercel": "sakana/namazu",
+  },
+  "stepfun/step-3.5-flash": {
+    "vercel": "stepfun/step-3.5-flash",
   },
   "stepfun/step-3.7-flash": {
     "deepinfra": "stepfun-ai/Step-3.7-Flash",
@@ -696,11 +1051,13 @@ export const availability = {
     "nvidia": "stepfun-ai/step-3.7-flash",
     "openrouter": "stepfun/step-3.7-flash",
     "stepfun": "step-3.7-flash",
+    "vercel": "stepfun/step-3.7-flash",
   },
   "tencent/hy3": {
     "deepinfra": "tencent/Hy3",
     "huggingface": "tencent/Hy3",
     "openrouter": "tencent/hy3",
+    "vercel": "tencent/hy3",
   },
   "thinkingmachines/inkling": {
     "baseten": { id: "thinkingmachines/inkling", narrows: { drops: ["pdf"] } },
@@ -709,55 +1066,132 @@ export const availability = {
     "nvidia": { id: "thinkingmachines/inkling", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "thinkingmachines/inkling", narrows: { drops: ["pdf"] } },
     "togetherai": { id: "thinkingmachines/Inkling", narrows: { drops: ["pdf"] } },
+    "vercel": "thinkingmachines/inkling",
   },
   "thinkingmachines/inkling-small": {
     "baseten": { id: "thinkingmachines/inkling-small", narrows: { drops: ["pdf"] } },
     "deepinfra": { id: "thinkingmachines/Inkling-Small", narrows: { context: 524288, drops: ["pdf"] } },
     "huggingface": { id: "thinkingmachines/Inkling-Small", narrows: { context: 524288, drops: ["pdf"] } },
     "openrouter": { id: "thinkingmachines/inkling-small", narrows: { context: 524288, drops: ["pdf"] } },
+    "vercel": "thinkingmachines/inkling-small",
+  },
+  "voyage/rerank-2.5": {
+    "vercel": "voyage/rerank-2.5",
+  },
+  "voyage/rerank-2.5-lite": {
+    "vercel": "voyage/rerank-2.5-lite",
+  },
+  "voyage/voyage-3-large": {
+    "vercel": "voyage/voyage-3-large",
+  },
+  "voyage/voyage-3.5": {
+    "vercel": "voyage/voyage-3.5",
+  },
+  "voyage/voyage-3.5-lite": {
+    "vercel": "voyage/voyage-3.5-lite",
+  },
+  "voyage/voyage-4": {
+    "vercel": "voyage/voyage-4",
+  },
+  "voyage/voyage-4-large": {
+    "vercel": "voyage/voyage-4-large",
+  },
+  "voyage/voyage-4-lite": {
+    "vercel": "voyage/voyage-4-lite",
+  },
+  "voyage/voyage-code-2": {
+    "vercel": "voyage/voyage-code-2",
+  },
+  "voyage/voyage-code-3": {
+    "vercel": "voyage/voyage-code-3",
+  },
+  "voyage/voyage-finance-2": {
+    "vercel": "voyage/voyage-finance-2",
+  },
+  "voyage/voyage-law-2": {
+    "vercel": "voyage/voyage-law-2",
+  },
+  "xai/grok-4.1-fast-non-reasoning": {
+    "vercel": "xai/grok-4.1-fast-non-reasoning",
+  },
+  "xai/grok-4.1-fast-reasoning": {
+    "vercel": "xai/grok-4.1-fast-reasoning",
   },
   "xai/grok-4.20-multi-agent": {
     "openrouter": "x-ai/grok-4.20-multi-agent",
+    "vercel": "xai/grok-4.20-multi-agent",
+  },
+  "xai/grok-4.20-multi-agent-beta": {
+    "vercel": "xai/grok-4.20-multi-agent-beta",
+  },
+  "xai/grok-4.20-non-reasoning": {
+    "vercel": "xai/grok-4.20-non-reasoning",
+  },
+  "xai/grok-4.20-non-reasoning-beta": {
+    "vercel": "xai/grok-4.20-non-reasoning-beta",
+  },
+  "xai/grok-4.20-reasoning": {
+    "vercel": "xai/grok-4.20-reasoning",
+  },
+  "xai/grok-4.20-reasoning-beta": {
+    "vercel": "xai/grok-4.20-reasoning-beta",
   },
   "xai/grok-4.3": {
     "amazon-bedrock": { id: "xai.grok-4.3", narrows: { drops: ["pdf"] } },
     "openrouter": "x-ai/grok-4.3",
+    "vercel": "xai/grok-4.3",
     "xai": "grok-4.3",
   },
   "xai/grok-4.5": {
     "openrouter": "x-ai/grok-4.5",
+    "vercel": "xai/grok-4.5",
     "xai": "grok-4.5",
   },
   "xai/grok-4.6": {
     "openrouter": "x-ai/grok-4.6",
+    "vercel": "xai/grok-4.6",
     "xai": "grok-4.6",
   },
   "xai/grok-build-0.1": {
     "openrouter": "x-ai/grok-build-0.1",
+    "vercel": "xai/grok-build-0.1",
     "xai": "grok-build-0.1",
+  },
+  "xai/grok-imagine-image": {
+    "vercel": "xai/grok-imagine-image",
+  },
+  "xai/grok-stt": {
+    "vercel": "xai/grok-stt",
+  },
+  "xiaomi/mimo-v2.5": {
+    "vercel": "xiaomi/mimo-v2.5",
   },
   "xiaomi/mimo-v2.5-pro": {
     "deepinfra": { id: "XiaomiMiMo/MiMo-V2.5-Pro", narrows: { context: 1048576 } },
     "huggingface": { id: "XiaomiMiMo/MiMo-V2.5-Pro", narrows: { context: 1048576 } },
     "novita-ai": { id: "xiaomimimo/mimo-v2.5-pro", narrows: { context: 1048576 } },
     "openrouter": "xiaomi/mimo-v2.5-pro",
+    "vercel": "xiaomi/mimo-v2.5-pro",
   },
   "zai/glm-4.5": {
     "huggingface": "zai-org/GLM-4.5",
     "novita-ai": "zai-org/glm-4.5",
     "openrouter": "z-ai/glm-4.5",
+    "vercel": "zai/glm-4.5",
     "zhipuai": "glm-4.5",
   },
   "zai/glm-4.5-air": {
     "huggingface": "zai-org/GLM-4.5-Air",
     "novita-ai": "zai-org/glm-4.5-air",
     "openrouter": "z-ai/glm-4.5-air",
+    "vercel": "zai/glm-4.5-air",
     "zhipuai": "glm-4.5-air",
   },
   "zai/glm-4.5v": {
     "huggingface": { id: "zai-org/GLM-4.5V", narrows: { context: 65536 } },
     "novita-ai": { id: "zai-org/glm-4.5v", narrows: { context: 65536 } },
     "openrouter": { id: "z-ai/glm-4.5v", narrows: { context: 65536 } },
+    "vercel": "zai/glm-4.5v",
     "zhipuai": { id: "glm-4.5v", narrows: { context: 64000 } },
   },
   "zai/glm-4.6": {
@@ -765,12 +1199,17 @@ export const availability = {
     "huggingface": "zai-org/GLM-4.6",
     "novita-ai": "zai-org/glm-4.6",
     "openrouter": "z-ai/glm-4.6",
+    "vercel": "zai/glm-4.6",
     "zhipuai": "glm-4.6",
   },
   "zai/glm-4.6v": {
     "novita-ai": { id: "zai-org/glm-4.6v", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "z-ai/glm-4.6v", narrows: { drops: ["pdf"] } },
+    "vercel": "zai/glm-4.6v",
     "zhipuai": { id: "glm-4.6v", narrows: { drops: ["pdf"] } },
+  },
+  "zai/glm-4.6v-flash": {
+    "vercel": "zai/glm-4.6v-flash",
   },
   "zai/glm-4.7": {
     "amazon-bedrock": "zai.glm-4.7",
@@ -780,6 +1219,7 @@ export const availability = {
     "huggingface": "zai-org/GLM-4.7",
     "novita-ai": "zai-org/glm-4.7",
     "openrouter": "z-ai/glm-4.7",
+    "vercel": "zai/glm-4.7",
     "zhipuai": "glm-4.7",
   },
   "zai/glm-4.7-flash": {
@@ -789,9 +1229,11 @@ export const availability = {
     "huggingface": "zai-org/GLM-4.7-Flash",
     "novita-ai": "zai-org/glm-4.7-flash",
     "openrouter": "z-ai/glm-4.7-flash",
+    "vercel": "zai/glm-4.7-flash",
     "zhipuai": "glm-4.7-flash",
   },
   "zai/glm-4.7-flashx": {
+    "vercel": "zai/glm-4.7-flashx",
     "zhipuai": "glm-4.7-flashx",
   },
   "zai/glm-5": {
@@ -804,10 +1246,12 @@ export const availability = {
     "novita-ai": "zai-org/glm-5",
     "openrouter": "z-ai/glm-5",
     "togetherai": { id: "zai-org/GLM-5", narrows: { context: 202752 } },
+    "vercel": "zai/glm-5",
     "zhipuai": "glm-5",
   },
   "zai/glm-5-turbo": {
     "openrouter": { id: "z-ai/glm-5-turbo", narrows: { context: 202752 } },
+    "vercel": "zai/glm-5-turbo",
   },
   "zai/glm-5.1": {
     "baseten": "zai-org/GLM-5.1",
@@ -817,6 +1261,7 @@ export const availability = {
     "novita-ai": "zai-org/glm-5.1",
     "openrouter": "z-ai/glm-5.1",
     "togetherai": { id: "zai-org/GLM-5.1", narrows: { context: 202752 } },
+    "vercel": "zai/glm-5.1",
     "zhipuai": { id: "glm-5.1", narrows: { context: 200000 } },
   },
   "zai/glm-5.2": {
@@ -833,13 +1278,16 @@ export const availability = {
     "scaleway": { id: "glm-5.2", narrows: { context: 256000 } },
     "siliconflow": "zai-org/GLM-5.2",
     "togetherai": { id: "zai-org/GLM-5.2", narrows: { context: 512000 } },
+    "vercel": "zai/glm-5.2",
     "zhipuai": "glm-5.2",
   },
   "zai/glm-5.2-fast": {
     "baseten": "zai-org/GLM-5.2-Fast",
+    "vercel": "zai/glm-5.2-fast",
   },
   "zai/glm-5v-turbo": {
     "openrouter": { id: "z-ai/glm-5v-turbo", narrows: { drops: ["pdf"] } },
+    "vercel": "zai/glm-5v-turbo",
     "zhipuai": "glm-5v-turbo",
   },
 } as const satisfies AvailabilityMap;

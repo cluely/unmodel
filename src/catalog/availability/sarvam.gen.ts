@@ -6,11 +6,11 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which providers serve longcat's chat models, and what each one calls
+ * Which providers serve sarvam's chat models, and what each one calls
  * them. Source model id → target provider id → the target's own id.
  *
- * longcat itself is always among the targets: a provider serves its own
- * models by definition, so the identity retarget `.toApi("longcat")` is
+ * sarvam itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("sarvam")` is
  * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
@@ -19,10 +19,12 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
-  "LongCat-2.0": {
-    "longcat": "LongCat-2.0",
-    "openrouter": "meituan/longcat-2.0",
+  "sarvam-105b": {
+    "sarvam": "sarvam-105b",
+  },
+  "sarvam-30b": {
+    "sarvam": "sarvam-30b",
   },
 } as const satisfies AvailabilityMap;
 
-export type LongcatAvailability = typeof availability;
+export type SarvamAvailability = typeof availability;

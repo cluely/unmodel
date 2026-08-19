@@ -20,7 +20,14 @@ import {
   realtimeSession,
   type OpenaiChatModelId,
 } from "../../src/providers/openai";
+import type { availability as openaiAvailability } from "../../src/catalog/availability/openai.gen";
+import type { ApiTargetsFor } from "../../src/retarget/ids";
 import { expectAssignable, expectTrue, type IsNever } from "./helpers";
+
+/** Exact type equality (invariant both ways), for asserting resolved unions. */
+type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+  ? true
+  : false;
 
 function chatTypeTests(): void {
   const validated = chat({
@@ -88,6 +95,27 @@ function chatTypeTests(): void {
   gpt.toApi("open-ai");
   const routed = gpt.toApiSafe("vercel");
   if (routed.ok) expectAssignable<"openai/gpt-5.4" | (string & {})>(routed.params.model);
+
+  // The home provider is in the union. `.toApi("openai")` on an OpenAI model
+  // is the identity retarget — the same wire body, the same URL — and leaving
+  // it out was a bug: `chat({ model: "gpt-5.2" }).toApi(` used to autocomplete
+  // "openrouter" | "vercel" only.
+  const gpt52 = chat({ model: "gpt-5.2", messages: [{ role: "user", content: "hi" }] });
+  const identity = gpt52.toApi("openai");
+  expectAssignable<"gpt-5.2" | (string & {})>(identity.model);
+  expectAssignable<"openai">(identity.target);
+  expectTrue<
+    Equals<ApiTargetsFor<typeof openaiAvailability, "gpt-5.2">, "openai" | "openrouter" | "vercel">
+  >();
+
+  // A model no other provider serves resolves to exactly its home provider —
+  // not to the permissive `StaticApiTargetId` arm, which offers 28 targets
+  // that every one fail at runtime.
+  const solo = chat({ model: "gpt-5.6", messages: [{ role: "user", content: "hi" }] });
+  solo.toApi("openai");
+  // @ts-expect-error openrouter does not serve gpt-5.6
+  solo.toApi("openrouter");
+  expectTrue<Equals<ApiTargetsFor<typeof openaiAvailability, "gpt-5.6">, "openai">>();
 
   // Model id autocomplete sanity: known catalog ids assign as literals...
   const known = chat({ model: "gpt-5.4-mini", messages: [{ role: "user", content: "hi" }] });

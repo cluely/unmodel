@@ -72,6 +72,13 @@ claude.toApi("openai");
 const viaOpenRouter = claude.toApi("openrouter");
 claude.toApi("vercel");
 
+// …and so does Anthropic itself. The home provider is always in the union —
+// it serves its own models by definition — so the identity retarget compiles
+// and returns the same wire body at the same URL.
+const viaAnthropic = claude.toApi("anthropic");
+expectTrue<Equals<typeof viaAnthropic.model, "claude-opus-5" | (string & {})>>();
+expectAssignable<"anthropic">(viaAnthropic.target);
+
 // Neither does a provider that serves no Claude at all, nor a typo.
 // @ts-expect-error — groq does not serve "claude-opus-5".
 claude.toApi("groq");
@@ -79,8 +86,14 @@ claude.toApi("groq");
 claude.toApi("open-ai");
 
 // The available set is exactly the static targets in the generated data
-// (amazon-bedrock is in the data but factory-configured, so it is filtered).
-expectTrue<Equals<ApiTargetsFor<AnthropicAvailability, "claude-opus-5">, "openrouter" | "vercel">>();
+// (amazon-bedrock is in the data but factory-configured, so it is filtered),
+// with the home provider among them.
+expectTrue<
+  Equals<
+    ApiTargetsFor<AnthropicAvailability, "claude-opus-5">,
+    "anthropic" | "openrouter" | "vercel"
+  >
+>();
 
 // ---------------------------------------------------------------------------
 // Factory providers are excluded from the one-arg union (design-types §5).

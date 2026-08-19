@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve moonshotai's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve moonshotai's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * moonshotai itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("moonshotai")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,19 +19,33 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "kimi-k2-0711-preview": {
+    "moonshotai": "kimi-k2-0711-preview",
+  },
+  "kimi-k2-0905-preview": {
+    "moonshotai": "kimi-k2-0905-preview",
+  },
   "kimi-k2-thinking": {
     "amazon-bedrock": { id: "moonshot.kimi-k2-thinking", narrows: { context: 262143 } },
     "google-vertex": { id: "moonshotai/kimi-k2-thinking-maas", endpoint: "google-vertex.chat" },
     "huggingface": "moonshotai/Kimi-K2-Thinking",
+    "moonshotai": "kimi-k2-thinking",
     "novita-ai": "moonshotai/kimi-k2-thinking",
     "openrouter": "moonshotai/kimi-k2-thinking",
     "vercel": { id: "moonshotai/kimi-k2-thinking", narrows: { context: 216144 } },
+  },
+  "kimi-k2-thinking-turbo": {
+    "moonshotai": "kimi-k2-thinking-turbo",
+  },
+  "kimi-k2-turbo-preview": {
+    "moonshotai": "kimi-k2-turbo-preview",
   },
   "kimi-k2.5": {
     "azure": { id: "kimi-k2.5", narrows: { drops: ["video"] } },
     "baseten": { id: "moonshotai/Kimi-K2.5", narrows: { context: 262000, drops: ["video"] } },
     "deepinfra": "moonshotai/Kimi-K2.5",
     "huggingface": "moonshotai/Kimi-K2.5",
+    "moonshotai": "kimi-k2.5",
     "nebius": { id: "moonshotai/Kimi-K2.5", narrows: { context: 256000, drops: ["video"] } },
     "novita-ai": "moonshotai/kimi-k2.5",
     "openrouter": { id: "moonshotai/kimi-k2.5", narrows: { drops: ["video"] } },
@@ -40,6 +58,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/moonshotai/kimi-k2.6", narrows: { drops: ["video"] } },
     "deepinfra": "moonshotai/Kimi-K2.6",
     "huggingface": "moonshotai/Kimi-K2.6",
+    "moonshotai": "kimi-k2.6",
     "novita-ai": "moonshotai/kimi-k2.6",
     "nvidia": "moonshotai/kimi-k2.6",
     "openrouter": { id: "moonshotai/kimi-k2.6", narrows: { drops: ["video"] } },
@@ -52,6 +71,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/moonshotai/kimi-k2.7-code", narrows: { drops: ["video"] } },
     "deepinfra": "moonshotai/Kimi-K2.7-Code",
     "huggingface": { id: "moonshotai/Kimi-K2.7-Code", narrows: { drops: ["video"] } },
+    "moonshotai": "kimi-k2.7-code",
     "nebius": { id: "moonshotai/Kimi-K2.7-Code", narrows: { drops: ["image", "video"] } },
     "novita-ai": "moonshotai/kimi-k2.7-code",
     "openrouter": { id: "moonshotai/kimi-k2.7-code", narrows: { drops: ["video"] } },
@@ -59,6 +79,7 @@ export const availability = {
     "vercel": { id: "moonshotai/kimi-k2.7-code", narrows: { context: 256000, drops: ["video"] } },
   },
   "kimi-k2.7-code-highspeed": {
+    "moonshotai": "kimi-k2.7-code-highspeed",
     "vercel": { id: "moonshotai/kimi-k2.7-code-highspeed", narrows: { drops: ["video"] } },
   },
   "kimi-k3": {
@@ -66,6 +87,7 @@ export const availability = {
     "deepinfra": { id: "moonshotai/Kimi-K3", narrows: { drops: ["video"] } },
     "fireworks-ai": { id: "accounts/fireworks/models/kimi-k3", narrows: { drops: ["video"] } },
     "huggingface": { id: "moonshotai/Kimi-K3", narrows: { context: 1000000, drops: ["video"] } },
+    "moonshotai": "kimi-k3",
     "nebius": { id: "moonshotai/Kimi-K3", narrows: { drops: ["image", "video"] } },
     "novita-ai": "moonshotai/kimi-k3",
     "openrouter": "moonshotai/kimi-k3",

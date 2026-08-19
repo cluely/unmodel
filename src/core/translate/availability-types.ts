@@ -2,8 +2,13 @@
  * The contract the generated cross-provider availability tables target.
  *
  * These tables answer one question without loading any other provider's
- * catalog: *"which other providers serve this model, and what do they call
- * it?"* Model ids are not normalized across providers — the same Claude is
+ * catalog: *"which providers serve this model, and what do they call it?"* The
+ * answer always includes the model's **home** provider as the identity target
+ * — it serves its own models by definition, so `.toApi(home)` is a valid,
+ * lossless retarget, and a model nobody else serves still gets a row rather
+ * than degrading to the permissive `StaticApiTargetId` union.
+ *
+ * Model ids are not normalized across providers — the same Claude is
  * `claude-opus-5` on anthropic, `anthropic/claude-opus-5` on openrouter,
  * `anthropic.claude-opus-5` on amazon-bedrock and `claude-opus-5@default` on
  * google-vertex — so the value must be the *target's* spelling, never a
@@ -12,7 +17,7 @@
  * One file per provider is generated into `src/catalog/availability/<id>.gen.ts`
  * with **no aggregator index**: an index would defeat the tree-shaking that
  * motivates the per-provider layout (a consumer of `unmodel/anthropic` pays
- * ~1.5 KB, not the ~288 KB of the whole fleet).
+ * ~4 KB, not the ~350 KB of the whole fleet).
  *
  * This module imports nothing from `src/providers/**` and must stay that way
  * (import-graph rule 1).

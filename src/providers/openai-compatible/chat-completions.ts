@@ -378,7 +378,7 @@ export interface ChatFinalizeSpec {
    * reach, as a plain object literal at the call site so a bundler sees
    * exactly which codecs the overlay needs.
    *
-   * Omitted on purpose for most of the fleet: 85.6% of the generated edges
+   * Omitted on purpose for most of the fleet: 92.2% of the generated edges
    * are openai-chat → openai-chat, which is a model-id respell plus a URL
    * swap and never touches the IR. Only the gateway overlays whose data
    * actually names a Gemini or Anthropic target (openrouter, vercel) pay for
@@ -397,7 +397,7 @@ export interface ChatFinalizeSpec {
  * supplies its availability table — `.toApi(provider)` / `.toApiSafe(provider)`.
  *
  * An openai-chat → openai-chat hop is a model-id respell plus a URL swap
- * (85.6% of all edges in the generated data, and the path that never touches
+ * (92.2% of all edges in the generated data, and the path that never touches
  * the IR). Cross-dialect hops go through `encodeOpenAIChat` and whichever
  * decoders the endpoint declared in `spec.decoders`; a target whose dialect
  * is not declared throws a `TranslationUnavailableError` naming the missing

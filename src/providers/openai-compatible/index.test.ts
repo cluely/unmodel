@@ -347,7 +347,7 @@ describe("createOpenAICompatible checkChat", () => {
 
 const availability = {
   "tiny-chat": {
-    // A same-dialect fleet hop — 84.8% of all edges in the generated data.
+    // A same-dialect fleet hop — 90.4% of all edges in the generated data.
     groq: "acme/tiny-chat",
     cerebras: { id: "tiny-chat", narrows: { context: 500, drops: ["image"] } },
     // Cross-dialect, and factory-configured: both must fail loudly rather
@@ -399,13 +399,14 @@ describe("createOpenAICompatible toApi", () => {
   test("generated narrows metadata becomes warnings, with no target catalog loaded", () => {
     const out = routed.chat(params).toApi("cerebras");
 
+    // cerebras spells this model exactly as acme does, so there is no
+    // `id_respelled` to record — only what the narrower target costs.
     expect(out.warnings.map((w) => w.code)).toEqual([
-      "id_respelled",
       "capability_narrowed",
       "capability_narrowed",
     ]);
-    expect(out.warnings[1]?.message).toContain("500-token context window");
-    expect(out.warnings[2]?.message).toContain("image");
+    expect(out.warnings[0]?.message).toContain("500-token context window");
+    expect(out.warnings[1]?.message).toContain("image");
   });
 
   test("leaves the source validation untouched", () => {

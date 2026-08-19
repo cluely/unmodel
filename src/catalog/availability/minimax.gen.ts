@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve minimax's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve minimax's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * minimax itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("minimax")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -18,6 +22,7 @@ export const availability = {
   "MiniMax-M2": {
     "amazon-bedrock": "minimax.minimax-m2",
     "huggingface": "MiniMaxAI/MiniMax-M2",
+    "minimax": "MiniMax-M2",
     "novita-ai": "minimax/minimax-m2",
     "openrouter": "minimax/minimax-m2",
     "vercel": "minimax/minimax-m2",
@@ -25,6 +30,7 @@ export const availability = {
   "MiniMax-M2.1": {
     "amazon-bedrock": "minimax.minimax-m2.1",
     "huggingface": "MiniMaxAI/MiniMax-M2.1",
+    "minimax": "MiniMax-M2.1",
     "novita-ai": "minimax/minimax-m2.1",
     "openrouter": "minimax/minimax-m2.1",
     "vercel": "minimax/minimax-m2.1",
@@ -35,6 +41,7 @@ export const availability = {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
     "friendli": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
     "huggingface": "MiniMaxAI/MiniMax-M2.5",
+    "minimax": "MiniMax-M2.5",
     "nebius": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
     "novita-ai": "minimax/minimax-m2.5",
     "openrouter": "minimax/minimax-m2.5",
@@ -42,12 +49,14 @@ export const availability = {
     "vercel": "minimax/minimax-m2.5",
   },
   "MiniMax-M2.5-highspeed": {
+    "minimax": "MiniMax-M2.5-highspeed",
     "novita-ai": "minimax/minimax-m2.5-highspeed",
     "vercel": "minimax/minimax-m2.5-highspeed",
   },
   "MiniMax-M2.7": {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M2.7", narrows: { context: 196608 } },
     "huggingface": "MiniMaxAI/MiniMax-M2.7",
+    "minimax": "MiniMax-M2.7",
     "novita-ai": "minimax/minimax-m2.7",
     "nvidia": "minimaxai/minimax-m2.7",
     "openrouter": "minimax/minimax-m2.7",
@@ -55,6 +64,7 @@ export const availability = {
     "vercel": "minimax/minimax-m2.7",
   },
   "MiniMax-M2.7-highspeed": {
+    "minimax": "MiniMax-M2.7-highspeed",
     "novita-ai": "minimax/minimax-m2.7-highspeed",
     "vercel": "minimax/minimax-m2.7-highspeed",
   },
@@ -62,6 +72,7 @@ export const availability = {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
     "fireworks-ai": { id: "accounts/fireworks/models/minimax-m3", narrows: { context: 512000 } },
     "huggingface": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288, drops: ["video"] } },
+    "minimax": "MiniMax-M3",
     "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image", "video"] } },
     "nvidia": "minimaxai/minimax-m3",
     "openrouter": "minimax/minimax-m3",

@@ -142,8 +142,8 @@ export interface OpenAICompatibleProvider<
    * enumerable properties are the exact fetch body; `.toSdk("openai")` returns
    * the wire body unchanged in shape (this dialect's SDK params are the OpenAI
    * SDK's), `.request` carries url/method/static headers, and — for overlays
-   * that pass an `availability` table — `.toApi(provider)` retargets to
-   * another provider that serves the same model.
+   * that pass an `availability` table — `.toApi(provider)` retargets to any
+   * provider that serves the same model, this one included (identity).
    */
   chat: OpenAICompatibleChat<ModelId, Avail>;
   /** {baseUrl}/chat/completions, or the configured `chatUrl` override verbatim. */

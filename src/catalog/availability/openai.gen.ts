@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve openai's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve openai's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * openai itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("openai")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,165 +19,221 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "chatgpt-image-latest": {
+    "openai": "chatgpt-image-latest",
+  },
   "gpt-3.5-turbo": {
+    "openai": "gpt-3.5-turbo",
     "openrouter": "openai/gpt-3.5-turbo",
     "vercel": "openai/gpt-3.5-turbo",
   },
   "gpt-4": {
+    "openai": "gpt-4",
     "openrouter": { id: "openai/gpt-4", narrows: { context: 8191 } },
   },
   "gpt-4-turbo": {
     "azure": "gpt-4-turbo",
+    "openai": "gpt-4-turbo",
     "openrouter": "openai/gpt-4-turbo",
     "vercel": "openai/gpt-4-turbo",
   },
   "gpt-4.1": {
     "azure": { id: "gpt-4.1", narrows: { drops: ["pdf"] } },
+    "openai": "gpt-4.1",
     "openrouter": "openai/gpt-4.1",
     "vercel": "openai/gpt-4.1",
   },
   "gpt-4.1-mini": {
     "azure": { id: "gpt-4.1-mini", narrows: { drops: ["pdf"] } },
+    "openai": "gpt-4.1-mini",
     "openrouter": "openai/gpt-4.1-mini",
     "vercel": "openai/gpt-4.1-mini",
   },
   "gpt-4.1-nano": {
     "azure": "gpt-4.1-nano",
+    "openai": "gpt-4.1-nano",
     "openrouter": "openai/gpt-4.1-nano",
     "vercel": "openai/gpt-4.1-nano",
   },
   "gpt-4o": {
     "azure": { id: "gpt-4o", narrows: { drops: ["pdf"] } },
+    "openai": "gpt-4o",
     "openrouter": "openai/gpt-4o",
     "vercel": "openai/gpt-4o",
   },
   "gpt-4o-2024-05-13": {
+    "openai": "gpt-4o-2024-05-13",
     "openrouter": "openai/gpt-4o-2024-05-13",
   },
   "gpt-4o-2024-08-06": {
+    "openai": "gpt-4o-2024-08-06",
     "openrouter": "openai/gpt-4o-2024-08-06",
   },
   "gpt-4o-2024-11-20": {
+    "openai": "gpt-4o-2024-11-20",
     "openrouter": "openai/gpt-4o-2024-11-20",
   },
   "gpt-4o-mini": {
     "azure": { id: "gpt-4o-mini", narrows: { drops: ["pdf"] } },
+    "openai": "gpt-4o-mini",
     "openrouter": "openai/gpt-4o-mini",
     "vercel": "openai/gpt-4o-mini",
   },
   "gpt-5": {
     "azure": "gpt-5",
+    "openai": "gpt-5",
     "openrouter": "openai/gpt-5",
     "vercel": "openai/gpt-5",
   },
   "gpt-5-mini": {
     "azure": "gpt-5-mini",
+    "openai": "gpt-5-mini",
     "openrouter": "openai/gpt-5-mini",
     "vercel": "openai/gpt-5-mini",
   },
   "gpt-5-nano": {
     "azure": "gpt-5-nano",
+    "openai": "gpt-5-nano",
     "openrouter": "openai/gpt-5-nano",
     "vercel": "openai/gpt-5-nano",
   },
   "gpt-5-pro": {
     "azure": "gpt-5-pro",
+    "openai": "gpt-5-pro",
     "openrouter": "openai/gpt-5-pro",
     "vercel": "openai/gpt-5-pro",
   },
   "gpt-5.1": {
     "azure": "gpt-5.1",
+    "openai": "gpt-5.1",
     "openrouter": "openai/gpt-5.1",
   },
   "gpt-5.2": {
     "azure": "gpt-5.2",
+    "openai": "gpt-5.2",
     "openrouter": "openai/gpt-5.2",
     "vercel": "openai/gpt-5.2",
   },
+  "gpt-5.2-chat-latest": {
+    "openai": "gpt-5.2-chat-latest",
+  },
   "gpt-5.2-pro": {
+    "openai": "gpt-5.2-pro",
     "openrouter": "openai/gpt-5.2-pro",
+  },
+  "gpt-5.3-chat-latest": {
+    "openai": "gpt-5.3-chat-latest",
   },
   "gpt-5.3-codex": {
     "azure": { id: "gpt-5.3-codex", narrows: { drops: ["pdf"] } },
+    "openai": "gpt-5.3-codex",
     "openrouter": "openai/gpt-5.3-codex",
     "vercel": "openai/gpt-5.3-codex",
+  },
+  "gpt-5.3-codex-spark": {
+    "openai": "gpt-5.3-codex-spark",
   },
   "gpt-5.4": {
     "amazon-bedrock": { id: "openai.gpt-5.4", narrows: { context: 272000 } },
     "azure": "gpt-5.4",
+    "openai": "gpt-5.4",
     "openrouter": "openai/gpt-5.4",
     "vercel": "openai/gpt-5.4",
   },
   "gpt-5.4-mini": {
     "azure": "gpt-5.4-mini",
+    "openai": "gpt-5.4-mini",
     "openrouter": "openai/gpt-5.4-mini",
     "vercel": "openai/gpt-5.4-mini",
   },
   "gpt-5.4-nano": {
     "azure": "gpt-5.4-nano",
+    "openai": "gpt-5.4-nano",
     "openrouter": "openai/gpt-5.4-nano",
     "vercel": "openai/gpt-5.4-nano",
   },
   "gpt-5.4-pro": {
     "azure": "gpt-5.4-pro",
+    "openai": "gpt-5.4-pro",
     "openrouter": "openai/gpt-5.4-pro",
     "vercel": "openai/gpt-5.4-pro",
   },
   "gpt-5.5": {
     "amazon-bedrock": { id: "openai.gpt-5.5", narrows: { context: 272000 } },
     "azure": "gpt-5.5",
+    "openai": "gpt-5.5",
     "openrouter": "openai/gpt-5.5",
     "vercel": { id: "openai/gpt-5.5", narrows: { context: 1000000 } },
   },
   "gpt-5.5-pro": {
+    "openai": "gpt-5.5-pro",
     "openrouter": "openai/gpt-5.5-pro",
     "vercel": { id: "openai/gpt-5.5-pro", narrows: { context: 1000000 } },
+  },
+  "gpt-5.6": {
+    "openai": "gpt-5.6",
   },
   "gpt-5.6-luna": {
     "amazon-bedrock": "openai.gpt-5.6-luna",
     "azure": "gpt-5.6-luna",
+    "openai": "gpt-5.6-luna",
     "openrouter": "openai/gpt-5.6-luna",
     "vercel": "openai/gpt-5.6-luna",
   },
   "gpt-5.6-sol": {
     "amazon-bedrock": "openai.gpt-5.6-sol",
     "azure": "gpt-5.6-sol",
+    "openai": "gpt-5.6-sol",
     "openrouter": "openai/gpt-5.6-sol",
     "vercel": "openai/gpt-5.6-sol",
   },
   "gpt-5.6-terra": {
     "amazon-bedrock": "openai.gpt-5.6-terra",
     "azure": "gpt-5.6-terra",
+    "openai": "gpt-5.6-terra",
     "openrouter": "openai/gpt-5.6-terra",
     "vercel": "openai/gpt-5.6-terra",
   },
+  "gpt-image-1-mini": {
+    "openai": "gpt-image-1-mini",
+  },
   "gpt-image-1.5": {
     "azure": "gpt-image-1.5",
+    "openai": "gpt-image-1.5",
+  },
+  "gpt-realtime-2.1": {
+    "openai": "gpt-realtime-2.1",
   },
   "o1": {
     "azure": { id: "o1", narrows: { drops: ["pdf"] } },
+    "openai": "o1",
     "openrouter": "openai/o1",
     "vercel": "openai/o1",
   },
   "o1-pro": {
+    "openai": "o1-pro",
     "openrouter": "openai/o1-pro",
   },
   "o3": {
     "azure": { id: "o3", narrows: { drops: ["pdf"] } },
+    "openai": "o3",
     "openrouter": "openai/o3",
     "vercel": "openai/o3",
   },
   "o3-mini": {
     "azure": "o3-mini",
+    "openai": "o3-mini",
     "openrouter": "openai/o3-mini",
     "vercel": "openai/o3-mini",
   },
   "o3-pro": {
+    "openai": "o3-pro",
     "openrouter": "openai/o3-pro",
     "vercel": "openai/o3-pro",
   },
   "o4-mini": {
     "azure": "o4-mini",
+    "openai": "o4-mini",
     "openrouter": "openai/o4-mini",
     "vercel": "openai/o4-mini",
   },

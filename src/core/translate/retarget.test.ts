@@ -70,7 +70,7 @@ function validate(
 
 // ---------------------------------------------------------------------------
 
-describe("same-dialect retarget (the 85.6% path)", () => {
+describe("same-dialect retarget (the 92.2% path)", () => {
   test("respells the model id and swaps the URL", () => {
     const out = validate(BODY).toApi("openrouter");
 
@@ -158,7 +158,7 @@ describe("the retargeted result", () => {
 });
 
 describe("translation warnings", () => {
-  test("always records the model-id respelling as an audit trail", () => {
+  test("records the model-id respelling as an audit trail", () => {
     const out = validate(BODY).toApi("openrouter") as unknown as {
       warnings: Array<{ code: string; from: string; to: string; message: string }>;
     };
@@ -216,6 +216,82 @@ describe("availability guard", () => {
 
   test("an unknown target provider is a TypeError-grade wiring mistake", () => {
     expect(() => validate(BODY).toApi("not-a-provider")).toThrow(TranslationUnavailableError);
+  });
+});
+
+/**
+ * **The home provider is always a valid target.**
+ *
+ * `groq.chat` serves groq's models by definition, so `.toApi("groq")` is the
+ * identity retarget: same body, same URL, nothing lost. Codegen puts an
+ * identity entry on every generated row, and the engine additionally falls
+ * back to it for models the table has never heard of — a release newer than
+ * the committed snapshot must not be told its own provider does not serve it.
+ */
+describe("identity retarget to the home provider", () => {
+  const WITH_SELF = {
+    "gpt-oss-120b": {
+      groq: "openai/gpt-oss-120b",
+      openrouter: "openai/gpt-oss-120b",
+    },
+  } as const satisfies AvailabilityMap;
+
+  const HOME_BODY: ChatBody = {
+    model: "openai/gpt-oss-120b",
+    messages: [{ role: "user", content: "hi" }],
+    temperature: 0.4,
+  };
+
+  test("a row with an identity entry returns the body unchanged, at the home URL", () => {
+    const out = validate({ ...HOME_BODY, model: "gpt-oss-120b" }, { availability: WITH_SELF }).toApi(
+      "groq",
+    );
+
+    expect(out).toEqual({
+      model: "openai/gpt-oss-120b",
+      messages: [{ role: "user", content: "hi" }],
+      temperature: 0.4,
+    });
+    expect((out as { request: RequestMeta }).request.url).toBe(
+      "https://api.groq.com/openai/v1/chat/completions",
+    );
+    expect((out as unknown as { target: string }).target).toBe("groq");
+  });
+
+  test("an identical spelling emits no id_respelled warning", () => {
+    // The row's identity entry spells the model exactly as the source does, so
+    // there is nothing to audit — `warnings` is the inventory of what the
+    // translation cost, and this one cost nothing.
+    const out = validate(HOME_BODY, { availability: WITH_SELF }).toApi("groq") as unknown as {
+      warnings: unknown[];
+    };
+
+    expect(out.warnings).toEqual([]);
+  });
+
+  test("a model absent from the table still retargets home, via the identity fallback", () => {
+    // The catalog lags; the provider does not. This is the model the user just
+    // validated against groq, so groq serves it whatever the table knows.
+    const out = validate({ ...HOME_BODY, model: "gpt-oss-future-99" }).toApi(
+      "groq",
+    ) as unknown as {
+      model: string;
+      request: RequestMeta;
+      warnings: unknown[];
+      target: string;
+    };
+
+    expect(out.model).toBe("gpt-oss-future-99");
+    expect(out.request.url).toBe("https://api.groq.com/openai/v1/chat/completions");
+    expect(out.warnings).toEqual([]);
+    expect(out.target).toBe("groq");
+  });
+
+  test("the fallback is home-only — another provider absent from the table still fails", () => {
+    const result = validate({ ...HOME_BODY, model: "gpt-oss-future-99" }).toApiSafe("openrouter");
+
+    expect(result.ok).toBe(false);
+    expect((result.errors?.[0] as { message: string }).message).toContain("is not served by");
   });
 });
 

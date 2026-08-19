@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve siliconflow's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve siliconflow's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * siliconflow itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("siliconflow")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -17,15 +21,61 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
 export const availability = {
   "ByteDance-Seed/Seed-OSS-36B-Instruct": {
     "nvidia": "bytedance/seed-oss-36b-instruct",
+    "siliconflow": "ByteDance-Seed/Seed-OSS-36B-Instruct",
+  },
+  "MiniMaxAI/MiniMax-M2.5": {
+    "siliconflow": "MiniMaxAI/MiniMax-M2.5",
+  },
+  "Qwen/Qwen2.5-72B-Instruct": {
+    "siliconflow": "Qwen/Qwen2.5-72B-Instruct",
+  },
+  "Qwen/Qwen2.5-7B-Instruct": {
+    "siliconflow": "Qwen/Qwen2.5-7B-Instruct",
+  },
+  "Qwen/Qwen3-14B": {
+    "siliconflow": "Qwen/Qwen3-14B",
+  },
+  "Qwen/Qwen3-235B-A22B-Thinking-2507": {
+    "siliconflow": "Qwen/Qwen3-235B-A22B-Thinking-2507",
+  },
+  "Qwen/Qwen3-30B-A3B-Instruct-2507": {
+    "siliconflow": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  },
+  "Qwen/Qwen3-32B": {
+    "siliconflow": "Qwen/Qwen3-32B",
+  },
+  "Qwen/Qwen3-8B": {
+    "siliconflow": "Qwen/Qwen3-8B",
+  },
+  "Qwen/Qwen3-Coder-30B-A3B-Instruct": {
+    "siliconflow": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+  },
+  "Qwen/Qwen3-Coder-480B-A35B-Instruct": {
+    "siliconflow": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+  },
+  "Qwen/Qwen3-VL-235B-A22B-Instruct": {
+    "siliconflow": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+  },
+  "Qwen/Qwen3-VL-235B-A22B-Thinking": {
+    "siliconflow": "Qwen/Qwen3-VL-235B-A22B-Thinking",
   },
   "Qwen/Qwen3-VL-30B-A3B-Instruct": {
     "novita-ai": { id: "qwen/qwen3-vl-30b-a3b-instruct", narrows: { context: 131072 } },
+    "siliconflow": "Qwen/Qwen3-VL-30B-A3B-Instruct",
   },
   "Qwen/Qwen3-VL-30B-A3B-Thinking": {
     "novita-ai": { id: "qwen/qwen3-vl-30b-a3b-thinking", narrows: { context: 131072 } },
+    "siliconflow": "Qwen/Qwen3-VL-30B-A3B-Thinking",
+  },
+  "Qwen/Qwen3-VL-32B-Instruct": {
+    "siliconflow": "Qwen/Qwen3-VL-32B-Instruct",
+  },
+  "Qwen/Qwen3-VL-32B-Thinking": {
+    "siliconflow": "Qwen/Qwen3-VL-32B-Thinking",
   },
   "Qwen/Qwen3-VL-8B-Instruct": {
     "novita-ai": { id: "qwen/qwen3-vl-8b-instruct", narrows: { context: 131072 } },
+    "siliconflow": "Qwen/Qwen3-VL-8B-Instruct",
   },
   "Qwen/Qwen3.5-122B-A10B": {
     "alibaba": "qwen3.5-122b-a10b",
@@ -34,6 +84,7 @@ export const availability = {
     "novita-ai": "qwen/qwen3.5-122b-a10b",
     "nvidia": "qwen/qwen3.5-122b-a10b",
     "openrouter": "qwen/qwen3.5-122b-a10b",
+    "siliconflow": "Qwen/Qwen3.5-122B-A10B",
   },
   "Qwen/Qwen3.5-27B": {
     "alibaba": "qwen3.5-27b",
@@ -41,6 +92,7 @@ export const availability = {
     "huggingface": "Qwen/Qwen3.5-27B",
     "novita-ai": "qwen/qwen3.5-27b",
     "openrouter": "qwen/qwen3.5-27b",
+    "siliconflow": "Qwen/Qwen3.5-27B",
   },
   "Qwen/Qwen3.5-35B-A3B": {
     "alibaba": "qwen3.5-35b-a3b",
@@ -48,6 +100,7 @@ export const availability = {
     "huggingface": "Qwen/Qwen3.5-35B-A3B",
     "novita-ai": "qwen/qwen3.5-35b-a3b",
     "openrouter": "qwen/qwen3.5-35b-a3b",
+    "siliconflow": "Qwen/Qwen3.5-35B-A3B",
   },
   "Qwen/Qwen3.5-397B-A17B": {
     "alibaba": "qwen3.5-397b-a17b",
@@ -58,7 +111,11 @@ export const availability = {
     "nvidia": "qwen/qwen3.5-397b-a17b",
     "openrouter": "qwen/qwen3.5-397b-a17b",
     "scaleway": { id: "qwen3.5-397b-a17b", narrows: { context: 256000 } },
+    "siliconflow": "Qwen/Qwen3.5-397B-A17B",
     "togetherai": "Qwen/Qwen3.5-397B-A17B",
+  },
+  "Qwen/Qwen3.5-9B": {
+    "siliconflow": "Qwen/Qwen3.5-9B",
   },
   "Qwen/Qwen3.6-27B": {
     "alibaba": "qwen3.6-27b",
@@ -66,6 +123,7 @@ export const availability = {
     "groq": { id: "qwen/qwen3.6-27b", narrows: { context: 131072 } },
     "huggingface": "Qwen/Qwen3.6-27B",
     "openrouter": "qwen/qwen3.6-27b",
+    "siliconflow": "Qwen/Qwen3.6-27B",
     "vercel": { id: "alibaba/qwen3.6-27b", narrows: { context: 256000 } },
   },
   "Qwen/Qwen3.6-35B-A3B": {
@@ -74,6 +132,28 @@ export const availability = {
     "huggingface": "Qwen/Qwen3.6-35B-A3B",
     "openrouter": "qwen/qwen3.6-35b-a3b",
     "scaleway": { id: "qwen3.6-35b-a3b", narrows: { context: 128000 } },
+    "siliconflow": "Qwen/Qwen3.6-35B-A3B",
+  },
+  "baidu/ERNIE-4.5-300B-A47B": {
+    "siliconflow": "baidu/ERNIE-4.5-300B-A47B",
+  },
+  "deepseek-ai/DeepSeek-R1": {
+    "siliconflow": "deepseek-ai/DeepSeek-R1",
+  },
+  "deepseek-ai/DeepSeek-V3": {
+    "siliconflow": "deepseek-ai/DeepSeek-V3",
+  },
+  "deepseek-ai/DeepSeek-V3.1": {
+    "siliconflow": "deepseek-ai/DeepSeek-V3.1",
+  },
+  "deepseek-ai/DeepSeek-V3.1-Terminus": {
+    "siliconflow": "deepseek-ai/DeepSeek-V3.1-Terminus",
+  },
+  "deepseek-ai/DeepSeek-V3.2": {
+    "siliconflow": "deepseek-ai/DeepSeek-V3.2",
+  },
+  "deepseek-ai/DeepSeek-V3.2-Exp": {
+    "siliconflow": "deepseek-ai/DeepSeek-V3.2-Exp",
   },
   "deepseek-ai/DeepSeek-V4-Flash": {
     "azure": "deepseek-v4-flash",
@@ -85,6 +165,7 @@ export const availability = {
     "novita-ai": "deepseek/deepseek-v4-flash",
     "nvidia": "deepseek-ai/deepseek-v4-flash",
     "openrouter": "deepseek/deepseek-v4-flash",
+    "siliconflow": "deepseek-ai/DeepSeek-V4-Flash",
     "vercel": "deepseek/deepseek-v4-flash",
   },
   "deepseek-ai/DeepSeek-V4-Pro": {
@@ -98,6 +179,7 @@ export const availability = {
     "novita-ai": "deepseek/deepseek-v4-pro",
     "nvidia": "deepseek-ai/deepseek-v4-pro",
     "openrouter": "deepseek/deepseek-v4-pro",
+    "siliconflow": "deepseek-ai/DeepSeek-V4-Pro",
     "togetherai": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 512000 } },
     "vercel": "deepseek/deepseek-v4-pro",
   },
@@ -108,6 +190,7 @@ export const availability = {
     "huggingface": "google/gemma-4-26B-A4B-it",
     "openrouter": "google/gemma-4-26b-a4b-it",
     "scaleway": { id: "gemma-4-26b-a4b-it", narrows: { context: 256000 } },
+    "siliconflow": "google/gemma-4-26B-A4B-it",
     "vercel": "google/gemma-4-26b-a4b-it",
   },
   "google/gemma-4-31B-it": {
@@ -117,13 +200,43 @@ export const availability = {
     "huggingface": "google/gemma-4-31B-it",
     "nvidia": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
     "openrouter": "google/gemma-4-31b-it",
+    "siliconflow": "google/gemma-4-31B-it",
     "vercel": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
+  },
+  "inclusionAI/Ling-flash-2.0": {
+    "siliconflow": "inclusionAI/Ling-flash-2.0",
+  },
+  "moonshotai/Kimi-K2.5": {
+    "siliconflow": "moonshotai/Kimi-K2.5",
+  },
+  "moonshotai/Kimi-K2.6": {
+    "siliconflow": "moonshotai/Kimi-K2.6",
   },
   "openai/gpt-oss-120b": {
     "novita-ai": "openai/gpt-oss-120b",
+    "siliconflow": "openai/gpt-oss-120b",
+  },
+  "openai/gpt-oss-20b": {
+    "siliconflow": "openai/gpt-oss-20b",
+  },
+  "stepfun-ai/Step-3.5-Flash": {
+    "siliconflow": "stepfun-ai/Step-3.5-Flash",
+  },
+  "tencent/Hunyuan-A13B-Instruct": {
+    "siliconflow": "tencent/Hunyuan-A13B-Instruct",
   },
   "tencent/Hy3-preview": {
     "openrouter": "tencent/hy3-preview",
+    "siliconflow": "tencent/Hy3-preview",
+  },
+  "zai-org/GLM-4.5-Air": {
+    "siliconflow": "zai-org/GLM-4.5-Air",
+  },
+  "zai-org/GLM-5": {
+    "siliconflow": "zai-org/GLM-5",
+  },
+  "zai-org/GLM-5.1": {
+    "siliconflow": "zai-org/GLM-5.1",
   },
   "zai-org/GLM-5.2": {
     "alibaba": { id: "glm-5.2", narrows: { context: 1000000 } },
@@ -137,9 +250,13 @@ export const availability = {
     "nvidia": { id: "z-ai/glm-5.2", narrows: { context: 1000000 } },
     "openrouter": { id: "z-ai/glm-5.2", narrows: { context: 1048576 } },
     "scaleway": { id: "glm-5.2", narrows: { context: 256000 } },
+    "siliconflow": "zai-org/GLM-5.2",
     "togetherai": { id: "zai-org/GLM-5.2", narrows: { context: 512000 } },
     "vercel": { id: "zai/glm-5.2", narrows: { context: 1000000 } },
     "zhipuai": { id: "glm-5.2", narrows: { context: 1000000 } },
+  },
+  "zai-org/GLM-5V-Turbo": {
+    "siliconflow": "zai-org/GLM-5V-Turbo",
   },
 } as const satisfies AvailabilityMap;
 

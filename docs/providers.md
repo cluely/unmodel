@@ -166,10 +166,22 @@ Scope is the 36 chat-validating providers listed explicitly in
 rather than a silent 404, plus a `targetOnly` list for providers that are reachable as
 *destinations* but get no source table of their own.
 
-33 files are emitted. `sarvam` has no edges at all; `amazon-bedrock` and `azure` are
-`targetOnly` (they are endpoint factories — see below — so their modules wire no `api:`,
-and a source table for them would be generated code with no importer). The one-importer
-rule is asserted by `test/import-graph.test.ts`.
+34 files are emitted — one per in-scope provider except `amazon-bedrock` and `azure`,
+which are `targetOnly` (they are endpoint factories — see below — so their modules wire
+no `api:`, and a source table for them would be generated code with no importer). The
+one-importer rule is asserted by `test/import-graph.test.ts`.
+
+**Every row carries its own provider as a target.** A provider serves its own models by
+definition, so `.toApi("openai")` on an OpenAI model is a valid — and lossless, no-op —
+retarget, which is what makes a provider-generic call site writable. It also means every
+in-scope chat row gets an entry, not only the rows in multi-provider groups: a model
+nobody else serves resolves to a union of exactly its home provider rather than falling
+through to the permissive `StaticApiTargetId` arm (28 targets that all fail at runtime).
+That is why `sarvam`, whose models no other in-scope provider serves, has a table at all,
+and why the tables grew from ~288 KiB to ~350 KiB. Identity entries never carry `narrows`
+(a model does not narrow against itself) and are suppressed by a `deny` pair that matches
+the row on both halves — which is how google-vertex's Claude rows, whose `rawPredict`
+surface unmodel has no module for, stay out of the data entirely.
 
 Two normalizations are worth naming because they are where merges are won or lost. The
 id half collapses **digit-dot-digit version separators** (`anthropic/claude-haiku-4.5` ≡
@@ -250,6 +262,6 @@ same `buildAvailability` machinery consumes it unchanged.
    and nothing else of theirs, which is what keeps `unmodel/anthropic` from pulling
    OpenRouter's schema, constraints or catalog. `test/import-graph.test.ts` enforces these
    rules over every import specifier in `src/`, because a single stray barrel import would
-   quietly multiply a provider's bundle. Measured, this costs little: 85.6% of retarget
+   quietly multiply a provider's bundle. Measured, this costs little: 90.4% of retarget
    edges are OpenAI-compatible → OpenAI-compatible and skip the IR entirely (id respell +
    URL swap), so only the cross-dialect endpoints pay for a codec at all.

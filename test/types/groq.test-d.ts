@@ -73,7 +73,7 @@ function groqChatTypeTests(): void {
   // @ts-expect-error the fleet's SDK shape is OpenAI's, not a per-overlay id
   v.toSdk("groq");
 
-  // `.toApi(provider)`: the same-dialect fleet hop, which is 84.8% of every
+  // `.toApi(provider)`: the same-dialect fleet hop, which is 90.4% of every
   // retarget edge in the generated data. The union comes from groq's own
   // availability table, so it is exactly the providers that serve THIS model.
   const oss = chat({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: "hi" }] });
@@ -113,8 +113,12 @@ function groqChatTypeTests(): void {
 
   // @ts-expect-error a retargeted result has no `.toApi` — one hop only
   viaCerebras.toApi("openrouter");
-  // @ts-expect-error groq is the source; its own table never names it
-  oss.toApi("groq");
+  // groq is the source, and it is a valid target too: a provider serves its
+  // own models, so this is the identity retarget — the same body at the same
+  // URL, which is what lets a provider-generic call site pass any target.
+  const viaGroq = oss.toApi("groq");
+  expectAssignable<"openai/gpt-oss-120b" | (string & {})>(viaGroq.model);
+  expectAssignable<"groq">(viaGroq.target);
   // @ts-expect-error anthropic does not serve gpt-oss
   oss.toApi("anthropic");
   // @ts-expect-error amazon-bedrock serves it, but needs a region `.toApi` never got
@@ -126,8 +130,10 @@ function groqChatTypeTests(): void {
 
   // A model the availability table has not caught up on degrades to the
   // permissive arm — runtime-checked, because an unknown model is a warning
-  // everywhere else in this library, not an error.
-  const unlisted = chat({ model: "llama-3.3-70b-versatile", messages: [] as never });
+  // everywhere else in this library, not an error. (Every model in groq's
+  // *catalog* is in its availability table now, since each carries at least
+  // its own identity target, so this has to be a genuinely future id.)
+  const unlisted = chat({ model: "llama-4.9-99b-future", messages: [] as never });
   unlisted.toApi("openrouter");
   // …but still not a factory target, and still not a made-up id.
   // @ts-expect-error factory targets stay out of the one-arg union

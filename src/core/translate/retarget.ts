@@ -9,11 +9,12 @@
  * the dialect codecs) arrives through the spec.
  *
  * Two paths, and the split is the whole performance story. Measured over the
- * generated availability data, **85.6% of directed edges never change dialect**
- * (3414/4026 are openai-chat → openai-chat, 34 more gemini → gemini). Those
- * take `retargetSameDialect`: respell the model id, swap the URL and headers,
+ * generated availability data, **92.2% of directed edges never change dialect**
+ * (4602/5088 are openai-chat → openai-chat, 74 more gemini → gemini; the
+ * identity edge every row now carries is same-dialect by construction). Those
+ * take the same-dialect path: respell the model id, swap the URL and headers,
  * re-validate. They never touch the IR, so they carry no round-trip risk at
- * all. Only the remaining ~15% pay for an encode/decode pair.
+ * all. Only the remaining ~8% pay for an encode/decode pair.
  */
 import type { ZodType } from "zod";
 import type { Issue, IssueSeverity } from "../issues";
@@ -288,6 +289,13 @@ function unavailableIssue(
 export function createToApi<Body extends object, IR = unknown>(
   spec: RetargetSpec<Body, IR>,
 ): (body: Body) => ApiRetargeter {
+  /**
+   * The provider this endpoint belongs to, read off its id
+   * (`"anthropic.messages"` → `"anthropic"`). Provider ids never contain a
+   * dot; endpoint ids always do.
+   */
+  const homeProvider = spec.endpoint.slice(0, spec.endpoint.indexOf("."));
+
   return (body) => (target) => {
     const modelId = spec.modelId(body);
     const sourceEntry =
@@ -320,7 +328,25 @@ export function createToApi<Body extends object, IR = unknown>(
       );
     }
 
-    if (entry === undefined) {
+    /**
+     * **Home is always a valid target, by definition.** An endpoint's own
+     * provider serves the model the caller just validated against it, whatever
+     * the generated catalog does or does not know — so a model released after
+     * the committed models.dev snapshot still retargets home, as the identity
+     * hop, instead of being told its home provider does not serve it.
+     *
+     * Scoped to models with no row in the table at all: codegen emits an
+     * identity entry for every in-scope row, so a row that *is* present and
+     * still omits its home provider means a hand-written or stale table, and
+     * the normal availability error is the honest answer there.
+     */
+    const resolved: AvailabilityTarget | undefined =
+      entry ??
+      (sourceEntry === undefined && modelId !== undefined && endpoint.provider === homeProvider
+        ? { id: modelId }
+        : undefined);
+
+    if (resolved === undefined) {
       const known = sourceEntry === undefined ? undefined : Object.keys(sourceEntry);
       return {
         route,
@@ -329,20 +355,27 @@ export function createToApi<Body extends object, IR = unknown>(
     }
 
     const sink = createWarningSink(spec.endpoint, endpoint.id);
-    sink.push({
-      code: "id_respelled",
-      path: ["model"],
-      message: `"${modelId}" is spelled "${entry.id}" on ${target}; the retargeted body carries the target's id.`,
-      meta: { from: modelId, to: entry.id },
-    });
+    // Only an actual respelling is worth auditing. The identity retarget and
+    // the (rarer) cross-provider hop where both providers happen to spell the
+    // model the same way change nothing about `model`, so a warning there
+    // would be noise in a list whose whole contract is "everything here is
+    // something the translation cost you".
+    if (resolved.id !== modelId) {
+      sink.push({
+        code: "id_respelled",
+        path: ["model"],
+        message: `"${modelId}" is spelled "${resolved.id}" on ${target}; the retargeted body carries the target's id.`,
+        meta: { from: modelId, to: resolved.id },
+      });
+    }
 
     let out: object;
     if (endpoint.dialect === spec.from) {
-      // The 85.6% path: no IR, no codec, no round-trip risk.
+      // The 92.2% path: no IR, no codec, no round-trip risk.
       out =
         spec.withModelId !== undefined
-          ? spec.withModelId(body, entry.id)
-          : { ...body, model: entry.id };
+          ? spec.withModelId(body, resolved.id)
+          : { ...body, model: resolved.id };
     } else {
       const decode = spec.decoders?.[endpoint.dialect];
       if (spec.encode === undefined || decode === undefined) {
@@ -354,16 +387,16 @@ export function createToApi<Body extends object, IR = unknown>(
         );
       }
       out = decode(spec.encode(body, sink.warn), sink.warn, {
-        targetModelId: entry.id,
+        targetModelId: resolved.id,
         provider: endpoint.provider,
         endpoint: endpoint.id,
-        ...(entry.narrows !== undefined && { narrows: entry.narrows }),
+        ...(resolved.narrows !== undefined && { narrows: resolved.narrows }),
       });
     }
 
-    pushNarrowingWarnings(entry, target, sink.push);
+    pushNarrowingWarnings(resolved, target, sink.push);
 
-    const url = endpointUrl(endpoint, entry.id);
+    const url = endpointUrl(endpoint, resolved.id);
     // Belt and braces: `isFactoryEndpoint` already rejected every entry the
     // table declares without a URL, so this only fires if the two fall out of
     // sync — better a named error than `undefined` in a fetch call.
@@ -382,12 +415,12 @@ export function createToApi<Body extends object, IR = unknown>(
     const issues: Issue[] = [];
     const validation = spec.targetValidation?.(endpoint);
     checkSchema(validation?.schema, out, issues);
-    checkConstraints(validation?.constraints, out, entry.id, issues);
+    checkConstraints(validation?.constraints, out, resolved.id, issues);
     const errors = issues.filter((issue) => issue.severity === "error");
     const warnings = issues.filter((issue) => issue.severity === "warning");
     if (errors.length > 0) return { route, result: { ok: false, errors, warnings } };
 
-    const sdk = (spec.sdkFor ?? defaultSdkFor)(endpoint, out, entry.id);
+    const sdk = (spec.sdkFor ?? defaultSdkFor)(endpoint, out, resolved.id);
     const validated = toValidated(out, request, { sdk });
     const params = attachWarnings(validated as object, sink.warnings);
     // Which provider this became, for logging and for narrowing on the result.

@@ -565,18 +565,55 @@ export function buildAvailability(snapshot: unknown, overrides: unknown): Availa
     );
 
   // --- emit ----------------------------------------------------------------
+  //
+  // One entry per in-scope chat row of every non-targetOnly provider — *not*
+  // only the rows in multi-provider groups — and every entry starts with the
+  // **identity target**: the row's own provider.
+  //
+  // A provider serves its own models by definition, so `.toApi("openai")` on
+  // an OpenAI model is a legitimate (lossless, no-op) retarget, and it is what
+  // makes provider-generic call sites writable. Omitting it cost twice: the
+  // autocomplete union for `gpt-5.2` offered "openrouter" | "vercel" but not
+  // the home provider, and a model nobody else serves had no row at all, so
+  // its union degraded to the permissive `StaticApiTargetId` arm — 28 targets
+  // that every one fail at runtime.
   type MutableMap = Record<string, Record<string, AvailabilityEntry>>;
   const out = new Map<string, MutableMap>();
+
+  // Diagnostic only, and still counted over *groups*: it measures how many
+  // models more than one provider serves, which self-entries do not change.
   let multiProviderGroups = 0;
   for (const members of groups.values()) {
-    if (new Set(members.map((r) => r.provider)).size < 2) continue;
-    multiProviderGroups += 1;
+    if (new Set(members.map((r) => r.provider)).size >= 2) multiProviderGroups += 1;
+  }
 
-    for (const source of members) {
-      // Target-only providers stay reachable as destinations (below) but get
-      // no source table of their own — nothing would import it.
-      if (targetOnly.has(source.provider)) continue;
-      const targets: Record<string, AvailabilityEntry> = {};
+  for (const source of rows) {
+    // Target-only providers stay reachable as destinations (below) but get
+    // no source table of their own — nothing would import it.
+    if (targetOnly.has(source.provider)) continue;
+
+    const entries = new Map<string, AvailabilityEntry>();
+
+    // The identity target. It needs no group and no catalog corroboration —
+    // the row *is* the evidence — and `narrows` is meaningless against
+    // itself, so a self-entry never carries any.
+    //
+    // It does still pass through `isDenied`: a deny pair whose two halves both
+    // match this one row is the overrides file saying this row's wire surface
+    // must not ship at all (google-vertex's Claude rows sit on an
+    // Anthropic-shaped `rawPredict` surface unmodel has no module for), and
+    // that has to hold for the identity edge too — otherwise codegen emits an
+    // endpoint id `src/core/translate/endpoints.ts` cannot resolve.
+    if (!isDenied(source, source)) {
+      const endpoint = endpointOf(source.provider, source.id);
+      entries.set(
+        source.provider,
+        endpoint === defaultEndpointOf(source.provider) ? source.id : { id: source.id, endpoint },
+      );
+    }
+
+    const members = groups.get(find(source.key)) ?? [];
+    if (new Set(members.map((r) => r.provider)).size > 1) {
       const candidatesByProvider = new Map<string, Row[]>();
       for (const candidate of members) {
         if (candidate.provider === source.provider) continue;
@@ -585,25 +622,37 @@ export function buildAvailability(snapshot: unknown, overrides: unknown): Availa
         if (list === undefined) candidatesByProvider.set(candidate.provider, [candidate]);
         else list.push(candidate);
       }
-      for (const targetProvider of [...candidatesByProvider.keys()].sort(compare)) {
+      for (const targetProvider of candidatesByProvider.keys()) {
         const target = pickCanonical(candidatesByProvider.get(targetProvider)!);
         if (target === undefined) continue;
         const endpoint = endpointOf(target.provider, target.id);
         const narrows = narrowsFor(source, target);
-        targets[targetProvider] =
+        entries.set(
+          targetProvider,
           endpoint === defaultEndpointOf(target.provider) && narrows === undefined
             ? target.id
             : {
                 id: target.id,
                 ...(endpoint === defaultEndpointOf(target.provider) ? {} : { endpoint }),
                 ...(narrows === undefined ? {} : { narrows }),
-              };
+              },
+        );
       }
-      if (Object.keys(targets).length === 0) continue;
-      const existing = out.get(source.provider);
-      if (existing === undefined) out.set(source.provider, { [source.id]: targets });
-      else existing[source.id] = targets;
     }
+
+    // Empty only when the row's own surface is denied and no other provider
+    // serves it — a row that has nowhere to go is not addressable at all.
+    if (entries.size === 0) continue;
+    // Deterministic key order, with the identity target taking its plain
+    // lexicographic place among the cross-provider ones rather than being
+    // hoisted first: emission order is data, not emphasis.
+    const targets: Record<string, AvailabilityEntry> = {};
+    for (const targetProvider of [...entries.keys()].sort(compare)) {
+      targets[targetProvider] = entries.get(targetProvider)!;
+    }
+    const existing = out.get(source.provider);
+    if (existing === undefined) out.set(source.provider, { [source.id]: targets });
+    else existing[source.id] = targets;
   }
 
   // Sort providers and each provider's source ids so emission order is stable.
@@ -653,8 +702,8 @@ function renderEntry(entry: AvailabilityEntry): string {
 
 /**
  * Renders one `src/catalog/availability/<id>.gen.ts`. There is deliberately
- * no index barrel: `unmodel/anthropic` must pay for anthropic's ~1.5 KB
- * table, not the fleet's ~288 KB.
+ * no index barrel: `unmodel/anthropic` must pay for anthropic's ~4 KB
+ * table, not the fleet's ~350 KB.
  */
 export function renderAvailabilityFile(
   providerId: string,
@@ -675,8 +724,12 @@ export function renderAvailabilityFile(
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve ${providerId}'s chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve ${providerId}'s chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * ${providerId} itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget \`.toApi("${providerId}")\` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default \`endpoint\` and/or \`narrows\` metadata (a smaller context

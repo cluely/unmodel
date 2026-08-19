@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve google's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve google's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * google itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("google")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,91 +19,126 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "deep-research-max-preview-04-2026": {
+    "google": "deep-research-max-preview-04-2026",
+  },
+  "deep-research-preview-04-2026": {
+    "google": "deep-research-preview-04-2026",
+  },
+  "gemini-2.5-computer-use-preview-10-2025": {
+    "google": "gemini-2.5-computer-use-preview-10-2025",
+  },
   "gemini-2.5-flash": {
+    "google": "gemini-2.5-flash",
     "google-vertex": "gemini-2.5-flash",
     "openrouter": "google/gemini-2.5-flash",
     "vercel": "google/gemini-2.5-flash",
   },
   "gemini-2.5-flash-image": {
+    "google": "gemini-2.5-flash-image",
     "google-vertex": "gemini-2.5-flash-image",
     "openrouter": "google/gemini-2.5-flash-image",
     "vercel": "google/gemini-2.5-flash-image",
   },
   "gemini-2.5-flash-lite": {
+    "google": "gemini-2.5-flash-lite",
     "google-vertex": "gemini-2.5-flash-lite",
     "openrouter": "google/gemini-2.5-flash-lite",
     "vercel": { id: "google/gemini-2.5-flash-lite", narrows: { drops: ["audio", "video"] } },
   },
   "gemini-2.5-pro": {
+    "google": "gemini-2.5-pro",
     "google-vertex": "gemini-2.5-pro",
     "openrouter": "google/gemini-2.5-pro",
     "vercel": "google/gemini-2.5-pro",
   },
   "gemini-3-flash-preview": {
+    "google": "gemini-3-flash-preview",
     "google-vertex": "gemini-3-flash-preview",
     "openrouter": "google/gemini-3-flash-preview",
   },
   "gemini-3-pro-image": {
+    "google": "gemini-3-pro-image",
     "google-vertex": { id: "gemini-3-pro-image", narrows: { context: 65536 } },
     "openrouter": "google/gemini-3-pro-image",
     "vercel": { id: "google/gemini-3-pro-image", narrows: { context: 65536 } },
   },
   "gemini-3-pro-image-preview": {
+    "google": "gemini-3-pro-image-preview",
     "openrouter": { id: "google/gemini-3-pro-image-preview", narrows: { context: 65536 } },
   },
   "gemini-3.1-flash-image": {
+    "google": "gemini-3.1-flash-image",
     "google-vertex": "gemini-3.1-flash-image",
     "openrouter": { id: "google/gemini-3.1-flash-image", narrows: { drops: ["video", "pdf"] } },
     "vercel": { id: "google/gemini-3.1-flash-image", narrows: { drops: ["video", "pdf"] } },
   },
   "gemini-3.1-flash-image-preview": {
+    "google": "gemini-3.1-flash-image-preview",
     "openrouter": { id: "google/gemini-3.1-flash-image-preview", narrows: { drops: ["pdf"] } },
   },
   "gemini-3.1-flash-lite": {
+    "google": "gemini-3.1-flash-lite",
     "google-vertex": "gemini-3.1-flash-lite",
     "openrouter": "google/gemini-3.1-flash-lite",
     "vercel": { id: "google/gemini-3.1-flash-lite", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-3.1-flash-lite-image": {
+    "google": "gemini-3.1-flash-lite-image",
     "openrouter": "google/gemini-3.1-flash-lite-image",
   },
   "gemini-3.1-flash-lite-preview": {
+    "google": "gemini-3.1-flash-lite-preview",
     "google-vertex": "gemini-3.1-flash-lite-preview",
     "openrouter": "google/gemini-3.1-flash-lite-preview",
   },
+  "gemini-3.1-flash-live-preview": {
+    "google": "gemini-3.1-flash-live-preview",
+  },
   "gemini-3.1-pro-preview": {
+    "google": "gemini-3.1-pro-preview",
     "google-vertex": "gemini-3.1-pro-preview",
     "openrouter": "google/gemini-3.1-pro-preview",
     "vercel": { id: "google/gemini-3.1-pro-preview", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-3.1-pro-preview-customtools": {
+    "google": "gemini-3.1-pro-preview-customtools",
     "google-vertex": "gemini-3.1-pro-preview-customtools",
     "openrouter": "google/gemini-3.1-pro-preview-customtools",
   },
   "gemini-3.5-flash": {
+    "google": "gemini-3.5-flash",
     "google-vertex": "gemini-3.5-flash",
     "openrouter": "google/gemini-3.5-flash",
     "vercel": { id: "google/gemini-3.5-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-3.5-flash-lite": {
+    "google": "gemini-3.5-flash-lite",
     "google-vertex": "gemini-3.5-flash-lite",
     "openrouter": "google/gemini-3.5-flash-lite",
     "vercel": { id: "google/gemini-3.5-flash-lite", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-3.6-flash": {
+    "google": "gemini-3.6-flash",
     "google-vertex": "gemini-3.6-flash",
     "openrouter": "google/gemini-3.6-flash",
     "vercel": { id: "google/gemini-3.6-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-flash-latest": {
+    "google": "gemini-flash-latest",
     "google-vertex": "gemini-flash-latest",
   },
   "gemini-flash-lite-latest": {
+    "google": "gemini-flash-lite-latest",
     "google-vertex": "gemini-flash-lite-latest",
+  },
+  "gemini-robotics-er-1.6-preview": {
+    "google": "gemini-robotics-er-1.6-preview",
   },
   "gemma-4-26b-a4b-it": {
     "cloudflare-workers-ai": { id: "@cf/google/gemma-4-26b-a4b-it", narrows: { context: 256000 } },
     "deepinfra": "google/gemma-4-26B-A4B-it",
+    "google": "gemma-4-26b-a4b-it",
     "huggingface": "google/gemma-4-26B-A4B-it",
     "openrouter": "google/gemma-4-26b-a4b-it",
     "scaleway": { id: "gemma-4-26b-a4b-it", narrows: { context: 256000 } },
@@ -109,6 +148,7 @@ export const availability = {
   "gemma-4-31b-it": {
     "deepinfra": "google/gemma-4-31B-it",
     "friendli": "google/gemma-4-31B-it",
+    "google": "gemma-4-31b-it",
     "huggingface": "google/gemma-4-31B-it",
     "nvidia": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
     "openrouter": "google/gemma-4-31b-it",

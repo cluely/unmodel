@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve groq's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve groq's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * groq itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("groq")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,6 +19,27 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "allam-2-7b": {
+    "groq": "allam-2-7b",
+  },
+  "groq/compound": {
+    "groq": "groq/compound",
+  },
+  "groq/compound-mini": {
+    "groq": "groq/compound-mini",
+  },
+  "llama-3.1-8b-instant": {
+    "groq": "llama-3.1-8b-instant",
+  },
+  "llama-3.3-70b-versatile": {
+    "groq": "llama-3.3-70b-versatile",
+  },
+  "meta-llama/llama-prompt-guard-2-22m": {
+    "groq": "meta-llama/llama-prompt-guard-2-22m",
+  },
+  "meta-llama/llama-prompt-guard-2-86m": {
+    "groq": "meta-llama/llama-prompt-guard-2-86m",
+  },
   "openai/gpt-oss-120b": {
     "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
     "cerebras": "gpt-oss-120b",
@@ -22,6 +47,7 @@ export const availability = {
     "deepinfra": "openai/gpt-oss-120b",
     "fireworks-ai": "accounts/fireworks/models/gpt-oss-120b",
     "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chat" },
+    "groq": "openai/gpt-oss-120b",
     "huggingface": "openai/gpt-oss-120b",
     "nebius": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
     "nvidia": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
@@ -36,6 +62,7 @@ export const availability = {
     "deepinfra": "openai/gpt-oss-20b",
     "fireworks-ai": "accounts/fireworks/models/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chat" },
+    "groq": "openai/gpt-oss-20b",
     "huggingface": "openai/gpt-oss-20b",
     "novita-ai": "openai/gpt-oss-20b",
     "nvidia": "openai/gpt-oss-20b",
@@ -43,13 +70,23 @@ export const availability = {
     "togetherai": "openai/gpt-oss-20b",
     "vercel": "openai/gpt-oss-20b",
   },
+  "openai/gpt-oss-safeguard-20b": {
+    "groq": "openai/gpt-oss-safeguard-20b",
+  },
   "qwen/qwen3.6-27b": {
     "alibaba": "qwen3.6-27b",
     "deepinfra": "Qwen/Qwen3.6-27B",
+    "groq": "qwen/qwen3.6-27b",
     "huggingface": "Qwen/Qwen3.6-27B",
     "openrouter": "qwen/qwen3.6-27b",
     "siliconflow": { id: "Qwen/Qwen3.6-27B", narrows: { drops: ["image"] } },
     "vercel": "alibaba/qwen3.6-27b",
+  },
+  "whisper-large-v3": {
+    "groq": "whisper-large-v3",
+  },
+  "whisper-large-v3-turbo": {
+    "groq": "whisper-large-v3-turbo",
   },
 } as const satisfies AvailabilityMap;
 

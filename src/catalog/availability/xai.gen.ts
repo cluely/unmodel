@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve xai's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve xai's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * xai itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("xai")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,22 +19,35 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "grok-4.20-0309-non-reasoning": {
+    "xai": "grok-4.20-0309-non-reasoning",
+  },
+  "grok-4.20-0309-reasoning": {
+    "xai": "grok-4.20-0309-reasoning",
+  },
+  "grok-4.20-multi-agent-0309": {
+    "xai": "grok-4.20-multi-agent-0309",
+  },
   "grok-4.3": {
     "amazon-bedrock": { id: "xai.grok-4.3", narrows: { drops: ["pdf"] } },
     "openrouter": "x-ai/grok-4.3",
     "vercel": "xai/grok-4.3",
+    "xai": "grok-4.3",
   },
   "grok-4.5": {
     "openrouter": "x-ai/grok-4.5",
     "vercel": "xai/grok-4.5",
+    "xai": "grok-4.5",
   },
   "grok-4.6": {
     "openrouter": "x-ai/grok-4.6",
     "vercel": { id: "xai/grok-4.6", narrows: { drops: ["image", "pdf"] } },
+    "xai": "grok-4.6",
   },
   "grok-build-0.1": {
     "openrouter": "x-ai/grok-build-0.1",
     "vercel": { id: "xai/grok-build-0.1", narrows: { drops: ["pdf"] } },
+    "xai": "grok-build-0.1",
   },
 } as const satisfies AvailabilityMap;
 

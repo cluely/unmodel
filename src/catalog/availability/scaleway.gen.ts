@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve scaleway's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve scaleway's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * scaleway itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("scaleway")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -21,6 +25,7 @@ export const availability = {
     "google": "gemma-4-26b-a4b-it",
     "huggingface": "google/gemma-4-26B-A4B-it",
     "openrouter": "google/gemma-4-26b-a4b-it",
+    "scaleway": "gemma-4-26b-a4b-it",
     "siliconflow": { id: "google/gemma-4-26B-A4B-it", narrows: { drops: ["image"] } },
     "vercel": "google/gemma-4-26b-a4b-it",
   },
@@ -35,6 +40,7 @@ export const availability = {
     "novita-ai": "zai-org/glm-5.2",
     "nvidia": "z-ai/glm-5.2",
     "openrouter": "z-ai/glm-5.2",
+    "scaleway": "glm-5.2",
     "siliconflow": "zai-org/GLM-5.2",
     "togetherai": "zai-org/GLM-5.2",
     "vercel": "zai/glm-5.2",
@@ -52,6 +58,7 @@ export const availability = {
     "nebius": "openai/gpt-oss-120b",
     "nvidia": "openai/gpt-oss-120b",
     "openrouter": "openai/gpt-oss-120b",
+    "scaleway": "gpt-oss-120b",
     "togetherai": "openai/gpt-oss-120b",
     "vercel": "openai/gpt-oss-120b",
   },
@@ -63,18 +70,30 @@ export const availability = {
     "novita-ai": "meta-llama/llama-3.3-70b-instruct",
     "nvidia": "meta/llama-3.3-70b-instruct",
     "openrouter": "meta-llama/llama-3.3-70b-instruct",
+    "scaleway": "llama-3.3-70b-instruct",
+  },
+  "mistral-medium-3.5-128b": {
+    "scaleway": "mistral-medium-3.5-128b",
+  },
+  "mistral-small-3.2-24b-instruct-2506": {
+    "scaleway": "mistral-small-3.2-24b-instruct-2506",
+  },
+  "pixtral-12b-2409": {
+    "scaleway": "pixtral-12b-2409",
   },
   "qwen3-235b-a22b-instruct-2507": {
     "deepinfra": "Qwen/Qwen3-235B-A22B-Instruct-2507",
     "huggingface": "Qwen/Qwen3-235B-A22B-Instruct-2507",
     "nebius": "Qwen/Qwen3-235B-A22B-Instruct-2507",
     "novita-ai": { id: "qwen/qwen3-235b-a22b-instruct-2507", narrows: { context: 131072 } },
+    "scaleway": "qwen3-235b-a22b-instruct-2507",
   },
   "qwen3-coder-30b-a3b-instruct": {
     "alibaba": "qwen3-coder-30b-a3b-instruct",
     "huggingface": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
     "novita-ai": "qwen/qwen3-coder-30b-a3b-instruct",
     "openrouter": "qwen/qwen3-coder-30b-a3b-instruct",
+    "scaleway": "qwen3-coder-30b-a3b-instruct",
   },
   "qwen3.5-397b-a17b": {
     "alibaba": "qwen3.5-397b-a17b",
@@ -84,6 +103,7 @@ export const availability = {
     "novita-ai": "qwen/qwen3.5-397b-a17b",
     "nvidia": { id: "qwen/qwen3.5-397b-a17b", narrows: { drops: ["video"] } },
     "openrouter": "qwen/qwen3.5-397b-a17b",
+    "scaleway": "qwen3.5-397b-a17b",
     "siliconflow": { id: "Qwen/Qwen3.5-397B-A17B", narrows: { drops: ["image", "video"] } },
     "togetherai": { id: "Qwen/Qwen3.5-397B-A17B", narrows: { drops: ["video"] } },
   },
@@ -92,6 +112,7 @@ export const availability = {
     "deepinfra": "Qwen/Qwen3.6-35B-A3B",
     "huggingface": "Qwen/Qwen3.6-35B-A3B",
     "openrouter": "qwen/qwen3.6-35b-a3b",
+    "scaleway": "qwen3.6-35b-a3b",
     "siliconflow": { id: "Qwen/Qwen3.6-35B-A3B", narrows: { drops: ["image"] } },
   },
 } as const satisfies AvailabilityMap;

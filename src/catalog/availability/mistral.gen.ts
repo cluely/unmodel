@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve mistral's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve mistral's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * mistral itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("mistral")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,25 +19,106 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "codestral-latest": {
+    "mistral": "codestral-latest",
+  },
+  "devstral-2512": {
+    "mistral": "devstral-2512",
+  },
+  "devstral-latest": {
+    "mistral": "devstral-latest",
+  },
+  "devstral-medium-2507": {
+    "mistral": "devstral-medium-2507",
+  },
+  "devstral-medium-latest": {
+    "mistral": "devstral-medium-latest",
+  },
+  "devstral-small-2505": {
+    "mistral": "devstral-small-2505",
+  },
+  "devstral-small-2507": {
+    "mistral": "devstral-small-2507",
+  },
+  "labs-devstral-small-2512": {
+    "mistral": "labs-devstral-small-2512",
+  },
+  "magistral-medium-latest": {
+    "mistral": "magistral-medium-latest",
+  },
   "magistral-small": {
+    "mistral": "magistral-small",
     "vercel": "mistral/magistral-small",
   },
+  "ministral-3b-latest": {
+    "mistral": "ministral-3b-latest",
+  },
+  "ministral-8b-latest": {
+    "mistral": "ministral-8b-latest",
+  },
+  "mistral-large-2411": {
+    "mistral": "mistral-large-2411",
+  },
   "mistral-large-2512": {
+    "mistral": "mistral-large-2512",
     "openrouter": "mistralai/mistral-large-2512",
+  },
+  "mistral-large-latest": {
+    "mistral": "mistral-large-latest",
   },
   "mistral-medium-2505": {
     "azure": { id: "mistral-medium-2505", narrows: { context: 128000 } },
+    "mistral": "mistral-medium-2505",
+  },
+  "mistral-medium-2508": {
+    "mistral": "mistral-medium-2508",
+  },
+  "mistral-medium-2604": {
+    "mistral": "mistral-medium-2604",
+  },
+  "mistral-medium-latest": {
+    "mistral": "mistral-medium-latest",
   },
   "mistral-nemo": {
+    "mistral": "mistral-nemo",
     "novita-ai": { id: "mistralai/mistral-nemo", narrows: { context: 60288 } },
     "openrouter": "mistralai/mistral-nemo",
     "vercel": "mistral/mistral-nemo",
   },
+  "mistral-small-2506": {
+    "mistral": "mistral-small-2506",
+  },
   "mistral-small-2603": {
+    "mistral": "mistral-small-2603",
     "openrouter": "mistralai/mistral-small-2603",
   },
+  "mistral-small-latest": {
+    "mistral": "mistral-small-latest",
+  },
+  "open-mistral-7b": {
+    "mistral": "open-mistral-7b",
+  },
+  "open-mistral-nemo": {
+    "mistral": "open-mistral-nemo",
+  },
+  "open-mixtral-8x22b": {
+    "mistral": "open-mixtral-8x22b",
+  },
+  "open-mixtral-8x7b": {
+    "mistral": "open-mixtral-8x7b",
+  },
   "pixtral-12b": {
+    "mistral": "pixtral-12b",
     "vercel": "mistral/pixtral-12b",
+  },
+  "pixtral-large-latest": {
+    "mistral": "pixtral-large-latest",
+  },
+  "voxtral-mini-latest": {
+    "mistral": "voxtral-mini-latest",
+  },
+  "voxtral-small-latest": {
+    "mistral": "voxtral-small-latest",
   },
 } as const satisfies AvailabilityMap;
 

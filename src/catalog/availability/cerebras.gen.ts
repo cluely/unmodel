@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve cerebras's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve cerebras's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * cerebras itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("cerebras")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,8 +19,12 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "gemma-4-31b": {
+    "cerebras": "gemma-4-31b",
+  },
   "gpt-oss-120b": {
     "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
+    "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
     "fireworks-ai": "accounts/fireworks/models/gpt-oss-120b",
@@ -29,6 +37,9 @@ export const availability = {
     "scaleway": { id: "gpt-oss-120b", narrows: { context: 128000 } },
     "togetherai": "openai/gpt-oss-120b",
     "vercel": "openai/gpt-oss-120b",
+  },
+  "zai-glm-4.7": {
+    "cerebras": "zai-glm-4.7",
   },
 } as const satisfies AvailabilityMap;
 

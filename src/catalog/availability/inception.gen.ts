@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve inception's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve inception's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * inception itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("inception")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -16,8 +20,12 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  */
 export const availability = {
   "mercury-2": {
+    "inception": "mercury-2",
     "openrouter": "inception/mercury-2",
     "vercel": "inception/mercury-2",
+  },
+  "mercury-edit-2": {
+    "inception": "mercury-edit-2",
   },
 } as const satisfies AvailabilityMap;
 

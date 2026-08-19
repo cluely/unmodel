@@ -216,8 +216,10 @@ const validator = createValidator<ChatCompletionsBody, unknown>({
  * properties are the exact fetch body; `.toSdk("openai")` returns the wire body
  * unchanged in shape (OpenAI's SDK params are wire-shaped), `.request` carries
  * url/method/static headers, and `.toApi(provider)` retargets the request to
- * another provider that serves the same model (`gpt-oss-120b` → groq, cerebras,
- * togetherai, …), typed off the generated availability table.
+ * any provider that serves the same model (`gpt-oss-120b` → groq, cerebras,
+ * togetherai, …), typed off the generated availability table. `"openai"` is
+ * always in that union: the identity retarget returns the same wire body at
+ * the same URL, so a provider-generic call site needs no special case.
  */
 export const chat = validator as unknown as {
   <T extends ChatCompletionsBody>(

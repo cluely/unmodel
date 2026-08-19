@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve upstage's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve upstage's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * upstage itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("upstage")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,8 +19,18 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "solar-mini": {
+    "upstage": "solar-mini",
+  },
+  "solar-pro2": {
+    "upstage": "solar-pro2",
+  },
+  "solar-pro3": {
+    "upstage": "solar-pro3",
+  },
   "solar-pro4": {
     "openrouter": "upstage/solar-pro4",
+    "upstage": "solar-pro4",
   },
 } as const satisfies AvailabilityMap;
 

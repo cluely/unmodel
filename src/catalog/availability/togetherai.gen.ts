@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve togetherai's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve togetherai's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * togetherai itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("togetherai")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -15,6 +19,9 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "LiquidAI/LFM2-24B-A2B": {
+    "togetherai": "LiquidAI/LFM2-24B-A2B",
+  },
   "MiniMaxAI/MiniMax-M2.5": {
     "amazon-bedrock": { id: "minimax.minimax-m2.5", narrows: { context: 196608 } },
     "baseten": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 204000 } },
@@ -25,6 +32,7 @@ export const availability = {
     "nebius": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
     "novita-ai": "minimax/minimax-m2.5",
     "openrouter": "minimax/minimax-m2.5",
+    "togetherai": "MiniMaxAI/MiniMax-M2.5",
     "vercel": "minimax/minimax-m2.5",
   },
   "MiniMaxAI/MiniMax-M2.7": {
@@ -34,6 +42,7 @@ export const availability = {
     "novita-ai": "minimax/minimax-m2.7",
     "nvidia": "minimaxai/minimax-m2.7",
     "openrouter": "minimax/minimax-m2.7",
+    "togetherai": "MiniMaxAI/MiniMax-M2.7",
     "vercel": "minimax/minimax-m2.7",
   },
   "MiniMaxAI/MiniMax-M3": {
@@ -44,7 +53,20 @@ export const availability = {
     "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image"] } },
     "nvidia": "minimaxai/minimax-m3",
     "openrouter": "minimax/minimax-m3",
+    "togetherai": "MiniMaxAI/MiniMax-M3",
     "vercel": "minimax/minimax-m3",
+  },
+  "Qwen/Qwen2.5-7B-Instruct-Turbo": {
+    "togetherai": "Qwen/Qwen2.5-7B-Instruct-Turbo",
+  },
+  "Qwen/Qwen3-235B-A22B-Instruct-2507-tput": {
+    "togetherai": "Qwen/Qwen3-235B-A22B-Instruct-2507-tput",
+  },
+  "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8": {
+    "togetherai": "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8",
+  },
+  "Qwen/Qwen3-Coder-Next-FP8": {
+    "togetherai": "Qwen/Qwen3-Coder-Next-FP8",
   },
   "Qwen/Qwen3.5-397B-A17B": {
     "alibaba": "qwen3.5-397b-a17b",
@@ -56,15 +78,18 @@ export const availability = {
     "openrouter": "qwen/qwen3.5-397b-a17b",
     "scaleway": { id: "qwen3.5-397b-a17b", narrows: { context: 256000 } },
     "siliconflow": { id: "Qwen/Qwen3.5-397B-A17B", narrows: { drops: ["image"] } },
+    "togetherai": "Qwen/Qwen3.5-397B-A17B",
   },
   "Qwen/Qwen3.5-9B": {
     "deepinfra": "Qwen/Qwen3.5-9B",
     "huggingface": "Qwen/Qwen3.5-9B",
     "openrouter": "qwen/qwen3.5-9b",
+    "togetherai": "Qwen/Qwen3.5-9B",
   },
   "Qwen/Qwen3.6-Plus": {
     "alibaba": "qwen3.6-plus",
     "openrouter": "qwen/qwen3.6-plus",
+    "togetherai": "Qwen/Qwen3.6-Plus",
     "vercel": "alibaba/qwen3.6-plus",
   },
   "Qwen/Qwen3.7-Max": {
@@ -72,20 +97,24 @@ export const availability = {
     "deepinfra": { id: "Qwen/Qwen3.7-Max", narrows: { context: 256000 } },
     "novita-ai": "qwen/qwen3.7-max",
     "openrouter": "qwen/qwen3.7-max",
+    "togetherai": "Qwen/Qwen3.7-Max",
     "vercel": { id: "alibaba/qwen3.7-max", narrows: { context: 991000 } },
   },
   "deepcogito/cogito-v2-1-671b": {
     "openrouter": { id: "deepcogito/cogito-v2.1-671b", narrows: { context: 128000 } },
+    "togetherai": "deepcogito/cogito-v2-1-671b",
   },
   "deepseek-ai/DeepSeek-R1": {
     "azure": "deepseek-r1",
     "huggingface": { id: "deepseek-ai/DeepSeek-R1", narrows: { context: 64000 } },
     "openrouter": "deepseek/deepseek-r1",
+    "togetherai": "deepseek-ai/DeepSeek-R1",
     "vercel": { id: "deepseek/deepseek-r1", narrows: { context: 128000 } },
   },
   "deepseek-ai/DeepSeek-V3": {
     "deepinfra": "deepseek-ai/DeepSeek-V3",
     "huggingface": { id: "deepseek-ai/DeepSeek-V3", narrows: { context: 64000 } },
+    "togetherai": "deepseek-ai/DeepSeek-V3",
   },
   "deepseek-ai/DeepSeek-V3-1": {
     "baseten": "deepseek-ai/DeepSeek-V3.1",
@@ -93,6 +122,7 @@ export const availability = {
     "google-vertex": { id: "deepseek-ai/deepseek-v3.1-maas", endpoint: "google-vertex.chat" },
     "huggingface": "deepseek-ai/DeepSeek-V3.1",
     "novita-ai": "deepseek/deepseek-v3.1",
+    "togetherai": "deepseek-ai/DeepSeek-V3-1",
     "vercel": "deepseek/deepseek-v3.1",
   },
   "deepseek-ai/DeepSeek-V4-Flash-0731": {
@@ -102,6 +132,7 @@ export const availability = {
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-0731",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "openrouter": "deepseek/deepseek-v4-flash-0731",
+    "togetherai": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "vercel": "deepseek/deepseek-v4-flash-0731",
   },
   "deepseek-ai/DeepSeek-V4-Pro": {
@@ -116,7 +147,23 @@ export const availability = {
     "nvidia": "deepseek-ai/deepseek-v4-pro",
     "openrouter": "deepseek/deepseek-v4-pro",
     "siliconflow": "deepseek-ai/DeepSeek-V4-Pro",
+    "togetherai": "deepseek-ai/DeepSeek-V4-Pro",
     "vercel": "deepseek/deepseek-v4-pro",
+  },
+  "essentialai/Rnj-1-Instruct": {
+    "togetherai": "essentialai/Rnj-1-Instruct",
+  },
+  "google/gemma-3n-E4B-it": {
+    "togetherai": "google/gemma-3n-E4B-it",
+  },
+  "google/gemma-4-31B-it": {
+    "togetherai": "google/gemma-4-31B-it",
+  },
+  "meta-llama/Llama-3.3-70B-Instruct-Turbo": {
+    "togetherai": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+  },
+  "meta-llama/Meta-Llama-3-8B-Instruct-Lite": {
+    "togetherai": "meta-llama/Meta-Llama-3-8B-Instruct-Lite",
   },
   "moonshotai/Kimi-K2.5": {
     "azure": "kimi-k2.5",
@@ -127,6 +174,7 @@ export const availability = {
     "nebius": { id: "moonshotai/Kimi-K2.5", narrows: { context: 256000 } },
     "novita-ai": "moonshotai/kimi-k2.5",
     "openrouter": "moonshotai/kimi-k2.5",
+    "togetherai": "moonshotai/Kimi-K2.5",
     "vercel": { id: "moonshotai/kimi-k2.5", narrows: { context: 262114 } },
   },
   "moonshotai/Kimi-K2.6": {
@@ -139,6 +187,7 @@ export const availability = {
     "novita-ai": "moonshotai/kimi-k2.6",
     "nvidia": "moonshotai/kimi-k2.6",
     "openrouter": { id: "moonshotai/kimi-k2.6", narrows: { drops: ["video"] } },
+    "togetherai": "moonshotai/Kimi-K2.6",
     "vercel": { id: "moonshotai/kimi-k2.6", narrows: { context: 262000, drops: ["video"] } },
   },
   "moonshotai/Kimi-K2.7-Code": {
@@ -151,6 +200,7 @@ export const availability = {
     "nebius": "moonshotai/Kimi-K2.7-Code",
     "novita-ai": "moonshotai/kimi-k2.7-code",
     "openrouter": "moonshotai/kimi-k2.7-code",
+    "togetherai": "moonshotai/Kimi-K2.7-Code",
     "vercel": { id: "moonshotai/kimi-k2.7-code", narrows: { context: 256000 } },
   },
   "moonshotai/Kimi-K3": {
@@ -162,11 +212,13 @@ export const availability = {
     "nebius": { id: "moonshotai/Kimi-K3", narrows: { drops: ["image", "video"] } },
     "novita-ai": "moonshotai/kimi-k3",
     "openrouter": "moonshotai/kimi-k3",
+    "togetherai": "moonshotai/Kimi-K3",
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000, drops: ["video"] } },
   },
   "nvidia/nemotron-3-ultra-550b-a55b": {
     "nvidia": "nvidia/nemotron-3-ultra-550b-a55b",
     "openrouter": { id: "nvidia/nemotron-3-ultra-550b-a55b", narrows: { context: 512288 } },
+    "togetherai": "nvidia/nemotron-3-ultra-550b-a55b",
   },
   "openai/gpt-oss-120b": {
     "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
@@ -181,6 +233,7 @@ export const availability = {
     "nvidia": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
     "openrouter": "openai/gpt-oss-120b",
     "scaleway": { id: "gpt-oss-120b", narrows: { context: 128000 } },
+    "togetherai": "openai/gpt-oss-120b",
     "vercel": "openai/gpt-oss-120b",
   },
   "openai/gpt-oss-20b": {
@@ -194,7 +247,11 @@ export const availability = {
     "novita-ai": "openai/gpt-oss-20b",
     "nvidia": "openai/gpt-oss-20b",
     "openrouter": "openai/gpt-oss-20b",
+    "togetherai": "openai/gpt-oss-20b",
     "vercel": "openai/gpt-oss-20b",
+  },
+  "pearl-ai/gemma-4-31b-it": {
+    "togetherai": "pearl-ai/gemma-4-31b-it",
   },
   "thinkingmachines/Inkling": {
     "baseten": { id: "thinkingmachines/inkling", narrows: { drops: ["audio"] } },
@@ -202,6 +259,7 @@ export const availability = {
     "huggingface": { id: "thinkingmachines/Inkling", narrows: { drops: ["audio"] } },
     "nvidia": "thinkingmachines/inkling",
     "openrouter": "thinkingmachines/inkling",
+    "togetherai": "thinkingmachines/Inkling",
     "vercel": { id: "thinkingmachines/inkling", narrows: { context: 256000, drops: ["audio"] } },
   },
   "zai-org/GLM-5": {
@@ -213,6 +271,7 @@ export const availability = {
     "nebius": { id: "zai-org/GLM-5", narrows: { context: 200000 } },
     "novita-ai": "zai-org/glm-5",
     "openrouter": "z-ai/glm-5",
+    "togetherai": "zai-org/GLM-5",
     "vercel": "zai/glm-5",
     "zhipuai": "glm-5",
   },
@@ -223,6 +282,7 @@ export const availability = {
     "huggingface": "zai-org/GLM-5.1",
     "novita-ai": "zai-org/glm-5.1",
     "openrouter": "z-ai/glm-5.1",
+    "togetherai": "zai-org/GLM-5.1",
     "vercel": "zai/glm-5.1",
     "zhipuai": { id: "glm-5.1", narrows: { context: 200000 } },
   },
@@ -239,6 +299,7 @@ export const availability = {
     "openrouter": "z-ai/glm-5.2",
     "scaleway": { id: "glm-5.2", narrows: { context: 256000 } },
     "siliconflow": "zai-org/GLM-5.2",
+    "togetherai": "zai-org/GLM-5.2",
     "vercel": "zai/glm-5.2",
     "zhipuai": "glm-5.2",
   },

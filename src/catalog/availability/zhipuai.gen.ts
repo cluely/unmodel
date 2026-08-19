@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve zhipuai's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve zhipuai's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * zhipuai itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("zhipuai")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -20,18 +24,24 @@ export const availability = {
     "novita-ai": "zai-org/glm-4.5",
     "openrouter": "z-ai/glm-4.5",
     "vercel": { id: "zai/glm-4.5", narrows: { context: 128000 } },
+    "zhipuai": "glm-4.5",
   },
   "glm-4.5-air": {
     "huggingface": "zai-org/GLM-4.5-Air",
     "novita-ai": "zai-org/glm-4.5-air",
     "openrouter": "z-ai/glm-4.5-air",
     "vercel": { id: "zai/glm-4.5-air", narrows: { context: 128000 } },
+    "zhipuai": "glm-4.5-air",
+  },
+  "glm-4.5-flash": {
+    "zhipuai": "glm-4.5-flash",
   },
   "glm-4.5v": {
     "huggingface": { id: "zai-org/GLM-4.5V", narrows: { drops: ["video"] } },
     "novita-ai": "zai-org/glm-4.5v",
     "openrouter": { id: "z-ai/glm-4.5v", narrows: { drops: ["video"] } },
     "vercel": { id: "zai/glm-4.5v", narrows: { drops: ["video"] } },
+    "zhipuai": "glm-4.5v",
   },
   "glm-4.6": {
     "deepinfra": { id: "zai-org/GLM-4.6", narrows: { context: 202752 } },
@@ -39,11 +49,13 @@ export const availability = {
     "novita-ai": "zai-org/glm-4.6",
     "openrouter": "z-ai/glm-4.6",
     "vercel": { id: "zai/glm-4.6", narrows: { context: 200000 } },
+    "zhipuai": "glm-4.6",
   },
   "glm-4.6v": {
     "novita-ai": "zai-org/glm-4.6v",
     "openrouter": "z-ai/glm-4.6v",
     "vercel": { id: "zai/glm-4.6v", narrows: { drops: ["video"] } },
+    "zhipuai": "glm-4.6v",
   },
   "glm-4.7": {
     "amazon-bedrock": "zai.glm-4.7",
@@ -54,6 +66,7 @@ export const availability = {
     "novita-ai": "zai-org/glm-4.7",
     "openrouter": "z-ai/glm-4.7",
     "vercel": { id: "zai/glm-4.7", narrows: { context: 200000 } },
+    "zhipuai": "glm-4.7",
   },
   "glm-4.7-flash": {
     "amazon-bedrock": "zai.glm-4.7-flash",
@@ -63,9 +76,11 @@ export const availability = {
     "novita-ai": "zai-org/glm-4.7-flash",
     "openrouter": "z-ai/glm-4.7-flash",
     "vercel": "zai/glm-4.7-flash",
+    "zhipuai": "glm-4.7-flash",
   },
   "glm-4.7-flashx": {
     "vercel": "zai/glm-4.7-flashx",
+    "zhipuai": "glm-4.7-flashx",
   },
   "glm-5": {
     "amazon-bedrock": { id: "zai.glm-5", narrows: { context: 202752 } },
@@ -78,6 +93,7 @@ export const availability = {
     "openrouter": "z-ai/glm-5",
     "togetherai": { id: "zai-org/GLM-5", narrows: { context: 202752 } },
     "vercel": { id: "zai/glm-5", narrows: { context: 202800 } },
+    "zhipuai": "glm-5",
   },
   "glm-5.1": {
     "baseten": "zai-org/GLM-5.1",
@@ -88,6 +104,7 @@ export const availability = {
     "openrouter": "z-ai/glm-5.1",
     "togetherai": "zai-org/GLM-5.1",
     "vercel": "zai/glm-5.1",
+    "zhipuai": "glm-5.1",
   },
   "glm-5.2": {
     "alibaba": "glm-5.2",
@@ -104,10 +121,12 @@ export const availability = {
     "siliconflow": "zai-org/GLM-5.2",
     "togetherai": { id: "zai-org/GLM-5.2", narrows: { context: 512000 } },
     "vercel": "zai/glm-5.2",
+    "zhipuai": "glm-5.2",
   },
   "glm-5v-turbo": {
     "openrouter": { id: "z-ai/glm-5v-turbo", narrows: { drops: ["pdf"] } },
     "vercel": { id: "zai/glm-5v-turbo", narrows: { drops: ["video"] } },
+    "zhipuai": "glm-5v-turbo",
   },
 } as const satisfies AvailabilityMap;
 

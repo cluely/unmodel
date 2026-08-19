@@ -228,8 +228,9 @@ describe("availability — generation", () => {
     const acme = build().providers.get("acme")!;
     // "llama-3-8b" merges with beta's row...
     expect(idOf(acme["llama-3-8b"]?.["beta"])).toBe("llama-3-8b");
-    // ...but "Llama 3 8B Turbo" is a different product and gets no edge at all.
-    expect(acme["meta/llama-3-8b"]).toBeUndefined();
+    // ...but "Llama 3 8B Turbo" is a different product, so its only target is
+    // the identity one — no cross-provider edge was found for it.
+    expect(Object.keys(acme["meta/llama-3-8b"]!)).toEqual(["acme"]);
     // The merge that did NOT happen is also visible in the collision probe.
     expect(build().collisions.some((c) => c.provider === "acme")).toBe(false);
   });
@@ -247,7 +248,9 @@ describe("availability — generation", () => {
   test("tier suffix, negative — the -fast SKU does not merge into the base model", () => {
     const openrouter = build().providers.get("openrouter")!;
     expect(idOf(openrouter["anthropic/claude-opus-5"]?.["anthropic"])).toBe("claude-opus-5");
-    expect(openrouter["anthropic/claude-opus-5-fast"]).toBeUndefined();
+    // The `-fast` SKU keeps its identity target (openrouter serves it) and
+    // gains nothing else — in particular no edge to anthropic.
+    expect(Object.keys(openrouter["anthropic/claude-opus-5-fast"]!)).toEqual(["openrouter"]);
   });
 
   test("region aliases collapse, canonical target is the unprefixed id, every source keeps an entry", () => {
@@ -274,9 +277,20 @@ describe("availability — generation", () => {
     const anthropic = b.providers.get("anthropic")!;
     const undated = anthropic["claude-haiku-4-5"]!;
     const dated = anthropic["claude-haiku-4-5-20251001"]!;
-    // openrouter joins via the `.`-vs-`-` version-separator collapse.
-    expect(Object.keys(undated).sort()).toEqual(["amazon-bedrock", "azure", "openrouter"]);
-    expect(Object.keys(dated).sort()).toEqual(["amazon-bedrock", "azure", "openrouter"]);
+    // openrouter joins via the `.`-vs-`-` version-separator collapse, and
+    // anthropic is each row's own identity target.
+    expect(Object.keys(undated).sort()).toEqual([
+      "amazon-bedrock",
+      "anthropic",
+      "azure",
+      "openrouter",
+    ]);
+    expect(Object.keys(dated).sort()).toEqual([
+      "amazon-bedrock",
+      "anthropic",
+      "azure",
+      "openrouter",
+    ]);
     // The dated spelling is treated as an alias, so the pair is not a collision.
     expect(b.collisions.some((c) => c.provider === "anthropic")).toBe(false);
   });
@@ -312,9 +326,13 @@ describe("availability — generation", () => {
     const anthropic = denied.providers.get("anthropic")!;
     expect(Object.keys(anthropic["claude-haiku-4-5"]!).sort()).toEqual([
       "amazon-bedrock",
+      "anthropic",
       "openrouter",
     ]);
-    // azure's only chat row loses every edge, so it emits no file at all.
+    // azure's only chat row loses every edge — the identity one included,
+    // since `*:*` matches azure's own row on both halves of the pair, which is
+    // exactly how a provider's unverified wire surface is switched off — so it
+    // emits no file at all.
     expect(denied.providers.has("azure")).toBe(false);
   });
 
@@ -336,8 +354,9 @@ describe("availability — generation", () => {
     const forced = build({ force: [["openai:whisper-1", "groq:whisper-large-v3"]] });
     expect(idOf(forced.providers.get("openai")!["whisper-1"]?.["groq"])).toBe("whisper-large-v3");
     expect(idOf(forced.providers.get("groq")!["whisper-large-v3"]?.["openai"])).toBe("whisper-1");
-    // Without the override there is no edge — different id tails and names.
-    expect(build().providers.get("openai")?.["whisper-1"]).toBeUndefined();
+    // Without the override there is no cross-provider edge — different id
+    // tails and names — leaving only the identity target.
+    expect(Object.keys(build().providers.get("openai")!["whisper-1"]!)).toEqual(["openai"]);
   });
 
   test("a force ref that no longer resolves fails codegen instead of silently lapsing", () => {
@@ -560,14 +579,48 @@ describe("availability — real snapshot invariants", () => {
     expect(missing).toEqual([]);
   });
 
-  test("no source model ever targets its own provider", () => {
-    const selfEdges: string[] = [];
+  /**
+   * The identity target, asserted as an invariant rather than spot-checked.
+   *
+   * A provider serves its own models by definition, so every emitted row must
+   * carry its own provider — that is what makes `.toApi(home)` a valid
+   * retarget and what keeps a model nobody else serves out of the permissive
+   * `StaticApiTargetId` degradation arm. The entry is always the row's own id,
+   * and never carries `narrows` (a model does not narrow against itself).
+   */
+  test("every source model targets its own provider, with its own id and no narrows", () => {
+    const broken: string[] = [];
     for (const [providerId, map] of REAL.providers) {
       for (const [modelId, targets] of Object.entries(map)) {
-        if (Object.hasOwn(targets, providerId)) selfEdges.push(`${providerId}:${modelId}`);
+        if (!Object.hasOwn(targets, providerId)) {
+          broken.push(`${providerId}:${modelId} — no identity target`);
+          continue;
+        }
+        const entry = targets[providerId]!;
+        if (idOf(entry) !== modelId) broken.push(`${providerId}:${modelId} → ${idOf(entry)}`);
+        if (typeof entry !== "string" && entry.narrows !== undefined) {
+          broken.push(`${providerId}:${modelId} — identity entry carries narrows`);
+        }
       }
     }
-    expect(selfEdges).toEqual([]);
+    expect(broken).toEqual([]);
+  });
+
+  test("the identity target covers rows no other provider serves", () => {
+    // Before identity targets existed these rows were emitted nowhere at all,
+    // and `.toApi` on them fell back to offering every static target.
+    const solo: string[] = [];
+    for (const [providerId, map] of REAL.providers) {
+      for (const [modelId, targets] of Object.entries(map)) {
+        if (Object.keys(targets).length === 1) solo.push(`${providerId}:${modelId}`);
+      }
+    }
+    expect(solo.length).toBeGreaterThan(0);
+    // sarvam is the extreme case: nobody else in scope serves a Sarvam model,
+    // so its whole table is identity edges — and it is a table that did not
+    // exist before.
+    const sarvam = REAL.providers.get("sarvam")!;
+    for (const targets of Object.values(sarvam)) expect(Object.keys(targets)).toEqual(["sarvam"]);
   });
 
   test("every emitted provider is inside the declared scope, and every entry is non-empty", () => {
@@ -616,6 +669,8 @@ describe("availability — real snapshot invariants", () => {
     expect(idOf(opus5["openrouter"])).toBe("anthropic/claude-opus-5");
     expect(idOf(opus5["vercel"])).toBe("anthropic/claude-opus-5");
     expect(idOf(opus5["amazon-bedrock"])).toBe("anthropic.claude-opus-5");
+    // Its home provider is a target too — the identity retarget.
+    expect(opus5["anthropic"]).toBe("claude-opus-5");
     expect(opus5["openai"]).toBeUndefined();
   });
 
@@ -676,17 +731,22 @@ describe("availability — real snapshot invariants", () => {
   test("per-map size budget — no single table balloons past its bundle budget", async () => {
     // These tables cannot be tree-shaken (`.toApi` is attached in finalize, so
     // the map is always reachable), and each is bundled into exactly one
-    // provider subpath. Measured today: 288 KiB total, largest is openrouter
-    // at 45 KiB. A refresh that blows through these has almost certainly
+    // provider subpath. Measured today: 350 KiB total, largest is openrouter
+    // at 66 KiB. A refresh that blows through these has almost certainly
     // broken the heuristic rather than genuinely grown the catalog —
     // investigate before bumping.
+    //
+    // The per-file ceiling moved 64 → 72 KiB when identity targets landed:
+    // every in-scope chat row now carries its own provider as a target, which
+    // adds a line to every existing row and a whole 3-line row for every model
+    // no other provider serves. openrouter, with the most rows, went 45 → 66.
     const dir = new URL("../src/catalog/availability/", import.meta.url).pathname;
     let total = 0;
     const oversized: string[] = [];
     for (const file of await readdir(dir)) {
       const bytes = (await Bun.file(`${dir}${file}`).text()).length;
       total += bytes;
-      if (bytes > 64 * 1024) oversized.push(`${file} (${bytes} bytes)`);
+      if (bytes > 72 * 1024) oversized.push(`${file} (${bytes} bytes)`);
     }
     expect(oversized).toEqual([]);
     expect(total).toBeLessThan(384 * 1024);

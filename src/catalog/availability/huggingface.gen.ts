@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve huggingface's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve huggingface's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * huggingface itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("huggingface")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -17,6 +21,7 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
 export const availability = {
   "MiniMaxAI/MiniMax-M2": {
     "amazon-bedrock": { id: "minimax.minimax-m2", narrows: { context: 204608 } },
+    "huggingface": "MiniMaxAI/MiniMax-M2",
     "minimax": { id: "MiniMax-M2", narrows: { context: 196608 } },
     "novita-ai": "minimax/minimax-m2",
     "openrouter": "minimax/minimax-m2",
@@ -24,6 +29,7 @@ export const availability = {
   },
   "MiniMaxAI/MiniMax-M2.1": {
     "amazon-bedrock": "minimax.minimax-m2.1",
+    "huggingface": "MiniMaxAI/MiniMax-M2.1",
     "minimax": "MiniMax-M2.1",
     "novita-ai": "minimax/minimax-m2.1",
     "openrouter": "minimax/minimax-m2.1",
@@ -34,6 +40,7 @@ export const availability = {
     "baseten": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 204000 } },
     "deepinfra": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
     "friendli": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
+    "huggingface": "MiniMaxAI/MiniMax-M2.5",
     "minimax": "MiniMax-M2.5",
     "nebius": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
     "novita-ai": "minimax/minimax-m2.5",
@@ -43,6 +50,7 @@ export const availability = {
   },
   "MiniMaxAI/MiniMax-M2.7": {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M2.7", narrows: { context: 196608 } },
+    "huggingface": "MiniMaxAI/MiniMax-M2.7",
     "minimax": "MiniMax-M2.7",
     "novita-ai": "minimax/minimax-m2.7",
     "nvidia": "minimaxai/minimax-m2.7",
@@ -53,6 +61,7 @@ export const availability = {
   "MiniMaxAI/MiniMax-M3": {
     "deepinfra": "MiniMaxAI/MiniMax-M3",
     "fireworks-ai": { id: "accounts/fireworks/models/minimax-m3", narrows: { context: 512000 } },
+    "huggingface": "MiniMaxAI/MiniMax-M3",
     "minimax": "MiniMax-M3",
     "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image"] } },
     "nvidia": "minimaxai/minimax-m3",
@@ -62,15 +71,18 @@ export const availability = {
   },
   "Qwen/Qwen3-235B-A22B": {
     "alibaba": "qwen3-235b-a22b",
+    "huggingface": "Qwen/Qwen3-235B-A22B",
     "openrouter": "qwen/qwen3-235b-a22b",
   },
   "Qwen/Qwen3-235B-A22B-Instruct-2507": {
     "deepinfra": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    "huggingface": "Qwen/Qwen3-235B-A22B-Instruct-2507",
     "nebius": "Qwen/Qwen3-235B-A22B-Instruct-2507",
     "novita-ai": { id: "qwen/qwen3-235b-a22b-instruct-2507", narrows: { context: 131072 } },
     "scaleway": { id: "qwen3-235b-a22b-instruct-2507", narrows: { context: 260000 } },
   },
   "Qwen/Qwen3-235B-A22B-Thinking-2507": {
+    "huggingface": "Qwen/Qwen3-235B-A22B-Thinking-2507",
     "novita-ai": { id: "qwen/qwen3-235b-a22b-thinking-2507", narrows: { context: 131072 } },
     "openrouter": "qwen/qwen3-235b-a22b-thinking-2507",
   },
@@ -78,22 +90,26 @@ export const availability = {
     "alibaba": "qwen3-32b",
     "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 16384 } },
     "deepinfra": { id: "Qwen/Qwen3-32B", narrows: { context: 40960 } },
+    "huggingface": "Qwen/Qwen3-32B",
     "nebius": { id: "Qwen/Qwen3-32B", narrows: { context: 128000 } },
     "openrouter": "qwen/qwen3-32b",
   },
   "Qwen/Qwen3-Coder-30B-A3B-Instruct": {
     "alibaba": "qwen3-coder-30b-a3b-instruct",
+    "huggingface": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
     "novita-ai": { id: "qwen/qwen3-coder-30b-a3b-instruct", narrows: { context: 160000 } },
     "openrouter": "qwen/qwen3-coder-30b-a3b-instruct",
     "scaleway": { id: "qwen3-coder-30b-a3b-instruct", narrows: { context: 128000 } },
   },
   "Qwen/Qwen3-Coder-480B-A35B-Instruct": {
     "alibaba": "qwen3-coder-480b-a35b-instruct",
+    "huggingface": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
     "novita-ai": "qwen/qwen3-coder-480b-a35b-instruct",
     "nvidia": "qwen/qwen3-coder-480b-a35b-instruct",
   },
   "Qwen/Qwen3-Coder-Next": {
     "amazon-bedrock": { id: "qwen.qwen3-coder-next", narrows: { context: 131072 } },
+    "huggingface": "Qwen/Qwen3-Coder-Next",
     "novita-ai": "qwen/qwen3-coder-next",
     "openrouter": "qwen/qwen3-coder-next",
     "vercel": { id: "alibaba/qwen3-coder-next", narrows: { context: 256000 } },
@@ -101,12 +117,14 @@ export const availability = {
   "Qwen/Qwen3-Next-80B-A3B-Instruct": {
     "alibaba": { id: "qwen3-next-80b-a3b-instruct", narrows: { context: 131072 } },
     "deepinfra": "Qwen/Qwen3-Next-80B-A3B-Instruct",
+    "huggingface": "Qwen/Qwen3-Next-80B-A3B-Instruct",
     "novita-ai": { id: "qwen/qwen3-next-80b-a3b-instruct", narrows: { context: 131072 } },
     "nvidia": "qwen/qwen3-next-80b-a3b-instruct",
     "openrouter": "qwen/qwen3-next-80b-a3b-instruct",
     "vercel": { id: "alibaba/qwen3-next-80b-a3b-instruct", narrows: { context: 131072 } },
   },
   "Qwen/Qwen3-Next-80B-A3B-Thinking": {
+    "huggingface": "Qwen/Qwen3-Next-80B-A3B-Thinking",
     "nebius": { id: "Qwen/Qwen3-Next-80B-A3B-Thinking", narrows: { context: 128000 } },
     "novita-ai": { id: "qwen/qwen3-next-80b-a3b-thinking", narrows: { context: 131072 } },
     "vercel": { id: "alibaba/qwen3-next-80b-a3b-thinking", narrows: { context: 131072 } },
@@ -114,6 +132,7 @@ export const availability = {
   "Qwen/Qwen3.5-122B-A10B": {
     "alibaba": "qwen3.5-122b-a10b",
     "deepinfra": "Qwen/Qwen3.5-122B-A10B",
+    "huggingface": "Qwen/Qwen3.5-122B-A10B",
     "novita-ai": "qwen/qwen3.5-122b-a10b",
     "nvidia": "qwen/qwen3.5-122b-a10b",
     "openrouter": "qwen/qwen3.5-122b-a10b",
@@ -122,6 +141,7 @@ export const availability = {
   "Qwen/Qwen3.5-27B": {
     "alibaba": "qwen3.5-27b",
     "deepinfra": "Qwen/Qwen3.5-27B",
+    "huggingface": "Qwen/Qwen3.5-27B",
     "novita-ai": "qwen/qwen3.5-27b",
     "openrouter": "qwen/qwen3.5-27b",
     "siliconflow": { id: "Qwen/Qwen3.5-27B", narrows: { drops: ["image"] } },
@@ -129,6 +149,7 @@ export const availability = {
   "Qwen/Qwen3.5-35B-A3B": {
     "alibaba": "qwen3.5-35b-a3b",
     "deepinfra": "Qwen/Qwen3.5-35B-A3B",
+    "huggingface": "Qwen/Qwen3.5-35B-A3B",
     "novita-ai": "qwen/qwen3.5-35b-a3b",
     "openrouter": "qwen/qwen3.5-35b-a3b",
     "siliconflow": { id: "Qwen/Qwen3.5-35B-A3B", narrows: { drops: ["image"] } },
@@ -136,6 +157,7 @@ export const availability = {
   "Qwen/Qwen3.5-397B-A17B": {
     "alibaba": "qwen3.5-397b-a17b",
     "deepinfra": "Qwen/Qwen3.5-397B-A17B",
+    "huggingface": "Qwen/Qwen3.5-397B-A17B",
     "nebius": { id: "Qwen/Qwen3.5-397B-A17B", narrows: { drops: ["image"] } },
     "novita-ai": "qwen/qwen3.5-397b-a17b",
     "nvidia": "qwen/qwen3.5-397b-a17b",
@@ -146,6 +168,7 @@ export const availability = {
   },
   "Qwen/Qwen3.5-9B": {
     "deepinfra": "Qwen/Qwen3.5-9B",
+    "huggingface": "Qwen/Qwen3.5-9B",
     "openrouter": "qwen/qwen3.5-9b",
     "togetherai": "Qwen/Qwen3.5-9B",
   },
@@ -153,6 +176,7 @@ export const availability = {
     "alibaba": "qwen3.6-27b",
     "deepinfra": "Qwen/Qwen3.6-27B",
     "groq": { id: "qwen/qwen3.6-27b", narrows: { context: 131072 } },
+    "huggingface": "Qwen/Qwen3.6-27B",
     "openrouter": "qwen/qwen3.6-27b",
     "siliconflow": { id: "Qwen/Qwen3.6-27B", narrows: { drops: ["image"] } },
     "vercel": { id: "alibaba/qwen3.6-27b", narrows: { context: 256000 } },
@@ -160,38 +184,48 @@ export const availability = {
   "Qwen/Qwen3.6-35B-A3B": {
     "alibaba": "qwen3.6-35b-a3b",
     "deepinfra": "Qwen/Qwen3.6-35B-A3B",
+    "huggingface": "Qwen/Qwen3.6-35B-A3B",
     "openrouter": "qwen/qwen3.6-35b-a3b",
     "scaleway": { id: "qwen3.6-35b-a3b", narrows: { context: 128000 } },
     "siliconflow": { id: "Qwen/Qwen3.6-35B-A3B", narrows: { drops: ["image"] } },
   },
+  "XiaomiMiMo/MiMo-V2-Flash": {
+    "huggingface": "XiaomiMiMo/MiMo-V2-Flash",
+  },
   "XiaomiMiMo/MiMo-V2.5": {
     "deepinfra": "XiaomiMiMo/MiMo-V2.5",
+    "huggingface": "XiaomiMiMo/MiMo-V2.5",
     "openrouter": "xiaomi/mimo-v2.5",
   },
   "XiaomiMiMo/MiMo-V2.5-Pro": {
     "deepinfra": "XiaomiMiMo/MiMo-V2.5-Pro",
+    "huggingface": "XiaomiMiMo/MiMo-V2.5-Pro",
     "novita-ai": "xiaomimimo/mimo-v2.5-pro",
     "openrouter": "xiaomi/mimo-v2.5-pro",
     "vercel": "xiaomi/mimo-v2.5-pro",
   },
   "deepseek-ai/DeepSeek-R1": {
     "azure": "deepseek-r1",
+    "huggingface": "deepseek-ai/DeepSeek-R1",
     "openrouter": "deepseek/deepseek-r1",
     "togetherai": "deepseek-ai/DeepSeek-R1",
     "vercel": "deepseek/deepseek-r1",
   },
   "deepseek-ai/DeepSeek-R1-0528": {
     "deepinfra": "deepseek-ai/DeepSeek-R1-0528",
+    "huggingface": "deepseek-ai/DeepSeek-R1-0528",
     "novita-ai": "deepseek/deepseek-r1-0528",
   },
   "deepseek-ai/DeepSeek-V3": {
     "deepinfra": "deepseek-ai/DeepSeek-V3",
+    "huggingface": "deepseek-ai/DeepSeek-V3",
     "togetherai": "deepseek-ai/DeepSeek-V3",
   },
   "deepseek-ai/DeepSeek-V3.1": {
     "baseten": "deepseek-ai/DeepSeek-V3.1",
     "deepinfra": "deepseek-ai/DeepSeek-V3.1",
     "google-vertex": { id: "deepseek-ai/deepseek-v3.1-maas", endpoint: "google-vertex.chat" },
+    "huggingface": "deepseek-ai/DeepSeek-V3.1",
     "novita-ai": "deepseek/deepseek-v3.1",
     "togetherai": "deepseek-ai/DeepSeek-V3-1",
     "vercel": "deepseek/deepseek-v3.1",
@@ -201,6 +235,7 @@ export const availability = {
     "deepinfra": "deepseek-ai/DeepSeek-V3.2",
     "friendli": "deepseek-ai/DeepSeek-V3.2",
     "google-vertex": { id: "deepseek-ai/deepseek-v3.2-maas", endpoint: "google-vertex.chat" },
+    "huggingface": "deepseek-ai/DeepSeek-V3.2",
     "nebius": { id: "deepseek-ai/DeepSeek-V3.2", narrows: { context: 163000 } },
     "novita-ai": "deepseek/deepseek-v3.2",
     "openrouter": "deepseek/deepseek-v3.2",
@@ -211,6 +246,7 @@ export const availability = {
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash",
     "deepseek": { id: "deepseek-v4-flash", narrows: { context: 1000000 } },
     "fireworks-ai": { id: "accounts/fireworks/models/deepseek-v4-flash", narrows: { context: 1000000 } },
+    "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
     "nebius": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 131072 } },
     "novita-ai": "deepseek/deepseek-v4-flash",
     "nvidia": "deepseek-ai/deepseek-v4-flash",
@@ -223,6 +259,7 @@ export const availability = {
     "baseten": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "fireworks-ai": { id: "accounts/fireworks/models/deepseek-v4-flash-0731", narrows: { context: 1000000 } },
+    "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "openrouter": "deepseek/deepseek-v4-flash-0731",
     "togetherai": { id: "deepseek-ai/DeepSeek-V4-Flash-0731", narrows: { context: 1000000 } },
     "vercel": { id: "deepseek/deepseek-v4-flash-0731", narrows: { context: 1000000 } },
@@ -233,6 +270,7 @@ export const availability = {
     "deepinfra": "deepseek-ai/DeepSeek-V4-Pro",
     "deepseek": { id: "deepseek-v4-pro", narrows: { context: 1000000 } },
     "fireworks-ai": { id: "accounts/fireworks/models/deepseek-v4-pro", narrows: { context: 1000000 } },
+    "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
     "nebius": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 1000000 } },
     "novita-ai": "deepseek/deepseek-v4-pro",
     "nvidia": "deepseek-ai/deepseek-v4-pro",
@@ -245,6 +283,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/google/gemma-4-26b-a4b-it", narrows: { context: 256000 } },
     "deepinfra": "google/gemma-4-26B-A4B-it",
     "google": "gemma-4-26b-a4b-it",
+    "huggingface": "google/gemma-4-26B-A4B-it",
     "openrouter": "google/gemma-4-26b-a4b-it",
     "scaleway": { id: "gemma-4-26b-a4b-it", narrows: { context: 256000 } },
     "siliconflow": { id: "google/gemma-4-26B-A4B-it", narrows: { drops: ["image"] } },
@@ -254,6 +293,7 @@ export const availability = {
     "deepinfra": "google/gemma-4-31B-it",
     "friendli": "google/gemma-4-31B-it",
     "google": "gemma-4-31b-it",
+    "huggingface": "google/gemma-4-31B-it",
     "nvidia": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
     "openrouter": "google/gemma-4-31b-it",
     "siliconflow": { id: "google/gemma-4-31B-it", narrows: { drops: ["image"] } },
@@ -262,6 +302,7 @@ export const availability = {
   "meta-llama/Llama-3.3-70B-Instruct": {
     "azure": { id: "llama-3.3-70b-instruct", narrows: { context: 128000 } },
     "google-vertex": { id: "meta/llama-3.3-70b-instruct-maas", endpoint: "google-vertex.chat", narrows: { context: 128000 } },
+    "huggingface": "meta-llama/Llama-3.3-70B-Instruct",
     "nebius": { id: "meta-llama/Llama-3.3-70B-Instruct", narrows: { context: 128000 } },
     "novita-ai": "meta-llama/llama-3.3-70b-instruct",
     "nvidia": { id: "meta/llama-3.3-70b-instruct", narrows: { context: 128000 } },
@@ -269,11 +310,16 @@ export const availability = {
     "scaleway": { id: "llama-3.3-70b-instruct", narrows: { context: 100000 } },
   },
   "moonshotai/Kimi-K2-Instruct": {
+    "huggingface": "moonshotai/Kimi-K2-Instruct",
     "novita-ai": "moonshotai/kimi-k2-instruct",
+  },
+  "moonshotai/Kimi-K2-Instruct-0905": {
+    "huggingface": "moonshotai/Kimi-K2-Instruct-0905",
   },
   "moonshotai/Kimi-K2-Thinking": {
     "amazon-bedrock": { id: "moonshot.kimi-k2-thinking", narrows: { context: 262143 } },
     "google-vertex": { id: "moonshotai/kimi-k2-thinking-maas", endpoint: "google-vertex.chat" },
+    "huggingface": "moonshotai/Kimi-K2-Thinking",
     "moonshotai": "kimi-k2-thinking",
     "novita-ai": "moonshotai/kimi-k2-thinking",
     "openrouter": "moonshotai/kimi-k2-thinking",
@@ -283,6 +329,7 @@ export const availability = {
     "azure": { id: "kimi-k2.5", narrows: { drops: ["video"] } },
     "baseten": { id: "moonshotai/Kimi-K2.5", narrows: { context: 262000, drops: ["video"] } },
     "deepinfra": "moonshotai/Kimi-K2.5",
+    "huggingface": "moonshotai/Kimi-K2.5",
     "moonshotai": "kimi-k2.5",
     "nebius": { id: "moonshotai/Kimi-K2.5", narrows: { context: 256000, drops: ["video"] } },
     "novita-ai": "moonshotai/kimi-k2.5",
@@ -295,6 +342,7 @@ export const availability = {
     "baseten": { id: "moonshotai/Kimi-K2.6", narrows: { context: 262000, drops: ["video"] } },
     "cloudflare-workers-ai": { id: "@cf/moonshotai/kimi-k2.6", narrows: { drops: ["video"] } },
     "deepinfra": "moonshotai/Kimi-K2.6",
+    "huggingface": "moonshotai/Kimi-K2.6",
     "moonshotai": "kimi-k2.6",
     "novita-ai": "moonshotai/kimi-k2.6",
     "nvidia": "moonshotai/kimi-k2.6",
@@ -307,6 +355,7 @@ export const availability = {
     "baseten": { id: "moonshotai/Kimi-K2.7-Code", narrows: { context: 262000 } },
     "cloudflare-workers-ai": "@cf/moonshotai/kimi-k2.7-code",
     "deepinfra": "moonshotai/Kimi-K2.7-Code",
+    "huggingface": "moonshotai/Kimi-K2.7-Code",
     "moonshotai": "kimi-k2.7-code",
     "nebius": { id: "moonshotai/Kimi-K2.7-Code", narrows: { drops: ["image"] } },
     "novita-ai": "moonshotai/kimi-k2.7-code",
@@ -318,6 +367,7 @@ export const availability = {
     "baseten": "moonshotai/Kimi-K3",
     "deepinfra": "moonshotai/Kimi-K3",
     "fireworks-ai": "accounts/fireworks/models/kimi-k3",
+    "huggingface": "moonshotai/Kimi-K3",
     "moonshotai": "kimi-k3",
     "nebius": { id: "moonshotai/Kimi-K3", narrows: { drops: ["image"] } },
     "novita-ai": "moonshotai/kimi-k3",
@@ -333,6 +383,7 @@ export const availability = {
     "fireworks-ai": "accounts/fireworks/models/gpt-oss-120b",
     "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chat" },
     "groq": "openai/gpt-oss-120b",
+    "huggingface": "openai/gpt-oss-120b",
     "nebius": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
     "nvidia": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
     "openrouter": "openai/gpt-oss-120b",
@@ -347,6 +398,7 @@ export const availability = {
     "fireworks-ai": "accounts/fireworks/models/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chat" },
     "groq": "openai/gpt-oss-20b",
+    "huggingface": "openai/gpt-oss-20b",
     "novita-ai": "openai/gpt-oss-20b",
     "nvidia": "openai/gpt-oss-20b",
     "openrouter": "openai/gpt-oss-20b",
@@ -354,12 +406,14 @@ export const availability = {
     "vercel": "openai/gpt-oss-20b",
   },
   "stepfun-ai/Step-3.5-Flash": {
+    "huggingface": "stepfun-ai/Step-3.5-Flash",
     "nvidia": { id: "stepfun-ai/step-3.5-flash", narrows: { context: 256000 } },
     "openrouter": "stepfun/step-3.5-flash",
     "stepfun": { id: "step-3.5-flash", narrows: { context: 256000 } },
   },
   "stepfun-ai/Step-3.7-Flash": {
     "deepinfra": "stepfun-ai/Step-3.7-Flash",
+    "huggingface": "stepfun-ai/Step-3.7-Flash",
     "nvidia": { id: "stepfun-ai/step-3.7-flash", narrows: { context: 256000, drops: ["video"] } },
     "openrouter": "stepfun/step-3.7-flash",
     "stepfun": { id: "step-3.7-flash", narrows: { context: 256000 } },
@@ -367,12 +421,14 @@ export const availability = {
   },
   "tencent/Hy3": {
     "deepinfra": "tencent/Hy3",
+    "huggingface": "tencent/Hy3",
     "openrouter": "tencent/hy3",
     "vercel": "tencent/hy3",
   },
   "thinkingmachines/Inkling": {
     "baseten": "thinkingmachines/inkling",
     "deepinfra": { id: "thinkingmachines/Inkling", narrows: { context: 524288 } },
+    "huggingface": "thinkingmachines/Inkling",
     "nvidia": "thinkingmachines/inkling",
     "openrouter": "thinkingmachines/inkling",
     "togetherai": { id: "thinkingmachines/Inkling", narrows: { context: 524288 } },
@@ -381,22 +437,26 @@ export const availability = {
   "thinkingmachines/Inkling-Small": {
     "baseten": "thinkingmachines/inkling-small",
     "deepinfra": "thinkingmachines/Inkling-Small",
+    "huggingface": "thinkingmachines/Inkling-Small",
     "openrouter": "thinkingmachines/inkling-small",
     "vercel": "thinkingmachines/inkling-small",
   },
   "zai-org/GLM-4.5": {
+    "huggingface": "zai-org/GLM-4.5",
     "novita-ai": "zai-org/glm-4.5",
     "openrouter": "z-ai/glm-4.5",
     "vercel": { id: "zai/glm-4.5", narrows: { context: 128000 } },
     "zhipuai": "glm-4.5",
   },
   "zai-org/GLM-4.5-Air": {
+    "huggingface": "zai-org/GLM-4.5-Air",
     "novita-ai": "zai-org/glm-4.5-air",
     "openrouter": "z-ai/glm-4.5-air",
     "vercel": { id: "zai/glm-4.5-air", narrows: { context: 128000 } },
     "zhipuai": "glm-4.5-air",
   },
   "zai-org/GLM-4.5V": {
+    "huggingface": "zai-org/GLM-4.5V",
     "novita-ai": "zai-org/glm-4.5v",
     "openrouter": "z-ai/glm-4.5v",
     "vercel": "zai/glm-4.5v",
@@ -404,6 +464,7 @@ export const availability = {
   },
   "zai-org/GLM-4.6": {
     "deepinfra": { id: "zai-org/GLM-4.6", narrows: { context: 202752 } },
+    "huggingface": "zai-org/GLM-4.6",
     "novita-ai": "zai-org/glm-4.6",
     "openrouter": "z-ai/glm-4.6",
     "vercel": { id: "zai/glm-4.6", narrows: { context: 200000 } },
@@ -414,6 +475,7 @@ export const availability = {
     "baseten": { id: "zai-org/GLM-4.7", narrows: { context: 200000 } },
     "deepinfra": { id: "zai-org/GLM-4.7", narrows: { context: 202752 } },
     "google-vertex": { id: "zai-org/glm-4.7-maas", endpoint: "google-vertex.chat", narrows: { context: 200000 } },
+    "huggingface": "zai-org/GLM-4.7",
     "novita-ai": "zai-org/glm-4.7",
     "openrouter": "z-ai/glm-4.7",
     "vercel": { id: "zai/glm-4.7", narrows: { context: 200000 } },
@@ -423,6 +485,7 @@ export const availability = {
     "amazon-bedrock": "zai.glm-4.7-flash",
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-4.7-flash", narrows: { context: 131072 } },
     "deepinfra": "zai-org/GLM-4.7-Flash",
+    "huggingface": "zai-org/GLM-4.7-Flash",
     "novita-ai": "zai-org/glm-4.7-flash",
     "openrouter": "z-ai/glm-4.7-flash",
     "vercel": "zai/glm-4.7-flash",
@@ -433,6 +496,7 @@ export const availability = {
     "baseten": "zai-org/GLM-5",
     "deepinfra": "zai-org/GLM-5",
     "google-vertex": { id: "zai-org/glm-5-maas", endpoint: "google-vertex.chat" },
+    "huggingface": "zai-org/GLM-5",
     "nebius": { id: "zai-org/GLM-5", narrows: { context: 200000 } },
     "novita-ai": "zai-org/glm-5",
     "openrouter": "z-ai/glm-5",
@@ -444,6 +508,7 @@ export const availability = {
     "baseten": "zai-org/GLM-5.1",
     "deepinfra": "zai-org/GLM-5.1",
     "friendli": "zai-org/GLM-5.1",
+    "huggingface": "zai-org/GLM-5.1",
     "novita-ai": "zai-org/glm-5.1",
     "openrouter": "z-ai/glm-5.1",
     "togetherai": "zai-org/GLM-5.1",
@@ -456,6 +521,7 @@ export const availability = {
     "cloudflare-workers-ai": "@cf/zai-org/glm-5.2",
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
+    "huggingface": "zai-org/GLM-5.2",
     "nebius": "zai-org/GLM-5.2",
     "novita-ai": "zai-org/glm-5.2",
     "nvidia": "z-ai/glm-5.2",

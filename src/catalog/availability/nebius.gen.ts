@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve nebius's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve nebius's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * nebius itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("nebius")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -22,39 +26,55 @@ export const availability = {
     "friendli": "MiniMaxAI/MiniMax-M2.5",
     "huggingface": "MiniMaxAI/MiniMax-M2.5",
     "minimax": "MiniMax-M2.5",
+    "nebius": "MiniMaxAI/MiniMax-M2.5",
     "novita-ai": "minimax/minimax-m2.5",
     "openrouter": "minimax/minimax-m2.5",
     "togetherai": "MiniMaxAI/MiniMax-M2.5",
     "vercel": "minimax/minimax-m2.5",
+  },
+  "MiniMaxAI/MiniMax-M2.5-fast": {
+    "nebius": "MiniMaxAI/MiniMax-M2.5-fast",
   },
   "MiniMaxAI/MiniMax-M3": {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
     "fireworks-ai": { id: "accounts/fireworks/models/minimax-m3", narrows: { context: 512000 } },
     "huggingface": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
     "minimax": { id: "MiniMax-M3", narrows: { context: 1000000 } },
+    "nebius": "MiniMaxAI/MiniMax-M3",
     "nvidia": { id: "minimaxai/minimax-m3", narrows: { context: 1000000 } },
     "openrouter": "minimax/minimax-m3",
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
     "vercel": { id: "minimax/minimax-m3", narrows: { context: 1000000 } },
   },
   "NousResearch/Hermes-4-405B": {
+    "nebius": "NousResearch/Hermes-4-405B",
     "openrouter": "nousresearch/hermes-4-405b",
   },
   "NousResearch/Hermes-4-70B": {
+    "nebius": "NousResearch/Hermes-4-70B",
     "openrouter": "nousresearch/hermes-4-70b",
+  },
+  "PrimeIntellect/INTELLECT-3": {
+    "nebius": "PrimeIntellect/INTELLECT-3",
   },
   "Qwen/Qwen2.5-VL-72B-Instruct": {
     "alibaba": "qwen2-5-vl-72b-instruct",
+    "nebius": "Qwen/Qwen2.5-VL-72B-Instruct",
     "novita-ai": { id: "qwen/qwen2.5-vl-72b-instruct", narrows: { context: 32768 } },
     "openrouter": "qwen/qwen2.5-vl-72b-instruct",
   },
   "Qwen/Qwen3-235B-A22B-Instruct-2507": {
     "deepinfra": "Qwen/Qwen3-235B-A22B-Instruct-2507",
     "huggingface": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    "nebius": "Qwen/Qwen3-235B-A22B-Instruct-2507",
     "novita-ai": { id: "qwen/qwen3-235b-a22b-instruct-2507", narrows: { context: 131072 } },
     "scaleway": { id: "qwen3-235b-a22b-instruct-2507", narrows: { context: 260000 } },
   },
+  "Qwen/Qwen3-235B-A22B-Thinking-2507-fast": {
+    "nebius": "Qwen/Qwen3-235B-A22B-Thinking-2507-fast",
+  },
   "Qwen/Qwen3-30B-A3B-Instruct-2507": {
+    "nebius": "Qwen/Qwen3-30B-A3B-Instruct-2507",
     "openrouter": "qwen/qwen3-30b-a3b-instruct-2507",
   },
   "Qwen/Qwen3-32B": {
@@ -62,17 +82,23 @@ export const availability = {
     "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 16384 } },
     "deepinfra": { id: "Qwen/Qwen3-32B", narrows: { context: 40960 } },
     "huggingface": "Qwen/Qwen3-32B",
+    "nebius": "Qwen/Qwen3-32B",
     "openrouter": "qwen/qwen3-32b",
   },
   "Qwen/Qwen3-Next-80B-A3B-Thinking": {
     "huggingface": "Qwen/Qwen3-Next-80B-A3B-Thinking",
+    "nebius": "Qwen/Qwen3-Next-80B-A3B-Thinking",
     "novita-ai": "qwen/qwen3-next-80b-a3b-thinking",
     "vercel": "alibaba/qwen3-next-80b-a3b-thinking",
+  },
+  "Qwen/Qwen3-Next-80B-A3B-Thinking-fast": {
+    "nebius": "Qwen/Qwen3-Next-80B-A3B-Thinking-fast",
   },
   "Qwen/Qwen3.5-397B-A17B": {
     "alibaba": "qwen3.5-397b-a17b",
     "deepinfra": "Qwen/Qwen3.5-397B-A17B",
     "huggingface": "Qwen/Qwen3.5-397B-A17B",
+    "nebius": "Qwen/Qwen3.5-397B-A17B",
     "novita-ai": "qwen/qwen3.5-397b-a17b",
     "nvidia": "qwen/qwen3.5-397b-a17b",
     "openrouter": "qwen/qwen3.5-397b-a17b",
@@ -80,15 +106,22 @@ export const availability = {
     "siliconflow": "Qwen/Qwen3.5-397B-A17B",
     "togetherai": "Qwen/Qwen3.5-397B-A17B",
   },
+  "Qwen/Qwen3.5-397B-A17B-fast": {
+    "nebius": "Qwen/Qwen3.5-397B-A17B-fast",
+  },
   "deepseek-ai/DeepSeek-V3.2": {
     "azure": { id: "deepseek-v3.2", narrows: { context: 128000 } },
     "deepinfra": "deepseek-ai/DeepSeek-V3.2",
     "friendli": "deepseek-ai/DeepSeek-V3.2",
     "google-vertex": { id: "deepseek-ai/deepseek-v3.2-maas", endpoint: "google-vertex.chat" },
     "huggingface": "deepseek-ai/DeepSeek-V3.2",
+    "nebius": "deepseek-ai/DeepSeek-V3.2",
     "novita-ai": "deepseek/deepseek-v3.2",
     "openrouter": "deepseek/deepseek-v3.2",
     "vercel": { id: "deepseek/deepseek-v3.2", narrows: { context: 128000 } },
+  },
+  "deepseek-ai/DeepSeek-V3.2-fast": {
+    "nebius": "deepseek-ai/DeepSeek-V3.2-fast",
   },
   "deepseek-ai/DeepSeek-V4-Flash": {
     "azure": "deepseek-v4-flash",
@@ -96,6 +129,7 @@ export const availability = {
     "deepseek": "deepseek-v4-flash",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
+    "nebius": "deepseek-ai/DeepSeek-V4-Flash",
     "novita-ai": "deepseek/deepseek-v4-flash",
     "nvidia": "deepseek-ai/deepseek-v4-flash",
     "openrouter": "deepseek/deepseek-v4-flash",
@@ -109,6 +143,7 @@ export const availability = {
     "deepseek": "deepseek-v4-pro",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-pro",
     "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
+    "nebius": "deepseek-ai/DeepSeek-V4-Pro",
     "novita-ai": "deepseek/deepseek-v4-pro",
     "nvidia": "deepseek-ai/deepseek-v4-pro",
     "openrouter": "deepseek/deepseek-v4-pro",
@@ -116,10 +151,14 @@ export const availability = {
     "togetherai": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 512000 } },
     "vercel": "deepseek/deepseek-v4-pro",
   },
+  "google/gemma-3-27b-it": {
+    "nebius": "google/gemma-3-27b-it",
+  },
   "meta-llama/Llama-3.3-70B-Instruct": {
     "azure": "llama-3.3-70b-instruct",
     "google-vertex": { id: "meta/llama-3.3-70b-instruct-maas", endpoint: "google-vertex.chat" },
     "huggingface": "meta-llama/Llama-3.3-70B-Instruct",
+    "nebius": "meta-llama/Llama-3.3-70B-Instruct",
     "novita-ai": "meta-llama/llama-3.3-70b-instruct",
     "nvidia": "meta/llama-3.3-70b-instruct",
     "openrouter": "meta-llama/llama-3.3-70b-instruct",
@@ -131,10 +170,14 @@ export const availability = {
     "deepinfra": "moonshotai/Kimi-K2.5",
     "huggingface": "moonshotai/Kimi-K2.5",
     "moonshotai": "kimi-k2.5",
+    "nebius": "moonshotai/Kimi-K2.5",
     "novita-ai": "moonshotai/kimi-k2.5",
     "openrouter": "moonshotai/kimi-k2.5",
     "togetherai": "moonshotai/Kimi-K2.5",
     "vercel": "moonshotai/kimi-k2.5",
+  },
+  "moonshotai/Kimi-K2.5-fast": {
+    "nebius": "moonshotai/Kimi-K2.5-fast",
   },
   "moonshotai/Kimi-K2.7-Code": {
     "azure": "kimi-k2.7-code",
@@ -143,6 +186,7 @@ export const availability = {
     "deepinfra": "moonshotai/Kimi-K2.7-Code",
     "huggingface": "moonshotai/Kimi-K2.7-Code",
     "moonshotai": "kimi-k2.7-code",
+    "nebius": "moonshotai/Kimi-K2.7-Code",
     "novita-ai": "moonshotai/kimi-k2.7-code",
     "openrouter": "moonshotai/kimi-k2.7-code",
     "togetherai": "moonshotai/Kimi-K2.7-Code",
@@ -154,12 +198,23 @@ export const availability = {
     "fireworks-ai": "accounts/fireworks/models/kimi-k3",
     "huggingface": { id: "moonshotai/Kimi-K3", narrows: { context: 1000000 } },
     "moonshotai": "kimi-k3",
+    "nebius": "moonshotai/Kimi-K3",
     "novita-ai": "moonshotai/kimi-k3",
     "openrouter": "moonshotai/kimi-k3",
     "togetherai": "moonshotai/Kimi-K3",
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000 } },
   },
+  "nvidia/Llama-3_1-Nemotron-Ultra-253B-v1": {
+    "nebius": "nvidia/Llama-3_1-Nemotron-Ultra-253B-v1",
+  },
+  "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B": {
+    "nebius": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+  },
+  "nvidia/Nemotron-3-Nano-Omni": {
+    "nebius": "nvidia/Nemotron-3-Nano-Omni",
+  },
   "nvidia/nemotron-3-super-120b-a12b": {
+    "nebius": "nvidia/nemotron-3-super-120b-a12b",
     "openrouter": "nvidia/nemotron-3-super-120b-a12b",
   },
   "openai/gpt-oss-120b": {
@@ -171,11 +226,15 @@ export const availability = {
     "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chat" },
     "groq": "openai/gpt-oss-120b",
     "huggingface": "openai/gpt-oss-120b",
+    "nebius": "openai/gpt-oss-120b",
     "nvidia": "openai/gpt-oss-120b",
     "openrouter": "openai/gpt-oss-120b",
     "scaleway": "gpt-oss-120b",
     "togetherai": "openai/gpt-oss-120b",
     "vercel": "openai/gpt-oss-120b",
+  },
+  "openai/gpt-oss-120b-fast": {
+    "nebius": "openai/gpt-oss-120b-fast",
   },
   "zai-org/GLM-5": {
     "amazon-bedrock": "zai.glm-5",
@@ -183,6 +242,7 @@ export const availability = {
     "deepinfra": "zai-org/GLM-5",
     "google-vertex": { id: "zai-org/glm-5-maas", endpoint: "google-vertex.chat" },
     "huggingface": "zai-org/GLM-5",
+    "nebius": "zai-org/GLM-5",
     "novita-ai": "zai-org/glm-5",
     "openrouter": "z-ai/glm-5",
     "togetherai": "zai-org/GLM-5",
@@ -196,6 +256,7 @@ export const availability = {
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
+    "nebius": "zai-org/GLM-5.2",
     "novita-ai": "zai-org/glm-5.2",
     "nvidia": "z-ai/glm-5.2",
     "openrouter": "z-ai/glm-5.2",

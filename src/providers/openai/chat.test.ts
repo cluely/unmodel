@@ -491,6 +491,26 @@ describe("openai.chat toApi", () => {
     expect(routed.warnings.map((w) => w.code)).toEqual(["id_respelled"]);
   });
 
+  test("retargets to openai itself — the identity hop, byte-for-byte the same request", () => {
+    // OpenAI serves OpenAI's models, so `.toApi("openai")` is in the union and
+    // is a no-op: the same wire body at the same URL. It exists so a
+    // provider-generic call site (`req.toApi(providerFromConfig)`) does not
+    // need a special case for "the provider I already am".
+    const validated = chat({ model: "gpt-5.2", messages: [userMessage("hi")] });
+    const routed = validated.toApi("openai");
+
+    // Enumerable properties only — spreading is what a caller does to get the
+    // fetch body, and the two bodies are indistinguishable.
+    const wire = (v: object): Record<string, unknown> => ({ ...v });
+    expect(wire(routed)).toEqual(wire(validated));
+    expect(routed.model).toBe("gpt-5.2");
+    expect(routed.request.url).toBe("https://api.openai.com/v1/chat/completions");
+    expect(routed.target).toBe("openai");
+    // Lossless, per the warnings contract: nothing was translated, respelled
+    // or narrowed, so there is nothing to report.
+    expect(routed.warnings.length).toBe(0);
+  });
+
   test("a provider that does not serve the model fails, naming the ones that do", () => {
     // The compile-time union already rules "groq" out; this is the runtime
     // guard behind it, which a JS caller still reaches.

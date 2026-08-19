@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve perplexity's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve perplexity's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * perplexity itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("perplexity")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -17,14 +21,20 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
 export const availability = {
   "sonar": {
     "openrouter": { id: "perplexity/sonar", narrows: { context: 127072 } },
+    "perplexity": "sonar",
     "vercel": { id: "perplexity/sonar", narrows: { context: 127000 } },
+  },
+  "sonar-deep-research": {
+    "perplexity": "sonar-deep-research",
   },
   "sonar-pro": {
     "openrouter": "perplexity/sonar-pro",
+    "perplexity": "sonar-pro",
     "vercel": "perplexity/sonar-pro",
   },
   "sonar-reasoning-pro": {
     "openrouter": "perplexity/sonar-reasoning-pro",
+    "perplexity": "sonar-reasoning-pro",
     "vercel": { id: "perplexity/sonar-reasoning-pro", narrows: { context: 127000 } },
   },
 } as const satisfies AvailabilityMap;

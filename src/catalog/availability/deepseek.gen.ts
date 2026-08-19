@@ -6,8 +6,12 @@
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 
 /**
- * Which other providers serve deepseek's chat models, and what each one
- * calls them. Source model id → target provider id → the target's own id.
+ * Which providers serve deepseek's chat models, and what each one calls
+ * them. Source model id → target provider id → the target's own id.
+ *
+ * deepseek itself is always among the targets: a provider serves its own
+ * models by definition, so the identity retarget `.toApi("deepseek")` is
+ * valid (and lossless) for every row here, including rows nobody else serves.
  *
  * A bare string means the target's default endpoint; the object form carries
  * a non-default `endpoint` and/or `narrows` metadata (a smaller context
@@ -16,11 +20,16 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  */
 export const availability = {
   "deepseek-chat": {
+    "deepseek": "deepseek-chat",
     "openrouter": { id: "deepseek/deepseek-chat", narrows: { context: 163840 } },
+  },
+  "deepseek-reasoner": {
+    "deepseek": "deepseek-reasoner",
   },
   "deepseek-v4-flash": {
     "azure": "deepseek-v4-flash",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash",
+    "deepseek": "deepseek-v4-flash",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
     "nebius": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 131072 } },
@@ -34,6 +43,7 @@ export const availability = {
     "azure": "deepseek-v4-pro",
     "baseten": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 262144 } },
     "deepinfra": "deepseek-ai/DeepSeek-V4-Pro",
+    "deepseek": "deepseek-v4-pro",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-pro",
     "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
     "nebius": "deepseek-ai/DeepSeek-V4-Pro",

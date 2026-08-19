@@ -47,7 +47,11 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { stripModelsPrefix } from "./chat";
+// `./model-path`, not `./chat`: the two share one six-line normalization, and
+// taking it from the chat validator used to pull that module's whole graph —
+// the Gemini wire schema, the chat constraint tables, the retarget engine and
+// two dialect codecs — into an entry that only generates images.
+import { GOOGLE_MODELS_BASE_URL, googleModelUrl, stripModelsPrefix } from "./model-path";
 import {
   IMAGEN_DOCS_URL,
   generateImagesConstraints,
@@ -55,7 +59,7 @@ import {
 } from "./constraints";
 import { generateImagesModels, type GoogleImagenModelId } from "./imagen-models";
 
-export const GENERATE_IMAGES_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+export const GENERATE_IMAGES_BASE_URL = GOOGLE_MODELS_BASE_URL;
 
 // ---------------------------------------------------------------------------
 // Wire types — Tier A: one arm per documented model id. The only per-model
@@ -370,7 +374,7 @@ function estimate(params: GenerateImagesBody, info: ModelInfo | undefined, _ctx:
  * yield the same URL.
  */
 export function generateImagesUrl(model: string): string {
-  return `${GENERATE_IMAGES_BASE_URL}/${stripModelsPrefix(model)}:predict`;
+  return googleModelUrl(model, "predict");
 }
 
 function buildSdkParams(

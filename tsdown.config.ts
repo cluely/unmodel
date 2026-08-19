@@ -7,6 +7,15 @@ export default defineConfig({
     "ai-sdk/index": "src/ai-sdk/index.ts",
     "catalog/index": "src/catalog/index.ts",
     "chat/index": "src/chat/index.ts",
+    // The six unified media surfaces. Each is the kernel plus a factory — the
+    // provider adapters are named by the caller, so these entries stay small
+    // (pinned in test/bundle-budget.test.ts) no matter how many adapters ship.
+    "unified/image": "src/unified/image.ts",
+    "unified/image-edit": "src/unified/image-edit.ts",
+    "unified/video": "src/unified/video.ts",
+    "unified/speech": "src/unified/speech.ts",
+    "unified/transcribe": "src/unified/transcribe.ts",
+    "unified/music": "src/unified/music.ts",
     "providers/alibaba/index": "src/providers/alibaba/index.ts",
     "providers/amazon-bedrock/index": "src/providers/amazon-bedrock/index.ts",
     "providers/anthropic/index": "src/providers/anthropic/index.ts",

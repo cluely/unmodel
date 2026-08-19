@@ -12,6 +12,27 @@ import type { ModelInfo } from "../../core/catalog-types";
 export const DREAM_MACHINE_BASE_URL = "https://api.lumalabs.ai/dream-machine/v1";
 
 /**
+ * `POST /generations` — the video route, and the prefix the image and reframe
+ * routes hang off (`/generations/image`, `/generations/…`).
+ *
+ * It lives here rather than in `./generations.ts` for a bundle reason, not a
+ * tidiness one: `image-generations.ts` needs the prefix and the ratio list
+ * below, and taking either from the video validator dragged that whole module
+ * — its zod schema, its checks, its pricing table — into an entry that never
+ * generates a video. This file imports zod and two core *types*, so a consumer
+ * pays for what it names.
+ */
+export const GENERATIONS_URL = `${DREAM_MACHINE_BASE_URL}/generations`;
+
+/**
+ * Documented aspect ratios (lumaai SDK closed enum). One list, because Luma
+ * documents the same seven for video, image and both reframe routes — a second
+ * copy would be a silent divergence waiting for the next value Luma ships.
+ */
+export const LUMA_ASPECT_RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4", "21:9", "9:21"] as const;
+export type LumaAspectRatio = (typeof LUMA_ASPECT_RATIOS)[number];
+
+/**
  * Enforces a documented value list on a field the spec deliberately leaves as
  * an open string (`VideoModelOutputResolution` and `VideoModelOutputDuration`
  * are both `anyOf: [enum, string]`, so the SDK accepts anything). Reported as

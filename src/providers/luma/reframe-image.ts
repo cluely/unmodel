@@ -27,11 +27,12 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { imageModels, type LumaImageModelId } from "./models";
-import { LUMA_ASPECT_RATIOS, type LumaAspectRatio } from "./generations";
 import {
   DREAM_MACHINE_BASE_URL,
+  LUMA_ASPECT_RATIOS,
   mediaSchema,
   reframeGeometryShape,
+  type LumaAspectRatio,
   type LumaMedia,
   type LumaReframeGeometry,
 } from "./shared";

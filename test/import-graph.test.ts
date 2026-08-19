@@ -433,6 +433,120 @@ describe("chat (amendment A1)", () => {
   });
 });
 
+/**
+ * Amendment A5 — `src/core/unified/**` and `src/unified/**`, the six unified
+ * media surfaces.
+ *
+ * The proposition of `unmodel/image` and its five siblings is that you name
+ * the providers you want and pay for those. That only holds if the *kernel*
+ * costs nothing beyond itself — and a kernel is one careless import away from
+ * costing everything, because it is the one module in the repo that talks
+ * about every provider at once.
+ *
+ * So the layering is asserted in three tiers, mirroring the shape of the chat
+ * rules above:
+ *
+ * - **A5** the kernel (`src/core/unified/**`) sees `src/core/**` and zod. Not
+ *   a provider, not a catalog, not even type-only — a type-only import today
+ *   is a value import after one refactor, and the rule that admits neither is
+ *   the rule nobody has to think about.
+ * - **A6** a category entry (`src/unified/**`) sees the kernel, its own
+ *   directory, and provider `unified.ts` adapter leaves — nothing else in a
+ *   provider directory, ever. This is what makes the ready-made pack in a
+ *   later commit cost exactly its adapters.
+ * - **A7** an adapter (`src/providers/<p>/unified.ts`) sees its own provider
+ *   directory, the kernel and the translation warning types. Scoped to the
+ *   files that exist, so it is inert until adapters land and applies the
+ *   moment the first one does.
+ */
+describe("unified media surfaces (amendment A5)", () => {
+  const isUnifiedAdapter = (file: string): boolean =>
+    /^src\/providers\/[^/]+\/unified\.ts$/.test(file);
+
+  test("A5 — the kernel imports only src/core/** and zod", () => {
+    const kernelFiles = FILES.filter((f) => under(f, "src/core/unified"));
+    // A rule that scans an empty set passes by saying nothing.
+    expect(kernelFiles.length).toBeGreaterThanOrEqual(3);
+
+    const violations: string[] = [];
+    for (const file of kernelFiles) {
+      for (const ref of importsOf(file)) {
+        if (ref.specifier === "zod") continue;
+        if (under(ref.target, "src/core")) continue;
+        violations.push(
+          violation(
+            file,
+            ref,
+            under(ref.target, "src/providers")
+              ? "the unified kernel must never depend on a provider — it is the one module that " +
+                  "speaks about all of them, so a single edge here lands in all six media entries"
+              : "src/core/unified may import only src/core/** and zod",
+          ),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("A6 — a category entry imports only the kernel, itself, and adapter leaves", () => {
+    const entries = FILES.filter((f) => under(f, "src/unified"));
+    expect(entries.length).toBe(6);
+
+    const violations: string[] = [];
+    for (const file of entries) {
+      for (const ref of importsOf(file)) {
+        if (under(ref.target, "src/core/unified")) continue;
+        if (under(ref.target, "src/unified")) continue;
+        if (isUnifiedAdapter(ref.target)) continue;
+        violations.push(
+          violation(
+            file,
+            ref,
+            under(ref.target, "src/providers")
+              ? "a category entry reaches a provider only through its unified.ts adapter — anything " +
+                  "else drags that provider's validator, schema and catalog into an entry whose " +
+                  "whole proposition is that you pay for the adapters you name"
+              : "src/unified may import only src/core/unified/**, its own directory, and " +
+                  "src/providers/*/unified.ts",
+          ),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("A7 — an adapter imports only its own provider, the kernel, and warning types", () => {
+    // Reserved: no adapter has landed yet, so this scans an empty set today.
+    // The point is that one cannot be added without the rule already applying.
+    const violations: string[] = [];
+    for (const file of FILES.filter(isUnifiedAdapter)) {
+      const provider = providerOf(file);
+      for (const ref of importsOf(file)) {
+        if (ref.specifier === "zod") continue;
+        if (under(ref.target, "src/core/unified")) continue;
+        if (ref.target === "src/core/translate/warnings.ts") continue;
+        if (providerOf(ref.target) === provider) continue;
+        violations.push(
+          violation(
+            file,
+            ref,
+            "a unified adapter may import only its own provider directory, src/core/unified/**, " +
+              "src/core/translate/warnings.ts and zod",
+          ),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("the six entries exist, one per category", () => {
+    const names = FILES.filter((f) => under(f, "src/unified"))
+      .map((f) => f.slice("src/unified/".length, -".ts".length))
+      .sort();
+    expect(names).toEqual(["image", "image-edit", "music", "speech", "transcribe", "video"]);
+  });
+});
+
 describe("cross-provider imports", () => {
   /**
    * The two structural exceptions, enumerated so adding a third is a

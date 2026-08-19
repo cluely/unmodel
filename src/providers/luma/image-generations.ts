@@ -27,7 +27,10 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { imageModels, type LumaImageModelId } from "./models";
-import { LUMA_ASPECT_RATIOS, GENERATIONS_URL, type LumaAspectRatio } from "./generations";
+// `./shared`, not `./generations`: two constants used to be worth this
+// module's entire graph — the video validator's zod schema, checks and pricing
+// table — in an entry that only generates images.
+import { LUMA_ASPECT_RATIOS, GENERATIONS_URL, type LumaAspectRatio } from "./shared";
 
 export const IMAGE_GENERATIONS_URL = `${GENERATIONS_URL}/image`;
 

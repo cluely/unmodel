@@ -29,6 +29,7 @@ import { toBytes } from "../../core/media/bytes";
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
 import { sniffImage, type SniffedImage } from "../../core/media/image";
 import { chatModels } from "./tts-models";
+import { GOOGLE_MODELS_BASE_URL, googleModelUrl, stripModelsPrefix } from "./model-path";
 import {
   GEMINI_IMAGE_ASPECT_RATIOS,
   GEMINI_IMAGE_ASPECT_RATIO_ENUM_NAMES,
@@ -136,13 +137,12 @@ type MediaKind = "image" | "audio" | "video" | "pdf";
 type RuledKind = Exclude<MediaKind, "pdf">;
 
 /**
- * Users copy "models/gemini-…" ids from listModels; the bare id is canonical
- * for the catalog, constraint tables, and the endpoint URL. Shared with
- * ./generate-videos (same URL scheme, same "models/{model}:<verb>" routes).
+ * Re-exported from `./model-path`, which is where it now lives: the image and
+ * video endpoints need the same normalization, and importing it from *here*
+ * dragged this module's ~100 KiB graph (wire schema, constraint tables, two
+ * codecs, the retarget engine) into bundles that only wanted Imagen or Veo.
  */
-export function stripModelsPrefix(model: string): string {
-  return model.startsWith("models/") ? model.slice("models/".length) : model;
-}
+export { stripModelsPrefix };
 
 const GENERATE_CONTENT_RULES = {
   constraints: chatConstraints,
@@ -841,7 +841,7 @@ function estimate(params: GenerateContentBody, info: ModelInfo | undefined, ctx:
 // + .request + .toApi(provider)
 // ---------------------------------------------------------------------------
 
-export const GENERATE_CONTENT_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+export const GENERATE_CONTENT_BASE_URL = GOOGLE_MODELS_BASE_URL;
 
 /**
  * Endpoint URL for a model id. Accepts both the bare id ("gemini-2.5-flash")
@@ -849,7 +849,7 @@ export const GENERATE_CONTENT_BASE_URL = "https://generativelanguage.googleapis.
  * listModels — both yield the same URL.
  */
 export function generateContentUrl(model: string): string {
-  return `${GENERATE_CONTENT_BASE_URL}/${stripModelsPrefix(model)}:generateContent`;
+  return googleModelUrl(model, "generateContent");
 }
 
 /**

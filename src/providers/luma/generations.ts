@@ -29,18 +29,25 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { videoModels, type LumaVideoModelId } from "./models";
-import { DREAM_MACHINE_BASE_URL, checkOpenEnum } from "./shared";
+import {
+  GENERATIONS_URL,
+  LUMA_ASPECT_RATIOS,
+  checkOpenEnum,
+  type LumaAspectRatio,
+} from "./shared";
 
-export const GENERATIONS_URL = `${DREAM_MACHINE_BASE_URL}/generations`;
+/**
+ * Both now live in `./shared.ts` — the image and reframe routes need them and
+ * must not pay for this module to get them. Re-exported so `/generations` and
+ * the ratio list keep their long-standing import site.
+ */
+export { GENERATIONS_URL, LUMA_ASPECT_RATIOS };
+export type { LumaAspectRatio };
 
 const VIDEO_GENERATION_DOCS = "https://docs.lumalabs.ai/docs/video-generation";
 
 /** `GET /generations/concepts/list` — the documented camera-concept list. */
 export const CONCEPTS_LIST_URL = `${GENERATIONS_URL}/concepts/list`;
-
-/** Documented aspect ratios (lumaai SDK closed enum). */
-export const LUMA_ASPECT_RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4", "21:9", "9:21"] as const;
-export type LumaAspectRatio = (typeof LUMA_ASPECT_RATIOS)[number];
 
 /** Documented video durations — https://docs.lumalabs.ai/docs/video-generation */
 export const LUMA_VIDEO_DURATIONS = ["5s", "9s"] as const;

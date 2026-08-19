@@ -70,6 +70,35 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
  */
 const CHAT_BUDGET_KIB = 600;
 
+/**
+ * The six unified media entries (`unmodel/image`, `unmodel/video`, …).
+ *
+ * Their whole proposition is that you name the adapters you want and the
+ * bundle contains those providers and no others — so the number that matters
+ * is not how big they are but that they are **kernel-only**. Today they carry
+ * `createUnified`, the issue sink, the warning sink and the two error classes,
+ * and nothing else exists that they could carry.
+ *
+ * The budget is 18 KiB against 15.6–16.8 KiB measured — the same ~10% headroom
+ * as every number above, set from what the tree measures rather than from a
+ * round figure. (A 15 KiB pin was the original target; reaching it would have
+ * meant deleting doc comments from `kernel.ts`, which is measured unminified
+ * and is where the compile/merge/remap contract is written down. Trading
+ * documentation for a number that already proves what it needs to prove is a
+ * bad trade, and the composition test below is the assertion doing the real
+ * work anyway.)
+ */
+const UNIFIED_BUDGET_KIB = 18;
+
+const UNIFIED_ENTRIES: string[] = [
+  "image",
+  "image-edit",
+  "video",
+  "speech",
+  "transcribe",
+  "music",
+];
+
 const FROM_IMPORT = /^[ \t]*(?:import|export)\s[^;]*?\sfrom\s*["']([^"']+)["']/gm;
 
 /** Every dist chunk an entry statically pulls in, the entry included. */
@@ -116,6 +145,7 @@ function sourceModulesOf(entry: string): string[] {
 
 const entryFile = (id: string): string => join(DIST, "providers", id, "index.js");
 const chatEntry = (): string => join(DIST, "chat", "index.js");
+const unifiedEntry = (name: string): string => join(DIST, "unified", `${name}.js`);
 
 // CI runs `bun test` before `bun run build`, and `dist/` is gitignored, so the
 // suite builds on demand rather than depending on run order. `clean: true` in
@@ -194,5 +224,57 @@ describe("unmodel/chat", () => {
       "src/providers/google/interop.ts",
       "src/providers/openai-compatible/interop.ts",
     ]);
+  });
+});
+
+describe("unified media entries", () => {
+  test("all six are built, so the assertions below assert something", () => {
+    for (const name of UNIFIED_ENTRIES) {
+      expect(existsSync(unifiedEntry(name)), `dist entry for unified/${name}`).toBe(true);
+    }
+  });
+
+  test.each(UNIFIED_ENTRIES)("unmodel/%s stays under the kernel budget", (name) => {
+    const kib = transitiveBytes(unifiedEntry(name)) / 1024;
+    expect(kib, `unified/${name} is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
+      UNIFIED_BUDGET_KIB,
+    );
+  });
+
+  /**
+   * The composition assertion, and the one doing the real work.
+   *
+   * A byte budget catches a provider leaking in *eventually*; this catches it
+   * in the diff that causes it, and names the module. Every one of the six is
+   * the kernel plus a handful of core leaves — no provider, no catalog, no
+   * availability data, no zod — and the moment that stops being true, the
+   * entry has stopped being what it is sold as.
+   *
+   * The one legitimate way this list grows is a category entry importing a
+   * provider `unified.ts` adapter, which is the ready-made pack. That is a
+   * deliberate change with a budget change attached, which is exactly the
+   * conversation this test exists to force.
+   */
+  test.each(UNIFIED_ENTRIES)("unmodel/%s carries the kernel and nothing else", (name) => {
+    const modules = sourceModulesOf(unifiedEntry(name));
+    // A vacuous scan would be worse than no scan.
+    expect(modules).toContain(`src/unified/${name}.ts`);
+    expect(modules).toContain("src/core/unified/kernel.ts");
+
+    expect(modules.filter((m) => m.startsWith("src/providers/"))).toEqual([]);
+    expect(modules.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
+    expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
+
+    // Every remaining module is either the entry itself or a core leaf. The
+    // four-layer engine in `core/pipeline.ts` is deliberately absent: the
+    // kernel delegates validation to the provider's own validator, so it needs
+    // the severity rules (`core/issue-sink.ts`) and not the engine.
+    expect(modules.filter((m) => m === "src/core/pipeline.ts")).toEqual([]);
+    for (const module of modules) {
+      expect(
+        module.startsWith("src/core/") || module === `src/unified/${name}.ts`,
+        `${module} is neither core nor the entry`,
+      ).toBe(true);
+    }
   });
 });

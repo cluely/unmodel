@@ -51,6 +51,30 @@
       "types": "./dist/chat/index.d.ts",
       "default": "./dist/chat/index.js"
     },
+    "./image": {
+      "types": "./dist/unified/image.d.ts",
+      "default": "./dist/unified/image.js"
+    },
+    "./image-edit": {
+      "types": "./dist/unified/image-edit.d.ts",
+      "default": "./dist/unified/image-edit.js"
+    },
+    "./video": {
+      "types": "./dist/unified/video.d.ts",
+      "default": "./dist/unified/video.js"
+    },
+    "./speech": {
+      "types": "./dist/unified/speech.d.ts",
+      "default": "./dist/unified/speech.js"
+    },
+    "./transcribe": {
+      "types": "./dist/unified/transcribe.d.ts",
+      "default": "./dist/unified/transcribe.js"
+    },
+    "./music": {
+      "types": "./dist/unified/music.d.ts",
+      "default": "./dist/unified/music.js"
+    },
     "./alibaba": {
       "types": "./dist/providers/alibaba/index.d.ts",
       "default": "./dist/providers/alibaba/index.js"

@@ -1,52 +1,27 @@
 import { z } from "zod";
-import type { Issue, IssueCode, IssueSeverity } from "./issues";
+import type { Issue } from "./issues";
 import { UnmodelValidationError } from "./issues";
 import type { ValidateEstimate, ValidateResult } from "./result";
 import type { ValidateOptions } from "./options";
 import type { ModelInfo } from "./catalog-types";
 import type { EndpointConstraints, FamilyRule } from "./constraint-types";
 import { heuristicTokenizer, type Tokenizer } from "./tokens";
+import { createIssueSink, partition } from "./issue-sink";
 
 /**
- * Every issue code's severity when nothing overrides it.
+ * The severity table and the collector now live in `./issue-sink.ts`, a leaf
+ * that imports no zod and no catalog.
  *
- * Exported (additively) so alternative pipelines — `unmodel/chat` runs its own
- * four layers over a compiled body rather than the caller's params — inherit
- * these semantics instead of re-deciding them. A second table that disagreed
- * about, say, whether `unknown_model` fails a request would be a difference
- * nobody would notice until it bit them.
+ * They moved because two pipelines want them without wanting *this* module:
+ * `unmodel/chat` and the `unmodel/<media>` unified kernel both run their own
+ * layers over a compiled body and delegate the rest, so making them import
+ * `createIssueSink` from here charged every one of those entries ~9 KiB of
+ * four-layer engine they never call. Re-exported so the import site never had
+ * to change.
  */
-export const DEFAULT_SEVERITY: Record<IssueCode, IssueSeverity> = {
-  invalid_shape: "error",
-  unknown_param: "warning",
-  unknown_model: "warning",
-  deprecated_model: "warning",
-  unsupported_param: "error",
-  unsupported_capability: "error",
-  invalid_enum_value: "error",
-  over_context: "error",
-  near_context: "warning",
-  over_output_limit: "error",
-  over_budget: "error",
-  media_too_large: "error",
-  media_unsupported_format: "error",
-  media_dimensions_exceeded: "error",
-  media_duration_exceeded: "error",
-  media_duration_undeclared: "warning",
-};
-
-export interface IssueInput {
-  code: IssueCode;
-  message: string;
-  path?: Array<string | number>;
-  model?: string;
-  meta?: Record<string, unknown>;
-  /**
-   * Overrides `DEFAULT_SEVERITY` for this one issue (used for deny rules
-   * flagged `ignored`). A user-supplied `options.severity` still wins.
-   */
-  severity?: IssueSeverity;
-}
+export { DEFAULT_SEVERITY, createIssueSink, partition } from "./issue-sink";
+export type { IssueInput, IssueSink } from "./issue-sink";
+import type { IssueInput } from "./issue-sink";
 
 export interface PipelineContext {
   readonly endpoint: string;
@@ -54,39 +29,6 @@ export interface PipelineContext {
   readonly tokenizer: Tokenizer;
   /** Records an issue; severity comes from defaults + the user's overrides. */
   report(issue: IssueInput): void;
-}
-
-/**
- * The severity-resolving collector every layer reports into: defaults, then
- * the rule's own override (deny rules flagged `ignored`), then the user's
- * `options.severity` — which wins, including `"off"`, which drops the issue.
- *
- * Extracted from `createValidator` so `unmodel/chat`'s pipeline shares the
- * exact resolution order rather than reimplementing it. `issues` is the live
- * array; pair it with {@link partition} at the end.
- */
-export interface IssueSink {
-  readonly issues: Issue[];
-  report(input: IssueInput): void;
-}
-
-export function createIssueSink(options: ValidateOptions): IssueSink {
-  const issues: Issue[] = [];
-  return {
-    issues,
-    report(input) {
-      const override = options.severity?.[input.code];
-      if (override === "off") return;
-      issues.push({
-        severity: override ?? input.severity ?? DEFAULT_SEVERITY[input.code],
-        code: input.code,
-        path: input.path ?? [],
-        message: input.message,
-        ...(input.model !== undefined && { model: input.model }),
-        ...(input.meta !== undefined && { meta: input.meta }),
-      });
-    },
-  };
 }
 
 export interface PipelineSpec<P, V = P> {
@@ -291,14 +233,6 @@ export function createValidator<P, V = P>(spec: PipelineSpec<P, V>): Validator<P
   validator.safe = safe;
   validator.constraintsFor = (modelId: string) => constraintsFor(spec, modelId);
   return validator;
-}
-
-/** Splits a collected issue list into the two arrays `ValidateResult` carries. */
-export function partition(issues: Issue[]): { errors: Issue[]; warnings: Issue[] } {
-  return {
-    errors: issues.filter((i) => i.severity === "error"),
-    warnings: issues.filter((i) => i.severity === "warning"),
-  };
 }
 
 function providerOf(endpoint: string): string {

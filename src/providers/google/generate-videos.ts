@@ -64,7 +64,10 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import type { GoogleVideoModelId } from "../../catalog/google.gen";
-import { stripModelsPrefix } from "./chat";
+// `./model-path`, not `./chat` — see the note in ./generate-images.ts: the
+// shared id normalization is a leaf, so this entry pays for Veo and nothing
+// else.
+import { GOOGLE_MODELS_BASE_URL, googleModelUrl, stripModelsPrefix } from "./model-path";
 import {
   generateVideosConstraints,
   generateVideosDocsUrl,
@@ -73,7 +76,7 @@ import {
 } from "./constraints";
 import { generateVideosModels, type GoogleVeoSupplementModelId } from "./veo-models";
 
-export const GENERATE_VIDEOS_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+export const GENERATE_VIDEOS_BASE_URL = GOOGLE_MODELS_BASE_URL;
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror the raw REST body of models.{model}:predictLongRunning
@@ -660,7 +663,7 @@ function estimate(params: GenerateVideosBody, info: ModelInfo | undefined, _ctx:
  * both yield the same URL.
  */
 export function generateVideosUrl(model: string): string {
-  return `${GENERATE_VIDEOS_BASE_URL}/${stripModelsPrefix(model)}:predictLongRunning`;
+  return googleModelUrl(model, "predictLongRunning");
 }
 
 function toSdkImage(image: GoogleVeoImage): GenerateVideosSdkImage {

@@ -1,0 +1,15 @@
+{
+  "ref": "fish-audio/s2.1-pro",
+  "voice": "802e3bc2b27e49c2995d23ef70e6ac89",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "reference_id": "802e3bc2b27e49c2995d23ef70e6ac89",
+    "format": "wav",
+    "sample_rate": 16000
+  },
+  "url": "https://api.fish.audio/v1/tts",
+  "headers": {
+    "content-type": "application/json",
+    "model": "s2.1-pro"
+  }
+}

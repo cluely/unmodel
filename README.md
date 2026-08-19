@@ -340,22 +340,28 @@ Native wire formats, hand-maintained catalogs, non-token pricing
 
 **Text to speech**
 
+Every provider addresses its synthesis route as `speech` — the wire spellings
+(`/v1/text-to-speech/{voice_id}`, `/tts/bytes`, `/v1/speak`, `/v1/t2a_v2`,
+`/synthesize`) survive on the URL constants and the wire types, not on the
+export you call. All fourteen also ship a `unified.ts` adapter, so the same
+request can be written once against `unmodel/speech`.
+
 | Subpath | Validators |
 | --- | --- |
 | `unmodel/openai` | `speech` — `tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`, `gpt-4o-mini-tts-2025-12-15` |
-| `unmodel/cartesia` | `tts` (Sonic) |
-| `unmodel/deepgram` | `speak` (Aura 1 / Aura 2) |
-| `unmodel/elevenlabs` | `textToSpeech` |
-| `unmodel/fish-audio` | `tts` (S2 / speech-1.x — msgpack or JSON body) |
-| `unmodel/hume` | `tts` (Octave, `octave` / `octave-2`) |
-| `unmodel/inworld` | `tts` |
+| `unmodel/cartesia` | `speech` (Sonic) |
+| `unmodel/deepgram` | `speech` (Aura 1 / Aura 2) |
+| `unmodel/elevenlabs` | `speech` |
+| `unmodel/fish-audio` | `speech` (S2 / speech-1.x — msgpack or JSON body) |
+| `unmodel/hume` | `speech` (Octave, `octave` / `octave-2`) |
+| `unmodel/inworld` | `speech` |
 | `unmodel/lmnt` | `speech` (audio bytes), `speechDetailed` (JSON + durations) |
-| `unmodel/minimax` | `t2a` (T2A v2) |
-| `unmodel/murf` | `speechGenerate` + `checkSpeech`, `speechStream` |
-| `unmodel/resemble` | `synthesize` + `checkSynthesis`, `synthesizeStream` |
-| `unmodel/rime` | `tts` (Arcana / Mist) |
-| `unmodel/smallest-ai` | `tts` (Lightning v3.1 / v3.1 Pro) |
-| `unmodel/speechify` | `speech`, `stream` (Simba) |
+| `unmodel/minimax` | `speech` (T2A v2) |
+| `unmodel/murf` | `speech` + `checkSpeech`, `speechStream` |
+| `unmodel/resemble` | `speech` + `checkSpeech`, `speechStream` |
+| `unmodel/rime` | `speech` (Arcana / Mist) |
+| `unmodel/smallest-ai` | `speech` (Lightning v3.1 / v3.1 Pro) |
+| `unmodel/speechify` | `speech`, `speechStream` (Simba) |
 
 **Speech to text**
 
@@ -389,9 +395,9 @@ round-trip through JSON. Which body a route wants differs by provider:
   the transcription request itself stays JSON and references what came back.
 
 ```ts
-import { textToSpeech } from "unmodel/elevenlabs";
+import { speech } from "unmodel/elevenlabs";
 
-const validated = textToSpeech(
+const validated = speech(
   {
     voice_id: "JBFqnCBsd6RMkjVDRZzb", // path param — moved into .request.url
     text: "Hello from unmodel!",
@@ -621,8 +627,8 @@ import { checkChat } from "unmodel/openai";
 // speech checkers — checkTranscription (unmodel/elevenlabs, unmodel/soniox,
 // unmodel/mistral), checkStt (unmodel/cartesia), checkListen (unmodel/deepgram),
 // checkTranscript (unmodel/assemblyai), checkPreRecorded (unmodel/gladia),
-// checkJob (unmodel/revai, unmodel/speechmatics), checkSpeech (unmodel/murf),
-// checkSynthesis (unmodel/resemble)
+// checkJob (unmodel/revai, unmodel/speechmatics),
+// checkSpeech (unmodel/murf, unmodel/resemble)
 
 const report = checkChat(await res.json());
 report.warnings;     // truncation, content filter, refusals — as Issue[]

@@ -13,7 +13,7 @@
  */
 import {
   listen,
-  speak,
+  speech,
   listenLive,
   listenFlux,
   fluxConfigure,
@@ -113,36 +113,36 @@ function listenTypeTests(): void {
 }
 
 /**
- * The audio-format surface of `deepgram.speak`, which is driven end to end by
+ * The audio-format surface of `deepgram.speech`, which is driven end to end by
  * the documented "Audio Format Combinations" table (AUDIO_FORMATS). Every
  * field the table closes is closed in the type as well, so a combination the
  * API rejects with `invalid_enum_value` is a red squiggle first.
  */
-function speakAudioFormatTypeTests(): void {
+function speechAudioFormatTypeTests(): void {
   // --- encoding: SPEAK_ENCODINGS is the whole space (and AUDIO_FORMATS' key)
-  speak({ text: "hi", encoding: "linear16" });
-  speak({ text: "hi", encoding: "opus" });
+  speech({ text: "hi", encoding: "linear16" });
+  speech({ text: "hi", encoding: "opus" });
   // @ts-expect-error the (string & {}) tail is gone — vorbis is not an encoding
-  speak({ text: "hi", encoding: "vorbis" });
+  speech({ text: "hi", encoding: "vorbis" });
   // @ts-expect-error the empty string compiled through the old tail
-  speak({ text: "hi", encoding: "" });
+  speech({ text: "hi", encoding: "" });
 
   // --- container: the union of every `containers` entry in AUDIO_FORMATS ---
-  speak({ text: "hi", encoding: "linear16", container: "wav" });
-  speak({ text: "hi", encoding: "opus", container: "ogg" });
+  speech({ text: "hi", encoding: "linear16", container: "wav" });
+  speech({ text: "hi", encoding: "opus", container: "ogg" });
   // @ts-expect-error "mp4" is not one of wav / ogg / none
-  speak({ text: "hi", encoding: "linear16", container: "mp4" });
+  speech({ text: "hi", encoding: "linear16", container: "mp4" });
   // @ts-expect-error the empty string compiled through the old tail
-  speak({ text: "hi", encoding: "linear16", container: "" });
+  speech({ text: "hi", encoding: "linear16", container: "" });
   expectAssignable<DeepgramSpeakContainer>("none");
 
   // --- sample_rate: the union of every `sampleRates` entry in AUDIO_FORMATS
-  speak({ text: "hi", encoding: "linear16", sample_rate: 24000 });
-  speak({ text: "hi", encoding: "flac", sample_rate: 22050 });
+  speech({ text: "hi", encoding: "linear16", sample_rate: 24000 });
+  speech({ text: "hi", encoding: "flac", sample_rate: 22050 });
   // @ts-expect-error 99 was silently accepted while the field was `number`
-  speak({ text: "hi", encoding: "linear16", sample_rate: 99 });
+  speech({ text: "hi", encoding: "linear16", sample_rate: 99 });
   // @ts-expect-error 44100 appears in no AUDIO_FORMATS row, for any encoding
-  speak({ text: "hi", encoding: "linear16", sample_rate: 44100 });
+  speech({ text: "hi", encoding: "linear16", sample_rate: 44100 });
   expectAssignable<DeepgramSpeakSampleRate>(48000);
 
   // --- bit_rate: DELIBERATELY still `number` --------------------------------
@@ -150,11 +150,11 @@ function speakAudioFormatTypeTests(): void {
   // union describes it. mp3 publishes a discrete list ([32000, 48000]) but
   // opus (4000–650000) and aac (4000–192000) publish continuous ranges, and
   // narrowing to the mp3 list would reject the legal opus values below.
-  speak({ text: "hi", encoding: "opus", bit_rate: 128000 });
-  speak({ text: "hi", encoding: "aac", bit_rate: 96000 });
+  speech({ text: "hi", encoding: "opus", bit_rate: 128000 });
+  speech({ text: "hi", encoding: "aac", bit_rate: 96000 });
 
   // Voice/model ids keep their (string & {}) escape.
-  speak({ text: "hi", model: "aura-9-future-en" });
+  speech({ text: "hi", model: "aura-9-future-en" });
 }
 
 /**
@@ -254,7 +254,7 @@ function realtimeSocketTypeTests(): void {
 
 export {
   listenTypeTests,
-  speakAudioFormatTypeTests,
+  speechAudioFormatTypeTests,
   listenRedactTypeTests,
   realtimeSocketTypeTests,
 };

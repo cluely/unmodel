@@ -30,6 +30,8 @@ import {
   ratioValue,
   resolveAudioFormat,
   resolveSizing,
+  resolveVoice,
+  toPrimaryLanguage,
   TIER_PIXELS,
   toDurationNumber,
   toDurationString,
@@ -768,5 +770,197 @@ describe("speed", () => {
     const ctx = ctxAt("speed");
     expect(toSpeedPercentDelta(1.234, { scale: 1000, min: 0.5, max: 2 }, ctx).value).toBe(234);
     expect(ctx.warnings).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fields an endpoint has no home for
+// ---------------------------------------------------------------------------
+
+describe("resolveAudioFormat · unavailable fields", () => {
+  const CODEC_ONLY = {
+    codecs: { mp3: "mp3", pcm_s16le: "pcm" },
+    unavailable: ["sampleRate", "bitrate"],
+  } as const;
+
+  test("a value with nowhere to go is an error, never a silent drop", () => {
+    const ctx = ctxAt("outputFormat");
+    const out = resolveAudioFormat({ format: "mp3", sampleRate: 44100 }, CODEC_ONLY, ctx);
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("unsupported_param");
+    expect(out.issues[0]!.message).toContain("`outputFormat.sampleRate` is not configurable");
+    expect(out.issues[0]!.meta).toMatchObject({ field: "sampleRate", codec: "mp3", value: 44100 });
+    expect(ctx.warnings).toEqual([]);
+  });
+
+  test("both halves are reported in one pass", () => {
+    const out = resolveAudioFormat(
+      { format: "mp3", sampleRate: 44100, bitrate: 128_000 },
+      CODEC_ONLY,
+      ctxAt("outputFormat"),
+    );
+    expect(out.issues.map((issue) => issue.meta?.["field"])).toEqual(["sampleRate", "bitrate"]);
+  });
+
+  test("an unavailable field is never defaulted into existence either", () => {
+    const ctx = ctxAt("outputFormat");
+    // A documented default plus an unavailable field is a table bug; the
+    // unavailability wins, because inventing a value for a field that cannot be
+    // sent would put a warning on the record about nothing.
+    const out = resolveAudioFormat(
+      "mp3",
+      { ...CODEC_ONLY, defaults: { sampleRate: 24000 } },
+      ctx,
+    );
+    expect(out.value).toMatchObject({ codec: "mp3" });
+    expect(out.value?.sampleRate).toBeUndefined();
+    expect(ctx.warnings).toEqual([]);
+  });
+
+  test("the per-codec spelling narrows to one codec (Deepgram's fixed-rate mp3)", () => {
+    const SPEC = {
+      codecs: { mp3: "mp3", pcm_s16le: "linear16" },
+      unavailable: { mp3: ["sampleRate"], pcm_s16le: ["bitrate"] },
+    } as const;
+    const mp3 = resolveAudioFormat(
+      { format: "mp3", sampleRate: 22050 },
+      SPEC,
+      ctxAt("outputFormat"),
+    );
+    expect(mp3.issues[0]!.code).toBe("unsupported_param");
+    // …while the same rate is fine on the codec that does publish the field.
+    const pcm = resolveAudioFormat(
+      { format: "pcm_s16le", sampleRate: 22050 },
+      SPEC,
+      ctxAt("outputFormat"),
+    );
+    expect(pcm.value).toMatchObject({ sampleRate: 22050 });
+  });
+});
+
+describe("resolveAudioFormat · defaultsByCodec", () => {
+  const SPEC = {
+    codecs: { mp3: "mp3", opus: "opus" },
+    sampleRates: { mp3: [44100], opus: [48000] },
+    defaults: { sampleRate: 44100, bitrate: 128_000 },
+    defaultsByCodec: { opus: { sampleRate: 48000 } },
+  } as const;
+
+  test("the per-codec default wins over the endpoint-wide one", () => {
+    const ctx = ctxAt("outputFormat");
+    // ElevenLabs' shape: the endpoint defaults to mp3_44100_128, but Opus is
+    // published at 48 kHz only, so 44100 would be a value the API rejects.
+    expect(resolveAudioFormat("opus", SPEC, ctx).value).toMatchObject({ sampleRate: 48000 });
+    expect(ctx.warnings.map((w) => w.meta?.["value"])).toEqual([48000, 128_000]);
+  });
+
+  test("a codec with no override keeps the endpoint-wide default", () => {
+    expect(resolveAudioFormat("mp3", SPEC, ctxAt("outputFormat")).value).toMatchObject({
+      sampleRate: 44100,
+      bitrate: 128_000,
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Voices
+// ---------------------------------------------------------------------------
+
+describe("resolveVoice", () => {
+  const ID_ONLY = { accepts: ["id"] } as const;
+  const NAME_ONLY = { accepts: ["name"] } as const;
+  const BOTH = { accepts: ["name", "id"] } as const;
+
+  test("a bare string is whichever spelling the endpoint takes", () => {
+    expect(resolveVoice("v1", ID_ONLY, ctxAt("voice")).value).toEqual({ kind: "id", value: "v1" });
+    expect(resolveVoice("astra", NAME_ONLY, ctxAt("voice")).value).toEqual({
+      kind: "name",
+      value: "astra",
+    });
+    // With both, the first entry decides — the array is in preference order.
+    expect(resolveVoice("Ito", BOTH, ctxAt("voice")).value).toEqual({ kind: "name", value: "Ito" });
+  });
+
+  test("the explicit wrappers pass through where they are accepted", () => {
+    expect(resolveVoice({ id: "v1" }, ID_ONLY, ctxAt("voice")).value).toEqual({
+      kind: "id",
+      value: "v1",
+    });
+    expect(resolveVoice({ name: "Ito" }, BOTH, ctxAt("voice")).value).toEqual({
+      kind: "name",
+      value: "Ito",
+    });
+  });
+
+  test("the wrong wrapper is an error, not a coercion", () => {
+    const out = resolveVoice({ name: "Kore" }, ID_ONLY, ctxAt("voice"));
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("invalid_shape");
+    expect(out.issues[0]!.message).toContain("`{ name }` has no equivalent here");
+    expect(out.issues[0]!.meta).toMatchObject({ accepts: ["id"], got: "name" });
+
+    // …and the same in the other direction.
+    expect(resolveVoice({ id: "abc" }, NAME_ONLY, ctxAt("voice")).issues[0]!.code).toBe(
+      "invalid_shape",
+    );
+  });
+
+  test("an empty or non-string voice is a shape error", () => {
+    expect(resolveVoice("", ID_ONLY, ctxAt("voice")).issues[0]!.code).toBe("invalid_shape");
+    expect(resolveVoice({ id: "" }, ID_ONLY, ctxAt("voice")).issues[0]!.code).toBe("invalid_shape");
+    expect(
+      resolveVoice({ id: 7 } as unknown as { id: string }, ID_ONLY, ctxAt("voice")).issues[0]!.code,
+    ).toBe("invalid_shape");
+    expect(
+      resolveVoice(7 as unknown as string, ID_ONLY, ctxAt("voice")).issues[0]!.code,
+    ).toBe("invalid_shape");
+  });
+
+  test("resolving a voice never warns — it is a lookup, not an approximation", () => {
+    const ctx = ctxAt("voice");
+    resolveVoice({ id: "v1" }, BOTH, ctx);
+    resolveVoice("v2", ID_ONLY, ctx);
+    expect(ctx.warnings).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Languages
+// ---------------------------------------------------------------------------
+
+describe("toPrimaryLanguage", () => {
+  test("a bare language tag passes through, lowercased and silent", () => {
+    const ctx = ctxAt("language");
+    expect(toPrimaryLanguage("pt", ctx).value).toBe("pt");
+    expect(toPrimaryLanguage("EN", ctx).value).toBe("en");
+    expect(toPrimaryLanguage("fil", ctx).value).toBe("fil");
+    expect(ctx.warnings).toEqual([]);
+  });
+
+  test("a dropped region warns, naming both tags", () => {
+    const ctx = ctxAt("language");
+    expect(toPrimaryLanguage("pt-BR", ctx, { source: "https://docs.example" }).value).toBe("pt");
+    expect(ctx.warnings).toHaveLength(1);
+    expect(ctx.warnings[0]!.code).toBe("approximated_param");
+    expect(ctx.warnings[0]!.message).toContain('"pt-BR" was sent as "pt"');
+    expect(ctx.warnings[0]!.meta).toMatchObject({
+      requested: "pt-BR",
+      achieved: "pt",
+      dropped: "BR",
+      source: "https://docs.example",
+    });
+  });
+
+  test("underscores and longer subtags are handled the same way", () => {
+    const ctx = ctxAt("language");
+    expect(toPrimaryLanguage("zh_Hans_CN", ctx).value).toBe("zh");
+    expect(ctx.warnings[0]!.meta).toMatchObject({ dropped: "Hans_CN" });
+  });
+
+  test("something that is not a language tag is an error", () => {
+    const out = toPrimaryLanguage("Brazilian Portuguese", ctxAt("language"));
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("invalid_shape");
+    expect(out.issues[0]!.message).toContain("BCP-47");
   });
 });

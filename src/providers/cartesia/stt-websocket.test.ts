@@ -7,7 +7,7 @@ import {
   STT_WEBSOCKET_KEYTERM_MAX,
   STT_WEBSOCKET_KEYTERM_TOTAL_CHARACTERS_MAX,
 } from "./stt-websocket";
-import { CARTESIA_VERSION } from "./tts";
+import { CARTESIA_VERSION } from "./speech";
 import { stt } from "./stt";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";

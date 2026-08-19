@@ -1,0 +1,12 @@
+{
+  "ref": "elevenlabs/eleven_flash_v2_5",
+  "voice": "JBFqnCBsd6RMkjVDRZzb",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "model_id": "eleven_flash_v2_5"
+  },
+  "url": "https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=mp3_44100_128",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "ref": "openai/gpt-4o-mini-tts",
+  "voice": "marin",
+  "params": {
+    "model": "gpt-4o-mini-tts",
+    "input": "The lighthouse keeper checked the lamp.",
+    "voice": "marin",
+    "speed": 1.5
+  },
+  "url": "https://api.openai.com/v1/audio/speech",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

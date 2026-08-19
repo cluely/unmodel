@@ -115,6 +115,10 @@
       "types": "./dist/providers/cartesia/index.d.ts",
       "default": "./dist/providers/cartesia/index.js"
     },
+    "./cartesia/unified": {
+      "types": "./dist/providers/cartesia/unified.d.ts",
+      "default": "./dist/providers/cartesia/unified.js"
+    },
     "./cerebras": {
       "types": "./dist/providers/cerebras/index.d.ts",
       "default": "./dist/providers/cerebras/index.js"
@@ -131,6 +135,10 @@
       "types": "./dist/providers/deepgram/index.d.ts",
       "default": "./dist/providers/deepgram/index.js"
     },
+    "./deepgram/unified": {
+      "types": "./dist/providers/deepgram/unified.d.ts",
+      "default": "./dist/providers/deepgram/unified.js"
+    },
     "./deepinfra": {
       "types": "./dist/providers/deepinfra/index.d.ts",
       "default": "./dist/providers/deepinfra/index.js"
@@ -143,6 +151,10 @@
       "types": "./dist/providers/elevenlabs/index.d.ts",
       "default": "./dist/providers/elevenlabs/index.js"
     },
+    "./elevenlabs/unified": {
+      "types": "./dist/providers/elevenlabs/unified.d.ts",
+      "default": "./dist/providers/elevenlabs/unified.js"
+    },
     "./fireworks-ai": {
       "types": "./dist/providers/fireworks-ai/index.d.ts",
       "default": "./dist/providers/fireworks-ai/index.js"
@@ -150,6 +162,10 @@
     "./fish-audio": {
       "types": "./dist/providers/fish-audio/index.d.ts",
       "default": "./dist/providers/fish-audio/index.js"
+    },
+    "./fish-audio/unified": {
+      "types": "./dist/providers/fish-audio/unified.d.ts",
+      "default": "./dist/providers/fish-audio/unified.js"
     },
     "./friendli": {
       "types": "./dist/providers/friendli/index.d.ts",
@@ -179,6 +195,10 @@
       "types": "./dist/providers/hume/index.d.ts",
       "default": "./dist/providers/hume/index.js"
     },
+    "./hume/unified": {
+      "types": "./dist/providers/hume/unified.d.ts",
+      "default": "./dist/providers/hume/unified.js"
+    },
     "./ideogram": {
       "types": "./dist/providers/ideogram/index.d.ts",
       "default": "./dist/providers/ideogram/index.js"
@@ -190,6 +210,10 @@
     "./inworld": {
       "types": "./dist/providers/inworld/index.d.ts",
       "default": "./dist/providers/inworld/index.js"
+    },
+    "./inworld/unified": {
+      "types": "./dist/providers/inworld/unified.d.ts",
+      "default": "./dist/providers/inworld/unified.js"
     },
     "./kling": {
       "types": "./dist/providers/kling/index.d.ts",
@@ -211,6 +235,10 @@
       "types": "./dist/providers/lmnt/index.d.ts",
       "default": "./dist/providers/lmnt/index.js"
     },
+    "./lmnt/unified": {
+      "types": "./dist/providers/lmnt/unified.d.ts",
+      "default": "./dist/providers/lmnt/unified.js"
+    },
     "./longcat": {
       "types": "./dist/providers/longcat/index.d.ts",
       "default": "./dist/providers/longcat/index.js"
@@ -227,6 +255,10 @@
       "types": "./dist/providers/minimax/index.d.ts",
       "default": "./dist/providers/minimax/index.js"
     },
+    "./minimax/unified": {
+      "types": "./dist/providers/minimax/unified.d.ts",
+      "default": "./dist/providers/minimax/unified.js"
+    },
     "./mistral": {
       "types": "./dist/providers/mistral/index.d.ts",
       "default": "./dist/providers/mistral/index.js"
@@ -238,6 +270,10 @@
     "./murf": {
       "types": "./dist/providers/murf/index.d.ts",
       "default": "./dist/providers/murf/index.js"
+    },
+    "./murf/unified": {
+      "types": "./dist/providers/murf/unified.d.ts",
+      "default": "./dist/providers/murf/unified.js"
     },
     "./nebius": {
       "types": "./dist/providers/nebius/index.d.ts",
@@ -254,6 +290,10 @@
     "./openai": {
       "types": "./dist/providers/openai/index.d.ts",
       "default": "./dist/providers/openai/index.js"
+    },
+    "./openai/unified": {
+      "types": "./dist/providers/openai/unified.d.ts",
+      "default": "./dist/providers/openai/unified.js"
     },
     "./openai-compatible": {
       "types": "./dist/providers/openai-compatible/index.d.ts",
@@ -279,6 +319,10 @@
       "types": "./dist/providers/resemble/index.d.ts",
       "default": "./dist/providers/resemble/index.js"
     },
+    "./resemble/unified": {
+      "types": "./dist/providers/resemble/unified.d.ts",
+      "default": "./dist/providers/resemble/unified.js"
+    },
     "./revai": {
       "types": "./dist/providers/revai/index.d.ts",
       "default": "./dist/providers/revai/index.js"
@@ -290,6 +334,10 @@
     "./rime": {
       "types": "./dist/providers/rime/index.d.ts",
       "default": "./dist/providers/rime/index.js"
+    },
+    "./rime/unified": {
+      "types": "./dist/providers/rime/unified.d.ts",
+      "default": "./dist/providers/rime/unified.js"
     },
     "./runway": {
       "types": "./dist/providers/runway/index.d.ts",
@@ -311,6 +359,10 @@
       "types": "./dist/providers/smallest-ai/index.d.ts",
       "default": "./dist/providers/smallest-ai/index.js"
     },
+    "./smallest-ai/unified": {
+      "types": "./dist/providers/smallest-ai/unified.d.ts",
+      "default": "./dist/providers/smallest-ai/unified.js"
+    },
     "./soniox": {
       "types": "./dist/providers/soniox/index.d.ts",
       "default": "./dist/providers/soniox/index.js"
@@ -318,6 +370,10 @@
     "./speechify": {
       "types": "./dist/providers/speechify/index.d.ts",
       "default": "./dist/providers/speechify/index.js"
+    },
+    "./speechify/unified": {
+      "types": "./dist/providers/speechify/unified.d.ts",
+      "default": "./dist/providers/speechify/unified.js"
     },
     "./speechmatics": {
       "types": "./dist/providers/speechmatics/index.d.ts",

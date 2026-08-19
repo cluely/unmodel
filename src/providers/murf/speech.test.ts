@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
-  speechGenerate,
+  speech,
   speechStream,
   SPEECH_GENERATE_URL,
   SPEECH_STREAM_URL,
@@ -15,7 +15,7 @@ import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 
-const safeGenerate = speechGenerate.safe as unknown as (
+const safeGenerate = speech.safe as unknown as (
   params: unknown,
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
@@ -24,9 +24,9 @@ const safeStream = speechStream.safe as unknown as (
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
 
-describe("murf.speechGenerate happy path", () => {
+describe("murf.speech happy path", () => {
   test("returns a wire-pure body and request meta", () => {
-    const v = speechGenerate({
+    const v = speech({
       text: "Hello world",
       voiceId: "en-US-natalie",
       format: "MP3",
@@ -47,21 +47,21 @@ describe("murf.speechGenerate happy path", () => {
   });
 
   test("an omitted modelVersion resolves to the gen2 catalog entry", () => {
-    const r = speechGenerate.safe({ text: "a".repeat(1000), voiceId: "en-US-natalie" });
+    const r = speech.safe({ text: "a".repeat(1000), voiceId: "en-US-natalie" });
     expect(r.ok).toBe(true);
     // gen2 is $30 / 1M characters.
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo((1000 * 30) / 1_000_000, 12);
   });
 
   test("modelVersion GEN2 lower-cases to the same catalog entry, no unknown_model", () => {
-    const r = speechGenerate.safe({ text: "hi", voiceId: "v", modelVersion: "GEN2" });
+    const r = speech.safe({ text: "hi", voiceId: "v", modelVersion: "GEN2" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
     expect(GENERATE_MODEL_VERSIONS).toEqual(["GEN2"]);
   });
 
   test("asking generate for Falcon 2 errors and points at the streaming route", () => {
-    const r = speechGenerate.safe({ text: "hi", voiceId: "v", modelVersion: "FALCON2" });
+    const r = speech.safe({ text: "hi", voiceId: "v", modelVersion: "FALCON2" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       const err = r.errors.find((e) => e.code === "invalid_enum_value");
@@ -72,7 +72,7 @@ describe("murf.speechGenerate happy path", () => {
   });
 
   test("multiNativeLocale warns as deprecated in favour of locale", () => {
-    const r = speechGenerate.safe({ text: "hi", voiceId: "v", multiNativeLocale: "en-US" });
+    const r = speech.safe({ text: "hi", voiceId: "v", multiNativeLocale: "en-US" });
     expect(r.ok).toBe(true);
     if (r.ok) {
       const warn = r.warnings.find((w) => w.path[0] === "multiNativeLocale");
@@ -88,24 +88,24 @@ describe("murf.speechGenerate happy path", () => {
   });
 });
 
-describe("murf.speechGenerate numeric bounds", () => {
+describe("murf.speech numeric bounds", () => {
   test("rate and pitch are integers in -50..50", () => {
-    expect(speechGenerate.safe({ text: "hi", voiceId: "v", rate: -50 }).ok).toBe(true);
-    expect(speechGenerate.safe({ text: "hi", voiceId: "v", pitch: 50 }).ok).toBe(true);
+    expect(speech.safe({ text: "hi", voiceId: "v", rate: -50 }).ok).toBe(true);
+    expect(speech.safe({ text: "hi", voiceId: "v", pitch: 50 }).ok).toBe(true);
     expect(safeGenerate({ text: "hi", voiceId: "v", rate: -51 }).ok).toBe(false);
     expect(safeGenerate({ text: "hi", voiceId: "v", pitch: 51 }).ok).toBe(false);
     expect(safeGenerate({ text: "hi", voiceId: "v", rate: 1.5 }).ok).toBe(false);
   });
 
   test("variation is an integer in 0..5", () => {
-    expect(speechGenerate.safe({ text: "hi", voiceId: "v", variation: 0 }).ok).toBe(true);
-    expect(speechGenerate.safe({ text: "hi", voiceId: "v", variation: 5 }).ok).toBe(true);
+    expect(speech.safe({ text: "hi", voiceId: "v", variation: 0 }).ok).toBe(true);
+    expect(speech.safe({ text: "hi", voiceId: "v", variation: 5 }).ok).toBe(true);
     expect(safeGenerate({ text: "hi", voiceId: "v", variation: 6 }).ok).toBe(false);
     expect(safeGenerate({ text: "hi", voiceId: "v", variation: -1 }).ok).toBe(false);
   });
 
   test("sampleRate is a closed list — 16000 is streaming-only", () => {
-    expect(speechGenerate.safe({ text: "hi", voiceId: "v", sampleRate: 44100 }).ok).toBe(true);
+    expect(speech.safe({ text: "hi", voiceId: "v", sampleRate: 44100 }).ok).toBe(true);
     expect(safeGenerate({ text: "hi", voiceId: "v", sampleRate: 16000 }).ok).toBe(false);
     expect(speechStream.safe({ text: "hi", voiceId: "v", sampleRate: 16000 }).ok).toBe(true);
   });
@@ -119,7 +119,7 @@ describe("murf.speechGenerate numeric bounds", () => {
 
 describe("murf companded-codec rules", () => {
   test("ULAW with a non-8000 sample rate errors", () => {
-    const r = speechGenerate.safe({
+    const r = speech.safe({
       text: "hi",
       voiceId: "v",
       format: "ULAW",
@@ -134,7 +134,7 @@ describe("murf companded-codec rules", () => {
   });
 
   test("ALAW with STEREO errors", () => {
-    const r = speechGenerate.safe({
+    const r = speech.safe({
       text: "hi",
       voiceId: "v",
       format: "ALAW",
@@ -149,7 +149,7 @@ describe("murf companded-codec rules", () => {
   });
 
   test("ULAW at 8000/MONO passes", () => {
-    const r = speechGenerate.safe({
+    const r = speech.safe({
       text: "hi",
       voiceId: "v",
       format: "ULAW",
@@ -168,7 +168,7 @@ describe("murf companded-codec rules", () => {
 
   test("non-companded formats are unaffected", () => {
     expect(
-      speechGenerate.safe({
+      speech.safe({
         text: "hi",
         voiceId: "v",
         format: "WAV",
@@ -183,7 +183,7 @@ describe("murf enums", () => {
   test("every documented format passes", () => {
     for (const format of SPEECH_FORMATS) {
       const params = { text: "hi", voiceId: "v", format, sampleRate: 8000 } as const;
-      expect(speechGenerate.safe({ ...params, channelType: "MONO" }).ok).toBe(true);
+      expect(speech.safe({ ...params, channelType: "MONO" }).ok).toBe(true);
     }
   });
 
@@ -262,7 +262,7 @@ describe("murf character limit", () => {
   test("text over 3000 characters is over_output_limit with character meta", () => {
     expect(models.gen2.limit.characters).toBe(MURF_MAX_CHARACTERS);
     const text = "a".repeat(MURF_MAX_CHARACTERS + 1);
-    const r = speechGenerate.safe({ text, voiceId: "v" });
+    const r = speech.safe({ text, voiceId: "v" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       const err = r.errors.find((e) => e.code === "over_output_limit");
@@ -280,14 +280,14 @@ describe("murf character limit", () => {
   });
 
   test("exactly at the cap passes", () => {
-    expect(speechGenerate.safe({ text: "a".repeat(MURF_MAX_CHARACTERS), voiceId: "v" }).ok).toBe(
+    expect(speech.safe({ text: "a".repeat(MURF_MAX_CHARACTERS), voiceId: "v" }).ok).toBe(
       true,
     );
   });
 
   test("maxCostUSD turns an over-budget request into an error", () => {
     expect(() =>
-      speechGenerate({ text: "a".repeat(3000), voiceId: "v" }, { maxCostUSD: 0.00001 }),
+      speech({ text: "a".repeat(3000), voiceId: "v" }, { maxCostUSD: 0.00001 }),
     ).toThrow(UnmodelValidationError);
   });
 });

@@ -1,0 +1,40 @@
+{
+  "ref": "speechify/simba-3.0",
+  "voice": "geffen_32",
+  "params": {
+    "input": "The lighthouse keeper checked the lamp.",
+    "voice_id": "geffen_32",
+    "model": "simba-3.0",
+    "output_format": "ulaw_8000"
+  },
+  "url": "https://api.speechify.ai/v1/audio/speech",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "outputFormat"
+      ],
+      "meta": {
+        "codec": "pcm_mulaw",
+        "requested": "wav",
+        "achieved": "raw",
+        "source": "https://docs.speechify.ai/openapi/api-reference.json"
+      }
+    },
+    {
+      "code": "approximated_param",
+      "path": [
+        "outputFormat"
+      ],
+      "meta": {
+        "field": "sampleRate",
+        "value": 8000,
+        "codec": "pcm_mulaw",
+        "source": "https://docs.speechify.ai/openapi/api-reference.json"
+      }
+    }
+  ]
+}

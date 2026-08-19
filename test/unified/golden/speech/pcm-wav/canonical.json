@@ -1,0 +1,8 @@
+{
+  "text": "The lighthouse keeper checked the lamp.",
+  "outputFormat": {
+    "format": "pcm_s16le",
+    "container": "wav",
+    "sampleRate": 16000
+  }
+}

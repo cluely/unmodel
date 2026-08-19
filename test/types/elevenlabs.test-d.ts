@@ -2,7 +2,7 @@
  * Type-level tests for the elevenlabs provider (TEXT-TO-SPEECH + MUSIC
  * modalities). NOT run by `bun test` — this file is only type-checked
  * (`bun run check` / tsc --noEmit). These tests pin the `ExactKeys`
- * public-cast contract of `elevenlabs.textToSpeech`: the excess-key compile
+ * public-cast contract of `elevenlabs.speech`: the excess-key compile
  * error, the `safe<T>` overload carrying the same guard, and — the regression
  * this endpoint's cast exists for — that the path param (`voice_id`) and the
  * three QUERY params are STRIPPED from the wire body and live only in
@@ -10,7 +10,7 @@
  * a field whose documented value space is finite must reject junk at compile
  * time, not merely at runtime.
  */
-import { music, musicUrl, textToSpeech, textToSpeechUrl } from "../../src/providers/elevenlabs";
+import { music, musicUrl, speech, textToSpeechUrl } from "../../src/providers/elevenlabs";
 import type {
   ElevenlabsMusicOutputFormat,
   ElevenlabsOptimizeStreamingLatency,
@@ -22,8 +22,8 @@ import type {
 import type { EndpointConstraints } from "../../src/core/constraint-types";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
-function textToSpeechTypeTests(): void {
-  const v = textToSpeech({
+function speechTypeTests(): void {
+  const v = speech({
     voice_id: "JBFqnCBsd6RMkjVDRZzb",
     text: "Hello world",
     model_id: "eleven_flash_v2_5",
@@ -66,33 +66,33 @@ function textToSpeechTypeTests(): void {
   expectAssignable<string | undefined>(v.toSdk("elevenlabs").request.modelId);
 
   // The SDK target vocabulary is closed to what this endpoint declares.
-  // @ts-expect-error "openai" is not an SDK target for elevenlabs.textToSpeech
+  // @ts-expect-error "openai" is not an SDK target for elevenlabs.speech
   v.toSdk("openai");
   // @ts-expect-error the zero-arg .toSdk() form was removed
   v.toSdk();
 
   // Unknown model ids stay assignable through the (string & {}) escape.
-  textToSpeech({ voice_id: "v1", text: "hi", model_id: "eleven_future_v9" });
+  speech({ voice_id: "v1", text: "hi", model_id: "eleven_future_v9" });
 
   // safe() narrows to the same stripped Validated shape.
-  const result = textToSpeech.safe({ voice_id: "v1", text: "hi", output_format: "wav_44100" });
+  const result = speech.safe({ voice_id: "v1", text: "hi", output_format: "wav_44100" });
   if (result.ok) {
     expectTrue<IsNever<KeyIn<typeof result.params, "voice_id">>>();
     expectTrue<IsNever<KeyIn<typeof result.params, "output_format">>>();
     expectAssignable<TextToSpeechSdkParams>(result.params.toSdk("elevenlabs"));
   }
 
-  expectAssignable<EndpointConstraints[]>(textToSpeech.constraintsFor("eleven_multilingual_v2"));
+  expectAssignable<EndpointConstraints[]>(speech.constraintsFor("eleven_multilingual_v2"));
 
   // @ts-expect-error output_format is a closed enum
-  textToSpeech({ voice_id: "v1", text: "hi", output_format: "mp3_44100" });
+  speech({ voice_id: "v1", text: "hi", output_format: "mp3_44100" });
   // @ts-expect-error apply_text_normalization is a closed enum
-  textToSpeech({ voice_id: "v1", text: "hi", apply_text_normalization: "always" });
+  speech({ voice_id: "v1", text: "hi", apply_text_normalization: "always" });
 
   // ExactKeys: a typo'd/excess top-level key is a COMPILE error, not a
   // silent unknown_param warning. `model` is the realistic typo — the wire
   // field is `model_id`.
-  textToSpeech({
+  speech({
     voice_id: "v1",
     text: "hi",
     // @ts-expect-error excess (typo'd) top-level key — the ExactKeys guard
@@ -100,7 +100,7 @@ function textToSpeechTypeTests(): void {
   });
 
   // The same guard is wired into the safe() overload.
-  textToSpeech.safe({
+  speech.safe({
     voice_id: "v1",
     text: "hi",
     // @ts-expect-error excess (typo'd) top-level key — ExactKeys on safe()
@@ -116,14 +116,14 @@ function textToSpeechTypeTests(): void {
  */
 function elevenlabsClosedEnumTypeTests(): void {
   // --- optimize_streaming_latency: the integers 0–4, nothing else ---------
-  textToSpeech({ voice_id: "v1", text: "hi", optimize_streaming_latency: 0 });
-  textToSpeech({ voice_id: "v1", text: "hi", optimize_streaming_latency: 4 });
+  speech({ voice_id: "v1", text: "hi", optimize_streaming_latency: 0 });
+  speech({ voice_id: "v1", text: "hi", optimize_streaming_latency: 4 });
   // null still selects the provider default.
-  textToSpeech({ voice_id: "v1", text: "hi", optimize_streaming_latency: null });
+  speech({ voice_id: "v1", text: "hi", optimize_streaming_latency: null });
   // @ts-expect-error there is no latency level 5 (schema: .int().min(0).max(4))
-  textToSpeech({ voice_id: "v1", text: "hi", optimize_streaming_latency: 5 });
+  speech({ voice_id: "v1", text: "hi", optimize_streaming_latency: 5 });
   // @ts-expect-error 99 was silently accepted while the field was `number`
-  textToSpeech({ voice_id: "v1", text: "hi", optimize_streaming_latency: 99 });
+  speech({ voice_id: "v1", text: "hi", optimize_streaming_latency: 99 });
   expectAssignable<ElevenlabsOptimizeStreamingLatency>(3);
 
   // --- TextToSpeechQuery: hand-built URLs get the same closed surface -----
@@ -160,4 +160,4 @@ function elevenlabsClosedEnumTypeTests(): void {
   music({ prompt: "x", model_id: "music_v9_future" });
 }
 
-export { textToSpeechTypeTests, elevenlabsClosedEnumTypeTests };
+export { speechTypeTests, elevenlabsClosedEnumTypeTests };

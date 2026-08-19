@@ -368,8 +368,30 @@ export type UnifiedResult<A, R extends string> = UnifiedOut<AdapterFor<A, R>> & 
  * a single object type with neither field required — quietly deleting the one
  * invariant the type exists to state.
  */
-export type UnifiedInput<Canon, Ref extends string> = DistributiveOmit<Canon, "model"> & {
+export type UnifiedInput<Canon, Ref extends string> = DistributiveOmit<
+  Canon,
+  "model" | "providerOptions"
+> & {
   model: Ref | (string & {});
+  providerOptions?: UnifiedProviderOptions<Ref>;
+};
+
+/**
+ * `providerOptions`, keyed by the providers this validator actually has.
+ *
+ * Still open in the way that matters — one request literal may carry blocks
+ * for **every** provider it might be pointed at, and only the ref'd one is
+ * applied — but closed on the thing that is always a mistake: a key for a
+ * provider that is not in this build. `{ opneai: … }` is a typo whose only
+ * symptom would otherwise be an override that silently never happens, which is
+ * the hardest kind of bug to see in a diff.
+ *
+ * The values stay `Record<string, unknown>`: they are wire params, and the
+ * whole point of the escape hatch is that the unified surface has no opinion
+ * about them.
+ */
+export type UnifiedProviderOptions<Ref extends string> = {
+  readonly [P in RefProvider<Ref>]?: Readonly<Record<string, unknown>>;
 };
 
 /** `Omit` that survives contact with a union. */

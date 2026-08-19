@@ -1,6 +1,6 @@
 export {
-  tts,
-  ttsConstraints,
+  speech,
+  speechConstraints,
   TTS_URL,
   TTS_LIVE_URL,
   TTS_LIVE_WS_URL,
@@ -11,14 +11,14 @@ export {
   OUTPUT_FORMATS,
   LANGUAGES,
   PRO_ONLY_LANGUAGES,
-} from "./tts";
+} from "./speech";
 export type {
   TtsBody,
   TtsParams,
   SmallestSampleRate,
   SmallestOutputFormat,
   SmallestLanguage,
-} from "./tts";
+} from "./speech";
 
 export { models, provider, SMALLEST_MODEL_IDS } from "./models";
 export type { SmallestModelId, SmallestTtsModelId } from "./models";

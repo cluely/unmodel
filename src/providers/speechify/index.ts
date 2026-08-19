@@ -1,6 +1,6 @@
 export {
   speech,
-  stream,
+  speechStream,
   AUDIO_SPEECH_URL,
   AUDIO_STREAM_URL,
   AUDIO_STREAM_WITH_TIMESTAMPS_URL,
@@ -11,7 +11,7 @@ export {
   SPEECH_OUTPUT_FORMATS,
   STREAM_OUTPUT_FORMATS,
   STREAM_ACCEPT_VALUES,
-} from "./audio";
+} from "./speech";
 export type {
   AudioSpeechBody,
   AudioStreamParams,
@@ -22,7 +22,7 @@ export type {
   SpeechifyStreamOutputFormat,
   SpeechifyStreamAccept,
   SpeechifyOptions,
-} from "./audio";
+} from "./speech";
 
 export { models, provider, SPEECHIFY_MODEL_IDS } from "./models";
 export type { SpeechifyModelId, SpeechifyTtsModelId } from "./models";

@@ -1,0 +1,20 @@
+{
+  "ref": "hume/octave-2",
+  "voice": "Ito",
+  "params": {
+    "utterances": [
+      {
+        "text": "The lighthouse keeper checked the lamp.",
+        "voice": {
+          "name": "Ito"
+        },
+        "speed": 1.5
+      }
+    ],
+    "version": "2"
+  },
+  "url": "https://api.hume.ai/v0/tts",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "ref": "lmnt/blizzard",
+  "voice": "leah",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "voice": "leah",
+    "model": "blizzard"
+  },
+  "url": "https://api.lmnt.com/v1/ai/speech/bytes",
+  "headers": {
+    "content-type": "application/json",
+    "lmnt-version": "1.2"
+  }
+}

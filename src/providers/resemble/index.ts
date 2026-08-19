@@ -1,23 +1,23 @@
 export {
-  synthesize,
-  synthesizeStream,
+  speech,
+  speechStream,
   SYNTHESIZE_URL,
   SYNTHESIZE_STREAM_URL,
   API_BASE_URL,
   OUTPUT_FORMATS,
   SAMPLE_RATES,
   PRECISIONS,
-} from "./synthesize";
+} from "./speech";
 export type {
   SynthesizeBody,
   SynthesizeStreamBody,
   ResembleOutputFormat,
   ResemblePrecision,
   ResembleSampleRate,
-} from "./synthesize";
+} from "./speech";
 
 // Only the synchronous route has a checker — /stream returns a WAV stream.
-export { checkSynthesis } from "./check";
+export { checkSpeech } from "./check";
 export type { ResembleSynthesisLike, ResembleAudioTimestamps } from "./check";
 
 export {

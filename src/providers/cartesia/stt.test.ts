@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { stt, toFormData, STT_TRANSCRIBE_URL, CARTESIA_STT_LANGUAGES } from "./stt";
-import { CARTESIA_VERSION } from "./tts";
+import { CARTESIA_VERSION } from "./speech";
 import { checkStt } from "./check";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";

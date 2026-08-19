@@ -1,5 +1,5 @@
 export {
-  tts,
+  speech,
   TTS_URL,
   TTS_FILE_URL,
   TTS_STREAM_JSON_URL,
@@ -9,7 +9,7 @@ export {
   MAX_DESCRIPTION_CHARACTERS,
   MAX_GENERATIONS,
   OCTAVE_VERSIONS,
-} from "./tts";
+} from "./speech";
 export type {
   TtsBody,
   TtsSdkParams,
@@ -22,7 +22,7 @@ export type {
   HumeAudioFormatType,
   HumeTimestampType,
   HumeOctaveVersion,
-} from "./tts";
+} from "./speech";
 
 export { models, provider, HUME_MODEL_IDS } from "./models";
 export type { HumeModelId, HumeTtsModelId } from "./models";

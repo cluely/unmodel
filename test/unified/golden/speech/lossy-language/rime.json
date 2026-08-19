@@ -1,0 +1,28 @@
+{
+  "ref": "rime/coda",
+  "voice": "astra",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "speaker": "astra",
+    "modelId": "coda",
+    "lang": "pt"
+  },
+  "url": "https://users.rime.ai/v1/rime-tts",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "language"
+      ],
+      "meta": {
+        "requested": "pt-BR",
+        "achieved": "pt",
+        "dropped": "BR",
+        "source": "https://docs.rime.ai/api-reference/coda/http"
+      }
+    }
+  ]
+}

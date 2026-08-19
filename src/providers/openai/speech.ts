@@ -186,7 +186,7 @@ function checkVoice(params: SpeechBody, _info: ModelInfo | undefined, ctx: Pipel
  *
  * The cap is documented on the ENDPOINT, not per model, so an id the catalog
  * does not know yet still gets it (`SPEECH_MAX_INPUT_CHARACTERS` fallback) —
- * same policy as inworld.tts. Without the fallback a brand-new speech model
+ * same policy as inworld.speech. Without the fallback a brand-new speech model
  * would silently lose the only limit this endpoint has.
  */
 function checkInputLength(

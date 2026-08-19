@@ -1,0 +1,13 @@
+{
+  "ref": "speechify/simba-3.0",
+  "voice": "geffen_32",
+  "params": {
+    "input": "The lighthouse keeper checked the lamp.",
+    "voice_id": "geffen_32",
+    "model": "simba-3.0"
+  },
+  "url": "https://api.speechify.ai/v1/audio/speech",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

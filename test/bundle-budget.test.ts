@@ -71,13 +71,13 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
 const CHAT_BUDGET_KIB = 600;
 
 /**
- * The six unified media entries (`unmodel/image`, `unmodel/video`, …).
+ * The unified media entries (`unmodel/image`, `unmodel/video`, …) that are
+ * still **kernel-only**.
  *
  * Their whole proposition is that you name the adapters you want and the
  * bundle contains those providers and no others — so the number that matters
- * is not how big they are but that they are **kernel-only**. Today they carry
- * `createUnified`, the issue sink, the warning sink and the two error classes,
- * and nothing else exists that they could carry.
+ * is not how big they are but what they carry: `createUnified`, the issue
+ * sink, the warning sink and the two error classes.
  *
  * The budget is 18 KiB against 15.6–16.8 KiB measured — the same ~10% headroom
  * as every number above, set from what the tree measures rather than from a
@@ -87,16 +87,53 @@ const CHAT_BUDGET_KIB = 600;
  * documentation for a number that already proves what it needs to prove is a
  * bad trade, and the composition test below is the assertion doing the real
  * work anyway.)
+ *
+ * `speech` is deliberately **not** in this list any more: it is the first
+ * category to ship a ready-made pack, so its entry legitimately imports
+ * fourteen adapters. It gets its own budget and its own, stricter composition
+ * test below — the point of which is that the *rest* of the rule still holds
+ * (exactly those fourteen providers, no catalogs, no availability data), so
+ * "the entry imports providers now" cannot quietly become "the entry imports
+ * anything".
  */
 const UNIFIED_BUDGET_KIB = 18;
 
-const UNIFIED_ENTRIES: string[] = [
-  "image",
-  "image-edit",
-  "video",
-  "speech",
-  "transcribe",
-  "music",
+const UNIFIED_ENTRIES: string[] = ["image", "image-edit", "video", "transcribe", "music"];
+
+/** Every category entry, packs included — for the "it was built at all" check. */
+const ALL_UNIFIED_ENTRIES: string[] = [...UNIFIED_ENTRIES, "speech"];
+
+/**
+ * `unmodel/speech`'s budget: the kernel plus fourteen TTS providers — each
+ * one's validator, zod schema, constraint table and hand-written catalog.
+ *
+ * 327 KiB measured, pinned at 360 with the same ~10% headroom as everything
+ * above. It is roughly twice what a "150–200 KiB" back-of-envelope suggested,
+ * and the reason is worth writing down rather than rounding away: the fourteen
+ * speech endpoints are validator-heavy rather than catalog-heavy (Deepgram
+ * alone carries 105 Aura voices as catalog rows, and OpenAI's speech
+ * constraints ride in the same 617-line table as its images and chat ones), so
+ * the weight is code, not data. A caller who wants two providers builds their
+ * own pack with `createSpeech([…])` and pays 40–60 KiB.
+ */
+const SPEECH_PACK_BUDGET_KIB = 360;
+
+/** The fourteen providers `unmodel/speech`'s ready-made pack is allowed to reach. */
+const SPEECH_PACK_PROVIDERS: string[] = [
+  "cartesia",
+  "deepgram",
+  "elevenlabs",
+  "fish-audio",
+  "hume",
+  "inworld",
+  "lmnt",
+  "minimax",
+  "murf",
+  "openai",
+  "resemble",
+  "rime",
+  "smallest-ai",
+  "speechify",
 ];
 
 const FROM_IMPORT = /^[ \t]*(?:import|export)\s[^;]*?\sfrom\s*["']([^"']+)["']/gm;
@@ -229,7 +266,7 @@ describe("unmodel/chat", () => {
 
 describe("unified media entries", () => {
   test("all six are built, so the assertions below assert something", () => {
-    for (const name of UNIFIED_ENTRIES) {
+    for (const name of ALL_UNIFIED_ENTRIES) {
       expect(existsSync(unifiedEntry(name)), `dist entry for unified/${name}`).toBe(true);
     }
   });
@@ -276,5 +313,57 @@ describe("unified media entries", () => {
         `${module} is neither core nor the entry`,
       ).toBe(true);
     }
+  });
+});
+
+describe("unmodel/speech (the first ready-made pack)", () => {
+  test(`stays under ${SPEECH_PACK_BUDGET_KIB} KiB`, () => {
+    const kib = transitiveBytes(unifiedEntry("speech")) / 1024;
+    expect(kib, `unified/speech is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
+      SPEECH_PACK_BUDGET_KIB,
+    );
+  });
+
+  /**
+   * The composition assertion, in the shape the kernel-only one had before a
+   * pack existed: the *list* is what does the work, not the byte count.
+   *
+   * A pack that reaches a fifteenth provider, or that drags in a generated
+   * catalog because someone imported `providers/<p>/index.ts` instead of the
+   * adapter leaf, fails here in the diff that causes it — which is the whole
+   * reason the adapters import `./speech` and not `.`.
+   */
+  test("it reaches exactly the fourteen speech providers, through their adapters", () => {
+    const modules = sourceModulesOf(unifiedEntry("speech"));
+    expect(modules).toContain("src/unified/speech.ts");
+    expect(modules).toContain("src/core/unified/kernel.ts");
+
+    const providers = [
+      ...new Set(
+        modules
+          .filter((m) => m.startsWith("src/providers/"))
+          .map((m) => m.split("/")[2] as string),
+      ),
+    ].sort();
+    expect(providers).toEqual(SPEECH_PACK_PROVIDERS);
+
+    // One adapter leaf per provider, and it is what pulled the provider in.
+    for (const provider of SPEECH_PACK_PROVIDERS) {
+      expect(modules).toContain(`src/providers/${provider}/unified.ts`);
+      expect(modules).toContain(`src/providers/${provider}/speech.ts`);
+    }
+  });
+
+  test("its graph carries no generated catalog, availability data or retarget layer", () => {
+    const modules = sourceModulesOf(unifiedEntry("speech"));
+    // Every TTS provider here keys off a hand-written catalog in its own
+    // directory, so a `src/catalog/*.gen.ts` in this graph means a provider
+    // barrel leaked in — 40–400 KiB of data for zero findings.
+    expect(modules.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
+    expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
+    expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
+    // …but the four-layer engine IS here now, unlike in a kernel-only entry:
+    // the pack's whole point is ending in the providers' own validators.
+    expect(modules).toContain("src/core/pipeline.ts");
   });
 });

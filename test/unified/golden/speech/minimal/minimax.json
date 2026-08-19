@@ -1,0 +1,15 @@
+{
+  "ref": "minimax/speech-2.8-hd",
+  "voice": "English_Graceful_Lady",
+  "params": {
+    "model": "speech-2.8-hd",
+    "text": "The lighthouse keeper checked the lamp.",
+    "voice_setting": {
+      "voice_id": "English_Graceful_Lady"
+    }
+  },
+  "url": "https://api.minimax.io/v1/t2a_v2",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

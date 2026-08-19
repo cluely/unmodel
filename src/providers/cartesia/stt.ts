@@ -30,7 +30,7 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeAudioMinutesCostUSD } from "../../core/cost";
 import { findMediaDeclaration } from "../../core/media/check";
 import { models, type CartesiaSttModelId } from "./models";
-import { CARTESIA_VERSION } from "./tts";
+import { CARTESIA_VERSION } from "./speech";
 
 export const STT_TRANSCRIBE_URL = "https://api.cartesia.ai/stt";
 

@@ -1,0 +1,29 @@
+{
+  "ref": "lmnt/blizzard",
+  "voice": "leah",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "voice": "leah",
+    "model": "blizzard",
+    "language": "pt"
+  },
+  "url": "https://api.lmnt.com/v1/ai/speech/bytes",
+  "headers": {
+    "content-type": "application/json",
+    "lmnt-version": "1.2"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "language"
+      ],
+      "meta": {
+        "requested": "pt-BR",
+        "achieved": "pt",
+        "dropped": "BR",
+        "source": "https://docs.lmnt.com/api/speech/generate"
+      }
+    }
+  ]
+}

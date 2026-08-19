@@ -2,11 +2,7 @@
  * `unmodel/speech` — one `speech()` for every text-to-speech provider.
  *
  * ```ts
- * import { createSpeech } from "unmodel/speech";
- * import { elevenlabsSpeech } from "unmodel/elevenlabs";
- * import { openaiSpeech } from "unmodel/openai";
- *
- * const speech = createSpeech([elevenlabsSpeech, openaiSpeech]);
+ * import { speech } from "unmodel/speech";
  *
  * const req = speech({
  *   model: "openai/gpt-4o-mini-tts",
@@ -15,6 +11,18 @@
  *   outputFormat: { format: "pcm_s16le", sampleRate: 24000 },
  *   speed: 1.1,
  * });
+ * ```
+ *
+ * That `speech` is the ready-made pack: all fourteen providers, and therefore
+ * all fourteen providers' catalogs and validators, in one bundle. To pay for
+ * only the ones you call, build your own from the adapter leaves:
+ *
+ * ```ts
+ * import { createSpeech } from "unmodel/speech";
+ * import { speech as elevenlabs } from "unmodel/elevenlabs/unified";
+ * import { speech as openai } from "unmodel/openai/unified";
+ *
+ * const speech = createSpeech([elevenlabs, openai]);
  * ```
  *
  * ## The two params worth knowing about
@@ -36,6 +44,20 @@
 import { createUnified } from "../core/unified/kernel";
 import type { AnyUnifiedAdapter, UnifiedValidator } from "../core/unified/types";
 import type { SpeechParams } from "../core/unified/vocabulary/speech";
+import { speech as cartesia } from "../providers/cartesia/unified";
+import { speech as deepgram } from "../providers/deepgram/unified";
+import { speech as elevenlabs } from "../providers/elevenlabs/unified";
+import { speech as fishAudio } from "../providers/fish-audio/unified";
+import { speech as hume } from "../providers/hume/unified";
+import { speech as inworld } from "../providers/inworld/unified";
+import { speech as lmnt } from "../providers/lmnt/unified";
+import { speech as minimax } from "../providers/minimax/unified";
+import { speech as murf } from "../providers/murf/unified";
+import { speech as openai } from "../providers/openai/unified";
+import { speech as resemble } from "../providers/resemble/unified";
+import { speech as rime } from "../providers/rime/unified";
+import { speech as smallestAi } from "../providers/smallest-ai/unified";
+import { speech as speechify } from "../providers/speechify/unified";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
 export type SpeechAdapter = AnyUnifiedAdapter<SpeechParams> & { readonly category: "speech" };
@@ -52,11 +74,34 @@ export function createSpeech<A extends SpeechAdapter>(
 }
 
 /**
- * The zero-argument `speech()` carrying every adapter unmodel ships lands here
- * once there are adapters to carry — see the layering note in
- * `src/unified/image.ts` for why the convenience pack is deliberately not part
- * of the commit that introduces the kernel.
+ * Every speech adapter unmodel ships, assembled by hand.
+ *
+ * By hand, and in one array, because that array is three things at once: the
+ * runtime registry, the `"provider/model"` ref union an editor autocompletes,
+ * and the return type of a call (each provider's own `Validated`). A generated
+ * or dynamically-loaded registry would keep the first and lose the other two.
+ *
+ * The cost is honest and measured: importing this pulls in fourteen provider
+ * validators, their schemas and their catalogs (~190 KiB, pinned in
+ * `test/bundle-budget.test.ts`). `createSpeech([…])` above is the way to pay
+ * for two providers instead of fourteen.
  */
+export const speech = createSpeech([
+  openai,
+  elevenlabs,
+  cartesia,
+  deepgram,
+  hume,
+  minimax,
+  rime,
+  lmnt,
+  fishAudio,
+  murf,
+  resemble,
+  smallestAi,
+  speechify,
+  inworld,
+]);
 
 export type {
   AudioContainer,

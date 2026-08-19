@@ -133,27 +133,31 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
   "stability.stableAudioTextToAudio": () =>
     import("./providers/stability").then((m) => asCli(m.stableAudioTextToAudio)),
 
-  // Speech — TTS
+  // Speech — TTS. Every provider addresses its synthesis route as `speech`
+  // (the address-vs-wire law): the wire spellings differ wildly
+  // (/v1/text-to-speech/{voice_id}, /tts/bytes, /v1/speak, /v1/t2a_v2,
+  // /synthesize), and the URL constants and wire types keep them — but the
+  // endpoint id a caller types is uniform.
   "openai.speech": () => import("./providers/openai").then((m) => asCli(m.speech)),
-  "elevenlabs.textToSpeech": () =>
-    import("./providers/elevenlabs").then((m) => asCli(m.textToSpeech)),
-  "cartesia.tts": () => import("./providers/cartesia").then((m) => asCli(m.tts)),
-  "inworld.tts": () => import("./providers/inworld").then((m) => asCli(m.tts)),
-  "deepgram.speak": () => import("./providers/deepgram").then((m) => asCli(m.speak)),
-  "fish-audio.tts": () => import("./providers/fish-audio").then((m) => asCli(m.tts)),
-  "hume.tts": () => import("./providers/hume").then((m) => asCli(m.tts)),
+  "elevenlabs.speech": () => import("./providers/elevenlabs").then((m) => asCli(m.speech)),
+  "cartesia.speech": () => import("./providers/cartesia").then((m) => asCli(m.speech)),
+  "inworld.speech": () => import("./providers/inworld").then((m) => asCli(m.speech)),
+  "deepgram.speech": () => import("./providers/deepgram").then((m) => asCli(m.speech)),
+  "fish-audio.speech": () => import("./providers/fish-audio").then((m) => asCli(m.speech)),
+  "hume.speech": () => import("./providers/hume").then((m) => asCli(m.speech)),
   "lmnt.speech": () => import("./providers/lmnt").then((m) => asCli(m.speech)),
   "lmnt.speechDetailed": () => import("./providers/lmnt").then((m) => asCli(m.speechDetailed)),
-  "minimax.t2a": () => import("./providers/minimax").then((m) => asCli(m.t2a)),
-  "murf.speechGenerate": () => import("./providers/murf").then((m) => asCli(m.speechGenerate)),
+  "minimax.speech": () => import("./providers/minimax").then((m) => asCli(m.speech)),
+  "murf.speech": () => import("./providers/murf").then((m) => asCli(m.speech)),
   "murf.speechStream": () => import("./providers/murf").then((m) => asCli(m.speechStream)),
-  "resemble.synthesize": () => import("./providers/resemble").then((m) => asCli(m.synthesize)),
-  "resemble.synthesizeStream": () =>
-    import("./providers/resemble").then((m) => asCli(m.synthesizeStream)),
-  "rime.tts": () => import("./providers/rime").then((m) => asCli(m.tts)),
-  "smallest-ai.tts": () => import("./providers/smallest-ai").then((m) => asCli(m.tts)),
+  "resemble.speech": () => import("./providers/resemble").then((m) => asCli(m.speech)),
+  "resemble.speechStream": () =>
+    import("./providers/resemble").then((m) => asCli(m.speechStream)),
+  "rime.speech": () => import("./providers/rime").then((m) => asCli(m.speech)),
+  "smallest-ai.speech": () => import("./providers/smallest-ai").then((m) => asCli(m.speech)),
   "speechify.speech": () => import("./providers/speechify").then((m) => asCli(m.speech)),
-  "speechify.stream": () => import("./providers/speechify").then((m) => asCli(m.stream)),
+  "speechify.speechStream": () =>
+    import("./providers/speechify").then((m) => asCli(m.speechStream)),
 
   // Speech — STT (URL-referenced audio; file-upload variants are multipart-only)
   "elevenlabs.speechToText": () =>
@@ -228,6 +232,23 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
   "vercel.chat": () => import("./providers/vercel").then((m) => asCli(m.chat)),
   "xai.chat": () => import("./providers/xai").then((m) => asCli(m.chat)),
   "zhipuai.chat": () => import("./providers/zhipuai").then((m) => asCli(m.chat)),
+};
+
+/**
+ * The unified media surfaces, addressed as `unified.<category>`.
+ *
+ * A separate map because they are a different *kind* of target: the params are
+ * the canonical vocabulary rather than any provider's wire body, and the
+ * `model` field is a `"provider/model"` ref that decides which validator
+ * actually runs. Folding them into REGISTRY would make the drift guard in
+ * `cli.test.ts` — which asserts REGISTRY names exactly the module-level
+ * provider validators — either wrong or full of exceptions.
+ *
+ * Only `speech` is here today: it is the one category with a ready-made pack.
+ * The other five land as their packs do.
+ */
+export const UNIFIED: Record<string, () => Promise<CliValidator>> = {
+  "unified.speech": () => import("./unified/speech").then((m) => asCli(m.speech)),
 };
 
 /**

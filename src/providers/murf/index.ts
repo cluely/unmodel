@@ -1,5 +1,5 @@
 export {
-  speechGenerate,
+  speech,
   speechStream,
   SPEECH_GENERATE_URL,
   SPEECH_STREAM_URL,

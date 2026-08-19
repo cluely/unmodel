@@ -1,5 +1,5 @@
 export {
-  textToSpeech,
+  speech,
   textToSpeechUrl,
   TEXT_TO_SPEECH_BASE_URL,
   DEFAULT_TTS_MODEL_ID,
@@ -7,7 +7,7 @@ export {
   TTS_OPTIMIZE_STREAMING_LATENCY_LEVELS,
   TTS_SPEED_MIN,
   TTS_SPEED_MAX,
-} from "./text-to-speech";
+} from "./speech";
 export type {
   TextToSpeechParams,
   TextToSpeechQuery,
@@ -18,7 +18,7 @@ export type {
   ElevenlabsPronunciationDictionaryLocator,
   ElevenlabsOutputFormat,
   ElevenlabsOptimizeStreamingLatency,
-} from "./text-to-speech";
+} from "./speech";
 
 export {
   textToSpeechStreamInput,
@@ -104,7 +104,7 @@ export type {
 export { checkTranscription } from "./check";
 export type { ElevenlabsTranscriptionLike, ElevenlabsTranscriptLike } from "./check";
 
-export { textToSpeechConstraints, speechToTextConstraints } from "./constraints";
+export { speechConstraints, speechToTextConstraints } from "./constraints";
 
 export {
   models,

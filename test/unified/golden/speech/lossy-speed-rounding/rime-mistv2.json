@@ -1,0 +1,15 @@
+{
+  "ref": "rime/mistv2",
+  "voice": "astra",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "speaker": "astra",
+    "modelId": "mistv2",
+    "speedAlpha": 0.8103727714748784
+  },
+  "url": "https://users.rime.ai/v1/rime-tts",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": []
+}

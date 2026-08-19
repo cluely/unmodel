@@ -1,0 +1,11 @@
+{
+  "ref": "deepgram/aura-2-thalia-en",
+  "voice": "aura-2-thalia-en",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp."
+  },
+  "url": "https://api.deepgram.com/v1/speak?model=aura-2-thalia-en",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

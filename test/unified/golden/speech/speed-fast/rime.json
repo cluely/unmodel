@@ -1,0 +1,14 @@
+{
+  "ref": "rime/coda",
+  "voice": "astra",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "speaker": "astra",
+    "modelId": "coda",
+    "timeScaleFactor": 0.6666666666666666
+  },
+  "url": "https://users.rime.ai/v1/rime-tts",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -56,13 +56,13 @@ import {
   CARTESIA_EMOTIONS,
   CARTESIA_TTS_LANGUAGES,
   CARTESIA_VERSION,
-  ttsConstraints,
+  speechConstraints,
   type CartesiaEmotion,
   type CartesiaEncoding,
   type CartesiaSampleRate,
   type CartesiaTtsLanguage,
   type CartesiaVoice,
-} from "./tts";
+} from "./speech";
 
 export const TTS_WEBSOCKET_URL = "wss://api.cartesia.ai/tts/websocket";
 
@@ -284,7 +284,7 @@ const validator = createValidator<TtsWebsocketMessage>({
   catalog: models,
   // Same per-model rule as POST /tts/bytes: pronunciation dictionaries are
   // sonic-3 and newer.
-  constraints: ttsConstraints,
+  constraints: speechConstraints,
   checks: [checkEnums, checkTtsModelKind],
   // No estimate: Cartesia publishes no USD rate (credits only — see models.ts),
   // so a per-character estimate could only ever be undefined.

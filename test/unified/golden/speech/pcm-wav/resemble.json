@@ -1,0 +1,15 @@
+{
+  "ref": "resemble/resemble-ultra",
+  "voice": "55592656",
+  "params": {
+    "voice_uuid": "55592656",
+    "data": "The lighthouse keeper checked the lamp.",
+    "output_format": "wav",
+    "sample_rate": 16000,
+    "precision": "PCM_16"
+  },
+  "url": "https://f.cluster.resemble.ai/synthesize",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

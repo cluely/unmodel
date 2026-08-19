@@ -1,5 +1,5 @@
 export {
-  tts,
+  speech,
   utf8ByteLength,
   TTS_URL,
   DEFAULT_TTS_MODEL,
@@ -10,7 +10,7 @@ export {
   OPUS_BITRATES,
   PROSODY_SPEED_MIN,
   PROSODY_SPEED_MAX,
-} from "./tts";
+} from "./speech";
 export type {
   TtsBody,
   FishAudioFormat,
@@ -19,7 +19,7 @@ export type {
   FishAudioOpusBitrate,
   FishAudioProsodyControl,
   FishAudioReferenceAudio,
-} from "./tts";
+} from "./speech";
 
 // No response checker: POST /v1/tts streams raw audio bytes, not JSON.
 

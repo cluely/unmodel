@@ -1,12 +1,12 @@
 export {
-  tts,
-  ttsConstraints,
+  speech,
+  speechConstraints,
   audioConfigSchema,
   TTS_VOICE_URL,
   TTS_VOICE_STREAM_URL,
   INWORLD_TTS_MAX_CHARACTERS,
   INWORLD_SAMPLE_RATES_HERTZ,
-} from "./tts";
+} from "./speech";
 export type {
   TtsVoiceBody,
   InworldAudioConfig,
@@ -16,7 +16,7 @@ export type {
   InworldTimestampType,
   InworldApplyTextNormalization,
   InworldSynthesisContext,
-} from "./tts";
+} from "./speech";
 
 export {
   transcribe,

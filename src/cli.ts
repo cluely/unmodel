@@ -17,7 +17,7 @@ import type { RequestMeta } from "./core/request";
 // The hand-maintained validator registry. It lives in its own module so the
 // drift test in cli.test.ts can import the maps without running the CLI (this
 // file calls runMain() at module scope).
-import { MULTIPART_ONLY, REGISTRY } from "./cli-registry";
+import { MULTIPART_ONLY, REGISTRY, UNIFIED } from "./cli-registry";
 
 // ---------------------------------------------------------------------------
 // Formatting helpers
@@ -282,7 +282,7 @@ const validateCommand = defineCommand({
   args: {
     target: {
       type: "positional",
-      description: `Endpoint, e.g. ${Object.keys(REGISTRY).slice(0, 3).join(", ")}, ...`,
+      description: `Endpoint, e.g. ${Object.keys(REGISTRY).slice(0, 3).join(", ")}, ${Object.keys(UNIFIED).join(", ")}, ...`,
       required: true,
     },
     file: {
@@ -298,7 +298,10 @@ const validateCommand = defineCommand({
   },
   async run({ args }) {
     const target = args.target as string;
-    const load = REGISTRY[target];
+    // A unified category (`unified.speech`) takes the canonical vocabulary and
+    // routes on its `model` ref; a provider endpoint takes that provider's wire
+    // body. Both end in a `.safe`, so the rest of this command is identical.
+    const load = REGISTRY[target] ?? UNIFIED[target];
     if (!load) {
       // Object.hasOwn: a target like "constructor" must not hit Object.prototype.
       if (Object.hasOwn(MULTIPART_ONLY, target)) {
@@ -309,7 +312,10 @@ const validateCommand = defineCommand({
         return;
       }
       fail(
-        `unknown endpoint "${target}" — available endpoints:\n  ${Object.keys(REGISTRY)
+        `unknown endpoint "${target}" — available endpoints:\n  ${[
+          ...Object.keys(REGISTRY),
+          ...Object.keys(UNIFIED),
+        ]
           .sort()
           .join("\n  ")}`,
       );

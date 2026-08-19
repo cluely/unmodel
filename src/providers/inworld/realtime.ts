@@ -27,7 +27,7 @@
  *   `close_context` ends it. The create payload shares voiceId / modelId /
  *   audioConfig / temperature / timestampType / applyTextNormalization /
  *   language / deliveryMode with the REST body validated by ./tts, so those
- *   bounds and the per-model gates in `ttsConstraints` are re-used verbatim;
+ *   bounds and the per-model gates in `speechConstraints` are re-used verbatim;
  *   the buffering fields (`maxBufferDelayMs`, `bufferCharThreshold`,
  *   `autoMode`, `timestampTransportStrategy`) are streaming-only.
  *
@@ -62,12 +62,12 @@ import {
 } from "./stt";
 import {
   audioConfigSchema,
-  ttsConstraints,
+  speechConstraints,
   type InworldAudioConfig,
   type InworldApplyTextNormalization,
   type InworldDeliveryMode,
   type InworldTimestampType,
-} from "./tts";
+} from "./speech";
 import { sttModels, ttsModels, STT_STREAM_MODEL_IDS, type InworldTtsModelId } from "./models";
 
 /** Bidirectional STT streaming; auth rides in an `authorization` query param. */
@@ -337,7 +337,7 @@ const voiceContextValidator = createValidator<InworldVoiceContextConfig, unknown
   // The per-model gates are properties of the MODEL, not of the transport:
   // `deliveryMode` is inworld-tts-2 only and `temperature` is ignored there
   // on both surfaces, so the REST table is re-used rather than re-stated.
-  constraints: ttsConstraints,
+  constraints: speechConstraints,
   finalize: finalizeVoiceContext,
 });
 

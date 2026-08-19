@@ -49,7 +49,7 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type CartesiaSttModelId } from "./models";
-import { CARTESIA_VERSION } from "./tts";
+import { CARTESIA_VERSION } from "./speech";
 import type { CartesiaSttEncoding } from "./stt";
 
 export const STT_WEBSOCKET_URL = "wss://api.cartesia.ai/stt/websocket";

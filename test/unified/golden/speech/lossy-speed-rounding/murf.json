@@ -1,0 +1,27 @@
+{
+  "ref": "murf/gen2",
+  "voice": "en-US-natalie",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "voiceId": "en-US-natalie",
+    "modelVersion": "GEN2",
+    "rate": 23
+  },
+  "url": "https://api.murf.ai/v1/speech/generate",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "speed"
+      ],
+      "meta": {
+        "requested": 1.234,
+        "achieved": 1.23,
+        "wire": 23
+      }
+    }
+  ]
+}

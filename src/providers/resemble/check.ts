@@ -56,7 +56,7 @@ export interface ResembleSynthesisLike {
  * did not succeed, when no audio came back, when the clip is zero-length,
  * and once per entry in the API's own `issues` array. Never throws.
  */
-export function checkSynthesis(res: ResembleSynthesisLike): ResponseReport {
+export function checkSpeech(res: ResembleSynthesisLike): ResponseReport {
   const warnings: Issue[] = [];
 
   if (res.success === false) {

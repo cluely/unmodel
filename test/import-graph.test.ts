@@ -516,10 +516,14 @@ describe("unified media surfaces (amendment A5)", () => {
   });
 
   test("A7 — an adapter imports only its own provider, the kernel, and warning types", () => {
-    // Reserved: no adapter has landed yet, so this scans an empty set today.
-    // The point is that one cannot be added without the rule already applying.
+    const adapters = FILES.filter(isUnifiedAdapter);
+    // The fourteen speech adapters. A rule that scans an empty set passes by
+    // saying nothing, and this one is the reason a category entry can import
+    // `providers/<p>/unified.ts` without dragging that provider's neighbours in.
+    expect(adapters.length).toBeGreaterThanOrEqual(14);
+
     const violations: string[] = [];
-    for (const file of FILES.filter(isUnifiedAdapter)) {
+    for (const file of adapters) {
       const provider = providerOf(file);
       for (const ref of importsOf(file)) {
         if (ref.specifier === "zod") continue;

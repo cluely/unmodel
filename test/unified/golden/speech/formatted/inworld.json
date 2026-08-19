@@ -1,0 +1,18 @@
+{
+  "ref": "inworld/inworld-tts-2",
+  "voice": "Dennis",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "voiceId": "Dennis",
+    "modelId": "inworld-tts-2",
+    "audioConfig": {
+      "audioEncoding": "MP3",
+      "sampleRateHertz": 44100,
+      "bitRate": 128000
+    }
+  },
+  "url": "https://api.inworld.ai/tts/v1/voice",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

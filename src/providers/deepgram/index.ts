@@ -59,7 +59,7 @@ export type {
 } from "./realtime";
 
 export {
-  speak,
+  speech,
   speakUrl,
   SPEAK_URL,
   DEFAULT_SPEAK_MODEL_ID,
@@ -69,13 +69,13 @@ export {
   SPEAK_SPEED_MIN,
   SPEAK_SPEED_MAX,
   AUDIO_FORMATS,
-} from "./speak";
+} from "./speech";
 export type {
   SpeakParams,
   DeepgramSpeakEncoding,
   DeepgramSpeakContainer,
   DeepgramSpeakSampleRate,
-} from "./speak";
+} from "./speech";
 
 export { checkListen } from "./check";
 export type { ListenResponseLike } from "./check";

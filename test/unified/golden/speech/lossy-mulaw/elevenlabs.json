@@ -1,0 +1,38 @@
+{
+  "ref": "elevenlabs/eleven_flash_v2_5",
+  "voice": "JBFqnCBsd6RMkjVDRZzb",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "model_id": "eleven_flash_v2_5"
+  },
+  "url": "https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=ulaw_8000",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "outputFormat"
+      ],
+      "meta": {
+        "codec": "pcm_mulaw",
+        "requested": "wav",
+        "achieved": "raw",
+        "source": "https://elevenlabs.io/docs/api-reference/text-to-speech/convert"
+      }
+    },
+    {
+      "code": "approximated_param",
+      "path": [
+        "outputFormat"
+      ],
+      "meta": {
+        "field": "sampleRate",
+        "value": 8000,
+        "codec": "pcm_mulaw",
+        "source": "https://elevenlabs.io/docs/api-reference/text-to-speech/convert"
+      }
+    }
+  ]
+}

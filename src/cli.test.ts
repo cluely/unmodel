@@ -2,7 +2,7 @@ import { test, expect } from "bun:test";
 import { mkdtempSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { MULTIPART_ONLY, REGISTRY } from "./cli-registry";
+import { MULTIPART_ONLY, REGISTRY, UNIFIED } from "./cli-registry";
 
 const CLI = new URL("./cli.ts", import.meta.url).pathname;
 
@@ -286,6 +286,51 @@ test("realtime session configs carry the websocket hint, not the multipart one",
   expect(result.transport).toBe("websocket");
   expect(result.note).toContain("realtime session config");
   expect(result.note).not.toContain("multipart");
+});
+
+// ---------------------------------------------------------------------------
+// unified.<category> — the canonical vocabulary from the command line
+// ---------------------------------------------------------------------------
+
+test("validate unified.speech compiles a canonical request through the ref's provider", async () => {
+  const { stdout, exitCode } = await runCli(
+    ["validate", "unified.speech", "--json"],
+    JSON.stringify({
+      model: "elevenlabs/eleven_flash_v2_5",
+      text: "Hello from the CLI.",
+      voice: "JBFqnCBsd6RMkjVDRZzb",
+      outputFormat: { format: "mp3", sampleRate: 44100, bitrate: 128000 },
+    }),
+  );
+  expect(exitCode).toBe(0);
+  const result = JSON.parse(stdout) as {
+    ok: boolean;
+    params: Record<string, unknown>;
+    request: { url: string };
+  };
+  expect(result.ok).toBe(true);
+  // The body is ElevenLabs' own, not the canonical vocabulary: `voice` and the
+  // format left for the URL, and `text`/`model_id` are the wire spellings.
+  expect(result.params).toEqual({ text: "Hello from the CLI.", model_id: "eleven_flash_v2_5" });
+  expect(result.request.url).toBe(
+    "https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=mp3_44100_128",
+  );
+});
+
+test("validate unified.speech reports a provider gap at the canonical path", async () => {
+  const { stderr, exitCode } = await runCli(
+    ["validate", "unified.speech"],
+    JSON.stringify({ model: "lmnt/blizzard", text: "hi", voice: "leah", speed: 1.5 }),
+  );
+  expect(exitCode).toBe(1);
+  expect(stderr).toContain("unsupported_param");
+  expect(stderr).toContain("speed");
+});
+
+test("the unified map names one target per shipped pack", () => {
+  expect(Object.keys(UNIFIED)).toEqual(["unified.speech"]);
+  // Never both maps: a `unified.*` id is not a provider endpoint.
+  expect(Object.keys(REGISTRY).filter((id) => id.startsWith("unified."))).toEqual([]);
 });
 
 // ---------------------------------------------------------------------------

@@ -1,11 +1,11 @@
 export {
-  tts,
-  ttsConstraints,
+  speech,
+  speechConstraints,
   TTS_BYTES_URL,
   CARTESIA_VERSION,
   CARTESIA_EMOTIONS,
   CARTESIA_TTS_LANGUAGES,
-} from "./tts";
+} from "./speech";
 export type {
   TtsBytesBody,
   CartesiaVoice,
@@ -19,7 +19,7 @@ export type {
   CartesiaMp3BitRate,
   CartesiaGenerationConfig,
   CartesiaTtsLanguage,
-} from "./tts";
+} from "./speech";
 
 export {
   ttsWebsocket,

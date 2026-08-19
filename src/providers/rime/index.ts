@@ -1,6 +1,6 @@
 export {
-  tts,
-  ttsConstraints,
+  speech,
+  speechConstraints,
   RIME_TTS_URL,
   RIME_WS_URL,
   DEFAULT_MODEL_ID,
@@ -14,14 +14,14 @@ export {
   MIST_V2_ACCEPT_VALUES,
   LANGUAGES,
   MIST_LANGUAGES,
-} from "./tts";
+} from "./speech";
 export type {
   RimeTtsBody,
   RimeTtsParams,
   RimeAccept,
   RimeDeprecatedAccept,
   RimeLanguage,
-} from "./tts";
+} from "./speech";
 
 export { models, provider, RIME_MODEL_IDS, ARCANA_MODEL_IDS } from "./models";
 export type { RimeModelId, RimeTtsModelId } from "./models";

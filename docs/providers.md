@@ -56,17 +56,22 @@ Native-API exceptions: **cohere** — now **native** (v2 Chat live, `unmodel/coh
 **amazon** (Nova — reachable via the Bedrock Converse factory); catalog-only:
 **ibm** (Granite/watsonx), **naver**, **snowflake**.
 Mixed-tier: **minimax** and **mistral** are oai-base for chat *and* native for their media
-routes on the same subpath (`minimax.t2a` / `videoGeneration` / `videoGenerationV2`,
+routes on the same subpath (`minimax.speech` / `videoGeneration` / `videoGenerationV2`,
 `mistral.transcription`). **bytedance** is a separate native subpath for the BytePlus
 ModelArk image/video routes — the Doubao chat overlay above is still to do.
 
 ## Speech wave — TTS / STT (native APIs, hand-maintained catalogs ✋)
 
-**Live — TTS:** openai (`speech` — tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15),
-cartesia, deepgram (`speak`, Aura 1/2), elevenlabs, fish-audio (`tts`), hume (`tts`, Octave),
-inworld, lmnt (`speech` + `speechDetailed`), minimax (`t2a`, T2A v2), murf (`speechGenerate` +
-`speechStream`), resemble (`synthesize` + `synthesizeStream`), rime (`tts`), smallest-ai
-(`tts`), speechify (`speech` + `stream`).
+**Live — TTS:** every provider addresses its synthesis route as `speech` (the address-vs-wire
+law — the wire spellings `/v1/text-to-speech/{voice_id}`, `/tts/bytes`, `/v1/speak`,
+`/v1/t2a_v2`, `/synthesize` survive only on the URL constants and wire types):
+openai (tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15), cartesia,
+deepgram (Aura 1/2), elevenlabs, fish-audio, hume (Octave), inworld,
+lmnt (`speech` + `speechDetailed`), minimax (T2A v2), murf (`speech` + `speechStream`),
+resemble (`speech` + `speechStream`), rime, smallest-ai,
+speechify (`speech` + `speechStream`).
+All fourteen also ship a `unified.ts` adapter, so `speech()` from `unmodel/speech` reaches
+them through one canonical vocabulary.
 **Live — STT:** openai (`transcription` — gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
 deepgram (`listen`), elevenlabs (Scribe), gladia (`preRecorded`), inworld (`transcribe` —

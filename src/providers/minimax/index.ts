@@ -36,7 +36,7 @@ export { chat, checkChat, estimateChatTokens };
 
 // --- Speech (T2A v2) -------------------------------------------------------
 export {
-  t2a,
+  speech,
   T2A_URL,
   T2A_UW_URL,
   T2A_EMOTIONS,
@@ -46,7 +46,7 @@ export {
   T2A_LANGUAGE_BOOSTS,
   T2A_SOUND_EFFECTS,
   T2A_MAX_TIMBRE_WEIGHTS,
-} from "./t2a";
+} from "./speech";
 export type {
   T2aParams,
   MinimaxVoiceSetting,
@@ -56,7 +56,7 @@ export type {
   MinimaxEmotion,
   MinimaxAudioFormat,
   MinimaxLanguageBoost,
-} from "./t2a";
+} from "./speech";
 
 // --- Video (v1 Hailuo / 01 routes) ----------------------------------------
 export {

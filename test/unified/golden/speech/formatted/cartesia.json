@@ -1,0 +1,22 @@
+{
+  "ref": "cartesia/sonic-3.5",
+  "voice": "694f9389-aac1-45b6-b726-9d9369183238",
+  "params": {
+    "model_id": "sonic-3.5",
+    "transcript": "The lighthouse keeper checked the lamp.",
+    "voice": {
+      "mode": "id",
+      "id": "694f9389-aac1-45b6-b726-9d9369183238"
+    },
+    "output_format": {
+      "container": "mp3",
+      "sample_rate": 44100,
+      "bit_rate": 128000
+    }
+  },
+  "url": "https://api.cartesia.ai/tts/bytes",
+  "headers": {
+    "content-type": "application/json",
+    "Cartesia-Version": "2026-03-01"
+  }
+}

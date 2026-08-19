@@ -4,7 +4,7 @@ import type { EndpointConstraints } from "../../core/constraint-types";
  * Per-model constraints for POST /v1/text-to-speech/{voice_id}.
  * Every rule carries a reason + source per the constraint-table contract.
  */
-export const textToSpeechConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+export const speechConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   eleven_multilingual_v2: {
     deny: {
       // "Language code (ISO 639-1) used to enforce a language for the model

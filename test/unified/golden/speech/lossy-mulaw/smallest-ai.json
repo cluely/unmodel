@@ -1,0 +1,29 @@
+{
+  "ref": "smallest-ai/lightning_v3.1_pro",
+  "voice": "meher",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "voice_id": "meher",
+    "model": "lightning_v3.1_pro",
+    "output_format": "ulaw"
+  },
+  "url": "https://api.smallest.ai/waves/v1/tts",
+  "headers": {
+    "content-type": "application/json",
+    "accept": "audio/wav"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "outputFormat"
+      ],
+      "meta": {
+        "codec": "pcm_mulaw",
+        "requested": "wav",
+        "achieved": "raw",
+        "source": "https://docs.smallest.ai/models/api-reference/text-to-speech/synthesize-speech"
+      }
+    }
+  ]
+}

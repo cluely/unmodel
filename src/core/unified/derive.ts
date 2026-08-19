@@ -47,6 +47,7 @@
  */
 import type { AudioContainer, AudioFormat, AudioFormatCodec, AudioFormatRequest } from "./vocabulary/audio";
 import type { AspectRatio, Dimensions, ResolutionTier } from "./vocabulary/common";
+import type { Voice } from "./vocabulary/speech";
 import type { CompileIssue, Derived } from "./types";
 import type { Warn } from "../translate/warnings";
 
@@ -847,6 +848,22 @@ export interface AudioFormatSpec {
   /** Bitrates in **bits per second**, per codec. Omit to accept any. */
   bitrates?: Readonly<Partial<Record<AudioFormatCodec, readonly number[]>>>;
   /**
+   * Fields this endpoint has **no field for at all** — either endpoint-wide
+   * (`["sampleRate", "bitrate"]` for an API whose format param is a bare
+   * codec) or per codec (Deepgram fixes mp3 at 22050 Hz and has no bitrate for
+   * linear16).
+   *
+   * Setting one is an `unsupported_param` **error**, never a silent drop: a
+   * caller who asked for 48 kHz and got whatever the provider felt like has
+   * been lied to, and the whole surface rests on that not happening. It is
+   * separate from an empty `sampleRates` list because the two are different
+   * facts with different fixes — "this model offers other rates" versus "this
+   * model does not let you choose".
+   */
+  unavailable?:
+    | readonly AudioFormatField[]
+    | Readonly<Partial<Record<AudioFormatCodec, readonly AudioFormatField[]>>>;
+  /**
    * Fields the wire format requires and the provider documents no default
    * for. Absent from the request → `invalid_shape`, because there is nothing
    * honest to invent.
@@ -858,8 +875,24 @@ export interface AudioFormatSpec {
    * naming the value used — which is the difference between a request you can
    * reproduce and one you cannot.
    */
-  defaults?: { sampleRate?: number; bitrate?: number };
+  defaults?: AudioFormatDefaults;
+  /**
+   * Per-codec overrides of {@link defaults}, merged over it.
+   *
+   * For the endpoints whose documented default genuinely depends on the codec:
+   * ElevenLabs defaults to `mp3_44100_128`, but its Opus is published at 48 kHz
+   * only, so filling 44100 there would invent a value the API rejects.
+   */
+  defaultsByCodec?: Readonly<Partial<Record<AudioFormatCodec, AudioFormatDefaults>>>;
   source?: string;
+}
+
+/** The two numeric halves of an encoding an endpoint may document a default for. */
+export interface AudioFormatDefaults {
+  /** Hz. */
+  sampleRate?: number;
+  /** Bits per second. */
+  bitrate?: number;
 }
 
 /** An encoding this endpoint can actually produce, ready to be placed. */
@@ -951,21 +984,65 @@ export function resolveAudioFormat(
     });
   }
 
-  const rate = fill(
-    { field: "sampleRate", unit: "Hz", value: format.sampleRate, codec, spec, ctx, issues },
-    spec.sampleRates?.[codec],
-    spec.defaults?.sampleRate,
-  );
-  if (rate !== undefined) resolved.sampleRate = rate;
+  // The fields this endpoint has no home for. Checked before `fill`, because a
+  // field that cannot be sent must not also be defaulted or demanded.
+  const missing = unavailableFields(spec, codec);
+  for (const field of missing) {
+    if (format[field] === undefined) continue;
+    issues.push(
+      ...bad(ctx, {
+        code: "unsupported_param",
+        message:
+          `\`${paramOf(ctx)}.${field}\` is not configurable on this model — it publishes no ` +
+          `${field === "sampleRate" ? "sample-rate" : "bitrate"} field for ${JSON.stringify(codec)}, ` +
+          `so the value could only be dropped.`,
+        meta: {
+          field,
+          codec,
+          value: format[field],
+          ...(spec.source !== undefined && { source: spec.source }),
+        },
+      }).issues,
+    );
+  }
 
-  const bitrate = fill(
-    { field: "bitrate", unit: "bits/s", value: format.bitrate, codec, spec, ctx, issues },
-    spec.bitrates?.[codec],
-    spec.defaults?.bitrate,
-  );
-  if (bitrate !== undefined) resolved.bitrate = bitrate;
+  const defaults: AudioFormatDefaults = { ...spec.defaults, ...spec.defaultsByCodec?.[codec] };
+
+  if (!missing.includes("sampleRate")) {
+    const rate = fill(
+      { field: "sampleRate", unit: "Hz", value: format.sampleRate, codec, spec, ctx, issues },
+      spec.sampleRates?.[codec],
+      defaults.sampleRate,
+    );
+    if (rate !== undefined) resolved.sampleRate = rate;
+  }
+
+  if (!missing.includes("bitrate")) {
+    const bitrate = fill(
+      { field: "bitrate", unit: "bits/s", value: format.bitrate, codec, spec, ctx, issues },
+      spec.bitrates?.[codec],
+      defaults.bitrate,
+    );
+    if (bitrate !== undefined) resolved.bitrate = bitrate;
+  }
 
   return issues.length > 0 ? { issues } : ok(resolved);
+}
+
+const NO_FIELDS: readonly AudioFormatField[] = Object.freeze([]);
+
+/** {@link AudioFormatSpec.unavailable}, in either spelling, for one codec. */
+function unavailableFields(
+  spec: AudioFormatSpec,
+  codec: AudioFormatCodec,
+): readonly AudioFormatField[] {
+  const declared = spec.unavailable;
+  if (declared === undefined) return NO_FIELDS;
+  if (Array.isArray(declared)) return declared as readonly AudioFormatField[];
+  return (
+    (declared as Readonly<Partial<Record<AudioFormatCodec, readonly AudioFormatField[]>>>)[codec] ??
+    NO_FIELDS
+  );
 }
 
 interface FillRequest {
@@ -1135,6 +1212,147 @@ export function toSpeedPercentDelta(
  */
 export function murfSpeed(speed: number, ctx: DeriveContext): Derived<number> {
   return toSpeedPercentDelta(speed, {}, ctx);
+}
+
+// ---------------------------------------------------------------------------
+// Voices
+// ---------------------------------------------------------------------------
+
+/** The two things a provider's voice field can be. */
+export type VoiceSpelling = "id" | "name";
+
+/** One endpoint's answer to "what is a voice here". */
+export interface VoiceRules {
+  /**
+   * The spellings this endpoint's voice field accepts, **in preference
+   * order** — the first entry is what a bare string means here.
+   *
+   * Most APIs take an opaque id (`voice_id`, `voice_uuid`, `reference_id`); a
+   * few take a catalog name (Rime's `speaker`); OpenAI and Hume take both, and
+   * cannot tell which you meant from the shape of a string, which is the whole
+   * reason {@link Voice} has three arms.
+   */
+  accepts: readonly VoiceSpelling[];
+  source?: string;
+}
+
+/** A voice this endpoint can actually address. */
+export interface ResolvedVoice {
+  kind: VoiceSpelling;
+  value: string;
+}
+
+/**
+ * Canonical {@link Voice} + one endpoint's spelling → the voice to send.
+ *
+ * The wrong wrapper is an **error**, not a coercion: `{ name: "Kore" }` at an
+ * API whose field is a UUID is not a voice it can look up, and sending the
+ * string anyway would produce a 404 the caller cannot connect to what they
+ * wrote. A bare string is never wrong — it is defined as "whichever spelling
+ * this provider takes", which is `accepts[0]`.
+ */
+export function resolveVoice(
+  voice: Voice,
+  rules: VoiceRules,
+  ctx: DeriveContext,
+): Derived<ResolvedVoice> {
+  const spellings = rules.accepts.length > 0 ? rules.accepts : (["id"] as const);
+  const bare = spellings[0] as VoiceSpelling;
+  const empty = (): Derived<never> =>
+    bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}\` must be a non-empty voice ${bare}.`,
+      meta: { value: voice, ...(rules.source !== undefined && { source: rules.source }) },
+    });
+
+  if (typeof voice === "string") {
+    return voice.length === 0 ? empty() : ok({ kind: bare, value: voice });
+  }
+  if (voice === null || typeof voice !== "object") {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}\` must be a voice ${bare}, \`{ id }\` or \`{ name }\`; got ${JSON.stringify(voice)}.`,
+      meta: { value: voice },
+    });
+  }
+  const kind: VoiceSpelling = "id" in voice ? "id" : "name";
+  const value = kind === "id" ? (voice as { id: unknown }).id : (voice as { name: unknown }).name;
+  if (typeof value !== "string") {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}.${kind}\` must be a string; got ${JSON.stringify(value)}.`,
+      meta: { value },
+    });
+  }
+  if (value.length === 0) return empty();
+  if (!spellings.includes(kind)) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` on this model is a voice ${spellings.join(" or ")}, so ` +
+        `\`{ ${kind} }\` has no equivalent here — pass the ${bare} instead ` +
+        `(a bare string is read as one).`,
+      meta: {
+        accepts: [...spellings],
+        got: kind,
+        value,
+        ...(rules.source !== undefined && { source: rules.source }),
+      },
+    });
+  }
+  return ok({ kind, value });
+}
+
+// ---------------------------------------------------------------------------
+// Languages
+// ---------------------------------------------------------------------------
+
+// The underscore spelling (`pt_BR`) is not BCP-47, but it is what half the
+// world's locale plumbing emits, and refusing it would be a purity nobody
+// benefits from — the primary subtag is unambiguous either way.
+const LANGUAGE_TAG = /^([A-Za-z]{2,3})(?:[-_]([A-Za-z0-9_-]+))?$/;
+
+/**
+ * BCP-47 → the primary subtag, for the endpoints whose language field is a
+ * bare ISO 639-1 code.
+ *
+ * **Warns whenever a subtag is dropped.** `"pt-BR"` and `"pt-PT"` are not the
+ * same request, and an API that only takes `"pt"` cannot tell them apart — so
+ * a caller who asked for Brazilian Portuguese and got Portuguese needs to hear
+ * about it exactly once, here, rather than in the audio.
+ */
+export function toPrimaryLanguage(
+  language: string,
+  ctx: DeriveContext,
+  options: EnumOptions = {},
+): Derived<string> {
+  const match = LANGUAGE_TAG.exec(language.trim());
+  if (match === null) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}\` must be a BCP-47 language tag (e.g. "en", "pt-BR"); got ${JSON.stringify(language)}.`,
+      meta: { value: language, ...(options.source !== undefined && { source: options.source }) },
+    });
+  }
+  const primary = (match[1] as string).toLowerCase();
+  const subtag = match[2];
+  if (subtag !== undefined) {
+    ctx.warn({
+      code: "approximated_param",
+      path: [...ctx.path],
+      message:
+        `\`${paramOf(ctx)}\` ${JSON.stringify(language)} was sent as ${JSON.stringify(primary)} — ` +
+        `this model's language field is a bare ISO 639-1 code, so the regional subtag ` +
+        `${JSON.stringify(subtag)} is not expressible and the accent it selects is the model's default.`,
+      meta: {
+        requested: language,
+        achieved: primary,
+        dropped: subtag,
+        ...(options.source !== undefined && { source: options.source }),
+      },
+    });
+  }
+  return ok(primary);
 }
 
 /** Shared bounds check, always in canonical speed units. */

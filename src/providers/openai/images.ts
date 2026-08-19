@@ -213,7 +213,7 @@ type ImagesArm<M extends string> = M extends keyof ImagesBodyByModel
 // deny rules, the edits-only gate) keys on the model id, and silently
 // validating a request against dall-e-2 that OpenAI may route to a GPT image
 // model would be worse than asking for the id. Documented deviation, same
-// policy as cartesia.tts.
+// policy as cartesia.speech.
 // ---------------------------------------------------------------------------
 
 const imagesSchema = z.looseObject({

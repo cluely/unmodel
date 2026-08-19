@@ -1,5 +1,5 @@
 /**
- * Murf AI Speech — POST https://api.murf.ai/v1/speech/generate  (`speechGenerate`)
+ * Murf AI Speech — POST https://api.murf.ai/v1/speech/generate  (`speech`)
  *                  POST https://api.murf.ai/v1/speech/stream    (`speechStream`)
  *
  * Wire reference:
@@ -413,7 +413,7 @@ const generateValidator = createValidator<
   SpeechGenerateBody,
   Validated<SpeechGenerateBody, SpeechSdkTargets<SpeechGenerateBody>>
 >({
-  endpoint: "murf.speechGenerate",
+  endpoint: "murf.speech",
   schema: generateSchema,
   modelId: generateModelId,
   catalog: models,
@@ -447,7 +447,7 @@ const streamValidator = createValidator<
  * `content-type`. Auth is your job: add an `api-key` header.
  *
  * ```ts
- * const params = murf.speechGenerate({ text: "Hello world", voiceId: "en-US-natalie", format: "MP3" });
+ * const params = murf.speech({ text: "Hello world", voiceId: "en-US-natalie", format: "MP3" });
  * const res = await fetch(params.request.url, {
  *   method: params.request.method,
  *   headers: { ...params.request.headers, "api-key": process.env.MURF_API_KEY! },
@@ -455,7 +455,7 @@ const streamValidator = createValidator<
  * });
  * ```
  */
-export const speechGenerate = generateValidator as unknown as {
+export const speech = generateValidator as unknown as {
   <T extends SpeechGenerateBody>(
     params: T & ExactKeys<T, SpeechGenerateBody>,
     options?: ValidateOptions,

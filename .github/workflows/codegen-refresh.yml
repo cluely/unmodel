@@ -1,0 +1,50 @@
+name: Codegen refresh
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun install --frozen-lockfile
+      - name: Refresh models.dev snapshot and regenerate catalogs
+        run: bun run codegen:refresh
+      - name: Create changeset if catalogs changed
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            cat > .changeset/models-dev-refresh.md <<'EOF'
+          ---
+          "unmodel": patch
+          ---
+
+          chore: refresh models.dev catalog
+          EOF
+          fi
+      # NOTE: PRs opened with the default GITHUB_TOKEN do not trigger other
+      # workflows (GitHub Actions limitation), so the CI workflow will NOT run
+      # on this PR and it cannot merge if branch protection requires checks.
+      # Fix: create a PAT or GitHub App token with contents+pull-requests
+      # write access, store it as a repo secret, and pass it via the action's
+      # `token:` input below.
+      - name: Open or update pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: codegen/models-dev-refresh
+          commit-message: "chore: refresh models.dev catalog"
+          title: "chore: refresh models.dev catalog"
+          body: |
+            Automated refresh of the models.dev catalog snapshot and generated files.
+
+            This PR was created by the scheduled `codegen-refresh` workflow. The branch is
+            rolling: subsequent runs update this same PR until it is merged or closed.

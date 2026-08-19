@@ -1,0 +1,53 @@
+{
+  "body": {
+    "model": "anthropic/claude-opus-5",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Get the weather."
+      },
+      {
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "id": "call_9",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_9",
+        "content": "Error: upstream 503"
+      }
+    ],
+    "max_completion_tokens": 512,
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "parameters": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "messages",
+        2,
+        "content",
+        0
+      ]
+    }
+  ]
+}

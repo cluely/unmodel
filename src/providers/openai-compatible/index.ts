@@ -1,0 +1,263 @@
+// The OpenAI-compatible provider factory. This module exports only the
+// factory plus the shared dialect types/pieces — a raw unconfigured endpoint
+// is meaningless, so there is no default `openaiCompatible.chat`. Overlay
+// modules (unmodel/groq etc.) call
+// `createOpenAICompatible<TheirModelId, typeof availability>` with their
+// generated catalog, so `model` gets their exact literal union and
+// `.toApi(provider)` gets their exact retarget targets.
+
+import { createValidator, type PipelineContext } from "../../core/pipeline";
+import { JSON_HEADERS, type ExactKeys, type Validated } from "../../core/request";
+import type { ValidateOptions } from "../../core/options";
+import type { ValidateResult } from "../../core/result";
+import type { ModelInfo } from "../../core/catalog-types";
+import type { AvailabilityMap } from "../../core/translate/availability-types";
+import type { EndpointConstraints, FamilyRule } from "../../core/constraint-types";
+import {
+  chatCompletionsChecks,
+  createChatCompletionsSchema,
+  createChatEstimate,
+  createChatFinalize,
+  estimateChatTokens,
+  type ChatCompletionsBodyBase,
+  type ChatConstraintSpec,
+  type ChatFinalizeSpec,
+  type ChatSdkTargets,
+} from "./chat-completions";
+import { createCheckChat, type ChatCompletionLike } from "./check";
+import type { ResponseReport } from "../../core/report";
+
+export interface OpenAICompatibleConfigBase<Avail extends AvailabilityMap = never> {
+  /** Short provider id, e.g. "groq" — used in endpoint names ("groq.chat") and messages. */
+  id: string;
+  /** Per-model catalog (generated models.gen.ts or a hand-maintained models.ts). */
+  catalog: Record<string, ModelInfo>;
+  /**
+   * This provider's generated cross-provider availability table, imported
+   * directly by the overlay:
+   *
+   * ```ts
+   * import { availability } from "../../catalog/availability/groq.gen";
+   * createOpenAICompatible<GroqTextModelId, typeof availability>({ …, availability });
+   * ```
+   *
+   * Passing it is what gives `chat()`'s result `.toApi(provider)`; the type
+   * argument and this value are the same table, so the compile-time union and
+   * the runtime lookup cannot drift apart. Overlays whose provider has no
+   * generated table simply omit both (the field's type is then `never`), and
+   * `.toApi` does not exist for them — in the type or at runtime.
+   *
+   * There is deliberately no aggregating index over `catalog/availability/`:
+   * each overlay imports exactly its own table, so `unmodel/groq` pays ~1 KB
+   * rather than the fleet's ~185 KB.
+   */
+  availability?: Avail;
+  /**
+   * Decoders for the other wire dialects this overlay's availability data can
+   * reach, declared as a plain object literal so a bundler sees exactly which
+   * codecs the overlay needs:
+   *
+   * ```ts
+   * import { decodeAnthropic } from "../anthropic/interop";
+   * import { decodeGemini } from "../google/interop";
+   * createOpenAICompatible<…>({ …, decoders: { "anthropic-messages": decodeAnthropic, gemini: decodeGemini } });
+   * ```
+   *
+   * Most overlays omit this: their availability data names only other
+   * OpenAI-compatible providers, and that path is a model-id respell plus a
+   * URL swap. The two gateways whose data does name Gemini and Anthropic
+   * targets (openrouter, vercel) declare it and pay for those two modules;
+   * everyone else pays nothing.
+   */
+  decoders?: ChatFinalizeSpec["decoders"];
+  /** Hand-written per-model constraint table for provider quirks. */
+  constraints?: Readonly<Partial<Record<string, EndpointConstraints>>>;
+  /** Pattern rules (reasoning families, endpoint-wide media limits etc.). */
+  familyRules?: readonly FamilyRule[];
+  /** Extra static non-auth headers sent with every chat request. */
+  headers?: Record<string, string>;
+  /**
+   * Provider-specific checks run after the shared dialect checks — for
+   * quirks the per-param deny/enum tables can't express (nested fields,
+   * cross-param rules).
+   */
+  extraChecks?: ReadonlyArray<
+    (params: ChatCompletionsBodyBase, info: ModelInfo | undefined, ctx: PipelineContext) => void
+  >;
+}
+
+/**
+ * Factory config: exactly one of `baseUrl` (the standard case — the chat URL
+ * is baseUrl + "/chat/completions") or `chatUrl` (a full-URL override for
+ * endpoints that do not follow the fixed path, e.g. Azure's resource-scoped
+ * `{endpoint}/openai/v1/chat/completions`).
+ */
+export type OpenAICompatibleConfig<Avail extends AvailabilityMap = never> =
+  OpenAICompatibleConfigBase<Avail> &
+  (
+    | {
+        /**
+         * OpenAI-compatible base URL without a trailing slash, e.g.
+         * "https://api.groq.com/openai/v1"; the chat URL is baseUrl + "/chat/completions".
+         */
+        baseUrl: string;
+        chatUrl?: undefined;
+      }
+    | {
+        baseUrl?: undefined;
+        /** Complete chat completions URL, used verbatim (query params included). */
+        chatUrl: string;
+      }
+  );
+
+/**
+ * The standard validator surface, with `model` narrowed to the provider's
+ * union and `.toApi`'s targets read off the provider's availability table.
+ *
+ * `Avail` defaults to `never`, which makes `.toApi` vanish from the result
+ * type entirely (see `Validated`) — that is the shape an overlay gets when it
+ * passes no `availability`.
+ */
+export interface OpenAICompatibleChat<
+  ModelId extends string = string,
+  Avail extends AvailabilityMap = never,
+> {
+  <T extends ChatCompletionsBodyBase<ModelId>>(
+    params: T & ExactKeys<T, ChatCompletionsBodyBase<ModelId>>,
+    options?: ValidateOptions,
+  ): Validated<T, ChatSdkTargets<T>, Avail, T["model"] & string>;
+  safe<T extends ChatCompletionsBodyBase<ModelId>>(
+    params: T & ExactKeys<T, ChatCompletionsBodyBase<ModelId>>,
+    options?: ValidateOptions,
+  ): ValidateResult<Validated<T, ChatSdkTargets<T>, Avail, T["model"] & string>>;
+  constraintsFor(modelId: string): EndpointConstraints[];
+}
+
+export interface OpenAICompatibleProvider<
+  ModelId extends string = string,
+  Avail extends AvailabilityMap = never,
+> {
+  /**
+   * Validates params for POST {baseUrl}/chat/completions. The result's
+   * enumerable properties are the exact fetch body; `.toSdk("openai")` returns
+   * the wire body unchanged in shape (this dialect's SDK params are the OpenAI
+   * SDK's), `.request` carries url/method/static headers, and — for overlays
+   * that pass an `availability` table — `.toApi(provider)` retargets to
+   * another provider that serves the same model.
+   */
+  chat: OpenAICompatibleChat<ModelId, Avail>;
+  /** {baseUrl}/chat/completions, or the configured `chatUrl` override verbatim. */
+  chatUrl: string;
+  /** Post-generation response inspection + usage pricing. Never throws. */
+  checkChat: (res: ChatCompletionLike) => ResponseReport;
+  /** The shared heuristic prompt-token estimator. */
+  estimateChatTokens: typeof estimateChatTokens;
+}
+
+/**
+ * Builds one overlay's chat surface.
+ *
+ * `Avail` is inferred from the `availability` value on its own — but naming
+ * `ModelId` explicitly (which every overlay must, since it is a phantom: the
+ * catalog's value type erases its keys) turns inference off for the rest, so
+ * overlays write both. Passing the table as a value as well as a type keeps
+ * the two honest: the type argument names the object the runtime looks up in.
+ *
+ * ```ts
+ * import { availability } from "../../catalog/availability/groq.gen";
+ * createOpenAICompatible<GroqTextModelId, typeof availability>({
+ *   id: provider.id, baseUrl: "…", catalog: models, availability,
+ * });
+ * ```
+ */
+export function createOpenAICompatible<
+  ModelId extends string = string,
+  Avail extends AvailabilityMap = never,
+>(config: OpenAICompatibleConfig<Avail>): OpenAICompatibleProvider<ModelId, Avail> {
+  const chatUrl =
+    config.chatUrl !== undefined ? config.chatUrl : `${config.baseUrl}/chat/completions`;
+  // One id for both the validator's issue labels and the retarget route
+  // (`"groq.chat → cerebras.chat"`); they must agree.
+  const endpoint = `${config.id}.chat`;
+  const spec: ChatConstraintSpec = {
+    ...(config.constraints !== undefined && { constraints: config.constraints }),
+    ...(config.familyRules !== undefined && { familyRules: config.familyRules }),
+  };
+
+  const validator = createValidator<ChatCompletionsBodyBase, unknown>({
+    endpoint,
+    schema: createChatCompletionsSchema(),
+    modelId: (params) => params.model,
+    catalog: config.catalog,
+    ...spec,
+    checks: [...chatCompletionsChecks(spec), ...(config.extraChecks ?? [])],
+    estimate: createChatEstimate(spec),
+    finalize: createChatFinalize({
+      endpoint,
+      provider: config.id,
+      request: {
+        url: chatUrl,
+        method: "POST",
+        headers: { ...JSON_HEADERS, ...config.headers },
+      },
+      ...(config.availability !== undefined && { availability: config.availability }),
+      ...(config.decoders !== undefined && { decoders: config.decoders }),
+    }),
+  });
+
+  return {
+    chat: validator as unknown as OpenAICompatibleChat<ModelId, Avail>,
+    chatUrl,
+    checkChat: createCheckChat(config.catalog, config.id),
+    estimateChatTokens,
+  };
+}
+
+// Shared dialect pieces, re-exported for overlays and provider compositions.
+export {
+  chatCompletionsChecks,
+  checkInputModalities,
+  checkOutputLimit,
+  checkSamplingParams,
+  checkStructuredOutput,
+  checkToolSupport,
+  createChatCompletionsSchema,
+  createChatEstimate,
+  createChatFinalize,
+  createInlineImagesCheck,
+  estimateChatTokens,
+  imageTokensFor,
+  messagesSchema,
+  textContentSchema,
+  DEFAULT_IMAGE_TOKENS,
+} from "./chat-completions";
+export type {
+  ChatAssistantMessage,
+  ChatAudioPart,
+  ChatCompletionsBodyBase,
+  ChatConstraintSpec,
+  ChatFinalizeSpec,
+  ChatSdkTargets,
+  ChatCustomTool,
+  ChatCustomToolCall,
+  ChatDeveloperMessage,
+  ChatFilePart,
+  ChatFunctionMessage,
+  ChatFunctionTool,
+  ChatFunctionToolCall,
+  ChatImagePart,
+  ChatMessage,
+  ChatPromptCacheBreakpoint,
+  ChatRefusalPart,
+  ChatResponseFormat,
+  ChatSystemMessage,
+  ChatTextPart,
+  ChatTool,
+  ChatToolCall,
+  ChatToolChoice,
+  ChatToolMessage,
+  ChatUserContentPart,
+  ChatUserMessage,
+} from "./chat-completions";
+export { createCheckChat } from "./check";
+export type { ChatChoiceLike, ChatCompletionLike } from "./check";

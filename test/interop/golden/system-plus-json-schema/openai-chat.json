@@ -1,0 +1,31 @@
+{
+  "model": "anthropic/claude-opus-5",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Answer as JSON."
+    },
+    {
+      "role": "user",
+      "content": "Who wrote Dune?"
+    }
+  ],
+  "max_completion_tokens": 800,
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "answer",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "author": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "author"
+        ]
+      }
+    }
+  }
+}

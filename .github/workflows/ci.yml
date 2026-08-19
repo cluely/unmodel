@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun install --frozen-lockfile
+      - name: Codegen drift check
+        run: |
+          bun run codegen
+          # `git diff --exit-code` alone misses newly created untracked files
+          # (e.g. a snapshot update that adds a new provider's .gen.ts).
+          git add -A
+          git diff --cached --exit-code
+      - run: bun run check
+      - run: bun test
+      - run: bun run build
+      - run: bun run lint:pkg

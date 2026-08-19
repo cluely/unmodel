@@ -1,0 +1,40 @@
+{
+  "$comment": [
+    "The other direction of the same asymmetry. Every other dialect references remote media by",
+    "arbitrary public URL; Gemini's fileData.fileUri resolves ONLY Files API URIs, gs:// Cloud",
+    "Storage URIs and YouTube links. Writing a plain web URL into fileData produces a 400, so",
+    "the crossing is approximated, not lossless — the request is still emitted (best effort)",
+    "but the cost is named."
+  ],
+  "body": {
+    "model": "gemini-2.5-flash",
+    "contents": [
+      {
+        "role": "user",
+        "parts": [
+          {
+            "text": "Describe this."
+          },
+          {
+            "fileData": {
+              "fileUri": "https://example.com/cat.png",
+              "mimeType": "image/png"
+            }
+          }
+        ]
+      }
+    ],
+    "generationConfig": {
+      "maxOutputTokens": 512
+    }
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": ["messages", 0, "content", 1],
+      "meta": {
+        "url": "https://example.com/cat.png"
+      }
+    }
+  ]
+}

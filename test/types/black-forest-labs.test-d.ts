@@ -1,0 +1,101 @@
+/**
+ * Type-level tests for the black-forest-labs provider. NOT run by
+ * `bun test` — this file is only type-checked (`bun run check` / tsc
+ * --noEmit). BFL has no official JS SDK, so these tests exercise the Tier-A
+ * per-route arms and the ExactKeys typo guard.
+ */
+import { flux1, flux2, fluxKontext } from "../../src/providers/black-forest-labs";
+import { expectAssignable } from "./helpers";
+
+function flux2TypeTests(): void {
+  // pro/max arm: disable_pup + up to 8 input images.
+  const pro = flux2({
+    model: "flux-2-pro",
+    prompt: "a tiny cabin",
+    disable_pup: true,
+    input_image: "data:image/png;base64,xxxx",
+    input_image_8: "https://example.com/ref.png",
+    width: 1024,
+    height: 768,
+    safety_tolerance: 2,
+    output_format: "png",
+    webhook_url: "https://example.com/hook",
+  });
+  // model is stripped from the wire body.
+  expectAssignable<{ prompt: string }>(pro);
+  expectAssignable<string>(JSON.stringify(pro));
+  expectAssignable<string>(pro.request.url);
+
+  // flex arm: guidance/steps/prompt_upsampling/input_image_blob_path.
+  flux2({
+    model: "flux-2-flex",
+    prompt: "hi",
+    prompt_upsampling: false,
+    guidance: 7.5,
+    steps: 28,
+    input_image_blob_path: "blobs/a.png",
+  });
+
+  // klein arm: bare surface, 4 input images.
+  flux2({ model: "flux-2-klein-4b", prompt: "hi", input_image_4: "x" });
+
+  // Unknown models fall back to the loose escape-hatch arm.
+  flux2({ model: "flux-9-mega", prompt: "hi", some_new_param: 1 });
+
+  // @ts-expect-error steps is flex-only — compile error on pro
+  flux2({ model: "flux-2-pro", prompt: "hi", steps: 30 });
+  // @ts-expect-error guidance is flex-only — compile error on max
+  flux2({ model: "flux-2-max", prompt: "hi", guidance: 5 });
+  // @ts-expect-error pro/max use disable_pup, not prompt_upsampling
+  flux2({ model: "flux-2-pro", prompt: "hi", prompt_upsampling: true });
+  // @ts-expect-error flex uses prompt_upsampling, not disable_pup
+  flux2({ model: "flux-2-flex", prompt: "hi", disable_pup: true });
+  // @ts-expect-error klein routes accept at most 4 input images
+  flux2({ model: "flux-2-klein-9b", prompt: "hi", input_image_5: "x" });
+  // @ts-expect-error klein routes have no steps control
+  flux2({ model: "flux-2-klein-4b", prompt: "hi", steps: 20 });
+  // @ts-expect-error ExactKeys rejects typo'd keys on known models
+  flux2({ model: "flux-2-pro", prompt: "hi", promt_upsampling: true });
+}
+
+function kontextTypeTests(): void {
+  const v = fluxKontext({
+    model: "flux-kontext-pro",
+    prompt: "replace the sky",
+    input_image: "data:image/png;base64,xxxx",
+    aspect_ratio: "16:9",
+    prompt_upsampling: true,
+    safety_tolerance: 6,
+    output_format: "png",
+  });
+  expectAssignable<{ prompt: string }>(v);
+  expectAssignable<string>(JSON.stringify(v));
+
+  // @ts-expect-error kontext sizes via aspect_ratio, not width
+  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", width: 1024 });
+  // @ts-expect-error ExactKeys rejects typo'd keys
+  fluxKontext({ model: "flux-kontext-max", prompt: "hi", aspectratio: "16:9" });
+
+  // The preset union autocompletes the documented 21:9 … 9:21 rule space.
+  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "21:9" });
+  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "9:21" });
+  // Ratios BFL never enumerated stay legal — the space is free-form "W:H".
+  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "7:3" });
+  // @ts-expect-error non-ratio strings are compile errors (was a bare `string`)
+  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "" });
+  // @ts-expect-error "WIDTHxHEIGHT" is the wrong wire shape for a ratio field
+  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "16x9" });
+}
+
+function flux1TypeTests(): void {
+  // The ultra route sizes by aspect_ratio; the presets cover the rule space.
+  flux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "16:9" });
+  flux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "1:2" });
+  flux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "7:3" });
+  // @ts-expect-error banana is not a ratio (was a bare `string`)
+  flux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "banana" });
+  // @ts-expect-error the width/height routes do not take aspect_ratio at all
+  flux1({ model: "flux-dev", prompt: "hi", aspect_ratio: "16:9" });
+}
+
+export { flux2TypeTests, kontextTypeTests, flux1TypeTests };

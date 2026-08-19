@@ -1,0 +1,74 @@
+{
+  "$comment": [
+    "Manual valve for the cross-provider availability heuristic in scripts/availability.ts.",
+    "Every deviation from the derivation lands here as a reviewable diff, because a wrong",
+    "merge is a runtime 404 rather than a validation error.",
+    "",
+    "providers — the generation scope, listed explicitly rather than inferred from",
+    "src/providers/ (codegen must not depend on the filesystem layout). These are the 36",
+    "providers unmodel ships a chat validator for. cohere is absent on purpose: its chat",
+    "wire format is a fifth dialect with no translator in v1.",
+    "",
+    "deny — edges the heuristic finds that must not ship. Each ref is \"<provider>:<model-id>\";",
+    "either half may use * as a wildcard. The edge is removed in both directions, and an",
+    "exact (glob-free) ref that matches nothing fails codegen so upstream renames surface.",
+    "",
+    "force — equivalences the heuristic misses. Refs must be exact and must resolve to",
+    "in-scope chat rows; a force pair merges the two models' groups."
+  ],
+
+  "providers": [
+    "alibaba",
+    "amazon-bedrock",
+    "anthropic",
+    "azure",
+    "baseten",
+    "cerebras",
+    "cloudflare-workers-ai",
+    "deepinfra",
+    "deepseek",
+    "fireworks-ai",
+    "friendli",
+    "google",
+    "google-vertex",
+    "groq",
+    "huggingface",
+    "inception",
+    "longcat",
+    "meta",
+    "minimax",
+    "mistral",
+    "moonshotai",
+    "nebius",
+    "novita-ai",
+    "nvidia",
+    "openai",
+    "openrouter",
+    "perplexity",
+    "sarvam",
+    "scaleway",
+    "siliconflow",
+    "stepfun",
+    "togetherai",
+    "upstage",
+    "vercel",
+    "xai",
+    "zhipuai"
+  ],
+
+  "targetOnly": ["amazon-bedrock", "azure"],
+
+  "$targetOnlyNotes": "Both are factory-configured (bedrock needs a region, azure a resource endpoint), so they are excluded from the one-argument .toApi union and their endpoint modules wire no api:. They stay in `providers` because other providers' rows legitimately target them — the data carries factory targets so the reserved two-argument overload needs no codegen change — but emitting a SOURCE table for them produced ~23 KB of generated code with no importer. Delete an entry here the day the matching endpoint module wires `api:`.",
+
+  "deny": [
+    ["*:*", "azure:*claude*"],
+    ["*:*", "google-vertex:*claude*"]
+  ],
+
+  "$denyNotes": {
+    "azure:*claude*": "azure lists 11 claude-* models but models.dev records api: null for azure and unmodel's azure module is OpenAI-compatible only. Nobody has verified which wire surface Azure exposes Claude on, so these rows ship no edges in either direction rather than a guessed dialect.",
+    "google-vertex:*claude*": "Vertex serves Claude through an Anthropic-shaped rawPredict surface that unmodel has no module for (models.dev also carries a separate google-vertex-anthropic provider unmodel does not implement). Deny until that endpoint exists; the google-vertex.messages surface rule in scripts/availability.ts is already in place for when it does."
+  },
+
+  "force": []
+}

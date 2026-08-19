@@ -1,0 +1,21 @@
+{
+  "model": "google/gemini-2.5-flash",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Describe this."
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "https://example.com/cat.png"
+          }
+        }
+      ]
+    }
+  ],
+  "max_completion_tokens": 512
+}

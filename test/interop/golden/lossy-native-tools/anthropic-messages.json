@@ -1,0 +1,34 @@
+{
+  "model": "claude-opus-5",
+  "max_tokens": 512,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Search for the news."
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "type": "web_search_20250305",
+      "name": "web_search",
+      "max_uses": 3
+    },
+    {
+      "name": "note",
+      "description": "Save a note.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}

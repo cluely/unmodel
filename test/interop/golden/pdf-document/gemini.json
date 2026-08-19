@@ -1,0 +1,22 @@
+{
+  "model": "gemini-2.5-flash",
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Summarize this."
+        },
+        {
+          "inlineData": {
+            "mimeType": "application/pdf",
+            "data": "JVBERi0xLjQK"
+          }
+        }
+      ]
+    }
+  ],
+  "generationConfig": {
+    "maxOutputTokens": 900
+  }
+}

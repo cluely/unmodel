@@ -1,0 +1,29 @@
+{
+  "$comment": [
+    "Gemini's fileData.fileUri on generativelanguage.googleapis.com/.../files/ is a",
+    "PROVIDER-SCOPED handle: it resolves only with the caller's Google credentials and is",
+    "namespaced to their project. Emitting it as a plain image_url would hand OpenAI a URL it",
+    "cannot fetch, with warnings.length === 0 — i.e. asserted lossless while broken. The IR",
+    "models it as { kind: \"file\", dialect: \"gemini\" } so every foreign decoder drops it loudly."
+  ],
+  "body": {
+    "model": "google/gemini-2.5-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Describe this."
+      }
+    ],
+    "max_completion_tokens": 512
+  },
+  "warnings": [
+    {
+      "code": "dropped_content",
+      "path": ["messages", 0, "content", 1],
+      "meta": {
+        "ref": "https://generativelanguage.googleapis.com/v1beta/files/abc123",
+        "dialect": "gemini"
+      }
+    }
+  ]
+}

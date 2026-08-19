@@ -1,0 +1,370 @@
+{
+  "name": "unmodel",
+  "version": "0.0.1",
+  "description": "Validation layer for LLM API calls: catalog-aware, zod-powered request validation and response sanity checks for every provider — bring your own SDK or fetch.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Gui <me@guiga.dev>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guigaribalde/unmodel.git"
+  },
+  "homepage": "https://github.com/guigaribalde/unmodel#readme",
+  "bugs": {
+    "url": "https://github.com/guigaribalde/unmodel/issues"
+  },
+  "keywords": [
+    "ai",
+    "llm",
+    "validation",
+    "zod",
+    "openai",
+    "anthropic",
+    "gemini",
+    "grok",
+    "typescript",
+    "models.dev",
+    "cost",
+    "tokens",
+    "flux",
+    "sora",
+    "veo",
+    "runway",
+    "bedrock",
+    "vertex"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./ai-sdk": {
+      "types": "./dist/ai-sdk/index.d.ts",
+      "default": "./dist/ai-sdk/index.js"
+    },
+    "./catalog": {
+      "types": "./dist/catalog/index.d.ts",
+      "default": "./dist/catalog/index.js"
+    },
+    "./alibaba": {
+      "types": "./dist/providers/alibaba/index.d.ts",
+      "default": "./dist/providers/alibaba/index.js"
+    },
+    "./amazon-bedrock": {
+      "types": "./dist/providers/amazon-bedrock/index.d.ts",
+      "default": "./dist/providers/amazon-bedrock/index.js"
+    },
+    "./anthropic": {
+      "types": "./dist/providers/anthropic/index.d.ts",
+      "default": "./dist/providers/anthropic/index.js"
+    },
+    "./assemblyai": {
+      "types": "./dist/providers/assemblyai/index.d.ts",
+      "default": "./dist/providers/assemblyai/index.js"
+    },
+    "./azure": {
+      "types": "./dist/providers/azure/index.d.ts",
+      "default": "./dist/providers/azure/index.js"
+    },
+    "./baseten": {
+      "types": "./dist/providers/baseten/index.d.ts",
+      "default": "./dist/providers/baseten/index.js"
+    },
+    "./black-forest-labs": {
+      "types": "./dist/providers/black-forest-labs/index.d.ts",
+      "default": "./dist/providers/black-forest-labs/index.js"
+    },
+    "./bria": {
+      "types": "./dist/providers/bria/index.d.ts",
+      "default": "./dist/providers/bria/index.js"
+    },
+    "./bytedance": {
+      "types": "./dist/providers/bytedance/index.d.ts",
+      "default": "./dist/providers/bytedance/index.js"
+    },
+    "./cartesia": {
+      "types": "./dist/providers/cartesia/index.d.ts",
+      "default": "./dist/providers/cartesia/index.js"
+    },
+    "./cerebras": {
+      "types": "./dist/providers/cerebras/index.d.ts",
+      "default": "./dist/providers/cerebras/index.js"
+    },
+    "./cloudflare-workers-ai": {
+      "types": "./dist/providers/cloudflare-workers-ai/index.d.ts",
+      "default": "./dist/providers/cloudflare-workers-ai/index.js"
+    },
+    "./cohere": {
+      "types": "./dist/providers/cohere/index.d.ts",
+      "default": "./dist/providers/cohere/index.js"
+    },
+    "./deepgram": {
+      "types": "./dist/providers/deepgram/index.d.ts",
+      "default": "./dist/providers/deepgram/index.js"
+    },
+    "./deepinfra": {
+      "types": "./dist/providers/deepinfra/index.d.ts",
+      "default": "./dist/providers/deepinfra/index.js"
+    },
+    "./deepseek": {
+      "types": "./dist/providers/deepseek/index.d.ts",
+      "default": "./dist/providers/deepseek/index.js"
+    },
+    "./elevenlabs": {
+      "types": "./dist/providers/elevenlabs/index.d.ts",
+      "default": "./dist/providers/elevenlabs/index.js"
+    },
+    "./fireworks-ai": {
+      "types": "./dist/providers/fireworks-ai/index.d.ts",
+      "default": "./dist/providers/fireworks-ai/index.js"
+    },
+    "./fish-audio": {
+      "types": "./dist/providers/fish-audio/index.d.ts",
+      "default": "./dist/providers/fish-audio/index.js"
+    },
+    "./friendli": {
+      "types": "./dist/providers/friendli/index.d.ts",
+      "default": "./dist/providers/friendli/index.js"
+    },
+    "./gladia": {
+      "types": "./dist/providers/gladia/index.d.ts",
+      "default": "./dist/providers/gladia/index.js"
+    },
+    "./google": {
+      "types": "./dist/providers/google/index.d.ts",
+      "default": "./dist/providers/google/index.js"
+    },
+    "./google-vertex": {
+      "types": "./dist/providers/google-vertex/index.d.ts",
+      "default": "./dist/providers/google-vertex/index.js"
+    },
+    "./groq": {
+      "types": "./dist/providers/groq/index.d.ts",
+      "default": "./dist/providers/groq/index.js"
+    },
+    "./huggingface": {
+      "types": "./dist/providers/huggingface/index.d.ts",
+      "default": "./dist/providers/huggingface/index.js"
+    },
+    "./hume": {
+      "types": "./dist/providers/hume/index.d.ts",
+      "default": "./dist/providers/hume/index.js"
+    },
+    "./ideogram": {
+      "types": "./dist/providers/ideogram/index.d.ts",
+      "default": "./dist/providers/ideogram/index.js"
+    },
+    "./inception": {
+      "types": "./dist/providers/inception/index.d.ts",
+      "default": "./dist/providers/inception/index.js"
+    },
+    "./inworld": {
+      "types": "./dist/providers/inworld/index.d.ts",
+      "default": "./dist/providers/inworld/index.js"
+    },
+    "./kling": {
+      "types": "./dist/providers/kling/index.d.ts",
+      "default": "./dist/providers/kling/index.js"
+    },
+    "./krea": {
+      "types": "./dist/providers/krea/index.d.ts",
+      "default": "./dist/providers/krea/index.js"
+    },
+    "./leonardo": {
+      "types": "./dist/providers/leonardo/index.d.ts",
+      "default": "./dist/providers/leonardo/index.js"
+    },
+    "./lightricks": {
+      "types": "./dist/providers/lightricks/index.d.ts",
+      "default": "./dist/providers/lightricks/index.js"
+    },
+    "./lmnt": {
+      "types": "./dist/providers/lmnt/index.d.ts",
+      "default": "./dist/providers/lmnt/index.js"
+    },
+    "./longcat": {
+      "types": "./dist/providers/longcat/index.d.ts",
+      "default": "./dist/providers/longcat/index.js"
+    },
+    "./luma": {
+      "types": "./dist/providers/luma/index.d.ts",
+      "default": "./dist/providers/luma/index.js"
+    },
+    "./meta": {
+      "types": "./dist/providers/meta/index.d.ts",
+      "default": "./dist/providers/meta/index.js"
+    },
+    "./minimax": {
+      "types": "./dist/providers/minimax/index.d.ts",
+      "default": "./dist/providers/minimax/index.js"
+    },
+    "./mistral": {
+      "types": "./dist/providers/mistral/index.d.ts",
+      "default": "./dist/providers/mistral/index.js"
+    },
+    "./moonshotai": {
+      "types": "./dist/providers/moonshotai/index.d.ts",
+      "default": "./dist/providers/moonshotai/index.js"
+    },
+    "./murf": {
+      "types": "./dist/providers/murf/index.d.ts",
+      "default": "./dist/providers/murf/index.js"
+    },
+    "./nebius": {
+      "types": "./dist/providers/nebius/index.d.ts",
+      "default": "./dist/providers/nebius/index.js"
+    },
+    "./novita-ai": {
+      "types": "./dist/providers/novita-ai/index.d.ts",
+      "default": "./dist/providers/novita-ai/index.js"
+    },
+    "./nvidia": {
+      "types": "./dist/providers/nvidia/index.d.ts",
+      "default": "./dist/providers/nvidia/index.js"
+    },
+    "./openai": {
+      "types": "./dist/providers/openai/index.d.ts",
+      "default": "./dist/providers/openai/index.js"
+    },
+    "./openai-compatible": {
+      "types": "./dist/providers/openai-compatible/index.d.ts",
+      "default": "./dist/providers/openai-compatible/index.js"
+    },
+    "./openrouter": {
+      "types": "./dist/providers/openrouter/index.d.ts",
+      "default": "./dist/providers/openrouter/index.js"
+    },
+    "./perplexity": {
+      "types": "./dist/providers/perplexity/index.d.ts",
+      "default": "./dist/providers/perplexity/index.js"
+    },
+    "./pixverse": {
+      "types": "./dist/providers/pixverse/index.d.ts",
+      "default": "./dist/providers/pixverse/index.js"
+    },
+    "./recraft": {
+      "types": "./dist/providers/recraft/index.d.ts",
+      "default": "./dist/providers/recraft/index.js"
+    },
+    "./resemble": {
+      "types": "./dist/providers/resemble/index.d.ts",
+      "default": "./dist/providers/resemble/index.js"
+    },
+    "./revai": {
+      "types": "./dist/providers/revai/index.d.ts",
+      "default": "./dist/providers/revai/index.js"
+    },
+    "./reve": {
+      "types": "./dist/providers/reve/index.d.ts",
+      "default": "./dist/providers/reve/index.js"
+    },
+    "./rime": {
+      "types": "./dist/providers/rime/index.d.ts",
+      "default": "./dist/providers/rime/index.js"
+    },
+    "./runway": {
+      "types": "./dist/providers/runway/index.d.ts",
+      "default": "./dist/providers/runway/index.js"
+    },
+    "./sarvam": {
+      "types": "./dist/providers/sarvam/index.d.ts",
+      "default": "./dist/providers/sarvam/index.js"
+    },
+    "./scaleway": {
+      "types": "./dist/providers/scaleway/index.d.ts",
+      "default": "./dist/providers/scaleway/index.js"
+    },
+    "./siliconflow": {
+      "types": "./dist/providers/siliconflow/index.d.ts",
+      "default": "./dist/providers/siliconflow/index.js"
+    },
+    "./smallest-ai": {
+      "types": "./dist/providers/smallest-ai/index.d.ts",
+      "default": "./dist/providers/smallest-ai/index.js"
+    },
+    "./soniox": {
+      "types": "./dist/providers/soniox/index.d.ts",
+      "default": "./dist/providers/soniox/index.js"
+    },
+    "./speechify": {
+      "types": "./dist/providers/speechify/index.d.ts",
+      "default": "./dist/providers/speechify/index.js"
+    },
+    "./speechmatics": {
+      "types": "./dist/providers/speechmatics/index.d.ts",
+      "default": "./dist/providers/speechmatics/index.js"
+    },
+    "./stability": {
+      "types": "./dist/providers/stability/index.d.ts",
+      "default": "./dist/providers/stability/index.js"
+    },
+    "./stepfun": {
+      "types": "./dist/providers/stepfun/index.d.ts",
+      "default": "./dist/providers/stepfun/index.js"
+    },
+    "./togetherai": {
+      "types": "./dist/providers/togetherai/index.d.ts",
+      "default": "./dist/providers/togetherai/index.js"
+    },
+    "./upstage": {
+      "types": "./dist/providers/upstage/index.d.ts",
+      "default": "./dist/providers/upstage/index.js"
+    },
+    "./vercel": {
+      "types": "./dist/providers/vercel/index.d.ts",
+      "default": "./dist/providers/vercel/index.js"
+    },
+    "./vidu": {
+      "types": "./dist/providers/vidu/index.d.ts",
+      "default": "./dist/providers/vidu/index.js"
+    },
+    "./xai": {
+      "types": "./dist/providers/xai/index.d.ts",
+      "default": "./dist/providers/xai/index.js"
+    },
+    "./zhipuai": {
+      "types": "./dist/providers/zhipuai/index.d.ts",
+      "default": "./dist/providers/zhipuai/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "unmodel": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "codegen": "bun scripts/codegen.ts",
+    "codegen:refresh": "bun scripts/codegen.ts --refresh",
+    "test": "bun test",
+    "check": "tsc --noEmit",
+    "changeset": "changeset",
+    "lint:pkg": "publint && attw --pack . --profile esm-only",
+    "prepublishOnly": "bun run build && bun run lint:pkg"
+  },
+  "dependencies": {
+    "citty": "^0.2.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@changesets/cli": "^3.0.0",
+    "@google/genai": "^2.17.0",
+    "@types/bun": "latest",
+    "openai": "^7.4.0",
+    "publint": "^0.3.23",
+    "tsdown": "^0.22.14",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

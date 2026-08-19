@@ -1,0 +1,74 @@
+{
+  "body": {
+    "model": "anthropic/claude-opus-5",
+    "messages": [
+      {
+        "role": "system",
+        "content": [
+          {
+            "type": "text",
+            "text": "You are careful.",
+            "prompt_cache_breakpoint": {
+              "mode": "explicit"
+            }
+          }
+        ]
+      },
+      {
+        "role": "user",
+        "content": "Think it through: 17*23?"
+      },
+      {
+        "role": "assistant",
+        "content": "391"
+      },
+      {
+        "role": "user",
+        "content": "Now double it."
+      }
+    ],
+    "max_completion_tokens": 2048,
+    "reasoning_effort": "low"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "thinking",
+        "budget_tokens"
+      ],
+      "meta": {
+        "budgetTokens": 1024,
+        "effort": "low"
+      }
+    },
+    {
+      "code": "dropped_content",
+      "path": [
+        "messages",
+        1,
+        "content",
+        0
+      ]
+    },
+    {
+      "code": "dropped_param",
+      "path": [
+        "container"
+      ],
+      "meta": {
+        "param": "container",
+        "dialect": "anthropic-messages"
+      }
+    },
+    {
+      "code": "dropped_param",
+      "path": [
+        "top_k"
+      ],
+      "meta": {
+        "top_k": 40
+      }
+    }
+  ]
+}

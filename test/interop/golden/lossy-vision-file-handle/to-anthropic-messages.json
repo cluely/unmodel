@@ -1,0 +1,27 @@
+{
+  "body": {
+    "model": "claude-opus-5",
+    "max_tokens": 512,
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "Describe this."
+          }
+        ]
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "dropped_content",
+      "path": ["messages", 0, "content", 1],
+      "meta": {
+        "ref": "https://generativelanguage.googleapis.com/v1beta/files/abc123",
+        "dialect": "gemini"
+      }
+    }
+  ]
+}

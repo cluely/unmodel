@@ -1,0 +1,22 @@
+{
+  "model": "gemini-2.5-flash",
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Describe this."
+        },
+        {
+          "fileData": {
+            "mimeType": "image/png",
+            "fileUri": "https://generativelanguage.googleapis.com/v1beta/files/abc123"
+          }
+        }
+      ]
+    }
+  ],
+  "generationConfig": {
+    "maxOutputTokens": 512
+  }
+}

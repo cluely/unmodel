@@ -1,0 +1,24 @@
+{
+  "model": "gemini-2.5-flash",
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hello"
+        }
+      ]
+    }
+  ],
+  "systemInstruction": {
+    "parts": [
+      {
+        "text": "You are terse."
+      }
+    ]
+  },
+  "generationConfig": {
+    "maxOutputTokens": 1024,
+    "temperature": 0.5
+  }
+}

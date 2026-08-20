@@ -21,6 +21,27 @@
  * Change the ref to `"google/imagen-4.0-generate-001"` and the same object
  * compiles to an Imagen `:predict` body. That is the entire proposition.
  *
+ * ## `size` and the per-model params narrow to the ref
+ *
+ * The vocabulary is one shape for everyone; what one *model* accepts is not.
+ * `gpt-image-2` takes a free-form `size` up to 3840 px and a `background` of
+ * `"opaque" | "auto"`; `gpt-image-1` — same provider, same endpoint — takes a
+ * three-value `size` enum and a `background` that also accepts
+ * `"transparent"`. So each adapter carries a `modelParams` table keyed by bare
+ * model id, and the ref selects a row:
+ *
+ * ```ts
+ * image({ model: "openai/gpt-image-2", prompt, size: "3840x2160" });        // that model's presets
+ * image({ model: "openai/gpt-image-1", prompt, background: "transparent" }); // ok
+ * image({ model: "openai/gpt-image-2", prompt, background: "transparent" }); // compile error
+ * ```
+ *
+ * `aspectRatio` and `resolution` narrow the same way, the params the
+ * vocabulary has no word for arrive with their exact types and go on the wire
+ * verbatim, and an unknown or run-time-built ref degrades to the wide
+ * vocabulary — the union drives autocomplete, it does not gate the API.
+ * `core/unified/vocabulary/model-params.ts` is where the mechanism lives.
+ *
  * ## What you get back is a provider result
  *
  * `image()` does not validate the request itself. It compiles the canonical
@@ -52,8 +73,11 @@
  * provider's own body.
  */
 import { createUnified } from "../core/unified/kernel";
-import type { AnyUnifiedAdapter, UnifiedValidator } from "../core/unified/types";
-import type { ImageParams } from "../core/unified/vocabulary/image";
+import type {
+  AnyImageAdapter,
+  ImageParams,
+  ImageValidator,
+} from "../core/unified/vocabulary/image";
 import { image as blackForestLabs } from "../providers/black-forest-labs/unified-image";
 import { image as bria } from "../providers/bria/unified";
 import { image as bytedance } from "../providers/bytedance/unified-image";
@@ -75,22 +99,28 @@ import { image as vidu } from "../providers/vidu/unified-image";
  * `src/providers/<p>/unified.ts` and are exported from that provider's
  * subpath.
  */
-export type ImageAdapter = AnyUnifiedAdapter<ImageParams> & { readonly category: "image" };
+export type ImageAdapter = AnyImageAdapter;
 
 /**
  * Builds an `image()` from the adapters you pass.
  *
  * The generic is on the *array element*, not on `ImageAdapter`, so the
- * adapters' literal `provider` and `as const` `models` survive inference —
- * which is what makes `model:` autocomplete `"openai/gpt-image-1"` rather than
- * `string`. Unregistered refs still compile and still run: an unrecognised
- * model is a `unknown_model` **warning**, because a model released after this
- * snapshot must stay callable.
+ * adapters' literal `provider`, `as const` `models` and `as const`
+ * `modelParams` survive inference — which is what makes `model:` autocomplete
+ * `"openai/gpt-image-1"` rather than `string`, *and* what makes `size:`
+ * autocomplete that model's own presets. Unregistered refs still compile and
+ * still run: an unrecognised model is a `unknown_model` **warning**, because a
+ * model released after this snapshot must stay callable.
+ *
+ * The cast is the same one `createUnified` already performs internally: the
+ * runtime is category-agnostic, and `ImageValidator` differs from
+ * `UnifiedValidator` only in the extra per-model constraints it puts on the
+ * params.
  */
 export function createImage<A extends ImageAdapter>(
   adapters: readonly A[],
-): UnifiedValidator<ImageParams, A> {
-  return createUnified<ImageParams, A>("image", adapters);
+): ImageValidator<A> {
+  return createUnified<ImageParams, A>("image", adapters) as unknown as ImageValidator<A>;
 }
 
 /**
@@ -136,11 +166,19 @@ export const image = createImage([
 ]);
 
 export type {
+  AnyImageAdapter,
   AspectRatio,
   AspectRatioPreset,
   Dimensions,
+  ImageAdapterFor,
   ImageOutputFormat,
   ImageParams,
+  ImageValidator,
+  ModelExtras,
+  ModelParams,
+  ModelParamTable,
+  ModelParamsFor,
+  ModelSizing,
   OutputDelivery,
   ProviderOptions,
   ResolutionTier,

@@ -8,6 +8,25 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { imagesModels } from "./images-models";
 import { imageConstraints } from "./constraints";
 import { checkPromptCharacterLimit, checkGptImage2Size } from "./images-shared";
+import type {
+  DALL_E_2_SIZE_VALUES,
+  DALL_E_3_SIZE_VALUES,
+  GPT_IMAGE_1_SIZE_VALUES,
+  GptImage2Size,
+} from "./images-shared";
+
+// The `size` value lists live in `./images-shared` — the module both this
+// endpoint and `./image-edit` already share — so that `unmodel/image-edit`'s
+// per-model table can name them without dragging this endpoint's validator,
+// schema and catalog into a pack that never calls it. Re-exported here because
+// they were part of this module's public surface first.
+export {
+  DALL_E_2_SIZE_VALUES,
+  DALL_E_3_SIZE_VALUES,
+  GPT_IMAGE_1_SIZE_VALUES,
+  GPT_IMAGE_2_SIZES,
+  type GptImage2Size,
+} from "./images-shared";
 
 export const IMAGES_GENERATIONS_URL = "https://api.openai.com/v1/images/generations";
 
@@ -31,7 +50,7 @@ interface GptImageBaseBody {
   output_format?: "png" | "jpeg" | "webp" | null;
   partial_images?: number | null;
   quality?: "auto" | "low" | "medium" | "high" | null;
-  size?: "auto" | "1024x1024" | "1536x1024" | "1024x1536" | null;
+  size?: (typeof GPT_IMAGE_1_SIZE_VALUES)[number] | null;
   stream?: boolean | null;
   user?: string;
   /** dall-e only — GPT image models always return base64. */
@@ -87,47 +106,6 @@ export interface GptImage2Body extends Omit<GptImageBaseBody, "background" | "si
   background?: "opaque" | "auto" | null;
 }
 
-/**
- * gpt-image-2 sizes. The named presets are autocomplete for the documented
- * rule space — every one satisfies checkGptImage2Size (edges ÷16, ratio
- * ≤3:1, max edge 3840, 655,360–8,294,400 total pixels) — and any other
- * "WIDTHxHEIGHT" within those bounds validates too (`${number}x${number}`
- * keeps free-form legal while making non-size strings a compile error).
- * 1920x1080 is deliberately absent: 1080 is not divisible by 16 — use
- * 2560x1440 or 3840x2160 for 16:9.
- */
-export type GptImage2Size =
-  | "auto"
-  // 1:1
-  | "1024x1024"
-  | "1536x1536"
-  | "2048x2048"
-  | "2880x2880"
-  // 3:2 / 2:3
-  | "1536x1024"
-  | "1024x1536"
-  // 4:3 / 3:4
-  | "2048x1536"
-  | "1536x2048"
-  // 16:9 / 9:16 (720p, 1440p, 4K)
-  | "1280x720"
-  | "2560x1440"
-  | "3840x2160"
-  | "720x1280"
-  | "1440x2560"
-  | "2160x3840"
-  // 2:1 / 1:2
-  | "2048x1024"
-  | "3840x1920"
-  | "1024x2048"
-  | "1920x3840"
-  // 21:9 / 9:21 (cinematic)
-  | "3360x1440"
-  | "1440x3360"
-  // 3:1 / 1:3 (the documented ratio limit)
-  | "3840x1280"
-  | "1280x3840"
-  | (`${number}x${number}` & {});
 
 export interface GptImage2SnapshotBody extends Omit<GptImage2Body, "model"> {
   model: "gpt-image-2-2026-04-21";
@@ -139,7 +117,7 @@ export interface DallE2Body {
   n?: number | null;
   quality?: "auto" | "standard" | null;
   response_format?: "url" | "b64_json" | null;
-  size?: "256x256" | "512x512" | "1024x1024" | null;
+  size?: (typeof DALL_E_2_SIZE_VALUES)[number] | null;
   user?: string;
   /** GPT image models only. */
   background?: never;
@@ -159,7 +137,7 @@ export interface DallE3Body {
   n?: 1 | null;
   quality?: "auto" | "standard" | "hd" | null;
   response_format?: "url" | "b64_json" | null;
-  size?: "1024x1024" | "1792x1024" | "1024x1792" | null;
+  size?: (typeof DALL_E_3_SIZE_VALUES)[number] | null;
   style?: "vivid" | "natural" | null;
   user?: string;
   /** GPT image models only. */

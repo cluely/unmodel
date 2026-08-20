@@ -50,6 +50,20 @@
  * only answers for TypeScript callers with a literal ref, and the promise has to
  * hold for everyone else too.
  *
+ * ## `size` and the per-model params narrow the same way
+ *
+ * Same mechanism as `unmodel/image`, and the same table: each adapter carries a
+ * `modelParams` row per model, so `size` autocompletes that model's presets,
+ * `aspectRatio` its own ratios, and the edits route's non-canonical params —
+ * `background`, `input_fidelity`, Recraft's curated `style` lists — appear with
+ * their exact types and go on the wire verbatim.
+ *
+ * ```ts
+ * imageEdit({ …, model: "openai/gpt-image-1",   background: "transparent" }); // ok
+ * imageEdit({ …, model: "openai/gpt-image-2",   background: "transparent" }); // compile error
+ * imageEdit({ …, model: "openai/gpt-image-1-mini", input_fidelity: "high" }); // compile error
+ * ```
+ *
  * ## `strength` means one thing, in one direction
  *
  * `0` keeps the source, `1` ignores it — "how much may this change". Providers
@@ -148,7 +162,13 @@ export type {
   ImageEditValidator,
   ImageNarrowing,
   ImageOutputFormat,
+  ModelExtras,
+  ModelParams,
+  ModelParamTable,
+  ModelParamsFor,
+  ModelShape,
   ProviderOptions,
+  WithModelParams,
 } from "../core/unified/vocabulary/image-edit";
 
 export type {

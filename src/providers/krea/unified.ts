@@ -74,19 +74,30 @@
  * `seed` is the one plain pass-through: same name, same meaning, no `ctx.from`.
  */
 import {
+  applyExtras,
+  EXTRA,
   pixelsToRatio,
   resolveSizing,
+  sizingField,
   toRatioEnum,
   toTier,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { ResolutionTier } from "../../core/unified/vocabulary/common";
-import type { ImageParams } from "../../core/unified/vocabulary/image";
+import type {
+  ImageAdapterFor,
+  ImageParams,
+  ModelParamTable,
+} from "../../core/unified/vocabulary/image";
 import {
   KREA_ASPECT_RATIOS,
   image as validator,
   type KreaAspectRatio,
+  type KreaCreativity,
+  type KreaImageStyleReference,
+  type KreaMoodboardRef,
   type KreaResolution,
+  type KreaStyleRef,
 } from "./image";
 
 /**
@@ -99,6 +110,37 @@ import {
  * `unknown_model` here.
  */
 const MODELS = ["krea-2/medium", "krea-2/large", "krea-2/medium-turbo"] as const;
+
+/**
+ * One row, three times: the K2 variants share a request schema byte for byte.
+ *
+ * No `sizes` — `/generate/image/krea/krea-2` has no pixel field, only
+ * `aspect_ratio` and a single-valued `resolution` — so `size` types as `never`
+ * and `tiers` is the one tier `KREA_RESOLUTIONS` contains.
+ *
+ * The seven extras are K2's generative sliders and reference inputs, typed
+ * from `./image.ts`'s own interfaces so the shape an editor offers and the
+ * shape `generateImage` checks are one declaration.
+ */
+const KREA_ROW = {
+  ratios: KREA_ASPECT_RATIOS,
+  tiers: ["1k"],
+  extras: {
+    creativity: EXTRA as KreaCreativity,
+    intensity: EXTRA as number,
+    complexity: EXTRA as number,
+    movement: EXTRA as number,
+    styles: EXTRA as KreaStyleRef[],
+    image_style_references: EXTRA as KreaImageStyleReference[],
+    moodboards: EXTRA as KreaMoodboardRef[],
+  },
+} as const;
+
+const KREA_IMAGE_MODEL_PARAMS = {
+  "krea-2/medium": KREA_ROW,
+  "krea-2/large": KREA_ROW,
+  "krea-2/medium-turbo": KREA_ROW,
+} as const satisfies ModelParamTable;
 
 const SOURCE = "https://api.krea.ai/openapi.json";
 
@@ -142,6 +184,7 @@ export const image = {
   category: "image",
   provider: "krea",
   models: MODELS,
+  modelParams: KREA_IMAGE_MODEL_PARAMS,
   unsupported: {
     n:
       "The Krea 2 request schema has no count field — Krea generates one image per request; " +
@@ -181,10 +224,11 @@ export const image = {
     } else if (sizing?.kind === "dimensions") {
       // No pixel field on this route: the size is thrown away and only the
       // shape survives, so `pixelsToRatio` warns even on an exact match.
-      ctx.from(["aspect_ratio"], "dimensions");
+      const wrote = sizingField(sizing);
+      ctx.from(["aspect_ratio"], wrote);
       ratio = ctx.take(
         pixelsToRatio(sizing.dimensions.width, sizing.dimensions.height, KREA_ASPECT_RATIOS, {
-          path: ["dimensions"],
+          path: [wrote],
           warn: ctx.warn,
         }),
       ) as KreaAspectRatio | undefined;
@@ -230,6 +274,12 @@ export const image = {
     };
     if (input.seed !== undefined) body.seed = input.seed;
 
+    applyExtras(input, KREA_IMAGE_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<ImageParams, KreaImageWire, KreaImageResult>;
+} as const satisfies ImageAdapterFor<
+  typeof KREA_IMAGE_MODEL_PARAMS,
+  KreaImageWire,
+  KreaImageResult
+>;

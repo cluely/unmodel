@@ -37,6 +37,11 @@ import type {
   ProviderOptions,
   UrlRef,
 } from "./common";
+import type {
+  ModelExtras,
+  ModelParamTable,
+  ModelShape,
+} from "./model-params";
 
 export type {
   AspectRatio,
@@ -45,6 +50,15 @@ export type {
   ImageOutputFormat,
   ProviderOptions,
 } from "./common";
+
+export type {
+  ModelExtras,
+  ModelParams,
+  ModelParamTable,
+  ModelParamsFor,
+  ModelShape,
+  WithModelParams,
+} from "./model-params";
 
 /**
  * The three ways a source image reaches an editing API, as a tag.
@@ -121,17 +135,27 @@ interface ImageEditParamsBase {
 }
 
 /**
- * An image-edit request. `aspectRatio` / `dimensions` are XOR for the same
- * reason as in `ImageParams`; both are optional here because the common case
- * is "same shape as the input", which is what omitting them means.
+ * An image-edit request. `size` / `aspectRatio` / `dimensions` are XOR for the
+ * same reason as in `ImageParams`; all three are optional here because the
+ * common case is "same shape as the input", which is what omitting them means.
  *
- * A union of two complete object types, not `Base & (ArmA | ArmB)` — see the
- * note on `ImageParams` for the distributive-`Omit` trap the shorter spelling
- * walks into.
+ * A union of three complete object types, not `Base & (ArmA | ArmB | ArmC)` —
+ * see the note on `ImageParams` for the distributive-`Omit` trap the shorter
+ * spelling walks into.
  */
 export type ImageEditParams =
-  | (ImageEditParamsBase & { aspectRatio?: AspectRatio; dimensions?: never })
-  | (ImageEditParamsBase & { aspectRatio?: never; dimensions?: Dimensions });
+  | (ImageEditParamsBase & {
+      /**
+       * The provider's own spelling of size — `"1024x1536"`, or the literal a
+       * model takes instead (`"auto"`). Narrows to *this model's* presets when
+       * the ref is a literal.
+       */
+      size?: string;
+      aspectRatio?: never;
+      dimensions?: never;
+    })
+  | (ImageEditParamsBase & { size?: never; aspectRatio?: AspectRatio; dimensions?: never })
+  | (ImageEditParamsBase & { size?: never; aspectRatio?: never; dimensions?: Dimensions });
 
 // ---------------------------------------------------------------------------
 // The narrowing, in the two places it has to be declared
@@ -172,10 +196,18 @@ export interface ImageEditAdapterFor<
   K extends ImageEditInputKind,
   Wire extends object = object,
   Out extends object = object,
+  T extends ModelParamTable = ModelParamTable,
 > extends UnifiedAdapter<ImageEditParamsFor<K>, Wire, Out> {
   readonly category: "imageEdit";
   /** The image shapes this route accepts, `as const`. */
   readonly imageInputs: readonly K[];
+  /**
+   * The per-**model** surface: this route's `size` presets and the extras each
+   * model takes. Optional on the type and present on all four adapters — a
+   * route with nothing model-dependent to say would leave it off and degrade
+   * to the wide vocabulary, which is what an unknown model already does.
+   */
+  readonly modelParams?: T;
 }
 
 /**
@@ -183,11 +215,12 @@ export interface ImageEditAdapterFor<
  * the one thing this category shares with `transcribe`: `image` is typed from
  * the adapter the **ref** selects.
  *
- * Written as an intersection on the parameter (`T & …`) rather than as a
- * constraint on `T`, for the same reason `ExactKeys` is: TypeScript infers `T`
- * from the argument first and *then* checks the argument against the parameter
- * type, so a constraint mentioning `T["model"]` would be circular while an
- * intersection is not.
+ * `image` is narrowed by an intersection on the parameter, because it is a
+ * required *object* field and an intersection reports those well. `size`,
+ * `aspectRatio` and the extras are narrowed through `T`'s **constraint**
+ * against the separately-inferred `M` instead — see the note on
+ * `ImageValidator` in `./image.ts` for why an intersection collapses a unit
+ * union to `never` and swallows the message.
  *
  * ```ts
  * imageEdit({ model: "openai/gpt-image-1.5", image: { file } });  // ok
@@ -197,18 +230,30 @@ export interface ImageEditAdapterFor<
  * ```
  */
 export interface ImageEditValidator<A> {
-  <T extends UnifiedInput<ImageEditParams, UnifiedRef<A>>>(
+  <
+    M extends UnifiedRef<A> | (string & {}),
+    T extends UnifiedInput<ImageEditParams, UnifiedRef<A>> &
+      ModelShape<A, M> &
+      ModelExtras<A, M>,
+  >(
     params: T &
-      ExactKeys<T, UnifiedInput<ImageEditParams, UnifiedRef<A>>> &
-      ImageNarrowing<A, T["model"] & string>,
+      { model: M } &
+      ExactKeys<T, UnifiedInput<ImageEditParams, UnifiedRef<A>> & ModelExtras<A, M>> &
+      ImageNarrowing<A, M>,
     options?: ValidateOptions,
-  ): UnifiedResult<A, T["model"] & string>;
-  safe<T extends UnifiedInput<ImageEditParams, UnifiedRef<A>>>(
+  ): UnifiedResult<A, M>;
+  safe<
+    M extends UnifiedRef<A> | (string & {}),
+    T extends UnifiedInput<ImageEditParams, UnifiedRef<A>> &
+      ModelShape<A, M> &
+      ModelExtras<A, M>,
+  >(
     params: T &
-      ExactKeys<T, UnifiedInput<ImageEditParams, UnifiedRef<A>>> &
-      ImageNarrowing<A, T["model"] & string>,
+      { model: M } &
+      ExactKeys<T, UnifiedInput<ImageEditParams, UnifiedRef<A>> & ModelExtras<A, M>> &
+      ImageNarrowing<A, M>,
     options?: ValidateOptions,
-  ): ValidateResult<UnifiedResult<A, T["model"] & string>>;
+  ): ValidateResult<UnifiedResult<A, M>>;
   /** Every provider id registered on this validator, sorted. */
   readonly providers: readonly string[];
 }
@@ -227,4 +272,5 @@ export type ImageNarrowing<A, R extends string> = {
 export type AnyImageEditAdapter = AnyUnifiedAdapter<ImageEditParams> & {
   readonly category: "imageEdit";
   readonly imageInputs: readonly ImageEditInputKind[];
+  readonly modelParams?: ModelParamTable;
 };

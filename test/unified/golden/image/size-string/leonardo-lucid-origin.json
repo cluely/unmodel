@@ -1,0 +1,12 @@
+{
+  "ref": "leonardo/lucid-origin",
+  "params": {
+    "model": "lucid-origin",
+    "parameters": {
+      "prompt": "a lighthouse in fog",
+      "width": 1024,
+      "height": 1024
+    }
+  },
+  "url": "https://cloud.leonardo.ai/api/rest/v2/generations"
+}

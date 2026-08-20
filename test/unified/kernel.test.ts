@@ -90,6 +90,8 @@ interface FakeAdapterOptions extends FakeValidatorOptions {
   provider?: string;
   models?: readonly string[];
   unsupported?: Readonly<Partial<Record<keyof FakeParams & string, string>>>;
+  /** Declares `prompt` as compiled from itself — the shape every extra has. */
+  identity?: boolean;
   /** Replaces the default compile — for the fail() and throw cases. */
   compile?: UnifiedAdapter<FakeParams, FakeBody>["compile"];
 }
@@ -104,6 +106,7 @@ function fakeAdapter(config: FakeAdapterOptions = {}): UnifiedAdapter<FakeParams
       config.compile ??
       ((input, ctx): CompiledCall<FakeBody> => {
         const body: FakeBody = { model: ctx.model, prompt: input.prompt };
+        if (config.identity === true) ctx.from(["prompt"], "prompt");
         if (input.aspectRatio !== undefined) {
           body.size = input.aspectRatio === "16:9" ? "1344x768" : "1024x1024";
           ctx.from(["size"], "aspectRatio");
@@ -459,6 +462,28 @@ describe("path provenance", () => {
     expect(result.errors[0]!.message).toBe(
       '`size` must be one of "1024x1024". (compiled from `size`)',
     );
+  });
+
+  test("a param compiled to its own name gets no suffix", () => {
+    // Every extra is spelled the way the provider spells it, so its provenance
+    // maps a key to itself. Appending "(compiled from `background`)" to a
+    // message already about `background` is noise that reads like a bug, so
+    // the suffix appears only when the two names actually differ.
+    const result = image({
+      identity: true,
+      issues: [
+        {
+          severity: "error",
+          code: "invalid_enum_value",
+          path: ["prompt"],
+          message: "`prompt` must not be empty.",
+        },
+      ],
+    }).safe({ ...base, aspectRatio: "16:9" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]!.path).toEqual(["prompt"]);
+    expect(result.errors[0]!.message).toBe("`prompt` must not be empty.");
   });
 
   test("a nested finding keeps its position under the canonical head", () => {

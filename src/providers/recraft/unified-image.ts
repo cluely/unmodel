@@ -88,17 +88,44 @@
  * this route, so `unsupported` is absent and every refusal below is
  * model-dependent and comes with the model's name in it.
  */
-import { redundantTier, resolveSizing, toRatioEnum } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { ImageParams, ResolutionTier } from "../../core/unified/vocabulary/image";
+import {
+  applyExtras,
+  EXTRA,
+  redundantTier,
+  resolveSizing,
+  sizingField,
+  toRatioEnum,
+} from "../../core/unified/derive";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  ImageAdapterFor,
+  ImageParams,
+  ModelParamTable,
+  ResolutionTier,
+} from "../../core/unified/vocabulary/image";
 import {
   image as generations,
   ASPECT_RATIOS,
   IMAGE_FORMATS,
+  UNATTRIBUTED_SIZE_VALUES,
+  V2_V3_SIZES,
+  V4_PRO_SIZES,
+  V4_STANDARD_SIZES,
+  type RecraftControls,
+  type RecraftCreativity,
   type RecraftImageFormat,
   type RecraftSize,
+  type RecraftSubstyle,
+  type RecraftTextLayoutElement,
+  type RecraftUpscaleMode,
 } from "./image";
 import type { RecraftModelId } from "./models";
+import {
+  RECRAFT_V2_STYLES,
+  RECRAFT_V2_VECTOR_STYLES,
+  RECRAFT_V3_STYLES,
+  RECRAFT_V3_VECTOR_STYLES,
+} from "./styles";
 
 const ENDPOINTS_DOCS = "https://www.recraft.ai/docs/api-reference/endpoints";
 const APPENDIX_DOCS = "https://www.recraft.ai/docs/api-reference/appendix";
@@ -142,6 +169,128 @@ const MODELS = [
  */
 const KNOWN_MODELS: ReadonlySet<string> = new Set<string>(MODELS);
 
+/**
+ * The per-model surface, and the widest table in the library — seventeen ids
+ * across four size groups, two style vocabularies and one deny rule that cuts
+ * across both.
+ *
+ * **Sizes.** The eight raster ids get the appendix's own `WxH` table, closed:
+ * `checkSize` rejects a `WxH` a model's table does not list, so a template
+ * tail would promise something the endpoint refuses. The vector line and
+ * `recraft20b` get no `sizes` row at all — the appendix documents them with
+ * aspect ratios alone — so `size` types as `never` there and an editor offers
+ * the fourteen shapes, which is the whole size vocabulary those models have.
+ * (`checkSize` is permissive for them at run time, having no table to check
+ * against; the type is the narrower of the two on purpose.)
+ *
+ * **Ratios.** `ASPECT_RATIOS`, all fourteen, on every row: one field, two
+ * vocabularies, and the ratio half is model-independent.
+ *
+ * **Styles.** `style` is denied on the whole V4/V4.1 line and typed from
+ * `STYLE_NAMES_BY_MODEL`'s own lists everywhere it is allowed, so
+ * `style: "Watercolor"` compiles on `recraftv3` and not on `recraftv3_vector`
+ * — whose list is the vector one. `text_layout` is V3-and-`recraft20b`-only,
+ * per the same family rules.
+ */
+const RECRAFT_SHARED_EXTRAS = {
+  substyle: EXTRA as RecraftSubstyle | (string & {}) | null,
+  creativity: EXTRA as RecraftCreativity | null,
+  upscale: EXTRA as RecraftUpscaleMode | null,
+  controls: EXTRA as RecraftControls | null,
+  block_nsfw: EXTRA as boolean | null,
+  calculate_features: EXTRA as boolean | null,
+  expire: EXTRA as boolean | null,
+} as const;
+
+const TEXT_LAYOUT = EXTRA as RecraftTextLayoutElement[] | null;
+const STYLE_ID = EXTRA as string | null;
+
+/** V4 / V4.1: no `style`, no `style_id`, no `text_layout`. */
+const V4_STANDARD_ROW = {
+  sizes: V4_STANDARD_SIZES,
+  ratios: ASPECT_RATIOS,
+  tiers: ["1k"],
+  extras: RECRAFT_SHARED_EXTRAS,
+} as const;
+
+const V4_PRO_ROW = {
+  sizes: V4_PRO_SIZES,
+  ratios: ASPECT_RATIOS,
+  tiers: ["2k"],
+  extras: RECRAFT_SHARED_EXTRAS,
+} as const;
+
+const V4_VECTOR_ROW = { ratios: ASPECT_RATIOS, tiers: [], extras: RECRAFT_SHARED_EXTRAS } as const;
+
+const V2_V3_RASTER_SIZES = [...V2_V3_SIZES, ...UNATTRIBUTED_SIZE_VALUES] as const;
+
+const RECRAFT_IMAGE_MODEL_PARAMS = {
+  recraftv4_1: V4_STANDARD_ROW,
+  recraftv4_1_utility: V4_STANDARD_ROW,
+  recraftv4: V4_STANDARD_ROW,
+  recraftv4_1_pro: V4_PRO_ROW,
+  recraftv4_1_utility_pro: V4_PRO_ROW,
+  recraftv4_pro: V4_PRO_ROW,
+  recraftv4_1_vector: V4_VECTOR_ROW,
+  recraftv4_1_pro_vector: V4_VECTOR_ROW,
+  recraftv4_1_utility_vector: V4_VECTOR_ROW,
+  recraftv4_1_utility_pro_vector: V4_VECTOR_ROW,
+  recraftv4_vector: V4_VECTOR_ROW,
+  recraftv4_pro_vector: V4_VECTOR_ROW,
+  recraftv3: {
+    sizes: V2_V3_RASTER_SIZES,
+    ratios: ASPECT_RATIOS,
+    tiers: ["1k"],
+    extras: {
+      style: EXTRA as (typeof RECRAFT_V3_STYLES)[number] | (string & {}) | null,
+      style_id: STYLE_ID,
+      text_layout: TEXT_LAYOUT,
+      ...RECRAFT_SHARED_EXTRAS,
+    },
+  },
+  recraftv3_vector: {
+    ratios: ASPECT_RATIOS,
+    tiers: [],
+    extras: {
+      style: EXTRA as (typeof RECRAFT_V3_VECTOR_STYLES)[number] | (string & {}) | null,
+      style_id: STYLE_ID,
+      text_layout: TEXT_LAYOUT,
+      ...RECRAFT_SHARED_EXTRAS,
+    },
+  },
+  recraftv2: {
+    sizes: V2_V3_RASTER_SIZES,
+    ratios: ASPECT_RATIOS,
+    tiers: ["1k"],
+    extras: {
+      style: EXTRA as (typeof RECRAFT_V2_STYLES)[number] | (string & {}) | null,
+      style_id: STYLE_ID,
+      ...RECRAFT_SHARED_EXTRAS,
+    },
+  },
+  recraftv2_vector: {
+    ratios: ASPECT_RATIOS,
+    tiers: [],
+    extras: {
+      style: EXTRA as (typeof RECRAFT_V2_VECTOR_STYLES)[number] | (string & {}) | null,
+      style_id: STYLE_ID,
+      ...RECRAFT_SHARED_EXTRAS,
+    },
+  },
+  recraft20b: {
+    ratios: ASPECT_RATIOS,
+    tiers: [],
+    extras: {
+      // No curated list is published for this id, and no family rule denies
+      // it — so the honest type is the open one the wire already has.
+      style: EXTRA as string | null,
+      style_id: STYLE_ID,
+      text_layout: TEXT_LAYOUT,
+      ...RECRAFT_SHARED_EXTRAS,
+    },
+  },
+} as const satisfies ModelParamTable;
+
 const RENDERED_TIER: Readonly<Record<string, ResolutionTier>> = {
   recraftv4_1: "1k",
   recraftv4_1_utility: "1k",
@@ -171,8 +320,8 @@ const REFS_BY_TIER: Readonly<Partial<Record<ResolutionTier, string>>> = {
  * signature, so an open tail would make `ExactKeys` demand `never` for every
  * extra key and `recraft.image.safe` would stop being assignable. The rest of
  * the surface — `style`, `style_id`, `substyle`, `controls`, `text_layout`,
- * `upscale` — arrives through `providerOptions.recraft`, which the kernel
- * merges *before* validation so it is checked by exactly the same four layers.
+ * `upscale` and the three booleans — is declared per model on
+ * {@link RECRAFT_IMAGE_MODEL_PARAMS} and named explicitly below.
  */
 export interface RecraftImageWire {
   model: string;
@@ -183,6 +332,21 @@ export interface RecraftImageWire {
   negative_prompt?: string;
   image_format?: RecraftImageFormat;
   response_format?: "url" | "b64_json";
+  // The per-model extras, spelled out rather than reached through an index
+  // signature: `GenerationsParams` has none, and an open tail here would make
+  // `ExactKeys` demand `never` for every key and stop `recraft.image.safe`
+  // being assignable. Which of them a given model takes is
+  // `RECRAFT_IMAGE_MODEL_PARAMS`'s answer, not this type's.
+  style?: string | null;
+  style_id?: string | null;
+  substyle?: string | null;
+  text_layout?: RecraftTextLayoutElement[] | null;
+  controls?: RecraftControls | null;
+  creativity?: RecraftCreativity | null;
+  upscale?: RecraftUpscaleMode | null;
+  block_nsfw?: boolean | null;
+  calculate_features?: boolean | null;
+  expire?: boolean | null;
 }
 
 /** What a unified call to `recraft/…` returns: `recraft.image`'s own `Validated`. */
@@ -192,6 +356,7 @@ export const image = {
   category: "image",
   provider: "recraft",
   models: MODELS,
+  modelParams: RECRAFT_IMAGE_MODEL_PARAMS,
   compile(
     input: ImageParams,
     ctx: CompileContext<ImageParams>,
@@ -223,10 +388,17 @@ export const image = {
       // question that has already been answered. Same rule, same message, as
       // every other route in this library whose size field takes pixels.
       if (input.resolution !== undefined) {
-        ctx.take(redundantTier(input.resolution, { path: ["resolution"], warn: ctx.warn }));
+        ctx.take(
+          redundantTier(
+            input.resolution,
+            { path: ["resolution"], warn: ctx.warn },
+            sizingField(sizing) === "size" ? "size" : "dimensions",
+          ),
+        );
       }
-      ctx.from(["size"], "dimensions");
-      body.size = `${sizing.dimensions.width}x${sizing.dimensions.height}`;
+      ctx.from(["size"], sizingField(sizing));
+      body.size = (sizing.size ??
+        `${sizing.dimensions.width}x${sizing.dimensions.height}`) as RecraftSize;
     }
 
     // --- resolution: verified against the model, never sent ----------------
@@ -315,6 +487,12 @@ export const image = {
       body.response_format = input.outputDelivery === "url" ? "url" : "b64_json";
     }
 
+    applyExtras(input, RECRAFT_IMAGE_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: generations.safe };
   },
-} as const satisfies UnifiedAdapter<ImageParams, RecraftImageWire, RecraftImageResult>;
+} as const satisfies ImageAdapterFor<
+  typeof RECRAFT_IMAGE_MODEL_PARAMS,
+  RecraftImageWire,
+  RecraftImageResult
+>;

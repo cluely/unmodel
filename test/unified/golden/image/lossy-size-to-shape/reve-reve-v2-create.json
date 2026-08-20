@@ -1,0 +1,24 @@
+{
+  "ref": "reve/reve-v2-create",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "version": "latest",
+    "aspect_ratio": "1:1"
+  },
+  "url": "https://api.reve.com/v2/image/create",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "size"
+      ],
+      "meta": {
+        "width": 1024,
+        "height": 1024,
+        "ratio": "1:1",
+        "chosen": "1:1",
+        "distance": 0
+      }
+    }
+  ]
+}

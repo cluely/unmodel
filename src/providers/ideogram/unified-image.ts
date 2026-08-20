@@ -127,35 +127,45 @@
  * about it either way.
  */
 import {
+  applyExtras,
+  EXTRA,
   formatRatio,
   parseRatio,
   ratioDistance,
   redundantTier,
   resolveSizing,
+  sizeRules,
+  sizingField,
   toRatioEnum,
   toSizeEnum,
   TIER_PIXELS,
   type SizeTable,
 } from "../../core/unified/derive";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  AnyUnifiedAdapter,
-  CompileContext,
-  CompiledCall,
-} from "../../core/unified/types";
-import type { ImageParams, ResolutionTier } from "../../core/unified/vocabulary/image";
+  AnyImageAdapter,
+  ImageParams,
+  ModelParamTable,
+  ResolutionTier,
+} from "../../core/unified/vocabulary/image";
 import {
   image as generateV3,
   ASPECT_RATIOS,
   RESOLUTIONS,
   type IdeogramAspectRatio,
+  type IdeogramColorPalette,
+  type IdeogramMagicPromptOption,
   type IdeogramRenderingSpeed,
   type IdeogramResolution,
+  type IdeogramStylePreset,
+  type IdeogramStyleType,
 } from "./image";
 import {
   imageV4 as generateV4,
   RESOLUTIONS_V4,
   type IdeogramResolutionV4,
   type IdeogramV4RenderingSpeed,
+  type V4JsonPrompt,
 } from "./image-v4";
 import {
   RENDERING_SPEED_TO_MODEL_ID,
@@ -192,6 +202,102 @@ const V4_MODELS = [
 ] as const satisfies readonly IdeogramModelId[];
 
 // ---------------------------------------------------------------------------
+// The per-model table
+// ---------------------------------------------------------------------------
+
+/**
+ * The two routes' per-model surfaces, which barely overlap.
+ *
+ * **Sizes.** Both routes size with a closed `resolution` enum — 69 values on
+ * 3.0, 38 on 4.0 — so both rows carry `sizes` and **neither** carries
+ * `sizeFreeform`: `checkEnums` rejects a `WxH` outside the list, and a
+ * template tail would suggest otherwise. 3.0 additionally has the 15-value
+ * `aspect_ratio` enum, which is what `ratios` holds; 4.0 has no ratio field
+ * at all, so its `ratios` is absent and `aspectRatio` there is *derived* into
+ * a `resolution` by `toSizeEnum` — which is why leaving it wide is right.
+ *
+ * **Tiers.** 3.0 renders one budget (`["1k"]`), 4.0 two.
+ *
+ * **Extras.** The 3.0 form's style vocabulary is large and entirely absent
+ * from 4.0, whose structured `json_prompt` is absent from 3.0 — so passing a
+ * `style_preset` to a 4.0 ref is an `unsupported_param` naming the four 3.0
+ * refs, which is precisely the mistake this table exists to catch.
+ *
+ * `rendering_speed` is deliberately **not** an extra on either row: it is
+ * already compiled from the model half of the ref (`ideogram-3.0-quality` →
+ * `rendering_speed: "QUALITY"`), and offering a second way to set it would
+ * let one request say two things about which model it wants.
+ */
+/**
+ * Ideogram's fifteen shapes, respelled with a colon.
+ *
+ * `ASPECT_RATIOS` is the **wire** spelling (`"16x9"`) and the canonical
+ * `aspectRatio` is a `W:H` — `toRatioEnum` is what bridges the two at run
+ * time, matching on the reduced ratio and handing back Ideogram's own
+ * spelling. The type has to bridge it too, and the honest way is to state the
+ * canonical list rather than to autocomplete a caller into a spelling the
+ * vocabulary does not use.
+ */
+const ASPECT_RATIOS_CANONICAL = [
+  "1:3",
+  "3:1",
+  "1:2",
+  "2:1",
+  "9:16",
+  "16:9",
+  "10:16",
+  "16:10",
+  "2:3",
+  "3:2",
+  "3:4",
+  "4:3",
+  "4:5",
+  "5:4",
+  "1:1",
+] as const;
+
+const IDEOGRAM_V3_EXTRAS = {
+  magic_prompt: EXTRA as IdeogramMagicPromptOption,
+  style_type: EXTRA as IdeogramStyleType,
+  style_preset: EXTRA as IdeogramStylePreset,
+  style_codes: EXTRA as string[],
+  color_palette: EXTRA as IdeogramColorPalette,
+  custom_model_uri: EXTRA as string,
+  style_reference_images: EXTRA as Blob[],
+  character_reference_images: EXTRA as Blob[],
+  character_reference_images_mask: EXTRA as Blob[],
+  enable_copyright_detection: EXTRA as boolean | null,
+} as const;
+
+const IDEOGRAM_V4_EXTRAS = {
+  json_prompt: EXTRA as V4JsonPrompt,
+  enable_copyright_detection: EXTRA as boolean | null,
+} as const;
+
+const IDEOGRAM_V3_ROW = {
+  sizes: RESOLUTIONS,
+  ratios: ASPECT_RATIOS_CANONICAL,
+  tiers: ["1k"],
+  extras: IDEOGRAM_V3_EXTRAS,
+} as const;
+
+const IDEOGRAM_V4_ROW = {
+  sizes: RESOLUTIONS_V4,
+  tiers: ["1k", "2k"],
+  extras: IDEOGRAM_V4_EXTRAS,
+} as const;
+
+const IDEOGRAM_IMAGE_MODEL_PARAMS = {
+  "ideogram-3.0-flash": IDEOGRAM_V3_ROW,
+  "ideogram-3.0-turbo": IDEOGRAM_V3_ROW,
+  "ideogram-3.0-default": IDEOGRAM_V3_ROW,
+  "ideogram-3.0-quality": IDEOGRAM_V3_ROW,
+  "ideogram-4.0-turbo": IDEOGRAM_V4_ROW,
+  "ideogram-4.0-default": IDEOGRAM_V4_ROW,
+  "ideogram-4.0-quality": IDEOGRAM_V4_ROW,
+} as const satisfies ModelParamTable;
+
+// ---------------------------------------------------------------------------
 // Wire bodies and results
 // ---------------------------------------------------------------------------
 
@@ -215,6 +321,18 @@ export interface IdeogramImageWire {
   seed?: number;
   negative_prompt?: string;
   num_images?: number;
+  // The 3.0 extras, named rather than reached through an index signature —
+  // see the note above for why an open tail would break `ExactKeys`.
+  magic_prompt?: IdeogramMagicPromptOption;
+  style_type?: IdeogramStyleType;
+  style_preset?: IdeogramStylePreset;
+  style_codes?: string[];
+  color_palette?: IdeogramColorPalette;
+  custom_model_uri?: string;
+  style_reference_images?: Blob[];
+  character_reference_images?: Blob[];
+  character_reference_images_mask?: Blob[];
+  enable_copyright_detection?: boolean | null;
 }
 
 /** The 4.0 wire body — a deliberately smaller and mostly disjoint surface. */
@@ -222,6 +340,8 @@ export interface IdeogramImageV4Wire {
   text_prompt: string;
   resolution?: IdeogramResolutionV4;
   rendering_speed?: IdeogramV4RenderingSpeed;
+  json_prompt?: V4JsonPrompt;
+  enable_copyright_detection?: boolean | null;
 }
 
 /** What a 3.0 ref returns: `ideogram.image`'s own `Validated`. */
@@ -349,7 +469,13 @@ function compileV3(
     body.rendering_speed = speed;
   }
 
-  const sizing = ctx.take(resolveSizing(input, { path: ["aspectRatio"], warn: ctx.warn }));
+  const sizing = ctx.take(
+    resolveSizing(
+      input,
+      { path: ["aspectRatio"], warn: ctx.warn },
+      sizeRules(IDEOGRAM_IMAGE_MODEL_PARAMS, ctx.model),
+    ),
+  );
 
   // The tier check runs whatever the shape was spelled as — including
   // alongside `dimensions`, where nothing would consume it and dropping it
@@ -389,11 +515,17 @@ function compileV3(
     // A tier beside the pixels is refused rather than dropped: `resolution` on
     // this wire IS the pixel pair, so the canonical tier has nothing left to say.
     if (input.resolution !== undefined) {
-      ctx.take(redundantTier(input.resolution, { path: ["resolution"], warn: ctx.warn }));
+      ctx.take(
+        redundantTier(
+          input.resolution,
+          { path: ["resolution"], warn: ctx.warn },
+          sizingField(sizing) === "size" ? "size" : "dimensions",
+        ),
+      );
     }
-    ctx.from(["resolution"], "dimensions");
-    body.resolution =
-      `${sizing.dimensions.width}x${sizing.dimensions.height}` as IdeogramResolution;
+    ctx.from(["resolution"], sizingField(sizing));
+    body.resolution = (sizing.size ??
+      `${sizing.dimensions.width}x${sizing.dimensions.height}`) as IdeogramResolution;
   } else if (sizing?.kind === "ratio") {
     ctx.from(["aspect_ratio"], "aspectRatio");
     // S1. Ideogram spells its ratios with an `x`; `toRatioEnum` matches on the
@@ -475,7 +607,13 @@ function compileV4(
     body.rendering_speed = speed;
   }
 
-  const sizing = ctx.take(resolveSizing(input, { path: ["aspectRatio"], warn: ctx.warn }));
+  const sizing = ctx.take(
+    resolveSizing(
+      input,
+      { path: ["aspectRatio"], warn: ctx.warn },
+      sizeRules(IDEOGRAM_IMAGE_MODEL_PARAMS, ctx.model),
+    ),
+  );
   const tier = input.resolution ?? "1k";
 
   if (sizing?.kind === "dimensions") {
@@ -485,11 +623,17 @@ function compileV4(
     // the tier has nothing to add beside explicit pixels, and is refused rather
     // than dropped.
     if (input.resolution !== undefined) {
-      ctx.take(redundantTier(input.resolution, { path: ["resolution"], warn: ctx.warn }));
+      ctx.take(
+        redundantTier(
+          input.resolution,
+          { path: ["resolution"], warn: ctx.warn },
+          sizingField(sizing) === "size" ? "size" : "dimensions",
+        ),
+      );
     }
-    ctx.from(["resolution"], "dimensions");
+    ctx.from(["resolution"], sizingField(sizing));
     const { width, height } = sizing.dimensions;
-    body.resolution = `${width}x${height}` as IdeogramResolutionV4;
+    body.resolution = (sizing.size ?? `${width}x${height}`) as IdeogramResolutionV4;
   } else if (sizing?.kind === "ratio") {
     // S3. Both tiers are exact for every shape they offer, so this warns only
     // if `RESOLUTIONS_V4` ever gains a value whose pixels contradict its ratio.
@@ -537,12 +681,17 @@ export const image = {
   category: "image",
   provider: "ideogram",
   models: MODELS,
+  modelParams: IDEOGRAM_IMAGE_MODEL_PARAMS,
   unsupported: OUTPUT_GAPS,
   compile(input: ImageParams, ctx: CompileContext<ImageParams>) {
     const route = routeFor(ctx.model);
     // The 3.0 route has `num_images`, `seed` and `negative_prompt`; nothing to
     // report, so it compiles straight through.
-    if (route.version === "v3") return compileV3(input, ctx, route.speed);
+    if (route.version === "v3") {
+      const call = compileV3(input, ctx, route.speed);
+      applyExtras(input, IDEOGRAM_IMAGE_MODEL_PARAMS, call.params, ctx);
+      return call;
+    }
 
     // Model-dependent gaps: these three fields exist on the sibling route, so
     // they cannot be declared in `unsupported` — the kernel checks that before
@@ -556,6 +705,8 @@ export const image = {
         meta: { value: input[field], source: OPENAPI_DOCS },
       });
     }
-    return compileV4(input, ctx, route.speed);
+    const call = compileV4(input, ctx, route.speed);
+    applyExtras(input, IDEOGRAM_IMAGE_MODEL_PARAMS, call.params, ctx);
+    return call;
   },
-} as const satisfies AnyUnifiedAdapter<ImageParams> & { readonly category: "image" };
+} as const satisfies AnyImageAdapter;

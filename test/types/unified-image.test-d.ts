@@ -21,9 +21,13 @@
  *     compile error rather than an override that silently never happens.
  *  5. **There is no `.toApi`.** Retargeting is a chat-dialect feature; a media
  *     result must not advertise one.
+ *  6. **`size`, `aspectRatio`, `resolution` and the extras narrow per MODEL.**
+ *     The adapters' `modelParams` tables are `as const`, the ref selects a row,
+ *     and the row types four things at once — which is the whole feature.
  */
 import { createImage, image } from "../../src/unified/image";
 import { image as blackForestLabsImage } from "../../src/providers/black-forest-labs/unified";
+import { image as stabilityImage } from "../../src/providers/stability/unified-image";
 import { image as googleImage } from "../../src/providers/google/unified-image";
 import { image as ideogramImage } from "../../src/providers/ideogram/unified";
 import { image as openaiImage } from "../../src/providers/openai/unified-image";
@@ -186,6 +190,121 @@ function noToApiTests(): void {
 }
 
 // ---------------------------------------------------------------------------
+// 6 · Per-model narrowing
+// ---------------------------------------------------------------------------
+
+function sizeNarrowingTests(): void {
+  // gpt-image-2's own presets, straight out of `GPT_IMAGE_2_SIZES` — the same
+  // array `openai.image` validates against.
+  image({ model: "openai/gpt-image-2", prompt: "hi", size: "3840x2160" });
+  image({ model: "openai/gpt-image-2", prompt: "hi", size: "auto" });
+
+  // `"1920x1080"` COMPILES and FAILS AT RUN TIME, and both halves are
+  // deliberate. gpt-image-2's `size` is free-form — any `WIDTHxHEIGHT` inside
+  // the documented rule space is legal — so the type carries a
+  // `` `${number}x${number}` `` tail beside the presets, and a tail cannot
+  // encode "both edges divisible by 16". 1080 is not, which is exactly why
+  // 1920x1080 is absent from the preset list and 2560x1440 is in it.
+  // `test/unified/image-e2e.test.ts` asserts the runtime refusal.
+  image({ model: "openai/gpt-image-2", prompt: "hi", size: "1920x1080" });
+  // @ts-expect-error — but a string that is not a size at all is not a size.
+  image({ model: "openai/gpt-image-2", prompt: "hi", size: "enormous" });
+
+  // dall-e-3's `size` is a CLOSED enum, so it gets no tail: the list is the
+  // limit, and a template tail would promise otherwise.
+  image({ model: "openai/dall-e-3", prompt: "hi", size: "1792x1024" });
+  // @ts-expect-error — three values, and this is not one of them.
+  image({ model: "openai/dall-e-3", prompt: "hi", size: "1920x1080" });
+  // @ts-expect-error — nor is gpt-image-1's enum dall-e-3's.
+  image({ model: "openai/gpt-image-1", prompt: "hi", size: "1792x1024" });
+  image({ model: "openai/gpt-image-1", prompt: "hi", size: "1536x1024" });
+
+  // A model whose API has no size field at all types `size` as `never`, so an
+  // editor steers to `aspectRatio` — which is narrowed to Stability's nine.
+  // @ts-expect-error — the three generate routes take a shape and nothing else.
+  image({ model: "stability/stable-image-ultra", prompt: "hi", size: "1024x1024" });
+  image({ model: "stability/stable-image-ultra", prompt: "hi", aspectRatio: "9:21" });
+  // @ts-expect-error — 4:3 is not one of Stability's nine.
+  image({ model: "stability/stable-image-ultra", prompt: "hi", aspectRatio: "4:3" });
+  // …while a provider whose ratios are *derived* keeps the wide vocabulary.
+  image({ model: "openai/gpt-image-2", prompt: "hi", aspectRatio: "5:4" });
+
+  // `resolution` narrows to the tiers the model can actually reach.
+  image({ model: "openai/gpt-image-2", prompt: "hi", resolution: "4k" });
+  // @ts-expect-error — the gpt-image-1 family's sizes are all about a megapixel.
+  image({ model: "openai/gpt-image-1", prompt: "hi", resolution: "2k" });
+  // @ts-expect-error — Imagen Fast has no `sampleImageSize` field at all.
+  image({ model: "google/imagen-4.0-fast-generate-001", prompt: "hi", resolution: "1k" });
+  image({ model: "google/imagen-4.0-generate-001", prompt: "hi", resolution: "2k" });
+
+  // The XOR now covers three fields rather than two.
+  // @ts-expect-error
+  image({ model: "openai/gpt-image-2", prompt: "hi", size: "1024x1024", aspectRatio: "1:1" });
+  // @ts-expect-error
+  image({
+    model: "openai/gpt-image-2",
+    prompt: "hi",
+    size: "1024x1024",
+    dimensions: { width: 1024, height: 1024 },
+  });
+}
+
+function extrasNarrowingTests(): void {
+  // THE case this whole mechanism exists for. The OpenAI SDK's own type offers
+  // `transparent` on every GPT image model; gpt-image-2 answers a recorded 400
+  // (test/fixtures/provider-errors/openai/images-gpt-image-2-background.json).
+  image({ model: "openai/gpt-image-1", prompt: "hi", background: "transparent" });
+  // @ts-expect-error — and the same word on gpt-image-2 does not compile.
+  image({ model: "openai/gpt-image-2", prompt: "hi", background: "transparent" });
+  image({ model: "openai/gpt-image-2", prompt: "hi", background: "opaque" });
+  image({ model: "openai/gpt-image-2", prompt: "hi", background: null });
+
+  // `style` exists on exactly one model on this endpoint.
+  image({ model: "openai/dall-e-3", prompt: "hi", style: "vivid" });
+  // @ts-expect-error — not on gpt-image-1…
+  image({ model: "openai/gpt-image-1", prompt: "hi", style: "vivid" });
+  // @ts-expect-error — …and not on gpt-image-2 either.
+  image({ model: "openai/gpt-image-2", prompt: "hi", style: "natural" });
+  // @ts-expect-error — and a value outside dall-e-3's two is not a style.
+  image({ model: "openai/dall-e-3", prompt: "hi", style: "cinematic" });
+
+  // The quality ladders differ per model, and so do the types.
+  image({ model: "openai/gpt-image-2", prompt: "hi", quality: "high" });
+  // @ts-expect-error — dall-e-3's ladder is "auto" | "standard" | "hd".
+  image({ model: "openai/dall-e-3", prompt: "hi", quality: "high" });
+  image({ model: "openai/dall-e-3", prompt: "hi", quality: "hd" });
+
+  // Cross-provider: an extra one adapter has is not a key on another's models.
+  image({ model: "stability/sd3.5-large", prompt: "hi", cfg_scale: 4 });
+  // @ts-expect-error — ultra is a different route with no `cfg_scale`.
+  image({ model: "stability/stable-image-ultra", prompt: "hi", cfg_scale: 4 });
+  // @ts-expect-error — and `background` is not a Stability param at all.
+  image({ model: "stability/stable-image-ultra", prompt: "hi", background: "opaque" });
+
+  // A typo is still a typo, per model.
+  // @ts-expect-error
+  image({ model: "openai/gpt-image-2", prompt: "hi", bakcground: "opaque" });
+}
+
+function degradedRefTests(): void {
+  // A model this snapshot does not carry degrades to the wide vocabulary: the
+  // union drives autocomplete, it does not gate the API.
+  image({ model: "openai/gpt-image-9", prompt: "hi", size: "1920x1080" });
+  image({ model: "openai/gpt-image-9", prompt: "hi", background: "transparent" });
+  image({ model: "openai/gpt-image-9", prompt: "hi", aspectRatio: "5:4", resolution: "4k" });
+
+  // …and so does a ref built at run time, for the same reason.
+  const dynamic: string = "openai/gpt-image-2";
+  image({ model: dynamic, prompt: "hi", size: "1920x1080" });
+  image({ model: dynamic, prompt: "hi", style: "vivid" });
+
+  // Degraded is not unchecked: a key no model in the pack declares is still a
+  // typo, and `ExactKeys` still says so.
+  // @ts-expect-error
+  image({ model: dynamic, prompt: "hi", bakcground: "opaque" });
+}
+
+// ---------------------------------------------------------------------------
 // The adapters satisfy the category contract
 // ---------------------------------------------------------------------------
 
@@ -195,4 +314,17 @@ expectAssignable<readonly string[]>(openaiImage.models);
 expectAssignable<"image">(blackForestLabsImage.category);
 expectAssignable<readonly string[]>(ideogramImage.models);
 
-export { refUnionTests, sizingXorTests, resultTypeTests, providerOptionsTests, noToApiTests };
+expectAssignable<"image">(stabilityImage.category);
+expectAssignable<Readonly<Record<string, object>>>(openaiImage.modelParams);
+expectAssignable<Readonly<Record<string, object>>>(stabilityImage.modelParams);
+
+export {
+  refUnionTests,
+  sizingXorTests,
+  resultTypeTests,
+  providerOptionsTests,
+  noToApiTests,
+  sizeNarrowingTests,
+  extrasNarrowingTests,
+  degradedRefTests,
+};

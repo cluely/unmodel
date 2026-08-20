@@ -49,9 +49,13 @@
  * ref at.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveImageEditInput,
   resolveOperation,
   resolveSizing,
+  sizeRules,
+  sizingField,
   toRatioEnum,
   toStrength,
   type StrengthRules,
@@ -60,12 +64,18 @@ import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
   ImageEditAdapterFor,
   ImageEditParamsFor,
+  ModelParamTable,
 } from "../../core/unified/vocabulary/image-edit";
 import {
   ASPECT_RATIOS,
+  RESOLUTIONS,
   type IdeogramAspectRatio,
+  type IdeogramColorPalette,
+  type IdeogramMagicPromptOption,
   type IdeogramRenderingSpeed,
   type IdeogramResolution,
+  type IdeogramStylePreset,
+  type IdeogramStyleType,
 } from "./image";
 import { imageEditRemix as remix } from "./image-edit";
 import { RENDERING_SPEED_TO_MODEL_ID, type IdeogramModelId } from "./models";
@@ -91,6 +101,59 @@ const MODELS = [
   "ideogram-3.0-default",
   "ideogram-3.0-quality",
 ] as const satisfies readonly IdeogramModelId[];
+
+/**
+ * One row, four times: the four refs differ only in `rendering_speed` and
+ * price, and `/v1/ideogram-v3/remix` is one route with one form.
+ *
+ * `sizes` is the same closed 69-value `resolution` enum the generation route
+ * has, and `ratios` the same fifteen shapes respelled with a colon — the wire
+ * spells them with an `x`, and `toRatioEnum` bridges the two. Neither is
+ * free-form: `checkEnums` rejects anything outside the lists.
+ *
+ * `rendering_speed` is deliberately absent from the extras: it is compiled
+ * from the model half of the ref, and a second way to set it would let one
+ * request say two things about which model it wants.
+ */
+const IDEOGRAM_REMIX_RATIOS = [
+  "1:3",
+  "3:1",
+  "1:2",
+  "2:1",
+  "9:16",
+  "16:9",
+  "10:16",
+  "16:10",
+  "2:3",
+  "3:2",
+  "3:4",
+  "4:3",
+  "4:5",
+  "5:4",
+  "1:1",
+] as const;
+
+const REMIX_ROW = {
+  sizes: RESOLUTIONS,
+  ratios: IDEOGRAM_REMIX_RATIOS,
+  extras: {
+    magic_prompt: EXTRA as IdeogramMagicPromptOption,
+    style_type: EXTRA as IdeogramStyleType,
+    style_preset: EXTRA as IdeogramStylePreset,
+    style_codes: EXTRA as string[],
+    color_palette: EXTRA as IdeogramColorPalette,
+    style_reference_images: EXTRA as Blob[],
+    character_reference_images: EXTRA as Blob[],
+    character_reference_images_mask: EXTRA as Blob[],
+  },
+} as const;
+
+const IDEOGRAM_IMAGE_EDIT_MODEL_PARAMS = {
+  "ideogram-3.0-flash": REMIX_ROW,
+  "ideogram-3.0-turbo": REMIX_ROW,
+  "ideogram-3.0-default": REMIX_ROW,
+  "ideogram-3.0-quality": REMIX_ROW,
+} as const satisfies ModelParamTable;
 
 /**
  * `image_weight` at canonical 0 and 1 — see the inversion table in the header.
@@ -125,6 +188,17 @@ export interface IdeogramImageEditWire {
   rendering_speed?: IdeogramRenderingSpeed;
   seed?: number;
   num_images?: number;
+  // The per-model extras, named rather than reached through an index
+  // signature — `RemixParams` has none, and an open tail would make
+  // `ExactKeys` demand `never` for every key.
+  magic_prompt?: IdeogramMagicPromptOption;
+  style_type?: IdeogramStyleType;
+  style_preset?: IdeogramStylePreset;
+  style_codes?: string[];
+  color_palette?: IdeogramColorPalette;
+  style_reference_images?: Blob[];
+  character_reference_images?: Blob[];
+  character_reference_images_mask?: Blob[];
 }
 
 /** What a unified edit call to `ideogram/…` returns: remix's own `Validated`. */
@@ -135,6 +209,7 @@ export const imageEdit = {
   provider: "ideogram",
   models: MODELS,
   imageInputs: ["file"],
+  modelParams: IDEOGRAM_IMAGE_EDIT_MODEL_PARAMS,
   unsupported: {
     outputFormat:
       "Ideogram's editing routes are multipart in and PNG out — no route on /v1/ideogram-v3/* " +
@@ -182,7 +257,13 @@ export const imageEdit = {
       if (weight !== undefined) body.image_weight = weight;
     }
 
-    const sizing = ctx.take(resolveSizing(input, { path: ["aspectRatio"], warn: ctx.warn }));
+    const sizing = ctx.take(
+      resolveSizing(
+        input,
+        { path: ["aspectRatio"], warn: ctx.warn },
+        sizeRules(IDEOGRAM_IMAGE_EDIT_MODEL_PARAMS, ctx.model),
+      ),
+    );
     if (sizing?.kind === "ratio") {
       ctx.from(["aspect_ratio"], "aspectRatio");
       // S1. Ideogram spells its ratios with an `x`; `toRatioEnum` matches on
@@ -199,9 +280,9 @@ export const imageEdit = {
       // Straight through: the 69-value `resolution` list is `checkEnums`'
       // business — the same check a hand-written call meets — and its message
       // already names the allowed values, remapped here onto `dimensions`.
-      ctx.from(["resolution"], "dimensions");
-      body.resolution =
-        `${sizing.dimensions.width}x${sizing.dimensions.height}` as IdeogramResolution;
+      ctx.from(["resolution"], sizingField(sizing));
+      body.resolution = (sizing.size ??
+        `${sizing.dimensions.width}x${sizing.dimensions.height}`) as IdeogramResolution;
     }
 
     if (input.n !== undefined) {
@@ -211,6 +292,13 @@ export const imageEdit = {
     // `seed` is `seed`: identical name, so no provenance to declare.
     if (input.seed !== undefined) body.seed = input.seed;
 
+    applyExtras(input, IDEOGRAM_IMAGE_EDIT_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: remix.safe };
   },
-} as const satisfies ImageEditAdapterFor<"file", IdeogramImageEditWire, IdeogramImageEditResult>;
+} as const satisfies ImageEditAdapterFor<
+  "file",
+  IdeogramImageEditWire,
+  IdeogramImageEditResult,
+  typeof IDEOGRAM_IMAGE_EDIT_MODEL_PARAMS
+>;

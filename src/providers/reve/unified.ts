@@ -84,12 +84,28 @@
  *
  * `n`, `seed` and `negativePrompt` have no field on either route at all.
  */
-import { pixelsToRatio, resolveSizing, toRatioEnum } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { ImageParams } from "../../core/unified/vocabulary/image";
+import {
+  applyExtras,
+  EXTRA,
+  pixelsToRatio,
+  resolveSizing,
+  sizingField,
+  toRatioEnum,
+} from "../../core/unified/derive";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  ImageAdapterFor,
+  ImageParams,
+  ModelParamTable,
+} from "../../core/unified/vocabulary/image";
 import { image as createV1 } from "./image";
 import { imageV2 as createV2 } from "./image-v2";
-import { REVE_DOCS_URL, REVE_V1_ASPECT_RATIOS, REVE_V2_ASPECT_RATIOS } from "./shared";
+import {
+  REVE_DOCS_URL,
+  REVE_V1_ASPECT_RATIOS,
+  REVE_V2_ASPECT_RATIOS,
+  type RevePostprocessingOperation,
+} from "./shared";
 
 /**
  * Every Reve model that *generates* an image, newest first.
@@ -98,6 +114,57 @@ import { REVE_DOCS_URL, REVE_V1_ASPECT_RATIOS, REVE_V2_ASPECT_RATIOS } from "./s
  * absent: they take a required input image and belong to `unmodel/image-edit`.
  */
 const MODELS = ["reve-v2-create", "reve-create@20250915"] as const;
+
+/**
+ * The two create routes' per-model surface.
+ *
+ * `ratios` is each route's own enum **minus `"auto"`**, and the subtraction is
+ * the point: `"auto"` is a Reve keyword meaning "you pick", not a shape, and
+ * the canonical `aspectRatio` is a `W:H`. Offering it would be a suggestion
+ * `toRatioEnum` refuses at run time. A caller who wants it sends it through
+ * `providerOptions.reve`, where it is spelled the way Reve spells it.
+ *
+ * No `sizes` on either route — neither has a pixel field — and no `tiers`
+ * either: `resolution` is a declared gap on this adapter.
+ *
+ * `test_time_scaling` is v1-only among the create routes, which is the kind of
+ * per-model difference this table exists to state.
+ */
+const REVE_V2_SHAPES = [
+  "4:1",
+  "3:1",
+  "21:9",
+  "2:1",
+  "17:9",
+  "16:9",
+  "3:2",
+  "4:3",
+  "5:4",
+  "1:1",
+  "4:5",
+  "3:4",
+  "2:3",
+  "9:16",
+  "1:2",
+  "1:3",
+  "1:4",
+] as const;
+
+const REVE_IMAGE_MODEL_PARAMS = {
+  "reve-v2-create": {
+    ratios: REVE_V2_SHAPES,
+    tiers: [],
+    extras: { postprocessing: EXTRA as RevePostprocessingOperation[] },
+  },
+  "reve-create@20250915": {
+    ratios: REVE_V1_ASPECT_RATIOS,
+    tiers: [],
+    extras: {
+      postprocessing: EXTRA as RevePostprocessingOperation[],
+      test_time_scaling: EXTRA as number,
+    },
+  },
+} as const satisfies ModelParamTable;
 
 /**
  * The ids that compile to `POST /v1/image/create`.
@@ -145,6 +212,7 @@ export const image = {
   category: "image",
   provider: "reve",
   models: MODELS,
+  modelParams: REVE_IMAGE_MODEL_PARAMS,
   unsupported: {
     n:
       "Neither /v1/image/create nor /v2/image/create has a count field — Reve generates one " +
@@ -199,10 +267,11 @@ export const image = {
       // No pixel field on either route: the size is thrown away and only the
       // shape survives, so `pixelsToRatio` warns even on an exact match — what
       // was lost is the pixel count, not the ratio.
-      ctx.from(["aspect_ratio"], "dimensions");
+      const wrote = sizingField(sizing);
+      ctx.from(["aspect_ratio"], wrote);
       const ratio = ctx.take(
         pixelsToRatio(sizing.dimensions.width, sizing.dimensions.height, ratios, {
-          path: ["dimensions"],
+          path: [wrote],
           warn: ctx.warn,
         }),
       );
@@ -236,9 +305,15 @@ export const image = {
     // adapter. Nothing is wrapped and nothing is re-validated: what comes back
     // is the provider's own `.safe`, handed the body compiled for its own route
     // by the same `v1` decision that chose the ratio list.
+    applyExtras(input, REVE_IMAGE_MODEL_PARAMS, body, ctx);
+
     return {
       params: body,
       validate: v1 ? createV1.safe : createV2.safe,
     } as unknown as CompiledCall<ReveImageWire, ReveImageResult>;
   },
-} as const satisfies UnifiedAdapter<ImageParams, ReveImageWire, ReveImageResult>;
+} as const satisfies ImageAdapterFor<
+  typeof REVE_IMAGE_MODEL_PARAMS,
+  ReveImageWire,
+  ReveImageResult
+>;

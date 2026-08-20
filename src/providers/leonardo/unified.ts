@@ -78,15 +78,31 @@
  * both are declared gaps.
  */
 import {
+  applyExtras,
+  EXTRA,
   redundantTier,
   resolveSizing,
+  sizingField,
   toPixels,
   type PixelRules,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { ImageParams } from "../../core/unified/vocabulary/image";
-import { image as validator } from "./image";
-import { LEONARDO_DOCS_URL, LEONARDO_MODEL_RULES } from "./model-rules";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  ImageAdapterFor,
+  ImageParams,
+  ModelParamTable,
+} from "../../core/unified/vocabulary/image";
+import {
+  image as validator,
+  type LeonardoLucidParameters,
+  type LeonardoPhoenixParameters,
+} from "./image";
+import {
+  LEONARDO_DOCS_URL,
+  LEONARDO_MODEL_RULES,
+  type LeonardoContrast,
+  type LeonardoPromptEnhance,
+} from "./model-rules";
 
 /**
  * Leonardo's own image models on `POST /v2/generations` — the whole of
@@ -99,6 +115,97 @@ import { LEONARDO_DOCS_URL, LEONARDO_MODEL_RULES } from "./model-rules";
  * shape below, which is honest about being a guess.
  */
 const MODELS = ["lucid-origin", "lucid-realism", "phoenix-v1.0", "phoenix-v0.9"] as const;
+
+// ---------------------------------------------------------------------------
+// The per-model table
+// ---------------------------------------------------------------------------
+
+/**
+ * The four Leonardo rows, split by `parameters` schema: Lucid and Phoenix.
+ *
+ * **Sizes.** `parameters.width` / `height` are a free pixel pair on an 8-px
+ * grid, so `sizeFreeform` is set and the presets are curated exact-ratio pairs
+ * at each model's own reachable tiers (Lucid Origin goes to 4k, the other
+ * three to 2k). `ratios` is absent everywhere: there is no ratio field on this
+ * API — a canonical ratio is *derived* into pixels by `toPixels` — so the wide
+ * vocabulary is the honest one.
+ *
+ * **Extras.** The split is the schemas': Phoenix adds `contrast`, `tiling` and
+ * a `QUALITY` mode Lucid does not have, and its `guidances` object takes two
+ * more kinds. `style_ids` is `string[]` on both rather than the per-model UUID
+ * allowlist — those are checked by `checkStyleIds` against the model's own
+ * table, whose message names the ids, and hard-coding four twenty-UUID unions
+ * here would be a second copy of a list that already exists and can already
+ * answer better.
+ */
+const LUCID_ORIGIN_SIZES = [
+  "1024x1024", "2048x2048", "2880x2880", "3616x3616", "1536x1024", "2400x1600",
+  "3456x2304", "1024x1536", "1600x2400", "2400x3600", "1024x768", "2048x1536",
+  "3200x2400", "768x1024", "1536x2048", "2400x3200", "1280x720", "2560x1440",
+  "3840x2160", "720x1280", "1440x2560", "2016x3584", "2048x1024", "3840x1920",
+  "1024x2048", "1808x3616", "2520x1080", "3360x1440", "1080x2520", "1440x3360",
+] as const;
+
+const LUCID_REALISM_SIZES = [
+  "1024x1024", "2048x2048", "2496x2496", "1536x1024", "2400x1600", "1024x1536",
+  "1600x2400", "1024x768", "2048x1536", "2432x1824", "768x1024", "1536x2048",
+  "1824x2432", "1280x720", "2432x1368", "720x1280", "1368x2432", "2048x1024",
+  "2432x1216", "1024x2048", "1216x2432", "1680x720", "2352x1008", "720x1680",
+  "1008x2352",
+] as const;
+
+const PHOENIX_SIZES = [
+  "1024x1024", "1536x1536", "2048x2048", "1536x1024", "1920x1280", "1024x1536",
+  "1280x1920", "1024x768", "1600x1200", "2048x1536", "768x1024", "1200x1600",
+  "1536x2048", "1280x720", "2048x1152", "720x1280", "1152x2048", "1024x512",
+  "2048x1024", "512x1024", "1024x2048", "1680x720", "2016x864", "720x1680",
+  "864x2016",
+] as const;
+
+const LEONARDO_SHARED_EXTRAS = {
+  prompt_enhance: EXTRA as LeonardoPromptEnhance,
+  style_ids: EXTRA as string[],
+  public: EXTRA as boolean | null,
+} as const;
+
+const LUCID_ROW_EXTRAS = {
+  mode: EXTRA as "FAST" | "ULTRA",
+  guidances: EXTRA as LeonardoLucidParameters["guidances"],
+  ...LEONARDO_SHARED_EXTRAS,
+} as const;
+
+const PHOENIX_ROW_EXTRAS = {
+  mode: EXTRA as "FAST" | "QUALITY" | "ULTRA",
+  contrast: EXTRA as LeonardoContrast,
+  tiling: EXTRA as boolean,
+  guidances: EXTRA as LeonardoPhoenixParameters["guidances"],
+  ...LEONARDO_SHARED_EXTRAS,
+} as const;
+
+const PHOENIX_ROW = {
+  sizes: PHOENIX_SIZES,
+  sizeFreeform: true,
+  tiers: ["1k", "2k"],
+  extras: PHOENIX_ROW_EXTRAS,
+} as const;
+
+const LEONARDO_IMAGE_MODEL_PARAMS = {
+  "lucid-origin": {
+    sizes: LUCID_ORIGIN_SIZES,
+    sizeFreeform: true,
+    tiers: ["1k", "2k", "4k"],
+    extras: LUCID_ROW_EXTRAS,
+  },
+  "lucid-realism": {
+    sizes: LUCID_REALISM_SIZES,
+    sizeFreeform: true,
+    tiers: ["1k", "2k"],
+    extras: LUCID_ROW_EXTRAS,
+  },
+  "phoenix-v1.0": PHOENIX_ROW,
+  "phoenix-v0.9": PHOENIX_ROW,
+} as const satisfies ModelParamTable;
+
 
 /** "every image model sizes in multiples of 8" — `LeonardoDimensionRule`. */
 const LEONARDO_GRID = 8;
@@ -160,6 +267,8 @@ export interface LeonardoImageWireParameters {
 export interface LeonardoImageWire {
   model: string;
   parameters: LeonardoImageWireParameters;
+  /** The one body-level key: "show the generated images in the community feed". */
+  public?: boolean | null;
 }
 
 /** What a unified image call to `leonardo/…` returns: `leonardo.image`'s `Validated`. */
@@ -169,6 +278,7 @@ export const image = {
   category: "image",
   provider: "leonardo",
   models: MODELS,
+  modelParams: LEONARDO_IMAGE_MODEL_PARAMS,
   unsupported: {
     outputFormat:
       "POST /v2/generations has no output-format field on any model's `parameters` schema — " +
@@ -213,11 +323,18 @@ export const image = {
       //
       // `resolution` has nothing to add here and could only contradict what
       // was already said, so it is refused rather than ignored.
+      const wrote = sizingField(sizing);
       if (input.resolution !== undefined) {
-        ctx.take(redundantTier(input.resolution, { path: ["resolution"], warn: ctx.warn }));
+        ctx.take(
+          redundantTier(
+            input.resolution,
+            { path: ["resolution"], warn: ctx.warn },
+            wrote === "size" ? "size" : "dimensions",
+          ),
+        );
       }
-      ctx.from(["parameters", "width"], "dimensions.width");
-      ctx.from(["parameters", "height"], "dimensions.height");
+      ctx.from(["parameters", "width"], wrote === "size" ? "size" : "dimensions.width");
+      ctx.from(["parameters", "height"], wrote === "size" ? "size" : "dimensions.height");
       parameters.width = sizing.dimensions.width;
       parameters.height = sizing.dimensions.height;
     } else if (input.resolution !== undefined) {
@@ -255,6 +372,20 @@ export const image = {
       }
     }
 
+    applyExtras(input, LEONARDO_IMAGE_MODEL_PARAMS, body, ctx, { at: ["parameters"] });
+    // `public` is a body-level key, not a `parameters` one — the one extra on
+    // this route that does not nest — so it is moved back up after the copy.
+    const params = body.parameters as Record<string, unknown>;
+    if (Object.hasOwn(params, "public")) {
+      body.public = params["public"] as boolean | null;
+      delete params["public"];
+      ctx.from(["public"], "public");
+    }
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<ImageParams, LeonardoImageWire, LeonardoImageResult>;
+} as const satisfies ImageAdapterFor<
+  typeof LEONARDO_IMAGE_MODEL_PARAMS,
+  LeonardoImageWire,
+  LeonardoImageResult
+>;

@@ -45,7 +45,10 @@
  * something adjacent.
  */
 import {
+  applyExtras,
   base64Payload,
+  EXTRA,
+  pixelsToRatio,
   resolveImageEditInput,
   resolveOperation,
   resolveSizing,
@@ -55,8 +58,9 @@ import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
   ImageEditAdapterFor,
   ImageEditParamsFor,
+  ModelParamTable,
 } from "../../core/unified/vocabulary/image-edit";
-import type { BflAspectRatio } from "./aspect";
+import { BFL_ASPECT_RATIOS, type BflAspectRatio } from "./aspect";
 import type { BflOutputFormat } from "./image";
 import { imageEdit as validator } from "./image-edit";
 
@@ -68,6 +72,30 @@ const EDIT_ONLY = ["edit"] as const;
 
 /** Both Kontext routes — the `black-forest-labs/…` edit refs. */
 const MODELS = ["flux-kontext-pro", "flux-kontext-max"] as const;
+
+/**
+ * Both Kontext routes share `FluxKontextProInputs`, so this is one row twice.
+ *
+ * No `sizes`: the schema declares no width/height, which is the same fact
+ * `unsupported.dimensions` states below — so `size` types as `never` and an
+ * editor offers the shape instead. `ratios` is a **range** rather than an
+ * enum ("between 21:9 and 9:21"), so `ratioFreeform` keeps the template tail
+ * beside the thirteen presets: `"7:3"` is as legal as `"21:9"` and compiles to
+ * the same thing.
+ */
+const KONTEXT_ROW = {
+  ratios: BFL_ASPECT_RATIOS,
+  ratioFreeform: true,
+  extras: {
+    prompt_upsampling: EXTRA as boolean,
+    safety_tolerance: EXTRA as number,
+  },
+} as const;
+
+const BFL_IMAGE_EDIT_MODEL_PARAMS = {
+  "flux-kontext-pro": KONTEXT_ROW,
+  "flux-kontext-max": KONTEXT_ROW,
+} as const satisfies ModelParamTable;
 
 /**
  * "Aspect ratio of the image between 21:9 and 9:21." The bound is symmetric and
@@ -106,6 +134,7 @@ export const imageEdit = {
   provider: "black-forest-labs",
   models: MODELS,
   imageInputs: ["data", "url"],
+  modelParams: BFL_IMAGE_EDIT_MODEL_PARAMS,
   unsupported: {
     strength:
       "FLUX.1 Kontext has no strength field — the route takes an instruction and applies it, with " +
@@ -158,11 +187,38 @@ export const imageEdit = {
         toRatioString(sizing.aspectRatio, KONTEXT_RATIO, { path: ["aspectRatio"], warn: ctx.warn }),
       );
       if (ratio !== undefined) body.aspect_ratio = ratio as BflAspectRatio;
+    } else if (sizing?.kind === "dimensions") {
+      // Reached only by a `size` string — `dimensions` is a declared gap and
+      // the kernel refused it before `compile` ran, and typed callers never get
+      // here because this model's row declares no `sizes`. A `size` is the same
+      // decision spelled differently, and this route can carry only the shape:
+      // `pixelsToRatio` sends it and warns that the pixel count did not
+      // survive, which is the same answer `dimensions` would deserve if the
+      // canonical field were not already refused by name.
+      ctx.from(["aspect_ratio"], "size");
+      const exact = ctx.take(
+        pixelsToRatio(sizing.dimensions.width, sizing.dimensions.height, undefined, {
+          path: ["size"],
+          warn: ctx.warn,
+        }),
+      );
+      const ratio =
+        exact === undefined
+          ? undefined
+          : ctx.take(toRatioString(exact, KONTEXT_RATIO, { path: ["size"], warn: ctx.warn }));
+      if (ratio !== undefined) body.aspect_ratio = ratio as BflAspectRatio;
     }
 
     if (input.seed !== undefined) body.seed = input.seed;
     if (input.outputFormat !== undefined) body.output_format = input.outputFormat;
 
+    applyExtras(input, BFL_IMAGE_EDIT_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies ImageEditAdapterFor<"data" | "url", BflImageEditWire, BflImageEditResult>;
+} as const satisfies ImageEditAdapterFor<
+  "data" | "url",
+  BflImageEditWire,
+  BflImageEditResult,
+  typeof BFL_IMAGE_EDIT_MODEL_PARAMS
+>;

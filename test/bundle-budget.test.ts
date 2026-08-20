@@ -132,7 +132,7 @@ const SPEECH_PACK_BUDGET_KIB = 400;
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
  * each one's validator, zod schema, constraint table and catalog.
  *
- * 697 KiB measured, pinned at 740. It is twice the speech pack, and the reason
+ * 747 KiB measured, pinned at 790. It is twice the speech pack, and the reason
  * is structural rather than careless: the image providers carry *size* tables
  * (per-model pixel grids, resolution enums, 69-value size lists, style
  * vocabularies) on top of the usual deny rules, several of them serve two
@@ -140,6 +140,15 @@ const SPEECH_PACK_BUDGET_KIB = 400;
  * catalog rather than a hand-written one (see `IMAGE_PACK_CATALOGS`). A caller
  * who wants two providers builds their own pack with `createImage([…])` and pays
  * 40–80 KiB.
+ *
+ * **Bumped 740 → 790 for the per-model tables.** The measurement moved 697 →
+ * 747 when every adapter gained a `modelParams` table: the `size` preset lists
+ * are real strings and have to exist at run time, because the same array that
+ * types `size` is the one `test/unified/image-presets.test.ts` compiles
+ * exhaustively — a preset an editor suggests is only worth suggesting if it is
+ * provably one the provider accepts, and a type alone cannot be swept. The
+ * extras cost almost nothing beside them: each is one key whose value is a
+ * `never` witness that minifies to a shared identifier.
  *
  * The headroom is the tightest in this file — ~6% rather than ~10% — and the
  * reason is worth writing down rather than fixing with a bigger number: the
@@ -151,7 +160,7 @@ const SPEECH_PACK_BUDGET_KIB = 400;
  * "approximately" means, one test suite over all of them. If this one fails,
  * check `sourceModulesOf` for a *new provider* before touching the number.
  */
-const IMAGE_PACK_BUDGET_KIB = 740;
+const IMAGE_PACK_BUDGET_KIB = 790;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -271,12 +280,18 @@ const TRANSCRIBE_PACK_PROVIDERS: string[] = [
 /**
  * `unmodel/music`'s budget: the kernel plus two providers.
  *
- * 135 KiB measured, pinned at 140 with the same ~10% headroom. The smallest
+ * 141 KiB measured, pinned at 150 with the same ~10% headroom. The smallest
  * pack in the library by a wide margin — two providers, one route each — and
  * the number is dominated by Stability's shared image/audio module graph and
  * ElevenLabs' 673-line composition-plan schema rather than by catalogs.
+ *
+ * **Bumped 140 → 150 with the per-model tables**, and not because this pack
+ * gained anything of its own: `core/unified/derive.ts` is one shared chunk that
+ * every pack pays for whole, and it grew by `parseSizeString`, `applyExtras`
+ * and the size-arm of `resolveSizing`. The same ~1 KiB landed on all six packs;
+ * this is the only one that was already inside a rounding error of its number.
  */
-const MUSIC_PACK_BUDGET_KIB = 140;
+const MUSIC_PACK_BUDGET_KIB = 150;
 
 /** The two providers `unmodel/music`'s ready-made pack is allowed to reach. */
 const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "stability"];
@@ -302,15 +317,23 @@ const SPEECH_PACK_PROVIDERS: string[] = [
 /**
  * `unmodel/image-edit`'s budget: the kernel plus four image-to-image providers.
  *
- * 250 KiB measured, pinned at 275 with the same ~10% headroom as everything
+ * 267 KiB measured, pinned at 295 with the same ~10% headroom as everything
  * above. Larger than the music pack and smaller than every other one, which is
  * what four providers should cost — and the number is dominated by three
  * providers' *editing* modules being long, check-heavy validators that also
  * carry their generation neighbours' vocabularies (Recraft's 900-line style
  * tables, Ideogram's 69-value resolution list, OpenAI's per-model media rules).
  * `createImageEdit([…])` is the way to pay for two providers instead of four.
+ *
+ * **Bumped 275 → 295 for the per-model tables**, the same ~17 KiB of `size`
+ * preset lists the image pack pays for and for the same reason: the array that
+ * types `size` is the array `test/unified/image-presets.test.ts` sweeps, so it
+ * has to exist at run time. OpenAI's lists are shared with the generations
+ * route through `openai/images-shared.ts` — deliberately, and pinned by the
+ * composition assertion below: reaching them through `openai/image.ts` instead
+ * would drag that endpoint's validator, schema and catalog into this pack.
  */
-const IMAGE_EDIT_PACK_BUDGET_KIB = 275;
+const IMAGE_EDIT_PACK_BUDGET_KIB = 295;
 
 /**
  * The one generated catalog this pack legitimately reaches.

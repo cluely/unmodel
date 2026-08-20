@@ -82,22 +82,32 @@
  * `seed`, `outputFormat` and `outputDelivery` have no field on either route.
  * The last one is structural rather than an omission: both routes are
  * asynchronous, answering with a task object that you poll, so there is nothing
- * for a delivery preference to change. `watermark_info`, `image_fidelity`,
- * `element_list` and the Omni series controls stay out of the vocabulary and in
- * `providerOptions.kling`.
+ * for a delivery preference to change. `image_reference`, `image_fidelity`,
+ * `human_fidelity`, `element_list`, `watermark_info` and the Omni series
+ * controls are typed per model on {@link KLING_IMAGE_MODEL_PARAMS} and copied
+ * to the wire verbatim — `result_type` on a `/generations` model is an
+ * `unsupported_param` naming the two Omni ids, and vice versa.
  */
 import {
+  applyExtras,
+  EXTRA,
   pixelsToRatio,
   resolveSizing,
+  sizingField,
   toRatioEnum,
   toTier,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { ResolutionTier } from "../../core/unified/vocabulary/common";
-import type { ImageParams } from "../../core/unified/vocabulary/image";
+import type {
+  ImageAdapterFor,
+  ImageParams,
+  ModelParamTable,
+} from "../../core/unified/vocabulary/image";
 import {
   image as imageValidator,
   KLING_IMAGE_ASPECT_RATIOS,
+  KLING_IMAGE_REFERENCES,
   KLING_IMAGE_RESOLUTIONS,
   type ImageGenerationsParams,
 } from "./image";
@@ -106,8 +116,10 @@ import {
   OMNI_IMAGE_ASPECT_RATIOS,
   OMNI_IMAGE_RESOLUTIONS,
   type OmniImageParams,
+  OMNI_RESULT_TYPES,
+  OMNI_SERIES_AMOUNTS,
 } from "./image-omni";
-import { DOCS_BASE } from "./shared";
+import { DOCS_BASE, type KlingWatermarkInfo } from "./shared";
 
 /**
  * Both image catalogs, concatenated: `imageModels` first, then
@@ -128,6 +140,62 @@ const MODELS = [
 
 /** The ids `POST /v1/images/omni-image` serves; everything else is the other route. */
 const OMNI_MODELS: ReadonlySet<string> = new Set(["kling-image-o1", "kling-v3-omni"]);
+
+/**
+ * The two routes' per-model surfaces.
+ *
+ * No `sizes` on either — neither `POST /v1/images/generations` nor
+ * `/v1/images/omni-image` has a pixel field, so `size` types as `never` and
+ * shape and tier are the two independent enums below.
+ *
+ * `ratios` is each route's own list **minus `"auto"`**, which the Omni route
+ * accepts and which is not a shape: it means "read it off the reference
+ * images". `providerOptions.kling` still reaches it, spelled the way Kling
+ * spells it. `tiers` is already canonical on this API — Kling's `resolution`
+ * enum is literally `"1k" | "2k"` / `"1k" | "2k" | "4k"`.
+ *
+ * The extras split cleanly by route: the reference-and-fidelity controls
+ * belong to `/generations`, `result_type` / `series_amount` to Omni, and
+ * `element_list` / `watermark_info` to both.
+ */
+const KLING_SHARED_EXTRAS = {
+  element_list: EXTRA as Array<{ element_id: string | number }>,
+  watermark_info: EXTRA as KlingWatermarkInfo,
+} as const;
+
+const KLING_GENERATIONS_ROW = {
+  ratios: KLING_IMAGE_ASPECT_RATIOS,
+  tiers: KLING_IMAGE_RESOLUTIONS,
+  extras: {
+    image_reference: EXTRA as (typeof KLING_IMAGE_REFERENCES)[number],
+    image_fidelity: EXTRA as number,
+    human_fidelity: EXTRA as number,
+    ...KLING_SHARED_EXTRAS,
+  },
+} as const;
+
+const KLING_OMNI_ROW = {
+  ratios: KLING_IMAGE_ASPECT_RATIOS,
+  tiers: OMNI_IMAGE_RESOLUTIONS,
+  extras: {
+    result_type: EXTRA as (typeof OMNI_RESULT_TYPES)[number],
+    // The wire accepts `string | number`; `checkSeriesAmount` stringifies and
+    // then enforces this closed set, so the closed set is what to offer.
+    series_amount: EXTRA as (typeof OMNI_SERIES_AMOUNTS)[number],
+    ...KLING_SHARED_EXTRAS,
+  },
+} as const;
+
+const KLING_IMAGE_MODEL_PARAMS = {
+  "kling-v3": KLING_GENERATIONS_ROW,
+  "kling-v2-1": KLING_GENERATIONS_ROW,
+  "kling-v2-new": KLING_GENERATIONS_ROW,
+  "kling-v2": KLING_GENERATIONS_ROW,
+  "kling-v1-5": KLING_GENERATIONS_ROW,
+  "kling-v1": KLING_GENERATIONS_ROW,
+  "kling-image-o1": KLING_OMNI_ROW,
+  "kling-v3-omni": KLING_OMNI_ROW,
+} as const satisfies ModelParamTable;
 
 const IMAGE_SOURCE = `${DOCS_BASE}/api/image/3-0-omni/image-generation`;
 const OMNI_SOURCE = `${DOCS_BASE}/api/image/3-0-omni/image-omni`;
@@ -180,6 +248,7 @@ export const image = {
   category: "image",
   provider: "kling",
   models: MODELS,
+  modelParams: KLING_IMAGE_MODEL_PARAMS,
   unsupported: {
     seed:
       "neither POST /v1/images/generations nor POST /v1/images/omni-image has a seed field, so " +
@@ -217,10 +286,11 @@ export const image = {
       // route has a field that carries a pixel count, so the shape is all that
       // survives. `resolution` below still carries the tier, when the caller
       // named one — the two halves are independent fields on this API.
-      ctx.from(["aspect_ratio"], "dimensions");
+      const wrote = sizingField(sizing);
+      ctx.from(["aspect_ratio"], wrote);
       const { width, height } = sizing.dimensions;
       const ratio = ctx.take(
-        pixelsToRatio(width, height, ratios, { path: ["dimensions"], warn: ctx.warn }),
+        pixelsToRatio(width, height, ratios, { path: [wrote], warn: ctx.warn }),
       );
       if (ratio !== undefined) body.aspect_ratio = ratio;
     }
@@ -253,6 +323,8 @@ export const image = {
       }
     }
 
+    applyExtras(input, KLING_IMAGE_MODEL_PARAMS, body, ctx);
+
     return {
       params: body as KlingImageWire,
       // One cast, at the one place the two routes meet: each validator takes
@@ -260,4 +332,8 @@ export const image = {
       validate: (omni ? omniValidator.safe : imageValidator.safe) as KlingValidate,
     };
   },
-} as const satisfies UnifiedAdapter<ImageParams, KlingImageWire, KlingImageResult>;
+} as const satisfies ImageAdapterFor<
+  typeof KLING_IMAGE_MODEL_PARAMS,
+  KlingImageWire,
+  KlingImageResult
+>;

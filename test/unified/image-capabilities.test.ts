@@ -33,6 +33,17 @@
  * actually about: which of the six derivation classes a shape lands in, and
  * under which wire key. That is what makes "S1–S6 are all covered" checkable
  * rather than a claim in a commit message.
+ *
+ * Two more columns arrived with the per-model tables, and both are read *from*
+ * those tables rather than restated beside them:
+ *
+ * - `sizeString` — how the canonical `size` lands, probed with the model's own
+ *   first declared preset. `null` claims the model has no `sizes` row at all,
+ *   and is checked against the table both ways: the row must be absent, and a
+ *   `size` must still compile at run time through `pixelsToRatio`, warning.
+ * - `extra` — one extra the model declares, asserted to be declared *and* to
+ *   reach the wire verbatim. That is the no-silent-drop sweep extended to the
+ *   half of the request the canonical vocabulary has no words for.
  */
 import { describe, expect, test } from "bun:test";
 import type { ImageParams } from "../../src/core/unified/vocabulary/image";
@@ -86,6 +97,22 @@ interface Capability {
   size: { class: SizeClass; at: string };
   /** Where a tier lands, or `null` when the provider has no field for one. */
   tier: string | null;
+  /**
+   * How the canonical `size` string lands, or `null` when this ref's model has
+   * no `size` spelling at all — in which case `size` types as `never` and the
+   * runtime falls back to `pixelsToRatio`, which is a `derived` that always
+   * warns. The probe value is the model's own first declared preset, so this
+   * cell also asserts that a preset is *reachable* and not merely listed.
+   */
+  sizeString: Support | null;
+  /**
+   * One extra this ref's model takes, and a legal value for it — asserted to
+   * reach the wire **verbatim**, which is the whole of the identity contract.
+   * `null` only for an adapter whose models declare none.
+   */
+  extra: Readonly<Record<string, unknown>> | null;
+  /** Where that extra lands, when the route nests its params. */
+  extraAt?: readonly string[];
   aspectRatio: Support;
   dimensions: Support;
   resolution: Support;
@@ -118,6 +145,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: openai,
     size: { class: "size-freeform", at: "size" },
     tier: "size",
+    sizeString: "native",
+    extra: { background: "auto" },
     aspectRatio: "derived",
     dimensions: "derived",
     resolution: "derived",
@@ -134,6 +163,9 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: google,
     size: { class: "ratio-enum", at: "parameters" },
     tier: "parameters",
+    sizeString: null,
+    extra: { personGeneration: "allow_adult" },
+    extraAt: ["parameters"],
     aspectRatio: "native",
     dimensions: "declared",
     resolution: "derived",
@@ -150,6 +182,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: blackForestLabs,
     size: { class: "pixels", at: "width" },
     tier: "width",
+    sizeString: "derived",
+    extra: { safety_tolerance: 2 },
     aspectRatio: "derived",
     dimensions: "native",
     resolution: "derived",
@@ -165,6 +199,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: ideogram,
     size: { class: "ratio-enum", at: "aspect_ratio" },
     tier: null,
+    sizeString: "native",
+    extra: { magic_prompt: "AUTO" },
     aspectRatio: "derived",
     dimensions: "derived",
     resolution: "implicit",
@@ -185,6 +221,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: recraft,
     size: { class: "ratio-enum", at: "size" },
     tier: null,
+    sizeString: "native",
+    extra: { block_nsfw: true },
     aspectRatio: "native",
     dimensions: "derived",
     resolution: "implicit",
@@ -205,6 +243,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: stability,
     size: { class: "ratio-enum", at: "aspect_ratio" },
     tier: null,
+    sizeString: null,
+    extra: { style_preset: "anime" },
     aspectRatio: "native",
     dimensions: "derived",
     resolution: "implicit",
@@ -229,6 +269,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: luma,
     size: { class: "ratio-enum", at: "aspect_ratio" },
     tier: null,
+    sizeString: null,
+    extra: { modify_image_ref: { url: "https://example.com/s.png" } },
     aspectRatio: "native",
     dimensions: "derived",
     resolution: "declared",
@@ -246,6 +288,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: bytedance,
     size: { class: "size-freeform", at: "size" },
     tier: "size",
+    sizeString: "native",
+    extra: { watermark: true },
     aspectRatio: "derived",
     dimensions: "derived",
     resolution: "derived",
@@ -263,6 +307,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     base: { aspectRatio: "1:1" },
     size: { class: "ratio-enum", at: "ratio" },
     tier: "ratio",
+    sizeString: "derived",
+    extra: { contentModeration: { publicFigureThreshold: "low" } },
     aspectRatio: "derived",
     dimensions: "derived",
     resolution: "implicit",
@@ -284,6 +330,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: kling,
     size: { class: "ratio-enum", at: "aspect_ratio" },
     tier: "resolution",
+    sizeString: null,
+    extra: { image_fidelity: 0.5 },
     aspectRatio: "native",
     dimensions: "derived",
     resolution: "native",
@@ -300,6 +348,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: vidu,
     size: { class: "ratio-enum", at: "aspect_ratio" },
     tier: "resolution",
+    sizeString: null,
+    extra: null,
     aspectRatio: "native",
     dimensions: "derived",
     resolution: "derived",
@@ -316,6 +366,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: bria,
     size: { class: "ratio-enum", at: "aspect_ratio" },
     tier: "resolution",
+    sizeString: null,
+    extra: { ip_signal: true },
     aspectRatio: "native",
     dimensions: "derived",
     resolution: "derived",
@@ -333,6 +385,9 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: leonardo,
     size: { class: "pixels", at: "parameters" },
     tier: "parameters",
+    sizeString: "derived",
+    extra: { prompt_enhance: "ON" },
+    extraAt: ["parameters"],
     aspectRatio: "derived",
     dimensions: "native",
     resolution: "derived",
@@ -349,6 +404,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     base: { aspectRatio: "1:1" },
     size: { class: "ratio-enum", at: "aspect_ratio" },
     tier: "resolution",
+    sizeString: null,
+    extra: { creativity: "high" },
     aspectRatio: "native",
     dimensions: "derived",
     resolution: "implicit",
@@ -370,6 +427,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: reve,
     size: { class: "ratio-enum", at: "aspect_ratio" },
     tier: null,
+    sizeString: null,
+    extra: { postprocessing: [{ process: "remove_background" }] },
     aspectRatio: "native",
     dimensions: "derived",
     resolution: "declared",
@@ -410,9 +469,12 @@ interface Compiled {
 }
 
 function compile(row: Capability, extra: Partial<ImageParams>): Compiled | string[] {
-  // `dimensions` and `aspectRatio` are the XOR pair, so a base shape has to
-  // step aside for a dimensions probe rather than fight it.
-  const base = "dimensions" in extra ? { ...row.base, aspectRatio: undefined } : row.base;
+  // `size`, `dimensions` and `aspectRatio` are the XOR group, so a base shape
+  // has to step aside for either of the other two rather than fight it.
+  const base =
+    "dimensions" in extra || "size" in extra
+      ? { ...row.base, aspectRatio: undefined }
+      : row.base;
   const result = image.safe({
     model: row.ref,
     prompt: "A probe.",
@@ -539,6 +601,87 @@ describe.each(rows)("%s", (provider, row) => {
     expect(warnings.length > 0, `${provider} ${field} approximates`).toBe(
       row.warns?.includes(field) === true,
     );
+  });
+
+  test(`the \`size\` string is ${row.sizeString ?? "not a word this model has"}`, () => {
+    // The per-model table is the source of both halves: the preset comes out of
+    // it, and a `null` cell claims it has no `sizes` row at all.
+    const presets = (
+      row.adapter as { modelParams?: Readonly<Record<string, { sizes?: readonly string[] }>> }
+    ).modelParams?.[row.ref.slice(row.ref.indexOf("/") + 1)]?.sizes;
+
+    if (row.sizeString === null) {
+      expect(presets, `${provider} declares sizes but the table says it has none`).toBeUndefined();
+      // Still callable, and still honest about the cost: a `size` at a
+      // provider whose only size field is a shape goes through `pixelsToRatio`,
+      // which always warns.
+      const result = image.safe({
+        model: row.ref,
+        prompt: "A probe.",
+        ...row.base,
+        aspectRatio: undefined,
+        size: "1024x1024",
+      } as never);
+      expect(result.ok, `${provider} refused a size string outright`).toBe(true);
+      if (!result.ok) return;
+      const warnings = (result.params as unknown as { warnings: readonly { path: unknown[] }[] })
+        .warnings;
+      expect(warnings.length, `${provider} converted a size silently`).toBeGreaterThan(0);
+      // …and the warning names `size`, not the field it was converted through.
+      expect(warnings.some((warning) => warning.path[0] === "size")).toBe(true);
+      return;
+    }
+
+    expect(presets, `${provider} has no presets to probe`).toBeDefined();
+    const preset = presets?.[0] as string;
+    const compiled = compile(row, { size: preset } as Partial<ImageParams>);
+    expect(compiled, `${provider} could not compile its own first preset`).not.toBeInstanceOf(
+      Array,
+    );
+    if (Array.isArray(compiled)) return;
+    expect(carries(compiled, preset), `${provider} size verbatim`).toBe(row.sizeString === "native");
+  });
+
+  test(row.extra === null ? "declares no extras" : "the extra reaches the wire verbatim", () => {
+    const table = (
+      row.adapter as {
+        modelParams?: Readonly<Record<string, { extras?: Readonly<Record<string, unknown>> }>>;
+      }
+    ).modelParams;
+    const model = row.ref.slice(row.ref.indexOf("/") + 1);
+
+    if (row.extra === null) {
+      for (const entry of Object.values(table ?? {})) {
+        expect(entry.extras, `${provider} declares an extra the table says it has none of`)
+          .toBeUndefined();
+      }
+      return;
+    }
+
+    // Declared, first — a cell that probed an undeclared key would be testing
+    // the escape hatch rather than the table.
+    for (const key of Object.keys(row.extra)) {
+      expect(table?.[model]?.extras, `${provider} ${model} has no extras`).toBeDefined();
+      expect(
+        Object.hasOwn(table?.[model]?.extras ?? {}, key),
+        `${provider} ${model} does not declare ${key}`,
+      ).toBe(true);
+    }
+
+    const compiled = compile(row, row.extra as Partial<ImageParams>);
+    expect(compiled, `${provider} could not compile its own extra`).not.toBeInstanceOf(Array);
+    if (Array.isArray(compiled)) return;
+
+    // Verbatim, under the caller's own spelling, at the declared path. This is
+    // the no-silent-drop sweep extended to the extras: an extra the adapter
+    // accepted must be on the wire.
+    let node: unknown = compiled.body;
+    for (const segment of row.extraAt ?? []) {
+      node = (node as Record<string, unknown>)[segment];
+    }
+    for (const [key, value] of Object.entries(row.extra)) {
+      expect((node as Record<string, unknown>)[key], `${provider} ${key} verbatim`).toEqual(value);
+    }
   });
 
   test(`size lands as ${row.size.class} at \`${row.size.at}\``, () => {

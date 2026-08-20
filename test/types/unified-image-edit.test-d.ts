@@ -19,7 +19,9 @@
  *
  * Sections 3–6 are the same four properties every category entry has: the ref
  * union, the provider's own result type, `providerOptions` keyed by the pack,
- * and no `.toApi`.
+ * and no `.toApi`. Section 7 is the per-**model** narrowing this category
+ * shares with `unmodel/image`: `size`, `aspectRatio` and the extras come from
+ * the adapter's `modelParams` row the ref selects.
  */
 import { createImageEdit, imageEdit } from "../../src/unified/image-edit";
 import { imageEdit as bflImageEdit } from "../../src/providers/black-forest-labs/unified";
@@ -284,6 +286,62 @@ function noToApiTests(): void {
 }
 
 // ---------------------------------------------------------------------------
+// 7 · Per-model narrowing
+// ---------------------------------------------------------------------------
+
+function modelNarrowingTests(): void {
+  const base = { operation: "edit", prompt } as const;
+
+  // The edits route's `size` is the same per-model split as generations'.
+  imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, size: "3840x2160" });
+  // Free-form again, so the tail admits a size the 16-px rule refuses at run
+  // time — see the note in `unified-image.test-d.ts`.
+  imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, size: "1920x1080" });
+  imageEdit({ ...base, model: "openai/gpt-image-1.5", image: { file }, size: "1536x1024" });
+  // @ts-expect-error — the gpt-image-1 family's enum is four values.
+  imageEdit({ ...base, model: "openai/gpt-image-1.5", image: { file }, size: "1920x1080" });
+  // @ts-expect-error — and dall-e-2's edit enum has no "auto".
+  imageEdit({ ...base, model: "openai/dall-e-2", image: { file }, size: "auto" });
+  imageEdit({ ...base, model: "openai/dall-e-2", image: { file }, size: "512x512" });
+
+  // Kontext sizes by shape only, so `size` is `never` there…
+  // @ts-expect-error
+  imageEdit({ ...base, model: "black-forest-labs/flux-kontext-pro", image: { url }, size: "1024x1024" });
+  // …and its `aspect_ratio` is a RANGE, so the presets come with a tail.
+  imageEdit({ ...base, model: "black-forest-labs/flux-kontext-pro", image: { url }, aspectRatio: "21:9" });
+  imageEdit({ ...base, model: "black-forest-labs/flux-kontext-max", image: { data }, aspectRatio: "7:3" });
+
+  // Recraft's imageToImage has no sizing surface at all.
+  // @ts-expect-error
+  imageEdit({ ...base, model: "recraft/recraftv3", image: { file }, size: "1024x1024" });
+
+  // The same `background` split as on generations: `transparent` on the
+  // gpt-image-1 family, and not on gpt-image-2.
+  imageEdit({ ...base, model: "openai/gpt-image-1", image: { file }, background: "transparent" });
+  // @ts-expect-error
+  imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, background: "transparent" });
+  imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, background: "auto" });
+
+  // `input_fidelity` is an edits-only extra, and not on every model.
+  imageEdit({ ...base, model: "openai/gpt-image-1.5", image: { file }, input_fidelity: "high" });
+  // @ts-expect-error — "unsupported for gpt-image-1-mini".
+  imageEdit({ ...base, model: "openai/gpt-image-1-mini", image: { file }, input_fidelity: "high" });
+  // @ts-expect-error — gpt-image-2 processes every input at high fidelity.
+  imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, input_fidelity: "low" });
+
+  // Recraft's curated style lists are per model, exactly as on generations.
+  imageEdit({ ...base, model: "recraft/recraftv3", image: { file }, style: "Watercolor" });
+  // @ts-expect-error — styles are not supported for the V4 / V4.1 line.
+  imageEdit({ ...base, model: "recraft/recraftv4_1", image: { file }, style: "Watercolor" });
+  imageEdit({ ...base, model: "recraft/recraftv4_1", image: { file }, style_id: "abc" });
+
+  // Ideogram's remix form.
+  imageEdit({ ...base, model: "ideogram/ideogram-3.0-quality", image: { file }, magic_prompt: "ON" });
+  // @ts-expect-error — a typo is still a typo, per model.
+  imageEdit({ ...base, model: "ideogram/ideogram-3.0-quality", image: { file }, magic_prmpt: "ON" });
+}
+
+// ---------------------------------------------------------------------------
 // The adapters satisfy the category contract
 // ---------------------------------------------------------------------------
 
@@ -300,4 +358,5 @@ export {
   resultTypeTests,
   providerOptionsTests,
   noToApiTests,
+  modelNarrowingTests,
 };

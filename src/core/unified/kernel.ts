@@ -247,6 +247,11 @@ export function runUnified(
       ? { path: [...issue.path], unmapped: true }
       : canonicalPath(provenance, issue.path);
     const viaOptions = unmapped && supplied;
+    // A param that was compiled *to its own name* — which is every extra, by
+    // definition: they are wire-verbatim and their provenance maps a key to
+    // itself — has nothing to explain. Appending "(compiled from `background`)"
+    // to a message already about `background` is noise that reads like a bug.
+    const renamed = !unmapped && path.join(".") !== issue.path.join(".");
     sink.report({
       code: issue.code,
       path,
@@ -254,7 +259,9 @@ export function runUnified(
         ? viaOptions
           ? `${issue.message}${PROVIDER_OPTIONS_SUFFIX}`
           : issue.message
-        : `${issue.message} (compiled from \`${issue.path.join(".")}\`)`,
+        : renamed
+          ? `${issue.message} (compiled from \`${issue.path.join(".")}\`)`
+          : issue.message,
       ...(issue.model !== undefined && { model: issue.model }),
       ...(issue.meta !== undefined && { meta: issue.meta }),
       // Preserve a deny rule's downgrade to a warning; the caller's own

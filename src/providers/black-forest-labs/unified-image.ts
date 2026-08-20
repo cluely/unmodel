@@ -78,22 +78,26 @@
  * `approximated_param` saying the size itself was not expressible.
  */
 import {
+  applyExtras,
+  EXTRA,
   pixelsToRatio,
   redundantTier,
   resolveSizing,
   toPixels,
+  sizingField,
   toRatioString,
   toTier,
   type PixelRules,
   type RatioStringRules,
   type Sizing,
 } from "../../core/unified/derive";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  AnyUnifiedAdapter,
-  CompileContext,
-  CompiledCall,
-} from "../../core/unified/types";
-import type { ImageParams } from "../../core/unified/vocabulary/image";
+  AnyImageAdapter,
+  ImageParams,
+  ModelParamTable,
+} from "../../core/unified/vocabulary/image";
+import { BFL_ASPECT_RATIOS } from "./aspect";
 import { image as validator } from "./image";
 import {
   imageFlux1 as flux1Validator,
@@ -219,11 +223,18 @@ function compileFlux2(
       // approximate. A side under 64 is the schema's own error, remapped. A
       // tier alongside is refused rather than ignored — the pixel count is
       // already settled and the two could disagree.
+      const wrote = sizingField(sizing);
       if (input.resolution !== undefined) {
-        ctx.take(redundantTier(input.resolution, { path: ["resolution"], warn: ctx.warn }));
+        ctx.take(
+          redundantTier(
+            input.resolution,
+            { path: ["resolution"], warn: ctx.warn },
+            wrote === "size" ? "size" : "dimensions",
+          ),
+        );
       }
-      ctx.from(["width"], "dimensions.width");
-      ctx.from(["height"], "dimensions.height");
+      ctx.from(["width"], wrote === "size" ? "size" : "dimensions.width");
+      ctx.from(["height"], wrote === "size" ? "size" : "dimensions.height");
       body.width = sizing.dimensions.width;
       body.height = sizing.dimensions.height;
     } else if (sizing?.kind === "ratio" || input.resolution !== undefined) {
@@ -360,6 +371,116 @@ function compileFlux1(
 /** Every BFL generation route, both generations, in catalog order. */
 const MODELS = [...FLUX2_MODELS, ...FLUX1_MODELS] as const;
 
+// ---------------------------------------------------------------------------
+// The per-model table
+// ---------------------------------------------------------------------------
+
+/**
+ * Eleven generation routes, three sizing shapes and a `safety_tolerance` whose
+ * *range* differs between the two generations — 0–5 on FLUX.2, 0–6 on FLUX.1
+ * — which the endpoints' own schemas check and this table does not restate.
+ *
+ * **Sizes.** The FLUX.2 and FLUX.1 pixel routes take a free `width`/`height`
+ * pair, so both carry `sizeFreeform` and a curated preset list: exact-ratio
+ * integer pairs at ~1 MP and ~4 MP for FLUX.2 (whose only documented rule is
+ * `minimum: 64`), and pairs with both sides divisible by 32 inside 256–1440
+ * for FLUX.1 (whose grid and range are enforced). The ultra routes have no
+ * width/height field at all — `FluxUltraInput` declares none — so they carry
+ * no `sizes` and `size` types as `never` there, which is the same fact
+ * `compileUltraSize` states at run time.
+ *
+ * **Ratios.** Only the ultra routes have a ratio field, and it is a *range*
+ * rather than an enum ("between 21:9 and 9:21"), so `ratioFreeform` keeps the
+ * template tail beside the thirteen presets. The pixel routes leave `ratios`
+ * absent: a canonical ratio there is derived into a pair by `toPixels`.
+ *
+ * **Tiers.** FLUX.2 reaches 1k and 2k; FLUX.1's pixel routes cap at 1440²
+ * (2.07 MP) so only 1k is reachable; the ultra routes have no size field, so
+ * `tiers` is empty and `resolution` is a compile error there.
+ */
+const FLUX_2_SIZES = [
+  "1024x1024", "1568x672", "1440x720", "1344x756", "1248x832", "1184x888",
+  "1140x912", "912x1140", "888x1184", "832x1248", "756x1344", "720x1440",
+  "672x1568", "2048x2048", "3136x1344", "2896x1448", "2688x1512", "2496x1664",
+  "2368x1776", "2280x1824", "1824x2280", "1776x2368", "1664x2496", "1512x2688",
+  "1448x2896", "1344x3136",
+] as const;
+
+const FLUX_1_SIZES = [
+  "1024x1024", "512x512", "1440x1440", "1344x576", "1408x704", "1024x576",
+  "1344x896", "960x640", "1280x960", "1024x768", "1280x1024", "1024x1280",
+  "960x1280", "768x1024", "896x1344", "640x960", "576x1024", "704x1408",
+  "576x1344",
+] as const;
+
+/** 0–5 on FLUX.2 and the tools routes, 0–6 on FLUX.1 — the schemas check it. */
+const SAFETY_TOLERANCE = EXTRA as number;
+const PROMPT_UPSAMPLING = EXTRA as boolean;
+
+const FLUX_2_BASE = { sizes: FLUX_2_SIZES, sizeFreeform: true, tiers: ["1k", "2k"] } as const;
+const FLUX_1_PIXEL_BASE = { sizes: FLUX_1_SIZES, sizeFreeform: true, tiers: ["1k"] } as const;
+const ULTRA_BASE = { ratios: BFL_ASPECT_RATIOS, ratioFreeform: true, tiers: [] } as const;
+
+const FLUX_2_PRO_ROW = {
+  ...FLUX_2_BASE,
+  extras: { disable_pup: EXTRA as boolean, safety_tolerance: SAFETY_TOLERANCE },
+} as const;
+
+const FLUX_2_KLEIN_ROW = {
+  ...FLUX_2_BASE,
+  extras: { safety_tolerance: SAFETY_TOLERANCE },
+} as const;
+
+const BFL_IMAGE_MODEL_PARAMS = {
+  "flux-2-pro": FLUX_2_PRO_ROW,
+  "flux-2-max": FLUX_2_PRO_ROW,
+  "flux-2-pro-preview": FLUX_2_PRO_ROW,
+  "flux-2-flex": {
+    ...FLUX_2_BASE,
+    extras: {
+      prompt_upsampling: EXTRA as boolean | null,
+      guidance: EXTRA as number,
+      steps: EXTRA as number,
+      safety_tolerance: SAFETY_TOLERANCE,
+    },
+  },
+  "flux-2-klein-9b": FLUX_2_KLEIN_ROW,
+  "flux-2-klein-9b-preview": FLUX_2_KLEIN_ROW,
+  "flux-2-klein-4b": FLUX_2_KLEIN_ROW,
+  "flux-pro-1.1": {
+    ...FLUX_1_PIXEL_BASE,
+    extras: { prompt_upsampling: PROMPT_UPSAMPLING, safety_tolerance: SAFETY_TOLERANCE },
+  },
+  "flux-dev": {
+    ...FLUX_1_PIXEL_BASE,
+    extras: {
+      steps: EXTRA as number | null,
+      guidance: EXTRA as number | null,
+      prompt_upsampling: PROMPT_UPSAMPLING,
+      safety_tolerance: SAFETY_TOLERANCE,
+    },
+  },
+  "flux-pro-1.1-ultra": {
+    ...ULTRA_BASE,
+    extras: {
+      raw: EXTRA as boolean,
+      prompt_upsampling: PROMPT_UPSAMPLING,
+      safety_tolerance: SAFETY_TOLERANCE,
+    },
+  },
+  "flux-pro-1.1-ultra-finetuned": {
+    ...ULTRA_BASE,
+    extras: {
+      finetune_id: EXTRA as string,
+      finetune_strength: EXTRA as number,
+      raw: EXTRA as boolean,
+      prompt_upsampling: PROMPT_UPSAMPLING,
+      safety_tolerance: SAFETY_TOLERANCE,
+    },
+  },
+} as const satisfies ModelParamTable;
+
+
 /** Which generation a ref belongs to. FLUX.1's four ids are the closed set. */
 const FLUX1_ROUTES: ReadonlySet<string> = new Set<string>(FLUX1_MODELS);
 
@@ -373,6 +494,7 @@ export const image = {
   category: "image",
   provider: "black-forest-labs",
   models: MODELS,
+  modelParams: BFL_IMAGE_MODEL_PARAMS,
   unsupported: {
     n: ONE_IMAGE_PER_REQUEST,
     outputDelivery: NO_DELIVERY_FIELD,
@@ -382,9 +504,11 @@ export const image = {
       "`prompt`; describe what to avoid inside it instead.",
   },
   compile(input: ImageParams, ctx: CompileContext<ImageParams>) {
-    return FLUX1_ROUTES.has(ctx.model) ? compileFlux1(input, ctx) : compileFlux2(input, ctx);
+    const call = FLUX1_ROUTES.has(ctx.model) ? compileFlux1(input, ctx) : compileFlux2(input, ctx);
+    applyExtras(input, BFL_IMAGE_MODEL_PARAMS, call.params, ctx);
+    return call;
   },
-} as const satisfies AnyUnifiedAdapter<ImageParams> & { readonly category: "image" };
+} as const satisfies AnyImageAdapter;
 
 /**
  * `flux-pro-1.1` / `flux-dev`: ratio + tier → a 32-px-grid pair inside
@@ -397,11 +521,18 @@ function compilePixelSize(
   ctx: CompileContext<ImageParams>,
 ): void {
   if (sizing?.kind === "dimensions") {
+    const wrote = sizingField(sizing);
     if (input.resolution !== undefined) {
-      ctx.take(redundantTier(input.resolution, { path: ["resolution"], warn: ctx.warn }));
+      ctx.take(
+        redundantTier(
+          input.resolution,
+          { path: ["resolution"], warn: ctx.warn },
+          wrote === "size" ? "size" : "dimensions",
+        ),
+      );
     }
-    ctx.from(["width"], "dimensions.width");
-    ctx.from(["height"], "dimensions.height");
+    ctx.from(["width"], wrote === "size" ? "size" : "dimensions.width");
+    ctx.from(["height"], wrote === "size" ? "size" : "dimensions.height");
     body.width = sizing.dimensions.width;
     body.height = sizing.dimensions.height;
     return;
@@ -460,7 +591,7 @@ function compileUltraSize(
     });
   }
 
-  const from = sizing?.kind === "dimensions" ? "dimensions" : "aspectRatio";
+  const from = sizing?.kind === "dimensions" ? sizingField(sizing) : "aspectRatio";
   const path = [from];
   ctx.from(["aspect_ratio"], from);
 

@@ -25,6 +25,13 @@
  *   *backwards*; a flipped map would still compile, still land in the right
  *   field, still warn about nothing — and quietly return a picture the caller
  *   did not ask for. Nothing but a direction assertion catches that.
+ *
+ * Two columns arrived with the per-model tables and are read *from* them:
+ * `sizeString` (how the canonical `size` lands, probed with the model's own
+ * first declared preset; `null` claims the model has no `sizes` row) and
+ * `extra` (one extra the model declares, asserted to be declared *and* to
+ * reach the wire verbatim — the no-silent-drop sweep, extended to the half of
+ * the request the canonical vocabulary has no words for).
  */
 import { describe, expect, test } from "bun:test";
 import type {
@@ -74,6 +81,17 @@ interface Capability {
   base?: Partial<ImageEditParams>;
   /** Where the shape lands, or `null` when the route has no size field at all. */
   size: { class: SizeClass; at: string } | null;
+  /**
+   * How the canonical `size` string lands, or `null` when this ref's model has
+   * no `size` spelling at all — read against the adapter's own per-model
+   * table, so the two cannot disagree.
+   */
+  sizeString: Support | null;
+  /**
+   * One extra this ref's model declares, and a legal value — asserted to be
+   * declared *and* to reach the wire verbatim. Identity is the whole contract.
+   */
+  extra: Readonly<Record<string, unknown>>;
   strength: StrengthCell | "declared";
   n: Support;
   seed: Support;
@@ -93,6 +111,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     ref: "openai/gpt-image-2",
     adapter: openai,
     size: { class: "size-freeform", at: "size" },
+    sizeString: "native",
+    extra: { background: "auto" },
     strength: "declared",
     n: "native",
     seed: "declared",
@@ -104,6 +124,9 @@ const TABLE: Readonly<Record<string, Capability>> = {
     ref: "black-forest-labs/flux-kontext-pro",
     adapter: blackForestLabs,
     size: { class: "ratio-string", at: "aspect_ratio" },
+    // Kontext declares no width/height at all, so `size` is `never` here.
+    sizeString: null,
+    extra: { safety_tolerance: 3 },
     strength: "declared",
     n: "declared",
     seed: "native",
@@ -117,6 +140,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     ref: "ideogram/ideogram-3.0-quality",
     adapter: ideogram,
     size: { class: "ratio-enum", at: "aspect_ratio" },
+    sizeString: "native",
+    extra: { magic_prompt: "AUTO" },
     // The inversion, as data: 0 → 100, 1 → 0.
     strength: { at: "image_weight", atZero: 100, atOne: 0 },
     n: "native",
@@ -130,6 +155,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: recraft,
     base: { strength: 0.5 },
     size: null,
+    sizeString: null,
+    extra: { style_id: "1e0c0f1a" },
     // The one route whose dial already means what the canonical one means.
     strength: { at: "strength", atZero: 0, atOne: 1 },
     n: "native",
@@ -175,9 +202,12 @@ interface Compiled {
 }
 
 function compile(row: Capability, extra: Partial<ImageEditParams>): Compiled | string[] {
-  // `dimensions` and `aspectRatio` are the XOR pair, so a base shape has to
-  // step aside for a dimensions probe rather than fight it.
-  const base = "dimensions" in extra ? { ...row.base, aspectRatio: undefined } : row.base;
+  // `size`, `dimensions` and `aspectRatio` are the XOR group, so a base shape
+  // has to step aside for either of the other two rather than fight it.
+  const base =
+    "dimensions" in extra || "size" in extra
+      ? { ...row.base, aspectRatio: undefined }
+      : row.base;
   const kind = row.adapter.imageInputs[0] as ImageEditInputKind;
   const result = imageEdit.safe({
     operation: "edit",
@@ -258,6 +288,45 @@ describe.each(rows)("%s", (provider, row) => {
   // -------------------------------------------------------------------------
   // image — the flagship row, in both directions
   // -------------------------------------------------------------------------
+
+  test(`the \`size\` string is ${row.sizeString ?? "not a word this model has"}`, () => {
+    const model = row.ref.slice(row.ref.indexOf("/") + 1);
+    const presets = (
+      row.adapter as { modelParams?: Readonly<Record<string, { sizes?: readonly string[] }>> }
+    ).modelParams?.[model]?.sizes;
+
+    if (row.sizeString === null) {
+      expect(presets, `${provider} declares sizes but the table says it has none`).toBeUndefined();
+      return;
+    }
+    expect(presets, `${provider} has no presets to probe`).toBeDefined();
+    const preset = presets?.[0] as string;
+    const compiled = compile(row, { size: preset } as Partial<ImageEditParams>);
+    expect(compiled, `${provider} could not compile its own first preset`).not.toBeInstanceOf(
+      Array,
+    );
+    if (Array.isArray(compiled)) return;
+    expect(carries(compiled, preset), `${provider} size verbatim`).toBe(row.sizeString === "native");
+  });
+
+  test("the extra is declared and reaches the wire verbatim", () => {
+    const model = row.ref.slice(row.ref.indexOf("/") + 1);
+    const extras = (
+      row.adapter as {
+        modelParams?: Readonly<Record<string, { extras?: Readonly<Record<string, unknown>> }>>;
+      }
+    ).modelParams?.[model]?.extras;
+    for (const key of Object.keys(row.extra)) {
+      expect(Object.hasOwn(extras ?? {}, key), `${provider} ${model} does not declare ${key}`)
+        .toBe(true);
+    }
+    const compiled = compile(row, row.extra as Partial<ImageEditParams>);
+    expect(compiled, `${provider} could not compile its own extra`).not.toBeInstanceOf(Array);
+    if (Array.isArray(compiled)) return;
+    for (const [key, value] of Object.entries(row.extra)) {
+      expect(compiled.body[key], `${provider} ${key} verbatim`).toEqual(value);
+    }
+  });
 
   test("accepts exactly the image kinds it declares", () => {
     for (const kind of IMAGE_KINDS) {

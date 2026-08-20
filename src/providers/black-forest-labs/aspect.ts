@@ -29,23 +29,25 @@ const MAX_ASPECT = 21 / 9;
  * and the portrait reciprocals follow from the image routes' bound being
  * explicitly symmetric ("between 21:9 and 9:21").
  */
-export type BflAspectRatio =
+export const BFL_ASPECT_RATIOS = [
   // widest documented ratio → 1:1
-  | "21:9"
-  | "2:1"
-  | "16:9"
-  | "3:2"
-  | "4:3"
-  | "5:4"
-  | "1:1"
+  "21:9",
+  "2:1",
+  "16:9",
+  "3:2",
+  "4:3",
+  "5:4",
+  "1:1",
   // 1:1 → tallest documented ratio
-  | "4:5"
-  | "3:4"
-  | "2:3"
-  | "9:16"
-  | "1:2"
-  | "9:21"
-  | (`${number}:${number}` & {});
+  "4:5",
+  "3:4",
+  "2:3",
+  "9:16",
+  "1:2",
+  "9:21",
+] as const;
+
+export type BflAspectRatio = (typeof BFL_ASPECT_RATIOS)[number] | (`${number}:${number}` & {});
 
 export interface AspectRatioCheckInput {
   /** The raw `aspect_ratio` value; null/undefined means "provider default". */

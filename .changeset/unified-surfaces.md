@@ -153,8 +153,8 @@ the adapters live in their own `unified-<category>.ts` modules behind the
 separate `unmodel/<provider>/unified` export, and `test/bundle-budget.test.ts`
 holds every entry — provider and pack alike — to a committed byte budget
 measured over the real `dist/` import graph. Measured today, unminified ESM with
-`zod` excluded: chat 557.7 KiB, image 696.8, video 571.4, speech 370.7,
-transcribe 359.8, image-edit 250.3, music 134.8. A pack is the whole category;
+`zod` excluded: chat 557.7 KiB, image 747.2, video 577.2, speech 376.5,
+transcribe 365.6, image-edit 267.3, music 140.6. A pack is the whole category;
 `createSpeech([openai, rime])` and its siblings pay only for the providers you
 register.
 
@@ -173,3 +173,55 @@ stay reachable by name at `unmodel/<provider>` where they work perfectly well.
 unified result has no dialect to leave: retargeting it means changing `model`
 and calling again, which is a string edit rather than an API — and adding
 `.toApi` would bundle the availability tables these entries exist without.
+
+## `unmodel/image` knows what *one model* takes
+
+The two image surfaces narrow per **model**, not per provider — because that is
+where the disagreement actually is. `gpt-image-2` takes a free-form `size` up to
+3840 px and a `background` of `"opaque" | "auto"`; `gpt-image-1` — same
+provider, same endpoint — takes a three-value `size` enum and a `background`
+that also accepts `"transparent"`. One adapter, two request surfaces, and the
+difference is the model id.
+
+```ts
+image({ model: "openai/gpt-image-2", prompt, size: "3840x2160" });
+//                                          ^ that model's own presets
+
+image({ model: "openai/gpt-image-1", prompt, background: "transparent" });  // ok
+image({ model: "openai/gpt-image-2", prompt, background: "transparent" });  // compile error
+```
+
+That second line is the whole argument for this library in one call. The OpenAI
+SDK's own type offers `transparent` on every GPT image model; gpt-image-2
+answers a 400 — *"Requests with `background` set to `transparent` will return an
+error for these models; use `opaque` or `auto` instead"* — which unmodel keeps
+as a recorded fixture.
+
+**What narrows.** `size` (a new canonical field, joining `aspectRatio` and
+`dimensions` in the XOR — three spellings of one decision, at most one given),
+`aspectRatio`, `resolution`, and the per-model params the canonical vocabulary
+has no word for. `size` is a string on purpose: `"3840x2160"` is what the docs,
+the dashboards and the models themselves call it, and one token autocompletes
+where a `{ width, height }` pair cannot.
+
+**The presets are provable.** A closed enum gets no template tail — the list
+*is* the limit, so `size: "1920x1080"` does not compile on `dall-e-3`. A
+free-form field gets `` `${number}x${number}` `` beside the presets, because it
+genuinely accepts more than the list; there `"1920x1080"` compiles and fails at
+run time on gpt-image-2's own 16-px rule, which is why it is absent from the
+presets and `"2560x1440"` is in them. Every preset in every table — across all
+19 adapters — is compiled through the adapter and run past the provider's own
+validator, with zero errors and zero warnings, in
+`test/unified/image-presets.test.ts`.
+
+**The extras are identity, and still checked.** A per-model param is already
+spelled the way the provider spells it, so it goes on the wire unchanged, before
+`providerOptions` is merged (which therefore still wins). The provider's own
+schema and deny tables then re-check it: a JavaScript caller who passes
+`background: "transparent"` to gpt-image-2 gets the same refusal a TypeScript
+caller got at compile time. An extra sent to a model that does not take it is an
+`unsupported_param` naming the models that do.
+
+Unknown and run-time-built refs degrade to the wide vocabulary, exactly as an
+unrecognised model already does: the union drives autocomplete, it does not gate
+the API.

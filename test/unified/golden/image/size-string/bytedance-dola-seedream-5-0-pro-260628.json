@@ -1,0 +1,9 @@
+{
+  "ref": "bytedance/dola-seedream-5-0-pro-260628",
+  "params": {
+    "model": "dola-seedream-5-0-pro-260628",
+    "prompt": "a lighthouse in fog",
+    "size": "1024x1024"
+  },
+  "url": "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations"
+}

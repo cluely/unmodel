@@ -61,13 +61,28 @@
  *   that would silently ignore them.
  *
  * Everything Imagen has that the vocabulary does not — `personGeneration`,
- * `guidanceScale`, `safetySetting`, `outputOptions.compressionQuality` — is one
- * `providerOptions.google` away, and is checked by the same constraint tables
- * either way.
+ * `guidanceScale`, `safetySetting`, `outputOptions` — is typed per model on
+ * {@link GOOGLE_IMAGE_MODEL_PARAMS} and copied verbatim into `parameters`, and
+ * is checked by the same constraint tables either way. `providerOptions.google`
+ * still reaches the rest (`storageUri`, `addWatermark`, `enhancePrompt` — all
+ * Vertex-only and all denied here, which is the point of checking).
  */
-import { resolveSizing, toRatioEnum, toTier } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { ImageOutputFormat, ImageParams } from "../../core/unified/vocabulary/image";
+import {
+  applyExtras,
+  EXTRA,
+  pixelsToRatio,
+  resolveSizing,
+  sizingField,
+  toRatioEnum,
+  toTier,
+} from "../../core/unified/derive";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  ImageAdapterFor,
+  ImageOutputFormat,
+  ImageParams,
+  ModelParamTable,
+} from "../../core/unified/vocabulary/image";
 // The enum and the docs URL come from the same table the provider's own
 // runtime check reads, so the compile-time list and the validation-time list
 // cannot drift apart.
@@ -76,6 +91,7 @@ import {
   image as validator,
   type GoogleImagenInstance,
   type GoogleImagenOutputOptions,
+  type GoogleImagenPersonGeneration,
 } from "./image";
 
 /** The three Imagen 4 codes the Gemini API documents — the `google/…` ref union. */
@@ -84,6 +100,53 @@ const MODELS = [
   "imagen-4.0-ultra-generate-001",
   "imagen-4.0-fast-generate-001",
 ] as const;
+
+/**
+ * The three Imagen rows.
+ *
+ * No `sizes` anywhere — `models.{model}:predict` has no width, height or `WxH`
+ * field on any route, which is the same fact `unsupported.dimensions` states
+ * below — so `size` types as `never` and an editor offers the five shapes.
+ *
+ * The `tiers` split is the whole reason this is a per-**model** table: Standard
+ * and Ultra publish `sampleImageSize: "1K" | "2K"`, and Fast has no such field
+ * ("only supported for the Standard and Ultra models"). An empty `tiers` makes
+ * `resolution` on Fast a compile error, which is the same answer the
+ * `unsupported_param` below gives a JavaScript caller.
+ *
+ * The extras are Imagen's own `parameters` keys, and they land under
+ * `parameters` rather than at the body root — the one adapter so far that
+ * needs `applyExtras`'s `at`. `outputOptions` shares its wire object with the
+ * `mimeType` compiled from `outputFormat`; `place` merges rather than
+ * replaces, so setting both keeps both.
+ */
+const IMAGEN_EXTRAS = {
+  personGeneration: EXTRA as GoogleImagenPersonGeneration,
+  safetySetting: EXTRA as string,
+  includeSafetyAttributes: EXTRA as boolean,
+  includeRaiReason: EXTRA as boolean,
+  language: EXTRA as string,
+  guidanceScale: EXTRA as number,
+  outputOptions: EXTRA as Omit<GoogleImagenOutputOptions, "mimeType">,
+} as const;
+
+const GOOGLE_IMAGE_MODEL_PARAMS = {
+  "imagen-4.0-generate-001": {
+    ratios: IMAGEN_ASPECT_RATIOS,
+    tiers: ["1k", "2k"],
+    extras: IMAGEN_EXTRAS,
+  },
+  "imagen-4.0-ultra-generate-001": {
+    ratios: IMAGEN_ASPECT_RATIOS,
+    tiers: ["1k", "2k"],
+    extras: IMAGEN_EXTRAS,
+  },
+  "imagen-4.0-fast-generate-001": {
+    ratios: IMAGEN_ASPECT_RATIOS,
+    tiers: [],
+    extras: IMAGEN_EXTRAS,
+  },
+} as const satisfies ModelParamTable;
 
 /**
  * The ids whose `parameters` object has no `sampleImageSize` — the Fast model,
@@ -151,6 +214,7 @@ export const image = {
   category: "image",
   provider: "google",
   models: MODELS,
+  modelParams: GOOGLE_IMAGE_MODEL_PARAMS,
   unsupported: {
     dimensions:
       "Imagen sizes by shape and tier — `parameters.aspectRatio` (one of " +
@@ -192,6 +256,22 @@ export const image = {
         ),
       );
       if (ratio !== undefined) parameters.aspectRatio = ratio;
+    } else if (sizing?.kind === "dimensions") {
+      // Reached only by a `size` string: `dimensions` is a declared gap and the
+      // kernel has already refused it. A `size` is the same decision spelled
+      // differently, and this route can carry only the shape — so it goes
+      // through `pixelsToRatio`, which warns that the pixel count did not
+      // survive. Typed callers never land here: `size` is `never` on all three
+      // rows.
+      const wrote = sizingField(sizing);
+      ctx.from(["parameters", "aspectRatio"], wrote);
+      const ratio = ctx.take(
+        pixelsToRatio(sizing.dimensions.width, sizing.dimensions.height, IMAGEN_ASPECT_RATIOS, {
+          path: [wrote],
+          warn: ctx.warn,
+        }),
+      );
+      if (ratio !== undefined) parameters.aspectRatio = ratio as (typeof IMAGEN_ASPECT_RATIOS)[number];
     }
 
     // No default tier: `sampleImageSize` is optional and Imagen documents its
@@ -269,6 +349,14 @@ export const image = {
     // empty object is a key the request did not need.
     if (Object.keys(parameters).length > 0) body.parameters = parameters;
 
+    // After the `parameters` object is attached, so an extra lands beside the
+    // compiled keys rather than in an object the line above then replaces.
+    applyExtras(input, GOOGLE_IMAGE_MODEL_PARAMS, body, ctx, { at: ["parameters"] });
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<ImageParams, GoogleImageWire, GoogleImageResult>;
+} as const satisfies ImageAdapterFor<
+  typeof GOOGLE_IMAGE_MODEL_PARAMS,
+  GoogleImageWire,
+  GoogleImageResult
+>;

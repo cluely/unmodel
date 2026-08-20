@@ -30,9 +30,12 @@
  *   escape hatch named.
  */
 import {
+  applyExtras,
   resolveImageEditInput,
   resolveOperation,
   resolveSizing,
+  sizeRules,
+  sizingField,
   toSizeEnum,
   toSizeFreeform,
   type FreeformRules,
@@ -44,6 +47,7 @@ import type {
   ImageEditParamsFor,
 } from "../../core/unified/vocabulary/image-edit";
 import { imageEdit as validator } from "./image-edit";
+import { OPENAI_IMAGE_EDIT_MODEL_PARAMS } from "./image-params";
 
 /**
  * Every model `/v1/images/edits` documents — "One of `dall-e-2` or a GPT image
@@ -134,6 +138,7 @@ export const imageEdit = {
   provider: "openai",
   models: MODELS,
   imageInputs: ["file"],
+  modelParams: OPENAI_IMAGE_EDIT_MODEL_PARAMS,
   unsupported: {
     strength:
       "POST /v1/images/edits has no strength dial — `input_fidelity` is a two-position switch " +
@@ -174,9 +179,20 @@ export const imageEdit = {
     );
     if (image?.kind === "file") body.image = image.file;
 
-    const sizing = ctx.take(resolveSizing(input, { path: ["aspectRatio"], warn: ctx.warn }));
+    const sizing = ctx.take(
+      resolveSizing(
+        input,
+        { path: ["aspectRatio"], warn: ctx.warn },
+        sizeRules(OPENAI_IMAGE_EDIT_MODEL_PARAMS, ctx.model),
+      ),
+    );
     const table = sizeTableFor(ctx.model);
-    if (sizing?.kind === "ratio") {
+    if (sizing?.kind === "size") {
+      // `"auto"`, the one non-pixel `size` on this route. Already checked
+      // against the model's declared list, so it goes across verbatim.
+      ctx.from(["size"], "size");
+      body.size = sizing.size;
+    } else if (sizing?.kind === "ratio") {
       ctx.from(["size"], "aspectRatio");
       // `1k` is the only tier this category has a word for: `ImageEditParams`
       // carries no `resolution`, because the overwhelmingly common answer to
@@ -198,8 +214,8 @@ export const imageEdit = {
       // that go on the wire, so there is nothing to warn about — and a size the
       // model does not offer is that model's own error, remapped onto
       // `dimensions`.
-      ctx.from(["size"], "dimensions");
-      body.size = `${sizing.dimensions.width}x${sizing.dimensions.height}`;
+      ctx.from(["size"], sizingField(sizing));
+      body.size = sizing.size ?? `${sizing.dimensions.width}x${sizing.dimensions.height}`;
     }
 
     if (input.n !== undefined) body.n = input.n;
@@ -220,6 +236,13 @@ export const imageEdit = {
       }
     }
 
+    applyExtras(input, OPENAI_IMAGE_EDIT_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies ImageEditAdapterFor<"file", OpenaiImageEditWire, OpenaiImageEditResult>;
+} as const satisfies ImageEditAdapterFor<
+  "file",
+  OpenaiImageEditWire,
+  OpenaiImageEditResult,
+  typeof OPENAI_IMAGE_EDIT_MODEL_PARAMS
+>;

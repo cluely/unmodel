@@ -199,6 +199,19 @@ shot.warnings;
 //                      32px grid: 1344×768 (1.750:1, requested 1.778:1).
 ```
 
+Sizes and per-model params autocomplete from the model the ref names, so the
+editor knows what one model takes before the API does:
+
+```ts
+image({ model: "openai/gpt-image-2", prompt: "...", size: "3840x2160" });
+//                                                        ^ that model's presets
+
+image({ model: "openai/gpt-image-1", prompt: "...", background: "transparent" });  // ok
+image({ model: "openai/gpt-image-2", prompt: "...", background: "transparent" });  // compile error
+//   "Requests with `background` set to `transparent` will return an error for
+//    these models; use `opaque` or `auto` instead." -- the recorded 400.
+```
+
 BFL has no `aspectRatio` and no `resolution` — it has a pixel pair on a 32-px
 grid — so the request is *derived* rather than translated, and it says so
 instead of quietly shipping the wrong ratio. Point the same object at
@@ -371,8 +384,8 @@ the escape hatch.
 | Import | Function | Providers | Canonical vocabulary |
 | --- | --- | --- | --- |
 | `unmodel/chat` | `chat` | 32 | `messages`, `system`, `maxOutputTokens`, `temperature` (canonical 0–2), `topP`, `topK`, `reasoning`, `tools` (a `Record`, so duplicate names are unrepresentable), `nativeTools`, `toolChoice`, `responseFormat`, `cache` breakpoints, `stream` |
-| `unmodel/image` | `image`, `createImage` | 15 | `prompt`, `aspectRatio` XOR `dimensions`, `resolution` tier, `n`, `seed`, `negativePrompt`, `outputFormat`, `outputDelivery` |
-| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 4 | `operation`, `prompt`, `image` (`file` / `url` / `data`), `strength`, `aspectRatio` XOR `dimensions`, `n`, `seed`, `outputFormat` |
+| `unmodel/image` | `image`, `createImage` | 15 | `prompt`, `size` XOR `aspectRatio` XOR `dimensions`, `resolution` tier, `n`, `seed`, `negativePrompt`, `outputFormat`, `outputDelivery`, plus that model's own typed extras |
+| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 4 | `operation`, `prompt`, `image` (`file` / `url` / `data`), `strength`, `size` XOR `aspectRatio` XOR `dimensions`, `n`, `seed`, `outputFormat`, plus that model's own typed extras |
 | `unmodel/speech` | `speech`, `createSpeech` | 14 | `text`, `voice`, `outputFormat`, `speed`, `language` |
 | `unmodel/video` | `video`, `createVideo` | 10 | `prompt`, `duration` (seconds), `resolution` tier, `aspectRatio`, `image` (first / last / reference), `video`, `negativePrompt`, `seed`, `n` |
 | `unmodel/transcribe` | `transcribe`, `createTranscribe` | 11 | `audio` (`file` / `url` / `fileId`), `language`, `languages`, `diarization`, `timestamps`, `prompt` |
@@ -413,8 +426,23 @@ that compiles one canonical request at every provider that can express it.
   is a type error, and the runtime check backs it up for JavaScript callers.
 - **`image` narrows the same way in `unmodel/image-edit`.** OpenAI takes
   `{ file }` only; FLUX Kontext takes `{ data }` or `{ url }` only.
-- **Sizing is an XOR.** `aspectRatio` and `dimensions` cannot both be given, in
-  `image` or `image-edit`, because no provider has a coherent reading of both.
+- **Sizing is an XOR.** `size`, `aspectRatio` and `dimensions` are three
+  spellings of one decision and at most one may be given, in `image` or
+  `image-edit`, because no provider has a coherent reading of two.
+- **`size` and the extras narrow per *model*.** Each image adapter carries a
+  per-model table, and the ref selects a row: `image({ model:
+  "openai/gpt-image-2", size: ... })` autocompletes *that* model's presets
+  (`"3840x2160"`, `"2560x1440"`, `"auto"`, ...), `resolution` narrows to the
+  tiers it can reach, `aspectRatio` to the ratios it accepts, and the params the
+  vocabulary has no word for appear with their exact types --
+  `background: "transparent"` compiles on `openai/gpt-image-1` and is a
+  **compile error** on `openai/gpt-image-2`, which answers a recorded 400 for
+  it. Extras go on the wire under the provider's own spelling, unchanged, and
+  one sent to a model that does not take it is an `unsupported_param` naming the
+  ones that do. Every preset in every table is compiled through the adapter and
+  run past the provider's validator in `test/unified/image-presets.test.ts`, so
+  a suggestion is one the API accepts. An unknown or run-time-built ref degrades
+  to the wide vocabulary, exactly as an unrecognised model already does.
 - **The inputs choose the video endpoint.** A prompt is text-to-video; adding
   `image` makes it image-to-video; `role: "reference"` makes it
   reference-to-video; `video` makes it video-to-video. A model with no arm for
@@ -1156,12 +1184,12 @@ build, in KiB of unminified ESM (transitive chunk graph, `zod` excluded):
 | Entry | Size | What dominates it |
 | --- | --- | --- |
 | `unmodel/chat` | 557.7 KiB | 433 KiB is the slim per-model profile table covering all 32 providers; the rest is the three dialect encoders and the translation hub |
-| `unmodel/image` | 696.8 KiB | fifteen providers' schemas, constraint tables and hand-maintained catalogs |
-| `unmodel/video` | 571.4 KiB | ten providers across twenty-one endpoint modules |
-| `unmodel/speech` | 370.7 KiB | fourteen providers, each with a voice/format roster |
-| `unmodel/transcribe` | 359.8 KiB | eleven providers |
-| `unmodel/image-edit` | 250.3 KiB | four providers |
-| `unmodel/music` | 134.8 KiB | two providers |
+| `unmodel/image` | 747.2 KiB | fifteen providers' schemas, constraint tables, hand-maintained catalogs and per-model size tables |
+| `unmodel/video` | 577.2 KiB | ten providers across twenty-one endpoint modules |
+| `unmodel/speech` | 376.5 KiB | fourteen providers, each with a voice/format roster |
+| `unmodel/transcribe` | 365.6 KiB | eleven providers |
+| `unmodel/image-edit` | 267.3 KiB | four providers |
+| `unmodel/music` | 140.6 KiB | two providers |
 
 Those numbers are the *whole category*. A pack you build yourself pays only for
 the providers you register — `createSpeech([openai, rime])` lands in the 40–60

@@ -10,6 +10,60 @@ import type { ModelInfo } from "../../core/catalog-types";
 const IMAGE_GUIDE_DOCS = "https://developers.openai.com/api/docs/guides/image-generation";
 const IMAGES_CREATE_DOCS = "https://developers.openai.com/api/docs/api-reference/images/create";
 
+/**
+ * gpt-image-2 sizes, as a value so the table `unmodel/image` narrows `size`
+ * with and the type this endpoint checks against are the same list.
+ *
+ * The named presets are autocomplete for the documented
+ * rule space — every one satisfies checkGptImage2Size (edges ÷16, ratio
+ * ≤3:1, max edge 3840, 655,360–8,294,400 total pixels) — and any other
+ * "WIDTHxHEIGHT" within those bounds validates too (`${number}x${number}`
+ * keeps free-form legal while making non-size strings a compile error).
+ * 1920x1080 is deliberately absent: 1080 is not divisible by 16 — use
+ * 2560x1440 or 3840x2160 for 16:9.
+ */
+export const GPT_IMAGE_2_SIZES = [
+  "auto",
+  // 1:1
+  "1024x1024",
+  "1536x1536",
+  "2048x2048",
+  "2880x2880",
+  // 3:2 / 2:3
+  "1536x1024",
+  "1024x1536",
+  // 4:3 / 3:4
+  "2048x1536",
+  "1536x2048",
+  // 16:9 / 9:16 (720p, 1440p, 4K)
+  "1280x720",
+  "2560x1440",
+  "3840x2160",
+  "720x1280",
+  "1440x2560",
+  "2160x3840",
+  // 2:1 / 1:2
+  "2048x1024",
+  "3840x1920",
+  "1024x2048",
+  "1920x3840",
+  // 21:9 / 9:21 (cinematic)
+  "3360x1440",
+  "1440x3360",
+  // 3:1 / 1:3 (the documented ratio limit)
+  "3840x1280",
+  "1280x3840",
+] as const;
+
+export type GptImage2Size = (typeof GPT_IMAGE_2_SIZES)[number] | (`${number}x${number}` & {});
+
+/** The `size` enum every GPT image model before gpt-image-2 shares. */
+export const GPT_IMAGE_1_SIZE_VALUES = ["auto", "1024x1024", "1536x1024", "1024x1536"] as const;
+
+/** dall-e-3's three, and dall-e-2's three. Neither takes `"auto"`. */
+export const DALL_E_3_SIZE_VALUES = ["1024x1024", "1792x1024", "1024x1792"] as const;
+export const DALL_E_2_SIZE_VALUES = ["256x256", "512x512", "1024x1024"] as const;
+
 /** The ids that accept free-form `WIDTHxHEIGHT` sizes. */
 export const GPT_IMAGE_2_MODELS: ReadonlySet<string> = new Set([
   "gpt-image-2",

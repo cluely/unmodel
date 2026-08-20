@@ -10,16 +10,20 @@
  * `./unified.ts` re-exports both, so the public subpath is unchanged.
  */
 import {
+  applyExtras,
   redundantTier,
   resolveSizing,
+  sizeRules,
+  sizingField,
   toSizeEnum,
   toSizeFreeform,
   type FreeformRules,
   type SizeTable,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { ImageParams } from "../../core/unified/vocabulary/image";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type { ImageAdapterFor, ImageParams } from "../../core/unified/vocabulary/image";
 import { image as imageValidator } from "./image";
+import { OPENAI_IMAGE_MODEL_PARAMS } from "./image-params";
 
 /**
  * # `image`
@@ -135,6 +139,7 @@ export const image = {
   category: "image",
   provider: "openai",
   models: IMAGE_MODELS,
+  modelParams: OPENAI_IMAGE_MODEL_PARAMS,
   unsupported: {
     seed:
       "POST /v1/images/generations has no seed field — neither the DALL·E nor the GPT image " +
@@ -150,7 +155,13 @@ export const image = {
     const body: OpenaiImageWire = { model: ctx.model, prompt: input.prompt };
     ctx.from(["size"], "aspectRatio");
 
-    const sizing = ctx.take(resolveSizing(input, { path: ["aspectRatio"], warn: ctx.warn }));
+    const sizing = ctx.take(
+      resolveSizing(
+        input,
+        { path: ["aspectRatio"], warn: ctx.warn },
+        sizeRules(OPENAI_IMAGE_MODEL_PARAMS, ctx.model),
+      ),
+    );
     const tier = input.resolution ?? "1k";
     const table = sizeTableFor(ctx.model);
 
@@ -162,7 +173,13 @@ export const image = {
           : toSizeEnum(ratio, tier, table, { path, warn: ctx.warn }),
       );
 
-    if (sizing?.kind === "ratio") {
+    if (sizing?.kind === "size") {
+      // A `size` that is not a pixel pair at all, which on this endpoint means
+      // exactly one value: `"auto"`. `resolveSizing` has already checked it
+      // against the model's declared list, so it goes across verbatim.
+      ctx.from(["size"], "size");
+      body.size = sizing.size;
+    } else if (sizing?.kind === "ratio") {
       const size = toSize(sizing.aspectRatio, ["aspectRatio"]);
       if (size !== undefined) body.size = size;
     } else if (sizing?.kind === "dimensions") {
@@ -177,10 +194,18 @@ export const image = {
       // IS the pixel count, so `resolution` has nothing left to say and could
       // only contradict what was already said.
       if (input.resolution !== undefined) {
-        ctx.take(redundantTier(input.resolution, { path: ["resolution"], warn: ctx.warn }));
+        ctx.take(
+          redundantTier(
+            input.resolution,
+            { path: ["resolution"], warn: ctx.warn },
+            sizingField(sizing) === "size" ? "size" : "dimensions",
+          ),
+        );
       }
-      ctx.from(["size"], "dimensions");
-      body.size = `${sizing.dimensions.width}x${sizing.dimensions.height}`;
+      ctx.from(["size"], sizingField(sizing));
+      // A `size` the caller wrote goes across exactly as written; a pair goes
+      // across as the pair. They are the same string whenever both are legal.
+      body.size = sizing.size ?? `${sizing.dimensions.width}x${sizing.dimensions.height}`;
     } else if (input.resolution !== undefined) {
       // A tier with no shape still has an answer here, because every family's
       // table has a square entry (and free-form solves 1:1 exactly). A tier the
@@ -229,6 +254,12 @@ export const image = {
       }
     }
 
+    applyExtras(input, OPENAI_IMAGE_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: imageValidator.safe };
   },
-} as const satisfies UnifiedAdapter<ImageParams, OpenaiImageWire, OpenaiImageResult>;
+} as const satisfies ImageAdapterFor<
+  typeof OPENAI_IMAGE_MODEL_PARAMS,
+  OpenaiImageWire,
+  OpenaiImageResult
+>;

@@ -87,21 +87,32 @@
  * would earn an `unknown_param` warning if it were passed through is a param
  * that must be refused instead.
  *
- * `watermark`, `stream`, `background`, `layer_decomposition` and
- * `optimize_prompt_options` stay out of the vocabulary on purpose — they are
- * ModelArk's own knobs, and `providerOptions.bytedance` reaches them without
- * making forty other adapters answer for them.
+ * `watermark`, `background`, `layer_decomposition`,
+ * `optimize_prompt_options` and the sequential-batch pair are ModelArk's own
+ * knobs rather than canonical words, and are typed per model on
+ * {@link BYTEDANCE_IMAGE_MODEL_PARAMS} — `background` on anything but Seedream
+ * 5.0 pro is an `unsupported_param` naming the model that does take it.
+ * `stream` stays out entirely: it changes how the response is *delivered*, not
+ * what is generated, and `providerOptions.bytedance` reaches it.
  */
 import {
+  applyExtras,
+  EXTRA,
   redundantTier,
   resolveSizing,
+  sizeRules,
+  sizingField,
   toSizeFreeform,
   toTier,
   type FreeformRules,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { ResolutionTier } from "../../core/unified/vocabulary/common";
-import type { ImageParams } from "../../core/unified/vocabulary/image";
+import type {
+  ImageAdapterFor,
+  ImageParams,
+  ModelParamTable,
+} from "../../core/unified/vocabulary/image";
 import { IMAGE_API_SOURCE, imageConstraints, imageShapeRules } from "./constraints";
 import { image as imageValidator } from "./image";
 
@@ -123,6 +134,130 @@ const MODELS = [
   "seedream-4-5-251128",
   "seedream-4-0-250828",
 ] as const;
+
+
+// ---------------------------------------------------------------------------
+// The per-model table
+// ---------------------------------------------------------------------------
+
+/**
+ * One `size` field, two grammars, and both are offered.
+ *
+ * The keyword arm (`"1K"`, `"2K"`, `"4K"` and the between-tier `"1.5K"` /
+ * `"3K"`) is a **literal** rather than a pixel pair, so it reaches the wire
+ * through `resolveSizing`'s literal arm — which is also what makes `"1.5K"` and
+ * `"3K"` reachable at all: the canonical `resolution` has three tiers and
+ * ModelArk has five keywords, and rather than invent two canonical words that
+ * only this provider would ever use, `size` carries the provider's own
+ * spelling. The `WxH` arm is free-form (`sizeFreeform`), bounded only by each
+ * model's total-pixel range, so the presets below are curated exact-ratio
+ * pairs at that model's own tiers, not an enum.
+ *
+ * `"auto"` is deliberately absent from every row: it exists only in
+ * layer-decomposition mode (`layer_decomposition: true`), so offering it
+ * unconditionally would autocomplete a value most requests cannot use.
+ * `providerOptions.bytedance.size` still reaches it.
+ *
+ * `ratios` is absent everywhere: there is no `aspect_ratio` field on this API
+ * at all — a canonical ratio is *derived* into a `WxH` by `toSizeFreeform` —
+ * so the wide ratio vocabulary is the honest one.
+ *
+ * The extras are ModelArk's own knobs, and the `PRO_ONLY` / `SEQUENTIAL_ONLY`
+ * split in `./constraints.ts` is what the per-model rows below restate:
+ * `background` and `layer_decomposition` are Seedream 5.0 pro's alone, the
+ * sequential-batch family is everyone else's, and
+ * `optimize_prompt_options.mode` narrows to `"standard"` on the three models
+ * whose docs say fast mode is not supported.
+ */
+const DOLA_SEEDREAM_5_0_PRO_SIZES = [
+  "1K", "1.5K", "2K",
+  "1024x1024", "1184x888", "888x1184", "1248x832", "832x1248", "1280x720",
+  "720x1280", "1554x666", "666x1554", "1448x724", "724x1448", "1536x1536",
+  "1776x1332", "1332x1776", "1872x1248", "1248x1872", "2048x1152", "1152x2048",
+  "2352x1008", "1008x2352", "2176x1088", "1088x2176", "2048x2048", "2368x1776",
+  "1776x2368", "2496x1664", "1664x2496", "2720x1530", "1530x2720", "3276x1404",
+  "1404x3276", "2896x1448", "1448x2896",
+] as const;
+
+const SEEDREAM_5_0_SIZES = [
+  "2K", "3K", "4K",
+  "2048x2048", "2368x1776", "1776x2368", "2496x1664", "1664x2496", "2560x1440",
+  "1440x2560", "3276x1404", "1404x3276", "2896x1448", "1448x2896", "3072x3072",
+  "3552x2664", "2664x3552", "3744x2496", "2496x3744", "4096x2304", "2304x4096",
+  "4704x2016", "2016x4704", "4344x2172", "2172x4344", "4096x4096", "4720x3540",
+  "3540x4720", "4992x3328", "3328x4992", "5440x3060", "3060x5440", "6216x2664",
+  "2664x6216", "5792x2896", "2896x5792",
+] as const;
+
+const SEEDREAM_4_5_SIZES = [
+  "2K", "4K",
+  "2048x2048", "2368x1776", "1776x2368", "2496x1664", "1664x2496", "2560x1440",
+  "1440x2560", "3276x1404", "1404x3276", "2896x1448", "1448x2896", "4096x4096",
+  "4720x3540", "3540x4720", "4992x3328", "3328x4992", "5440x3060", "3060x5440",
+  "6216x2664", "2664x6216", "5792x2896", "2896x5792",
+] as const;
+
+const SEEDREAM_4_0_SIZES = [
+  "1K", "2K", "4K",
+  "1024x1024", "1184x888", "888x1184", "1248x832", "832x1248", "1280x720",
+  "720x1280", "1554x666", "666x1554", "1448x724", "724x1448", "2048x2048",
+  "2368x1776", "1776x2368", "2496x1664", "1664x2496", "2560x1440", "1440x2560",
+  "3276x1404", "1404x3276", "2896x1448", "1448x2896", "4096x4096", "4720x3540",
+  "3540x4720", "4992x3328", "3328x4992", "5440x3060", "3060x5440", "6216x2664",
+  "2664x6216", "5792x2896", "2896x5792",
+] as const;
+
+const WATERMARK = EXTRA as boolean;
+const SEQUENTIAL = EXTRA as "auto" | "disabled";
+const SEQUENTIAL_OPTIONS = EXTRA as { max_images?: number };
+const STANDARD_ONLY = EXTRA as { mode?: "standard" };
+
+const SEQUENTIAL_EXTRAS = {
+  watermark: WATERMARK,
+  sequential_image_generation: SEQUENTIAL,
+  sequential_image_generation_options: SEQUENTIAL_OPTIONS,
+} as const;
+
+const BYTEDANCE_IMAGE_MODEL_PARAMS = {
+  "dola-seedream-5-0-pro-260628": {
+    sizes: DOLA_SEEDREAM_5_0_PRO_SIZES,
+    sizeFreeform: true,
+    tiers: ["1k", "2k"],
+    extras: {
+      watermark: WATERMARK,
+      background: EXTRA as "transparent" | "opaque",
+      layer_decomposition: EXTRA as boolean,
+      optimize_prompt_options: EXTRA as { mode?: "standard" | "fast" },
+    },
+  },
+  "seedream-5-0-260128": {
+    sizes: SEEDREAM_5_0_SIZES,
+    sizeFreeform: true,
+    tiers: ["2k", "4k"],
+    extras: { ...SEQUENTIAL_EXTRAS, optimize_prompt_options: STANDARD_ONLY },
+  },
+  "seedream-5-0-lite-260128": {
+    sizes: SEEDREAM_5_0_SIZES,
+    sizeFreeform: true,
+    tiers: ["2k", "4k"],
+    extras: { ...SEQUENTIAL_EXTRAS, optimize_prompt_options: STANDARD_ONLY },
+  },
+  "seedream-4-5-251128": {
+    sizes: SEEDREAM_4_5_SIZES,
+    sizeFreeform: true,
+    tiers: ["2k", "4k"],
+    extras: { ...SEQUENTIAL_EXTRAS, optimize_prompt_options: STANDARD_ONLY },
+  },
+  "seedream-4-0-250828": {
+    sizes: SEEDREAM_4_0_SIZES,
+    sizeFreeform: true,
+    tiers: ["1k", "2k", "4k"],
+    extras: {
+      ...SEQUENTIAL_EXTRAS,
+      optimize_prompt_options: EXTRA as { mode?: "standard" | "fast" },
+    },
+  },
+} as const satisfies ModelParamTable;
 
 /** The wire body this adapter compiles to — the loose arm of `ImageGenerationsBody`. */
 export interface BytedanceImageWire {
@@ -183,6 +318,7 @@ export const image = {
   category: "image",
   provider: "bytedance",
   models: MODELS,
+  modelParams: BYTEDANCE_IMAGE_MODEL_PARAMS,
   unsupported: {
     seed:
       "POST /api/v3/images/generations has no seed field on the current API — `seed` was a " +
@@ -201,11 +337,28 @@ export const image = {
     ctx.from(["response_format"], "outputDelivery");
     ctx.from(["output_format"], "outputFormat");
 
-    const sizing = ctx.take(resolveSizing(input, { path: ["aspectRatio"], warn: ctx.warn }));
+    const sizing = ctx.take(
+      resolveSizing(
+        input,
+        { path: ["aspectRatio"], warn: ctx.warn },
+        sizeRules(BYTEDANCE_IMAGE_MODEL_PARAMS, ctx.model),
+      ),
+    );
     const tier = input.resolution ?? "1k";
     const tiers = tiersFor(ctx.model);
 
-    if (sizing?.kind === "ratio") {
+    if (sizing?.kind === "size") {
+      // A resolution keyword — `"1K"`, `"1.5K"`, `"3K"`. `resolveSizing` has
+      // already checked it against this model's declared list, and a tier
+      // beside it would be a second answer to the same question.
+      if (input.resolution !== undefined) {
+        ctx.take(
+          redundantTier(input.resolution, { path: ["resolution"], warn: ctx.warn }, "size"),
+        );
+      }
+      ctx.from(["size"], "size");
+      body.size = sizing.size;
+    } else if (sizing?.kind === "ratio") {
       // The tier gate first, for the message — see the module note. Its value
       // is the keyword, which the free-form arm does not want; what it is
       // being asked is whether this model reaches this tier at all.
@@ -228,10 +381,16 @@ export const image = {
       // A tier alongside the pixels is refused rather than dropped: `size`
       // here IS the pixel count, so the two can only agree or contradict.
       if (input.resolution !== undefined) {
-        ctx.take(redundantTier(input.resolution, { path: ["resolution"], warn: ctx.warn }));
+        ctx.take(
+          redundantTier(
+            input.resolution,
+            { path: ["resolution"], warn: ctx.warn },
+            sizingField(sizing) === "size" ? "size" : "dimensions",
+          ),
+        );
       }
-      ctx.from(["size"], "dimensions");
-      body.size = `${sizing.dimensions.width}x${sizing.dimensions.height}`;
+      ctx.from(["size"], sizingField(sizing));
+      body.size = sizing.size ?? `${sizing.dimensions.width}x${sizing.dimensions.height}`;
     } else if (input.resolution !== undefined) {
       const keyword = ctx.take(toTier(tier, tiers, { path: ["resolution"], warn: ctx.warn }));
       if (keyword !== undefined) {
@@ -295,6 +454,12 @@ export const image = {
       body.response_format = input.outputDelivery === "url" ? "url" : "b64_json";
     }
 
+    applyExtras(input, BYTEDANCE_IMAGE_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: imageValidator.safe };
   },
-} as const satisfies UnifiedAdapter<ImageParams, BytedanceImageWire, BytedanceImageResult>;
+} as const satisfies ImageAdapterFor<
+  typeof BYTEDANCE_IMAGE_MODEL_PARAMS,
+  BytedanceImageWire,
+  BytedanceImageResult
+>;

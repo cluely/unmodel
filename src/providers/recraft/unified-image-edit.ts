@@ -46,6 +46,8 @@
  * wire-only.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveImageEditInput,
   resolveOperation,
   toStrength,
@@ -55,9 +57,12 @@ import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
   ImageEditAdapterFor,
   ImageEditParamsFor,
+  ModelParamTable,
 } from "../../core/unified/vocabulary/image-edit";
+import type { RecraftControls, RecraftTextLayoutElement } from "./image";
 import { imageEdit as imageToImage } from "./image-edit";
 import { IMAGE_TO_IMAGE_MODELS, type RecraftModelId } from "./models";
+import { RECRAFT_V3_STYLES, RECRAFT_V3_VECTOR_STYLES } from "./styles";
 
 /** The operations this route serves through the canonical vocabulary. */
 const EDIT_ONLY = ["edit"] as const;
@@ -75,6 +80,56 @@ const ENDPOINTS_DOCS = "https://www.recraft.ai/docs/api-reference/endpoints";
  * the ids that validate cannot drift.
  */
 const MODELS = [...IMAGE_TO_IMAGE_MODELS] as const satisfies readonly RecraftModelId[];
+
+/**
+ * Fourteen rows, and **no sizing on any of them**: `imageToImage` publishes no
+ * `size` and no aspect field, so `sizes` and `ratios` are both absent and
+ * `aspectRatio` / `dimensions` are declared gaps below. `size` types as
+ * `never` for the same reason, which is the answer this route actually gives.
+ *
+ * The extras are the style vocabulary, and the split is the same one the
+ * generation route has: `style` is a curated per-model list on the two V3 ids
+ * and denied on the whole V4/V4.1 line, `text_layout` is V3-only, and
+ * `negative_prompt` — which *is* a canonical word on the generation surface —
+ * is an extra here because `ImageEditParams` has no `negativePrompt`.
+ */
+const RECRAFT_EDIT_SHARED_EXTRAS = {
+  style_id: EXTRA as string | null,
+  controls: EXTRA as RecraftControls | null,
+} as const;
+
+const V4_EDIT_ROW = { extras: RECRAFT_EDIT_SHARED_EXTRAS } as const;
+
+const RECRAFT_IMAGE_EDIT_MODEL_PARAMS = {
+  recraftv3: {
+    extras: {
+      style: EXTRA as (typeof RECRAFT_V3_STYLES)[number] | (string & {}) | null,
+      negative_prompt: EXTRA as string | null,
+      text_layout: EXTRA as RecraftTextLayoutElement[] | null,
+      ...RECRAFT_EDIT_SHARED_EXTRAS,
+    },
+  },
+  recraftv3_vector: {
+    extras: {
+      style: EXTRA as (typeof RECRAFT_V3_VECTOR_STYLES)[number] | (string & {}) | null,
+      negative_prompt: EXTRA as string | null,
+      text_layout: EXTRA as RecraftTextLayoutElement[] | null,
+      ...RECRAFT_EDIT_SHARED_EXTRAS,
+    },
+  },
+  recraftv4: V4_EDIT_ROW,
+  recraftv4_vector: V4_EDIT_ROW,
+  recraftv4_pro: V4_EDIT_ROW,
+  recraftv4_pro_vector: V4_EDIT_ROW,
+  recraftv4_1: V4_EDIT_ROW,
+  recraftv4_1_vector: V4_EDIT_ROW,
+  recraftv4_1_pro: V4_EDIT_ROW,
+  recraftv4_1_pro_vector: V4_EDIT_ROW,
+  recraftv4_1_utility: V4_EDIT_ROW,
+  recraftv4_1_utility_vector: V4_EDIT_ROW,
+  recraftv4_1_utility_pro: V4_EDIT_ROW,
+  recraftv4_1_utility_pro_vector: V4_EDIT_ROW,
+} as const satisfies ModelParamTable;
 
 /** "0 = almost identical to the input, 1 = minimal similarity" — the identity map. */
 const STRENGTH: StrengthRules = { atZero: 0, atOne: 1, source: ENDPOINTS_DOCS };
@@ -98,6 +153,13 @@ export interface RecraftImageEditWire {
   image_url?: string;
   n?: number;
   random_seed?: number;
+  // The per-model extras, named for the same reason the generation wire names
+  // its own: `ImageToImageParams` has no index signature.
+  style?: string | null;
+  style_id?: string | null;
+  negative_prompt?: string | null;
+  text_layout?: RecraftTextLayoutElement[] | null;
+  controls?: RecraftControls | null;
 }
 
 /** What a unified edit call to `recraft/…` returns: `imageToImage`'s `Validated`. */
@@ -108,7 +170,12 @@ export const imageEdit = {
   provider: "recraft",
   models: MODELS,
   imageInputs: ["file", "url"],
+  modelParams: RECRAFT_IMAGE_EDIT_MODEL_PARAMS,
   unsupported: {
+    size:
+      "POST /v1/images/imageToImage publishes no size or aspect field — the result takes the " +
+      "input image's shape. `recraft.imageEditOutpaint` is the route with a `size`, and it is " +
+      "reachable at `unmodel/recraft`.",
     aspectRatio:
       "POST /v1/images/imageToImage publishes no size or aspect field — the result takes the " +
       "input image's shape. `recraft.imageEditOutpaint` is the route with a `size`, and it is " +
@@ -182,10 +249,13 @@ export const imageEdit = {
       body.random_seed = input.seed;
     }
 
+    applyExtras(input, RECRAFT_IMAGE_EDIT_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: imageToImage.safe };
   },
 } as const satisfies ImageEditAdapterFor<
   "file" | "url",
   RecraftImageEditWire,
-  RecraftImageEditResult
+  RecraftImageEditResult,
+  typeof RECRAFT_IMAGE_EDIT_MODEL_PARAMS
 >;

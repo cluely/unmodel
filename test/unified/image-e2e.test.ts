@@ -267,12 +267,15 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
   });
 
   test("leonardo's per-model dimension cap, reported at `aspectRatio`", () => {
+    // `as never`: Phoenix's `tiers` is `["1k", "2k"]`, so `"4k"` no longer
+    // compiles — the narrowing catching this at the call site is the point,
+    // and the runtime half still has to answer for JavaScript callers.
     const result = image.safe({
       model: "leonardo/phoenix-v1.0",
       prompt: "a lighthouse in fog",
       aspectRatio: "16:9",
       resolution: "4k",
-    });
+    } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]!.path).toEqual(["aspectRatio"]);
@@ -319,11 +322,15 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
   });
 
   test("a ratio no provider enum has is an error naming that provider's list", () => {
+    // `as never` because the per-model narrowing now types `aspectRatio` from
+    // Imagen's own five-value enum, so `"21:9"` no longer compiles here — which
+    // is the point of the narrowing, and exactly why the runtime half still
+    // has to be checked: a JavaScript caller reaches this branch.
     const result = image.safe({
       model: "google/imagen-4.0-generate-001",
       prompt: "a lighthouse in fog",
       aspectRatio: "21:9",
-    });
+    } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({
@@ -331,6 +338,129 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
       path: ["aspectRatio"],
     });
     expect(result.errors[0]!.meta).toMatchObject({ allowed: ["1:1", "3:4", "4:3", "9:16", "16:9"] });
+  });
+});
+
+describe("`size`, the third spelling of one decision", () => {
+  test("any two of the three is `invalid_shape` naming both", () => {
+    const pairs: Array<Record<string, unknown>> = [
+      { size: "1024x1024", aspectRatio: "1:1" },
+      { size: "1024x1024", dimensions: { width: 1024, height: 1024 } },
+      { aspectRatio: "1:1", dimensions: { width: 1024, height: 1024 } },
+    ];
+    for (const pair of pairs) {
+      const result = image.safe({
+        model: "openai/gpt-image-2",
+        prompt: "a lighthouse in fog",
+        ...pair,
+      } as never);
+      expect(result.ok, JSON.stringify(pair)).toBe(false);
+      if (result.ok) continue;
+      expect(result.errors[0]!.code).toBe("invalid_shape");
+      for (const field of Object.keys(pair)) {
+        expect(result.errors[0]!.message, field).toContain(field);
+      }
+    }
+  });
+
+  test("a tier beside a size is refused, naming `size` rather than `dimensions`", () => {
+    // `size` carries the pixel count itself, so `resolution` has nothing left
+    // to say and could only contradict it — the same rule `dimensions` meets,
+    // with the message pointed at the word the caller actually wrote.
+    const result = image.safe({
+      model: "openai/gpt-image-2",
+      prompt: "a lighthouse in fog",
+      size: "1024x1024",
+      resolution: "2k",
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path: ["resolution"] });
+    expect(result.errors[0]!.message).toContain("`size`");
+    expect(result.errors[0]!.message).not.toContain("`dimensions`");
+  });
+
+  test("a free-form preset the rules refuse is the provider's own error", () => {
+    // `"1920x1080"` COMPILES — gpt-image-2's `size` is free-form, so the type
+    // carries a `${number}x${number}` tail beside the presets and a tail
+    // cannot encode "both edges divisible by 16". 1080 is not, which is
+    // exactly why it is absent from `GPT_IMAGE_2_SIZES`. The runtime refusal
+    // is the other half of that promise, and it is `checkGptImage2Size` — the
+    // same check a hand-written call meets.
+    const result = image.safe({
+      model: "openai/gpt-image-2",
+      prompt: "a lighthouse in fog",
+      size: "1920x1080",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["size"] });
+    expect(result.errors[0]!.message).toContain("16");
+    // …while the preset that IS on the list compiles, verbatim.
+    const ok = image.safe({
+      model: "openai/gpt-image-2",
+      prompt: "a lighthouse in fog",
+      size: "2560x1440",
+    });
+    expect(ok.ok).toBe(true);
+    if (!ok.ok) return;
+    expect(ok.params).toMatchObject({ size: "2560x1440" });
+  });
+
+  test("a size outside a closed enum is refused by that model's own list", () => {
+    const result = image.safe({
+      model: "openai/dall-e-3",
+      prompt: "a lighthouse in fog",
+      size: "1920x1080",
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]!.path).toEqual(["size"]);
+  });
+
+  test("a non-pixel literal is checked against the model's declared list", () => {
+    expect(
+      image.safe({ model: "openai/gpt-image-2", prompt: "hi", size: "auto" }).ok,
+    ).toBe(true);
+    const bogus = image.safe({
+      model: "openai/gpt-image-2",
+      prompt: "hi",
+      size: "enormous",
+    } as never);
+    expect(bogus.ok).toBe(false);
+    if (bogus.ok) return;
+    expect(bogus.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["size"] });
+    expect(bogus.errors[0]!.message).toContain('"auto"');
+  });
+
+  test("at a shape-only provider a size becomes the shape, and always warns", () => {
+    // S1: the ratio is expressible, the pixel count is not. Same
+    // `pixelsToRatio` the `dimensions` arm uses — with the warning pointed at
+    // `size`, because that is the word that was written.
+    const result = image.safe({
+      model: "stability/stable-image-ultra",
+      prompt: "a lighthouse in fog",
+      size: "1920x1080",
+    } as never);
+    expect(result.ok, result.ok ? "" : JSON.stringify(result.errors)).toBe(true);
+    if (!result.ok) return;
+    expect(result.params).toMatchObject({ aspect_ratio: "16:9" });
+    const warnings = (result.params as unknown as { warnings: readonly { code: string; path: unknown[] }[] })
+      .warnings;
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatchObject({ code: "approximated_param", path: ["size"] });
+  });
+
+  test("a size no shape on the model matches is `unsupported_param`, not a snap", () => {
+    const result = image.safe({
+      model: "stability/stable-image-ultra",
+      prompt: "a lighthouse in fog",
+      // 4:1 — wider than 21:9, Stability's widest, by more than 2%.
+      size: "1200x300",
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["size"] });
   });
 });
 

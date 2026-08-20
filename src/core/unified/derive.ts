@@ -726,39 +726,147 @@ export function pixelsToRatio(
 // aspectRatio XOR dimensions
 // ---------------------------------------------------------------------------
 
-/** Which of the two spellings of size the caller used. */
+/**
+ * Which of the three spellings of size the caller used.
+ *
+ * A `WxH` `size` arrives as `kind: "dimensions"` **with** its original
+ * spelling on `size`, which is the whole reason adding the field cost no
+ * adapter a new branch: the pixel pair is what every adapter already compiles,
+ * and `size` is there only so the ones with a verbatim string field can send
+ * exactly what the caller wrote, and so provenance can name the field they
+ * actually used.
+ *
+ * `kind: "size"` is the residue — a `size` that is not a pixel pair at all
+ * (`"auto"`). Only the adapters whose wire enum contains such a literal ever
+ * see one, because {@link resolveSizing} refuses anything not in the model's
+ * declared list.
+ */
 export type Sizing =
   | { kind: "ratio"; aspectRatio: AspectRatio }
-  | { kind: "dimensions"; dimensions: Dimensions }
+  | { kind: "dimensions"; dimensions: Dimensions; size?: string }
+  | { kind: "size"; size: string }
   | { kind: "unset" };
+
+/** `"1536x1024"` → `{ width: 1536, height: 1024 }`; anything else → `undefined`. */
+export function parseSizeString(size: string): Dimensions | undefined {
+  const match = PIXEL_PAIR.exec(size.trim());
+  if (match === null) return undefined;
+  const width = Number(match[1]);
+  const height = Number(match[2]);
+  if (!(width > 0) || !(height > 0)) return undefined;
+  return { width, height };
+}
+
+/** What {@link resolveSizing} needs to know about the model to read a `size`. */
+export interface SizingRules {
+  /**
+   * The model's declared `size` values. Only consulted for a `size` that is
+   * *not* a `WxH` pair: a literal in the list passes through, and one that is
+   * not is an `invalid_enum_value` here rather than an unrecognised string on
+   * the wire. Pixel pairs are never checked here — bounds and enums are the
+   * provider validator's job, and doing it twice would mean two lists.
+   */
+  readonly sizes?: readonly string[];
+}
+
+/**
+ * One row of an adapter's per-model table, as sizing rules.
+ *
+ * Exists so an adapter can write `sizeRules(TABLE, ctx.model)` rather than
+ * casting its `as const` table to an indexable one at every call site:
+ * `ctx.model` is a `string` (a ref can name a model this build has never heard
+ * of), and a table declared `as const` has no index signature.
+ */
+export function sizeRules(table: ModelRowTable, model: string): SizingRules {
+  return (table[model] as SizingRules | undefined) ?? {};
+}
+
+/**
+ * An adapter's per-model table, as much of it as `derive.ts` needs to know.
+ *
+ * `object` rather than a shape with optional members, deliberately: a row that
+ * declares only `ratios` has no property in common with a `{ sizes?: … }`, and
+ * TypeScript's weak-type check would reject it — correctly, for a type meant
+ * to be *written*, and unhelpfully for one meant to be *read*. The two readers
+ * below cast to what they need, once each.
+ */
+export type ModelRowTable = Readonly<Record<string, object>>;
 
 /**
  * Reads the size decision off a request.
  *
  * The type already makes `{ aspectRatio, dimensions }` a compile error; this
  * is the runtime half, for JavaScript callers and anyone who casts. Reported
- * as `invalid_shape` at the root of the pair, because the fault is the
- * *combination* — pointing at either field alone would suggest deleting the
+ * as `invalid_shape` at the root of the group, because the fault is the
+ * *combination* — pointing at any one field alone would suggest deleting the
  * wrong one.
  */
 export function resolveSizing(
-  input: { aspectRatio?: AspectRatio; dimensions?: Dimensions },
+  input: { size?: string; aspectRatio?: AspectRatio; dimensions?: Dimensions },
   ctx: DeriveContext,
+  rules: SizingRules = {},
 ): Derived<Sizing> {
-  const hasRatio = input.aspectRatio !== undefined;
-  const hasDimensions = input.dimensions !== undefined;
-  if (hasRatio && hasDimensions) {
+  const written: string[] = [];
+  if (input.size !== undefined) written.push("size");
+  if (input.aspectRatio !== undefined) written.push("aspectRatio");
+  if (input.dimensions !== undefined) written.push("dimensions");
+  if (written.length > 1) {
     return bad(ctx, {
       code: "invalid_shape",
       message:
-        "`aspectRatio` and `dimensions` are two spellings of one decision; supply exactly one. " +
-        "Use `dimensions` when the pixel size matters and `aspectRatio` when only the shape does.",
-      meta: { aspectRatio: input.aspectRatio, dimensions: input.dimensions },
+        `\`${written.join("` and `")}\` are ${written.length === 3 ? "three" : "two"} spellings of one ` +
+        "decision; supply exactly one. Use `size` for the provider's own spelling, `dimensions` when " +
+        "the pixel size is computed, and `aspectRatio` when only the shape matters.",
+      meta: {
+        ...(input.size !== undefined && { size: input.size }),
+        ...(input.aspectRatio !== undefined && { aspectRatio: input.aspectRatio }),
+        ...(input.dimensions !== undefined && { dimensions: input.dimensions }),
+      },
     });
   }
-  if (hasRatio) return ok({ kind: "ratio", aspectRatio: input.aspectRatio as AspectRatio });
-  if (hasDimensions) return ok({ kind: "dimensions", dimensions: input.dimensions as Dimensions });
+  if (input.aspectRatio !== undefined) return ok({ kind: "ratio", aspectRatio: input.aspectRatio });
+  if (input.dimensions !== undefined) return ok({ kind: "dimensions", dimensions: input.dimensions });
+  if (input.size !== undefined) {
+    const dimensions = parseSizeString(input.size);
+    if (dimensions !== undefined) return ok({ kind: "dimensions", dimensions, size: input.size });
+    if (rules.sizes?.includes(input.size) === true) return ok({ kind: "size", size: input.size });
+    const literals = rules.sizes?.filter((value) => parseSizeString(value) === undefined) ?? [];
+    return {
+      // `["size"]`, not `ctx.path`: adapters pass the ratio path because that
+      // is the commonest arm, and a finding about a `size` the caller wrote
+      // has to name `size`.
+      issues: [
+        {
+          code: "invalid_enum_value",
+          path: ["size"],
+          message:
+            `\`size\` must be a "WIDTHxHEIGHT" string${
+              literals.length === 0 ? "" : ` or one of ${list(literals)}`
+            } for this model; got ${JSON.stringify(input.size)}.`,
+          meta: {
+            value: input.size,
+            ...(rules.sizes !== undefined && { allowed: [...rules.sizes] }),
+          },
+        },
+      ],
+    };
+  }
   return ok({ kind: "unset" });
+}
+
+/**
+ * The canonical field a {@link Sizing} came from, for `ctx.from`.
+ *
+ * Provenance has to name the word the caller wrote, and after `size` joined
+ * the group that is no longer decidable from `kind` alone — a `WxH` `size` and
+ * a `dimensions` pair are the same `kind` on purpose.
+ */
+export function sizingField(sizing: Sizing | undefined): "size" | "aspectRatio" | "dimensions" {
+  if (sizing === undefined) return "aspectRatio";
+  if (sizing.kind === "size") return "size";
+  if (sizing.kind === "ratio") return "aspectRatio";
+  if (sizing.kind === "dimensions") return sizing.size === undefined ? "dimensions" : "size";
+  return "aspectRatio";
 }
 
 /**
@@ -780,11 +888,16 @@ export function resolveSizing(
  * the loss contract exists to prevent: a caller who wrote `4k` and got 1 MP has
  * no warning, no error, and no way to find out except by looking at the output.
  */
-export function redundantTier(tier: ResolutionTier, ctx: DeriveContext): Derived<never> {
+export function redundantTier(
+  tier: ResolutionTier,
+  ctx: DeriveContext,
+  /** Which spelling of the pixel count the caller used — `size` says it too. */
+  beside: "dimensions" | "size" = "dimensions",
+): Derived<never> {
   return bad(ctx, {
     code: "invalid_shape",
     message:
-      `\`resolution\` ${JSON.stringify(tier)} has nothing to add beside \`dimensions\` on this ` +
+      `\`resolution\` ${JSON.stringify(tier)} has nothing to add beside \`${beside}\` on this ` +
       "model, whose size field takes pixels — the pixel count is already fixed, and the two can " +
       "disagree. Drop `resolution`, or use `aspectRatio` to size by tier instead.",
     meta: { value: tier },
@@ -2286,4 +2399,149 @@ function outOfSpeedRange(
     });
   }
   return undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Per-model extras
+// ---------------------------------------------------------------------------
+
+/**
+ * The value side of a `modelParams` extras entry: `undefined` at run time, and
+ * whatever the cast says at compile time.
+ *
+ * ```ts
+ * const GPT_IMAGE_2_EXTRAS = { background: EXTRA as "opaque" | "auto" | null } as const;
+ * ```
+ *
+ * `never` rather than `unknown` so the cast is an ordinary assertion in both
+ * directions and needs no `as unknown as`. What it buys is a single
+ * declaration that `Object.keys` can read *and* `typeof` can read — see
+ * `vocabulary/model-params.ts` for the argument in full.
+ */
+export const EXTRA: never = undefined as never;
+
+/** The minimum an adapter's per-model row has to look like from here. */
+interface ExtrasRow {
+  readonly extras?: Readonly<Record<string, unknown>>;
+}
+
+/** What {@link applyExtras} needs off the compile context. */
+export interface ExtrasContext {
+  readonly model: string;
+  fail(issue: CompileIssue): void;
+  from(wirePath: Array<string | number>, canonical: string): void;
+}
+
+/** Where the extras land, when they are not top-level wire keys. */
+export interface ExtrasOptions {
+  /**
+   * The wire path they nest under — `["parameters"]` for Imagen's `:predict`
+   * body. Missing objects along the path are created. Empty (the default)
+   * means the body root, which is what most endpoints want.
+   */
+  readonly at?: readonly string[];
+}
+
+/**
+ * Copies a model's declared extras onto the wire body, verbatim, and refuses
+ * one the model does not take.
+ *
+ * **Identity, deliberately.** An extra is already spelled the way the provider
+ * spells it — that is what makes it an extra rather than a canonical word — so
+ * there is nothing to translate and nothing to approximate. The value goes
+ * across untouched and `ctx.from` maps the wire path back to the same name, so
+ * a finding the *provider's* validator raises about it arrives at the key the
+ * caller typed. Which is the second half of the design: these are re-checked
+ * by the endpoint's own schema and deny tables, so an untyped caller who
+ * passes `background: "transparent"` to `gpt-image-2` still gets the deny
+ * error citing the recorded 400 — the types are the fast path, not the only
+ * one.
+ *
+ * A key some *other* model on this adapter takes is an `unsupported_param`
+ * naming the models that do, rather than a silent pass-through to a schema
+ * that would reject it under a name the caller does not recognise.
+ *
+ * Runs **before** `providerOptions` is merged, so the escape hatch still wins.
+ */
+export function applyExtras(
+  params: object,
+  rows: ModelRowTable,
+  wire: object,
+  ctx: ExtrasContext,
+  options: ExtrasOptions = {},
+): void {
+  // The canonical vocabulary has no index signature — deliberately, it is a
+  // closed list of words — and an extra is by definition a key it does not
+  // name. Same on the wire side, where the body is a discriminated union of
+  // route arms. Both casts are said once, here, rather than at every adapter.
+  const input = params as Readonly<Record<string, unknown>>;
+  const body = wire as Record<string, unknown>;
+  const table = rows as Readonly<Record<string, ExtrasRow>>;
+  const row = table[ctx.model];
+  // An unrecognised model has already drawn `unknown_model` from the kernel,
+  // and the same sentence applies here: model-dependent checks are skipped, so
+  // an extra rides through to the provider's schema rather than being refused
+  // by a table that does not know this model.
+  const known = row !== undefined;
+  const mine = row?.extras;
+  for (const key of extraNames(table)) {
+    const value = input[key];
+    if (value === undefined) continue;
+    if (known && (mine === undefined || !Object.hasOwn(mine, key))) {
+      const takers = Object.keys(table).filter((id) => {
+        const extras = table[id]?.extras;
+        return extras !== undefined && Object.hasOwn(extras, key);
+      });
+      ctx.fail({
+        code: "unsupported_param",
+        path: [key],
+        message:
+          `\`${key}\` is not a parameter "${ctx.model}" accepts; it is taken by ${list(takers)}.`,
+        meta: { value, models: takers },
+      });
+      continue;
+    }
+    const path = [...(options.at ?? []), key];
+    ctx.from(path, key);
+    place(body, path, value);
+  }
+}
+
+/** Every extra name any model in one table declares, deduplicated. */
+function extraNames(table: Readonly<Record<string, ExtrasRow>>): readonly string[] {
+  const names = new Set<string>();
+  for (const row of Object.values(table)) {
+    if (row.extras === undefined) continue;
+    for (const key of Object.keys(row.extras)) names.add(key);
+  }
+  return [...names];
+}
+
+/**
+ * Writes `value` at `path`, creating the plain objects along the way and
+ * **merging** rather than replacing when both sides are plain objects.
+ *
+ * The merge is what lets a nested extra share a wire object with a canonical
+ * param: Imagen's `outputOptions` carries `mimeType` (compiled from
+ * `outputFormat`) and `compressionQuality` (an extra), and replacing the
+ * object would silently delete whichever of the two was written first. Same
+ * rule the kernel's `deepMerge` uses for `providerOptions`, for the same
+ * reason.
+ */
+function place(body: Record<string, unknown>, path: readonly string[], value: unknown): void {
+  let node = body;
+  for (let i = 0; i < path.length - 1; i += 1) {
+    const segment = path[i] as string;
+    const next = node[segment];
+    if (!isPlainRecord(next)) node[segment] = {};
+    node = node[segment] as Record<string, unknown>;
+  }
+  const key = path[path.length - 1] as string;
+  const existing = node[key];
+  node[key] =
+    isPlainRecord(existing) && isPlainRecord(value) ? { ...existing, ...value } : value;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

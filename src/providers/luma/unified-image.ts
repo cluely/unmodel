@@ -69,10 +69,21 @@
  * canonical spelling in this category and stay reachable through
  * `providerOptions.luma`.
  */
-import { pixelsToRatio, resolveSizing, toRatioEnum } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { ImageParams } from "../../core/unified/vocabulary/image";
-import { image as validator } from "./image";
+import {
+  applyExtras,
+  EXTRA,
+  pixelsToRatio,
+  resolveSizing,
+  sizingField,
+  toRatioEnum,
+} from "../../core/unified/derive";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  ImageAdapterFor,
+  ImageParams,
+  ModelParamTable,
+} from "../../core/unified/vocabulary/image";
+import { image as validator, type LumaCharacterRef, type LumaImageRef } from "./image";
 // `./shared`, not `./generations`, for the same bundle reason `./image.ts`
 // gives: the ratio list lives beside the URL prefix so that an image entry
 // never drags the video validator's schema, checks and pricing table in.
@@ -80,6 +91,35 @@ import { LUMA_ASPECT_RATIOS, type LumaAspectRatio } from "./shared";
 
 /** The two Photon rows in the route-scoped catalog — the ref union for `luma/…`. */
 const MODELS = ["photon-1", "photon-flash-1"] as const;
+
+/**
+ * Photon's per-model surface, which is the same row twice: the two ids share
+ * `ImageGenerationsParams` byte for byte and differ only in price.
+ *
+ * No `sizes`, because `POST /generations/image` has no pixel field of any kind
+ * — so `size` types as `never` and an editor offers the seven shapes instead.
+ * `tiers` is empty for the same reason `resolution` is a declared gap below:
+ * there is no size field to carry a tier, and saying so in the type means the
+ * mistake is caught before the request is built.
+ *
+ * The three extras are Photon's reference inputs. They are typed from
+ * `./image.ts`'s own interfaces rather than restated, so the shape an editor
+ * offers and the shape `imageGenerations` checks are one declaration.
+ */
+const LUMA_ROW = {
+  ratios: LUMA_ASPECT_RATIOS,
+  tiers: [],
+  extras: {
+    style_ref: EXTRA as LumaImageRef[],
+    character_ref: EXTRA as LumaCharacterRef,
+    modify_image_ref: EXTRA as LumaImageRef,
+  },
+} as const;
+
+const LUMA_IMAGE_MODEL_PARAMS = {
+  "photon-1": LUMA_ROW,
+  "photon-flash-1": LUMA_ROW,
+} as const satisfies ModelParamTable;
 
 const IMAGE_GENERATION_DOCS = "https://docs.lumalabs.ai/docs/image-generation";
 
@@ -116,6 +156,7 @@ export const image = {
   category: "image",
   provider: "luma",
   models: MODELS,
+  modelParams: LUMA_IMAGE_MODEL_PARAMS,
   unsupported: {
     resolution:
       "POST /generations/image has no size, resolution or dimension field — Photon derives the " +
@@ -151,10 +192,13 @@ export const image = {
       // the literal type the derivation widened to `string`.
       if (ratio !== undefined) body.aspect_ratio = ratio as LumaAspectRatio;
     } else if (sizing?.kind === "dimensions") {
-      ctx.from(["aspect_ratio"], "dimensions");
+      // `size` lands here too — a `"1920x1080"` is the same decision as the
+      // pair, and neither survives a route whose only shape field is a ratio.
+      const wrote = sizingField(sizing);
+      ctx.from(["aspect_ratio"], wrote);
       const { width, height } = sizing.dimensions;
       const ratio = ctx.take(
-        pixelsToRatio(width, height, LUMA_ASPECT_RATIOS, { path: ["dimensions"], warn: ctx.warn }),
+        pixelsToRatio(width, height, LUMA_ASPECT_RATIOS, { path: [wrote], warn: ctx.warn }),
       );
       if (ratio !== undefined) body.aspect_ratio = ratio as LumaAspectRatio;
     }
@@ -187,6 +231,12 @@ export const image = {
       });
     }
 
+    applyExtras(input, LUMA_IMAGE_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<ImageParams, LumaImageWire, LumaImageResult>;
+} as const satisfies ImageAdapterFor<
+  typeof LUMA_IMAGE_MODEL_PARAMS,
+  LumaImageWire,
+  LumaImageResult
+>;

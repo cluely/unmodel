@@ -30,8 +30,10 @@ import {
   ratioDistance,
   ratioValue,
   resolveAudioFormat,
+  parseSizeString,
   resolveSizing,
   resolveVoice,
+  sizingField,
   toPrimaryLanguage,
   TIER_PIXELS,
   toDurationNumber,
@@ -482,6 +484,82 @@ describe("resolveSizing", () => {
     expect(out.value).toBeUndefined();
     expect(out.issues[0]!.code).toBe("invalid_shape");
     expect(out.issues[0]!.message).toContain("exactly one");
+  });
+
+  test("any two of the three is the same error, naming both", () => {
+    for (const pair of [
+      { size: "1024x1024", aspectRatio: "16:9" as const },
+      { size: "1024x1024", dimensions: { width: 800, height: 600 } },
+      { aspectRatio: "16:9" as const, dimensions: { width: 800, height: 600 } },
+    ]) {
+      const out = resolveSizing(pair, ctxAt("aspectRatio"));
+      expect(out.value).toBeUndefined();
+      expect(out.issues[0]!.code).toBe("invalid_shape");
+      for (const field of Object.keys(pair)) {
+        expect(out.issues[0]!.message).toContain(field);
+      }
+    }
+    const all = resolveSizing(
+      { size: "1024x1024", aspectRatio: "16:9", dimensions: { width: 8, height: 6 } },
+      ctxAt("aspectRatio"),
+    );
+    expect(all.issues[0]!.message).toContain("three spellings");
+  });
+
+  test('a "WxH" size is the dimensions arm, with the spelling kept', () => {
+    // The whole reason adding `size` cost no adapter a new branch: a pixel
+    // pair is what every adapter already compiles, and the original spelling
+    // rides along for the ones whose wire field is a verbatim string.
+    expect(resolveSizing({ size: "1536x1024" }, ctxAt("aspectRatio")).value).toEqual({
+      kind: "dimensions",
+      dimensions: { width: 1536, height: 1024 },
+      size: "1536x1024",
+    });
+  });
+
+  test("a non-pixel size is checked against the model's declared list", () => {
+    const ok = resolveSizing({ size: "auto" }, ctxAt("aspectRatio"), {
+      sizes: ["auto", "1024x1024"],
+    });
+    expect(ok.value).toEqual({ kind: "size", size: "auto" });
+
+    const bad = resolveSizing({ size: "huge" }, ctxAt("aspectRatio"), {
+      sizes: ["auto", "1024x1024"],
+    });
+    expect(bad.value).toBeUndefined();
+    expect(bad.issues[0]!.code).toBe("invalid_enum_value");
+    // At `size`, not at the ratio path the adapter passed in.
+    expect(bad.issues[0]!.path).toEqual(["size"]);
+    expect(bad.issues[0]!.message).toContain('"auto"');
+    expect(bad.issues[0]!.message).not.toContain('"1024x1024"');
+
+    const noList = resolveSizing({ size: "auto" }, ctxAt("aspectRatio"));
+    expect(noList.issues[0]!.code).toBe("invalid_enum_value");
+  });
+
+  test("sizingField names the word the caller wrote", () => {
+    expect(sizingField(resolveSizing({ size: "8x6" }, ctxAt("aspectRatio")).value)).toBe("size");
+    expect(
+      sizingField(resolveSizing({ dimensions: { width: 8, height: 6 } }, ctxAt("x")).value),
+    ).toBe("dimensions");
+    expect(sizingField(resolveSizing({ aspectRatio: "4:3" }, ctxAt("x")).value)).toBe("aspectRatio");
+    expect(sizingField(resolveSizing({}, ctxAt("x")).value)).toBe("aspectRatio");
+    expect(sizingField(undefined)).toBe("aspectRatio");
+  });
+});
+
+describe("parseSizeString", () => {
+  test("reads the two spellings a size can arrive in", () => {
+    expect(parseSizeString("1536x1024")).toEqual({ width: 1536, height: 1024 });
+    expect(parseSizeString(" 1536 x 1024 ")).toEqual({ width: 1536, height: 1024 });
+    expect(parseSizeString("1536X1024")).toEqual({ width: 1536, height: 1024 });
+    expect(parseSizeString("1536×1024")).toEqual({ width: 1536, height: 1024 });
+  });
+
+  test("anything that is not a positive pixel pair is undefined, not a guess", () => {
+    for (const value of ["auto", "16:9", "1024", "0x1024", "1024x0", "1024x", "x1024", ""]) {
+      expect(parseSizeString(value), value).toBeUndefined();
+    }
   });
 });
 

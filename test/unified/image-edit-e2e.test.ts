@@ -234,7 +234,11 @@ describe("the provider's own checks reach the canonical path", () => {
     if (tooBig.ok) return;
     expect(tooBig.errors[0]!.code).toBe("media_too_large");
     expect(tooBig.errors[0]!.path).toEqual(["image"]);
-    expect(tooBig.errors[0]!.message).toContain("compiled from `image`");
+    // No "(compiled from …)" suffix: the wire key is `image` and so is the
+    // canonical one, and a message that explains a rename that did not happen
+    // reads like a bug. The suffix appears when the two differ — see the
+    // `size` cases above, and `kernel.ts`'s `remap`.
+    expect(tooBig.errors[0]!.message).not.toContain("compiled from");
 
     const wrongFormat = imageEdit.safe({
       operation: "edit",
@@ -290,7 +294,7 @@ describe("the provider's own checks reach the canonical path", () => {
     if (result.ok) return;
     expect(result.errors[0]!.code).toBe("over_output_limit");
     expect(result.errors[0]!.path).toEqual(["prompt"]);
-    expect(result.errors[0]!.message).toContain("compiled from `prompt`");
+    expect(result.errors[0]!.message).not.toContain("compiled from");
   });
 
   test("a Recraft model the editing route does not serve is that route's own error", () => {
@@ -541,6 +545,65 @@ describe("the image narrowing, at run time", () => {
       image: { data: "data:image/png;base64,aVZCT1J3MEtHZ28=" },
     });
     expect((params as unknown as { input_image: string }).input_image).toBe("aVZCT1J3MEtHZ28=");
+  });
+});
+
+describe("`size`, on the editing routes", () => {
+  test("a preset compiles verbatim, and the XOR still holds", () => {
+    const ok = imageEdit.safe({
+      operation: "edit",
+      model: "openai/gpt-image-2",
+      prompt: PROMPT,
+      image: { file: png() },
+      size: "2560x1440",
+    } as never);
+    expect(ok.ok, ok.ok ? "" : JSON.stringify(ok.errors)).toBe(true);
+    if (!ok.ok) return;
+    expect(ok.params).toMatchObject({ size: "2560x1440" });
+
+    const both = imageEdit.safe({
+      operation: "edit",
+      model: "openai/gpt-image-2",
+      prompt: PROMPT,
+      image: { file: png() },
+      size: "2560x1440",
+      aspectRatio: "16:9",
+    } as never);
+    expect(both.ok).toBe(false);
+    if (both.ok) return;
+    expect(both.errors[0]!.code).toBe("invalid_shape");
+  });
+
+  test("the free-form tail's promise is kept by the endpoint, not by the type", () => {
+    // Same story as on generations: `"1920x1080"` is inside the template tail
+    // and outside gpt-image-2's 16-px rule, so the type admits it and
+    // `checkGptImage2Size` refuses it.
+    const result = imageEdit.safe({
+      operation: "edit",
+      model: "openai/gpt-image-2",
+      prompt: PROMPT,
+      image: { file: png() },
+      size: "1920x1080",
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["size"] });
+  });
+
+  test("at a route with no size field the string becomes the shape, and warns", () => {
+    const result = imageEdit.safe({
+      operation: "edit",
+      model: "black-forest-labs/flux-kontext-pro",
+      prompt: PROMPT,
+      image: { url: "https://example.com/street.png" },
+      size: "1920x1080",
+    } as never);
+    expect(result.ok, result.ok ? "" : JSON.stringify(result.errors)).toBe(true);
+    if (!result.ok) return;
+    expect(result.params).toMatchObject({ aspect_ratio: "16:9" });
+    const warnings = (result.params as unknown as { warnings: readonly { path: unknown[] }[] })
+      .warnings;
+    expect(warnings.some((warning) => warning.path[0] === "size")).toBe(true);
   });
 });
 

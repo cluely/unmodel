@@ -313,10 +313,14 @@ describe("bounds and rules the adapter did not copy surface as the provider's ow
   });
 
   test("openai's whisper-only granularities, reported at `timestamps`", () => {
+    // The cast is the point of the test: `gpt-4o-transcribe`'s row now types
+    // `timestamps` as `"none"`, so a TypeScript caller cannot write this at
+    // all. What is under test is the run-time half of the same rule — the one
+    // that has to hold for JavaScript callers and run-time-built refs.
     const result = transcribe.safe({
       model: "openai/gpt-4o-transcribe",
       audio: { file: audio() },
-      timestamps: "word",
+      timestamps: "word" as "none",
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;

@@ -24,9 +24,10 @@
  * ref → row lookup, the extras derivations — is declared once, over
  * {@link ModelParamsBase}. Each category then extends that base with the fields
  * its own vocabulary narrows ({@link ModelParams} for the two image surfaces,
- * {@link VideoModelParams} for video) and gets its own derivations. Adding a
- * seventh category means adding a row interface and its derivations, not a
- * second copy of the lookup.
+ * {@link VideoModelParams}, {@link SpeechModelParams},
+ * {@link TranscribeModelParams}, {@link MusicModelParams}) and gets its own
+ * derivations. Adding a seventh category means adding a row interface and its
+ * derivations, not a second copy of the lookup.
  *
  * ## One table, three consumers
  *
@@ -36,9 +37,9 @@
  *
  * | reader | what it takes |
  * |---|---|
- * | the caller's types | `sizes` → the `size` union, `ratios` → `aspectRatio`, `tiers` → `resolution`, `extras` → the per-model extra params |
+ * | the caller's types | `sizes` → the `size` union, `ratios` → `aspectRatio`, `tiers` / `resolutions` → `resolution`, `durations` → `duration`, `codecs` → `outputFormat`, `languages` → `language`, `timestamps` → `timestamps`, `extras` → the per-model extra params |
  * | the adapter's `compile` | `extras`' **keys**, to identity-copy them onto the wire and to refuse one the model does not take |
- * | the preset sweep | `sizes`, to prove every value an editor suggests is one the provider's own validator accepts |
+ * | the preset sweep | every list, to prove each value an editor suggests is one the provider's own validator accepts |
  *
  * A second declaration could not be kept in step with the first, and the
  * autocomplete promise is only worth anything if the suggestions are provably
@@ -70,7 +71,14 @@ import type {
   AdapterFor,
   RefModel,
 } from "../types";
+import type { AudioFormat, AudioFormatCodec, AudioFormatRequest } from "./audio";
 import type { AspectRatio, Dimensions, ResolutionTier, VideoResolution } from "./common";
+// Type-only, and therefore fine that `./transcribe` imports this file back: an
+// `import type` is erased before emit, so the cycle exists only in the checker,
+// which resolves it. The alternative — moving the granularity union into
+// `./common` — would file a transcription word under "shared vocabulary" purely
+// to dodge an edge the language handles.
+import type { TimestampGranularity } from "./transcribe";
 
 /**
  * What every category's row carries: the params the canonical vocabulary has no
@@ -201,6 +209,100 @@ export interface VideoModelParams extends ModelParamsBase {
 
 /** A video adapter's per-model table, keyed by **bare** model id. */
 export type VideoModelParamTable = Readonly<Record<string, VideoModelParams>>;
+
+/**
+ * One speech model's request surface, beyond the canonical vocabulary.
+ *
+ * ## What is here, and what deliberately is not
+ *
+ * Two fields, because two are what a *type* can state honestly about a
+ * text-to-speech request:
+ *
+ * - **`codecs`** is a closed set at every one of the fourteen providers. A
+ *   codec the endpoint has no spelling for is an error, never an approximation,
+ *   so the list is the limit in both directions and the union carries no tail.
+ * - **`languages`** is a closed set on the wire and an *open* one in the
+ *   vocabulary — see {@link LanguageOf}.
+ *
+ * **`sampleRate` and `bitrate` are not here, on purpose.** They are the
+ * category's real complexity and the one shape a per-model row cannot carry: at
+ * ElevenLabs they are a *composite enum* (`mp3_22050_32` exists, `mp3_22050_128`
+ * does not — the legal pairs are not the cross product), at Cartesia and MiniMax
+ * they are per-codec lists whose validity depends on the codec chosen in the
+ * same object, and at Deepgram opus takes a bitrate anywhere in 4–650 kbps,
+ * which is a range. Typing any of that would mean either a matrix type keyed on
+ * a sibling property or a union of several hundred members — for a check
+ * `AudioFormatSpec` already performs at run time, with a message that names the
+ * rates the codec *does* take. So the row narrows the codec, and the sample
+ * rate stays run time's job.
+ *
+ * **`voice` is not here either, and stays wide everywhere.** Voice catalogs are
+ * the one part of a TTS API that is genuinely dynamic: they are per-account
+ * (every provider here supports cloned voices, which no snapshot can enumerate),
+ * they run to thousands of entries at ElevenLabs and Murf, and they turn over
+ * between releases. A union of a few hundred ids would be stale within a month,
+ * would refuse the caller's own cloned voice, and would put the largest
+ * completion list in the library in front of the field. The one provider where
+ * the voice *is* knowable is Deepgram — because there the voice is the model —
+ * and that is already typed, by the ref union, at no extra cost.
+ */
+export interface SpeechModelParams extends ModelParamsBase {
+  /**
+   * The canonical codecs this model can emit — after the adapter's own mapping,
+   * so `pcm_s16le` is here for an endpoint whose wire spells it `"linear16"`,
+   * `"pcm"` or `"wav"`. Exhaustive, and therefore closed: an off-list codec is
+   * a compile error naming the ones that exist.
+   */
+  readonly codecs?: readonly AudioFormatCodec[];
+  /**
+   * The languages this model's language field enumerates, as primary subtags.
+   * Absent means the model has no closed list to offer — either the field is
+   * free-form or the adapter declares it unsupported.
+   */
+  readonly languages?: readonly string[];
+}
+
+/** A speech adapter's per-model table, keyed by **bare** model id. */
+export type SpeechModelParamTable = Readonly<Record<string, SpeechModelParams>>;
+
+/**
+ * One transcription model's request surface, beyond the canonical vocabulary.
+ *
+ * The category already narrows one field per **adapter** — `audioInputs`, which
+ * decides the shape of `audio` — and that stays exactly where it is. It
+ * composes with this one rather than competing: the two narrow different keys
+ * through different mechanisms (a route's input shapes are an adapter fact, a
+ * granularity set is a model fact), and `TranscribeValidator` intersects both.
+ */
+export interface TranscribeModelParams extends ModelParamsBase {
+  /**
+   * The timing detail this route can return. Every entry is a granularity the
+   * caller can *ask for* and get; `"none"` is on the list exactly when asking
+   * for plain text is expressible, which is not everywhere — several routes
+   * always return word timings and have no switch to turn them off.
+   */
+  readonly timestamps?: readonly TimestampGranularity[];
+  /** The languages this model's language field enumerates. See {@link LanguageOf}. */
+  readonly languages?: readonly string[];
+}
+
+/** A transcribe adapter's per-model table, keyed by **bare** model id. */
+export type TranscribeModelParamTable = Readonly<Record<string, TranscribeModelParams>>;
+
+/**
+ * One music model's request surface, beyond the canonical vocabulary.
+ *
+ * The smallest row in the file, matching the smallest vocabulary: `prompt`,
+ * `durationSeconds`, `instrumental` and `seed` are either free-form or booleans,
+ * so `outputFormat` is the only canonical word with a per-model enum behind it.
+ */
+export interface MusicModelParams extends ModelParamsBase {
+  /** The canonical codecs this model can emit — same contract as {@link SpeechModelParams.codecs}. */
+  readonly codecs?: readonly AudioFormatCodec[];
+}
+
+/** A music adapter's per-model table, keyed by **bare** model id. */
+export type MusicModelParamTable = Readonly<Record<string, MusicModelParams>>;
 
 /** An adapter that carries one. Every narrowing category's adapter type extends it. */
 export interface WithModelParams<T extends AnyModelParamTable = AnyModelParamTable> {
@@ -409,3 +511,115 @@ export type VideoModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] ex
       VideoResolutionOf<ModelParamsFor<A, R>>,
       VideoRatioOf<ModelParamsFor<A, R>>
     >;
+
+// ---------------------------------------------------------------------------
+// The three audio categories: row → the caller's types
+// ---------------------------------------------------------------------------
+
+/** `codecs` → the codec union; absent keeps every codec the vocabulary has. */
+export type CodecOf<Row> = Row extends {
+  readonly codecs: readonly (infer C extends AudioFormatCodec)[];
+}
+  ? C
+  : AudioFormatCodec;
+
+/**
+ * `codecs` → the whole `outputFormat` type, with **both** spellings narrowed.
+ *
+ * `AudioFormatRequest` is `AudioFormatCodec | AudioFormat`, and narrowing only
+ * the shorthand would leave `{ format: "vorbis" }` compiling at a provider that
+ * has never heard of Vorbis — the object form is the one a caller reaches for
+ * precisely when they care about the encoding, so it is the half that must not
+ * be left wide.
+ *
+ * Spelled `Omit<AudioFormat, "format"> & { format: C }` rather than
+ * `AudioFormat & { format: C }`: the latter leaves two `format` declarations in
+ * the intersection and the property's type becomes `AudioFormatCodec & C`,
+ * which is a *deferred* intersection — assignability still works, but the
+ * contextual type at a `format:` completion position is no longer a plain
+ * literal union and the editor's list goes wide. Replacing the property
+ * outright is the same rule {@link SizingArms} states, one level down.
+ */
+export type AudioFormatOf<Row> =
+  | CodecOf<Row>
+  | (Omit<AudioFormat, "format"> & { format: CodecOf<Row> });
+
+/**
+ * `languages` → the `language` union; absent keeps the wide `string`.
+ *
+ * **Open, unlike every other list in this file**, and the `(string & {})` tail
+ * is the whole argument. The canonical `language` is a BCP-47 *tag*, while the
+ * wire fields these lists come from are enums of bare primary subtags — so
+ * `language: "pt-BR"` is a legal, working request that `toPrimaryLanguage`
+ * sends as `"pt"` with an `approximated_param` naming the subtag it could not
+ * express (and `"pt_BR"`, which half the world's locale plumbing emits, is
+ * accepted too). A closed union would make both of those compile errors: a
+ * false negative on a request the library deliberately supports, which is the
+ * one failure mode worse than no narrowing at all. Widening the union to
+ * `` `${L}-${string}` `` tails instead would triple its size and still lie
+ * about the underscore spelling.
+ *
+ * So the list **completes** and does not gate — exactly what a model ref does,
+ * for exactly the reason `UnifiedInput` gives — and the provider's own enum
+ * check is what refuses `"xx"`, naming the languages it has.
+ */
+export type LanguageOf<Row> = Row extends {
+  readonly languages: readonly (infer L extends string)[];
+}
+  ? L | (string & {})
+  : string;
+
+/** `timestamps` → the `timestamps` union; absent keeps all four granularities. */
+export type TimestampsOf<Row> = Row extends {
+  readonly timestamps: readonly (infer T extends TimestampGranularity)[];
+}
+  ? T
+  : TimestampGranularity;
+
+/**
+ * The two fields a speech row narrows, as a complete **replacement** for the
+ * vocabulary's own — {@link SizingArms}'s rule, and this category has its own
+ * reason to obey it: {@link LanguageOf} carries a `(string & {})` tail, and an
+ * intersection with the base's `language?: string` would discharge the brace,
+ * leave a bare `string` in the union, and let subtype reduction eat all
+ * forty-two codes while tsc stayed green. `SpeechParamsBase` therefore omits
+ * both fields, so this is the only source of their contextual type.
+ */
+type SpeechArms<Format, Language> = {
+  outputFormat?: Format;
+  language?: Language;
+};
+
+/**
+ * The `outputFormat` / `language` pair one ref admits. Degraded — dynamic ref,
+ * unknown provider, unknown model — it restates the wide vocabulary.
+ */
+export type SpeechModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? SpeechArms<AudioFormatRequest, string>
+  : SpeechArms<AudioFormatOf<ModelParamsFor<A, R>>, LanguageOf<ModelParamsFor<A, R>>>;
+
+/** {@link SpeechArms} for transcription: the granularity set and the languages. */
+type TranscribeArms<Stamps, Language> = {
+  timestamps?: Stamps;
+  language?: Language;
+};
+
+/**
+ * The `timestamps` / `language` pair one ref admits.
+ *
+ * Composes with — never replaces — this category's *other* narrowing:
+ * `AudioNarrowing` types `audio` from the adapter's `audioInputs`, which is a
+ * different key reached through a different mechanism, so the two intersect
+ * cleanly in `TranscribeValidator`.
+ */
+export type TranscribeModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? TranscribeArms<TimestampGranularity, string>
+  : TranscribeArms<TimestampsOf<ModelParamsFor<A, R>>, LanguageOf<ModelParamsFor<A, R>>>;
+
+/** The one field a music row narrows. */
+type MusicArms<Format> = { outputFormat?: Format };
+
+/** The `outputFormat` one ref admits, restated wide when the ref is degraded. */
+export type MusicModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? MusicArms<AudioFormatRequest>
+  : MusicArms<AudioFormatOf<ModelParamsFor<A, R>>>;

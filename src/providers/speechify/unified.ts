@@ -22,15 +22,21 @@
  * character cap, and the unified surface targets the JSON one.
  */
 import {
+  applyExtras,
   bitsToKbps,
+  EXTRA,
   normalizeAudioFormat,
   resolveAudioFormat,
   resolveVoice,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
 import type { AudioContainer, AudioFormatCodec } from "../../core/unified/vocabulary/audio";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { SpeechParams } from "../../core/unified/vocabulary/speech";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  SpeechAdapterFor,
+  SpeechModelParamTable,
+  SpeechParams,
+} from "../../core/unified/vocabulary/speech";
 import {
   speech as validator,
   type AudioSpeechBody,
@@ -87,10 +93,50 @@ function containerFor(
   return undefined;
 }
 
+/**
+ * Speechify's per-model surface, and the one model whose language list is one
+ * value long.
+ *
+ * `simba-3.2` is English only — the provider's `checkLanguage` refuses anything
+ * that does not start `en`, citing the 400 it would otherwise return — so its
+ * row says `languages: ["en"]` and an editor completes exactly that. The other
+ * three carry no list: `simba-3.0`'s six extra locales and
+ * `simba-multilingual`'s "30+" are documented in prose rather than as an enum,
+ * and `checkLanguage` deliberately does not gate them ("the docs say 30+ and do
+ * not enumerate"). A completion list with no authority behind it would be a
+ * guess dressed as a capability.
+ *
+ * The two extras are `options`' members, nested through
+ * {@link OPTIONS_NESTING}: loudness normalization to −14 LUFS, and the
+ * numbers-and-dates text expansion whose *default* differs between this route
+ * and the streaming one — which is exactly why it is worth being able to set
+ * explicitly.
+ */
+const SPEECHIFY_EXTRAS = {
+  loudness_normalization: EXTRA as boolean,
+  text_normalization: EXTRA as boolean,
+} as const;
+
+const CODECS = ["mp3", "aac", "pcm_s16le", "pcm_mulaw"] as const;
+
+const SPEECHIFY_SPEECH_MODEL_PARAMS = {
+  "simba-english": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
+  "simba-multilingual": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
+  "simba-3.0": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
+  "simba-3.2": { codecs: CODECS, languages: ["en"], extras: SPEECHIFY_EXTRAS },
+} as const satisfies SpeechModelParamTable;
+
+/** Both extras live under `options`. */
+const OPTIONS_NESTING: Readonly<Record<string, readonly string[]>> = {
+  loudness_normalization: ["options"],
+  text_normalization: ["options"],
+};
+
 export const speech = {
   category: "speech",
   provider: "speechify",
   models: MODELS,
+  modelParams: SPEECHIFY_SPEECH_MODEL_PARAMS,
   unsupported: {
     speed:
       "POST /v1/audio/speech publishes no speaking-rate field — pace is controlled with SSML " +
@@ -165,6 +211,12 @@ export const speech = {
     // takes — no reduction, no warning.
     if (input.language !== undefined) body.language = input.language;
 
+    applyExtras(input, SPEECHIFY_SPEECH_MODEL_PARAMS, body, ctx, { nest: OPTIONS_NESTING });
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<SpeechParams, SpeechifySpeechWire, SpeechifySpeechResult>;
+} as const satisfies SpeechAdapterFor<
+  typeof SPEECHIFY_SPEECH_MODEL_PARAMS,
+  SpeechifySpeechWire,
+  SpeechifySpeechResult
+>;

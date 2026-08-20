@@ -26,13 +26,19 @@
  * translation to be readable.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioFormat,
   resolveVoice,
   toSpeed,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { SpeechParams } from "../../core/unified/vocabulary/speech";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  SpeechAdapterFor,
+  SpeechModelParamTable,
+  SpeechParams,
+} from "../../core/unified/vocabulary/speech";
 import { speech as validator, type SpeechCustomVoice } from "./speech";
 
 /** Every speech model the hand catalog carries — the ref union for `openai/…`. */
@@ -71,10 +77,38 @@ const FORMAT: AudioFormatSpec = {
 /** Documented `speed` bounds: "0.25 to 4.0; 1.0 is the default". */
 const SPEED = { min: 0.25, max: 4, source: SPEECH_DOCS };
 
+/** The five codecs `response_format` names, in canonical spelling. */
+const CODECS = ["mp3", "opus", "aac", "flac", "pcm_s16le"] as const;
+
+/**
+ * OpenAI's per-model speech surface: one codec set, and one param that splits
+ * the catalog in two.
+ *
+ * `instructions` is `gpt-4o-mini-tts`'s alone — "Does not work with `tts-1` or
+ * `tts-1-hd`", which `./speech.ts` states in the type system as
+ * `instructions?: never` on the tts-1 arms and `constraints.ts` re-states as a
+ * deny rule. Declaring it here makes that the same fact a third time in the one
+ * place a *unified* caller can see it, and an editor now offers the key on the
+ * two models that take it and refuses it on the two that do not.
+ *
+ * `stream_format` is deliberately absent: it selects SSE framing rather than
+ * anything about the audio, which puts it in the transport half that
+ * `providerOptions.openai` owns. `language` is not narrowed because the
+ * endpoint has no language field at all — the adapter declares that gap
+ * outright, and the kernel reports it before compile.
+ */
+const OPENAI_SPEECH_MODEL_PARAMS = {
+  "tts-1": { codecs: CODECS },
+  "tts-1-hd": { codecs: CODECS },
+  "gpt-4o-mini-tts": { codecs: CODECS, extras: { instructions: EXTRA as string } },
+  "gpt-4o-mini-tts-2025-12-15": { codecs: CODECS, extras: { instructions: EXTRA as string } },
+} as const satisfies SpeechModelParamTable;
+
 export const speech = {
   category: "speech",
   provider: "openai",
   models: MODELS,
+  modelParams: OPENAI_SPEECH_MODEL_PARAMS,
   unsupported: {
     language:
       "POST /v1/audio/speech has no language field — gpt-4o-mini-tts takes language direction " +
@@ -118,6 +152,12 @@ export const speech = {
       if (speed !== undefined) body.speed = speed;
     }
 
+    applyExtras(input, OPENAI_SPEECH_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<SpeechParams, OpenaiSpeechWire, OpenaiSpeechResult>;
+} as const satisfies SpeechAdapterFor<
+  typeof OPENAI_SPEECH_MODEL_PARAMS,
+  OpenaiSpeechWire,
+  OpenaiSpeechResult
+>;

@@ -372,7 +372,11 @@ function checkSolaria3(
     });
   } else {
     const language = languages[0];
-    if (language !== undefined && !SOLARIA_3_LANGUAGES.includes(language)) {
+    // The widening cast is what lets `SOLARIA_3_LANGUAGES` stay `as const`:
+    // its literals are read back by `unified.ts`'s per-model `languages` row,
+    // and a `readonly string[]` there would widen the completion list to
+    // `string`.
+    if (language !== undefined && !(SOLARIA_3_LANGUAGES as readonly string[]).includes(language)) {
       ctx.report({
         code: "invalid_enum_value",
         path: ["language_config", "languages", 0],

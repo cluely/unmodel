@@ -125,8 +125,19 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * "approximately" means, one test suite over all of them — so the number moves
  * instead. Every other pack moved by the same ~9 KiB and stayed inside its
  * headroom; this one was already at 98% of its budget.
+ *
+ * **Why it moved from 400.** The per-model wave: fourteen `modelParams` tables
+ * joined this graph — 403 KiB measured, up 27 from 377. About a third of that
+ * is the tables themselves (codec sets, language lists and ~110 `EXTRA`
+ * witnesses, each of which is one object key holding `undefined` at run time)
+ * and the rest is the prose that argues for them, which these bundles are
+ * measured *unminified* and therefore pay for. Both halves are load-bearing:
+ * the tables are read by the caller's types, by `applyExtras` and by
+ * `test/unified/speech-presets.test.ts`, and a table whose per-model
+ * distinctions are not explained is a table nobody can audit against the wire.
+ * Pinned at 430, which keeps the ~6% headroom the 400 had.
  */
-const SPEECH_PACK_BUDGET_KIB = 400;
+const SPEECH_PACK_BUDGET_KIB = 430;
 
 /**
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
@@ -257,8 +268,16 @@ const IMAGE_PACK_PROVIDERS: string[] = [
  * carries fifty wire fields and thirteen cross-field rules) over small
  * hand-written catalogs. `createTranscribe([…])` is the way to pay for two
  * providers instead of eleven.
+ *
+ * **Why it moved from 390.** The per-model wave, and this is the pack it cost
+ * the most: 395 KiB measured, up 29 from 366. The reason is the same fact the
+ * paragraph above gives — these are the widest wire surfaces in the library, so
+ * they are also the widest *extras* tables. AssemblyAI declares 34 keys,
+ * Deepgram 29 across 38 generated rows, Speechmatics 19 with per-key nesting;
+ * each is one `EXTRA` witness at run time plus the sentence that says which
+ * models take it and why. Pinned at 420, keeping the ~6% headroom the 390 had.
  */
-const TRANSCRIBE_PACK_BUDGET_KIB = 390;
+const TRANSCRIBE_PACK_BUDGET_KIB = 420;
 
 /**
  * The one generated catalog this pack legitimately reaches.

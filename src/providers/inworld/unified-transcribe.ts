@@ -30,13 +30,26 @@
  * cell in the table below is mapped and tested, so the day the vocabulary
  * grows an inline-bytes shape, this file is one line from working.
  */
-import { resolveDiarization, toTimestampGranularity } from "../../core/unified/derive";
+import {
+  applyExtras,
+  EXTRA,
+  resolveDiarization,
+  toTimestampGranularity,
+} from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
   TranscribeAdapterFor,
+  TranscribeModelParamTable,
   TranscribeParamsFor,
 } from "../../core/unified/vocabulary/transcribe";
-import { transcribe as validator, type TranscribeBody } from "./transcribe";
+import {
+  transcribe as validator,
+  type InworldGroqConfig,
+  type InworldSttAudioEncoding,
+  type InworldSttV1Config,
+  type InworldVoiceProfileConfig,
+  type TranscribeBody,
+} from "./transcribe";
 
 /**
  * The two ids POST /stt/v1/transcribe serves. The rest of Inworld's STT
@@ -54,10 +67,76 @@ export type InworldTranscribeWire = TranscribeBody;
 /** What a unified call to `inworld/…` returns. */
 export type InworldTranscribeResult = ReturnType<typeof validator>;
 
+/**
+ * The per-model table, declared in full even though no request can currently
+ * reach it — for the reason the module header gives about the adapter itself:
+ * every cell here is mapped and correct, so the day the vocabulary grows an
+ * inline-bytes shape this file is one line from working, and the table would be
+ * the wrong thing to have left blank in the meantime.
+ *
+ * ## `timestamps`
+ *
+ * `inworld/inworld-stt-1` gets `["none"]`. "Word timestamps & diarization:
+ * Available for AssemblyAI, Soniox, Deepgram; **not yet for Inworld**" — and
+ * the field is "accepted but no per-word data comes back", which is the
+ * accepted-and-ignored case, so `timestamps: "word"` is refused by name there.
+ * Groq is named on neither side of that sentence, so `groq/whisper-large-v3`
+ * keeps `["none", "word"]`, exactly as the provider's own check does.
+ *
+ * ## The vendor blocks
+ *
+ * `transcribeConfig` carries at most one provider block and it must match the
+ * model's vendor — `inworldSttV1Config` for `inworld/…`, `groqConfig` for
+ * `groq/…` — so each row declares its own and refuses the other by name.
+ * `voiceProfileConfig` goes the same way: "Voice Profile … is only produced by
+ * `inworld/inworld-stt-1`". All three are whole typed objects rather than
+ * flattened members, because `voiceProfileConfig.enableVoiceProfile` is
+ * *required* when the object is present and the two turn-taking blocks share
+ * member names (`minEndOfTurnSilenceWhenConfident`, `vadThreshold`) with the
+ * streaming surface's AssemblyAI block.
+ *
+ * Everything nests under `transcribeConfig` ({@link CONFIG_NESTING}), which is
+ * where the whole request lives.
+ */
+const SHARED_EXTRAS = {
+  /** The adapter defaults it to `AUTO_DETECT`; this is how a caller pins it. */
+  audioEncoding: EXTRA as InworldSttAudioEncoding,
+  sampleRateHertz: EXTRA as number,
+  numberOfChannels: EXTRA as number,
+  inactivityTimeoutSeconds: EXTRA as number,
+  endOfTurnConfidenceThreshold: EXTRA as number,
+} as const;
+
+const INWORLD_TRANSCRIBE_MODEL_PARAMS = {
+  "inworld/inworld-stt-1": {
+    timestamps: ["none"],
+    extras: {
+      ...SHARED_EXTRAS,
+      voiceProfileConfig: EXTRA as InworldVoiceProfileConfig,
+      inworldSttV1Config: EXTRA as InworldSttV1Config,
+    },
+  },
+  "groq/whisper-large-v3": {
+    timestamps: ["none", "word"],
+    extras: { ...SHARED_EXTRAS, groqConfig: EXTRA as InworldGroqConfig },
+  },
+} as const satisfies TranscribeModelParamTable;
+
+/** Every extra is a `transcribeConfig` field; the body root holds only `audioData`. */
+const CONFIG_NESTING: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
+  [
+    ...Object.keys(SHARED_EXTRAS),
+    "voiceProfileConfig",
+    "inworldSttV1Config",
+    "groqConfig",
+  ].map((key) => [key, ["transcribeConfig"]]),
+);
+
 export const transcribe = {
   category: "transcribe",
   provider: "inworld",
   models: MODELS,
+  modelParams: INWORLD_TRANSCRIBE_MODEL_PARAMS,
   audioInputs: [],
   unsupported: {
     audio:
@@ -119,6 +198,13 @@ export const transcribe = {
 
     if (input.prompt !== undefined) body.transcribeConfig.prompts = [input.prompt];
 
+    applyExtras(input, INWORLD_TRANSCRIBE_MODEL_PARAMS, body, ctx, { nest: CONFIG_NESTING });
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies TranscribeAdapterFor<never, InworldTranscribeWire, InworldTranscribeResult>;
+} as const satisfies TranscribeAdapterFor<
+  never,
+  typeof INWORLD_TRANSCRIBE_MODEL_PARAMS,
+  InworldTranscribeWire,
+  InworldTranscribeResult
+>;

@@ -19,17 +19,24 @@
  * emit it in the first place.
  */
 import {
+  applyExtras,
   bitsToKbps,
+  EXTRA,
   resolveAudioFormat,
   resolveVoice,
   toSpeed,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { SpeechParams } from "../../core/unified/vocabulary/speech";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  SpeechAdapterFor,
+  SpeechModelParamTable,
+  SpeechParams,
+} from "../../core/unified/vocabulary/speech";
 import {
   speech as validator,
   type FishAudioFormat,
+  type FishAudioLatency,
   type FishAudioMp3Bitrate,
   type FishAudioOpusBitrate,
   type TtsBody,
@@ -56,10 +63,70 @@ const FORMAT: AudioFormatSpec = {
   source: TTS_DOCS,
 };
 
+/**
+ * Fish Audio's per-model surface: one codec set, and one row that is a member
+ * short.
+ *
+ * `normalize_loudness` "applies to the S2 family (`s2-pro`, `s2.1-pro`,
+ * `s2.1-pro-free`); on `s1` it is accepted but has no effect" — the
+ * accepted-and-ignored case again, and the provider's own `checkProsody` warns
+ * about it. Declaring it on the three S2 ids and not on `s1` moves that warning
+ * to compile time, where a caller can still change their mind about the model.
+ *
+ * The rest is one shared block of sampling and chunking controls, which is what
+ * this endpoint has instead of a canonical vocabulary: `temperature` / `top_p`
+ * / `repetition_penalty` steer the model, `chunk_length` / `min_chunk_length` /
+ * `max_new_tokens` / `early_stop_threshold` / `condition_on_previous_chunks`
+ * steer the streaming decoder, and `latency` picks a quality-versus-delay
+ * profile. `prosody.volume` nests beside the `speed` the adapter compiles;
+ * everything else is a body-root field.
+ *
+ * `references` and `reference_audio` are excluded: they are inline voice
+ * cloning payloads, and `voice` — the canonical word — is Fish's
+ * `reference_id`, the *stored* form of the same thing.
+ */
+const SHARED_TTS_EXTRAS = {
+  // → prosody.*
+  volume: EXTRA as number | null,
+  // → body root
+  temperature: EXTRA as number | null,
+  top_p: EXTRA as number | null,
+  repetition_penalty: EXTRA as number | null,
+  normalize: EXTRA as boolean | null,
+  latency: EXTRA as FishAudioLatency,
+  chunk_length: EXTRA as number | null,
+  min_chunk_length: EXTRA as number | null,
+  max_new_tokens: EXTRA as number | null,
+  condition_on_previous_chunks: EXTRA as boolean | null,
+  early_stop_threshold: EXTRA as number | null,
+  features: EXTRA as string[] | null,
+} as const;
+
+const CODECS = ["mp3", "opus", "pcm_s16le"] as const;
+
+const S2_ROW = {
+  codecs: CODECS,
+  extras: { ...SHARED_TTS_EXTRAS, normalize_loudness: EXTRA as boolean | null },
+} as const;
+
+const FISH_AUDIO_SPEECH_MODEL_PARAMS = {
+  "s2.1-pro": S2_ROW,
+  "s2.1-pro-free": S2_ROW,
+  "s2-pro": S2_ROW,
+  s1: { codecs: CODECS, extras: SHARED_TTS_EXTRAS },
+} as const satisfies SpeechModelParamTable;
+
+/** The two prosody members; everything else is a body-root field. */
+const PROSODY_NESTING: Readonly<Record<string, readonly string[]>> = {
+  volume: ["prosody"],
+  normalize_loudness: ["prosody"],
+};
+
 export const speech = {
   category: "speech",
   provider: "fish-audio",
   models: MODELS,
+  modelParams: FISH_AUDIO_SPEECH_MODEL_PARAMS,
   unsupported: {
     language:
       "POST /v1/tts has no language field — Fish Audio infers the language from the text and " +
@@ -124,6 +191,12 @@ export const speech = {
       if (speed !== undefined) body.prosody = { speed };
     }
 
+    applyExtras(input, FISH_AUDIO_SPEECH_MODEL_PARAMS, body, ctx, { nest: PROSODY_NESTING });
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<SpeechParams, FishAudioSpeechWire, FishAudioSpeechResult>;
+} as const satisfies SpeechAdapterFor<
+  typeof FISH_AUDIO_SPEECH_MODEL_PARAMS,
+  FishAudioSpeechWire,
+  FishAudioSpeechResult
+>;

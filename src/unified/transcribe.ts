@@ -46,6 +46,25 @@
  * only answers for TypeScript callers with a literal ref, and the promise has
  * to hold for everyone else too.
  *
+ * ## `timestamps` narrows per **model**, through a second table
+ *
+ * Which granularities a route can return is a model fact rather than a route
+ * one — `whisper-1` returns word *and* segment timings, `gpt-4o-transcribe`
+ * returns neither, `scribe_v1` adds character-level — so each adapter also
+ * carries a `modelParams` table, and the ref picks a row from it:
+ *
+ * ```ts
+ * transcribe({ model: "openai/whisper-1",        audio, timestamps: "segment" });   // ok
+ * transcribe({ model: "openai/gpt-4o-transcribe", audio, timestamps: "segment" });  // compile error
+ * transcribe({ model: "elevenlabs/scribe_v1",    audio, timestamps: "character" }); // ok
+ * transcribe({ model: "deepgram/nova-3",         audio, keyterm: "unmodel" });      // ok
+ * transcribe({ model: "deepgram/nova-2",         audio, keyterm: "unmodel" });      // compile error
+ * ```
+ *
+ * The two narrowings compose rather than compete: `audioInputs` types `audio`
+ * from the adapter, `modelParams` types `timestamps`, `language` and the extras
+ * from the model, and `TranscribeValidator` intersects both.
+ *
  * The result is the provider's own `Validated` (see `unmodel/image` for the
  * full explanation of what that means and why the pack is assembled by hand).
  */
@@ -99,7 +118,7 @@ export function createTranscribe<A extends TranscribeAdapter>(
  * dynamically-loaded registry would keep the first and lose the other three.
  *
  * The cost is honest and measured: importing this pulls in eleven provider
- * validators, their schemas and their catalogs (~245 KiB, pinned in
+ * validators, their schemas and their catalogs (~395 KiB, pinned in
  * `test/bundle-budget.test.ts`). `createTranscribe([…])` above is the way to
  * pay for two providers instead of eleven.
  *
@@ -133,12 +152,21 @@ export type {
   AudioNarrowing,
   AudioUrlInput,
   Diarization,
+  LanguageOf,
+  ModelExtras,
+  ModelParamsFor,
   ProviderOptions,
   TimestampGranularity,
+  TimestampsOf,
   TranscribeAdapterFor,
+  TranscribeModelNarrowing,
+  TranscribeModelParams,
+  TranscribeModelParamTable,
   TranscribeParams,
+  TranscribeParamsBase,
   TranscribeParamsFor,
   TranscribeValidator,
+  WithModelParams,
 } from "../core/unified/vocabulary/transcribe";
 
 export type {

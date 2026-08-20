@@ -91,9 +91,71 @@ function noToApiTests(): void {
   expectTrue<KeyIn<typeof result, "request"> extends "request" ? true : false>();
 }
 
+/**
+ * Per-model narrowing, which in this category is per-**provider**: both
+ * ElevenLabs ids share one row and both Stability ids share another, because
+ * their endpoints genuinely do not differ by model. What the row buys is still
+ * the point of the wave — the codec list an editor offers is that endpoint's
+ * own, and the diffusion knobs arrive typed.
+ */
+function codecNarrowingTests(): void {
+  music({ model: "elevenlabs/music_v1", prompt: "hi", outputFormat: "opus" });
+  // @ts-expect-error — Stability's `output_format` is `"mp3" | "wav"` only.
+  music({ model: "stability/stable-audio-2", prompt: "hi", outputFormat: "opus" });
+  music({ model: "stability/stable-audio-2", prompt: "hi", outputFormat: "pcm_s16le" });
+  // @ts-expect-error — `aac` has no composite spelling at ElevenLabs either.
+  music({ model: "elevenlabs/music_v1", prompt: "hi", outputFormat: "aac" });
+
+  // The object spelling narrows too — that is the one a caller reaches for when
+  // the encoding matters, so leaving it wide would defeat the point.
+  music({
+    model: "elevenlabs/music_v2",
+    prompt: "hi",
+    outputFormat: { format: "pcm_mulaw", sampleRate: 8000 },
+  });
+  music({
+    model: "stability/stable-audio-2.5",
+    prompt: "hi",
+    // @ts-expect-error — and Stability has no μ-law arm.
+    outputFormat: { format: "pcm_mulaw" },
+  });
+}
+
+function extrasNarrowingTests(): void {
+  music({ model: "stability/stable-audio-2", prompt: "hi", steps: 50, cfg_scale: 7 });
+  // @ts-expect-error — `steps` is Stability's; ElevenLabs' row has no such key.
+  music({ model: "elevenlabs/music_v1", prompt: "hi", steps: 50 });
+  music({ model: "elevenlabs/music_v1", prompt: "hi", finetune_id: "ft_1" });
+  // @ts-expect-error — …and `finetune_id` goes the other way.
+  music({ model: "stability/stable-audio-2", prompt: "hi", finetune_id: "ft_1" });
+
+  // @ts-expect-error — a typo is still a typo.
+  music({ model: "elevenlabs/music_v1", prompt: "hi", finetune_stength: 0.5 });
+  music({ model: "elevenlabs/music_v1", prompt: "hi", finetune_strength: 0.5 });
+}
+
+/** A dynamic or unknown ref degrades to the wide vocabulary, never to `never`. */
+function degradedRefTests(): void {
+  const dynamic: string = process.env["MODEL"] ?? "elevenlabs/music_v1";
+  music({ model: dynamic, prompt: "hi", outputFormat: "vorbis" });
+  music({ model: "elevenlabs/music_v3", prompt: "hi", outputFormat: "flac" });
+  // Extras degrade to "every name in the build, typed `unknown`"…
+  music({ model: "elevenlabs/music_v3", prompt: "hi", steps: 50 });
+  // @ts-expect-error — …and a typo is still caught by `ExactKeys`.
+  music({ model: "elevenlabs/music_v3", prompt: "hi", stepss: 50 });
+}
+
 expectAssignable<"music">(elevenlabsMusic.category);
 expectAssignable<"elevenlabs">(elevenlabsMusic.provider);
 expectAssignable<readonly string[]>(elevenlabsMusic.models);
 expectAssignable<MusicParams["model"]>("elevenlabs/music_v1");
 
-export { refUnionTests, resultTypeTests, providerOptionsTests, noToApiTests };
+export {
+  refUnionTests,
+  resultTypeTests,
+  providerOptionsTests,
+  noToApiTests,
+  codecNarrowingTests,
+  extrasNarrowingTests,
+  degradedRefTests,
+};

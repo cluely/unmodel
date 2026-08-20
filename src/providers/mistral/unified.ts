@@ -16,6 +16,8 @@
  * at a wire field the caller never wrote.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioInput,
   resolveDiarization,
   toPrimaryLanguage,
@@ -24,6 +26,7 @@ import {
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
   TranscribeAdapterFor,
+  TranscribeModelParamTable,
   TranscribeParamsFor,
 } from "../../core/unified/vocabulary/transcribe";
 import { transcribe as validator, type TranscriptionBody } from "./transcribe";
@@ -46,10 +49,42 @@ export type MistralTranscribeWire = TranscriptionBody;
 /** What a unified call to `mistral/…` returns. */
 export type MistralTranscribeResult = ReturnType<typeof validator>;
 
+/**
+ * The five Voxtral ids share one row, because they share one schema: there is
+ * no per-model constraint table on this endpoint at all, and the one rule that
+ * exists (`timestamp_granularities` "is not compatible with `language`") is a
+ * *combination* rule that applies to every id equally.
+ *
+ * `timestamps` carries `"none"` because it is genuinely expressible here — the
+ * field is absent by default and the route returns no timings without it — plus
+ * the two granularities the adapter maps.
+ *
+ * Two extras, and both are the sharp end of an adapter gap: `context_bias` is
+ * the term list that `prompt` is *not* (its entries may contain neither commas
+ * nor whitespace, so a sentence cannot be one), and `temperature` is the
+ * sampling knob no canonical word covers.
+ */
+const VOXTRAL_ROW = {
+  timestamps: ["none", "word", "segment"],
+  extras: {
+    temperature: EXTRA as number | null,
+    context_bias: EXTRA as string[],
+  },
+} as const;
+
+const MISTRAL_TRANSCRIBE_MODEL_PARAMS = {
+  "voxtral-mini-latest": VOXTRAL_ROW,
+  "voxtral-mini-2602": VOXTRAL_ROW,
+  "voxtral-mini-2507": VOXTRAL_ROW,
+  "voxtral-small-latest": VOXTRAL_ROW,
+  "voxtral-small-2507": VOXTRAL_ROW,
+} as const satisfies TranscribeModelParamTable;
+
 export const transcribe = {
   category: "transcribe",
   provider: "mistral",
   models: MODELS,
+  modelParams: MISTRAL_TRANSCRIBE_MODEL_PARAMS,
   audioInputs: ["file", "url", "fileId"],
   unsupported: {
     languages:
@@ -113,10 +148,13 @@ export const transcribe = {
       if (granularity !== undefined) body.timestamp_granularities = [granularity];
     }
 
+    applyExtras(input, MISTRAL_TRANSCRIBE_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
 } as const satisfies TranscribeAdapterFor<
   "file" | "url" | "fileId",
+  typeof MISTRAL_TRANSCRIBE_MODEL_PARAMS,
   MistralTranscribeWire,
   MistralTranscribeResult
 >;

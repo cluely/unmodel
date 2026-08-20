@@ -17,18 +17,27 @@
  * codec here and the error arrives before the request is sent.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioFormat,
   resolveVoice,
   toPrimaryLanguage,
   toSpeed,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { SpeechParams } from "../../core/unified/vocabulary/speech";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  SpeechAdapterFor,
+  SpeechModelParamTable,
+  SpeechParams,
+} from "../../core/unified/vocabulary/speech";
 import {
   speech as validator,
   type MinimaxAudioFormat,
+  type MinimaxEmotion,
   type MinimaxLanguageBoost,
+  type MinimaxTimbreWeight,
+  type MinimaxVoiceModify,
   type T2aParams,
 } from "./speech";
 
@@ -87,8 +96,16 @@ const FORMAT: AudioFormatSpec = {
  * onto one word where the wire has only one (`tl`/`fil` → Filipino,
  * `no`/`nb` → Norwegian); Cantonese has its own entry because MiniMax gives it
  * one (`"Chinese,Yue"`).
+ *
+ * `as const satisfies`, not an annotation: the per-model `languages` rows below
+ * are `keyof typeof LANGUAGE_BOOSTS`, and an annotated
+ * `Readonly<Record<string, …>>` makes that `string` — which widens the rows to
+ * `readonly string[]`, makes `LanguageOf` answer the bare `string`, and leaves
+ * `language:` completing nothing while tsc stays green. Measured with the
+ * language service; the same class of silent degrade `AnyModelParamTable`
+ * documents. `satisfies` keeps the value checked against the wire enum.
  */
-const LANGUAGE_BOOSTS: Readonly<Record<string, MinimaxLanguageBoost>> = {
+const LANGUAGE_BOOSTS = {
   af: "Afrikaans",
   ar: "Arabic",
   bg: "Bulgarian",
@@ -131,12 +148,125 @@ const LANGUAGE_BOOSTS: Readonly<Record<string, MinimaxLanguageBoost>> = {
   vi: "Vietnamese",
   yue: "Chinese,Yue",
   zh: "Chinese",
+} as const satisfies Readonly<Record<string, MinimaxLanguageBoost>>;
+
+/** The 42 primary subtags above, and the four the 01/02 series does not serve. */
+type BoostedLanguage = keyof typeof LANGUAGE_BOOSTS;
+type LateLanguage = "fa" | "fil" | "tl" | "ta";
+
+/**
+ * MiniMax's per-model surface: one codec set, three language sets, three
+ * emotion sets.
+ *
+ * ## Languages
+ *
+ * The row is the *canonical* side of {@link LANGUAGE_BOOSTS} — BCP-47 primary
+ * subtags, not MiniMax's English words — because that is what a caller writes.
+ * "The speech-01 and speech-02 series models do not currently support Persian,
+ * Filipino, or Tamil", which the provider's `checkLanguageBoost` enforces, so
+ * the four older ids drop `fa`, `fil`, `tl` and `ta` and complete the other 38.
+ *
+ * ## `emotion`, which is why the extras differ per row
+ *
+ * `voice_setting.emotion` has seven values everywhere, plus `"fluent"` on the
+ * 2.6 and 2.8 pairs and `"whisper"` on the 2.6 pair alone — the wire's own
+ * `FLUENT_MODELS` / `WHISPER_MODELS` / `FLUENT_ALSO_ON_2_8` sets, transcribed
+ * into three `EXTRA as` casts. So `emotion: "whisper"` completes on
+ * `speech-2.6-hd` and is a compile error on `speech-2.8-hd`, which is the
+ * `unsupported_capability` that model raises at run time, moved forward.
+ *
+ * ## Nesting, and the one collision it avoids
+ *
+ * `voice_setting`'s members and `pronunciation_dict.tone` arrive under their
+ * own prefixes ({@link SPEECH_NESTING}), beside the `voice_id` and `speed` the
+ * adapter compiles. `voice_modify` is deliberately **one whole-object extra**
+ * rather than four flattened members: it carries its own `pitch`, and
+ * `voice_setting` carries a `pitch` too — two different wire params with the
+ * same leaf name, which is exactly the case a flat extras namespace cannot
+ * spell. One typed object keeps both reachable and keeps them apart.
+ *
+ * `output_format` (`"url" | "hex"`, how the *response* carries the bytes) is
+ * excluded as transport, and its name would collide with the canonical word for
+ * the encoding besides.
+ */
+const BASE_EMOTIONS = ["happy", "sad", "angry", "fearful", "disgusted", "surprised", "calm"] as const;
+
+const SHARED_SPEECH_EXTRAS = {
+  // → voice_setting.*
+  vol: EXTRA as number,
+  pitch: EXTRA as number,
+  text_normalization: EXTRA as boolean,
+  latex_read: EXTRA as boolean,
+  // → pronunciation_dict.*
+  tone: EXTRA as string[],
+  // → body root
+  timbre_weights: EXTRA as MinimaxTimbreWeight[],
+  voice_modify: EXTRA as MinimaxVoiceModify,
+  subtitle_enable: EXTRA as boolean,
+  subtitle_type: EXTRA as "sentence" | "word" | "word_streaming",
+} as const;
+
+/**
+ * The 42 primary subtags {@link LANGUAGE_BOOSTS} maps, and the 38 the 01/02
+ * series serves — "the speech-01 and speech-02 series models do not currently
+ * support Persian, Filipino, or Tamil", which is `fa`, `fil`/`tl` and `ta`.
+ *
+ * Both casts name the exact set the runtime expression produces; a `filter`
+ * type predicate would answer the *same* type for both and hand the older
+ * models a completion list containing four codes `checkLanguageBoost` refuses.
+ */
+const ALL_LANGUAGES = Object.keys(LANGUAGE_BOOSTS) as ReadonlyArray<BoostedLanguage>;
+const LATE_LANGUAGES: ReadonlySet<string> = new Set<LateLanguage>(["fa", "fil", "tl", "ta"]);
+const LEGACY_LANGUAGES = ALL_LANGUAGES.filter((code) => !LATE_LANGUAGES.has(code)) as ReadonlyArray<
+  Exclude<BoostedLanguage, LateLanguage>
+>;
+
+const CODECS = ["mp3", "flac", "opus", "pcm_s16le", "pcm_mulaw"] as const;
+
+const ROW_2_8 = {
+  codecs: CODECS,
+  languages: ALL_LANGUAGES,
+  extras: { ...SHARED_SPEECH_EXTRAS, emotion: EXTRA as Exclude<MinimaxEmotion, "whisper"> },
+} as const;
+
+const ROW_2_6 = {
+  codecs: CODECS,
+  languages: ALL_LANGUAGES,
+  extras: { ...SHARED_SPEECH_EXTRAS, emotion: EXTRA as MinimaxEmotion },
+} as const;
+
+const ROW_LEGACY = {
+  codecs: CODECS,
+  languages: LEGACY_LANGUAGES,
+  extras: { ...SHARED_SPEECH_EXTRAS, emotion: EXTRA as (typeof BASE_EMOTIONS)[number] },
+} as const;
+
+const MINIMAX_SPEECH_MODEL_PARAMS = {
+  "speech-2.8-hd": ROW_2_8,
+  "speech-2.8-turbo": ROW_2_8,
+  "speech-2.6-hd": ROW_2_6,
+  "speech-2.6-turbo": ROW_2_6,
+  "speech-02-hd": ROW_LEGACY,
+  "speech-02-turbo": ROW_LEGACY,
+  "speech-01-hd": ROW_LEGACY,
+  "speech-01-turbo": ROW_LEGACY,
+} as const satisfies SpeechModelParamTable;
+
+/** Where each extra lands; everything not named here is a body-root field. */
+const SPEECH_NESTING: Readonly<Record<string, readonly string[]>> = {
+  emotion: ["voice_setting"],
+  vol: ["voice_setting"],
+  pitch: ["voice_setting"],
+  text_normalization: ["voice_setting"],
+  latex_read: ["voice_setting"],
+  tone: ["pronunciation_dict"],
 };
 
 export const speech = {
   category: "speech",
   provider: "minimax",
   models: MODELS,
+  modelParams: MINIMAX_SPEECH_MODEL_PARAMS,
   compile(
     input: SpeechParams,
     ctx: CompileContext<SpeechParams>,
@@ -200,7 +330,12 @@ export const speech = {
         toPrimaryLanguage(input.language, { path: ["language"], warn: ctx.warn }, { source: T2A_DOCS }),
       );
       if (primary !== undefined) {
-        const boost = LANGUAGE_BOOSTS[primary];
+        // The widening cast is the cost of keeping `LANGUAGE_BOOSTS` literal
+        // for the rows above: a run-time subtag is a `string`, and a table with
+        // 42 named keys has no index signature to look one up with.
+        const boost = (LANGUAGE_BOOSTS as Readonly<Record<string, MinimaxLanguageBoost | undefined>>)[
+          primary
+        ];
         if (boost === undefined) {
           ctx.fail({
             code: "invalid_enum_value",
@@ -221,6 +356,12 @@ export const speech = {
       }
     }
 
+    applyExtras(input, MINIMAX_SPEECH_MODEL_PARAMS, body, ctx, { nest: SPEECH_NESTING });
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<SpeechParams, MinimaxSpeechWire, MinimaxSpeechResult>;
+} as const satisfies SpeechAdapterFor<
+  typeof MINIMAX_SPEECH_MODEL_PARAMS,
+  MinimaxSpeechWire,
+  MinimaxSpeechResult
+>;

@@ -447,6 +447,20 @@ that compiles one canonical request at every provider that can express it.
   `image` makes it image-to-video; `role: "reference"` makes it
   reference-to-video; `video` makes it video-to-video. A model with no arm for
   the route you derived says so by name.
+- **The audio categories narrow per model too.** `outputFormat` completes the
+  codecs *that* endpoint emits, in both spellings — the shorthand and the
+  fully-spelled object — so `outputFormat: "flac"` compiles on `openai/tts-1`
+  and is a compile error on `hume/octave`, whose `format.type` is mp3, wav or
+  pcm. `timestamps` completes the granularities the transcription route can
+  return (`whisper-1` has word and segment; `gpt-4o-transcribe` has neither),
+  `language` completes the codes the wire enumerates without gating the field
+  (`"pt-BR"` is a working request that the adapter sends as `"pt"`), and each
+  model's non-canonical knobs arrive typed. `voice` deliberately stays wide
+  everywhere: voice catalogs are per-account, thousands of entries long, and
+  replaced between releases, so a union of them would be stale and would refuse
+  the caller's own cloned voice. Sample rate and bitrate stay run time's job —
+  their legal values depend on the codec chosen beside them, and at ElevenLabs
+  the legal pairs are not even the cross product.
 - **`operation` is `"edit"` and only `"edit"` in v1.** Masked routes stay
   reachable by name at `unmodel/<provider>`.
 
@@ -918,6 +932,42 @@ boolean at Deepgram — and at the four routes that report word timings
 unconditionally it costs nothing, while `timestamps: "segment"` there is an
 error naming what they do report.
 
+**The three audio categories narrow per *model*, the way `image` and `video`
+do.** Each adapter carries a `modelParams` table keyed by bare model id, and
+the ref selects a row:
+
+```ts
+speech({ model: "openai/tts-1",     text, outputFormat: "flac" });   // ok
+speech({ model: "hume/octave",      text, outputFormat: "flac" });   // compile error — mp3 / pcm only
+speech({ model: "cartesia/sonic-3", text, outputFormat: { format: "pcm_f32le", sampleRate: 44100 } });
+speech({ model: "openai/gpt-4o-mini-tts", text, instructions: "…" }); // ok
+speech({ model: "openai/tts-1",           text, instructions: "…" }); // compile error
+
+transcribe({ model: "openai/whisper-1",         audio, timestamps: "segment" });  // ok
+transcribe({ model: "openai/gpt-4o-transcribe", audio, timestamps: "segment" });  // compile error
+transcribe({ model: "deepgram/nova-3", audio, keyterm: "unmodel" });              // ok
+transcribe({ model: "deepgram/nova-2", audio, keyterm: "unmodel" });              // compile error
+
+music({ model: "elevenlabs/music_v1",      prompt, outputFormat: "opus" });       // ok
+music({ model: "stability/stable-audio-2", prompt, outputFormat: "opus" });       // compile error
+```
+
+`outputFormat` narrows in *both* spellings — the codec shorthand and the
+fully-spelled object's `format` — because the object form is the one a caller
+reaches for precisely when the encoding matters. `language` completes the codes
+the wire enumerates **without** gating the field: the canonical `language` is a
+BCP-47 tag, and `"pt-BR"` is a working request that the adapter sends as `"pt"`
+with a warning naming the subtag it could not express. `voice` deliberately
+stays wide at every provider — voice catalogs are per-account (every one of
+these supports cloning), thousands of entries long, and replaced between
+releases. Sample rate and bitrate stay run time's job for a related reason:
+their legal values depend on the codec chosen beside them, and at ElevenLabs the
+legal combinations are not even the cross product. Every value in every table
+is compiled through the adapter and run past the provider's own validator in
+`test/unified/{speech,transcribe,music}-presets.test.ts`, and one off-set
+neighbour of each is asserted to fail — so a suggestion is one the API accepts,
+and a closed list means what it says in both directions.
+
 **In `unmodel/music`, the unit is in the name.** `durationSeconds: 90` is
 `music_length_ms: 90000` at ElevenLabs and `duration: 90` at Stability. The
 conversion is exact and therefore silent; a length that lands between two
@@ -1184,12 +1234,12 @@ build, in KiB of unminified ESM (transitive chunk graph, `zod` excluded):
 | Entry | Size | What dominates it |
 | --- | --- | --- |
 | `unmodel/chat` | 557.7 KiB | 433 KiB is the slim per-model profile table covering all 32 providers; the rest is the three dialect encoders and the translation hub |
-| `unmodel/image` | 747.2 KiB | fifteen providers' schemas, constraint tables, hand-maintained catalogs and per-model size tables |
-| `unmodel/video` | 577.2 KiB | ten providers across twenty-one endpoint modules |
-| `unmodel/speech` | 376.5 KiB | fourteen providers, each with a voice/format roster |
-| `unmodel/transcribe` | 365.6 KiB | eleven providers |
-| `unmodel/image-edit` | 267.3 KiB | four providers |
-| `unmodel/music` | 140.6 KiB | two providers |
+| `unmodel/image` | 748.9 KiB | fifteen providers' schemas, constraint tables, hand-maintained catalogs and per-model size tables |
+| `unmodel/video` | 607.6 KiB | ten providers across twenty-one endpoint modules, plus their per-model duration/resolution/ratio tables |
+| `unmodel/speech` | 403.0 KiB | fourteen providers, each with a voice/format roster and a per-model codec/language table |
+| `unmodel/transcribe` | 394.9 KiB | eleven providers — the widest wire surfaces in the library, and therefore the widest per-model extras tables |
+| `unmodel/image-edit` | 269.3 KiB | four providers |
+| `unmodel/music` | 143.0 KiB | two providers |
 
 Those numbers are the *whole category*. A pack you build yourself pays only for
 the providers you register — `createSpeech([openai, rime])` lands in the 40–60

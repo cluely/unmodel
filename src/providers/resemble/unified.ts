@@ -17,13 +17,19 @@
  * off rather than inventing one.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioFormat,
   resolveVoice,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
 import type { AudioFormatCodec } from "../../core/unified/vocabulary/audio";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { SpeechParams } from "../../core/unified/vocabulary/speech";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  SpeechAdapterFor,
+  SpeechModelParamTable,
+  SpeechParams,
+} from "../../core/unified/vocabulary/speech";
 import {
   speech as validator,
   type ResemblePrecision,
@@ -78,10 +84,39 @@ const PRECISION: Readonly<Partial<Record<AudioFormatCodec, ResemblePrecision>>> 
   pcm_mulaw: "MULAW",
 };
 
+/**
+ * Resemble's one catalog row, and the one thing worth saying about its codecs.
+ *
+ * `output_format` is only `wav` or `mp3`; the PCM *width* is a separate field
+ * (`precision`), which is why this row lists four PCM codecs against an
+ * endpoint whose format enum has two members. `pcm_s24le` and `pcm_s32le` are
+ * genuinely reachable here and nowhere else in the category, and the canonical
+ * spelling is what makes that visible — Resemble's own `PCM_24` says nothing
+ * about byte order, and the caller's request is the same one everywhere else.
+ *
+ * The extras are the four body fields with no canonical word: `use_hd` picks
+ * the higher-quality synthesis path, `apply_custom_pronunciations` applies the
+ * account's dictionary, and `title` / `project_uuid` file the clip. There is no
+ * `languages` row and no `speed` — both are properties of the voice here, which
+ * the adapter declares as gaps.
+ */
+const RESEMBLE_SPEECH_MODEL_PARAMS = {
+  "resemble-ultra": {
+    codecs: ["mp3", "pcm_s16le", "pcm_s24le", "pcm_s32le", "pcm_mulaw"],
+    extras: {
+      use_hd: EXTRA as boolean,
+      apply_custom_pronunciations: EXTRA as boolean,
+      title: EXTRA as string,
+      project_uuid: EXTRA as string,
+    },
+  },
+} as const satisfies SpeechModelParamTable;
+
 export const speech = {
   category: "speech",
   provider: "resemble",
   models: MODELS,
+  modelParams: RESEMBLE_SPEECH_MODEL_PARAMS,
   unsupported: {
     speed:
       "Resemble's synthesis routes publish no speaking-rate field — pace is a property of the " +
@@ -127,6 +162,12 @@ export const speech = {
       }
     }
 
+    applyExtras(input, RESEMBLE_SPEECH_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<SpeechParams, ResembleSpeechWire, ResembleSpeechResult>;
+} as const satisfies SpeechAdapterFor<
+  typeof RESEMBLE_SPEECH_MODEL_PARAMS,
+  ResembleSpeechWire,
+  ResembleSpeechResult
+>;

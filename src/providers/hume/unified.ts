@@ -20,16 +20,23 @@
  * `providerOptions.hume`.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioFormat,
   resolveVoice,
   toSpeed,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { SpeechParams } from "../../core/unified/vocabulary/speech";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  SpeechAdapterFor,
+  SpeechModelParamTable,
+  SpeechParams,
+} from "../../core/unified/vocabulary/speech";
 import {
   speech as validator,
   type HumeAudioFormatType,
+  type HumeTimestampType,
   type HumeUtterance,
   type TtsBody,
 } from "./speech";
@@ -52,10 +59,71 @@ const FORMAT: AudioFormatSpec = {
   source: SYNTHESIZE_DOCS,
 };
 
+/**
+ * Hume's per-model surface, and the one place it splits.
+ *
+ * Both rows carry the same two codecs (`format.type` is `mp3` / `wav` / `pcm`
+ * and nothing else) and the same three body-root knobs. What differs is
+ * `include_timestamp_types`: "Only supported for Octave 2 requests", and on
+ * `version: "1"` the API **accepts it and returns empty timestamp arrays**.
+ * That is the accepted-and-ignored case the loss contract likes least — worse
+ * than a refusal, because nothing in the response says the request lost
+ * anything — so the key is declared on `octave-2` alone and an editor refuses
+ * it on `octave` by name. The provider's own `checkTimestampTypes` still warns
+ * for the callers no type reaches.
+ *
+ * ## The two extras that reach into `utterances[0]`
+ *
+ * Hume is the provider with no `text` field: `text`, `voice` and `speed`
+ * compile into an utterance, and `description` (acting direction) and
+ * `trailing_silence` are that utterance's siblings. {@link UTTERANCE_NESTING}
+ * places them there, which is what the array-walking half of `applyExtras`'s
+ * `place` exists for — the alternative was leaving the single most useful knob
+ * on this endpoint reachable only through `providerOptions`.
+ *
+ * Deliberately absent:
+ *
+ * - **`utterances[].voice.provider`** (`"HUME_AI" | "CUSTOM_VOICE"`) — the only
+ *   spelling a top-level extra could have is `provider`, which is the word this
+ *   whole library uses for the other half of a model ref. A key that reads as
+ *   `"hume"` and means `"CUSTOM_VOICE"` is worth more confusion than it saves;
+ *   it stays on `providerOptions.hume`.
+ * - **`num_generations`** — it asks for several takes of the same text, which
+ *   is what the canonical `n` would mean if this category had one. Spelling it
+ *   as a provider extra would put a word in front of callers that the
+ *   vocabulary intends to standardise.
+ * - **`context`, `instant_mode`** — the first is a prior-generation reference
+ *   with its own request shape, the second is streaming-only transport.
+ */
+const OCTAVE_EXTRAS = {
+  // → utterances[0].*
+  description: EXTRA as string | null,
+  trailing_silence: EXTRA as number,
+  // → body root
+  temperature: EXTRA as number | null,
+  split_utterances: EXTRA as boolean,
+  strip_headers: EXTRA as boolean,
+} as const;
+
+const HUME_SPEECH_MODEL_PARAMS = {
+  octave: { codecs: ["mp3", "pcm_s16le"], extras: OCTAVE_EXTRAS },
+  "octave-2": {
+    codecs: ["mp3", "pcm_s16le"],
+    extras: { ...OCTAVE_EXTRAS, include_timestamp_types: EXTRA as HumeTimestampType[] },
+  },
+} as const satisfies SpeechModelParamTable;
+
+/** The two knobs that belong to the utterance rather than to the request. */
+const UTTERANCE_NESTING: Readonly<Record<string, readonly string[]>> = {
+  description: ["utterances", "0"],
+  trailing_silence: ["utterances", "0"],
+};
+
 export const speech = {
   category: "speech",
   provider: "hume",
   models: MODELS,
+  modelParams: HUME_SPEECH_MODEL_PARAMS,
   unsupported: {
     language:
       "POST /v0/tts has no language field — Octave infers the language from the text and the " +
@@ -119,6 +187,12 @@ export const speech = {
       if (speed !== undefined) utterance.speed = speed;
     }
 
+    applyExtras(input, HUME_SPEECH_MODEL_PARAMS, body, ctx, { nest: UTTERANCE_NESTING });
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<SpeechParams, HumeSpeechWire, HumeSpeechResult>;
+} as const satisfies SpeechAdapterFor<
+  typeof HUME_SPEECH_MODEL_PARAMS,
+  HumeSpeechWire,
+  HumeSpeechResult
+>;

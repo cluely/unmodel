@@ -26,13 +26,19 @@
  * an out-of-range value surfaces that message remapped onto `outputFormat`.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioFormat,
   resolveVoice,
   toSpeed,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { SpeechParams } from "../../core/unified/vocabulary/speech";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  SpeechAdapterFor,
+  SpeechModelParamTable,
+  SpeechParams,
+} from "../../core/unified/vocabulary/speech";
 import {
   speech as validator,
   type DeepgramSpeakEncoding,
@@ -100,10 +106,48 @@ const FORMAT: AudioFormatSpec = {
   source: MEDIA_DOCS,
 };
 
+/**
+ * The per-model surface, which on this endpoint is *one* surface.
+ *
+ * `POST /v1/speak` takes the same seven encodings and the same two
+ * non-canonical query params whichever of the 103 voices the ref names —
+ * because here the model id selects a *voice*, and a voice does not change
+ * which container the bytes come back in. So the row is built rather than
+ * typed out: `Object.fromEntries` over the same `MODELS` array the ref union
+ * comes from, so a voice added to the catalog gets a row automatically and the
+ * two lists cannot fall out of step. (103 hand-written identical literals would
+ * also imply, wrongly, that some of them differ.)
+ *
+ * The cast is what keeps the literal keys — `Object.fromEntries` widens to
+ * `Record<string, …>`, which would make every row lookup miss and silently
+ * degrade all 103 models to the wide vocabulary. `satisfies` then checks the
+ * row itself, field by field.
+ *
+ * No `languages`: the language is baked into the voice, which is baked into the
+ * model, and the adapter declares the gap outright.
+ *
+ * `mip_opt_out` (Model Improvement Program opt-out) and `tag` (billing labels
+ * that come back on the usage record) are the two documented query params with
+ * no canonical word. Neither changes the audio, which is why the *research*
+ * pass and this table agree that they are the whole extras list here.
+ */
+const AURA_ROW = {
+  codecs: ["mp3", "opus", "aac", "flac", "pcm_s16le", "pcm_mulaw", "pcm_alaw"],
+  extras: {
+    mip_opt_out: EXTRA as boolean,
+    tag: EXTRA as string | string[],
+  },
+} as const;
+
+const DEEPGRAM_SPEECH_MODEL_PARAMS = Object.fromEntries(
+  MODELS.map((model) => [model, AURA_ROW]),
+) as Readonly<Record<(typeof MODELS)[number], typeof AURA_ROW>> satisfies SpeechModelParamTable;
+
 export const speech = {
   category: "speech",
   provider: "deepgram",
   models: MODELS,
+  modelParams: DEEPGRAM_SPEECH_MODEL_PARAMS,
   unsupported: {
     language:
       "POST /v1/speak has no language field — the language is baked into the voice, which is " +
@@ -171,6 +215,12 @@ export const speech = {
       if (speed !== undefined) body.speed = speed;
     }
 
+    applyExtras(input, DEEPGRAM_SPEECH_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<SpeechParams, DeepgramSpeechWire, DeepgramSpeechResult>;
+} as const satisfies SpeechAdapterFor<
+  typeof DEEPGRAM_SPEECH_MODEL_PARAMS,
+  DeepgramSpeechWire,
+  DeepgramSpeechResult
+>;

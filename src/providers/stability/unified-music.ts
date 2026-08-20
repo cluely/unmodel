@@ -17,12 +17,18 @@
  * `output_format` is a codec and nothing else — `mp3` or `wav`, a form field
  * rather than a query param — so a request naming a sample rate or a bitrate is
  * an error rather than a value quietly dropped. `steps` and `cfg_scale` have no
- * canonical word either and ride in `providerOptions.stability`; their
- * per-model bounds live in `stability.music`'s own `checkSteps`.
+ * canonical word; they arrive as per-model extras and go on the wire verbatim,
+ * with their per-model bounds still checked by `stability.music`'s own
+ * `checkSteps` (30–100 on stable-audio-2, 4–8 on 2.5 — and on the first of
+ * those `steps` moves the price, which is another reason not to invent one).
  */
-import { resolveAudioFormat, type AudioFormatSpec } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { MusicParams } from "../../core/unified/vocabulary/music";
+import { applyExtras, EXTRA, resolveAudioFormat, type AudioFormatSpec } from "../../core/unified/derive";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  MusicAdapterFor,
+  MusicModelParamTable,
+  MusicParams,
+} from "../../core/unified/vocabulary/music";
 import {
   music as validator,
   type StableAudioOutputFormat,
@@ -59,10 +65,38 @@ const FORMAT: AudioFormatSpec = {
   source: API_REFERENCE_URL,
 };
 
+/**
+ * Both Stable Audio 2.x ids, with the same two-codec row.
+ *
+ * `output_format` is `"mp3" | "wav"`, which is `mp3` and `pcm_s16le` in
+ * canonical spelling — the narrowest codec list in the library, and the reason
+ * `outputFormat: "opus"` is a compile error here and fine on
+ * `elevenlabs/music_v1`.
+ *
+ * `steps` and `cfg_scale` are the diffusion knobs the vocabulary has no word
+ * for. They are identical keys on both rows because both models take them; what
+ * differs is the *range*, which is a run-time fact `checkSteps` already owns
+ * and a row deliberately does not duplicate.
+ */
+const STABILITY_MUSIC_EXTRAS = {
+  /** Sampling steps; 30–100 on stable-audio-2, 4–8 on 2.5, and it moves the price. */
+  steps: EXTRA as number,
+  /** How closely to follow the prompt. */
+  cfg_scale: EXTRA as number,
+} as const;
+
+const ROW = { codecs: ["mp3", "pcm_s16le"], extras: STABILITY_MUSIC_EXTRAS } as const;
+
+const STABILITY_MUSIC_MODEL_PARAMS = {
+  "stable-audio-2": ROW,
+  "stable-audio-2.5": ROW,
+} as const satisfies MusicModelParamTable;
+
 export const music = {
   category: "music",
   provider: "stability",
   models: MODELS,
+  modelParams: STABILITY_MUSIC_MODEL_PARAMS,
   unsupported: {
     instrumental:
       "Stable Audio has no vocals switch — it is an instrumental-and-sound model, and the way to " +
@@ -92,6 +126,12 @@ export const music = {
 
     if (input.seed !== undefined) body.seed = input.seed;
 
+    applyExtras(input, STABILITY_MUSIC_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<MusicParams, StabilityMusicWire, StabilityMusicResult>;
+} as const satisfies MusicAdapterFor<
+  typeof STABILITY_MUSIC_MODEL_PARAMS,
+  StabilityMusicWire,
+  StabilityMusicResult
+>;

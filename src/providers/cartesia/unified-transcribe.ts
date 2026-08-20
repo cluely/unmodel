@@ -14,6 +14,8 @@
  * segment is not a coarse word.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioInput,
   toPrimaryLanguage,
   toTimestampGranularity,
@@ -21,9 +23,15 @@ import {
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
   TranscribeAdapterFor,
+  TranscribeModelParamTable,
   TranscribeParamsFor,
 } from "../../core/unified/vocabulary/transcribe";
-import { transcribe as validator, type SttTranscribeParams } from "./transcribe";
+import {
+  transcribe as validator,
+  CARTESIA_STT_LANGUAGES,
+  type CartesiaSttEncoding,
+  type SttTranscribeParams,
+} from "./transcribe";
 
 /** The one batch STT model — the ref union for `cartesia/…`. */
 const MODELS = ["ink-whisper"] as const;
@@ -36,10 +44,44 @@ export type CartesiaTranscribeWire = SttTranscribeParams;
 /** What a unified call to `cartesia/…` returns. */
 export type CartesiaTranscribeResult = ReturnType<typeof validator>;
 
+/**
+ * One model, one row — and the row is where the 100-code language list finally
+ * becomes visible to a caller.
+ *
+ * The module note above says the enum "lives in `cartesia.transcribe`'s own
+ * `checkLanguage`; duplicating it here would be a second copy to drift". That
+ * is still true, which is why `languages` is {@link CARTESIA_STT_LANGUAGES}
+ * *by reference*: one array, checked at run time by the provider and completed
+ * at compile time by the editor, with no second declaration to keep in step.
+ *
+ * `timestamps: ["none", "word"]`: the wire array's only member is `"word"`, and
+ * `"none"` is expressible because omitting the field is exactly what it means
+ * here. `"segment"` and `"character"` are the narrowest refusal in the category
+ * — a segment is not a coarse word, so it is an error rather than an
+ * approximation.
+ *
+ * The two extras describe the *bytes*, which this route needs because it takes
+ * raw audio as well as containers: `encoding` and `sample_rate` are what a
+ * containerless upload has instead of a header. They are not the canonical
+ * `outputFormat` — that word belongs to the speech category, and there is no
+ * output audio here to have a format.
+ */
+const CARTESIA_TRANSCRIBE_MODEL_PARAMS = {
+  "ink-whisper": {
+    timestamps: ["none", "word"],
+    languages: CARTESIA_STT_LANGUAGES,
+    extras: {
+      encoding: EXTRA as CartesiaSttEncoding,
+      sample_rate: EXTRA as number,
+    },
+  },
+} as const satisfies TranscribeModelParamTable;
+
 export const transcribe = {
   category: "transcribe",
   provider: "cartesia",
   models: MODELS,
+  modelParams: CARTESIA_TRANSCRIBE_MODEL_PARAMS,
   audioInputs: ["file"],
   unsupported: {
     languages:
@@ -87,10 +129,13 @@ export const transcribe = {
       if (granularity !== undefined) body.timestamp_granularities = [granularity];
     }
 
+    applyExtras(input, CARTESIA_TRANSCRIBE_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
 } as const satisfies TranscribeAdapterFor<
   "file",
+  typeof CARTESIA_TRANSCRIBE_MODEL_PARAMS,
   CartesiaTranscribeWire,
   CartesiaTranscribeResult
 >;

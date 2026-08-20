@@ -74,4 +74,4 @@ export const DEFAULT_MODEL = "solaria-1";
  * `language_config.languages` (no code switching)", with
  * "Languages: English, French, German, Spanish, Italian".
  */
-export const SOLARIA_3_LANGUAGES: readonly string[] = ["en", "fr", "de", "es", "it"];
+export const SOLARIA_3_LANGUAGES = ["en", "fr", "de", "es", "it"] as const satisfies readonly string[];

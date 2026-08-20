@@ -14,18 +14,27 @@
  * `providerOptions.inworld.audioConfig`.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioFormat,
   resolveVoice,
   toSpeed,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { SpeechParams } from "../../core/unified/vocabulary/speech";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  SpeechAdapterFor,
+  SpeechModelParamTable,
+  SpeechParams,
+} from "../../core/unified/vocabulary/speech";
 import {
   speech as validator,
+  type InworldApplyTextNormalization,
   type InworldAudioConfig,
   type InworldAudioEncoding,
+  type InworldDeliveryMode,
   type InworldSampleRateHertz,
+  type InworldTimestampType,
   type TtsVoiceBody,
 } from "./speech";
 
@@ -81,10 +90,60 @@ const FORMAT: AudioFormatSpec = {
   source: SYNTHESIZE_DOCS,
 };
 
+/**
+ * Inworld's per-model surface: one codec set, and a `speechConstraints` table
+ * read into three rows.
+ *
+ * `deliveryMode` is "Only supported by `inworld-tts-2`" — which in the deny
+ * table means the two TTS-2 ids, since the 1.x generations are the ones it
+ * denies — and `temperature` runs the other way: it is flagged `ignored` on
+ * `inworld-tts-2`, where "the request is accepted but sampling is unaffected;
+ * use `deliveryMode` to steer stability instead". So the flagship carries
+ * `deliveryMode` and not `temperature`, the 1.x line carries `temperature` and
+ * not `deliveryMode`, and `inworld-tts-2-flash` is the one id that carries
+ * both. Two crossing per-model rules, stated once here and enforced again by
+ * the provider for the callers a type cannot reach.
+ *
+ * No `languages`: `language` is BCP-47 with a region and passes through
+ * unmapped, against no published enum.
+ */
+const SHARED_EXTRAS = {
+  applyTextNormalization: EXTRA as InworldApplyTextNormalization,
+  enhanceGeneration: EXTRA as boolean,
+  timestampType: EXTRA as InworldTimestampType,
+} as const;
+
+const CODECS = ["mp3", "flac", "opus", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] as const;
+
+const LEGACY_ROW = {
+  codecs: CODECS,
+  extras: { ...SHARED_EXTRAS, temperature: EXTRA as number },
+} as const;
+
+const INWORLD_SPEECH_MODEL_PARAMS = {
+  "inworld-tts-2": {
+    codecs: CODECS,
+    extras: { ...SHARED_EXTRAS, deliveryMode: EXTRA as InworldDeliveryMode },
+  },
+  "inworld-tts-2-flash": {
+    codecs: CODECS,
+    extras: {
+      ...SHARED_EXTRAS,
+      deliveryMode: EXTRA as InworldDeliveryMode,
+      temperature: EXTRA as number,
+    },
+  },
+  "inworld-tts-1.5-max": LEGACY_ROW,
+  "inworld-tts-1.5-mini": LEGACY_ROW,
+  "inworld-tts-1": LEGACY_ROW,
+  "inworld-tts-1-max": LEGACY_ROW,
+} as const satisfies SpeechModelParamTable;
+
 export const speech = {
   category: "speech",
   provider: "inworld",
   models: MODELS,
+  modelParams: INWORLD_SPEECH_MODEL_PARAMS,
   compile(
     input: SpeechParams,
     ctx: CompileContext<SpeechParams>,
@@ -140,6 +199,12 @@ export const speech = {
     // BCP-47 already ("en-US"), which is exactly what `language` takes.
     if (input.language !== undefined) body.language = input.language;
 
+    applyExtras(input, INWORLD_SPEECH_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<SpeechParams, InworldSpeechWire, InworldSpeechResult>;
+} as const satisfies SpeechAdapterFor<
+  typeof INWORLD_SPEECH_MODEL_PARAMS,
+  InworldSpeechWire,
+  InworldSpeechResult
+>;

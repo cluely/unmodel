@@ -19,8 +19,25 @@ import type {
   UnifiedResult,
 } from "../types";
 import type { BlobRef, FileIdRef, ProviderOptions, UrlRef } from "./common";
+import type {
+  ModelExtras,
+  TranscribeModelNarrowing,
+  TranscribeModelParamTable,
+  WithModelParams,
+} from "./model-params";
 
 export type { ProviderOptions } from "./common";
+
+export type {
+  LanguageOf,
+  ModelExtras,
+  ModelParamsFor,
+  TimestampsOf,
+  TranscribeModelNarrowing,
+  TranscribeModelParams,
+  TranscribeModelParamTable,
+  WithModelParams,
+} from "./model-params";
 
 /**
  * The three ways audio reaches a transcription API, as a tag.
@@ -96,22 +113,46 @@ export interface Diarization {
   maxSpeakers?: number;
 }
 
-export interface TranscribeParams {
+/**
+ * Everything that is not narrowed per model.
+ *
+ * Same split, and the same reason, as `VideoParamsBase`: `language` and
+ * `timestamps` are **replaced** by {@link TranscribeModelNarrowing} in the
+ * validator's constraint rather than intersected with it, and a base that still
+ * declared them would put the wide type back into the intersection —
+ * discharging the `(string & {})` brace `LanguageOf` carries and letting
+ * subtype reduction eat every code it completes.
+ *
+ * `audio` stays here: its narrowing is per **adapter** rather than per model,
+ * and it is applied as a separate intersection ({@link AudioNarrowing}) whose
+ * type is a plain object union with no brace to lose.
+ */
+export interface TranscribeParamsBase {
   audio: AudioInput;
   /** `"provider/model"`, split on the **first** slash. */
   model: string;
-  /** BCP-47. Omit to let the model detect. */
-  language?: string;
   /**
    * A candidate set for detection, for the providers that accept a shortlist.
    * Distinct from `language`: that one *asserts*, this one *constrains*.
    */
   languages?: readonly string[];
   diarization?: Diarization;
-  timestamps?: TimestampGranularity;
   /** Vocabulary hints / a prior transcript, where the model takes one. */
   prompt?: string;
   providerOptions?: ProviderOptions;
+}
+
+/**
+ * A transcription request.
+ *
+ * The two per-model fields are declared here at their widest — this is the type
+ * an adapter's `compile` is written against, and the type a caller with a
+ * run-time-built ref gets.
+ */
+export interface TranscribeParams extends TranscribeParamsBase {
+  /** BCP-47. Omit to let the model detect. */
+  language?: string;
+  timestamps?: TimestampGranularity;
 }
 
 // ---------------------------------------------------------------------------
@@ -137,9 +178,11 @@ export interface TranscribeParams {
  */
 export interface TranscribeAdapterFor<
   K extends AudioInputKind,
+  T extends TranscribeModelParamTable,
   Wire extends object = object,
   Out extends object = object,
-> extends UnifiedAdapter<TranscribeParamsFor<K>, Wire, Out> {
+> extends UnifiedAdapter<TranscribeParamsFor<K>, Wire, Out>,
+    WithModelParams<T> {
   readonly category: "transcribe";
   /** The audio shapes this route accepts, `as const`. */
   readonly audioInputs: readonly K[];
@@ -165,18 +208,30 @@ export interface TranscribeAdapterFor<
  * ```
  */
 export interface TranscribeValidator<A> {
-  <T extends UnifiedInput<TranscribeParams, UnifiedRef<A>>>(
+  <
+    M extends UnifiedRef<A> | (string & {}),
+    T extends UnifiedInput<TranscribeParamsBase, UnifiedRef<A>> &
+      TranscribeModelNarrowing<A, M> &
+      ModelExtras<A, M>,
+  >(
     params: T &
-      ExactKeys<T, UnifiedInput<TranscribeParams, UnifiedRef<A>>> &
-      AudioNarrowing<A, T["model"] & string>,
+      { model: M } &
+      ExactKeys<T, UnifiedInput<TranscribeParams, UnifiedRef<A>> & ModelExtras<A, M>> &
+      AudioNarrowing<A, M>,
     options?: ValidateOptions,
-  ): UnifiedResult<A, T["model"] & string>;
-  safe<T extends UnifiedInput<TranscribeParams, UnifiedRef<A>>>(
+  ): UnifiedResult<A, M>;
+  safe<
+    M extends UnifiedRef<A> | (string & {}),
+    T extends UnifiedInput<TranscribeParamsBase, UnifiedRef<A>> &
+      TranscribeModelNarrowing<A, M> &
+      ModelExtras<A, M>,
+  >(
     params: T &
-      ExactKeys<T, UnifiedInput<TranscribeParams, UnifiedRef<A>>> &
-      AudioNarrowing<A, T["model"] & string>,
+      { model: M } &
+      ExactKeys<T, UnifiedInput<TranscribeParams, UnifiedRef<A>> & ModelExtras<A, M>> &
+      AudioNarrowing<A, M>,
     options?: ValidateOptions,
-  ): ValidateResult<UnifiedResult<A, T["model"] & string>>;
+  ): ValidateResult<UnifiedResult<A, M>>;
   /** Every provider id registered on this validator, sorted. */
   readonly providers: readonly string[];
 }
@@ -191,8 +246,17 @@ export type AudioNarrowing<A, R extends string> = {
   audio: AudioInputFor<Extract<InputsFor<A, R, "audioInputs">, AudioInputKind>>;
 };
 
-/** The loosest transcribe adapter that still pins the vocabulary. */
+/**
+ * The loosest transcribe adapter that still pins the vocabulary.
+ *
+ * `audioInputs` is required — a route that declared none would type `audio` as
+ * `never` and be uncallable, so there is no honest default — while
+ * `modelParams` is optional, exactly as on the other narrowing categories: a
+ * third-party adapter without one is still a legal argument to
+ * `createTranscribe`, and its refs degrade to the wide vocabulary.
+ */
 export type AnyTranscribeAdapter = AnyUnifiedAdapter<TranscribeParams> & {
   readonly category: "transcribe";
   readonly audioInputs: readonly AudioInputKind[];
+  readonly modelParams?: TranscribeModelParamTable;
 };

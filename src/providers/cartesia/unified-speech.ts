@@ -29,16 +29,24 @@
  * point at the nested field instead.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioFormat,
   resolveVoice,
   toPrimaryLanguage,
   toSpeed,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { SpeechParams } from "../../core/unified/vocabulary/speech";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  SpeechAdapterFor,
+  SpeechModelParamTable,
+  SpeechParams,
+} from "../../core/unified/vocabulary/speech";
 import {
   speech as validator,
+  CARTESIA_TTS_LANGUAGES,
+  type CartesiaEmotion,
   type CartesiaEncoding,
   type CartesiaMp3BitRate,
   type CartesiaOutputFormat,
@@ -93,10 +101,55 @@ const FORMAT: AudioFormatSpec = {
   source: TTS_BYTES_DOCS,
 };
 
+/**
+ * Cartesia's per-model speech surface — one row, four times, and the languages
+ * are the provider's own array rather than a copy of it.
+ *
+ * All four served ids sit on one `/tts/bytes` schema with one `encoding` enum
+ * and one 42-code `language` enum, and the only per-model rule in
+ * `speechConstraints` denies `pronunciation_dict_id` on `sonic-2` and
+ * `sonic-turbo` — neither of which this adapter serves. So the row is shared,
+ * and `languages` is {@link CARTESIA_TTS_LANGUAGES} by reference: the list an
+ * editor offers and the list `checkEnums` refuses against are then the same
+ * array, and cannot drift.
+ *
+ * `generation_config`'s two non-canonical members ride in through
+ * {@link GENERATION_CONFIG_NESTING}, beside the `speed` the adapter compiles
+ * into the same object. `emotion`'s type is the provider's own 58-label union,
+ * so an editor completes them and a typo is caught before the request is built.
+ */
+const CARTESIA_SPEECH_EXTRAS = {
+  // → generation_config.*
+  volume: EXTRA as number,
+  emotion: EXTRA as CartesiaEmotion,
+  // → body root
+  pronunciation_dict_id: EXTRA as string,
+} as const;
+
+const ROW = {
+  codecs: ["mp3", "pcm_s16le", "pcm_f32le", "pcm_mulaw", "pcm_alaw"],
+  languages: CARTESIA_TTS_LANGUAGES,
+  extras: CARTESIA_SPEECH_EXTRAS,
+} as const;
+
+const CARTESIA_SPEECH_MODEL_PARAMS = {
+  "sonic-3.5": ROW,
+  "sonic-3": ROW,
+  "sonic-preview": ROW,
+  "sonic-latest": ROW,
+} as const satisfies SpeechModelParamTable;
+
+/** The two attribute controls that live under `generation_config`. */
+const GENERATION_CONFIG_NESTING: Readonly<Record<string, readonly string[]>> = {
+  volume: ["generation_config"],
+  emotion: ["generation_config"],
+};
+
 export const speech = {
   category: "speech",
   provider: "cartesia",
   models: MODELS,
+  modelParams: CARTESIA_SPEECH_MODEL_PARAMS,
   compile(
     input: SpeechParams,
     ctx: CompileContext<SpeechParams>,
@@ -195,6 +248,14 @@ export const speech = {
       if (language !== undefined) body.language = language;
     }
 
+    applyExtras(input, CARTESIA_SPEECH_MODEL_PARAMS, body, ctx, {
+      nest: GENERATION_CONFIG_NESTING,
+    });
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<SpeechParams, CartesiaSpeechWire, CartesiaSpeechResult>;
+} as const satisfies SpeechAdapterFor<
+  typeof CARTESIA_SPEECH_MODEL_PARAMS,
+  CartesiaSpeechWire,
+  CartesiaSpeechResult
+>;

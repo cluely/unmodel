@@ -19,13 +19,19 @@
  * `.request.url` is where it shows up.
  */
 import {
+  applyExtras,
   bitsToKbps,
+  EXTRA,
   resolveAudioFormat,
   toMilliseconds,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { MusicParams as CanonicalMusicParams } from "../../core/unified/vocabulary/music";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  MusicAdapterFor,
+  MusicModelParamTable,
+  MusicParams as CanonicalMusicParams,
+} from "../../core/unified/vocabulary/music";
 import { music as validator, type ElevenlabsMusicOutputFormat, type MusicParams } from "./music";
 
 /** The two music models — the ref union for `elevenlabs/…`. */
@@ -77,10 +83,50 @@ const FORMAT: AudioFormatSpec = {
   source: MUSIC_DOCS,
 };
 
+/**
+ * The two music ids, which are wire-identical, and one shared row says so.
+ *
+ * `POST /v1/music` has no per-model constraint table at all: both ids go
+ * through one validator, one `MUSIC_OUTPUT_FORMATS` enum and one schema. What
+ * differs between them is the *shape* of `composition_plan` (`sections` on v1,
+ * `chunks` on v2) and the `"auto"` output-format default — neither of which is
+ * a value-space difference a row can carry, and `composition_plan` is excluded
+ * for the first of those reasons: one key whose type depends on the model id is
+ * a discriminated union the extras mechanism has no way to express, and it is
+ * an alternative to `prompt` rather than an addition to it.
+ *
+ * `codecs` is `FORMAT.codecs`' key set. `aac`, `flac` and `pcm_f32le` have no
+ * composite spelling here and are compile errors rather than 422s.
+ *
+ * The five extras are the body's own generation knobs: a fine-tune and its
+ * strength, phonetic name handling, C2PA signing, and whether the result is
+ * retained so it can be inpainted later. `music_length_ms`,
+ * `force_instrumental`, `output_format` and `seed` are canonical words' wire
+ * spellings and are therefore not extras.
+ */
+const MUSIC_EXTRAS = {
+  finetune_id: EXTRA as string | null,
+  finetune_strength: EXTRA as number,
+  use_phonetic_names: EXTRA as boolean,
+  sign_with_c2pa: EXTRA as boolean,
+  store_for_inpainting: EXTRA as boolean,
+} as const;
+
+const ROW = {
+  codecs: ["mp3", "opus", "pcm_s16le", "pcm_mulaw", "pcm_alaw"],
+  extras: MUSIC_EXTRAS,
+} as const;
+
+const ELEVENLABS_MUSIC_MODEL_PARAMS = {
+  music_v2: ROW,
+  music_v1: ROW,
+} as const satisfies MusicModelParamTable;
+
 export const music = {
   category: "music",
   provider: "elevenlabs",
   models: MODELS,
+  modelParams: ELEVENLABS_MUSIC_MODEL_PARAMS,
   compile(
     input: CanonicalMusicParams,
     ctx: CompileContext<CanonicalMusicParams>,
@@ -123,6 +169,12 @@ export const music = {
     // warning arrives here at `seed` rather than being pre-empted.
     if (input.seed !== undefined) body.seed = input.seed;
 
+    applyExtras(input, ELEVENLABS_MUSIC_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<CanonicalMusicParams, ElevenlabsMusicWire, ElevenlabsMusicResult>;
+} as const satisfies MusicAdapterFor<
+  typeof ELEVENLABS_MUSIC_MODEL_PARAMS,
+  ElevenlabsMusicWire,
+  ElevenlabsMusicResult
+>;

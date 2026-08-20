@@ -23,6 +23,8 @@
  *   canonical counts are refused by name.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioInput,
   resolveDiarization,
   toTimestampGranularity,
@@ -30,9 +32,24 @@ import {
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
   TranscribeAdapterFor,
+  TranscribeModelParamTable,
   TranscribeParamsFor,
 } from "../../core/unified/vocabulary/transcribe";
-import { transcribe as validator, type JobConfig } from "./transcribe";
+import {
+  transcribe as validator,
+  type JobConfig,
+  type SpeechmaticsAdditionalVocabEntry,
+  type SpeechmaticsAudioEventsConfig,
+  type SpeechmaticsAudioFilteringConfig,
+  type SpeechmaticsLanguageIdentificationConfig,
+  type SpeechmaticsOutputConfig,
+  type SpeechmaticsPunctuationOverrides,
+  type SpeechmaticsSpeakerDiarizationConfig,
+  type SpeechmaticsSummarizationConfig,
+  type SpeechmaticsTopicDetectionConfig,
+  type SpeechmaticsTranscriptFilteringConfig,
+  type SpeechmaticsTranslationConfig,
+} from "./transcribe";
 
 /** The three batch models — the ref union for `speechmatics/…`. */
 const MODELS = ["enhanced", "standard", "melia-1"] as const;
@@ -48,10 +65,107 @@ export type SpeechmaticsTranscribeWire = JobConfig;
 /** What a unified call to `speechmatics/…` returns. */
 export type SpeechmaticsTranscribeResult = ReturnType<typeof validator>;
 
+/**
+ * Speechmatics' per-model surface: the job config's own fields, and the ten
+ * things Melia 1 "does not yet support".
+ *
+ * ## Whole config objects, not flattened members
+ *
+ * Every extra below that ends in `_config` or `_overrides` is declared as one
+ * typed **object**, rather than as its members promoted to top-level keys. That
+ * is a deliberate departure from the flattening the other adapters do, and the
+ * reason is this endpoint's shape: its knobs live three levels deep in eight
+ * different config objects, and flattening them would put `topics`, `types`,
+ * `speakers`, `replacements` and `sensitivity` on the unified request as
+ * top-level words — names so generic that they would read as canonical
+ * vocabulary rather than as Speechmatics' own. One object per feature keeps the
+ * provider's structure visible, keeps the types exact (each is an interface
+ * `./transcribe.ts` already exports), and keeps the extras list short enough to
+ * read. Same call MiniMax's `voice_modify` makes, for the same reason.
+ *
+ * ## `timestamps: ["word"]`
+ *
+ * There is no granularity field: word timings ride on every transcript. So
+ * `"word"` agrees and compiles to nothing, and `"segment"` / `"character"` /
+ * `"none"` are refused by name.
+ *
+ * ## Melia 1
+ *
+ * Its row is the shared one minus `MELIA_UNSUPPORTED`: no custom dictionary
+ * (`additional_vocab`), no find-and-replace (`transcript_filtering_config`), no
+ * entity detection, no audio filtering, and none of the five
+ * speech-intelligence add-ons. And it "requires `language: "multi"`", which is
+ * the whole of its `languages` list — the shortest in the library, and one an
+ * editor can now complete.
+ *
+ * `domain` is Enhanced's alone: `domain: "medical"` "selects the Enhanced
+ * Medical model and requires `model: "enhanced"`".
+ *
+ * Excluded: `fetch_data`, `transcription_config.{language,model,diarization}`
+ * and `language_identification_config.expected_languages` are canonical words'
+ * wire spellings (the last of those is why the config object still merges
+ * rather than replaces), `operating_point` is deprecated in favour of `model`,
+ * and `notification_config` / `tracking` are transport.
+ */
+const TRANSCRIPTION_CONFIG_EXTRAS = {
+  output_locale: EXTRA as string,
+  punctuation_overrides: EXTRA as SpeechmaticsPunctuationOverrides,
+  channel_diarization_labels: EXTRA as string[],
+  max_delay_mode: EXTRA as "fixed" | "flexible",
+  speaker_diarization_config: EXTRA as SpeechmaticsSpeakerDiarizationConfig,
+  language_hints: EXTRA as string[],
+} as const;
+
+const ROOT_EXTRAS = {
+  language_identification_config: EXTRA as SpeechmaticsLanguageIdentificationConfig,
+  output_config: EXTRA as SpeechmaticsOutputConfig,
+} as const;
+
+/** The shared block plus the ten features `MELIA_UNSUPPORTED` names. */
+const FULL_EXTRAS = {
+  ...TRANSCRIPTION_CONFIG_EXTRAS,
+  ...ROOT_EXTRAS,
+  additional_vocab: EXTRA as SpeechmaticsAdditionalVocabEntry[],
+  enable_entities: EXTRA as boolean,
+  audio_filtering_config: EXTRA as SpeechmaticsAudioFilteringConfig,
+  transcript_filtering_config: EXTRA as SpeechmaticsTranscriptFilteringConfig,
+  translation_config: EXTRA as SpeechmaticsTranslationConfig,
+  summarization_config: EXTRA as SpeechmaticsSummarizationConfig,
+  topic_detection_config: EXTRA as SpeechmaticsTopicDetectionConfig,
+  audio_events_config: EXTRA as SpeechmaticsAudioEventsConfig,
+  sentiment_analysis_config: EXTRA as Record<string, unknown>,
+  auto_chapters_config: EXTRA as Record<string, unknown>,
+} as const;
+
+const TIMESTAMPS = ["word"] as const;
+
+const SPEECHMATICS_TRANSCRIBE_MODEL_PARAMS = {
+  enhanced: {
+    timestamps: TIMESTAMPS,
+    extras: { ...FULL_EXTRAS, domain: EXTRA as string },
+  },
+  standard: { timestamps: TIMESTAMPS, extras: FULL_EXTRAS },
+  "melia-1": {
+    timestamps: TIMESTAMPS,
+    languages: ["multi"],
+    extras: { ...TRANSCRIPTION_CONFIG_EXTRAS, ...ROOT_EXTRAS },
+  },
+} as const satisfies TranscribeModelParamTable;
+
+/** Which extras belong to `transcription_config`; the rest are job-config roots. */
+const CONFIG_NESTING: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
+  [...Object.keys(TRANSCRIPTION_CONFIG_EXTRAS), "additional_vocab", "enable_entities",
+   "audio_filtering_config", "transcript_filtering_config", "domain"].map((key) => [
+    key,
+    ["transcription_config"],
+  ]),
+);
+
 export const transcribe = {
   category: "transcribe",
   provider: "speechmatics",
   models: MODELS,
+  modelParams: SPEECHMATICS_TRANSCRIBE_MODEL_PARAMS,
   audioInputs: ["url"],
   unsupported: {
     prompt:
@@ -128,10 +242,13 @@ export const transcribe = {
       );
     }
 
+    applyExtras(input, SPEECHMATICS_TRANSCRIBE_MODEL_PARAMS, body, ctx, { nest: CONFIG_NESTING });
+
     return { params: body, validate: validator.safe };
   },
 } as const satisfies TranscribeAdapterFor<
   "url",
+  typeof SPEECHMATICS_TRANSCRIBE_MODEL_PARAMS,
   SpeechmaticsTranscribeWire,
   SpeechmaticsTranscribeResult
 >;

@@ -246,6 +246,110 @@ function noToApiTests(): void {
 }
 
 // ---------------------------------------------------------------------------
+// 6 · Per-model narrowing: timestamps, language and the extras
+// ---------------------------------------------------------------------------
+
+/**
+ * The category's *second* narrowing, and it composes with the first rather than
+ * competing: `audioInputs` types `audio` from the **adapter**, `modelParams`
+ * types `timestamps` from the **model**, and `TranscribeValidator` intersects
+ * both — so a request can be wrong in either way independently.
+ */
+function timestampNarrowingTests(): void {
+  transcribe({ model: "openai/whisper-1", audio: { file }, timestamps: "segment" });
+  // @ts-expect-error — "`timestamp_granularities[]` … is only supported for whisper-1".
+  transcribe({ model: "openai/gpt-4o-transcribe", audio: { file }, timestamps: "segment" });
+  transcribe({ model: "openai/gpt-4o-transcribe", audio: { file }, timestamps: "none" });
+
+  // ElevenLabs is the one route with character-level timings…
+  transcribe({ model: "elevenlabs/scribe_v1", audio: { url }, timestamps: "character" });
+  // @ts-expect-error — …and the one that has no segment level.
+  transcribe({ model: "elevenlabs/scribe_v1", audio: { url }, timestamps: "segment" });
+
+  // Deepgram's `utterances` is the segment switch; word timings are
+  // unconditional, so there is no `"none"` to ask for.
+  transcribe({ model: "deepgram/nova-3", audio: { url }, timestamps: "segment" });
+  // @ts-expect-error — the field would be accepted and the timings arrive anyway.
+  transcribe({ model: "deepgram/nova-3", audio: { url }, timestamps: "none" });
+
+  // The four routes with no granularity field at all report word timings only.
+  transcribe({ model: "assemblyai/universal-2", audio: { url }, timestamps: "word" });
+  // @ts-expect-error — and a segment is not a coarse word.
+  transcribe({ model: "assemblyai/universal-2", audio: { url }, timestamps: "segment" });
+  // @ts-expect-error — same at Cartesia, whose array's only member is "word".
+  transcribe({ model: "cartesia/ink-whisper", audio: { file }, timestamps: "character" });
+  transcribe({ model: "cartesia/ink-whisper", audio: { file }, timestamps: "none" });
+}
+
+function languageNarrowingTests(): void {
+  // Closed lists complete without gating — see `LanguageOf` for why the tail is
+  // open: `"en-GB"` is a working request that the adapter sends as `"en"`.
+  transcribe({ model: "gladia/solaria-3", audio: { url }, language: "fr" });
+  transcribe({ model: "gladia/solaria-3", audio: { url }, language: "fr-CA" });
+  transcribe({ model: "speechmatics/melia-1", audio: { url }, language: "multi" });
+  // A model with no published enum keeps the plain `string`.
+  transcribe({ model: "gladia/solaria-1", audio: { url }, language: "cy" });
+  // @ts-expect-error — but it is a tag, not an array; `languages` is the plural.
+  transcribe({ model: "gladia/solaria-1", audio: { url }, language: ["cy"] });
+}
+
+function extrasNarrowingTests(): void {
+  transcribe({ model: "deepgram/nova-3", audio: { url }, keyterm: "unmodel" });
+  // @ts-expect-error — keyterm prompting is the Nova-3 models'; others ignore it.
+  transcribe({ model: "deepgram/nova-2", audio: { url }, keyterm: "unmodel" });
+  transcribe({ model: "deepgram/nova-2", audio: { url }, keywords: "unmodel" });
+
+  // AssemblyAI's two gated blocks point in opposite directions.
+  transcribe({ model: "assemblyai/universal-3-5-pro", audio: { url }, temperature: 0.2 });
+  // @ts-expect-error — "Supported: Universal-3.5 Pro only".
+  transcribe({ model: "assemblyai/universal-2", audio: { url }, temperature: 0.2 });
+  transcribe({ model: "assemblyai/universal-2", audio: { url }, summarization: true });
+  // @ts-expect-error — "Supported: Universal-2 only".
+  transcribe({ model: "assemblyai/universal-3-5-pro", audio: { url }, summarization: true });
+  // @ts-expect-error — and `slam-1` is gated away from both.
+  transcribe({ model: "assemblyai/slam-1", audio: { url }, auto_chapters: true });
+
+  // Rev AI: human-only one way, machine-only the other, low-cost in between.
+  transcribe({ model: "revai/human", audio: { url }, rush: true });
+  // @ts-expect-error — `rush` is "only available for `transcriber: "human"`".
+  transcribe({ model: "revai/machine", audio: { url }, rush: true });
+  transcribe({ model: "revai/machine", audio: { url }, remove_disfluencies: true });
+  // @ts-expect-error — …which is "not available for human transcription jobs".
+  transcribe({ model: "revai/human", audio: { url }, remove_disfluencies: true });
+  transcribe({ model: "revai/fusion", audio: { url }, diarization_type: "premium" });
+  // @ts-expect-error — and not "in the low-cost environment".
+  transcribe({ model: "revai/low_cost", audio: { url }, diarization_type: "premium" });
+
+  // Speechmatics' Melia 1 "does not yet support" the intelligence add-ons.
+  transcribe({ model: "speechmatics/standard", audio: { url }, summarization_config: {} });
+  // @ts-expect-error
+  transcribe({ model: "speechmatics/melia-1", audio: { url }, language: "multi", summarization_config: {} });
+  // @ts-expect-error — `domain: "medical"` "requires `model: "enhanced"`".
+  transcribe({ model: "speechmatics/standard", audio: { url }, domain: "medical" });
+  transcribe({ model: "speechmatics/enhanced", audio: { url }, domain: "medical" });
+
+  // ElevenLabs' one row difference.
+  transcribe({ model: "elevenlabs/scribe_v2", audio: { url }, no_verbatim: true });
+  // @ts-expect-error — "Only supported with scribe_v2 model".
+  transcribe({ model: "elevenlabs/scribe_v1", audio: { url }, no_verbatim: true });
+
+  // @ts-expect-error — a key no model on the ref'd provider takes is a typo.
+  transcribe({ model: "mistral/voxtral-mini-latest", audio: { url }, contextbias: ["x"] });
+  transcribe({ model: "mistral/voxtral-mini-latest", audio: { url }, context_bias: ["x"] });
+}
+
+/** A dynamic or unknown ref degrades to the wide vocabulary, never to `never`. */
+function degradedRefTests(): void {
+  const dynamic: string = process.env["MODEL"] ?? "openai/whisper-1";
+  transcribe({ model: dynamic, audio: { url }, timestamps: "character", language: "cy" });
+  transcribe({ model: "openai/whisper-9", audio: { file }, timestamps: "segment" });
+  // Extras degrade to "every name in the build, typed `unknown`"…
+  transcribe({ model: "openai/whisper-9", audio: { file }, temperature: 0.2 });
+  // @ts-expect-error — …and a typo is still caught by `ExactKeys`.
+  transcribe({ model: "openai/whisper-9", audio: { file }, temperatur: 0.2 });
+}
+
+// ---------------------------------------------------------------------------
 // The adapters satisfy the category contract
 // ---------------------------------------------------------------------------
 
@@ -260,4 +364,8 @@ export {
   resultTypeTests,
   providerOptionsTests,
   noToApiTests,
+  timestampNarrowingTests,
+  languageNarrowingTests,
+  extrasNarrowingTests,
+  degradedRefTests,
 };

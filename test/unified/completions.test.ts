@@ -248,3 +248,232 @@ video({ model: "¦", prompt: "x" });`);
     expect(entries).toContain("lightricks/ltx-2-5-fast");
   });
 });
+
+/**
+ * ## The audio categories add a second *shape* to check, not just a second list
+ *
+ * `outputFormat` is `AudioFormatCodec | AudioFormat`, so narrowing it means
+ * narrowing a union **and** a property inside its object arm. Both are checked
+ * below, because only the first is visible from the shorthand position: an
+ * `AudioFormatOf` that narrowed the shorthand and left `format` wide would pass
+ * a `size`-style test and still complete `"vorbis"` one keystroke later.
+ *
+ * `language` is the third shape again: a literal union with a `(string & {})`
+ * tail, which is the LiteralUnion trick and the reason it must never be
+ * intersected with the base's `language?: string` (the brace would discharge,
+ * the bare `string` would survive, and subtype reduction would eat all
+ * forty-two codes while tsc stayed perfectly happy — the `SizingArms` failure,
+ * one category over).
+ */
+describe("unified speech: per-model narrowing reaches the editor", () => {
+  test("outputFormat completes the model's codecs, and not the others'", () => {
+    const hume = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "hume/octave", text: "x", outputFormat: "¦" });`);
+    expect(hume.sort()).toEqual(["mp3", "pcm_s16le"]);
+
+    const openai = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "openai/tts-1", text: "x", outputFormat: "¦" });`);
+    expect(openai.sort()).toEqual(["aac", "flac", "mp3", "opus", "pcm_s16le"]);
+
+    // Resemble is the only provider in the category with the wider PCM widths.
+    const resemble = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "resemble/resemble-ultra", text: "x", outputFormat: "¦" });`);
+    expect(resemble).toContain("pcm_s24le");
+    expect(openai).not.toContain("pcm_s24le");
+  });
+
+  test("the object spelling narrows `format` too", () => {
+    const entries = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "cartesia/sonic-3", text: "x", outputFormat: { format: "¦" } });`);
+    expect(entries.sort()).toEqual(["mp3", "pcm_alaw", "pcm_f32le", "pcm_mulaw", "pcm_s16le"]);
+  });
+
+  test("language completes the model's list without gating it", () => {
+    const entries = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "lmnt/blizzard", text: "x", language: "¦" });`);
+    // The 31 LMNT serves, and `"auto"` — a wire value the canonical BCP-47
+    // `language` cannot spell — is deliberately not among them.
+    expect(entries).toContain("ur");
+    expect(entries).toContain("as");
+    expect(entries).not.toContain("auto");
+    // The `(string & {})` tail has not eaten the literals.
+    expect(entries.length).toBe(31);
+  });
+
+  /**
+   * Two regressions this suite caught while the tables were being written, both
+   * of the "green build, dead narrowing" kind the file exists for — and both
+   * invisible to `.test-d.ts`, because a widened union is *more* permissive and
+   * therefore breaks no assignment:
+   *
+   *  1. **A widened source array.** MiniMax's `language_boost` map was
+   *     annotated `Readonly<Record<string, …>>`, so `keyof typeof` was `string`,
+   *     so the row's `languages` was `readonly string[]`, so `LanguageOf`
+   *     answered the bare `string` and `language:` completed **nothing**.
+   *  2. **A `filter` type predicate.** smallest.ai's two pools were derived with
+   *     `filter((c): c is Exclude<L, "auto"> => …)`, which answers the same type
+   *     for both calls whatever the predicate tests — so the 20-code base pool
+   *     typed as all 31 and offered the eleven Pro-only codes its own validator
+   *     refuses.
+   *
+   * The lists are asserted by *count* as well as by membership, because both
+   * failures are "the list is a different size than the table says".
+   */
+  test("a per-model language list is the model's own, not the provider's widest", () => {
+    const two8 = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "minimax/speech-2.8-hd", text: "x", language: "¦" });`);
+    expect(two8.length).toBe(42);
+    expect(two8).toContain("fa");
+
+    const legacy = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "minimax/speech-01-hd", text: "x", language: "¦" });`);
+    // "The speech-01 and speech-02 series models do not currently support
+    // Persian, Filipino, or Tamil" — `fa`, `fil`/`tl` and `ta`.
+    expect(legacy.length).toBe(38);
+    for (const code of ["fa", "fil", "tl", "ta"]) expect(legacy).not.toContain(code);
+
+    const base = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "smallest-ai/lightning_v3.1", text: "x", language: "¦" });`);
+    expect(base.length).toBe(20);
+    expect(base).not.toContain("ja");
+
+    const pro = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "smallest-ai/lightning_v3.1_pro", text: "x", language: "¦" });`);
+    expect(pro.length).toBe(31);
+    expect(pro).toContain("ja");
+  });
+
+  test("property names include the model's extras, and its extras only", () => {
+    const entries = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "rime/mistv2", text: "x", ¦ });`);
+    for (const name of ["outputFormat", "language", "speed", "inlineSpeedAlpha", "noTextNormalization"]) {
+      expect(entries).toContain(name);
+    }
+    // Coda's row is empty and the Mist knobs are not on it.
+    const coda = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "rime/coda", text: "x", ¦ });`);
+    expect(coda).not.toContain("inlineSpeedAlpha");
+    expect(coda).not.toContain("noTextNormalization");
+  });
+
+  test("an extra's own values complete, per model", () => {
+    const two6 = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "minimax/speech-2.6-hd", text: "x", emotion: "¦" });`);
+    expect(two6).toContain("whisper");
+    expect(two6).toContain("fluent");
+    const two8 = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "minimax/speech-2.8-hd", text: "x", emotion: "¦" });`);
+    expect(two8).toContain("fluent");
+    expect(two8).not.toContain("whisper");
+    const legacy = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "minimax/speech-01-hd", text: "x", emotion: "¦" });`);
+    expect(legacy).not.toContain("fluent");
+    expect(legacy).toContain("calm");
+  });
+
+  test("an unknown model degrades to the wide vocabulary", () => {
+    const entries = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "openai/tts-9", text: "x", outputFormat: "¦" });`);
+    for (const codec of ["mp3", "aac", "flac", "opus", "vorbis", "pcm_s24le", "pcm_alaw"]) {
+      expect(entries).toContain(codec);
+    }
+  });
+});
+
+describe("unified transcribe: per-model narrowing reaches the editor", () => {
+  test("timestamps completes the granularities the route reports", () => {
+    const whisper = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "openai/whisper-1", audio: { file: new Blob([]) }, timestamps: "¦" });`);
+    expect(whisper.sort()).toEqual(["none", "segment", "word"]);
+
+    const gpt4o = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "openai/gpt-4o-transcribe", audio: { file: new Blob([]) }, timestamps: "¦" });`);
+    expect(gpt4o.sort()).toEqual(["none"]);
+
+    const scribe = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "elevenlabs/scribe_v1", audio: { url: "https://e.com/a.wav" }, timestamps: "¦" });`);
+    expect(scribe.sort()).toEqual(["character", "none", "word"]);
+
+    // No `"none"` where the route has no switch to turn timings off.
+    const deepgram = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "deepgram/nova-3", audio: { url: "https://e.com/a.wav" }, timestamps: "¦" });`);
+    expect(deepgram.sort()).toEqual(["segment", "word"]);
+
+    const assembly = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "assemblyai/universal-2", audio: { url: "https://e.com/a.wav" }, timestamps: "¦" });`);
+    expect(assembly.sort()).toEqual(["word"]);
+  });
+
+  test("language completes a closed list where the wire has one", () => {
+    const solaria3 = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "gladia/solaria-3", audio: { url: "https://e.com/a.wav" }, language: "¦" });`);
+    for (const code of ["en", "fr", "de", "es", "it"]) expect(solaria3).toContain(code);
+    expect(solaria3).not.toContain("pt");
+
+    // Melia 1's whole list is one magic value.
+    const melia = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "speechmatics/melia-1", audio: { url: "https://e.com/a.wav" }, language: "¦" });`);
+    expect(melia).toContain("multi");
+  });
+
+  test("property names include the model's extras, and its extras only", () => {
+    const nova3 = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "deepgram/nova-3", audio: { url: "https://e.com/a.wav" }, ¦ });`);
+    for (const name of ["timestamps", "diarization", "keyterm", "keywords", "smart_format"]) {
+      expect(nova3).toContain(name);
+    }
+    const nova2 = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "deepgram/nova-2", audio: { url: "https://e.com/a.wav" }, ¦ });`);
+    expect(nova2).toContain("keywords");
+    expect(nova2).not.toContain("keyterm");
+
+    // Rev AI's two gated blocks, from one adapter.
+    const human = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "revai/human", audio: { url: "https://e.com/a.wav" }, ¦ });`);
+    expect(human).toContain("rush");
+    expect(human).not.toContain("remove_disfluencies");
+    const machine = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "revai/machine", audio: { url: "https://e.com/a.wav" }, ¦ });`);
+    expect(machine).toContain("remove_disfluencies");
+    expect(machine).not.toContain("rush");
+  });
+
+  test("an unknown model degrades to the wide vocabulary", () => {
+    const entries = completionsAt(`import { transcribe } from "./src/unified/transcribe";
+transcribe({ model: "openai/whisper-9", audio: { file: new Blob([]) }, timestamps: "¦" });`);
+    expect(entries.sort()).toEqual(["character", "none", "segment", "word"]);
+  });
+});
+
+describe("unified music: per-model narrowing reaches the editor", () => {
+  test("outputFormat completes the provider's codecs", () => {
+    const stability = completionsAt(`import { music } from "./src/unified/music";
+music({ model: "stability/stable-audio-2", prompt: "x", outputFormat: "¦" });`);
+    expect(stability.sort()).toEqual(["mp3", "pcm_s16le"]);
+
+    const elevenlabs = completionsAt(`import { music } from "./src/unified/music";
+music({ model: "elevenlabs/music_v1", prompt: "x", outputFormat: "¦" });`);
+    expect(elevenlabs.sort()).toEqual(["mp3", "opus", "pcm_alaw", "pcm_mulaw", "pcm_s16le"]);
+  });
+
+  test("property names include the model's extras, and its extras only", () => {
+    const stability = completionsAt(`import { music } from "./src/unified/music";
+music({ model: "stability/stable-audio-2", prompt: "x", ¦ });`);
+    expect(stability).toContain("steps");
+    expect(stability).toContain("cfg_scale");
+    expect(stability).not.toContain("finetune_id");
+
+    const elevenlabs = completionsAt(`import { music } from "./src/unified/music";
+music({ model: "elevenlabs/music_v1", prompt: "x", ¦ });`);
+    expect(elevenlabs).toContain("finetune_id");
+    expect(elevenlabs).not.toContain("steps");
+  });
+
+  test("an unknown model degrades to the wide vocabulary", () => {
+    const entries = completionsAt(`import { music } from "./src/unified/music";
+music({ model: "elevenlabs/music_v9", prompt: "x", outputFormat: "¦" });`);
+    for (const codec of ["mp3", "aac", "flac", "opus", "vorbis", "pcm_s24le"]) {
+      expect(entries).toContain(codec);
+    }
+  });
+});

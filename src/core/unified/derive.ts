@@ -2541,13 +2541,21 @@ function extraNames(table: Readonly<Record<string, ExtrasRow>>): readonly string
  * object would silently delete whichever of the two was written first. Same
  * rule the kernel's `deepMerge` uses for `providerOptions`, for the same
  * reason.
+ *
+ * An **array** already on the path is walked by index rather than replaced —
+ * `["utterances", "0", "description"]` reaches into the utterance the compiler
+ * built. Hume is why: its body has no `text` field at all, so `text`, `voice`
+ * and `speed` compile into `utterances[0]`, and its acting direction
+ * (`description`) is a sibling of them. Without this, the first segment would
+ * find an array, decide it was not a plain record, and overwrite the utterance
+ * with `{}` — turning a per-model extra into a request that lost its text.
  */
 function place(body: Record<string, unknown>, path: readonly string[], value: unknown): void {
   let node = body;
   for (let i = 0; i < path.length - 1; i += 1) {
     const segment = path[i] as string;
     const next = node[segment];
-    if (!isPlainRecord(next)) node[segment] = {};
+    if (!isPlainRecord(next) && !Array.isArray(next)) node[segment] = {};
     node = node[segment] as Record<string, unknown>;
   }
   const key = path[path.length - 1] as string;

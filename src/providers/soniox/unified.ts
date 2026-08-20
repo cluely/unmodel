@@ -19,6 +19,8 @@
  *   from a transcript in the wrong language.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveAudioInput,
   resolveDiarization,
   toPrimaryLanguage,
@@ -27,9 +29,14 @@ import {
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
   TranscribeAdapterFor,
+  TranscribeModelParamTable,
   TranscribeParamsFor,
 } from "../../core/unified/vocabulary/transcribe";
-import { transcribe as validator, type TranscriptionsBody } from "./transcribe";
+import {
+  transcribe as validator,
+  type SonioxTranslation,
+  type TranscriptionsBody,
+} from "./transcribe";
 
 /** The two async models — the ref union for `soniox/…`. */
 const MODELS = ["stt-async-v5", "stt-async-v4"] as const;
@@ -43,10 +50,46 @@ export type SonioxTranscribeWire = TranscriptionsBody;
 /** What a unified call to `soniox/…` returns. */
 export type SonioxTranscribeResult = ReturnType<typeof validator>;
 
+/**
+ * Both async models share one row: one schema, one param surface, no per-model
+ * constraint table.
+ *
+ * `timestamps: ["word"]` and no `"none"` — Soniox returns per-token timing on
+ * every response and offers no switch, so `"word"` agrees and costs nothing
+ * while the other three are refused by name.
+ *
+ * The three extras are the rest of Soniox's language machinery, and they are
+ * exactly the fields the canonical mapping *approximates* around.
+ * `language_hints_strict` is the flag this adapter already sets to `true` when
+ * `language` is used — so setting it alongside `languages` is the only way to
+ * say "bias hard toward this shortlist" without asserting a single language,
+ * which is the request the canonical vocabulary has no word for.
+ * `enable_language_identification` returns the detected language per token, and
+ * `translation` is the one-way/two-way translation config.
+ *
+ * Excluded: `audio_url`, `file_id`, `language_hints`,
+ * `enable_speaker_diarization` and `context` are canonical words' wire
+ * spellings.
+ */
+const SONIOX_ROW = {
+  timestamps: ["word"],
+  extras: {
+    language_hints_strict: EXTRA as boolean,
+    enable_language_identification: EXTRA as boolean,
+    translation: EXTRA as SonioxTranslation | null,
+  },
+} as const;
+
+const SONIOX_TRANSCRIBE_MODEL_PARAMS = {
+  "stt-async-v5": SONIOX_ROW,
+  "stt-async-v4": SONIOX_ROW,
+} as const satisfies TranscribeModelParamTable;
+
 export const transcribe = {
   category: "transcribe",
   provider: "soniox",
   models: MODELS,
+  modelParams: SONIOX_TRANSCRIBE_MODEL_PARAMS,
   audioInputs: ["url", "fileId"],
   compile(
     input: TranscribeParamsFor<"url" | "fileId">,
@@ -132,10 +175,13 @@ export const transcribe = {
 
     if (input.prompt !== undefined) body.context = input.prompt;
 
+    applyExtras(input, SONIOX_TRANSCRIBE_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
 } as const satisfies TranscribeAdapterFor<
   "url" | "fileId",
+  typeof SONIOX_TRANSCRIBE_MODEL_PARAMS,
   SonioxTranscribeWire,
   SonioxTranscribeResult
 >;

@@ -20,16 +20,23 @@
  * reachable through `providerOptions.murf.format`.
  */
 import {
+  applyExtras,
+  EXTRA,
   murfSpeed,
   resolveAudioFormat,
   resolveVoice,
   type AudioFormatSpec,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { SpeechParams } from "../../core/unified/vocabulary/speech";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  SpeechAdapterFor,
+  SpeechModelParamTable,
+  SpeechParams,
+} from "../../core/unified/vocabulary/speech";
 import {
   speech as generateValidator,
   speechStream as streamValidator,
+  type MurfChannelType,
   type MurfFormat,
   type SpeechGenerateBody,
   type SpeechStreamBody,
@@ -107,10 +114,58 @@ function formatSpec(rates: readonly number[]): AudioFormatSpec {
 const GENERATE_FORMAT = formatSpec([8000, 24000, 44100, 48000]);
 const STREAM_FORMAT = formatSpec([8000, 16000, 24000, 44100, 48000]);
 
+/**
+ * Murf's per-model surface, which is really a per-**route** surface — and here
+ * that is the same thing.
+ *
+ * The ref picks the endpoint (`gen2` → `/v1/speech/generate`, `falcon-2` →
+ * `/v1/speech/stream`, because Falcon 2 is served nowhere else), so a model
+ * serves exactly one route and the video wave's route hazard cannot arise: an
+ * extra declared on a row is a field of the one body that row compiles to.
+ *
+ * `style`, `pitch` and `channelType` are `SpeechCommon` and therefore on both.
+ * The four the generate body adds are Gen2's alone: `variation` and
+ * `audioDuration` are marked "Gen2 only" in the reference, and
+ * `encodeAsBase64` / `wordDurationsAsOriginalText` exist only on
+ * `SpeechGenerateBody`. Sending any of them to `/v1/speech/stream` would put a
+ * key on a body that has no such field, which is the silent-drop the loss
+ * contract forbids — so `falcon-2`'s row stops at three.
+ *
+ * No `languages`: `locale` is BCP-47 and passes through unmapped (Murf
+ * publishes a voice list, not a language enum), so there is nothing closed to
+ * complete. `multiNativeLocale` is excluded as deprecated — the provider's own
+ * validator says so — and `OGG` never reaches `codecs` because the adapter
+ * refuses to guess which codec is inside the container.
+ */
+const SHARED_MURF_EXTRAS = {
+  /** Predefined voice style, e.g. "Angry", "Sad" — a catalog string, not an enum. */
+  style: EXTRA as string,
+  /** Integer −50…50, like `rate`; the canonical vocabulary has no word for pitch. */
+  pitch: EXTRA as number,
+  channelType: EXTRA as MurfChannelType,
+} as const;
+
+const MURF_CODECS = ["mp3", "flac", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] as const;
+
+const MURF_SPEECH_MODEL_PARAMS = {
+  gen2: {
+    codecs: MURF_CODECS,
+    extras: {
+      ...SHARED_MURF_EXTRAS,
+      variation: EXTRA as number,
+      audioDuration: EXTRA as number,
+      encodeAsBase64: EXTRA as boolean,
+      wordDurationsAsOriginalText: EXTRA as boolean,
+    },
+  },
+  "falcon-2": { codecs: MURF_CODECS, extras: SHARED_MURF_EXTRAS },
+} as const satisfies SpeechModelParamTable;
+
 export const speech = {
   category: "speech",
   provider: "murf",
   models: MODELS,
+  modelParams: MURF_SPEECH_MODEL_PARAMS,
   compile(
     input: SpeechParams,
     ctx: CompileContext<SpeechParams>,
@@ -163,6 +218,8 @@ export const speech = {
     // `locale` is BCP-47 already ("en-US", "es-ES"), so it passes through.
     if (input.language !== undefined) body.locale = input.language;
 
+    applyExtras(input, MURF_SPEECH_MODEL_PARAMS, body, ctx);
+
     return {
       params: body as MurfSpeechWire,
       // One cast, at the one place the two routes meet: each validator takes
@@ -170,4 +227,8 @@ export const speech = {
       validate: (streaming ? streamValidator.safe : generateValidator.safe) as MurfValidate,
     };
   },
-} as const satisfies UnifiedAdapter<SpeechParams, MurfSpeechWire, MurfSpeechResult>;
+} as const satisfies SpeechAdapterFor<
+  typeof MURF_SPEECH_MODEL_PARAMS,
+  MurfSpeechWire,
+  MurfSpeechResult
+>;

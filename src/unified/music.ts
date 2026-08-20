@@ -27,6 +27,14 @@
  * and therefore silent, and a length that lands between two milliseconds is an
  * error rather than a rounded value nobody asked for.
  *
+ * **`outputFormat` narrows to the ref.** ElevenLabs publishes a composite enum
+ * covering mp3, Opus, PCM, μ-law and A-law; Stability's `output_format` is
+ * `"mp3" | "wav"`. Each adapter's `modelParams` table says which, so
+ * `outputFormat: "opus"` is a compile error on `stability/stable-audio-2` and
+ * fine on `elevenlabs/music_v1` — and each model's non-canonical knobs
+ * (`steps`, `cfg_scale`, `finetune_id`) arrive typed and go on the wire
+ * verbatim.
+ *
  * The smallest of the six vocabularies, deliberately: music APIs disagree
  * about everything above the prompt, and a canonical word for something three
  * providers interpret differently would make this category's warnings
@@ -38,23 +46,32 @@
  * full explanation of what that means and why the pack is assembled by hand).
  */
 import { createUnified } from "../core/unified/kernel";
-import type { AnyUnifiedAdapter, UnifiedValidator } from "../core/unified/types";
-import type { MusicParams } from "../core/unified/vocabulary/music";
+import type {
+  AnyMusicAdapter,
+  MusicParams,
+  MusicValidator,
+} from "../core/unified/vocabulary/music";
 import { music as elevenlabs } from "../providers/elevenlabs/unified-music";
 import { music as stability } from "../providers/stability/unified-music";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
-export type MusicAdapter = AnyUnifiedAdapter<MusicParams> & { readonly category: "music" };
+export type MusicAdapter = AnyMusicAdapter;
 
 /**
  * Builds a `music()` from the adapters you pass. The generic is on the array
- * element so each adapter's literal `provider` and `as const` `models` survive
- * inference and drive both autocomplete and the return type.
+ * element so each adapter's literal `provider`, `as const` `models` and
+ * `as const` `modelParams` survive inference — driving autocomplete, the return
+ * type, and the per-model `outputFormat` and extras narrowing alike.
+ *
+ * The cast is the same one `createUnified` already performs internally: the
+ * runtime is category-agnostic, and `MusicValidator` differs from
+ * `UnifiedValidator` only in the extra per-model constraints it puts on the
+ * params.
  */
 export function createMusic<A extends MusicAdapter>(
   adapters: readonly A[],
-): UnifiedValidator<MusicParams, A> {
-  return createUnified<MusicParams, A>("music", adapters);
+): MusicValidator<A> {
+  return createUnified<MusicParams, A>("music", adapters) as unknown as MusicValidator<A>;
 }
 
 /**
@@ -74,19 +91,31 @@ export function createMusic<A extends MusicAdapter>(
  * milliseconds is refused rather than rounded.
  *
  * The cost is honest and measured: importing this pulls in both providers'
- * validators, schemas and catalogs (~90 KiB, pinned in
+ * validators, schemas and catalogs (~145 KiB, pinned in
  * `test/bundle-budget.test.ts`). `createMusic([…])` above is the way to pay
  * for one provider instead of two.
  */
 export const music = createMusic([elevenlabs, stability]);
 
 export type {
+  AnyMusicAdapter,
   AudioContainer,
   AudioFormat,
   AudioFormatCodec,
+  AudioFormatOf,
   AudioFormatRequest,
+  CodecOf,
+  ModelExtras,
+  ModelParamsFor,
+  MusicAdapterFor,
+  MusicModelNarrowing,
+  MusicModelParams,
+  MusicModelParamTable,
   MusicParams,
+  MusicParamsBase,
+  MusicValidator,
   ProviderOptions,
+  WithModelParams,
 } from "../core/unified/vocabulary/music";
 
 export type {

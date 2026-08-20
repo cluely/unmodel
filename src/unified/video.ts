@@ -37,12 +37,39 @@
  * duration a model does not offer is an `invalid_enum_value` listing the ones
  * it does — never the nearest.
  *
+ * ## The three size words narrow to the ref
+ *
+ * The vocabulary is one shape for everyone; what one *model* accepts is not.
+ * `sora-2` renders 720p and `sora-2-pro` adds 1080p; `kling-v2-5-turbo` runs 5
+ * or 10 seconds and `kling-v3` runs any integer from 3 to 15. So each adapter
+ * carries a `modelParams` table keyed by bare model id, and the ref selects a
+ * row:
+ *
+ * ```ts
+ * video({ model: "openai/sora-2",     prompt, duration: 8 });         // ok
+ * video({ model: "openai/sora-2",     prompt, duration: 7 });         // compile error
+ * video({ model: "openai/sora-2",     prompt, resolution: "1080p" }); // pro only
+ * video({ model: "kling/kling-v1-6",  prompt, cfg_scale: 0.5 });      // ok
+ * video({ model: "kling/kling-v3",    prompt, cfg_scale: 0.5 });      // compile error
+ * ```
+ *
+ * A model whose lengths are a *range* rather than a list — Seedance takes any
+ * integer inside per-model bounds — declares none, and `duration` stays the
+ * wide `number` there. The params the vocabulary has no word for arrive with
+ * their exact types and go on the wire verbatim, and an unknown or
+ * run-time-built ref degrades to the wide vocabulary: the union drives
+ * autocomplete, it does not gate the API.
+ * `core/unified/vocabulary/model-params.ts` is where the mechanism lives.
+ *
  * The result is the provider's own `Validated` (see `unmodel/image` for the
  * full explanation of what that means and why the pack is assembled by hand).
  */
 import { createUnified } from "../core/unified/kernel";
-import type { AnyUnifiedAdapter, UnifiedValidator } from "../core/unified/types";
-import type { VideoParams } from "../core/unified/vocabulary/video";
+import type {
+  AnyVideoAdapter,
+  VideoParams,
+  VideoValidator,
+} from "../core/unified/vocabulary/video";
 import { video as bytedance } from "../providers/bytedance/unified-video";
 import { video as google } from "../providers/google/unified-video";
 import { video as kling } from "../providers/kling/unified-video";
@@ -55,17 +82,28 @@ import { video as runway } from "../providers/runway/unified-video";
 import { video as vidu } from "../providers/vidu/unified-video";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
-export type VideoAdapter = AnyUnifiedAdapter<VideoParams> & { readonly category: "video" };
+export type VideoAdapter = AnyVideoAdapter;
 
 /**
- * Builds a `video()` from the adapters you pass. The generic is on the array
- * element so each adapter's literal `provider` and `as const` `models` survive
- * inference and drive both autocomplete and the return type.
+ * Builds a `video()` from the adapters you pass.
+ *
+ * The generic is on the *array element*, not on `VideoAdapter`, so the
+ * adapters' literal `provider`, `as const` `models` and `as const`
+ * `modelParams` survive inference — which is what makes `model:` autocomplete
+ * `"openai/sora-2"` rather than `string`, *and* what makes `duration:` accept
+ * that model's own five lengths and nothing else. Unregistered refs still
+ * compile and still run: an unrecognised model is a `unknown_model` **warning**,
+ * because a model released after this snapshot must stay callable.
+ *
+ * The cast is the same one `createUnified` already performs internally: the
+ * runtime is category-agnostic, and `VideoValidator` differs from
+ * `UnifiedValidator` only in the extra per-model constraints it puts on the
+ * params.
  */
 export function createVideo<A extends VideoAdapter>(
   adapters: readonly A[],
-): UnifiedValidator<VideoParams, A> {
-  return createUnified<VideoParams, A>("video", adapters);
+): VideoValidator<A> {
+  return createUnified<VideoParams, A>("video", adapters) as unknown as VideoValidator<A>;
 }
 
 /**
@@ -104,14 +142,27 @@ export const video = createVideo([
 ]);
 
 export type {
+  AnyVideoAdapter,
   AspectRatio,
   AspectRatioPreset,
+  ModelExtras,
+  ModelParamsFor,
   ProviderOptions,
+  VideoAdapterFor,
+  VideoDurationOf,
   VideoImageInput,
   VideoImageRole,
   VideoInput,
+  VideoModelNarrowing,
+  VideoModelParams,
+  VideoModelParamTable,
   VideoParams,
+  VideoParamsBase,
+  VideoRatioOf,
   VideoResolution,
+  VideoResolutionOf,
+  VideoValidator,
+  WithModelParams,
 } from "../core/unified/vocabulary/video";
 
 export type {

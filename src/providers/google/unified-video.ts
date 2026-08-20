@@ -50,6 +50,8 @@
  * most and shows up nowhere.
  */
 import {
+  applyExtras,
+  EXTRA,
   requireInlineBytes,
   resolveImageSlots,
   resolveVideoRoute,
@@ -58,9 +60,11 @@ import {
   toTier,
   type VideoRoute,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
+  VideoAdapterFor,
   VideoImageInput,
+  VideoModelParamTable,
   VideoParams,
   VideoResolution,
 } from "../../core/unified/vocabulary/video";
@@ -110,6 +114,75 @@ const RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
 /** `parameters.aspectRatio` — "Every Veo model generates 16:9 or 9:16". */
 const ASPECT_RATIOS = ["16:9", "9:16"] as const;
 
+/**
+ * Veo's per-model surface.
+ *
+ * Three facts the wire tables carry and the vocabulary can now state up front:
+ *
+ * - **`durationSeconds`** is 4/6/8 across Veo 3.x, 5–8 on Veo 2 and 3–10 on
+ *   Omni. Closed enums, all three, so they narrow rather than staying `number`.
+ * - **`resolution` does not exist on Veo 2.** `videoConstraints` denies it
+ *   ("output is 720p"), which is exactly what `resolutions: []` says — the
+ *   caller's `resolution` types as `never` and the mistake is caught before the
+ *   request is built rather than after it is sent.
+ * - **`4k` is Veo 3.x-minus-Lite.** Lite stops at 1080p and Omni at 720p.
+ *
+ * What the rows deliberately do NOT say: `1080p` and `4k` on Veo 3.x also
+ * require `duration: 8`, and `personGeneration: "allow_all"` is refused on an
+ * image-driven request. Both are *pairings* rather than per-field enums —
+ * `checkParameterPairings` owns them, and a row cannot express a rule about two
+ * fields at once without inventing a second table that would then disagree.
+ *
+ * Both extras nest under `parameters` and are re-checked there by the
+ * endpoint's own tables, which is why `personGeneration` can carry a different
+ * union per model: Veo 3.x has two values, Veo 2 has three (it is the only
+ * family with `dont_allow`), and Omni's entry carries no enum at all — the Veo
+ * rules are `veo-`-prefix-gated — so nothing narrower than `string` would be
+ * true there.
+ */
+const VEO_3_EXTRAS = {
+  personGeneration: EXTRA as "allow_all" | "allow_adult",
+  enhancePrompt: EXTRA as boolean,
+} as const;
+
+const VEO_3_ROW = {
+  durations: [4, 6, 8],
+  resolutions: ["720p", "1080p", "4k"],
+  ratios: ASPECT_RATIOS,
+  extras: VEO_3_EXTRAS,
+} as const;
+
+const GOOGLE_VIDEO_MODEL_PARAMS = {
+  "veo-3.1-generate-preview": VEO_3_ROW,
+  "veo-3.1-fast-generate-preview": VEO_3_ROW,
+  "veo-3.1-lite-generate-preview": {
+    durations: [4, 6, 8],
+    resolutions: ["720p", "1080p"],
+    ratios: ASPECT_RATIOS,
+    extras: VEO_3_EXTRAS,
+  },
+  "veo-3.0-generate-001": VEO_3_ROW,
+  "veo-3.0-fast-generate-001": VEO_3_ROW,
+  "veo-2.0-generate-001": {
+    durations: [5, 6, 7, 8],
+    resolutions: [],
+    ratios: ASPECT_RATIOS,
+    extras: {
+      personGeneration: EXTRA as "allow_all" | "allow_adult" | "dont_allow",
+      enhancePrompt: EXTRA as boolean,
+    },
+  },
+  "gemini-omni-flash-preview": {
+    durations: [3, 4, 5, 6, 7, 8, 9, 10],
+    resolutions: ["720p"],
+    ratios: ASPECT_RATIOS,
+    extras: {
+      personGeneration: EXTRA as string,
+      enhancePrompt: EXTRA as boolean,
+    },
+  },
+} as const satisfies VideoModelParamTable;
+
 /** The wire body this adapter compiles to — the loose arm of `GenerateVideosBody`. */
 export interface GoogleVideoWire {
   model: string;
@@ -133,6 +206,7 @@ export const video = {
   category: "video",
   provider: "google",
   models: MODELS,
+  modelParams: GOOGLE_VIDEO_MODEL_PARAMS,
   compile(
     input: VideoParams,
     ctx: CompileContext<VideoParams>,
@@ -243,8 +317,14 @@ export const video = {
 
     const body: GoogleVideoWire = { model: ctx.model, instances: [instance] };
     // Omitted when empty: `parameters` is optional on the wire, and an empty
-    // object is a key the request did not need.
+    // object is a key the request did not need. Written before `applyExtras`,
+    // which nests into `parameters` and creates it when this request had none.
     if (Object.keys(parameters).length > 0) body.parameters = parameters;
+    applyExtras(input, GOOGLE_VIDEO_MODEL_PARAMS, body, ctx, { at: ["parameters"] });
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<VideoParams, GoogleVideoWire, GoogleVideoResult>;
+} as const satisfies VideoAdapterFor<
+  typeof GOOGLE_VIDEO_MODEL_PARAMS,
+  GoogleVideoWire,
+  GoogleVideoResult
+>;

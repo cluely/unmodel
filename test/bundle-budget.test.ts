@@ -178,15 +178,24 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  * endpoint modules between them, because six of the ten serve more than one
  * route and Kling alone contributes five.
  *
- * 571 KiB measured, pinned at 610 with the same ~10% headroom as everything
+ * 606 KiB measured, pinned at 670 with the same ~10% headroom as everything
  * above. It sits between the speech and image packs and for the same structural
  * reason the image one is large: video providers carry *size* tables (per-model
  * ratio enums with 30 pixel-pair members, resolution casings, duration × tier
  * matrices) on top of the usual deny rules, and this pack pays for every route
  * of every provider rather than one route each. `createVideo([…])` is the way
  * to pay for two providers instead of ten.
+ *
+ * **Bumped 610 → 670 with the per-model tables**, and the 35 KiB it cost is the
+ * same trade the image pack made: the arrays that *type* `duration`,
+ * `resolution` and `aspectRatio` are the arrays
+ * `test/unified/video-presets.test.ts` sweeps, so they have to exist at run
+ * time. Ten adapters × ~80 models is where it goes, and Runway's 13 shape lists
+ * (with their 13-member pixel-pair reductions) and Kling's 15 rows across three
+ * route families are the two biggest contributors. The `extras` objects are
+ * `undefined`s and cost about what a name list would.
  */
-const VIDEO_PACK_BUDGET_KIB = 610;
+const VIDEO_PACK_BUDGET_KIB = 670;
 
 /**
  * The two generated catalogs this pack legitimately reaches.

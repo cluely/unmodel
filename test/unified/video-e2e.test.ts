@@ -163,9 +163,17 @@ describe("route derivation", () => {
 // Refusals: the half of the loss contract a fixture cannot hold
 // ---------------------------------------------------------------------------
 
+/**
+ * These probes pass values the **types** now refuse, and that is the point:
+ * `luma/ray-2` narrows `duration` to `5 | 9`, so `8` is a compile error before
+ * it is a run-time one. The `as never` casts are how a JavaScript caller — or
+ * anyone who casts — reaches this code path, and the run-time half of the
+ * contract has to keep working for them. (Same idiom as
+ * `test/unified/image-presets.test.ts`.)
+ */
 describe("a value a model cannot serve is refused, never approximated", () => {
   test("a duration outside a closed enum lists the values that exist", () => {
-    const result = video.safe({ model: "luma/ray-2", prompt: "hi", duration: 8 });
+    const result = video.safe({ model: "luma/ray-2", prompt: "hi", duration: 8 } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({
@@ -179,14 +187,14 @@ describe("a value a model cannot serve is refused, never approximated", () => {
   test("the same miss at a provider whose bound is the endpoint's own table", () => {
     // Nothing about kling-v2-1's 5-or-10 is copied into the adapter: the
     // capability map lives in `v1-routes.ts` and answers here, at `duration`.
-    const result = video.safe({ model: "kling/kling-v2-1", prompt: "hi", duration: 7 });
+    const result = video.safe({ model: "kling/kling-v2-1", prompt: "hi", duration: 7 } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({ path: ["duration"], meta: { allowed: [5, 10] } });
   });
 
   test("a tier a model has no size for is an error, not the next one down", () => {
-    const result = video.safe({ model: "openai/sora-2", prompt: "hi", resolution: "1080p" });
+    const result = video.safe({ model: "openai/sora-2", prompt: "hi", resolution: "1080p" } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({
@@ -213,7 +221,7 @@ describe("a value a model cannot serve is refused, never approximated", () => {
       model: "google/veo-3.1-generate-preview",
       prompt: "hi",
       aspectRatio: "4:3",
-    });
+    } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({
@@ -457,7 +465,7 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
   });
 
   test("vidu's per-model, per-route duration bounds, reported at `duration`", () => {
-    const result = video.safe({ model: "vidu/viduq1", prompt: "a fox", duration: 8 });
+    const result = video.safe({ model: "vidu/viduq1", prompt: "a fox", duration: 8 } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]!.path).toEqual(["duration"]);

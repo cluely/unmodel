@@ -67,6 +67,21 @@ export interface Dimensions {
  */
 export type ResolutionTier = "1k" | "2k" | "4k";
 
+/**
+ * How big a *clip* is: the three resolutions worth naming, plus the two
+ * everyone markets.
+ *
+ * A separate word from {@link ResolutionTier} because video sizes are named
+ * after their **short edge** rather than their pixel count — 1280×720 and
+ * 720×1280 are both "720p", and every video API in this build spells its own
+ * tiers this way — so `"1k"` would be a translation where `"720p"` is the
+ * provider's own word.
+ *
+ * It lives here rather than in `video.ts` so that `model-params.ts` can read it
+ * without the two files importing each other.
+ */
+export type VideoResolution = "480p" | "720p" | "1080p" | "1440p" | "4k";
+
 // ---------------------------------------------------------------------------
 // Output
 // ---------------------------------------------------------------------------

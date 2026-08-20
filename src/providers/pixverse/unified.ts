@@ -37,17 +37,25 @@
  * than an adapter that silently ignores the frame.
  */
 import {
+  applyExtras,
+  EXTRA,
   toDurationNumber,
   toRatioEnum,
   toTier,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { VideoParams, VideoResolution } from "../../core/unified/vocabulary/video";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  VideoAdapterFor,
+  VideoModelParamTable,
+  VideoParams,
+  VideoResolution,
+} from "../../core/unified/vocabulary/video";
 import {
   DOCS_BASE,
   LEGACY_ASPECT_RATIOS,
   WIDE_ASPECT_RATIOS,
   type PixverseAspectRatio,
+  type PixverseMotionMode,
   type PixverseQualityValue,
 } from "./shared";
 import { video as validator, type TextToVideoParams } from "./video";
@@ -66,6 +74,94 @@ const QUALITIES: Readonly<Partial<Record<VideoResolution, PixverseQualityValue>>
   "1080p": "1080p",
 };
 
+/**
+ * PixVerse's per-model surface.
+ *
+ * Three groups, and the boundary between them is the audio story: the modern
+ * models (v5.5 upward) generate sound from a switch, the legacy ones (v5 and
+ * below) take a sound-effect prompt and a lip-sync TTS block, and nothing takes
+ * both. `checkModelGatedFields` is where those lists live and this table is
+ * keyed off the same three: `AUDIO_SWITCH_MODELS`, `MULTI_CLIP_MODELS` and
+ * `LEGACY_AUDIO_MODELS`.
+ *
+ * `motion_mode`, `camera_movement` and `template_id` are ungated — every model
+ * takes them — so they are on every row.
+ *
+ * `durations` is a closed enum on six of the eight and a *range* on `v6` and
+ * `c1` (every integer from 1 to 15), so those two carry no `durations` and
+ * `duration` stays `number` there. `quality` is `360p`/`540p`/`720p`/`1080p` on
+ * every model, of which two have canonical names — hence the identical
+ * `resolutions` on all eight, and `providerOptions.pixverse.quality` for the
+ * other two. Note the adapter *fills* `quality: "540p"` when the caller names
+ * no tier: that default is a value this row cannot name, which is exactly why
+ * filling it warns.
+ */
+const COMMON_EXTRAS = {
+  motion_mode: EXTRA as PixverseMotionMode,
+  camera_movement: EXTRA as string,
+  template_id: EXTRA as number,
+} as const;
+
+const LEGACY_AUDIO_EXTRAS = {
+  ...COMMON_EXTRAS,
+  sound_effect_switch: EXTRA as boolean,
+  sound_effect_content: EXTRA as string,
+  lip_sync_tts_switch: EXTRA as boolean,
+  lip_sync_tts_content: EXTRA as string,
+  lip_sync_tts_speaker_id: EXTRA as string,
+} as const;
+
+const TIERS = ["720p", "1080p"] as const;
+
+const LEGACY_ROW = {
+  durations: [5, 8],
+  resolutions: TIERS,
+  ratios: LEGACY_ASPECT_RATIOS,
+  extras: LEGACY_AUDIO_EXTRAS,
+} as const;
+
+const WIDE_ROW = {
+  resolutions: TIERS,
+  ratios: WIDE_ASPECT_RATIOS,
+  extras: {
+    ...COMMON_EXTRAS,
+    generate_audio_switch: EXTRA as boolean,
+  },
+} as const;
+
+const PIXVERSE_VIDEO_MODEL_PARAMS = {
+  c1: WIDE_ROW,
+  v6: {
+    resolutions: TIERS,
+    ratios: WIDE_ASPECT_RATIOS,
+    extras: {
+      ...COMMON_EXTRAS,
+      generate_audio_switch: EXTRA as boolean,
+      generate_multi_clip_switch: EXTRA as boolean,
+    },
+  },
+  "v5.6": {
+    durations: [5, 8, 10],
+    resolutions: TIERS,
+    ratios: LEGACY_ASPECT_RATIOS,
+    extras: { ...COMMON_EXTRAS, generate_audio_switch: EXTRA as boolean },
+  },
+  "v5.5": {
+    durations: [5, 8, 10],
+    resolutions: TIERS,
+    ratios: LEGACY_ASPECT_RATIOS,
+    extras: {
+      ...COMMON_EXTRAS,
+      generate_audio_switch: EXTRA as boolean,
+      generate_multi_clip_switch: EXTRA as boolean,
+    },
+  },
+  v5: LEGACY_ROW,
+  "v4.5": LEGACY_ROW,
+  v4: LEGACY_ROW,
+  "v3.5": LEGACY_ROW,
+} as const satisfies VideoModelParamTable;
+
 /** What a required field is filled with when the caller named nothing. */
 const DEFAULT_RATIO = "16:9";
 const DEFAULT_DURATION = 5;
@@ -81,6 +177,7 @@ export const video = {
   category: "video",
   provider: "pixverse",
   models: MODELS,
+  modelParams: PIXVERSE_VIDEO_MODEL_PARAMS,
   unsupported: {
     image:
       "POST /openapi/v2/video/image/generate takes `img_id`, an integer minted by " +
@@ -181,6 +278,12 @@ export const video = {
 
     if (input.seed !== undefined) body.seed = input.seed;
 
+    applyExtras(input, PIXVERSE_VIDEO_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<VideoParams, PixverseVideoWire, PixverseVideoResult>;
+} as const satisfies VideoAdapterFor<
+  typeof PIXVERSE_VIDEO_MODEL_PARAMS,
+  PixverseVideoWire,
+  PixverseVideoResult
+>;

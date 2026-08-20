@@ -46,6 +46,8 @@
  *   rather than declaring a gap that is only true for six of the twelve ids.
  */
 import {
+  applyExtras,
+  EXTRA,
   resolveImageSlots,
   resolveVideoRoute,
   toDurationNumber,
@@ -56,10 +58,25 @@ import {
   videoRoute,
   type VideoRoute,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { VideoParams, VideoResolution } from "../../core/unified/vocabulary/video";
-import { DOCS_BASE, KLING_ASPECT_RATIOS, type KlingContent } from "./shared";
-import { V1_MODEL_RULES } from "./v1-routes";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  VideoAdapterFor,
+  VideoModelParamTable,
+  VideoParams,
+  VideoResolution,
+} from "../../core/unified/vocabulary/video";
+import {
+  DOCS_BASE,
+  KLING_ASPECT_RATIOS,
+  type KlingContent,
+  type KlingWatermarkInfo,
+} from "./shared";
+import {
+  V1_MODEL_RULES,
+  type KlingCameraControl,
+  type KlingShot,
+  type KlingShotType,
+} from "./v1-routes";
 import { video as v1TextValidator, type TextToVideoParams } from "./video";
 import { videoFromImage as v1ImageValidator, type ImageToVideoParams } from "./video-from-image";
 import { TEXT_TO_VIDEO_V3_RULES, videoV3 as v3TextValidator, type TextToVideoV3Params } from "./video-v3";
@@ -112,6 +129,173 @@ const V3_RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
   "4k": "4k",
 };
 
+/**
+ * Kling's per-model surface, across all three route families.
+ *
+ * ## The two families, in the two lists
+ *
+ * `mode` on `/v1/videos/*` is a resolution with another name ("std = 720P, pro
+ * = 1080P, 4k = 4K"), so a `kling-v*` row's `resolutions` is that model's mode
+ * set translated back into tiers — `kling-v2-master` is pro-only, hence
+ * `["1080p"]`. The path-addressed family spells its tiers directly and the row
+ * is the enum. `480p` and `1440p` are on nothing.
+ *
+ * `ratios: []` marks `kling-v2-1` and `kling-v1-5`: both are **image-to-video
+ * only** ids (they are absent from `TEXT2VIDEO_MODELS`), and
+ * `/v1/videos/image2video` has no `aspect_ratio` field because the frame sets
+ * the shape. Every other model keeps the three-value enum, which the image
+ * route still refuses at run time — the shape is a text-route param on both
+ * families, and only omni takes it alongside a frame.
+ *
+ * ## Extras, and why they nest differently per family
+ *
+ * The same key lands in a different place depending on which family the ref
+ * selected: `watermark_info` is a body-root field on `/v1/videos/*` and lives
+ * under `options` on the path-addressed routes, and `multi_shot` is body-root
+ * on `kling-v3` and under `settings` on `kling-3.0`. That is what
+ * {@link V3_NESTING} is for — one table, so the "not a parameter this model
+ * accepts" check still sees every key, with a per-key prefix at the write.
+ *
+ * Excluded on purpose:
+ *
+ * - **`static_mask`, `dynamic_masks`, `element_list`, `voice_list`** exist on
+ *   `image2video` and not on `text2video`, and this surface picks the route
+ *   from the inputs. `videoSchema` is a `looseObject`, so one of them on a
+ *   text request would ride onto a body that has no such field and be ignored
+ *   rather than refused — the one outcome the loss contract does not allow.
+ * - **`shot_type` and `multi_prompt`** are accepted by the schema on every v1
+ *   id, but they only do anything alongside `multi_shot`, which is `kling-v3`'s
+ *   alone. They are declared on `kling-v3` for that reason: a `shot_type` on
+ *   `kling-v1` is accepted-and-ignored, which is worse than refused.
+ * - **`cfg_scale`** is `kling-v1` / `-v1-5` / `-v1-6` only (`V1_MODEL_RULES`),
+ *   and **`camera_control`** is `kling-v1` alone — not `kling-v1-6`, which the
+ *   research had wrong and `V1_MODEL_RULES` settles.
+ *
+ * `callback_url` and `external_task_id` are transport and stay on
+ * `providerOptions.kling`.
+ */
+const WATERMARK = { watermark_info: EXTRA as KlingWatermarkInfo } as const;
+
+const V1_CFG_ROW_EXTRAS = { ...WATERMARK, cfg_scale: EXTRA as number } as const;
+
+const V1_PLAIN_ROW = {
+  durations: [5, 10],
+  resolutions: ["720p", "1080p"],
+  ratios: KLING_ASPECT_RATIOS,
+  extras: WATERMARK,
+} as const;
+
+const V1_MASTER_ROW = {
+  durations: [5, 10],
+  resolutions: ["1080p"],
+  ratios: KLING_ASPECT_RATIOS,
+  extras: WATERMARK,
+} as const;
+
+const V1_CFG_ROW = {
+  durations: [5, 10],
+  resolutions: ["720p", "1080p"],
+  ratios: KLING_ASPECT_RATIOS,
+  extras: V1_CFG_ROW_EXTRAS,
+} as const;
+
+const THREE_ZERO_DURATIONS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const;
+
+const KLING_VIDEO_MODEL_PARAMS = {
+  // --- POST /v1/videos/{text2video,image2video} ---------------------------
+  "kling-v3": {
+    durations: THREE_ZERO_DURATIONS,
+    resolutions: ["720p", "1080p", "4k"],
+    ratios: KLING_ASPECT_RATIOS,
+    extras: {
+      ...WATERMARK,
+      sound: EXTRA as "on" | "off",
+      multi_shot: EXTRA as boolean,
+      shot_type: EXTRA as KlingShotType,
+      multi_prompt: EXTRA as KlingShot[],
+    },
+  },
+  "kling-v2-6": {
+    durations: [3, 4, 5, 6, 7, 8, 9, 10],
+    resolutions: ["720p", "1080p"],
+    ratios: KLING_ASPECT_RATIOS,
+    extras: { ...WATERMARK, sound: EXTRA as "on" | "off" },
+  },
+  "kling-v2-5-turbo": V1_PLAIN_ROW,
+  "kling-v2-1-master": V1_MASTER_ROW,
+  "kling-v2-1": {
+    durations: [5, 10],
+    resolutions: ["720p", "1080p"],
+    ratios: [],
+    extras: WATERMARK,
+  },
+  "kling-v2-master": V1_MASTER_ROW,
+  "kling-v1-6": V1_CFG_ROW,
+  "kling-v1-5": {
+    durations: [5, 10],
+    resolutions: ["720p", "1080p"],
+    ratios: [],
+    extras: V1_CFG_ROW_EXTRAS,
+  },
+  "kling-v1": {
+    durations: [5, 10],
+    resolutions: ["720p", "1080p"],
+    ratios: KLING_ASPECT_RATIOS,
+    extras: { ...V1_CFG_ROW_EXTRAS, camera_control: EXTRA as KlingCameraControl },
+  },
+  // --- The path-addressed families ----------------------------------------
+  "kling-3.0": {
+    durations: THREE_ZERO_DURATIONS,
+    resolutions: ["720p", "1080p", "4k"],
+    ratios: KLING_ASPECT_RATIOS,
+    extras: { ...WATERMARK, audio: EXTRA as "native" | "off", multi_shot: EXTRA as boolean },
+  },
+  "kling-3.0-turbo": {
+    durations: THREE_ZERO_DURATIONS,
+    resolutions: ["720p", "1080p"],
+    ratios: KLING_ASPECT_RATIOS,
+    extras: WATERMARK,
+  },
+  "kling-2.6": {
+    durations: [5, 10],
+    resolutions: ["720p", "1080p"],
+    ratios: KLING_ASPECT_RATIOS,
+    extras: { ...WATERMARK, audio: EXTRA as "native" | "off" },
+  },
+  "kling-2.5-turbo": {
+    durations: [5, 10],
+    resolutions: ["720p", "1080p"],
+    ratios: KLING_ASPECT_RATIOS,
+    extras: WATERMARK,
+  },
+  "kling-3.0-omni": {
+    durations: THREE_ZERO_DURATIONS,
+    resolutions: ["720p", "1080p", "4k"],
+    ratios: KLING_ASPECT_RATIOS,
+    extras: {
+      ...WATERMARK,
+      audio: EXTRA as "native" | "original" | "off",
+      multi_shot: EXTRA as boolean,
+    },
+  },
+  "kling-o1": {
+    durations: [3, 4, 5, 6, 7, 8, 9, 10],
+    resolutions: ["720p", "1080p"],
+    ratios: KLING_ASPECT_RATIOS,
+    extras: { ...WATERMARK, audio: EXTRA as "original" | "off" },
+  },
+} as const satisfies VideoModelParamTable;
+
+/**
+ * Where each extra lands on the two path-addressed families. The `/v1/videos/*`
+ * family needs no map — every one of its extras is a body-root field.
+ */
+const V3_NESTING: Readonly<Record<string, readonly string[]>> = {
+  audio: ["settings"],
+  multi_shot: ["settings"],
+  watermark_info: ["options"],
+};
+
 /** The wire body of whichever of the five routes the ref and inputs select. */
 export type KlingVideoWire =
   | TextToVideoParams
@@ -160,6 +344,7 @@ export const video = {
   category: "video",
   provider: "kling",
   models: MODELS,
+  modelParams: KLING_VIDEO_MODEL_PARAMS,
   unsupported: {
     seed:
       "no Kling video route has a seed field, so a generation is not reproducible from the " +
@@ -188,7 +373,11 @@ export const video = {
         ? compileV3(input, ctx, route, derived !== undefined)
         : compileOmni(input, ctx);
   },
-} as const satisfies UnifiedAdapter<VideoParams, KlingVideoWire, KlingVideoResult>;
+} as const satisfies VideoAdapterFor<
+  typeof KLING_VIDEO_MODEL_PARAMS,
+  KlingVideoWire,
+  KlingVideoResult
+>;
 
 // ---------------------------------------------------------------------------
 // The corroborated family — POST /v1/videos/{text2video,image2video}
@@ -278,6 +467,8 @@ function compileV1(
     }
   }
 
+  applyExtras(input, KLING_VIDEO_MODEL_PARAMS, body, ctx);
+
   const validate = (route === "image" ? v1ImageValidator.safe : v1TextValidator.safe) as KlingValidate;
   return { params: body as unknown as KlingVideoWire, validate };
 }
@@ -322,6 +513,7 @@ function compileV3(
     const body: Record<string, unknown> = { model: ctx.model, prompt: input.prompt ?? "" };
     if (input.prompt === undefined) requirePrompt(ctx, V3_SOURCE);
     if (Object.keys(settings).length > 0) body["settings"] = settings;
+    applyExtras(input, KLING_VIDEO_MODEL_PARAMS, body, ctx, { nest: V3_NESTING });
     return { params: body as unknown as KlingVideoWire, validate: v3TextValidator.safe as KlingValidate };
   }
 
@@ -336,6 +528,7 @@ function compileV3(
   );
   const body: Record<string, unknown> = { model: ctx.model, contents };
   if (Object.keys(settings).length > 0) body["settings"] = settings;
+  applyExtras(input, KLING_VIDEO_MODEL_PARAMS, body, ctx, { nest: V3_NESTING });
   return { params: body as unknown as KlingVideoWire, validate: v3ImageValidator.safe as KlingValidate };
 }
 
@@ -374,6 +567,7 @@ function compileOmni(
   );
   const body: Record<string, unknown> = { model: ctx.model, contents };
   if (Object.keys(settings).length > 0) body["settings"] = settings;
+  applyExtras(input, KLING_VIDEO_MODEL_PARAMS, body, ctx, { nest: V3_NESTING });
   return { params: body as unknown as KlingVideoWire, validate: omniValidator.safe as KlingValidate };
 }
 

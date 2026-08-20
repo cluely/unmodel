@@ -187,7 +187,132 @@ function providerOptionsTests(): void {
 }
 
 // ---------------------------------------------------------------------------
-// 5 · No retargeting on a media result
+// 5 · Per-model narrowing: duration, resolution, aspectRatio and the extras
+// ---------------------------------------------------------------------------
+
+/**
+ * The half `test/unified/completions.test.ts` cannot assert.
+ *
+ * The language service **does** offer number-literal completions at a
+ * `duration:` position (measured; the entries come back as `"4"`, `"8"`, …
+ * mixed into the global identifier list any expression position carries), so
+ * that file checks the list is a superset of the model's lengths and excludes
+ * their neighbours. What it cannot check is the *other* direction — a
+ * completion list is a suggestion, and only a compile error is a limit. That is
+ * this block.
+ */
+function durationNarrowingTests(): void {
+  video({ model: "openai/sora-2", prompt: "hi", duration: 8 });
+  // @ts-expect-error — Sora's five lengths are a closed enum; 7 is not one.
+  video({ model: "openai/sora-2", prompt: "hi", duration: 7 });
+  // @ts-expect-error — nor is a value that is legal one provider over.
+  video({ model: "luma/ray-2", prompt: "hi", duration: 8 });
+  video({ model: "luma/ray-2", prompt: "hi", duration: 9 });
+
+  // A model whose lengths are a *range* keeps the wide `number` — a `>=` check
+  // is not a union, and the endpoint's own bounds answer at run time.
+  video({ model: "bytedance/seedance-1-0-pro-250528", prompt: "hi", duration: 7 });
+  // Including the documented `-1` sentinel ("the model picks the length").
+  video({ model: "bytedance/dreamina-seedance-2-5-260628", prompt: "hi", duration: -1 });
+
+  // `runway/aleph2` has no duration parameter at all — the output follows the
+  // input clip — so `durations: []` makes it `never`.
+  // @ts-expect-error
+  video({ model: "runway/aleph2", video: { url: "https://e.com/a.mp4" }, duration: 5 });
+}
+
+function sizeNarrowingTests(): void {
+  video({ model: "openai/sora-2", prompt: "hi", resolution: "720p" });
+  // @ts-expect-error — 1080p is `sora-2-pro`'s ("use sora-2-pro for higher-resolution exports").
+  video({ model: "openai/sora-2", prompt: "hi", resolution: "1080p" });
+  video({ model: "openai/sora-2-pro", prompt: "hi", resolution: "1080p" });
+  // @ts-expect-error — 1440p is on no Sora model.
+  video({ model: "openai/sora-2-pro", prompt: "hi", resolution: "1440p" });
+  // @ts-expect-error — Veo 2 denies `parameters.resolution` outright.
+  video({ model: "google/veo-2.0-generate-001", prompt: "hi", resolution: "720p" });
+
+  video({ model: "kling/kling-v3", prompt: "hi", aspectRatio: "16:9" });
+  // @ts-expect-error — Kling's three shapes do not include 4:3.
+  video({ model: "kling/kling-v3", prompt: "hi", aspectRatio: "4:3" });
+  // @ts-expect-error — and an image-only id has no aspect-ratio field at all.
+  video({ model: "kling/kling-v2-1", prompt: "hi", aspectRatio: "16:9" });
+  // @ts-expect-error — same for every Hailuo model on /v1/video_generation.
+  video({ model: "minimax/MiniMax-Hailuo-02", prompt: "hi", aspectRatio: "16:9" });
+  // `MiniMax-H3` is the v2 route, which does have `ratio`.
+  video({ model: "minimax/MiniMax-H3", prompt: "hi", aspectRatio: "21:9", duration: 6, resolution: "720p" });
+
+  // Runway's `ratio` members are pixel pairs, and the shapes they reduce to are
+  // what a caller writes — including the ones no other provider has.
+  video({ model: "runway/gen4.5", prompt: "hi", aspectRatio: "69:52" });
+  // @ts-expect-error — but not a shape that pair list has no entry for.
+  video({ model: "runway/gen4.5", prompt: "hi", aspectRatio: "21:9" });
+}
+
+function extrasNarrowingTests(): void {
+  video({ model: "kling/kling-v1-6", prompt: "hi", cfg_scale: 0.5 });
+  // @ts-expect-error — `cfg_scale` is kling-v1 / -v1-5 / -v1-6 only.
+  video({ model: "kling/kling-v3", prompt: "hi", cfg_scale: 0.5 });
+  // @ts-expect-error — and `camera_control` is `kling-v1` alone.
+  video({ model: "kling/kling-v1-6", prompt: "hi", camera_control: { type: "simple" } });
+  video({ model: "kling/kling-v1", prompt: "hi", camera_control: { type: "simple" } });
+
+  video({ model: "kling/kling-v3", prompt: "hi", sound: "on" });
+  // @ts-expect-error — an extra's own values are narrowed too.
+  video({ model: "kling/kling-v3", prompt: "hi", sound: "loud" });
+  // The path-addressed family spells it `settings.audio`, with a per-model set.
+  video({ model: "kling/kling-3.0-omni", prompt: "hi", audio: "original" });
+  // @ts-expect-error — `kling-3.0` has no "original".
+  video({ model: "kling/kling-3.0", prompt: "hi", audio: "original" });
+  // @ts-expect-error — and the turbo rows have no `audio` at all.
+  video({ model: "kling/kling-3.0-turbo", prompt: "hi", audio: "native" });
+
+  video({ model: "google/veo-3.1-generate-preview", prompt: "hi", personGeneration: "allow_adult" });
+  // @ts-expect-error — `dont_allow` is Veo 2's, and only Veo 2's.
+  video({ model: "google/veo-3.1-generate-preview", prompt: "hi", personGeneration: "dont_allow" });
+  video({ model: "google/veo-2.0-generate-001", prompt: "hi", personGeneration: "dont_allow" });
+
+  video({ model: "lightricks/ltx-2-5-fast", prompt: "hi", fps: 48 });
+  // @ts-expect-error — ltx-2-5-pro's matrix has no 48.
+  video({ model: "lightricks/ltx-2-5-pro", prompt: "hi", fps: 48 });
+  video({ model: "lightricks/ltx-2-5-pro", prompt: "hi", fps: 50 });
+
+  video({ model: "bytedance/seedance-1-0-pro-250528", prompt: "hi", frames: 49 });
+  // @ts-expect-error — `frames` is the Seedance 1.0 pros'; the 2.x arms deny it.
+  video({ model: "bytedance/dreamina-seedance-2-0-260128", prompt: "hi", frames: 49 });
+  // @ts-expect-error — and `generate_audio` is the other way round.
+  video({ model: "bytedance/seedance-1-0-pro-250528", prompt: "hi", generate_audio: true });
+  video({ model: "bytedance/dreamina-seedance-2-0-260128", prompt: "hi", generate_audio: true });
+
+  // @ts-expect-error — a key no model on the ref'd provider takes is a typo.
+  video({ model: "luma/ray-2", prompt: "hi", lop: true });
+  video({ model: "luma/ray-2", prompt: "hi", loop: true });
+}
+
+/**
+ * A ref the type system cannot resolve — built at run time, or naming a model
+ * newer than this snapshot — degrades to the wide vocabulary rather than to
+ * `never`. Same trade every model list in this library makes.
+ */
+function degradedRefTests(): void {
+  const dynamic: string = process.env["MODEL"] ?? "openai/sora-2";
+  video({ model: dynamic, prompt: "hi", duration: 7, resolution: "1440p", aspectRatio: "5:4" });
+  video({ model: "openai/sora-9", prompt: "hi", duration: 7, resolution: "1440p" });
+  // The extras degrade to "every name in the build, typed `unknown`" — so a
+  // real extra still compiles…
+  video({ model: "openai/sora-9", prompt: "hi", loop: true });
+  // @ts-expect-error — …and a typo is still caught by `ExactKeys`.
+  video({ model: "openai/sora-9", prompt: "hi", lop: true });
+}
+
+/** `duration` on a dynamic ref is the wide `number`, not a literal union. */
+function degradedDurationType(): void {
+  const dynamic: string = process.env["MODEL"] ?? "openai/sora-2";
+  const seconds: number = 7;
+  video({ model: dynamic, prompt: "hi", duration: seconds });
+}
+
+// ---------------------------------------------------------------------------
+// 6 · No retargeting on a media result
 // ---------------------------------------------------------------------------
 
 function noToApiTests(): void {
@@ -209,4 +334,15 @@ expectAssignable<readonly string[]>(openaiVideo.models);
 expectAssignable<"video">(klingVideo.category);
 expectAssignable<readonly string[]>(googleVideo.models);
 
-export { refUnionTests, routeInputTests, resultTypeTests, providerOptionsTests, noToApiTests };
+export {
+  refUnionTests,
+  routeInputTests,
+  resultTypeTests,
+  providerOptionsTests,
+  durationNarrowingTests,
+  sizeNarrowingTests,
+  extrasNarrowingTests,
+  degradedRefTests,
+  degradedDurationType,
+  noToApiTests,
+};

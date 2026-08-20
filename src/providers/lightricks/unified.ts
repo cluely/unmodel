@@ -45,6 +45,8 @@
  * declared gaps rather than params quietly dropped.
  */
 import {
+  applyExtras,
+  EXTRA,
   requireMediaUrl,
   resolveImageSlots,
   resolveVideoRoute,
@@ -54,9 +56,19 @@ import {
   type SizeTable,
   type VideoRoute,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { VideoParams, VideoResolution } from "../../core/unified/vocabulary/video";
-import { MODELS_SOURCE, type LtxDuration, type LtxResolution } from "./shared";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  VideoAdapterFor,
+  VideoModelParamTable,
+  VideoParams,
+  VideoResolution,
+} from "../../core/unified/vocabulary/video";
+import {
+  MODELS_SOURCE,
+  type LtxCameraMotion,
+  type LtxDuration,
+  type LtxResolution,
+} from "./shared";
 import { video as textValidator, type TextToVideoParams } from "./video";
 import {
   videoFromImage as imageValidator,
@@ -95,6 +107,70 @@ const DEFAULT_SHAPE = "16:9";
 /** Both routes are on every model; which one runs is the image's business. */
 const ROUTES: readonly VideoRoute[] = ["text", "image"];
 
+/** The two shapes {@link SIZES} is keyed by — LTX publishes 16:9 and nothing else. */
+const RATIOS = ["16:9", "9:16"] as const;
+
+/**
+ * LTX's per-model surface, read off `SUPPORT_MATRIX` in `./shared.ts`.
+ *
+ * The `fast` / `pro` split is the whole table: a fast model runs 6 to 20
+ * seconds in even steps and reaches every tier, a pro model runs 6, 8 or 10.
+ * `ltx-2-5-pro` is the one row that is neither — 720p and 1080p only, and the
+ * one model whose `fps` list drops 48.
+ *
+ * **These lists are a union, not a product.** `checkSupportMatrix` owns the
+ * pairings that a per-field row cannot state: a fast model's 12–20 second
+ * lengths are 720p/1080p at 24 or 25 fps only, and 1440p/4k cap at 10 seconds
+ * whatever the frame rate. So the row says "6 through 20 are lengths this model
+ * offers" — true — and the endpoint answers for the combination, remapped onto
+ * `duration`. `480p` is on no LTX model, which is why no row carries it.
+ *
+ * `fps` is typed as the exact per-model union rather than the exported
+ * `LtxFps`, which is deliberately open (`| (number & {})`) because the wire
+ * field is a bare `z.number().int()`. Here the model's matrix *is* the limit,
+ * so the closed union is the truer type and `48` on `ltx-2-5-pro` is a compile
+ * error rather than a 400.
+ */
+const FAST_FPS = [24, 25, 48, 50] as const;
+
+const FAST_EXTRAS = {
+  fps: EXTRA as (typeof FAST_FPS)[number],
+  generate_audio: EXTRA as boolean,
+  camera_motion: EXTRA as LtxCameraMotion,
+} as const;
+
+const FAST_ROW = {
+  durations: [6, 8, 10, 12, 14, 16, 18, 20],
+  resolutions: ["720p", "1080p", "1440p", "4k"],
+  ratios: RATIOS,
+  extras: FAST_EXTRAS,
+} as const;
+
+const PRO_ROW = {
+  durations: [6, 8, 10],
+  resolutions: ["720p", "1080p", "1440p", "4k"],
+  ratios: RATIOS,
+  extras: FAST_EXTRAS,
+} as const;
+
+const LIGHTRICKS_VIDEO_MODEL_PARAMS = {
+  "ltx-2-5-fast": FAST_ROW,
+  "ltx-2-5-pro": {
+    durations: [6, 8, 10],
+    resolutions: ["720p", "1080p"],
+    ratios: RATIOS,
+    extras: {
+      fps: EXTRA as 24 | 25 | 50,
+      generate_audio: EXTRA as boolean,
+      camera_motion: EXTRA as LtxCameraMotion,
+    },
+  },
+  "ltx-2-3-fast": FAST_ROW,
+  "ltx-2-3-pro": PRO_ROW,
+  "ltx-2-fast": FAST_ROW,
+  "ltx-2-pro": PRO_ROW,
+} as const satisfies VideoModelParamTable;
+
 /** The wire body of whichever of the two routes the inputs select. */
 export type LightricksVideoWire = TextToVideoParams | ImageToVideoParams;
 
@@ -120,6 +196,7 @@ export const video = {
   category: "video",
   provider: "lightricks",
   models: MODELS,
+  modelParams: LIGHTRICKS_VIDEO_MODEL_PARAMS,
   unsupported: {
     video:
       "POST /v2/text-to-video and /v2/image-to-video generate from a prompt and frames. LTX's " +
@@ -244,9 +321,15 @@ export const video = {
       }
     }
 
+    applyExtras(input, LIGHTRICKS_VIDEO_MODEL_PARAMS, body, ctx);
+
     const validate = (route === "image" ? imageValidator.safe : textValidator.safe) as LightricksValidate;
     // One cast, at the one place the two routes meet: each validator takes its
     // own arm of the union, and the inputs decided which arm `body` is.
     return { params: body as unknown as LightricksVideoWire, validate };
   },
-} as const satisfies UnifiedAdapter<VideoParams, LightricksVideoWire, LightricksVideoResult>;
+} as const satisfies VideoAdapterFor<
+  typeof LIGHTRICKS_VIDEO_MODEL_PARAMS,
+  LightricksVideoWire,
+  LightricksVideoResult
+>;

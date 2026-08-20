@@ -42,6 +42,8 @@
  * `providerOptions.luma.keyframes` is how a caller extends one.
  */
 import {
+  applyExtras,
+  EXTRA,
   requireMediaUrl,
   resolveImageSlots,
   resolveVideoRoute,
@@ -51,12 +53,18 @@ import {
   unsupportedSlot,
   type VideoRoute,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { VideoParams, VideoResolution } from "../../core/unified/vocabulary/video";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  VideoAdapterFor,
+  VideoModelParamTable,
+  VideoParams,
+  VideoResolution,
+} from "../../core/unified/vocabulary/video";
 import { LUMA_ASPECT_RATIOS } from "./shared";
 import {
   video as validator,
   type GenerationsParams,
+  type LumaConcept,
   type LumaKeyframes,
 } from "./video";
 
@@ -66,7 +74,7 @@ const MODELS = ["ray-2", "ray-flash-2"] as const;
 const VIDEO_GENERATION_DOCS = "https://docs.lumalabs.ai/docs/video-generation";
 
 /** "Duration can be 5s or 9s" — the two documented values, as seconds. */
-const DURATIONS = [5, 9];
+const DURATIONS = [5, 9] as const;
 
 /**
  * `resolution` — the documented enum minus `540p`, which the canonical tiers
@@ -82,6 +90,38 @@ const RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
 /** Text and image-to-video are the same POST; extend needs a generation id. */
 const ROUTES: readonly VideoRoute[] = ["text", "image"];
 
+/**
+ * Ray's per-model surface — one row, used twice.
+ *
+ * `ray-2` and `ray-flash-2` share `GenerationsParams` byte for byte and differ
+ * only in price, and there is no per-model table anywhere in this provider (the
+ * two checks `luma.video` runs are model-independent), so a second row would be
+ * a second thing to keep in step with nothing.
+ *
+ * `durations` is the tightest enum in the category and the reason `duration` is
+ * a closed list rather than a range here: `7` is a compile error naming 5 and 9
+ * rather than a 9-second clip at nearly twice the price.
+ *
+ * The two extras are Ray's own generation controls, typed from `./video.ts`'s
+ * `LumaConcept` rather than restated. `keyframes` is deliberately absent — it
+ * is the *other* spelling of the canonical `image`, and the adapter writes it —
+ * and `callback_url` is transport.
+ */
+const LUMA_ROW = {
+  durations: DURATIONS,
+  resolutions: ["720p", "1080p", "4k"],
+  ratios: LUMA_ASPECT_RATIOS,
+  extras: {
+    loop: EXTRA as boolean,
+    concepts: EXTRA as LumaConcept[],
+  },
+} as const;
+
+const LUMA_VIDEO_MODEL_PARAMS = {
+  "ray-2": LUMA_ROW,
+  "ray-flash-2": LUMA_ROW,
+} as const satisfies VideoModelParamTable;
+
 /** The wire body this adapter compiles to — `luma.video`'s own param type. */
 export interface LumaVideoWire extends GenerationsParams {}
 
@@ -92,6 +132,7 @@ export const video = {
   category: "video",
   provider: "luma",
   models: MODELS,
+  modelParams: LUMA_VIDEO_MODEL_PARAMS,
   unsupported: {
     video:
       "POST /generations takes a prompt and keyframes, not a source clip. Luma edits video at " +
@@ -127,7 +168,7 @@ export const video = {
 
     if (input.duration !== undefined) {
       const duration = ctx.take(
-        toDurationSuffixedString(input.duration, DURATIONS, {
+        toDurationSuffixedString(input.duration, [...DURATIONS], {
           path: ["duration"],
           warn: ctx.warn,
         }),
@@ -186,6 +227,12 @@ export const video = {
       if (Object.keys(keyframes).length > 0) body.keyframes = keyframes;
     }
 
+    applyExtras(input, LUMA_VIDEO_MODEL_PARAMS, body, ctx);
+
     return { params: body, validate: validator.safe };
   },
-} as const satisfies UnifiedAdapter<VideoParams, LumaVideoWire, LumaVideoResult>;
+} as const satisfies VideoAdapterFor<
+  typeof LUMA_VIDEO_MODEL_PARAMS,
+  LumaVideoWire,
+  LumaVideoResult
+>;

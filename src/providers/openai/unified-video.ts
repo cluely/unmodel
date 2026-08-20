@@ -53,8 +53,13 @@ import {
   type SizeTable,
   type VideoRoute,
 } from "../../core/unified/derive";
-import type { CompileContext, CompiledCall, UnifiedAdapter } from "../../core/unified/types";
-import type { VideoParams, VideoResolution } from "../../core/unified/vocabulary/video";
+import type { CompileContext, CompiledCall } from "../../core/unified/types";
+import type {
+  VideoAdapterFor,
+  VideoModelParamTable,
+  VideoParams,
+  VideoResolution,
+} from "../../core/unified/vocabulary/video";
 import { video as videoValidator, type VideoInputReference } from "./video";
 
 /** The five ids POST /v1/videos documents — the `openai/…` ref union. */
@@ -73,7 +78,7 @@ const VIDEOS_CREATE_DOCS = "https://developers.openai.com/api/docs/api-reference
  * lags it by two values, and `videoConstraints` (which re-checks this on the
  * way out) carries the same five.
  */
-const SORA_SECONDS = [4, 8, 12, 16, 20];
+const SORA_SECONDS = [4, 8, 12, 16, 20] as const;
 
 /** 720p is every Sora model's tier; 1080p is sora-2-pro's. */
 const BASE_SIZES: SizeTable<VideoResolution> = {
@@ -84,6 +89,44 @@ const PRO_SIZES: SizeTable<VideoResolution> = {
   "720p": { "16:9": "1280x720", "9:16": "720x1280" },
   "1080p": { "16:9": "1920x1080", "9:16": "1080x1920" },
 };
+
+/** The two shapes both size tables are keyed by. */
+const SORA_RATIOS = ["16:9", "9:16"] as const;
+
+/**
+ * Sora's per-model surface — the shortest table in this category, because the
+ * whole body is four fields and none of them is a param the vocabulary has no
+ * word for.
+ *
+ * The two rows differ in exactly one entry, which is the difference the
+ * documentation leads with: "Use `sora-2-pro` for higher-resolution exports".
+ * The dated snapshots repeat their base model's row rather than aliasing it,
+ * because a snapshot is a frozen model and the day one of them diverges the
+ * table should say so in one place.
+ *
+ * No `extras`: `input_reference.file_id` is the only unclaimed field on the
+ * body and it is the *other* spelling of the canonical `image` — the endpoint
+ * requires exactly one of the two — so it stays on `providerOptions.openai`.
+ */
+const SORA_BASE_ROW = {
+  durations: SORA_SECONDS,
+  resolutions: ["720p"],
+  ratios: SORA_RATIOS,
+} as const;
+
+const SORA_PRO_ROW = {
+  durations: SORA_SECONDS,
+  resolutions: ["720p", "1080p"],
+  ratios: SORA_RATIOS,
+} as const;
+
+const OPENAI_VIDEO_MODEL_PARAMS = {
+  "sora-2": SORA_BASE_ROW,
+  "sora-2-2025-10-06": SORA_BASE_ROW,
+  "sora-2-2025-12-08": SORA_BASE_ROW,
+  "sora-2-pro": SORA_PRO_ROW,
+  "sora-2-pro-2025-10-06": SORA_PRO_ROW,
+} as const satisfies VideoModelParamTable;
 
 /** The shape a tier resolves to when the caller named no shape at all. */
 const DEFAULT_SHAPE = "9:16";
@@ -113,6 +156,7 @@ export const video = {
   category: "video",
   provider: "openai",
   models: MODELS,
+  modelParams: OPENAI_VIDEO_MODEL_PARAMS,
   unsupported: {
     video:
       "POST /v1/videos generates a clip from a prompt and an optional first frame; it has no " +
@@ -165,7 +209,7 @@ export const video = {
 
     if (input.duration !== undefined) {
       const seconds = ctx.take(
-        toDurationString(input.duration, SORA_SECONDS, { path: ["duration"], warn: ctx.warn }),
+        toDurationString(input.duration, [...SORA_SECONDS], { path: ["duration"], warn: ctx.warn }),
       );
       if (seconds !== undefined) body.seconds = seconds;
     }
@@ -221,4 +265,8 @@ export const video = {
 
     return { params: body, validate: videoValidator.safe };
   },
-} as const satisfies UnifiedAdapter<VideoParams, OpenaiVideoWire, OpenaiVideoResult>;
+} as const satisfies VideoAdapterFor<
+  typeof OPENAI_VIDEO_MODEL_PARAMS,
+  OpenaiVideoWire,
+  OpenaiVideoResult
+>;

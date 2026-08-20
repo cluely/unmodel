@@ -1,19 +1,32 @@
 /**
- * Per-**model** typing for the two image categories.
+ * Per-**model** typing, for every category that needs it.
  *
  * ## The problem this solves
  *
  * `transcribe` narrows one field per *adapter* (`audioInputs`), and that is
  * enough there because a provider's routes agree about how audio arrives. The
- * image categories do not have that luxury: `gpt-image-2` takes a free-form
- * `size` up to 3840 px and a `background` that is `"opaque" | "auto"`, while
- * `gpt-image-1` — same provider, same endpoint — takes a three-value `size`
- * enum and a `background` that also accepts `"transparent"`. One adapter, two
- * different request surfaces, and the difference is the model id.
+ * image and video categories do not have that luxury: `gpt-image-2` takes a
+ * free-form `size` up to 3840 px and a `background` that is `"opaque" | "auto"`,
+ * while `gpt-image-1` — same provider, same endpoint — takes a three-value
+ * `size` enum and a `background` that also accepts `"transparent"`. One
+ * adapter, two different request surfaces, and the difference is the model id.
+ * Video is the same story twice over: `sora-2` renders 720p and `sora-2-pro`
+ * adds 1080p, `kling-v2-5-turbo` runs 5 or 10 seconds and `kling-v3` runs any
+ * integer from 3 to 15.
  *
- * So the unit of declaration here is the **model**, not the adapter: each image
+ * So the unit of declaration here is the **model**, not the adapter: each
  * adapter carries a `modelParams` table keyed by bare model id, and
  * {@link ModelParamsFor} resolves `model: "openai/gpt-image-2"` to that row.
+ *
+ * ## One mechanism, per-category rows
+ *
+ * The half that is category-agnostic — a row's {@link EXTRA} witnesses, the
+ * ref → row lookup, the extras derivations — is declared once, over
+ * {@link ModelParamsBase}. Each category then extends that base with the fields
+ * its own vocabulary narrows ({@link ModelParams} for the two image surfaces,
+ * {@link VideoModelParams} for video) and gets its own derivations. Adding a
+ * seventh category means adding a row interface and its derivations, not a
+ * second copy of the lookup.
  *
  * ## One table, three consumers
  *
@@ -57,10 +70,48 @@ import type {
   AdapterFor,
   RefModel,
 } from "../types";
-import type { AspectRatio, Dimensions, ResolutionTier } from "./common";
+import type { AspectRatio, Dimensions, ResolutionTier, VideoResolution } from "./common";
 
 /**
- * One model's request surface, beyond the canonical vocabulary every model has.
+ * What every category's row carries: the params the canonical vocabulary has no
+ * word for.
+ *
+ * The shared half of a row, and the reason the ref → row lookup and the extras
+ * derivations below are written once rather than once per category.
+ */
+export interface ModelParamsBase {
+  /**
+   * The non-canonical params this model takes, as `{ wireName: EXTRA as T }`.
+   * See the module header for why the values are witnesses.
+   */
+  readonly extras?: Readonly<Record<string, unknown>>;
+}
+
+/**
+ * The loosest per-model table — the constraint on {@link WithModelParams}, so
+ * that one ref → row lookup serves every category.
+ *
+ * `object` and **not** `ModelParamsBase`, which is the shape it means: a row is
+ * a category's own row type, and every one of those is `ModelParamsBase` plus
+ * that category's fields. Writing the constraint that way would be exactly
+ * wrong, because `ModelParamsBase` is a *weak* type — every property optional —
+ * and TypeScript refuses to assign an object with no properties in common to
+ * one. A row that declares `{ durations, resolutions, ratios }` and no `extras`
+ * is precisely that object, so `WithModelParams<infer T>` would fail to match
+ * the adapter, `ModelParamsFor` would answer `never`, and every model would
+ * silently degrade to the wide vocabulary with tsc perfectly happy. (Measured;
+ * it is the same class of failure as the `& {}` one `SizingArms` documents —
+ * green build, dead narrowing.)
+ *
+ * A category's own table type (`ModelParamTable`, `VideoModelParamTable`) is
+ * what an adapter's `satisfies` clause names, and that is where a row is
+ * actually checked field by field.
+ */
+export type AnyModelParamTable = Readonly<Record<string, object>>;
+
+/**
+ * One image model's request surface, beyond the canonical vocabulary every
+ * model has.
  *
  * Every field is optional, and **absent means different things on purpose**:
  *
@@ -77,7 +128,7 @@ import type { AspectRatio, Dimensions, ResolutionTier } from "./common";
  * The asymmetry is the honest one: a missing size *list* means the field does
  * not exist, while a missing ratio list means the field is computed.
  */
-export interface ModelParams {
+export interface ModelParams extends ModelParamsBase {
   /**
    * The `WxH` values this model accepts, plus any literal it takes instead
    * (`"auto"`). Curated for the free-form models, exhaustive for the enums —
@@ -101,18 +152,58 @@ export interface ModelParams {
   readonly ratioFreeform?: boolean;
   /** The canonical tiers this model can express. */
   readonly tiers?: readonly ResolutionTier[];
-  /**
-   * The non-canonical params this model takes, as `{ wireName: EXTRA as T }`.
-   * See the module header for why the values are witnesses.
-   */
-  readonly extras?: Readonly<Record<string, unknown>>;
 }
 
-/** An adapter's per-model table, keyed by **bare** model id. */
+/** An image adapter's per-model table, keyed by **bare** model id. */
 export type ModelParamTable = Readonly<Record<string, ModelParams>>;
 
-/** An adapter that carries one. Both image categories' adapter types extend it. */
-export interface WithModelParams<T extends ModelParamTable = ModelParamTable> {
+/**
+ * One video model's request surface, beyond the canonical vocabulary.
+ *
+ * Absent means "the canonical field keeps its wide type", uniformly — the
+ * asymmetry `ModelParams.sizes` carries has no analogue here, because every
+ * field a video row narrows is a field the vocabulary already has. What says
+ * "this model has no such field at all" is an **empty** list: `ratios: []`
+ * types `aspectRatio` as `never`, which is the compile-time half of the
+ * `unsupported_param` a Hailuo model raises for it at run time.
+ */
+export interface VideoModelParams extends ModelParamsBase {
+  /**
+   * The clip lengths this model offers, **in seconds**, as a closed enum.
+   *
+   * Absent means the model's lengths are a *range* rather than a list — every
+   * integer from 4 to 30 on Seedance 2.5, 1 to 16 on Vidu q3 — and `duration`
+   * then keeps the wide `number`. That is the one place this row is not simply
+   * "list or wide vocabulary": a range genuinely cannot be a union, and
+   * pretending otherwise would put 27 literals in a completion list to describe
+   * a `>=` check.
+   *
+   * When it is present it is exhaustive, so the union carries **no** template
+   * tail: the list *is* the limit, and `duration: 7` on `sora-2` is a compile
+   * error naming 4, 8, 12, 16 and 20.
+   */
+  readonly durations?: readonly number[];
+  /**
+   * The canonical tiers this model can express — after the adapter's own
+   * mapping, so `720p` is here for a model whose wire spells it `"768P"` or
+   * `"std"`. Empty means the model has no size field at all.
+   */
+  readonly resolutions?: readonly VideoResolution[];
+  /**
+   * The shapes this model accepts, in canonical `W:H` form. Every video wire in
+   * this build publishes a closed list (a pixel-pair enum still reduces to a
+   * finite set of shapes), so — unlike the image row — there is no `freeform`
+   * flag and the union carries no template tail. Empty means the model has no
+   * aspect-ratio field.
+   */
+  readonly ratios?: readonly string[];
+}
+
+/** A video adapter's per-model table, keyed by **bare** model id. */
+export type VideoModelParamTable = Readonly<Record<string, VideoModelParams>>;
+
+/** An adapter that carries one. Every narrowing category's adapter type extends it. */
+export interface WithModelParams<T extends AnyModelParamTable = AnyModelParamTable> {
   readonly modelParams: T;
 }
 
@@ -145,29 +236,8 @@ type RowOf<A, M extends string> = A extends WithModelParams<infer T>
 export type ModelParamsFor<A, R extends string> = RowOf<AdapterFor<A, R>, RefModel<R>>;
 
 // ---------------------------------------------------------------------------
-// Row → the caller's types
+// Row → extras — the half every category shares
 // ---------------------------------------------------------------------------
-
-/** `sizes` → the `size` union, with the template tail only where the wire is open. */
-export type SizeOf<Row> = Row extends { readonly sizes: readonly (infer S extends string)[] }
-  ? Row extends { readonly sizeFreeform: true }
-    ? S | (`${number}x${number}` & {})
-    : S
-  : never;
-
-/** `ratios` → the `aspectRatio` union; absent keeps the wide one. */
-export type RatioOf<Row> = Row extends { readonly ratios: readonly (infer R extends string)[] }
-  ? Row extends { readonly ratioFreeform: true }
-    ? R | (`${number}:${number}` & {})
-    : R
-  : AspectRatio;
-
-/** `tiers` → the `resolution` union; absent keeps all three. */
-export type TierOf<Row> = Row extends {
-  readonly tiers: readonly (infer T extends ResolutionTier)[];
-}
-  ? T
-  : ResolutionTier;
 
 /** `extras` → the optional per-model params, with their exact types. */
 type ExtrasOf<Row> = Row extends { readonly extras: infer X }
@@ -192,6 +262,31 @@ type AnyExtraKey<A> = A extends WithModelParams<infer T> ? ExtraKeysOf<T[keyof T
 export type ModelExtras<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
   ? { [K in AnyExtraKey<A>]?: unknown }
   : ExtrasOf<ModelParamsFor<A, R>>;
+
+// ---------------------------------------------------------------------------
+// Image / imageEdit: row → the caller's types
+// ---------------------------------------------------------------------------
+
+/** `sizes` → the `size` union, with the template tail only where the wire is open. */
+export type SizeOf<Row> = Row extends { readonly sizes: readonly (infer S extends string)[] }
+  ? Row extends { readonly sizeFreeform: true }
+    ? S | (`${number}x${number}` & {})
+    : S
+  : never;
+
+/** `ratios` → the `aspectRatio` union; absent keeps the wide one. */
+export type RatioOf<Row> = Row extends { readonly ratios: readonly (infer R extends string)[] }
+  ? Row extends { readonly ratioFreeform: true }
+    ? R | (`${number}:${number}` & {})
+    : R
+  : AspectRatio;
+
+/** `tiers` → the `resolution` union; absent keeps all three. */
+export type TierOf<Row> = Row extends {
+  readonly tiers: readonly (infer T extends ResolutionTier)[];
+}
+  ? T
+  : ResolutionTier;
 
 /**
  * The size/aspectRatio/dimensions XOR with per-model members. This is a
@@ -240,3 +335,77 @@ export type ModelSizing<A, R extends string> = [ModelParamsFor<A, R>] extends [n
 export type ModelShape<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
   ? WideSizingArms
   : SizingArms<SizeOf<ModelParamsFor<A, R>>, RatioOf<ModelParamsFor<A, R>>>;
+
+// ---------------------------------------------------------------------------
+// Video: row → the caller's types
+// ---------------------------------------------------------------------------
+
+/**
+ * `durations` → the `duration` union; absent keeps the wide `number`.
+ *
+ * **No template tail, ever.** `SizeOf`'s `` (`${number}x${number}` & {}) `` is
+ * there because a free-form `size` genuinely accepts values outside its preset
+ * list; a duration list is a *closed enum* — five values on Sora, two on Luma —
+ * and a model whose lengths are open declares no `durations` at all and gets
+ * the wide `number`. So the two cases are "these exactly" and "any number",
+ * with nothing in between to spell.
+ */
+export type VideoDurationOf<Row> = Row extends {
+  readonly durations: readonly (infer D extends number)[];
+}
+  ? D
+  : number;
+
+/** `resolutions` → the `resolution` union; absent keeps all five tiers. */
+export type VideoResolutionOf<Row> = Row extends {
+  readonly resolutions: readonly (infer R extends VideoResolution)[];
+}
+  ? R
+  : VideoResolution;
+
+/**
+ * `ratios` → the `aspectRatio` union; absent keeps the wide {@link AspectRatio}.
+ *
+ * A plain literal union with no `` (`${number}:${number}` & {}) `` tail, which
+ * is the difference from {@link RatioOf}: every video wire in this build
+ * publishes a closed shape list — even Runway, whose `ratio` members are pixel
+ * pairs, reduces to a finite set of shapes — so a tail would promise a
+ * freedom none of them has. The *degraded* case keeps `AspectRatio` and
+ * therefore keeps its tail, which is why this must never be intersected with
+ * the wide vocabulary: see {@link SizingArms} for what that costs.
+ */
+export type VideoRatioOf<Row> = Row extends {
+  readonly ratios: readonly (infer R extends string)[];
+}
+  ? R
+  : AspectRatio;
+
+/**
+ * The three fields a video row narrows, as a complete **replacement** for the
+ * vocabulary's own.
+ *
+ * Same rule as {@link SizingArms}, and for the same measured reason: the
+ * degraded arm restates `AspectRatio`, whose `` (`${number}:${number}` & {}) ``
+ * tail is discharged the moment it is intersected with a narrowed literal
+ * union — after which subtype reduction eats every preset and `aspectRatio:`
+ * completes nothing. `VideoParamsBase` therefore omits all three fields, so
+ * this is the only source of their contextual type.
+ */
+type VideoArms<Duration, Resolution, Ratio> = {
+  duration?: Duration;
+  resolution?: Resolution;
+  aspectRatio?: Ratio;
+};
+
+/**
+ * The duration / resolution / shape one ref admits. Degraded — dynamic ref,
+ * unknown provider, unknown model — it restates the wide vocabulary, so a model
+ * released after this snapshot stays callable.
+ */
+export type VideoModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? VideoArms<number, VideoResolution, AspectRatio>
+  : VideoArms<
+      VideoDurationOf<ModelParamsFor<A, R>>,
+      VideoResolutionOf<ModelParamsFor<A, R>>,
+      VideoRatioOf<ModelParamsFor<A, R>>
+    >;

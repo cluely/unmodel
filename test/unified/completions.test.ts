@@ -140,3 +140,111 @@ imageEdit({ model: "openai/gpt-image-2", operation: "edit", prompt: "x", image: 
     expect(entries).toContain("2048x1024");
   });
 });
+
+/**
+ * ## `duration` is the first **numeric** union this suite has had to check
+ *
+ * The measured answer, recorded here because it decides how the assertion is
+ * written: TypeScript **does** offer number-literal completions at a
+ * `duration:` position. `getCompletionsAtPosition` returns them as entries
+ * whose `name` is the digits (`"4"`, `"8"`, …), mixed into the global
+ * identifier/keyword list that any expression position carries — unlike a
+ * string position, which is filtered to the union alone.
+ *
+ * So the assertion is a **subset** check rather than the exact-list one the
+ * `size`/`aspectRatio` tests use, and it also checks the negative (`7` and `5`
+ * are absent) — because "every literal is offered" is trivially satisfied by a
+ * list that contains every number. `test/types/unified-video.test-d.ts` holds
+ * the other half: `duration: 7` is a compile error on `sora-2` and `8` is not.
+ */
+describe("unified video: per-model narrowing reaches the editor", () => {
+  test("duration completes sora's five lengths, as number literals", () => {
+    const entries = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "openai/sora-2", prompt: "x", duration: ¦ });`);
+    for (const seconds of ["4", "8", "12", "16", "20"]) expect(entries).toContain(seconds);
+    // The list is the limit: neither neighbour of 8 is on it.
+    expect(entries).not.toContain("7");
+    expect(entries).not.toContain("5");
+  });
+
+  test("a closed duration enum at another provider completes its own values", () => {
+    const entries = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "luma/ray-2", prompt: "x", duration: ¦ });`);
+    expect(entries).toContain("5");
+    expect(entries).toContain("9");
+    expect(entries).not.toContain("8");
+  });
+
+  test("a model whose lengths are a range keeps the wide number", () => {
+    // Seedance's `duration` is `z.number().int()` with per-model bounds, so the
+    // row declares no `durations` and there is no literal list to offer.
+    const entries = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "bytedance/seedance-1-0-pro-250528", prompt: "x", duration: ¦ });`);
+    for (const seconds of ["4", "8", "12"]) expect(entries).not.toContain(seconds);
+  });
+
+  test("resolution completes 720p on sora-2 and adds 1080p on pro", () => {
+    const base = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "openai/sora-2", prompt: "x", resolution: "¦" });`);
+    expect(base.sort()).toEqual(["720p"]);
+    const pro = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "openai/sora-2-pro", prompt: "x", resolution: "¦" });`);
+    expect(pro.sort()).toEqual(["1080p", "720p"]);
+  });
+
+  test("aspectRatio narrows to kling's three, not the canonical nine", () => {
+    const entries = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "kling/kling-v3", prompt: "x", aspectRatio: "¦" });`);
+    // Lexicographic, so `"16:9"` sorts before `"1:1"` (`'6'` < `':'`).
+    expect(entries.sort()).toEqual(["16:9", "1:1", "9:16"]);
+  });
+
+  test("a shape-less model completes nothing for aspectRatio", () => {
+    // `/v1/video_generation` has no aspect-ratio field: `ratios: []` types it
+    // as `never`, which is the compile-time half of the run-time refusal.
+    const entries = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "minimax/MiniMax-Hailuo-02", prompt: "x", aspectRatio: "¦" });`);
+    expect(entries).toEqual([]);
+  });
+
+  test("property names include the model's extras, and its extras only", () => {
+    const entries = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "kling/kling-v1", prompt: "x", ¦ });`);
+    for (const name of ["duration", "resolution", "aspectRatio", "cfg_scale", "camera_control"]) {
+      expect(entries).toContain(name);
+    }
+    // `sound` is kling-v3's and `audio` the path-addressed family's.
+    expect(entries).not.toContain("sound");
+    expect(entries).not.toContain("audio");
+  });
+
+  test("an extra's own values complete", () => {
+    const entries = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "kling/kling-v3", prompt: "x", sound: "¦" });`);
+    expect(entries.sort()).toEqual(["off", "on"]);
+    // The same key does not exist one model over.
+    const omni = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "kling/kling-3.0-omni", prompt: "x", audio: "¦" });`);
+    expect(omni.sort()).toEqual(["native", "off", "original"]);
+  });
+
+  test("an unknown model degrades to the wide vocabulary", () => {
+    const ratios = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "openai/sora-9", prompt: "x", aspectRatio: "¦" });`);
+    // The nine canonical presets, and the `& {}` tail has not eaten them.
+    for (const preset of ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "21:9", "9:21"]) {
+      expect(ratios).toContain(preset);
+    }
+    const tiers = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "openai/sora-9", prompt: "x", resolution: "¦" });`);
+    expect(tiers.sort()).toEqual(["1080p", "1440p", "480p", "4k", "720p"]);
+  });
+
+  test("model refs complete provider-qualified", () => {
+    const entries = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "¦", prompt: "x" });`);
+    expect(entries).toContain("openai/sora-2");
+    expect(entries).toContain("kling/kling-3.0-omni");
+    expect(entries).toContain("lightricks/ltx-2-5-fast");
+  });
+});

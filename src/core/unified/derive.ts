@@ -2440,6 +2440,20 @@ export interface ExtrasOptions {
    * means the body root, which is what most endpoints want.
    */
   readonly at?: readonly string[];
+  /**
+   * Per-key overrides of {@link at}, for a provider whose extras do not all
+   * live under one prefix.
+   *
+   * Kling is why this exists, and it is not an edge case: its path-addressed
+   * routes put `audio` under `settings` and `watermark_info` under `options`,
+   * while its `/v1/videos/*` routes put `watermark_info` at the body root. One
+   * `applyExtras` call has to serve all of them, because the refusal check
+   * ("`cfg_scale` is not a parameter kling-3.0 accepts") reads the *whole*
+   * table — splitting the table by prefix would split that check too, and an
+   * extra that belongs to the other half would then be silently dropped
+   * instead of refused.
+   */
+  readonly nest?: Readonly<Record<string, readonly string[]>>;
 }
 
 /**
@@ -2501,7 +2515,7 @@ export function applyExtras(
       });
       continue;
     }
-    const path = [...(options.at ?? []), key];
+    const path = [...(options.nest?.[key] ?? options.at ?? []), key];
     ctx.from(path, key);
     place(body, path, value);
   }

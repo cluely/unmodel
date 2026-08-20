@@ -19,9 +19,9 @@ provider — not their quality ranking.
 
 | Provider | Categories | API style | Tier | models.dev | Notes |
 |---|---|---|---|---|---|
-| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + images + imageEdit + speech + transcribe + video + realtime session done) | ✅ | complete for the documented REST surface |
-| anthropic | llm | native (the reference) | **native** (done) | ✅ | |
-| google | llm, image, video, tts, stt | native | **native** (generateContent + Imagen image + Veo video done) | ✅ | Gemini TTS is validated inside `generateContent` (`responseModalities: ["AUDIO"]` + `speechConfig`); STT likewise via inline/file audio parts |
+| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + image + imageEdit + speech + transcribe + video + realtime session done) | ✅ | complete for the documented REST surface |
+| anthropic | llm | native (the reference) | **native** (`chat`, the `/v1/messages` wire format — done) | ✅ | |
+| google | llm, image, video, tts, stt | native | **native** (`chat` + Imagen `image` + Veo `video` done) | ✅ | Gemini TTS is validated inside `chat` (the `:generateContent` route — `responseModalities: ["AUDIO"]` + `speechConfig`); STT likewise via inline/file audio parts |
 | xai (grok) | llm, image, video, stt | openai-compatible (+anthropic-compat) | **oai-base** (live) | ✅ (`xai`) | grok-imagine image/video are native-style, later |
 | groq | inference (chat + Whisper STT) | openai-compatible | **oai-base** (live) | ✅ | Whisper STT covered by speech wave via oai audio shape |
 | cerebras | inference | openai-compatible | **oai-base** (live) | ✅ | |
@@ -42,8 +42,10 @@ Remaining: sambanova, hyperbolic, parasail, crusoe, gmi, coreweave, lambda, moda
 databricks, digitalocean, lightning-ai.
 Special cases — now **live as endpoint factories** (no provider-wide static URL):
 **azure** (`createAzure({ endpoint })`, OpenAI v1 dialect, deployment-name model ids),
-**google-vertex** (`createGoogleVertex({ project, location })`, Gemini generateContent),
-**amazon-bedrock** (`createAmazonBedrock({ region })`, native Converse wire format).
+**google-vertex** (`createGoogleVertex({ project, location })`, Gemini `chat` on the
+`:generateContent` route),
+**amazon-bedrock** (`createAmazonBedrock({ region })`, `chat` on the native Converse wire
+format).
 Still catalog-only: **replicate** (native API — until a native validator lands).
 
 ## Wave 2 — model creators with first-party OpenAI-compatible APIs (oai-base)
@@ -70,16 +72,18 @@ deepgram (Aura 1/2), elevenlabs, fish-audio, hume (Octave), inworld,
 lmnt (`speech` + `speechDetailed`), minimax (T2A v2), murf (`speech` + `speechStream`),
 resemble (`speech` + `speechStream`), rime, smallest-ai,
 speechify (`speech` + `speechStream`).
-All fourteen also ship a `unified.ts` adapter, so `speech()` from `unmodel/speech` reaches
-them through one canonical vocabulary.
+All fourteen also ship an adapter at `unmodel/<provider>/unified`, so `speech()` from
+`unmodel/speech` reaches them through one canonical vocabulary.
 **Live — STT:** every provider addresses the route as `transcribe` — openai
 (gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
 deepgram, elevenlabs (Scribe), gladia, inworld (base64 audio inline in the JSON body, no
-multipart route), mistral (Voxtral), revai, soniox, speechmatics. All eleven also ship a
-`unified.ts` adapter, so `transcribe()` from `unmodel/transcribe` reaches them through one
-canonical vocabulary.
-Google TTS/STT ride on `generateContent` (no separate endpoint upstream).
+multipart route), mistral (Voxtral), revai, soniox, speechmatics. All eleven also ship an
+adapter at `unmodel/<provider>/unified`, so `transcribe()` from `unmodel/transcribe`
+reaches them through one canonical vocabulary — where the `audio` shapes each route accepts
+are enforced at compile time.
+Google TTS/STT ride on `google.chat` (the `:generateContent` route — no separate endpoint
+upstream).
 **Live — realtime session configs:** the documented JSON config object of each socket surface
 (connection query set, first configuration frame, or per-chunk generation message) — never the
 socket lifecycle, which stays out of unmodel's scope and is stated in every module header.
@@ -146,9 +150,9 @@ Several of these are already reachable as hosted routes on `unmodel/runway`
 (`hailuo3`, `seedance2*`, `gemini_omni_flash`, `grok_imagine_1_5`).
 **Excluded:** pika, genmo/haiper, sand-ai, skywork, sapiens-ai (no public API).
 **Music / audio — live:** elevenlabs (Eleven Music, `music`), stability (Stable Audio 2.x:
-`music` / `musicFromAudio` / `musicInpaint`). Both text-to-music routes ship a `unified.ts`
-adapter behind `music()` from `unmodel/music`; the two audio-conditioned Stability routes are
-wire-only (see `src/unified/music.ts`).
+`music` / `musicFromAudio` / `musicInpaint`). Both text-to-music routes ship an adapter at
+`unmodel/<provider>/unified` behind `music()` from `unmodel/music`; the two
+audio-conditioned Stability routes are wire-only (see `src/unified/music.ts`).
 Remaining: mureka, sonauto. **Excluded:** suno, udio, producer-ai (no public API).
 
 ## LLM creators without a public API today (catalog-only or excluded)
@@ -157,6 +161,53 @@ motif-technologies, xiaomi (MiMo), thinking-machines (Inkling), nex-agi, china-m
 sapiens-ai, inclusionai (Ant Ling/Ring), sk-telecom, ai9stars, lg-ai-research (EXAONE),
 servicenow, multiverse-computing, mbzuai-ifm, korea-telecom, celeris, trillion-labs,
 openbmb, nanbeige, tii-falcon, allenai (Olmo — weights only).
+
+## Unified surfaces — coverage per category
+
+Seven entries take a **standardized camelCase vocabulary** instead of a wire body and
+compile it to whichever provider the `"provider/model"` ref names. They are a layer *over*
+the roster above, not a replacement for it: a unified call compiles to a provider's wire
+params and then runs **that provider's own validator**, so there is exactly one definition
+of a valid request and the wire-exact subpaths stay the substrate and the escape hatch.
+See `docs/decisions.md` for why that layering is fixed.
+
+| Entry | Function(s) | Adapters | Providers covered |
+|---|---|---|---|
+| `unmodel/chat` | `chat` | n/a — one entry, three dialect encoders + a slim per-model profile table | 32: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
+| `unmodel/image` | `image`, `createImage` | 15 | black-forest-labs, bria, bytedance, google, ideogram, kling, krea, leonardo, luma, openai, recraft, reve, runway, stability, vidu |
+| `unmodel/speech` | `speech`, `createSpeech` | 14 | cartesia, deepgram, elevenlabs, fish-audio, hume, inworld, lmnt, minimax, murf, openai, resemble, rime, smallest-ai, speechify |
+| `unmodel/transcribe` | `transcribe`, `createTranscribe` | 11 | assemblyai, cartesia, deepgram, elevenlabs, gladia, inworld, mistral, openai, revai, soniox, speechmatics |
+| `unmodel/video` | `video`, `createVideo` | 10 | bytedance, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu |
+| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 4 | black-forest-labs, ideogram, openai, recraft — the four whose primary editing route is *image + prompt, no mask* |
+| `unmodel/music` | `music`, `createMusic` | 2 | elevenlabs, stability |
+
+**Layout.** Each adapter lives in the provider's own directory as
+`unified-<category>.ts`, re-exported from a single `unified.ts` barrel published as
+`unmodel/<provider>/unified` (36 such subpaths). A provider serving more than one category
+therefore splits per category, so no pack pays for another category's schemas or catalogs.
+`test/bundle-budget.test.ts` asserts a pack can only reach a provider through that
+provider's uniformly-named endpoint module — which is what makes the address-vs-wire
+rename structural rather than cosmetic.
+
+**Contract, identical in all seven.** A param a provider cannot express is an **error**
+naming what it does offer; a value it can only express approximately is an
+`approximated_param` **warning** naming both the requested and the achieved value;
+everything else is silent — so zero warnings means the request mapped exactly, asserted per
+category by a golden matrix that compiles one canonical request at every provider that can
+express it. Anything genuinely one-off rides in `providerOptions`, keyed by provider and
+deep-merged over the compiled body **before** validation.
+
+**Declared gaps** (each is a typed refusal with a message naming the wire-only sibling that
+does the job): `inworld.transcribe` takes base64 audio inside its JSON body, which a
+synchronous compile step cannot produce from a `Blob`; black-forest-labs' Kontext
+`input_image` is a JSON string, so its `imageInputs` is `["data", "url"]`; Stability's
+`musicFromAudio` / `musicInpaint` and the sixteen masked editing routes take controls no
+other provider has, so a canonical vocabulary for them would be a vocabulary of one.
+
+**Roadmap.** Every category with more than one provider now has a pack, so a new adapter is
+the unit of growth rather than a new entry. Embeddings have neither a wire validator nor a
+unified surface yet; when they land, they follow the same order — wire-exact subpath first,
+adapter second.
 
 ## Output targets — `.toSdk(target)` and `.toApi(provider)`
 
@@ -214,7 +265,7 @@ but not sufficient, since models.dev records embeddings, transcription and music
 generation as text-out too, so a row that charges for input and nothing for output (it
 generates no tokens) or that emits audio/video without tool calling (music, speech,
 realtime voice) is dropped. Image-out rows are deliberately kept — `gemini-3-pro-image`
-really is a `generateContent` request.
+really is a `google.chat` (`:generateContent`) request.
 
 Currently denied there, both for unverified wire surfaces:
 
@@ -255,7 +306,7 @@ same `buildAvailability` machinery consumes it unchanged.
    refreshed manually. `ModelCost` carries the non-token rates these modalities need:
    `perMillionCharacters` (TTS), `perAudioMinute` (STT), `perImage`, `perVideoSecond`.
    `ModelLimit.characters` bounds character-priced inputs.
-3. **New endpoint shapes**: TTS (`speech`/`tts`), STT (`transcribe`), image
+3. **New endpoint shapes**: TTS (`speech`), STT (`transcribe`), image
    generation and editing, and video generation + post-production, each mirroring its native
    wire format on the same pipeline/constraints machinery. Realtime *transports* stay out of
    scope; the session-config object is validated (`openai.realtimeSession`).

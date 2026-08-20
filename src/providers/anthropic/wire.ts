@@ -10,7 +10,8 @@ import type { AnthropicModelId } from "../../catalog/anthropic.gen";
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Wire types — mirror POST /v1/messages exactly (no unified format).
+// Wire types — mirror POST /v1/messages exactly (the wire substrate; the
+// unified surface compiles to this).
 // ---------------------------------------------------------------------------
 
 export interface CacheControlEphemeral {

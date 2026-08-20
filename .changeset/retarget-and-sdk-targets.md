@@ -22,7 +22,7 @@ New in this release:
   provider that serves the same model, translating the wire format across dialects and
   respelling the model id. The target union is typed per model from generated per-provider
   availability tables (`src/catalog/availability/<id>.gen.ts`), so
-  `messages({ model: "claude-opus-5", … }).toApi("openai")` is a compile error rather than
+  `chat({ model: "claude-opus-5", … }).toApi("openai")` is a compile error rather than
   a 404. `.toApiSafe(provider)` is the non-throwing form. The endpoint factories
   (`amazon-bedrock`, `google-vertex`, `azure`) are excluded from the union for now — they
   need per-instance config a one-argument call cannot supply — and a two-argument overload

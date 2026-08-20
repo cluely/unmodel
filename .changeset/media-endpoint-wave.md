@@ -7,18 +7,21 @@ Media endpoint wave: image editing, speech, and video post-production validators
 New request validators (all on existing subpaths — no new package exports):
 
 - `unmodel/openai`: `imageEdit` (+ `imageEditToFormData`), `speech` (TTS),
-  `transcription` (+ `transcriptionToFormData`).
-- `unmodel/google`: `generateImages` (Imagen 4 fast/standard/ultra).
-- `unmodel/black-forest-labs`: `flux1`, `fluxFill`, `fluxExpand`, and the FLUX Tools
-  routes `fluxOutpainting`, `fluxErase`, `fluxDeblur`, `fluxVto`.
-- `unmodel/ideogram`: `generateV4`, `edit`, `remix`, `reframe`, `replaceBackground`.
-- `unmodel/recraft`: `imageToImage`, `inpaint`, `outpaint`, `generateBackground`,
-  `replaceBackground`.
-- `unmodel/stability`: `stableImageErase`, `stableImageInpaint`, `stableImageOutpaint`,
-  `stableImageSearchAndReplace`, `stableImageSearchAndRecolor`,
-  `stableImageRemoveBackground`.
-- `unmodel/luma`: `modifyVideo`, `reframeVideo`, `reframeImage`, `upscale`, `addAudio`.
-- `unmodel/runway`: `videoToVideo`.
+  `transcribe` (+ `transcribeToFormData`).
+- `unmodel/google`: `image` (Imagen 4 fast/standard/ultra).
+- `unmodel/black-forest-labs`: `imageFlux1`, `imageEditFill`, `imageEditExpand`, and the
+  FLUX Tools routes `imageEditOutpainting`, `imageEditErase`, `imageEditDeblur`,
+  `imageEditVto`.
+- `unmodel/ideogram`: `imageV4`, `imageEdit`, `imageEditRemix`, `imageEditReframe`,
+  `imageEditReplaceBackground`.
+- `unmodel/recraft`: `imageEdit`, `imageEditInpaint`, `imageEditOutpaint`,
+  `imageEditGenerateBackground`, `imageEditReplaceBackground`.
+- `unmodel/stability`: `imageEditErase`, `imageEditInpaint`, `imageEditOutpaint`,
+  `imageEditSearchAndReplace`, `imageEditSearchAndRecolor`,
+  `imageEditRemoveBackground`.
+- `unmodel/luma`: `videoModify`, `videoReframe`, `imageEditReframe`, `videoUpscale`,
+  `videoAddAudio`.
+- `unmodel/runway`: `videoFromVideo`.
 
 Types across every audited endpoint were re-derived from the providers' current
 documentation rather than their SDKs — narrowed where the SDK permits what the API

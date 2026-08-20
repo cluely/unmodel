@@ -4,10 +4,13 @@ Validation layer for LLM API calls: catalog-aware, zod-powered request validatio
 
 unmodel does **not** perform generation and never touches your API keys. You build and validate request params through unmodel, then send them yourself: over raw `fetch`, or through an SDK via `.toSdk(target)`. After the call, `check*` helpers inspect the raw response for silent quality problems (truncation, refusals, content filtering) and price the actual usage.
 
-- **Wire-format params.** Params mirror each provider's raw REST body exactly — no unified cross-provider format to learn or debug through.
+**Wire-exact by construction, unified by choice.**
+
+- **Wire-exact params.** Every validator's params *are* the provider's raw REST body, byte for byte — `max_tokens` at Anthropic, `max_completion_tokens` at OpenAI, `generationConfig.maxOutputTokens` at Google, `voice_id` in ElevenLabs' URL. Nothing is renamed, so there is no intermediate format standing between your object and the request the provider answers. This is the substrate, it is what every other feature is built out of, and it is not going away.
+- **A standardized surface on top, when you want one.** `unmodel/chat` and the six [unified media packs](#unified-surfaces) give one camelCase vocabulary that reads the same at every provider, so a portable call site is a string edit rather than a rewrite. They **compile down** to exactly the wire body above — same object, same `.request`, same provider validator — so the thing you inspect, log, tweak and send is still the provider's own request. You can always drop a layer; nothing hides underneath.
 - **Catalog-aware.** Backed by a generated [models.dev](https://models.dev) catalog: context windows, output limits, per-token pricing, capabilities, deprecations.
 - **Types that beat the SDK.** Params are typed from each provider's current **documentation**, not from its SDK: narrowed where the SDK permits what the API rejects, widened where the SDK's enum is a subset of the documented reality. Every deviation cites the doc URL it came from.
-- **Retarget, don't rewrite.** `.toApi(provider)` moves a validated chat request to any provider that serves the same model — translating the wire format and respelling the model id. Which providers those are is typed per model, so the wrong destination is a compile error rather than a 404. The model's home provider is always among them, as the identity retarget, so a provider-generic call site needs no special case for "the provider I already am".
+- **Retarget, don't rewrite.** `.toApi(provider)` moves an **already validated** chat request to another provider that serves the same model — translating the wire format and respelling the model id. Which providers those are is typed per model, so the wrong destination is a compile error rather than a 404. The model's home provider is always among them, as the identity retarget, so a provider-generic call site needs no special case for "the provider I already am". (This answers a different question from the unified surface above: `unmodel/chat` writes *one request* that many providers can serve, `.toApi` moves *a request you already have* to one of them. See [Unified surfaces](#unified-surfaces).)
 - **Zero provider dependencies.** Provider SDKs are never imported at runtime. `zod` is the only dependency of the library entry points — including the Vercel AI SDK adapter, which takes `ai`'s `jsonSchema` as an argument instead of importing it.
 
 Runtime-agnostic: Node ≥ 20, Bun, Cloudflare Workers.
@@ -125,6 +128,90 @@ Requests without tools need no adapter at all.
 > models.dev provider with its own HTTP API — the one `unmodel/vercel`
 > validates. `"ai-sdk"` is the only target id in the library that is not a
 > catalog provider id; every other one, on both methods, is.
+
+## Quickstart: one request, any provider
+
+The two quickstarts above are the substrate: you named a provider by importing
+it, and you wrote that provider's exact wire params. The layer on top inverts
+that — you write **one** standardized request and the provider is a string:
+
+```ts
+import { chat } from "unmodel/chat";
+
+const req = chat({
+  model: "anthropic/claude-opus-5", // "provider/model", split on the FIRST slash
+  messages: [{ role: "user", content: "Explain retargeting." }],
+  reasoning: { budgetTokens: 2048 },
+  maxOutputTokens: 4096,
+});
+
+req.request.url; // https://api.anthropic.com/v1/messages
+JSON.stringify(req);
+// {"model":"claude-opus-5","max_tokens":4096,
+//  "messages":[{"role":"user","content":[{"type":"text","text":"Explain retargeting."}]}],
+//  "thinking":{"type":"enabled","budget_tokens":2048}}
+req.warnings; // [] — nothing was lost on the way to this body
+```
+
+Change one string, and the same params compile to a different API:
+
+```ts
+const viaOpenAI = chat({
+  model: "openai/gpt-5.2", // ← the only difference
+  messages: [{ role: "user", content: "Explain retargeting." }],
+  reasoning: { budgetTokens: 2048 },
+  maxOutputTokens: 4096,
+});
+
+viaOpenAI.request.url; // https://api.openai.com/v1/chat/completions
+JSON.stringify(viaOpenAI);
+// {"model":"gpt-5.2","messages":[{"role":"user","content":"Explain retargeting."}],
+//  "max_completion_tokens":4096,"reasoning_effort":"low"}
+
+viaOpenAI.warnings;
+// [approximated_param] a 2048-token reasoning budget has no chat-completions
+//                      equivalent; it was bucketed to `reasoning_effort: "low"`,
+//                      which the target sizes on its own terms.
+```
+
+The result is an ordinary `Validated`: its enumerable properties are the
+provider's wire body, `.request` is that provider's URL, method and static
+headers, and you send it with the same `fetch` as the first quickstart. Nothing
+new to learn about *sending* — only about *writing*.
+
+Media works the same way, one canonical vocabulary per category:
+
+```ts
+import { image } from "unmodel/image";
+
+const shot = image({
+  model: "black-forest-labs/flux-pro-1.1",
+  prompt: "a lighthouse in fog",
+  aspectRatio: "16:9",
+  resolution: "1k",
+});
+
+JSON.stringify(shot);  // {"prompt":"a lighthouse in fog","width":1344,"height":768}
+shot.request.url;      // https://api.bfl.ai/v1/flux-pro-1.1
+
+shot.warnings;
+// [approximated_param] `aspectRatio` 16:9 at 1k does not land on this model's
+//                      32px grid: 1344×768 (1.750:1, requested 1.778:1).
+```
+
+BFL has no `aspectRatio` and no `resolution` — it has a pixel pair on a 32-px
+grid — so the request is *derived* rather than translated, and it says so
+instead of quietly shipping the wrong ratio. Point the same object at
+`"openai/gpt-image-2"` and you get `size: "1360x768"`; at
+`"google/imagen-4.0-generate-001"`, an Imagen `:predict` body carrying
+`parameters.aspectRatio: "16:9"` — which is exact, and so warns about nothing.
+
+Importing a media pack costs every provider in it. If you only ever call two,
+the `create*` registry forms build a pack from the adapter leaves at
+`unmodel/<provider>/unified`, and the ref union narrows with it —
+`createImage([openai, ideogram])`, `createSpeech([…])`, and one per category.
+See [Unified surfaces](#unified-surfaces) for the whole contract and
+[Bundle story](#bundle-story) for what each entry costs.
 
 ## Retargeting: `.toApi(provider)`
 
@@ -255,7 +342,9 @@ const checked = openrouterChat(body);
   decision, not an oversight: across the providers unmodel implements there are
   exactly five multi-provider media model groups in the catalog, and their wire
   formats share no dialect to translate through. The moment cross-provider
-  media serving is real, the same machinery generates it.
+  media serving is real, the same machinery generates it. Writing *one* media
+  request that many providers can serve is a different question, and it is
+  answered by the [unified media packs](#unified-surfaces).
 - **No factory providers as targets, yet.** `amazon-bedrock`, `google-vertex`
   and `azure` are excluded from the `.toApi` union in this release: `.toApi` is
   synchronous and total, and it cannot build a URL without a `region`,
@@ -270,6 +359,75 @@ const checked = openrouterChat(body);
   Claude through a `rawPredict` route unmodel has no module for), so those
   edges are switched off in `data/availability-overrides.json` rather than
   shipped as a compile-time promise that 404s.
+
+## Unified surfaces
+
+Seven entries — one for chat and one per media category — take a **standardized
+camelCase vocabulary** instead of a wire body, and compile it to whichever
+provider the `"provider/model"` ref names. They are the portability layer; the
+per-provider validators under [Providers](#providers) remain the substrate and
+the escape hatch.
+
+| Import | Function | Providers | Canonical vocabulary |
+| --- | --- | --- | --- |
+| `unmodel/chat` | `chat` | 32 | `messages`, `system`, `maxOutputTokens`, `temperature` (canonical 0–2), `topP`, `topK`, `reasoning`, `tools` (a `Record`, so duplicate names are unrepresentable), `nativeTools`, `toolChoice`, `responseFormat`, `cache` breakpoints, `stream` |
+| `unmodel/image` | `image`, `createImage` | 15 | `prompt`, `aspectRatio` XOR `dimensions`, `resolution` tier, `n`, `seed`, `negativePrompt`, `outputFormat`, `outputDelivery` |
+| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 4 | `operation`, `prompt`, `image` (`file` / `url` / `data`), `strength`, `aspectRatio` XOR `dimensions`, `n`, `seed`, `outputFormat` |
+| `unmodel/speech` | `speech`, `createSpeech` | 14 | `text`, `voice`, `outputFormat`, `speed`, `language` |
+| `unmodel/video` | `video`, `createVideo` | 10 | `prompt`, `duration` (seconds), `resolution` tier, `aspectRatio`, `image` (first / last / reference), `video`, `negativePrompt`, `seed`, `n` |
+| `unmodel/transcribe` | `transcribe`, `createTranscribe` | 11 | `audio` (`file` / `url` / `fileId`), `language`, `languages`, `diarization`, `timestamps`, `prompt` |
+| `unmodel/music` | `music`, `createMusic` | 2 | `prompt`, `durationSeconds`, `instrumental`, `outputFormat`, `seed` |
+
+**The contract.** A unified call compiles the canonical params to one provider's
+wire params and then runs **that provider's own validator** — the same `chat()`
+or `image()` you would have imported from `unmodel/<provider>` by hand, with its
+catalog, its constraint tables, its media limits and its cost estimate. There is
+no second definition of what a valid request is, so the two cannot disagree, and
+what you get back is that provider's ordinary `Validated`: enumerable properties
+are its exact wire body, `.request` is its URL/method/static headers, `.toSdk`
+is its SDK shape. Anything the vocabulary cannot say rides in `providerOptions`,
+keyed by provider and deep-merged over the compiled body **before** validation,
+so it is checked rather than smuggled past the checks. Dropping to the wire
+layer is therefore never a migration — it is deleting one import.
+
+**The ref convention.** `model` is `"provider/model"`, split on the **first**
+slash. OpenRouter's own ids contain slashes, so
+`"openrouter/anthropic/claude-opus-5"` is provider `openrouter`, model
+`anthropic/claude-opus-5`; splitting on the last slash — the obvious
+implementation — would route it to a provider called `openrouter/anthropic`. The
+generated ref unions drive autocomplete but do not gate the API: a model
+released after the catalog snapshot is still callable.
+
+**The loss policy, in three rules.** A param the provider cannot express at all
+is an **error** naming what it does offer. A value it can only express
+approximately is an `approximated_param` **warning** naming both the requested
+and the achieved value. Everything else is silent. So `warnings.length === 0`
+*means* the request mapped exactly — asserted per category by a golden matrix
+that compiles one canonical request at every provider that can express it.
+
+**Narrowings that happen at compile time**, not at 400-time:
+
+- **`audio` narrows to the transcribe route.** AssemblyAI fetches a URL,
+  Cartesia takes multipart bytes, Soniox takes a URL or its own file id, Mistral
+  takes all three — so `transcribe({ model: "cartesia/ink-whisper", audio: { url } })`
+  is a type error, and the runtime check backs it up for JavaScript callers.
+- **`image` narrows the same way in `unmodel/image-edit`.** OpenAI takes
+  `{ file }` only; FLUX Kontext takes `{ data }` or `{ url }` only.
+- **Sizing is an XOR.** `aspectRatio` and `dimensions` cannot both be given, in
+  `image` or `image-edit`, because no provider has a coherent reading of both.
+- **The inputs choose the video endpoint.** A prompt is text-to-video; adding
+  `image` makes it image-to-video; `role: "reference"` makes it
+  reference-to-video; `video` makes it video-to-video. A model with no arm for
+  the route you derived says so by name.
+- **`operation` is `"edit"` and only `"edit"` in v1.** Masked routes stay
+  reachable by name at `unmodel/<provider>`.
+
+`unmodel/chat` is a single entry with one slim bundled catalog. The six media
+packs also ship `create*` registry forms — `createImage([openai, ideogram])`
+over the adapter leaves at `unmodel/<provider>/unified` — so a two-provider app
+pays for two providers. Per-category detail (every vocabulary, the exact
+translations, and the honest gaps) is in
+[Unified media](#unified-media-one-vocabulary-per-category).
 
 ## Providers
 
@@ -626,6 +784,12 @@ provider. `unmodel/image`, `unmodel/image-edit`, `unmodel/speech`,
 canonical camelCase vocabulary per media category, compiled to whichever
 provider the `"provider/model"` ref names.
 
+This section is the per-category detail. The shared contract — compile to the
+provider's wire params, then run **that provider's own validator**; unsupported
+is an error, derived is a warning, zero warnings means exact; `providerOptions`
+for anything one-off — is stated once under
+[Unified surfaces](#unified-surfaces) and holds for every category here.
+
 ```ts
 import { image } from "unmodel/image";
 
@@ -648,17 +812,7 @@ compiles to an Imagen `:predict` body; to `"black-forest-labs/flux-2-pro"` and
 it becomes a grid-snapped `width`/`height` pair; to `"ideogram/ideogram-3.0-quality"`
 and the ref itself chooses both the route and its `rendering_speed`.
 
-**What you get back is a provider result.** `image()` does not validate the
-request itself. It compiles the canonical params to the provider's wire params
-and then runs **the provider's own validator** — the same `image()` from
-`unmodel/openai` you would have called by hand, with its catalog, its
-constraint tables, its media limits and its cost estimate. There is no second
-definition of what a valid request is, so the two cannot disagree.
-
-**The loss contract is the product.** A param a provider cannot express is an
-**error** naming what it does offer; a value it can only express approximately
-is an `approximated_param` **warning** naming both the requested and the
-achieved value. So `warnings.length === 0` *means* the request mapped exactly:
+Both halves of the loss policy, on one line each:
 
 ```ts
 image({ model: "black-forest-labs/flux-pro-1.1", prompt: "…", aspectRatio: "16:9", resolution: "1k" }).warnings;
@@ -670,14 +824,9 @@ image({ model: "openai/gpt-image-1", prompt: "…", seed: 7 });
 // /v1/images/generations has no seed field, so a seed could only be dropped.
 ```
 
-| Entry | Providers | Vocabulary |
-| --- | --- | --- |
-| `unmodel/image` | 15 | `prompt`, `aspectRatio` XOR `dimensions`, `resolution` tier, `n`, `seed`, `negativePrompt`, `outputFormat`, `outputDelivery` |
-| `unmodel/image-edit` | 4 | `operation`, `prompt`, `image` (`file` / `url` / `data`), `strength`, `aspectRatio` XOR `dimensions`, `n`, `seed`, `outputFormat` |
-| `unmodel/speech` | 14 | `text`, `voice`, `outputFormat`, `speed`, `language` |
-| `unmodel/video` | 10 | `prompt`, `duration` (seconds), `resolution` tier, `aspectRatio`, `image` (first / last / reference), `video`, `negativePrompt`, `seed`, `n` |
-| `unmodel/transcribe` | 11 | `audio` (`file` / `url` / `fileId`), `language`, `languages`, `diarization`, `timestamps`, `prompt` |
-| `unmodel/music` | 2 | `prompt`, `durationSeconds`, `instrumental`, `outputFormat`, `seed` |
+The vocabularies themselves are tabulated under
+[Unified surfaces](#unified-surfaces); what follows is what each one *costs* to
+translate.
 
 **In `unmodel/image-edit`, `strength` means one thing in one direction — and
 `image` narrows to the route.** `strength: 0` keeps the source, `strength: 1`
@@ -844,11 +993,14 @@ if (result.ok) {
 
 ```ts
 import { checkChat } from "unmodel/openai";
-// also: checkImages, and checkChat on unmodel/anthropic, unmodel/google,
-// unmodel/google-vertex, unmodel/amazon-bedrock, unmodel/cohere and every
-// OpenAI-compatible overlay, and the
-// speech checkers — checkTranscription (unmodel/elevenlabs, unmodel/soniox,
-// unmodel/mistral), checkStt (unmodel/cartesia), checkListen (unmodel/deepgram),
+// `checkChat` is the uniform name at every chat provider — unmodel/anthropic,
+// unmodel/google, unmodel/google-vertex, unmodel/amazon-bedrock, unmodel/cohere
+// and every OpenAI-compatible overlay export exactly that.
+//
+// Also: checkImages (unmodel/openai), and the speech-side checkers, each named
+// for the response document it reads —
+// checkTranscription (unmodel/elevenlabs, unmodel/soniox, unmodel/mistral),
+// checkStt (unmodel/cartesia), checkListen (unmodel/deepgram),
 // checkTranscript (unmodel/assemblyai), checkPreRecorded (unmodel/gladia),
 // checkJob (unmodel/revai, unmodel/speechmatics),
 // checkSpeech (unmodel/murf, unmodel/resemble)
@@ -894,11 +1046,21 @@ echo '{"model":"gpt-5.2","messages":[{"role":"user","content":"Hello!"}]}' \
 
 unmodel validate groq.chat params.json --max-cost 0.05
 
-# Media endpoints are addressed the same way: <provider>.<validator>.
+# Media endpoints are addressed the same way, with the same uniform verbs the
+# library uses: <provider>.<verb>.
 echo '{"model":"sora-2","prompt":"a red fox in snow","seconds":"8","size":"1280x720"}' \
   | unmodel validate openai.video
 # ok: openai.video params are valid
 # estimate: max cost ~$0.8
+
+# The unified surfaces are addressed as unified.<category> — the params are the
+# canonical vocabulary and `model` is a "provider/model" ref, so the ref decides
+# which provider's validator actually runs.
+echo '{"model":"black-forest-labs/flux-pro-1.1","prompt":"a lighthouse in fog",
+       "aspectRatio":"16:9","resolution":"1k"}' \
+  | unmodel validate unified.image
+# ok: unified.image params are valid
+# estimate: max cost ~$0.04
 
 # Pass an unknown target to print every registered endpoint.
 unmodel validate list-them-all
@@ -909,6 +1071,10 @@ JSON — including the ones that are *posted* as `multipart/form-data` but carry
 no `Blob` (`speechmatics.transcribe`, `mistral.transcribe`,
 `stability.music`, …). For those the CLI prints a
 `transport: multipart/form-data` note pointing at the subpath's `toFormData`.
+The six unified surfaces are registered alongside them as `unified.image`,
+`unified.imageEdit`, `unified.music`, `unified.speech`, `unified.transcribe` and
+`unified.video` — camelCase after the dot like every other endpoint id, because
+`unmodel validate` addresses endpoints while `unmodel/image-edit` is an import.
 [Realtime session configs](#speech--tts-and-stt) are covered too, with a
 `transport: websocket` note: they validate like anything else, but the result is
 a config to open a socket with, not a body to post.
@@ -959,25 +1125,68 @@ Every provider lives on its own subpath; importing one pulls in nothing from the
 | `unmodel/openai-compatible` | The `createOpenAICompatible` factory and shared Chat Completions dialect pieces |
 | `unmodel/catalog` | models.dev snapshot: `catalog`, `getProvider`, `getModel` |
 | `unmodel/ai-sdk` | The `withJsonSchemaTools` adapter for `.toSdk("ai-sdk")` — types plus one pure function, no dependency on `ai` |
-| `unmodel/<provider>/unified` | One provider's adapters for the [unified media surfaces](#unified-media-one-vocabulary-per-category) — that provider's endpoint module and the kernel, nothing else |
+| `unmodel/<provider>/unified` | One provider's adapters for the [unified media surfaces](#unified-surfaces) — that provider's endpoint module and the kernel, nothing else |
+| `unmodel/chat` | The standardized chat surface: the three dialect encoders and one slim per-model profile table covering all 32 providers — no provider subpath's schema, constraints or catalog |
 | `unmodel/image`, `unmodel/image-edit`, `unmodel/speech`, `unmodel/video`, `unmodel/transcribe`, `unmodel/music` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createImageEdit([…])` / `createSpeech([…])` / `createVideo([…])` / `createTranscribe([…])` / `createMusic([…])` is how you pay for two instead of fifteen |
 
 Retargeting keeps that story intact. The wire-format **codecs** are per dialect
-(four of them), not per provider, so `unmodel/anthropic` reaches
+(three of them), not per provider, so `unmodel/anthropic` reaches
 `openai-compatible`'s codec module and nothing else of that provider's —
-not its schema, not its constraints, not its catalog. And 85% of retarget edges
+not its schema, not its constraints, not its catalog. And 90.4% of retarget edges
 are OpenAI-compatible → OpenAI-compatible, which is pure data: an id respell
 and a URL swap, no codec at all.
 
+### What the unified entries cost
+
+The unified surfaces do not change what a provider subpath weighs. **A
+per-provider entry carries none of the unified layer** — the adapters live in
+their own modules (`unified-image.ts`, `unified-speech.ts`, …) behind a separate
+`unmodel/<provider>/unified` export, so `unmodel/anthropic` never sees a kernel
+and `unmodel/elevenlabs` never sees the speech vocabulary. That is pinned rather
+than claimed: `test/bundle-budget.test.ts` walks the real `dist/` import graph
+and holds each provider entry to a committed byte budget (and asserts a pack can
+only reach a provider through that provider's uniformly-named endpoint module),
+while `test/import-graph.test.ts` enforces the same rules over every import
+specifier in `src/`.
+
+A unified entry is priced the way `unmodel/catalog` is: an explicit opt-in that
+buys breadth, and you only pay for it if you import it. Measured on a real
+build, in KiB of unminified ESM (transitive chunk graph, `zod` excluded):
+
+| Entry | Size | What dominates it |
+| --- | --- | --- |
+| `unmodel/chat` | 557.7 KiB | 433 KiB is the slim per-model profile table covering all 32 providers; the rest is the three dialect encoders and the translation hub |
+| `unmodel/image` | 696.8 KiB | fifteen providers' schemas, constraint tables and hand-maintained catalogs |
+| `unmodel/video` | 571.4 KiB | ten providers across twenty-one endpoint modules |
+| `unmodel/speech` | 370.7 KiB | fourteen providers, each with a voice/format roster |
+| `unmodel/transcribe` | 359.8 KiB | eleven providers |
+| `unmodel/image-edit` | 250.3 KiB | four providers |
+| `unmodel/music` | 134.8 KiB | two providers |
+
+Those numbers are the *whole category*. A pack you build yourself pays only for
+the providers you register — `createSpeech([openai, rime])` lands in the 40–60
+KiB range on top of the kernel, and the equivalent holds for every category. If
+you want exactly one provider, importing its subpath directly is still the
+smallest thing in the library.
+
 ## Status
 
-Current coverage: 153 request validators across 70 provider subpaths, plus all
-six unified media surfaces (`unmodel/image` over 15 providers, `unmodel/speech`
+Current coverage: **153 wire-exact request validators** across **65 provider
+subpaths**, plus **4 endpoint-factory subpaths** (Azure OpenAI, Vertex AI,
+Amazon Bedrock, Cloudflare Workers AI) whose factories return the same
+surface — 69 provider subpaths in all, out of 117 package exports. Chat is 33 of
+those validators; the rest are speech, transcription, image, image editing,
+video, music and realtime session configs.
+
+On top of them, **seven standardized surfaces**: `unmodel/chat` over 32
+providers, and the six media packs — `unmodel/image` over 15, `unmodel/speech`
 over 14, `unmodel/transcribe` over 11, `unmodel/video` over 10,
-`unmodel/image-edit` over 4, `unmodel/music` over 2).
+`unmodel/image-edit` over 4, `unmodel/music` over 2 — each also available as a
+per-provider adapter at `unmodel/<provider>/unified` (36 of those). The suite is
+**4,585 tests across 185 files**.
 
 - **OpenAI** — Chat Completions, Images + image edits, Speech (TTS), Transcription (STT), Sora videos, Realtime session config.
-- **Anthropic** Messages; **Google** Gemini `chat`, Imagen `image`, Veo `video`; **Cohere** v2 Chat.
+- **Anthropic** `chat` (Messages); **Google** Gemini `chat`, Imagen `image`, Veo `video`; **Cohere** v2 Chat.
 - **Cloud-endpoint factories** for Azure OpenAI, Vertex AI, Amazon Bedrock (Converse), and Cloudflare Workers AI.
 - **A 29-provider OpenAI-compatible chat fleet** (Groq, xAI, Mistral, DeepSeek, OpenRouter, …).
 - **TTS** — OpenAI, Cartesia, Deepgram (Aura), ElevenLabs, Fish Audio, Hume (Octave), Inworld, LMNT, MiniMax (T2A v2), Murf, Resemble, Rime, Smallest AI, Speechify.
@@ -986,6 +1195,7 @@ over 14, `unmodel/transcribe` over 11, `unmodel/video` over 10,
 - **Image** — Black Forest Labs (FLUX.2, FLUX 1.x, Kontext, FLUX Tools), Bria (FIBO), ByteDance (Seedream), Ideogram (v3 + v4), Kling, Krea, Leonardo, Luma (Photon), Recraft, Reve (v1 + v2), Runway, Stability (generate + the six edit routes), Vidu.
 - **Video** — Sora, Veo, ByteDance (Seedance), Kling, Lightricks (LTX-2), Luma (Ray + `videoModify`/`videoReframe`/`videoUpscale`/`videoAddAudio`), MiniMax (Hailuo + H3), PixVerse, Runway (text/image/video-to-video), Vidu.
 - **Music / audio** — ElevenLabs (Eleven Music), Stability (Stable Audio 2.x).
+- **Unified surfaces** — `unmodel/chat` compiling to three wire dialects across 32 providers, and one canonical vocabulary per media category over the providers listed above. Wire-exact per-provider validators remain the substrate: every unified call ends in one of them.
 
 More endpoints (embeddings, further realtime surfaces) are coming — see `docs/providers.md` for the roadmap. If a validator sees a model it doesn't know, it warns (`unknown_model`) and validates what it can — it never blocks you from using a brand-new model.
 
@@ -1002,6 +1212,12 @@ bun run codegen       # regenerate src/catalog/**/*.gen.ts from data/models-dev.
                       #  tables, filtered by data/availability-overrides.json)
 bun run codegen:refresh # re-download models.dev data, then regenerate
 ```
+
+`docs/decisions.md` records the two standing decisions that shape the whole
+codebase — the wire-exact/unified **layering**, and the **address-vs-wire naming
+law** — with what would have to change for either to be revisited. Read it before
+making the tree "more consistent" in either direction. `docs/providers.md` has
+the provider roster, the coverage roadmap and the retargeting internals.
 
 ## License
 

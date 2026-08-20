@@ -107,7 +107,7 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * `unmodel/speech`'s budget: the kernel plus fourteen TTS providers — each
  * one's validator, zod schema, constraint table and hand-written catalog.
  *
- * 364 KiB measured, pinned at 400 with the same ~10% headroom as everything
+ * 371 KiB measured, pinned at 400 with the same ~10% headroom as everything
  * above. It is roughly twice what a "150–200 KiB" back-of-envelope suggested,
  * and the reason is worth writing down rather than rounding away: the fourteen
  * speech endpoints are validator-heavy rather than catalog-heavy (Deepgram
@@ -169,7 +169,7 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  * endpoint modules between them, because six of the ten serve more than one
  * route and Kling alone contributes five.
  *
- * 556 KiB measured, pinned at 610 with the same ~10% headroom as everything
+ * 571 KiB measured, pinned at 610 with the same ~10% headroom as everything
  * above. It sits between the speech and image packs and for the same structural
  * reason the image one is large: video providers carry *size* tables (per-model
  * ratio enums with 30 pixel-pair members, resolution casings, duration × tier
@@ -233,7 +233,7 @@ const IMAGE_PACK_PROVIDERS: string[] = [
 /**
  * `unmodel/transcribe`'s budget: the kernel plus eleven STT providers.
  *
- * 352 KiB measured, pinned at 390 with the same ~10% headroom as everything
+ * 360 KiB measured, pinned at 390 with the same ~10% headroom as everything
  * above — within a few KiB of the speech pack, and for the same reason: these
  * are eleven long, check-heavy validators (AssemblyAI's `/v2/transcript` alone
  * carries fifty wire fields and thirteen cross-field rules) over small
@@ -271,7 +271,7 @@ const TRANSCRIBE_PACK_PROVIDERS: string[] = [
 /**
  * `unmodel/music`'s budget: the kernel plus two providers.
  *
- * 128 KiB measured, pinned at 140 with the same ~10% headroom. The smallest
+ * 135 KiB measured, pinned at 140 with the same ~10% headroom. The smallest
  * pack in the library by a wide margin — two providers, one route each — and
  * the number is dominated by Stability's shared image/audio module graph and
  * ElevenLabs' 673-line composition-plan schema rather than by catalogs.

@@ -1,0 +1,19 @@
+{
+  "ref": "recraft/recraftv4_1",
+  "image": {
+    "file": "@blob"
+  },
+  "params": {
+    "model": "recraftv4_1",
+    "prompt": "make it winter",
+    "strength": 0.5,
+    "image": {
+      "@blob": {
+        "size": 64,
+        "type": "image/png"
+      }
+    }
+  },
+  "url": "https://external.api.recraft.ai/v1/images/imageToImage",
+  "headers": {}
+}

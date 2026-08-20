@@ -493,7 +493,7 @@ function finalizeTo(url: string) {
  * and null/undefined fields are omitted.
  *
  * ```ts
- * const params = recraft.imageToImage({ image: file, prompt: "winter", strength: 0.2 });
+ * const params = recraft.imageEdit({ image: file, prompt: "winter", strength: 0.2 });
  * await fetch(params.request.url, {
  *   method: params.request.method,
  *   headers: { authorization: `Bearer ${process.env.RECRAFT_API_TOKEN}` },
@@ -517,7 +517,7 @@ export function toFormData(params: object): FormData {
 // ---------------------------------------------------------------------------
 
 const imageToImageValidator = createValidator<ImageToImageParams, unknown>({
-  endpoint: "recraft.imageToImage",
+  endpoint: "recraft.imageEdit",
   schema: imageToImageSchema,
   modelId: makeResolveModel(DEFAULT_IMAGE_TO_IMAGE_MODEL_ID),
   catalog: models,
@@ -552,7 +552,7 @@ const V3_EDIT_CHECKS: ReadonlyArray<
 ];
 
 const inpaintValidator = createValidator<InpaintParams, unknown>({
-  endpoint: "recraft.inpaint",
+  endpoint: "recraft.imageEditInpaint",
   schema: inpaintSchema,
   modelId: makeResolveModel(DEFAULT_V3_EDIT_MODEL_ID),
   catalog: models,
@@ -562,7 +562,7 @@ const inpaintValidator = createValidator<InpaintParams, unknown>({
 });
 
 const generateBackgroundValidator = createValidator<GenerateBackgroundParams, unknown>({
-  endpoint: "recraft.generateBackground",
+  endpoint: "recraft.imageEditGenerateBackground",
   schema: inpaintSchema,
   modelId: makeResolveModel(DEFAULT_V3_EDIT_MODEL_ID),
   catalog: models,
@@ -572,7 +572,7 @@ const generateBackgroundValidator = createValidator<GenerateBackgroundParams, un
 });
 
 const outpaintValidator = createValidator<OutpaintParams, unknown>({
-  endpoint: "recraft.outpaint",
+  endpoint: "recraft.imageEditOutpaint",
   schema: outpaintSchema,
   modelId: makeResolveModel(DEFAULT_V3_EDIT_MODEL_ID),
   catalog: models,
@@ -582,7 +582,7 @@ const outpaintValidator = createValidator<OutpaintParams, unknown>({
 });
 
 const replaceBackgroundValidator = createValidator<ReplaceBackgroundParams, unknown>({
-  endpoint: "recraft.replaceBackground",
+  endpoint: "recraft.imageEditReplaceBackground",
   schema: replaceBackgroundSchema,
   modelId: makeResolveModel(DEFAULT_V3_EDIT_MODEL_ID),
   catalog: models,
@@ -614,23 +614,23 @@ interface RecraftTransformValidator<P> {
  * carries the JSON content-type only on the URL path. Auth is your job: add
  * an `authorization: Bearer <token>` header.
  */
-export const imageToImage =
+export const imageEdit =
   imageToImageValidator as unknown as RecraftTransformValidator<ImageToImageParams>;
 
 /**
  * Validates params for Recraft `POST /v1/images/inpaint` — regenerates the
  * white regions of `mask` from `prompt`. Documented for `recraftv3` /
  * `recraftv3_vector` only (default `recraftv3`); other model ids are reported
- * as `invalid_enum_value`. See `imageToImage` for the fetch recipe.
+ * as `invalid_enum_value`. See `imageEdit` for the fetch recipe.
  */
-export const inpaint = inpaintValidator as unknown as RecraftTransformValidator<InpaintParams>;
+export const imageEditInpaint = inpaintValidator as unknown as RecraftTransformValidator<InpaintParams>;
 
 /**
  * Validates params for Recraft `POST /v1/images/generateBackground` —
  * same request shape as `inpaint`, generating a background in the masked
  * regions. `recraftv3` / `recraftv3_vector` only.
  */
-export const generateBackground =
+export const imageEditGenerateBackground =
   generateBackgroundValidator as unknown as RecraftTransformValidator<GenerateBackgroundParams>;
 
 /**
@@ -639,14 +639,14 @@ export const generateBackground =
  * target `size` (never both), optionally with `zoom_out_percentage`; at least
  * one of the three is required. `recraftv3` / `recraftv3_vector` only.
  */
-export const outpaint = outpaintValidator as unknown as RecraftTransformValidator<OutpaintParams>;
+export const imageEditOutpaint = outpaintValidator as unknown as RecraftTransformValidator<OutpaintParams>;
 
 /**
  * Validates params for Recraft `POST /v1/images/replaceBackground` — detects
  * the background and regenerates it from `prompt`. `recraftv3` /
  * `recraftv3_vector` only.
  */
-export const replaceBackground =
+export const imageEditReplaceBackground =
   replaceBackgroundValidator as unknown as RecraftTransformValidator<ReplaceBackgroundParams>;
 
 export type { RecraftModelId };

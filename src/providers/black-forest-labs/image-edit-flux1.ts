@@ -280,7 +280,7 @@ function finalize(params: { model?: string }): unknown {
 }
 
 const fillValidator = createValidator<FluxFillParams, unknown>({
-  endpoint: "black-forest-labs.fluxFill",
+  endpoint: "black-forest-labs.imageEditFill",
   schema: fillSchema,
   modelId: (params) => params.model,
   catalog: models,
@@ -290,7 +290,7 @@ const fillValidator = createValidator<FluxFillParams, unknown>({
 });
 
 const expandValidator = createValidator<FluxExpandParams, unknown>({
-  endpoint: "black-forest-labs.fluxExpand",
+  endpoint: "black-forest-labs.imageEditExpand",
   schema: expandSchema,
   modelId: (params) => params.model ?? DEFAULT_EXPAND_MODEL_ID,
   catalog: models,
@@ -310,7 +310,7 @@ const expandValidator = createValidator<FluxExpandParams, unknown>({
  * poll `BFL_GET_RESULT_URL`. Auth is your job: add an `x-key` header.
  *
  * ```ts
- * const params = blackForestLabs.fluxFill({
+ * const params = blackForestLabs.imageEditFill({
  *   model: "flux-pro-1.0-fill",
  *   image: imageBase64,
  *   mask: maskBase64,
@@ -318,7 +318,7 @@ const expandValidator = createValidator<FluxExpandParams, unknown>({
  * });
  * ```
  */
-export const fluxFill = fillValidator as unknown as {
+export const imageEditFill = fillValidator as unknown as {
   <M extends FluxFillParams["model"], T extends FluxFillArm<M>>(
     params: T & FluxFillArm<M> & { model: M } & ExactKeys<T, FluxFillArm<M>>,
     options?: ValidateOptions,
@@ -339,7 +339,7 @@ export const fluxFill = fillValidator as unknown as {
  * body and interpolated into `.request.url`. The route has no published
  * price, so no cost is estimated. Auth is your job: add an `x-key` header.
  */
-export const fluxExpand = expandValidator as unknown as {
+export const imageEditExpand = expandValidator as unknown as {
   <T extends FluxExpandParams>(
     params: T & ExactKeys<T, FluxExpandParams>,
     options?: ValidateOptions,

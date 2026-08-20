@@ -5,7 +5,7 @@ import {
   IMAGES_EDITS_URL,
   DEFAULT_IMAGE_EDIT_MODEL_ID,
   MAX_EDIT_IMAGES,
-} from "./images-edit";
+} from "./image-edit";
 import { imagesEditConstraints } from "./constraints";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";

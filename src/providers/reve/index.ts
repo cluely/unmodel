@@ -2,14 +2,14 @@ export { image, REVE_CREATE_URL, REVE_V1_PROMPT_MAX_LENGTH } from "./image";
 export type { CreateParams } from "./image";
 
 export {
-  edit,
-  remix,
+  imageEdit,
+  imageEditRemix,
   REVE_EDIT_URL,
   REVE_REMIX_URL,
   REVE_REMIX_MIN_REFERENCE_IMAGES,
   REVE_REMIX_MAX_REFERENCE_IMAGES,
-} from "./edit";
-export type { EditParams, RemixParams } from "./edit";
+} from "./image-edit";
+export type { EditParams, RemixParams } from "./image-edit";
 
 export {
   imageV2,

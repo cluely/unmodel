@@ -6,7 +6,7 @@
  *
  * Wire notes (verified against https://api.bfl.ai/openapi.json and
  * https://docs.bfl.ml/llms.txt on 2026-08-13):
- * - Same route-is-the-model shape as image()/fluxKontext(): `model` is a
+ * - Same route-is-the-model shape as image()/imageEdit(): `model` is a
  *   pseudo-param, STRIPPED from the wire body and interpolated into
  *   `.request.url`.
  * - The four routes take THREE different Pydantic schemas, which is why they

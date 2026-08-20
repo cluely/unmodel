@@ -1,14 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import {
-  edit,
-  remix,
-  reframe,
-  replaceBackground,
+  imageEdit,
+  imageEditRemix,
+  imageEditReframe,
+  imageEditReplaceBackground,
   IDEOGRAM_V3_EDIT_URL,
   IDEOGRAM_V3_REMIX_URL,
   IDEOGRAM_V3_REFRAME_URL,
   IDEOGRAM_V3_REPLACE_BACKGROUND_URL,
-} from "./edit";
+} from "./image-edit";
 import { toFormData } from "./image";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -31,9 +31,9 @@ describe("ideogram v3 editing route URLs", () => {
   });
 });
 
-describe("ideogram.edit", () => {
+describe("ideogram.imageEdit", () => {
   test("image + mask + prompt validate into a multipart body", () => {
-    const v = edit({ image: png(), mask: png(), prompt: "add a hat" });
+    const v = imageEdit({ image: png(), mask: png(), prompt: "add a hat" });
     expect(Object.keys(v)).toEqual(["image", "mask", "prompt"]);
     expect(v.request.url).toBe(IDEOGRAM_V3_EDIT_URL);
     expect(v.request.headers).toEqual({});
@@ -45,13 +45,13 @@ describe("ideogram.edit", () => {
   });
 
   test("mask is required", () => {
-    const r = (edit.safe as unknown as Unchecked)({ image: png(), prompt: "x" });
+    const r = (imageEdit.safe as unknown as Unchecked)({ image: png(), prompt: "x" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["mask"]);
   });
 
   test("style_codes conflict with style_type and style_reference_images", () => {
-    const r = (edit.safe as unknown as Unchecked)({
+    const r = (imageEdit.safe as unknown as Unchecked)({
       image: png(),
       mask: png(),
       prompt: "x",
@@ -63,7 +63,7 @@ describe("ideogram.edit", () => {
   });
 
   test("character reference switches to the surcharge rate", () => {
-    const r = edit.safe({
+    const r = imageEdit.safe({
       image: png(),
       mask: png(),
       prompt: "x",
@@ -75,7 +75,7 @@ describe("ideogram.edit", () => {
   });
 
   test("more than one character reference is rejected", () => {
-    const r = (edit.safe as unknown as Unchecked)({
+    const r = (imageEdit.safe as unknown as Unchecked)({
       image: png(),
       mask: png(),
       prompt: "x",
@@ -85,7 +85,7 @@ describe("ideogram.edit", () => {
   });
 
   test("an image over 25MB is media_too_large", () => {
-    const r = (edit.safe as unknown as Unchecked)({
+    const r = (imageEdit.safe as unknown as Unchecked)({
       image: png(25 * 1024 * 1024 + 1),
       mask: png(),
       prompt: "x",
@@ -95,9 +95,9 @@ describe("ideogram.edit", () => {
   });
 });
 
-describe("ideogram.remix", () => {
+describe("ideogram.imageEditRemix", () => {
   test("resolution and aspect_ratio are mutually exclusive", () => {
-    const r = (remix.safe as unknown as Unchecked)({
+    const r = (imageEditRemix.safe as unknown as Unchecked)({
       image: png(),
       prompt: "x",
       resolution: "1024x1024",
@@ -108,18 +108,18 @@ describe("ideogram.remix", () => {
   });
 
   test("image_weight rides along and prices per num_images", () => {
-    const v = remix({ image: png(), prompt: "x", image_weight: 70, num_images: 2 });
+    const v = imageEditRemix({ image: png(), prompt: "x", image_weight: 70, num_images: 2 });
     expect(Object.keys(v)).toEqual(["image", "prompt", "image_weight", "num_images"]);
     expect(v.request.url).toBe(IDEOGRAM_V3_REMIX_URL);
     expect(v.request.headers).toEqual({});
 
-    const r = remix.safe({ image: png(), prompt: "x", image_weight: 70, num_images: 2 });
+    const r = imageEditRemix.safe({ image: png(), prompt: "x", image_weight: 70, num_images: 2 });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.12, 10);
   });
 
   test("an unknown aspect_ratio is invalid_enum_value", () => {
-    const r = (remix.safe as unknown as Unchecked)({
+    const r = (imageEditRemix.safe as unknown as Unchecked)({
       image: png(),
       prompt: "x",
       aspect_ratio: "16:9",
@@ -129,35 +129,35 @@ describe("ideogram.remix", () => {
   });
 });
 
-describe("ideogram.reframe", () => {
+describe("ideogram.imageEditReframe", () => {
   test("resolution is required", () => {
-    const missing = (reframe.safe as unknown as Unchecked)({ image: png() });
+    const missing = (imageEditReframe.safe as unknown as Unchecked)({ image: png() });
     expect(missing.ok).toBe(false);
-    expect(reframe.safe({ image: png(), resolution: "1536x512" }).ok).toBe(true);
+    expect(imageEditReframe.safe({ image: png(), resolution: "1536x512" }).ok).toBe(true);
   });
 
   test("reframe prices at the rendering-speed rate", () => {
-    const v = reframe({ image: png(), resolution: "1024x1024", rendering_speed: "TURBO" });
+    const v = imageEditReframe({ image: png(), resolution: "1024x1024", rendering_speed: "TURBO" });
     expect(Object.keys(v)).toEqual(["image", "resolution", "rendering_speed"]);
     expect(v.request.url).toBe(IDEOGRAM_V3_REFRAME_URL);
     expect(v.request.headers).toEqual({});
 
-    const r = reframe.safe({ image: png(), resolution: "1024x1024", rendering_speed: "TURBO" });
+    const r = imageEditReframe.safe({ image: png(), resolution: "1024x1024", rendering_speed: "TURBO" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.03, 10);
   });
 });
 
-describe("ideogram.replaceBackground", () => {
+describe("ideogram.imageEditReplaceBackground", () => {
   test("image + prompt validate", () => {
-    const v = replaceBackground({ image: png(), prompt: "a beach at sunset" });
+    const v = imageEditReplaceBackground({ image: png(), prompt: "a beach at sunset" });
     expect(Object.keys(v)).toEqual(["image", "prompt"]);
     expect(v.request.url).toBe(IDEOGRAM_V3_REPLACE_BACKGROUND_URL);
     expect(v.request.headers).toEqual({});
   });
 
   test("an unknown style_preset is invalid_enum_value", () => {
-    const r = (replaceBackground.safe as unknown as Unchecked)({
+    const r = (imageEditReplaceBackground.safe as unknown as Unchecked)({
       image: png(),
       prompt: "x",
       style_preset: "NOT_A_PRESET",

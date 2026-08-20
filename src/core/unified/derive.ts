@@ -47,6 +47,7 @@
  */
 import type { AudioContainer, AudioFormat, AudioFormatCodec, AudioFormatRequest } from "./vocabulary/audio";
 import type { AspectRatio, Dimensions, ResolutionTier } from "./vocabulary/common";
+import type { ImageEditInputKind } from "./vocabulary/image-edit";
 import type { Voice } from "./vocabulary/speech";
 import type {
   AudioInputKind,
@@ -1277,6 +1278,240 @@ export function resolveAudioInput(
     });
   }
   return kind === "url" ? ok({ kind, url: value }) : ok({ kind, fileId: value });
+}
+
+// ---------------------------------------------------------------------------
+// Image-edit inputs, operation and strength
+// ---------------------------------------------------------------------------
+
+/**
+ * The `operation` discriminant, checked against what this route serves.
+ *
+ * The type already makes `operation: "inpaint"` a compile error while `"edit"`
+ * is the only member — but a discriminant that is *only* a type is a silent
+ * drop waiting for a JavaScript caller: the field would compile to nothing and
+ * the request would quietly be an edit. It is checked here for the same reason
+ * every other canonical field is, and it is generic in the set because the next
+ * operation to land will land at some providers and not others.
+ *
+ * Reported as `invalid_enum_value` naming what the route does serve, with the
+ * adapter's hint pointing at the wire-only sibling that does the job today.
+ */
+export function resolveOperation<O extends string>(
+  operation: unknown,
+  accepts: readonly O[],
+  ctx: DeriveContext,
+  options: { hint?: string; source?: string } = {},
+): Derived<O> {
+  if (typeof operation === "string" && (accepts as readonly string[]).includes(operation)) {
+    return ok(operation as O);
+  }
+  return bad(ctx, {
+    code: "invalid_enum_value",
+    message:
+      `\`${paramOf(ctx)}\` must be ${list(accepts)} on this model; got ${JSON.stringify(operation)}.` +
+      (options.hint === undefined ? "" : ` ${options.hint}`),
+    meta: {
+      allowed: [...accepts],
+      value: operation,
+      ...(options.source !== undefined && { source: options.source }),
+    },
+  });
+}
+
+/** `image`, once it is known which of the three shapes it is. */
+export type ImageEditSource =
+  | { kind: "file"; file: Blob }
+  | { kind: "url"; url: string }
+  | { kind: "data"; data: string };
+
+/** How each kind is spelled in a message — the field the caller would write. */
+const IMAGE_EDIT_SPELLING: Readonly<Record<ImageEditInputKind, string>> = Object.freeze({
+  file: "{ file }",
+  url: "{ url }",
+  data: "{ data }",
+});
+
+/**
+ * `image` narrowed to the one shape it is, checked against what the route takes.
+ *
+ * The runtime half of the category's flagship promise, and a sibling of
+ * {@link resolveAudioInput} in every respect that matters: the compile-time
+ * half (`ImageEditValidator`, driven by the same `imageInputs` array) already
+ * rejects a `Blob` at a JSON-only route — but only for a caller in TypeScript
+ * with a literal ref, so this is what answers for everyone else.
+ *
+ * A separate function rather than a generic shared with the audio one, because
+ * the two categories' kind sets do not overlap (`fileId` there, `data` here)
+ * and the prose that makes each message useful is about the *thing* — "where
+ * the audio is" against "which picture to edit". Merging them would buy a
+ * kilobyte and cost every message its subject.
+ *
+ * Two shapes at once is an error rather than a precedence rule: `{ url, file }`
+ * is a caller who has not decided, and picking one silently would edit a
+ * picture they did not choose, at a price per image.
+ */
+export function resolveImageEditInput(
+  image: unknown,
+  accepts: readonly ImageEditInputKind[],
+  ctx: DeriveContext,
+  options: { source?: string; hint?: string } = {},
+): Derived<ImageEditSource> {
+  const offered = accepts.map((kind) => IMAGE_EDIT_SPELLING[kind]).join(" or ");
+  const meta = {
+    accepts: [...accepts],
+    ...(options.source !== undefined && { source: options.source }),
+  };
+  const hint = options.hint === undefined ? "" : ` ${options.hint}`;
+  if (image === null || typeof image !== "object") {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}\` must be an object naming the picture to edit; this model takes ${offered}.`,
+      meta: { ...meta, value: image },
+    });
+  }
+  const record = image as Record<string, unknown>;
+  const present = (["file", "url", "data"] as const).filter((key) => record[key] !== undefined);
+  if (present.length === 0) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` names no picture — it takes ${offered}, and this object has none of ` +
+        "`file`, `url` or `data`.",
+      meta,
+    });
+  }
+  if (present.length > 1) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` carries ${present.map((key) => `\`${key}\``).join(" and ")} at once; ` +
+        "exactly one of `file`, `url` or `data` says which picture to edit.",
+      meta: { ...meta, provided: present },
+    });
+  }
+  const kind = present[0] as ImageEditInputKind;
+  if (!accepts.includes(kind)) {
+    return bad(ctx, {
+      code: "unsupported_param",
+      message:
+        `\`${paramOf(ctx)}\` was given as \`${IMAGE_EDIT_SPELLING[kind]}\`, which this model has no ` +
+        `wire field for — it takes ${offered}.${hint}`,
+      meta: { ...meta, given: kind },
+    });
+  }
+  if (kind === "file") {
+    const file = record["file"];
+    if (!(file instanceof Blob)) {
+      return bad(ctx, {
+        code: "invalid_shape",
+        message: `\`${paramOf(ctx)}.file\` must be a Blob or File; got ${typeof file}.`,
+        meta,
+      });
+    }
+    return ok({ kind, file });
+  }
+  const value = record[kind];
+  if (typeof value !== "string" || value === "") {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}.${kind}\` must be a non-empty string; got ${JSON.stringify(value)}.`,
+      meta,
+    });
+  }
+  return kind === "url" ? ok({ kind, url: value }) : ok({ kind, data: value });
+}
+
+/**
+ * The raw base64 payload of an inline-bytes reference.
+ *
+ * A caller who happens to have a `data:` URI passes it through `{ data }` and
+ * means the bytes, not the envelope — so the prefix is stripped for the routes
+ * whose field is documented "base64", and a bare base64 string is returned
+ * unchanged. Distinct from {@link requireInlineBytes}, which answers the same
+ * question for the `{ url } | { data }` pair and carries a media type along.
+ */
+export function base64Payload(data: string): string {
+  const match = /^data:[^;,]*(?:;[^,]*)*,(.*)$/s.exec(data);
+  return match === null ? data : (match[1] ?? "");
+}
+
+/**
+ * Where a provider's own strength scale starts and ends.
+ *
+ * The two endpoints are stated as the wire values at canonical `0` and `1`
+ * rather than as a `{ min, max, invert }` triple, because that is the thing an
+ * adapter can read off the provider's documentation without doing any algebra —
+ * and because it makes the **direction** data rather than code. Ideogram's
+ * `image_weight` is "how strongly the output should resemble the input", so it
+ * runs `{ atZero: 100, atOne: 0 }`; Recraft's `strength` is "0 = almost
+ * identical to the input", so it runs `{ atZero: 0, atOne: 1 }`. The inversion
+ * is one number swapped, in one place, next to the sentence that justifies it.
+ */
+export interface StrengthRules {
+  /** The wire value that means "keep the source" — canonical `strength: 0`. */
+  atZero: number;
+  /** The wire value that means "ignore the source" — canonical `strength: 1`. */
+  atOne: number;
+  /** Round to a whole number, warning when rounding moves the value. */
+  integer?: boolean;
+  source?: string;
+}
+
+/**
+ * Canonical `strength` (0 = keep the source, 1 = ignore it) → the provider's own
+ * scale.
+ *
+ * Linear between the two declared endpoints, which is the only defensible
+ * reading of a dial nobody documents a curve for — and it lands exactly on the
+ * midpoint, so `strength: 0.5` is `image_weight: 50` at Ideogram, which is that
+ * route's own default. That coincidence is worth having: the canonical "half"
+ * and the provider's "no opinion" are the same request.
+ *
+ * Out of `[0, 1]` is an `invalid_shape` rather than a clamp. A clamp would take
+ * `strength: 1.5` — which is not a stronger edit, it is a misunderstanding — and
+ * silently make it mean `1`, at which point the caller has no way to learn that
+ * the scale was not what they thought.
+ */
+export function toStrength(
+  strength: number,
+  rules: StrengthRules,
+  ctx: DeriveContext,
+): Derived<number> {
+  if (!Number.isFinite(strength) || strength < 0 || strength > 1) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` must be between 0 and 1 — 0 keeps the source image, 1 ignores it; ` +
+        `got ${JSON.stringify(strength)}.`,
+      meta: {
+        value: strength,
+        min: 0,
+        max: 1,
+        ...(rules.source !== undefined && { source: rules.source }),
+      },
+    });
+  }
+  const exact = rules.atZero + strength * (rules.atOne - rules.atZero);
+  if (rules.integer !== true) return ok(exact);
+  const rounded = Math.round(exact);
+  if (rounded !== exact) {
+    ctx.warn({
+      code: "approximated_param",
+      path: [...ctx.path],
+      message:
+        `\`${paramOf(ctx)}\` ${strength} is ${exact} on this model's scale, which takes whole ` +
+        `numbers: ${rounded} was sent.`,
+      meta: {
+        requested: strength,
+        achieved: rounded,
+        exact,
+        scale: [rules.atZero, rules.atOne],
+        ...(rules.source !== undefined && { source: rules.source }),
+      },
+    });
+  }
+  return ok(rounded);
 }
 
 /**

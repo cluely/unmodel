@@ -5,7 +5,7 @@ import {
   BRIA_IMAGE_GENERATE_URL,
   BRIA_IMAGE_GENERATE_LITE_URL,
 } from "./image";
-import { imageEdit, BRIA_IMAGE_EDIT_URL } from "./edit";
+import { imageEdit, BRIA_IMAGE_EDIT_URL } from "./image-edit";
 import { models } from "./models";
 import { BRIA_ASPECT_RATIOS, BRIA_RESOLUTIONS, BRIA_OUTPUT_TYPES } from "./shared";
 import type { ValidateOptions } from "../../core/options";

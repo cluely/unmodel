@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { image, REVE_CREATE_URL } from "./image";
-import { edit, remix, REVE_EDIT_URL, REVE_REMIX_URL } from "./edit";
+import { imageEdit, imageEditRemix, REVE_EDIT_URL, REVE_REMIX_URL } from "./image-edit";
 import { imageV2, REVE_V2_CREATE_URL, REVE_ASYNC_IMAGE_FORMATS } from "./image-v2";
 import { models, resolveReveVersion } from "./models";
 import {
@@ -16,8 +16,8 @@ type Unchecked = (params: unknown, options?: ValidateOptions) => ValidateResult<
   Record<string, unknown>
 >;
 const imageUnchecked = image.safe as unknown as Unchecked;
-const editUnchecked = edit.safe as unknown as Unchecked;
-const remixUnchecked = remix.safe as unknown as Unchecked;
+const editUnchecked = imageEdit.safe as unknown as Unchecked;
+const remixUnchecked = imageEditRemix.safe as unknown as Unchecked;
 const imageV2Unchecked = imageV2.safe as unknown as Unchecked;
 
 /** Minimal PNG (signature + IHDR) with the given dimensions, base64-encoded. */
@@ -127,13 +127,13 @@ describe("reve.image", () => {
   });
 });
 
-describe("reve.edit / reve.remix", () => {
+describe("reve.imageEdit / reve.imageEditRemix", () => {
   test("edit targets its route and prices the fast checkpoint separately", () => {
-    const standard = edit.safe({ edit_instruction: "make the sky stormy", reference_image: pngBase64(64, 64) });
+    const standard = imageEdit.safe({ edit_instruction: "make the sky stormy", reference_image: pngBase64(64, 64) });
     expect(standard.ok).toBe(true);
     if (standard.ok) expect(standard.estimate.costUSD).toBeCloseTo(0.04, 6);
 
-    const fast = edit({
+    const fast = imageEdit({
       edit_instruction: "make the sky stormy",
       reference_image: pngBase64(64, 64),
       version: "latest-fast",
@@ -141,7 +141,7 @@ describe("reve.edit / reve.remix", () => {
     expect(Object.keys(fast)).toEqual(["edit_instruction", "reference_image", "version"]);
     expect(fast.request.url).toBe(REVE_EDIT_URL);
     expect(fast.request.headers).toEqual({ "content-type": "application/json" });
-    const fastSafe = edit.safe({
+    const fastSafe = imageEdit.safe({
       edit_instruction: "x",
       reference_image: pngBase64(64, 64),
       version: "latest-fast",
@@ -152,7 +152,7 @@ describe("reve.edit / reve.remix", () => {
   test("every ReveV1AspectRatio preset validates on edit and remix", () => {
     // Keep in sync with ReveV1AspectRatio
     for (const aspect_ratio of REVE_V1_ASPECT_RATIOS) {
-      const e = edit.safe({
+      const e = imageEdit.safe({
         edit_instruction: "x",
         reference_image: pngBase64(64, 64),
         aspect_ratio,
@@ -160,7 +160,7 @@ describe("reve.edit / reve.remix", () => {
       expect(e.ok, `edit should accept ${aspect_ratio}`).toBe(true);
       if (e.ok) expect(e.warnings, `edit ${aspect_ratio} should be warning-free`).toEqual([]);
 
-      const m = remix.safe({ prompt: "x", reference_images: [pngBase64(64, 64)], aspect_ratio });
+      const m = imageEditRemix.safe({ prompt: "x", reference_images: [pngBase64(64, 64)], aspect_ratio });
       expect(m.ok, `remix should accept ${aspect_ratio}`).toBe(true);
       if (m.ok) expect(m.warnings, `remix ${aspect_ratio} should be warning-free`).toEqual([]);
     }
@@ -187,7 +187,7 @@ describe("reve.edit / reve.remix", () => {
     });
     expect(many.ok).toBe(false);
 
-    const ok = remix({ prompt: "x", reference_images: [pngBase64(8, 8)] });
+    const ok = imageEditRemix({ prompt: "x", reference_images: [pngBase64(8, 8)] });
     expect(Object.keys(ok)).toEqual(["prompt", "reference_images"]);
     expect(ok.request.url).toBe(REVE_REMIX_URL);
     expect(ok.request.headers).toEqual({ "content-type": "application/json" });

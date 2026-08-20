@@ -1,0 +1,16 @@
+{
+  "ref": "recraft/recraftv3",
+  "image": {
+    "url": "https://example.com/street.png"
+  },
+  "params": {
+    "model": "recraftv3",
+    "prompt": "make it winter",
+    "strength": 0.5,
+    "image_url": "https://example.com/street.png"
+  },
+  "url": "https://external.api.recraft.ai/v1/images/imageToImage",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

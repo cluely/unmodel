@@ -341,7 +341,7 @@ function finalizeTo(url: string) {
 }
 
 const eraseValidator = createValidator<StableImageEraseParams, unknown>({
-  endpoint: "stability.stableImageErase",
+  endpoint: "stability.imageEditErase",
   schema: eraseSchema,
   // No `model` wire field on any edit route — the route is the model.
   modelId: () => "stable-image-erase",
@@ -351,7 +351,7 @@ const eraseValidator = createValidator<StableImageEraseParams, unknown>({
 });
 
 const inpaintValidator = createValidator<StableImageInpaintParams, unknown>({
-  endpoint: "stability.stableImageInpaint",
+  endpoint: "stability.imageEditInpaint",
   schema: inpaintSchema,
   modelId: () => "stable-image-inpaint",
   catalog: models,
@@ -360,7 +360,7 @@ const inpaintValidator = createValidator<StableImageInpaintParams, unknown>({
 });
 
 const outpaintValidator = createValidator<StableImageOutpaintParams, unknown>({
-  endpoint: "stability.stableImageOutpaint",
+  endpoint: "stability.imageEditOutpaint",
   schema: outpaintSchema,
   modelId: () => "stable-image-outpaint",
   catalog: models,
@@ -370,7 +370,7 @@ const outpaintValidator = createValidator<StableImageOutpaintParams, unknown>({
 });
 
 const searchAndReplaceValidator = createValidator<StableImageSearchAndReplaceParams, unknown>({
-  endpoint: "stability.stableImageSearchAndReplace",
+  endpoint: "stability.imageEditSearchAndReplace",
   schema: searchAndReplaceSchema,
   modelId: () => "stable-image-search-and-replace",
   catalog: models,
@@ -379,7 +379,7 @@ const searchAndReplaceValidator = createValidator<StableImageSearchAndReplacePar
 });
 
 const searchAndRecolorValidator = createValidator<StableImageSearchAndRecolorParams, unknown>({
-  endpoint: "stability.stableImageSearchAndRecolor",
+  endpoint: "stability.imageEditSearchAndRecolor",
   schema: searchAndRecolorSchema,
   modelId: () => "stable-image-search-and-recolor",
   catalog: models,
@@ -388,7 +388,7 @@ const searchAndRecolorValidator = createValidator<StableImageSearchAndRecolorPar
 });
 
 const removeBackgroundValidator = createValidator<StableImageRemoveBackgroundParams, unknown>({
-  endpoint: "stability.stableImageRemoveBackground",
+  endpoint: "stability.imageEditRemoveBackground",
   schema: removeBackgroundSchema,
   modelId: () => "stable-image-remove-background",
   catalog: models,
@@ -418,46 +418,46 @@ interface StableImageEditValidator<P> {
  * accept header (`image/*` for bytes — the server default — or
  * `application/json` for base64 JSON).
  */
-export const stableImageErase =
+export const imageEditErase =
   eraseValidator as unknown as StableImageEditValidator<StableImageEraseParams>;
 
 /**
  * Validates params for `POST /v2beta/stable-image/edit/inpaint` (5 credits ≈
  * $0.05). Note `grow_mask` runs 0–100 here — wider than the 0–20 the other
- * edit routes allow. Multipart endpoint — see `stableImageErase`.
+ * edit routes allow. Multipart endpoint — see `imageEditErase`.
  */
-export const stableImageInpaint =
+export const imageEditInpaint =
   inpaintValidator as unknown as StableImageEditValidator<StableImageInpaintParams>;
 
 /**
  * Validates params for `POST /v2beta/stable-image/edit/outpaint` (4 credits ≈
  * $0.04). At least one of `left`/`right`/`up`/`down` must be non-zero; each
- * is capped at 2000 px. Multipart endpoint — see `stableImageErase`.
+ * is capped at 2000 px. Multipart endpoint — see `imageEditErase`.
  */
-export const stableImageOutpaint =
+export const imageEditOutpaint =
   outpaintValidator as unknown as StableImageEditValidator<StableImageOutpaintParams>;
 
 /**
  * Validates params for `POST /v2beta/stable-image/edit/search-and-replace`
  * (5 credits ≈ $0.05) — `search_prompt` selects the region, `prompt`
- * describes the replacement. Multipart endpoint — see `stableImageErase`.
+ * describes the replacement. Multipart endpoint — see `imageEditErase`.
  */
-export const stableImageSearchAndReplace =
+export const imageEditSearchAndReplace =
   searchAndReplaceValidator as unknown as StableImageEditValidator<StableImageSearchAndReplaceParams>;
 
 /**
  * Validates params for `POST /v2beta/stable-image/edit/search-and-recolor`
  * (5 credits ≈ $0.05) — `select_prompt` selects the region, `prompt`
- * describes the new colors. Multipart endpoint — see `stableImageErase`.
+ * describes the new colors. Multipart endpoint — see `imageEditErase`.
  */
-export const stableImageSearchAndRecolor =
+export const imageEditSearchAndRecolor =
   searchAndRecolorValidator as unknown as StableImageEditValidator<StableImageSearchAndRecolorParams>;
 
 /**
  * Validates params for `POST /v2beta/stable-image/edit/remove-background`
  * (5 credits ≈ $0.05). `output_format` is png/webp only on this route — jpeg
  * cannot carry the alpha channel the route produces. Multipart endpoint —
- * see `stableImageErase`.
+ * see `imageEditErase`.
  */
-export const stableImageRemoveBackground =
+export const imageEditRemoveBackground =
   removeBackgroundValidator as unknown as StableImageEditValidator<StableImageRemoveBackgroundParams>;

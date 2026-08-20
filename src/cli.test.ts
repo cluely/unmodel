@@ -483,9 +483,56 @@ test("validate unified.music reports a provider gap at the canonical path", asyn
   expect(stderr).toContain("instrumental");
 });
 
+test("validate unified.imageEdit compiles a canonical request through the ref's provider", async () => {
+  const { stdout, exitCode } = await runCli(
+    ["validate", "unified.imageEdit", "--json"],
+    JSON.stringify({
+      operation: "edit",
+      model: "black-forest-labs/flux-kontext-pro",
+      prompt: "replace the sky with a thunderstorm",
+      image: { url: "https://example.com/street.png" },
+      aspectRatio: "16:9",
+    }),
+  );
+  expect(exitCode).toBe(0);
+  const result = JSON.parse(stdout) as {
+    ok: boolean;
+    params: Record<string, unknown>;
+    request: { url: string };
+  };
+  expect(result.ok).toBe(true);
+  // BFL's own body: `image` became the dual-purpose `input_image` string, the
+  // ref became the route, and `operation` is a discriminant that never ships.
+  expect(result.params).toEqual({
+    prompt: "replace the sky with a thunderstorm",
+    input_image: "https://example.com/street.png",
+    aspect_ratio: "16:9",
+  });
+  expect(result.request.url).toBe("https://api.bfl.ai/v1/flux-kontext-pro");
+});
+
+test("validate unified.imageEdit reports an image shape the route has no field for", async () => {
+  const { stderr, exitCode } = await runCli(
+    ["validate", "unified.imageEdit"],
+    JSON.stringify({
+      operation: "edit",
+      model: "black-forest-labs/flux-kontext-pro",
+      prompt: "hi",
+      image: { file: "not-a-blob" },
+    }),
+  );
+  expect(exitCode).toBe(1);
+  expect(stderr).toContain("unsupported_param");
+  expect(stderr).toContain("image");
+  // …and it names what this route DOES take, which is the whole point.
+  expect(stderr).toContain("{ data }");
+  expect(stderr).toContain("{ url }");
+});
+
 test("the unified map names one target per shipped pack", () => {
   expect(Object.keys(UNIFIED)).toEqual([
     "unified.image",
+    "unified.imageEdit",
     "unified.music",
     "unified.speech",
     "unified.transcribe",

@@ -1,21 +1,21 @@
 import { describe, expect, test } from "bun:test";
-import { fluxFill, fluxExpand } from "./edit";
+import { imageEditFill, imageEditExpand } from "./image-edit-flux1";
 import { BFL_API_BASE_URL } from "./image";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 
-const safeFill = fluxFill.safe as unknown as (
+const safeFill = imageEditFill.safe as unknown as (
   params: unknown,
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
-const safeExpand = fluxExpand.safe as unknown as (
+const safeExpand = imageEditExpand.safe as unknown as (
   params: unknown,
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
 
-describe("black-forest-labs.fluxFill", () => {
+describe("black-forest-labs.imageEditFill", () => {
   test("returns a wire-pure body with the model stripped into the URL", () => {
-    const v = fluxFill({
+    const v = imageEditFill({
       model: "flux-pro-1.0-fill",
       image: "data:image/png;base64,aaa",
       mask: "data:image/png;base64,bbb",
@@ -51,7 +51,7 @@ describe("black-forest-labs.fluxFill", () => {
     expect(missing.ok).toBe(false);
     if (!missing.ok) expect(missing.errors[0]?.path).toEqual(["finetune_id"]);
 
-    const ok = fluxFill.safe({
+    const ok = imageEditFill.safe({
       model: "flux-pro-1.0-fill-finetuned",
       image: "x",
       finetune_id: "my-lora",
@@ -70,15 +70,15 @@ describe("black-forest-labs.fluxFill", () => {
   });
 
   test("fill is $0.05 per image (5 credits)", () => {
-    const r = fluxFill.safe({ model: "flux-pro-1.0-fill", image: "x" });
+    const r = imageEditFill.safe({ model: "flux-pro-1.0-fill", image: "x" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.05, 10);
   });
 });
 
-describe("black-forest-labs.fluxExpand", () => {
+describe("black-forest-labs.imageEditExpand", () => {
   test("defaults to the single documented expand route", () => {
-    const v = fluxExpand({ image: "data:image/png;base64,aaa", top: 256 });
+    const v = imageEditExpand({ image: "data:image/png;base64,aaa", top: 256 });
     expect(Object.keys(v)).toEqual(["image", "top"]);
     expect(v.request.url).toBe(`${BFL_API_BASE_URL}/v1/flux-pro-1.0-expand`);
   });
@@ -103,7 +103,7 @@ describe("black-forest-labs.fluxExpand", () => {
   });
 
   test("expand has no published price, so no estimate", () => {
-    const r = fluxExpand.safe({ image: "x", right: 100 });
+    const r = imageEditExpand.safe({ image: "x", right: 100 });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
   });

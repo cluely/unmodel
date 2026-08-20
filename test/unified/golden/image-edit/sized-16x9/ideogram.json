@@ -1,0 +1,19 @@
+{
+  "ref": "ideogram/ideogram-3.0-turbo",
+  "image": {
+    "file": "@blob"
+  },
+  "params": {
+    "image": {
+      "@blob": {
+        "size": 64,
+        "type": "image/png"
+      }
+    },
+    "prompt": "make it winter",
+    "rendering_speed": "TURBO",
+    "aspect_ratio": "16x9"
+  },
+  "url": "https://api.ideogram.ai/v1/ideogram-v3/remix",
+  "headers": {}
+}

@@ -109,13 +109,21 @@ bytedance (`image`, Seedream on BytePlus ModelArk), kling (`image` + `imageOmni`
 `imageSd3`), luma (Photon `image`), runway (`image`), vidu (`imageFromReference`).
 All fifteen also ship a unified adapter at `unmodel/<provider>/unified`, and
 `unmodel/image` carries the ready-made pack over all of them.
-**Live — editing:** openai (`imageEdit`), black-forest-labs (`fluxFill`, `fluxExpand`,
-FLUX Tools `fluxOutpainting`/`fluxErase`/`fluxDeblur`/`fluxVto`), bria (`imageEdit`), recraft
-(`imageToImage`, `inpaint`, `outpaint`, `generateBackground`, `replaceBackground`), ideogram
-(`edit`, `remix`, `reframe`, `replaceBackground`), reve (`edit`, `remix`), stability
-(`stableImageErase`, `stableImageInpaint`, `stableImageOutpaint`,
-`stableImageSearchAndReplace`, `stableImageSearchAndRecolor`,
-`stableImageRemoveBackground`), luma (`reframeImage`).
+**Live — editing:** every image-to-image route is addressed as
+`<provider>.imageEdit`, with each extra route qualified by what it does to the
+picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
+`imageEditFill` / `imageEditExpand`, FLUX Tools
+`imageEditOutpainting`/`imageEditErase`/`imageEditDeblur`/`imageEditVto`), bria
+(`imageEdit`), recraft (`imageEdit`, `imageEditInpaint`, `imageEditOutpaint`,
+`imageEditGenerateBackground`, `imageEditReplaceBackground`), ideogram
+(`imageEdit`, `imageEditRemix`, `imageEditReframe`,
+`imageEditReplaceBackground`), reve (`imageEdit`, `imageEditRemix`), stability
+(`imageEditErase`, `imageEditInpaint`, `imageEditOutpaint`,
+`imageEditSearchAndReplace`, `imageEditSearchAndRecolor`,
+`imageEditRemoveBackground`), luma (`imageEditReframe`).
+Four of the eight — openai, black-forest-labs, ideogram, recraft — ship a
+unified adapter, and `unmodel/image-edit` carries the ready-made pack over
+them.
 Remaining: microsoft-ai, xai (grok-imagine), alibaba (Qwen-Image/Wan), fal (aggregator),
 baidu, tencent (HunyuanImage), minimax, z-ai, nvidia, amazon (Titan/Nova).
 **Excluded (no public API):** midjourney, hidream, pruna, playground, sapiens-ai, eigen-ai,

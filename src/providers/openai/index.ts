@@ -50,7 +50,7 @@ export {
   DEFAULT_IMAGE_EDIT_MODEL_ID,
   MAX_EDIT_IMAGES,
   MASK_RULE,
-} from "./images-edit";
+} from "./image-edit";
 export type {
   ImageEditBody,
   GptImage1EditBody,
@@ -62,7 +62,7 @@ export type {
   DefaultImageEditBody,
   DallE2EditBody,
   UnknownImageEditModelBody,
-} from "./images-edit";
+} from "./image-edit";
 
 export {
   imagesModels,

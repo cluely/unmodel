@@ -12,7 +12,7 @@ import { describe, expect, test } from "bun:test";
 import { UnmodelValidationError } from "../../src/core/issues";
 import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { createImage, image } from "../../src/unified/image";
-import { image as ideogramAdapter } from "../../src/providers/ideogram/unified";
+import { image as ideogramAdapter } from "../../src/providers/ideogram/unified-image";
 import { image as openaiAdapter } from "../../src/providers/openai/unified";
 
 describe("the pack", () => {

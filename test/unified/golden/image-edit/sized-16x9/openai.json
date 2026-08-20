@@ -1,0 +1,19 @@
+{
+  "ref": "openai/gpt-image-2",
+  "image": {
+    "file": "@blob"
+  },
+  "params": {
+    "model": "gpt-image-2",
+    "image": {
+      "@blob": {
+        "size": 64,
+        "type": "image/png"
+      }
+    },
+    "prompt": "make it winter",
+    "size": "1360x768"
+  },
+  "url": "https://api.openai.com/v1/images/edits",
+  "headers": {}
+}

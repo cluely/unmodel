@@ -86,7 +86,7 @@ function finalize(params: ReframeImageParams): unknown {
 }
 
 const validator = createValidator<ReframeImageParams, unknown>({
-  endpoint: "luma.reframeImage",
+  endpoint: "luma.imageEditReframe",
   schema: reframeImageSchema,
   modelId: (params) => params.model,
   catalog: imageModels,
@@ -98,7 +98,7 @@ const validator = createValidator<ReframeImageParams, unknown>({
  * `POST /dream-machine/v1/generations/image/reframe`.
  *
  * ```ts
- * const params = luma.reframeImage({
+ * const params = luma.imageEditReframe({
  *   model: "photon-1",
  *   media: { url: "https://example.com/image.jpg" },
  *   aspect_ratio: "16:9",
@@ -106,7 +106,7 @@ const validator = createValidator<ReframeImageParams, unknown>({
  * });
  * ```
  */
-export const reframeImage = validator as unknown as {
+export const imageEditReframe = validator as unknown as {
   <T extends ReframeImageParams>(
     params: T & ExactKeys<T, ReframeImageParams>,
     options?: ValidateOptions,

@@ -41,8 +41,8 @@ export type { ModifyVideoParams, LumaModifyMode } from "./video-modify";
 export { videoReframe, REFRAME_VIDEO_URL } from "./video-reframe";
 export type { ReframeVideoParams } from "./video-reframe";
 
-export { reframeImage, REFRAME_IMAGE_URL } from "./reframe-image";
-export type { ReframeImageParams } from "./reframe-image";
+export { imageEditReframe, REFRAME_IMAGE_URL } from "./image-edit-reframe";
+export type { ReframeImageParams } from "./image-edit-reframe";
 
 export { videoUpscale, upscaleUrl } from "./video-upscale";
 export type { UpscaleParams } from "./video-upscale";

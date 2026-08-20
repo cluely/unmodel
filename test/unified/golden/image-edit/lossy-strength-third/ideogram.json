@@ -1,0 +1,37 @@
+{
+  "ref": "ideogram/ideogram-3.0-default",
+  "image": {
+    "file": "@blob"
+  },
+  "params": {
+    "image": {
+      "@blob": {
+        "size": 64,
+        "type": "image/png"
+      }
+    },
+    "prompt": "make it winter",
+    "rendering_speed": "DEFAULT",
+    "image_weight": 67
+  },
+  "url": "https://api.ideogram.ai/v1/ideogram-v3/remix",
+  "headers": {},
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "strength"
+      ],
+      "meta": {
+        "requested": 0.333,
+        "achieved": 67,
+        "exact": 66.69999999999999,
+        "scale": [
+          100,
+          0
+        ],
+        "source": "https://developer.ideogram.ai/openapi.json"
+      }
+    }
+  ]
+}

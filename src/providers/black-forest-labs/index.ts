@@ -18,8 +18,8 @@ export type {
   BflOutputFormat,
 } from "./image";
 
-export { fluxKontext } from "./kontext";
-export type { FluxKontextParams } from "./kontext";
+export { imageEdit } from "./image-edit";
+export type { FluxKontextParams } from "./image-edit";
 
 export type { BflAspectRatio } from "./aspect";
 
@@ -38,20 +38,20 @@ export type {
   UnknownFlux1ModelBody,
 } from "./image-flux1";
 
-export { fluxFill, fluxExpand, DEFAULT_EXPAND_MODEL_ID, FLUX_EXPAND_MAX_PIXELS } from "./edit";
+export { imageEditFill, imageEditExpand, DEFAULT_EXPAND_MODEL_ID, FLUX_EXPAND_MAX_PIXELS } from "./image-edit-flux1";
 export type {
   FluxFillParams,
   FluxFillBody,
   FluxFillFinetunedBody,
   UnknownFluxFillBody,
   FluxExpandParams,
-} from "./edit";
+} from "./image-edit-flux1";
 
 export {
-  fluxOutpainting,
-  fluxErase,
-  fluxDeblur,
-  fluxVto,
+  imageEditOutpainting,
+  imageEditErase,
+  imageEditDeblur,
+  imageEditVto,
   FLUX_OUTPAINTING_URL,
   FLUX_ERASE_URL,
   FLUX_DEBLUR_URL,
@@ -62,14 +62,14 @@ export {
   FLUX_OUTPAINTING_MODES,
   FLUX_ERASE_MAX_DILATE_PIXELS,
   FLUX_TOOLS_MIN_DIMENSION,
-} from "./tools";
+} from "./image-edit-tools";
 export type {
   FluxOutpaintingParams,
   FluxOutpaintingMode,
   FluxEraseParams,
   FluxDeblurParams,
   FluxVtoParams,
-} from "./tools";
+} from "./image-edit-tools";
 
 export { imageConstraints, imageFlux1Constraints } from "./constraints";
 

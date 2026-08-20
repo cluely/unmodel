@@ -20,14 +20,14 @@ const EXPECTED_IDS: readonly string[] = [
   "anthropic.chat",
   "assemblyai.transcribe",
   "baseten.chat",
-  "black-forest-labs.fluxDeblur",
-  "black-forest-labs.fluxErase",
-  "black-forest-labs.fluxExpand",
-  "black-forest-labs.fluxFill",
-  "black-forest-labs.fluxKontext",
-  "black-forest-labs.fluxOutpainting",
-  "black-forest-labs.fluxVto",
   "black-forest-labs.image",
+  "black-forest-labs.imageEdit",
+  "black-forest-labs.imageEditDeblur",
+  "black-forest-labs.imageEditErase",
+  "black-forest-labs.imageEditExpand",
+  "black-forest-labs.imageEditFill",
+  "black-forest-labs.imageEditOutpainting",
+  "black-forest-labs.imageEditVto",
   "black-forest-labs.imageFlux1",
   "bria.image",
   "bria.imageEdit",
@@ -63,12 +63,12 @@ const EXPECTED_IDS: readonly string[] = [
   "groq.chat",
   "huggingface.chat",
   "hume.speech",
-  "ideogram.edit",
   "ideogram.image",
+  "ideogram.imageEdit",
+  "ideogram.imageEditReframe",
+  "ideogram.imageEditRemix",
+  "ideogram.imageEditReplaceBackground",
   "ideogram.imageV4",
-  "ideogram.reframe",
-  "ideogram.remix",
-  "ideogram.replaceBackground",
   "inception.chat",
   "inworld.realtimeTranscribeConfig",
   "inworld.realtimeVoiceContext",
@@ -90,7 +90,7 @@ const EXPECTED_IDS: readonly string[] = [
   "lmnt.speechDetailed",
   "longcat.chat",
   "luma.image",
-  "luma.reframeImage",
+  "luma.imageEditReframe",
   "luma.video",
   "luma.videoAddAudio",
   "luma.videoModify",
@@ -120,19 +120,19 @@ const EXPECTED_IDS: readonly string[] = [
   "perplexity.chat",
   "pixverse.video",
   "pixverse.videoFromImage",
-  "recraft.generateBackground",
   "recraft.image",
-  "recraft.imageToImage",
-  "recraft.inpaint",
-  "recraft.outpaint",
-  "recraft.replaceBackground",
+  "recraft.imageEdit",
+  "recraft.imageEditGenerateBackground",
+  "recraft.imageEditInpaint",
+  "recraft.imageEditOutpaint",
+  "recraft.imageEditReplaceBackground",
   "resemble.speech",
   "resemble.speechStream",
   "revai.transcribe",
-  "reve.edit",
   "reve.image",
+  "reve.imageEdit",
+  "reve.imageEditRemix",
   "reve.imageV2",
-  "reve.remix",
   "rime.speech",
   "runway.image",
   "runway.video",
@@ -149,16 +149,16 @@ const EXPECTED_IDS: readonly string[] = [
   "speechmatics.transcribe",
   "stability.image",
   "stability.imageCore",
+  "stability.imageEditErase",
+  "stability.imageEditInpaint",
+  "stability.imageEditOutpaint",
+  "stability.imageEditRemoveBackground",
+  "stability.imageEditSearchAndRecolor",
+  "stability.imageEditSearchAndReplace",
   "stability.imageSd3",
   "stability.music",
   "stability.musicFromAudio",
   "stability.musicInpaint",
-  "stability.stableImageErase",
-  "stability.stableImageInpaint",
-  "stability.stableImageOutpaint",
-  "stability.stableImageRemoveBackground",
-  "stability.stableImageSearchAndRecolor",
-  "stability.stableImageSearchAndReplace",
   "stepfun.chat",
   "togetherai.chat",
   "upstage.chat",
@@ -274,8 +274,9 @@ test("the image-generation endpoints all use the uniform `image` verb", () => {
  * (`videoModify`, `videoReframe`, `videoUpscale`, `videoAddAudio`).
  *
  * Written out rather than derived for the same reason as the image list: an id
- * does not carry its category, and `luma.reframeImage` is an *edit* route that
- * must keep its name until that wave.
+ * does not carry its category, and `luma.imageEditReframe` reframes a *still*
+ * rather than a clip — so it belongs to the `imageEdit` list below, next to
+ * `luma.videoReframe`'s near-namesake, and not here.
  */
 const VIDEO_IDS: readonly string[] = [
   "bytedance.video",
@@ -443,4 +444,134 @@ test("the music-category endpoints all use the uniform `music` verb", () => {
     "stability.stableAudioInpaint",
   ];
   for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
+ * The image-edit half, and the last one the law had left to apply: eight
+ * providers, twenty-six routes, and previously eight unrelated vocabularies for
+ * "change this picture" — a product family (`fluxKontext`, `fluxFill`,
+ * `fluxVto`), a wire path (`imageToImage`, `stableImageSearchAndReplace`), a
+ * bare verb (`edit`, `remix`, `reframe`) and a noun phrase
+ * (`replaceBackground`, `generateBackground`).
+ *
+ * All twenty-six now address the category as `imageEdit`, with each extra route
+ * qualified by *what it does to the picture* (`imageEditInpaint`,
+ * `imageEditOutpaint`, `imageEditErase`, `imageEditDeblur`,
+ * `imageEditReframe`, `imageEditVto`, `imageEditSearchAndReplace`) — never by
+ * the wire spelling or the vendor's product name, both of which survive on the
+ * URL constants and the `*Params` types where they belong.
+ *
+ * A provider's primary "prompt + one image" route is bare `imageEdit`
+ * everywhere it has one. The three that do not — Stability, Luma and the
+ * FLUX-tools family — are genuinely mask- or geometry-driven at every route
+ * they serve, which is exactly what the qualifier says.
+ */
+const IMAGE_EDIT_IDS: readonly string[] = [
+  "black-forest-labs.imageEdit",
+  "black-forest-labs.imageEditDeblur",
+  "black-forest-labs.imageEditErase",
+  "black-forest-labs.imageEditExpand",
+  "black-forest-labs.imageEditFill",
+  "black-forest-labs.imageEditOutpainting",
+  "black-forest-labs.imageEditVto",
+  "bria.imageEdit",
+  "ideogram.imageEdit",
+  "ideogram.imageEditReframe",
+  "ideogram.imageEditRemix",
+  "ideogram.imageEditReplaceBackground",
+  "luma.imageEditReframe",
+  "openai.imageEdit",
+  "recraft.imageEdit",
+  "recraft.imageEditGenerateBackground",
+  "recraft.imageEditInpaint",
+  "recraft.imageEditOutpaint",
+  "recraft.imageEditReplaceBackground",
+  "reve.imageEdit",
+  "reve.imageEditRemix",
+  "stability.imageEditErase",
+  "stability.imageEditInpaint",
+  "stability.imageEditOutpaint",
+  "stability.imageEditRemoveBackground",
+  "stability.imageEditSearchAndRecolor",
+  "stability.imageEditSearchAndReplace",
+];
+
+test("the image-edit endpoints all use the uniform `imageEdit` verb", () => {
+  for (const id of IMAGE_EDIT_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toMatch(/^imageEdit([A-Z]|$)/);
+  }
+  const providers = [...new Set(IMAGE_EDIT_IDS.map((id) => id.split(".")[0] as string))].sort();
+  expect(providers).toEqual([
+    "black-forest-labs",
+    "bria",
+    "ideogram",
+    "luma",
+    "openai",
+    "recraft",
+    "reve",
+    "stability",
+  ]);
+  // The five whose primary route is "prompt + one image, no mask" address it as
+  // bare `imageEdit` — which is the ref `unmodel/image-edit` reaches for, and
+  // therefore the half of the law with teeth.
+  for (const provider of ["black-forest-labs", "bria", "ideogram", "openai", "recraft", "reve"]) {
+    expect(IMAGE_EDIT_IDS).toContain(`${provider}.imageEdit`);
+  }
+
+  // …and no route is claimed by both halves of the image surface. `imageEdit`
+  // is a prefix-extension of `image`, so the two lists are the only thing that
+  // can tell a generation route from an editing one — a route in both would
+  // make the unified `image` and `image-edit` packs disagree about what it is.
+  expect(IMAGE_GENERATION_IDS.filter((id) => IMAGE_EDIT_IDS.includes(id))).toEqual([]);
+
+  const retired = [
+    "black-forest-labs.fluxKontext",
+    "black-forest-labs.fluxFill",
+    "black-forest-labs.fluxExpand",
+    "black-forest-labs.fluxErase",
+    "black-forest-labs.fluxDeblur",
+    "black-forest-labs.fluxOutpainting",
+    "black-forest-labs.fluxVto",
+    "ideogram.edit",
+    "ideogram.remix",
+    "ideogram.reframe",
+    "ideogram.replaceBackground",
+    "luma.reframeImage",
+    "recraft.imageToImage",
+    "recraft.inpaint",
+    "recraft.outpaint",
+    "recraft.generateBackground",
+    "recraft.replaceBackground",
+    "reve.edit",
+    "reve.remix",
+    "stability.stableImageErase",
+    "stability.stableImageInpaint",
+    "stability.stableImageOutpaint",
+    "stability.stableImageSearchAndReplace",
+    "stability.stableImageSearchAndRecolor",
+    "stability.stableImageRemoveBackground",
+  ];
+  for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
+ * The law, closed. Every endpoint in the six media categories now addresses its
+ * category with the category's own verb — which is what makes the six unified
+ * entries' ref unions readable, because the word a caller types at
+ * `unmodel/<category>` and the word they type at `unmodel/<provider>` are the
+ * same word.
+ */
+test("every media endpoint addresses its category with that category's verb", () => {
+  const MEDIA = [
+    ...IMAGE_GENERATION_IDS,
+    ...IMAGE_EDIT_IDS,
+    ...VIDEO_IDS,
+    ...TRANSCRIBE_IDS,
+    ...MUSIC_IDS,
+  ];
+  // No id belongs to two categories — `imageEdit` vs `image` is the pair where
+  // a prefix test alone would say yes twice.
+  expect(new Set(MEDIA).size).toBe(MEDIA.length);
+  for (const id of MEDIA) expect(EXPECTED_IDS).toContain(id);
 });

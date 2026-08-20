@@ -7,7 +7,7 @@
  * `invalid_enum_value` at runtime, and these tests pin that it is a compile
  * error first.
  */
-import { image, edit, remix, imageV2 } from "../../src/providers/reve";
+import { image, imageEdit, imageEditRemix, imageV2 } from "../../src/providers/reve";
 import { expectAssignable } from "./helpers";
 
 declare const base64Png: string;
@@ -17,20 +17,20 @@ function v1AspectRatioTypeTests(): void {
   expectAssignable<"16:9">(v.aspect_ratio);
   image({ prompt: "hi", aspect_ratio: "9:16" });
 
-  edit({ edit_instruction: "make the sky stormy", reference_image: base64Png, aspect_ratio: "3:2" });
-  edit({ edit_instruction: "hi", reference_image: base64Png, aspect_ratio: "1:1" });
+  imageEdit({ edit_instruction: "make the sky stormy", reference_image: base64Png, aspect_ratio: "3:2" });
+  imageEdit({ edit_instruction: "hi", reference_image: base64Png, aspect_ratio: "1:1" });
 
-  remix({ prompt: "hi", reference_images: [base64Png], aspect_ratio: "4:3" });
-  remix({ prompt: "hi", reference_images: [base64Png], aspect_ratio: "2:3" });
+  imageEditRemix({ prompt: "hi", reference_images: [base64Png], aspect_ratio: "4:3" });
+  imageEditRemix({ prompt: "hi", reference_images: [base64Png], aspect_ratio: "2:3" });
 
   // @ts-expect-error the v1 routes accept only the legacy subset — 21:9 is v2-only
   image({ prompt: "hi", aspect_ratio: "21:9" });
   // @ts-expect-error `auto` is v2-only too
   image({ prompt: "hi", aspect_ratio: "auto" });
   // @ts-expect-error the empty string is not a ratio
-  edit({ edit_instruction: "hi", reference_image: base64Png, aspect_ratio: "" });
+  imageEdit({ edit_instruction: "hi", reference_image: base64Png, aspect_ratio: "" });
   // @ts-expect-error junk no longer compiles on remix either
-  remix({ prompt: "hi", reference_images: [base64Png], aspect_ratio: "banana" });
+  imageEditRemix({ prompt: "hi", reference_images: [base64Png], aspect_ratio: "banana" });
 }
 
 function v2TypeTests(): void {

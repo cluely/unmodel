@@ -390,7 +390,7 @@ function modelIdFor(params: object): string | undefined {
 }
 
 const editValidator = createValidator<EditParams, unknown>({
-  endpoint: "ideogram.edit",
+  endpoint: "ideogram.imageEdit",
   schema: editSchema,
   modelId: modelIdFor,
   catalog: models,
@@ -408,7 +408,7 @@ const editValidator = createValidator<EditParams, unknown>({
 });
 
 const remixValidator = createValidator<RemixParams, unknown>({
-  endpoint: "ideogram.remix",
+  endpoint: "ideogram.imageEditRemix",
   schema: remixSchema,
   modelId: modelIdFor,
   catalog: models,
@@ -429,7 +429,7 @@ const remixValidator = createValidator<RemixParams, unknown>({
 });
 
 const reframeValidator = createValidator<ReframeParams, unknown>({
-  endpoint: "ideogram.reframe",
+  endpoint: "ideogram.imageEditReframe",
   schema: reframeSchema,
   modelId: modelIdFor,
   catalog: models,
@@ -443,7 +443,7 @@ const reframeValidator = createValidator<ReframeParams, unknown>({
 });
 
 const replaceBackgroundValidator = createValidator<ReplaceBackgroundParams, unknown>({
-  endpoint: "ideogram.replaceBackground",
+  endpoint: "ideogram.imageEditReplaceBackground",
   schema: replaceBackgroundSchema,
   modelId: modelIdFor,
   catalog: models,
@@ -477,28 +477,28 @@ interface IdeogramEditValidator<P> {
  * as the body, never `JSON.stringify`. Auth is your job: add an `Api-Key`
  * header when fetching.
  */
-export const edit = editValidator as unknown as IdeogramEditValidator<EditParams>;
+export const imageEdit = editValidator as unknown as IdeogramEditValidator<EditParams>;
 
 /**
  * Validates params for Ideogram `POST /v1/ideogram-v3/remix` — regenerates
  * the image from `prompt`, with `image_weight` controlling how much of the
  * input survives. Accepts `resolution` XOR `aspect_ratio`. Multipart
- * endpoint — see `edit`.
+ * endpoint — see `imageEdit`.
  */
-export const remix = remixValidator as unknown as IdeogramEditValidator<RemixParams>;
+export const imageEditRemix = remixValidator as unknown as IdeogramEditValidator<RemixParams>;
 
 /**
  * Validates params for Ideogram `POST /v1/ideogram-v3/reframe` — re-crops and
  * extends the image to a new `resolution` (REQUIRED). No `prompt`,
  * `style_type`, `magic_prompt` or `negative_prompt` on this route. Multipart
- * endpoint — see `edit`.
+ * endpoint — see `imageEdit`.
  */
-export const reframe = reframeValidator as unknown as IdeogramEditValidator<ReframeParams>;
+export const imageEditReframe = reframeValidator as unknown as IdeogramEditValidator<ReframeParams>;
 
 /**
  * Validates params for Ideogram `POST /v1/ideogram-v3/replace-background` —
  * replaces the background with the scene described by `prompt`. Multipart
- * endpoint — see `edit`.
+ * endpoint — see `imageEdit`.
  */
-export const replaceBackground =
+export const imageEditReplaceBackground =
   replaceBackgroundValidator as unknown as IdeogramEditValidator<ReplaceBackgroundParams>;

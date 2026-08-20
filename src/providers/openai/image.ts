@@ -56,7 +56,7 @@ export interface GptImage15Body extends GptImageBaseBody {
 // documented generations model list is "One of `dall-e-2`, `dall-e-3`, or a
 // GPT image model (`gpt-image-1`, `gpt-image-1-mini`, `gpt-image-1.5`,
 // `gpt-image-2`, or `gpt-image-2-2026-04-21`)" — chatgpt-image-latest appears
-// only on /v1/images/edits (see images-edit.ts). At the type level it falls
+// only on /v1/images/edits (see image-edit.ts). At the type level it falls
 // into the escape-hatch arm, but the catalog is shared with the edits
 // endpoint, where the id IS documented, so no `unknown_model` warning can
 // fire for it. checkEditsOnlyModel below is what makes the restriction

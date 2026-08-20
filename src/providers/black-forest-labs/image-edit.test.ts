@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { fluxKontext } from "./kontext";
+import { imageEdit } from "./image-edit";
 import { BFL_API_BASE_URL } from "./image";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 
 // Bypasses the compile-time surface so runtime enforcement can be exercised.
-const safeUnchecked = fluxKontext.safe as unknown as (
+const safeUnchecked = imageEdit.safe as unknown as (
   params: unknown,
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
@@ -30,9 +30,9 @@ const BFL_ASPECT_RATIO_PRESETS = [
   "9:21",
 ] as const;
 
-describe("black-forest-labs.fluxKontext happy path", () => {
+describe("black-forest-labs.imageEdit happy path", () => {
   test("returns a wire-pure body with the model stripped into the URL", () => {
-    const v = fluxKontext({
+    const v = imageEdit({
       model: "flux-kontext-max",
       prompt: "replace the sky with a thunderstorm",
       input_image: "data:image/png;base64,xxxx",
@@ -58,7 +58,7 @@ describe("black-forest-labs.fluxKontext happy path", () => {
   });
 
   test("kontext allows safety_tolerance up to 6 (unlike flux-2's 0–5)", () => {
-    const ok = fluxKontext.safe({ model: "flux-kontext-pro", prompt: "hi", safety_tolerance: 6 });
+    const ok = imageEdit.safe({ model: "flux-kontext-pro", prompt: "hi", safety_tolerance: 6 });
     expect(ok.ok).toBe(true);
     const bad = safeUnchecked({ model: "flux-kontext-pro", prompt: "hi", safety_tolerance: 7 });
     expect(bad.ok).toBe(false);
@@ -66,13 +66,13 @@ describe("black-forest-labs.fluxKontext happy path", () => {
   });
 
   test("text-to-image use (no input_image) passes", () => {
-    const r = fluxKontext.safe({ model: "flux-kontext-pro", prompt: "a red door" });
+    const r = imageEdit.safe({ model: "flux-kontext-pro", prompt: "a red door" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
   test("explicit nulls pass", () => {
-    const r = fluxKontext.safe({
+    const r = imageEdit.safe({
       model: "flux-kontext-pro",
       prompt: "hi",
       input_image: null,
@@ -84,19 +84,19 @@ describe("black-forest-labs.fluxKontext happy path", () => {
   });
 
   test("unknown kontext model warns but validates", () => {
-    const r = fluxKontext.safe({ model: "flux-kontext-ultra", prompt: "hi" });
+    const r = imageEdit.safe({ model: "flux-kontext-ultra", prompt: "hi" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
 });
 
-describe("black-forest-labs.fluxKontext aspect_ratio", () => {
+describe("black-forest-labs.imageEdit aspect_ratio", () => {
   test("every BflAspectRatio preset passes the runtime rule it advertises", () => {
     // Keep in sync with the BflAspectRatio union in aspect.ts — each named
     // preset must satisfy checkAspectRatioRange ("W:H" between 21:9 and 9:21),
     // or the autocomplete would advertise ratios the API rejects.
     for (const aspect_ratio of BFL_ASPECT_RATIO_PRESETS) {
-      const r = fluxKontext.safe({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio });
+      const r = imageEdit.safe({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio });
       expect(r.ok, `preset ${aspect_ratio} should validate`).toBe(true);
       if (r.ok) expect(r.warnings, `preset ${aspect_ratio} should be warning-free`).toEqual([]);
     }
@@ -104,14 +104,14 @@ describe("black-forest-labs.fluxKontext aspect_ratio", () => {
 
   test("free-form ratios inside the documented range still pass", () => {
     for (const aspect_ratio of ["7:3", "10:16"] as const) {
-      const r = fluxKontext.safe({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio });
+      const r = imageEdit.safe({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio });
       expect(r.ok).toBe(true);
     }
   });
 
   test("ratios wider than 21:9 or taller than 9:21 fail", () => {
     for (const aspect_ratio of ["22:9", "5:1", "1:5"] as const) {
-      const r = fluxKontext.safe({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio });
+      const r = imageEdit.safe({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio });
       expect(r.ok).toBe(false);
       if (!r.ok) {
         expect(r.errors[0]?.code).toBe("invalid_enum_value");
@@ -130,18 +130,18 @@ describe("black-forest-labs.fluxKontext aspect_ratio", () => {
   });
 });
 
-describe("black-forest-labs.fluxKontext cost estimation", () => {
+describe("black-forest-labs.imageEdit cost estimation", () => {
   test("kontext pro is $0.04 and max is $0.08 per image", () => {
-    const pro = fluxKontext.safe({ model: "flux-kontext-pro", prompt: "hi" });
+    const pro = imageEdit.safe({ model: "flux-kontext-pro", prompt: "hi" });
     expect(pro.ok).toBe(true);
     if (pro.ok) expect(pro.estimate.costUSD).toBeCloseTo(0.04, 10);
-    const max = fluxKontext.safe({ model: "flux-kontext-max", prompt: "hi" });
+    const max = imageEdit.safe({ model: "flux-kontext-max", prompt: "hi" });
     expect(max.ok).toBe(true);
     if (max.ok) expect(max.estimate.costUSD).toBeCloseTo(0.08, 10);
   });
 
   test("maxCostUSD under the estimate is over_budget", () => {
-    const r = fluxKontext.safe(
+    const r = imageEdit.safe(
       { model: "flux-kontext-max", prompt: "hi" },
       { maxCostUSD: 0.05 },
     );

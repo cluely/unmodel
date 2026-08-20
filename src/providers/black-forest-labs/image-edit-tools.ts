@@ -261,7 +261,7 @@ function finalizeTo(modelId: string) {
 }
 
 const outpaintingValidator = createValidator<FluxOutpaintingParams, unknown>({
-  endpoint: "black-forest-labs.fluxOutpainting",
+  endpoint: "black-forest-labs.imageEditOutpainting",
   schema: outpaintingSchema,
   modelId: () => FLUX_OUTPAINTING_MODEL_ID,
   catalog: models,
@@ -271,7 +271,7 @@ const outpaintingValidator = createValidator<FluxOutpaintingParams, unknown>({
 });
 
 const eraseValidator = createValidator<FluxEraseParams, unknown>({
-  endpoint: "black-forest-labs.fluxErase",
+  endpoint: "black-forest-labs.imageEditErase",
   schema: eraseSchema,
   modelId: () => FLUX_ERASE_MODEL_ID,
   catalog: models,
@@ -280,7 +280,7 @@ const eraseValidator = createValidator<FluxEraseParams, unknown>({
 });
 
 const deblurValidator = createValidator<FluxDeblurParams, unknown>({
-  endpoint: "black-forest-labs.fluxDeblur",
+  endpoint: "black-forest-labs.imageEditDeblur",
   schema: deblurSchema,
   modelId: () => FLUX_DEBLUR_MODEL_ID,
   catalog: models,
@@ -289,7 +289,7 @@ const deblurValidator = createValidator<FluxDeblurParams, unknown>({
 });
 
 const vtoValidator = createValidator<FluxVtoParams, unknown>({
-  endpoint: "black-forest-labs.fluxVto",
+  endpoint: "black-forest-labs.imageEditVto",
   schema: vtoSchema,
   modelId: (params) => params.model ?? DEFAULT_VTO_MODEL_ID,
   catalog: models,
@@ -329,27 +329,27 @@ interface FluxToolValidator<P> {
  * returns an async job — poll `BFL_GET_RESULT_URL`. Auth is your job: add an
  * `x-key` header when fetching.
  */
-export const fluxOutpainting =
+export const imageEditOutpainting =
   outpaintingValidator as unknown as FluxToolValidator<FluxOutpaintingParams>;
 
 /**
  * Validates params for `POST https://api.bfl.ai/v1/flux-tools/erase-v1` —
  * mask-driven object removal (white = remove, black = keep).
  */
-export const fluxErase = eraseValidator as unknown as FluxToolValidator<FluxEraseParams>;
+export const imageEditErase = eraseValidator as unknown as FluxToolValidator<FluxEraseParams>;
 
 /**
  * Validates params for `POST https://api.bfl.ai/v1/flux-tools/deblur-v1` —
  * blur removal; no prompt needed.
  */
-export const fluxDeblur = deblurValidator as unknown as FluxToolValidator<FluxDeblurParams>;
+export const imageEditDeblur = deblurValidator as unknown as FluxToolValidator<FluxDeblurParams>;
 
 /**
  * Validates params for the FLUX virtual try-on routes
  * (`POST https://api.bfl.ai/v1/flux-tools/vto-v2`, default, or `/vto-v1`).
  * `model` is a route selector, stripped from the body into `.request.url`.
  */
-export const fluxVto = vtoValidator as unknown as {
+export const imageEditVto = vtoValidator as unknown as {
   <T extends FluxVtoParams>(
     params: T & ExactKeys<T, FluxVtoParams>,
     options?: ValidateOptions,

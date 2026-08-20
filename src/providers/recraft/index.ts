@@ -25,11 +25,11 @@ export type {
 } from "./image";
 
 export {
-  imageToImage,
-  inpaint,
-  outpaint,
-  replaceBackground,
-  generateBackground,
+  imageEdit,
+  imageEditInpaint,
+  imageEditOutpaint,
+  imageEditReplaceBackground,
+  imageEditGenerateBackground,
   toFormData,
   IMAGE_TO_IMAGE_URL,
   INPAINT_URL,
@@ -40,14 +40,14 @@ export {
   DEFAULT_V3_EDIT_MODEL_ID,
   MAX_INPUT_IMAGE_BYTES,
   MAX_OUTPAINT_EXPAND_PIXELS,
-} from "./transform";
+} from "./image-edit";
 export type {
   ImageToImageParams,
   InpaintParams,
   GenerateBackgroundParams,
   OutpaintParams,
   ReplaceBackgroundParams,
-} from "./transform";
+} from "./image-edit";
 
 export { imageFamilyRules } from "./constraints";
 

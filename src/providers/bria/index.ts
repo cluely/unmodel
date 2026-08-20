@@ -21,8 +21,8 @@ export {
   BRIA_EDIT_GUIDANCE_SCALE_MAX,
   BRIA_EDIT_STEPS_MIN,
   BRIA_EDIT_STEPS_MAX,
-} from "./edit";
-export type { ImageEditParams, BriaEditModelVersion } from "./edit";
+} from "./image-edit";
+export type { ImageEditParams, BriaEditModelVersion } from "./image-edit";
 
 export {
   BRIA_API_BASE_URL,

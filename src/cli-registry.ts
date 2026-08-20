@@ -43,8 +43,8 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
     import("./providers/black-forest-labs").then((m) => asCli(m.imageFlux1)),
   "black-forest-labs.image": () =>
     import("./providers/black-forest-labs").then((m) => asCli(m.image)),
-  "black-forest-labs.fluxKontext": () =>
-    import("./providers/black-forest-labs").then((m) => asCli(m.fluxKontext)),
+  "black-forest-labs.imageEdit": () =>
+    import("./providers/black-forest-labs").then((m) => asCli(m.imageEdit)),
   "ideogram.image": () => import("./providers/ideogram").then((m) => asCli(m.image)),
   "ideogram.imageV4": () => import("./providers/ideogram").then((m) => asCli(m.imageV4)),
   "recraft.image": () => import("./providers/recraft").then((m) => asCli(m.image)),
@@ -67,29 +67,31 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
 
   // Image editing (URL/base64 image inputs — the multipart-only editors are
   // listed under MULTIPART_ONLY below)
-  "black-forest-labs.fluxFill": () =>
-    import("./providers/black-forest-labs").then((m) => asCli(m.fluxFill)),
-  "black-forest-labs.fluxExpand": () =>
-    import("./providers/black-forest-labs").then((m) => asCli(m.fluxExpand)),
-  "black-forest-labs.fluxOutpainting": () =>
-    import("./providers/black-forest-labs").then((m) => asCli(m.fluxOutpainting)),
-  "black-forest-labs.fluxErase": () =>
-    import("./providers/black-forest-labs").then((m) => asCli(m.fluxErase)),
-  "black-forest-labs.fluxDeblur": () =>
-    import("./providers/black-forest-labs").then((m) => asCli(m.fluxDeblur)),
-  "black-forest-labs.fluxVto": () =>
-    import("./providers/black-forest-labs").then((m) => asCli(m.fluxVto)),
-  "recraft.imageToImage": () => import("./providers/recraft").then((m) => asCli(m.imageToImage)),
-  "recraft.inpaint": () => import("./providers/recraft").then((m) => asCli(m.inpaint)),
-  "recraft.outpaint": () => import("./providers/recraft").then((m) => asCli(m.outpaint)),
-  "recraft.generateBackground": () =>
-    import("./providers/recraft").then((m) => asCli(m.generateBackground)),
-  "recraft.replaceBackground": () =>
-    import("./providers/recraft").then((m) => asCli(m.replaceBackground)),
-  "luma.reframeImage": () => import("./providers/luma").then((m) => asCli(m.reframeImage)),
+  "black-forest-labs.imageEditFill": () =>
+    import("./providers/black-forest-labs").then((m) => asCli(m.imageEditFill)),
+  "black-forest-labs.imageEditExpand": () =>
+    import("./providers/black-forest-labs").then((m) => asCli(m.imageEditExpand)),
+  "black-forest-labs.imageEditOutpainting": () =>
+    import("./providers/black-forest-labs").then((m) => asCli(m.imageEditOutpainting)),
+  "black-forest-labs.imageEditErase": () =>
+    import("./providers/black-forest-labs").then((m) => asCli(m.imageEditErase)),
+  "black-forest-labs.imageEditDeblur": () =>
+    import("./providers/black-forest-labs").then((m) => asCli(m.imageEditDeblur)),
+  "black-forest-labs.imageEditVto": () =>
+    import("./providers/black-forest-labs").then((m) => asCli(m.imageEditVto)),
+  "recraft.imageEdit": () => import("./providers/recraft").then((m) => asCli(m.imageEdit)),
+  "recraft.imageEditInpaint": () =>
+    import("./providers/recraft").then((m) => asCli(m.imageEditInpaint)),
+  "recraft.imageEditOutpaint": () =>
+    import("./providers/recraft").then((m) => asCli(m.imageEditOutpaint)),
+  "recraft.imageEditGenerateBackground": () =>
+    import("./providers/recraft").then((m) => asCli(m.imageEditGenerateBackground)),
+  "recraft.imageEditReplaceBackground": () =>
+    import("./providers/recraft").then((m) => asCli(m.imageEditReplaceBackground)),
+  "luma.imageEditReframe": () => import("./providers/luma").then((m) => asCli(m.imageEditReframe)),
   "bria.imageEdit": () => import("./providers/bria").then((m) => asCli(m.imageEdit)),
-  "reve.edit": () => import("./providers/reve").then((m) => asCli(m.edit)),
-  "reve.remix": () => import("./providers/reve").then((m) => asCli(m.remix)),
+  "reve.imageEdit": () => import("./providers/reve").then((m) => asCli(m.imageEdit)),
+  "reve.imageEditRemix": () => import("./providers/reve").then((m) => asCli(m.imageEditRemix)),
 
   // Video generation and post-production
   "openai.video": () => import("./providers/openai").then((m) => asCli(m.video)),
@@ -252,18 +254,23 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
  * `cli.test.ts` — which asserts REGISTRY names exactly the module-level
  * provider validators — either wrong or full of exceptions.
  *
- * Five of the six are here: they are the categories with a ready-made pack.
- * `image-edit` lands as its pack does.
+ * All six are here — every category now ships a ready-made pack. The key after
+ * the dot is the **category id** (`imageEdit`), camelCase like every other
+ * endpoint id the CLI takes, not the kebab-case package subpath: `unmodel
+ * validate` addresses endpoints, and `unmodel/image-edit` is an import.
  *
- * `unified.transcribe` is registered even though four of its eleven providers
- * take their audio as a `Blob`: the canonical `audio` is `{ url }` or
- * `{ fileId }` at the other seven, both of which a JSON document expresses, so
- * the surface is genuinely CLI-usable — and a ref pointed at a multipart route
- * is refused by that provider's own adapter with a message naming the shapes it
- * does take, which is a better answer than hiding the whole category.
+ * `unified.transcribe` and `unified.image-edit` are registered even though some
+ * of their providers take their media as a `Blob`: the canonical `audio` is
+ * `{ url }` or `{ fileId }` at seven of eleven transcribe providers and the
+ * canonical `image` is `{ url }` or `{ data }` at two of four editing ones, all
+ * of which a JSON document expresses — so both surfaces are genuinely
+ * CLI-usable, and a ref pointed at a multipart route is refused by that
+ * provider's own adapter with a message naming the shapes it does take, which is
+ * a better answer than hiding the whole category.
  */
 export const UNIFIED: Record<string, () => Promise<CliValidator>> = {
   "unified.image": () => import("./unified/image").then((m) => asCli(m.image)),
+  "unified.imageEdit": () => import("./unified/image-edit").then((m) => asCli(m.imageEdit)),
   "unified.music": () => import("./unified/music").then((m) => asCli(m.music)),
   "unified.speech": () => import("./unified/speech").then((m) => asCli(m.speech)),
   "unified.transcribe": () => import("./unified/transcribe").then((m) => asCli(m.transcribe)),
@@ -281,16 +288,16 @@ export const MULTIPART_ONLY: Record<string, string> = {
   "openai.imageEdit": "unmodel/openai",
   "openai.transcribe": "unmodel/openai",
   "cartesia.transcribe": "unmodel/cartesia",
-  "ideogram.edit": "unmodel/ideogram",
-  "ideogram.remix": "unmodel/ideogram",
-  "ideogram.reframe": "unmodel/ideogram",
-  "ideogram.replaceBackground": "unmodel/ideogram",
-  "stability.stableImageErase": "unmodel/stability",
-  "stability.stableImageInpaint": "unmodel/stability",
-  "stability.stableImageOutpaint": "unmodel/stability",
-  "stability.stableImageSearchAndReplace": "unmodel/stability",
-  "stability.stableImageSearchAndRecolor": "unmodel/stability",
-  "stability.stableImageRemoveBackground": "unmodel/stability",
+  "ideogram.imageEdit": "unmodel/ideogram",
+  "ideogram.imageEditRemix": "unmodel/ideogram",
+  "ideogram.imageEditReframe": "unmodel/ideogram",
+  "ideogram.imageEditReplaceBackground": "unmodel/ideogram",
+  "stability.imageEditErase": "unmodel/stability",
+  "stability.imageEditInpaint": "unmodel/stability",
+  "stability.imageEditOutpaint": "unmodel/stability",
+  "stability.imageEditSearchAndReplace": "unmodel/stability",
+  "stability.imageEditSearchAndRecolor": "unmodel/stability",
+  "stability.imageEditRemoveBackground": "unmodel/stability",
   "stability.musicFromAudio": "unmodel/stability",
   "stability.musicInpaint": "unmodel/stability",
 };

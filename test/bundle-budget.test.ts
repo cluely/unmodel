@@ -71,41 +71,34 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
 const CHAT_BUDGET_KIB = 600;
 
 /**
- * The unified media entries (`unmodel/image`, `unmodel/video`, …) that are
- * still **kernel-only**.
+ * Every category entry. All six ship a ready-made pack now, so each has its own
+ * budget and its own composition test below rather than a shared kernel-only
+ * one.
  *
- * Their whole proposition is that you name the adapters you want and the
- * bundle contains those providers and no others — so the number that matters
- * is not how big they are but what they carry: `createUnified`, the issue
- * sink, the warning sink and the two error classes.
+ * **The kernel-only budget is retired, not lost.** Until this wave there was a
+ * `UNIFIED_BUDGET_KIB = 18` that `image-edit` — the last entry with no pack —
+ * was measured against, plus a "carries the kernel and nothing else" test over
+ * the same list. Both now cover nothing: a list that is empty is a test that
+ * passes by saying nothing, which is worse than no test. What they were
+ * protecting has not gone away, and is asserted twice over instead:
  *
- * The budget is 18 KiB against 15.6–16.8 KiB measured — the same ~10% headroom
- * as every number above, set from what the tree measures rather than from a
- * round figure. (A 15 KiB pin was the original target; reaching it would have
- * meant deleting doc comments from `kernel.ts`, which is measured unminified
- * and is where the compile/merge/remap contract is written down. Trading
- * documentation for a number that already proves what it needs to prove is a
- * bad trade, and the composition test below is the assertion doing the real
- * work anyway.)
+ * - the *rule* they encoded is in `test/import-graph.test.ts` (amendments
+ *   A5–A7), which is where "a category entry sees only the kernel, itself and
+ *   adapter leaves" belongs — it holds for entries with a pack too;
+ * - the *bytes* are still pinned, per pack, by the six budgets below, each with
+ *   a composition test that is strictly stricter than the retired one (exactly
+ *   these providers, exactly these catalogs, no availability data, no retarget
+ *   layer).
  *
- * `image-edit` is the last entry in this list. The other five ship a
- * ready-made pack, so their entries legitimately import fifteen, ten, fourteen,
- * eleven and two adapters. Each gets its own budget and its own, stricter
- * composition test below — the point of which is that the *rest* of the rule
- * still holds (exactly those providers, no catalogs beyond the load-bearing
- * ones, no availability data), so "the entry imports providers now" cannot
- * quietly become "the entry imports anything".
+ * A caller who wants the kernel-only weight builds their own pack with
+ * `createImageEdit([…])`, and what that costs is a function of the adapters they
+ * name — which is the proposition, and is not a number this file can pin.
  */
-const UNIFIED_BUDGET_KIB = 18;
-
-const UNIFIED_ENTRIES: string[] = ["image-edit"];
-
-/** Every category entry, packs included — for the "it was built at all" check. */
 const ALL_UNIFIED_ENTRIES: string[] = [
-  ...UNIFIED_ENTRIES,
-  "speech",
   "image",
+  "image-edit",
   "video",
+  "speech",
   "transcribe",
   "music",
 ];
@@ -139,14 +132,24 @@ const SPEECH_PACK_BUDGET_KIB = 400;
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
  * each one's validator, zod schema, constraint table and catalog.
  *
- * 670 KiB measured, pinned at 740 with the same ~10% headroom as everything
- * above. It is twice the speech pack, and the reason is structural rather than
- * careless: the image providers carry *size* tables (per-model pixel grids,
- * resolution enums, 69-value size lists, style vocabularies) on top of the
- * usual deny rules, several of them serve two generation routes from one
- * adapter, and two of them key off a generated catalog rather than a
- * hand-written one (see `IMAGE_PACK_CATALOGS`). A caller who wants two
- * providers builds their own pack with `createImage([…])` and pays 40–80 KiB.
+ * 697 KiB measured, pinned at 740. It is twice the speech pack, and the reason
+ * is structural rather than careless: the image providers carry *size* tables
+ * (per-model pixel grids, resolution enums, 69-value size lists, style
+ * vocabularies) on top of the usual deny rules, several of them serve two
+ * generation routes from one adapter, and two of them key off a generated
+ * catalog rather than a hand-written one (see `IMAGE_PACK_CATALOGS`). A caller
+ * who wants two providers builds their own pack with `createImage([…])` and pays
+ * 40–80 KiB.
+ *
+ * The headroom is the tightest in this file — ~6% rather than ~10% — and the
+ * reason is worth writing down rather than fixing with a bigger number: the
+ * measurement rose from 670 to 697 across the transcribe and image-edit waves
+ * without a single module joining this graph, because `core/unified/derive.ts`
+ * is one shared chunk that every pack pays for whole and it grew by ~14 KiB of
+ * new derivations. Splitting it per category would buy those back and cost the
+ * property its own header argues for — one file, one set of rules for what
+ * "approximately" means, one test suite over all of them. If this one fails,
+ * check `sourceModulesOf` for a *new provider* before touching the number.
  */
 const IMAGE_PACK_BUDGET_KIB = 740;
 
@@ -296,6 +299,52 @@ const SPEECH_PACK_PROVIDERS: string[] = [
   "speechify",
 ];
 
+/**
+ * `unmodel/image-edit`'s budget: the kernel plus four image-to-image providers.
+ *
+ * 250 KiB measured, pinned at 275 with the same ~10% headroom as everything
+ * above. Larger than the music pack and smaller than every other one, which is
+ * what four providers should cost — and the number is dominated by three
+ * providers' *editing* modules being long, check-heavy validators that also
+ * carry their generation neighbours' vocabularies (Recraft's 900-line style
+ * tables, Ideogram's 69-value resolution list, OpenAI's per-model media rules).
+ * `createImageEdit([…])` is the way to pay for two providers instead of four.
+ */
+const IMAGE_EDIT_PACK_BUDGET_KIB = 275;
+
+/**
+ * The one generated catalog this pack legitimately reaches.
+ *
+ * Load-bearing rather than leaked, and for the same reason as in the image
+ * pack: `openai/images-models.ts` builds the image catalog by supplementing
+ * `src/catalog/openai.gen.ts`. A *second* entry here means a provider barrel
+ * leaked in.
+ */
+const IMAGE_EDIT_PACK_CATALOGS: string[] = ["src/catalog/openai.gen.ts"];
+
+/** The four providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
+const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
+  "black-forest-labs",
+  "ideogram",
+  "openai",
+  "recraft",
+];
+
+/**
+ * Every pack's budget, keyed by entry name — the map the shared budget test
+ * iterates, and the thing that makes "every category has a number" checkable
+ * rather than a claim. The per-pack `describe`s below add what a number cannot
+ * say: which providers, which catalogs, which endpoint modules.
+ */
+const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
+  image: IMAGE_PACK_BUDGET_KIB,
+  "image-edit": IMAGE_EDIT_PACK_BUDGET_KIB,
+  video: VIDEO_PACK_BUDGET_KIB,
+  speech: SPEECH_PACK_BUDGET_KIB,
+  transcribe: TRANSCRIBE_PACK_BUDGET_KIB,
+  music: MUSIC_PACK_BUDGET_KIB,
+};
+
 const FROM_IMPORT = /^[ \t]*(?:import|export)\s[^;]*?\sfrom\s*["']([^"']+)["']/gm;
 
 /** Every dist chunk an entry statically pulls in, the entry included. */
@@ -432,59 +481,45 @@ describe("unified media entries", () => {
     }
   });
 
-  test.each(UNIFIED_ENTRIES)("unmodel/%s stays under the kernel budget", (name) => {
+  /**
+   * Every one of the six now ships a pack, so every one has a budget below.
+   * Asserted as a *property of this file* rather than left to reading: a
+   * seventh category, or a pack whose budget nobody wrote down, fails here
+   * instead of shipping unmeasured.
+   */
+  test("every entry has a budget of its own", () => {
+    expect(Object.keys(PACK_BUDGET_KIB).sort()).toEqual([...ALL_UNIFIED_ENTRIES].sort());
+  });
+
+  test.each(Object.entries(PACK_BUDGET_KIB))("unmodel/%s stays under %i KiB", (name, budget) => {
     const kib = transitiveBytes(unifiedEntry(name)) / 1024;
-    expect(kib, `unified/${name} is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
-      UNIFIED_BUDGET_KIB,
-    );
+    expect(kib, `unified/${name} is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(budget);
   });
 
   /**
-   * The composition assertion, and the one doing the real work.
+   * The property every pack shares, in one place: a pack is provider validators
+   * plus the kernel plus the four-layer engine, and **never** the retarget layer
+   * or the availability data. Both are dead weight in a media bundle — a
+   * `Validated` from a unified call carries `.toSdk` and no `.toApi` — and both
+   * are one careless barrel import away.
    *
-   * A byte budget catches a provider leaking in *eventually*; this catches it
-   * in the diff that causes it, and names the module. Every one of the six is
-   * the kernel plus a handful of core leaves — no provider, no catalog, no
-   * availability data, no zod — and the moment that stops being true, the
-   * entry has stopped being what it is sold as.
-   *
-   * The one legitimate way this list grows is a category entry importing a
-   * provider `unified.ts` adapter, which is the ready-made pack. That is a
-   * deliberate change with a budget change attached, which is exactly the
-   * conversation this test exists to force.
+   * The per-pack tests below add the parts that differ: which providers, which
+   * catalogs, which endpoint modules.
    */
-  test.each(UNIFIED_ENTRIES)("unmodel/%s carries the kernel and nothing else", (name) => {
+  test.each(ALL_UNIFIED_ENTRIES)("unmodel/%s carries no retarget or availability layer", (name) => {
     const modules = sourceModulesOf(unifiedEntry(name));
     // A vacuous scan would be worse than no scan.
     expect(modules).toContain(`src/unified/${name}.ts`);
     expect(modules).toContain("src/core/unified/kernel.ts");
+    expect(modules).toContain("src/core/pipeline.ts");
 
-    expect(modules.filter((m) => m.startsWith("src/providers/"))).toEqual([]);
-    expect(modules.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
     expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
-
-    // Every remaining module is either the entry itself or a core leaf. The
-    // four-layer engine in `core/pipeline.ts` is deliberately absent: the
-    // kernel delegates validation to the provider's own validator, so it needs
-    // the severity rules (`core/issue-sink.ts`) and not the engine.
-    expect(modules.filter((m) => m === "src/core/pipeline.ts")).toEqual([]);
-    for (const module of modules) {
-      expect(
-        module.startsWith("src/core/") || module === `src/unified/${name}.ts`,
-        `${module} is neither core nor the entry`,
-      ).toBe(true);
-    }
+    expect(modules.filter((m) => m.startsWith("src/catalog/availability/"))).toEqual([]);
+    expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
   });
 });
 
 describe("unmodel/speech (the first ready-made pack)", () => {
-  test(`stays under ${SPEECH_PACK_BUDGET_KIB} KiB`, () => {
-    const kib = transitiveBytes(unifiedEntry("speech")) / 1024;
-    expect(kib, `unified/speech is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
-      SPEECH_PACK_BUDGET_KIB,
-    );
-  });
-
   /**
    * The composition assertion, in the shape the kernel-only one had before a
    * pack existed: the *list* is what does the work, not the byte count.
@@ -547,13 +582,6 @@ describe("unmodel/speech (the first ready-made pack)", () => {
 });
 
 describe("unmodel/image (the second ready-made pack)", () => {
-  test(`stays under ${IMAGE_PACK_BUDGET_KIB} KiB`, () => {
-    const kib = transitiveBytes(unifiedEntry("image")) / 1024;
-    expect(kib, `unified/image is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
-      IMAGE_PACK_BUDGET_KIB,
-    );
-  });
-
   /**
    * The composition assertion, and the one doing the real work: a pack that
    * reaches a sixteenth provider, or that drags in a generated catalog because
@@ -575,15 +603,21 @@ describe("unmodel/image (the second ready-made pack)", () => {
     expect(providers).toEqual(IMAGE_PACK_PROVIDERS);
 
     // One adapter leaf per provider, and it is what pulled the provider in.
-    // The seven providers that serve more than one category split their
+    // The eleven providers that serve more than one category split their
     // adapter per category, and each pack imports only its own half — which is
-    // what the independence test below is measuring in bytes.
+    // what the independence test below is measuring in bytes. The image-edit
+    // wave added three: black-forest-labs, ideogram and recraft each grew an
+    // editing adapter, and a single `unified.ts` holding both would have put
+    // their edit validators in this pack for nothing.
     const SPLIT = new Set([
+      "black-forest-labs",
       "bytedance",
       "google",
+      "ideogram",
       "kling",
       "luma",
       "openai",
+      "recraft",
       "runway",
       "stability",
       "vidu",
@@ -639,13 +673,6 @@ describe("unmodel/image (the second ready-made pack)", () => {
 });
 
 describe("unmodel/video (the third ready-made pack)", () => {
-  test(`stays under ${VIDEO_PACK_BUDGET_KIB} KiB`, () => {
-    const kib = transitiveBytes(unifiedEntry("video")) / 1024;
-    expect(kib, `unified/video is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
-      VIDEO_PACK_BUDGET_KIB,
-    );
-  });
-
   /**
    * The composition assertion. This pack is the one where "exactly these
    * providers" is doing the most work: seven of the ten also serve an image or
@@ -716,13 +743,6 @@ describe("unmodel/video (the third ready-made pack)", () => {
 });
 
 describe("unmodel/transcribe (the fourth ready-made pack)", () => {
-  test(`stays under ${TRANSCRIBE_PACK_BUDGET_KIB} KiB`, () => {
-    const kib = transitiveBytes(unifiedEntry("transcribe")) / 1024;
-    expect(kib, `unified/transcribe is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
-      TRANSCRIBE_PACK_BUDGET_KIB,
-    );
-  });
-
   /**
    * The composition assertion. Five of the eleven also serve a speech surface
    * and one also serves image and video, so an adapter that imported its
@@ -804,13 +824,6 @@ describe("unmodel/transcribe (the fourth ready-made pack)", () => {
 });
 
 describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
-  test(`stays under ${MUSIC_PACK_BUDGET_KIB} KiB`, () => {
-    const kib = transitiveBytes(unifiedEntry("music")) / 1024;
-    expect(kib, `unified/music is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
-      MUSIC_PACK_BUDGET_KIB,
-    );
-  });
-
   test("it reaches exactly the two music providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("music"));
     expect(modules).toContain("src/unified/music.ts");
@@ -854,16 +867,112 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
     expect(modules).toContain("src/core/pipeline.ts");
   });
 
-  test("the five packs are independent — none pulls another's entry in", () => {
-    const entries = ["image", "video", "speech", "transcribe", "music"];
-    for (const name of entries) {
+  test("the six packs are independent — none pulls another's entry in", () => {
+    for (const name of ALL_UNIFIED_ENTRIES) {
       const modules = sourceModulesOf(unifiedEntry(name));
-      for (const other of entries) {
+      for (const other of ALL_UNIFIED_ENTRIES) {
         if (other === name) continue;
         expect(modules, `unified/${name} pulls unified/${other}`).not.toContain(
           `src/unified/${other}.ts`,
         );
       }
+    }
+  });
+});
+
+describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
+  /**
+   * The composition assertion. This pack is the one where the *per-category
+   * adapter split* is doing the most work of all six: every one of its four
+   * providers also serves `unmodel/image`, so an adapter that imported its
+   * provider's barrel instead of the image-edit leaf would drag that provider's
+   * whole generation surface — validators, size tables, catalogs — into a pack
+   * that can never call it, without changing a single import in
+   * `src/unified/image-edit.ts`.
+   */
+  test("it reaches exactly the four image-edit providers, through their adapters", () => {
+    const modules = sourceModulesOf(unifiedEntry("image-edit"));
+    expect(modules).toContain("src/unified/image-edit.ts");
+    expect(modules).toContain("src/core/unified/kernel.ts");
+
+    const providers = [
+      ...new Set(
+        modules
+          .filter((m) => m.startsWith("src/providers/"))
+          .map((m) => m.split("/")[2] as string),
+      ),
+    ].sort();
+    expect(providers).toEqual(IMAGE_EDIT_PACK_PROVIDERS);
+
+    for (const provider of IMAGE_EDIT_PACK_PROVIDERS) {
+      // All four serve two categories, so all four adapters are suffixed
+      // leaves and the barrel is never in this graph.
+      expect(modules).toContain(`src/providers/${provider}/unified-image-edit.ts`);
+      expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
+      // Every provider's editing endpoint module is addressed as
+      // `image-edit.ts`, which is the rename made structural: the pack cannot
+      // reach a provider except through a file with the uniform name. Four wire
+      // spellings — `images-edit`, `kontext`, `edit`, `transform` — collapse
+      // onto one.
+      expect(modules).toContain(`src/providers/${provider}/image-edit.ts`);
+    }
+  });
+
+  /**
+   * Two providers' *generation* endpoint modules ride along, and both are the
+   * provider's own doing rather than the adapter's — the same shape as the
+   * cartesia exception in the transcribe pack, and pinned as exceptions so that
+   * a *third* one has to be typed out here:
+   *
+   * - `black-forest-labs/image-edit.ts` imports `bflModelUrl` and
+   *   `BFL_OUTPUT_FORMATS` from `./image` (the model IS the route on that API,
+   *   and the URL builder lives with the FLUX.2 endpoint);
+   * - `ideogram/image-edit.ts` imports the rendering-speed, resolution and
+   *   aspect-ratio enums from `./image`, because the editing routes share the
+   *   generation route's vocabulary verbatim.
+   *
+   * Neither pulls a *catalog* that the pack does not already need, and neither
+   * is an adapter reaching sideways — which is what the assertion below pins.
+   */
+  test("only the two documented generation modules ride along", () => {
+    const modules = sourceModulesOf(unifiedEntry("image-edit"));
+    const generation = modules.filter((m) => /^src\/providers\/[^/]+\/image\.ts$/.test(m)).sort();
+    expect(generation).toEqual([
+      "src/providers/black-forest-labs/image.ts",
+      "src/providers/ideogram/image.ts",
+    ]);
+    // OpenAI's and Recraft's edit modules reach `./image` for *types* only, so
+    // those two generation validators stay out — which is the difference a
+    // type-only import makes, measured.
+    expect(modules).not.toContain("src/providers/openai/image.ts");
+    expect(modules).not.toContain("src/providers/recraft/image.ts");
+  });
+
+  test("its graph carries exactly one catalog, and no chat or speech surface", () => {
+    const modules = sourceModulesOf(unifiedEntry("image-edit"));
+    expect(modules.filter((m) => m.startsWith("src/catalog/")).sort()).toEqual(
+      IMAGE_EDIT_PACK_CATALOGS,
+    );
+    // OpenAI is in five packs; this one must carry only its edit endpoint.
+    expect(modules).not.toContain("src/providers/openai/chat.ts");
+    expect(modules).not.toContain("src/providers/openai/speech.ts");
+    expect(modules).not.toContain("src/providers/openai/transcribe.ts");
+    expect(modules).not.toContain("src/providers/openai/video.ts");
+    expect(modules).toContain("src/core/pipeline.ts");
+  });
+
+  test("the image and image-edit packs share four providers and no endpoints", () => {
+    const edit = sourceModulesOf(unifiedEntry("image-edit"));
+    const generate = sourceModulesOf(unifiedEntry("image"));
+    expect(edit).not.toContain("src/unified/image.ts");
+    expect(generate).not.toContain("src/unified/image-edit.ts");
+    // The generation pack must not acquire an editing validator, which is the
+    // failure the split exists to prevent in the other direction: `unmodel/image`
+    // is the largest pack in the library and has the least room to spare.
+    for (const provider of IMAGE_EDIT_PACK_PROVIDERS) {
+      expect(generate).not.toContain(`src/providers/${provider}/unified-image-edit.ts`);
+      expect(generate).not.toContain(`src/providers/${provider}/image-edit.ts`);
+      expect(edit).not.toContain(`src/providers/${provider}/unified-image.ts`);
     }
   });
 });

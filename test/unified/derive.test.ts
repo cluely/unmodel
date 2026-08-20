@@ -17,6 +17,7 @@
 import { describe, expect, test } from "bun:test";
 import type { TranslationWarning } from "../../src/core/translate/warnings";
 import {
+  base64Payload,
   bitsToKbps,
   DEFAULT_CONTAINER,
   formatRatio,
@@ -39,7 +40,9 @@ import {
   toPixels,
   requireInlineBytes,
   requireMediaUrl,
+  resolveImageEditInput,
   resolveImageSlots,
+  resolveOperation,
   resolveVideoRoute,
   toMediaUri,
   toRatioEnum,
@@ -48,6 +51,7 @@ import {
   toSizeFreeform,
   toSpeed,
   toSpeedPercentDelta,
+  toStrength,
   toTier,
   videoRoute,
   VIDEO_ROUTE_LABELS,
@@ -1146,5 +1150,155 @@ describe("toPrimaryLanguage", () => {
     expect(out.value).toBeUndefined();
     expect(out.issues[0]!.code).toBe("invalid_shape");
     expect(out.issues[0]!.message).toContain("BCP-47");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Image-edit inputs and the strength scale
+// ---------------------------------------------------------------------------
+
+describe("resolveImageEditInput", () => {
+  const blob = new Blob([new Uint8Array(8)], { type: "image/png" });
+  const ALL = ["file", "url", "data"] as const;
+
+  test("narrows to the one shape it is", () => {
+    expect(resolveImageEditInput({ file: blob }, ALL, ctxAt("image")).value).toEqual({
+      kind: "file",
+      file: blob,
+    });
+    expect(resolveImageEditInput({ url: "https://e.com/a.png" }, ALL, ctxAt("image")).value).toEqual(
+      { kind: "url", url: "https://e.com/a.png" },
+    );
+    expect(resolveImageEditInput({ data: "QUJD" }, ALL, ctxAt("image")).value).toEqual({
+      kind: "data",
+      data: "QUJD",
+    });
+  });
+
+  test("a shape the route has no field for names the ones it does", () => {
+    const out = resolveImageEditInput({ file: blob }, ["data", "url"], ctxAt("image"), {
+      hint: "Read it yourself.",
+    });
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("unsupported_param");
+    expect(out.issues[0]!.message).toContain("{ data }");
+    expect(out.issues[0]!.message).toContain("{ url }");
+    // The hint is the half a caller can act on, so it is appended verbatim.
+    expect(out.issues[0]!.message).toEndWith("Read it yourself.");
+    expect(out.issues[0]!.meta).toMatchObject({ accepts: ["data", "url"], given: "file" });
+  });
+
+  test("two shapes at once is a caller who has not decided", () => {
+    const out = resolveImageEditInput({ file: blob, url: "https://e.com/a.png" }, ALL, ctxAt("image"));
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("invalid_shape");
+    expect(out.issues[0]!.meta).toMatchObject({ provided: ["file", "url"] });
+  });
+
+  test("no shape at all, and a non-object, each say what the route takes", () => {
+    for (const value of [{}, null, "https://e.com/a.png", 7]) {
+      const out = resolveImageEditInput(value, ["url"], ctxAt("image"));
+      expect(out.value).toBeUndefined();
+      expect(out.issues[0]!.code).toBe("invalid_shape");
+      expect(out.issues[0]!.message).toContain("{ url }");
+    }
+  });
+
+  test("the wrong JavaScript type inside the right key is caught", () => {
+    const notBlob = resolveImageEditInput({ file: "not a blob" }, ["file"], ctxAt("image"));
+    expect(notBlob.issues[0]!.message).toContain("must be a Blob or File");
+    for (const bad of ["", 7, null]) {
+      const out = resolveImageEditInput({ url: bad }, ["url"], ctxAt("image"));
+      expect(out.value).toBeUndefined();
+      expect(out.issues[0]!.code).toBe("invalid_shape");
+    }
+  });
+});
+
+describe("base64Payload", () => {
+  test("unwraps a data URI to its payload and leaves bare base64 alone", () => {
+    expect(base64Payload("data:image/png;base64,QUJD")).toBe("QUJD");
+    expect(base64Payload("data:,QUJD")).toBe("QUJD");
+    expect(base64Payload("QUJD")).toBe("QUJD");
+    // A payload containing a comma is not re-split: the first comma ends the
+    // header, and everything after it is the payload.
+    expect(base64Payload("data:image/png;base64,QU,JD")).toBe("QU,JD");
+  });
+});
+
+describe("toStrength", () => {
+  const NATIVE = { atZero: 0, atOne: 1 };
+  const INVERTED = { atZero: 100, atOne: 0, integer: true };
+
+  test("the identity scale is the identity", () => {
+    for (const value of [0, 0.25, 0.5, 0.75, 1]) {
+      const ctx = ctxAt("strength");
+      expect(toStrength(value, NATIVE, ctx).value).toBe(value);
+      expect(ctx.warnings).toEqual([]);
+    }
+  });
+
+  test("an inverted scale runs downhill, and lands on the midpoint exactly", () => {
+    expect(toStrength(0, INVERTED, ctxAt("strength")).value).toBe(100);
+    expect(toStrength(0.5, INVERTED, ctxAt("strength")).value).toBe(50);
+    expect(toStrength(1, INVERTED, ctxAt("strength")).value).toBe(0);
+    // Monotonically decreasing — the property a sign error breaks silently.
+    const values = [0, 0.25, 0.5, 0.75, 1].map(
+      (s) => toStrength(s, INVERTED, ctxAt("strength")).value as number,
+    );
+    for (let i = 1; i < values.length; i += 1) {
+      expect(values[i]!).toBeLessThan(values[i - 1]!);
+    }
+  });
+
+  test("rounding to a whole number warns with both values", () => {
+    const ctx = ctxAt("strength");
+    expect(toStrength(0.333, INVERTED, ctx).value).toBe(67);
+    expect(ctx.warnings).toHaveLength(1);
+    expect(ctx.warnings[0]!.code).toBe("approximated_param");
+    expect(ctx.warnings[0]!.meta).toMatchObject({ requested: 0.333, achieved: 67 });
+  });
+
+  test("a value that is already whole does not warn", () => {
+    const ctx = ctxAt("strength");
+    expect(toStrength(0.25, INVERTED, ctx).value).toBe(75);
+    expect(ctx.warnings).toEqual([]);
+  });
+
+  test("outside [0, 1] is refused rather than clamped", () => {
+    for (const value of [-0.001, 1.001, 50, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const out = toStrength(value, NATIVE, ctxAt("strength"));
+      expect(out.value, String(value)).toBeUndefined();
+      expect(out.issues[0]!.code).toBe("invalid_shape");
+      expect(out.issues[0]!.message).toContain("0 keeps the source image");
+    }
+  });
+});
+
+describe("resolveOperation", () => {
+  const EDIT_ONLY = ["edit"] as const;
+
+  test("the operation a route serves passes through", () => {
+    const out = resolveOperation("edit", EDIT_ONLY, ctxAt("operation"));
+    expect(out.value).toBe("edit");
+    expect(out.issues).toEqual([]);
+  });
+
+  test("anything else is an enum error naming what the route does serve", () => {
+    for (const value of ["inpaint", "outpaint", "", 7, null, undefined]) {
+      const out = resolveOperation(value, EDIT_ONLY, ctxAt("operation"), { hint: "Try X." });
+      expect(out.value, String(value)).toBeUndefined();
+      expect(out.issues[0]!.code).toBe("invalid_enum_value");
+      expect(out.issues[0]!.message).toContain('"edit"');
+      expect(out.issues[0]!.message).toEndWith("Try X.");
+      expect(out.issues[0]!.meta).toMatchObject({ allowed: ["edit"], value });
+    }
+  });
+
+  test("a route that serves more than one accepts each of them", () => {
+    const both = ["edit", "inpaint"] as const;
+    expect(resolveOperation("edit", both, ctxAt("operation")).value).toBe("edit");
+    expect(resolveOperation("inpaint", both, ctxAt("operation")).value).toBe("inpaint");
+    expect(resolveOperation("outpaint", both, ctxAt("operation")).value).toBeUndefined();
   });
 });

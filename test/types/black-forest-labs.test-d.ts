@@ -4,7 +4,7 @@
  * --noEmit). BFL has no official JS SDK, so these tests exercise the Tier-A
  * per-route arms and the ExactKeys typo guard.
  */
-import { imageFlux1, image, fluxKontext } from "../../src/providers/black-forest-labs";
+import { imageFlux1, image, imageEdit } from "../../src/providers/black-forest-labs";
 import { expectAssignable } from "./helpers";
 
 function flux2TypeTests(): void {
@@ -59,7 +59,7 @@ function flux2TypeTests(): void {
 }
 
 function kontextTypeTests(): void {
-  const v = fluxKontext({
+  const v = imageEdit({
     model: "flux-kontext-pro",
     prompt: "replace the sky",
     input_image: "data:image/png;base64,xxxx",
@@ -72,19 +72,19 @@ function kontextTypeTests(): void {
   expectAssignable<string>(JSON.stringify(v));
 
   // @ts-expect-error kontext sizes via aspect_ratio, not width
-  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", width: 1024 });
+  imageEdit({ model: "flux-kontext-pro", prompt: "hi", width: 1024 });
   // @ts-expect-error ExactKeys rejects typo'd keys
-  fluxKontext({ model: "flux-kontext-max", prompt: "hi", aspectratio: "16:9" });
+  imageEdit({ model: "flux-kontext-max", prompt: "hi", aspectratio: "16:9" });
 
   // The preset union autocompletes the documented 21:9 … 9:21 rule space.
-  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "21:9" });
-  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "9:21" });
+  imageEdit({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "21:9" });
+  imageEdit({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "9:21" });
   // Ratios BFL never enumerated stay legal — the space is free-form "W:H".
-  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "7:3" });
+  imageEdit({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "7:3" });
   // @ts-expect-error non-ratio strings are compile errors (was a bare `string`)
-  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "" });
+  imageEdit({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "" });
   // @ts-expect-error "WIDTHxHEIGHT" is the wrong wire shape for a ratio field
-  fluxKontext({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "16x9" });
+  imageEdit({ model: "flux-kontext-pro", prompt: "hi", aspect_ratio: "16x9" });
 }
 
 function flux1TypeTests(): void {

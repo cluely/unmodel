@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { videoReframe, REFRAME_VIDEO_URL } from "./video-reframe";
-import { reframeImage, REFRAME_IMAGE_URL } from "./reframe-image";
+import { imageEditReframe, REFRAME_IMAGE_URL } from "./image-edit-reframe";
 import { LUMA_VIDEO_DIMENSIONS, LUMA_IMAGE_DIMENSIONS } from "./pricing";
 import { LUMA_ASPECT_RATIOS } from "./video";
 import type { ValidateOptions } from "../../core/options";
@@ -10,7 +10,7 @@ const safeVideoUnchecked = videoReframe.safe as unknown as (
   params: unknown,
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
-const safeImageUnchecked = reframeImage.safe as unknown as (
+const safeImageUnchecked = imageEditReframe.safe as unknown as (
   params: unknown,
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
@@ -77,9 +77,9 @@ describe("luma.videoReframe", () => {
   });
 });
 
-describe("luma.reframeImage", () => {
+describe("luma.imageEditReframe", () => {
   test("returns a wire-pure body with URL and method", () => {
-    const v = reframeImage({
+    const v = imageEditReframe({
       model: "photon-1",
       media: IMAGE,
       aspect_ratio: "16:9",
@@ -101,7 +101,7 @@ describe("luma.reframeImage", () => {
   });
 
   test("a ray model on the image route warns as unknown_model", () => {
-    const r = reframeImage.safe({ model: "ray-2", media: IMAGE, aspect_ratio: "16:9" });
+    const r = imageEditReframe.safe({ model: "ray-2", media: IMAGE, aspect_ratio: "16:9" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });

@@ -1,18 +1,18 @@
 import { describe, expect, test } from "bun:test";
 import {
-  stableImageErase,
-  stableImageInpaint,
-  stableImageOutpaint,
-  stableImageSearchAndReplace,
-  stableImageSearchAndRecolor,
-  stableImageRemoveBackground,
+  imageEditErase,
+  imageEditInpaint,
+  imageEditOutpaint,
+  imageEditSearchAndReplace,
+  imageEditSearchAndRecolor,
+  imageEditRemoveBackground,
   STABLE_IMAGE_ERASE_URL,
   STABLE_IMAGE_INPAINT_URL,
   STABLE_IMAGE_OUTPAINT_URL,
   STABLE_IMAGE_SEARCH_AND_REPLACE_URL,
   STABLE_IMAGE_SEARCH_AND_RECOLOR_URL,
   STABLE_IMAGE_REMOVE_BACKGROUND_URL,
-} from "./edit";
+} from "./image-edit";
 import { toFormData } from "./image";
 import { models } from "./models";
 import type { ValidateOptions } from "../../core/options";
@@ -52,18 +52,18 @@ describe("stability edit catalog ids", () => {
   // stops resolving. This pins that — the warning is unreachable by design.
   test("every route's fixed catalog id resolves, so unknown_model never fires", () => {
     const routes: Array<[string, ValidateResult<unknown>]> = [
-      ["stable-image-erase", stableImageErase.safe({ image: png() })],
-      ["stable-image-inpaint", stableImageInpaint.safe({ image: png(), prompt: "x" })],
-      ["stable-image-outpaint", stableImageOutpaint.safe({ image: png(), left: 100 })],
+      ["stable-image-erase", imageEditErase.safe({ image: png() })],
+      ["stable-image-inpaint", imageEditInpaint.safe({ image: png(), prompt: "x" })],
+      ["stable-image-outpaint", imageEditOutpaint.safe({ image: png(), left: 100 })],
       [
         "stable-image-search-and-replace",
-        stableImageSearchAndReplace.safe({ image: png(), prompt: "a", search_prompt: "b" }),
+        imageEditSearchAndReplace.safe({ image: png(), prompt: "a", search_prompt: "b" }),
       ],
       [
         "stable-image-search-and-recolor",
-        stableImageSearchAndRecolor.safe({ image: png(), prompt: "a", select_prompt: "b" }),
+        imageEditSearchAndRecolor.safe({ image: png(), prompt: "a", select_prompt: "b" }),
       ],
-      ["stable-image-remove-background", stableImageRemoveBackground.safe({ image: png() })],
+      ["stable-image-remove-background", imageEditRemoveBackground.safe({ image: png() })],
     ];
     for (const [id, r] of routes) {
       expect(Object.hasOwn(models, id)).toBe(true);
@@ -73,10 +73,10 @@ describe("stability edit catalog ids", () => {
   });
 });
 
-describe("stability.stableImageInpaint", () => {
+describe("stability.imageEditInpaint", () => {
   test("returns multipart-ready fields with an empty header map", () => {
     const image = png();
-    const v = stableImageInpaint({ image, prompt: "a golden retriever" });
+    const v = imageEditInpaint({ image, prompt: "a golden retriever" });
     expect(Object.keys(v)).toEqual(["image", "prompt"]);
     expect(v.request.url).toBe(STABLE_IMAGE_INPAINT_URL);
     expect(v.request.headers).toEqual({});
@@ -86,8 +86,8 @@ describe("stability.stableImageInpaint", () => {
   });
 
   test("grow_mask goes to 100 on inpaint (the rest of the family caps at 20)", () => {
-    expect(stableImageInpaint.safe({ image: png(), prompt: "x", grow_mask: 100 }).ok).toBe(true);
-    const over = (stableImageInpaint.safe as unknown as Unchecked)({
+    expect(imageEditInpaint.safe({ image: png(), prompt: "x", grow_mask: 100 }).ok).toBe(true);
+    const over = (imageEditInpaint.safe as unknown as Unchecked)({
       image: png(),
       prompt: "x",
       grow_mask: 101,
@@ -96,64 +96,64 @@ describe("stability.stableImageInpaint", () => {
   });
 
   test("prompt is required", () => {
-    const r = (stableImageInpaint.safe as unknown as Unchecked)({ image: png() });
+    const r = (imageEditInpaint.safe as unknown as Unchecked)({ image: png() });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["prompt"]);
   });
 
   test("costs 5 credits ($0.05)", () => {
-    const r = stableImageInpaint.safe({ image: png(), prompt: "x" });
+    const r = imageEditInpaint.safe({ image: png(), prompt: "x" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.05, 10);
   });
 });
 
-describe("stability.stableImageErase", () => {
+describe("stability.imageEditErase", () => {
   test("returns multipart-ready fields with an empty header map", () => {
-    const v = stableImageErase({ image: png(), mask: png(), grow_mask: 10 });
+    const v = imageEditErase({ image: png(), mask: png(), grow_mask: 10 });
     expect(Object.keys(v)).toEqual(["image", "mask", "grow_mask"]);
     expect(v.request.url).toBe(STABLE_IMAGE_ERASE_URL);
     expect(v.request.headers).toEqual({});
   });
 
   test("needs only an image and caps grow_mask at 20", () => {
-    expect(stableImageErase.safe({ image: png() }).ok).toBe(true);
-    expect(stableImageErase.safe({ image: png(), grow_mask: 20 }).ok).toBe(true);
-    const over = (stableImageErase.safe as unknown as Unchecked)({ image: png(), grow_mask: 21 });
+    expect(imageEditErase.safe({ image: png() }).ok).toBe(true);
+    expect(imageEditErase.safe({ image: png(), grow_mask: 20 }).ok).toBe(true);
+    const over = (imageEditErase.safe as unknown as Unchecked)({ image: png(), grow_mask: 21 });
     expect(over.ok).toBe(false);
   });
 
   test("a non-Blob image is an invalid_shape error", () => {
-    const r = (stableImageErase.safe as unknown as Unchecked)({ image: "./cat.png" });
+    const r = (imageEditErase.safe as unknown as Unchecked)({ image: "./cat.png" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
   });
 });
 
-describe("stability.stableImageOutpaint", () => {
+describe("stability.imageEditOutpaint", () => {
   test("returns multipart-ready fields with an empty header map", () => {
-    const v = stableImageOutpaint({ image: png(), left: 200, creativity: 0.5 });
+    const v = imageEditOutpaint({ image: png(), left: 200, creativity: 0.5 });
     expect(Object.keys(v)).toEqual(["image", "left", "creativity"]);
     expect(v.request.url).toBe(STABLE_IMAGE_OUTPAINT_URL);
     expect(v.request.headers).toEqual({});
   });
 
   test("requires at least one non-zero direction", () => {
-    const none = (stableImageOutpaint.safe as unknown as Unchecked)({ image: png() });
+    const none = (imageEditOutpaint.safe as unknown as Unchecked)({ image: png() });
     expect(none.ok).toBe(false);
     if (!none.ok) expect(none.errors[0]?.message).toContain("at least one outpainting direction");
 
-    expect(stableImageOutpaint.safe({ image: png(), left: 200 }).ok).toBe(true);
+    expect(imageEditOutpaint.safe({ image: png(), left: 200 }).ok).toBe(true);
   });
 
   test("each side is capped at 2000 px", () => {
-    expect(stableImageOutpaint.safe({ image: png(), up: 2000 }).ok).toBe(true);
-    const over = (stableImageOutpaint.safe as unknown as Unchecked)({ image: png(), up: 2001 });
+    expect(imageEditOutpaint.safe({ image: png(), up: 2000 }).ok).toBe(true);
+    const over = (imageEditOutpaint.safe as unknown as Unchecked)({ image: png(), up: 2001 });
     expect(over.ok).toBe(false);
   });
 
   test("costs 4 credits ($0.04)", () => {
-    const r = stableImageOutpaint.safe({ image: png(), down: 100 });
+    const r = imageEditOutpaint.safe({ image: png(), down: 100 });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.04, 10);
   });
@@ -161,7 +161,7 @@ describe("stability.stableImageOutpaint", () => {
 
 describe("stability search-and-* routes", () => {
   test("each returns multipart-ready fields on its own route with empty headers", () => {
-    const replace = stableImageSearchAndReplace({
+    const replace = imageEditSearchAndReplace({
       image: png(),
       prompt: "a dog",
       search_prompt: "cat",
@@ -170,7 +170,7 @@ describe("stability search-and-* routes", () => {
     expect(replace.request.url).toBe(STABLE_IMAGE_SEARCH_AND_REPLACE_URL);
     expect(replace.request.headers).toEqual({});
 
-    const recolor = stableImageSearchAndRecolor({
+    const recolor = imageEditSearchAndRecolor({
       image: png(),
       prompt: "blue",
       select_prompt: "car",
@@ -181,39 +181,39 @@ describe("stability search-and-* routes", () => {
   });
 
   test("search-and-replace requires prompt + search_prompt", () => {
-    const missing = (stableImageSearchAndReplace.safe as unknown as Unchecked)({
+    const missing = (imageEditSearchAndReplace.safe as unknown as Unchecked)({
       image: png(),
       prompt: "a dog",
     });
     expect(missing.ok).toBe(false);
     expect(
-      stableImageSearchAndReplace.safe({ image: png(), prompt: "a dog", search_prompt: "cat" }).ok,
+      imageEditSearchAndReplace.safe({ image: png(), prompt: "a dog", search_prompt: "cat" }).ok,
     ).toBe(true);
   });
 
   test("search-and-recolor requires prompt + select_prompt", () => {
-    const missing = (stableImageSearchAndRecolor.safe as unknown as Unchecked)({
+    const missing = (imageEditSearchAndRecolor.safe as unknown as Unchecked)({
       image: png(),
       prompt: "blue",
     });
     expect(missing.ok).toBe(false);
     expect(
-      stableImageSearchAndRecolor.safe({ image: png(), prompt: "blue", select_prompt: "car" }).ok,
+      imageEditSearchAndRecolor.safe({ image: png(), prompt: "blue", select_prompt: "car" }).ok,
     ).toBe(true);
   });
 });
 
-describe("stability.stableImageRemoveBackground", () => {
+describe("stability.imageEditRemoveBackground", () => {
   test("returns multipart-ready fields with an empty header map", () => {
-    const v = stableImageRemoveBackground({ image: png(), output_format: "webp" });
+    const v = imageEditRemoveBackground({ image: png(), output_format: "webp" });
     expect(Object.keys(v)).toEqual(["image", "output_format"]);
     expect(v.request.url).toBe(STABLE_IMAGE_REMOVE_BACKGROUND_URL);
     expect(v.request.headers).toEqual({});
   });
 
   test("output_format is png/webp only — jpeg cannot carry alpha", () => {
-    expect(stableImageRemoveBackground.safe({ image: png(), output_format: "webp" }).ok).toBe(true);
-    const jpeg = (stableImageRemoveBackground.safe as unknown as Unchecked)({
+    expect(imageEditRemoveBackground.safe({ image: png(), output_format: "webp" }).ok).toBe(true);
+    const jpeg = (imageEditRemoveBackground.safe as unknown as Unchecked)({
       image: png(),
       output_format: "jpeg",
     });
@@ -222,7 +222,7 @@ describe("stability.stableImageRemoveBackground", () => {
   });
 
   test("costs 5 credits ($0.05)", () => {
-    const r = stableImageRemoveBackground.safe({ image: png() });
+    const r = imageEditRemoveBackground.safe({ image: png() });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.05, 10);
   });

@@ -22,12 +22,12 @@ export type {
 } from "./image";
 
 export {
-  stableImageErase,
-  stableImageInpaint,
-  stableImageOutpaint,
-  stableImageSearchAndReplace,
-  stableImageSearchAndRecolor,
-  stableImageRemoveBackground,
+  imageEditErase,
+  imageEditInpaint,
+  imageEditOutpaint,
+  imageEditSearchAndReplace,
+  imageEditSearchAndRecolor,
+  imageEditRemoveBackground,
   STABLE_IMAGE_ERASE_URL,
   STABLE_IMAGE_INPAINT_URL,
   STABLE_IMAGE_OUTPAINT_URL,
@@ -36,7 +36,7 @@ export {
   STABLE_IMAGE_REMOVE_BACKGROUND_URL,
   STABILITY_OUTPAINT_MAX_PIXELS,
   STABILITY_ALPHA_OUTPUT_FORMATS,
-} from "./edit";
+} from "./image-edit";
 export type {
   StableImageEraseParams,
   StableImageInpaintParams,
@@ -45,7 +45,7 @@ export type {
   StableImageSearchAndRecolorParams,
   StableImageRemoveBackgroundParams,
   StabilityAlphaOutputFormat,
-} from "./edit";
+} from "./image-edit";
 
 export {
   music,

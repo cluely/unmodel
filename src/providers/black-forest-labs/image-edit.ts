@@ -7,7 +7,7 @@
  * - Kontext is BFL's image-editing family: text-to-image OR image editing via
  *   base64/URL `input_image` (plus experimental multiref `input_image_2..4`).
  *   Both routes share one input schema (FluxKontextProInputs), so a single
- *   `fluxKontext()` endpoint fn discriminated on `model` mirrors the API; the
+ *   `imageEdit()` endpoint fn discriminated on `model` mirrors the API; the
  *   `model` pseudo-param is STRIPPED from the wire body and interpolated into
  *   `.request.url` (the model is the route on this API).
  * - Kontext differs from the FLUX.2 routes: sizing is `aspect_ratio`
@@ -135,7 +135,7 @@ function finalize(params: FluxKontextParams): unknown {
 }
 
 const validator = createValidator<FluxKontextParams, unknown>({
-  endpoint: "black-forest-labs.fluxKontext",
+  endpoint: "black-forest-labs.imageEdit",
   schema: kontextSchema,
   modelId: (params) => params.model,
   catalog: models,
@@ -156,7 +156,7 @@ const validator = createValidator<FluxKontextParams, unknown>({
  * scope). Auth is your job: add an `x-key` header when fetching.
  *
  * ```ts
- * const params = blackForestLabs.fluxKontext({
+ * const params = blackForestLabs.imageEdit({
  *   model: "flux-kontext-pro",
  *   prompt: "replace the sky with a thunderstorm",
  *   input_image: imageBase64,
@@ -168,7 +168,7 @@ const validator = createValidator<FluxKontextParams, unknown>({
  * });
  * ```
  */
-export const fluxKontext = validator as unknown as {
+export const imageEdit = validator as unknown as {
   <T extends FluxKontextParams>(
     params: T & ExactKeys<T, FluxKontextParams>,
     options?: ValidateOptions,

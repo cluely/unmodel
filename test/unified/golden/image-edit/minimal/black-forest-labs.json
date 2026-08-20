@@ -1,0 +1,14 @@
+{
+  "ref": "black-forest-labs/flux-kontext-pro",
+  "image": {
+    "data": "aVZCT1J3MEtHZ28="
+  },
+  "params": {
+    "prompt": "make it winter",
+    "input_image": "aVZCT1J3MEtHZ28="
+  },
+  "url": "https://api.bfl.ai/v1/flux-kontext-pro",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

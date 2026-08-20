@@ -491,17 +491,17 @@ credit-based) pricing:
 | --- | --- | --- |
 | `unmodel/openai` | `image` (gpt-image + DALL·E), `checkImages` | `imageEdit` + `imageEditToFormData` |
 | `unmodel/google` | `image` (Imagen 4 fast/standard/ultra) | — (Gemini image editing goes through `chat`) |
-| `unmodel/black-forest-labs` | `image` (FLUX.2 route family), `imageFlux1` (FLUX 1.1 / dev / ultra), `fluxKontext` | `fluxFill`, `fluxExpand`, `fluxOutpainting`, `fluxErase`, `fluxDeblur`, `fluxVto` |
+| `unmodel/black-forest-labs` | `image` (FLUX.2 route family), `imageFlux1` (FLUX 1.1 / dev / ultra), `imageEdit` | `imageEditFill`, `imageEditExpand`, `imageEditOutpainting`, `imageEditErase`, `imageEditDeblur`, `imageEditVto` |
 | `unmodel/bria` | `image`, `imageLite` (FIBO / Fibo Lite) | `imageEdit` |
 | `unmodel/bytedance` | `image` (Seedream 4.x/5.x on BytePlus ModelArk — reference images ride the same route) | — |
 | `unmodel/kling` | `image`, `imageOmni` | — |
 | `unmodel/krea` | `image` | — |
 | `unmodel/leonardo` | `image` (Lucid Origin/Realism, Phoenix) | — |
-| `unmodel/recraft` | `image` | `imageToImage`, `inpaint`, `outpaint`, `generateBackground`, `replaceBackground` (+ `toFormData`) |
-| `unmodel/ideogram` (+ `toFormData`) | `image` (v3), `imageV4` | `edit`, `remix`, `reframe`, `replaceBackground` |
-| `unmodel/reve` | `image` (v1), `imageV2` | `edit`, `remix` |
-| `unmodel/stability` (+ `toFormData`) | `image` (Ultra), `imageCore`, `imageSd3` | `stableImageErase`, `stableImageInpaint`, `stableImageOutpaint`, `stableImageSearchAndReplace`, `stableImageSearchAndRecolor`, `stableImageRemoveBackground` |
-| `unmodel/luma` | `image` (Photon) | `reframeImage` |
+| `unmodel/recraft` | `image` | `imageEdit`, `imageEditInpaint`, `imageEditOutpaint`, `imageEditGenerateBackground`, `imageEditReplaceBackground` (+ `toFormData`) |
+| `unmodel/ideogram` (+ `toFormData`) | `image` (v3), `imageV4` | `imageEdit`, `imageEditRemix`, `imageEditReframe`, `imageEditReplaceBackground` |
+| `unmodel/reve` | `image` (v1), `imageV2` | `imageEdit`, `imageEditRemix` |
+| `unmodel/stability` (+ `toFormData`) | `image` (Ultra), `imageCore`, `imageSd3` | `imageEditErase`, `imageEditInpaint`, `imageEditOutpaint`, `imageEditSearchAndReplace`, `imageEditSearchAndRecolor`, `imageEditRemoveBackground` |
+| `unmodel/luma` | `image` (Photon) | `imageEditReframe` |
 | `unmodel/runway` | `image` | — |
 | `unmodel/vidu` | `imageFromReference` | — |
 
@@ -512,6 +512,16 @@ generation route qualifies the extras (`imageCore`, `imageV4`, `imageFlux1`) and
 never the primary one. The URL constants and wire types keep their wire
 spelling. One canonical `image()` over all fifteen lives at
 [`unmodel/image`](#unified-media-one-vocabulary-per-category).
+
+The editing column follows the same law with its own verb: every image-to-image
+route is `imageEdit`, and each extra route qualifies by *what it does to the
+picture* (`imageEditInpaint`, `imageEditErase`, `imageEditReframe`,
+`imageEditSearchAndReplace`) rather than by the wire path or the vendor's
+product name — `/v1/images/imageToImage`, `/v1/ideogram-v3/remix`,
+`/v2beta/stable-image/edit/search-and-replace` and FLUX Kontext all keep their
+spellings on the URL constants and the `*Params` types. One canonical
+`imageEdit()` over four of them lives at
+[`unmodel/image-edit`](#unified-media-one-vocabulary-per-category).
 
 `toFormData` sits on the subpath, not on one route: Ideogram's and Stability's
 image routes are multipart end to end, so the same helper builds the body for
@@ -611,10 +621,10 @@ canonical `music()` over the two text-to-music routes lives at
 
 Everything above is a provider's **own** wire format, which is the point of this
 library — but sometimes you want to write one request and point it at any
-provider. `unmodel/image`, `unmodel/speech`, `unmodel/video`,
-`unmodel/transcribe` and `unmodel/music` are that: one canonical camelCase
-vocabulary per media category, compiled to whichever provider the
-`"provider/model"` ref names.
+provider. `unmodel/image`, `unmodel/image-edit`, `unmodel/speech`,
+`unmodel/video`, `unmodel/transcribe` and `unmodel/music` are that: one
+canonical camelCase vocabulary per media category, compiled to whichever
+provider the `"provider/model"` ref names.
 
 ```ts
 import { image } from "unmodel/image";
@@ -663,13 +673,39 @@ image({ model: "openai/gpt-image-1", prompt: "…", seed: 7 });
 | Entry | Providers | Vocabulary |
 | --- | --- | --- |
 | `unmodel/image` | 15 | `prompt`, `aspectRatio` XOR `dimensions`, `resolution` tier, `n`, `seed`, `negativePrompt`, `outputFormat`, `outputDelivery` |
+| `unmodel/image-edit` | 4 | `operation`, `prompt`, `image` (`file` / `url` / `data`), `strength`, `aspectRatio` XOR `dimensions`, `n`, `seed`, `outputFormat` |
 | `unmodel/speech` | 14 | `text`, `voice`, `outputFormat`, `speed`, `language` |
 | `unmodel/video` | 10 | `prompt`, `duration` (seconds), `resolution` tier, `aspectRatio`, `image` (first / last / reference), `video`, `negativePrompt`, `seed`, `n` |
 | `unmodel/transcribe` | 11 | `audio` (`file` / `url` / `fileId`), `language`, `languages`, `diarization`, `timestamps`, `prompt` |
 | `unmodel/music` | 2 | `prompt`, `durationSeconds`, `instrumental`, `outputFormat`, `seed` |
 
-`image-edit` ships the factory and its vocabulary today; its pack lands as its
-adapters do.
+**In `unmodel/image-edit`, `strength` means one thing in one direction — and
+`image` narrows to the route.** `strength: 0` keeps the source, `strength: 1`
+ignores it. Providers spell that a dozen ways and at least one spells it
+*backwards*: Ideogram's `image_weight` is how strongly the output should
+**resemble** the input, so `strength: 0` compiles to `image_weight: 100` and
+`strength: 0.5` to `image_weight: 50` — which is also that route's own default.
+Recraft's `strength` already runs the canonical way and is passed through
+untouched; OpenAI and Black Forest Labs have no dial at all and say so.
+
+The source picture arrives differently per route, and — exactly as `audio` does
+at `unmodel/transcribe` — the ref decides which shapes type-check:
+
+```ts
+import { imageEdit } from "unmodel/image-edit";
+
+imageEdit({ operation: "edit", model: "openai/gpt-image-1.5", prompt, image: { file } });  // ok
+imageEdit({ operation: "edit", model: "openai/gpt-image-1.5", prompt, image: { url } });   // compile error
+imageEdit({ operation: "edit", model: "black-forest-labs/flux-kontext-pro", prompt, image: { data } }); // ok
+imageEdit({ operation: "edit", model: "black-forest-labs/flux-kontext-pro", prompt, image: { file } }); // compile error
+```
+
+`operation` is `"edit"` and only `"edit"` in v1. Inpainting, outpainting,
+erase, background replacement and virtual try-on all need a mask or a second
+image the vocabulary has no word for, so they stay reachable by name at
+`unmodel/<provider>` (`recraft.imageEditInpaint`,
+`stability.imageEditSearchAndReplace`, `black-forest-labs.imageEditFill`, …).
+The discriminant exists so they can join later without widening the type.
 
 **In `unmodel/transcribe`, `audio` narrows to the route — at compile time.**
 Transcription APIs disagree about how audio arrives, and the disagreement is
@@ -924,7 +960,7 @@ Every provider lives on its own subpath; importing one pulls in nothing from the
 | `unmodel/catalog` | models.dev snapshot: `catalog`, `getProvider`, `getModel` |
 | `unmodel/ai-sdk` | The `withJsonSchemaTools` adapter for `.toSdk("ai-sdk")` — types plus one pure function, no dependency on `ai` |
 | `unmodel/<provider>/unified` | One provider's adapters for the [unified media surfaces](#unified-media-one-vocabulary-per-category) — that provider's endpoint module and the kernel, nothing else |
-| `unmodel/image`, `unmodel/speech`, `unmodel/video`, `unmodel/transcribe`, `unmodel/music` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createSpeech([…])` / `createVideo([…])` / `createTranscribe([…])` / `createMusic([…])` is how you pay for two instead of fifteen |
+| `unmodel/image`, `unmodel/image-edit`, `unmodel/speech`, `unmodel/video`, `unmodel/transcribe`, `unmodel/music` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createImageEdit([…])` / `createSpeech([…])` / `createVideo([…])` / `createTranscribe([…])` / `createMusic([…])` is how you pay for two instead of fifteen |
 
 Retargeting keeps that story intact. The wire-format **codecs** are per dialect
 (four of them), not per provider, so `unmodel/anthropic` reaches
@@ -935,9 +971,10 @@ and a URL swap, no codec at all.
 
 ## Status
 
-Current coverage: 153 request validators across 70 provider subpaths, plus two
-unified media surfaces (`unmodel/image` over 15 providers, `unmodel/speech` over 14,
-`unmodel/video` over 10, `unmodel/transcribe` over 11, `unmodel/music` over 2).
+Current coverage: 153 request validators across 70 provider subpaths, plus all
+six unified media surfaces (`unmodel/image` over 15 providers, `unmodel/speech`
+over 14, `unmodel/transcribe` over 11, `unmodel/video` over 10,
+`unmodel/image-edit` over 4, `unmodel/music` over 2).
 
 - **OpenAI** — Chat Completions, Images + image edits, Speech (TTS), Transcription (STT), Sora videos, Realtime session config.
 - **Anthropic** Messages; **Google** Gemini `chat`, Imagen `image`, Veo `video`; **Cohere** v2 Chat.

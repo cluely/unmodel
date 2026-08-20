@@ -127,7 +127,7 @@ function finalizeEdit(params: EditParams): unknown {
 }
 
 const editValidator = createValidator<EditParams, unknown>({
-  endpoint: "reve.edit",
+  endpoint: "reve.imageEdit",
   schema: editSchema,
   modelId: (params) => resolveReveVersion("edit", params.version),
   catalog: models,
@@ -141,14 +141,14 @@ const editValidator = createValidator<EditParams, unknown>({
  * language editing of one base64 image).
  *
  * ```ts
- * const params = reve.edit({
+ * const params = reve.imageEdit({
  *   edit_instruction: "make the sky stormy",
  *   reference_image: base64Png,
  *   version: "latest-fast",
  * });
  * ```
  */
-export const edit = editValidator as unknown as {
+export const imageEdit = editValidator as unknown as {
   <T extends EditParams>(
     params: T & ExactKeys<T, EditParams>,
     options?: ValidateOptions,
@@ -242,7 +242,7 @@ function finalizeRemix(params: RemixParams): unknown {
 }
 
 const remixValidator = createValidator<RemixParams, unknown>({
-  endpoint: "reve.remix",
+  endpoint: "reve.imageEditRemix",
   schema: remixSchema,
   modelId: (params) => resolveReveVersion("remix", params.version),
   catalog: models,
@@ -256,13 +256,13 @@ const remixValidator = createValidator<RemixParams, unknown>({
  * 1–6 reference images).
  *
  * ```ts
- * const params = reve.remix({
+ * const params = reve.imageEditRemix({
  *   prompt: "the product from <img>0</img> on a marble table",
  *   reference_images: [base64Png],
  * });
  * ```
  */
-export const remix = remixValidator as unknown as {
+export const imageEditRemix = remixValidator as unknown as {
   <T extends RemixParams>(
     params: T & ExactKeys<T, RemixParams>,
     options?: ValidateOptions,

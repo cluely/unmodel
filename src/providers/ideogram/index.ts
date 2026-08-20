@@ -40,21 +40,21 @@ export type {
 } from "./image-v4";
 
 export {
-  edit,
-  remix,
-  reframe,
-  replaceBackground,
+  imageEdit,
+  imageEditRemix,
+  imageEditReframe,
+  imageEditReplaceBackground,
   IDEOGRAM_V3_EDIT_URL,
   IDEOGRAM_V3_REMIX_URL,
   IDEOGRAM_V3_REFRAME_URL,
   IDEOGRAM_V3_REPLACE_BACKGROUND_URL,
-} from "./edit";
+} from "./image-edit";
 export type {
   EditParams,
   RemixParams,
   ReframeParams,
   ReplaceBackgroundParams,
-} from "./edit";
+} from "./image-edit";
 
 export {
   models,

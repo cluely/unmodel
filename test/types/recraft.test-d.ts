@@ -6,7 +6,7 @@
  * both the generations route and the outpaint route, so junk compiled and the
  * documented per-model size tables were invisible.
  */
-import { image, outpaint } from "../../src/providers/recraft";
+import { image, imageEditOutpaint } from "../../src/providers/recraft";
 import { expectAssignable } from "./helpers";
 
 declare const imageBlob: Blob;
@@ -44,13 +44,13 @@ function outpaintSizeTypeTests(): void {
   // The outpaint route shares the RecraftSize vocabulary; it is
   // recraftv3 / recraftv3_vector only, so the V2/V3 table and the shared
   // aspect ratios are the meaningful presets.
-  outpaint({ image: imageBlob, prompt: "wider", size: "1024x1024" });
-  outpaint({ image: imageBlob, prompt: "wider", size: "3:2" });
+  imageEditOutpaint({ image: imageBlob, prompt: "wider", size: "1024x1024" });
+  imageEditOutpaint({ image: imageBlob, prompt: "wider", size: "3:2" });
 
   // @ts-expect-error — junk no longer compiles (`size` was a bare `string`)
-  outpaint({ image: imageBlob, prompt: "wider", size: "banana" });
+  imageEditOutpaint({ image: imageBlob, prompt: "wider", size: "banana" });
   // @ts-expect-error — the empty string is not a size
-  outpaint({ image: imageBlob, prompt: "wider", size: "" });
+  imageEditOutpaint({ image: imageBlob, prompt: "wider", size: "" });
 }
 
 export { generationsSizeTypeTests, outpaintSizeTypeTests };

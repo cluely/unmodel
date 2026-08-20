@@ -1,0 +1,25 @@
+{
+  "ref": "revai/machine",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "transcriber": "machine",
+    "source_config": {
+      "url": "https://example.com/interview.wav"
+    },
+    "language": "pt"
+  },
+  "url": "https://api.rev.ai/speechtotext/v1/jobs",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "issues": [
+    {
+      "code": "unsupported_param",
+      "path": [
+        "model"
+      ]
+    }
+  ]
+}

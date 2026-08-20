@@ -356,7 +356,7 @@ export const TRANSCRIPTION_RESPONSE_FORMATS = [
  * arbiter.
  *
  * NOTE: this list is currently advisory. It rides the family rule below, but
- * `checkUpload` (transcription.ts) deliberately passes `formats: undefined`
+ * `checkUpload` (transcribe.ts) deliberately passes `formats: undefined`
  * because these are file EXTENSIONS and a Blob carries only a MIME type, so
  * nothing is enforced against it today. It is exported so callers can do
  * their own extension check before uploading.
@@ -418,7 +418,7 @@ const NON_DIARIZE_DENIES: Record<string, DenyRule> = {
 };
 
 /**
- * Per-model constraint table for openai.transcription, audited against the
+ * Per-model constraint table for openai.transcribe, audited against the
  * createTranscription API reference (openai@7.4.0 OpenAPI-generated
  * docstrings) and the speech-to-text guide on 2026-08-13.
  *

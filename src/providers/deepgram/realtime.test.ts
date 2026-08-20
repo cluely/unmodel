@@ -17,7 +17,7 @@ import {
   FLUX_KEYTERMS_MAX,
   EOT_THRESHOLD_DEFAULT,
 } from "./realtime";
-import { listen } from "./listen";
+import { transcribe } from "./transcribe";
 import { models, NOVA_3_USD_PER_MINUTE } from "./models";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -84,7 +84,7 @@ describe("deepgram.listenLive value space vs the pre-recorded route", () => {
       const live = liveSafe({ model: "nova-3", encoding, sample_rate: 16000 });
       expect(live.ok, `${encoding} should be a live encoding`).toBe(true);
 
-      const batch = unchecked(listen.safe)({ url: "https://a.com/x.wav", encoding });
+      const batch = unchecked(transcribe.safe)({ url: "https://a.com/x.wav", encoding });
       expect(batch.ok, `${encoding} is not documented for pre-recorded`).toBe(false);
     }
     // …and the shared ones stay shared.
@@ -103,7 +103,7 @@ describe("deepgram.listenLive value space vs the pre-recorded route", () => {
   test("callback_method: DELETE is live-only, and case-insensitive", () => {
     expect(liveSafe({ callback: "https://cb.example", callback_method: "DELETE" }).ok).toBe(true);
     expect(liveSafe({ callback: "https://cb.example", callback_method: "delete" }).ok).toBe(true);
-    expect(unchecked(listen.safe)({ url: "https://a.com/x.wav", callback_method: "DELETE" }).ok).toBe(
+    expect(unchecked(transcribe.safe)({ url: "https://a.com/x.wav", callback_method: "DELETE" }).ok).toBe(
       false,
     );
   });
@@ -113,7 +113,7 @@ describe("deepgram.listenLive value space vs the pre-recorded route", () => {
     expect(live.ok).toBe(false);
     if (!live.ok) expect(live.errors[0]?.path).toEqual(["diarize_model"]);
     expect(liveSafe({ model: "nova-3", diarize_model: "v1" }).ok).toBe(true);
-    expect(unchecked(listen.safe)({ url: "https://a.com/x.wav", diarize_model: "v2" }).ok).toBe(true);
+    expect(unchecked(transcribe.safe)({ url: "https://a.com/x.wav", diarize_model: "v2" }).ok).toBe(true);
   });
 });
 

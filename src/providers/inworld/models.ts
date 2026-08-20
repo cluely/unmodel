@@ -21,7 +21,7 @@
 // characters" for `text`, encoded as `limit.characters`. `limit.context: 0`
 // disables token-window checks — none of these are token models. STT has no
 // character limit; its cap is a ~16 MB request-body cap, which is a property
-// of the endpoint (see stt.ts), not of the model.
+// of the endpoint (see transcribe.ts), not of the model.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 

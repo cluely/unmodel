@@ -1,0 +1,7 @@
+{
+  "prompt": "slow post-rock build, brushed drums, no vocals",
+  "outputFormat": {
+    "format": "pcm_s16le",
+    "container": "wav"
+  }
+}

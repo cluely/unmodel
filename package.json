@@ -91,6 +91,10 @@
       "types": "./dist/providers/assemblyai/index.d.ts",
       "default": "./dist/providers/assemblyai/index.js"
     },
+    "./assemblyai/unified": {
+      "types": "./dist/providers/assemblyai/unified.d.ts",
+      "default": "./dist/providers/assemblyai/unified.js"
+    },
     "./azure": {
       "types": "./dist/providers/azure/index.d.ts",
       "default": "./dist/providers/azure/index.js"
@@ -186,6 +190,10 @@
     "./gladia": {
       "types": "./dist/providers/gladia/index.d.ts",
       "default": "./dist/providers/gladia/index.js"
+    },
+    "./gladia/unified": {
+      "types": "./dist/providers/gladia/unified.d.ts",
+      "default": "./dist/providers/gladia/unified.js"
     },
     "./google": {
       "types": "./dist/providers/google/index.d.ts",
@@ -303,6 +311,10 @@
       "types": "./dist/providers/mistral/index.d.ts",
       "default": "./dist/providers/mistral/index.js"
     },
+    "./mistral/unified": {
+      "types": "./dist/providers/mistral/unified.d.ts",
+      "default": "./dist/providers/mistral/unified.js"
+    },
     "./moonshotai": {
       "types": "./dist/providers/moonshotai/index.d.ts",
       "default": "./dist/providers/moonshotai/index.js"
@@ -375,6 +387,10 @@
       "types": "./dist/providers/revai/index.d.ts",
       "default": "./dist/providers/revai/index.js"
     },
+    "./revai/unified": {
+      "types": "./dist/providers/revai/unified.d.ts",
+      "default": "./dist/providers/revai/unified.js"
+    },
     "./reve": {
       "types": "./dist/providers/reve/index.d.ts",
       "default": "./dist/providers/reve/index.js"
@@ -423,6 +439,10 @@
       "types": "./dist/providers/soniox/index.d.ts",
       "default": "./dist/providers/soniox/index.js"
     },
+    "./soniox/unified": {
+      "types": "./dist/providers/soniox/unified.d.ts",
+      "default": "./dist/providers/soniox/unified.js"
+    },
     "./speechify": {
       "types": "./dist/providers/speechify/index.d.ts",
       "default": "./dist/providers/speechify/index.js"
@@ -434,6 +454,10 @@
     "./speechmatics": {
       "types": "./dist/providers/speechmatics/index.d.ts",
       "default": "./dist/providers/speechmatics/index.js"
+    },
+    "./speechmatics/unified": {
+      "types": "./dist/providers/speechmatics/unified.d.ts",
+      "default": "./dist/providers/speechmatics/unified.js"
     },
     "./stability": {
       "types": "./dist/providers/stability/index.d.ts",

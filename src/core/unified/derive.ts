@@ -48,6 +48,11 @@
 import type { AudioContainer, AudioFormat, AudioFormatCodec, AudioFormatRequest } from "./vocabulary/audio";
 import type { AspectRatio, Dimensions, ResolutionTier } from "./vocabulary/common";
 import type { Voice } from "./vocabulary/speech";
+import type {
+  AudioInputKind,
+  Diarization,
+  TimestampGranularity,
+} from "./vocabulary/transcribe";
 import type { VideoImageInput, VideoInput } from "./vocabulary/video";
 import type { CompileIssue, Derived } from "./types";
 import type { Warn } from "../translate/warnings";
@@ -863,6 +868,58 @@ export function toDurationSuffixedString(
   return issues.length > 0 ? { issues } : ok(`${seconds}${suffix}`);
 }
 
+/**
+ * How far off an integer a floating-point product may land and still be read
+ * as that integer.
+ *
+ * `90 * 1000` is exactly 90000, but `0.1 * 1000` is 100.00000000000001 in
+ * IEEE-754 — so a bare `Number.isInteger` check would reject a duration the
+ * caller wrote as a perfectly ordinary decimal. A microsecond of slack is
+ * three orders of magnitude below anything an audio API can act on and
+ * comfortably above the error a single multiplication can introduce.
+ */
+const MILLISECOND_EPSILON = 1e-6;
+
+/**
+ * Seconds → **milliseconds**, exactly, or not at all.
+ *
+ * Half the music category's providers count in milliseconds and half in
+ * seconds, which makes ×1000 the one conversion this vocabulary cannot avoid.
+ * It is deliberately **silent**: a thousandfold unit change is not an
+ * approximation — 90 seconds *is* 90000 ms, with nothing lost and nothing
+ * invented — so warning about it would spend the warning channel's credibility
+ * on arithmetic that is exact. What is *not* exact is a duration that lands
+ * between two milliseconds, and that is an `invalid_shape` naming the value
+ * rather than a rounded one nobody asked for.
+ */
+export function toMilliseconds(seconds: number, ctx: DeriveContext): Derived<number> {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}\` must be a positive number of seconds; got ${JSON.stringify(seconds)}.`,
+      meta: { value: seconds },
+    });
+  }
+  const exact = seconds * 1000;
+  const rounded = Math.round(exact);
+  if (Math.abs(exact - rounded) > MILLISECOND_EPSILON) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      // `toFixed(3)` on the way into the *message* only: a product like
+      // `12.3456 * 1000` is 12345.599999999999 in IEEE-754, and quoting that
+      // back at someone who wrote `12.3456` reads as a bug in unmodel rather
+      // than as the rounding decision they have to make. `meta` keeps the
+      // unrounded number for anything that needs to compute with it.
+      message:
+        `\`${paramOf(ctx)}\` ${seconds} is ${Number(exact.toFixed(3))} ms, and this model's ` +
+        "length field counts whole milliseconds. Round it yourself rather than have unmodel " +
+        "pick a length for you.",
+      meta: { value: seconds, milliseconds: exact },
+    });
+  }
+  return ok(rounded);
+}
+
 // ---------------------------------------------------------------------------
 // Video inputs — the route a request derives, and how each input is encoded
 // ---------------------------------------------------------------------------
@@ -1113,6 +1170,245 @@ export function requireInlineBytes(
     code: "unsupported_param",
     message: `\`${paramOf(ctx)}\` must be inline bytes on this model — a URL has no wire field. ${hint}`,
     meta: { url: ref.url },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Transcription inputs
+// ---------------------------------------------------------------------------
+
+/** `audio`, once it is known which of the three shapes it is. */
+export type AudioSource =
+  | { kind: "file"; file: Blob }
+  | { kind: "url"; url: string }
+  | { kind: "fileId"; fileId: string };
+
+/** How each kind is spelled in a message — the field the caller would write. */
+const AUDIO_SPELLING: Readonly<Record<AudioInputKind, string>> = Object.freeze({
+  file: "{ file }",
+  url: "{ url }",
+  fileId: "{ fileId }",
+});
+
+/**
+ * `audio` narrowed to the one shape it is, checked against what the route takes.
+ *
+ * The runtime half of the category's flagship promise. The compile-time half
+ * (`TranscribeValidator`, driven by the same `audioInputs` array) already
+ * rejects a `Blob` at a URL-only route — but only for a caller in TypeScript
+ * with a literal ref, so this is what answers for everyone else: JavaScript,
+ * a ref assembled at runtime, and a request that came in over the wire.
+ *
+ * The parameter is `unknown` on purpose. A parameter whose invalid case the
+ * type system forbids is a parameter whose invalid case nobody tests, and this
+ * function's whole job is the invalid cases.
+ *
+ * Two shapes at once is an error rather than a precedence rule: `{ url, file }`
+ * is a caller who has not decided, and every one of these APIs rejects the
+ * combination too — picking one silently would send audio the caller did not
+ * choose, at a price per minute.
+ */
+export function resolveAudioInput(
+  audio: unknown,
+  accepts: readonly AudioInputKind[],
+  ctx: DeriveContext,
+  options: { source?: string; hint?: string } = {},
+): Derived<AudioSource> {
+  const offered = accepts.map((kind) => AUDIO_SPELLING[kind]).join(" or ");
+  const meta = {
+    accepts: [...accepts],
+    ...(options.source !== undefined && { source: options.source }),
+  };
+  if (audio === null || typeof audio !== "object") {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` must be an object naming where the audio is; this model takes ${offered}.`,
+      meta: { ...meta, value: audio },
+    });
+  }
+  const record = audio as Record<string, unknown>;
+  const present = (["file", "url", "fileId"] as const).filter((key) => record[key] !== undefined);
+  if (present.length === 0) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` names no audio — it takes ${offered}, and this object has none of ` +
+        "`file`, `url` or `fileId`.",
+      meta,
+    });
+  }
+  if (present.length > 1) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` carries ${present.map((key) => `\`${key}\``).join(" and ")} at once; ` +
+        "exactly one of `file`, `url` or `fileId` says where the audio is.",
+      meta: { ...meta, provided: present },
+    });
+  }
+  const kind = present[0] as AudioInputKind;
+  if (!accepts.includes(kind)) {
+    return bad(ctx, {
+      code: "unsupported_param",
+      message:
+        `\`${paramOf(ctx)}\` was given as \`${AUDIO_SPELLING[kind]}\`, which this model has no wire ` +
+        `field for — it takes ${offered}.${options.hint === undefined ? "" : ` ${options.hint}`}`,
+      meta: { ...meta, given: kind },
+    });
+  }
+  if (kind === "file") {
+    const file = record["file"];
+    if (!(file instanceof Blob)) {
+      return bad(ctx, {
+        code: "invalid_shape",
+        message: `\`${paramOf(ctx)}.file\` must be a Blob or File; got ${typeof file}.`,
+        meta,
+      });
+    }
+    return ok({ kind, file });
+  }
+  const value = record[kind];
+  if (typeof value !== "string" || value === "") {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}.${kind}\` must be a non-empty string; got ${JSON.stringify(value)}.`,
+      meta,
+    });
+  }
+  return kind === "url" ? ok({ kind, url: value }) : ok({ kind, fileId: value });
+}
+
+/**
+ * Which of `diarization`'s four fields this provider has a wire slot for.
+ *
+ * `enabled` is not listed: an adapter that declares `diarization` supported at
+ * all can express the on/off decision, and one that cannot declares the whole
+ * field `unsupported` instead — where the kernel's uniform message applies.
+ */
+export interface DiarizationRules {
+  /** An exact speaker count (`speakers_expected`, `num_speakers`, …). */
+  speakers?: boolean;
+  minSpeakers?: boolean;
+  maxSpeakers?: boolean;
+  source?: string;
+}
+
+/** The counts, after the ones this provider cannot express have been refused. */
+export interface ResolvedDiarization {
+  enabled: boolean;
+  speakers?: number;
+  minSpeakers?: number;
+  maxSpeakers?: number;
+}
+
+/**
+ * `diarization`, checked field by field against what the provider offers.
+ *
+ * Every count the provider has no field for is an `unsupported_param` at its
+ * own canonical path (`["diarization", "maxSpeakers"]`), never a drop — the
+ * commonest way a transcription request quietly does something other than what
+ * was asked is a speaker bound that went nowhere, and the caller is billed for
+ * the run either way.
+ *
+ * A count sent with `enabled: false` is an error too: it asks the provider to
+ * configure a feature the same request turns off, which is a request that has
+ * not decided rather than one the wire can carry.
+ */
+export function resolveDiarization(
+  diarization: Diarization,
+  rules: DiarizationRules,
+  ctx: DeriveContext,
+): Derived<ResolvedDiarization> {
+  const issues: CompileIssue[] = [];
+  const resolved: ResolvedDiarization = { enabled: diarization.enabled === true };
+  const counts = [
+    ["speakers", diarization.speakers, rules.speakers === true],
+    ["minSpeakers", diarization.minSpeakers, rules.minSpeakers === true],
+    ["maxSpeakers", diarization.maxSpeakers, rules.maxSpeakers === true],
+  ] as const;
+
+  for (const [field, value, supported] of counts) {
+    if (value === undefined) continue;
+    if (!resolved.enabled) {
+      issues.push({
+        code: "invalid_shape",
+        path: [...ctx.path, field],
+        message:
+          `\`${paramOf(ctx)}.${field}\` was given with \`enabled: false\` — a speaker count ` +
+          "configures diarization, so a request that sets one has not decided whether it wants it.",
+        meta: { value },
+      });
+      continue;
+    }
+    if (!supported) {
+      issues.push({
+        code: "unsupported_param",
+        path: [...ctx.path, field],
+        message: `\`${paramOf(ctx)}.${field}\` has no wire field on this model.`,
+        meta: { value, ...(rules.source !== undefined && { source: rules.source }) },
+      });
+      continue;
+    }
+    if (!Number.isInteger(value) || value < 1) {
+      issues.push({
+        code: "invalid_shape",
+        path: [...ctx.path, field],
+        message: `\`${paramOf(ctx)}.${field}\` must be a positive integer; got ${JSON.stringify(value)}.`,
+        meta: { value },
+      });
+      continue;
+    }
+    resolved[field] = value;
+  }
+
+  if (
+    resolved.minSpeakers !== undefined &&
+    resolved.maxSpeakers !== undefined &&
+    resolved.minSpeakers > resolved.maxSpeakers
+  ) {
+    issues.push({
+      code: "invalid_shape",
+      path: [...ctx.path, "minSpeakers"],
+      message:
+        `\`${paramOf(ctx)}.minSpeakers\` (${resolved.minSpeakers}) is greater than ` +
+        `\`${paramOf(ctx)}.maxSpeakers\` (${resolved.maxSpeakers}).`,
+      meta: { min: resolved.minSpeakers, max: resolved.maxSpeakers },
+    });
+  }
+  return issues.length === 0 ? ok(resolved) : { issues };
+}
+
+/**
+ * `timestamps`, mapped onto the granularities one provider actually offers.
+ *
+ * `"none"` returns `undefined` — "omit the field", which is what asking for no
+ * timing means on every wire in the category — and a granularity the provider
+ * does not offer is an `invalid_enum_value` naming the ones it does. There is
+ * deliberately no nearest-match: word timings when segments were asked for is
+ * a different response shape, not an approximation of one, and a caller
+ * parsing the result would find out by exception.
+ */
+export function toTimestampGranularity<G extends TimestampGranularity>(
+  requested: TimestampGranularity,
+  supported: readonly G[],
+  ctx: DeriveContext,
+  options: EnumOptions = {},
+): Derived<G | undefined> {
+  if (requested === "none") return ok(undefined);
+  if ((supported as readonly TimestampGranularity[]).includes(requested)) {
+    return ok(requested as G);
+  }
+  return bad(ctx, {
+    code: "invalid_enum_value",
+    message:
+      `\`${paramOf(ctx)}\` ${JSON.stringify(requested)} is not a granularity this model reports; ` +
+      `it offers ${list([...supported, "none"])}.`,
+    meta: {
+      allowed: [...supported, "none"],
+      value: requested,
+      ...(options.source !== undefined && { source: options.source }),
+    },
   });
 }
 

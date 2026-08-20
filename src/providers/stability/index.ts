@@ -48,9 +48,9 @@ export type {
 } from "./edit";
 
 export {
-  stableAudioTextToAudio,
-  stableAudioAudioToAudio,
-  stableAudioInpaint,
+  music,
+  musicFromAudio,
+  musicInpaint,
   stableAudioCredits,
   STABLE_AUDIO_TEXT_TO_AUDIO_URL,
   STABLE_AUDIO_AUDIO_TO_AUDIO_URL,
@@ -63,13 +63,13 @@ export {
   STABILITY_USD_PER_CREDIT,
   DEFAULT_STABLE_AUDIO_MODEL_ID,
   INPAINT_MODEL_ID,
-} from "./audio";
+} from "./music";
 export type {
   StableAudioTextToAudioParams,
   StableAudioAudioToAudioParams,
   StableAudioInpaintParams,
   StableAudioOutputFormat,
-} from "./audio";
+} from "./music";
 
 // No response checker: with the default accept (image/* or audio/*) these
 // endpoints respond with raw bytes, not JSON.

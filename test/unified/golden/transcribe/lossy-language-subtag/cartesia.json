@@ -1,0 +1,34 @@
+{
+  "ref": "cartesia/ink-whisper",
+  "audio": {
+    "file": "@blob"
+  },
+  "params": {
+    "file": {
+      "@blob": {
+        "size": 64,
+        "type": "audio/wav"
+      }
+    },
+    "model": "ink-whisper",
+    "language": "pt"
+  },
+  "url": "https://api.cartesia.ai/stt",
+  "headers": {
+    "Cartesia-Version": "2026-03-01"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "language"
+      ],
+      "meta": {
+        "requested": "pt-BR",
+        "achieved": "pt",
+        "dropped": "BR",
+        "source": "https://docs.cartesia.ai/api-reference/stt/transcribe"
+      }
+    }
+  ]
+}

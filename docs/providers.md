@@ -19,7 +19,7 @@ provider — not their quality ranking.
 
 | Provider | Categories | API style | Tier | models.dev | Notes |
 |---|---|---|---|---|---|
-| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + images + imageEdit + speech + transcription + video + realtime session done) | ✅ | complete for the documented REST surface |
+| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + images + imageEdit + speech + transcribe + video + realtime session done) | ✅ | complete for the documented REST surface |
 | anthropic | llm | native (the reference) | **native** (done) | ✅ | |
 | google | llm, image, video, tts, stt | native | **native** (generateContent + Imagen image + Veo video done) | ✅ | Gemini TTS is validated inside `generateContent` (`responseModalities: ["AUDIO"]` + `speechConfig`); STT likewise via inline/file audio parts |
 | xai (grok) | llm, image, video, stt | openai-compatible (+anthropic-compat) | **oai-base** (live) | ✅ (`xai`) | grok-imagine image/video are native-style, later |
@@ -30,7 +30,7 @@ provider — not their quality ranking.
 | elevenlabs | tts (r11), stt (Scribe, r1), music | native | **native** (TTS+STT+music live; realtime configs live) | ✋ | per-character pricing; `textToSpeechStreamInput` + `speechToTextRealtime` validate the socket configs |
 | cartesia | tts (Sonic, r6), stt (Ink) | native | **native** (TTS+STT live; realtime configs live) | ✋ | `ttsWebsocket` (generation message) + `sttWebsocket` (connection query set) |
 | inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT is inline base64 (no multipart); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
-| soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `transcriptions` + `realtimeTranscription` config message |
+| soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `transcribe` + `realtimeTranscription` config message |
 | stepfun | llm (r83), tts (r5), image-edit | openai-compatible | **oai-base** (chat live) | ✅ | TTS via speech wave |
 
 ## Wave 2 — inference hosts & aggregators (all openai-compatible, all in models.dev → oai-base)
@@ -57,7 +57,7 @@ Native-API exceptions: **cohere** — now **native** (v2 Chat live, `unmodel/coh
 **ibm** (Granite/watsonx), **naver**, **snowflake**.
 Mixed-tier: **minimax** and **mistral** are oai-base for chat *and* native for their media
 routes on the same subpath (`minimax.speech` / `video` / `videoV2`,
-`mistral.transcription`). **bytedance** is a separate native subpath for the BytePlus
+`mistral.transcribe`). **bytedance** is a separate native subpath for the BytePlus
 ModelArk image/video routes — the Doubao chat overlay above is still to do.
 
 ## Speech wave — TTS / STT (native APIs, hand-maintained catalogs ✋)
@@ -72,11 +72,13 @@ resemble (`speech` + `speechStream`), rime, smallest-ai,
 speechify (`speech` + `speechStream`).
 All fourteen also ship a `unified.ts` adapter, so `speech()` from `unmodel/speech` reaches
 them through one canonical vocabulary.
-**Live — STT:** openai (`transcription` — gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/
+**Live — STT:** every provider addresses the route as `transcribe` — openai
+(gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
-deepgram (`listen`), elevenlabs (Scribe), gladia (`preRecorded`), inworld (`transcribe` —
-base64 audio inline in the JSON body, no multipart route), mistral (`transcription`,
-Voxtral), revai (`jobs`), soniox, speechmatics (`jobs`).
+deepgram, elevenlabs (Scribe), gladia, inworld (base64 audio inline in the JSON body, no
+multipart route), mistral (Voxtral), revai, soniox, speechmatics. All eleven also ship a
+`unified.ts` adapter, so `transcribe()` from `unmodel/transcribe` reaches them through one
+canonical vocabulary.
 Google TTS/STT ride on `generateContent` (no separate endpoint upstream).
 **Live — realtime session configs:** the documented JSON config object of each socket surface
 (connection query set, first configuration frame, or per-chunk generation message) — never the
@@ -136,7 +138,9 @@ Several of these are already reachable as hosted routes on `unmodel/runway`
 (`hailuo3`, `seedance2*`, `gemini_omni_flash`, `grok_imagine_1_5`).
 **Excluded:** pika, genmo/haiper, sand-ai, skywork, sapiens-ai (no public API).
 **Music / audio — live:** elevenlabs (Eleven Music, `music`), stability (Stable Audio 2.x:
-`stableAudioTextToAudio` / `stableAudioAudioToAudio` / `stableAudioInpaint`).
+`music` / `musicFromAudio` / `musicInpaint`). Both text-to-music routes ship a `unified.ts`
+adapter behind `music()` from `unmodel/music`; the two audio-conditioned Stability routes are
+wire-only (see `src/unified/music.ts`).
 Remaining: mureka, sonauto. **Excluded:** suno, udio, producer-ai (no public API).
 
 ## LLM creators without a public API today (catalog-only or excluded)
@@ -243,7 +247,7 @@ same `buildAvailability` machinery consumes it unchanged.
    refreshed manually. `ModelCost` carries the non-token rates these modalities need:
    `perMillionCharacters` (TTS), `perAudioMinute` (STT), `perImage`, `perVideoSecond`.
    `ModelLimit.characters` bounds character-priced inputs.
-3. **New endpoint shapes**: TTS (`speech`/`tts`), STT (`transcription`/`stt`/`listen`), image
+3. **New endpoint shapes**: TTS (`speech`/`tts`), STT (`transcribe`), image
    generation and editing, and video generation + post-production, each mirroring its native
    wire format on the same pipeline/constraints machinery. Realtime *transports* stay out of
    scope; the session-config object is validated (`openai.realtimeSession`).
@@ -260,7 +264,7 @@ same `buildAvailability` machinery consumes it unchanged.
    for a *distinct* upload endpoint whose response id then feeds the validator
    (`gladia.toUploadFormData` → `UPLOAD_URL`, `soniox.toUploadFormData` → `FILES_URL`).
    A provider needing both disambiguates per endpoint instead (openai's
-   `imageEditToFormData` / `transcriptionToFormData`).
+   `imageEditToFormData` / `transcribeToFormData`).
 5. **Translation is hub-and-spoke, and the spokes are per *dialect*, not per provider.**
    The hub lives in `src/core/translate/` (`ir.ts`, `warnings.ts`, `endpoints.ts`,
    `retarget.ts`, `ai-sdk.ts`, `availability-types.ts`) and imports nothing from

@@ -1,0 +1,27 @@
+{
+  "ref": "elevenlabs/scribe_v2",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "model_id": "scribe_v2",
+    "source_url": "https://example.com/interview.wav",
+    "language_code": "pt"
+  },
+  "url": "https://api.elevenlabs.io/v1/speech-to-text",
+  "headers": {},
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "language"
+      ],
+      "meta": {
+        "requested": "pt-BR",
+        "achieved": "pt",
+        "dropped": "BR",
+        "source": "https://elevenlabs.io/docs/api-reference/speech-to-text/convert"
+      }
+    }
+  ]
+}

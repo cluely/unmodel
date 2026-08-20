@@ -1,0 +1,11 @@
+{
+  "ref": "elevenlabs/music_v2",
+  "params": {
+    "prompt": "slow post-rock build, brushed drums, no vocals",
+    "model_id": "music_v2"
+  },
+  "url": "https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

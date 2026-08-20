@@ -1,0 +1,17 @@
+{
+  "ref": "elevenlabs/scribe_v2",
+  "audio": {
+    "file": "@blob"
+  },
+  "params": {
+    "model_id": "scribe_v2",
+    "file": {
+      "@blob": {
+        "size": 64,
+        "type": "audio/wav"
+      }
+    }
+  },
+  "url": "https://api.elevenlabs.io/v1/speech-to-text",
+  "headers": {}
+}

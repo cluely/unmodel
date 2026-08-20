@@ -1,0 +1,36 @@
+{
+  "ref": "soniox/stt-async-v5",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "model": "stt-async-v5",
+    "audio_url": "https://example.com/interview.wav",
+    "language_hints": [
+      "pt"
+    ],
+    "language_hints_strict": true
+  },
+  "url": "https://api.soniox.com/v1/transcriptions",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "language"
+      ],
+      "meta": {
+        "requested": "pt",
+        "achieved": {
+          "language_hints": [
+            "pt"
+          ],
+          "language_hints_strict": true
+        },
+        "source": "https://soniox.com/docs/api-reference/stt/transcriptions/create_transcription"
+      }
+    }
+  ]
+}

@@ -58,7 +58,7 @@ export type {
 } from "./speech-to-text-realtime";
 
 export {
-  speechToText,
+  transcribe,
   toFormData,
   speechToTextUrl,
   SPEECH_TO_TEXT_URL,
@@ -66,8 +66,8 @@ export {
   STT_KEYTERM_MAX_WORDS,
   STT_KEYTERMS_MAX,
   STT_MAX_FILE_BYTES,
-} from "./speech-to-text";
-export type { SpeechToTextParams, SpeechToTextSdkParams } from "./speech-to-text";
+} from "./transcribe";
+export type { SpeechToTextParams, SpeechToTextSdkParams } from "./transcribe";
 
 export {
   music,

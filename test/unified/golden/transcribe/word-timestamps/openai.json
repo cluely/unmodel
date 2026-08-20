@@ -1,0 +1,21 @@
+{
+  "ref": "openai/whisper-1",
+  "audio": {
+    "file": "@blob"
+  },
+  "params": {
+    "model": "whisper-1",
+    "file": {
+      "@blob": {
+        "size": 64,
+        "type": "audio/wav"
+      }
+    },
+    "timestamp_granularities": [
+      "word"
+    ],
+    "response_format": "verbose_json"
+  },
+  "url": "https://api.openai.com/v1/audio/transcriptions",
+  "headers": {}
+}

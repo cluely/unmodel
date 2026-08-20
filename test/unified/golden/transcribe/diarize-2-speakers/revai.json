@@ -1,0 +1,18 @@
+{
+  "ref": "revai/machine",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "transcriber": "machine",
+    "source_config": {
+      "url": "https://example.com/interview.wav"
+    },
+    "skip_diarization": false,
+    "speakers_count": 2
+  },
+  "url": "https://api.rev.ai/speechtotext/v1/jobs",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "diarization": {
+    "enabled": true,
+    "speakers": 2
+  }
+}

@@ -1,10 +1,10 @@
 export {
-  transcriptions,
+  transcribe,
   toUploadFormData,
   TRANSCRIPTIONS_URL,
   FILES_URL,
   MAX_AUDIO_DURATION_SECONDS,
-} from "./transcriptions";
+} from "./transcribe";
 export type {
   TranscriptionsBody,
   SonioxTranslation,
@@ -12,7 +12,7 @@ export type {
   SonioxTranslationTwoWay,
   SonioxContextObject,
   SonioxFileUploadParams,
-} from "./transcriptions";
+} from "./transcribe";
 
 export {
   realtimeTranscription,

@@ -159,7 +159,7 @@ const sttModels = {
 
 /**
  * WebSocket-only STT. Listed for catalog completeness and pricing; the batch
- * `speechToText` validator rejects these ids because
+ * `transcribe` validator rejects these ids because
  * POST /v1/speech-to-text cannot serve them.
  */
 const realtimeSttModels = {

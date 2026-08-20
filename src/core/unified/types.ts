@@ -331,6 +331,46 @@ export type AdapterFor<A, R extends string> = [Extract<A, { provider: RefProvide
   : Extract<A, { provider: RefProvider<R> }>;
 
 /**
+ * The variant set an adapter declares for one of its own fields, as a union.
+ *
+ * The compile-time half of a **per-route narrowing**: some categories have a
+ * canonical field whose legal *shapes* depend on the route rather than on the
+ * category. `transcribe`'s `audio` is the case that motivated this — a batch
+ * API that only fetches URLs, a multipart route that only takes a `Blob`, and
+ * a provider whose file API mints ids are three different types for one word —
+ * so a transcribe adapter declares `audioInputs: ["url"] as const` and this
+ * turns that back into `"url"`.
+ *
+ * Generic in the field name rather than hard-coded to `audioInputs` because
+ * the kernel has no business knowing a category's field names, and because the
+ * next category that needs one should not need a second copy of this.
+ *
+ * `Record<Field, …>` distributes over a union of adapters, which is what makes
+ * the degraded case below behave: a ref that is not a literal selects every
+ * adapter, and the union of everything they accept is the honest answer.
+ */
+export type DeclaredInputs<A, Field extends string> =
+  A extends Record<Field, readonly (infer V extends string)[]>
+    ? V
+    : never;
+
+/**
+ * {@link DeclaredInputs}, resolved through a model ref — "which shapes may
+ * `audio` take, given `model: "assemblyai/best"`".
+ *
+ * Composed of the two pieces that already exist rather than reimplementing
+ * either: {@link AdapterFor} picks the adapter (or degrades to the whole
+ * union), and `DeclaredInputs` reads what it declared. A ref naming a provider
+ * with no adapter, or a ref built at runtime, therefore widens to every kind
+ * any adapter in the build accepts — open at compile time, still checked at
+ * runtime, which is the same trade every model list in this library makes.
+ */
+export type InputsFor<A, R extends string, Field extends string> = DeclaredInputs<
+  AdapterFor<A, R>,
+  Field
+>;
+
+/**
  * The `Validated` an adapter's provider endpoint returns.
  *
  * `CompiledCall<any, infer O>` and not `CompiledCall<object, infer O>`: under

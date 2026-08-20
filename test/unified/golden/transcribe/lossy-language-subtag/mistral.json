@@ -1,0 +1,27 @@
+{
+  "ref": "mistral/voxtral-mini-latest",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "model": "voxtral-mini-latest",
+    "file_url": "https://example.com/interview.wav",
+    "language": "pt"
+  },
+  "url": "https://api.mistral.ai/v1/audio/transcriptions",
+  "headers": {},
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "language"
+      ],
+      "meta": {
+        "requested": "pt-BR",
+        "achieved": "pt",
+        "dropped": "BR",
+        "source": "https://docs.mistral.ai/studio/audio/speech_to_text/offline_transcription"
+      }
+    }
+  ]
+}

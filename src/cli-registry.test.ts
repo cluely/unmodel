@@ -18,7 +18,7 @@ import { MULTIPART_ONLY, REGISTRY } from "./cli-registry";
 const EXPECTED_IDS: readonly string[] = [
   "alibaba.chat",
   "anthropic.chat",
-  "assemblyai.transcript",
+  "assemblyai.transcribe",
   "baseten.chat",
   "black-forest-labs.fluxDeblur",
   "black-forest-labs.fluxErase",
@@ -35,28 +35,28 @@ const EXPECTED_IDS: readonly string[] = [
   "bytedance.image",
   "bytedance.video",
   "cartesia.speech",
-  "cartesia.stt",
   "cartesia.sttWebsocket",
+  "cartesia.transcribe",
   "cartesia.ttsWebsocket",
   "cerebras.chat",
   "cohere.chat",
   "deepgram.fluxConfigure",
-  "deepgram.listen",
   "deepgram.listenFlux",
   "deepgram.listenLive",
   "deepgram.speakLive",
   "deepgram.speech",
+  "deepgram.transcribe",
   "deepinfra.chat",
   "deepseek.chat",
   "elevenlabs.music",
   "elevenlabs.speech",
-  "elevenlabs.speechToText",
   "elevenlabs.speechToTextRealtime",
   "elevenlabs.textToSpeechStreamInput",
+  "elevenlabs.transcribe",
   "fireworks-ai.chat",
   "fish-audio.speech",
   "friendli.chat",
-  "gladia.preRecorded",
+  "gladia.transcribe",
   "google.chat",
   "google.image",
   "google.video",
@@ -102,7 +102,7 @@ const EXPECTED_IDS: readonly string[] = [
   "minimax.video",
   "minimax.videoV2",
   "mistral.chat",
-  "mistral.transcription",
+  "mistral.transcribe",
   "moonshotai.chat",
   "murf.speech",
   "murf.speechStream",
@@ -114,7 +114,7 @@ const EXPECTED_IDS: readonly string[] = [
   "openai.imageEdit",
   "openai.realtimeSession",
   "openai.speech",
-  "openai.transcription",
+  "openai.transcribe",
   "openai.video",
   "openrouter.chat",
   "perplexity.chat",
@@ -128,7 +128,7 @@ const EXPECTED_IDS: readonly string[] = [
   "recraft.replaceBackground",
   "resemble.speech",
   "resemble.speechStream",
-  "revai.jobs",
+  "revai.transcribe",
   "reve.edit",
   "reve.image",
   "reve.imageV2",
@@ -143,16 +143,16 @@ const EXPECTED_IDS: readonly string[] = [
   "siliconflow.chat",
   "smallest-ai.speech",
   "soniox.realtimeTranscription",
-  "soniox.transcriptions",
+  "soniox.transcribe",
   "speechify.speech",
   "speechify.speechStream",
-  "speechmatics.jobs",
+  "speechmatics.transcribe",
   "stability.image",
   "stability.imageCore",
   "stability.imageSd3",
-  "stability.stableAudioAudioToAudio",
-  "stability.stableAudioInpaint",
-  "stability.stableAudioTextToAudio",
+  "stability.music",
+  "stability.musicFromAudio",
+  "stability.musicInpaint",
   "stability.stableImageErase",
   "stability.stableImageInpaint",
   "stability.stableImageOutpaint",
@@ -347,6 +347,100 @@ test("the video-category endpoints all use the uniform `video` verb", () => {
     "vidu.img2video",
     "vidu.reference2video",
     "vidu.text2video",
+  ];
+  for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
+ * The speech-to-text half of the law, and the one where the wire spellings
+ * disagreed the most: eleven providers spelled the same operation
+ * `transcription`, `transcriptions`, `transcript`, `speechToText`, `listen`,
+ * `preRecorded`, `jobs` and `stt`. All eleven now address it as `transcribe`,
+ * which is also what makes `unmodel/transcribe`'s ref union readable — the
+ * category entry and the provider entry are the same word.
+ *
+ * Written out rather than derived because an id does not carry its category,
+ * and because the point of the list is that a rename has to be typed here.
+ */
+const TRANSCRIBE_IDS: readonly string[] = [
+  "assemblyai.transcribe",
+  "cartesia.transcribe",
+  "deepgram.transcribe",
+  "elevenlabs.transcribe",
+  "gladia.transcribe",
+  "inworld.transcribe",
+  "mistral.transcribe",
+  "openai.transcribe",
+  "revai.transcribe",
+  "soniox.transcribe",
+  "speechmatics.transcribe",
+];
+
+test("the transcription endpoints all use the uniform `transcribe` verb", () => {
+  for (const id of TRANSCRIBE_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    // Bare `transcribe` everywhere: no provider ships a second batch route, so
+    // unlike image and video there is nothing to qualify.
+    expect(id.split(".")[1] ?? "").toBe("transcribe");
+  }
+  const providers = [...new Set(TRANSCRIBE_IDS.map((id) => id.split(".")[0] as string))].sort();
+  expect(providers).toHaveLength(11);
+
+  // The realtime surfaces keep their own names — a socket config is a
+  // different endpoint from a batch POST, and collapsing the two would make
+  // `transcribe` mean two transports.
+  for (const id of [
+    "deepgram.listenLive",
+    "deepgram.listenFlux",
+    "deepgram.fluxConfigure",
+    "elevenlabs.speechToTextRealtime",
+    "soniox.realtimeTranscription",
+    "cartesia.sttWebsocket",
+    "inworld.realtimeTranscribeConfig",
+  ]) {
+    expect(EXPECTED_IDS).toContain(id);
+  }
+
+  const retired = [
+    "assemblyai.transcript",
+    "cartesia.stt",
+    "deepgram.listen",
+    "elevenlabs.speechToText",
+    "gladia.preRecorded",
+    "mistral.transcription",
+    "openai.transcription",
+    "revai.jobs",
+    "soniox.transcriptions",
+    "speechmatics.jobs",
+  ];
+  for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
+ * The music half. Two providers, three routes: the text-to-music route is bare
+ * `music` at both, and Stability's two audio-conditioned routes qualify by
+ * what they are made from and what they do to a finished track.
+ */
+const MUSIC_IDS: readonly string[] = [
+  "elevenlabs.music",
+  "stability.music",
+  "stability.musicFromAudio",
+  "stability.musicInpaint",
+];
+
+test("the music-category endpoints all use the uniform `music` verb", () => {
+  for (const id of MUSIC_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toMatch(/^music([A-Z]|$)/);
+  }
+  const providers = [...new Set(MUSIC_IDS.map((id) => id.split(".")[0] as string))].sort();
+  for (const provider of providers) expect(MUSIC_IDS).toContain(`${provider}.music`);
+  expect(providers).toEqual(["elevenlabs", "stability"]);
+
+  const retired = [
+    "stability.stableAudioTextToAudio",
+    "stability.stableAudioAudioToAudio",
+    "stability.stableAudioInpaint",
   ];
   for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
 });

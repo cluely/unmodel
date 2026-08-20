@@ -35,8 +35,8 @@ export type {
   CartesiaWebsocketGenerationConfig,
 } from "./tts-websocket";
 
-export { stt, toFormData, STT_TRANSCRIBE_URL, CARTESIA_STT_LANGUAGES } from "./stt";
-export type { SttTranscribeParams, CartesiaSttEncoding, CartesiaSttLanguage } from "./stt";
+export { transcribe, toFormData, STT_TRANSCRIBE_URL, CARTESIA_STT_LANGUAGES } from "./transcribe";
+export type { SttTranscribeParams, CartesiaSttEncoding, CartesiaSttLanguage } from "./transcribe";
 
 export {
   sttWebsocket,

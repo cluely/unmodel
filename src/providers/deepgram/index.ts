@@ -1,13 +1,13 @@
 export {
-  listen,
+  transcribe,
   listenUrl,
   withQuery,
   LISTEN_URL,
   LISTEN_ENCODINGS,
   NOVA_3_MULTILINGUAL_USD_PER_MINUTE,
   REDACT_GROUPS,
-} from "./listen";
-export type { ListenParams, DeepgramRedact, DeepgramListenEncoding } from "./listen";
+} from "./transcribe";
+export type { ListenParams, DeepgramRedact, DeepgramListenEncoding } from "./transcribe";
 
 export {
   listenLive,

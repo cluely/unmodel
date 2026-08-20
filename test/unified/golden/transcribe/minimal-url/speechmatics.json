@@ -1,0 +1,18 @@
+{
+  "ref": "speechmatics/standard",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "type": "transcription",
+    "transcription_config": {
+      "language": "auto",
+      "model": "standard"
+    },
+    "fetch_data": {
+      "url": "https://example.com/interview.wav"
+    }
+  },
+  "url": "https://eu1.asr.api.speechmatics.com/v2/jobs",
+  "headers": {}
+}

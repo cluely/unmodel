@@ -67,7 +67,7 @@ import { image as openai } from "../providers/openai/unified-image";
 import { image as recraft } from "../providers/recraft/unified";
 import { image as reve } from "../providers/reve/unified";
 import { image as runway } from "../providers/runway/unified-image";
-import { image as stability } from "../providers/stability/unified";
+import { image as stability } from "../providers/stability/unified-image";
 import { image as vidu } from "../providers/vidu/unified-image";
 
 /**

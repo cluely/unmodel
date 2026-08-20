@@ -250,7 +250,7 @@ const checked = openrouterChat(body);
 
 ### Scope
 
-- **Chat only.** Media endpoints (`image`, `speech`, `transcription`,
+- **Chat only.** Media endpoints (`image`, `speech`, `transcribe`,
   `video`, …) have `.toSdk` but no `.toApi`. That asymmetry is a scope
   decision, not an oversight: across the providers unmodel implements there are
   exactly five multi-provider media model groups in the catalog, and their wire
@@ -366,30 +366,40 @@ request can be written once against
 
 **Speech to text**
 
+Every provider addresses its transcription route as `transcribe` — the wire
+spellings (`/v1/audio/transcriptions`, `/v1/speech-to-text`, `/v1/listen`,
+`/v2/transcript`, `/v2/pre-recorded`, `/speechtotext/v1/jobs`, `/v2/jobs`,
+`/stt`) survive on the URL constants and the wire types, not on the export you
+call. All eleven also ship a `unified.ts` adapter, so the same request can be
+written once against
+[`unmodel/transcribe`](#unified-media-one-vocabulary-per-category) — where the
+`audio` shapes each route accepts are enforced at compile time.
+
 | Subpath | Validators |
 | --- | --- |
-| `unmodel/openai` | `transcription` + `transcriptionToFormData` — `gpt-transcribe`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`, `gpt-4o-mini-transcribe-2025-12-15`, `gpt-4o-transcribe-diarize`, `whisper-1` |
-| `unmodel/assemblyai` | `transcript` + `checkTranscript` |
-| `unmodel/cartesia` | `stt` + `toFormData` + `checkStt` |
-| `unmodel/deepgram` | `listen` + `checkListen` |
-| `unmodel/elevenlabs` | `speechToText` + `toFormData` + `checkTranscription` |
-| `unmodel/gladia` | `preRecorded` + `toUploadFormData` + `checkPreRecorded` |
+| `unmodel/openai` | `transcribe` + `transcribeToFormData` — `gpt-transcribe`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`, `gpt-4o-mini-transcribe-2025-12-15`, `gpt-4o-transcribe-diarize`, `whisper-1` |
+| `unmodel/assemblyai` | `transcribe` + `checkTranscript` |
+| `unmodel/cartesia` | `transcribe` + `toFormData` + `checkStt` |
+| `unmodel/deepgram` | `transcribe` + `checkListen` |
+| `unmodel/elevenlabs` | `transcribe` + `toFormData` + `checkTranscription` |
+| `unmodel/gladia` | `transcribe` + `toUploadFormData` + `checkPreRecorded` |
 | `unmodel/inworld` | `transcribe` — base64 audio inline in the JSON body (no multipart route; the ~16MB cap is a request-size cap) |
-| `unmodel/mistral` | `transcription` + `toFormData` + `checkTranscription` (Voxtral) |
-| `unmodel/revai` | `jobs` + `toFormData` + `checkJob` |
-| `unmodel/soniox` | `transcriptions` + `toUploadFormData` + `checkTranscription` |
-| `unmodel/speechmatics` | `jobs` + `toFormData` + `checkJob` |
+| `unmodel/mistral` | `transcribe` + `toFormData` + `checkTranscription` (Voxtral) |
+| `unmodel/revai` | `transcribe` + `toFormData` + `checkJob` |
+| `unmodel/soniox` | `transcribe` + `toUploadFormData` + `checkTranscription` |
+| `unmodel/speechmatics` | `transcribe` + `toFormData` + `checkJob` |
 
 Every STT form-data helper builds the `multipart/form-data` body for audio
 bytes, so the validated params stay wire-shaped and the `Blob` never has to
 round-trip through JSON. Which body a route wants differs by provider:
 
-- **Multipart is the route** — `cartesia.stt`, `elevenlabs.speechToText`,
-  `mistral.transcription`, `speechmatics.jobs`: post `toFormData(validated)`,
+- **Multipart is the route** — `cartesia.transcribe`,
+  `elevenlabs.transcribe`, `mistral.transcribe`, `speechmatics.transcribe`: post
+  `toFormData(validated)`,
   never `JSON.stringify`. `.request.headers` names no content type (only a
   required version header, where the provider has one) precisely because the
   boundary belongs to the `FormData` and `fetch` derives it.
-- **Multipart is the byte-upload alternative** — `revai.jobs`: JSON with a
+- **Multipart is the byte-upload alternative** — `revai.transcribe`: JSON with a
   remote `source_config.url`, or `toFormData` when you hold the bytes.
 - **Multipart is a separate upload endpoint** — `gladia.toUploadFormData`
   (`UPLOAD_URL`) and `soniox.toUploadFormData` (`FILES_URL`) upload the audio first;
@@ -586,18 +596,25 @@ submit request; polling and downloads are transport, so they stay your job.
 
 ### Music and audio generation
 
+Both providers address their text-to-music route as `music`; Stability's two
+audio-conditioned routes qualify by what they are made from
+(`musicFromAudio`) and what they do to a finished track (`musicInpaint`). One
+canonical `music()` over the two text-to-music routes lives at
+[`unmodel/music`](#unified-media-one-vocabulary-per-category).
+
 | Subpath | Validators |
 | --- | --- |
 | `unmodel/elevenlabs` | `music` (Eleven Music — prompt or composition plan, priced per audio minute) |
-| `unmodel/stability` (+ `toFormData`) | `stableAudioTextToAudio`, `stableAudioAudioToAudio`, `stableAudioInpaint` (Stable Audio 2.x, credit-priced) |
+| `unmodel/stability` (+ `toFormData`) | `music`, `musicFromAudio`, `musicInpaint` (Stable Audio 2.x, credit-priced) |
 
 ## Unified media: one vocabulary per category
 
 Everything above is a provider's **own** wire format, which is the point of this
 library — but sometimes you want to write one request and point it at any
-provider. `unmodel/image`, `unmodel/speech` and `unmodel/video` are that: one
-canonical camelCase vocabulary per media category, compiled to whichever
-provider the `"provider/model"` ref names.
+provider. `unmodel/image`, `unmodel/speech`, `unmodel/video`,
+`unmodel/transcribe` and `unmodel/music` are that: one canonical camelCase
+vocabulary per media category, compiled to whichever provider the
+`"provider/model"` ref names.
 
 ```ts
 import { image } from "unmodel/image";
@@ -648,9 +665,53 @@ image({ model: "openai/gpt-image-1", prompt: "…", seed: 7 });
 | `unmodel/image` | 15 | `prompt`, `aspectRatio` XOR `dimensions`, `resolution` tier, `n`, `seed`, `negativePrompt`, `outputFormat`, `outputDelivery` |
 | `unmodel/speech` | 14 | `text`, `voice`, `outputFormat`, `speed`, `language` |
 | `unmodel/video` | 10 | `prompt`, `duration` (seconds), `resolution` tier, `aspectRatio`, `image` (first / last / reference), `video`, `negativePrompt`, `seed`, `n` |
+| `unmodel/transcribe` | 11 | `audio` (`file` / `url` / `fileId`), `language`, `languages`, `diarization`, `timestamps`, `prompt` |
+| `unmodel/music` | 2 | `prompt`, `durationSeconds`, `instrumental`, `outputFormat`, `seed` |
 
-The other three categories (`image-edit`, `transcribe`, `music`) ship the
-factory and their vocabulary today; their packs land as their adapters do.
+`image-edit` ships the factory and its vocabulary today; its pack lands as its
+adapters do.
+
+**In `unmodel/transcribe`, `audio` narrows to the route — at compile time.**
+Transcription APIs disagree about how audio arrives, and the disagreement is
+per *route*: AssemblyAI fetches a URL, Cartesia takes multipart bytes, Soniox
+takes a URL or a file id from its own upload API, Mistral takes all three. Each
+adapter declares which, and the ref you write decides which `audio` shapes
+type-check:
+
+```ts
+import { transcribe } from "unmodel/transcribe";
+
+transcribe({ model: "assemblyai/universal-2", audio: { url } });   // ok
+transcribe({ model: "assemblyai/universal-2", audio: { file } });  // compile error
+transcribe({ model: "cartesia/ink-whisper",  audio: { file } });   // ok
+transcribe({ model: "cartesia/ink-whisper",  audio: { url } });    // compile error
+```
+
+The runtime check backs it up for JavaScript callers and for refs built at
+run time, naming the shapes the route does take:
+
+```ts
+transcribe({ model: "assemblyai/universal-2", audio: { file } });
+// throws: `audio` was given as `{ file }`, which this model has no wire field
+// for — it takes `{ url }`. Upload local bytes to POST /v2/upload first; its
+// `upload_url` is an `audio_url`.
+```
+
+The rest of the vocabulary translates the way the others do: `diarization:
+{ enabled: true }` is `speaker_labels` at AssemblyAI, `diarization: "speaker"`
+at Speechmatics and the **inverted** `skip_diarization: false` at Rev AI;
+`timestamps: "word"` is an array at OpenAI, a scalar enum at ElevenLabs and a
+boolean at Deepgram — and at the four routes that report word timings
+unconditionally it costs nothing, while `timestamps: "segment"` there is an
+error naming what they do report.
+
+**In `unmodel/music`, the unit is in the name.** `durationSeconds: 90` is
+`music_length_ms: 90000` at ElevenLabs and `duration: 90` at Stability. The
+conversion is exact and therefore silent; a length that lands between two
+milliseconds is an error rather than a rounded value nobody asked for.
+Stability's audio-conditioned routes (`musicFromAudio`, `musicInpaint`) stay
+wire-only — they take controls no other provider has, so a canonical vocabulary
+for them would be a vocabulary of one.
 
 **In `unmodel/video`, the inputs choose the endpoint.** A prompt is
 text-to-video; adding `image` makes it image-to-video; tagging that image
@@ -809,15 +870,15 @@ unmodel validate list-them-all
 
 `unmodel validate` covers the 138 endpoints whose params are expressible as
 JSON — including the ones that are *posted* as `multipart/form-data` but carry
-no `Blob` (`speechmatics.jobs`, `mistral.transcription`,
-`stability.stableAudioTextToAudio`, …). For those the CLI prints a
+no `Blob` (`speechmatics.transcribe`, `mistral.transcribe`,
+`stability.music`, …). For those the CLI prints a
 `transport: multipart/form-data` note pointing at the subpath's `toFormData`.
 [Realtime session configs](#speech--tts-and-stt) are covered too, with a
 `transport: websocket` note: they validate like anything else, but the result is
 a config to open a socket with, not a body to post.
 
 The 15 endpoints that *require* a `Blob` body part (`openai.imageEdit`,
-`openai.transcription`, `cartesia.stt`, the Ideogram and Stability editors, and
+`openai.transcribe`, `cartesia.transcribe`, the Ideogram and Stability editors, and
 the two Stability audio-input routes) cannot be expressed as JSON at all, so
 they are library-only — the CLI says so rather than failing on a type error.
 
@@ -863,7 +924,7 @@ Every provider lives on its own subpath; importing one pulls in nothing from the
 | `unmodel/catalog` | models.dev snapshot: `catalog`, `getProvider`, `getModel` |
 | `unmodel/ai-sdk` | The `withJsonSchemaTools` adapter for `.toSdk("ai-sdk")` — types plus one pure function, no dependency on `ai` |
 | `unmodel/<provider>/unified` | One provider's adapters for the [unified media surfaces](#unified-media-one-vocabulary-per-category) — that provider's endpoint module and the kernel, nothing else |
-| `unmodel/image`, `unmodel/speech`, `unmodel/video` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createSpeech([…])` / `createVideo([…])` is how you pay for two instead of fifteen |
+| `unmodel/image`, `unmodel/speech`, `unmodel/video`, `unmodel/transcribe`, `unmodel/music` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createSpeech([…])` / `createVideo([…])` / `createTranscribe([…])` / `createMusic([…])` is how you pay for two instead of fifteen |
 
 Retargeting keeps that story intact. The wire-format **codecs** are per dialect
 (four of them), not per provider, so `unmodel/anthropic` reaches
@@ -876,7 +937,7 @@ and a URL swap, no codec at all.
 
 Current coverage: 153 request validators across 70 provider subpaths, plus two
 unified media surfaces (`unmodel/image` over 15 providers, `unmodel/speech` over 14,
-`unmodel/video` over 10).
+`unmodel/video` over 10, `unmodel/transcribe` over 11, `unmodel/music` over 2).
 
 - **OpenAI** — Chat Completions, Images + image edits, Speech (TTS), Transcription (STT), Sora videos, Realtime session config.
 - **Anthropic** Messages; **Google** Gemini `chat`, Imagen `image`, Veo `video`; **Cohere** v2 Chat.

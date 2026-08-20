@@ -1,0 +1,12 @@
+{
+  "ref": "mistral/voxtral-mini-latest",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "model": "voxtral-mini-latest",
+    "file_url": "https://example.com/interview.wav"
+  },
+  "url": "https://api.mistral.ai/v1/audio/transcriptions",
+  "headers": {}
+}

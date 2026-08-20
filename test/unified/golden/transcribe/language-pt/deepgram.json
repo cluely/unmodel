@@ -1,0 +1,13 @@
+{
+  "ref": "deepgram/nova-3",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "url": "https://example.com/interview.wav"
+  },
+  "url": "https://api.deepgram.com/v1/listen?model=nova-3&language=pt",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -3,7 +3,7 @@ import type { ResponseReport } from "../../core/report";
 import type { ModelInfo } from "../../core/catalog-types";
 import { computeAudioMinutesCostUSD } from "../../core/cost";
 import { models } from "./models";
-import { DEFAULT_MODEL } from "./jobs";
+import { DEFAULT_MODEL } from "./transcribe";
 
 /**
  * Structural subset of a GET /v2/jobs/{id} response

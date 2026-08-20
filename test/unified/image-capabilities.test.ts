@@ -50,7 +50,7 @@ import { image as openai } from "../../src/providers/openai/unified";
 import { image as recraft } from "../../src/providers/recraft/unified";
 import { image as reve } from "../../src/providers/reve/unified";
 import { image as runway } from "../../src/providers/runway/unified-image";
-import { image as stability } from "../../src/providers/stability/unified";
+import { image as stability } from "../../src/providers/stability/unified-image";
 import { image as vidu } from "../../src/providers/vidu/unified-image";
 
 type Support = "native" | "derived" | "implicit" | "declared" | "refused";

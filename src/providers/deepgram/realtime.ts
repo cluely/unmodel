@@ -46,7 +46,7 @@ import {
   checkDictationPairing,
   LISTEN_ENCODINGS,
   type DeepgramRedact,
-} from "./listen";
+} from "./transcribe";
 import { AUDIO_FORMATS, SPEAK_SPEED_MIN, SPEAK_SPEED_MAX } from "./speech";
 import {
   models,

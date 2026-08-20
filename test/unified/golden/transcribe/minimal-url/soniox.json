@@ -1,0 +1,14 @@
+{
+  "ref": "soniox/stt-async-v5",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "model": "stt-async-v5",
+    "audio_url": "https://example.com/interview.wav"
+  },
+  "url": "https://api.soniox.com/v1/transcriptions",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

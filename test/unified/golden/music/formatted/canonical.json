@@ -1,0 +1,8 @@
+{
+  "prompt": "slow post-rock build, brushed drums, no vocals",
+  "outputFormat": {
+    "format": "mp3",
+    "sampleRate": 44100,
+    "bitrate": 128000
+  }
+}

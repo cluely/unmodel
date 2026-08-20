@@ -2,7 +2,7 @@
  * Type-level tests for the deepgram provider (SPEECH-TO-TEXT modality).
  * NOT run by `bun test` — this file is only type-checked (`bun run check` /
  * tsc --noEmit). These tests pin the `ExactKeys` public-cast contract of
- * `deepgram.listen`: the excess-key compile error, the `safe<T>` overload
+ * `deepgram.transcribe`: the excess-key compile error, the `safe<T>` overload
  * carrying the same guard, and the most aggressive strip in the repo — the
  * cast is `Validated<Pick<T, "url" & keyof T>, ListenSdkTargets<Omit<T, "url">>>`,
  * so the wire body is ONLY `{url}` (or `{}`) while every transcription option
@@ -12,7 +12,7 @@
  * error rather than a runtime throw.
  */
 import {
-  listen,
+  transcribe,
   speech,
   listenLive,
   listenFlux,
@@ -27,7 +27,7 @@ import type { EndpointConstraints } from "../../src/core/constraint-types";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
 function listenTypeTests(): void {
-  const v = listen({
+  const v = transcribe({
     url: "https://example.com/audio.wav",
     model: "nova-3",
     language: "multi",
@@ -65,16 +65,16 @@ function listenTypeTests(): void {
 
   // Local-file case: no `url` param, so `Pick<T, "url" & keyof T>` collapses
   // to an empty body and you POST raw audio bytes to `.request.url` yourself.
-  const local = listen({ model: "nova-3", language: "en", multichannel: true });
+  const local = transcribe({ model: "nova-3", language: "en", multichannel: true });
   expectTrue<IsNever<KeyIn<typeof local, "url">>>();
   expectAssignable<string>(local.request.url);
   expectAssignable<"nova-3">(local.toSdk("deepgram").model);
 
   // Unknown model ids stay assignable through the (string & {}) escape.
-  listen({ url: "https://example.com/a.wav", model: "nova-9-future" });
+  transcribe({ url: "https://example.com/a.wav", model: "nova-9-future" });
 
   // safe() narrows to the same split shape.
-  const result = listen.safe({ url: "https://example.com/a.wav", model: "nova-3" });
+  const result = transcribe.safe({ url: "https://example.com/a.wav", model: "nova-3" });
   if (result.ok) {
     expectAssignable<string>(result.params.url);
     expectTrue<IsNever<KeyIn<typeof result.params, "model">>>();
@@ -82,30 +82,30 @@ function listenTypeTests(): void {
   }
 
   // The SDK target vocabulary is closed: only "deepgram" is declared here.
-  // @ts-expect-error "openai" is not an SDK target for deepgram.listen
+  // @ts-expect-error "openai" is not an SDK target for deepgram.transcribe
   v.toSdk("openai");
   // @ts-expect-error the zero-arg .toSdk() form was removed
   v.toSdk();
 
-  expectAssignable<EndpointConstraints[]>(listen.constraintsFor("nova-3"));
+  expectAssignable<EndpointConstraints[]>(transcribe.constraintsFor("nova-3"));
 
   // @ts-expect-error diarize_model is a closed enum
-  listen({ url: "https://example.com/a.wav", diarize_model: "v3" });
+  transcribe({ url: "https://example.com/a.wav", diarize_model: "v3" });
   // @ts-expect-error callback_method is a closed enum
-  listen({ url: "https://example.com/a.wav", callback_method: "GET" });
+  transcribe({ url: "https://example.com/a.wav", callback_method: "GET" });
 
   // ExactKeys: a typo'd/excess top-level key is a COMPILE error, not a
   // silent unknown_param warning — which matters more here than anywhere,
   // because an unrecognised key would otherwise be URL-encoded into the
   // query string and silently ignored by Deepgram.
-  listen({
+  transcribe({
     url: "https://example.com/a.wav",
     // @ts-expect-error excess (typo'd) top-level key — the ExactKeys guard
     smart_fomat: true,
   });
 
   // The same guard is wired into the safe() overload.
-  listen.safe({
+  transcribe.safe({
     url: "https://example.com/a.wav",
     // @ts-expect-error excess (typo'd) top-level key — ExactKeys on safe()
     punctuation: true,
@@ -162,26 +162,26 @@ function speechAudioFormatTypeTests(): void {
  * this pass — so there is deliberately NO @ts-expect-error case below. The
  * five named groups are autocomplete, not an exhaustive space: Deepgram also
  * accepts arbitrary entity types (`redact=email_address`) for which no closed
- * list is published, and `redact` accordingly has no entry in listen.ts's
+ * list is published, and `redact` accordingly has no entry in transcribe.ts's
  * QUERY_ENUMS. Rejecting an unlisted string here would be a compile error on
  * a request the API fulfils.
  */
 function listenRedactTypeTests(): void {
   // A named group — this is what autocomplete now offers.
-  listen({ url: "https://example.com/a.wav", redact: "pci" });
-  listen({ url: "https://example.com/a.wav", redact: ["pii", "phi"] });
+  transcribe({ url: "https://example.com/a.wav", redact: "pci" });
+  transcribe({ url: "https://example.com/a.wav", redact: ["pii", "phi"] });
   // An arbitrary entity type — legal on the wire, so it must still compile.
-  listen({ url: "https://example.com/a.wav", redact: "email_address" });
-  listen({ url: "https://example.com/a.wav", redact: ["ssn", "aggressive_numbers"] });
+  transcribe({ url: "https://example.com/a.wav", redact: "email_address" });
+  transcribe({ url: "https://example.com/a.wav", redact: ["ssn", "aggressive_numbers"] });
   // The boolean arm ("redact everything") is untouched.
-  listen({ url: "https://example.com/a.wav", redact: true });
+  transcribe({ url: "https://example.com/a.wav", redact: true });
 }
 
 /**
  * The three WebSocket CONFIG surfaces. Two contracts are pinned here that no
  * REST endpoint can pin: `.request.method` is `"GET"` (a socket handshake is
  * an upgrade, so `ValidatedSocket` carries `SocketMeta`, not `RequestMeta`),
- * and — unlike `listen`, which strips every query param out of its body — the
+ * and — unlike `transcribe`, which strips every query param out of its body — the
  * whole config STAYS on the body, because for a socket the config object is
  * the deliverable and the URL is just where it is encoded.
  */

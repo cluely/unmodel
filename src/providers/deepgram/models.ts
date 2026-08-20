@@ -7,12 +7,12 @@
 //
 // PRICING (pay-as-you-go, read off the pricing page's speech-to-text table;
 // already USD per minute, no unit conversion needed). The table has SEPARATE
-// streaming and pre-recorded columns — this catalog and `listen` are the
+// streaming and pre-recorded columns — this catalog and `transcribe` are the
 // PRE-RECORDED (POST /v1/listen) surface, so the pre-recorded column is what
 // is encoded here:
 // - Nova-3 monolingual: $0.0077/min pre-recorded ($0.0048/min streaming).
 // - Nova-3 multilingual (`language=multi`): $0.0092/min pre-recorded
-//   ($0.0058/min streaming) — applied in listen.ts, since it is a request
+//   ($0.0058/min streaming) — applied in transcribe.ts, since it is a request
 //   property, not a distinct model id.
 // - Flux (STREAMING-ONLY, /v2/listen WebSocket): $0.0065/min English,
 //   $0.0078/min multilingual. Kept in the catalog for completeness; the

@@ -293,7 +293,13 @@ expectAssignable<readonly string[]>(image.providers);
 declare const videoAdapter: UnifiedAdapter<VideoParams> & { category: "video" };
 declare const editAdapter: UnifiedAdapter<ImageEditParams> & { category: "imageEdit" };
 declare const speechAdapter: UnifiedAdapter<SpeechParams> & { category: "speech" };
-declare const transcribeAdapter: UnifiedAdapter<TranscribeParams> & { category: "transcribe" };
+// The transcribe surface asks for one thing more than the other five: the
+// audio shapes the route accepts, which is what drives the per-model `audio`
+// narrowing in `test/types/unified-transcribe.test-d.ts`.
+declare const transcribeAdapter: UnifiedAdapter<TranscribeParams> & {
+  category: "transcribe";
+  audioInputs: readonly ["url"];
+};
 declare const musicAdapter: UnifiedAdapter<MusicParams> & { category: "music" };
 
 createVideo([videoAdapter]);

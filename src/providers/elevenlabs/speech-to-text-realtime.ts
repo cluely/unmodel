@@ -235,7 +235,7 @@ function checkRealtimeModelKind(
     code: "unsupported_capability",
     path: ["model_id"],
     model: params.model_id,
-    message: `"${params.model_id}" is not a realtime speech-to-text model; wss /v1/speech-to-text/realtime accepts ${REALTIME_STT_MODEL_IDS.map((id) => `"${id}"`).join(", ")}.${batch ? " Batch Scribe runs over POST /v1/speech-to-text (see `elevenlabs.speechToText`)." : ""}`,
+    message: `"${params.model_id}" is not a realtime speech-to-text model; wss /v1/speech-to-text/realtime accepts ${REALTIME_STT_MODEL_IDS.map((id) => `"${id}"`).join(", ")}.${batch ? " Batch Scribe runs over POST /v1/speech-to-text (see `elevenlabs.transcribe`)." : ""}`,
     meta: { allowed: [...REALTIME_STT_MODEL_IDS], source: MODELS_DOCS_URL },
   });
 }

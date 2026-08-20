@@ -128,10 +128,12 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
   "vidu.videoFromImage": () => import("./providers/vidu").then((m) => asCli(m.videoFromImage)),
   "vidu.videoFromReference": () => import("./providers/vidu").then((m) => asCli(m.videoFromReference)),
 
-  // Music / audio generation
+  // Music generation. Both providers address their text-to-music route as
+  // `music`; Stability's two audio-conditioned routes qualify by what they are
+  // made from (`musicFromAudio`) and what they do to a finished track
+  // (`musicInpaint`), and both are multipart-only.
   "elevenlabs.music": () => import("./providers/elevenlabs").then((m) => asCli(m.music)),
-  "stability.stableAudioTextToAudio": () =>
-    import("./providers/stability").then((m) => asCli(m.stableAudioTextToAudio)),
+  "stability.music": () => import("./providers/stability").then((m) => asCli(m.music)),
 
   // Speech — TTS. Every provider addresses its synthesis route as `speech`
   // (the address-vs-wire law): the wire spellings differ wildly
@@ -159,21 +161,27 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
   "speechify.speechStream": () =>
     import("./providers/speechify").then((m) => asCli(m.speechStream)),
 
-  // Speech — STT (URL-referenced audio; file-upload variants are multipart-only)
-  "elevenlabs.speechToText": () =>
-    import("./providers/elevenlabs").then((m) => asCli(m.speechToText)),
-  "soniox.transcriptions": () =>
-    import("./providers/soniox").then((m) => asCli(m.transcriptions)),
-  "deepgram.listen": () => import("./providers/deepgram").then((m) => asCli(m.listen)),
+  // Speech to text. Every provider addresses its transcription route as
+  // `transcribe` (the address-vs-wire law): the wire spellings differ wildly
+  // (/v1/audio/transcriptions, /v1/speech-to-text, /v1/listen, /v2/transcript,
+  // /v2/pre-recorded, /speechtotext/v1/jobs, /v2/jobs, /stt), and the URL
+  // constants and wire types keep them — but the endpoint id a caller types is
+  // uniform. Listed here are the routes whose audio a JSON document can
+  // express; the file-upload-only ones are under MULTIPART_ONLY below.
+  "elevenlabs.transcribe": () =>
+    import("./providers/elevenlabs").then((m) => asCli(m.transcribe)),
+  "soniox.transcribe": () =>
+    import("./providers/soniox").then((m) => asCli(m.transcribe)),
+  "deepgram.transcribe": () => import("./providers/deepgram").then((m) => asCli(m.transcribe)),
   // Inline base64 audio, so JSON params can express it — not multipart.
   "inworld.transcribe": () => import("./providers/inworld").then((m) => asCli(m.transcribe)),
-  "assemblyai.transcript": () =>
-    import("./providers/assemblyai").then((m) => asCli(m.transcript)),
-  "gladia.preRecorded": () => import("./providers/gladia").then((m) => asCli(m.preRecorded)),
-  "mistral.transcription": () =>
-    import("./providers/mistral").then((m) => asCli(m.transcription)),
-  "revai.jobs": () => import("./providers/revai").then((m) => asCli(m.jobs)),
-  "speechmatics.jobs": () => import("./providers/speechmatics").then((m) => asCli(m.jobs)),
+  "assemblyai.transcribe": () =>
+    import("./providers/assemblyai").then((m) => asCli(m.transcribe)),
+  "gladia.transcribe": () => import("./providers/gladia").then((m) => asCli(m.transcribe)),
+  "mistral.transcribe": () =>
+    import("./providers/mistral").then((m) => asCli(m.transcribe)),
+  "revai.transcribe": () => import("./providers/revai").then((m) => asCli(m.transcribe)),
+  "speechmatics.transcribe": () => import("./providers/speechmatics").then((m) => asCli(m.transcribe)),
 
   // Realtime session configs — the JSON config object a socket surface takes
   // (a connection-URL query set, a first configuration message, or a per-chunk
@@ -244,12 +252,21 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
  * `cli.test.ts` — which asserts REGISTRY names exactly the module-level
  * provider validators — either wrong or full of exceptions.
  *
- * `speech`, `image` and `video` are here today: they are the categories with a
- * ready-made pack. The other three land as their packs do.
+ * Five of the six are here: they are the categories with a ready-made pack.
+ * `image-edit` lands as its pack does.
+ *
+ * `unified.transcribe` is registered even though four of its eleven providers
+ * take their audio as a `Blob`: the canonical `audio` is `{ url }` or
+ * `{ fileId }` at the other seven, both of which a JSON document expresses, so
+ * the surface is genuinely CLI-usable — and a ref pointed at a multipart route
+ * is refused by that provider's own adapter with a message naming the shapes it
+ * does take, which is a better answer than hiding the whole category.
  */
 export const UNIFIED: Record<string, () => Promise<CliValidator>> = {
   "unified.image": () => import("./unified/image").then((m) => asCli(m.image)),
+  "unified.music": () => import("./unified/music").then((m) => asCli(m.music)),
   "unified.speech": () => import("./unified/speech").then((m) => asCli(m.speech)),
+  "unified.transcribe": () => import("./unified/transcribe").then((m) => asCli(m.transcribe)),
   "unified.video": () => import("./unified/video").then((m) => asCli(m.video)),
 };
 
@@ -262,8 +279,8 @@ export const UNIFIED: Record<string, () => Promise<CliValidator>> = {
  */
 export const MULTIPART_ONLY: Record<string, string> = {
   "openai.imageEdit": "unmodel/openai",
-  "openai.transcription": "unmodel/openai",
-  "cartesia.stt": "unmodel/cartesia",
+  "openai.transcribe": "unmodel/openai",
+  "cartesia.transcribe": "unmodel/cartesia",
   "ideogram.edit": "unmodel/ideogram",
   "ideogram.remix": "unmodel/ideogram",
   "ideogram.reframe": "unmodel/ideogram",
@@ -274,6 +291,6 @@ export const MULTIPART_ONLY: Record<string, string> = {
   "stability.stableImageSearchAndReplace": "unmodel/stability",
   "stability.stableImageSearchAndRecolor": "unmodel/stability",
   "stability.stableImageRemoveBackground": "unmodel/stability",
-  "stability.stableAudioAudioToAudio": "unmodel/stability",
-  "stability.stableAudioInpaint": "unmodel/stability",
+  "stability.musicFromAudio": "unmodel/stability",
+  "stability.musicInpaint": "unmodel/stability",
 };

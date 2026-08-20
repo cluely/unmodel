@@ -1,0 +1,17 @@
+{
+  "ref": "assemblyai/universal-2",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "audio_url": "https://example.com/interview.wav",
+    "speech_models": [
+      "universal-2"
+    ],
+    "language_code": "pt"
+  },
+  "url": "https://api.assemblyai.com/v2/transcript",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

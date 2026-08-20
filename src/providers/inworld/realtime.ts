@@ -59,7 +59,7 @@ import {
   INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS,
   STT_OVERVIEW_DOCS,
   type InworldRealtimeTranscribeConfig,
-} from "./stt";
+} from "./transcribe";
 import {
   audioConfigSchema,
   speechConstraints,

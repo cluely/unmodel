@@ -3,7 +3,7 @@
 // (last checked 2026-08-13).
 //
 // The realtime models (stt-rt-v5 / stt-rt-v4) serve the WebSocket API, whose
-// configuration message `realtimeTranscription` validates; `transcriptions`
+// configuration message `realtimeTranscription` validates; `transcribe`
 // (the async REST endpoint) rejects them, and vice versa.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
@@ -36,7 +36,7 @@ const asyncModels = {
     modalities: { input: ["audio"], output: ["text"] },
     // limit.context 0: STT is not token-windowed; the pipeline skips context
     // checks. Soniox caps a single request at 5 hours of audio — enforced in
-    // transcriptions.ts via MAX_AUDIO_DURATION_SECONDS.
+    // transcribe.ts via MAX_AUDIO_DURATION_SECONDS.
     limit: { context: 0 },
     cost: { perAudioMinute: ASYNC_USD_PER_MINUTE },
   },
@@ -60,7 +60,7 @@ const asyncModels = {
 /**
  * WebSocket-only realtime models: the ids `realtimeTranscription` accepts in
  * the session configuration message. They cannot be used with
- * POST /v1/transcriptions — `transcriptions` reports `unsupported_capability`
+ * POST /v1/transcriptions — `transcribe` reports `unsupported_capability`
  * for them — and their $0.12/hr rate prices a realtime session from this same
  * table.
  */

@@ -18,8 +18,8 @@
  *     result must not advertise one.
  */
 import { speech } from "../../src/unified/speech";
-import { speech as cartesiaSpeech } from "../../src/providers/cartesia/unified";
-import { speech as elevenlabsSpeech } from "../../src/providers/elevenlabs/unified";
+import { speech as cartesiaSpeech } from "../../src/providers/cartesia/unified-speech";
+import { speech as elevenlabsSpeech } from "../../src/providers/elevenlabs/unified-speech";
 import { speech as murfSpeech } from "../../src/providers/murf/unified";
 import { speech as openaiSpeech } from "../../src/providers/openai/unified";
 import { createSpeech } from "../../src/unified/speech";

@@ -1,0 +1,33 @@
+{
+  "ref": "gladia/solaria-1",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "audio_url": "https://example.com/interview.wav",
+    "model": "solaria-1",
+    "language_config": {
+      "languages": [
+        "pt"
+      ]
+    }
+  },
+  "url": "https://api.gladia.io/v2/pre-recorded",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "language"
+      ],
+      "meta": {
+        "requested": "pt-BR",
+        "achieved": "pt",
+        "dropped": "BR",
+        "source": "https://docs.gladia.io/api-reference/v2/pre-recorded/init"
+      }
+    }
+  ]
+}

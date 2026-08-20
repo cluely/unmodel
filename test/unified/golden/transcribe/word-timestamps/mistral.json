@@ -1,0 +1,20 @@
+{
+  "ref": "mistral/voxtral-mini-latest",
+  "audio": {
+    "file": "@blob"
+  },
+  "params": {
+    "model": "voxtral-mini-latest",
+    "file": {
+      "@blob": {
+        "size": 64,
+        "type": "audio/wav"
+      }
+    },
+    "timestamp_granularities": [
+      "word"
+    ]
+  },
+  "url": "https://api.mistral.ai/v1/audio/transcriptions",
+  "headers": {}
+}

@@ -1,0 +1,22 @@
+{
+  "ref": "cartesia/ink-whisper",
+  "audio": {
+    "file": "@blob"
+  },
+  "params": {
+    "file": {
+      "@blob": {
+        "size": 64,
+        "type": "audio/wav"
+      }
+    },
+    "model": "ink-whisper",
+    "timestamp_granularities": [
+      "word"
+    ]
+  },
+  "url": "https://api.cartesia.ai/stt",
+  "headers": {
+    "Cartesia-Version": "2026-03-01"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "ref": "elevenlabs/music_v1",
+  "params": {
+    "prompt": "slow post-rock build, brushed drums, no vocals",
+    "model_id": "music_v1"
+  },
+  "url": "https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "outputFormat"
+      ],
+      "meta": {
+        "field": "sampleRate",
+        "value": 44100,
+        "codec": "mp3",
+        "source": "https://elevenlabs.io/docs/api-reference/music/compose"
+      }
+    },
+    {
+      "code": "approximated_param",
+      "path": [
+        "outputFormat"
+      ],
+      "meta": {
+        "field": "bitrate",
+        "value": 128000,
+        "codec": "mp3",
+        "source": "https://elevenlabs.io/docs/api-reference/music/compose"
+      }
+    }
+  ]
+}

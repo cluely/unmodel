@@ -1,0 +1,14 @@
+{
+  "ref": "gladia/solaria-1",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "audio_url": "https://example.com/interview.wav",
+    "model": "solaria-1"
+  },
+  "url": "https://api.gladia.io/v2/pre-recorded",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

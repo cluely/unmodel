@@ -1,0 +1,14 @@
+{
+  "ref": "soniox/stt-async-v5",
+  "audio": {
+    "fileId": "f_2f8a"
+  },
+  "params": {
+    "model": "stt-async-v5",
+    "file_id": "f_2f8a"
+  },
+  "url": "https://api.soniox.com/v1/transcriptions",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

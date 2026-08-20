@@ -34,7 +34,7 @@ export {
   STT_OVERVIEW_DOCS,
   STT_TRANSCRIBE_URL,
   TRANSCRIBE_DOCS,
-} from "./stt";
+} from "./transcribe";
 export type {
   TranscribeBody,
   TranscribeConfigCheckOptions,
@@ -48,7 +48,7 @@ export type {
   InworldSttV1Config,
   InworldTranscribeConfig,
   InworldVoiceProfileConfig,
-} from "./stt";
+} from "./transcribe";
 
 export {
   realtimeTranscribeConfig,

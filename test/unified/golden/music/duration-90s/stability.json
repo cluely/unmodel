@@ -1,0 +1,10 @@
+{
+  "ref": "stability/stable-audio-2",
+  "params": {
+    "prompt": "slow post-rock build, brushed drums, no vocals",
+    "model": "stable-audio-2",
+    "duration": 90
+  },
+  "url": "https://api.stability.ai/v2beta/audio/stable-audio-2/text-to-audio",
+  "headers": {}
+}

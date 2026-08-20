@@ -1,5 +1,5 @@
 export {
-  jobs,
+  transcribe,
   toFormData,
   JOBS_URL,
   MAX_MEDIA_DURATION_SECONDS,
@@ -7,7 +7,7 @@ export {
   MAX_MEDIA_BYTES,
   MIN_SEGMENT_SECONDS,
   MAX_DELETE_AFTER_SECONDS,
-} from "./jobs";
+} from "./transcribe";
 export type {
   JobsBody,
   RevaiJobUpload,
@@ -20,7 +20,7 @@ export type {
   RevaiSummarizationConfig,
   RevaiTranslationConfig,
   RevaiTranslationTarget,
-} from "./jobs";
+} from "./transcribe";
 
 export { checkJob } from "./check";
 export type { JobResponseLike } from "./check";

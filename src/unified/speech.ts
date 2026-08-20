@@ -44,12 +44,12 @@
 import { createUnified } from "../core/unified/kernel";
 import type { AnyUnifiedAdapter, UnifiedValidator } from "../core/unified/types";
 import type { SpeechParams } from "../core/unified/vocabulary/speech";
-import { speech as cartesia } from "../providers/cartesia/unified";
-import { speech as deepgram } from "../providers/deepgram/unified";
-import { speech as elevenlabs } from "../providers/elevenlabs/unified";
+import { speech as cartesia } from "../providers/cartesia/unified-speech";
+import { speech as deepgram } from "../providers/deepgram/unified-speech";
+import { speech as elevenlabs } from "../providers/elevenlabs/unified-speech";
 import { speech as fishAudio } from "../providers/fish-audio/unified";
 import { speech as hume } from "../providers/hume/unified";
-import { speech as inworld } from "../providers/inworld/unified";
+import { speech as inworld } from "../providers/inworld/unified-speech";
 import { speech as lmnt } from "../providers/lmnt/unified";
 import { speech as minimax } from "../providers/minimax/unified-speech";
 import { speech as murf } from "../providers/murf/unified";

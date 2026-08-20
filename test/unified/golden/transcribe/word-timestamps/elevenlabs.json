@@ -1,0 +1,13 @@
+{
+  "ref": "elevenlabs/scribe_v2",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "model_id": "scribe_v2",
+    "source_url": "https://example.com/interview.wav",
+    "timestamps_granularity": "word"
+  },
+  "url": "https://api.elevenlabs.io/v1/speech-to-text",
+  "headers": {}
+}

@@ -37,14 +37,14 @@ export const CHAT_COMPLETIONS_URL = chatUrl;
 export { chat, checkChat, estimateChatTokens };
 
 export {
-  transcription,
+  transcribe,
   toFormData,
   AUDIO_TRANSCRIPTIONS_URL,
   FILES_URL,
   MAX_CONTEXT_BIAS_TERMS,
   MAX_FILE_URL_LENGTH,
-} from "./transcription";
-export type { TranscriptionBody, MistralTimestampGranularity } from "./transcription";
+} from "./transcribe";
+export type { TranscriptionBody, MistralTimestampGranularity } from "./transcribe";
 
 export { checkTranscription } from "./transcription-check";
 export type { TranscriptionResponseLike } from "./transcription-check";

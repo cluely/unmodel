@@ -15,7 +15,7 @@ import {
   image,
   imageEdit,
   speech,
-  transcription,
+  transcribe,
   video,
   realtimeSession,
   type OpenaiChatModelId,
@@ -411,10 +411,10 @@ function speechTypeTests(): void {
   speech({ model: "tts-1", input: "x", voice: "alloy", bogus_thing: 1 });
 }
 
-function transcriptionTypeTests(): void {
+function transcribeTypeTests(): void {
   const file = new File([new Uint8Array(4)], "speech.mp3", { type: "audio/mpeg" });
 
-  const stt = transcription({
+  const stt = transcribe({
     model: "whisper-1",
     file,
     response_format: "verbose_json",
@@ -428,15 +428,15 @@ function transcriptionTypeTests(): void {
   // @ts-expect-error the zero-arg .toSdk() form was removed
   stt.toSdk();
 
-  transcription({ model: "gpt-transcribe", file, keywords: ["unmodel"], languages: ["en", "pt"] });
-  transcription({
+  transcribe({ model: "gpt-transcribe", file, keywords: ["unmodel"], languages: ["en", "pt"] });
+  transcribe({
     model: "gpt-4o-mini-transcribe",
     file,
     include: ["logprobs"],
     response_format: "json",
     stream: true,
   });
-  transcription({
+  transcribe({
     model: "gpt-4o-transcribe-diarize",
     file,
     response_format: "diarized_json",
@@ -445,28 +445,28 @@ function transcriptionTypeTests(): void {
     known_speaker_references: ["data:audio/wav;base64,AA"],
   });
   // Unknown models fall back to the loose escape arm.
-  transcription({ model: "whisper-9", file, some_future_param: true });
+  transcribe({ model: "whisper-9", file, some_future_param: true });
 
   // @ts-expect-error — verbose_json is not a gpt-4o-transcribe format
-  transcription({ model: "gpt-4o-transcribe", file, response_format: "verbose_json" });
+  transcribe({ model: "gpt-4o-transcribe", file, response_format: "verbose_json" });
 
   // @ts-expect-error — timestamp_granularities is whisper-1 only
-  transcription({ model: "gpt-4o-transcribe", file, timestamp_granularities: ["word"] });
+  transcribe({ model: "gpt-4o-transcribe", file, timestamp_granularities: ["word"] });
 
   // @ts-expect-error — whisper-1 does not stream
-  transcription({ model: "whisper-1", file, stream: true });
+  transcribe({ model: "whisper-1", file, stream: true });
 
   // @ts-expect-error — gpt-4o-transcribe-diarize does not support prompts
-  transcription({ model: "gpt-4o-transcribe-diarize", file, prompt: "hello" });
+  transcribe({ model: "gpt-4o-transcribe-diarize", file, prompt: "hello" });
 
   // @ts-expect-error — keywords is a gpt-transcribe param
-  transcription({ model: "whisper-1", file, keywords: ["unmodel"] });
+  transcribe({ model: "whisper-1", file, keywords: ["unmodel"] });
 
   // @ts-expect-error — known speakers are diarize-only
-  transcription({ model: "gpt-transcribe", file, known_speaker_names: ["agent"] });
+  transcribe({ model: "gpt-transcribe", file, known_speaker_names: ["agent"] });
 
   // @ts-expect-error — bogus top-level param on a known arm
-  transcription({ model: "whisper-1", file, bogus_thing: 1 });
+  transcribe({ model: "whisper-1", file, bogus_thing: 1 });
 }
 
 void chatTypeTests;
@@ -474,6 +474,6 @@ void chatModelUnionTests;
 void imagesTypeTests;
 void imageEditTypeTests;
 void speechTypeTests;
-void transcriptionTypeTests;
+void transcribeTypeTests;
 void videoTypeTests;
 void realtimeSessionTypeTests;

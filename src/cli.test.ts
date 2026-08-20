@@ -402,8 +402,95 @@ test("validate unified.video reports a route the model does not serve", async ()
   expect(stderr).toContain("pass `image`");
 });
 
+test("validate unified.transcribe compiles a canonical request through the ref's provider", async () => {
+  const { stdout, exitCode } = await runCli(
+    ["validate", "unified.transcribe", "--json"],
+    JSON.stringify({
+      model: "assemblyai/universal-2",
+      audio: { url: "https://example.com/interview.wav" },
+      language: "pt",
+      diarization: { enabled: true, speakers: 2 },
+    }),
+  );
+  expect(exitCode).toBe(0);
+  const result = JSON.parse(stdout) as {
+    ok: boolean;
+    params: Record<string, unknown>;
+    request: { url: string };
+  };
+  expect(result.ok).toBe(true);
+  // AssemblyAI's own body: the ref became a routing array, `audio` became the
+  // URL field, and `diarization` split into a flag and a count.
+  expect(result.params).toEqual({
+    audio_url: "https://example.com/interview.wav",
+    speech_models: ["universal-2"],
+    language_code: "pt",
+    speaker_labels: true,
+    speakers_expected: 2,
+  });
+  expect(result.request.url).toBe("https://api.assemblyai.com/v2/transcript");
+});
+
+test("validate unified.transcribe reports an audio shape the route has no field for", async () => {
+  const { stderr, exitCode } = await runCli(
+    ["validate", "unified.transcribe"],
+    JSON.stringify({
+      model: "assemblyai/universal-2",
+      audio: { fileId: "file-abc" },
+    }),
+  );
+  expect(exitCode).toBe(1);
+  expect(stderr).toContain("unsupported_param");
+  expect(stderr).toContain("audio");
+  // …and it names what this route DOES take, which is the whole point.
+  expect(stderr).toContain("{ url }");
+});
+
+test("validate unified.music compiles a canonical request through the ref's provider", async () => {
+  const { stdout, exitCode } = await runCli(
+    ["validate", "unified.music", "--json"],
+    JSON.stringify({
+      model: "elevenlabs/music_v1",
+      prompt: "slow post-rock build, no vocals",
+      durationSeconds: 90,
+      instrumental: true,
+    }),
+  );
+  expect(exitCode).toBe(0);
+  const result = JSON.parse(stdout) as {
+    ok: boolean;
+    params: Record<string, unknown>;
+    request: { url: string };
+  };
+  expect(result.ok).toBe(true);
+  // Seconds became milliseconds, exactly and silently.
+  expect(result.params).toEqual({
+    prompt: "slow post-rock build, no vocals",
+    model_id: "music_v1",
+    music_length_ms: 90000,
+    force_instrumental: true,
+  });
+  expect(result.request.url).toBe("https://api.elevenlabs.io/v1/music");
+});
+
+test("validate unified.music reports a provider gap at the canonical path", async () => {
+  const { stderr, exitCode } = await runCli(
+    ["validate", "unified.music"],
+    JSON.stringify({ model: "stability/stable-audio-2", prompt: "hi", instrumental: true }),
+  );
+  expect(exitCode).toBe(1);
+  expect(stderr).toContain("unsupported_param");
+  expect(stderr).toContain("instrumental");
+});
+
 test("the unified map names one target per shipped pack", () => {
-  expect(Object.keys(UNIFIED)).toEqual(["unified.image", "unified.speech", "unified.video"]);
+  expect(Object.keys(UNIFIED)).toEqual([
+    "unified.image",
+    "unified.music",
+    "unified.speech",
+    "unified.transcribe",
+    "unified.video",
+  ]);
   // Never both maps: a `unified.*` id is not a provider endpoint.
   expect(Object.keys(REGISTRY).filter((id) => id.startsWith("unified."))).toEqual([]);
 });

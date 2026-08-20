@@ -2,18 +2,30 @@
  * `unmodel/music` — one `music()` for every music-generation provider.
  *
  * ```ts
- * import { createMusic } from "unmodel/music";
- * import { elevenlabsMusic } from "unmodel/elevenlabs";
- *
- * const music = createMusic([elevenlabsMusic]);
+ * import { music } from "unmodel/music";
  *
  * const req = music({
- *   model: "elevenlabs/music-v1",
+ *   model: "elevenlabs/music_v1",
  *   prompt: "slow post-rock build, no vocals",
  *   durationSeconds: 45,
  *   instrumental: true,
  * });
  * ```
+ *
+ * That `music` is the ready-made pack. To pay for one provider instead of two,
+ * build your own from the adapter leaves:
+ *
+ * ```ts
+ * import { createMusic } from "unmodel/music";
+ * import { music as elevenlabs } from "unmodel/elevenlabs/unified";
+ *
+ * const music = createMusic([elevenlabs]);
+ * ```
+ *
+ * **The unit is in the name.** `durationSeconds: 45` is `music_length_ms:
+ * 45000` at ElevenLabs and `duration: 45` at Stability; the conversion is exact
+ * and therefore silent, and a length that lands between two milliseconds is an
+ * error rather than a rounded value nobody asked for.
  *
  * The smallest of the six vocabularies, deliberately: music APIs disagree
  * about everything above the prompt, and a canonical word for something three
@@ -28,6 +40,8 @@
 import { createUnified } from "../core/unified/kernel";
 import type { AnyUnifiedAdapter, UnifiedValidator } from "../core/unified/types";
 import type { MusicParams } from "../core/unified/vocabulary/music";
+import { music as elevenlabs } from "../providers/elevenlabs/unified-music";
+import { music as stability } from "../providers/stability/unified-music";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
 export type MusicAdapter = AnyUnifiedAdapter<MusicParams> & { readonly category: "music" };
@@ -44,11 +58,27 @@ export function createMusic<A extends MusicAdapter>(
 }
 
 /**
- * The zero-argument `music()` carrying every adapter unmodel ships lands here
- * once there are adapters to carry — see the layering note in
- * `src/unified/image.ts` for why the convenience pack is deliberately not part
- * of the commit that introduces the kernel.
+ * Every music adapter unmodel ships, assembled by hand — the smallest pack in
+ * the library, and the one whose *omissions* are the interesting part.
+ *
+ * **Two providers, one route each.** Stability's `musicFromAudio` (audio-to-
+ * audio) and `musicInpaint` are deliberately not unified in v1: both take an
+ * `audio` Blob plus controls no other provider has (`strength`,
+ * `mask_start`/`mask_end`), so a canonical vocabulary for them would be a
+ * vocabulary of one — which is a rename with extra steps, not a translation.
+ * They stay wire-only on `unmodel/stability`.
+ *
+ * **The one conversion.** ElevenLabs counts milliseconds and Stability counts
+ * seconds, which is exactly why the canonical word is `durationSeconds`;
+ * ×1000 is exact and therefore silent, and a length that lands between two
+ * milliseconds is refused rather than rounded.
+ *
+ * The cost is honest and measured: importing this pulls in both providers'
+ * validators, schemas and catalogs (~90 KiB, pinned in
+ * `test/bundle-budget.test.ts`). `createMusic([…])` above is the way to pay
+ * for one provider instead of two.
  */
+export const music = createMusic([elevenlabs, stability]);
 
 export type {
   AudioContainer,

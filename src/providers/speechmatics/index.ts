@@ -1,5 +1,5 @@
 export {
-  jobs,
+  transcribe,
   toFormData,
   jobsUrl,
   JOBS_URL,
@@ -7,7 +7,7 @@ export {
   DEFAULT_MODEL,
   SUPPORTED_FILE_TYPES,
   resolveModel,
-} from "./jobs";
+} from "./transcribe";
 export type {
   JobConfig,
   SpeechmaticsJobUpload,
@@ -28,7 +28,7 @@ export type {
   SpeechmaticsSummarizationConfig,
   SpeechmaticsTopicDetectionConfig,
   SpeechmaticsAudioEventsConfig,
-} from "./jobs";
+} from "./transcribe";
 
 export { checkJob } from "./check";
 export type { JobDetailsLike } from "./check";

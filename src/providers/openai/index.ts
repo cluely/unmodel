@@ -88,12 +88,12 @@ export type {
 } from "./speech";
 
 export {
-  transcription,
-  toFormData as transcriptionToFormData,
+  transcribe,
+  toFormData as transcribeToFormData,
   AUDIO_TRANSCRIPTIONS_URL,
   DIARIZE_CHUNKING_THRESHOLD_SECONDS,
   MAX_KNOWN_SPEAKERS,
-} from "./transcription";
+} from "./transcribe";
 export type {
   TranscriptionBody,
   TranscriptionResponseFormat,
@@ -106,7 +106,7 @@ export type {
   Gpt4oMiniTranscribeSnapshotBody,
   Gpt4oTranscribeDiarizeBody,
   UnknownTranscriptionModelBody,
-} from "./transcription";
+} from "./transcribe";
 
 export {
   speechModels,

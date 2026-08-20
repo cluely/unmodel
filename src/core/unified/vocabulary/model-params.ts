@@ -57,7 +57,7 @@ import type {
   AdapterFor,
   RefModel,
 } from "../types";
-import type { AspectRatio, ResolutionTier } from "./common";
+import type { AspectRatio, Dimensions, ResolutionTier } from "./common";
 
 /**
  * One model's request surface, beyond the canonical vocabulary every model has.
@@ -194,18 +194,41 @@ export type ModelExtras<A, R extends string> = [ModelParamsFor<A, R>] extends [n
   : ExtrasOf<ModelParamsFor<A, R>>;
 
 /**
- * The sizing trio one ref admits, as a standalone object type so the error a
- * caller sees names the field and shows the values that model takes.
+ * The size/aspectRatio/dimensions XOR with per-model members. This is a
+ * complete **replacement** for the vocabulary's own three arms, not a set of
+ * per-field narrowings to intersect with them — and that is the load-bearing
+ * decision of this module:
  *
- * `unknown` in the degraded case rather than an object of wide unions: an
- * intersection with `unknown` is a no-op, which leaves the vocabulary's own
- * declarations in charge — and they are already the wide ones.
+ * `SizeOf` unions carry `` (`${number}x${number}` & {}) `` tails, and the
+ * `& {}` is what stops TypeScript's union subtype reduction from absorbing
+ * every `"WxH"` preset into the template. Intersecting that union with the
+ * wide arm's `size?: string` **discharges the `& {}`** during intersection
+ * normalization (`` `T` & {} & string `` reduces to `` `T` ``), a bare
+ * template survives in the union, subtype reduction eats every preset, and
+ * the editor completes nothing but `"auto"`. Measured with the real language
+ * service; pinned by `test/unified/completions.test.ts`. Replacing the arms
+ * outright means the narrowed union is the only source of `size`'s contextual
+ * type, so the presets survive to the completion list — which is the entire
+ * point of carrying them.
+ */
+type SizingArms<Size, Ratio> =
+  | { size?: Size; aspectRatio?: never; dimensions?: never }
+  | { size?: never; aspectRatio?: Ratio; dimensions?: never }
+  | { size?: never; aspectRatio?: never; dimensions?: Dimensions };
+
+/** The wide arms, restated for the degraded (dynamic/unknown-ref) case. */
+type WideSizingArms = SizingArms<string, AspectRatio>;
+
+/**
+ * The sizing decision one ref admits, as complete XOR arms (see
+ * {@link SizingArms} for why they replace the vocabulary's own arms instead
+ * of intersecting them). Degraded — dynamic ref, unknown provider, unknown
+ * model — it restates the wide arms, so the XOR invariant holds for every
+ * caller and a model released after this snapshot stays callable.
  */
 export type ModelSizing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
-  ? unknown
-  : {
-      size?: SizeOf<ModelParamsFor<A, R>>;
-      aspectRatio?: RatioOf<ModelParamsFor<A, R>>;
+  ? WideSizingArms & { resolution?: ResolutionTier }
+  : SizingArms<SizeOf<ModelParamsFor<A, R>>, RatioOf<ModelParamsFor<A, R>>> & {
       resolution?: TierOf<ModelParamsFor<A, R>>;
     };
 
@@ -215,8 +238,5 @@ export type ModelSizing<A, R extends string> = [ModelParamsFor<A, R>] extends [n
  * editing is "the size it already was".
  */
 export type ModelShape<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
-  ? unknown
-  : {
-      size?: SizeOf<ModelParamsFor<A, R>>;
-      aspectRatio?: RatioOf<ModelParamsFor<A, R>>;
-    };
+  ? WideSizingArms
+  : SizingArms<SizeOf<ModelParamsFor<A, R>>, RatioOf<ModelParamsFor<A, R>>>;

@@ -197,7 +197,7 @@ export type AnyImageAdapter = AnyUnifiedAdapter<ImageParams> & {
 export interface ImageValidator<A> {
   <
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<ImageParams, UnifiedRef<A>> & ModelSizing<A, M> & ModelExtras<A, M>,
+    T extends UnifiedInput<ImageParamsBase, UnifiedRef<A>> & ModelSizing<A, M> & ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
@@ -206,7 +206,7 @@ export interface ImageValidator<A> {
   ): UnifiedResult<A, M>;
   safe<
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<ImageParams, UnifiedRef<A>> & ModelSizing<A, M> & ModelExtras<A, M>,
+    T extends UnifiedInput<ImageParamsBase, UnifiedRef<A>> & ModelSizing<A, M> & ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &

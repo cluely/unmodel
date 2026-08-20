@@ -232,7 +232,7 @@ export interface ImageEditAdapterFor<
 export interface ImageEditValidator<A> {
   <
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<ImageEditParams, UnifiedRef<A>> &
+    T extends UnifiedInput<ImageEditParamsBase, UnifiedRef<A>> &
       ModelShape<A, M> &
       ModelExtras<A, M>,
   >(
@@ -244,7 +244,7 @@ export interface ImageEditValidator<A> {
   ): UnifiedResult<A, M>;
   safe<
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<ImageEditParams, UnifiedRef<A>> &
+    T extends UnifiedInput<ImageEditParamsBase, UnifiedRef<A>> &
       ModelShape<A, M> &
       ModelExtras<A, M>,
   >(

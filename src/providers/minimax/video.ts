@@ -511,11 +511,11 @@ const validator = createValidator<VideoGenerationParams, unknown>({
 export const video = validator as unknown as {
   <T extends VideoGenerationParams>(
     params: T & ExactKeys<T, VideoGenerationParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, MinimaxSdkTargets<T>>;
   safe<T extends VideoGenerationParams>(
     params: T & ExactKeys<T, VideoGenerationParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, MinimaxSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

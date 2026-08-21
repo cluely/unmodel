@@ -141,7 +141,9 @@ describe("deepgram.transcribe enum checks", () => {
 });
 
 describe("deepgram.transcribe cost estimation", () => {
-  const tenMinutes = { media: [{ path: ["url"], durationSeconds: 600 }] };
+  // `as const`: see the note in assemblyai's suite — a hoisted path widens to
+  // `string[]` and the coordinate's first segment is a key of the params.
+  const tenMinutes = { media: [{ path: ["url"] as const, durationSeconds: 600 }] };
 
   test("nova-3 monolingual: 10 min x the $0.0077/min PRE-RECORDED rate", () => {
     // deepgram.com/pricing lists streaming and pre-recorded separately;

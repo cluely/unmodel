@@ -258,7 +258,7 @@ export function runChat(
     const renamed = !unmapped && path.join(".") !== issue.path.join(".");
     return {
       ...issue,
-      path,
+      path: [...path],
       message: unmapped
         ? message.endsWith(PROVIDER_OPTIONS_SUFFIX)
           ? message

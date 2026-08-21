@@ -39,6 +39,7 @@ import type {
   SpeechModelParamTable,
   SpeechParams,
 } from "../../core/unified/vocabulary/speech";
+import { SPEECH_VOICES, TTS_1_VOICES } from "./constraints";
 import { speech as validator, type SpeechCustomVoice } from "./speech";
 
 /** Every speech model the hand catalog carries — the ref union for `openai/…`. */
@@ -91,6 +92,16 @@ const CODECS = ["mp3", "opus", "aac", "flac", "pcm_s16le"] as const;
  * place a *unified* caller can see it, and an editor now offers the key on the
  * two models that take it and refuses it on the two that do not.
  *
+ * `voices` is the same split a second time, and the reason this adapter is the
+ * only one in the category that declares one: OpenAI hand-catalogues its
+ * built-in voices per model — nine for tts-1 / tts-1-hd, thirteen for
+ * gpt-4o-mini-tts — and `./speech.ts` already refuses an off-list *string* at
+ * the wire with `checkVoice`. Reusing the two constants that drive that check
+ * means the unified surface completes exactly what the wire surface completes,
+ * rather than the bare `Voice` it used to offer. It completes, it does not
+ * gate: a cloned voice (`{ id: "voice_1234" }`, or a bare id string) compiles
+ * on every model, which is also what `checkVoice` does.
+ *
  * `stream_format` is deliberately absent: it selects SSE framing rather than
  * anything about the audio, which puts it in the transport half that
  * `providerOptions.openai` owns. `language` is not narrowed because the
@@ -98,10 +109,18 @@ const CODECS = ["mp3", "opus", "aac", "flac", "pcm_s16le"] as const;
  * outright, and the kernel reports it before compile.
  */
 const OPENAI_SPEECH_MODEL_PARAMS = {
-  "tts-1": { codecs: CODECS },
-  "tts-1-hd": { codecs: CODECS },
-  "gpt-4o-mini-tts": { codecs: CODECS, extras: { instructions: EXTRA as string } },
-  "gpt-4o-mini-tts-2025-12-15": { codecs: CODECS, extras: { instructions: EXTRA as string } },
+  "tts-1": { codecs: CODECS, voices: TTS_1_VOICES },
+  "tts-1-hd": { codecs: CODECS, voices: TTS_1_VOICES },
+  "gpt-4o-mini-tts": {
+    codecs: CODECS,
+    voices: SPEECH_VOICES,
+    extras: { instructions: EXTRA as string },
+  },
+  "gpt-4o-mini-tts-2025-12-15": {
+    codecs: CODECS,
+    voices: SPEECH_VOICES,
+    extras: { instructions: EXTRA as string },
+  },
 } as const satisfies SpeechModelParamTable;
 
 export const speech = {

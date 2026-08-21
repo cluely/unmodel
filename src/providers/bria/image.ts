@@ -291,11 +291,11 @@ const generateValidator = createValidator<ImageGenerateParams, unknown>({
 export const image = generateValidator as unknown as {
   <T extends ImageGenerateParams>(
     params: T & ExactKeys<T, ImageGenerateParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, BriaSdkTargets<T>>;
   safe<T extends ImageGenerateParams>(
     params: T & ExactKeys<T, ImageGenerateParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, BriaSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
@@ -325,11 +325,11 @@ const generateLiteValidator = createValidator<ImageGenerateLiteParams, unknown>(
 export const imageLite = generateLiteValidator as unknown as {
   <T extends ImageGenerateLiteParams>(
     params: T & ExactKeys<T, ImageGenerateLiteParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, BriaSdkTargets<T>>;
   safe<T extends ImageGenerateLiteParams>(
     params: T & ExactKeys<T, ImageGenerateLiteParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, BriaSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

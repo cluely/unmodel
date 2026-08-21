@@ -483,11 +483,11 @@ const validator = createValidator<RealtimeTranscriptionConfig, unknown>({
 export const realtimeTranscription = validator as unknown as {
   <T extends RealtimeTranscriptionConfig>(
     params: T & ExactKeys<T, RealtimeTranscriptionConfig>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidatedSocket<T, RealtimeSdkTargets<T>>;
   safe<T extends RealtimeTranscriptionConfig>(
     params: T & ExactKeys<T, RealtimeTranscriptionConfig>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<ValidatedSocket<T, RealtimeSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

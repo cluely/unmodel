@@ -74,7 +74,14 @@ describe("attachWarnings", () => {
     const live: TranslationWarning[] = [...warnings];
     const body = attachWarnings({ model: "x" }, live);
 
-    live.push({ ...(warnings[0] as TranslationWarning), code: "dropped_param" });
+    // Spreading one warning and overriding its `code` re-pairs a code with
+    // another code's `meta` — precisely what the discriminated union exists to
+    // prevent, so it needs the cast. What is under test here is the copy, not
+    // the shape, and any second warning would do.
+    live.push({
+      ...(warnings[0] as TranslationWarning),
+      code: "dropped_param",
+    } as TranslationWarning);
 
     expect(body.warnings).toHaveLength(1);
   });

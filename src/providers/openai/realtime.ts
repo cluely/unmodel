@@ -32,6 +32,14 @@
  * - `reasoning` and `parallel_tool_calls` are documented for
  *   reasoning-capable Realtime models only; for catalog-known models this is
  *   enforced via the catalog's `reasoning` flag.
+ * - `audio.input.transcription` carries four per-model rules, and they are
+ *   enforced at both layers now (they used to be enforced at neither, stated
+ *   only in the JSDoc on the fields): `delay` is a compile error and an
+ *   `unsupported_param` on every model but `gpt-realtime-whisper`, `prompt` is
+ *   both on `gpt-realtime-whisper` alone, and `keywords`/`languages` are a
+ *   demotable WARNING off `gpt-transcribe`/`gpt-live-transcribe` — the
+ *   reference states support for those two and is silent about the rest, and
+ *   silence is not a refusal.
  * - The generated catalog currently tracks only `gpt-realtime-2.1`; other
  *   documented ids (gpt-realtime, gpt-realtime-mini, ...) validate with an
  *   unknown_model warning until models.dev catches up.
@@ -113,6 +121,42 @@ export interface RealtimeNoiseReduction {
   type?: "near_field" | "far_field";
 }
 
+/**
+ * The transcription model ids this session config documents. Open-tailed at
+ * the field, like every generated union in this repo — a model shipped after
+ * this snapshot still has to be nameable.
+ */
+export const REALTIME_TRANSCRIPTION_MODEL_IDS = [
+  "whisper-1",
+  "gpt-transcribe",
+  "gpt-live-transcribe",
+  "gpt-4o-mini-transcribe",
+  "gpt-4o-mini-transcribe-2025-12-15",
+  "gpt-4o-transcribe",
+  "gpt-4o-transcribe-diarize",
+  "gpt-realtime-whisper",
+] as const;
+
+/** One documented `audio.input.transcription.model` id. */
+export type RealtimeTranscriptionModelId = (typeof REALTIME_TRANSCRIPTION_MODEL_IDS)[number];
+
+/**
+ * The two per-model refusals the GA session docs state OUTRIGHT, and only
+ * those. Each is a sentence in the reference, quoted at the field it governs:
+ *
+ * - `delay` — "only supported with gpt-realtime-whisper in GA sessions", so
+ *   every other id refuses it.
+ * - `prompt` — "not supported with gpt-realtime-whisper in GA sessions".
+ *
+ * `keywords` / `languages` are deliberately NOT refused anywhere. The docs
+ * make a POSITIVE statement about them ("supported by gpt-transcribe /
+ * gpt-live-transcribe") and say nothing about the other six ids; turning
+ * silence into an unappealable `never` would invent a refusal the reference
+ * does not make, and a `never` has no escape hatch but `as any` — which also
+ * destroys `ExactKeys` and the model-literal inference. Those two stay a
+ * runtime `unsupported_param` (see `checkTranscription`), where the caller can
+ * demote them per code.
+ */
 export interface RealtimeTranscription {
   /** Emission delay; only supported with gpt-realtime-whisper in GA sessions. */
   delay?: "minimal" | "low" | "medium" | "high" | "xhigh";
@@ -122,19 +166,29 @@ export interface RealtimeTranscription {
   language?: string;
   /** Possible input languages (gpt-transcribe / gpt-live-transcribe). */
   languages?: string[];
-  model?:
-    | "whisper-1"
-    | "gpt-transcribe"
-    | "gpt-live-transcribe"
-    | "gpt-4o-mini-transcribe"
-    | "gpt-4o-mini-transcribe-2025-12-15"
-    | "gpt-4o-transcribe"
-    | "gpt-4o-transcribe-diarize"
-    | "gpt-realtime-whisper"
-    | (string & {});
+  model?: RealtimeTranscriptionModelId | (string & {});
   /** Style guidance; not supported with gpt-realtime-whisper in GA sessions. */
   prompt?: string;
 }
+
+/**
+ * `RealtimeTranscription` narrowed to one transcription model id.
+ *
+ * Refusals are spelled `?: never` rather than omitted, and that is the
+ * mechanism, not a style choice: the callable infers `T` from the whole
+ * literal and intersects it, and an intersection re-admits every excess key
+ * BELOW the top level — six sketch iterations, and only the `never` form makes
+ * the `T extends SessionArm<TM>` constraint do the enforcing. (Same finding as
+ * `google.chat`'s nested `generationConfig` arms.)
+ *
+ * An id this map does not name — a future model, or a runtime-built string —
+ * keeps the whole flat shape.
+ */
+export type RealtimeTranscriptionArm<M extends string> = M extends "gpt-realtime-whisper"
+  ? Omit<RealtimeTranscription, "model" | "prompt"> & { model?: M; prompt?: never }
+  : M extends RealtimeTranscriptionModelId
+    ? Omit<RealtimeTranscription, "model" | "delay"> & { model?: M; delay?: never }
+    : RealtimeTranscription & { model?: M };
 
 export interface RealtimeServerVad {
   type: "server_vad";
@@ -281,6 +335,28 @@ export interface RealtimeSessionBody {
   tracing?: RealtimeTracing | null;
   truncation?: RealtimeTruncation;
 }
+
+/**
+ * `RealtimeSessionBody` with the nested `audio.input.transcription` narrowed to
+ * one transcription model id.
+ *
+ * Every level between the root and `transcription` has to be restated, because
+ * a narrowing that is not on the path the caller writes never fires.
+ */
+export type RealtimeSessionArm<TM extends string> = Omit<RealtimeSessionBody, "audio"> & {
+  audio?: Omit<RealtimeAudioConfig, "input"> & {
+    input?: Omit<RealtimeAudioInput, "transcription"> & {
+      // `& { model?: TM }` is the INFERENCE SITE, and without it the whole
+      // narrowing is inert: `RealtimeTranscriptionArm<TM>` is a conditional
+      // type, and TypeScript does not infer a type parameter from inside one —
+      // `TM` would silently fall back to its constraint and every arm would
+      // accept everything, with tsc perfectly happy. Measured: the two
+      // `@ts-expect-error` probes below reported "unused directive" until this
+      // intersection was added.
+      transcription?: (RealtimeTranscriptionArm<TM> & { model?: TM }) | null;
+    };
+  };
+};
 
 /** `.toSdk("openai")` shape: `client.realtime.clientSecrets.create({ session })`. */
 export interface RealtimeSessionSdkParams<T extends RealtimeSessionBody = RealtimeSessionBody> {
@@ -452,6 +528,82 @@ function checkReasoningCapability(
   }
 }
 
+/** GA session reference; the four transcription rules below are quoted from it. */
+const REALTIME_GUIDE_DOCS = "https://developers.openai.com/api/docs/guides/realtime";
+
+/**
+ * The per-transcription-model rules this module's own JSDoc has always stated
+ * — and which were enforced at NEITHER layer until now.
+ *
+ * Two are outright refusals and are also compile errors
+ * ({@link RealtimeTranscriptionArm}); two are positive statements the docs
+ * make about two models and say nothing about for the rest, so they are
+ * reported here and NOT typed. A caller can demote either per code, which is
+ * exactly the appeal a `never` would not have.
+ *
+ * All four are skipped when `model` is absent or unrecognised: the docs say
+ * nothing about a model they do not list, and guessing is how a validation
+ * layer earns a reputation for false positives.
+ */
+function checkTranscription(
+  params: RealtimeSessionBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const transcription = params.audio?.input?.transcription;
+  if (transcription == null) return;
+  const model = transcription.model;
+  if (model === undefined) return;
+  const known = (REALTIME_TRANSCRIPTION_MODEL_IDS as readonly string[]).includes(model);
+  if (!known) return;
+  const path = (param: string): Array<string | number> => [
+    "audio",
+    "input",
+    "transcription",
+    param,
+  ];
+
+  // "delay … only supported with gpt-realtime-whisper in GA sessions".
+  if (transcription.delay !== undefined && model !== "gpt-realtime-whisper") {
+    ctx.report({
+      code: "unsupported_param",
+      path: path("delay"),
+      model,
+      message: `\`audio.input.transcription.delay\` is only supported with "gpt-realtime-whisper" in GA sessions; "${model}" does not accept it.`,
+      meta: { allowed: ["gpt-realtime-whisper"], value: model, source: REALTIME_GUIDE_DOCS },
+    });
+  }
+
+  // "prompt … not supported with gpt-realtime-whisper in GA sessions".
+  if (transcription.prompt !== undefined && model === "gpt-realtime-whisper") {
+    ctx.report({
+      code: "unsupported_param",
+      path: path("prompt"),
+      model,
+      message:
+        '`audio.input.transcription.prompt` is not supported with "gpt-realtime-whisper" in GA sessions; remove it, or transcribe with a model that takes style guidance.',
+      meta: { source: REALTIME_GUIDE_DOCS },
+    });
+  }
+
+  // "keywords / languages … supported by gpt-transcribe / gpt-live-transcribe".
+  // A warning, not an error: the docs name the two models that DO take these
+  // and are silent about the rest, so this is a documented-support statement
+  // rather than a documented refusal.
+  const guidanceModels = ["gpt-transcribe", "gpt-live-transcribe"];
+  for (const param of ["keywords", "languages"] as const) {
+    if (transcription[param] === undefined || guidanceModels.includes(model)) continue;
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: path(param),
+      model,
+      message: `\`audio.input.transcription.${param}\` is documented for "gpt-transcribe" and "gpt-live-transcribe"; the reference does not list it for "${model}", so it may be ignored.`,
+      meta: { allowed: guidanceModels, value: model, source: REALTIME_GUIDE_DOCS },
+    });
+  }
+}
+
 /**
  * MCP tools require `server_label` and one of `server_url`, `connector_id`,
  * or `tunnel_id` ("One of server_url, connector_id, or tunnel_id must be
@@ -542,7 +694,7 @@ const validator = createValidator<RealtimeSessionBody, unknown>({
   // verify); model-dependent checks are skipped when it is omitted.
   modelId: (params) => params.model,
   catalog: models,
-  checks: [checkOutputModalities, checkReasoningCapability, checkMcpTools],
+  checks: [checkOutputModalities, checkReasoningCapability, checkTranscription, checkMcpTools],
   estimate,
   finalize,
 });
@@ -573,13 +725,24 @@ const validator = createValidator<RealtimeSessionBody, unknown>({
  * ```
  */
 export const realtimeSession = validator as unknown as {
-  <T extends RealtimeSessionBody>(
-    params: T & ExactKeys<T, RealtimeSessionBody>,
-    options?: ValidateOptions,
+  // `TM` is constrained to the known ids PLUS the open tail, never bare
+  // `string`: with `TM extends string` the inference site stops offering
+  // anything and `transcription: { model: "…" }` completes NOTHING — the
+  // green-build/dead-completions failure this repo's completions suite exists
+  // to catch. `test/unified/completions.test.ts` pins the eight ids.
+  <
+    TM extends RealtimeTranscriptionModelId | (string & {}),
+    T extends RealtimeSessionArm<TM>,
+  >(
+    params: T & RealtimeSessionArm<TM> & ExactKeys<T, RealtimeSessionBody>,
+    options?: ValidateOptions<T>,
   ): Validated<T, RealtimeSessionSdkTargets<T>>;
-  safe<T extends RealtimeSessionBody>(
-    params: T & ExactKeys<T, RealtimeSessionBody>,
-    options?: ValidateOptions,
+  safe<
+    TM extends RealtimeTranscriptionModelId | (string & {}),
+    T extends RealtimeSessionArm<TM>,
+  >(
+    params: T & RealtimeSessionArm<TM> & ExactKeys<T, RealtimeSessionBody>,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, RealtimeSessionSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

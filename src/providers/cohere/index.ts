@@ -29,6 +29,9 @@ export type {
   CohereResponseFormat,
   CohereThinking,
   CohereCitationOptions,
+  CohereSdkMessage,
+  CohereSdkUserContentPart,
+  CohereV2ChatRequest,
 } from "./chat";
 
 export { checkChat } from "./check";

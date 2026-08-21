@@ -310,11 +310,11 @@ const vtoValidator = createValidator<FluxVtoParams, unknown>({
 interface FluxToolValidator<P> {
   <T extends P>(
     params: T & ExactKeys<T, P>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, BflSdkTargets<T>>;
   safe<T extends P>(
     params: T & ExactKeys<T, P>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, BflSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 }
@@ -352,11 +352,11 @@ export const imageEditDeblur = deblurValidator as unknown as FluxToolValidator<F
 export const imageEditVto = vtoValidator as unknown as {
   <T extends FluxVtoParams>(
     params: T & ExactKeys<T, FluxVtoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>;
   safe<T extends FluxVtoParams>(
     params: T & ExactKeys<T, FluxVtoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

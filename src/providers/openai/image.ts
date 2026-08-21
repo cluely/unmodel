@@ -298,11 +298,11 @@ const validator = createValidator<AnyImagesBody, unknown>({
 export const image = validator as unknown as {
   <M extends ImagesModelInput, T extends ImagesArm<M>>(
     params: T & ImagesArm<M> & { model: M } & ExactKeys<T, ImagesArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T & { model: M }, OpenAISdkTargets<T & { model: M }>>;
   safe<M extends ImagesModelInput, T extends ImagesArm<M>>(
     params: T & ImagesArm<M> & { model: M } & ExactKeys<T, ImagesArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T & { model: M }, OpenAISdkTargets<T & { model: M }>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

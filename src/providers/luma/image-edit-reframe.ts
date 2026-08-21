@@ -109,11 +109,11 @@ const validator = createValidator<ReframeImageParams, unknown>({
 export const imageEditReframe = validator as unknown as {
   <T extends ReframeImageParams>(
     params: T & ExactKeys<T, ReframeImageParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, LumaSdkTargets<T>>;
   safe<T extends ReframeImageParams>(
     params: T & ExactKeys<T, ReframeImageParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, LumaSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

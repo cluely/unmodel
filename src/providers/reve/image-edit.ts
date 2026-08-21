@@ -151,11 +151,11 @@ const editValidator = createValidator<EditParams, unknown>({
 export const imageEdit = editValidator as unknown as {
   <T extends EditParams>(
     params: T & ExactKeys<T, EditParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, ReveSdkTargets<T>>;
   safe<T extends EditParams>(
     params: T & ExactKeys<T, EditParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ReveSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
@@ -265,11 +265,11 @@ const remixValidator = createValidator<RemixParams, unknown>({
 export const imageEditRemix = remixValidator as unknown as {
   <T extends RemixParams>(
     params: T & ExactKeys<T, RemixParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, ReveSdkTargets<T>>;
   safe<T extends RemixParams>(
     params: T & ExactKeys<T, RemixParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ReveSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

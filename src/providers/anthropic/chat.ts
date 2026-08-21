@@ -18,7 +18,7 @@ import { availability } from "../../catalog/availability/anthropic.gen";
 import type { AnthropicAvailability } from "../../catalog/availability/anthropic.gen";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { ModelInfo, ModelsWhereFalse } from "../../core/catalog-types";
 import type { EndpointConstraints, MediaRule } from "../../core/constraint-types";
 import { PER_MESSAGE_TOKEN_OVERHEAD, estimateToolDefinitionTokens } from "../../core/tokens";
 import { computeCostUSD } from "../../core/cost";
@@ -574,11 +574,77 @@ const validator = createValidator<MessagesBody, Validated<MessagesBody, ChatSdkT
   finalize,
 });
 
+// ---------------------------------------------------------------------------
+// Per-model narrowing (Tier A)
+//
+// Three facts this endpoint already refuses at call time, moved to compile
+// time. Each is DERIVED — from the deny table or from the catalog — so no
+// hand-copied id list exists to drift, and `chat.test.ts` pins the resolved
+// unions so a `bun run codegen` that flips a flag surfaces as a test diff
+// rather than as a silent break in a caller's code.
+//
+// Deliberately NOT narrowed:
+//
+// - `top_p`. The rule is `>= 0.99`, and a numeric lower bound has no honest
+//   literal type: `0.99 | 1` would refuse documented values.
+// - `tools` / `thinking` off `toolCall: false` / `reasoning: false`. Both flags
+//   are `false` for zero models in the Anthropic catalog today, so an arm keyed
+//   on them would be dead code dressed as a guarantee.
+//
+// The one false positive worth knowing about: a shared base object widens
+// `temperature: 1` to `number`, so `chat({ ...base, model: "claude-opus-5" })`
+// needs `1 as const`. Accepted knowingly — the alternative is not catching the
+// literal case either.
+// ---------------------------------------------------------------------------
+
+/**
+ * The generation whose sampling params were removed. `keyof typeof
+ * chatConstraints` rather than a second list: the deny table is already the
+ * single source for `top_k`, and `checkCapabilities` is already the single
+ * source for `temperature` via the catalog flag. Both resolve to the same five
+ * ids today, and the test that pins them says so.
+ */
+type TopKRemovedModelId = Extract<keyof typeof chatConstraints, string>;
+
+/** Models the catalog marks `temperature: false` — only the default 1.0 is accepted. */
+type FixedSamplingModelId = ModelsWhereFalse<typeof models, "temperature">;
+
+/**
+ * `checkThinkingCompatibility` refuses `thinking: {type: "disabled"}` here: the
+ * model always thinks. Snapshots (`claude-fable-5-20260601`) stay open through
+ * `model`'s own `(string & {})` tail, exactly as `isModelOrSnapshot` allows.
+ */
+type ThinkingAlwaysOnModelId = "claude-fable-5";
+
+/**
+ * `MessagesBody` with the three per-model fields replaced for one model id.
+ *
+ * A **replacement**, not an intersection: intersecting `temperature?: 1` with
+ * the base's `temperature?: number` gives `number`, which is the whole
+ * narrowing discharged. Refusals are spelled `never` rather than omitted so
+ * the spread/composition idiom (`{ ...base, model }`) keeps working — the key
+ * still completes, it simply refuses every value.
+ */
+export type MessagesArm<M extends string> = Omit<
+  MessagesBody,
+  "model" | "temperature" | "top_k" | "thinking"
+> & {
+  model: M;
+  temperature?: M extends FixedSamplingModelId ? 1 : number;
+  top_k?: M extends TopKRemovedModelId ? never : number;
+  thinking?: M extends ThinkingAlwaysOnModelId
+    ? Exclude<NonNullable<MessagesBody["thinking"]>, { type: "disabled" }>
+    : MessagesBody["thinking"];
+};
+
 /** Registry-instantiable form of this endpoint's generic result. */
 export interface AnthropicChatResultKind extends ValidatorResultKind {
+  // `& MessagesArm<…>` is what keeps the composition idiom compiling: without
+  // it, a params object built by `unmodel/chat`'s registry no longer satisfies
+  // the arm and the whole result collapses. Verified: 3 spurious errors → 0.
   readonly output: this["input"] extends MessagesBody
     ? Validated<
-        this["input"],
+        this["input"] & MessagesArm<this["input"]["model"] & string>,
         ChatSdkTargets<this["input"]>,
         AnthropicAvailability,
         this["input"]["model"] & string
@@ -603,13 +669,15 @@ export interface AnthropicChatResultKind extends ValidatorResultKind {
  * crossing cost on the non-enumerable `.warnings`.
  */
 export const chat = validator as unknown as {
-  <T extends MessagesBody>(
-    params: T & ExactKeys<T, MessagesBody>,
-    options?: ValidateOptions,
-  ): Validated<T, ChatSdkTargets<T>, AnthropicAvailability, T["model"] & string>;
-  safe<T extends MessagesBody>(
-    params: T & ExactKeys<T, MessagesBody>,
-    options?: ValidateOptions,
-  ): ValidateResult<Validated<T, ChatSdkTargets<T>, AnthropicAvailability, T["model"] & string>>;
+  <M extends MessagesBody["model"], T extends MessagesArm<M>>(
+    params: T & { model: M } & ExactKeys<T, MessagesBody>,
+    options?: ValidateOptions<T>,
+  ): Validated<T, ChatSdkTargets<T & { model: M }>, AnthropicAvailability, M & string>;
+  safe<M extends MessagesBody["model"], T extends MessagesArm<M>>(
+    params: T & { model: M } & ExactKeys<T, MessagesBody>,
+    options?: ValidateOptions<T>,
+  ): ValidateResult<
+    Validated<T, ChatSdkTargets<T & { model: M }>, AnthropicAvailability, M & string>
+  >;
   constraintsFor(modelId: string): EndpointConstraints[];
 } & ValidatorResultKindCarrier<AnthropicChatResultKind> & ValidatorProviderCarrier<"anthropic">;

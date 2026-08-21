@@ -421,11 +421,11 @@ const validator = createValidator<TextToSpeechStreamInputParams>({
 export const textToSpeechStreamInput = validator as unknown as {
   <T extends TextToSpeechStreamInputParams>(
     params: T & ExactKeys<T, TextToSpeechStreamInputParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): T;
   safe<T extends TextToSpeechStreamInputParams>(
     params: T & ExactKeys<T, TextToSpeechStreamInputParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<T>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

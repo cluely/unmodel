@@ -225,11 +225,11 @@ const validator = createValidator<GenerationsParams, unknown>({
 export const video = validator as unknown as {
   <T extends GenerationsParams>(
     params: T & ExactKeys<T, GenerationsParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, LumaSdkTargets<T>>;
   safe<T extends GenerationsParams>(
     params: T & ExactKeys<T, GenerationsParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, LumaSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

@@ -198,11 +198,11 @@ const validator = createValidator<Reference2ImageParams, unknown>({
 export const imageFromReference = validator as unknown as {
   <T extends Reference2ImageParams>(
     params: T & ExactKeys<T, Reference2ImageParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, ViduSdkTargets<T>>;
   safe<T extends Reference2ImageParams>(
     params: T & ExactKeys<T, Reference2ImageParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ViduSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

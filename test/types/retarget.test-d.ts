@@ -12,6 +12,8 @@ import type { AnthropicAvailability } from "../../src/catalog/availability/anthr
 import type { GoogleAvailability } from "../../src/catalog/availability/google.gen";
 import type { GroqAvailability } from "../../src/catalog/availability/groq.gen";
 import type { Validated } from "../../src/core/request";
+import type { DialectId } from "../../src/core/translate/endpoints";
+import type { Warn } from "../../src/core/translate/warnings";
 import type { ApiModelFor, ApiTargetsFor, StaticApiTargetId } from "../../src/retarget/ids";
 import type { MessagesBody } from "../../src/providers/anthropic/wire";
 import type { GenerateContentBody } from "../../src/providers/google/wire";
@@ -225,3 +227,62 @@ unknownModel.toApi("groq");
 unknownModel.toApi("amazon-bedrock");
 // @ts-expect-error — not a catalog provider id.
 unknownModel.toApi("not-a-provider");
+
+// ---------------------------------------------------------------------------
+// `warnings[].meta` is the payload that goes with `code`
+//
+// It used to be `Record<string, unknown>`: every read needed a cast, nothing
+// completed, and `meta.tol` was silently fine — on the documented deliverable
+// of the whole translation layer. Six of the seven codes now carry their real
+// key set; `approximated_param` keeps an open bag on purpose (~24 shapes).
+// ---------------------------------------------------------------------------
+
+for (const w of viaOpenRouter.warnings) {
+  // @ts-expect-error — reading `meta` blind is what the union refuses: `tool`
+  // is not a key every arm has. Narrow on `code` first.
+  w.meta?.tool;
+
+  if (w.code === "dropped_tool") {
+    expectAssignable<string | undefined>(w.meta?.tool);
+    expectAssignable<DialectId | undefined>(w.meta?.dialect);
+    // @ts-expect-error — a typo in a `meta` read is a compile error now, with a
+    // "Did you mean 'tool'?" suggestion.
+    w.meta?.tol;
+  }
+
+  if (w.code === "id_respelled") {
+    // `to` is always present on this arm; `from` is not — a body need not
+    // carry a model id at all.
+    expectAssignable<string | undefined>(w.meta?.to);
+    expectAssignable<string | undefined>(w.meta?.from);
+  }
+
+  if (w.code === "capability_narrowed") {
+    // The consumer line that could not compile before: `meta` was `unknown`,
+    // so arithmetic on a token count needed a cast.
+    expectAssignable<number>((w.meta?.context ?? 0) + 1);
+    expectAssignable<readonly string[] | undefined>(w.meta?.drops);
+  }
+
+  if (w.code === "synthesized_tool_call_id") {
+    expectAssignable<string | undefined>(w.meta?.id);
+    expectAssignable<string | undefined>(w.meta?.name);
+  }
+
+  if (w.code === "approximated_param") {
+    // The deliberate open arm: the three recurring keys complete, and any
+    // one-off key still reads.
+    expectAssignable<unknown>(w.meta?.requested);
+    expectAssignable<unknown>(w.meta?.achieved);
+    expectAssignable<string | undefined>(w.meta?.source);
+    expectAssignable<unknown>(w.meta?.["budgetTokens"]);
+  }
+}
+
+// A codec's own input keeps the pairing too — `DistributiveOmit`, not `Omit`,
+// is what makes that true (a plain `Omit` collapses the union into one arm
+// whose `code` and `meta` are two independent unions).
+declare const warn: Warn;
+warn({ code: "dropped_tool", path: ["tools"], message: "x", meta: { tool: "web_search" } });
+// @ts-expect-error — `context` belongs to `capability_narrowed`, not here.
+warn({ code: "dropped_tool", path: ["tools"], message: "x", meta: { context: 1 } });

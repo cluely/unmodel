@@ -492,11 +492,11 @@ const validator = createValidator<RimeTtsParams, unknown>({
 export const speech = validator as unknown as {
   <T extends RimeTtsParams>(
     params: T & ExactKeys<T, RimeTtsParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "accept">, SpeechSdkTargets<Omit<T, "accept">>>;
   safe<T extends RimeTtsParams>(
     params: T & ExactKeys<T, RimeTtsParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "accept">, SpeechSdkTargets<Omit<T, "accept">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

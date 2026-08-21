@@ -686,11 +686,11 @@ const validator = createValidator<AnyGenerationsBody, unknown>({
 export const image = validator as unknown as {
   <M extends LeonardoModelInput, T extends LeonardoArm<M>>(
     params: T & LeonardoArm<M> & { model: M } & ExactKeys<T, LeonardoArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, LeonardoSdkTargets<T>>;
   safe<M extends LeonardoModelInput, T extends LeonardoArm<M>>(
     params: T & LeonardoArm<M> & { model: M } & ExactKeys<T, LeonardoArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, LeonardoSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

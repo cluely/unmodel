@@ -206,11 +206,11 @@ const validator = createValidator<ImageGenerationsParams, unknown>({
 export const image = validator as unknown as {
   <T extends ImageGenerationsParams>(
     params: T & ExactKeys<T, ImageGenerationsParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, LumaSdkTargets<T>>;
   safe<T extends ImageGenerationsParams>(
     params: T & ExactKeys<T, ImageGenerationsParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, LumaSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

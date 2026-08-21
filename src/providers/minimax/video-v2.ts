@@ -69,6 +69,14 @@ export type MinimaxVideoV2Ratio = (typeof VIDEO_V2_RATIOS)[number];
 
 /** `content[].type` values. */
 export const VIDEO_V2_CONTENT_TYPES = ["text", "image_url", "video_url", "audio_url"] as const;
+/**
+ * The `content[].type` vocabulary, closed — like `MinimaxVideoV2Resolution` and
+ * `MinimaxVideoV2Ratio` and unlike `model`. Protocol vocabulary, not an id:
+ * `checkContentEnums` already refuses an off-list value with
+ * `invalid_enum_value`, and `summarize` funnels an unrecognised item into the
+ * first-frame branch, so a typo used to earn a second, misleading diagnostic.
+ */
+export type MinimaxV2ContentType = (typeof VIDEO_V2_CONTENT_TYPES)[number];
 /** `content[].role` values. */
 export const VIDEO_V2_ROLES = [
   "first_frame",
@@ -77,6 +85,8 @@ export const VIDEO_V2_ROLES = [
   "reference_video",
   "reference_audio",
 ] as const;
+/** The `content[].role` vocabulary, closed for the reasons on {@link MinimaxV2ContentType}. */
+export type MinimaxV2Role = (typeof VIDEO_V2_ROLES)[number];
 
 /** "Length is counted by characters, with a maximum of 7000 characters per `text`." */
 export const VIDEO_V2_TEXT_MAX_CHARACTERS = 7000;
@@ -107,7 +117,7 @@ export interface MinimaxMediaUrl {
 }
 
 export interface MinimaxV2ContentItem {
-  type: (typeof VIDEO_V2_CONTENT_TYPES)[number] | (string & {});
+  type: MinimaxV2ContentType;
   /** Set when `type` is "text"; up to 7000 characters. */
   text?: string;
   /** Set when `type` is "image_url". */
@@ -117,7 +127,7 @@ export interface MinimaxV2ContentItem {
   /** Set when `type` is "audio_url" (reference scenario only). */
   audio_url?: MinimaxMediaUrl;
   /** Position/purpose of this item; conditionally required. */
-  role?: (typeof VIDEO_V2_ROLES)[number] | (string & {});
+  role?: MinimaxV2Role;
 }
 
 export interface VideoGenerationV2Params {
@@ -471,11 +481,11 @@ const validator = createValidator<VideoGenerationV2Params, unknown>({
 export const videoV2 = validator as unknown as {
   <T extends VideoGenerationV2Params>(
     params: T & ExactKeys<T, VideoGenerationV2Params>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, MinimaxSdkTargets<T>>;
   safe<T extends VideoGenerationV2Params>(
     params: T & ExactKeys<T, VideoGenerationV2Params>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, MinimaxSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

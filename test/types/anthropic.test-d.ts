@@ -8,6 +8,9 @@ import type { MessageCreateParams } from "@anthropic-ai/sdk/resources/messages";
 import { chat, checkChat } from "../../src/providers/anthropic";
 import type { AnthropicStopReason, MessagesBody } from "../../src/providers/anthropic";
 import type { EndpointConstraints } from "../../src/core/constraint-types";
+import type { ModelsWhereFalse } from "../../src/core/catalog-types";
+import { models as anthropicModels } from "../../src/catalog/anthropic.gen";
+import { chatConstraints as anthropicChatConstraints } from "../../src/providers/anthropic/constraints";
 import type { ResponseReport } from "../../src/core/report";
 import { expectAssignable, expectTrue, type HasLiteralMember } from "./helpers";
 
@@ -182,3 +185,75 @@ function anthropicReportTypeTests(): void {
 }
 
 void anthropicReportTypeTests;
+
+// ---------------------------------------------------------------------------
+// Tier A: three per-model facts, moved from call time to compile time
+//
+// Each of the three is something `chat.safe` already refuses at run time
+// (src/providers/anthropic/chat.test.ts asserts all three); what is new is that
+// the editor refuses it first. The keying is DERIVED — `top_k` off the deny
+// table, `temperature` off the catalog flag — so the union below is the guard
+// that makes a catalog regen visible: if `bun run codegen` flips a flag, this
+// file stops compiling instead of a caller's code silently breaking.
+// ---------------------------------------------------------------------------
+
+/** Exact type equality (invariant both ways), for asserting resolved unions. */
+type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+  ? true
+  : false;
+
+declare const runtimeModel: string;
+
+/** The resolved fixed-sampling generation, pinned. */
+type FixedSampling = ModelsWhereFalse<typeof anthropicModels, "temperature">;
+expectTrue<
+  Equals<
+    FixedSampling,
+    "claude-fable-5" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-5"
+  >
+>();
+/** …and the deny table resolves to exactly the same five ids. */
+expectTrue<Equals<FixedSampling, Extract<keyof typeof anthropicChatConstraints, string>>>();
+
+function anthropicPerModelTypeTests(): void {
+  // The default is the only accepted temperature on this generation…
+  chat({ model: "claude-opus-5", max_tokens: 16, messages: [], temperature: 1 });
+  // …and the previous generation is untouched.
+  chat({ model: "claude-sonnet-4-5", max_tokens: 16, messages: [], temperature: 0.7, top_k: 40 });
+
+  // @ts-expect-error — `unsupported_param` at call time; a compile error now.
+  chat({ model: "claude-opus-5", max_tokens: 16, messages: [], temperature: 0.7 });
+  // @ts-expect-error — `top_k` returns a 400 on this generation, at any value.
+  chat({ model: "claude-opus-5", max_tokens: 16, messages: [], top_k: 40 });
+  // @ts-expect-error — fable-5 always thinks; `disabled` is excluded.
+  chat({ model: "claude-fable-5", max_tokens: 16, messages: [], thinking: { type: "disabled" } });
+
+  // The other two thinking modes stay, on fable-5 and everywhere else.
+  chat({ model: "claude-fable-5", max_tokens: 16, messages: [], thinking: { type: "adaptive" } });
+  chat({
+    model: "claude-opus-4-5",
+    max_tokens: 16,
+    messages: [],
+    thinking: { type: "disabled" },
+  });
+
+  // `top_p` is NOT narrowed — the rule is `>= 0.99`, and a numeric lower bound
+  // has no honest literal type; `0.99 | 1` would refuse documented values.
+  chat({ model: "claude-opus-5", max_tokens: 16, messages: [], top_p: 0.995 });
+
+  // Degraded arms stay callable: a model id that only exists at run time, and
+  // a model released after this build.
+  chat({ model: runtimeModel, max_tokens: 16, messages: [], temperature: 0.7, top_k: 40 });
+  chat({ model: "claude-opus-9", max_tokens: 16, messages: [], temperature: 0.7, top_k: 40 });
+
+  // A ref union distributes rather than collapsing to `never`.
+  const branch = Math.random() > 0.5 ? ("claude-opus-5" as const) : ("claude-sonnet-4-5" as const);
+  chat({ model: branch, max_tokens: 16, messages: [] });
+
+  // The literal still reaches the result — the arm must not eat it.
+  const v = chat({ model: "claude-opus-5", max_tokens: 16, messages: [] });
+  expectAssignable<"claude-opus-5">(v.model);
+  expectAssignable<MessageCreateParams>(v.toSdk("anthropic"));
+}
+
+void anthropicPerModelTypeTests;

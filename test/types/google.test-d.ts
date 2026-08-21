@@ -13,6 +13,8 @@ import type { GoogleFinishReason } from "../../src/providers/google";
 import type { ResponseReport } from "../../src/core/report";
 import type { GoogleTextModelId } from "../../src/catalog/google.gen";
 import { GEMINI_IMAGE_MODEL_RULES } from "../../src/providers/google/constraints";
+import { models as googleCatalogModels } from "../../src/catalog/google.gen";
+import type { ModelsWhereFalse } from "../../src/core/catalog-types";
 import { chatModels } from "../../src/providers/google/tts-models";
 import type { GeminiTtsVoiceName } from "../../src/providers/google/wire";
 import type {
@@ -674,3 +676,147 @@ function googleReportTypeTests(): void {
 }
 
 void googleReportTypeTests;
+
+// ---------------------------------------------------------------------------
+// Tier A: the four per-model run-time checks, restated at the call site
+//
+// google.chat had NO per-model constraint table at all while four checks
+// narrowed it per model at run time (checkResponseModalities,
+// checkImageGeneration, checkSpeechGeneration, checkCapabilities). Each arm is
+// keyed off the same source its check reads, so no id list can drift; the
+// pinned unions below are the guard that makes a catalog regen visible.
+// ---------------------------------------------------------------------------
+
+/** Exact type equality (invariant both ways), for asserting resolved unions. */
+type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+  ? true
+  : false;
+
+/** The catalog rows the arms are derived from, pinned. */
+expectTrue<
+  Equals<
+    ModelsWhereFalse<typeof googleCatalogModels, "temperature">,
+    | "gemini-embedding-001"
+    | "gemini-embedding-2"
+    | "veo-3.1-fast-generate-preview"
+    | "veo-3.1-generate-preview"
+    | "veo-3.1-lite-generate-preview"
+  >
+>();
+expectTrue<
+  HasLiteralMember<ModelsWhereFalse<typeof googleCatalogModels, "reasoning">, "gemini-2.5-flash-preview-tts">
+>();
+expectTrue<
+  HasLiteralMember<ModelsWhereFalse<typeof googleCatalogModels, "toolCall">, "gemini-2.5-flash-image">
+>();
+
+function googlePerModelTypeTests(): void {
+  const HI = [{ parts: [{ text: "hi" }] }];
+
+  // --- responseModalities: the model's own output modalities ----------------
+  chat({ model: "gemini-2.5-flash", contents: HI, generationConfig: { responseModalities: ["TEXT"] } });
+  chat({
+    model: "gemini-3.1-flash-image",
+    contents: HI,
+    generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+  });
+  // Both spellings, on every arm — the wire type carries both and so does this.
+  chat({
+    model: "gemini-3.1-flash-image",
+    contents: HI,
+    generationConfig: { responseModalities: ["Text", "Image"] },
+  });
+  chat({
+    model: "gemini-2.5-flash",
+    contents: HI,
+    // @ts-expect-error — `unsupported_capability` at call time; a compile error now.
+    generationConfig: { responseModalities: ["IMAGE"] },
+  });
+
+  // --- imageConfig: the guide's own resolution table ------------------------
+  chat({
+    model: "gemini-3-pro-image",
+    contents: HI,
+    generationConfig: { imageConfig: { imageSize: "4K", aspectRatio: "16:9" } },
+  });
+  // The proto-JSON enum spelling of an allowed value, which `allowedSpellings`
+  // accepts at run time and the arm must therefore accept too.
+  chat({
+    model: "gemini-3-pro-image",
+    contents: HI,
+    generationConfig: { imageConfig: { aspectRatio: "ASPECT_RATIO_SIXTEEN_BY_NINE" } },
+  });
+  chat({
+    model: "gemini-3-pro-image",
+    contents: HI,
+    // @ts-expect-error — the Pro table has no 512 column.
+    generationConfig: { imageConfig: { imageSize: "512" } },
+  });
+  chat({
+    model: "gemini-2.5-flash-image",
+    contents: HI,
+    // @ts-expect-error — one fixed resolution: this model takes no `imageSize`.
+    generationConfig: { imageConfig: { imageSize: "1K" } },
+  });
+  chat({
+    model: "gemini-2.5-flash-image",
+    contents: HI,
+    // @ts-expect-error — the 1:8 extreme is not on this model's ratio table.
+    generationConfig: { imageConfig: { aspectRatio: "1:8" } },
+  });
+
+  // --- speechConfig / thinkingConfig / temperature / tools ------------------
+  chat({
+    model: "gemini-3.1-flash-tts-preview",
+    contents: HI,
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+    },
+  });
+  chat({
+    model: "gemini-2.5-flash",
+    contents: HI,
+    // @ts-expect-error — a model that does not generate audio takes no speechConfig.
+    generationConfig: { speechConfig: { voiceConfig: {} } },
+  });
+  chat({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: HI,
+    // @ts-expect-error — `reasoning: false` in the catalog.
+    generationConfig: { thinkingConfig: { thinkingBudget: 1024 } },
+  });
+  chat({
+    model: "gemini-embedding-001",
+    contents: HI,
+    // @ts-expect-error — `temperature: false` in the catalog.
+    generationConfig: { temperature: 0.5 },
+  });
+  // @ts-expect-error — `toolCall: false` in the catalog.
+  chat({ model: "gemini-2.5-flash-image", contents: HI, tools: [{ googleSearch: {} }] });
+
+  // --- everything that must NOT break --------------------------------------
+  // A reasoning model still takes thinkingConfig, and a normal model still
+  // takes temperature and tools.
+  chat({
+    model: "gemini-2.5-flash",
+    contents: HI,
+    generationConfig: { temperature: 0.5, thinkingConfig: { thinkingBudget: 1024 } },
+    tools: [{ googleSearch: {} }],
+  });
+  // A runtime-built id and an id released after this build both stay callable
+  // with the whole vocabulary.
+  chat({ model: runtimeGoogleModel, contents: HI, generationConfig: { temperature: 0.5 } });
+  chat({ model: "gemini-9-ultra", contents: HI, generationConfig: { responseModalities: ["IMAGE"] } });
+
+  // The literal reaches the result, and the SDK shape still typechecks.
+  // (`model` is stripped from the body — on this wire it lives in the URL.)
+  const v = chat({ model: "gemini-3.1-flash-image", contents: HI });
+  expectAssignable<string>(v.request.url);
+  expectAssignable<GenerateContentParameters>(v.toSdk("google"));
+}
+
+void googlePerModelTypeTests;
+
+/** A model id only known at run time — the degraded arm of every narrowing. */
+declare const runtimeGoogleModel: string;

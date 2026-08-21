@@ -499,7 +499,7 @@ const MEDIA_PATHS: ReadonlyArray<Array<string | number>> = [
 
 function declaredMedia(
   ctx: PipelineContext,
-): { path: Array<string | number>; durationSeconds?: number; bytes?: number } | undefined {
+): { path: readonly (string | number)[]; durationSeconds?: number; bytes?: number } | undefined {
   for (const path of MEDIA_PATHS) {
     const found = findMediaDeclaration(ctx.options.media, path);
     if (found !== undefined) return { ...found, path };
@@ -519,7 +519,7 @@ function checkMediaLimits(
   if (seconds !== undefined && seconds > limit) {
     ctx.report({
       code: "media_duration_exceeded",
-      path: declaration?.path ?? ["source_config", "url"],
+      path: [...(declaration?.path ?? ["source_config", "url"])],
       model: transcriberOf(params),
       message: `media is declared as ${seconds}s; Rev AI caps a job at ${limit}s (${limit / 3600} hours)${params.language === "te" ? ' for Telugu ("te")' : ""}.`,
       meta: { durationSeconds: seconds, limit, source: REFERENCE_DOCS },
@@ -619,6 +619,10 @@ const validator = createValidator<JobsBody, unknown>({
     checkSegments,
     checkMediaLimits,
   ],
+  // `media` is the multipart file part of the upload route, not a key of the
+  // JSON job body — same list `declaredMedia` reads, so the two cannot
+  // disagree about which coordinates this endpoint honours.
+  mediaPaths: MEDIA_PATHS,
   estimate: estimateJob,
   finalize,
 });

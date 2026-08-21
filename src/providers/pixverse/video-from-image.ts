@@ -182,11 +182,11 @@ const validator = createValidator<ImageToVideoParams, unknown>({
 export const videoFromImage = validator as unknown as {
   <T extends ImageToVideoParams>(
     params: T & ExactKeys<T, ImageToVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, PixverseSdkTargets<T>>;
   safe<T extends ImageToVideoParams>(
     params: T & ExactKeys<T, ImageToVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, PixverseSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

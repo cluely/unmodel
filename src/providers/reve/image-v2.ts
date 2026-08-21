@@ -281,11 +281,11 @@ const validator = createValidator<CreateV2Params, unknown>({
 export const imageV2 = validator as unknown as {
   <T extends CreateV2Params>(
     params: T & ExactKeys<T, CreateV2Params>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, ReveSdkTargets<T>>;
   safe<T extends CreateV2Params>(
     params: T & ExactKeys<T, CreateV2Params>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ReveSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

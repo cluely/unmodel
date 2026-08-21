@@ -410,11 +410,11 @@ export type ChatSdkTargets<T extends ConverseParams = ConverseParams> = {
 export interface AmazonBedrockChat {
   <T extends ConverseParams>(
     params: T & ExactKeys<T, ConverseParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "modelId">, ChatSdkTargets<T>>;
   safe<T extends ConverseParams>(
     params: T & ExactKeys<T, ConverseParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "modelId">, ChatSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 }

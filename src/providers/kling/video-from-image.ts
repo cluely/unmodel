@@ -328,11 +328,11 @@ const validator = createValidator<ImageToVideoParams, unknown>({
 export const videoFromImage = validator as unknown as {
   <M extends ImageToVideoModelInput, T extends ImageToVideoArm<M>>(
     params: T & ImageToVideoArm<M> & { model_name?: M } & ExactKeys<T, ImageToVideoArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, KlingSdkTargets<T>>;
   safe<M extends ImageToVideoModelInput, T extends ImageToVideoArm<M>>(
     params: T & ImageToVideoArm<M> & { model_name?: M } & ExactKeys<T, ImageToVideoArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, KlingSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

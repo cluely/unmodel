@@ -23,12 +23,17 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints, MediaRule } from "../../core/constraint-types";
+import type { ModelsWhereFalse } from "../../core/catalog-types";
 import { computeCostUSD } from "../../core/cost";
 import { estimateToolDefinitionTokens, PER_MESSAGE_TOKEN_OVERHEAD } from "../../core/tokens";
 import { toBytes } from "../../core/media/bytes";
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
 import { sniffImage, type SniffedImage } from "../../core/media/image";
 import { chatModels } from "./tts-models";
+// The GENERATED catalog, imported alongside `chatModels`: the merged table is
+// annotated `Record<string, ModelInfo>` (deliberately — its header explains
+// why), which erases exactly the literals the arms below are derived from.
+import { models as googleCatalogModels } from "../../catalog/google.gen";
 import { GOOGLE_MODELS_BASE_URL, googleModelUrl, stripModelsPrefix } from "./model-path";
 import {
   GEMINI_IMAGE_ASPECT_RATIOS,
@@ -70,6 +75,17 @@ import type {
 // only zod), so translation machinery can reach the dialect without pulling
 // in this validator. Re-exported here so the module's public surface is
 // unchanged.
+// The wire types the per-model arms below are written against. They are only
+// RE-exported above, which does not put them in local scope — this import is
+// what makes them nameable here.
+import type {
+  GoogleGenerationConfig,
+  GoogleImageConfig,
+  GoogleModality,
+  GoogleSpeechConfig,
+  GoogleThinkingConfig,
+} from "./wire";
+
 export type {
   GoogleRole,
   GoogleInlineData,
@@ -967,11 +983,114 @@ const validator = createValidator<GenerateContentBody, unknown>({
   finalize,
 });
 
+// ---------------------------------------------------------------------------
+// Per-model narrowing (Tier A)
+//
+// This endpoint had NO per-model constraint table at all (`chatConstraints` is
+// `{}`), while four run-time checks narrow it per model: checkResponseModalities,
+// checkImageGeneration, checkSpeechGeneration and checkCapabilities. Every arm
+// below restates one of those four, keyed off the same source the check reads —
+// the generated catalog, or GEMINI_IMAGE_MODEL_RULES — so no hand-copied id
+// list exists to drift, and `chat.test.ts` pins the resolved unions so a
+// `bun run codegen` that flips a flag surfaces as a test diff.
+//
+// `generationConfig` is a NESTED object, which is the mechanically interesting
+// part: the refusals have to be spelled `?: never` rather than omitted, or the
+// intersection the callable performs re-admits every excess key below the top
+// level. (Same finding as `openai.realtimeSession`'s transcription arms.)
+//
+// The honest ceiling, stated once: a caller who hoists
+// `const generationConfig: GoogleGenerationConfig = {…}` and passes the
+// variable gets the wide type back. Arms narrow the call site, not the world.
+// ---------------------------------------------------------------------------
+
+/** The generated catalog itself — `chatModels` is annotated, so its literals are gone. */
+type GoogleCatalog = typeof googleCatalogModels;
+
+/** Both wire spellings of one catalog modality, and only the ones the wire has. */
+type ModalitySpellings<O extends string> = Extract<
+  GoogleModality,
+  Uppercase<O> | Capitalize<O>
+>;
+
+/**
+ * The `responseModalities` vocabulary one model actually serves.
+ *
+ * `MODALITY_UNSPECIFIED` rides on every arm because `checkResponseModalities`
+ * maps it to nothing and passes it: refusing it here would be an error the
+ * validator does not raise. A model whose only output modality has no wire
+ * spelling at all (video) keeps the full union rather than collapsing to
+ * `never`, for the same reason.
+ */
+type OutputModalityOf<M extends string> = M extends keyof GoogleCatalog
+  ? [ModalitySpellings<GoogleCatalog[M]["modalities"]["output"][number]>] extends [never]
+    ? GoogleModality
+    : ModalitySpellings<GoogleCatalog[M]["modalities"]["output"][number]> | "MODALITY_UNSPECIFIED"
+  : GoogleModality;
+
+type ImageRules = typeof GEMINI_IMAGE_MODEL_RULES;
+type AspectRatioEnumNames = typeof GEMINI_IMAGE_ASPECT_RATIO_ENUM_NAMES;
+type ImageSizeEnumNames = typeof GEMINI_IMAGE_SIZE_ENUM_NAMES;
+
+/** A ratio plus its proto-JSON enum name — exactly what `allowedSpellings` accepts. */
+type AspectRatioSpelling<R extends string> =
+  | R
+  | (R extends keyof AspectRatioEnumNames ? AspectRatioEnumNames[R] : never);
+
+/** A size plus its proto-JSON enum name. */
+type ImageSizeSpelling<S extends string> =
+  | S
+  | (S extends keyof ImageSizeEnumNames ? ImageSizeEnumNames[S] : never);
+
+/**
+ * `imageConfig` for one model, from the guide's own resolution table.
+ *
+ * A model with no `imageSizes` row has a single fixed output resolution and
+ * takes no `imageSize` at all — `never`, which is what `checkImageGeneration`
+ * reports for it. A model not in the table keeps the wide config.
+ */
+type ImageConfigOf<M extends string> = M extends keyof ImageRules
+  ? Omit<GoogleImageConfig, "aspectRatio" | "imageSize"> & {
+      aspectRatio?: AspectRatioSpelling<ImageRules[M]["aspectRatios"][number]>;
+      imageSize?: ImageRules[M] extends { imageSizes: infer S extends readonly string[] }
+        ? ImageSizeSpelling<S[number]>
+        : never;
+    }
+  : GoogleImageConfig;
+
+/** `generationConfig` with its five per-model fields replaced for one model id. */
+type NarrowedGenerationConfig<M extends string> = Omit<
+  GoogleGenerationConfig,
+  "temperature" | "thinkingConfig" | "responseModalities" | "imageConfig" | "speechConfig"
+> & {
+  temperature?: M extends ModelsWhereFalse<GoogleCatalog, "temperature"> ? never : number;
+  thinkingConfig?: M extends ModelsWhereFalse<GoogleCatalog, "reasoning">
+    ? never
+    : GoogleThinkingConfig;
+  responseModalities?: Array<OutputModalityOf<M>>;
+  imageConfig?: ImageConfigOf<M>;
+  speechConfig?: "AUDIO" extends OutputModalityOf<M> ? GoogleSpeechConfig : never;
+};
+
+/** `GenerateContentBody` narrowed to one model id. */
+export type GenerateContentArm<M extends string> = Omit<
+  GenerateContentBody,
+  "model" | "tools" | "generationConfig"
+> & {
+  model: M;
+  tools?: M extends ModelsWhereFalse<GoogleCatalog, "toolCall">
+    ? never
+    : GenerateContentBody["tools"];
+  generationConfig?: NarrowedGenerationConfig<M>;
+};
+
 /** Registry-instantiable form of this endpoint's generic result. */
 export interface GoogleChatResultKind extends ValidatorResultKind {
+  // `& GenerateContentArm<…>` keeps the composition idiom compiling — the same
+  // one-line mitigation `AnthropicChatResultKind` carries, for the same reason.
   readonly output: this["input"] extends GenerateContentBody
     ? Validated<
-        Omit<this["input"], "model">,
+        Omit<this["input"] & GenerateContentArm<this["input"]["model"] & string>, "model">,
         ChatSdkTargets<this["input"]>,
         GoogleAvailability,
         this["input"]["model"] & string
@@ -1000,20 +1119,20 @@ export interface GoogleChatResultKind extends ValidatorResultKind {
  * ```
  */
 export const chat = validator as unknown as {
-  <T extends GenerateContentBody>(
-    params: T & ExactKeys<T, GenerateContentBody>,
-    options?: ValidateOptions,
+  <M extends GenerateContentBody["model"], T extends GenerateContentArm<M>>(
+    params: T & { model: M } & ExactKeys<T, GenerateContentBody>,
+    options?: ValidateOptions<T>,
   ): Validated<
     Omit<T, "model">,
-    ChatSdkTargets<T>,
+    ChatSdkTargets<T & { model: M }>,
     GoogleAvailability,
-    T["model"] & string
+    M & string
   >;
-  safe<T extends GenerateContentBody>(
-    params: T & ExactKeys<T, GenerateContentBody>,
-    options?: ValidateOptions,
+  safe<M extends GenerateContentBody["model"], T extends GenerateContentArm<M>>(
+    params: T & { model: M } & ExactKeys<T, GenerateContentBody>,
+    options?: ValidateOptions<T>,
   ): ValidateResult<
-    Validated<Omit<T, "model">, ChatSdkTargets<T>, GoogleAvailability, T["model"] & string>
+    Validated<Omit<T, "model">, ChatSdkTargets<T & { model: M }>, GoogleAvailability, M & string>
   >;
   constraintsFor(modelId: string): EndpointConstraints[];
 } & ValidatorResultKindCarrier<GoogleChatResultKind> & ValidatorProviderCarrier<"google">;

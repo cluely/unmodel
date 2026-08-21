@@ -14,7 +14,7 @@ import type { MediaDeclaration, ValidateOptions } from "../core/options";
 import type { DialectId } from "../core/translate/endpoints";
 import type { ChatParams } from "./types";
 
-type Path = Array<string | number>;
+type Path = readonly (string | number)[];
 type UnknownRecord = Record<string, unknown>;
 
 interface LocatedMedia {

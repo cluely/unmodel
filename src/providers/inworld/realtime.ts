@@ -196,11 +196,11 @@ const transcribeConfigValidator = createValidator<InworldRealtimeTranscribeConfi
 export const realtimeTranscribeConfig = transcribeConfigValidator as unknown as {
   <T extends InworldRealtimeTranscribeConfig>(
     params: T & ExactKeys<T, InworldRealtimeTranscribeConfig>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidatedSocket<T, RealtimeTranscribeSdkTargets<T>>;
   safe<T extends InworldRealtimeTranscribeConfig>(
     params: T & ExactKeys<T, InworldRealtimeTranscribeConfig>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<ValidatedSocket<T, RealtimeTranscribeSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
@@ -368,11 +368,11 @@ const voiceContextValidator = createValidator<InworldVoiceContextConfig, unknown
 export const realtimeVoiceContext = voiceContextValidator as unknown as {
   <T extends InworldVoiceContextConfig>(
     params: T & ExactKeys<T, InworldVoiceContextConfig>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidatedSocket<T, RealtimeVoiceContextSdkTargets<T>>;
   safe<T extends InworldVoiceContextConfig>(
     params: T & ExactKeys<T, InworldVoiceContextConfig>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<ValidatedSocket<T, RealtimeVoiceContextSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

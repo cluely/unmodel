@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Issue } from "./issues";
-import { UnmodelValidationError } from "./issues";
+import { formatIssuePath, UnmodelValidationError } from "./issues";
 import type { ValidateEstimate, ValidateResult } from "./result";
 import type { ValidateOptions } from "./options";
 import type { ModelInfo } from "./catalog-types";
@@ -57,6 +57,21 @@ export interface PipelineSpec<P, V = P> {
    */
   promptPath?: readonly (string | number)[];
   /**
+   * Media coordinates this endpoint accepts that are **not fields of the
+   * params object** — the multipart file part on an upload route
+   * (`speechmatics.transcribe`'s `data_file`, `revai.transcribe`'s `media`).
+   *
+   * `reportUnresolvedMedia` treats a declaration that names nothing as a
+   * silently-inert declaration, which is right everywhere the body and the
+   * declaration share one coordinate system. On these two routes they do not:
+   * the audio arrives as a form part alongside the JSON config, and the
+   * endpoint's own lookup table already names the coordinate. Listing it here
+   * is what keeps the check from inventing a warning for a declaration the
+   * endpoint does read — and the same fact is why those two validators keep
+   * the un-parameterized `ValidateOptions` on their public signature.
+   */
+  mediaPaths?: ReadonlyArray<readonly (string | number)[]>;
+  /**
    * Shapes the validated output: by default the fetch-ready wire body (a
    * `Validated` built via `toValidated`, with non-enumerable `toSdk(target)` and
    * `.request`). Omitted → the original params object is returned as-is.
@@ -67,9 +82,68 @@ export interface PipelineSpec<P, V = P> {
 /** Fraction of the context window above which a near_context warning fires. */
 const NEAR_CONTEXT_RATIO = 0.9;
 
+/** Walks one media path into the params; `undefined` when it names nothing. */
+function resolvePath(root: unknown, path: readonly (string | number)[]): unknown {
+  let cursor = root;
+  for (const segment of path) {
+    if (cursor === null || typeof cursor !== "object") return undefined;
+    if (Array.isArray(cursor)) {
+      if (typeof segment !== "number") return undefined;
+      cursor = cursor[segment];
+      continue;
+    }
+    if (!Object.hasOwn(cursor, String(segment))) return undefined;
+    cursor = (cursor as Record<string, unknown>)[String(segment)];
+  }
+  return cursor;
+}
+
+/**
+ * Reports a `ValidateOptions.media` declaration that addresses nothing.
+ *
+ * This is the silent half of the media contract. `findMediaDeclaration` matches
+ * a declaration to a part by deep-equal path, so a path with one segment wrong
+ * — `["mesages", 0, …]`, a stale index after the array was edited, a canonical
+ * spelling on a wire surface — simply never matches: the declared duration and
+ * byte size are never applied, no check runs, and the caller is told the
+ * request is fine. A 999 MB attachment declared at a typo'd path used to
+ * return `{ ok: true, warnings: [] }`.
+ *
+ * A warning, not an error, and appealable per code like every other: a caller
+ * may legitimately carry one options object across several calls, so a
+ * declaration that is inert *here* is not necessarily a mistake. What it must
+ * not be is invisible.
+ *
+ * `media_declaration_dropped` is the same code `unmodel/chat` reports when a
+ * declaration does not survive compilation — the caller-facing fact is
+ * identical (declared facts were not applied to anything), and the message
+ * says which of the two happened.
+ */
+function reportUnresolvedMedia(
+  params: unknown,
+  extra: ReadonlyArray<readonly (string | number)[]>,
+  ctx: PipelineContext,
+): void {
+  const declared = (candidate: readonly (string | number)[]): boolean =>
+    extra.some((p) => p.length === candidate.length && p.every((s, i) => s === candidate[i]));
+  for (const declaration of ctx.options.media ?? []) {
+    const path = declaration.path as readonly (string | number)[];
+    if (resolvePath(params, path) !== undefined || declared(path)) continue;
+    ctx.report({
+      code: "media_declaration_dropped",
+      path: [...path],
+      message:
+        `the media declared at \`${formatIssuePath([...path])}\` does not exist in these params, so ` +
+        "its declared facts were not applied and no media check ran for it. Media paths address " +
+        `the ${ctx.endpoint} wire body — check the spelling and the indexes.`,
+      meta: { declaredPath: [...path] },
+    });
+  }
+}
+
 export interface Validator<P, V = P> {
-  (params: P, options?: ValidateOptions): V;
-  safe(params: P, options?: ValidateOptions): ValidateResult<V>;
+  (params: P, options?: ValidateOptions<P>): V;
+  safe(params: P, options?: ValidateOptions<P>): ValidateResult<V>;
   /** All constraints that apply to a model id (model-specific + matching family rules). */
   constraintsFor(modelId: string): EndpointConstraints[];
   /**
@@ -124,6 +198,7 @@ export function createValidator<P, V = P>(spec: PipelineSpec<P, V>): Validator<P
       return { ok: false, ...partition(issues) };
     }
     reportUnknownTopLevelKeys(spec.schema, params, ctx);
+    reportUnresolvedMedia(params, spec.mediaPaths ?? [], ctx);
 
     // Layer 2: catalog.
     const modelId = spec.modelId(params);

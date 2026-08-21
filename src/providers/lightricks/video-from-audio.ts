@@ -142,11 +142,11 @@ const validator = createValidator<AudioToVideoParams, unknown>({
 export const videoFromAudio = validator as unknown as {
   <T extends AudioToVideoParams>(
     params: T & ExactKeys<T, AudioToVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>;
   safe<T extends AudioToVideoParams>(
     params: T & ExactKeys<T, AudioToVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

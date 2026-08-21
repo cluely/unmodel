@@ -16,6 +16,28 @@ export type Modality = "text" | "image" | "audio" | "video" | "pdf";
 export type FutureModelId<Candidate extends string, Known extends string> =
   Candidate extends Known ? never : Candidate;
 
+/**
+ * The ids in a generated catalog whose capability flag `K` is the literal
+ * `false` — the Tier-A keying mechanism, written once.
+ *
+ * The point is that no hand-copied id list exists to drift: a model whose
+ * `temperature: false` flag flips in the next `bun run codegen` moves in or out
+ * of the union by itself. That is also the hazard, which is why every use of
+ * this type is paired with a test that pins the resolved union: a catalog regen
+ * that changes a flag has to surface as a test diff, never as a silent break in
+ * a caller's code.
+ *
+ * `Models` is the `as const satisfies Record<string, ModelInfo>` table itself,
+ * not `ModelInfo` — the literal `false` is exactly what the annotation would
+ * have discarded.
+ */
+export type ModelsWhereFalse<Models, K extends keyof ModelInfo> = Extract<
+  {
+    [M in keyof Models]: Models[M] extends Record<K, false> ? M : never;
+  }[keyof Models],
+  string
+>;
+
 /** USD per 1M tokens (or per-unit for media rates). */
 export interface ModelCost {
   input?: number;

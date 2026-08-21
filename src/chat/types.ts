@@ -55,7 +55,7 @@
  *   callable. The union drives autocomplete, it does not gate the API.
  */
 import type { ChatModelRef, ChatProviderId } from "../catalog/chat-refs.gen";
-import type { DialectBody } from "../retarget/dialects";
+import type { DialectBody, DialectNativeTool } from "../retarget/dialects";
 import type { ChatDialect } from "./public-types";
 
 export type { ChatModelRef, ChatProviderId };
@@ -101,12 +101,22 @@ export interface ChatTextPart {
  *   File-id namespaces are per-provider and never portable, which is exactly
  *   why the provider is recorded alongside the id: compiling for a *different*
  *   provider then drops it with a warning instead of emitting a dead handle.
+ *
+ * That `provider` used to be a bare `string`, so it completed nothing and a
+ * typo there was the quietest failure on this surface: `encodeFilePart` drops
+ * the whole part with a `dropped_content` warning ("names provider X, which
+ * unmodel has no endpoint for"), i.e. a silently deleted attachment on a
+ * channel most callers do not read. It is now the generated provider union
+ * with the usual open tail — the four factory-configured providers
+ * (`amazon-bedrock`, `azure`, `cloudflare-workers-ai`, `google-vertex`) are
+ * deliberately not in it, because `unmodel/chat` cannot target them by ref at
+ * all, so suggesting them would be worse guidance than suggesting nothing.
  */
 export interface ChatFilePart {
   type: "file";
   /** IANA MIME type. Required with bare base64, redundant with a `data:` URL. */
   mediaType?: string;
-  data: string | { fileId: string; provider: string };
+  data: string | { fileId: string; provider: ChatProviderId | (string & {}) };
   filename?: string;
   cache?: ChatCache;
 }
@@ -211,18 +221,53 @@ export interface ChatToolSpec {
 export type ChatToolChoice = "auto" | "none" | "required" | { type: "tool"; toolName: string };
 
 /**
+ * Providers that cannot be *targeted* by a ref but whose dialect has a codec,
+ * so a tool filed under them is emitted verbatim on a sibling ref that shares
+ * the dialect (`{ provider: "google-vertex", … }` on a `google/…` call is the
+ * realistic case: one nativeTools array, two deployments of one model).
+ *
+ * `amazon-bedrock` and `cohere` are deliberately absent: `bedrock-converse`
+ * has no codec in v1 and cohere resolves to no dialect at all, so a tool filed
+ * under either can only ever be discarded — the class of value this union
+ * exists to stop describing.
+ */
+type AliasedNativeToolProviderId = "azure" | "cloudflare-workers-ai" | "google-vertex";
+
+/**
  * A provider-defined tool — Anthropic's `web_search_20250305`, Gemini's
- * `googleSearch` / `codeExecution`, OpenAI's `custom` grammar tools.
+ * `googleSearch` / `codeExecution`, OpenAI's `custom` grammar tools, and every
+ * OpenAI-dialect provider's own built-ins (`{ type: "browser_search" }`, …).
  *
  * These never cross dialects, so `definition` is passed through verbatim under
  * the provider that owns it and every other target drops it with a
  * `dropped_tool` warning that names the tool. Recording the provider is what
  * makes that warning nameable instead of "an unknown object was discarded".
+ *
+ * `definition` used to be `unknown`, which meant the one closed vocabulary
+ * here — Gemini's eight grounding tools — completed nothing and a *misfiled*
+ * tool (a Gemini tool under `"anthropic"`) was accepted at compile time and
+ * discarded at run time. Discriminating on `provider` gives each dialect its
+ * real shape ({@link DialectNativeTool}), and each arm keeps its own escape
+ * hatch so a tool shipped after this snapshot still compiles.
+ *
+ * There is deliberately **no** `{ provider: string & {}; definition: unknown }`
+ * arm. It reads like a free courtesy and is the opposite: it re-widens
+ * `provider` off a unit-typed discriminant, which puts `definition` back to
+ * `unknown` for *every* arm and discharges the whole type — measured, both
+ * mismatch probes and the `"anthropicc"` typo went back to compiling clean.
+ * Code that builds this array dynamically should import `ChatNativeTool` and
+ * annotate, which is also how it finds out that `provider` is a closed set.
  */
-export interface ChatNativeTool {
-  provider: string;
-  definition: unknown;
-}
+export type ChatNativeTool =
+  | { provider: "anthropic"; definition: DialectNativeTool<"anthropic-messages"> }
+  | { provider: "google" | "google-vertex"; definition: DialectNativeTool<"gemini"> }
+  | {
+      provider: Exclude<
+        ChatProviderId | AliasedNativeToolProviderId,
+        "anthropic" | "google" | "google-vertex"
+      >;
+      definition: DialectNativeTool<"openai-chat">;
+    };
 
 // ---------------------------------------------------------------------------
 // Settings

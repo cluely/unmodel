@@ -301,8 +301,16 @@ export interface GenerationsParams<M extends RecraftModelInput = RecraftModelInp
   model?: M | null;
   /** Curated style name (V2/V3 models only). Cannot be combined with style_id. */
   style?: StyleFor<M> | null;
-  /** Style sub-variant (undocumented; see SUBSTYLES); pairs with `style`. */
-  substyle?: RecraftSubstyle | (string & {}) | null;
+  /**
+   * Style sub-variant (undocumented; see SUBSTYLES); pairs with `style`.
+   *
+   * Closed, unlike the neighbouring `style` and `size`: `checkSpecEnums`
+   * refuses an off-list value with `invalid_enum_value` at error severity
+   * (`SPEC_ENUM_CHECKS` below names this param and this exact list), so an open
+   * tail here bought nothing except turning a compile error into a call-time
+   * one. The same reasoning closes `creativity`, `image_format` and `upscale`.
+   */
+  substyle?: RecraftSubstyle | null;
   /** Style UUID used as a visual reference (V2/V3 models only). Cannot be combined with style. */
   style_id?: string | null;
   /**
@@ -321,12 +329,19 @@ export interface GenerationsParams<M extends RecraftModelInput = RecraftModelInp
   text_layout?: RecraftTextLayoutElement[] | null;
   /** Generation tweaks; artistic_level / no_text are V3-only. */
   controls?: RecraftControls | null;
-  /** Creativity tier: "simple" | "standard" | "eccentric" (undocumented param). */
-  creativity?: RecraftCreativity | (string & {}) | null;
-  /** Raster output container: "webp" or "png" (undocumented param). */
-  image_format?: RecraftImageFormat | (string & {}) | null;
-  /** Post-generation upscale tier (Swagger `UpscaleMode`). */
-  upscale?: RecraftUpscaleMode | (string & {}) | null;
+  /**
+   * Creativity tier: "simple" | "standard" | "eccentric" (undocumented param).
+   *
+   * Closed against `CREATIVITY_LEVELS` — see `substyle`. The list comes from an
+   * earlier revision of the Swagger document (`LEGACY_SPEC_SOURCE`), which is
+   * an argument for loosening BOTH layers, not for letting the type accept what
+   * `checkSpecEnums` then refuses.
+   */
+  creativity?: RecraftCreativity | null;
+  /** Raster output container: "webp" or "png" (undocumented param). Closed — see `substyle`. */
+  image_format?: RecraftImageFormat | null;
+  /** Post-generation upscale tier (Swagger `UpscaleMode`). Closed — see `substyle`. */
+  upscale?: RecraftUpscaleMode | null;
   /** Reject NSFW results server-side. */
   block_nsfw?: boolean | null;
   /** Return image feature vectors alongside the result. */
@@ -724,11 +739,11 @@ const validator = createValidator<GenerationsParams, unknown>({
 export const image = validator as unknown as {
   <M extends RecraftModelInput, T extends GenerationsParams<M>>(
     params: T & GenerationsParams<M> & ExactKeys<T, GenerationsParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, RecraftSdkTargets<T>>;
   safe<M extends RecraftModelInput, T extends GenerationsParams<M>>(
     params: T & GenerationsParams<M> & ExactKeys<T, GenerationsParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, RecraftSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

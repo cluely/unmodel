@@ -74,9 +74,14 @@ describe("codegen", () => {
     }
   });
 
-  test("emits one file per provider plus the index, providers sorted", () => {
+  test("emits one file per provider plus the two registry files, providers sorted", () => {
     const files = generate(miniSnapshot);
-    expect([...files.keys()]).toEqual(["acme.gen.ts", "beta-ai.gen.ts", "index.ts"]);
+    expect([...files.keys()]).toEqual([
+      "acme.gen.ts",
+      "beta-ai.gen.ts",
+      "index.ts",
+      "typed.gen.ts",
+    ]);
   });
 
   test("provider file: camelCase normalization, unions, satisfies contract", () => {
@@ -104,11 +109,32 @@ describe("codegen", () => {
 
   test("index aggregates all providers with a ProviderId union and getModel", () => {
     const index = generate(miniSnapshot).get("index.ts")!;
-    expect(index).toContain('import * as acmeGen from "./acme.gen";');
-    expect(index).toContain('import * as betaAiGen from "./beta-ai.gen";');
     expect(index).toContain('| "acme"');
     expect(index).toContain('| "beta-ai"');
     expect(index).toContain("export function getModel(");
+    // The registry object itself lives in `typed.gen.ts` and is re-exported
+    // WIDENED here — one runtime object, two declarations. The annotation is
+    // what keeps every `.gen` namespace out of `dist/catalog/index.d.ts`
+    // (~4 KiB against ~3.6 MB); test/bundle-budget.test.ts pins both numbers.
+    expect(index).toContain('import { catalogTyped } from "./typed.gen";');
+    expect(index).toContain("export const catalog: Record<ProviderId, ProviderCatalog> = catalogTyped;");
+    expect(index).not.toContain('import * as acmeGen from "./acme.gen";');
+  });
+
+  test("typed.gen keeps the literals the index throws away", () => {
+    const typed = generate(miniSnapshot).get("typed.gen.ts")!;
+    expect(typed).toContain('import * as acmeGen from "./acme.gen";');
+    expect(typed).toContain('import * as betaAiGen from "./beta-ai.gen";');
+    // `satisfies`, never an annotation: the annotation is what erased the
+    // per-provider model ids in the first place.
+    expect(typed).toContain("} satisfies Record<ProviderId, ProviderCatalog>;");
+    expect(typed).not.toContain("export const catalogTyped: Record<");
+    expect(typed).toContain("export type Catalog = typeof catalogTyped;");
+    expect(typed).toContain("export type ModelIdFor<P extends ProviderId>");
+    // Both helpers keep a loose overload, so an id known only at run time
+    // still degrades honestly to `| undefined`.
+    expect(typed).toContain("export function getModelTyped<P extends ProviderId, M extends ModelIdFor<P>>(");
+    expect(typed).toContain("): ModelInfo | undefined;");
   });
 
   test("rejects a snapshot with a broken known field, naming the path", () => {

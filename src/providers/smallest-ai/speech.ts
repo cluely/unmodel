@@ -394,11 +394,11 @@ const validator = createValidator<TtsParams, unknown>({
 export const speech = validator as unknown as {
   <T extends TtsParams>(
     params: T & ExactKeys<T, TtsParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "x_expire_content">, SpeechSdkTargets<Omit<T, "x_expire_content">>>;
   safe<T extends TtsParams>(
     params: T & ExactKeys<T, TtsParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<
     Validated<Omit<T, "x_expire_content">, SpeechSdkTargets<Omit<T, "x_expire_content">>>
   >;

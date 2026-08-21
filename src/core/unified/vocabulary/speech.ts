@@ -38,6 +38,7 @@ export type {
   SpeechModelNarrowing,
   SpeechModelParams,
   SpeechModelParamTable,
+  VoiceOf,
   WithModelParams,
 } from "./model-params";
 
@@ -50,7 +51,7 @@ export type {
  * takes; `{ id }` and `{ name }` exist for the providers that take both and
  * would otherwise have to guess which you meant from the shape of the string.
  *
- * **Wide by default, and narrowed per model nowhere yet.** See
+ * **Wide by default, and narrowed per model only where a list exists.** See
  * `SpeechModelParams` in `./model-params.ts` for the argument in full — voice
  * catalogs are per-account (cloning), run to thousands of entries at ElevenLabs
  * and Murf, and turn over between releases, so a *closed* union of them would
@@ -62,10 +63,14 @@ export type {
  * hand-catalogues them at the wire: Deepgram (where the voice *is* the model,
  * so the ref union types it for free), OpenAI's nine and thirteen, and — since
  * the Gemini TTS tightening — Google's thirty, which `unmodel/google` now
- * refuses to compile off-list. Surfacing those here would mean an open-tailed
- * `voices` row in {@link SpeechModelParams}, on the `languages` model: it
- * completes, it does not gate. That is a real opportunity, deliberately not
- * taken in this pass rather than one ruled out.
+ * refuses to compile off-list.
+ *
+ * Those are surfaced, through the open-tailed `voices` row on
+ * {@link SpeechModelParams} and {@link VoiceOf}: a model whose provider closes
+ * a list completes it, every other model keeps this type verbatim, and no
+ * model gates — a cloned voice compiles everywhere, in all three spellings.
+ * This alias is what a row *without* a list resolves to, and what an adapter's
+ * `compile` is written against.
  */
 export type Voice = string | { id: string } | { name: string };
 
@@ -73,18 +78,17 @@ export type Voice = string | { id: string } | { name: string };
  * Everything that is not narrowed per model.
  *
  * The split exists for one reason, and it is the same reason `VideoParamsBase`
- * exists: the two fields below it — `outputFormat` and `language` — are
- * **replaced** by {@link SpeechModelNarrowing} in a validator's constraint
- * rather than intersected with it, and a base that still declared them would
- * put the wide type back into the intersection. See `SpeechArms` in
- * `./model-params.ts` for what that costs.
+ * exists: the three fields on `SpeechParams` below — `outputFormat`,
+ * `language` and `voice` — are **replaced** by {@link SpeechModelNarrowing} in
+ * a validator's constraint rather than intersected with it, and a base that
+ * still declared them would put the wide type back into the intersection. See
+ * `SpeechArms` in `./model-params.ts` for what that costs.
  */
 export interface SpeechParamsBase {
   /** What to say. */
   text: string;
   /** `"provider/model"`, split on the **first** slash. */
   model: string;
-  voice?: Voice;
   /**
    * A multiplier: `1.0` is the model's normal rate, `2.0` is twice as fast,
    * `0.5` half.
@@ -112,6 +116,8 @@ export interface SpeechParams extends SpeechParamsBase {
   outputFormat?: AudioFormatRequest;
   /** BCP-47, e.g. `"pt-BR"`. Multilingual models use it to pick pronunciation. */
   language?: string;
+  /** Which voice — see {@link Voice}. Narrowed per model where a list exists. */
+  voice?: Voice;
 }
 
 // ---------------------------------------------------------------------------

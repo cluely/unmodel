@@ -11,6 +11,7 @@ import {
   VIDEO_V2_DURATIONS,
   VIDEO_V2_RATIOS,
 } from "./video-v2";
+import type { MinimaxV2Role } from "./video-v2";
 import { videoV2Models } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
@@ -22,7 +23,10 @@ const safeUnchecked = videoV2.safe as unknown as (
 ) => ValidateResult<Record<string, unknown>>;
 
 const text = (value = "A neon-lit street at night") => ({ type: "text" as const, text: value });
-const image = (role?: string) => ({
+// `role` is the closed wire vocabulary now, so the fixture helper says so. The
+// off-list negative tests below go through `safeUnchecked`, which is where an
+// untyped runtime value belongs.
+const image = (role?: MinimaxV2Role) => ({
   type: "image_url" as const,
   image_url: { url: "https://cdn.example/a.jpg" },
   ...(role !== undefined && { role }),

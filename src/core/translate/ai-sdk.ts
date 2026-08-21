@@ -35,6 +35,7 @@
  * `withJsonSchemaTools(options, jsonSchema)`, which takes the wrapper as an
  * argument; requests without tools need no adapter at all.
  */
+import type { DialectId } from "./endpoints";
 import type { ChatIR, IRPart, IRToolOutput } from "./ir";
 import { inferMediaTypeFromUrl } from "./ir";
 import type { TranslationWarning, Warn } from "./warnings";
@@ -487,7 +488,9 @@ export function toAiSdkChat(
           code: "dropped_param",
           path: [param],
           message: `\`${param}\` is a ${dialect} param and this request is being formatted for ${options.provider}; it was dropped.`,
-          meta: { param, dialect },
+          // `Object.entries` over a `Partial<Record<DialectId, …>>` widens the
+          // key to `string`; the runtime value is a DialectId by construction.
+          meta: { param, dialect: dialect as DialectId },
         });
       }
     }

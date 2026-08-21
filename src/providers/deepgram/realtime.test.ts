@@ -23,7 +23,11 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 
 /** Ten minutes of session, declared out of band (no param references the audio). */
-const tenMinutes: ValidateOptions = { media: [{ path: [], durationSeconds: 600 }] };
+// The empty path addresses the params object itself, which is the whole
+// coordinate system on a socket endpoint: the media is the stream. Inferred
+// rather than annotated `ValidateOptions`, so the `readonly []` survives and
+// the same object serves listenLive, listenFlux and speakLive.
+const tenMinutes = { media: [{ path: [] as const, durationSeconds: 600 }] };
 
 const unchecked = <T>(fn: T) =>
   fn as unknown as (

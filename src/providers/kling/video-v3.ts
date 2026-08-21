@@ -210,11 +210,11 @@ const validator = createValidator<TextToVideoV3Params, unknown>({
 export const videoV3 = validator as unknown as {
   <T extends TextToVideoV3Params>(
     params: T & ExactKeys<T, TextToVideoV3Params>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "model">, KlingSdkTargets<Omit<T, "model">>>;
   safe<T extends TextToVideoV3Params>(
     params: T & ExactKeys<T, TextToVideoV3Params>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "model">, KlingSdkTargets<Omit<T, "model">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

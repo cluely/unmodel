@@ -15,7 +15,7 @@
  *     silent downgrade.
  */
 import { describe, expect, test } from "bun:test";
-import type { TranslationWarning } from "../../src/core/translate/warnings";
+import type { TranslationWarningInput } from "../../src/core/translate/warnings";
 import {
   base64Payload,
   bitsToKbps,
@@ -62,9 +62,12 @@ import {
 
 /** A context that records what was warned, so both halves are assertable. */
 function ctxAt(...path: Array<string | number>): DeriveContext & {
-  warnings: Array<Omit<TranslationWarning, "from" | "to">>;
+  warnings: TranslationWarningInput[];
 } {
-  const warnings: Array<Omit<TranslationWarning, "from" | "to">> = [];
+  // `TranslationWarningInput`, not `Omit<TranslationWarning, …>`: a plain
+  // `Omit` over the warning union collapses `code` and `meta` into two
+  // independent unions, which is the pairing the union exists to keep.
+  const warnings: TranslationWarningInput[] = [];
   return { path, warn: (w) => warnings.push(w), warnings };
 }
 
@@ -1117,7 +1120,12 @@ describe("resolveAudioFormat · defaultsByCodec", () => {
     // ElevenLabs' shape: the endpoint defaults to mp3_44100_128, but Opus is
     // published at 48 kHz only, so 44100 would be a value the API rejects.
     expect(resolveAudioFormat("opus", SPEC, ctx).value).toMatchObject({ sampleRate: 48000 });
-    expect(ctx.warnings.map((w) => w.meta?.["value"])).toEqual([48000, 128_000]);
+    // `meta` is per-code now, so the read narrows first — the discipline the
+    // warning contract always stated in prose. `approximated_param` keeps its
+    // open bag (24 shapes across ~40 producers), so `["value"]` still reads.
+    expect(
+      ctx.warnings.map((w) => (w.code === "approximated_param" ? w.meta?.["value"] : undefined)),
+    ).toEqual([48000, 128_000]);
   });
 
   test("a codec with no override keeps the endpoint-wide default", () => {

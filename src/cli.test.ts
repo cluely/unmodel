@@ -3,6 +3,7 @@ import { mkdtempSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MULTIPART_ONLY, REGISTRY, UNIFIED } from "./cli-registry";
+import type { CliEndpointId, CliMultipartOnlyId, CliUnifiedId } from "./cli-registry";
 
 const CLI = new URL("./cli.ts", import.meta.url).pathname;
 
@@ -599,4 +600,32 @@ test("every module-level validator is reachable from the CLI registry", async ()
 test("REGISTRY and MULTIPART_ONLY never claim the same endpoint", () => {
   const both = Object.keys(REGISTRY).filter((target) => Object.hasOwn(MULTIPART_ONLY, target));
   expect(both).toEqual([]);
+});
+
+// ---------------------------------------------------------------------------
+// The drift guard's compile-time half
+//
+// The three maps keep their literal keys (`satisfies`, not `Record<string, …>`),
+// so "REGISTRY names this endpoint" is a statement tsc can check. These lines
+// are the type-level twin of the runtime guards above: they cost nothing at run
+// time and they fail the build — not a test — if an id is renamed or dropped.
+// ---------------------------------------------------------------------------
+
+const registryIds: readonly CliEndpointId[] = ["openai.chat", "anthropic.chat", "google.chat"];
+const unifiedIds: readonly CliUnifiedId[] = ["unified.image", "unified.video"];
+const multipartIds: readonly CliMultipartOnlyId[] = ["openai.imageEdit", "stability.musicInpaint"];
+// @ts-expect-error — `keyof typeof REGISTRY` was `string`, so this used to compile.
+const notAnEndpoint: CliEndpointId = "openai.chatt";
+// @ts-expect-error — a unified category id is not a provider endpoint id.
+const notAnEndpoint2: CliEndpointId = "unified.image";
+// @ts-expect-error — MULTIPART_ONLY's values are package subpaths, nothing else.
+const notASubpath: CliMultipartOnlyId = "openai.chat";
+
+test("the registry ids are literal types, not `string`", () => {
+  // The assertions above are the test; this keeps the bindings live so no
+  // "unused variable" lint sweeps them away with the guarantee.
+  expect(registryIds.every((id) => Object.hasOwn(REGISTRY, id))).toBe(true);
+  expect(unifiedIds.every((id) => Object.hasOwn(UNIFIED, id))).toBe(true);
+  expect(multipartIds.every((id) => Object.hasOwn(MULTIPART_ONLY, id))).toBe(true);
+  expect([notAnEndpoint, notAnEndpoint2, notASubpath].length).toBe(3);
 });

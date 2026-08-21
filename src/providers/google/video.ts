@@ -930,11 +930,11 @@ const validator = createValidator<GenerateVideosBody, unknown>({
 export const video = validator as unknown as {
   <M extends VideoModelInput, T extends VeoBodyArm<M>>(
     params: T & VeoBodyArm<M> & { model: M } & ExactKeys<T, VeoBodyArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "model">, VideoSdkTargets<T & GenerateVideosBody>>;
   safe<M extends VideoModelInput, T extends VeoBodyArm<M>>(
     params: T & VeoBodyArm<M> & { model: M } & ExactKeys<T, VeoBodyArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "model">, VideoSdkTargets<T & GenerateVideosBody>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

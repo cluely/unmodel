@@ -98,11 +98,11 @@ const validator = createValidator<UpscaleParams, unknown>({
 export const videoUpscale = validator as unknown as {
   <T extends UpscaleParams>(
     params: T & ExactKeys<T, UpscaleParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "id">, LumaSdkTargets<Omit<T, "id">>>;
   safe<T extends UpscaleParams>(
     params: T & ExactKeys<T, UpscaleParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "id">, LumaSdkTargets<Omit<T, "id">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

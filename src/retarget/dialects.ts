@@ -10,9 +10,9 @@
  */
 import type { DialectId } from "../core/translate/endpoints";
 import type { GeminiSdkConfigKey } from "../core/translate/sdk-shapes";
-import type { MessagesBody } from "../providers/anthropic/wire";
-import type { GenerateContentBody } from "../providers/google/wire";
-import type { ChatCompletionsBodyBase } from "../providers/openai-compatible/wire";
+import type { MessagesBody, ServerTool } from "../providers/anthropic/wire";
+import type { GenerateContentBody, GoogleTool } from "../providers/google/wire";
+import type { ChatCompletionsBodyBase, ChatCustomTool } from "../providers/openai-compatible/wire";
 
 /**
  * The wire dialect a `.toApi` destination speaks. `google-vertex` also serves
@@ -49,6 +49,39 @@ export type DialectBody<D, M extends string> = D extends "openai-chat"
     ? MessagesBodyFor<M>
     : D extends "gemini"
       ? GenerateContentBodyFor<M>
+      : never;
+
+/**
+ * A **provider-defined** tool as one dialect spells it — the shape that goes
+ * into `tools[]` verbatim, with no unmodel translation at any point.
+ *
+ * Each arm is as tight as the dialect genuinely is, and no tighter:
+ *
+ * - `gemini` — `GoogleTool` minus `functionDeclarations` (that half is what
+ *   `ChatParams.tools` compiles to, so filing it here would be two ways to say
+ *   one thing). The remaining eight keys are a genuinely closed, documented
+ *   vocabulary that today's `unknown` makes invisible. `& Record<string,
+ *   unknown>` keeps a grounding tool shipped after this snapshot compiling.
+ * - `anthropic-messages` — `ServerTool`, which is `{ type, name }` plus an
+ *   index signature. Permissive enough never to refuse a future server tool,
+ *   strict enough to catch a *misfiled* one (a Gemini `{ googleSearch: {} }`
+ *   has neither key).
+ * - `openai-chat` — the 30-odd providers on this dialect ship built-ins
+ *   unmodel does not model (`{ type: "browser_search" }`, `{ type: "web", web:
+ *   { … } }`, …) and `interop.ts` forwards them untouched, so the arm must be
+ *   open **on shape**: OpenAI's own `custom` grammar tool, or anything that at
+ *   least names a `type`. Requiring `ChatCustomTool` alone would turn the
+ *   escape hatch into a wall for every provider except OpenAI.
+ *
+ * `bedrock-converse` resolves to `never`: chat has no codec for it in v1, so a
+ * tool filed there could only ever be discarded.
+ */
+export type DialectNativeTool<D> = D extends "anthropic-messages"
+  ? ServerTool
+  : D extends "gemini"
+    ? Omit<GoogleTool, "functionDeclarations"> & Record<string, unknown>
+    : D extends "openai-chat"
+      ? ChatCustomTool | ({ type: string } & Record<string, unknown>)
       : never;
 
 /**

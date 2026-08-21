@@ -197,11 +197,11 @@ const validator = createValidator<ImageEditParams, unknown>({
 export const imageEdit = validator as unknown as {
   <T extends ImageEditParams>(
     params: T & ExactKeys<T, ImageEditParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, BriaSdkTargets<T>>;
   safe<T extends ImageEditParams>(
     params: T & ExactKeys<T, ImageEditParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, BriaSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

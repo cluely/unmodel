@@ -432,11 +432,11 @@ const listenLiveValidator = createValidator<ListenLiveParams, unknown>({
 export const listenLive = listenLiveValidator as unknown as {
   <T extends ListenLiveParams>(
     params: T & ExactKeys<T, ListenLiveParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidatedSocket<T, ListenLiveSdkTargets<T>>;
   safe<T extends ListenLiveParams>(
     params: T & ExactKeys<T, ListenLiveParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<ValidatedSocket<T, ListenLiveSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
@@ -682,11 +682,11 @@ const listenFluxValidator = createValidator<ListenFluxParams, unknown>({
 export const listenFlux = listenFluxValidator as unknown as {
   <T extends ListenFluxParams>(
     params: T & ExactKeys<T, ListenFluxParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidatedSocket<T, ListenFluxSdkTargets<T>>;
   safe<T extends ListenFluxParams>(
     params: T & ExactKeys<T, ListenFluxParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<ValidatedSocket<T, ListenFluxSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
@@ -788,11 +788,11 @@ const fluxConfigureValidator = createValidator<FluxConfigureMessage, unknown>({
 export const fluxConfigure = fluxConfigureValidator as unknown as {
   <T extends FluxConfigureMessage>(
     params: T & ExactKeys<T, FluxConfigureMessage>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidatedSocket<T, FluxConfigureSdkTargets<T>>;
   safe<T extends FluxConfigureMessage>(
     params: T & ExactKeys<T, FluxConfigureMessage>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<ValidatedSocket<T, FluxConfigureSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
@@ -979,11 +979,11 @@ const speakLiveValidator = createValidator<SpeakLiveParams, unknown>({
 export const speakLive = speakLiveValidator as unknown as {
   <T extends SpeakLiveParams>(
     params: T & ExactKeys<T, SpeakLiveParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidatedSocket<T, SpeakLiveSdkTargets<T>>;
   safe<T extends SpeakLiveParams>(
     params: T & ExactKeys<T, SpeakLiveParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<ValidatedSocket<T, SpeakLiveSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

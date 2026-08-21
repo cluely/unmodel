@@ -63,7 +63,7 @@ interface FakeValidatorOptions {
 }
 
 function fakeValidate(config: FakeValidatorOptions = {}) {
-  return (params: FakeBody, options?: ValidateOptions): ValidateResult<FakeBody> => {
+  return (params: FakeBody, options?: ValidateOptions<FakeBody>): ValidateResult<FakeBody> => {
     if (config.seen !== undefined) {
       config.seen.params = params;
       config.seen.options = options;

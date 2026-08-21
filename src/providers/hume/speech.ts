@@ -436,11 +436,11 @@ const validator = createValidator<TtsBody, unknown>({
 export const speech = validator as unknown as {
   <T extends TtsBody>(
     params: T & ExactKeys<T, TtsBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, SpeechSdkTargets>;
   safe<T extends TtsBody>(
     params: T & ExactKeys<T, TtsBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, SpeechSdkTargets>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

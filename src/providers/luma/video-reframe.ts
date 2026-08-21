@@ -111,11 +111,11 @@ const validator = createValidator<ReframeVideoParams, unknown>({
 export const videoReframe = validator as unknown as {
   <T extends ReframeVideoParams>(
     params: T & ExactKeys<T, ReframeVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, LumaSdkTargets<T>>;
   safe<T extends ReframeVideoParams>(
     params: T & ExactKeys<T, ReframeVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, LumaSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

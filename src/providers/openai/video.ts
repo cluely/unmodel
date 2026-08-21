@@ -305,11 +305,11 @@ const validator = createValidator<AnyVideosBody, unknown>({
 export const video = validator as unknown as {
   <M extends VideosModelInput | undefined = undefined, T extends VideosArm<M> = VideosArm<M>>(
     params: T & VideosArm<M> & { model?: M } & ExactKeys<T, VideosArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, OpenAISdkTargets<T>>;
   safe<M extends VideosModelInput | undefined = undefined, T extends VideosArm<M> = VideosArm<M>>(
     params: T & VideosArm<M> & { model?: M } & ExactKeys<T, VideosArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, OpenAISdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

@@ -580,11 +580,11 @@ const validator = createValidator<T2aParams, unknown>({
 export const speech = validator as unknown as {
   <T extends T2aParams>(
     params: T & ExactKeys<T, T2aParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, MinimaxSdkTargets<T>>;
   safe<T extends T2aParams>(
     params: T & ExactKeys<T, T2aParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, MinimaxSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

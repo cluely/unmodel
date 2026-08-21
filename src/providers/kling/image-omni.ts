@@ -168,11 +168,11 @@ const validator = createValidator<OmniImageParams, unknown>({
 export const imageOmni = validator as unknown as {
   <T extends OmniImageParams>(
     params: T & ExactKeys<T, OmniImageParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, KlingSdkTargets<T>>;
   safe<T extends OmniImageParams>(
     params: T & ExactKeys<T, OmniImageParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, KlingSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

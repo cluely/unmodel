@@ -352,11 +352,11 @@ const inpaintValidator = createValidator<StableAudioInpaintParams, unknown>({
 interface StableAudioValidator<P> {
   <T extends P>(
     params: T & ExactKeys<T, P>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, StabilitySdkTargets<T>>;
   safe<T extends P>(
     params: T & ExactKeys<T, P>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, StabilitySdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 }

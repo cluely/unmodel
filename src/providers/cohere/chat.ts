@@ -537,8 +537,64 @@ function estimateChat(
 // Finalize: wire body + .toSdk("cohere") (cohere-ai v2 camelCase shape) + .request
 // ---------------------------------------------------------------------------
 
+/**
+ * A user content part as the SDK spells it: `image_url` becomes `imageUrl`,
+ * text parts pass through unchanged.
+ */
+export type CohereSdkUserContentPart =
+  | CohereTextContent
+  | { type: "image_url"; imageUrl: CohereImageContent["image_url"] };
+
+/** One message in the SDK's camelCase spelling — what {@link sdkMessage} returns. */
+export type CohereSdkMessage =
+  | { role: "user"; content: string | CohereSdkUserContentPart[] }
+  | CohereSystemMessage
+  | (Omit<CohereAssistantMessage, "tool_calls" | "tool_plan"> & {
+      toolCalls?: CohereToolCall[];
+      toolPlan?: string;
+    })
+  | (Omit<CohereToolMessage, "tool_call_id"> & { toolCallId: string });
+
+/**
+ * The camelCase `V2ChatRequest` that `cohere-ai`'s `client.v2.chat()` /
+ * `client.v2.chatStream()` takes — the shape {@link toSdkParams} already
+ * builds, written down.
+ *
+ * It was `Record<string, unknown>`, the one `toSdk` bag left in the library:
+ * every other provider's target returns the body itself or a declared shape,
+ * so `v.toSdk("cohere").maxTokenz` was the only SDK handoff in unmodel where a
+ * typo produced no diagnostic at all.
+ *
+ * Still hand-mirrored and never imported — `cohere-ai` is not a devDependency,
+ * so assignability against the real SDK is NOT compiler-checked here, and this
+ * type is a careful transcription rather than a proof. `stream` is absent
+ * because the SDK splits it into two methods.
+ */
+export interface CohereV2ChatRequest {
+  model: ChatBody["model"];
+  messages: CohereSdkMessage[];
+  tools?: CohereTool[];
+  documents?: CohereDocument[];
+  temperature?: number;
+  seed?: number;
+  k?: number;
+  p?: number;
+  logprobs?: boolean;
+  priority?: number;
+  strictTools?: boolean;
+  citationOptions?: CohereCitationOptions;
+  responseFormat?: { type: "text" } | { type: "json_object"; jsonSchema?: Record<string, unknown> };
+  safetyMode?: "CONTEXTUAL" | "STRICT" | "OFF";
+  maxTokens?: number;
+  stopSequences?: string[];
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+  toolChoice?: "REQUIRED" | "NONE";
+  thinking?: { type: "enabled"; tokenBudget?: number } | { type: "disabled" };
+}
+
 /** Renames snake_case message fields to the cohere-ai SDK's camelCase. */
-function sdkMessage(message: CohereChatMessage): Record<string, unknown> {
+function sdkMessage(message: CohereChatMessage): CohereSdkMessage {
   if (message.role === "tool") {
     const { tool_call_id, content, ...rest } = message;
     return { ...rest, toolCallId: tool_call_id, content };
@@ -559,7 +615,11 @@ function sdkMessage(message: CohereChatMessage): Record<string, unknown> {
       ),
     };
   }
-  return message as unknown as Record<string, unknown>;
+  // Everything left is already SDK-shaped: a `system` message, or a `user`
+  // message whose content is a plain string. Narrowing has ruled out the two
+  // renamed roles above but TS cannot see that the remaining `user` arm has a
+  // string content, so the arm is spelled out rather than cast wholesale.
+  return message as CohereSystemMessage | { role: "user"; content: string };
 }
 
 /**
@@ -568,7 +628,7 @@ function sdkMessage(message: CohereChatMessage): Record<string, unknown> {
  * is hand-mirrored from the SDK — never imported — so assignability is not
  * compiler-checked. `stream` is dropped: the SDK splits it into two methods.
  */
-function toSdkParams(body: ChatBody): Record<string, unknown> {
+function toSdkParams(body: ChatBody): CohereV2ChatRequest {
   const {
     messages,
     stream: _stream,
@@ -618,7 +678,7 @@ function toSdkParams(body: ChatBody): Record<string, unknown> {
  * heuristic finds no other implemented provider serving a Cohere model under a
  * matching id AND display name, so there is nothing to retarget to.
  */
-export type ChatSdkTargets = { cohere: () => Record<string, unknown> };
+export type ChatSdkTargets = { cohere: () => CohereV2ChatRequest };
 
 function finalize(params: ChatBody): unknown {
   const body = { ...params };
@@ -652,11 +712,11 @@ const validator = createValidator<ChatBody, unknown>({
 export const chat = validator as unknown as {
   <T extends ChatBody>(
     params: T & ExactKeys<T, ChatBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, ChatSdkTargets>;
   safe<T extends ChatBody>(
     params: T & ExactKeys<T, ChatBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ChatSdkTargets>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

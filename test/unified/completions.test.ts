@@ -350,6 +350,37 @@ speech({ model: "smallest-ai/lightning_v3.1_pro", text: "x", language: "¦" });`
     expect(pro).toContain("ja");
   });
 
+  test("voice completes the model's built-in list, and matches the wire layer's", () => {
+    // The unified surface used to be strictly WORSE than the wire surface it
+    // compiles down to: `voice` was the bare `Voice`, so it completed nothing,
+    // while `openai.speech` has hand-catalogued per-model lists.
+    const wire1 = completionsAt(`import { speech } from "./src/providers/openai";
+speech({ model: "tts-1", input: "x", voice: "¦" });`);
+    const unified1 = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "openai/tts-1", text: "x", voice: "¦" });`);
+    expect(unified1.sort()).toEqual(wire1.sort());
+    expect(unified1.length).toBe(9);
+    expect(unified1).toContain("alloy");
+    // gpt-4o-mini-tts-only voices are not on tts-1's list.
+    expect(unified1).not.toContain("marin");
+
+    const wire2 = completionsAt(`import { speech } from "./src/providers/openai";
+speech({ model: "gpt-4o-mini-tts", input: "x", voice: "¦" });`);
+    const unified2 = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "openai/gpt-4o-mini-tts", text: "x", voice: "¦" });`);
+    expect(unified2.sort()).toEqual(wire2.sort());
+    expect(unified2.length).toBe(13);
+    expect(unified2).toContain("marin");
+
+    // A provider that publishes no closed list declares no `voices` row and is
+    // unchanged: the wide `Voice` completes nothing, which is the honest answer
+    // for a per-account catalog.
+    const elevenlabs = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "elevenlabs/eleven_v3", text: "x", voice: "¦" });`);
+    // (The bare `""` is what the service offers for an unconstrained `string`.)
+    expect(elevenlabs.filter((e) => e !== "")).toEqual([]);
+  });
+
   test("property names include the model's extras, and its extras only", () => {
     const entries = completionsAt(`import { speech } from "./src/unified/speech";
 speech({ model: "rime/mistv2", text: "x", ¦ });`);
@@ -887,6 +918,224 @@ chat({ model: "google/gemini-2.5-flash", messages: [], providerOptions: { google
   });
 });
 
+describe("chat: the two provider-keyed fields inside `messages`/`nativeTools`", () => {
+  test("a file part's provider completes the ids whose files can be reached", () => {
+    const entries = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [{ role: "user", content: [{ type: "file", data: { fileId: "f", provider: "¦" } }] }] });`);
+    // Was zero — a bare `string`, on a field where a typo silently deletes the
+    // attachment (`dropped_content`). The set is `ChatProviderId`: the four
+    // factory-configured providers are absent because `unmodel/chat` cannot
+    // target them by ref at all.
+    expect(entries.length).toBe(32);
+    expect(entries).toContain("openai");
+    expect(entries).toContain("anthropic");
+    expect(entries).not.toContain("google-vertex");
+  });
+
+  test("a native tool's provider completes, and its definition completes per dialect", () => {
+    const providers = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "google/gemini-2.5-flash", messages: [], nativeTools: [{ provider: "¦", definition: {} }] });`);
+    expect(providers).toContain("google");
+    expect(providers).toContain("anthropic");
+    // The three dialect aliases a tool can legitimately be filed under, and the
+    // two it cannot (their tools could only ever be discarded).
+    expect(providers).toContain("google-vertex");
+    expect(providers).not.toContain("cohere");
+    expect(providers).not.toContain("amazon-bedrock");
+
+    const google = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "google/gemini-2.5-flash", messages: [], nativeTools: [{ provider: "google", definition: { ¦ } }] });`);
+    // Was the global-scope fallback: `definition` was `unknown`.
+    expect(google).toContain("googleSearch");
+    expect(google).toContain("codeExecution");
+    expect(google).toContain("urlContext");
+    expect(google).toContain("googleMaps");
+    // `functionDeclarations` is what `tools` compiles to; filing it by hand
+    // would be a second way to say one thing.
+    expect(google).not.toContain("functionDeclarations");
+    expect(google).not.toContain("AbortController");
+
+    const anthropic = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "anthropic/claude-opus-5", messages: [], nativeTools: [{ provider: "anthropic", definition: { ¦ } }] });`);
+    expect(anthropic).toContain("type");
+    expect(anthropic).toContain("name");
+
+    const grammar = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [], nativeTools: [{ provider: "openai", definition: { type: "custom", custom: { name: "g", format: { type: "grammar", grammar: { definition: "x", syntax: "¦" } } } } }] });`);
+    expect(grammar.sort()).toEqual(["lark", "regex"]);
+  });
+});
+
+describe("unmodel/catalog/typed: the 113 providers with no subpath get completions", () => {
+  test("getModelTyped completes a provider's model ids; getModel still does not", () => {
+    const typed = completionsAt(`import { getModelTyped } from "./src/catalog/typed.gen";
+getModelTyped("anthropic", "¦");`);
+    expect(typed).toContain("claude-opus-5");
+    expect(typed).toContain("claude-fable-5");
+    expect(typed.length).toBe(13);
+
+    // The cheap entry is deliberately unchanged: its `catalog` is annotated,
+    // which is what keeps `dist/catalog/index.d.ts` at ~4 KiB instead of
+    // ~3.6 MB. test/bundle-budget.test.ts pins both halves of that trade.
+    const loose = completionsAt(`import { getModel } from "./src/catalog/index";
+getModel("anthropic", "¦");`);
+    expect(loose.filter((e) => e !== "")).toEqual([]);
+  });
+
+  test("a provider with no subpath is where this actually pays", () => {
+    // `unmodel/cerebras` has no model-id type of its own; these three symbols
+    // are the only typed access to its catalog anywhere in the package.
+    const entries = completionsAt(`import { getModelTyped } from "./src/catalog/typed.gen";
+getModelTyped("cerebras", "¦");`);
+    expect(entries.length).toBeGreaterThan(0);
+  });
+
+  test("both entries complete the same provider ids", () => {
+    const typed = completionsAt(`import { getProviderTyped } from "./src/catalog/typed.gen";
+getProviderTyped("¦");`);
+    const loose = completionsAt(`import { getProvider } from "./src/catalog/index";
+getProvider("¦");`);
+    expect(typed.sort()).toEqual(loose.sort());
+    expect(typed).toContain("anthropic");
+  });
+});
+
+describe("openai.realtimeSession: the transcription arms do not kill completions", () => {
+  /**
+   * The regression this case exists to prevent, measured on the way in: with
+   * `TM extends string` — the obvious spelling — `transcription: { model: "¦" }`
+   * completed **nothing at all**, 8 entries down to 0, while tsc stayed green.
+   * `TM extends RealtimeTranscriptionModelId | (string & {})` brings them back.
+   */
+  test("the transcription model ids still complete", () => {
+    const entries = completionsAt(`import { realtimeSession } from "./src/providers/openai";
+realtimeSession({ type: "realtime", audio: { input: { transcription: { model: "¦" } } } });`);
+    expect(entries.sort()).toEqual([
+      "gpt-4o-mini-transcribe",
+      "gpt-4o-mini-transcribe-2025-12-15",
+      "gpt-4o-transcribe",
+      "gpt-4o-transcribe-diarize",
+      "gpt-live-transcribe",
+      "gpt-realtime-whisper",
+      "gpt-transcribe",
+      "whisper-1",
+    ]);
+  });
+
+  test("the arm's own field values still complete on the model that takes them", () => {
+    const entries = completionsAt(`import { realtimeSession } from "./src/providers/openai";
+realtimeSession({ type: "realtime", audio: { input: { transcription: { model: "gpt-realtime-whisper", delay: "¦" } } } });`);
+    expect(entries.sort()).toEqual(["high", "low", "medium", "minimal", "xhigh"]);
+  });
+
+  test("the honest ceiling: a refused key is still SUGGESTED, then red-squiggled", () => {
+    // Worth pinning rather than glossing: `?: never` gives an error on any
+    // value, not a hidden key — the editor offers `delay` on gpt-transcribe and
+    // then refuses every value for it. Omitting the key instead would break the
+    // spread idiom, so this is the right trade, accurately described.
+    const entries = completionsAt(`import { realtimeSession } from "./src/providers/openai";
+realtimeSession({ type: "realtime", audio: { input: { transcription: { model: "gpt-transcribe", ¦ } } } });`);
+    expect(entries).toContain("delay");
+    expect(entries).toContain("prompt");
+    expect(entries).toContain("keywords");
+  });
+});
+
+describe("anthropic.chat: per-model narrowing reaches the editor", () => {
+  test("thinking drops `disabled` on the model that always thinks", () => {
+    const fable = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "claude-fable-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
+    expect(fable.sort()).toEqual(["adaptive", "enabled"]);
+
+    const opus45 = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "claude-opus-4-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
+    expect(opus45.sort()).toEqual(["adaptive", "disabled", "enabled"]);
+  });
+
+  test("the narrowed keys still complete — `never` refuses values, not names", () => {
+    // Accurate rather than flattering: `top_k?: never` keeps `top_k` in the
+    // key list on claude-opus-5. Omitting it instead would break the
+    // `{ ...base, model }` spread idiom, so `never` is the right choice — the
+    // gain is an error on any value, not a hidden key.
+    const entries = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "claude-opus-5", max_tokens: 16, messages: [], ¦ });`);
+    expect(entries).toContain("top_k");
+    expect(entries).toContain("temperature");
+    expect(entries).toContain("top_p");
+  });
+
+  test("model ids still complete — the arm must not eat the ref union", () => {
+    const entries = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "¦", max_tokens: 16, messages: [] });`);
+    expect(entries).toContain("claude-opus-5");
+    expect(entries).toContain("claude-sonnet-4-5");
+    expect(entries.length).toBeGreaterThan(5);
+  });
+});
+
+describe("cohere: the SDK handoff completes", () => {
+  test("toSdk('cohere') is the camelCase V2ChatRequest, not a bag", () => {
+    const entries = completionsAt(`import { chat } from "./src/providers/cohere";
+chat({ model: "command-a-03-2025", messages: [] }).toSdk("cohere").¦`);
+    // Was zero: the only `toSdk` target in the library that returned
+    // `Record<string, unknown>`.
+    for (const key of [
+      "citationOptions",
+      "documents",
+      "frequencyPenalty",
+      "logprobs",
+      "maxTokens",
+      "messages",
+      "model",
+      "presencePenalty",
+      "responseFormat",
+      "safetyMode",
+      "stopSequences",
+      "strictTools",
+      "thinking",
+      "toolChoice",
+      "tools",
+    ]) {
+      expect(entries).toContain(key);
+    }
+    // `stream` is absent on purpose — the SDK splits it into two methods.
+    expect(entries).not.toContain("stream");
+    // …and the wire spellings are gone, which is the whole point of the shape.
+    expect(entries).not.toContain("max_tokens");
+    expect(entries).not.toContain("stop_sequences");
+  });
+});
+
+describe("translation warnings: meta completes once you narrow on code", () => {
+  test("each code's own payload keys are suggested", () => {
+    const dropped = completionsAt(`import type { TranslationWarning } from "./src/core/translate/warnings";
+declare const w: TranslationWarning;
+if (w.code === "dropped_tool") { w.meta?.¦ }`);
+    // Was zero — `meta` was `Record<string, unknown>`, so the editor had
+    // nothing to say about the deliverable of the whole translation layer.
+    expect(dropped.sort()).toEqual(["dialect", "provider", "tool"]);
+
+    const param = completionsAt(`import type { TranslationWarning } from "./src/core/translate/warnings";
+declare const w: TranslationWarning;
+if (w.code === "dropped_param") { w.meta?.¦ }`);
+    expect(param.sort()).toEqual(["detail", "dialect", "n", "param", "provider", "top_k"]);
+
+    const narrowed = completionsAt(`import type { TranslationWarning } from "./src/core/translate/warnings";
+declare const w: TranslationWarning;
+if (w.code === "capability_narrowed") { w.meta?.¦ }`);
+    expect(narrowed.sort()).toEqual(["context", "drops"]);
+
+    // The one code that stays an open bag still completes its three recurring
+    // keys — `Record<string, unknown>` in an intersection does not eat them.
+    const approximated = completionsAt(`import type { TranslationWarning } from "./src/core/translate/warnings";
+declare const w: TranslationWarning;
+if (w.code === "approximated_param") { w.meta?.¦ }`);
+    expect(approximated).toContain("requested");
+    expect(approximated).toContain("achieved");
+    expect(approximated).toContain("source");
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Adapter-author surface: `ctx.from(wirePath, canonical)`
 // ---------------------------------------------------------------------------
@@ -1118,41 +1367,122 @@ describe("google TTS: voiceName completes exactly the 30 preset voices", () => {
 });
 
 // ---------------------------------------------------------------------------
-// google.chat imageConfig: what the `as const satisfies` tables buy today
+// google.chat generationConfig: the model's OWN vocabulary, not the union
 //
-// `GEMINI_IMAGE_MODEL_RULES` lost its widened annotation, so its rows are
-// literal tuples again. The per-MODEL narrowing that would spend those
-// literals on `imageConfig` is a separate item and is NOT in this tree, so
-// these lists are still the whole documented vocabulary (28 ratios in two
-// spellings, 8 sizes) rather than the model's own row — measured 28/8 before
-// the annotation change and 28/8 after. Pinned so the next pass has a number
-// to move, and so a re-widened table cannot quietly take the vocabulary down
-// to 0 the way it did in the probe that found this.
+// `GEMINI_IMAGE_MODEL_RULES` and the two enum-name maps are `as const
+// satisfies`, so their rows are literal tuples — and `GenerateContentArm<M>`
+// now spends those literals. The numbers this block used to pin (28 ratios and
+// 8 sizes on every model, "a number for the next pass to move") are the BEFORE
+// column: every model offered every documented value, including the sizes its
+// own table has no column for.
+//
+// Both spellings survive per model: the runtime `allowedSpellings` expands each
+// allowed value to its proto-JSON enum name, and the arm does the same, so the
+// two layers agree value for value.
 // ---------------------------------------------------------------------------
 
-describe("google image config: the documented vocabulary completes", () => {
-  test("aspectRatio offers both documented spellings", () => {
-    const entries = completionsAt(`import { chat } from "./src/providers/google";
+describe("google image config: per-model narrowing reaches the editor", () => {
+  test("aspectRatio is the model's own row, in both spellings", () => {
+    // 3.1 Flash Image is the model whose table lists all 14 ratios: 14 × 2.
+    const all = completionsAt(`import { chat } from "./src/providers/google";
 chat({
   model: "gemini-3.1-flash-image",
   contents: [{ parts: [{ text: "hi" }] }],
   generationConfig: { imageConfig: { aspectRatio: "¦" } },
 });`);
-    expect(entries.length).toBe(28);
-    expect(entries).toContain("16:9");
-    expect(entries).toContain("ASPECT_RATIO_SIXTEEN_BY_NINE");
+    expect(all.length).toBe(28);
+    expect(all).toContain("16:9");
+    expect(all).toContain("ASPECT_RATIO_SIXTEEN_BY_NINE");
+
+    // Nano Banana's table lists the 10 core ratios — the 1:4/4:1/1:8/8:1
+    // extremes are absent, and `invalid_enum_value` is what asking for one
+    // used to cost.
+    const core = completionsAt(`import { chat } from "./src/providers/google";
+chat({
+  model: "gemini-2.5-flash-image",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: { imageConfig: { aspectRatio: "¦" } },
+});`);
+    expect(core.length).toBe(20);
+    expect(core).toContain("16:9");
+    expect(core).not.toContain("1:8");
+    expect(core).not.toContain("ASPECT_RATIO_ONE_BY_EIGHT");
   });
 
-  test("imageSize offers both documented spellings", () => {
-    const entries = completionsAt(`import { chat } from "./src/providers/google";
+  test("imageSize is the model's own row, and absent where the model is fixed", () => {
+    // Pro: 1K / 2K / 4K — no 512 column. Was 8 (every documented size).
+    const pro = completionsAt(`import { chat } from "./src/providers/google";
 chat({
   model: "gemini-3-pro-image",
   contents: [{ parts: [{ text: "hi" }] }],
   generationConfig: { imageConfig: { imageSize: "¦" } },
 });`);
-    expect(entries.length).toBe(8);
-    expect(entries).toContain("2K");
-    expect(entries).toContain("IMAGE_SIZE_TWO_K");
+    expect(pro.length).toBe(6);
+    expect(pro).toContain("2K");
+    expect(pro).toContain("IMAGE_SIZE_TWO_K");
+    expect(pro).not.toContain("512");
+
+    // Flash Lite: 512 / 1K only.
+    const lite = completionsAt(`import { chat } from "./src/providers/google";
+chat({
+  model: "gemini-3.1-flash-lite-image",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: { imageConfig: { imageSize: "¦" } },
+});`);
+    expect(lite.length).toBe(4);
+    expect(lite).toContain("512");
+    expect(lite).not.toContain("4K");
+  });
+
+  test("responseModalities is the model's own output modalities", () => {
+    // A text-only model used to be offered IMAGE and AUDIO. `MODALITY_UNSPECIFIED`
+    // stays on every arm because the runtime check passes it — refusing it here
+    // would be an error the validator does not raise.
+    const text = completionsAt(`import { chat } from "./src/providers/google";
+chat({
+  model: "gemini-2.5-flash",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: { responseModalities: ["¦"] },
+});`);
+    expect(text.sort()).toEqual(["MODALITY_UNSPECIFIED", "TEXT", "Text"]);
+
+    const image = completionsAt(`import { chat } from "./src/providers/google";
+chat({
+  model: "gemini-3.1-flash-image",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: { responseModalities: ["¦"] },
+});`);
+    expect(image.sort()).toEqual(["IMAGE", "Image", "MODALITY_UNSPECIFIED", "TEXT", "Text"]);
+
+    const tts = completionsAt(`import { chat } from "./src/providers/google";
+chat({
+  model: "gemini-3.1-flash-tts-preview",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: { responseModalities: ["¦"] },
+});`);
+    expect(tts.sort()).toEqual(["AUDIO", "Audio", "MODALITY_UNSPECIFIED"]);
+  });
+
+  test("the generationConfig key list is unchanged — no discharge, no regression", () => {
+    const entries = completionsAt(`import { chat } from "./src/providers/google";
+chat({
+  model: "gemini-3.1-flash-image",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: { ¦ },
+});`);
+    // Replacing five fields must not drop the other nineteen.
+    expect(entries.length).toBe(24);
+    for (const key of ["temperature", "thinkingConfig", "responseModalities", "imageConfig", "speechConfig"]) {
+      expect(entries).toContain(key);
+    }
+  });
+
+  test("model ids still complete — the arm must not eat the ref union", () => {
+    const entries = completionsAt(`import { chat } from "./src/providers/google";
+chat({ model: "¦", contents: [] });`);
+    expect(entries).toContain("gemini-2.5-flash");
+    expect(entries).toContain("gemini-3.1-flash-image");
+    expect(entries.length).toBeGreaterThan(10);
   });
 });
 

@@ -14,7 +14,14 @@ export type { ValidateEstimate, ValidateResult } from "./core/result";
 
 export type { ResponseReport, UsageReport } from "./core/report";
 
-export type { MediaDeclaration, ValidateOptions } from "./core/options";
+export type {
+  MediaDeclaration,
+  MediaFacts,
+  MediaPath,
+  MediaPathFor,
+  ValidateOptions,
+  ValidateOptionsBase,
+} from "./core/options";
 
 export {
   heuristicTokenizer,
@@ -75,6 +82,8 @@ export { formatTranslationWarnings } from "./core/translate/warnings";
 export type {
   TranslationWarning,
   TranslationWarningCode,
+  TranslationWarningInput,
+  TranslationWarningMeta,
   Warn,
 } from "./core/translate/warnings";
 export type { DialectId, TargetEndpoint } from "./core/translate/endpoints";

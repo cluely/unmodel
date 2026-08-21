@@ -632,3 +632,106 @@ expectAssignable<ChatParams["serviceTier"]>("flex");
 expectAssignable<ChatParams["serviceTier"]>("standard_only");
 expectAssignable<ChatParams["serviceTier"]>("unspecified");
 expectAssignable<ChatParams["serviceTier"]>("a_tier_shipped_next_month");
+
+// ---------------------------------------------------------------------------
+// The two provider-keyed fields below the top level
+//
+// Both used to be bare `string` / `unknown`, so both completed nothing and both
+// failed silently: a file part whose provider unmodel has no endpoint for is
+// DROPPED with `dropped_content`, and a native tool filed under the wrong
+// dialect is dropped with `dropped_tool`. A warning on a channel most callers
+// never read is a deleted attachment and a missing tool.
+// ---------------------------------------------------------------------------
+
+chat({
+  model: "openai/gpt-5.2",
+  messages: [
+    {
+      role: "user",
+      content: [{ type: "file", data: { fileId: "file-1", provider: "openai" } }],
+    },
+  ],
+});
+
+// The tail stays: a provider added to the endpoint table after this build still
+// compiles, exactly as `model` does.
+chat({
+  model: "openai/gpt-5.2",
+  messages: [
+    {
+      role: "user",
+      content: [{ type: "file", data: { fileId: "f", provider: "a-provider-from-2027" } }],
+    },
+  ],
+});
+
+// Each dialect's native tools, under the provider that owns them.
+chat({
+  model: "google/gemini-2.5-flash",
+  messages: [{ role: "user", content: "hi" }],
+  nativeTools: [
+    { provider: "google", definition: { googleSearch: {} } },
+    { provider: "google", definition: { codeExecution: {} } },
+    // A grounding tool shipped after this snapshot — the arm's own escape hatch.
+    { provider: "google", definition: { brandNewGroundingTool: { x: 1 } } },
+    // Vertex serves the same dialect, so a tool filed there is emitted, not dropped.
+    { provider: "google-vertex", definition: { googleMaps: {} } },
+  ],
+});
+
+chat({
+  model: "anthropic/claude-opus-5",
+  messages: [{ role: "user", content: "hi" }],
+  maxOutputTokens: 16,
+  nativeTools: [
+    { provider: "anthropic", definition: { type: "web_search_20250305", name: "web_search" } },
+    { provider: "anthropic", definition: { type: "memory_20260101", name: "memory", extra: 1 } },
+  ],
+});
+
+chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  nativeTools: [
+    { provider: "openai", definition: { type: "custom", custom: { name: "grammar" } } },
+    { provider: "openai", definition: { type: "custom", custom: { name: "g" }, future_knob: 1 } },
+    // The reason the openai-dialect arm is open on SHAPE: 30 providers ship
+    // built-ins unmodel does not model and `interop.ts` forwards them verbatim.
+    { provider: "groq", definition: { type: "browser_search" } },
+    { provider: "xai", definition: { type: "web_search" } },
+    { provider: "openrouter", definition: { type: "web", web: { max_results: 3 } } },
+  ],
+});
+
+chat({
+  model: "anthropic/claude-opus-5",
+  messages: [{ role: "user", content: "hi" }],
+  maxOutputTokens: 16,
+  // @ts-expect-error — a MISFILED tool: `{ googleSearch: {} }` is a Gemini
+  // shape, and Anthropic's arm requires `type` and `name`. This used to compile
+  // and then vanish with a `dropped_tool` warning at run time.
+  nativeTools: [{ provider: "anthropic", definition: { googleSearch: {} } }],
+});
+
+chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  // @ts-expect-error — same misfiling on an OpenAI-dialect provider: no `type`.
+  nativeTools: [{ provider: "groq", definition: { googleSearch: {} } }],
+});
+
+chat({
+  model: "anthropic/claude-opus-5",
+  messages: [{ role: "user", content: "hi" }],
+  maxOutputTokens: 16,
+  // @ts-expect-error — a provider typo, with a "Did you mean 'anthropic'?".
+  nativeTools: [{ provider: "anthropicc", definition: { type: "t", name: "n" } }],
+});
+
+chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  // @ts-expect-error — `cohere` resolves to no dialect and `amazon-bedrock`'s
+  // has no codec, so tools filed under either can only ever be discarded.
+  nativeTools: [{ provider: "cohere", definition: { type: "connector" } }],
+});

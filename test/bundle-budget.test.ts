@@ -80,6 +80,30 @@ const CHAT_FACTORY_BUDGET_KIB = 150;
 const CHAT_DECLARATION_BUDGET_KIB = 500;
 
 /**
+ * `dist/catalog/index.d.ts` on its own, for the reason above and one specific
+ * to this entry.
+ *
+ * `unmodel/catalog` is where the `ProviderId` type lives, so a project that
+ * only wants to name a provider resolves this file. Its `catalog` export is
+ * annotated `Record<ProviderId, ProviderCatalog>`, which erases all 184 `.gen`
+ * namespaces from the declaration — dropping that annotation in favour of
+ * `satisfies` (which is what keeps the literals, and is exactly what
+ * `unmodel/catalog/typed` does) takes this file from ~4 KiB to ~3.6 MB: a
+ * ~900x regression on the obvious specifier, invisible to `tsc`, invisible to
+ * every JS budget, and paid by every downstream project. That is the same
+ * trade docs/decisions.md §3 settled for `unmodel/chat`, and this number is
+ * what makes "the cheap path is the only path" checkable. 4.3 KiB measured.
+ */
+const CATALOG_DECLARATION_BUDGET_KIB = 8;
+
+/**
+ * …and the opt-in entry's own ceiling, so the heavy half cannot grow unnoticed
+ * either. 3607.1 KiB measured; 4200 leaves ~14% for catalog growth (the
+ * snapshot gains providers between releases, and each one lands here).
+ */
+const TYPED_CATALOG_DECLARATION_BUDGET_KIB = 4200;
+
+/**
  * Every category entry. All six ship a ready-made pack now, so each has its own
  * budget and its own composition test below rather than a shared kernel-only
  * one.
@@ -521,6 +545,49 @@ describe("per-entry bundle budgets", () => {
     const lean = transitiveBytes(entryFile("cerebras"));
     const withCodec = transitiveBytes(entryFile("deepinfra"));
     expect(lean).toBeLessThan(withCodec);
+  });
+});
+
+describe("unmodel/catalog", () => {
+  test(`its declaration file stays under ${CATALOG_DECLARATION_BUDGET_KIB} KiB`, () => {
+    const file = join(DIST, "catalog", "index.d.ts");
+    expect(existsSync(file), "dist declaration for catalog").toBe(true);
+    const kib = statSync(file).size / 1024;
+    expect(kib, `catalog/index.d.ts is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
+      CATALOG_DECLARATION_BUDGET_KIB,
+    );
+  });
+
+  test("its declaration names no generated namespace — that is what the annotation buys", () => {
+    const file = join(DIST, "catalog", "index.d.ts");
+    const text = readFileSync(file, "utf8");
+    // One import, and it is the shared core types chunk. A `.gen` SPECIFIER
+    // here means the widening was dropped and the 3.6 MB came with it. (The
+    // prose in the doc comment mentions `.gen`, hence the specifier-shaped
+    // pattern rather than a bare substring.)
+    expect(text).not.toMatch(/from "[^"]*\.gen/);
+    expect(text.match(/^import /gm) ?? []).toHaveLength(1);
+  });
+
+  test(`the opt-in typed entry stays under ${TYPED_CATALOG_DECLARATION_BUDGET_KIB} KiB`, () => {
+    const file = join(DIST, "catalog", "typed.gen.d.ts");
+    expect(existsSync(file), "dist declaration for catalog/typed").toBe(true);
+    const kib = statSync(file).size / 1024;
+    expect(kib, `catalog/typed.gen.d.ts is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
+      TYPED_CATALOG_DECLARATION_BUDGET_KIB,
+    );
+    // …and that it IS the heavy one, so a future regression cannot pass by
+    // quietly widening both halves back to the same cheap shape.
+    expect(kib).toBeGreaterThan(CATALOG_DECLARATION_BUDGET_KIB * 100);
+  });
+
+  test("both entries share one runtime object — the split is declarations only", () => {
+    const cheap = readFileSync(join(DIST, "catalog", "index.js"), "utf8");
+    const typed = readFileSync(join(DIST, "catalog", "typed.gen.js"), "utf8");
+    // `index.js` imports the registry rather than declaring a second copy of
+    // it; a caller who reaches for both entries pays for one.
+    expect(cheap).toMatch(/from "\.\.\/typed\.gen-/);
+    expect(typed).toMatch(/from "\.\.\/typed\.gen-/);
   });
 });
 

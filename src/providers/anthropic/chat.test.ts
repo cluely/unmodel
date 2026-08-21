@@ -620,6 +620,10 @@ describe("anthropic.chat catalog + constraints", () => {
       model: "claude-opus-5",
       max_tokens: 100,
       messages: HI,
+      // @ts-expect-error — the catalog marks this generation `temperature:
+      // false`, so the arm types `temperature` as `1`. Kept as a runtime test:
+      // the compile error is the type layer's answer, this is the validator's,
+      // and a JS caller only ever gets the second one.
       temperature: 0.7,
     });
     expect(result.ok).toBe(false);
@@ -635,7 +639,11 @@ describe("anthropic.chat catalog + constraints", () => {
       model: "claude-opus-5",
       max_tokens: 100,
       messages: HI,
+      // `top_p` is deliberately NOT narrowed: its rule is a numeric lower
+      // bound (>= 0.99), which has no honest literal type.
       top_p: 0.9,
+      // @ts-expect-error — `top_k` is `never` on this generation: the deny
+      // table says any value returns a 400.
       top_k: 40,
     });
     expect(result.ok).toBe(false);
@@ -666,6 +674,8 @@ describe("anthropic.chat catalog + constraints", () => {
       max_tokens: 4096,
       messages: HI,
       thinking: { type: "adaptive" },
+      // @ts-expect-error — `top_k` is `never` on this generation; the runtime
+      // assertion below (exactly one issue, no duplicate) still matters.
       top_k: 5,
     });
     expect(result.ok).toBe(false);
@@ -753,6 +763,8 @@ describe("anthropic.chat thinking compatibility", () => {
       model: "claude-fable-5",
       max_tokens: 1024,
       messages: HI,
+      // @ts-expect-error — `{ type: "disabled" }` is excluded from this
+      // model's `thinking` arm: it always thinks.
       thinking: { type: "disabled" },
     });
     expect(result.ok).toBe(false);

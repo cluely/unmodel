@@ -482,11 +482,11 @@ const validator = createValidator<AnyGenerateImagesBody, unknown>({
 export const image = validator as unknown as {
   <M extends ImagenModelInput, T extends ImagenArm<M>>(
     params: T & ImagenArm<M> & { model: M } & ExactKeys<T, ImagenArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "model">, ImageSdkTargets<T>>;
   safe<M extends ImagenModelInput, T extends ImagenArm<M>>(
     params: T & ImagenArm<M> & { model: M } & ExactKeys<T, ImagenArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "model">, ImageSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

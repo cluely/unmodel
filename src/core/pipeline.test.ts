@@ -369,3 +369,110 @@ describe("createValidator", () => {
     expect(JSON_HEADERS["authorization"]).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// `options.media` paths: the declaration that addressed nothing
+// ---------------------------------------------------------------------------
+
+describe("ValidateOptions.media: a path that names nothing is reported", () => {
+  test("a typo'd path used to be a SILENT validation bypass", () => {
+    // The failure this closes, verbatim: `findMediaDeclaration` matches by
+    // deep-equal path, so one wrong segment means the declaration is never
+    // found — the declared 999 MB is never checked and the caller is told the
+    // request is fine.
+    const r = validate.safe(
+      { model: "test-model", text: "hi" },
+      { media: [{ path: ["txet"], bytes: 999_999_999 }] },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const dropped = r.warnings.filter((w) => w.code === "media_declaration_dropped");
+      expect(dropped).toHaveLength(1);
+      expect(dropped[0]?.path).toEqual(["txet"]);
+      expect(dropped[0]?.meta?.declaredPath).toEqual(["txet"]);
+      expect(dropped[0]?.message).toContain("does not exist in these params");
+    }
+  });
+
+  test("a path that resolves is silent, including into arrays and nested objects", () => {
+    const params = { model: "test-model", parts: [{ blob: { url: "x" } }] };
+    const r = validate.safe(params, {
+      media: [
+        { path: ["parts", 0, "blob"], bytes: 10 },
+        { path: ["parts", 0, "blob", "url"], bytes: 10 },
+        // The empty path is the params object itself — the coordinate the
+        // socket endpoints use, where the media IS the stream.
+        { path: [], durationSeconds: 60 },
+      ],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.filter((w) => w.code === "media_declaration_dropped")).toEqual([]);
+    }
+  });
+
+  test("a stale index is caught, which a spelling check alone would miss", () => {
+    const r = validate.safe(
+      { model: "test-model", parts: [{ blob: 1 }] },
+      { media: [{ path: ["parts", 3, "blob"], durationSeconds: 30 }] },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("media_declaration_dropped");
+  });
+
+  test("a string index into an array does not resolve — it is not the same coordinate", () => {
+    const r = validate.safe(
+      { model: "test-model", parts: [{ blob: 1 }] },
+      { media: [{ path: ["parts", "0", "blob"], durationSeconds: 30 }] },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("media_declaration_dropped");
+  });
+
+  test("prototype keys do not resolve", () => {
+    const r = validate.safe(
+      { model: "test-model" },
+      { media: [{ path: ["constructor"], bytes: 1 }] },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("media_declaration_dropped");
+  });
+
+  test("it is appealable per code, like every other finding", () => {
+    const r = validate.safe(
+      { model: "test-model", text: "hi" },
+      {
+        media: [{ path: ["nope"], bytes: 1 }],
+        severity: { media_declaration_dropped: "off" },
+      },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).not.toContain("media_declaration_dropped");
+  });
+
+  test("an endpoint's declared out-of-body coordinates are honoured", () => {
+    // The `data_file` / `media` case: the audio arrives as a form part, so the
+    // coordinate is real even though it is not a key of the JSON body.
+    const withUpload = createValidator<TestParams>({
+      endpoint: "test.upload",
+      schema: z.looseObject({ model: z.string() }),
+      modelId: (p) => p.model,
+      catalog,
+      mediaPaths: [["data_file"]],
+    });
+    const r = withUpload.safe(
+      { model: "test-model" },
+      { media: [{ path: ["data_file"], durationSeconds: 60 }] },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).not.toContain("media_declaration_dropped");
+
+    // …and only the coordinates it declared.
+    const other = withUpload.safe(
+      { model: "test-model" },
+      { media: [{ path: ["data_fil"], durationSeconds: 60 }] },
+    );
+    expect(other.ok).toBe(true);
+    if (other.ok) expect(other.warnings.map((w) => w.code)).toContain("media_declaration_dropped");
+  });
+});

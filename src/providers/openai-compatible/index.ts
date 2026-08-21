@@ -192,11 +192,11 @@ export interface OpenAICompatibleChat<
     ValidatorProviderCarrier<Provider> {
   <T extends ChatCompletionsBodyBase<ModelId>>(
     params: T & ExactKeys<T, ChatCompletionsBodyBase<ModelId>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, ChatSdkTargets<T>, Avail, T["model"] & string>;
   safe<T extends ChatCompletionsBodyBase<ModelId>>(
     params: T & ExactKeys<T, ChatCompletionsBodyBase<ModelId>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ChatSdkTargets<T>, Avail, T["model"] & string>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 }

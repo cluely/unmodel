@@ -587,11 +587,11 @@ const validator = createValidator<AnyImageGenerationsBody, unknown>({
 export const image = validator as unknown as {
   <M extends ImageModelInput, T extends ImageArm<M>>(
     params: T & ImageArm<M> & { model: M } & ExactKeys<T, ImageArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, BytedanceSdkTargets<T>>;
   safe<M extends ImageModelInput, T extends ImageArm<M>>(
     params: T & ImageArm<M> & { model: M } & ExactKeys<T, ImageArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, BytedanceSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

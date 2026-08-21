@@ -30,7 +30,7 @@ import type { DialectId, TargetEndpoint } from "./endpoints";
 import { endpointUrl, isFactoryEndpoint, resolveEndpoint } from "./endpoints";
 import { TranslationUnavailableError } from "./errors";
 import { geminiSdkParams } from "./sdk-shapes";
-import type { TranslationWarning, Warn } from "./warnings";
+import type { TranslationWarning, TranslationWarningInput, Warn } from "./warnings";
 import { attachWarnings, createWarningSink } from "./warnings";
 
 export { TranslationUnavailableError } from "./errors";
@@ -159,7 +159,10 @@ export { checkConstraints } from "./constraint-check";
 function pushNarrowingWarnings(
   entry: AvailabilityTarget,
   target: string,
-  push: (warning: Omit<TranslationWarning, "from" | "to">) => void,
+  // Not `Omit<TranslationWarning, …>`: a plain `Omit` over the warning union
+  // collapses it to one arm with a union-typed `code` AND a union-typed `meta`,
+  // which is precisely the pairing the union exists to keep.
+  push: (warning: TranslationWarningInput) => void,
 ): void {
   const narrows = entry.narrows;
   if (narrows === undefined) return;

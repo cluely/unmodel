@@ -663,11 +663,11 @@ const validator = createValidator<MusicParams, unknown>({
 export const music = validator as unknown as {
   <T extends MusicParams>(
     params: T & ExactKeys<T, MusicParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "output_format">, MusicSdkTargets>;
   safe<T extends MusicParams>(
     params: T & ExactKeys<T, MusicParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "output_format">, MusicSdkTargets>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

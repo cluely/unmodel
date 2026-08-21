@@ -459,11 +459,11 @@ const replaceBackgroundValidator = createValidator<ReplaceBackgroundParams, unkn
 interface IdeogramEditValidator<P> {
   <T extends P>(
     params: T & ExactKeys<T, P>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, IdeogramSdkTargets<T>>;
   safe<T extends P>(
     params: T & ExactKeys<T, P>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, IdeogramSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 }

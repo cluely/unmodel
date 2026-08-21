@@ -653,11 +653,11 @@ type RouteModelInput<Route extends string> = Route extends "imageToImage"
 interface RecraftTransformValidator<Route extends string> {
   <M extends RouteModelInput<Route>, T extends TransformArm<Route, M>>(
     params: T & TransformArm<Route, M> & ExactKeys<T, TransformArm<Route, RouteModelInput<Route>>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, RecraftSdkTargets<T>>;
   safe<M extends RouteModelInput<Route>, T extends TransformArm<Route, M>>(
     params: T & TransformArm<Route, M> & ExactKeys<T, TransformArm<Route, RouteModelInput<Route>>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, RecraftSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 }

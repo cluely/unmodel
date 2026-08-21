@@ -436,11 +436,11 @@ const streamValidator = createValidator<AudioStreamParams, unknown>({
 export const speech = speechValidator as unknown as {
   <T extends AudioSpeechBody>(
     params: T & ExactKeys<T, AudioSpeechBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, SpeechSdkTargets<T>>;
   safe<T extends AudioSpeechBody>(
     params: T & ExactKeys<T, AudioSpeechBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, SpeechSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
@@ -471,11 +471,11 @@ export const speech = speechValidator as unknown as {
 export const speechStream = streamValidator as unknown as {
   <T extends AudioStreamParams>(
     params: T & ExactKeys<T, AudioStreamParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "accept">, SpeechStreamSdkTargets<AudioStreamSdkParams>>;
   safe<T extends AudioStreamParams>(
     params: T & ExactKeys<T, AudioStreamParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "accept">, SpeechStreamSdkTargets<AudioStreamSdkParams>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

@@ -18,10 +18,20 @@ export type IssueCode =
   | "media_duration_exceeded"
   | "media_duration_undeclared"
   /**
-   * A `ValidateOptions.media` declaration named a part that did not survive
-   * compilation, so its declared facts were not applied to anything. Only a
-   * compiling surface (`unmodel/chat`) can produce it: on a wire surface the
-   * declaration and the body share one coordinate system.
+   * A `ValidateOptions.media` declaration's facts were not applied to
+   * anything. Two ways to earn it, and the message says which:
+   *
+   * - on a compiling surface (`unmodel/chat`), the part it named did not
+   *   survive compilation for this provider;
+   * - on any surface, the path names nothing in the params — a typo, a stale
+   *   index, or canonical coordinates handed to a wire validator. That case
+   *   used to be a silent validation bypass: the declaration was simply never
+   *   found, so a declared 999 MB attachment was never checked and the call
+   *   came back clean.
+   *
+   * An endpoint whose media arrives out of band (a multipart `data_file`)
+   * lists those coordinates in `PipelineSpec.mediaPaths`, so a real
+   * declaration there is not mistaken for an inert one.
    */
   | "media_declaration_dropped";
 

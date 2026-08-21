@@ -522,11 +522,11 @@ const validator = createValidator<PreRecordedBody, unknown>({
 export const transcribe = validator as unknown as {
   <T extends PreRecordedBody>(
     params: T & ExactKeys<T, PreRecordedBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, PreRecordedSdkTargets<T>>;
   safe<T extends PreRecordedBody>(
     params: T & ExactKeys<T, PreRecordedBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, PreRecordedSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

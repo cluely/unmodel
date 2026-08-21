@@ -56,9 +56,9 @@ import type { ChatParams } from "./types";
  */
 export type ChatProviderValidator<Provider extends string = string> = ((
   params: never,
-  options?: ValidateOptions,
+  options?: ValidateOptions<never>,
 ) => object) & {
-  safe: (params: never, options?: ValidateOptions) => ValidateResult<object>;
+  safe: (params: never, options?: ValidateOptions<never>) => ValidateResult<object>;
 } & ValidatorProviderCarrier<Provider>;
 
 /** Provider id -> that provider's concrete chat validator. */

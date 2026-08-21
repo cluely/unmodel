@@ -5,6 +5,7 @@
  * exercise the closed enum unions on the raw wire params.
  */
 import { video, videoV2 } from "../../src/providers/minimax";
+import type { MinimaxV2ContentType, MinimaxV2Role } from "../../src/providers/minimax";
 import { expectAssignable } from "./helpers";
 
 function videoGenerationTypeTests(): void {
@@ -80,4 +81,46 @@ function videoGenerationV2TypeTests(): void {
   });
 }
 
-export { videoGenerationTypeTests, videoGenerationV2TypeTests };
+/**
+ * `content[].type` and `content[].role` are the last two closed-by-the-checker
+ * vocabularies on this body that used to carry an open tail. `resolution`,
+ * `ratio` and `duration` in the same interface were already closed against
+ * their own `as const` arrays; these two are protocol vocabulary and strictly
+ * more stable than those.
+ */
+function videoV2ContentVocabularyTypeTests(): void {
+  const v = videoV2({
+    model: "MiniMax-H3",
+    content: [
+      { type: "text", text: "a neon-lit street" },
+      { type: "image_url", image_url: { url: "https://cdn.example/a.jpg" }, role: "first_frame" },
+      { type: "video_url", video_url: { url: "https://cdn.example/a.mp4" }, role: "reference_video" },
+      { type: "audio_url", audio_url: { url: "https://cdn.example/a.mp3" }, role: "reference_audio" },
+    ],
+    resolution: "768P",
+    duration: 6,
+  });
+  expectAssignable<MinimaxV2ContentType>(v.content[0]?.type ?? "text");
+  expectAssignable<MinimaxV2Role | undefined>(v.content[1]?.role);
+
+  videoV2({
+    model: "MiniMax-H3",
+    // @ts-expect-error — `invalid_enum_value` at run time; "pdf_url" is not a content type.
+    content: [{ type: "pdf_url", text: "hi" }],
+    resolution: "768P",
+    duration: 6,
+  });
+  videoV2({
+    model: "MiniMax-H3",
+    content: [
+      { type: "text", text: "hi" },
+      // @ts-expect-error — an unrecognised role is counted as a first frame by
+      // `summarize`, so it used to earn a spurious second diagnostic too.
+      { type: "image_url", image_url: { url: "https://x/a.jpg" }, role: "middle_frame" },
+    ],
+    resolution: "768P",
+    duration: 6,
+  });
+}
+
+export { videoGenerationTypeTests, videoGenerationV2TypeTests, videoV2ContentVocabularyTypeTests };

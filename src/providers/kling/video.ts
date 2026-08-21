@@ -256,11 +256,11 @@ const validator = createValidator<TextToVideoParams, unknown>({
 export const video = validator as unknown as {
   <M extends TextToVideoModelInput, T extends TextToVideoArm<M>>(
     params: T & TextToVideoArm<M> & { model_name?: M } & ExactKeys<T, TextToVideoArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, KlingSdkTargets<T>>;
   safe<M extends TextToVideoModelInput, T extends TextToVideoArm<M>>(
     params: T & TextToVideoArm<M> & { model_name?: M } & ExactKeys<T, TextToVideoArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, KlingSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

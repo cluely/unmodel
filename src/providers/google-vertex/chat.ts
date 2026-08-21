@@ -308,7 +308,7 @@ const retargetGenerateContent = createToApi<VertexGenerateContentBody>({
 export type GoogleVertexChat = {
   <T extends VertexGenerateContentBody>(
     params: T & ExactKeys<T, VertexGenerateContentBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<
     Omit<T, "model">,
     VertexChatSdkTargets<T>,
@@ -317,7 +317,7 @@ export type GoogleVertexChat = {
   >;
   safe<T extends VertexGenerateContentBody>(
     params: T & ExactKeys<T, VertexGenerateContentBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<
     Validated<
       Omit<T, "model">,

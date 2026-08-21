@@ -265,7 +265,9 @@ export function warnForeignExtras(ir: ChatIR, self: DialectId, warn: Warn): void
         code: "dropped_param",
         path: [key],
         message: `\`${key}\` is a ${dialect} param with no ${self} equivalent; it was dropped from the translated body.`,
-        meta: { param: key, dialect },
+        // `Object.entries` widens the passthrough key to `string`; the value
+        // is a DialectId by construction (that is what `passthrough` is keyed by).
+        meta: { param: key, dialect: dialect as DialectId },
       });
     }
   }

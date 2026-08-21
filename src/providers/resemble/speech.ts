@@ -264,11 +264,11 @@ const synthesizeStreamValidator = createValidator<
 export const speech = synthesizeValidator as unknown as {
   <T extends SynthesizeBody>(
     params: T & ExactKeys<T, SynthesizeBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, SpeechSdkTargets<T>>;
   safe<T extends SynthesizeBody>(
     params: T & ExactKeys<T, SynthesizeBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, SpeechSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
@@ -292,11 +292,11 @@ export const speech = synthesizeValidator as unknown as {
 export const speechStream = synthesizeStreamValidator as unknown as {
   <T extends SynthesizeStreamBody>(
     params: T & ExactKeys<T, SynthesizeStreamBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, SpeechSdkTargets<T>>;
   safe<T extends SynthesizeStreamBody>(
     params: T & ExactKeys<T, SynthesizeStreamBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, SpeechSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

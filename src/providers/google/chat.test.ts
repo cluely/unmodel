@@ -271,6 +271,9 @@ describe("capability checks (real catalog ids)", () => {
     const result = chat.safe({
       model: "gemini-2.5-flash-image",
       contents: HELLO,
+      // @ts-expect-error — `tools` is `never` on a `toolCall: false` model.
+      // Kept as a runtime test: the compile error is the type layer's answer,
+      // this is the validator's, and a JS caller only ever gets the second.
       tools: [{ functionDeclarations: [{ name: "f" }] }],
     });
     const issue = expectError(result, "unsupported_capability");
@@ -304,6 +307,7 @@ describe("capability checks (real catalog ids)", () => {
     const result = chat.safe({
       model: "gemini-embedding-001",
       contents: HELLO,
+      // @ts-expect-error — `temperature` is `never` on a `temperature: false` model.
       generationConfig: { temperature: 0.5 },
     });
     const issue = expectError(result, "unsupported_param");
@@ -315,6 +319,7 @@ describe("capability checks (real catalog ids)", () => {
     const result = chat.safe({
       model: "gemini-2.5-flash-preview-tts",
       contents: HELLO,
+      // @ts-expect-error — `thinkingConfig` is `never` on a non-reasoning model.
       generationConfig: { thinkingConfig: { thinkingBudget: 1024 } },
     });
     const issue = expectError(result, "unsupported_capability");
@@ -616,6 +621,8 @@ describe("throwing form", () => {
       chat({
         model: "gemini-2.5-flash-image",
         contents: HELLO,
+        // @ts-expect-error — `tools` is `never` on a `toolCall: false` model;
+        // the throwing form still has to throw for a JS caller.
         tools: [{ functionDeclarations: [{ name: "f" }] }],
       }),
     ).toThrow(/unsupported/);
@@ -745,6 +752,8 @@ describe("generationConfig ranges and enums", () => {
       chat.safe({
         model: "gemini-2.5-flash",
         contents: HELLO,
+        // @ts-expect-error — a text-only model's `responseModalities` arm has
+        // no IMAGE member. This is the largest of the four google arms.
         generationConfig: { responseModalities: ["IMAGE"] },
       }),
       "unsupported_capability",
@@ -758,7 +767,11 @@ describe("generationConfig ranges and enums", () => {
 // ---------------------------------------------------------------------------
 
 describe("image generation config", () => {
-  const TEXT_IMAGE: GoogleModality[] = ["TEXT", "IMAGE"];
+  // Narrowed from `GoogleModality[]`: the per-model arms type
+  // `responseModalities` as that model's own output modalities, and a hoisted
+  // wide annotation is exactly the class-D bite the arms exist to fix. These
+  // are all image models, so this is what a real caller would write too.
+  const TEXT_IMAGE: Array<"TEXT" | "IMAGE"> = ["TEXT", "IMAGE"];
 
   test("imageConfig and responseFormat.image are validated identically", () => {
     // Annotated: `aspectRatio` is a closed union, so the array literal needs a
@@ -771,17 +784,24 @@ describe("image generation config", () => {
       },
     ];
     for (const generationConfig of configs) {
+      // The honest ceiling of Tier A, exercised on purpose: a HOISTED
+      // `GoogleGenerationConfig` variable is the wide type, and the per-model
+      // arms narrow the call SITE, not the world. That is also why this loop
+      // is the right shape for the test — one value, deliberately fed to a
+      // model whose table allows it and one whose table does not, which no
+      // literal call site could express.
+      const wide = generationConfig as never;
       // 1:8 is documented for 3.1 Flash Image …
       expectOk(
         chat.safe({
           model: "gemini-3.1-flash-image",
           contents: HELLO,
-          generationConfig,
+          generationConfig: wide,
         }),
       );
       // … but not for Nano Banana Pro, whose table lists 10 ratios.
       expectError(
-        chat.safe({ model: "gemini-3-pro-image", contents: HELLO, generationConfig }),
+        chat.safe({ model: "gemini-3-pro-image", contents: HELLO, generationConfig: wide }),
         "invalid_enum_value",
       );
     }
@@ -875,6 +895,7 @@ describe("image generation config", () => {
       chat.safe({
         model: "gemini-3.1-flash-lite-image",
         contents: HELLO,
+        // @ts-expect-error — this model's table lists 512 and 1K only.
         generationConfig: { imageConfig: { imageSize: "4K" } },
       }),
       "invalid_enum_value",
@@ -883,6 +904,7 @@ describe("image generation config", () => {
       chat.safe({
         model: "gemini-3-pro-image",
         contents: HELLO,
+        // @ts-expect-error — the Pro table has no 512 column.
         generationConfig: { imageConfig: { imageSize: "512" } },
       }),
       "invalid_enum_value",
@@ -891,6 +913,8 @@ describe("image generation config", () => {
       chat.safe({
         model: "gemini-2.5-flash-image",
         contents: HELLO,
+        // @ts-expect-error — this model has one fixed resolution and takes no
+        // `imageSize` at all, which the arm spells `never`.
         generationConfig: { imageConfig: { imageSize: "2K" } },
       }),
       "unsupported_param",
@@ -942,7 +966,9 @@ describe("image generation config", () => {
 
 describe("speech generation config", () => {
   const TTS_MODEL = "gemini-3.1-flash-tts-preview";
-  const AUDIO_ONLY = { responseModalities: ["AUDIO"] as GoogleModality[] };
+  // `Array<"AUDIO">`, not `GoogleModality[]`: this model produces audio only,
+  // which is precisely what the arm says.
+  const AUDIO_ONLY = { responseModalities: ["AUDIO"] as Array<"AUDIO"> };
 
   test("single-speaker TTS validates", () => {
     expectOk(
@@ -1054,6 +1080,8 @@ describe("speech generation config", () => {
         model: "gemini-2.5-flash",
         contents: HELLO,
         generationConfig: {
+          // @ts-expect-error — `speechConfig` is `never` on a model that does
+          // not generate audio.
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
         },
       }),

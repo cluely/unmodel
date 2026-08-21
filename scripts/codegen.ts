@@ -249,7 +249,7 @@ function renderIndexFile(providers: RawProvider[]): string {
 
   return `${GEN_HEADER}
 import type { ModelInfo, ProviderInfo } from "../core/catalog-types";
-${entries.map((e) => `import * as ${e.importName} from "./${e.id}.gen";`).join("\n")}
+import { catalogTyped } from "./typed.gen";
 
 export interface ProviderCatalog {
   provider: ProviderInfo;
@@ -261,12 +261,24 @@ ${providers.map((p) => `  | ${quote(p.id)}`).join("\n")};
 
 /**
  * The full registry, deliberately widened to ModelInfo (no literal types).
- * Provider subpaths with validators (e.g. \`unmodel/openai\`) re-export their
- * own catalog slice with literal types when you need precise inference.
+ *
+ * The widening is a BUNDLE decision, not a taste one, and it is the reason
+ * \`unmodel/catalog/typed\` exists next to this entry. The annotation erases all
+ * ${providers.length} \`.gen\` namespaces from this module's declaration —
+ * \`dist/catalog/index.d.ts\` imports nothing but \`catalog-types\` and stays a
+ * few KiB. Dropping it in favour of \`satisfies\` pulls every generated
+ * namespace into the bundled declaration and takes that file to ~3.6 MB, which
+ * every downstream project that touches \`unmodel/catalog\` then pays — including
+ * one that only wanted the \`ProviderId\` type. docs/decisions.md §3 already
+ * settled this shape for \`unmodel/chat\`: the cheap path has to be the only
+ * path, and the heavy artefact gets its own specifier.
+ *
+ * So: this export is the cheap one, \`unmodel/catalog/typed\` is the same object
+ * with its literals intact, and provider subpaths with validators (e.g.
+ * \`unmodel/openai\`) re-export their own catalog slice for the 71 providers
+ * that have one. Both entries are pinned in test/bundle-budget.test.ts.
  */
-export const catalog: Record<ProviderId, ProviderCatalog> = {
-${entries.map((e) => `  ${quote(collisions.get(e.importName)!)}: ${e.importName},`).join("\n")}
-};
+export const catalog: Record<ProviderId, ProviderCatalog> = catalogTyped;
 
 export function getProvider(providerId: ProviderId | (string & {})): ProviderCatalog | undefined {
   // Object.hasOwn: ids like "constructor" must not resolve to inherited
@@ -281,6 +293,108 @@ export function getModel(
   modelId: string,
 ): ModelInfo | undefined {
   const models = getProvider(providerId)?.models;
+  return models !== undefined && Object.hasOwn(models, modelId) ? models[modelId] : undefined;
+}
+`;
+}
+
+/**
+ * \`src/catalog/typed.gen.ts\` — the same registry with its literals kept, on
+ * its own subpath.
+ *
+ * Why it is a separate entry rather than a flag on the one above: ${providers.length}
+ * providers ship a catalog and only 71 of them have a provider subpath, so for
+ * ~115 providers these three symbols are the ONLY typed access to their model
+ * ids — \`getModel("anthropic", "…")\` completed nothing at all. Keeping the
+ * literals is what fixes that, and it necessarily drags every \`.gen\`
+ * namespace into the declaration graph. Charging that to the caller who asks
+ * for literals, and nobody else, is the only mitigation available.
+ *
+ * The RUNTIME object is declared once, here, and \`./index\` re-exports it
+ * widened — so importing both entries costs one object, not two.
+ */
+function renderTypedCatalogFile(providers: RawProvider[]): string {
+  const entries = providers.map((p) => ({ id: p.id, importName: `${camelCase(p.id)}Gen` }));
+  const collisions = new Map<string, string>();
+  for (const entry of entries) {
+    const existing = collisions.get(entry.importName);
+    if (existing !== undefined) {
+      throw new Error(`Import name collision between providers "${existing}" and "${entry.id}"`);
+    }
+    collisions.set(entry.importName, entry.id);
+  }
+
+  return `${GEN_HEADER}
+import type { ModelInfo, ProviderInfo } from "../core/catalog-types";
+${entries.map((e) => `import * as ${e.importName} from "./${e.id}.gen";`).join("\n")}
+
+export interface ProviderCatalog {
+  provider: ProviderInfo;
+  models: Record<string, ModelInfo>;
+}
+
+export type ProviderId =
+${providers.map((p) => `  | ${quote(p.id)}`).join("\n")};
+
+/**
+ * The full registry with every literal the \`.gen\` files already computed.
+ *
+ * \`satisfies\`, not an annotation: the annotation checks the rows exactly the
+ * same way and then throws away what it checked, so \`keyof\` collapses to
+ * \`string\`, every limit widens to \`number\`, and \`getModel("anthropic", "…")\`
+ * completes nothing. This is the same edit \`GEMINI_IMAGE_MODEL_RULES\` and the
+ * CLI registries carry, at catalog scale.
+ *
+ * The price is real and is why this lives on its own subpath: the bundled
+ * declaration for this entry is ~3.6 MB against ~4 KiB for \`unmodel/catalog\`.
+ * See the doc on \`catalog\` in \`./index\`.
+ */
+export const catalogTyped = {
+${entries.map((e) => `  ${quote(collisions.get(e.importName)!)}: ${e.importName},`).join("\n")}
+} satisfies Record<ProviderId, ProviderCatalog>;
+
+/** The typed registry's own type — \`Catalog["anthropic"]["models"]\` and so on. */
+export type Catalog = typeof catalogTyped;
+
+/** Every model id one provider serves, as a union. */
+export type ModelIdFor<P extends ProviderId> = Extract<keyof Catalog[P]["models"], string>;
+
+/**
+ * One provider's catalog slice, with its literals.
+ *
+ * Two overloads, and the loose one is not a formality: a provider id known
+ * only at run time falls to it and keeps \`| undefined\`, which is the honest
+ * answer. A KNOWN literal cannot miss, so it does not.
+ */
+export function getProviderTyped<P extends ProviderId>(providerId: P): Catalog[P];
+export function getProviderTyped(
+  providerId: ProviderId | (string & {}),
+): ProviderCatalog | undefined;
+export function getProviderTyped(providerId: string): ProviderCatalog | undefined {
+  // Object.hasOwn: ids like "constructor" must not resolve to inherited
+  // Object.prototype members.
+  return Object.hasOwn(catalogTyped, providerId)
+    ? (catalogTyped as Record<string, ProviderCatalog>)[providerId]
+    : undefined;
+}
+
+/**
+ * One model's row, with its literals — \`.limit.context\` is \`1000000\`, not
+ * \`number\`, and needs no \`?.\`.
+ *
+ * A known provider with an UNKNOWN model id falls to the loose overload and
+ * keeps \`| undefined\`, which is again the honest answer.
+ */
+export function getModelTyped<P extends ProviderId, M extends ModelIdFor<P>>(
+  providerId: P,
+  modelId: M,
+): Catalog[P]["models"][M];
+export function getModelTyped(
+  providerId: ProviderId | (string & {}),
+  modelId: string,
+): ModelInfo | undefined;
+export function getModelTyped(providerId: string, modelId: string): ModelInfo | undefined {
+  const models = getProviderTyped(providerId)?.models;
   return models !== undefined && Object.hasOwn(models, modelId) ? models[modelId] : undefined;
 }
 `;
@@ -516,6 +630,7 @@ export function generate(snapshot: unknown, overrides?: unknown): Map<string, st
     files.set(`${provider.id}.gen.ts`, renderProviderFile(provider));
   }
   files.set("index.ts", renderIndexFile(providers));
+  files.set("typed.gen.ts", renderTypedCatalogFile(providers));
 
   if (overrides !== undefined) {
     const availability = buildAvailability(snapshot, overrides);

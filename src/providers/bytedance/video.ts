@@ -779,11 +779,11 @@ const validator = createValidator<AnyContentGenerationTasksBody, unknown>({
 export const video = validator as unknown as {
   <M extends VideoModelInput, T extends VideoArm<M>>(
     params: T & VideoArm<M> & { model: M } & ExactKeys<T, VideoArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, BytedanceSdkTargets<T>>;
   safe<M extends VideoModelInput, T extends VideoArm<M>>(
     params: T & VideoArm<M> & { model: M } & ExactKeys<T, VideoArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, BytedanceSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

@@ -228,3 +228,84 @@ describe("openai.realtimeSession estimation", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Per-transcription-model rules
+//
+// This module's own JSDoc has stated these four since it was written and NOTHING
+// enforced them — not the type, not a check. Two are outright refusals in the
+// GA reference and are errors (and compile errors); two are positive
+// support statements about two models, so they are warnings and are NOT typed.
+// ---------------------------------------------------------------------------
+
+describe("openai.realtimeSession transcription rules", () => {
+  const session = (transcription: Record<string, unknown>): unknown => ({
+    type: "realtime",
+    audio: { input: { transcription } },
+  });
+
+  test("`delay` is refused on every model but gpt-realtime-whisper", () => {
+    const r = safeUnchecked(session({ model: "gpt-transcribe", delay: "low" }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors).toHaveLength(1);
+      expect(r.errors[0]?.code).toBe("unsupported_param");
+      expect(r.errors[0]?.path).toEqual(["audio", "input", "transcription", "delay"]);
+      expect(r.errors[0]?.message).toContain("gpt-realtime-whisper");
+      expect(r.errors[0]?.meta?.source).toBeString();
+    }
+  });
+
+  test("`prompt` is refused on gpt-realtime-whisper, and only there", () => {
+    const bad = safeUnchecked(session({ model: "gpt-realtime-whisper", prompt: "style" }));
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) {
+      expect(bad.errors[0]?.path).toEqual(["audio", "input", "transcription", "prompt"]);
+    }
+    expect(safeUnchecked(session({ model: "whisper-1", prompt: "style" })).ok).toBe(true);
+  });
+
+  test("`delay` on gpt-realtime-whisper is exactly the documented pairing", () => {
+    const r = safeUnchecked(session({ model: "gpt-realtime-whisper", delay: "minimal" }));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("`keywords`/`languages` warn rather than fail — the docs state support, not refusal", () => {
+    const r = safeUnchecked(session({ model: "whisper-1", keywords: ["acme"], languages: ["en"] }));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => w.path.at(-1))).toEqual(["keywords", "languages"]);
+      expect(r.warnings.every((w) => w.severity === "warning")).toBe(true);
+    }
+    // …and are silent on the two models the reference names.
+    for (const model of ["gpt-transcribe", "gpt-live-transcribe"]) {
+      const ok = safeUnchecked(session({ model, keywords: ["acme"], languages: ["en"] }));
+      expect(ok.ok).toBe(true);
+      if (ok.ok) expect(ok.warnings).toEqual([]);
+    }
+  });
+
+  test("a model the reference does not list is left alone entirely", () => {
+    // Guessing about a model the docs are silent on is how a validation layer
+    // earns a reputation for false positives.
+    const r = safeUnchecked(
+      session({ model: "future-stt-1", delay: "low", prompt: "p", keywords: ["a"] }),
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("no transcription model means no per-model rule", () => {
+    const r = safeUnchecked(session({ delay: "low", prompt: "p" }));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("the two errors are appealable per code, like every other finding", () => {
+    const r = safeUnchecked(session({ model: "gpt-transcribe", delay: "low" }), {
+      severity: { unsupported_param: "off" },
+    });
+    expect(r.ok).toBe(true);
+  });
+});

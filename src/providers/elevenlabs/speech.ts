@@ -545,11 +545,11 @@ const validator = createValidator<TextToSpeechParams, unknown>({
 export const speech = validator as unknown as {
   <T extends TextToSpeechParams>(
     params: T & ExactKeys<T, TextToSpeechParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, keyof TextToSpeechQuery | "voice_id">, SpeechSdkTargets>;
   safe<T extends TextToSpeechParams>(
     params: T & ExactKeys<T, TextToSpeechParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<
     Validated<Omit<T, keyof TextToSpeechQuery | "voice_id">, SpeechSdkTargets>
   >;

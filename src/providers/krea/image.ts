@@ -578,11 +578,11 @@ const validator = createValidator<Krea2Params, unknown>({
 export const image = validator as unknown as {
   <T extends Krea2Params>(
     params: T & ExactKeys<T, Krea2Params>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "model">, KreaSdkTargets<Omit<T, "model">>>;
   safe<T extends Krea2Params>(
     params: T & ExactKeys<T, Krea2Params>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "model">, KreaSdkTargets<Omit<T, "model">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

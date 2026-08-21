@@ -171,11 +171,11 @@ const validator = createValidator<FluxKontextParams, unknown>({
 export const imageEdit = validator as unknown as {
   <T extends FluxKontextParams>(
     params: T & ExactKeys<T, FluxKontextParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>;
   safe<T extends FluxKontextParams>(
     params: T & ExactKeys<T, FluxKontextParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

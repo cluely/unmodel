@@ -705,11 +705,11 @@ const validator = createValidator<GenerateParams, unknown>({
 export const image = validator as unknown as {
   <T extends GenerateParams>(
     params: T & ExactKeys<T, GenerateParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, IdeogramSdkTargets<T>>;
   safe<T extends GenerateParams>(
     params: T & ExactKeys<T, GenerateParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, IdeogramSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

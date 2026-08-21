@@ -18,7 +18,9 @@ const safeUnchecked = realtimeTranscription.safe as unknown as (
 ) => ValidateResult<Record<string, unknown>>;
 
 /** Ten minutes of session, declared out of band (no param references the audio). */
-const tenMinutes: ValidateOptions = { media: [{ path: [], durationSeconds: 600 }] };
+// The empty path addresses the params object itself — the media is the socket
+// stream. Inferred, not annotated, so the `readonly []` coordinate survives.
+const tenMinutes = { media: [{ path: [] as const, durationSeconds: 600 }] };
 
 describe("soniox.realtimeTranscription happy path", () => {
   test("the enumerable body IS the config message; .request is the socket", () => {

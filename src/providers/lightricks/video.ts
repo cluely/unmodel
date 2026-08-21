@@ -152,11 +152,11 @@ const validator = createValidator<TextToVideoParams, unknown>({
 export const video = validator as unknown as {
   <T extends TextToVideoParams>(
     params: T & ExactKeys<T, TextToVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>;
   safe<T extends TextToVideoParams>(
     params: T & ExactKeys<T, TextToVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

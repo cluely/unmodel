@@ -392,11 +392,11 @@ const validator = createValidator<SpeechToTextRealtimeParams>({
 export const speechToTextRealtime = validator as unknown as {
   <T extends SpeechToTextRealtimeParams>(
     params: T & ExactKeys<T, SpeechToTextRealtimeParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): T;
   safe<T extends SpeechToTextRealtimeParams>(
     params: T & ExactKeys<T, SpeechToTextRealtimeParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<T>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

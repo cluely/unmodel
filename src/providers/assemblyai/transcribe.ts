@@ -670,11 +670,11 @@ const validator = createValidator<TranscriptBody, unknown>({
 export const transcribe = validator as unknown as {
   <T extends TranscriptBody>(
     params: T & ExactKeys<T, TranscriptBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, TranscriptSdkTargets<T>>;
   safe<T extends TranscriptBody>(
     params: T & ExactKeys<T, TranscriptBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, TranscriptSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

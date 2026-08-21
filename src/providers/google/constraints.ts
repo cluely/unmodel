@@ -192,7 +192,7 @@ export const GEMINI_IMAGE_SIZES = ["512", "1K", "2K", "4K"] as const;
  * The pages conflict, so both spellings validate.
  * Source: GENERATE_CONTENT_API_DOCS_URL (AspectRatio / ImageSize enums).
  */
-export const GEMINI_IMAGE_ASPECT_RATIO_ENUM_NAMES: Readonly<Record<string, string>> = {
+export const GEMINI_IMAGE_ASPECT_RATIO_ENUM_NAMES = {
   "1:1": "ASPECT_RATIO_ONE_BY_ONE",
   "1:4": "ASPECT_RATIO_ONE_BY_FOUR",
   "4:1": "ASPECT_RATIO_FOUR_BY_ONE",
@@ -207,15 +207,19 @@ export const GEMINI_IMAGE_ASPECT_RATIO_ENUM_NAMES: Readonly<Record<string, strin
   "9:16": "ASPECT_RATIO_NINE_BY_SIXTEEN",
   "16:9": "ASPECT_RATIO_SIXTEEN_BY_NINE",
   "21:9": "ASPECT_RATIO_TWENTY_ONE_BY_NINE",
-};
+  // `as const satisfies`, for GEMINI_IMAGE_MODEL_RULES' reason: the annotation
+  // erases the pairing, so a per-model type could offer "16:9" but not the
+  // enum-name spelling the same model accepts. `allowedSpellings` reads it as
+  // `Readonly<Record<string, string>>` all the same.
+} as const satisfies Readonly<Record<string, string>>;
 
 /** proto-JSON enum names for `responseFormat.image.imageSize`. */
-export const GEMINI_IMAGE_SIZE_ENUM_NAMES: Readonly<Record<string, string>> = {
+export const GEMINI_IMAGE_SIZE_ENUM_NAMES = {
   "512": "IMAGE_SIZE_FIVE_TWELVE",
   "1K": "IMAGE_SIZE_ONE_K",
   "2K": "IMAGE_SIZE_TWO_K",
   "4K": "IMAGE_SIZE_FOUR_K",
-};
+} as const satisfies Readonly<Record<string, string>>;
 
 /** Per-model image-generation capability, from the guide's resolution tables. */
 export interface GeminiImageRule {

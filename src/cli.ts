@@ -132,6 +132,20 @@ function isSocketRequest(request: RequestMeta): boolean {
 }
 
 /**
+ * The one seam where an untrusted `argv` string meets the literal-keyed
+ * registries.
+ *
+ * The maps keep their keys (`satisfies`, not `Record<string, …>`) so
+ * `CliEndpointId` is nameable and `cli.test.ts`'s drift guard can be a
+ * compile-time statement. Indexing them with argv is the only place that has
+ * to widen, and `Object.hasOwn` is what makes it safe rather than a cast: a
+ * target like `"constructor"` must not resolve through `Object.prototype`.
+ */
+function lookup<V>(map: Readonly<Record<string, V>>, key: string): V | undefined {
+  return Object.hasOwn(map, key) ? map[key] : undefined;
+}
+
+/**
  * Endpoints in REGISTRY split three ways: JSON-bodied ones finalize with a
  * `content-type: application/json` header, multipart ones finalize with an
  * intentionally EMPTY header map (the boundary belongs to `FormData`, so the
@@ -301,13 +315,13 @@ const validateCommand = defineCommand({
     // A unified category (`unified.speech`) takes the canonical vocabulary and
     // routes on its `model` ref; a provider endpoint takes that provider's wire
     // body. Both end in a `.safe`, so the rest of this command is identical.
-    const load = REGISTRY[target] ?? UNIFIED[target];
+    const load = lookup(REGISTRY, target) ?? lookup(UNIFIED, target);
     if (!load) {
-      // Object.hasOwn: a target like "constructor" must not hit Object.prototype.
-      if (Object.hasOwn(MULTIPART_ONLY, target)) {
+      const multipartHome = lookup(MULTIPART_ONLY, target);
+      if (multipartHome !== undefined) {
         fail(
           `"${target}" takes a file upload (Blob), which JSON params cannot express — ` +
-            `use it from the library instead: import { ... } from "${MULTIPART_ONLY[target]}"`,
+            `use it from the library instead: import { ... } from "${multipartHome}"`,
         );
         return;
       }

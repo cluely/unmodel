@@ -209,11 +209,11 @@ const validator = createValidator<TextToImageParams, unknown>({
 export const image = validator as unknown as {
   <T extends TextToImageParams>(
     params: T & ExactKeys<T, TextToImageParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, RunwaySdkTargets<T>>;
   safe<T extends TextToImageParams>(
     params: T & ExactKeys<T, TextToImageParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, RunwaySdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

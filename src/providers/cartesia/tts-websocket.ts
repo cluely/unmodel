@@ -328,11 +328,11 @@ const validator = createValidator<TtsWebsocketMessage>({
 export const ttsWebsocket = validator as unknown as {
   <T extends TtsWebsocketMessage>(
     params: T & ExactKeys<T, TtsWebsocketMessage>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): T;
   safe<T extends TtsWebsocketMessage>(
     params: T & ExactKeys<T, TtsWebsocketMessage>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<T>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

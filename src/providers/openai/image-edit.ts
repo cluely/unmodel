@@ -404,14 +404,14 @@ const validator = createValidator<AnyImageEditBody, unknown>({
 export const imageEdit = validator as unknown as {
   <M extends ImageEditModelInput | undefined = undefined, T extends ImageEditArm<M> = ImageEditArm<M>>(
     params: T & ImageEditArm<M> & { model?: M } & ExactKeys<T, ImageEditArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, OpenAISdkTargets<T>>;
   safe<
     M extends ImageEditModelInput | undefined = undefined,
     T extends ImageEditArm<M> = ImageEditArm<M>,
   >(
     params: T & ImageEditArm<M> & { model?: M } & ExactKeys<T, ImageEditArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, OpenAISdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

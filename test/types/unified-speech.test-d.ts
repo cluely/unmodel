@@ -262,13 +262,44 @@ function degradedRefTests(): void {
 
 /** Deepgram is the one provider where the voice IS knowable — via the ref. */
 function voiceStaysWideTests(): void {
-  // Voice catalogs are per-account and thousands long, so `voice` is a plain
-  // string everywhere; `SpeechModelParams` argues the case in full.
+  // Voice catalogs are per-account and thousands long at most providers, so
+  // `voice` stays the wide `Voice` wherever no closed list is published;
+  // `SpeechModelParams` argues the case in full.
   speech({ model: "elevenlabs/eleven_v3", text: "hi", voice: "any-cloned-voice-id" });
   speech({ model: "murf/gen2", text: "hi", voice: { id: "en-US-natalie" } });
   speech({ model: "hume/octave", text: "hi", voice: { name: "Kore" } });
   // The ref union types Deepgram's, because there the model id is the voice.
   expectAssignable<PackRefs | (string & {})>("deepgram/aura-2-thalia-en");
+}
+
+/**
+ * …and where a provider DOES publish one, the unified surface offers it — the
+ * `languages` model applied to `voice`. OpenAI hand-catalogues nine voices for
+ * tts-1 and thirteen for gpt-4o-mini-tts, `checkVoice` refuses an off-list
+ * string at the wire, and the unified surface used to be strictly looser than
+ * the wire surface it compiles down to.
+ *
+ * The counts are pinned in `test/unified/completions.test.ts` (against the wire
+ * layer's own list); what is pinned here is that the list does not GATE.
+ */
+function voiceNarrowingTests(): void {
+  // (The result is the compiled WIRE body, whose `voice` is the provider's own
+  // `string | SpeechCustomVoice` — the narrowing under test is on the input.)
+  speech({ model: "openai/tts-1", text: "hi", voice: "alloy" });
+  speech({ model: "openai/gpt-4o-mini-tts", text: "hi", voice: "marin" });
+
+  // The open tail, in all three spellings: a custom voice is minted per account
+  // and `checkVoice` never enum-checks the object forms, so neither does this.
+  speech({ model: "openai/tts-1", text: "hi", voice: "voice_1234" });
+  speech({ model: "openai/tts-1", text: "hi", voice: { id: "voice_1234" } });
+  speech({ model: "openai/gpt-4o-mini-tts", text: "hi", voice: { name: "my clone" } });
+
+  // A runtime-built ref degrades to the wide vocabulary, unchanged.
+  const dynamic: string = process.env["MODEL"] ?? "openai/tts-1";
+  speech({ model: dynamic, text: "hi", voice: "anything" });
+
+  // @ts-expect-error — a voice is a name or a handle, never a number.
+  speech({ model: "openai/tts-1", text: "hi", voice: 42 });
 }
 
 // ---------------------------------------------------------------------------
@@ -290,4 +321,5 @@ export {
   extrasNarrowingTests,
   degradedRefTests,
   voiceStaysWideTests,
+  voiceNarrowingTests,
 };

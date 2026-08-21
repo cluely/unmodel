@@ -332,11 +332,11 @@ const expandValidator = createValidator<FluxExpandParams, unknown>({
 export const imageEditFill = fillValidator as unknown as {
   <M extends FluxFillModelInput, T extends FluxFillArm<M>>(
     params: T & FluxFillArm<M> & { model: M } & ExactKeys<T, FluxFillArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>;
   safe<M extends FluxFillModelInput, T extends FluxFillArm<M>>(
     params: T & FluxFillArm<M> & { model: M } & ExactKeys<T, FluxFillArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
@@ -353,11 +353,11 @@ export const imageEditFill = fillValidator as unknown as {
 export const imageEditExpand = expandValidator as unknown as {
   <T extends FluxExpandParams>(
     params: T & ExactKeys<T, FluxExpandParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>;
   safe<T extends FluxExpandParams>(
     params: T & ExactKeys<T, FluxExpandParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

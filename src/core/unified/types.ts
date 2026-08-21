@@ -253,7 +253,7 @@ export interface CompiledCall<Wire extends object = object, Out extends object =
   /** The wire body, before `providerOptions` is merged over it. */
   params: Wire;
   /** The provider endpoint's own `.safe`. */
-  validate: (params: Wire, options?: ValidateOptions) => ValidateResult<Out>;
+  validate: (params: Wire, options?: ValidateOptions<Wire>) => ValidateResult<Out>;
 }
 
 /**

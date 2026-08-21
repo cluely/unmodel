@@ -100,6 +100,8 @@ export {
 export type {
   VideoGenerationV2Params,
   MinimaxV2ContentItem,
+  MinimaxV2ContentType,
+  MinimaxV2Role,
   MinimaxMediaUrl,
   MinimaxVideoV2Resolution,
   MinimaxVideoV2Duration,

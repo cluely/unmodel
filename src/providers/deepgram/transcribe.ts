@@ -419,11 +419,11 @@ const validator = createValidator<ListenParams, unknown>({
 export const transcribe = validator as unknown as {
   <T extends ListenParams>(
     params: T & ExactKeys<T, ListenParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Pick<T, "url" & keyof T>, ListenSdkTargets<Omit<T, "url">>>;
   safe<T extends ListenParams>(
     params: T & ExactKeys<T, ListenParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Pick<T, "url" & keyof T>, ListenSdkTargets<Omit<T, "url">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

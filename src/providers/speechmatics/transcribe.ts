@@ -494,7 +494,7 @@ const AUDIO_PATHS: ReadonlyArray<Array<string | number>> = [["data_file"], ["fet
 
 function declaredAudio(
   ctx: PipelineContext,
-): { path: Array<string | number>; durationSeconds?: number; bytes?: number } | undefined {
+): { path: readonly (string | number)[]; durationSeconds?: number; bytes?: number } | undefined {
   for (const path of AUDIO_PATHS) {
     const found = findMediaDeclaration(ctx.options.media, path);
     if (found !== undefined) return { ...found, path };
@@ -569,6 +569,10 @@ const validator = createValidator<JobConfig, unknown>({
   modelId: resolveModel,
   catalog: models,
   checks: [checkOperatingPoint, checkMelia, checkMedicalDomain, checkDataFileSize],
+  // The audio arrives as a `data_file` FORM PART alongside this JSON config, so
+  // a declaration addressed to it names a real coordinate that is not a key of
+  // `JobConfig`. Same list `declaredAudio` reads, so the two cannot disagree.
+  mediaPaths: AUDIO_PATHS,
   estimate: estimateJob,
   finalize,
 });

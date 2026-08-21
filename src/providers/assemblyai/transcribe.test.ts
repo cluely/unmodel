@@ -132,7 +132,9 @@ describe("assemblyai.transcribe pairing + gating rules", () => {
 });
 
 describe("assemblyai.transcribe cost estimation", () => {
-  const oneHour = { media: [{ path: ["audio_url"], durationSeconds: 3600 }] };
+  // `as const`: a hoisted path infers `string[]`, and the media coordinate is
+  // a tuple whose first segment is a key of the params — see `MediaPathFor`.
+  const oneHour = { media: [{ path: ["audio_url"] as const, durationSeconds: 3600 }] };
 
   test("universal-3-5-pro: 1 hour ≈ $0.21 (pricing page rate)", () => {
     const r = transcribe.safe({ audio_url: AUDIO, speech_model: "universal-3-5-pro" }, oneHour);

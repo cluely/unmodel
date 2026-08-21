@@ -153,11 +153,11 @@ const validator = createValidator<ModifyVideoParams, unknown>({
 export const videoModify = validator as unknown as {
   <T extends ModifyVideoParams>(
     params: T & ExactKeys<T, ModifyVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, LumaSdkTargets<T>>;
   safe<T extends ModifyVideoParams>(
     params: T & ExactKeys<T, ModifyVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, LumaSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

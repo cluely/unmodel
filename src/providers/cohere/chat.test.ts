@@ -75,7 +75,12 @@ describe("cohere.chat happy path", () => {
     expect(sdk.strictTools).toBe(true);
     expect(sdk.frequencyPenalty).toBe(0.1);
     expect(sdk.thinking).toEqual({ type: "disabled" });
-    expect(sdk.max_tokens).toBeUndefined();
+    // The snake_case wire key is GONE from the SDK shape, which the type now
+    // states outright — so the assertion has to leave the type to ask the
+    // runtime. Keeping it is still worth a line: the type is hand-mirrored
+    // from an SDK this repo does not depend on, so the runtime is the only
+    // thing that can prove the rename actually happened.
+    expect((sdk as unknown as Record<string, unknown>)["max_tokens"]).toBeUndefined();
     const messages = sdk.messages as Array<Record<string, unknown>>;
     expect(messages[1]?.toolPlan).toBe("I will check the weather.");
     expect(messages[1]?.tool_calls).toBeUndefined();

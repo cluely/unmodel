@@ -79,6 +79,10 @@ import type { AspectRatio, Dimensions, ResolutionTier, VideoResolution } from ".
 // `./common` — would file a transcription word under "shared vocabulary" purely
 // to dodge an edge the language handles.
 import type { TimestampGranularity } from "./transcribe";
+// Same type-only cycle as `./transcribe` above, and for the same reason: the
+// word belongs to the speech vocabulary, and filing it under "shared" purely to
+// dodge an edge the checker handles would misplace it.
+import type { Voice } from "./speech";
 
 /**
  * What every category's row carries: the params the canonical vocabulary has no
@@ -236,24 +240,24 @@ export type VideoModelParamTable = Readonly<Record<string, VideoModelParams>>;
  * rates the codec *does* take. So the row narrows the codec, and the sample
  * rate stays run time's job.
  *
- * **`voice` is not here either, and stays wide for now.** Voice catalogs are
- * the one part of a TTS API that is genuinely dynamic: they are per-account
- * (every provider here supports cloned voices, which no snapshot can enumerate),
- * they run to thousands of entries at ElevenLabs and Murf, and they turn over
- * between releases. A *closed* union of a few hundred ids would be stale within
- * a month, would refuse the caller's own cloned voice, and would put the largest
- * completion list in the library in front of the field.
+ * **`voice` IS here now, and only where the provider publishes a list.** Voice
+ * catalogs are the one part of a TTS API that is genuinely dynamic: they are
+ * per-account (every provider here supports cloned voices, which no snapshot
+ * can enumerate), they run to thousands of entries at ElevenLabs and Murf, and
+ * they turn over between releases. That argument is about the providers whose
+ * catalogs are unbounded, and it was never a claim that no provider publishes
+ * a list — OpenAI publishes nine for `tts-1` and thirteen for
+ * `gpt-4o-mini-tts`, hand-catalogued in this repo and already enforced at the
+ * wire, where an off-list voice is a `checkVoice` error naming the list.
  *
- * What that argument does **not** say — though this comment used to — is that
- * Deepgram is the one provider whose voices are knowable. It is not: OpenAI
- * publishes nine for `tts-1` and thirteen for `gpt-4o-mini-tts`, and Google
- * publishes thirty for Gemini TTS, all three hand-catalogued in this repo and
- * enforced at the wire (an off-list Gemini voice is now a compile error at
- * `unmodel/google`). Deepgram is merely the provider where the voice *is* the
- * model, so the ref union types it for free. A `voices` row here — open-tailed,
- * exactly like {@link languages}, completing without gating — is therefore a
- * live opportunity rather than a closed question; it is simply not taken in
- * this pass.
+ * So {@link voices} is the `languages` model applied to `voice`: a row states
+ * a list only when the provider closes one, {@link VoiceOf} keeps the
+ * `(string & {})` tail plus both object spellings so a cloned voice never
+ * stops compiling, and a row that declares nothing keeps the wide `Voice`
+ * unchanged. The thirteen adapters that publish no list are bit-for-bit
+ * unaffected — and the one that does stops being *looser* at the unified
+ * surface than at the wire surface it compiles down to, which is the invariant
+ * `test/unified/completions.test.ts` already asserts for `size`.
  */
 export interface SpeechModelParams extends ModelParamsBase {
   /**
@@ -269,6 +273,22 @@ export interface SpeechModelParams extends ModelParamsBase {
    * free-form or the adapter declares it unsupported.
    */
   readonly languages?: readonly string[];
+  /**
+   * The model's **built-in** voices, and ONLY where the provider publishes a
+   * closed, hand-catalogued list of them.
+   *
+   * Absent is the normal case and means "this provider's voice space is not
+   * enumerable" — a per-account catalog, cloned voices, or thousands of ids
+   * that turn over between releases. Absent keeps the wide {@link Voice}
+   * exactly as it was; there is no default list and no guessing.
+   *
+   * Present is a completion list, never a gate: {@link VoiceOf} keeps the
+   * `(string & {})` tail and both object spellings, so the caller's own cloned
+   * voice compiles beside the presets. That is deliberate — the wire-level
+   * check is per model too, and a type stricter than the validator would be a
+   * false compile error, the worst failure mode this library has.
+   */
+  readonly voices?: readonly string[];
 }
 
 /** A speech adapter's per-model table, keyed by **bare** model id. */
@@ -578,6 +598,20 @@ export type LanguageOf<Row> = Row extends {
   ? L | (string & {})
   : string;
 
+/**
+ * `voices` → that model's presets, `| (string & {})`, plus both object
+ * spellings. Absent restates the wide {@link Voice}.
+ *
+ * Open for {@link LanguageOf}'s reason and one of its own: every provider in
+ * this category supports cloned voices, and the wire-level check that refuses
+ * an off-list *string* is itself per model (`checkVoice` skips a model with no
+ * table). A closed union here would refuse a working request — so the list
+ * completes and does not gate.
+ */
+export type VoiceOf<Row> = Row extends { readonly voices: readonly (infer V extends string)[] }
+  ? V | (string & {}) | { id: string } | { name: string }
+  : Voice;
+
 /** `timestamps` → the `timestamps` union; absent keeps all four granularities. */
 export type TimestampsOf<Row> = Row extends {
   readonly timestamps: readonly (infer T extends TimestampGranularity)[];
@@ -586,26 +620,33 @@ export type TimestampsOf<Row> = Row extends {
   : TimestampGranularity;
 
 /**
- * The two fields a speech row narrows, as a complete **replacement** for the
+ * The three fields a speech row narrows, as a complete **replacement** for the
  * vocabulary's own — {@link SizingArms}'s rule, and this category has its own
- * reason to obey it: {@link LanguageOf} carries a `(string & {})` tail, and an
- * intersection with the base's `language?: string` would discharge the brace,
- * leave a bare `string` in the union, and let subtype reduction eat all
- * forty-two codes while tsc stayed green. `SpeechParamsBase` therefore omits
- * both fields, so this is the only source of their contextual type.
+ * reason to obey it: {@link LanguageOf} and {@link VoiceOf} both carry a
+ * `(string & {})` tail, and an intersection with the base's `language?: string`
+ * / `voice?: Voice` would discharge the brace, leave a bare `string` in the
+ * union, and let subtype reduction eat every code and every preset while tsc
+ * stayed green. `SpeechParamsBase` therefore omits all three, so this is the
+ * only source of their contextual type.
  */
-type SpeechArms<Format, Language> = {
+type SpeechArms<Format, Language, VoiceArm> = {
   outputFormat?: Format;
   language?: Language;
+  voice?: VoiceArm;
 };
 
 /**
- * The `outputFormat` / `language` pair one ref admits. Degraded — dynamic ref,
- * unknown provider, unknown model — it restates the wide vocabulary.
+ * The `outputFormat` / `language` / `voice` triple one ref admits. Degraded —
+ * dynamic ref, unknown provider, unknown model — it restates the wide
+ * vocabulary.
  */
 export type SpeechModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
-  ? SpeechArms<AudioFormatRequest, string>
-  : SpeechArms<AudioFormatOf<ModelParamsFor<A, R>>, LanguageOf<ModelParamsFor<A, R>>>;
+  ? SpeechArms<AudioFormatRequest, string, Voice>
+  : SpeechArms<
+      AudioFormatOf<ModelParamsFor<A, R>>,
+      LanguageOf<ModelParamsFor<A, R>>,
+      VoiceOf<ModelParamsFor<A, R>>
+    >;
 
 /** {@link SpeechArms} for transcription: the granularity set and the languages. */
 type TranscribeArms<Stamps, Language> = {

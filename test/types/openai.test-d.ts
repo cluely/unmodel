@@ -367,6 +367,101 @@ function realtimeSessionTypeTests(): void {
   realtimeSession({ type: "realtime", bogus_thing: 1 });
 }
 
+/**
+ * The two per-transcription-model REFUSALS the GA reference states outright,
+ * as compile errors — the arms this module's JSDoc described and nothing
+ * enforced.
+ *
+ * `keywords`/`languages` are deliberately absent from these assertions: the
+ * reference makes a POSITIVE statement about two models and says nothing about
+ * the other six, so they are a demotable runtime warning rather than an
+ * unappealable `never`. src/providers/openai/realtime.test.ts pins that half.
+ */
+function realtimeTranscriptionArmTypeTests(): void {
+  // The documented pairings, all legal.
+  realtimeSession({
+    type: "realtime",
+    audio: { input: { transcription: { model: "gpt-realtime-whisper", delay: "low" } } },
+  });
+  realtimeSession({
+    type: "realtime",
+    audio: {
+      input: {
+        transcription: {
+          model: "gpt-transcribe",
+          prompt: "medical dictation",
+          keywords: ["acme"],
+          languages: ["en"],
+        },
+      },
+    },
+  });
+  realtimeSession({
+    type: "realtime",
+    audio: { input: { transcription: { model: "whisper-1", prompt: "style", language: "en" } } },
+  });
+
+  realtimeSession({
+    type: "realtime",
+    audio: {
+      input: {
+        transcription: {
+          model: "gpt-transcribe",
+          // @ts-expect-error — `delay` is "only supported with
+          // gpt-realtime-whisper in GA sessions"; this compiled, and was
+          // enforced at neither layer.
+          delay: "low",
+        },
+      },
+    },
+  });
+  realtimeSession({
+    type: "realtime",
+    audio: {
+      input: {
+        transcription: {
+          model: "gpt-realtime-whisper",
+          // @ts-expect-error — `prompt` is "not supported with gpt-realtime-whisper".
+          prompt: "style",
+        },
+      },
+    },
+  });
+
+  // A future id keeps the whole flat shape — the docs say nothing about a model
+  // they do not list, and a `never` there would be a refusal we invented.
+  realtimeSession({
+    type: "realtime",
+    audio: { input: { transcription: { model: "future-stt-1", delay: "low", prompt: "p" } } },
+  });
+  // …and so does a session that names no transcription model at all.
+  realtimeSession({
+    type: "realtime",
+    audio: { input: { transcription: { language: "en" } } },
+  });
+  // `null` still means "transcription off".
+  realtimeSession({ type: "realtime", audio: { input: { transcription: null } } });
+
+  // Top-level `ExactKeys` survives the nested arm…
+  // @ts-expect-error — bogus top-level param, with the arms applied.
+  realtimeSession({ type: "realtime", bogus_thing: 1, audio: { input: { transcription: {} } } });
+  // …and so does the nested typo check.
+  realtimeSession({
+    type: "realtime",
+    // @ts-expect-error — `transcriptionn` is not a key of `audio.input`.
+    audio: { input: { transcriptionn: { model: "whisper-1" } } },
+  });
+
+  // The caller's literal survives onto the result.
+  const ok = realtimeSession({
+    type: "realtime",
+    audio: { input: { transcription: { model: "gpt-realtime-whisper", delay: "low" } } },
+  });
+  expectAssignable<"low" | undefined>(ok.audio?.input?.transcription?.delay);
+}
+
+void realtimeTranscriptionArmTypeTests;
+
 function imageEditTypeTests(): void {
   // A File is a Blob, and the SDK's Uploadable accepts it — so the same
   // validated object satisfies both surfaces.
@@ -603,3 +698,40 @@ void speechTypeTests;
 void transcribeTypeTests;
 void videoTypeTests;
 void realtimeSessionTypeTests;
+
+// ---------------------------------------------------------------------------
+// `ValidateOptions.media` paths address THESE params
+//
+// The path was `Array<string | number>`, so `["mesages", 0, …]` compiled, never
+// matched a part, and the declared facts were silently never applied — a
+// declared 999 MB attachment on a request reported `{ ok: true, warnings: [] }`.
+// The root segment is closed against the params the call actually passed;
+// everything below it is the runtime check's job (`media_declaration_dropped`),
+// because a recursive path type costs +40% instantiations on a chat body.
+// ---------------------------------------------------------------------------
+
+function mediaPathTypeTests(): void {
+  chat.safe(
+    { model: "gpt-5.2", messages: [{ role: "user", content: "hi" }] },
+    { media: [{ path: ["messages", 0, "content", 0], bytes: 1024 }] },
+  );
+
+  // The empty path is the params object itself — the socket endpoints' coordinate.
+  chat.safe({ model: "gpt-5.2", messages: [] }, { media: [{ path: [], durationSeconds: 60 }] });
+
+  chat.safe(
+    { model: "gpt-5.2", messages: [{ role: "user", content: "hi" }] },
+    // @ts-expect-error — `"mesages"` is not a key of these params: TS2820 with a
+    // "Did you mean 'messages'?" suggestion, where nothing at all used to fire.
+    { media: [{ path: ["mesages", 0, "content", 0], bytes: 999_999_999 }] },
+  );
+
+  // The other fields were already tight and stay so.
+  chat.safe(
+    { model: "gpt-5.2", messages: [] },
+    // @ts-expect-error — `durationSecs` is not a declaration field.
+    { media: [{ path: ["messages"], durationSecs: 30 }] },
+  );
+}
+
+export { mediaPathTypeTests };

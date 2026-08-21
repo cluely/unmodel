@@ -320,11 +320,11 @@ const validator = createValidator<SttWebsocketParams>({
 export const sttWebsocket = validator as unknown as {
   <T extends SttWebsocketParams>(
     params: T & ExactKeys<T, SttWebsocketParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): T;
   safe<T extends SttWebsocketParams>(
     params: T & ExactKeys<T, SttWebsocketParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<T>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

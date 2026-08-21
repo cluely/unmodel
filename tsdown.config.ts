@@ -6,6 +6,12 @@ export default defineConfig({
     cli: "src/cli.ts",
     "ai-sdk/index": "src/ai-sdk/index.ts",
     "catalog/index": "src/catalog/index.ts",
+    // The literal-preserving registry, on its own specifier for the reason
+    // docs/decisions.md §3 gives for `unmodel/chat/factory`: its bundled
+    // declaration is ~5 MB against a few KiB for `catalog/index`, and the
+    // cheap path has to be the only path. Both are pinned in
+    // test/bundle-budget.test.ts.
+    "catalog/typed.gen": "src/catalog/typed.gen.ts",
     "chat/index": "src/chat/index.ts",
     "chat/factory": "src/chat/factory.ts",
     // The six unified media surfaces. Each is the kernel plus a factory — the

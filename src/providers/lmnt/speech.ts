@@ -325,11 +325,11 @@ const speechDetailedValidator = createValidator<
 export const speech = speechValidator as unknown as {
   <T extends SpeechBody>(
     params: T & ExactKeys<T, SpeechBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, SpeechSdkTargets<T>>;
   safe<T extends SpeechBody>(
     params: T & ExactKeys<T, SpeechBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, SpeechSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
@@ -354,11 +354,11 @@ export const speech = speechValidator as unknown as {
 export const speechDetailed = speechDetailedValidator as unknown as {
   <T extends SpeechDetailedBody>(
     params: T & ExactKeys<T, SpeechDetailedBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, SpeechSdkTargets<T>>;
   safe<T extends SpeechDetailedBody>(
     params: T & ExactKeys<T, SpeechDetailedBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, SpeechSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

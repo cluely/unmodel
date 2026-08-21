@@ -289,11 +289,11 @@ const validator = createValidator<AnySpeechBody, unknown>({
 export const speech = validator as unknown as {
   <M extends SpeechModelInput, T extends SpeechArm<M>>(
     params: T & SpeechArm<M> & { model: M } & ExactKeys<T, SpeechArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T & { model: M }, SpeechSdkTargets<T & { model: M }>>;
   safe<M extends SpeechModelInput, T extends SpeechArm<M>>(
     params: T & SpeechArm<M> & { model: M } & ExactKeys<T, SpeechArm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T & { model: M }, SpeechSdkTargets<T & { model: M }>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

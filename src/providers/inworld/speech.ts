@@ -301,11 +301,11 @@ const validator = createValidator<TtsVoiceBody, Validated<TtsVoiceBody, SpeechSd
 export const speech = validator as unknown as {
   <T extends TtsVoiceBody>(
     params: T & ExactKeys<T, TtsVoiceBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, SpeechSdkTargets<T>>;
   safe<T extends TtsVoiceBody>(
     params: T & ExactKeys<T, TtsVoiceBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, SpeechSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

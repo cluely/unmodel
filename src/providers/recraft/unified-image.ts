@@ -193,7 +193,10 @@ const KNOWN_MODELS: ReadonlySet<string> = new Set<string>(MODELS);
  * per the same family rules.
  */
 const RECRAFT_SHARED_EXTRAS = {
-  substyle: EXTRA as RecraftSubstyle | (string & {}) | null,
+  // Closed, matching the wire body: `checkSpecEnums` refuses an off-list
+  // substyle at error severity, and an extra wider than the wire param it
+  // passes through is not assignable to the adapter's own validator signature.
+  substyle: EXTRA as RecraftSubstyle | null,
   creativity: EXTRA as RecraftCreativity | null,
   upscale: EXTRA as RecraftUpscaleMode | null,
   controls: EXTRA as RecraftControls | null,
@@ -339,7 +342,7 @@ export interface RecraftImageWire {
   // `RECRAFT_IMAGE_MODEL_PARAMS`'s answer, not this type's.
   style?: string | null;
   style_id?: string | null;
-  substyle?: string | null;
+  substyle?: RecraftSubstyle | null;
   text_layout?: RecraftTextLayoutElement[] | null;
   controls?: RecraftControls | null;
   creativity?: RecraftCreativity | null;

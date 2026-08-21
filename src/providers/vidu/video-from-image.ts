@@ -238,11 +238,11 @@ const validator = createValidator<Img2VideoParams, unknown>({
 export const videoFromImage = validator as unknown as {
   <T extends Img2VideoParams>(
     params: T & ExactKeys<T, Img2VideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, ViduSdkTargets<T>>;
   safe<T extends Img2VideoParams>(
     params: T & ExactKeys<T, Img2VideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ViduSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

@@ -323,11 +323,11 @@ const validator = createValidator<AnyFlux2Body, unknown>({
 export const image = validator as unknown as {
   <M extends Flux2ModelInput, T extends Flux2Arm<M>>(
     params: T & Flux2Arm<M> & { model: M } & ExactKeys<T, Flux2Arm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>;
   safe<M extends Flux2ModelInput, T extends Flux2Arm<M>>(
     params: T & Flux2Arm<M> & { model: M } & ExactKeys<T, Flux2Arm<M>>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

@@ -329,6 +329,11 @@ describe("tools", () => {
 
   test("a native tool for a provider with no endpoint is dropped, naming the provider", () => {
     const { ir, warnings } = encode({
+      // @ts-expect-error — `cohere` resolves to no dialect, so a tool filed
+      // under it can only ever be discarded; `ChatNativeTool`'s discriminant
+      // says so at compile time now. The runtime drop is still the contract for
+      // a JS caller (and for a provider added to the endpoint table without a
+      // codec), so the coverage stays — it just needs the cast to get here.
       nativeTools: [{ provider: "cohere", definition: { name: "connectors" } }],
     });
     expect(ir.nativeTools).toBeUndefined();

@@ -23,7 +23,7 @@ export interface CliValidator {
 
 const asCli = (validator: unknown): CliValidator => validator as CliValidator;
 
-export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
+export const REGISTRY = {
   // Core chat endpoints (native wire formats)
   "openai.chat": () => import("./providers/openai").then((m) => asCli(m.chat)),
   "anthropic.chat": () => import("./providers/anthropic").then((m) => asCli(m.chat)),
@@ -242,7 +242,19 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
   "vercel.chat": () => import("./providers/vercel").then((m) => asCli(m.chat)),
   "xai.chat": () => import("./providers/xai").then((m) => asCli(m.chat)),
   "zhipuai.chat": () => import("./providers/zhipuai").then((m) => asCli(m.chat)),
-};
+} satisfies Record<string, () => Promise<CliValidator>>;
+
+/**
+ * Every `<provider>.<endpoint>` id the CLI can run.
+ *
+ * `satisfies` rather than an annotation, on all three maps below, for one
+ * reason: `Record<string, …>` discards the keys these maps exist to define, so
+ * `keyof typeof REGISTRY` was `string` and the drift guard in `cli.test.ts`
+ * could only ever be a runtime assertion. The values are still checked — that
+ * is what `satisfies` is — and the sole untrusted-string seam (argv) casts
+ * once, at the lookup in `cli.ts`, which is where it belongs.
+ */
+export type CliEndpointId = keyof typeof REGISTRY;
 
 /**
  * The unified media surfaces, addressed as `unified.<category>`.
@@ -268,14 +280,17 @@ export const REGISTRY: Record<string, () => Promise<CliValidator>> = {
  * provider's own adapter with a message naming the shapes it does take, which is
  * a better answer than hiding the whole category.
  */
-export const UNIFIED: Record<string, () => Promise<CliValidator>> = {
+export const UNIFIED = {
   "unified.image": () => import("./unified/image").then((m) => asCli(m.image)),
   "unified.imageEdit": () => import("./unified/image-edit").then((m) => asCli(m.imageEdit)),
   "unified.music": () => import("./unified/music").then((m) => asCli(m.music)),
   "unified.speech": () => import("./unified/speech").then((m) => asCli(m.speech)),
   "unified.transcribe": () => import("./unified/transcribe").then((m) => asCli(m.transcribe)),
   "unified.video": () => import("./unified/video").then((m) => asCli(m.video)),
-};
+} satisfies Record<string, () => Promise<CliValidator>>;
+
+/** Every unified-category id the CLI serves. */
+export type CliUnifiedId = keyof typeof UNIFIED;
 
 /**
  * Module-level validators deliberately absent from REGISTRY: their params
@@ -284,7 +299,7 @@ export const UNIFIED: Record<string, () => Promise<CliValidator>> = {
  * library API (`import { imageEdit } from "unmodel/openai"`), and the CLI says
  * so instead of failing with a confusing "expected Blob".
  */
-export const MULTIPART_ONLY: Record<string, string> = {
+export const MULTIPART_ONLY = {
   "openai.imageEdit": "unmodel/openai",
   "openai.transcribe": "unmodel/openai",
   "cartesia.transcribe": "unmodel/cartesia",
@@ -300,4 +315,7 @@ export const MULTIPART_ONLY: Record<string, string> = {
   "stability.imageEditRemoveBackground": "unmodel/stability",
   "stability.musicFromAudio": "unmodel/stability",
   "stability.musicInpaint": "unmodel/stability",
-};
+} satisfies Record<string, `unmodel/${string}`>;
+
+/** Every endpoint id the CLI refuses because its params need a `Blob`. */
+export type CliMultipartOnlyId = keyof typeof MULTIPART_ONLY;

@@ -225,11 +225,11 @@ const validator = createValidator<OmniVideoParams, unknown>({
 export const videoOmni = validator as unknown as {
   <T extends OmniVideoParams>(
     params: T & ExactKeys<T, OmniVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "model">, KlingSdkTargets<Omit<T, "model">>>;
   safe<T extends OmniVideoParams>(
     params: T & ExactKeys<T, OmniVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "model">, KlingSdkTargets<Omit<T, "model">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

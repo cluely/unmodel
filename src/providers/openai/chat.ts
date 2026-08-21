@@ -248,11 +248,11 @@ export interface OpenAIChatResultKind extends ValidatorResultKind {
 export const chat = validator as unknown as {
   <T extends ChatCompletionsBody>(
     params: T & ExactKeys<T, ChatCompletionsBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, ChatSdkTargets<T>, typeof availability, T["model"] & string>;
   safe<T extends ChatCompletionsBody>(
     params: T & ExactKeys<T, ChatCompletionsBody>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ChatSdkTargets<T>, typeof availability, T["model"] & string>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 } & ValidatorResultKindCarrier<OpenAIChatResultKind> & ValidatorProviderCarrier<"openai">;

@@ -556,11 +556,11 @@ const validator = createValidator<SpeechToTextParams, unknown>({
 export const transcribe = validator as unknown as {
   <T extends SpeechToTextParams>(
     params: T & ExactKeys<T, SpeechToTextParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "enable_logging">, SpeechToTextSdkTargets>;
   safe<T extends SpeechToTextParams>(
     params: T & ExactKeys<T, SpeechToTextParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "enable_logging">, SpeechToTextSdkTargets>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

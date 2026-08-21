@@ -97,8 +97,10 @@ describe("soniox.transcribe audio source rules", () => {
 });
 
 describe("soniox.transcribe duration + cost", () => {
+  // `as const`: a hoisted path infers `string[]`, and the media coordinate is a
+  // tuple whose first segment is a key of the params — see `MediaPathFor`.
   const hourOfAudio = {
-    media: [{ path: ["audio_url"], durationSeconds: 3600 }],
+    media: [{ path: ["audio_url"] as const, durationSeconds: 3600 }],
   };
 
   test("declared duration over 5 hours is media_duration_exceeded", () => {

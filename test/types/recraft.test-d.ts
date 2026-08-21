@@ -138,9 +138,45 @@ function editStyleTypeTests(): void {
   imageEdit({ image: imageBlob, prompt: "x", strength: 0.2, style: "3D render" });
 }
 
+/**
+ * The four `SPEC_ENUM_CHECKS` params. Each is refused at run time by
+ * `checkSpecEnums` with `invalid_enum_value` at error severity, naming the
+ * exact list — so an open `(string & {})` tail bought nothing except moving a
+ * compile error to the first `.safe()` call. Unlike `style`/`size`/`model`,
+ * these are not per-model and not id-shaped; the allowed list is the constant
+ * the checker reads.
+ */
+function generationsSpecEnumTypeTests(): void {
+  const v = image({
+    prompt: "hi",
+    model: "recraftv3",
+    creativity: "eccentric",
+    image_format: "webp",
+    upscale: "upscale4mp",
+    substyle: "watercolor",
+  });
+  expectAssignable<"eccentric">(v.creativity);
+  expectAssignable<"webp">(v.image_format);
+  expectAssignable<"upscale4mp">(v.upscale);
+  expectAssignable<"watercolor">(v.substyle);
+
+  // `null` still clears each of them — the wire body is nullable throughout.
+  image({ prompt: "hi", creativity: null, image_format: null, upscale: null, substyle: null });
+
+  // @ts-expect-error — `checkSpecEnums` reports invalid_enum_value for this.
+  image({ prompt: "hi", model: "recraftv3", creativity: "wild" });
+  // @ts-expect-error — "upscale2mp" is not in UPSCALE_MODES.
+  image({ prompt: "hi", model: "recraftv3", upscale: "upscale2mp" });
+  // @ts-expect-error — Recraft publishes no JPEG container on this route.
+  image({ prompt: "hi", model: "recraftv3", image_format: "jpeg" });
+  // @ts-expect-error — not one of the 104 SUBSTYLES.
+  image({ prompt: "hi", model: "recraftv3", substyle: "water_colour" });
+}
+
 export {
   generationsSizeTypeTests,
   outpaintSizeTypeTests,
   generationsStyleTypeTests,
   editStyleTypeTests,
+  generationsSpecEnumTypeTests,
 };

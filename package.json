@@ -47,6 +47,10 @@
       "types": "./dist/catalog/index.d.ts",
       "default": "./dist/catalog/index.js"
     },
+    "./catalog/typed": {
+      "types": "./dist/catalog/typed.gen.d.ts",
+      "default": "./dist/catalog/typed.gen.js"
+    },
     "./chat": {
       "types": "./dist/chat/index.d.ts",
       "default": "./dist/chat/index.js"

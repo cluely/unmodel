@@ -167,11 +167,11 @@ const validator = createValidator<ImageToVideoParams, unknown>({
 export const videoFromImage = validator as unknown as {
   <T extends ImageToVideoParams>(
     params: T & ExactKeys<T, ImageToVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>;
   safe<T extends ImageToVideoParams>(
     params: T & ExactKeys<T, ImageToVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

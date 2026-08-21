@@ -144,7 +144,11 @@ export type {
 export { SORA_MODELS, SORA_RATE_PER_SECOND } from "./videos-models";
 export type { SoraModelId } from "./videos-models";
 
-export { realtimeSession, REALTIME_CLIENT_SECRETS_URL } from "./realtime";
+export {
+  realtimeSession,
+  REALTIME_CLIENT_SECRETS_URL,
+  REALTIME_TRANSCRIPTION_MODEL_IDS,
+} from "./realtime";
 export type {
   RealtimeSessionBody,
   RealtimeSessionSdkParams,
@@ -156,6 +160,9 @@ export type {
   RealtimeAudioOutput,
   RealtimeNoiseReduction,
   RealtimeTranscription,
+  RealtimeTranscriptionArm,
+  RealtimeTranscriptionModelId,
+  RealtimeSessionArm,
   RealtimeTurnDetection,
   RealtimeServerVad,
   RealtimeSemanticVad,

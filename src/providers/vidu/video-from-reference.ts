@@ -339,11 +339,11 @@ const validator = createValidator<Reference2VideoParams, unknown>({
 export const videoFromReference = validator as unknown as {
   <T extends Reference2VideoParams>(
     params: T & ExactKeys<T, Reference2VideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, ViduSdkTargets<T>>;
   safe<T extends Reference2VideoParams>(
     params: T & ExactKeys<T, Reference2VideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ViduSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

@@ -98,11 +98,11 @@ const validator = createValidator<AddAudioParams, unknown>({
 export const videoAddAudio = validator as unknown as {
   <T extends AddAudioParams>(
     params: T & ExactKeys<T, AddAudioParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<Omit<T, "id">, LumaSdkTargets<Omit<T, "id">>>;
   safe<T extends AddAudioParams>(
     params: T & ExactKeys<T, AddAudioParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<Omit<T, "id">, LumaSdkTargets<Omit<T, "id">>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

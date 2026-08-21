@@ -280,11 +280,11 @@ const validator = createValidator<VideoToVideoParams, unknown>({
 export const videoFromVideo = validator as unknown as {
   <T extends VideoToVideoParams>(
     params: T & ExactKeys<T, VideoToVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): Validated<T, RunwaySdkTargets<T>>;
   safe<T extends VideoToVideoParams>(
     params: T & ExactKeys<T, VideoToVideoParams>,
-    options?: ValidateOptions,
+    options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, RunwaySdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

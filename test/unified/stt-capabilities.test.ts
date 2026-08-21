@@ -40,6 +40,7 @@ import { stt as cartesia } from "../../src/providers/cartesia/unified-stt";
 import { stt as deepgram } from "../../src/providers/deepgram/unified-stt";
 import { stt as elevenlabs } from "../../src/providers/elevenlabs/unified-stt";
 import { stt as gladia } from "../../src/providers/gladia/unified";
+import { stt as google } from "../../src/providers/google/unified-stt";
 import { stt as inworld } from "../../src/providers/inworld/unified-stt";
 import { stt as mistral } from "../../src/providers/mistral/unified";
 import { stt as openai } from "../../src/providers/openai/unified-stt";
@@ -59,7 +60,22 @@ type DiarizationShape =
   | "enum";
 
 /** And where a timestamp granularity lands. */
-type TimestampShape = "array" | "scalar" | "boolean" | "implied";
+type TimestampShape =
+  /** A `timestamp_granularities`-shaped list. */
+  | "array"
+  /** One granularity name in one field. */
+  | "scalar"
+  /**
+   * A **grouping** switch. Word timings come back unconditionally and the only
+   * knob decides whether they are also grouped into segments — so asking for
+   * `"word"` states `false`, which is what keeps the granularity on the wire
+   * instead of inherited from a default the caller cannot see.
+   */
+  | "boolean"
+  /** A plain "emit word timings" flag: `true` when `"word"` was asked for. */
+  | "flag"
+  /** The route always reports word timings and has no field to say so. */
+  | "implied";
 
 interface Capability {
   ref: string;
@@ -146,6 +162,31 @@ const TABLE: Readonly<Record<string, Capability>> = {
     timestamps: { shape: "boolean", at: "sentences" },
     absentGranularity: "character",
   },
+  google: {
+    ref: "google/gemini-2.5-flash",
+    adapter: google,
+    // `audioTranscriptionConfig.languageCodes` is documented "BCP-47 language
+    // codes" and carries the FULL tag — the opposite of `google.tts`, whose
+    // `languageCode` is a primary subtag. One entry pins, several are the
+    // candidate set, so both canonical words reach the same array.
+    language: "native",
+    languages: "native",
+    // Verbatim, but as a text **part** beside the audio rather than a field:
+    // this endpoint has no prompt slot because the whole request is a prompt.
+    prompt: "native",
+    diarization: {
+      shape: "flag",
+      at: "generationConfig.audioTranscriptionConfig.diarization",
+    },
+    // A bare boolean: @google/genai's `AudioTranscriptionConfig` declares no
+    // speaker-count member at all.
+    counts: { speakers: false, minSpeakers: false, maxSpeakers: false },
+    timestamps: {
+      shape: "flag",
+      at: "generationConfig.audioTranscriptionConfig.wordTimestamp",
+    },
+    absentGranularity: "segment",
+  },
   speechmatics: {
     ref: "speechmatics/standard",
     adapter: speechmatics,
@@ -201,6 +242,20 @@ const TABLE: Readonly<Record<string, Capability>> = {
     timestamps: { shape: "array", at: "timestamp_granularities" },
     absentGranularity: "segment",
   },
+  inworld: {
+    // The Groq route, not `inworld/inworld-stt-1`: "Word timestamps &
+    // diarization … not yet for Inworld", which that model's own validator
+    // reports — so the first-party id cannot probe two of the rows below.
+    ref: "inworld/groq/whisper-large-v3",
+    adapter: inworld,
+    language: "native",
+    languages: "unsupported",
+    prompt: "native",
+    diarization: { shape: "flag", at: "transcribeConfig.enableSpeakerDiarization" },
+    counts: { speakers: false, minSpeakers: false, maxSpeakers: false },
+    timestamps: { shape: "flag", at: "transcribeConfig.includeWordTimestamps" },
+    absentGranularity: "segment",
+  },
 };
 
 /**
@@ -210,25 +265,20 @@ const TABLE: Readonly<Record<string, Capability>> = {
  */
 const IMPLIED_CELLS = ["assemblyai", "revai", "soniox", "speechmatics"];
 
-/**
- * Inworld is deliberately absent from the table: its `audio` is declared
- * unsupported (base64 inline, which a synchronous compile step cannot produce
- * from a Blob), so no canonical request reaches its compile step and no other
- * cell can be observed. Its one assertable property is asserted on its own,
- * below.
- */
-const UNREACHABLE = "inworld";
-
 const PROBE_LANGUAGE = "pt-BR";
 /** Includes `"en"`, which AssemblyAI's `language_codes` requires. */
 const PROBE_LANGUAGES = ["en", "pt-BR"];
 const PROBE_PROMPT = "Acme Corp, quarterly results";
-const AUDIO_KINDS: readonly AudioInputKind[] = ["file", "url", "fileId"];
+const AUDIO_KINDS: readonly AudioInputKind[] = ["file", "url", "fileId", "data"];
+
+/** Valid base64, and a RIFF header, so the byte-count checks have something real. */
+const PROBE_BASE64 = "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
 
 const AUDIO_FOR: Readonly<Record<AudioInputKind, () => Record<string, unknown>>> = {
   file: () => ({ file: new Blob([new Uint8Array(64)], { type: "audio/wav" }) }),
   url: () => ({ url: "https://example.com/interview.wav" }),
   fileId: () => ({ fileId: "f_2f8a" }),
+  data: () => ({ data: PROBE_BASE64, mimeType: "audio/wav" }),
 };
 
 /** The compiled request, in the three places a param can end up. */
@@ -315,9 +365,7 @@ function wireValue(compiled: Compiled, at: string): unknown {
 const rows = Object.entries(TABLE);
 
 test("the table covers exactly the providers in the pack", () => {
-  expect([...rows.map(([provider]) => provider), UNREACHABLE].sort()).toEqual([
-    ...stt.providers,
-  ]);
+  expect(rows.map(([provider]) => provider).sort()).toEqual([...stt.providers]);
 });
 
 describe.each(rows)("%s", (provider, row) => {
@@ -474,8 +522,13 @@ describe.each(rows)("%s", (provider, row) => {
       case "scalar":
         expect(value).toBe("word");
         break;
+      case "flag":
+        // "Emit word timings", asked for directly.
+        expect(String(value)).toBe("true");
+        break;
       default:
-        // A boolean that states the granularity rather than inheriting it.
+        // A grouping switch: word timings are already coming back, and `false`
+        // says "do not group them into segments".
         expect(String(value)).toBe("false");
     }
   });
@@ -494,39 +547,29 @@ describe.each(rows)("%s", (provider, row) => {
 });
 
 // ---------------------------------------------------------------------------
-// The provider no canonical request can reach
+// The provider that used to be unreachable
 // ---------------------------------------------------------------------------
 
 describe("inworld", () => {
-  test("declares `audio` unsupported, and every shape is refused with the reason", () => {
-    expect(inworld.audioInputs).toEqual([]);
-    expect(inworld.unsupported.audio).toContain("base64");
-    for (const kind of AUDIO_KINDS) {
-      const result = stt.safe({
-        model: "inworld/inworld/inworld-stt-1",
-        audio: AUDIO_FOR[kind](),
-      } as never);
-      expect(result.ok).toBe(false);
-      if (result.ok) continue;
-      expect(result.errors[0]?.code).toBe("unsupported_param");
-      expect(result.errors[0]?.path).toEqual(["audio"]);
-      // The message points at the surface that DOES work, which is the only
-      // useful thing to say about a route the vocabulary cannot express.
-      expect(String(result.errors[0]?.message)).toContain("unmodel/inworld");
-    }
-  });
-
-  test("it is still a registered provider, so the ref resolves", () => {
-    expect(stt.providers).toContain("inworld");
-    // The alternative — leaving it out — answers a wire question with a
-    // packaging error, which is what this asserts against.
+  /**
+   * Inworld shipped for one wave with `audioInputs: []` and `audio` declared
+   * unsupported — a registered provider no canonical request could reach. The
+   * `"data"` kind retired that, and this is the regression: the base64 payload
+   * the caller writes has to arrive at `audioData.content` unchanged.
+   */
+  test("compiles a `{ data }` request into audioData.content", () => {
     const result = stt.safe({
       model: "inworld/inworld/inworld-stt-1",
-      audio: { url: "https://example.com/a.wav" },
+      audio: { data: PROBE_BASE64, mimeType: "audio/wav" },
     } as never);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(String(result.errors[0]?.message)).not.toContain("not a transcribe provider");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.params).toMatchObject({ audioData: { content: PROBE_BASE64 } });
+  });
+
+  test("declares no `audio` gap at all any more", () => {
+    expect(inworld.audioInputs).toEqual(["data"]);
+    expect((inworld.unsupported as Record<string, unknown>)["audio"]).toBeUndefined();
   });
 });
 
@@ -596,7 +639,7 @@ describe("no silent drops, over every canonical field", () => {
 
 test("every audio kind in the vocabulary is served by some provider", () => {
   const kinds = new Set(rows.flatMap(([, row]) => row.adapter.audioInputs));
-  expect([...kinds].sort()).toEqual(["file", "fileId", "url"]);
+  expect([...kinds].sort()).toEqual(["data", "file", "fileId", "url"]);
 });
 
 test("every diarization shape in the category is exercised", () => {
@@ -611,7 +654,7 @@ test("every diarization shape in the category is exercised", () => {
 
 test("every timestamp shape in the category is exercised", () => {
   const shapes = new Set(rows.map(([, row]) => row.timestamps.shape));
-  expect([...shapes].sort()).toEqual(["array", "boolean", "implied", "scalar"]);
+  expect([...shapes].sort()).toEqual(["array", "boolean", "flag", "implied", "scalar"]);
 });
 
 test("the implied cells are exactly the four routes with no granularity field", () => {

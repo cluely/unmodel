@@ -1,38 +1,34 @@
 /**
  * `unmodel/stt` → `inworld.stt` (POST /stt/v1/transcribe).
  *
- * ## The adapter that says no, and why it still ships
+ * ## One input shape, and it is the base64 one
  *
  * Inworld takes its audio as **base64 inside the JSON body**
  * (`audioData.content`). There is no URL field, no multipart part and no file
- * API — the module header says as much — so of the three canonical shapes:
+ * API, so of the four canonical shapes only `{ data }` has somewhere to go:
  *
  * - `{ url }` and `{ fileId }` have no wire field to compile *to*;
  * - `{ file }` has one in principle, and cannot reach it in practice: a `Blob`
  *   is read asynchronously (`arrayBuffer()`, `text()`, `FileReader` — all
  *   promises) and `compile` is synchronous, by design, because a validator that
  *   returned a promise would make every unified call `await`-shaped for the
- *   sake of one provider.
+ *   sake of one provider. Encode the bytes yourself and pass `{ data }`.
  *
- * So `audio` is **declared unsupported** and `audioInputs` is empty. Both
- * halves of the narrowing then say the same thing: `audio` types as `never` at
- * a `inworld/…` ref, so the call does not compile, and the kernel's uniform
- * `unsupported_param` explains why at runtime for everyone the type cannot
- * reach. That is the honest answer — the alternative was to invent an
- * inline-bytes arm in a vocabulary five other adapters share, or to pretend a
- * base64 payload is a "file id".
+ * `audioInputs: ["data"]` is therefore the whole story, and both halves of the
+ * narrowing tell it: `audio` types as `{ data, mimeType? }` at an `inworld/…`
+ * ref, and `resolveAudioInput` reports an `unsupported_param` naming `{ data }`
+ * for the three shapes this route has no field for.
  *
- * The adapter is here rather than absent because absence would say something
- * *false*. A missing adapter produces "inworld is not a transcribe provider in
- * this build", which sends a reader looking for a packaging mistake;
- * `unmodel/inworld`'s `stt` validator exists and works perfectly well —
- * it is the canonical vocabulary that cannot express its input. Every other
- * cell in the table below is mapped and tested, so the day the vocabulary
- * grows an inline-bytes shape, this file is one line from working.
+ * This adapter used to declare `audio` **unsupported** with an empty
+ * `audioInputs` — a provider registered in the pack that no canonical request
+ * could reach. That was an honest answer to the wrong question: the vocabulary
+ * was missing the inline-bytes shape three sibling categories already had, not
+ * Inworld missing an endpoint. Adding `"data"` retired the gap.
  */
 import {
   applyExtras,
   EXTRA,
+  resolveAudioInput,
   resolveDiarization,
   toTimestampGranularity,
 } from "../../core/unified/derive";
@@ -68,11 +64,7 @@ export type InworldSttWire = TranscribeBody;
 export type InworldSttResult = ReturnType<typeof validator>;
 
 /**
- * The per-model table, declared in full even though no request can currently
- * reach it — for the reason the module header gives about the adapter itself:
- * every cell here is mapped and correct, so the day the vocabulary grows an
- * inline-bytes shape this file is one line from working, and the table would be
- * the wrong thing to have left blank in the meantime.
+ * The per-model table.
  *
  * ## `timestamps`
  *
@@ -137,25 +129,16 @@ export const stt = {
   provider: "inworld",
   models: MODELS,
   modelParams: INWORLD_STT_MODEL_PARAMS,
-  audioInputs: [],
+  audioInputs: ["data"] as const,
   unsupported: {
-    audio:
-      "POST /stt/v1/transcribe carries its audio as base64 in `audioData.content` — there is no " +
-      "URL field, no multipart part and no file API — and a Blob cannot be base64-encoded " +
-      "without awaiting, which a synchronous compile step cannot do. Encode the bytes yourself " +
-      "and call `stt` from `unmodel/inworld` directly.",
     languages:
       "POST /stt/v1/transcribe takes one `transcribeConfig.language`; the candidate-set field " +
       "(`sonioxConfig.languageHints`) exists only on the streaming surface.",
   },
   compile(
-    input: SttParamsFor<never>,
-    ctx: CompileContext<SttParamsFor<never>>,
+    input: SttParamsFor<"data">,
+    ctx: CompileContext<SttParamsFor<"data">>,
   ): CompiledCall<InworldSttWire, InworldSttResult> {
-    // Reached only when `audio` was absent, which the kernel has already
-    // refused: `audioData.content` is required and there is nothing to put in
-    // it, so the empty string is what the provider's own "must not be empty"
-    // rule then reports.
     const body: InworldSttWire = {
       transcribeConfig: { modelId: ctx.model, audioEncoding: "AUTO_DETECT" },
       audioData: { content: "" },
@@ -166,6 +149,19 @@ export const stt = {
     ctx.from(["transcribeConfig", "enableSpeakerDiarization"], "diarization");
     ctx.from(["transcribeConfig", "includeWordTimestamps"], "timestamps");
     ctx.from(["transcribeConfig", "prompts"], "prompt");
+
+    const audio = ctx.take(
+      resolveAudioInput(input.audio, ["data"], { path: ["audio"], warn: ctx.warn }, {
+        source: TRANSCRIBE_DOCS,
+        hint:
+          "POST /stt/v1/transcribe has no URL field, no multipart part and no file API — " +
+          "`audioData.content` is base64 bytes.",
+      }),
+    );
+    // `audioEncoding` stays `AUTO_DETECT`: the payload carries its own container
+    // header, and a caller who knows better pins it through the extra of the
+    // same name.
+    if (audio?.kind === "data") body.audioData.content = audio.data;
 
     // BCP-47 verbatim: Inworld's own pattern accepts `en` and `en-US` alike.
     if (input.language !== undefined) body.transcribeConfig.language = input.language;
@@ -203,7 +199,7 @@ export const stt = {
     return { params: body, validate: validator.safe };
   },
 } as const satisfies SttAdapterFor<
-  never,
+  "data",
   typeof INWORLD_STT_MODEL_PARAMS,
   InworldSttWire,
   InworldSttResult

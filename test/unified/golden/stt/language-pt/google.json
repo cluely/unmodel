@@ -1,0 +1,12 @@
+{
+  "ref": "google/gemini-2.5-flash",
+  "audio": { "data": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=", "mimeType": "audio/wav" },
+  "params": {
+    "contents": [
+      { "parts": [{ "inlineData": { "mimeType": "audio/wav", "data": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=" } }] }
+    ],
+    "generationConfig": { "audioTranscriptionConfig": { "languageCodes": ["pt"] } }
+  },
+  "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+  "headers": { "content-type": "application/json" }
+}

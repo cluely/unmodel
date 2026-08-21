@@ -1,0 +1,17 @@
+{
+  "ref": "google/gemini-2.5-flash-preview-tts",
+  "voice": "Kore",
+  "params": {
+    "contents": [
+      { "parts": [{ "text": "The lighthouse keeper checked the lamp." }] }
+    ],
+    "generationConfig": {
+      "responseModalities": ["AUDIO"],
+      "speechConfig": {
+        "voiceConfig": { "prebuiltVoiceConfig": { "voiceName": "Kore" } }
+      }
+    }
+  },
+  "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent",
+  "headers": { "content-type": "application/json" }
+}

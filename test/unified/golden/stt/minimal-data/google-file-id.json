@@ -1,0 +1,19 @@
+{
+  "ref": "google/gemini-2.5-flash",
+  "audio": { "fileId": "abc123" },
+  "params": {
+    "contents": [
+      {
+        "parts": [
+          {
+            "fileData": {
+              "fileUri": "https://generativelanguage.googleapis.com/v1beta/files/abc123"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+  "headers": { "content-type": "application/json" }
+}

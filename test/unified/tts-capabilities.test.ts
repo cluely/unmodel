@@ -39,6 +39,7 @@ import { tts as cartesia } from "../../src/providers/cartesia/unified-tts";
 import { tts as deepgram } from "../../src/providers/deepgram/unified-tts";
 import { tts as elevenlabs } from "../../src/providers/elevenlabs/unified-tts";
 import { tts as fishAudio } from "../../src/providers/fish-audio/unified";
+import { tts as google } from "../../src/providers/google/unified-tts";
 import { tts as hume } from "../../src/providers/hume/unified";
 import { tts as inworld } from "../../src/providers/inworld/unified-tts";
 import { tts as lmnt } from "../../src/providers/lmnt/unified";
@@ -136,6 +137,23 @@ const TABLE: Readonly<Record<string, Capability>> = {
     language: "unsupported",
     format: { shape: "query", at: "encoding" },
     probe: "mp3",
+  },
+  google: {
+    // The one provider whose voice is a **name** rather than an id — the thirty
+    // presets `prebuiltVoiceConfig.voiceName` publishes.
+    ref: "google/gemini-2.5-flash-preview-tts",
+    voice_id: "Kore",
+    adapter: google,
+    voice: "native",
+    // No rate field anywhere in `SpeechConfig`; the guide steers pace with
+    // natural-language direction inside the prompt.
+    speed: "unsupported",
+    // `languageCode` is a primary subtag, so "pt-BR" goes out as "pt".
+    language: "derived",
+    // `generationConfig.responseFormat.audio` is `{ mimeType, sampleRate,
+    // bitRate }` — the F3 shape, two levels down.
+    format: { shape: "object", at: "generationConfig" },
+    probe: MP3_FULL,
   },
   hume: {
     ref: "hume/octave-2",
@@ -408,7 +426,7 @@ describe.each(rows)("%s", (provider, row) => {
   });
 
   test("an unsupported codec is an invalid_enum_value naming what IS offered", () => {
-    // `vorbis` is offered by none of the fourteen — the one codec in the
+    // `vorbis` is offered by none of the fifteen — the one codec in the
     // vocabulary that no provider in this pack encodes.
     const compiled = compile(row, { outputFormat: "vorbis" });
     expect(compiled).toEqual(["invalid_enum_value @ outputFormat"]);

@@ -193,8 +193,31 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * `test/unified/tts-presets.test.ts`, and a table whose per-model
  * distinctions are not explained is a table nobody can audit against the wire.
  * Pinned at 430, which keeps the ~6% headroom the 400 had.
+ *
+ * **Bumped 430 → 500 when Gemini joined**, and the investigation this file's
+ * header demands was run rather than skipped: 467.4 KiB measured, up 55 from
+ * 412, and every one of those KiB is named below. Seven modules joined this
+ * graph, all of them google's own, **none of them a catalog** — the zero-catalog
+ * assertion below still holds, which is the thing that would actually have been
+ * expensive:
+ *
+ * | module | what it is |
+ * |---|---|
+ * | `google/unified-tts.ts` | the adapter: the FORMAT spec, the 30-voice / 78-language rows, the speed gap |
+ * | `google/tts.ts` | the `google.tts` validator this pack now ends in |
+ * | `google/tts-checks.ts` | the shared speech battery it calls |
+ * | `google/tts-constraints.ts` | the 78-language table and the audio-format maps — import-free, which is *why* no catalog came with them |
+ * | `google/tts-models.ts` | the three hand rows (a generated catalog here would have cost ~90 KiB) |
+ * | `google/wire.ts` | reached for `GEMINI_TTS_VOICES`, which is where `voiceName` is typed from |
+ * | `google/model-path.ts` | six lines: `models/{id}:{method}` |
+ *
+ * `wire.ts` is the one that looks like a leak and is not: a wire leaf may not
+ * import a constraints module, so the 30 preset voice names live there and both
+ * the wire check and this adapter read the same array. Its zod schema constants
+ * are dead code in this entry and stay as a ~1.6 KiB remnant, which was the
+ * accepted price of not declaring the voices twice.
  */
-const TTS_PACK_BUDGET_KIB = 430;
+const TTS_PACK_BUDGET_KIB = 500;
 
 /**
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
@@ -333,27 +356,54 @@ const IMAGE_PACK_PROVIDERS: string[] = [
  * Deepgram 29 across 38 generated rows, Speechmatics 19 with per-key nesting;
  * each is one `EXTRA` witness at run time plus the sentence that says which
  * models take it and why. Pinned at 420, keeping the ~6% headroom the 390 had.
+ *
+ * **Bumped 420 → 520 when Gemini joined**, and this is the one pack where the
+ * bump is mostly *data* rather than code: 482.8 KiB measured, up 78 from 404.7.
+ * Six google modules joined — `unified-stt.ts`, `stt.ts`, `audio-constraints.ts`,
+ * `tts-checks.ts` (for the shared capability triple), `tts-constraints.ts` and
+ * `wire.ts` — and with them **`src/catalog/google.gen.ts`**, which is ~55 of the
+ * 78 KiB on its own and is now the second entry in {@link STT_PACK_CATALOGS}.
+ *
+ * That catalog is load-bearing rather than leaked, and the choice behind it was
+ * made deliberately: `google.stt`'s Tier-A arms key off the generated flags
+ * (`ModelsWhereFalse<GoogleCatalog, …>`), and the thirteen curated ids need no
+ * doc correction to any field — so hand rows here would be a *second opinion on
+ * generated data*, which is exactly what `google.tts`'s three rows are allowed
+ * to be only because they carry a documented correction (32k context against
+ * models.dev's 8192). `mistral.gen.ts` is here for the mirror-image reason: it
+ * is supplemented, not replaced.
  */
-const STT_PACK_BUDGET_KIB = 420;
+const STT_PACK_BUDGET_KIB = 520;
 
 /**
- * The one generated catalog this pack legitimately reaches.
+ * The two generated catalogs this pack legitimately reaches, and nothing else.
  *
- * Load-bearing rather than leaked, and for the same reason as the image and
- * video packs' two: `mistral/audio-models.ts` supplements
- * `src/catalog/mistral.gen.ts`, which carries only the `voxtral-*-latest`
- * aliases and none of the dated transcription ids or the per-minute rates. A
- * *second* entry here means a provider barrel leaked in.
+ * Both are load-bearing rather than leaked:
+ *
+ * - `mistral/audio-models.ts` supplements `src/catalog/mistral.gen.ts`, which
+ *   carries only the `voxtral-*-latest` aliases and none of the dated
+ *   transcription ids or the per-minute rates;
+ * - `google/stt.ts` reads `src/catalog/google.gen.ts` **directly** — the one
+ *   endpoint in the audio packs that does. It is the choice the STT budget's
+ *   note above argues: thirteen curated ids with nothing to doc-correct, whose
+ *   Tier-A arms are keyed off the generated capability flags, so hand rows would
+ *   be a second opinion on generated data rather than a correction to it.
+ *
+ * A *third* entry here means a provider barrel leaked in.
  */
-const STT_PACK_CATALOGS: string[] = ["src/catalog/mistral.gen.ts"];
+const STT_PACK_CATALOGS: string[] = [
+  "src/catalog/google.gen.ts",
+  "src/catalog/mistral.gen.ts",
+];
 
-/** The eleven providers `unmodel/stt`'s ready-made pack is allowed to reach. */
+/** The twelve providers `unmodel/stt`'s ready-made pack is allowed to reach. */
 const STT_PACK_PROVIDERS: string[] = [
   "assemblyai",
   "cartesia",
   "deepgram",
   "elevenlabs",
   "gladia",
+  "google",
   "inworld",
   "mistral",
   "openai",
@@ -400,12 +450,13 @@ const MUSIC_PACK_BUDGET_KIB = 160;
 /** The two providers `unmodel/music`'s ready-made pack is allowed to reach. */
 const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "stability"];
 
-/** The fourteen providers `unmodel/tts`'s ready-made pack is allowed to reach. */
+/** The fifteen providers `unmodel/tts`'s ready-made pack is allowed to reach. */
 const TTS_PACK_PROVIDERS: string[] = [
   "cartesia",
   "deepgram",
   "elevenlabs",
   "fish-audio",
+  "google",
   "hume",
   "inworld",
   "lmnt",
@@ -569,6 +620,46 @@ describe("per-entry bundle budgets", () => {
     const lean = transitiveBytes(entryFile("cerebras"));
     const withCodec = transitiveBytes(entryFile("deepinfra"));
     expect(lean).toBeLessThan(withCodec);
+  });
+
+  /**
+   * `unmodel/google-vertex` reaches `unmodel/google`'s **barrel** — its
+   * `check.ts` imports `checkChat` from `../google`, and its `index.ts` imports
+   * a dozen wire types from the same place. That is a re-export away from being
+   * the most expensive import in the library, and until this wave nothing said
+   * so: the barrel now names five endpoint validators, and a single value that
+   * failed to shake would put a whole second provider inside this entry.
+   *
+   * So what is pinned is what survives tree-shaking, measured rather than
+   * assumed:
+   *
+   * - **absent**, and each for real money: `google/chat.ts` (the validator the
+   *   barrel's `checkChat` sits beside), `google/stt.ts`, `google/image.ts`,
+   *   `google/video.ts`, and every unified adapter;
+   * - **present, and named because it is not free**: `google/tts.ts` rides in
+   *   at ~12 KiB. Nothing imports it — `tts-check.ts` needs only
+   *   `./tts-models` — but rolldown emits those two modules as one chunk, so
+   *   the validator arrives with the three rows its cost estimate reads. A
+   *   chunking artifact rather than a graph edge, and pinned here so that if it
+   *   ever *stops* being one the diff says which.
+   */
+  test("google-vertex reaches google's check helpers and none of its endpoints", () => {
+    const modules = sourceModulesOf(entryFile("google-vertex"));
+    // A vacuous scan would be worse than no scan.
+    expect(modules).toContain("src/providers/google-vertex/chat.ts");
+    expect(modules).toContain("src/providers/google/check.ts");
+
+    for (const endpoint of ["chat", "stt", "image", "video"]) {
+      expect(
+        modules,
+        `google-vertex pulls google/${endpoint}.ts through the barrel`,
+      ).not.toContain(`src/providers/google/${endpoint}.ts`);
+    }
+    expect(modules.filter((m) => /^src\/providers\/google\/unified/.test(m))).toEqual([]);
+    expect(modules).not.toContain("src/providers/google/constraints.ts");
+
+    // The measured exception; see the note above.
+    expect(modules).toContain("src/providers/google/tts.ts");
   });
 });
 
@@ -925,12 +1016,12 @@ describe("unmodel/tts (the first ready-made pack)", () => {
    * The composition assertion, in the shape the kernel-only one had before a
    * pack existed: the *list* is what does the work, not the byte count.
    *
-   * A pack that reaches a fifteenth provider, or that drags in a generated
+   * A pack that reaches a sixteenth provider, or that drags in a generated
    * catalog because someone imported `providers/<p>/index.ts` instead of the
    * adapter leaf, fails here in the diff that causes it — which is the whole
    * reason the adapters import `./tts` and not `.`.
    */
-  test("it reaches exactly the fourteen speech providers, through their adapters", () => {
+  test("it reaches exactly the fifteen speech providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("tts"));
     expect(modules).toContain("src/unified/tts.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -945,13 +1036,17 @@ describe("unmodel/tts (the first ready-made pack)", () => {
     expect(providers).toEqual(TTS_PACK_PROVIDERS);
 
     // One adapter leaf per provider, and it is what pulled the provider in.
-    // Six of the fourteen serve more than one category, so their adapters are
+    // Seven of the fifteen serve more than one category, so their adapters are
     // split per category and this pack imports only the speech half — see the
-    // independence test below.
+    // independence test below. Google is the newest and the one with the most
+    // to lose by a barrel: `google/unified.ts` also exports the Imagen, Veo and
+    // transcription adapters, and reaching it here would put three more
+    // validators and the generated catalog in a speech bundle.
     const SPLIT = new Set([
       "cartesia",
       "deepgram",
       "elevenlabs",
+      "google",
       "inworld",
       "minimax",
       "openai",
@@ -979,6 +1074,32 @@ describe("unmodel/tts (the first ready-made pack)", () => {
     // …but the four-layer engine IS here now, unlike in a kernel-only entry:
     // the pack's whole point is ending in the providers' own validators.
     expect(modules).toContain("src/core/pipeline.ts");
+  });
+
+  /**
+   * Google is the one provider whose TTS surface shares a *route* with a chat
+   * validator, so the zero-catalog assertion above is only half the story: what
+   * keeps it true is that `google.tts` reaches the two **import-free**
+   * constraint leaves rather than `google/constraints.ts`, which reads
+   * `src/catalog/google.gen.ts` and `./veo-models.ts`. One edge from
+   * `unified-tts.ts` or `tts.ts` to that module would put ~90 KiB of generated
+   * rows and the whole Veo table into a speech bundle — and it would fail above
+   * as a bare list mismatch, which says nothing about the cause. These name it.
+   */
+  test("google reaches the import-free leaves, never the constraint tables", () => {
+    const modules = sourceModulesOf(unifiedEntry("tts"));
+    expect(modules).toContain("src/providers/google/unified-tts.ts");
+    expect(modules).toContain("src/providers/google/tts-constraints.ts");
+    expect(modules).toContain("src/providers/google/tts-models.ts");
+
+    expect(modules).not.toContain("src/providers/google/constraints.ts");
+    expect(modules).not.toContain("src/providers/google/veo-models.ts");
+    expect(modules).not.toContain("src/providers/google/chat.ts");
+    expect(modules).not.toContain("src/providers/google/chat-tts-overlay.ts");
+    expect(modules).not.toContain("src/providers/google/stt.ts");
+    expect(modules).not.toContain("src/providers/google/audio-constraints.ts");
+    expect(modules).not.toContain("src/providers/google/index.ts");
+    expect(modules).not.toContain("src/providers/google/interop.ts");
   });
 });
 
@@ -1145,13 +1266,13 @@ describe("unmodel/video (the third ready-made pack)", () => {
 
 describe("unmodel/stt (the fourth ready-made pack)", () => {
   /**
-   * The composition assertion. Five of the eleven also serve a speech surface
-   * and one also serves image and video, so an adapter that imported its
+   * The composition assertion. Six of the twelve also serve a speech surface
+   * and two also serve image and video, so an adapter that imported its
    * provider's barrel instead of the transcribe leaf would drag a second
    * category's validators and catalogs in without changing a single import in
    * `src/unified/stt.ts`.
    */
-  test("it reaches exactly the eleven transcribe providers, through their adapters", () => {
+  test("it reaches exactly the twelve transcribe providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("stt"));
     expect(modules).toContain("src/unified/stt.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -1165,9 +1286,9 @@ describe("unmodel/stt (the fourth ready-made pack)", () => {
     ].sort();
     expect(providers).toEqual(STT_PACK_PROVIDERS);
 
-    // Six of the eleven serve transcription only, so their adapter is the
-    // unsuffixed leaf; the other five split per category.
-    const SPLIT = new Set(["cartesia", "deepgram", "elevenlabs", "inworld", "openai"]);
+    // Six of the twelve serve transcription only, so their adapter is the
+    // unsuffixed leaf; the other six split per category.
+    const SPLIT = new Set(["cartesia", "deepgram", "elevenlabs", "google", "inworld", "openai"]);
     for (const provider of STT_PACK_PROVIDERS) {
       const leaf = SPLIT.has(provider) ? "unified-stt" : "unified";
       expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
@@ -1183,7 +1304,7 @@ describe("unmodel/stt (the fourth ready-made pack)", () => {
     }
   });
 
-  test("its graph carries exactly one catalog, and no availability or retarget layer", () => {
+  test("its graph carries exactly two catalogs, and no availability or retarget layer", () => {
     const modules = sourceModulesOf(unifiedEntry("stt"));
     expect(modules.filter((m) => m.startsWith("src/catalog/")).sort()).toEqual(
       STT_PACK_CATALOGS,
@@ -1191,35 +1312,51 @@ describe("unmodel/stt (the fourth ready-made pack)", () => {
     expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
     expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
     // The chat half of a provider that serves both is the loudest possible
-    // leak: `mistral/index.ts` would bring the openai-compatible dialect in.
+    // leak: `mistral/index.ts` would bring the openai-compatible dialect in,
+    // and `google/index.ts` the gemini codec and four more endpoints.
     expect(modules).not.toContain("src/providers/mistral/chat.ts");
+    expect(modules).not.toContain("src/providers/google/chat.ts");
+    expect(modules).not.toContain("src/providers/google/constraints.ts");
+    expect(modules).not.toContain("src/providers/google/veo-models.ts");
+    expect(modules).not.toContain("src/providers/google/index.ts");
     // …but the four-layer engine IS here: the pack ends in the providers' own
     // validators.
     expect(modules).toContain("src/core/pipeline.ts");
   });
 
-  test("the speech and transcribe packs share five providers and no endpoints", () => {
+  test("the speech and transcribe packs share six providers and no endpoints", () => {
     const stt = sourceModulesOf(unifiedEntry("stt"));
     const tts = sourceModulesOf(unifiedEntry("tts"));
     expect(stt).not.toContain("src/unified/tts.ts");
     expect(tts).not.toContain("src/unified/stt.ts");
-    // The five shared providers contribute one endpoint each, per pack — this
+    const SHARED = ["cartesia", "deepgram", "elevenlabs", "google", "inworld", "openai"];
+    // The six shared providers contribute one endpoint each, per pack — this
     // is what the per-category adapter split buys, and it is the reason
-    // `unmodel/tts` does not carry eleven STT validators.
+    // `unmodel/tts` does not carry twelve STT validators.
     //
     // cartesia is the one exception, and it is the provider's own doing rather
     // than the adapter's: `cartesia/stt.ts` imports `CARTESIA_VERSION` from
     // `./tts`, so the TTS module rides along in this pack for one constant.
     // Pinned as an exception so that a *second* one has to be typed out here.
-    for (const shared of ["cartesia", "deepgram", "elevenlabs", "inworld", "openai"]) {
+    for (const shared of SHARED) {
       expect(tts).toContain(`src/providers/${shared}/tts.ts`);
       if (shared !== "cartesia") {
         expect(stt).not.toContain(`src/providers/${shared}/tts.ts`);
       }
     }
-    for (const shared of ["cartesia", "deepgram", "elevenlabs", "inworld", "openai"]) {
+    for (const shared of SHARED) {
       expect(stt).toContain(`src/providers/${shared}/stt.ts`);
       expect(tts).not.toContain(`src/providers/${shared}/stt.ts`);
+    }
+    // Google is *nearly* a second cartesia and deliberately is not: its two
+    // surfaces share a check battery, so `google/tts-checks.ts` and
+    // `google/tts-constraints.ts` are in BOTH packs — but the validator they
+    // were extracted from is in neither's other half, which is exactly what the
+    // extraction bought. A `google/tts.ts` in the STT graph would mean the
+    // shared battery had been re-absorbed into an endpoint module.
+    for (const shared of ["src/providers/google/tts-checks.ts", "src/providers/google/tts-constraints.ts"]) {
+      expect(tts).toContain(shared);
+      expect(stt).toContain(shared);
     }
   });
 });

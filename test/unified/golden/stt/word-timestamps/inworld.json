@@ -1,0 +1,21 @@
+{
+  "ref": "inworld/groq/whisper-large-v3",
+  "audio": {
+    "data": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=",
+    "mimeType": "audio/wav"
+  },
+  "params": {
+    "transcribeConfig": {
+      "modelId": "groq/whisper-large-v3",
+      "audioEncoding": "AUTO_DETECT",
+      "includeWordTimestamps": true
+    },
+    "audioData": {
+      "content": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="
+    }
+  },
+  "url": "https://api.inworld.ai/stt/v1/transcribe",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

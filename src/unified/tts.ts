@@ -13,8 +13,8 @@
  * });
  * ```
  *
- * That `tts` is the ready-made pack: all fourteen providers, and therefore
- * all fourteen providers' catalogs and validators, in one bundle. To pay for
+ * That `tts` is the ready-made pack: all fifteen providers, and therefore
+ * all fifteen providers' catalogs and validators, in one bundle. To pay for
  * only the ones you call, build your own from the adapter leaves:
  *
  * ```ts
@@ -75,6 +75,7 @@ import { tts as cartesia } from "../providers/cartesia/unified-tts";
 import { tts as deepgram } from "../providers/deepgram/unified-tts";
 import { tts as elevenlabs } from "../providers/elevenlabs/unified-tts";
 import { tts as fishAudio } from "../providers/fish-audio/unified";
+import { tts as google } from "../providers/google/unified-tts";
 import { tts as hume } from "../providers/hume/unified";
 import { tts as inworld } from "../providers/inworld/unified-tts";
 import { tts as lmnt } from "../providers/lmnt/unified";
@@ -117,16 +118,17 @@ export function createTts<A extends TtsAdapter>(
  * and the return type of a call (each provider's own `Validated`). A generated
  * or dynamically-loaded registry would keep the first and lose the other two.
  *
- * The cost is honest and measured: importing this pulls in fourteen provider
- * validators, their schemas and their catalogs (~400 KiB, pinned in
+ * The cost is honest and measured: importing this pulls in fifteen provider
+ * validators, their schemas and their catalogs (~430 KiB, pinned in
  * `test/bundle-budget.test.ts`). `createTts([…])` above is the way to pay
- * for two providers instead of fourteen.
+ * for two providers instead of fifteen.
  */
 export const tts = createTts([
   openai,
   elevenlabs,
   cartesia,
   deepgram,
+  google,
   hume,
   minimax,
   rime,

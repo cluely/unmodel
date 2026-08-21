@@ -20,15 +20,18 @@ import { stt } from "../../src/unified/stt";
 
 const URL_ = "https://example.com/interview.wav";
 const audio = (): Blob => new Blob([new Uint8Array(1024)], { type: "audio/wav" });
+/** A real base64 payload — an empty WAV — for the `{ data }` routes. */
+const BASE64_AUDIO = "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
 
 describe("the pack", () => {
-  test("registers exactly the eleven transcribe providers, sorted", () => {
+  test("registers exactly the twelve transcribe providers, sorted", () => {
     expect([...stt.providers]).toEqual([
       "assemblyai",
       "cartesia",
       "deepgram",
       "elevenlabs",
       "gladia",
+      "google",
       "inworld",
       "mistral",
       "openai",
@@ -187,7 +190,7 @@ describe("`audio` is narrowed at runtime as well as at compile time", () => {
     expect(result.errors[0]!.message).toContain("`file`, `url` or `fileId`");
   });
 
-  test("inworld refuses every shape, and says why the vocabulary cannot reach it", () => {
+  test("a Blob at inworld's base64-only route says where the bytes go instead", () => {
     const result = stt.safe({
       model: "inworld/inworld/inworld-stt-1",
       audio: { file: audio() },
@@ -196,8 +199,29 @@ describe("`audio` is narrowed at runtime as well as at compile time", () => {
     if (result.ok) return;
     expect(result.errors[0]!.code).toBe("unsupported_param");
     expect(result.errors[0]!.path).toEqual(["audio"]);
+    expect(result.errors[0]!.message).toContain("{ data }");
     expect(result.errors[0]!.message).toContain("audioData.content");
-    expect(result.errors[0]!.message).toContain("unmodel/inworld");
+  });
+
+  test("base64 bytes reach the one route whose audio field is a string", () => {
+    const params = stt({
+      model: "inworld/inworld/inworld-stt-1",
+      audio: { data: BASE64_AUDIO, mimeType: "audio/wav" },
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      transcribeConfig: { modelId: "inworld/inworld-stt-1", audioEncoding: "AUTO_DETECT" },
+      audioData: { content: BASE64_AUDIO },
+    });
+  });
+
+  test("a `data:` URI is unwrapped to its payload — the field is documented base64", () => {
+    const params = stt({
+      model: "inworld/inworld/inworld-stt-1",
+      audio: { data: `data:audio/wav;base64,${BASE64_AUDIO}` },
+    });
+    expect((params as unknown as { audioData: { content: string } }).audioData.content).toBe(
+      BASE64_AUDIO,
+    );
   });
 });
 
@@ -379,5 +403,150 @@ describe("the throwing form", () => {
       expect(error.message).toContain("unmodel/stt");
       expect(error.issues[0]!.path).toEqual(["prompt"]);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Gemini — the provider whose transcription surface is a generateContent call
+// ---------------------------------------------------------------------------
+
+describe("google", () => {
+  const REF = "google/gemini-2.5-flash";
+  const AUDIO = { data: BASE64_AUDIO, mimeType: "audio/wav" } as const;
+
+  test("audio becomes a PART, and the prompt becomes the part beside it", () => {
+    const params = stt({ model: REF, audio: AUDIO, prompt: "Transcribe this." });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      contents: [
+        {
+          parts: [
+            { text: "Transcribe this." },
+            { inlineData: { mimeType: "audio/wav", data: BASE64_AUDIO } },
+          ],
+        },
+      ],
+    });
+  });
+
+  /**
+   * The probe-backed mappings, in one body. `audioTranscriptionConfig` is
+   * documented under the Live API's setup message; its acceptance on the unary
+   * route was verified against the live API, which is what makes these four
+   * cells `derived` rather than `unsupported`.
+   */
+  test("language, timestamps and diarization reach audioTranscriptionConfig", () => {
+    const params = stt({
+      model: REF,
+      audio: AUDIO,
+      language: "pt-BR",
+      timestamps: "word",
+      diarization: { enabled: true },
+    }) as unknown as { generationConfig: { audioTranscriptionConfig: unknown } };
+    expect(params.generationConfig.audioTranscriptionConfig).toEqual({
+      // The FULL tag — unlike `google.tts`'s primary-subtag `languageCode`.
+      languageCodes: ["pt-BR"],
+      wordTimestamp: true,
+      diarization: true,
+    });
+  });
+
+  test("`languages` is the same array, and setting both has not decided", () => {
+    const many = stt({ model: REF, audio: AUDIO, languages: ["en", "pt-BR"] }) as unknown as {
+      generationConfig: { audioTranscriptionConfig: { languageCodes: string[] } };
+    };
+    expect(many.generationConfig.audioTranscriptionConfig.languageCodes).toEqual(["en", "pt-BR"]);
+
+    const both = stt.safe({ model: REF, audio: AUDIO, language: "en", languages: ["en", "pt"] });
+    expect(both.ok).toBe(false);
+    if (both.ok) return;
+    expect(both.errors[0]).toMatchObject({ code: "invalid_shape", path: ["languages"] });
+    expect(both.errors[0]!.message).toContain("languageCodes");
+  });
+
+  test('timestamps: "none" omits the field rather than writing `false`', () => {
+    const params = stt({ model: REF, audio: AUDIO, timestamps: "none" });
+    expect(JSON.parse(JSON.stringify(params))).not.toHaveProperty("generationConfig");
+  });
+
+  test("a speaker count is refused at its own path — there is no wire field", () => {
+    const result = stt.safe({
+      model: REF,
+      audio: AUDIO,
+      diarization: { enabled: true, maxSpeakers: 4 },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({
+      code: "unsupported_param",
+      path: ["diarization", "maxSpeakers"],
+    });
+  });
+
+  test("a bare file id becomes the full Files API URI", () => {
+    const bare = stt({ model: REF, audio: { fileId: "abc123" } }) as unknown as {
+      contents: Array<{ parts: Array<{ fileData: { fileUri: string } }> }>;
+    };
+    expect(bare.contents[0]!.parts[0]!.fileData.fileUri).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/files/abc123",
+    );
+    // …and one that is already absolute is not prefixed twice.
+    const full = stt({
+      model: REF,
+      audio: { fileId: "https://generativelanguage.googleapis.com/v1beta/files/abc123" },
+    }) as unknown as { contents: Array<{ parts: Array<{ fileData: { fileUri: string } }> }> };
+    expect(full.contents[0]!.parts[0]!.fileData.fileUri).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/files/abc123",
+    );
+  });
+
+  test("`{ url }` is refused with the Files API pointer", () => {
+    const result = stt.safe({ model: REF, audio: { url: URL_ } } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["audio"] });
+    // `fileUri` LOOKS like a URL field and is not one; the message has to say
+    // so, or the caller reads the refusal as a gap in unmodel.
+    expect(result.errors[0]!.message).toContain("Files API");
+    expect(result.errors[0]!.message).toContain("files.upload");
+  });
+
+  test("`{ data }` without a mimeType names the seven spellings", () => {
+    const result = stt.safe({ model: REF, audio: { data: BASE64_AUDIO } } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({
+      code: "invalid_shape",
+      path: ["audio", "mimeType"],
+    });
+    expect(result.errors[0]!.meta?.["allowed"]).toHaveLength(7);
+    expect(result.errors[0]!.message).toContain("audio/wav");
+  });
+
+  test("an excluded model is refused by name, with the reason", () => {
+    const result = stt.safe({ model: "google/gemini-embedding-2", audio: AUDIO } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const message = result.errors.map((issue) => String(issue.message)).join(" ");
+    expect(message).toContain("embedding model");
+  });
+
+  test("a declared duration prices the audio at 32 tokens per second", () => {
+    const result = stt.safe(
+      { model: REF, audio: AUDIO },
+      { media: [{ path: ["contents", 0, "parts", 0], durationSeconds: 600 }] },
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // "32 tokens per second of audio (1 minute = 1,920 tokens)" — ten minutes
+    // is 19,200, plus the per-message overhead the text side adds.
+    expect(result.estimate?.inputTokens).toBeGreaterThanOrEqual(19_200);
+
+    // Undeclared, the undercount is silent — until a budget is riding on it.
+    const budgeted = stt.safe({ model: REF, audio: AUDIO }, { maxCostUSD: 1 });
+    expect(budgeted.ok).toBe(true);
+    if (!budgeted.ok) return;
+    expect(
+      budgeted.warnings.map((issue) => String(issue.code)),
+    ).toContain("media_duration_undeclared");
   });
 });

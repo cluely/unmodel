@@ -6,7 +6,7 @@
  * `tts({ model: "hume/octave", outputFormat: … })` offers that model's own
  * two codecs, and a suggestion is only worth having if it is one the provider
  * accepts. So the promise is checked rather than asserted: every `codecs` entry
- * and every `languages` entry on all fourteen speech adapters is compiled
+ * and every `languages` entry on all fifteen speech adapters is compiled
  * through the unified surface and run through the provider's own validator,
  * and one off-set neighbour of each is asserted to fail — because a closed list
  * makes a claim in both directions, and without the negative half a table that
@@ -51,6 +51,7 @@ import { tts as cartesia } from "../../src/providers/cartesia/unified-tts";
 import { tts as deepgram } from "../../src/providers/deepgram/unified-tts";
 import { tts as elevenlabs } from "../../src/providers/elevenlabs/unified-tts";
 import { tts as fishAudio } from "../../src/providers/fish-audio/unified";
+import { tts as google } from "../../src/providers/google/unified-tts";
 import { tts as hume } from "../../src/providers/hume/unified";
 import { tts as inworld } from "../../src/providers/inworld/unified-tts";
 import { tts as lmnt } from "../../src/providers/lmnt/unified";
@@ -73,6 +74,7 @@ const ADAPTERS: readonly Adapter[] = [
   elevenlabs,
   cartesia,
   deepgram,
+  google,
   hume,
   minimax,
   rime,
@@ -106,18 +108,20 @@ const LANGUAGE_POOL = ["en", "fr", "de", "es", "pt", "zh", "ja", "ru", "ko", "hi
 /**
  * The request every probe is built on.
  *
- * `voice` is required by eleven of the fourteen (it is the field the whole
- * request is about), and the two exceptions are the two facts worth recording
- * here: at Deepgram the voice **is** the model, so sending one that disagrees
- * with the ref is an error by design; and at OpenAI `voice` is a closed
- * nine-name enum rather than an opaque id, so the placeholder has to be a real
- * one. Cartesia's `outputFormat` is on the base because POST /tts/bytes
- * documents no default for it — the one required encoding field in the
- * category — so a probe about *anything else* has to carry a valid one.
+ * `voice` is required by twelve of the fifteen (it is the field the whole
+ * request is about), and the three exceptions are the three facts worth
+ * recording here: at Deepgram the voice **is** the model, so sending one that
+ * disagrees with the ref is an error by design; at OpenAI `voice` is a closed
+ * nine-name enum rather than an opaque id; and at Google it is a closed
+ * thirty-**name** list, so both placeholders have to be real. Cartesia's
+ * `outputFormat` is on the base because POST /tts/bytes documents no default
+ * for it — the one required encoding field in the category — so a probe about
+ * *anything else* has to carry a valid one.
  */
 function base(provider: string): Record<string, unknown> {
   const params: Record<string, unknown> = { text: "A probe." };
   if (provider === "openai") params["voice"] = "alloy";
+  else if (provider === "google") params["voice"] = "Kore";
   else if (provider !== "deepgram") params["voice"] = "v1";
   if (provider === "cartesia") params["outputFormat"] = { format: "mp3", sampleRate: 44100 };
   return params;
@@ -126,6 +130,8 @@ function base(provider: string): Record<string, unknown> {
 interface Outcome {
   ok: boolean;
   errors: string[];
+  /** Issue-space warnings, as `code@path`, for the warn-only language cell. */
+  warnings: string[];
   /** The wire body plus its `.request`, for the no-drop check. */
   wire: string;
 }
@@ -134,12 +140,15 @@ function run(ref: string, params: Record<string, unknown>): Outcome {
   const result = tts.safe({ model: ref, ...params } as never) as {
     ok: boolean;
     errors?: Array<{ code: string; path: Array<string | number>; message: string }>;
+    warnings?: Array<{ code: string; path: Array<string | number> }>;
     params?: { request?: unknown };
   };
+  const warnings = (result.warnings ?? []).map((i) => `${i.code}@${i.path.join(".")}`);
   if (!result.ok) {
     return {
       ok: false,
       wire: "",
+      warnings,
       errors: (result.errors ?? []).map((i) => `${i.code}@${i.path.join(".")}: ${i.message}`),
     };
   }
@@ -149,9 +158,24 @@ function run(ref: string, params: Record<string, unknown>): Outcome {
   return {
     ok: true,
     errors: [],
+    warnings,
     wire: JSON.stringify(result.params) + JSON.stringify(result.params?.request ?? {}),
   };
 }
+
+/**
+ * The providers whose off-list language is a **warning** rather than an error.
+ *
+ * One entry, and it is a documentary fact rather than a leniency: Gemini's
+ * 78-row table is headed "Supported languages" and states which languages the
+ * models *speak*, while the REST reference's own `languageCode` example
+ * ("en-US") is a value that table does not carry. So `checkLanguageCode`
+ * reports `invalid_enum_value` at `severity: "warning"` — the library never
+ * fails a request the API may well fulfil — and the negative half of the
+ * completion claim is asserted here as "compiles, and says so" rather than
+ * "refused". Enumerated so a second provider cannot join it silently.
+ */
+const WARN_ONLY_LANGUAGES: ReadonlySet<string> = new Set(["google"]);
 
 /**
  * The spellings a codec is tried in, in order.
@@ -319,6 +343,12 @@ describe("every declared speech preset is a value the provider accepts", () => {
       off,
       () => {
         const probe = run(ref, { ...base(provider), language: off });
+        if (WARN_ONLY_LANGUAGES.has(provider)) {
+          if (!probe.ok) return `refused, but this provider only warns: ${probe.errors.join("; ")}`;
+          return probe.warnings.includes("invalid_enum_value@language")
+            ? ""
+            : `accepted in silence; warnings were ${JSON.stringify(probe.warnings)}`;
+        }
         if (probe.ok) return "accepted";
         return probe.errors.some((error) => error.includes("@language"))
           ? ""

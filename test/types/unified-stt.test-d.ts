@@ -3,21 +3,22 @@
  * `bun test` — this file is only type-checked (`bun run check` / tsc --noEmit).
  *
  * The category's flagship claim is a **compile-time** one, so this file carries
- * more weight here than its five siblings do: the same word `audio` has three
+ * more weight here than its five siblings do: the same word `audio` has four
  * legal shapes, which of them is legal depends on the *route*, and the promise
  * is that a `Blob` handed to a URL-only endpoint is a red squiggle rather than
  * a 400 from a body the route does not parse.
  *
- * Section 1 is that promise, in all four directions:
+ * Section 1 is that promise, in every direction:
  *
- * | route | accepts | `{ file }` | `{ url }` | `{ fileId }` |
- * |---|---|---|---|---|
- * | assemblyai, deepgram, gladia, revai, speechmatics | url | error | ok | error |
- * | openai, cartesia | file | ok | error | error |
- * | elevenlabs | file, url | ok | ok | error |
- * | soniox | url, fileId | error | ok | ok |
- * | mistral | all three | ok | ok | ok |
- * | inworld | none — see its module header | error | error | error |
+ * | route | accepts | `{ file }` | `{ url }` | `{ fileId }` | `{ data }` |
+ * |---|---|---|---|---|---|
+ * | assemblyai, deepgram, gladia, revai, speechmatics | url | error | ok | error | error |
+ * | openai, cartesia | file | ok | error | error | error |
+ * | elevenlabs | file, url | ok | ok | error | error |
+ * | soniox | url, fileId | error | ok | ok | error |
+ * | mistral | file, url, fileId | ok | ok | ok | error |
+ * | inworld | data | error | error | error | ok |
+ * | google | data, fileId | error | error | ok | ok |
  *
  * Sections 2–5 are the same four properties every category entry has: the ref
  * union, the provider's own result type, `providerOptions` keyed by the pack,
@@ -28,6 +29,8 @@ import { createStt } from "../../src/unified/stt";
 import { stt as assemblyaiStt } from "../../src/providers/assemblyai/unified";
 import { stt as cartesiaStt } from "../../src/providers/cartesia/unified-stt";
 import { stt as elevenlabsStt } from "../../src/providers/elevenlabs/unified-stt";
+import { stt as googleStt } from "../../src/providers/google/unified-stt";
+import { stt as inworldStt } from "../../src/providers/inworld/unified-stt";
 import { stt as mistralStt } from "../../src/providers/mistral/unified";
 import { stt as openaiStt } from "../../src/providers/openai/unified";
 import { stt as sonioxStt } from "../../src/providers/soniox/unified";
@@ -40,6 +43,7 @@ import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helper
 
 declare const file: Blob;
 const url = "https://example.com/interview.wav";
+const data = "UklGRiQAAABXQVZF";
 
 // ---------------------------------------------------------------------------
 // 1 · `audio` narrows per model, at compile time
@@ -91,18 +95,35 @@ function audioNarrowingTests(): void {
   // @ts-expect-error — bytes go through POST /v1/files first.
   stt({ model: "soniox/stt-async-v5", audio: { file } });
 
-  // Mistral is the only route that takes all three, so nothing narrows.
+  // Mistral takes three of the four, so only `{ data }` narrows away.
   stt({ model: "mistral/voxtral-mini-latest", audio: { file } });
   stt({ model: "mistral/voxtral-mini-latest", audio: { url } });
   stt({ model: "mistral/voxtral-mini-latest", audio: { fileId: "file-abc" } });
+  // @ts-expect-error — /v1/audio/transcriptions has no inline-bytes field.
+  stt({ model: "mistral/voxtral-mini-latest", audio: { data } });
 
-  // Inworld accepts none: its route takes base64 inline, which a synchronous
-  // compile step cannot produce. Both halves of the narrowing say so — the type
-  // here, and the declared `unsupported.audio` at runtime.
-  // @ts-expect-error — there is no canonical shape this route can be given.
+  // --- The base64-only route ------------------------------------------------
+  // Inworld's audio field IS a base64 string (`audioData.content`), which is
+  // exactly the shape `"data"` names.
+  stt({ model: "inworld/inworld/inworld-stt-1", audio: { data } });
+  stt({ model: "inworld/inworld/inworld-stt-1", audio: { data, mimeType: "audio/wav" } });
+  // @ts-expect-error — a Blob cannot be base64-encoded without awaiting.
   stt({ model: "inworld/inworld/inworld-stt-1", audio: { file } });
-  // @ts-expect-error — including the two that are merely absent from the wire.
+  // @ts-expect-error — and there is no URL field, nor a file API.
   stt({ model: "inworld/inworld/inworld-stt-1", audio: { url } });
+
+  // --- Base64 or a Files API handle ----------------------------------------
+  // Gemini takes an `inlineData` part or a `fileData.fileUri`, and the
+  // difference between the two is ~20 MB rather than a preference.
+  stt({ model: "google/gemini-2.5-flash", audio: { data, mimeType: "audio/wav" } });
+  stt({ model: "google/gemini-3.1-pro-preview", audio: { fileId: "abc123" } });
+  // `fileData.fileUri` LOOKS like a URL field and is not one: it is a Files API
+  // name, and Gemini does not fetch third-party hosts. This is the refusal the
+  // `"data"` kind's design note calls the one worth reading twice.
+  // @ts-expect-error — upload first, then pass the id.
+  stt({ model: "google/gemini-2.5-flash", audio: { url } });
+  // @ts-expect-error — and a Blob, for Inworld's reason.
+  stt({ model: "google/gemini-2.5-flash", audio: { file } });
 
   // --- The degraded case ----------------------------------------------------
   // A ref that is not a literal selects no adapter, so `audio` widens to every
@@ -129,8 +150,13 @@ function audioNarrowingTests(): void {
 expectAssignable<AudioInputFor<"url">>({ url });
 expectAssignable<AudioInputFor<"file" | "url">>({ file });
 expectAssignable<AudioInputFor<"file" | "url">>({ url });
+expectAssignable<AudioInputFor<"data">>({ data });
+expectAssignable<AudioInputFor<"data">>({ data, mimeType: "audio/wav" });
+expectAssignable<AudioInputFor<"data" | "fileId">>({ fileId: "f_1" });
 // @ts-expect-error — a kind outside the set has no arm in the union.
 expectAssignable<AudioInputFor<"url">>({ file });
+// @ts-expect-error — including the newest one.
+expectAssignable<AudioInputFor<"url">>({ data });
 // @ts-expect-error — and an empty set has no arms at all.
 expectAssignable<AudioInputFor<never>>({ url });
 
@@ -141,6 +167,8 @@ expectAssignable<readonly ["file"]>(cartesiaStt.audioInputs);
 expectAssignable<readonly ["file", "url"]>(elevenlabsStt.audioInputs);
 expectAssignable<readonly ["url", "fileId"]>(sonioxStt.audioInputs);
 expectAssignable<readonly ["file", "url", "fileId"]>(mistralStt.audioInputs);
+expectAssignable<readonly ["data"]>(inworldStt.audioInputs);
+expectAssignable<readonly ["data", "fileId"]>(googleStt.audioInputs);
 
 // ---------------------------------------------------------------------------
 // 2 · The ref union
@@ -224,8 +252,11 @@ function providerOptionsTests(): void {
   });
   // @ts-expect-error — but not for a provider this pack does not have.
   stt({ model: "assemblyai/universal-2", audio: { url }, providerOptions: { asemblyai: {} } });
-  // @ts-expect-error — nor for one that is simply not a transcribe provider.
+  // Google IS a transcribe provider now — `google.stt` is a narrower view of
+  // `generateContent` — so its key is legal here, on any ref.
   stt({ model: "assemblyai/universal-2", audio: { url }, providerOptions: { google: {} } });
+  // @ts-expect-error — nor for one that is simply not a transcribe provider.
+  stt({ model: "assemblyai/universal-2", audio: { url }, providerOptions: { elevenlabsx: {} } });
 
   const pair = createStt([openaiStt, assemblyaiStt]);
   pair({ model: "openai/whisper-1", audio: { file }, providerOptions: { openai: {} } });
@@ -338,6 +369,59 @@ function extrasNarrowingTests(): void {
   stt({ model: "mistral/voxtral-mini-latest", audio: { url }, context_bias: ["x"] });
 }
 
+/**
+ * Gemini — the category's second narrowing seen through a route whose ASR
+ * config is a probe-backed message rather than a documented request field.
+ *
+ * `audioTranscriptionConfig` is documented under the Live API's setup message,
+ * and its acceptance on the unary route was verified against the live API
+ * (Google 400s unknown fields, so a 200 is proof). What that buys at the type
+ * level is a `timestamps` row with two members and an extras set that is the
+ * ASR knobs plus the generation ones — not a category of `unsupported`
+ * declarations.
+ */
+function googleTranscribeTests(): void {
+  const audio = { data, mimeType: "audio/wav" } as const;
+
+  // `wordTimestamp` is a bare boolean, so `"word"` and `"none"` are the whole
+  // vocabulary — and `"none"` IS expressible here, unlike at the six routes
+  // that report word timings unconditionally.
+  stt({ model: "google/gemini-2.5-flash", audio, timestamps: "word" });
+  stt({ model: "google/gemini-2.5-flash", audio, timestamps: "none" });
+  // @ts-expect-error — there is no segment grouping anywhere in the config.
+  stt({ model: "google/gemini-2.5-flash", audio, timestamps: "segment" });
+  // @ts-expect-error — nor character alignment.
+  stt({ model: "google/gemini-2.5-flash", audio, timestamps: "character" });
+
+  // `languageCodes` is documented "BCP-47 language codes" with no published
+  // enum, so the row declares no `languages` list and `language` keeps the wide
+  // `string` — carrying the FULL tag, unlike `google.tts`'s primary subtag.
+  stt({ model: "google/gemini-2.5-flash", audio, language: "pt-BR" });
+  stt({ model: "google/gemini-2.5-flash", audio, languages: ["en", "pt-BR"] });
+
+  // The counts have no wire field at all — `diarization` is a bare boolean —
+  // so they are a RUNTIME `unsupported_param` at their own canonical path
+  // rather than a compile error: the vocabulary is one shape for everyone.
+  stt({ model: "google/gemini-2.5-flash", audio, diarization: { enabled: true } });
+  stt({ model: "google/gemini-2.5-flash", audio, diarization: { enabled: true, speakers: 2 } });
+
+  // The extras, on every one of the thirteen curated ids (their catalog rows
+  // agree field for field, which is why the table is built from one row).
+  stt({ model: "google/gemini-3.5-flash", audio, customVocabulary: ["unmodel", "Gemini"] });
+  stt({ model: "google/gemini-flash-latest", audio, thinkingConfig: { thinkingBudget: 128 } });
+  stt({ model: "google/gemini-2.5-pro", audio, responseMimeType: "application/json" });
+  stt({ model: "google/gemini-2.5-pro", audio, systemInstruction: { parts: [{ text: "be terse" }] } });
+  // @ts-expect-error — a key no model on this provider takes is a typo.
+  stt({ model: "google/gemini-2.5-flash", audio, customVocabluary: ["x"] });
+  // @ts-expect-error — and a neighbour's extra is not on this row either.
+  stt({ model: "google/gemini-2.5-flash", audio, keyterm: "unmodel" });
+
+  // An excluded id is a RUNTIME refusal naming the reason, not a compile error:
+  // the ref union is the thirteen curated ones, and a model Google shipped last
+  // week must stay callable.
+  stt({ model: "google/gemini-embedding-2", audio });
+}
+
 /** A dynamic or unknown ref degrades to the wide vocabulary, never to `never`. */
 function degradedRefTests(): void {
   const dynamic: string = process.env["MODEL"] ?? "openai/whisper-1";
@@ -367,5 +451,6 @@ export {
   timestampNarrowingTests,
   languageNarrowingTests,
   extrasNarrowingTests,
+  googleTranscribeTests,
   degradedRefTests,
 };

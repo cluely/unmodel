@@ -1291,18 +1291,41 @@ export function requireInlineBytes(
 // Transcription inputs
 // ---------------------------------------------------------------------------
 
-/** `audio`, once it is known which of the three shapes it is. */
+/** `audio`, once it is known which of the four shapes it is. */
 export type AudioSource =
   | { kind: "file"; file: Blob }
   | { kind: "url"; url: string }
-  | { kind: "fileId"; fileId: string };
+  | { kind: "fileId"; fileId: string }
+  | { kind: "data"; data: string; mimeType?: string };
 
 /** How each kind is spelled in a message — the field the caller would write. */
 const AUDIO_SPELLING: Readonly<Record<AudioInputKind, string>> = Object.freeze({
   file: "{ file }",
   url: "{ url }",
   fileId: "{ fileId }",
+  data: "{ data }",
 });
+
+/**
+ * Every audio kind, in one order, derived from the spelling table.
+ *
+ * The *presence scan* has to look at all four — a `{ data }` handed to a
+ * URL-only route must be recognised as `data` and refused by name, not read as
+ * "this object names no audio" — so this is a different list from the
+ * `accepts` one, and it is derived rather than written out so a fifth kind
+ * cannot be added to the vocabulary and forgotten here.
+ */
+const AUDIO_KINDS = Object.keys(AUDIO_SPELLING) as readonly AudioInputKind[];
+
+/** `data:<type>[;param…],<payload>` — the envelope a `{ data }` may arrive in. */
+const DATA_URI = /^data:([^;,]*)(?:;[^,]*)*,(.*)$/s;
+
+/** ``["url", "fileId"]`` → ``"`url` or `fileId`"`` — the keys, as prose. */
+function audioKeyList(kinds: readonly AudioInputKind[]): string {
+  const quoted = kinds.map((kind) => `\`${kind}\``);
+  if (quoted.length <= 1) return quoted.join("");
+  return `${quoted.slice(0, -1).join(", ")} or ${quoted[quoted.length - 1]}`;
+}
 
 /**
  * `audio` narrowed to the one shape it is, checked against what the route takes.
@@ -1321,6 +1344,13 @@ const AUDIO_SPELLING: Readonly<Record<AudioInputKind, string>> = Object.freeze({
  * is a caller who has not decided, and every one of these APIs rejects the
  * combination too — picking one silently would send audio the caller did not
  * choose, at a price per minute.
+ *
+ * **Every sentence below names the kinds from `accepts`**, never a written-out
+ * list of the four. A message that enumerated the whole vocabulary would tell a
+ * caller about shapes this route cannot take, and — the reason it is a rule
+ * rather than a preference — would have to be edited by hand every time the
+ * vocabulary grew one, which is exactly the edit the `"data"` kind found
+ * missing here.
  */
 export function resolveAudioInput(
   audio: unknown,
@@ -1342,13 +1372,16 @@ export function resolveAudioInput(
     });
   }
   const record = audio as Record<string, unknown>;
-  const present = (["file", "url", "fileId"] as const).filter((key) => record[key] !== undefined);
+  // Scanned over ALL the kinds, so `{ data }` at a URL-only route is refused as
+  // a `data` this route has no field for rather than reported as an object that
+  // names no audio at all.
+  const present = AUDIO_KINDS.filter((key) => record[key] !== undefined);
   if (present.length === 0) {
     return bad(ctx, {
       code: "invalid_shape",
       message:
-        `\`${paramOf(ctx)}\` names no audio — it takes ${offered}, and this object has none of ` +
-        "`file`, `url` or `fileId`.",
+        `\`${paramOf(ctx)}\` names no audio — it takes ${offered}, and this object sets none of ` +
+        `${audioKeyList(accepts)}.`,
       meta,
     });
   }
@@ -1357,7 +1390,7 @@ export function resolveAudioInput(
       code: "invalid_shape",
       message:
         `\`${paramOf(ctx)}\` carries ${present.map((key) => `\`${key}\``).join(" and ")} at once; ` +
-        "exactly one of `file`, `url` or `fileId` says where the audio is.",
+        `exactly one key says where the audio is, and this model takes ${offered}.`,
       meta: { ...meta, provided: present },
     });
   }
@@ -1390,7 +1423,29 @@ export function resolveAudioInput(
       meta,
     });
   }
-  return kind === "url" ? ok({ kind, url: value }) : ok({ kind, fileId: value });
+  if (kind === "url") return ok({ kind, url: value });
+  if (kind === "fileId") return ok({ kind, fileId: value });
+
+  // `data`. A caller who happens to have a `data:` URI passes it here and means
+  // the bytes — every wire field in this category is documented "base64" — so
+  // the envelope is unwrapped and its media type is kept when the canonical
+  // `mimeType` did not supply one. The explicit field wins when both are
+  // present: it is the vocabulary's word for this fact, and the prefix is
+  // packaging the caller may not have chosen.
+  const declared = record["mimeType"];
+  if (declared !== undefined && (typeof declared !== "string" || declared === "")) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}.mimeType\` must be a non-empty string; got ${JSON.stringify(declared)}.`,
+      meta,
+    });
+  }
+  const envelope = DATA_URI.exec(value);
+  const data = envelope === null ? value : (envelope[2] ?? "");
+  const embedded = envelope?.[1];
+  const mimeType =
+    declared ?? (embedded === undefined || embedded === "" ? undefined : embedded);
+  return ok({ kind, data, ...(mimeType !== undefined && { mimeType }) });
 }
 
 // ---------------------------------------------------------------------------

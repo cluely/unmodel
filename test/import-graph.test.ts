@@ -613,11 +613,13 @@ describe("unified media surfaces (amendment A5)", () => {
 
   test("A7 — an adapter imports only its own provider, the kernel, and warning types", () => {
     const adapters = FILES.filter(isUnifiedAdapter);
-    // Fourteen speech adapters plus fifteen image ones, minus the barrel
-    // openai keeps for its subpath. A rule that scans an empty set passes by
-    // saying nothing, and this one is the reason a category entry can import
-    // an adapter leaf without dragging that provider's neighbours in.
-    expect(adapters.length).toBeGreaterThanOrEqual(29);
+    // A floor rather than an equality, and it moves when a wave lands: 29 held
+    // through the image and speech waves, and Gemini joining both audio
+    // categories added `google/unified-tts.ts` and `google/unified-stt.ts`. A
+    // rule that scans an empty set passes by saying nothing, and this one is
+    // the reason a category entry can import an adapter leaf without dragging
+    // that provider's neighbours in.
+    expect(adapters.length).toBeGreaterThanOrEqual(31);
 
     const violations: string[] = [];
     for (const file of adapters) {

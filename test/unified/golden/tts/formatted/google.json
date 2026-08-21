@@ -1,0 +1,20 @@
+{
+  "ref": "google/gemini-2.5-flash-preview-tts",
+  "voice": "Kore",
+  "params": {
+    "contents": [
+      { "parts": [{ "text": "The lighthouse keeper checked the lamp." }] }
+    ],
+    "generationConfig": {
+      "responseModalities": ["AUDIO"],
+      "speechConfig": {
+        "voiceConfig": { "prebuiltVoiceConfig": { "voiceName": "Kore" } }
+      },
+      "responseFormat": {
+        "audio": { "mimeType": "AUDIO_MP3", "sampleRate": 44100, "bitRate": 128000 }
+      }
+    }
+  },
+  "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent",
+  "headers": { "content-type": "application/json" }
+}

@@ -30,6 +30,7 @@ import {
   ratioDistance,
   ratioValue,
   resolveAudioFormat,
+  resolveAudioInput,
   parseSizeString,
   resolveSizing,
   resolveVoice,
@@ -1236,6 +1237,121 @@ describe("toPrimaryLanguage", () => {
     expect(out.value).toBeUndefined();
     expect(out.issues[0]!.code).toBe("invalid_shape");
     expect(out.issues[0]!.message).toContain("BCP-47");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Transcription inputs
+// ---------------------------------------------------------------------------
+
+describe("resolveAudioInput", () => {
+  const blob = new Blob([new Uint8Array(8)], { type: "audio/wav" });
+  const ALL = ["file", "url", "fileId", "data"] as const;
+
+  test("narrows to the one shape it is", () => {
+    expect(resolveAudioInput({ file: blob }, ALL, ctxAt("audio")).value).toEqual({
+      kind: "file",
+      file: blob,
+    });
+    expect(resolveAudioInput({ url: "https://e.com/a.wav" }, ALL, ctxAt("audio")).value).toEqual({
+      kind: "url",
+      url: "https://e.com/a.wav",
+    });
+    expect(resolveAudioInput({ fileId: "f_2f8a" }, ALL, ctxAt("audio")).value).toEqual({
+      kind: "fileId",
+      fileId: "f_2f8a",
+    });
+    expect(resolveAudioInput({ data: "QUJD" }, ALL, ctxAt("audio")).value).toEqual({
+      kind: "data",
+      data: "QUJD",
+    });
+  });
+
+  test("`{ data }` carries its media type when the caller declared one", () => {
+    expect(
+      resolveAudioInput({ data: "QUJD", mimeType: "audio/wav" }, ALL, ctxAt("audio")).value,
+    ).toEqual({ kind: "data", data: "QUJD", mimeType: "audio/wav" });
+  });
+
+  test("a `data:` URI is unwrapped, and supplies the media type it carries", () => {
+    expect(
+      resolveAudioInput({ data: "data:audio/mp3;base64,QUJD" }, ALL, ctxAt("audio")).value,
+    ).toEqual({ kind: "data", data: "QUJD", mimeType: "audio/mp3" });
+    // The explicit field is the vocabulary's word for the fact, so it wins over
+    // packaging the caller may not have chosen.
+    expect(
+      resolveAudioInput(
+        { data: "data:audio/mp3;base64,QUJD", mimeType: "audio/wav" },
+        ALL,
+        ctxAt("audio"),
+      ).value,
+    ).toEqual({ kind: "data", data: "QUJD", mimeType: "audio/wav" });
+    // A typeless envelope leaves the media type absent rather than empty.
+    expect(resolveAudioInput({ data: "data:,QUJD" }, ALL, ctxAt("audio")).value).toEqual({
+      kind: "data",
+      data: "QUJD",
+    });
+  });
+
+  test("a shape the route has no field for names the ones it does", () => {
+    const out = resolveAudioInput({ file: blob }, ["data"], ctxAt("audio"), {
+      hint: "Encode the bytes yourself.",
+    });
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("unsupported_param");
+    expect(out.issues[0]!.message).toContain("{ file }");
+    expect(out.issues[0]!.message).toContain("it takes { data }");
+    expect(out.issues[0]!.message).toEndWith("Encode the bytes yourself.");
+    expect(out.issues[0]!.meta).toMatchObject({ accepts: ["data"], given: "file" });
+  });
+
+  /**
+   * The regression the `"data"` kind was added by: before it, the presence scan
+   * looked at three keys, so `{ data }` at a URL-only route read as "this object
+   * names no audio" — an `invalid_shape` about a missing field rather than an
+   * `unsupported_param` about the one that was there.
+   */
+  test("`{ data }` at a route without it is refused BY NAME, not read as empty", () => {
+    const out = resolveAudioInput({ data: "QUJD" }, ["url"], ctxAt("audio"));
+    expect(out.issues[0]!.code).toBe("unsupported_param");
+    expect(out.issues[0]!.meta).toMatchObject({ given: "data" });
+  });
+
+  test("every message names the kinds from `accepts`, never the whole vocabulary", () => {
+    const accepts = ["url", "fileId"] as const;
+    const messages = [
+      resolveAudioInput(null, accepts, ctxAt("audio")),
+      resolveAudioInput({}, accepts, ctxAt("audio")),
+      resolveAudioInput({ url: "https://e.com/a.wav", fileId: "f_1" }, accepts, ctxAt("audio")),
+    ].map((out) => String(out.issues[0]!.message));
+    for (const message of messages) {
+      expect(message).toContain("{ url }");
+      expect(message).toContain("{ fileId }");
+      // The two shapes this route cannot take are never mentioned.
+      expect(message).not.toContain("{ file }");
+      expect(message).not.toContain("{ data }");
+    }
+  });
+
+  test("two shapes at once is a caller who has not decided", () => {
+    const out = resolveAudioInput({ data: "QUJD", url: "https://e.com/a.wav" }, ALL, ctxAt("audio"));
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("invalid_shape");
+    expect(out.issues[0]!.meta).toMatchObject({ provided: ["url", "data"] });
+  });
+
+  test("the wrong JavaScript type inside the right key is caught", () => {
+    expect(
+      String(resolveAudioInput({ file: "not a blob" }, ["file"], ctxAt("audio")).issues[0]!.message),
+    ).toContain("must be a Blob or File");
+    for (const bad of ["", 7, null]) {
+      const out = resolveAudioInput({ data: bad }, ["data"], ctxAt("audio"));
+      expect(out.value).toBeUndefined();
+      expect(out.issues[0]!.code).toBe("invalid_shape");
+    }
+    const badType = resolveAudioInput({ data: "QUJD", mimeType: 7 }, ["data"], ctxAt("audio"));
+    expect(badType.value).toBeUndefined();
+    expect(String(badType.issues[0]!.message)).toContain("`audio.mimeType`");
   });
 });
 

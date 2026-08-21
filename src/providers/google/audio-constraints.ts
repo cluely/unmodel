@@ -34,6 +34,18 @@ export const GOOGLE_AUDIO_DOCS_URL = "https://ai.google.dev/gemini-api/docs/audi
  */
 export const INLINE_MEDIA_MAX_BYTES = 100 * 1024 * 1024;
 
+/**
+ * The base a `fileData.fileUri` points into — `files.upload` answers with a
+ * name (`files/abc123`) and a `uri` that is this plus that name.
+ *
+ * It lives in the *audio* leaf although the Files API serves every media kind,
+ * for `INLINE_MEDIA_MAX_BYTES`'s reason above: the unified transcribe adapter
+ * needs it to expand a bare `{ fileId }` without reaching `./constraints`, and
+ * one declaration the other kinds can import back is better than two that can
+ * disagree.
+ */
+export const GOOGLE_FILES_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/files";
+
 /** "Max length: 9.5 hours of audio per prompt." Source: GOOGLE_AUDIO_DOCS_URL */
 export const GEMINI_AUDIO_MAX_DURATION_SECONDS = 9.5 * 3600;
 

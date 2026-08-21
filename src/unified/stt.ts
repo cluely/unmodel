@@ -12,8 +12,8 @@
  * });
  * ```
  *
- * That `stt` is the ready-made pack: all eleven providers, and therefore
- * all eleven providers' catalogs and validators, in one bundle. To pay for only
+ * That `stt` is the ready-made pack: all twelve providers, and therefore
+ * all twelve providers' catalogs and validators, in one bundle. To pay for only
  * the ones you call, build your own from the adapter leaves:
  *
  * ```ts
@@ -27,18 +27,20 @@
  * ## `audio` narrows per model, at compile time
  *
  * Transcription APIs disagree about how audio arrives — multipart upload, a
- * URL the provider fetches, or a handle from its own file API — and the
- * disagreement is per *route*, not per provider. So each adapter declares its
- * `audioInputs`, `AudioInputFor` turns that set into the exact `audio` type for
- * the route, and a caller who hands a batch-only endpoint a `Blob` gets a type
- * error at the call site rather than a validated request that 400s on a body
- * the route does not parse:
+ * URL the provider fetches, a handle from its own file API, or base64 bytes in
+ * the JSON body — and the disagreement is per *route*, not per provider. So each
+ * adapter declares its `audioInputs`, `AudioInputFor` turns that set into the
+ * exact `audio` type for the route, and a caller who hands a batch-only endpoint
+ * a `Blob` gets a type error at the call site rather than a validated request
+ * that 400s on a body the route does not parse:
  *
  * ```ts
  * stt({ model: "assemblyai/universal-2", audio: { url } });   // ok
  * stt({ model: "assemblyai/universal-2", audio: { file } });  // compile error
  * stt({ model: "cartesia/ink-whisper",  audio: { file } });   // ok
  * stt({ model: "cartesia/ink-whisper",  audio: { url } });    // compile error
+ * stt({ model: "google/gemini-2.5-flash", audio: { data, mimeType: "audio/wav" } }); // ok
+ * stt({ model: "google/gemini-2.5-flash", audio: { url } });  // compile error
  * ```
  *
  * The same array backs it at run time — `resolveAudioInput` reports an
@@ -79,6 +81,7 @@ import { stt as cartesia } from "../providers/cartesia/unified-stt";
 import { stt as deepgram } from "../providers/deepgram/unified-stt";
 import { stt as elevenlabs } from "../providers/elevenlabs/unified-stt";
 import { stt as gladia } from "../providers/gladia/unified";
+import { stt as google } from "../providers/google/unified-stt";
 import { stt as inworld } from "../providers/inworld/unified-stt";
 import { stt as mistral } from "../providers/mistral/unified";
 import { stt as openai } from "../providers/openai/unified-stt";
@@ -117,17 +120,10 @@ export function createStt<A extends SttAdapter>(
  * this category, the per-ref `audio` narrowing. A generated or
  * dynamically-loaded registry would keep the first and lose the other three.
  *
- * The cost is honest and measured: importing this pulls in eleven provider
- * validators, their schemas and their catalogs (~395 KiB, pinned in
+ * The cost is honest and measured: importing this pulls in twelve provider
+ * validators, their schemas and their catalogs (~420 KiB, pinned in
  * `test/bundle-budget.test.ts`). `createStt([…])` above is the way to
- * pay for two providers instead of eleven.
- *
- * `inworld` is in the list and cannot be called: its route takes base64 audio
- * inline, which a synchronous compile step cannot produce from a `Blob`, so its
- * adapter declares `audio` unsupported and its `audioInputs` is empty. It is
- * registered anyway because leaving it out would report "inworld is not a
- * transcribe provider in this build" — a packaging answer to a wire question.
- * `src/providers/inworld/unified-stt.ts` argues the case in full.
+ * pay for two providers instead of twelve.
  */
 export const stt = createStt([
   openai,
@@ -135,6 +131,7 @@ export const stt = createStt([
   assemblyai,
   elevenlabs,
   gladia,
+  google,
   speechmatics,
   mistral,
   soniox,
@@ -144,6 +141,7 @@ export const stt = createStt([
 ]);
 
 export type {
+  AudioDataInput,
   AudioFileIdInput,
   AudioFileInput,
   AudioInput,

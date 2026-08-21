@@ -282,9 +282,9 @@ export type CliEndpointId = keyof typeof REGISTRY;
  *
  * `unified.stt` and `unified.image-edit` are registered even though some
  * of their providers take their media as a `Blob`: the canonical `audio` is
- * `{ url }` or `{ fileId }` at seven of eleven transcribe providers and the
- * canonical `image` is `{ url }` or `{ data }` at two of four editing ones, all
- * of which a JSON document expresses — so both surfaces are genuinely
+ * `{ url }`, `{ fileId }` or `{ data }` at ten of twelve transcribe providers
+ * and the canonical `image` is `{ url }` or `{ data }` at two of four editing
+ * ones, all of which a JSON document expresses — so both surfaces are genuinely
  * CLI-usable, and a ref pointed at a multipart route is refused by that
  * provider's own adapter with a message naming the shapes it does take, which is
  * a better answer than hiding the whole category.

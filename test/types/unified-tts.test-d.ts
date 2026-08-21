@@ -124,8 +124,11 @@ function providerOptionsTests(): void {
   });
   // @ts-expect-error — but not for a provider this pack does not have.
   tts({ model: "openai/tts-1", text: "hi", providerOptions: { opneai: { speed: 1 } } });
+  // Google IS a speech provider now — `google.tts` is a narrower view of
+  // `generateContent` — so its key is legal here, on any ref.
+  tts({ model: "openai/tts-1", text: "hi", providerOptions: { google: { store: true } } });
   // @ts-expect-error — nor for one that is simply not a speech provider.
-  tts({ model: "openai/tts-1", text: "hi", providerOptions: { google: { speed: 1 } } });
+  tts({ model: "openai/tts-1", text: "hi", providerOptions: { assemblyai: { speed: 1 } } });
 
   // A hand-built pack narrows the key set to exactly its own adapters.
   const pair = createTts([openaiTts, elevenlabsTts]);
@@ -302,6 +305,101 @@ function voiceNarrowingTests(): void {
   tts({ model: "openai/tts-1", text: "hi", voice: 42 });
 }
 
+/**
+ * Gemini — the third `voices` row in the library, and the one whose voice is a
+ * **name** rather than an id.
+ *
+ * `prebuiltVoiceConfig.voiceName` takes one of thirty published presets and has
+ * no cloned-voice form on the message at all, so the adapter resolves with
+ * `accepts: ["name"]`. What that buys at the type level is the same as
+ * everywhere else — the list completes, it does not gate — and what it costs is
+ * that `{ id }` is a run-time `invalid_shape` rather than a compile error,
+ * because `VoiceOf` keeps both object spellings for every provider that
+ * publishes a list. That asymmetry is deliberate: a type stricter than the
+ * check is the one failure mode this library forbids.
+ */
+function googleSpeechTests(): void {
+  tts({ model: "google/gemini-2.5-flash-preview-tts", text: "hi", voice: "Kore" });
+  tts({ model: "google/gemini-3.1-flash-tts-preview", text: "hi", voice: "Zubenelgenubi" });
+  // The open tail: a voice this snapshot has never heard of still compiles, and
+  // `checkVoiceName` is what refuses it, naming all thirty.
+  tts({ model: "google/gemini-2.5-pro-preview-tts", text: "hi", voice: "Some-New-Voice" });
+
+  // `language` completes the guide's 78 and gates nothing — "pt-BR" is a
+  // working request the adapter sends as "pt".
+  tts({ model: "google/gemini-2.5-flash-preview-tts", text: "hi", language: "cmn" });
+  tts({ model: "google/gemini-2.5-flash-preview-tts", text: "hi", language: "pt-BR" });
+  tts({ model: "google/gemini-2.5-flash-preview-tts", text: "hi", language: "zh" });
+
+  // The five codecs `responseFormat.audio` spells, in both spellings…
+  tts({ model: "google/gemini-2.5-flash-preview-tts", text: "hi", outputFormat: "pcm_mulaw" });
+  tts({
+    model: "google/gemini-2.5-flash-preview-tts",
+    text: "hi",
+    outputFormat: { format: "pcm_s16le", container: "wav", sampleRate: 16000 },
+  });
+  // @ts-expect-error — …and AAC is not one of them.
+  tts({ model: "google/gemini-2.5-flash-preview-tts", text: "hi", outputFormat: "aac" });
+  // @ts-expect-error — nor in the object spelling.
+  tts({ model: "google/gemini-2.5-flash-preview-tts", text: "hi", outputFormat: { format: "flac" } });
+
+  // `speed` is a DECLARED gap, not a typed-away one: the vocabulary is one
+  // shape for everyone, so it compiles and the kernel refuses it with a message
+  // naming where the control actually is (prose inside `text`).
+  tts({ model: "google/gemini-2.5-flash-preview-tts", text: "hi", speed: 1.5 });
+
+  // The extras, and the one per-model split: 3.1 is the only reasoning TTS
+  // model, so it is the only arm with a `thinkingConfig`.
+  tts({
+    model: "google/gemini-3.1-flash-tts-preview",
+    text: "hi",
+    thinkingConfig: { thinkingBudget: 128 },
+  });
+  // @ts-expect-error — `ttsModels`' own `reasoning: false` takes it off the row.
+  tts({ model: "google/gemini-2.5-pro-preview-tts", text: "hi", thinkingConfig: {} });
+
+  // Multi-speaker is an extra rather than a canonical word: a dialogue needs a
+  // speaker NAME per voice, matched to names in the prompt, which no other
+  // provider in the category has. The bounded tuple refuses a third speaker at
+  // the call site.
+  tts({
+    model: "google/gemini-2.5-flash-preview-tts",
+    text: "Joe: hi\nJane: hello",
+    multiSpeakerVoiceConfig: {
+      speakerVoiceConfigs: [
+        { speaker: "Joe", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+        { speaker: "Jane", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } },
+      ],
+    },
+  });
+  tts({
+    model: "google/gemini-2.5-flash-preview-tts",
+    text: "Joe: hi",
+    multiSpeakerVoiceConfig: {
+      // @ts-expect-error — "up to 2", and the runtime refuses a third too.
+      speakerVoiceConfigs: [
+        { speaker: "Joe", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+        { speaker: "Jane", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } },
+        { speaker: "Sam", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Charon" } } },
+      ],
+    },
+  });
+  tts({
+    model: "google/gemini-2.5-flash-preview-tts",
+    text: "Joe: hi",
+    multiSpeakerVoiceConfig: {
+      speakerVoiceConfigs: [
+        {
+          speaker: "Joe",
+          // @ts-expect-error — an off-list voice name inside it is refused by
+          // the same closed union the wire surface uses.
+          voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyrr" } },
+        },
+      ],
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // The adapters satisfy the category contract
 // ---------------------------------------------------------------------------
@@ -322,4 +420,5 @@ export {
   degradedRefTests,
   voiceStaysWideTests,
   voiceNarrowingTests,
+  googleSpeechTests,
 };

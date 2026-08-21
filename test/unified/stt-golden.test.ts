@@ -12,8 +12,9 @@
  * Same reason the speech matrix keeps `voice` there, and a stronger one. A
  * voice id is not portable; an audio *shape* is not even the same **type**
  * across providers. `{ url }` at AssemblyAI, `{ file }` at Cartesia,
- * `{ url }` or `{ fileId }` at Soniox — which are legal is decided by the
- * route, at compile time, by the adapter's `audioInputs`. Putting `audio` in
+ * `{ data }` at Inworld, `{ url }` or `{ fileId }` at Soniox — which are legal
+ * is decided by the route, at compile time, by the adapter's
+ * `audioInputs`. Putting `audio` in
  * `canonical.json` would force a case to be single-shape, which would mean
  * eleven providers could never appear in one matrix at all.
  *
@@ -51,6 +52,7 @@
  * |---|---|---|
  * | audio as a URL | assemblyai, deepgram, gladia, revai, speechmatics, soniox | `minimal-url` |
  * | audio as a Blob | openai, cartesia, elevenlabs, mistral | `minimal-blob` |
+ * | audio as base64 in the body | inworld, google | `minimal-data` |
  * | diarization: flag + count | assemblyai, elevenlabs, gladia, revai | `diarize-2-speakers` |
  * | diarization: bare flag / enum / inverted | deepgram, speechmatics, mistral, soniox, revai | `diarize-on` |
  * | timestamps: array / scalar / boolean | openai+mistral+cartesia / elevenlabs / deepgram+gladia | `word-timestamps` |
@@ -185,7 +187,7 @@ describe("the matrix itself", () => {
       .map((file) => ({ name, fixture: readJson<Fixture>(join(GOLDEN, name, file)) })),
   );
 
-  test("every callable provider in the pack appears in at least two cases", () => {
+  test("every provider in the pack appears in at least two cases", () => {
     const cases = new Map<string, Set<string>>();
     for (const { name, fixture } of all) {
       const provider = fixture.ref.slice(0, fixture.ref.indexOf("/"));
@@ -197,11 +199,11 @@ describe("the matrix itself", () => {
       .filter(([, seen]) => seen.size < 2)
       .map(([provider]) => provider);
     expect(thin).toEqual([]);
-    // inworld is the one provider with no fixture, and it is the one provider
-    // no canonical request can reach: its route takes base64 audio inline, so
-    // its adapter declares `audio` unsupported. `stt-e2e.test.ts` is
-    // where that refusal is asserted instead.
-    expect([...cases.keys(), "inworld"].sort()).toEqual([...stt.providers]);
+    // No splice, and that is the news: every registered provider is reachable
+    // by a canonical request. Inworld used to be the exception — base64 audio
+    // inline, which the vocabulary had no shape for — until the `"data"` kind
+    // landed.
+    expect([...cases.keys()].sort()).toEqual([...stt.providers]);
   });
 
   test("a lossy case is lossy somewhere, and a lossless one is committed lossless", () => {
@@ -218,9 +220,11 @@ describe("the matrix itself", () => {
    * fixtures rather than asserted in prose — this is the runtime half of the
    * compile-time narrowing that `test/types/unified-stt.test-d.ts` pins.
    */
-  test("all three audio shapes are exercised", () => {
-    const kinds = new Set(all.flatMap(({ fixture }) => Object.keys(fixture.audio)));
-    expect([...kinds].sort()).toEqual(["file", "fileId", "url"]);
+  test("all four audio shapes are exercised", () => {
+    const kinds = new Set(
+      all.flatMap(({ fixture }) => Object.keys(fixture.audio).filter((key) => key !== "mimeType")),
+    );
+    expect([...kinds].sort()).toEqual(["data", "file", "fileId", "url"]);
   });
 
   /**

@@ -23,6 +23,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
 
+import { GEMINI_TTS_LANGUAGE_CODES } from "../../src/providers/google/tts-constraints";
+import { GEMINI_TTS_VOICES } from "../../src/providers/google/wire";
 import { GPT_IMAGE_2_SIZES } from "../../src/providers/openai/images-shared";
 import { SUBSTYLES } from "../../src/providers/recraft/image";
 import {
@@ -73,6 +75,27 @@ function completionsAt(src: string): string[] {
   probeVersion += 1;
   const info = service.getCompletionsAtPosition(PROBE, cursor, {});
   return (info?.entries ?? []).map((e) => e.name);
+}
+
+/**
+ * The type errors `src` produces, from the same language service — the other
+ * half of what an editor shows.
+ *
+ * Most refusals in this library belong in a `.test-d.ts`, and stay there. This
+ * exists for the ones a *completion list cannot express*, of which the
+ * transcribe category has the flagship example: `audio`'s legal shapes are
+ * narrowed per route by an intersection, and an intersection narrows
+ * **assignability** without narrowing the property names offered inside the
+ * object literal — so `audio: { ` completes `url` at a Gemini ref that refuses
+ * it. The squiggle is the promise; the list is not, and asserting the squiggle
+ * next to the list is what keeps that distinction honest rather than a surprise.
+ */
+function semanticErrorsIn(src: string): string[] {
+  probeText = src;
+  probeVersion += 1;
+  return service
+    .getSemanticDiagnostics(PROBE)
+    .map((d) => ts.flattenDiagnosticMessageText(d.messageText, " "));
 }
 
 describe("unified image: size completes the model's own presets", () => {
@@ -418,6 +441,135 @@ tts({ model: "openai/tts-9", text: "x", outputFormat: "¦" });`);
   });
 });
 
+// ---------------------------------------------------------------------------
+// Gemini: the three surfaces that can name a voice
+//
+// A Gemini TTS request is reachable three ways — `google.chat` (which keeps
+// serving the TTS ids, because generateContent genuinely does), `google.tts`
+// (the narrow Tier-A view of the same route) and `tts()` from `unmodel/tts` —
+// and a voice name is the one field whose values are unguessable proper nouns.
+// Three surfaces is three chances for one of them to quietly widen back to
+// `string` and complete nothing, which is precisely the failure no `.test-d.ts`
+// can see: a widened union is MORE permissive, so every assignment still checks.
+//
+// So the parity is asserted against the array itself, not against a number:
+// `GEMINI_TTS_VOICES` is declared once in `google/wire.ts` (a wire leaf may not
+// import a constraints module, and `voiceName` is typed from it), the wire
+// check reads it, and the unified adapter's `voices` row reads it.
+// ---------------------------------------------------------------------------
+
+describe("google speech: three surfaces, one list of thirty voices", () => {
+  const SPEECH_CONFIG = `
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],
+    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "¦" } } },
+  },
+});`;
+
+  test("google.chat, google.tts and unified tts complete the identical thirty", () => {
+    const viaChat = completionsAt(`import { chat } from "./src/providers/google";
+chat({ model: "gemini-2.5-flash-preview-tts",${SPEECH_CONFIG}`);
+    const viaWireTts = completionsAt(`import { tts } from "./src/providers/google";
+tts({ model: "gemini-2.5-flash-preview-tts",${SPEECH_CONFIG}`);
+    const viaUnified = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "google/gemini-2.5-flash-preview-tts", text: "x", voice: "¦" });`);
+
+    // Order included: all three read the same `as const` array, so the same
+    // guide order comes out of all three — and a sorted comparison would hide a
+    // surface that had rebuilt the list from a Set.
+    expect(viaChat).toEqual([...GEMINI_TTS_VOICES]);
+    expect(viaWireTts).toEqual(viaChat);
+    expect(viaUnified).toEqual(viaChat);
+    expect(viaChat).toHaveLength(30);
+
+    // No empty entry anywhere: the wire type is preset-only by construction
+    // (`prebuiltVoiceConfig` has no cloned-voice form at all), and the unified
+    // `VoiceOf` tail is a `(string & {})` that completes the presets without
+    // adding a blank row.
+    for (const list of [viaChat, viaWireTts, viaUnified]) expect(list).not.toContain("");
+  });
+
+  test("the unified list completes without gating — a cloned voice still compiles", () => {
+    // `VoiceOf` keeps the `(string & {})` tail and both object spellings, so a
+    // voice this snapshot has never heard of is a working request rather than a
+    // false compile error. It is the wire check's job to refuse it, with a
+    // message naming all thirty.
+    expect(
+      semanticErrorsIn(`import { tts } from "./src/unified/tts";
+tts({ model: "google/gemini-2.5-flash-preview-tts", text: "x", voice: "Some-Cloned-Voice" });`),
+    ).toEqual([]);
+  });
+
+  test("language completes the guide's 78-row table, and gates nothing", () => {
+    const entries = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "google/gemini-2.5-flash-preview-tts", text: "x", language: "¦" });`);
+    // Pinned by count as well as membership: the table is the kind of data that
+    // grows silently, and a widened source array is the "green build, dead
+    // narrowing" failure this whole file exists for.
+    expect(entries).toHaveLength(78);
+    expect(entries).toHaveLength(GEMINI_TTS_LANGUAGE_CODES.length);
+    // The five three-letter codes ISO 639-1 has no member for — which is why
+    // the list is transcribed from the guide rather than derived from a table.
+    for (const code of ["ceb", "cmn", "fil", "kok", "mai"]) expect(entries).toContain(code);
+    // Google spells Mandarin "cmn", so "zh" is genuinely absent…
+    expect(entries).not.toContain("zh");
+    // …and still compiles, because `LanguageOf` is open and the wire check for
+    // an off-table code is a WARNING: the table lists the languages the models
+    // speak, not the values the field accepts.
+    expect(
+      semanticErrorsIn(`import { tts } from "./src/unified/tts";
+tts({ model: "google/gemini-2.5-flash-preview-tts", text: "x", language: "zh" });`),
+    ).toEqual([]);
+  });
+
+  test("outputFormat completes the five codecs `responseFormat.audio` spells", () => {
+    const entries = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "google/gemini-2.5-flash-preview-tts", text: "x", outputFormat: "¦" });`);
+    expect(entries.sort()).toEqual(["mp3", "opus", "pcm_alaw", "pcm_mulaw", "pcm_s16le"]);
+    // AUDIO_WAV is not a sixth codec — it is `pcm_s16le` in a container, and
+    // the two are told apart by `outputFormat.container` rather than by a name
+    // the caller has to know.
+    const containers = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "google/gemini-2.5-flash-preview-tts", text: "x",
+  outputFormat: { format: "pcm_s16le", container: "¦" } });`);
+    expect(containers).toContain("wav");
+    expect(containers).toContain("raw");
+  });
+
+  test("thinkingConfig is offered on 3.1 alone — the one per-model split", () => {
+    const flash31 = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "google/gemini-3.1-flash-tts-preview", text: "x", ¦ });`);
+    for (const name of ["voice", "language", "outputFormat", "speed", "temperature",
+      "maxOutputTokens", "multiSpeakerVoiceConfig", "thinkingConfig"]) {
+      expect(flash31).toContain(name);
+    }
+
+    // The two 2.5 models are not reasoning models, so `ttsModels`' own
+    // `reasoning: false` flag takes the key off their row — the same fact
+    // `./tts.ts` states as `thinkingConfig?: never` on their wire arms.
+    const pro25 = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "google/gemini-2.5-pro-preview-tts", text: "x", ¦ });`);
+    expect(pro25).toContain("multiSpeakerVoiceConfig");
+    expect(pro25).not.toContain("thinkingConfig");
+    expect(
+      semanticErrorsIn(`import { tts } from "./src/unified/tts";
+tts({ model: "google/gemini-2.5-pro-preview-tts", text: "x",
+  thinkingConfig: { thinkingBudget: 1 } });`).length,
+    ).toBeGreaterThan(0);
+  });
+
+  test("`speed` is offered and refused at run time, which is the declared gap", () => {
+    // Declared in `unsupported`, not typed away: the vocabulary is one shape
+    // for everyone, so the key completes and the kernel reports it before
+    // compile with a message naming where the control actually is.
+    expect(
+      semanticErrorsIn(`import { tts } from "./src/unified/tts";
+tts({ model: "google/gemini-2.5-flash-preview-tts", text: "x", speed: 1.2 });`),
+    ).toEqual([]);
+  });
+});
+
 describe("unified transcribe: per-model narrowing reaches the editor", () => {
   test("timestamps completes the granularities the route reports", () => {
     const whisper = completionsAt(`import { stt } from "./src/unified/stt";
@@ -480,6 +632,81 @@ stt({ model: "revai/machine", audio: { url: "https://e.com/a.wav" }, ¦ });`);
     const entries = completionsAt(`import { stt } from "./src/unified/stt";
 stt({ model: "openai/whisper-9", audio: { file: new Blob([]) }, timestamps: "¦" });`);
     expect(entries.sort()).toEqual(["character", "none", "segment", "word"]);
+  });
+
+  test("google: timestamps completes the two granularities the ASR config has", () => {
+    const entries = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "google/gemini-2.5-flash", audio: { data: "QUJD" }, timestamps: "¦" });`);
+    // `wordTimestamp` is a bare boolean: there is no segment grouping and no
+    // character alignment anywhere in `AudioTranscriptionConfig`, and `"none"`
+    // IS expressible (omitting the field returns a plain transcript), which is
+    // why it is on the list rather than refused like Deepgram's.
+    expect(entries.sort()).toEqual(["none", "word"]);
+  });
+
+  test("google: property names are its own ASR and generation knobs", () => {
+    const entries = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "google/gemini-2.5-flash", audio: { data: "QUJD" }, ¦ });`);
+    // The four probe-backed canonical cells…
+    for (const name of ["language", "languages", "timestamps", "diarization", "prompt"]) {
+      expect(entries).toContain(name);
+    }
+    // …and the extras the wire types justify, including the one that nests a
+    // level deeper than the rest.
+    for (const name of ["customVocabulary", "temperature", "maxOutputTokens",
+      "mediaResolution", "responseMimeType", "responseSchema", "thinkingConfig",
+      "systemInstruction"]) {
+      expect(entries).toContain(name);
+    }
+    // A neighbour's extra is not on this row.
+    expect(entries).not.toContain("keyterm");
+    expect(entries).not.toContain("speaker_labels");
+  });
+
+  /**
+   * The `"data"` kind, at the type level — and the one place in this file where
+   * the completion list is deliberately NOT the assertion.
+   *
+   * `audio`'s narrowing is an intersection (`AudioNarrowing`), which decides
+   * **assignability** and not the property names offered inside an object
+   * literal — so `audio: { ` completes `url`, `file`, `fileId`, `data` and
+   * `mimeType` at every provider in the pack, including the two that refuse
+   * three of them. That is a known and accepted shape of the narrowing (see
+   * `SttParamsBase.audio`, which stays in the base for exactly this reason),
+   * so what is pinned here is the squiggle: the promise the category makes is
+   * that a shape the route cannot take is an error at the call site.
+   */
+  test("google and inworld take base64 audio, and refuse the shapes they have no field for", () => {
+    const ok = (src: string) => expect(semanticErrorsIn(src)).toEqual([]);
+    const refused = (src: string) =>
+      expect(semanticErrorsIn(src).join(" ").length, src).toBeGreaterThan(0);
+
+    // google: `["data", "fileId"]`.
+    ok(`import { stt } from "./src/unified/stt";
+stt({ model: "google/gemini-2.5-flash", audio: { data: "QUJD", mimeType: "audio/wav" } });`);
+    ok(`import { stt } from "./src/unified/stt";
+stt({ model: "google/gemini-2.5-flash", audio: { fileId: "abc123" } });`);
+    // `fileData.fileUri` is a Files API name, not an arbitrary URL — Gemini
+    // does not fetch third-party hosts, so there is nothing to compile a `url`
+    // into.
+    refused(`import { stt } from "./src/unified/stt";
+stt({ model: "google/gemini-2.5-flash", audio: { url: "https://e.com/a.wav" } });`);
+    // …and a Blob cannot be base64-encoded without awaiting.
+    refused(`import { stt } from "./src/unified/stt";
+stt({ model: "google/gemini-2.5-flash", audio: { file: new Blob([]) } });`);
+
+    // inworld: `["data"]` — the adapter the `"data"` kind un-gapped. Before it,
+    // `audioInputs` was `[]`, `audio` typed as `never`, and NO canonical
+    // request reached this provider at all.
+    ok(`import { stt } from "./src/unified/stt";
+stt({ model: "inworld/inworld/inworld-stt-1", audio: { data: "QUJD" } });`);
+    refused(`import { stt } from "./src/unified/stt";
+stt({ model: "inworld/inworld/inworld-stt-1", audio: { url: "https://e.com/a.wav" } });`);
+
+    // And the kind is genuinely narrowed rather than added to everyone: the
+    // multipart-only route still refuses it.
+    refused(`import { stt } from "./src/unified/stt";
+stt({ model: "openai/whisper-1", audio: { data: "QUJD" } });`);
   });
 });
 

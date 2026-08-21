@@ -208,8 +208,7 @@ express it. Anything genuinely one-off rides in `providerOptions`, keyed by prov
 deep-merged over the compiled body **before** validation.
 
 **Declared gaps** (each is a typed refusal with a message naming the wire-only sibling that
-does the job): `inworld.stt` takes base64 audio inside its JSON body, which a
-synchronous compile step cannot produce from a `Blob`; black-forest-labs' Kontext
+does the job): black-forest-labs' Kontext
 `input_image` is a JSON string, so its `imageInputs` is `["data", "url"]`; Stability's
 `musicFromAudio` / `musicInpaint` and the sixteen masked editing routes take controls no
 other provider has, so a canonical vocabulary for them would be a vocabulary of one.

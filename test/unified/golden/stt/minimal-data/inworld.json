@@ -1,0 +1,20 @@
+{
+  "ref": "inworld/inworld/inworld-stt-1",
+  "audio": {
+    "data": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=",
+    "mimeType": "audio/wav"
+  },
+  "params": {
+    "transcribeConfig": {
+      "modelId": "inworld/inworld-stt-1",
+      "audioEncoding": "AUTO_DETECT"
+    },
+    "audioData": {
+      "content": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="
+    }
+  },
+  "url": "https://api.inworld.ai/stt/v1/transcribe",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

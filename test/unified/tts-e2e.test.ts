@@ -14,12 +14,13 @@ import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { tts } from "../../src/unified/tts";
 
 describe("the pack", () => {
-  test("registers exactly the fourteen speech providers, sorted", () => {
+  test("registers exactly the fifteen speech providers, sorted", () => {
     expect([...tts.providers]).toEqual([
       "cartesia",
       "deepgram",
       "elevenlabs",
       "fish-audio",
+      "google",
       "hume",
       "inworld",
       "lmnt",
@@ -297,5 +298,151 @@ describe("the throwing form", () => {
       expect((error as Error).message).toContain("unmodel/tts");
       expect((error as UnmodelValidationError).issues[0]!.path).toEqual(["speed"]);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Gemini — the provider whose speech surface is a generateContent call
+// ---------------------------------------------------------------------------
+
+describe("google", () => {
+  const REF = "google/gemini-2.5-flash-preview-tts";
+  const TEXT = "The lighthouse keeper checked the lamp.";
+
+  test("compiles into contents + the pinned AUDIO modality", () => {
+    const params = tts({ model: REF, text: TEXT, voice: "Kore" });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      contents: [{ parts: [{ text: TEXT }] }],
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+      },
+    });
+    // `model` lives in the URL on this wire, not in the body.
+    expect(params.request.url).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent",
+    );
+  });
+
+  test("`speed` is refused with the direction that replaces it", () => {
+    const result = tts.safe({ model: REF, text: TEXT, voice: "Kore", speed: 1.5 });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["speed"] });
+    // The message has to say where the control actually is, or the caller is
+    // left believing Gemini cannot change pace at all.
+    expect(result.errors[0]!.message).toContain("natural-language style");
+    expect(result.errors[0]!.message).toContain("`text`");
+  });
+
+  test("an off-list voice is refused by the wire check, remapped onto `voice`", () => {
+    const result = tts.safe({ model: REF, text: TEXT, voice: "Zephyrr" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    // The finding is raised by `checkVoiceName` five levels down
+    // (`generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName`)
+    // and `ctx.from` is what brings it back to the word the caller typed.
+    expect(result.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["voice"] });
+    expect(result.errors[0]!.meta?.["allowed"]).toHaveLength(30);
+  });
+
+  test("`{ id }` is refused: a Gemini voice is a NAME", () => {
+    const result = tts.safe({ model: REF, text: TEXT, voice: { id: "voice_1234" } });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path: ["voice"] });
+    expect(result.errors[0]!.message).toContain("voice name");
+  });
+
+  test("pcm_s16le has two homes, told apart by the container", () => {
+    const wav = tts({
+      model: REF,
+      text: TEXT,
+      voice: "Kore",
+      outputFormat: { format: "pcm_s16le", container: "wav", sampleRate: 24000 },
+    }) as unknown as { generationConfig: { responseFormat: { audio: { mimeType: string } } } };
+    expect(wav.generationConfig.responseFormat.audio.mimeType).toBe("AUDIO_WAV");
+
+    const raw = tts({
+      model: REF,
+      text: TEXT,
+      voice: "Kore",
+      outputFormat: { format: "pcm_s16le", container: "raw", sampleRate: 24000 },
+    }) as unknown as { generationConfig: { responseFormat: { audio: { mimeType: string } } } };
+    expect(raw.generationConfig.responseFormat.audio.mimeType).toBe("AUDIO_L16");
+  });
+
+  test("a bitrate on an uncompressed codec is refused before the wire sees it", () => {
+    const result = tts.safe({
+      model: REF,
+      text: TEXT,
+      voice: "Kore",
+      outputFormat: { format: "pcm_s16le", sampleRate: 24000, bitrate: 128000 },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    // Declared as `unavailable` on the FORMAT spec, so it is a compile-step
+    // refusal at the canonical path rather than the wire's S8 error five levels
+    // down — both say the same thing, and this one names `outputFormat`.
+    expect(result.errors[0]).toMatchObject({
+      code: "unsupported_param",
+      path: ["outputFormat"],
+    });
+  });
+
+  test("the documented 24 kHz default is filled in, and says so", () => {
+    const result = tts.safe({ model: REF, text: TEXT, voice: "Kore", outputFormat: "mp3" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const params = result.params as unknown as {
+      generationConfig: { responseFormat: { audio: { sampleRate: number } } };
+      warnings: Array<{ code: string; path: Array<string | number> }>;
+    };
+    expect(params.generationConfig.responseFormat.audio.sampleRate).toBe(24000);
+    // A value chosen on the caller's behalf is always on the record: zero
+    // warnings has to mean the request mapped exactly.
+    expect(params.warnings).toMatchObject([
+      { code: "approximated_param", path: ["outputFormat"] },
+    ]);
+  });
+
+  test("a multi-speaker extra lands beside the compiled voiceConfig, where the XOR sees both", () => {
+    const result = tts.safe({
+      model: REF,
+      text: "Joe: hi\nJane: hello",
+      voice: "Kore",
+      multiSpeakerVoiceConfig: {
+        speakerVoiceConfigs: [
+          { speaker: "Joe", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+          { speaker: "Jane", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } },
+        ],
+      },
+    } as never);
+    // `voiceConfig` and `multiSpeakerVoiceConfig` are "mutually exclusive", and
+    // the extra nesting under `generationConfig.speechConfig` is exactly what
+    // lets the wire's own check say so rather than one of them being dropped.
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]!.message).toContain("mutually exclusive");
+
+    // Without a `voice`, it is an ordinary two-speaker request.
+    const ok = tts.safe({
+      model: REF,
+      text: "Joe: hi\nJane: hello",
+      multiSpeakerVoiceConfig: {
+        speakerVoiceConfigs: [
+          { speaker: "Joe", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+          { speaker: "Jane", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } },
+        ],
+      },
+    } as never);
+    expect(ok.ok).toBe(true);
+  });
+
+  test("a chat id on the speech pack is refused by name, pointing at google.chat", () => {
+    const result = tts.safe({ model: "google/gemini-2.5-flash", text: TEXT, voice: "Kore" } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((issue) => String(issue.message).includes("google.chat"))).toBe(true);
   });
 });

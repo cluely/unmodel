@@ -19,7 +19,7 @@ import type {
   UnifiedRef,
   UnifiedResult,
 } from "../types";
-import type { BlobRef, FileIdRef, ProviderOptions, UrlRef } from "./common";
+import type { BlobRef, DataRef, FileIdRef, ProviderOptions, UrlRef } from "./common";
 import type {
   ModelExtras,
   SttModelNarrowing,
@@ -41,14 +41,23 @@ export type {
 } from "./model-params";
 
 /**
- * The three ways audio reaches a transcription API, as a tag.
+ * The four ways audio reaches a transcription API, as a tag.
  *
  * Named as a union of string literals rather than left implicit in the shape
  * of `AudioInput`, because it is the thing adapters need to *talk about*: a
  * route accepts some subset, and {@link AudioInputFor} turns that subset into
  * the exact `audio` type for that route.
+ *
+ * `"data"` is the youngest of the four and the one that needed an argument.
+ * Two routes in this build carry their audio as **base64 inside the JSON body**
+ * — Inworld's `audioData.content` and Gemini's `inlineData.data` — and neither
+ * can be reached from `{ file }`: a `Blob` is read asynchronously and `compile`
+ * is synchronous, by design. Before the kind existed, Inworld's adapter shipped
+ * with `audioInputs: []` and an `unsupported.audio` declaring the gap, which is
+ * an honest answer to the wrong question: the vocabulary was missing a shape
+ * three sibling categories (`imageEdit`, `video`, `music`) already had.
  */
-export type AudioInputKind = "file" | "url" | "fileId";
+export type AudioInputKind = "file" | "url" | "fileId" | "data";
 
 /** A `Blob`/`File` posted as multipart. */
 export type AudioFileInput = BlobRef;
@@ -56,9 +65,23 @@ export type AudioFileInput = BlobRef;
 export type AudioUrlInput = UrlRef;
 /** A handle from the provider's own upload API. */
 export type AudioFileIdInput = FileIdRef;
+/**
+ * Base64 bytes in the request body, for the routes whose audio field is a
+ * string rather than a part.
+ *
+ * `DataRef` verbatim — the same `{ data, mimeType? }` the other three
+ * categories carry — so `mimeType` is optional here and *required* by whichever
+ * adapter cannot sniff the format (Gemini's `inlineData` is one; its refusal
+ * names the seven MIME spellings it takes).
+ */
+export type AudioDataInput = DataRef;
 
-/** Audio, in whichever of the three forms the caller has. */
-export type AudioInput = AudioFileInput | AudioUrlInput | AudioFileIdInput;
+/** Audio, in whichever of the four forms the caller has. */
+export type AudioInput =
+  | AudioFileInput
+  | AudioUrlInput
+  | AudioFileIdInput
+  | AudioDataInput;
 
 /**
  * The `audio` type for a route that accepts exactly the kinds in `K`.
@@ -81,7 +104,8 @@ export type AudioInput = AudioFileInput | AudioUrlInput | AudioFileIdInput;
 export type AudioInputFor<K extends AudioInputKind> =
   | ("file" extends K ? AudioFileInput : never)
   | ("url" extends K ? AudioUrlInput : never)
-  | ("fileId" extends K ? AudioFileIdInput : never);
+  | ("fileId" extends K ? AudioFileIdInput : never)
+  | ("data" extends K ? AudioDataInput : never);
 
 /**
  * `SttParams` narrowed to the input kinds one route accepts.

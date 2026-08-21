@@ -9,8 +9,9 @@
  *
  * A row lists `"none"` exactly when the route can genuinely *return* no
  * timings: OpenAI's models produce them only when asked, ElevenLabs has a
- * scalar `none | word | character` enum, Cartesia's array can be omitted. Six
- * of the eleven providers have no such switch — AssemblyAI, Deepgram, Gladia,
+ * scalar `none | word | character` enum, Cartesia's array can be omitted, and
+ * Gemini's `wordTimestamp` is a plain boolean. Six of the twelve providers have
+ * no such switch — AssemblyAI, Deepgram, Gladia,
  * Rev AI, Soniox and Speechmatics all return word timings on every response —
  * and their rows say `["word"]` or `["word", "segment"]` with **no `"none"`**,
  * which makes `timestamps: "none"` a compile error there.
@@ -30,11 +31,10 @@
  * marks a field required with no default, and for the same reason: without it
  * the sweep would be measuring the missing field instead of the preset.
  *
- * `inworld` is swept for nothing: its `audioInputs` is empty, because the route
- * takes base64 audio inline and a synchronous compile step cannot produce it
- * from a `Blob`. There is no request to build, so there is nothing to run —
- * `src/providers/inworld/unified-stt.ts` argues the case, and its table
- * is still checked by the structural tests below.
+ * Every adapter in the pack is swept. That is newer than it looks: `inworld`
+ * used to be skipped because its `audioInputs` was empty — the route takes
+ * base64 audio inline, and the vocabulary had no shape for it — and the
+ * `"data"` kind is what put its rows under the same sweep as everyone else's.
  */
 import { describe, expect, test } from "bun:test";
 import type { SttModelParams } from "../../src/core/unified/vocabulary/model-params";
@@ -48,6 +48,7 @@ import { stt as cartesia } from "../../src/providers/cartesia/unified-stt";
 import { stt as deepgram } from "../../src/providers/deepgram/unified-stt";
 import { stt as elevenlabs } from "../../src/providers/elevenlabs/unified-stt";
 import { stt as gladia } from "../../src/providers/gladia/unified";
+import { stt as google } from "../../src/providers/google/unified-stt";
 import { stt as inworld } from "../../src/providers/inworld/unified-stt";
 import { stt as mistral } from "../../src/providers/mistral/unified";
 import { stt as openai } from "../../src/providers/openai/unified-stt";
@@ -68,6 +69,7 @@ const ADAPTERS: readonly Adapter[] = [
   assemblyai,
   elevenlabs,
   gladia,
+  google,
   speechmatics,
   mistral,
   soniox,
@@ -79,11 +81,17 @@ const ADAPTERS: readonly Adapter[] = [
 const GRANULARITIES: readonly TimestampGranularity[] = ["none", "word", "segment", "character"];
 const LANGUAGE_POOL = ["en", "fr", "de", "es", "pt", "zh", "ja", "ru", "multi", "cy"];
 
+/** A real base64 payload — an empty WAV — for the `{ data }` routes. */
+const PROBE_BASE64 = "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
+
 /** The `audio` shape this route accepts, in whichever form it takes. */
 function audioFor(adapter: Adapter): Record<string, unknown> | undefined {
   if (adapter.audioInputs.includes("url")) return { url: "https://example.com/interview.wav" };
   if (adapter.audioInputs.includes("file")) {
     return { file: new Blob(["probe"], { type: "audio/wav" }) };
+  }
+  if (adapter.audioInputs.includes("data")) {
+    return { data: PROBE_BASE64, mimeType: "audio/wav" };
   }
   if (adapter.audioInputs.includes("fileId")) return { fileId: "file_probe" };
   return undefined;
@@ -170,9 +178,8 @@ describe("every declared transcribe preset is a value the provider accepts", () 
     }
   });
 
-  test("the sweep covers every adapter that can be called at all", () => {
-    // Ten of eleven: `inworld` has no `audio` shape this vocabulary can build.
-    expect(new Set(CELLS.map((cell) => cell.ref.split("/")[0])).size).toBe(ADAPTERS.length - 1);
+  test("the sweep covers every adapter in the pack", () => {
+    expect(new Set(CELLS.map((cell) => cell.ref.split("/")[0])).size).toBe(ADAPTERS.length);
   });
 
   // -------------------------------------------------------------------------

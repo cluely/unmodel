@@ -41,11 +41,35 @@ const DIST = join(ROOT, "dist");
  * | deepinfra | a fleet overlay that now pays for the gemini codec (`.toApi("google")`) |
  * | openrouter | the ceiling: 2 codecs + the largest generated catalog and table |
  * | vercel | same shape as openrouter, second-largest catalog |
+ *
+ * **google, 235 → 310.** The investigation this header demands was run rather
+ * than skipped, and it names six modules — all of them google's own, none of
+ * them a catalog, and all of them new *code* rather than a graph that leaked:
+ * `unmodel/google` grew two endpoints. Measured at 286.3 KiB, up 55 from 231,
+ * and the 55 is accounted for module by module (unminified ESM, so the prose
+ * ships too):
+ *
+ * | module | KiB | what it is |
+ * |---|---|---|
+ * | `google/stt.ts` | 14.3 | the `google.stt` validator: part union, typed `audioTranscriptionConfig`, T1–T9, the audio-token estimate |
+ * | `google/tts.ts` | 12.4 | the `google.tts` validator: the XOR speech arms, the audio-format union, S6/S12/S13 |
+ * | `google/tts-checks.ts` | 9.7 | the speech battery `chat.ts` now CALLS instead of owning — a move, not an addition, plus the five new S7–S11 rules both surfaces gained |
+ * | `google/tts-constraints.ts` | 6.3 | the 78-language table and the audio-format maps; import-free so `unmodel/tts` can reach them without a catalog |
+ * | `google/audio-constraints.ts` | 5.2 | the audio input formats, caps, token rate and the 13+6 STT curation lists; likewise import-free |
+ * | `google/tts-check.ts` | 4.8 | `checkTts`, priced off the three hand rows rather than the generated catalog |
+ * | `google/tts-models.ts` | 2.0 | those three hand rows |
+ *
+ * Two of those seven are not really growth at all: `tts-checks.ts` and both
+ * constraint leaves were already in this entry as bytes inside `chat.ts` and
+ * `constraints.ts`, and the module boundary is what lets `google.tts` run the
+ * identical rules without dragging the generated catalog. The genuinely new
+ * weight is the two validators and their response checker, which is what two
+ * endpoints cost. 310 restores the ~8% headroom the 235 had.
  */
 const BUDGET_KIB: Readonly<Record<string, number>> = {
   anthropic: 150,
   groq: 125,
-  google: 235,
+  google: 310,
   deepinfra: 190,
   openrouter: 400,
   vercel: 355,
@@ -650,12 +674,29 @@ describe("unmodel/chat", () => {
    * a chat entry. That is a fact worth a name in a diff, not headroom to be
    * absorbed silently.
    *
-   * Two entries look surprising and are legitimate: `google/tts-models.ts` is
-   * imported by `google/chat.ts` for `chatModels`, and `google/veo-models.ts`
+   * Two entries look surprising and are legitimate: `google/chat-tts-overlay.ts`
+   * is imported by `google/chat.ts` for `chatModels`, and `google/veo-models.ts`
    * by `google/constraints.ts` for its media rules — both leaf-driven, not
    * barrel leakage.
+   *
+   * **51 → 54 with the google speech surfaces**, and all three are google's,
+   * all three are leaf-driven, and none of them is a catalog:
+   *
+   * - `google/tts-constraints.ts` and `google/audio-constraints.ts` are the two
+   *   import-free leaves the TTS/STT constants moved into (`google.tts` may not
+   *   reach `google/constraints.ts`, which reads the generated catalog). They
+   *   were always in this graph — as bytes inside `constraints.ts` — and are
+   *   now named.
+   * - `google/tts-checks.ts` is the shared speech check battery `chat.ts` now
+   *   CALLS instead of owning. Same reason: those checks were already here, in
+   *   `chat.ts`'s body, and the module boundary is what lets `google.tts` run
+   *   the identical rules.
+   *
+   * `google/tts-models.ts` in the old list is `google/chat-tts-overlay.ts` in
+   * the new one — a rename, not a departure; `google/tts-models.ts` now names
+   * the dedicated surface's three hand rows and is deliberately NOT here.
    */
-  test("its provider graph is exactly the enumerated 51 modules", () => {
+  test("its provider graph is exactly the enumerated 54 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
       "src/providers/alibaba/index.ts",
@@ -669,11 +710,14 @@ describe("unmodel/chat", () => {
       "src/providers/deepseek/index.ts",
       "src/providers/fireworks-ai/index.ts",
       "src/providers/friendli/index.ts",
+      "src/providers/google/audio-constraints.ts",
+      "src/providers/google/chat-tts-overlay.ts",
       "src/providers/google/chat.ts",
       "src/providers/google/constraints.ts",
       "src/providers/google/interop.ts",
       "src/providers/google/model-path.ts",
-      "src/providers/google/tts-models.ts",
+      "src/providers/google/tts-checks.ts",
+      "src/providers/google/tts-constraints.ts",
       "src/providers/google/veo-models.ts",
       "src/providers/google/wire.ts",
       "src/providers/groq/constraints.ts",

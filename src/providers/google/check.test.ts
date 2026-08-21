@@ -130,3 +130,75 @@ describe("costUSD", () => {
     expect(report.costUSD).toBeUndefined();
   });
 });
+
+describe("per-modality prompt tokens", () => {
+  /**
+   * The shape below is a real response, not a sketch: a one-second WAV plus a
+   * five-token prompt came back with `promptTokenCount: 6` and a
+   * `promptTokensDetails` of TEXT 5 + AUDIO 1 — the entries SUM to the total,
+   * which is what makes re-rating (rather than adding) the right arithmetic.
+   */
+  const LIVE_PROBE = {
+    candidates: [{ finishReason: "STOP" }],
+    usageMetadata: {
+      promptTokenCount: 6,
+      candidatesTokenCount: 10,
+      totalTokenCount: 16,
+      promptTokensDetails: [
+        { modality: "TEXT", tokenCount: 5 },
+        { modality: "AUDIO", tokenCount: 1 },
+      ],
+    },
+    modelVersion: "gemini-2.5-flash",
+  };
+
+  test("the AUDIO slice is billed at the model's inputAudio rate", () => {
+    const cost = models["gemini-2.5-flash"].cost!;
+    expect(cost.inputAudio).toBeDefined();
+    const report = checkChat(LIVE_PROBE);
+    // 5 text tokens at $0.30/M + 1 audio token at $1.00/M + 10 output at $2.50/M
+    expect(report.costUSD).toBeCloseTo(
+      (5 * cost.input!) / 1_000_000 + (1 * cost.inputAudio!) / 1_000_000 + (10 * cost.output!) / 1_000_000,
+      15,
+    );
+    // The raw usage stays raw: the breakdown is a pricing input, not a report field.
+    expect(report.usage.inputTokens).toBe(6);
+  });
+
+  test("re-rating is visibly different from ignoring the breakdown", () => {
+    const withDetails = checkChat(LIVE_PROBE);
+    const { promptTokensDetails: _dropped, ...flat } = LIVE_PROBE.usageMetadata;
+    const withoutDetails = checkChat({ ...LIVE_PROBE, usageMetadata: flat });
+    expect(withDetails.costUSD).toBeGreaterThan(withoutDetails.costUSD!);
+  });
+
+  test("a response with no breakdown prices exactly as it always did", () => {
+    const report = checkChat({
+      candidates: [{ finishReason: "STOP" }],
+      usageMetadata: { promptTokenCount: 6, candidatesTokenCount: 10 },
+      modelVersion: "gemini-2.5-flash",
+    });
+    const cost = models["gemini-2.5-flash"].cost!;
+    expect(report.costUSD).toBeCloseTo(
+      (6 * cost.input!) / 1_000_000 + (10 * cost.output!) / 1_000_000,
+      15,
+    );
+  });
+
+  test("a TEXT-only breakdown adds no audio bill", () => {
+    const report = checkChat({
+      candidates: [{ finishReason: "STOP" }],
+      usageMetadata: {
+        promptTokenCount: 6,
+        candidatesTokenCount: 10,
+        promptTokensDetails: [{ modality: "TEXT", tokenCount: 6 }],
+      },
+      modelVersion: "gemini-2.5-flash",
+    });
+    const cost = models["gemini-2.5-flash"].cost!;
+    expect(report.costUSD).toBeCloseTo(
+      (6 * cost.input!) / 1_000_000 + (10 * cost.output!) / 1_000_000,
+      15,
+    );
+  });
+});

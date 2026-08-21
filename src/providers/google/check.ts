@@ -12,6 +12,12 @@ import { models } from "../../catalog/google.gen";
 export interface ChatResponseLike {
   candidates?: Array<{
     finishReason?: string;
+    content?: {
+      parts?: Array<{
+        text?: string;
+        inlineData?: { mimeType?: string; data?: string };
+      }>;
+    };
   }>;
   promptFeedback?: {
     blockReason?: string;
@@ -23,8 +29,42 @@ export interface ChatResponseLike {
     cachedContentTokenCount?: number;
     toolUsePromptTokenCount?: number;
     totalTokenCount?: number;
+    /**
+     * Per-modality breakdown of `promptTokenCount`, e.g.
+     * `[{ modality: "TEXT", tokenCount: 5 }, { modality: "AUDIO", tokenCount: 1 }]`.
+     *
+     * Confirmed against a live response, which is why it is typed rather than
+     * guessed: the entries **sum to** `promptTokenCount`, they do not extend
+     * it — so the AUDIO slice is handed to `computeCostUSD` as
+     * `audioInputTokens`, which re-rates it out of the text bill at the
+     * model's `inputAudio` rate. On the audio-capable Gemini models that
+     * publish both, audio is 2–4x text.
+     */
+    promptTokensDetails?: Array<{ modality?: string; tokenCount?: number }>;
   };
   modelVersion?: string;
+}
+
+/**
+ * The AUDIO slice of `promptTokensDetails`, or undefined when the response
+ * carries no per-modality breakdown.
+ *
+ * Exported because it is the fact, not the plumbing: a caller reading raw
+ * usage off a response wants the same number `checkChat`/`checkStt` price
+ * with. It matters most on a transcription, whose prompt is almost entirely
+ * audio — the difference between a right price and a 3x-low one.
+ */
+export function audioPromptTokens(
+  meta: ChatResponseLike["usageMetadata"],
+): number | undefined {
+  const details = meta?.promptTokensDetails;
+  if (details === undefined) return undefined;
+  let audio: number | undefined;
+  for (const entry of details) {
+    if (entry?.modality?.toUpperCase() !== "AUDIO") continue;
+    audio = (audio ?? 0) + (entry.tokenCount ?? 0);
+  }
+  return audio;
 }
 
 /** finishReason values that mean the provider filtered/blocked the output. */
@@ -93,7 +133,9 @@ function modelInfoFor(modelVersion: string | undefined): ModelInfo | undefined {
  *   outputTokens, thoughtsTokenCount → reasoningTokens (billed at the output
  *   rate for costing, since Google prices thoughts as output),
  *   cachedContentTokenCount → cachedInputTokens (already included in
- *   promptTokenCount, matching computeCostUSD's re-rating convention).
+ *   promptTokenCount, matching computeCostUSD's re-rating convention), and
+ *   `promptTokensDetails`'s AUDIO entry → audioInputTokens on the same
+ *   convention (see {@link audioPromptTokens}).
  * - `costUSD` is priced from catalog rates via the response's `modelVersion`
  *   (prefix fallback); undefined when the model is unknown.
  */
@@ -152,12 +194,16 @@ export function checkChat(response: ChatResponseLike): ResponseReport<GoogleFini
       meta.candidatesTokenCount === undefined && meta.thoughtsTokenCount === undefined
         ? undefined
         : (meta.candidatesTokenCount ?? 0) + (meta.thoughtsTokenCount ?? 0);
+    // The AUDIO slice of promptTokenCount, when the response broke it down —
+    // re-rated out of the text bill at the model's inputAudio rate.
+    const audioTokens = audioPromptTokens(meta);
     costUSD = computeCostUSD(info.cost, {
       ...(billedInput !== undefined && { inputTokens: billedInput }),
       ...(billedOutput !== undefined && { outputTokens: billedOutput }),
       ...(meta.cachedContentTokenCount !== undefined && {
         cachedInputTokens: meta.cachedContentTokenCount,
       }),
+      ...(audioTokens !== undefined && { audioInputTokens: audioTokens }),
     });
   }
 
@@ -167,4 +213,45 @@ export function checkChat(response: ChatResponseLike): ResponseReport<GoogleFini
     usage,
     ...(costUSD !== undefined && { costUSD }),
   };
+}
+
+/**
+ * Post-generation report for a Gemini **transcription** response.
+ *
+ * `checkChat` plus one fact that only makes sense on this surface: a
+ * transcription that finishes cleanly and returns no text is a failed
+ * transcription, not an empty answer. Everything else — the finish reasons,
+ * the block reason, the usage mapping, and the per-modality audio re-rating
+ * that matters most here (a transcription's prompt is almost entirely audio,
+ * billed at 2–4x the text rate) — is the same logic, called rather than
+ * copied.
+ *
+ * It lives in this module rather than a `stt-check.ts` sibling because
+ * `checkChat` is the whole of it and this module already imports the generated
+ * catalog that prices both.
+ */
+export function checkStt(response: ChatResponseLike): ResponseReport<GoogleFinishReason> {
+  const report = checkChat(response);
+  const finishReason = response.candidates?.[0]?.finishReason;
+  const blockReason = response.promptFeedback?.blockReason;
+
+  // Only for an otherwise-clean finish: a MAX_TOKENS or filtered response has
+  // already been explained, and "and there is no transcript" would be noise.
+  if (finishReason === "STOP" && blockReason === undefined && response.candidates !== undefined) {
+    const parts = response.candidates[0]?.content?.parts ?? [];
+    const transcript = parts.map((part) => part?.text ?? "").join("").trim();
+    if (transcript === "") {
+      report.warnings.push({
+        severity: "warning",
+        code: "invalid_shape",
+        path: ["candidates", 0, "content", "parts"],
+        message:
+          "Generation finished normally (finishReason STOP) but no transcript text came back. " +
+          "Check that the audio part actually carried audio, that its mimeType matches the bytes, and that the prompt asked for a transcription.",
+        meta: { kind: "empty_transcript", finishReason },
+      });
+    }
+  }
+
+  return report;
 }

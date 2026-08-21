@@ -5,6 +5,26 @@ export interface TokenBreakdown {
   outputTokens?: number;
   /** Input tokens served from provider cache (billed at cacheRead rate). */
   cachedInputTokens?: number;
+  /**
+   * Input tokens that were AUDIO (billed at the `inputAudio` rate).
+   *
+   * Same convention as {@link TokenBreakdown.cachedInputTokens}: they are
+   * assumed to be **included in** `inputTokens` and are re-rated, not added —
+   * subtracted from the text bill and charged at `cost.inputAudio` instead
+   * (falling back to `cost.input` when the catalog carries no audio rate, so a
+   * provider without one is billed exactly as before rather than for free).
+   *
+   * The convention is what the providers report: Gemini's
+   * `usageMetadata.promptTokensDetails` breaks `promptTokenCount` down by
+   * modality — the parts sum to the total, they do not extend it — and the
+   * same is true of every audio-capable model in the catalog. Adding instead
+   * of re-rating would double-bill every second of audio.
+   *
+   * Audio rates are 2–20x the text rate on the models that publish both
+   * (`gemini-2.5-flash`: $0.30 text, $1.00 audio per 1M), so the difference
+   * between re-rating and ignoring it is not a rounding error.
+   */
+  audioInputTokens?: number;
   /** Tokens written to provider cache (billed at cacheWrite rate). */
   cacheWriteTokens?: number;
   /**
@@ -18,9 +38,12 @@ const PER_MILLION = 1_000_000;
 
 /**
  * Costs a token breakdown against catalog pricing (USD per 1M tokens).
- * Cached input tokens are assumed to be included in `inputTokens` and are
- * re-rated: they are subtracted from the input bill and charged at the
- * cacheRead rate instead. Returns undefined when no rate is known.
+ *
+ * Two slices of `inputTokens` are **re-rated rather than added**, because that
+ * is how the providers report them: cached tokens are subtracted from the text
+ * bill and charged at the cacheRead rate, and audio tokens likewise at the
+ * inputAudio rate. `freshInput` is what is left. Returns undefined when no
+ * rate is known.
  */
 export function computeCostUSD(cost: ModelCost | undefined, tokens: TokenBreakdown): number | undefined {
   if (!cost) return undefined;
@@ -29,7 +52,11 @@ export function computeCostUSD(cost: ModelCost | undefined, tokens: TokenBreakdo
   let priced = false;
 
   const cached = tokens.cachedInputTokens ?? 0;
-  const freshInput = Math.max(0, (tokens.inputTokens ?? 0) - cached);
+  const audio = tokens.audioInputTokens ?? 0;
+  // Both slices come out of the same total, so a response that is entirely
+  // cached audio bills once, not twice — and `Math.max` keeps a provider that
+  // reports slices summing to more than the total from producing a credit.
+  const freshInput = Math.max(0, (tokens.inputTokens ?? 0) - cached - audio);
 
   if (cost.input !== undefined && tokens.inputTokens !== undefined) {
     total += (freshInput * cost.input) / PER_MILLION;
@@ -39,6 +66,16 @@ export function computeCostUSD(cost: ModelCost | undefined, tokens: TokenBreakdo
     const rate = cost.cacheRead ?? cost.input;
     if (rate !== undefined) {
       total += (cached * rate) / PER_MILLION;
+      priced = true;
+    }
+  }
+  if (audio > 0) {
+    // `?? cost.input`: a model with no published audio rate bills audio at the
+    // text rate, which is what ignoring the slice used to do — the fallback
+    // keeps this change from making anything cheaper by accident.
+    const rate = cost.inputAudio ?? cost.input;
+    if (rate !== undefined) {
+      total += (audio * rate) / PER_MILLION;
       priced = true;
     }
   }

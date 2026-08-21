@@ -142,6 +142,11 @@ export const REGISTRY = {
   // (/v1/text-to-speech/{voice_id}, /tts/bytes, /v1/speak, /v1/t2a_v2,
   // /synthesize), and the URL constants and wire types keep them — but the
   // endpoint id a caller types is uniform.
+  // Gemini has no dedicated speech endpoint: `google.tts` is a TTS-shaped view
+  // of `models/{model}:generateContent` with responseModalities ["AUDIO"].
+  // The address is uniform all the same — that is the law, and the wire
+  // spelling survives on `generateTtsUrl` and the body types.
+  "google.tts": () => import("./providers/google").then((m) => asCli(m.tts)),
   "openai.tts": () => import("./providers/openai").then((m) => asCli(m.tts)),
   "elevenlabs.tts": () => import("./providers/elevenlabs").then((m) => asCli(m.tts)),
   "cartesia.tts": () => import("./providers/cartesia").then((m) => asCli(m.tts)),
@@ -172,6 +177,10 @@ export const REGISTRY = {
   // express; the file-upload-only ones are under MULTIPART_ONLY below.
   "elevenlabs.stt": () =>
     import("./providers/elevenlabs").then((m) => asCli(m.stt)),
+  // As with `google.tts`: Gemini has no dedicated transcription endpoint, so
+  // `google.stt` is an audio-in/text-out view of `:generateContent`. Inline
+  // base64 audio, so JSON params can express it — not multipart.
+  "google.stt": () => import("./providers/google").then((m) => asCli(m.stt)),
   "soniox.stt": () =>
     import("./providers/soniox").then((m) => asCli(m.stt)),
   "deepgram.stt": () => import("./providers/deepgram").then((m) => asCli(m.stt)),

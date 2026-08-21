@@ -22,7 +22,7 @@ import type {
   GoogleImageAspectRatioEnumName,
   GoogleImageSizeEnumName,
 } from "./wire";
-import { chatModels } from "./tts-models";
+import { chatModels } from "./chat-tts-overlay";
 import { models } from "../../catalog/google.gen";
 import type { Issue } from "../../core/issues";
 import type { ValidateResult } from "../../core/result";
@@ -1104,5 +1104,110 @@ describe("speech generation config", () => {
         },
       }),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The shared TTS battery, reached from the WIDE surface.
+//
+// `google.chat` and `google.tts` call one implementation (./tts-checks.ts), so
+// these assertions exist to prove the wiring rather than to re-test the rules:
+// the S7–S11 checks arrived with the dedicated surface, and a chat body can
+// reach every one of them.
+// ---------------------------------------------------------------------------
+
+describe("the shared TTS check battery on google.chat", () => {
+  const AUDIO = { responseModalities: ["AUDIO"] as Array<"AUDIO"> };
+  const KORE = { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" as const } } };
+
+  test("the TTS-without-AUDIO message now names the dedicated surface", () => {
+    const issue = expectError(
+      chat.safe({ model: "gemini-2.5-flash-preview-tts", contents: HELLO }),
+      "unsupported_capability",
+    );
+    expect(issue.message).toContain("google.tts");
+    expect(issue.message).toContain("unmodel/tts");
+    expect(issue.meta?.surface).toBe("google.tts");
+  });
+
+  test("S7 — responseFormat.audio.mimeType is enforced here too", () => {
+    const issue = expectError(
+      chat.safe({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: HELLO,
+        generationConfig: {
+          ...AUDIO,
+          speechConfig: KORE,
+          responseFormat: { audio: { mimeType: "audio/flac" } },
+        },
+      }),
+      "invalid_enum_value",
+    );
+    expect(issue.path).toEqual(["generationConfig", "responseFormat", "audio", "mimeType"]);
+  });
+
+  test("S8 — bitRate on an uncompressed format is an error here too", () => {
+    const issue = expectError(
+      chat.safe({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: HELLO,
+        generationConfig: {
+          ...AUDIO,
+          speechConfig: KORE,
+          responseFormat: { audio: { mimeType: "AUDIO_WAV", bitRate: 128000 } },
+        },
+      }),
+      "unsupported_param",
+    );
+    expect(issue.path).toEqual(["generationConfig", "responseFormat", "audio", "bitRate"]);
+  });
+
+  test("S9/S10 — sampleRate sanity and the plausibility band", () => {
+    expectError(
+      chat.safe({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: HELLO,
+        generationConfig: {
+          ...AUDIO,
+          speechConfig: KORE,
+          responseFormat: { audio: { sampleRate: -1 } },
+        },
+      }),
+      "invalid_shape",
+    );
+
+    const banded = chat.safe({
+      model: "gemini-2.5-flash-preview-tts",
+      contents: HELLO,
+      generationConfig: {
+        ...AUDIO,
+        speechConfig: KORE,
+        responseFormat: { audio: { sampleRate: 96000 } },
+      },
+    });
+    expect(banded.ok).toBe(true);
+    expect(banded.warnings.some((w) => w.code === "invalid_enum_value")).toBe(true);
+  });
+
+  test("S11 — an off-table languageCode warns rather than failing", () => {
+    const result = chat.safe({
+      model: "gemini-2.5-flash-preview-tts",
+      contents: HELLO,
+      generationConfig: { ...AUDIO, speechConfig: { ...KORE, languageCode: "zz" } },
+    });
+    expect(result.ok).toBe(true);
+    const warning = result.warnings.find((w) => w.code === "invalid_enum_value");
+    expect(warning?.path).toEqual(["generationConfig", "speechConfig", "languageCode"]);
+    expect(warning?.meta?.primarySubtag).toBe("zz");
+  });
+
+  test("a documented languageCode stays silent", () => {
+    const result = chat.safe({
+      model: "gemini-2.5-flash-preview-tts",
+      contents: HELLO,
+      generationConfig: { ...AUDIO, speechConfig: { ...KORE, languageCode: "pt-BR" } },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.warnings.filter((w) => w.code === "invalid_enum_value")).toEqual([]);
   });
 });

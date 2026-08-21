@@ -29,7 +29,7 @@ import { estimateToolDefinitionTokens, PER_MESSAGE_TOKEN_OVERHEAD } from "../../
 import { toBytes } from "../../core/media/bytes";
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
 import { sniffImage, type SniffedImage } from "../../core/media/image";
-import { chatModels } from "./tts-models";
+import { chatModels } from "./chat-tts-overlay";
 // The GENERATED catalog, imported alongside `chatModels`: the merged table is
 // annotated `Record<string, ModelInfo>` (deliberately — its header explains
 // why), which erases exactly the literals the arms below are derived from.
@@ -50,9 +50,6 @@ import {
   GEMINI_RESPONSE_MODALITIES,
   GEMINI_TEMPERATURE_RANGE,
   GEMINI_THINKING_LEVELS,
-  GEMINI_TTS_DOCS_URL,
-  GEMINI_TTS_MAX_SPEAKERS,
-  GEMINI_TTS_MODEL_IDS,
   GENERATE_CONTENT_API_DOCS_URL,
   GOOGLE_MEDIA_DOC_URLS,
   INLINE_PDF_MAX_BYTES,
@@ -60,11 +57,19 @@ import {
   chatFamilyRules,
   type GeminiImageRule,
 } from "./constraints";
-// GEMINI_TTS_VOICES rides in ./wire, not ./constraints: the wire type
-// `GooglePrebuiltVoiceConfig.voiceName` is built from it, and a wire leaf may
-// not import a constraints module (test/import-graph.test.ts).
-import { GEMINI_TTS_VOICES, generateContentSchema } from "./wire";
-import type { GenerateContentBody, GoogleContent, GooglePart, GoogleVoiceConfig } from "./wire";
+// The Gemini TTS rules live in ./tts-checks, shared verbatim with `google.tts`
+// — one battery, so the narrow surface and this one cannot disagree about what
+// a valid speech request is. (That module imports ./tts-constraints and ./wire
+// only, never ./constraints: `unmodel/tts` asserts a catalog-free graph.)
+import {
+  checkAudioModalityRequested,
+  checkAudioResponseFormat,
+  checkGenerationCapabilities,
+  checkSpeechConfig,
+  isGeminiTtsModel,
+} from "./tts-checks";
+import { generateContentSchema } from "./wire";
+import type { GenerateContentBody, GoogleContent, GooglePart } from "./wire";
 import type {
   ValidatorProviderCarrier,
   ValidatorResultKind,
@@ -239,39 +244,9 @@ function checkCapabilities(params: GenerateContentBody, info: ModelInfo | undefi
     }
   }
 
-  if (config.temperature !== undefined && info.temperature === false) {
-    ctx.report({
-      code: "unsupported_param",
-      path: ["generationConfig", "temperature"],
-      model,
-      message: `\`generationConfig.temperature\` is not supported by "${model}".`,
-    });
-  }
-
-  if (config.thinkingConfig !== undefined && info.reasoning === false) {
-    ctx.report({
-      code: "unsupported_capability",
-      path: ["generationConfig", "thinkingConfig"],
-      model,
-      message: `"${model}" is not a reasoning model; remove \`generationConfig.thinkingConfig\`.`,
-    });
-  }
-
-  const outputLimit = info.limit.output;
-  if (
-    config.maxOutputTokens !== undefined &&
-    outputLimit !== undefined &&
-    outputLimit > 0 &&
-    config.maxOutputTokens > outputLimit
-  ) {
-    ctx.report({
-      code: "over_output_limit",
-      path: ["generationConfig", "maxOutputTokens"],
-      model,
-      message: `\`generationConfig.maxOutputTokens\` (${config.maxOutputTokens}) exceeds the ${outputLimit}-token output limit of "${model}".`,
-      meta: { limit: outputLimit, value: config.maxOutputTokens },
-    });
-  }
+  // temperature / thinkingConfig / maxOutputTokens: the same three catalog-flag
+  // rules `google.tts` runs, from ./tts-checks.
+  checkGenerationCapabilities(config, ["generationConfig"], model, info, ctx);
 }
 
 // ---------------------------------------------------------------------------
@@ -575,40 +550,14 @@ function checkImageGeneration(
 }
 
 /**
- * Gemini TTS models. The docs name exactly three ids; the `-tts` suffix test
- * keeps newer snapshots of the same line covered instead of silently
- * unvalidated.
+ * Speech generation on the WIDE surface: the one rule that is this endpoint's
+ * alone (a `speechConfig` on a model that cannot emit audio), plus the shared
+ * battery from ./tts-checks that `google.tts` runs identically.
+ *
+ * The S7–S11 checks arrived with `google.tts` and this surface gets them free,
+ * which is the point of the shared module: `responseFormat.audio` is reachable
+ * from a plain `generateContent` body too.
  */
-function isGeminiTtsModel(id: string): boolean {
-  return (
-    GEMINI_TTS_MODEL_IDS.includes(id as (typeof GEMINI_TTS_MODEL_IDS)[number]) ||
-    /(^|[-.])tts([-.]|$)/.test(id)
-  );
-}
-
-function checkVoiceName(
-  voiceConfig: GoogleVoiceConfig | undefined,
-  path: Array<string | number>,
-  model: string,
-  enforceVoices: boolean,
-  ctx: PipelineContext,
-): void {
-  // Typed `string`, not GeminiTtsVoiceName: the wire type now closes this
-  // field to the 30 presets, but a JS caller (or a body parsed from JSON)
-  // still reaches here with anything, and that is the whole point of the
-  // check below.
-  const voiceName: string | undefined = voiceConfig?.prebuiltVoiceConfig?.voiceName;
-  if (voiceName === undefined || !enforceVoices) return;
-  if (GEMINI_TTS_VOICES.includes(voiceName as (typeof GEMINI_TTS_VOICES)[number])) return;
-  ctx.report({
-    code: "invalid_enum_value",
-    path: [...path, "prebuiltVoiceConfig", "voiceName"],
-    model,
-    message: `\`voiceName\` must be one of the 30 prebuilt Gemini TTS voices; got ${JSON.stringify(voiceName)}.`,
-    meta: { value: voiceName, allowed: [...GEMINI_TTS_VOICES], source: GEMINI_TTS_DOCS_URL },
-  });
-}
-
 function checkSpeechGeneration(
   params: GenerateContentBody,
   info: ModelInfo | undefined,
@@ -619,21 +568,23 @@ function checkSpeechGeneration(
   const isTts = isGeminiTtsModel(id);
   const speechConfig = params.generationConfig?.speechConfig;
 
-  // "TTS models can only receive text inputs and generate audio outputs" —
-  // and an empty/absent responseModalities "is equivalent to requesting only
-  // text", which a TTS model cannot produce.
+  // S1.
   if (isTts && info !== undefined) {
-    const requested = requestedModalities(params);
-    if (!requested.includes("AUDIO")) {
-      ctx.report({
-        code: "unsupported_capability",
-        path: ["generationConfig", "responseModalities"],
-        model,
-        message: `"${model}" is a TTS model and only produces audio; set \`generationConfig.responseModalities\` to ["AUDIO"].`,
-        meta: { requested, source: GEMINI_TTS_DOCS_URL },
-      });
-    }
+    checkAudioModalityRequested(
+      requestedModalities(params),
+      ["generationConfig", "responseModalities"],
+      model,
+      ctx,
+    );
   }
+
+  // S7–S10. Reachable without a speechConfig at all, so it runs first.
+  checkAudioResponseFormat(
+    params.generationConfig?.responseFormat?.audio,
+    ["generationConfig", "responseFormat", "audio"],
+    model,
+    ctx,
+  );
 
   if (speechConfig == null) return;
 
@@ -651,54 +602,8 @@ function checkSpeechGeneration(
     return;
   }
 
-  const multi = speechConfig.multiSpeakerVoiceConfig;
-  // "It is mutually exclusive with the voiceConfig field."
-  if (speechConfig.voiceConfig != null && multi != null) {
-    ctx.report({
-      code: "invalid_shape",
-      path: ["generationConfig", "speechConfig"],
-      model,
-      message:
-        "`speechConfig.voiceConfig` and `speechConfig.multiSpeakerVoiceConfig` are mutually exclusive; set exactly one.",
-      meta: { source: GENERATE_CONTENT_API_DOCS_URL },
-    });
-  }
-
-  checkVoiceName(
-    speechConfig.voiceConfig,
-    ["generationConfig", "speechConfig", "voiceConfig"],
-    model,
-    isTts,
-    ctx,
-  );
-
-  if (multi == null) return;
-  const speakers = multi.speakerVoiceConfigs ?? [];
-  if (speakers.length > GEMINI_TTS_MAX_SPEAKERS) {
-    ctx.report({
-      code: "invalid_shape",
-      path: ["generationConfig", "speechConfig", "multiSpeakerVoiceConfig", "speakerVoiceConfigs"],
-      model,
-      message: `multi-speaker TTS supports up to ${GEMINI_TTS_MAX_SPEAKERS} speakers; got ${speakers.length}.`,
-      meta: { limit: GEMINI_TTS_MAX_SPEAKERS, value: speakers.length, source: GEMINI_TTS_DOCS_URL },
-    });
-  }
-  speakers.forEach((entry, i) => {
-    checkVoiceName(
-      entry?.voiceConfig,
-      [
-        "generationConfig",
-        "speechConfig",
-        "multiSpeakerVoiceConfig",
-        "speakerVoiceConfigs",
-        i,
-        "voiceConfig",
-      ],
-      model,
-      isTts,
-      ctx,
-    );
-  });
+  // S3–S5 + S11.
+  checkSpeechConfig(speechConfig, ["generationConfig", "speechConfig"], model, isTts, ctx);
 }
 
 function checkPartMedia(

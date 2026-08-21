@@ -10,12 +10,26 @@ import type {
 import { chat, image, video, type GenerateImagesBody } from "../../src/providers/google";
 import { checkChat as googleCheckChat } from "../../src/providers/google";
 import type { GoogleFinishReason } from "../../src/providers/google";
+import {
+  checkStt as googleCheckStt,
+  checkTts as googleCheckTts,
+  stt as googleStt,
+  tts as googleTts,
+} from "../../src/providers/google";
+import type {
+  GeminiAudioMimeType,
+  GeminiTtsLanguageCode,
+  GenerateTtsBody,
+  GoogleAudioTranscriptionConfig,
+  GoogleTtsFinishReason,
+} from "../../src/providers/google";
+import type { KeyIn } from "./helpers";
 import type { ResponseReport } from "../../src/core/report";
 import type { GoogleTextModelId } from "../../src/catalog/google.gen";
 import { GEMINI_IMAGE_MODEL_RULES } from "../../src/providers/google/constraints";
 import { models as googleCatalogModels } from "../../src/catalog/google.gen";
 import type { ModelsWhereFalse } from "../../src/core/catalog-types";
-import { chatModels } from "../../src/providers/google/tts-models";
+import { chatModels } from "../../src/providers/google/chat-tts-overlay";
 import type { GeminiTtsVoiceName } from "../../src/providers/google/wire";
 import type {
   VeoParameterModelId,
@@ -820,3 +834,260 @@ void googlePerModelTypeTests;
 
 /** A model id only known at run time — the degraded arm of every narrowing. */
 declare const runtimeGoogleModel: string;
+
+// ---------------------------------------------------------------------------
+// google.tts — the dedicated speech surface.
+//
+// Everything below is a refusal the RUNTIME also raises, expressed as a type
+// so it never reaches the runtime. The one place the two deliberately differ
+// is the speaker tuple: the type refuses three speakers, and the check refuses
+// >2, which is the same rule seen from both sides.
+// ---------------------------------------------------------------------------
+
+function googleTtsTypeTests(): void {
+  const SAY: GenerateTtsBody["contents"] = [{ parts: [{ text: "Have a wonderful day!" }] }];
+
+  // The happy path, and its SDK shape.
+  const spoken = googleTts({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: SAY,
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+    },
+  });
+  expectAssignable<string>(spoken.request.url);
+  expectAssignable<GenerateContentParameters>(spoken.toSdk("google"));
+  // `model` lives in the URL, not the body.
+  expectTrue<IsNever<KeyIn<typeof spoken, "model">>>();
+
+  // The voice vocabulary is the SAME 30 names the wire chat surface completes.
+  expectTrue<HasLiteralMember<GeminiTtsVoiceName, "Kore">>();
+  expectAssignable<GeminiTtsVoiceName>("Sulafat");
+
+  googleTts({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: SAY,
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      speechConfig: {
+        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
+        // @ts-expect-error — the two voice arms are an XOR.
+        multiSpeakerVoiceConfig: {
+          speakerVoiceConfigs: [
+            { speaker: "Joe", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } },
+          ],
+        },
+      },
+    },
+  });
+
+  googleTts({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: SAY,
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      speechConfig: {
+        multiSpeakerVoiceConfig: {
+          // @ts-expect-error — the speaker tuple is bounded at two.
+          speakerVoiceConfigs: [
+            { speaker: "A", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+            { speaker: "B", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } },
+            { speaker: "C", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Leda" } } },
+          ],
+        },
+      },
+    },
+  });
+
+  googleTts({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: SAY,
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      // @ts-expect-error — bitRate is "only applicable for compressed formats".
+      responseFormat: { audio: { mimeType: "AUDIO_L16", bitRate: 128000 } },
+    },
+  });
+  // …and it IS available on the compressed arm, in either spelling.
+  googleTts({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: SAY,
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      responseFormat: { audio: { mimeType: "audio/ogg_opus", bitRate: 96000 } },
+    },
+  });
+
+  googleTts({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: SAY,
+    // @ts-expect-error — TTS models produce audio and nothing else.
+    generationConfig: { responseModalities: ["TEXT"] },
+  });
+
+  googleTts({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: SAY,
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      // @ts-expect-error — `reasoning: false` on the 2.5 TTS rows.
+      thinkingConfig: { thinkingBudget: 1024 },
+    },
+  });
+  // …and 3.1, the reasoning TTS model, takes it.
+  googleTts({
+    model: "gemini-3.1-flash-tts-preview",
+    contents: SAY,
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      thinkingConfig: { thinkingBudget: 1024 },
+    },
+  });
+
+  googleTts({
+    model: "gemini-2.5-flash-preview-tts",
+    // @ts-expect-error — "TTS models can only receive text inputs."
+    contents: [{ parts: [{ inlineData: { mimeType: "audio/wav", data: "AAAA" } }] }],
+    generationConfig: { responseModalities: ["AUDIO"] },
+  });
+
+  googleTts({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: SAY,
+    generationConfig: { responseModalities: ["AUDIO"] },
+    // @ts-expect-error — tools are a `google.chat` feature.
+    tools: [{ googleSearch: {} }],
+  });
+
+  // The language union completes the guide's table and still admits a full
+  // BCP-47 tag, which is what the `(string & {})` tail is for.
+  expectTrue<HasLiteralMember<GeminiTtsLanguageCode, "cmn">>();
+  googleTts({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: SAY,
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      speechConfig: {
+        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
+        languageCode: "en-US",
+      },
+    },
+  });
+
+  // A future TTS id opts into the loose arm rather than being refused.
+  googleTts({
+    model: "gemini-9-flash-tts",
+    contents: SAY,
+    generationConfig: { responseModalities: ["AUDIO"] },
+  });
+
+  const ttsReport = googleCheckTts({ candidates: [{ finishReason: "STOP" }] });
+  expectAssignable<ResponseReport<GoogleTtsFinishReason>>(ttsReport);
+  expectTrue<HasLiteralMember<GoogleTtsFinishReason, "PROHIBITED_CONTENT">>();
+}
+
+void googleTtsTypeTests;
+
+// ---------------------------------------------------------------------------
+// google.stt — the dedicated transcription surface.
+// ---------------------------------------------------------------------------
+
+function googleSttTypeTests(): void {
+  const transcript = googleStt({
+    model: "gemini-2.5-flash",
+    contents: [
+      {
+        parts: [
+          { text: "Transcribe this." },
+          { inlineData: { mimeType: "audio/wav", data: "AAAA" } },
+        ],
+      },
+    ],
+    generationConfig: {
+      audioTranscriptionConfig: {
+        languageCodes: ["en-US"],
+        customVocabulary: ["unmodel"],
+        wordTimestamp: true,
+        diarization: true,
+      },
+    },
+  });
+  expectAssignable<string>(transcript.request.url);
+  expectAssignable<GenerateContentParameters>(transcript.toSdk("google"));
+  expectTrue<IsNever<KeyIn<typeof transcript, "model">>>();
+
+  // The audio MIME union is CLOSED — no `(string & {})` tail, because the
+  // audio guide publishes the whole set.
+  expectTrue<HasLiteralMember<GeminiAudioMimeType, "audio/flac">>();
+  expectTrue<IsNever<Exclude<GeminiAudioMimeType, string>>>();
+  googleStt({
+    model: "gemini-2.5-flash",
+    // @ts-expect-error — webm is not one of the seven documented audio types.
+    contents: [{ parts: [{ inlineData: { mimeType: "audio/webm", data: "AAAA" } }] }],
+  });
+
+  googleStt({
+    model: "gemini-2.5-flash",
+    contents: [
+      {
+        // @ts-expect-error — function calling is a `google.chat` feature.
+        parts: [{ functionCall: { name: "save", args: {} } }],
+      },
+    ],
+  });
+
+  googleStt({
+    model: "gemini-2.5-flash",
+    contents: [{ parts: [{ inlineData: { mimeType: "audio/wav", data: "AAAA" } }] }],
+    // @ts-expect-error — speech OUTPUT config belongs to `google.tts`.
+    generationConfig: { speechConfig: { voiceConfig: {} } },
+  });
+
+  googleStt({
+    model: "gemini-2.5-flash",
+    contents: [{ parts: [{ inlineData: { mimeType: "audio/wav", data: "AAAA" } }] }],
+    // @ts-expect-error — transcription does not call tools.
+    tools: [{ googleSearch: {} }],
+  });
+
+  // `fileData.mimeType` is optional (the Files API already knows the type);
+  // `inlineData.mimeType` is required (raw base64 carries no format).
+  googleStt({
+    model: "gemini-3.1-pro-preview",
+    contents: [
+      {
+        parts: [
+          { fileData: { fileUri: "https://generativelanguage.googleapis.com/v1beta/files/x" } },
+        ],
+      },
+    ],
+  });
+
+  // The deprecated trio is typed rather than refused — the API still accepts
+  // it, and `@deprecated` is what moves a caller off it.
+  googleStt({
+    model: "gemini-2.5-flash",
+    contents: [{ parts: [{ inlineData: { mimeType: "audio/wav", data: "AAAA" } }] }],
+    generationConfig: {
+      audioTranscriptionConfig: {
+        languageHints: { languageCodes: ["en-US"] },
+        adaptationPhrases: ["unmodel"],
+        languageAuto: {},
+      },
+    },
+  });
+  expectAssignable<GoogleAudioTranscriptionConfig>({ wordTimestamp: true, diarization: false });
+
+  // A future id opts into the loose arm rather than being refused.
+  googleStt({
+    model: "gemini-9-flash",
+    contents: [{ parts: [{ inlineData: { mimeType: "audio/mp3", data: "AAAA" } }] }],
+  });
+
+  expectAssignable<ResponseReport<GoogleFinishReason>>(
+    googleCheckStt({ candidates: [{ finishReason: "STOP" }] }),
+  );
+}
+
+void googleSttTypeTests;

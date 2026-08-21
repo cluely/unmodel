@@ -24,6 +24,51 @@ describe("computeCostUSD", () => {
     expect(cost).toBeCloseTo(6 + 0.4, 10);
   });
 
+  test("audio input tokens are re-rated at inputAudio", () => {
+    const cost = computeCostUSD(
+      { input: 0.3, inputAudio: 1 },
+      { inputTokens: 1_000_000, audioInputTokens: 400_000 },
+    );
+    // 600k text at $0.30/M + 400k audio at $1.00/M
+    expect(cost).toBeCloseTo(0.18 + 0.4, 10);
+  });
+
+  test("audio tokens fall back to the text rate when no inputAudio is published", () => {
+    // The fallback matters: without it, a model whose catalog row has no audio
+    // rate would bill its audio at ZERO once the caller starts reporting the
+    // slice — a regression dressed up as a feature.
+    const withFallback = computeCostUSD(
+      { input: 1.25 },
+      { inputTokens: 1_000_000, audioInputTokens: 400_000 },
+    );
+    const ignoringTheSlice = computeCostUSD({ input: 1.25 }, { inputTokens: 1_000_000 });
+    expect(withFallback).toBeCloseTo(1.25, 10);
+    expect(withFallback).toBe(ignoringTheSlice);
+  });
+
+  test("audio and cached slices come out of the same input total", () => {
+    const cost = computeCostUSD(
+      { input: 10, cacheRead: 1, inputAudio: 20 },
+      { inputTokens: 1_000_000, cachedInputTokens: 300_000, audioInputTokens: 200_000 },
+    );
+    // 500k fresh at $10/M + 300k cached at $1/M + 200k audio at $20/M
+    expect(cost).toBeCloseTo(5 + 0.3 + 4, 10);
+  });
+
+  test("slices that over-sum the total floor the fresh bill at zero, never a credit", () => {
+    const cost = computeCostUSD(
+      { input: 10, inputAudio: 20 },
+      { inputTokens: 100, audioInputTokens: 400 },
+    );
+    expect(cost).toBeCloseTo((400 * 20) / 1_000_000, 12);
+  });
+
+  test("no audio tokens leaves the arithmetic exactly as it was", () => {
+    expect(
+      computeCostUSD({ input: 3, inputAudio: 9 }, { inputTokens: 1_000_000, audioInputTokens: 0 }),
+    ).toBe(3);
+  });
+
   test("cache write tokens billed at cacheWrite rate", () => {
     expect(computeCostUSD({ cacheWrite: 3.75 }, { cacheWriteTokens: 1_000_000 })).toBe(3.75);
   });

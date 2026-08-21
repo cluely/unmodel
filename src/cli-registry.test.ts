@@ -59,6 +59,8 @@ const EXPECTED_IDS: readonly string[] = [
   "gladia.stt",
   "google.chat",
   "google.image",
+  "google.stt",
+  "google.tts",
   "google.video",
   "groq.chat",
   "huggingface.chat",
@@ -356,9 +358,14 @@ test("the video-category endpoints all use the uniform `video` verb", () => {
  * The speech-to-text half of the law, and the one where the wire spellings
  * disagreed the most: eleven providers spelled the same operation
  * `transcription`, `transcriptions`, `transcript`, `speechToText`, `listen`,
- * `preRecorded` and `jobs`. All eleven now address it as `stt`, which is also
+ * `preRecorded` and `jobs`. All of them now address it as `stt`, which is also
  * what makes `unmodel/stt`'s ref union readable — the category entry and the
  * provider entry are the same word.
+ *
+ * Twelve providers since google joined, and google is the sharpest case the
+ * law has: Gemini has no transcription ROUTE at all — audio in and text out is
+ * `:generateContent`, the same wire path `google.chat` serves — and the
+ * address is still the same word as everyone else's.
  *
  * Written out rather than derived because an id does not carry its category,
  * and because the point of the list is that a rename has to be typed here.
@@ -369,6 +376,10 @@ const STT_IDS: readonly string[] = [
   "deepgram.stt",
   "elevenlabs.stt",
   "gladia.stt",
+  // Gemini has no dedicated transcription route: `google.stt` is an
+  // audio-in/text-out view of `:generateContent`, and the address is uniform
+  // all the same — which is precisely the law this list exists to pin.
+  "google.stt",
   "inworld.stt",
   "mistral.stt",
   "openai.stt",
@@ -385,7 +396,7 @@ test("the transcription endpoints all use the uniform `stt` verb", () => {
     expect(id.split(".")[1] ?? "").toBe("stt");
   }
   const providers = [...new Set(STT_IDS.map((id) => id.split(".")[0] as string))].sort();
-  expect(providers).toHaveLength(11);
+  expect(providers).toHaveLength(12);
 
   // The realtime surfaces keep their own names — a socket config is a
   // different endpoint from a batch POST, and collapsing the two would make

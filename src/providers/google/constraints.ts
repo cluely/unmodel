@@ -2,29 +2,28 @@ import type { EndpointConstraints, FamilyRule } from "../../core/constraint-type
 import type { ModelInfo } from "../../core/catalog-types";
 import { models } from "../../catalog/google.gen";
 import { videoModels } from "./veo-models";
+// Two import-free leaves, re-exported wholesale below so this module's public
+// surface is unchanged. They exist because THIS module reads the generated
+// catalog and the Veo rows, and `google.tts` / `google.stt` may not: see the
+// headers of ./tts-constraints.ts and ./audio-constraints.ts.
+import {
+  GEMINI_AUDIO_FORMATS,
+  GEMINI_AUDIO_MAX_DURATION_SECONDS,
+  GOOGLE_AUDIO_DOCS_URL,
+  INLINE_MEDIA_MAX_BYTES,
+} from "./audio-constraints";
+
+export * from "./tts-constraints";
+export * from "./audio-constraints";
 
 const catalog: Record<string, ModelInfo> = models;
 
 /** Docs backing each media rule; attached as `meta.source` on media issues. */
 export const GOOGLE_MEDIA_DOC_URLS = {
   image: "https://ai.google.dev/gemini-api/docs/image-understanding",
-  audio: "https://ai.google.dev/gemini-api/docs/audio",
+  audio: GOOGLE_AUDIO_DOCS_URL,
   video: "https://ai.google.dev/gemini-api/docs/video-understanding",
 } as const;
-
-/**
- * Inline media rides in the JSON body, and Google caps the TOTAL request
- * (prompts + all inline bytes) at 100MB — so any single inline part over
- * 100MB is certainly over. Sources:
- * - https://ai.google.dev/gemini-api/docs/files ("Always use the Files API
- *   when the total request size ... is larger than 100 MB")
- * - https://ai.google.dev/gemini-api/docs/file-input-methods ("100 MB per
- *   request or payload (50 MB for PDFs)")
- * NOTE: the audio page (GOOGLE_MEDIA_DOC_URLS.audio) still says 20MB —
- * Google's docs conflict; we chose the permissive bound to avoid false
- * positives. The API is the final arbiter.
- */
-export const INLINE_MEDIA_MAX_BYTES = 100 * 1024 * 1024;
 
 /**
  * PDFs have a stricter inline/request cap than other media: "For PDF files,
@@ -38,9 +37,6 @@ export const INLINE_PDF_MAX_BYTES = 50 * 1024 * 1024;
  * Source: GOOGLE_MEDIA_DOC_URLS.image
  */
 export const GEMINI_IMAGE_TOKENS = 258;
-
-/** "Max length: 9.5 hours of audio per prompt." Source: GOOGLE_MEDIA_DOC_URLS.audio */
-export const GEMINI_AUDIO_MAX_DURATION_SECONDS = 9.5 * 3600;
 
 /**
  * "Models with a 1M context window can process videos up to 1 hour long at
@@ -58,13 +54,6 @@ export const GEMINI_1M_VIDEO_MAX_DURATION_SECONDS = 3600;
  * applies via the declared MIME type.
  */
 export const GEMINI_IMAGE_FORMATS = ["png", "jpeg", "webp", "heic", "heif", "gif", "avif"] as const;
-
-/**
- * Documented audio MIME subtypes (wav, mp3, aiff, aac, ogg, flac);
- * "mpeg" added because MP3 files are conventionally sent as audio/mpeg.
- * Source: GOOGLE_MEDIA_DOC_URLS.audio
- */
-export const GEMINI_AUDIO_FORMATS = ["wav", "mp3", "mpeg", "aiff", "aac", "ogg", "flac"] as const;
 
 /**
  * Documented video MIME subtypes; "quicktime" added because .mov files are
@@ -310,24 +299,20 @@ export const GEMINI_IMAGE_CONFIG_VERTEX_ONLY_KEYS = [
 
 // ---------------------------------------------------------------------------
 // Gemini TTS (generateContent with responseModalities AUDIO + speechConfig).
+//
+// The GEMINI_TTS_* constants now live in ./tts-constraints.ts — an import-free
+// leaf — and are re-exported from this module by the `export *` at the top, so
+// nothing about the public surface moved. The split is a bundle rule, not a
+// taxonomy change: `google.tts` may not import THIS module, which reads the
+// generated catalog.
 // ---------------------------------------------------------------------------
-
-/** The generateContent speech-generation guide (voices, limits, REST samples). */
-export const GEMINI_TTS_DOCS_URL =
-  "https://ai.google.dev/gemini-api/docs/generate-content/speech-generation";
-
-/** The three TTS model ids on the guide's "Supported models" table. */
-export const GEMINI_TTS_MODEL_IDS = [
-  "gemini-3.1-flash-tts-preview",
-  "gemini-2.5-flash-preview-tts",
-  "gemini-2.5-pro-preview-tts",
-] as const;
 
 /**
  * "TTS models support the following 30 voice options in the voice_name field"
  * — declared in ./wire, because `GooglePrebuiltVoiceConfig.voiceName` is typed
  * from it and a wire leaf cannot import this module. Exactly one declaration
- * of the 30 names exists; ./chat and ./index both read it from ./wire.
+ * of the 30 names exists; ./chat, ./tts-checks and ./index all read it from
+ * ./wire.
  *
  * Only the TYPE is re-exported here, next to the other GEMINI_TTS_* constants
  * where a reader looks for it. A value re-export would give this module a
@@ -337,23 +322,6 @@ export const GEMINI_TTS_MODEL_IDS = [
  * see the composition assertions in test/bundle-budget.test.ts.
  */
 export type { GeminiTtsVoiceName } from "./wire";
-
-/** "you'll need a multiSpeakerVoiceConfig object with each speaker (up to 2)". */
-export const GEMINI_TTS_MAX_SPEAKERS = 2;
-
-/**
- * "A TTS session has a context window limit of 32k tokens." models.dev
- * carries 8192 for these ids; the docs win — see ./tts-models.
- */
-export const GEMINI_TTS_CONTEXT_TOKENS = 32768;
-
-/**
- * "TTS does not support streaming for models older than version 3.1
- * (streaming is supported for gemini-3.1-flash-tts-preview and newer)."
- * Consumers building `:streamGenerateContent` URLs can gate on this set;
- * unmodel only validates the unary route, so it is informational.
- */
-export const GEMINI_TTS_STREAMING_MODEL_IDS = ["gemini-3.1-flash-tts-preview"] as const;
 
 // ---------------------------------------------------------------------------
 // Imagen (image / models.{model}:predict) constraints.

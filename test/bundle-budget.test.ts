@@ -1021,7 +1021,7 @@ describe("unmodel/tts (the first ready-made pack)", () => {
    * adapter leaf, fails here in the diff that causes it — which is the whole
    * reason the adapters import `./tts` and not `.`.
    */
-  test("it reaches exactly the fifteen speech providers, through their adapters", () => {
+  test("it reaches exactly the fifteen tts providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("tts"));
     expect(modules).toContain("src/unified/tts.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -1040,8 +1040,8 @@ describe("unmodel/tts (the first ready-made pack)", () => {
     // split per category and this pack imports only the speech half — see the
     // independence test below. Google is the newest and the one with the most
     // to lose by a barrel: `google/unified.ts` also exports the Imagen, Veo and
-    // transcription adapters, and reaching it here would put three more
-    // validators and the generated catalog in a speech bundle.
+    // stt adapters, and reaching it here would put three more
+    // validators and the generated catalog in a tts bundle.
     const SPLIT = new Set([
       "cartesia",
       "deepgram",
@@ -1083,7 +1083,7 @@ describe("unmodel/tts (the first ready-made pack)", () => {
    * constraint leaves rather than `google/constraints.ts`, which reads
    * `src/catalog/google.gen.ts` and `./veo-models.ts`. One edge from
    * `unified-tts.ts` or `tts.ts` to that module would put ~90 KiB of generated
-   * rows and the whole Veo table into a speech bundle — and it would fail above
+   * rows and the whole Veo table into a tts bundle — and it would fail above
    * as a bare list mismatch, which says nothing about the cause. These name it.
    */
   test("google reaches the import-free leaves, never the constraint tables", () => {
@@ -1272,7 +1272,7 @@ describe("unmodel/stt (the fourth ready-made pack)", () => {
    * category's validators and catalogs in without changing a single import in
    * `src/unified/stt.ts`.
    */
-  test("it reaches exactly the twelve transcribe providers, through their adapters", () => {
+  test("it reaches exactly the twelve stt providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("stt"));
     expect(modules).toContain("src/unified/stt.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");

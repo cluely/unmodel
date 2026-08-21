@@ -98,7 +98,7 @@ own checks rather than around them. Buckets that do not match the ref are inert,
 so one request object can carry tuned settings for several providers and stay
 portable.
 
-**Narrowings that happen at compile time.** `audio` narrows to the transcribe
+**Narrowings that happen at compile time.** `audio` narrows to the STT
 route (AssemblyAI fetches a URL, Cartesia takes multipart bytes, Soniox takes a
 URL or its own file id, Mistral takes all three); `image` narrows the same way
 in `unmodel/image-edit`; `aspectRatio` and `dimensions` are an XOR; the presence

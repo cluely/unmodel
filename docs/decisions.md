@@ -211,3 +211,68 @@ byte-identical requests, so the split costs no behavioural divergence.
 removable — a `/*#__PURE__*/` annotation that real bundlers honour on a call of
 this shape, or lazy per-provider registration. Then one entry would be honest
 again.
+
+---
+
+## 4. One wire route may carry several addresses; the widest one never gets narrower
+
+**Decision.** Gemini has no speech endpoint. TTS is `:generateContent` with
+`responseModalities: ["AUDIO"]` and a `speechConfig`; STT is `:generateContent`
+with audio parts. unmodel ships **three** validators over that one URL —
+`google.chat`, `google.tts`, `google.stt` — and the rule between them is fixed:
+
+- **The wire-truthful surface keeps everything it can send.** A TTS model id is
+  a legal `google.chat` request, so `google.chat` still accepts it. Narrowing
+  chat to "text in, text out" so the taxonomy looks tidier would make the
+  validator refuse a request the API fulfils, which is the one failure this
+  library must never have.
+- **The modality surfaces are narrower *views*, not different endpoints.**
+  `google.tts` requires `generationConfig`, pins `responseModalities` to
+  `["AUDIO"]`, XORs `speechConfig`'s two arms, bounds `speakerVoiceConfigs` to
+  a 1-or-2 tuple, discriminates `responseFormat.audio` so `bitRate` exists only
+  on compressed formats, and marks every chat-only knob `?: never` — including
+  the ones nested in `generationConfig`, which have to be spelled out or the
+  callable's intersection re-admits them. `google.stt` narrows `contents` to
+  text and audio parts, closes `inlineData.mimeType` to the seven published
+  audio types, and types `audioTranscriptionConfig`.
+- **The checks live in ONE battery both surfaces call** (`tts-checks.ts`), so
+  the two cannot drift about what a valid speech request is, and the rules
+  `google.tts` adds are rules `google.chat` gains for free.
+- **The wide surface signposts the narrow one.** `google.chat` on a TTS id
+  without `["AUDIO"]` names `google.tts` and `unmodel/tts` in the error. That
+  is the only thing the split adds to chat: a pointer, never a refusal.
+
+**Why.** Modality is a property of the *request*, not of the URL. Providers
+that ship separate speech endpoints let the address carry that information for
+free; Gemini does not, and the choice is either to lose the typing or to add an
+address. Losing the typing was the status quo and it cost the library its whole
+value proposition on this provider — thirty voices and a 78-language table
+sitting inside a bag of chat params that also accepts tools, thinking budgets
+and image config. Adding an address costs one module and buys the same
+compile-time story every other TTS and STT provider already has, plus a
+`"google/…"` ref in the unified packs.
+
+**The corollary for vocabularies: a kind is added when a real route needs it,
+not when a provider is added.** Gemini takes audio as inline base64 or as a
+Files-API id and fetches no third-party host, which the existing three audio
+kinds (`file`, `url`, `fileId`) could not express. So the STT vocabulary gained
+a fourth, `data` — `DataRef` verbatim, the same `{ data, mimeType? }` `image`,
+`image-edit` and `video` already carry, which is why it is a *widening* rather
+than a new concept. It immediately retired a wart: inworld's `audioInputs` had
+been `[]`, a provider in the pack that no canonical request could reach. The
+alternative — smuggling base64 in under `file` or `url` — would have made two
+kinds mean three things.
+
+**Therefore, never:**
+
+- Remove a model id from `google.chat` because a narrower surface now serves
+  it. The narrow surface is additive.
+- Give `google.tts` or `google.stt` a private copy of a check. If a rule is
+  worth enforcing on one, it belongs in the shared battery.
+- Read this as licence to split every provider by modality. The split exists
+  because the *wire* fuses modalities into one route. A provider with a real
+  `/v1/audio/speech` needs no second address.
+
+**What would change this.** Google shipping a dedicated speech or transcription
+endpoint. Then `google.tts` / `google.stt` retarget to it and the chat overlap
+becomes history rather than design.

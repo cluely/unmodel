@@ -2,7 +2,7 @@
 "unmodel": minor
 ---
 
-Realtime session configs for the speech providers — the documented JSON config object
+Realtime session configs for the TTS/STT providers — the documented JSON config object
 of each socket surface, never the socket lifecycle.
 
 New request validators (all on existing subpaths — no new package exports):

@@ -310,7 +310,25 @@ export interface GoogleMultiSpeakerVoiceConfig {
 export interface GoogleSpeechConfig {
   voiceConfig?: GoogleVoiceConfig;
   multiSpeakerVoiceConfig?: GoogleMultiSpeakerVoiceConfig;
-  /** IETF BCP-47 language code, e.g. "en-US". */
+  /**
+   * The language the speech is generated in.
+   *
+   * The REST reference calls this a BCP-47 code and its own example is
+   * "en-US", but the speech-generation guide's "Supported languages" table —
+   * the authority on which languages the models actually speak — is a list of
+   * bare PRIMARY SUBTAGS ("ar", "pt", "cmn"), five of which are three-letter
+   * ISO 639-2/3 codes with no ISO 639-1 member (`ceb`, `cmn`, `fil`, `kok`,
+   * `mai`). So: a full tag is accepted by the field, a primary subtag is what
+   * the table publishes, and `GEMINI_TTS_LANGUAGE_CODES` in ./tts-constraints
+   * is that table (78 rows, transcribed 2026-08-21). `google.tts` types this
+   * as `GeminiTtsLanguageCode | (string & {})` and warns — never errors — on
+   * an off-table value, because the table states which languages the models
+   * speak, not which strings the field rejects.
+   *
+   * - https://ai.google.dev/api/generate-content ("en-US")
+   * - https://ai.google.dev/gemini-api/docs/generate-content/speech-generation
+   *   (the table)
+   */
   languageCode?: string;
 }
 

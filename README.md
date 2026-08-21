@@ -441,10 +441,11 @@ that compiles one canonical request at every provider that can express it.
 
 **Narrowings that happen at compile time**, not at 400-time:
 
-- **`audio` narrows to the transcribe route.** AssemblyAI fetches a URL,
-  Cartesia takes multipart bytes, Soniox takes a URL or its own file id, Mistral
-  takes all three — so `stt({ model: "cartesia/ink-whisper", audio: { url } })`
-  is a type error, and the runtime check backs it up for JavaScript callers.
+- **`audio` narrows to the STT route.** AssemblyAI fetches a URL, Cartesia
+  takes multipart bytes, Soniox takes a URL or its own file id, Gemini takes
+  inline base64 or a Files-API id and fetches nothing — so
+  `stt({ model: "cartesia/ink-whisper", audio: { url } })` is a type error, and
+  the runtime check backs it up for JavaScript callers.
 - **`image` narrows the same way in `unmodel/image-edit`.** OpenAI takes
   `{ file }` only; FLUX Kontext takes `{ data }` or `{ url }` only.
 - **Sizing is an XOR.** `size`, `aspectRatio` and `dimensions` are three
@@ -528,7 +529,7 @@ gaps) is in
 | --- | --- |
 | `unmodel/openai` | `chat`, `checkChat`, `realtimeSession` (session config) — the image, speech and video validators are listed in their own sections below |
 | `unmodel/anthropic` | `chat`, `checkChat` |
-| `unmodel/google` | `chat`, `checkChat` — Imagen and Veo below |
+| `unmodel/google` | `chat`, `checkChat` — Gemini TTS/STT, Imagen and Veo below |
 | `unmodel/cohere` | `chat` (v2 Chat API), `checkChat` |
 
 Some endpoints have no provider-wide static URL — the URL embeds your cloud
@@ -582,18 +583,19 @@ For an OpenAI-compatible endpoint unmodel doesn't ship (a proxy, a self-hosted
 server), `unmodel/openai-compatible` exports the `createOpenAICompatible`
 factory the fleet itself is built on — bring your own base URL and catalog.
 
-### Speech — TTS and STT
+### Audio — TTS and STT
 
-Native wire formats, hand-maintained catalogs, non-token pricing
-(per-character TTS, per-second/minute STT).
+Native wire formats, hand-maintained catalogs, and mostly non-token pricing
+(per-character TTS, per-second/minute STT) — Gemini is the exception and bills
+audio as tokens, 32 of them per second.
 
 **Text to speech**
 
 Every provider addresses its synthesis route as `tts` — the wire spellings
 (`/v1/text-to-speech/{voice_id}`, `/tts/bytes`, `/v1/speak`, `/v1/t2a_v2`,
-`/synthesize`) survive on the URL constants and the wire types, not on the
-export you call. All fourteen also ship a `unified.ts` adapter, so the same
-request can be written once against
+`/synthesize`, `:generateContent`) survive on the URL constants and the wire
+types, not on the export you call. All fifteen also ship a `unified.ts`
+adapter, so the same request can be written once against
 [`unmodel/tts`](#unified-media-one-vocabulary-per-category).
 
 | Subpath | Validators |
@@ -603,6 +605,7 @@ request can be written once against
 | `unmodel/deepgram` | `tts` (Aura 1 / Aura 2) |
 | `unmodel/elevenlabs` | `tts` |
 | `unmodel/fish-audio` | `tts` (S2 / speech-1.x — msgpack or JSON body) |
+| `unmodel/google` | `tts` + `checkTts`, `generateTtsUrl` / `ttsStreamUrl` (Gemini TTS — a TTS-shaped window on `:generateContent`; see the Gemini block below) |
 | `unmodel/hume` | `tts` (Octave, `octave` / `octave-2`) |
 | `unmodel/inworld` | `tts` |
 | `unmodel/lmnt` | `tts` (audio bytes), `ttsDetailed` (JSON + durations) |
@@ -618,9 +621,9 @@ request can be written once against
 Every provider addresses its transcription route as `stt` — the wire
 spellings (`/v1/audio/transcriptions`, `/v1/speech-to-text`, `/v1/listen`,
 `/v2/transcript`, `/v2/pre-recorded`, `/speechtotext/v1/jobs`, `/v2/jobs`,
-`/stt`) survive on the URL constants and the wire types, not on the export you
-call. All eleven also ship a `unified.ts` adapter, so the same request can be
-written once against
+`/stt`, `:generateContent`) survive on the URL constants and the wire types,
+not on the export you call. All twelve also ship a `unified.ts` adapter, so the
+same request can be written once against
 [`unmodel/stt`](#unified-media-one-vocabulary-per-category) — where the
 `audio` shapes each route accepts are enforced at compile time.
 
@@ -632,6 +635,7 @@ written once against
 | `unmodel/deepgram` | `stt` + `checkListen` |
 | `unmodel/elevenlabs` | `stt` + `toFormData` + `checkTranscription` |
 | `unmodel/gladia` | `stt` + `toUploadFormData` + `checkPreRecorded` |
+| `unmodel/google` | `stt` + `checkStt` (Gemini — inline or Files-API audio parts on `:generateContent`; see the Gemini block below) |
 | `unmodel/inworld` | `stt` — base64 audio inline in the JSON body (no multipart route; the ~16MB cap is a request-size cap) |
 | `unmodel/mistral` | `stt` + `toFormData` + `checkTranscription` (Voxtral) |
 | `unmodel/revai` | `stt` + `toFormData` + `checkJob` |
@@ -679,45 +683,182 @@ const res = await fetch(validated.request.url, {
 const audio = await res.arrayBuffer();
 ```
 
-**Gemini TTS — thirty voices, typed**
+**Gemini — one wire route, three windows onto it**
 
-Google's speech generation is not a speech route at all: a TTS model id rides
-`google.chat`'s own `generateContent` body. Its `voiceName` is the closed
-thirty-voice preset list the speech-generation guide publishes — typed from
-the same `as const` array the runtime check reads (`GEMINI_TTS_VOICES`,
-re-exported from `unmodel/google`), so the two cannot drift. The editor
-completes all thirty, and a typo is refused at both layers:
+Google has no dedicated speech endpoint. Gemini TTS is a `:generateContent`
+call with `responseModalities: ["AUDIO"]` and a `speechConfig`; Gemini STT is a
+`:generateContent` call with audio parts. That is a fact about the API, not a
+gap in it — so unmodel gives it **three** surfaces at descending width, all
+posting to the same URL.
+
+The narrow ones come first, because they are the ones you want. `tts()` from
+`unmodel/tts` takes a `"google/…"` ref like any other provider:
+
+```ts
+import { tts } from "unmodel/tts";
+
+const req = tts({
+  model: "google/gemini-2.5-flash-preview-tts",
+  text: "Have a wonderful day!",
+  voice: "Kore",
+  language: "pt-BR",
+});
+```
+
+```jsonc
+// req — the enumerable props ARE the :generateContent body
+{
+  "contents": [{ "parts": [{ "text": "Have a wonderful day!" }] }],
+  "generationConfig": {
+    "responseModalities": ["AUDIO"],
+    "speechConfig": {
+      "voiceConfig": { "prebuiltVoiceConfig": { "voiceName": "Kore" } },
+      "languageCode": "pt"
+    }
+  }
+}
+// req.request.url →
+// https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent
+// req.warnings →
+// [approximated_param] `language` "pt-BR" was sent as "pt" — this model's
+// language field is a bare ISO 639-1 code, so the regional subtag "BR" is not
+// expressible and the accent it selects is the model's default.
+```
+
+`tts` from `unmodel/google` is the wire-exact one — the same bytes, written
+out — and it is what the unified adapter compiles into:
+
+```ts
+import { tts } from "unmodel/google";
+
+const validated = tts({
+  model: "gemini-2.5-flash-preview-tts",
+  contents: [{ role: "user", parts: [{ text: "Say cheerfully: have a wonderful day!" }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],           // required, and ["AUDIO"] is the only value
+    speechConfig: {
+      voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } }, // completes all 30
+      // voiceName: "Zephyrr"                                        // compile error
+    },
+  },
+});
+// validated.request.url →
+// https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent
+```
+
+**What `google.tts` buys over writing the same body at `google.chat`** — every
+one of these is a compile error before it is a runtime issue:
+
+- **`generationConfig` is required and `responseModalities` is pinned to
+  `["AUDIO"]`.** A TTS model produces audio and nothing else, so the field that
+  is optional on chat is mandatory here and has one legal value.
+- **Every chat-only knob is `?: never`** — tools, structured output,
+  `imageConfig`, media resolution, the sampling penalties — including the ones
+  nested inside `generationConfig`, which have to be spelled out or the
+  callable's intersection re-admits them.
+- **`speechConfig` is a compile-time XOR.** `voiceConfig` and
+  `multiSpeakerVoiceConfig` are mutually exclusive on the wire and mutually
+  exclusive in the type; you cannot write both.
+- **`speakerVoiceConfigs` is a bounded `[one] | [one, two]` tuple**, because
+  the guide says up to 2. A third entry does not type-check, and for JS callers
+  the check says so too:
+
+  ```
+  Invalid params for google.tts:
+    - [invalid_shape] generationConfig.speechConfig.multiSpeakerVoiceConfig.speakerVoiceConfigs: multi-speaker TTS supports up to 2 speakers; got 3.
+  ```
+
+- **`responseFormat.audio` is a discriminated union**, so `bitRate` exists only
+  on the compressed arms. Asking for one on raw PCM is refused rather than
+  silently ignored:
+
+  ```
+  Invalid params for google.tts:
+    - [unsupported_param] generationConfig.responseFormat.audio.bitRate: `responseFormat.audio.bitRate` is only applicable for compressed formats (MP3, Opus); "AUDIO_L16" is uncompressed.
+  ```
+
+- **`languageCode` completes the 78 languages** the speech-generation guide
+  tabulates, with a `(string & {})` tail and a *warning* off-list — the table
+  says which languages the models speak, not which strings the field rejects.
+- **The estimate is bounded by the real 32,768-token TTS session limit**, not
+  by the chat catalog's context window.
+
+`voiceName` is the closed thirty-voice preset list the guide publishes, typed
+from the same `as const` array the runtime check reads (`GEMINI_TTS_VOICES`,
+re-exported from `unmodel/google`), so the two cannot drift. There is
+deliberately no `(string & {})` tail on it: `prebuiltVoiceConfig` is
+preset-only by construction — a cloned or custom voice has no wire form on this
+message — so an open tail would advertise a value space Google has not
+published and switch the completion list off. A typo is refused at both layers:
+
+```
+Invalid params for google.tts:
+  - [invalid_enum_value] generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName: `voiceName` must be one of the 30 prebuilt Gemini TTS voices; got "Zephyrr".
+```
+
+**And TTS still rides `google.chat` on purpose.** `:generateContent` genuinely
+is the same route, so a TTS model id remains a valid chat request and the
+validator that refused it would be the one failure this library must never
+have. `google.tts` is a narrower *view* of those bytes, not a different
+endpoint — both surfaces call one shared check battery, so they cannot drift
+about what a valid speech request is. What the chat side now adds is a
+signpost:
 
 ```ts
 import { chat } from "unmodel/google";
 
-const validated = chat({
+chat({
   model: "gemini-2.5-flash-preview-tts",
-  contents: [{ role: "user", parts: [{ text: "Say cheerfully: have a wonderful day!" }] }],
-  generationConfig: {
-    responseModalities: ["AUDIO"],
-    speechConfig: {
-      voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } }, // completes all 30
-      // voiceName: "Zephyrr"                                       // compile error
-    },
-  },
+  contents: [{ role: "user", parts: [{ text: "hi" }] }],
 });
 ```
 
-There is deliberately no `(string & {})` tail on `voiceName`:
-`prebuiltVoiceConfig` is preset-only by construction — a cloned or custom
-voice has no wire form on this message — so an open tail would advertise a
-value space Google has not published and switch the completion list off.
+```
+Invalid params for google.chat:
+  - [unsupported_capability] generationConfig.responseModalities: "gemini-2.5-flash-preview-tts" is a TTS model and only produces audio; set `generationConfig.responseModalities` to ["AUDIO"]. For a surface where that is the only option, use `tts` from `unmodel/google` (google.tts) or `tts()` from `unmodel/tts`.
+```
 
 The same request through `unmodel/chat` writes the voice via
 `providerOptions.google`, where the bucket is the typed deep-partial of this
 wire body: `voiceName` completes the same thirty, though as an escape hatch
 its leaves stay compile-*open* on purpose (a voice Google adds tomorrow must
 not break yesterday's build). Validation still closes the gap — off-list
-voices are refused at run time on every path, JS callers included:
+voices are refused at run time on every path, JS callers included.
+
+**Gemini STT is the mirror image.** `stt` at `unmodel/google` narrows
+`contents` to text and audio parts only — no image, no video, no PDF, no
+function calls, no thoughts — closes `inlineData.mimeType` to the seven audio
+types the audio guide publishes, and types `audioTranscriptionConfig`, whose
+acceptance on the unary route was verified against the live API rather than
+inferred. Through the pack it is a `stt()` call like any other:
+
+```ts
+import { stt } from "unmodel/stt";
+
+const req = stt({
+  model: "google/gemini-2.5-flash",
+  audio: { data, mimeType: "audio/wav" },
+  timestamps: "word",
+  diarization: { enabled: true },
+});
+```
+
+```jsonc
+{
+  "contents": [{ "parts": [{ "inlineData": { "mimeType": "audio/wav", "data": "…" } }] }],
+  "generationConfig": {
+    "audioTranscriptionConfig": { "wordTimestamp": true, "diarization": true }
+  }
+}
+// req.warnings → []   (zero warnings means the request mapped exactly)
+```
+
+Google does not fetch third-party hosts, so `{ url }` is a compile error — and
+for JavaScript callers the runtime refusal names the way in:
 
 ```
-`voiceName` must be one of the 30 prebuilt Gemini TTS voices; got "Zephyrr".
+Invalid params for unmodel/stt:
+  - [unsupported_param] audio: `audio` was given as `{ url }`, which this model has no wire field for — it takes { data } or { fileId }. `fileData.fileUri` is a Files API name, not an arbitrary URL — Gemini does not fetch third-party hosts. Upload the audio with `files.upload` first and pass the id it returns as `{ fileId }`, or send the bytes as `{ data, mimeType }`.
 ```
 
 **Realtime session configs**
@@ -990,10 +1131,13 @@ The discriminant exists so they can join later without widening the type.
 
 **In `unmodel/stt`, `audio` narrows to the route — at compile time.**
 Transcription APIs disagree about how audio arrives, and the disagreement is
-per *route*: AssemblyAI fetches a URL, Cartesia takes multipart bytes, Soniox
-takes a URL or a file id from its own upload API, Mistral takes all three. Each
-adapter declares which, and the ref you write decides which `audio` shapes
-type-check:
+per *route*. There are four ways in — `{ file }` multipart bytes, `{ url }` the
+provider fetches, `{ fileId }` from the provider's own upload API, and
+`{ data }` base64 in the JSON body — and no provider takes all four:
+AssemblyAI fetches a URL, Cartesia takes multipart bytes, Soniox takes a URL or
+a file id, Gemini takes inline base64 or a Files-API id and fetches nothing,
+Mistral takes three. Each adapter declares which, and the ref you write decides
+which `audio` shapes type-check:
 
 ```ts
 import { stt } from "unmodel/stt";
@@ -1002,6 +1146,8 @@ stt({ model: "assemblyai/universal-2", audio: { url } });   // ok
 stt({ model: "assemblyai/universal-2", audio: { file } });  // compile error
 stt({ model: "cartesia/ink-whisper",  audio: { file } });   // ok
 stt({ model: "cartesia/ink-whisper",  audio: { url } });    // compile error
+stt({ model: "google/gemini-2.5-flash", audio: { data, mimeType: "audio/wav" } }); // ok
+stt({ model: "google/gemini-2.5-flash", audio: { url } });  // compile error
 ```
 
 The runtime check backs it up for JavaScript callers and for refs built at
@@ -1010,8 +1156,48 @@ run time, naming the shapes the route does take:
 ```ts
 stt({ model: "assemblyai/universal-2", audio: { file } });
 // throws: `audio` was given as `{ file }`, which this model has no wire field
-// for — it takes `{ url }`. Upload local bytes to POST /v2/upload first; its
+// for — it takes { url }. Upload local bytes to POST /v2/upload first; its
 // `upload_url` is an `audio_url`.
+```
+
+`{ data }` is `{ data, mimeType? }` — the same `DataRef` `image`, `image-edit`
+and `video` already carry. `mimeType` is optional in the vocabulary and
+*required* by whichever adapter cannot sniff the format, whose refusal names
+the spellings it takes:
+
+```ts
+stt({ model: "google/gemini-2.5-flash", audio: { data } });
+// throws: `inlineData.mimeType` is required on this route: the bytes carry no
+// format and Gemini does not sniff them, so an omitted type is a 400. One of
+// audio/wav, audio/mp3, audio/mpeg, audio/aiff, audio/aac, audio/ogg,
+// audio/flac.
+```
+
+**Audio input is priced where the provider prices it that way.** Gemini bills
+audio as tokens — 32 of them per second, documented — so
+`computeCostUSD` carries an `audioInputTokens` slot that is subtracted from
+fresh input and re-rated at the catalog's `inputAudio` rate. Tell the validator
+how long the clip is and the estimate is a real number rather than the
+base64 string's token count:
+
+```ts
+stt.safe(
+  { model: "gemini-2.5-flash", contents: [{ parts: [{ inlineData }] }] },
+  { media: [{ path: ["contents", 0, "parts", 0], durationSeconds: 600 }] },
+);
+// estimate: { inputTokens: 19204, costUSD: 0.18304120000000002 }
+//                        ↑ 600s × 32 tok/s = 19,200, plus the message overhead
+```
+
+Duration is yours to declare, so an undeclared clip is normally silent — but
+not when a budget is riding on it. With `maxCostUSD` set, the same call warns
+rather than passing a check it never really made:
+
+```
+[media_duration_undeclared] contents: maxCostUSD is set, but 1 audio part(s)
+carry no declared duration, so the estimate below counts 32 tokens/second for
+none of them — the budget check is passing on an undercount. Declare them via
+options.media = [{ path, durationSeconds }].
 ```
 
 The rest of the vocabulary translates the way the others do: `diarization:
@@ -1190,13 +1376,13 @@ import { checkChat } from "unmodel/openai";
 // unmodel/google, unmodel/google-vertex, unmodel/amazon-bedrock, unmodel/cohere
 // and every OpenAI-compatible overlay export exactly that.
 //
-// Also: checkImages (unmodel/openai), and the speech-side checkers, each named
+// Also: checkImages (unmodel/openai), and the audio-side checkers, each named
 // for the response document it reads —
 // checkTranscription (unmodel/elevenlabs, unmodel/soniox, unmodel/mistral),
-// checkStt (unmodel/cartesia), checkListen (unmodel/deepgram),
+// checkStt (unmodel/cartesia, unmodel/google), checkListen (unmodel/deepgram),
 // checkTranscript (unmodel/assemblyai), checkPreRecorded (unmodel/gladia),
 // checkJob (unmodel/revai, unmodel/speechmatics),
-// checkTts (unmodel/murf, unmodel/resemble)
+// checkTts (unmodel/google, unmodel/murf, unmodel/resemble)
 
 const report = checkChat(await res.json());
 report.warnings;     // truncation, content filter, refusals — as Issue[]
@@ -1268,7 +1454,7 @@ The six unified surfaces are registered alongside them as `unified.image`,
 `unified.imageEdit`, `unified.music`, `unified.tts`, `unified.stt` and
 `unified.video` — camelCase after the dot like every other endpoint id, because
 `unmodel validate` addresses endpoints while `unmodel/image-edit` is an import.
-[Realtime session configs](#speech--tts-and-stt) are covered too, with a
+[Realtime session configs](#audio--tts-and-stt) are covered too, with a
 `transport: websocket` note: they validate like anything else, but the result is
 a config to open a socket with, not a body to post.
 
@@ -1353,7 +1539,7 @@ The unified surfaces do not change what a provider subpath weighs. **A
 per-provider entry carries none of the unified layer** — the adapters live in
 their own modules (`unified-image.ts`, `unified-tts.ts`, …) behind a separate
 `unmodel/<provider>/unified` export, so `unmodel/anthropic` never sees a kernel
-and `unmodel/elevenlabs` never sees the speech vocabulary. That is pinned rather
+and `unmodel/elevenlabs` never sees the TTS vocabulary. That is pinned rather
 than claimed: `test/bundle-budget.test.ts` walks the real `dist/` import graph
 and holds each provider entry to a committed byte budget (and asserts a pack can
 only reach a provider through that provider's uniformly-named endpoint module),
@@ -1366,14 +1552,14 @@ build, in KiB of unminified ESM (transitive chunk graph, `zod` excluded):
 
 | Entry | Size | What dominates it |
 | --- | --- | --- |
-| `unmodel/chat` | 1718.7 KiB | all 32 providers' exact validators, catalogs and available retarget tables, plus the canonical compiler. ~379 KiB of it is the `chatProfiles` discovery snapshot, which no validation path reads |
-| `unmodel/chat/factory` | 144.0 KiB | provider-free canonical compiler and the three dialect codecs; registered provider validators add their own weight |
-| `unmodel/image` | 755.7 KiB | fifteen providers' schemas, constraint tables, hand-maintained catalogs and per-model size tables |
-| `unmodel/video` | 614.4 KiB | ten providers across twenty-one endpoint modules, plus their per-model duration/resolution/ratio tables |
-| `unmodel/tts` | 409.8 KiB | fourteen providers, each with a voice/format roster and a per-model codec/language table |
-| `unmodel/stt` | 401.7 KiB | eleven providers — the widest wire surfaces in the library, and therefore the widest per-model extras tables |
-| `unmodel/image-edit` | 276.1 KiB | four providers |
-| `unmodel/music` | 149.8 KiB | two providers |
+| `unmodel/chat` | 1743.5 KiB | all 32 providers' exact validators, catalogs and available retarget tables, plus the canonical compiler. ~379 KiB of it is the `chatProfiles` discovery snapshot, which no validation path reads |
+| `unmodel/chat/factory` | 146.1 KiB | provider-free canonical compiler and the three dialect codecs; registered provider validators add their own weight |
+| `unmodel/image` | 765.4 KiB | fifteen providers' schemas, constraint tables, hand-maintained catalogs and per-model size tables |
+| `unmodel/video` | 626.1 KiB | ten providers across twenty-one endpoint modules, plus their per-model duration/resolution/ratio tables |
+| `unmodel/stt` | 482.8 KiB | twelve providers — the widest wire surfaces in the library, and therefore the widest per-model extras tables; Gemini also brings the generated Google catalog |
+| `unmodel/tts` | 467.4 KiB | fifteen providers, each with a voice/format roster and a per-model codec/language table |
+| `unmodel/image-edit` | 281.4 KiB | four providers |
+| `unmodel/music` | 155.1 KiB | two providers |
 
 The ready-pack numbers are the *whole category*; `chat/factory` is the
 provider-free base. A pack you build yourself pays only for the providers you
@@ -1384,26 +1570,26 @@ library.
 
 ## Status
 
-Current coverage: **153 wire-exact request validators** across **65 provider
+Current coverage: **155 wire-exact request validators** across **65 provider
 subpaths**, plus **4 endpoint-factory subpaths** (Azure OpenAI, Vertex AI,
 Amazon Bedrock, Cloudflare Workers AI) whose factories return the same
 surface — 69 provider subpaths in all, out of 118 package exports. Chat is 33 of
-those validators; the rest are speech, transcription, image, image editing,
-video, music and realtime session configs.
+those validators; the rest are TTS, STT, image, image editing, video, music and
+realtime session configs.
 
 On top of them, **seven standardized surfaces**: `unmodel/chat` over 32
 providers, and the six media packs — `unmodel/image` over 15, `unmodel/tts`
-over 14, `unmodel/stt` over 11, `unmodel/video` over 10,
+over 15, `unmodel/stt` over 12, `unmodel/video` over 10,
 `unmodel/image-edit` over 4, `unmodel/music` over 2 — each also available as a
 per-provider adapter at `unmodel/<provider>/unified` (36 of those). The suite is
-**9,963 tests across 193 files**.
+**10,584 tests across 197 files**.
 
-- **OpenAI** — Chat Completions, Images + image edits, Speech (TTS), Transcription (STT), Sora videos, Realtime session config.
-- **Anthropic** `chat` (Messages); **Google** Gemini `chat`, Imagen `image`, Veo `video`; **Cohere** v2 Chat.
+- **OpenAI** — Chat Completions, Images + image edits, `tts`, `stt`, Sora videos, Realtime session config.
+- **Anthropic** `chat` (Messages); **Google** Gemini `chat` + `tts` + `stt`, Imagen `image`, Veo `video`; **Cohere** v2 Chat.
 - **Cloud-endpoint factories** for Azure OpenAI, Vertex AI, Amazon Bedrock (Converse), and Cloudflare Workers AI.
 - **A 29-provider OpenAI-compatible chat fleet** (Groq, xAI, Mistral, DeepSeek, OpenRouter, …).
-- **TTS** — OpenAI, Cartesia, Deepgram (Aura), ElevenLabs, Fish Audio, Hume (Octave), Inworld, LMNT, MiniMax (T2A v2), Murf, Resemble, Rime, Smallest AI, Speechify.
-- **STT** — OpenAI, AssemblyAI, Cartesia, Deepgram, ElevenLabs (Scribe), Gladia, Inworld (inline base64 audio), Mistral (Voxtral), Rev AI, Soniox, Speechmatics.
+- **TTS** — OpenAI, Cartesia, Deepgram (Aura), ElevenLabs, Fish Audio, Google (Gemini TTS), Hume (Octave), Inworld, LMNT, MiniMax (T2A v2), Murf, Resemble, Rime, Smallest AI, Speechify.
+- **STT** — OpenAI, AssemblyAI, Cartesia, Deepgram, ElevenLabs (Scribe), Gladia, Google (Gemini), Inworld (inline base64 audio), Mistral (Voxtral), Rev AI, Soniox, Speechmatics.
 - **Realtime session configs** — OpenAI (GA session), Cartesia (TTS + STT sockets), Deepgram (Live, Flux, Aura streaming), ElevenLabs (stream-input TTS, Scribe v2 Realtime), Inworld (STT + TTS bidirectional), Soniox. The config objects only; socket lifecycle stays out of scope.
 - **Image** — Black Forest Labs (FLUX.2, FLUX 1.x, Kontext, FLUX Tools), Bria (FIBO), ByteDance (Seedream), Ideogram (v3 + v4), Kling, Krea, Leonardo, Luma (Photon), Recraft, Reve (v1 + v2), Runway, Stability (generate + the six edit routes), Vidu.
 - **Video** — Sora, Veo, ByteDance (Seedance), Kling, Lightricks (LTX-2), Luma (Ray + `videoModify`/`videoReframe`/`videoUpscale`/`videoAddAudio`), MiniMax (Hailuo + H3), PixVerse, Runway (text/image/video-to-video), Vidu.
@@ -1426,11 +1612,13 @@ bun run codegen       # regenerate src/catalog/**/*.gen.ts from data/models-dev.
 bun run codegen:refresh # re-download models.dev data, then regenerate
 ```
 
-`docs/decisions.md` records the two standing decisions that shape the whole
-codebase — the wire-exact/unified **layering**, and the **address-vs-wire naming
-law** — with what would have to change for either to be revisited. Read it before
-making the tree "more consistent" in either direction. `docs/providers.md` has
-the provider roster, the coverage roadmap and the retargeting internals.
+`docs/decisions.md` records the standing decisions that shape the whole
+codebase — the wire-exact/unified **layering**, the **address-vs-wire naming
+law**, why `unmodel/chat` ships in two entries, and why one wire route can carry
+three addresses (Gemini's `chat`/`tts`/`stt`) — each with what would have to
+change for it to be revisited. Read it before making the tree "more consistent"
+in any of those directions. `docs/providers.md` has the provider roster, the
+coverage roadmap and the retargeting internals.
 
 ## License
 

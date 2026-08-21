@@ -2,7 +2,7 @@
 "unmodel": minor
 ---
 
-Media endpoint wave: image editing, speech, and video post-production validators.
+Media endpoint wave: image editing, TTS/STT, and video post-production validators.
 
 New request validators (all on existing subpaths — no new package exports):
 

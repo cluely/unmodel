@@ -59,7 +59,7 @@ export interface PipelineSpec<P, V = P> {
   /**
    * Media coordinates this endpoint accepts that are **not fields of the
    * params object** — the multipart file part on an upload route
-   * (`speechmatics.transcribe`'s `data_file`, `revai.transcribe`'s `media`).
+   * (`speechmatics.stt`'s `data_file`, `revai.stt`'s `media`).
    *
    * `reportUnresolvedMedia` treats a declaration that names nothing as a
    * silently-inert declaration, which is right everywhere the body and the

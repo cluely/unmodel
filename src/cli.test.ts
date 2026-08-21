@@ -293,9 +293,9 @@ test("realtime session configs carry the websocket hint, not the multipart one",
 // unified.<category> — the canonical vocabulary from the command line
 // ---------------------------------------------------------------------------
 
-test("validate unified.speech compiles a canonical request through the ref's provider", async () => {
+test("validate unified.tts compiles a canonical request through the ref's provider", async () => {
   const { stdout, exitCode } = await runCli(
-    ["validate", "unified.speech", "--json"],
+    ["validate", "unified.tts", "--json"],
     JSON.stringify({
       model: "elevenlabs/eleven_flash_v2_5",
       text: "Hello from the CLI.",
@@ -318,9 +318,9 @@ test("validate unified.speech compiles a canonical request through the ref's pro
   );
 });
 
-test("validate unified.speech reports a provider gap at the canonical path", async () => {
+test("validate unified.tts reports a provider gap at the canonical path", async () => {
   const { stderr, exitCode } = await runCli(
-    ["validate", "unified.speech"],
+    ["validate", "unified.tts"],
     JSON.stringify({ model: "lmnt/blizzard", text: "hi", voice: "leah", speed: 1.5 }),
   );
   expect(exitCode).toBe(1);
@@ -403,9 +403,9 @@ test("validate unified.video reports a route the model does not serve", async ()
   expect(stderr).toContain("pass `image`");
 });
 
-test("validate unified.transcribe compiles a canonical request through the ref's provider", async () => {
+test("validate unified.stt compiles a canonical request through the ref's provider", async () => {
   const { stdout, exitCode } = await runCli(
-    ["validate", "unified.transcribe", "--json"],
+    ["validate", "unified.stt", "--json"],
     JSON.stringify({
       model: "assemblyai/universal-2",
       audio: { url: "https://example.com/interview.wav" },
@@ -432,9 +432,9 @@ test("validate unified.transcribe compiles a canonical request through the ref's
   expect(result.request.url).toBe("https://api.assemblyai.com/v2/transcript");
 });
 
-test("validate unified.transcribe reports an audio shape the route has no field for", async () => {
+test("validate unified.stt reports an audio shape the route has no field for", async () => {
   const { stderr, exitCode } = await runCli(
-    ["validate", "unified.transcribe"],
+    ["validate", "unified.stt"],
     JSON.stringify({
       model: "assemblyai/universal-2",
       audio: { fileId: "file-abc" },
@@ -535,8 +535,8 @@ test("the unified map names one target per shipped pack", () => {
     "unified.image",
     "unified.imageEdit",
     "unified.music",
-    "unified.speech",
-    "unified.transcribe",
+    "unified.tts",
+    "unified.stt",
     "unified.video",
   ]);
   // Never both maps: a `unified.*` id is not a provider endpoint.

@@ -128,7 +128,7 @@ export interface VideoParams extends VideoParamsBase {
  * The table is the single source of three things — the caller's `duration` /
  * `resolution` / `aspectRatio` unions, the extras a model takes, and the
  * run-time roster `applyExtras` refuses an out-of-model extra against — for
- * exactly the reason `transcribe`'s `audioInputs` is one array: a second
+ * exactly the reason `stt`'s `audioInputs` is one array: a second
  * declaration is a second thing to keep in step, and this one has to be right
  * in an editor *and* on the wire.
  */

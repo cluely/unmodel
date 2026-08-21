@@ -14,7 +14,7 @@ New request validators (all on existing subpaths — no new package exports):
 - `unmodel/elevenlabs`: `textToSpeechStreamInput` (+ `textToSpeechStreamInputUrl`,
   `toInitializeConnectionMessage`), `speechToTextRealtime`
   (+ `speechToTextRealtimeUrl`).
-- `unmodel/inworld`: `transcribe` (sync STT — base64 audio inline in the JSON body),
+- `unmodel/inworld`: `stt` (sync STT — base64 audio inline in the JSON body),
   `realtimeTranscribeConfig` and `realtimeVoiceContext` (the first frame of each
   bidirectional socket).
 - `unmodel/soniox`: `realtimeTranscription` (the configuration message sent right

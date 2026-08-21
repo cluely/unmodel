@@ -75,7 +75,7 @@ error rather than a wrongly-shaped object:
 | `google.chat`, `google-vertex.chat` | `"google"`, `"ai-sdk"` |
 | `amazon-bedrock.chat` | `"amazon-bedrock"` (Converse command input) |
 | `cohere.chat` | `"cohere"` |
-| image / speech / video endpoints | that provider's own SDK id |
+| image / tts / video endpoints | that provider's own SDK id |
 
 The whole OpenAI-compatible fleet declares the same `"openai"` target, because
 that is genuinely the SDK you call them with (`new OpenAI({ baseURL })`, or a
@@ -229,7 +229,7 @@ instead of quietly shipping the wrong ratio. Point the same object at
 Importing a media pack costs every provider in it. If you only ever call two,
 the `create*` registry forms build a pack from the adapter leaves at
 `unmodel/<provider>/unified`, and the ref union narrows with it —
-`createImage([openai, ideogram])`, `createSpeech([…])`, and one per category.
+`createImage([openai, ideogram])`, `createTts([…])`, and one per category.
 See [Unified surfaces](#unified-surfaces) for the whole contract and
 [Bundle story](#bundle-story) for what each entry costs.
 
@@ -357,7 +357,7 @@ const checked = openrouterChat(body);
 
 ### Scope
 
-- **Chat only.** Media endpoints (`image`, `speech`, `transcribe`,
+- **Chat only.** Media endpoints (`image`, `tts`, `stt`,
   `video`, …) have `.toSdk` but no `.toApi`. That asymmetry is a scope
   decision, not an oversight: across the providers unmodel implements there are
   exactly five multi-provider media model groups in the catalog, and their wire
@@ -393,9 +393,9 @@ the escape hatch.
 | `unmodel/chat` | `chat` | 32 | `messages`, `system`, `maxOutputTokens`, `temperature` (canonical 0–2), `topP`, `topK`, `reasoning`, `tools` (a `Record`, so duplicate names are unrepresentable), `nativeTools`, `toolChoice`, `responseFormat`, `cache` breakpoints, `stream` |
 | `unmodel/image` | `image`, `createImage` | 15 | `prompt`, `size` XOR `aspectRatio` XOR `dimensions`, `resolution` tier, `n`, `seed`, `negativePrompt`, `outputFormat`, `outputDelivery`, plus that model's own typed extras |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 4 | `operation`, `prompt`, `image` (`file` / `url` / `data`), `strength`, `size` XOR `aspectRatio` XOR `dimensions`, `n`, `seed`, `outputFormat`, plus that model's own typed extras |
-| `unmodel/speech` | `speech`, `createSpeech` | 14 | `text`, `voice`, `outputFormat`, `speed`, `language` |
+| `unmodel/tts` | `tts`, `createTts` | 14 | `text`, `voice`, `outputFormat`, `speed`, `language` |
 | `unmodel/video` | `video`, `createVideo` | 10 | `prompt`, `duration` (seconds), `resolution` tier, `aspectRatio`, `image` (first / last / reference), `video`, `negativePrompt`, `seed`, `n` |
-| `unmodel/transcribe` | `transcribe`, `createTranscribe` | 11 | `audio` (`file` / `url` / `fileId`), `language`, `languages`, `diarization`, `timestamps`, `prompt` |
+| `unmodel/stt` | `stt`, `createStt` | 11 | `audio` (`file` / `url` / `fileId`), `language`, `languages`, `diarization`, `timestamps`, `prompt` |
 | `unmodel/music` | `music`, `createMusic` | 2 | `prompt`, `durationSeconds`, `instrumental`, `outputFormat`, `seed` |
 
 **The contract.** A unified call compiles the canonical params to one provider's
@@ -443,7 +443,7 @@ that compiles one canonical request at every provider that can express it.
 
 - **`audio` narrows to the transcribe route.** AssemblyAI fetches a URL,
   Cartesia takes multipart bytes, Soniox takes a URL or its own file id, Mistral
-  takes all three — so `transcribe({ model: "cartesia/ink-whisper", audio: { url } })`
+  takes all three — so `stt({ model: "cartesia/ink-whisper", audio: { url } })`
   is a type error, and the runtime check backs it up for JavaScript callers.
 - **`image` narrows the same way in `unmodel/image-edit`.** OpenAI takes
   `{ file }` only; FLUX Kontext takes `{ data }` or `{ url }` only.
@@ -589,75 +589,75 @@ Native wire formats, hand-maintained catalogs, non-token pricing
 
 **Text to speech**
 
-Every provider addresses its synthesis route as `speech` — the wire spellings
+Every provider addresses its synthesis route as `tts` — the wire spellings
 (`/v1/text-to-speech/{voice_id}`, `/tts/bytes`, `/v1/speak`, `/v1/t2a_v2`,
 `/synthesize`) survive on the URL constants and the wire types, not on the
 export you call. All fourteen also ship a `unified.ts` adapter, so the same
 request can be written once against
-[`unmodel/speech`](#unified-media-one-vocabulary-per-category).
+[`unmodel/tts`](#unified-media-one-vocabulary-per-category).
 
 | Subpath | Validators |
 | --- | --- |
-| `unmodel/openai` | `speech` — `tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`, `gpt-4o-mini-tts-2025-12-15` |
-| `unmodel/cartesia` | `speech` (Sonic) |
-| `unmodel/deepgram` | `speech` (Aura 1 / Aura 2) |
-| `unmodel/elevenlabs` | `speech` |
-| `unmodel/fish-audio` | `speech` (S2 / speech-1.x — msgpack or JSON body) |
-| `unmodel/hume` | `speech` (Octave, `octave` / `octave-2`) |
-| `unmodel/inworld` | `speech` |
-| `unmodel/lmnt` | `speech` (audio bytes), `speechDetailed` (JSON + durations) |
-| `unmodel/minimax` | `speech` (T2A v2) |
-| `unmodel/murf` | `speech` + `checkSpeech`, `speechStream` |
-| `unmodel/resemble` | `speech` + `checkSpeech`, `speechStream` |
-| `unmodel/rime` | `speech` (Arcana / Mist) |
-| `unmodel/smallest-ai` | `speech` (Lightning v3.1 / v3.1 Pro) |
-| `unmodel/speechify` | `speech`, `speechStream` (Simba) |
+| `unmodel/openai` | `tts` — `tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`, `gpt-4o-mini-tts-2025-12-15` |
+| `unmodel/cartesia` | `tts` (Sonic) |
+| `unmodel/deepgram` | `tts` (Aura 1 / Aura 2) |
+| `unmodel/elevenlabs` | `tts` |
+| `unmodel/fish-audio` | `tts` (S2 / speech-1.x — msgpack or JSON body) |
+| `unmodel/hume` | `tts` (Octave, `octave` / `octave-2`) |
+| `unmodel/inworld` | `tts` |
+| `unmodel/lmnt` | `tts` (audio bytes), `ttsDetailed` (JSON + durations) |
+| `unmodel/minimax` | `tts` (T2A v2) |
+| `unmodel/murf` | `tts` + `checkTts`, `ttsStream` |
+| `unmodel/resemble` | `tts` + `checkTts`, `ttsStream` |
+| `unmodel/rime` | `tts` (Arcana / Mist) |
+| `unmodel/smallest-ai` | `tts` (Lightning v3.1 / v3.1 Pro) |
+| `unmodel/speechify` | `tts`, `ttsStream` (Simba) |
 
 **Speech to text**
 
-Every provider addresses its transcription route as `transcribe` — the wire
+Every provider addresses its transcription route as `stt` — the wire
 spellings (`/v1/audio/transcriptions`, `/v1/speech-to-text`, `/v1/listen`,
 `/v2/transcript`, `/v2/pre-recorded`, `/speechtotext/v1/jobs`, `/v2/jobs`,
 `/stt`) survive on the URL constants and the wire types, not on the export you
 call. All eleven also ship a `unified.ts` adapter, so the same request can be
 written once against
-[`unmodel/transcribe`](#unified-media-one-vocabulary-per-category) — where the
+[`unmodel/stt`](#unified-media-one-vocabulary-per-category) — where the
 `audio` shapes each route accepts are enforced at compile time.
 
 | Subpath | Validators |
 | --- | --- |
-| `unmodel/openai` | `transcribe` + `transcribeToFormData` — `gpt-transcribe`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`, `gpt-4o-mini-transcribe-2025-12-15`, `gpt-4o-transcribe-diarize`, `whisper-1` |
-| `unmodel/assemblyai` | `transcribe` + `checkTranscript` |
-| `unmodel/cartesia` | `transcribe` + `toFormData` + `checkStt` |
-| `unmodel/deepgram` | `transcribe` + `checkListen` |
-| `unmodel/elevenlabs` | `transcribe` + `toFormData` + `checkTranscription` |
-| `unmodel/gladia` | `transcribe` + `toUploadFormData` + `checkPreRecorded` |
-| `unmodel/inworld` | `transcribe` — base64 audio inline in the JSON body (no multipart route; the ~16MB cap is a request-size cap) |
-| `unmodel/mistral` | `transcribe` + `toFormData` + `checkTranscription` (Voxtral) |
-| `unmodel/revai` | `transcribe` + `toFormData` + `checkJob` |
-| `unmodel/soniox` | `transcribe` + `toUploadFormData` + `checkTranscription` |
-| `unmodel/speechmatics` | `transcribe` + `toFormData` + `checkJob` |
+| `unmodel/openai` | `stt` + `sttToFormData` — `gpt-transcribe`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`, `gpt-4o-mini-transcribe-2025-12-15`, `gpt-4o-transcribe-diarize`, `whisper-1` |
+| `unmodel/assemblyai` | `stt` + `checkTranscript` |
+| `unmodel/cartesia` | `stt` + `toFormData` + `checkStt` |
+| `unmodel/deepgram` | `stt` + `checkListen` |
+| `unmodel/elevenlabs` | `stt` + `toFormData` + `checkTranscription` |
+| `unmodel/gladia` | `stt` + `toUploadFormData` + `checkPreRecorded` |
+| `unmodel/inworld` | `stt` — base64 audio inline in the JSON body (no multipart route; the ~16MB cap is a request-size cap) |
+| `unmodel/mistral` | `stt` + `toFormData` + `checkTranscription` (Voxtral) |
+| `unmodel/revai` | `stt` + `toFormData` + `checkJob` |
+| `unmodel/soniox` | `stt` + `toUploadFormData` + `checkTranscription` |
+| `unmodel/speechmatics` | `stt` + `toFormData` + `checkJob` |
 
 Every STT form-data helper builds the `multipart/form-data` body for audio
 bytes, so the validated params stay wire-shaped and the `Blob` never has to
 round-trip through JSON. Which body a route wants differs by provider:
 
-- **Multipart is the route** — `cartesia.transcribe`,
-  `elevenlabs.transcribe`, `mistral.transcribe`, `speechmatics.transcribe`: post
+- **Multipart is the route** — `cartesia.stt`,
+  `elevenlabs.stt`, `mistral.stt`, `speechmatics.stt`: post
   `toFormData(validated)`,
   never `JSON.stringify`. `.request.headers` names no content type (only a
   required version header, where the provider has one) precisely because the
   boundary belongs to the `FormData` and `fetch` derives it.
-- **Multipart is the byte-upload alternative** — `revai.transcribe`: JSON with a
+- **Multipart is the byte-upload alternative** — `revai.stt`: JSON with a
   remote `source_config.url`, or `toFormData` when you hold the bytes.
 - **Multipart is a separate upload endpoint** — `gladia.toUploadFormData`
   (`UPLOAD_URL`) and `soniox.toUploadFormData` (`FILES_URL`) upload the audio first;
   the transcription request itself stays JSON and references what came back.
 
 ```ts
-import { speech } from "unmodel/elevenlabs";
+import { tts } from "unmodel/elevenlabs";
 
-const validated = speech(
+const validated = tts(
   {
     voice_id: "JBFqnCBsd6RMkjVDRZzb", // path param — moved into .request.url
     text: "Hello from unmodel!",
@@ -911,8 +911,8 @@ canonical `music()` over the two text-to-music routes lives at
 
 Everything above is a provider's **own** wire format, which is the point of this
 library — but sometimes you want to write one request and point it at any
-provider. `unmodel/image`, `unmodel/image-edit`, `unmodel/speech`,
-`unmodel/video`, `unmodel/transcribe` and `unmodel/music` are that: one
+provider. `unmodel/image`, `unmodel/image-edit`, `unmodel/tts`,
+`unmodel/video`, `unmodel/stt` and `unmodel/music` are that: one
 canonical camelCase vocabulary per media category, compiled to whichever
 provider the `"provider/model"` ref names.
 
@@ -970,7 +970,7 @@ Recraft's `strength` already runs the canonical way and is passed through
 untouched; OpenAI and Black Forest Labs have no dial at all and say so.
 
 The source picture arrives differently per route, and — exactly as `audio` does
-at `unmodel/transcribe` — the ref decides which shapes type-check:
+at `unmodel/stt` — the ref decides which shapes type-check:
 
 ```ts
 import { imageEdit } from "unmodel/image-edit";
@@ -988,7 +988,7 @@ image the vocabulary has no word for, so they stay reachable by name at
 `stability.imageEditSearchAndReplace`, `black-forest-labs.imageEditFill`, …).
 The discriminant exists so they can join later without widening the type.
 
-**In `unmodel/transcribe`, `audio` narrows to the route — at compile time.**
+**In `unmodel/stt`, `audio` narrows to the route — at compile time.**
 Transcription APIs disagree about how audio arrives, and the disagreement is
 per *route*: AssemblyAI fetches a URL, Cartesia takes multipart bytes, Soniox
 takes a URL or a file id from its own upload API, Mistral takes all three. Each
@@ -996,19 +996,19 @@ adapter declares which, and the ref you write decides which `audio` shapes
 type-check:
 
 ```ts
-import { transcribe } from "unmodel/transcribe";
+import { stt } from "unmodel/stt";
 
-transcribe({ model: "assemblyai/universal-2", audio: { url } });   // ok
-transcribe({ model: "assemblyai/universal-2", audio: { file } });  // compile error
-transcribe({ model: "cartesia/ink-whisper",  audio: { file } });   // ok
-transcribe({ model: "cartesia/ink-whisper",  audio: { url } });    // compile error
+stt({ model: "assemblyai/universal-2", audio: { url } });   // ok
+stt({ model: "assemblyai/universal-2", audio: { file } });  // compile error
+stt({ model: "cartesia/ink-whisper",  audio: { file } });   // ok
+stt({ model: "cartesia/ink-whisper",  audio: { url } });    // compile error
 ```
 
 The runtime check backs it up for JavaScript callers and for refs built at
 run time, naming the shapes the route does take:
 
 ```ts
-transcribe({ model: "assemblyai/universal-2", audio: { file } });
+stt({ model: "assemblyai/universal-2", audio: { file } });
 // throws: `audio` was given as `{ file }`, which this model has no wire field
 // for — it takes `{ url }`. Upload local bytes to POST /v2/upload first; its
 // `upload_url` is an `audio_url`.
@@ -1027,16 +1027,16 @@ do.** Each adapter carries a `modelParams` table keyed by bare model id, and
 the ref selects a row:
 
 ```ts
-speech({ model: "openai/tts-1",     text, outputFormat: "flac" });   // ok
-speech({ model: "hume/octave",      text, outputFormat: "flac" });   // compile error — mp3 / pcm only
-speech({ model: "cartesia/sonic-3", text, outputFormat: { format: "pcm_f32le", sampleRate: 44100 } });
-speech({ model: "openai/gpt-4o-mini-tts", text, instructions: "…" }); // ok
-speech({ model: "openai/tts-1",           text, instructions: "…" }); // compile error
+tts({ model: "openai/tts-1",     text, outputFormat: "flac" });   // ok
+tts({ model: "hume/octave",      text, outputFormat: "flac" });   // compile error — mp3 / pcm only
+tts({ model: "cartesia/sonic-3", text, outputFormat: { format: "pcm_f32le", sampleRate: 44100 } });
+tts({ model: "openai/gpt-4o-mini-tts", text, instructions: "…" }); // ok
+tts({ model: "openai/tts-1",           text, instructions: "…" }); // compile error
 
-transcribe({ model: "openai/whisper-1",         audio, timestamps: "segment" });  // ok
-transcribe({ model: "openai/gpt-4o-transcribe", audio, timestamps: "segment" });  // compile error
-transcribe({ model: "deepgram/nova-3", audio, keyterm: "unmodel" });              // ok
-transcribe({ model: "deepgram/nova-2", audio, keyterm: "unmodel" });              // compile error
+stt({ model: "openai/whisper-1",         audio, timestamps: "segment" });  // ok
+stt({ model: "openai/gpt-4o-transcribe", audio, timestamps: "segment" });  // compile error
+stt({ model: "deepgram/nova-3", audio, keyterm: "unmodel" });              // ok
+stt({ model: "deepgram/nova-2", audio, keyterm: "unmodel" });              // compile error
 
 music({ model: "elevenlabs/music_v1",      prompt, outputFormat: "opus" });       // ok
 music({ model: "stability/stable-audio-2", prompt, outputFormat: "opus" });       // compile error
@@ -1056,7 +1056,7 @@ for a related reason:
 their legal values depend on the codec chosen beside them, and at ElevenLabs the
 legal combinations are not even the cross product. Every value in every table
 is compiled through the adapter and run past the provider's own validator in
-`test/unified/{speech,transcribe,music}-presets.test.ts`, and one off-set
+`test/unified/{tts,stt,music}-presets.test.ts`, and one off-set
 neighbour of each is asserted to fail — so a suggestion is one the API accepts,
 and a closed list means what it says in both directions.
 
@@ -1196,7 +1196,7 @@ import { checkChat } from "unmodel/openai";
 // checkStt (unmodel/cartesia), checkListen (unmodel/deepgram),
 // checkTranscript (unmodel/assemblyai), checkPreRecorded (unmodel/gladia),
 // checkJob (unmodel/revai, unmodel/speechmatics),
-// checkSpeech (unmodel/murf, unmodel/resemble)
+// checkTts (unmodel/murf, unmodel/resemble)
 
 const report = checkChat(await res.json());
 report.warnings;     // truncation, content filter, refusals — as Issue[]
@@ -1261,11 +1261,11 @@ unmodel validate list-them-all
 
 `unmodel validate` covers the 138 endpoints whose params are expressible as
 JSON — including the ones that are *posted* as `multipart/form-data` but carry
-no `Blob` (`speechmatics.transcribe`, `mistral.transcribe`,
+no `Blob` (`speechmatics.stt`, `mistral.stt`,
 `stability.music`, …). For those the CLI prints a
 `transport: multipart/form-data` note pointing at the subpath's `toFormData`.
 The six unified surfaces are registered alongside them as `unified.image`,
-`unified.imageEdit`, `unified.music`, `unified.speech`, `unified.transcribe` and
+`unified.imageEdit`, `unified.music`, `unified.tts`, `unified.stt` and
 `unified.video` — camelCase after the dot like every other endpoint id, because
 `unmodel validate` addresses endpoints while `unmodel/image-edit` is an import.
 [Realtime session configs](#speech--tts-and-stt) are covered too, with a
@@ -1273,7 +1273,7 @@ The six unified surfaces are registered alongside them as `unified.image`,
 a config to open a socket with, not a body to post.
 
 The 15 endpoints that *require* a `Blob` body part (`openai.imageEdit`,
-`openai.transcribe`, `cartesia.transcribe`, the Ideogram and Stability editors, and
+`openai.stt`, `cartesia.stt`, the Ideogram and Stability editors, and
 the two Stability audio-input routes) cannot be expressed as JSON at all, so
 they are library-only — the CLI says so rather than failing on a type error.
 
@@ -1338,7 +1338,7 @@ Every provider lives on its own subpath; importing one pulls in nothing from the
 | `unmodel/<provider>/unified` | One provider's adapters for the [unified media surfaces](#unified-surfaces) — that provider's endpoint module and the kernel, nothing else |
 | `unmodel/chat` | Ready-made standardized chat pack: three dialect encoders plus all 32 concrete provider validators, catalogs and their `.toApi` availability data |
 | `unmodel/chat/factory` | Provider-free `createChat(registry)` compiler entry; add only the concrete provider chat validators your application uses |
-| `unmodel/image`, `unmodel/image-edit`, `unmodel/speech`, `unmodel/video`, `unmodel/transcribe`, `unmodel/music` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createImageEdit([…])` / `createSpeech([…])` / `createVideo([…])` / `createTranscribe([…])` / `createMusic([…])` is how you pay for two instead of fifteen |
+| `unmodel/image`, `unmodel/image-edit`, `unmodel/tts`, `unmodel/video`, `unmodel/stt`, `unmodel/music` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createImageEdit([…])` / `createTts([…])` / `createVideo([…])` / `createStt([…])` / `createMusic([…])` is how you pay for two instead of fifteen |
 
 Retargeting keeps that story intact. The wire-format **codecs** are per dialect
 (three of them), not per provider, so `unmodel/anthropic` reaches
@@ -1351,7 +1351,7 @@ and a URL swap, no codec at all.
 
 The unified surfaces do not change what a provider subpath weighs. **A
 per-provider entry carries none of the unified layer** — the adapters live in
-their own modules (`unified-image.ts`, `unified-speech.ts`, …) behind a separate
+their own modules (`unified-image.ts`, `unified-tts.ts`, …) behind a separate
 `unmodel/<provider>/unified` export, so `unmodel/anthropic` never sees a kernel
 and `unmodel/elevenlabs` never sees the speech vocabulary. That is pinned rather
 than claimed: `test/bundle-budget.test.ts` walks the real `dist/` import graph
@@ -1370,14 +1370,14 @@ build, in KiB of unminified ESM (transitive chunk graph, `zod` excluded):
 | `unmodel/chat/factory` | 144.0 KiB | provider-free canonical compiler and the three dialect codecs; registered provider validators add their own weight |
 | `unmodel/image` | 755.7 KiB | fifteen providers' schemas, constraint tables, hand-maintained catalogs and per-model size tables |
 | `unmodel/video` | 614.4 KiB | ten providers across twenty-one endpoint modules, plus their per-model duration/resolution/ratio tables |
-| `unmodel/speech` | 409.8 KiB | fourteen providers, each with a voice/format roster and a per-model codec/language table |
-| `unmodel/transcribe` | 401.7 KiB | eleven providers — the widest wire surfaces in the library, and therefore the widest per-model extras tables |
+| `unmodel/tts` | 409.8 KiB | fourteen providers, each with a voice/format roster and a per-model codec/language table |
+| `unmodel/stt` | 401.7 KiB | eleven providers — the widest wire surfaces in the library, and therefore the widest per-model extras tables |
 | `unmodel/image-edit` | 276.1 KiB | four providers |
 | `unmodel/music` | 149.8 KiB | two providers |
 
 The ready-pack numbers are the *whole category*; `chat/factory` is the
 provider-free base. A pack you build yourself pays only for the providers you
-register — `createSpeech([openai, rime])` lands in the 40–60 KiB range on top
+register — `createTts([openai, rime])` lands in the 40–60 KiB range on top
 of the kernel, and the equivalent holds for every category. If you want exactly
 one provider, importing its subpath directly is still the smallest thing in the
 library.
@@ -1392,8 +1392,8 @@ those validators; the rest are speech, transcription, image, image editing,
 video, music and realtime session configs.
 
 On top of them, **seven standardized surfaces**: `unmodel/chat` over 32
-providers, and the six media packs — `unmodel/image` over 15, `unmodel/speech`
-over 14, `unmodel/transcribe` over 11, `unmodel/video` over 10,
+providers, and the six media packs — `unmodel/image` over 15, `unmodel/tts`
+over 14, `unmodel/stt` over 11, `unmodel/video` over 10,
 `unmodel/image-edit` over 4, `unmodel/music` over 2 — each also available as a
 per-provider adapter at `unmodel/<provider>/unified` (36 of those). The suite is
 **9,963 tests across 193 files**.

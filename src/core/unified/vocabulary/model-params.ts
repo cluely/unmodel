@@ -3,7 +3,7 @@
  *
  * ## The problem this solves
  *
- * `transcribe` narrows one field per *adapter* (`audioInputs`), and that is
+ * `stt` narrows one field per *adapter* (`audioInputs`), and that is
  * enough there because a provider's routes agree about how audio arrives. The
  * image and video categories do not have that luxury: `gpt-image-2` takes a
  * free-form `size` up to 3840 px and a `background` that is `"opaque" | "auto"`,
@@ -24,8 +24,8 @@
  * ref → row lookup, the extras derivations — is declared once, over
  * {@link ModelParamsBase}. Each category then extends that base with the fields
  * its own vocabulary narrows ({@link ModelParams} for the two image surfaces,
- * {@link VideoModelParams}, {@link SpeechModelParams},
- * {@link TranscribeModelParams}, {@link MusicModelParams}) and gets its own
+ * {@link VideoModelParams}, {@link TtsModelParams},
+ * {@link SttModelParams}, {@link MusicModelParams}) and gets its own
  * derivations. Adding a seventh category means adding a row interface and its
  * derivations, not a second copy of the lookup.
  *
@@ -73,16 +73,16 @@ import type {
 } from "../types";
 import type { AudioFormat, AudioFormatCodec, AudioFormatRequest } from "./audio";
 import type { AspectRatio, Dimensions, ResolutionTier, VideoResolution } from "./common";
-// Type-only, and therefore fine that `./transcribe` imports this file back: an
+// Type-only, and therefore fine that `./stt` imports this file back: an
 // `import type` is erased before emit, so the cycle exists only in the checker,
 // which resolves it. The alternative — moving the granularity union into
 // `./common` — would file a transcription word under "shared vocabulary" purely
 // to dodge an edge the language handles.
-import type { TimestampGranularity } from "./transcribe";
-// Same type-only cycle as `./transcribe` above, and for the same reason: the
+import type { TimestampGranularity } from "./stt";
+// Same type-only cycle as `./stt` above, and for the same reason: the
 // word belongs to the speech vocabulary, and filing it under "shared" purely to
 // dodge an edge the checker handles would misplace it.
-import type { Voice } from "./speech";
+import type { Voice } from "./tts";
 
 /**
  * What every category's row carries: the params the canonical vocabulary has no
@@ -259,7 +259,7 @@ export type VideoModelParamTable = Readonly<Record<string, VideoModelParams>>;
  * surface than at the wire surface it compiles down to, which is the invariant
  * `test/unified/completions.test.ts` already asserts for `size`.
  */
-export interface SpeechModelParams extends ModelParamsBase {
+export interface TtsModelParams extends ModelParamsBase {
   /**
    * The canonical codecs this model can emit — after the adapter's own mapping,
    * so `pcm_s16le` is here for an endpoint whose wire spells it `"linear16"`,
@@ -292,7 +292,7 @@ export interface SpeechModelParams extends ModelParamsBase {
 }
 
 /** A speech adapter's per-model table, keyed by **bare** model id. */
-export type SpeechModelParamTable = Readonly<Record<string, SpeechModelParams>>;
+export type TtsModelParamTable = Readonly<Record<string, TtsModelParams>>;
 
 /**
  * One transcription model's request surface, beyond the canonical vocabulary.
@@ -301,9 +301,9 @@ export type SpeechModelParamTable = Readonly<Record<string, SpeechModelParams>>;
  * decides the shape of `audio` — and that stays exactly where it is. It
  * composes with this one rather than competing: the two narrow different keys
  * through different mechanisms (a route's input shapes are an adapter fact, a
- * granularity set is a model fact), and `TranscribeValidator` intersects both.
+ * granularity set is a model fact), and `SttValidator` intersects both.
  */
-export interface TranscribeModelParams extends ModelParamsBase {
+export interface SttModelParams extends ModelParamsBase {
   /**
    * The timing detail this route can return. Every entry is a granularity the
    * caller can *ask for* and get; `"none"` is on the list exactly when asking
@@ -316,7 +316,7 @@ export interface TranscribeModelParams extends ModelParamsBase {
 }
 
 /** A transcribe adapter's per-model table, keyed by **bare** model id. */
-export type TranscribeModelParamTable = Readonly<Record<string, TranscribeModelParams>>;
+export type SttModelParamTable = Readonly<Record<string, SttModelParams>>;
 
 /**
  * One music model's request surface, beyond the canonical vocabulary.
@@ -326,7 +326,7 @@ export type TranscribeModelParamTable = Readonly<Record<string, TranscribeModelP
  * so `outputFormat` is the only canonical word with a per-model enum behind it.
  */
 export interface MusicModelParams extends ModelParamsBase {
-  /** The canonical codecs this model can emit — same contract as {@link SpeechModelParams.codecs}. */
+  /** The canonical codecs this model can emit — same contract as {@link TtsModelParams.codecs}. */
   readonly codecs?: readonly AudioFormatCodec[];
 }
 
@@ -626,10 +626,10 @@ export type TimestampsOf<Row> = Row extends {
  * `(string & {})` tail, and an intersection with the base's `language?: string`
  * / `voice?: Voice` would discharge the brace, leave a bare `string` in the
  * union, and let subtype reduction eat every code and every preset while tsc
- * stayed green. `SpeechParamsBase` therefore omits all three, so this is the
+ * stayed green. `TtsParamsBase` therefore omits all three, so this is the
  * only source of their contextual type.
  */
-type SpeechArms<Format, Language, VoiceArm> = {
+type TtsArms<Format, Language, VoiceArm> = {
   outputFormat?: Format;
   language?: Language;
   voice?: VoiceArm;
@@ -640,16 +640,16 @@ type SpeechArms<Format, Language, VoiceArm> = {
  * dynamic ref, unknown provider, unknown model — it restates the wide
  * vocabulary.
  */
-export type SpeechModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
-  ? SpeechArms<AudioFormatRequest, string, Voice>
-  : SpeechArms<
+export type TtsModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? TtsArms<AudioFormatRequest, string, Voice>
+  : TtsArms<
       AudioFormatOf<ModelParamsFor<A, R>>,
       LanguageOf<ModelParamsFor<A, R>>,
       VoiceOf<ModelParamsFor<A, R>>
     >;
 
-/** {@link SpeechArms} for transcription: the granularity set and the languages. */
-type TranscribeArms<Stamps, Language> = {
+/** {@link TtsArms} for transcription: the granularity set and the languages. */
+type SttArms<Stamps, Language> = {
   timestamps?: Stamps;
   language?: Language;
 };
@@ -660,11 +660,11 @@ type TranscribeArms<Stamps, Language> = {
  * Composes with — never replaces — this category's *other* narrowing:
  * `AudioNarrowing` types `audio` from the adapter's `audioInputs`, which is a
  * different key reached through a different mechanism, so the two intersect
- * cleanly in `TranscribeValidator`.
+ * cleanly in `SttValidator`.
  */
-export type TranscribeModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
-  ? TranscribeArms<TimestampGranularity, string>
-  : TranscribeArms<TimestampsOf<ModelParamsFor<A, R>>, LanguageOf<ModelParamsFor<A, R>>>;
+export type SttModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? SttArms<TimestampGranularity, string>
+  : SttArms<TimestampsOf<ModelParamsFor<A, R>>, LanguageOf<ModelParamsFor<A, R>>>;
 
 /** The one field a music row narrows. */
 type MusicArms<Format> = { outputFormat?: Format };

@@ -71,13 +71,13 @@
       "types": "./dist/unified/video.d.ts",
       "default": "./dist/unified/video.js"
     },
-    "./speech": {
-      "types": "./dist/unified/speech.d.ts",
-      "default": "./dist/unified/speech.js"
+    "./tts": {
+      "types": "./dist/unified/tts.d.ts",
+      "default": "./dist/unified/tts.js"
     },
-    "./transcribe": {
-      "types": "./dist/unified/transcribe.d.ts",
-      "default": "./dist/unified/transcribe.js"
+    "./stt": {
+      "types": "./dist/unified/stt.d.ts",
+      "default": "./dist/unified/stt.js"
     },
     "./music": {
       "types": "./dist/unified/music.d.ts",

@@ -1,5 +1,5 @@
 /**
- * `unmodel/speech` → `smallest-ai.speech` (POST /waves/v1/tts).
+ * `unmodel/tts` → `smallest-ai.tts` (POST /waves/v1/tts).
  *
  * The flattest body of the fourteen: `text`, `voice_id`, `model`, `speed`,
  * `language`, `output_format` and `sample_rate` are all top-level, so the
@@ -25,19 +25,23 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  SpeechAdapterFor,
-  SpeechModelParamTable,
-  SpeechParams,
-} from "../../core/unified/vocabulary/speech";
+  TtsAdapterFor,
+  TtsModelParamTable,
+  TtsParams,
+} from "../../core/unified/vocabulary/tts";
 import {
-  speech as validator,
+  tts as validator,
   LANGUAGES,
   PRO_ONLY_LANGUAGES,
   type SmallestLanguage,
   type SmallestOutputFormat,
   type SmallestSampleRate,
-  type TtsParams,
-} from "./speech";
+  // Aliased on import: `/waves/v1/tts` names its own request body `TtsParams`
+  // (a wire name, so it keeps its spelling), and the canonical vocabulary type
+  // this adapter compiles *from* is now called `TtsParams` too. Both belong in
+  // this file, so one of them has to arrive under another name.
+  type TtsParams as SmallestWireParams,
+} from "./tts";
 
 /** The two Lightning pools — the ref union for `smallest-ai/…`. */
 const MODELS = ["lightning_v3.1", "lightning_v3.1_pro"] as const;
@@ -46,10 +50,10 @@ const SYNTHESIZE_DOCS =
   "https://docs.smallest.ai/models/api-reference/text-to-speech/synthesize-speech";
 
 /** The wire params this adapter compiles to. */
-export type SmallestSpeechWire = TtsParams;
+export type SmallestTtsWire = SmallestWireParams;
 
 /** What a unified call to `smallest-ai/…` returns. */
-export type SmallestSpeechResult = ReturnType<typeof validator<SmallestSpeechWire>>;
+export type SmallestTtsResult = ReturnType<typeof validator<SmallestTtsWire>>;
 
 const SAMPLE_RATES = [8000, 16000, 24000, 44100] as const;
 
@@ -101,7 +105,7 @@ const FORMAT: AudioFormatSpec = {
  * as the same 31 codes, the base row silently gains the 11 Pro-only ones, and
  * an editor offers `"ja"` on `lightning_v3.1` — where `checkProOnly` refuses
  * it. Measured. So each `as` names exactly the set its runtime filter produces,
- * and `test/unified/speech-presets.test.ts` proves the runtime half matches by
+ * and `test/unified/tts-presets.test.ts` proves the runtime half matches by
  * compiling every code the row declares.
  */
 type ProOnlyLanguage = (typeof PRO_ONLY_LANGUAGES)[number];
@@ -122,25 +126,25 @@ const SHARED_EXTRAS = {
 
 const CODECS = ["mp3", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] as const;
 
-const SMALLEST_SPEECH_MODEL_PARAMS = {
+const SMALLEST_TTS_MODEL_PARAMS = {
   "lightning_v3.1": { codecs: CODECS, languages: BASE_LANGUAGES, extras: SHARED_EXTRAS },
   "lightning_v3.1_pro": { codecs: CODECS, languages: PRO_LANGUAGES, extras: SHARED_EXTRAS },
-} as const satisfies SpeechModelParamTable;
+} as const satisfies TtsModelParamTable;
 
-export const speech = {
-  category: "speech",
+export const tts = {
+  category: "tts",
   provider: "smallest-ai",
   models: MODELS,
-  modelParams: SMALLEST_SPEECH_MODEL_PARAMS,
+  modelParams: SMALLEST_TTS_MODEL_PARAMS,
   compile(
-    input: SpeechParams,
-    ctx: CompileContext<SpeechParams>,
-  ): CompiledCall<SmallestSpeechWire, SmallestSpeechResult> {
+    input: TtsParams,
+    ctx: CompileContext<TtsParams>,
+  ): CompiledCall<SmallestTtsWire, SmallestTtsResult> {
     ctx.from(["voice_id"], "voice");
     ctx.from(["output_format"], "outputFormat");
     ctx.from(["sample_rate"], "outputFormat");
 
-    const body: SmallestSpeechWire = { text: input.text, voice_id: "", model: ctx.model };
+    const body: SmallestTtsWire = { text: input.text, voice_id: "", model: ctx.model };
 
     if (input.voice !== undefined) {
       const voice = ctx.take(
@@ -192,12 +196,12 @@ export const speech = {
       if (language !== undefined) body.language = language as SmallestLanguage;
     }
 
-    applyExtras(input, SMALLEST_SPEECH_MODEL_PARAMS, body, ctx);
+    applyExtras(input, SMALLEST_TTS_MODEL_PARAMS, body, ctx);
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies SpeechAdapterFor<
-  typeof SMALLEST_SPEECH_MODEL_PARAMS,
-  SmallestSpeechWire,
-  SmallestSpeechResult
+} as const satisfies TtsAdapterFor<
+  typeof SMALLEST_TTS_MODEL_PARAMS,
+  SmallestTtsWire,
+  SmallestTtsResult
 >;

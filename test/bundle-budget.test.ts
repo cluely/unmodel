@@ -131,13 +131,13 @@ const ALL_UNIFIED_ENTRIES: string[] = [
   "image",
   "image-edit",
   "video",
-  "speech",
-  "transcribe",
+  "tts",
+  "stt",
   "music",
 ];
 
 /**
- * `unmodel/speech`'s budget: the kernel plus fourteen TTS providers — each
+ * `unmodel/tts`'s budget: the kernel plus fourteen TTS providers — each
  * one's validator, zod schema, constraint table and hand-written catalog.
  *
  * 371 KiB measured, pinned at 400 with the same ~10% headroom as everything
@@ -147,7 +147,7 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * alone carries 105 Aura voices as catalog rows, and OpenAI's speech
  * constraints ride in the same 617-line table as its images and chat ones), so
  * the weight is code, not data. A caller who wants two providers builds their
- * own pack with `createSpeech([…])` and pays 40–60 KiB.
+ * own pack with `createTts([…])` and pays 40–60 KiB.
  *
  * **Why it moved from 360.** Nothing joined this graph: `core/unified/derive.ts`
  * grew by ~9 KiB when the transcribe wave added `resolveAudioInput`,
@@ -166,11 +166,11 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * and the rest is the prose that argues for them, which these bundles are
  * measured *unminified* and therefore pay for. Both halves are load-bearing:
  * the tables are read by the caller's types, by `applyExtras` and by
- * `test/unified/speech-presets.test.ts`, and a table whose per-model
+ * `test/unified/tts-presets.test.ts`, and a table whose per-model
  * distinctions are not explained is a table nobody can audit against the wire.
  * Pinned at 430, which keeps the ~6% headroom the 400 had.
  */
-const SPEECH_PACK_BUDGET_KIB = 430;
+const TTS_PACK_BUDGET_KIB = 430;
 
 /**
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
@@ -293,13 +293,13 @@ const IMAGE_PACK_PROVIDERS: string[] = [
 ];
 
 /**
- * `unmodel/transcribe`'s budget: the kernel plus eleven STT providers.
+ * `unmodel/stt`'s budget: the kernel plus eleven STT providers.
  *
  * 360 KiB measured, pinned at 390 with the same ~10% headroom as everything
  * above — within a few KiB of the speech pack, and for the same reason: these
  * are eleven long, check-heavy validators (AssemblyAI's `/v2/transcript` alone
  * carries fifty wire fields and thirteen cross-field rules) over small
- * hand-written catalogs. `createTranscribe([…])` is the way to pay for two
+ * hand-written catalogs. `createStt([…])` is the way to pay for two
  * providers instead of eleven.
  *
  * **Why it moved from 390.** The per-model wave, and this is the pack it cost
@@ -310,7 +310,7 @@ const IMAGE_PACK_PROVIDERS: string[] = [
  * each is one `EXTRA` witness at run time plus the sentence that says which
  * models take it and why. Pinned at 420, keeping the ~6% headroom the 390 had.
  */
-const TRANSCRIBE_PACK_BUDGET_KIB = 420;
+const STT_PACK_BUDGET_KIB = 420;
 
 /**
  * The one generated catalog this pack legitimately reaches.
@@ -321,10 +321,10 @@ const TRANSCRIBE_PACK_BUDGET_KIB = 420;
  * aliases and none of the dated transcription ids or the per-minute rates. A
  * *second* entry here means a provider barrel leaked in.
  */
-const TRANSCRIBE_PACK_CATALOGS: string[] = ["src/catalog/mistral.gen.ts"];
+const STT_PACK_CATALOGS: string[] = ["src/catalog/mistral.gen.ts"];
 
-/** The eleven providers `unmodel/transcribe`'s ready-made pack is allowed to reach. */
-const TRANSCRIBE_PACK_PROVIDERS: string[] = [
+/** The eleven providers `unmodel/stt`'s ready-made pack is allowed to reach. */
+const STT_PACK_PROVIDERS: string[] = [
   "assemblyai",
   "cartesia",
   "deepgram",
@@ -376,8 +376,8 @@ const MUSIC_PACK_BUDGET_KIB = 160;
 /** The two providers `unmodel/music`'s ready-made pack is allowed to reach. */
 const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "stability"];
 
-/** The fourteen providers `unmodel/speech`'s ready-made pack is allowed to reach. */
-const SPEECH_PACK_PROVIDERS: string[] = [
+/** The fourteen providers `unmodel/tts`'s ready-made pack is allowed to reach. */
+const TTS_PACK_PROVIDERS: string[] = [
   "cartesia",
   "deepgram",
   "elevenlabs",
@@ -443,8 +443,8 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
   image: IMAGE_PACK_BUDGET_KIB,
   "image-edit": IMAGE_EDIT_PACK_BUDGET_KIB,
   video: VIDEO_PACK_BUDGET_KIB,
-  speech: SPEECH_PACK_BUDGET_KIB,
-  transcribe: TRANSCRIBE_PACK_BUDGET_KIB,
+  tts: TTS_PACK_BUDGET_KIB,
+  stt: STT_PACK_BUDGET_KIB,
   music: MUSIC_PACK_BUDGET_KIB,
 };
 
@@ -688,7 +688,7 @@ describe("unmodel/chat", () => {
       // `chat.ts` leaf, not loosening the assertion.
       "src/providers/mistral/audio-models.ts",
       "src/providers/mistral/index.ts",
-      "src/providers/mistral/transcribe.ts",
+      "src/providers/mistral/stt.ts",
       "src/providers/mistral/transcription-check.ts",
       "src/providers/moonshotai/index.ts",
       "src/providers/nebius/index.ts",
@@ -876,7 +876,7 @@ describe("unified media entries", () => {
   });
 });
 
-describe("unmodel/speech (the first ready-made pack)", () => {
+describe("unmodel/tts (the first ready-made pack)", () => {
   /**
    * The composition assertion, in the shape the kernel-only one had before a
    * pack existed: the *list* is what does the work, not the byte count.
@@ -884,11 +884,11 @@ describe("unmodel/speech (the first ready-made pack)", () => {
    * A pack that reaches a fifteenth provider, or that drags in a generated
    * catalog because someone imported `providers/<p>/index.ts` instead of the
    * adapter leaf, fails here in the diff that causes it — which is the whole
-   * reason the adapters import `./speech` and not `.`.
+   * reason the adapters import `./tts` and not `.`.
    */
   test("it reaches exactly the fourteen speech providers, through their adapters", () => {
-    const modules = sourceModulesOf(unifiedEntry("speech"));
-    expect(modules).toContain("src/unified/speech.ts");
+    const modules = sourceModulesOf(unifiedEntry("tts"));
+    expect(modules).toContain("src/unified/tts.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
 
     const providers = [
@@ -898,7 +898,7 @@ describe("unmodel/speech (the first ready-made pack)", () => {
           .map((m) => m.split("/")[2] as string),
       ),
     ].sort();
-    expect(providers).toEqual(SPEECH_PACK_PROVIDERS);
+    expect(providers).toEqual(TTS_PACK_PROVIDERS);
 
     // One adapter leaf per provider, and it is what pulled the provider in.
     // Six of the fourteen serve more than one category, so their adapters are
@@ -912,10 +912,10 @@ describe("unmodel/speech (the first ready-made pack)", () => {
       "minimax",
       "openai",
     ]);
-    for (const provider of SPEECH_PACK_PROVIDERS) {
-      const leaf = SPLIT.has(provider) ? "unified-speech" : "unified";
+    for (const provider of TTS_PACK_PROVIDERS) {
+      const leaf = SPLIT.has(provider) ? "unified-tts" : "unified";
       expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
-      expect(modules).toContain(`src/providers/${provider}/speech.ts`);
+      expect(modules).toContain(`src/providers/${provider}/tts.ts`);
       // The barrel is never in a pack's graph: importing it would pull the
       // other categories' adapters — and their catalogs — in with it.
       if (SPLIT.has(provider)) {
@@ -925,7 +925,7 @@ describe("unmodel/speech (the first ready-made pack)", () => {
   });
 
   test("its graph carries no generated catalog, availability data or retarget layer", () => {
-    const modules = sourceModulesOf(unifiedEntry("speech"));
+    const modules = sourceModulesOf(unifiedEntry("tts"));
     // Every TTS provider here keys off a hand-written catalog in its own
     // directory, so a `src/catalog/*.gen.ts` in this graph means a provider
     // barrel leaked in — 40–400 KiB of data for zero findings.
@@ -1015,17 +1015,17 @@ describe("unmodel/image (the second ready-made pack)", () => {
 
   test("the two packs are independent — neither pulls the other in", () => {
     const image = sourceModulesOf(unifiedEntry("image"));
-    const speech = sourceModulesOf(unifiedEntry("speech"));
-    expect(image).not.toContain("src/unified/speech.ts");
-    expect(speech).not.toContain("src/unified/image.ts");
+    const tts = sourceModulesOf(unifiedEntry("tts"));
+    expect(image).not.toContain("src/unified/tts.ts");
+    expect(tts).not.toContain("src/unified/image.ts");
     // openai is in both packs and must contribute only the endpoint each pack
     // needs. This is what the per-category adapter split buys, and it is worth
     // 39 KiB: one module exporting both adapters is one *entry* chunk holding
-    // both, so `unmodel/speech` carried OpenAI's image catalog — and the
+    // both, so `unmodel/tts` carried OpenAI's image catalog — and the
     // generated `src/catalog/openai.gen.ts` behind it — for nothing.
-    expect(image).not.toContain("src/providers/openai/speech.ts");
-    expect(speech).not.toContain("src/providers/openai/image.ts");
-    expect(speech.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
+    expect(image).not.toContain("src/providers/openai/tts.ts");
+    expect(tts).not.toContain("src/providers/openai/image.ts");
+    expect(tts.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
   });
 });
 
@@ -1082,34 +1082,34 @@ describe("unmodel/video (the third ready-made pack)", () => {
   test("the three packs are independent — none pulls another's endpoints in", () => {
     const video = sourceModulesOf(unifiedEntry("video"));
     const image = sourceModulesOf(unifiedEntry("image"));
-    const speech = sourceModulesOf(unifiedEntry("speech"));
-    for (const other of ["image", "speech"]) {
+    const tts = sourceModulesOf(unifiedEntry("tts"));
+    for (const other of ["image", "tts"]) {
       expect(video).not.toContain(`src/unified/${other}.ts`);
     }
     expect(image).not.toContain("src/unified/video.ts");
-    expect(speech).not.toContain("src/unified/video.ts");
+    expect(tts).not.toContain("src/unified/video.ts");
     // The seven shared providers contribute one category each, per pack.
     for (const shared of ["openai", "google", "luma", "kling", "runway", "vidu", "bytedance"]) {
       expect(video).not.toContain(`src/providers/${shared}/image.ts`);
       expect(image).not.toContain(`src/providers/${shared}/video.ts`);
     }
-    expect(video).not.toContain("src/providers/openai/speech.ts");
-    expect(video).not.toContain("src/providers/minimax/speech.ts");
-    expect(speech).not.toContain("src/providers/minimax/video.ts");
+    expect(video).not.toContain("src/providers/openai/tts.ts");
+    expect(video).not.toContain("src/providers/minimax/tts.ts");
+    expect(tts).not.toContain("src/providers/minimax/video.ts");
   });
 });
 
-describe("unmodel/transcribe (the fourth ready-made pack)", () => {
+describe("unmodel/stt (the fourth ready-made pack)", () => {
   /**
    * The composition assertion. Five of the eleven also serve a speech surface
    * and one also serves image and video, so an adapter that imported its
    * provider's barrel instead of the transcribe leaf would drag a second
    * category's validators and catalogs in without changing a single import in
-   * `src/unified/transcribe.ts`.
+   * `src/unified/stt.ts`.
    */
   test("it reaches exactly the eleven transcribe providers, through their adapters", () => {
-    const modules = sourceModulesOf(unifiedEntry("transcribe"));
-    expect(modules).toContain("src/unified/transcribe.ts");
+    const modules = sourceModulesOf(unifiedEntry("stt"));
+    expect(modules).toContain("src/unified/stt.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
 
     const providers = [
@@ -1119,13 +1119,13 @@ describe("unmodel/transcribe (the fourth ready-made pack)", () => {
           .map((m) => m.split("/")[2] as string),
       ),
     ].sort();
-    expect(providers).toEqual(TRANSCRIBE_PACK_PROVIDERS);
+    expect(providers).toEqual(STT_PACK_PROVIDERS);
 
     // Six of the eleven serve transcription only, so their adapter is the
     // unsuffixed leaf; the other five split per category.
     const SPLIT = new Set(["cartesia", "deepgram", "elevenlabs", "inworld", "openai"]);
-    for (const provider of TRANSCRIBE_PACK_PROVIDERS) {
-      const leaf = SPLIT.has(provider) ? "unified-transcribe" : "unified";
+    for (const provider of STT_PACK_PROVIDERS) {
+      const leaf = SPLIT.has(provider) ? "unified-stt" : "unified";
       expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
       if (SPLIT.has(provider)) {
         expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
@@ -1135,14 +1135,14 @@ describe("unmodel/transcribe (the fourth ready-made pack)", () => {
       // through a file with the uniform name. Eight wire spellings —
       // `transcription`, `transcriptions`, `transcript`, `speech-to-text`,
       // `listen`, `pre-recorded`, `jobs`, `stt` — collapse onto one.
-      expect(modules).toContain(`src/providers/${provider}/transcribe.ts`);
+      expect(modules).toContain(`src/providers/${provider}/stt.ts`);
     }
   });
 
   test("its graph carries exactly one catalog, and no availability or retarget layer", () => {
-    const modules = sourceModulesOf(unifiedEntry("transcribe"));
+    const modules = sourceModulesOf(unifiedEntry("stt"));
     expect(modules.filter((m) => m.startsWith("src/catalog/")).sort()).toEqual(
-      TRANSCRIBE_PACK_CATALOGS,
+      STT_PACK_CATALOGS,
     );
     expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
     expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
@@ -1155,27 +1155,27 @@ describe("unmodel/transcribe (the fourth ready-made pack)", () => {
   });
 
   test("the speech and transcribe packs share five providers and no endpoints", () => {
-    const transcribe = sourceModulesOf(unifiedEntry("transcribe"));
-    const speech = sourceModulesOf(unifiedEntry("speech"));
-    expect(transcribe).not.toContain("src/unified/speech.ts");
-    expect(speech).not.toContain("src/unified/transcribe.ts");
+    const stt = sourceModulesOf(unifiedEntry("stt"));
+    const tts = sourceModulesOf(unifiedEntry("tts"));
+    expect(stt).not.toContain("src/unified/tts.ts");
+    expect(tts).not.toContain("src/unified/stt.ts");
     // The five shared providers contribute one endpoint each, per pack — this
     // is what the per-category adapter split buys, and it is the reason
-    // `unmodel/speech` does not carry eleven STT validators.
+    // `unmodel/tts` does not carry eleven STT validators.
     //
     // cartesia is the one exception, and it is the provider's own doing rather
-    // than the adapter's: `cartesia/transcribe.ts` imports `CARTESIA_VERSION` from
-    // `./speech`, so the TTS module rides along in this pack for one constant.
+    // than the adapter's: `cartesia/stt.ts` imports `CARTESIA_VERSION` from
+    // `./tts`, so the TTS module rides along in this pack for one constant.
     // Pinned as an exception so that a *second* one has to be typed out here.
     for (const shared of ["cartesia", "deepgram", "elevenlabs", "inworld", "openai"]) {
-      expect(speech).toContain(`src/providers/${shared}/speech.ts`);
+      expect(tts).toContain(`src/providers/${shared}/tts.ts`);
       if (shared !== "cartesia") {
-        expect(transcribe).not.toContain(`src/providers/${shared}/speech.ts`);
+        expect(stt).not.toContain(`src/providers/${shared}/tts.ts`);
       }
     }
     for (const shared of ["cartesia", "deepgram", "elevenlabs", "inworld", "openai"]) {
-      expect(transcribe).toContain(`src/providers/${shared}/transcribe.ts`);
-      expect(speech).not.toContain(`src/providers/${shared}/transcribe.ts`);
+      expect(stt).toContain(`src/providers/${shared}/stt.ts`);
+      expect(tts).not.toContain(`src/providers/${shared}/stt.ts`);
     }
   });
 });
@@ -1217,8 +1217,8 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
     expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
     expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
     // ElevenLabs is in three packs; music must carry only its music endpoint.
-    expect(modules).not.toContain("src/providers/elevenlabs/speech.ts");
-    expect(modules).not.toContain("src/providers/elevenlabs/transcribe.ts");
+    expect(modules).not.toContain("src/providers/elevenlabs/tts.ts");
+    expect(modules).not.toContain("src/providers/elevenlabs/stt.ts");
     // Stability is in two; music must not carry the Stable Image routes.
     expect(modules).not.toContain("src/providers/stability/image.ts");
     expect(modules).toContain("src/core/pipeline.ts");
@@ -1312,8 +1312,8 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
     );
     // OpenAI is in five packs; this one must carry only its edit endpoint.
     expect(modules).not.toContain("src/providers/openai/chat.ts");
-    expect(modules).not.toContain("src/providers/openai/speech.ts");
-    expect(modules).not.toContain("src/providers/openai/transcribe.ts");
+    expect(modules).not.toContain("src/providers/openai/tts.ts");
+    expect(modules).not.toContain("src/providers/openai/stt.ts");
     expect(modules).not.toContain("src/providers/openai/video.ts");
     expect(modules).toContain("src/core/pipeline.ts");
   });

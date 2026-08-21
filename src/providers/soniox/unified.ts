@@ -1,5 +1,5 @@
 /**
- * `unmodel/transcribe` → `soniox.transcribe` (POST /v1/transcriptions).
+ * `unmodel/stt` → `soniox.stt` (POST /v1/transcriptions).
  *
  * The two-kind adapter: `audio_url` **or** `file_id` (from `POST /v1/files`),
  * exactly one of them, which is what `audioInputs: ["url", "fileId"]` says at
@@ -28,15 +28,15 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  TranscribeAdapterFor,
-  TranscribeModelParamTable,
-  TranscribeParamsFor,
-} from "../../core/unified/vocabulary/transcribe";
+  SttAdapterFor,
+  SttModelParamTable,
+  SttParamsFor,
+} from "../../core/unified/vocabulary/stt";
 import {
-  transcribe as validator,
+  stt as validator,
   type SonioxTranslation,
   type TranscriptionsBody,
-} from "./transcribe";
+} from "./stt";
 
 /** The two async models — the ref union for `soniox/…`. */
 const MODELS = ["stt-async-v5", "stt-async-v4"] as const;
@@ -45,10 +45,10 @@ const CREATE_DOCS =
   "https://soniox.com/docs/api-reference/stt/transcriptions/create_transcription";
 
 /** The wire body this adapter compiles to. */
-export type SonioxTranscribeWire = TranscriptionsBody;
+export type SonioxSttWire = TranscriptionsBody;
 
 /** What a unified call to `soniox/…` returns. */
-export type SonioxTranscribeResult = ReturnType<typeof validator>;
+export type SonioxSttResult = ReturnType<typeof validator>;
 
 /**
  * Both async models share one row: one schema, one param surface, no per-model
@@ -80,22 +80,22 @@ const SONIOX_ROW = {
   },
 } as const;
 
-const SONIOX_TRANSCRIBE_MODEL_PARAMS = {
+const SONIOX_STT_MODEL_PARAMS = {
   "stt-async-v5": SONIOX_ROW,
   "stt-async-v4": SONIOX_ROW,
-} as const satisfies TranscribeModelParamTable;
+} as const satisfies SttModelParamTable;
 
-export const transcribe = {
-  category: "transcribe",
+export const stt = {
+  category: "stt",
   provider: "soniox",
   models: MODELS,
-  modelParams: SONIOX_TRANSCRIBE_MODEL_PARAMS,
+  modelParams: SONIOX_STT_MODEL_PARAMS,
   audioInputs: ["url", "fileId"],
   compile(
-    input: TranscribeParamsFor<"url" | "fileId">,
-    ctx: CompileContext<TranscribeParamsFor<"url" | "fileId">>,
-  ): CompiledCall<SonioxTranscribeWire, SonioxTranscribeResult> {
-    const body: SonioxTranscribeWire = { model: ctx.model };
+    input: SttParamsFor<"url" | "fileId">,
+    ctx: CompileContext<SttParamsFor<"url" | "fileId">>,
+  ): CompiledCall<SonioxSttWire, SonioxSttResult> {
+    const body: SonioxSttWire = { model: ctx.model };
     ctx.from(["audio_url"], "audio");
     ctx.from(["file_id"], "audio");
     ctx.from(["language_hints"], "languages");
@@ -175,13 +175,13 @@ export const transcribe = {
 
     if (input.prompt !== undefined) body.context = input.prompt;
 
-    applyExtras(input, SONIOX_TRANSCRIBE_MODEL_PARAMS, body, ctx);
+    applyExtras(input, SONIOX_STT_MODEL_PARAMS, body, ctx);
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies TranscribeAdapterFor<
+} as const satisfies SttAdapterFor<
   "url" | "fileId",
-  typeof SONIOX_TRANSCRIBE_MODEL_PARAMS,
-  SonioxTranscribeWire,
-  SonioxTranscribeResult
+  typeof SONIOX_STT_MODEL_PARAMS,
+  SonioxSttWire,
+  SonioxSttResult
 >;

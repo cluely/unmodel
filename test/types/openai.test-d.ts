@@ -15,8 +15,8 @@ import {
   checkChat,
   image,
   imageEdit,
-  speech,
-  transcribe,
+  tts,
+  stt,
   video,
   realtimeSession,
   type ChatFinishReason,
@@ -528,8 +528,8 @@ function imageEditTypeTests(): void {
   imageEdit({ model: "gpt-image-1.5", image: file, prompt: "x", bogus_thing: 1 });
 }
 
-function speechTypeTests(): void {
-  const tts = speech({
+function ttsTypeTests(): void {
+  const spoken = tts({
     model: "gpt-4o-mini-tts",
     input: "Today is a wonderful day to build something people love.",
     voice: "marin",
@@ -538,23 +538,23 @@ function speechTypeTests(): void {
     speed: 1.1,
     stream_format: "sse",
   });
-  expectAssignable<SpeechCreateParams>(tts);
-  expectAssignable<SpeechCreateParams>(tts.toSdk("openai"));
+  expectAssignable<SpeechCreateParams>(spoken);
+  expectAssignable<SpeechCreateParams>(spoken.toSdk("openai"));
   // @ts-expect-error the zero-arg .toSdk() form was removed
-  tts.toSdk();
+  spoken.toSdk();
 
   // WIDENED: the docs list 13 built-in voices; the SDK union omits fable,
   // onyx and nova even though its own docstring names them.
-  speech({ model: "gpt-4o-mini-tts", input: "x", voice: "fable" });
-  speech({ model: "tts-1", input: "x", voice: "onyx" });
-  speech({ model: "tts-1-hd", input: "x", voice: "nova" });
+  tts({ model: "gpt-4o-mini-tts", input: "x", voice: "fable" });
+  tts({ model: "tts-1", input: "x", voice: "onyx" });
+  tts({ model: "tts-1-hd", input: "x", voice: "nova" });
   // Custom voices ride as an object on this endpoint.
-  speech({ model: "tts-1", input: "x", voice: { id: "voice_1234" } });
+  tts({ model: "tts-1", input: "x", voice: { id: "voice_1234" } });
   // Unknown models fall back to the loose escape arm.
-  speech({ model: "tts-2", input: "x", voice: "whoever", some_future_param: true });
+  tts({ model: "tts-2", input: "x", voice: "whoever", some_future_param: true });
 
   // @ts-expect-error — instructions does not work with tts-1
-  speech({ model: "tts-1", input: "x", voice: "alloy", instructions: "be chirpy" });
+  tts({ model: "tts-1", input: "x", voice: "alloy", instructions: "be chirpy" });
 
   // @ts-expect-error — aliasing cannot send a known id through the loose arm
   const aliasedInvalid: SpeechBody = {
@@ -570,22 +570,22 @@ function speechTypeTests(): void {
     voice: "future-voice",
     future_prosody: true,
   };
-  speech(future);
+  tts(future);
 
   // @ts-expect-error — sse streaming is not supported for tts-1-hd
-  speech({ model: "tts-1-hd", input: "x", voice: "alloy", stream_format: "sse" });
+  tts({ model: "tts-1-hd", input: "x", voice: "alloy", stream_format: "sse" });
 
   // @ts-expect-error — marin is a gpt-4o-mini-tts voice, not a tts-1 voice
-  speech({ model: "tts-1", input: "x", voice: "marin" });
+  tts({ model: "tts-1", input: "x", voice: "marin" });
 
   // @ts-expect-error — bogus top-level param on a known arm
-  speech({ model: "tts-1", input: "x", voice: "alloy", bogus_thing: 1 });
+  tts({ model: "tts-1", input: "x", voice: "alloy", bogus_thing: 1 });
 }
 
-function transcribeTypeTests(): void {
+function sttTypeTests(): void {
   const file = new File([new Uint8Array(4)], "speech.mp3", { type: "audio/mpeg" });
 
-  const stt = transcribe({
+  const transcript = stt({
     model: "whisper-1",
     file,
     response_format: "verbose_json",
@@ -593,21 +593,21 @@ function transcribeTypeTests(): void {
     language: "en",
     temperature: 0,
   });
-  expectAssignable<TranscriptionCreateParams>(stt);
-  expectAssignable<TranscriptionCreateParams>(stt.toSdk("openai"));
-  expectAssignable<"whisper-1">(stt.model);
+  expectAssignable<TranscriptionCreateParams>(transcript);
+  expectAssignable<TranscriptionCreateParams>(transcript.toSdk("openai"));
+  expectAssignable<"whisper-1">(transcript.model);
   // @ts-expect-error the zero-arg .toSdk() form was removed
-  stt.toSdk();
+  transcript.toSdk();
 
-  transcribe({ model: "gpt-transcribe", file, keywords: ["unmodel"], languages: ["en", "pt"] });
-  transcribe({
+  stt({ model: "gpt-transcribe", file, keywords: ["unmodel"], languages: ["en", "pt"] });
+  stt({
     model: "gpt-4o-mini-transcribe",
     file,
     include: ["logprobs"],
     response_format: "json",
     stream: true,
   });
-  transcribe({
+  stt({
     model: "gpt-4o-transcribe-diarize",
     file,
     response_format: "diarized_json",
@@ -616,19 +616,19 @@ function transcribeTypeTests(): void {
     known_speaker_references: ["data:audio/wav;base64,AA"],
   });
   // Unknown models fall back to the loose escape arm.
-  transcribe({ model: "whisper-9", file, some_future_param: true });
+  stt({ model: "whisper-9", file, some_future_param: true });
 
   // @ts-expect-error — verbose_json is not a gpt-4o-transcribe format
-  transcribe({ model: "gpt-4o-transcribe", file, response_format: "verbose_json" });
+  stt({ model: "gpt-4o-transcribe", file, response_format: "verbose_json" });
 
   // @ts-expect-error — timestamp_granularities is whisper-1 only
-  transcribe({ model: "gpt-4o-transcribe", file, timestamp_granularities: ["word"] });
+  stt({ model: "gpt-4o-transcribe", file, timestamp_granularities: ["word"] });
 
   // @ts-expect-error — whisper-1 does not stream
-  transcribe({ model: "whisper-1", file, stream: true });
+  stt({ model: "whisper-1", file, stream: true });
 
   // @ts-expect-error — gpt-4o-transcribe-diarize does not support prompts
-  transcribe({ model: "gpt-4o-transcribe-diarize", file, prompt: "hello" });
+  stt({ model: "gpt-4o-transcribe-diarize", file, prompt: "hello" });
 
   // @ts-expect-error — aliasing cannot send a known id through the loose arm
   const aliasedInvalid: TranscriptionBody = {
@@ -642,16 +642,16 @@ function transcribeTypeTests(): void {
     file,
     future_alignment: true,
   };
-  transcribe(future);
+  stt(future);
 
   // @ts-expect-error — keywords is a gpt-transcribe param
-  transcribe({ model: "whisper-1", file, keywords: ["unmodel"] });
+  stt({ model: "whisper-1", file, keywords: ["unmodel"] });
 
   // @ts-expect-error — known speakers are diarize-only
-  transcribe({ model: "gpt-transcribe", file, known_speaker_names: ["agent"] });
+  stt({ model: "gpt-transcribe", file, known_speaker_names: ["agent"] });
 
   // @ts-expect-error — bogus top-level param on a known arm
-  transcribe({ model: "whisper-1", file, bogus_thing: 1 });
+  stt({ model: "whisper-1", file, bogus_thing: 1 });
 }
 
 // ---------------------------------------------------------------------------
@@ -694,8 +694,8 @@ void chatReportTypeTests;
 void chatModelUnionTests;
 void imagesTypeTests;
 void imageEditTypeTests;
-void speechTypeTests;
-void transcribeTypeTests;
+void ttsTypeTests;
+void sttTypeTests;
 void videoTypeTests;
 void realtimeSessionTypeTests;
 

@@ -1,5 +1,5 @@
 /**
- * `unmodel/speech` → `fish-audio.speech` (POST /v1/tts).
+ * `unmodel/tts` → `fish-audio.tts` (POST /v1/tts).
  *
  * `model` is a **header**, not a body field — the provider validator strips it
  * out of the body and emits `.request.headers.model` — so the adapter writes
@@ -29,18 +29,18 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  SpeechAdapterFor,
-  SpeechModelParamTable,
-  SpeechParams,
-} from "../../core/unified/vocabulary/speech";
+  TtsAdapterFor,
+  TtsModelParamTable,
+  TtsParams,
+} from "../../core/unified/vocabulary/tts";
 import {
-  speech as validator,
+  tts as validator,
   type FishAudioFormat,
   type FishAudioLatency,
   type FishAudioMp3Bitrate,
   type FishAudioOpusBitrate,
   type TtsBody,
-} from "./speech";
+} from "./tts";
 
 /** The four TTS model ids — the ref union for `fish-audio/…`. */
 const MODELS = ["s2.1-pro", "s2.1-pro-free", "s2-pro", "s1"] as const;
@@ -48,10 +48,10 @@ const MODELS = ["s2.1-pro", "s2.1-pro-free", "s2-pro", "s1"] as const;
 const TTS_DOCS = "https://docs.fish.audio/api-reference/endpoint/openapi-v1/text-to-speech";
 
 /** The wire params this adapter compiles to (`model` becomes a header). */
-export type FishAudioSpeechWire = TtsBody;
+export type FishAudioTtsWire = TtsBody;
 
 /** What a unified call to `fish-audio/…` returns. */
-export type FishAudioSpeechResult = ReturnType<typeof validator<FishAudioSpeechWire>>;
+export type FishAudioTtsResult = ReturnType<typeof validator<FishAudioTtsWire>>;
 
 const FORMAT: AudioFormatSpec = {
   codecs: { mp3: "mp3", opus: "opus", pcm_s16le: "wav" },
@@ -109,12 +109,12 @@ const S2_ROW = {
   extras: { ...SHARED_TTS_EXTRAS, normalize_loudness: EXTRA as boolean | null },
 } as const;
 
-const FISH_AUDIO_SPEECH_MODEL_PARAMS = {
+const FISH_AUDIO_TTS_MODEL_PARAMS = {
   "s2.1-pro": S2_ROW,
   "s2.1-pro-free": S2_ROW,
   "s2-pro": S2_ROW,
   s1: { codecs: CODECS, extras: SHARED_TTS_EXTRAS },
-} as const satisfies SpeechModelParamTable;
+} as const satisfies TtsModelParamTable;
 
 /** The two prosody members; everything else is a body-root field. */
 const PROSODY_NESTING: Readonly<Record<string, readonly string[]>> = {
@@ -122,20 +122,20 @@ const PROSODY_NESTING: Readonly<Record<string, readonly string[]>> = {
   normalize_loudness: ["prosody"],
 };
 
-export const speech = {
-  category: "speech",
+export const tts = {
+  category: "tts",
   provider: "fish-audio",
   models: MODELS,
-  modelParams: FISH_AUDIO_SPEECH_MODEL_PARAMS,
+  modelParams: FISH_AUDIO_TTS_MODEL_PARAMS,
   unsupported: {
     language:
       "POST /v1/tts has no language field — Fish Audio infers the language from the text and " +
       "from the voice behind `reference_id`.",
   },
   compile(
-    input: SpeechParams,
-    ctx: CompileContext<SpeechParams>,
-  ): CompiledCall<FishAudioSpeechWire, FishAudioSpeechResult> {
+    input: TtsParams,
+    ctx: CompileContext<TtsParams>,
+  ): CompiledCall<FishAudioTtsWire, FishAudioTtsResult> {
     ctx.from(["reference_id"], "voice");
     ctx.from(["format"], "outputFormat");
     ctx.from(["sample_rate"], "outputFormat");
@@ -143,7 +143,7 @@ export const speech = {
     ctx.from(["opus_bitrate"], "outputFormat");
     ctx.from(["prosody", "speed"], "speed");
 
-    const body: FishAudioSpeechWire = { model: ctx.model, text: input.text };
+    const body: FishAudioTtsWire = { model: ctx.model, text: input.text };
 
     if (input.voice !== undefined) {
       const voice = ctx.take(
@@ -191,12 +191,12 @@ export const speech = {
       if (speed !== undefined) body.prosody = { speed };
     }
 
-    applyExtras(input, FISH_AUDIO_SPEECH_MODEL_PARAMS, body, ctx, { nest: PROSODY_NESTING });
+    applyExtras(input, FISH_AUDIO_TTS_MODEL_PARAMS, body, ctx, { nest: PROSODY_NESTING });
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies SpeechAdapterFor<
-  typeof FISH_AUDIO_SPEECH_MODEL_PARAMS,
-  FishAudioSpeechWire,
-  FishAudioSpeechResult
+} as const satisfies TtsAdapterFor<
+  typeof FISH_AUDIO_TTS_MODEL_PARAMS,
+  FishAudioTtsWire,
+  FishAudioTtsResult
 >;

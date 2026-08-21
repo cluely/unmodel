@@ -3,7 +3,7 @@
 // (last checked 2026-08-13).
 //
 // The realtime models (stt-rt-v5 / stt-rt-v4) serve the WebSocket API, whose
-// configuration message `realtimeTranscription` validates; `transcribe`
+// configuration message `realtimeTranscription` validates; `stt`
 // (the async REST endpoint) rejects them, and vice versa.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
@@ -60,7 +60,7 @@ const asyncModels = {
 /**
  * WebSocket-only realtime models: the ids `realtimeTranscription` accepts in
  * the session configuration message. They cannot be used with
- * POST /v1/transcriptions — `transcribe` reports `unsupported_capability`
+ * POST /v1/transcriptions — `stt` reports `unsupported_capability`
  * for them — and their $0.12/hr rate prices a realtime session from this same
  * table.
  */

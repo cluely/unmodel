@@ -100,7 +100,7 @@ type ToApiMember<Avail, Model extends string> = [Avail] extends [never]
  *
  * Four type parameters, and `Model` is separate from `Body` on purpose:
  * `toApi`'s union depends on the model id, and the model id is not always on
- * the body — `google.chat` and `elevenlabs.speech` strip it
+ * the body — `google.chat` and `elevenlabs.tts` strip it
  * into `.request.url`. `Validated<Body>` with one argument still means "wire
  * body + `.request`, no targets".
  */

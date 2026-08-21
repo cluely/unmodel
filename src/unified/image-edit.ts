@@ -128,7 +128,7 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * By hand, and in one array, because that array is four things at once: the
  * runtime registry, the `"provider/model"` ref union an editor autocompletes,
  * the return type of a call (each provider's own `Validated`) — and, as in
- * `transcribe`, the per-ref `image` narrowing. A generated or
+ * `stt`, the per-ref `image` narrowing. A generated or
  * dynamically-loaded registry would keep the first and lose the other three.
  *
  * Four providers rather than the eight that ship an editing route, and the four

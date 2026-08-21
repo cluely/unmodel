@@ -6,8 +6,8 @@ import {
   TTS_STREAM_WS_URL,
   TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD,
 } from "./realtime";
-import { INWORLD_STT_AUDIO_ENCODINGS, INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS } from "./transcribe";
-import { INWORLD_SAMPLE_RATES_HERTZ } from "./speech";
+import { INWORLD_STT_AUDIO_ENCODINGS, INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS } from "./stt";
+import { INWORLD_SAMPLE_RATES_HERTZ } from "./tts";
 import { STT_STREAM_MODEL_IDS, STT_SYNC_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";

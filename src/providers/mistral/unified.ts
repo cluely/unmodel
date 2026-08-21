@@ -1,5 +1,5 @@
 /**
- * `unmodel/transcribe` → `mistral.transcribe` (POST /v1/audio/transcriptions).
+ * `unmodel/stt` → `mistral.stt` (POST /v1/audio/transcriptions).
  *
  * The only route in the category that accepts **all three** canonical audio
  * shapes — `file` (multipart Blob), `file_url` and `file_id` (from
@@ -11,7 +11,7 @@
  * The pairing worth knowing about is not this adapter's: Voxtral documents
  * that `timestamp_granularities` "is not compatible with `language`". So a
  * request that pins a language *and* asks for word timings is rejected by
- * `mistral.transcribe`'s own `checkTimestampLanguage`, and the provenance
+ * `mistral.stt`'s own `checkTimestampLanguage`, and the provenance
  * declared below is what makes that finding arrive at `timestamps` rather than
  * at a wire field the caller never wrote.
  */
@@ -25,11 +25,11 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  TranscribeAdapterFor,
-  TranscribeModelParamTable,
-  TranscribeParamsFor,
-} from "../../core/unified/vocabulary/transcribe";
-import { transcribe as validator, type TranscriptionBody } from "./transcribe";
+  SttAdapterFor,
+  SttModelParamTable,
+  SttParamsFor,
+} from "../../core/unified/vocabulary/stt";
+import { stt as validator, type TranscriptionBody } from "./stt";
 
 /** The five Voxtral batch models — the ref union for `mistral/…`. */
 const MODELS = [
@@ -44,10 +44,10 @@ const TRANSCRIPTION_DOCS =
   "https://docs.mistral.ai/studio/audio/speech_to_text/offline_transcription";
 
 /** The wire params this adapter compiles to (multipart form fields). */
-export type MistralTranscribeWire = TranscriptionBody;
+export type MistralSttWire = TranscriptionBody;
 
 /** What a unified call to `mistral/…` returns. */
-export type MistralTranscribeResult = ReturnType<typeof validator>;
+export type MistralSttResult = ReturnType<typeof validator>;
 
 /**
  * The five Voxtral ids share one row, because they share one schema: there is
@@ -72,19 +72,19 @@ const VOXTRAL_ROW = {
   },
 } as const;
 
-const MISTRAL_TRANSCRIBE_MODEL_PARAMS = {
+const MISTRAL_STT_MODEL_PARAMS = {
   "voxtral-mini-latest": VOXTRAL_ROW,
   "voxtral-mini-2602": VOXTRAL_ROW,
   "voxtral-mini-2507": VOXTRAL_ROW,
   "voxtral-small-latest": VOXTRAL_ROW,
   "voxtral-small-2507": VOXTRAL_ROW,
-} as const satisfies TranscribeModelParamTable;
+} as const satisfies SttModelParamTable;
 
-export const transcribe = {
-  category: "transcribe",
+export const stt = {
+  category: "stt",
   provider: "mistral",
   models: MODELS,
-  modelParams: MISTRAL_TRANSCRIBE_MODEL_PARAMS,
+  modelParams: MISTRAL_STT_MODEL_PARAMS,
   audioInputs: ["file", "url", "fileId"],
   unsupported: {
     languages:
@@ -96,10 +96,10 @@ export const transcribe = {
       "`providerOptions.mistral`.",
   },
   compile(
-    input: TranscribeParamsFor<"file" | "url" | "fileId">,
-    ctx: CompileContext<TranscribeParamsFor<"file" | "url" | "fileId">>,
-  ): CompiledCall<MistralTranscribeWire, MistralTranscribeResult> {
-    const body: MistralTranscribeWire = { model: ctx.model };
+    input: SttParamsFor<"file" | "url" | "fileId">,
+    ctx: CompileContext<SttParamsFor<"file" | "url" | "fileId">>,
+  ): CompiledCall<MistralSttWire, MistralSttResult> {
+    const body: MistralSttWire = { model: ctx.model };
     ctx.from(["file"], "audio");
     ctx.from(["file_url"], "audio");
     ctx.from(["file_id"], "audio");
@@ -148,13 +148,13 @@ export const transcribe = {
       if (granularity !== undefined) body.timestamp_granularities = [granularity];
     }
 
-    applyExtras(input, MISTRAL_TRANSCRIBE_MODEL_PARAMS, body, ctx);
+    applyExtras(input, MISTRAL_STT_MODEL_PARAMS, body, ctx);
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies TranscribeAdapterFor<
+} as const satisfies SttAdapterFor<
   "file" | "url" | "fileId",
-  typeof MISTRAL_TRANSCRIBE_MODEL_PARAMS,
-  MistralTranscribeWire,
-  MistralTranscribeResult
+  typeof MISTRAL_STT_MODEL_PARAMS,
+  MistralSttWire,
+  MistralSttResult
 >;

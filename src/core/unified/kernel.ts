@@ -116,7 +116,7 @@ const CANONICAL_KEY_LISTS = {
     "aspectRatio",
     "providerOptions",
   ] as const),
-  speech: ([
+  tts: ([
     "model",
     "text",
     "voice",
@@ -125,7 +125,7 @@ const CANONICAL_KEY_LISTS = {
     "language",
     "providerOptions",
   ] as const),
-  transcribe: ([
+  stt: ([
     "model",
     "audio",
     "languages",
@@ -151,8 +151,8 @@ const CANONICAL_KEYS: Readonly<Record<UnifiedCategory, ReadonlySet<string>>> = O
   image: new Set<string>(CANONICAL_KEY_LISTS.image),
   imageEdit: new Set<string>(CANONICAL_KEY_LISTS.imageEdit),
   video: new Set<string>(CANONICAL_KEY_LISTS.video),
-  speech: new Set<string>(CANONICAL_KEY_LISTS.speech),
-  transcribe: new Set<string>(CANONICAL_KEY_LISTS.transcribe),
+  tts: new Set<string>(CANONICAL_KEY_LISTS.tts),
+  stt: new Set<string>(CANONICAL_KEY_LISTS.stt),
   music: new Set<string>(CANONICAL_KEY_LISTS.music),
 });
 

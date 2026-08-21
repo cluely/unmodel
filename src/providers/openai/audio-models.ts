@@ -46,7 +46,7 @@ const SPEECH_BASE = {
 
 /**
  * The four ids POST /v1/audio/speech documents (`SpeechModel` in the
- * OpenAPI-generated openai@7.4.0 types, and the createSpeech reference's
+ * OpenAPI-generated openai@7.4.0 types, and the createTts reference's
  * allowed values).
  */
 export const speechModels = {

@@ -20,7 +20,7 @@ it to change.
   normalised. Wire types mirror the documented request exactly, including the
   parts unmodel finds ugly.
 - **The layer on top** is `unmodel/chat` and the six media packs
-  (`unmodel/{image,image-edit,speech,video,transcribe,music}`). They take one
+  (`unmodel/{image,image-edit,tts,video,stt,music}`). They take one
   standardized camelCase vocabulary, **compile** it to one provider's wire
   params, and then hand those params to **that provider's own validator** from
   the substrate.
@@ -92,7 +92,7 @@ rules.
   dialect ids, response types — **keep the provider's own wire spelling**. They
   describe the bytes on the wire, and respelling them would make the type lie.
 
-The uniform verbs are `chat`, `image`, `imageEdit`, `speech`, `transcribe`,
+The uniform verbs are `chat`, `image`, `imageEdit`, `tts`, `stt`,
 `video` and `music`. A provider's primary route in a category is the bare verb;
 every *extra* route qualifies by what makes it different — what it is made from
 (`videoFromImage`, `imageFromReference`, `musicFromAudio`), which route family
@@ -111,8 +111,8 @@ path, never by the vendor's product name.
 | `black-forest-labs.image` | `Flux2Body` |
 | `krea.image` | `krea2Url` |
 | `vidu.imageFromReference` | `REFERENCE2IMAGE_URL`, `/ent/v2/reference2image` |
-| `elevenlabs.speech` | `TEXT_TO_SPEECH_BASE_URL`, `/v1/text-to-speech/{voice_id}` |
-| `deepgram.transcribe` | `LISTEN_URL`, `/v1/listen` |
+| `elevenlabs.tts` | `TEXT_TO_SPEECH_BASE_URL`, `/v1/text-to-speech/{voice_id}` |
+| `deepgram.stt` | `LISTEN_URL`, `/v1/listen` |
 | `stability.music` | `STABLE_AUDIO_TEXT_TO_AUDIO_URL` |
 | `recraft.imageEdit` | `IMAGE_TO_IMAGE_URL`, `ImageToImageParams` |
 
@@ -130,7 +130,7 @@ nowhere else — they are not names this codebase still knows.
    providers spelled "transcribe this audio" eight different ways. Learning one
    provider taught you nothing about the next.
 2. **It is what makes the unified refs readable.** The word you type at
-   `unmodel/transcribe` and the word you type at `unmodel/<provider>` are the
+   `unmodel/stt` and the word you type at `unmodel/<provider>` are the
    same word, at every provider, in every category.
 3. **The wire spelling still has to survive somewhere**, because it is how you
    find the endpoint in the provider's docs — so it survives exactly where it is
@@ -148,7 +148,7 @@ name, which makes the filename half structural rather than cosmetic.
 - **Realtime surfaces keep their own names** (`listenLive`, `speakLive`,
   `ttsWebsocket`, `speechToTextRealtime`, `realtimeTranscription`,
   `realtimeSession`, …). A socket config is a *different endpoint* from a batch
-  POST; folding it into `speech` or `transcribe` would make one address mean two
+  POST; folding it into `tts` or `stt` would make one address mean two
   transports.
 - **`google-vertex` has three chat addresses** — `chat`, `chatMaas`,
   `chatRawPredict` — because Vertex genuinely serves three wire surfaces. The

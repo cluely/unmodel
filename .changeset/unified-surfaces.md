@@ -41,15 +41,15 @@ proposition.
 | `unmodel/chat` | `chat` | 32 |
 | `unmodel/chat/factory` | `createChat` | whichever you register |
 | `unmodel/image` | `image`, `createImage` | 15 |
-| `unmodel/speech` | `speech`, `createSpeech` | 14 |
-| `unmodel/transcribe` | `transcribe`, `createTranscribe` | 11 |
+| `unmodel/tts` | `tts`, `createTts` | 14 |
+| `unmodel/stt` | `stt`, `createStt` | 11 |
 | `unmodel/video` | `video`, `createVideo` | 10 |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 4 |
 | `unmodel/music` | `music`, `createMusic` | 2 |
 
 …plus `unmodel/<provider>/unified` for each of the 36 providers that ship an
 adapter, and `unified.image` / `unified.imageEdit` / `unified.music` /
-`unified.speech` / `unified.transcribe` / `unified.video` on `unmodel validate`.
+`unified.tts` / `unified.stt` / `unified.video` on `unmodel validate`.
 
 **The result is a provider result.** A unified call does not validate the
 request itself. It compiles the canonical params to the provider's wire params
@@ -134,7 +134,7 @@ translations that would otherwise be hand-written per provider:
   `null` "automatic duration". A duration a model does not offer is an
   `invalid_enum_value` listing the ones it does — never the nearest, because a
   9-second clip is not approximately a 5-second one at any price.
-- **transcribe** — `diarization: { enabled: true }` reaches a flag
+- **stt** — `diarization: { enabled: true }` reaches a flag
   (`speaker_labels`, `diarize`, `enable_speaker_diarization`), an enum
   (`diarization: "speaker"`), an **inverted** flag (`skip_diarization: false`)
   and a flag-plus-config-object; `timestamps: "word"` is an array at OpenAI, a
@@ -145,7 +145,7 @@ translations that would otherwise be hand-written per provider:
   `music_length_ms: 90000` at ElevenLabs and `duration: 90` at Stability. The
   conversion is exact and therefore silent; a length that lands between two
   milliseconds is refused rather than rounded.
-- **speech** — `outputFormat` reconciles container, sample rate and bitrate
+- **tts** — `outputFormat` reconciles container, sample rate and bitrate
   across fourteen providers that each publish a different subset; a provider
   with no speaking-rate field says so instead of dropping `speed`.
 
@@ -155,13 +155,13 @@ separate `unmodel/<provider>/unified` export, and `test/bundle-budget.test.ts`
 holds every entry — provider and pack alike — to a committed byte budget
 measured over the real `dist/` import graph. Measured today, unminified ESM with
 `zod` excluded: chat 1718.7 KiB (`chat/factory` 144.0), image 755.7, video
-614.4, speech 409.8, transcribe 401.7, image-edit 276.1, music 149.8. A pack is
+614.4, tts 409.8, stt 401.7, image-edit 276.1, music 149.8. A pack is
 the whole category;
-`createSpeech([openai, rime])` and its siblings pay only for the providers you
+`createTts([openai, rime])` and its siblings pay only for the providers you
 register.
 
 **Declared gaps, each a typed refusal rather than a surprise.**
-`inworld.transcribe` carries base64 audio inside its JSON body, which a
+`inworld.stt` carries base64 audio inside its JSON body, which a
 synchronous compile step cannot produce from a `Blob`; Black Forest Labs'
 Kontext `input_image` is a JSON string, so its `imageInputs` is
 `["data", "url"]` and `{ file }` does not type-check; Recraft's `strength` is

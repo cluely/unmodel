@@ -27,7 +27,7 @@
  *   `close_context` ends it. The create payload shares voiceId / modelId /
  *   audioConfig / temperature / timestampType / applyTextNormalization /
  *   language / deliveryMode with the REST body validated by ./tts, so those
- *   bounds and the per-model gates in `speechConstraints` are re-used verbatim;
+ *   bounds and the per-model gates in `ttsConstraints` are re-used verbatim;
  *   the buffering fields (`maxBufferDelayMs`, `bufferCharThreshold`,
  *   `autoMode`, `timestampTransportStrategy`) are streaming-only.
  *
@@ -59,15 +59,15 @@ import {
   INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS,
   STT_OVERVIEW_DOCS,
   type InworldRealtimeTranscribeConfig,
-} from "./transcribe";
+} from "./stt";
 import {
   audioConfigSchema,
-  speechConstraints,
+  ttsConstraints,
   type InworldAudioConfig,
   type InworldApplyTextNormalization,
   type InworldDeliveryMode,
   type InworldTimestampType,
-} from "./speech";
+} from "./tts";
 import { sttModels, ttsModels, STT_STREAM_MODEL_IDS, type InworldTtsModelId } from "./models";
 
 /** Bidirectional STT streaming; auth rides in an `authorization` query param. */
@@ -176,7 +176,7 @@ const transcribeConfigValidator = createValidator<InworldRealtimeTranscribeConfi
  * (method `"GET"`: the handshake is an HTTP upgrade, so there is no body).
  *
  * The identical object is accepted by the sync endpoint as the
- * `transcribeConfig` field of its body — see `inworld.transcribe`, which adds
+ * `transcribeConfig` field of its body — see `inworld.stt`, which adds
  * `audioData` and validates the same rules against the sync model roster.
  *
  * ```ts
@@ -337,7 +337,7 @@ const voiceContextValidator = createValidator<InworldVoiceContextConfig, unknown
   // The per-model gates are properties of the MODEL, not of the transport:
   // `deliveryMode` is inworld-tts-2 only and `temperature` is ignored there
   // on both surfaces, so the REST table is re-used rather than re-stated.
-  constraints: speechConstraints,
+  constraints: ttsConstraints,
   finalize: finalizeVoiceContext,
 });
 

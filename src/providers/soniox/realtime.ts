@@ -37,7 +37,7 @@ import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
-import type { SonioxContextObject, SonioxTranslation } from "./transcribe";
+import type { SonioxContextObject, SonioxTranslation } from "./stt";
 import { models, REALTIME_MODEL_IDS, type SonioxRealtimeModelId } from "./models";
 
 /** "wss://stt-rt.soniox.com/transcribe-websocket" — the real-time STT socket. */

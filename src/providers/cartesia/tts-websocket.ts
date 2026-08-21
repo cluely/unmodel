@@ -45,7 +45,7 @@
  *
  * BREAKING (type-level only): `language` and `generation_config.emotion` are
  * closed to their enums here as on POST /tts/bytes, so a `string`-typed
- * variable no longer assigns. See the open-tail rule in ./speech.
+ * variable no longer assigns. See the open-tail rule in ./tts.
  */
 
 import { z } from "zod";
@@ -60,13 +60,13 @@ import {
   CARTESIA_EMOTIONS,
   CARTESIA_TTS_LANGUAGES,
   CARTESIA_VERSION,
-  speechConstraints,
+  ttsConstraints,
   type CartesiaEmotion,
   type CartesiaEncoding,
   type CartesiaSampleRate,
   type CartesiaTtsLanguage,
   type CartesiaVoice,
-} from "./speech";
+} from "./tts";
 
 export const TTS_WEBSOCKET_URL = "wss://api.cartesia.ai/tts/websocket";
 
@@ -102,7 +102,7 @@ export interface CartesiaWebsocketGenerationConfig {
   speed?: number;
   /**
    * One of the 58 documented labels ({@link CARTESIA_EMOTIONS}). Closed, per
-   * the open-tail rule in ./speech: an off-enum label is an
+   * the open-tail rule in ./tts: an off-enum label is an
    * `invalid_enum_value` *error* here, unlike an off-enum `model_id`, which is
    * a warning and therefore keeps its tail.
    */
@@ -296,7 +296,7 @@ const validator = createValidator<TtsWebsocketMessage>({
   catalog: models,
   // Same per-model rule as POST /tts/bytes: pronunciation dictionaries are
   // sonic-3 and newer.
-  constraints: speechConstraints,
+  constraints: ttsConstraints,
   checks: [checkEnums, checkTtsModelKind],
   // No estimate: Cartesia publishes no USD rate (credits only — see models.ts),
   // so a per-character estimate could only ever be undefined.

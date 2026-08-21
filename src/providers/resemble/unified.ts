@@ -1,5 +1,5 @@
 /**
- * `unmodel/speech` → `resemble.speech` (POST https://f.cluster.resemble.ai/synthesize).
+ * `unmodel/tts` → `resemble.tts` (POST https://f.cluster.resemble.ai/synthesize).
  *
  * **There is no model on the wire.** "The synthesis API automatically uses the
  * model associated with your `voice_uuid` … Do not pass it as a `model`
@@ -26,16 +26,16 @@ import {
 import type { AudioFormatCodec } from "../../core/unified/vocabulary/audio";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  SpeechAdapterFor,
-  SpeechModelParamTable,
-  SpeechParams,
-} from "../../core/unified/vocabulary/speech";
+  TtsAdapterFor,
+  TtsModelParamTable,
+  TtsParams,
+} from "../../core/unified/vocabulary/tts";
 import {
-  speech as validator,
+  tts as validator,
   type ResemblePrecision,
   type ResembleSampleRate,
   type SynthesizeBody,
-} from "./speech";
+} from "./tts";
 
 /** The one TTS row the catalog carries — the ref union for `resemble/…`. */
 const MODELS = ["resemble-ultra"] as const;
@@ -43,10 +43,10 @@ const MODELS = ["resemble-ultra"] as const;
 const SYNC_DOCS = "https://docs.resemble.ai/voice-generation/text-to-speech/synchronous";
 
 /** The wire body this adapter compiles to. */
-export type ResembleSpeechWire = SynthesizeBody;
+export type ResembleTtsWire = SynthesizeBody;
 
 /** What a unified call to `resemble/…` returns. */
-export type ResembleSpeechResult = ReturnType<typeof validator>;
+export type ResembleTtsResult = ReturnType<typeof validator>;
 
 const SAMPLE_RATES = [8000, 16000, 22050, 32000, 44100, 48000] as const;
 
@@ -100,7 +100,7 @@ const PRECISION: Readonly<Partial<Record<AudioFormatCodec, ResemblePrecision>>> 
  * `languages` row and no `speed` — both are properties of the voice here, which
  * the adapter declares as gaps.
  */
-const RESEMBLE_SPEECH_MODEL_PARAMS = {
+const RESEMBLE_TTS_MODEL_PARAMS = {
   "resemble-ultra": {
     codecs: ["mp3", "pcm_s16le", "pcm_s24le", "pcm_s32le", "pcm_mulaw"],
     extras: {
@@ -110,13 +110,13 @@ const RESEMBLE_SPEECH_MODEL_PARAMS = {
       project_uuid: EXTRA as string,
     },
   },
-} as const satisfies SpeechModelParamTable;
+} as const satisfies TtsModelParamTable;
 
-export const speech = {
-  category: "speech",
+export const tts = {
+  category: "tts",
   provider: "resemble",
   models: MODELS,
-  modelParams: RESEMBLE_SPEECH_MODEL_PARAMS,
+  modelParams: RESEMBLE_TTS_MODEL_PARAMS,
   unsupported: {
     speed:
       "Resemble's synthesis routes publish no speaking-rate field — pace is a property of the " +
@@ -126,16 +126,16 @@ export const speech = {
       "voice behind `voice_uuid`, which also selects the model.",
   },
   compile(
-    input: SpeechParams,
-    ctx: CompileContext<SpeechParams>,
-  ): CompiledCall<ResembleSpeechWire, ResembleSpeechResult> {
+    input: TtsParams,
+    ctx: CompileContext<TtsParams>,
+  ): CompiledCall<ResembleTtsWire, ResembleTtsResult> {
     ctx.from(["data"], "text");
     ctx.from(["voice_uuid"], "voice");
     ctx.from(["output_format"], "outputFormat");
     ctx.from(["sample_rate"], "outputFormat");
     ctx.from(["precision"], "outputFormat");
 
-    const body: ResembleSpeechWire = { voice_uuid: "", data: input.text };
+    const body: ResembleTtsWire = { voice_uuid: "", data: input.text };
 
     if (input.voice !== undefined) {
       const voice = ctx.take(
@@ -162,12 +162,12 @@ export const speech = {
       }
     }
 
-    applyExtras(input, RESEMBLE_SPEECH_MODEL_PARAMS, body, ctx);
+    applyExtras(input, RESEMBLE_TTS_MODEL_PARAMS, body, ctx);
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies SpeechAdapterFor<
-  typeof RESEMBLE_SPEECH_MODEL_PARAMS,
-  ResembleSpeechWire,
-  ResembleSpeechResult
+} as const satisfies TtsAdapterFor<
+  typeof RESEMBLE_TTS_MODEL_PARAMS,
+  ResembleTtsWire,
+  ResembleTtsResult
 >;

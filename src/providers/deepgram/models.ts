@@ -7,7 +7,7 @@
 //
 // PRICING (pay-as-you-go, read off the pricing page's speech-to-text table;
 // already USD per minute, no unit conversion needed). The table has SEPARATE
-// streaming and pre-recorded columns — this catalog and `transcribe` are the
+// streaming and pre-recorded columns — this catalog and `stt` are the
 // PRE-RECORDED (POST /v1/listen) surface, so the pre-recorded column is what
 // is encoded here:
 // - Nova-3 monolingual: $0.0077/min pre-recorded ($0.0048/min streaming).

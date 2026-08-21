@@ -145,18 +145,18 @@ if (safe.ok) expectAssignable<ChatMessage[]>(safe.params.messages);
 // out, at zero type cost.
 // ---------------------------------------------------------------------------
 
-declare const speech: Validated<{ input: string; voice: string }, { openai: () => unknown }>;
+declare const tts: Validated<{ input: string; voice: string }, { openai: () => unknown }>;
 
 // @ts-expect-error — this endpoint declares no API targets, so there is no `.toApi`.
-speech.toApi("openai");
+tts.toApi("openai");
 // @ts-expect-error — nor `.toApiSafe`.
-speech.toApiSafe("openai");
-expectTrue<IsNever<KeyIn<typeof speech, "toApi">>>();
-expectTrue<IsNever<KeyIn<typeof speech, "toApiSafe">>>();
+tts.toApiSafe("openai");
+expectTrue<IsNever<KeyIn<typeof tts, "toApi">>>();
+expectTrue<IsNever<KeyIn<typeof tts, "toApiSafe">>>();
 
 // `.toSdk` and `.request` are still there.
-speech.toSdk("openai");
-expectAssignable<string>(speech.request.url);
+tts.toSdk("openai");
+expectAssignable<string>(tts.request.url);
 
 // ---------------------------------------------------------------------------
 // `.toSdk(target)`: the zero-arg form is gone, and the union is per-endpoint.

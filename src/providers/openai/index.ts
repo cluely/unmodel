@@ -73,7 +73,7 @@ export {
 } from "./images-models";
 export type { OpenaiImagesSupplementModelId } from "./images-models";
 
-export { speech, AUDIO_SPEECH_URL } from "./speech";
+export { tts, AUDIO_SPEECH_URL } from "./tts";
 export type {
   SpeechBody,
   SpeechVoice,
@@ -85,15 +85,15 @@ export type {
   Gpt4oMiniTtsBody,
   Gpt4oMiniTtsSnapshotBody,
   UnknownSpeechModelBody,
-} from "./speech";
+} from "./tts";
 
 export {
-  transcribe,
-  toFormData as transcribeToFormData,
+  stt,
+  toFormData as sttToFormData,
   AUDIO_TRANSCRIPTIONS_URL,
   DIARIZE_CHUNKING_THRESHOLD_SECONDS,
   MAX_KNOWN_SPEAKERS,
-} from "./transcribe";
+} from "./stt";
 export type {
   TranscriptionBody,
   TranscriptionResponseFormat,
@@ -106,7 +106,7 @@ export type {
   Gpt4oMiniTranscribeSnapshotBody,
   Gpt4oTranscribeDiarizeBody,
   UnknownTranscriptionModelBody,
-} from "./transcribe";
+} from "./stt";
 
 export {
   speechModels,
@@ -188,7 +188,7 @@ export type {
 export {
   imageConstraints,
   imagesEditConstraints,
-  speechConstraints,
+  ttsConstraints,
   transcriptionConstraints,
   transcriptionFamilyRules,
   chatConstraints,

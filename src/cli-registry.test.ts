@@ -18,7 +18,7 @@ import { MULTIPART_ONLY, REGISTRY } from "./cli-registry";
 const EXPECTED_IDS: readonly string[] = [
   "alibaba.chat",
   "anthropic.chat",
-  "assemblyai.transcribe",
+  "assemblyai.stt",
   "baseten.chat",
   "black-forest-labs.image",
   "black-forest-labs.imageEdit",
@@ -34,9 +34,9 @@ const EXPECTED_IDS: readonly string[] = [
   "bria.imageLite",
   "bytedance.image",
   "bytedance.video",
-  "cartesia.speech",
+  "cartesia.stt",
   "cartesia.sttWebsocket",
-  "cartesia.transcribe",
+  "cartesia.tts",
   "cartesia.ttsWebsocket",
   "cerebras.chat",
   "cohere.chat",
@@ -44,25 +44,25 @@ const EXPECTED_IDS: readonly string[] = [
   "deepgram.listenFlux",
   "deepgram.listenLive",
   "deepgram.speakLive",
-  "deepgram.speech",
-  "deepgram.transcribe",
+  "deepgram.stt",
+  "deepgram.tts",
   "deepinfra.chat",
   "deepseek.chat",
   "elevenlabs.music",
-  "elevenlabs.speech",
   "elevenlabs.speechToTextRealtime",
+  "elevenlabs.stt",
   "elevenlabs.textToSpeechStreamInput",
-  "elevenlabs.transcribe",
+  "elevenlabs.tts",
   "fireworks-ai.chat",
-  "fish-audio.speech",
+  "fish-audio.tts",
   "friendli.chat",
-  "gladia.transcribe",
+  "gladia.stt",
   "google.chat",
   "google.image",
   "google.video",
   "groq.chat",
   "huggingface.chat",
-  "hume.speech",
+  "hume.tts",
   "ideogram.image",
   "ideogram.imageEdit",
   "ideogram.imageEditReframe",
@@ -72,8 +72,8 @@ const EXPECTED_IDS: readonly string[] = [
   "inception.chat",
   "inworld.realtimeTranscribeConfig",
   "inworld.realtimeVoiceContext",
-  "inworld.speech",
-  "inworld.transcribe",
+  "inworld.stt",
+  "inworld.tts",
   "kling.image",
   "kling.imageOmni",
   "kling.video",
@@ -86,8 +86,8 @@ const EXPECTED_IDS: readonly string[] = [
   "lightricks.video",
   "lightricks.videoFromAudio",
   "lightricks.videoFromImage",
-  "lmnt.speech",
-  "lmnt.speechDetailed",
+  "lmnt.tts",
+  "lmnt.ttsDetailed",
   "longcat.chat",
   "luma.image",
   "luma.imageEditReframe",
@@ -98,14 +98,14 @@ const EXPECTED_IDS: readonly string[] = [
   "luma.videoUpscale",
   "meta.chat",
   "minimax.chat",
-  "minimax.speech",
+  "minimax.tts",
   "minimax.video",
   "minimax.videoV2",
   "mistral.chat",
-  "mistral.transcribe",
+  "mistral.stt",
   "moonshotai.chat",
-  "murf.speech",
-  "murf.speechStream",
+  "murf.tts",
+  "murf.ttsStream",
   "nebius.chat",
   "novita-ai.chat",
   "nvidia.chat",
@@ -113,8 +113,8 @@ const EXPECTED_IDS: readonly string[] = [
   "openai.image",
   "openai.imageEdit",
   "openai.realtimeSession",
-  "openai.speech",
-  "openai.transcribe",
+  "openai.stt",
+  "openai.tts",
   "openai.video",
   "openrouter.chat",
   "perplexity.chat",
@@ -126,14 +126,14 @@ const EXPECTED_IDS: readonly string[] = [
   "recraft.imageEditInpaint",
   "recraft.imageEditOutpaint",
   "recraft.imageEditReplaceBackground",
-  "resemble.speech",
-  "resemble.speechStream",
-  "revai.transcribe",
+  "resemble.tts",
+  "resemble.ttsStream",
+  "revai.stt",
   "reve.image",
   "reve.imageEdit",
   "reve.imageEditRemix",
   "reve.imageV2",
-  "rime.speech",
+  "rime.tts",
   "runway.image",
   "runway.video",
   "runway.videoFromImage",
@@ -141,12 +141,12 @@ const EXPECTED_IDS: readonly string[] = [
   "sarvam.chat",
   "scaleway.chat",
   "siliconflow.chat",
-  "smallest-ai.speech",
+  "smallest-ai.tts",
   "soniox.realtimeTranscription",
-  "soniox.transcribe",
-  "speechify.speech",
-  "speechify.speechStream",
-  "speechmatics.transcribe",
+  "soniox.stt",
+  "speechify.tts",
+  "speechify.ttsStream",
+  "speechmatics.stt",
   "stability.image",
   "stability.imageCore",
   "stability.imageEditErase",
@@ -356,40 +356,40 @@ test("the video-category endpoints all use the uniform `video` verb", () => {
  * The speech-to-text half of the law, and the one where the wire spellings
  * disagreed the most: eleven providers spelled the same operation
  * `transcription`, `transcriptions`, `transcript`, `speechToText`, `listen`,
- * `preRecorded`, `jobs` and `stt`. All eleven now address it as `transcribe`,
- * which is also what makes `unmodel/transcribe`'s ref union readable — the
- * category entry and the provider entry are the same word.
+ * `preRecorded` and `jobs`. All eleven now address it as `stt`, which is also
+ * what makes `unmodel/stt`'s ref union readable — the category entry and the
+ * provider entry are the same word.
  *
  * Written out rather than derived because an id does not carry its category,
  * and because the point of the list is that a rename has to be typed here.
  */
-const TRANSCRIBE_IDS: readonly string[] = [
-  "assemblyai.transcribe",
-  "cartesia.transcribe",
-  "deepgram.transcribe",
-  "elevenlabs.transcribe",
-  "gladia.transcribe",
-  "inworld.transcribe",
-  "mistral.transcribe",
-  "openai.transcribe",
-  "revai.transcribe",
-  "soniox.transcribe",
-  "speechmatics.transcribe",
+const STT_IDS: readonly string[] = [
+  "assemblyai.stt",
+  "cartesia.stt",
+  "deepgram.stt",
+  "elevenlabs.stt",
+  "gladia.stt",
+  "inworld.stt",
+  "mistral.stt",
+  "openai.stt",
+  "revai.stt",
+  "soniox.stt",
+  "speechmatics.stt",
 ];
 
-test("the transcription endpoints all use the uniform `transcribe` verb", () => {
-  for (const id of TRANSCRIBE_IDS) {
+test("the transcription endpoints all use the uniform `stt` verb", () => {
+  for (const id of STT_IDS) {
     expect(EXPECTED_IDS).toContain(id);
-    // Bare `transcribe` everywhere: no provider ships a second batch route, so
+    // Bare `stt` everywhere: no provider ships a second batch route, so
     // unlike image and video there is nothing to qualify.
-    expect(id.split(".")[1] ?? "").toBe("transcribe");
+    expect(id.split(".")[1] ?? "").toBe("stt");
   }
-  const providers = [...new Set(TRANSCRIBE_IDS.map((id) => id.split(".")[0] as string))].sort();
+  const providers = [...new Set(STT_IDS.map((id) => id.split(".")[0] as string))].sort();
   expect(providers).toHaveLength(11);
 
   // The realtime surfaces keep their own names — a socket config is a
   // different endpoint from a batch POST, and collapsing the two would make
-  // `transcribe` mean two transports.
+  // `stt` mean two transports.
   for (const id of [
     "deepgram.listenLive",
     "deepgram.listenFlux",
@@ -404,7 +404,6 @@ test("the transcription endpoints all use the uniform `transcribe` verb", () => 
 
   const retired = [
     "assemblyai.transcript",
-    "cartesia.stt",
     "deepgram.listen",
     "elevenlabs.speechToText",
     "gladia.preRecorded",
@@ -567,7 +566,7 @@ test("every media endpoint addresses its category with that category's verb", ()
     ...IMAGE_GENERATION_IDS,
     ...IMAGE_EDIT_IDS,
     ...VIDEO_IDS,
-    ...TRANSCRIBE_IDS,
+    ...STT_IDS,
     ...MUSIC_IDS,
   ];
   // No id belongs to two categories — `imageEdit` vs `image` is the pair where

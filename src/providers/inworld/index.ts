@@ -1,12 +1,12 @@
 export {
-  speech,
-  speechConstraints,
+  tts,
+  ttsConstraints,
   audioConfigSchema,
   TTS_VOICE_URL,
   TTS_VOICE_STREAM_URL,
   INWORLD_TTS_MAX_CHARACTERS,
   INWORLD_SAMPLE_RATES_HERTZ,
-} from "./speech";
+} from "./tts";
 export type {
   TtsVoiceBody,
   InworldAudioConfig,
@@ -16,10 +16,10 @@ export type {
   InworldTimestampType,
   InworldApplyTextNormalization,
   InworldSynthesisContext,
-} from "./speech";
+} from "./tts";
 
 export {
-  transcribe,
+  stt,
   checkTranscribeConfig,
   decodedBase64Bytes,
   sttVendorOf,
@@ -34,7 +34,7 @@ export {
   STT_OVERVIEW_DOCS,
   STT_TRANSCRIBE_URL,
   TRANSCRIBE_DOCS,
-} from "./transcribe";
+} from "./stt";
 export type {
   TranscribeBody,
   TranscribeConfigCheckOptions,
@@ -48,7 +48,7 @@ export type {
   InworldSttV1Config,
   InworldTranscribeConfig,
   InworldVoiceProfileConfig,
-} from "./transcribe";
+} from "./stt";
 
 export {
   realtimeTranscribeConfig,

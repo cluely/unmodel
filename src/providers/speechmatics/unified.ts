@@ -1,5 +1,5 @@
 /**
- * `unmodel/transcribe` → `speechmatics.transcribe` (POST /v2/jobs).
+ * `unmodel/stt` → `speechmatics.stt` (POST /v2/jobs).
  *
  * What unmodel validates here is the **job config** — the JSON that rides in
  * the multipart `config` part — so the compiled body is a `JobConfig` and the
@@ -31,12 +31,12 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  TranscribeAdapterFor,
-  TranscribeModelParamTable,
-  TranscribeParamsFor,
-} from "../../core/unified/vocabulary/transcribe";
+  SttAdapterFor,
+  SttModelParamTable,
+  SttParamsFor,
+} from "../../core/unified/vocabulary/stt";
 import {
-  transcribe as validator,
+  stt as validator,
   type JobConfig,
   type SpeechmaticsAdditionalVocabEntry,
   type SpeechmaticsAudioEventsConfig,
@@ -49,7 +49,7 @@ import {
   type SpeechmaticsTopicDetectionConfig,
   type SpeechmaticsTranscriptFilteringConfig,
   type SpeechmaticsTranslationConfig,
-} from "./transcribe";
+} from "./stt";
 
 /** The three batch models — the ref union for `speechmatics/…`. */
 const MODELS = ["enhanced", "standard", "melia-1"] as const;
@@ -60,10 +60,10 @@ const JOBS_DOCS = "https://docs.speechmatics.com/speech-to-text/batch";
 const AUTO = "auto";
 
 /** The wire config this adapter compiles to (the multipart `config` part). */
-export type SpeechmaticsTranscribeWire = JobConfig;
+export type SpeechmaticsSttWire = JobConfig;
 
 /** What a unified call to `speechmatics/…` returns. */
-export type SpeechmaticsTranscribeResult = ReturnType<typeof validator>;
+export type SpeechmaticsSttResult = ReturnType<typeof validator>;
 
 /**
  * Speechmatics' per-model surface: the job config's own fields, and the ten
@@ -80,7 +80,7 @@ export type SpeechmaticsTranscribeResult = ReturnType<typeof validator>;
  * top-level words — names so generic that they would read as canonical
  * vocabulary rather than as Speechmatics' own. One object per feature keeps the
  * provider's structure visible, keeps the types exact (each is an interface
- * `./transcribe.ts` already exports), and keeps the extras list short enough to
+ * `./stt.ts` already exports), and keeps the extras list short enough to
  * read. Same call MiniMax's `voice_modify` makes, for the same reason.
  *
  * ## `timestamps: ["word"]`
@@ -139,7 +139,7 @@ const FULL_EXTRAS = {
 
 const TIMESTAMPS = ["word"] as const;
 
-const SPEECHMATICS_TRANSCRIBE_MODEL_PARAMS = {
+const SPEECHMATICS_STT_MODEL_PARAMS = {
   enhanced: {
     timestamps: TIMESTAMPS,
     extras: { ...FULL_EXTRAS, domain: EXTRA as string },
@@ -150,7 +150,7 @@ const SPEECHMATICS_TRANSCRIBE_MODEL_PARAMS = {
     languages: ["multi"],
     extras: { ...TRANSCRIPTION_CONFIG_EXTRAS, ...ROOT_EXTRAS },
   },
-} as const satisfies TranscribeModelParamTable;
+} as const satisfies SttModelParamTable;
 
 /** Which extras belong to `transcription_config`; the rest are job-config roots. */
 const CONFIG_NESTING: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
@@ -161,11 +161,11 @@ const CONFIG_NESTING: Readonly<Record<string, readonly string[]>> = Object.fromE
   ]),
 );
 
-export const transcribe = {
-  category: "transcribe",
+export const stt = {
+  category: "stt",
   provider: "speechmatics",
   models: MODELS,
-  modelParams: SPEECHMATICS_TRANSCRIBE_MODEL_PARAMS,
+  modelParams: SPEECHMATICS_STT_MODEL_PARAMS,
   audioInputs: ["url"],
   unsupported: {
     prompt:
@@ -174,10 +174,10 @@ export const transcribe = {
       "`providerOptions.speechmatics`.",
   },
   compile(
-    input: TranscribeParamsFor<"url">,
-    ctx: CompileContext<TranscribeParamsFor<"url">>,
-  ): CompiledCall<SpeechmaticsTranscribeWire, SpeechmaticsTranscribeResult> {
-    const body: SpeechmaticsTranscribeWire = {
+    input: SttParamsFor<"url">,
+    ctx: CompileContext<SttParamsFor<"url">>,
+  ): CompiledCall<SpeechmaticsSttWire, SpeechmaticsSttResult> {
+    const body: SpeechmaticsSttWire = {
       type: "transcription",
       transcription_config: { language: AUTO, model: ctx.model },
     };
@@ -242,13 +242,13 @@ export const transcribe = {
       );
     }
 
-    applyExtras(input, SPEECHMATICS_TRANSCRIBE_MODEL_PARAMS, body, ctx, { nest: CONFIG_NESTING });
+    applyExtras(input, SPEECHMATICS_STT_MODEL_PARAMS, body, ctx, { nest: CONFIG_NESTING });
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies TranscribeAdapterFor<
+} as const satisfies SttAdapterFor<
   "url",
-  typeof SPEECHMATICS_TRANSCRIBE_MODEL_PARAMS,
-  SpeechmaticsTranscribeWire,
-  SpeechmaticsTranscribeResult
+  typeof SPEECHMATICS_STT_MODEL_PARAMS,
+  SpeechmaticsSttWire,
+  SpeechmaticsSttResult
 >;

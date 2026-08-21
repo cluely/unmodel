@@ -1,13 +1,13 @@
 export {
-  transcribe,
+  stt,
   listenUrl,
   withQuery,
   LISTEN_URL,
   LISTEN_ENCODINGS,
   NOVA_3_MULTILINGUAL_USD_PER_MINUTE,
   REDACT_GROUPS,
-} from "./transcribe";
-export type { ListenParams, DeepgramRedact, DeepgramListenEncoding } from "./transcribe";
+} from "./stt";
+export type { ListenParams, DeepgramRedact, DeepgramListenEncoding } from "./stt";
 
 export {
   listenLive,
@@ -59,7 +59,7 @@ export type {
 } from "./realtime";
 
 export {
-  speech,
+  tts,
   speakUrl,
   SPEAK_URL,
   DEFAULT_SPEAK_MODEL_ID,
@@ -69,13 +69,13 @@ export {
   SPEAK_SPEED_MIN,
   SPEAK_SPEED_MAX,
   AUDIO_FORMATS,
-} from "./speech";
+} from "./tts";
 export type {
   SpeakParams,
   DeepgramSpeakEncoding,
   DeepgramSpeakContainer,
   DeepgramSpeakSampleRate,
-} from "./speech";
+} from "./tts";
 
 export { checkListen } from "./check";
 export type { ListenResponseLike } from "./check";

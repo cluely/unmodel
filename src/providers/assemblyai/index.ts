@@ -1,5 +1,5 @@
 export {
-  transcribe,
+  stt,
   TRANSCRIPT_URL,
   TRANSCRIPT_URL_EU,
   UPLOAD_URL,
@@ -12,14 +12,14 @@ export {
   STATIC_ENTITY_MAX_TERMS_PER_LABEL,
   STATIC_ENTITY_MAX_TERM_CHARACTERS,
   STATIC_ENTITY_MAX_LABEL_CHARACTERS,
-} from "./transcribe";
+} from "./stt";
 export type {
   TranscriptBody,
   AssemblyaiSpeechModel,
   AssemblyaiSpeakerOptions,
   AssemblyaiLanguageDetectionOptions,
   AssemblyaiDomain,
-} from "./transcribe";
+} from "./stt";
 
 export { checkTranscript } from "./check";
 export type { AssemblyaiTranscriptStatus, TranscriptResponseLike } from "./check";

@@ -134,7 +134,7 @@ describe("endpointLabel", () => {
   test("camelCase category → kebab subpath, which is what an export looks like", () => {
     expect(endpointLabel("image")).toBe("unmodel/image");
     expect(endpointLabel("imageEdit")).toBe("unmodel/image-edit");
-    expect(endpointLabel("transcribe")).toBe("unmodel/transcribe");
+    expect(endpointLabel("stt")).toBe("unmodel/stt");
   });
 });
 

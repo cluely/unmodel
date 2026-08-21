@@ -1,5 +1,5 @@
 /**
- * `unmodel/speech` → `murf.speech` / `murf.speechStream` (POST
+ * `unmodel/tts` → `murf.tts` / `murf.ttsStream` (POST
  * /v1/speech/generate and /v1/speech/stream).
  *
  * **The ref picks the route.** Murf spells its two models in two different
@@ -29,18 +29,18 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  SpeechAdapterFor,
-  SpeechModelParamTable,
-  SpeechParams,
-} from "../../core/unified/vocabulary/speech";
+  TtsAdapterFor,
+  TtsModelParamTable,
+  TtsParams,
+} from "../../core/unified/vocabulary/tts";
 import {
-  speech as generateValidator,
-  speechStream as streamValidator,
+  tts as generateValidator,
+  ttsStream as streamValidator,
   type MurfChannelType,
   type MurfFormat,
   type SpeechGenerateBody,
   type SpeechStreamBody,
-} from "./speech";
+} from "./tts";
 
 /** The two catalog rows — the ref union for `murf/…`. */
 const MODELS = ["gen2", "falcon-2"] as const;
@@ -48,12 +48,12 @@ const MODELS = ["gen2", "falcon-2"] as const;
 const TTS_OVERVIEW_DOCS = "https://murf.ai/api/docs/text-to-speech/overview";
 
 /** The wire body this adapter compiles to — one arm per route. */
-export type MurfSpeechWire = SpeechGenerateBody | SpeechStreamBody;
+export type MurfTtsWire = SpeechGenerateBody | SpeechStreamBody;
 
 /** What a unified call to `murf/…` returns — again one arm per route. */
-export type MurfSpeechResult = ReturnType<typeof generateValidator> | ReturnType<typeof streamValidator>;
+export type MurfTtsResult = ReturnType<typeof generateValidator> | ReturnType<typeof streamValidator>;
 
-type MurfValidate = CompiledCall<MurfSpeechWire, MurfSpeechResult>["validate"];
+type MurfValidate = CompiledCall<MurfTtsWire, MurfTtsResult>["validate"];
 
 /**
  * The body under construction, before the route narrows it.
@@ -147,7 +147,7 @@ const SHARED_MURF_EXTRAS = {
 
 const MURF_CODECS = ["mp3", "flac", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] as const;
 
-const MURF_SPEECH_MODEL_PARAMS = {
+const MURF_TTS_MODEL_PARAMS = {
   gen2: {
     codecs: MURF_CODECS,
     extras: {
@@ -159,17 +159,17 @@ const MURF_SPEECH_MODEL_PARAMS = {
     },
   },
   "falcon-2": { codecs: MURF_CODECS, extras: SHARED_MURF_EXTRAS },
-} as const satisfies SpeechModelParamTable;
+} as const satisfies TtsModelParamTable;
 
-export const speech = {
-  category: "speech",
+export const tts = {
+  category: "tts",
   provider: "murf",
   models: MODELS,
-  modelParams: MURF_SPEECH_MODEL_PARAMS,
+  modelParams: MURF_TTS_MODEL_PARAMS,
   compile(
-    input: SpeechParams,
-    ctx: CompileContext<SpeechParams>,
-  ): CompiledCall<MurfSpeechWire, MurfSpeechResult> {
+    input: TtsParams,
+    ctx: CompileContext<TtsParams>,
+  ): CompiledCall<MurfTtsWire, MurfTtsResult> {
     const streaming = STREAM_ONLY_MODELS.has(ctx.model);
     ctx.from(["voiceId"], "voice");
     ctx.from(["modelVersion"], "model");
@@ -218,17 +218,17 @@ export const speech = {
     // `locale` is BCP-47 already ("en-US", "es-ES"), so it passes through.
     if (input.language !== undefined) body.locale = input.language;
 
-    applyExtras(input, MURF_SPEECH_MODEL_PARAMS, body, ctx);
+    applyExtras(input, MURF_TTS_MODEL_PARAMS, body, ctx);
 
     return {
-      params: body as MurfSpeechWire,
+      params: body as MurfTtsWire,
       // One cast, at the one place the two routes meet: each validator takes
       // its own arm of the union, and the ref decided which arm `body` is.
       validate: (streaming ? streamValidator.safe : generateValidator.safe) as MurfValidate,
     };
   },
-} as const satisfies SpeechAdapterFor<
-  typeof MURF_SPEECH_MODEL_PARAMS,
-  MurfSpeechWire,
-  MurfSpeechResult
+} as const satisfies TtsAdapterFor<
+  typeof MURF_TTS_MODEL_PARAMS,
+  MurfTtsWire,
+  MurfTtsResult
 >;

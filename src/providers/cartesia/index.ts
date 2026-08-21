@@ -1,11 +1,11 @@
 export {
-  speech,
-  speechConstraints,
+  tts,
+  ttsConstraints,
   TTS_BYTES_URL,
   CARTESIA_VERSION,
   CARTESIA_EMOTIONS,
   CARTESIA_TTS_LANGUAGES,
-} from "./speech";
+} from "./tts";
 export type {
   TtsBytesBody,
   CartesiaVoice,
@@ -19,7 +19,7 @@ export type {
   CartesiaMp3BitRate,
   CartesiaGenerationConfig,
   CartesiaTtsLanguage,
-} from "./speech";
+} from "./tts";
 
 export {
   ttsWebsocket,
@@ -35,8 +35,8 @@ export type {
   CartesiaWebsocketGenerationConfig,
 } from "./tts-websocket";
 
-export { transcribe, toFormData, STT_TRANSCRIBE_URL, CARTESIA_STT_LANGUAGES } from "./transcribe";
-export type { SttTranscribeParams, CartesiaSttEncoding, CartesiaSttLanguage } from "./transcribe";
+export { stt, toFormData, STT_TRANSCRIBE_URL, CARTESIA_STT_LANGUAGES } from "./stt";
+export type { SttTranscribeParams, CartesiaSttEncoding, CartesiaSttLanguage } from "./stt";
 
 export {
   sttWebsocket,

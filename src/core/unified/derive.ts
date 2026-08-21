@@ -48,12 +48,12 @@
 import type { AudioContainer, AudioFormat, AudioFormatCodec, AudioFormatRequest } from "./vocabulary/audio";
 import type { AspectRatio, Dimensions, ResolutionTier } from "./vocabulary/common";
 import type { ImageEditInputKind } from "./vocabulary/image-edit";
-import type { Voice } from "./vocabulary/speech";
+import type { Voice } from "./vocabulary/tts";
 import type {
   AudioInputKind,
   Diarization,
   TimestampGranularity,
-} from "./vocabulary/transcribe";
+} from "./vocabulary/stt";
 import type { VideoImageInput, VideoInput } from "./vocabulary/video";
 import type { CompileIssue, Derived } from "./types";
 import type { Warn } from "../translate/warnings";
@@ -1308,7 +1308,7 @@ const AUDIO_SPELLING: Readonly<Record<AudioInputKind, string>> = Object.freeze({
  * `audio` narrowed to the one shape it is, checked against what the route takes.
  *
  * The runtime half of the category's flagship promise. The compile-time half
- * (`TranscribeValidator`, driven by the same `audioInputs` array) already
+ * (`SttValidator`, driven by the same `audioInputs` array) already
  * rejects a `Blob` at a URL-only route — but only for a caller in TypeScript
  * with a literal ref, so this is what answers for everyone else: JavaScript,
  * a ref assembled at runtime, and a request that came in over the wire.

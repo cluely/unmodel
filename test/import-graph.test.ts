@@ -551,7 +551,7 @@ describe("chat (amendment A1)", () => {
  * An adapter leaf is `unified.ts`, or `unified-<category>.ts` for a provider
  * that serves more than one. The suffixed form is not a convenience: a single
  * module exporting two categories' adapters is a single *build entry* holding
- * both, so `unmodel/speech` paid for OpenAI's image catalog until the two were
+ * both, so `unmodel/tts` paid for OpenAI's image catalog until the two were
  * split. One module per category is what makes A6's promise true in bytes and
  * not just in imports.
  */
@@ -644,7 +644,7 @@ describe("unified media surfaces (amendment A5)", () => {
     const names = FILES.filter((f) => under(f, "src/unified"))
       .map((f) => f.slice("src/unified/".length, -".ts".length))
       .sort();
-    expect(names).toEqual(["image", "image-edit", "music", "speech", "transcribe", "video"]);
+    expect(names).toEqual(["image", "image-edit", "music", "stt", "tts", "video"]);
   });
 });
 

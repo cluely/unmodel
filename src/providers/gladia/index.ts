@@ -1,11 +1,11 @@
 export {
-  transcribe,
+  stt,
   toUploadFormData,
   PRE_RECORDED_URL,
   UPLOAD_URL,
   MAX_AUDIO_DURATION_SECONDS,
   MAX_AUDIO_BYTES,
-} from "./transcribe";
+} from "./stt";
 export type {
   PreRecordedBody,
   GladiaUploadParams,
@@ -20,7 +20,7 @@ export type {
   GladiaCustomSpellingConfig,
   GladiaAudioToLlmConfig,
   GladiaPiiRedactionConfig,
-} from "./transcribe";
+} from "./stt";
 
 export { checkPreRecorded } from "./check";
 export type { GladiaJobStatus, PreRecordedResultLike } from "./check";

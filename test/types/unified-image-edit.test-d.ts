@@ -9,7 +9,7 @@
  *    the masked operations join later without widening `ImageEditParams`, and it
  *    only does that job if `"inpaint"` is a red squiggle *today*.
  * 2. `image` narrows per **route**, exactly as `audio` does at
- *    `unmodel/transcribe`:
+ *    `unmodel/stt`:
  *
  * | route | accepts | `{ file }` | `{ url }` | `{ data }` |
  * |---|---|---|---|---|

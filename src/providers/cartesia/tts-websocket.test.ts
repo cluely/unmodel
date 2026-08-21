@@ -6,7 +6,7 @@ import {
   TTS_WEBSOCKET_MAX_BUFFER_DELAY_MS_DEFAULT,
   TTS_WEBSOCKET_MAX_BUFFER_DELAY_MS_MAX,
 } from "./tts-websocket";
-import { CARTESIA_EMOTIONS, CARTESIA_TTS_LANGUAGES, CARTESIA_VERSION } from "./speech";
+import { CARTESIA_EMOTIONS, CARTESIA_TTS_LANGUAGES, CARTESIA_VERSION } from "./tts";
 import { TTS_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";

@@ -1,6 +1,6 @@
 export {
-  speech,
-  speechStream,
+  tts,
+  ttsStream,
   SPEECH_GENERATE_URL,
   SPEECH_STREAM_URL,
   SPEECH_STREAM_GLOBAL_URL,
@@ -19,7 +19,7 @@ export {
   PITCH_MAX,
   VARIATION_MIN,
   VARIATION_MAX,
-} from "./speech";
+} from "./tts";
 export type {
   SpeechGenerateBody,
   SpeechStreamBody,
@@ -27,10 +27,10 @@ export type {
   MurfFormat,
   MurfGenerateSampleRate,
   MurfStreamSampleRate,
-} from "./speech";
+} from "./tts";
 
 // Only /v1/speech/generate has a checker — /v1/speech/stream returns audio bytes.
-export { checkSpeech } from "./check";
+export { checkTts } from "./check";
 export type { MurfSpeechResponseLike, MurfWordDuration } from "./check";
 
 export {

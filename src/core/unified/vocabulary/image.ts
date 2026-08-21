@@ -130,7 +130,7 @@ export type ImageParams =
  * The table is the single source of three things — the caller's `size` /
  * `aspectRatio` / `resolution` unions, the extras a model takes, and the
  * run-time roster `applyExtras` refuses an out-of-model extra against — for
- * exactly the reason `transcribe`'s `audioInputs` is one array: a second
+ * exactly the reason `stt`'s `audioInputs` is one array: a second
  * declaration is a second thing to keep in step, and this one has to be right
  * in an editor *and* on the wire.
  */
@@ -165,7 +165,7 @@ export type AnyImageAdapter = AnyUnifiedAdapter<ImageParams> & {
  *
  * `M` exists so the narrowing can live in `T`'s **constraint** rather than in
  * an intersection on the parameter, and that is a message-quality decision
- * with teeth. `transcribe` narrows one *required object* field, where an
+ * with teeth. `stt` narrows one *required object* field, where an
  * intersection reports fine. These narrow *unit unions* — and `T & { aspectRatio?: "16:9" | … }`
  * against a `T` whose `aspectRatio` is `"4:3"` gives an intersection with a
  * discriminant property of type `never`, which TypeScript reduces to `never`

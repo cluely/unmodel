@@ -2,7 +2,7 @@
  * Type-level tests for the deepgram provider (SPEECH-TO-TEXT modality).
  * NOT run by `bun test` — this file is only type-checked (`bun run check` /
  * tsc --noEmit). These tests pin the `ExactKeys` public-cast contract of
- * `deepgram.transcribe`: the excess-key compile error, the `safe<T>` overload
+ * `deepgram.stt`: the excess-key compile error, the `safe<T>` overload
  * carrying the same guard, and the most aggressive strip in the repo — the
  * cast is `Validated<Pick<T, "url" & keyof T>, ListenSdkTargets<Omit<T, "url">>>`,
  * so the wire body is ONLY `{url}` (or `{}`) while every transcription option
@@ -12,8 +12,8 @@
  * error rather than a runtime throw.
  */
 import {
-  transcribe,
-  speech,
+  stt,
+  tts,
   listenLive,
   listenFlux,
   fluxConfigure,
@@ -27,7 +27,7 @@ import type { EndpointConstraints } from "../../src/core/constraint-types";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
 function listenTypeTests(): void {
-  const v = transcribe({
+  const v = stt({
     url: "https://example.com/audio.wav",
     model: "nova-3",
     language: "multi",
@@ -65,16 +65,16 @@ function listenTypeTests(): void {
 
   // Local-file case: no `url` param, so `Pick<T, "url" & keyof T>` collapses
   // to an empty body and you POST raw audio bytes to `.request.url` yourself.
-  const local = transcribe({ model: "nova-3", language: "en", multichannel: true });
+  const local = stt({ model: "nova-3", language: "en", multichannel: true });
   expectTrue<IsNever<KeyIn<typeof local, "url">>>();
   expectAssignable<string>(local.request.url);
   expectAssignable<"nova-3">(local.toSdk("deepgram").model);
 
   // Unknown model ids stay assignable through the (string & {}) escape.
-  transcribe({ url: "https://example.com/a.wav", model: "nova-9-future" });
+  stt({ url: "https://example.com/a.wav", model: "nova-9-future" });
 
   // safe() narrows to the same split shape.
-  const result = transcribe.safe({ url: "https://example.com/a.wav", model: "nova-3" });
+  const result = stt.safe({ url: "https://example.com/a.wav", model: "nova-3" });
   if (result.ok) {
     expectAssignable<string>(result.params.url);
     expectTrue<IsNever<KeyIn<typeof result.params, "model">>>();
@@ -82,30 +82,30 @@ function listenTypeTests(): void {
   }
 
   // The SDK target vocabulary is closed: only "deepgram" is declared here.
-  // @ts-expect-error "openai" is not an SDK target for deepgram.transcribe
+  // @ts-expect-error "openai" is not an SDK target for deepgram.stt
   v.toSdk("openai");
   // @ts-expect-error the zero-arg .toSdk() form was removed
   v.toSdk();
 
-  expectAssignable<EndpointConstraints[]>(transcribe.constraintsFor("nova-3"));
+  expectAssignable<EndpointConstraints[]>(stt.constraintsFor("nova-3"));
 
   // @ts-expect-error diarize_model is a closed enum
-  transcribe({ url: "https://example.com/a.wav", diarize_model: "v3" });
+  stt({ url: "https://example.com/a.wav", diarize_model: "v3" });
   // @ts-expect-error callback_method is a closed enum
-  transcribe({ url: "https://example.com/a.wav", callback_method: "GET" });
+  stt({ url: "https://example.com/a.wav", callback_method: "GET" });
 
   // ExactKeys: a typo'd/excess top-level key is a COMPILE error, not a
   // silent unknown_param warning — which matters more here than anywhere,
   // because an unrecognised key would otherwise be URL-encoded into the
   // query string and silently ignored by Deepgram.
-  transcribe({
+  stt({
     url: "https://example.com/a.wav",
     // @ts-expect-error excess (typo'd) top-level key — the ExactKeys guard
     smart_fomat: true,
   });
 
   // The same guard is wired into the safe() overload.
-  transcribe.safe({
+  stt.safe({
     url: "https://example.com/a.wav",
     // @ts-expect-error excess (typo'd) top-level key — ExactKeys on safe()
     punctuation: true,
@@ -113,36 +113,36 @@ function listenTypeTests(): void {
 }
 
 /**
- * The audio-format surface of `deepgram.speech`, which is driven end to end by
+ * The audio-format surface of `deepgram.tts`, which is driven end to end by
  * the documented "Audio Format Combinations" table (AUDIO_FORMATS). Every
  * field the table closes is closed in the type as well, so a combination the
  * API rejects with `invalid_enum_value` is a red squiggle first.
  */
-function speechAudioFormatTypeTests(): void {
+function ttsAudioFormatTypeTests(): void {
   // --- encoding: SPEAK_ENCODINGS is the whole space (and AUDIO_FORMATS' key)
-  speech({ text: "hi", encoding: "linear16" });
-  speech({ text: "hi", encoding: "opus" });
+  tts({ text: "hi", encoding: "linear16" });
+  tts({ text: "hi", encoding: "opus" });
   // @ts-expect-error the (string & {}) tail is gone — vorbis is not an encoding
-  speech({ text: "hi", encoding: "vorbis" });
+  tts({ text: "hi", encoding: "vorbis" });
   // @ts-expect-error the empty string compiled through the old tail
-  speech({ text: "hi", encoding: "" });
+  tts({ text: "hi", encoding: "" });
 
   // --- container: the union of every `containers` entry in AUDIO_FORMATS ---
-  speech({ text: "hi", encoding: "linear16", container: "wav" });
-  speech({ text: "hi", encoding: "opus", container: "ogg" });
+  tts({ text: "hi", encoding: "linear16", container: "wav" });
+  tts({ text: "hi", encoding: "opus", container: "ogg" });
   // @ts-expect-error "mp4" is not one of wav / ogg / none
-  speech({ text: "hi", encoding: "linear16", container: "mp4" });
+  tts({ text: "hi", encoding: "linear16", container: "mp4" });
   // @ts-expect-error the empty string compiled through the old tail
-  speech({ text: "hi", encoding: "linear16", container: "" });
+  tts({ text: "hi", encoding: "linear16", container: "" });
   expectAssignable<DeepgramSpeakContainer>("none");
 
   // --- sample_rate: the union of every `sampleRates` entry in AUDIO_FORMATS
-  speech({ text: "hi", encoding: "linear16", sample_rate: 24000 });
-  speech({ text: "hi", encoding: "flac", sample_rate: 22050 });
+  tts({ text: "hi", encoding: "linear16", sample_rate: 24000 });
+  tts({ text: "hi", encoding: "flac", sample_rate: 22050 });
   // @ts-expect-error 99 was silently accepted while the field was `number`
-  speech({ text: "hi", encoding: "linear16", sample_rate: 99 });
+  tts({ text: "hi", encoding: "linear16", sample_rate: 99 });
   // @ts-expect-error 44100 appears in no AUDIO_FORMATS row, for any encoding
-  speech({ text: "hi", encoding: "linear16", sample_rate: 44100 });
+  tts({ text: "hi", encoding: "linear16", sample_rate: 44100 });
   expectAssignable<DeepgramSpeakSampleRate>(48000);
 
   // --- bit_rate: DELIBERATELY still `number` --------------------------------
@@ -150,11 +150,11 @@ function speechAudioFormatTypeTests(): void {
   // union describes it. mp3 publishes a discrete list ([32000, 48000]) but
   // opus (4000–650000) and aac (4000–192000) publish continuous ranges, and
   // narrowing to the mp3 list would reject the legal opus values below.
-  speech({ text: "hi", encoding: "opus", bit_rate: 128000 });
-  speech({ text: "hi", encoding: "aac", bit_rate: 96000 });
+  tts({ text: "hi", encoding: "opus", bit_rate: 128000 });
+  tts({ text: "hi", encoding: "aac", bit_rate: 96000 });
 
   // Voice/model ids keep their (string & {}) escape.
-  speech({ text: "hi", model: "aura-9-future-en" });
+  tts({ text: "hi", model: "aura-9-future-en" });
 }
 
 /**
@@ -168,20 +168,20 @@ function speechAudioFormatTypeTests(): void {
  */
 function listenRedactTypeTests(): void {
   // A named group — this is what autocomplete now offers.
-  transcribe({ url: "https://example.com/a.wav", redact: "pci" });
-  transcribe({ url: "https://example.com/a.wav", redact: ["pii", "phi"] });
+  stt({ url: "https://example.com/a.wav", redact: "pci" });
+  stt({ url: "https://example.com/a.wav", redact: ["pii", "phi"] });
   // An arbitrary entity type — legal on the wire, so it must still compile.
-  transcribe({ url: "https://example.com/a.wav", redact: "email_address" });
-  transcribe({ url: "https://example.com/a.wav", redact: ["ssn", "aggressive_numbers"] });
+  stt({ url: "https://example.com/a.wav", redact: "email_address" });
+  stt({ url: "https://example.com/a.wav", redact: ["ssn", "aggressive_numbers"] });
   // The boolean arm ("redact everything") is untouched.
-  transcribe({ url: "https://example.com/a.wav", redact: true });
+  stt({ url: "https://example.com/a.wav", redact: true });
 }
 
 /**
  * The three WebSocket CONFIG surfaces. Two contracts are pinned here that no
  * REST endpoint can pin: `.request.method` is `"GET"` (a socket handshake is
  * an upgrade, so `ValidatedSocket` carries `SocketMeta`, not `RequestMeta`),
- * and — unlike `transcribe`, which strips every query param out of its body — the
+ * and — unlike `stt`, which strips every query param out of its body — the
  * whole config STAYS on the body, because for a socket the config object is
  * the deliverable and the URL is just where it is encoded.
  */
@@ -254,7 +254,7 @@ function realtimeSocketTypeTests(): void {
 
 export {
   listenTypeTests,
-  speechAudioFormatTypeTests,
+  ttsAudioFormatTypeTests,
   listenRedactTypeTests,
   realtimeSocketTypeTests,
 };

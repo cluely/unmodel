@@ -312,7 +312,7 @@ const validateCommand = defineCommand({
   },
   async run({ args }) {
     const target = args.target as string;
-    // A unified category (`unified.speech`) takes the canonical vocabulary and
+    // A unified category (`unified.tts`) takes the canonical vocabulary and
     // routes on its `model` ref; a provider endpoint takes that provider's wire
     // body. Both end in a `.safe`, so the rest of this command is identical.
     const load = lookup(REGISTRY, target) ?? lookup(UNIFIED, target);

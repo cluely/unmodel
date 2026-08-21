@@ -1,5 +1,5 @@
 /**
- * `unmodel/speech` → `speechify.speech` (POST /v1/audio/speech).
+ * `unmodel/tts` → `speechify.tts` (POST /v1/audio/speech).
  *
  * Speechify has **two** format fields and they are not redundant:
  * `audio_format` names a container only (`"mp3"`, `"wav"`, `"aac"`), while
@@ -17,7 +17,7 @@
  * takes the composite — at the single rate Speechify publishes (8 kHz), filled
  * with the usual warning.
  *
- * The streaming route (`speechify.speechStream`) takes an `Accept` header and
+ * The streaming route (`speechify.ttsStream`) takes an `Accept` header and
  * drops the two `wav_*` formats; it is a different endpoint with a different
  * character cap, and the unified surface targets the JSON one.
  */
@@ -33,16 +33,16 @@ import {
 import type { AudioContainer, AudioFormatCodec } from "../../core/unified/vocabulary/audio";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  SpeechAdapterFor,
-  SpeechModelParamTable,
-  SpeechParams,
-} from "../../core/unified/vocabulary/speech";
+  TtsAdapterFor,
+  TtsModelParamTable,
+  TtsParams,
+} from "../../core/unified/vocabulary/tts";
 import {
-  speech as validator,
+  tts as validator,
   type AudioSpeechBody,
   type SpeechifyAudioFormat,
   type SpeechifyOutputFormat,
-} from "./speech";
+} from "./tts";
 
 /** The four Simba rows — the ref union for `speechify/…`. */
 const MODELS = ["simba-english", "simba-multilingual", "simba-3.0", "simba-3.2"] as const;
@@ -50,10 +50,10 @@ const MODELS = ["simba-english", "simba-multilingual", "simba-3.0", "simba-3.2"]
 const SPEC_URL = "https://docs.speechify.ai/openapi/api-reference.json";
 
 /** The wire body this adapter compiles to. */
-export type SpeechifySpeechWire = AudioSpeechBody;
+export type SpeechifyTtsWire = AudioSpeechBody;
 
 /** What a unified call to `speechify/…` returns. */
-export type SpeechifySpeechResult = ReturnType<typeof validator>;
+export type SpeechifyTtsResult = ReturnType<typeof validator>;
 
 const FORMAT: AudioFormatSpec = {
   codecs: { mp3: "mp3", pcm_s16le: "wav", pcm_mulaw: "ulaw", aac: "aac" },
@@ -119,12 +119,12 @@ const SPEECHIFY_EXTRAS = {
 
 const CODECS = ["mp3", "aac", "pcm_s16le", "pcm_mulaw"] as const;
 
-const SPEECHIFY_SPEECH_MODEL_PARAMS = {
+const SPEECHIFY_TTS_MODEL_PARAMS = {
   "simba-english": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
   "simba-multilingual": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
   "simba-3.0": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
   "simba-3.2": { codecs: CODECS, languages: ["en"], extras: SPEECHIFY_EXTRAS },
-} as const satisfies SpeechModelParamTable;
+} as const satisfies TtsModelParamTable;
 
 /** Both extras live under `options`. */
 const OPTIONS_NESTING: Readonly<Record<string, readonly string[]>> = {
@@ -132,26 +132,26 @@ const OPTIONS_NESTING: Readonly<Record<string, readonly string[]>> = {
   text_normalization: ["options"],
 };
 
-export const speech = {
-  category: "speech",
+export const tts = {
+  category: "tts",
   provider: "speechify",
   models: MODELS,
-  modelParams: SPEECHIFY_SPEECH_MODEL_PARAMS,
+  modelParams: SPEECHIFY_TTS_MODEL_PARAMS,
   unsupported: {
     speed:
       "POST /v1/audio/speech publishes no speaking-rate field — pace is controlled with SSML " +
       "(`<prosody rate>`) inside `input`, which is text rather than a multiplier.",
   },
   compile(
-    input: SpeechParams,
-    ctx: CompileContext<SpeechParams>,
-  ): CompiledCall<SpeechifySpeechWire, SpeechifySpeechResult> {
+    input: TtsParams,
+    ctx: CompileContext<TtsParams>,
+  ): CompiledCall<SpeechifyTtsWire, SpeechifyTtsResult> {
     ctx.from(["input"], "text");
     ctx.from(["voice_id"], "voice");
     ctx.from(["output_format"], "outputFormat");
     ctx.from(["audio_format"], "outputFormat");
 
-    const body: SpeechifySpeechWire = { input: input.text, voice_id: "", model: ctx.model };
+    const body: SpeechifyTtsWire = { input: input.text, voice_id: "", model: ctx.model };
 
     if (input.voice !== undefined) {
       const voice = ctx.take(
@@ -211,12 +211,12 @@ export const speech = {
     // takes — no reduction, no warning.
     if (input.language !== undefined) body.language = input.language;
 
-    applyExtras(input, SPEECHIFY_SPEECH_MODEL_PARAMS, body, ctx, { nest: OPTIONS_NESTING });
+    applyExtras(input, SPEECHIFY_TTS_MODEL_PARAMS, body, ctx, { nest: OPTIONS_NESTING });
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies SpeechAdapterFor<
-  typeof SPEECHIFY_SPEECH_MODEL_PARAMS,
-  SpeechifySpeechWire,
-  SpeechifySpeechResult
+} as const satisfies TtsAdapterFor<
+  typeof SPEECHIFY_TTS_MODEL_PARAMS,
+  SpeechifyTtsWire,
+  SpeechifyTtsResult
 >;

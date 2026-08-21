@@ -246,7 +246,7 @@ export const SPEECH_RESPONSE_FORMATS = ["mp3", "opus", "aac", "flac", "wav", "pc
 /**
  * The 13 built-in voices gpt-4o-mini-tts supports — "`alloy`, `ash`,
  * `ballad`, `coral`, `echo`, `fable`, `onyx`, `nova`, `sage`, `shimmer`,
- * `verse`, `marin`, and `cedar`" (createSpeech reference). WIDENED from the
+ * `verse`, `marin`, and `cedar`" (createTts reference). WIDENED from the
  * openai@7.4.0 `SpeechCreateParams["voice"]` union, which omits `fable`,
  * `onyx` and `nova` even though its own docstring lists them.
  */
@@ -283,13 +283,13 @@ export const TTS_1_VOICES = [
   "shimmer",
 ] as const;
 
-/** "Does not work with `tts-1` or `tts-1-hd`." — createSpeech reference. */
+/** "Does not work with `tts-1` or `tts-1-hd`." — createTts reference. */
 const INSTRUCTIONS_UNSUPPORTED: DenyRule = {
   reason: "`instructions` does not work with tts-1 or tts-1-hd",
   source: SPEECH_DOCS,
 };
 
-/** "`sse` is not supported for `tts-1` or `tts-1-hd`." — createSpeech reference. */
+/** "`sse` is not supported for `tts-1` or `tts-1-hd`." — createTts reference. */
 // NOTE: `voice` deliberately carries NO enum. Its value may be a custom voice
 // OBJECT (`{ id: "voice_1234" }`), which the generic enum layer would reject
 // out of hand; the string form is validated by checkVoice in speech.ts
@@ -305,13 +305,13 @@ const GPT_4O_MINI_TTS_ENUMS: EndpointConstraints["enums"] = {
 };
 
 /**
- * Per-model constraint table for openai.speech, audited against the
- * createSpeech API reference and the text-to-speech guide on 2026-08-13.
+ * Per-model constraint table for openai.tts, audited against the
+ * createTts API reference and the text-to-speech guide on 2026-08-13.
  * `voice` is enumerated here only for the string form — a custom voice object
  * (`{ id: "voice_1234" }`) bypasses the enum layer (it is not a string) and
  * is checked in speech.ts instead.
  */
-export const speechConstraints = {
+export const ttsConstraints = {
   "tts-1": {
     deny: { instructions: INSTRUCTIONS_UNSUPPORTED },
     enums: TTS_1_ENUMS,
@@ -418,7 +418,7 @@ const NON_DIARIZE_DENIES: Record<string, DenyRule> = {
 };
 
 /**
- * Per-model constraint table for openai.transcribe, audited against the
+ * Per-model constraint table for openai.stt, audited against the
  * createTranscription API reference (openai@7.4.0 OpenAPI-generated
  * docstrings) and the speech-to-text guide on 2026-08-13.
  *

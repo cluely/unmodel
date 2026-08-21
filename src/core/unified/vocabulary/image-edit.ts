@@ -68,7 +68,7 @@ export type {
  * {@link ImageEditInput}, because it is the thing adapters need to *talk
  * about*: a route accepts some subset, and {@link ImageEditInputFor} turns that
  * subset into the exact `image` type for that route. Same mechanism as
- * `transcribe`'s `audioInputs`, and for the same reason — the disagreement is
+ * `stt`'s `audioInputs`, and for the same reason — the disagreement is
  * per **route**, not per provider.
  */
 export type ImageEditInputKind = "file" | "url" | "data";
@@ -213,7 +213,7 @@ export interface ImageEditAdapterFor<
 
 /**
  * `imageEdit()` — {@link UnifiedRef}-driven like every category validator, plus
- * the one thing this category shares with `transcribe`: `image` is typed from
+ * the one thing this category shares with `stt`: `image` is typed from
  * the adapter the **ref** selects.
  *
  * `image` is narrowed by an intersection on the parameter, because it is a

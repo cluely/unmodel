@@ -1,5 +1,5 @@
 /**
- * `unmodel/speech` → `lmnt.speech` (POST /v1/ai/speech/bytes).
+ * `unmodel/tts` → `lmnt.tts` (POST /v1/ai/speech/bytes).
  *
  * A plain body — `{ text, voice, model, format, sample_rate, language }` — and
  * one real gap: **LMNT publishes no speed control**. Neither
@@ -24,11 +24,11 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  SpeechAdapterFor,
-  SpeechModelParamTable,
-  SpeechParams,
-} from "../../core/unified/vocabulary/speech";
-import { speech as validator, type LmntFormat, type LmntSampleRate, type SpeechBody } from "./speech";
+  TtsAdapterFor,
+  TtsModelParamTable,
+  TtsParams,
+} from "../../core/unified/vocabulary/tts";
+import { tts as validator, type LmntFormat, type LmntSampleRate, type SpeechBody } from "./tts";
 
 /** LMNT's one documented model — the ref union for `lmnt/…`. */
 const MODELS = ["blizzard"] as const;
@@ -36,10 +36,10 @@ const MODELS = ["blizzard"] as const;
 const SPEECH_DOCS = "https://docs.lmnt.com/api/speech/generate";
 
 /** The wire body this adapter compiles to. */
-export type LmntSpeechWire = SpeechBody;
+export type LmntTtsWire = SpeechBody;
 
 /** What a unified call to `lmnt/…` returns. */
-export type LmntSpeechResult = ReturnType<typeof validator>;
+export type LmntTtsResult = ReturnType<typeof validator>;
 
 const SAMPLE_RATES = [8000, 16000, 24000] as const;
 
@@ -89,7 +89,7 @@ const FORMAT: AudioFormatSpec = {
  * account's library; it changes what the request *does* rather than only how
  * the answer is framed, so it is an extra rather than transport.
  */
-const LMNT_SPEECH_MODEL_PARAMS = {
+const LMNT_TTS_MODEL_PARAMS = {
   blizzard: {
     codecs: ["mp3", "aac", "opus", "pcm_s16le", "pcm_f32le", "pcm_mulaw"],
     languages: [
@@ -104,26 +104,26 @@ const LMNT_SPEECH_MODEL_PARAMS = {
       debug: EXTRA as boolean,
     },
   },
-} as const satisfies SpeechModelParamTable;
+} as const satisfies TtsModelParamTable;
 
-export const speech = {
-  category: "speech",
+export const tts = {
+  category: "tts",
   provider: "lmnt",
   models: MODELS,
-  modelParams: LMNT_SPEECH_MODEL_PARAMS,
+  modelParams: LMNT_TTS_MODEL_PARAMS,
   unsupported: {
     speed:
       "LMNT's speech endpoints publish no speaking-rate field — `temperature` and `top_p` steer " +
       "expressiveness and stability, not pace, so there is nothing to map a multiplier onto.",
   },
   compile(
-    input: SpeechParams,
-    ctx: CompileContext<SpeechParams>,
-  ): CompiledCall<LmntSpeechWire, LmntSpeechResult> {
+    input: TtsParams,
+    ctx: CompileContext<TtsParams>,
+  ): CompiledCall<LmntTtsWire, LmntTtsResult> {
     ctx.from(["format"], "outputFormat");
     ctx.from(["sample_rate"], "outputFormat");
 
-    const body: LmntSpeechWire = { text: input.text, voice: "", model: ctx.model };
+    const body: LmntTtsWire = { text: input.text, voice: "", model: ctx.model };
 
     if (input.voice !== undefined) {
       const voice = ctx.take(
@@ -160,12 +160,12 @@ export const speech = {
       if (language !== undefined) body.language = language;
     }
 
-    applyExtras(input, LMNT_SPEECH_MODEL_PARAMS, body, ctx);
+    applyExtras(input, LMNT_TTS_MODEL_PARAMS, body, ctx);
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies SpeechAdapterFor<
-  typeof LMNT_SPEECH_MODEL_PARAMS,
-  LmntSpeechWire,
-  LmntSpeechResult
+} as const satisfies TtsAdapterFor<
+  typeof LMNT_TTS_MODEL_PARAMS,
+  LmntTtsWire,
+  LmntTtsResult
 >;

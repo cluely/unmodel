@@ -22,8 +22,8 @@ import type { ValidateResult } from "../../src/core/result";
 import { createImage, image as realImage } from "../../src/unified/image";
 import { createImageEdit } from "../../src/unified/image-edit";
 import { createMusic } from "../../src/unified/music";
-import { createSpeech } from "../../src/unified/speech";
-import { createTranscribe } from "../../src/unified/transcribe";
+import { createTts } from "../../src/unified/tts";
+import { createStt } from "../../src/unified/stt";
 import { createVideo } from "../../src/unified/video";
 import type {
   CanonicalField,
@@ -37,12 +37,12 @@ import type {
 import type { ImageParams } from "../../src/core/unified/vocabulary/image";
 import type { ImageEditParams } from "../../src/core/unified/vocabulary/image-edit";
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
-import type { SpeechParams } from "../../src/core/unified/vocabulary/speech";
+import type { TtsParams } from "../../src/core/unified/vocabulary/tts";
 import type {
   AudioInputFor,
-  TranscribeParams,
-  TranscribeParamsFor,
-} from "../../src/core/unified/vocabulary/transcribe";
+  SttParams,
+  SttParamsFor,
+} from "../../src/core/unified/vocabulary/stt";
 import type { VideoParams } from "../../src/core/unified/vocabulary/video";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
@@ -137,11 +137,11 @@ expectAssignable<VideoParams>({ model: "a/b", image: { data: "…" } });
 // @ts-expect-error — `"2k"` is an image tier; video resolutions are the marketed names.
 expectAssignable<VideoParams>({ model: "a/b", prompt: "x", resolution: "2k" });
 
-expectAssignable<SpeechParams>({ model: "openai/tts-1", text: "hello", voice: "alloy" });
-expectAssignable<SpeechParams>({ model: "a/b", text: "hello", voice: { id: "v1" } });
-expectAssignable<SpeechParams>({ model: "a/b", text: "hello", voice: { name: "Kore" } });
-expectAssignable<SpeechParams>({ model: "a/b", text: "x", outputFormat: "mp3" });
-expectAssignable<SpeechParams>({
+expectAssignable<TtsParams>({ model: "openai/tts-1", text: "hello", voice: "alloy" });
+expectAssignable<TtsParams>({ model: "a/b", text: "hello", voice: { id: "v1" } });
+expectAssignable<TtsParams>({ model: "a/b", text: "hello", voice: { name: "Kore" } });
+expectAssignable<TtsParams>({ model: "a/b", text: "x", outputFormat: "mp3" });
+expectAssignable<TtsParams>({
   model: "a/b",
   text: "x",
   outputFormat: { format: "pcm_s16le", container: "raw", sampleRate: 24000, bitrate: 384000 },
@@ -149,10 +149,10 @@ expectAssignable<SpeechParams>({
   language: "pt-BR",
 });
 // @ts-expect-error — `"linear16"` is a provider's spelling; the vocabulary uses ffmpeg's.
-expectAssignable<SpeechParams>({ model: "a/b", text: "x", outputFormat: "linear16" });
+expectAssignable<TtsParams>({ model: "a/b", text: "x", outputFormat: "linear16" });
 
-expectAssignable<TranscribeParams>({ model: "openai/whisper-1", audio: { url: "https://a/b.wav" } });
-expectAssignable<TranscribeParams>({
+expectAssignable<SttParams>({ model: "openai/whisper-1", audio: { url: "https://a/b.wav" } });
+expectAssignable<SttParams>({
   model: "a/b",
   audio: { fileId: "file_123" },
   diarization: { enabled: true, maxSpeakers: 3 },
@@ -160,7 +160,7 @@ expectAssignable<TranscribeParams>({
   languages: ["en", "pt"],
 });
 // @ts-expect-error — diarization's switch is explicit; config alone is ambiguous.
-expectAssignable<TranscribeParams>({ model: "a/b", audio: { url: "u" }, diarization: { maxSpeakers: 3 } });
+expectAssignable<SttParams>({ model: "a/b", audio: { url: "u" }, diarization: { maxSpeakers: 3 } });
 
 expectAssignable<MusicParams>({ model: "a/b", prompt: "post-rock", durationSeconds: 45 });
 expectAssignable<MusicParams>({ model: "a/b", prompt: "x", instrumental: true, outputFormat: "flac" });
@@ -180,9 +180,9 @@ expectAssignable<FileOrUrl>({ file: new Blob() });
 // @ts-expect-error — …but still not a provider file handle.
 expectAssignable<FileOrUrl>({ fileId: "file_123" });
 
-expectAssignable<TranscribeParamsFor<"url">>({ model: "a/b", audio: { url: "u" } });
+expectAssignable<SttParamsFor<"url">>({ model: "a/b", audio: { url: "u" } });
 // @ts-expect-error — the narrowing survives into the params type.
-expectAssignable<TranscribeParamsFor<"url">>({ model: "a/b", audio: { fileId: "f" } });
+expectAssignable<SttParamsFor<"url">>({ model: "a/b", audio: { fileId: "f" } });
 
 // ---------------------------------------------------------------------------
 // Ref splitting, at the type level — first slash, never last
@@ -327,19 +327,19 @@ declare const editAdapter: UnifiedAdapter<ImageEditParams> & {
   category: "imageEdit";
   imageInputs: readonly ["file"];
 };
-declare const speechAdapter: UnifiedAdapter<SpeechParams> & { category: "speech" };
+declare const ttsAdapter: UnifiedAdapter<TtsParams> & { category: "tts" };
 // The transcribe surface, the same way — see
-// `test/types/unified-transcribe.test-d.ts`.
-declare const transcribeAdapter: UnifiedAdapter<TranscribeParams> & {
-  category: "transcribe";
+// `test/types/unified-stt.test-d.ts`.
+declare const sttAdapter: UnifiedAdapter<SttParams> & {
+  category: "stt";
   audioInputs: readonly ["url"];
 };
 declare const musicAdapter: UnifiedAdapter<MusicParams> & { category: "music" };
 
 createVideo([videoAdapter]).safeUnknown({} as unknown);
 createImageEdit([editAdapter]).safeUnknown({} as unknown);
-createSpeech([speechAdapter]).safeUnknown({} as unknown);
-createTranscribe([transcribeAdapter]).safeUnknown({} as unknown);
+createTts([ttsAdapter]).safeUnknown({} as unknown);
+createStt([sttAdapter]).safeUnknown({} as unknown);
 createMusic([musicAdapter]).safeUnknown({} as unknown);
 
 // @ts-expect-error — a video adapter on the image surface is a category error.
@@ -407,11 +407,11 @@ realImage({
 // the union is closed instead.
 // ---------------------------------------------------------------------------
 
-expectAssignable<CanonicalField<TranscribeParams>>("language");
-expectAssignable<CanonicalField<TranscribeParams>>("diarization.maxSpeakers");
+expectAssignable<CanonicalField<SttParams>>("language");
+expectAssignable<CanonicalField<SttParams>>("diarization.maxSpeakers");
 expectAssignable<CanonicalField<ImageParams>>("dimensions.width");
 // @ts-expect-error — a typo in the nested half.
-expectAssignable<CanonicalField<TranscribeParams>>("diarizaton.maxSpeakers");
+expectAssignable<CanonicalField<SttParams>>("diarizaton.maxSpeakers");
 // @ts-expect-error — a typo in the leaf half.
 expectAssignable<CanonicalField<ImageParams>>("dimensions.witdh");
 // @ts-expect-error — a flat typo.

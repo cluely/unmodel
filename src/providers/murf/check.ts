@@ -47,7 +47,7 @@ export interface MurfSpeechResponseLike {
  * request-time estimate from `speechGenerate` remains the authoritative
  * number. Never throws.
  */
-export function checkSpeech(res: MurfSpeechResponseLike): ResponseReport {
+export function checkTts(res: MurfSpeechResponseLike): ResponseReport {
   const warnings: Issue[] = [];
 
   const hasUrl = typeof res.audioFile === "string" && res.audioFile !== "";

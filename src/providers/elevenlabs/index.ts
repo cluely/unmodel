@@ -1,5 +1,5 @@
 export {
-  speech,
+  tts,
   textToSpeechUrl,
   TEXT_TO_SPEECH_BASE_URL,
   DEFAULT_TTS_MODEL_ID,
@@ -7,7 +7,7 @@ export {
   TTS_OPTIMIZE_STREAMING_LATENCY_LEVELS,
   TTS_SPEED_MIN,
   TTS_SPEED_MAX,
-} from "./speech";
+} from "./tts";
 export type {
   TextToSpeechParams,
   TextToSpeechQuery,
@@ -18,7 +18,7 @@ export type {
   ElevenlabsPronunciationDictionaryLocator,
   ElevenlabsOutputFormat,
   ElevenlabsOptimizeStreamingLatency,
-} from "./speech";
+} from "./tts";
 
 export {
   textToSpeechStreamInput,
@@ -58,7 +58,7 @@ export type {
 } from "./speech-to-text-realtime";
 
 export {
-  transcribe,
+  stt,
   toFormData,
   speechToTextUrl,
   SPEECH_TO_TEXT_URL,
@@ -66,8 +66,8 @@ export {
   STT_KEYTERM_MAX_WORDS,
   STT_KEYTERMS_MAX,
   STT_MAX_FILE_BYTES,
-} from "./transcribe";
-export type { SpeechToTextParams, SpeechToTextSdkParams } from "./transcribe";
+} from "./stt";
+export type { SpeechToTextParams, SpeechToTextSdkParams } from "./stt";
 
 export {
   music,
@@ -104,7 +104,7 @@ export type {
 export { checkTranscription } from "./check";
 export type { ElevenlabsTranscriptionLike, ElevenlabsTranscriptLike } from "./check";
 
-export { speechConstraints, speechToTextConstraints } from "./constraints";
+export { ttsConstraints, speechToTextConstraints } from "./constraints";
 
 export {
   models,

@@ -137,53 +137,53 @@ export const REGISTRY = {
   "elevenlabs.music": () => import("./providers/elevenlabs").then((m) => asCli(m.music)),
   "stability.music": () => import("./providers/stability").then((m) => asCli(m.music)),
 
-  // Speech — TTS. Every provider addresses its synthesis route as `speech`
+  // Text to speech. Every provider addresses its synthesis route as `tts`
   // (the address-vs-wire law): the wire spellings differ wildly
   // (/v1/text-to-speech/{voice_id}, /tts/bytes, /v1/speak, /v1/t2a_v2,
   // /synthesize), and the URL constants and wire types keep them — but the
   // endpoint id a caller types is uniform.
-  "openai.speech": () => import("./providers/openai").then((m) => asCli(m.speech)),
-  "elevenlabs.speech": () => import("./providers/elevenlabs").then((m) => asCli(m.speech)),
-  "cartesia.speech": () => import("./providers/cartesia").then((m) => asCli(m.speech)),
-  "inworld.speech": () => import("./providers/inworld").then((m) => asCli(m.speech)),
-  "deepgram.speech": () => import("./providers/deepgram").then((m) => asCli(m.speech)),
-  "fish-audio.speech": () => import("./providers/fish-audio").then((m) => asCli(m.speech)),
-  "hume.speech": () => import("./providers/hume").then((m) => asCli(m.speech)),
-  "lmnt.speech": () => import("./providers/lmnt").then((m) => asCli(m.speech)),
-  "lmnt.speechDetailed": () => import("./providers/lmnt").then((m) => asCli(m.speechDetailed)),
-  "minimax.speech": () => import("./providers/minimax").then((m) => asCli(m.speech)),
-  "murf.speech": () => import("./providers/murf").then((m) => asCli(m.speech)),
-  "murf.speechStream": () => import("./providers/murf").then((m) => asCli(m.speechStream)),
-  "resemble.speech": () => import("./providers/resemble").then((m) => asCli(m.speech)),
-  "resemble.speechStream": () =>
-    import("./providers/resemble").then((m) => asCli(m.speechStream)),
-  "rime.speech": () => import("./providers/rime").then((m) => asCli(m.speech)),
-  "smallest-ai.speech": () => import("./providers/smallest-ai").then((m) => asCli(m.speech)),
-  "speechify.speech": () => import("./providers/speechify").then((m) => asCli(m.speech)),
-  "speechify.speechStream": () =>
-    import("./providers/speechify").then((m) => asCli(m.speechStream)),
+  "openai.tts": () => import("./providers/openai").then((m) => asCli(m.tts)),
+  "elevenlabs.tts": () => import("./providers/elevenlabs").then((m) => asCli(m.tts)),
+  "cartesia.tts": () => import("./providers/cartesia").then((m) => asCli(m.tts)),
+  "inworld.tts": () => import("./providers/inworld").then((m) => asCli(m.tts)),
+  "deepgram.tts": () => import("./providers/deepgram").then((m) => asCli(m.tts)),
+  "fish-audio.tts": () => import("./providers/fish-audio").then((m) => asCli(m.tts)),
+  "hume.tts": () => import("./providers/hume").then((m) => asCli(m.tts)),
+  "lmnt.tts": () => import("./providers/lmnt").then((m) => asCli(m.tts)),
+  "lmnt.ttsDetailed": () => import("./providers/lmnt").then((m) => asCli(m.ttsDetailed)),
+  "minimax.tts": () => import("./providers/minimax").then((m) => asCli(m.tts)),
+  "murf.tts": () => import("./providers/murf").then((m) => asCli(m.tts)),
+  "murf.ttsStream": () => import("./providers/murf").then((m) => asCli(m.ttsStream)),
+  "resemble.tts": () => import("./providers/resemble").then((m) => asCli(m.tts)),
+  "resemble.ttsStream": () =>
+    import("./providers/resemble").then((m) => asCli(m.ttsStream)),
+  "rime.tts": () => import("./providers/rime").then((m) => asCli(m.tts)),
+  "smallest-ai.tts": () => import("./providers/smallest-ai").then((m) => asCli(m.tts)),
+  "speechify.tts": () => import("./providers/speechify").then((m) => asCli(m.tts)),
+  "speechify.ttsStream": () =>
+    import("./providers/speechify").then((m) => asCli(m.ttsStream)),
 
   // Speech to text. Every provider addresses its transcription route as
-  // `transcribe` (the address-vs-wire law): the wire spellings differ wildly
+  // `stt` (the address-vs-wire law): the wire spellings differ wildly
   // (/v1/audio/transcriptions, /v1/speech-to-text, /v1/listen, /v2/transcript,
   // /v2/pre-recorded, /speechtotext/v1/jobs, /v2/jobs, /stt), and the URL
   // constants and wire types keep them — but the endpoint id a caller types is
   // uniform. Listed here are the routes whose audio a JSON document can
   // express; the file-upload-only ones are under MULTIPART_ONLY below.
-  "elevenlabs.transcribe": () =>
-    import("./providers/elevenlabs").then((m) => asCli(m.transcribe)),
-  "soniox.transcribe": () =>
-    import("./providers/soniox").then((m) => asCli(m.transcribe)),
-  "deepgram.transcribe": () => import("./providers/deepgram").then((m) => asCli(m.transcribe)),
+  "elevenlabs.stt": () =>
+    import("./providers/elevenlabs").then((m) => asCli(m.stt)),
+  "soniox.stt": () =>
+    import("./providers/soniox").then((m) => asCli(m.stt)),
+  "deepgram.stt": () => import("./providers/deepgram").then((m) => asCli(m.stt)),
   // Inline base64 audio, so JSON params can express it — not multipart.
-  "inworld.transcribe": () => import("./providers/inworld").then((m) => asCli(m.transcribe)),
-  "assemblyai.transcribe": () =>
-    import("./providers/assemblyai").then((m) => asCli(m.transcribe)),
-  "gladia.transcribe": () => import("./providers/gladia").then((m) => asCli(m.transcribe)),
-  "mistral.transcribe": () =>
-    import("./providers/mistral").then((m) => asCli(m.transcribe)),
-  "revai.transcribe": () => import("./providers/revai").then((m) => asCli(m.transcribe)),
-  "speechmatics.transcribe": () => import("./providers/speechmatics").then((m) => asCli(m.transcribe)),
+  "inworld.stt": () => import("./providers/inworld").then((m) => asCli(m.stt)),
+  "assemblyai.stt": () =>
+    import("./providers/assemblyai").then((m) => asCli(m.stt)),
+  "gladia.stt": () => import("./providers/gladia").then((m) => asCli(m.stt)),
+  "mistral.stt": () =>
+    import("./providers/mistral").then((m) => asCli(m.stt)),
+  "revai.stt": () => import("./providers/revai").then((m) => asCli(m.stt)),
+  "speechmatics.stt": () => import("./providers/speechmatics").then((m) => asCli(m.stt)),
 
   // Realtime session configs — the JSON config object a socket surface takes
   // (a connection-URL query set, a first configuration message, or a per-chunk
@@ -271,7 +271,7 @@ export type CliEndpointId = keyof typeof REGISTRY;
  * endpoint id the CLI takes, not the kebab-case package subpath: `unmodel
  * validate` addresses endpoints, and `unmodel/image-edit` is an import.
  *
- * `unified.transcribe` and `unified.image-edit` are registered even though some
+ * `unified.stt` and `unified.image-edit` are registered even though some
  * of their providers take their media as a `Blob`: the canonical `audio` is
  * `{ url }` or `{ fileId }` at seven of eleven transcribe providers and the
  * canonical `image` is `{ url }` or `{ data }` at two of four editing ones, all
@@ -284,8 +284,8 @@ export const UNIFIED = {
   "unified.image": () => import("./unified/image").then((m) => asCli(m.image)),
   "unified.imageEdit": () => import("./unified/image-edit").then((m) => asCli(m.imageEdit)),
   "unified.music": () => import("./unified/music").then((m) => asCli(m.music)),
-  "unified.speech": () => import("./unified/speech").then((m) => asCli(m.speech)),
-  "unified.transcribe": () => import("./unified/transcribe").then((m) => asCli(m.transcribe)),
+  "unified.tts": () => import("./unified/tts").then((m) => asCli(m.tts)),
+  "unified.stt": () => import("./unified/stt").then((m) => asCli(m.stt)),
   "unified.video": () => import("./unified/video").then((m) => asCli(m.video)),
 } satisfies Record<string, () => Promise<CliValidator>>;
 
@@ -301,8 +301,8 @@ export type CliUnifiedId = keyof typeof UNIFIED;
  */
 export const MULTIPART_ONLY = {
   "openai.imageEdit": "unmodel/openai",
-  "openai.transcribe": "unmodel/openai",
-  "cartesia.transcribe": "unmodel/cartesia",
+  "openai.stt": "unmodel/openai",
+  "cartesia.stt": "unmodel/cartesia",
   "ideogram.imageEdit": "unmodel/ideogram",
   "ideogram.imageEditRemix": "unmodel/ideogram",
   "ideogram.imageEditReframe": "unmodel/ideogram",

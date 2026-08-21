@@ -7,8 +7,8 @@ import {
   STT_WEBSOCKET_KEYTERM_MAX,
   STT_WEBSOCKET_KEYTERM_TOTAL_CHARACTERS_MAX,
 } from "./stt-websocket";
-import { CARTESIA_VERSION } from "./speech";
-import { transcribe } from "./transcribe";
+import { CARTESIA_VERSION } from "./tts";
+import { stt } from "./stt";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -64,7 +64,7 @@ describe("cartesia.sttWebsocket happy path", () => {
   });
 
   test("ink-2 is realtime-only: the batch validator rejects it, this one accepts it", () => {
-    const batch = (transcribe.safe as unknown as (params: unknown) => ValidateResult<unknown>)({
+    const batch = (stt.safe as unknown as (params: unknown) => ValidateResult<unknown>)({
       file: new Blob(["x"]),
       model: "ink-2",
     });

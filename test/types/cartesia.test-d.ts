@@ -22,7 +22,7 @@
  * (BCP-47 muscle memory on a field that takes bare ISO-639-1) and `"smug"` (an
  * emotion that sounds like it should be in a 58-label list and is not).
  */
-import { speech, ttsWebsocket, transcribe, sttWebsocket } from "../../src/providers/cartesia";
+import { tts, ttsWebsocket, stt, sttWebsocket } from "../../src/providers/cartesia";
 import type {
   CartesiaEmotion,
   CartesiaTtsLanguage,
@@ -41,41 +41,41 @@ const BYTES_BASE = {
 } as const;
 
 /** POST /tts/bytes — the 42-code `language` and the 58-label `emotion`. */
-function speechEnumTypeTests(): void {
+function ttsEnumTypeTests(): void {
   // LEGAL: members of the two published enums.
-  speech({ ...BYTES_BASE, language: "pt" });
-  speech({ ...BYTES_BASE, language: "pa" });
-  speech({ ...BYTES_BASE, generation_config: { emotion: "determined" } });
-  speech({ ...BYTES_BASE, generation_config: { emotion: "nostalgic", speed: 1.2 } });
+  tts({ ...BYTES_BASE, language: "pt" });
+  tts({ ...BYTES_BASE, language: "pa" });
+  tts({ ...BYTES_BASE, generation_config: { emotion: "determined" } });
+  tts({ ...BYTES_BASE, generation_config: { emotion: "nostalgic", speed: 1.2 } });
   expectAssignable<CartesiaTtsLanguage>("en");
   expectAssignable<CartesiaEmotion>("neutral");
 
-  // ILLEGAL: the regional subtag. This is the headline case — `speech.safe`
+  // ILLEGAL: the regional subtag. This is the headline case — `tts.safe`
   // already returned `invalid_enum_value @language` for it at error severity,
   // and tsc used to say nothing at all.
-  speech({
+  tts({
     ...BYTES_BASE,
     // @ts-expect-error "pt-BR" is BCP-47; this field is the bare 42-code enum
     language: "pt-BR",
   });
-  speech({
+  tts({
     ...BYTES_BASE,
     // @ts-expect-error "en-US" — same mistake, the other direction
     language: "en-US",
   });
-  speech({
+  tts({
     ...BYTES_BASE,
     // @ts-expect-error "" compiled through the old (string & {}) tail
     language: "",
   });
 
   // ILLEGAL: an emotion that is not one of the 58 labels.
-  speech({
+  tts({
     ...BYTES_BASE,
     // @ts-expect-error "smug" is not in CARTESIA_EMOTIONS
     generation_config: { emotion: "smug" },
   });
-  speech({
+  tts({
     ...BYTES_BASE,
     // @ts-expect-error "Happy" — the labels are lower-case
     generation_config: { emotion: "Happy" },
@@ -84,7 +84,7 @@ function speechEnumTypeTests(): void {
   // THE DOCUMENTED BREAKING CHANGE: a `string`-typed variable no longer
   // assigns. Narrow it (or assert it) at the boundary where it enters.
   const fromConfig: string = "en";
-  speech({
+  tts({
     ...BYTES_BASE,
     // @ts-expect-error a bare `string` is no longer assignable — narrow first
     language: fromConfig,
@@ -92,8 +92,8 @@ function speechEnumTypeTests(): void {
 
   // UNCHANGED: `model_id` keeps its tail, because an off-enum cataloged id is a
   // warning, not an error. No @ts-expect-error case exists here by design.
-  speech({ ...BYTES_BASE, model_id: "sonic-3.5-2026-05-04" });
-  speech({ ...BYTES_BASE, model_id: "sonic-9-future" });
+  tts({ ...BYTES_BASE, model_id: "sonic-3.5-2026-05-04" });
+  tts({ ...BYTES_BASE, model_id: "sonic-9-future" });
 }
 
 /** The socket message carries the same two enums as POST /tts/bytes. */
@@ -125,22 +125,22 @@ function ttsWebsocketEnumTypeTests(): void {
 }
 
 /** POST /stt — the 100-code `language`, a different (larger) enum. */
-function transcribeEnumTypeTests(): void {
+function sttEnumTypeTests(): void {
   const file = new Blob([new Uint8Array([0, 1, 2, 3])], { type: "audio/wav" });
 
-  transcribe({ file, model: "ink-whisper", language: "en" });
+  stt({ file, model: "ink-whisper", language: "en" });
   // Whisper's long tail is in this enum and not in the TTS one.
-  transcribe({ file, model: "ink-whisper", language: "yue" });
-  transcribe({ file, model: "ink-whisper", language: "haw" });
+  stt({ file, model: "ink-whisper", language: "yue" });
+  stt({ file, model: "ink-whisper", language: "haw" });
   expectAssignable<CartesiaSttLanguage>("cy");
 
-  transcribe({
+  stt({
     file,
     model: "ink-whisper",
     // @ts-expect-error the STT enum is bare ISO-639-1 too — no regional subtag
     language: "pt-BR",
   });
-  transcribe({
+  stt({
     file,
     model: "ink-whisper",
     // @ts-expect-error not one of the 100 documented codes
@@ -154,7 +154,7 @@ function transcribeEnumTypeTests(): void {
 
   // UNCHANGED: `model` keeps its tail — `checkBatchModel` accepts every
   // `ink-whisper-` prefixed id, which is a set no published enum spells out.
-  transcribe({ file, model: "ink-whisper-2026-01-01" });
+  stt({ file, model: "ink-whisper-2026-01-01" });
 }
 
 /**
@@ -176,8 +176,8 @@ function sttWebsocketConsistencyTypeTests(): void {
 }
 
 export {
-  speechEnumTypeTests,
+  ttsEnumTypeTests,
   ttsWebsocketEnumTypeTests,
-  transcribeEnumTypeTests,
+  sttEnumTypeTests,
   sttWebsocketConsistencyTypeTests,
 };

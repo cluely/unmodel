@@ -28,7 +28,7 @@
  * `Blob`'s bytes cannot be read without awaiting, and `compile` is synchronous
  * by design (it is a pure function from params to params, which is what lets
  * the same compile step run in a validator, a CLI and a test with no I/O). The
- * same reasoning, and the same honest refusal, as `inworld.transcribe`: the
+ * same reasoning, and the same honest refusal, as `inworld.stt`: the
  * shape that cannot work does not type-check, and the runtime message names the
  * two that do.
  *

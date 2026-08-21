@@ -1,8 +1,8 @@
 /**
  * `unmodel/image-edit` → `openai.imageEdit` (POST /v1/images/edits).
  *
- * A fifth per-category leaf beside `./unified-image`, `./unified-speech`,
- * `./unified-video` and `./unified-transcribe`, and a separate module for the
+ * A fifth per-category leaf beside `./unified-image`, `./unified-tts`,
+ * `./unified-video` and `./unified-stt`, and a separate module for the
  * reason all of them are: `unmodel/image` and `unmodel/image-edit` both reach
  * this provider, and a single module holding both adapters would put OpenAI's
  * *generation* validator into the editing pack and vice versa. `./unified.ts`

@@ -55,13 +55,13 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, TTS_MODEL_IDS, type ElevenlabsTtsModelId } from "./models";
-import { speechConstraints } from "./constraints";
+import { ttsConstraints } from "./constraints";
 import {
   TTS_OUTPUT_FORMATS,
   TTS_SPEED_MAX,
   TTS_SPEED_MIN,
   type ElevenlabsOutputFormat,
-} from "./speech";
+} from "./tts";
 
 /**
  * Base of the streaming TTS socket; the full address is
@@ -385,7 +385,7 @@ const validator = createValidator<TextToSpeechStreamInputParams>({
   catalog: models,
   // Same per-model rules as the REST endpoint: `language_code` is silently
   // ignored by multilingual_v2 models.
-  constraints: speechConstraints,
+  constraints: ttsConstraints,
   checks: [checkTtsModelKind, checkOutputFormat, checkAutoMode],
   // No estimate: the socket is billed per character of the text you stream
   // later, none of which is known at connect time.

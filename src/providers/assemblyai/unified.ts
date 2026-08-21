@@ -1,5 +1,5 @@
 /**
- * `unmodel/transcribe` → `assemblyai.transcribe` (POST /v2/transcript).
+ * `unmodel/stt` → `assemblyai.stt` (POST /v2/transcript).
  *
  * A URL-only route: `audio_url` is the single required field, and bytes reach
  * it through a *separate* upload endpoint (`POST /v2/upload`, whose response
@@ -30,16 +30,16 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  TranscribeAdapterFor,
-  TranscribeModelParamTable,
-  TranscribeParamsFor,
-} from "../../core/unified/vocabulary/transcribe";
+  SttAdapterFor,
+  SttModelParamTable,
+  SttParamsFor,
+} from "../../core/unified/vocabulary/stt";
 import {
-  transcribe as validator,
+  stt as validator,
   type AssemblyaiDomain,
   type AssemblyaiLanguageDetectionOptions,
   type TranscriptBody,
-} from "./transcribe";
+} from "./stt";
 
 /** The four speech models AssemblyAI routes to — the `assemblyai/…` refs. */
 const MODELS = ["universal-3-5-pro", "universal-2", "universal-3-pro", "slam-1"] as const;
@@ -47,10 +47,10 @@ const MODELS = ["universal-3-5-pro", "universal-2", "universal-3-pro", "slam-1"]
 const SUBMIT_DOCS = "https://www.assemblyai.com/docs/api-reference/transcripts/submit";
 
 /** The wire body this adapter compiles to. */
-export type AssemblyaiTranscribeWire = TranscriptBody;
+export type AssemblyaiSttWire = TranscriptBody;
 
 /** What a unified call to `assemblyai/…` returns. */
-export type AssemblyaiTranscribeResult = ReturnType<typeof validator>;
+export type AssemblyaiSttResult = ReturnType<typeof validator>;
 
 /**
  * AssemblyAI's per-model surface — the largest extras table in the library, and
@@ -142,7 +142,7 @@ const TRANSCRIPT_EXTRAS = {
 const TIMESTAMPS = ["word"] as const;
 const SHARED_ROW = { timestamps: TIMESTAMPS, extras: TRANSCRIPT_EXTRAS } as const;
 
-const ASSEMBLYAI_TRANSCRIBE_MODEL_PARAMS = {
+const ASSEMBLYAI_STT_MODEL_PARAMS = {
   "universal-3-5-pro": {
     timestamps: TIMESTAMPS,
     extras: {
@@ -163,18 +163,18 @@ const ASSEMBLYAI_TRANSCRIBE_MODEL_PARAMS = {
   },
   "universal-3-pro": SHARED_ROW,
   "slam-1": SHARED_ROW,
-} as const satisfies TranscribeModelParamTable;
+} as const satisfies SttModelParamTable;
 
 /** The one extra that belongs to `speaker_options` rather than the body root. */
 const SPEAKER_OPTIONS_NESTING: Readonly<Record<string, readonly string[]>> = {
   advanced_speaker_segmentation: ["speaker_options"],
 };
 
-export const transcribe = {
-  category: "transcribe",
+export const stt = {
+  category: "stt",
   provider: "assemblyai",
   models: MODELS,
-  modelParams: ASSEMBLYAI_TRANSCRIBE_MODEL_PARAMS,
+  modelParams: ASSEMBLYAI_STT_MODEL_PARAMS,
   audioInputs: ["url"],
   unsupported: {
     prompt:
@@ -183,10 +183,10 @@ export const transcribe = {
       "of terms; send either through `providerOptions.assemblyai` so it keeps its own meaning.",
   },
   compile(
-    input: TranscribeParamsFor<"url">,
-    ctx: CompileContext<TranscribeParamsFor<"url">>,
-  ): CompiledCall<AssemblyaiTranscribeWire, AssemblyaiTranscribeResult> {
-    const body: AssemblyaiTranscribeWire = { audio_url: "", speech_models: [ctx.model] };
+    input: SttParamsFor<"url">,
+    ctx: CompileContext<SttParamsFor<"url">>,
+  ): CompiledCall<AssemblyaiSttWire, AssemblyaiSttResult> {
+    const body: AssemblyaiSttWire = { audio_url: "", speech_models: [ctx.model] };
     ctx.from(["audio_url"], "audio");
     ctx.from(["speech_models"], "model");
     ctx.from(["language_code"], "language");
@@ -252,15 +252,15 @@ export const transcribe = {
       );
     }
 
-    applyExtras(input, ASSEMBLYAI_TRANSCRIBE_MODEL_PARAMS, body, ctx, {
+    applyExtras(input, ASSEMBLYAI_STT_MODEL_PARAMS, body, ctx, {
       nest: SPEAKER_OPTIONS_NESTING,
     });
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies TranscribeAdapterFor<
+} as const satisfies SttAdapterFor<
   "url",
-  typeof ASSEMBLYAI_TRANSCRIBE_MODEL_PARAMS,
-  AssemblyaiTranscribeWire,
-  AssemblyaiTranscribeResult
+  typeof ASSEMBLYAI_STT_MODEL_PARAMS,
+  AssemblyaiSttWire,
+  AssemblyaiSttResult
 >;

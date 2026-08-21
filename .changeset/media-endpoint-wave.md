@@ -6,8 +6,8 @@ Media endpoint wave: image editing, speech, and video post-production validators
 
 New request validators (all on existing subpaths — no new package exports):
 
-- `unmodel/openai`: `imageEdit` (+ `imageEditToFormData`), `speech` (TTS),
-  `transcribe` (+ `transcribeToFormData`).
+- `unmodel/openai`: `imageEdit` (+ `imageEditToFormData`), `tts` (TTS),
+  `stt` (+ `sttToFormData`).
 - `unmodel/google`: `image` (Imagen 4 fast/standard/ultra).
 - `unmodel/black-forest-labs`: `imageFlux1`, `imageEditFill`, `imageEditExpand`, and the
   FLUX Tools routes `imageEditOutpainting`, `imageEditErase`, `imageEditDeblur`,

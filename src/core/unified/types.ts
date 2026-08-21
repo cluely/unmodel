@@ -103,7 +103,7 @@ import type { TranslationWarning, Warn } from "../translate/warnings";
  * carrying all six would be a type whose valid combinations you have to
  * memorize.
  */
-export type UnifiedCategory = "image" | "imageEdit" | "video" | "speech" | "transcribe" | "music";
+export type UnifiedCategory = "image" | "imageEdit" | "video" | "tts" | "stt" | "music";
 
 /**
  * A finding in **canonical** space: the path names a field the caller wrote,
@@ -307,7 +307,7 @@ export interface UnifiedAdapter<
    * on {@link AnyUnifiedAdapter}: {@link CompileContext} is contravariant in
    * its vocabulary (through `from`'s `CanonicalField<Canon>` parameter), so an
    * adapter whose `compile` takes a *narrowed* vocabulary — `ImageEditParamsFor<"file">`,
-   * `TranscribeParamsFor<…>` — is not assignable to one typed with the wide
+   * `SttParamsFor<…>` — is not assignable to one typed with the wide
    * canonical vocabulary. Until `CanonicalField` closed, the `(string & {})`
    * tail was silently neutralising that contravariance; the knob makes what was
    * already happening explicit instead of restoring the tail.
@@ -372,7 +372,7 @@ export type AdapterFor<A, R extends string> = [Extract<A, { provider: RefProvide
  *
  * The compile-time half of a **per-route narrowing**: some categories have a
  * canonical field whose legal *shapes* depend on the route rather than on the
- * category. `transcribe`'s `audio` is the case that motivated this — a batch
+ * category. `stt`'s `audio` is the case that motivated this — a batch
  * API that only fetches URLs, a multipart route that only takes a `Blob`, and
  * a provider whose file API mints ids are three different types for one word —
  * so a transcribe adapter declares `audioInputs: ["url"] as const` and this

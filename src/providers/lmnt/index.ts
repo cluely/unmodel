@@ -1,6 +1,6 @@
 export {
-  speech,
-  speechDetailed,
+  tts,
+  ttsDetailed,
   SPEECH_BYTES_URL,
   SPEECH_URL,
   LMNT_VERSION,
@@ -10,14 +10,14 @@ export {
   NON_STREAMABLE_FORMATS,
   SPEECH_SAMPLE_RATES,
   SPEECH_LANGUAGES,
-} from "./speech";
+} from "./tts";
 export type {
   SpeechBody,
   SpeechDetailedBody,
   LmntFormat,
   LmntLanguage,
   LmntSampleRate,
-} from "./speech";
+} from "./tts";
 
 // No response checker: /v1/ai/speech/bytes streams raw audio, and the JSON
 // /v1/ai/speech response carries no usage or billing field.

@@ -1,5 +1,5 @@
 /**
- * `unmodel/transcribe` → `gladia.transcribe` (POST /v2/pre-recorded).
+ * `unmodel/stt` → `gladia.stt` (POST /v2/pre-recorded).
  *
  * URL-only, like AssemblyAI: `audio_url` is the one required field and bytes
  * go through `POST /v2/upload` first (`toUploadFormData` builds that body).
@@ -31,12 +31,12 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  TranscribeAdapterFor,
-  TranscribeModelParamTable,
-  TranscribeParamsFor,
-} from "../../core/unified/vocabulary/transcribe";
+  SttAdapterFor,
+  SttModelParamTable,
+  SttParamsFor,
+} from "../../core/unified/vocabulary/stt";
 import {
-  transcribe as validator,
+  stt as validator,
   type GladiaAudioToLlmConfig,
   type GladiaCustomSpellingConfig,
   type GladiaCustomVocabularyConfig,
@@ -45,7 +45,7 @@ import {
   type GladiaSummarizationConfig,
   type GladiaTranslationConfig,
   type PreRecordedBody,
-} from "./transcribe";
+} from "./stt";
 import { SOLARIA_3_LANGUAGES } from "./models";
 
 /** The two Solaria models — the ref union for `gladia/…`. */
@@ -54,10 +54,10 @@ const MODELS = ["solaria-3", "solaria-1"] as const;
 const INIT_DOCS = "https://docs.gladia.io/api-reference/v2/pre-recorded/init";
 
 /** The wire body this adapter compiles to. */
-export type GladiaTranscribeWire = PreRecordedBody;
+export type GladiaSttWire = PreRecordedBody;
 
 /** What a unified call to `gladia/…` returns. */
-export type GladiaTranscribeResult = ReturnType<typeof validator>;
+export type GladiaSttResult = ReturnType<typeof validator>;
 
 /**
  * Gladia's two models, and the one that is single-language.
@@ -111,7 +111,7 @@ const PRE_RECORDED_EXTRAS = {
 
 const TIMESTAMPS = ["word", "segment"] as const;
 
-const GLADIA_TRANSCRIBE_MODEL_PARAMS = {
+const GLADIA_STT_MODEL_PARAMS = {
   "solaria-3": {
     timestamps: TIMESTAMPS,
     languages: SOLARIA_3_LANGUAGES,
@@ -121,18 +121,18 @@ const GLADIA_TRANSCRIBE_MODEL_PARAMS = {
     timestamps: TIMESTAMPS,
     extras: { ...PRE_RECORDED_EXTRAS, code_switching: EXTRA as boolean },
   },
-} as const satisfies TranscribeModelParamTable;
+} as const satisfies SttModelParamTable;
 
 /** The one extra that belongs to `language_config`. */
 const LANGUAGE_CONFIG_NESTING: Readonly<Record<string, readonly string[]>> = {
   code_switching: ["language_config"],
 };
 
-export const transcribe = {
-  category: "transcribe",
+export const stt = {
+  category: "stt",
   provider: "gladia",
   models: MODELS,
-  modelParams: GLADIA_TRANSCRIBE_MODEL_PARAMS,
+  modelParams: GLADIA_STT_MODEL_PARAMS,
   audioInputs: ["url"],
   unsupported: {
     prompt:
@@ -141,10 +141,10 @@ export const transcribe = {
       "this word; send them through `providerOptions.gladia`.",
   },
   compile(
-    input: TranscribeParamsFor<"url">,
-    ctx: CompileContext<TranscribeParamsFor<"url">>,
-  ): CompiledCall<GladiaTranscribeWire, GladiaTranscribeResult> {
-    const body: GladiaTranscribeWire = { audio_url: "", model: ctx.model };
+    input: SttParamsFor<"url">,
+    ctx: CompileContext<SttParamsFor<"url">>,
+  ): CompiledCall<GladiaSttWire, GladiaSttResult> {
+    const body: GladiaSttWire = { audio_url: "", model: ctx.model };
     ctx.from(["audio_url"], "audio");
     ctx.from(["diarization"], "diarization");
     ctx.from(["diarization_config", "number_of_speakers"], "diarization.speakers");
@@ -219,15 +219,15 @@ export const transcribe = {
       if (granularity !== undefined) body.sentences = granularity === "segment";
     }
 
-    applyExtras(input, GLADIA_TRANSCRIBE_MODEL_PARAMS, body, ctx, {
+    applyExtras(input, GLADIA_STT_MODEL_PARAMS, body, ctx, {
       nest: LANGUAGE_CONFIG_NESTING,
     });
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies TranscribeAdapterFor<
+} as const satisfies SttAdapterFor<
   "url",
-  typeof GLADIA_TRANSCRIBE_MODEL_PARAMS,
-  GladiaTranscribeWire,
-  GladiaTranscribeResult
+  typeof GLADIA_STT_MODEL_PARAMS,
+  GladiaSttWire,
+  GladiaSttResult
 >;

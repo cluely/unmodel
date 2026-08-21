@@ -23,8 +23,8 @@ import type { CanonicalKeyOf } from "../../src/core/unified/kernel";
 import type { ImageParams } from "../../src/core/unified/vocabulary/image";
 import type { ImageEditParams } from "../../src/core/unified/vocabulary/image-edit";
 import type { VideoParams } from "../../src/core/unified/vocabulary/video";
-import type { SpeechParams } from "../../src/core/unified/vocabulary/speech";
-import type { TranscribeParams } from "../../src/core/unified/vocabulary/transcribe";
+import type { TtsParams } from "../../src/core/unified/vocabulary/tts";
+import type { SttParams } from "../../src/core/unified/vocabulary/stt";
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
 import { expectTrue, type IsNever } from "./helpers";
 
@@ -39,11 +39,11 @@ import { expectTrue, type IsNever } from "./helpers";
 type AllKeys<T> = T extends unknown ? Extract<keyof T, string> : never;
 
 /** Vocabulary keys the kernel's list does not accept: a valid request refused. */
-type Unlisted<C extends "image" | "imageEdit" | "video" | "speech" | "transcribe" | "music", P> =
+type Unlisted<C extends "image" | "imageEdit" | "video" | "tts" | "stt" | "music", P> =
   Exclude<AllKeys<P>, CanonicalKeyOf<C>>;
 
 /** List keys no vocabulary declares: a param accepted that nothing compiles. */
-type Unclaimed<C extends "image" | "imageEdit" | "video" | "speech" | "transcribe" | "music", P> =
+type Unclaimed<C extends "image" | "imageEdit" | "video" | "tts" | "stt" | "music", P> =
   Exclude<CanonicalKeyOf<C>, AllKeys<P>>;
 
 expectTrue<IsNever<Unlisted<"image", ImageParams>>>();
@@ -55,11 +55,11 @@ expectTrue<IsNever<Unclaimed<"imageEdit", ImageEditParams>>>();
 expectTrue<IsNever<Unlisted<"video", VideoParams>>>();
 expectTrue<IsNever<Unclaimed<"video", VideoParams>>>();
 
-expectTrue<IsNever<Unlisted<"speech", SpeechParams>>>();
-expectTrue<IsNever<Unclaimed<"speech", SpeechParams>>>();
+expectTrue<IsNever<Unlisted<"tts", TtsParams>>>();
+expectTrue<IsNever<Unclaimed<"tts", TtsParams>>>();
 
-expectTrue<IsNever<Unlisted<"transcribe", TranscribeParams>>>();
-expectTrue<IsNever<Unclaimed<"transcribe", TranscribeParams>>>();
+expectTrue<IsNever<Unlisted<"stt", SttParams>>>();
+expectTrue<IsNever<Unclaimed<"stt", SttParams>>>();
 
 expectTrue<IsNever<Unlisted<"music", MusicParams>>>();
 expectTrue<IsNever<Unclaimed<"music", MusicParams>>>();

@@ -19,7 +19,7 @@ provider — not their quality ranking.
 
 | Provider | Categories | API style | Tier | models.dev | Notes |
 |---|---|---|---|---|---|
-| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + image + imageEdit + speech + transcribe + video + realtime session done) | ✅ | complete for the documented REST surface |
+| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + image + imageEdit + tts + stt + video + realtime session done) | ✅ | complete for the documented REST surface |
 | anthropic | llm | native (the reference) | **native** (`chat`, the `/v1/messages` wire format — done) | ✅ | |
 | google | llm, image, video, tts, stt | native | **native** (`chat` + Imagen `image` + Veo `video` done) | ✅ | Gemini TTS is validated inside `chat` (the `:generateContent` route — `responseModalities: ["AUDIO"]` + `speechConfig`); STT likewise via inline/file audio parts |
 | xai (grok) | llm, image, video, stt | openai-compatible (+anthropic-compat) | **oai-base** (live) | ✅ (`xai`) | grok-imagine image/video are native-style, later |
@@ -30,7 +30,7 @@ provider — not their quality ranking.
 | elevenlabs | tts (r11), stt (Scribe, r1), music | native | **native** (TTS+STT+music live; realtime configs live) | ✋ | per-character pricing; `textToSpeechStreamInput` + `speechToTextRealtime` validate the socket configs |
 | cartesia | tts (Sonic, r6), stt (Ink) | native | **native** (TTS+STT live; realtime configs live) | ✋ | `ttsWebsocket` (generation message) + `sttWebsocket` (connection query set) |
 | inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT is inline base64 (no multipart); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
-| soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `transcribe` + `realtimeTranscription` config message |
+| soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `stt` + `realtimeTranscription` config message |
 | stepfun | llm (r83), tts (r5), image-edit | openai-compatible | **oai-base** (chat live) | ✅ | TTS via speech wave |
 
 ## Wave 2 — inference hosts & aggregators (all openai-compatible, all in models.dev → oai-base)
@@ -58,28 +58,28 @@ Native-API exceptions: **cohere** — now **native** (v2 Chat live, `unmodel/coh
 **amazon** (Nova — reachable via the Bedrock Converse factory); catalog-only:
 **ibm** (Granite/watsonx), **naver**, **snowflake**.
 Mixed-tier: **minimax** and **mistral** are oai-base for chat *and* native for their media
-routes on the same subpath (`minimax.speech` / `video` / `videoV2`,
-`mistral.transcribe`). **bytedance** is a separate native subpath for the BytePlus
+routes on the same subpath (`minimax.tts` / `video` / `videoV2`,
+`mistral.stt`). **bytedance** is a separate native subpath for the BytePlus
 ModelArk image/video routes — the Doubao chat overlay above is still to do.
 
 ## Speech wave — TTS / STT (native APIs, hand-maintained catalogs ✋)
 
-**Live — TTS:** every provider addresses its synthesis route as `speech` (the address-vs-wire
+**Live — TTS:** every provider addresses its synthesis route as `tts` (the address-vs-wire
 law — the wire spellings `/v1/text-to-speech/{voice_id}`, `/tts/bytes`, `/v1/speak`,
 `/v1/t2a_v2`, `/synthesize` survive only on the URL constants and wire types):
 openai (tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15), cartesia,
 deepgram (Aura 1/2), elevenlabs, fish-audio, hume (Octave), inworld,
-lmnt (`speech` + `speechDetailed`), minimax (T2A v2), murf (`speech` + `speechStream`),
-resemble (`speech` + `speechStream`), rime, smallest-ai,
-speechify (`speech` + `speechStream`).
-All fourteen also ship an adapter at `unmodel/<provider>/unified`, so `speech()` from
-`unmodel/speech` reaches them through one canonical vocabulary.
-**Live — STT:** every provider addresses the route as `transcribe` — openai
+lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
+resemble (`tts` + `ttsStream`), rime, smallest-ai,
+speechify (`tts` + `ttsStream`).
+All fourteen also ship an adapter at `unmodel/<provider>/unified`, so `tts()` from
+`unmodel/tts` reaches them through one canonical vocabulary.
+**Live — STT:** every provider addresses the route as `stt` — openai
 (gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
 deepgram, elevenlabs (Scribe), gladia, inworld (base64 audio inline in the JSON body, no
 multipart route), mistral (Voxtral), revai, soniox, speechmatics. All eleven also ship an
-adapter at `unmodel/<provider>/unified`, so `transcribe()` from `unmodel/transcribe`
+adapter at `unmodel/<provider>/unified`, so `stt()` from `unmodel/stt`
 reaches them through one canonical vocabulary — where the `audio` shapes each route accepts
 are enforced at compile time.
 Google TTS/STT ride on `google.chat` (the `:generateContent` route — no separate endpoint
@@ -97,7 +97,7 @@ speechmatics, plus Cartesia's sibling turn-detection socket (`/stt/turns/websock
 gradium, async, microsoft/azure, mistral (Voxtral TTS), boson-ai, neuphonic, amazon (Polly),
 nvidia (Magpie), zyphra.
 **STT still to do:** azure, smallest-ai, google, alibaba, deepinfra, xai, amazon,
-nvidia, gradium, reson8, modulate, cohere (transcribe).
+nvidia, gradium, reson8, modulate, cohere (stt).
 
 ## Image wave (native APIs unless noted)
 
@@ -185,8 +185,8 @@ leaves rather than whole validators.
 | `unmodel/chat` | `chat` | n/a — three dialect codecs, composed with all 32 concrete provider `chat` validators | 32: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
 | `unmodel/chat/factory` | `createChat` | the same three codecs, no registry | whichever provider validators you register: `createChat({ anthropic, openai })` |
 | `unmodel/image` | `image`, `createImage` | 15 | black-forest-labs, bria, bytedance, google, ideogram, kling, krea, leonardo, luma, openai, recraft, reve, runway, stability, vidu |
-| `unmodel/speech` | `speech`, `createSpeech` | 14 | cartesia, deepgram, elevenlabs, fish-audio, hume, inworld, lmnt, minimax, murf, openai, resemble, rime, smallest-ai, speechify |
-| `unmodel/transcribe` | `transcribe`, `createTranscribe` | 11 | assemblyai, cartesia, deepgram, elevenlabs, gladia, inworld, mistral, openai, revai, soniox, speechmatics |
+| `unmodel/tts` | `tts`, `createTts` | 14 | cartesia, deepgram, elevenlabs, fish-audio, hume, inworld, lmnt, minimax, murf, openai, resemble, rime, smallest-ai, speechify |
+| `unmodel/stt` | `stt`, `createStt` | 11 | assemblyai, cartesia, deepgram, elevenlabs, gladia, inworld, mistral, openai, revai, soniox, speechmatics |
 | `unmodel/video` | `video`, `createVideo` | 10 | bytedance, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 4 | black-forest-labs, ideogram, openai, recraft — the four whose primary editing route is *image + prompt, no mask* |
 | `unmodel/music` | `music`, `createMusic` | 2 | elevenlabs, stability |
@@ -208,7 +208,7 @@ express it. Anything genuinely one-off rides in `providerOptions`, keyed by prov
 deep-merged over the compiled body **before** validation.
 
 **Declared gaps** (each is a typed refusal with a message naming the wire-only sibling that
-does the job): `inworld.transcribe` takes base64 audio inside its JSON body, which a
+does the job): `inworld.stt` takes base64 audio inside its JSON body, which a
 synchronous compile step cannot produce from a `Blob`; black-forest-labs' Kontext
 `input_image` is a JSON string, so its `imageInputs` is `["data", "url"]`; Stability's
 `musicFromAudio` / `musicInpaint` and the sixteen masked editing routes take controls no
@@ -316,7 +316,7 @@ same `buildAvailability` machinery consumes it unchanged.
    refreshed manually. `ModelCost` carries the non-token rates these modalities need:
    `perMillionCharacters` (TTS), `perAudioMinute` (STT), `perImage`, `perVideoSecond`.
    `ModelLimit.characters` bounds character-priced inputs.
-3. **New endpoint shapes**: TTS (`speech`), STT (`transcribe`), image
+3. **New endpoint shapes**: TTS (`tts`), STT (`stt`), image
    generation and editing, and video generation + post-production, each mirroring its native
    wire format on the same pipeline/constraints machinery. Realtime *transports* stay out of
    scope; the session-config object is validated (`openai.realtimeSession`).
@@ -333,7 +333,7 @@ same `buildAvailability` machinery consumes it unchanged.
    for a *distinct* upload endpoint whose response id then feeds the validator
    (`gladia.toUploadFormData` → `UPLOAD_URL`, `soniox.toUploadFormData` → `FILES_URL`).
    A provider needing both disambiguates per endpoint instead (openai's
-   `imageEditToFormData` / `transcribeToFormData`).
+   `imageEditToFormData` / `sttToFormData`).
 5. **Translation is hub-and-spoke, and the spokes are per *dialect*, not per provider.**
    The hub lives in `src/core/translate/` (`ir.ts`, `warnings.ts`, `endpoints.ts`,
    `retarget.ts`, `ai-sdk.ts`, `availability-types.ts`) and imports nothing from

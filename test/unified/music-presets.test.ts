@@ -11,7 +11,7 @@
  * covering mp3, Opus, PCM, μ-law and A-law. `outputFormat: "opus"` is therefore
  * a compile error at one and ordinary at the other, from one vocabulary.
  *
- * See `test/unified/speech-presets.test.ts` for why a codec cell tries a short
+ * See `test/unified/tts-presets.test.ts` for why a codec cell tries a short
  * ladder of spellings rather than one, and why a warning does not fail a cell.
  */
 import { describe, expect, test } from "bun:test";

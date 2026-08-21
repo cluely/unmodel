@@ -1,5 +1,5 @@
 /**
- * `unmodel/speech` → `hume.speech` (POST /v0/tts).
+ * `unmodel/tts` → `hume.tts` (POST /v0/tts).
  *
  * Hume is the one provider whose body has no `text` field: a request is a list
  * of **utterances**, each with its own voice, speed and trailing silence. One
@@ -29,17 +29,17 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  SpeechAdapterFor,
-  SpeechModelParamTable,
-  SpeechParams,
-} from "../../core/unified/vocabulary/speech";
+  TtsAdapterFor,
+  TtsModelParamTable,
+  TtsParams,
+} from "../../core/unified/vocabulary/tts";
 import {
-  speech as validator,
+  tts as validator,
   type HumeAudioFormatType,
   type HumeTimestampType,
   type HumeUtterance,
   type TtsBody,
-} from "./speech";
+} from "./tts";
 
 /** The two Octave rows the catalog carries — the ref union for `hume/…`. */
 const MODELS = ["octave", "octave-2"] as const;
@@ -47,10 +47,10 @@ const MODELS = ["octave", "octave-2"] as const;
 const SYNTHESIZE_DOCS = "https://dev.hume.ai/reference/text-to-speech-tts/synthesize-json";
 
 /** The wire body this adapter compiles to. */
-export type HumeSpeechWire = TtsBody;
+export type HumeTtsWire = TtsBody;
 
 /** What a unified call to `hume/…` returns. */
-export type HumeSpeechResult = ReturnType<typeof validator>;
+export type HumeTtsResult = ReturnType<typeof validator>;
 
 const FORMAT: AudioFormatSpec = {
   codecs: { mp3: "mp3", pcm_s16le: "pcm" },
@@ -105,13 +105,13 @@ const OCTAVE_EXTRAS = {
   strip_headers: EXTRA as boolean,
 } as const;
 
-const HUME_SPEECH_MODEL_PARAMS = {
+const HUME_TTS_MODEL_PARAMS = {
   octave: { codecs: ["mp3", "pcm_s16le"], extras: OCTAVE_EXTRAS },
   "octave-2": {
     codecs: ["mp3", "pcm_s16le"],
     extras: { ...OCTAVE_EXTRAS, include_timestamp_types: EXTRA as HumeTimestampType[] },
   },
-} as const satisfies SpeechModelParamTable;
+} as const satisfies TtsModelParamTable;
 
 /** The two knobs that belong to the utterance rather than to the request. */
 const UTTERANCE_NESTING: Readonly<Record<string, readonly string[]>> = {
@@ -119,11 +119,11 @@ const UTTERANCE_NESTING: Readonly<Record<string, readonly string[]>> = {
   trailing_silence: ["utterances", "0"],
 };
 
-export const speech = {
-  category: "speech",
+export const tts = {
+  category: "tts",
   provider: "hume",
   models: MODELS,
-  modelParams: HUME_SPEECH_MODEL_PARAMS,
+  modelParams: HUME_TTS_MODEL_PARAMS,
   unsupported: {
     language:
       "POST /v0/tts has no language field — Octave infers the language from the text and the " +
@@ -131,9 +131,9 @@ export const speech = {
       "direction, available through `providerOptions.hume`).",
   },
   compile(
-    input: SpeechParams,
-    ctx: CompileContext<SpeechParams>,
-  ): CompiledCall<HumeSpeechWire, HumeSpeechResult> {
+    input: TtsParams,
+    ctx: CompileContext<TtsParams>,
+  ): CompiledCall<HumeTtsWire, HumeTtsResult> {
     ctx.from(["utterances", 0, "text"], "text");
     ctx.from(["utterances", 0, "voice"], "voice");
     ctx.from(["utterances", 0, "speed"], "speed");
@@ -141,7 +141,7 @@ export const speech = {
     ctx.from(["format"], "outputFormat");
 
     const utterance: HumeUtterance = { text: input.text };
-    const body: HumeSpeechWire = { utterances: [utterance] };
+    const body: HumeTtsWire = { utterances: [utterance] };
 
     // The catalog row is the version. An id neither row names has already
     // drawn `unknown_model`; leaving `version` off is Hume's own documented
@@ -187,12 +187,12 @@ export const speech = {
       if (speed !== undefined) utterance.speed = speed;
     }
 
-    applyExtras(input, HUME_SPEECH_MODEL_PARAMS, body, ctx, { nest: UTTERANCE_NESTING });
+    applyExtras(input, HUME_TTS_MODEL_PARAMS, body, ctx, { nest: UTTERANCE_NESTING });
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies SpeechAdapterFor<
-  typeof HUME_SPEECH_MODEL_PARAMS,
-  HumeSpeechWire,
-  HumeSpeechResult
+} as const satisfies TtsAdapterFor<
+  typeof HUME_TTS_MODEL_PARAMS,
+  HumeTtsWire,
+  HumeTtsResult
 >;

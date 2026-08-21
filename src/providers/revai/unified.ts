@@ -1,5 +1,5 @@
 /**
- * `unmodel/transcribe` → `revai.transcribe` (POST /speechtotext/v1/jobs).
+ * `unmodel/stt` → `revai.stt` (POST /speechtotext/v1/jobs).
  *
  * The inverted one. Rev AI turns diarization **off** with `skip_diarization`,
  * so `{ enabled: true }` compiles to `skip_diarization: false` — the only
@@ -28,19 +28,19 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  TranscribeAdapterFor,
-  TranscribeModelParamTable,
-  TranscribeParamsFor,
-} from "../../core/unified/vocabulary/transcribe";
+  SttAdapterFor,
+  SttModelParamTable,
+  SttParamsFor,
+} from "../../core/unified/vocabulary/stt";
 import {
-  transcribe as validator,
+  stt as validator,
   type JobsBody,
   type RevaiCustomVocabulary,
   type RevaiSegment,
   type RevaiSpeakerName,
   type RevaiSummarizationConfig,
   type RevaiTranslationConfig,
-} from "./transcribe";
+} from "./stt";
 
 /** The four transcribers — the ref union for `revai/…`. */
 const MODELS = ["machine", "low_cost", "fusion", "human"] as const;
@@ -48,17 +48,17 @@ const MODELS = ["machine", "low_cost", "fusion", "human"] as const;
 const REFERENCE_DOCS = "https://docs.rev.ai/api/asynchronous/reference";
 
 /** The wire body this adapter compiles to. */
-export type RevaiTranscribeWire = JobsBody;
+export type RevaiSttWire = JobsBody;
 
 /** What a unified call to `revai/…` returns. */
-export type RevaiTranscribeResult = ReturnType<typeof validator>;
+export type RevaiSttResult = ReturnType<typeof validator>;
 
 /**
  * Rev AI's per-model surface, which is really per-**transcriber** — and this is
  * the provider where the ref genuinely changes what the body may contain, in
  * both directions at once.
  *
- * Three overlapping rules from `./transcribe.ts`, transcribed into four rows:
+ * Three overlapping rules from `./stt.ts`, transcribed into four rows:
  *
  * - **`HUMAN_ONLY`** — `rush`, `segments_to_transcribe` and `speaker_names` are
  *   "only available for `transcriber: "human"`". They are on the `human` row
@@ -114,7 +114,7 @@ const FULL_MACHINE_EXTRAS = {
 const TIMESTAMPS = ["word"] as const;
 const MACHINE_ROW = { timestamps: TIMESTAMPS, extras: FULL_MACHINE_EXTRAS } as const;
 
-const REVAI_TRANSCRIBE_MODEL_PARAMS = {
+const REVAI_STT_MODEL_PARAMS = {
   machine: MACHINE_ROW,
   low_cost: { timestamps: TIMESTAMPS, extras: MACHINE_EXTRAS },
   fusion: MACHINE_ROW,
@@ -128,13 +128,13 @@ const REVAI_TRANSCRIBE_MODEL_PARAMS = {
       forced_alignment: EXTRA as boolean,
     },
   },
-} as const satisfies TranscribeModelParamTable;
+} as const satisfies SttModelParamTable;
 
-export const transcribe = {
-  category: "transcribe",
+export const stt = {
+  category: "stt",
   provider: "revai",
   models: MODELS,
-  modelParams: REVAI_TRANSCRIBE_MODEL_PARAMS,
+  modelParams: REVAI_STT_MODEL_PARAMS,
   audioInputs: ["url"],
   unsupported: {
     languages:
@@ -146,10 +146,10 @@ export const transcribe = {
       "its own limits, so send it through `providerOptions.revai`.",
   },
   compile(
-    input: TranscribeParamsFor<"url">,
-    ctx: CompileContext<TranscribeParamsFor<"url">>,
-  ): CompiledCall<RevaiTranscribeWire, RevaiTranscribeResult> {
-    const body: RevaiTranscribeWire = { transcriber: ctx.model, source_config: { url: "" } };
+    input: SttParamsFor<"url">,
+    ctx: CompileContext<SttParamsFor<"url">>,
+  ): CompiledCall<RevaiSttWire, RevaiSttResult> {
+    const body: RevaiSttWire = { transcriber: ctx.model, source_config: { url: "" } };
     ctx.from(["source_config", "url"], "audio");
     ctx.from(["transcriber"], "model");
     ctx.from(["skip_diarization"], "diarization");
@@ -201,13 +201,13 @@ export const transcribe = {
       );
     }
 
-    applyExtras(input, REVAI_TRANSCRIBE_MODEL_PARAMS, body, ctx);
+    applyExtras(input, REVAI_STT_MODEL_PARAMS, body, ctx);
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies TranscribeAdapterFor<
+} as const satisfies SttAdapterFor<
   "url",
-  typeof REVAI_TRANSCRIBE_MODEL_PARAMS,
-  RevaiTranscribeWire,
-  RevaiTranscribeResult
+  typeof REVAI_STT_MODEL_PARAMS,
+  RevaiSttWire,
+  RevaiSttResult
 >;

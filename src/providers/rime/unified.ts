@@ -1,5 +1,5 @@
 /**
- * `unmodel/speech` → `rime.speech` (POST /v1/rime-tts).
+ * `unmodel/tts` → `rime.tts` (POST /v1/rime-tts).
  *
  * Two provider-specific facts drive everything here.
  *
@@ -31,18 +31,18 @@ import {
 import type { AudioContainer, AudioFormatCodec } from "../../core/unified/vocabulary/audio";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
-  SpeechAdapterFor,
-  SpeechModelParamTable,
-  SpeechParams,
-} from "../../core/unified/vocabulary/speech";
+  TtsAdapterFor,
+  TtsModelParamTable,
+  TtsParams,
+} from "../../core/unified/vocabulary/tts";
 import {
-  speech as validator,
+  tts as validator,
   LANGUAGES,
   MIST_LANGUAGES,
   type RimeAccept,
   type RimeLanguage,
   type RimeTtsParams,
-} from "./speech";
+} from "./tts";
 
 /** Every model id the catalog carries — the ref union for `rime/…`. */
 const MODELS = ["coda", "mistv3", "mistv2", "mist", "arcanav3", "arcanav2", "arcana"] as const;
@@ -51,10 +51,10 @@ const CODA_DOCS = "https://docs.rime.ai/api-reference/coda/http";
 const SPEED_DOCS = "https://docs.rime.ai/docs/speed";
 
 /** The wire params this adapter compiles to (`accept` becomes a header). */
-export type RimeSpeechWire = RimeTtsParams;
+export type RimeTtsWire = RimeTtsParams;
 
 /** What a unified call to `rime/…` returns. */
-export type RimeSpeechResult = ReturnType<typeof validator<RimeSpeechWire>>;
+export type RimeTtsResult = ReturnType<typeof validator<RimeTtsWire>>;
 
 /**
  * The Mist generation whose speed field is `speedAlpha`. Everything else —
@@ -113,7 +113,7 @@ function acceptFor(codec: AudioFormatCodec, container: AudioContainer | undefine
  * carrying the newer codecs: the two facts split the catalog differently, and a
  * per-model row is the only shape that can say so.
  *
- * **Extras** are `speechConstraints` read backwards. Coda denies all four
+ * **Extras** are `ttsConstraints` read backwards. Coda denies all four
  * ("per-word speed adjustment is a Mist-family feature — Coda does not support
  * it"), so its row declares none and an editor refuses `inlineSpeedAlpha` on it
  * by name. `speedAlpha` and `timeScaleFactor` are absent from every row: they
@@ -145,7 +145,7 @@ const LEGACY_MIST_ROW = {
   extras: LEGACY_MIST_EXTRAS,
 } as const;
 
-const RIME_SPEECH_MODEL_PARAMS = {
+const RIME_TTS_MODEL_PARAMS = {
   coda: { codecs: MODERN_CODECS, languages: LANGUAGES },
   mistv3: { codecs: MODERN_CODECS, languages: MIST_LANGUAGES, extras: MIST_EXTRAS },
   mistv2: LEGACY_MIST_ROW,
@@ -153,17 +153,17 @@ const RIME_SPEECH_MODEL_PARAMS = {
   arcanav3: { ...ARCANA_ROW, extras: MIST_EXTRAS },
   arcanav2: { ...ARCANA_ROW, extras: MIST_EXTRAS },
   arcana: { ...ARCANA_ROW, extras: MIST_EXTRAS },
-} as const satisfies SpeechModelParamTable;
+} as const satisfies TtsModelParamTable;
 
-export const speech = {
-  category: "speech",
+export const tts = {
+  category: "tts",
   provider: "rime",
   models: MODELS,
-  modelParams: RIME_SPEECH_MODEL_PARAMS,
+  modelParams: RIME_TTS_MODEL_PARAMS,
   compile(
-    input: SpeechParams,
-    ctx: CompileContext<SpeechParams>,
-  ): CompiledCall<RimeSpeechWire, RimeSpeechResult> {
+    input: TtsParams,
+    ctx: CompileContext<TtsParams>,
+  ): CompiledCall<RimeTtsWire, RimeTtsResult> {
     ctx.from(["speaker"], "voice");
     ctx.from(["modelId"], "model");
     ctx.from(["accept"], "outputFormat");
@@ -172,7 +172,7 @@ export const speech = {
     ctx.from(["timeScaleFactor"], "speed");
     ctx.from(["speedAlpha"], "speed");
 
-    const body: RimeSpeechWire = { text: input.text, speaker: "", modelId: ctx.model };
+    const body: RimeTtsWire = { text: input.text, speaker: "", modelId: ctx.model };
 
     if (input.voice !== undefined) {
       const voice = ctx.take(
@@ -216,12 +216,12 @@ export const speech = {
       if (language !== undefined) body.lang = language as RimeLanguage;
     }
 
-    applyExtras(input, RIME_SPEECH_MODEL_PARAMS, body, ctx);
+    applyExtras(input, RIME_TTS_MODEL_PARAMS, body, ctx);
 
     return { params: body, validate: validator.safe };
   },
-} as const satisfies SpeechAdapterFor<
-  typeof RIME_SPEECH_MODEL_PARAMS,
-  RimeSpeechWire,
-  RimeSpeechResult
+} as const satisfies TtsAdapterFor<
+  typeof RIME_TTS_MODEL_PARAMS,
+  RimeTtsWire,
+  RimeTtsResult
 >;

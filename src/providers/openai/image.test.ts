@@ -9,7 +9,7 @@ import {
 import {
   imageConstraints,
   imagesEditConstraints,
-  speechConstraints,
+  ttsConstraints,
   transcriptionConstraints,
   chatConstraints,
 } from "./constraints";
@@ -405,7 +405,7 @@ describe("openai constraint provenance", () => {
   const tables: Array<[string, Partial<Record<string, EndpointConstraints>>]> = [
     ["image", imageConstraints],
     ["imageEdit", imagesEditConstraints],
-    ["speech", speechConstraints],
+    ["tts", ttsConstraints],
     ["transcription", transcriptionConstraints],
     ["chat", chatConstraints],
   ];

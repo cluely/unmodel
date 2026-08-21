@@ -274,30 +274,30 @@ video({ model: "¦", prompt: "x" });`);
  */
 describe("unified speech: per-model narrowing reaches the editor", () => {
   test("outputFormat completes the model's codecs, and not the others'", () => {
-    const hume = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "hume/octave", text: "x", outputFormat: "¦" });`);
+    const hume = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "hume/octave", text: "x", outputFormat: "¦" });`);
     expect(hume.sort()).toEqual(["mp3", "pcm_s16le"]);
 
-    const openai = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "openai/tts-1", text: "x", outputFormat: "¦" });`);
+    const openai = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "openai/tts-1", text: "x", outputFormat: "¦" });`);
     expect(openai.sort()).toEqual(["aac", "flac", "mp3", "opus", "pcm_s16le"]);
 
     // Resemble is the only provider in the category with the wider PCM widths.
-    const resemble = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "resemble/resemble-ultra", text: "x", outputFormat: "¦" });`);
+    const resemble = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "resemble/resemble-ultra", text: "x", outputFormat: "¦" });`);
     expect(resemble).toContain("pcm_s24le");
     expect(openai).not.toContain("pcm_s24le");
   });
 
   test("the object spelling narrows `format` too", () => {
-    const entries = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "cartesia/sonic-3", text: "x", outputFormat: { format: "¦" } });`);
+    const entries = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "cartesia/sonic-3", text: "x", outputFormat: { format: "¦" } });`);
     expect(entries.sort()).toEqual(["mp3", "pcm_alaw", "pcm_f32le", "pcm_mulaw", "pcm_s16le"]);
   });
 
   test("language completes the model's list without gating it", () => {
-    const entries = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "lmnt/blizzard", text: "x", language: "¦" });`);
+    const entries = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "lmnt/blizzard", text: "x", language: "¦" });`);
     // The 31 LMNT serves, and `"auto"` — a wire value the canonical BCP-47
     // `language` cannot spell — is deliberately not among them.
     expect(entries).toContain("ur");
@@ -327,25 +327,25 @@ speech({ model: "lmnt/blizzard", text: "x", language: "¦" });`);
    * failures are "the list is a different size than the table says".
    */
   test("a per-model language list is the model's own, not the provider's widest", () => {
-    const two8 = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "minimax/speech-2.8-hd", text: "x", language: "¦" });`);
+    const two8 = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "minimax/speech-2.8-hd", text: "x", language: "¦" });`);
     expect(two8.length).toBe(42);
     expect(two8).toContain("fa");
 
-    const legacy = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "minimax/speech-01-hd", text: "x", language: "¦" });`);
+    const legacy = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "minimax/speech-01-hd", text: "x", language: "¦" });`);
     // "The speech-01 and speech-02 series models do not currently support
     // Persian, Filipino, or Tamil" — `fa`, `fil`/`tl` and `ta`.
     expect(legacy.length).toBe(38);
     for (const code of ["fa", "fil", "tl", "ta"]) expect(legacy).not.toContain(code);
 
-    const base = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "smallest-ai/lightning_v3.1", text: "x", language: "¦" });`);
+    const base = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "smallest-ai/lightning_v3.1", text: "x", language: "¦" });`);
     expect(base.length).toBe(20);
     expect(base).not.toContain("ja");
 
-    const pro = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "smallest-ai/lightning_v3.1_pro", text: "x", language: "¦" });`);
+    const pro = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "smallest-ai/lightning_v3.1_pro", text: "x", language: "¦" });`);
     expect(pro.length).toBe(31);
     expect(pro).toContain("ja");
   });
@@ -353,21 +353,21 @@ speech({ model: "smallest-ai/lightning_v3.1_pro", text: "x", language: "¦" });`
   test("voice completes the model's built-in list, and matches the wire layer's", () => {
     // The unified surface used to be strictly WORSE than the wire surface it
     // compiles down to: `voice` was the bare `Voice`, so it completed nothing,
-    // while `openai.speech` has hand-catalogued per-model lists.
-    const wire1 = completionsAt(`import { speech } from "./src/providers/openai";
-speech({ model: "tts-1", input: "x", voice: "¦" });`);
-    const unified1 = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "openai/tts-1", text: "x", voice: "¦" });`);
+    // while `openai.tts` has hand-catalogued per-model lists.
+    const wire1 = completionsAt(`import { tts } from "./src/providers/openai";
+tts({ model: "tts-1", input: "x", voice: "¦" });`);
+    const unified1 = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "openai/tts-1", text: "x", voice: "¦" });`);
     expect(unified1.sort()).toEqual(wire1.sort());
     expect(unified1.length).toBe(9);
     expect(unified1).toContain("alloy");
     // gpt-4o-mini-tts-only voices are not on tts-1's list.
     expect(unified1).not.toContain("marin");
 
-    const wire2 = completionsAt(`import { speech } from "./src/providers/openai";
-speech({ model: "gpt-4o-mini-tts", input: "x", voice: "¦" });`);
-    const unified2 = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "openai/gpt-4o-mini-tts", text: "x", voice: "¦" });`);
+    const wire2 = completionsAt(`import { tts } from "./src/providers/openai";
+tts({ model: "gpt-4o-mini-tts", input: "x", voice: "¦" });`);
+    const unified2 = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "openai/gpt-4o-mini-tts", text: "x", voice: "¦" });`);
     expect(unified2.sort()).toEqual(wire2.sort());
     expect(unified2.length).toBe(13);
     expect(unified2).toContain("marin");
@@ -375,43 +375,43 @@ speech({ model: "openai/gpt-4o-mini-tts", text: "x", voice: "¦" });`);
     // A provider that publishes no closed list declares no `voices` row and is
     // unchanged: the wide `Voice` completes nothing, which is the honest answer
     // for a per-account catalog.
-    const elevenlabs = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "elevenlabs/eleven_v3", text: "x", voice: "¦" });`);
+    const elevenlabs = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "elevenlabs/eleven_v3", text: "x", voice: "¦" });`);
     // (The bare `""` is what the service offers for an unconstrained `string`.)
     expect(elevenlabs.filter((e) => e !== "")).toEqual([]);
   });
 
   test("property names include the model's extras, and its extras only", () => {
-    const entries = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "rime/mistv2", text: "x", ¦ });`);
+    const entries = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "rime/mistv2", text: "x", ¦ });`);
     for (const name of ["outputFormat", "language", "speed", "inlineSpeedAlpha", "noTextNormalization"]) {
       expect(entries).toContain(name);
     }
     // Coda's row is empty and the Mist knobs are not on it.
-    const coda = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "rime/coda", text: "x", ¦ });`);
+    const coda = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "rime/coda", text: "x", ¦ });`);
     expect(coda).not.toContain("inlineSpeedAlpha");
     expect(coda).not.toContain("noTextNormalization");
   });
 
   test("an extra's own values complete, per model", () => {
-    const two6 = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "minimax/speech-2.6-hd", text: "x", emotion: "¦" });`);
+    const two6 = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "minimax/speech-2.6-hd", text: "x", emotion: "¦" });`);
     expect(two6).toContain("whisper");
     expect(two6).toContain("fluent");
-    const two8 = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "minimax/speech-2.8-hd", text: "x", emotion: "¦" });`);
+    const two8 = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "minimax/speech-2.8-hd", text: "x", emotion: "¦" });`);
     expect(two8).toContain("fluent");
     expect(two8).not.toContain("whisper");
-    const legacy = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "minimax/speech-01-hd", text: "x", emotion: "¦" });`);
+    const legacy = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "minimax/speech-01-hd", text: "x", emotion: "¦" });`);
     expect(legacy).not.toContain("fluent");
     expect(legacy).toContain("calm");
   });
 
   test("an unknown model degrades to the wide vocabulary", () => {
-    const entries = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "openai/tts-9", text: "x", outputFormat: "¦" });`);
+    const entries = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "openai/tts-9", text: "x", outputFormat: "¦" });`);
     for (const codec of ["mp3", "aac", "flac", "opus", "vorbis", "pcm_s24le", "pcm_alaw"]) {
       expect(entries).toContain(codec);
     }
@@ -420,65 +420,65 @@ speech({ model: "openai/tts-9", text: "x", outputFormat: "¦" });`);
 
 describe("unified transcribe: per-model narrowing reaches the editor", () => {
   test("timestamps completes the granularities the route reports", () => {
-    const whisper = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "openai/whisper-1", audio: { file: new Blob([]) }, timestamps: "¦" });`);
+    const whisper = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "openai/whisper-1", audio: { file: new Blob([]) }, timestamps: "¦" });`);
     expect(whisper.sort()).toEqual(["none", "segment", "word"]);
 
-    const gpt4o = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "openai/gpt-4o-transcribe", audio: { file: new Blob([]) }, timestamps: "¦" });`);
+    const gpt4o = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "openai/gpt-4o-transcribe", audio: { file: new Blob([]) }, timestamps: "¦" });`);
     expect(gpt4o.sort()).toEqual(["none"]);
 
-    const scribe = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "elevenlabs/scribe_v1", audio: { url: "https://e.com/a.wav" }, timestamps: "¦" });`);
+    const scribe = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "elevenlabs/scribe_v1", audio: { url: "https://e.com/a.wav" }, timestamps: "¦" });`);
     expect(scribe.sort()).toEqual(["character", "none", "word"]);
 
     // No `"none"` where the route has no switch to turn timings off.
-    const deepgram = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "deepgram/nova-3", audio: { url: "https://e.com/a.wav" }, timestamps: "¦" });`);
+    const deepgram = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "deepgram/nova-3", audio: { url: "https://e.com/a.wav" }, timestamps: "¦" });`);
     expect(deepgram.sort()).toEqual(["segment", "word"]);
 
-    const assembly = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "assemblyai/universal-2", audio: { url: "https://e.com/a.wav" }, timestamps: "¦" });`);
+    const assembly = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "assemblyai/universal-2", audio: { url: "https://e.com/a.wav" }, timestamps: "¦" });`);
     expect(assembly.sort()).toEqual(["word"]);
   });
 
   test("language completes a closed list where the wire has one", () => {
-    const solaria3 = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "gladia/solaria-3", audio: { url: "https://e.com/a.wav" }, language: "¦" });`);
+    const solaria3 = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "gladia/solaria-3", audio: { url: "https://e.com/a.wav" }, language: "¦" });`);
     for (const code of ["en", "fr", "de", "es", "it"]) expect(solaria3).toContain(code);
     expect(solaria3).not.toContain("pt");
 
     // Melia 1's whole list is one magic value.
-    const melia = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "speechmatics/melia-1", audio: { url: "https://e.com/a.wav" }, language: "¦" });`);
+    const melia = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "speechmatics/melia-1", audio: { url: "https://e.com/a.wav" }, language: "¦" });`);
     expect(melia).toContain("multi");
   });
 
   test("property names include the model's extras, and its extras only", () => {
-    const nova3 = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "deepgram/nova-3", audio: { url: "https://e.com/a.wav" }, ¦ });`);
+    const nova3 = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "deepgram/nova-3", audio: { url: "https://e.com/a.wav" }, ¦ });`);
     for (const name of ["timestamps", "diarization", "keyterm", "keywords", "smart_format"]) {
       expect(nova3).toContain(name);
     }
-    const nova2 = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "deepgram/nova-2", audio: { url: "https://e.com/a.wav" }, ¦ });`);
+    const nova2 = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "deepgram/nova-2", audio: { url: "https://e.com/a.wav" }, ¦ });`);
     expect(nova2).toContain("keywords");
     expect(nova2).not.toContain("keyterm");
 
     // Rev AI's two gated blocks, from one adapter.
-    const human = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "revai/human", audio: { url: "https://e.com/a.wav" }, ¦ });`);
+    const human = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "revai/human", audio: { url: "https://e.com/a.wav" }, ¦ });`);
     expect(human).toContain("rush");
     expect(human).not.toContain("remove_disfluencies");
-    const machine = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "revai/machine", audio: { url: "https://e.com/a.wav" }, ¦ });`);
+    const machine = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "revai/machine", audio: { url: "https://e.com/a.wav" }, ¦ });`);
     expect(machine).toContain("remove_disfluencies");
     expect(machine).not.toContain("rush");
   });
 
   test("an unknown model degrades to the wide vocabulary", () => {
-    const entries = completionsAt(`import { transcribe } from "./src/unified/transcribe";
-transcribe({ model: "openai/whisper-9", audio: { file: new Blob([]) }, timestamps: "¦" });`);
+    const entries = completionsAt(`import { stt } from "./src/unified/stt";
+stt({ model: "openai/whisper-9", audio: { file: new Blob([]) }, timestamps: "¦" });`);
     expect(entries.sort()).toEqual(["character", "none", "segment", "word"]);
   });
 });
@@ -640,7 +640,7 @@ chat({ model: "openai/gpt-5.2", ¦ });`);
  * either way — so the *list* is not what these tests are really pinning: it is
  * that the list is now the WHOLE space. `not.toContain` is doing the work.
  * With a tail present, `emotion: "smug"` and `language: "pt-BR"` type-checked
- * silently while `speech.safe` refused both at `invalid_enum_value` *error*
+ * silently while `tts.safe` refused both at `invalid_enum_value` *error*
  * severity; the editor was quiet about a call unmodel itself rejects.
  *
  * The counts (58 / 42 / 100) are the documented sizes, pinned again beside
@@ -649,8 +649,8 @@ chat({ model: "openai/gpt-5.2", ¦ });`);
  * exact-count assertion for it anywhere.
  */
 describe("cartesia: the closed wire enums complete exactly their members", () => {
-  const BYTES = `import { speech } from "./src/providers/cartesia";
-speech({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: "v" },
+  const BYTES = `import { tts } from "./src/providers/cartesia";
+tts({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: "v" },
   output_format: { container: "wav" }, `;
 
   test("generation_config.emotion offers the 58 labels and nothing else", () => {
@@ -689,8 +689,8 @@ ttsWebsocket({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: 
   });
 
   test("batch STT completes its own, larger 100-code list", () => {
-    const entries = completionsAt(`import { transcribe } from "./src/providers/cartesia";
-transcribe({ file: new Blob([]), model: "ink-whisper", language: "¦" });`);
+    const entries = completionsAt(`import { stt } from "./src/providers/cartesia";
+stt({ file: new Blob([]), model: "ink-whisper", language: "¦" });`);
     expect(entries.length).toBe(100);
     // Whisper's long tail — in this enum, and deliberately not in the TTS one.
     expect(entries).toContain("yue");
@@ -719,8 +719,8 @@ transcribe({ file: new Blob([]), model: "ink-whisper", language: "¦" });`);
   });
 
   test("the unified layer still takes BCP-47: closing the wire changed nothing here", () => {
-    const entries = completionsAt(`import { speech } from "./src/unified/speech";
-speech({ model: "cartesia/sonic-3.5", text: "x", language: "¦" });`);
+    const entries = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "cartesia/sonic-3.5", text: "x", language: "¦" });`);
     // The row's `languages` is CARTESIA_TTS_LANGUAGES by reference, so the
     // editor offers the same 42 codes one layer up — while `toPrimaryLanguage`
     // keeps normalizing "pt-BR" to "pt" for callers who type the regional tag.
@@ -1143,8 +1143,8 @@ if (w.code === "approximated_param") { w.meta?.¦ }`);
 describe("CanonicalField completes the vocabulary, dotted paths included", () => {
   test("the nested paths the tail permitted but could not suggest now complete", () => {
     const entries = completionsAt(`import type { CanonicalField } from "./src/core/unified/types";
-import type { TranscribeParams } from "./src/core/unified/vocabulary/transcribe";
-declare const from: (wirePath: Array<string | number>, canonical: CanonicalField<TranscribeParams>) => void;
+import type { SttParams } from "./src/core/unified/vocabulary/stt";
+declare const from: (wirePath: Array<string | number>, canonical: CanonicalField<SttParams>) => void;
 from(["speaker_options", "max_speakers_expected"], "¦");`);
     // Flat fields still complete…
     expect(entries).toContain("audio");

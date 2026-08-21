@@ -16,7 +16,7 @@ about thirty different ways — a wire path (`imageToImage`, `text2video`), a
 product family (`fluxKontext`, `krea2`), a bare verb (`edit`, `listen`,
 `speak`), a plural noun (`images`, `videos`, `jobs`, `generations`) and a noun
 phrase (`replaceBackground`, `contentGenerationTasks`). All of them now address
-their category as `chat`, `image`, `imageEdit`, `speech`, `transcribe`, `video`
+their category as `chat`, `image`, `imageEdit`, `tts`, `stt`, `video`
 or `music`, with each *extra* route at a provider qualified by what makes it
 different — never the primary one, so the word a caller reaches for first is the
 same word everywhere.
@@ -61,47 +61,50 @@ say which:
 | `google-vertex.chat` | `google-vertex.chatMaas` | the OpenAI-compatible MaaS surface Vertex serves `*-maas` models on |
 | — | `google-vertex.chatRawPredict` | new, and dormant: the Anthropic-shaped `rawPredict` route Claude-on-Vertex uses. unmodel has no module for it, so those rows stay denied in `data/availability-overrides.json`; the label exists so the rule is already correct when one lands |
 
-## Speech (text to speech)
+## TTS (text to speech)
 
 | old | new |
 | --- | --- |
-| `elevenlabs.textToSpeech` | `elevenlabs.speech` |
-| `cartesia.tts` | `cartesia.speech` |
-| `deepgram.speak` | `deepgram.speech` |
-| `hume.tts` | `hume.speech` |
-| `minimax.t2a` | `minimax.speech` |
-| `rime.tts` | `rime.speech` |
-| `fish-audio.tts` | `fish-audio.speech` |
-| `smallest-ai.tts` | `smallest-ai.speech` |
-| `inworld.tts` | `inworld.speech` |
-| `murf.speechGenerate` | `murf.speech` |
-| `resemble.synthesize` / `resemble.synthesizeStream` | `resemble.speech` / `resemble.speechStream` |
-| `speechify.stream` | `speechify.speechStream` |
+| `elevenlabs.textToSpeech` | `elevenlabs.tts` |
+| `cartesia.tts` | `cartesia.tts` |
+| `deepgram.speak` | `deepgram.tts` |
+| `hume.tts` | `hume.tts` |
+| `minimax.t2a` | `minimax.tts` |
+| `rime.tts` | `rime.tts` |
+| `fish-audio.tts` | `fish-audio.tts` |
+| `smallest-ai.tts` | `smallest-ai.tts` |
+| `inworld.tts` | `inworld.tts` |
+| `murf.speechGenerate` | `murf.tts` |
+| `resemble.synthesize` / `resemble.synthesizeStream` | `resemble.tts` / `resemble.ttsStream` |
+| `speechify.stream` | `speechify.ttsStream` |
 
-`openai.speech`, `lmnt.speech`, `lmnt.speechDetailed`, `murf.speechStream` and
-`speechify.speech` already had the uniform name. Constraint tables and checkers
-follow: `elevenlabs.textToSpeechConstraints` → `speechConstraints` (likewise
-cartesia, rime, smallest-ai, inworld), and `resemble.checkSynthesis` →
-`checkSpeech`, matching `murf.checkSpeech`.
+`openai.tts`, `lmnt.tts`, `lmnt.ttsDetailed`, `murf.ttsStream` and
+`speechify.tts` were already spelled with the category's verb and moved with
+it. The rows where old and new read alike are the providers whose own wire word
+was already `tts`. Constraint tables and checkers follow:
+`elevenlabs.textToSpeechConstraints` → `ttsConstraints` (likewise cartesia,
+rime, smallest-ai, inworld), and `resemble.checkSynthesis` → `checkTts`,
+matching `murf.checkTts`.
 
-## Transcribe (speech to text)
+## STT (speech to text)
 
 | old | new |
 | --- | --- |
-| `openai.transcription` | `openai.transcribe` |
-| `mistral.transcription` | `mistral.transcribe` |
-| `elevenlabs.speechToText` | `elevenlabs.transcribe` |
-| `soniox.transcriptions` | `soniox.transcribe` |
-| `deepgram.listen` | `deepgram.transcribe` |
-| `assemblyai.transcript` | `assemblyai.transcribe` |
-| `gladia.preRecorded` | `gladia.transcribe` |
-| `revai.jobs` | `revai.transcribe` |
-| `speechmatics.jobs` | `speechmatics.transcribe` |
-| `cartesia.stt` | `cartesia.transcribe` |
+| `openai.transcription` | `openai.stt` |
+| `mistral.transcription` | `mistral.stt` |
+| `elevenlabs.speechToText` | `elevenlabs.stt` |
+| `soniox.transcriptions` | `soniox.stt` |
+| `deepgram.listen` | `deepgram.stt` |
+| `assemblyai.transcript` | `assemblyai.stt` |
+| `gladia.preRecorded` | `gladia.stt` |
+| `revai.jobs` | `revai.stt` |
+| `speechmatics.jobs` | `speechmatics.stt` |
+| `cartesia.stt` | `cartesia.stt` |
 
-`inworld.transcribe` already had the uniform name.
+`inworld.stt` moved with the rest of the category; `cartesia.stt` reads alike in
+both columns because `stt` was already Cartesia's own wire word.
 `openai.transcriptionToFormData` moves with its endpoint to
-`openai.transcribeToFormData`.
+`openai.sttToFormData`.
 
 ## Image generation
 
@@ -199,7 +202,7 @@ bytedance's `contentGenerationTasksConstraints`, luma's
 ## What did *not* get renamed
 
 **The realtime surfaces**, on purpose: a socket config is a different endpoint
-from a batch POST, and folding them in would make `speech` and `transcribe` each
+from a batch POST, and folding them in would make `tts` and `stt` each
 mean two transports. `openai.realtimeSession`, `elevenlabs.textToSpeechStreamInput`,
 `elevenlabs.speechToTextRealtime`, `soniox.realtimeTranscription`,
 `deepgram.listenLive` / `listenFlux` / `fluxConfigure` / `speakLive`,
@@ -227,5 +230,5 @@ were — this wave changed no wire format and no validation rule.
 + import { image } from "unmodel/google";
 
 - echo "$params" | unmodel validate openai.transcription
-+ echo "$params" | unmodel validate openai.transcribe
++ echo "$params" | unmodel validate openai.stt
 ```

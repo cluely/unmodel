@@ -1,8 +1,8 @@
 /**
  * `unmodel/image` → `openai.image` (POST /v1/images/generations).
  *
- * A sibling of `./unified-speech`, and a separate module for a reason that is
- * about bytes rather than tidiness: `unmodel/speech` and `unmodel/image` both
+ * A sibling of `./unified-tts`, and a separate module for a reason that is
+ * about bytes rather than tidiness: `unmodel/tts` and `unmodel/image` both
  * import from this provider, and a single module holding both adapters puts
  * OpenAI's image catalog (and the generated `src/catalog/openai.gen.ts` behind
  * it) into the speech pack, where nothing can ever use it. One module per

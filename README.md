@@ -679,6 +679,47 @@ const res = await fetch(validated.request.url, {
 const audio = await res.arrayBuffer();
 ```
 
+**Gemini TTS — thirty voices, typed**
+
+Google's speech generation is not a speech route at all: a TTS model id rides
+`google.chat`'s own `generateContent` body. Its `voiceName` is the closed
+thirty-voice preset list the speech-generation guide publishes — typed from
+the same `as const` array the runtime check reads (`GEMINI_TTS_VOICES`,
+re-exported from `unmodel/google`), so the two cannot drift. The editor
+completes all thirty, and a typo is refused at both layers:
+
+```ts
+import { chat } from "unmodel/google";
+
+const validated = chat({
+  model: "gemini-2.5-flash-preview-tts",
+  contents: [{ role: "user", parts: [{ text: "Say cheerfully: have a wonderful day!" }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],
+    speechConfig: {
+      voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } }, // completes all 30
+      // voiceName: "Zephyrr"                                       // compile error
+    },
+  },
+});
+```
+
+There is deliberately no `(string & {})` tail on `voiceName`:
+`prebuiltVoiceConfig` is preset-only by construction — a cloned or custom
+voice has no wire form on this message — so an open tail would advertise a
+value space Google has not published and switch the completion list off.
+
+The same request through `unmodel/chat` writes the voice via
+`providerOptions.google`, where the bucket is the typed deep-partial of this
+wire body: `voiceName` completes the same thirty, though as an escape hatch
+its leaves stay compile-*open* on purpose (a voice Google adds tomorrow must
+not break yesterday's build). Validation still closes the gap — off-list
+voices are refused at run time on every path, JS callers included:
+
+```
+`voiceName` must be one of the 30 prebuilt Gemini TTS voices; got "Zephyrr".
+```
+
 **Realtime session configs**
 
 A realtime speech API is configured by one JSON object — a connection-URL query

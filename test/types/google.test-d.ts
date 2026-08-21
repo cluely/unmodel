@@ -8,8 +8,20 @@ import type {
   GenerateVideosParameters,
 } from "@google/genai";
 import { chat, image, video, type GenerateImagesBody } from "../../src/providers/google";
+import { checkChat as googleCheckChat } from "../../src/providers/google";
+import type { GoogleFinishReason } from "../../src/providers/google";
+import type { ResponseReport } from "../../src/core/report";
 import type { GoogleTextModelId } from "../../src/catalog/google.gen";
-import { expectAssignable } from "./helpers";
+import { GEMINI_IMAGE_MODEL_RULES } from "../../src/providers/google/constraints";
+import { chatModels } from "../../src/providers/google/tts-models";
+import type { GeminiTtsVoiceName } from "../../src/providers/google/wire";
+import type {
+  VeoParameterModelId,
+  VeoParametersArm,
+  VEO_PARAMETER_SPACE,
+} from "../../src/providers/google/video";
+import { video as googleVideoAdapter } from "../../src/providers/google/unified-video";
+import { expectAssignable, expectTrue, type HasLiteralMember, type IsNever } from "./helpers";
 
 const validated = chat({
   model: "gemini-2.5-flash",
@@ -428,3 +440,237 @@ const imagenForApi = image({
 });
 // @ts-expect-error — image declares no `.toApi` targets either.
 imagenForApi.toApi("vercel");
+
+// ---------------------------------------------------------------------------
+// Gemini TTS `voiceName` is the closed 30-voice preset list, not `string`.
+//
+// The runtime has always reported `invalid_enum_value` naming all 30 for
+// anything off it (`checkVoiceName` in chat.ts); the type says the same thing
+// now, which is what turns a round trip into a red squiggle.
+// ---------------------------------------------------------------------------
+
+/** Exactly the array's members — a hand-widened alias would fail this. */
+expectTrue<Same<GeminiTtsVoiceName, (typeof import("../../src/providers/google"))["GEMINI_TTS_VOICES"][number]>>();
+
+chat({
+  model: "gemini-3.1-flash-tts-preview",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],
+    // @ts-expect-error "Bartholomew" is not one of the 30 preset voices.
+    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Bartholomew" } } },
+  },
+});
+chat({
+  model: "gemini-3.1-flash-tts-preview",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],
+    speechConfig: {
+      multiSpeakerVoiceConfig: {
+        speakerVoiceConfigs: [
+          // @ts-expect-error the multi-speaker path is the same closed union.
+          { speaker: "Joe", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyrr" } } },
+        ],
+      },
+    },
+  },
+});
+// There is deliberately no `(string & {})` tail: a runtime-built voice needs
+// the cast, which is correct — the validator would reject an unlisted one.
+declare const runtimeVoice: string;
+expectAssignable<GeminiTtsVoiceName>(runtimeVoice as GeminiTtsVoiceName);
+
+// ---------------------------------------------------------------------------
+// The two google tables keep their literals (`as const satisfies`, not `:`).
+//
+// An annotation type-checks the same rows and erases them, which is invisible
+// to every other test in the repo: the narrowing built on such a table
+// compiles green and completes nothing.
+// ---------------------------------------------------------------------------
+
+expectTrue<Same<(typeof GEMINI_IMAGE_MODEL_RULES)["gemini-3-pro-image"]["imageSizes"], readonly ["1K", "2K", "4K"]>>();
+expectTrue<Same<(typeof GEMINI_IMAGE_MODEL_RULES)["gemini-3.1-flash-lite-image"]["imageSizes"], readonly ["512", "1K"]>>();
+// `gemini-2.5-flash-image` carries no `imageSizes` at all — a single fixed
+// resolution — and the row type says so rather than offering `string[]`.
+expectTrue<IsNever<Extract<keyof (typeof GEMINI_IMAGE_MODEL_RULES)["gemini-2.5-flash-image"], "imageSizes">>>();
+// @ts-expect-error the table's keys are closed now: an uncataloged id is a
+// compile error, which is what the `Object.hasOwn` guard in chat.ts exists for.
+GEMINI_IMAGE_MODEL_RULES["gemini-9.9-flash-image"];
+
+// The catalog overlay keeps every generated row's flags…
+expectTrue<Same<(typeof chatModels)["gemini-2.5-flash"]["reasoning"], true>>();
+// …and states the overlay's own honest uncertainty for the three TTS ids: the
+// doc-sourced 32k when models.dev still lists the id, the generated 8192 when
+// the guard finds nothing to override.
+expectTrue<Same<(typeof chatModels)["gemini-3.1-flash-tts-preview"]["limit"]["context"], 8192 | 32768>>();
+
+// ---------------------------------------------------------------------------
+// google.video: the wire arm is per model, and it AGREES with the unified table
+//
+// This is the drift test in type space. `google.video` accepted
+// `resolution: "4k"` on Veo 2 while `unmodel/video` — the surface that
+// compiles down to it — refused the same fact, because two tables in the same
+// package described the same models and nothing compared them. They are one
+// table now (`VEO_PARAMETER_SPACE`, read by `./unified-video`), and the
+// assertions below fail in BOTH directions if that ever stops being true.
+// ---------------------------------------------------------------------------
+
+/** Mutual assignability: a widening on either side fails, not just a narrowing. */
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+
+type UnifiedVideoRows = (typeof googleVideoAdapter)["modelParams"];
+
+/** Neither table may carry a model the other does not. */
+expectTrue<IsNever<Exclude<VeoParameterModelId, keyof UnifiedVideoRows>>>();
+expectTrue<IsNever<Exclude<keyof UnifiedVideoRows, VeoParameterModelId>>>();
+
+/** Per model, the wire field's value space vs the unified row's list. */
+type Drifted<M extends VeoParameterModelId> =
+  Same<NonNullable<VeoParametersArm<M>["resolution"]>, UnifiedVideoRows[M]["resolutions"][number]> extends true
+    ? Same<NonNullable<VeoParametersArm<M>["durationSeconds"]>, UnifiedVideoRows[M]["durations"][number]> extends true
+      ? Same<NonNullable<VeoParametersArm<M>["aspectRatio"]>, UnifiedVideoRows[M]["ratios"][number]> extends true
+        ? never
+        : M
+      : M
+    : M;
+
+expectTrue<IsNever<{ [M in VeoParameterModelId]: Drifted<M> }[VeoParameterModelId]>>();
+
+/**
+ * `personGeneration` is the one field where the two sources genuinely differ,
+ * and the difference is asserted rather than smoothed over: where Google
+ * publishes a list, both surfaces carry it; where it publishes none (Omni),
+ * the unified row says `string` — all a row can say — and the wire keeps the
+ * documented three-value union instead of widening to match.
+ */
+type WithPublishedPersonGeneration = {
+  [M in VeoParameterModelId]: (typeof VEO_PARAMETER_SPACE)[M] extends {
+    personGeneration: readonly string[];
+  }
+    ? M
+    : never;
+}[VeoParameterModelId];
+
+type PersonDrifted<M extends WithPublishedPersonGeneration> = Same<
+  NonNullable<VeoParametersArm<M>["personGeneration"]>,
+  UnifiedVideoRows[M]["extras"]["personGeneration"]
+> extends true
+  ? never
+  : M;
+
+expectTrue<
+  IsNever<{ [M in WithPublishedPersonGeneration]: PersonDrifted<M> }[WithPublishedPersonGeneration]>
+>();
+expectTrue<Same<WithPublishedPersonGeneration, Exclude<VeoParameterModelId, "gemini-omni-flash-preview">>>();
+expectTrue<Same<UnifiedVideoRows["gemini-omni-flash-preview"]["extras"]["personGeneration"], string>>();
+expectTrue<
+  Same<
+    NonNullable<VeoParametersArm<"gemini-omni-flash-preview">["personGeneration"]>,
+    "allow_all" | "allow_adult" | "dont_allow"
+  >
+>();
+
+// The four calls the wire used to accept while the unified layer refused them.
+video({
+  model: "veo-2.0-generate-001",
+  instances: [{ prompt: "a hummingbird" }],
+  // @ts-expect-error Veo 2 has no `resolution` parameter at all.
+  parameters: { resolution: "4k" },
+});
+video({
+  model: "veo-3.1-generate-preview",
+  instances: [{ prompt: "a hummingbird" }],
+  // @ts-expect-error `dont_allow` is Veo 2-only.
+  parameters: { personGeneration: "dont_allow" },
+});
+video({
+  model: "veo-3.1-lite-generate-preview",
+  instances: [{ prompt: "a hummingbird" }],
+  // @ts-expect-error Lite stops at 1080p.
+  parameters: { resolution: "4k" },
+});
+video({
+  model: "gemini-omni-flash-preview",
+  instances: [{ prompt: "a hummingbird" }],
+  // @ts-expect-error Omni is 720p and 3-10s.
+  parameters: { resolution: "1080p", durationSeconds: 20 },
+});
+// …and the same four facts, each on the model that DOES document them.
+expectAssignable<{ instances: unknown }>(
+  video({
+    model: "veo-3.1-generate-preview",
+    instances: [{ prompt: "a hummingbird" }],
+    parameters: { resolution: "4k", durationSeconds: 8, personGeneration: "allow_adult" },
+  }),
+);
+expectAssignable<{ instances: unknown }>(
+  video({
+    model: "veo-2.0-generate-001",
+    instances: [{ prompt: "a hummingbird" }],
+    parameters: { personGeneration: "dont_allow", durationSeconds: 5, sampleCount: 2 },
+  }),
+);
+expectAssignable<{ instances: unknown }>(
+  video({
+    model: "gemini-omni-flash-preview",
+    instances: [{ prompt: "a hummingbird" }],
+    parameters: { resolution: "720p", durationSeconds: 3 },
+  }),
+);
+
+/**
+ * The degraded arm: a run-time model id has no row, so `parameters` keeps the
+ * wide documented type — the same trade `unknown_model` makes at run time, and
+ * the reason a model released after this snapshot stays callable.
+ */
+declare const runtimeVideoModel: string;
+expectAssignable<{ instances: unknown }>(
+  video({
+    model: runtimeVideoModel,
+    instances: [{ prompt: "a hummingbird" }],
+    parameters: { resolution: "4k", durationSeconds: 12, personGeneration: "dont_allow" },
+  }),
+);
+
+/**
+ * `sampleCount` is deliberately NOT narrowed per model: `videoConstraints`
+ * bounds it (1 on Veo 3.x, 1-2 on Veo 2) but no unified row carries it, so
+ * there is no second table to keep it honest and the runtime enum owns it
+ * alone. Pinned so that stops being an accident.
+ */
+expectTrue<Same<VeoParametersArm<"veo-3.1-generate-preview">["sampleCount"], number | undefined>>();
+
+// ---------------------------------------------------------------------------
+// `checkChat`'s report: `finishReason` carries Gemini's own vocabulary
+// ---------------------------------------------------------------------------
+
+function googleReportTypeTests(): void {
+  const report = googleCheckChat({ candidates: [{ finishReason: "STOP" }] });
+
+  // `HasLiteralMember`, not `Same`: a `(string & {})`-tailed union and bare
+  // `string` are mutually assignable, so `Same` passes even against a fully
+  // widened type (see the helper's doc).
+  expectTrue<HasLiteralMember<typeof report.finishReason, "MAX_TOKENS">>();
+  expectTrue<HasLiteralMember<typeof report.finishReason, "STOP">>();
+  expectTrue<HasLiteralMember<GoogleFinishReason, "IMAGE_RECITATION">>();
+  // The truncation branch's literal, the eight filtered ones, and the success
+  // value the checker does not branch on but every caller compares against.
+  if (report.finishReason === "MAX_TOKENS") void 0;
+  if (report.finishReason === "IMAGE_PROHIBITED_CONTENT") void 0;
+  if (report.finishReason === "STOP") void 0;
+
+  // Backward compatible: still a `ResponseReport`, still a `string`.
+  const wide: ResponseReport = report;
+  void wide;
+  const asString: string | undefined = report.finishReason;
+  void asString;
+
+  // Tail-open: `check.test.ts` pins that an UNRECOGNIZED finishReason is
+  // passed through and not treated as filtering, so the type must be able to
+  // hold one. The Gemini enum has grown four `IMAGE_*` members already.
+  const shipped: GoogleFinishReason = "UNEXPECTED_TOOL_CALL";
+  void shipped;
+}
+
+void googleReportTypeTests;

@@ -379,7 +379,12 @@ export const image = {
     if (Object.hasOwn(params, "public")) {
       body.public = params["public"] as boolean | null;
       delete params["public"];
-      ctx.from(["public"], "public");
+      // No `ctx.from` here: `public` is a model *extra*, not a canonical field,
+      // and it keeps its own name on the wire. Declaring provenance would have
+      // rewritten this route's messages to append "(compiled from `public`)"
+      // for an identical name — the pure noise `from`'s own doc rules out. It
+      // compiled only because `CanonicalField` used to carry a `(string & {})`
+      // tail; closing the tail is what surfaced it.
     }
 
     return { params: body, validate: validator.safe };

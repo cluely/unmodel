@@ -568,6 +568,10 @@ describe("providerOptions", () => {
   test("a bucket keyed by something that is not a provider id is a typo, and says so", () => {
     const { ir, warnings } = encode({
       model: "openai/gpt-5",
+      // @ts-expect-error — the point of the fixture: a typo'd bucket key. The
+      // key set is closed now, so TypeScript catches this one at the keystroke
+      // ("Did you mean to write 'openrouter'?"); the runtime path below still
+      // has to work for JS callers and for a key built at runtime.
       providerOptions: { openrouterr: { provider: { order: ["x"] } } },
     });
     expect(ir.passthrough).toBeUndefined();

@@ -36,7 +36,7 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromMilliseconds } from "../../core/cost";
 import { models, MUSIC_MODEL_IDS, type ElevenlabsMusicModelId } from "./models";
 
 export const MUSIC_URL = "https://api.elevenlabs.io/v1/music";
@@ -544,7 +544,7 @@ export function requestedDurationMs(params: MusicParams): number | undefined {
 function estimate(params: MusicParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
   const ms = requestedDurationMs(params);
   if (ms === undefined) return {};
-  const costUSD = computeAudioMinutesCostUSD(info?.cost, ms / 60000);
+  const costUSD = computeAudioMinutesCostUSD(info?.cost, minutesFromMilliseconds(ms));
   return costUSD === undefined ? {} : { costUSD };
 }
 

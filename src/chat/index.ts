@@ -107,7 +107,14 @@ export type {
 } from "./public-types";
 
 export { CHAT_PROVIDERS, classifyModelRef, classifyRef, dialectOf, parseModelRef, refProblemMessage } from "./refs";
-export type { ModelRef, RefClassification, RefProblem } from "./refs";
+export type {
+  FactoryChatProviderId,
+  ModelRef,
+  NoCodecChatProviderId,
+  RefClassification,
+  RefProblem,
+  RefProblemKindOf,
+} from "./refs";
 
 export { chatParamsSchema } from "./schema";
 
@@ -128,6 +135,7 @@ export type {
   ChatProviderValidator,
   ChatValidator,
   UnregisteredChatProvider,
+  UnservableChatReason,
 } from "./factory";
 
 export type { ChatOptions } from "./validate";
@@ -141,10 +149,13 @@ export type {
   ChatNativeTool,
   ChatParams,
   ChatProviderId,
+  ChatProviderOptions,
   ChatReasoning,
   ChatReasoningEffort,
   ChatReasoningPart,
   ChatResponseFormat,
+  ChatServiceTier,
+  ChatServiceTierFor,
   ChatTextPart,
   ChatToolCallPart,
   ChatToolChoice,

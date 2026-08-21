@@ -23,10 +23,34 @@ export interface MessageLike {
 const catalog = models as Record<string, ModelInfo>;
 
 /**
+ * The `stop_reason` values a /v1/messages response can carry, as `checkChat`
+ * reports them on `finishReason`.
+ *
+ * PUBLIC API — keep in sync with the `finishReason === …` branches below
+ * (`max_tokens` at line 55, `refusal` at 66, `model_context_window_exceeded`
+ * at 77); the rest are the documented values those branches deliberately do
+ * not warn about.
+ *
+ * Tail-open, per this library's `(string & {})` convention: the checker never
+ * refuses an off-list stop reason — it passes it straight through to
+ * `finishReason` — so a stop reason Anthropic ships tomorrow must stay
+ * assignable. The union exists to drive autocomplete, not to gate values.
+ */
+export type AnthropicStopReason =
+  | "end_turn"
+  | "max_tokens"
+  | "stop_sequence"
+  | "tool_use"
+  | "pause_turn"
+  | "refusal"
+  | "model_context_window_exceeded"
+  | (string & {});
+
+/**
  * Post-generation report for a /v1/messages response: truncation/refusal
  * warnings, normalized usage, and actual cost from catalog rates. Never throws.
  */
-export function checkChat(response: MessageLike): ResponseReport {
+export function checkChat(response: MessageLike): ResponseReport<AnthropicStopReason> {
   const warnings: Issue[] = [];
   const finishReason = response.stop_reason ?? undefined;
   const model = response.model;

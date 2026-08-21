@@ -20,6 +20,12 @@
  *   `camera_control`, `multi_shot`), plus the shared shot-pairing rules.
  * - Async: responds with a task object; poll
  *   `GET /v1/videos/image2video/{id}`. Auth is `Authorization: Bearer <key>`.
+ *
+ * PER-MODEL VALUE SPACE. As on text2video, a literal `model_name` narrows
+ * `mode`, `duration`, `sound`, `cfg_scale`, `camera_control` and `multi_shot`
+ * to that model's own `V1_MODEL_RULES` row — the row `checkV1Support` reports
+ * against and the row `./unified-video.ts` derives its nine `kling-v*` rows
+ * from. See {@link ImageToVideoArm} and `V1CapabilityArm` in ./v1-routes.
  */
 
 import { z } from "zod";
@@ -53,6 +59,9 @@ import {
   type KlingShot,
   type KlingShotType,
   type KlingV1Duration,
+  type V1CapabilityArm,
+  type V1NarrowedKey,
+  type V1RuleModelId,
 } from "./v1-routes";
 import { MODE_RESOLUTION, videoCostUSD } from "./pricing";
 
@@ -73,6 +82,13 @@ export const IMAGE2VIDEO_MODELS = [
   "kling-v3",
 ] as const;
 
+/**
+ * A `model_name` this route serves AND the capability map bounds — the ids
+ * that get a per-model body arm below. This enum is TEXT2VIDEO_MODELS plus
+ * `kling-v1-5` and `kling-v2-1`, which are image-to-video-only.
+ */
+export type ImageToVideoModelId = Extract<(typeof IMAGE2VIDEO_MODELS)[number], V1RuleModelId>;
+
 /** One motion-brush trajectory point. */
 export interface KlingTrajectoryPoint {
   x: number;
@@ -85,6 +101,11 @@ export interface KlingDynamicMask {
   trajectories: KlingTrajectoryPoint[];
 }
 
+/**
+ * The WIDE body — every documented value of every model on this route. A
+ * literal `model_name` gets {@link ImageToVideoArm} instead; this is what a
+ * run-time id, a post-snapshot id and an omitted `model_name` fall back to.
+ */
 export interface ImageToVideoParams {
   /** Defaults to "kling-v1". */
   model_name?: KlingV1VideoModelId | (string & {});
@@ -117,14 +138,35 @@ export interface ImageToVideoParams {
   camera_control?: KlingCameraControl;
   /**
    * Seconds, as a string. Defaults to "5". The union is the widest documented
-   * range (kling-v3's 3–15s); `V1_MODEL_RULES` narrows it per `model_name` at
-   * runtime — every other model here offers only "5" and "10".
+   * range (kling-v3's 3–15s), which is what a run-time or post-snapshot
+   * `model_name` gets; a LITERAL one is narrowed to its own `V1_MODEL_RULES`
+   * row at compile time — every model but kling-v3 and kling-v2-6 offers only
+   * "5" and "10".
    */
   duration?: KlingV1Duration;
   watermark_info?: KlingWatermarkInfo;
   callback_url?: string;
   external_task_id?: string;
 }
+
+/**
+ * Resolves a `model_name` literal to its exact body — the image2video twin of
+ * `TextToVideoArm`, off the same `V1_MODEL_RULES` row. See that type for why
+ * the check is non-distributive and why the six keys are restated rather than
+ * intersected.
+ *
+ * There is no `aspect_ratio` on this route at all (the input image sets the
+ * frame), so the one field `V1CapabilityArm` deliberately leaves wide does not
+ * arise here.
+ */
+export type ImageToVideoArm<M extends string> = [M] extends [ImageToVideoModelId]
+  ? Omit<ImageToVideoParams, "model_name" | V1NarrowedKey> & {
+      model_name?: M;
+    } & V1CapabilityArm<M & ImageToVideoModelId>
+  : ImageToVideoParams;
+
+/** What `model_name` may be: a catalogued id, or any string at run time. */
+type ImageToVideoModelInput = NonNullable<ImageToVideoParams["model_name"]>;
 
 const videoFromImageSchema = z.looseObject({
   model_name: z.string().optional(),
@@ -284,12 +326,12 @@ const validator = createValidator<ImageToVideoParams, unknown>({
  * ```
  */
 export const videoFromImage = validator as unknown as {
-  <T extends ImageToVideoParams>(
-    params: T & ExactKeys<T, ImageToVideoParams>,
+  <M extends ImageToVideoModelInput, T extends ImageToVideoArm<M>>(
+    params: T & ImageToVideoArm<M> & { model_name?: M } & ExactKeys<T, ImageToVideoArm<M>>,
     options?: ValidateOptions,
   ): Validated<T, KlingSdkTargets<T>>;
-  safe<T extends ImageToVideoParams>(
-    params: T & ExactKeys<T, ImageToVideoParams>,
+  safe<M extends ImageToVideoModelInput, T extends ImageToVideoArm<M>>(
+    params: T & ImageToVideoArm<M> & { model_name?: M } & ExactKeys<T, ImageToVideoArm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<T, KlingSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];

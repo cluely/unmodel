@@ -198,20 +198,20 @@ export type AnyImageAdapter = AnyUnifiedAdapter<ImageParams> & {
 export interface ImageValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<ImageParamsBase, UnifiedRef<A>> & ModelSizing<A, M> & ModelExtras<A, M>,
+    T extends UnifiedInput<ImageParamsBase, UnifiedRef<A>, A> & ModelSizing<A, M> & ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<ImageParams, UnifiedRef<A>> & ModelExtras<A, M>>,
+      ExactKeys<T, UnifiedInput<ImageParams, UnifiedRef<A>, A> & ModelExtras<A, M>>,
     options?: ValidateOptions,
   ): UnifiedResult<A, M>;
   safe<
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<ImageParamsBase, UnifiedRef<A>> & ModelSizing<A, M> & ModelExtras<A, M>,
+    T extends UnifiedInput<ImageParamsBase, UnifiedRef<A>, A> & ModelSizing<A, M> & ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<ImageParams, UnifiedRef<A>> & ModelExtras<A, M>>,
+      ExactKeys<T, UnifiedInput<ImageParams, UnifiedRef<A>, A> & ModelExtras<A, M>>,
     options?: ValidateOptions,
   ): ValidateResult<UnifiedResult<A, M>>;
   /** Every provider id registered on this validator, sorted. */

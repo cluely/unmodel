@@ -171,7 +171,12 @@ export type {
 } from "./realtime";
 
 export { checkChat, checkImages } from "./check";
-export type { ChatCompletionLike, ChatChoiceLike, ImagesResponseLike } from "./check";
+export type {
+  ChatCompletionLike,
+  ChatChoiceLike,
+  ChatFinishReason,
+  ImagesResponseLike,
+} from "./check";
 
 export {
   imageConstraints,

@@ -477,9 +477,12 @@ that compiles one canonical request at every provider that can express it.
   `language` completes the codes the wire enumerates without gating the field
   (`"pt-BR"` is a working request that the adapter sends as `"pt"`), and each
   model's non-canonical knobs arrive typed. `voice` deliberately stays wide
-  everywhere: voice catalogs are per-account, thousands of entries long, and
-  replaced between releases, so a union of them would be stale and would refuse
-  the caller's own cloned voice. Sample rate and bitrate stay run time's job —
+  on the unified surface: voice catalogs are per-account, thousands of entries
+  long, and replaced between releases, so a union of them would be stale and
+  would refuse the caller's own cloned voice. (The providers that *do* publish
+  a closed list — OpenAI's nine and thirteen, Gemini TTS's thirty — are
+  catalogued and enforced at their own wire surfaces, `unmodel/openai` and
+  `unmodel/google`.) Sample rate and bitrate stay run time's job —
   their legal values depend on the codec chosen beside them, and at ElevenLabs
   the legal pairs are not even the cross product.
 - **`operation` is `"edit"` and only `"edit"` in v1.** Masked routes stay
@@ -1004,9 +1007,11 @@ reaches for precisely when the encoding matters. `language` completes the codes
 the wire enumerates **without** gating the field: the canonical `language` is a
 BCP-47 tag, and `"pt-BR"` is a working request that the adapter sends as `"pt"`
 with a warning naming the subtag it could not express. `voice` deliberately
-stays wide at every provider — voice catalogs are per-account (every one of
+stays wide on this surface — voice catalogs are per-account (every one of
 these supports cloning), thousands of entries long, and replaced between
-releases. Sample rate and bitrate stay run time's job for a related reason:
+releases; where a provider publishes a closed list instead, its own wire
+surface catalogues and enforces it. Sample rate and bitrate stay run time's job
+for a related reason:
 their legal values depend on the codec chosen beside them, and at ElevenLabs the
 legal combinations are not even the cross product. Every value in every table
 is compiled through the adapter and run past the provider's own validator in

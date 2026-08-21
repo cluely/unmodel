@@ -51,6 +51,7 @@ import {
   type CartesiaMp3BitRate,
   type CartesiaOutputFormat,
   type CartesiaSampleRate,
+  type CartesiaTtsLanguage,
   type TtsBytesBody,
 } from "./speech";
 
@@ -138,6 +139,21 @@ const CARTESIA_SPEECH_MODEL_PARAMS = {
   "sonic-preview": ROW,
   "sonic-latest": ROW,
 } as const satisfies SpeechModelParamTable;
+
+const TTS_LANGUAGE_SET = new Set<string>(CARTESIA_TTS_LANGUAGES);
+
+/**
+ * Membership in the wire's closed 42-code `language` enum, tested against the
+ * same array {@link ROW} publishes for completions — one list, no second copy.
+ *
+ * `toPrimaryLanguage` returns a bare `string`: it normalizes BCP-47 to a primary
+ * subtag ("pt-BR" → "pt") but knows no provider's list, so `"xx-YY"` arrives as
+ * `"xx"`. Closing `TtsBytesBody.language` is what made that gap visible at this
+ * adapter's own compile step.
+ */
+function isTtsLanguage(language: string): language is CartesiaTtsLanguage {
+  return TTS_LANGUAGE_SET.has(language);
+}
 
 /** The two attribute controls that live under `generation_config`. */
 const GENERATION_CONFIG_NESTING: Readonly<Record<string, readonly string[]>> = {
@@ -245,7 +261,16 @@ export const speech = {
           { source: TTS_BYTES_DOCS },
         ),
       );
-      if (language !== undefined) body.language = language;
+      if (language !== undefined) {
+        // Narrowed for every code the wire accepts. The `else` deliberately
+        // reinstates one layer inward the looseness the wire type just shed —
+        // an off-enum primary subtag rides through to `checkEnums`, which
+        // refuses it at *error* severity with the allow-list and the doc link.
+        // Dropping it instead would silently send a request in a language the
+        // caller did not ask for, and re-checking the enum here would be the
+        // second copy of the list that the row exists to avoid.
+        body.language = isTtsLanguage(language) ? language : (language as CartesiaTtsLanguage);
+      }
     }
 
     applyExtras(input, CARTESIA_SPEECH_MODEL_PARAMS, body, ctx, {

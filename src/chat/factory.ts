@@ -34,6 +34,7 @@ import type {
 } from "./public-types";
 import type { ChatOptions, ChatProviderRuntime } from "./validate";
 import { CHAT_ENDPOINT, runChat, runChatUnknown } from "./validate";
+import type { RefProblem, RefProblemKindOf } from "./refs";
 import { CHAT_PROVIDERS } from "./refs";
 import type { ChatParams } from "./types";
 
@@ -126,19 +127,44 @@ export type ChatProviderResult<Validator, Params> = [
  * Two very different situations arrive here, and conflating them costs a
  * compile error the caller should have had:
  *
- * - **The ref is a statically-known provider id that was not registered.** The
- *   call can only ever throw `TranslationUnavailableError`, so handing back a
- *   usable-looking `Validated` is a type that describes a value the program
- *   cannot produce. It resolves to {@link UnregisteredChatProvider} instead —
- *   a branded, otherwise-empty type, so `.request`, `.toSdk` and friends are
- *   all compile errors that name the mistake at the call site.
- * - **The ref is genuinely dynamic** (`string`, or a model released after this
- *   build). That must stay callable, which is the convention every media pack
- *   already follows, so it keeps the structural fallback below.
+ * - **The provider half is a literal.** Whether it names a provider this build
+ *   did not register (`createChat({ openai })` + `"anthropic/…"`), one
+ *   `unmodel/chat` structurally cannot serve (`cohere`, `azure`,
+ *   `amazon-bedrock` — see the table in `./refs`), or a plain typo
+ *   (`"opnai/gpt-5"`), the call can only ever throw
+ *   `TranslationUnavailableError`. Handing back a usable-looking `Validated`
+ *   is a type that describes a value the program cannot produce, so it
+ *   resolves to {@link UnregisteredChatProvider} instead — branded and
+ *   otherwise empty, so `.request`, `.toSdk` and friends are compile errors
+ *   that name the mistake at the call site.
+ * - **The ref is genuinely dynamic** (`string`, or a templated id). That must
+ *   stay callable, which is the convention every media pack already follows,
+ *   so it keeps the structural fallback below. Note this hatch is about
+ *   *models*, not providers: a model released after this build stays callable
+ *   at a registered provider, while providers are a closed hand-maintained set
+ *   that only a new unmodel release can grow.
  */
-export interface UnregisteredChatProvider<Provider extends string> {
+export interface UnregisteredChatProvider<
+  Provider extends string,
+  Problem extends UnservableChatReason = UnservableChatReason,
+> {
   readonly __unmodel_unregisteredChatProvider: Provider;
+  /**
+   * Which remedy applies — the same verdict `classifyRef` computes at runtime,
+   * carried into the type so the hover says *why*, not just "no". `"not-registered"`
+   * is the one case with no `RefProblem` arm: the provider is servable, this
+   * particular registry just does not carry it.
+   */
+  readonly __unmodel_refProblem: Problem;
 }
+
+/** Every reason a literal-provider ref can be unservable. */
+export type UnservableChatReason = RefProblem["kind"] | "not-registered";
+
+/** `"cohere"` → `"no-codec"`; a registered-elsewhere provider → `"not-registered"`. */
+type UnservableReason<P extends string> = [P & ChatProviderId] extends [never]
+  ? RefProblemKindOf<P>
+  : "not-registered";
 
 type FallbackChatResult<R extends string> = Validated<
   ChatBody<R>,
@@ -154,11 +180,13 @@ type UnregisteredResult<R extends string> = string extends ChatProviderOf<R>
   ? // A ref that is not statically resolvable at all. Must stay callable: a
     // model released after this build is the case the fallback exists for.
     FallbackChatResult<R>
-  : [ChatProviderOf<R> & ChatProviderId] extends [never]
-    ? // A literal that names no provider this build knows — the `model`
-      // position already flags it; the result stays structural.
-      FallbackChatResult<R>
-    : UnregisteredChatProvider<ChatProviderOf<R>>;
+  : // Any literal provider that is not in this registry, for whatever reason.
+    // There used to be a second arm here that kept an unknown *literal* provider
+    // structural, on the grounds that "the `model` position already flags it".
+    // It does not: `model` is `ChatModelRef | (string & {})`, so `"opnai/gpt-5"`
+    // compiles clean and used to hand back a full `Validated` for a call that
+    // throws every time.
+    UnregisteredChatProvider<ChatProviderOf<R>, UnservableReason<ChatProviderOf<R>>>;
 
 type RegisteredProviderResult<Registry, R extends string> =
   ChatProviderOf<R> extends keyof Registry

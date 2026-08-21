@@ -18,6 +18,11 @@
  * The realtime STT WebSocket endpoints (wss:///stt/websocket and the
  * turn-detection variant), which are the only route to the `ink-2` model,
  * are not validated by unmodel.
+ *
+ * BREAKING (type-level only): `SttTranscribeParams.language` is closed to
+ * {@link CartesiaSttLanguage} — it is re-exported from ../cartesia and no
+ * longer accepts a `string`-typed variable. See the open-tail rule in ./speech
+ * for why `language` closes and `model` does not.
  */
 
 import { z } from "zod";
@@ -27,7 +32,7 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { findMediaDeclaration } from "../../core/media/check";
 import { models, type CartesiaSttModelId } from "./models";
 import { CARTESIA_VERSION } from "./speech";
@@ -80,8 +85,15 @@ export interface SttTranscribeParams {
   file: Blob | string;
   /** Batch transcription accepts only the ink-whisper family. */
   model: CartesiaSttModelId | (string & {});
-  /** ISO-639-1 code from {@link CARTESIA_STT_LANGUAGES}; defaults to "en". */
-  language?: CartesiaSttLanguage | (string & {});
+  /**
+   * ISO-639-1 code from {@link CARTESIA_STT_LANGUAGES}; defaults to "en".
+   * Closed, per the open-tail rule in ./speech: `checkLanguage` reports an
+   * off-enum code at `invalid_enum_value`'s default *error* severity, so a
+   * `(string & {})` tail would admit only values this module refuses. `model`
+   * keeps its tail — off-enum ids like `ink-whisper-2026-01-01` are accepted by
+   * `checkBatchModel`'s prefix test.
+   */
+  language?: CartesiaSttLanguage;
   /** Wire field `timestamp_granularities[]`; only "word" is supported. */
   timestamp_granularities?: Array<"word">;
   /** Raw PCM only. */
@@ -163,7 +175,7 @@ function estimateStt(
 ): ValidateEstimate {
   const declared = findMediaDeclaration(ctx.options.media, ["file"]);
   if (declared?.durationSeconds === undefined) return {};
-  const costUSD = computeAudioMinutesCostUSD(info?.cost, declared.durationSeconds / 60);
+  const costUSD = computeAudioMinutesCostUSD(info?.cost, minutesFromSeconds(declared.durationSeconds));
   return costUSD === undefined ? {} : { costUSD };
 }
 

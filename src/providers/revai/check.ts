@@ -1,7 +1,7 @@
 import type { Issue } from "../../core/issues";
 import type { ResponseReport } from "../../core/report";
 import type { ModelInfo } from "../../core/catalog-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { models, DEFAULT_TRANSCRIBER, MINIMUM_BILLED_SECONDS } from "./models";
 
 /**
@@ -26,6 +26,23 @@ export interface JobResponseLike {
   completed_on?: string;
 }
 
+/**
+ * The async job `status` values, as `checkJob` reports them on `finishReason`.
+ * Rev AI's own vocabulary: `in_progress`, `transcribed` (not "completed") and
+ * `failed`.
+ *
+ * PUBLIC API — keep in sync with the `res.status === "failed"` branch below;
+ * `in_progress` and `transcribed` are the values it deliberately does not warn
+ * about.
+ *
+ * Tail-open for the reason recorded in full on `AssemblyaiTranscriptStatus`
+ * (src/providers/assemblyai/check.ts): this checker TOLERATES an unrecognized
+ * status rather than refusing it, and `JobResponseLike.status` is a `string`,
+ * so a closed union could only be reached by a cast that asserts more than the
+ * runtime checks.
+ */
+export type RevaiJobStatus = "in_progress" | "transcribed" | "failed" | (string & {});
+
 const catalog: Record<string, ModelInfo> = models;
 
 /**
@@ -43,7 +60,7 @@ const catalog: Record<string, ModelInfo> = models;
  *   rate, which the catalog does not carry, so those estimates are the
  *   English-rate floor. STT has no token usage, so `usage` is always empty.
  */
-export function checkJob(res: JobResponseLike): ResponseReport {
+export function checkJob(res: JobResponseLike): ResponseReport<RevaiJobStatus> {
   const warnings: Issue[] = [];
 
   if (res.status === "failed") {
@@ -66,7 +83,7 @@ export function checkJob(res: JobResponseLike): ResponseReport {
     typeof seconds === "number" && seconds > 0
       ? computeAudioMinutesCostUSD(
           catalog[transcriber]?.cost,
-          (Math.max(seconds, MINIMUM_BILLED_SECONDS) / 60) * (res.speaker_channels_count ?? 1),
+          minutesFromSeconds(Math.max(seconds, MINIMUM_BILLED_SECONDS) * (res.speaker_channels_count ?? 1)),
         )
       : undefined;
 

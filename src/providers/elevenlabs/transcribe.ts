@@ -35,7 +35,7 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { findMediaDeclaration } from "../../core/media/check";
 import { models, STT_MODEL_IDS, type ElevenlabsSttModelId } from "./models";
 import { speechToTextConstraints } from "./constraints";
@@ -386,7 +386,7 @@ function estimate(params: SpeechToTextParams, info: ModelInfo | undefined, ctx: 
       : undefined) ?? ctx.options.media?.find((d) => d.durationSeconds !== undefined);
   const seconds = declaration?.durationSeconds;
   if (seconds === undefined) return {};
-  const costUSD = computeAudioMinutesCostUSD(info?.cost, seconds / 60);
+  const costUSD = computeAudioMinutesCostUSD(info?.cost, minutesFromSeconds(seconds));
   return costUSD === undefined ? {} : { costUSD };
 }
 

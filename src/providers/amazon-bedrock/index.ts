@@ -38,7 +38,7 @@ export type {
 } from "./chat";
 
 export { checkChat } from "./check";
-export type { ConverseResponseLike, ConverseUsageLike } from "./check";
+export type { ConverseResponseLike, ConverseStopReason, ConverseUsageLike } from "./check";
 
 export { models, provider } from "../../catalog/amazon-bedrock.gen";
 export type {

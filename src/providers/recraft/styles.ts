@@ -181,10 +181,36 @@ export type RecraftStyleName =
  * Curated style names keyed by the model ids that support styles at all.
  * Models absent from this map (the whole V4/V4.1 line) reject `style`, which
  * the constraint table reports as unsupported_param.
+ *
+ * `as const satisfies` rather than a `: Readonly<Record<string, readonly
+ * string[]>>` ANNOTATION: the annotation still holds (via `satisfies`, so a
+ * malformed entry is still a compile error) but it no longer erases the key
+ * union and the value literals, which is what makes this table usable as the
+ * type source for `StyleFor<M>`. The two runtime lookups that index it with a
+ * resolved `string` model id do the widening locally — see the `STYLE_NAMES`
+ * aliases in image.ts / image-edit.ts.
  */
-export const STYLE_NAMES_BY_MODEL: Readonly<Record<string, readonly string[]>> = {
+export const STYLE_NAMES_BY_MODEL = {
   recraftv3: RECRAFT_V3_STYLES,
   recraftv3_vector: RECRAFT_V3_VECTOR_STYLES,
   recraftv2: RECRAFT_V2_STYLES,
   recraftv2_vector: RECRAFT_V2_VECTOR_STYLES,
-};
+} as const satisfies Readonly<Record<string, readonly string[]>>;
+
+/** The model ids that carry a curated style list. */
+export type RecraftStyledModelId = keyof typeof STYLE_NAMES_BY_MODEL;
+
+/**
+ * The curated style names the model id `M` actually accepts — the type-level
+ * half of `checkStyleForModel`, keyed off the same table the runtime check
+ * reads. A style valid for a *different* model no longer compiles, instead of
+ * compiling and then failing validation with `invalid_enum_value`.
+ *
+ * Model ids outside the table degrade to the pooled union plus the open tail:
+ * an unknown/future id, a runtime-built `string`, and `model` omitted (M falls
+ * back to its `string` constraint) all keep completing every name and stay
+ * callable, mirroring the degraded arm the size/model unions already carry.
+ */
+export type StyleFor<M extends string> = M extends RecraftStyledModelId
+  ? (typeof STYLE_NAMES_BY_MODEL)[M][number]
+  : RecraftStyleName | (string & {});

@@ -34,7 +34,7 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { findMediaDeclaration } from "../../core/media/check";
 import {
   models,
@@ -575,7 +575,7 @@ function estimateJob(
   const channels = params.speaker_channels_count ?? 1;
   const costUSD = computeAudioMinutesCostUSD(
     { perAudioMinute: audioMinuteRateUSD(params, info) },
-    (billed / 60) * channels,
+    minutesFromSeconds(billed * channels),
   );
   return costUSD === undefined ? {} : { costUSD };
 }

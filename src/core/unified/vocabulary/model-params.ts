@@ -236,15 +236,24 @@ export type VideoModelParamTable = Readonly<Record<string, VideoModelParams>>;
  * rates the codec *does* take. So the row narrows the codec, and the sample
  * rate stays run time's job.
  *
- * **`voice` is not here either, and stays wide everywhere.** Voice catalogs are
+ * **`voice` is not here either, and stays wide for now.** Voice catalogs are
  * the one part of a TTS API that is genuinely dynamic: they are per-account
  * (every provider here supports cloned voices, which no snapshot can enumerate),
  * they run to thousands of entries at ElevenLabs and Murf, and they turn over
- * between releases. A union of a few hundred ids would be stale within a month,
- * would refuse the caller's own cloned voice, and would put the largest
- * completion list in the library in front of the field. The one provider where
- * the voice *is* knowable is Deepgram — because there the voice is the model —
- * and that is already typed, by the ref union, at no extra cost.
+ * between releases. A *closed* union of a few hundred ids would be stale within
+ * a month, would refuse the caller's own cloned voice, and would put the largest
+ * completion list in the library in front of the field.
+ *
+ * What that argument does **not** say — though this comment used to — is that
+ * Deepgram is the one provider whose voices are knowable. It is not: OpenAI
+ * publishes nine for `tts-1` and thirteen for `gpt-4o-mini-tts`, and Google
+ * publishes thirty for Gemini TTS, all three hand-catalogued in this repo and
+ * enforced at the wire (an off-list Gemini voice is now a compile error at
+ * `unmodel/google`). Deepgram is merely the provider where the voice *is* the
+ * model, so the ref union types it for free. A `voices` row here — open-tailed,
+ * exactly like {@link languages}, completing without gating — is therefore a
+ * live opportunity rather than a closed question; it is simply not taken in
+ * this pass.
  */
 export interface SpeechModelParams extends ModelParamsBase {
   /**

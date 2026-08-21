@@ -27,8 +27,15 @@ export {
   computeCostUSD,
   computeCharacterCostUSD,
   computeAudioMinutesCostUSD,
+  // The unit constructors that go with `computeAudioMinutesCostUSD`. Exported
+  // beside it because the function now takes `Minutes`, so a caller outside
+  // this package needs a way to produce one — and naming the conversion is the
+  // point: a bare `number` there was one omitted `/ 60` away from a 60x bill.
+  minutes,
+  minutesFromMilliseconds,
+  minutesFromSeconds,
 } from "./core/cost";
-export type { TokenBreakdown } from "./core/cost";
+export type { Minutes, TokenBreakdown } from "./core/cost";
 
 export type {
   Modality,
@@ -114,7 +121,10 @@ export type {
   ApiModelFor,
   ApiTargetId,
   ApiTargetsFor,
+  DialectSdkMap,
+  DialectSdkResult,
   FactoryApiTargetId,
+  GeminiSdkParams,
   Retargeted,
   SdkTargetId,
   StaticApiTargetId,
@@ -142,10 +152,13 @@ export type {
   ChatNativeTool,
   ChatParams,
   ChatProviderId,
+  ChatProviderOptions,
   ChatReasoning,
   ChatReasoningEffort,
   ChatReasoningPart,
   ChatResponseFormat,
+  ChatServiceTier,
+  ChatServiceTierFor,
   ChatTextPart,
   ChatToolCallPart,
   ChatToolChoice,

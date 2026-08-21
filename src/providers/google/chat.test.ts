@@ -15,9 +15,13 @@ import {
   INLINE_MEDIA_MAX_BYTES,
   INLINE_PDF_MAX_BYTES,
 } from "./constraints";
-// The enum-name unions live on the wire leaf and are not re-exported through
-// chat.ts; a test may reach the leaf directly.
-import type { GoogleImageAspectRatioEnumName, GoogleImageSizeEnumName } from "./wire";
+// The enum-name unions and the 30-voice preset list live on the wire leaf and
+// are not re-exported through chat.ts; a test may reach the leaf directly.
+import type {
+  GeminiTtsVoiceName,
+  GoogleImageAspectRatioEnumName,
+  GoogleImageSizeEnumName,
+} from "./wire";
 import { chatModels } from "./tts-models";
 import { models } from "../../catalog/google.gen";
 import type { Issue } from "../../core/issues";
@@ -960,6 +964,9 @@ describe("speech generation config", () => {
         contents: HELLO,
         generationConfig: {
           ...AUDIO_ONLY,
+          // @ts-expect-error `voiceName` is the closed 30-voice union, so this
+          // no longer type-checks — which is the point. The runtime path under
+          // test is the one a JS caller (or a parsed JSON body) still takes.
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Bartholomew" } } },
         },
       }),
@@ -990,7 +997,10 @@ describe("speech generation config", () => {
   });
 
   test("multi-speaker caps at 2 speakers", () => {
-    const speaker = (name: string, voiceName: string) => ({
+    // `voiceName` is narrowed to the 30-voice union rather than `string`: this
+    // helper builds a VALID speaker, and the cap under test is the speaker
+    // count, not the voice.
+    const speaker = (name: string, voiceName: GeminiTtsVoiceName) => ({
       speaker: name,
       voiceConfig: { prebuiltVoiceConfig: { voiceName } },
     });

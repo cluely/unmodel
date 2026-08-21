@@ -12,12 +12,14 @@ import type { RealtimeSessionCreateRequest } from "openai/resources/realtime/rea
 import type { ClientSecretCreateParams } from "openai/resources/realtime/client-secrets";
 import {
   chat,
+  checkChat,
   image,
   imageEdit,
   speech,
   transcribe,
   video,
   realtimeSession,
+  type ChatFinishReason,
   type OpenaiChatModelId,
   type ImagesBody,
   type ImageEditBody,
@@ -27,7 +29,8 @@ import {
 } from "../../src/providers/openai";
 import type { availability as openaiAvailability } from "../../src/catalog/availability/openai.gen";
 import type { ApiTargetsFor } from "../../src/retarget/ids";
-import { expectAssignable, expectTrue, type IsNever } from "./helpers";
+import type { ResponseReport } from "../../src/core/report";
+import { expectAssignable, expectTrue, type HasLiteralMember, type IsNever } from "./helpers";
 
 /** Exact type equality (invariant both ways), for asserting resolved unions. */
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
@@ -556,7 +559,43 @@ function transcribeTypeTests(): void {
   transcribe({ model: "whisper-1", file, bogus_thing: 1 });
 }
 
+// ---------------------------------------------------------------------------
+// `checkChat`'s report: the shared Chat Completions finish-reason vocabulary
+// ---------------------------------------------------------------------------
+
+function chatReportTypeTests(): void {
+  const report = checkChat({ choices: [{ finish_reason: "stop" }] });
+
+  expectTrue<HasLiteralMember<typeof report.finishReason, "stop">>();
+  expectTrue<HasLiteralMember<typeof report.finishReason, "content_filter">>();
+  if (report.finishReason === "length") void 0;
+  if (report.finishReason === "content_filter") void 0;
+  if (report.finishReason === "function_call") void 0;
+
+  // Backward compatible: the `Reason` parameter defaults to `string`.
+  const wide: ResponseReport = report;
+  void wide;
+  const asString: string | undefined = report.finishReason;
+  void asString;
+
+  // `ResponseReport`'s `Reason` parameter is a REAL constraint, not
+  // decoration: an UNTAILED instantiation rejects a typo. That diagnostic is
+  // exactly what the tailed unions trade away, deliberately — see the tail
+  // decision recorded on `AssemblyaiTranscriptStatus` in
+  // src/providers/assemblyai/check.ts. If one of those endpoints ever starts
+  // REFUSING an off-list value, deleting its `(string & {})` arm is all it
+  // takes to turn this diagnostic on for real.
+  const closed: ResponseReport<"stop" | "length"> = { warnings: [], usage: {} };
+  // @ts-expect-error — "lenght" is not in the closed union; no tail to absorb it.
+  void (closed.finishReason === "lenght");
+  // The tailed alias, by contrast, absorbs it — asserted so the difference is
+  // pinned rather than assumed.
+  const tailed: ChatFinishReason = "lenght";
+  void tailed;
+}
+
 void chatTypeTests;
+void chatReportTypeTests;
 void chatModelUnionTests;
 void imagesTypeTests;
 void imageEditTypeTests;

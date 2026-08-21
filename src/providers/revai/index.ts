@@ -23,7 +23,7 @@ export type {
 } from "./transcribe";
 
 export { checkJob } from "./check";
-export type { JobResponseLike } from "./check";
+export type { JobResponseLike, RevaiJobStatus } from "./check";
 
 export {
   models,

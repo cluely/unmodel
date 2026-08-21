@@ -24,7 +24,7 @@ export type {
   ThinkingConfig,
 } from "./chat";
 export { checkChat } from "./check";
-export type { MessageLike, MessageUsage } from "./check";
+export type { AnthropicStopReason, MessageLike, MessageUsage } from "./check";
 export { chatConstraints, chatFamilyRules } from "./constraints";
 
 export { models, provider } from "../../catalog/anthropic.gen";

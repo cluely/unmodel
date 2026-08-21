@@ -114,24 +114,24 @@ export type AnyMusicAdapter = AnyUnifiedAdapter<MusicParams> & {
 export interface MusicValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<MusicParamsBase, UnifiedRef<A>> &
+    T extends UnifiedInput<MusicParamsBase, UnifiedRef<A>, A> &
       MusicModelNarrowing<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<MusicParams, UnifiedRef<A>> & ModelExtras<A, M>>,
+      ExactKeys<T, UnifiedInput<MusicParams, UnifiedRef<A>, A> & ModelExtras<A, M>>,
     options?: ValidateOptions,
   ): UnifiedResult<A, M>;
   safe<
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<MusicParamsBase, UnifiedRef<A>> &
+    T extends UnifiedInput<MusicParamsBase, UnifiedRef<A>, A> &
       MusicModelNarrowing<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<MusicParams, UnifiedRef<A>> & ModelExtras<A, M>>,
+      ExactKeys<T, UnifiedInput<MusicParams, UnifiedRef<A>, A> & ModelExtras<A, M>>,
     options?: ValidateOptions,
   ): ValidateResult<UnifiedResult<A, M>>;
   /** Every provider id registered on this validator, sorted. */

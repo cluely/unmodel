@@ -37,7 +37,7 @@ export type {
 } from "./realtime";
 
 export { checkTranscription } from "./check";
-export type { TranscriptionResponseLike } from "./check";
+export type { SonioxTranscriptionStatus, TranscriptionResponseLike } from "./check";
 
 export { models, provider, ASYNC_MODEL_IDS, REALTIME_MODEL_IDS } from "./models";
 export type { SonioxModelId, SonioxAsyncModelId, SonioxRealtimeModelId } from "./models";

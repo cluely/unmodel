@@ -24,7 +24,7 @@ import {
   type ChatFinalizeSpec,
   type ChatSdkTargets,
 } from "./chat-completions";
-import { createCheckChat, type ChatCompletionLike } from "./check";
+import { createCheckChat, type ChatCompletionLike, type ChatFinishReason } from "./check";
 import type { ResponseReport } from "../../core/report";
 import type {
   ValidatorProviderCarrier,
@@ -32,11 +32,55 @@ import type {
   ValidatorResultKindCarrier,
 } from "../../core/validator-result-kind";
 
-export interface OpenAICompatibleConfigBase<Avail extends AvailabilityMap = never> {
+declare const openaiCompatibleCatalog: unique symbol;
+
+/**
+ * Nominal, type-only carrier for the EXACT catalog an overlay was built with.
+ *
+ * Same device, and the same reasoning, as `ValidatorProviderCarrier` in
+ * src/core/validator-result-kind.ts: the property is optional, so carrying it
+ * never grows a fake runtime member and the factory's plain object literal
+ * still satisfies the interface.
+ *
+ * It exists because every generated catalog is
+ * `as const satisfies Record<string, ModelInfo>` — `models.limit.output`,
+ * `models.toolCall`, `keyof typeof models` are all literal at the source — and
+ * `catalog: Record<string, ModelInfo>` on the config used to discard every one
+ * of them at the factory boundary. That is what blocked per-model narrowing
+ * for the ~30-provider fleet, not catalog size. Threading `Catalog` through
+ * keeps the literals reachable so a future per-dialect arm can read
+ * `Catalog[M]["toolCall"]`.
+ */
+export interface OpenAICompatibleCatalogCarrier<Catalog extends Record<string, ModelInfo>> {
+  readonly [openaiCompatibleCatalog]?: Catalog;
+}
+
+/** The exact catalog a factory-built provider carries, or `never` when unmarked. */
+export type OpenAICompatibleCatalogOf<Provider> =
+  typeof openaiCompatibleCatalog extends keyof Provider
+    ? Provider extends OpenAICompatibleCatalogCarrier<infer Catalog>
+      ? Catalog
+      : never
+    : never;
+
+export interface OpenAICompatibleConfigBase<
+  Avail extends AvailabilityMap = never,
+  Catalog extends Record<string, ModelInfo> = Record<string, ModelInfo>,
+> {
   /** Short provider id, e.g. "groq" — used in endpoint names ("groq.chat") and messages. */
   id: string;
-  /** Per-model catalog (generated models.gen.ts or a hand-maintained models.ts). */
-  catalog: Record<string, ModelInfo>;
+  /**
+   * Per-model catalog (generated models.gen.ts or a hand-maintained models.ts).
+   *
+   * Typed as the INFERRED `Catalog`, not as `Record<string, ModelInfo>`: the
+   * wide annotation type-checks identically and silently throws away the
+   * literal keys, capability flags and limits the generated
+   * `as const satisfies Record<string, ModelInfo>` object carries. `Catalog`
+   * defaults to the wide record, so every existing
+   * `createOpenAICompatible<ModelId, Avail, Provider>({…})` call — all of
+   * which pass three explicit type arguments — keeps compiling unchanged.
+   */
+  catalog: Catalog;
   /**
    * This provider's generated cross-provider availability table, imported
    * directly by the overlay:
@@ -97,8 +141,10 @@ export interface OpenAICompatibleConfigBase<Avail extends AvailabilityMap = neve
  * endpoints that do not follow the fixed path, e.g. Azure's resource-scoped
  * `{endpoint}/openai/v1/chat/completions`).
  */
-export type OpenAICompatibleConfig<Avail extends AvailabilityMap = never> =
-  OpenAICompatibleConfigBase<Avail> &
+export type OpenAICompatibleConfig<
+  Avail extends AvailabilityMap = never,
+  Catalog extends Record<string, ModelInfo> = Record<string, ModelInfo>,
+> = OpenAICompatibleConfigBase<Avail, Catalog> &
   (
     | {
         /**
@@ -159,7 +205,8 @@ export interface OpenAICompatibleProvider<
   ModelId extends string = string,
   Avail extends AvailabilityMap = never,
   Provider extends string = string,
-> {
+  Catalog extends Record<string, ModelInfo> = Record<string, ModelInfo>,
+> extends OpenAICompatibleCatalogCarrier<Catalog> {
   /**
    * Validates params for POST {baseUrl}/chat/completions. The result's
    * enumerable properties are the exact fetch body; `.toSdk("openai")` returns
@@ -171,8 +218,17 @@ export interface OpenAICompatibleProvider<
   chat: OpenAICompatibleChat<ModelId, Avail, Provider>;
   /** {baseUrl}/chat/completions, or the configured `chatUrl` override verbatim. */
   chatUrl: string;
-  /** Post-generation response inspection + usage pricing. Never throws. */
-  checkChat: (res: ChatCompletionLike) => ResponseReport;
+  /**
+   * Post-generation response inspection + usage pricing. Never throws.
+   *
+   * The `ResponseReport<ChatFinishReason>` return type is load-bearing and
+   * must not be relaxed to a bare `ResponseReport`: this member re-annotates
+   * `createCheckChat`'s result, so writing the wide form here throws the
+   * narrowed `finishReason` away for EVERY overlay at once and
+   * `report.finishReason === "` completes nothing across the whole fleet.
+   * `test/unified/completions.test.ts` pins that.
+   */
+  checkChat: (res: ChatCompletionLike) => ResponseReport<ChatFinishReason>;
   /** The shared heuristic prompt-token estimator. */
   estimateChatTokens: typeof estimateChatTokens;
 }
@@ -186,6 +242,22 @@ export interface OpenAICompatibleProvider<
  * overlays write all three. Passing the table as a value as well as a type
  * keeps the two honest: the type argument names the object the runtime looks
  * up in.
+ *
+ * `Catalog` is INFERRED (and `const`, so an inline object literal keeps its
+ * literal types too), never written by an overlay. It is fourth and defaulted
+ * precisely so it stays invisible: every overlay passes exactly three explicit
+ * type arguments, TypeScript then fills the fourth from its default rather
+ * than inferring it, and all 33 call sites keep compiling byte-identically.
+ * An overlay opts in by naming it — `createOpenAICompatible<Id, Avail, Prov,
+ * typeof models>({…})` — which is what makes `keyof Catalog` and
+ * `Catalog[M]["toolCall"]` reachable from the returned provider.
+ *
+ * That reach is deliberately UNUSED here. Turning a catalog capability flag
+ * into a compile error is a separate decision and a bad one for the
+ * gateway/aggregator overlays specifically: models.dev's openrouter rows are
+ * unaudited aggregation (66 of 349 carry `toolCall: false`, including models
+ * that demonstrably tool-call), so gating on them would refuse requests that
+ * work. This parameter is the unblock, not the gate.
  *
  * `Provider` is the models.dev id, repeated as a type argument because
  * `config.id` is a `string` by the time the parameter type is formed and TS
@@ -207,7 +279,10 @@ export function createOpenAICompatible<
   ModelId extends string = string,
   Avail extends AvailabilityMap = never,
   Provider extends string = string,
->(config: OpenAICompatibleConfig<Avail>): OpenAICompatibleProvider<ModelId, Avail, Provider> {
+  const Catalog extends Record<string, ModelInfo> = Record<string, ModelInfo>,
+>(
+  config: OpenAICompatibleConfig<Avail, Catalog>,
+): OpenAICompatibleProvider<ModelId, Avail, Provider, Catalog> {
   const chatUrl =
     config.chatUrl !== undefined ? config.chatUrl : `${config.baseUrl}/chat/completions`;
   // One id for both the validator's issue labels and the retarget route
@@ -296,4 +371,4 @@ export type {
   ChatUserMessage,
 } from "./chat-completions";
 export { createCheckChat } from "./check";
-export type { ChatChoiceLike, ChatCompletionLike } from "./check";
+export type { ChatChoiceLike, ChatCompletionLike, ChatFinishReason } from "./check";

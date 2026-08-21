@@ -9,7 +9,7 @@
 import type { Issue } from "../../core/issues";
 import type { ResponseReport } from "../../core/report";
 import type { ModelInfo } from "../../core/catalog-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { models } from "./models";
 
 export interface ElevenlabsTranscriptLike {
@@ -69,7 +69,7 @@ export function checkTranscription(
   const channels = Math.max(1, res.transcripts?.length ?? 1);
   const costUSD =
     durationSecs != null && info !== undefined
-      ? computeAudioMinutesCostUSD(info.cost, (durationSecs / 60) * channels)
+      ? computeAudioMinutesCostUSD(info.cost, minutesFromSeconds(durationSecs * channels))
       : undefined;
 
   return { warnings, usage: {}, ...(costUSD !== undefined && { costUSD }) };

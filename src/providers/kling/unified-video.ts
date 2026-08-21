@@ -72,12 +72,15 @@ import {
   type KlingWatermarkInfo,
 } from "./shared";
 import {
+  V1_MODE_TIERS,
   V1_MODEL_RULES,
   type KlingCameraControl,
   type KlingShot,
   type KlingShotType,
+  type V1RuleModelId,
+  type V1RulesOf,
 } from "./v1-routes";
-import { video as v1TextValidator, type TextToVideoParams } from "./video";
+import { TEXT2VIDEO_MODELS, video as v1TextValidator, type TextToVideoParams } from "./video";
 import { videoFromImage as v1ImageValidator, type ImageToVideoParams } from "./video-from-image";
 import { TEXT_TO_VIDEO_V3_RULES, videoV3 as v3TextValidator, type TextToVideoV3Params } from "./video-v3";
 import {
@@ -137,11 +140,20 @@ const V3_RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
  * `mode` on `/v1/videos/*` is a resolution with another name ("std = 720P, pro
  * = 1080P, 4k = 4K"), so a `kling-v*` row's `resolutions` is that model's mode
  * set translated back into tiers — `kling-v2-master` is pro-only, hence
- * `["1080p"]`. The path-addressed family spells its tiers directly and the row
- * is the enum. `480p` and `1440p` are on nothing.
+ * `["1080p"]`. Those nine rows are no longer written out: {@link rowOf} DERIVES
+ * them from `V1_MODEL_RULES`, the same table `kling.video` /
+ * `kling.videoFromImage` narrow their bodies from, so the two surfaces cannot
+ * disagree about a model again (see the block above `rowOf`). The
+ * path-addressed family spells its tiers directly and its six rows are still
+ * written out — its rule tables come from the doc site's JS bundle rather than
+ * a served page, so those wire validators stay deliberately wide and there is
+ * nothing there to derive *from* that a reader could check. `480p` and `1440p`
+ * are on nothing. `./video.test.ts` ties all fifteen rows to their rule tables
+ * either way.
  *
  * `ratios: []` marks `kling-v2-1` and `kling-v1-5`: both are **image-to-video
- * only** ids (they are absent from `TEXT2VIDEO_MODELS`), and
+ * only** ids (they are absent from `TEXT2VIDEO_MODELS` — which is now what the
+ * derivation reads, rather than a fact restated here), and
  * `/v1/videos/image2video` has no `aspect_ratio` field because the frame sets
  * the shape. Every other model keeps the three-value enum, which the image
  * route still refuses at run time — the shape is a text-route param on both
@@ -178,71 +190,96 @@ const WATERMARK = { watermark_info: EXTRA as KlingWatermarkInfo } as const;
 
 const V1_CFG_ROW_EXTRAS = { ...WATERMARK, cfg_scale: EXTRA as number } as const;
 
-const V1_PLAIN_ROW = {
-  durations: [5, 10],
-  resolutions: ["720p", "1080p"],
-  ratios: KLING_ASPECT_RATIOS,
-  extras: WATERMARK,
-} as const;
-
-const V1_MASTER_ROW = {
-  durations: [5, 10],
-  resolutions: ["1080p"],
-  ratios: KLING_ASPECT_RATIOS,
-  extras: WATERMARK,
-} as const;
-
-const V1_CFG_ROW = {
-  durations: [5, 10],
-  resolutions: ["720p", "1080p"],
-  ratios: KLING_ASPECT_RATIOS,
-  extras: V1_CFG_ROW_EXTRAS,
-} as const;
-
 const THREE_ZERO_DURATIONS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const;
 
+// ---------------------------------------------------------------------------
+// The `/v1/videos/*` rows are DERIVED from `V1_MODEL_RULES`, not restated.
+//
+// Those nine rows used to be nine hand-written literals beside a rule table
+// describing the same nine models, and the two disagreed in the direction that
+// matters most: the rows said `kling-v2-5-turbo` runs 5 or 10 seconds — which
+// `V1_MODEL_RULES` also says — while `kling.video`, the wire validator this
+// adapter compiles *down to*, accepted `duration: "8"` there at compile time.
+// A wire-exact validator looser than the unified surface above it inverts
+// docs/decisions.md #1, so the rule table is now the one source: `./video.ts`
+// narrows its body arm from it, and `rowOf` below builds these rows from it.
+//
+// The three transformations are the ones the route's own documentation states:
+//
+// - **`durations` are the same numbers, spelled differently.** `/v1/videos/*`
+//   takes seconds as a STRING ("5") and the canonical vocabulary takes a
+//   number (5), so the row is the rule list parsed — not a second list.
+// - **`resolutions` are `modes`.** "std = 720P, pro = 1080P, 4k = 4K" is the
+//   parameter's own description (see {@link V1_MODE_TIERS}), so a model's mode
+//   set IS its tier set: `kling-v2-master` is pro-only, hence `["1080p"]`.
+// - **`ratios: []` is route membership, not a ratio rule.** `kling-v2-1` and
+//   `kling-v1-5` are image-to-video-only ids (absent from
+//   `TEXT2VIDEO_MODELS`), and `/v1/videos/image2video` has no `aspect_ratio`
+//   field because the frame sets the shape. Every id the text route serves
+//   keeps the full three-value enum — no source narrows `aspect_ratio` per
+//   model, which is why the wire arm leaves it wide too.
+//
+// `extras` stays hand-written, exactly as google's rows do: it carries TYPES
+// (`cfg_scale` is a number, `sound` is `"on" | "off"`) that a boolean
+// capability flag cannot spell. `./video.test.ts` asserts each extra key is
+// present iff the rule table sets its switch, in both directions.
+// ---------------------------------------------------------------------------
+
+/** `"5"` → `5`, over a whole rule list, at the type level. */
+type SecondsOf<S> = S extends `${infer N extends number}` ? N : never;
+type DurationNumbers<T extends readonly string[]> = { readonly [K in keyof T]: SecondsOf<T[K]> };
+
+/** `"pro"` → `"1080p"`, over a whole `modes` list. */
+type TiersOf<T extends readonly string[]> = {
+  readonly [K in keyof T]: T[K] extends keyof typeof V1_MODE_TIERS
+    ? (typeof V1_MODE_TIERS)[T[K]]
+    : never;
+};
+
+/** One `/v1/videos/*` row, stated as a function of the model's rule row. */
+type V1Row<M extends V1RuleModelId, E extends object> = {
+  readonly durations: DurationNumbers<V1RulesOf<M>["durations"]>;
+  readonly resolutions: TiersOf<V1RulesOf<M>["modes"]>;
+  readonly ratios: M extends (typeof TEXT2VIDEO_MODELS)[number]
+    ? typeof KLING_ASPECT_RATIOS
+    : readonly [];
+  readonly extras: E;
+};
+
+function rowOf<M extends V1RuleModelId, E extends object>(model: M, extras: E): V1Row<M, E> {
+  const rules = V1_MODEL_RULES[model]!;
+  const onTextRoute = (TEXT2VIDEO_MODELS as readonly string[]).includes(model);
+  // One cast, at the one place the two spellings meet: the runtime performs
+  // exactly the two mappings `V1Row` states, and `./video.test.ts` re-checks
+  // the result against the rule table value by value.
+  return {
+    durations: rules.durations.map(Number),
+    resolutions: rules.modes.map((mode) => V1_MODE_TIERS[mode as keyof typeof V1_MODE_TIERS]),
+    ratios: onTextRoute ? KLING_ASPECT_RATIOS : [],
+    extras,
+  } as unknown as V1Row<M, E>;
+}
+
 const KLING_VIDEO_MODEL_PARAMS = {
-  // --- POST /v1/videos/{text2video,image2video} ---------------------------
-  "kling-v3": {
-    durations: THREE_ZERO_DURATIONS,
-    resolutions: ["720p", "1080p", "4k"],
-    ratios: KLING_ASPECT_RATIOS,
-    extras: {
-      ...WATERMARK,
-      sound: EXTRA as "on" | "off",
-      multi_shot: EXTRA as boolean,
-      shot_type: EXTRA as KlingShotType,
-      multi_prompt: EXTRA as KlingShot[],
-    },
-  },
-  "kling-v2-6": {
-    durations: [3, 4, 5, 6, 7, 8, 9, 10],
-    resolutions: ["720p", "1080p"],
-    ratios: KLING_ASPECT_RATIOS,
-    extras: { ...WATERMARK, sound: EXTRA as "on" | "off" },
-  },
-  "kling-v2-5-turbo": V1_PLAIN_ROW,
-  "kling-v2-1-master": V1_MASTER_ROW,
-  "kling-v2-1": {
-    durations: [5, 10],
-    resolutions: ["720p", "1080p"],
-    ratios: [],
-    extras: WATERMARK,
-  },
-  "kling-v2-master": V1_MASTER_ROW,
-  "kling-v1-6": V1_CFG_ROW,
-  "kling-v1-5": {
-    durations: [5, 10],
-    resolutions: ["720p", "1080p"],
-    ratios: [],
-    extras: V1_CFG_ROW_EXTRAS,
-  },
-  "kling-v1": {
-    durations: [5, 10],
-    resolutions: ["720p", "1080p"],
-    ratios: KLING_ASPECT_RATIOS,
-    extras: { ...V1_CFG_ROW_EXTRAS, camera_control: EXTRA as KlingCameraControl },
-  },
+  // --- POST /v1/videos/{text2video,image2video} — derived from V1_MODEL_RULES
+  "kling-v3": rowOf("kling-v3", {
+    ...WATERMARK,
+    sound: EXTRA as "on" | "off",
+    multi_shot: EXTRA as boolean,
+    shot_type: EXTRA as KlingShotType,
+    multi_prompt: EXTRA as KlingShot[],
+  }),
+  "kling-v2-6": rowOf("kling-v2-6", { ...WATERMARK, sound: EXTRA as "on" | "off" }),
+  "kling-v2-5-turbo": rowOf("kling-v2-5-turbo", WATERMARK),
+  "kling-v2-1-master": rowOf("kling-v2-1-master", WATERMARK),
+  "kling-v2-1": rowOf("kling-v2-1", WATERMARK),
+  "kling-v2-master": rowOf("kling-v2-master", WATERMARK),
+  "kling-v1-6": rowOf("kling-v1-6", V1_CFG_ROW_EXTRAS),
+  "kling-v1-5": rowOf("kling-v1-5", V1_CFG_ROW_EXTRAS),
+  "kling-v1": rowOf("kling-v1", {
+    ...V1_CFG_ROW_EXTRAS,
+    camera_control: EXTRA as KlingCameraControl,
+  }),
   // --- The path-addressed families ----------------------------------------
   "kling-3.0": {
     durations: THREE_ZERO_DURATIONS,
@@ -306,8 +343,11 @@ export type KlingVideoWire =
 
 /** What a unified video call to `kling/…` returns — one route's `Validated`. */
 export type KlingVideoResult =
-  | ReturnType<typeof v1TextValidator<TextToVideoParams>>
-  | ReturnType<typeof v1ImageValidator<ImageToVideoParams>>
+  // `string` for the model parameter: this adapter compiles a run-time ref, so
+  // it lands on the wide arm of the two `/v1/videos/*` validators by
+  // construction (a `string` id has no `V1_MODEL_RULES` row to narrow to).
+  | ReturnType<typeof v1TextValidator<string, TextToVideoParams>>
+  | ReturnType<typeof v1ImageValidator<string, ImageToVideoParams>>
   | ReturnType<typeof v3TextValidator<TextToVideoV3Params>>
   | ReturnType<typeof v3ImageValidator<ImageToVideoV3Params>>
   | ReturnType<typeof omniValidator<OmniVideoParams>>;

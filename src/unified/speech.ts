@@ -171,4 +171,5 @@ export type {
   UnifiedRef,
   UnifiedResult,
   UnifiedValidator,
+  UnregisteredUnifiedProvider,
 } from "../core/unified/types";

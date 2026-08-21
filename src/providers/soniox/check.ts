@@ -1,7 +1,7 @@
 import type { Issue } from "../../core/issues";
 import type { ResponseReport } from "../../core/report";
 import type { ModelInfo } from "../../core/catalog-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromMilliseconds } from "../../core/cost";
 import { models } from "./models";
 
 /**
@@ -22,6 +22,27 @@ export interface TranscriptionResponseLike {
   error_message?: string | null;
 }
 
+/**
+ * The transcription `status` values, as `checkTranscription` reports them on
+ * `finishReason`.
+ *
+ * PUBLIC API — keep in sync with the `res.status === "error"` branch below;
+ * `queued`, `processing` and `completed` are the values it deliberately does
+ * not warn about.
+ *
+ * Tail-open for the reason recorded in full on `AssemblyaiTranscriptStatus`
+ * (src/providers/assemblyai/check.ts): this checker TOLERATES an unrecognized
+ * status rather than refusing it, and `TranscriptionResponseLike.status` is a
+ * `string`, so a closed union could only be reached by a cast that asserts
+ * more than the runtime checks.
+ */
+export type SonioxTranscriptionStatus =
+  | "queued"
+  | "processing"
+  | "completed"
+  | "error"
+  | (string & {});
+
 const catalog: Record<string, ModelInfo> = models;
 
 /**
@@ -35,7 +56,9 @@ const catalog: Record<string, ModelInfo> = models;
  *   rate; undefined when the model is unknown or duration is absent. Token
  *   usage does not apply to STT, so `usage` is always empty.
  */
-export function checkTranscription(res: TranscriptionResponseLike): ResponseReport {
+export function checkTranscription(
+  res: TranscriptionResponseLike,
+): ResponseReport<SonioxTranscriptionStatus> {
   const warnings: Issue[] = [];
 
   if (res.status === "error") {
@@ -55,7 +78,7 @@ export function checkTranscription(res: TranscriptionResponseLike): ResponseRepo
   const info = res.model !== undefined ? catalog[res.model] : undefined;
   const costUSD =
     typeof res.audio_duration_ms === "number"
-      ? computeAudioMinutesCostUSD(info?.cost, res.audio_duration_ms / 60_000)
+      ? computeAudioMinutesCostUSD(info?.cost, minutesFromMilliseconds(res.audio_duration_ms))
       : undefined;
 
   return {

@@ -40,6 +40,11 @@ import {
   type KeyIn,
 } from "./helpers";
 
+/** Exact type equality (invariant both ways), as in `retarget.test-d.ts`. */
+type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+  ? true
+  : false;
+
 // ---------------------------------------------------------------------------
 // The ref union drives autocomplete without gating the API
 // ---------------------------------------------------------------------------
@@ -434,7 +439,13 @@ anthropicChat({ ...claude });
 googleChat({ model: gemini.modelId, ...gemini });
 
 // ---------------------------------------------------------------------------
-// An unresolvable ref degrades to the three-body union, not to `any`
+// A LITERAL provider this build cannot serve is branded, not structural
+//
+// Every ref below throws `TranslationUnavailableError` at runtime, always. The
+// result type used to be a full `Validated` with `.request`, `.toSdk` and a
+// three-body union — a type describing a value the program cannot produce. The
+// brand carries the *reason*, so the hover names which of `refs.ts`'s four
+// remedies applies.
 // ---------------------------------------------------------------------------
 
 const unknown = chat({
@@ -442,23 +453,67 @@ const unknown = chat({
   messages: [{ role: "user", content: "hi" }],
 });
 
-// `messages` exists on two of the three dialects and not on Gemini, so the
-// union has no such property — the honest outcome of an unknown provider.
-// @ts-expect-error — the dialect is unknown, so the body is a union.
+// @ts-expect-error — a call that always throws has no body.
 unknown.messages;
-// Only the target every dialect shares survives `keyof` on a union.
+// @ts-expect-error — and no SDK shape, not even the shared `ai-sdk` target.
 unknown.toSdk("ai-sdk");
-// @ts-expect-error — not offered by every arm of the union.
+// @ts-expect-error — nor the per-dialect ones.
 unknown.toSdk("openai");
-// The request metadata is dialect-independent and stays fully typed.
-expectAssignable<string>(unknown.request.url);
-expectAssignable<"POST">(unknown.request.method);
+// @ts-expect-error — nor request metadata.
+unknown.request;
+// The meta half survives, so `warnings`/`target` still read.
+expectAssignable<"acme-labs">(unknown.target);
+// The brand names the provider AND the remedy.
+expectTrue<
+  Equals<
+    typeof unknown["__unmodel_unregisteredChatProvider"] &
+      typeof unknown["__unmodel_refProblem"],
+    "acme-labs" & "unknown-provider"
+  >
+>();
 
-// A ref widened all the way to `string` behaves the same.
+// The four real-provider cases, each with the reason `classifyRef` computes.
+const cohereRef = chat({
+  model: "cohere/command-a-03-2025",
+  messages: [{ role: "user", content: "hi" }],
+});
+expectTrue<Equals<typeof cohereRef["__unmodel_refProblem"], "no-codec">>();
+const azureRef = chat({ model: "azure/gpt-5", messages: [{ role: "user", content: "hi" }] });
+expectTrue<Equals<typeof azureRef["__unmodel_refProblem"], "factory">>();
+const bedrockRef = chat({
+  model: "amazon-bedrock/anthropic.claude-sonnet-4-5",
+  messages: [{ role: "user", content: "hi" }],
+});
+expectTrue<Equals<typeof bedrockRef["__unmodel_refProblem"], "factory-and-no-codec">>();
+const typoRef = chat({ model: "opnai/gpt-5", messages: [{ role: "user", content: "hi" }] });
+// A plain provider typo — the case `model`'s `(string & {})` tail lets through.
+expectTrue<Equals<typeof typoRef["__unmodel_refProblem"], "unknown-provider">>();
+// @ts-expect-error — and it can no longer be used as a request.
+typoRef.request.url;
+
+// A union ref loses `.request` entirely when ANY arm is unservable — the call
+// throws half the time, so there is no honest shared shape. Deliberate, and a
+// behaviour change beyond the four singletons above.
+declare const flag: boolean;
+const mixed = chat({
+  model: flag ? "openai/gpt-5.2" : "cohere/command-a-03-2025",
+  messages: [{ role: "user", content: "hi" }],
+});
+// @ts-expect-error — one arm of the union is branded.
+mixed.request;
+
+// A ref widened all the way to `string` stays fully callable — the escape hatch
+// for a model released after this build.
 declare const dynamicRef: string;
 const dynamic = chat({ model: dynamicRef, messages: [{ role: "user", content: "hi" }] });
 expectAssignable<string>(dynamic.request.url);
 expectAssignable<readonly unknown[]>(dynamic.warnings);
+// So does a post-snapshot model id at a REGISTERED provider.
+const futureModel = chat({
+  model: "openai/gpt-9-turbo",
+  messages: [{ role: "user", content: "hi" }],
+});
+expectAssignable<string>(futureModel.request.url);
 
 // ---------------------------------------------------------------------------
 // ChatBody, standalone
@@ -512,3 +567,68 @@ if (untrustedOutcome.ok) {
   expectAssignable<string>(untrustedOutcome.params.request.url);
   untrustedOutcome.params.toSdk("ai-sdk");
 }
+
+// ---------------------------------------------------------------------------
+// `providerOptions`: closed keys, typed buckets, escape hatch intact
+//
+// The keys used to be `ChatProviderId | (string & {})`, which in KEY position
+// collapses the mapped type to `[x: string]: …` and switches excess-property
+// checking off entirely — so a bucket addressed to `opneai` compiled, and
+// `encode.ts` then made it silently inert. The values used to be
+// `Record<string, unknown>`, so nothing in the bucket was checked either.
+//
+// What must NOT break is the reason the field exists, so all three hatches are
+// asserted rather than assumed.
+// ---------------------------------------------------------------------------
+
+chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  providerOptions: {
+    // A declared wire field of that provider's dialect, with its declared type.
+    openai: { logprobs: true, top_logprobs: 5 },
+    // A key no wire type declares — an endpoint-only extra (`store` lives on
+    // OpenAI's own body, not the shared dialect body) or a knob shipped after
+    // this snapshot. Both must still compile.
+    anthropic: { container: "c-1", brand_new_2027_knob: true },
+    // Nested, which is where the shallow form of this type broke.
+    google: { generationConfig: { thinkingConfig: { thinkingBudget: 1024 }, brandNewKnob: 1 } },
+    // A provider `unmodel/chat` cannot send to: known, inert, silent, legal.
+    // `test/chat/encode.test.ts` pins the runtime half of that promise.
+    "amazon-bedrock": { additionalModelRequestFields: { top_k: 5 } },
+  },
+});
+
+// A new value on an already-closed wire enum still compiles — the leaf `(string
+// & {})` arm. Without it the escape hatch would stop escaping for exactly the
+// case it exists for, which the module header calls out by name.
+chat({
+  model: "anthropic/claude-opus-5",
+  messages: [{ role: "user", content: "hi" }],
+  maxOutputTokens: 8,
+  providerOptions: { anthropic: { service_tier: "priority_2027" } },
+});
+
+chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  // @ts-expect-error — a typo'd bucket key is a compile error now, with a
+  // "Did you mean to write 'openai'?" suggestion.
+  providerOptions: { opneai: { store: true } },
+});
+
+chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  // @ts-expect-error — and a declared field's type is checked: `logprobs` is a
+  // boolean on that wire body.
+  providerOptions: { openai: { logprobs: "yes" } },
+});
+
+// `serviceTier` completes every dialect's vocabulary and gates none of them:
+// both non-OpenAI codecs DROP an unknown tier with a named warning rather than
+// refusing it, so the tail is what keeps the type honest about the runtime.
+expectAssignable<ChatParams["serviceTier"]>("flex");
+expectAssignable<ChatParams["serviceTier"]>("standard_only");
+expectAssignable<ChatParams["serviceTier"]>("unspecified");
+expectAssignable<ChatParams["serviceTier"]>("a_tier_shipped_next_month");

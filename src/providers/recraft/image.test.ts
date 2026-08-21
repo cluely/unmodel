@@ -114,6 +114,9 @@ describe("recraft.image styles", () => {
     expect(image.safe({ prompt: "x", model: "recraftv3", style: "Recraft V3 Raw" }).ok).toBe(
       true,
     );
+    // @ts-expect-error — the type now catches what the runtime catches: `style`
+    // resolves per model (StyleFor<M>), so a V3 Vector name on recraftv3 no
+    // longer compiles. Kept as a runtime test because JS callers still reach it.
     const r = image.safe({ prompt: "x", model: "recraftv3", style: "Vector art" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
@@ -131,6 +134,9 @@ describe("recraft.image styles", () => {
     expect(image.safe({ prompt: "x", model: "recraftv2_vector", style: "Icon" }).ok).toBe(
       true,
     );
+    // @ts-expect-error — the type now catches what the runtime catches: "Icon"
+    // is a V2 Vector name and recraftv2 is raster. Kept as a runtime test
+    // because JS callers still reach it.
     const r = image.safe({ prompt: "x", model: "recraftv2", style: "Icon" });
     expect(r.ok).toBe(false);
   });

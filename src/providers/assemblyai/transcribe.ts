@@ -5,7 +5,7 @@ import type { ValidateOptions, MediaDeclaration } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { findMediaDeclaration } from "../../core/media/check";
 import { models, type AssemblyaiModelId } from "./models";
 
@@ -604,7 +604,7 @@ function estimateTranscript(
   // first (DEFAULT_SPEECH_MODELS), so price at that rate.
   const effective =
     info ?? (primaryModelId(params) === undefined ? models["universal-3-5-pro"] : undefined);
-  const costUSD = computeAudioMinutesCostUSD(effective?.cost, declared / 60);
+  const costUSD = computeAudioMinutesCostUSD(effective?.cost, minutesFromSeconds(declared));
   return costUSD === undefined ? {} : { costUSD };
 }
 

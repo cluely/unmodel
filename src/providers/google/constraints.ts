@@ -258,8 +258,16 @@ const GEMINI_IMAGE_CORE_RATIOS = [
  *   so `imageSize` is denied for it.
  *
  * `-preview` ids share their GA sibling's table (the docs list only the GA id).
+ *
+ * `as const satisfies`, not `: Readonly<Partial<Record<string, GeminiImageRule>>>`:
+ * the annotation type-checks the rows exactly the same way, but it also erases
+ * them — `keyof` collapses to `string` and every row's ratio/size list widens
+ * to `readonly string[]`, so a per-model type narrowing built on this table
+ * compiles green and completes NOTHING in the editor. `satisfies` keeps the
+ * check and the literals both. The runtime lookup in ./chat, where the model
+ * id is a `string`, widens back locally at that one call site.
  */
-export const GEMINI_IMAGE_MODEL_RULES: Readonly<Partial<Record<string, GeminiImageRule>>> = {
+export const GEMINI_IMAGE_MODEL_RULES = {
   "gemini-3.1-flash-image": {
     aspectRatios: GEMINI_IMAGE_ASPECT_RATIOS,
     imageSizes: GEMINI_IMAGE_SIZES,
@@ -281,7 +289,7 @@ export const GEMINI_IMAGE_MODEL_RULES: Readonly<Partial<Record<string, GeminiIma
     imageSizes: ["1K", "2K", "4K"],
   },
   "gemini-2.5-flash-image": { aspectRatios: GEMINI_IMAGE_CORE_RATIOS },
-};
+} as const satisfies Readonly<Partial<Record<string, GeminiImageRule>>>;
 
 /**
  * `imageConfig` keys @google/genai@2.17.0 itself documents as "This field is
@@ -311,39 +319,20 @@ export const GEMINI_TTS_MODEL_IDS = [
   "gemini-2.5-pro-preview-tts",
 ] as const;
 
-/** "TTS models support the following 30 voice options in the voice_name field". */
-export const GEMINI_TTS_VOICES = [
-  "Zephyr",
-  "Puck",
-  "Charon",
-  "Kore",
-  "Fenrir",
-  "Leda",
-  "Orus",
-  "Aoede",
-  "Callirrhoe",
-  "Autonoe",
-  "Enceladus",
-  "Iapetus",
-  "Umbriel",
-  "Algieba",
-  "Despina",
-  "Erinome",
-  "Algenib",
-  "Rasalgethi",
-  "Laomedeia",
-  "Achernar",
-  "Alnilam",
-  "Schedar",
-  "Gacrux",
-  "Pulcherrima",
-  "Achird",
-  "Zubenelgenubi",
-  "Vindemiatrix",
-  "Sadachbia",
-  "Sadaltager",
-  "Sulafat",
-] as const;
+/**
+ * "TTS models support the following 30 voice options in the voice_name field"
+ * — declared in ./wire, because `GooglePrebuiltVoiceConfig.voiceName` is typed
+ * from it and a wire leaf cannot import this module. Exactly one declaration
+ * of the 30 names exists; ./chat and ./index both read it from ./wire.
+ *
+ * Only the TYPE is re-exported here, next to the other GEMINI_TTS_* constants
+ * where a reader looks for it. A value re-export would give this module a
+ * runtime edge to ./wire, and this module is on the `unmodel/image` and
+ * `unmodel/video` pack graphs (`google/unified.ts` and `./unified-video.ts`
+ * both import it) while ./wire — the generateContent zod schema — is not:
+ * see the composition assertions in test/bundle-budget.test.ts.
+ */
+export type { GeminiTtsVoiceName } from "./wire";
 
 /** "you'll need a multiSpeakerVoiceConfig object with each speaker (up to 2)". */
 export const GEMINI_TTS_MAX_SPEAKERS = 2;

@@ -23,7 +23,7 @@ export type {
 } from "./transcribe";
 
 export { checkPreRecorded } from "./check";
-export type { PreRecordedResultLike } from "./check";
+export type { GladiaJobStatus, PreRecordedResultLike } from "./check";
 
 export {
   models,

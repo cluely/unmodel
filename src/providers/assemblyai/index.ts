@@ -22,7 +22,7 @@ export type {
 } from "./transcribe";
 
 export { checkTranscript } from "./check";
-export type { TranscriptResponseLike } from "./check";
+export type { AssemblyaiTranscriptStatus, TranscriptResponseLike } from "./check";
 
 export { models, provider } from "./models";
 export type { AssemblyaiModelId } from "./models";

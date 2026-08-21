@@ -26,6 +26,17 @@
  *   capability map.
  * - Async: responds with a task object; poll
  *   `GET /v1/videos/text2video/{id}`. Auth is `Authorization: Bearer <key>`.
+ *
+ * PER-MODEL VALUE SPACE. A literal `model_name` narrows `mode`, `duration`,
+ * `sound`, `cfg_scale`, `camera_control` and `multi_shot` to that model's own
+ * row of `V1_MODEL_RULES` (see {@link TextToVideoArm} and `V1CapabilityArm` in
+ * ./v1-routes) — the SAME row `checkV1Support` reports against, and the same
+ * row `./unified-video.ts` builds `KLING_VIDEO_MODEL_PARAMS` from. Until that
+ * was wired, this validator accepted `duration: "8"` on `kling-v2-5-turbo`
+ * while `unmodel/video` — the surface that compiles down to it — refused the
+ * same fact at compile time, which inverts docs/decisions.md #1. `aspect_ratio`
+ * is deliberately NOT narrowed: no source bounds it per model. See
+ * `V1CapabilityArm`'s doc for the full list of what stays wide and why.
  */
 
 import { z } from "zod";
@@ -60,6 +71,9 @@ import {
   type KlingShot,
   type KlingShotType,
   type KlingV1Duration,
+  type V1CapabilityArm,
+  type V1NarrowedKey,
+  type V1RuleModelId,
 } from "./v1-routes";
 import { MODE_RESOLUTION, videoCostUSD } from "./pricing";
 
@@ -78,6 +92,23 @@ export const TEXT2VIDEO_MODELS = [
   "kling-v3",
 ] as const;
 
+/**
+ * A `model_name` this route serves AND the capability map bounds — the ids
+ * that get a per-model body arm below. Every one of the seven has a row today;
+ * the `Extract` is what makes adding an eighth to `TEXT2VIDEO_MODELS` without
+ * a rule row degrade to the wide body instead of failing to compile.
+ */
+export type TextToVideoModelId = Extract<(typeof TEXT2VIDEO_MODELS)[number], V1RuleModelId>;
+
+/**
+ * The WIDE body — every documented value of every model on this route.
+ *
+ * A call whose `model_name` is a literal gets {@link TextToVideoArm} instead,
+ * which narrows six of these fields to that model's own row of
+ * `V1_MODEL_RULES`; this interface is what a run-time-discovered id, a
+ * post-snapshot id and an OMITTED `model_name` fall back to, and what the
+ * checks are written against.
+ */
 export interface TextToVideoParams {
   /** Defaults to "kling-v1". */
   model_name?: KlingV1VideoModelId | (string & {});
@@ -99,18 +130,50 @@ export interface TextToVideoParams {
   mode?: KlingMode;
   /** kling-v1 only (720P, 5s). */
   camera_control?: KlingCameraControl;
-  /** Defaults to "16:9". */
+  /**
+   * Defaults to "16:9". NOT narrowed per model: no source bounds `aspect_ratio`
+   * per `model_name`, so all three values stay legal on every id here.
+   */
   aspect_ratio?: KlingAspectRatio;
   /**
    * Seconds, as a string. Defaults to "5". The union is the widest documented
-   * range (kling-v3's 3–15s); `V1_MODEL_RULES` narrows it per `model_name` at
-   * runtime — every other model here offers only "5" and "10".
+   * range (kling-v3's 3–15s), which is what a run-time or post-snapshot
+   * `model_name` gets; a LITERAL one is narrowed to its own `V1_MODEL_RULES`
+   * row at compile time — every model but kling-v3 and kling-v2-6 offers only
+   * "5" and "10".
    */
   duration?: KlingV1Duration;
   watermark_info?: KlingWatermarkInfo;
   callback_url?: string;
   external_task_id?: string;
 }
+
+/**
+ * Resolves a `model_name` literal to its exact body — the same per-model arm
+ * shape `google.video` and `openai.image` use.
+ *
+ * The six narrowed keys are REMOVED from the wide shape and restated rather
+ * than intersected with it: intersecting a wide union with a narrow one is how
+ * the `& {}` tails elsewhere in this repo get discharged, and the completion
+ * list dies while tsc stays green (see the `SizingArms` note in
+ * `src/core/unified/vocabulary/model-params.ts`).
+ *
+ * `[M] extends [TextToVideoModelId]` rather than the usual naked `M extends …`
+ * on purpose: `model_name` is OPTIONAL on this route (it defaults to
+ * `kling-v1` server-side), so an omitted one leaves `M` at its constraint —
+ * the whole id union — and a distributive conditional would answer with a
+ * union of seven arms. The non-distributive form answers with the wide body
+ * instead, which is what an unnamed model deserves: no per-model narrowing,
+ * and every documented value still completes.
+ */
+export type TextToVideoArm<M extends string> = [M] extends [TextToVideoModelId]
+  ? Omit<TextToVideoParams, "model_name" | V1NarrowedKey> & {
+      model_name?: M;
+    } & V1CapabilityArm<M & TextToVideoModelId>
+  : TextToVideoParams;
+
+/** What `model_name` may be: a catalogued id, or any string at run time. */
+type TextToVideoModelInput = NonNullable<TextToVideoParams["model_name"]>;
 
 const videoSchema = z.looseObject({
   model_name: z.string().optional(),
@@ -191,12 +254,12 @@ const validator = createValidator<TextToVideoParams, unknown>({
  * ```
  */
 export const video = validator as unknown as {
-  <T extends TextToVideoParams>(
-    params: T & ExactKeys<T, TextToVideoParams>,
+  <M extends TextToVideoModelInput, T extends TextToVideoArm<M>>(
+    params: T & TextToVideoArm<M> & { model_name?: M } & ExactKeys<T, TextToVideoArm<M>>,
     options?: ValidateOptions,
   ): Validated<T, KlingSdkTargets<T>>;
-  safe<T extends TextToVideoParams>(
-    params: T & ExactKeys<T, TextToVideoParams>,
+  safe<M extends TextToVideoModelInput, T extends TextToVideoArm<M>>(
+    params: T & TextToVideoArm<M> & { model_name?: M } & ExactKeys<T, TextToVideoArm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<T, KlingSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];

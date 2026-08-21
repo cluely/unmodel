@@ -1,7 +1,7 @@
 import type { Issue } from "../../core/issues";
 import type { ResponseReport } from "../../core/report";
 import type { ModelInfo } from "../../core/catalog-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { models } from "./models";
 
 /**
@@ -69,7 +69,7 @@ export function checkListen(res: ListenResponseLike, modelId?: string): Response
     typeof duration === "number"
       ? computeAudioMinutesCostUSD(
           resolved !== undefined ? catalog[resolved]?.cost : undefined,
-          duration / 60,
+          minutesFromSeconds(duration),
         )
       : undefined;
 

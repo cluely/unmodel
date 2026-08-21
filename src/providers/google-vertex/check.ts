@@ -4,10 +4,14 @@ import { computeCostUSD } from "../../core/cost";
 import {
   checkChat as checkGoogleChat,
   type ChatResponseLike,
+  type GoogleFinishReason,
 } from "../google";
 import { models } from "../../catalog/google-vertex.gen";
 
-export type { ChatResponseLike };
+// Vertex serves the Gemini wire dialect verbatim, so the finish-reason
+// vocabulary is unmodel/google's own alias — re-exported rather than
+// re-declared, so the two cannot drift.
+export type { ChatResponseLike, GoogleFinishReason };
 
 /**
  * Post-generation report for a Vertex generateContent response. Never throws.
@@ -18,7 +22,7 @@ export type { ChatResponseLike };
  * google-vertex catalog rates — the google-priced `costUSD` is dropped and
  * recomputed here from the response's `modelVersion`.
  */
-export function checkChat(response: ChatResponseLike): ResponseReport {
+export function checkChat(response: ChatResponseLike): ResponseReport<GoogleFinishReason> {
   const { costUSD: _googlePriced, ...report } = checkGoogleChat(response);
 
   const info =

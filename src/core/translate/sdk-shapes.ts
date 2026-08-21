@@ -32,7 +32,7 @@ interface GeminiBodyLike {
 }
 
 /** Wire-body keys that move into `config` unchanged. `store` has no SDK equivalent. */
-const CONFIG_KEYS = [
+export const CONFIG_KEYS = [
   "systemInstruction",
   "tools",
   "toolConfig",
@@ -40,6 +40,15 @@ const CONFIG_KEYS = [
   "cachedContent",
   "serviceTier",
 ] as const;
+
+/**
+ * The wire-body keys `geminiSdkParams` lifts into `config`, as a type.
+ *
+ * `src/retarget/dialects.ts` builds its `GeminiSdkParams` result type off this,
+ * so the declared shape of `.toSdk("google")` is read from the same constant
+ * the runtime iterates — adding a key here changes both at once.
+ */
+export type GeminiSdkConfigKey = (typeof CONFIG_KEYS)[number];
 
 /**
  * `{ contents, generationConfig, … }` + a model id →

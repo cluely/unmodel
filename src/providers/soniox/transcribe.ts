@@ -5,7 +5,7 @@ import type { ValidateOptions, MediaDeclaration } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { findMediaDeclaration } from "../../core/media/check";
 import { models, ASYNC_MODEL_IDS, type SonioxAsyncModelId } from "./models";
 
@@ -205,7 +205,7 @@ function estimateTranscription(
 ): ValidateEstimate {
   const declared = declaredDurationSeconds(ctx.options.media, audioPath(params));
   if (declared === undefined) return {};
-  const costUSD = computeAudioMinutesCostUSD(info?.cost, declared / 60);
+  const costUSD = computeAudioMinutesCostUSD(info?.cost, minutesFromSeconds(declared));
   return costUSD === undefined ? {} : { costUSD };
 }
 

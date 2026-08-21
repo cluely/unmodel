@@ -10,7 +10,7 @@
  */
 import type { RequestMeta } from "../core/request";
 import type { TranslationWarning } from "../core/translate/warnings";
-import type { DialectBody, DialectOf, DialectSdkTargets } from "./dialects";
+import type { DialectBody, DialectOf, DialectSdkResult, DialectSdkTargets } from "./dialects";
 import type { ApiTargetId } from "./ids";
 
 /**
@@ -22,8 +22,16 @@ import type { ApiTargetId } from "./ids";
  * second hop is a compile error, by construction.
  */
 export type Retargeted<P extends ApiTargetId, M extends string> = DialectBody<DialectOf<P>, M> & {
-  /** SDK targets of the *target's* dialect. Non-enumerable. */
-  toSdk<K extends DialectSdkTargets<DialectOf<P>>>(target: K): unknown;
+  /**
+   * SDK targets of the *target's* dialect, shaped for the target that was
+   * asked for. Non-enumerable.
+   *
+   * The result is keyed on `K`, not on the dialect, so `openai.chat.completions
+   * .create(r.toSdk("openai"))` type-checks without a cast — and so a target
+   * added to `DialectSdkMap`'s key set without a declared shape is a compile
+   * error rather than a confident lie about the wrong one.
+   */
+  toSdk<K extends DialectSdkTargets<DialectOf<P>>>(target: K): DialectSdkResult<DialectOf<P>, M, K>;
   /** The target's URL, method and static non-auth headers. Non-enumerable. */
   request: RequestMeta;
   /** The provider this was retargeted to. Non-enumerable. */

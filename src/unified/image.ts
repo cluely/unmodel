@@ -108,9 +108,12 @@ export type ImageAdapter = AnyImageAdapter;
  * adapters' literal `provider`, `as const` `models` and `as const`
  * `modelParams` survive inference — which is what makes `model:` autocomplete
  * `"openai/gpt-image-1"` rather than `string`, *and* what makes `size:`
- * autocomplete that model's own presets. Unregistered refs still compile and
- * still run: an unrecognised model is a `unknown_model` **warning**, because a
- * model released after this snapshot must stay callable.
+ * autocomplete that model's own presets. An unregistered *model* still compiles
+ * and still runs: an unrecognised model id is a `unknown_model` **warning**,
+ * because a model released after this snapshot must stay callable. An
+ * unregistered *provider* is a different thing — that call can only throw — so
+ * its result is {@link UnregisteredUnifiedProvider}, named after the provider
+ * segment that is not in this pack.
  *
  * The cast is the same one `createUnified` already performs internally: the
  * runtime is category-agnostic, and `ImageValidator` differs from
@@ -193,4 +196,5 @@ export type {
   UnifiedRef,
   UnifiedResult,
   UnifiedValidator,
+  UnregisteredUnifiedProvider,
 } from "../core/unified/types";

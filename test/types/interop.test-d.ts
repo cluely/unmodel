@@ -10,6 +10,7 @@
  */
 import { chat as anthropicChat } from "../../src/providers/anthropic";
 import { chat as googleChat } from "../../src/providers/google";
+import { chat as groqChat } from "../../src/providers/groq";
 import { chat as openaiChat } from "../../src/providers/openai";
 import { chat as openrouterChat } from "../../src/providers/openrouter";
 import { video } from "../../src/providers/openai/video";
@@ -27,7 +28,14 @@ import {
 import type { MessagesBody } from "../../src/providers/anthropic/wire";
 import type { GenerateContentBody } from "../../src/providers/google/wire";
 import type { ChatCompletionsBodyBase } from "../../src/providers/openai-compatible/wire";
-import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
+import type { ChatGeminiSdkParams } from "../../src/chat/public-types";
+import type { GeminiSdkParams } from "../../src/retarget/dialects";
+import { expectAssignable, expectNotAny, expectTrue, type IsNever, type KeyIn } from "./helpers";
+
+/** Exact type equality (invariant both ways), as in `retarget.test-d.ts`. */
+type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+  ? true
+  : false;
 
 // ---------------------------------------------------------------------------
 // Every codec satisfies the engine's encoder/decoder contracts, so wiring one
@@ -173,4 +181,53 @@ expectAssignable<{ brand: "ai" } | undefined>(wrapped.tools?.["save_note"]?.inpu
 // The wrapper's return type flows through, so `ai`'s branded schema survives.
 expectTrue<
   NonNullable<typeof wrapped.tools>[string]["inputSchema"] extends { brand: "ai" } ? true : false
+>();
+
+// ---------------------------------------------------------------------------
+// `.toSdk(target)` on a RETARGETED result returns the target's real params
+// object, not `unknown`.
+//
+// `unknown` made the library's own advertised flow — retarget, then hand the
+// result to that SDK — a hard compile error at the last hop, so every call site
+// needed an `as any` and threw away the validation it had just paid for. The
+// result is keyed on the TARGET, not on the dialect: see `DialectSdkMap`.
+// ---------------------------------------------------------------------------
+
+// openai-chat arm: the SDK params ARE the wire body, model pinned to the target's spelling.
+const oss = groqChat({
+  model: "openai/gpt-oss-120b",
+  messages: [{ role: "user", content: "hi" }],
+});
+const viaCerebras = oss.toApi("cerebras");
+expectAssignable<"gpt-oss-120b" | (string & {})>(viaCerebras.toSdk("openai").model);
+expectNotAny<ReturnType<typeof viaCerebras.toSdk<"openai">>>();
+// @ts-expect-error `unknown` used to accept this; a real body has no such key.
+viaCerebras.toSdk("openai").not_a_chat_completions_key;
+
+// anthropic-messages arm.
+const viaAnthropic = claude.toApi("anthropic");
+expectAssignable<number>(viaAnthropic.toSdk("anthropic").max_tokens);
+// @ts-expect-error camelCase is the SDK's spelling, not the wire's.
+viaAnthropic.toSdk("anthropic").maxTokens;
+
+// gemini arm: a real reshaping, `{ model, contents, config }`, matching what
+// `geminiSdkParams` builds at runtime.
+const viaGoogle = routedGemini.toApi("google");
+expectAssignable<GenerateContentBody["contents"]>(viaGoogle.toSdk("google").contents);
+expectAssignable<number | undefined>(viaGoogle.toSdk("google").config?.temperature);
+// `generationConfig` is FLATTENED into `config` — the runtime spreads it, and
+// the type now says so instead of `Record<string, unknown>`.
+// @ts-expect-error the wire body's nesting does not survive into the SDK shape.
+viaGoogle.toSdk("google").config?.generationConfig;
+// `store` is deliberately not carried (no @google/genai equivalent).
+// @ts-expect-error
+viaGoogle.toSdk("google").config?.store;
+
+// The degraded chat arm hands back the SAME gemini shape as a registered ref,
+// because `ChatGeminiSdkParams` is now an alias of the retarget engine's type.
+expectTrue<Equals<ChatGeminiSdkParams<"gemini-2.5-flash">, GeminiSdkParams<"gemini-2.5-flash">>>();
+expectTrue<
+  Equals<ChatGeminiSdkParams["contents"], GenerateContentBody["contents"]> extends true
+    ? true
+    : false
 >();

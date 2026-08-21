@@ -90,7 +90,42 @@ const CHAT_PROVIDER_SET: ReadonlySet<string> = new Set(CHAT_PROVIDERS);
  * a fifth codec (or wiring a factory overload) is a deliberate edit here with
  * a message to update, not a silent change of behaviour.
  */
-const NO_CODEC: ReadonlySet<string> = new Set(["cohere", "amazon-bedrock"]);
+const NO_CODEC_PROVIDERS = ["cohere", "amazon-bedrock"] as const;
+
+const NO_CODEC: ReadonlySet<string> = new Set(NO_CODEC_PROVIDERS);
+
+/** The `NO_CODEC` set as a type — one declaration, so the two cannot disagree. */
+export type NoCodecChatProviderId = (typeof NO_CODEC_PROVIDERS)[number];
+
+/**
+ * Factory-configured providers unmodel ships a chat validator for.
+ *
+ * Hand-written rather than derived from `ENDPOINTS`, for the same reason
+ * `CHAT_PROVIDERS` is: `isFactoryEndpoint` is a runtime predicate over a table
+ * this module reaches through a function, and a type cannot call it.
+ * `test/chat/refs.test.ts` pins this union against `classifyRef`'s own verdict
+ * in both directions, so adding a factory endpoint without updating it is a
+ * failed build rather than a type that quietly lies.
+ */
+export type FactoryChatProviderId = "azure" | "cloudflare-workers-ai" | "google-vertex" | "amazon-bedrock";
+
+/**
+ * `classifyRef(P).kind`, at the type level, for a provider id known at compile
+ * time — `never` for a provider `unmodel/chat` can actually serve.
+ *
+ * The point is the *hover*: a branded unservable result that names `"no-codec"`
+ * or `"factory"` tells the reader which of the four remedies in this module's
+ * table applies, where a bare brand only says "no".
+ */
+export type RefProblemKindOf<P extends string> = [P & ChatProviderId] extends [never]
+  ? [P & FactoryChatProviderId] extends [never]
+    ? [P & NoCodecChatProviderId] extends [never]
+      ? "unknown-provider"
+      : "no-codec"
+    : [P & NoCodecChatProviderId] extends [never]
+      ? "factory"
+      : "factory-and-no-codec"
+  : never;
 
 export interface ModelRef {
   provider: string;

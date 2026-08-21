@@ -1,7 +1,7 @@
 import type { Issue } from "../../core/issues";
 import type { ResponseReport } from "../../core/report";
 import type { ModelInfo } from "../../core/catalog-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { models } from "./models";
 
 const catalog: Record<string, ModelInfo> = models;
@@ -43,7 +43,7 @@ export function checkStt(res: SttTranscriptionLike, model?: string): ResponseRep
 
   const costUSD =
     typeof res.duration === "number" && model !== undefined
-      ? computeAudioMinutesCostUSD(catalog[model]?.cost, res.duration / 60)
+      ? computeAudioMinutesCostUSD(catalog[model]?.cost, minutesFromSeconds(res.duration))
       : undefined;
 
   return { warnings, usage: {}, ...(costUSD !== undefined && { costUSD }) };

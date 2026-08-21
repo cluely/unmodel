@@ -91,9 +91,12 @@ export type VideoAdapter = AnyVideoAdapter;
  * adapters' literal `provider`, `as const` `models` and `as const`
  * `modelParams` survive inference — which is what makes `model:` autocomplete
  * `"openai/sora-2"` rather than `string`, *and* what makes `duration:` accept
- * that model's own five lengths and nothing else. Unregistered refs still
- * compile and still run: an unrecognised model is a `unknown_model` **warning**,
- * because a model released after this snapshot must stay callable.
+ * that model's own five lengths and nothing else. An unregistered *model* still
+ * compiles and still runs: an unrecognised model id is a `unknown_model`
+ * **warning**, because a model released after this snapshot must stay callable.
+ * An unregistered *provider* is a different thing — that call can only throw —
+ * so its result is {@link UnregisteredUnifiedProvider}, named after the
+ * provider segment that is not in this pack.
  *
  * The cast is the same one `createUnified` already performs internally: the
  * runtime is category-agnostic, and `VideoValidator` differs from
@@ -174,4 +177,5 @@ export type {
   UnifiedRef,
   UnifiedResult,
   UnifiedValidator,
+  UnregisteredUnifiedProvider,
 } from "../core/unified/types";

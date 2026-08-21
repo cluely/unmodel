@@ -33,6 +33,14 @@
  * remapped onto the word they wrote — "`parameters.durationSeconds` must be one
  * of 4, 6, 8" arrives at `duration`.
  *
+ * That was stated here before it was true of the ROWS: `GOOGLE_VIDEO_MODEL_PARAMS`
+ * used to restate the durations, tiers and ratios itself, and it drifted from
+ * the wire surface it compiles to — `google.video` accepted `resolution: "4k"`
+ * on Veo 2 while these rows said the field does not exist there. The rows are
+ * now built from `VEO_PARAMETER_SPACE` in `./video`, the same table that
+ * narrows the wire body, so the second opinion is gone rather than merely
+ * discouraged.
+ *
  * # The one thing this API cannot take is a URL
  *
  * `GoogleVeoImage` is `{ bytesBase64Encoded, mimeType }` or
@@ -70,11 +78,13 @@ import type {
 } from "../../core/unified/vocabulary/video";
 import { VEO_DOCS_URL } from "./constraints";
 import {
+  VEO_PARAMETER_SPACE,
   video as validator,
   type GoogleVeoImage,
   type GoogleVeoInstance,
   type GoogleVeoParameters,
   type GoogleVeoReferenceImage,
+  type VeoParameterModelId,
 } from "./video";
 
 /**
@@ -145,42 +155,57 @@ const VEO_3_EXTRAS = {
   enhancePrompt: EXTRA as boolean,
 } as const;
 
-const VEO_3_ROW = {
-  durations: [4, 6, 8],
-  resolutions: ["720p", "1080p", "4k"],
-  ratios: ASPECT_RATIOS,
-  extras: VEO_3_EXTRAS,
-} as const;
+/**
+ * One row, built from `VEO_PARAMETER_SPACE` in `./video` rather than restated.
+ *
+ * The three enumerated fields are the SAME lists the wire surface narrows
+ * `parameters.durationSeconds` / `.resolution` / `.aspectRatio` to, so the two
+ * tables cannot disagree — which they did until this was wired: the wire arm
+ * accepted `resolution: "4k"` on Veo 2 and on Lite while these rows already
+ * said otherwise, and nothing in the suite compared them.
+ * `test/types/google.test-d.ts` and `./video.test.ts` now assert the equality
+ * in both directions, because "derived" is a property of today's code and the
+ * assertion is a property of the repo.
+ */
+type UnifiedRow<M extends VeoParameterModelId, E extends object> = {
+  readonly durations: (typeof VEO_PARAMETER_SPACE)[M]["durations"];
+  readonly resolutions: (typeof VEO_PARAMETER_SPACE)[M]["resolutions"];
+  readonly ratios: (typeof VEO_PARAMETER_SPACE)[M]["ratios"];
+  readonly extras: E;
+};
+
+function rowOf<M extends VeoParameterModelId, E extends object>(
+  model: M,
+  extras: E,
+): UnifiedRow<M, E> {
+  const space = VEO_PARAMETER_SPACE[model];
+  return {
+    durations: space.durations,
+    resolutions: space.resolutions,
+    ratios: space.ratios,
+    extras,
+  };
+}
 
 const GOOGLE_VIDEO_MODEL_PARAMS = {
-  "veo-3.1-generate-preview": VEO_3_ROW,
-  "veo-3.1-fast-generate-preview": VEO_3_ROW,
-  "veo-3.1-lite-generate-preview": {
-    durations: [4, 6, 8],
-    resolutions: ["720p", "1080p"],
-    ratios: ASPECT_RATIOS,
-    extras: VEO_3_EXTRAS,
-  },
-  "veo-3.0-generate-001": VEO_3_ROW,
-  "veo-3.0-fast-generate-001": VEO_3_ROW,
-  "veo-2.0-generate-001": {
-    durations: [5, 6, 7, 8],
-    resolutions: [],
-    ratios: ASPECT_RATIOS,
-    extras: {
-      personGeneration: EXTRA as "allow_all" | "allow_adult" | "dont_allow",
-      enhancePrompt: EXTRA as boolean,
-    },
-  },
-  "gemini-omni-flash-preview": {
-    durations: [3, 4, 5, 6, 7, 8, 9, 10],
-    resolutions: ["720p"],
-    ratios: ASPECT_RATIOS,
-    extras: {
-      personGeneration: EXTRA as string,
-      enhancePrompt: EXTRA as boolean,
-    },
-  },
+  "veo-3.1-generate-preview": rowOf("veo-3.1-generate-preview", VEO_3_EXTRAS),
+  "veo-3.1-fast-generate-preview": rowOf("veo-3.1-fast-generate-preview", VEO_3_EXTRAS),
+  "veo-3.1-lite-generate-preview": rowOf("veo-3.1-lite-generate-preview", VEO_3_EXTRAS),
+  "veo-3.0-generate-001": rowOf("veo-3.0-generate-001", VEO_3_EXTRAS),
+  "veo-3.0-fast-generate-001": rowOf("veo-3.0-fast-generate-001", VEO_3_EXTRAS),
+  "veo-2.0-generate-001": rowOf("veo-2.0-generate-001", {
+    personGeneration: EXTRA as "allow_all" | "allow_adult" | "dont_allow",
+    enhancePrompt: EXTRA as boolean,
+  }),
+  "gemini-omni-flash-preview": rowOf("gemini-omni-flash-preview", {
+    // `string`, and the wire keeps its documented three-value union: Google
+    // publishes no `personGeneration` list for Omni, so neither surface may
+    // invent one — this row can only state what the table proves, and the wire
+    // type may not widen past what the page names. See the same note in
+    // ./video.
+    personGeneration: EXTRA as string,
+    enhancePrompt: EXTRA as boolean,
+  }),
 } as const satisfies VideoModelParamTable;
 
 /** The wire body this adapter compiles to — the loose arm of `GenerateVideosBody`. */
@@ -192,7 +217,9 @@ export interface GoogleVideoWire {
 }
 
 /** What a unified video call to `google/…` returns: `google.video`'s `Validated`. */
-export type GoogleVideoResult = ReturnType<typeof validator<GoogleVideoWire>>;
+export type GoogleVideoResult = ReturnType<
+  typeof validator<GoogleVideoWire["model"], GoogleVideoWire>
+>;
 
 /** The routes a model serves, from the Veo docs' feature table. */
 function routesFor(model: string): readonly VideoRoute[] {

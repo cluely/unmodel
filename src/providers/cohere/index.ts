@@ -32,7 +32,7 @@ export type {
 } from "./chat";
 
 export { checkChat } from "./check";
-export type { ChatResponseLike, ChatUsageLike } from "./check";
+export type { ChatResponseLike, ChatUsageLike, CohereFinishReason } from "./check";
 
 export { models, provider } from "../../catalog/cohere.gen";
 export type {

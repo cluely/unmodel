@@ -27,7 +27,10 @@ export type {
   DialectBody,
   DialectId,
   DialectOf,
+  DialectSdkMap,
+  DialectSdkResult,
   DialectSdkTargets,
+  GeminiSdkParams,
   GenerateContentBodyFor,
   MessagesBodyFor,
 } from "./dialects";

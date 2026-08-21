@@ -211,25 +211,25 @@ export interface TranscribeAdapterFor<
 export interface TranscribeValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<TranscribeParamsBase, UnifiedRef<A>> &
+    T extends UnifiedInput<TranscribeParamsBase, UnifiedRef<A>, A> &
       TranscribeModelNarrowing<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<TranscribeParams, UnifiedRef<A>> & ModelExtras<A, M>> &
+      ExactKeys<T, UnifiedInput<TranscribeParams, UnifiedRef<A>, A> & ModelExtras<A, M>> &
       AudioNarrowing<A, M>,
     options?: ValidateOptions,
   ): UnifiedResult<A, M>;
   safe<
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<TranscribeParamsBase, UnifiedRef<A>> &
+    T extends UnifiedInput<TranscribeParamsBase, UnifiedRef<A>, A> &
       TranscribeModelNarrowing<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<TranscribeParams, UnifiedRef<A>> & ModelExtras<A, M>> &
+      ExactKeys<T, UnifiedInput<TranscribeParams, UnifiedRef<A>, A> & ModelExtras<A, M>> &
       AudioNarrowing<A, M>,
     options?: ValidateOptions,
   ): ValidateResult<UnifiedResult<A, M>>;

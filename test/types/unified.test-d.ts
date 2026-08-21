@@ -19,13 +19,14 @@
  *     `image()`, selected by the string literal in `model`.
  */
 import type { ValidateResult } from "../../src/core/result";
-import { createImage } from "../../src/unified/image";
+import { createImage, image as realImage } from "../../src/unified/image";
 import { createImageEdit } from "../../src/unified/image-edit";
 import { createMusic } from "../../src/unified/music";
 import { createSpeech } from "../../src/unified/speech";
 import { createTranscribe } from "../../src/unified/transcribe";
 import { createVideo } from "../../src/unified/video";
 import type {
+  CanonicalField,
   CompileContext,
   CompiledCall,
   RefModel,
@@ -275,10 +276,33 @@ expectTrue<IsNever<KeyIn<typeof bravoResult, "alphaOnly">>>();
 expectAssignable<readonly { code: string }[]>(alphaResult.warnings);
 expectAssignable<readonly { code: string }[]>(bravoResult.warnings);
 
-// An unresolvable ref degrades to the union of every registered result — not
-// to `any`. The members every provider has stay typed.
+// A LITERAL provider this build does not register is branded, not widened.
+// The call throws `TranslationUnavailableError` every time, so a usable-looking
+// result would be a type describing a value the program cannot produce. This
+// used to assert `unknownRef.warnings` — i.e. it pinned the looseness.
 const unknownRef = image({ model: "charlie/anything", prompt: "x" });
-expectAssignable<readonly { code: string }[]>(unknownRef.warnings);
+expectTrue<IsNever<KeyIn<typeof unknownRef, "warnings">>>();
+expectTrue<IsNever<KeyIn<typeof unknownRef, "request">>>();
+expectAssignable<"charlie">(unknownRef.__unmodel_unregisteredUnifiedProvider);
+// @ts-expect-error — property access on a result that never exists.
+unknownRef.warnings;
+
+// The escape hatches this must NOT catch, each asserted rather than assumed.
+declare const runtimeRef: string;
+// 1. A ref built at runtime: no provider segment to read, stays fully callable.
+expectAssignable<readonly { code: string }[]>(
+  image({ model: runtimeRef, prompt: "x" }).warnings,
+);
+// 2. A model released after the snapshot, at a REGISTERED provider.
+expectAssignable<readonly { code: string }[]>(
+  image({ model: "alpha/alpha-99-released-later", prompt: "x" }).warnings,
+);
+// 3. `safeUnknown`, whose input shape is unknown by construction.
+declare const untrusted: unknown;
+const untrustedResult = image.safeUnknown(untrusted);
+if (untrustedResult.ok) {
+  expectAssignable<readonly { code: string }[]>(untrustedResult.params.warnings);
+}
 
 // `.safe` wraps the same type and never throws.
 expectAssignable<ValidateResult<typeof alphaResult>>(
@@ -322,3 +346,76 @@ createMusic([musicAdapter]).safeUnknown({} as unknown);
 createImage([videoAdapter]);
 // @ts-expect-error — and the reverse.
 createVideo([alphaImage]);
+
+// ---------------------------------------------------------------------------
+// `providerOptions` buckets are the ref'd adapter's own wire body
+//
+// Keys were already tied to the registered providers; the VALUES used to be
+// `Record<string, unknown>`, so `{ openai: { n: "two" } }` type-checked and
+// then failed inside the provider's validator — after the merge, which the
+// kernel performs before validation. Now it fails at the keystroke.
+//
+// Both escape hatches are asserted, not assumed: they are what the field is for.
+// ---------------------------------------------------------------------------
+
+const withBuckets = realImage({
+  model: "openai/gpt-image-2",
+  prompt: "x",
+  providerOptions: {
+    // A declared wire field, with its declared type.
+    openai: { response_format: "b64_json" },
+    // A knob no adapter declares — the whole point of an escape hatch.
+    stability: { brand_new_2027_knob: 1 },
+    // And a nested one, which the shallow form of `OpenBucket` broke.
+    google: { parameters: { brandNewNestedKnob: true } },
+  },
+});
+expectAssignable<readonly { code: string }[]>(withBuckets.warnings);
+
+realImage({
+  model: "openai/gpt-image-2",
+  prompt: "x",
+  // @ts-expect-error — `n` is a number on that wire body; this used to compile
+  // and fail at runtime instead.
+  providerOptions: { openai: { n: "two" } },
+});
+
+realImage({
+  model: "openai/gpt-image-2",
+  prompt: "x",
+  // @ts-expect-error — a provider the pack does not register is still a typo.
+  providerOptions: { opneai: { n: 2 } },
+});
+
+// A new value on an already-closed wire enum still compiles: the buckets keep a
+// `(string & {})` tail at the leaves, the same convention every generated union
+// in this library carries. Without it the escape hatch would stop escaping for
+// exactly the case it exists for.
+realImage({
+  model: "openai/gpt-image-2",
+  prompt: "x",
+  providerOptions: { openai: { response_format: "avif_json_from_the_future" } },
+});
+
+// ---------------------------------------------------------------------------
+// `CanonicalField` — the adapter author's provenance declaration
+//
+// It used to carry a `(string & {})` tail, which permitted the dotted paths
+// adapters actually pass but could not suggest them, and let a typo through to
+// degrade an error message months later in the one code path nobody tests. The
+// paths are two levels deep at most and both vocabularies are in this build, so
+// the union is closed instead.
+// ---------------------------------------------------------------------------
+
+expectAssignable<CanonicalField<TranscribeParams>>("language");
+expectAssignable<CanonicalField<TranscribeParams>>("diarization.maxSpeakers");
+expectAssignable<CanonicalField<ImageParams>>("dimensions.width");
+// @ts-expect-error — a typo in the nested half.
+expectAssignable<CanonicalField<TranscribeParams>>("diarizaton.maxSpeakers");
+// @ts-expect-error — a typo in the leaf half.
+expectAssignable<CanonicalField<ImageParams>>("dimensions.witdh");
+// @ts-expect-error — a flat typo.
+expectAssignable<CanonicalField<ImageParams>>("promt");
+// @ts-expect-error — a model extra is not a canonical field (the live defect
+// this closure found, at `src/providers/leonardo/unified.ts`).
+expectAssignable<CanonicalField<ImageParams>>("public");

@@ -36,7 +36,7 @@ import type { ValidateOptions, MediaDeclaration } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import type { SonioxContextObject, SonioxTranslation } from "./transcribe";
 import { models, REALTIME_MODEL_IDS, type SonioxRealtimeModelId } from "./models";
 
@@ -418,7 +418,7 @@ function estimateSession(
 ): ValidateEstimate {
   const declared = declaredSessionSeconds(ctx.options.media);
   if (declared === undefined) return {};
-  const costUSD = computeAudioMinutesCostUSD(info?.cost, declared / 60);
+  const costUSD = computeAudioMinutesCostUSD(info?.cost, minutesFromSeconds(declared));
   return costUSD === undefined ? {} : { costUSD };
 }
 

@@ -1,7 +1,7 @@
 import type { Issue } from "../../core/issues";
 import type { ResponseReport } from "../../core/report";
 import type { ModelInfo } from "../../core/catalog-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { models } from "./models";
 import { DEFAULT_MODEL } from "./transcribe";
 
@@ -28,6 +28,24 @@ export interface JobDetailsLike {
   } | null;
 }
 
+/**
+ * The batch job `status` values, as `checkJob` reports them on `finishReason`.
+ * Speechmatics' own vocabulary: `running` (not "processing") and `rejected`
+ * (not "error").
+ *
+ * PUBLIC API — keep in sync with the `job?.status === "rejected"` branch
+ * below; `running` and `done` are the values it deliberately does not warn
+ * about.
+ *
+ * Tail-open for the reason recorded in full on `AssemblyaiTranscriptStatus`
+ * (src/providers/assemblyai/check.ts): this checker TOLERATES an unrecognized
+ * status rather than refusing it, and `JobDetailsLike`'s `status` is a
+ * `string`, so a closed union could only be reached by a cast that asserts
+ * more than the runtime checks. Speechmatics also expires and deletes jobs,
+ * which the three modeled values do not cover.
+ */
+export type SpeechmaticsJobStatus = "running" | "done" | "rejected" | (string & {});
+
 const catalog: Record<string, ModelInfo> = models;
 
 /**
@@ -45,7 +63,7 @@ const catalog: Record<string, ModelInfo> = models;
  *   usage, so `usage` is always empty. Speech-intelligence bolt-ons are billed
  *   on top and are not included.
  */
-export function checkJob(res: JobDetailsLike): ResponseReport {
+export function checkJob(res: JobDetailsLike): ResponseReport<SpeechmaticsJobStatus> {
   const warnings: Issue[] = [];
   const job = res.job ?? undefined;
 
@@ -69,7 +87,7 @@ export function checkJob(res: JobDetailsLike): ResponseReport {
     typeof duration === "number" && duration > 0
       ? computeAudioMinutesCostUSD(
           modelId !== undefined ? catalog[modelId]?.cost : undefined,
-          duration / 60,
+          minutesFromSeconds(duration),
         )
       : undefined;
 

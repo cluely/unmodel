@@ -215,9 +215,78 @@ export type GoogleModality =
   | "Audio"
   | "MODALITY_UNSPECIFIED";
 
-/** `PrebuiltVoiceConfig` — "The name of the preset voice to use." */
+/**
+ * "TTS models support the following 30 voice options in the voice_name field."
+ * Source: the generateContent speech-generation guide
+ * (https://ai.google.dev/gemini-api/docs/generate-content/speech-generation —
+ * `GEMINI_TTS_DOCS_URL` in ./constraints).
+ *
+ * The list lives HERE, in the wire leaf, because `voiceName` is typed from it
+ * and a wire leaf may not import ./constraints (test/import-graph.test.ts: "a
+ * wire leaf may import only zod, sibling wire leaves, type-only catalog ids
+ * and type-only core types"). An `as const` array needs no imports, so the
+ * leaf rule still holds with the list on this side — unlike
+ * `GoogleImageAspectRatioEnumName` below, whose source in ./constraints is a
+ * ratio→name MAP the runtime check reads, leaving only its value union to
+ * restate here. ./chat imports this array for the runtime check and ./index
+ * re-exports it, so the 30 names are declared exactly once in the repo.
+ */
+export const GEMINI_TTS_VOICES = [
+  "Zephyr",
+  "Puck",
+  "Charon",
+  "Kore",
+  "Fenrir",
+  "Leda",
+  "Orus",
+  "Aoede",
+  "Callirrhoe",
+  "Autonoe",
+  "Enceladus",
+  "Iapetus",
+  "Umbriel",
+  "Algieba",
+  "Despina",
+  "Erinome",
+  "Algenib",
+  "Rasalgethi",
+  "Laomedeia",
+  "Achernar",
+  "Alnilam",
+  "Schedar",
+  "Gacrux",
+  "Pulcherrima",
+  "Achird",
+  "Zubenelgenubi",
+  "Vindemiatrix",
+  "Sadachbia",
+  "Sadaltager",
+  "Sulafat",
+] as const;
+
+/** One of the 30 preset voices the speech-generation guide catalogues. */
+export type GeminiTtsVoiceName = (typeof GEMINI_TTS_VOICES)[number];
+
+/**
+ * `PrebuiltVoiceConfig` — "The name of the preset voice to use."
+ *
+ * `voiceName` is the closed 30-value preset list and NOT `string`: the guide
+ * publishes the whole set (GEMINI_TTS_VOICES above) and ./chat already reports
+ * an ERROR — `invalid_enum_value`, listing all 30 — for anything off it. There
+ * is deliberately no `(string & {})` tail: `prebuiltVoiceConfig` is
+ * preset-only by construction (a cloned or custom voice has no wire form on
+ * this message at all), so a tail would advertise an allowed-value space
+ * Google has not published and would silently switch the editor's completion
+ * list off.
+ *
+ * NOTE the one asymmetry with the runtime: ./chat enforces the list only for
+ * TTS ids (`enforceVoices`), while this type states it for every model, so a
+ * Live-API voice on a `*-live-*` id — a model this endpoint cannot drive
+ * anyway, the Live API being bidiGenerateContent — now needs a cast. That is
+ * the type being stricter than the check, never looser.
+ */
 export interface GooglePrebuiltVoiceConfig {
-  voiceName?: string;
+  voiceName?: GeminiTtsVoiceName;
 }
 
 /** `VoiceConfig` — a oneof whose only documented member is prebuiltVoiceConfig. */
@@ -281,6 +350,10 @@ export type GoogleImageSize = "512" | "1K" | "2K" | "4K";
  * wire LEAF (test/import-graph.test.ts: "a wire leaf may import only zod,
  * sibling wire leaves, type-only catalog ids and type-only core types"), so it
  * cannot reach into constraints.ts to derive the union, not even type-only.
+ * (The other direction is available where the source is a plain list rather
+ * than a runtime map — that is what `GEMINI_TTS_VOICES` above does: declared
+ * here, read from ./chat and ./constraints. A ratio→enum-name MAP is a runtime
+ * lookup the checks own, so it stays there and this union stays restated.)
  */
 export type GoogleImageAspectRatioEnumName =
   | "ASPECT_RATIO_ONE_BY_ONE"

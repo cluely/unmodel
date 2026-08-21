@@ -5,7 +5,11 @@ import { models } from "../../catalog/openai.gen";
 
 // The Chat Completions response checker is the shared OpenAI-compatible one
 // (src/providers/openai-compatible/check.ts), bound to OpenAI's catalog.
-export type { ChatChoiceLike, ChatCompletionLike } from "../openai-compatible/check";
+export type {
+  ChatChoiceLike,
+  ChatCompletionLike,
+  ChatFinishReason,
+} from "../openai-compatible/check";
 
 /**
  * Inspects a Chat Completions response for silent quality problems

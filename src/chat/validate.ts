@@ -230,8 +230,14 @@ export function runChat(
   // The compiled message container is the encoder's own unless the caller
   // replaced it through `providerOptions`; only then does `messageOrigin`
   // describe the body the provider validator actually inspected.
+  // Indexed with the *classified* provider, not the raw ref half: since the
+  // bucket keys closed to the providers the runtime honours, `ChatProviderOptions`
+  // has no string index signature to fall through, and `classification.provider`
+  // is the `ChatProviderId` this call was already narrowed to at line 141.
   const wireOrigin =
-    params.providerOptions?.[ref.provider]?.["contents"] === undefined ? messageOrigin : undefined;
+    params.providerOptions?.[classification.provider]?.["contents"] === undefined
+      ? messageOrigin
+      : undefined;
   const remap = (issue: Issue): Issue => {
     const canonicalMediaPath = mediaPaths.toCanonical(issue.path);
     const { path, unmapped } =

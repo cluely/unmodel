@@ -50,14 +50,22 @@ export type {
  * takes; `{ id }` and `{ name }` exist for the providers that take both and
  * would otherwise have to guess which you meant from the shape of the string.
  *
- * **Deliberately not narrowed per model.** Every other closed enum in this
- * category is; `voice` is the one that must not be. See `SpeechModelParams` in
- * `./model-params.ts` for the argument in full — voice catalogs are per-account
- * (cloning), run to thousands of entries, and turn over between releases, so a
- * union of them would be stale, would refuse the caller's own cloned voice, and
- * would be the largest completion list in the library. The single provider
- * where the voice is knowable is Deepgram, where the voice *is* the model — and
- * the ref union already types it there for free.
+ * **Wide by default, and narrowed per model nowhere yet.** See
+ * `SpeechModelParams` in `./model-params.ts` for the argument in full — voice
+ * catalogs are per-account (cloning), run to thousands of entries at ElevenLabs
+ * and Murf, and turn over between releases, so a *closed* union of them would
+ * be stale, would refuse the caller's own cloned voice, and would be the
+ * largest completion list in the library.
+ *
+ * That argument is about the providers whose catalogs are unbounded, and it is
+ * not a claim that no provider publishes a list. Several do, and this repo
+ * hand-catalogues them at the wire: Deepgram (where the voice *is* the model,
+ * so the ref union types it for free), OpenAI's nine and thirteen, and — since
+ * the Gemini TTS tightening — Google's thirty, which `unmodel/google` now
+ * refuses to compile off-list. Surfacing those here would mean an open-tailed
+ * `voices` row in {@link SpeechModelParams}, on the `languages` model: it
+ * completes, it does not gate. That is a real opportunity, deliberately not
+ * taken in this pass rather than one ruled out.
  */
 export type Voice = string | { id: string } | { name: string };
 
@@ -163,24 +171,24 @@ export type AnySpeechAdapter = AnyUnifiedAdapter<SpeechParams> & {
 export interface SpeechValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<SpeechParamsBase, UnifiedRef<A>> &
+    T extends UnifiedInput<SpeechParamsBase, UnifiedRef<A>, A> &
       SpeechModelNarrowing<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<SpeechParams, UnifiedRef<A>> & ModelExtras<A, M>>,
+      ExactKeys<T, UnifiedInput<SpeechParams, UnifiedRef<A>, A> & ModelExtras<A, M>>,
     options?: ValidateOptions,
   ): UnifiedResult<A, M>;
   safe<
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<SpeechParamsBase, UnifiedRef<A>> &
+    T extends UnifiedInput<SpeechParamsBase, UnifiedRef<A>, A> &
       SpeechModelNarrowing<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<SpeechParams, UnifiedRef<A>> & ModelExtras<A, M>>,
+      ExactKeys<T, UnifiedInput<SpeechParams, UnifiedRef<A>, A> & ModelExtras<A, M>>,
     options?: ValidateOptions,
   ): ValidateResult<UnifiedResult<A, M>>;
   /** Every provider id registered on this validator, sorted. */

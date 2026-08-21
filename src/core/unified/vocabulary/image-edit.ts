@@ -233,25 +233,25 @@ export interface ImageEditAdapterFor<
 export interface ImageEditValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<ImageEditParamsBase, UnifiedRef<A>> &
+    T extends UnifiedInput<ImageEditParamsBase, UnifiedRef<A>, A> &
       ModelShape<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<ImageEditParams, UnifiedRef<A>> & ModelExtras<A, M>> &
+      ExactKeys<T, UnifiedInput<ImageEditParams, UnifiedRef<A>, A> & ModelExtras<A, M>> &
       ImageNarrowing<A, M>,
     options?: ValidateOptions,
   ): UnifiedResult<A, M>;
   safe<
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<ImageEditParamsBase, UnifiedRef<A>> &
+    T extends UnifiedInput<ImageEditParamsBase, UnifiedRef<A>, A> &
       ModelShape<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<ImageEditParams, UnifiedRef<A>> & ModelExtras<A, M>> &
+      ExactKeys<T, UnifiedInput<ImageEditParams, UnifiedRef<A>, A> & ModelExtras<A, M>> &
       ImageNarrowing<A, M>,
     options?: ValidateOptions,
   ): ValidateResult<UnifiedResult<A, M>>;

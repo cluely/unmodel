@@ -378,7 +378,14 @@ function runUnifiedUnchecked(
   /** Joined wire path → the canonical field it was compiled from. */
   const provenance = new Map<string, string>();
 
-  const ctx: CompileContext<never> = {
+  // `any`, not `never`: the kernel builds ONE context and hands it to whichever
+  // adapter the ref selected, whose vocabularies differ (and are narrowed per
+  // route). `CompileContext` is contravariant in that vocabulary, so `never`
+  // stopped satisfying the adapters once `CanonicalField` closed. The
+  // per-adapter check is still exact — each adapter's own `compile` signature
+  // types its `ctx`, and `AnyUnifiedAdapter`'s `Ctx = any` is confined to the
+  // constraint, mirroring the `Wire`/`Out` decision six lines above it.
+  const ctx: CompileContext<any> = {
     model: modelId,
     warn: translation.warn,
     fail: (issue) => sink.report({ ...issue, model }),

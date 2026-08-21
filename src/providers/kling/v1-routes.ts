@@ -159,12 +159,23 @@ export type KlingV1Duration = (typeof THREE_TO_FIFTEEN)[number];
  * Support per `model_name`, from the capability map's Generation Range /
  * Resolution columns and its Native Audio / Camera Control / Multi-shot rows.
  *
+ * ONE TABLE, READ THREE TIMES. {@link checkV1Support} applies it at run time;
+ * `./video.ts` and `./video-from-image.ts` narrow `mode` / `duration` /
+ * `sound` / `cfg_scale` / `camera_control` / `multi_shot` per `model_name`
+ * from it ({@link V1CapabilityArm}); and `./unified-video.ts` builds the nine
+ * `kling-v*` rows of `KLING_VIDEO_MODEL_PARAMS` out of it. Before that, the
+ * unified surface refused `duration: 8` on `kling-v2-5-turbo` at compile time
+ * while the wire validator it compiles down to accepted it — a wire-exact
+ * validator looser than the layer above it, which inverts docs/decisions.md
+ * #1. The literal types below are what makes the three agree by construction;
+ * `./video.test.ts` asserts the rest.
+ *
  * Note one documented discrepancy: the capability map gives `kling-v2-6` a
  * "3~10s" generation range while the current `POST /text-to-video/kling-2.6`
  * route offers only 5s and 10s. Each route is checked against its own source,
  * so the wider range applies here and the narrower one in ./video-v3.ts.
  */
-export const V1_MODEL_RULES: Readonly<Record<string, V1ModelRules>> = {
+const V1_MODEL_RULES_TABLE = {
   "kling-v3": {
     modes: ["std", "pro", "4k"],
     durations: THREE_TO_FIFTEEN,
@@ -186,7 +197,89 @@ export const V1_MODEL_RULES: Readonly<Record<string, V1ModelRules>> = {
     // "Only supports 720P and 5s duration" — the capability map's tooltip.
     cameraControl: true,
   },
+} as const satisfies Readonly<Record<string, V1ModelRules>>;
+
+/**
+ * The same table, widened for run-time lookups keyed by an arbitrary
+ * `model_name`. Same object — a second literal could drift; a second *view*
+ * cannot.
+ */
+export const V1_MODEL_RULES: Readonly<Record<string, V1ModelRules>> =
+  V1_MODEL_RULES_TABLE;
+
+/** A `model_name` {@link V1_MODEL_RULES} carries a row for. */
+export type V1RuleModelId = keyof typeof V1_MODEL_RULES_TABLE;
+
+/** One model's row, at its literal type. */
+export type V1RulesOf<M extends V1RuleModelId> = (typeof V1_MODEL_RULES_TABLE)[M];
+
+/**
+ * What each `mode` renders. "`std`: … output video resolution is 720P.
+ * `pro`: … 1080P. `4k`: … 4K." — the `/v1/videos/*` routes' own description of
+ * the parameter, which is why a `modes` list *is* a resolution list and
+ * `./unified-video.ts` can derive one from the other rather than restating it.
+ * `./pricing.ts` reads the same three pairs as `MODE_RESOLUTION`; the drift
+ * suite in `./video.test.ts` pins them equal.
+ */
+export const V1_MODE_TIERS = {
+  std: "720p",
+  pro: "1080p",
+  "4k": "4k",
+} as const satisfies Readonly<Record<string, string>>;
+
+/**
+ * `mode` / `duration` and the four capability switches, as ONE `model_name`
+ * accepts them.
+ *
+ * Every list is {@link V1_MODEL_RULES}' own — the list `checkV1Support`
+ * reports against — so the type cannot refuse a request the check would allow.
+ * The two `false`/`"off"` arms are not a trick: `checkV1Support` reports
+ * `sound` and `multi_shot` only when they are *switched on*, so `sound: "off"`
+ * and `multi_shot: false` stay legal everywhere and the type says exactly that
+ * rather than denying the key.
+ *
+ * Deliberately NOT narrowed here, because no table proves a value space for
+ * them:
+ *
+ * - **`aspect_ratio`** (text2video only). The capability map has no per-model
+ *   aspect-ratio column and `checkV1Support` never gates it, so all three of
+ *   `KLING_ASPECT_RATIOS` stay legal on every model. (The unified rows *do*
+ *   carry `ratios: []` for `kling-v1-5` / `kling-v2-1` — that is route
+ *   membership, not a ratio rule: neither id is in `TEXT2VIDEO_MODELS`, and
+ *   `image2video` has no `aspect_ratio` field at all.)
+ * - **`shot_type` / `multi_prompt`**. They only do anything alongside
+ *   `multi_shot`, but no check refuses them on their own, so narrowing them to
+ *   `never` off `kling-v3` would refuse a request the runtime accepts. The
+ *   unified rows declare them on `kling-v3` alone, which is the layer that may
+ *   say "not a parameter this model accepts"; the wire may not.
+ * - **`cfg_scale`'s range**. `0–1` is a bound, not an enum; the zod schema
+ *   owns it.
+ */
+export type V1CapabilityArm<M extends V1RuleModelId> = {
+  /** This model's own `mode` values (std = 720P, pro = 1080P, 4k = 4K). */
+  mode?: V1RulesOf<M>["modes"][number];
+  /** This model's own clip lengths, as the strings this API takes. */
+  duration?: V1RulesOf<M>["durations"][number];
+  /** `"on"` only where the capability map gives the model native audio. */
+  sound?: V1RulesOf<M> extends { sound: true } ? "on" | "off" : "off";
+  /** `never` where the capability map has no `cfg_scale` for the model. */
+  cfg_scale?: V1RulesOf<M> extends { cfgScale: true } ? number : never;
+  /** `never` off `kling-v1` — the one model with camera control. */
+  camera_control?: V1RulesOf<M> extends { cameraControl: true }
+    ? KlingCameraControl
+    : never;
+  /** `true` only on `kling-v3`; `false` stays legal everywhere. */
+  multi_shot?: V1RulesOf<M> extends { multiShot: true } ? boolean : false;
 };
+
+/** The keys {@link V1CapabilityArm} restates, to `Omit` from the wide body. */
+export type V1NarrowedKey =
+  | "mode"
+  | "duration"
+  | "sound"
+  | "cfg_scale"
+  | "camera_control"
+  | "multi_shot";
 
 interface V1Params {
   model_name?: string;

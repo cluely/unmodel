@@ -48,14 +48,17 @@ import {
   GEMINI_TTS_DOCS_URL,
   GEMINI_TTS_MAX_SPEAKERS,
   GEMINI_TTS_MODEL_IDS,
-  GEMINI_TTS_VOICES,
   GENERATE_CONTENT_API_DOCS_URL,
   GOOGLE_MEDIA_DOC_URLS,
   INLINE_PDF_MAX_BYTES,
   chatConstraints,
   chatFamilyRules,
+  type GeminiImageRule,
 } from "./constraints";
-import { generateContentSchema } from "./wire";
+// GEMINI_TTS_VOICES rides in ./wire, not ./constraints: the wire type
+// `GooglePrebuiltVoiceConfig.voiceName` is built from it, and a wire leaf may
+// not import a constraints module (test/import-graph.test.ts).
+import { GEMINI_TTS_VOICES, generateContentSchema } from "./wire";
 import type { GenerateContentBody, GoogleContent, GooglePart, GoogleVoiceConfig } from "./wire";
 import type {
   ValidatorProviderCarrier,
@@ -483,9 +486,12 @@ function checkImageGeneration(
     return;
   }
 
-  const rule = Object.hasOwn(GEMINI_IMAGE_MODEL_RULES, id)
-    ? GEMINI_IMAGE_MODEL_RULES[id]
-    : undefined;
+  // The table is `as const satisfies` so the per-model literals survive for
+  // the types built on it; the runtime id is a `string`, so it is widened back
+  // HERE and nowhere else — one local alias rather than an annotation on the
+  // table, which would erase those literals for every consumer.
+  const imageRules: Readonly<Partial<Record<string, GeminiImageRule>>> = GEMINI_IMAGE_MODEL_RULES;
+  const rule = Object.hasOwn(imageRules, id) ? imageRules[id] : undefined;
 
   for (const entry of entries) {
     for (const key of GEMINI_IMAGE_CONFIG_VERTEX_ONLY_KEYS) {
@@ -571,7 +577,11 @@ function checkVoiceName(
   enforceVoices: boolean,
   ctx: PipelineContext,
 ): void {
-  const voiceName = voiceConfig?.prebuiltVoiceConfig?.voiceName;
+  // Typed `string`, not GeminiTtsVoiceName: the wire type now closes this
+  // field to the 30 presets, but a JS caller (or a body parsed from JSON)
+  // still reaches here with anything, and that is the whole point of the
+  // check below.
+  const voiceName: string | undefined = voiceConfig?.prebuiltVoiceConfig?.voiceName;
   if (voiceName === undefined || !enforceVoices) return;
   if (GEMINI_TTS_VOICES.includes(voiceName as (typeof GEMINI_TTS_VOICES)[number])) return;
   ctx.report({

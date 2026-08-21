@@ -22,6 +22,32 @@ export interface ConverseResponseLike {
 }
 
 /**
+ * The `stopReason` values a Converse response can carry, as `checkChat`
+ * reports them on `finishReason`.
+ *
+ * PUBLIC API — keep in sync with the `finishReason === …` branches below
+ * (`max_tokens`, `guardrail_intervened`, `content_filtered`,
+ * `model_context_window_exceeded`, `malformed_model_output`,
+ * `malformed_tool_use`); `end_turn`, `tool_use` and `stop_sequence` are the
+ * documented values those branches deliberately do not warn about.
+ *
+ * Tail-open, per this library's `(string & {})` convention: the checker never
+ * refuses an off-list stop reason — it passes it straight through — and
+ * Converse fronts every vendor on Bedrock, each free to add one.
+ */
+export type ConverseStopReason =
+  | "end_turn"
+  | "tool_use"
+  | "max_tokens"
+  | "stop_sequence"
+  | "guardrail_intervened"
+  | "content_filtered"
+  | "model_context_window_exceeded"
+  | "malformed_model_output"
+  | "malformed_tool_use"
+  | (string & {});
+
+/**
  * Post-generation report for a Converse response: truncation/guardrail/
  * context warnings, normalized usage, and actual cost from catalog rates.
  * Never throws.
@@ -30,7 +56,10 @@ export interface ConverseResponseLike {
  * requested to get `costUSD`; without it only warnings and usage are
  * reported.
  */
-export function checkChat(response: ConverseResponseLike, modelId?: string): ResponseReport {
+export function checkChat(
+  response: ConverseResponseLike,
+  modelId?: string,
+): ResponseReport<ConverseStopReason> {
   const warnings: Issue[] = [];
   const finishReason = response.stopReason ?? undefined;
 

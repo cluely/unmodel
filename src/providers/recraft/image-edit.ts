@@ -50,7 +50,7 @@ import {
   V3_ONLY_MODELS,
   type RecraftModelId,
 } from "./models";
-import { STYLE_NAMES_BY_MODEL, type RecraftStyleName } from "./styles";
+import { STYLE_NAMES_BY_MODEL, type StyleFor } from "./styles";
 import type { RecraftControls, RecraftSize, RecraftTextLayoutElement } from "./image";
 
 const IMAGES_BASE_URL = "https://external.api.recraft.ai/v1/images";
@@ -79,8 +79,21 @@ export const MAX_OUTPAINT_EXPAND_PIXELS = 4096;
 // Wire types
 // ---------------------------------------------------------------------------
 
-/** Fields every editing route shares, per the endpoints doc's param tables. */
-interface RecraftTransformCommon {
+/** `model` input on the routes that accept the V3 **and** V4 lines. */
+type ImageToImageModelInput = (typeof IMAGE_TO_IMAGE_MODELS)[number] | (string & {});
+/** `model` input on the four `recraftv3` / `recraftv3_vector`-only routes. */
+type V3OnlyModelInput = (typeof V3_ONLY_MODELS)[number] | (string & {});
+
+/**
+ * Fields every editing route shares, per the endpoints doc's param tables.
+ *
+ * `M` is the route's `model` literal so `style` can resolve to that model's own
+ * curated list — see `GenerationsParams` in ./image.ts for why (`makeStyleCheck`
+ * below rejects a cross-model name at runtime, and this is the type-level half
+ * of the same rule). Each route binds `M` through its own `model` field, whose
+ * allow-list is narrower than the generations route's.
+ */
+interface RecraftTransformCommon<M extends string = string> {
   /** Multipart: the image to modify. Mutually exclusive with `image_url`. */
   image?: Blob;
   /** JSON: a public URL or `data:` URL. Mutually exclusive with `image`. */
@@ -90,7 +103,7 @@ interface RecraftTransformCommon {
   /** Number of images, 1–6. Default 1. Billed per image. */
   n?: number | null;
   /** Curated style name; per-route model compatibility applies. */
-  style?: RecraftStyleName | (string & {}) | null;
+  style?: StyleFor<M> | null;
   /** Style UUID used as a visual reference. Cannot be combined with `style`. */
   style_id?: string | null;
   /** Undesired elements. */
@@ -105,16 +118,18 @@ interface RecraftTransformCommon {
   controls?: RecraftControls | null;
 }
 
-export interface ImageToImageParams extends RecraftTransformCommon {
+export interface ImageToImageParams<M extends ImageToImageModelInput = ImageToImageModelInput>
+  extends RecraftTransformCommon<M> {
   /** Defaults to "recraftv4_1" server-side. V3 and V4 models only (no V2). */
-  model?: (typeof IMAGE_TO_IMAGE_MODELS)[number] | (string & {}) | null;
+  model?: M | null;
   /** REQUIRED. 0 = almost identical to the input, 1 = minimal similarity. */
   strength: number;
 }
 
-export interface InpaintParams extends RecraftTransformCommon {
+export interface InpaintParams<M extends V3OnlyModelInput = V3OnlyModelInput>
+  extends RecraftTransformCommon<M> {
   /** Defaults to "recraftv3" server-side. recraftv3 / recraftv3_vector only. */
-  model?: (typeof V3_ONLY_MODELS)[number] | (string & {}) | null;
+  model?: M | null;
   /** Multipart: grayscale mask, white = inpaint. Mutually exclusive with `mask_url`. */
   mask?: Blob;
   /** JSON: URL or `data:` URL of the mask. Mutually exclusive with `mask`. */
@@ -122,11 +137,13 @@ export interface InpaintParams extends RecraftTransformCommon {
 }
 
 /** generateBackground takes the same params as inpaint (image + mask + prompt). */
-export type GenerateBackgroundParams = InpaintParams;
+export type GenerateBackgroundParams<M extends V3OnlyModelInput = V3OnlyModelInput> =
+  InpaintParams<M>;
 
-export interface OutpaintParams extends RecraftTransformCommon {
+export interface OutpaintParams<M extends V3OnlyModelInput = V3OnlyModelInput>
+  extends RecraftTransformCommon<M> {
   /** Defaults to "recraftv3" server-side. recraftv3 / recraftv3_vector only. */
-  model?: (typeof V3_ONLY_MODELS)[number] | (string & {}) | null;
+  model?: M | null;
   /** Pixels to add on the left, 0–4096. Cannot be combined with `size`. */
   expand_left?: number | null;
   /** Pixels to add on the right, 0–4096. Cannot be combined with `size`. */
@@ -149,9 +166,10 @@ export interface OutpaintParams extends RecraftTransformCommon {
   zoom_out_percentage?: number | null;
 }
 
-export interface ReplaceBackgroundParams extends RecraftTransformCommon {
+export interface ReplaceBackgroundParams<M extends V3OnlyModelInput = V3OnlyModelInput>
+  extends RecraftTransformCommon<M> {
   /** Defaults to "recraftv3" server-side. recraftv3 / recraftv3_vector only. */
-  model?: (typeof V3_ONLY_MODELS)[number] | (string & {}) | null;
+  model?: M | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -367,6 +385,22 @@ function makeModelCheck(allowed: readonly string[], fallback: string) {
   };
 }
 
+/**
+ * The style table widened to a plain string-keyed lookup. `STYLE_NAMES_BY_MODEL`
+ * is `as const` so it can serve as the type source for `StyleFor<M>`; this check
+ * indexes it with a RESOLVED model id (a `string`, possibly the route's
+ * server-side default or an id unmodel has never heard of), so the widening
+ * lives here — on the one consumer that wants it — rather than back on the
+ * table. Same shape as the `STYLE_NAMES` alias in ./image.ts.
+ */
+const STYLE_NAMES: Readonly<Record<string, readonly string[]>> = STYLE_NAMES_BY_MODEL;
+
+/**
+ * Style ↔ model cross-check. `RecraftTransformCommon`'s `style?: StyleFor<M>`
+ * now catches the same mismatch at compile time for a literal `model`; this
+ * stays the enforcement for JS callers and for runtime-built model ids, where
+ * the type degrades to the pooled union.
+ */
 function makeStyleCheck(fallback: string) {
   return (
     params: RecraftTransformCommon & { model?: string | null },
@@ -376,7 +410,7 @@ function makeStyleCheck(fallback: string) {
     const style = params.style;
     if (style == null || info === undefined) return;
     const model = params.model ?? fallback;
-    const allowed = STYLE_NAMES_BY_MODEL[model];
+    const allowed = STYLE_NAMES[model];
     if (allowed === undefined || allowed.includes(style)) return;
     ctx.report({
       code: "invalid_enum_value",
@@ -591,13 +625,38 @@ const replaceBackgroundValidator = createValidator<ReplaceBackgroundParams, unkn
   finalize: finalizeTo(REPLACE_BACKGROUND_URL),
 });
 
-interface RecraftTransformValidator<P> {
-  <T extends P>(
-    params: T & ExactKeys<T, P>,
+/**
+ * The params of `Route` at model literal `M`. TypeScript has no higher-kinded
+ * types, so `RecraftTransformValidator` names its route as a phantom tag and
+ * resolves the arm here, instead of taking the params type directly — the
+ * params types are now generic in `M` and cannot be passed unapplied.
+ */
+type TransformArm<Route extends string, M extends string> = Route extends "imageToImage"
+  ? ImageToImageParams<M>
+  : Route extends "inpaint"
+    ? InpaintParams<M>
+    : Route extends "outpaint"
+      ? OutpaintParams<M>
+      : ReplaceBackgroundParams<M>;
+
+/** The `model` ids `Route` accepts — the constraint of its callable's `M`. */
+type RouteModelInput<Route extends string> = Route extends "imageToImage"
+  ? ImageToImageModelInput
+  : V3OnlyModelInput;
+
+/**
+ * `M` is bound by `model` alone (`model?: M | null` on each params interface).
+ * Do NOT add an `& { model?: M }` arm to `params`: that intersection is
+ * normalized before completion and leaves `model` completing nothing. See the
+ * `GenerationsParams` doc in ./image.ts.
+ */
+interface RecraftTransformValidator<Route extends string> {
+  <M extends RouteModelInput<Route>, T extends TransformArm<Route, M>>(
+    params: T & TransformArm<Route, M> & ExactKeys<T, TransformArm<Route, RouteModelInput<Route>>>,
     options?: ValidateOptions,
   ): Validated<T, RecraftSdkTargets<T>>;
-  safe<T extends P>(
-    params: T & ExactKeys<T, P>,
+  safe<M extends RouteModelInput<Route>, T extends TransformArm<Route, M>>(
+    params: T & TransformArm<Route, M> & ExactKeys<T, TransformArm<Route, RouteModelInput<Route>>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<T, RecraftSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
@@ -615,7 +674,7 @@ interface RecraftTransformValidator<P> {
  * an `authorization: Bearer <token>` header.
  */
 export const imageEdit =
-  imageToImageValidator as unknown as RecraftTransformValidator<ImageToImageParams>;
+  imageToImageValidator as unknown as RecraftTransformValidator<"imageToImage">;
 
 /**
  * Validates params for Recraft `POST /v1/images/inpaint` — regenerates the
@@ -623,7 +682,7 @@ export const imageEdit =
  * `recraftv3_vector` only (default `recraftv3`); other model ids are reported
  * as `invalid_enum_value`. See `imageEdit` for the fetch recipe.
  */
-export const imageEditInpaint = inpaintValidator as unknown as RecraftTransformValidator<InpaintParams>;
+export const imageEditInpaint = inpaintValidator as unknown as RecraftTransformValidator<"inpaint">;
 
 /**
  * Validates params for Recraft `POST /v1/images/generateBackground` —
@@ -631,7 +690,7 @@ export const imageEditInpaint = inpaintValidator as unknown as RecraftTransformV
  * regions. `recraftv3` / `recraftv3_vector` only.
  */
 export const imageEditGenerateBackground =
-  generateBackgroundValidator as unknown as RecraftTransformValidator<GenerateBackgroundParams>;
+  generateBackgroundValidator as unknown as RecraftTransformValidator<"inpaint">;
 
 /**
  * Validates params for Recraft `POST /v1/images/outpaint` — extends the image
@@ -639,7 +698,7 @@ export const imageEditGenerateBackground =
  * target `size` (never both), optionally with `zoom_out_percentage`; at least
  * one of the three is required. `recraftv3` / `recraftv3_vector` only.
  */
-export const imageEditOutpaint = outpaintValidator as unknown as RecraftTransformValidator<OutpaintParams>;
+export const imageEditOutpaint = outpaintValidator as unknown as RecraftTransformValidator<"outpaint">;
 
 /**
  * Validates params for Recraft `POST /v1/images/replaceBackground` — detects
@@ -647,6 +706,6 @@ export const imageEditOutpaint = outpaintValidator as unknown as RecraftTransfor
  * `recraftv3_vector` only.
  */
 export const imageEditReplaceBackground =
-  replaceBackgroundValidator as unknown as RecraftTransformValidator<ReplaceBackgroundParams>;
+  replaceBackgroundValidator as unknown as RecraftTransformValidator<"replaceBackground">;
 
 export type { RecraftModelId };

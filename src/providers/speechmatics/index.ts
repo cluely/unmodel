@@ -31,7 +31,7 @@ export type {
 } from "./transcribe";
 
 export { checkJob } from "./check";
-export type { JobDetailsLike } from "./check";
+export type { JobDetailsLike, SpeechmaticsJobStatus } from "./check";
 
 export {
   models,

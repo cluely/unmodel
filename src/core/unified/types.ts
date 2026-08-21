@@ -204,13 +204,39 @@ export interface CompileContext<Canon> {
 }
 
 /**
- * A field name in the canonical vocabulary — or a dotted path into one, for
- * the nested cases (`"dimensions.width"`, `"diarization.maxSpeakers"`).
+ * The dotted paths one level into a canonical vocabulary —
+ * `"dimensions.width"`, `"diarization.maxSpeakers"`. Arrays are excluded: an
+ * index is not a field name, and no adapter names one.
  *
- * The `(string & {})` tail keeps those legal while the union half still drives
- * autocomplete and still catches `"aspecRatio"`.
+ * Depth 1 is exhaustive, not a simplification: every dotted `ctx.from` in the
+ * repo is `<object field>.<leaf>`, and a canonical vocabulary two levels deep
+ * would be a vocabulary problem before it was a typing one.
  */
-export type CanonicalField<Canon> = Extract<keyof Canon, string> | (string & {});
+type DottedField<T> = {
+  [K in Extract<keyof T, string>]: NonNullable<T[K]> extends object
+    ? NonNullable<T[K]> extends readonly unknown[]
+      ? never
+      : `${K}.${Extract<keyof NonNullable<T[K]>, string>}`
+    : never;
+}[Extract<keyof T, string>];
+
+/**
+ * A field name in the canonical vocabulary, or a dotted path into one.
+ *
+ * Closed, deliberately. This is not a caller-facing surface where a `(string &
+ * {})` tail buys forward-compatibility — it is the adapter author's declaration
+ * of *which canonical field a wire param was compiled from*, and the vocabulary
+ * it names is in this very build. The tail here bought nothing and cost the
+ * completions: the dotted paths it existed to permit could not be suggested,
+ * and a typo degraded an error message silently, months later, in the one code
+ * path nobody tests — which is exactly what {@link CompileContext.from}'s own
+ * doc predicts, and what closing this found (a `ctx.from` naming a model extra
+ * that is not a canonical field at all).
+ *
+ * An adapter that genuinely needs to name an extras key should union
+ * `AnyExtraKey<A>` in here rather than reopen the tail.
+ */
+export type CanonicalField<Canon> = Extract<keyof Canon, string> | DottedField<Canon>;
 
 /**
  * What an adapter produces: the provider's wire params, and the provider's own
@@ -243,6 +269,7 @@ export interface UnifiedAdapter<
   Canon,
   Wire extends object = object,
   Out extends object = object,
+  Ctx = Canon,
 > {
   readonly category: UnifiedCategory;
   /** The ref's first-slash prefix, e.g. `"openai"`. */
@@ -275,7 +302,17 @@ export interface UnifiedAdapter<
    */
   readonly unsupported?: Readonly<Partial<Record<Extract<keyof Canon, string>, string>>>;
 
-  compile(input: Canon, ctx: CompileContext<Canon>): CompiledCall<Wire, Out>;
+  /**
+   * `Ctx` is separate from `Canon` for the same reason `Wire`/`Out` are `any`
+   * on {@link AnyUnifiedAdapter}: {@link CompileContext} is contravariant in
+   * its vocabulary (through `from`'s `CanonicalField<Canon>` parameter), so an
+   * adapter whose `compile` takes a *narrowed* vocabulary — `ImageEditParamsFor<"file">`,
+   * `TranscribeParamsFor<…>` — is not assignable to one typed with the wide
+   * canonical vocabulary. Until `CanonicalField` closed, the `(string & {})`
+   * tail was silently neutralising that contravariance; the knob makes what was
+   * already happening explicit instead of restoring the tail.
+   */
+  compile(input: Canon, ctx: CompileContext<Ctx>): CompiledCall<Wire, Out>;
 }
 
 /**
@@ -289,7 +326,7 @@ export interface UnifiedAdapter<
  * reject every real adapter. The concrete types survive on the adapter's own
  * type and are recovered by {@link UnifiedOut}.
  */
-export type AnyUnifiedAdapter<Canon> = UnifiedAdapter<Canon, any, any>;
+export type AnyUnifiedAdapter<Canon> = UnifiedAdapter<Canon, any, any, any>;
 
 // ---------------------------------------------------------------------------
 // Type-level ref plumbing
@@ -360,10 +397,18 @@ export type DeclaredInputs<A, Field extends string> =
  *
  * Composed of the two pieces that already exist rather than reimplementing
  * either: {@link AdapterFor} picks the adapter (or degrades to the whole
- * union), and `DeclaredInputs` reads what it declared. A ref naming a provider
- * with no adapter, or a ref built at runtime, therefore widens to every kind
- * any adapter in the build accepts — open at compile time, still checked at
- * runtime, which is the same trade every model list in this library makes.
+ * union), and `DeclaredInputs` reads what it declared. A ref built at runtime
+ * therefore widens to every kind any adapter in the build accepts — open at
+ * compile time, still checked at runtime, which is the same trade every model
+ * list in this library makes.
+ *
+ * A ref naming a provider **not in this build** widens the same way, and that
+ * is a remaining asymmetry rather than an endorsement: {@link UnifiedResult}
+ * brands such a ref, because its call can only throw, but the *params* it
+ * accepts still degrade to the union. Tightening the input position would mean
+ * intersecting `model` with something wide, which discharges the `(string & {})`
+ * tail and kills the completions this library exists to provide — so the refusal
+ * is stated on the result, where it costs nothing.
  */
 export type InputsFor<A, R extends string, Field extends string> = DeclaredInputs<
   AdapterFor<A, R>,
@@ -386,13 +431,68 @@ export type UnifiedOut<A> = A extends { compile: (...args: never[]) => infer C }
   : object;
 
 /**
+ * The result of a ref whose provider is not in this build.
+ *
+ * Branded and otherwise empty, so `.request`, `.toSdk` and every wire field are
+ * compile errors that name the provider. The call it describes cannot succeed:
+ * `image({ model: "google/imagen-4.0-generate-001", … })` on a pack without the
+ * google adapter throws `TranslationUnavailableError`, always — so the old type
+ * (the union of every *registered* provider's `Validated`) described a value
+ * the program cannot produce.
+ *
+ * A named property rather than a `unique symbol`, matching
+ * `UnregisteredChatProvider`: the two surfaces close the same hole and should
+ * read the same way. Chat's carries the reason as well, because chat has four
+ * distinct remedies to name; here there is exactly one — register the adapter,
+ * or fix the provider segment.
+ */
+export interface UnregisteredUnifiedProvider<Provider extends string> {
+  readonly __unmodel_unregisteredUnifiedProvider: Provider;
+}
+
+/** The provider ids an adapter union actually registers. */
+export type RegisteredProviderId<A> = A extends { readonly provider: infer P extends string }
+  ? P
+  : never;
+
+/** The resolved shape — what every servable ref returns. */
+type ResolvedUnifiedResult<A, R extends string> = UnifiedOut<AdapterFor<A, R>> & {
+  readonly warnings: readonly TranslationWarning[];
+};
+
+/**
  * What a unified call returns: the provider's own `Validated` — enumerable
  * properties are its wire body, `.request` and `.toSdk` ride non-enumerably —
  * plus the translation warnings, likewise non-enumerable and frozen.
+ *
+ * Three arms, and the middle one is the point:
+ *
+ * 1. **No provider segment at all** (`model` built at runtime, so `RefProvider`
+ *    is `never`) — resolves, because a ref this build cannot read is exactly
+ *    the case the degradation exists for.
+ * 2. **A literal provider this build does not register** — branded. Covers both
+ *    a subset pack (`createImage([openai, ideogram])` pointed at google) and
+ *    the case with no other guard at all: a typo in the provider segment, which
+ *    `model`'s `(string & {})` tail admits at the input position by design.
+ * 3. **Anything else** — resolves, including a model id released after the
+ *    snapshot at a registered provider.
+ *
+ * Non-distributive on purpose: the distributive spelling additionally flags the
+ * bad arm of a mixed union (`cond ? "openai/x" : "bogus/y"`) and was measured at
+ * +6% instantiations, which is not worth that arm.
+ *
+ * `unmodel/chat` brands the same two cases through `UnregisteredChatProvider`
+ * (with the remedy attached, since chat has four), so the two surfaces now give
+ * the same answer to the same mistake. That symmetry is a decision, not an
+ * accident: an unregistered *provider* is never a forward-compatibility case,
+ * because providers are a closed hand-maintained set that only a new release
+ * can grow — unlike a model id, which the snapshot legitimately lags.
  */
-export type UnifiedResult<A, R extends string> = UnifiedOut<AdapterFor<A, R>> & {
-  readonly warnings: readonly TranslationWarning[];
-};
+export type UnifiedResult<A, R extends string> = [RefProvider<R>] extends [never]
+  ? ResolvedUnifiedResult<A, R>
+  : [RefProvider<R> & RegisteredProviderId<A>] extends [never]
+    ? UnregisteredUnifiedProvider<RefProvider<R>>
+    : ResolvedUnifiedResult<A, R>;
 
 /**
  * The untrusted-input half of a unified validator's interface.
@@ -421,16 +521,63 @@ export interface SafeUnknown<Out> {
  * a single object type with neither field required — quietly deleting the one
  * invariant the type exists to state.
  */
-export type UnifiedInput<Canon, Ref extends string> = DistributiveOmit<
+export type UnifiedInput<Canon, Ref extends string, A = never> = DistributiveOmit<
   Canon,
   "model" | "providerOptions"
 > & {
   model: Ref | (string & {});
-  providerOptions?: UnifiedProviderOptions<Ref>;
+  providerOptions?: UnifiedProviderOptions<Ref, A>;
 };
 
 /**
- * `providerOptions`, keyed by the providers this validator actually has.
+ * The wire body one adapter compiles to.
+ *
+ * Read straight off the adapter's own `Wire` parameter — `CompiledCall<Wire,
+ * Out>` already carries it, and the adapter declared it. `any` in the other
+ * three slots for the same reason {@link AnyUnifiedAdapter} uses it: `compile`
+ * is contravariant in its context and `validate` in its params, so a narrower
+ * wildcard never matches.
+ */
+export type UnifiedWire<A> = A extends UnifiedAdapter<any, infer W, any, any>
+  ? W
+  : Readonly<Record<string, unknown>>;
+
+/**
+ * A deep partial that keeps an open arm at every level.
+ *
+ * Both escape hatches have to survive, because they are what the field is
+ * *for*: an unknown KEY at any depth (a knob the provider shipped after this
+ * snapshot, including a nested one — the shallow variant was measured and broke
+ * exactly that case), and an unknown VALUE inside an already-closed union (a
+ * new enum member on an existing key). The leaf arm is the same
+ * `(string & {})` convention every generated union in this library carries:
+ * the union drives autocomplete, it does not gate the API.
+ */
+type OpenBucket<T> = T extends readonly (infer E)[]
+  ? ReadonlyArray<OpenBucket<E>> | Array<OpenBucket<E>>
+  : T extends (...args: never[]) => unknown
+    ? T
+    : T extends object
+      ? { readonly [K in keyof T]?: OpenBucket<T[K]> } & Readonly<Record<string, unknown>>
+      : string extends T
+        ? T
+        : T extends string
+          ? T | (string & {})
+          : T;
+
+/** The two-argument form: keys tied, values an open bag. */
+type OpenUnifiedProviderOptions<Ref extends string> = {
+  readonly [P in RefProvider<Ref>]?: Readonly<Record<string, unknown>>;
+};
+
+/** The three-argument form: keys tied, values the adapter's own wire body. */
+type TypedUnifiedProviderOptions<Ref extends string, A> = {
+  readonly [P in RefProvider<Ref>]?: OpenBucket<UnifiedWire<Extract<A, { provider: P }>>>;
+};
+
+/**
+ * `providerOptions`, keyed by the providers this validator actually has and
+ * valued by what each of them actually sends.
  *
  * Still open in the way that matters — one request literal may carry blocks
  * for **every** provider it might be pointed at, and only the ref'd one is
@@ -439,13 +586,27 @@ export type UnifiedInput<Canon, Ref extends string> = DistributiveOmit<
  * symptom would otherwise be an override that silently never happens, which is
  * the hardest kind of bug to see in a diff.
  *
- * The values stay `Record<string, unknown>`: they are wire params, and the
- * whole point of the escape hatch is that the unified surface has no opinion
- * about them.
+ * **The values used to stay `Record<string, unknown>`**, on the grounds that
+ * they are wire params and the unified surface has no opinion about them. That
+ * reasoning does not survive contact with what the values actually are: the
+ * bucket is merged into a body *this library compiled*, and then validated by
+ * *this library's* validator for that provider — the adapter's declared `Wire`
+ * is the unified surface's own artefact, not a foreign object it should decline
+ * to look at. Merging happens before validation (`kernel.ts`), so a
+ * type-contradicting value was already a runtime validator error; typing it
+ * moves that error to the keystroke, which is the direction decisions.md §1
+ * argues for. Nothing that compiled before stops compiling: {@link OpenBucket}
+ * keeps every level open, and the two-argument form below degrades to the old
+ * bag for any caller that has not threaded `A`.
+ *
+ * Completions are only as complete as the adapter's `Wire` interface. Where one
+ * declares six fields plus an index signature for an endpoint that takes ten,
+ * the list is *confidently incomplete* — an argument for tightening those Wire
+ * interfaces, which is a separate pass, not for going back to a bag.
  */
-export type UnifiedProviderOptions<Ref extends string> = {
-  readonly [P in RefProvider<Ref>]?: Readonly<Record<string, unknown>>;
-};
+export type UnifiedProviderOptions<Ref extends string, A = never> = [A] extends [never]
+  ? OpenUnifiedProviderOptions<Ref>
+  : TypedUnifiedProviderOptions<Ref, A>;
 
 /** `Omit` that survives contact with a union. */
 export type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
@@ -465,12 +626,12 @@ export type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omi
  * whose schema passes unknown keys along.
  */
 export interface UnifiedValidator<Canon, A> extends SafeUnknown<UnifiedResult<A, string>> {
-  <T extends UnifiedInput<Canon, UnifiedRef<A>>>(
-    params: T & ExactKeys<T, UnifiedInput<Canon, UnifiedRef<A>>>,
+  <T extends UnifiedInput<Canon, UnifiedRef<A>, A>>(
+    params: T & ExactKeys<T, UnifiedInput<Canon, UnifiedRef<A>, A>>,
     options?: ValidateOptions,
   ): UnifiedResult<A, T["model"] & string>;
-  safe<T extends UnifiedInput<Canon, UnifiedRef<A>>>(
-    params: T & ExactKeys<T, UnifiedInput<Canon, UnifiedRef<A>>>,
+  safe<T extends UnifiedInput<Canon, UnifiedRef<A>, A>>(
+    params: T & ExactKeys<T, UnifiedInput<Canon, UnifiedRef<A>, A>>,
     options?: ValidateOptions,
   ): ValidateResult<UnifiedResult<A, T["model"] & string>>;
   /** Every provider id registered on this validator, sorted. */

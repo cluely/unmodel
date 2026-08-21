@@ -39,6 +39,35 @@ const FILTERED_FINISH_REASONS = new Set([
   "IMAGE_RECITATION",
 ]);
 
+/**
+ * The `candidates[0].finishReason` values a generateContent response can
+ * carry, as `checkChat` reports them on `finishReason`.
+ *
+ * PUBLIC API — keep in sync with the branches below: `"MAX_TOKENS"` (the
+ * truncation branch) and every member of `FILTERED_FINISH_REASONS` above (the
+ * content-filtering branch). `"STOP"` is the ordinary success value, which the
+ * checker does not branch on but every caller compares against
+ * (`check.test.ts` asserts it), so it is listed too.
+ *
+ * Tail-open, per this library's `(string & {})` convention: the checker never
+ * refuses an off-list finish reason — `check.test.ts` pins that an
+ * unrecognized one is passed through and NOT treated as filtering — and the
+ * Gemini enum grows with each modality (the four `IMAGE_*` members arrived
+ * that way). The union drives autocomplete; it does not gate values.
+ */
+export type GoogleFinishReason =
+  | "STOP"
+  | "MAX_TOKENS"
+  | "SAFETY"
+  | "RECITATION"
+  | "BLOCKLIST"
+  | "PROHIBITED_CONTENT"
+  | "SPII"
+  | "IMAGE_SAFETY"
+  | "IMAGE_PROHIBITED_CONTENT"
+  | "IMAGE_RECITATION"
+  | (string & {});
+
 const catalog: Record<string, ModelInfo> = models;
 
 /**
@@ -68,7 +97,7 @@ function modelInfoFor(modelVersion: string | undefined): ModelInfo | undefined {
  * - `costUSD` is priced from catalog rates via the response's `modelVersion`
  *   (prefix fallback); undefined when the model is unknown.
  */
-export function checkChat(response: ChatResponseLike): ResponseReport {
+export function checkChat(response: ChatResponseLike): ResponseReport<GoogleFinishReason> {
   const warnings: Issue[] = [];
   const finishReason = response.candidates?.[0]?.finishReason;
 

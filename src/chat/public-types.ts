@@ -1,7 +1,7 @@
 /** Provider-free public result types shared by the ready and factory entries. */
 import type { AiSdkChatResult } from "../core/translate/ai-sdk";
 import type { TranslationWarning } from "../core/translate/warnings";
-import type { DialectBody } from "../retarget/dialects";
+import type { DialectBody, GeminiSdkParams } from "../retarget/dialects";
 import type { ChatProviderId } from "../catalog/chat-refs.gen";
 
 /** The three dialects `unmodel/chat` can compile to. */
@@ -30,12 +30,18 @@ export type ChatDialectOf<R extends string> = R extends `${infer P}/${string}`
 /** The compiled wire body for a ref. */
 export type ChatBody<R extends string> = DialectBody<ChatDialectOf<R>, ChatModelOf<R>>;
 
-/** `@google/genai`'s `{ model, contents, config }` SDK shape. */
-export interface ChatGeminiSdkParams<M extends string = string> {
-  model: M | (string & {});
-  contents: unknown;
-  config?: Record<string, unknown>;
-}
+/**
+ * `@google/genai`'s `{ model, contents, config }` SDK shape.
+ *
+ * One declaration, shared with the retarget engine (`src/retarget/dialects.ts`),
+ * which in turn reads `config`'s key set off the runtime shaper's own
+ * `CONFIG_KEYS`. Chat's degraded arm — a ref whose provider is not statically
+ * known — therefore hands back exactly the shape a *registered* `google` ref
+ * does, instead of `contents: unknown` / `config?: Record<string, unknown>`.
+ * (An alias rather than an interface, so there is nothing to merge into: the
+ * shape is the retarget layer's to define.)
+ */
+export type ChatGeminiSdkParams<M extends string = string> = GeminiSdkParams<M>;
 
 /** Native SDK targets offered by each compiled dialect. */
 export type ChatSdkTargets<D, M extends string> = D extends "anthropic-messages"

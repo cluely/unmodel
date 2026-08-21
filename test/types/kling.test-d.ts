@@ -15,7 +15,19 @@ import {
   image,
   imageOmni,
 } from "../../src/providers/kling";
-import { expectAssignable } from "./helpers";
+import type {
+  TextToVideoArm,
+  TextToVideoModelId,
+  TextToVideoParams,
+} from "../../src/providers/kling/video";
+import type {
+  ImageToVideoArm,
+  ImageToVideoParams,
+} from "../../src/providers/kling/video-from-image";
+import { video as klingVideoAdapter } from "../../src/providers/kling/unified-video";
+import { V1_MODE_TIERS } from "../../src/providers/kling/v1-routes";
+import type { KlingAspectRatio } from "../../src/providers/kling/shared";
+import { expectAssignable, expectTrue, type IsNever } from "./helpers";
 
 function v1DurationTypeTests(): void {
   // `duration` is seconds as a STRING on /v1/videos/*; the union is the widest
@@ -93,4 +105,173 @@ function imageRouteTypeTests(): void {
   imageOmni({ prompt: "hi", resolution: "banana" });
 }
 
-export { v1DurationTypeTests, pathRouteSettingsTypeTests, imageRouteTypeTests };
+// ---------------------------------------------------------------------------
+// kling.video / kling.videoFromImage: the wire arm is per model, and it AGREES
+// with the unified table
+//
+// This is the drift test in type space. `kling.video` accepted
+// `duration: "8"` on `kling-v2-5-turbo` while `unmodel/video` — the surface
+// that compiles down to it — refused the same fact, because two tables in the
+// same package described the same nine models and nothing compared them. They
+// are one table now (`V1_MODEL_RULES`, read by both `./video.ts` and
+// `./unified-video.ts`), and the assertions below fail in BOTH directions if
+// that ever stops being true.
+// ---------------------------------------------------------------------------
+
+/** Mutual assignability: a widening on either side fails, not just a narrowing. */
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+
+type UnifiedVideoRows = (typeof klingVideoAdapter)["modelParams"];
+
+/** The seven text2video ids all have a unified row (the other six are elsewhere). */
+expectTrue<IsNever<Exclude<TextToVideoModelId, keyof UnifiedVideoRows>>>();
+
+/** `"5"` → `5`: the two surfaces spell the same seconds differently. */
+type WireDuration<M extends TextToVideoModelId> = NonNullable<TextToVideoArm<M>["duration"]>;
+type WireMode<M extends TextToVideoModelId> = NonNullable<TextToVideoArm<M>["mode"]>;
+
+/** Per model, the wire field's value space vs the unified row's list. */
+type Drifted<M extends TextToVideoModelId> =
+  Same<WireDuration<M>, `${UnifiedVideoRows[M]["durations"][number]}`> extends true
+    ? Same<
+        (typeof V1_MODE_TIERS)[WireMode<M> & keyof typeof V1_MODE_TIERS],
+        UnifiedVideoRows[M]["resolutions"][number]
+      > extends true
+      ? never
+      : M
+    : M;
+
+expectTrue<IsNever<{ [M in TextToVideoModelId]: Drifted<M> }[TextToVideoModelId]>>();
+
+/**
+ * The three capability switches, the other way round: a key the unified row
+ * declares as an extra is a key the wire arm types, and a key it does not
+ * declare is one the wire arm types `never` (or, for `sound`, `"off"` — the
+ * value that is still legal because the run-time check only refuses switching
+ * it ON).
+ */
+type SwitchDrifted<M extends TextToVideoModelId> =
+  Same<
+    "cfg_scale" extends keyof UnifiedVideoRows[M]["extras"] ? true : false,
+    IsNever<NonNullable<TextToVideoArm<M>["cfg_scale"]>> extends true ? false : true
+  > extends true
+    ? Same<
+        "camera_control" extends keyof UnifiedVideoRows[M]["extras"] ? true : false,
+        IsNever<NonNullable<TextToVideoArm<M>["camera_control"]>> extends true ? false : true
+      > extends true
+      ? Same<
+          "sound" extends keyof UnifiedVideoRows[M]["extras"] ? true : false,
+          Same<NonNullable<TextToVideoArm<M>["sound"]>, "on" | "off">
+        > extends true
+        ? never
+        : M
+      : M
+    : M;
+
+expectTrue<IsNever<{ [M in TextToVideoModelId]: SwitchDrifted<M> }[TextToVideoModelId]>>();
+
+/**
+ * `aspect_ratio` is NOT narrowed, and that is asserted rather than left to
+ * chance: no source bounds it per `model_name`, so every model keeps the full
+ * three-value enum. (The unified row's `ratios: []` on `kling-v2-1` /
+ * `kling-v1-5` is route membership — neither id has a text2video arm at all.)
+ */
+expectTrue<Same<NonNullable<TextToVideoArm<"kling-v2-master">["aspect_ratio"]>, KlingAspectRatio>>();
+expectTrue<Same<NonNullable<TextToVideoArm<"kling-v3">["aspect_ratio"]>, KlingAspectRatio>>();
+
+/**
+ * The degraded arms are the WIDE body itself — not a union of the seven arms,
+ * which is what a distributive conditional would have produced for the omitted
+ * `model_name` case, and which would have made `duration:` complete the
+ * intersection of seven lists instead of the documented range.
+ */
+expectTrue<Same<TextToVideoArm<string>, TextToVideoParams>>();
+expectTrue<Same<TextToVideoArm<"kling-v9">, TextToVideoParams>>();
+expectTrue<Same<ImageToVideoArm<string>, ImageToVideoParams>>();
+expectTrue<Same<NonNullable<TextToVideoArm<string>["mode"]>, "std" | "pro" | "4k">>();
+expectTrue<Same<NonNullable<TextToVideoArm<string>["sound"]>, "on" | "off">>();
+expectTrue<Same<NonNullable<ImageToVideoArm<string>["mode"]>, "std" | "pro" | "4k">>();
+
+function v1PerModelArmTypeTests(): void {
+  // --- The calls the wire used to accept while the unified layer refused them
+  // @ts-expect-error kling-v2-5-turbo offers "5" and "10"
+  video({ model_name: "kling-v2-5-turbo", prompt: "hi", duration: "8" });
+  // @ts-expect-error kling-v2-6's range is 3–10s
+  video({ model_name: "kling-v2-6", prompt: "hi", duration: "12" });
+  // @ts-expect-error the master models are 1080P-only ("pro")
+  video({ model_name: "kling-v2-master", prompt: "hi", mode: "std" });
+  // @ts-expect-error 4K is kling-v3's alone on this family
+  video({ model_name: "kling-v2-6", prompt: "hi", mode: "4k" });
+  // @ts-expect-error native audio is kling-v3 / kling-v2-6 only
+  video({ model_name: "kling-v2-5-turbo", prompt: "hi", sound: "on" });
+  // @ts-expect-error cfg_scale is kling-v1 / -v1-5 / -v1-6 only
+  video({ model_name: "kling-v2-6", prompt: "hi", cfg_scale: 0.5 });
+  // @ts-expect-error camera control is kling-v1 alone — not kling-v1-6
+  video({ model_name: "kling-v1-6", prompt: "hi", camera_control: { type: "down_back" } });
+  // @ts-expect-error multi-shot is kling-v3's alone
+  video({ model_name: "kling-v2-6", prompt: "hi", multi_shot: true });
+  // @ts-expect-error the image route narrows the same six fields
+  videoFromImage({ model_name: "kling-v2-1", image: "https://e.com/a.png", duration: "3" });
+  // @ts-expect-error kling-v1-5 has no camera control either
+  videoFromImage({ model_name: "kling-v1-5", image: "https://e.com/a.png", camera_control: {} });
+
+  // --- …and the same facts, each on the model that DOES document them
+  video({ model_name: "kling-v3", prompt: "hi", duration: "8", mode: "4k", sound: "on" });
+  video({ model_name: "kling-v3", prompt: "hi", multi_shot: true, shot_type: "intelligence" });
+  video({ model_name: "kling-v2-6", prompt: "hi", duration: "3", mode: "pro", sound: "on" });
+  video({ model_name: "kling-v2-master", prompt: "hi", mode: "pro", duration: "10" });
+  video({ model_name: "kling-v1", prompt: "hi", cfg_scale: 0.5, camera_control: { type: "down_back" } });
+  video({ model_name: "kling-v1-6", prompt: "hi", cfg_scale: 0.5 });
+  videoFromImage({ model_name: "kling-v2-1", image: "https://e.com/a.png", duration: "5", mode: "pro" });
+  videoFromImage({ model_name: "kling-v1-5", image: "https://e.com/a.png", cfg_scale: 0.2 });
+
+  // Switching a capability OFF stays legal everywhere: the run-time check only
+  // refuses turning it on, and the type may not be stricter than the check.
+  video({ model_name: "kling-v2-5-turbo", prompt: "hi", sound: "off", multi_shot: false });
+
+  // --- The degraded arms: every documented value still compiles ------------
+  // An omitted `model_name` (the server default is kling-v1, but nothing in the
+  // request says so, so nothing is narrowed).
+  video({ prompt: "hi", duration: "12", mode: "4k", sound: "on", cfg_scale: 0.5 });
+  // A run-time id.
+  const runtime: string = "kling-v3";
+  video({ model_name: runtime, prompt: "hi", duration: "12", mode: "4k", cfg_scale: 0.5 });
+  // A post-snapshot id.
+  video({ model_name: "kling-v9", prompt: "hi", duration: "12", mode: "4k", sound: "on" });
+  videoFromImage({ model_name: "kling-v9", image: "https://e.com/a.png", duration: "15", mode: "4k" });
+
+  // --- `Validated<T, …>` inference is undamaged ---------------------------
+  const v = video({ model_name: "kling-v3", prompt: "hi", duration: "8", mode: "pro" });
+  // `model_name` is a BODY field on this route: nothing is stripped, and every
+  // key survives at its literal type.
+  expectAssignable<"kling-v3">(v.model_name);
+  expectAssignable<"8">(v.duration);
+  expectAssignable<"pro">(v.mode);
+  expectAssignable<string>(v.request.url);
+  expectAssignable<"POST">(v.request.method);
+  expectAssignable<{ model_name: "kling-v3"; duration: "8" }>(v.toSdk("kling"));
+  // @ts-expect-error "kling" is this endpoint's only SDK target
+  v.toSdk("ai-sdk");
+
+  const safe = video.safe({ model_name: "kling-v1", prompt: "hi", cfg_scale: 0.25 });
+  if (safe.ok) {
+    expectAssignable<"kling-v1">(safe.params.model_name);
+    expectAssignable<number>(safe.params.cfg_scale);
+  }
+
+  // ExactKeys still guards the per-model arm: a typo'd key is a compile error,
+  // not a silent unknown_param warning.
+  video({
+    model_name: "kling-v3",
+    prompt: "hi",
+    // @ts-expect-error excess (typo'd) top-level key — the ExactKeys guard
+    negativePrompt: "rain",
+  });
+}
+
+export {
+  v1DurationTypeTests,
+  pathRouteSettingsTypeTests,
+  imageRouteTypeTests,
+  v1PerModelArmTypeTests,
+};

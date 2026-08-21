@@ -15,6 +15,23 @@
  *
  * Streaming/websocket variants (POST /tts/sse, wss:///tts/websocket) are not
  * validated by unmodel.
+ *
+ * OPEN-TAIL RULE (applies to every wire type in this provider): a
+ * `| (string & {})` tail is legitimate exactly where an off-enum value is
+ * reported at *warning* severity, and illegitimate where it is reported at
+ * *error* severity. `model_id` keeps its tail because a cataloged dated
+ * snapshot (`sonic-3.5-2026-05-04`) is off-enum yet valid — `checkTtsModelKind`
+ * reports it as a warning. `language` and `generation_config.emotion` have no
+ * tail: `checkEnums` reports an off-enum value at the `invalid_enum_value`
+ * default severity, which is *error*, so no value the tail admitted at compile
+ * time was a value this module would accept at run time. Same shape as
+ * `SttWebsocketParams.language` in ./stt-websocket, which already ships closed.
+ *
+ * BREAKING (type-level only): `TtsBytesBody.language` and
+ * `CartesiaGenerationConfig.emotion` are re-exported from ../cartesia and no
+ * longer accept a `string`-typed variable. Every value that closure rejects was
+ * already rejected at run time; a caller holding a `string` must narrow it
+ * (`CARTESIA_TTS_LANGUAGES.includes(x)`) or assert it.
  */
 
 import { z } from "zod";
@@ -114,8 +131,13 @@ export interface CartesiaGenerationConfig {
   volume?: number;
   /** Range [0.6, 1.5]; default 1. */
   speed?: number;
-  /** One of the 58 documented labels ({@link CARTESIA_EMOTIONS}). */
-  emotion?: CartesiaEmotion | (string & {});
+  /**
+   * One of the 58 documented labels ({@link CARTESIA_EMOTIONS}). Closed: an
+   * off-enum label is an `invalid_enum_value` *error* in `checkEnums`, so an
+   * open tail would only admit values this module refuses (see the open-tail
+   * rule in the module JSDoc).
+   */
+  emotion?: CartesiaEmotion;
 }
 
 /** The 42 language codes the tts/bytes docs enumerate (2026-03-01). */
@@ -139,7 +161,14 @@ export interface TtsBytesBody {
   transcript: string;
   voice: CartesiaVoice;
   output_format: CartesiaOutputFormat;
-  language?: CartesiaTtsLanguage | (string & {});
+  /**
+   * One of the 42 documented codes ({@link CARTESIA_TTS_LANGUAGES}). Closed for
+   * the same reason as `generation_config.emotion`: `checkEnums` reports an
+   * off-enum code as an *error*. Note this is the wire layer, so a BCP-47 tag
+   * like "pt-BR" is refused here by design — the unified layer normalizes it to
+   * "pt" before it reaches this type.
+   */
+  language?: CartesiaTtsLanguage;
   /** Pronunciation dictionary id — sonic-3 models and newer only. */
   pronunciation_dict_id?: string;
   generation_config?: CartesiaGenerationConfig;

@@ -1,7 +1,7 @@
 import type { Issue } from "../../core/issues";
 import type { ResponseReport } from "../../core/report";
 import type { ModelInfo } from "../../core/catalog-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { models, DEFAULT_MODEL } from "./models";
 
 /**
@@ -24,6 +24,22 @@ export interface PreRecordedResultLike {
   } | null;
 }
 
+/**
+ * The pre-recorded job `status` values, as `checkPreRecorded` reports them on
+ * `finishReason`. Note `"done"`, not "completed" — Gladia's own spelling.
+ *
+ * PUBLIC API — keep in sync with the `res.status === "error"` branch below;
+ * `queued`, `processing` and `done` are the values it deliberately does not
+ * warn about.
+ *
+ * Tail-open for the reason recorded in full on `AssemblyaiTranscriptStatus`
+ * (src/providers/assemblyai/check.ts): this checker TOLERATES an unrecognized
+ * status rather than refusing it, and `PreRecordedResultLike.status` is a
+ * `string`, so a closed union could only be reached by a cast that asserts
+ * more than the runtime checks.
+ */
+export type GladiaJobStatus = "queued" | "processing" | "done" | "error" | (string & {});
+
 const catalog: Record<string, ModelInfo> = models;
 
 /**
@@ -43,7 +59,7 @@ const catalog: Record<string, ModelInfo> = models;
  *   carries no token usage, so `usage` is always empty; audio-intelligence
  *   add-ons are billed on top and are not included.
  */
-export function checkPreRecorded(res: PreRecordedResultLike): ResponseReport {
+export function checkPreRecorded(res: PreRecordedResultLike): ResponseReport<GladiaJobStatus> {
   const warnings: Issue[] = [];
 
   if (res.status === "error") {
@@ -77,7 +93,7 @@ export function checkPreRecorded(res: PreRecordedResultLike): ResponseReport {
     numberOrUndefined(res.file?.audio_duration);
   const modelId = res.request_params?.model ?? DEFAULT_MODEL;
   const costUSD =
-    seconds === undefined ? undefined : computeAudioMinutesCostUSD(catalog[modelId]?.cost, seconds / 60);
+    seconds === undefined ? undefined : computeAudioMinutesCostUSD(catalog[modelId]?.cost, minutesFromSeconds(seconds));
 
   return {
     warnings,

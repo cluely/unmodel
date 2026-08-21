@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { computeAudioMinutesCostUSD, computeCharacterCostUSD, computeCostUSD } from "./cost";
+import {
+  computeAudioMinutesCostUSD,
+  computeCharacterCostUSD,
+  computeCostUSD,
+  minutes,
+  minutesFromMilliseconds,
+  minutesFromSeconds,
+} from "./cost";
 
 describe("computeCostUSD", () => {
   test("flat input/output pricing", () => {
@@ -51,17 +58,44 @@ describe("computeCharacterCostUSD", () => {
 
 describe("computeAudioMinutesCostUSD", () => {
   test("prices by USD per minute of audio", () => {
-    expect(computeAudioMinutesCostUSD({ perAudioMinute: 0.006 }, 10)).toBeCloseTo(0.06, 10);
-    expect(computeAudioMinutesCostUSD({ perAudioMinute: 0.006 }, 0.5)).toBeCloseTo(0.003, 10);
+    expect(computeAudioMinutesCostUSD({ perAudioMinute: 0.006 }, minutes(10))).toBeCloseTo(0.06, 10);
+    expect(computeAudioMinutesCostUSD({ perAudioMinute: 0.006 }, minutes(0.5))).toBeCloseTo(
+      0.003,
+      10,
+    );
   });
 
   test("zero minutes price to zero, not undefined", () => {
-    expect(computeAudioMinutesCostUSD({ perAudioMinute: 0.006 }, 0)).toBe(0);
+    expect(computeAudioMinutesCostUSD({ perAudioMinute: 0.006 }, minutes(0))).toBe(0);
   });
 
   test("undefined when no per-minute rate is known", () => {
-    expect(computeAudioMinutesCostUSD(undefined, 10)).toBeUndefined();
-    expect(computeAudioMinutesCostUSD({}, 10)).toBeUndefined();
-    expect(computeAudioMinutesCostUSD({ inputAudio: 100 }, 10)).toBeUndefined();
+    expect(computeAudioMinutesCostUSD(undefined, minutes(10))).toBeUndefined();
+    expect(computeAudioMinutesCostUSD({}, minutes(10))).toBeUndefined();
+    expect(computeAudioMinutesCostUSD({ inputAudio: 100 }, minutes(10))).toBeUndefined();
+  });
+});
+
+describe("the minutes unit", () => {
+  test("the two conversions are the two the call sites were spelling by hand", () => {
+    expect(minutesFromSeconds(90)).toBeCloseTo(1.5, 10);
+    expect(minutesFromMilliseconds(90_000)).toBeCloseTo(1.5, 10);
+    expect(minutes(1.5)).toBeCloseTo(1.5, 10);
+    // Branded values are still numbers, so arithmetic at a call site works.
+    expect(minutesFromSeconds(90) * 2).toBeCloseTo(3, 10);
+  });
+
+  test("a seconds value cannot reach the per-minute rate", () => {
+    const seconds = 600;
+    // @ts-expect-error — the 60x overcharge this brand exists to prevent.
+    computeAudioMinutesCostUSD({ perAudioMinute: 0.006 }, seconds);
+    // @ts-expect-error — and untagged arithmetic is caught too, which is what
+    // makes the brand worth more than a rename: `seconds / 60` is right here
+    // and wrong three lines later, and only one of them is reviewable.
+    computeAudioMinutesCostUSD({ perAudioMinute: 0.006 }, seconds / 60);
+    // The conversion is the way through, and it is the same number.
+    expect(computeAudioMinutesCostUSD({ perAudioMinute: 0.006 }, minutesFromSeconds(seconds))).toBe(
+      0.06,
+    );
   });
 });

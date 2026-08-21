@@ -10,16 +10,31 @@
  * (`OpenAICompatibleChat<ModelId>` in src/providers/openai-compatible/index.ts)
  * rather than in each overlay. One assertion here covers every overlay.
  */
-import { chat } from "../../src/providers/groq";
+import { chat, checkChat } from "../../src/providers/groq";
 import type { GroqTextModelId } from "../../src/providers/groq";
+import type { ChatFinishReason } from "../../src/providers/openai-compatible";
+import type { ResponseReport } from "../../src/core/report";
 import { chat as cerebrasChat } from "../../src/providers/cerebras";
 import type { GroqAvailability } from "../../src/catalog/availability/groq.gen";
+import { createOpenAICompatible } from "../../src/providers/openai-compatible";
 import type {
   ChatCompletionsBodyBase,
   OpenAICompatibleChat,
+  OpenAICompatibleCatalogOf,
+  OpenAICompatibleProvider,
 } from "../../src/providers/openai-compatible";
+import { models as groqModels } from "../../src/catalog/groq.gen";
+import type { GroqModelId } from "../../src/catalog/groq.gen";
+import { availability } from "../../src/catalog/availability/groq.gen";
 import type { EndpointConstraints } from "../../src/core/constraint-types";
-import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
+import {
+  expectAssignable,
+  expectNotAny,
+  expectTrue,
+  type HasLiteralMember,
+  type IsNever,
+  type KeyIn,
+} from "./helpers";
 
 function groqChatTypeTests(): void {
   // The overlay's `chat` IS the factory's interface, instantiated with the
@@ -183,4 +198,108 @@ function groqChatTypeTests(): void {
   });
 }
 
-export { groqChatTypeTests };
+/**
+ * `checkChat`'s report reaches the caller NARROWED — through the factory.
+ *
+ * This is the assertion that protects the whole ~30-provider fleet, and it is
+ * here rather than in a core test because the failure mode is specific to the
+ * factory: `OpenAICompatibleProvider.checkChat` RE-ANNOTATES the member that
+ * `createOpenAICompatible` fills from `createCheckChat`. Writing the wide
+ * `(res: ChatCompletionLike) => ResponseReport` there type-checks perfectly
+ * and silently discards the narrowed `finishReason` for every overlay at once
+ * — groq's completion list measured 5 with the narrow annotation and 0 with
+ * the wide one. Narrowing check.ts alone is not enough.
+ */
+function groqReportTypeTests(): void {
+  const report = checkChat({ choices: [{ finish_reason: "stop" }] });
+
+  // `HasLiteralMember`, not an equality check: a `(string & {})`-tailed union
+  // and bare `string` are mutually assignable, so an equality check passes
+  // even against a fully widened type (see the helper's doc).
+  expectTrue<HasLiteralMember<typeof report.finishReason, "tool_calls">>();
+  expectTrue<HasLiteralMember<typeof report.finishReason, "content_filter">>();
+  expectTrue<HasLiteralMember<ChatFinishReason, "length">>();
+  if (report.finishReason === "tool_calls") void 0;
+  if (report.finishReason === "content_filter") void 0;
+
+  // Backward compatible: a narrowed report is still a `ResponseReport`.
+  const wide: ResponseReport = report;
+  void wide;
+
+  // Tail-open by convention — this dialect is spoken by ~30 third-party hosts
+  // that each add their own finish reasons, and the checker refuses none of
+  // them.
+  const vendorSpecific: ChatFinishReason = "tool_use";
+  void vendorSpecific;
+}
+
+/**
+ * The factory's `catalog` parameter preserves the generated catalog's literal
+ * types instead of erasing them at the boundary.
+ *
+ * Every generated catalog is `as const satisfies Record<string, ModelInfo>` —
+ * literal keys, literal capability flags, literal limits — and the config's
+ * `catalog: Record<string, ModelInfo>` annotation used to discard all of it
+ * the moment it crossed into the factory. THAT, not catalog size, is what
+ * blocked per-model narrowing for the whole ~30-provider fleet: the factory
+ * never saw which model had which capability, so the model union had to be
+ * supplied separately as an explicit type argument.
+ *
+ * This asserts the plumbing only. Nothing here turns a capability flag into a
+ * compile error, and nothing should until the rows behind it are audited —
+ * models.dev's aggregator rows are not (66 of openrouter's 349 carry
+ * `toolCall: false`, some of them wrongly), so gating on them would refuse
+ * requests that work.
+ */
+function openAICompatibleCatalogTypeTests(): void {
+  // Opting in = naming the fourth type argument. `Catalog` is inferred-shaped
+  // and `const`, but TypeScript fills a trailing parameter from its DEFAULT
+  // once any type argument is written explicitly, and all 33 call sites write
+  // three — which is exactly why this change touched none of them.
+  const narrow = createOpenAICompatible<
+    GroqTextModelId,
+    typeof availability,
+    "groq",
+    typeof groqModels
+  >({
+    id: "groq",
+    baseUrl: "https://api.groq.com/openai/v1",
+    catalog: groqModels,
+    availability,
+  });
+
+  type Catalog = OpenAICompatibleCatalogOf<typeof narrow>;
+
+  // The derived model-id union. This was `string` before — the single fact
+  // that made per-model narrowing impossible from inside the factory.
+  expectTrue<SameType<keyof Catalog, GroqModelId>>();
+  expectNotAny<keyof Catalog>();
+  expectTrue<SameType<SameType<keyof Catalog, string>, false>>();
+
+  // Per-model capability flags and limits survive as literals, not `boolean`
+  // and `number` — the raw material a future per-dialect arm needs.
+  expectTrue<SameType<Catalog["llama-3.3-70b-versatile"]["toolCall"], true>>();
+  expectTrue<SameType<Catalog["allam-2-7b"]["toolCall"], false>>();
+  expectTrue<SameType<Catalog["llama-3.3-70b-versatile"]["limit"]["context"], 131072>>();
+
+  // BACKWARD COMPATIBILITY, pinned: the three-argument form every overlay
+  // actually writes still compiles and still gets the wide default. If this
+  // ever stopped being true, the new parameter would be a breaking change to
+  // 33 call sites at once.
+  const wide = createOpenAICompatible<GroqTextModelId, typeof availability, "groq">({
+    id: "groq",
+    baseUrl: "https://api.groq.com/openai/v1",
+    catalog: groqModels,
+    availability,
+  });
+  expectTrue<SameType<keyof OpenAICompatibleCatalogOf<typeof wide>, string>>();
+
+  // …and the narrowed provider is still assignable to the wide interface, so
+  // `AzureProvider`-style aliases keep working.
+  expectAssignable<OpenAICompatibleProvider<GroqTextModelId, typeof availability, "groq">>(narrow);
+}
+
+/** Local structural-equality probe. */
+type SameType<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+
+export { groqChatTypeTests, groqReportTypeTests, openAICompatibleCatalogTypeTests };

@@ -23,7 +23,9 @@ import {
   dialectOf,
   parseModelRef,
   refProblemMessage,
+  type FactoryChatProviderId,
   type RefProblem,
+  type RefProblemKindOf,
 } from "../../src/chat/refs";
 import type { ChatProviderId } from "../../src/catalog/chat-refs.gen";
 import { ENDPOINTS, isFactoryEndpoint, resolveEndpoint } from "../../src/core/translate/endpoints";
@@ -202,5 +204,86 @@ describe("classifyModelRef", () => {
       const message = refProblemMessage(classification as RefProblem);
       expect(message.length, ref).toBeGreaterThan(60);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The TYPE-level classifier agrees with the runtime one
+//
+// `RefProblemKindOf` is what puts the remedy into the hover of an unservable
+// `chat()` result (`UnregisteredChatProvider<"cohere", "no-codec">`), and it
+// reads two hand-written unions — `NoCodecChatProviderId` (derived from the
+// runtime set) and `FactoryChatProviderId` (hand-written, because
+// `isFactoryEndpoint` is a predicate over a table a type cannot call). A wrong
+// verdict there is a confidently mislabelled error message, so it is pinned in
+// both directions: the runtime kind must match the type's, and the factory
+// union must be exactly the endpoint table's factory targets.
+// ---------------------------------------------------------------------------
+
+describe("RefProblemKindOf", () => {
+  const FACTORY_IDS = [
+    "amazon-bedrock",
+    "azure",
+    "cloudflare-workers-ai",
+    "google-vertex",
+  ] as const satisfies readonly FactoryChatProviderId[];
+
+  // The other direction: no member of the union is missing from the array.
+  type MissingFactory = Exclude<FactoryChatProviderId, (typeof FACTORY_IDS)[number]>;
+  const _noMissingFactory: MissingFactory[] = [];
+  void _noMissingFactory;
+
+  test("the factory union is exactly the endpoint table's factory targets", () => {
+    const fromTable = new Set(
+      Object.values(ENDPOINTS)
+        .filter(isFactoryEndpoint)
+        .map((endpoint) => endpoint.provider),
+    );
+    expect([...fromTable].sort()).toEqual([...FACTORY_IDS].sort());
+  });
+
+  test("the type's verdict is the runtime's verdict, provider by provider", () => {
+    // Each row is checked twice: `satisfies` proves the type computes the
+    // second element, and the assertion proves `classifyRef` computes it too.
+    const cases = [
+      ["cohere", "no-codec"],
+      ["azure", "factory"],
+      ["cloudflare-workers-ai", "factory"],
+      ["google-vertex", "factory"],
+      ["amazon-bedrock", "factory-and-no-codec"],
+      ["opnai", "unknown-provider"],
+      ["acme-labs", "unknown-provider"],
+    ] as const satisfies ReadonlyArray<readonly [string, RefProblem["kind"]]>;
+
+    /** `true` only when the type's verdict for `P` is exactly `K`. */
+    type ExpectKind<P extends string, K extends RefProblem["kind"]> = [RefProblemKindOf<P>] extends [
+      K,
+    ]
+      ? [K] extends [RefProblemKindOf<P>]
+        ? true
+        : never
+      : never;
+    const _typeSide: [
+      ExpectKind<"cohere", "no-codec">,
+      ExpectKind<"azure", "factory">,
+      ExpectKind<"cloudflare-workers-ai", "factory">,
+      ExpectKind<"google-vertex", "factory">,
+      ExpectKind<"amazon-bedrock", "factory-and-no-codec">,
+      ExpectKind<"opnai", "unknown-provider">,
+      ExpectKind<"acme-labs", "unknown-provider">,
+    ] = [true, true, true, true, true, true, true];
+    void _typeSide;
+    expect(_typeSide).toHaveLength(cases.length);
+
+    for (const [provider, kind] of cases) {
+      expect(classifyRef(provider).kind, provider).toBe(kind);
+    }
+  });
+
+  test("a servable provider has no problem kind at all", () => {
+    type NoProblem = RefProblemKindOf<"openai"> | RefProblemKindOf<"anthropic">;
+    const _never: NoProblem[] = [];
+    void _never;
+    expect(classifyRef("openai").kind).toBe("supported");
   });
 });

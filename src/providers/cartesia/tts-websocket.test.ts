@@ -186,7 +186,9 @@ describe("cartesia.ttsWebsocket checks", () => {
 
   test("emotion accepts the complete 58-label list, not just the primaries", () => {
     expect(CARTESIA_EMOTIONS).toHaveLength(58);
-    for (const emotion of ["neutral", "nostalgic", "determined"]) {
+    // `as const`, not a cast: the array is now a compile-time membership
+    // contract — a label that leaves the 58-value enum fails to typecheck here.
+    for (const emotion of ["neutral", "nostalgic", "determined"] as const) {
       expect(ttsWebsocket.safe({ ...BASE, generation_config: { emotion } }).ok).toBe(true);
     }
     const r = safeUnchecked({ ...BASE, generation_config: { emotion: "hangry" } });
@@ -200,7 +202,8 @@ describe("cartesia.ttsWebsocket checks", () => {
 
   test("language is the same 42-code enum as POST /tts/bytes", () => {
     expect(CARTESIA_TTS_LANGUAGES).toHaveLength(42);
-    for (const language of ["en", "ja", "pa"]) {
+    // Ditto: these three codes are asserted to be members at compile time.
+    for (const language of ["en", "ja", "pa"] as const) {
       expect(ttsWebsocket.safe({ ...BASE, language }).ok).toBe(true);
     }
     const r = safeUnchecked({ ...BASE, language: "xx" });

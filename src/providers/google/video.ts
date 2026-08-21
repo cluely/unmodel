@@ -187,6 +187,11 @@ export interface GoogleVeoParameters {
  * Raw wire body for predictLongRunning plus `model`. On the wire the model id
  * lives ONLY in the URL path — the validated output strips `model` from the
  * enumerable body and interpolates it into `.request.url` instead.
+ *
+ * This is the WIDE form — every documented value of every model. A call whose
+ * `model` is a literal gets {@link VeoBodyArm} instead, which narrows
+ * `parameters` to that model's own row; this alias is what a run-time model id
+ * falls back to, and what the checks below are written against.
  */
 export interface GenerateVideosBody {
   model: GoogleVideoModelId | GoogleVeoSupplementModelId | (string & {});
@@ -196,6 +201,145 @@ export interface GenerateVideosBody {
   /** Completion-webhook config (SDK: config.webhookConfig). */
   webhookConfig?: Record<string, unknown>;
 }
+
+// ---------------------------------------------------------------------------
+// Per-model `parameters` value space.
+//
+// One table, read twice: the types below narrow `parameters` per model from
+// it, and ./unified-video builds `GOOGLE_VIDEO_MODEL_PARAMS` — the rows that
+// type the canonical `duration` / `resolution` / `aspectRatio` — out of the
+// same rows. Before this existed the two disagreed: `unmodel/video` refused
+// `resolution: "1080p"` on Veo 2 at compile time while THIS surface, the one
+// it compiles down to, accepted `resolution: "4k"` there. A wire-exact
+// validator that is looser than the unified layer above it inverts
+// docs/decisions.md #1, so the narrowing lives here and the unified row is
+// derived, never the other way round.
+//
+// WHERE THE VALUES COME FROM. Every list below is the one ./constraints
+// already transcribes for the RUNTIME check — `videoConstraints` (per model)
+// and `videoFamilyRules` (the `veo-`-prefixed families) — from the "Veo API
+// parameters and specifications" table on VEO_DOCS_URL and, for the one
+// non-Veo id, GEMINI_OMNI_FLASH_DOCS_URL. Two of them are deliberately
+// PERMISSIVE readings of pages that disagree with themselves, and stay that
+// way here so the type cannot refuse a request the check would allow:
+// Veo 2's `durationSeconds` (parameters table says 5/6/8, feature table says
+// "5-8") and Veo 3's `4k` (the feature-comparison table omits it).
+//
+// WHERE THE DOCS ARE THE WEAKER SOURCE, said plainly rather than papered over:
+//
+// - `personGeneration` on `gemini-omni-flash-preview`. Google publishes no
+//   list for it — the Veo enum rules are `veo-`-prefix-gated and its own pages
+//   are silent — so the row carries no `personGeneration` at all and the field
+//   keeps the wide documented union. Narrowing it would be inventing an
+//   allowed-value space; widening it to `string` (which is what the unified
+//   row says, and correctly, because that row can only speak about what the
+//   *table* proves) would advertise values no page names.
+// - `sampleCount` is NOT narrowed. `videoConstraints` does bound it (1 on
+//   Veo 3.x, 1-2 on Veo 2), but the unified table has no row field for it, so
+//   there is nothing here to keep the two in step; the runtime enum owns it
+//   alone, and `test/types/google.test-d.ts` pins that as a deliberate gap.
+// - Pairing rules stay runtime-only, unchanged: 1080p/4k needing 8s, and
+//   `allow_all` being refused on an image-driven request, are rules about TWO
+//   fields, which a per-field union cannot state (see `checkParameterPairings`
+//   and the same note in ./unified-video).
+// ---------------------------------------------------------------------------
+
+/**
+ * One model's `parameters` value space.
+ *
+ * An EMPTY list is a positive statement — "this model has no such parameter" —
+ * and types the field `never` (Veo 2 takes no `resolution` at all, which
+ * `videoConstraints` states as a deny). An ABSENT `personGeneration` is the
+ * other statement: no published list, so the field keeps its wide union.
+ */
+export interface VeoParameterSpace {
+  readonly durations: readonly number[];
+  readonly resolutions: readonly NonNullable<GoogleVeoParameters["resolution"]>[];
+  readonly ratios: readonly NonNullable<GoogleVeoParameters["aspectRatio"]>[];
+  readonly personGeneration?: readonly NonNullable<GoogleVeoParameters["personGeneration"]>[];
+}
+
+/** Veo 3 and Veo 3.1, standard and fast — one row, four ids. */
+const VEO_3_SPACE = {
+  durations: [4, 6, 8],
+  resolutions: ["720p", "1080p", "4k"],
+  ratios: ["16:9", "9:16"],
+  personGeneration: ["allow_all", "allow_adult"],
+} as const satisfies VeoParameterSpace;
+
+/** The rows. Every id `videoConstraints` / `videoFamilyRules` bound, and no other. */
+export const VEO_PARAMETER_SPACE = {
+  "veo-3.1-generate-preview": VEO_3_SPACE,
+  "veo-3.1-fast-generate-preview": VEO_3_SPACE,
+  /** Lite stops at 1080p — "Veo 3.1 Lite" column of the parameters table. */
+  "veo-3.1-lite-generate-preview": {
+    durations: [4, 6, 8],
+    resolutions: ["720p", "1080p"],
+    ratios: ["16:9", "9:16"],
+    personGeneration: ["allow_all", "allow_adult"],
+  },
+  "veo-3.0-generate-001": VEO_3_SPACE,
+  "veo-3.0-fast-generate-001": VEO_3_SPACE,
+  /** No `resolution` parameter at all (output is 720p); the only family with `dont_allow`. */
+  "veo-2.0-generate-001": {
+    durations: [5, 6, 7, 8],
+    resolutions: [],
+    ratios: ["16:9", "9:16"],
+    personGeneration: ["allow_all", "allow_adult", "dont_allow"],
+  },
+  /** "Output video: 3s-10s (720p, 24 FPS)"; 16:9 default, 9:16 portrait. */
+  "gemini-omni-flash-preview": {
+    durations: [3, 4, 5, 6, 7, 8, 9, 10],
+    resolutions: ["720p"],
+    ratios: ["16:9", "9:16"],
+  },
+} as const satisfies Readonly<Record<string, VeoParameterSpace>>;
+
+/** A model id {@link VEO_PARAMETER_SPACE} carries a row for. */
+export type VeoParameterModelId = keyof typeof VEO_PARAMETER_SPACE;
+
+type VeoSpaceOf<M extends VeoParameterModelId> = (typeof VEO_PARAMETER_SPACE)[M];
+
+/**
+ * `parameters` as ONE model accepts them.
+ *
+ * The four narrowed keys are removed from the wide shape and restated rather
+ * than intersected with it: intersecting a wide union with a narrow one is how
+ * the `& {}` tails elsewhere in this repo get discharged, and the completion
+ * list dies while tsc stays green (see the `SizingArms` note in
+ * `src/core/unified/vocabulary/model-params.ts`).
+ */
+export type VeoParametersArm<M extends VeoParameterModelId> = Omit<
+  GoogleVeoParameters,
+  "aspectRatio" | "durationSeconds" | "personGeneration" | "resolution"
+> & {
+  /** "Every Veo model generates 16:9 or 9:16" — and so does Omni. */
+  aspectRatio?: VeoSpaceOf<M>["ratios"][number];
+  /** This model's own closed clip lengths. */
+  durationSeconds?: VeoSpaceOf<M>["durations"][number];
+  /** This model's own tiers; `never` where the model has no `resolution` field. */
+  resolution?: VeoSpaceOf<M>["resolutions"][number];
+  /** The model's published list, or the wide documented union where it has none. */
+  personGeneration?: VeoSpaceOf<M> extends { personGeneration: readonly (infer P)[] }
+    ? P
+    : GoogleVeoParameters["personGeneration"];
+};
+
+/**
+ * Resolves a model id literal to its exact Tier-A body — the same
+ * `ImagesArm<M>` shape ./image and openai/image use. A non-literal id (or one
+ * with no row) keeps the wide {@link GenerateVideosBody}, which is the
+ * degraded arm a run-time-discovered model deserves: no per-model table means
+ * no per-model narrowing, exactly as `unknown_model` says at run time.
+ */
+export type VeoBodyArm<M extends string> = M extends VeoParameterModelId
+  ? Omit<GenerateVideosBody, "model" | "parameters"> & {
+      model: M;
+      parameters?: VeoParametersArm<M>;
+    }
+  : GenerateVideosBody;
+
+type VideoModelInput = VeoParameterModelId | GenerateVideosBody["model"];
 
 // ---------------------------------------------------------------------------
 // SDK view — @google/genai's ai.models.generateVideos({ model, prompt, image,
@@ -784,13 +928,13 @@ const validator = createValidator<GenerateVideosBody, unknown>({
  * ```
  */
 export const video = validator as unknown as {
-  <T extends GenerateVideosBody>(
-    params: T & ExactKeys<T, GenerateVideosBody>,
+  <M extends VideoModelInput, T extends VeoBodyArm<M>>(
+    params: T & VeoBodyArm<M> & { model: M } & ExactKeys<T, VeoBodyArm<M>>,
     options?: ValidateOptions,
-  ): Validated<Omit<T, "model">, VideoSdkTargets<T>>;
-  safe<T extends GenerateVideosBody>(
-    params: T & ExactKeys<T, GenerateVideosBody>,
+  ): Validated<Omit<T, "model">, VideoSdkTargets<T & GenerateVideosBody>>;
+  safe<M extends VideoModelInput, T extends VeoBodyArm<M>>(
+    params: T & VeoBodyArm<M> & { model: M } & ExactKeys<T, VeoBodyArm<M>>,
     options?: ValidateOptions,
-  ): ValidateResult<Validated<Omit<T, "model">, VideoSdkTargets<T>>>;
+  ): ValidateResult<Validated<Omit<T, "model">, VideoSdkTargets<T & GenerateVideosBody>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

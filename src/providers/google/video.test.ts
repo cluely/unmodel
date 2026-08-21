@@ -1,10 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import {
   GENERATE_VIDEOS_BASE_URL,
+  VEO_PARAMETER_SPACE,
   video,
   generateVideosUrl,
   type GenerateVideosBody,
+  type GoogleVeoParameters,
+  type VeoParameterSpace,
 } from "./video";
+// The unified adapter builds its rows from the same table; the drift suite at
+// the end of this file is what asserts that stays true.
+import { video as unifiedVideo } from "./unified-video";
 import { videoModels, veoSupplementModels } from "./veo-models";
 import type { Issue } from "../../core/issues";
 import type { ValidateResult } from "../../core/result";
@@ -210,6 +216,9 @@ describe("per-model param constraints", () => {
       video.safe({
         model: "veo-2.0-generate-001",
         instances: PROMPT,
+        // @ts-expect-error Veo 2 has no `resolution` parameter, so the arm
+        // types it `never`; the runtime path under test is the one a JS caller
+        // still takes.
         parameters: { resolution: "720p" },
       }),
       "unsupported_param",
@@ -223,6 +232,7 @@ describe("per-model param constraints", () => {
       video.safe({
         model: "veo-3.1-generate-preview",
         instances: PROMPT,
+        // @ts-expect-error 5s is Veo 2's, not Veo 3.x's — now a compile error too.
         parameters: { durationSeconds: 5 },
       }),
       "invalid_enum_value",
@@ -238,6 +248,7 @@ describe("per-model param constraints", () => {
       video.safe({
         model: "veo-2.0-generate-001",
         instances: PROMPT,
+        // @ts-expect-error 4s is Veo 3.x's, not Veo 2's.
         parameters: { durationSeconds: 4 },
       }),
       "invalid_enum_value",
@@ -249,6 +260,7 @@ describe("per-model param constraints", () => {
       video.safe({
         model: "veo-3.1-generate-preview",
         instances: PROMPT,
+        // @ts-expect-error `dont_allow` is Veo 2-only; the Veo 3.x arm has two values.
         parameters: { personGeneration: "dont_allow" },
       }),
       "invalid_enum_value",
@@ -285,6 +297,7 @@ describe("per-model param constraints", () => {
       video.safe({
         model: "veo-3.1-lite-generate-preview",
         instances: PROMPT,
+        // @ts-expect-error Lite stops at 1080p — the wire arm now says so too.
         parameters: { resolution: "4k" },
       }),
       "invalid_enum_value",
@@ -658,11 +671,14 @@ describe("gemini-omni-flash-preview parameter bounds", () => {
   });
 
   test("the documented 3-10s window: both ends pass, 2s and 11s do not", () => {
-    for (const durationSeconds of [3, 10]) {
+    // `as const`: the arm types Omni's `durationSeconds` as the integers 3-10,
+    // so a `number[]` loop variable no longer fits even for the valid ends.
+    for (const durationSeconds of [3, 10] as const) {
       expectOk(video.safe({ model: OMNI, instances: PROMPT, parameters: { durationSeconds } }));
     }
-    for (const durationSeconds of [2, 11]) {
+    for (const durationSeconds of [2, 11] as const) {
       const issue = expectError(
+        // @ts-expect-error 2s and 11s are outside the documented 3-10s window.
         video.safe({ model: OMNI, instances: PROMPT, parameters: { durationSeconds } }),
         "invalid_enum_value",
       );
@@ -744,6 +760,130 @@ describe("every catalogued video model is bounded", () => {
       expect(warning?.message).toContain("no documented `parameters` bounds are encoded");
     } finally {
       delete videoModels[id];
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Drift: the per-model type table vs the runtime tables vs the unified rows.
+//
+// `google.video` accepted `parameters: { resolution: "4k" }` on Veo 2 for as
+// long as the endpoint existed, while `unmodel/video` — the surface that
+// compiles down to this one — refused the same fact at compile time, and
+// `videoConstraints` refused it at run time. Three descriptions of the same
+// seven models, and nothing compared them, which is exactly why it rotted
+// unnoticed. `VEO_PARAMETER_SPACE` is now the one the types are built from and
+// the one `./unified-video` reads; the assertions below tie it to the runtime
+// tables in BOTH directions, so a value added to either side alone fails here.
+// (The compile-time half of the same invariant lives in
+// test/types/google.test-d.ts, and the completion lists in
+// test/unified/completions.test.ts.)
+// ---------------------------------------------------------------------------
+
+/** The merged `enums` the pipeline actually applies to a model's `parameters`. */
+function enumsFor(modelId: string): Record<string, readonly (string | number)[]> {
+  const merged: Record<string, readonly (string | number)[]> = {};
+  for (const constraints of video.constraintsFor(modelId)) {
+    for (const [key, allowed] of Object.entries(constraints.enums ?? {})) merged[key] = allowed;
+  }
+  return merged;
+}
+
+/** The params a model DENIES outright — how "this model has no such field" is spelled. */
+function deniedFor(modelId: string): string[] {
+  return video.constraintsFor(modelId).flatMap((c) => Object.keys(c.deny ?? {}));
+}
+
+/** Sorted and widened, so a tuple type on one side does not decide the comparison. */
+function sorted(values: readonly (string | number)[] = []): Array<string | number> {
+  return [...values].sort();
+}
+
+describe("per-model tables agree (types ↔ runtime ↔ unified)", () => {
+  const ids: string[] = Object.keys(VEO_PARAMETER_SPACE);
+  /** The row, at the interface type: `personGeneration` is optional on it. */
+  const rowOf = (id: string): VeoParameterSpace =>
+    (VEO_PARAMETER_SPACE as Readonly<Record<string, VeoParameterSpace>>)[id]!;
+
+  test("the table covers every model the endpoint bounds, and no other", () => {
+    expect(ids.length).toBe(7);
+    // Every id with a row is a model this endpoint actually serves…
+    for (const id of ids) {
+      expect(videoModels[id], `${id} is not in the endpoint's catalog`).toBeDefined();
+      expect(video.constraintsFor(id).length, `${id} has no runtime constraints`).toBeGreaterThan(0);
+    }
+    // The two hand-written Veo supplements are in that catalog by construction.
+    for (const id of Object.keys(veoSupplementModels)) expect(ids).toContain(id);
+    // …and every model this endpoint can actually generate with has a row, so
+    // a new video-output id cannot arrive with runtime bounds and a silently
+    // wide type. (`videoModels` is the whole google catalog plus the Veo
+    // supplements — the video-output filter is the same one
+    // `checkVideoModality` applies.)
+    const generates = Object.entries(videoModels).filter(([, info]) =>
+      info.modalities.output.includes("video"),
+    );
+    expect(generates.length).toBeGreaterThanOrEqual(ids.length);
+    for (const [id] of generates) {
+      expect(ids, `${id} generates video but has no VEO_PARAMETER_SPACE row`).toContain(id);
+    }
+  });
+
+  test.each(ids)("%s: durations match the runtime enum", (id) => {
+    expect(sorted(rowOf(id).durations)).toEqual(sorted(enumsFor(id)["durationSeconds"]));
+  });
+
+  test.each(ids)("%s: resolutions match the runtime enum, and empty means denied", (id) => {
+    const row = rowOf(id);
+    const allowed = enumsFor(id)["resolution"];
+    if (row.resolutions.length === 0) {
+      // The positive statement: no `resolution` parameter at all. The type says
+      // `never`, the runtime says `unsupported_param`, and neither may drift
+      // into offering a value.
+      expect(allowed).toBeUndefined();
+      expect(deniedFor(id)).toContain("resolution");
+      return;
+    }
+    expect(deniedFor(id)).not.toContain("resolution");
+    expect(sorted(row.resolutions)).toEqual(sorted(allowed));
+  });
+
+  test.each(ids)("%s: aspect ratios match the runtime enum", (id) => {
+    expect(sorted(rowOf(id).ratios)).toEqual(sorted(enumsFor(id)["aspectRatio"]));
+  });
+
+  test.each(ids)("%s: personGeneration is narrowed only where the runtime bounds it", (id) => {
+    const published = rowOf(id).personGeneration;
+    const allowed = enumsFor(id)["personGeneration"];
+    if (published === undefined) {
+      // Omni: neither page publishes a list, so the runtime bounds nothing and
+      // the wire type keeps its documented union rather than inventing one.
+      expect(allowed).toBeUndefined();
+      return;
+    }
+    expect(sorted(published)).toEqual(sorted(allowed));
+  });
+
+  test("the unified rows are the same lists, not a second opinion", () => {
+    const rows: Readonly<Record<string, { durations: unknown; resolutions: unknown; ratios: unknown }>> =
+      unifiedVideo.modelParams;
+    expect(Object.keys(rows).sort()).toEqual([...ids].sort());
+    for (const id of ids) {
+      expect(rows[id]?.durations).toEqual(rowOf(id).durations);
+      expect(rows[id]?.resolutions).toEqual(rowOf(id).resolutions);
+      expect(rows[id]?.ratios).toEqual(rowOf(id).ratios);
+    }
+  });
+
+  test("every value the type admits is a value the runtime accepts", () => {
+    for (const id of ids) {
+      const row = rowOf(id);
+      const call = (parameters: GoogleVeoParameters) =>
+        expectOk(video.safe({ model: id, instances: PROMPT, parameters } as GenerateVideosBody));
+      for (const durationSeconds of row.durations) call({ durationSeconds });
+      // 1080p/4k need 8s — a PAIRING rule, which is why it is not in the
+      // per-field table; pass the length the pairing check wants.
+      for (const resolution of row.resolutions) call({ resolution, durationSeconds: 8 });
+      for (const personGeneration of row.personGeneration ?? []) call({ personGeneration });
     }
   });
 });

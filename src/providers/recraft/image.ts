@@ -50,7 +50,7 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type RecraftModelId } from "./models";
 import { imageFamilyRules } from "./constraints";
-import { STYLE_NAMES_BY_MODEL, type RecraftStyleName } from "./styles";
+import { STYLE_NAMES_BY_MODEL, type StyleFor } from "./styles";
 
 export const IMAGES_GENERATIONS_URL = "https://external.api.recraft.ai/v1/images/generations";
 
@@ -265,15 +265,42 @@ export type RecraftUpscaleMode = (typeof UPSCALE_MODES)[number];
 export const CREATIVITY_LEVELS = ["simple", "standard", "eccentric"] as const;
 export type RecraftCreativity = (typeof CREATIVITY_LEVELS)[number];
 
-export interface GenerationsParams {
+/**
+ * `model` input: the known ids plus the open tail for runtime-built ones, and
+ * the CONSTRAINT of `M` below. It has to carry the id literals rather than be a
+ * bare `string`, or `model`'s own completion list collapses — the same reason
+ * openai's images callable constrains its `M` to `ImagesModelInput`.
+ */
+type RecraftModelInput = RecraftModelId | (string & {});
+
+/**
+ * The generations wire body. `M` is the `model` literal, inferred at the call
+ * site so `style` resolves to that model's own curated list (`StyleFor<M>`,
+ * styles.ts) instead of pooling all four lists into one union — the styles are
+ * per-model and `checkStyleForModel` rejects a cross-model name at runtime, so
+ * the pooled union completed 111 names on a model that accepts 66, seven of
+ * which compiled and were then refused.
+ *
+ * `M` is bound by `model` alone: `model?: M | null` is the inference site, and
+ * the callable must NOT re-state it as an extra `& { model?: M }` intersection
+ * arm — that intersection is normalized before completion and leaves `model`
+ * itself completing nothing (measured: 17 ids → 1).
+ *
+ * `M` defaults to the whole `RecraftModelInput` union, so the plain
+ * `GenerationsParams` type is byte-for-byte what it was: `model` completes all
+ * 17 ids and `style` the pooled 111 with its open tail. That default is also
+ * the degraded arm — `model` omitted, `null`, runtime-built, or an id with no
+ * style table — which keeps JS-shaped and future ids callable.
+ */
+export interface GenerationsParams<M extends RecraftModelInput = RecraftModelInput> {
   /** Text description of the desired image(s). Max length is per-model (see models.ts). */
   prompt: string;
   /** Number of images, 1–6. Default 1. Billed per image. */
   n?: number | null;
   /** Defaults to "recraftv4_1" server-side. */
-  model?: RecraftModelId | (string & {}) | null;
+  model?: M | null;
   /** Curated style name (V2/V3 models only). Cannot be combined with style_id. */
-  style?: RecraftStyleName | (string & {}) | null;
+  style?: StyleFor<M> | null;
   /** Style sub-variant (undocumented; see SUBSTYLES); pairs with `style`. */
   substyle?: RecraftSubstyle | (string & {}) | null;
   /** Style UUID used as a visual reference (V2/V3 models only). Cannot be combined with style. */
@@ -454,10 +481,23 @@ function checkStyleExclusivity(
 }
 
 /**
+ * The style table widened to a plain string-keyed lookup. `STYLE_NAMES_BY_MODEL`
+ * is `as const` so it can serve as the type source for `StyleFor<M>`; this check
+ * indexes it with a RESOLVED model id (a `string`, possibly the server-side
+ * default or an id unmodel has never heard of), so the widening lives here — on
+ * the one consumer that wants it — rather than back on the table.
+ */
+const STYLE_NAMES: Readonly<Record<string, readonly string[]>> = STYLE_NAMES_BY_MODEL;
+
+/**
  * Style ↔ model cross-check: a curated style name must belong to the selected
  * model's list (styles are per-model; e.g. "Vector art" is a V2/V3 Vector
  * style and is rejected for recraftv3). V4/V4.1 models are handled by the
  * family deny rule, not here.
+ *
+ * `GenerationsParams`'s `style?: StyleFor<M>` now catches the same mismatch at
+ * compile time for a literal `model`; this stays the enforcement for JS callers
+ * and for runtime-built model ids, where the type degrades to the pooled union.
  */
 function checkStyleForModel(
   params: GenerationsParams,
@@ -467,7 +507,7 @@ function checkStyleForModel(
   const style = params.style;
   if (style == null || info === undefined) return;
   const model = resolvedModelId(params);
-  const allowed = STYLE_NAMES_BY_MODEL[model];
+  const allowed = STYLE_NAMES[model];
   if (allowed === undefined || allowed.includes(style)) return;
   ctx.report({
     code: "invalid_enum_value",
@@ -682,12 +722,12 @@ const validator = createValidator<GenerationsParams, unknown>({
  * ```
  */
 export const image = validator as unknown as {
-  <T extends GenerationsParams>(
-    params: T & ExactKeys<T, GenerationsParams>,
+  <M extends RecraftModelInput, T extends GenerationsParams<M>>(
+    params: T & GenerationsParams<M> & ExactKeys<T, GenerationsParams>,
     options?: ValidateOptions,
   ): Validated<T, RecraftSdkTargets<T>>;
-  safe<T extends GenerationsParams>(
-    params: T & ExactKeys<T, GenerationsParams>,
+  safe<M extends RecraftModelInput, T extends GenerationsParams<M>>(
+    params: T & GenerationsParams<M> & ExactKeys<T, GenerationsParams>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<T, RecraftSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];

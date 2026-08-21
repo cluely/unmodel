@@ -193,24 +193,24 @@ export type AnyVideoAdapter = AnyUnifiedAdapter<VideoParams> & {
 export interface VideoValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<VideoParamsBase, UnifiedRef<A>> &
+    T extends UnifiedInput<VideoParamsBase, UnifiedRef<A>, A> &
       VideoModelNarrowing<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<VideoParams, UnifiedRef<A>> & ModelExtras<A, M>>,
+      ExactKeys<T, UnifiedInput<VideoParams, UnifiedRef<A>, A> & ModelExtras<A, M>>,
     options?: ValidateOptions,
   ): UnifiedResult<A, M>;
   safe<
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<VideoParamsBase, UnifiedRef<A>> &
+    T extends UnifiedInput<VideoParamsBase, UnifiedRef<A>, A> &
       VideoModelNarrowing<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
       { model: M } &
-      ExactKeys<T, UnifiedInput<VideoParams, UnifiedRef<A>> & ModelExtras<A, M>>,
+      ExactKeys<T, UnifiedInput<VideoParams, UnifiedRef<A>, A> & ModelExtras<A, M>>,
     options?: ValidateOptions,
   ): ValidateResult<UnifiedResult<A, M>>;
   /** Every provider id registered on this validator, sorted. */

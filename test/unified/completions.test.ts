@@ -24,6 +24,13 @@ import { join } from "node:path";
 import ts from "typescript";
 
 import { GPT_IMAGE_2_SIZES } from "../../src/providers/openai/images-shared";
+import { SUBSTYLES } from "../../src/providers/recraft/image";
+import {
+  RECRAFT_V2_STYLES,
+  RECRAFT_V2_VECTOR_STYLES,
+  RECRAFT_V3_STYLES,
+  RECRAFT_V3_VECTOR_STYLES,
+} from "../../src/providers/recraft/styles";
 
 const REPO = join(import.meta.dir, "../..");
 const PROBE = join(REPO, "__completions_probe__.ts");
@@ -512,11 +519,17 @@ chat({ model: "openai/gpt-5.2", messages: [], reasoning: "¦" });`);
   test("providerOptions completes the provider ids", () => {
     const entries = completionsAt(`import { chat } from "./src/chat/index";
 chat({ model: "openai/gpt-5.2", messages: [], providerOptions: { ¦ } });`);
-    expect(entries.length).toBe(32);
+    // The 32 `unmodel/chat` serves, plus the five it knows but cannot send to,
+    // whose buckets are inert and silent on purpose (a portable request carries
+    // several providers' settings). `test/chat/provider-options.test.ts` pins
+    // that set against the runtime's own tolerated set in both directions.
+    expect(entries.length).toBe(37);
     expect(entries).toContain("openai");
     // Ids with a hyphen come back quoted, since that is what the editor has to
     // insert for them to be a valid key.
     expect(entries).toContain('"fireworks-ai"');
+    expect(entries).toContain('"amazon-bedrock"');
+    expect(entries).toContain("cohere");
   });
 
   test("toApi and toSdk complete per dialect, off the result", () => {
@@ -585,5 +598,795 @@ chat({ model: "openai/gpt-5.2", ¦ });`);
     expect(entries).not.toContain("request");
     expect(entries).not.toContain("toSdk");
     expect(entries).toContain("__unmodel_unregisteredChatProvider");
+  });
+});
+
+/**
+ * cartesia's closed wire enums.
+ *
+ * `language` and `generation_config.emotion` used to carry `| (string & {})`
+ * tails. The tails did not break the completion list — the labels were offered
+ * either way — so the *list* is not what these tests are really pinning: it is
+ * that the list is now the WHOLE space. `not.toContain` is doing the work.
+ * With a tail present, `emotion: "smug"` and `language: "pt-BR"` type-checked
+ * silently while `speech.safe` refused both at `invalid_enum_value` *error*
+ * severity; the editor was quiet about a call unmodel itself rejects.
+ *
+ * The counts (58 / 42 / 100) are the documented sizes, pinned again beside
+ * their enums in the provider's own tests. `model_id` keeps its tail on
+ * purpose — an off-enum cataloged id is a *warning* — which is why there is no
+ * exact-count assertion for it anywhere.
+ */
+describe("cartesia: the closed wire enums complete exactly their members", () => {
+  const BYTES = `import { speech } from "./src/providers/cartesia";
+speech({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: "v" },
+  output_format: { container: "wav" }, `;
+
+  test("generation_config.emotion offers the 58 labels and nothing else", () => {
+    const entries = completionsAt(`${BYTES}generation_config: { emotion: "¦" } });`);
+    expect(entries.length).toBe(58);
+    expect(entries).toContain("neutral");
+    expect(entries).toContain("nostalgic");
+    expect(entries).toContain("determined");
+    // The headline case: plausible, not documented, and refused at run time.
+    expect(entries).not.toContain("smug");
+  });
+
+  test("language offers the 42 codes and nothing else", () => {
+    const entries = completionsAt(`${BYTES}language: "¦" });`);
+    expect(entries.length).toBe(42);
+    expect(entries).toContain("en");
+    expect(entries).toContain("pt");
+    expect(entries).toContain("pa");
+    // BCP-47 muscle memory on a bare-ISO-639-1 field — the most likely typo on
+    // the whole call, and now a red squiggle rather than a 422.
+    expect(entries).not.toContain("pt-BR");
+    expect(entries).not.toContain("en-US");
+  });
+
+  test("the socket message publishes the same two lists", () => {
+    const SOCKET = `import { ttsWebsocket } from "./src/providers/cartesia";
+ttsWebsocket({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: "v" },
+  output_format: { container: "raw", encoding: "pcm_s16le", sample_rate: 8000 },
+  context_id: "c", `;
+    const emotions = completionsAt(`${SOCKET}generation_config: { emotion: "¦" } });`);
+    expect(emotions.length).toBe(58);
+    expect(emotions).not.toContain("smug");
+    const languages = completionsAt(`${SOCKET}language: "¦" });`);
+    expect(languages.length).toBe(42);
+    expect(languages).not.toContain("pt-BR");
+  });
+
+  test("batch STT completes its own, larger 100-code list", () => {
+    const entries = completionsAt(`import { transcribe } from "./src/providers/cartesia";
+transcribe({ file: new Blob([]), model: "ink-whisper", language: "¦" });`);
+    expect(entries.length).toBe(100);
+    // Whisper's long tail — in this enum, and deliberately not in the TTS one.
+    expect(entries).toContain("yue");
+    expect(entries).toContain("haw");
+    expect(entries).not.toContain("klingon");
+  });
+
+  test("model_id keeps its open tail: the enum is offered, not enforced", () => {
+    const entries = completionsAt(`${BYTES.replace('model_id: "sonic-3.5", ', 'model_id: "¦", ')}});`);
+    // The four ids the endpoint's `model_id` enum publishes...
+    for (const id of ["sonic-3.5", "sonic-3", "sonic-preview", "sonic-latest"]) {
+      expect(entries).toContain(id);
+    }
+    // ...plus the three cataloged sonic ids that are OFF that enum and still
+    // valid — the dated snapshot and the two "older models". Those three are
+    // the whole justification for the tail: `checkTtsModelKind` reports them at
+    // *warning* severity, so refusing them at compile time would be wrong.
+    for (const id of ["sonic-3.5-2026-05-04", "sonic-2", "sonic-turbo"]) {
+      expect(entries).toContain(id);
+    }
+    expect(entries.length).toBe(7);
+    // A completion list cannot show the tail itself; that a *fourth* off-enum
+    // id like "sonic-9-future" still compiles is pinned in
+    // test/types/cartesia.test-d.ts, where this field alone has no
+    // `@ts-expect-error` case.
+  });
+
+  test("the unified layer still takes BCP-47: closing the wire changed nothing here", () => {
+    const entries = completionsAt(`import { speech } from "./src/unified/speech";
+speech({ model: "cartesia/sonic-3.5", text: "x", language: "¦" });`);
+    // The row's `languages` is CARTESIA_TTS_LANGUAGES by reference, so the
+    // editor offers the same 42 codes one layer up — while `toPrimaryLanguage`
+    // keeps normalizing "pt-BR" to "pt" for callers who type the regional tag.
+    expect(entries).toContain("pt");
+    expect(entries).toContain("en");
+  });
+});
+
+describe("recraft: `style` completes the model's own curated list, not all 111", () => {
+  // `STYLE_NAMES_BY_MODEL` carried a `Readonly<Record<string, readonly
+  // string[]>>` ANNOTATION, which erased the key union and the value literals,
+  // so `style` could only be typed as the POOLED `RecraftStyleName` union of
+  // all four lists. Measured before the fix: every model completed 111 names,
+  // and the 45 that recraftv3 does not accept — 7 of them real V2-only names
+  // like "3D render" — compiled with zero diagnostics and were then refused by
+  // `checkStyleForModel` with `invalid_enum_value`. `as const satisfies` plus
+  // `StyleFor<M>` makes the type say what the runtime check already enforced.
+  //
+  // The counts are asserted EXACTLY, not just "contains": the failure mode this
+  // guards is the completion list quietly re-pooling (or collapsing) while
+  // assignability stays green, which no `.test-d.ts` can see.
+  const recraftStyle = (model: string) =>
+    completionsAt(`import { image } from "./src/providers/recraft";
+image({ prompt: "x", model: ${JSON.stringify(model)}, style: "¦" });`);
+
+  test("recraftv3 completes exactly its 66 styles", () => {
+    const entries = recraftStyle("recraftv3");
+    expect(entries.length).toBe(RECRAFT_V3_STYLES.length);
+    expect(entries.length).toBe(66);
+    expect(entries.sort()).toEqual([...RECRAFT_V3_STYLES].sort());
+    // The V2-only name that used to compile and then fail validation.
+    expect(entries).not.toContain("3D render");
+    // ...and a V3 Vector name, which is a different model's list again.
+    expect(entries).not.toContain("Vector art");
+  });
+
+  test("recraftv2 keeps the V2-only names recraftv3 must not offer", () => {
+    const entries = recraftStyle("recraftv2");
+    expect(entries.length).toBe(RECRAFT_V2_STYLES.length);
+    expect(entries.length).toBe(27);
+    expect(entries).toContain("3D render");
+  });
+
+  test("recraftv2_vector completes exactly 21", () => {
+    const entries = recraftStyle("recraftv2_vector");
+    expect(entries.length).toBe(RECRAFT_V2_VECTOR_STYLES.length);
+    expect(entries.length).toBe(21);
+    expect(entries.sort()).toEqual([...RECRAFT_V2_VECTOR_STYLES].sort());
+  });
+
+  test("recraftv3_vector completes exactly 23", () => {
+    const entries = recraftStyle("recraftv3_vector");
+    expect(entries.length).toBe(RECRAFT_V3_VECTOR_STYLES.length);
+    expect(entries.length).toBe(23);
+    expect(entries).toContain("Vector art");
+    expect(entries).not.toContain("Photorealism");
+  });
+
+  test("the degraded arms keep the pooled 111 with their open tail", () => {
+    const pooled = new Set([
+      ...RECRAFT_V3_STYLES,
+      ...RECRAFT_V3_VECTOR_STYLES,
+      ...RECRAFT_V2_STYLES,
+      ...RECRAFT_V2_VECTOR_STYLES,
+    ]);
+    expect(pooled.size).toBe(111);
+
+    // `model` omitted — the wire defaults it server-side, so unmodel cannot
+    // narrow and must not pretend to.
+    const omitted = completionsAt(`import { image } from "./src/providers/recraft";
+image({ prompt: "x", style: "¦" });`);
+    expect(omitted.length).toBe(111);
+
+    // A runtime-built id: the whole point of keeping the open tail.
+    const runtime = completionsAt(`import { image } from "./src/providers/recraft";
+declare const m: string;
+image({ prompt: "x", model: m, style: "¦" });`);
+    expect(runtime.length).toBe(111);
+    expect(runtime).toContain("3D render");
+
+    // A model with no style table at all (the V4 line; `style` is denied there
+    // by the family rule, not by this union).
+    expect(recraftStyle("recraftv4_1").length).toBe(111);
+  });
+
+  test("narrowing `style` did not disturb `model` or `size`", () => {
+    // `M`'s constraint has to carry the model literals, and the callable must
+    // not re-state `model` as an extra intersection arm — either mistake
+    // silently drops `model` from 17 completions to 1.
+    const models = completionsAt(`import { image } from "./src/providers/recraft";
+image({ prompt: "x", model: "¦" });`);
+    expect(models.length).toBe(17);
+    expect(models).toContain("recraftv3");
+
+    const sizes = completionsAt(`import { image } from "./src/providers/recraft";
+image({ prompt: "x", model: "recraftv3", size: "¦" });`);
+    expect(sizes.length).toBe(56);
+
+    // `substyle` has no published per-style pairing, so it stays globally open.
+    const substyles = completionsAt(`import { image } from "./src/providers/recraft";
+image({ prompt: "x", model: "recraftv3", substyle: "¦" });`);
+    expect(substyles.length).toBe(SUBSTYLES.length);
+  });
+
+  test("the editing routes narrow `style` the same way", () => {
+    // image-edit.ts carried the identical pooled union; fixing only the
+    // generations route would have moved the asymmetry rather than closed it.
+    const inpaintV3 = completionsAt(`import { imageEditInpaint } from "./src/providers/recraft";
+declare const b: Blob;
+imageEditInpaint({ image: b, mask: b, prompt: "x", model: "recraftv3", style: "¦" });`);
+    expect(inpaintV3.length).toBe(66);
+    expect(inpaintV3).not.toContain("3D render");
+
+    const inpaintVector = completionsAt(`import { imageEditInpaint } from "./src/providers/recraft";
+declare const b: Blob;
+imageEditInpaint({ image: b, mask: b, prompt: "x", model: "recraftv3_vector", style: "¦" });`);
+    expect(inpaintVector.length).toBe(23);
+    expect(inpaintVector).toContain("Vector art");
+
+    const editOmitted = completionsAt(`import { imageEdit } from "./src/providers/recraft";
+declare const b: Blob;
+imageEdit({ image: b, prompt: "x", strength: 0.2, style: "¦" });`);
+    expect(editOmitted.length).toBe(111);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// `unmodel/chat`: the two fields that used to complete nothing at all
+// ---------------------------------------------------------------------------
+
+describe("chat serviceTier: the union of every dialect's tier vocabulary", () => {
+  test("completes all three dialects' tiers, not the intersection", () => {
+    const entries = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [], serviceTier: "¦" });`);
+    // openai-chat's six, anthropic's `standard_only`, gemini's four — the tail
+    // must not have eaten any of them.
+    for (const tier of [
+      "auto",
+      "default",
+      "flex",
+      "scale",
+      "priority",
+      "fast",
+      "standard_only",
+      "unspecified",
+      "standard",
+    ]) {
+      expect(entries).toContain(tier);
+    }
+  });
+
+  test("the anthropic and gemini arms are read off the dialect bodies themselves", () => {
+    // Not hand-copied literals: `ChatServiceTierFor` indexes `DialectBody`, so
+    // a wire-side change to either enum shows up here.
+    const wire = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "claude-opus-5", max_tokens: 8, messages: [], service_tier: "¦" });`);
+    const unified = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [], serviceTier: "¦" });`);
+    for (const tier of wire) expect(unified).toContain(tier);
+  });
+});
+
+describe("chat providerOptions: buckets are typed, not bags", () => {
+  test("a bucket's interior completes that provider's own dialect body", () => {
+    const anthropic = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [], providerOptions: { anthropic: { ¦ } } });`);
+    // Was the global keyword soup (`AbortController`, `abstract`, …).
+    expect(anthropic).toContain("service_tier");
+    expect(anthropic).toContain("thinking");
+    expect(anthropic).not.toContain("AbortController");
+
+    const openai = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [], providerOptions: { openai: { ¦ } } });`);
+    expect(openai).toContain("logprobs");
+    expect(openai).toContain("response_format");
+    // A bucket completes its DIALECT's shared body, which is what the compiler
+    // merges into. Endpoint-only extras — openai's `store`, the field doc's own
+    // example — live on `ChatCompletionsBody` in the provider module and so do
+    // not complete; they still COMPILE, through the open arm every level of the
+    // bucket carries. That is the honest boundary, and it is asserted here so
+    // it cannot be mistaken for a completion the type forgot.
+    expect(openai).not.toContain("store");
+  });
+
+  test("values complete too, and nest", () => {
+    const tiers = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [], providerOptions: { anthropic: { service_tier: "¦" } } });`);
+    expect(tiers).toContain("auto");
+    expect(tiers).toContain("standard_only");
+
+    const nested = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "google/gemini-2.5-flash", messages: [], providerOptions: { google: { generationConfig: { ¦ } } } });`);
+    expect(nested).toContain("thinkingConfig");
+    expect(nested).toContain("temperature");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Adapter-author surface: `ctx.from(wirePath, canonical)`
+// ---------------------------------------------------------------------------
+
+describe("CanonicalField completes the vocabulary, dotted paths included", () => {
+  test("the nested paths the tail permitted but could not suggest now complete", () => {
+    const entries = completionsAt(`import type { CanonicalField } from "./src/core/unified/types";
+import type { TranscribeParams } from "./src/core/unified/vocabulary/transcribe";
+declare const from: (wirePath: Array<string | number>, canonical: CanonicalField<TranscribeParams>) => void;
+from(["speaker_options", "max_speakers_expected"], "¦");`);
+    // Flat fields still complete…
+    expect(entries).toContain("audio");
+    expect(entries).toContain("language");
+    // …and so do the four `diarization.*` paths adapters actually pass, which a
+    // `(string & {})` tail can never suggest.
+    expect(entries).toContain("diarization.enabled");
+    expect(entries).toContain("diarization.speakers");
+    expect(entries).toContain("diarization.minSpeakers");
+    expect(entries).toContain("diarization.maxSpeakers");
+    // An index is not a field name: array-valued fields contribute no paths.
+    expect(entries.filter((e) => e.startsWith("diarization.")).sort()).toEqual([
+      "diarization.enabled",
+      "diarization.maxSpeakers",
+      "diarization.minSpeakers",
+      "diarization.speakers",
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Media packs: `providerOptions` buckets and unservable refs
+// ---------------------------------------------------------------------------
+
+describe("media providerOptions: a bucket is the adapter's own wire body", () => {
+  test("a bucket's interior completes real wire params", () => {
+    const stability = completionsAt(`import { image } from "./src/unified/image";
+image({ model: "openai/gpt-image-2", prompt: "x", providerOptions: { stability: { ¦ } } });`);
+    // Was the global keyword soup; now Stability's own params.
+    expect(stability).toContain("cfg_scale");
+    expect(stability).toContain("style_preset");
+    expect(stability).toContain("negative_prompt");
+    expect(stability).not.toContain("AbortController");
+  });
+
+  test("the openai bucket completes that adapter's declared wire fields", () => {
+    const openai = completionsAt(`import { image } from "./src/unified/image";
+image({ model: "openai/gpt-image-2", prompt: "x", providerOptions: { openai: { ¦ } } });`);
+    expect(openai).toContain("response_format");
+    expect(openai).not.toContain("AbortController");
+    // Honest boundary: the list is only as complete as the adapter's own `Wire`
+    // interface, which here declares six fields plus an index signature for an
+    // endpoint that takes more. Tightening those interfaces is a separate pass;
+    // typed-but-incomplete still beats a bag, and every undeclared key compiles.
+    expect(openai.length).toBeLessThan(20);
+  });
+
+  test("the escape hatch survives at every depth", () => {
+    const nested = completionsAt(`import { image } from "./src/unified/image";
+image({ model: "google/imagen-4.0-generate-001", prompt: "x", providerOptions: { google: { ¦ } } });`);
+    expect(nested.length).toBeGreaterThan(0);
+    expect(nested).not.toContain("AbortController");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Response reports: `report.finishReason`
+// ---------------------------------------------------------------------------
+
+describe("checkChat's report: finishReason completes the provider's own reasons", () => {
+  // `finishReason` is the one value every caller branches on (`tool_use` vs
+  // `end_turn`), and it was a bare `string` on all 17 checkers — measured at
+  // ZERO completions on every provider below. `ResponseReport<Reason>` plus a
+  // per-provider union alias is what buys these lists. No `.test-d.ts` can
+  // stand in: assignability is unaffected by widening `Reason` back to
+  // `string`, only the completion list dies.
+
+  test("an anthropic report completes anthropic's seven stop reasons", () => {
+    const entries = completionsAt(`import { checkChat } from "./src/providers/anthropic";
+const report = checkChat({});
+if (report.finishReason === "¦") {}`);
+    expect(entries.sort()).toEqual([
+      "end_turn",
+      "max_tokens",
+      "model_context_window_exceeded",
+      "pause_turn",
+      "refusal",
+      "stop_sequence",
+      "tool_use",
+    ]);
+  });
+
+  test("a groq report completes the Chat Completions five — through the FACTORY", () => {
+    // This is the fleet assertion. groq's `checkChat` comes from
+    // `createOpenAICompatible`, whose `OpenAICompatibleProvider.checkChat`
+    // member re-annotates the return type. Widening THAT one line back to a
+    // bare `ResponseReport` type-checks fine and takes this list to 0 for all
+    // ~30 openai-compatible overlays at once — narrowing check.ts alone is
+    // dead on arrival.
+    const entries = completionsAt(`import { checkChat } from "./src/providers/groq";
+const report = checkChat({});
+switch (report.finishReason) { case "¦": }`);
+    expect(entries.sort()).toEqual([
+      "content_filter",
+      "function_call",
+      "length",
+      "stop",
+      "tool_calls",
+    ]);
+  });
+
+  test("openai's own checkChat gets the same five", () => {
+    // Same alias, different entry point: openai calls `createCheckChat`
+    // directly rather than through the factory, so this passes even when the
+    // groq case above fails. Both are asserted precisely because they can
+    // diverge.
+    const entries = completionsAt(`import { checkChat } from "./src/providers/openai";
+const report = checkChat({});
+if (report.finishReason === "¦") {}`);
+    expect(entries.sort()).toEqual([
+      "content_filter",
+      "function_call",
+      "length",
+      "stop",
+      "tool_calls",
+    ]);
+  });
+
+  test("a google report completes the Gemini finish reasons", () => {
+    // The nine literals that exist in google/check.ts (MAX_TOKENS plus the
+    // eight in FILTERED_FINISH_REASONS), plus STOP — the success value the
+    // checker does not branch on but every caller compares against.
+    const entries = completionsAt(`import { checkChat } from "./src/providers/google";
+const report = checkChat({});
+if (report.finishReason === "¦") {}`);
+    expect(entries.sort()).toEqual([
+      "BLOCKLIST",
+      "IMAGE_PROHIBITED_CONTENT",
+      "IMAGE_RECITATION",
+      "IMAGE_SAFETY",
+      "MAX_TOKENS",
+      "PROHIBITED_CONTENT",
+      "RECITATION",
+      "SAFETY",
+      "SPII",
+      "STOP",
+    ]);
+  });
+
+  test("an assemblyai report completes the four job statuses", () => {
+    // The job-status checkers keep their `(string & {})` tail: they TOLERATE
+    // an unrecognized status (no warning, passed straight through) rather than
+    // refusing it, and their `*Like.status` inputs are `string`, so a closed
+    // union could only be reached by a cast. See the tail decision recorded on
+    // `AssemblyaiTranscriptStatus`. The tail does not eat the four presets.
+    const entries = completionsAt(`import { checkTranscript } from "./src/providers/assemblyai";
+const report = checkTranscript({});
+if (report.finishReason === "¦") {}`);
+    expect(entries.sort()).toEqual(["completed", "error", "processing", "queued"]);
+  });
+
+  test("the narrowing survives a bare-ResponseReport annotation on the way out", () => {
+    // Backward compatibility has a completions cost, and it is bounded: a
+    // caller who re-annotates as the wide `ResponseReport` gets the old
+    // behavior (0), which is correct — that is what the default `string`
+    // means. What must not happen is the LIBRARY doing that on the caller's
+    // behalf, which is what the groq case above guards.
+    const wide = completionsAt(`import { checkChat } from "./src/providers/anthropic";
+import type { ResponseReport } from "./src/core/report";
+const report: ResponseReport = checkChat({});
+if (report.finishReason === "¦") {}`);
+    expect(wide).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// google.chat: the 30 prebuilt Gemini TTS voices
+//
+// `voiceName` was typed `string` while `checkVoiceName` reported
+// `invalid_enum_value` naming all 30 for anything off the list: the editor
+// offered NOTHING for the one field of a TTS request whose values are
+// unguessable proper nouns ("Zubenelgenubi", "Laomedeia"). Measured 0 entries
+// before, 30 after — and 0 is what an accidental re-widening looks like, which
+// no `.test-d.ts` can see.
+// ---------------------------------------------------------------------------
+
+const GEMINI_TTS_PROBE = `import { chat } from "./src/providers/google";
+`;
+
+describe("google TTS: voiceName completes exactly the 30 preset voices", () => {
+  test("single-speaker voiceConfig", () => {
+    const entries = completionsAt(`${GEMINI_TTS_PROBE}chat({
+  model: "gemini-3.1-flash-tts-preview",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],
+    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "¦" } } },
+  },
+});`);
+    expect(entries.length).toBe(30);
+    // The guide's own order, first and last, plus the two the docs' samples use.
+    expect(entries[0]).toBe("Zephyr");
+    expect(entries.at(-1)).toBe("Sulafat");
+    for (const voice of ["Kore", "Puck", "Charon", "Zubenelgenubi"]) {
+      expect(entries).toContain(voice);
+    }
+    // No `(string & {})` tail: a tail would put an empty entry here and gate
+    // nothing, and `prebuiltVoiceConfig` is preset-only by construction.
+    expect(entries).not.toContain("");
+  });
+
+  test("every speaker of a multi-speaker request completes the same 30", () => {
+    const entries = completionsAt(`${GEMINI_TTS_PROBE}chat({
+  model: "gemini-3.1-flash-tts-preview",
+  contents: [{ parts: [{ text: "Joe: hi" }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],
+    speechConfig: {
+      multiSpeakerVoiceConfig: {
+        speakerVoiceConfigs: [
+          { speaker: "Joe", voiceConfig: { prebuiltVoiceConfig: { voiceName: "¦" } } },
+        ],
+      },
+    },
+  },
+});`);
+    expect(entries.length).toBe(30);
+    expect(entries).toContain("Sadaltager");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// google.chat imageConfig: what the `as const satisfies` tables buy today
+//
+// `GEMINI_IMAGE_MODEL_RULES` lost its widened annotation, so its rows are
+// literal tuples again. The per-MODEL narrowing that would spend those
+// literals on `imageConfig` is a separate item and is NOT in this tree, so
+// these lists are still the whole documented vocabulary (28 ratios in two
+// spellings, 8 sizes) rather than the model's own row — measured 28/8 before
+// the annotation change and 28/8 after. Pinned so the next pass has a number
+// to move, and so a re-widened table cannot quietly take the vocabulary down
+// to 0 the way it did in the probe that found this.
+// ---------------------------------------------------------------------------
+
+describe("google image config: the documented vocabulary completes", () => {
+  test("aspectRatio offers both documented spellings", () => {
+    const entries = completionsAt(`import { chat } from "./src/providers/google";
+chat({
+  model: "gemini-3.1-flash-image",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: { imageConfig: { aspectRatio: "¦" } },
+});`);
+    expect(entries.length).toBe(28);
+    expect(entries).toContain("16:9");
+    expect(entries).toContain("ASPECT_RATIO_SIXTEEN_BY_NINE");
+  });
+
+  test("imageSize offers both documented spellings", () => {
+    const entries = completionsAt(`import { chat } from "./src/providers/google";
+chat({
+  model: "gemini-3-pro-image",
+  contents: [{ parts: [{ text: "hi" }] }],
+  generationConfig: { imageConfig: { imageSize: "¦" } },
+});`);
+    expect(entries.length).toBe(8);
+    expect(entries).toContain("2K");
+    expect(entries).toContain("IMAGE_SIZE_TWO_K");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// google.video: the wire surface completes the model's OWN parameters
+//
+// This is the completion half of the drift invariant in
+// src/providers/google/video.test.ts. Before the per-model arm, every model
+// completed the same three resolutions and the same three person policies —
+// including Veo 2, which has no `resolution` parameter at all, and Omni, which
+// only ever produces 720p. Measured per model: resolution 3/3/3/3 before →
+// 3 / 2 / 0 / 1 after; personGeneration 3/3 before → 2 / 3 after.
+// ---------------------------------------------------------------------------
+
+const VIDEO_PROBE = `import { video } from "./src/providers/google";
+`;
+
+/** One `parameters` completion list for a model literal. */
+function veoParam(model: string, field: string, cursor = `"¦"`): string[] {
+  return completionsAt(
+    `${VIDEO_PROBE}video({ model: "${model}", instances: [{ prompt: "x" }], parameters: { ${field}: ${cursor} } });`,
+  );
+}
+
+describe("google.video: per-model parameter completions", () => {
+  test("resolution is the model's own tier list", () => {
+    expect(veoParam("veo-3.1-generate-preview", "resolution")).toEqual(["720p", "1080p", "4k"]);
+    expect(veoParam("veo-3.1-lite-generate-preview", "resolution")).toEqual(["720p", "1080p"]);
+    expect(veoParam("gemini-omni-flash-preview", "resolution")).toEqual(["720p"]);
+    // Veo 2 has no `resolution` parameter: the field types `never`, so there is
+    // nothing to complete — the type states the deny the runtime reports.
+    expect(veoParam("veo-2.0-generate-001", "resolution")).toEqual([]);
+  });
+
+  test("durationSeconds is the model's own closed enum", () => {
+    // Numeric literals complete alongside the global scope; filter to the ones
+    // that are numbers, which is the union the arm states.
+    const numbers = (model: string): string[] =>
+      veoParam(model, "durationSeconds", "¦").filter((entry) => /^\d+$/.test(entry));
+    expect(numbers("veo-3.1-generate-preview")).toEqual(["4", "6", "8"]);
+    expect(numbers("veo-2.0-generate-001")).toEqual(["5", "6", "7", "8"]);
+    expect(numbers("gemini-omni-flash-preview")).toEqual(["3", "4", "5", "6", "7", "8", "9", "10"]);
+  });
+
+  test("personGeneration narrows only where Google publishes a list", () => {
+    expect(veoParam("veo-3.1-generate-preview", "personGeneration")).toEqual([
+      "allow_all",
+      "allow_adult",
+    ]);
+    // Veo 2 is the only family with `dont_allow`…
+    expect(veoParam("veo-2.0-generate-001", "personGeneration")).toEqual([
+      "allow_all",
+      "allow_adult",
+      "dont_allow",
+    ]);
+    // …and Omni publishes nothing, so the wire keeps its documented union
+    // rather than inventing a narrower one or widening to `string`.
+    expect(veoParam("gemini-omni-flash-preview", "personGeneration")).toEqual([
+      "allow_all",
+      "allow_adult",
+      "dont_allow",
+    ]);
+  });
+
+  test("a run-time model id keeps the wide arm — completion, not gating", () => {
+    const entries = completionsAt(`${VIDEO_PROBE}declare const model: string;
+video({ model, instances: [{ prompt: "x" }], parameters: { resolution: "¦" } });`);
+    expect(entries).toEqual(["720p", "1080p", "4k"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// `.toSdk(target)` on a retargeted result, and the two branded refusals
+// ---------------------------------------------------------------------------
+
+describe("retargeted toSdk completes the target's own params", () => {
+  test("the gemini arm offers the SDK's three keys, not `unknown`", () => {
+    const entries = completionsAt(`import { chat } from "./src/providers/openrouter";
+const r = chat({ model: "google/gemini-2.5-flash", messages: [{ role: "user", content: "hi" }] });
+r.toApi("google").toSdk("google").¦`);
+    // Was 0 entries + "Object is of type 'unknown'".
+    expect(entries).toContain("model");
+    expect(entries).toContain("contents");
+    expect(entries).toContain("config");
+  });
+
+  test("the identity arms offer the wire body", () => {
+    const entries = completionsAt(`import { chat } from "./src/providers/groq";
+const r = chat({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: "hi" }] });
+r.toApi("cerebras").toSdk("openai").¦`);
+    expect(entries).toContain("messages");
+    expect(entries).toContain("model");
+    expect(entries).toContain("temperature");
+  });
+});
+
+describe("a ref this build cannot serve completes nothing to call", () => {
+  test("chat: a provider typo hands back a brand, not a request", () => {
+    const entries = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "opnai/gpt-5.2", messages: [] }).¦`);
+    // The meta half survives; the request half is gone, so the mistake shows up
+    // as a missing member at the call site instead of a runtime throw.
+    expect(entries).toContain("target");
+    expect(entries).toContain("warnings");
+    expect(entries).not.toContain("request");
+    expect(entries).not.toContain("toSdk");
+    // The brand names the remedy `classifyRef` computes.
+    expect(entries).toContain("__unmodel_refProblem");
+  });
+
+  test("media: an unregistered provider hands back a brand too", () => {
+    const entries = completionsAt(`import { createImage } from "./src/unified/image";
+import { image as openai } from "./src/providers/openai/unified-image";
+const image = createImage([openai]);
+image({ model: "google/imagen-4.0-generate-001", prompt: "x" }).¦`);
+    expect(entries).not.toContain("request");
+    expect(entries).not.toContain("warnings");
+    expect(entries).toContain("__unmodel_unregisteredUnifiedProvider");
+
+    // …while a registered provider's result is untouched.
+    const ok = completionsAt(`import { createImage } from "./src/unified/image";
+import { image as openai } from "./src/providers/openai/unified-image";
+const image = createImage([openai]);
+image({ model: "openai/gpt-image-2", prompt: "x" }).¦`);
+    expect(ok).toContain("request");
+    expect(ok).toContain("warnings");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// kling.video / kling.videoFromImage: the wire surface completes the model's
+// OWN parameters
+//
+// The completion half of the drift invariant in
+// src/providers/kling/video.test.ts. Before the per-model arm, every one of
+// the nine `/v1/videos/*` models completed the same three modes, the same
+// thirteen durations and the same two `sound` values — including
+// `kling-v2-master`, which is 1080P-only, and `kling-v2-5-turbo`, which runs 5
+// or 10 seconds and has no native audio at all. Measured per model:
+//   mode        3/3/3/3/3 before → 3 / 2 / 2 / 1 / 2 after
+//               (v3 / v2-6 / v2-5-turbo / v2-master / v1)
+//   duration   13/13/13/13/13 before → 13 / 8 / 2 / 2 / 2 after
+//   sound       2/2/2/2/2 before → 2 / 2 / 1 / 1 / 1 after
+// `aspect_ratio` is 3 before and 3 after on every model, deliberately: no
+// source bounds it per `model_name`, so it is the field this change does NOT
+// narrow.
+// ---------------------------------------------------------------------------
+
+const KLING_VIDEO_PROBE = `import { video, videoFromImage } from "./src/providers/kling";
+`;
+
+/** One body-field completion list for a `model_name` literal on text2video. */
+function klingParam(model: string, field: string, cursor = `"¦"`): string[] {
+  return completionsAt(
+    `${KLING_VIDEO_PROBE}video({ model_name: "${model}", prompt: "x", ${field}: ${cursor} });`,
+  );
+}
+
+describe("kling.video: per-model parameter completions", () => {
+  test("mode is the model's own list (std = 720P, pro = 1080P, 4k = 4K)", () => {
+    expect(klingParam("kling-v3", "mode")).toEqual(["std", "pro", "4k"]);
+    expect(klingParam("kling-v2-6", "mode")).toEqual(["std", "pro"]);
+    expect(klingParam("kling-v1", "mode")).toEqual(["std", "pro"]);
+    // The master models are 1080P-only on the capability map — one entry, and
+    // it is the compile-time half of the `allowed: ["pro"]` the runtime reports.
+    expect(klingParam("kling-v2-master", "mode")).toEqual(["pro"]);
+    expect(klingParam("kling-v2-1-master", "mode")).toEqual(["pro"]);
+  });
+
+  test("duration is the model's own closed enum — seconds as strings", () => {
+    expect(klingParam("kling-v3", "duration")).toEqual([
+      "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+    ]);
+    expect(klingParam("kling-v2-6", "duration")).toEqual([
+      "3", "4", "5", "6", "7", "8", "9", "10",
+    ]);
+    expect(klingParam("kling-v2-5-turbo", "duration")).toEqual(["5", "10"]);
+    expect(klingParam("kling-v1", "duration")).toEqual(["5", "10"]);
+  });
+
+  test("sound offers \"on\" only where the model has native audio", () => {
+    expect(klingParam("kling-v3", "sound")).toEqual(["on", "off"]);
+    expect(klingParam("kling-v2-6", "sound")).toEqual(["on", "off"]);
+    // Not a denied key: `sound: "off"` is legal on every model and the run-time
+    // check only refuses switching it ON, so the type offers exactly "off".
+    expect(klingParam("kling-v2-5-turbo", "sound")).toEqual(["off"]);
+    expect(klingParam("kling-v1", "sound")).toEqual(["off"]);
+  });
+
+  test("aspect_ratio is NOT narrowed — the same three on every model", () => {
+    for (const model of ["kling-v3", "kling-v2-master", "kling-v1"]) {
+      expect(klingParam(model, "aspect_ratio")).toEqual(["16:9", "9:16", "1:1"]);
+    }
+  });
+
+  test("camera_control's shape completes on kling-v1 and nowhere else", () => {
+    // `never` off kling-v1, so the object literal has no contextual type and
+    // the field's own keys are not offered.
+    expect(klingParam("kling-v1", "camera_control", "{ ¦ }")).toEqual(["config", "type"]);
+    expect(klingParam("kling-v1-6", "camera_control", "{ ¦ }")).not.toContain("config");
+    expect(klingParam("kling-v2-6", "camera_control", "{ ¦ }")).not.toContain("config");
+  });
+
+  test("the image route narrows the same fields, over its two extra ids", () => {
+    const i2v = (model: string, field: string): string[] =>
+      completionsAt(
+        `${KLING_VIDEO_PROBE}videoFromImage({ model_name: "${model}", image: "u", prompt: "x", ${field}: "¦" });`,
+      );
+    expect(i2v("kling-v3", "duration")).toEqual([
+      "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+    ]);
+    // The two image-to-video-only ids — absent from text2video entirely.
+    expect(i2v("kling-v2-1", "duration")).toEqual(["5", "10"]);
+    expect(i2v("kling-v1-5", "mode")).toEqual(["std", "pro"]);
+  });
+
+  test("the degraded arms keep every documented value", () => {
+    // `model_name` is optional on this route, so an omitted one is a real
+    // caller shape — and nothing in the request names a model, so nothing is
+    // narrowed (the server default is kling-v1, but the request does not say so).
+    expect(completionsAt(`${KLING_VIDEO_PROBE}video({ prompt: "x", duration: "¦" });`)).toEqual([
+      "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+    ]);
+    expect(completionsAt(`${KLING_VIDEO_PROBE}video({ prompt: "x", mode: "¦" });`)).toEqual([
+      "std", "pro", "4k",
+    ]);
+    // A run-time model id.
+    expect(
+      completionsAt(`${KLING_VIDEO_PROBE}declare const model: string;
+video({ model_name: model, prompt: "x", duration: "¦" });`),
+    ).toEqual(["3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]);
+    // A post-snapshot id: no rule row, so no narrowing — completion, not gating.
+    expect(
+      completionsAt(`${KLING_VIDEO_PROBE}video({ model_name: "kling-v9", prompt: "x", sound: "¦" });`),
+    ).toEqual(["on", "off"]);
   });
 });

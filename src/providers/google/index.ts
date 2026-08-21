@@ -46,10 +46,14 @@ export {
 } from "./chat";
 export {
   GENERATE_VIDEOS_BASE_URL,
+  VEO_PARAMETER_SPACE,
   VEO_RESOLUTION_RATE_OVERRIDES,
   video,
   generateVideosUrl,
   type GenerateVideosBody,
+  type VeoParameterModelId,
+  type VeoParameterSpace,
+  type VeoParametersArm,
   type GenerateVideosSdkConfig,
   type GenerateVideosSdkImage,
   type GenerateVideosSdkParams,
@@ -95,7 +99,7 @@ export {
   type GoogleImagenModelId,
 } from "./imagen-models";
 export { chatModels, ttsModelOverrides } from "./tts-models";
-export { checkChat, type ChatResponseLike } from "./check";
+export { checkChat, type ChatResponseLike, type GoogleFinishReason } from "./check";
 export {
   GEMINI_1M_VIDEO_MAX_DURATION_SECONDS,
   GEMINI_AUDIO_FORMATS,
@@ -120,7 +124,6 @@ export {
   GEMINI_TTS_MAX_SPEAKERS,
   GEMINI_TTS_MODEL_IDS,
   GEMINI_TTS_STREAMING_MODEL_IDS,
-  GEMINI_TTS_VOICES,
   GEMINI_VIDEO_FORMATS,
   GENERATE_CONTENT_API_DOCS_URL,
   GOOGLE_MEDIA_DOC_URLS,
@@ -142,6 +145,9 @@ export {
   videoFamilyRules,
   type GeminiImageRule,
 } from "./constraints";
+// The 30 preset TTS voices are declared in the wire leaf, because
+// `GooglePrebuiltVoiceConfig.voiceName` is typed from them (see ./wire).
+export { GEMINI_TTS_VOICES, type GeminiTtsVoiceName } from "./wire";
 
 export { models, provider } from "../../catalog/google.gen";
 export type {

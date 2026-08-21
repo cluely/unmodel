@@ -67,3 +67,28 @@ export function expectNotNever<T>(
  * ```
  */
 export type KeyIn<T, K extends PropertyKey> = Extract<keyof T, K>;
+
+/**
+ * `true` only when `T` is a union that still contains the LITERAL member `M`.
+ *
+ * The probe for a `(string & {})`-tailed union, and the only kind that works
+ * on one. Ordinary assignability cannot see the difference: `string` and
+ * `"a" | "b" | (string & {})` are mutually assignable (`string` satisfies both
+ * arms of the intersection), so `expectAssignable` and a two-way `extends`
+ * equality check BOTH pass against a type that has been widened all the way
+ * back to `string` — the completions die and no `.test-d.ts` notices.
+ *
+ * `Extract` distributes over the union instead, so it sees the members:
+ * `Extract<string, "a">` is `never` (one member, and `string` does not extend
+ * `"a"`), while `Extract<"a" | (string & {}), "a">` is `"a"`.
+ *
+ * ```ts
+ * expectTrue<HasLiteralMember<AnthropicStopReason, "end_turn">>();
+ * ```
+ *
+ * It is a lower bound, not an equality: it proves the literal survived, not
+ * that the union is exactly the expected set. The exact COMPLETION list is
+ * pinned by `test/unified/completions.test.ts`, which asks the language
+ * service directly — the only thing that can.
+ */
+export type HasLiteralMember<T, M> = [Extract<T, M>] extends [never] ? false : true;

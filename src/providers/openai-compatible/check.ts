@@ -32,6 +32,31 @@ export interface ChatCompletionLike {
 }
 
 /**
+ * The `finish_reason` values a Chat Completions response can carry, as the
+ * checker reports them on `finishReason`. One alias for the whole
+ * OpenAI-compatible fleet (openai, groq, togetherai, openrouter, … ~30
+ * overlays), since they all speak this dialect.
+ *
+ * PUBLIC API — keep in sync with the `choice.finish_reason === …` branches
+ * below (`"length"` and `"content_filter"`); `stop`, `tool_calls` and the
+ * deprecated `function_call` are the documented values those branches
+ * deliberately do not warn about.
+ *
+ * Tail-open, per this library's `(string & {})` convention: the checker never
+ * refuses an off-list finish reason — it passes it straight through — and this
+ * dialect is spoken by ~30 third-party hosts that each add their own (groq's
+ * `tool_use`, vLLM's `abort`, …). The union drives autocomplete; it does not
+ * gate values.
+ */
+export type ChatFinishReason =
+  | "stop"
+  | "length"
+  | "tool_calls"
+  | "content_filter"
+  | "function_call"
+  | (string & {});
+
+/**
  * Builds a Chat Completions response checker bound to one provider's catalog:
  * it inspects a response for silent quality problems (truncation, content
  * filtering, refusals) and prices the actual usage against catalog rates.
@@ -41,7 +66,7 @@ export interface ChatCompletionLike {
 export function createCheckChat(
   catalog: Record<string, ModelInfo>,
   providerName: string,
-): (res: ChatCompletionLike) => ResponseReport {
+): (res: ChatCompletionLike) => ResponseReport<ChatFinishReason> {
   /**
    * Resolves a response model id against the catalog. Responses often carry a
    * dated snapshot id (e.g. "gpt-5.2-2026-01-15") absent from the catalog;
@@ -51,7 +76,7 @@ export function createCheckChat(
     return modelId === undefined ? undefined : resolveModelInfo(catalog, modelId);
   }
 
-  return function checkChat(res: ChatCompletionLike): ResponseReport {
+  return function checkChat(res: ChatCompletionLike): ResponseReport<ChatFinishReason> {
     const warnings: Issue[] = [];
 
     (res.choices ?? []).forEach((choice, index) => {

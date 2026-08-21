@@ -30,6 +30,7 @@ import {
   transcribe as validator,
   CARTESIA_STT_LANGUAGES,
   type CartesiaSttEncoding,
+  type CartesiaSttLanguage,
   type SttTranscribeParams,
 } from "./transcribe";
 
@@ -77,6 +78,20 @@ const CARTESIA_TRANSCRIBE_MODEL_PARAMS = {
   },
 } as const satisfies TranscribeModelParamTable;
 
+const STT_LANGUAGE_SET = new Set<string>(CARTESIA_STT_LANGUAGES);
+
+/**
+ * Membership in the wire's closed 100-code `language` enum, tested against the
+ * same array the row above publishes for completions — still one list.
+ *
+ * `toPrimaryLanguage` returns a bare `string` (it normalizes BCP-47 to a primary
+ * subtag but knows no provider's list), so this is where a compiled body earns
+ * the closed wire type.
+ */
+function isSttLanguage(language: string): language is CartesiaSttLanguage {
+  return STT_LANGUAGE_SET.has(language);
+}
+
 export const transcribe = {
   category: "transcribe",
   provider: "cartesia",
@@ -116,7 +131,14 @@ export const transcribe = {
       );
       // The closed 100-code list lives in `cartesia.transcribe`'s own
       // `checkLanguage`; duplicating it here would be a second copy to drift.
-      if (language !== undefined) body.language = language;
+      // So: narrowed against that same array for every code the wire accepts,
+      // and an off-enum primary subtag is forwarded through one explicit cast —
+      // reinstating the wire type's old looseness exactly one layer inward — so
+      // `checkLanguage` still refuses it at *error* severity. Dropping it would
+      // silently transcribe in Whisper's detected language instead.
+      if (language !== undefined) {
+        body.language = isSttLanguage(language) ? language : (language as CartesiaSttLanguage);
+      }
     }
 
     if (input.timestamps !== undefined) {

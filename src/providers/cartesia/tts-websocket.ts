@@ -42,6 +42,10 @@
  * - There is no `.request`: a WebSocket URL is not fetchable, and unmodel's
  *   `RequestMeta` describes an HTTP POST. The validated object's enumerable
  *   props ARE the JSON message — `JSON.stringify` it and send it.
+ *
+ * BREAKING (type-level only): `language` and `generation_config.emotion` are
+ * closed to their enums here as on POST /tts/bytes, so a `string`-typed
+ * variable no longer assigns. See the open-tail rule in ./speech.
  */
 
 import { z } from "zod";
@@ -96,8 +100,13 @@ export interface CartesiaWebsocketGenerationConfig {
   volume?: number;
   /** Range [0.6, 1.5]; default 1. */
   speed?: number;
-  /** One of the 58 documented labels ({@link CARTESIA_EMOTIONS}). */
-  emotion?: CartesiaEmotion | (string & {});
+  /**
+   * One of the 58 documented labels ({@link CARTESIA_EMOTIONS}). Closed, per
+   * the open-tail rule in ./speech: an off-enum label is an
+   * `invalid_enum_value` *error* here, unlike an off-enum `model_id`, which is
+   * a warning and therefore keeps its tail.
+   */
+  emotion?: CartesiaEmotion;
 }
 
 export interface TtsWebsocketMessage {
@@ -111,8 +120,11 @@ export interface TtsWebsocketMessage {
   output_format: CartesiaWebsocketOutputFormat;
   /** REQUIRED. "A unique identifier for the context", e.g. a UUID. */
   context_id: string;
-  /** "The transcript's language." Keep identical across one context. */
-  language?: CartesiaTtsLanguage | (string & {});
+  /**
+   * "The transcript's language." Keep identical across one context. Closed:
+   * the same 42-code enum as POST /tts/bytes, refused at *error* severity.
+   */
+  language?: CartesiaTtsLanguage;
   /**
    * `true` while more transcript chunks will follow on this context; `false`
    * on the last one (the default) to minimize latency.

@@ -5,7 +5,7 @@ import type { ValidateOptions, MediaDeclaration } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { findMediaDeclaration } from "../../core/media/check";
 import { models, type DeepgramModelId } from "./models";
 
@@ -321,12 +321,12 @@ function estimateListen(
 ): ValidateEstimate {
   const declared = declaredDurationSeconds(ctx.options.media);
   if (declared === undefined) return {};
-  const minutes = declared / 60;
+  const billedMinutes = minutesFromSeconds(declared);
   const multilingualNova3 =
     params.language === "multi" && (params.model === "nova-3" || params.model === "nova-3-general");
   const costUSD = multilingualNova3
-    ? minutes * NOVA_3_MULTILINGUAL_USD_PER_MINUTE
-    : computeAudioMinutesCostUSD(info?.cost, minutes);
+    ? billedMinutes * NOVA_3_MULTILINGUAL_USD_PER_MINUTE
+    : computeAudioMinutesCostUSD(info?.cost, billedMinutes);
   return costUSD === undefined ? {} : { costUSD };
 }
 

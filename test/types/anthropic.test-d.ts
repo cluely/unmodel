@@ -5,10 +5,11 @@
  * src/ never imports it (its bundled types drag node:* into dist d.ts).
  */
 import type { MessageCreateParams } from "@anthropic-ai/sdk/resources/messages";
-import { chat } from "../../src/providers/anthropic";
-import type { MessagesBody } from "../../src/providers/anthropic";
+import { chat, checkChat } from "../../src/providers/anthropic";
+import type { AnthropicStopReason, MessagesBody } from "../../src/providers/anthropic";
 import type { EndpointConstraints } from "../../src/core/constraint-types";
-import { expectAssignable } from "./helpers";
+import type { ResponseReport } from "../../src/core/report";
+import { expectAssignable, expectTrue, type HasLiteralMember } from "./helpers";
 
 const validated = chat({
   model: "claude-sonnet-4-5",
@@ -127,3 +128,57 @@ chat({
   messages: [{ role: "user", content: "x" }],
   thinking: { type: "adaptive", display: "summarized" },
 });
+
+// ---------------------------------------------------------------------------
+// `checkChat`'s report: `finishReason` carries anthropic's own stop reasons
+// ---------------------------------------------------------------------------
+
+declare const runtimeReason: string;
+
+function anthropicReportTypeTests(): void {
+  const report = checkChat({ stop_reason: "end_turn" });
+
+  // The report is narrowed to anthropic's vocabulary, so the value every
+  // caller branches on compares against its own literals.
+  //
+  // `HasLiteralMember`, not an equality check: a `(string & {})`-tailed union
+  // and bare `string` are MUTUALLY ASSIGNABLE, so a two-way `extends` test
+  // passes even against a fully widened type. The exact completion list is
+  // pinned by `test/unified/completions.test.ts`, which asks the language
+  // service — the only thing that can see a completion list die.
+  expectTrue<HasLiteralMember<typeof report.finishReason, "end_turn">>();
+  expectTrue<HasLiteralMember<typeof report.finishReason, "model_context_window_exceeded">>();
+  expectTrue<HasLiteralMember<AnthropicStopReason, "refusal">>();
+  if (report.finishReason === "tool_use") void 0;
+  if (report.finishReason === "pause_turn") void 0;
+  if (report.finishReason === "model_context_window_exceeded") void 0;
+
+  // BACKWARD COMPATIBILITY. The `Reason` parameter DEFAULTS to `string`, and
+  // these three are the whole reason that default is not decoration: a
+  // narrowed report must stay usable everywhere a bare one was. If any of them
+  // ever fails, the generic became a breaking change.
+  const asString: string | undefined = report.finishReason;
+  void asString;
+  const asWideReport: ResponseReport = report;
+  void asWideReport;
+  const takesWideReport = (_rep: ResponseReport): void => {};
+  takesWideReport(report);
+
+  // …and comparing against a run-time string still compiles, which a closed
+  // union would forbid.
+  void (report.finishReason === runtimeReason);
+
+  // THE `(string & {})` TAIL, pinned. This checker never refuses an off-list
+  // stop reason — it passes `response.stop_reason` straight through — so a
+  // reason Anthropic ships tomorrow must stay both assignable and comparable.
+  // The deliberate price is that the tail cannot catch a typo either: the line
+  // below is NOT an error, and must not be "fixed" by dropping the tail unless
+  // the checker starts rejecting unknown stop reasons. See the tail decision
+  // recorded on `AssemblyaiTranscriptStatus` in
+  // src/providers/assemblyai/check.ts.
+  const shipped: AnthropicStopReason = "some_reason_shipped_after_this_release";
+  void shipped;
+  void (report.finishReason === "end_tuurn");
+}
+
+void anthropicReportTypeTests;

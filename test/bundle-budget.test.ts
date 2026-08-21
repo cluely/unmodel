@@ -327,8 +327,27 @@ const TRANSCRIBE_PACK_PROVIDERS: string[] = [
  * every pack pays for whole, and it grew by `parseSizeString`, `applyExtras`
  * and the size-arm of `resolveSizing`. The same ~1 KiB landed on all six packs;
  * this is the only one that was already inside a rounding error of its number.
+ *
+ * **Bumped 150 → 160 with the type-tightening wave**, and the investigation
+ * this file's header demands was run rather than skipped: the pack's module
+ * graph is byte-for-byte the same **13 files** it was before (no module joined,
+ * nothing re-exported), and the growth is +0.8 KiB inside `core/cost.ts` — the
+ * `Minutes` unit brand's three one-line constructors and the paragraph
+ * explaining why a bare `number` there was one omitted `/ 60` from a 60x
+ * overcharge. Comments ship in an unminified ESM build, so documentation is
+ * real bytes here. The same increment landed on the other five packs (image
+ * 755.7 → 757.1, video 614.4 → 616.4, speech 409.8 → 412.2, transcribe 401.7 →
+ * 404.7 KiB), all of which absorbed it inside their headroom.
+ *
+ * The reason it failed *here* is that the previous bump's own note was already
+ * true again: measured at HEAD, this pack stood at **149.8 KiB against a 150
+ * budget** — 99.9% consumed, so any addition to any shared chunk would have
+ * tripped it. Restoring ~10% headroom is what a budget with none left needs;
+ * the alternative on offer was deleting documentation to buy 0.2 KiB, which
+ * would have made the number pass without making the bundle meaningfully
+ * smaller.
  */
-const MUSIC_PACK_BUDGET_KIB = 150;
+const MUSIC_PACK_BUDGET_KIB = 160;
 
 /** The two providers `unmodel/music`'s ready-made pack is allowed to reach. */
 const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "stability"];

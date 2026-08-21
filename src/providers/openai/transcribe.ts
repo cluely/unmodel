@@ -33,7 +33,7 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
 import { transcriptionModels } from "./audio-models";
 import { transcriptionConstraints, transcriptionFamilyRules } from "./constraints";
@@ -388,7 +388,7 @@ function estimate(
     findMediaDeclaration(ctx.options.media, ["file"])?.durationSeconds ??
     ctx.options.media?.find((d) => d.durationSeconds !== undefined)?.durationSeconds;
   if (seconds === undefined) return {};
-  const costUSD = computeAudioMinutesCostUSD(info?.cost, seconds / 60);
+  const costUSD = computeAudioMinutesCostUSD(info?.cost, minutesFromSeconds(seconds));
   return costUSD === undefined ? {} : { costUSD };
 }
 

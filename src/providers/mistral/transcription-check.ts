@@ -1,7 +1,7 @@
 import type { Issue } from "../../core/issues";
 import type { ResponseReport } from "../../core/report";
 import type { ModelInfo } from "../../core/catalog-types";
-import { computeAudioMinutesCostUSD } from "../../core/cost";
+import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { transcriptionModels } from "./audio-models";
 
 /**
@@ -63,7 +63,7 @@ export function checkTranscription(res: TranscriptionResponseLike): ResponseRepo
     typeof seconds === "number"
       ? computeAudioMinutesCostUSD(
           res.model !== undefined ? catalog[res.model]?.cost : undefined,
-          seconds / 60,
+          minutesFromSeconds(seconds),
         )
       : undefined;
 

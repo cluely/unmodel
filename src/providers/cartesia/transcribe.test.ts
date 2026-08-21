@@ -17,7 +17,9 @@ describe("cartesia.transcribe happy path", () => {
     const params = {
       file: AUDIO,
       model: "ink-whisper" as const,
-      language: "en",
+      // `as const`: `language` is the closed 100-code enum, so the literal has
+      // to stay a literal to assign — a membership contract, not a cast.
+      language: "en" as const,
       timestamp_granularities: ["word" as const],
     };
     const v = transcribe(params);
@@ -181,7 +183,10 @@ describe("cartesia.transcribe language allow-list (doc audit 2026-08-13)", () =>
   });
 
   test("an undocumented code is invalid_enum_value with the doc source", () => {
-    const r = transcribe.safe({ file: AUDIO, model: "ink-whisper", language: "klingon" });
+    // `language` is a closed enum in the type now, so "klingon" is only
+    // reachable from JS (or `providerOptions`); `safeUnchecked` is this file's
+    // established way to exercise that runtime path.
+    const r = safeUnchecked({ file: AUDIO, model: "ink-whisper", language: "klingon" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       const issue = r.errors.find((e) => e.code === "invalid_enum_value");

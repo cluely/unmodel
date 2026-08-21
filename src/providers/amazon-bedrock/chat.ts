@@ -448,6 +448,7 @@ export function createAmazonBedrock(config: AmazonBedrockConfig): AmazonBedrockP
     catalog: models,
     checks: [checkCapabilities, checkMessageContent, checkPromptResourceParams],
     estimate: estimateConverse,
+    promptPath: ["messages"],
     finalize: (params) => {
       const { modelId, ...body } = params;
       const request: RequestMeta = {

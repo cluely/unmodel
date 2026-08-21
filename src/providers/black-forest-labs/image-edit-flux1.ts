@@ -29,7 +29,7 @@ import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models } from "./models";
 import { bflModelUrl, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
@@ -98,13 +98,20 @@ export interface FluxFillFinetunedBody extends FluxFillFields {
 }
 
 /** Escape hatch for fill-like routes unmodel doesn't know yet. */
-export interface UnknownFluxFillBody {
-  model: string & {};
+export interface UnknownFluxFillBody<Model extends string> {
+  model: FutureModelId<Model, keyof FluxFillBodyByModel>;
   image: string;
   [key: string]: unknown;
 }
 
-export type FluxFillParams = FluxFillBody | FluxFillFinetunedBody | UnknownFluxFillBody;
+/**
+ * Closed over documented fill routes by default. Supply a future route literal
+ * to opt into the loose arm: `FluxFillParams<"flux-pro-2-fill">`.
+ */
+export type FluxFillParams<FutureModel extends string = never> =
+  | FluxFillBody
+  | FluxFillFinetunedBody
+  | UnknownFluxFillBody<FutureModel>;
 
 interface FluxFillBodyByModel {
   "flux-pro-1.0-fill": FluxFillBody;
@@ -113,7 +120,11 @@ interface FluxFillBodyByModel {
 
 type FluxFillArm<M extends string> = M extends keyof FluxFillBodyByModel
   ? FluxFillBodyByModel[M]
-  : UnknownFluxFillBody;
+  : UnknownFluxFillBody<M>;
+
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyFluxFillParams = FluxFillParams<string>;
+type FluxFillModelInput = keyof FluxFillBodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Expand (outpainting by per-side margins)
@@ -191,7 +202,7 @@ const expandSchema = z.looseObject({
 
 /** `finetune_id` is required on the `-finetuned` fill route. */
 function checkFillFinetuneId(
-  params: FluxFillParams,
+  params: AnyFluxFillParams,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -213,7 +224,7 @@ function checkFillFinetuneId(
  * route named.
  */
 function checkFillFinetuneUnsupported(
-  params: FluxFillParams,
+  params: AnyFluxFillParams,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -279,7 +290,7 @@ function finalize(params: { model?: string }): unknown {
   });
 }
 
-const fillValidator = createValidator<FluxFillParams, unknown>({
+const fillValidator = createValidator<AnyFluxFillParams, unknown>({
   endpoint: "black-forest-labs.imageEditFill",
   schema: fillSchema,
   modelId: (params) => params.model,
@@ -319,11 +330,11 @@ const expandValidator = createValidator<FluxExpandParams, unknown>({
  * ```
  */
 export const imageEditFill = fillValidator as unknown as {
-  <M extends FluxFillParams["model"], T extends FluxFillArm<M>>(
+  <M extends FluxFillModelInput, T extends FluxFillArm<M>>(
     params: T & FluxFillArm<M> & { model: M } & ExactKeys<T, FluxFillArm<M>>,
     options?: ValidateOptions,
   ): Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>;
-  safe<M extends FluxFillParams["model"], T extends FluxFillArm<M>>(
+  safe<M extends FluxFillModelInput, T extends FluxFillArm<M>>(
     params: T & FluxFillArm<M> & { model: M } & ExactKeys<T, FluxFillArm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>>;

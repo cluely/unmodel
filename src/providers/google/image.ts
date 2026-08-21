@@ -45,7 +45,7 @@ import {
 } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 // `./model-path`, not `./chat`: the two share one six-line normalization, and
 // taking it from the chat validator used to pull that module's whole graph —
@@ -158,16 +158,20 @@ export interface ImagenFastBody extends GenerateImagesBodyBase {
 }
 
 /** Escape hatch for models unmodel doesn't know yet (unknown_model warning). */
-export interface UnknownImagenBody extends GenerateImagesBodyBase {
-  model: string & {};
+export interface UnknownImagenBody<Model extends string> extends GenerateImagesBodyBase {
+  model: FutureModelId<Model, keyof GenerateImagesBodyByModel>;
   parameters?: Record<string, unknown>;
 }
 
-export type GenerateImagesBody =
+/**
+ * Closed over documented Imagen models by default. Supply a future model
+ * literal to opt into the loose arm: `GenerateImagesBody<"imagen-9">`.
+ */
+export type GenerateImagesBody<FutureModel extends string = never> =
   | ImagenStandardBody
   | ImagenUltraBody
   | ImagenFastBody
-  | UnknownImagenBody;
+  | UnknownImagenBody<FutureModel>;
 
 interface GenerateImagesBodyByModel {
   "imagen-4.0-generate-001": ImagenStandardBody;
@@ -178,7 +182,11 @@ interface GenerateImagesBodyByModel {
 /** Resolves a model id literal to its exact Tier-A arm. */
 type ImagenArm<M extends string> = M extends keyof GenerateImagesBodyByModel
   ? GenerateImagesBodyByModel[M]
-  : UnknownImagenBody;
+  : UnknownImagenBody<M>;
+
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyGenerateImagesBody = GenerateImagesBody<string>;
+type ImagenModelInput = keyof GenerateImagesBodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // SDK view — @google/genai's ai.models.generateImages({ model, prompt,
@@ -209,13 +217,17 @@ type SdkEnumPart<T, K extends string, Out extends string> = T extends {
   ? Record<Out, V>
   : {};
 
-export type GenerateImagesSdkConfig<T extends GenerateImagesBody = GenerateImagesBody> =
+export type GenerateImagesSdkConfig<
+  T extends AnyGenerateImagesBody = GenerateImagesBody,
+> =
   GenerateImagesSdkConfigBase &
     SdkEnumPart<T, "personGeneration", "personGeneration"> &
     SdkEnumPart<T, "safetySetting", "safetyFilterLevel"> &
     SdkEnumPart<T, "language", "language">;
 
-export type GenerateImagesSdkParams<T extends GenerateImagesBody = GenerateImagesBody> = {
+export type GenerateImagesSdkParams<
+  T extends AnyGenerateImagesBody = GenerateImagesBody,
+> = {
   model: T["model"];
   prompt: string;
   config?: GenerateImagesSdkConfig<T>;
@@ -272,7 +284,7 @@ const GENERATE_IMAGES_RULES = {
  * their real depth (same arrangement as ./video).
  */
 function checkImagenParameters(
-  params: GenerateImagesBody,
+  params: AnyGenerateImagesBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -308,7 +320,7 @@ function checkImagenParameters(
 
 /** models.{model}:predict (this route) serves image-output models only. */
 function checkImageModality(
-  params: GenerateImagesBody,
+  params: AnyGenerateImagesBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -324,7 +336,7 @@ function checkImageModality(
 
 /** "Note: Maximum prompt length is 480 tokens." (rides on `limit.input`). */
 function checkPromptLength(
-  params: GenerateImagesBody,
+  params: AnyGenerateImagesBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -353,7 +365,11 @@ function checkPromptLength(
 /** "The default is 4." — the Imagen guide's numberOfImages description. */
 export const IMAGEN_DEFAULT_SAMPLE_COUNT = 4;
 
-function estimate(params: GenerateImagesBody, info: ModelInfo | undefined, _ctx: PipelineContext) {
+function estimate(
+  params: AnyGenerateImagesBody,
+  info: ModelInfo | undefined,
+  _ctx: PipelineContext,
+) {
   const rate = info?.cost?.perImage;
   if (rate === undefined) return {};
   const count =
@@ -379,7 +395,7 @@ export function generateImagesUrl(model: string): string {
 
 function buildSdkParams(
   model: string,
-  body: Omit<GenerateImagesBody, "model">,
+  body: Omit<AnyGenerateImagesBody, "model">,
 ): Record<string, unknown> {
   const parameters = (body.parameters ?? {}) as Record<string, unknown>;
   const outputOptions = parameters["outputOptions"] as GoogleImagenOutputOptions | undefined;
@@ -414,11 +430,11 @@ function buildSdkParams(
  * derivable from the catalog (design-translate §4), so `Avail` stays `never`
  * and `.toApi` does not exist on the result at all.
  */
-export type ImageSdkTargets<T extends GenerateImagesBody = GenerateImagesBody> = {
+export type ImageSdkTargets<T extends AnyGenerateImagesBody = GenerateImagesBody> = {
   google: () => GenerateImagesSdkParams<T>;
 };
 
-function finalize(params: GenerateImagesBody): unknown {
+function finalize(params: AnyGenerateImagesBody): unknown {
   const { model, ...body } = params;
   const request: RequestMeta = {
     url: generateImagesUrl(model),
@@ -428,7 +444,7 @@ function finalize(params: GenerateImagesBody): unknown {
   return toValidated(body, request, { sdk: { google: () => buildSdkParams(model, body) } });
 }
 
-const validator = createValidator<GenerateImagesBody, unknown>({
+const validator = createValidator<AnyGenerateImagesBody, unknown>({
   endpoint: "google.image",
   schema,
   modelId: (params) => stripModelsPrefix(params.model),
@@ -464,11 +480,11 @@ const validator = createValidator<GenerateImagesBody, unknown>({
  * ```
  */
 export const image = validator as unknown as {
-  <M extends GenerateImagesBody["model"], T extends ImagenArm<M>>(
+  <M extends ImagenModelInput, T extends ImagenArm<M>>(
     params: T & ImagenArm<M> & { model: M } & ExactKeys<T, ImagenArm<M>>,
     options?: ValidateOptions,
   ): Validated<Omit<T, "model">, ImageSdkTargets<T>>;
-  safe<M extends GenerateImagesBody["model"], T extends ImagenArm<M>>(
+  safe<M extends ImagenModelInput, T extends ImagenArm<M>>(
     params: T & ImagenArm<M> & { model: M } & ExactKeys<T, ImagenArm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<Omit<T, "model">, ImageSdkTargets<T>>>;

@@ -6,6 +6,7 @@ import type { ValidateOptions } from "../../options";
 import type { ValidateResult } from "../../result";
 import type {
   AnyUnifiedAdapter,
+  SafeUnknown,
   UnifiedAdapter,
   UnifiedInput,
   UnifiedRef,
@@ -159,7 +160,7 @@ export type AnySpeechAdapter = AnyUnifiedAdapter<SpeechParams> & {
  * speech({ model: "openai/tts-1",           text, instructions: "…" }); // error
  * ```
  */
-export interface SpeechValidator<A> {
+export interface SpeechValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
     T extends UnifiedInput<SpeechParamsBase, UnifiedRef<A>> &

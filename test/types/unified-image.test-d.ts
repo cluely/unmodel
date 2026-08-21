@@ -29,6 +29,7 @@ import { createImage, image } from "../../src/unified/image";
 import { image as blackForestLabsImage } from "../../src/providers/black-forest-labs/unified";
 import { image as stabilityImage } from "../../src/providers/stability/unified-image";
 import { image as googleImage } from "../../src/providers/google/unified-image";
+import type { GoogleImagenInstance } from "../../src/providers/google/image";
 import { image as ideogramImage } from "../../src/providers/ideogram/unified";
 import { image as openaiImage } from "../../src/providers/openai/unified-image";
 import type { UnifiedRef } from "../../src/core/unified/types";
@@ -139,7 +140,7 @@ function resultTypeTests(): void {
 
   const google = image({ model: "google/imagen-4.0-generate-001", prompt: "hi" });
   // Imagen's body nests the prompt and strips the model into the URL.
-  expectAssignable<Record<string, unknown>[]>(google.instances);
+  expectAssignable<GoogleImagenInstance[]>(google.instances);
   expectTrue<IsNever<KeyIn<typeof google, "prompt">>>();
   google.toSdk("google");
 

@@ -1,18 +1,20 @@
 /**
- * Validation **layer 3** against a wire body that the caller did not write.
+ * The hand-written deny/enum tables, checked against a wire body the caller
+ * did not write.
  *
- * Both consumers are in that position and neither can use `core/pipeline`'s
- * copy: `.toApi(provider)` checks the *target's* deny/enum tables against a
- * body the translator just produced, and `unmodel/chat` checks the compiled
- * dialect body against the tables of whichever provider the model ref named.
- * In both cases the params object the pipeline would have inspected — the
- * caller's — is in a different vocabulary from the body the API will receive,
- * so the check has to run on the body.
+ * `.toApi(provider)` is in that position: it checks the *target's* tables
+ * against a body the translator just produced, so the params object
+ * `core/pipeline` would have inspected — the caller's — is in a different
+ * vocabulary from the body the API will receive, and the check has to run on
+ * the body instead.
  *
- * Extracted into its own module rather than exported from `retarget.ts`
- * because `unmodel/chat` needs exactly this function and none of the retarget
- * engine: importing `retarget.ts` for it would put `createToApi` and the
- * availability vocabulary into an entry that has no `.toApi` at all.
+ * It is its own module for historical reasons that no longer bind: it was
+ * shared with `unmodel/chat`, which ran a parallel copy of this layer against
+ * its compiled body and could not afford to import the retarget engine to get
+ * it. `unmodel/chat` now compiles a body and hands it to the provider's own
+ * validator, which applies its own tables through `core/pipeline` — so
+ * `retarget.ts` is the only importer left, and it is free to fold this back in
+ * whenever someone wants one file instead of two.
  *
  * This is deliberately deny/enum **only**, matching `TargetValidation`: media
  * rules and `extraCheck`s need the params in their source shape, and family

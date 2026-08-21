@@ -14,7 +14,7 @@ import { availability } from "../../catalog/availability/friendli.gen";
 const FRIENDLI_BASE_URL = provider.api;
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<FriendliTextModelId, typeof availability>({
+  createOpenAICompatible<FriendliTextModelId, typeof availability, "friendli">({
     id: provider.id,
     baseUrl: FRIENDLI_BASE_URL,
     catalog: models,

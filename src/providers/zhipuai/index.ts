@@ -12,7 +12,7 @@ import type { ZhipuaiTextModelId } from "../../catalog/zhipuai.gen";
 import { availability } from "../../catalog/availability/zhipuai.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<ZhipuaiTextModelId, typeof availability>({
+  createOpenAICompatible<ZhipuaiTextModelId, typeof availability, "zhipuai">({
     id: "zhipuai",
     // Zhipu's OpenAI-compatible v4 endpoint (https://open.bigmodel.cn/dev/api).
     baseUrl: provider.api,

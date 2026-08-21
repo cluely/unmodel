@@ -31,7 +31,7 @@ import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeAudioMinutesCostUSD } from "../../core/cost";
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
@@ -167,20 +167,24 @@ export interface Gpt4oTranscribeDiarizeBody extends TranscriptionBodyCommon {
 }
 
 /** Escape hatch for models unmodel doesn't know yet (unknown_model warning). */
-export interface UnknownTranscriptionModelBody {
-  model: string & {};
+export interface UnknownTranscriptionModelBody<Model extends string> {
+  model: FutureModelId<Model, keyof TranscriptionBodyByModel>;
   file: Blob;
   [key: string]: unknown;
 }
 
-export type TranscriptionBody =
+/**
+ * Closed over documented models by default. Supply a future model literal to
+ * opt into the loose arm: `TranscriptionBody<"whisper-9">`.
+ */
+export type TranscriptionBody<FutureModel extends string = never> =
   | Whisper1Body
   | GptTranscribeBody
   | Gpt4oTranscribeBody
   | Gpt4oMiniTranscribeBody
   | Gpt4oMiniTranscribeSnapshotBody
   | Gpt4oTranscribeDiarizeBody
-  | UnknownTranscriptionModelBody;
+  | UnknownTranscriptionModelBody<FutureModel>;
 
 interface TranscriptionBodyByModel {
   "whisper-1": Whisper1Body;
@@ -194,7 +198,11 @@ interface TranscriptionBodyByModel {
 /** Resolves a model id literal to its exact Tier-A arm. */
 type TranscriptionArm<M extends string> = M extends keyof TranscriptionBodyByModel
   ? TranscriptionBodyByModel[M]
-  : UnknownTranscriptionModelBody;
+  : UnknownTranscriptionModelBody<M>;
+
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyTranscriptionBody = TranscriptionBody<string>;
+type TranscriptionModelInput = keyof TranscriptionBodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Schema — loose; per-model narrowing happens in constraints.ts (runtime) and
@@ -233,7 +241,7 @@ const transcriptionSchema = z.looseObject({
 // Checks
 // ---------------------------------------------------------------------------
 
-type LooseParams = TranscriptionBody & {
+type LooseParams = AnyTranscriptionBody & {
   response_format?: unknown;
   timestamp_granularities?: unknown;
   include?: unknown;
@@ -244,7 +252,7 @@ type LooseParams = TranscriptionBody & {
 
 /** Documented field-pairing rules the API enforces server-side. */
 function checkPairings(
-  params: TranscriptionBody,
+  params: AnyTranscriptionBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -318,7 +326,7 @@ function checkPairings(
  * seconds." The duration is only known when declared via options.media.
  */
 function checkDiarizeChunking(
-  params: TranscriptionBody,
+  params: AnyTranscriptionBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -343,7 +351,7 @@ function checkDiarizeChunking(
  * false-positives on format.
  */
 function checkUpload(
-  params: TranscriptionBody,
+  params: AnyTranscriptionBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -372,7 +380,7 @@ function checkUpload(
 // ---------------------------------------------------------------------------
 
 function estimate(
-  params: TranscriptionBody,
+  params: AnyTranscriptionBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): ValidateEstimate {
@@ -403,7 +411,7 @@ const REPEATED_FIELDS = new Set([
  * are dropped — null means "use the provider default", which multipart
  * expresses by omission.
  */
-export function toFormData(params: TranscriptionBody): FormData {
+export function toFormData(params: TranscriptionBody<string>): FormData {
   const form = new FormData();
   for (const [key, value] of Object.entries(params)) {
     if (value == null) continue;
@@ -436,7 +444,7 @@ export function toFormData(params: TranscriptionBody): FormData {
  */
 type TranscriptionSdkTargets<B> = { openai: () => B };
 
-function finalize(params: TranscriptionBody): unknown {
+function finalize(params: AnyTranscriptionBody): unknown {
   const body = { ...params };
   return toValidated(
     body,
@@ -451,7 +459,7 @@ function finalize(params: TranscriptionBody): unknown {
   );
 }
 
-const validator = createValidator<TranscriptionBody, unknown>({
+const validator = createValidator<AnyTranscriptionBody, unknown>({
   endpoint: "openai.transcribe",
   schema: transcriptionSchema,
   modelId: (params) => params.model,
@@ -482,11 +490,11 @@ const validator = createValidator<TranscriptionBody, unknown>({
  * estimate and `maxCostUSD` enforcement.
  */
 export const transcribe = validator as unknown as {
-  <M extends TranscriptionBody["model"], T extends TranscriptionArm<M>>(
+  <M extends TranscriptionModelInput, T extends TranscriptionArm<M>>(
     params: T & TranscriptionArm<M> & { model: M } & ExactKeys<T, TranscriptionArm<M>>,
     options?: ValidateOptions,
   ): Validated<T & { model: M }, TranscriptionSdkTargets<T & { model: M }>>;
-  safe<M extends TranscriptionBody["model"], T extends TranscriptionArm<M>>(
+  safe<M extends TranscriptionModelInput, T extends TranscriptionArm<M>>(
     params: T & TranscriptionArm<M> & { model: M } & ExactKeys<T, TranscriptionArm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<T & { model: M }, TranscriptionSdkTargets<T & { model: M }>>>;

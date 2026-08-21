@@ -107,11 +107,18 @@ export function checkToolSupport(
 ): void {
   if (info === undefined || info.toolCall) return;
   if (params.tools !== undefined && params.tools.length > 0) {
+    // Naming the tools matters: a request assembled from a registry may carry
+    // tools the call site never mentions, and "remove `tools`" alone does not
+    // say which ones the model will silently never call.
+    const names = params.tools.map((tool) =>
+      tool.type === "function" ? tool.function.name : tool.custom.name,
+    );
     ctx.report({
       code: "unsupported_capability",
       path: ["tools"],
       model: params.model,
-      message: `"${params.model}" does not support tool calling; remove \`tools\`.`,
+      message: `"${params.model}" does not support tool calling, and ${names.length} tool(s) were supplied (${names.join(", ")}); remove \`tools\`.`,
+      meta: { tools: names },
     });
   }
 }
@@ -160,6 +167,36 @@ export function checkStructuredOutput(
       message: `"${params.model}" does not support structured outputs (response_format json_schema).`,
     });
   }
+}
+
+/**
+ * `reasoning_effort` on a model the catalog says cannot reason.
+ *
+ * The dialect leaves the value an open string because compatible servers
+ * disagree about the ladder, but every one of them agrees on the shape of the
+ * mistake: asking a non-reasoning model to think is a 400, not a soft ignore
+ * (OpenAI rejects it on gpt-4o/gpt-4.1 outright). `null` restores the server
+ * default and `"none"` explicitly asks for *no* reasoning — both are things a
+ * non-reasoning model can honour, so neither is refused.
+ *
+ * Catalog-driven like its neighbours: an absent row (`info === undefined`)
+ * skips, and only an explicit `reasoning: false` refuses.
+ */
+export function checkReasoningCapability(
+  params: ChatCompletionsBodyBase,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (info === undefined || info.reasoning !== false) return;
+  const effort = params.reasoning_effort;
+  if (effort === undefined || effort === null || effort === "none") return;
+  ctx.report({
+    code: "unsupported_capability",
+    path: ["reasoning_effort"],
+    model: params.model,
+    message: `"${params.model}" is not a reasoning model; remove \`reasoning_effort\` (or set it to "none").`,
+    meta: { effort },
+  });
 }
 
 export function checkSamplingParams(
@@ -253,6 +290,7 @@ export function chatCompletionsChecks(
     checkToolSupport,
     checkInputModalities,
     checkStructuredOutput,
+    checkReasoningCapability,
     checkSamplingParams,
     checkOutputLimit,
     createInlineImagesCheck(spec),

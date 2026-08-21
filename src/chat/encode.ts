@@ -69,6 +69,7 @@ import type {
   DialectId,
   IRCacheBreakpoint,
   IRData,
+  IRMessage,
   IRNativeTool,
   IRPart,
   IRReasoning,
@@ -382,6 +383,27 @@ function encodeReasoning(
 // ---------------------------------------------------------------------------
 
 /**
+ * The IR plus the structural correspondence encoding destroyed.
+ *
+ * `ir.messages[i]` is **not** `params.messages[i]`: system messages are folded
+ * out into `ir.system`, and `tool` messages are folded into the following user
+ * turn. Anything that has to translate a wire address back to the vocabulary
+ * the caller wrote needs to know which canonical message a compiled one came
+ * from, and deriving that a second time from the same rules is exactly the
+ * kind of parallel declaration that drifts. So the encoder records it while it
+ * does the fold.
+ */
+export interface ChatEncoding {
+  readonly ir: ChatIR;
+  /**
+   * IR message index → the `params.messages` index it was encoded from, or
+   * `undefined` for a message the encoder synthesised (a run of `tool`
+   * messages flushed into a user turn of their own has no single origin).
+   */
+  readonly messageOrigin: readonly (number | undefined)[];
+}
+
+/**
  * `ChatParams` + a target dialect → the IR that dialect's decoder turns into a
  * wire body.
  *
@@ -393,8 +415,22 @@ function encodeReasoning(
  * never wrote a wire spelling and should never be shown one.
  */
 export function encodeUnified(params: ChatParams, targetDialect: DialectId, warn: Warn): ChatIR {
+  return encodeChat(params, targetDialect, warn).ir;
+}
+
+/** {@link encodeUnified}, plus the message-index map the wire-path tables need. */
+export function encodeChat(
+  params: ChatParams,
+  targetDialect: DialectId,
+  warn: Warn,
+): ChatEncoding {
   const ref = parseModelRef(params.model);
   const ir = emptyIR(targetDialect, ref?.modelId ?? params.model);
+  const messageOrigin: (number | undefined)[] = [];
+  const pushMessage = (message: IRMessage, origin: number | undefined): void => {
+    ir.messages.push(message);
+    messageOrigin.push(origin);
+  };
 
   // --- system ---------------------------------------------------------------
   // `system` first, then any `role: "system"` messages in the order they
@@ -417,7 +453,9 @@ export function encodeUnified(params: ChatParams, targetDialect: DialectId, warn
   let pending: IRPart[] = [];
   const flush = (): void => {
     if (pending.length === 0) return;
-    ir.messages.push({ role: "user", content: pending });
+    // Synthesised: the parts came from one or more `tool` messages, so there is
+    // no single canonical message this turn can be addressed back to.
+    pushMessage({ role: "user", content: pending }, undefined);
     pending = [];
   };
 
@@ -441,7 +479,7 @@ export function encodeUnified(params: ChatParams, targetDialect: DialectId, warn
             if (encoded !== undefined) parts.push(encoded);
           });
         }
-        ir.messages.push({ role: "user", content: [...pending, ...parts] });
+        pushMessage({ role: "user", content: [...pending, ...parts] }, index);
         pending = [];
         return;
       }
@@ -476,7 +514,7 @@ export function encodeUnified(params: ChatParams, targetDialect: DialectId, warn
             }
           }
         }
-        ir.messages.push({ role: "assistant", content: parts });
+        pushMessage({ role: "assistant", content: parts }, index);
         return;
       }
       case "tool":
@@ -609,5 +647,5 @@ export function encodeUnified(params: ChatParams, targetDialect: DialectId, warn
     });
   }
 
-  return ir;
+  return { ir, messageOrigin };
 }

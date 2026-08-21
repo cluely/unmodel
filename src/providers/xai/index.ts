@@ -41,7 +41,8 @@ const chatFamilyRules: readonly FamilyRule[] = [
 
 const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   XaiTextModelId,
-  typeof availability
+  typeof availability,
+  "xai"
 >({
   id: provider.id,
   // The generated catalog carries no `api` field for xAI; the documented

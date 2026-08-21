@@ -13,7 +13,7 @@ import { availability } from "../../catalog/availability/scaleway.gen";
 const SCALEWAY_BASE_URL = provider.api;
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<ScalewayTextModelId, typeof availability>({
+  createOpenAICompatible<ScalewayTextModelId, typeof availability, "scaleway">({
     id: provider.id,
     baseUrl: SCALEWAY_BASE_URL,
     catalog: models,

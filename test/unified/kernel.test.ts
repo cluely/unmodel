@@ -166,6 +166,125 @@ describe("ref splitting", () => {
     expect(result.errors[0]!.code).toBe("invalid_shape");
   });
 
+  test.each([
+    { label: "null", input: null },
+    { label: "undefined", input: undefined },
+    { label: "an array", input: [] },
+    { label: "a string", input: "not an object" },
+    { label: "a number", input: 42 },
+  ])("safeUnknown reports a root shape issue for $label instead of throwing", ({ input }) => {
+    const result = image().safeUnknown(input);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path: [] });
+  });
+
+  test("safeUnknown validates a runtime value through the same pipeline", () => {
+    const input: unknown = { model: "fake/fake-1", prompt: "from JSON" };
+    const result = image().safeUnknown(input);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.params).toMatchObject({ model: "fake-1", prompt: "from JSON" });
+  });
+
+  test.each([
+    { label: "a BigInt model", model: 1n },
+    {
+      label: "a cyclic model",
+      model: (() => {
+        const value: { self?: unknown } = {};
+        value.self = value;
+        return value;
+      })(),
+    },
+  ])("safeUnknown reports $label without throwing while formatting it", ({ model }) => {
+    expect(() => image().safeUnknown({ model, prompt: "x" })).not.toThrow();
+    const result = image().safeUnknown({ model, prompt: "x" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path: ["model"] });
+  });
+
+  test("safeUnknown contains exceptions thrown while inspecting an input property", () => {
+    const input = Object.defineProperty({}, "model", {
+      enumerable: true,
+      get(): never {
+        throw new Error("getter exploded");
+      },
+    });
+    expect(() => image().safeUnknown(input)).not.toThrow();
+    const result = image().safeUnknown(input);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path: [] });
+    expect(result.errors[0]?.message).toContain("getter exploded");
+  });
+
+  test("safeUnknown contains exceptions thrown by a Proxy inspection trap", () => {
+    const input = new Proxy(
+      {},
+      {
+        getPrototypeOf(): never {
+          throw new Error("proxy exploded");
+        },
+      },
+    );
+    expect(() => image().safeUnknown(input)).not.toThrow();
+    const result = image().safeUnknown(input);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path: [] });
+    expect(result.errors[0]?.message).toContain("proxy exploded");
+  });
+
+  test("safeUnknown rejects a canonical typo instead of silently dropping it", () => {
+    const result = image().safeUnknown({ ...base, promt: "misspelled" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["promt"] });
+  });
+
+  test.each([
+    { providerOptions: "not an object", path: ["providerOptions"] },
+    { providerOptions: { fake: "not an object" }, path: ["providerOptions", "fake"] },
+  ])("safeUnknown rejects malformed providerOptions", ({ providerOptions, path }) => {
+    const result = image().safeUnknown({ ...base, providerOptions });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path });
+  });
+
+  test("safeUnknown reports a providerOptions bucket not registered in the pack", () => {
+    const result = image().safeUnknown({
+      ...base,
+      providerOptions: { opneai: { quality: "high" } },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings[0]).toMatchObject({
+      code: "unknown_param",
+      path: ["providerOptions", "opneai"],
+    });
+  });
+
+  test("safe remains non-throwing when a cast bypasses its strict interface", () => {
+    expect(() => image().safe(null as never)).not.toThrow();
+    expect(image().safe(null as never).ok).toBe(false);
+
+    const explosive = Object.defineProperty({}, "model", {
+      enumerable: true,
+      get(): never {
+        throw new Error("cast getter exploded");
+      },
+    });
+    expect(() => image().safe(explosive as never)).not.toThrow();
+    const inspected = image().safe(explosive as never);
+    expect(inspected.ok).toBe(false);
+    if (!inspected.ok) {
+      expect(inspected.errors[0]).toMatchObject({ code: "invalid_shape", path: [] });
+    }
+  });
+
   test.each(["fake/", "/fake-1", "/"])("%p is not a ref", (model) => {
     const result = image().safe({ model, prompt: "x" });
     expect(result.ok).toBe(false);

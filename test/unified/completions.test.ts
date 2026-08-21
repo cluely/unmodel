@@ -477,3 +477,113 @@ music({ model: "elevenlabs/music_v9", prompt: "x", outputFormat: "¦" });`);
     }
   });
 });
+
+describe("unified chat: the ready entry", () => {
+  test("model completes the whole ref table", () => {
+    const entries = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "¦" });`);
+    // 1,339 refs in the committed snapshot. Pinned as a floor plus three
+    // spot checks: an exact count would churn on every catalog refresh, while
+    // a collapse to zero — the failure this suite exists for — cannot hide
+    // under either assertion.
+    expect(entries.length).toBeGreaterThan(1000);
+    expect(entries).toContain("anthropic/claude-opus-5");
+    expect(entries).toContain("google/gemini-2.5-flash");
+    expect(entries).toContain("openrouter/anthropic/claude-opus-5");
+  });
+
+  test("property names are the canonical vocabulary, not a dialect's", () => {
+    const entries = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", ¦ });`);
+    expect(entries).toContain("maxOutputTokens");
+    expect(entries).toContain("reasoning");
+    expect(entries).toContain("providerOptions");
+    // The wire spellings belong to the provider subpath, not here.
+    expect(entries).not.toContain("max_completion_tokens");
+    expect(entries).not.toContain("reasoning_effort");
+  });
+
+  test("reasoning completes the effort ladder", () => {
+    const entries = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [], reasoning: "¦" });`);
+    expect(entries.sort()).toEqual(["high", "max", "minimal", "low", "medium", "off", "xhigh"].sort());
+  });
+
+  test("providerOptions completes the provider ids", () => {
+    const entries = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [], providerOptions: { ¦ } });`);
+    expect(entries.length).toBe(32);
+    expect(entries).toContain("openai");
+    // Ids with a hyphen come back quoted, since that is what the editor has to
+    // insert for them to be a valid key.
+    expect(entries).toContain('"fireworks-ai"');
+  });
+
+  test("toApi and toSdk complete per dialect, off the result", () => {
+    const gptApi = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [] }).toApi("¦");`);
+    expect(gptApi.sort()).toEqual(["openai", "openrouter", "vercel"]);
+
+    const claudeApi = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "anthropic/claude-opus-5", messages: [], maxOutputTokens: 8 }).toApi("¦");`);
+    expect(claudeApi.sort()).toEqual(["anthropic", "openrouter", "vercel"]);
+
+    const gptSdk = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [] }).toSdk("¦");`);
+    expect(gptSdk.sort()).toEqual(["ai-sdk", "openai"]);
+
+    const geminiSdk = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "google/gemini-2.5-flash", messages: [] }).toSdk("¦");`);
+    expect(geminiSdk.sort()).toEqual(["ai-sdk", "google"]);
+  });
+});
+
+describe("unified chat: the factory entry completes identically", () => {
+  /**
+   * `createChat({ anthropic, openai })` builds the same surface from two
+   * validators instead of thirty-two. The completion lists it produces are the
+   * thing a caller notices if the registry's conditional machinery collapses —
+   * and a collapse to `never` type-checks fine, which is exactly the class of
+   * failure this suite exists to catch and `.test-d.ts` cannot.
+   */
+  const PACK = `import { createChat } from "./src/chat/factory";
+import { chat as anthropic } from "./src/providers/anthropic";
+import { chat as openai } from "./src/providers/openai";
+const pack = createChat({ anthropic, openai });
+`;
+
+  test("property names match the ready entry's", () => {
+    const factory = completionsAt(`${PACK}pack({ model: "openai/gpt-5.2", ¦ });`);
+    const ready = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", ¦ });`);
+    expect(factory.sort()).toEqual(ready.sort());
+  });
+
+  test("each registered dialect keeps its own result members", () => {
+    const openaiSdk = completionsAt(`${PACK}pack({ model: "openai/gpt-5.2", messages: [] }).toSdk("¦");`);
+    expect(openaiSdk.sort()).toEqual(["ai-sdk", "openai"]);
+
+    const anthropicSdk = completionsAt(
+      `${PACK}pack({ model: "anthropic/claude-opus-5", messages: [], maxOutputTokens: 8 }).toSdk("¦");`,
+    );
+    expect(anthropicSdk.sort()).toEqual(["ai-sdk", "anthropic"]);
+
+    // `.toApi` is the provider validator's own surface: registering anthropic
+    // buys anthropic's whole availability table, not just anthropic.
+    const anthropicApi = completionsAt(
+      `${PACK}pack({ model: "anthropic/claude-opus-5", messages: [], maxOutputTokens: 8 }).toApi("¦");`,
+    );
+    expect(anthropicApi.sort()).toEqual(["anthropic", "openrouter", "vercel"]);
+  });
+
+  test("an unregistered provider offers no result members at all", () => {
+    // The call can only throw at runtime, so the result type is branded rather
+    // than structural — there is nothing to complete, and that is the point.
+    const entries = completionsAt(
+      `${PACK}pack({ model: "google/gemini-2.5-flash", messages: [] }).¦;`,
+    );
+    expect(entries).not.toContain("request");
+    expect(entries).not.toContain("toSdk");
+    expect(entries).toContain("__unmodel_unregisteredChatProvider");
+  });
+});

@@ -1,11 +1,9 @@
 /**
- * Validation layer 2: the bundled model profile table.
+ * Catalog and capability validation delegated to the concrete provider.
  *
- * `unmodel/chat` ships `chatProfiles` **inside** the entry rather than behind a
- * subpath, and that is the single largest thing in its bundle — so the checks
- * it buys had better be the ones that matter. Each case below is a request that
- * is perfectly well-formed, compiles to a perfectly valid body, and would still
- * fail (or, worse, quietly under-deliver) at the provider:
+ * The profile export remains useful for discovery, but it is not a parallel
+ * validator. Each request below compiles first and then meets the same catalog,
+ * capability, limit and estimate checks as a direct provider call.
  *
  * - tools sent to a model that cannot call them: some APIs 400, others accept
  *   the request and never emit a call, which is the harder bug;
@@ -28,7 +26,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { chat } from "../../src/chat/index";
-import { chatProfiles, type ChatCatalog } from "../../src/catalog/chat-profiles.gen";
+import { chatProfiles } from "../../src/catalog/chat-profiles.gen";
 
 const MESSAGES = [{ role: "user" as const, content: "hi" }];
 
@@ -123,8 +121,10 @@ describe("capability checks", () => {
   });
 
   test("a json-schema on a model the catalog says nothing about is allowed", () => {
-    // `gemini-2.5-computer-use-preview-10-2025` carries no `structuredOutput`
-    // key at all. Tri-state: absent is not `false`.
+    // Tri-state: absent is not `false`. This row has no `structuredOutput`
+    // key, and every validator in the library — google.chat included — has to
+    // read that the same way, or the same request is refused through one door
+    // and served through another.
     expect(
       chatProfiles["google"]?.["gemini-2.5-computer-use-preview-10-2025"]?.structuredOutput,
     ).toBeUndefined();
@@ -137,11 +137,17 @@ describe("capability checks", () => {
   });
 
   test("`reasoning` on a non-reasoning model errors; turning it off does not", () => {
+    // The refusal lives in the concrete validator (openai-compatible's
+    // `checkReasoningCapability`), so it reports at the wire spelling
+    // `reasoning_effort` and comes back re-addressed to the word the caller
+    // wrote. Unified chat runs no parallel rule of its own.
     const asked = chat.safe({ model: LEGACY, messages: MESSAGES, reasoning: "high" });
     expect(asked.ok).toBe(false);
-    if (!asked.ok) {
-      expect(asked.errors.some((e) => e.path[0] === "reasoning")).toBe(true);
-    }
+    if (asked.ok) return;
+    expect(errorsOf(asked)).toContainEqual({
+      code: "unsupported_capability",
+      path: ["reasoning"],
+    });
 
     // `reasoning: false` / `"off"` asks the model NOT to think, which every
     // model can honour — so it must not trip the capability check.
@@ -149,6 +155,22 @@ describe("capability checks", () => {
       const outcome = chat.safe({ model: LEGACY, messages: MESSAGES, reasoning: off });
       expect(outcome.ok, JSON.stringify(errorsOf(outcome))).toBe(true);
     }
+  });
+
+  test("…and the same refusal reaches the 30 fleet providers, not just openai", () => {
+    // The check is in the shared chat-completions battery, so every
+    // OpenAI-compatible overlay inherits it — the point of pushing it down.
+    const outcome = chat.safe({
+      model: "groq/llama-3.1-8b-instant",
+      messages: MESSAGES,
+      reasoning: "high",
+    });
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(errorsOf(outcome)).toContainEqual({
+      code: "unsupported_capability",
+      path: ["reasoning"],
+    });
   });
 
   test("an attachment in a modality the model does not read errors, at its own path", () => {
@@ -190,11 +212,11 @@ describe("capability checks", () => {
     if (outcome.ok) return;
     const issue = outcome.errors.find((e) => e.code === "over_output_limit");
     expect(issue?.path).toEqual(["maxOutputTokens"]);
-    expect(issue?.meta).toEqual({ requested: 8192, limit: 4096 });
+    expect(issue?.meta).toEqual({ value: 8192, limit: 4096 });
   });
 });
 
-describe("layer 4 — estimation, context and budget", () => {
+describe("estimation, context and budget", () => {
   test("an estimate rides on a successful safe() result", () => {
     const outcome = chat.safe({
       model: "anthropic/claude-opus-5",
@@ -217,6 +239,19 @@ describe("layer 4 — estimation, context and budget", () => {
     if (outcome.ok) return;
     const issue = outcome.errors.find((e) => e.code === "over_context");
     expect(issue?.meta?.["limit"]).toBe(16385);
+    // An estimate finding still has to say *where*: `(root)` tells a caller
+    // nothing about what to shorten.
+    expect(issue?.path).toEqual(["messages"]);
+  });
+
+  test("…and it says `messages` on Gemini too, whose wire container is `contents`", () => {
+    const outcome = chat.safe({
+      model: "google/gemini-2.5-flash",
+      messages: [{ role: "user", content: "x".repeat(4 * 2_000_000) }],
+    });
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.errors.find((e) => e.code === "over_context")?.path).toEqual(["messages"]);
   });
 
   test("maxCostUSD rejects a request whose worst case exceeds it", () => {
@@ -234,55 +269,8 @@ describe("layer 4 — estimation, context and budget", () => {
     const issue = outcome.errors.find((e) => e.code === "over_budget");
     expect(issue?.meta?.["limit"]).toBe(0.01);
     expect(issue?.message).toContain("maxCostUSD");
-  });
-});
-
-describe("options.catalog", () => {
-  /**
-   * A one-row override. The realistic use is pinning a snapshot or adding a
-   * model that shipped after unmodel's — here it also proves the override
-   * *replaces* the bundled table rather than layering on top of it, which is
-   * the behaviour a caller pinning a snapshot needs.
-   */
-  const OVERRIDE: ChatCatalog = {
-    openai: {
-      "gpt-3.5-turbo": {
-        attachment: true,
-        reasoning: true,
-        toolCall: true,
-        structuredOutput: true,
-        temperature: true,
-        modalities: { input: ["text", "image"], output: ["text"] },
-        limit: { context: 1_000_000, output: 100_000 },
-        cost: { input: 0, output: 0 },
-      },
-    },
-  };
-
-  test("it wins over the bundled table", () => {
-    const params = {
-      model: LEGACY,
-      messages: MESSAGES,
-      tools: { weather: { inputSchema: { type: "object" } } },
-      maxOutputTokens: 8192,
-      reasoning: "high" as const,
-    };
-    expect(chat.safe(params).ok).toBe(false);
-
-    const overridden = chat.safe(params, { catalog: OVERRIDE });
-    expect(overridden.ok, JSON.stringify(errorsOf(overridden))).toBe(true);
-    if (!overridden.ok) return;
-    // Not deprecated in the override, so no deprecation warning either.
-    expect(overridden.warnings.map((w) => w.code)).not.toContain("deprecated_model");
-  });
-
-  test("a model the override omits is unknown, even if the bundled table has it", () => {
-    const outcome = chat.safe(
-      { model: "anthropic/claude-opus-5", messages: MESSAGES, maxOutputTokens: 64 },
-      { catalog: OVERRIDE },
-    );
-    expect(outcome.ok).toBe(true);
-    if (!outcome.ok) return;
-    expect(outcome.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+    // The price is a property of the model, and the model is the param a
+    // budget failure is actually fixed at.
+    expect(issue?.path).toEqual(["model"]);
   });
 });

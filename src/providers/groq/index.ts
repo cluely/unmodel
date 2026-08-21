@@ -14,7 +14,8 @@ import { GROQ_OPENAI_COMPAT_DOC, chatFamilyRules } from "./constraints";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   GroqTextModelId,
-  typeof availability
+  typeof availability,
+  "groq"
 >({
   id: provider.id,
   // The generated catalog carries no `api` field for Groq; the documented

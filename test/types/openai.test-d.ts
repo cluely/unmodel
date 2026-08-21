@@ -19,6 +19,11 @@ import {
   video,
   realtimeSession,
   type OpenaiChatModelId,
+  type ImagesBody,
+  type ImageEditBody,
+  type SpeechBody,
+  type TranscriptionBody,
+  type VideosBody,
 } from "../../src/providers/openai";
 import type { availability as openaiAvailability } from "../../src/catalog/availability/openai.gen";
 import type { ApiTargetsFor } from "../../src/retarget/ids";
@@ -220,6 +225,32 @@ function imagesTypeTests(): void {
   // @ts-expect-error — GROUND TRUTH: gpt-image-2 has no transparent background
   image({ model: "gpt-image-2", prompt: "x", background: "transparent" });
 
+  // Aliasing the public body union must not route a known discriminant through
+  // its loose future-model arm.
+  // @ts-expect-error — gpt-image-2 remains subject to its exact arm after aliasing
+  const aliasedInvalid: ImagesBody = {
+    model: "gpt-image-2",
+    prompt: "x",
+    background: "transparent",
+  };
+  void aliasedInvalid;
+
+  // Future models remain an explicit, usable escape hatch. Supplying a known
+  // id as the escape parameter cannot opt it out of its exact arm.
+  const future: ImagesBody<"gpt-image-9"> = {
+    model: "gpt-image-9",
+    prompt: "x",
+    some_future_param: true,
+  };
+  image(future);
+  // @ts-expect-error — a known id cannot inhabit the future-model arm
+  const knownAsFuture: ImagesBody<"gpt-image-2"> = {
+    model: "gpt-image-2",
+    prompt: "x",
+    background: "transparent",
+  };
+  void knownAsFuture;
+
   // @ts-expect-error — the dated gpt-image-2 snapshot rejects `transparent` too
   image({ model: "gpt-image-2-2026-04-21", prompt: "x", background: "transparent" });
 
@@ -271,6 +302,16 @@ function videoTypeTests(): void {
 
   // @ts-expect-error — sora-2 renders 720p only; 1080p needs sora-2-pro
   video({ model: "sora-2", prompt: "x", size: "1920x1080" });
+
+  // @ts-expect-error — aliasing cannot send a known id through the loose arm
+  const aliasedInvalid: VideosBody = { model: "sora-2", prompt: "x", size: "1920x1080" };
+  void aliasedInvalid;
+  const future: VideosBody<"sora-3"> = {
+    model: "sora-3",
+    prompt: "x",
+    future_motion_control: true,
+  };
+  video(future);
 
   // @ts-expect-error — model omitted means sora-2, so 1024p is rejected
   video({ prompt: "x", size: "1024x1792" });
@@ -360,6 +401,22 @@ function imageEditTypeTests(): void {
   // @ts-expect-error — gpt-image-2 has no transparent background
   imageEdit({ model: "gpt-image-2", image: file, prompt: "x", background: "transparent" });
 
+  // @ts-expect-error — aliasing cannot send a known id through the loose arm
+  const aliasedInvalid: ImageEditBody = {
+    model: "gpt-image-2",
+    image: file,
+    prompt: "x",
+    background: "transparent",
+  };
+  void aliasedInvalid;
+  const future: ImageEditBody<"gpt-image-9"> = {
+    model: "gpt-image-9",
+    image: file,
+    prompt: "x",
+    future_edit_control: true,
+  };
+  imageEdit(future);
+
   // @ts-expect-error — response_format is dall-e-2 only on this endpoint
   imageEdit({ model: "gpt-image-1", image: file, prompt: "x", response_format: "url" });
 
@@ -400,6 +457,22 @@ function speechTypeTests(): void {
 
   // @ts-expect-error — instructions does not work with tts-1
   speech({ model: "tts-1", input: "x", voice: "alloy", instructions: "be chirpy" });
+
+  // @ts-expect-error — aliasing cannot send a known id through the loose arm
+  const aliasedInvalid: SpeechBody = {
+    model: "tts-1",
+    input: "x",
+    voice: "alloy",
+    instructions: "be chirpy",
+  };
+  void aliasedInvalid;
+  const future: SpeechBody<"tts-2"> = {
+    model: "tts-2",
+    input: "x",
+    voice: "future-voice",
+    future_prosody: true,
+  };
+  speech(future);
 
   // @ts-expect-error — sse streaming is not supported for tts-1-hd
   speech({ model: "tts-1-hd", input: "x", voice: "alloy", stream_format: "sse" });
@@ -458,6 +531,20 @@ function transcribeTypeTests(): void {
 
   // @ts-expect-error — gpt-4o-transcribe-diarize does not support prompts
   transcribe({ model: "gpt-4o-transcribe-diarize", file, prompt: "hello" });
+
+  // @ts-expect-error — aliasing cannot send a known id through the loose arm
+  const aliasedInvalid: TranscriptionBody = {
+    model: "gpt-4o-transcribe-diarize",
+    file,
+    prompt: "hello",
+  };
+  void aliasedInvalid;
+  const future: TranscriptionBody<"whisper-9"> = {
+    model: "whisper-9",
+    file,
+    future_alignment: true,
+  };
+  transcribe(future);
 
   // @ts-expect-error — keywords is a gpt-transcribe param
   transcribe({ model: "whisper-1", file, keywords: ["unmodel"] });

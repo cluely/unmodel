@@ -183,15 +183,15 @@ describe("every declared music preset is a value the provider accepts", () => {
    * taken by …". Music has no such pair: both ElevenLabs ids share one row and
    * both Stability ids share another, because their endpoints genuinely do not
    * differ by model. So the only cross-model mistake available is a *cross
-   * provider* one, and that is caught by the type rather than by the runtime —
-   * exactly as `ExactKeys` documents for any key the vocabulary does not name.
+   * provider* one. `ExactKeys` catches it for typed callers; the canonical
+   * envelope check is the matching runtime backstop for JSON and JavaScript.
    */
-  test("the cross-provider case is a compile error, and the tables agree it has no run-time twin", () => {
+  test("the cross-provider case is rejected by the type and runtime backstops", () => {
     // @ts-expect-error — `steps` is Stability's; ElevenLabs' row has no such key.
-    const dropped = music.safe({ model: "elevenlabs/music_v1", prompt: "x", steps: 40 });
-    expect(dropped.ok).toBe(true);
-    if (!dropped.ok) return;
-    expect(JSON.stringify(dropped.params)).not.toContain("steps");
+    const rejected = music.safe({ model: "elevenlabs/music_v1", prompt: "x", steps: 40 });
+    expect(rejected.ok).toBe(false);
+    if (rejected.ok) return;
+    expect(rejected.errors[0]).toMatchObject({ code: "unsupported_param", path: ["steps"] });
 
     for (const adapter of ADAPTERS) {
       const rosters = Object.values(adapter.modelParams ?? {}).map((row) =>

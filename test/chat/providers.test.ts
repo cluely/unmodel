@@ -19,7 +19,6 @@ import { describe, expect, test } from "bun:test";
 
 import { chat } from "../../src/chat/index";
 import { CHAT_PROVIDERS, dialectOf } from "../../src/chat/refs";
-import { CHAT_CONSTRAINT_ENDPOINTS } from "../../src/chat/constraints";
 import { chatProfiles } from "../../src/catalog/chat-profiles.gen";
 import { ENDPOINTS, isFactoryEndpoint } from "../../src/core/translate/endpoints";
 import { TARGET_CONSTRAINT_ENDPOINTS } from "../../src/retarget/target-constraints";
@@ -88,28 +87,46 @@ describe("a smoke request per provider", () => {
   );
 });
 
-describe("the two constraint tables", () => {
+describe("constraints have one authority: the provider's own validator", () => {
   /**
-   * `src/chat/constraints.ts` and `src/retarget/target-constraints.ts` answer
-   * the same question for different callers and are deliberately separate (see
-   * either module's header for the bundle argument). What must not drift is the
-   * *coverage*: a provider whose rules a retarget honours must not be a
-   * provider `chat()` ignores, or the same request would be rejected through
-   * one door and accepted through the other.
+   * There used to be a second table here — `src/chat/constraints.ts`, a
+   * chat-side copy of the deny/enum rules — and a drift test asserting it
+   * covered at least what the retarget table covers, "or the same request
+   * would be rejected through one door and accepted through the other".
+   *
+   * That table is gone: `chat()` now compiles a body and hands it to the
+   * provider's own validator, which applies the provider's own tables. The
+   * drift it guarded against is no longer expressible, so the assertion is
+   * replaced by the two facts that now carry the guarantee — every endpoint
+   * the retarget table names is reachable from `chat()`, and a provider deny
+   * rule really does fire through the unified entry.
    */
-  test("the chat table covers every endpoint the retarget table does", () => {
+  test("every endpoint the retarget table names is a provider chat() can reach", () => {
     for (const endpoint of TARGET_CONSTRAINT_ENDPOINTS) {
-      expect(CHAT_CONSTRAINT_ENDPOINTS, `${endpoint} is missing from the chat table`).toContain(
-        endpoint,
-      );
-    }
-  });
-
-  test("every endpoint the chat table names is a real chat endpoint", () => {
-    for (const endpoint of CHAT_CONSTRAINT_ENDPOINTS) {
       const entry = ENDPOINTS[endpoint];
       expect(entry, `${endpoint} is not in ENDPOINTS`).toBeDefined();
       expect(CHAT_PROVIDERS as readonly string[]).toContain(entry?.provider as string);
     }
+  });
+
+  test("a provider's hand-written deny rule fires through the unified entry", () => {
+    // Groq's OpenAI-compatible endpoint 400s on `logprobs` and accepts only
+    // `n: 1`. Both rules live in src/providers/groq/constraints.ts and are
+    // applied by groq.chat — which is where chat() terminates. Nothing under
+    // src/chat holds a copy that could disagree.
+    const outcome = chat.safe({
+      model: "groq/llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: "hi" }],
+      candidates: 3,
+      providerOptions: { groq: { logprobs: true } },
+    });
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    const codes = outcome.errors.map((issue) => issue.code);
+    expect(codes).toContain("unsupported_param");
+    expect(codes).toContain("invalid_enum_value");
+    expect(outcome.errors.find((i) => i.code === "unsupported_param")?.message).toContain(
+      "logprobs",
+    );
   });
 });

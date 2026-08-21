@@ -306,11 +306,11 @@ export type KlingVideoWire =
 
 /** What a unified video call to `kling/…` returns — one route's `Validated`. */
 export type KlingVideoResult =
-  | ReturnType<typeof v1TextValidator>
-  | ReturnType<typeof v1ImageValidator>
-  | ReturnType<typeof v3TextValidator>
-  | ReturnType<typeof v3ImageValidator>
-  | ReturnType<typeof omniValidator>;
+  | ReturnType<typeof v1TextValidator<TextToVideoParams>>
+  | ReturnType<typeof v1ImageValidator<ImageToVideoParams>>
+  | ReturnType<typeof v3TextValidator<TextToVideoV3Params>>
+  | ReturnType<typeof v3ImageValidator<ImageToVideoV3Params>>
+  | ReturnType<typeof omniValidator<OmniVideoParams>>;
 
 /** See the note on kling's image adapter: `validate` is contravariant. */
 type KlingValidate = CompiledCall<KlingVideoWire, KlingVideoResult>["validate"];

@@ -14,7 +14,7 @@ import { availability } from "../../catalog/availability/deepinfra.gen";
 const DEEPINFRA_BASE_URL = "https://api.deepinfra.com/v1/openai";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<DeepinfraTextModelId, typeof availability>({
+  createOpenAICompatible<DeepinfraTextModelId, typeof availability, "deepinfra">({
     id: "deepinfra",
     baseUrl: DEEPINFRA_BASE_URL,
     catalog: models,

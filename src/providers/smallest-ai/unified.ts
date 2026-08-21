@@ -49,7 +49,7 @@ const SYNTHESIZE_DOCS =
 export type SmallestSpeechWire = TtsParams;
 
 /** What a unified call to `smallest-ai/…` returns. */
-export type SmallestSpeechResult = ReturnType<typeof validator>;
+export type SmallestSpeechResult = ReturnType<typeof validator<SmallestSpeechWire>>;
 
 const SAMPLE_RATES = [8000, 16000, 24000, 44100] as const;
 

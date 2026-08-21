@@ -29,7 +29,7 @@ import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints, MediaRule } from "../../core/constraint-types";
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
 import { imagesModels } from "./images-models";
@@ -162,14 +162,18 @@ export interface DallE2EditBody {
 }
 
 /** Escape hatch for models unmodel doesn't know yet (unknown_model warning). */
-export interface UnknownImageEditModelBody {
-  model: string & {};
+export interface UnknownImageEditModelBody<Model extends string> {
+  model: FutureModelId<Model, keyof ImageEditBodyByModel>;
   image: Blob | Blob[];
   prompt: string;
   [key: string]: unknown;
 }
 
-export type ImageEditBody =
+/**
+ * Closed over documented models by default. Supply a future model literal to
+ * opt into the loose arm: `ImageEditBody<"gpt-image-9">`.
+ */
+export type ImageEditBody<FutureModel extends string = never> =
   | GptImage1EditBody
   | GptImage1MiniEditBody
   | GptImage15EditBody
@@ -178,7 +182,7 @@ export type ImageEditBody =
   | ChatgptImageLatestEditBody
   | DefaultImageEditBody
   | DallE2EditBody
-  | UnknownImageEditModelBody;
+  | UnknownImageEditModelBody<FutureModel>;
 
 interface ImageEditBodyByModel {
   "gpt-image-1": GptImage1EditBody;
@@ -194,10 +198,12 @@ interface ImageEditBodyByModel {
 type ImageEditArm<M> = M extends keyof ImageEditBodyByModel
   ? ImageEditBodyByModel[M]
   : M extends string
-    ? UnknownImageEditModelBody
+    ? UnknownImageEditModelBody<M>
     : DefaultImageEditBody;
 
 type ImageEditModelInput = keyof ImageEditBodyByModel | (string & {});
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyImageEditBody = ImageEditBody<string>;
 
 // ---------------------------------------------------------------------------
 // Schema — the loose union of every param any model accepts; per-model
@@ -237,7 +243,7 @@ const asBlobs = (image: unknown): Blob[] =>
  * `dall-e-2`, you can only provide one image".
  */
 function checkImageCount(
-  params: ImageEditBody,
+  params: AnyImageEditBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -295,7 +301,7 @@ function checkUpload(
 
 /** Enforces the per-model upload rules on `image[]` and the `mask` PNG. */
 function checkUploads(
-  params: ImageEditBody,
+  params: AnyImageEditBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -327,7 +333,7 @@ const checkPromptLimit = createPromptLimitCheck(DEFAULT_IMAGE_EDIT_MODEL_ID);
  * Blob rides as `image`. Null values are dropped — null means "use the
  * provider default", which multipart expresses by omission.
  */
-export function toFormData(params: ImageEditBody): FormData {
+export function toFormData(params: ImageEditBody<string>): FormData {
   const form = new FormData();
   for (const [key, value] of Object.entries(params)) {
     if (value == null) continue;
@@ -356,7 +362,7 @@ export function toFormData(params: ImageEditBody): FormData {
  */
 type OpenAISdkTargets<B> = { openai: () => B };
 
-function finalize(params: ImageEditBody): unknown {
+function finalize(params: AnyImageEditBody): unknown {
   const body = { ...params };
   return toValidated(body, {
     url: IMAGES_EDITS_URL,
@@ -369,7 +375,7 @@ function finalize(params: ImageEditBody): unknown {
   });
 }
 
-const validator = createValidator<ImageEditBody, unknown>({
+const validator = createValidator<AnyImageEditBody, unknown>({
   endpoint: "openai.imageEdit",
   schema: imageEditSchema,
   modelId: (params) => params.model ?? DEFAULT_IMAGE_EDIT_MODEL_ID,

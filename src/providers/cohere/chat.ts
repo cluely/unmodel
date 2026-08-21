@@ -637,6 +637,7 @@ const validator = createValidator<ChatBody, unknown>({
   catalog: models,
   checks: [validateCapabilities, validateResponseFormatCompatibility, validateImages],
   estimate: estimateChat,
+  promptPath: ["messages"],
   finalize,
 });
 

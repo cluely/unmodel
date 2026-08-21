@@ -20,7 +20,8 @@ import { availability } from "../../catalog/availability/sarvam.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   SarvamTextModelId,
-  typeof availability
+  typeof availability,
+  "sarvam"
 >({
   id: provider.id,
   // Documented OpenAI-compatible base URL (https://docs.sarvam.ai/api/

@@ -7,7 +7,7 @@ import type {
   GenerateImagesParameters,
   GenerateVideosParameters,
 } from "@google/genai";
-import { chat, image, video } from "../../src/providers/google";
+import { chat, image, video, type GenerateImagesBody } from "../../src/providers/google";
 import type { GoogleTextModelId } from "../../src/catalog/google.gen";
 import { expectAssignable } from "./helpers";
 
@@ -193,6 +193,21 @@ image({
   // @ts-expect-error sampleImageSize is not supported by the Fast model
   parameters: { sampleImageSize: "1K" },
 });
+
+// The exported body alias keeps the same per-model narrowing.
+// @ts-expect-error — aliasing cannot route Imagen Fast through the loose arm
+const aliasedInvalidImagen: GenerateImagesBody = {
+  model: "imagen-4.0-fast-generate-001",
+  instances: [{ prompt: "hi" }],
+  parameters: { sampleImageSize: "1K" },
+};
+void aliasedInvalidImagen;
+const futureImagen: GenerateImagesBody<"imagen-9.9-imaginary"> = {
+  model: "imagen-9.9-imaginary",
+  instances: [{ prompt: "hi" }],
+  parameters: { futureControl: true },
+};
+image(futureImagen);
 
 // Imagen's aspect ratios are the narrow five, not Nano Banana's fourteen.
 image({

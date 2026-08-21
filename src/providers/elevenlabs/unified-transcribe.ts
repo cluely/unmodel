@@ -40,7 +40,7 @@ const STT_DOCS = "https://elevenlabs.io/docs/api-reference/speech-to-text/conver
 export type ElevenlabsTranscribeWire = SpeechToTextParams;
 
 /** What a unified call to `elevenlabs/…` returns. */
-export type ElevenlabsTranscribeResult = ReturnType<typeof validator>;
+export type ElevenlabsTranscribeResult = ReturnType<typeof validator<ElevenlabsTranscribeWire>>;
 
 /**
  * Scribe's per-model surface: the category's only three-value `timestamps`

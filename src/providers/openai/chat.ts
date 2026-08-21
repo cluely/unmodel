@@ -18,6 +18,11 @@ import {
 import { models, type OpenaiTextModelId } from "../../catalog/openai.gen";
 import { availability } from "../../catalog/availability/openai.gen";
 import { chatFamilyRules, chatConstraints } from "./constraints";
+import type {
+  ValidatorProviderCarrier,
+  ValidatorResultKind,
+  ValidatorResultKindCarrier,
+} from "../../core/validator-result-kind";
 
 export const CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -200,6 +205,7 @@ const validator = createValidator<ChatCompletionsBody, unknown>({
   familyRules: chatFamilyRules,
   checks: chatCompletionsChecks(CHAT_CONSTRAINT_SPEC),
   estimate: createChatEstimate(CHAT_CONSTRAINT_SPEC),
+  promptPath: ["messages"],
   finalize: createChatFinalize({
     endpoint: "openai.chat",
     request: {
@@ -210,6 +216,24 @@ const validator = createValidator<ChatCompletionsBody, unknown>({
     availability,
   }),
 });
+
+type AppliedOpenAIChatBody<Input> = Input extends { model: infer Model extends string }
+  ? Omit<ChatCompletionsBody, "model"> & { model: Model }
+  : never;
+
+/** Registry-instantiable form of this endpoint's generic result. */
+export interface OpenAIChatResultKind extends ValidatorResultKind {
+  readonly output: AppliedOpenAIChatBody<this["input"]> extends infer Body
+    ? Body extends ChatCompletionsBody
+      ? Validated<
+          Body,
+          ChatSdkTargets<Body>,
+          typeof availability,
+          Body["model"] & string
+        >
+      : never
+    : never;
+}
 
 /**
  * Validates params for POST /v1/chat/completions. The result's enumerable
@@ -231,4 +255,4 @@ export const chat = validator as unknown as {
     options?: ValidateOptions,
   ): ValidateResult<Validated<T, ChatSdkTargets<T>, typeof availability, T["model"] & string>>;
   constraintsFor(modelId: string): EndpointConstraints[];
-};
+} & ValidatorResultKindCarrier<OpenAIChatResultKind> & ValidatorProviderCarrier<"openai">;

@@ -296,12 +296,15 @@ export function getModel(
 // weight — types are erased, values are not:
 //
 //   • `chat-refs.gen.ts`    TYPE-ONLY. Zero runtime bytes; ~50 KB of `.d.ts`.
-//   • `chat-profiles.gen.ts` runtime. The slim capability/limit/cost subset a
-//     request check actually reads, and nothing else.
+//   • `chat-profiles.gen.ts` runtime. The slim capability/limit/cost subset,
+//     and nothing else.
 //
-// Keeping `name`, `family`, `openWeights`, `releaseDate`, `lastUpdated` and
-// `knowledge` out of the profile table is worth ~90 KB of shipped source for
-// data no validation path consults.
+// The profile table is a *discovery* snapshot, not a validator input: a
+// `unmodel/chat` request compiles to a wire body and terminates in the named
+// provider's own validator, which reads that provider's full generated
+// catalog. Keeping `name`, `family`, `openWeights`, `releaseDate`,
+// `lastUpdated` and `knowledge` out of it is still worth ~90 KB of shipped
+// source, and the same reasoning says nothing else should be added either.
 // ---------------------------------------------------------------------------
 
 /** A text-output model — the rows `unmodel/chat` can address. */
@@ -443,11 +446,18 @@ function renderChatProfilesFile(scope: ReturnType<typeof chatScope>): string {
 import type { ModelInfo } from "../core/catalog-types";
 
 /**
- * What \`unmodel/chat\` needs to know about a model to check a request against
- * it: what it accepts, what it can do, how big it is and what it costs. A
- * \`Pick\` of \`ModelInfo\` rather than a fresh interface, so a field rename in
- * the catalog contract fails \`tsc\` here instead of silently splitting the two
- * vocabularies.
+ * A model, as \`unmodel/chat\` advertises it: what it accepts, what it can do,
+ * how big it is and what it costs.
+ *
+ * This is a **discovery** snapshot, not the table a request is checked
+ * against. A \`unmodel/chat\` call compiles to a wire body and terminates in
+ * the named provider's own validator, which reads that provider's full
+ * generated catalog — so this table is what you browse, and that one is what
+ * decides.
+ *
+ * A \`Pick\` of \`ModelInfo\` rather than a fresh interface, so a field rename
+ * in the catalog contract fails \`tsc\` here instead of silently splitting the
+ * two vocabularies.
  */
 export type ChatModelProfile = Pick<
   ModelInfo,

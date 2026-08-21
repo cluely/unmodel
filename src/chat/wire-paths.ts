@@ -1,18 +1,16 @@
 /**
  * Wire param name → unified param name, per dialect.
  *
- * Layers 1, 2 and 4 of the chat pipeline inspect the caller's `ChatParams`, so
- * their issue paths are already in the vocabulary the caller typed. **Layer 3
- * is the exception**: the provider deny/enum tables are written against the
- * wire body (that is the whole point of them — they encode "this API returns a
- * 400 for `logprobs`"), so they can only run against the *compiled* body, and
- * the paths they produce name params nobody wrote.
+ * Canonical shape checks inspect the caller's `ChatParams`, so their issue
+ * paths already use the vocabulary the caller typed. Concrete-provider checks
+ * inspect the compiled wire body instead, so their paths must cross back over
+ * this boundary before being reported.
  *
  * Telling someone their request is invalid at `["max_completion_tokens"]` when
  * they wrote `maxOutputTokens` is worse than saying nothing: it sends them
- * looking for a param that does not exist in the API they are using. So layer 3
- * issues get their paths translated back through these tables before they are
- * reported.
+ * looking for a param that does not exist in the API they are using. So every
+ * issue the concrete provider validator reports gets its path translated back
+ * through these tables before it is returned.
  *
  * ## The two cases, and why unmapped is not a failure
  *
@@ -30,8 +28,8 @@
  *
  * That second case is the common one for deny rules — groq denies `logprobs`
  * and `logit_bias`, which the unified vocabulary has no word for at all — so
- * "unmapped" is the *expected* outcome for most layer-3 findings, not a hole
- * in the table.
+ * "unmapped" is the *expected* outcome for most passthrough findings, not a
+ * hole in the table.
  *
  * ## Nested keys
  *
@@ -99,6 +97,9 @@ const ANTHROPIC_MESSAGES: Readonly<Record<string, string>> = Object.freeze({
 
 /** Gemini `:generateContent`. Settings nest under `generationConfig`. */
 const GEMINI: Readonly<Record<string, string>> = Object.freeze({
+  // Restored only while calling google.chat; that validator owns catalog
+  // findings before stripping the model back into the request URL.
+  model: "model",
   contents: "messages",
   systemInstruction: "system",
   tools: "tools",
@@ -142,9 +143,47 @@ export interface RemappedPath {
   unmapped: boolean;
 }
 
-/** Looks up `path` in `dialect`'s table, longest prefix first. */
-export function unifiedPath(dialect: DialectId, path: Array<string | number>): RemappedPath {
+/**
+ * How the compiled body's message container lines up with the caller's.
+ *
+ * `contents[i]` is not `messages[i]`: the encoder folds `system` messages out
+ * into a separate field and folds `tool` messages into the following user
+ * turn, so the indices shift the moment either is present. The map is recorded
+ * by the encoder (see `ChatEncoding.messageOrigin`) rather than re-derived
+ * here, because a second copy of the fold rules is a second thing to keep in
+ * step. `undefined` at an index means the compiled message was synthesised and
+ * has no canonical address at all.
+ */
+export type MessageOrigin = readonly (number | undefined)[];
+
+/**
+ * Looks up `path` in `dialect`'s table, longest prefix first.
+ *
+ * @param messageOrigin the compiled → canonical message index map, when the
+ * compiled message container is still the encoder's own. Omit it whenever the
+ * caller replaced the container through `providerOptions`: there is then no
+ * correspondence to speak of, and inventing one addresses a finding to a
+ * message the caller never wrote.
+ */
+export function unifiedPath(
+  dialect: DialectId,
+  path: Array<string | number>,
+  messageOrigin?: MessageOrigin,
+): RemappedPath {
   if (path.length === 0) return { path, unmapped: false };
+
+  // Gemini's message container changes name *and* index. Nothing below the
+  // message is re-addressed: the parts array is built by the codec, which
+  // drops and merges parts, so `parts[j]` is not `content[j]`. Media findings
+  // never reach this table — `media-paths.ts` re-addresses them by payload
+  // fingerprint first — so a surviving part-level path came in through
+  // `providerOptions`, where the wire spelling is the address to fix.
+  if (dialect === "gemini" && path[0] === "contents" && typeof path[1] === "number") {
+    const origin = messageOrigin?.[path[1]];
+    if (origin === undefined || path[2] === "parts") return { path: [...path], unmapped: true };
+    return { path: ["messages", origin, ...path.slice(2)], unmapped: false };
+  }
+
   const map = MAPS[dialect];
   const joined = path.join(".");
   if (Object.hasOwn(map, joined)) return { path: [map[joined] as string], unmapped: false };

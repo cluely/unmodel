@@ -179,6 +179,13 @@ provider's wire body, `.request` is that provider's URL, method and static
 headers, and you send it with the same `fetch` as the first quickstart. Nothing
 new to learn about *sending* — only about *writing*.
 
+One thing to know before you reach for it: `unmodel/chat` is the *ready-made*
+pack and it costs ~1.7 MB, because compiling for any provider from a bare
+`"provider/model"` string means carrying all 32 of their real validators. If
+you only ever call two of them, `createChat` from
+[`unmodel/chat/factory`](#bundle-story) builds the identical surface out of
+just those (~144 KiB plus the validators you register).
+
 Media works the same way, one canonical vocabulary per category:
 
 ```ts
@@ -403,6 +410,20 @@ keyed by provider and deep-merged over the compiled body **before** validation,
 so it is checked rather than smuggled past the checks. Dropping to the wire
 layer is therefore never a migration — it is deleting one import.
 
+Typed calls keep exact-key checking on both the throwing form and `.safe()`.
+When the value comes from JSON, a queue, or another untyped boundary, all seven
+standardized surfaces expose a separate `.safeUnknown(value)` method:
+
+```ts
+const value: unknown = JSON.parse(text);
+const result = image.safeUnknown(value);
+```
+
+Keeping this separate is intentional: an `unknown` overload on `.safe()` would
+also accept a typoed object literal after the exact-key overload rejected it.
+`safeUnknown` instead performs the runtime shape checks without weakening the
+normal TypeScript call.
+
 **The ref convention.** `model` is `"provider/model"`, split on the **first**
 slash. OpenRouter's own ids contain slashes, so
 `"openrouter/anthropic/claude-opus-5"` is provider `openrouter`, model
@@ -464,11 +485,36 @@ that compiles one canonical request at every provider that can express it.
 - **`operation` is `"edit"` and only `"edit"` in v1.** Masked routes stay
   reachable by name at `unmodel/<provider>`.
 
-`unmodel/chat` is a single entry with one slim bundled catalog. The six media
-packs also ship `create*` registry forms — `createImage([openai, ideogram])`
-over the adapter leaves at `unmodel/<provider>/unified` — so a two-provider app
-pays for two providers. Per-category detail (every vocabulary, the exact
-translations, and the honest gaps) is in
+`unmodel/chat` is the ready-made 32-provider pack: it includes each provider's
+real chat validator, catalog and available `.toApi` targets. A narrow exact
+pack comes from the provider-free factory entry:
+
+```ts
+import { createChat } from "unmodel/chat/factory";
+import { chat as anthropic } from "unmodel/anthropic";
+import { chat as openai } from "unmodel/openai";
+
+const chat = createChat({ anthropic, openai });
+```
+
+The registry key and the validator under it are one claim, not two: every chat
+validator has the same shape and providers share model ids, so
+`createChat({ groq: togetherai })` would otherwise compile, validate against
+Together's catalog and post to Together's host with zero warnings. It is a
+**compile error** — each validator states which provider it speaks for — and a
+`TypeError` at construction for a hand-written one that carries no such claim.
+`createChat` lives only at `unmodel/chat/factory`; reaching it through
+`unmodel/chat` would drag the whole ready registry in, so that re-export does
+not exist.
+
+The former `ChatOptions.catalog` override is intentionally gone: layering a
+second catalog beside a concrete provider validator creates two authorities
+that can disagree. Register a provider validator configured for the catalog
+you need instead. The six media packs likewise ship `create*` registry forms —
+`createImage([openai, ideogram])` over the adapter leaves at
+`unmodel/<provider>/unified` — so a two-provider app pays for two providers.
+Per-category detail (every vocabulary, the exact translations, and the honest
+gaps) is in
 [Unified media](#unified-media-one-vocabulary-per-category).
 
 ## Providers
@@ -1048,6 +1094,29 @@ image({ model: "gpt-image-2", prompt: "a watercolor fox", size: "1808x1024" }); 
 image({ model: "gpt-image-2", prompt: "a watercolor fox", size: "1810x1024" }); // ✗ not divisible by 16
 ```
 
+Provider body aliases are closed over their documented model arms by default,
+so annotating a value does not erase those model-specific checks. A future
+model remains an explicit escape hatch:
+
+```ts
+import type { ImagesBody } from "unmodel/openai";
+
+const known: ImagesBody = {
+  model: "gpt-image-2",
+  prompt: "a watercolor fox",
+  background: "transparent", // ✗ still rejected through the annotation
+};
+
+const future: ImagesBody<"gpt-image-9"> = {
+  model: "gpt-image-9",
+  prompt: "a watercolor fox",
+  experimental_option: true,
+};
+```
+
+Use `ImagesBody<string>` only when the model id is genuinely discovered at
+runtime; that explicit widening also deliberately gives up per-model narrowing.
+
 Every such deviation carries the doc URL that justifies it, in the constraint's `source` field.
 
 Validation also catches, per model: unknown/deprecated models, unsupported params and capabilities, invalid enum values, prompts over the context window, output limits, unsupported/oversized media, and budget overruns.
@@ -1172,6 +1241,7 @@ Everything unmodel-specific goes in a second argument — params stay byte-for-b
 
 ```ts
 import { encodingForModel } from "js-tiktoken";
+import { chat } from "unmodel/google"; // the wire subpath — see the note below
 
 const enc = encodingForModel("gpt-4o");
 
@@ -1192,6 +1262,22 @@ const validated = chat(params, {
 });
 ```
 
+**`media[].path` is in the vocabulary of the entry you called**, and the two
+vocabularies differ. On a wire subpath — `unmodel/google`, as above — it
+addresses the wire body: `["contents", 0, "parts", 1]`. On `unmodel/chat` it
+addresses the request *you* wrote, so the same declaration is
+`["messages", 1, "content", 0]`; unified chat carries it across compilation by
+matching the payload, so it survives Gemini's `contents`/`parts` rename and the
+system message chat-completions inserts. A declaration whose part does not
+survive compilation at all is dropped with a `media_declaration_dropped`
+warning rather than re-aimed at whatever now occupies that slot. When in doubt,
+call without it: the `media_*_undeclared` warning prints the exact path to
+declare.
+
+`chat.providers` lists the provider ids a chat validator was built with —
+all 32 on the ready `unmodel/chat`, exactly what you registered on a
+`createChat` pack.
+
 ## Bundle story
 
 Every provider lives on its own subpath; importing one pulls in nothing from the others, and `"sideEffects": false` lets bundlers tree-shake the rest:
@@ -1204,7 +1290,8 @@ Every provider lives on its own subpath; importing one pulls in nothing from the
 | `unmodel/catalog` | models.dev snapshot: `catalog`, `getProvider`, `getModel` |
 | `unmodel/ai-sdk` | The `withJsonSchemaTools` adapter for `.toSdk("ai-sdk")` — types plus one pure function, no dependency on `ai` |
 | `unmodel/<provider>/unified` | One provider's adapters for the [unified media surfaces](#unified-surfaces) — that provider's endpoint module and the kernel, nothing else |
-| `unmodel/chat` | The standardized chat surface: the three dialect encoders and one slim per-model profile table covering all 32 providers — no provider subpath's schema, constraints or catalog |
+| `unmodel/chat` | Ready-made standardized chat pack: three dialect encoders plus all 32 concrete provider validators, catalogs and their `.toApi` availability data |
+| `unmodel/chat/factory` | Provider-free `createChat(registry)` compiler entry; add only the concrete provider chat validators your application uses |
 | `unmodel/image`, `unmodel/image-edit`, `unmodel/speech`, `unmodel/video`, `unmodel/transcribe`, `unmodel/music` | A ready-made pack: every adapter in that category, and therefore every one of those providers. `createImage([…])` / `createImageEdit([…])` / `createSpeech([…])` / `createVideo([…])` / `createTranscribe([…])` / `createMusic([…])` is how you pay for two instead of fifteen |
 
 Retargeting keeps that story intact. The wire-format **codecs** are per dialect
@@ -1233,26 +1320,28 @@ build, in KiB of unminified ESM (transitive chunk graph, `zod` excluded):
 
 | Entry | Size | What dominates it |
 | --- | --- | --- |
-| `unmodel/chat` | 557.7 KiB | 433 KiB is the slim per-model profile table covering all 32 providers; the rest is the three dialect encoders and the translation hub |
-| `unmodel/image` | 748.9 KiB | fifteen providers' schemas, constraint tables, hand-maintained catalogs and per-model size tables |
-| `unmodel/video` | 607.6 KiB | ten providers across twenty-one endpoint modules, plus their per-model duration/resolution/ratio tables |
-| `unmodel/speech` | 403.0 KiB | fourteen providers, each with a voice/format roster and a per-model codec/language table |
-| `unmodel/transcribe` | 394.9 KiB | eleven providers — the widest wire surfaces in the library, and therefore the widest per-model extras tables |
-| `unmodel/image-edit` | 269.3 KiB | four providers |
-| `unmodel/music` | 143.0 KiB | two providers |
+| `unmodel/chat` | 1718.7 KiB | all 32 providers' exact validators, catalogs and available retarget tables, plus the canonical compiler. ~379 KiB of it is the `chatProfiles` discovery snapshot, which no validation path reads |
+| `unmodel/chat/factory` | 144.0 KiB | provider-free canonical compiler and the three dialect codecs; registered provider validators add their own weight |
+| `unmodel/image` | 755.7 KiB | fifteen providers' schemas, constraint tables, hand-maintained catalogs and per-model size tables |
+| `unmodel/video` | 614.4 KiB | ten providers across twenty-one endpoint modules, plus their per-model duration/resolution/ratio tables |
+| `unmodel/speech` | 409.8 KiB | fourteen providers, each with a voice/format roster and a per-model codec/language table |
+| `unmodel/transcribe` | 401.7 KiB | eleven providers — the widest wire surfaces in the library, and therefore the widest per-model extras tables |
+| `unmodel/image-edit` | 276.1 KiB | four providers |
+| `unmodel/music` | 149.8 KiB | two providers |
 
-Those numbers are the *whole category*. A pack you build yourself pays only for
-the providers you register — `createSpeech([openai, rime])` lands in the 40–60
-KiB range on top of the kernel, and the equivalent holds for every category. If
-you want exactly one provider, importing its subpath directly is still the
-smallest thing in the library.
+The ready-pack numbers are the *whole category*; `chat/factory` is the
+provider-free base. A pack you build yourself pays only for the providers you
+register — `createSpeech([openai, rime])` lands in the 40–60 KiB range on top
+of the kernel, and the equivalent holds for every category. If you want exactly
+one provider, importing its subpath directly is still the smallest thing in the
+library.
 
 ## Status
 
 Current coverage: **153 wire-exact request validators** across **65 provider
 subpaths**, plus **4 endpoint-factory subpaths** (Azure OpenAI, Vertex AI,
 Amazon Bedrock, Cloudflare Workers AI) whose factories return the same
-surface — 69 provider subpaths in all, out of 117 package exports. Chat is 33 of
+surface — 69 provider subpaths in all, out of 118 package exports. Chat is 33 of
 those validators; the rest are speech, transcription, image, image editing,
 video, music and realtime session configs.
 
@@ -1261,7 +1350,7 @@ providers, and the six media packs — `unmodel/image` over 15, `unmodel/speech`
 over 14, `unmodel/transcribe` over 11, `unmodel/video` over 10,
 `unmodel/image-edit` over 4, `unmodel/music` over 2 — each also available as a
 per-provider adapter at `unmodel/<provider>/unified` (36 of those). The suite is
-**4,585 tests across 185 files**.
+**9,963 tests across 193 files**.
 
 - **OpenAI** — Chat Completions, Images + image edits, Speech (TTS), Transcription (STT), Sora videos, Realtime session config.
 - **Anthropic** `chat` (Messages); **Google** Gemini `chat`, Imagen `image`, Veo `video`; **Cohere** v2 Chat.

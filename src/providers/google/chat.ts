@@ -57,6 +57,11 @@ import {
 } from "./constraints";
 import { generateContentSchema } from "./wire";
 import type { GenerateContentBody, GoogleContent, GooglePart, GoogleVoiceConfig } from "./wire";
+import type {
+  ValidatorProviderCarrier,
+  ValidatorResultKind,
+  ValidatorResultKindCarrier,
+} from "../../core/validator-result-kind";
 
 // The wire types and the zod schema live in ./wire.ts (a leaf that imports
 // only zod), so translation machinery can reach the dialect without pulling
@@ -202,7 +207,10 @@ function checkCapabilities(params: GenerateContentBody, info: ModelInfo | undefi
   if (config === undefined) return;
 
   for (const key of ["responseSchema", "responseJsonSchema"] as const) {
-    if (config[key] !== undefined && !info.structuredOutput) {
+    // Tri-state, like every other structured-output check in the library:
+    // absent means "the catalog has no answer" and must not fail a request.
+    // Only an explicit `false` refuses.
+    if (config[key] !== undefined && info.structuredOutput === false) {
       ctx.report({
         code: "unsupported_capability",
         path: ["generationConfig", key],
@@ -945,8 +953,21 @@ const validator = createValidator<GenerateContentBody, unknown>({
     checkVertexOnlyFields,
   ],
   estimate,
+  promptPath: ["contents"],
   finalize,
 });
+
+/** Registry-instantiable form of this endpoint's generic result. */
+export interface GoogleChatResultKind extends ValidatorResultKind {
+  readonly output: this["input"] extends GenerateContentBody
+    ? Validated<
+        Omit<this["input"], "model">,
+        ChatSdkTargets<this["input"]>,
+        GoogleAvailability,
+        this["input"]["model"] & string
+      >
+    : never;
+}
 
 /**
  * Validates raw wire params for Gemini `models.{model}:generateContent`.
@@ -985,4 +1006,4 @@ export const chat = validator as unknown as {
     Validated<Omit<T, "model">, ChatSdkTargets<T>, GoogleAvailability, T["model"] & string>
   >;
   constraintsFor(modelId: string): EndpointConstraints[];
-};
+} & ValidatorResultKindCarrier<GoogleChatResultKind> & ValidatorProviderCarrier<"google">;

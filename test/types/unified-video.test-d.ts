@@ -25,6 +25,7 @@
  */
 import { createVideo, video } from "../../src/unified/video";
 import { video as googleVideo } from "../../src/providers/google/unified-video";
+import type { GoogleVeoInstance } from "../../src/providers/google/video";
 import { video as klingVideo } from "../../src/providers/kling/unified-video";
 import { video as lumaVideo } from "../../src/providers/luma/unified-video";
 import { video as openaiVideo } from "../../src/providers/openai/unified-video";
@@ -146,7 +147,7 @@ function resultTypeTests(): void {
 
   const google = video({ model: "google/veo-3.1-generate-preview", prompt: "hi" });
   // Veo's body nests the prompt in an instance and strips the model into the URL.
-  expectAssignable<Record<string, unknown>[]>(google.instances);
+  expectAssignable<GoogleVeoInstance[]>(google.instances);
   expectTrue<IsNever<KeyIn<typeof google, "prompt">>>();
   google.toSdk("google");
 

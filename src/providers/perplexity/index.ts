@@ -25,7 +25,7 @@ const PERPLEXITY_BASE_URL = "https://api.perplexity.ai";
 // catalog model is `toolCall: false`, so the built-in capability check
 // already rejects `tools`.
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<PerplexityTextModelId, typeof availability>({
+  createOpenAICompatible<PerplexityTextModelId, typeof availability, "perplexity">({
     id: "perplexity",
     baseUrl: PERPLEXITY_BASE_URL,
     catalog: models,

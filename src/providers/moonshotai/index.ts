@@ -10,7 +10,7 @@ import type { MoonshotaiTextModelId } from "../../catalog/moonshotai.gen";
 import { availability } from "../../catalog/availability/moonshotai.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<MoonshotaiTextModelId, typeof availability>({
+  createOpenAICompatible<MoonshotaiTextModelId, typeof availability, "moonshotai">({
     id: "moonshotai",
     // https://platform.moonshot.ai/docs/api/chat
     baseUrl: provider.api,

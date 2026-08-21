@@ -171,9 +171,19 @@ params and then runs **that provider's own validator**, so there is exactly one 
 of a valid request and the wire-exact subpaths stay the substrate and the escape hatch.
 See `docs/decisions.md` for why that layering is fixed.
 
+`unmodel/chat` is the one entry that can be asked for *any* provider from a bare
+`"provider/model"` string, so its ready form composes all 32 validators (~1.7 MB, and it
+is the whole of what a chat result's `.toApi` / `.toSdk` are built from). The composition
+is the same either way: `unmodel/chat/factory`'s `createChat({ … })` builds the identical
+surface from only the validators an application registers (~144 KiB plus those), and the
+two produce byte-identical requests — asserted in `test/chat/factory.test.ts`. The media
+packs make the same split with `create*`, but from one entry, because their adapters are
+leaves rather than whole validators.
+
 | Entry | Function(s) | Adapters | Providers covered |
 |---|---|---|---|
-| `unmodel/chat` | `chat` | n/a — one entry, three dialect encoders + a slim per-model profile table | 32: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
+| `unmodel/chat` | `chat` | n/a — three dialect codecs, composed with all 32 concrete provider `chat` validators | 32: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
+| `unmodel/chat/factory` | `createChat` | the same three codecs, no registry | whichever provider validators you register: `createChat({ anthropic, openai })` |
 | `unmodel/image` | `image`, `createImage` | 15 | black-forest-labs, bria, bytedance, google, ideogram, kling, krea, leonardo, luma, openai, recraft, reve, runway, stability, vidu |
 | `unmodel/speech` | `speech`, `createSpeech` | 14 | cartesia, deepgram, elevenlabs, fish-audio, hume, inworld, lmnt, minimax, murf, openai, resemble, rime, smallest-ai, speechify |
 | `unmodel/transcribe` | `transcribe`, `createTranscribe` | 11 | assemblyai, cartesia, deepgram, elevenlabs, gladia, inworld, mistral, openai, revai, soniox, speechmatics |

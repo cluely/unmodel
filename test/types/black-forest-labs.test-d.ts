@@ -4,7 +4,15 @@
  * --noEmit). BFL has no official JS SDK, so these tests exercise the Tier-A
  * per-route arms and the ExactKeys typo guard.
  */
-import { imageFlux1, image, imageEdit } from "../../src/providers/black-forest-labs";
+import {
+  imageFlux1,
+  image,
+  imageEdit,
+  imageEditFill,
+  type Flux1Body,
+  type Flux2Body,
+  type FluxFillParams,
+} from "../../src/providers/black-forest-labs";
 import { expectAssignable } from "./helpers";
 
 function flux2TypeTests(): void {
@@ -44,6 +52,15 @@ function flux2TypeTests(): void {
 
   // @ts-expect-error steps is flex-only — compile error on pro
   image({ model: "flux-2-pro", prompt: "hi", steps: 30 });
+  // @ts-expect-error — aliasing cannot route flux-2-pro through the loose arm
+  const aliasedInvalid: Flux2Body = { model: "flux-2-pro", prompt: "hi", steps: 30 };
+  void aliasedInvalid;
+  const future: Flux2Body<"flux-9-mega"> = {
+    model: "flux-9-mega",
+    prompt: "hi",
+    future_sampler: "new",
+  };
+  image(future);
   // @ts-expect-error guidance is flex-only — compile error on max
   image({ model: "flux-2-max", prompt: "hi", guidance: 5 });
   // @ts-expect-error pro/max use disable_pup, not prompt_upsampling
@@ -96,6 +113,35 @@ function flux1TypeTests(): void {
   imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "banana" });
   // @ts-expect-error the width/height routes do not take aspect_ratio at all
   imageFlux1({ model: "flux-dev", prompt: "hi", aspect_ratio: "16:9" });
+
+  // @ts-expect-error — aliasing cannot route flux-dev through the loose arm
+  const aliasedInvalid: Flux1Body = {
+    model: "flux-dev",
+    prompt: "hi",
+    aspect_ratio: "16:9",
+  };
+  void aliasedInvalid;
+  const future: Flux1Body<"flux-pro-2"> = {
+    model: "flux-pro-2",
+    future_sampler: "new",
+  };
+  imageFlux1(future);
 }
 
-export { flux2TypeTests, kontextTypeTests, flux1TypeTests };
+function fluxFillBodyAliasTypeTests(): void {
+  // @ts-expect-error — the base fill route has no finetune id
+  const aliasedInvalid: FluxFillParams = {
+    model: "flux-pro-1.0-fill",
+    image: "base64",
+    finetune_id: "my-lora",
+  };
+  void aliasedInvalid;
+  const future: FluxFillParams<"flux-pro-2-fill"> = {
+    model: "flux-pro-2-fill",
+    image: "base64",
+    future_mask_mode: "semantic",
+  };
+  imageEditFill(future);
+}
+
+export { flux2TypeTests, kontextTypeTests, flux1TypeTests, fluxFillBodyAliasTypeTests };

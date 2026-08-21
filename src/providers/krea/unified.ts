@@ -178,7 +178,7 @@ export interface KreaImageWire {
 }
 
 /** What a unified image call to `krea/…` returns: `krea.image`'s `Validated`. */
-export type KreaImageResult = ReturnType<typeof validator>;
+export type KreaImageResult = ReturnType<typeof validator<KreaImageWire>>;
 
 export const image = {
   category: "image",

@@ -7,6 +7,7 @@ export default defineConfig({
     "ai-sdk/index": "src/ai-sdk/index.ts",
     "catalog/index": "src/catalog/index.ts",
     "chat/index": "src/chat/index.ts",
+    "chat/factory": "src/chat/factory.ts",
     // The six unified media surfaces. Each is the kernel plus a factory — the
     // provider adapters are named by the caller, so these entries stay small
     // (pinned in test/bundle-budget.test.ts) no matter how many adapters ship.

@@ -121,7 +121,7 @@ const deploymentCatalog: Record<string, ModelInfo> = new Proxy(
  * available, since the wire body is the standard chat-completions dialect.
  */
 export function createAzure(config: AzureConfig): AzureProvider {
-  return createOpenAICompatible<AzureTextModelId>({
+  return createOpenAICompatible<AzureTextModelId, never, "azure">({
     id: provider.id,
     chatUrl: azureChatCompletionsUrl(config.endpoint, config.apiVersion),
     catalog: deploymentCatalog,

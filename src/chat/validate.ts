@@ -1,27 +1,11 @@
 /**
- * The `unmodel/chat` pipeline: four validation layers around one compile step.
+ * The `unmodel/chat` pipeline: validate the canonical shape, compile once, then
+ * terminate in the concrete provider validator selected by the model ref.
  *
- * The layers are the same four every provider validator runs, and they are run
- * in the same order for the same reasons — but two of them are looking at a
- * different object than usual, and that is the whole design:
- *
- * | layer | subject | why |
- * |---|---|---|
- * | 1 · shape | the caller's `ChatParams` | unified vocabulary, unified paths |
- * | — · ref | `model`'s provider half | decides the dialect everything below depends on |
- * | 2 · catalog | the bundled slim profile table | capabilities and limits, per model |
- * | — · compile | encode → IR → decode | the dialect body the request becomes |
- * | 3 · constraints | the **compiled body** | deny tables are written against the wire |
- * | 4 · estimate | the caller's `ChatParams` | tokens are a property of the prompt, not the body |
- *
- * ## Layer 3 is the only one that cannot stay in the unified vocabulary
- *
- * A provider's deny table says "`logprobs` returns a 400 here". That fact is
- * about the wire param, and the only place a wire param exists is the compiled
- * body — which is exactly why the compile step sits *between* layers 2 and 3
- * rather than at the end. The price is that layer 3's issue paths come back in
- * the wrong vocabulary, which `wire-paths.ts` translates back before anything
- * is reported.
+ * Canonical validation only decides whether the input can be compiled. The
+ * provider's schema, catalog, constraints, capability checks and estimate stay
+ * authoritative; their issue paths are translated back to the vocabulary the
+ * caller wrote before being returned.
  *
  * ## Structural failures are not validation failures
  *
@@ -46,49 +30,33 @@
  * every provider validator in the library makes.
  */
 import type { Issue } from "../core/issues";
-import type { ValidateEstimate, ValidateResult } from "../core/result";
+import type { ValidateResult } from "../core/result";
 import type { ValidateOptions } from "../core/options";
-import type { Tokenizer } from "../core/tokens";
-import { estimateToolDefinitionTokens, heuristicTokenizer, PER_MESSAGE_TOKEN_OVERHEAD } from "../core/tokens";
-import { computeCostUSD } from "../core/cost";
-import type { Modality } from "../core/catalog-types";
 import { createIssueSink, partition, reportUnknownTopLevelKeys } from "../core/pipeline";
-import { checkConstraints } from "../core/translate/constraint-check";
 import { resolveEndpoint } from "../core/translate/endpoints";
 import { TranslationUnavailableError } from "../core/translate/errors";
-import { inferMediaTypeFromUrl, parseDataUrl } from "../core/translate/ir";
 import { createWarningSink } from "../core/translate/warnings";
-import type { ChatCatalog, ChatModelProfile } from "../catalog/chat-profiles.gen";
-import { chatProfiles } from "../catalog/chat-profiles.gen";
 import { CHAT_ROUTE, compileChat, finalizeChat, type ChatCompileInput } from "./compile";
-import { chatConstraintsFor } from "./constraints";
-import { encodeUnified } from "./encode";
+import { encodeChat } from "./encode";
+import { chatMediaPaths, providerChatOptions } from "./media-paths";
 import { classifyRef, parseModelRef, refProblemMessage } from "./refs";
 import { chatParamsSchema } from "./schema";
-import type { ChatFilePart, ChatParams } from "./types";
+import type { ChatParams, ChatProviderId } from "./types";
 import { PROVIDER_OPTIONS_SUFFIX, unifiedPath } from "./wire-paths";
 
 /** The endpoint label that appears in thrown errors and unknown-param messages. */
 export const CHAT_ENDPOINT = "unmodel/chat";
 
-/** Fraction of the context window above which `near_context` fires. */
-const NEAR_CONTEXT_RATIO = 0.9;
-
-/** Per-image token estimate when no constraint table supplies a real one. */
-const DEFAULT_IMAGE_TOKENS = 1000;
-
-export interface ChatOptions extends ValidateOptions {
-  /**
-   * Replaces the bundled `chatProfiles` table for layers 2 and 4.
-   *
-   * The profiles ship *inside* this entry rather than behind a subpath, because
-   * a validator that has to be handed its own catalog before it can check
-   * anything is a validator most people will call without one. The override
-   * exists for the two cases that genuinely need it: pinning a snapshot, and
-   * adding a model that shipped after unmodel's.
-   */
-  catalog?: ChatCatalog;
-}
+/**
+ * Validation options forwarded unchanged to the concrete provider validator.
+ *
+ * The former `catalog` override is intentionally absent. A replacement table
+ * can disagree with the concrete provider validator's closed-over catalog,
+ * which would recreate the two-authorities bug this pipeline removes. Import
+ * the provider subpath (or its factory, where offered) when a custom catalog is
+ * required.
+ */
+export type ChatOptions = ValidateOptions;
 
 /**
  * What one run produced. `structural` is set when the ref itself is
@@ -101,114 +69,15 @@ export interface ChatOutcome {
   structural?: Error;
 }
 
-// ---------------------------------------------------------------------------
-// Media helpers — used by the modality check
-// ---------------------------------------------------------------------------
-
-/** Mirrors `encode.ts`'s `URL_SCHEME`. */
-const URL_SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i;
-
-/**
- * The media type of an attachment, by the same three readings the encoder
- * uses: declared, recovered from a `data:` URL, or inferred from a remote
- * URL's extension. `undefined` means "not knowable here" — a provider file
- * handle, or a URL with no extension — and the modality check then says
- * nothing rather than guessing a rejection.
- */
-function mediaTypeOf(part: ChatFilePart): string | undefined {
-  if (part.mediaType !== undefined) return part.mediaType;
-  if (typeof part.data !== "string") return undefined;
-  if (part.data.startsWith("data:")) return parseDataUrl(part.data)?.mediaType;
-  if (URL_SCHEME.test(part.data)) return inferMediaTypeFromUrl(part.data);
-  return undefined;
-}
-
-function modalityOf(mediaType: string | undefined): Modality | undefined {
-  if (mediaType === undefined) return undefined;
-  const mime = mediaType.trim().toLowerCase();
-  if (mime.startsWith("image/")) return "image";
-  if (mime.startsWith("audio/")) return "audio";
-  if (mime.startsWith("video/")) return "video";
-  if (mime === "application/pdf") return "pdf";
-  return undefined;
-}
-
-/** True when `reasoning` asks the model to think rather than to stop thinking. */
-function asksForReasoning(reasoning: ChatParams["reasoning"]): boolean {
-  return reasoning !== undefined && reasoning !== false && reasoning !== "off";
-}
-
-// ---------------------------------------------------------------------------
-// Layer 4 — estimation
-// ---------------------------------------------------------------------------
-
-/**
- * A heuristic prompt-token count over the **unified** messages.
- *
- * Deliberately measured before compilation: the token cost is a property of the
- * prompt, and counting the compiled body instead would make the same
- * conversation estimate differently per provider purely because of JSON
- * punctuation.
- *
- * Attachments are the honest weak spot. Images are charged the constraint
- * table's per-image number (or a flat default), and audio / video / PDF are not
- * estimated at all — no per-byte heuristic exists that is better than silence,
- * and the count is documented as a floor. Text-only requests, which is most of
- * them, are as accurate as the tokenizer supplied.
- */
-function estimateInputTokens(
-  params: ChatParams,
-  tokenizer: Tokenizer,
-  imageTokens: number,
-): number {
-  let total = 0;
-
-  if (typeof params.system === "string") {
-    total += tokenizer.count(params.system) + PER_MESSAGE_TOKEN_OVERHEAD;
-  } else if (Array.isArray(params.system)) {
-    for (const block of params.system) {
-      total += tokenizer.count(block.text ?? "") + PER_MESSAGE_TOKEN_OVERHEAD;
-    }
-  }
-
-  for (const message of params.messages) {
-    total += PER_MESSAGE_TOKEN_OVERHEAD;
-    const content: unknown = message.content;
-    if (typeof content === "string") {
-      total += tokenizer.count(content);
-      continue;
-    }
-    if (!Array.isArray(content)) continue;
-    for (const part of content as Array<Record<string, unknown>>) {
-      if (typeof part !== "object" || part === null) continue;
-      switch (part["type"]) {
-        case "text":
-          if (typeof part["text"] === "string") total += tokenizer.count(part["text"]);
-          break;
-        case "reasoning":
-          if (typeof part["text"] === "string") total += tokenizer.count(part["text"]);
-          break;
-        case "tool-call":
-          total += estimateToolDefinitionTokens(tokenizer, part["input"]);
-          break;
-        case "tool-result":
-          total += estimateToolDefinitionTokens(tokenizer, part["output"]);
-          break;
-        case "file":
-          if (modalityOf(mediaTypeOf(part as unknown as ChatFilePart)) === "image") {
-            total += imageTokens;
-          }
-          break;
-        default:
-          break;
-      }
-    }
-  }
-
-  for (const [name, spec] of Object.entries(params.tools ?? {})) {
-    total += estimateToolDefinitionTokens(tokenizer, { name, ...spec });
-  }
-  return total;
+/** The provider-dependent end of the pipeline, supplied by `createChat()`. */
+export interface ChatProviderRuntime {
+  has(provider: ChatProviderId): boolean;
+  validate(
+    provider: ChatProviderId,
+    modelId: string,
+    body: object,
+    options: ValidateOptions,
+  ): ValidateResult<object>;
 }
 
 // ---------------------------------------------------------------------------
@@ -227,11 +96,14 @@ function structuralIssue(model: string, provider: string, message: string): Issu
   };
 }
 
-export function runChat(params: ChatParams, options: ChatOptions = {}): ChatOutcome {
+export function runChat(
+  params: ChatParams,
+  options: ChatOptions,
+  providers: ChatProviderRuntime,
+): ChatOutcome {
   const sink = createIssueSink(options);
-  const tokenizer = options.tokenizer ?? heuristicTokenizer;
 
-  // --- Layer 1: shape -------------------------------------------------------
+  // --- Canonical shape ------------------------------------------------------
   const parsed = chatParamsSchema.safeParse(params);
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
@@ -275,6 +147,20 @@ export function runChat(params: ChatParams, options: ChatOptions = {}): ChatOutc
     };
   }
 
+  if (!providers.has(classification.provider)) {
+    const message =
+      `unmodel/chat: provider "${classification.provider}" is not registered in this chat pack. ` +
+      `Add its validator to createChat({ ${classification.provider}: providerChat }).`;
+    return {
+      result: {
+        ok: false,
+        errors: [structuralIssue(params.model, ref.provider, message)],
+        warnings: sink.issues.filter((issue) => issue.severity === "warning"),
+      },
+      structural: new TranslationUnavailableError(message),
+    };
+  }
+
   // `classifyRef` only returns `supported` for providers `ENDPOINTS` resolves,
   // so this cannot be undefined; the guard keeps the type honest.
   const endpoint = resolveEndpoint(ref.provider);
@@ -286,29 +172,20 @@ export function runChat(params: ChatParams, options: ChatOptions = {}): ChatOutc
     };
   }
 
-  // --- Layer 2: catalog -----------------------------------------------------
-  const catalog = options.catalog ?? chatProfiles;
-  const models = Object.hasOwn(catalog, ref.provider) ? catalog[ref.provider] : undefined;
-  const profile: ChatModelProfile | undefined =
-    models !== undefined && Object.hasOwn(models, ref.modelId) ? models[ref.modelId] : undefined;
-
-  if (profile === undefined) {
-    sink.report({
-      code: "unknown_model",
-      path: ["model"],
-      model: params.model,
-      message: `Model "${ref.modelId}" is not in the ${ref.provider} catalog; model-dependent checks were skipped. If this model is new, catalog data may lag behind.`,
-    });
-  } else {
-    checkProfile(params, ref.modelId, params.model, profile, sink.report);
-  }
+  // A canonical-space error means there is nothing worth compiling: the body
+  // below would be built from params the caller has to fix first, and running
+  // the provider validator over it produces a second round of findings about a
+  // request nobody asked for. The sink stays open — the media step after
+  // compilation reports into it too, and the final partition is taken there.
+  const canonical = partition(sink.issues);
+  if (canonical.errors.length > 0) return { result: { ok: false, ...canonical } };
 
   // --- Compile --------------------------------------------------------------
   // One sink for the whole translation, so `warnings` answers the single
   // question "what did compiling this request cost?" — encoder losses and
   // decoder losses are indistinguishable from where the caller stands.
   const translation = createWarningSink(CHAT_ROUTE, endpoint.id);
-  const ir = encodeUnified(params, endpoint.dialect, translation.warn);
+  const { ir, messageOrigin } = encodeChat(params, endpoint.dialect, translation.warn);
   const input: ChatCompileInput = {
     ir,
     provider: ref.provider,
@@ -331,170 +208,116 @@ export function runChat(params: ChatParams, options: ChatOptions = {}): ChatOutc
     };
   }
 
-  // --- Layer 3: the provider's deny/enum tables, against the compiled body ---
-  const layer3: Issue[] = [];
-  checkConstraints(chatConstraintsFor(endpoint.id, ref.modelId), compiled.body, ref.modelId, layer3);
-  for (const issue of layer3) {
-    const { path, unmapped } = unifiedPath(endpoint.dialect, issue.path);
-    sink.report({
-      code: issue.code,
-      path,
-      message: unmapped ? `${issue.message}${PROVIDER_OPTIONS_SUFFIX}` : issue.message,
-      ...(issue.model !== undefined && { model: issue.model }),
-      ...(issue.meta !== undefined && { meta: issue.meta }),
-      // Preserve `ignored` deny rules' downgrade to a warning; the user's own
-      // `options.severity` still wins over it inside the sink.
-      severity: issue.severity,
-    });
-  }
+  // --- Provider substrate ---------------------------------------------------
+  // This call is the definition of wire validity. It runs the exact same
+  // schema, catalog, rules, media checks and estimate as `unmodel/<provider>`.
+  const mediaPaths = chatMediaPaths(params, compiled.body, endpoint.dialect);
+  // A declaration unmodel could not follow across compilation is reported into
+  // the canonical sink, not silently forwarded — see `providerChatOptions`.
+  const providerOptions = providerChatOptions(options, mediaPaths, (issue) => sink.report(issue));
+  // Re-partitioned after the media step so a dropped declaration (or an
+  // `options.severity` escalation of one) is carried, not lost behind the
+  // snapshot taken before compilation.
+  const compileIssues = partition(sink.issues);
+  if (compileIssues.errors.length > 0) return { result: { ok: false, ...compileIssues } };
 
-  // --- Layer 4: tokens, context, budget -------------------------------------
-  const imageTokens =
-    chatConstraintsFor(endpoint.id, ref.modelId).find((table) => table.imageTokens !== undefined)
-      ?.imageTokens ?? DEFAULT_IMAGE_TOKENS;
-  const inputTokens = estimateInputTokens(params, tokenizer, imageTokens);
-  const outputTokens = params.maxOutputTokens ?? profile?.limit.output;
-  const costUSD = computeCostUSD(profile?.cost, { inputTokens, outputTokens });
-  const estimate: ValidateEstimate = {
-    inputTokens,
-    ...(costUSD !== undefined && { costUSD }),
+  const providerResult = providers.validate(
+    classification.provider,
+    ref.modelId,
+    compiled.body,
+    providerOptions,
+  );
+  // The compiled message container is the encoder's own unless the caller
+  // replaced it through `providerOptions`; only then does `messageOrigin`
+  // describe the body the provider validator actually inspected.
+  const wireOrigin =
+    params.providerOptions?.[ref.provider]?.["contents"] === undefined ? messageOrigin : undefined;
+  const remap = (issue: Issue): Issue => {
+    const canonicalMediaPath = mediaPaths.toCanonical(issue.path);
+    const { path, unmapped } =
+      canonicalMediaPath === undefined
+        ? unifiedPath(endpoint.dialect, issue.path, wireOrigin)
+        : { path: canonicalMediaPath, unmapped: false };
+    const message =
+      canonicalMediaPath === undefined
+        ? issue.message
+        : issue.message.replace(JSON.stringify(issue.path), JSON.stringify(path));
+    // Translating the path and leaving the message alone is the worst of both:
+    // the caller is told the problem is at `maxOutputTokens` in a sentence that
+    // only ever says `max_completion_tokens`, which is the very thing
+    // `wire-paths.ts` exists to prevent — sending them after a param that does
+    // not exist in the vocabulary they used. So a *renamed* path names the wire
+    // spelling it was compiled from, the same way the media kernel does. A path
+    // compiled to its own name has nothing to explain and gains nothing.
+    const renamed = !unmapped && path.join(".") !== issue.path.join(".");
+    return {
+      ...issue,
+      path,
+      message: unmapped
+        ? message.endsWith(PROVIDER_OPTIONS_SUFFIX)
+          ? message
+          : `${message}${PROVIDER_OPTIONS_SUFFIX}`
+        : renamed && canonicalMediaPath === undefined
+          ? `${message} (compiled from \`${issue.path.join(".")}\`)`
+          : message,
+    };
   };
 
-  const context = profile?.limit.context ?? 0;
-  if (context > 0) {
-    if (inputTokens > context) {
-      sink.report({
-        code: "over_context",
-        path: ["messages"],
-        model: params.model,
-        message: `~${inputTokens} estimated prompt tokens exceed the ${context}-token context window of "${ref.modelId}".`,
-        meta: { estimated: inputTokens, limit: context },
-      });
-    } else if (inputTokens > context * NEAR_CONTEXT_RATIO) {
-      sink.report({
-        code: "near_context",
-        path: ["messages"],
-        model: params.model,
-        message: `~${inputTokens} estimated prompt tokens are within 10% of the ${context}-token context window of "${ref.modelId}"; the estimate is heuristic, so the request may not fit.`,
-        meta: { estimated: inputTokens, limit: context },
-      });
-    }
-  }
-  if (options.maxCostUSD !== undefined && costUSD !== undefined && costUSD > options.maxCostUSD) {
-    sink.report({
-      code: "over_budget",
-      path: ["model"],
-      model: params.model,
-      message: `Estimated worst-case cost $${costUSD.toFixed(4)} exceeds maxCostUSD $${options.maxCostUSD}.`,
-      meta: { estimated: costUSD, limit: options.maxCostUSD },
-    });
+  const providerWarnings = providerResult.warnings.map(remap);
+  if (!providerResult.ok) {
+    return {
+      result: {
+        ok: false,
+        errors: providerResult.errors.map(remap),
+        warnings: [...compileIssues.warnings, ...providerWarnings],
+      },
+    };
   }
 
-  const { errors, warnings } = partition(sink.issues);
-  if (errors.length > 0) return { result: { ok: false, errors, warnings } };
   return {
     result: {
       ok: true,
-      params: finalizeChat(input, compiled, translation.warnings),
-      warnings,
-      estimate,
+      params: finalizeChat(input, providerResult.params, translation.warnings),
+      warnings: [...compileIssues.warnings, ...providerWarnings],
+      estimate: providerResult.estimate,
     },
   };
 }
 
-// ---------------------------------------------------------------------------
-// Layer 2 checks
-// ---------------------------------------------------------------------------
-
-type Report = (issue: {
-  code: Issue["code"];
-  message: string;
-  path?: Array<string | number>;
-  model?: string;
-  meta?: Record<string, unknown>;
-  severity?: Issue["severity"];
-}) => void;
+function unknownFailureMessage(error: unknown): string {
+  try {
+    if (error instanceof Error && typeof error.message === "string" && error.message !== "") {
+      return error.message;
+    }
+  } catch {
+    // A proxy can throw from `getPrototypeOf` or from its `message` getter.
+  }
+  try {
+    return String(error);
+  } catch {
+    return "an unknown inspection error";
+  }
+}
 
 /**
- * The model-dependent checks. Each one exists because the failure it prevents
- * is otherwise a 400 (or worse, a silently ignored param) that names the wire
- * spelling of something the caller never wrote.
+ * Total boundary for JSON/queue values. Zod reports ordinary malformed values,
+ * while this guard catches hostile objects whose property/proxy traps throw
+ * before a schema can return a result.
  */
-function checkProfile(
-  params: ChatParams,
-  modelId: string,
-  ref: string,
-  profile: ChatModelProfile,
-  report: Report,
-): void {
-  if (profile.status === "deprecated") {
-    report({
-      code: "deprecated_model",
-      path: ["model"],
-      model: ref,
-      message: `Model "${modelId}" is marked deprecated by the provider.`,
-    });
-  }
-
-  const toolNames = Object.keys(params.tools ?? {});
-  if (toolNames.length > 0 && profile.toolCall === false) {
-    report({
-      code: "unsupported_capability",
-      path: ["tools"],
-      model: ref,
-      message: `"${modelId}" does not support tool calling, and ${toolNames.length} tool(s) were supplied (${toolNames.join(", ")}); every dialect either rejects the request or ignores the tools entirely.`,
-      meta: { tools: toolNames },
-    });
-  }
-
-  // Attachments vs the model's declared input modalities. Checked per part so
-  // the path points at the offending attachment rather than at `messages`.
-  const accepted = new Set<Modality>(profile.modalities.input);
-  params.messages.forEach((message, index) => {
-    if (message.role !== "user" || typeof message.content === "string") return;
-    message.content.forEach((part, j) => {
-      if (part.type !== "file") return;
-      const mediaType = mediaTypeOf(part);
-      const modality = modalityOf(mediaType);
-      if (modality === undefined || accepted.has(modality)) return;
-      report({
-        code: "unsupported_capability",
-        path: ["messages", index, "content", j],
-        model: ref,
-        message: `"${modelId}" does not accept ${modality} input (it accepts ${[...accepted].join(", ")}); the \`${mediaType}\` attachment would be rejected.`,
-        meta: { modality, mediaType, accepted: [...accepted] },
-      });
-    });
-  });
-
-  // `structuredOutput` is tri-state in the catalog: absent means models.dev has
-  // no answer, and an absent answer must not fail a request.
-  if (params.responseFormat?.type === "json-schema" && profile.structuredOutput === false) {
-    report({
-      code: "unsupported_capability",
-      path: ["responseFormat"],
-      model: ref,
-      message: `"${modelId}" does not support schema-constrained structured output; a \`json-schema\` response format cannot be honoured. Use \`{ type: "json" }\` and validate the result yourself, or pick a model with structured output.`,
-    });
-  }
-
-  if (asksForReasoning(params.reasoning) && profile.reasoning === false) {
-    report({
-      code: "unsupported_capability",
-      path: ["reasoning"],
-      model: ref,
-      message: `"${modelId}" is not a reasoning model, so \`reasoning\` has nothing to control. Drop it, or use a model the catalog marks \`reasoning: true\`.`,
-    });
-  }
-
-  const limit = profile.limit.output;
-  if (limit !== undefined && params.maxOutputTokens !== undefined && params.maxOutputTokens > limit) {
-    report({
-      code: "over_output_limit",
-      path: ["maxOutputTokens"],
-      model: ref,
-      message: `\`maxOutputTokens\` is ${params.maxOutputTokens}, above the ${limit}-token output limit of "${modelId}".`,
-      meta: { requested: params.maxOutputTokens, limit },
-    });
+export function runChatUnknown(
+  params: unknown,
+  options: ChatOptions,
+  providers: ChatProviderRuntime,
+): ChatOutcome {
+  try {
+    return runChat(params as ChatParams, options, providers);
+  } catch (error) {
+    const issue: Issue = {
+      severity: "error",
+      code: "invalid_shape",
+      path: [],
+      message: `unmodel/chat: the untyped input could not be inspected safely: ${unknownFailureMessage(error)}.`,
+    };
+    return { result: { ok: false, errors: [issue], warnings: [] } };
   }
 }

@@ -16,7 +16,8 @@ import { availability } from "../../catalog/availability/meta.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   MetaTextModelId,
-  typeof availability
+  typeof availability,
+  "meta"
 >({
   id: provider.id,
   // Documented OpenAI-compatible base URL (https://dev.meta.ai/docs,

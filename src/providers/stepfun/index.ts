@@ -10,7 +10,7 @@ import type { StepfunTextModelId } from "../../catalog/stepfun.gen";
 import { availability } from "../../catalog/availability/stepfun.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<StepfunTextModelId, typeof availability>({
+  createOpenAICompatible<StepfunTextModelId, typeof availability, "stepfun">({
     id: provider.id,
     // Generated from models.dev: https://api.stepfun.com/v1
     baseUrl: provider.api,

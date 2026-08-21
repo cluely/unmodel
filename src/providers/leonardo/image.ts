@@ -42,7 +42,7 @@ import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type LeonardoModelId } from "./models";
 import {
@@ -191,17 +191,21 @@ export interface PhoenixV09Body extends LeonardoBodyBase {
  * `parameters` schema, so unmodel passes them through with an unknown_model
  * warning instead of guessing.
  */
-export interface UnknownLeonardoModelBody extends LeonardoBodyBase {
-  model: string & {};
+export interface UnknownLeonardoModelBody<Model extends string> extends LeonardoBodyBase {
+  model: FutureModelId<Model, keyof LeonardoBodyByModel>;
   parameters: Record<string, unknown>;
 }
 
-export type GenerationsBody =
+/**
+ * Closed over Leonardo-owned models by default. Supply a third-party or future
+ * model literal to opt into the loose arm: `GenerationsBody<"flux-dev">`.
+ */
+export type GenerationsBody<FutureModel extends string = never> =
   | LucidOriginBody
   | LucidRealismBody
   | PhoenixV1Body
   | PhoenixV09Body
-  | UnknownLeonardoModelBody;
+  | UnknownLeonardoModelBody<FutureModel>;
 
 interface LeonardoBodyByModel {
   "lucid-origin": LucidOriginBody;
@@ -213,7 +217,11 @@ interface LeonardoBodyByModel {
 /** Resolves a model id literal to its exact Tier-A arm. */
 type LeonardoArm<M extends string> = M extends keyof LeonardoBodyByModel
   ? LeonardoBodyByModel[M]
-  : UnknownLeonardoModelBody;
+  : UnknownLeonardoModelBody<M>;
+
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyGenerationsBody = GenerationsBody<string>;
+type LeonardoModelInput = keyof LeonardoBodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Schema (loose: unknown keys pass through with a warning).
@@ -466,7 +474,7 @@ function checkGuidances(
 }
 
 function checkParameters(
-  params: GenerationsBody,
+  params: AnyGenerationsBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -625,7 +633,7 @@ function checkParameters(
  */
 type LeonardoSdkTargets<B> = { leonardo: () => B };
 
-function finalize(params: GenerationsBody): unknown {
+function finalize(params: AnyGenerationsBody): unknown {
   const body = { ...params };
   return toValidated(body, {
     url: LEONARDO_GENERATIONS_URL,
@@ -636,7 +644,7 @@ function finalize(params: GenerationsBody): unknown {
   });
 }
 
-const validator = createValidator<GenerationsBody, unknown>({
+const validator = createValidator<AnyGenerationsBody, unknown>({
   endpoint: "leonardo.image",
   schema: generationsSchema,
   modelId: (params) => params.model,
@@ -676,11 +684,11 @@ const validator = createValidator<GenerationsBody, unknown>({
  * ```
  */
 export const image = validator as unknown as {
-  <M extends GenerationsBody["model"], T extends LeonardoArm<M>>(
+  <M extends LeonardoModelInput, T extends LeonardoArm<M>>(
     params: T & LeonardoArm<M> & { model: M } & ExactKeys<T, LeonardoArm<M>>,
     options?: ValidateOptions,
   ): Validated<T, LeonardoSdkTargets<T>>;
-  safe<M extends GenerationsBody["model"], T extends LeonardoArm<M>>(
+  safe<M extends LeonardoModelInput, T extends LeonardoArm<M>>(
     params: T & LeonardoArm<M> & { model: M } & ExactKeys<T, LeonardoArm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<T, LeonardoSdkTargets<T>>>;

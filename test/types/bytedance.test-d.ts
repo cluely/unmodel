@@ -4,7 +4,12 @@
  * --noEmit). BytePlus ships no official JS SDK, so these tests exercise the
  * Tier-A per-model arms and the `size` rule space.
  */
-import { image } from "../../src/providers/bytedance";
+import {
+  image,
+  video,
+  type ContentGenerationTasksBody,
+  type ImageGenerationsBody,
+} from "../../src/providers/bytedance";
 import { expectAssignable } from "./helpers";
 
 function imageGenerationsSizeTypeTests(): void {
@@ -53,6 +58,36 @@ function imageGenerationsArmTypeTests(): void {
   // Unknown ids (new releases, `ep-…` endpoint ids) fall into the loose arm,
   // where `size` is unconstrained because the model's table is unknown.
   image({ model: "ep-20260101-abcdef", prompt: "hi", size: "whatever" });
+
+  // @ts-expect-error — a known discriminant cannot escape its exact arm after aliasing
+  const aliasedInvalid: ImageGenerationsBody = {
+    model: "dola-seedream-5-0-pro-260628",
+    prompt: "hi",
+    stream: true,
+  };
+  void aliasedInvalid;
+  const future: ImageGenerationsBody<"ep-20260101-abcdef"> = {
+    model: "ep-20260101-abcdef",
+    prompt: "hi",
+    future_image_control: true,
+  };
+  image(future);
 }
 
-export { imageGenerationsSizeTypeTests, imageGenerationsArmTypeTests };
+function videoBodyAliasTypeTests(): void {
+  // @ts-expect-error — Seedance 2.5 does not accept the 1.x-only seed field
+  const aliasedInvalid: ContentGenerationTasksBody = {
+    model: "dreamina-seedance-2-5-260628",
+    content: [{ type: "text", text: "hi" }],
+    seed: 1,
+  };
+  void aliasedInvalid;
+  const future: ContentGenerationTasksBody<"ep-20260101-video"> = {
+    model: "ep-20260101-video",
+    content: [{ type: "text", text: "hi" }],
+    future_video_control: true,
+  };
+  video(future);
+}
+
+export { imageGenerationsSizeTypeTests, imageGenerationsArmTypeTests, videoBodyAliasTypeTests };

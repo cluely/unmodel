@@ -16,7 +16,8 @@ const NVIDIA_BASE_URL = provider.api;
 
 const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   NvidiaTextModelId,
-  typeof availability
+  typeof availability,
+  "nvidia"
 >({
   id: "nvidia",
   baseUrl: NVIDIA_BASE_URL,

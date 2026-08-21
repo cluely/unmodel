@@ -15,7 +15,7 @@ import type { LongcatTextModelId } from "../../catalog/longcat.gen";
 import { availability } from "../../catalog/availability/longcat.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<LongcatTextModelId, typeof availability>({
+  createOpenAICompatible<LongcatTextModelId, typeof availability, "longcat">({
     id: provider.id,
     // The generated catalog's `api` field stops at /openai; the documented
     // chat path is /openai/v1/chat/completions

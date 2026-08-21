@@ -13,6 +13,7 @@ import type { ValidateResult } from "../../result";
 import type {
   AnyUnifiedAdapter,
   InputsFor,
+  SafeUnknown,
   UnifiedAdapter,
   UnifiedInput,
   UnifiedRef,
@@ -207,7 +208,7 @@ export interface TranscribeAdapterFor<
  * transcribe({ model: "cartesia/ink-whisper",  audio: { url } });    // error
  * ```
  */
-export interface TranscribeValidator<A> {
+export interface TranscribeValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
     T extends UnifiedInput<TranscribeParamsBase, UnifiedRef<A>> &

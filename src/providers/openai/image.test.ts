@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { image, IMAGES_GENERATIONS_URL, type GptImage2Size } from "./image";
+import {
+  image,
+  IMAGES_GENERATIONS_URL,
+  type GptImage2Size,
+} from "./image";
 import {
   imageConstraints,
   imagesEditConstraints,
@@ -84,6 +88,10 @@ describe("openai.image happy path", () => {
   });
 
   test("unknown model falls back to the escape arm with a warning", () => {
+    // Written inline, like its `video.test.ts` and `image-edit.test.ts`
+    // siblings: an annotated alias would only exercise assignability to a
+    // type the caller wrote down, and the escape arm's job is to accept the
+    // literal a caller actually types.
     const r = image.safe({ model: "gpt-image-9", prompt: "x", brand_new_param: 1 });
     expect(r.ok).toBe(true);
     if (r.ok) {

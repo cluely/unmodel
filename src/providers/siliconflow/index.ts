@@ -16,7 +16,7 @@ import { availability } from "../../catalog/availability/siliconflow.gen";
 const SILICONFLOW_BASE_URL = provider.api;
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<SiliconflowTextModelId, typeof availability>({
+  createOpenAICompatible<SiliconflowTextModelId, typeof availability, "siliconflow">({
     id: provider.id,
     baseUrl: SILICONFLOW_BASE_URL,
     catalog: models,

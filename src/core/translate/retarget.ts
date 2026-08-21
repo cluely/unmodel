@@ -147,11 +147,11 @@ function checkSchema(schema: ZodType | undefined, body: object, out: Issue[]): v
 }
 
 /**
- * Validation layer 3 (the target's hand-written deny/enum tables) lives in
- * `./constraint-check.ts` and is re-exported here, where the retarget engine's
- * readers expect to find it. `unmodel/chat` runs the identical check against
- * its compiled body and imports that module directly, so the two paths cannot
- * disagree about what a deny rule means.
+ * The target's hand-written deny/enum tables live in `./constraint-check.ts`
+ * and are re-exported here, where the retarget engine's readers expect to find
+ * them. That module was extracted when `unmodel/chat` ran the same check
+ * against its own compiled body; it now terminates in the provider's validator
+ * instead, so this is the sole consumer.
  */
 export { checkConstraints } from "./constraint-check";
 

@@ -51,6 +51,10 @@
       "types": "./dist/chat/index.d.ts",
       "default": "./dist/chat/index.js"
     },
+    "./chat/factory": {
+      "types": "./dist/chat/factory.d.ts",
+      "default": "./dist/chat/factory.js"
+    },
     "./image": {
       "types": "./dist/unified/image.d.ts",
       "default": "./dist/unified/image.js"

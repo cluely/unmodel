@@ -14,7 +14,7 @@ import type { InceptionTextModelId } from "../../catalog/inception.gen";
 import { availability } from "../../catalog/availability/inception.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<InceptionTextModelId, typeof availability>({
+  createOpenAICompatible<InceptionTextModelId, typeof availability, "inception">({
     id: provider.id,
     // Documented base URL is https://api.inceptionlabs.ai/v1
     // (https://docs.inceptionlabs.ai/get-started/get-started); the generated

@@ -31,7 +31,7 @@ import { availability } from "../../catalog/availability/cloudflare-workers-ai.g
 export function createCloudflare(
   accountId: string,
 ): OpenAICompatibleProvider<CloudflareWorkersAiTextModelId, typeof availability> {
-  return createOpenAICompatible<CloudflareWorkersAiTextModelId, typeof availability>({
+  return createOpenAICompatible<CloudflareWorkersAiTextModelId, typeof availability, "cloudflare-workers-ai">({
     id: provider.id,
     baseUrl: `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/v1`,
     catalog: models,

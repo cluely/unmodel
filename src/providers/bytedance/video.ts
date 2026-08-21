@@ -39,7 +39,7 @@ import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { videoModels } from "./models";
 import {
@@ -264,13 +264,17 @@ export interface Seedance10ProFastBody extends Seedance10Fields {
 }
 
 /** Escape hatch for ids unmodel has no arm for (new models, `ep-…` endpoints). */
-export interface UnknownVideoModelBody {
-  model: string & {};
+export interface UnknownVideoModelBody<Model extends string> {
+  model: FutureModelId<Model, keyof VideoBodyByModel>;
   content: unknown[];
   [key: string]: unknown;
 }
 
-export type ContentGenerationTasksBody =
+/**
+ * Closed over documented models by default. Supply a future model or endpoint
+ * id to opt into the loose arm: `ContentGenerationTasksBody<"ep-…">`.
+ */
+export type ContentGenerationTasksBody<FutureModel extends string = never> =
   | DreaminaSeedance25Body
   | DreaminaSeedance20Body
   | DreaminaSeedance20FastBody
@@ -278,7 +282,7 @@ export type ContentGenerationTasksBody =
   | Seedance15ProBody
   | Seedance10ProBody
   | Seedance10ProFastBody
-  | UnknownVideoModelBody;
+  | UnknownVideoModelBody<FutureModel>;
 
 interface VideoBodyByModel {
   "dreamina-seedance-2-5-260628": DreaminaSeedance25Body;
@@ -293,7 +297,11 @@ interface VideoBodyByModel {
 /** Resolves a model id literal to its exact Tier-A arm. */
 type VideoArm<M extends string> = M extends keyof VideoBodyByModel
   ? VideoBodyByModel[M]
-  : UnknownVideoModelBody;
+  : UnknownVideoModelBody<M>;
+
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyContentGenerationTasksBody = ContentGenerationTasksBody<string>;
+type VideoModelInput = keyof VideoBodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Schema — permissive on `content[].type` so a newly documented content type
@@ -360,7 +368,7 @@ interface ContentTally {
 
 const KNOWN_CONTENT_TYPES = ["text", "image_url", "video_url", "audio_url", "draft_task"] as const;
 
-function tallyContent(params: ContentGenerationTasksBody): ContentTally {
+function tallyContent(params: AnyContentGenerationTasksBody): ContentTally {
   const tally: ContentTally = {
     text: 0,
     firstFrame: 0,
@@ -393,7 +401,7 @@ function tallyContent(params: ContentGenerationTasksBody): ContentTally {
   return tally;
 }
 
-function contentItems(params: ContentGenerationTasksBody): AnyRecord[] {
+function contentItems(params: AnyContentGenerationTasksBody): AnyRecord[] {
   const content = (params as AnyRecord)["content"];
   if (!Array.isArray(content)) return [];
   return content.filter((item): item is AnyRecord => typeof item === "object" && item !== null);
@@ -401,7 +409,7 @@ function contentItems(params: ContentGenerationTasksBody): AnyRecord[] {
 
 /** Content item shapes, roles, per-model support and per-model counts. */
 function checkContent(
-  params: ContentGenerationTasksBody,
+  params: AnyContentGenerationTasksBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -522,7 +530,7 @@ function checkContent(
 
 /** `duration` range (and the documented `-1` "model picks" value) per model. */
 function checkDuration(
-  params: ContentGenerationTasksBody,
+  params: AnyContentGenerationTasksBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -554,7 +562,7 @@ function checkDuration(
 
 /** `frames` must be 25 + 4n within [29, 289]. */
 function checkFrames(
-  params: ContentGenerationTasksBody,
+  params: AnyContentGenerationTasksBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -574,7 +582,7 @@ function checkFrames(
 
 /** `ratio` rules that depend on the task the content describes. */
 function checkRatio(
-  params: ContentGenerationTasksBody,
+  params: AnyContentGenerationTasksBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -610,7 +618,7 @@ function checkRatio(
  * validates these at submit time when the type is set explicitly.
  */
 function checkOmniTaskType(
-  params: ContentGenerationTasksBody,
+  params: AnyContentGenerationTasksBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -651,7 +659,7 @@ function checkOmniTaskType(
 
 /** Draft mode (Seedance 1.5 pro) forces 480p and excludes flex/last-frame. */
 function checkDraft(
-  params: ContentGenerationTasksBody,
+  params: AnyContentGenerationTasksBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -694,7 +702,7 @@ function checkDraft(
 // which a URL does not reveal: those estimates are a floor.
 // ---------------------------------------------------------------------------
 
-function estimate(params: ContentGenerationTasksBody, info: ModelInfo | undefined) {
+function estimate(params: AnyContentGenerationTasksBody, info: ModelInfo | undefined) {
   if (info === undefined) return {};
   const record = params as AnyRecord;
   const costUSD = videoCostUSD(params.model, {
@@ -716,7 +724,7 @@ function estimate(params: ContentGenerationTasksBody, info: ModelInfo | undefine
  */
 type BytedanceSdkTargets<B> = { bytedance: () => B };
 
-function finalize(params: ContentGenerationTasksBody): unknown {
+function finalize(params: AnyContentGenerationTasksBody): unknown {
   const body = { ...params };
   return toValidated(body, {
     url: CONTENT_GENERATION_TASKS_URL,
@@ -727,7 +735,7 @@ function finalize(params: ContentGenerationTasksBody): unknown {
   });
 }
 
-const validator = createValidator<ContentGenerationTasksBody, unknown>({
+const validator = createValidator<AnyContentGenerationTasksBody, unknown>({
   endpoint: "bytedance.video",
   schema: videoSchema,
   modelId: (params) => params.model,
@@ -769,11 +777,11 @@ const validator = createValidator<ContentGenerationTasksBody, unknown>({
  * ```
  */
 export const video = validator as unknown as {
-  <M extends ContentGenerationTasksBody["model"], T extends VideoArm<M>>(
+  <M extends VideoModelInput, T extends VideoArm<M>>(
     params: T & VideoArm<M> & { model: M } & ExactKeys<T, VideoArm<M>>,
     options?: ValidateOptions,
   ): Validated<T, BytedanceSdkTargets<T>>;
-  safe<M extends ContentGenerationTasksBody["model"], T extends VideoArm<M>>(
+  safe<M extends VideoModelInput, T extends VideoArm<M>>(
     params: T & VideoArm<M> & { model: M } & ExactKeys<T, VideoArm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<T, BytedanceSdkTargets<T>>>;

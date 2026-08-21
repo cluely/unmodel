@@ -14,7 +14,8 @@ const NEBIUS_BASE_URL = provider.api;
 
 const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   NebiusTextModelId,
-  typeof availability
+  typeof availability,
+  "nebius"
 >({
   id: "nebius",
   baseUrl: NEBIUS_BASE_URL,

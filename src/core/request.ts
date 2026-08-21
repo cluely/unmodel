@@ -217,6 +217,43 @@ export function toValidated<Body extends object, Sdk extends SdkFormatters>(
 }
 
 /**
+ * A copy of a validated result addressed at a different URL.
+ *
+ * `.request` is defined non-writable and non-configurable by
+ * {@link toValidated}, which is deliberate: a validator's own result is a
+ * finished statement about a request, and a caller must not be able to
+ * silently re-point it. A compiling layer sometimes has to, though —
+ * `unmodel/chat` compiles a Gemini body whose *route* depends on the canonical
+ * `stream` flag, a fact `google.chat` has no word for. That is a rebuild, not
+ * an edit: every descriptor (the enumerable body, `toSdk`, `toApi`) is carried
+ * onto a fresh object with a fresh `RequestMeta`, so the result the substrate
+ * produced is returned to its caller untouched and this function stays the one
+ * named seam through which a URL can change after validation.
+ *
+ * `url` is derived from `current.url` by the caller rather than rebuilt from a
+ * model id, so the address stays single-authority: whatever model the provider
+ * validator resolved is the model the request is sent to.
+ */
+export function reroute<T extends object>(validated: T, url: string): T {
+  const current = (validated as { request?: RequestMeta }).request;
+  if (current === undefined || typeof current.url !== "string") {
+    throw new TypeError(
+      "unmodel: cannot re-address a validated result that carries no `.request`.",
+    );
+  }
+  const descriptors: Record<string | symbol, PropertyDescriptor> = {
+    ...Object.getOwnPropertyDescriptors(validated),
+    request: {
+      value: { ...current, url, headers: { ...current.headers } },
+      enumerable: false,
+      writable: false,
+      configurable: false,
+    },
+  };
+  return Object.defineProperties({}, descriptors) as T;
+}
+
+/**
  * `Validated` for a WebSocket config surface: same enumerable-body/`toSdk`
  * contract, with `.request` describing the socket to open ({@link SocketMeta})
  * instead of an HTTP call. No `toApi` — retargeting a socket config across

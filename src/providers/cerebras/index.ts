@@ -13,7 +13,7 @@ import type { CerebrasTextModelId } from "../../catalog/cerebras.gen";
 import { availability } from "../../catalog/availability/cerebras.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<CerebrasTextModelId, typeof availability>({
+  createOpenAICompatible<CerebrasTextModelId, typeof availability, "cerebras">({
     id: provider.id,
     // The generated catalog carries no `api` field for Cerebras; the
     // documented OpenAI-compatible base URL is https://api.cerebras.ai/v1

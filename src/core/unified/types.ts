@@ -395,6 +395,19 @@ export type UnifiedResult<A, R extends string> = UnifiedOut<AdapterFor<A, R>> & 
 };
 
 /**
+ * The untrusted-input half of a unified validator's interface.
+ *
+ * This is deliberately a separate method instead of an `unknown` overload on
+ * `safe`: an `unknown` overload would also accept typoed object literals after
+ * the strict `ExactKeys` overload rejected them, silently deleting the
+ * compile-time check. `safeUnknown` is the explicit seam for JSON, CLI input,
+ * and other values whose shape is not known until runtime.
+ */
+export interface SafeUnknown<Out> {
+  safeUnknown(params: unknown, options?: ValidateOptions): ValidateResult<Out>;
+}
+
+/**
  * The caller-facing param type: the category's vocabulary, with `model`
  * replaced by the registered-ref union plus an open tail.
  *
@@ -451,7 +464,7 @@ export type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omi
  * a `T` that satisfies the constraint and sail straight through to a provider
  * whose schema passes unknown keys along.
  */
-export interface UnifiedValidator<Canon, A> {
+export interface UnifiedValidator<Canon, A> extends SafeUnknown<UnifiedResult<A, string>> {
   <T extends UnifiedInput<Canon, UnifiedRef<A>>>(
     params: T & ExactKeys<T, UnifiedInput<Canon, UnifiedRef<A>>>,
     options?: ValidateOptions,

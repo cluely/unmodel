@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -150,13 +150,18 @@ export interface DallE3Body {
 }
 
 /** Escape hatch for models unmodel doesn't know yet (unknown_model warning). */
-export interface UnknownImageModelBody {
-  model: string & {};
+export interface UnknownImageModelBody<Model extends string> {
+  model: FutureModelId<Model, keyof ImagesBodyByModel>;
   prompt: string;
   [key: string]: unknown;
 }
 
-export type ImagesBody =
+/**
+ * Known-model bodies are closed by default. Pass a future model literal as the
+ * type argument to opt into the loose escape arm, e.g. `ImagesBody<"gpt-image-9">`.
+ * Use `ImagesBody<string>` only when the id is genuinely runtime-discovered.
+ */
+export type ImagesBody<FutureModel extends string = never> =
   | GptImage1Body
   | GptImage1MiniBody
   | GptImage15Body
@@ -164,7 +169,7 @@ export type ImagesBody =
   | GptImage2SnapshotBody
   | DallE2Body
   | DallE3Body
-  | UnknownImageModelBody;
+  | UnknownImageModelBody<FutureModel>;
 
 interface ImagesBodyByModel {
   "gpt-image-1": GptImage1Body;
@@ -179,7 +184,11 @@ interface ImagesBodyByModel {
 /** Resolves a model id literal to its exact Tier-A arm. */
 type ImagesArm<M extends string> = M extends keyof ImagesBodyByModel
   ? ImagesBodyByModel[M]
-  : UnknownImageModelBody;
+  : UnknownImageModelBody<M>;
+
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyImagesBody = ImagesBody<string>;
+type ImagesModelInput = keyof ImagesBodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Schema — the loose union of every param any model accepts; per-model
@@ -233,7 +242,7 @@ const GENERATIONS_MODEL_IDS = [
 ] as const;
 
 function checkEditsOnlyModel(
-  params: ImagesBody,
+  params: AnyImagesBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -256,7 +265,7 @@ function checkEditsOnlyModel(
  */
 type OpenAISdkTargets<B> = { openai: () => B };
 
-function finalize(params: ImagesBody): unknown {
+function finalize(params: AnyImagesBody): unknown {
   const body = { ...params };
   return toValidated(body, {
     url: IMAGES_GENERATIONS_URL,
@@ -267,7 +276,7 @@ function finalize(params: ImagesBody): unknown {
   });
 }
 
-const validator = createValidator<ImagesBody, unknown>({
+const validator = createValidator<AnyImagesBody, unknown>({
   endpoint: "openai.image",
   schema: imageSchema,
   modelId: (params) => params.model,
@@ -287,11 +296,11 @@ const validator = createValidator<ImagesBody, unknown>({
  * unchanged in shape — OpenAI's SDK params are wire-shaped.
  */
 export const image = validator as unknown as {
-  <M extends ImagesBody["model"], T extends ImagesArm<M>>(
+  <M extends ImagesModelInput, T extends ImagesArm<M>>(
     params: T & ImagesArm<M> & { model: M } & ExactKeys<T, ImagesArm<M>>,
     options?: ValidateOptions,
   ): Validated<T & { model: M }, OpenAISdkTargets<T & { model: M }>>;
-  safe<M extends ImagesBody["model"], T extends ImagesArm<M>>(
+  safe<M extends ImagesModelInput, T extends ImagesArm<M>>(
     params: T & ImagesArm<M> & { model: M } & ExactKeys<T, ImagesArm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<T & { model: M }, OpenAISdkTargets<T & { model: M }>>>;

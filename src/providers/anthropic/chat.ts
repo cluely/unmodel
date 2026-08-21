@@ -30,6 +30,11 @@ import type { MediaDeclaration } from "../../core/options";
 import { chatConstraints, chatFamilyRules, THINKING_DOCS, VISION_DOCS } from "./constraints";
 import { messagesSchema } from "./wire";
 import type { MessagesBody } from "./wire";
+import type {
+  ValidatorProviderCarrier,
+  ValidatorResultKind,
+  ValidatorResultKindCarrier,
+} from "../../core/validator-result-kind";
 
 // The wire types and the zod schema live in ./wire.ts (a leaf that imports
 // only zod), so translation machinery can reach the dialect without pulling
@@ -103,11 +108,15 @@ export function checkCapabilities(
   const model = params.model;
 
   if (params.tools !== undefined && params.tools.length > 0 && !info.toolCall) {
+    // Named, not just counted: a request assembled from a tool registry can
+    // carry tools the call site never mentions.
+    const names = params.tools.map((tool) => tool.name);
     ctx.report({
       code: "unsupported_capability",
       path: ["tools"],
       model,
-      message: `"${model}" does not support tool calling; remove \`tools\`.`,
+      message: `"${model}" does not support tool calling, and ${names.length} tool(s) were supplied (${names.join(", ")}); remove \`tools\`.`,
+      meta: { tools: names },
     });
   }
 
@@ -561,8 +570,21 @@ const validator = createValidator<MessagesBody, Validated<MessagesBody, ChatSdkT
   familyRules: chatFamilyRules,
   checks: [checkCapabilities, checkThinkingCompatibility, checkImageMedia],
   estimate: estimateMessages,
+  promptPath: ["messages"],
   finalize,
 });
+
+/** Registry-instantiable form of this endpoint's generic result. */
+export interface AnthropicChatResultKind extends ValidatorResultKind {
+  readonly output: this["input"] extends MessagesBody
+    ? Validated<
+        this["input"],
+        ChatSdkTargets<this["input"]>,
+        AnthropicAvailability,
+        this["input"]["model"] & string
+      >
+    : never;
+}
 
 /**
  * Validates params for POST /v1/messages. The result's enumerable properties
@@ -590,4 +612,4 @@ export const chat = validator as unknown as {
     options?: ValidateOptions,
   ): ValidateResult<Validated<T, ChatSdkTargets<T>, AnthropicAvailability, T["model"] & string>>;
   constraintsFor(modelId: string): EndpointConstraints[];
-};
+} & ValidatorResultKindCarrier<AnthropicChatResultKind> & ValidatorProviderCarrier<"anthropic">;

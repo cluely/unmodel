@@ -28,7 +28,7 @@ import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models } from "../../catalog/openai.gen";
 import { SORA_MODELS, SORA_RATE_PER_SECOND, type SoraModelId } from "./videos-models";
@@ -117,20 +117,24 @@ export interface DefaultVideoModelBody extends SoraBodyCommon {
 }
 
 /** Escape hatch for models unmodel doesn't know yet (unknown_model warning). */
-export interface UnknownVideoModelBody {
-  model: string & {};
+export interface UnknownVideoModelBody<Model extends string> {
+  model: FutureModelId<Model, keyof VideosBodyByModel>;
   prompt: string;
   [key: string]: unknown;
 }
 
-export type VideosBody =
+/**
+ * Closed over documented models by default. Supply a future model literal to
+ * opt into the loose arm: `VideosBody<"sora-3">`.
+ */
+export type VideosBody<FutureModel extends string = never> =
   | Sora2Body
   | Sora2Snapshot20251006Body
   | Sora2Snapshot20251208Body
   | Sora2ProBody
   | Sora2ProSnapshot20251006Body
   | DefaultVideoModelBody
-  | UnknownVideoModelBody;
+  | UnknownVideoModelBody<FutureModel>;
 
 interface VideosBodyByModel {
   "sora-2": Sora2Body;
@@ -144,10 +148,12 @@ interface VideosBodyByModel {
 type VideosArm<M> = M extends keyof VideosBodyByModel
   ? VideosBodyByModel[M]
   : M extends string
-    ? UnknownVideoModelBody
+    ? UnknownVideoModelBody<M>
     : DefaultVideoModelBody;
 
 type VideosModelInput = keyof VideosBodyByModel | (string & {});
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyVideosBody = VideosBody<string>;
 
 // ---------------------------------------------------------------------------
 // Schema — loose; per-model narrowing happens in constraints.ts (runtime)
@@ -175,7 +181,7 @@ const VIDEOS_CREATE_DOCS_URL = "https://developers.openai.com/api/docs/api-refer
 
 /** "Provide exactly one of `image_url` or `file_id`" (create API reference). */
 function checkInputReference(
-  params: VideosBody,
+  params: AnyVideosBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -193,7 +199,7 @@ function checkInputReference(
 
 /** Catalog-known models that cannot output video (e.g. a chat id) error out. */
 function checkVideoOutputModality(
-  params: VideosBody,
+  params: AnyVideosBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -214,7 +220,7 @@ function checkVideoOutputModality(
 // ---------------------------------------------------------------------------
 
 function estimate(
-  params: VideosBody,
+  params: AnyVideosBody,
   info: ModelInfo | undefined,
   _ctx: PipelineContext,
 ): ValidateEstimate {
@@ -239,7 +245,7 @@ function estimate(
  */
 type OpenAISdkTargets<B> = { openai: () => B };
 
-function finalize(params: VideosBody): unknown {
+function finalize(params: AnyVideosBody): unknown {
   const body = { ...params };
   return toValidated(body, {
     url: VIDEOS_URL,
@@ -257,7 +263,7 @@ function finalize(params: VideosBody): unknown {
  */
 const catalog = { ...models, ...SORA_MODELS };
 
-const validator = createValidator<VideosBody, unknown>({
+const validator = createValidator<AnyVideosBody, unknown>({
   endpoint: "openai.video",
   schema: videosSchema,
   // `model` is optional on the wire; checks run against the documented

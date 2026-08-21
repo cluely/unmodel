@@ -39,6 +39,7 @@ proposition.
 | Entry | Function(s) | Providers |
 | --- | --- | --- |
 | `unmodel/chat` | `chat` | 32 |
+| `unmodel/chat/factory` | `createChat` | whichever you register |
 | `unmodel/image` | `image`, `createImage` | 15 |
 | `unmodel/speech` | `speech`, `createSpeech` | 14 |
 | `unmodel/transcribe` | `transcribe`, `createTranscribe` | 11 |
@@ -153,8 +154,9 @@ the adapters live in their own `unified-<category>.ts` modules behind the
 separate `unmodel/<provider>/unified` export, and `test/bundle-budget.test.ts`
 holds every entry — provider and pack alike — to a committed byte budget
 measured over the real `dist/` import graph. Measured today, unminified ESM with
-`zod` excluded: chat 557.7 KiB, image 747.2, video 577.2, speech 376.5,
-transcribe 365.6, image-edit 267.3, music 140.6. A pack is the whole category;
+`zod` excluded: chat 1718.7 KiB (`chat/factory` 144.0), image 755.7, video
+614.4, speech 409.8, transcribe 401.7, image-edit 276.1, music 149.8. A pack is
+the whole category;
 `createSpeech([openai, rime])` and its siblings pay only for the providers you
 register.
 
@@ -168,11 +170,14 @@ than a number unmodel picked; Stability's `musicFromAudio` / `musicInpaint` and
 the sixteen masked editing routes take controls no other provider has, so they
 stay reachable by name at `unmodel/<provider>` where they work perfectly well.
 
-**No `.toApi()` on a unified result, deliberately.** A provider result offers
-`.toApi(target)` because it starts in one dialect and may want another. A
-unified result has no dialect to leave: retargeting it means changing `model`
-and calling again, which is a string edit rather than an API — and adding
-`.toApi` would bundle the availability tables these entries exist without.
+**No `.toApi()` on a unified *media* result, deliberately.** A provider result
+offers `.toApi(target)` because it starts in one dialect and may want another.
+A unified media result has no dialect to leave: retargeting it means changing
+`model` and calling again, which is a string edit rather than an API — and
+adding `.toApi` would bundle the availability tables the six media packs exist
+without. `unmodel/chat` is the exception and pays for it on purpose: it returns
+the provider's own `Validated`, so `.toApi` and `.toSdk` are there because they
+were never removed. See the `chat-composition` changeset.
 
 ## `unmodel/image` knows what *one model* takes
 

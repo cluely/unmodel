@@ -103,13 +103,66 @@ describe("the wire body is the whole body", () => {
     expect(result.modelId).toBe("gemini-2.5-flash");
   });
 
-  test("no `toApi` — a unified result has no dialect to leave", () => {
-    const result = chat({
-      model: "groq/llama-3.1-8b-instant",
-      messages: [{ role: "user", content: "hi" }],
+  /**
+   * The retarget surface is the *reason* this entry composes concrete provider
+   * validators rather than a slim table — it is what the budget increase from
+   * 600 KiB to 1800 KiB buys. Asserting only that the key exists, or that an
+   * identity hop succeeds, would pass with cross-dialect retargeting from
+   * `unmodel/chat` completely broken. These cross a dialect boundary and read
+   * the body.
+   */
+  describe("the provider's own retarget surface survives", () => {
+    test("the members are there and the identity hop works", () => {
+      const result = chat({
+        model: "groq/llama-3.1-8b-instant",
+        messages: [{ role: "user", content: "hi" }],
+      });
+      expect("toApi" in result).toBe(true);
+      expect("toApiSafe" in result).toBe(true);
+      expect(result.toApiSafe("groq").ok).toBe(true);
     });
-    expect("toApi" in result).toBe(false);
-    expect("toApiSafe" in result).toBe(false);
+
+    test("anthropic-messages → openrouter respells the model and the output cap", () => {
+      const result = chat({
+        model: "anthropic/claude-opus-5",
+        messages: [{ role: "user", content: "hi" }],
+        maxOutputTokens: 16,
+      });
+      const retargeted = result.toApi("openrouter");
+      expect(retargeted.request.url).toBe("https://openrouter.ai/api/v1/chat/completions");
+      expect(body(retargeted)).toEqual({
+        model: "anthropic/claude-opus-5",
+        messages: [{ role: "user", content: "hi" }],
+        max_completion_tokens: 16,
+      });
+    });
+
+    test("gemini → openrouter crosses from a URL-carried model to a body one", () => {
+      const result = chat({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: "hi" }],
+      });
+      const retargeted = result.toApi("openrouter");
+      expect(retargeted.request.url).toBe("https://openrouter.ai/api/v1/chat/completions");
+      expect(body(retargeted)).toEqual({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: "hi" }],
+      });
+    });
+
+    test("a target that does not serve the model fails, naming the ones that do", () => {
+      const result = chat({
+        model: "anthropic/claude-opus-5",
+        messages: [{ role: "user", content: "hi" }],
+        maxOutputTokens: 16,
+      });
+      const outcome = (result.toApiSafe as (t: string) => { ok: boolean; errors?: unknown[] })(
+        "groq",
+      );
+      expect(outcome.ok).toBe(false);
+      const message = (outcome.errors?.[0] as { message: string } | undefined)?.message ?? "";
+      expect(message).toContain("openrouter");
+    });
   });
 });
 
@@ -150,12 +203,12 @@ describe("toSdk", () => {
     const result = chat({
       model: "anthropic/claude-opus-5",
       messages: [{ role: "user", content: "hi" }],
-      maxOutputTokens: 64,
+      maxOutputTokens: 2048,
       reasoning: { budgetTokens: 1024 },
     });
     const options = result.toSdk("ai-sdk");
     expect(options.messages).toEqual([{ role: "user", content: [{ type: "text", text: "hi" }] }]);
-    expect(options.maxOutputTokens).toBe(64);
+    expect(options.maxOutputTokens).toBe(2048);
     expect(options.providerOptions).toEqual({
       anthropic: { thinking: { type: "enabled", budgetTokens: 1024 } },
     });

@@ -65,7 +65,7 @@ const TTS_DOCS = "https://elevenlabs.io/docs/api-reference/text-to-speech/conver
 export type ElevenlabsSpeechWire = TextToSpeechParams;
 
 /** What a unified call to `elevenlabs/…` returns. */
-export type ElevenlabsSpeechResult = ReturnType<typeof validator>;
+export type ElevenlabsSpeechResult = ReturnType<typeof validator<ElevenlabsSpeechWire>>;
 
 /**
  * The capability behind `output_format`, enumerated from the same

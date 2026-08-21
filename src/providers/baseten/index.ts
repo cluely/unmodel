@@ -13,7 +13,8 @@ const BASETEN_BASE_URL = provider.api;
 
 const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   BasetenTextModelId,
-  typeof availability
+  typeof availability,
+  "baseten"
 >({
   id: provider.id,
   baseUrl: BASETEN_BASE_URL,

@@ -36,7 +36,7 @@ import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { imageModels } from "./models";
 import {
@@ -202,19 +202,23 @@ export interface Seedream40Body extends ImageGenerationsCore {
  * per-account Endpoint IDs (`ep-…`), and `seededit-3-0-i2i-250628`, whose API
  * reference BytePlus has retired (see models.ts).
  */
-export interface UnknownImageModelBody {
-  model: string & {};
+export interface UnknownImageModelBody<Model extends string> {
+  model: FutureModelId<Model, keyof ImageBodyByModel>;
   prompt?: string;
   [key: string]: unknown;
 }
 
-export type ImageGenerationsBody =
+/**
+ * Closed over documented models by default. Supply a future model or endpoint
+ * id to opt into the loose arm: `ImageGenerationsBody<"ep-…">`.
+ */
+export type ImageGenerationsBody<FutureModel extends string = never> =
   | Seedream50ProBody
   | Seedream50Body
   | Seedream50LiteBody
   | Seedream45Body
   | Seedream40Body
-  | UnknownImageModelBody;
+  | UnknownImageModelBody<FutureModel>;
 
 interface ImageBodyByModel {
   "dola-seedream-5-0-pro-260628": Seedream50ProBody;
@@ -227,7 +231,11 @@ interface ImageBodyByModel {
 /** Resolves a model id literal to its exact Tier-A arm. */
 type ImageArm<M extends string> = M extends keyof ImageBodyByModel
   ? ImageBodyByModel[M]
-  : UnknownImageModelBody;
+  : UnknownImageModelBody<M>;
+
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyImageGenerationsBody = ImageGenerationsBody<string>;
+type ImageModelInput = keyof ImageBodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Schema — the loose union of every documented param; per-model narrowing
@@ -267,26 +275,26 @@ const imageGenerationsSchema = z.looseObject({
 
 type AnyRecord = Record<string, unknown>;
 
-function imageList(params: ImageGenerationsBody): string[] {
+function imageList(params: AnyImageGenerationsBody): string[] {
   const image = (params as AnyRecord)["image"];
   if (typeof image === "string") return [image];
   if (Array.isArray(image)) return image.filter((v): v is string => typeof v === "string");
   return [];
 }
 
-function imageCount(params: ImageGenerationsBody): number {
+function imageCount(params: AnyImageGenerationsBody): number {
   const image = (params as AnyRecord)["image"];
   if (typeof image === "string") return 1;
   return Array.isArray(image) ? image.length : 0;
 }
 
-function isLayerDecomposition(params: ImageGenerationsBody): boolean {
+function isLayerDecomposition(params: AnyImageGenerationsBody): boolean {
   return (params as AnyRecord)["layer_decomposition"] === true;
 }
 
 /** `prompt` is required unless the request is a layer-decomposition request. */
 function checkPrompt(
-  params: ImageGenerationsBody,
+  params: AnyImageGenerationsBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -308,7 +316,7 @@ function checkPrompt(
 
 /** `size`: a model-specific keyword, or `"<w>x<h>"` inside the model's bounds. */
 function checkSize(
-  params: ImageGenerationsBody,
+  params: AnyImageGenerationsBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -370,7 +378,7 @@ function checkSize(
 
 /** Reference-image count, layer-decomposition/background pairing, and bytes. */
 function checkImages(
-  params: ImageGenerationsBody,
+  params: AnyImageGenerationsBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -438,7 +446,7 @@ function checkImages(
 
 /** Batch-generation pairing rules and the documented 15-image total. */
 function checkSequential(
-  params: ImageGenerationsBody,
+  params: AnyImageGenerationsBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -475,7 +483,7 @@ function checkSequential(
 
 /** `optimize_prompt_options.mode` — "fast" is not on every model. */
 function checkPromptOptimizeMode(
-  params: ImageGenerationsBody,
+  params: AnyImageGenerationsBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -499,7 +507,7 @@ function checkPromptOptimizeMode(
 // Estimation — worst-case USD per request (see ./pricing.ts).
 // ---------------------------------------------------------------------------
 
-function estimate(params: ImageGenerationsBody, info: ModelInfo | undefined) {
+function estimate(params: AnyImageGenerationsBody, info: ModelInfo | undefined) {
   const record = params as AnyRecord;
   const options = record["sequential_image_generation_options"];
   const maxImages =
@@ -528,7 +536,7 @@ function estimate(params: ImageGenerationsBody, info: ModelInfo | undefined) {
  */
 type BytedanceSdkTargets<B> = { bytedance: () => B };
 
-function finalize(params: ImageGenerationsBody): unknown {
+function finalize(params: AnyImageGenerationsBody): unknown {
   const body = { ...params };
   return toValidated(body, {
     url: IMAGE_GENERATIONS_URL,
@@ -539,7 +547,7 @@ function finalize(params: ImageGenerationsBody): unknown {
   });
 }
 
-const validator = createValidator<ImageGenerationsBody, unknown>({
+const validator = createValidator<AnyImageGenerationsBody, unknown>({
   endpoint: "bytedance.image",
   schema: imageGenerationsSchema,
   modelId: (params) => params.model,
@@ -577,11 +585,11 @@ const validator = createValidator<ImageGenerationsBody, unknown>({
  * ```
  */
 export const image = validator as unknown as {
-  <M extends ImageGenerationsBody["model"], T extends ImageArm<M>>(
+  <M extends ImageModelInput, T extends ImageArm<M>>(
     params: T & ImageArm<M> & { model: M } & ExactKeys<T, ImageArm<M>>,
     options?: ValidateOptions,
   ): Validated<T, BytedanceSdkTargets<T>>;
-  safe<M extends ImageGenerationsBody["model"], T extends ImageArm<M>>(
+  safe<M extends ImageModelInput, T extends ImageArm<M>>(
     params: T & ImageArm<M> & { model: M } & ExactKeys<T, ImageArm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<T, BytedanceSdkTargets<T>>>;

@@ -284,6 +284,11 @@ expectAssignable<readonly { code: string }[]>(unknownRef.warnings);
 expectAssignable<ValidateResult<typeof alphaResult>>(
   image.safe({ model: "alpha/alpha-1", prompt: "x" }),
 );
+declare const untrustedImageInput: unknown;
+const untrustedImageResult = image.safeUnknown(untrustedImageInput);
+if (untrustedImageResult.ok) {
+  expectAssignable<readonly { code: string }[]>(untrustedImageResult.params.warnings);
+}
 expectAssignable<readonly string[]>(image.providers);
 
 // ---------------------------------------------------------------------------
@@ -307,11 +312,11 @@ declare const transcribeAdapter: UnifiedAdapter<TranscribeParams> & {
 };
 declare const musicAdapter: UnifiedAdapter<MusicParams> & { category: "music" };
 
-createVideo([videoAdapter]);
-createImageEdit([editAdapter]);
-createSpeech([speechAdapter]);
-createTranscribe([transcribeAdapter]);
-createMusic([musicAdapter]);
+createVideo([videoAdapter]).safeUnknown({} as unknown);
+createImageEdit([editAdapter]).safeUnknown({} as unknown);
+createSpeech([speechAdapter]).safeUnknown({} as unknown);
+createTranscribe([transcribeAdapter]).safeUnknown({} as unknown);
+createMusic([musicAdapter]).safeUnknown({} as unknown);
 
 // @ts-expect-error — a video adapter on the image surface is a category error.
 createImage([videoAdapter]);

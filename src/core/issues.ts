@@ -16,7 +16,14 @@ export type IssueCode =
   | "media_unsupported_format"
   | "media_dimensions_exceeded"
   | "media_duration_exceeded"
-  | "media_duration_undeclared";
+  | "media_duration_undeclared"
+  /**
+   * A `ValidateOptions.media` declaration named a part that did not survive
+   * compilation, so its declared facts were not applied to anything. Only a
+   * compiling surface (`unmodel/chat`) can produce it: on a wire surface the
+   * declaration and the body share one coordinate system.
+   */
+  | "media_declaration_dropped";
 
 export interface Issue {
   severity: IssueSeverity;

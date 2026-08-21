@@ -52,23 +52,32 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
 };
 
 /**
- * `unmodel/chat`'s budget, measured the same way and pinned separately because
- * it is not a provider entry: it is the one entry that carries a catalog
- * covering *every* provider.
+ * `unmodel/chat` is the ready-made 32-provider pack. It carries every concrete
+ * provider validator, its catalog and (where offered) availability table so
+ * provider `.toApi` survives the unified call — asserted for real, across a
+ * dialect boundary, in `test/chat/compile.test.ts`. It also retains the public
+ * slim profile export for discovery, which is ~379 KiB (22%) of the number
+ * below for data no validation path reads.
  *
- * 558 KiB measured, of which 433 KiB is `src/catalog/chat-profiles.gen.ts`
- * inlined — the slim per-model profile table (324 KB of source) that makes
- * `chat()` catalog-aware without a subpath the caller has to know about. The
- * remaining ~125 KiB is the three dialect codecs, the translation hub, the four
- * constraint tables and the pipeline. Headroom is ~8%, matching the provider
- * budgets: a failure here means a real addition, and the routine legitimate
- * cause is a models.dev refresh growing the profile table.
- *
- * The number is only half the guarantee. `chat entry's graph` below pins the
- * *composition* — no per-provider catalog, no availability data — which is what
- * stops the budget from being met by luck while the wrong modules are inside.
+ * 1718.7 KiB measured; 1800 leaves ~4.5% headroom. Applications that need a
+ * narrow graph use `unmodel/chat/factory` below.
  */
-const CHAT_BUDGET_KIB = 600;
+const CHAT_BUDGET_KIB = 1800;
+
+/** Provider-free compiler/factory entry; 144.0 KiB measured, ~4% headroom. */
+const CHAT_FACTORY_BUDGET_KIB = 150;
+
+/**
+ * `dist/chat/index.d.ts` on its own — declarations, not chunks.
+ *
+ * A separate number because a `.d.ts` regression is invisible to every other
+ * gate: types erase, so no JS budget moves, `tsc` stays clean and every test
+ * passes. This entry shipped at 891.9 KiB until `chat` was annotated with
+ * `ChatValidator<ChatProviderValidatorRegistry>` — without the annotation
+ * `const`-inference emits the whole 32-provider registry expansion twice, and
+ * the second copy was 48% of the file. 455.0 KiB measured.
+ */
+const CHAT_DECLARATION_BUDGET_KIB = 500;
 
 /**
  * Every category entry. All six ship a ready-made pack now, so each has its own
@@ -415,6 +424,26 @@ function transitiveChunks(entry: string): string[] {
   return [...seen];
 }
 
+/** TypeScript resolves `.js` specifiers in declarations to sibling `.d.ts`. */
+function transitiveDeclarations(entry: string): string[] {
+  const seen = new Set<string>();
+  const visit = (file: string): void => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    for (const match of readFileSync(file, "utf8").matchAll(FROM_IMPORT)) {
+      const specifier = match[1] as string;
+      if (!specifier.startsWith(".")) continue;
+      const resolved = resolve(dirname(file), specifier);
+      const declaration = resolved.endsWith(".js")
+        ? `${resolved.slice(0, -3)}.d.ts`
+        : resolved;
+      visit(existsSync(declaration) ? declaration : resolved);
+    }
+  };
+  visit(entry);
+  return [...seen];
+}
+
 /** Total bytes of an entry chunk plus every chunk it statically pulls in. */
 function transitiveBytes(entry: string): number {
   return transitiveChunks(entry).reduce((total, file) => total + statSync(file).size, 0);
@@ -442,12 +471,15 @@ function sourceModulesOf(entry: string): string[] {
 
 const entryFile = (id: string): string => join(DIST, "providers", id, "index.js");
 const chatEntry = (): string => join(DIST, "chat", "index.js");
+const chatFactoryEntry = (): string => join(DIST, "chat", "factory.js");
 const unifiedEntry = (name: string): string => join(DIST, "unified", `${name}.js`);
 
 // CI runs `bun test` before `bun run build`, and `dist/` is gitignored, so the
 // suite builds on demand rather than depending on run order. `clean: true` in
 // tsdown.config.ts makes this idempotent with the later CI build step.
-const built = existsSync(entryFile("anthropic")) || (await $`bun run build`.quiet().then(() => true));
+const built =
+  (existsSync(entryFile("anthropic")) && existsSync(chatFactoryEntry())) ||
+  (await $`bun run build`.quiet().then(() => true));
 
 describe("per-entry bundle budgets", () => {
   test("the build is present, so the budgets below assert something", () => {
@@ -480,36 +512,187 @@ describe("unmodel/chat", () => {
     expect(kib, `chat is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(CHAT_BUDGET_KIB);
   });
 
+  test(`its declaration file stays under ${CHAT_DECLARATION_BUDGET_KIB} KiB`, () => {
+    const file = join(DIST, "chat", "index.d.ts");
+    expect(existsSync(file), "dist declaration for chat").toBe(true);
+    const kib = statSync(file).size / 1024;
+    expect(kib, `chat/index.d.ts is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
+      CHAT_DECLARATION_BUDGET_KIB,
+    );
+  });
+
+  test("its graph contains the compiler's own modules", () => {
+    const modules = new Set(sourceModulesOf(chatEntry()));
+    // Every module under src/chat that emits runtime code has to actually be
+    // reached — a compiler step that quietly stopped being part of the entry
+    // would show up here and nowhere else.
+    //
+    // `providers.ts` is the one exception and is pinned separately: it exports
+    // a single const used exactly once, so rolldown folds it into the entry's
+    // `createChat({ … })` call and emits no region marker for it.
+    for (const module of [
+      "src/chat/compile.ts",
+      "src/chat/encode.ts",
+      "src/chat/factory.ts",
+      "src/chat/index.ts",
+      "src/chat/media-paths.ts",
+      "src/chat/refs.ts",
+      "src/chat/schema.ts",
+      "src/chat/validate.ts",
+      "src/chat/wire-paths.ts",
+    ]) {
+      expect([...modules], `${module} is not in the chat graph`).toContain(module);
+    }
+
+    // The registry, inlined: one key per statically addressable provider.
+    const entry = readFileSync(chatEntry(), "utf8");
+    const registry = entry.slice(entry.indexOf("createChat({"), entry.indexOf("createChat({") + 2000);
+    for (const provider of ["alibaba", "anthropic", "google", "openai", "zhipuai"]) {
+      expect(registry, `${provider} is missing from the inlined registry`).toContain(provider);
+    }
+    expect(entry.includes('"fireworks-ai":')).toBe(true);
+  });
+
   /**
-   * The composition assertion, and the reason the number above means anything.
+   * The 51 provider modules the registry drags in, enumerated.
    *
-   * `unmodel/chat` carries one catalog on purpose — the slim `chat-profiles`
-   * table. Two other kinds of generated data are one careless import away and
-   * would each be invisible in a passing budget for a while:
+   * Counting *directories* — which is all the import-graph rule can do — says
+   * 32 and stays 32 no matter what a barrel grows. 29 of the 32 providers ship
+   * only an `index.ts`, so the registry has to import a barrel for them, and a
+   * barrel re-exports whatever its provider adds next: `../providers/mistral`
+   * already pulls a transcription endpoint and its audio catalog (~22 KiB) into
+   * a chat entry. That is a fact worth a name in a diff, not headroom to be
+   * absorbed silently.
    *
-   * - **a per-provider full catalog** (`src/catalog/<id>.gen.ts`). The near
-   *   miss is real: wiring google's chat constraint table pulled
-   *   `src/catalog/google.gen.ts` in for 44 KiB and zero findings, which is
-   *   what this test caught.
-   * - **the availability layer** (`src/catalog/availability/**`, ~290 KB in
-   *   total). `unmodel/chat` has no `.toApi`, so any of it here is pure weight.
+   * Two entries look surprising and are legitimate: `google/tts-models.ts` is
+   * imported by `google/chat.ts` for `chatModels`, and `google/veo-models.ts`
+   * by `google/constraints.ts` for its media rules — both leaf-driven, not
+   * barrel leakage.
    */
-  test("its graph contains no availability data and no per-provider catalog", () => {
+  test("its provider graph is exactly the enumerated 51 modules", () => {
+    const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
+    expect(modules).toEqual([
+      "src/providers/alibaba/index.ts",
+      "src/providers/anthropic/chat.ts",
+      "src/providers/anthropic/constraints.ts",
+      "src/providers/anthropic/interop.ts",
+      "src/providers/anthropic/wire.ts",
+      "src/providers/baseten/index.ts",
+      "src/providers/cerebras/index.ts",
+      "src/providers/deepinfra/index.ts",
+      "src/providers/deepseek/index.ts",
+      "src/providers/fireworks-ai/index.ts",
+      "src/providers/friendli/index.ts",
+      "src/providers/google/chat.ts",
+      "src/providers/google/constraints.ts",
+      "src/providers/google/interop.ts",
+      "src/providers/google/model-path.ts",
+      "src/providers/google/tts-models.ts",
+      "src/providers/google/veo-models.ts",
+      "src/providers/google/wire.ts",
+      "src/providers/groq/constraints.ts",
+      "src/providers/groq/index.ts",
+      "src/providers/huggingface/index.ts",
+      "src/providers/inception/index.ts",
+      "src/providers/longcat/index.ts",
+      "src/providers/meta/index.ts",
+      "src/providers/minimax/index.ts",
+      // Barrel leakage, measured: mistral's index re-exports its transcribe
+      // endpoint. Deleting these three lines requires giving mistral a
+      // `chat.ts` leaf, not loosening the assertion.
+      "src/providers/mistral/audio-models.ts",
+      "src/providers/mistral/index.ts",
+      "src/providers/mistral/transcribe.ts",
+      "src/providers/mistral/transcription-check.ts",
+      "src/providers/moonshotai/index.ts",
+      "src/providers/nebius/index.ts",
+      "src/providers/novita-ai/index.ts",
+      "src/providers/nvidia/index.ts",
+      "src/providers/openai-compatible/chat-completions.ts",
+      "src/providers/openai-compatible/check.ts",
+      "src/providers/openai-compatible/index.ts",
+      "src/providers/openai-compatible/interop.ts",
+      "src/providers/openai-compatible/wire.ts",
+      "src/providers/openai/chat.ts",
+      "src/providers/openai/constraints.ts",
+      "src/providers/openrouter/index.ts",
+      "src/providers/perplexity/index.ts",
+      "src/providers/sarvam/index.ts",
+      "src/providers/scaleway/index.ts",
+      "src/providers/siliconflow/index.ts",
+      "src/providers/stepfun/index.ts",
+      "src/providers/togetherai/index.ts",
+      "src/providers/upstage/index.ts",
+      "src/providers/vercel/index.ts",
+      "src/providers/xai/index.ts",
+      "src/providers/zhipuai/index.ts",
+    ]);
+  });
+
+  test("its graph contains the ready registry's exact catalogs and availability", () => {
     const modules = sourceModulesOf(chatEntry());
     // A vacuous scan would be worse than no scan.
     expect(modules).toContain("src/chat/index.ts");
     expect(modules).toContain("src/catalog/chat-profiles.gen.ts");
 
-    expect(modules.filter((m) => m.startsWith("src/catalog/availability/"))).toEqual([]);
+    expect(modules.filter((m) => m.startsWith("src/catalog/availability/"))).toEqual([
+      "src/catalog/availability/anthropic.gen.ts",
+      "src/catalog/availability/baseten.gen.ts",
+      "src/catalog/availability/friendli.gen.ts",
+      "src/catalog/availability/google.gen.ts",
+      "src/catalog/availability/mistral.gen.ts",
+      "src/catalog/availability/nebius.gen.ts",
+      "src/catalog/availability/nvidia.gen.ts",
+      "src/catalog/availability/openai.gen.ts",
+      "src/catalog/availability/scaleway.gen.ts",
+      "src/catalog/availability/siliconflow.gen.ts",
+      "src/catalog/availability/xai.gen.ts",
+    ]);
 
     const CHAT_TABLES = new Set([
       "src/catalog/chat-profiles.gen.ts",
       "src/catalog/chat-refs.gen.ts",
     ]);
     const catalogs = modules.filter(
-      (m) => /^src\/catalog\/.*\.gen\.ts$/.test(m) && !CHAT_TABLES.has(m),
+      (m) =>
+        /^src\/catalog\/.*\.gen\.ts$/.test(m) &&
+        !m.startsWith("src/catalog/availability/") &&
+        !CHAT_TABLES.has(m),
     );
-    expect(catalogs).toEqual([]);
+    expect(catalogs).toEqual([
+      "src/catalog/alibaba.gen.ts",
+      "src/catalog/anthropic.gen.ts",
+      "src/catalog/baseten.gen.ts",
+      "src/catalog/cerebras.gen.ts",
+      "src/catalog/deepinfra.gen.ts",
+      "src/catalog/deepseek.gen.ts",
+      "src/catalog/fireworks-ai.gen.ts",
+      "src/catalog/friendli.gen.ts",
+      "src/catalog/google.gen.ts",
+      "src/catalog/groq.gen.ts",
+      "src/catalog/huggingface.gen.ts",
+      "src/catalog/inception.gen.ts",
+      "src/catalog/longcat.gen.ts",
+      "src/catalog/meta.gen.ts",
+      "src/catalog/minimax.gen.ts",
+      "src/catalog/mistral.gen.ts",
+      "src/catalog/moonshotai.gen.ts",
+      "src/catalog/nebius.gen.ts",
+      "src/catalog/novita-ai.gen.ts",
+      "src/catalog/nvidia.gen.ts",
+      "src/catalog/openai.gen.ts",
+      "src/catalog/openrouter.gen.ts",
+      "src/catalog/perplexity.gen.ts",
+      "src/catalog/sarvam.gen.ts",
+      "src/catalog/scaleway.gen.ts",
+      "src/catalog/siliconflow.gen.ts",
+      "src/catalog/stepfun.gen.ts",
+      "src/catalog/togetherai.gen.ts",
+      "src/catalog/upstage.gen.ts",
+      "src/catalog/vercel.gen.ts",
+      "src/catalog/xai.gen.ts",
+      "src/catalog/zhipuai.gen.ts",
+    ]);
   });
 
   test("it reaches exactly three codecs — one per dialect it compiles to", () => {
@@ -521,6 +704,43 @@ describe("unmodel/chat", () => {
       "src/providers/google/interop.ts",
       "src/providers/openai-compatible/interop.ts",
     ]);
+  });
+});
+
+describe("unmodel/chat/factory", () => {
+  test(`stays under ${CHAT_FACTORY_BUDGET_KIB} KiB before providers are supplied`, () => {
+    expect(existsSync(chatFactoryEntry()), "dist entry for chat/factory").toBe(true);
+    const kib = transitiveBytes(chatFactoryEntry()) / 1024;
+    expect(kib, `chat/factory is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
+      CHAT_FACTORY_BUDGET_KIB,
+    );
+  });
+
+  test("contains the compiler and codecs, but no ready registry or provider data", () => {
+    const modules = sourceModulesOf(chatFactoryEntry());
+    expect(modules).toContain("src/chat/factory.ts");
+    expect(modules).not.toContain("src/chat/index.ts");
+    expect(modules).not.toContain("src/chat/providers.ts");
+    expect(modules).not.toContain("src/catalog/chat-profiles.gen.ts");
+    expect(modules.filter((m) => /^src\/catalog\/.*\.gen\.ts$/.test(m))).toEqual([]);
+
+    // Not "no endpoint validator" — *no provider module at all* beyond the
+    // three codecs the compiler is made of. A catalog, a constraint table or a
+    // wire schema arriving here would mean the narrow entry had quietly
+    // acquired a provider, which is the one thing it exists not to do.
+    expect(modules.filter((m) => m.startsWith("src/providers/"))).toEqual([
+      "src/providers/anthropic/interop.ts",
+      "src/providers/google/interop.ts",
+      "src/providers/openai-compatible/interop.ts",
+    ]);
+  });
+
+  test("its declaration graph does not reference the ready registry", () => {
+    const declarations = transitiveDeclarations(join(DIST, "chat", "factory.d.ts"));
+    const text = declarations.map((file) => readFileSync(file, "utf8")).join("\n");
+    expect(text).not.toContain("CHAT_PROVIDER_VALIDATORS");
+    expect(text).not.toContain("src/chat/providers.d.ts");
+    expect(text).not.toContain("src/chat/index.d.ts");
   });
 });
 

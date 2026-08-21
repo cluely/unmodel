@@ -127,7 +127,7 @@ export interface BflImageEditWire {
 }
 
 /** What a unified edit call to `black-forest-labs/…` returns. */
-export type BflImageEditResult = ReturnType<typeof validator>;
+export type BflImageEditResult = ReturnType<typeof validator<BflImageEditWire>>;
 
 export const imageEdit = {
   category: "imageEdit",

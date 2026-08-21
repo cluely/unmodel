@@ -176,8 +176,8 @@ export type LightricksVideoWire = TextToVideoParams | ImageToVideoParams;
 
 /** What a unified video call to `lightricks/…` returns — one route's `Validated`. */
 export type LightricksVideoResult =
-  | ReturnType<typeof textValidator>
-  | ReturnType<typeof imageValidator>;
+  | ReturnType<typeof textValidator<TextToVideoParams>>
+  | ReturnType<typeof imageValidator<ImageToVideoParams>>;
 
 /** See the note on kling's image adapter: `validate` is contravariant. */
 type LightricksValidate = CompiledCall<LightricksVideoWire, LightricksVideoResult>["validate"];

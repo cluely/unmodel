@@ -192,7 +192,7 @@ export interface GoogleVideoWire {
 }
 
 /** What a unified video call to `google/…` returns: `google.video`'s `Validated`. */
-export type GoogleVideoResult = ReturnType<typeof validator>;
+export type GoogleVideoResult = ReturnType<typeof validator<GoogleVideoWire>>;
 
 /** The routes a model serves, from the Veo docs' feature table. */
 function routesFor(model: string): readonly VideoRoute[] {

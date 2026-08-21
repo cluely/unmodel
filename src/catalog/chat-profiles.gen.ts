@@ -6,11 +6,18 @@
 import type { ModelInfo } from "../core/catalog-types";
 
 /**
- * What `unmodel/chat` needs to know about a model to check a request against
- * it: what it accepts, what it can do, how big it is and what it costs. A
- * `Pick` of `ModelInfo` rather than a fresh interface, so a field rename in
- * the catalog contract fails `tsc` here instead of silently splitting the two
- * vocabularies.
+ * A model, as `unmodel/chat` advertises it: what it accepts, what it can do,
+ * how big it is and what it costs.
+ *
+ * This is a **discovery** snapshot, not the table a request is checked
+ * against. A `unmodel/chat` call compiles to a wire body and terminates in
+ * the named provider's own validator, which reads that provider's full
+ * generated catalog — so this table is what you browse, and that one is what
+ * decides.
+ *
+ * A `Pick` of `ModelInfo` rather than a fresh interface, so a field rename
+ * in the catalog contract fails `tsc` here instead of silently splitting the
+ * two vocabularies.
  */
 export type ChatModelProfile = Pick<
   ModelInfo,

@@ -25,7 +25,7 @@ import type { OpenrouterTextModelId } from "../../catalog/openrouter.gen";
 import { availability } from "../../catalog/availability/openrouter.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<OpenrouterTextModelId, typeof availability>({
+  createOpenAICompatible<OpenrouterTextModelId, typeof availability, "openrouter">({
     id: provider.id,
     // Generated from models.dev: https://openrouter.ai/api/v1
     baseUrl: provider.api,

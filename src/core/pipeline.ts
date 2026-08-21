@@ -48,6 +48,15 @@ export interface PipelineSpec<P, V = P> {
   /** Token/cost estimation; drives context-window and budget enforcement. */
   estimate?: (params: P, info: ModelInfo | undefined, ctx: PipelineContext) => ValidateEstimate;
   /**
+   * Where a context-window finding is addressed — the param the input-token
+   * estimate was drawn from (`["messages"]` on a chat body, `["contents"]` on
+   * Gemini's). An issue that reports no path renders as `(root)`, which tells
+   * a caller nothing about what to shorten; endpoints that know their own
+   * prompt-bearing param say so here rather than each re-reporting the
+   * finding. Omitted → the finding keeps the empty path it always had.
+   */
+  promptPath?: readonly (string | number)[];
+  /**
    * Shapes the validated output: by default the fetch-ready wire body (a
    * `Validated` built via `toValidated`, with non-enumerable `toSdk(target)` and
    * `.request`). Omitted → the original params object is returned as-is.
@@ -63,6 +72,17 @@ export interface Validator<P, V = P> {
   safe(params: P, options?: ValidateOptions): ValidateResult<V>;
   /** All constraints that apply to a model id (model-specific + matching family rules). */
   constraintsFor(modelId: string): EndpointConstraints[];
+  /**
+   * The qualified endpoint this validator speaks for, e.g. `"groq.chat"` —
+   * the same string that labels its thrown errors.
+   *
+   * Exposed because a registry keyed by provider id otherwise has no way to
+   * check that a value agrees with the key it was filed under: every chat
+   * validator has the same structural type, and two providers routinely serve
+   * the same model ids, so a transposed entry produces a request addressed to
+   * the wrong host with no error anywhere. `createChat` reads it.
+   */
+  readonly endpoint: string;
 }
 
 export function constraintsFor(
@@ -187,11 +207,13 @@ export function createValidator<P, V = P>(spec: PipelineSpec<P, V>): Validator<P
     } catch (err) {
       ctx.report({ code: "invalid_shape", message: inspectionFailureMessage(err) });
     }
+    const promptPath = spec.promptPath === undefined ? {} : { path: [...spec.promptPath] };
     if (estimate.inputTokens !== undefined && info !== undefined && info.limit.context > 0) {
       const context = info.limit.context;
       if (estimate.inputTokens > context) {
         ctx.report({
           code: "over_context",
+          ...promptPath,
           model: modelId,
           message: `~${estimate.inputTokens} estimated prompt tokens exceed the ${context}-token context window of "${modelId}".`,
           meta: { estimated: estimate.inputTokens, limit: context },
@@ -199,6 +221,7 @@ export function createValidator<P, V = P>(spec: PipelineSpec<P, V>): Validator<P
       } else if (estimate.inputTokens > context * NEAR_CONTEXT_RATIO) {
         ctx.report({
           code: "near_context",
+          ...promptPath,
           model: modelId,
           message: `~${estimate.inputTokens} estimated prompt tokens are within 10% of the ${context}-token context window of "${modelId}"; the estimate is heuristic, so the request may not fit.`,
           meta: { estimated: estimate.inputTokens, limit: context },
@@ -212,6 +235,9 @@ export function createValidator<P, V = P>(spec: PipelineSpec<P, V>): Validator<P
     ) {
       ctx.report({
         code: "over_budget",
+        // The price is a property of the model the caller chose, and the model
+        // is the one param a budget failure can actually be fixed at.
+        path: ["model"],
         model: modelId,
         message: `Estimated worst-case cost $${estimate.costUSD.toFixed(4)} exceeds maxCostUSD $${options.maxCostUSD}.`,
         meta: { estimated: estimate.costUSD, limit: options.maxCostUSD },
@@ -232,7 +258,13 @@ export function createValidator<P, V = P>(spec: PipelineSpec<P, V>): Validator<P
 
   validator.safe = safe;
   validator.constraintsFor = (modelId: string) => constraintsFor(spec, modelId);
-  return validator;
+  Object.defineProperty(validator, "endpoint", {
+    value: spec.endpoint,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
+  return validator as Validator<P, V>;
 }
 
 function providerOf(endpoint: string): string {

@@ -123,9 +123,13 @@ export type {
 /**
  * The unified chat vocabulary, **type-only**.
  *
- * `unmodel/chat`'s runtime lives behind its own subpath because it bundles the
- * slim profile table for every chat model — several hundred kilobytes that this
- * entry must never acquire. The *types* cost nothing, and `ChatParams` is
+ * `unmodel/chat`'s runtime lives behind its own subpath because it composes
+ * all 32 concrete provider chat validators, their catalogs and their available
+ * retarget tables — ~1.7 MB that this entry must never acquire. (The
+ * discovery-only profile snapshot is ~22% of that; the validators are the
+ * rest. `unmodel/chat/factory` is the 135 KiB alternative for applications
+ * that register only the providers they call.) The *types* cost nothing, and
+ * `ChatParams` is
  * exactly the sort of thing an application declares in a shared module far away
  * from the call that validates it, so `import type { ChatParams } from
  * "unmodel"` should work without reaching for the subpath.

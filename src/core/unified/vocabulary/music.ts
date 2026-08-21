@@ -13,6 +13,7 @@ import type { ValidateOptions } from "../../options";
 import type { ValidateResult } from "../../result";
 import type {
   AnyUnifiedAdapter,
+  SafeUnknown,
   UnifiedAdapter,
   UnifiedInput,
   UnifiedRef,
@@ -110,7 +111,7 @@ export type AnyMusicAdapter = AnyUnifiedAdapter<MusicParams> & {
  * music({ model: "elevenlabs/music_v1",      prompt, steps: 40 });              // error
  * ```
  */
-export interface MusicValidator<A> {
+export interface MusicValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
     T extends UnifiedInput<MusicParamsBase, UnifiedRef<A>> &

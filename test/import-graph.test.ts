@@ -263,16 +263,16 @@ describe("retarget", () => {
  *
  * No existing rule constrained this directory (rule 4 is scoped to
  * `src/retarget/**`), and it is the one entry that speaks about *every*
- * provider at once — so it is also the one place where reaching for a
- * provider barrel or the full catalog is both tempting and catastrophic:
- * `src/catalog/index.ts` alone is ~800 KB of generated data, against the
- * ~330 KB slim table this entry is designed around.
+ * provider at once. The ready-made entry deliberately pays for every concrete
+ * chat validator so compiled bodies terminate in the same authority as the
+ * provider subpaths. That fan-in is isolated to `src/chat/providers.ts`.
  *
  * The allowance is deliberately the same shape as the retarget rule (rule 4):
  * core, the two chat-scoped generated tables, `src/retarget/dialects.ts`
  * (type-only — it is the shared dialect→body map, built from type-only wire
- * leaves), provider *leaves* only, and its own directory. A provider
- * `index.ts` or validator never becomes allowed.
+ * leaves), provider *leaves* only, and its own directory. The sole exception
+ * is the explicit validator registry; no other chat module may reach a
+ * provider barrel or endpoint validator.
  *
  * A1 is completed by three sharper pins, each catching a failure the broad
  * rule above would let through:
@@ -284,9 +284,9 @@ describe("retarget", () => {
  * - **A3** `chat-profiles.gen.ts` has exactly one production owner. It is 324 KB
  *   of generated data; the moment a second entry imports it, that entry's
  *   budget silently triples.
- * - **A4** nothing under `src/chat` touches `src/catalog/availability/**`.
- *   `unmodel/chat` has no `.toApi`, so the availability layer is pure weight
- *   here — and it is ~290 KB of it.
+ * - **A4** concrete validator imports are isolated to the registry and cover
+ *   all 32 statically addressable providers. Those validators deliberately
+ *   bring their ordinary `.toApi` surfaces with them.
  */
 describe("chat (amendment A1)", () => {
   const CHAT_CATALOG_TABLES = new Set([
@@ -295,21 +295,72 @@ describe("chat (amendment A1)", () => {
   ]);
 
   /**
-   * A2 — the exact provider modules `src/chat` may reach, and why each is
-   * there. Three codecs (one per dialect it compiles to) and four constraint
-   * tables (the providers with hand-written chat deny/enum rules).
+   * A2 — the exact provider modules the *compiler* may reach, and why each is
+   * there: three codecs, one per dialect it compiles to.
+   *
+   * There used to be four constraint tables here as well, held open by
+   * `src/chat/constraints.ts` — a chat-side copy of the deny/enum rules. That
+   * module is gone: compiled bodies terminate in the provider's own validator,
+   * which applies the provider's own tables, so nothing under `src/chat` needs
+   * to reach a constraints leaf at all.
    */
   const CHAT_PROVIDER_LEAVES = new Set([
     "src/providers/anthropic/interop.ts", // anthropic-messages decoder
     "src/providers/google/interop.ts", // gemini decoder
     "src/providers/openai-compatible/interop.ts", // openai-chat decoder (30 providers)
-    // Four constraint tables, not five: google's chat rules carry no deny or
-    // enum entry and its module reads a generated catalog, so wiring it in
-    // costs 44 KiB to contribute nothing. See src/chat/constraints.ts.
-    "src/providers/anthropic/constraints.ts",
-    "src/providers/groq/constraints.ts",
-    "src/providers/openai/constraints.ts",
-    "src/providers/upstage/constraints.ts",
+  ]);
+
+  /**
+   * A4 — the exact modules the ready-pack registry may import, one per
+   * provider.
+   *
+   * The registry is the one file in `src/chat` allowed to reach a concrete
+   * validator, and the old rule stated that as `continue` — *any* path under
+   * `src/providers` — which pinned nothing: an unrelated endpoint validator, a
+   * second module from an already-counted directory, or a barrel swapped in
+   * for a leaf all passed. (A barrel is not free: `../providers/mistral`
+   * re-exports its transcription endpoint, and ~22 KiB of transcribe schemas
+   * ride into `unmodel/chat` because of it.)
+   *
+   * So the registry's imports are enumerated. Three providers ship a dedicated
+   * `chat.ts` leaf and must use it; the rest have only a barrel, which is the
+   * honest module for them until they grow one.
+   */
+  const CHAT_REGISTRY_IMPORTS = new Set([
+    "src/providers/anthropic/chat.ts",
+    "src/providers/google/chat.ts",
+    "src/providers/openai/chat.ts",
+    ...[
+      "alibaba",
+      "baseten",
+      "cerebras",
+      "deepinfra",
+      "deepseek",
+      "fireworks-ai",
+      "friendli",
+      "groq",
+      "huggingface",
+      "inception",
+      "longcat",
+      "meta",
+      "minimax",
+      "mistral",
+      "moonshotai",
+      "nebius",
+      "novita-ai",
+      "nvidia",
+      "openrouter",
+      "perplexity",
+      "sarvam",
+      "scaleway",
+      "siliconflow",
+      "stepfun",
+      "togetherai",
+      "upstage",
+      "vercel",
+      "xai",
+      "zhipuai",
+    ].map((provider) => `src/providers/${provider}/index.ts`),
   ]);
 
   test("reaches only core, the chat tables, pinned provider leaves and itself", () => {
@@ -335,6 +386,20 @@ describe("chat (amendment A1)", () => {
           continue;
         }
         if (under(ref.target, "src/providers")) {
+          if (file === "src/chat/providers.ts") {
+            if (CHAT_REGISTRY_IMPORTS.has(ref.target)) continue;
+            violations.push(
+              violation(
+                file,
+                ref,
+                "the ready-pack registry imports exactly one enumerated module per provider " +
+                  "(A4). A barrel where a `chat.ts` leaf exists, or a second module from a " +
+                  "directory already counted, drags unrelated endpoint data into unmodel/chat " +
+                  "without changing the provider count",
+              ),
+            );
+            continue;
+          }
           if (CHAT_PROVIDER_LEAVES.has(ref.target)) continue;
           const basename = ref.target.slice(ref.target.lastIndexOf("/") + 1);
           violations.push(
@@ -343,8 +408,8 @@ describe("chat (amendment A1)", () => {
               ref,
               basename === "index.ts" || !PROVIDER_LEAF_BASENAMES.has(basename)
                 ? `only ${[...PROVIDER_LEAF_BASENAMES].join(" / ")} may be imported from a provider ` +
-                    "directory — a barrel or validator drags that provider's schema, catalog and " +
-                    "checks into the one entry that already carries every provider's profile"
+                    "directory — concrete validators belong in the explicit ready-pack registry; " +
+                    "a barrel elsewhere would leak provider data into the compiler/factory graph"
                 : "a leaf, but not one of one of the pinned seven (A2) — a new codec or constraint table " +
                     "is a real bundle cost, so add it to CHAT_PROVIDER_LEAVES deliberately",
             ),
@@ -356,8 +421,8 @@ describe("chat (amendment A1)", () => {
             violation(
               file,
               ref,
-              "unmodel/chat pays for the slim src/catalog/chat-profiles.gen.ts and nothing else; " +
-                "a per-provider catalog or the full registry is the weight that table exists to avoid",
+              "only the explicit ready-pack registry may reach per-provider catalogs; the " +
+                "compiler/factory graph must stay provider-free",
             ),
           );
           continue;
@@ -397,20 +462,46 @@ describe("chat (amendment A1)", () => {
     expect(importers.filter((file) => !under(file, "src/chat"))).toEqual([]);
   });
 
-  test("A4 — src/chat never reaches the availability layer", () => {
-    // `unmodel/chat` has no `.toApi`, so the ~290 KB of generated retarget
-    // tables would be pure weight. The `only a provider module may import its
-    // own table` rule below already forbids it; asserted here too because this
-    // is the entry where someone would try.
+  test("A4 — concrete provider validators are isolated to the complete registry", () => {
     const violations: string[] = [];
     for (const file of FILES.filter((f) => under(f, "src/chat"))) {
       for (const ref of importsOf(file)) {
-        if (under(ref.target, "src/catalog/availability")) {
-          violations.push(violation(file, ref, "unmodel/chat has no .toApi and pays for no availability data"));
+        if (!under(ref.target, "src/providers")) continue;
+        if (CHAT_PROVIDER_LEAVES.has(ref.target)) continue;
+        if (file !== "src/chat/providers.ts") {
+          violations.push(violation(file, ref, "concrete provider validators belong only in src/chat/providers.ts"));
         }
       }
     }
     expect(violations).toEqual([]);
+
+    const providers = new Set(
+      importsOf("src/chat/providers.ts")
+        .map((ref) => providerOf(ref.target))
+        .filter((provider): provider is string => provider !== undefined),
+    );
+    expect(providers.size).toBe(32);
+
+    // Counting *directories* is not enough: `../providers/openai` and
+    // `../providers/openai/image` both count as "openai". The exact modules
+    // are pinned, and every pin has to be used, so a stale entry cannot sit
+    // there quietly widening the allowance.
+    const registryTargets = importsOf("src/chat/providers.ts")
+      .map((ref) => ref.target)
+      .filter((target) => under(target, "src/providers"));
+    expect([...new Set(registryTargets)].sort()).toEqual([...CHAT_REGISTRY_IMPORTS].sort());
+
+    const registryImporters = FILES.filter((file) =>
+      importsOf(file).some((ref) => ref.target === "src/chat/providers.ts"),
+    );
+    expect(registryImporters).toEqual(["src/chat/index.ts"]);
+
+    const factoryLeaks = importsOf("src/chat/factory.ts").filter(
+      (ref) =>
+        ref.target === "src/chat/index.ts" ||
+        ref.target === "src/chat/providers.ts",
+    );
+    expect(factoryLeaks).toEqual([]);
   });
 
   test("the type-only ref table stays type-only at every call site", () => {

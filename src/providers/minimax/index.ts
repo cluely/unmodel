@@ -10,7 +10,7 @@ import type { MinimaxTextModelId } from "../../catalog/minimax.gen";
 import { availability } from "../../catalog/availability/minimax.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<MinimaxTextModelId, typeof availability>({
+  createOpenAICompatible<MinimaxTextModelId, typeof availability, "minimax">({
     id: "minimax",
     // NOT provider.api: the models.dev snapshot records MiniMax's
     // Anthropic-compatible route (https://api.minimax.io/anthropic/v1). The

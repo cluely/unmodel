@@ -13,7 +13,7 @@ import { availability } from "../../catalog/availability/fireworks-ai.gen";
 const FIREWORKS_AI_BASE_URL = "https://api.fireworks.ai/inference/v1";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<FireworksAiTextModelId, typeof availability>({
+  createOpenAICompatible<FireworksAiTextModelId, typeof availability, "fireworks-ai">({
     id: "fireworks-ai",
     baseUrl: FIREWORKS_AI_BASE_URL,
     catalog: models,

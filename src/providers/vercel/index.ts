@@ -28,7 +28,8 @@ const VERCEL_BASE_URL = "https://ai-gateway.vercel.sh/v1";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   VercelTextModelId,
-  typeof availability
+  typeof availability,
+  "vercel"
 >({
   id: provider.id,
   baseUrl: VERCEL_BASE_URL,

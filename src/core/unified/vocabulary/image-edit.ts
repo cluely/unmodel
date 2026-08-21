@@ -23,6 +23,7 @@ import type {
   AnyUnifiedAdapter,
   DistributiveOmit,
   InputsFor,
+  SafeUnknown,
   UnifiedAdapter,
   UnifiedInput,
   UnifiedRef,
@@ -229,7 +230,7 @@ export interface ImageEditAdapterFor<
  * imageEdit({ model: "black-forest-labs/flux-kontext-pro", image: { file } }); // compile error
  * ```
  */
-export interface ImageEditValidator<A> {
+export interface ImageEditValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
     T extends UnifiedInput<ImageEditParamsBase, UnifiedRef<A>> &

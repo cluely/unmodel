@@ -13,7 +13,7 @@ import type { HuggingfaceTextModelId } from "../../catalog/huggingface.gen";
 import { availability } from "../../catalog/availability/huggingface.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<HuggingfaceTextModelId, typeof availability>({
+  createOpenAICompatible<HuggingfaceTextModelId, typeof availability, "huggingface">({
     id: provider.id,
     // Generated from models.dev: https://router.huggingface.co/v1
     baseUrl: provider.api,

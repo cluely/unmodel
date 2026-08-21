@@ -9,6 +9,7 @@ import type { ValidateOptions } from "../../options";
 import type { ValidateResult } from "../../result";
 import type {
   AnyUnifiedAdapter,
+  SafeUnknown,
   UnifiedAdapter,
   UnifiedInput,
   UnifiedRef,
@@ -194,7 +195,7 @@ export type AnyImageAdapter = AnyUnifiedAdapter<ImageParams> & {
  * image({ model: "openai/dall-e-3",    prompt, size: "1920x1080" });         // error
  * ```
  */
-export interface ImageValidator<A> {
+export interface ImageValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
     T extends UnifiedInput<ImageParamsBase, UnifiedRef<A>> & ModelSizing<A, M> & ModelExtras<A, M>,

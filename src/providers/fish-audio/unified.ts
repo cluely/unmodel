@@ -51,7 +51,7 @@ const TTS_DOCS = "https://docs.fish.audio/api-reference/endpoint/openapi-v1/text
 export type FishAudioSpeechWire = TtsBody;
 
 /** What a unified call to `fish-audio/…` returns. */
-export type FishAudioSpeechResult = ReturnType<typeof validator>;
+export type FishAudioSpeechResult = ReturnType<typeof validator<FishAudioSpeechWire>>;
 
 const FORMAT: AudioFormatSpec = {
   codecs: { mp3: "mp3", opus: "opus", pcm_s16le: "wav" },

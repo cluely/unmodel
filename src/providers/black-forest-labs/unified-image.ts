@@ -201,7 +201,9 @@ export interface BflImageWire extends BflImageWireBase {
 }
 
 /** What a unified call to a FLUX.2 ref returns: `bfl.image`'s own `Validated`. */
-export type BflImageResult = ReturnType<typeof validator>;
+export type BflImageResult = ReturnType<
+  typeof validator<BflImageWire["model"], BflImageWire>
+>;
 
 /**
  * The FLUX.2 half of `compile`. Split out so the dispatch below reads as the

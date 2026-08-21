@@ -43,6 +43,7 @@ export const DEFAULT_SEVERITY: Record<IssueCode, IssueSeverity> = {
   media_dimensions_exceeded: "error",
   media_duration_exceeded: "error",
   media_duration_undeclared: "warning",
+  media_declaration_dropped: "warning",
 };
 
 export interface IssueInput {

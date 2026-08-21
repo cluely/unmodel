@@ -25,7 +25,7 @@ import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCharacterCostUSD } from "../../core/cost";
 import { speechModels, SPEECH_MAX_INPUT_CHARACTERS } from "./audio-models";
@@ -101,19 +101,23 @@ export interface Gpt4oMiniTtsSnapshotBody extends Gpt4oMiniTtsBodyCommon {
 }
 
 /** Escape hatch for models unmodel doesn't know yet (unknown_model warning). */
-export interface UnknownSpeechModelBody {
-  model: string & {};
+export interface UnknownSpeechModelBody<Model extends string> {
+  model: FutureModelId<Model, keyof SpeechBodyByModel>;
   input: string;
   voice: string | SpeechCustomVoice;
   [key: string]: unknown;
 }
 
-export type SpeechBody =
+/**
+ * Closed over documented models by default. Supply a future model literal to
+ * opt into the loose arm: `SpeechBody<"tts-2">`.
+ */
+export type SpeechBody<FutureModel extends string = never> =
   | Tts1Body
   | Tts1HdBody
   | Gpt4oMiniTtsBody
   | Gpt4oMiniTtsSnapshotBody
-  | UnknownSpeechModelBody;
+  | UnknownSpeechModelBody<FutureModel>;
 
 interface SpeechBodyByModel {
   "tts-1": Tts1Body;
@@ -125,7 +129,11 @@ interface SpeechBodyByModel {
 /** Resolves a model id literal to its exact Tier-A arm. */
 type SpeechArm<M extends string> = M extends keyof SpeechBodyByModel
   ? SpeechBodyByModel[M]
-  : UnknownSpeechModelBody;
+  : UnknownSpeechModelBody<M>;
+
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnySpeechBody = SpeechBody<string>;
+type SpeechModelInput = keyof SpeechBodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Schema — loose; per-model narrowing happens in constraints.ts (runtime) and
@@ -163,7 +171,7 @@ const VOICES_BY_MODEL: Readonly<Record<string, readonly string[]>> = {
  * built-in list. Object voices (`{ id }`) are custom voices and are never
  * enum-checked — which is also why `voice` carries no constraint-table enum.
  */
-function checkVoice(params: SpeechBody, _info: ModelInfo | undefined, ctx: PipelineContext): void {
+function checkVoice(params: AnySpeechBody, _info: ModelInfo | undefined, ctx: PipelineContext): void {
   const voice = (params as { voice?: unknown }).voice;
   if (typeof voice !== "string") return;
   const allowed = Object.hasOwn(VOICES_BY_MODEL, params.model)
@@ -190,7 +198,7 @@ function checkVoice(params: SpeechBody, _info: ModelInfo | undefined, ctx: Pipel
  * would silently lose the only limit this endpoint has.
  */
 function checkInputLength(
-  params: SpeechBody,
+  params: AnySpeechBody,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -215,7 +223,7 @@ function checkInputLength(
 // ---------------------------------------------------------------------------
 
 function estimate(
-  params: SpeechBody,
+  params: AnySpeechBody,
   info: ModelInfo | undefined,
   _ctx: PipelineContext,
 ): ValidateEstimate {
@@ -232,7 +240,7 @@ function estimate(
  */
 type SpeechSdkTargets<B> = { openai: () => B };
 
-function finalize(params: SpeechBody): unknown {
+function finalize(params: AnySpeechBody): unknown {
   const body = { ...params };
   return toValidated(
     body,
@@ -245,7 +253,7 @@ function finalize(params: SpeechBody): unknown {
   );
 }
 
-const validator = createValidator<SpeechBody, unknown>({
+const validator = createValidator<AnySpeechBody, unknown>({
   endpoint: "openai.speech",
   schema: speechSchema,
   modelId: (params) => params.model,
@@ -279,11 +287,11 @@ const validator = createValidator<SpeechBody, unknown>({
  * ```
  */
 export const speech = validator as unknown as {
-  <M extends SpeechBody["model"], T extends SpeechArm<M>>(
+  <M extends SpeechModelInput, T extends SpeechArm<M>>(
     params: T & SpeechArm<M> & { model: M } & ExactKeys<T, SpeechArm<M>>,
     options?: ValidateOptions,
   ): Validated<T & { model: M }, SpeechSdkTargets<T & { model: M }>>;
-  safe<M extends SpeechBody["model"], T extends SpeechArm<M>>(
+  safe<M extends SpeechModelInput, T extends SpeechArm<M>>(
     params: T & SpeechArm<M> & { model: M } & ExactKeys<T, SpeechArm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<T & { model: M }, SpeechSdkTargets<T & { model: M }>>>;

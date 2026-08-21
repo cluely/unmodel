@@ -208,7 +208,9 @@ export interface GoogleImageWire {
 }
 
 /** What a unified image call to `google/…` returns: `google.image`'s `Validated`. */
-export type GoogleImageResult = ReturnType<typeof validator>;
+export type GoogleImageResult = ReturnType<
+  typeof validator<GoogleImageWire["model"], GoogleImageWire>
+>;
 
 export const image = {
   category: "image",

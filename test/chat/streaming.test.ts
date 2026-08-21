@@ -107,4 +107,50 @@ describe("gemini streams by method, not by flag", () => {
     expect(result.request.url).not.toContain("streamGenerateContent");
     expect(result.warnings).toEqual([]);
   });
+
+  /**
+   * There is exactly one authority on which model a request addresses: the
+   * provider validator. `providerOptions.google.model` is a supported (if
+   * warning-only) override, and re-deriving the streaming URL from the model
+   * *ref* instead would validate against one model and send to another — with
+   * no error, because both URLs are well-formed. So the streaming route is
+   * built by rewriting the method segment of the URL the validator itself
+   * produced.
+   */
+  test("the streaming URL is derived from the validator's URL, not re-derived from the ref", () => {
+    const overridden = {
+      model: "google/gemini-2.5-flash" as const,
+      messages: MESSAGES,
+      providerOptions: { google: { model: "models/gemini-2.0-flash" } },
+    };
+    const plain = chat.safe(overridden);
+    const streamed = chat.safe({ ...overridden, stream: true });
+    expect(plain.ok && streamed.ok).toBe(true);
+    if (!plain.ok || !streamed.ok) return;
+
+    expect(plain.params.request.url).toContain("models/gemini-2.0-flash:generateContent");
+    expect(streamed.params.request.url).toBe(
+      plain.params.request.url.replace(":generateContent", ":streamGenerateContent?alt=sse"),
+    );
+    // Both were checked against the same model, so both name it identically.
+    expect(streamed.warnings.map((w) => w.code)).toEqual(plain.warnings.map((w) => w.code));
+  });
+
+  test("re-routing rebuilds the result rather than writing into the substrate's", () => {
+    // `.request` is non-writable by construction. A compiler that reached in
+    // and mutated it would work today and break the day the substrate freezes
+    // its own result — and would be invisible to tsc either way, since the
+    // write can only be spelled through a cast.
+    const streamed = chat({ model: "google/gemini-2.5-flash", messages: MESSAGES, stream: true });
+    const descriptor = Object.getOwnPropertyDescriptor(streamed, "request");
+    expect(descriptor?.enumerable).toBe(false);
+    expect(descriptor?.writable).toBe(false);
+    expect(descriptor?.configurable).toBe(false);
+
+    // The provider's own surface survives the rebuild intact.
+    expect(typeof streamed.toSdk).toBe("function");
+    expect(streamed.toSdk("google").model).toBe("gemini-2.5-flash");
+    expect(streamed.modelId).toBe("gemini-2.5-flash");
+    expect(streamed.target).toBe("google");
+  });
 });

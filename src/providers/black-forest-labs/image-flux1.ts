@@ -31,7 +31,7 @@ import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models } from "./models";
 import { bflModelUrl, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
@@ -142,17 +142,21 @@ export interface FluxUltraFinetunedBody extends FluxUltraFields {
 }
 
 /** Escape hatch for routes unmodel doesn't know yet (unknown_model warning). */
-export interface UnknownFlux1ModelBody {
-  model: string & {};
+export interface UnknownFlux1ModelBody<Model extends string> {
+  model: FutureModelId<Model, keyof Flux1BodyByModel>;
   [key: string]: unknown;
 }
 
-export type Flux1Body =
+/**
+ * Closed over documented routes by default. Supply a future route literal to
+ * opt into the loose arm: `Flux1Body<"flux-pro-2">`.
+ */
+export type Flux1Body<FutureModel extends string = never> =
   | FluxPro11Body
   | FluxDevBody
   | FluxUltraBody
   | FluxUltraFinetunedBody
-  | UnknownFlux1ModelBody;
+  | UnknownFlux1ModelBody<FutureModel>;
 
 interface Flux1BodyByModel {
   "flux-pro-1.1": FluxPro11Body;
@@ -164,7 +168,11 @@ interface Flux1BodyByModel {
 /** Resolves a model id literal to its exact Tier-A arm. */
 type Flux1Arm<M extends string> = M extends keyof Flux1BodyByModel
   ? Flux1BodyByModel[M]
-  : UnknownFlux1ModelBody;
+  : UnknownFlux1ModelBody<M>;
+
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyFlux1Body = Flux1Body<string>;
+type Flux1ModelInput = keyof Flux1BodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Schema — union of every param any FLUX.1 route accepts; per-route narrowing
@@ -209,7 +217,7 @@ const flux1Schema = z.looseObject({
 // ---------------------------------------------------------------------------
 
 function checkAspectRatio(
-  params: Flux1Body,
+  params: AnyFlux1Body,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -220,7 +228,7 @@ function checkAspectRatio(
 
 /** `width`/`height` "must be a multiple of 32" (FluxPro11Inputs/FluxDevInputs). */
 function checkDimensionMultiple(
-  params: Flux1Body,
+  params: AnyFlux1Body,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -244,7 +252,7 @@ function checkDimensionMultiple(
 
 /** `finetune_id` is required on the `-finetuned` routes. */
 function checkFinetuneId(
-  params: Flux1Body,
+  params: AnyFlux1Body,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -263,7 +271,7 @@ function checkFinetuneId(
 // Estimation — FLUX.1 is flat per-image credit pricing (models.ts).
 // ---------------------------------------------------------------------------
 
-function estimate(_params: Flux1Body, info: ModelInfo | undefined) {
+function estimate(_params: AnyFlux1Body, info: ModelInfo | undefined) {
   const perImage = info?.cost?.perImage;
   return perImage === undefined ? {} : { costUSD: perImage };
 }
@@ -276,7 +284,7 @@ function estimate(_params: Flux1Body, info: ModelInfo | undefined) {
  */
 type BflSdkTargets<B> = { "black-forest-labs": () => B };
 
-function finalize(params: Flux1Body): unknown {
+function finalize(params: AnyFlux1Body): unknown {
   const { model, ...body } = params;
   return toValidated(body, {
     url: bflModelUrl(model),
@@ -287,7 +295,7 @@ function finalize(params: Flux1Body): unknown {
   });
 }
 
-const validator = createValidator<Flux1Body, unknown>({
+const validator = createValidator<AnyFlux1Body, unknown>({
   endpoint: "black-forest-labs.imageFlux1",
   schema: flux1Schema,
   modelId: (params) => params.model,
@@ -323,11 +331,11 @@ const validator = createValidator<Flux1Body, unknown>({
  * ```
  */
 export const imageFlux1 = validator as unknown as {
-  <M extends Flux1Body["model"], T extends Flux1Arm<M>>(
+  <M extends Flux1ModelInput, T extends Flux1Arm<M>>(
     params: T & Flux1Arm<M> & { model: M } & ExactKeys<T, Flux1Arm<M>>,
     options?: ValidateOptions,
   ): Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>;
-  safe<M extends Flux1Body["model"], T extends Flux1Arm<M>>(
+  safe<M extends Flux1ModelInput, T extends Flux1Arm<M>>(
     params: T & Flux1Arm<M> & { model: M } & ExactKeys<T, Flux1Arm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>>;

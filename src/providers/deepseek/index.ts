@@ -8,7 +8,7 @@ import type { DeepseekTextModelId } from "../../catalog/deepseek.gen";
 import { availability } from "../../catalog/availability/deepseek.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<DeepseekTextModelId, typeof availability>({
+  createOpenAICompatible<DeepseekTextModelId, typeof availability, "deepseek">({
     id: "deepseek",
     // DeepSeek's documented base URL has no version segment — the chat route
     // is https://api.deepseek.com/chat/completions (an alias with /v1 also

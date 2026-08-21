@@ -15,7 +15,7 @@ import type { AlibabaTextModelId } from "../../catalog/alibaba.gen";
 import { availability } from "../../catalog/availability/alibaba.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<AlibabaTextModelId, typeof availability>({
+  createOpenAICompatible<AlibabaTextModelId, typeof availability, "alibaba">({
     id: "alibaba",
     // Legacy international compatible-mode domain (the models.dev value;
     // still functional). Alibaba's doc page now recommends workspace/

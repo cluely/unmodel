@@ -54,7 +54,7 @@ const SPEED_DOCS = "https://docs.rime.ai/docs/speed";
 export type RimeSpeechWire = RimeTtsParams;
 
 /** What a unified call to `rime/…` returns. */
-export type RimeSpeechResult = ReturnType<typeof validator>;
+export type RimeSpeechResult = ReturnType<typeof validator<RimeSpeechWire>>;
 
 /**
  * The Mist generation whose speed field is `speedAlpha`. Everything else —

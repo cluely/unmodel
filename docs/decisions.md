@@ -1,10 +1,10 @@
 # Decisions
 
-Standing decisions for this repository. They are written down because both of
-them look, from inside a single file, like inconsistencies worth "fixing" — and
-fixing either one would break the library's central promise. If you are about to
-make the codebase more uniform in one of the ways described below, read the
-entry first and then don't.
+Standing decisions for this repository. They are written down because each of
+them looks, from inside a single file, like an inconsistency worth "fixing" —
+and fixing any one of them would break the library's central promise. If you
+are about to make the codebase more uniform in one of the ways described below,
+read the entry first and then don't.
 
 Each entry states the decision, the reason, and what would have to be true for
 it to change.
@@ -162,3 +162,52 @@ name, which makes the filename half structural rather than cosmetic.
 
 **What would change this.** A new category gets a new verb, chosen the same way
 (what the operation is, not what any one vendor calls it). Nothing else.
+
+---
+
+## 3. `unmodel/chat` ships in two entries; the media packs ship in one
+
+**Decision.** Six of the seven unified surfaces expose their ready pack and
+their `create*` registry form from **one** entry — `image` and `createImage`
+both live at `unmodel/image`. Chat does not: `chat` is at `unmodel/chat` and
+`createChat` is at `unmodel/chat/factory`, and `unmodel/chat` deliberately does
+**not** re-export `createChat` as a value.
+
+**Why.** The asymmetry is not chat being special about ergonomics; it is chat
+being special about *weight*, in a way tree-shaking cannot reach.
+
+1. **A media adapter is a leaf; a chat adapter is a whole validator.** A media
+   pack composes `unified-<category>.ts` modules — a schema fragment and a
+   compile function. Chat composes the providers' real `chat()` validators,
+   with their generated catalogs, constraint tables and availability tables.
+   The ready chat pack is ~1.7 MB against ~150–750 KiB for a media pack.
+2. **The ready pack cannot be shaken out of a shared entry.** `src/chat/index.ts`
+   is `export const chat = createChat(CHAT_PROVIDER_VALIDATORS)` — a top-level
+   call with side-effect-unknown semantics that no bundler removes, even under
+   `"sideEffects": false`. Measured with `bun build --minify` against a real
+   `dist/`: anything imported from `dist/chat/index.js` drags **1.20 MB**;
+   `createChat` from `dist/chat/factory.js` is **340 KB**. The declaration
+   graph splits the same way — 45 files (1818 KiB) against 7 (178 KiB).
+3. **So the cheap path has to be the only path.** A `createChat` re-export on
+   `unmodel/chat` would be the identical function at eleven times the cost, on
+   the more obvious specifier, with nothing in the type or the autocomplete to
+   say so. Type re-exports are free and stay.
+
+**The word "factory" is overloaded here, knowingly.** Inside `src/chat`,
+"factory-configured" means a provider whose URL needs config a bare
+`"provider/model"` ref cannot carry (azure, google-vertex, amazon-bedrock,
+cloudflare-workers-ai) — the four providers `unmodel/chat` *refuses*. The
+subpath means the opposite: the entry you use to build a pack yourself. The
+collision is real and the subpath name was kept because it matches the
+`create*` vocabulary the six media packs already use.
+
+**Enforcement.** `test/bundle-budget.test.ts` pins both entries separately, and
+asserts that `unmodel/chat/factory`'s graph contains *no* provider module
+beyond the three dialect codecs and that its declaration graph never references
+the ready registry. `test/chat/factory.test.ts` asserts the two produce
+byte-identical requests, so the split costs no behavioural divergence.
+
+**What would change this.** A bundler-visible way to make the ready pack
+removable — a `/*#__PURE__*/` annotation that real bundlers honour on a call of
+this shape, or lazy per-provider registration. Then one entry would be honest
+again.

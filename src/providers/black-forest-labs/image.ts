@@ -39,7 +39,7 @@ import { createValidator } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models } from "./models";
 import { imageConstraints } from "./constraints";
@@ -180,13 +180,17 @@ export interface Flux2Klein4bBody extends Flux2KleinFields {
 }
 
 /** Escape hatch for routes unmodel doesn't know yet (unknown_model warning). */
-export interface UnknownFlux2ModelBody {
-  model: string & {};
+export interface UnknownFlux2ModelBody<Model extends string> {
+  model: FutureModelId<Model, keyof Flux2BodyByModel>;
   prompt: string;
   [key: string]: unknown;
 }
 
-export type Flux2Body =
+/**
+ * Closed over documented routes by default. Supply a future route literal to
+ * opt into the loose arm: `Flux2Body<"flux-9-mega">`.
+ */
+export type Flux2Body<FutureModel extends string = never> =
   | Flux2ProBody
   | Flux2MaxBody
   | Flux2ProPreviewBody
@@ -194,7 +198,7 @@ export type Flux2Body =
   | Flux2Klein9bBody
   | Flux2Klein9bPreviewBody
   | Flux2Klein4bBody
-  | UnknownFlux2ModelBody;
+  | UnknownFlux2ModelBody<FutureModel>;
 
 interface Flux2BodyByModel {
   "flux-2-pro": Flux2ProBody;
@@ -209,7 +213,11 @@ interface Flux2BodyByModel {
 /** Resolves a model id literal to its exact Tier-A arm. */
 type Flux2Arm<M extends string> = M extends keyof Flux2BodyByModel
   ? Flux2BodyByModel[M]
-  : UnknownFlux2ModelBody;
+  : UnknownFlux2ModelBody<M>;
+
+/** Runtime implementation type; the public alias stays closed by default. */
+type AnyFlux2Body = Flux2Body<string>;
+type Flux2ModelInput = keyof Flux2BodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Schema — the loose union of every param any flux-2 route accepts; per-route
@@ -245,7 +253,7 @@ const flux2Schema = z.looseObject({
 // Estimation — the documented 1MP text-to-image base price (see models.ts).
 // ---------------------------------------------------------------------------
 
-function estimate(_params: Flux2Body, info: ModelInfo | undefined) {
+function estimate(_params: AnyFlux2Body, info: ModelInfo | undefined) {
   const perImage = info?.cost?.perImage;
   return perImage === undefined ? {} : { costUSD: perImage };
 }
@@ -262,7 +270,7 @@ function estimate(_params: Flux2Body, info: ModelInfo | undefined) {
  */
 type BflSdkTargets<B> = { "black-forest-labs": () => B };
 
-function finalize(params: Flux2Body): unknown {
+function finalize(params: AnyFlux2Body): unknown {
   const { model, ...body } = params;
   return toValidated(body, {
     url: bflModelUrl(model),
@@ -273,7 +281,7 @@ function finalize(params: Flux2Body): unknown {
   });
 }
 
-const validator = createValidator<Flux2Body, unknown>({
+const validator = createValidator<AnyFlux2Body, unknown>({
   endpoint: "black-forest-labs.image",
   schema: flux2Schema,
   modelId: (params) => params.model,
@@ -313,11 +321,11 @@ const validator = createValidator<Flux2Body, unknown>({
  * ```
  */
 export const image = validator as unknown as {
-  <M extends Flux2Body["model"], T extends Flux2Arm<M>>(
+  <M extends Flux2ModelInput, T extends Flux2Arm<M>>(
     params: T & Flux2Arm<M> & { model: M } & ExactKeys<T, Flux2Arm<M>>,
     options?: ValidateOptions,
   ): Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>;
-  safe<M extends Flux2Body["model"], T extends Flux2Arm<M>>(
+  safe<M extends Flux2ModelInput, T extends Flux2Arm<M>>(
     params: T & Flux2Arm<M> & { model: M } & ExactKeys<T, Flux2Arm<M>>,
     options?: ValidateOptions,
   ): ValidateResult<Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>>>;

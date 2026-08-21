@@ -19,8 +19,10 @@ import type { GenerateContentParameters } from "@google/genai";
 import type { ChatCompletionCreateParams } from "openai/resources/chat/completions";
 
 import { chat } from "../../src/chat/index";
+import { createChat } from "../../src/chat/factory";
 import { chat as anthropicChat } from "../../src/providers/anthropic";
 import { chat as googleChat } from "../../src/providers/google";
+import { chat as openaiChat } from "../../src/providers/openai";
 import type {
   ChatBody,
   ChatDialectOf,
@@ -28,7 +30,15 @@ import type {
   ChatProviderOf,
 } from "../../src/chat/index";
 import type { ChatModelRef, ChatParams } from "../../src/chat/types";
-import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
+import type { ValidateResult } from "../../src/core/result";
+import {
+  expectAssignable,
+  expectNotAny,
+  expectNotNever,
+  expectTrue,
+  type IsNever,
+  type KeyIn,
+} from "./helpers";
 
 // ---------------------------------------------------------------------------
 // The ref union drives autocomplete without gating the API
@@ -71,9 +81,15 @@ expectTrue<ChatDialectOf<"openrouter/anthropic/claude-opus-5"> extends "openai-c
 const claude = chat({
   model: "anthropic/claude-opus-5",
   messages: [{ role: "user", content: "hi" }],
-  maxOutputTokens: 1024,
-  reasoning: { budgetTokens: 512 },
+  maxOutputTokens: 4096,
+  reasoning: { budgetTokens: 2048 },
 });
+
+// The registry must preserve provider result types rather than erasing them at
+// its dynamic dispatch boundary. These fail if either the whole result or a
+// provider-only field ever becomes `any`.
+expectNotAny<typeof claude>();
+expectNotAny<typeof claude.thinking>();
 
 /**
  * Comparing a *whole dialect body* against an SDK's create-params runs into
@@ -138,15 +154,18 @@ declare const claudeSdk: SdkComparable<
   AnthropicReplace,
   AnthropicOpen
 >;
+expectNotAny<ReturnType<typeof claude.toSdk<"anthropic">>>();
 expectAssignable<MessageCreateParams>(claudeSdk);
 expectAssignable<"claude-opus-5" | (string & {})>(claude.model);
 expectAssignable<number>(claude.max_tokens);
+expectAssignable<MessageCreateParams["thinking"]>(claude.thinking);
 
 const gpt = chat({
   model: "openai/gpt-5.2",
   messages: [{ role: "user", content: "hi" }],
   maxOutputTokens: 1024,
 });
+expectNotAny<typeof gpt.reasoning_effort>();
 
 declare const gptSync: SdkComparable<typeof gpt, ChatCompletionCreateParams, OpenAiReplace, OpenAiOpen>;
 expectAssignable<ChatCompletionCreateParams>(gptSync);
@@ -158,12 +177,17 @@ declare const gptSdk: SdkComparable<
 >;
 expectAssignable<ChatCompletionCreateParams>(gptSdk);
 expectAssignable<"gpt-5.2" | (string & {})>(gpt.model);
+expectAssignable<"gpt-5.2">(gpt.model);
+expectAssignable<ChatCompletionCreateParams["reasoning_effort"]>(gpt.reasoning_effort);
+// @ts-expect-error — OpenAI's gpt-5.2 availability has no Groq target.
+gpt.toApi("groq");
 
 const gemini = chat({
   model: "google/gemini-2.5-flash",
   messages: [{ role: "user", content: "hi" }],
   maxOutputTokens: 1024,
 });
+expectNotAny<typeof gemini.generationConfig>();
 
 // Gemini's model id travels in the URL, so it is STRIPPED from the body — the
 // same invariant `google.chat`'s own result holds.
@@ -171,6 +195,175 @@ expectTrue<IsNever<KeyIn<typeof gemini, "model">>>();
 expectAssignable<GenerateContentParameters>(gemini.toSdk("google") as GenerateContentParameters);
 // `.modelId` is the only place to read the id back.
 expectAssignable<"gemini-2.5-flash">(gemini.modelId);
+
+// A narrow registry preserves the same provider-specific result inference
+// without importing the ready-made 32-provider registry.
+const narrowChat = createChat({
+  anthropic: anthropicChat,
+  google: googleChat,
+  openai: openaiChat,
+});
+const narrowClaude = narrowChat({
+  model: "anthropic/claude-opus-5",
+  messages: [{ role: "user", content: "hi" }],
+  maxOutputTokens: 4096,
+});
+expectNotAny<typeof narrowClaude>();
+expectNotAny<typeof narrowClaude.thinking>();
+narrowClaude.toSdk("anthropic");
+narrowClaude.toApi("openrouter");
+
+const narrowGemini = narrowChat({
+  model: "google/gemini-2.5-flash",
+  messages: [{ role: "user", content: "hi" }],
+});
+expectNotAny<typeof narrowGemini>();
+expectNotAny<typeof narrowGemini.generationConfig>();
+narrowGemini.toSdk("google");
+
+const narrowGpt = narrowChat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+});
+expectNotAny<typeof narrowGpt>();
+expectNotAny<typeof narrowGpt.reasoning_effort>();
+expectAssignable<"gpt-5.2">(narrowGpt.model);
+expectAssignable<ChatCompletionCreateParams["reasoning_effort"]>(narrowGpt.reasoning_effort);
+narrowGpt.toApi("openrouter");
+// @ts-expect-error — factory composition must preserve model-specific availability.
+narrowGpt.toApi("groq");
+
+// Registry keys are provider ids, not arbitrary labels.
+createChat({
+  // @ts-expect-error — not a statically addressable provider id.
+  acme: anthropicChat,
+});
+
+// ---------------------------------------------------------------------------
+// The registry's key and its value are one claim, not two
+// ---------------------------------------------------------------------------
+//
+// Structurally every chat validator is the same type, and providers routinely
+// serve the same model ids — so a mis-filed entry produces a request addressed
+// to the wrong host, priced against the wrong catalog, with zero warnings. The
+// provider brand is what makes it a compile error instead.
+
+// @ts-expect-error — openai's validator filed under anthropic's key.
+createChat({ anthropic: openaiChat });
+// @ts-expect-error — anthropic's validator filed under openai's key.
+createChat({ openai: anthropicChat });
+// @ts-expect-error — google's validator filed under openai's key.
+createChat({ openai: googleChat });
+
+// An explicitly-`undefined` entry is a compile error, not a runtime TypeError:
+// `tsconfig` has no `exactOptionalPropertyTypes`, so without this it would be
+// assignable to the optional property and only fail at construction.
+declare const registerOpenAI: boolean;
+// @ts-expect-error — build the registry with a spread instead.
+createChat({ openai: registerOpenAI ? openaiChat : undefined });
+
+// ---------------------------------------------------------------------------
+// The escape hatch for a hand-written validator
+// ---------------------------------------------------------------------------
+//
+// A validator carrying no result-kind marker is still registrable — that is
+// what keeps the registry open to third parties — and its declared result type
+// must survive the round trip rather than degrading to `any` or `never`. No
+// shipped validator takes this branch, which is exactly why it needs a test.
+
+interface CustomBody {
+  model: string;
+  messages: unknown[];
+  house_flag?: boolean;
+}
+type CustomResult = CustomBody & { request: { url: string; method: "POST" } };
+declare const customChat: ((params: CustomBody) => CustomResult) & {
+  safe: (params: CustomBody) => ValidateResult<CustomResult>;
+};
+const custom = createChat({ deepseek: customChat });
+const customResult = custom({
+  model: "deepseek/deepseek-chat",
+  messages: [{ role: "user", content: "hi" }],
+});
+expectNotNever<typeof customResult>();
+expectNotAny<typeof customResult>();
+expectAssignable<boolean | undefined>(customResult.house_flag);
+expectAssignable<string>(customResult.request.url);
+// The unified compiler's own facts are still attached.
+expectAssignable<"deepseek">(customResult.target);
+
+// ---------------------------------------------------------------------------
+// A ref whose provider is not in the pack has no usable result
+// ---------------------------------------------------------------------------
+//
+// The call can only ever throw `TranslationUnavailableError`, so a result type
+// that answers `.request` and `.toSdk` describes a value the program cannot
+// produce. Naming the mistake at the call site is the point.
+
+const unregistered = narrowChat({
+  model: "groq/llama-3.1-8b-instant",
+  messages: [{ role: "user", content: "hi" }],
+});
+expectNotNever<typeof unregistered>();
+// @ts-expect-error — "groq" was never registered on this pack.
+unregistered.request;
+// @ts-expect-error — same.
+unregistered.toSdk("openai");
+// The brand names the provider that is missing.
+expectAssignable<"groq">(unregistered.__unmodel_unregisteredChatProvider);
+
+// ---------------------------------------------------------------------------
+// A union of refs stays a union of results
+// ---------------------------------------------------------------------------
+//
+// `flag ? "anthropic/…" : "google/…"` is the ordinary way a model is chosen at
+// runtime. Without distribution the result collapses to `never` — which is
+// assignable to everything, so nothing errors, the hover reads `never`, and
+// the completion list is empty. `expectNotAny` cannot see this; only
+// `expectNotNever` can.
+
+declare const eitherRef: "anthropic/claude-opus-5" | "openai/gpt-5.2";
+const either = chat({
+  model: eitherRef,
+  messages: [{ role: "user", content: "hi" }],
+  maxOutputTokens: 64,
+});
+expectNotNever<typeof either>();
+expectNotAny<typeof either>();
+expectAssignable<string>(either.request.url);
+expectAssignable<"anthropic" | "openai">(either.target);
+// The union is a real discriminated union: `target` narrows it back to one
+// provider's body, which is where the dialect-specific surface lives.
+if (either.target === "anthropic") {
+  expectAssignable<number>(either.max_tokens);
+  either.toSdk("anthropic");
+} else {
+  expectAssignable<"gpt-5.2" | (string & {})>(either.model);
+  either.toSdk("openai");
+}
+// Unnarrowed, `toSdk` is a union of two generic signatures, which TypeScript
+// declines to call. That is the sound answer and deliberately not papered
+// over: intersecting the signatures would make `either.toSdk("openai")`
+// compile against a value that may be the Anthropic arm at runtime.
+// @ts-expect-error — narrow on `target` first.
+either.toSdk("ai-sdk");
+
+declare const eitherDialect: "anthropic/claude-opus-5" | "google/gemini-2.5-flash";
+const crossDialect = chat({
+  model: eitherDialect,
+  messages: [{ role: "user", content: "hi" }],
+  maxOutputTokens: 64,
+});
+expectNotNever<typeof crossDialect>();
+expectAssignable<"anthropic" | "google">(crossDialect.target);
+
+const eitherNarrow = narrowChat({
+  model: eitherRef,
+  messages: [{ role: "user", content: "hi" }],
+  maxOutputTokens: 64,
+});
+expectNotNever<typeof eitherNarrow>();
+expectAssignable<string>(eitherNarrow.request.url);
 
 // Every dialect offers "ai-sdk"; only its own dialect's native target.
 gpt.toSdk("ai-sdk");
@@ -184,14 +377,12 @@ gpt.toSdk("anthropic");
 gpt.toSdk();
 
 // ---------------------------------------------------------------------------
-// No `.toApi` — a unified result has no dialect to leave
+// The concrete provider's `.toApi` surface survives
 // ---------------------------------------------------------------------------
 
-// @ts-expect-error — `unmodel/chat` results do not retarget; change `model`.
 claude.toApi("openrouter");
-// @ts-expect-error — nor the safe form.
-gpt.toApiSafe("groq");
-expectTrue<IsNever<KeyIn<typeof gemini, "toApi">>>();
+gpt.toApiSafe("openai");
+gemini.toApi("openrouter");
 
 // ---------------------------------------------------------------------------
 // `target` and `modelId` narrow to the ref's halves
@@ -213,6 +404,15 @@ chat({
   // @ts-expect-error — the param is `maxOutputTokens`; `maxTokens` is a typo.
   maxTokens: 128,
 });
+
+chat(
+  { model: "openai/gpt-5.2", messages: [{ role: "user", content: "hi" }] },
+  {
+    // @ts-expect-error — a second catalog authority is incompatible with
+    // provider-exact delegation; configure/register the provider validator.
+    catalog: {},
+  },
+);
 
 chat({
   model: "openai/gpt-5.2",
@@ -300,4 +500,15 @@ if (outcome.ok) {
   expectAssignable<number | undefined>(outcome.estimate.inputTokens);
 } else {
   expectAssignable<string>(outcome.errors[0]?.message ?? "");
+}
+
+// Untyped boundaries have their own explicit safe surface. Its success value
+// is still a useful, non-any fallback result even though no literal ref exists
+// from which to select one provider statically.
+declare const untrustedInput: unknown;
+const untrustedOutcome = chat.safeUnknown(untrustedInput);
+if (untrustedOutcome.ok) {
+  expectNotAny<typeof untrustedOutcome.params>();
+  expectAssignable<string>(untrustedOutcome.params.request.url);
+  untrustedOutcome.params.toSdk("ai-sdk");
 }

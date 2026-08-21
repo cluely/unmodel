@@ -104,7 +104,10 @@ function checkCapabilities(
   if (config === undefined) return;
 
   for (const key of ["responseSchema", "responseJsonSchema"] as const) {
-    if (config[key] !== undefined && !info.structuredOutput) {
+    // Tri-state, like every other structured-output check in the library:
+    // absent means "the catalog has no answer" and must not fail a request.
+    // Only an explicit `false` refuses.
+    if (config[key] !== undefined && info.structuredOutput === false) {
       ctx.report({
         code: "unsupported_capability",
         path: ["generationConfig", key],
@@ -339,6 +342,7 @@ export function createChat(config: GoogleVertexConfig): GoogleVertexChat {
     catalog: models,
     checks: [checkCapabilities, checkMediaModalities],
     estimate,
+    promptPath: ["contents"],
     finalize: (params) => {
       const { model, ...body } = params;
       const request: RequestMeta = {

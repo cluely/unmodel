@@ -2,7 +2,7 @@
 // factory plus the shared dialect types/pieces — a raw unconfigured endpoint
 // is meaningless, so there is no default `openaiCompatible.chat`. Overlay
 // modules (unmodel/groq etc.) call
-// `createOpenAICompatible<TheirModelId, typeof availability>` with their
+// `createOpenAICompatible<TheirModelId, typeof availability, "id">` with their
 // generated catalog, so `model` gets their exact literal union and
 // `.toApi(provider)` gets their exact retarget targets.
 
@@ -26,6 +26,11 @@ import {
 } from "./chat-completions";
 import { createCheckChat, type ChatCompletionLike } from "./check";
 import type { ResponseReport } from "../../core/report";
+import type {
+  ValidatorProviderCarrier,
+  ValidatorResultKind,
+  ValidatorResultKindCarrier,
+} from "../../core/validator-result-kind";
 
 export interface OpenAICompatibleConfigBase<Avail extends AvailabilityMap = never> {
   /** Short provider id, e.g. "groq" — used in endpoint names ("groq.chat") and messages. */
@@ -38,7 +43,7 @@ export interface OpenAICompatibleConfigBase<Avail extends AvailabilityMap = neve
    *
    * ```ts
    * import { availability } from "../../catalog/availability/groq.gen";
-   * createOpenAICompatible<GroqTextModelId, typeof availability>({ …, availability });
+   * createOpenAICompatible<GroqTextModelId, typeof availability, "groq">({ …, availability });
    * ```
    *
    * Passing it is what gives `chat()`'s result `.toApi(provider)`; the type
@@ -118,10 +123,27 @@ export type OpenAICompatibleConfig<Avail extends AvailabilityMap = never> =
  * type entirely (see `Validated`) — that is the shape an overlay gets when it
  * passes no `availability`.
  */
+/** Registry-instantiable result type for every OpenAI-compatible overlay. */
+export interface OpenAICompatibleChatResultKind<
+  ModelId extends string,
+  Avail extends AvailabilityMap,
+> extends ValidatorResultKind {
+  readonly output: this["input"] extends ChatCompletionsBodyBase<ModelId>
+    ? Validated<
+        this["input"],
+        ChatSdkTargets<this["input"]>,
+        Avail,
+        this["input"]["model"] & string
+      >
+    : never;
+}
+
 export interface OpenAICompatibleChat<
   ModelId extends string = string,
   Avail extends AvailabilityMap = never,
-> {
+  Provider extends string = string,
+> extends ValidatorResultKindCarrier<OpenAICompatibleChatResultKind<ModelId, Avail>>,
+    ValidatorProviderCarrier<Provider> {
   <T extends ChatCompletionsBodyBase<ModelId>>(
     params: T & ExactKeys<T, ChatCompletionsBodyBase<ModelId>>,
     options?: ValidateOptions,
@@ -136,6 +158,7 @@ export interface OpenAICompatibleChat<
 export interface OpenAICompatibleProvider<
   ModelId extends string = string,
   Avail extends AvailabilityMap = never,
+  Provider extends string = string,
 > {
   /**
    * Validates params for POST {baseUrl}/chat/completions. The result's
@@ -145,7 +168,7 @@ export interface OpenAICompatibleProvider<
    * that pass an `availability` table — `.toApi(provider)` retargets to any
    * provider that serves the same model, this one included (identity).
    */
-  chat: OpenAICompatibleChat<ModelId, Avail>;
+  chat: OpenAICompatibleChat<ModelId, Avail, Provider>;
   /** {baseUrl}/chat/completions, or the configured `chatUrl` override verbatim. */
   chatUrl: string;
   /** Post-generation response inspection + usage pricing. Never throws. */
@@ -160,12 +183,22 @@ export interface OpenAICompatibleProvider<
  * `Avail` is inferred from the `availability` value on its own — but naming
  * `ModelId` explicitly (which every overlay must, since it is a phantom: the
  * catalog's value type erases its keys) turns inference off for the rest, so
- * overlays write both. Passing the table as a value as well as a type keeps
- * the two honest: the type argument names the object the runtime looks up in.
+ * overlays write all three. Passing the table as a value as well as a type
+ * keeps the two honest: the type argument names the object the runtime looks
+ * up in.
+ *
+ * `Provider` is the models.dev id, repeated as a type argument because
+ * `config.id` is a `string` by the time the parameter type is formed and TS
+ * has no partial inference to recover the literal from it. It is not
+ * decoration: it is what makes `createChat({ groq: togetheraiChat })` — two
+ * validators with identical structural types, serving overlapping model ids,
+ * on different hosts — a compile error rather than a silently misaddressed
+ * request. `createChat` also re-checks it at runtime against the endpoint the
+ * validator reports, so an unbranded third-party validator is still caught.
  *
  * ```ts
  * import { availability } from "../../catalog/availability/groq.gen";
- * createOpenAICompatible<GroqTextModelId, typeof availability>({
+ * createOpenAICompatible<GroqTextModelId, typeof availability, "groq">({
  *   id: provider.id, baseUrl: "…", catalog: models, availability,
  * });
  * ```
@@ -173,7 +206,8 @@ export interface OpenAICompatibleProvider<
 export function createOpenAICompatible<
   ModelId extends string = string,
   Avail extends AvailabilityMap = never,
->(config: OpenAICompatibleConfig<Avail>): OpenAICompatibleProvider<ModelId, Avail> {
+  Provider extends string = string,
+>(config: OpenAICompatibleConfig<Avail>): OpenAICompatibleProvider<ModelId, Avail, Provider> {
   const chatUrl =
     config.chatUrl !== undefined ? config.chatUrl : `${config.baseUrl}/chat/completions`;
   // One id for both the validator's issue labels and the retarget route
@@ -192,6 +226,7 @@ export function createOpenAICompatible<
     ...spec,
     checks: [...chatCompletionsChecks(spec), ...(config.extraChecks ?? [])],
     estimate: createChatEstimate(spec),
+    promptPath: ["messages"],
     finalize: createChatFinalize({
       endpoint,
       provider: config.id,
@@ -206,7 +241,7 @@ export function createOpenAICompatible<
   });
 
   return {
-    chat: validator as unknown as OpenAICompatibleChat<ModelId, Avail>,
+    chat: validator as unknown as OpenAICompatibleChat<ModelId, Avail, Provider>,
     chatUrl,
     checkChat: createCheckChat(config.catalog, config.id),
     estimateChatTokens,
@@ -218,6 +253,7 @@ export {
   chatCompletionsChecks,
   checkInputModalities,
   checkOutputLimit,
+  checkReasoningCapability,
   checkSamplingParams,
   checkStructuredOutput,
   checkToolSupport,

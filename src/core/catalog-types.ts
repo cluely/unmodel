@@ -1,6 +1,21 @@
 /** Input/output modality of a model, as tracked by models.dev. */
 export type Modality = "text" | "image" | "audio" | "video" | "pdf";
 
+/**
+ * The model-id slot for an explicit future-model arm.
+ *
+ * `Candidate` defaults to `never` at each public body alias, which keeps that
+ * alias closed over its known discriminated arms. Supplying a future literal
+ * opens only that literal; accidentally supplying a known id stays
+ * uninhabitable so it cannot bypass the known arm's narrower fields.
+ *
+ * A deliberately widened `string` remains supported for callers whose model
+ * ids truly arrive at runtime. That loss of narrowing is explicit at the body
+ * alias (`SomeBody<string>`), rather than silently infecting its default form.
+ */
+export type FutureModelId<Candidate extends string, Known extends string> =
+  Candidate extends Known ? never : Candidate;
+
 /** USD per 1M tokens (or per-unit for media rates). */
 export interface ModelCost {
   input?: number;

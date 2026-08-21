@@ -15,7 +15,7 @@ import { availability } from "../../catalog/availability/novita-ai.gen";
 const NOVITA_AI_BASE_URL = "https://api.novita.ai/openai/v1";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<NovitaAiTextModelId, typeof availability>({
+  createOpenAICompatible<NovitaAiTextModelId, typeof availability, "novita-ai">({
     id: "novita-ai",
     baseUrl: NOVITA_AI_BASE_URL,
     catalog: models,

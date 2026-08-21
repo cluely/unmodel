@@ -123,6 +123,49 @@ describe("a ref with no provider is a shape error, not a structural one", () => 
 });
 
 describe("layer 1", () => {
+  test("safeUnknown accepts untyped input and reports malformed roots without throwing", () => {
+    for (const input of [null, [], "not an object", 42]) {
+      const outcome = chat.safeUnknown(input);
+      expect(outcome.ok).toBe(false);
+      if (outcome.ok) continue;
+      expect(outcome.errors[0]?.code).toBe("invalid_shape");
+      expect(outcome.errors[0]?.path).toEqual([]);
+    }
+
+    const outcome = chat.safeUnknown({
+      model: "openai/gpt-5.2",
+      messages: MESSAGES,
+    });
+    expect(outcome.ok).toBe(true);
+  });
+
+  test("safeUnknown is total for hostile getters and proxies", () => {
+    const throwingGetter = Object.defineProperty({}, "model", {
+      get(): never {
+        throw new Error("boom");
+      },
+    });
+    const throwingProxy = new Proxy(
+      {},
+      {
+        get(): never {
+          throw new Error("no properties for you");
+        },
+      },
+    );
+
+    for (const input of [throwingGetter, throwingProxy]) {
+      expect(() => chat.safeUnknown(input)).not.toThrow();
+      const outcome = chat.safeUnknown(input);
+      expect(outcome.ok).toBe(false);
+      if (outcome.ok) continue;
+      expect(outcome.errors).toHaveLength(1);
+      expect(outcome.errors[0]?.code).toBe("invalid_shape");
+      expect(outcome.errors[0]?.path).toEqual([]);
+      expect(outcome.errors[0]?.message).toContain("could not be inspected safely");
+    }
+  });
+
   test("an empty messages array is rejected", () => {
     const outcome = chat.safe({ model: "openai/gpt-5.2", messages: [] });
     expect(outcome.ok).toBe(false);
@@ -192,6 +235,344 @@ describe("layer 1", () => {
     const issue = outcome.warnings.find((w) => w.code === "unknown_param");
     expect(issue?.path).toEqual(["maxTokens"]);
     expect(issue?.message).toContain("unmodel/chat");
+  });
+});
+
+describe("the compiled body terminates in the provider validator", () => {
+  test("Anthropic rejects a thinking budget at or above max_tokens", () => {
+    const outcome = chat.safe({
+      model: "anthropic/claude-sonnet-4-5",
+      messages: MESSAGES,
+      maxOutputTokens: 2048,
+      reasoning: { budgetTokens: 4096 },
+    });
+
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    const issue = outcome.errors.find((candidate) => candidate.path[0] === "reasoning");
+    expect(issue?.code).toBe("invalid_shape");
+    expect(issue?.message).toContain("must be less than max_tokens");
+    // The path is in the caller's vocabulary and the sentence is in the
+    // provider's — so the sentence has to say which is which.
+    expect(issue?.message).toContain("(compiled from `thinking.budget_tokens`)");
+  });
+
+  /**
+   * A translated path with an untranslated message is the failure
+   * `wire-paths.ts` exists to prevent, wearing a disguise: the caller is told
+   * the problem is at `maxOutputTokens` in a sentence that only ever says
+   * `max_completion_tokens`, and goes looking for a param that does not exist
+   * in the API they are using. So a renamed path names the wire spelling it
+   * came from, exactly as the media kernel does.
+   */
+  test.each([
+    ["openai/gpt-4o", "max_completion_tokens"],
+    ["anthropic/claude-sonnet-4-5", "max_tokens"],
+    ["google/gemini-2.5-flash", "generationConfig.maxOutputTokens"],
+  ])("%s bridges its output-limit message back to maxOutputTokens", (model, wire) => {
+    const outcome = chat.safe({ model, messages: MESSAGES, maxOutputTokens: 99_999_999 });
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    const issue = outcome.errors.find((candidate) => candidate.code === "over_output_limit");
+    expect(issue?.path).toEqual(["maxOutputTokens"]);
+    expect(issue?.message).toContain(wire);
+    expect(issue?.message).toContain(`(compiled from \`${wire}\`)`);
+  });
+
+  test("a param compiled to its own name gains no annotation", () => {
+    // `messages` is `messages` on chat-completions. "(compiled from
+    // `messages`)" would read like a bug, so it is not emitted.
+    const outcome = chat.safe({
+      model: "openai/gpt-3.5-turbo",
+      messages: [{ role: "user", content: "x".repeat(4 * 20_000) }],
+    });
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    const issue = outcome.errors.find((candidate) => candidate.code === "over_context");
+    expect(issue?.path).toEqual(["messages"]);
+    expect(issue?.message).not.toContain("compiled from");
+  });
+});
+
+describe("media declarations cross the compiler boundary", () => {
+  test("Gemini consumes a canonical declaration and reports canonical content paths", () => {
+    const params = {
+      model: "google/gemini-2.5-flash" as const,
+      messages: [
+        { role: "system" as const, content: "Inspect the clip." },
+        {
+          role: "user" as const,
+          content: [
+            {
+              type: "file" as const,
+              mediaType: "video/mp4",
+              data: "https://generativelanguage.googleapis.com/v1beta/files/clip",
+            },
+          ],
+        },
+      ],
+    };
+    const options = {
+      media: [
+        {
+          path: ["messages", 1, "content", 0] as Array<string | number>,
+          durationSeconds: 1800,
+        },
+      ],
+    };
+
+    const declared = chat.safe(params, options);
+    expect(declared.ok).toBe(true);
+    expect(declared.warnings.map((issue) => issue.code)).not.toContain(
+      "media_duration_undeclared",
+    );
+    // Translation must not mutate the caller's reusable options object.
+    expect(options.media[0]?.path).toEqual(["messages", 1, "content", 0]);
+
+    const undeclared = chat.safe(params);
+    expect(undeclared.ok).toBe(true);
+    const issue = undeclared.warnings.find(
+      (candidate) => candidate.code === "media_duration_undeclared",
+    );
+    expect(issue?.path).toEqual(["messages", 1, "content", 0]);
+    expect(issue?.message).toContain(
+      'options.media = [{ path: ["messages",1,"content",0], durationSeconds }]',
+    );
+    expect(issue?.message).not.toContain("contents");
+    expect(issue?.message).not.toContain("parts");
+  });
+
+  test("chat-completions declarations follow an inserted system message", () => {
+    const outcome = chat.safe(
+      {
+        model: "openai/gpt-4o",
+        system: "Inspect the image.",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "file",
+                mediaType: "image/png",
+                data: "https://example.com/huge.png",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        media: [
+          {
+            path: ["messages", 0, "content", 0],
+            bytes: 21 * 1024 * 1024,
+          },
+        ],
+      },
+    );
+
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    const issue = outcome.errors.find((candidate) => candidate.code === "media_too_large");
+    expect(issue?.path).toEqual(["messages", 0, "content", 0]);
+  });
+
+  /**
+   * Anthropic's half of the mapping, and the normalization step that makes it
+   * work at all.
+   *
+   * The two tests above cover Gemini and chat-completions with `https://`
+   * payloads, which take the early return in `normalizedData`. A `data:` URL
+   * does not: the canonical part carries the whole
+   * `data:image/png;base64,AAAA` string while the compiled Anthropic block
+   * carries the bare `AAAA`, so without stripping the prefix the fingerprints
+   * never match and the declaration is silently dropped. Silently is the
+   * problem — nothing throws, the size check just stops running.
+   */
+  test("an anthropic inline data: URL is matched by its decoded payload", () => {
+    const params = {
+      model: "anthropic/claude-opus-5" as const,
+      messages: [
+        {
+          role: "user" as const,
+          content: [
+            { type: "file" as const, mediaType: "image/png", data: "data:image/png;base64,AAAA" },
+          ],
+        },
+      ],
+      maxOutputTokens: 16,
+    };
+    // The compiled block really does carry the bare payload…
+    expect(JSON.stringify(chat(params))).toContain('"data":"AAAA"');
+
+    // …and the declaration, written against the caller's own spelling, still
+    // reaches it.
+    const outcome = chat.safe(params, {
+      media: [{ path: ["messages", 0, "content", 0], bytes: 22 * 1024 * 1024 }],
+    });
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    const issue = outcome.errors.find((candidate) => candidate.code === "media_too_large");
+    expect(issue?.path).toEqual(["messages", 0, "content", 0]);
+  });
+
+  test("media inside a tool result is addressed at its full canonical path", () => {
+    const outcome = chat.safe(
+      {
+        model: "anthropic/claude-opus-5",
+        messages: [
+          { role: "user", content: "look" },
+          {
+            role: "assistant",
+            content: [{ type: "tool-call", toolCallId: "c1", toolName: "shot", input: {} }],
+          },
+          {
+            role: "tool",
+            content: [
+              {
+                type: "tool-result",
+                toolCallId: "c1",
+                toolName: "shot",
+                output: {
+                  type: "content",
+                  value: [
+                    { type: "media", mediaType: "image/png", data: "https://example.com/x.png" },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+        maxOutputTokens: 16,
+      },
+      {
+        media: [
+          {
+            path: ["messages", 2, "content", 0, "output", "value", 0],
+            bytes: 22 * 1024 * 1024,
+          },
+        ],
+      },
+    );
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    const issue = outcome.errors.find((candidate) => candidate.code === "media_too_large");
+    expect(issue?.path).toEqual(["messages", 2, "content", 0, "output", "value", 0]);
+  });
+
+  test("two identical payloads are paired in order, not merged", () => {
+    // Both parts fingerprint identically, so the mapping has to keep a queue —
+    // a set would attach the declaration to whichever it saw first, which is a
+    // wrong-but-plausible error report rather than a crash.
+    const outcome = chat.safe(
+      {
+        model: "openai/gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "file", mediaType: "image/png", data: "https://example.com/x.png" },
+              { type: "file", mediaType: "image/png", data: "https://example.com/x.png" },
+            ],
+          },
+        ],
+      },
+      { media: [{ path: ["messages", 0, "content", 1], bytes: 22 * 1024 * 1024 }] },
+    );
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    const issues = outcome.errors.filter((candidate) => candidate.code === "media_too_large");
+    expect(issues.length).toBe(1);
+    expect(issues[0]?.path).toEqual(["messages", 0, "content", 1]);
+  });
+
+  /**
+   * The orphan case: a declaration whose part did not survive compilation.
+   *
+   * Canonical and wire coordinates share the shape `["messages", i, "content",
+   * j]` on both of these dialects, and `core/media/check.ts` matches
+   * declarations by exact path equality — so forwarding an orphaned canonical
+   * path does not merely fail to help, it re-attaches the declared facts to
+   * whichever *different* attachment slid into that slot. The facts then win
+   * over the real ones for anything the checker cannot sniff (an `http(s)`
+   * image, a provider file id, every duration rule), which turns a valid
+   * request into a hard error pointed at an attachment nobody described.
+   */
+  test.each([
+    ["openai/gpt-4o", "openai-chat"],
+    ["anthropic/claude-opus-5", "anthropic-messages"],
+  ])("a declaration on a dropped attachment is dropped, not re-aimed (%s)", (model) => {
+    const params = {
+      model,
+      messages: [
+        {
+          role: "user" as const,
+          content: [
+            // Dropped by every non-Gemini decoder: file-id namespaces are
+            // per-provider. Its slot in the compiled body disappears.
+            {
+              type: "file" as const,
+              mediaType: "video/mp4",
+              data: { fileId: "files/clip", provider: "google" },
+            },
+            // Survives, and lands at wire content[0]. An https URL is not
+            // sniffable, so a misapplied declaration would be believed.
+            {
+              type: "file" as const,
+              mediaType: "image/png",
+              data: "https://example.com/real.png",
+            },
+          ],
+        },
+      ],
+    };
+    const declared = {
+      media: [
+        {
+          path: ["messages", 0, "content", 0] as Array<string | number>,
+          bytes: 22 * 1024 * 1024,
+          durationSeconds: 100_000,
+        },
+      ],
+    };
+
+    expect(chat.safe(params).ok).toBe(true);
+
+    const outcome = chat.safe(params, declared);
+    expect(outcome.ok, JSON.stringify(outcome.ok ? [] : outcome.errors)).toBe(true);
+    if (!outcome.ok) return;
+    const dropped = outcome.warnings.find(
+      (candidate) => candidate.code === "media_declaration_dropped",
+    );
+    expect(dropped?.path).toEqual(["messages", 0, "content", 0]);
+    expect(dropped?.message).toContain("did not survive compilation");
+    expect(outcome.warnings.map((w) => w.code)).not.toContain("media_too_large");
+  });
+});
+
+describe("wire findings are re-addressed honestly, or not at all", () => {
+  test("a providerOptions-supplied Gemini part keeps its wire path and gains the hint", () => {
+    // A leading system message means `contents[0]` is `messages[1]`, and the
+    // supplied part is not in `messages` at all. Reporting it at
+    // `messages[0].content[0]` — a system message whose content is a *string*
+    // — would be a confident address for a location that does not exist.
+    const outcome = chat.safe({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: "be nice" },
+        { role: "user", content: "hi" },
+      ],
+      providerOptions: {
+        google: {
+          contents: [
+            { role: "user", parts: [{ inlineData: { mimeType: "image/png", data: "AAA", displayName: "x" } }] },
+          ],
+        },
+      },
+    });
+    expect(outcome.ok).toBe(true);
+    const issue = outcome.warnings.find((candidate) => candidate.code === "unknown_param");
+    expect(issue?.path).toEqual(["contents", 0, "parts", 0, "inlineData", "displayName"]);
+    expect(issue?.message).toContain("supplied via `providerOptions`");
   });
 });
 

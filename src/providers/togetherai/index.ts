@@ -13,7 +13,7 @@ import { availability } from "../../catalog/availability/togetherai.gen";
 const TOGETHERAI_BASE_URL = "https://api.together.ai/v1";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<TogetheraiTextModelId, typeof availability>({
+  createOpenAICompatible<TogetheraiTextModelId, typeof availability, "togetherai">({
     id: "togetherai",
     baseUrl: TOGETHERAI_BASE_URL,
     catalog: models,

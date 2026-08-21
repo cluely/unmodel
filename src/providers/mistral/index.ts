@@ -14,7 +14,7 @@ import type { MistralTextModelId } from "../../catalog/mistral.gen";
 import { availability } from "../../catalog/availability/mistral.gen";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<MistralTextModelId, typeof availability>({
+  createOpenAICompatible<MistralTextModelId, typeof availability, "mistral">({
     id: "mistral",
     // The models.dev snapshot carries no `api` value for Mistral; this is the
     // documented base URL (https://docs.mistral.ai/api/).

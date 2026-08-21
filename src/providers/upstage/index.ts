@@ -17,7 +17,7 @@ import { availability } from "../../catalog/availability/upstage.gen";
 import { chatFamilyRules } from "./constraints";
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<UpstageTextModelId, typeof availability>({
+  createOpenAICompatible<UpstageTextModelId, typeof availability, "upstage">({
     id: provider.id,
     // Documented OpenAI-compatible base URL (see module JSDoc).
     baseUrl: "https://api.upstage.ai/v1",

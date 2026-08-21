@@ -14,7 +14,7 @@ import type { ValidateOptions } from "../options";
 // `../issue-sink`, not `../pipeline`: the same severity rules, without the
 // four-layer engine (and the zod, tokenizer and catalog types behind it) that
 // this pipeline delegates rather than runs.
-import { createIssueSink, partition } from "../issue-sink";
+import { createIssueSink, partition, type IssueSink } from "../issue-sink";
 import type { ValidateResult } from "../result";
 import { TranslationUnavailableError } from "../translate/errors";
 import { attachWarnings, createWarningSink } from "../translate/warnings";
@@ -64,10 +64,166 @@ function structuralIssue(model: string, provider: string, message: string): Issu
 /** Keys that must never be written through, whatever a caller passes. */
 const FORBIDDEN_KEYS: ReadonlySet<string> = new Set(["__proto__", "constructor", "prototype"]);
 
+/**
+ * The canonical vocabulary, written out per category.
+ *
+ * A second declaration of a type is a second thing to keep in step, and this
+ * one decides whether a request is *rejected* — a vocabulary field added
+ * without a matching entry here turns a call that type-checks into an
+ * `unsupported_param` error at runtime. Declared `as const` so the literal
+ * union is recoverable, and `test/types/canonical-keys.test-d.ts` fails
+ * `tsc` in both directions the moment the two disagree.
+ */
+const CANONICAL_KEY_LISTS = {
+  image: ([
+    "model",
+    "prompt",
+    "size",
+    "aspectRatio",
+    "dimensions",
+    "resolution",
+    "n",
+    "seed",
+    "negativePrompt",
+    "outputFormat",
+    "outputDelivery",
+    "providerOptions",
+  ] as const),
+  imageEdit: ([
+    "model",
+    "operation",
+    "prompt",
+    "image",
+    "strength",
+    "size",
+    "aspectRatio",
+    "dimensions",
+    "n",
+    "seed",
+    "outputFormat",
+    "providerOptions",
+  ] as const),
+  video: ([
+    "model",
+    "prompt",
+    "image",
+    "video",
+    "negativePrompt",
+    "seed",
+    "n",
+    "duration",
+    "resolution",
+    "aspectRatio",
+    "providerOptions",
+  ] as const),
+  speech: ([
+    "model",
+    "text",
+    "voice",
+    "speed",
+    "outputFormat",
+    "language",
+    "providerOptions",
+  ] as const),
+  transcribe: ([
+    "model",
+    "audio",
+    "languages",
+    "diarization",
+    "prompt",
+    "language",
+    "timestamps",
+    "providerOptions",
+  ] as const),
+  music: ([
+    "model",
+    "prompt",
+    "durationSeconds",
+    "instrumental",
+    "seed",
+    "outputFormat",
+    "providerOptions",
+  ] as const),
+} satisfies Readonly<Record<UnifiedCategory, readonly string[]>>;
+
+/** The keys `validateCanonicalEnvelope` accepts, per category. */
+const CANONICAL_KEYS: Readonly<Record<UnifiedCategory, ReadonlySet<string>>> = Object.freeze({
+  image: new Set<string>(CANONICAL_KEY_LISTS.image),
+  imageEdit: new Set<string>(CANONICAL_KEY_LISTS.imageEdit),
+  video: new Set<string>(CANONICAL_KEY_LISTS.video),
+  speech: new Set<string>(CANONICAL_KEY_LISTS.speech),
+  transcribe: new Set<string>(CANONICAL_KEY_LISTS.transcribe),
+  music: new Set<string>(CANONICAL_KEY_LISTS.music),
+});
+
+/** One category's declared vocabulary, as a literal union. Pinned by a test. */
+export type CanonicalKeyOf<C extends UnifiedCategory> = (typeof CANONICAL_KEY_LISTS)[C][number];
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const proto: unknown = Object.getPrototypeOf(value);
   return proto === Object.prototype || proto === null;
+}
+
+/** Runtime backstop for the canonical vocabulary and its provider escape hatch. */
+function validateCanonicalEnvelope(
+  category: UnifiedCategory,
+  adapter: AnyUnifiedAdapter<never>,
+  params: Record<string, unknown>,
+  provider: string,
+  registered: ReadonlyMap<string, AnyUnifiedAdapter<never>>,
+  sink: IssueSink,
+): void {
+  const known = new Set(CANONICAL_KEYS[category]);
+  const modelParams = (adapter as unknown as { modelParams?: unknown }).modelParams;
+  if (isPlainObject(modelParams)) {
+    for (const row of Object.values(modelParams)) {
+      if (!isPlainObject(row) || !isPlainObject(row["extras"])) continue;
+      for (const key of Object.keys(row["extras"])) known.add(key);
+    }
+  }
+
+  for (const key of Object.keys(params)) {
+    if (known.has(key)) continue;
+    sink.report({
+      code: "unsupported_param",
+      path: [key],
+      message:
+        `\`${key}\` is not part of the ${endpointLabel(category)} canonical vocabulary; ` +
+        "compiling it would silently drop the value.",
+    });
+  }
+
+  if (!Object.hasOwn(params, "providerOptions") || params["providerOptions"] === undefined) return;
+  const all = params["providerOptions"];
+  if (!isPlainObject(all)) {
+    sink.report({
+      code: "invalid_shape",
+      path: ["providerOptions"],
+      message: "`providerOptions` must be an object keyed by provider id.",
+    });
+    return;
+  }
+  for (const [id, block] of Object.entries(all)) {
+    if (!registered.has(id)) {
+      sink.report({
+        code: "unknown_param",
+        path: ["providerOptions", id],
+        message:
+          `\`providerOptions.${id}\` does not name a provider registered on ${endpointLabel(category)}. ` +
+          `Its block was not applied. Registered providers: ${[...registered.keys()].sort().join(", ")}.`,
+      });
+      continue;
+    }
+    if (isPlainObject(block)) continue;
+    sink.report({
+      code: "invalid_shape",
+      path: ["providerOptions", id],
+      message: `\`providerOptions.${id}\` must be an object of wire parameters${
+        id === provider ? " for the selected provider" : ""
+      }.`,
+    });
+  }
 }
 
 /**
@@ -109,11 +265,47 @@ export function deepMerge<T extends object>(base: T, override: Readonly<Record<s
 export function runUnified(
   category: UnifiedCategory,
   byProvider: ReadonlyMap<string, AnyUnifiedAdapter<never>>,
-  params: Record<string, unknown>,
+  params: unknown,
   options: ValidateOptions = {},
+): UnifiedOutcome {
+  try {
+    return runUnifiedUnchecked(category, byProvider, params, options);
+  } catch (error) {
+    // `safeUnknown` accepts values from outside the type system, where even
+    // inspection can execute user code (getters and Proxy traps). Keep the
+    // safe contract at the outermost boundary so no property read, key walk,
+    // provider validator, or result decoration can leak an exception.
+    const sink = createIssueSink(options);
+    sink.report({
+      code: "invalid_shape",
+      path: [],
+      message:
+        `unmodel could not safely inspect these params for ${endpointLabel(category)} ` +
+        `(${describeValue(error)}) — this is likely a malformed request; if the request is valid, ` +
+        "please file a bug.",
+    });
+    return { result: { ok: false, ...partition(sink.issues) } };
+  }
+}
+
+/** The pipeline body, guarded by {@link runUnified}'s total safe boundary. */
+function runUnifiedUnchecked(
+  category: UnifiedCategory,
+  byProvider: ReadonlyMap<string, AnyUnifiedAdapter<never>>,
+  params: unknown,
+  options: ValidateOptions,
 ): UnifiedOutcome {
   const sink = createIssueSink(options);
   const label = endpointLabel(category);
+
+  if (!isPlainObject(params)) {
+    sink.report({
+      code: "invalid_shape",
+      path: [],
+      message: `Expected an object for ${label}; got ${describeValue(params)}.`,
+    });
+    return { result: { ok: false, ...partition(sink.issues) } };
+  }
 
   // --- Ref ------------------------------------------------------------------
   const model = params["model"];
@@ -121,7 +313,7 @@ export function runUnified(
     sink.report({
       code: "invalid_shape",
       path: ["model"],
-      message: `\`model\` must be a "provider/model" string for ${label}; got ${JSON.stringify(model)}.`,
+      message: `\`model\` must be a "provider/model" string for ${label}; got ${describeValue(model)}.`,
     });
     return { result: { ok: false, ...partition(sink.issues) } };
   }
@@ -151,6 +343,10 @@ export function runUnified(
       structural: new TranslationUnavailableError(message),
     };
   }
+
+  validateCanonicalEnvelope(category, adapter, params, provider, byProvider, sink);
+  const envelope = partition(sink.issues);
+  if (envelope.errors.length > 0) return { result: { ok: false, ...envelope } };
 
   // --- Catalog: an unknown model warns, exactly as everywhere else ----------
   if (!adapter.models.includes(modelId)) {
@@ -304,6 +500,25 @@ function readProviderOptions(
   return isPlainObject(own) ? own : undefined;
 }
 
+function describeValue(value: unknown): string {
+  if (value === undefined) return "undefined";
+  try {
+    if (value instanceof Error) return `${value.name}: ${value.message}`;
+  } catch {
+    // A Proxy may trap even the prototype read behind `instanceof`; fall
+    // through to the two formatter attempts below.
+  }
+  try {
+    return JSON.stringify(value) ?? String(value);
+  } catch {
+    try {
+      return String(value);
+    } catch {
+      return "<uninspectable value>";
+    }
+  }
+}
+
 /**
  * Wire path → canonical path, using what the adapter declared.
  *
@@ -367,6 +582,10 @@ export function createUnified<Canon, A extends AnyUnifiedAdapter<Canon>>(
     return runUnified(category, byProvider, params, options).result;
   }
 
+  function safeUnknown(params: unknown, options?: ValidateOptions): ValidateResult<object> {
+    return runUnified(category, byProvider, params, options).result;
+  }
+
   function validator(params: Record<string, unknown>, options?: ValidateOptions): object {
     const { result, structural } = runUnified(category, byProvider, params, options);
     // Structural first, so the thrown type stays `TranslationUnavailableError`
@@ -377,6 +596,7 @@ export function createUnified<Canon, A extends AnyUnifiedAdapter<Canon>>(
   }
 
   validator.safe = safe;
+  validator.safeUnknown = safeUnknown;
   Object.defineProperty(validator, "providers", {
     value: Object.freeze([...byProvider.keys()].sort()),
     enumerable: true,

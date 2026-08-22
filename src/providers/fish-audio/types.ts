@@ -36,7 +36,11 @@
  * Endpoints:
  *
  * - `fish-audio.tts` → `TtsBody` (already the wire name — see below)
+ * - `fish-audio.voiceClone` → `VoiceCloneBody`
+ * - `fish-audio.voiceDesign` → `VoiceDesignBody` (already the wire name)
  */
+
+import type { CreateModelParams } from "./voice-clone";
 
 export type {
   TtsBody,
@@ -48,13 +52,25 @@ export type {
   FishAudioReferenceAudio,
 } from "./tts";
 
-export type { FishAudioModelId, FishAudioTtsModelId } from "./models";
+export type { CreateModelParams, FishAudioVisibility } from "./voice-clone";
+
+export type { VoiceDesignBody } from "./voice-design";
+
+export type {
+  FishAudioModelId,
+  FishAudioTtsModelId,
+  FishAudioVoiceDesignModelId,
+  FishAudioVoiceCloneModelId,
+} from "./models";
 
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.
 // Pure type aliases: no rename, no runtime, no cost.
 //
-// No alias is declared for `fish-audio.tts`: the category name is ALREADY
-// this provider's wire name (`TtsBody`), re-exported above. The wire name
-// wins — an alias here would be a rename, and the law forbids it.
+// No alias is declared for `fish-audio.tts` or `fish-audio.voiceDesign`: the
+// category name is ALREADY this provider's wire name (`TtsBody`,
+// `VoiceDesignBody`), re-exported above. The wire name wins — an alias here
+// would be a rename, and the law forbids it.
 // ---------------------------------------------------------------------------
+
+export type VoiceCloneBody = CreateModelParams;

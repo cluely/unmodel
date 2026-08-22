@@ -1,0 +1,6 @@
+{
+  "ref": "fish-audio/voice-design-1",
+  "params": { "instruction": "An elderly British gentleman with a warm, gravelly storytelling tone", "n": 2, "seed": 42, "guidance_scale": 2 },
+  "url": "https://api.fish.audio/v1/voice-design",
+  "headers": { "content-type": "application/json", "model": "voice-design-1" }
+}

@@ -1,0 +1,8 @@
+{
+  "ref": "fish-audio/fast",
+  "samples": [{ "audio": { "file": "@blob" } }],
+  "params": { "type": "tts", "title": "Narrator", "train_mode": "fast", "voices": [{"@blob":{"size":64,"type":"audio/wav"}}] },
+  "url": "https://api.fish.audio/model",
+  "headers": {},
+  "issues": [{ "code": "invalid_shape", "path": ["visibility"] }]
+}

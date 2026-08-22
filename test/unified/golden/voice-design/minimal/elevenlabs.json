@@ -1,0 +1,6 @@
+{
+  "ref": "elevenlabs/eleven_ttv_v3",
+  "params": { "voice_description": "An elderly British gentleman with a warm, gravelly storytelling tone", "model_id": "eleven_ttv_v3", "auto_generate_text": true },
+  "url": "https://api.elevenlabs.io/v1/text-to-voice/design",
+  "headers": { "content-type": "application/json" }
+}

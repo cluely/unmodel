@@ -74,11 +74,11 @@ import type {
 import { tts as cartesia } from "../providers/cartesia/unified-tts";
 import { tts as deepgram } from "../providers/deepgram/unified-tts";
 import { tts as elevenlabs } from "../providers/elevenlabs/unified-tts";
-import { tts as fishAudio } from "../providers/fish-audio/unified";
+import { tts as fishAudio } from "../providers/fish-audio/unified-tts";
 import { tts as google } from "../providers/google/unified-tts";
 import { tts as hume } from "../providers/hume/unified";
 import { tts as inworld } from "../providers/inworld/unified-tts";
-import { tts as lmnt } from "../providers/lmnt/unified";
+import { tts as lmnt } from "../providers/lmnt/unified-tts";
 import { tts as minimax } from "../providers/minimax/unified-tts";
 import { tts as murf } from "../providers/murf/unified";
 import { tts as openai } from "../providers/openai/unified-tts";

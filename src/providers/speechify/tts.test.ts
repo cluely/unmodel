@@ -9,7 +9,7 @@ import {
   SPEECH_OUTPUT_FORMATS,
   STREAM_OUTPUT_FORMATS,
 } from "./tts";
-import { models } from "./models";
+import { models, SPEECHIFY_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -275,8 +275,11 @@ describe("speechify cost estimation (Starter list rate)", () => {
 });
 
 describe("speechify catalog", () => {
-  test("every model is TTS-shaped with the 20,000-character ceiling", () => {
-    for (const info of Object.values(models)) {
+  test("every synthesis model is TTS-shaped with the 20,000-character ceiling", () => {
+    // The synthetic `voice-clone` id (POST /v1/voices) is deliberately not a
+    // synthesis model, so the sweep runs over the synthesis allow-list.
+    for (const id of SPEECHIFY_MODEL_IDS) {
+      const info = models[id];
       expect(info.limit.context).toBe(0);
       expect(info.limit.characters).toBe(20000);
       expect(info.modalities.input).toEqual(["text"]);

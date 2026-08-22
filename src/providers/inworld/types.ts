@@ -41,11 +41,17 @@
  * - `inworld.realtimeVoiceContext` → `RealtimeVoiceContextBody`
  * - `inworld.stt` → `SttBody`
  * - `inworld.tts` → `TtsBody`
+ * - `inworld.voiceClone` → `VoiceCloneBody`
+ * - `inworld.voiceDesign` → `VoiceDesignBody`
+ * - `inworld.voiceDesignPublish` → `VoiceDesignPublishBody`
  */
 
 import type { InworldRealtimeTranscribeConfig, TranscribeBody } from "./stt";
 import type { InworldVoiceContextConfig } from "./realtime";
 import type { TtsVoiceBody } from "./tts";
+import type { VoicesCloneBody } from "./voice-clone";
+import type { VoicesDesignBody } from "./voice-design";
+import type { VoicesPublishBody } from "./voice-design-publish";
 
 export type {
   TtsVoiceBody,
@@ -81,10 +87,22 @@ export type {
 } from "./realtime";
 
 export type {
+  VoicesCloneBody,
+  InworldVoiceSample,
+  InworldAudioProcessingConfig,
+  InworldLangCode,
+} from "./voice-clone";
+
+export type { VoicesDesignBody, InworldVoiceDesignConfig } from "./voice-design";
+
+export type { VoicesPublishBody } from "./voice-design-publish";
+
+export type {
   InworldModelId,
   InworldSttModelId,
   InworldSttVendor,
   InworldTtsModelId,
+  InworldVoiceModelId,
 } from "./models";
 
 // ---------------------------------------------------------------------------
@@ -102,3 +120,6 @@ export type RealtimeTranscribeConfigBody = InworldRealtimeTranscribeConfig;
 export type RealtimeVoiceContextBody = InworldVoiceContextConfig;
 export type SttBody = TranscribeBody;
 export type TtsBody = TtsVoiceBody;
+export type VoiceCloneBody = VoicesCloneBody;
+export type VoiceDesignBody = VoicesDesignBody;
+export type VoiceDesignPublishBody = VoicesPublishBody;

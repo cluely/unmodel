@@ -1,0 +1,7 @@
+{
+  "ref": "elevenlabs/ivc",
+  "samples": [{ "audio": { "file": "@blob" } }, { "audio": { "file": "@blob" } }],
+  "params": { "name": "Narrator", "files": [{"@blob":{"size":64,"type":"audio/wav"}}, {"@blob":{"size":64,"type":"audio/wav"}}], "description": "A warm narrator voice for audiobooks" },
+  "url": "https://api.elevenlabs.io/v1/voices/add",
+  "headers": {}
+}

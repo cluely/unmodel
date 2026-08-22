@@ -97,6 +97,8 @@ const CATEGORY_PREFIX: Readonly<Record<string, string>> = {
   tts: "TTS",
   stt: "STT",
   music: "MUSIC",
+  voiceClone: "VOICE_CLONE",
+  voiceDesign: "VOICE_DESIGN",
 };
 
 const PROVIDERS: string[] = readdirSync(PROVIDERS_DIR, { withFileTypes: true })
@@ -422,6 +424,8 @@ describe("unmodel/values — the canonical hub", () => {
       "stt",
       "tts",
       "video",
+      "voiceClone",
+      "voiceDesign",
     ]);
   });
 

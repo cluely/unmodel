@@ -8,3 +8,13 @@
  */
 export { tts, type MinimaxTtsResult, type MinimaxTtsWire } from "./unified-tts";
 export { video, type MinimaxVideoResult, type MinimaxVideoWire } from "./unified-video";
+export {
+  voiceClone,
+  type MinimaxVoiceCloneResult,
+  type MinimaxVoiceCloneWire,
+} from "./unified-voice-clone";
+export {
+  voiceDesign,
+  type MinimaxVoiceDesignResult,
+  type MinimaxVoiceDesignWire,
+} from "./unified-voice-design";

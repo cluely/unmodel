@@ -28,6 +28,8 @@ npm install unmodel
   - [Image editing](#image-editing)
   - [Video generation](#video-generation)
   - [Music generation](#music-generation)
+  - [Voice cloning](#voice-cloning)
+  - [Voice design](#voice-design)
   - [Realtime audio](#realtime-audio)
 - [Send requests](#send-requests)
   - [Fetch](#fetch)
@@ -182,7 +184,7 @@ const voices = TTS_MODEL_PARAMS["gpt-4o-mini-tts"].voices;
 </select>;
 ```
 
-Each entry exports, per category it serves, three uniform names — `<CATEGORY>_MODEL_PARAMS`, `<CATEGORY>_MODELS`, and `<CATEGORY>_FORMAT_SPEC` where the category has an audio format spec (`IMAGE_`, `IMAGE_EDIT_`, `VIDEO_`, `TTS_`, `STT_`, `MUSIC_`) — plus that provider's own published lists under their own names (`GEMINI_TTS_VOICES`, `GPT_IMAGE_2_SIZES`, `BFL_ASPECT_RATIOS`, `RECRAFT_V3_STYLES`, `KLING_ASPECT_RATIOS`, …). 36 providers ship one; the ones that do are exactly the providers with a unified adapter.
+Each entry exports, per category it serves, three uniform names — `<CATEGORY>_MODEL_PARAMS`, `<CATEGORY>_MODELS`, and `<CATEGORY>_FORMAT_SPEC` where the category has an audio format spec (`IMAGE_`, `IMAGE_EDIT_`, `VIDEO_`, `TTS_`, `STT_`, `MUSIC_`, `VOICE_CLONE_`, `VOICE_DESIGN_`) — plus that provider's own published lists under their own names (`GEMINI_TTS_VOICES`, `GPT_IMAGE_2_SIZES`, `BFL_ASPECT_RATIOS`, `RECRAFT_V3_STYLES`, `KLING_ASPECT_RATIOS`, …). 36 providers ship one; the ones that do are exactly the providers with a unified adapter.
 
 The tables are **the same objects the adapter compiles with**, re-exported rather than copied, so a picker and the request it builds cannot disagree. `test/values-entries.test.ts` asserts that by reference (`===`), not by deep equality.
 
@@ -227,6 +229,8 @@ That is the whole point of the layout: the per-model tables live on import-free 
 | [Image editing](#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram` |
 | [Video generation](#video-generation) | `unmodel/video` | `unmodel/openai`, `unmodel/google`, `unmodel/runway` |
 | [Music generation](#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/stability` |
+| [Voice cloning](#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
+| [Voice design](#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
 | [Realtime audio config](#realtime-audio) | — | `unmodel/openai`, `unmodel/deepgram`, `unmodel/elevenlabs`, etc. |
 
 See the complete [provider and endpoint roster](docs/providers.md).
@@ -396,6 +400,50 @@ JSON.stringify(request);
 ```
 
 Audio-conditioned Stability routes remain provider-native because no other provider shares their controls.
+
+## Voice cloning
+
+`unmodel/voice-clone` creates a voice from reference recordings. The samples' shape narrows per model at compile time — multipart `{ file }` at ElevenLabs, Fish Audio, Cartesia and LMNT, base64 `{ data }` at Inworld, an upload-handle `{ fileId }` at MiniMax — and each route's sample count is enforced with the bounds in the message:
+
+```ts
+import { voiceClone } from "unmodel/voice-clone";
+
+const request = voiceClone({
+  model: "elevenlabs/ivc",
+  operation: "clone",
+  name: "Narrator",
+  samples: [{ audio: { file: recording } }],
+  description: "A warm narrator voice for audiobooks",
+});
+
+await fetch(request.request.url, {
+  method: "POST",
+  headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY! },
+  body: elevenlabs.voiceCloneToFormData(request),
+});
+```
+
+The vocabulary carries the facts an invoice would otherwise teach: `visibility` (Fish Audio defaults new voices to **public** — the validator warns when it is omitted), the caller-chosen `voiceId` MiniMax requires and everyone else refuses, and per-sample `transcript`s where a wire field exists. The result is the created voice's id, which `unmodel/tts` takes as `voice`; managing stored voices is out of scope. Speechify's clone route (a consent challenge/response ceremony) is wire-only at `unmodel/speechify`.
+
+## Voice design
+
+`unmodel/voice-design` invents a voice from a text description — `prompt` is the generative word (`voice_description`, `instruction`, `designPrompt` on the wires), never `description`, which is voice-clone metadata:
+
+```ts
+import { voiceDesign } from "unmodel/voice-design";
+
+const request = voiceDesign({
+  model: "elevenlabs/eleven_ttv_v3",
+  operation: "design",
+  prompt: "An elderly British gentleman with a warm, gravelly storytelling tone",
+});
+
+JSON.stringify(request);
+// → {"voice_description":"An elderly British gentleman with a warm, gravelly
+//    storytelling tone","model_id":"eleven_ttv_v3","auto_generate_text":true}
+```
+
+The unified surface is phase 1 — the generative call. ElevenLabs and Inworld return previews a second, provider-shaped call persists; those saves are wire-only (`elevenlabs.voiceDesignSave`, `inworld.voiceDesignPublish`) because their correlating handles share no vocabulary. MiniMax is single-phase and Fish Audio's candidates are deliberately ephemeral. Hume's voice design rides its own TTS wire and stays on `unmodel/hume`.
 
 ## Realtime audio
 

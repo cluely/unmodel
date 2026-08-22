@@ -161,6 +161,27 @@ export type {
 
 export type { MusicParams, MusicParamsBase } from "../core/unified/vocabulary/music";
 
+export type {
+  VoiceCloneParams,
+  VoiceCloneParamsBase,
+  VoiceCloneParamsFor,
+  VoiceSample,
+  VoiceSampleDataInput,
+  VoiceSampleFileIdInput,
+  VoiceSampleFileInput,
+  VoiceSampleFor,
+  VoiceSampleInput,
+  VoiceSampleInputFor,
+  VoiceSampleKind,
+  VoiceSampleLimits,
+  VoiceVisibility,
+} from "../core/unified/vocabulary/voice-clone";
+
+export type {
+  VoiceDesignParams,
+  VoiceDesignParamsBase,
+} from "../core/unified/vocabulary/voice-design";
+
 // The words the categories share: sizing, delivery, and the four media refs
 // every category's inputs are built from.
 export type {
@@ -193,6 +214,8 @@ export type {
   SttModelParams,
   TtsModelParams,
   VideoModelParams,
+  VoiceCloneModelParams,
+  VoiceDesignModelParams,
 } from "../core/unified/vocabulary/model-params";
 
 export type { CompileIssue, UnifiedCategory } from "../core/unified/types";

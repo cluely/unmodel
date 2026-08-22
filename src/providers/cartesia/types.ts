@@ -40,12 +40,14 @@
  * - `cartesia.sttWebsocket` → `SttWebsocketBody`
  * - `cartesia.tts` → `TtsBody`
  * - `cartesia.ttsWebsocket` → `TtsWebsocketBody`
+ * - `cartesia.voiceClone` → `VoiceCloneBody`
  */
 
 import type { SttTranscribeParams } from "./stt";
 import type { SttWebsocketParams } from "./stt-websocket";
 import type { TtsBytesBody } from "./tts";
 import type { TtsWebsocketMessage } from "./tts-websocket";
+import type { VoicesCloneParams } from "./voice-clone";
 
 export type {
   TtsBytesBody,
@@ -74,7 +76,18 @@ export type { SttWebsocketParams, CartesiaSttWebsocketLanguage } from "./stt-web
 
 export type { SttTranscriptionLike } from "./check";
 
-export type { CartesiaModelId, CartesiaTtsModelId, CartesiaSttModelId } from "./models";
+export type {
+  VoicesCloneParams,
+  CartesiaCloneLanguage,
+  CartesiaVoiceAccess,
+} from "./voice-clone";
+
+export type {
+  CartesiaModelId,
+  CartesiaTtsModelId,
+  CartesiaSttModelId,
+  CartesiaVoiceCloneModelId,
+} from "./models";
 
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.
@@ -91,3 +104,4 @@ export type SttBody = SttTranscribeParams;
 export type SttWebsocketBody = SttWebsocketParams;
 export type TtsBody = TtsBytesBody;
 export type TtsWebsocketBody = TtsWebsocketMessage;
+export type VoiceCloneBody = VoicesCloneParams;

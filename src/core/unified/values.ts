@@ -46,6 +46,7 @@ import type {
   VideoResolution,
 } from "./vocabulary/common";
 import type { AudioInputKind, TimestampGranularity } from "./vocabulary/stt";
+import type { VoiceSampleKind, VoiceVisibility } from "./vocabulary/voice-clone";
 
 // ---------------------------------------------------------------------------
 // Sizing
@@ -155,6 +156,29 @@ export const AUDIO_INPUT_KINDS = [
   "fileId",
   "data",
 ] as const satisfies readonly AudioInputKind[];
+
+// ---------------------------------------------------------------------------
+// Voice creation
+// ---------------------------------------------------------------------------
+
+/**
+ * The three ways a caller hands reference recordings over. A strict subset of
+ * {@link AUDIO_INPUT_KINDS} today (no wave-one clone route fetches a URL);
+ * which of them a given route accepts is on that provider's adapter as
+ * `sampleInputs`.
+ */
+export const VOICE_SAMPLE_KINDS = [
+  "file",
+  "data",
+  "fileId",
+] as const satisfies readonly VoiceSampleKind[];
+
+/** Who can see a created voice, most private first. */
+export const VOICE_VISIBILITIES = [
+  "private",
+  "unlisted",
+  "public",
+] as const satisfies readonly VoiceVisibility[];
 
 // ---------------------------------------------------------------------------
 // The params vocabulary itself

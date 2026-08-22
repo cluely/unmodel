@@ -1,0 +1,16 @@
+{
+  "ref": "inworld/voice-clone",
+  "samples": [
+    { "audio": { "data": "UklGRgAAAABXQVZF" }, "transcript": "Hello there." },
+    { "audio": { "data": "UklGRgAAAABXQVZF" }, "transcript": "General Kenobi." }
+  ],
+  "params": {
+    "displayName": "Narrator",
+    "voiceSamples": [
+      { "audioData": "UklGRgAAAABXQVZF", "transcription": "Hello there." },
+      { "audioData": "UklGRgAAAABXQVZF", "transcription": "General Kenobi." }
+    ]
+  },
+  "url": "https://api.inworld.ai/voices/v1/voices:clone",
+  "headers": { "content-type": "application/json" }
+}

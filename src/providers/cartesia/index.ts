@@ -49,8 +49,29 @@ export {
 } from "./stt-websocket";
 export type { SttWebsocketParams, CartesiaSttWebsocketLanguage } from "./stt-websocket";
 
+export {
+  voiceClone,
+  voiceCloneToFormData,
+  VOICES_CLONE_URL,
+  VOICE_CLONE_CARTESIA_VERSION,
+  VOICE_CLONE_MODEL_ID,
+  VOICE_CLONE_TAGLINE_MAX_CHARACTERS,
+  VOICE_CLONE_LANGUAGES,
+  VOICE_CLONE_ACCESS_VALUES,
+} from "./voice-clone";
+export type {
+  VoicesCloneParams,
+  CartesiaCloneLanguage,
+  CartesiaVoiceAccess,
+} from "./voice-clone";
+
 export { checkStt } from "./check";
 export type { SttTranscriptionLike } from "./check";
 
 export { models, provider, TTS_MODEL_IDS } from "./models";
-export type { CartesiaModelId, CartesiaTtsModelId, CartesiaSttModelId } from "./models";
+export type {
+  CartesiaModelId,
+  CartesiaTtsModelId,
+  CartesiaSttModelId,
+  CartesiaVoiceCloneModelId,
+} from "./models";

@@ -13,8 +13,12 @@
 // character costs 3–4 bytes, which the docs call out explicitly
 // ("1M UTF-8 bytes is approximately 180,000 English words").
 //
-// COVERAGE: the four ids below are exactly the `model` header enum plus the
-// two retired `speech-*` ids. `s2.1-pro-free` is the free developer tier —
+// COVERAGE: the four TTS ids below are exactly the `model` header enum plus
+// the two retired `speech-*` ids, `voice-design-1` is the required `model`
+// header of POST /v1/voice-design, and `fast` is a SYNTHETIC id — POST /model
+// (voice cloning) has no model field, so the id names its documented
+// `train_mode` to give the voice-clone validator a catalog address.
+// `s2.1-pro-free` is the free developer tier —
 // its published rate really is $0.00 / M UTF-8 bytes, so `cost` is 0 rather
 // than omitted. Fish Audio publishes no per-request character cap for
 // `text`, so no model carries `limit.characters`.
@@ -133,17 +137,63 @@ const retiredModels = {
   },
 } as const satisfies Record<string, ModelInfo>;
 
+/**
+ * Voice design — POST /v1/voice-design, validated by ./voice-design. The
+ * required `model` header accepts exactly this id. Billed "$0.01 /
+ * successful API request"; `ModelCost` has no per-request unit, so `cost` is
+ * omitted and the endpoint estimates the flat rate itself.
+ */
+const voiceDesignModels = {
+  "voice-design-1": {
+    id: "voice-design-1",
+    name: "Fish Audio Voice Design 1",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+} as const satisfies Record<string, ModelInfo>;
+
+/**
+ * Voice cloning — POST /model, validated by ./voice-clone. The wire has no
+ * model field: `fast` is a synthetic id naming the documented (and only)
+ * `train_mode`, so a future full-training mode is a new id rather than a
+ * param. No rate is published for model creation, so `cost` is omitted.
+ */
+const voiceCloneModels = {
+  fast: {
+    id: "fast",
+    name: "Fish Audio Voice Cloning (fast)",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["audio"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+} as const satisfies Record<string, ModelInfo>;
+
 export const models = {
   ...ttsModels,
   ...retiredModels,
+  ...voiceDesignModels,
+  ...voiceCloneModels,
 } as const satisfies Record<string, ModelInfo>;
 
 /** Values the `model` header of POST /v1/tts accepts. */
 export type FishAudioTtsModelId = keyof typeof ttsModels;
+/** Values the required `model` header of POST /v1/voice-design accepts. */
+export type FishAudioVoiceDesignModelId = keyof typeof voiceDesignModels;
+/** The synthetic id addressing POST /model (no model field on the wire). */
+export type FishAudioVoiceCloneModelId = keyof typeof voiceCloneModels;
 export type FishAudioModelId = keyof typeof models;
 
 /** Runtime allow-list backing the text-to-speech endpoint's model gate. */
 export const TTS_MODEL_IDS: readonly string[] = Object.keys(ttsModels);
+/** Runtime allow-list backing the voice-design endpoint's model gate. */
+export const VOICE_DESIGN_MODEL_IDS: readonly string[] = Object.keys(voiceDesignModels);
 
 /**
  * The S2 generation — the only models that accept multi-speaker

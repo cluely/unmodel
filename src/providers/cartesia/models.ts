@@ -157,11 +157,28 @@ export const models = {
     modalities: { input: ["audio"], output: ["text"] },
     limit: { context: 0 },
   },
+  // Voice cloning — POST /voices/clone, validated by ./voice-clone. The wire
+  // has no model field: this is a SYNTHETIC route-noun id so the validator
+  // has a catalog address. Usage of the resulting voice is billed in credits
+  // (Pro Voice Clone ~1.5/character — see the PRICING note above); the clone
+  // call itself publishes no rate, so `cost` is omitted.
+  "voice-clone": {
+    id: "voice-clone",
+    name: "Cartesia Voice Cloning",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["audio"], output: ["audio"] },
+    limit: { context: 0 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type CartesiaModelId = keyof typeof models;
 /** TTS (sonic-*) model ids. */
 export type CartesiaTtsModelId = Extract<CartesiaModelId, `sonic${string}`>;
+/** The synthetic id addressing POST /voices/clone (no model field on the wire). */
+export type CartesiaVoiceCloneModelId = Extract<CartesiaModelId, "voice-clone">;
 
 /**
  * The `model_id` enum POST /tts/bytes publishes for Cartesia-Version

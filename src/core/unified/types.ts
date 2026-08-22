@@ -94,16 +94,27 @@ import type { ValidateResult } from "../result";
 import type { TranslationWarning, Warn } from "../translate/warnings";
 
 /**
- * The six media surfaces, each of which gets its own vocabulary, its own
+ * The eight media surfaces, each of which gets its own vocabulary, its own
  * entry point, and its own adapter set.
  *
  * They are separate categories rather than one `media()` with a mode flag
  * because the vocabularies genuinely do not overlap — `voice` means nothing to
  * an image model, `aspectRatio` nothing to a transcription — and a single type
- * carrying all six would be a type whose valid combinations you have to
- * memorize.
+ * carrying all eight would be a type whose valid combinations you have to
+ * memorize. The voice-creation pair splits for the same reason at closer
+ * range: cloning's input is audio samples, design's is a text prompt, and
+ * `description` means metadata on one side and the generative instruction on
+ * the other (see `vocabulary/voice-clone.ts`).
  */
-export type UnifiedCategory = "image" | "imageEdit" | "video" | "tts" | "stt" | "music";
+export type UnifiedCategory =
+  | "image"
+  | "imageEdit"
+  | "video"
+  | "tts"
+  | "stt"
+  | "music"
+  | "voiceClone"
+  | "voiceDesign";
 
 /**
  * A finding in **canonical** space: the path names a field the caller wrote,

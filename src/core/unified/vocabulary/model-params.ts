@@ -333,6 +333,35 @@ export interface MusicModelParams extends ModelParamsBase {
 /** A music adapter's per-model table, keyed by **bare** model id. */
 export type MusicModelParamTable = Readonly<Record<string, MusicModelParams>>;
 
+/**
+ * One voice-cloning route's request surface, beyond the canonical vocabulary.
+ *
+ * The category narrows two things per **adapter** already — `sampleInputs`
+ * (the shape of each recording) and `sampleLimits` (how many) — and those
+ * stay there: which transport a route takes is an adapter fact. What is a
+ * *model* fact is the language space: Cartesia's clone route requires one of
+ * 44 codes, so `languages` completes it, open, through {@link LanguageOf}.
+ */
+export interface VoiceCloneModelParams extends ModelParamsBase {
+  /** The languages this route's language field enumerates. See {@link LanguageOf}. */
+  readonly languages?: readonly string[];
+}
+
+/** A voice-clone adapter's per-model table, keyed by **bare** model id. */
+export type VoiceCloneModelParamTable = Readonly<Record<string, VoiceCloneModelParams>>;
+
+/**
+ * One voice-design model's request surface, beyond the canonical vocabulary.
+ * The same single-field row as its clone sibling, for the same reason.
+ */
+export interface VoiceDesignModelParams extends ModelParamsBase {
+  /** The languages this route's language field enumerates. See {@link LanguageOf}. */
+  readonly languages?: readonly string[];
+}
+
+/** A voice-design adapter's per-model table, keyed by **bare** model id. */
+export type VoiceDesignModelParamTable = Readonly<Record<string, VoiceDesignModelParams>>;
+
 /** An adapter that carries one. Every narrowing category's adapter type extends it. */
 export interface WithModelParams<T extends AnyModelParamTable = AnyModelParamTable> {
   readonly modelParams: T;
@@ -673,3 +702,26 @@ type MusicArms<Format> = { outputFormat?: Format };
 export type MusicModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
   ? MusicArms<AudioFormatRequest>
   : MusicArms<AudioFormatOf<ModelParamsFor<A, R>>>;
+
+/** The one field either voice-creation row narrows. */
+type VoiceArms<Language> = { language?: Language };
+
+/**
+ * The `language` one voice-clone ref admits, restated wide when the ref is
+ * degraded. Composes with — never replaces — the category's *other*
+ * narrowing: `SampleNarrowing` types `samples` from the adapter's
+ * `sampleInputs`, a different key reached through a different mechanism
+ * (stt's `AudioNarrowing` sentence, one field over).
+ */
+export type VoiceCloneModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [
+  never,
+]
+  ? VoiceArms<string>
+  : VoiceArms<LanguageOf<ModelParamsFor<A, R>>>;
+
+/** The `language` one voice-design ref admits, restated wide when degraded. */
+export type VoiceDesignModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [
+  never,
+]
+  ? VoiceArms<string>
+  : VoiceArms<LanguageOf<ModelParamsFor<A, R>>>;

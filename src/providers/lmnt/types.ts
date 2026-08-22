@@ -38,9 +38,11 @@
  *
  * - `lmnt.tts` → `TtsBody`
  * - `lmnt.ttsDetailed` → `TtsDetailedBody`
+ * - `lmnt.voiceClone` → `VoiceCloneBody`
  */
 
 import type { SpeechBody, SpeechDetailedBody } from "./tts";
+import type { AiVoiceParams } from "./voice-clone";
 
 export type {
   SpeechBody,
@@ -50,7 +52,9 @@ export type {
   LmntSampleRate,
 } from "./tts";
 
-export type { LmntModelId, LmntTtsModelId } from "./models";
+export type { AiVoiceParams } from "./voice-clone";
+
+export type { LmntModelId, LmntTtsModelId, LmntVoiceCloneModelId } from "./models";
 
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.
@@ -59,3 +63,4 @@ export type { LmntModelId, LmntTtsModelId } from "./models";
 
 export type TtsBody = SpeechBody;
 export type TtsDetailedBody = SpeechDetailedBody;
+export type VoiceCloneBody = AiVoiceParams;

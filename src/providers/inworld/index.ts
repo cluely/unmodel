@@ -71,6 +71,40 @@ export type {
 } from "./realtime";
 
 export {
+  voiceClone,
+  checkLanguageExclusivity,
+  checkLangCodeEnum,
+  VOICES_CLONE_URL,
+  VOICE_CLONE_MODEL_ID,
+  VOICE_CLONE_MAX_SAMPLE_BYTES,
+  INWORLD_LANG_CODES,
+} from "./voice-clone";
+export type {
+  VoicesCloneBody,
+  InworldVoiceSample,
+  InworldAudioProcessingConfig,
+  InworldLangCode,
+} from "./voice-clone";
+
+export {
+  voiceDesign,
+  VOICES_DESIGN_URL,
+  VOICE_DESIGN_MODEL_ID,
+  VOICE_DESIGN_PROMPT_MIN_CHARACTERS,
+  VOICE_DESIGN_PROMPT_MAX_CHARACTERS,
+  VOICE_DESIGN_SAMPLES_MIN,
+  VOICE_DESIGN_SAMPLES_MAX,
+} from "./voice-design";
+export type { VoicesDesignBody, InworldVoiceDesignConfig } from "./voice-design";
+
+export {
+  voiceDesignPublish,
+  voiceDesignPublishUrl,
+  VOICES_PUBLISH_BASE_URL,
+} from "./voice-design-publish";
+export type { VoicesPublishBody } from "./voice-design-publish";
+
+export {
   models,
   provider,
   sttModels,
@@ -84,4 +118,5 @@ export type {
   InworldSttModelId,
   InworldSttVendor,
   InworldTtsModelId,
+  InworldVoiceModelId,
 } from "./models";

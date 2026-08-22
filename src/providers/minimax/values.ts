@@ -27,3 +27,13 @@ export {
   MODELS as TTS_MODELS,
   FORMAT as TTS_FORMAT_SPEC,
 } from "./tts-params";
+
+export {
+  MINIMAX_VOICE_CLONE_MODEL_PARAMS as VOICE_CLONE_MODEL_PARAMS,
+  MODELS as VOICE_CLONE_MODELS,
+} from "./voice-clone-params";
+
+export {
+  MINIMAX_VOICE_DESIGN_MODEL_PARAMS as VOICE_DESIGN_MODEL_PARAMS,
+  MODELS as VOICE_DESIGN_MODELS,
+} from "./voice-design-params";

@@ -26,6 +26,8 @@ import type { VideoParams } from "../../src/core/unified/vocabulary/video";
 import type { TtsParams } from "../../src/core/unified/vocabulary/tts";
 import type { SttParams } from "../../src/core/unified/vocabulary/stt";
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
+import type { VoiceCloneParams } from "../../src/core/unified/vocabulary/voice-clone";
+import type { VoiceDesignParams } from "../../src/core/unified/vocabulary/voice-design";
 import { expectTrue, type IsNever } from "./helpers";
 
 /**
@@ -39,11 +41,17 @@ import { expectTrue, type IsNever } from "./helpers";
 type AllKeys<T> = T extends unknown ? Extract<keyof T, string> : never;
 
 /** Vocabulary keys the kernel's list does not accept: a valid request refused. */
-type Unlisted<C extends "image" | "imageEdit" | "video" | "tts" | "stt" | "music", P> =
+type Unlisted<
+  C extends "image" | "imageEdit" | "video" | "tts" | "stt" | "music" | "voiceClone" | "voiceDesign",
+  P,
+> =
   Exclude<AllKeys<P>, CanonicalKeyOf<C>>;
 
 /** List keys no vocabulary declares: a param accepted that nothing compiles. */
-type Unclaimed<C extends "image" | "imageEdit" | "video" | "tts" | "stt" | "music", P> =
+type Unclaimed<
+  C extends "image" | "imageEdit" | "video" | "tts" | "stt" | "music" | "voiceClone" | "voiceDesign",
+  P,
+> =
   Exclude<CanonicalKeyOf<C>, AllKeys<P>>;
 
 expectTrue<IsNever<Unlisted<"image", ImageParams>>>();
@@ -63,3 +71,9 @@ expectTrue<IsNever<Unclaimed<"stt", SttParams>>>();
 
 expectTrue<IsNever<Unlisted<"music", MusicParams>>>();
 expectTrue<IsNever<Unclaimed<"music", MusicParams>>>();
+
+expectTrue<IsNever<Unlisted<"voiceClone", VoiceCloneParams>>>();
+expectTrue<IsNever<Unclaimed<"voiceClone", VoiceCloneParams>>>();
+
+expectTrue<IsNever<Unlisted<"voiceDesign", VoiceDesignParams>>>();
+expectTrue<IsNever<Unclaimed<"voiceDesign", VoiceDesignParams>>>();

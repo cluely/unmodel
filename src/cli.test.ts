@@ -538,6 +538,8 @@ test("the unified map names one target per shipped pack", () => {
     "unified.tts",
     "unified.stt",
     "unified.video",
+    "unified.voiceClone",
+    "unified.voiceDesign",
   ]);
   // Never both maps: a `unified.*` id is not a provider endpoint.
   expect(Object.keys(REGISTRY).filter((id) => id.startsWith("unified."))).toEqual([]);

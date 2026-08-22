@@ -158,7 +158,41 @@ const ALL_UNIFIED_ENTRIES: string[] = [
   "tts",
   "stt",
   "music",
+  "voice-clone",
+  "voice-design",
 ];
+
+/**
+ * `unmodel/voice-clone`'s budget: the kernel plus six clone providers'
+ * wire validators, adapters and hand catalogs. Measured 208.7 KiB at landing;
+ * the headroom is one small provider. Two accounting notes from the landing
+ * measurement, both cuts rather than additions:
+ *
+ * - `inworld/audio-bytes.ts` exists because this pack's 4MB sample check
+ *   needs `decodedBase64Bytes`, which lived inside `inworld/stt.ts` — a
+ *   ~30 KiB transcription validator this pack has no other reason to carry.
+ *   The helper moved to an import-free leaf; measured, the move took the pack
+ *   240.9 → 208.7.
+ * - `minimax/tts.ts` was in this graph for one array (`T2A_LANGUAGE_BOOSTS`,
+ *   the clone preview's language hint). The array moved to `minimax/models.ts`
+ *   — the cartesia-languages precedent: the hand catalog already rides in the
+ *   pack for the synthetic rows and the preview pricing.
+ *
+ * What legitimately stays: each provider's `models.ts` (the synthetic
+ * voice-clone rows live there, and MiniMax's speech rows price the preview
+ * synthesis), and the six `voice-clone.ts` wire validators with their zod
+ * schemas.
+ */
+const VOICE_CLONE_PACK_BUDGET_KIB = 220;
+
+/**
+ * `unmodel/voice-design`'s budget: the kernel plus four design providers.
+ * Measured 179.1 KiB at landing. `inworld/audio-bytes.ts` rides in through
+ * `inworld/voice-clone.ts` (the design adapter shares its language checks
+ * and lang-code enum) — a leaf, not the STT validator it replaced; see the
+ * voice-clone accounting above.
+ */
+const VOICE_DESIGN_PACK_BUDGET_KIB = 190;
 
 /**
  * `unmodel/tts`'s budget: the kernel plus fourteen TTS providers — each
@@ -589,6 +623,8 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
   tts: TTS_PACK_BUDGET_KIB,
   stt: STT_PACK_BUDGET_KIB,
   music: MUSIC_PACK_BUDGET_KIB,
+  "voice-clone": VOICE_CLONE_PACK_BUDGET_KIB,
+  "voice-design": VOICE_DESIGN_PACK_BUDGET_KIB,
 };
 
 const FROM_IMPORT = /^[ \t]*(?:import|export)\s[^;]*?\sfrom\s*["']([^"']+)["']/gm;
@@ -894,7 +930,14 @@ describe("unmodel/chat", () => {
       "src/providers/inception/index.ts",
       "src/providers/longcat/index.ts",
       "src/providers/meta/index.ts",
-      "src/providers/minimax/index.ts",
+      // A chat.ts LEAF (the anthropic/google/openai pattern), cut when the
+      // voice-creation wave landed: importing the minimax barrel here dragged
+      // the new voiceClone/voiceDesign validators (plus the media catalog and
+      // tts.ts they import) into every chat bundle, and unlike mistral's
+      // enumerated leakage above, that graph would keep growing with each
+      // minimax media endpoint. The leaf pins chat's minimax cost to the chat
+      // dialect + its two generated catalogs, permanently.
+      "src/providers/minimax/chat.ts",
       // Barrel leakage, measured: mistral's index re-exports its transcribe
       // endpoint. Deleting these three lines requires giving mistral a
       // `chat.ts` leaf, not loosening the assertion.
@@ -1043,8 +1086,8 @@ describe("unmodel/chat/factory", () => {
 });
 
 describe("unified media entries", () => {
-  test("all six are built, so the assertions below assert something", () => {
-    expect(new Set(ALL_UNIFIED_ENTRIES).size).toBe(6);
+  test("all eight are built, so the assertions below assert something", () => {
+    expect(new Set(ALL_UNIFIED_ENTRIES).size).toBe(8);
     for (const name of ALL_UNIFIED_ENTRIES) {
       expect(existsSync(unifiedEntry(name)), `dist entry for unified/${name}`).toBe(true);
     }
@@ -1113,8 +1156,10 @@ describe("unmodel/tts (the first ready-made pack)", () => {
     expect(providers).toEqual(TTS_PACK_PROVIDERS);
 
     // One adapter leaf per provider, and it is what pulled the provider in.
-    // Seven of the fifteen serve more than one category, so their adapters are
-    // split per category and this pack imports only the speech half — see the
+    // Nine of the fifteen serve more than one category (fish-audio and lmnt
+    // joined the split when their voice-clone adapters landed), so their
+    // adapters are split per category and this pack imports only the speech
+    // half — see the
     // independence test below. Google is the newest and the one with the most
     // to lose by a barrel: `google/unified.ts` also exports the Imagen, Veo and
     // stt adapters, and reaching it here would put three more
@@ -1123,8 +1168,10 @@ describe("unmodel/tts (the first ready-made pack)", () => {
       "cartesia",
       "deepgram",
       "elevenlabs",
+      "fish-audio",
       "google",
       "inworld",
+      "lmnt",
       "minimax",
       "openai",
     ]);

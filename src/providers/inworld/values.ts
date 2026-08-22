@@ -26,3 +26,13 @@ export {
 export { INWORLD_STT_MODEL_PARAMS as STT_MODEL_PARAMS, MODELS as STT_MODELS } from "./stt-params";
 
 export { STT_STREAM_MODEL_IDS, STT_SYNC_MODEL_IDS } from "./models";
+
+export {
+  INWORLD_VOICE_CLONE_MODEL_PARAMS as VOICE_CLONE_MODEL_PARAMS,
+  MODELS as VOICE_CLONE_MODELS,
+} from "./voice-clone-params";
+
+export {
+  INWORLD_VOICE_DESIGN_MODEL_PARAMS as VOICE_DESIGN_MODEL_PARAMS,
+  MODELS as VOICE_DESIGN_MODELS,
+} from "./voice-design-params";

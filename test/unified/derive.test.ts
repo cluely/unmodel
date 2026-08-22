@@ -31,6 +31,7 @@ import {
   ratioValue,
   resolveAudioFormat,
   resolveAudioInput,
+  resolveVoiceSamples,
   parseSizeString,
   resolveSizing,
   resolveVoice,
@@ -1502,5 +1503,114 @@ describe("resolveOperation", () => {
     expect(resolveOperation("edit", both, ctxAt("operation")).value).toBe("edit");
     expect(resolveOperation("inpaint", both, ctxAt("operation")).value).toBe("inpaint");
     expect(resolveOperation("outpaint", both, ctxAt("operation")).value).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Voice-clone samples
+// ---------------------------------------------------------------------------
+
+describe("resolveVoiceSamples", () => {
+  const blob = new Blob([new Uint8Array(8)], { type: "audio/wav" });
+  const FILE_ONLY = {
+    accepts: ["file"] as const,
+    limits: { min: 1, max: 20 },
+    transcripts: "optional" as const,
+  };
+  const ONE_CLIP = {
+    accepts: ["file"] as const,
+    limits: { min: 1, max: 1 },
+    transcripts: "unsupported" as const,
+  };
+
+  test("resolves each element to its shape, keeping transcripts where taken", () => {
+    const out = resolveVoiceSamples(
+      [{ audio: { file: blob }, transcript: "hello there" }, { audio: { file: blob } }],
+      FILE_ONLY,
+      ctxAt("samples"),
+    );
+    expect(out.issues).toEqual([]);
+    expect(out.value).toEqual([
+      { kind: "file", file: blob, transcript: "hello there" },
+      { kind: "file", file: blob },
+    ]);
+  });
+
+  test("resolves data and fileId shapes, unwrapping a data: URI", () => {
+    const out = resolveVoiceSamples(
+      [{ audio: { data: "data:audio/mp3;base64,QUJD" } }, { audio: { fileId: "12345" } }],
+      { accepts: ["data", "fileId"], limits: { min: 1, max: 5 }, transcripts: "optional" },
+      ctxAt("samples"),
+    );
+    expect(out.value).toEqual([
+      { kind: "data", data: "QUJD", mimeType: "audio/mp3" },
+      { kind: "fileId", fileId: "12345" },
+    ]);
+  });
+
+  test("a count breach names the bound — 'exactly one recording' when min === max", () => {
+    const out = resolveVoiceSamples(
+      [{ audio: { file: blob } }, { audio: { file: blob } }],
+      ONE_CLIP,
+      ctxAt("samples"),
+    );
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("invalid_shape");
+    expect(out.issues[0]!.message).toContain("exactly one recording");
+    expect(out.issues[0]!.meta).toMatchObject({ min: 1, max: 1, actual: 2 });
+
+    const empty = resolveVoiceSamples([], FILE_ONLY, ctxAt("samples"));
+    expect(empty.issues[0]!.message).toContain("1–20 recordings");
+  });
+
+  test("a transcript at a route without a transcript field is refused at its element", () => {
+    const out = resolveVoiceSamples(
+      [{ audio: { file: blob }, transcript: "hi" }],
+      ONE_CLIP,
+      ctxAt("samples"),
+    );
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("unsupported_param");
+    expect(out.issues[0]!.path).toEqual(["samples", 0, "transcript"]);
+  });
+
+  test("a wrong shape is refused BY NAME at its element's audio path", () => {
+    const out = resolveVoiceSamples(
+      [{ audio: { file: blob } }, { audio: { data: "QUJD" } }],
+      { ...FILE_ONLY, limits: { min: 1, max: 20 } },
+      ctxAt("samples"),
+    );
+    expect(out.value).toBeUndefined();
+    expect(out.issues[0]!.code).toBe("unsupported_param");
+    expect(out.issues[0]!.path).toEqual(["samples", 1, "audio"]);
+    expect(out.issues[0]!.meta).toMatchObject({ given: "data", accepts: ["file"] });
+  });
+
+  test("all bad elements are reported in one pass", () => {
+    const out = resolveVoiceSamples(
+      [{ audio: {} }, { audio: { file: "not-a-blob" } }, "not-an-object"],
+      { accepts: ["file"], limits: { min: 1, max: 20 }, transcripts: "optional" },
+      ctxAt("samples"),
+    );
+    expect(out.value).toBeUndefined();
+    expect(out.issues).toHaveLength(3);
+    expect(out.issues.map((issue) => issue.path)).toEqual([
+      ["samples", 0, "audio"],
+      ["samples", 1, "audio"],
+      ["samples", 2],
+    ]);
+  });
+
+  test("two keys at once and a non-array are invalid_shape", () => {
+    const two = resolveVoiceSamples(
+      [{ audio: { file: blob, data: "QUJD" } }],
+      { accepts: ["file", "data"], limits: { min: 1, max: 20 }, transcripts: "optional" },
+      ctxAt("samples"),
+    );
+    expect(two.issues[0]!.message).toContain("`file` and `data` at once");
+
+    const notArray = resolveVoiceSamples({ file: blob }, FILE_ONLY, ctxAt("samples"));
+    expect(notArray.issues[0]!.code).toBe("invalid_shape");
+    expect(notArray.issues[0]!.message).toContain("array of reference recordings");
   });
 });

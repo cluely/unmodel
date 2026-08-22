@@ -21,7 +21,44 @@ export type {
   FishAudioReferenceAudio,
 } from "./tts";
 
+export {
+  voiceClone,
+  voiceCloneToFormData,
+  CREATE_MODEL_URL,
+  VOICE_CLONE_MODEL_ID,
+  VOICE_CLONE_MAX_VOICES,
+  VOICE_CLONE_MAX_TEXTS,
+  VOICE_CLONE_VISIBILITIES,
+} from "./voice-clone";
+export type { CreateModelParams, FishAudioVisibility } from "./voice-clone";
+
+export {
+  voiceDesign,
+  VOICE_DESIGN_URL,
+  DEFAULT_VOICE_DESIGN_MODEL,
+  VOICE_DESIGN_COST_PER_REQUEST_USD,
+  VOICE_DESIGN_INSTRUCTION_MAX_CHARACTERS,
+  VOICE_DESIGN_REFERENCE_TEXT_MAX_CHARACTERS,
+  VOICE_DESIGN_N_MIN,
+  VOICE_DESIGN_N_MAX,
+  VOICE_DESIGN_SPEED_MAX,
+  VOICE_DESIGN_NUM_STEP_MIN,
+  VOICE_DESIGN_NUM_STEP_MAX,
+} from "./voice-design";
+export type { VoiceDesignBody } from "./voice-design";
+
 // No response checker: POST /v1/tts streams raw audio bytes, not JSON.
 
-export { models, provider, TTS_MODEL_IDS, S2_MODEL_IDS } from "./models";
-export type { FishAudioModelId, FishAudioTtsModelId } from "./models";
+export {
+  models,
+  provider,
+  TTS_MODEL_IDS,
+  S2_MODEL_IDS,
+  VOICE_DESIGN_MODEL_IDS,
+} from "./models";
+export type {
+  FishAudioModelId,
+  FishAudioTtsModelId,
+  FishAudioVoiceDesignModelId,
+  FishAudioVoiceCloneModelId,
+} from "./models";

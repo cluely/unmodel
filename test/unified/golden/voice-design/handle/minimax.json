@@ -1,0 +1,10 @@
+{
+  "ref": "minimax/voice-design",
+  "params": {
+    "prompt": "An elderly British gentleman with a warm, gravelly storytelling tone",
+    "preview_text": "Hello there, traveler. Welcome to the kingdom.",
+    "voice_id": "MyDesignedVoice01"
+  },
+  "url": "https://api.minimax.io/v1/voice_design",
+  "headers": { "content-type": "application/json" }
+}

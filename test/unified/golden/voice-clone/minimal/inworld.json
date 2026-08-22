@@ -1,0 +1,7 @@
+{
+  "ref": "inworld/voice-clone",
+  "samples": [{ "audio": { "data": "UklGRgAAAABXQVZF" } }],
+  "params": { "displayName": "Narrator", "voiceSamples": [{ "audioData": "UklGRgAAAABXQVZF" }] },
+  "url": "https://api.inworld.ai/voices/v1/voices:clone",
+  "headers": { "content-type": "application/json" }
+}

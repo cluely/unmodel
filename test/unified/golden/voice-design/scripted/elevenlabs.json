@@ -1,0 +1,6 @@
+{
+  "ref": "elevenlabs/eleven_multilingual_ttv_v2",
+  "params": { "voice_description": "An elderly British gentleman with a warm, gravelly storytelling tone", "model_id": "eleven_multilingual_ttv_v2", "text": "Once upon a time, in a land far away, there lived a clockmaker who wound the stars each evening and listened to their slow, patient music." },
+  "url": "https://api.elevenlabs.io/v1/text-to-voice/design",
+  "headers": { "content-type": "application/json" }
+}

@@ -9,3 +9,8 @@
  */
 export { tts, type CartesiaTtsResult, type CartesiaTtsWire } from "./unified-tts";
 export { stt, type CartesiaSttResult, type CartesiaSttWire } from "./unified-stt";
+export {
+  voiceClone,
+  type CartesiaVoiceCloneResult,
+  type CartesiaVoiceCloneWire,
+} from "./unified-voice-clone";

@@ -99,6 +99,41 @@ export type {
   ElevenlabsMusicOutputFormat,
 } from "./music";
 
+export {
+  voiceClone,
+  voiceCloneToFormData,
+  VOICES_ADD_URL,
+  VOICE_CLONE_MODEL_ID,
+  VOICE_CLONE_LABEL_KEYS,
+} from "./voice-clone";
+export type {
+  VoicesAddParams,
+  VoicesAddSdkParams,
+  ElevenlabsVoiceCloneLabelKey,
+} from "./voice-clone";
+
+export {
+  voiceDesign,
+  textToVoiceDesignUrl,
+  TEXT_TO_VOICE_DESIGN_URL,
+  DEFAULT_VOICE_DESIGN_MODEL_ID,
+  VOICE_DESIGN_OUTPUT_FORMATS,
+  VOICE_DESIGN_TEXT_MIN_CHARACTERS,
+  VOICE_DESIGN_TEXT_MAX_CHARACTERS,
+} from "./voice-design";
+export type {
+  TextToVoiceDesignParams,
+  TextToVoiceDesignQuery,
+  TextToVoiceDesignSdkParams,
+  ElevenlabsVoiceDesignOutputFormat,
+} from "./voice-design";
+
+export { voiceDesignSave, TEXT_TO_VOICE_URL } from "./voice-design-save";
+export type {
+  CreateVoiceFromPreviewParams,
+  CreateVoiceFromPreviewSdkParams,
+} from "./voice-design-save";
+
 // No TTS checker: /v1/text-to-speech responds with raw audio bytes, not JSON.
 // Likewise /v1/music, which returns the track's bytes.
 export { checkTranscription } from "./check";
@@ -113,6 +148,7 @@ export {
   STT_MODEL_IDS,
   REALTIME_STT_MODEL_IDS,
   MUSIC_MODEL_IDS,
+  VOICE_DESIGN_MODEL_IDS,
   MUSIC_PER_AUDIO_MINUTE,
 } from "./models";
 export type {
@@ -121,4 +157,6 @@ export type {
   ElevenlabsSttModelId,
   ElevenlabsRealtimeSttModelId,
   ElevenlabsMusicModelId,
+  ElevenlabsVoiceDesignModelId,
+  ElevenlabsVoiceCloneModelId,
 } from "./models";

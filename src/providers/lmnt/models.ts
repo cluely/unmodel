@@ -32,7 +32,7 @@ export const LMNT_MAX_CHARACTERS = 5000;
 /** Indie tier overage: "$0.05 per 1K characters after" → USD per 1M characters. */
 const PER_MILLION_CHARACTERS = 50;
 
-export const models = {
+const ttsModels = {
   // "LMNT's current major model in their Blizzard family, which receives
   // regular updates" — 31 languages, voice cloning, accent control, word
   // timestamps, streaming and speech sessions. The only value the `model`
@@ -51,9 +51,35 @@ export const models = {
   },
 } as const satisfies Record<string, ModelInfo>;
 
+/**
+ * Voice cloning — POST /v1/ai/voice, validated by ./voice-clone. The wire has
+ * no model field: `voice-clone` is a SYNTHETIC route-noun id so the validator
+ * has a catalog address. No rate is published for voice creation, so `cost`
+ * is omitted.
+ */
+const voiceCloneModels = {
+  "voice-clone": {
+    id: "voice-clone",
+    name: "LMNT Voice Cloning",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["audio"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+} as const satisfies Record<string, ModelInfo>;
+
+export const models = {
+  ...ttsModels,
+  ...voiceCloneModels,
+} as const satisfies Record<string, ModelInfo>;
+
 export type LmntModelId = keyof typeof models;
-/** Every LMNT model is a TTS model — there is no public STT API. */
-export type LmntTtsModelId = LmntModelId;
+/** Model ids the speech endpoints' `model` field documents. */
+export type LmntTtsModelId = keyof typeof ttsModels;
+/** The synthetic id addressing POST /v1/ai/voice (no model field on the wire). */
+export type LmntVoiceCloneModelId = keyof typeof voiceCloneModels;
 
 /** Runtime allow-list backing the speech endpoints' model gate. */
-export const TTS_MODEL_IDS: readonly string[] = Object.keys(models);
+export const TTS_MODEL_IDS: readonly string[] = Object.keys(ttsModels);

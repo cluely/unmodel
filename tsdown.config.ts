@@ -32,6 +32,8 @@ export default defineConfig({
     "unified/tts": "src/unified/tts.ts",
     "unified/stt": "src/unified/stt.ts",
     "unified/music": "src/unified/music.ts",
+    "unified/voice-clone": "src/unified/voice-clone.ts",
+    "unified/voice-design": "src/unified/voice-design.ts",
     "providers/alibaba/index": "src/providers/alibaba/index.ts",
     "providers/alibaba/types": "src/providers/alibaba/types.ts",
     "providers/amazon-bedrock/index": "src/providers/amazon-bedrock/index.ts",

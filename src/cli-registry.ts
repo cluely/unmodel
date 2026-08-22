@@ -194,6 +194,39 @@ export const REGISTRY = {
   "revai.stt": () => import("./providers/revai").then((m) => asCli(m.stt)),
   "speechmatics.stt": () => import("./providers/speechmatics").then((m) => asCli(m.stt)),
 
+  // Voice generation — creating a voice rather than speaking with one. Every
+  // provider addresses its clone-from-audio route as `voiceClone` and its
+  // design-from-description route as `voiceDesign` (the address-vs-wire law):
+  // the wire spellings differ wildly (/v1/voices/add, /model,
+  // voices:clone, /v1/voice_clone, /v1/text-to-voice/design,
+  // /v1/voice-design), and the URL constants and wire types keep them — but
+  // the endpoint id a caller types is uniform. Two-phase design flows qualify
+  // their save step by what it does (`voiceDesignSave`, `voiceDesignPublish`);
+  // the clone routes whose samples ride as JSON (inline base64 or a file id)
+  // are here, the Blob-taking ones under MULTIPART_ONLY below.
+  "elevenlabs.voiceDesign": () =>
+    import("./providers/elevenlabs").then((m) => asCli(m.voiceDesign)),
+  "elevenlabs.voiceDesignSave": () =>
+    import("./providers/elevenlabs").then((m) => asCli(m.voiceDesignSave)),
+  "fish-audio.voiceDesign": () =>
+    import("./providers/fish-audio").then((m) => asCli(m.voiceDesign)),
+  // Inline base64 samples, so JSON params can express it — not multipart.
+  "inworld.voiceClone": () =>
+    import("./providers/inworld").then((m) => asCli(m.voiceClone)),
+  "inworld.voiceDesign": () =>
+    import("./providers/inworld").then((m) => asCli(m.voiceDesign)),
+  "inworld.voiceDesignPublish": () =>
+    import("./providers/inworld").then((m) => asCli(m.voiceDesignPublish)),
+  // JSON with a file-id handle from the separate upload prerequisite.
+  "minimax.voiceClone": () =>
+    import("./providers/minimax").then((m) => asCli(m.voiceClone)),
+  "minimax.voiceDesign": () =>
+    import("./providers/minimax").then((m) => asCli(m.voiceDesign)),
+  // The consent-challenge prerequisite of speechify.voiceClone (which itself
+  // is multipart-only, below).
+  "speechify.voiceConsentChallenge": () =>
+    import("./providers/speechify").then((m) => asCli(m.voiceConsentChallenge)),
+
   // Realtime session configs — the JSON config object a socket surface takes
   // (a connection-URL query set, a first configuration message, or a per-chunk
   // generation message), never the socket lifecycle. These validate from the
@@ -296,6 +329,15 @@ export const UNIFIED = {
   "unified.tts": () => import("./unified/tts").then((m) => asCli(m.tts)),
   "unified.stt": () => import("./unified/stt").then((m) => asCli(m.stt)),
   "unified.video": () => import("./unified/video").then((m) => asCli(m.video)),
+  // Registered even though every clone provider here but inworld/minimax takes
+  // its samples as a `Blob`: canonical `{ data }` and `{ fileId }` samples are
+  // JSON-expressible, and a ref pointed at a file-only route is refused by
+  // that adapter with a message naming the shapes it does take — the
+  // `unified.stt` argument, one category over.
+  "unified.voiceClone": () =>
+    import("./unified/voice-clone").then((m) => asCli(m.voiceClone)),
+  "unified.voiceDesign": () =>
+    import("./unified/voice-design").then((m) => asCli(m.voiceDesign)),
 } satisfies Record<string, () => Promise<CliValidator>>;
 
 /** Every unified-category id the CLI serves. */
@@ -324,6 +366,11 @@ export const MULTIPART_ONLY = {
   "stability.imageEditRemoveBackground": "unmodel/stability",
   "stability.musicFromAudio": "unmodel/stability",
   "stability.musicInpaint": "unmodel/stability",
+  "elevenlabs.voiceClone": "unmodel/elevenlabs",
+  "fish-audio.voiceClone": "unmodel/fish-audio",
+  "cartesia.voiceClone": "unmodel/cartesia",
+  "lmnt.voiceClone": "unmodel/lmnt",
+  "speechify.voiceClone": "unmodel/speechify",
 } satisfies Record<string, `unmodel/${string}`>;
 
 /** Every endpoint id the CLI refuses because its params need a `Blob`. */

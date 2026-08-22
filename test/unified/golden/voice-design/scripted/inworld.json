@@ -1,0 +1,6 @@
+{
+  "ref": "inworld/voice-design",
+  "params": { "designPrompt": "An elderly British gentleman with a warm, gravelly storytelling tone", "previewText": "Once upon a time, in a land far away, there lived a clockmaker who wound the stars each evening and listened to their slow, patient music." },
+  "url": "https://api.inworld.ai/voices/v1/voices:design",
+  "headers": { "content-type": "application/json" }
+}

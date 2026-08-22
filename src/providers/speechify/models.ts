@@ -34,7 +34,7 @@ export const provider = {
   doc: "https://docs.speechify.ai",
 } as const satisfies ProviderInfo;
 
-export const models = {
+const ttsModels = {
   // "Streaming-native model with the lowest time-to-first-byte and richest
   // expressivity, English only today." Recommended for new English work.
   "simba-3.2": {
@@ -94,13 +94,40 @@ export const models = {
   },
 } as const satisfies Record<string, ModelInfo>;
 
+/**
+ * Voice cloning — POST /v1/voices, validated by ./voice-clone. The wire has
+ * no model field: `voice-clone` is a SYNTHETIC route-noun id so the validator
+ * has a catalog address (the response's `models[]` says which synthesis
+ * models serve the new voice). No rate is published for voice creation, so
+ * `cost` is omitted.
+ */
+const voiceCloneModels = {
+  "voice-clone": {
+    id: "voice-clone",
+    name: "Speechify Voice Cloning",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["audio"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+} as const satisfies Record<string, ModelInfo>;
+
+export const models = {
+  ...ttsModels,
+  ...voiceCloneModels,
+} as const satisfies Record<string, ModelInfo>;
+
 export type SpeechifyModelId = keyof typeof models;
-/** Every catalogued Speechify model serves the synthesis routes. */
-export type SpeechifyTtsModelId = SpeechifyModelId;
+/** Model ids the synthesis routes serve. */
+export type SpeechifyTtsModelId = keyof typeof ttsModels;
+/** The synthetic id addressing POST /v1/voices (no model field on the wire). */
+export type SpeechifyVoiceCloneModelId = keyof typeof voiceCloneModels;
 
 export const SPEECHIFY_MODEL_IDS = [
   "simba-english",
   "simba-multilingual",
   "simba-3.0",
   "simba-3.2",
-] as const satisfies readonly SpeechifyModelId[];
+] as const satisfies readonly SpeechifyTtsModelId[];

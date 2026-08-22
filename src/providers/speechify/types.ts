@@ -38,9 +38,13 @@
  *
  * - `speechify.tts` → `TtsBody`
  * - `speechify.ttsStream` → `TtsStreamBody`
+ * - `speechify.voiceClone` → `VoiceCloneBody`
+ * - `speechify.voiceConsentChallenge` → `VoiceConsentChallengeBody`
  */
 
 import type { AudioSpeechBody, AudioStreamParams } from "./tts";
+import type { CreateVoiceParams } from "./voice-clone";
+import type { ConsentChallengeParams } from "./voice-consent-challenge";
 
 export type {
   AudioSpeechBody,
@@ -54,7 +58,15 @@ export type {
   SpeechifyOptions,
 } from "./tts";
 
-export type { SpeechifyModelId, SpeechifyTtsModelId } from "./models";
+export type { CreateVoiceParams, SpeechifyVoiceGender } from "./voice-clone";
+
+export type { ConsentChallengeParams } from "./voice-consent-challenge";
+
+export type {
+  SpeechifyModelId,
+  SpeechifyTtsModelId,
+  SpeechifyVoiceCloneModelId,
+} from "./models";
 
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.
@@ -63,3 +75,5 @@ export type { SpeechifyModelId, SpeechifyTtsModelId } from "./models";
 
 export type TtsBody = AudioSpeechBody;
 export type TtsStreamBody = AudioStreamParams;
+export type VoiceCloneBody = CreateVoiceParams;
+export type VoiceConsentChallengeBody = ConsentChallengeParams;

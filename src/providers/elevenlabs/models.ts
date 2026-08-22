@@ -22,12 +22,14 @@
 //   OUTPUT. ./music computes the estimate from the requested track length.
 //
 // COVERAGE: this catalog lists every model id on elevenlabs.io/docs/models,
-// including ids no unmodel endpoint can reach today (realtime STT, music,
-// sound effects, speech-to-speech, text-to-voice). Each carries a comment
-// naming the API that serves it; the text-to-speech and speech-to-text
-// validators gate on the modality groups below so a music/realtime id is
-// rejected instead of silently accepted. Models whose USD rate is not
-// published on elevenlabs.io/pricing/api omit `cost` rather than guess.
+// including ids no unmodel endpoint can reach today (realtime STT, sound
+// effects, speech-to-speech). Each carries a comment naming the API that
+// serves it; the text-to-speech, speech-to-text and voice-design validators
+// gate on the modality groups below so a music/realtime id is rejected
+// instead of silently accepted. Models whose USD rate is not published on
+// elevenlabs.io/pricing/api omit `cost` rather than guess. One id (`ivc`) is
+// SYNTHETIC — POST /v1/voices/add has no model field, and the id names the
+// documented mode so the voice-clone validator has a catalog address.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -206,8 +208,10 @@ const speechToSpeechModels = {
 } as const satisfies Record<string, ModelInfo>;
 
 /**
- * Text-to-voice (voice design) models — POST /v1/text-to-voice, which unmodel
- * does not validate. No separate USD rate is published.
+ * Text-to-voice (voice design) models — POST /v1/text-to-voice/design,
+ * validated by ./voice-design (saving a preview is POST /v1/text-to-voice,
+ * ./voice-design-save). No separate USD rate is published, so `cost` is
+ * omitted.
  */
 const textToVoiceModels = {
   eleven_ttv_v3: {
@@ -228,6 +232,28 @@ const textToVoiceModels = {
     toolCall: false,
     openWeights: false,
     modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+} as const satisfies Record<string, ModelInfo>;
+
+/**
+ * Instant Voice Cloning — POST /v1/voices/add, validated by ./voice-clone.
+ * The wire has no model field: `ivc` is a synthetic id naming the documented
+ * mode (Instant Voice Cloning), which also reserves `pvc` for the separate
+ * four-step Professional Voice Cloning flow (POST /v1/voices/pvc + samples /
+ * verification / train), which unmodel does not validate. No USD rate is
+ * published — cloning is bundled into subscription voice slots — so `cost`
+ * is omitted.
+ */
+const voiceCloneModels = {
+  ivc: {
+    id: "ivc",
+    name: "Instant Voice Cloning",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["audio"], output: ["audio"] },
     limit: { context: 0 },
   },
 } as const satisfies Record<string, ModelInfo>;
@@ -279,6 +305,7 @@ export const models = {
   ...realtimeSttModels,
   ...speechToSpeechModels,
   ...textToVoiceModels,
+  ...voiceCloneModels,
   ...generativeAudioModels,
 } as const satisfies Record<string, ModelInfo>;
 
@@ -294,6 +321,10 @@ export type ElevenlabsTtsModelId = keyof typeof ttsModels;
 export type ElevenlabsMusicModelId = keyof typeof musicModels;
 /** Model ids batch POST /v1/speech-to-text accepts. */
 export type ElevenlabsSttModelId = keyof typeof sttModels;
+/** Model ids POST /v1/text-to-voice/design accepts. */
+export type ElevenlabsVoiceDesignModelId = keyof typeof textToVoiceModels;
+/** The synthetic id addressing POST /v1/voices/add (no model field on the wire). */
+export type ElevenlabsVoiceCloneModelId = keyof typeof voiceCloneModels;
 /** WebSocket-only STT ids — not accepted by the batch endpoint. */
 export type ElevenlabsRealtimeSttModelId = keyof typeof realtimeSttModels;
 export type ElevenlabsModelId = keyof typeof models;
@@ -310,3 +341,5 @@ export const STT_MODEL_IDS: readonly string[] = Object.keys(sttModels);
 export const REALTIME_STT_MODEL_IDS: readonly string[] = Object.keys(realtimeSttModels);
 /** Runtime allow-list backing the music endpoint's model gate. */
 export const MUSIC_MODEL_IDS: readonly string[] = Object.keys(musicModels);
+/** Runtime allow-list backing the voice-design endpoint's model gate. */
+export const VOICE_DESIGN_MODEL_IDS: readonly string[] = Object.keys(textToVoiceModels);

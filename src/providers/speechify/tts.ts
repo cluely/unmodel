@@ -38,8 +38,9 @@
  *
  * NOT VALIDATED HERE: POST /v1/audio/stream/with-timestamps (an SSE route
  * whose body matches `stream`, but which rejects the two legacy Simba 1.6
- * models with 400 `speech_marks_unsupported`), the dialogue route, and the
- * voice-cloning routes.
+ * models with 400 `speech_marks_unsupported`) and the dialogue route. The
+ * voice-cloning routes are validated by ./voice-clone and
+ * ./voice-consent-challenge.
  *
  * `.toSdk("speechify")` is the identity on `tts`: @speechify/api's
  * `GetSpeechRequest` is snake_case with exactly the wire keys. On `stream` it

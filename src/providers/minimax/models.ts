@@ -50,6 +50,52 @@ export const T2A_HD_PER_MILLION_CHARACTERS = 100;
 /** $60 per 1M characters — the speech-*-turbo tiers. */
 export const T2A_TURBO_PER_MILLION_CHARACTERS = 60;
 
+/** `language_boost` values (plus "auto"). */
+export const T2A_LANGUAGE_BOOSTS = [
+  "Chinese",
+  "Chinese,Yue",
+  "English",
+  "Arabic",
+  "Russian",
+  "Spanish",
+  "French",
+  "Portuguese",
+  "German",
+  "Turkish",
+  "Dutch",
+  "Ukrainian",
+  "Vietnamese",
+  "Indonesian",
+  "Japanese",
+  "Italian",
+  "Korean",
+  "Thai",
+  "Polish",
+  "Romanian",
+  "Greek",
+  "Czech",
+  "Finnish",
+  "Hindi",
+  "Bulgarian",
+  "Danish",
+  "Hebrew",
+  "Malay",
+  "Persian",
+  "Slovak",
+  "Swedish",
+  "Croatian",
+  "Filipino",
+  "Hungarian",
+  "Norwegian",
+  "Slovenian",
+  "Catalan",
+  "Nynorsk",
+  "Tamil",
+  "Afrikaans",
+  "auto",
+] as const;
+export type MinimaxLanguageBoost = (typeof T2A_LANGUAGE_BOOSTS)[number];
+
 /** Shared shape of every T2A catalog entry. */
 const T2A = {
   attachment: false,
@@ -230,15 +276,53 @@ export const videoV2Models = {
  * TEXT catalog is generated — `src/catalog/minimax.gen.ts` — and is exported
  * from ./index as `models`; this one is exported there as `mediaModels`.
  */
+/** "$30 per 1M characters" — the voice-design preview-audio rate. */
+export const VOICE_DESIGN_PREVIEW_PER_MILLION_CHARACTERS = 30;
+
+/**
+ * Voice creation — POST /v1/voice_clone (./voice-clone) and
+ * POST /v1/voice_design (./voice-design). Neither wire has a model field:
+ * both ids are SYNTHETIC route nouns so the validators have catalog
+ * addresses. The design row carries the documented preview rate; cloning
+ * publishes no per-request rate (only its optional preview is billed,
+ * through the chosen speech model), so its `cost` is omitted.
+ */
+export const voiceModels = {
+  "voice-clone": {
+    id: "voice-clone",
+    name: "MiniMax Voice Cloning",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["audio"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+  "voice-design": {
+    id: "voice-design",
+    name: "MiniMax Voice Design",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+    cost: { perMillionCharacters: VOICE_DESIGN_PREVIEW_PER_MILLION_CHARACTERS },
+  },
+} as const satisfies Record<string, ModelInfo>;
+
 export const models = {
   ...speechModels,
   ...videoModels,
   ...videoV2Models,
+  ...voiceModels,
 } as const satisfies Record<string, ModelInfo>;
 
 export type MinimaxSpeechModelId = keyof typeof speechModels;
 export type MinimaxVideoGenerationModelId = keyof typeof videoModels;
 export type MinimaxVideoV2ModelId = keyof typeof videoV2Models;
+/** The synthetic ids addressing the voice-creation routes (no model fields on those wires). */
+export type MinimaxVoiceModelId = keyof typeof voiceModels;
 export type MinimaxMediaModelId = keyof typeof models;
 
 /** Runtime allow-list backing the t2a endpoint's model gate. */

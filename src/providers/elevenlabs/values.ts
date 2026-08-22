@@ -33,3 +33,13 @@ export {
   MODELS as MUSIC_MODELS,
   FORMAT as MUSIC_FORMAT_SPEC,
 } from "./music-params";
+
+export {
+  ELEVENLABS_VOICE_CLONE_MODEL_PARAMS as VOICE_CLONE_MODEL_PARAMS,
+  MODELS as VOICE_CLONE_MODELS,
+} from "./voice-clone-params";
+
+export {
+  ELEVENLABS_VOICE_DESIGN_MODEL_PARAMS as VOICE_DESIGN_MODEL_PARAMS,
+  MODELS as VOICE_DESIGN_MODELS,
+} from "./voice-design-params";

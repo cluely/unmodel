@@ -324,13 +324,15 @@ describe("chat (amendment A1)", () => {
    * re-exports its transcription endpoint, and ~22 KiB of transcribe schemas
    * ride into `unmodel/chat` because of it.)
    *
-   * So the registry's imports are enumerated. Three providers ship a dedicated
-   * `chat.ts` leaf and must use it; the rest have only a barrel, which is the
-   * honest module for them until they grow one.
+   * So the registry's imports are enumerated. Four providers ship a dedicated
+   * `chat.ts` leaf and must use it (minimax grew one when the voice-creation
+   * wave made its barrel too expensive for a chat bundle); the rest have only
+   * a barrel, which is the honest module for them until they grow one.
    */
   const CHAT_REGISTRY_IMPORTS = new Set([
     "src/providers/anthropic/chat.ts",
     "src/providers/google/chat.ts",
+    "src/providers/minimax/chat.ts",
     "src/providers/openai/chat.ts",
     ...[
       "alibaba",
@@ -345,7 +347,6 @@ describe("chat (amendment A1)", () => {
       "inception",
       "longcat",
       "meta",
-      "minimax",
       "mistral",
       "moonshotai",
       "nebius",
@@ -588,7 +589,7 @@ describe("unified media surfaces (amendment A5)", () => {
 
   test("A6 — a category entry imports only the kernel, itself, and adapter leaves", () => {
     const entries = FILES.filter((f) => under(f, "src/unified"));
-    expect(entries.length).toBe(6);
+    expect(entries.length).toBe(8);
 
     const violations: string[] = [];
     for (const file of entries) {
@@ -644,11 +645,20 @@ describe("unified media surfaces (amendment A5)", () => {
     expect(violations).toEqual([]);
   });
 
-  test("the six entries exist, one per category", () => {
+  test("the eight entries exist, one per category", () => {
     const names = FILES.filter((f) => under(f, "src/unified"))
       .map((f) => f.slice("src/unified/".length, -".ts".length))
       .sort();
-    expect(names).toEqual(["image", "image-edit", "music", "stt", "tts", "video"]);
+    expect(names).toEqual([
+      "image",
+      "image-edit",
+      "music",
+      "stt",
+      "tts",
+      "video",
+      "voice-clone",
+      "voice-design",
+    ]);
   });
 });
 

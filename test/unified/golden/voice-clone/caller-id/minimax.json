@@ -1,0 +1,7 @@
+{
+  "ref": "minimax/voice-clone",
+  "samples": [{ "audio": { "fileId": "123456789" } }],
+  "params": { "file_id": 123456789, "voice_id": "MyVoice01" },
+  "url": "https://api.minimax.io/v1/voice_clone",
+  "headers": { "content-type": "application/json" }
+}

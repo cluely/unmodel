@@ -40,11 +40,15 @@
  * - `minimax.tts` → `TtsBody`
  * - `minimax.video` → `VideoBody`
  * - `minimax.videoV2` → `VideoV2Body`
+ * - `minimax.voiceClone` → `VoiceCloneBody`
+ * - `minimax.voiceDesign` → `VoiceDesignBody`
  */
 
 import type { T2aParams } from "./tts";
 import type { VideoGenerationParams } from "./video";
 import type { VideoGenerationV2Params } from "./video-v2";
+import type { VoiceCloneParams } from "./voice-clone";
+import type { VoiceDesignParams } from "./voice-design";
 import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
 import type { MinimaxTextModelId } from "../../catalog/minimax.gen";
 
@@ -85,10 +89,20 @@ export type {
 } from "./video-v2";
 
 export type {
+  VoiceCloneParams,
+  MinimaxClonePrompt,
+  MinimaxVoiceUpload,
+  MinimaxVoiceUploadPurpose,
+} from "./voice-clone";
+
+export type { VoiceDesignParams } from "./voice-design";
+
+export type {
   MinimaxMediaModelId,
   MinimaxSpeechModelId,
   MinimaxVideoGenerationModelId,
   MinimaxVideoV2ModelId,
+  MinimaxVoiceModelId,
 } from "./models";
 
 // The OpenAI-compatible chat dialect this overlay speaks. The wire leaf is the
@@ -135,3 +149,5 @@ export type ChatBody<ModelId extends string = MinimaxTextModelId> = ChatCompleti
 export type TtsBody = T2aParams;
 export type VideoBody = VideoGenerationParams;
 export type VideoV2Body = VideoGenerationV2Params;
+export type VoiceCloneBody = VoiceCloneParams;
+export type VoiceDesignBody = VoiceDesignParams;

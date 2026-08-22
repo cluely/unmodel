@@ -234,9 +234,41 @@ const sttModels = {
   },
 } as const satisfies Record<string, ModelInfo>;
 
+/**
+ * Voice creation — POST /voices/v1/voices:clone (./voice-clone) and
+ * POST /voices/v1/voices:design (./voice-design). Neither wire has a model
+ * field: both ids are SYNTHETIC route nouns so the validators have catalog
+ * addresses. inworld.ai/pricing publishes no per-request rate for either
+ * (cloned-voice storage is subscription-gated; design is a research
+ * preview), so `cost` is omitted.
+ */
+const voiceModels = {
+  "voice-clone": {
+    id: "voice-clone",
+    name: "Inworld Voice Cloning",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["audio"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+  "voice-design": {
+    id: "voice-design",
+    name: "Inworld Voice Design",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+} as const satisfies Record<string, ModelInfo>;
+
 export const models = {
   ...ttsModels,
   ...sttModels,
+  ...voiceModels,
 } as const satisfies Record<string, ModelInfo>;
 
 /**
@@ -244,11 +276,13 @@ export const models = {
  * catalog consumers want); an endpoint that must not resolve the other
  * modality's ids validates against one of these instead.
  */
-export { ttsModels, sttModels };
+export { ttsModels, sttModels, voiceModels };
 
 export type InworldModelId = keyof typeof models;
 /** Model ids POST /tts/v1/voice and the TTS WebSocket accept. */
 export type InworldTtsModelId = keyof typeof ttsModels;
+/** The synthetic ids addressing the voice-creation routes (no model fields on those wires). */
+export type InworldVoiceModelId = keyof typeof voiceModels;
 /** Model ids the STT router accepts, on either endpoint. */
 export type InworldSttModelId = keyof typeof sttModels;
 

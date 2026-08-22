@@ -42,6 +42,9 @@
  * - `elevenlabs.stt` → `SttBody`
  * - `elevenlabs.textToSpeechStreamInput` → `TextToSpeechStreamInputBody`
  * - `elevenlabs.tts` → `TtsBody`
+ * - `elevenlabs.voiceClone` → `VoiceCloneBody`
+ * - `elevenlabs.voiceDesign` → `VoiceDesignBody`
+ * - `elevenlabs.voiceDesignSave` → `VoiceDesignSaveBody`
  */
 
 import type { MusicParams } from "./music";
@@ -49,6 +52,9 @@ import type { SpeechToTextRealtimeParams } from "./speech-to-text-realtime";
 import type { SpeechToTextParams } from "./stt";
 import type { TextToSpeechStreamInputParams } from "./text-to-speech-stream-input";
 import type { TextToSpeechParams } from "./tts";
+import type { VoicesAddParams } from "./voice-clone";
+import type { TextToVoiceDesignParams } from "./voice-design";
+import type { CreateVoiceFromPreviewParams } from "./voice-design-save";
 
 export type {
   TextToSpeechParams,
@@ -95,6 +101,24 @@ export type {
   ElevenlabsMusicOutputFormat,
 } from "./music";
 
+export type {
+  VoicesAddParams,
+  VoicesAddSdkParams,
+  ElevenlabsVoiceCloneLabelKey,
+} from "./voice-clone";
+
+export type {
+  TextToVoiceDesignParams,
+  TextToVoiceDesignQuery,
+  TextToVoiceDesignSdkParams,
+  ElevenlabsVoiceDesignOutputFormat,
+} from "./voice-design";
+
+export type {
+  CreateVoiceFromPreviewParams,
+  CreateVoiceFromPreviewSdkParams,
+} from "./voice-design-save";
+
 export type { ElevenlabsTranscriptionLike, ElevenlabsTranscriptLike } from "./check";
 
 export type {
@@ -103,6 +127,8 @@ export type {
   ElevenlabsSttModelId,
   ElevenlabsRealtimeSttModelId,
   ElevenlabsMusicModelId,
+  ElevenlabsVoiceDesignModelId,
+  ElevenlabsVoiceCloneModelId,
 } from "./models";
 
 // ---------------------------------------------------------------------------
@@ -121,3 +147,6 @@ export type SpeechToTextRealtimeBody = SpeechToTextRealtimeParams;
 export type SttBody = SpeechToTextParams;
 export type TextToSpeechStreamInputBody = TextToSpeechStreamInputParams;
 export type TtsBody = TextToSpeechParams;
+export type VoiceCloneBody = VoicesAddParams;
+export type VoiceDesignBody = TextToVoiceDesignParams;
+export type VoiceDesignSaveBody = CreateVoiceFromPreviewParams;

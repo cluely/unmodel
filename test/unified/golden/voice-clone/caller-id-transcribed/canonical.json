@@ -1,0 +1,5 @@
+{
+  "operation": "clone",
+  "voiceId": "MyVoice01",
+  "noiseReduction": true
+}

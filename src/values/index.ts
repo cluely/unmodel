@@ -67,15 +67,17 @@ export {
   RESOLUTION_TIERS,
   TIMESTAMP_GRANULARITIES,
   VIDEO_RESOLUTIONS,
+  VOICE_SAMPLE_KINDS,
+  VOICE_VISIBILITIES,
 } from "../core/unified/values";
 
 /**
- * The exact top-level params each of the six categories accepts, keyed by
+ * The exact top-level params each of the eight categories accepts, keyed by
  * category.
  *
  * This is not documentation of the vocabulary — it *is* the vocabulary: the
  * kernel builds its envelope check from this very object, so a key that is not
- * in the list here is a key `image()`, `tts()` and their four siblings reject
+ * in the list here is a key `image()`, `tts()` and their six siblings reject
  * with `unsupported_param` before compile. Reading it client-side is how a form
  * knows which fields to render, and `test/types/canonical-keys.test-d.ts` pins
  * it against the `*Params` types in both directions.

@@ -24,7 +24,7 @@ import { chat as huggingfaceChat } from "../providers/huggingface";
 import { chat as inceptionChat } from "../providers/inception";
 import { chat as longcatChat } from "../providers/longcat";
 import { chat as metaChat } from "../providers/meta";
-import { chat as minimaxChat } from "../providers/minimax";
+import { chat as minimaxChat } from "../providers/minimax/chat";
 import { chat as mistralChat } from "../providers/mistral";
 import { chat as moonshotaiChat } from "../providers/moonshotai";
 import { chat as nebiusChat } from "../providers/nebius";

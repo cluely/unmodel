@@ -1,0 +1,7 @@
+{
+  "ref": "lmnt/voice-clone",
+  "samples": [{ "audio": { "file": "@blob" } }],
+  "params": { "file": {"@blob":{"size":64,"type":"audio/wav"}}, "name": "Narrator" },
+  "url": "https://api.lmnt.com/v1/ai/voice",
+  "headers": { "lmnt-version": "1.2" }
+}

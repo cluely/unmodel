@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { tts, TTS_VOICE_URL, INWORLD_TTS_MAX_CHARACTERS } from "./tts";
-import { models, sttModels, ttsModels } from "./models";
+import { models, sttModels, ttsModels, voiceModels } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -242,10 +242,11 @@ describe("inworld catalog", () => {
     }
   });
 
-  test("the provider catalog is the two route-scoped catalogs, merged", () => {
+  test("the provider catalog is the route-scoped catalogs, merged", () => {
     expect(Object.keys(models)).toEqual([
       ...Object.keys(ttsModels),
       ...Object.keys(sttModels),
+      ...Object.keys(voiceModels),
     ]);
   });
 });

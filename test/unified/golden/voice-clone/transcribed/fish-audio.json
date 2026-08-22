@@ -1,0 +1,15 @@
+{
+  "ref": "fish-audio/fast",
+  "samples": [
+    { "audio": { "file": "@blob" }, "transcript": "Hello there." },
+    { "audio": { "file": "@blob" }, "transcript": "General Kenobi." }
+  ],
+  "params": {
+    "type": "tts", "title": "Narrator", "train_mode": "fast",
+    "voices": [{"@blob":{"size":64,"type":"audio/wav"}}, {"@blob":{"size":64,"type":"audio/wav"}}],
+    "texts": ["Hello there.", "General Kenobi."]
+  },
+  "url": "https://api.fish.audio/model",
+  "headers": {},
+  "issues": [{ "code": "invalid_shape", "path": ["visibility"] }]
+}

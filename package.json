@@ -95,6 +95,14 @@
       "types": "./dist/unified/music.d.ts",
       "default": "./dist/unified/music.js"
     },
+    "./voice-clone": {
+      "types": "./dist/unified/voice-clone.d.ts",
+      "default": "./dist/unified/voice-clone.js"
+    },
+    "./voice-design": {
+      "types": "./dist/unified/voice-design.d.ts",
+      "default": "./dist/unified/voice-design.js"
+    },
     "./alibaba": {
       "types": "./dist/providers/alibaba/index.d.ts",
       "default": "./dist/providers/alibaba/index.js"

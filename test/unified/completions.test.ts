@@ -1947,3 +1947,36 @@ video({ model_name: model, prompt: "x", duration: "¦" });`),
     ).toEqual(["on", "off"]);
   });
 });
+
+describe("unified voice creation: narrowing reaches the editor", () => {
+  test("the clone ref union completes the synthetic and real ids alike", () => {
+    const refs = completionsAt(`import { voiceClone } from "./src/unified/voice-clone";
+voiceClone({ model: "¦", operation: "clone", name: "n", samples: [] });`);
+    expect(refs).toContain("elevenlabs/ivc");
+    expect(refs).toContain("fish-audio/fast");
+    expect(refs).toContain("minimax/voice-clone");
+    expect(refs).toContain("cartesia/voice-clone");
+  });
+
+  test("clone language completes Cartesia's 44 without gating them", () => {
+    const entries = completionsAt(`import { voiceClone } from "./src/unified/voice-clone";
+voiceClone({ model: "cartesia/voice-clone", operation: "clone", name: "n", samples: [], language: "¦" });`);
+    // The 44 the clone route requires one of; the `(string & {})` tail has
+    // not eaten the literals.
+    expect(entries).toContain("tl");
+    expect(entries).toContain("ur");
+    expect(entries.length).toBe(44);
+  });
+
+  test("design extras narrow per model: the ttv_v3-only pair", () => {
+    const v3 = completionsAt(`import { voiceDesign } from "./src/unified/voice-design";
+voiceDesign({ model: "elevenlabs/eleven_ttv_v3", operation: "design", prompt: "p", ¦ });`);
+    expect(v3).toContain("prompt_strength");
+    expect(v3).toContain("reference_audio_base64");
+
+    const v2 = completionsAt(`import { voiceDesign } from "./src/unified/voice-design";
+voiceDesign({ model: "elevenlabs/eleven_multilingual_ttv_v2", operation: "design", prompt: "p", ¦ });`);
+    expect(v2).toContain("loudness");
+    expect(v2).not.toContain("prompt_strength");
+  });
+});

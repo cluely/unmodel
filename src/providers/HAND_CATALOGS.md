@@ -17,3 +17,11 @@ Rules, identical to the codegen contract:
   `perAudioMinute` (STT), `perImage`, `perVideoSecond`. TTS input caps live on
   `ModelLimit.characters`. Cost helpers: `computeCharacterCostUSD` /
   `computeAudioMinutesCostUSD` in `src/core/cost.ts`.
+- **Synthetic ids** — a validator whose wire has NO model field still needs a
+  catalog address (the unified `"provider/model"` ref, `unknown_model`, and
+  every catalog-keyed check hang off one). The id names the documented mode
+  when the wire has one (`elevenlabs/ivc` — Instant Voice Cloning, reserving
+  `pvc`; `fish-audio/fast` — the `train_mode` const), and the route noun when
+  it does not (`cartesia/voice-clone`, `inworld/voice-design`, …). Every
+  synthetic row carries a comment saying it is synthetic and which route it
+  addresses, and the validator pins it via `modelId: () => "<id>"`.

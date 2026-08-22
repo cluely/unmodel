@@ -26,7 +26,8 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCharacterCostUSD } from "../../core/cost";
-import { speechModels, SPEECH_MODEL_IDS, type MinimaxSpeechModelId } from "./models";
+import { speechModels, SPEECH_MODEL_IDS, type MinimaxSpeechModelId, T2A_LANGUAGE_BOOSTS, type MinimaxLanguageBoost,
+} from "./models";
 
 export const T2A_URL = "https://api.minimax.io/v1/t2a_v2";
 /** Documented lower-latency alternative host for the same endpoint. */
@@ -65,51 +66,11 @@ export const T2A_SAMPLE_RATES = [8000, 16000, 22050, 24000, 32000, 44100] as con
 /** `audio_setting.bitrate` values (mp3 only). */
 export const T2A_BITRATES = [32000, 64000, 128000, 256000] as const;
 
-/** `language_boost` values (plus "auto"). */
-export const T2A_LANGUAGE_BOOSTS = [
-  "Chinese",
-  "Chinese,Yue",
-  "English",
-  "Arabic",
-  "Russian",
-  "Spanish",
-  "French",
-  "Portuguese",
-  "German",
-  "Turkish",
-  "Dutch",
-  "Ukrainian",
-  "Vietnamese",
-  "Indonesian",
-  "Japanese",
-  "Italian",
-  "Korean",
-  "Thai",
-  "Polish",
-  "Romanian",
-  "Greek",
-  "Czech",
-  "Finnish",
-  "Hindi",
-  "Bulgarian",
-  "Danish",
-  "Hebrew",
-  "Malay",
-  "Persian",
-  "Slovak",
-  "Swedish",
-  "Croatian",
-  "Filipino",
-  "Hungarian",
-  "Norwegian",
-  "Slovenian",
-  "Catalan",
-  "Nynorsk",
-  "Tamil",
-  "Afrikaans",
-  "auto",
-] as const;
-export type MinimaxLanguageBoost = (typeof T2A_LANGUAGE_BOOSTS)[number];
+// `T2A_LANGUAGE_BOOSTS` moved to ./models (the cartesia-languages precedent):
+// the voice-clone preview shares it, and importing this validator for one
+// array put 20 KiB in the voice-clone pack.
+export { T2A_LANGUAGE_BOOSTS } from "./models";
+export type { MinimaxLanguageBoost } from "./models";
 
 /** `voice_modify.sound_effects` values (one at a time). */
 export const T2A_SOUND_EFFECTS = [

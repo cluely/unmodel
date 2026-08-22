@@ -38,6 +38,7 @@ const EXPECTED_IDS: readonly string[] = [
   "cartesia.sttWebsocket",
   "cartesia.tts",
   "cartesia.ttsWebsocket",
+  "cartesia.voiceClone",
   "cerebras.chat",
   "cohere.chat",
   "deepgram.fluxConfigure",
@@ -53,8 +54,13 @@ const EXPECTED_IDS: readonly string[] = [
   "elevenlabs.stt",
   "elevenlabs.textToSpeechStreamInput",
   "elevenlabs.tts",
+  "elevenlabs.voiceClone",
+  "elevenlabs.voiceDesign",
+  "elevenlabs.voiceDesignSave",
   "fireworks-ai.chat",
   "fish-audio.tts",
+  "fish-audio.voiceClone",
+  "fish-audio.voiceDesign",
   "friendli.chat",
   "gladia.stt",
   "google.chat",
@@ -76,6 +82,9 @@ const EXPECTED_IDS: readonly string[] = [
   "inworld.realtimeVoiceContext",
   "inworld.stt",
   "inworld.tts",
+  "inworld.voiceClone",
+  "inworld.voiceDesign",
+  "inworld.voiceDesignPublish",
   "kling.image",
   "kling.imageOmni",
   "kling.video",
@@ -90,6 +99,7 @@ const EXPECTED_IDS: readonly string[] = [
   "lightricks.videoFromImage",
   "lmnt.tts",
   "lmnt.ttsDetailed",
+  "lmnt.voiceClone",
   "longcat.chat",
   "luma.image",
   "luma.imageEditReframe",
@@ -103,6 +113,8 @@ const EXPECTED_IDS: readonly string[] = [
   "minimax.tts",
   "minimax.video",
   "minimax.videoV2",
+  "minimax.voiceClone",
+  "minimax.voiceDesign",
   "mistral.chat",
   "mistral.stt",
   "moonshotai.chat",
@@ -148,6 +160,8 @@ const EXPECTED_IDS: readonly string[] = [
   "soniox.stt",
   "speechify.tts",
   "speechify.ttsStream",
+  "speechify.voiceClone",
+  "speechify.voiceConsentChallenge",
   "speechmatics.stt",
   "stability.image",
   "stability.imageCore",
@@ -423,6 +437,64 @@ test("the transcription endpoints all use the uniform `stt` verb", () => {
     "revai.jobs",
     "soniox.transcriptions",
     "speechmatics.jobs",
+  ];
+  for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
+ * The voice-creation half — two verbs, because creating a voice from
+ * recordings and inventing one from a description are different operations
+ * everywhere they both exist (different routes, disjoint required fields).
+ * The wire spellings disagreed as usual (`/v1/voices/add`, `/model`,
+ * `voices:clone`, `/v1/voice_clone`; `/v1/text-to-voice/design`,
+ * `/v1/voice-design`, `voices:design`, `/v1/voice_design`) and every
+ * provider now addresses them as `voiceClone` / `voiceDesign`. The two-phase
+ * design flows qualify their save step by what it does (`voiceDesignSave`,
+ * `voiceDesignPublish`), and Speechify's consent prerequisite by what it is.
+ */
+const VOICE_CLONE_IDS: readonly string[] = [
+  "cartesia.voiceClone",
+  "elevenlabs.voiceClone",
+  "fish-audio.voiceClone",
+  "inworld.voiceClone",
+  "lmnt.voiceClone",
+  "minimax.voiceClone",
+  "speechify.voiceClone",
+];
+
+const VOICE_DESIGN_IDS: readonly string[] = [
+  "elevenlabs.voiceDesign",
+  "fish-audio.voiceDesign",
+  "inworld.voiceDesign",
+  "minimax.voiceDesign",
+];
+
+test("the voice-creation endpoints use the uniform verbs", () => {
+  for (const id of VOICE_CLONE_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toBe("voiceClone");
+  }
+  for (const id of VOICE_DESIGN_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toBe("voiceDesign");
+  }
+  // The phase-2 saves and the consent prerequisite qualify, never rename.
+  for (const id of [
+    "elevenlabs.voiceDesignSave",
+    "inworld.voiceDesignPublish",
+    "speechify.voiceConsentChallenge",
+  ]) {
+    expect(EXPECTED_IDS).toContain(id);
+  }
+
+  // The wire spellings never became addresses.
+  const retired = [
+    "elevenlabs.voicesAdd",
+    "elevenlabs.textToVoice",
+    "fish-audio.createModel",
+    "inworld.cloneVoice",
+    "minimax.voiceCloning",
+    "speechify.voices",
   ];
   for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
 });

@@ -168,7 +168,7 @@ openbmb, nanbeige, tii-falcon, allenai (Olmo — weights only).
 
 ## Unified surfaces — coverage per category
 
-Seven entries take a **standardized camelCase vocabulary** instead of a wire body and
+Nine entries take a **standardized camelCase vocabulary** instead of a wire body and
 compile it to whichever provider the `"provider/model"` ref names. They are a layer *over*
 the roster above, not a replacement for it: a unified call compiles to a provider's wire
 params and then runs **that provider's own validator**, so there is exactly one definition
@@ -194,6 +194,8 @@ leaves rather than whole validators.
 | `unmodel/video` | `video`, `createVideo` | 10 | bytedance, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 4 | black-forest-labs, ideogram, openai, recraft — the four whose primary editing route is *image + prompt, no mask* |
 | `unmodel/music` | `music`, `createMusic` | 2 | elevenlabs, stability |
+| `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
+| `unmodel/voice-design` | `voiceDesign`, `createVoiceDesign` | 4 | elevenlabs, fish-audio, inworld, minimax — the unified surface is phase 1 (the generative call); the ElevenLabs/Inworld save steps are wire-only (`voiceDesignSave`, `voiceDesignPublish`) |
 
 **Layout.** Each adapter lives in the provider's own directory as
 `unified-<category>.ts`, re-exported from a single `unified.ts` barrel published as
@@ -224,7 +226,7 @@ import-free `<category>-params.ts` leaves that both read: one import from a valu
 subpath because they are 45 KiB. `test/values-entries.test.ts` measures every export against a
 real build and asserts the tables by reference.
 
-**Contract, identical in all seven.** A param a provider cannot express is an **error**
+**Contract, identical in all nine.** A param a provider cannot express is an **error**
 naming what it does offer; a value it can only express approximately is an
 `approximated_param` **warning** naming both the requested and the achieved value;
 everything else is silent — so zero warnings means the request mapped exactly, asserted per
@@ -239,12 +241,25 @@ does the job): black-forest-labs' Kontext
 third-party host, so `google.stt`'s `audioInputs` is `["data", "fileId"]` and `{ url }` is
 refused with the upload path spelled out; Stability's
 `musicFromAudio` / `musicInpaint` and the sixteen masked editing routes take controls no
-other provider has, so a canonical vocabulary for them would be a vocabulary of one.
+other provider has, so a canonical vocabulary for them would be a vocabulary of one; Hume's
+voice design IS its TTS wire (a description-only `/v0/tts` call, fully expressible through
+`unmodel/hume`'s own `tts`), so a `voiceDesign` adapter there would return a TTS `Validated`
+from a design call and muddle what the result is.
+
+**Voice creation, and who is out.** The clone pack's excluded providers each carry a
+documented reason rather than a gap: Speechify is wire-only (consent ceremony, above);
+Resemble's voice building is a create-then-upload-then-build multi-endpoint flow (its
+models.ts already catalogs unvalidated capabilities and this is one); Google's
+`voices:generateVoiceCloningKey` is allowlist-gated and returns an opaque key rather than a
+voice; smallest.ai's `add_voice` survives only in archived docs (the current docs describe
+cloning as console-only); OpenAI, Gemini, Deepgram, Murf and Rime publish no self-serve
+voice-creation endpoint at all.
 
 **Roadmap.** Every category with more than one provider now has a pack, so a new adapter is
-the unit of growth rather than a new entry. Embeddings have neither a wire validator nor a
-unified surface yet; when they land, they follow the same order — wire-exact subpath first,
-adapter second.
+the unit of growth rather than a new entry. The voice-creation pair landed exactly the way
+this paragraph has always prescribed — thirteen wire-exact endpoints first, the two packs
+second — and embeddings, which still have neither, follow the same order when they land:
+wire-exact subpath first, adapter second.
 
 ## Output targets — `.toSdk(target)` and `.toApi(provider)`
 

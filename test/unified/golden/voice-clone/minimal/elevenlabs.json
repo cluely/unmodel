@@ -1,0 +1,7 @@
+{
+  "ref": "elevenlabs/ivc",
+  "samples": [{ "audio": { "file": "@blob" } }],
+  "params": { "name": "Narrator", "files": [{"@blob":{"size":64,"type":"audio/wav"}}] },
+  "url": "https://api.elevenlabs.io/v1/voices/add",
+  "headers": {}
+}

@@ -13,3 +13,13 @@
  */
 export { tts, type InworldTtsResult, type InworldTtsWire } from "./unified-tts";
 export { stt, type InworldSttResult, type InworldSttWire } from "./unified-stt";
+export {
+  voiceClone,
+  type InworldVoiceCloneResult,
+  type InworldVoiceCloneWire,
+} from "./unified-voice-clone";
+export {
+  voiceDesign,
+  type InworldVoiceDesignResult,
+  type InworldVoiceDesignWire,
+} from "./unified-voice-design";

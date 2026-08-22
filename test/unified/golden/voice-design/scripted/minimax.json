@@ -1,0 +1,6 @@
+{
+  "ref": "minimax/voice-design",
+  "params": { "prompt": "An elderly British gentleman with a warm, gravelly storytelling tone", "preview_text": "Once upon a time, in a land far away, there lived a clockmaker who wound the stars each evening and listened to their slow, patient music." },
+  "url": "https://api.minimax.io/v1/voice_design",
+  "headers": { "content-type": "application/json" }
+}

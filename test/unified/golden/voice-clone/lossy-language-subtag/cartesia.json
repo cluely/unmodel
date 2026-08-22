@@ -1,0 +1,19 @@
+{
+  "ref": "cartesia/voice-clone",
+  "samples": [{ "audio": { "file": "@blob" } }],
+  "params": { "clip": {"@blob":{"size":64,"type":"audio/wav"}}, "name": "Narrator", "language": "en", "access": "private" },
+  "url": "https://api.cartesia.ai/voices/clone",
+  "headers": { "Cartesia-Version": "2026-08-14" },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": ["language"],
+      "meta": {
+        "requested": "en-GB",
+        "achieved": "en",
+        "dropped": "GB",
+        "source": "https://docs.cartesia.ai/api-reference/voices/clone"
+      }
+    }
+  ]
+}

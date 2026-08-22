@@ -55,6 +55,7 @@ import type {
   TimestampGranularity,
 } from "./vocabulary/stt";
 import type { VideoImageInput, VideoInput } from "./vocabulary/video";
+import type { VoiceSampleKind } from "./vocabulary/voice-clone";
 import type { CompileIssue, Derived } from "./types";
 import type { Warn } from "../translate/warnings";
 
@@ -1445,6 +1446,223 @@ export function resolveAudioInput(
   const embedded = envelope?.[1];
   const mimeType =
     declared ?? (embedded === undefined || embedded === "" ? undefined : embedded);
+  return ok({ kind, data, ...(mimeType !== undefined && { mimeType }) });
+}
+
+// ---------------------------------------------------------------------------
+// Voice-clone samples
+// ---------------------------------------------------------------------------
+
+/** One reference recording, once it is known which of the three shapes it is. */
+export type VoiceSampleSource =
+  | { kind: "file"; file: Blob; transcript?: string }
+  | { kind: "data"; data: string; mimeType?: string; transcript?: string }
+  | { kind: "fileId"; fileId: string; transcript?: string };
+
+/** How each kind is spelled in a message — the field the caller would write. */
+const VOICE_SAMPLE_SPELLING: Readonly<Record<VoiceSampleKind, string>> = Object.freeze({
+  file: "{ audio: { file } }",
+  data: "{ audio: { data } }",
+  fileId: "{ audio: { fileId } }",
+});
+
+/** Every sample kind, in one order — the presence scan's list (see AUDIO_KINDS). */
+const VOICE_SAMPLE_KINDS = Object.keys(VOICE_SAMPLE_SPELLING) as readonly VoiceSampleKind[];
+
+/**
+ * `samples` resolved element by element, checked against what the route takes.
+ *
+ * The voice-clone twin of {@link resolveAudioInput} — its own function rather
+ * than a loop around it, because every message here keeps its subject: "which
+ * recording the voice is cloned from", per element, with the element's index
+ * in the path. Three checks stack:
+ *
+ * - **count** — `min`/`max` come from the adapter's `sampleLimits`, because
+ *   the split is real: Fish takes up to 20 recordings, Cartesia and its kin
+ *   exactly one clip. A breach is one finding on `samples` itself, with the
+ *   bounds in the meta.
+ * - **shape, per element** — the `resolveAudioInput` rules (exactly one key,
+ *   a kind this route has a wire field for, a real Blob / non-empty string),
+ *   reported at `samples[i].audio`.
+ * - **transcript** — a route with no per-sample transcript field refuses one
+ *   (`transcripts: "unsupported"`), at `samples[i].transcript`. An error, per
+ *   the contract: silently dropping the words a caller supplied to improve
+ *   clone quality is not an approximation.
+ *
+ * All elements are scanned before returning, so a caller with three bad
+ * samples hears about three, not one per round-trip.
+ */
+export function resolveVoiceSamples(
+  samples: unknown,
+  options: {
+    accepts: readonly VoiceSampleKind[];
+    limits: { readonly min: number; readonly max: number };
+    transcripts: "optional" | "unsupported";
+    source?: string;
+    hint?: string;
+  },
+  ctx: DeriveContext,
+): Derived<readonly VoiceSampleSource[]> {
+  const { accepts, limits } = options;
+  const offered = accepts.map((kind) => VOICE_SAMPLE_SPELLING[kind]).join(" or ");
+  const meta = {
+    accepts: [...accepts],
+    ...(options.source !== undefined && { source: options.source }),
+  };
+  if (!Array.isArray(samples)) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` must be an array of reference recordings; this model takes ${offered}.`,
+      meta: { ...meta, value: samples },
+    });
+  }
+  if (samples.length < limits.min || samples.length > limits.max) {
+    const wants =
+      limits.min === limits.max
+        ? `exactly ${limits.min === 1 ? "one recording" : `${limits.min} recordings`}`
+        : `${limits.min}–${limits.max} recordings`;
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}\` has ${samples.length} recordings; this model takes ${wants}.`,
+      meta: { ...meta, min: limits.min, max: limits.max, actual: samples.length },
+    });
+  }
+
+  const issues: CompileIssue[] = [];
+  const resolved: VoiceSampleSource[] = [];
+  samples.forEach((sample: unknown, index) => {
+    if (sample === null || typeof sample !== "object") {
+      issues.push({
+        code: "invalid_shape",
+        path: [...ctx.path, index],
+        message: `\`${paramOf(ctx)}[${index}]\` must be a { audio, transcript? } object; got ${JSON.stringify(sample)}.`,
+        meta,
+      });
+      return;
+    }
+    const record = sample as Record<string, unknown>;
+    const transcript = record["transcript"];
+    if (transcript !== undefined && typeof transcript !== "string") {
+      issues.push({
+        code: "invalid_shape",
+        path: [...ctx.path, index, "transcript"],
+        message: `\`${paramOf(ctx)}[${index}].transcript\` must be a string; got ${typeof transcript}.`,
+        meta,
+      });
+      return;
+    }
+    if (transcript !== undefined && options.transcripts === "unsupported") {
+      issues.push({
+        code: "unsupported_param",
+        path: [...ctx.path, index, "transcript"],
+        message:
+          `this model has no per-sample transcript field, so \`${paramOf(ctx)}[${index}].transcript\` cannot be sent` +
+          `${options.hint === undefined ? "" : ` — ${options.hint}`}.`,
+        meta,
+      });
+      return;
+    }
+    const audio = resolveAudioSampleShape(record["audio"], accepts, offered, meta, {
+      path: [...ctx.path, index, "audio"],
+      warn: ctx.warn,
+    });
+    if (audio.value === undefined) {
+      issues.push(...audio.issues);
+      return;
+    }
+    resolved.push({
+      ...audio.value,
+      ...(transcript !== undefined && { transcript }),
+    });
+  });
+  if (issues.length > 0) return { issues };
+  return ok(resolved);
+}
+
+/** One element's `audio`, resolved with the resolveAudioInput rules. */
+function resolveAudioSampleShape(
+  audio: unknown,
+  accepts: readonly VoiceSampleKind[],
+  offered: string,
+  meta: Record<string, unknown>,
+  ctx: DeriveContext,
+): Derived<VoiceSampleSource> {
+  if (audio === null || typeof audio !== "object") {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}\` must be an object naming where the recording is; this model takes ${offered}.`,
+      meta: { ...meta, value: audio },
+    });
+  }
+  const record = audio as Record<string, unknown>;
+  // Scanned over ALL the kinds, so `{ data }` at a file-only route is refused
+  // as a `data` this route has no field for rather than as an object that
+  // names no recording at all.
+  const present = VOICE_SAMPLE_KINDS.filter((key) => record[key] !== undefined);
+  if (present.length === 0) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` names no recording — this model takes ${offered}, and this object sets ` +
+        `none of ${accepts.map((kind) => `\`${kind}\``).join(", ")}.`,
+      meta,
+    });
+  }
+  if (present.length > 1) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message:
+        `\`${paramOf(ctx)}\` carries ${present.map((key) => `\`${key}\``).join(" and ")} at once; ` +
+        `exactly one key says where the recording is, and this model takes ${offered}.`,
+      meta: { ...meta, provided: present },
+    });
+  }
+  const kind = present[0] as VoiceSampleKind;
+  if (!accepts.includes(kind)) {
+    return bad(ctx, {
+      code: "unsupported_param",
+      message:
+        `\`${paramOf(ctx)}\` was given as \`{ ${kind} }\`, which this model has no wire field ` +
+        `for — it takes ${offered}.`,
+      meta: { ...meta, given: kind },
+    });
+  }
+  if (kind === "file") {
+    const file = record["file"];
+    if (!(file instanceof Blob)) {
+      return bad(ctx, {
+        code: "invalid_shape",
+        message: `\`${paramOf(ctx)}.file\` must be a Blob or File; got ${typeof file}.`,
+        meta,
+      });
+    }
+    return ok({ kind, file });
+  }
+  const value = record[kind];
+  if (typeof value !== "string" || value === "") {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}.${kind}\` must be a non-empty string; got ${JSON.stringify(value)}.`,
+      meta,
+    });
+  }
+  if (kind === "fileId") return ok({ kind, fileId: value });
+
+  // `data`: unwrap a `data:` URI the caller happened to have — the same rule,
+  // for the same reason, as resolveAudioInput's data arm.
+  const declared = record["mimeType"];
+  if (declared !== undefined && (typeof declared !== "string" || declared === "")) {
+    return bad(ctx, {
+      code: "invalid_shape",
+      message: `\`${paramOf(ctx)}.mimeType\` must be a non-empty string; got ${JSON.stringify(declared)}.`,
+      meta,
+    });
+  }
+  const envelope = DATA_URI.exec(value);
+  const data = envelope === null ? value : (envelope[2] ?? "");
+  const embedded = envelope?.[1];
+  const mimeType = declared ?? (embedded === undefined || embedded === "" ? undefined : embedded);
   return ok({ kind, data, ...(mimeType !== undefined && { mimeType }) });
 }
 

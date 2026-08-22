@@ -24,7 +24,11 @@ export type {
 export { videoV3, textToVideoV3Url, TEXT_TO_VIDEO_V3_RULES } from "./video-v3";
 export type { TextToVideoV3Params, TextToVideoV3Settings } from "./video-v3";
 
-export { videoV3FromImage, imageToVideoV3Url, IMAGE_TO_VIDEO_V3_RULES } from "./video-v3-from-image";
+export {
+  videoV3FromImage,
+  imageToVideoV3Url,
+  IMAGE_TO_VIDEO_V3_RULES,
+} from "./video-v3-from-image";
 export type { ImageToVideoV3Params, ImageToVideoV3Settings } from "./video-v3-from-image";
 
 export {
@@ -44,11 +48,7 @@ export {
   KLING_IMAGE_RESOLUTIONS,
   KLING_IMAGE_REFERENCES,
 } from "./image";
-export type {
-  ImageGenerationsParams,
-  KlingImageAspectRatio,
-  KlingImageResolution,
-} from "./image";
+export type { ImageGenerationsParams, KlingImageAspectRatio, KlingImageResolution } from "./image";
 
 export {
   imageOmni,

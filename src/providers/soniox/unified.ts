@@ -20,26 +20,15 @@
  */
 import {
   applyExtras,
-  EXTRA,
   resolveAudioInput,
   resolveDiarization,
   toPrimaryLanguage,
   toTimestampGranularity,
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
-import type {
-  SttAdapterFor,
-  SttModelParamTable,
-  SttParamsFor,
-} from "../../core/unified/vocabulary/stt";
-import {
-  stt as validator,
-  type SonioxTranslation,
-  type TranscriptionsBody,
-} from "./stt";
-
-/** The two async models — the ref union for `soniox/…`. */
-const MODELS = ["stt-async-v5", "stt-async-v4"] as const;
+import type { SttAdapterFor, SttParamsFor } from "../../core/unified/vocabulary/stt";
+import { stt as validator, type TranscriptionsBody } from "./stt";
+import { MODELS, SONIOX_STT_MODEL_PARAMS } from "./stt-params";
 
 const CREATE_DOCS =
   "https://soniox.com/docs/api-reference/stt/transcriptions/create_transcription";
@@ -49,41 +38,6 @@ export type SonioxSttWire = TranscriptionsBody;
 
 /** What a unified call to `soniox/…` returns. */
 export type SonioxSttResult = ReturnType<typeof validator>;
-
-/**
- * Both async models share one row: one schema, one param surface, no per-model
- * constraint table.
- *
- * `timestamps: ["word"]` and no `"none"` — Soniox returns per-token timing on
- * every response and offers no switch, so `"word"` agrees and costs nothing
- * while the other three are refused by name.
- *
- * The three extras are the rest of Soniox's language machinery, and they are
- * exactly the fields the canonical mapping *approximates* around.
- * `language_hints_strict` is the flag this adapter already sets to `true` when
- * `language` is used — so setting it alongside `languages` is the only way to
- * say "bias hard toward this shortlist" without asserting a single language,
- * which is the request the canonical vocabulary has no word for.
- * `enable_language_identification` returns the detected language per token, and
- * `translation` is the one-way/two-way translation config.
- *
- * Excluded: `audio_url`, `file_id`, `language_hints`,
- * `enable_speaker_diarization` and `context` are canonical words' wire
- * spellings.
- */
-const SONIOX_ROW = {
-  timestamps: ["word"],
-  extras: {
-    language_hints_strict: EXTRA as boolean,
-    enable_language_identification: EXTRA as boolean,
-    translation: EXTRA as SonioxTranslation | null,
-  },
-} as const;
-
-const SONIOX_STT_MODEL_PARAMS = {
-  "stt-async-v5": SONIOX_ROW,
-  "stt-async-v4": SONIOX_ROW,
-} as const satisfies SttModelParamTable;
 
 export const stt = {
   category: "stt",

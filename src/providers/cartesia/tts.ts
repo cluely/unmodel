@@ -42,7 +42,12 @@ import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCharacterCostUSD } from "../../core/cost";
-import { models, TTS_MODEL_IDS, type CartesiaTtsModelId } from "./models";
+import { CARTESIA_TTS_LANGUAGES, TTS_MODEL_IDS, models, type CartesiaTtsModelId } from "./models";
+
+// Declared in `./models` — an import-free leaf — so that `unmodel/cartesia/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export { CARTESIA_TTS_LANGUAGES } from "./models";
 
 export const TTS_BYTES_URL = "https://api.cartesia.ai/tts/bytes";
 /**
@@ -139,15 +144,6 @@ export interface CartesiaGenerationConfig {
    */
   emotion?: CartesiaEmotion;
 }
-
-/** The 42 language codes the tts/bytes docs enumerate (2026-03-01). */
-export const CARTESIA_TTS_LANGUAGES = [
-  "en", "fr", "de", "es", "pt", "zh", "ja", "hi", "it", "ko",
-  "nl", "pl", "ru", "sv", "tr", "tl", "bg", "ro", "ar", "cs",
-  "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "hu", "no",
-  "vi", "bn", "th", "he", "ka", "id", "te", "gu", "kn", "ml",
-  "mr", "pa",
-] as const;
 
 export type CartesiaTtsLanguage = (typeof CARTESIA_TTS_LANGUAGES)[number];
 

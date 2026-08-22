@@ -10,9 +10,5 @@
  * directly.
  */
 export { tts, type ElevenlabsTtsResult, type ElevenlabsTtsWire } from "./unified-tts";
-export {
-  stt,
-  type ElevenlabsSttResult,
-  type ElevenlabsSttWire,
-} from "./unified-stt";
+export { stt, type ElevenlabsSttResult, type ElevenlabsSttWire } from "./unified-stt";
 export { music, type ElevenlabsMusicResult, type ElevenlabsMusicWire } from "./unified-music";

@@ -190,3 +190,65 @@ export const OPENAI_IMAGE_EDIT_MODEL_PARAMS = {
     extras: DALL_E_2_EXTRAS,
   },
 } as const satisfies ModelParamTable;
+
+// ---------------------------------------------------------------------------
+// Model lists
+//
+// The two routes' ref unions, beside the tables they narrow: the generations
+// route serves dall-e-3 and the edits route serves chatgpt-image-latest, and
+// neither serves the other's, which is the whole reason there are two lists.
+// ---------------------------------------------------------------------------
+
+/**
+ * # `image`
+ *
+ * Three size vocabularies live behind one `size` field here, and which one a
+ * request lands in is decided entirely by the model id:
+ *
+ * | family | `size` | canonical shape |
+ * |---|---|---|
+ * | `dall-e-2` | `256x256` / `512x512` / `1024x1024` | S3 — square only |
+ * | `dall-e-3` | `1024x1024` / `1792x1024` / `1024x1792` | S3 — and `1792x1024` is **1.750:1**, not 16:9 |
+ * | `gpt-image-1`, `-1-mini`, `-1.5` | `1024x1024` / `1536x1024` / `1024x1536` | S3 — square and 3:2 |
+ * | `gpt-image-2`, `-2-2026-04-21` | free-form `WxH` | S4 — 16-px grid, ≤3:1, ≤3840 px/edge |
+ *
+ * The DALL·E 3 row is the reason {@link toSizeEnum} measures its own output:
+ * everyone calls `1792x1024` "16:9" and it is not, so asking for `16:9` here
+ * gets that size **and** an `approximated_param` naming 1.750 against 1.778.
+ * Nothing else in this adapter is lossy — which is the point.
+ *
+ * The two deliveries and the two formats are orthogonal on paper and not on
+ * this API: the GPT image models always return base64 and have no
+ * `response_format`, and the DALL·E models return a URL or base64 and have no
+ * `output_format`. So `outputDelivery: "base64"` is free on a GPT image model
+ * (it is what it does) and `outputDelivery: "url"` is an error there, while
+ * `outputFormat` is an error on DALL·E. Both errors quote the create
+ * reference's own wording rather than a message this file invented.
+ *
+ * `seed` and `negativePrompt` have no field on this endpoint at all, so they
+ * are declared gaps and the kernel reports them uniformly.
+ */
+export const IMAGE_MODELS = [
+  "gpt-image-2",
+  "gpt-image-2-2026-04-21",
+  "gpt-image-1.5",
+  "gpt-image-1",
+  "gpt-image-1-mini",
+  "dall-e-3",
+  "dall-e-2",
+] as const;
+
+/**
+ * Every model `/v1/images/edits` documents — "One of `dall-e-2` or a GPT image
+ * model". `dall-e-3` is deliberately absent; `chatgpt-image-latest` is
+ * deliberately present, and is edit-only.
+ */
+export const IMAGE_EDIT_MODELS = [
+  "gpt-image-2",
+  "gpt-image-2-2026-04-21",
+  "gpt-image-1.5",
+  "gpt-image-1",
+  "gpt-image-1-mini",
+  "chatgpt-image-latest",
+  "dall-e-2",
+] as const;

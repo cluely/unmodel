@@ -26,6 +26,7 @@ import type {
   UnifiedCategory,
   UnifiedValidator,
 } from "./types";
+import { CANONICAL_KEY_LISTS } from "./canonical-keys";
 
 /** The suffix an unmapped wire param's message gains when the caller put it there. */
 export const PROVIDER_OPTIONS_SUFFIX = " (supplied via `providerOptions`)";
@@ -64,87 +65,6 @@ function structuralIssue(model: string, provider: string, message: string): Issu
 /** Keys that must never be written through, whatever a caller passes. */
 const FORBIDDEN_KEYS: ReadonlySet<string> = new Set(["__proto__", "constructor", "prototype"]);
 
-/**
- * The canonical vocabulary, written out per category.
- *
- * A second declaration of a type is a second thing to keep in step, and this
- * one decides whether a request is *rejected* — a vocabulary field added
- * without a matching entry here turns a call that type-checks into an
- * `unsupported_param` error at runtime. Declared `as const` so the literal
- * union is recoverable, and `test/types/canonical-keys.test-d.ts` fails
- * `tsc` in both directions the moment the two disagree.
- */
-const CANONICAL_KEY_LISTS = {
-  image: ([
-    "model",
-    "prompt",
-    "size",
-    "aspectRatio",
-    "dimensions",
-    "resolution",
-    "n",
-    "seed",
-    "negativePrompt",
-    "outputFormat",
-    "outputDelivery",
-    "providerOptions",
-  ] as const),
-  imageEdit: ([
-    "model",
-    "operation",
-    "prompt",
-    "image",
-    "strength",
-    "size",
-    "aspectRatio",
-    "dimensions",
-    "n",
-    "seed",
-    "outputFormat",
-    "providerOptions",
-  ] as const),
-  video: ([
-    "model",
-    "prompt",
-    "image",
-    "video",
-    "negativePrompt",
-    "seed",
-    "n",
-    "duration",
-    "resolution",
-    "aspectRatio",
-    "providerOptions",
-  ] as const),
-  tts: ([
-    "model",
-    "text",
-    "voice",
-    "speed",
-    "outputFormat",
-    "language",
-    "providerOptions",
-  ] as const),
-  stt: ([
-    "model",
-    "audio",
-    "languages",
-    "diarization",
-    "prompt",
-    "language",
-    "timestamps",
-    "providerOptions",
-  ] as const),
-  music: ([
-    "model",
-    "prompt",
-    "durationSeconds",
-    "instrumental",
-    "seed",
-    "outputFormat",
-    "providerOptions",
-  ] as const),
-} satisfies Readonly<Record<UnifiedCategory, readonly string[]>>;
 
 /** The keys `validateCanonicalEnvelope` accepts, per category. */
 const CANONICAL_KEYS: Readonly<Record<UnifiedCategory, ReadonlySet<string>>> = Object.freeze({
@@ -156,8 +76,15 @@ const CANONICAL_KEYS: Readonly<Record<UnifiedCategory, ReadonlySet<string>>> = O
   music: new Set<string>(CANONICAL_KEY_LISTS.music),
 });
 
-/** One category's declared vocabulary, as a literal union. Pinned by a test. */
+/**
+ * One category's declared vocabulary, as a literal union. Pinned by a test.
+ *
+ * Re-exported here rather than only from `./values` because this is where the
+ * kernel's callers already look for it.
+ */
 export type CanonicalKeyOf<C extends UnifiedCategory> = (typeof CANONICAL_KEY_LISTS)[C][number];
+
+export { CANONICAL_KEY_LISTS };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;

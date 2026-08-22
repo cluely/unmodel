@@ -57,7 +57,13 @@ import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCharacterCostUSD } from "../../core/cost";
-import { models, type SmallestTtsModelId } from "./models";
+import { LANGUAGES, PRO_ONLY_LANGUAGES, models, type SmallestTtsModelId, type SmallestLanguage } from "./models";
+
+// Declared in `./models` — an import-free leaf — so that `unmodel/smallest-ai/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export { LANGUAGES, PRO_ONLY_LANGUAGES } from "./models";
+export type { SmallestLanguage } from "./models";
 
 export const TTS_URL = "https://api.smallest.ai/waves/v1/tts";
 /** SSE + WebSocket streaming (same URL, protocol-dispatched). Not validated. */
@@ -91,67 +97,6 @@ export type SmallestSampleRate = (typeof SAMPLE_RATES)[number];
 /** Default "pcm". `mp3`/`wav` are directly playable; `pcm` is lowest latency. */
 export const OUTPUT_FORMATS = ["mp3", "pcm", "wav", "ulaw", "alaw"] as const;
 export type SmallestOutputFormat = (typeof OUTPUT_FORMATS)[number];
-
-/**
- * The `language` enum, verbatim from the endpoint reference. `auto` routes
- * across languages. `lightning_v3.1` accepts 20 of these codes (10 European +
- * 10 Indic); `lightning_v3.1_pro` accepts all 31 — see `PRO_ONLY_LANGUAGES`.
- */
-export const LANGUAGES = [
-  "auto",
-  "en",
-  "hi",
-  "mr",
-  "kn",
-  "ta",
-  "bn",
-  "gu",
-  "te",
-  "ml",
-  "pa",
-  "or",
-  "es",
-  "de",
-  "fr",
-  "it",
-  "nl",
-  "sv",
-  "pt",
-  "ru",
-  "el",
-  "fi",
-  "no",
-  "pl",
-  "ar",
-  "zh",
-  "id",
-  "ja",
-  "ko",
-  "ms",
-  "tr",
-  "vi",
-] as const;
-export type SmallestLanguage = (typeof LANGUAGES)[number];
-
-/**
- * The 11 codes the endpoint reference lists only under `lightning_v3.1_pro`
- * ("31 supported languages (adds 11 over base)"): Greek, Finnish, Norwegian
- * and the 8 Asian & Middle Eastern languages. The base pool's 20 codes are
- * everything else.
- */
-export const PRO_ONLY_LANGUAGES = [
-  "el",
-  "fi",
-  "no",
-  "ar",
-  "zh",
-  "id",
-  "ja",
-  "ko",
-  "ms",
-  "tr",
-  "vi",
-] as const satisfies readonly SmallestLanguage[];
 
 export interface TtsBody {
   /** Text to convert to speech; capped at 250 characters per request. */

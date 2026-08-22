@@ -51,11 +51,7 @@
  * - `stability.musicInpaint` → `MusicInpaintBody`
  */
 
-import type {
-  StableImageUltraParams,
-  StableImageCoreParams,
-  StableImageSd3Params,
-} from "./image";
+import type { StableImageUltraParams, StableImageCoreParams, StableImageSd3Params } from "./image";
 import type {
   StableImageEraseParams,
   StableImageInpaintParams,

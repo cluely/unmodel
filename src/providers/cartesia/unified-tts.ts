@@ -30,23 +30,16 @@
  */
 import {
   applyExtras,
-  EXTRA,
   resolveAudioFormat,
   resolveVoice,
   toPrimaryLanguage,
   toSpeed,
-  type AudioFormatSpec,
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
-import type {
-  TtsAdapterFor,
-  TtsModelParamTable,
-  TtsParams,
-} from "../../core/unified/vocabulary/tts";
+import type { TtsAdapterFor, TtsParams } from "../../core/unified/vocabulary/tts";
 import {
   tts as validator,
   CARTESIA_TTS_LANGUAGES,
-  type CartesiaEmotion,
   type CartesiaEncoding,
   type CartesiaMp3BitRate,
   type CartesiaOutputFormat,
@@ -54,91 +47,13 @@ import {
   type CartesiaTtsLanguage,
   type TtsBytesBody,
 } from "./tts";
-
-/** The sonic ids the `model_id` enum publishes — the ref union for `cartesia/…`. */
-const MODELS = ["sonic-3.5", "sonic-3", "sonic-preview", "sonic-latest"] as const;
-
-const TTS_BYTES_DOCS = "https://docs.cartesia.ai/api-reference/tts/bytes";
+import { CARTESIA_TTS_MODEL_PARAMS, FORMAT, MODELS, TTS_BYTES_DOCS } from "./tts-params";
 
 /** The wire body this adapter compiles to. */
 export type CartesiaTtsWire = TtsBytesBody;
 
 /** What a unified call to `cartesia/…` returns. */
 export type CartesiaTtsResult = ReturnType<typeof validator>;
-
-const SAMPLE_RATES = [8000, 16000, 22050, 24000, 44100, 48000] as const;
-
-const FORMAT: AudioFormatSpec = {
-  codecs: {
-    mp3: "mp3",
-    pcm_s16le: "pcm_s16le",
-    pcm_f32le: "pcm_f32le",
-    pcm_mulaw: "pcm_mulaw",
-    pcm_alaw: "pcm_alaw",
-  },
-  containers: {
-    mp3: ["mp3"],
-    pcm_s16le: ["wav", "raw"],
-    pcm_f32le: ["wav", "raw"],
-    pcm_mulaw: ["wav", "raw"],
-    pcm_alaw: ["wav", "raw"],
-  },
-  sampleRates: {
-    mp3: SAMPLE_RATES,
-    pcm_s16le: SAMPLE_RATES,
-    pcm_f32le: SAMPLE_RATES,
-    pcm_mulaw: SAMPLE_RATES,
-    pcm_alaw: SAMPLE_RATES,
-  },
-  bitrates: { mp3: [32000, 64000, 96000, 128000, 192000] },
-  // Only the mp3 arm has a `bit_rate` field at all.
-  unavailable: {
-    pcm_s16le: ["bitrate"],
-    pcm_f32le: ["bitrate"],
-    pcm_mulaw: ["bitrate"],
-    pcm_alaw: ["bitrate"],
-  },
-  defaults: { bitrate: 128000 },
-  source: TTS_BYTES_DOCS,
-};
-
-/**
- * Cartesia's per-model speech surface — one row, four times, and the languages
- * are the provider's own array rather than a copy of it.
- *
- * All four served ids sit on one `/tts/bytes` schema with one `encoding` enum
- * and one 42-code `language` enum, and the only per-model rule in
- * `ttsConstraints` denies `pronunciation_dict_id` on `sonic-2` and
- * `sonic-turbo` — neither of which this adapter serves. So the row is shared,
- * and `languages` is {@link CARTESIA_TTS_LANGUAGES} by reference: the list an
- * editor offers and the list `checkEnums` refuses against are then the same
- * array, and cannot drift.
- *
- * `generation_config`'s two non-canonical members ride in through
- * {@link GENERATION_CONFIG_NESTING}, beside the `speed` the adapter compiles
- * into the same object. `emotion`'s type is the provider's own 58-label union,
- * so an editor completes them and a typo is caught before the request is built.
- */
-const CARTESIA_TTS_EXTRAS = {
-  // → generation_config.*
-  volume: EXTRA as number,
-  emotion: EXTRA as CartesiaEmotion,
-  // → body root
-  pronunciation_dict_id: EXTRA as string,
-} as const;
-
-const ROW = {
-  codecs: ["mp3", "pcm_s16le", "pcm_f32le", "pcm_mulaw", "pcm_alaw"],
-  languages: CARTESIA_TTS_LANGUAGES,
-  extras: CARTESIA_TTS_EXTRAS,
-} as const;
-
-const CARTESIA_TTS_MODEL_PARAMS = {
-  "sonic-3.5": ROW,
-  "sonic-3": ROW,
-  "sonic-preview": ROW,
-  "sonic-latest": ROW,
-} as const satisfies TtsModelParamTable;
 
 const TTS_LANGUAGE_SET = new Set<string>(CARTESIA_TTS_LANGUAGES);
 

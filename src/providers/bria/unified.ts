@@ -79,7 +79,6 @@
  */
 import {
   applyExtras,
-  EXTRA,
   pixelsToRatio,
   resolveSizing,
   sizingField,
@@ -87,11 +86,7 @@ import {
   toTier,
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
-import type {
-  ImageAdapterFor,
-  ImageParams,
-  ModelParamTable,
-} from "../../core/unified/vocabulary/image";
+import type { ImageAdapterFor, ImageParams } from "../../core/unified/vocabulary/image";
 import {
   image as generateValidator,
   imageLite as liteValidator,
@@ -104,45 +99,7 @@ import {
   type BriaAspectRatio,
   type BriaResolution,
 } from "./shared";
-
-/** The two generate rows in the catalog — the ref union for `bria/…`. */
-const MODELS = ["FIBO", "FIBO-lite"] as const;
-
-/**
- * The two generate routes' per-model surface.
- *
- * Neither has a width/height field, so no `sizes` row exists and `size` types
- * as `never` — the nine-value `aspect_ratio` enum is the whole shape
- * vocabulary. The tier split is the interesting half and it is real: the full
- * route publishes `resolution: "1MP" | "4MP"`, and the lite route has no such
- * field at all, so its `tiers` is empty and `resolution` is a compile error
- * rather than a value with nowhere to go.
- *
- * `steps_num` is the same story one level down: 35–50 on the full route, and
- * an explicit `unsupported_param` on lite ("`steps_num` is not part of the
- * Fibo Lite request schema"). Declaring it on one row and not the other is
- * what makes that a compile error too.
- */
-const BRIA_SHARED_EXTRAS = {
-  structured_prompt: EXTRA as string,
-  ip_signal: EXTRA as boolean,
-  prompt_content_moderation: EXTRA as boolean,
-  visual_input_content_moderation: EXTRA as boolean,
-  visual_output_content_moderation: EXTRA as boolean,
-} as const;
-
-const BRIA_IMAGE_MODEL_PARAMS = {
-  FIBO: {
-    ratios: BRIA_ASPECT_RATIOS,
-    tiers: ["1k", "2k"],
-    extras: { steps_num: EXTRA as number, ...BRIA_SHARED_EXTRAS },
-  },
-  "FIBO-lite": {
-    ratios: BRIA_ASPECT_RATIOS,
-    tiers: [],
-    extras: BRIA_SHARED_EXTRAS,
-  },
-} as const satisfies ModelParamTable;
+import { BRIA_IMAGE_MODEL_PARAMS, MODELS } from "./image-params";
 
 /** The pseudo-id that means "the lite route" (`./models.ts`). */
 const LITE_MODEL_ID = "FIBO-lite";

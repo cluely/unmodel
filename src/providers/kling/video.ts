@@ -54,6 +54,7 @@ import {
   KLING_HEADERS,
   KLING_MODES,
   KLING_SOUND,
+  TEXT2VIDEO_MODELS,
   type KlingAspectRatio,
   type KlingMode,
   type KlingWatermarkInfo,
@@ -77,20 +78,14 @@ import {
 } from "./v1-routes";
 import { MODE_RESOLUTION, videoCostUSD } from "./pricing";
 
+// Declared in `./shared` — an import-free leaf — so that `unmodel/kling/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export { TEXT2VIDEO_MODELS } from "./shared";
+
 export const TEXT2VIDEO_URL = `${KLING_BASE_URL}/v1/videos/text2video`;
 
 const SOURCE = `${DOCS_BASE}/apiReference/model/textToVideo`;
-
-/** `model_name` values this route accepts. */
-export const TEXT2VIDEO_MODELS = [
-  "kling-v1",
-  "kling-v1-6",
-  "kling-v2-master",
-  "kling-v2-1-master",
-  "kling-v2-5-turbo",
-  "kling-v2-6",
-  "kling-v3",
-] as const;
 
 /**
  * A `model_name` this route serves AND the capability map bounds — the ids

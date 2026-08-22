@@ -26,9 +26,26 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { imageModels, type KlingImageModelId } from "./models";
-import { DOCS_BASE, KLING_BASE_URL, KLING_HEADERS, type KlingWatermarkInfo } from "./shared";
+import {
+  DOCS_BASE,
+  KLING_BASE_URL,
+  KLING_HEADERS,
+  KLING_IMAGE_ASPECT_RATIOS,
+  KLING_IMAGE_REFERENCES,
+  KLING_IMAGE_RESOLUTIONS,
+  type KlingWatermarkInfo,
+} from "./shared";
 import { elementListSchema, watermarkInfoSchema } from "./v1-routes";
 import { imageCostUSD, type ImageMode } from "./pricing";
+
+// Declared in `./shared` — an import-free leaf — so that `unmodel/kling/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export {
+  KLING_IMAGE_ASPECT_RATIOS,
+  KLING_IMAGE_REFERENCES,
+  KLING_IMAGE_RESOLUTIONS,
+} from "./shared";
 
 export const IMAGE_GENERATIONS_URL = `${KLING_BASE_URL}/v1/images/generations`;
 
@@ -36,27 +53,9 @@ const SOURCE = `${DOCS_BASE}/api/image/3-0-omni/image-generation`;
 
 /** Server-side default when `model_name` is omitted. */
 export const DEFAULT_IMAGE_MODEL = "kling-v1";
-
-/** Documented `aspect_ratio` values on the image routes. */
-export const KLING_IMAGE_ASPECT_RATIOS = [
-  "16:9",
-  "9:16",
-  "1:1",
-  "4:3",
-  "3:4",
-  "3:2",
-  "2:3",
-  "21:9",
-] as const;
 export type KlingImageAspectRatio = (typeof KLING_IMAGE_ASPECT_RATIOS)[number];
-
-/** Documented `resolution` values on this route. */
-export const KLING_IMAGE_RESOLUTIONS = ["1k", "2k"] as const;
 /** `resolution` on `/v1/images/generations` — a closed enum, zod-enforced. */
 export type KlingImageResolution = (typeof KLING_IMAGE_RESOLUTIONS)[number];
-
-/** `image_reference` — what the reference image is being used for. */
-export const KLING_IMAGE_REFERENCES = ["subject", "face"] as const;
 
 export interface ImageGenerationsParams {
   /** Defaults to "kling-v1". */

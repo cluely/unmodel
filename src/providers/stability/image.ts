@@ -33,6 +33,12 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type StabilitySd3ModelId } from "./models";
 
+// Declared in `./constraints` — an import-free leaf — so that `unmodel/stability/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export { STABILITY_ASPECT_RATIOS } from "./constraints";
+import { STABILITY_ASPECT_RATIOS } from "./constraints";
+
 const GENERATE_BASE_URL = "https://api.stability.ai/v2beta/stable-image/generate";
 
 export const STABLE_IMAGE_ULTRA_URL = `${GENERATE_BASE_URL}/ultra`;
@@ -51,19 +57,6 @@ const API_REFERENCE_URL = "https://api.stability.ai/v2alpha/openapi";
  * "The model to use for generation … default sd3.5-large".
  */
 export const DEFAULT_SD3_MODEL_ID = "sd3.5-large";
-
-/** Aspect ratios accepted by all three generate routes. */
-export const STABILITY_ASPECT_RATIOS = [
-  "21:9",
-  "16:9",
-  "3:2",
-  "5:4",
-  "1:1",
-  "4:5",
-  "2:3",
-  "9:16",
-  "9:21",
-] as const;
 export type StabilityAspectRatio = (typeof STABILITY_ASPECT_RATIOS)[number];
 
 /** `style_preset` values accepted by all three generate routes. */

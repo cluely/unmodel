@@ -47,22 +47,7 @@ import type {
   ImageEditParamsFor,
 } from "../../core/unified/vocabulary/image-edit";
 import { imageEdit as validator } from "./image-edit";
-import { OPENAI_IMAGE_EDIT_MODEL_PARAMS } from "./image-params";
-
-/**
- * Every model `/v1/images/edits` documents — "One of `dall-e-2` or a GPT image
- * model". `dall-e-3` is deliberately absent; `chatgpt-image-latest` is
- * deliberately present, and is edit-only.
- */
-const MODELS = [
-  "gpt-image-2",
-  "gpt-image-2-2026-04-21",
-  "gpt-image-1.5",
-  "gpt-image-1",
-  "gpt-image-1-mini",
-  "chatgpt-image-latest",
-  "dall-e-2",
-] as const;
+import { IMAGE_EDIT_MODELS, OPENAI_IMAGE_EDIT_MODEL_PARAMS } from "./image-params";
 
 /**
  * The operations this route serves through the canonical vocabulary. One today,
@@ -136,7 +121,7 @@ function sizeTableFor(model: string): SizeTable | undefined {
 export const imageEdit = {
   category: "imageEdit",
   provider: "openai",
-  models: MODELS,
+  models: IMAGE_EDIT_MODELS,
   imageInputs: ["file"],
   modelParams: OPENAI_IMAGE_EDIT_MODEL_PARAMS,
   unsupported: {

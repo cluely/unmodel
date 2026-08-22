@@ -16,65 +16,23 @@
  * onto the pair, and a WAV request that names no width simply leaves the field
  * off rather than inventing one.
  */
-import {
-  applyExtras,
-  EXTRA,
-  resolveAudioFormat,
-  resolveVoice,
-  type AudioFormatSpec,
-} from "../../core/unified/derive";
+import { applyExtras, resolveAudioFormat, resolveVoice } from "../../core/unified/derive";
 import type { AudioFormatCodec } from "../../core/unified/vocabulary/audio";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
-import type {
-  TtsAdapterFor,
-  TtsModelParamTable,
-  TtsParams,
-} from "../../core/unified/vocabulary/tts";
+import type { TtsAdapterFor, TtsParams } from "../../core/unified/vocabulary/tts";
 import {
   tts as validator,
   type ResemblePrecision,
   type ResembleSampleRate,
   type SynthesizeBody,
 } from "./tts";
-
-/** The one TTS row the catalog carries — the ref union for `resemble/…`. */
-const MODELS = ["resemble-ultra"] as const;
-
-const SYNC_DOCS = "https://docs.resemble.ai/voice-generation/text-to-speech/synchronous";
+import { FORMAT, MODELS, RESEMBLE_TTS_MODEL_PARAMS, SYNC_DOCS } from "./tts-params";
 
 /** The wire body this adapter compiles to. */
 export type ResembleTtsWire = SynthesizeBody;
 
 /** What a unified call to `resemble/…` returns. */
 export type ResembleTtsResult = ReturnType<typeof validator>;
-
-const SAMPLE_RATES = [8000, 16000, 22050, 32000, 44100, 48000] as const;
-
-const FORMAT: AudioFormatSpec = {
-  codecs: {
-    mp3: "mp3",
-    pcm_s16le: "wav",
-    pcm_s24le: "wav",
-    pcm_s32le: "wav",
-    pcm_mulaw: "wav",
-  },
-  containers: {
-    mp3: ["mp3"],
-    pcm_s16le: ["wav"],
-    pcm_s24le: ["wav"],
-    pcm_s32le: ["wav"],
-    pcm_mulaw: ["wav"],
-  },
-  sampleRates: {
-    mp3: SAMPLE_RATES,
-    pcm_s16le: SAMPLE_RATES,
-    pcm_s24le: SAMPLE_RATES,
-    pcm_s32le: SAMPLE_RATES,
-    pcm_mulaw: SAMPLE_RATES,
-  },
-  unavailable: ["bitrate"],
-  source: SYNC_DOCS,
-};
 
 /** Canonical sample format → Resemble's `precision`. WAV output only. */
 const PRECISION: Readonly<Partial<Record<AudioFormatCodec, ResemblePrecision>>> = {
@@ -83,34 +41,6 @@ const PRECISION: Readonly<Partial<Record<AudioFormatCodec, ResemblePrecision>>> 
   pcm_s32le: "PCM_32",
   pcm_mulaw: "MULAW",
 };
-
-/**
- * Resemble's one catalog row, and the one thing worth saying about its codecs.
- *
- * `output_format` is only `wav` or `mp3`; the PCM *width* is a separate field
- * (`precision`), which is why this row lists four PCM codecs against an
- * endpoint whose format enum has two members. `pcm_s24le` and `pcm_s32le` are
- * genuinely reachable here and nowhere else in the category, and the canonical
- * spelling is what makes that visible — Resemble's own `PCM_24` says nothing
- * about byte order, and the caller's request is the same one everywhere else.
- *
- * The extras are the four body fields with no canonical word: `use_hd` picks
- * the higher-quality synthesis path, `apply_custom_pronunciations` applies the
- * account's dictionary, and `title` / `project_uuid` file the clip. There is no
- * `languages` row and no `speed` — both are properties of the voice here, which
- * the adapter declares as gaps.
- */
-const RESEMBLE_TTS_MODEL_PARAMS = {
-  "resemble-ultra": {
-    codecs: ["mp3", "pcm_s16le", "pcm_s24le", "pcm_s32le", "pcm_mulaw"],
-    extras: {
-      use_hd: EXTRA as boolean,
-      apply_custom_pronunciations: EXTRA as boolean,
-      title: EXTRA as string,
-      project_uuid: EXTRA as string,
-    },
-  },
-} as const satisfies TtsModelParamTable;
 
 export const tts = {
   category: "tts",

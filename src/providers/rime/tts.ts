@@ -55,7 +55,13 @@ import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCharacterCostUSD } from "../../core/cost";
-import { models, type RimeTtsModelId } from "./models";
+import { LANGUAGES, MIST_LANGUAGES, models, type RimeTtsModelId, type RimeLanguage } from "./models";
+
+// Declared in `./models` — an import-free leaf — so that `unmodel/rime/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export { LANGUAGES, MIST_LANGUAGES } from "./models";
+export type { RimeLanguage } from "./models";
 
 export const RIME_TTS_URL = "https://users.rime.ai/v1/rime-tts";
 /** WebSocket streaming — different protocol and param transport; not validated. */
@@ -108,45 +114,6 @@ export const MIST_V2_ACCEPT_VALUES = [
   "audio/L16",
   "audio/PCMU",
 ] as const satisfies readonly RimeAccept[];
-
-/**
- * Both the ISO 639-1 and the ISO 639-2/3 spelling are accepted for each of the
- * eight documented languages.
- */
-export const LANGUAGES = [
-  "en",
-  "eng",
-  "es",
-  "spa",
-  "fr",
-  "fra",
-  "pt",
-  "por",
-  "de",
-  "ger",
-  "ja",
-  "jpn",
-  "ar",
-  "ara",
-  "hi",
-  "hin",
-] as const;
-export type RimeLanguage = (typeof LANGUAGES)[number];
-
-/**
- * "The Mist column reflects Mist v3 and Mist v2, which both serve English,
- * French, German, and Spanish" — Coda serves all eight.
- */
-export const MIST_LANGUAGES = [
-  "en",
-  "eng",
-  "es",
-  "spa",
-  "fr",
-  "fra",
-  "de",
-  "ger",
-] as const satisfies readonly RimeLanguage[];
 
 export interface RimeTtsBody {
   /** The text to speak. Capped at 1,000 characters per request. */

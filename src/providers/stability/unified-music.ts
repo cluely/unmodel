@@ -22,75 +22,21 @@
  * `checkSteps` (30–100 on stable-audio-2, 4–8 on 2.5 — and on the first of
  * those `steps` moves the price, which is another reason not to invent one).
  */
-import { applyExtras, EXTRA, resolveAudioFormat, type AudioFormatSpec } from "../../core/unified/derive";
+import { applyExtras, resolveAudioFormat } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
-import type {
-  MusicAdapterFor,
-  MusicModelParamTable,
-  MusicParams,
-} from "../../core/unified/vocabulary/music";
+import type { MusicAdapterFor, MusicParams } from "../../core/unified/vocabulary/music";
 import {
   music as validator,
   type StableAudioOutputFormat,
   type StableAudioTextToAudioParams,
 } from "./music";
-
-/**
- * The two Stable Audio 2.x models this route serves.
- *
- * `stable-audio-3` is in the catalog and deliberately absent here: it is served
- * by the async `/v2beta/audio/stable-audio/*` routes, and `stability.music`'s
- * own `checkAudioModel` rejects it — a ref that cannot work should not
- * autocomplete.
- */
-const MODELS = ["stable-audio-2", "stable-audio-2.5"] as const;
-
-const API_REFERENCE_URL = "https://api.stability.ai/v2alpha/openapi";
+import { FORMAT, MODELS, STABILITY_MUSIC_MODEL_PARAMS } from "./music-params";
 
 /** The wire params this adapter compiles to (multipart form fields). */
 export type StabilityMusicWire = StableAudioTextToAudioParams;
 
 /** What a unified call to `stability/…` returns. */
 export type StabilityMusicResult = ReturnType<typeof validator>;
-
-/**
- * `output_format` — a codec, full stop. `wav` is where a canonical
- * `pcm_s16le` lands, since that is the only thing a WAV file of generated
- * audio contains.
- */
-const FORMAT: AudioFormatSpec = {
-  codecs: { mp3: "mp3", pcm_s16le: "wav" },
-  containers: { pcm_s16le: ["wav"] },
-  unavailable: ["sampleRate", "bitrate"],
-  source: API_REFERENCE_URL,
-};
-
-/**
- * Both Stable Audio 2.x ids, with the same two-codec row.
- *
- * `output_format` is `"mp3" | "wav"`, which is `mp3` and `pcm_s16le` in
- * canonical spelling — the narrowest codec list in the library, and the reason
- * `outputFormat: "opus"` is a compile error here and fine on
- * `elevenlabs/music_v1`.
- *
- * `steps` and `cfg_scale` are the diffusion knobs the vocabulary has no word
- * for. They are identical keys on both rows because both models take them; what
- * differs is the *range*, which is a run-time fact `checkSteps` already owns
- * and a row deliberately does not duplicate.
- */
-const STABILITY_MUSIC_EXTRAS = {
-  /** Sampling steps; 30–100 on stable-audio-2, 4–8 on 2.5, and it moves the price. */
-  steps: EXTRA as number,
-  /** How closely to follow the prompt. */
-  cfg_scale: EXTRA as number,
-} as const;
-
-const ROW = { codecs: ["mp3", "pcm_s16le"], extras: STABILITY_MUSIC_EXTRAS } as const;
-
-const STABILITY_MUSIC_MODEL_PARAMS = {
-  "stable-audio-2": ROW,
-  "stable-audio-2.5": ROW,
-} as const satisfies MusicModelParamTable;
 
 export const music = {
   category: "music",

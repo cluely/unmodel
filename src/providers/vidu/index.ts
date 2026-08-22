@@ -1,7 +1,12 @@
 export { video, TEXT2VIDEO_URL, TEXT2VIDEO_SUPPORT, videoConstraints } from "./video";
 export type { Text2VideoParams } from "./video";
 
-export { videoFromImage, IMG2VIDEO_URL, IMG2VIDEO_SUPPORT, videoFromImageConstraints } from "./video-from-image";
+export {
+  videoFromImage,
+  IMG2VIDEO_URL,
+  IMG2VIDEO_SUPPORT,
+  videoFromImageConstraints,
+} from "./video-from-image";
 export type { Img2VideoParams } from "./video-from-image";
 
 export {
@@ -48,13 +53,7 @@ export type {
   ViduStyle,
 } from "./shared";
 
-export {
-  CREDIT_USD,
-  models,
-  videoModels,
-  imageModels,
-  provider,
-} from "./models";
+export { CREDIT_USD, models, videoModels, imageModels, provider } from "./models";
 export type { ViduModelId, ViduImageModelId } from "./models";
 
 export {

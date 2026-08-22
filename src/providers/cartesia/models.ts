@@ -179,3 +179,31 @@ export const TTS_MODEL_IDS = [
 ] as const satisfies readonly CartesiaModelId[];
 /** STT (ink-*) model ids. */
 export type CartesiaSttModelId = Extract<CartesiaModelId, `ink${string}`>;
+
+/** The 42 language codes the tts/bytes docs enumerate (2026-03-01). */
+export const CARTESIA_TTS_LANGUAGES = [
+  "en", "fr", "de", "es", "pt", "zh", "ja", "hi", "it", "ko",
+  "nl", "pl", "ru", "sv", "tr", "tl", "bg", "ro", "ar", "cs",
+  "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "hu", "no",
+  "vi", "bn", "th", "he", "ka", "id", "te", "gu", "kn", "ml",
+  "mr", "pa",
+] as const;
+
+/**
+ * The `language` enum POST /stt publishes (Cartesia-Version 2026-03-01) —
+ * https://docs.cartesia.ai/api-reference/stt/transcribe, transcribed in doc
+ * order. Note this is a DIFFERENT, much larger set than the 42-code TTS list:
+ * batch STT is Whisper-backed and adds its long tail (cy, haw, yue, …).
+ */
+export const CARTESIA_STT_LANGUAGES = [
+  "en", "zh", "de", "es", "ru", "ko", "fr", "ja", "pt", "tr",
+  "pl", "ca", "nl", "ar", "sv", "it", "id", "hi", "fi", "vi",
+  "he", "uk", "el", "ms", "cs", "ro", "da", "hu", "ta", "no",
+  "th", "ur", "hr", "bg", "lt", "la", "mi", "ml", "cy", "sk",
+  "te", "fa", "lv", "bn", "sr", "az", "sl", "kn", "et", "mk",
+  "br", "eu", "is", "hy", "ne", "mn", "bs", "kk", "sq", "sw",
+  "gl", "mr", "pa", "si", "km", "sn", "yo", "so", "af", "oc",
+  "ka", "be", "tg", "sd", "gu", "am", "yi", "lo", "uz", "fo",
+  "ht", "ps", "tk", "nn", "mt", "sa", "lb", "my", "bo", "tl",
+  "mg", "as", "tt", "haw", "ln", "ha", "ba", "jw", "su", "yue",
+] as const;

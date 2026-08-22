@@ -31,11 +31,7 @@
  * //   .models.generateContent(params.toSdk("google-vertex"))
  * ```
  */
-import {
-  createChat,
-  type GoogleVertexConfig,
-  type GoogleVertexChat,
-} from "./chat";
+import { createChat, type GoogleVertexConfig, type GoogleVertexChat } from "./chat";
 import { checkChat } from "./check";
 
 export interface GoogleVertexProvider {

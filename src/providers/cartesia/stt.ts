@@ -34,8 +34,13 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { findMediaDeclaration } from "../../core/media/check";
-import { models, type CartesiaSttModelId } from "./models";
+import { CARTESIA_STT_LANGUAGES, models, type CartesiaSttModelId } from "./models";
 import { CARTESIA_VERSION } from "./tts";
+
+// Declared in `./models` — an import-free leaf — so that `unmodel/cartesia/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export { CARTESIA_STT_LANGUAGES } from "./models";
 
 export const STT_TRANSCRIBE_URL = "https://api.cartesia.ai/stt";
 
@@ -53,25 +58,6 @@ export type CartesiaSttEncoding =
   | "pcm_f32le"
   | "pcm_mulaw"
   | "pcm_alaw";
-
-/**
- * The `language` enum POST /stt publishes (Cartesia-Version 2026-03-01) —
- * https://docs.cartesia.ai/api-reference/stt/transcribe, transcribed in doc
- * order. Note this is a DIFFERENT, much larger set than the 42-code TTS list:
- * batch STT is Whisper-backed and adds its long tail (cy, haw, yue, …).
- */
-export const CARTESIA_STT_LANGUAGES = [
-  "en", "zh", "de", "es", "ru", "ko", "fr", "ja", "pt", "tr",
-  "pl", "ca", "nl", "ar", "sv", "it", "id", "hi", "fi", "vi",
-  "he", "uk", "el", "ms", "cs", "ro", "da", "hu", "ta", "no",
-  "th", "ur", "hr", "bg", "lt", "la", "mi", "ml", "cy", "sk",
-  "te", "fa", "lv", "bn", "sr", "az", "sl", "kn", "et", "mk",
-  "br", "eu", "is", "hy", "ne", "mn", "bs", "kk", "sq", "sw",
-  "gl", "mr", "pa", "si", "km", "sn", "yo", "so", "af", "oc",
-  "ka", "be", "tg", "sd", "gu", "am", "yi", "lo", "uz", "fo",
-  "ht", "ps", "tk", "nn", "mt", "sa", "lb", "my", "bo", "tl",
-  "mg", "as", "tt", "haw", "ln", "ha", "ba", "jw", "su", "yue",
-] as const;
 
 export type CartesiaSttLanguage = (typeof CARTESIA_STT_LANGUAGES)[number];
 

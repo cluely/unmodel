@@ -216,8 +216,25 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * the wire check and this adapter read the same array. Its zod schema constants
  * are dead code in this entry and stay as a ~1.6 KiB remnant, which was the
  * accepted price of not declaring the voices twice.
+ *
+ * **Bumped 500 → 515 by the values entries**, and the investigation this
+ * file's header demands was run rather than skipped: **no module joined this
+ * graph that was not already in it as bytes**. 467.4 → 481.3 KiB, +13.9 across 15 adapter leaves.
+ * `unmodel/<provider>/values` publishes the per-model tables, so those tables
+ * moved out of the adapters into import-free `<category>-params.ts` leaves —
+ * without that split, importing one voice list cost 30–82 KiB of validator
+ * (measured; see `test/values-entries.test.ts`). Splitting a module is not free
+ * in an unminified ESM build: each leaf costs its own doc header and the
+ * export/import plumbing rolldown emits for a const that now crosses a module
+ * boundary instead of being inlined. Measured at **~0.65 KiB per leaf**, in the
+ * one pack small enough to account for line by line: music's
+ * `elevenlabs/unified-music.ts` went 4.2 → 2.6 KiB with a 2.3 KiB
+ * `music-params.ts` beside it (+0.7), stability's 3.4 → 2.4 with 1.6 (+0.6),
+ * and `core/unified/canonical-keys.ts` — the params vocabulary, moved out of
+ * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
+ * is +0.1 net against the kernel's own shrink.
  */
-const TTS_PACK_BUDGET_KIB = 500;
+const TTS_PACK_BUDGET_KIB = 515;
 
 /**
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
@@ -250,8 +267,25 @@ const TTS_PACK_BUDGET_KIB = 500;
  * property its own header argues for — one file, one set of rules for what
  * "approximately" means, one test suite over all of them. If this one fails,
  * check `sourceModulesOf` for a *new provider* before touching the number.
+ *
+ * **Bumped 790 → 820 by the values entries**, and the investigation this
+ * file's header demands was run rather than skipped: **no module joined this
+ * graph that was not already in it as bytes**. 765.4 → 780.5 KiB, +15.1 across 21 adapter leaves.
+ * `unmodel/<provider>/values` publishes the per-model tables, so those tables
+ * moved out of the adapters into import-free `<category>-params.ts` leaves —
+ * without that split, importing one voice list cost 30–82 KiB of validator
+ * (measured; see `test/values-entries.test.ts`). Splitting a module is not free
+ * in an unminified ESM build: each leaf costs its own doc header and the
+ * export/import plumbing rolldown emits for a const that now crosses a module
+ * boundary instead of being inlined. Measured at **~0.65 KiB per leaf**, in the
+ * one pack small enough to account for line by line: music's
+ * `elevenlabs/unified-music.ts` went 4.2 → 2.6 KiB with a 2.3 KiB
+ * `music-params.ts` beside it (+0.7), stability's 3.4 → 2.4 with 1.6 (+0.6),
+ * and `core/unified/canonical-keys.ts` — the params vocabulary, moved out of
+ * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
+ * is +0.1 net against the kernel's own shrink.
  */
-const IMAGE_PACK_BUDGET_KIB = 790;
+const IMAGE_PACK_BUDGET_KIB = 820;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -444,8 +478,25 @@ const STT_PACK_PROVIDERS: string[] = [
  * the alternative on offer was deleting documentation to buy 0.2 KiB, which
  * would have made the number pass without making the bundle meaningfully
  * smaller.
+ *
+ * **Bumped 160 → 168 by the values entries**, and the investigation this
+ * file's header demands was run rather than skipped: **no module joined this
+ * graph that was not already in it as bytes**. 155.1 → 156.8 KiB, +1.7 across 2 adapter leaves.
+ * `unmodel/<provider>/values` publishes the per-model tables, so those tables
+ * moved out of the adapters into import-free `<category>-params.ts` leaves —
+ * without that split, importing one voice list cost 30–82 KiB of validator
+ * (measured; see `test/values-entries.test.ts`). Splitting a module is not free
+ * in an unminified ESM build: each leaf costs its own doc header and the
+ * export/import plumbing rolldown emits for a const that now crosses a module
+ * boundary instead of being inlined. Measured at **~0.65 KiB per leaf**, in the
+ * one pack small enough to account for line by line: music's
+ * `elevenlabs/unified-music.ts` went 4.2 → 2.6 KiB with a 2.3 KiB
+ * `music-params.ts` beside it (+0.7), stability's 3.4 → 2.4 with 1.6 (+0.6),
+ * and `core/unified/canonical-keys.ts` — the params vocabulary, moved out of
+ * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
+ * is +0.1 net against the kernel's own shrink.
  */
-const MUSIC_PACK_BUDGET_KIB = 160;
+const MUSIC_PACK_BUDGET_KIB = 168;
 
 /** The two providers `unmodel/music`'s ready-made pack is allowed to reach. */
 const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "stability"];
@@ -487,8 +538,25 @@ const TTS_PACK_PROVIDERS: string[] = [
  * route through `openai/images-shared.ts` — deliberately, and pinned by the
  * composition assertion below: reaching them through `openai/image.ts` instead
  * would drag that endpoint's validator, schema and catalog into this pack.
+ *
+ * **Bumped 295 → 310 by the values entries**, and the investigation this
+ * file's header demands was run rather than skipped: **no module joined this
+ * graph that was not already in it as bytes**. 281.4 → 287.2 KiB, +5.8 across 8 adapter leaves.
+ * `unmodel/<provider>/values` publishes the per-model tables, so those tables
+ * moved out of the adapters into import-free `<category>-params.ts` leaves —
+ * without that split, importing one voice list cost 30–82 KiB of validator
+ * (measured; see `test/values-entries.test.ts`). Splitting a module is not free
+ * in an unminified ESM build: each leaf costs its own doc header and the
+ * export/import plumbing rolldown emits for a const that now crosses a module
+ * boundary instead of being inlined. Measured at **~0.65 KiB per leaf**, in the
+ * one pack small enough to account for line by line: music's
+ * `elevenlabs/unified-music.ts` went 4.2 → 2.6 KiB with a 2.3 KiB
+ * `music-params.ts` beside it (+0.7), stability's 3.4 → 2.4 with 1.6 (+0.6),
+ * and `core/unified/canonical-keys.ts` — the params vocabulary, moved out of
+ * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
+ * is +0.1 net against the kernel's own shrink.
  */
-const IMAGE_EDIT_PACK_BUDGET_KIB = 295;
+const IMAGE_EDIT_PACK_BUDGET_KIB = 310;
 
 /**
  * The one generated catalog this pack legitimately reaches.
@@ -786,8 +854,16 @@ describe("unmodel/chat", () => {
    * `google/tts-models.ts` in the old list is `google/chat-tts-overlay.ts` in
    * the new one — a rename, not a departure; `google/tts-models.ts` now names
    * the dedicated surface's three hand rows and is deliberately NOT here.
+   *
+   * **54 → 55 with the values entries**, and the one that joined is a *move*
+   * rather than an addition: `google/image-constraints.ts` is the import-free
+   * leaf the Imagen and Gemini-image value spaces went to so that
+   * `unmodel/google/values` could publish them without `src/catalog/google.gen.ts`
+   * riding along (26.1 → 3.6 KiB on a shaken one-import measurement).
+   * `google/constraints.ts` re-exports every name, so those bytes were already
+   * in this graph — inside `constraints.ts` — and this line is where they went.
    */
-  test("its provider graph is exactly the enumerated 54 modules", () => {
+  test("its provider graph is exactly the enumerated 55 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
       "src/providers/alibaba/index.ts",
@@ -805,6 +881,7 @@ describe("unmodel/chat", () => {
       "src/providers/google/chat-tts-overlay.ts",
       "src/providers/google/chat.ts",
       "src/providers/google/constraints.ts",
+      "src/providers/google/image-constraints.ts",
       "src/providers/google/interop.ts",
       "src/providers/google/model-path.ts",
       "src/providers/google/tts-checks.ts",

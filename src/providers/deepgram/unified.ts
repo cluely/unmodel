@@ -8,8 +8,4 @@
  * to get both; the ready-made packs import the halves directly.
  */
 export { tts, type DeepgramTtsResult, type DeepgramTtsWire } from "./unified-tts";
-export {
-  stt,
-  type DeepgramSttResult,
-  type DeepgramSttWire,
-} from "./unified-stt";
+export { stt, type DeepgramSttResult, type DeepgramSttWire } from "./unified-stt";

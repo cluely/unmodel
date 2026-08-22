@@ -8,8 +8,4 @@
  * to get both; the ready-made packs import the halves directly.
  */
 export { tts, type CartesiaTtsResult, type CartesiaTtsWire } from "./unified-tts";
-export {
-  stt,
-  type CartesiaSttResult,
-  type CartesiaSttWire,
-} from "./unified-stt";
+export { stt, type CartesiaSttResult, type CartesiaSttWire } from "./unified-stt";

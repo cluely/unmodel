@@ -212,6 +212,18 @@ no aggregate of provider wire types. All 71 entries emit an empty JavaScript mod
 `test/types-entries.test.ts` asserts against a real build alongside the completeness drift
 guard keyed on `src/cli-registry.ts`.
 
+**Values without a validator.** The 36 providers with a unified adapter also publish
+`unmodel/<provider>/values`: the runtime twin of those types — `<CATEGORY>_MODEL_PARAMS`,
+`<CATEGORY>_MODELS` and `<CATEGORY>_FORMAT_SPEC` per category served, plus that provider's own
+published enums (voices, sizes, ratios, durations, codecs, languages) under their own names.
+The tables are the **same objects** the adapter compiles with, which is why they sit on
+import-free `<category>-params.ts` leaves that both read: one import from a values entry costs
+~1 KiB (19.4 KiB at the worst, runway's) instead of the 30–82 KiB a validator would drag.
+`unmodel/values` is the canonical hub (the closed unions as arrays, `CANONICAL_KEY_LISTS`,
+`CHAT_PROVIDERS`) and `unmodel/values/chat-refs` carries the 1,339 chat refs on their own
+subpath because they are 45 KiB. `test/values-entries.test.ts` measures every export against a
+real build and asserts the tables by reference.
+
 **Contract, identical in all seven.** A param a provider cannot express is an **error**
 naming what it does offer; a value it can only express approximately is an
 `approximated_param` **warning** naming both the requested and the achieved value;

@@ -95,11 +95,7 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { ResolutionTier } from "../../core/unified/vocabulary/common";
-import type {
-  ImageAdapterFor,
-  ImageParams,
-  ModelParamTable,
-} from "../../core/unified/vocabulary/image";
+import type { ImageAdapterFor, ImageParams } from "../../core/unified/vocabulary/image";
 import {
   IMAGE_ASPECT_RATIOS,
   IMAGE_COUNTS,
@@ -109,38 +105,7 @@ import {
   type ViduImageResolution,
 } from "./image-from-reference";
 import { DOCS_BASE } from "./shared";
-
-/**
- * The two ids `POST /ent/v2/reference2image` accepts — `imageModels` in
- * `./models.ts`, which is the route-scoped catalog the validator itself uses.
- * Vidu's other nine models are video-only and warn as `unknown_model` here.
- */
-const MODELS = ["viduq2", "viduq1"] as const;
-
-/**
- * The two models' per-model surface.
- *
- * `ratios` is each model's `IMAGE_ASPECT_RATIOS` row **minus `"auto"`** — a
- * Vidu keyword meaning "read the shape off the reference images", not a shape
- * — and `tiers` is the canonical half of `IMAGE_RESOLUTIONS`: viduq1 publishes
- * `["1080p"]` and viduq2 adds `2K` and `4K`, which is exactly the difference
- * between the two rows below. No `sizes`: this route has no pixel field, so
- * `size` types as `never` and still runs through `pixelsToRatio`.
- *
- * No extras — every other field on `Reference2ImageParams` is either canonical
- * (`prompt`, `seed`) or `images`, whose reference payload has no canonical
- * word yet and rides through `providerOptions.vidu`.
- */
-const VIDU_IMAGE_MODEL_PARAMS = {
-  viduq2: {
-    ratios: ["16:9", "9:16", "1:1", "3:4", "4:3", "21:9", "2:3", "3:2"],
-    tiers: ["1k", "2k", "4k"],
-  },
-  viduq1: {
-    ratios: ["16:9", "9:16", "1:1", "3:4", "4:3"],
-    tiers: ["1k"],
-  },
-} as const satisfies ModelParamTable;
+import { MODELS, VIDU_IMAGE_MODEL_PARAMS } from "./image-params";
 
 const SOURCE = `${DOCS_BASE}/reference-to-image`;
 

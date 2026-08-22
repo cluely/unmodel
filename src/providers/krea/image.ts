@@ -59,6 +59,12 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, KREA_BILLING_TIERS, type KreaModelId } from "./models";
 
+// Declared in `./constraints` — an import-free leaf — so that `unmodel/krea/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export { KREA_ASPECT_RATIOS, KREA_CREATIVITY_MODES, KREA_RESOLUTIONS } from "./constraints";
+import { KREA_ASPECT_RATIOS, KREA_CREATIVITY_MODES, KREA_RESOLUTIONS } from "./constraints";
+
 export const KREA_API_BASE_URL = "https://api.krea.ai";
 
 /** Async-job polling endpoint (`GET /jobs/{job_id}`) — transport, out of scope. */
@@ -72,26 +78,8 @@ export function krea2Url(model: string): string {
   const path = model.split("/").map(encodeURIComponent).join("/");
   return `${KREA_API_BASE_URL}/generate/image/krea/${path}`;
 }
-
-/** `aspect_ratio` enum — OpenAPI `aspect_ratio`. */
-export const KREA_ASPECT_RATIOS = [
-  "1:1",
-  "4:3",
-  "3:2",
-  "16:9",
-  "2.35:1",
-  "4:5",
-  "2:3",
-  "9:16",
-] as const;
 export type KreaAspectRatio = (typeof KREA_ASPECT_RATIOS)[number];
-
-/** `resolution` enum — "Resolution scale. One of: 1K." */
-export const KREA_RESOLUTIONS = ["1K"] as const;
 export type KreaResolution = (typeof KREA_RESOLUTIONS)[number];
-
-/** `creativity` enum — prompt-expansion mode. */
-export const KREA_CREATIVITY_MODES = ["raw", "low", "medium", "high"] as const;
 export type KreaCreativity = (typeof KREA_CREATIVITY_MODES)[number];
 
 /** K2 generative-slider bounds (`intensity`, `complexity`, `movement`). */

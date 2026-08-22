@@ -23,10 +23,23 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { omniImageModels, type KlingOmniImageModelId } from "./models";
-import { DOCS_BASE, KLING_BASE_URL, KLING_HEADERS, type KlingWatermarkInfo } from "./shared";
+import {
+  DOCS_BASE,
+  KLING_BASE_URL,
+  KLING_HEADERS,
+  OMNI_IMAGE_RESOLUTIONS,
+  OMNI_RESULT_TYPES,
+  OMNI_SERIES_AMOUNTS,
+  type KlingWatermarkInfo,
+} from "./shared";
 import { elementListSchema, watermarkInfoSchema } from "./v1-routes";
 import { KLING_IMAGE_ASPECT_RATIOS } from "./image";
 import { imageCostUSD, type ImageMode } from "./pricing";
+
+// Declared in `./shared` — an import-free leaf — so that `unmodel/kling/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export { OMNI_IMAGE_RESOLUTIONS, OMNI_RESULT_TYPES, OMNI_SERIES_AMOUNTS } from "./shared";
 
 export const OMNI_IMAGE_URL = `${KLING_BASE_URL}/v1/images/omni-image`;
 
@@ -34,17 +47,8 @@ const SOURCE = `${DOCS_BASE}/api/image/3-0-omni/image-omni`;
 
 /** Server-side default when `model_name` is omitted. */
 export const DEFAULT_OMNI_IMAGE_MODEL = "kling-image-o1";
-
-/** `resolution` values on this route — it adds a 4K tier. */
-export const OMNI_IMAGE_RESOLUTIONS = ["1k", "2k", "4k"] as const;
 /** `resolution` on `/v1/images/omni-image` — a closed enum, zod-enforced. */
 export type KlingOmniImageResolution = (typeof OMNI_IMAGE_RESOLUTIONS)[number];
-
-/** `result_type`: a single image or a consistent series. */
-export const OMNI_RESULT_TYPES = ["single", "series"] as const;
-
-/** `series_amount`: 2–9, or "auto". */
-export const OMNI_SERIES_AMOUNTS = ["2", "3", "4", "5", "6", "7", "8", "9", "auto"] as const;
 
 /** `aspect_ratio` here also accepts "auto" (match the first input image). */
 export const OMNI_IMAGE_ASPECT_RATIOS = [...KLING_IMAGE_ASPECT_RATIOS, "auto"] as const;

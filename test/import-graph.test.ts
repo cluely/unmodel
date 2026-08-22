@@ -786,6 +786,193 @@ describe("type-only entries (amendment A8)", () => {
   });
 });
 
+/**
+ * Amendment A9 — the value entries: `src/providers/<p>/values.ts` and
+ * `src/values/**`.
+ *
+ * `unmodel/<provider>/values` promises the opposite of what A8's entries
+ * promise. A types entry is free and must stay free; a values entry ships real
+ * bytes and must ship *only* the ones asked for. Both promises are invisible to
+ * `tsc`, and this one has a specific, easy way to break: re-export a list from
+ * the module that also builds a zod schema, and one import of one array drags a
+ * validator, the pipeline and sometimes a generated catalog — 30–80 KiB,
+ * measured, which is why the per-model tables live on import-free
+ * `<category>-params.ts` leaves at all.
+ *
+ * So the rules are the narrowest ones that still let the entries be complete:
+ *
+ * - a provider's values entry names **its own directory and nothing else** —
+ *   not the dialect bases A8 allows, because a value import of another
+ *   provider's module is that provider's bytes, not merely its declarations;
+ * - it never names an adapter (`unified*.ts`). The adapter is where the compile
+ *   function and the validator import live; the data it compiles with is on the
+ *   `-params` leaf beside it, and both read the same object;
+ * - the hub sees the canonical value modules, the chat ref array and
+ *   `src/chat/refs.ts` — enumerated, because each is a chunk;
+ * - the 1,339-ref array has exactly ONE importer, for the reason A3 pins the
+ *   profile table: it is 45 KiB, and a second importer would put it in a second
+ *   entry without changing a line of the entry that acquired it.
+ *
+ * `test/values-entries.test.ts` asserts the other half — what each export
+ * actually costs — against a real build.
+ */
+describe("value entries (amendment A9)", () => {
+  const isProviderValuesEntry = (file: string): boolean =>
+    /^src\/providers\/[^/]+\/values\.ts$/.test(file);
+  const isUnifiedAdapter = (file: string): boolean =>
+    /^src\/providers\/[^/]+\/unified(-[a-z-]+)?\.ts$/.test(file);
+
+  /** The exact modules `src/values/**` may reach outside itself. */
+  const HUB_IMPORTS = new Set([
+    // The canonical arrays, and — re-exported from that same module —
+    // `CANONICAL_KEY_LISTS`. One door, so the hub names one core module.
+    "src/core/unified/values.ts",
+    "src/chat/refs.ts", // CHAT_PROVIDERS, 32 strings
+    "src/catalog/chat-refs-values.gen.ts", // CHAT_MODEL_REFS, on its own entry
+  ]);
+
+  const REF_VALUES = "src/catalog/chat-refs-values.gen.ts";
+
+  test("a provider values entry stays inside its own provider", () => {
+    const files = FILES.filter(isProviderValuesEntry);
+    // A rule that scans an empty set passes by saying nothing.
+    expect(files.length).toBeGreaterThanOrEqual(36);
+
+    const violations: string[] = [];
+    for (const file of files) {
+      const from = providerOf(file) as string;
+      for (const ref of importsOf(file)) {
+        if (providerOf(ref.target) !== from) {
+          violations.push(
+            violation(
+              file,
+              ref,
+              "a values entry may name only its own provider directory — a value import of " +
+                "anything else is another module's bytes behind this subpath",
+            ),
+          );
+          continue;
+        }
+        if (isUnifiedAdapter(ref.target)) {
+          violations.push(
+            violation(
+              file,
+              ref,
+              "an adapter imports the provider's validator and core/unified/derive, so one " +
+                "import from here would cost 30–80 KiB. Re-export the table from the " +
+                "`<category>-params.ts` leaf the adapter itself reads",
+            ),
+          );
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("the hub reaches only the enumerated canonical modules", () => {
+    const files = FILES.filter((f) => under(f, "src/values"));
+    expect(files.length).toBe(2);
+
+    const violations: string[] = [];
+    const reached = new Set<string>();
+    for (const file of files) {
+      for (const ref of importsOf(file)) {
+        if (under(ref.target, "src/values")) continue;
+        if (HUB_IMPORTS.has(ref.target)) {
+          reached.add(ref.target);
+          continue;
+        }
+        violations.push(
+          violation(
+            file,
+            ref,
+            under(ref.target, "src/providers")
+              ? "the hub is the CANONICAL vocabulary — a provider's arrays live at " +
+                  "unmodel/<provider>/values, one entry each, precisely so this one stays 2 KiB"
+              : `src/values may import only ${[...HUB_IMPORTS].join(", ")} and itself`,
+          ),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+    // No dead pins: every allowance is used, so the set cannot quietly widen.
+    expect([...reached].sort()).toEqual([...HUB_IMPORTS].sort());
+  });
+
+  test("the 1,339-ref array has exactly one importer, and it is its own entry", () => {
+    const importers = FILES.filter((file) =>
+      importsOf(file).some((ref) => ref.target === REF_VALUES),
+    );
+    expect(importers).toEqual(["src/values/chat-refs.ts"]);
+  });
+
+  test("the type-only ref union and its value twin stay separate", () => {
+    // `chat-refs.gen.ts` is the union and must stay type-only everywhere (the
+    // rule above in A1); `chat-refs-values.gen.ts` is the array. The generated
+    // value file may reference the union — type-only — and nothing in
+    // `src/chat` may reach the array: `unmodel/chat` already ships 1.7 MB and
+    // has no use for a list of its own refs.
+    const violations: string[] = [];
+    for (const ref of importsOf(REF_VALUES)) {
+      if (ref.target === "src/catalog/chat-refs.gen.ts" && ref.typeOnly) continue;
+      violations.push(violation(REF_VALUES, ref, "the ref array imports its own union, type-only"));
+    }
+    for (const file of FILES.filter((f) => under(f, "src/chat"))) {
+      for (const ref of importsOf(file)) {
+        if (ref.target === REF_VALUES) violations.push(violation(file, ref, "unmodel/chat does not need the ref array"));
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("no other module imports a values entry — they are leaves, not plumbing", () => {
+    const violations: string[] = [];
+    for (const file of FILES) {
+      if (isProviderValuesEntry(file) || under(file, "src/values")) continue;
+      for (const ref of importsOf(file)) {
+        if (isProviderValuesEntry(ref.target) || under(ref.target, "src/values")) {
+          violations.push(
+            violation(file, ref, "a values entry is a published surface, not a shared module"),
+          );
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  /**
+   * The `-params` leaves are what make A9's first rule affordable, so they get
+   * the rule that keeps them cheap: their own provider directory, and the
+   * kernel's `EXTRA`/type surface. A zod import, a validator or a catalog here
+   * would move straight through the values entry into a client bundle.
+   */
+  test("a <category>-params leaf imports only its provider and the kernel", () => {
+    const leaves = FILES.filter((f) => /^src\/providers\/[^/]+\/[a-z-]+-params\.ts$/.test(f));
+    expect(leaves.length).toBeGreaterThanOrEqual(50);
+
+    const violations: string[] = [];
+    for (const file of leaves) {
+      const provider = providerOf(file) as string;
+      for (const ref of importsOf(file)) {
+        if (ref.specifier === "zod") {
+          violations.push(violation(file, ref, "a params leaf holds data, not a schema"));
+          continue;
+        }
+        if (under(ref.target, "src/core/unified")) continue;
+        if (providerOf(ref.target) === provider && !isCatalogGen(ref.target)) continue;
+        violations.push(
+          violation(
+            file,
+            ref,
+            "a params leaf may import only its own provider directory and src/core/unified/**",
+          ),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+});
+
 describe("cross-provider imports", () => {
   /**
    * The two structural exceptions, enumerated so adding a third is a

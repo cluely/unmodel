@@ -1,9 +1,4 @@
-export {
-  video,
-  TEXT_TO_VIDEO_URL,
-  TEXT_TO_VIDEO_V1_URL,
-  TEXT_TO_VIDEO_ENDPOINT,
-} from "./video";
+export { video, TEXT_TO_VIDEO_URL, TEXT_TO_VIDEO_V1_URL, TEXT_TO_VIDEO_ENDPOINT } from "./video";
 export type { TextToVideoParams } from "./video";
 
 export {

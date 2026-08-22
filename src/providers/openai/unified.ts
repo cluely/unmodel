@@ -18,8 +18,4 @@ export {
   type OpenaiImageEditWire,
 } from "./unified-image-edit";
 export { video, type OpenaiVideoResult, type OpenaiVideoWire } from "./unified-video";
-export {
-  stt,
-  type OpenaiSttResult,
-  type OpenaiSttWire,
-} from "./unified-stt";
+export { stt, type OpenaiSttResult, type OpenaiSttWire } from "./unified-stt";

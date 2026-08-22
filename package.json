@@ -63,6 +63,14 @@
       "types": "./dist/types/index.d.ts",
       "default": "./dist/types/index.js"
     },
+    "./values": {
+      "types": "./dist/values/index.d.ts",
+      "default": "./dist/values/index.js"
+    },
+    "./values/chat-refs": {
+      "types": "./dist/values/chat-refs.d.ts",
+      "default": "./dist/values/chat-refs.js"
+    },
     "./image": {
       "types": "./dist/unified/image.d.ts",
       "default": "./dist/unified/image.js"
@@ -123,6 +131,10 @@
       "types": "./dist/providers/assemblyai/types.d.ts",
       "default": "./dist/providers/assemblyai/types.js"
     },
+    "./assemblyai/values": {
+      "types": "./dist/providers/assemblyai/values.d.ts",
+      "default": "./dist/providers/assemblyai/values.js"
+    },
     "./azure": {
       "types": "./dist/providers/azure/index.d.ts",
       "default": "./dist/providers/azure/index.js"
@@ -151,6 +163,10 @@
       "types": "./dist/providers/black-forest-labs/types.d.ts",
       "default": "./dist/providers/black-forest-labs/types.js"
     },
+    "./black-forest-labs/values": {
+      "types": "./dist/providers/black-forest-labs/values.d.ts",
+      "default": "./dist/providers/black-forest-labs/values.js"
+    },
     "./bria": {
       "types": "./dist/providers/bria/index.d.ts",
       "default": "./dist/providers/bria/index.js"
@@ -162,6 +178,10 @@
     "./bria/types": {
       "types": "./dist/providers/bria/types.d.ts",
       "default": "./dist/providers/bria/types.js"
+    },
+    "./bria/values": {
+      "types": "./dist/providers/bria/values.d.ts",
+      "default": "./dist/providers/bria/values.js"
     },
     "./bytedance": {
       "types": "./dist/providers/bytedance/index.d.ts",
@@ -175,6 +195,10 @@
       "types": "./dist/providers/bytedance/types.d.ts",
       "default": "./dist/providers/bytedance/types.js"
     },
+    "./bytedance/values": {
+      "types": "./dist/providers/bytedance/values.d.ts",
+      "default": "./dist/providers/bytedance/values.js"
+    },
     "./cartesia": {
       "types": "./dist/providers/cartesia/index.d.ts",
       "default": "./dist/providers/cartesia/index.js"
@@ -186,6 +210,10 @@
     "./cartesia/types": {
       "types": "./dist/providers/cartesia/types.d.ts",
       "default": "./dist/providers/cartesia/types.js"
+    },
+    "./cartesia/values": {
+      "types": "./dist/providers/cartesia/values.d.ts",
+      "default": "./dist/providers/cartesia/values.js"
     },
     "./cerebras": {
       "types": "./dist/providers/cerebras/index.d.ts",
@@ -223,6 +251,10 @@
       "types": "./dist/providers/deepgram/types.d.ts",
       "default": "./dist/providers/deepgram/types.js"
     },
+    "./deepgram/values": {
+      "types": "./dist/providers/deepgram/values.d.ts",
+      "default": "./dist/providers/deepgram/values.js"
+    },
     "./deepinfra": {
       "types": "./dist/providers/deepinfra/index.d.ts",
       "default": "./dist/providers/deepinfra/index.js"
@@ -251,6 +283,10 @@
       "types": "./dist/providers/elevenlabs/types.d.ts",
       "default": "./dist/providers/elevenlabs/types.js"
     },
+    "./elevenlabs/values": {
+      "types": "./dist/providers/elevenlabs/values.d.ts",
+      "default": "./dist/providers/elevenlabs/values.js"
+    },
     "./fireworks-ai": {
       "types": "./dist/providers/fireworks-ai/index.d.ts",
       "default": "./dist/providers/fireworks-ai/index.js"
@@ -270,6 +306,10 @@
     "./fish-audio/types": {
       "types": "./dist/providers/fish-audio/types.d.ts",
       "default": "./dist/providers/fish-audio/types.js"
+    },
+    "./fish-audio/values": {
+      "types": "./dist/providers/fish-audio/values.d.ts",
+      "default": "./dist/providers/fish-audio/values.js"
     },
     "./friendli": {
       "types": "./dist/providers/friendli/index.d.ts",
@@ -291,6 +331,10 @@
       "types": "./dist/providers/gladia/types.d.ts",
       "default": "./dist/providers/gladia/types.js"
     },
+    "./gladia/values": {
+      "types": "./dist/providers/gladia/values.d.ts",
+      "default": "./dist/providers/gladia/values.js"
+    },
     "./google": {
       "types": "./dist/providers/google/index.d.ts",
       "default": "./dist/providers/google/index.js"
@@ -302,6 +346,10 @@
     "./google/types": {
       "types": "./dist/providers/google/types.d.ts",
       "default": "./dist/providers/google/types.js"
+    },
+    "./google/values": {
+      "types": "./dist/providers/google/values.d.ts",
+      "default": "./dist/providers/google/values.js"
     },
     "./google-vertex": {
       "types": "./dist/providers/google-vertex/index.d.ts",
@@ -339,6 +387,10 @@
       "types": "./dist/providers/hume/types.d.ts",
       "default": "./dist/providers/hume/types.js"
     },
+    "./hume/values": {
+      "types": "./dist/providers/hume/values.d.ts",
+      "default": "./dist/providers/hume/values.js"
+    },
     "./ideogram": {
       "types": "./dist/providers/ideogram/index.d.ts",
       "default": "./dist/providers/ideogram/index.js"
@@ -350,6 +402,10 @@
     "./ideogram/types": {
       "types": "./dist/providers/ideogram/types.d.ts",
       "default": "./dist/providers/ideogram/types.js"
+    },
+    "./ideogram/values": {
+      "types": "./dist/providers/ideogram/values.d.ts",
+      "default": "./dist/providers/ideogram/values.js"
     },
     "./inception": {
       "types": "./dist/providers/inception/index.d.ts",
@@ -371,6 +427,10 @@
       "types": "./dist/providers/inworld/types.d.ts",
       "default": "./dist/providers/inworld/types.js"
     },
+    "./inworld/values": {
+      "types": "./dist/providers/inworld/values.d.ts",
+      "default": "./dist/providers/inworld/values.js"
+    },
     "./kling": {
       "types": "./dist/providers/kling/index.d.ts",
       "default": "./dist/providers/kling/index.js"
@@ -382,6 +442,10 @@
     "./kling/types": {
       "types": "./dist/providers/kling/types.d.ts",
       "default": "./dist/providers/kling/types.js"
+    },
+    "./kling/values": {
+      "types": "./dist/providers/kling/values.d.ts",
+      "default": "./dist/providers/kling/values.js"
     },
     "./krea": {
       "types": "./dist/providers/krea/index.d.ts",
@@ -395,6 +459,10 @@
       "types": "./dist/providers/krea/types.d.ts",
       "default": "./dist/providers/krea/types.js"
     },
+    "./krea/values": {
+      "types": "./dist/providers/krea/values.d.ts",
+      "default": "./dist/providers/krea/values.js"
+    },
     "./leonardo": {
       "types": "./dist/providers/leonardo/index.d.ts",
       "default": "./dist/providers/leonardo/index.js"
@@ -406,6 +474,10 @@
     "./leonardo/types": {
       "types": "./dist/providers/leonardo/types.d.ts",
       "default": "./dist/providers/leonardo/types.js"
+    },
+    "./leonardo/values": {
+      "types": "./dist/providers/leonardo/values.d.ts",
+      "default": "./dist/providers/leonardo/values.js"
     },
     "./lightricks": {
       "types": "./dist/providers/lightricks/index.d.ts",
@@ -419,6 +491,10 @@
       "types": "./dist/providers/lightricks/types.d.ts",
       "default": "./dist/providers/lightricks/types.js"
     },
+    "./lightricks/values": {
+      "types": "./dist/providers/lightricks/values.d.ts",
+      "default": "./dist/providers/lightricks/values.js"
+    },
     "./lmnt": {
       "types": "./dist/providers/lmnt/index.d.ts",
       "default": "./dist/providers/lmnt/index.js"
@@ -430,6 +506,10 @@
     "./lmnt/types": {
       "types": "./dist/providers/lmnt/types.d.ts",
       "default": "./dist/providers/lmnt/types.js"
+    },
+    "./lmnt/values": {
+      "types": "./dist/providers/lmnt/values.d.ts",
+      "default": "./dist/providers/lmnt/values.js"
     },
     "./longcat": {
       "types": "./dist/providers/longcat/index.d.ts",
@@ -451,6 +531,10 @@
       "types": "./dist/providers/luma/types.d.ts",
       "default": "./dist/providers/luma/types.js"
     },
+    "./luma/values": {
+      "types": "./dist/providers/luma/values.d.ts",
+      "default": "./dist/providers/luma/values.js"
+    },
     "./meta": {
       "types": "./dist/providers/meta/index.d.ts",
       "default": "./dist/providers/meta/index.js"
@@ -471,6 +555,10 @@
       "types": "./dist/providers/minimax/types.d.ts",
       "default": "./dist/providers/minimax/types.js"
     },
+    "./minimax/values": {
+      "types": "./dist/providers/minimax/values.d.ts",
+      "default": "./dist/providers/minimax/values.js"
+    },
     "./mistral": {
       "types": "./dist/providers/mistral/index.d.ts",
       "default": "./dist/providers/mistral/index.js"
@@ -482,6 +570,10 @@
     "./mistral/types": {
       "types": "./dist/providers/mistral/types.d.ts",
       "default": "./dist/providers/mistral/types.js"
+    },
+    "./mistral/values": {
+      "types": "./dist/providers/mistral/values.d.ts",
+      "default": "./dist/providers/mistral/values.js"
     },
     "./moonshotai": {
       "types": "./dist/providers/moonshotai/index.d.ts",
@@ -502,6 +594,10 @@
     "./murf/types": {
       "types": "./dist/providers/murf/types.d.ts",
       "default": "./dist/providers/murf/types.js"
+    },
+    "./murf/values": {
+      "types": "./dist/providers/murf/values.d.ts",
+      "default": "./dist/providers/murf/values.js"
     },
     "./nebius": {
       "types": "./dist/providers/nebius/index.d.ts",
@@ -539,6 +635,10 @@
       "types": "./dist/providers/openai/types.d.ts",
       "default": "./dist/providers/openai/types.js"
     },
+    "./openai/values": {
+      "types": "./dist/providers/openai/values.d.ts",
+      "default": "./dist/providers/openai/values.js"
+    },
     "./openai-compatible": {
       "types": "./dist/providers/openai-compatible/index.d.ts",
       "default": "./dist/providers/openai-compatible/index.js"
@@ -575,6 +675,10 @@
       "types": "./dist/providers/pixverse/types.d.ts",
       "default": "./dist/providers/pixverse/types.js"
     },
+    "./pixverse/values": {
+      "types": "./dist/providers/pixverse/values.d.ts",
+      "default": "./dist/providers/pixverse/values.js"
+    },
     "./recraft": {
       "types": "./dist/providers/recraft/index.d.ts",
       "default": "./dist/providers/recraft/index.js"
@@ -586,6 +690,10 @@
     "./recraft/types": {
       "types": "./dist/providers/recraft/types.d.ts",
       "default": "./dist/providers/recraft/types.js"
+    },
+    "./recraft/values": {
+      "types": "./dist/providers/recraft/values.d.ts",
+      "default": "./dist/providers/recraft/values.js"
     },
     "./resemble": {
       "types": "./dist/providers/resemble/index.d.ts",
@@ -599,6 +707,10 @@
       "types": "./dist/providers/resemble/types.d.ts",
       "default": "./dist/providers/resemble/types.js"
     },
+    "./resemble/values": {
+      "types": "./dist/providers/resemble/values.d.ts",
+      "default": "./dist/providers/resemble/values.js"
+    },
     "./revai": {
       "types": "./dist/providers/revai/index.d.ts",
       "default": "./dist/providers/revai/index.js"
@@ -610,6 +722,10 @@
     "./revai/types": {
       "types": "./dist/providers/revai/types.d.ts",
       "default": "./dist/providers/revai/types.js"
+    },
+    "./revai/values": {
+      "types": "./dist/providers/revai/values.d.ts",
+      "default": "./dist/providers/revai/values.js"
     },
     "./reve": {
       "types": "./dist/providers/reve/index.d.ts",
@@ -623,6 +739,10 @@
       "types": "./dist/providers/reve/types.d.ts",
       "default": "./dist/providers/reve/types.js"
     },
+    "./reve/values": {
+      "types": "./dist/providers/reve/values.d.ts",
+      "default": "./dist/providers/reve/values.js"
+    },
     "./rime": {
       "types": "./dist/providers/rime/index.d.ts",
       "default": "./dist/providers/rime/index.js"
@@ -635,6 +755,10 @@
       "types": "./dist/providers/rime/types.d.ts",
       "default": "./dist/providers/rime/types.js"
     },
+    "./rime/values": {
+      "types": "./dist/providers/rime/values.d.ts",
+      "default": "./dist/providers/rime/values.js"
+    },
     "./runway": {
       "types": "./dist/providers/runway/index.d.ts",
       "default": "./dist/providers/runway/index.js"
@@ -646,6 +770,10 @@
     "./runway/types": {
       "types": "./dist/providers/runway/types.d.ts",
       "default": "./dist/providers/runway/types.js"
+    },
+    "./runway/values": {
+      "types": "./dist/providers/runway/values.d.ts",
+      "default": "./dist/providers/runway/values.js"
     },
     "./sarvam": {
       "types": "./dist/providers/sarvam/index.d.ts",
@@ -683,6 +811,10 @@
       "types": "./dist/providers/smallest-ai/types.d.ts",
       "default": "./dist/providers/smallest-ai/types.js"
     },
+    "./smallest-ai/values": {
+      "types": "./dist/providers/smallest-ai/values.d.ts",
+      "default": "./dist/providers/smallest-ai/values.js"
+    },
     "./soniox": {
       "types": "./dist/providers/soniox/index.d.ts",
       "default": "./dist/providers/soniox/index.js"
@@ -694,6 +826,10 @@
     "./soniox/types": {
       "types": "./dist/providers/soniox/types.d.ts",
       "default": "./dist/providers/soniox/types.js"
+    },
+    "./soniox/values": {
+      "types": "./dist/providers/soniox/values.d.ts",
+      "default": "./dist/providers/soniox/values.js"
     },
     "./speechify": {
       "types": "./dist/providers/speechify/index.d.ts",
@@ -707,6 +843,10 @@
       "types": "./dist/providers/speechify/types.d.ts",
       "default": "./dist/providers/speechify/types.js"
     },
+    "./speechify/values": {
+      "types": "./dist/providers/speechify/values.d.ts",
+      "default": "./dist/providers/speechify/values.js"
+    },
     "./speechmatics": {
       "types": "./dist/providers/speechmatics/index.d.ts",
       "default": "./dist/providers/speechmatics/index.js"
@@ -719,6 +859,10 @@
       "types": "./dist/providers/speechmatics/types.d.ts",
       "default": "./dist/providers/speechmatics/types.js"
     },
+    "./speechmatics/values": {
+      "types": "./dist/providers/speechmatics/values.d.ts",
+      "default": "./dist/providers/speechmatics/values.js"
+    },
     "./stability": {
       "types": "./dist/providers/stability/index.d.ts",
       "default": "./dist/providers/stability/index.js"
@@ -730,6 +874,10 @@
     "./stability/types": {
       "types": "./dist/providers/stability/types.d.ts",
       "default": "./dist/providers/stability/types.js"
+    },
+    "./stability/values": {
+      "types": "./dist/providers/stability/values.d.ts",
+      "default": "./dist/providers/stability/values.js"
     },
     "./stepfun": {
       "types": "./dist/providers/stepfun/index.d.ts",
@@ -774,6 +922,10 @@
     "./vidu/types": {
       "types": "./dist/providers/vidu/types.d.ts",
       "default": "./dist/providers/vidu/types.js"
+    },
+    "./vidu/values": {
+      "types": "./dist/providers/vidu/values.d.ts",
+      "default": "./dist/providers/vidu/values.js"
     },
     "./xai": {
       "types": "./dist/providers/xai/index.d.ts",

@@ -23,46 +23,7 @@ import {
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { ImageAdapterFor, ImageParams } from "../../core/unified/vocabulary/image";
 import { image as imageValidator } from "./image";
-import { OPENAI_IMAGE_MODEL_PARAMS } from "./image-params";
-
-/**
- * # `image`
- *
- * Three size vocabularies live behind one `size` field here, and which one a
- * request lands in is decided entirely by the model id:
- *
- * | family | `size` | canonical shape |
- * |---|---|---|
- * | `dall-e-2` | `256x256` / `512x512` / `1024x1024` | S3 — square only |
- * | `dall-e-3` | `1024x1024` / `1792x1024` / `1024x1792` | S3 — and `1792x1024` is **1.750:1**, not 16:9 |
- * | `gpt-image-1`, `-1-mini`, `-1.5` | `1024x1024` / `1536x1024` / `1024x1536` | S3 — square and 3:2 |
- * | `gpt-image-2`, `-2-2026-04-21` | free-form `WxH` | S4 — 16-px grid, ≤3:1, ≤3840 px/edge |
- *
- * The DALL·E 3 row is the reason {@link toSizeEnum} measures its own output:
- * everyone calls `1792x1024` "16:9" and it is not, so asking for `16:9` here
- * gets that size **and** an `approximated_param` naming 1.750 against 1.778.
- * Nothing else in this adapter is lossy — which is the point.
- *
- * The two deliveries and the two formats are orthogonal on paper and not on
- * this API: the GPT image models always return base64 and have no
- * `response_format`, and the DALL·E models return a URL or base64 and have no
- * `output_format`. So `outputDelivery: "base64"` is free on a GPT image model
- * (it is what it does) and `outputDelivery: "url"` is an error there, while
- * `outputFormat` is an error on DALL·E. Both errors quote the create
- * reference's own wording rather than a message this file invented.
- *
- * `seed` and `negativePrompt` have no field on this endpoint at all, so they
- * are declared gaps and the kernel reports them uniformly.
- */
-const IMAGE_MODELS = [
-  "gpt-image-2",
-  "gpt-image-2-2026-04-21",
-  "gpt-image-1.5",
-  "gpt-image-1",
-  "gpt-image-1-mini",
-  "dall-e-3",
-  "dall-e-2",
-] as const;
+import { IMAGE_MODELS, OPENAI_IMAGE_MODEL_PARAMS } from "./image-params";
 
 const IMAGES_CREATE_DOCS = "https://developers.openai.com/api/docs/api-reference/images/create";
 const IMAGE_GUIDE_DOCS = "https://developers.openai.com/api/docs/guides/image-generation";

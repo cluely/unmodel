@@ -48,12 +48,7 @@ import {
   type DeepgramRedact,
 } from "./stt";
 import { AUDIO_FORMATS, SPEAK_SPEED_MIN, SPEAK_SPEED_MAX } from "./tts";
-import {
-  models,
-  TTS_MODEL_IDS,
-  type DeepgramSttModelId,
-  type DeepgramTtsModelId,
-} from "./models";
+import { models, TTS_MODEL_IDS, type DeepgramSttModelId, type DeepgramTtsModelId } from "./models";
 
 export const LISTEN_LIVE_URL = "wss://api.deepgram.com/v1/listen";
 export const LISTEN_FLUX_URL = "wss://api.deepgram.com/v2/listen";

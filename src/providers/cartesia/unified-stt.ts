@@ -15,27 +15,19 @@
  */
 import {
   applyExtras,
-  EXTRA,
   resolveAudioInput,
   toPrimaryLanguage,
   toTimestampGranularity,
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
-import type {
-  SttAdapterFor,
-  SttModelParamTable,
-  SttParamsFor,
-} from "../../core/unified/vocabulary/stt";
+import type { SttAdapterFor, SttParamsFor } from "../../core/unified/vocabulary/stt";
 import {
   stt as validator,
   CARTESIA_STT_LANGUAGES,
-  type CartesiaSttEncoding,
   type CartesiaSttLanguage,
   type SttTranscribeParams,
 } from "./stt";
-
-/** The one batch STT model — the ref union for `cartesia/…`. */
-const MODELS = ["ink-whisper"] as const;
+import { CARTESIA_STT_MODEL_PARAMS, MODELS } from "./stt-params";
 
 const STT_DOCS = "https://docs.cartesia.ai/api-reference/stt/transcribe";
 
@@ -44,39 +36,6 @@ export type CartesiaSttWire = SttTranscribeParams;
 
 /** What a unified call to `cartesia/…` returns. */
 export type CartesiaSttResult = ReturnType<typeof validator>;
-
-/**
- * One model, one row — and the row is where the 100-code language list finally
- * becomes visible to a caller.
- *
- * The module note above says the enum "lives in `cartesia.stt`'s own
- * `checkLanguage`; duplicating it here would be a second copy to drift". That
- * is still true, which is why `languages` is {@link CARTESIA_STT_LANGUAGES}
- * *by reference*: one array, checked at run time by the provider and completed
- * at compile time by the editor, with no second declaration to keep in step.
- *
- * `timestamps: ["none", "word"]`: the wire array's only member is `"word"`, and
- * `"none"` is expressible because omitting the field is exactly what it means
- * here. `"segment"` and `"character"` are the narrowest refusal in the category
- * — a segment is not a coarse word, so it is an error rather than an
- * approximation.
- *
- * The two extras describe the *bytes*, which this route needs because it takes
- * raw audio as well as containers: `encoding` and `sample_rate` are what a
- * containerless upload has instead of a header. They are not the canonical
- * `outputFormat` — that word belongs to the speech category, and there is no
- * output audio here to have a format.
- */
-const CARTESIA_STT_MODEL_PARAMS = {
-  "ink-whisper": {
-    timestamps: ["none", "word"],
-    languages: CARTESIA_STT_LANGUAGES,
-    extras: {
-      encoding: EXTRA as CartesiaSttEncoding,
-      sample_rate: EXTRA as number,
-    },
-  },
-} as const satisfies SttModelParamTable;
 
 const STT_LANGUAGE_SET = new Set<string>(CARTESIA_STT_LANGUAGES);
 

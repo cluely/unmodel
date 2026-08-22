@@ -44,12 +44,7 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import {
-  models,
-  IMAGE_TO_IMAGE_MODELS,
-  V3_ONLY_MODELS,
-  type RecraftModelId,
-} from "./models";
+import { models, IMAGE_TO_IMAGE_MODELS, V3_ONLY_MODELS, type RecraftModelId } from "./models";
 import { STYLE_NAMES_BY_MODEL, type StyleFor } from "./styles";
 import type { RecraftControls, RecraftSize, RecraftTextLayoutElement } from "./image";
 

@@ -12,7 +12,21 @@ import {
   GOOGLE_AUDIO_DOCS_URL,
   INLINE_MEDIA_MAX_BYTES,
 } from "./audio-constraints";
+// The image value spaces, moved to a third import-free leaf for the same reason
+// and re-exported wholesale: `unmodel/google/values` and `./image-params.ts`
+// publish IMAGEN_ASPECT_RATIOS and its neighbours, and reaching them through
+// this module would cost them ~24 KiB of generated catalog for five strings.
+import {
+  GEMINI_IMAGE_ASPECT_RATIOS,
+  GEMINI_IMAGE_SIZES,
+  IMAGEN_ASPECT_RATIOS,
+  IMAGEN_DOCS_URL,
+  IMAGEN_IMAGE_SIZES,
+  IMAGEN_PERSON_GENERATION,
+  IMAGEN_SAMPLE_COUNTS,
+} from "./image-constraints";
 
+export * from "./image-constraints";
 export * from "./tts-constraints";
 export * from "./audio-constraints";
 
@@ -141,37 +155,6 @@ export const GEMINI_MEDIA_RESOLUTIONS = [
 /** The generateContent image-generation guide (model tables + REST samples). */
 export const GEMINI_IMAGE_GENERATION_DOCS_URL =
   "https://ai.google.dev/gemini-api/docs/generate-content/image-generation";
-
-/**
- * Every aspect ratio the REST reference's `ImageConfig.aspectRatio` documents.
- * WIDENED vs the SDK: @google/genai@2.17.0's `ImageConfig.aspectRatio`
- * docstring lists only 1:1, 2:3, 3:2, 3:4, 4:3, 9:16, 16:9 and 21:9 — it is
- * missing the documented 1:4, 4:1, 1:8, 8:1, 4:5 and 5:4.
- * Source: GENERATE_CONTENT_API_DOCS_URL (ImageConfig).
- */
-export const GEMINI_IMAGE_ASPECT_RATIOS = [
-  "1:1",
-  "1:4",
-  "4:1",
-  "1:8",
-  "8:1",
-  "2:3",
-  "3:2",
-  "3:4",
-  "4:3",
-  "4:5",
-  "5:4",
-  "9:16",
-  "16:9",
-  "21:9",
-] as const;
-
-/**
- * Every size the REST reference's `ImageConfig.imageSize` documents
- * ("Supported values are 512, 1K, 2K, 4K"). WIDENED vs the SDK, whose
- * docstring omits "512". Source: GENERATE_CONTENT_API_DOCS_URL (ImageConfig).
- */
-export const GEMINI_IMAGE_SIZES = ["512", "1K", "2K", "4K"] as const;
 
 /**
  * proto-JSON enum names for the SAME values under
@@ -322,45 +305,6 @@ export const GEMINI_IMAGE_CONFIG_VERTEX_ONLY_KEYS = [
  * see the composition assertions in test/bundle-budget.test.ts.
  */
 export type { GeminiTtsVoiceName } from "./wire";
-
-// ---------------------------------------------------------------------------
-// Imagen (image / models.{model}:predict) constraints.
-//
-// NOTE: like the Veo tables below, these deny/enum entries target keys of the
-// nested `parameters` wire object, so ./image applies them in a
-// dedicated check rather than through the pipeline's Layer-3 pass.
-// ---------------------------------------------------------------------------
-
-/** Imagen docs backing every Imagen constraint below. */
-export const IMAGEN_DOCS_URL = "https://ai.google.dev/gemini-api/docs/imagen";
-
-/** "aspectRatio … Supported values are "1:1", "3:4", "4:3", "9:16", and "16:9"." */
-export const IMAGEN_ASPECT_RATIOS = ["1:1", "3:4", "4:3", "9:16", "16:9"] as const;
-
-/** "imageSize … The supported values are 1K and 2K." (wire key: sampleImageSize) */
-export const IMAGEN_IMAGE_SIZES = ["1K", "2K"] as const;
-
-/**
- * "personGeneration … dont_allow / allow_adult (default) / allow_all".
- * The SCREAMING_CASE spellings are accepted too: @google/genai's
- * `PersonGeneration` enum is DONT_ALLOW/ALLOW_ADULT/ALLOW_ALL and its mldev
- * converter forwards the value to `parameters.personGeneration` verbatim, so
- * both first-party spellings reach the same wire field.
- */
-export const IMAGEN_PERSON_GENERATION = [
-  "dont_allow",
-  "allow_adult",
-  "allow_all",
-  "DONT_ALLOW",
-  "ALLOW_ADULT",
-  "ALLOW_ALL",
-] as const;
-
-/** "numberOfImages: The number of images to generate, from 1 to 4 (inclusive)." */
-export const IMAGEN_SAMPLE_COUNTS = [1, 2, 3, 4] as const;
-
-/** "Note: Maximum prompt length is 480 tokens." */
-export const IMAGEN_MAX_PROMPT_TOKENS = 480;
 
 /**
  * `parameters` keys that exist on Vertex AI but have NO Gemini API wire form:
@@ -537,7 +481,6 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
 export function videoDocsUrl(modelId: string): string {
   return modelId.startsWith("gemini-omni-flash") ? GEMINI_OMNI_FLASH_DOCS_URL : VEO_DOCS_URL;
 }
-
 
 /**
  * NOTE: both rules below are PREFIX-matched on `veo-`, so they bound only the

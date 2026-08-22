@@ -93,11 +93,7 @@ export {
   VEO_3_PROMPT_MAX_TOKENS,
   type GoogleVeoSupplementModelId,
 } from "./veo-models";
-export {
-  imageModels,
-  imagenModels,
-  type GoogleImagenModelId,
-} from "./imagen-models";
+export { imageModels, imagenModels, type GoogleImagenModelId } from "./imagen-models";
 export {
   GENERATE_TTS_BASE_URL,
   tts,

@@ -90,7 +90,6 @@
  */
 import {
   applyExtras,
-  EXTRA,
   pixelsToRatio,
   resolveSizing,
   sizingField,
@@ -99,15 +98,10 @@ import {
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { ResolutionTier } from "../../core/unified/vocabulary/common";
-import type {
-  ImageAdapterFor,
-  ImageParams,
-  ModelParamTable,
-} from "../../core/unified/vocabulary/image";
+import type { ImageAdapterFor, ImageParams } from "../../core/unified/vocabulary/image";
 import {
   image as imageValidator,
   KLING_IMAGE_ASPECT_RATIOS,
-  KLING_IMAGE_REFERENCES,
   KLING_IMAGE_RESOLUTIONS,
   type ImageGenerationsParams,
 } from "./image";
@@ -116,86 +110,12 @@ import {
   OMNI_IMAGE_ASPECT_RATIOS,
   OMNI_IMAGE_RESOLUTIONS,
   type OmniImageParams,
-  OMNI_RESULT_TYPES,
-  OMNI_SERIES_AMOUNTS,
 } from "./image-omni";
-import { DOCS_BASE, type KlingWatermarkInfo } from "./shared";
-
-/**
- * Both image catalogs, concatenated: `imageModels` first, then
- * `omniImageModels`. One `as const` array, because it is one ref union and one
- * runtime allow-list — {@link OMNI_MODELS} is what splits it again inside
- * `compile`.
- */
-const MODELS = [
-  "kling-v3",
-  "kling-v2-1",
-  "kling-v2-new",
-  "kling-v2",
-  "kling-v1-5",
-  "kling-v1",
-  "kling-image-o1",
-  "kling-v3-omni",
-] as const;
+import { DOCS_BASE } from "./shared";
+import { KLING_IMAGE_MODEL_PARAMS, MODELS } from "./image-params";
 
 /** The ids `POST /v1/images/omni-image` serves; everything else is the other route. */
 const OMNI_MODELS: ReadonlySet<string> = new Set(["kling-image-o1", "kling-v3-omni"]);
-
-/**
- * The two routes' per-model surfaces.
- *
- * No `sizes` on either — neither `POST /v1/images/generations` nor
- * `/v1/images/omni-image` has a pixel field, so `size` types as `never` and
- * shape and tier are the two independent enums below.
- *
- * `ratios` is each route's own list **minus `"auto"`**, which the Omni route
- * accepts and which is not a shape: it means "read it off the reference
- * images". `providerOptions.kling` still reaches it, spelled the way Kling
- * spells it. `tiers` is already canonical on this API — Kling's `resolution`
- * enum is literally `"1k" | "2k"` / `"1k" | "2k" | "4k"`.
- *
- * The extras split cleanly by route: the reference-and-fidelity controls
- * belong to `/generations`, `result_type` / `series_amount` to Omni, and
- * `element_list` / `watermark_info` to both.
- */
-const KLING_SHARED_EXTRAS = {
-  element_list: EXTRA as Array<{ element_id: string | number }>,
-  watermark_info: EXTRA as KlingWatermarkInfo,
-} as const;
-
-const KLING_GENERATIONS_ROW = {
-  ratios: KLING_IMAGE_ASPECT_RATIOS,
-  tiers: KLING_IMAGE_RESOLUTIONS,
-  extras: {
-    image_reference: EXTRA as (typeof KLING_IMAGE_REFERENCES)[number],
-    image_fidelity: EXTRA as number,
-    human_fidelity: EXTRA as number,
-    ...KLING_SHARED_EXTRAS,
-  },
-} as const;
-
-const KLING_OMNI_ROW = {
-  ratios: KLING_IMAGE_ASPECT_RATIOS,
-  tiers: OMNI_IMAGE_RESOLUTIONS,
-  extras: {
-    result_type: EXTRA as (typeof OMNI_RESULT_TYPES)[number],
-    // The wire accepts `string | number`; `checkSeriesAmount` stringifies and
-    // then enforces this closed set, so the closed set is what to offer.
-    series_amount: EXTRA as (typeof OMNI_SERIES_AMOUNTS)[number],
-    ...KLING_SHARED_EXTRAS,
-  },
-} as const;
-
-const KLING_IMAGE_MODEL_PARAMS = {
-  "kling-v3": KLING_GENERATIONS_ROW,
-  "kling-v2-1": KLING_GENERATIONS_ROW,
-  "kling-v2-new": KLING_GENERATIONS_ROW,
-  "kling-v2": KLING_GENERATIONS_ROW,
-  "kling-v1-5": KLING_GENERATIONS_ROW,
-  "kling-v1": KLING_GENERATIONS_ROW,
-  "kling-image-o1": KLING_OMNI_ROW,
-  "kling-v3-omni": KLING_OMNI_ROW,
-} as const satisfies ModelParamTable;
 
 const IMAGE_SOURCE = `${DOCS_BASE}/api/image/3-0-omni/image-generation`;
 const OMNI_SOURCE = `${DOCS_BASE}/api/image/3-0-omni/image-omni`;

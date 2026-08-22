@@ -379,3 +379,41 @@ export function checkContents<P extends CurrentRouteParams>(
     }
   };
 }
+
+/** `model_name` values this route accepts. */
+export const TEXT2VIDEO_MODELS = [
+  "kling-v1",
+  "kling-v1-6",
+  "kling-v2-master",
+  "kling-v2-1-master",
+  "kling-v2-5-turbo",
+  "kling-v2-6",
+  "kling-v3",
+] as const;
+
+/** Documented `aspect_ratio` values on the image routes. */
+export const KLING_IMAGE_ASPECT_RATIOS = [
+  "16:9",
+  "9:16",
+  "1:1",
+  "4:3",
+  "3:4",
+  "3:2",
+  "2:3",
+  "21:9",
+] as const;
+
+/** Documented `resolution` values on this route. */
+export const KLING_IMAGE_RESOLUTIONS = ["1k", "2k"] as const;
+
+/** `image_reference` — what the reference image is being used for. */
+export const KLING_IMAGE_REFERENCES = ["subject", "face"] as const;
+
+/** `resolution` values on this route — it adds a 4K tier. */
+export const OMNI_IMAGE_RESOLUTIONS = ["1k", "2k", "4k"] as const;
+
+/** `result_type`: a single image or a consistent series. */
+export const OMNI_RESULT_TYPES = ["single", "series"] as const;
+
+/** `series_amount`: 2–9, or "auto". */
+export const OMNI_SERIES_AMOUNTS = ["2", "3", "4", "5", "6", "7", "8", "9", "auto"] as const;

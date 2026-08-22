@@ -19,6 +19,7 @@ npm install unmodel
 - [Quick start](#quick-start)
 - [Choose a surface](#choose-a-surface)
 - [Types only](#types-only)
+- [Values](#values)
 - [API index](#api-index)
   - [Chat](#chat)
   - [Text to speech](#text-to-speech)
@@ -88,6 +89,7 @@ The enumerable result is the exact HTTP body. `.request` contains the URL, metho
 | Small cross-provider bundle | `createChat` from `unmodel/chat/factory`; media factories from their category entries | serves only registered providers |
 | Move validated chat to another host | `.toApi(provider)` | an existing validated request |
 | [Types with no runtime](#types-only) | `unmodel/<provider>/types`, `unmodel/types` | nothing — the entries emit no JavaScript |
+| [Runtime lists for pickers](#values) | `unmodel/<provider>/values`, `unmodel/values` | nothing — arrays out, ~1 KiB per import |
 
 Unified calls compile to provider-native params and finish in that provider's own validator:
 
@@ -160,6 +162,59 @@ Three properties are tested rather than promised, in `test/types-entries.test.ts
 - **packaged** — every entry has its `exports` subpath and its build entry.
 
 URL constants, `check*` helpers, `toFormData` and the models tables are runtime values, so they stay on the main subpath (`unmodel/openai`) — which tree-shakes to the few bytes a URL string costs if that is all you import.
+
+## Values
+
+A type cannot be rendered. `unmodel/<provider>/values` publishes the same vocabulary as **runtime arrays**: the voices, sizes, aspect ratios, durations, resolutions, codecs, sample rates, languages, timestamp granularities and model ids behind the enriched types — for the `<select>` a user picks from, and for validating a form field on the client.
+
+```tsx
+import { TTS_MODELS, TTS_MODEL_PARAMS } from "unmodel/openai/values";
+
+<select name="model">
+  {TTS_MODELS.map((id) => <option key={id}>{id}</option>)}
+</select>;
+
+// The row is per model, because the answer is: gpt-4o-mini-tts has 13 voices,
+// tts-1 has 9, and offering the wrong nine is a 400 the user sees.
+const voices = TTS_MODEL_PARAMS["gpt-4o-mini-tts"].voices;
+<select name="voice">
+  {voices.map((voice) => <option key={voice}>{voice}</option>)}
+</select>;
+```
+
+Each entry exports, per category it serves, three uniform names — `<CATEGORY>_MODEL_PARAMS`, `<CATEGORY>_MODELS`, and `<CATEGORY>_FORMAT_SPEC` where the category has an audio format spec (`IMAGE_`, `IMAGE_EDIT_`, `VIDEO_`, `TTS_`, `STT_`, `MUSIC_`) — plus that provider's own published lists under their own names (`GEMINI_TTS_VOICES`, `GPT_IMAGE_2_SIZES`, `BFL_ASPECT_RATIOS`, `RECRAFT_V3_STYLES`, `KLING_ASPECT_RATIOS`, …). 36 providers ship one; the ones that do are exactly the providers with a unified adapter.
+
+The tables are **the same objects the adapter compiles with**, re-exported rather than copied, so a picker and the request it builds cannot disagree. `test/values-entries.test.ts` asserts that by reference (`===`), not by deep equality.
+
+`unmodel/values` is the canonical hub — the closed unions as arrays:
+
+```ts
+import { ASPECT_RATIO_PRESETS, AUDIO_FORMAT_CODECS, CANONICAL_KEY_LISTS } from "unmodel/values";
+
+const isCodec = (value: string): value is (typeof AUDIO_FORMAT_CODECS)[number] =>
+  (AUDIO_FORMAT_CODECS as readonly string[]).includes(value);
+
+CANONICAL_KEY_LISTS.tts; // ["model", "text", "voice", "speed", "outputFormat", "language", "providerOptions"]
+```
+
+`ASPECT_RATIO_PRESETS`, `RESOLUTION_TIERS`, `VIDEO_RESOLUTIONS`, `IMAGE_OUTPUT_FORMATS`, `OUTPUT_DELIVERIES`, `AUDIO_FORMAT_CODECS`, `AUDIO_CONTAINERS`, `TIMESTAMP_GRANULARITIES`, `AUDIO_INPUT_KINDS`, `CANONICAL_KEY_LISTS` and `CHAT_PROVIDERS`. Each array is proved equal to its union in both directions by `test/types/values-hub.test-d.ts`, so a word added to the vocabulary and forgotten in the array is a compile error rather than a picker that quietly offers eight options out of nine.
+
+The 1,339 `"provider/model"` chat refs are the runtime twin of `ChatModelRef`, and they live on their own subpath because they are 45 KiB:
+
+```ts
+import { CHAT_MODEL_REFS } from "unmodel/values/chat-refs";
+```
+
+**What this costs.** Measured against a real build, per export, with a bundler that tree-shakes (`test/values-entries.test.ts` runs the measurement and holds each entry to a budget):
+
+| Import | Cost |
+| --- | --- |
+| any one array from `unmodel/values` | 0.2–1.5 KiB |
+| the median export of a provider entry | ~1 KiB |
+| the most expensive one (`unmodel/runway/values`) | 19.4 KiB |
+| `CHAT_MODEL_REFS` | 49 KiB — hence its own subpath |
+
+That is the whole point of the layout: the per-model tables live on import-free `<category>-params.ts` leaves that the adapter reads too, so importing one voice list does not pull that provider's validator, its zod schema or its catalog. Before that split the same measurement read 30–82 KiB.
 
 ## API index
 
@@ -648,6 +703,8 @@ Every implemented provider validator has its own subpath, and the package is mar
 | `unmodel/image`, `unmodel/tts`, etc. | every adapter in that category |
 | `unmodel/<provider>/unified` | one provider's unified adapters, where available |
 | `unmodel/<provider>/types`, `unmodel/types` | types only — the emitted JavaScript is an empty module |
+| `unmodel/<provider>/values`, `unmodel/values` | the runtime lists behind those types: arrays and per-model tables, ~1 KiB per import |
+| `unmodel/values/chat-refs` | the 1,339 `"provider/model"` chat refs as an array (45 KiB) |
 
 Build a narrow chat pack with concrete provider validators:
 

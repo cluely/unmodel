@@ -47,7 +47,6 @@
 import {
   applyExtras,
   base64Payload,
-  EXTRA,
   pixelsToRatio,
   resolveImageEditInput,
   resolveOperation,
@@ -58,44 +57,17 @@ import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
   ImageEditAdapterFor,
   ImageEditParamsFor,
-  ModelParamTable,
 } from "../../core/unified/vocabulary/image-edit";
-import { BFL_ASPECT_RATIOS, type BflAspectRatio } from "./aspect";
+import type { BflAspectRatio } from "./aspect";
 import type { BflOutputFormat } from "./image";
 import { imageEdit as validator } from "./image-edit";
+import { BFL_IMAGE_EDIT_MODEL_PARAMS, MODELS } from "./image-edit-params";
 
 const KONTEXT_SCHEMA_URL =
   "https://api.bfl.ai/openapi.json#/components/schemas/FluxKontextProInputs";
 
 /** The operations this route serves through the canonical vocabulary. */
 const EDIT_ONLY = ["edit"] as const;
-
-/** Both Kontext routes — the `black-forest-labs/…` edit refs. */
-const MODELS = ["flux-kontext-pro", "flux-kontext-max"] as const;
-
-/**
- * Both Kontext routes share `FluxKontextProInputs`, so this is one row twice.
- *
- * No `sizes`: the schema declares no width/height, which is the same fact
- * `unsupported.dimensions` states below — so `size` types as `never` and an
- * editor offers the shape instead. `ratios` is a **range** rather than an
- * enum ("between 21:9 and 9:21"), so `ratioFreeform` keeps the template tail
- * beside the thirteen presets: `"7:3"` is as legal as `"21:9"` and compiles to
- * the same thing.
- */
-const KONTEXT_ROW = {
-  ratios: BFL_ASPECT_RATIOS,
-  ratioFreeform: true,
-  extras: {
-    prompt_upsampling: EXTRA as boolean,
-    safety_tolerance: EXTRA as number,
-  },
-} as const;
-
-const BFL_IMAGE_EDIT_MODEL_PARAMS = {
-  "flux-kontext-pro": KONTEXT_ROW,
-  "flux-kontext-max": KONTEXT_ROW,
-} as const satisfies ModelParamTable;
 
 /**
  * "Aspect ratio of the image between 21:9 and 9:21." The bound is symmetric and

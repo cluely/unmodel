@@ -12,8 +12,4 @@
  * is where that decision is argued.
  */
 export { tts, type InworldTtsResult, type InworldTtsWire } from "./unified-tts";
-export {
-  stt,
-  type InworldSttResult,
-  type InworldSttWire,
-} from "./unified-stt";
+export { stt, type InworldSttResult, type InworldSttWire } from "./unified-stt";

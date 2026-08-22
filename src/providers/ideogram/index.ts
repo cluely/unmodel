@@ -23,12 +23,7 @@ export type {
   IdeogramColorPaletteMember,
 } from "./image";
 
-export {
-  imageV4,
-  IDEOGRAM_V4_GENERATE_URL,
-  RESOLUTIONS_V4,
-  V4_RENDERING_SPEEDS,
-} from "./image-v4";
+export { imageV4, IDEOGRAM_V4_GENERATE_URL, RESOLUTIONS_V4, V4_RENDERING_SPEEDS } from "./image-v4";
 export type {
   GenerateV4Params,
   IdeogramResolutionV4,
@@ -49,12 +44,7 @@ export {
   IDEOGRAM_V3_REFRAME_URL,
   IDEOGRAM_V3_REPLACE_BACKGROUND_URL,
 } from "./image-edit";
-export type {
-  EditParams,
-  RemixParams,
-  ReframeParams,
-  ReplaceBackgroundParams,
-} from "./image-edit";
+export type { EditParams, RemixParams, ReframeParams, ReplaceBackgroundParams } from "./image-edit";
 
 export {
   models,

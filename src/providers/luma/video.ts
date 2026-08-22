@@ -29,12 +29,7 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { videoModels, type LumaVideoModelId } from "./models";
-import {
-  GENERATIONS_URL,
-  LUMA_ASPECT_RATIOS,
-  checkOpenEnum,
-  type LumaAspectRatio,
-} from "./shared";
+import { GENERATIONS_URL, LUMA_ASPECT_RATIOS, checkOpenEnum, type LumaAspectRatio } from "./shared";
 
 /**
  * Both now live in `./shared.ts` — the image and reframe routes need them and

@@ -43,11 +43,13 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import {
-  models,
-  RENDERING_SPEED_TO_MODEL_ID,
-  CHARACTER_REFERENCE_PER_IMAGE,
-} from "./models";
+import { models, RENDERING_SPEED_TO_MODEL_ID, CHARACTER_REFERENCE_PER_IMAGE } from "./models";
+
+// Declared in `./constraints` — an import-free leaf — so that `unmodel/ideogram/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export { RESOLUTIONS } from "./constraints";
+import { RESOLUTIONS } from "./constraints";
 
 export const IDEOGRAM_V3_GENERATE_URL = "https://api.ideogram.ai/v1/ideogram-v3/generate";
 
@@ -89,79 +91,6 @@ export const ASPECT_RATIOS = [
   "1x1",
 ] as const;
 export type IdeogramAspectRatio = (typeof ASPECT_RATIOS)[number];
-
-/** The 69 resolutions supported by Ideogram 3.0. */
-export const RESOLUTIONS = [
-  "512x1536",
-  "576x1408",
-  "576x1472",
-  "576x1536",
-  "640x1344",
-  "640x1408",
-  "640x1472",
-  "640x1536",
-  "704x1152",
-  "704x1216",
-  "704x1280",
-  "704x1344",
-  "704x1408",
-  "704x1472",
-  "736x1312",
-  "768x1088",
-  "768x1216",
-  "768x1280",
-  "768x1344",
-  "800x1280",
-  "832x960",
-  "832x1024",
-  "832x1088",
-  "832x1152",
-  "832x1216",
-  "832x1248",
-  "864x1152",
-  "896x960",
-  "896x1024",
-  "896x1088",
-  "896x1120",
-  "896x1152",
-  "960x832",
-  "960x896",
-  "960x1024",
-  "960x1088",
-  "1024x832",
-  "1024x896",
-  "1024x960",
-  "1024x1024",
-  "1088x768",
-  "1088x832",
-  "1088x896",
-  "1088x960",
-  "1120x896",
-  "1152x704",
-  "1152x832",
-  "1152x864",
-  "1152x896",
-  "1216x704",
-  "1216x768",
-  "1216x832",
-  "1248x832",
-  "1280x704",
-  "1280x768",
-  "1280x800",
-  "1312x736",
-  "1344x640",
-  "1344x704",
-  "1344x768",
-  "1408x576",
-  "1408x640",
-  "1408x704",
-  "1472x576",
-  "1472x640",
-  "1472x704",
-  "1536x512",
-  "1536x576",
-  "1536x640",
-] as const;
 export type IdeogramResolution = (typeof RESOLUTIONS)[number];
 
 /** The 62 predefined style presets. */

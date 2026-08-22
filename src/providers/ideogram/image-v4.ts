@@ -38,55 +38,15 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, RENDERING_SPEED_TO_V4_MODEL_ID } from "./models";
 import { RENDERING_SPEEDS, type IdeogramRenderingSpeed } from "./image";
 
+// Declared in `./constraints` — an import-free leaf — so that `unmodel/ideogram/values`
+// and the `*-params` table can read these without this validator, its zod schema
+// and its catalog. Re-exported here so every existing caller is unchanged.
+export { RESOLUTIONS_V4 } from "./constraints";
+import { RESOLUTIONS_V4 } from "./constraints";
+
 export const IDEOGRAM_V4_GENERATE_URL = "https://api.ideogram.ai/v1/ideogram-v4/generate";
 
 const OPENAPI_URL = "https://developer.ideogram.ai/openapi.json";
-
-/**
- * The 1K and 2K resolutions supported by Ideogram 4.0 (OpenAPI
- * `ResolutionV4`). Deliberately a separate list from the 3.0 `RESOLUTIONS`
- * enum — the two barely overlap.
- */
-export const RESOLUTIONS_V4 = [
-  "2048x2048",
-  "1440x2880",
-  "2880x1440",
-  "1664x2496",
-  "2496x1664",
-  "1792x2240",
-  "2240x1792",
-  "1440x2560",
-  "2560x1440",
-  "1600x2560",
-  "2560x1600",
-  "1728x2304",
-  "2304x1728",
-  "1296x3168",
-  "3168x1296",
-  "1152x2944",
-  "2944x1152",
-  "1248x3328",
-  "3328x1248",
-  "1280x3072",
-  "3072x1280",
-  "1024x3072",
-  "3072x1024",
-  "1024x1024",
-  "896x1120",
-  "1120x896",
-  "864x1152",
-  "1152x864",
-  "832x1248",
-  "1248x832",
-  "800x1280",
-  "1280x800",
-  "720x1280",
-  "1280x720",
-  "720x1440",
-  "1440x720",
-  "512x1536",
-  "1536x512",
-] as const;
 export type IdeogramResolutionV4 = (typeof RESOLUTIONS_V4)[number];
 
 /** Rendering speeds the 4.0 routes actually accept — FLASH returns 400. */

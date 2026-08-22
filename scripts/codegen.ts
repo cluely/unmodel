@@ -410,6 +410,10 @@ export function getModelTyped(providerId: string, modelId: string): ModelInfo | 
 // weight — types are erased, values are not:
 //
 //   • `chat-refs.gen.ts`    TYPE-ONLY. Zero runtime bytes; ~50 KB of `.d.ts`.
+//   • `chat-refs-values.gen.ts` runtime, and ONLY the ref array — the twin of
+//     the union above, on its own module so that it can have its own chunk and
+//     its own subpath (`unmodel/values/chat-refs`). Nothing in `src/chat`
+//     imports it.
 //   • `chat-profiles.gen.ts` runtime. The slim capability/limit/cost subset,
 //     and nothing else.
 //
@@ -487,6 +491,48 @@ ${scope.map((entry) => `  | ${quote(entry.id)}`).join("\n")};
  */
 export type ChatModelRef =
 ${refs.map((ref) => `  | ${quote(ref)}`).join("\n")};
+`;
+}
+
+/**
+ * The **runtime twin** of {@link renderChatRefsFile}'s `ChatModelRef` — the
+ * same refs, in the same order, as a `readonly string[]`.
+ *
+ * A second file rather than a `const` added to `chat-refs.gen.ts`, and the
+ * reason is the header of that function's neighbour: `chat-refs.gen.ts` is
+ * pinned type-only in `test/import-graph.test.ts` ("the chat ref union is
+ * type-only — use `import type`") precisely so that its ~52 KB of literals
+ * cannot reach a bundle. Putting an array in it would make that rule
+ * unenforceable and would put 45 KB of strings behind every `import type
+ * { ChatModelRef }`.
+ *
+ * So the array is its own module, its own chunk, and its own subpath
+ * (`unmodel/values/chat-refs`): a page that wants a model dropdown asks for it
+ * by name and pays for it, and a page that wants `ASPECT_RATIO_PRESETS` from
+ * `unmodel/values` does not. `test/values-entries.test.ts` asserts the two
+ * files agree in both directions — a ref in the union and not the array, or
+ * the reverse, is a failing type check.
+ */
+function renderChatRefValuesFile(scope: ReturnType<typeof chatScope>): string {
+  const refs: string[] = [];
+  for (const { id, models } of scope) {
+    for (const model of models) refs.push(`${id}/${model.id}`);
+  }
+  return `${CHAT_HEADER}
+import type { ChatModelRef } from "./chat-refs.gen";
+
+/**
+ * Every \`"provider/model"\` pair \`chat()\` accepts — ${refs.length} of them — as
+ * values, for the dropdown a type cannot draw.
+ *
+ * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
+ * which is the order \`chatScope\` produces and the order the union is written
+ * in. \`satisfies readonly ChatModelRef[]\` catches an entry the union does not
+ * have; the other direction is asserted in \`test/values-entries.test.ts\`.
+ */
+export const CHAT_MODEL_REFS = [
+${refs.map((ref) => `  ${quote(ref)},`).join("\n")}
+] as const satisfies readonly ChatModelRef[];
 `;
 }
 
@@ -653,6 +699,7 @@ export function generate(snapshot: unknown, overrides?: unknown): Map<string, st
     }
     const scope = chatScope(providers, parsedOverrides.data);
     files.set("chat-refs.gen.ts", renderChatRefsFile(scope));
+    files.set("chat-refs-values.gen.ts", renderChatRefValuesFile(scope));
     files.set("chat-profiles.gen.ts", renderChatProfilesFile(scope));
   }
   return files;

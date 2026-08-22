@@ -34,11 +34,7 @@ import type { EndpointConstraints, MediaRule } from "../../core/constraint-types
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
 import { imagesModels } from "./images-models";
 import { imagesEditConstraints } from "./constraints";
-import {
-  checkGptImage2Size,
-  createPromptLimitCheck,
-  type GptImage2Size,
-} from "./images-shared";
+import { checkGptImage2Size, createPromptLimitCheck, type GptImage2Size } from "./images-shared";
 
 export const IMAGES_EDITS_URL = "https://api.openai.com/v1/images/edits";
 

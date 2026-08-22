@@ -152,3 +152,43 @@ export const ARCANA_MODEL_IDS = [
   "arcanav2",
   "arcanav3",
 ] as const satisfies readonly RimeModelId[];
+
+/**
+ * Both the ISO 639-1 and the ISO 639-2/3 spelling are accepted for each of the
+ * eight documented languages.
+ */
+export const LANGUAGES = [
+  "en",
+  "eng",
+  "es",
+  "spa",
+  "fr",
+  "fra",
+  "pt",
+  "por",
+  "de",
+  "ger",
+  "ja",
+  "jpn",
+  "ar",
+  "ara",
+  "hi",
+  "hin",
+] as const;
+
+/**
+ * "The Mist column reflects Mist v3 and Mist v2, which both serve English,
+ * French, German, and Spanish" — Coda serves all eight.
+ */
+export const MIST_LANGUAGES = [
+  "en",
+  "eng",
+  "es",
+  "spa",
+  "fr",
+  "fra",
+  "de",
+  "ger",
+] as const satisfies readonly RimeLanguage[];
+
+export type RimeLanguage = (typeof LANGUAGES)[number];

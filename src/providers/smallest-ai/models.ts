@@ -94,3 +94,65 @@ export const SMALLEST_MODEL_IDS = [
   "lightning_v3.1",
   "lightning_v3.1_pro",
 ] as const satisfies readonly SmallestModelId[];
+
+/**
+ * The `language` enum, verbatim from the endpoint reference. `auto` routes
+ * across languages. `lightning_v3.1` accepts 20 of these codes (10 European +
+ * 10 Indic); `lightning_v3.1_pro` accepts all 31 — see `PRO_ONLY_LANGUAGES`.
+ */
+export const LANGUAGES = [
+  "auto",
+  "en",
+  "hi",
+  "mr",
+  "kn",
+  "ta",
+  "bn",
+  "gu",
+  "te",
+  "ml",
+  "pa",
+  "or",
+  "es",
+  "de",
+  "fr",
+  "it",
+  "nl",
+  "sv",
+  "pt",
+  "ru",
+  "el",
+  "fi",
+  "no",
+  "pl",
+  "ar",
+  "zh",
+  "id",
+  "ja",
+  "ko",
+  "ms",
+  "tr",
+  "vi",
+] as const;
+
+/**
+ * The 11 codes the endpoint reference lists only under `lightning_v3.1_pro`
+ * ("31 supported languages (adds 11 over base)"): Greek, Finnish, Norwegian
+ * and the 8 Asian & Middle Eastern languages. The base pool's 20 codes are
+ * everything else.
+ */
+export const PRO_ONLY_LANGUAGES = [
+  "el",
+  "fi",
+  "no",
+  "ar",
+  "zh",
+  "id",
+  "ja",
+  "ko",
+  "ms",
+  "tr",
+  "vi",
+] as const satisfies readonly SmallestLanguage[];
+
+export type SmallestLanguage = (typeof LANGUAGES)[number];

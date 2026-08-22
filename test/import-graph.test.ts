@@ -34,6 +34,8 @@ import { join, dirname, relative, resolve as resolvePath } from "node:path";
  *     importing `openai-compatible/interop.ts` pulls in one codec module and
  *     its type-only wire imports, not that provider's zod schema, catalog or
  *     checks. Two dialect-base exceptions are allowed and enumerated below.
+ *  7. The type-only entries (`src/providers/<p>/types.ts`, `src/types/**`) are
+ *     **type-only and provider-local** — amendment A8 below.
  */
 
 const ROOT = resolvePath(import.meta.dir, "..");
@@ -647,6 +649,140 @@ describe("unified media surfaces (amendment A5)", () => {
       .map((f) => f.slice("src/unified/".length, -".ts".length))
       .sort();
     expect(names).toEqual(["image", "image-edit", "music", "stt", "tts", "video"]);
+  });
+});
+
+/**
+ * Amendment A8 — the type-only entries: `src/providers/<p>/types.ts` and
+ * `src/types/**`.
+ *
+ * `unmodel/<provider>/types` promises two things a type checker cannot: that
+ * it costs nothing at runtime, and that importing one provider's types does
+ * not drag another provider's. Both are one missing `type` keyword away from
+ * being false, and neither failure produces a type error —
+ * `verbatimModuleSyntax` turns a value import here straight into a value
+ * import in the emitted JavaScript, which would make `unmodel/anthropic/types`
+ * ship anthropic's schema, catalog and pipeline.
+ *
+ * So the rule is the strictest one that still lets the entries be complete:
+ *
+ * - **every** import is type-only, everywhere, no exceptions;
+ * - a provider's types entry sees its own directory, its own generated
+ *   catalog, and — because they are the same two structural exceptions rule 6
+ *   already allows — the `openai-compatible` dialect base and (for
+ *   `google-vertex`) `google`;
+ * - the hub sees `src/core/**`, `src/chat/**` and `src/retarget/**`. Not a
+ *   provider directory, not a per-provider catalog: an aggregate of every
+ *   provider's wire types is the ~900 KB declaration this layout exists to
+ *   avoid, and the first import that reaches for one is how it would start.
+ *
+ * `test/types-entries.test.ts` asserts the other half — that the built
+ * JavaScript really is empty — against a real build.
+ */
+describe("type-only entries (amendment A8)", () => {
+  const isProviderTypesEntry = (file: string): boolean =>
+    /^src\/providers\/[^/]+\/types\.ts$/.test(file);
+
+  /** The same two structural exceptions rule 6 enumerates, and no others. */
+  const TYPES_ENTRY_DIALECT_BASES: ReadonlyArray<{ from: string; to: string }> = [
+    { from: "*", to: "openai-compatible" },
+    { from: "google-vertex", to: "google" },
+  ];
+
+  test("every import in every types entry is type-only", () => {
+    const files = [...FILES.filter(isProviderTypesEntry), ...FILES.filter((f) => under(f, "src/types"))];
+    // A rule that scans an empty set passes by saying nothing.
+    expect(files.length).toBeGreaterThanOrEqual(71);
+
+    const violations: string[] = [];
+    for (const file of files) {
+      for (const ref of importsOf(file)) {
+        if (ref.typeOnly) continue;
+        violations.push(
+          violation(
+            file,
+            ref,
+            "a types entry is type-only — under verbatimModuleSyntax this import is emitted " +
+              "as a real one, and the entry stops being free",
+          ),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("a provider types entry stays inside its own provider", () => {
+    const files = FILES.filter(isProviderTypesEntry);
+    expect(files.length).toBeGreaterThanOrEqual(70);
+
+    const violations: string[] = [];
+    for (const file of files) {
+      const from = providerOf(file) as string;
+      for (const ref of importsOf(file)) {
+        if (providerOf(ref.target) === from) continue;
+        if (ref.target === `src/catalog/${from}.gen.ts`) continue;
+        const to = providerOf(ref.target) ?? ref.target.split("/")[2];
+        if (
+          to !== undefined &&
+          TYPES_ENTRY_DIALECT_BASES.some(
+            (rule) => (rule.from === "*" || rule.from === from) && rule.to === to,
+          )
+        ) {
+          continue;
+        }
+        violations.push(
+          violation(
+            file,
+            ref,
+            "a provider types entry may name only its own directory, its own generated " +
+              "catalog, the openai-compatible dialect base and (for google-vertex) google — " +
+              "anything else puts a second provider's declarations behind this subpath",
+          ),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("the hub names no provider and no per-provider catalog", () => {
+    const files = FILES.filter((f) => under(f, "src/types"));
+    expect(files.length).toBeGreaterThanOrEqual(1);
+
+    const violations: string[] = [];
+    for (const file of files) {
+      for (const ref of importsOf(file)) {
+        if (under(ref.target, "src/core")) continue;
+        if (under(ref.target, "src/chat")) continue;
+        if (under(ref.target, "src/retarget")) continue;
+        if (under(ref.target, "src/types")) continue;
+        violations.push(
+          violation(
+            file,
+            ref,
+            under(ref.target, "src/providers") || isCatalogGen(ref.target)
+              ? "the hub is the CANONICAL vocabulary — provider wire types live at " +
+                  "unmodel/<provider>/types, one entry each, precisely so this one stays small"
+              : "src/types may import only src/core/**, src/chat/**, src/retarget/** and itself",
+          ),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("no other module imports a types entry — they are leaves, not plumbing", () => {
+    const violations: string[] = [];
+    for (const file of FILES) {
+      if (isProviderTypesEntry(file) || under(file, "src/types")) continue;
+      for (const ref of importsOf(file)) {
+        if (isProviderTypesEntry(ref.target) || under(ref.target, "src/types")) {
+          violations.push(
+            violation(file, ref, "a types entry is a published surface, not a shared module"),
+          );
+        }
+      }
+    }
+    expect(violations).toEqual([]);
   });
 });
 

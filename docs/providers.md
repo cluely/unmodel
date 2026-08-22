@@ -203,6 +203,15 @@ therefore splits per category, so no pack pays for another category's schemas or
 provider's uniformly-named endpoint module — which is what makes the address-vs-wire
 rename structural rather than cosmetic.
 
+**Types without runtime.** Every provider in the roster above also publishes
+`unmodel/<provider>/types` (70 subpaths): its wire names verbatim plus one uniform
+`<Endpoint>Body` alias per endpoint address it serves — 155 endpoints in all — and nothing
+executable. `unmodel/types` is the matching hub for the canonical vocabulary
+(`ChatParams`, `TtsParams`, `ImageParams`, …, `Issue`, `ValidateResult`), deliberately with
+no aggregate of provider wire types. All 71 entries emit an empty JavaScript module, which
+`test/types-entries.test.ts` asserts against a real build alongside the completeness drift
+guard keyed on `src/cli-registry.ts`.
+
 **Contract, identical in all seven.** A param a provider cannot express is an **error**
 naming what it does offer; a value it can only express approximately is an
 `approximated_param` **warning** naming both the requested and the achieved value;

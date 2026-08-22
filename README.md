@@ -18,6 +18,7 @@ npm install unmodel
 
 - [Quick start](#quick-start)
 - [Choose a surface](#choose-a-surface)
+- [Types only](#types-only)
 - [API index](#api-index)
   - [Chat](#chat)
   - [Text to speech](#text-to-speech)
@@ -86,6 +87,7 @@ The enumerable result is the exact HTTP body. `.request` contains the URL, metho
 | Exact provider API | `unmodel/openai`, `unmodel/anthropic`, etc. | provider-native fields + bare model id |
 | Small cross-provider bundle | `createChat` from `unmodel/chat/factory`; media factories from their category entries | serves only registered providers |
 | Move validated chat to another host | `.toApi(provider)` | an existing validated request |
+| [Types with no runtime](#types-only) | `unmodel/<provider>/types`, `unmodel/types` | nothing — the entries emit no JavaScript |
 
 Unified calls compile to provider-native params and finish in that provider's own validator:
 
@@ -108,6 +110,56 @@ const request = chat({
 Provider validators take provider-native request fields. After validation, path and query fields move into `.request.url`; for JSON endpoints, the remaining enumerable object is the exact body. Multipart endpoints use the provider's form-data helper.
 
 Unified model refs split on the first slash. For example, `openrouter/anthropic/claude-opus-5` means provider `openrouter`, model `anthropic/claude-opus-5`.
+
+## Types only
+
+If you want unmodel's request shapes but not its runtime — you already have a client, or you are building the body in one place and sending it in another — every type is published on its own subpath, and those subpaths ship **no JavaScript at all**.
+
+`unmodel/<provider>/types` is one provider's complete type surface: the doc-corrected wire bodies, the per-model arms, the closed enums and preset unions, the model-id unions, the response `*Like` shapes.
+
+```ts
+import type { ImageBody } from "unmodel/openai/types";
+
+const body = {
+  model: "gpt-image-2",
+  prompt: "a lighthouse at dusk",
+  size: "3840x1280",
+  background: "transparent",
+} satisfies ImageBody;
+```
+
+```text
+error TS1360: Type '{ model: "gpt-image-2"; prompt: string; size: "3840x1280"; background: "transparent"; }'
+  does not satisfy the expected type 'ImageBody'.
+  Types of property 'background' are incompatible.
+    Type '"transparent"' is not assignable to type '"auto" | "opaque" | null | undefined'.
+```
+
+That is a real `tsc` message, and it is the point of the entry: `gpt-image-2` returns a 400 for a transparent background, so the type does not have the value. `size` stays open to the documented `WIDTHxHEIGHT` rule space and closed to everything else. Use `satisfies` rather than an annotation so the literal types survive.
+
+Each provider entry exports its **wire names verbatim** — `MessagesBody`, `ListenParams`, `Flux2Body`, the names you find in the vendor's own docs — plus one uniform `<Endpoint>Body` alias per endpoint address it serves: `ChatBody`, `TtsBody`, `SttBody`, `ImageBody`, `ImageEditBody`, `VideoBody`, `MusicBody`, and the qualified extras (`ImageFlux1Body`, `TtsStreamBody`, `VideoV3FromImageBody`). The aliases are additions, never renames; where the alias name already *is* the wire name (cohere's `ChatBody`, hume's `TtsBody`), the wire name wins and there is no duplicate.
+
+`unmodel/types` is the small hub: the canonical camelCase vocabulary the unified surfaces speak (`ChatParams`, `TtsParams`, `SttParams`, `ImageParams`, `ImageEditParams`, `VideoParams`, `MusicParams`, plus `AspectRatio`, `AudioFormat`, `Voice`, `Diarization` and friends), the `"provider/model"` ref unions (`ChatModelRef`, `ChatProviderId`), and the result vocabulary (`Issue`, `ValidateResult`, `ResponseReport`, `TranslationWarning`, `Retargeted`).
+
+```ts
+import type { ChatParams } from "unmodel/types";
+
+export const prompt = {
+  model: "anthropic/claude-sonnet-4-5",
+  messages: [{ role: "user", content: "Summarise this." }],
+  maxOutputTokens: 512,
+} satisfies ChatParams;
+```
+
+The hub deliberately does **not** aggregate provider wire types: the 70 provider entries carry ~2,140 type exports between them, and one module naming all of them is a ~900 KB declaration file every consumer would have to parse to reach one interface. Import the provider you actually call.
+
+Three properties are tested rather than promised, in `test/types-entries.test.ts` against a real build:
+
+- **zero runtime** — every one of the 71 entries emits an empty JavaScript module;
+- **complete** — every endpoint id the CLI can validate has a `<Endpoint>Body` type on its provider's entry, so a new endpoint cannot ship with the types a release behind;
+- **packaged** — every entry has its `exports` subpath and its build entry.
+
+URL constants, `check*` helpers, `toFormData` and the models tables are runtime values, so they stay on the main subpath (`unmodel/openai`) — which tree-shakes to the few bytes a URL string costs if that is all you import.
 
 ## API index
 
@@ -595,6 +647,7 @@ Every implemented provider validator has its own subpath, and the package is mar
 | `unmodel/chat/factory` | provider-free `createChat(registry)` |
 | `unmodel/image`, `unmodel/tts`, etc. | every adapter in that category |
 | `unmodel/<provider>/unified` | one provider's unified adapters, where available |
+| `unmodel/<provider>/types`, `unmodel/types` | types only — the emitted JavaScript is an empty module |
 
 Build a narrow chat pack with concrete provider validators:
 

@@ -22,7 +22,7 @@
  * on its own is a few hundred bytes and would assert nothing.
  */
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { $ } from "bun";
 
@@ -1512,5 +1512,98 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
       expect(generate).not.toContain(`src/providers/${provider}/image-edit.ts`);
       expect(edit).not.toContain(`src/providers/${provider}/unified-image.ts`);
     }
+  });
+});
+
+/**
+ * The type-only entries — `unmodel/types` and `unmodel/<provider>/types`.
+ *
+ * These have the inverse budget problem to every entry above: their JavaScript
+ * is empty by construction (`test/types-entries.test.ts` pins that against the
+ * same build), so the only thing that can grow is the **declaration** graph —
+ * and a declaration graph is exactly what a careless re-export grows without
+ * changing a single byte of shipped code.
+ *
+ * Two numbers are pinned:
+ *
+ * - **per provider entry**, against the fattest of the 70. The catalog-heavy
+ *   overlays lead (openrouter's model-id union alone is ~230 KiB), which is
+ *   also why this budget is the one a models.dev refresh moves first — the
+ *   same drift the note at the top of this file describes for `BUDGET_KIB`.
+ * - **the hub**, which must stay in the neighbourhood of the root entry. It is
+ *   the canonical vocabulary plus the six media vocabularies and nothing else;
+ *   an aggregate of provider wire types would put it an order of magnitude
+ *   higher, which is the mistake the per-provider layout exists to avoid.
+ */
+describe("type-only entries", () => {
+  /** Fattest today: openrouter at ~298 KiB, openai at ~297 KiB. */
+  const TYPES_ENTRY_DECLARATION_BUDGET_KIB = 340;
+  /** ~307 KiB today, against 233 KiB for the root entry it extends. */
+  const TYPES_HUB_DECLARATION_BUDGET_KIB = 340;
+
+  const typesEntry = (provider: string): string =>
+    join(DIST, "providers", provider, "types.d.ts");
+
+  const PROVIDERS: string[] = readdirSync(join(ROOT, "src", "providers"), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+
+  const declarationKiB = (entry: string): number =>
+    transitiveDeclarations(entry).reduce((total, file) => total + statSync(file).size, 0) / 1024;
+
+  test("the build is present, so the budgets below assert something", () => {
+    expect(built).toBe(true);
+    expect(PROVIDERS.length).toBeGreaterThanOrEqual(70);
+    for (const provider of PROVIDERS) {
+      expect(existsSync(typesEntry(provider)), `dist types entry for ${provider}`).toBe(true);
+    }
+    expect(existsSync(join(DIST, "types", "index.d.ts"))).toBe(true);
+  });
+
+  test(`every provider types entry declares under ${TYPES_ENTRY_DECLARATION_BUDGET_KIB} KiB`, () => {
+    const over: string[] = [];
+    for (const provider of PROVIDERS) {
+      const kib = declarationKiB(typesEntry(provider));
+      if (kib > TYPES_ENTRY_DECLARATION_BUDGET_KIB) {
+        over.push(`${provider}: ${kib.toFixed(1)} KiB`);
+      }
+    }
+    expect(over).toEqual([]);
+  });
+
+  test(`the hub declares under ${TYPES_HUB_DECLARATION_BUDGET_KIB} KiB`, () => {
+    const kib = declarationKiB(join(DIST, "types", "index.d.ts"));
+    expect(kib, `unmodel/types is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
+      TYPES_HUB_DECLARATION_BUDGET_KIB,
+    );
+  });
+
+  test("a provider types entry costs no more than that provider's main entry", () => {
+    // The proposition of the split is that the types are the *cheap* half. If a
+    // types entry ever outgrew its own `index`, it would be carrying something
+    // the runtime entry does not — a second provider's declarations, most
+    // likely, which amendment A8 in test/import-graph.test.ts forbids at the
+    // source and this catches in bytes.
+    const over: string[] = [];
+    for (const provider of PROVIDERS) {
+      const types = declarationKiB(typesEntry(provider));
+      const index = declarationKiB(join(DIST, "providers", provider, "index.d.ts"));
+      // A small margin: the types entry adds the alias declarations and, for
+      // the fleet overlays, the shared dialect wire leaf its index does not
+      // re-export.
+      if (types > index * 1.15 + 16) over.push(`${provider}: types ${types.toFixed(1)} KiB vs index ${index.toFixed(1)} KiB`);
+    }
+    expect(over).toEqual([]);
+  });
+
+  test("the hub's declaration graph names no provider wire module", () => {
+    const graph = transitiveDeclarations(join(DIST, "types", "index.d.ts"));
+    // The dialect bodies `ChatBody<Ref>` resolves to are the ONE provider-shaped
+    // thing the hub legitimately reaches, and they arrive as chunked wire leaves
+    // rather than as a provider entry. What must never appear is a provider's
+    // own `dist/providers/<p>/…` declaration: that would mean the hub had
+    // acquired an entry, not a leaf.
+    expect(graph.filter((file) => file.includes(`${join(DIST, "providers")}/`))).toEqual([]);
   });
 });

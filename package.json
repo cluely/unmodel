@@ -59,6 +59,10 @@
       "types": "./dist/chat/factory.d.ts",
       "default": "./dist/chat/factory.js"
     },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/types/index.js"
+    },
     "./image": {
       "types": "./dist/unified/image.d.ts",
       "default": "./dist/unified/image.js"
@@ -87,13 +91,25 @@
       "types": "./dist/providers/alibaba/index.d.ts",
       "default": "./dist/providers/alibaba/index.js"
     },
+    "./alibaba/types": {
+      "types": "./dist/providers/alibaba/types.d.ts",
+      "default": "./dist/providers/alibaba/types.js"
+    },
     "./amazon-bedrock": {
       "types": "./dist/providers/amazon-bedrock/index.d.ts",
       "default": "./dist/providers/amazon-bedrock/index.js"
     },
+    "./amazon-bedrock/types": {
+      "types": "./dist/providers/amazon-bedrock/types.d.ts",
+      "default": "./dist/providers/amazon-bedrock/types.js"
+    },
     "./anthropic": {
       "types": "./dist/providers/anthropic/index.d.ts",
       "default": "./dist/providers/anthropic/index.js"
+    },
+    "./anthropic/types": {
+      "types": "./dist/providers/anthropic/types.d.ts",
+      "default": "./dist/providers/anthropic/types.js"
     },
     "./assemblyai": {
       "types": "./dist/providers/assemblyai/index.d.ts",
@@ -103,13 +119,25 @@
       "types": "./dist/providers/assemblyai/unified.d.ts",
       "default": "./dist/providers/assemblyai/unified.js"
     },
+    "./assemblyai/types": {
+      "types": "./dist/providers/assemblyai/types.d.ts",
+      "default": "./dist/providers/assemblyai/types.js"
+    },
     "./azure": {
       "types": "./dist/providers/azure/index.d.ts",
       "default": "./dist/providers/azure/index.js"
     },
+    "./azure/types": {
+      "types": "./dist/providers/azure/types.d.ts",
+      "default": "./dist/providers/azure/types.js"
+    },
     "./baseten": {
       "types": "./dist/providers/baseten/index.d.ts",
       "default": "./dist/providers/baseten/index.js"
+    },
+    "./baseten/types": {
+      "types": "./dist/providers/baseten/types.d.ts",
+      "default": "./dist/providers/baseten/types.js"
     },
     "./black-forest-labs": {
       "types": "./dist/providers/black-forest-labs/index.d.ts",
@@ -119,6 +147,10 @@
       "types": "./dist/providers/black-forest-labs/unified.d.ts",
       "default": "./dist/providers/black-forest-labs/unified.js"
     },
+    "./black-forest-labs/types": {
+      "types": "./dist/providers/black-forest-labs/types.d.ts",
+      "default": "./dist/providers/black-forest-labs/types.js"
+    },
     "./bria": {
       "types": "./dist/providers/bria/index.d.ts",
       "default": "./dist/providers/bria/index.js"
@@ -126,6 +158,10 @@
     "./bria/unified": {
       "types": "./dist/providers/bria/unified.d.ts",
       "default": "./dist/providers/bria/unified.js"
+    },
+    "./bria/types": {
+      "types": "./dist/providers/bria/types.d.ts",
+      "default": "./dist/providers/bria/types.js"
     },
     "./bytedance": {
       "types": "./dist/providers/bytedance/index.d.ts",
@@ -135,6 +171,10 @@
       "types": "./dist/providers/bytedance/unified.d.ts",
       "default": "./dist/providers/bytedance/unified.js"
     },
+    "./bytedance/types": {
+      "types": "./dist/providers/bytedance/types.d.ts",
+      "default": "./dist/providers/bytedance/types.js"
+    },
     "./cartesia": {
       "types": "./dist/providers/cartesia/index.d.ts",
       "default": "./dist/providers/cartesia/index.js"
@@ -143,17 +183,33 @@
       "types": "./dist/providers/cartesia/unified.d.ts",
       "default": "./dist/providers/cartesia/unified.js"
     },
+    "./cartesia/types": {
+      "types": "./dist/providers/cartesia/types.d.ts",
+      "default": "./dist/providers/cartesia/types.js"
+    },
     "./cerebras": {
       "types": "./dist/providers/cerebras/index.d.ts",
       "default": "./dist/providers/cerebras/index.js"
+    },
+    "./cerebras/types": {
+      "types": "./dist/providers/cerebras/types.d.ts",
+      "default": "./dist/providers/cerebras/types.js"
     },
     "./cloudflare-workers-ai": {
       "types": "./dist/providers/cloudflare-workers-ai/index.d.ts",
       "default": "./dist/providers/cloudflare-workers-ai/index.js"
     },
+    "./cloudflare-workers-ai/types": {
+      "types": "./dist/providers/cloudflare-workers-ai/types.d.ts",
+      "default": "./dist/providers/cloudflare-workers-ai/types.js"
+    },
     "./cohere": {
       "types": "./dist/providers/cohere/index.d.ts",
       "default": "./dist/providers/cohere/index.js"
+    },
+    "./cohere/types": {
+      "types": "./dist/providers/cohere/types.d.ts",
+      "default": "./dist/providers/cohere/types.js"
     },
     "./deepgram": {
       "types": "./dist/providers/deepgram/index.d.ts",
@@ -163,13 +219,25 @@
       "types": "./dist/providers/deepgram/unified.d.ts",
       "default": "./dist/providers/deepgram/unified.js"
     },
+    "./deepgram/types": {
+      "types": "./dist/providers/deepgram/types.d.ts",
+      "default": "./dist/providers/deepgram/types.js"
+    },
     "./deepinfra": {
       "types": "./dist/providers/deepinfra/index.d.ts",
       "default": "./dist/providers/deepinfra/index.js"
     },
+    "./deepinfra/types": {
+      "types": "./dist/providers/deepinfra/types.d.ts",
+      "default": "./dist/providers/deepinfra/types.js"
+    },
     "./deepseek": {
       "types": "./dist/providers/deepseek/index.d.ts",
       "default": "./dist/providers/deepseek/index.js"
+    },
+    "./deepseek/types": {
+      "types": "./dist/providers/deepseek/types.d.ts",
+      "default": "./dist/providers/deepseek/types.js"
     },
     "./elevenlabs": {
       "types": "./dist/providers/elevenlabs/index.d.ts",
@@ -179,9 +247,17 @@
       "types": "./dist/providers/elevenlabs/unified.d.ts",
       "default": "./dist/providers/elevenlabs/unified.js"
     },
+    "./elevenlabs/types": {
+      "types": "./dist/providers/elevenlabs/types.d.ts",
+      "default": "./dist/providers/elevenlabs/types.js"
+    },
     "./fireworks-ai": {
       "types": "./dist/providers/fireworks-ai/index.d.ts",
       "default": "./dist/providers/fireworks-ai/index.js"
+    },
+    "./fireworks-ai/types": {
+      "types": "./dist/providers/fireworks-ai/types.d.ts",
+      "default": "./dist/providers/fireworks-ai/types.js"
     },
     "./fish-audio": {
       "types": "./dist/providers/fish-audio/index.d.ts",
@@ -191,9 +267,17 @@
       "types": "./dist/providers/fish-audio/unified.d.ts",
       "default": "./dist/providers/fish-audio/unified.js"
     },
+    "./fish-audio/types": {
+      "types": "./dist/providers/fish-audio/types.d.ts",
+      "default": "./dist/providers/fish-audio/types.js"
+    },
     "./friendli": {
       "types": "./dist/providers/friendli/index.d.ts",
       "default": "./dist/providers/friendli/index.js"
+    },
+    "./friendli/types": {
+      "types": "./dist/providers/friendli/types.d.ts",
+      "default": "./dist/providers/friendli/types.js"
     },
     "./gladia": {
       "types": "./dist/providers/gladia/index.d.ts",
@@ -203,6 +287,10 @@
       "types": "./dist/providers/gladia/unified.d.ts",
       "default": "./dist/providers/gladia/unified.js"
     },
+    "./gladia/types": {
+      "types": "./dist/providers/gladia/types.d.ts",
+      "default": "./dist/providers/gladia/types.js"
+    },
     "./google": {
       "types": "./dist/providers/google/index.d.ts",
       "default": "./dist/providers/google/index.js"
@@ -211,17 +299,33 @@
       "types": "./dist/providers/google/unified.d.ts",
       "default": "./dist/providers/google/unified.js"
     },
+    "./google/types": {
+      "types": "./dist/providers/google/types.d.ts",
+      "default": "./dist/providers/google/types.js"
+    },
     "./google-vertex": {
       "types": "./dist/providers/google-vertex/index.d.ts",
       "default": "./dist/providers/google-vertex/index.js"
+    },
+    "./google-vertex/types": {
+      "types": "./dist/providers/google-vertex/types.d.ts",
+      "default": "./dist/providers/google-vertex/types.js"
     },
     "./groq": {
       "types": "./dist/providers/groq/index.d.ts",
       "default": "./dist/providers/groq/index.js"
     },
+    "./groq/types": {
+      "types": "./dist/providers/groq/types.d.ts",
+      "default": "./dist/providers/groq/types.js"
+    },
     "./huggingface": {
       "types": "./dist/providers/huggingface/index.d.ts",
       "default": "./dist/providers/huggingface/index.js"
+    },
+    "./huggingface/types": {
+      "types": "./dist/providers/huggingface/types.d.ts",
+      "default": "./dist/providers/huggingface/types.js"
     },
     "./hume": {
       "types": "./dist/providers/hume/index.d.ts",
@@ -231,6 +335,10 @@
       "types": "./dist/providers/hume/unified.d.ts",
       "default": "./dist/providers/hume/unified.js"
     },
+    "./hume/types": {
+      "types": "./dist/providers/hume/types.d.ts",
+      "default": "./dist/providers/hume/types.js"
+    },
     "./ideogram": {
       "types": "./dist/providers/ideogram/index.d.ts",
       "default": "./dist/providers/ideogram/index.js"
@@ -239,9 +347,17 @@
       "types": "./dist/providers/ideogram/unified.d.ts",
       "default": "./dist/providers/ideogram/unified.js"
     },
+    "./ideogram/types": {
+      "types": "./dist/providers/ideogram/types.d.ts",
+      "default": "./dist/providers/ideogram/types.js"
+    },
     "./inception": {
       "types": "./dist/providers/inception/index.d.ts",
       "default": "./dist/providers/inception/index.js"
+    },
+    "./inception/types": {
+      "types": "./dist/providers/inception/types.d.ts",
+      "default": "./dist/providers/inception/types.js"
     },
     "./inworld": {
       "types": "./dist/providers/inworld/index.d.ts",
@@ -251,6 +367,10 @@
       "types": "./dist/providers/inworld/unified.d.ts",
       "default": "./dist/providers/inworld/unified.js"
     },
+    "./inworld/types": {
+      "types": "./dist/providers/inworld/types.d.ts",
+      "default": "./dist/providers/inworld/types.js"
+    },
     "./kling": {
       "types": "./dist/providers/kling/index.d.ts",
       "default": "./dist/providers/kling/index.js"
@@ -258,6 +378,10 @@
     "./kling/unified": {
       "types": "./dist/providers/kling/unified.d.ts",
       "default": "./dist/providers/kling/unified.js"
+    },
+    "./kling/types": {
+      "types": "./dist/providers/kling/types.d.ts",
+      "default": "./dist/providers/kling/types.js"
     },
     "./krea": {
       "types": "./dist/providers/krea/index.d.ts",
@@ -267,6 +391,10 @@
       "types": "./dist/providers/krea/unified.d.ts",
       "default": "./dist/providers/krea/unified.js"
     },
+    "./krea/types": {
+      "types": "./dist/providers/krea/types.d.ts",
+      "default": "./dist/providers/krea/types.js"
+    },
     "./leonardo": {
       "types": "./dist/providers/leonardo/index.d.ts",
       "default": "./dist/providers/leonardo/index.js"
@@ -274,6 +402,10 @@
     "./leonardo/unified": {
       "types": "./dist/providers/leonardo/unified.d.ts",
       "default": "./dist/providers/leonardo/unified.js"
+    },
+    "./leonardo/types": {
+      "types": "./dist/providers/leonardo/types.d.ts",
+      "default": "./dist/providers/leonardo/types.js"
     },
     "./lightricks": {
       "types": "./dist/providers/lightricks/index.d.ts",
@@ -283,6 +415,10 @@
       "types": "./dist/providers/lightricks/unified.d.ts",
       "default": "./dist/providers/lightricks/unified.js"
     },
+    "./lightricks/types": {
+      "types": "./dist/providers/lightricks/types.d.ts",
+      "default": "./dist/providers/lightricks/types.js"
+    },
     "./lmnt": {
       "types": "./dist/providers/lmnt/index.d.ts",
       "default": "./dist/providers/lmnt/index.js"
@@ -291,9 +427,17 @@
       "types": "./dist/providers/lmnt/unified.d.ts",
       "default": "./dist/providers/lmnt/unified.js"
     },
+    "./lmnt/types": {
+      "types": "./dist/providers/lmnt/types.d.ts",
+      "default": "./dist/providers/lmnt/types.js"
+    },
     "./longcat": {
       "types": "./dist/providers/longcat/index.d.ts",
       "default": "./dist/providers/longcat/index.js"
+    },
+    "./longcat/types": {
+      "types": "./dist/providers/longcat/types.d.ts",
+      "default": "./dist/providers/longcat/types.js"
     },
     "./luma": {
       "types": "./dist/providers/luma/index.d.ts",
@@ -303,9 +447,17 @@
       "types": "./dist/providers/luma/unified.d.ts",
       "default": "./dist/providers/luma/unified.js"
     },
+    "./luma/types": {
+      "types": "./dist/providers/luma/types.d.ts",
+      "default": "./dist/providers/luma/types.js"
+    },
     "./meta": {
       "types": "./dist/providers/meta/index.d.ts",
       "default": "./dist/providers/meta/index.js"
+    },
+    "./meta/types": {
+      "types": "./dist/providers/meta/types.d.ts",
+      "default": "./dist/providers/meta/types.js"
     },
     "./minimax": {
       "types": "./dist/providers/minimax/index.d.ts",
@@ -315,6 +467,10 @@
       "types": "./dist/providers/minimax/unified.d.ts",
       "default": "./dist/providers/minimax/unified.js"
     },
+    "./minimax/types": {
+      "types": "./dist/providers/minimax/types.d.ts",
+      "default": "./dist/providers/minimax/types.js"
+    },
     "./mistral": {
       "types": "./dist/providers/mistral/index.d.ts",
       "default": "./dist/providers/mistral/index.js"
@@ -323,9 +479,17 @@
       "types": "./dist/providers/mistral/unified.d.ts",
       "default": "./dist/providers/mistral/unified.js"
     },
+    "./mistral/types": {
+      "types": "./dist/providers/mistral/types.d.ts",
+      "default": "./dist/providers/mistral/types.js"
+    },
     "./moonshotai": {
       "types": "./dist/providers/moonshotai/index.d.ts",
       "default": "./dist/providers/moonshotai/index.js"
+    },
+    "./moonshotai/types": {
+      "types": "./dist/providers/moonshotai/types.d.ts",
+      "default": "./dist/providers/moonshotai/types.js"
     },
     "./murf": {
       "types": "./dist/providers/murf/index.d.ts",
@@ -335,17 +499,33 @@
       "types": "./dist/providers/murf/unified.d.ts",
       "default": "./dist/providers/murf/unified.js"
     },
+    "./murf/types": {
+      "types": "./dist/providers/murf/types.d.ts",
+      "default": "./dist/providers/murf/types.js"
+    },
     "./nebius": {
       "types": "./dist/providers/nebius/index.d.ts",
       "default": "./dist/providers/nebius/index.js"
+    },
+    "./nebius/types": {
+      "types": "./dist/providers/nebius/types.d.ts",
+      "default": "./dist/providers/nebius/types.js"
     },
     "./novita-ai": {
       "types": "./dist/providers/novita-ai/index.d.ts",
       "default": "./dist/providers/novita-ai/index.js"
     },
+    "./novita-ai/types": {
+      "types": "./dist/providers/novita-ai/types.d.ts",
+      "default": "./dist/providers/novita-ai/types.js"
+    },
     "./nvidia": {
       "types": "./dist/providers/nvidia/index.d.ts",
       "default": "./dist/providers/nvidia/index.js"
+    },
+    "./nvidia/types": {
+      "types": "./dist/providers/nvidia/types.d.ts",
+      "default": "./dist/providers/nvidia/types.js"
     },
     "./openai": {
       "types": "./dist/providers/openai/index.d.ts",
@@ -355,17 +535,33 @@
       "types": "./dist/providers/openai/unified.d.ts",
       "default": "./dist/providers/openai/unified.js"
     },
+    "./openai/types": {
+      "types": "./dist/providers/openai/types.d.ts",
+      "default": "./dist/providers/openai/types.js"
+    },
     "./openai-compatible": {
       "types": "./dist/providers/openai-compatible/index.d.ts",
       "default": "./dist/providers/openai-compatible/index.js"
+    },
+    "./openai-compatible/types": {
+      "types": "./dist/providers/openai-compatible/types.d.ts",
+      "default": "./dist/providers/openai-compatible/types.js"
     },
     "./openrouter": {
       "types": "./dist/providers/openrouter/index.d.ts",
       "default": "./dist/providers/openrouter/index.js"
     },
+    "./openrouter/types": {
+      "types": "./dist/providers/openrouter/types.d.ts",
+      "default": "./dist/providers/openrouter/types.js"
+    },
     "./perplexity": {
       "types": "./dist/providers/perplexity/index.d.ts",
       "default": "./dist/providers/perplexity/index.js"
+    },
+    "./perplexity/types": {
+      "types": "./dist/providers/perplexity/types.d.ts",
+      "default": "./dist/providers/perplexity/types.js"
     },
     "./pixverse": {
       "types": "./dist/providers/pixverse/index.d.ts",
@@ -375,6 +571,10 @@
       "types": "./dist/providers/pixverse/unified.d.ts",
       "default": "./dist/providers/pixverse/unified.js"
     },
+    "./pixverse/types": {
+      "types": "./dist/providers/pixverse/types.d.ts",
+      "default": "./dist/providers/pixverse/types.js"
+    },
     "./recraft": {
       "types": "./dist/providers/recraft/index.d.ts",
       "default": "./dist/providers/recraft/index.js"
@@ -382,6 +582,10 @@
     "./recraft/unified": {
       "types": "./dist/providers/recraft/unified.d.ts",
       "default": "./dist/providers/recraft/unified.js"
+    },
+    "./recraft/types": {
+      "types": "./dist/providers/recraft/types.d.ts",
+      "default": "./dist/providers/recraft/types.js"
     },
     "./resemble": {
       "types": "./dist/providers/resemble/index.d.ts",
@@ -391,6 +595,10 @@
       "types": "./dist/providers/resemble/unified.d.ts",
       "default": "./dist/providers/resemble/unified.js"
     },
+    "./resemble/types": {
+      "types": "./dist/providers/resemble/types.d.ts",
+      "default": "./dist/providers/resemble/types.js"
+    },
     "./revai": {
       "types": "./dist/providers/revai/index.d.ts",
       "default": "./dist/providers/revai/index.js"
@@ -398,6 +606,10 @@
     "./revai/unified": {
       "types": "./dist/providers/revai/unified.d.ts",
       "default": "./dist/providers/revai/unified.js"
+    },
+    "./revai/types": {
+      "types": "./dist/providers/revai/types.d.ts",
+      "default": "./dist/providers/revai/types.js"
     },
     "./reve": {
       "types": "./dist/providers/reve/index.d.ts",
@@ -407,6 +619,10 @@
       "types": "./dist/providers/reve/unified.d.ts",
       "default": "./dist/providers/reve/unified.js"
     },
+    "./reve/types": {
+      "types": "./dist/providers/reve/types.d.ts",
+      "default": "./dist/providers/reve/types.js"
+    },
     "./rime": {
       "types": "./dist/providers/rime/index.d.ts",
       "default": "./dist/providers/rime/index.js"
@@ -414,6 +630,10 @@
     "./rime/unified": {
       "types": "./dist/providers/rime/unified.d.ts",
       "default": "./dist/providers/rime/unified.js"
+    },
+    "./rime/types": {
+      "types": "./dist/providers/rime/types.d.ts",
+      "default": "./dist/providers/rime/types.js"
     },
     "./runway": {
       "types": "./dist/providers/runway/index.d.ts",
@@ -423,17 +643,33 @@
       "types": "./dist/providers/runway/unified.d.ts",
       "default": "./dist/providers/runway/unified.js"
     },
+    "./runway/types": {
+      "types": "./dist/providers/runway/types.d.ts",
+      "default": "./dist/providers/runway/types.js"
+    },
     "./sarvam": {
       "types": "./dist/providers/sarvam/index.d.ts",
       "default": "./dist/providers/sarvam/index.js"
+    },
+    "./sarvam/types": {
+      "types": "./dist/providers/sarvam/types.d.ts",
+      "default": "./dist/providers/sarvam/types.js"
     },
     "./scaleway": {
       "types": "./dist/providers/scaleway/index.d.ts",
       "default": "./dist/providers/scaleway/index.js"
     },
+    "./scaleway/types": {
+      "types": "./dist/providers/scaleway/types.d.ts",
+      "default": "./dist/providers/scaleway/types.js"
+    },
     "./siliconflow": {
       "types": "./dist/providers/siliconflow/index.d.ts",
       "default": "./dist/providers/siliconflow/index.js"
+    },
+    "./siliconflow/types": {
+      "types": "./dist/providers/siliconflow/types.d.ts",
+      "default": "./dist/providers/siliconflow/types.js"
     },
     "./smallest-ai": {
       "types": "./dist/providers/smallest-ai/index.d.ts",
@@ -443,6 +679,10 @@
       "types": "./dist/providers/smallest-ai/unified.d.ts",
       "default": "./dist/providers/smallest-ai/unified.js"
     },
+    "./smallest-ai/types": {
+      "types": "./dist/providers/smallest-ai/types.d.ts",
+      "default": "./dist/providers/smallest-ai/types.js"
+    },
     "./soniox": {
       "types": "./dist/providers/soniox/index.d.ts",
       "default": "./dist/providers/soniox/index.js"
@@ -450,6 +690,10 @@
     "./soniox/unified": {
       "types": "./dist/providers/soniox/unified.d.ts",
       "default": "./dist/providers/soniox/unified.js"
+    },
+    "./soniox/types": {
+      "types": "./dist/providers/soniox/types.d.ts",
+      "default": "./dist/providers/soniox/types.js"
     },
     "./speechify": {
       "types": "./dist/providers/speechify/index.d.ts",
@@ -459,6 +703,10 @@
       "types": "./dist/providers/speechify/unified.d.ts",
       "default": "./dist/providers/speechify/unified.js"
     },
+    "./speechify/types": {
+      "types": "./dist/providers/speechify/types.d.ts",
+      "default": "./dist/providers/speechify/types.js"
+    },
     "./speechmatics": {
       "types": "./dist/providers/speechmatics/index.d.ts",
       "default": "./dist/providers/speechmatics/index.js"
@@ -466,6 +714,10 @@
     "./speechmatics/unified": {
       "types": "./dist/providers/speechmatics/unified.d.ts",
       "default": "./dist/providers/speechmatics/unified.js"
+    },
+    "./speechmatics/types": {
+      "types": "./dist/providers/speechmatics/types.d.ts",
+      "default": "./dist/providers/speechmatics/types.js"
     },
     "./stability": {
       "types": "./dist/providers/stability/index.d.ts",
@@ -475,21 +727,41 @@
       "types": "./dist/providers/stability/unified.d.ts",
       "default": "./dist/providers/stability/unified.js"
     },
+    "./stability/types": {
+      "types": "./dist/providers/stability/types.d.ts",
+      "default": "./dist/providers/stability/types.js"
+    },
     "./stepfun": {
       "types": "./dist/providers/stepfun/index.d.ts",
       "default": "./dist/providers/stepfun/index.js"
+    },
+    "./stepfun/types": {
+      "types": "./dist/providers/stepfun/types.d.ts",
+      "default": "./dist/providers/stepfun/types.js"
     },
     "./togetherai": {
       "types": "./dist/providers/togetherai/index.d.ts",
       "default": "./dist/providers/togetherai/index.js"
     },
+    "./togetherai/types": {
+      "types": "./dist/providers/togetherai/types.d.ts",
+      "default": "./dist/providers/togetherai/types.js"
+    },
     "./upstage": {
       "types": "./dist/providers/upstage/index.d.ts",
       "default": "./dist/providers/upstage/index.js"
     },
+    "./upstage/types": {
+      "types": "./dist/providers/upstage/types.d.ts",
+      "default": "./dist/providers/upstage/types.js"
+    },
     "./vercel": {
       "types": "./dist/providers/vercel/index.d.ts",
       "default": "./dist/providers/vercel/index.js"
+    },
+    "./vercel/types": {
+      "types": "./dist/providers/vercel/types.d.ts",
+      "default": "./dist/providers/vercel/types.js"
     },
     "./vidu": {
       "types": "./dist/providers/vidu/index.d.ts",
@@ -499,13 +771,25 @@
       "types": "./dist/providers/vidu/unified.d.ts",
       "default": "./dist/providers/vidu/unified.js"
     },
+    "./vidu/types": {
+      "types": "./dist/providers/vidu/types.d.ts",
+      "default": "./dist/providers/vidu/types.js"
+    },
     "./xai": {
       "types": "./dist/providers/xai/index.d.ts",
       "default": "./dist/providers/xai/index.js"
     },
+    "./xai/types": {
+      "types": "./dist/providers/xai/types.d.ts",
+      "default": "./dist/providers/xai/types.js"
+    },
     "./zhipuai": {
       "types": "./dist/providers/zhipuai/index.d.ts",
       "default": "./dist/providers/zhipuai/index.js"
+    },
+    "./zhipuai/types": {
+      "types": "./dist/providers/zhipuai/types.d.ts",
+      "default": "./dist/providers/zhipuai/types.js"
     },
     "./package.json": "./package.json"
   },

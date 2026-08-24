@@ -21,11 +21,10 @@ import OpenAI from "openai";
 const params: OpenAI.Images.ImageGenerateParams = {
   model: "gpt-image-2",
   prompt: "a lighthouse",
-  background: "transparent", // ❌compiles, the API answers 400
+  background: "transparent", // ❌ compiles, the API answers 400
 };
 ```
 
-UnModel types `background` per model, so the same object is a compile error:
 ### UnModel
 ```ts
 import type { ImageBody } from "unmodel/openai/types";
@@ -33,11 +32,12 @@ import type { ImageBody } from "unmodel/openai/types";
 const params = {
   model: "gpt-image-2",
   prompt: "a lighthouse",
-  background: "transparent",  // ⚠️ ERROR: Type '"transparent"' is not assignable to type '"auto" | "opaque" | null | undefined'.
+  background: "transparent",  // ✅ ERROR: Type '"transparent"' is not assignable to type '"auto" | "opaque" | null | undefined'.
 } satisfies ImageBody;
 ```
+UnModel types `background` per model, so the same object is a compile error :)
 
-The SDK also hides the sizes a model serves. At `size:` on a `gpt-image-2`
+The SDK also hides parameters a model accepts. At `size:` on a `gpt-image-2`
 request it completes **8** values: a mixed DALL·E bag (`256x256`, `1792x1024`,
 …) offered regardless of model, none of them the 4K, 2:1 or 21:9 resolutions
 gpt-image-2 renders. Its `(string & {})` tail swallows anything else. unmodel
@@ -51,15 +51,8 @@ import { image } from "unmodel/openai";
 image({
   model: "gpt-image-2",
   prompt: "a lighthouse",
-  size: "3840x2160" // ✅ 4K, and the SDK doesn't even suggest it
+  size: "3840x2160" // ✅ UnModel completes 4K. OpenAi SDK doesn't even suggest it
 });
-image({
-  model: "dall-e-3",
-  prompt: "x",
-  size: "256x256" // ⚠️ compile error: dall-e-3's enum is closed here
-}); 
-// and at runtime, for JS callers:
-// `size` must be one of "1024x1024", "1792x1024", "1024x1792" for "dall-e-3"; got "256x256".
 ```
 
 Allowed values autocomplete per model. Gemini TTS has exactly 30 preset
@@ -69,7 +62,11 @@ the full list in the message:
 ```ts
 import { tts } from "unmodel/tts";
 
-tts({ model: "google/gemini-2.5-flash-preview-tts", text: "Have a wonderful day!", voice: "Kore" });
+tts({
+  model: "google/gemini-2.5-flash-preview-tts",
+  text: "Have a wonderful day!",
+  voice: "Kore" 
+});
 // voice: "¦" → completes Zephyr, Puck, Charon, Kore, Fenrir, Leda, Orus, Aoede, … (all 30)
 // voice: "Zephyrr" → `voiceName` must be one of the 30 prebuilt Gemini TTS voices; got "Zephyrr".
 ```

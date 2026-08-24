@@ -967,6 +967,7 @@
     "dev": "tsdown --watch",
     "codegen": "bun scripts/codegen.ts",
     "codegen:refresh": "bun scripts/codegen.ts --refresh",
+    "gen:tts-matrix": "bun scripts/gen-tts-matrix.ts",
     "test": "bun test",
     "check": "tsc --noEmit",
     "changeset": "changeset",

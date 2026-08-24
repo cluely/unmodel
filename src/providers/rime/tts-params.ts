@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import { LANGUAGES, MIST_LANGUAGES } from "./models";
 
 /** Every model id the catalog carries — the ref union for `rime/…`. */
@@ -105,3 +105,10 @@ export const RIME_TTS_MODEL_PARAMS = {
   arcanav2: { ...ARCANA_ROW, extras: MIST_EXTRAS },
   arcana: { ...ARCANA_ROW, extras: MIST_EXTRAS },
 } as const satisfies TtsModelParamTable;
+
+/**
+ * Raw audio bytes: "The response is raw audio bytes, so there is no response
+ * checker" (./tts.ts). `Accept` chooses the container those bytes arrive in,
+ * which is the format question, not this one.
+ */
+export const RIME_TTS_DELIVERY = { kind: "bytes" } as const satisfies TtsDeliverySpec;

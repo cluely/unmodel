@@ -28,7 +28,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type ExactKeys, type Validated } from "../../core/request";
+import { toValidated, type ExactKeys, type ValidatedForm } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -212,6 +212,7 @@ function finalize(params: VoicesAddParams): unknown {
       // Deliberately NOT application/json: this is a multipart endpoint, and
       // fetch must derive the multipart boundary from the FormData body itself.
       headers: {},
+      body: "form",
     },
     { sdk: { elevenlabs: () => buildSdkParams(params) } },
   );
@@ -244,10 +245,10 @@ export const voiceClone = validator as unknown as {
   <T extends VoicesAddParams>(
     params: T & ExactKeys<T, VoicesAddParams>,
     options?: ValidateOptions<T>,
-  ): Validated<T, VoiceCloneSdkTargets>;
+  ): ValidatedForm<T, VoiceCloneSdkTargets>;
   safe<T extends VoicesAddParams>(
     params: T & ExactKeys<T, VoicesAddParams>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T, VoiceCloneSdkTargets>>;
+  ): ValidateResult<ValidatedForm<T, VoiceCloneSdkTargets>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

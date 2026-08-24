@@ -21,6 +21,7 @@ export {
   SPEECHIFY_TTS_MODEL_PARAMS as TTS_MODEL_PARAMS,
   MODELS as TTS_MODELS,
   FORMAT as TTS_FORMAT_SPEC,
+  SPEECHIFY_TTS_DELIVERY as TTS_DELIVERY,
 } from "./tts-params";
 
 export { SPEECHIFY_MODEL_IDS } from "./models";

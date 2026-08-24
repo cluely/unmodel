@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { UnmodelValidationError } from "./issues";
 import { JSON_HEADERS, toValidated, type ApiRetargeter, type RequestMeta } from "./request";
+import { toRequestInit } from "./request-init";
 
 const REQUEST: RequestMeta = {
   url: "https://api.example.com/v1/chat/completions",
@@ -37,6 +38,60 @@ describe("toValidated", () => {
     expect(b.request.headers["authorization"]).toBeUndefined();
     expect(REQUEST.headers["authorization"]).toBeUndefined();
     expect(a.request).not.toBe(b.request);
+  });
+});
+
+describe("toRequestInit", () => {
+  const validate = (): ReturnType<typeof toValidated<typeof BODY, { openai: () => typeof BODY }>> =>
+    toValidated({ ...BODY }, REQUEST, { sdk: { openai: () => BODY } });
+
+  test("carries the url, method and static headers off .request", () => {
+    const args = toRequestInit(validate());
+
+    expect(args.url).toBe(REQUEST.url);
+    expect(args.method).toBe("POST");
+    expect(args.headers).toEqual({ "content-type": "application/json" });
+  });
+
+  test("the body is the enumerable wire body, and nothing else", () => {
+    const args = toRequestInit(validate());
+
+    expect(JSON.parse(args.body)).toEqual(BODY);
+    // The non-enumerable members must not have been serialized.
+    expect(Object.keys(JSON.parse(args.body) as object)).toEqual(["model", "messages"]);
+  });
+
+  test("destructuring gives fetch its two arguments", () => {
+    const { url, ...init } = toRequestInit(validate());
+
+    expect(url).toBe(REQUEST.url);
+    expect(init).toEqual({
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(BODY),
+    });
+  });
+
+  test("the headers are a copy — adding auth never reaches .request", () => {
+    const validated = validate();
+
+    const { headers } = toRequestInit(validated);
+    headers["authorization"] = "Bearer secret";
+
+    expect(validated.request.headers["authorization"]).toBeUndefined();
+    expect(REQUEST.headers["authorization"]).toBeUndefined();
+  });
+
+  test("a multipart request throws instead of serializing a FormData body", () => {
+    // Annotated `RequestMeta`, which is how the one endpoint that picks its
+    // framing per call (`recraft.imageEdit`) reaches here: the literal type is
+    // erased, so the compile-time guard cannot fire and this check is the one
+    // that does.
+    const multipart: RequestMeta = { ...REQUEST, headers: {}, body: "form" };
+    const validated = toValidated({ ...BODY }, multipart, { sdk: { openai: () => BODY } });
+
+    expect(() => toRequestInit(validated)).toThrow(TypeError);
+    expect(() => toRequestInit(validated)).toThrow("toFormData");
   });
 });
 

@@ -119,11 +119,26 @@ describe("endpoint table", () => {
     }
   });
 
-  test("headers carry no auth — unmodel never touches API keys", () => {
-    for (const [, endpoint] of entries) {
-      for (const name of Object.keys(endpoint.headers)) {
-        expect(["authorization", "x-api-key", "api-key"]).not.toContain(name.toLowerCase());
-      }
+  // Checked against each row's own `auth.header` rather than a hardcoded list
+  // of header names: a literal deny-list only guards the names someone thought
+  // of (the previous one missed `x-goog-api-key`, which google.chat uses), and
+  // it goes stale the moment a row arrives with a header not on it. This form
+  // cannot: adding an endpoint adds its own guard.
+  test("no entry's static headers include its own auth header", () => {
+    for (const [id, endpoint] of entries) {
+      const auth = endpoint.auth.header.toLowerCase();
+      const names = Object.keys(endpoint.headers).map((name) => name.toLowerCase());
+      const why = `${id} ships its own auth header — unmodel never touches API keys`;
+      expect(names, why).not.toContain(auth);
+    }
+  });
+
+  test("every entry names a lowercase auth header, and a scheme only from the union", () => {
+    for (const [id, endpoint] of entries) {
+      const { header, scheme } = endpoint.auth;
+      expect(header, `${id} has an empty auth header`).not.toBe("");
+      expect(header, `${id} spells its auth header with capitals`).toBe(header.toLowerCase());
+      if (scheme !== undefined) expect(["Bearer", "Basic", "Token"]).toContain(scheme);
     }
   });
 });

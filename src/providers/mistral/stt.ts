@@ -31,7 +31,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type ExactKeys, type Validated } from "../../core/request";
+import { toValidated, type ExactKeys, type ValidatedForm } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -315,6 +315,7 @@ function finalize(params: TranscriptionBody): unknown {
       // Deliberately NOT application/json: fetch must derive the multipart
       // boundary from the FormData body itself.
       headers: {},
+      body: "form",
     },
     { sdk: { mistral: () => body } },
   );
@@ -351,10 +352,10 @@ export const stt = validator as unknown as {
   <T extends TranscriptionBody>(
     params: T & ExactKeys<T, TranscriptionBody>,
     options?: ValidateOptions<T>,
-  ): Validated<T, TranscriptionSdkTargets<T>>;
+  ): ValidatedForm<T, TranscriptionSdkTargets<T>>;
   safe<T extends TranscriptionBody>(
     params: T & ExactKeys<T, TranscriptionBody>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T, TranscriptionSdkTargets<T>>>;
+  ): ValidateResult<ValidatedForm<T, TranscriptionSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

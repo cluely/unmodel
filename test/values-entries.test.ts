@@ -126,6 +126,8 @@ interface Adapter {
   category: string;
   models: readonly string[];
   modelParams: object;
+  /** `tts` only — how that provider hands the audio back. */
+  delivery: unknown;
 }
 
 /** Loads every adapter object a provider exports, across its leaves. */
@@ -145,6 +147,7 @@ async function adaptersOf(provider: string): Promise<Adapter[]> {
         category: candidate.category,
         models: candidate.models as readonly string[],
         modelParams: candidate.modelParams as object,
+        delivery: (candidate as { delivery?: unknown }).delivery,
       });
     }
   }
@@ -313,6 +316,37 @@ describe("identity — the published table IS the adapter's table", () => {
     expect(drift).toEqual([]);
     expect(found).toBe(16);
   });
+
+  test("the speech delivery descriptors are the adapter's own too", async () => {
+    // All 15 `tts` adapters declare how the audio comes back — a fact about the
+    // *response*, which is why it sits on the adapter rather than on a per-model
+    // row: five of the fifteen change it per request. The entry publishes it
+    // under one uniform name, by reference, for the reason above.
+    // By object rather than by row: a provider whose `unified.ts` re-exports
+    // the adapter its `unified-tts.ts` declares is found through both leaves,
+    // and it is one descriptor either way.
+    const found = new Set<unknown>();
+    const drift: string[] = [];
+    for (const provider of PROVIDERS_WITH_VALUES) {
+      const values = (await import(join(PROVIDERS_DIR, provider, "values.ts"))) as Record<
+        string,
+        unknown
+      >;
+      for (const adapter of await adaptersOf(provider)) {
+        if (adapter.category !== "tts") continue;
+        if (adapter.delivery === undefined) {
+          drift.push(`${provider}: the tts adapter declares no delivery`);
+          continue;
+        }
+        found.add(adapter.delivery);
+        if (values["TTS_DELIVERY"] !== adapter.delivery) {
+          drift.push(`${provider}: TTS_DELIVERY is not the adapter's own object`);
+        }
+      }
+    }
+    expect(drift).toEqual([]);
+    expect(found.size).toBe(15);
+  });
 });
 
 describe("the never-published lists are published now", () => {
@@ -386,7 +420,7 @@ describe("the never-published lists are published now", () => {
 // ---------------------------------------------------------------------------
 
 describe("unmodel/values — the canonical hub", () => {
-  test("it publishes the nine canonical arrays, and each is non-empty and unique", async () => {
+  test("it publishes the ten canonical arrays, and each is non-empty and unique", async () => {
     const hub = (await import(join(ROOT, "src", "values", "index.ts"))) as Record<string, unknown>;
     const expected: Readonly<Record<string, number>> = {
       ASPECT_RATIO_PRESETS: 9,
@@ -398,6 +432,7 @@ describe("unmodel/values — the canonical hub", () => {
       AUDIO_CONTAINERS: 8,
       TIMESTAMP_GRANULARITIES: 4,
       AUDIO_INPUT_KINDS: 4,
+      TTS_DELIVERY_KINDS: 5,
     };
     const problems: string[] = [];
     for (const [name, size] of Object.entries(expected)) {

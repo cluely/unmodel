@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import { SPEECH_VOICES, TTS_1_VOICES } from "./constraints";
 
 /** Every speech model the hand catalog carries — the ref union for `openai/…`. */
@@ -53,9 +53,12 @@ export const CODECS = ["mp3", "opus", "aac", "flac", "pcm_s16le"] as const;
  * gpt-4o-mini-tts — and `./tts.ts` already refuses an off-list *string* at
  * the wire with `checkVoice`. Reusing the two constants that drive that check
  * means the unified surface completes exactly what the wire surface completes,
- * rather than the bare `Voice` it used to offer. It completes, it does not
- * gate: a cloned voice (`{ id: "voice_1234" }`, or a bare id string) compiles
- * on every model, which is also what `checkVoice` does.
+ * rather than the bare `Voice` it used to offer. The TYPE completes and does
+ * not gate — `VoiceOf` carries a `(string & {})` tail, so a bare id string
+ * compiles on every model. The runtime check is narrower: `checkVoice` skips
+ * only a model with NO table, and all four rows below have one, so an off-list
+ * bare string is an `invalid_enum_value` at validate time. A cloned voice must
+ * be spelled `{ id: "voice_1234" }`, which is the only form the wire documents.
  *
  * `stream_format` is deliberately absent: it selects SSE framing rather than
  * anything about the audio, which puts it in the transport half that
@@ -77,3 +80,18 @@ export const OPENAI_TTS_MODEL_PARAMS = {
     extras: { instructions: EXTRA as string },
   },
 } as const satisfies TtsModelParamTable;
+
+/**
+ * Raw audio bytes — unless `stream_format` asks for frames.
+ *
+ * "JSON in, raw audio bytes (or an SSE stream) out — there is no response
+ * checker for speech" (./tts.ts). `stream_format` is the one request field that
+ * moves it, which is why it is named here rather than answered: the same field
+ * the table above leaves out of `extras` on purpose, because it frames the
+ * transport and not the audio. tts-1 and tts-1-hd do not accept `"sse"` at all.
+ */
+export const OPENAI_TTS_DELIVERY = {
+  byRequestField: "stream_format",
+  variants: { audio: { kind: "bytes" }, sse: { kind: "sse" } },
+  default: { kind: "bytes" },
+} as const satisfies TtsDeliverySpec;

@@ -37,7 +37,13 @@ import {
   type SpeechifyAudioFormat,
   type SpeechifyOutputFormat,
 } from "./tts";
-import { FORMAT, MODELS, SPEC_URL, SPEECHIFY_TTS_MODEL_PARAMS } from "./tts-params";
+import {
+  FORMAT,
+  MODELS,
+  SPEC_URL,
+  SPEECHIFY_TTS_DELIVERY,
+  SPEECHIFY_TTS_MODEL_PARAMS,
+} from "./tts-params";
 
 /** The wire body this adapter compiles to. */
 export type SpeechifyTtsWire = AudioSpeechBody;
@@ -72,6 +78,7 @@ export const tts = {
   provider: "speechify",
   models: MODELS,
   modelParams: SPEECHIFY_TTS_MODEL_PARAMS,
+  delivery: SPEECHIFY_TTS_DELIVERY,
   unsupported: {
     speed:
       "POST /v1/audio/speech publishes no speaking-rate field — pace is controlled with SSML " +

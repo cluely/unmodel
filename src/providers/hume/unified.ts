@@ -28,7 +28,13 @@ import {
   type HumeUtterance,
   type TtsBody,
 } from "./tts";
-import { FORMAT, HUME_TTS_MODEL_PARAMS, MODELS, SYNTHESIZE_DOCS } from "./tts-params";
+import {
+  FORMAT,
+  HUME_TTS_DELIVERY,
+  HUME_TTS_MODEL_PARAMS,
+  MODELS,
+  SYNTHESIZE_DOCS,
+} from "./tts-params";
 
 /** The wire body this adapter compiles to. */
 export type HumeTtsWire = TtsBody;
@@ -47,6 +53,7 @@ export const tts = {
   provider: "hume",
   models: MODELS,
   modelParams: HUME_TTS_MODEL_PARAMS,
+  delivery: HUME_TTS_DELIVERY,
   unsupported: {
     language:
       "POST /v0/tts has no language field — Octave infers the language from the text and the " +

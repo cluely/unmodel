@@ -13,6 +13,25 @@ export interface RequestMeta {
   method: "POST";
   /** Static non-auth headers the endpoint requires (e.g. anthropic-version). */
   headers: Record<string, string>;
+  /**
+   * How the endpoint frames the body. Absent means `"json"`, so the ~110 JSON
+   * endpoints declare nothing. `"form"` marks a multipart endpoint, whose body
+   * comes from its own `toFormData` helper and must never be `JSON.stringify`d
+   * — {@link toRequestInit} refuses those.
+   */
+  readonly body?: "json" | "form";
+}
+
+/**
+ * `RequestMeta` pinned to the multipart framing.
+ *
+ * It exists because `Validated` types `.request` as plain `RequestMeta`, which
+ * erases the `body: "form"` literal a `finalize` hands to {@link toValidated}:
+ * the framing survives to a caller only if the *endpoint's declared result
+ * type* says it, which is what {@link ValidatedForm} is for.
+ */
+export interface FormRequestMeta extends RequestMeta {
+  readonly body: "form";
 }
 
 /**
@@ -114,6 +133,21 @@ export type Validated<
   request: RequestMeta;
 } & ToApiMember<Avail, Model>;
 
+/**
+ * `Validated` for a multipart endpoint: identical contract, with
+ * `.request.body` pinned to `"form"` ({@link FormRequestMeta}) so
+ * {@link toRequestInit} rejects the result at compile time instead of
+ * `JSON.stringify`ing a body that belongs in a `FormData`.
+ *
+ * Declared on the endpoint's public signature rather than inferred, for the
+ * reason {@link FormRequestMeta} documents. It stays assignable to
+ * `Validated`, so every consumer of a validated result is unaffected.
+ */
+export type ValidatedForm<Body, Sdk extends SdkFormatters = SdkFormatters> = Validated<
+  Body,
+  Sdk
+> & { request: FormRequestMeta };
+
 /** One target's retarget outcome, as produced by `createToApi`. */
 export interface ApiRetargetOutcome {
   /** `"anthropic.chat → openrouter.chat"` — the label on thrown errors. */
@@ -159,13 +193,20 @@ export interface ValidatedInit<Sdk extends SdkFormatters> {
  * than a silent mis-bind, which is what you want for a mechanical migration
  * across ~186 of them.
  */
-export function toValidated<Body extends object, Sdk extends SdkFormatters>(
+export function toValidated<
+  Body extends object,
+  Sdk extends SdkFormatters,
+  // Generic so the `body: "form"` a multipart endpoint passes survives into
+  // the result type; `RequestMeta` erases it, and then `ValidatedForm` could
+  // never be produced.
+  Req extends RequestMeta = RequestMeta,
+>(
   body: Body,
-  request: RequestMeta,
+  request: Req,
   init: ValidatedInit<Sdk>,
 ): Body & {
   toSdk<K extends Extract<keyof Sdk, string>>(target: K): ReturnType<Sdk[K]>;
-  request: RequestMeta;
+  request: Req;
 } {
   const out = { ...body };
   const { api } = init;
@@ -212,7 +253,7 @@ export function toValidated<Body extends object, Sdk extends SdkFormatters>(
   });
   return out as Body & {
     toSdk<K extends Extract<keyof Sdk, string>>(target: K): ReturnType<Sdk[K]>;
-    request: RequestMeta;
+    request: Req;
   };
 }
 

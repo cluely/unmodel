@@ -23,7 +23,13 @@ import {
   type InworldSampleRateHertz,
   type TtsVoiceBody,
 } from "./tts";
-import { FORMAT, INWORLD_TTS_MODEL_PARAMS, MODELS, SYNTHESIZE_DOCS } from "./tts-params";
+import {
+  FORMAT,
+  INWORLD_TTS_DELIVERY,
+  INWORLD_TTS_MODEL_PARAMS,
+  MODELS,
+  SYNTHESIZE_DOCS,
+} from "./tts-params";
 
 /** The wire body this adapter compiles to. */
 export type InworldTtsWire = TtsVoiceBody;
@@ -36,6 +42,7 @@ export const tts = {
   provider: "inworld",
   models: MODELS,
   modelParams: INWORLD_TTS_MODEL_PARAMS,
+  delivery: INWORLD_TTS_DELIVERY,
   compile(
     input: TtsParams,
     ctx: CompileContext<TtsParams>,

@@ -509,6 +509,7 @@ function finalizeTo(url: string) {
       url,
       method: "POST",
       headers: usesBlob ? {} : JSON_HEADERS,
+      body: usesBlob ? "form" : "json",
     }, {
       sdk: { recraft: () => body },
     });

@@ -22,6 +22,11 @@
  * `max_completion_tokens` + `reasoning_effort` at
  * `api.openai.com/v1/chat/completions`. That is the entire proposition.
  *
+ * The auth header moves with the URL, and it is the one thing `req` cannot
+ * carry for you: that same request now wants `authorization: Bearer …`, not
+ * `x-api-key`. {@link CHAT_AUTH} is the lookup — `CHAT_AUTH[provider]` gives
+ * the header name and the scheme word, keyed the same way the ref is.
+ *
  * ## What this entry is, relative to the provider subpaths
  *
  * `unmodel/anthropic`'s `chat()` mirrors `/v1/messages` exactly — `max_tokens`,
@@ -106,8 +111,9 @@ export type {
   ChatSdkTargets,
 } from "./public-types";
 
-export { CHAT_PROVIDERS, classifyModelRef, classifyRef, dialectOf, parseModelRef, refProblemMessage } from "./refs";
+export { CHAT_AUTH, CHAT_PROVIDERS, classifyModelRef, classifyRef, dialectOf, parseModelRef, refProblemMessage } from "./refs";
 export type {
+  EndpointAuth,
   FactoryChatProviderId,
   ModelRef,
   NoCodecChatProviderId,

@@ -1,20 +1,26 @@
 /**
  * Gemini TTS constants — and nothing else.
  *
- * This module must import NOTHING, for the same reason `./model-path.ts`
- * imports nothing: `./constraints.ts` reads `src/catalog/google.gen.ts` and
- * `./veo-models.ts`, so every consumer of one TTS constant used to pay for the
- * whole generated google catalog. `unmodel/tts`'s bundle budget asserts the
- * pack carries **zero** catalogs (test/bundle-budget.test.ts), which a single
- * `./constraints` edge from the TTS surface would break outright.
+ * This module must import nothing at runtime, for the same reason
+ * `./model-path.ts` imports nothing: `./constraints.ts` reads
+ * `src/catalog/google.gen.ts` and `./veo-models.ts`, so every consumer of one
+ * TTS constant used to pay for the whole generated google catalog.
+ * `unmodel/tts`'s bundle budget asserts the pack carries **zero** catalogs
+ * (test/bundle-budget.test.ts), which a single `./constraints` edge from the
+ * TTS surface would break outright. The two `import type`s below are erased by
+ * `verbatimModuleSyntax` (tsconfig.json) and emit no edge.
  *
  * `./constraints.ts` re-exports everything below, so the public surface of
  * `unmodel/google` is unchanged by the split.
  *
  * The 30 preset voice names are NOT here: `GooglePrebuiltVoiceConfig.voiceName`
  * is typed from them, and a wire leaf may not import a constraints module — so
- * they live in `./wire.ts` (see the note there).
+ * they live in `./wire.ts` (see the note there). Their descriptors are here,
+ * in `GEMINI_TTS_VOICE_INFO`, because nothing is typed from those.
  */
+
+import type { TtsDelivery, TtsDeliverySpec } from "../../core/unified/vocabulary/common";
+import type { GeminiTtsVoiceName } from "./wire";
 
 /** The generateContent speech-generation guide (voices, languages, limits, REST samples). */
 export const GEMINI_TTS_DOCS_URL =
@@ -43,6 +49,63 @@ export const GEMINI_TTS_CONTEXT_TOKENS = 32768;
  * validates the unary route, so this set is informational.
  */
 export const GEMINI_TTS_STREAMING_MODEL_IDS = ["gemini-3.1-flash-tts-preview"] as const;
+
+/**
+ * The one-word characteristic the guide's "Voice options" list prints beside
+ * each of the 30 preset voices (GEMINI_TTS_DOCS_URL), transcribed 2026-08-24
+ * from the live page — the descriptors that sit on the same bulleted list the
+ * names in `GEMINI_TTS_VOICES` (./wire) come from.
+ *
+ * **Display data, never enforced.** No check reads this table: an off-list
+ * voice is refused against `GEMINI_TTS_VOICES` by `checkVoiceName`
+ * (./tts-checks), and `GooglePrebuiltVoiceConfig.voiceName` is typed from that
+ * array, not from these keys. This is here so a picker can label "Zephyr" as
+ * "Bright" without inventing the word.
+ *
+ * Google publishes one column today, so the value is an OBJECT rather than a
+ * bare string — the shape a second column can join without breaking callers,
+ * the same arrangement `GEMINI_AUDIO_OUTPUT_FORMATS` and `AudioFormatSpec`
+ * already use. `as const satisfies` keeps `…["Zephyr"].description` the
+ * literal `"Bright"` and makes a 31st voice a BUILD error until its descriptor
+ * is transcribed too. Keys are in guide order, which is `GEMINI_TTS_VOICES`
+ * order; `src/providers/google/tts.test.ts` pins that.
+ *
+ * Nothing here is fetched: a reworded descriptor is invisible to every test,
+ * exactly as the 78 language names and the 32k context number are. The
+ * transcription date above is the guard.
+ */
+export const GEMINI_TTS_VOICE_INFO = {
+  Zephyr: { description: "Bright" },
+  Puck: { description: "Upbeat" },
+  Charon: { description: "Informative" },
+  Kore: { description: "Firm" },
+  Fenrir: { description: "Excitable" },
+  Leda: { description: "Youthful" },
+  Orus: { description: "Firm" },
+  Aoede: { description: "Breezy" },
+  Callirrhoe: { description: "Easy-going" },
+  Autonoe: { description: "Bright" },
+  Enceladus: { description: "Breathy" },
+  Iapetus: { description: "Clear" },
+  Umbriel: { description: "Easy-going" },
+  Algieba: { description: "Smooth" },
+  Despina: { description: "Smooth" },
+  Erinome: { description: "Clear" },
+  Algenib: { description: "Gravelly" },
+  Rasalgethi: { description: "Informative" },
+  Laomedeia: { description: "Upbeat" },
+  Achernar: { description: "Soft" },
+  Alnilam: { description: "Firm" },
+  Schedar: { description: "Even" },
+  Gacrux: { description: "Mature" },
+  Pulcherrima: { description: "Forward" },
+  Achird: { description: "Friendly" },
+  Zubenelgenubi: { description: "Casual" },
+  Vindemiatrix: { description: "Gentle" },
+  Sadachbia: { description: "Lively" },
+  Sadaltager: { description: "Knowledgeable" },
+  Sulafat: { description: "Warm" },
+} as const satisfies Record<GeminiTtsVoiceName, { readonly description: string }>;
 
 /**
  * Every language code on the guide's "Supported languages" table
@@ -245,3 +308,46 @@ export const GEMINI_AUDIO_DELIVERY_MODES = [
 
 /** How generated audio comes back: inline base64, or a URI to fetch. */
 export type GeminiAudioDelivery = (typeof GEMINI_AUDIO_DELIVERY_MODES)[number];
+
+/**
+ * The same five modes, read from the response side — where the audio actually
+ * lands for each of them.
+ *
+ * Declared beside the enum it maps rather than on `./tts-params.ts`, because
+ * this IS that enum's other half; `unmodel/google/values` publishes both from
+ * here. `./tts-check.ts` states the shapes: "the audio comes back as
+ * `candidates[0].content.parts[0].inlineData` with an `audio/*` mimeType and
+ * base64 `data` … or, when the request set `responseFormat.audio.delivery` to
+ * `URI`, as a `fileData` part carrying an `audio/*` mimeType and a `fileUri` to
+ * fetch instead of bytes."
+ */
+const INLINE_AUDIO_PART = {
+  kind: "base64",
+  path: ["candidates", 0, "content", "parts", 0, "inlineData", "data"],
+  mimePath: ["candidates", 0, "content", "parts", 0, "inlineData", "mimeType"],
+} as const satisfies TtsDelivery;
+
+/** The URI arm: a `fileUri` to fetch, and therefore no bytes in hand. */
+const URI_AUDIO_PART = {
+  kind: "url",
+  path: ["candidates", 0, "content", "parts", 0, "fileData", "fileUri"],
+} as const satisfies TtsDelivery;
+
+/**
+ * How Gemini hands the audio back, keyed by the request field that decides it.
+ *
+ * `DELIVERY_UNSPECIFIED` is mapped to the inline arm rather than left out: it
+ * is the enum's own name for "not stated", and not stating it is what the
+ * default row below already covers.
+ */
+export const GOOGLE_TTS_DELIVERY = {
+  byRequestField: "generationConfig.responseFormat.audio.delivery",
+  variants: {
+    DELIVERY_UNSPECIFIED: INLINE_AUDIO_PART,
+    INLINE: INLINE_AUDIO_PART,
+    inline: INLINE_AUDIO_PART,
+    URI: URI_AUDIO_PART,
+    uri: URI_AUDIO_PART,
+  },
+  default: INLINE_AUDIO_PART,
+} as const satisfies TtsDeliverySpec;

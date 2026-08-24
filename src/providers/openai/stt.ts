@@ -28,7 +28,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type Validated, type ExactKeys } from "../../core/request";
+import { toValidated, type ValidatedForm, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
@@ -454,6 +454,7 @@ function finalize(params: AnyTranscriptionBody): unknown {
       // Deliberately NOT application/json: fetch must derive the multipart
       // boundary from the FormData body itself.
       headers: {},
+      body: "form",
     },
     { sdk: { openai: () => body } },
   );
@@ -493,10 +494,10 @@ export const stt = validator as unknown as {
   <M extends TranscriptionModelInput, T extends TranscriptionArm<M>>(
     params: T & TranscriptionArm<M> & { model: M } & ExactKeys<T, TranscriptionArm<M>>,
     options?: ValidateOptions<T>,
-  ): Validated<T & { model: M }, TranscriptionSdkTargets<T & { model: M }>>;
+  ): ValidatedForm<T & { model: M }, TranscriptionSdkTargets<T & { model: M }>>;
   safe<M extends TranscriptionModelInput, T extends TranscriptionArm<M>>(
     params: T & TranscriptionArm<M> & { model: M } & ExactKeys<T, TranscriptionArm<M>>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T & { model: M }, TranscriptionSdkTargets<T & { model: M }>>>;
+  ): ValidateResult<ValidatedForm<T & { model: M }, TranscriptionSdkTargets<T & { model: M }>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

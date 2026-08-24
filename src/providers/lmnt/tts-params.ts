@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 
 /** LMNT's one documented model — the ref union for `lmnt/…`. */
 export const MODELS = ["blizzard"] as const;
@@ -81,3 +81,13 @@ export const LMNT_TTS_MODEL_PARAMS = {
     },
   },
 } as const satisfies TtsModelParamTable;
+
+/**
+ * Raw audio bytes — the adapter compiles to /v1/ai/speech/bytes, which "returns
+ * a streaming binary response, so it has no response checker" (./tts.ts).
+ *
+ * LMNT's other route answers JSON with base64 `audio` plus word timestamps, and
+ * it is a different validator (`lmnt.ttsDetailed`) rather than a request field
+ * on this one — so there is nothing for the caller to flip, and this stays flat.
+ */
+export const LMNT_TTS_DELIVERY = { kind: "bytes" } as const satisfies TtsDeliverySpec;

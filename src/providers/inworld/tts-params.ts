@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type {
   InworldApplyTextNormalization,
   InworldDeliveryMode,
@@ -111,3 +111,16 @@ export const INWORLD_TTS_MODEL_PARAMS = {
   "inworld-tts-1": LEGACY_ROW,
   "inworld-tts-1-max": LEGACY_ROW,
 } as const satisfies TtsModelParamTable;
+
+/**
+ * JSON with base64 audio: "The response is JSON but carries no quality/usage
+ * signals beyond `usage.processedCharactersCount`, so there is no response
+ * checker" (./tts.ts) — the audio itself is the `audioContent` string.
+ *
+ * The streaming variant (/tts/v1/voice:stream) returns NDJSON and "unmodel
+ * finalizes to the non-streaming URL only", so no request field flips this.
+ */
+export const INWORLD_TTS_DELIVERY = {
+  kind: "base64",
+  path: ["audioContent"],
+} as const satisfies TtsDeliverySpec;

@@ -14,6 +14,7 @@ import {
   GEMINI_SPEECH_NATIVE_SAMPLE_RATE,
   GEMINI_TTS_CONTEXT_TOKENS,
   GEMINI_TTS_LANGUAGE_CODES,
+  GEMINI_TTS_VOICE_INFO,
 } from "./tts-constraints";
 import { GEMINI_TTS_VOICES } from "./wire";
 import type { Issue } from "../../core/issues";
@@ -200,6 +201,9 @@ describe("S2–S5: voices and speakers", () => {
     ]);
     expect(issue.meta?.allowed).toEqual([...GEMINI_TTS_VOICES]);
     expect(GEMINI_TTS_VOICES).toHaveLength(30);
+    // The descriptor table is display data, but it must cover the same 30
+    // names in the same order — completions.test.ts asserts entries[0].
+    expect(Object.keys(GEMINI_TTS_VOICE_INFO)).toEqual([...GEMINI_TTS_VOICES]);
   });
 
   test("every one of the 30 preset voices validates", () => {
@@ -755,6 +759,41 @@ describe("checkTts", () => {
     expect(report.warnings).toHaveLength(1);
     expect(report.warnings[0]?.meta?.kind).toBe("empty_audio");
     expect(report.warnings[0]?.path).toEqual(["candidates", 0, "content", "parts"]);
+  });
+
+  test("a URI-delivery response carries audio: a fileData part is not empty", () => {
+    const report = checkTts({
+      candidates: [
+        {
+          finishReason: "STOP",
+          content: {
+            parts: [
+              { fileData: { fileUri: "https://generativelanguage.googleapis.com/v1beta/files/abc", mimeType: "audio/mpeg" } },
+            ],
+          },
+        },
+      ],
+      modelVersion: MODEL,
+    });
+    expect(report.warnings).toEqual([]);
+  });
+
+  test("a non-audio fileData part still earns the empty-audio warning", () => {
+    const report = checkTts({
+      candidates: [
+        {
+          finishReason: "STOP",
+          content: {
+            parts: [
+              { fileData: { fileUri: "https://generativelanguage.googleapis.com/v1beta/files/abc", mimeType: "text/plain" } },
+            ],
+          },
+        },
+      ],
+      modelVersion: MODEL,
+    });
+    expect(report.warnings).toHaveLength(1);
+    expect(report.warnings[0]?.meta?.kind).toBe("empty_audio");
   });
 
   test("a truncated response does not ALSO get the empty-audio warning", () => {

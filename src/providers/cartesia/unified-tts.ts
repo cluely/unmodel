@@ -47,7 +47,13 @@ import {
   type CartesiaTtsLanguage,
   type TtsBytesBody,
 } from "./tts";
-import { CARTESIA_TTS_MODEL_PARAMS, FORMAT, MODELS, TTS_BYTES_DOCS } from "./tts-params";
+import {
+  CARTESIA_TTS_DELIVERY,
+  CARTESIA_TTS_MODEL_PARAMS,
+  FORMAT,
+  MODELS,
+  TTS_BYTES_DOCS,
+} from "./tts-params";
 
 /** The wire body this adapter compiles to. */
 export type CartesiaTtsWire = TtsBytesBody;
@@ -81,6 +87,7 @@ export const tts = {
   provider: "cartesia",
   models: MODELS,
   modelParams: CARTESIA_TTS_MODEL_PARAMS,
+  delivery: CARTESIA_TTS_DELIVERY,
   compile(
     input: TtsParams,
     ctx: CompileContext<TtsParams>,

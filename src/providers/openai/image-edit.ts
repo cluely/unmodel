@@ -26,7 +26,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type Validated, type ExactKeys } from "../../core/request";
+import { toValidated, type ValidatedForm, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
@@ -366,6 +366,7 @@ function finalize(params: AnyImageEditBody): unknown {
     // Deliberately NOT application/json: fetch must derive the multipart
     // boundary from the FormData body itself.
     headers: {},
+    body: "form",
   }, {
     sdk: { openai: () => body },
   });
@@ -401,13 +402,13 @@ export const imageEdit = validator as unknown as {
   <M extends ImageEditModelInput | undefined = undefined, T extends ImageEditArm<M> = ImageEditArm<M>>(
     params: T & ImageEditArm<M> & { model?: M } & ExactKeys<T, ImageEditArm<M>>,
     options?: ValidateOptions<T>,
-  ): Validated<T, OpenAISdkTargets<T>>;
+  ): ValidatedForm<T, OpenAISdkTargets<T>>;
   safe<
     M extends ImageEditModelInput | undefined = undefined,
     T extends ImageEditArm<M> = ImageEditArm<M>,
   >(
     params: T & ImageEditArm<M> & { model?: M } & ExactKeys<T, ImageEditArm<M>>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T, OpenAISdkTargets<T>>>;
+  ): ValidateResult<ValidatedForm<T, OpenAISdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

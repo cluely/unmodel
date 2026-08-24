@@ -34,7 +34,13 @@ import {
   type FishAudioOpusBitrate,
   type TtsBody,
 } from "./tts";
-import { FISH_AUDIO_TTS_MODEL_PARAMS, FORMAT, MODELS, TTS_DOCS } from "./tts-params";
+import {
+  FISH_AUDIO_TTS_DELIVERY,
+  FISH_AUDIO_TTS_MODEL_PARAMS,
+  FORMAT,
+  MODELS,
+  TTS_DOCS,
+} from "./tts-params";
 
 /** The wire params this adapter compiles to (`model` becomes a header). */
 export type FishAudioTtsWire = TtsBody;
@@ -53,6 +59,7 @@ export const tts = {
   provider: "fish-audio",
   models: MODELS,
   modelParams: FISH_AUDIO_TTS_MODEL_PARAMS,
+  delivery: FISH_AUDIO_TTS_DELIVERY,
   unsupported: {
     language:
       "POST /v1/tts has no language field — Fish Audio infers the language from the text and " +

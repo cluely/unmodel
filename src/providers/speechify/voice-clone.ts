@@ -34,7 +34,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type ExactKeys, type Validated } from "../../core/request";
+import { toValidated, type ExactKeys, type ValidatedForm } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -231,7 +231,7 @@ type VoiceCloneSdkTargets<B> = { speechify: () => B };
 
 function finalize(
   params: CreateVoiceParams,
-): Validated<CreateVoiceParams, VoiceCloneSdkTargets<CreateVoiceParams>> {
+): ValidatedForm<CreateVoiceParams, VoiceCloneSdkTargets<CreateVoiceParams>> {
   return toValidated(
     params,
     {
@@ -240,6 +240,7 @@ function finalize(
       // Deliberately NOT application/json: this is a multipart endpoint, and
       // fetch must derive the multipart boundary from the FormData body itself.
       headers: {},
+      body: "form",
     },
     { sdk: { speechify: () => params } },
   );
@@ -247,7 +248,7 @@ function finalize(
 
 const validator = createValidator<
   CreateVoiceParams,
-  Validated<CreateVoiceParams, VoiceCloneSdkTargets<CreateVoiceParams>>
+  ValidatedForm<CreateVoiceParams, VoiceCloneSdkTargets<CreateVoiceParams>>
 >({
   endpoint: "speechify.voiceClone",
   schema,
@@ -276,10 +277,10 @@ export const voiceClone = validator as unknown as {
   <T extends CreateVoiceParams>(
     params: T & ExactKeys<T, CreateVoiceParams>,
     options?: ValidateOptions<T>,
-  ): Validated<T, VoiceCloneSdkTargets<T>>;
+  ): ValidatedForm<T, VoiceCloneSdkTargets<T>>;
   safe<T extends CreateVoiceParams>(
     params: T & ExactKeys<T, CreateVoiceParams>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T, VoiceCloneSdkTargets<T>>>;
+  ): ValidateResult<ValidatedForm<T, VoiceCloneSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

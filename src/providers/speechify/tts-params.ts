@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 
 /** The four Simba rows — the ref union for `speechify/…`. */
 export const MODELS = ["simba-english", "simba-multilingual", "simba-3.0", "simba-3.2"] as const;
@@ -71,3 +71,14 @@ export const SPEECHIFY_TTS_MODEL_PARAMS = {
   "simba-3.0": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
   "simba-3.2": { codecs: CODECS, languages: ["en"], extras: SPEECHIFY_EXTRAS },
 } as const satisfies TtsModelParamTable;
+
+/**
+ * JSON with base64 audio: /v1/audio/speech — the route this adapter compiles to
+ * — "answers JSON (`audio_data` base64 + `billable_characters_count` +
+ * `speech_marks`)" (./tts.ts). /v1/audio/stream is the byte route and is a
+ * different validator (`speechify.ttsStream`).
+ */
+export const SPEECHIFY_TTS_DELIVERY = {
+  kind: "base64",
+  path: ["audio_data"],
+} as const satisfies TtsDeliverySpec;

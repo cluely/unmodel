@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type {
   MinimaxEmotion,
   MinimaxLanguageBoost,
@@ -225,3 +225,22 @@ export const MINIMAX_TTS_MODEL_PARAMS = {
   "speech-01-hd": ROW_LEGACY,
   "speech-01-turbo": ROW_LEGACY,
 } as const satisfies TtsModelParamTable;
+
+/**
+ * Hex, at `data.audio` — or a URL, and `output_format` is which:
+ * "Non-streaming responses return the audio hex-encoded in `data.audio` (or a
+ * URL when `output_format: "url"`), so this is a JSON API — but unmodel
+ * validates requests only, so there is no checker here" (./tts.ts).
+ *
+ * `stream` does not appear here because it does not move the answer: the
+ * validator already refuses `output_format: "url"` alongside it — "streaming
+ * responses are always hex" — so a streamed response is the hex arm, framed.
+ */
+export const MINIMAX_TTS_DELIVERY = {
+  byRequestField: "output_format",
+  variants: {
+    hex: { kind: "hex", path: ["data", "audio"] },
+    url: { kind: "url", path: ["data", "audio"] },
+  },
+  default: { kind: "hex", path: ["data", "audio"] },
+} as const satisfies TtsDeliverySpec;

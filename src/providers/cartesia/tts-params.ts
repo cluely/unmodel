@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { CartesiaEmotion } from "./tts";
 import { CARTESIA_TTS_LANGUAGES } from "./models";
 
@@ -92,3 +92,11 @@ export const CARTESIA_TTS_MODEL_PARAMS = {
   "sonic-preview": ROW,
   "sonic-latest": ROW,
 } as const satisfies TtsModelParamTable;
+
+/**
+ * Raw audio bytes — POST /tts/bytes is named after its answer: "The response is
+ * raw audio bytes, so there is no response checker for this endpoint"
+ * (./tts.ts). The SSE and WebSocket variants are separate routes and unmodel
+ * does not validate them, so nothing here flips.
+ */
+export const CARTESIA_TTS_DELIVERY = { kind: "bytes" } as const satisfies TtsDeliverySpec;

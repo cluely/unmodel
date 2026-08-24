@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { FishAudioLatency } from "./tts";
 
 /** The four TTS model ids — the ref union for `fish-audio/…`. */
@@ -80,3 +80,10 @@ export const FISH_AUDIO_TTS_MODEL_PARAMS = {
   "s2-pro": S2_ROW,
   s1: { codecs: CODECS, extras: SHARED_TTS_EXTRAS },
 } as const satisfies TtsModelParamTable;
+
+/**
+ * Raw audio bytes: "The response is a chunked raw audio stream, not JSON, so
+ * there is no response checker" (./tts.ts). Chunked is a transfer encoding —
+ * the body is still the audio, so there is nothing to decode or fetch.
+ */
+export const FISH_AUDIO_TTS_DELIVERY = { kind: "bytes" } as const satisfies TtsDeliverySpec;

@@ -30,7 +30,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type ExactKeys, type Validated } from "../../core/request";
+import { toValidated, type ExactKeys, type ValidatedForm } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -249,7 +249,7 @@ type VoiceCloneSdkTargets<B> = { cartesia: () => B };
 
 function finalize(
   params: VoicesCloneParams,
-): Validated<VoicesCloneParams, VoiceCloneSdkTargets<VoicesCloneParams>> {
+): ValidatedForm<VoicesCloneParams, VoiceCloneSdkTargets<VoicesCloneParams>> {
   return toValidated(
     params,
     {
@@ -258,6 +258,7 @@ function finalize(
       // Multipart: no content-type (fetch derives the boundary), but the
       // version header is REQUIRED on this wire.
       headers: { "Cartesia-Version": VOICE_CLONE_CARTESIA_VERSION },
+      body: "form",
     },
     { sdk: { cartesia: () => params } },
   );
@@ -265,7 +266,7 @@ function finalize(
 
 const validator = createValidator<
   VoicesCloneParams,
-  Validated<VoicesCloneParams, VoiceCloneSdkTargets<VoicesCloneParams>>
+  ValidatedForm<VoicesCloneParams, VoiceCloneSdkTargets<VoicesCloneParams>>
 >({
   endpoint: "cartesia.voiceClone",
   schema,
@@ -293,10 +294,10 @@ export const voiceClone = validator as unknown as {
   <T extends VoicesCloneParams>(
     params: T & ExactKeys<T, VoicesCloneParams>,
     options?: ValidateOptions<T>,
-  ): Validated<T, VoiceCloneSdkTargets<T>>;
+  ): ValidatedForm<T, VoiceCloneSdkTargets<T>>;
   safe<T extends VoicesCloneParams>(
     params: T & ExactKeys<T, VoicesCloneParams>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T, VoiceCloneSdkTargets<T>>>;
+  ): ValidateResult<ValidatedForm<T, VoiceCloneSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

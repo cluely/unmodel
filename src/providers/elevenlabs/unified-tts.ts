@@ -38,7 +38,13 @@ import {
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { TtsAdapterFor, TtsParams } from "../../core/unified/vocabulary/tts";
 import { tts as validator, type TextToSpeechParams } from "./tts";
-import { ELEVENLABS_TTS_MODEL_PARAMS, FORMAT, MODELS, TTS_DOCS } from "./tts-params";
+import {
+  ELEVENLABS_TTS_DELIVERY,
+  ELEVENLABS_TTS_MODEL_PARAMS,
+  FORMAT,
+  MODELS,
+  TTS_DOCS,
+} from "./tts-params";
 
 /** The wire params this adapter compiles to (voice_id + query params included). */
 export type ElevenlabsTtsWire = TextToSpeechParams;
@@ -59,6 +65,7 @@ export const tts = {
   provider: "elevenlabs",
   models: MODELS,
   modelParams: ELEVENLABS_TTS_MODEL_PARAMS,
+  delivery: ELEVENLABS_TTS_DELIVERY,
   compile(
     input: TtsParams,
     ctx: CompileContext<TtsParams>,

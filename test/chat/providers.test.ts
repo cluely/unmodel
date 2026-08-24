@@ -18,9 +18,14 @@
 import { describe, expect, test } from "bun:test";
 
 import { chat } from "../../src/chat/index";
-import { CHAT_PROVIDERS, dialectOf } from "../../src/chat/refs";
+import { CHAT_AUTH, CHAT_PROVIDERS, dialectOf } from "../../src/chat/refs";
 import { chatProfiles } from "../../src/catalog/chat-profiles.gen";
-import { ENDPOINTS, isFactoryEndpoint } from "../../src/core/translate/endpoints";
+import {
+  ENDPOINTS,
+  isFactoryEndpoint,
+  resolveEndpoint,
+  type TargetEndpoint,
+} from "../../src/core/translate/endpoints";
 import { TARGET_CONSTRAINT_ENDPOINTS } from "../../src/retarget/target-constraints";
 
 /** The dialects `src/chat/compile.ts` ships a decoder for. */
@@ -46,6 +51,22 @@ describe("CHAT_PROVIDERS is derived, not decided", () => {
       const dialect = dialectOf(provider);
       expect(dialect, `${provider} has no dialect`).toBeDefined();
       expect(CODEC_DIALECTS.has(dialect as string), `${provider} → ${dialect}`).toBe(true);
+    }
+  });
+
+  // CHAT_AUTH restates the endpoint table's auth column instead of importing
+  // it, because importing it would drag all 30 chat/completions URLs into
+  // `unmodel/values` (6.1 KiB against a 3 KiB per-export budget). That trade is
+  // only defensible while this test exists: it is the thing that makes the
+  // restatement a mirror rather than a second opinion.
+  test("every CHAT_AUTH row matches the auth its endpoint declares", () => {
+    expect(Object.keys(CHAT_AUTH).sort()).toEqual([...CHAT_PROVIDERS].sort());
+    for (const provider of CHAT_PROVIDERS) {
+      const endpoint = resolveEndpoint(provider);
+      expect(endpoint, `${provider} has no endpoint`).toBeDefined();
+      expect(CHAT_AUTH[provider], `${provider} auth drifted`).toEqual(
+        (endpoint as TargetEndpoint).auth,
+      );
     }
   });
 

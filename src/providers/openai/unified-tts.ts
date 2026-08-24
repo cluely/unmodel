@@ -29,7 +29,13 @@ import { applyExtras, resolveAudioFormat, resolveVoice, toSpeed } from "../../co
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { TtsAdapterFor, TtsParams } from "../../core/unified/vocabulary/tts";
 import { tts as validator, type SpeechCustomVoice } from "./tts";
-import { FORMAT, MODELS, OPENAI_TTS_MODEL_PARAMS, SPEECH_DOCS } from "./tts-params";
+import {
+  FORMAT,
+  MODELS,
+  OPENAI_TTS_DELIVERY,
+  OPENAI_TTS_MODEL_PARAMS,
+  SPEECH_DOCS,
+} from "./tts-params";
 
 /** The wire body this adapter compiles to — the loose arm of `SpeechBody`. */
 export interface OpenaiTtsWire {
@@ -52,6 +58,7 @@ export const tts = {
   provider: "openai",
   models: MODELS,
   modelParams: OPENAI_TTS_MODEL_PARAMS,
+  delivery: OPENAI_TTS_DELIVERY,
   unsupported: {
     language:
       "POST /v1/audio/speech has no language field — gpt-4o-mini-tts takes language direction " +

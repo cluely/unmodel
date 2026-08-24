@@ -26,12 +26,12 @@
  * Each array carries `satisfies readonly <Union>[]`, which catches a member the
  * union does not have. The other direction — a union member missing from the
  * array — is not expressible in a `satisfies`, so it is asserted in
- * `test/types/values-hub.test-d.ts`, in both directions, for all nine. The
+ * `test/types/values-hub.test-d.ts`, in both directions, for all ten. The
  * alternative was to *derive* each union from its array
  * (`type X = (typeof ARR)[number]`) and delete the hand-written one. It was
  * rejected twice over: it would put a value module's name inside the types-only
  * vocabulary — the one directory whose law is that it names no values — and it
- * would replace nine legible unions with an indexed access in every editor
+ * would replace ten legible unions with an indexed access in every editor
  * hover and every emitted `.d.ts`. Two declarations plus a both-direction
  * proof is the trade this repo already makes for `CANONICAL_KEY_LISTS`
  * (`test/types/canonical-keys.test-d.ts`), and it is made for the same reason.
@@ -43,6 +43,7 @@ import type {
   ImageOutputFormat,
   OutputDelivery,
   ResolutionTier,
+  TtsDeliveryKind,
   VideoResolution,
 } from "./vocabulary/common";
 import type { AudioInputKind, TimestampGranularity } from "./vocabulary/stt";
@@ -96,6 +97,22 @@ export const IMAGE_OUTPUT_FORMATS = [
 
 /** URL or inline bytes — the two ways a provider hands an artefact back. */
 export const OUTPUT_DELIVERIES = ["url", "base64"] as const satisfies readonly OutputDelivery[];
+
+/**
+ * The five ways a speech endpoint answers, cheapest to read first.
+ *
+ * The closed set the `kind` on every adapter's `delivery` is drawn from; WHICH
+ * one a given provider uses — and which request field flips it, and at which
+ * path the audio sits — is that provider's own `TTS_DELIVERY` at
+ * `unmodel/<provider>/values`.
+ */
+export const TTS_DELIVERY_KINDS = [
+  "bytes",
+  "base64",
+  "hex",
+  "url",
+  "sse",
+] as const satisfies readonly TtsDeliveryKind[];
 
 // ---------------------------------------------------------------------------
 // Audio

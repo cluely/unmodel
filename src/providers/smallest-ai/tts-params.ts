@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { SmallestLanguage } from "./models";
 import { LANGUAGES, PRO_ONLY_LANGUAGES } from "./models";
 
@@ -95,3 +95,10 @@ export const SMALLEST_TTS_MODEL_PARAMS = {
   "lightning_v3.1": { codecs: CODECS, languages: BASE_LANGUAGES, extras: SHARED_EXTRAS },
   "lightning_v3.1_pro": { codecs: CODECS, languages: PRO_LANGUAGES, extras: SHARED_EXTRAS },
 } as const satisfies TtsModelParamTable;
+
+/**
+ * Raw audio bytes: "The response is binary audio, so there is no response
+ * checker" (./tts.ts). The streaming routes (POST/WS /waves/v1/tts/live) are
+ * not validated by unmodel, so nothing here flips.
+ */
+export const SMALLEST_TTS_DELIVERY = { kind: "bytes" } as const satisfies TtsDeliverySpec;

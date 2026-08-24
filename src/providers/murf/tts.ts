@@ -22,10 +22,14 @@
  *   characters, not tokens.
  * - COMPANDED CODECS: "ULAW and ALAW formats only support mono channel type
  *   and a sample rate of 8000 Hz." Both halves are enforced as errors.
- * - `/v1/speech/generate` answers with JSON (`audioFile`,
- *   `audioLengthInSeconds`, `remainingCharacterCount`, `wordDurations`) —
- *   see `./check`. `/v1/speech/stream` answers with an audio stream, so it
- *   has no response checker.
+ * - RESPONSE CHECKER, PER ROUTE — Murf has one, for exactly one of its two
+ *   routes, so "murf has no checker" and "murf has a checker" are both wrong.
+ *   `/v1/speech/generate` answers with JSON (`audioFile`,
+ *   `audioLengthInSeconds`, `remainingCharacterCount`, `wordDurations`) and
+ *   HAS one: `checkTts` in `./check`, exported from `unmodel/murf`.
+ *   `/v1/speech/stream` answers with an audio stream — no JSON, so no
+ *   checker. `MURF_TTS_DELIVERY` in ./tts-params is the machine-readable
+ *   twin of that split, keyed by model because the routes are.
  * - REGIONAL ROUTERS: Falcon 2 also publishes a global router
  *   (`https://global.api.murf.ai/v1/speech/stream`) plus eleven regional
  *   hosts. `.request.url` targets the documented default host; swap the

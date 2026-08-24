@@ -60,14 +60,20 @@ export type {
 } from "./core/constraint-types";
 
 export { toValidated, toValidatedSocket, JSON_HEADERS, NO_HEADERS } from "./core/request";
+// Its own leaf, so the provider and pack entries do not carry caller-side
+// sugar no validator calls — see the module header.
+export { toRequestInit } from "./core/request-init";
+export type { FetchArgs } from "./core/request-init";
 export type {
   ApiRetargeter,
   ApiRetargetOutcome,
   ExactKeys,
+  FormRequestMeta,
   RequestMeta,
   SdkFormatters,
   SocketMeta,
   Validated,
+  ValidatedForm,
   ValidatedInit,
   ValidatedSocket,
 } from "./core/request";

@@ -33,7 +33,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type ExactKeys, type Validated } from "../../core/request";
+import { toValidated, type ExactKeys, type ValidatedForm } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -558,6 +558,7 @@ function finalize(config: JobConfig): unknown {
       method: "POST",
       // Deliberately empty: fetch derives the multipart boundary from FormData.
       headers: {},
+      body: "form",
     },
     { sdk: { speechmatics: () => body } },
   );
@@ -598,11 +599,11 @@ export const stt = validator as unknown as {
   <T extends JobConfig>(
     config: T & ExactKeys<T, JobConfig>,
     options?: ValidateOptions,
-  ): Validated<T, JobsSdkTargets<T>>;
+  ): ValidatedForm<T, JobsSdkTargets<T>>;
   safe<T extends JobConfig>(
     config: T & ExactKeys<T, JobConfig>,
     options?: ValidateOptions,
-  ): ValidateResult<Validated<T, JobsSdkTargets<T>>>;
+  ): ValidateResult<ValidatedForm<T, JobsSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };
 

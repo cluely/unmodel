@@ -10,7 +10,7 @@
  */
 
 import { EXTRA } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { MurfChannelType } from "./tts";
 
 /** The two catalog rows — the ref union for `murf/…`. */
@@ -62,3 +62,29 @@ export const MURF_TTS_MODEL_PARAMS = {
   },
   "falcon-2": { codecs: MURF_CODECS, extras: SHARED_MURF_EXTRAS },
 } as const satisfies TtsModelParamTable;
+
+/**
+ * The one provider in the category where the **model ref** decides, because it
+ * decides the route: "`/v1/speech/generate` answers with JSON (`audioFile`,
+ * `audioLengthInSeconds`, `remainingCharacterCount`, `wordDurations`) …
+ * `/v1/speech/stream` answers with an audio stream, so it has no response
+ * checker" (./tts.ts), and `gen2` and `falcon-2` are served by one each.
+ *
+ * On the generate route the audio is a URL by default — `audioFile` is the
+ * "URL to generated audio", "available for download for 72 hours" (./check.ts),
+ * so there are no bytes in hand — and base64 only when `encodeAsBase64` is set:
+ * "Set to true to receive audio in response as Base64 encoded string".
+ */
+export const MURF_TTS_DELIVERY = {
+  byModel: {
+    gen2: {
+      byRequestField: "encodeAsBase64",
+      variants: {
+        true: { kind: "base64", path: ["encodedAudio"] },
+        false: { kind: "url", path: ["audioFile"] },
+      },
+      default: { kind: "url", path: ["audioFile"] },
+    },
+    "falcon-2": { kind: "bytes" },
+  },
+} as const satisfies TtsDeliverySpec;

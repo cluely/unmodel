@@ -27,7 +27,7 @@
 
 import { z } from "zod";
 import { createValidator } from "../../core/pipeline";
-import { toValidated, type ExactKeys, type Validated } from "../../core/request";
+import { toValidated, type ExactKeys, type ValidatedForm } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { EndpointConstraints } from "../../core/constraint-types";
@@ -132,7 +132,7 @@ type VoiceCloneSdkTargets<B> = { lmnt: () => B };
 
 function finalize(
   params: AiVoiceParams,
-): Validated<AiVoiceParams, VoiceCloneSdkTargets<AiVoiceParams>> {
+): ValidatedForm<AiVoiceParams, VoiceCloneSdkTargets<AiVoiceParams>> {
   return toValidated(
     params,
     {
@@ -141,6 +141,7 @@ function finalize(
       // Multipart: no content-type (fetch derives the boundary), but the
       // static version header rides along.
       headers: { "lmnt-version": VOICE_CLONE_LMNT_VERSION },
+      body: "form",
     },
     { sdk: { lmnt: () => params } },
   );
@@ -148,7 +149,7 @@ function finalize(
 
 const validator = createValidator<
   AiVoiceParams,
-  Validated<AiVoiceParams, VoiceCloneSdkTargets<AiVoiceParams>>
+  ValidatedForm<AiVoiceParams, VoiceCloneSdkTargets<AiVoiceParams>>
 >({
   endpoint: "lmnt.voiceClone",
   schema,
@@ -174,10 +175,10 @@ export const voiceClone = validator as unknown as {
   <T extends AiVoiceParams>(
     params: T & ExactKeys<T, AiVoiceParams>,
     options?: ValidateOptions<T>,
-  ): Validated<T, VoiceCloneSdkTargets<T>>;
+  ): ValidatedForm<T, VoiceCloneSdkTargets<T>>;
   safe<T extends AiVoiceParams>(
     params: T & ExactKeys<T, AiVoiceParams>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T, VoiceCloneSdkTargets<T>>>;
+  ): ValidateResult<ValidatedForm<T, VoiceCloneSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

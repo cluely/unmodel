@@ -32,9 +32,12 @@
  * construction imports nothing at all — so reaching for `parseModelRef` never
  * drags a graph behind it.
  */
-import type { DialectId, EndpointConfigKey } from "../core/translate/endpoints";
+import type { DialectId, EndpointAuth, EndpointConfigKey } from "../core/translate/endpoints";
 import { isFactoryEndpoint, resolveEndpoint } from "../core/translate/endpoints";
 import type { ChatProviderId } from "../catalog/chat-refs.gen";
+
+/** The shape of a {@link CHAT_AUTH} row: a header name and an optional scheme. */
+export type { EndpointAuth } from "../core/translate/endpoints";
 
 /**
  * Every provider `chat()` can send to, as a runtime array.
@@ -83,6 +86,74 @@ export const CHAT_PROVIDERS = [
 ] as const satisfies readonly ChatProviderId[];
 
 const CHAT_PROVIDER_SET: ReadonlySet<string> = new Set(CHAT_PROVIDERS);
+
+// The three shapes the 32 chat providers use. Spelled here rather than
+// imported for the byte reason on `CHAT_AUTH` below; pinned against the
+// endpoint table's own descriptors by `test/chat/providers.test.ts`.
+const BEARER_AUTH: EndpointAuth = Object.freeze({ header: "authorization", scheme: "Bearer" });
+const ANTHROPIC_AUTH: EndpointAuth = Object.freeze({ header: "x-api-key" });
+const GOOGLE_AUTH: EndpointAuth = Object.freeze({ header: "x-goog-api-key" });
+
+/**
+ * The header each provider's credential goes in, keyed by provider — the one
+ * thing a retarget changes that the returned request cannot carry.
+ *
+ * `chat({ model: "anthropic/…" })` needs `x-api-key`; change the ref to
+ * `"openai/…"` and the compiled `.request.url` moves, but the header the caller
+ * already wrote does not. This is the lookup that closes that gap:
+ *
+ * ```ts
+ * const { header, scheme } = CHAT_AUTH[provider];
+ * headers[header] = scheme === undefined ? key : `${scheme} ${key}`;
+ * ```
+ *
+ * Names only, never values — unmodel still never touches a key.
+ *
+ * A **mirror** of the `auth` column on the endpoint table, not a reference to
+ * it, and the reason is measured rather than stylistic: retaining any binding
+ * from `endpoints.ts` retains the module, which is all 30 chat/completions
+ * URLs — `unmodel/values` would ship 6.1 KiB to answer "which header", against
+ * a 3 KiB per-export budget. Restating three descriptors costs 0.3.
+ *
+ * A copy that nothing checks is exactly the failure mode this repo does not
+ * accept, so it is checked: `test/chat/providers.test.ts` compares every row
+ * here against the `auth` of the endpoint that provider actually resolves to,
+ * and a table that drifts fails the build.
+ */
+export const CHAT_AUTH: Readonly<Record<ChatProviderId, EndpointAuth>> = {
+  alibaba: BEARER_AUTH,
+  anthropic: ANTHROPIC_AUTH,
+  baseten: BEARER_AUTH,
+  cerebras: BEARER_AUTH,
+  deepinfra: BEARER_AUTH,
+  deepseek: BEARER_AUTH,
+  "fireworks-ai": BEARER_AUTH,
+  friendli: BEARER_AUTH,
+  google: GOOGLE_AUTH,
+  groq: BEARER_AUTH,
+  huggingface: BEARER_AUTH,
+  inception: BEARER_AUTH,
+  longcat: BEARER_AUTH,
+  meta: BEARER_AUTH,
+  minimax: BEARER_AUTH,
+  mistral: BEARER_AUTH,
+  moonshotai: BEARER_AUTH,
+  nebius: BEARER_AUTH,
+  "novita-ai": BEARER_AUTH,
+  nvidia: BEARER_AUTH,
+  openai: BEARER_AUTH,
+  openrouter: BEARER_AUTH,
+  perplexity: BEARER_AUTH,
+  sarvam: BEARER_AUTH,
+  scaleway: BEARER_AUTH,
+  siliconflow: BEARER_AUTH,
+  stepfun: BEARER_AUTH,
+  togetherai: BEARER_AUTH,
+  upstage: BEARER_AUTH,
+  vercel: BEARER_AUTH,
+  xai: BEARER_AUTH,
+  zhipuai: BEARER_AUTH,
+};
 
 /**
  * Providers unmodel ships a chat validator for but `unmodel/chat` cannot

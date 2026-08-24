@@ -26,7 +26,13 @@ import {
   type ResembleSampleRate,
   type SynthesizeBody,
 } from "./tts";
-import { FORMAT, MODELS, RESEMBLE_TTS_MODEL_PARAMS, SYNC_DOCS } from "./tts-params";
+import {
+  FORMAT,
+  MODELS,
+  RESEMBLE_TTS_DELIVERY,
+  RESEMBLE_TTS_MODEL_PARAMS,
+  SYNC_DOCS,
+} from "./tts-params";
 
 /** The wire body this adapter compiles to. */
 export type ResembleTtsWire = SynthesizeBody;
@@ -47,6 +53,7 @@ export const tts = {
   provider: "resemble",
   models: MODELS,
   modelParams: RESEMBLE_TTS_MODEL_PARAMS,
+  delivery: RESEMBLE_TTS_DELIVERY,
   unsupported: {
     speed:
       "Resemble's synthesis routes publish no speaking-rate field — pace is a property of the " +

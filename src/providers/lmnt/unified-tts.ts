@@ -23,7 +23,13 @@ import {
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { TtsAdapterFor, TtsParams } from "../../core/unified/vocabulary/tts";
 import { tts as validator, type LmntFormat, type LmntSampleRate, type SpeechBody } from "./tts";
-import { FORMAT, LMNT_TTS_MODEL_PARAMS, MODELS, SPEECH_DOCS } from "./tts-params";
+import {
+  FORMAT,
+  LMNT_TTS_DELIVERY,
+  LMNT_TTS_MODEL_PARAMS,
+  MODELS,
+  SPEECH_DOCS,
+} from "./tts-params";
 
 /** The wire body this adapter compiles to. */
 export type LmntTtsWire = SpeechBody;
@@ -36,6 +42,7 @@ export const tts = {
   provider: "lmnt",
   models: MODELS,
   modelParams: LMNT_TTS_MODEL_PARAMS,
+  delivery: LMNT_TTS_DELIVERY,
   unsupported: {
     speed:
       "LMNT's speech endpoints publish no speaking-rate field — `temperature` and `top_p` steer " +

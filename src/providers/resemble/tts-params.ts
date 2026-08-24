@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 
 /** The one TTS row the catalog carries — the ref union for `resemble/…`. */
 export const MODELS = ["resemble-ultra"] as const;
@@ -72,3 +72,14 @@ export const RESEMBLE_TTS_MODEL_PARAMS = {
     },
   },
 } as const satisfies TtsModelParamTable;
+
+/**
+ * JSON with base64 audio: "The synchronous route answers with JSON (base64
+ * `audio_content`, `duration`, `audio_timestamps`, `success`, `issues`) …
+ * The streaming route answers with a chunked WAV stream" (./tts.ts). The
+ * adapter compiles to the synchronous route.
+ */
+export const RESEMBLE_TTS_DELIVERY = {
+  kind: "base64",
+  path: ["audio_content"],
+} as const satisfies TtsDeliverySpec;

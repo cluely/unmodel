@@ -30,7 +30,13 @@ import type { AudioContainer, AudioFormatCodec } from "../../core/unified/vocabu
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { TtsAdapterFor, TtsParams } from "../../core/unified/vocabulary/tts";
 import { tts as validator, type RimeAccept, type RimeLanguage, type RimeTtsParams } from "./tts";
-import { CODA_DOCS, FORMAT, MODELS, RIME_TTS_MODEL_PARAMS } from "./tts-params";
+import {
+  CODA_DOCS,
+  FORMAT,
+  MODELS,
+  RIME_TTS_DELIVERY,
+  RIME_TTS_MODEL_PARAMS,
+} from "./tts-params";
 const SPEED_DOCS = "https://docs.rime.ai/docs/speed";
 
 /** The wire params this adapter compiles to (`accept` becomes a header). */
@@ -57,6 +63,7 @@ export const tts = {
   provider: "rime",
   models: MODELS,
   modelParams: RIME_TTS_MODEL_PARAMS,
+  delivery: RIME_TTS_DELIVERY,
   compile(
     input: TtsParams,
     ctx: CompileContext<TtsParams>,

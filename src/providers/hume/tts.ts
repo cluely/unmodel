@@ -36,6 +36,14 @@
  * all take the same body — only /v0/tts is finalized here. The bidirectional
  * WebSocket /v0/tts/stream/input is a different protocol and is not validated.
  *
+ * NO RESPONSE CHECKER, even though /v0/tts answers JSON. unmodel's response
+ * side reports quality, usage and cost signals, and this envelope carries
+ * none: `generations[].audio` is the base64 audio and the rest of the
+ * document describes it (duration, encoding, the requested snippets). There
+ * is nothing to warn about that the request layer did not already gate, so
+ * scope stays request validation. `HUME_TTS_DELIVERY` in ./tts-params names
+ * where the bytes are.
+ *
  * `.toSdk("hume")` re-shapes the body for the `hume` TypeScript SDK's
  * `client.tts.synthesizeJson(...)`, which is camelCase (`numGenerations`,
  * `trailingSilence`, …). Auth is an `X-Hume-Api-Key` header — unmodel never

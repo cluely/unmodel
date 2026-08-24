@@ -120,6 +120,7 @@ npm install unmodel
 Write one request, validate it against the selected provider, send the body yourself:
 
 ```ts
+import { toRequestInit } from "unmodel";
 import { chat } from "unmodel/chat";
 import { checkChat } from "unmodel/openai";
 
@@ -132,13 +133,13 @@ const request = chat({
 JSON.stringify(request);
 // → {"model":"gpt-5.2","messages":[...],"max_completion_tokens":256}
 
-const response = await fetch(request.request.url, {
-  method: request.request.method,
+const { url, ...init } = toRequestInit(request);
+const response = await fetch(url, {
+  ...init,
   headers: {
-    ...request.request.headers,
+    ...init.headers,
     authorization: `Bearer ${process.env.OPENAI_API_KEY ?? ""}`,
   },
-  body: JSON.stringify(request),
 });
 
 const payload = await response.json();
@@ -151,7 +152,7 @@ report.finishReason; // "stop", "length", ...
 report.costUSD;      // actual catalog-priced usage, when available
 ```
 
-The enumerable result is the exact HTTP body. `.request` holds the URL, method, and static headers. Auth stays yours.
+The enumerable result is the exact HTTP body. `.request` holds the URL, method, and static headers, and `toRequestInit` packs those plus the JSON framing into fetch's four arguments. Auth stays yours: no unmodel export takes a key.
 
 ## Choose a surface
 
@@ -255,7 +256,19 @@ const voices = TTS_MODEL_PARAMS["gpt-4o-mini-tts"].voices;
 </select>;
 ```
 
-Each entry exports three uniform names per category it serves: `<CATEGORY>_MODEL_PARAMS`, `<CATEGORY>_MODELS`, and `<CATEGORY>_FORMAT_SPEC` where the category has an audio format spec. Prefixes are `IMAGE_`, `IMAGE_EDIT_`, `VIDEO_`, `TTS_`, `STT_`, `MUSIC_`, `VOICE_CLONE_`, `VOICE_DESIGN_`. Next to those sit the provider's own lists under their own names (`GEMINI_TTS_VOICES`, `GPT_IMAGE_2_SIZES`, `BFL_ASPECT_RATIOS`, `RECRAFT_V3_STYLES`, `KLING_ASPECT_RATIOS`, …). 36 providers ship a values entry: exactly the ones with a unified adapter.
+`voices` is on the row only where the provider publishes a closed list, which today is two of the fifteen TTS providers: OpenAI (9 for `tts-1`, 13 for `gpt-4o-mini-tts`) and Google (30 Gemini presets). Everywhere else the catalog is per-account because of cloning, runs to thousands of entries, and turns over between releases, so there is no row and no array to import: fetch the voices from the provider. Deepgram is the exception that looks like one, since its voice *is* the model, which makes `TTS_MODELS` the voice picker.
+
+Where a list does exist, the provider's own name for it is an alias, not a rival:
+
+```ts
+import { SPEECH_VOICES, TTS_MODEL_PARAMS } from "unmodel/openai/values";
+import { GEMINI_TTS_VOICES, TTS_MODEL_PARAMS as GOOGLE } from "unmodel/google/values";
+
+SPEECH_VOICES === TTS_MODEL_PARAMS["gpt-4o-mini-tts"].voices;            // true
+GEMINI_TTS_VOICES === GOOGLE["gemini-2.5-flash-preview-tts"].voices;     // true
+```
+
+Each entry exports three uniform names per category it serves: `<CATEGORY>_MODEL_PARAMS`, `<CATEGORY>_MODELS`, and `<CATEGORY>_FORMAT_SPEC` where the category has an audio format spec. Prefixes are `IMAGE_`, `IMAGE_EDIT_`, `VIDEO_`, `TTS_`, `STT_`, `MUSIC_`, `VOICE_CLONE_`, `VOICE_DESIGN_`. Next to those sit the provider's own lists under their own names (`GEMINI_TTS_VOICES`, `GPT_IMAGE_2_SIZES`, `BFL_ASPECT_RATIOS`, `RECRAFT_V3_STYLES`, `KLING_ASPECT_RATIOS`, …). Those are aliases of the same objects the uniform names reach, not a second source of truth, so there is never a question of which one is current. 36 providers ship a values entry: exactly the ones with a unified adapter.
 
 The tables are **the same objects the adapter compiles with**, re-exported not copied, so a picker and the request it builds cannot disagree. `test/values-entries.test.ts` asserts that by reference (`===`), not deep equality.
 
@@ -304,7 +317,7 @@ That is the point of the layout. The per-model tables live on import-free `<cate
 | [Voice design](#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
 | [Realtime audio config](#realtime-audio) | none | `unmodel/openai`, `unmodel/deepgram`, `unmodel/elevenlabs`, etc. |
 
-See the full [provider and endpoint roster](docs/providers.md).
+See the full [provider and endpoint roster](docs/providers.md), and the [TTS integrator's matrix](docs/tts.md) for per-provider auth, response delivery and wire quirks.
 
 ## Chat
 
@@ -349,7 +362,45 @@ JSON.stringify(request);
 //    "voice":"alloy","response_format":"mp3"}
 ```
 
-Formats and some provider-only extras narrow to the selected model. Published languages and voices autocomplete. Custom values stay type-accepted, decided by provider validation.
+Formats and some provider-only extras narrow to the selected model. Published languages and voices autocomplete where the provider publishes them. Custom values stay type-accepted, decided by provider validation.
+
+`voice` is the one field where the wire and unified surfaces differ on purpose. `unmodel/openai`'s own `tts` gates the built-in names closed, because OpenAI publishes exactly that list. Unified `tts()` completes the same list and never gates it at compile time, because a cloned voice id is a working request at every provider and a union that refused it would be wrong for the caller who needs it most.
+
+### Estimating cost
+
+`.safe()` carries an `estimate` alongside the validated body, and `maxCostUSD` turns that estimate into a gate:
+
+```ts
+const result = tts.safe(
+  { model: "elevenlabs/eleven_multilingual_v2", text: "The lighthouse is ready.", voice: voiceId },
+  { maxCostUSD: 0.01 },
+);
+
+result.ok && result.estimate.costUSD; // 0.0024
+```
+
+Over budget is an error, not a warning, so a runaway request never leaves the process:
+
+```ts
+// text.length === 2000, maxCostUSD: 0.0001
+result.errors[0].message;
+// → "Estimated worst-case cost $0.2000 exceeds maxCostUSD $0.0001."
+```
+
+The arithmetic behind it is public. `resolveModelInfo` finds the row, `computeCharacterCostUSD` / `computeAudioMinutesCostUSD` / `computeCostUSD` price it, and all four are root exports:
+
+```ts
+import { computeCharacterCostUSD, resolveModelInfo } from "unmodel";
+import { models } from "unmodel/elevenlabs";
+
+const info = resolveModelInfo(models, "eleven_multilingual_v2");
+info?.cost; // { perMillionCharacters: 100 }
+computeCharacterCostUSD(info?.cost, "The lighthouse is ready.".length); // 0.0024
+```
+
+Reach for those when you are pricing text you have not validated yet. For a request you are about to send, `estimate.costUSD` is already the answer, and it is the more correct one: it uses the basis the provider bills in, which is not always characters. Fish Audio prices UTF-8 bytes, so CJK costs about 3x what a `.length` estimator would report. Hume multiplies by `num_generations`. Gemini prices the full worst-case token ceiling.
+
+Two absences are deliberate and mean exactly what they say. `gpt-4o-mini-tts` is token-billed on audio tokens whose count is unknowable before the call, so it gets no per-call estimate rather than a guess. Cartesia bills in credits with no published USD rate, and Resemble publishes none either. In all three `estimate.costUSD === undefined` is the honest answer, not a bug; the rationale for each lives in that provider's `models.ts` docblock.
 
 ## Speech to text
 
@@ -542,17 +593,21 @@ OpenAI, Cartesia, Deepgram, ElevenLabs, Inworld, and Soniox expose realtime conf
 
 ### Fetch
 
-For JSON endpoints, send the validated object directly:
+For JSON endpoints, `toRequestInit` turns a validated result into fetch's arguments:
 
 ```ts
-await fetch(request.request.url, {
-  method: request.request.method,
-  headers: { ...request.request.headers, authorization: `Bearer ${apiKey}` },
-  body: JSON.stringify(request),
+import { toRequestInit } from "unmodel";
+
+const { url, ...init } = toRequestInit(request);
+await fetch(url, {
+  ...init,
+  headers: { ...init.headers, authorization: `Bearer ${apiKey}` },
 });
 ```
 
-`.request.headers` holds the required static headers such as `content-type` or `anthropic-version`. Never credentials.
+`.request.headers` holds the required static headers such as `content-type` or `anthropic-version`. Never credentials, which is why `toRequestInit` takes no key: it hands back `{ url, method, headers, body }` and you add the auth header. `headers` is a copy, so mutating it is safe. It never calls `fetch` and unmodel never sends anything.
+
+Multipart endpoints cannot reach it, and that is enforced at compile time rather than documented: their result type declares `body: "form"`, so passing one to `toRequestInit` is a type error naming the `toFormData` helper to use instead.
 
 ### Provider SDKs
 
@@ -741,6 +796,15 @@ request.toApi("openai");
 //            ~~~~~~~~ TypeScript error: OpenAI does not serve Claude
 ```
 
+The auth header moves with the provider and is the one thing the moved request cannot carry for you: that request now wants `authorization: Bearer …`, not `x-api-key`. `CHAT_AUTH` from `unmodel/chat` is the lookup, keyed the same way the ref is, and it holds header names only.
+
+```ts
+import { CHAT_AUTH } from "unmodel/chat";
+
+CHAT_AUTH.anthropic;  // { header: "x-api-key" }
+CHAT_AUTH.openrouter; // { header: "authorization", scheme: "Bearer" }
+```
+
 `.toApiSafe(provider)` is the non-throwing form. Retargeting reruns the destination deny/enum rules it has available. For full schema, nested, catalog, context, and budget checks, pass the result through the destination validator. Chat-only, one hop.
 
 ## Check responses
@@ -778,6 +842,16 @@ const provider = getProvider("anthropic");
 ```
 
 Catalog model IDs are plain strings. Provider modules export generated model unions for autocomplete. Request validators may still accept future IDs and warn at runtime.
+
+`getModel` reads the models.dev snapshot and nothing else, so it is a chat-and-LLM surface. models.dev does not cover speech, image or video models, and their catalogs are hand-maintained per provider instead, which means `getModel("openai", "gpt-4o-mini-tts")` is `undefined` rather than a row with no price. Those catalogs are exported under their provider's own subpath:
+
+```ts
+import { models } from "unmodel/elevenlabs";
+
+models["eleven_multilingual_v2"].cost; // { perMillionCharacters: 100 }
+```
+
+Single-category providers export one `models`; the multi-category ones name the catalog after the category (`speechModels`, `transcriptionModels`, and so on at `unmodel/openai`). Either way `resolveModelInfo(catalog, id)` is the lookup, and it is the one that handles dated snapshots and aliases.
 
 Query and validate from the terminal:
 
@@ -860,6 +934,7 @@ bun run codegen:refresh # refresh models.dev, then regenerate
 ```
 
 - [Provider coverage and roadmap](docs/providers.md)
+- [TTS integrator's matrix](docs/tts.md)
 - [Architecture decisions](docs/decisions.md)
 
 ## License

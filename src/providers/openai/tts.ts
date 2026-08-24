@@ -18,6 +18,8 @@
  *   (there is no character-specific issue code — same convention as the other
  *   TTS providers). Because it is an endpoint cap, an unknown model id falls
  *   back to the same 4096 rather than escaping the check.
+ * - Auth is an `authorization: Bearer <key>` header — unmodel never touches
+ *   keys; add it yourself when fetching.
  */
 
 import { z } from "zod";
@@ -284,6 +286,18 @@ const validator = createValidator<AnySpeechBody, unknown>({
  *   headers: { ...params.request.headers, authorization: `Bearer ${key}` },
  *   body: JSON.stringify(params),
  * }).then((r) => r.arrayBuffer());
+ * ```
+ *
+ * `voice` is a closed union here — a voice id that arrives as a runtime
+ * `string` (config, a picker) does not fit it. Narrow, then call: guard with
+ * the exported `SPEECH_VOICES` (the same array `checkVoice` reads) and pass
+ * the result as {@link SpeechVoice}. A cloned voice is not a bare string at
+ * all — it is the object form `{ id: "voice_1234" }`.
+ *
+ * ```ts
+ * if ((SPEECH_VOICES as readonly string[]).includes(raw)) {
+ *   openai.tts({ model: "gpt-4o-mini-tts", input, voice: raw as SpeechVoice });
+ * }
  * ```
  */
 export const tts = validator as unknown as {

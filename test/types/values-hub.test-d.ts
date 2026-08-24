@@ -2,7 +2,7 @@
  * `unmodel/values` ↔ `unmodel/types`. Not executed by `bun test`;
  * type-checked by `bun run check`.
  *
- * Nine arrays and nine unions say the same thing twice, and the repo's own rule
+ * Ten arrays and ten unions say the same thing twice, and the repo's own rule
  * about second declarations is that they cannot be kept in step by intention.
  * `src/core/unified/values.ts` carries `satisfies readonly <Union>[]` on every
  * array, which catches **one** of the two failures — a member the union does
@@ -11,7 +11,7 @@
  * built from `ASPECT_RATIO_PRESETS` silently offers eight ratios out of nine.
  * No runtime test can catch it either, because there is nothing to compare the
  * array against at run time. So both directions are compared here, for all
- * nine, exactly the way `canonical-keys.test-d.ts` compares the kernel's key
+ * ten, exactly the way `canonical-keys.test-d.ts` compares the kernel's key
  * lists with the `*Params` types.
  *
  * Two `Record` key-sets get the same treatment, and for a sharper reason: they
@@ -36,6 +36,7 @@ import {
   OUTPUT_DELIVERIES,
   RESOLUTION_TIERS,
   TIMESTAMP_GRANULARITIES,
+  TTS_DELIVERY_KINDS,
   VIDEO_RESOLUTIONS,
 } from "../../src/core/unified/values";
 import { DEFAULT_CONTAINER, TIER_PIXELS } from "../../src/core/unified/derive";
@@ -46,6 +47,7 @@ import type {
   ImageOutputFormat,
   OutputDelivery,
   ResolutionTier,
+  TtsDeliveryKind,
   VideoResolution,
 } from "../../src/core/unified/vocabulary/common";
 import type {
@@ -62,7 +64,7 @@ type Extra<A extends readonly unknown[], U> = Exclude<A[number], U>;
 type Missing<A extends readonly unknown[], U> = Exclude<U, A[number]>;
 
 // ---------------------------------------------------------------------------
-// The nine canonical arrays
+// The ten canonical arrays
 // ---------------------------------------------------------------------------
 
 expectTrue<IsNever<Extra<typeof ASPECT_RATIO_PRESETS, AspectRatioPreset>>>();
@@ -91,6 +93,12 @@ expectTrue<IsNever<Missing<typeof TIMESTAMP_GRANULARITIES, TimestampGranularity>
 
 expectTrue<IsNever<Extra<typeof AUDIO_INPUT_KINDS, AudioInputKind>>>();
 expectTrue<IsNever<Missing<typeof AUDIO_INPUT_KINDS, AudioInputKind>>>();
+
+// `TtsDeliveryKind` is derived from `TtsDelivery["kind"]`, so the union follows
+// the arms automatically and this array is the one thing that does not — a
+// sixth arm with no member here is a picker that cannot name it.
+expectTrue<IsNever<Extra<typeof TTS_DELIVERY_KINDS, TtsDeliveryKind>>>();
+expectTrue<IsNever<Missing<typeof TTS_DELIVERY_KINDS, TtsDeliveryKind>>>();
 
 // ---------------------------------------------------------------------------
 // The two key-set declarations in derive.ts

@@ -30,10 +30,25 @@
  * *shape* — which of the five placements the encoding lands in, and under
  * which key. That is what makes "F1–F5 are all covered" checkable rather than
  * a claim in a commit message.
+ *
+ * `delivery` is that same idea on the **response** side, and the last column
+ * added: which of the five kinds the audio comes back as, and — where a request
+ * field moves it — which field. It is checked against the descriptor on the
+ * adapter rather than against a compiled request, because unmodel validates
+ * requests and never sees a response; what the suite can prove is that the
+ * descriptor exists at all fifteen, that its kinds are the canonical five, that
+ * every JSON kind carries a path, and that the hand-pinned table below still
+ * says what the adapters say.
  */
 import { describe, expect, test } from "bun:test";
+import { TTS_DELIVERY_KINDS } from "../../src/core/unified/values";
 import type { AudioFormatRequest } from "../../src/core/unified/vocabulary/audio";
-import type { TtsParams } from "../../src/core/unified/vocabulary/tts";
+import type {
+  TtsDelivery,
+  TtsDeliveryKind,
+  TtsDeliverySpec,
+  TtsParams,
+} from "../../src/core/unified/vocabulary/tts";
 import { tts } from "../../src/unified/tts";
 import { tts as cartesia } from "../../src/providers/cartesia/unified-tts";
 import { tts as deepgram } from "../../src/providers/deepgram/unified-tts";
@@ -70,10 +85,11 @@ interface Capability {
   ref: string;
   /** A voice this provider's own validator accepts — voices are never portable. */
   voice_id: string;
-  /** The adapter, so the `unsupported` column can be checked against data. */
+  /** The adapter, so the `unsupported` and `delivery` columns read real data. */
   adapter: Readonly<{
     provider: string;
     unsupported?: Readonly<Partial<Record<string, string>>>;
+    delivery: TtsDeliverySpec;
   }>;
   /**
    * Canonical params every probe for this provider must carry. Cartesia is the
@@ -86,8 +102,44 @@ interface Capability {
   speed: Support;
   language: Support;
   format: { shape: FormatShape; at: string };
+  /**
+   * How the audio comes back: every `kind` the adapter's descriptor can
+   * produce, sorted, and the request fields that choose between them — empty
+   * where the answer never moves.
+   *
+   * The kinds and the deciding field rather than the whole descriptor: the
+   * response *paths* are per-provider prose and belong in the leaf that states
+   * them, while "how many answers are there, and what picks one" is the
+   * property a caller writing a reader has to get right.
+   */
+  delivery: { kinds: readonly TtsDeliveryKind[]; by: readonly string[] };
   /** An encoding this provider can express — the probe for the format row. */
   probe: AudioFormatRequest;
+}
+
+/** Every arm a descriptor can resolve to, flattened across models and variants. */
+function arms(spec: TtsDeliverySpec): TtsDelivery[] {
+  if ("byModel" in spec) return Object.values(spec.byModel).flatMap(arms);
+  if ("byRequestField" in spec) {
+    // A `string` variant is a declared gap, not a delivery — see
+    // `TtsDeliveryByRequest`. Deepgram's `callback` is the one that has one.
+    const variants = Object.values(spec.variants).filter(
+      (variant): variant is TtsDelivery => typeof variant !== "string",
+    );
+    return [spec.default, ...variants];
+  }
+  return [spec];
+}
+
+/** Every request field a descriptor names, sorted and de-duplicated. */
+function decidedBy(spec: TtsDeliverySpec): string[] {
+  const fields =
+    "byModel" in spec
+      ? Object.values(spec.byModel).flatMap(decidedBy)
+      : "byRequestField" in spec
+        ? [spec.byRequestField]
+        : [];
+  return [...new Set(fields)].sort();
 }
 
 const MP3_FULL: AudioFormatRequest = { format: "mp3", sampleRate: 44100, bitrate: 128000 };
@@ -105,6 +157,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "native",
     language: "unsupported",
     format: { shape: "codec", at: "response_format" },
+    delivery: { kinds: ["bytes", "sse"], by: ["stream_format"] },
     probe: "mp3",
   },
   elevenlabs: {
@@ -115,6 +168,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "native",
     language: "derived",
     format: { shape: "composite", at: "output_format" },
+    delivery: { kinds: ["bytes"], by: [] },
     probe: MP3_FULL,
   },
   cartesia: {
@@ -125,6 +179,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "native",
     language: "derived",
     format: { shape: "object", at: "output_format" },
+    delivery: { kinds: ["bytes"], by: [] },
     probe: MP3_FULL,
     base: { outputFormat: MP3_FULL },
   },
@@ -136,6 +191,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "native",
     language: "unsupported",
     format: { shape: "query", at: "encoding" },
+    delivery: { kinds: ["bytes"], by: ["callback"] },
     probe: "mp3",
   },
   google: {
@@ -153,6 +209,10 @@ const TABLE: Readonly<Record<string, Capability>> = {
     // `generationConfig.responseFormat.audio` is `{ mimeType, sampleRate,
     // bitRate }` — the F3 shape, two levels down.
     format: { shape: "object", at: "generationConfig" },
+    delivery: {
+      kinds: ["base64", "url"],
+      by: ["generationConfig.responseFormat.audio.delivery"],
+    },
     probe: MP3_FULL,
   },
   hume: {
@@ -163,6 +223,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "native",
     language: "unsupported",
     format: { shape: "object", at: "format" },
+    delivery: { kinds: ["base64"], by: [] },
     probe: "mp3",
   },
   minimax: {
@@ -173,6 +234,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "native",
     language: "derived",
     format: { shape: "object", at: "audio_setting" },
+    delivery: { kinds: ["hex", "url"], by: ["output_format"] },
     probe: MP3_FULL,
   },
   rime: {
@@ -183,6 +245,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "derived",
     language: "derived",
     format: { shape: "header", at: "accept" },
+    delivery: { kinds: ["bytes"], by: [] },
     probe: "mp3",
   },
   lmnt: {
@@ -193,6 +256,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "unsupported",
     language: "derived",
     format: { shape: "codec", at: "format" },
+    delivery: { kinds: ["bytes"], by: [] },
     probe: "mp3",
   },
   "fish-audio": {
@@ -203,6 +267,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "native",
     language: "unsupported",
     format: { shape: "codec", at: "format" },
+    delivery: { kinds: ["bytes"], by: [] },
     probe: "mp3",
   },
   murf: {
@@ -213,6 +278,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "derived",
     language: "native",
     format: { shape: "codec", at: "format" },
+    delivery: { kinds: ["base64", "bytes", "url"], by: ["encodeAsBase64"] },
     probe: "mp3",
   },
   resemble: {
@@ -223,6 +289,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "unsupported",
     language: "unsupported",
     format: { shape: "codec", at: "output_format" },
+    delivery: { kinds: ["base64"], by: [] },
     probe: "mp3",
   },
   "smallest-ai": {
@@ -233,6 +300,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "native",
     language: "derived",
     format: { shape: "codec", at: "output_format" },
+    delivery: { kinds: ["bytes"], by: [] },
     probe: "mp3",
   },
   speechify: {
@@ -243,6 +311,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "unsupported",
     language: "native",
     format: { shape: "composite", at: "output_format" },
+    delivery: { kinds: ["base64"], by: [] },
     probe: { format: "mp3", sampleRate: 24000, bitrate: 128000 },
   },
   inworld: {
@@ -253,6 +322,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     speed: "native",
     language: "native",
     format: { shape: "object", at: "audioConfig" },
+    delivery: { kinds: ["base64"], by: [] },
     probe: "mp3",
   },
 };
@@ -425,6 +495,27 @@ describe.each(rows)("%s", (provider, row) => {
     }
   });
 
+  test(`the audio comes back as ${row.delivery.kinds.join(" | ")}`, () => {
+    const spec = row.adapter.delivery;
+    // Every adapter carries one: the descriptor is required on `TtsAdapterFor`,
+    // and this is the runtime half of that — a third-party adapter may omit it,
+    // one of the fifteen may not.
+    expect(spec, `${provider} declares no delivery`).toBeDefined();
+
+    const kinds = [...new Set(arms(spec).map((arm) => arm.kind))].sort();
+    expect(kinds).toEqual([...row.delivery.kinds].sort());
+    expect(decidedBy(spec)).toEqual([...row.delivery.by].sort());
+
+    for (const arm of arms(spec)) {
+      // The canonical five, and nothing invented per provider.
+      expect(TTS_DELIVERY_KINDS, `${provider} declares kind "${arm.kind}"`).toContain(arm.kind);
+      // A JSON kind without a path is the descriptor saying "decode something,
+      // somewhere" — exactly the silence this column exists to replace.
+      if (arm.kind === "bytes" || arm.kind === "sse") continue;
+      expect(arm.path.length, `${provider} ${arm.kind} has an empty path`).toBeGreaterThan(0);
+    }
+  });
+
   test("an unsupported codec is an invalid_enum_value naming what IS offered", () => {
     // `vorbis` is offered by none of the fifteen — the one codec in the
     // vocabulary that no provider in this pack encodes.
@@ -436,6 +527,28 @@ describe.each(rows)("%s", (provider, row) => {
 test("every format shape in the category is exercised by some provider", () => {
   const shapes = new Set(rows.map(([, row]) => row.format.shape));
   expect([...shapes].sort()).toEqual(["codec", "composite", "header", "object", "query"]);
+});
+
+test("every delivery kind in the category is exercised by some provider", () => {
+  const kinds = new Set(rows.flatMap(([, row]) => row.delivery.kinds));
+  expect([...kinds].sort()).toEqual([...TTS_DELIVERY_KINDS].sort());
+});
+
+test("the five providers whose delivery a request field moves are exactly these", () => {
+  // The reason the descriptor is on the adapter and not on a `TtsModelParams`
+  // row: at a third of the providers a static per-model value would be wrong.
+  const moved = rows.filter(([, row]) => row.delivery.by.length > 0).map(([provider]) => provider);
+  expect(moved.sort()).toEqual(["deepgram", "google", "minimax", "murf", "openai"]);
+});
+
+test("murf is the one provider whose delivery the model ref decides", () => {
+  // `gen2` is served by /v1/speech/generate (JSON) and `falcon-2` by
+  // /v1/speech/stream (bytes), so the route — and the answer — is the ref's.
+  const byModel = rows.filter(([, row]) => "byModel" in row.adapter.delivery);
+  expect(byModel.map(([provider]) => provider)).toEqual(["murf"]);
+  const spec = murf.delivery;
+  expect(Object.keys(spec.byModel).sort()).toEqual([...murf.models].sort());
+  expect(spec.byModel["falcon-2"]).toEqual({ kind: "bytes" });
 });
 
 test("both speed spellings that are not the identity are exercised", () => {

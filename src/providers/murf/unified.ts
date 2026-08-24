@@ -35,7 +35,7 @@ import {
   type SpeechGenerateBody,
   type SpeechStreamBody,
 } from "./tts";
-import { MODELS, MURF_TTS_MODEL_PARAMS } from "./tts-params";
+import { MODELS, MURF_TTS_DELIVERY, MURF_TTS_MODEL_PARAMS } from "./tts-params";
 
 const TTS_OVERVIEW_DOCS = "https://murf.ai/api/docs/text-to-speech/overview";
 
@@ -111,6 +111,7 @@ export const tts = {
   provider: "murf",
   models: MODELS,
   modelParams: MURF_TTS_MODEL_PARAMS,
+  delivery: MURF_TTS_DELIVERY,
   compile(
     input: TtsParams,
     ctx: CompileContext<TtsParams>,

@@ -30,7 +30,13 @@ import {
   type SmallestSampleRate,
   type TtsParams as SmallestWireParams,
 } from "./tts";
-import { FORMAT, MODELS, SMALLEST_TTS_MODEL_PARAMS, SYNTHESIZE_DOCS } from "./tts-params";
+import {
+  FORMAT,
+  MODELS,
+  SMALLEST_TTS_DELIVERY,
+  SMALLEST_TTS_MODEL_PARAMS,
+  SYNTHESIZE_DOCS,
+} from "./tts-params";
 
 /** The wire params this adapter compiles to. */
 export type SmallestTtsWire = SmallestWireParams;
@@ -43,6 +49,7 @@ export const tts = {
   provider: "smallest-ai",
   models: MODELS,
   modelParams: SMALLEST_TTS_MODEL_PARAMS,
+  delivery: SMALLEST_TTS_DELIVERY,
   compile(
     input: TtsParams,
     ctx: CompileContext<TtsParams>,

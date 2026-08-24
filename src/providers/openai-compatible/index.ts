@@ -123,7 +123,15 @@ export interface OpenAICompatibleConfigBase<
   constraints?: Readonly<Partial<Record<string, EndpointConstraints>>>;
   /** Pattern rules (reasoning families, endpoint-wide media limits etc.). */
   familyRules?: readonly FamilyRule[];
-  /** Extra static non-auth headers sent with every chat request. */
+  /**
+   * Extra static headers sent with every chat request — version pins, routing
+   * hints, an `http-referer`.
+   *
+   * **Never credentials.** Whatever is put here lands verbatim on
+   * `.request.headers`, the one object in the library that is otherwise
+   * guaranteed to hold no key, and it lands there for every request the overlay
+   * ever validates. Auth stays at the fetch call site.
+   */
   headers?: Record<string, string>;
   /**
    * Provider-specific checks run after the shared dialect checks — for

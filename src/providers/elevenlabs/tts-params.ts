@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { ElevenlabsPronunciationDictionaryLocator } from "./tts";
 
 /** The six text-to-speech model ids — the ref union for `elevenlabs/…`. */
@@ -134,3 +134,10 @@ export const ELEVENLABS_TTS_MODEL_PARAMS = {
   eleven_turbo_v2_5: ROW,
   eleven_turbo_v2: ROW,
 } as const satisfies TtsModelParamTable;
+
+/**
+ * Raw audio bytes: "The endpoint responds with raw audio bytes, not JSON, so
+ * there is no response checker for TTS" (./tts.ts). `output_format` picks the
+ * encoding of those bytes, never where they land.
+ */
+export const ELEVENLABS_TTS_DELIVERY = { kind: "bytes" } as const satisfies TtsDeliverySpec;

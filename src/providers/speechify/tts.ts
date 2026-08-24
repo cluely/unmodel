@@ -42,6 +42,15 @@
  * voice-cloning routes are validated by ./voice-clone and
  * ./voice-consent-challenge.
  *
+ * NO RESPONSE CHECKER on either route, and `/v1/audio/speech` answering JSON
+ * is not an oversight. unmodel's response side reports quality, usage and cost
+ * signals; that envelope is `audio_data` (base64 audio),
+ * `billable_characters_count` and `speech_marks` — the audio, the count the
+ * request layer already estimated, and an alignment document. Nothing to warn
+ * about, so scope stays request validation. `/v1/audio/stream` answers an
+ * audio stream, which has no JSON to check at all. `SPEECHIFY_TTS_DELIVERY`
+ * in ./tts-params names where the bytes are.
+ *
  * `.toSdk("speechify")` is the identity on `tts`: @speechify/api's
  * `GetSpeechRequest` is snake_case with exactly the wire keys. On `stream` it
  * re-attaches the stripped header as `Accept`, matching that SDK's

@@ -11,7 +11,10 @@
  * different payload: the audio comes back as
  * `candidates[0].content.parts[0].inlineData` with an `audio/*` mimeType and
  * base64 `data` (raw PCM at 24 kHz, mono, 16-bit unless `responseFormat.audio`
- * asked for a container).
+ * asked for a container) — or, when the request set
+ * `responseFormat.audio.delivery` to `URI` (`GEMINI_AUDIO_DELIVERY_MODES` in
+ * ./tts-constraints, validated by ./tts), as a `fileData` part carrying an
+ * `audio/*` mimeType and a `fileUri` to fetch instead of bytes.
  */
 
 import type { Issue } from "../../core/issues";
@@ -38,6 +41,7 @@ export interface TtsResponseLike {
       parts?: Array<{
         text?: string;
         inlineData?: { mimeType?: string; data?: string };
+        fileData?: { fileUri?: string; mimeType?: string };
       }>;
     };
   }>;
@@ -82,11 +86,17 @@ export type GoogleTtsFinishReason =
 
 const catalog: Record<string, ModelInfo> = ttsModels;
 
-/** Does this candidate carry any actual audio? */
+/**
+ * Does this candidate carry any actual audio?
+ *
+ * Both deliveries count: inline base64 (`inlineData`) and a URI to fetch
+ * (`fileData`). Scanning only `inlineData` would report `empty_audio` on every
+ * `delivery: "URI"` response — a request this same package validates.
+ */
 function hasAudioPart(response: TtsResponseLike): boolean {
   const parts = response.candidates?.[0]?.content?.parts ?? [];
   return parts.some((part) => {
-    const mimeType = part?.inlineData?.mimeType;
+    const mimeType = part?.inlineData?.mimeType ?? part?.fileData?.mimeType;
     return typeof mimeType === "string" && mimeType.toLowerCase().startsWith("audio/");
   });
 }
@@ -161,7 +171,7 @@ export function checkTts(response: TtsResponseLike): ResponseReport<GoogleTtsFin
       code: "invalid_shape",
       path: ["candidates", 0, "content", "parts"],
       message:
-        "Generation finished normally (finishReason STOP) but no audio/* inlineData part came back. " +
+        "Generation finished normally (finishReason STOP) but no audio/* part came back — neither inlineData nor a fileData URI. " +
         "Gemini TTS occasionally returns text tokens instead of audio tokens; retrying is the documented remedy.",
       meta: { kind: "empty_audio", finishReason, source: GEMINI_TTS_DOCS_URL },
     });

@@ -17,4 +17,8 @@
  * `test/values-entries.test.ts` measures that against a real build.
  */
 
-export { MURF_TTS_MODEL_PARAMS as TTS_MODEL_PARAMS, MODELS as TTS_MODELS } from "./tts-params";
+export {
+  MURF_TTS_MODEL_PARAMS as TTS_MODEL_PARAMS,
+  MODELS as TTS_MODELS,
+  MURF_TTS_DELIVERY as TTS_DELIVERY,
+} from "./tts-params";

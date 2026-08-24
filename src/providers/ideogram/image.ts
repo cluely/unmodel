@@ -38,7 +38,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type ExactKeys, type Validated } from "../../core/request";
+import { toValidated, type ExactKeys, type ValidatedForm } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -590,6 +590,7 @@ function finalize(params: GenerateParams): unknown {
     // Deliberately NOT application/json: this is a multipart endpoint, and
     // fetch must derive the multipart boundary from the FormData body itself.
     headers: {},
+    body: "form",
   }, {
     sdk: { ideogram: () => body },
   });
@@ -635,10 +636,10 @@ export const image = validator as unknown as {
   <T extends GenerateParams>(
     params: T & ExactKeys<T, GenerateParams>,
     options?: ValidateOptions<T>,
-  ): Validated<T, IdeogramSdkTargets<T>>;
+  ): ValidatedForm<T, IdeogramSdkTargets<T>>;
   safe<T extends GenerateParams>(
     params: T & ExactKeys<T, GenerateParams>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T, IdeogramSdkTargets<T>>>;
+  ): ValidateResult<ValidatedForm<T, IdeogramSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

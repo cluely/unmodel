@@ -657,7 +657,11 @@ export interface AnthropicChatResultKind extends ValidatorResultKind {
  * are the exact fetch body; `.toSdk("anthropic")` returns the wire-shaped body
  * (the official SDK's params are wire-shaped — assignability is asserted in
  * test/types/anthropic.test-d.ts, so src never imports the SDK) and
- * `.request` carries url/method/static headers.
+ * `.request` carries url/method/static headers — including the required
+ * `anthropic-version: 2023-06-01`, which `/v1/messages` rejects the request
+ * without. Auth is your job: Anthropic takes the key in an `x-api-key` header,
+ * bare (no `Bearer`), which is the header the OpenAI-shaped providers do *not*
+ * use.
  *
  * `.toSdk("ai-sdk")` returns the Vercel AI SDK's `generateText` options
  * (no `model` — you supply the provider instance; wrap tool schemas with

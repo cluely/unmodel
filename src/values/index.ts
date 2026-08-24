@@ -21,10 +21,15 @@
  * translates *into*: {@link ASPECT_RATIO_PRESETS}, {@link RESOLUTION_TIERS},
  * {@link VIDEO_RESOLUTIONS}, {@link IMAGE_OUTPUT_FORMATS},
  * {@link OUTPUT_DELIVERIES}, {@link AUDIO_FORMAT_CODECS},
- * {@link AUDIO_CONTAINERS}, {@link TIMESTAMP_GRANULARITIES} and
- * {@link AUDIO_INPUT_KINDS} — plus {@link CANONICAL_KEY_LISTS} (the exact
+ * {@link AUDIO_CONTAINERS}, {@link TIMESTAMP_GRANULARITIES},
+ * {@link AUDIO_INPUT_KINDS} and {@link TTS_DELIVERY_KINDS} (the five ways a
+ * speech endpoint answers; which one a provider uses is its own `TTS_DELIVERY`
+ * at `unmodel/<provider>/values`) — plus {@link CANONICAL_KEY_LISTS} (the exact
  * params each category accepts, which is the list the kernel's envelope check
- * enforces) and {@link CHAT_PROVIDERS}.
+ * enforces) and {@link CHAT_PROVIDERS} — plus {@link CHAT_AUTH}, which names
+ * the header each of those providers wants its credential in (a header name,
+ * never a key), because that is the one thing a retarget changes that the
+ * request object cannot carry.
  *
  * ## What is NOT here
  *
@@ -66,6 +71,7 @@ export {
   OUTPUT_DELIVERIES,
   RESOLUTION_TIERS,
   TIMESTAMP_GRANULARITIES,
+  TTS_DELIVERY_KINDS,
   VIDEO_RESOLUTIONS,
   VOICE_SAMPLE_KINDS,
   VOICE_VISIBILITIES,
@@ -98,3 +104,23 @@ export { CANONICAL_KEY_LISTS } from "../core/unified/values";
  * where it is declared, and `unmodel/chat` re-exports it from there too.
  */
 export { CHAT_PROVIDERS } from "../chat/refs";
+
+/**
+ * Provider id → `{ header, scheme? }`: where that provider's API key goes.
+ *
+ * ```ts
+ * const { header, scheme } = CHAT_AUTH[provider];
+ * headers[header] = scheme === undefined ? key : `${scheme} ${key}`;
+ * ```
+ *
+ * Header **names** only. unmodel never sees a credential, and this table is the
+ * same class of data as the `env` array on a provider's catalog entry, which
+ * already names the variable the key is read from.
+ *
+ * The rows mirror the auth column of the endpoint table the retarget layer
+ * resolves against — restated rather than imported so this entry stays a
+ * rounding error, and pinned row by row against that table in
+ * `test/chat/providers.test.ts`, so the header a picker renders and the header
+ * the compiled `.request.url` expects cannot disagree.
+ */
+export { CHAT_AUTH } from "../chat/refs";

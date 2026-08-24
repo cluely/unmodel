@@ -1,7 +1,12 @@
 /**
  * The hand-written target endpoint table: which wire dialect each retarget
- * destination speaks, where its URL is, and what static non-auth headers it
- * needs.
+ * destination speaks, where its URL is, what static non-auth headers it needs,
+ * and which header the caller's own credential goes in.
+ *
+ * That last column names a header; it never holds a value. It is here because
+ * retargeting invalidates it — a request that moves from `anthropic` to
+ * `openai` needs `authorization: Bearer` where it had `x-api-key`, and this
+ * table is the only place that knows both halves of that swap.
  *
  * **This module imports nothing, deliberately** — it is literal strings and
  * pure URL builders only, so any module may reach it without dragging a graph
@@ -30,6 +35,51 @@ export type DialectId = "openai-chat" | "anthropic-messages" | "gemini" | "bedro
 /** Config keys a factory-configured target needs before a URL can exist. */
 export type EndpointConfigKey = "region" | "project" | "location" | "endpoint" | "accountId";
 
+/**
+ * Where the caller's credential goes — the header **name** and the scheme word
+ * that prefixes the value, never a value. This is the same class of data as
+ * `ProviderInfo.env`, which already names the env var the key is read from:
+ * naming `x-api-key` is not holding a key.
+ *
+ * It exists because retargeting changes it. `.request.url` moving from
+ * Anthropic to OpenAI silently invalidates the `x-api-key` header the caller
+ * already wrote, and the table that computes the new URL is the only thing that
+ * knows the new header.
+ *
+ * One way in per row. Four targets accept a second one, recorded here rather
+ * than as a row, because a consumer rendering `{ header, scheme }` should be
+ * shown the way that always works:
+ *
+ * - **google** accepts the key as a `?key=` query parameter instead of the
+ *   header. Never that: a key in a URL lands in browser history, proxy logs
+ *   and referrer headers.
+ * - **azure** accepts a Microsoft Entra ID token as `authorization: Bearer`
+ *   alongside its own `api-key` header. The API-key form is the one that needs
+ *   no directory setup, so it is the one named.
+ * - **google-vertex** is OAuth *only* — the value is a short-lived access token
+ *   (Application Default Credentials, `gcloud auth print-access-token`), not
+ *   the `x-goog-api-key` the Gemini Developer API takes. Same vendor, two
+ *   different credentials: the retarget hazard in miniature.
+ * - **amazon-bedrock** signs with SigV4 unless bearer tokens are enabled. A
+ *   signature over method, path, headers and body is not a header name and a
+ *   value, so that form is not expressible here at all.
+ */
+export interface EndpointAuth {
+  /**
+   * Header name, spelled lowercase. HTTP header names are case-insensitive, so
+   * the casing here is a house convention rather than a wire requirement — but
+   * a single spelling is what lets `endpoints.test.ts` compare it against
+   * {@link TargetEndpoint.headers} without a normalisation step of its own.
+   */
+  readonly header: string;
+  /**
+   * The word before the credential: `authorization: Bearer <key>`. **Absent**
+   * when the header value is the bare key, which is the norm for the
+   * vendor-specific header names (`x-api-key`, `x-goog-api-key`, `api-key`).
+   */
+  readonly scheme?: "Bearer" | "Basic" | "Token";
+}
+
 export interface TargetEndpoint {
   /** `"<provider>.<endpoint>"`, e.g. `"anthropic.chat"`. */
   readonly id: string;
@@ -38,6 +88,11 @@ export interface TargetEndpoint {
   readonly dialect: DialectId;
   /** Static non-auth headers. Auth is always the caller's job. */
   readonly headers: Readonly<Record<string, string>>;
+  /**
+   * The header that job goes in. Never present in {@link headers} — that
+   * separation is asserted per row in `endpoints.test.ts`.
+   */
+  readonly auth: EndpointAuth;
   /**
    * The POST URL. A function when the surface puts the model id in the path
    * (Gemini's `models/{model}:generateContent`). **Absent on factory targets**
@@ -78,6 +133,26 @@ const ANTHROPIC_HEADERS: Readonly<Record<string, string>> = Object.freeze({
   "anthropic-version": ANTHROPIC_VERSION,
 });
 
+// The four descriptors, shared by reference across the rows below. Their prose
+// is on `EndpointAuth`, which is erased: JSDoc on a `const` survives into the
+// emitted bundle, and these are four objects every provider entry carries.
+//
+// Not exported. `src/chat/refs.ts` mirrors them rather than importing them,
+// because importing any binding from this module retains the whole URL table —
+// see the note on `CHAT_AUTH` there.
+
+/** `authorization: Bearer <key>` — every OpenAI-compatible surface. */
+const BEARER_AUTH: EndpointAuth = Object.freeze({ header: "authorization", scheme: "Bearer" });
+
+/** `x-api-key: <key>`, bare. */
+const ANTHROPIC_AUTH: EndpointAuth = Object.freeze({ header: "x-api-key" });
+
+/** `x-goog-api-key: <key>`, bare. */
+const GOOGLE_AUTH: EndpointAuth = Object.freeze({ header: "x-goog-api-key" });
+
+/** `api-key: <key>`, bare. */
+const AZURE_AUTH: EndpointAuth = Object.freeze({ header: "api-key" });
+
 /** `"models/gemini-3-pro"` → `"gemini-3-pro"`; the path segment is added here. */
 function stripModelsPrefix(modelId: string): string {
   return modelId.startsWith("models/") ? modelId.slice("models/".length) : modelId;
@@ -117,8 +192,19 @@ const OPENAI_CHAT_URLS: Readonly<Record<string, string>> = Object.freeze({
   zhipuai: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
 });
 
+// Speaking chat-completions and taking `authorization: Bearer` are the same
+// fact for all 30 of these — the compatibility layer they each advertise is
+// defined against OpenAI's own auth — so the header is supplied once here
+// rather than repeated per row.
 function openaiChatEndpoint(provider: string, url: string): TargetEndpoint {
-  return { id: `${provider}.chat`, provider, dialect: "openai-chat", headers: JSON_ONLY, url };
+  return {
+    id: `${provider}.chat`,
+    provider,
+    dialect: "openai-chat",
+    headers: JSON_ONLY,
+    auth: BEARER_AUTH,
+    url,
+  };
 }
 
 const OPENAI_CHAT_ENTRIES: ReadonlyArray<readonly [string, TargetEndpoint]> = Object.entries(
@@ -142,6 +228,7 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
         provider: "anthropic",
         dialect: "anthropic-messages",
         headers: ANTHROPIC_HEADERS,
+        auth: ANTHROPIC_AUTH,
         url: "https://api.anthropic.com/v1/messages",
       } satisfies TargetEndpoint,
     ],
@@ -153,6 +240,7 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
         provider: "google",
         dialect: "gemini",
         headers: JSON_ONLY,
+        auth: GOOGLE_AUTH,
         url: (modelId: string) =>
           `https://generativelanguage.googleapis.com/v1beta/models/${stripModelsPrefix(modelId)}:generateContent`,
         // `?alt=sse` is not optional decoration: without it the streaming
@@ -176,6 +264,9 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
         provider: "amazon-bedrock",
         dialect: "bedrock-converse",
         headers: JSON_ONLY,
+        // The bearer-token form; SigV4 signing is the other one and is not
+        // expressible as a header name (see `EndpointAuth`).
+        auth: BEARER_AUTH,
         config: ["region"],
       } satisfies TargetEndpoint,
     ],
@@ -187,6 +278,9 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
         provider: "google-vertex",
         dialect: "gemini",
         headers: JSON_ONLY,
+        // An OAuth access token, not the `x-goog-api-key` its `google` sibling
+        // three rows up takes (see `EndpointAuth`).
+        auth: BEARER_AUTH,
         config: ["project", "location"],
       } satisfies TargetEndpoint,
     ],
@@ -200,6 +294,7 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
         provider: "google-vertex",
         dialect: "openai-chat",
         headers: JSON_ONLY,
+        auth: BEARER_AUTH,
         config: ["project", "location"],
       } satisfies TargetEndpoint,
     ],
@@ -211,6 +306,9 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
         provider: "azure",
         dialect: "openai-chat",
         headers: JSON_ONLY,
+        // The one openai-chat target that does NOT take `authorization:
+        // Bearer` by default: Azure's own header is `api-key`, bare.
+        auth: AZURE_AUTH,
         config: ["endpoint"],
       } satisfies TargetEndpoint,
     ],
@@ -222,6 +320,9 @@ export const ENDPOINTS: Readonly<Record<string, TargetEndpoint>> = Object.freeze
         provider: "cloudflare-workers-ai",
         dialect: "openai-chat",
         headers: JSON_ONLY,
+        // A Cloudflare API token, not the account id: the account id is a path
+        // segment on the URL and carries no authority on its own.
+        auth: BEARER_AUTH,
         config: ["accountId"],
       } satisfies TargetEndpoint,
     ],

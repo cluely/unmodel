@@ -26,7 +26,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type Validated, type ExactKeys } from "../../core/request";
+import { toValidated, type ValidatedForm, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -376,6 +376,7 @@ function finalizeTo(url: string) {
       // derive the multipart boundary from the FormData body itself. Add
       // your own accept header (image/* or application/json) and auth.
       headers: {},
+      body: "form",
     }, {
       sdk: { stability: () => body },
     });
@@ -417,11 +418,11 @@ interface StableImageValidator<P> {
   <T extends P>(
     params: T & ExactKeys<T, P>,
     options?: ValidateOptions<T>,
-  ): Validated<T, StabilitySdkTargets<T>>;
+  ): ValidatedForm<T, StabilitySdkTargets<T>>;
   safe<T extends P>(
     params: T & ExactKeys<T, P>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T, StabilitySdkTargets<T>>>;
+  ): ValidateResult<ValidatedForm<T, StabilitySdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 }
 

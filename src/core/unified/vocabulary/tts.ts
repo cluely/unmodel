@@ -13,7 +13,7 @@ import type {
   UnifiedResult,
 } from "../types";
 import type { AudioFormatRequest } from "./audio";
-import type { ProviderOptions } from "./common";
+import type { ProviderOptions, TtsDeliverySpec } from "./common";
 import type {
   ModelExtras,
   TtsModelNarrowing,
@@ -27,7 +27,16 @@ export type {
   AudioFormatCodec,
   AudioFormatRequest,
 } from "./audio";
-export type { ProviderOptions } from "./common";
+export type {
+  ProviderOptions,
+  TtsDelivery,
+  TtsDeliveryByModel,
+  TtsDeliveryByRequest,
+  TtsDeliveryKind,
+  TtsDeliveryPath,
+  TtsDeliverySpec,
+  TtsRouteDelivery,
+} from "./common";
 
 export type {
   AudioFormatOf,
@@ -141,6 +150,21 @@ export interface TtsAdapterFor<
 > extends UnifiedAdapter<TtsParams, Wire, Out>,
     WithModelParams<T> {
   readonly category: "tts";
+  /**
+   * How this provider hands the audio back — see {@link TtsDeliverySpec}.
+   *
+   * On the **adapter** and not on a `modelParams` row, which is the split that
+   * matters: a row is one model's *request* surface, and delivery is a fact
+   * about the response that five of the fifteen providers change per request
+   * (`stream_format`, `output_format`, `encodeAsBase64`,
+   * `responseFormat.audio.delivery`, `callback`). A row value would be a static
+   * claim that is wrong a third of the time.
+   *
+   * Required here and optional on {@link AnyTtsAdapter}, for the reason
+   * `modelParams` is: every adapter unmodel ships declares one, and a
+   * third-party adapter that does not is still a legal `createTts` argument.
+   */
+  readonly delivery: TtsDeliverySpec;
 }
 
 /**
@@ -155,6 +179,7 @@ export interface TtsAdapterFor<
 export type AnyTtsAdapter = AnyUnifiedAdapter<TtsParams> & {
   readonly category: "tts";
   readonly modelParams?: TtsModelParamTable;
+  readonly delivery?: TtsDeliverySpec;
 };
 
 /**

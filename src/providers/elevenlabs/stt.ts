@@ -30,7 +30,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type ExactKeys, type Validated } from "../../core/request";
+import { toValidated, type ExactKeys, type ValidatedForm } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -517,6 +517,7 @@ function finalize(params: SpeechToTextParams): unknown {
       // Deliberately NOT application/json: this is a multipart endpoint, and
       // fetch must derive the multipart boundary from the FormData body itself.
       headers: {},
+      body: "form",
     },
     { sdk: { elevenlabs: () => buildSdkParams(params) } },
   );
@@ -557,10 +558,10 @@ export const stt = validator as unknown as {
   <T extends SpeechToTextParams>(
     params: T & ExactKeys<T, SpeechToTextParams>,
     options?: ValidateOptions<T>,
-  ): Validated<Omit<T, "enable_logging">, SpeechToTextSdkTargets>;
+  ): ValidatedForm<Omit<T, "enable_logging">, SpeechToTextSdkTargets>;
   safe<T extends SpeechToTextParams>(
     params: T & ExactKeys<T, SpeechToTextParams>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<Omit<T, "enable_logging">, SpeechToTextSdkTargets>>;
+  ): ValidateResult<ValidatedForm<Omit<T, "enable_logging">, SpeechToTextSdkTargets>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

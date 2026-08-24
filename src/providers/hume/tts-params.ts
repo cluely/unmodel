@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { HumeTimestampType } from "./tts";
 
 /** The two Octave rows the catalog carries — the ref union for `hume/…`. */
@@ -78,3 +78,15 @@ export const HUME_TTS_MODEL_PARAMS = {
     extras: { ...OCTAVE_EXTRAS, include_timestamp_types: EXTRA as HumeTimestampType[] },
   },
 } as const satisfies TtsModelParamTable;
+
+/**
+ * JSON with base64 audio: "/v0/tts (this one, JSON with base64 audio), /v0/tts/file
+ * (audio bytes) … only /v0/tts is finalized here" (./tts.ts).
+ *
+ * The path indexes `generations` because `num_generations` runs to 5 and the
+ * response returns them all — index 0 is the first, not the only one.
+ */
+export const HUME_TTS_DELIVERY = {
+  kind: "base64",
+  path: ["generations", 0, "audio"],
+} as const satisfies TtsDeliverySpec;

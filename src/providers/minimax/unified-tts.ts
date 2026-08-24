@@ -34,6 +34,7 @@ import {
 import {
   FORMAT,
   LANGUAGE_BOOSTS,
+  MINIMAX_TTS_DELIVERY,
   MINIMAX_TTS_MODEL_PARAMS,
   MODELS,
   SAMPLE_RATES,
@@ -61,6 +62,7 @@ export const tts = {
   provider: "minimax",
   models: MODELS,
   modelParams: MINIMAX_TTS_MODEL_PARAMS,
+  delivery: MINIMAX_TTS_DELIVERY,
   compile(
     input: TtsParams,
     ctx: CompileContext<TtsParams>,

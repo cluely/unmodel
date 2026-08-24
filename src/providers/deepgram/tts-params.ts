@@ -10,7 +10,7 @@
  */
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
-import type { TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import { ttsModels } from "./models";
 
 export const MEDIA_DOCS = "https://developers.deepgram.com/docs/tts-media-output-settings";
@@ -101,3 +101,22 @@ export const AURA_ROW = {
 export const DEEPGRAM_TTS_MODEL_PARAMS = Object.fromEntries(
   MODELS.map((model) => [model, AURA_ROW]),
 ) as Readonly<Record<(typeof MODELS)[number], typeof AURA_ROW>> satisfies TtsModelParamTable;
+
+/**
+ * Raw audio bytes — unless `callback` redirects them.
+ *
+ * "The response is raw audio bytes (or a callback ack when `callback` is set),
+ * never JSON, so there is no response checker" (./tts.ts). The field is named
+ * rather than answered because a flat `bytes` would be a false claim for every
+ * request that sets it, and `callback` takes a URL rather than an enum — so the
+ * variant is keyed `"set"`, presence being what flips the delivery.
+ */
+export const DEEPGRAM_TTS_DELIVERY = {
+  byRequestField: "callback",
+  variants: {
+    set:
+      "With `callback` set the response is an ack rather than audio — Deepgram POSTs the " +
+      "audio to the URL you named, so this response body carries none of it.",
+  },
+  default: { kind: "bytes" },
+} as const satisfies TtsDeliverySpec;

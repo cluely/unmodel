@@ -87,6 +87,7 @@ import type { TtsAdapterFor, TtsParams } from "../../core/unified/vocabulary/tts
 // carries ZERO catalogs, which one edge from here would break outright.
 import {
   GEMINI_TTS_DOCS_URL,
+  GOOGLE_TTS_DELIVERY,
   type GeminiCompressedAudioMimeType,
   type GeminiUncompressedAudioMimeType,
 } from "./tts-constraints";
@@ -158,6 +159,7 @@ export const tts = {
   provider: "google",
   models: MODELS,
   modelParams: GOOGLE_TTS_MODEL_PARAMS,
+  delivery: GOOGLE_TTS_DELIVERY,
   unsupported: {
     speed:
       "Gemini TTS has no rate field — the guide steers pace through natural-language style " +

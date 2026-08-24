@@ -27,7 +27,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type ExactKeys, type Validated } from "../../core/request";
+import { toValidated, type ExactKeys, type ValidatedForm } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -210,7 +210,7 @@ type SttSdkTargets<B> = { cartesia: () => B };
 
 function finalize(
   params: SttTranscribeParams,
-): Validated<SttTranscribeParams, SttSdkTargets<SttTranscribeParams>> {
+): ValidatedForm<SttTranscribeParams, SttSdkTargets<SttTranscribeParams>> {
   // Per the OpenAPI spec, `encoding` and `sample_rate` are QUERY params —
   // they go on the URL, not into the multipart form.
   const { encoding, sample_rate, ...formFields } = params;
@@ -227,6 +227,7 @@ function finalize(
       url: queryString === "" ? STT_TRANSCRIBE_URL : `${STT_TRANSCRIBE_URL}?${queryString}`,
       method: "POST",
       headers: { "Cartesia-Version": CARTESIA_VERSION },
+      body: "form",
     },
     { sdk: { cartesia: () => body } },
   );
@@ -234,7 +235,7 @@ function finalize(
 
 const validator = createValidator<
   SttTranscribeParams,
-  Validated<SttTranscribeParams, SttSdkTargets<SttTranscribeParams>>
+  ValidatedForm<SttTranscribeParams, SttSdkTargets<SttTranscribeParams>>
 >({
   endpoint: "cartesia.stt",
   schema,
@@ -266,10 +267,10 @@ export const stt = validator as unknown as {
   <T extends SttTranscribeParams>(
     params: T & ExactKeys<T, SttTranscribeParams>,
     options?: ValidateOptions<T>,
-  ): Validated<T, SttSdkTargets<T>>;
+  ): ValidatedForm<T, SttSdkTargets<T>>;
   safe<T extends SttTranscribeParams>(
     params: T & ExactKeys<T, SttTranscribeParams>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T, SttSdkTargets<T>>>;
+  ): ValidateResult<ValidatedForm<T, SttSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

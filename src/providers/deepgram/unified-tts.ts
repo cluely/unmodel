@@ -34,7 +34,13 @@ import {
   type DeepgramSpeakSampleRate,
   type SpeakParams,
 } from "./tts";
-import { DEEPGRAM_TTS_MODEL_PARAMS, FORMAT, MEDIA_DOCS, MODELS } from "./tts-params";
+import {
+  DEEPGRAM_TTS_DELIVERY,
+  DEEPGRAM_TTS_MODEL_PARAMS,
+  FORMAT,
+  MEDIA_DOCS,
+  MODELS,
+} from "./tts-params";
 
 const SPEAK_DOCS = "https://developers.deepgram.com/reference/text-to-speech/speak-request";
 
@@ -49,6 +55,7 @@ export const tts = {
   provider: "deepgram",
   models: MODELS,
   modelParams: DEEPGRAM_TTS_MODEL_PARAMS,
+  delivery: DEEPGRAM_TTS_DELIVERY,
   unsupported: {
     language:
       "POST /v1/speak has no language field — the language is baked into the voice, which is " +

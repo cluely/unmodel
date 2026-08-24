@@ -1,17 +1,17 @@
 {
   "name": "unmodel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Validation layer for LLM API calls: catalog-aware, zod-powered request validation and response sanity checks for every provider — bring your own SDK or fetch.",
   "type": "module",
   "license": "MIT",
   "author": "Gui <me@guiga.dev>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/guigaribalde/unmodel.git"
+    "url": "git+https://github.com/cluely/unmodel.git"
   },
-  "homepage": "https://github.com/guigaribalde/unmodel#readme",
+  "homepage": "https://github.com/cluely/unmodel#readme",
   "bugs": {
-    "url": "https://github.com/guigaribalde/unmodel/issues"
+    "url": "https://github.com/cluely/unmodel/issues"
   },
   "keywords": [
     "ai",

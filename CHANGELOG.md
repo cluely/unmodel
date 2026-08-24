@@ -1,5 +1,12 @@
 # unmodel
 
+## 0.1.1
+
+### Patch Changes
+
+- Correct the repository, homepage and bugs URLs — the project lives under the
+  `cluely` organization on GitHub, not a personal account.
+
 ## 0.1.0
 
 ### Minor Changes

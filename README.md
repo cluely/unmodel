@@ -1,4 +1,4 @@
-# unmodel
+# UnModel
 
 Type-safe validation and translation for AI API requests: chat, speech, images, video, and music.
 
@@ -14,29 +14,27 @@ transparent background. OpenAI answers 400, and that recorded response is a
 test fixture here. The SDK types `background` as one flat enum for every model,
 so this compiles with **zero errors** and fails in production:
 
+### OpenAi
 ```ts
 import OpenAI from "openai";
 
 const params: OpenAI.Images.ImageGenerateParams = {
   model: "gpt-image-2",
   prompt: "a lighthouse",
-  background: "transparent", // ✅ compiles, ❌ the API answers 400
+  background: "transparent", // ❌compiles, the API answers 400
 };
 ```
 
-unmodel types `background` per model, so the same object is a compile error:
-
+UnModel types `background` per model, so the same object is a compile error:
+### UnModel
 ```ts
 import type { ImageBody } from "unmodel/openai/types";
 
 const params = {
   model: "gpt-image-2",
   prompt: "a lighthouse",
-  background: "transparent",
+  background: "transparent",  // ⚠️ ERROR: Type '"transparent"' is not assignable to type '"auto" | "opaque" | null | undefined'.
 } satisfies ImageBody;
-// error TS1360: Type '{ ... }' does not satisfy the expected type 'ImageBody'.
-//   Types of property 'background' are incompatible.
-//     Type '"transparent"' is not assignable to type '"auto" | "opaque" | null | undefined'.
 ```
 
 The SDK also hides the sizes a model serves. At `size:` on a `gpt-image-2`
@@ -50,8 +48,16 @@ stays legal, grid and pixel rules enforced:
 ```ts
 import { image } from "unmodel/openai";
 
-image({ model: "gpt-image-2", prompt: "a lighthouse", size: "3840x2160" }); // ✅ 4K, and the SDK doesn't even suggest it
-image({ model: "dall-e-3", prompt: "x", size: "256x256" }); // ❌ compile error: dall-e-3's enum is closed here
+image({
+  model: "gpt-image-2",
+  prompt: "a lighthouse",
+  size: "3840x2160" // ✅ 4K, and the SDK doesn't even suggest it
+});
+image({
+  model: "dall-e-3",
+  prompt: "x",
+  size: "256x256" // ⚠️ compile error: dall-e-3's enum is closed here
+}); 
 // and at runtime, for JS callers:
 // `size` must be one of "1024x1024", "1792x1024", "1024x1792" for "dall-e-3"; got "256x256".
 ```

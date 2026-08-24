@@ -4,6 +4,76 @@ Type-safe validation and translation for AI API requests: chat, speech, images, 
 
 unmodel validates provider-native params, compiles optional cross-provider params to real wire bodies, and checks raw responses for truncation, refusals, filtering, usage, and cost. It never sends requests or handles credentials—you keep `fetch`, your SDK, and your keys.
 
+## Why: the SDKs lie, the docs don't
+
+Every example below was executed against `openai@7.4.0` and this package — the
+errors are pasted from real `tsc` runs, not written by hand.
+
+**The official SDK accepts a request the API rejects.** `gpt-image-2` does not
+support transparent backgrounds — OpenAI's API answers 400 (we keep the
+recorded response as a test fixture). The SDK types `background` as one flat
+enum for every model, so this compiles with **zero errors** and fails in
+production:
+
+```ts
+import OpenAI from "openai";
+
+const params: OpenAI.Images.ImageGenerateParams = {
+  model: "gpt-image-2",
+  prompt: "a lighthouse",
+  background: "transparent", // ✓ compiles — ✗ the API answers 400
+};
+```
+
+unmodel types `background` per model, so the same object is a compile error:
+
+```ts
+import type { ImageBody } from "unmodel/openai/types";
+
+const params = {
+  model: "gpt-image-2",
+  prompt: "a lighthouse",
+  background: "transparent",
+} satisfies ImageBody;
+// error TS1360: Type '{ ... }' does not satisfy the expected type 'ImageBody'.
+//   Types of property 'background' are incompatible.
+//     Type '"transparent"' is not assignable to type '"auto" | "opaque" | null | undefined'.
+```
+
+**The SDK hides the sizes the model actually serves.** At `size:` on a
+`gpt-image-2` request, the SDK completes **8** values — a mixed DALL·E bag
+(`256x256`, `1792x1024`, …) offered regardless of model, with none of the 4K,
+2:1 or 21:9 resolutions gpt-image-2 renders, and a `(string & {})` tail that
+silently swallows anything else. unmodel completes the model's real **23**
+presets — `2880x2880`, `3840x2160`, `2048x1024`, `3360x1440`, … — each one
+proven against the validator by a test, and free-form `WxH` stays legal with
+the grid and pixel rules enforced:
+
+```ts
+import { image } from "unmodel/openai";
+
+image({ model: "gpt-image-2", prompt: "a lighthouse", size: "3840x2160" }); // 4K — the SDK doesn't even suggest it
+image({ model: "dall-e-3", prompt: "x", size: "256x256" }); // compile error — dall-e-3's enum is closed here
+// and at runtime, for JS callers:
+// `size` must be one of "1024x1024", "1792x1024", "1024x1792" for "dall-e-3"; got "256x256".
+```
+
+**Allowed values autocomplete, per model.** Gemini TTS has exactly 30 preset
+voices. Type `voice: "` and all 30 complete; an off-list voice is refused with
+the full list in the message:
+
+```ts
+import { tts } from "unmodel/tts";
+
+tts({ model: "google/gemini-2.5-flash-preview-tts", text: "Have a wonderful day!", voice: "Kore" });
+// voice: "¦" → completes Zephyr, Puck, Charon, Kore, Fenrir, Leda, Orus, Aoede, … (all 30)
+// voice: "Zephyrr" → `voiceName` must be one of the 30 prebuilt Gemini TTS voices; got "Zephyrr".
+```
+
+The same lists ship as runtime values for your own UI —
+`GEMINI_TTS_VOICES` from `unmodel/google/values` is the same array the
+validator enforces, by object identity.
+
 - Provider docs drive the types and runtime checks, including model-specific limits and exceptions.
 - A generated [models.dev](https://models.dev) catalog adds capabilities, context limits, pricing, and deprecations.
 - Provider SDKs are optional; unmodel has no runtime dependency on them.

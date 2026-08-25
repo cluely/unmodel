@@ -344,7 +344,7 @@ video, 2 transcription), and the providers one would expect to join —
 black-forest-labs, elevenlabs, deepgram, runway, luma, ideogram, recraft, stability,
 kling, pixverse — are absent from models.dev entirely (they are the ✋ hand catalogs
 above). There is nothing to generate, and their wire formats share no dialect to
-translate through. The README says so explicitly, because chat-has-it/media-doesn't
+translate through. The retargeting guide (validation.md) says so explicitly, because chat-has-it/media-doesn't
 otherwise reads as an oversight. If hand catalogs ever grow an `equivalentTo` field, the
 same `buildAvailability` machinery consumes it unchanged.
 

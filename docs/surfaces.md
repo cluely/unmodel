@@ -15,6 +15,7 @@ One import per category, one camelCase vocabulary, `"provider/model"` refs. Ever
 | [Lipsync](#lipsync) | `unmodel/lipsync` | `unmodel/fal` |
 | [Avatar](#avatar) | `unmodel/avatar` | `unmodel/fal` |
 | [Upscale](#upscale) | `unmodel/upscale` | `unmodel/fal` |
+| [3D generation](#3d-generation) | `unmodel/3d` | `unmodel/tripo3d`, `unmodel/fal` |
 | [Music generation](#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/fal`, `unmodel/stability` |
 | [Voice cloning](#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
 | [Voice design](#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
@@ -279,6 +280,87 @@ upscale({ model: "fal/fal-ai/recraft/upscale/crisp", source: { url }, factor: 2 
 extras: each is one vendor's dial with no second witness, and `creativity` alone
 is a 0–1 number at Clarity, a 1–6 integer at Topaz and a two-member enum at
 FLUX.
+
+## 3D generation
+
+Asking for an object rather than a picture of one — the first category in the
+library to ship with TWO providers on its first day, and that is the point.
+`unmodel/lipsync`, `unmodel/avatar` and `unmodel/upscale` each shipped on fal
+alone; 3D waited, because a vocabulary read off one vendor is that vendor's
+request schema with the names changed, and 3D is where that shows fastest.
+Two schemas in, `texture` already had five spellings — `texture` at Tripo,
+`textured_mesh` at Hunyuan3D, `enable_texture` at Hi3D, `should_texture` at
+Meshy, `texture_mode` at Rodin — and the output container had four more plus a
+boolean that changes it as a side effect. None of them is in the vocabulary.
+
+```ts
+import { threeD } from "unmodel/3d";
+
+const request = threeD({
+  model: "tripo3d/v3.1-20260211",
+  prompt: "a brass astrolabe on a walnut stand",
+  seed: 7,
+  texture_quality: "detailed",
+});
+
+JSON.stringify(request);
+// → {"model":"v3.1-20260211","prompt":"a brass astrolabe on a walnut stand",
+//    "model_seed":7,"texture_quality":"detailed"}
+request.request.url;
+// → "https://openapi.tripo3d.ai/v3/generation/text-to-model"
+```
+
+Five words, and the first category whose two content words are **alternatives**
+rather than companions: a 3D route is asked for a thing either by describing it
+(`prompt`) or by showing it (`image`), and each row says which of the two that
+route reads.
+
+```ts
+threeD({ model: "fal/tripo3d/h3.1/text-to-3d", prompt: "a chair" });          // ok
+threeD({ model: "fal/tripo3d/h3.1/text-to-3d", image: { url } });             // compile error: text-driven
+threeD({ model: "fal/fal-ai/trellis", image: { url } });                      // ok
+threeD({ model: "fal/fal-ai/trellis", prompt: "a chair" });                   // compile error: image-driven
+threeD({ model: "fal/fal-ai/hyper3d/rodin/v2.5", prompt, image: { url } });   // ok — reads both
+```
+
+The third arm is not a hedge. `fal-ai/hyper3d/rodin/v2.5` publishes both fields
+and requires neither: the prompt steers an image-driven reconstruction and also
+stands alone. So do all four Tripo models, for a different reason — at the
+native API the model id is the same string in both moods and the **route**
+forks, `POST /v3/generation/text-to-model` versus
+`POST /v3/generation/image-to-model`.
+
+That overlap is deliberate. `tripo3d/h3.1/image-to-3d` at fal and
+`tripo3d/v3.1-20260211` here are the same model reached two ways, and the two
+requests compile to visibly different bodies:
+
+```ts
+threeD({ model: "fal/tripo3d/h3.1/image-to-3d", image: { url } });
+// → {"image_url":"https://example.com/chair.png"}   POST https://queue.fal.run/tripo3d/h3.1/image-to-3d
+
+threeD({ model: "tripo3d/v3.1-20260211", image: { url } });
+// → {"model":"v3.1-20260211","input":"https://example.com/chair.png"}
+//   POST https://openapi.tripo3d.ai/v3/generation/image-to-model
+```
+
+`seed` maps to the **geometry** seed wherever a route publishes more than one:
+Tripo has `model_seed`, `image_seed` and `texture_seed`, pinning the mesh, the
+internal text-to-image stage and the texturing separately, and the canonical
+word is the one that decides whether you got the same object.
+
+Everything else is a per-model extra, typed from that route's own wire
+interface: the polygon budget (`face_limit` / `face_count` /
+`target_polycount` / `decimation_target`), the texture and PBR switches, the
+quad-mesh flag, the output container, and every sampler dial. There is no
+`size`, `aspectRatio`, `resolution` or `n` — a mesh has no frame, and these
+routes return one object per request.
+
+Two things about the wire are worth knowing before your first call. Tripo's
+`input` is one polymorphic string that accepts a `file_…` token, a public URL or
+a prior `task_…` id and **never inline bytes**, so a `{ data }` ref is refused
+here naming `POST /v3/files` rather than compiled into a `data:` URI Tripo would
+reject. And seven of Tripo's parameters are gated on the model version —
+`v2.5-20250123` takes none of them — which is a compile error rather than a 4xx.
 
 ## Music generation
 

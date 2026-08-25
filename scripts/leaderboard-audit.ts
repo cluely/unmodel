@@ -193,7 +193,10 @@ export async function sweepCoverage(): Promise<Coverage> {
   for (const provider of providers.sort()) {
     const dir = join(PROVIDERS_DIR, provider);
     const leaves = readdirSync(dir)
-      .filter((name) => /^unified(-[a-z-]+)?\.ts$/.test(name) && !name.endsWith(".test.ts"))
+      // `[a-z0-9-]`, not `[a-z-]`: `unified-3d.ts` is a category leaf and the
+      // category id starts with a digit. Same regex as
+      // test/values-entries.test.ts, which this sweep is lifted from.
+      .filter((name) => /^unified(-[a-z0-9-]+)?\.ts$/.test(name) && !name.endsWith(".test.ts"))
       .sort();
     for (const leaf of leaves) {
       const module = (await import(join(dir, leaf))) as Record<string, unknown>;

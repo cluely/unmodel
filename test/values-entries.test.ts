@@ -91,6 +91,7 @@ const PROVIDERS_WITH_VALUES: readonly string[] = [
   "speechmatics",
   "stability",
   "stepfun",
+  "tripo3d",
   "vidu",
   "xai",
 ];
@@ -103,6 +104,11 @@ const CATEGORY_PREFIX: Readonly<Record<string, string>> = {
   lipsync: "LIPSYNC",
   avatar: "AVATAR",
   upscale: "UPSCALE",
+  // The one category whose prefix is not its id upper-cased, and it cannot be:
+  // `3D_MODEL_PARAMS` is not a JavaScript identifier. `THREE_D` is the same
+  // spelling the `threeD` verb, the generated `FAL_THREE_D_*` constants and the
+  // `three-d-*.gen.ts` file names use, for the same reason.
+  "3d": "THREE_D",
   tts: "TTS",
   stt: "STT",
   music: "MUSIC",
@@ -118,7 +124,9 @@ const PROVIDERS: string[] = readdirSync(PROVIDERS_DIR, { withFileTypes: true })
 /** `unified.ts` / `unified-<category>.ts` — the adapter leaves, per provider. */
 function adapterFilesOf(provider: string): string[] {
   return readdirSync(join(PROVIDERS_DIR, provider))
-    .filter((name) => /^unified(-[a-z-]+)?\.ts$/.test(name))
+    // `[a-z0-9-]`, not `[a-z-]`: `unified-3d.ts` is a category leaf and the
+    // category id starts with a digit.
+    .filter((name) => /^unified(-[a-z0-9-]+)?\.ts$/.test(name))
     .sort();
 }
 
@@ -181,7 +189,7 @@ describe("values entries exist, one per provider with an adapter", () => {
   test("the enumerated list is exactly the set of providers with an adapter", () => {
     expect(DERIVED_PROVIDERS).toEqual([...PROVIDERS_WITH_VALUES]);
     // A rule that scans an empty set passes by saying nothing.
-    expect(PROVIDERS_WITH_VALUES.length).toBe(42);
+    expect(PROVIDERS_WITH_VALUES.length).toBe(43);
   });
 
   test("every one of them ships a values.ts, and no other provider does", () => {
@@ -464,6 +472,8 @@ describe("unmodel/values — the canonical hub", () => {
       Record<string, unknown>;
     expect(hub["CANONICAL_KEY_LISTS"]).toBe(kernel["CANONICAL_KEY_LISTS"]);
     expect(Object.keys(hub["CANONICAL_KEY_LISTS"] as object).sort()).toEqual([
+      // Sorted, so the digit leads.
+      "3d",
       "avatar",
       "image",
       "imageEdit",
@@ -476,8 +486,8 @@ describe("unmodel/values — the canonical hub", () => {
       "voiceClone",
       "voiceDesign",
     ]);
-    // The three youngest categories, written out: five words each, and the
-    // words that DIFFER between them are the whole reason they are three
+    // The four youngest categories, written out: five words each, and the
+    // words that DIFFER between them are the whole reason they are four
     // categories. A rename here is a breaking change to the request shape, so
     // it has to be typed in a diff.
     const lists = hub["CANONICAL_KEY_LISTS"] as Record<string, readonly string[]>;
@@ -492,6 +502,16 @@ describe("unmodel/values — the canonical hub", () => {
     expect(lists["upscale"]).not.toContain("size");
     expect(lists["upscale"]).not.toContain("aspectRatio");
     expect(lists["imageEdit"]).not.toContain("factor");
+    expect(lists["3d"]).toEqual(["model", "prompt", "image", "seed", "providerOptions"]);
+    // `3d` is the first category whose two content words are ALTERNATIVES: a
+    // route reads `prompt` or `image`, and the row says which. It carries no
+    // sizing word of any kind — a mesh has no frame — and no `n`, because these
+    // routes return one object per request. `format` is deliberately absent:
+    // the output container has five spellings across the two witnesses and one
+    // of them is a separate HTTP call.
+    for (const absent of ["size", "aspectRatio", "resolution", "n", "format", "texture"]) {
+      expect(lists["3d"]).not.toContain(absent);
+    }
   });
 
   test("CHAT_PROVIDERS is unmodel/chat's own array, not a second copy", async () => {
@@ -691,8 +711,12 @@ describe("bundle discipline", () => {
    * vocabulary — and the invariants that matter are asserted above and unmoved:
    * no zod, no validators, no catalog, and the same objects the adapters
    * compile with rather than copies of them.
+   *
+   * **Bumped 120 → 140 by wave 3**: 125.6 KiB measured, the tenth category's
+   * nineteen endpoint rows — Trellis 2's thirty sampler parameters and Meshy's
+   * twenty among them.
    */
-  const ENTRY_BUDGET_KIB = 120;
+  const ENTRY_BUDGET_KIB = 140;
 
   /** The hub is nine short arrays and two re-exports. 15.6 KiB of chunk graph. */
   const HUB_ENTRY_BUDGET_KIB = 20;

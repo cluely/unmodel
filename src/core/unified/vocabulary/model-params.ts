@@ -80,6 +80,7 @@ import type { AspectRatio, Dimensions, ResolutionTier, VideoResolution } from ".
 import type { AvatarImageInput, AvatarSourceKind } from "./avatar";
 import type { LipsyncSourceFor, LipsyncSourceKind } from "./lipsync";
 import type { UpscaleSourceFor, UpscaleSourceKind } from "./upscale";
+import type { ThreeDImageInput, ThreeDInputKind } from "./3d";
 // Type-only, and therefore fine that `./stt` imports this file back: an
 // `import type` is erased before emit, so the cycle exists only in the checker,
 // which resolves it. The alternative — moving the granularity union into
@@ -421,6 +422,34 @@ export interface UpscaleModelParams extends ModelParamsBase {
 
 /** An upscale adapter's per-model table, keyed by **bare** model id. */
 export type UpscaleModelParamTable = Readonly<Record<string, UpscaleModelParams>>;
+
+/**
+ * One 3D route's request surface, beyond the canonical vocabulary.
+ *
+ * One field, and it decides BOTH canonical content words at once — the only
+ * row in the library that does. `sources` at lipsync, avatar and upscale
+ * answers "in what shape does the one input arrive"; `inputs` here answers "by
+ * which of two routes is the object named at all", and the answer moves
+ * `prompt` and `image` in opposite directions.
+ */
+export interface ThreeDModelParams extends ModelParamsBase {
+  /**
+   * The moods this route reads, `as const`.
+   *
+   * `["text"]` requires `prompt` and types `image` as `never`; `["image"]` does
+   * the reverse; a list with both leaves each optional, which is the honest
+   * shape for `fal-ai/hyper3d/rodin/v2.5` — it publishes both fields, requires
+   * neither, and uses the prompt to steer the image when both arrive. Absent
+   * keeps the wide optional pair, which is what an uncatalogued ref gets.
+   *
+   * There is no empty-list arm: a 3D route that is told nothing about what to
+   * build is not a route.
+   */
+  readonly inputs?: readonly ThreeDInputKind[];
+}
+
+/** A 3D adapter's per-model table, keyed by **bare** model id. */
+export type ThreeDModelParamTable = Readonly<Record<string, ThreeDModelParams>>;
 
 /**
  * One voice-cloning route's request surface, beyond the canonical vocabulary.
@@ -917,6 +946,48 @@ export type UpscaleModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] 
   : ModelParamsFor<A, R> extends { readonly sources: readonly string[] }
     ? UpscaleArms<UpscaleSourceOf<ModelParamsFor<A, R>>, UpscaleFactorOf<ModelParamsFor<A, R>>>
     : UpscaleArms<UpscaleSourceFor<UpscaleSourceKind>, UpscaleFactorOf<ModelParamsFor<A, R>>>;
+
+/**
+ * `inputs` → the `image` type on a 3D row.
+ *
+ * Its own alias rather than being inlined below because the adapter tests and
+ * `unmodel/values` both name it, and because "what shape does this route's
+ * image take" is a question worth being able to ask on its own.
+ */
+export type ThreeDImageOf<Row> = Row extends {
+  readonly inputs: readonly (infer K extends string)[];
+}
+  ? "image" extends K
+    ? ThreeDImageInput
+    : never
+  : ThreeDImageInput;
+
+/**
+ * The two fields a 3D row narrows, as a complete **replacement** for the
+ * vocabulary's own.
+ *
+ * Four arms, and the category needs every one of them. A text route requires
+ * `prompt` and refuses `image`; an image route does the reverse; a route that
+ * publishes both requires neither, because at `fal-ai/hyper3d/rodin/v2.5` the
+ * prompt is a steering hint and the image is optional too; and a ref this build
+ * cannot read restates the wide optional pair, so a model released after this
+ * snapshot stays callable.
+ *
+ * `SizingArms`'s rule applies twice over here, which is why
+ * {@link ThreeDParamsBase} omits both fields: an intersection cannot make an
+ * optional property required (so the text arm's `prompt: string` would decay),
+ * and an intersection with an optional property cannot make it `never` (so the
+ * refusals would decay too).
+ */
+export type ThreeDModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? { prompt?: string; image?: ThreeDImageInput }
+  : ModelParamsFor<A, R> extends { readonly inputs: readonly (infer K extends string)[] }
+    ? "text" extends K
+      ? "image" extends K
+        ? { prompt?: string; image?: ThreeDImageInput }
+        : { prompt: string; image?: never }
+      : { prompt?: never; image: ThreeDImageInput }
+    : { prompt?: string; image?: ThreeDImageInput };
 
 /** The one field either voice-creation row narrows. */
 type VoiceArms<Language> = { language?: Language };

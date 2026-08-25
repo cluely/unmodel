@@ -24,6 +24,7 @@ export { video, type FalVideoResult, type FalVideoWire } from "./unified-video";
 export { lipsync, type FalLipsyncResult, type FalLipsyncWire } from "./unified-lipsync";
 export { avatar, type FalAvatarResult, type FalAvatarWire } from "./unified-avatar";
 export { upscale, type FalUpscaleResult, type FalUpscaleWire } from "./unified-upscale";
+export { threeD, type FalThreeDResult, type FalThreeDWire } from "./unified-3d";
 export { tts, type FalTtsResult, type FalTtsWire } from "./unified-tts";
 export { stt, type FalSttResult, type FalSttWire } from "./unified-stt";
 export { music, type FalMusicResult, type FalMusicWire } from "./unified-music";

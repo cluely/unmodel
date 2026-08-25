@@ -1,0 +1,415 @@
+{
+  "metadata": {
+    "category": "image-to-3d",
+    "date": "2024-12-13T00:00:00.000Z",
+    "description": "Generate 3D models from your images using Trellis. A native 3D generative model enabling versatile and high-quality 3D asset creation.",
+    "display_name": "Trellis",
+    "github_url": "https://github.com/microsoft/TRELLIS/blob/main/LICENSE",
+    "group": {
+      "key": "trellis",
+      "label": "Single Image"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/trellis",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "stylized"
+    ],
+    "thumbnail_url": "https://storage.googleapis.com/falserverless/web-examples/trellis/trellis-photo.jpg",
+    "updated_at": "2026-04-21T17:55:07.440Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "TrellisInput": {
+          "properties": {
+            "image_url": {
+              "description": "URL of the input image to convert to 3D",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/web-examples/rodin3d/warriorwoman.png"
+              ],
+              "title": "Image Url",
+              "type": "string"
+            },
+            "mesh_simplify": {
+              "default": 0.95,
+              "description": "Mesh simplification factor",
+              "maximum": 0.98,
+              "minimum": 0.9,
+              "title": "Mesh Simplify",
+              "type": "number"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Random seed for reproducibility",
+              "title": "Seed"
+            },
+            "slat_guidance_strength": {
+              "default": 3,
+              "description": "Guidance strength for structured latent generation",
+              "maximum": 10,
+              "minimum": 0,
+              "title": "Slat Guidance Strength",
+              "type": "number"
+            },
+            "slat_sampling_steps": {
+              "default": 12,
+              "description": "Sampling steps for structured latent generation",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Slat Sampling Steps",
+              "type": "integer"
+            },
+            "ss_guidance_strength": {
+              "default": 7.5,
+              "description": "Guidance strength for sparse structure generation",
+              "maximum": 10,
+              "minimum": 0,
+              "title": "Ss Guidance Strength",
+              "type": "number"
+            },
+            "ss_sampling_steps": {
+              "default": 12,
+              "description": "Sampling steps for sparse structure generation",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Ss Sampling Steps",
+              "type": "integer"
+            },
+            "texture_size": {
+              "default": 1024,
+              "description": "Texture resolution",
+              "enum": [
+                512,
+                1024,
+                2048
+              ],
+              "title": "Texture Size",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "image_url"
+          ],
+          "title": "InputModel",
+          "type": "object",
+          "x-fal-order-properties": [
+            "image_url",
+            "seed",
+            "ss_guidance_strength",
+            "ss_sampling_steps",
+            "slat_guidance_strength",
+            "slat_sampling_steps",
+            "mesh_simplify",
+            "texture_size"
+          ]
+        },
+        "TrellisOutput": {
+          "properties": {
+            "model_mesh": {
+              "$ref": "#/components/schemas/File",
+              "description": "Generated 3D mesh file"
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "description": "Processing timings",
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "model_mesh",
+            "timings"
+          ],
+          "title": "ObjectOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "model_mesh",
+            "timings"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/trellis queue.",
+      "title": "Queue OpenAPI for fal-ai/trellis",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate",
+        "category": "image-to-3d",
+        "documentationUrl": "https://fal.ai/models/fal-ai/trellis/api",
+        "endpointId": "fal-ai/trellis",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/trellis",
+        "thumbnailUrl": "https://storage.googleapis.com/falserverless/web-examples/trellis/trellis-photo.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/trellis": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrellisInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/trellis/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/TrellisOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/trellis/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/trellis/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

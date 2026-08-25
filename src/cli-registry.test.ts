@@ -66,6 +66,7 @@ const EXPECTED_IDS: readonly string[] = [
   "fal.lipsync",
   "fal.music",
   "fal.stt",
+  "fal.threeD",
   "fal.tts",
   "fal.upscale",
   "fal.video",
@@ -193,6 +194,8 @@ const EXPECTED_IDS: readonly string[] = [
   "stepfun.chat",
   "stepfun.tts",
   "togetherai.chat",
+  "tripo3d.threeD",
+  "tripo3d.threeDFromImage",
   "upstage.chat",
   "vercel.chat",
   "vidu.imageFromReference",
@@ -674,6 +677,82 @@ test("the upscale endpoints use the category's own verb", () => {
 });
 
 /**
+ * The 3D half — the newest category, and the only one whose verb is not its
+ * category id.
+ *
+ * ## The naming decision, and why it went this way
+ *
+ * The category id is the literal string `"3d"`: it is what `UnifiedCategory`
+ * holds, what `CANONICAL_KEY_LISTS` is keyed on, what the package subpath
+ * (`unmodel/3d`) and the tsdown entry (`unified/3d`) are named, what the
+ * `unified.3d` key above spells, and what `endpointLabel` renders as
+ * `"unmodel/3d"`. Every one of those is a STRING or a file name, and a digit is
+ * fine in all of them.
+ *
+ * The endpoint verb is `threeD`, and that is forced rather than chosen. An
+ * endpoint id's second segment is a module EXPORT NAME — `cli.test.ts` derives
+ * this whole registry by walking `Object.entries` over each provider's index
+ * and asserting every module-level validator appears here — and `3d` is not a
+ * JavaScript identifier. `export const 3d = …` does not parse.
+ *
+ * The alternative was real and was rejected on evidence rather than taste.
+ * ES2022 arbitrary module namespace names would allow `export { threeD as "3d" }`,
+ * and it does work: `bun` and `tsc --strict` both accept it (probed). Three
+ * things argued against it. It would make `unmodel/3d` the only subpath in the
+ * package whose value a consumer imports as `import { "3d" as threeD } from
+ * "unmodel/fal"` — exotic syntax, in a d.ts, shipped to every downstream
+ * toolchain including the ones `publint` and `attw` are run to protect. It
+ * would be the first non-identifier export name in a library whose every other
+ * endpoint id is `<provider>.<identifier>`. And the pack's own export is
+ * `threeD` regardless, because `export const 3d` fails in `src/unified/3d.ts`
+ * too — so `fal.3d` would have bought inconsistency, not consistency.
+ *
+ * The EXPECTED_IDS pattern `/^[a-z0-9-]+\.[a-zA-Z0-9]+$/` would have accepted
+ * `fal.3d`; that it would have passed the regex is not the same as its being
+ * expressible, and this is where the difference is recorded.
+ *
+ * ## Two providers, three addresses
+ *
+ * fal is one address over nineteen endpoints, as it is in every other category.
+ * Tripo has TWO, and the asymmetry is the point of the category having a second
+ * witness at all: at fal the route is a PARAMETER (`tripo3d/h3.1/text-to-3d` and
+ * `tripo3d/h3.1/image-to-3d` are two endpoint ids), while at Tripo's own API the
+ * model id is the same string on both and the URL forks —
+ * `POST /v3/generation/text-to-model` versus `POST /v3/generation/image-to-model`,
+ * with different required fields. That is a wire-route fork, which is exactly
+ * what `vidu.videoFromImage` and `lightricks.videoFromImage` qualify for.
+ */
+const THREE_D_IDS: readonly string[] = [
+  "fal.threeD",
+  "tripo3d.threeD",
+  "tripo3d.threeDFromImage",
+];
+
+test("the 3D endpoints use the category's own verb", () => {
+  for (const id of THREE_D_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toMatch(/^threeD([A-Z]|$)/);
+  }
+  // Bare at every provider that serves the category; the qualified one is an
+  // addition rather than a replacement, the `lmnt.ttsDetailed` shape.
+  for (const provider of [...new Set(THREE_D_IDS.map((id) => id.split(".")[0] as string))]) {
+    expect(THREE_D_IDS).toContain(`${provider}.threeD`);
+  }
+
+  // Disjoint from the image categories, which is the content of the split: an
+  // image route returns a picture of a thing and a 3D route returns the thing.
+  expect(THREE_D_IDS.filter((id) => IMAGE_GENERATION_IDS.includes(id))).toEqual([]);
+  expect(THREE_D_IDS.filter((id) => IMAGE_EDIT_IDS.includes(id))).toEqual([]);
+  expect(THREE_D_IDS.filter((id) => VIDEO_IDS.includes(id))).toEqual([]);
+
+  // The rejected spellings. `fal.3d` and `tripo3d.3d` would have passed the id
+  // pattern and cannot be export names; `fal.mesh` and `fal.textTo3d` name the
+  // artifact and the wire route rather than the category.
+  const retired = ["fal.3d", "tripo3d.3d", "fal.mesh", "fal.textTo3d", "tripo3d.imageTo3d"];
+  for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
  * The text-to-speech half, written out here for the first time because fal is
  * the first provider whose speech address is worth pinning against a wire
  * spelling it could have taken instead.
@@ -862,6 +941,7 @@ test("every media endpoint addresses its category with that category's verb", ()
     ...LIPSYNC_IDS,
     ...AVATAR_IDS,
     ...UPSCALE_IDS,
+    ...THREE_D_IDS,
     ...TTS_IDS,
     ...STT_IDS,
     ...MUSIC_IDS,

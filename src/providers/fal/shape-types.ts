@@ -304,6 +304,47 @@ export interface FalParamShape {
    */
   factors?: readonly number[];
   /**
+   * `fal.threeD`: the input moods this endpoint reads.
+   *
+   * `["text"]` requires `prompt` and types `image` as `never`; `["image"]` does
+   * the reverse; `["image", "text"]` leaves both optional, which is the honest
+   * shape for `fal-ai/hyper3d/rodin/v2.5` — it publishes both fields, requires
+   * neither, and uses a prompt to steer an image-driven generation. The only
+   * row field in this provider that decides two canonical words at once, and it
+   * moves them in opposite directions.
+   *
+   * There is no empty arm: an endpoint that declares neither a prompt nor an
+   * image fails codegen rather than shipping a row nobody can call.
+   */
+  inputs?: readonly string[];
+  /**
+   * `fal.threeD`: the wire parameter the reference image goes in.
+   *
+   * Four spellings across seven vendors — `image_url` at Tripo and Trellis,
+   * `input_image_url` at Hunyuan3D, `image_urls` at Rodin, `front_image_url` at
+   * Tripo's multiview route, where the canonical `image` is that route's FRONT
+   * view and the other three angles ride as extras.
+   */
+  imageWire?: string;
+  /**
+   * `fal.threeD`: {@link imageWire} takes an ARRAY of URLs rather than one.
+   *
+   * `fal-ai/hyper3d/rodin/v2.5` accepts up to five views in `image_urls`; the
+   * canonical single `image` becomes a one-element list there. A flag rather
+   * than a second wire field because the adapter's only decision is whether to
+   * wrap.
+   */
+  imageWireList?: true;
+  /**
+   * `fal.threeD`: the wire parameter the GEOMETRY seed goes in.
+   *
+   * `seed` at most endpoints and `model_seed` at Tripo's four, which publish
+   * three seeds apiece (`model_seed`, `image_seed`, `texture_seed`) pinning
+   * three different stages. The canonical `seed` maps to the one that decides
+   * whether you got the same object; the other two are extras.
+   */
+  seedWire?: string;
+  /**
    * `fal.tts` / `fal.music`: the wire parameter the words go in.
    *
    * Curated rather than derived, because the endpoints genuinely disagree:

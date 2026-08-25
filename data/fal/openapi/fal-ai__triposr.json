@@ -1,0 +1,396 @@
+{
+  "metadata": {
+    "category": "image-to-3d",
+    "date": "2024-01-30T00:00:00.000Z",
+    "description": "State of the art Image to 3D Object generation",
+    "display_name": "TripoSR",
+    "highlighted": false,
+    "is_favorited": null,
+    "model_url": "https://fal.run/fal-ai/triposr",
+    "pinned": false,
+    "status": "active",
+    "tags": [],
+    "thumbnail_url": "https://storage.googleapis.com/falserverless/gallery/triposr.jpeg",
+    "updated_at": "2026-01-26T21:44:58.680Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "TriposrInput": {
+          "properties": {
+            "do_remove_background": {
+              "default": true,
+              "description": "Whether to remove the background from the input image.",
+              "title": "Do Remove Background",
+              "type": "boolean"
+            },
+            "foreground_ratio": {
+              "default": 0.9,
+              "description": "Ratio of the foreground image to the original image.",
+              "maximum": 1,
+              "minimum": 0.5,
+              "title": "Foreground Ratio",
+              "type": "number"
+            },
+            "image_url": {
+              "description": "Path for the image file to be processed.",
+              "examples": [
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/hamburger.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/poly_fox.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/robot.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/teapot.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/tiger_girl.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/horse.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/flamingo.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/unicorn.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/chair.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/iso_house.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/marble.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/police_woman.png",
+                "https://raw.githubusercontent.com/VAST-AI-Research/TripoSR/ea034e12a428fa848684a3f9f267b2042d298ca6/examples/captured_p.png"
+              ],
+              "title": "Image Url",
+              "type": "string"
+            },
+            "mc_resolution": {
+              "default": 256,
+              "description": "Resolution of the marching cubes. Above 512 is not recommended.",
+              "maximum": 1024,
+              "minimum": 32,
+              "title": "Mc Resolution",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "glb",
+              "description": "Output format for the 3D model.",
+              "enum": [
+                "glb",
+                "obj"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            }
+          },
+          "required": [
+            "image_url"
+          ],
+          "title": "TripoSRInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "image_url",
+            "output_format",
+            "do_remove_background",
+            "foreground_ratio",
+            "mc_resolution"
+          ]
+        },
+        "TriposrOutput": {
+          "properties": {
+            "model_mesh": {
+              "$ref": "#/components/schemas/File",
+              "description": "Generated 3D object file."
+            },
+            "remeshing_dir": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/File"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Directory containing textures for the remeshed model."
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "description": "Inference timings.",
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "model_mesh",
+            "timings"
+          ],
+          "title": "ObjectOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "model_mesh",
+            "timings",
+            "remeshing_dir"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/triposr queue.",
+      "title": "Queue OpenAPI for fal-ai/triposr",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate Model",
+        "category": "image-to-3d",
+        "documentationUrl": "https://fal.ai/models/fal-ai/triposr/api",
+        "endpointId": "fal-ai/triposr",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/triposr",
+        "thumbnailUrl": "https://storage.googleapis.com/falserverless/gallery/triposr.jpeg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/triposr": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriposrInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/triposr/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/TriposrOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/triposr/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/triposr/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

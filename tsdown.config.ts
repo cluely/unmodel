@@ -23,7 +23,7 @@ export default defineConfig({
     // list on its own entry so it gets its own chunk (see that module).
     "values/index": "src/values/index.ts",
     "values/chat-refs": "src/values/chat-refs.ts",
-    // The eleven unified media surfaces. Each is the kernel plus a factory — the
+    // The twelve unified media surfaces. Each is the kernel plus a factory — the
     // provider adapters are named by the caller, so these entries stay small
     // (pinned in test/bundle-budget.test.ts) no matter how many adapters ship.
     "unified/image": "src/unified/image.ts",
@@ -32,6 +32,9 @@ export default defineConfig({
     "unified/lipsync": "src/unified/lipsync.ts",
     "unified/avatar": "src/unified/avatar.ts",
     "unified/upscale": "src/unified/upscale.ts",
+    // The subpath is `unmodel/3d` and the entry key matches it: the category id
+    // IS "3d", so there is no camelCase-to-kebab step to take here.
+    "unified/3d": "src/unified/3d.ts",
     "unified/tts": "src/unified/tts.ts",
     "unified/stt": "src/unified/stt.ts",
     "unified/music": "src/unified/music.ts",
@@ -257,6 +260,10 @@ export default defineConfig({
     "providers/upstage/types": "src/providers/upstage/types.ts",
     "providers/vercel/index": "src/providers/vercel/index.ts",
     "providers/vercel/types": "src/providers/vercel/types.ts",
+    "providers/tripo3d/index": "src/providers/tripo3d/index.ts",
+    "providers/tripo3d/unified": "src/providers/tripo3d/unified.ts",
+    "providers/tripo3d/types": "src/providers/tripo3d/types.ts",
+    "providers/tripo3d/values": "src/providers/tripo3d/values.ts",
     "providers/vidu/index": "src/providers/vidu/index.ts",
     "providers/vidu/unified": "src/providers/vidu/unified.ts",
     "providers/vidu/types": "src/providers/vidu/types.ts",

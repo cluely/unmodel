@@ -529,6 +529,90 @@ upscale({ model: "fal/fal-ai/esrgan", source: { url: "https://x/a.png" }, creati
     ).toBeGreaterThan(0);
   });
 
+  /**
+   * Probe 7 — the 3D roster, where the two canonical words are ALTERNATIVES.
+   *
+   * The failure this guards is the one `ThreeDModelNarrowing` exists to
+   * prevent, and it is invisible to `tsc --noEmit` on the library itself: if
+   * the arms ever intersected with the vocabulary's own optional `prompt?` and
+   * `image?` instead of REPLACING them, every route would accept both words,
+   * every wrong-mood request would compile, and the failure would arrive as a
+   * 4xx. Three arms, three probes, and the third is the one a two-arm design
+   * would have gotten wrong.
+   */
+  test("probe 7 — prompt and image narrow in opposite directions, per route", () => {
+    // Text-only: the prompt is required and the image is a squiggle.
+    expect(
+      semanticErrorsIn(`import { threeD } from "./src/unified/3d";
+threeD({ model: "fal/tripo3d/h3.1/text-to-3d", prompt: "a chair" });`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { threeD } from "./src/unified/3d";
+threeD({ model: "fal/tripo3d/h3.1/text-to-3d", image: { url: "https://x/a.png" } });`).length,
+    ).toBeGreaterThan(0);
+
+    // Image-only: exactly the reverse, at the same vendor's sibling route.
+    expect(
+      semanticErrorsIn(`import { threeD } from "./src/unified/3d";
+threeD({ model: "fal/tripo3d/h3.1/image-to-3d", image: { url: "https://x/a.png" } });`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { threeD } from "./src/unified/3d";
+threeD({ model: "fal/tripo3d/h3.1/image-to-3d", prompt: "a chair" });`).length,
+    ).toBeGreaterThan(0);
+
+    // Both: Rodin publishes both fields and requires neither, so all four
+    // combinations compile and the "at least one" rule is a run-time refusal.
+    // A two-arm narrowing would have had to call this route text-only or
+    // image-only and made half its surface unreachable.
+    expect(
+      semanticErrorsIn(`import { threeD } from "./src/unified/3d";
+threeD({ model: "fal/fal-ai/hyper3d/rodin/v2.5", prompt: "a chair", image: { url: "https://x/a.png" } });`),
+    ).toEqual([]);
+
+    // The native provider is on the both-arm at every model, because there the
+    // ROUTE follows the input rather than the id — the same model, a different
+    // narrowing, which is the comparison the category was built to make.
+    expect(
+      semanticErrorsIn(`import { threeD } from "./src/unified/3d";
+threeD({ model: "tripo3d/v3.1-20260211", prompt: "a chair" });`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { threeD } from "./src/unified/3d";
+threeD({ model: "tripo3d/v3.1-20260211", image: { url: "https://x/a.png" } });`),
+    ).toEqual([]);
+  });
+
+  /**
+   * Probe 8 — the per-model extras at 23 refs across two providers, and the
+   * version gate that makes one vendor's own roster disagree with itself.
+   */
+  test("probe 8 — the 3D extras complete from each route's own wire interface", () => {
+    // Tripo's `texture_quality` is a three-value ladder, and the editor offers
+    // exactly it — through the UNIFIED surface, where the ref carries the model.
+    const quality = completionsAt(`import { threeD } from "./src/unified/3d";
+threeD({ model: "tripo3d/v3.1-20260211", prompt: "a chair", texture_quality: "¦" });`);
+    expect(quality.sort()).toEqual(["detailed", "extreme", "standard"]);
+
+    // The legacy generation takes NONE of the version-gated seven, and that is
+    // a compile squiggle rather than a 4xx — the sharpest per-model narrowing
+    // this provider has.
+    expect(
+      semanticErrorsIn(`import { threeD } from "./src/unified/3d";
+threeD({ model: "tripo3d/v2.5-20250123", prompt: "a chair", geometry_quality: "detailed" });`).length,
+    ).toBeGreaterThan(0);
+
+    // And a word that is on one vendor's wire and not another's, at fal.
+    expect(
+      semanticErrorsIn(`import { threeD } from "./src/unified/3d";
+threeD({ model: "fal/fal-ai/hunyuan3d/v2", image: { url: "https://x/a.png" }, textured_mesh: true });`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { threeD } from "./src/unified/3d";
+threeD({ model: "fal/fal-ai/trellis", image: { url: "https://x/a.png" }, textured_mesh: true });`).length,
+    ).toBeGreaterThan(0);
+  });
+
   test("an endpoint id typed as a plain string still compiles", () => {
     // The other half of the map-over-union choice: a caller who builds the id
     // at run time gets the loose arm rather than a type error. A union of

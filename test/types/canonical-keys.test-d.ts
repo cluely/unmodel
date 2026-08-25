@@ -26,6 +26,7 @@ import type { VideoParams } from "../../src/core/unified/vocabulary/video";
 import type { LipsyncParams } from "../../src/core/unified/vocabulary/lipsync";
 import type { AvatarParams } from "../../src/core/unified/vocabulary/avatar";
 import type { UpscaleParams } from "../../src/core/unified/vocabulary/upscale";
+import type { ThreeDParams } from "../../src/core/unified/vocabulary/3d";
 import type { TtsParams } from "../../src/core/unified/vocabulary/tts";
 import type { SttParams } from "../../src/core/unified/vocabulary/stt";
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
@@ -60,6 +61,7 @@ type Category =
   | "lipsync"
   | "avatar"
   | "upscale"
+  | "3d"
   | "tts"
   | "stt"
   | "music"
@@ -112,6 +114,19 @@ expectTrue<IsNever<Unclaimed<"avatar", AvatarParams>>>();
  */
 expectTrue<IsNever<Unlisted<"upscale", UpscaleParams>>>();
 expectTrue<IsNever<Unclaimed<"upscale", UpscaleParams>>>();
+
+/**
+ * `3d` is the first category whose two content words are ALTERNATIVES, and this
+ * pair is where that shows up as a type fact rather than a claim: `prompt` and
+ * `image` are BOTH optional on `ThreeDParams` and both in the key list, because
+ * the list answers "may a caller write this key" and which one a given model
+ * REQUIRES is what `ThreeDModelNarrowing` states per row. A key list that tried
+ * to express the requirement would be a second copy of the rows.
+ *
+ * Note what is absent from both sides: every sizing word, `n`, and `format`.
+ */
+expectTrue<IsNever<Unlisted<"3d", ThreeDParams>>>();
+expectTrue<IsNever<Unclaimed<"3d", ThreeDParams>>>();
 
 expectTrue<IsNever<Unlisted<"tts", TtsParams>>>();
 expectTrue<IsNever<Unclaimed<"tts", TtsParams>>>();

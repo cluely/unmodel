@@ -12,7 +12,7 @@ provider — not their quality ranking.
 - **generated** — wire types, schemas, per-endpoint constraint data and catalog rows emitted by a
   codegen from the provider's own published OpenAPI, over a committed snapshot. Behaviour (checks,
   messages, estimates, docs) is still hand-written beside it. One provider so far: **fal** — see
-  [the fal.ai wave](#falai-wave--one-aggregator-nine-verbs).
+  [the fal.ai wave](#falai-wave--one-aggregator-ten-verbs).
 - **catalog-only** — model metadata available via `unmodel/catalog`; no request validator yet.
 - **excluded** — no public developer API today (noted; revisit when one ships).
 
@@ -245,13 +245,72 @@ three answers per model: a range, a closed set (AuraSR upscales by 4 or not at a
 result is a queue envelope rather than a file. Polling is out of scope — follow the
 `response_url` fal hands back, never a URL you construct.
 
-## fal.ai wave — one aggregator, nine verbs
+## 3D wave — the first category with two witnesses
 
-fal.ai is a generative-media inference cloud. unmodel serves **146 curated endpoints across
-nine verbs** — `fal.image` (32), `fal.imageEdit` (17), `fal.video` (30), `fal.lipsync` (10),
-`fal.upscale` (10), `fal.avatar` (8), `fal.tts` (23), `fal.stt` (6), `fal.music` (10) — all bare
-ids, all on `unmodel/fal`, with a unified adapter per category behind
+`unmodel/3d` is the fourth category added in 2026 and the only one that did **not** ship on one
+provider. The three above were deferred to fal alone because fal is where their models are
+hosted; this one waited for a second, independent witness, because a 3D vocabulary read off a
+single vendor would have been that vendor's request schema with the field names changed. Two
+schemas in, `texture` already had five spellings and the output container four more.
+
+**Tripo — `tripo3d.threeD` and `tripo3d.threeDFromImage`, 4 models.** Tier: **native**.
+`https://openapi.tripo3d.ai/v3`, flat JSON, `Authorization: Bearer <TRIPO_API_KEY>`, one endpoint
+per operation. Models `v3.1-20260211`, `v3.0-20250812`, `v2.5-20250123` and the low-poly
+`P1-20260311` — the DATED ids every endpoint reference page and every `curl` example publishes.
+(Tripo's `models-and-versions` page names the same four `tripo-v3.1`, `tripo-v3.0`, `tripo-v2.5`
+and `tripo-p1`; the endpoint page is the per-route spec and is what the parameter's own enum is
+written on, so it wins. The aliases are plausibly accepted and that is not verified.) Two
+routes, both qualified the way `vidu.videoFromImage` is, because they are two URLs with
+different required fields. Not served: the mesh-processing surface (texture, convert, segment,
+decimate, rig, retarget) — mesh in, mesh out is a question no unmodel verb asks — and the
+text-to-image routes, which resell seedream, gemini and gpt-image that unmodel already carries
+from the vendors themselves.
+
+Three cross-field rules Tripo documents and unmodel checks, each of them a 4xx otherwise:
+seven parameters are gated on the model version and `v2.5-20250123` takes none of them;
+`generate_parts: true` requires `texture`, `pbr` and `quad` all false, and the first two DEFAULT
+to true; and the polycount ceiling moves with the model, with Ultra mode and with `quad`. A
+fourth is a heuristic: `input` is one polymorphic string that accepts a `file_…` token, a public
+URL or a prior `task_…` id, disambiguated by prefix and never inline bytes.
+
+Pricing is per task in credits at $0.01 each, and this is the rare media provider whose estimate
+is EXACT: the price is a pure function of the request body (base task type plus the add-ons the
+body switched on), with no duration to guess and no output pixel count to infer. The one
+exception is P1, whose credit table Tripo's pricing page renders client-side only — `undefined`
+rather than borrowing the H-series numbers, which are demonstrably different.
+
+**fal — `fal.threeD`, 19 endpoints.** Tripo H3.1 text/image, Tripo P1 text/image, Tripo v2.5
+image and multiview, Hunyuan3D 2.0 and turbo, Hunyuan 3D 3.1 Pro text/image and Rapid image,
+TRELLIS and TRELLIS 2, TripoSR, Hyper3D Rodin v2.5 and its text-only sibling, Meshy 7
+text/image, Hi3D v3.0. Seven vendors, one address. `hitem3d/hi3d/v3.0/image-to-3d` is this
+category's `model`-collision case: a `const "hi3dv3.0"` body field that stays on the wire while
+`endpoint` routes.
+
+Excluded by name: `tripo3d/h3.1/multiview-to-3d` (requires two views; `image` is one reference,
+and half-serving it would be worse than not serving it), `fal-ai/hunyuan3d-v21` (fal marked it
+`deprecated`), `tripo3d/triposplat` (gaussian splats are a point cloud, not a mesh),
+`fal-ai/hunyuan_world/image-to-world` (a navigable scene, not an object). Excluded wholesale:
+fal's twelve `3d-to-3d` endpoints — retopology, segmentation, retexture, rigging, part
+splitting — which take a mesh and return one. `unmodel/3d` asks for an object to be MADE.
+
+The overlap between the two providers is deliberate: `tripo3d/h3.1/image-to-3d` at fal and
+`tripo3d/v3.1-20260211` natively are the same model reached two ways, which is the comparison
+the category exists to make cheap. Where they disagree on a word — fal renames Tripo's `input`
+to `image_url` and drops `smart_low_poly`, `generate_parts` and `compress` — the disagreement
+lands in each row's extras rather than in the vocabulary.
+
+## fal.ai wave — one aggregator, ten verbs
+
+fal.ai is a generative-media inference cloud. unmodel serves **165 curated endpoints across
+ten verbs** — `fal.image` (32), `fal.imageEdit` (17), `fal.video` (30), `fal.lipsync` (10),
+`fal.upscale` (10), `fal.avatar` (8), `fal.threeD` (19), `fal.tts` (23), `fal.stt` (6),
+`fal.music` (10) — all bare ids, all on `unmodel/fal`, with a unified adapter per category behind
 `unmodel/fal/unified`. Tier: **generated**.
+
+`fal.threeD` is the one verb here that is not its category's id, and the reason is mechanical:
+an endpoint id's second segment is a module export name, and `3d` is not a JavaScript
+identifier. The category id, the subpath (`unmodel/3d`) and the CLI's `unified.3d` all keep the
+digit.
 
 **The model IS the route.** `POST https://queue.fal.run/{endpoint_id}` with a flat JSON body and
 no model field in it — the endpoint id is the URL path, at arbitrary depth. So the selector is a
@@ -321,7 +380,7 @@ openbmb, nanbeige, tii-falcon, allenai (Olmo — weights only).
 
 ## Unified surfaces — coverage per category
 
-Eleven entries take a **standardized camelCase vocabulary** instead of a wire body and
+Twelve entries take a **standardized camelCase vocabulary** instead of a wire body and
 compile it to whichever provider the `"provider/model"` ref names. They are a layer *over*
 the roster above, not a replacement for it: a unified call compiles to a provider's wire
 params and then runs **that provider's own validator**, so there is exactly one definition
@@ -350,12 +409,13 @@ leaves rather than whole validators.
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 1 | fal — 10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider |
 | `unmodel/avatar` | `avatar`, `createAvatar` | 1 | fal — 8 endpoints; the still-driven twin of lipsync |
 | `unmodel/upscale` | `upscale`, `createUpscale` | 1 | fal — 10 endpoints, seven taking a still and three taking a clip |
+| `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (4 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
 | `unmodel/voice-design` | `voiceDesign`, `createVoiceDesign` | 4 | elevenlabs, fish-audio, inworld, minimax — the unified surface is phase 1 (the generative call); the ElevenLabs/Inworld save steps are wire-only (`voiceDesignSave`, `voiceDesignPublish`) |
 
 **Layout.** Each adapter lives in the provider's own directory as
 `unified-<category>.ts`, re-exported from a single `unified.ts` barrel published as
-`unmodel/<provider>/unified` (42 such subpaths). A provider serving more than one category
+`unmodel/<provider>/unified` (43 such subpaths). A provider serving more than one category
 therefore splits per category, so no pack pays for another category's schemas or catalogs.
 `test/bundle-budget.test.ts` asserts a pack can only reach a provider through that
 provider's uniformly-named endpoint module — which is what makes the address-vs-wire

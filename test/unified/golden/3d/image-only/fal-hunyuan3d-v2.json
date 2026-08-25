@@ -1,0 +1,10 @@
+{
+  "ref": "fal/fal-ai/hunyuan3d/v2",
+  "params": {
+    "input_image_url": "https://example.com/chair.png"
+  },
+  "url": "https://queue.fal.run/fal-ai/hunyuan3d/v2",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

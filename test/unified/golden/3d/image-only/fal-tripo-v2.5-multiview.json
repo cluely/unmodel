@@ -1,0 +1,10 @@
+{
+  "ref": "fal/tripo3d/tripo/v2.5/multiview-to-3d",
+  "params": {
+    "front_image_url": "https://example.com/chair.png"
+  },
+  "url": "https://queue.fal.run/tripo3d/tripo/v2.5/multiview-to-3d",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

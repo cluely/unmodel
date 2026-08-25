@@ -1,0 +1,10 @@
+{
+  "ref": "fal/fal-ai/triposr",
+  "params": {
+    "image_url": "data:image/png;base64,aGVsbG8="
+  },
+  "url": "https://queue.fal.run/fal-ai/triposr",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

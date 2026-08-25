@@ -1,0 +1,10 @@
+{
+  "ref": "fal/fal-ai/hyper3d/rodin/v2.5/text-to-3d",
+  "params": {
+    "prompt": "a brass astrolabe on a walnut stand"
+  },
+  "url": "https://queue.fal.run/fal-ai/hyper3d/rodin/v2.5/text-to-3d",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

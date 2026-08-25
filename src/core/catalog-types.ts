@@ -1,5 +1,14 @@
-/** Input/output modality of a model, as tracked by models.dev. */
-export type Modality = "text" | "image" | "audio" | "video" | "pdf";
+/**
+ * Input/output modality of a model.
+ *
+ * The first five are models.dev's own vocabulary and `scripts/availability.ts`
+ * parses exactly those. `"3d"` is unmodel's, added with `unmodel/3d`: a mesh is
+ * not a picture of one, and filing a GLB under `"image"` because the response
+ * also carries a preview render would make `modalities.output` lie about what
+ * the request bought. models.dev tracks no 3D models, so the member only ever
+ * appears on hand and fal-generated rows.
+ */
+export type Modality = "text" | "image" | "audio" | "video" | "pdf" | "3d";
 
 /**
  * The model-id slot for an explicit future-model arm.

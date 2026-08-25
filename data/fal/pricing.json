@@ -711,12 +711,136 @@
       "verified": "2026-08-25",
       "quote": "Your request will cost $0.05 per second."
     },
+    "fal-ai/hunyuan-3d/v3.1/pro/image-to-3d": {
+      "unit": "conditional",
+      "tierKey": "stacking add-ons on a flat base — `enable_pbr`, multi-view input, `face_count`",
+      "tiers": [
+        {
+          "when": "per generation, base",
+          "usd": 0.375
+        },
+        {
+          "when": "added when PBR materials are enabled",
+          "usd": 0.15
+        },
+        {
+          "when": "added when multi-view images are supplied",
+          "usd": 0.15
+        },
+        {
+          "when": "added when a custom face count is set",
+          "usd": 0.15
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/hunyuan-3d/v3.1/pro/image-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.375 per generation. For $1.00, you can run this model 2 times. Enabling PBR materials adds $0.15. Using multi-view images adds $0.15. Custom face count adds $0.15."
+    },
+    "fal-ai/hunyuan-3d/v3.1/pro/text-to-3d": {
+      "unit": "conditional",
+      "tierKey": "stacking add-ons on a flat base — `enable_pbr`, multi-view input, `face_count`",
+      "tiers": [
+        {
+          "when": "per generation, base",
+          "usd": 0.375
+        },
+        {
+          "when": "added when PBR materials are enabled",
+          "usd": 0.15
+        },
+        {
+          "when": "added when multi-view images are supplied",
+          "usd": 0.15
+        },
+        {
+          "when": "added when a custom face count is set",
+          "usd": 0.15
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/hunyuan-3d/v3.1/pro/text-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.375 per generation. For $1.00, you can run this model 2 times. Enabling PBR materials adds $0.15. Using multi-view images adds $0.15. Custom face count adds $0.15."
+    },
+    "fal-ai/hunyuan-3d/v3.1/rapid/image-to-3d": {
+      "unit": "conditional",
+      "tierKey": "enable_pbr",
+      "tiers": [
+        {
+          "when": "per generation, base",
+          "usd": 0.225
+        },
+        {
+          "when": "added when PBR materials are enabled",
+          "usd": 0.15
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/hunyuan-3d/v3.1/rapid/image-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.225 per generation. For $1.00, you can run this model 4 times. Base generation (text or image to 3D) costs $0.225. Enabling PBR materials adds $0.15."
+    },
     "fal-ai/hunyuan-image/v3/text-to-image": {
       "unit": "per_megapixel",
       "usd": 0.1,
       "source": "https://fal.ai/models/fal-ai/hunyuan-image/v3/text-to-image",
       "verified": "2026-08-25",
       "quote": "Your request will cost $0.1 per megapixel."
+    },
+    "fal-ai/hunyuan3d/v2": {
+      "unit": "conditional",
+      "tierKey": "textured_mesh",
+      "tiers": [
+        {
+          "when": "per generation for a white mesh (`textured_mesh: false`)",
+          "usd": 0.16
+        },
+        {
+          "when": "per generation with textures (`textured_mesh: true`) — three times the white-mesh rate, per the endpoint's own field description",
+          "usd": 0.48
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/hunyuan3d/v2",
+      "verified": "2026-08-25",
+      "quote": "Tencent's Hunyuan3D converts single images into 3D GLB meshes at $0.16 per generation … At $0.16 per generation for white mesh ($0.48 with textures) … If set true, textured mesh will be generated and the price charged would be 3 times that of white mesh."
+    },
+    "fal-ai/hunyuan3d/v2/turbo": {
+      "unpriced": "fal's page for the turbo arm publishes no rate at all — not a per-generation figure, not a compute-second template. The only price statement on it is RELATIVE (`textured_mesh` costs three times a white mesh) with no base to multiply, and borrowing the non-turbo endpoint's $0.16 would be inventing a number for a different SKU. Same rule as fal-ai/wizper: `undefined` beats a wrong number.",
+      "source": "https://fal.ai/models/fal-ai/hunyuan3d/v2/turbo",
+      "verified": "2026-08-25",
+      "quote": "If set true, textured mesh will be generated and the price charged would be 3 times that of white mesh."
+    },
+    "fal-ai/hyper3d/rodin/v2.5": {
+      "unit": "conditional",
+      "tierKey": "addons",
+      "tiers": [
+        {
+          "when": "per generation, base",
+          "usd": 0.4
+        },
+        {
+          "when": "added when `HighPack` is in `addons` (4K textures and a high-poly mesh)",
+          "usd": 0.8
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/hyper3d/rodin/v2.5",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost **$0.4** per generation. If **HighPack** is added to the `addons`, it will cost an additional **$0.8** per generation."
+    },
+    "fal-ai/hyper3d/rodin/v2.5/text-to-3d": {
+      "unit": "conditional",
+      "tierKey": "addons",
+      "tiers": [
+        {
+          "when": "per generation, base",
+          "usd": 0.4
+        },
+        {
+          "when": "added when `HighPack` is in `addons` (4K textures and a high-poly mesh)",
+          "usd": 0.8
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/hyper3d/rodin/v2.5/text-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost **$0.4** per generation. If **HighPack** is added to the `addons`, it will cost an additional **$0.8** per generation."
     },
     "fal-ai/ideogram/v3": {
       "unit": "conditional",
@@ -1401,6 +1525,41 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.1333 per output second."
     },
+    "fal-ai/trellis": {
+      "unit": "per_generation",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/fal-ai/trellis",
+      "verified": "2026-08-25",
+      "quote": "Cost: $0.02 per unit … Transform images into 3D objects with Trellis. $0.02/generation."
+    },
+    "fal-ai/trellis-2": {
+      "unit": "conditional",
+      "tierKey": "resolution",
+      "tiers": [
+        {
+          "when": "per generation at 512p",
+          "usd": 0.25
+        },
+        {
+          "when": "per generation at 1024p",
+          "usd": 0.3
+        },
+        {
+          "when": "per generation at 1536p",
+          "usd": 0.35
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/trellis-2",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost 0.25 $ for 512p resolution, 0.3 $ for 1024p resolution and 0.35 $ for 1536p resolution."
+    },
+    "fal-ai/triposr": {
+      "unit": "per_generation",
+      "usd": 0.07,
+      "source": "https://fal.ai/models/fal-ai/triposr",
+      "verified": "2026-08-25",
+      "quote": "Transform images into 3D objects with TripoSR. State-of-the-art 3D generation from single images. $0.07 per generation."
+    },
     "fal-ai/veo3.1": {
       "unit": "conditional",
       "tierKey": "generate_audio × resolution",
@@ -1621,6 +1780,23 @@
       "verified": "2026-08-24",
       "quote": "Text tokens (per 1M): $0.3125 input, $1.875 output. Image tokens (per 1M): $0.3125 input, $37.50 output. Output images are generated at a fixed 1K (1024x1024px)"
     },
+    "hitem3d/hi3d/v3.0/image-to-3d": {
+      "unit": "conditional",
+      "tierKey": "resolution — geometry credits scale with it; texture and PBR are flat credit adders, billed at $0.02 per credit",
+      "tiers": [
+        {
+          "when": "per generation at 2048³ quality",
+          "usd": 2.1
+        },
+        {
+          "when": "per generation at 2048³ master",
+          "usd": 9.1
+        }
+      ],
+      "source": "https://fal.ai/models/hitem3d/hi3d/v3.0/image-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request is billed at $0.02 per credit. Total cost is a sum of geometry, texture, and PBR credits, where geometry credits scale with resolution, texture is fixed at 10 credits, and PBR is fixed at 5 credits. On v3.0, your request will cost $2.10 (2048³quality) or $9.10 (2048³master)."
+    },
     "ideogram/v4": {
       "unit": "conditional",
       "tierKey": "rendering_speed — each tier is a PER-MEGAPIXEL rate, not a per-image one",
@@ -1692,6 +1868,64 @@
       "source": "https://fal.ai/models/lightricks/ltx-2.5/text-to-video/pro",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.12 per second for 720p or $0.17 per second for 1080p."
+    },
+    "meshy/v7/image-to-3d": {
+      "unit": "conditional",
+      "tierKey": "texture and `ultra_mode`, plus stacking add-ons for rigging and animation",
+      "tiers": [
+        {
+          "when": "per generation, base model with no texture",
+          "usd": 0.8
+        },
+        {
+          "when": "per generation with textures",
+          "usd": 1.2
+        },
+        {
+          "when": "per generation with textures and `ultra_mode`",
+          "usd": 1.4
+        },
+        {
+          "when": "added when auto-rigging is enabled",
+          "usd": 0.2
+        },
+        {
+          "when": "added per animation call",
+          "usd": 0.12
+        }
+      ],
+      "source": "https://fal.ai/models/meshy/v7/image-to-3d",
+      "verified": "2026-08-25",
+      "quote": "A base model with no texture costs **$0.80**. Adding textures brings it to **$1.20**, and enabling ultra mode raises it to **$1.40** for a fully textured, ultra-quality model. Optional auto-rigging adds **$0.20**, and animation adds **$0.12** per call."
+    },
+    "meshy/v7/text-to-3d": {
+      "unit": "conditional",
+      "tierKey": "texture and `ultra_mode`, plus stacking add-ons for rigging and animation",
+      "tiers": [
+        {
+          "when": "per generation, base model with no texture",
+          "usd": 0.8
+        },
+        {
+          "when": "per generation with textures",
+          "usd": 1.2
+        },
+        {
+          "when": "per generation with textures and `ultra_mode`",
+          "usd": 1.4
+        },
+        {
+          "when": "added when auto-rigging is enabled",
+          "usd": 0.2
+        },
+        {
+          "when": "added per animation call",
+          "usd": 0.12
+        }
+      ],
+      "source": "https://fal.ai/models/meshy/v7/text-to-3d",
+      "verified": "2026-08-25",
+      "quote": "A base model with no texture costs **$0.80**. Adding textures brings it to **$1.20**, and enabling ultra mode raises it to **$1.40** for a fully textured, ultra-quality model. Optional auto-rigging adds **$0.20**, and animation adds **$0.12** per call."
     },
     "microsoft/mai-image-2.5": {
       "unpriced": "fal publishes no rate for the PUBLISHED id: the page at https://fal.ai/models/microsoft/mai-image-2.5 states no price at all, and the internal route fal's own OpenAPI documents shows only the unpopulated $0-per-compute-second billing template — the same template wizper shows. Quoting $0 as a rate would be worse than saying nothing, so estimates for this endpoint return {} with this caveat.",
@@ -2021,6 +2255,148 @@
       "source": "https://fal.ai/models/topaz/upscale/video/precision",
       "verified": "2026-08-25",
       "quote": "Your request will cost $0.10 per 10 seconds of output at 720p, $0.20 at 1080p, and $0.60 at 4K with the precision models (Proteus, Artemis, Iris, Dione, Theia, Gaia HQ/CG, and Rhea). Proteus Natural (2x only) costs $0.10 per 10 seconds at 720p, $0.20 at 1080p, and $0.50 at 4K. Gaia 2 (2x, animation) costs $0.10 at 720p or 1080p and $0.30 at 4K. Longer clips scale with duration, with credits rounded once per job: a 1-minute upscale with the standard precision models costs $0.40 at 720p, $0.80 at 1080p, and $3.10 at 4K. These examples assume 30 fps. The final cost depends on output resolution, duration, and frame rate."
+    },
+    "tripo3d/h3.1/image-to-3d": {
+      "unit": "conditional",
+      "tierKey": "`texture` and `texture_quality`, plus stacking add-ons for `geometry_quality` and `quad`",
+      "tiers": [
+        {
+          "when": "per generation without textures (`texture: false`)",
+          "usd": 0.2
+        },
+        {
+          "when": "per generation with standard textures",
+          "usd": 0.3
+        },
+        {
+          "when": "per generation with HD textures (`texture_quality: \"detailed\"`)",
+          "usd": 0.4
+        },
+        {
+          "when": "added when `geometry_quality: \"detailed\"`",
+          "usd": 0.2
+        },
+        {
+          "when": "added when `quad: true`",
+          "usd": 0.05
+        }
+      ],
+      "source": "https://fal.ai/models/tripo3d/h3.1/image-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.20 (without textures), $0.30 (with standard textures), or $0.40 (with HD textures), plus an additional $0.20 for detailed geometry and $0.05 for quad mesh if selected."
+    },
+    "tripo3d/h3.1/text-to-3d": {
+      "unit": "conditional",
+      "tierKey": "`texture` and `texture_quality`, plus stacking add-ons for `geometry_quality` and `quad`",
+      "tiers": [
+        {
+          "when": "per generation without textures (`texture: false`)",
+          "usd": 0.1
+        },
+        {
+          "when": "per generation with standard textures",
+          "usd": 0.2
+        },
+        {
+          "when": "per generation with HD textures (`texture_quality: \"detailed\"`)",
+          "usd": 0.3
+        },
+        {
+          "when": "added when `geometry_quality: \"detailed\"`",
+          "usd": 0.2
+        },
+        {
+          "when": "added when `quad: true`",
+          "usd": 0.05
+        }
+      ],
+      "source": "https://fal.ai/models/tripo3d/h3.1/text-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.10 (without textures), $0.20 (with standard textures), or $0.30 (with HD textures), plus an additional $0.20 for detailed geometry and $0.05 for quad mesh if selected."
+    },
+    "tripo3d/p1/image-to-3d": {
+      "unit": "conditional",
+      "tierKey": "`texture`",
+      "tiers": [
+        {
+          "when": "per generation without textures (`texture: false`)",
+          "usd": 0.4
+        },
+        {
+          "when": "per generation with textures",
+          "usd": 0.5
+        }
+      ],
+      "source": "https://fal.ai/models/tripo3d/p1/image-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.40 (without textures) or $0.50 (with textures)."
+    },
+    "tripo3d/p1/text-to-3d": {
+      "unit": "conditional",
+      "tierKey": "`texture`",
+      "tiers": [
+        {
+          "when": "per generation without textures (`texture: false`)",
+          "usd": 0.4
+        },
+        {
+          "when": "per generation with textures",
+          "usd": 0.5
+        }
+      ],
+      "source": "https://fal.ai/models/tripo3d/p1/text-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.40 (without textures) or $0.50 (with textures)."
+    },
+    "tripo3d/tripo/v2.5/image-to-3d": {
+      "unit": "conditional",
+      "tierKey": "`texture` and `texture_quality`, plus stacking add-ons for `style` and `quad`",
+      "tiers": [
+        {
+          "when": "per generation without textures",
+          "usd": 0.2
+        },
+        {
+          "when": "per generation with standard textures",
+          "usd": 0.3
+        },
+        {
+          "when": "per generation with HD textures",
+          "usd": 0.4
+        },
+        {
+          "when": "added for each of `style` and `quad`",
+          "usd": 0.05
+        }
+      ],
+      "source": "https://fal.ai/models/tripo3d/tripo/v2.5/image-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.2 (without textures), $0.3 (with standard textures), or $0.4 (with HD textures), plus an additional $0.05 each for Style and quad options if selected."
+    },
+    "tripo3d/tripo/v2.5/multiview-to-3d": {
+      "unit": "conditional",
+      "tierKey": "`texture` and `texture_quality`, plus stacking add-ons for `style` and `quad`",
+      "tiers": [
+        {
+          "when": "per generation without textures",
+          "usd": 0.2
+        },
+        {
+          "when": "per generation with standard textures",
+          "usd": 0.3
+        },
+        {
+          "when": "per generation with HD textures",
+          "usd": 0.4
+        },
+        {
+          "when": "added for each of `style` and `quad`",
+          "usd": 0.05
+        }
+      ],
+      "source": "https://fal.ai/models/tripo3d/tripo/v2.5/multiview-to-3d",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.2 (without textures), $0.3 (with standard textures), or $0.4 (with HD textures), plus an additional $0.05 each for Style and quad options if selected."
     },
     "veed/avatars/audio-to-video": {
       "unit": "per_video_minute",

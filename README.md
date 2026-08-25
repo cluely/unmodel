@@ -25,7 +25,7 @@ Every ❌/✅ in this README is pasted from a real `tsc` run or backed by a test
 
 - 🎯 **Per-model types** — `background: "transparent"` on `gpt-image-2` is a compile error, not a 400
 - 🔤 **Real autocomplete** — the 23 real `gpt-image-2` sizes, all 30 Gemini TTS voices; every list proven by a test
-- 🌐 **One vocabulary, thirteen surfaces** — chat, TTS, STT, image, image edit, video, lipsync, avatar, upscale, music, voice clone, voice design, realtime config
+- 🌐 **One vocabulary, fourteen surfaces** — chat, TTS, STT, image, image edit, video, lipsync, avatar, upscale, 3D, music, voice clone, voice design, realtime config
 - 🔁 **`.toApi(provider)`** — move a validated chat request to another host serving the same model
 - 💸 **Cost gates** — `.safe({ maxCostUSD })` blocks a runaway request before it leaves the process
 - 🧾 **Response checks** — truncation, refusals, filtering, usage, and catalog-priced cost from raw payloads
@@ -91,7 +91,7 @@ canonical params → provider wire params → provider validator → fetch or SD
 
 Provider validators take provider-native fields, and the validated result is the exact wire body. Unified model refs split on the first slash: `openrouter/anthropic/claude-opus-5` means provider `openrouter`, model `anthropic/claude-opus-5`.
 
-## 🎨 The thirteen surfaces
+## 🎨 The fourteen surfaces
 
 | Task | Portable import | Provider-native example |
 | --- | --- | --- |
@@ -104,6 +104,7 @@ Provider validators take provider-native fields, and the validated result is the
 | [👄 Lipsync](docs/surfaces.md#lipsync) | `unmodel/lipsync` | `unmodel/fal` |
 | [🧑‍🎤 Avatar](docs/surfaces.md#avatar) | `unmodel/avatar` | `unmodel/fal` |
 | [🔍 Upscale](docs/surfaces.md#upscale) | `unmodel/upscale` | `unmodel/fal` |
+| [🧊 3D generation](docs/surfaces.md#3d-generation) | `unmodel/3d` | `unmodel/tripo3d`, `unmodel/fal` |
 | [🎵 Music generation](docs/surfaces.md#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/fal`, `unmodel/stability` |
 | [🎙️ Voice cloning](docs/surfaces.md#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
 | [🧪 Voice design](docs/surfaces.md#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
@@ -125,12 +126,13 @@ image({ model: "openai/gpt-image-1", prompt: "...", background: "transparent" })
 image({ model: "openai/gpt-image-2", prompt: "...", background: "transparent" }); // ❌ TypeScript error
 ```
 
-The three newest surfaces are one line each: a clip, a still, and a frame you want bigger.
+The four newest surfaces are one line each: a clip, a still, a frame you want bigger, and an object.
 
 ```ts
 import { lipsync } from "unmodel/lipsync";
 import { avatar } from "unmodel/avatar";
 import { upscale } from "unmodel/upscale";
+import { threeD } from "unmodel/3d";
 
 JSON.stringify(lipsync({ model: "fal/veed/lipsync/v2", source: { url: clip }, audio: { url: vo } }));
 // → {"video_url":"https://ex.com/take.mp4","audio_url":"https://ex.com/vo.wav"}
@@ -140,6 +142,22 @@ JSON.stringify(avatar({ model: "fal/fal-ai/sync-lipsync/v3/image-to-video", imag
 
 JSON.stringify(upscale({ model: "fal/fal-ai/clarity-upscaler", source: { url: still }, factor: 2 }));
 // → {"image_url":"https://ex.com/face.png","upscale_factor":2}
+
+JSON.stringify(threeD({ model: "tripo3d/v3.1-20260211", prompt: "a brass astrolabe", seed: 7 }));
+// → {"model":"v3.1-20260211","prompt":"a brass astrolabe","model_seed":7}
+```
+
+`unmodel/3d` is the first category that shipped with two providers, and on purpose: a 3D
+vocabulary read off one vendor would be that vendor's schema with the names changed. The same
+model through the aggregator compiles to a different body, which is the comparison it exists
+to make cheap.
+
+```ts
+JSON.stringify(threeD({ model: "fal/tripo3d/h3.1/image-to-3d", image: { url: still } }));
+// → {"image_url":"https://ex.com/face.png"}
+
+JSON.stringify(threeD({ model: "tripo3d/v3.1-20260211", image: { url: still } }));
+// → {"model":"v3.1-20260211","input":"https://ex.com/face.png"}
 ```
 
 Same pattern for every surface — inputs, formats, and extras narrow to the selected model. Per-category guides, including audio input routing, multipart helpers, and voice cloning: [docs/surfaces.md](docs/surfaces.md). Full roster: [docs/providers.md](docs/providers.md); per-provider TTS quirks: [docs/tts.md](docs/tts.md).
@@ -277,7 +295,7 @@ Every implemented provider has its own subpath with native field names, model ID
 
 ### fal.ai
 
-`unmodel/fal` covers 146 curated endpoints across nine verbs: `image`, `imageEdit`, `video`, `lipsync`, `upscale`, `avatar`, `tts`, `stt`, `music`. Four things here work unlike every other provider.
+`unmodel/fal` covers 165 curated endpoints across ten verbs: `image`, `imageEdit`, `video`, `lipsync`, `upscale`, `avatar`, `threeD`, `tts`, `stt`, `music`. Four things here work unlike every other provider.
 
 ```ts
 import { image } from "unmodel/fal";
@@ -296,7 +314,7 @@ request.request.url; // "https://queue.fal.run/fal-ai/flux/dev"
 
 ## 📚 Docs
 
-- 📖 [Surfaces guide](docs/surfaces.md) — all thirteen categories, examples, quirks, bundles and custom packs
+- 📖 [Surfaces guide](docs/surfaces.md) — all fourteen categories, examples, quirks, bundles and custom packs
 - ✅ [Validation, cost, and response checks](docs/validation.md)
 - 🔡 [Types and values reference](docs/types-and-values.md)
 - 🔌 [Integrations: fetch, SDKs, catalog, CLI](docs/integrations.md)

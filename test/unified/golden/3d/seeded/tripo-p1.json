@@ -1,0 +1,12 @@
+{
+  "ref": "tripo3d/P1-20260311",
+  "params": {
+    "model": "P1-20260311",
+    "prompt": "a brass astrolabe on a walnut stand",
+    "model_seed": 7
+  },
+  "url": "https://openapi.tripo3d.ai/v3/generation/text-to-model",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

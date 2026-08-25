@@ -433,6 +433,30 @@
       "status": "active",
       "updated_at": "2026-04-26T23:11:58.879Z"
     },
+    "fal-ai/hunyuan-3d/v3.1/pro/image-to-3d": {
+      "category": "image-to-3d",
+      "display_name": "Hunyuan 3D Pro Image to 3D",
+      "file": "openapi/fal-ai__hunyuan-3d__v3.1__pro__image-to-3d.json",
+      "sha256": "89df026a5a309bb792d590e9bd8ce898bad67c045af1c42c9049a3c7875cf0d2",
+      "status": "active",
+      "updated_at": "2026-04-28T16:47:25.903Z"
+    },
+    "fal-ai/hunyuan-3d/v3.1/pro/text-to-3d": {
+      "category": "text-to-3d",
+      "display_name": "Hunyuan 3D Pro Text to 3D",
+      "file": "openapi/fal-ai__hunyuan-3d__v3.1__pro__text-to-3d.json",
+      "sha256": "1471aa0e82930a819e6c9fe56d9464511e57b1472ad6a99090865c5144efbfab",
+      "status": "active",
+      "updated_at": "2026-04-28T16:47:25.903Z"
+    },
+    "fal-ai/hunyuan-3d/v3.1/rapid/image-to-3d": {
+      "category": "image-to-3d",
+      "display_name": "Hunyuan 3D Rapid Image to 3D",
+      "file": "openapi/fal-ai__hunyuan-3d__v3.1__rapid__image-to-3d.json",
+      "sha256": "164af5bedadfc13ee2e0978aabbfe4be0d7248764d106a4080f3a7dec314a4d9",
+      "status": "active",
+      "updated_at": "2026-04-28T16:47:25.903Z"
+    },
     "fal-ai/hunyuan-image/v3/text-to-image": {
       "category": "text-to-image",
       "display_name": "Hunyuan Image",
@@ -440,6 +464,38 @@
       "sha256": "b445732d1a8465d1e065d0ef9d80e2591c92410a228f80723b8ef9cabfacf6c0",
       "status": "active",
       "updated_at": "2026-04-21T17:48:19.277Z"
+    },
+    "fal-ai/hunyuan3d/v2": {
+      "category": "image-to-3d",
+      "display_name": "Hunyuan3D",
+      "file": "openapi/fal-ai__hunyuan3d__v2.json",
+      "sha256": "fcc632158d1fb6dc0aeecd6c40e5f1d0a1ac780b28ff220c98d6ac7c99a88b24",
+      "status": "active",
+      "updated_at": "2026-04-21T17:48:31.111Z"
+    },
+    "fal-ai/hunyuan3d/v2/turbo": {
+      "category": "image-to-3d",
+      "display_name": "Hunyuan3D",
+      "file": "openapi/fal-ai__hunyuan3d__v2__turbo.json",
+      "sha256": "18111cda047ef2fd8f08321fe845022757ea6053982db26d20104414407b8658",
+      "status": "active",
+      "updated_at": "2026-04-21T17:48:33.770Z"
+    },
+    "fal-ai/hyper3d/rodin/v2.5": {
+      "category": "image-to-3d",
+      "display_name": "Hyper3D - Rodin V2.5 - Image to 3D",
+      "file": "openapi/fal-ai__hyper3d__rodin__v2.5.json",
+      "sha256": "ca4e4d033dd1c98ff7b50adcf9052488919a5684eed12654a23cb55b01a96735",
+      "status": "active",
+      "updated_at": "2026-07-13T18:24:58.995Z"
+    },
+    "fal-ai/hyper3d/rodin/v2.5/text-to-3d": {
+      "category": "text-to-3d",
+      "display_name": "Hyper3D - Rodin V2.5 - Text to 3D",
+      "file": "openapi/fal-ai__hyper3d__rodin__v2.5__text-to-3d.json",
+      "sha256": "76edfaa5594c719cca8cad35443a3fa5adfe393ed3e9f4143b04854144d3fc64",
+      "status": "active",
+      "updated_at": "2026-07-13T18:24:40.753Z"
     },
     "fal-ai/ideogram/v3": {
       "category": "text-to-image",
@@ -913,6 +969,30 @@
       "status": "active",
       "updated_at": "2026-07-01T04:52:04.240Z"
     },
+    "fal-ai/trellis": {
+      "category": "image-to-3d",
+      "display_name": "Trellis",
+      "file": "openapi/fal-ai__trellis.json",
+      "sha256": "177d8971225523b42fab22f57ca2ff7db23f640384fc566cfaca5723f6638992",
+      "status": "active",
+      "updated_at": "2026-04-21T17:55:07.440Z"
+    },
+    "fal-ai/trellis-2": {
+      "category": "image-to-3d",
+      "display_name": "Trellis 2",
+      "file": "openapi/fal-ai__trellis-2.json",
+      "sha256": "9de8e482b735f690261e7860d21b595db1e3881322ed8487d514bf56046a97eb",
+      "status": "active",
+      "updated_at": "2026-04-21T17:55:07.906Z"
+    },
+    "fal-ai/triposr": {
+      "category": "image-to-3d",
+      "display_name": "TripoSR",
+      "file": "openapi/fal-ai__triposr.json",
+      "sha256": "4689366d6343d959dba73f577717721af3e749decee45d3f5b8b68d47561aa90",
+      "status": "active",
+      "updated_at": "2026-01-26T21:44:58.680Z"
+    },
     "fal-ai/veo3.1": {
       "category": "text-to-video",
       "display_name": "Veo 3.1",
@@ -1017,6 +1097,14 @@
       "status": "active",
       "updated_at": "2026-08-19T21:49:37.630Z"
     },
+    "hitem3d/hi3d/v3.0/image-to-3d": {
+      "category": "image-to-3d",
+      "display_name": "Hi3D Image to 3D",
+      "file": "openapi/hitem3d__hi3d__v3.0__image-to-3d.json",
+      "sha256": "81b3504ecbed32f3206afb5c9ed8350a64a8de8712814d1ced9d1776b6c904ec",
+      "status": "active",
+      "updated_at": "2026-08-19T19:58:51.233Z"
+    },
     "ideogram/v4": {
       "category": "text-to-image",
       "display_name": "Ideogram V4.0 Text to Image",
@@ -1048,6 +1136,22 @@
       "sha256": "478f3dae0d7b68d8e61b3cffe91213cc794c37c1b4f7604c6071d66ebc58ce6f",
       "status": "active",
       "updated_at": "2026-08-14T23:11:35.262Z"
+    },
+    "meshy/v7/image-to-3d": {
+      "category": "image-to-3d",
+      "display_name": "V7 Image to 3D",
+      "file": "openapi/meshy__v7__image-to-3d.json",
+      "sha256": "a840ce7b23f1d6ee7fe32f488a3897990982ab03ff24f832078a6949a252e42d",
+      "status": "active",
+      "updated_at": "2026-08-11T22:02:14.440Z"
+    },
+    "meshy/v7/text-to-3d": {
+      "category": "text-to-3d",
+      "display_name": "V7 Text to 3D",
+      "file": "openapi/meshy__v7__text-to-3d.json",
+      "sha256": "0c42ad9133685bade310b4a7fb8b97f17bd92b79dd3f055eadf061343d051c08",
+      "status": "active",
+      "updated_at": "2026-08-24T11:50:18.611Z"
     },
     "microsoft/mai-image-2.5": {
       "category": "text-to-image",
@@ -1128,6 +1232,54 @@
       "sha256": "d0ce9bc6118b5fb0b8c379b4216ef34eee9023adab607cb64133ad6c381059d6",
       "status": "active",
       "updated_at": "2026-08-20T00:07:38.733Z"
+    },
+    "tripo3d/h3.1/image-to-3d": {
+      "category": "image-to-3d",
+      "display_name": "Tripo H3.1 Image to 3D",
+      "file": "openapi/tripo3d__h3.1__image-to-3d.json",
+      "sha256": "56fa62a06b279add3c3480a3e5ad1654183180ef2cc361aaa9ba6c9fe72c04ae",
+      "status": "active",
+      "updated_at": "2026-05-07T21:06:01.289Z"
+    },
+    "tripo3d/h3.1/text-to-3d": {
+      "category": "text-to-3d",
+      "display_name": "Tripo H3.1 Text to 3D",
+      "file": "openapi/tripo3d__h3.1__text-to-3d.json",
+      "sha256": "f7801fd1ddc4f555a41fa2c6a5ed064f0021102c6fbea1caac39a21290df3115",
+      "status": "active",
+      "updated_at": "2026-05-07T21:06:01.289Z"
+    },
+    "tripo3d/p1/image-to-3d": {
+      "category": "image-to-3d",
+      "display_name": "Tripo P1 Image to 3D",
+      "file": "openapi/tripo3d__p1__image-to-3d.json",
+      "sha256": "32f6de5bd6df53c1c20bd7c8a7c1813b3a9523b4966773e8c9e487fec5b1f599",
+      "status": "active",
+      "updated_at": "2026-05-07T21:06:01.289Z"
+    },
+    "tripo3d/p1/text-to-3d": {
+      "category": "text-to-3d",
+      "display_name": "Tripo P1 Text to 3D",
+      "file": "openapi/tripo3d__p1__text-to-3d.json",
+      "sha256": "22260e2b0a99d0a8b2d241d54bb6a8faa9b7e816184fff9cd87fd134cfa4123a",
+      "status": "active",
+      "updated_at": "2026-05-07T21:06:01.289Z"
+    },
+    "tripo3d/tripo/v2.5/image-to-3d": {
+      "category": "image-to-3d",
+      "display_name": "Tripo3D",
+      "file": "openapi/tripo3d__tripo__v2.5__image-to-3d.json",
+      "sha256": "901fc60b41662f310fc3ad136d0bad00819a60025c8b21602d278a55ff08043c",
+      "status": "active",
+      "updated_at": "2026-01-26T21:43:51.625Z"
+    },
+    "tripo3d/tripo/v2.5/multiview-to-3d": {
+      "category": "image-to-3d",
+      "display_name": "Tripo3D",
+      "file": "openapi/tripo3d__tripo__v2.5__multiview-to-3d.json",
+      "sha256": "b60ac29d51611f7ffdd40e9a0b2d6eca6cef0bca342744f1d13aa119c1869cc2",
+      "status": "active",
+      "updated_at": "2026-06-24T11:33:13.598Z"
     },
     "veed/avatars/audio-to-video": {
       "category": "audio-to-video",

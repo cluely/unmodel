@@ -1,0 +1,11 @@
+{
+  "ref": "fal/meshy/v7/text-to-3d",
+  "params": {
+    "prompt": "a brass astrolabe on a walnut stand",
+    "seed": 7
+  },
+  "url": "https://queue.fal.run/meshy/v7/text-to-3d",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

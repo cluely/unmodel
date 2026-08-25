@@ -201,6 +201,7 @@ export const SDK_TARGET_IDS = [
   "stability",
   "stepfun",
   "togetherai",
+  "tripo3d",
   "upstage",
   "vercel",
   "vidu",

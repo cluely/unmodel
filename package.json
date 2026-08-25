@@ -95,6 +95,10 @@
       "types": "./dist/unified/upscale.d.ts",
       "default": "./dist/unified/upscale.js"
     },
+    "./3d": {
+      "types": "./dist/unified/3d.d.ts",
+      "default": "./dist/unified/3d.js"
+    },
     "./tts": {
       "types": "./dist/unified/tts.d.ts",
       "default": "./dist/unified/tts.js"
@@ -994,6 +998,22 @@
     "./vercel/types": {
       "types": "./dist/providers/vercel/types.d.ts",
       "default": "./dist/providers/vercel/types.js"
+    },
+    "./tripo3d": {
+      "types": "./dist/providers/tripo3d/index.d.ts",
+      "default": "./dist/providers/tripo3d/index.js"
+    },
+    "./tripo3d/unified": {
+      "types": "./dist/providers/tripo3d/unified.d.ts",
+      "default": "./dist/providers/tripo3d/unified.js"
+    },
+    "./tripo3d/types": {
+      "types": "./dist/providers/tripo3d/types.d.ts",
+      "default": "./dist/providers/tripo3d/types.js"
+    },
+    "./tripo3d/values": {
+      "types": "./dist/providers/tripo3d/values.d.ts",
+      "default": "./dist/providers/tripo3d/values.js"
     },
     "./vidu": {
       "types": "./dist/providers/vidu/index.d.ts",

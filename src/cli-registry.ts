@@ -167,6 +167,26 @@ export const REGISTRY = {
   // reading the row's `sources`.
   "fal.upscale": () => import("./providers/fal").then((m) => asCli(m.upscale)),
 
+  // 3D asset generation. The verb is `threeD` rather than `3d` and the reason is
+  // mechanical rather than aesthetic: an endpoint id's second segment is a
+  // module EXPORT NAME (`cli.test.ts` derives this map from `Object.entries`
+  // over each provider's index), and `3d` is not a JavaScript identifier. The
+  // category id, the package subpath (`unmodel/3d`), the `unified.3d` key below
+  // and `endpointLabel`'s "unmodel/3d" all keep the digit; only the things that
+  // have to be typed as identifiers are spelled out.
+  //
+  // fal is nineteen endpoints from seven vendors behind one address, as it is
+  // everywhere else here. Tripo has TWO, because at a native provider the
+  // route is a real URL fork rather than a parameter: `POST
+  // /v3/generation/text-to-model` and `POST /v3/generation/image-to-model` take
+  // different required fields, so they qualify the same way `vidu.videoFromImage`
+  // and `lightricks.videoFromImage` do. `unmodel/3d` hides the fork — its
+  // adapter picks the route from whether the caller passed `prompt` or `image`.
+  "fal.threeD": () => import("./providers/fal").then((m) => asCli(m.threeD)),
+  "tripo3d.threeD": () => import("./providers/tripo3d").then((m) => asCli(m.threeD)),
+  "tripo3d.threeDFromImage": () =>
+    import("./providers/tripo3d").then((m) => asCli(m.threeDFromImage)),
+
   // Music generation. Every provider addresses its text-to-music route as
   // `music`; Stability's two audio-conditioned routes qualify by what they are
   // made from (`musicFromAudio`) and what they do to a finished track
@@ -363,7 +383,7 @@ export type CliEndpointId = keyof typeof REGISTRY;
  * `cli.test.ts` — which asserts REGISTRY names exactly the module-level
  * provider validators — either wrong or full of exceptions.
  *
- * All eleven are here — every category ships a ready-made pack. The key after the
+ * All twelve are here — every category ships a ready-made pack. The key after the
  * dot is the **category id** (`imageEdit`), camelCase like every other endpoint
  * id the CLI takes, not the kebab-case package subpath: `unmodel validate`
  * addresses endpoints, and `unmodel/image-edit` is an import.
@@ -393,6 +413,14 @@ export const UNIFIED = {
   // Same reason, one category over: `source` is a reference at all ten upscale
   // routes, whether it names a still or a clip.
   "unified.upscale": () => import("./unified/upscale").then((m) => asCli(m.upscale)),
+  // The key keeps the category id, digit and all — `unified.3d`, not
+  // `unified.threeD` — because these keys are category ids and `3d` is one.
+  // The provider-side verb is `threeD` for a reason that does not apply here:
+  // an export name has to be an identifier and an object key does not.
+  //
+  // JSON expresses this category exactly: `image` is a reference at every route
+  // and there is no multipart anywhere in it.
+  "unified.3d": () => import("./unified/3d").then((m) => asCli(m.threeD)),
   // Registered even though every clone provider here but inworld/minimax takes
   // its samples as a `Blob`: canonical `{ data }` and `{ fileId }` samples are
   // JSON-expressible, and a ref pointed at a file-only route is refused by

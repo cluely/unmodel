@@ -1,0 +1,604 @@
+{
+  "metadata": {
+    "category": "image-to-3d",
+    "date": "2025-12-17T21:49:28.133Z",
+    "description": "Generate 3D models from your images using Trellis 2. A native 3D generative model enabling versatile and high-quality 3D asset creation.",
+    "display_name": "Trellis 2",
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/trellis-2",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "image-to-3D"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a87573c/DwQCx7YBl36dnFSHaU8OT_bfc26b64d210462489530b5d5d5d98e1.jpg",
+    "updated_at": "2026-04-21T17:55:07.906Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "Trellis2Input": {
+          "properties": {
+            "decimation_target": {
+              "default": 500000,
+              "description": "Target number of vertices in the final mesh. Lower values produce smaller files but less detail. 500k is good for most uses, reduce to 20k-50k for web/mobile.",
+              "maximum": 2000000,
+              "minimum": 5000,
+              "title": "Decimation Target",
+              "type": "integer"
+            },
+            "image_url": {
+              "description": "URL of the input image to convert to 3D",
+              "examples": [
+                "https://v3b.fal.media/files/b/0a86b60d/xkpao5B0uxmH0tmJm0HVL_2fe35ce1-fe44-475b-b582-6846a149537c.png"
+              ],
+              "title": "Image Url",
+              "type": "string"
+            },
+            "remesh": {
+              "default": true,
+              "description": "Rebuild the mesh topology for cleaner triangles. Slower but usually produces better results for downstream use (animation, 3D printing, etc).",
+              "title": "Remesh",
+              "type": "boolean"
+            },
+            "remesh_band": {
+              "default": 1,
+              "description": "Controls how far remeshing can move vertices from the original surface. Higher values allow more smoothing but may lose fine details.",
+              "maximum": 4,
+              "minimum": 0,
+              "title": "Remesh Band",
+              "type": "number"
+            },
+            "remesh_project": {
+              "default": 0,
+              "description": "How much to project remeshed vertices back onto the original surface. 0 = no projection (smoother), 1 = full projection (preserves detail).",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Remesh Project",
+              "type": "number"
+            },
+            "resolution": {
+              "default": 1024,
+              "description": "Output resolution; higher is slower but more detailed",
+              "enum": [
+                512,
+                1024,
+                1536
+              ],
+              "title": "Resolution",
+              "type": "integer"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Random seed for reproducibility",
+              "title": "Seed"
+            },
+            "shape_slat_guidance_interval_end": {
+              "default": 1,
+              "description": "Fraction of the denoising process at which classifier-free guidance ends for stage 2 (shape refinement). Must be >= shape_slat_guidance_interval_start.",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Shape Slat Guidance Interval End",
+              "type": "number"
+            },
+            "shape_slat_guidance_interval_start": {
+              "default": 0.6,
+              "description": "Fraction of the denoising process at which classifier-free guidance starts for stage 2 (shape refinement). Guidance is only applied between interval_start and interval_end.",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Shape Slat Guidance Interval Start",
+              "type": "number"
+            },
+            "shape_slat_guidance_rescale": {
+              "default": 0.5,
+              "description": "Dampens artifacts from high guidance in the shape stage. Increase if you see noisy geometry.",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Shape Slat Guidance Rescale",
+              "type": "number"
+            },
+            "shape_slat_guidance_strength": {
+              "default": 7.5,
+              "description": "How closely the detailed geometry follows the input image. Higher values add more detail but may introduce noise.",
+              "maximum": 10,
+              "minimum": 0,
+              "title": "Shape Slat Guidance Strength",
+              "type": "number"
+            },
+            "shape_slat_rescale_t": {
+              "default": 3,
+              "description": "Controls noise schedule sharpness for shape refinement. Higher values produce sharper geometric details.",
+              "maximum": 6,
+              "minimum": 1,
+              "title": "Shape Slat Rescale T",
+              "type": "number"
+            },
+            "shape_slat_sampling_steps": {
+              "default": 12,
+              "description": "Number of denoising steps for shape refinement. More steps = slower but potentially smoother geometry.",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Shape Slat Sampling Steps",
+              "type": "integer"
+            },
+            "ss_guidance_interval_end": {
+              "default": 1,
+              "description": "Fraction of the denoising process at which classifier-free guidance ends for stage 1 (sparse structure). Must be >= ss_guidance_interval_start.",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Ss Guidance Interval End",
+              "type": "number"
+            },
+            "ss_guidance_interval_start": {
+              "default": 0.6,
+              "description": "Fraction of the denoising process at which classifier-free guidance starts for stage 1 (sparse structure). Guidance is only applied between interval_start and interval_end; outside this window the model runs unguided. Lower values apply guidance earlier.",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Ss Guidance Interval Start",
+              "type": "number"
+            },
+            "ss_guidance_rescale": {
+              "default": 0.7,
+              "description": "Dampens artifacts from high guidance in stage 1. Lower values allow stronger guidance effects, higher values stabilize the output.",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Ss Guidance Rescale",
+              "type": "number"
+            },
+            "ss_guidance_strength": {
+              "default": 7.5,
+              "description": "How closely the initial 3D structure follows the input image. Higher values produce more faithful but potentially noisier results.",
+              "maximum": 10,
+              "minimum": 0,
+              "title": "Ss Guidance Strength",
+              "type": "number"
+            },
+            "ss_rescale_t": {
+              "default": 5,
+              "description": "Controls noise schedule sharpness for structure generation. Higher values produce sharper transitions.",
+              "maximum": 6,
+              "minimum": 1,
+              "title": "Ss Rescale T",
+              "type": "number"
+            },
+            "ss_sampling_steps": {
+              "default": 12,
+              "description": "Number of denoising steps for the initial structure. More steps = slower but potentially higher quality.",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Ss Sampling Steps",
+              "type": "integer"
+            },
+            "tex_slat_guidance_interval_end": {
+              "default": 0.9,
+              "description": "Fraction of the denoising process at which classifier-free guidance ends for stage 3 (texture). Must be >= tex_slat_guidance_interval_start.",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Tex Slat Guidance Interval End",
+              "type": "number"
+            },
+            "tex_slat_guidance_interval_start": {
+              "default": 0.6,
+              "description": "Fraction of the denoising process at which classifier-free guidance starts for stage 3 (texture). Guidance is only applied between interval_start and interval_end.",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Tex Slat Guidance Interval Start",
+              "type": "number"
+            },
+            "tex_slat_guidance_rescale": {
+              "default": 0,
+              "description": "Dampens artifacts from high guidance in the texture stage. Increase if textures look noisy or have color banding.",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Tex Slat Guidance Rescale",
+              "type": "number"
+            },
+            "tex_slat_guidance_strength": {
+              "default": 1,
+              "description": "How closely the texture follows the input image colors. Higher values produce more vivid but potentially oversaturated textures.",
+              "maximum": 10,
+              "minimum": 0,
+              "title": "Tex Slat Guidance Strength",
+              "type": "number"
+            },
+            "tex_slat_rescale_t": {
+              "default": 3,
+              "description": "Controls noise schedule sharpness for texture generation. Higher values produce sharper texture details.",
+              "maximum": 6,
+              "minimum": 1,
+              "title": "Tex Slat Rescale T",
+              "type": "number"
+            },
+            "tex_slat_sampling_steps": {
+              "default": 12,
+              "description": "Number of denoising steps for texture generation. More steps = slower but potentially cleaner textures.",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Tex Slat Sampling Steps",
+              "type": "integer"
+            },
+            "texture_size": {
+              "default": 2048,
+              "description": "Resolution of the texture image baked onto the mesh. Higher values capture finer surface details but produce larger files.",
+              "enum": [
+                1024,
+                2048,
+                4096
+              ],
+              "title": "Texture Size",
+              "type": "integer"
+            },
+            "uv_unwrap_angle_threshold_deg": {
+              "default": 90,
+              "description": "Maximum angle (in degrees) between adjacent face normals allowed within a single UV chart. Lower values produce more charts with less distortion; higher values produce fewer, larger charts with potentially more stretching.",
+              "maximum": 180,
+              "minimum": 0,
+              "title": "Uv Unwrap Angle Threshold Deg",
+              "type": "number"
+            },
+            "uv_unwrap_global_iterations": {
+              "default": 1,
+              "description": "Number of global clustering passes during UV chart computation. More passes produce more balanced charts.",
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Uv Unwrap Global Iterations",
+              "type": "integer"
+            },
+            "uv_unwrap_refine_iterations": {
+              "default": 0,
+              "description": "Number of local refinement passes during UV chart computation. Higher values produce cleaner chart boundaries at the cost of additional UV-unwrap time.",
+              "maximum": 10,
+              "minimum": 0,
+              "title": "Uv Unwrap Refine Iterations",
+              "type": "integer"
+            },
+            "uv_unwrap_smooth_strength": {
+              "default": 1,
+              "description": "Smoothing strength applied to UV chart boundaries. Higher values reduce visible seams but may introduce UV distortion.",
+              "maximum": 10,
+              "minimum": 0,
+              "title": "Uv Unwrap Smooth Strength",
+              "type": "number"
+            }
+          },
+          "required": [
+            "image_url"
+          ],
+          "title": "SingleImageInputModel",
+          "type": "object",
+          "x-fal-order-properties": [
+            "seed",
+            "resolution",
+            "ss_guidance_strength",
+            "ss_guidance_rescale",
+            "ss_guidance_interval_start",
+            "ss_guidance_interval_end",
+            "ss_sampling_steps",
+            "ss_rescale_t",
+            "shape_slat_guidance_strength",
+            "shape_slat_guidance_rescale",
+            "shape_slat_guidance_interval_start",
+            "shape_slat_guidance_interval_end",
+            "shape_slat_sampling_steps",
+            "shape_slat_rescale_t",
+            "tex_slat_guidance_strength",
+            "tex_slat_guidance_rescale",
+            "tex_slat_guidance_interval_start",
+            "tex_slat_guidance_interval_end",
+            "tex_slat_sampling_steps",
+            "tex_slat_rescale_t",
+            "decimation_target",
+            "texture_size",
+            "remesh",
+            "remesh_band",
+            "remesh_project",
+            "uv_unwrap_angle_threshold_deg",
+            "uv_unwrap_refine_iterations",
+            "uv_unwrap_global_iterations",
+            "uv_unwrap_smooth_strength",
+            "image_url"
+          ]
+        },
+        "Trellis2Output": {
+          "properties": {
+            "model_glb": {
+              "$ref": "#/components/schemas/File",
+              "description": "Generated 3D GLB file",
+              "examples": [
+                {
+                  "url": "https://v3b.fal.media/files/b/0a86b61d/DNmTkiWHUQ8k-rG6aussB_trellis2_68d6300f70f34d23b69a912b5fe60487.glb"
+                }
+              ]
+            }
+          },
+          "required": [
+            "model_glb"
+          ],
+          "title": "ObjectOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "model_glb"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/trellis-2 queue.",
+      "title": "Queue OpenAPI for fal-ai/trellis-2",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate",
+        "category": "image-to-3d",
+        "documentationUrl": "https://fal.ai/models/fal-ai/trellis-2/api",
+        "endpointId": "fal-ai/trellis-2",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/trellis-2",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a87573c/DwQCx7YBl36dnFSHaU8OT_bfc26b64d210462489530b5d5d5d98e1.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/trellis-2": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Trellis2Input"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/trellis-2/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Trellis2Output"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/trellis-2/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/trellis-2/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

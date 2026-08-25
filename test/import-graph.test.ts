@@ -562,7 +562,7 @@ describe("chat (amendment A1)", () => {
  */
 describe("unified media surfaces (amendment A5)", () => {
   const isUnifiedAdapter = (file: string): boolean =>
-    /^src\/providers\/[^/]+\/unified(-[a-z-]+)?\.ts$/.test(file);
+    /^src\/providers\/[^/]+\/unified(-[a-z0-9-]+)?\.ts$/.test(file);
 
   test("A5 — the kernel imports only src/core/** and zod", () => {
     const kernelFiles = FILES.filter((f) => under(f, "src/core/unified"));
@@ -591,7 +591,7 @@ describe("unified media surfaces (amendment A5)", () => {
 
   test("A6 — a category entry imports only the kernel, itself, and adapter leaves", () => {
     const entries = FILES.filter((f) => under(f, "src/unified"));
-    expect(entries.length).toBe(11);
+    expect(entries.length).toBe(12);
 
     const violations: string[] = [];
     for (const file of entries) {
@@ -648,11 +648,16 @@ describe("unified media surfaces (amendment A5)", () => {
     expect(violations).toEqual([]);
   });
 
-  test("the eleven entries exist, one per category", () => {
+  test("the twelve entries exist, one per category", () => {
     const names = FILES.filter((f) => under(f, "src/unified"))
       .map((f) => f.slice("src/unified/".length, -".ts".length))
       .sort();
     expect(names).toEqual([
+      // `3d` sorts first because it starts with a digit, and it is the one
+      // entry whose file name is not a TypeScript identifier — the category id
+      // IS "3d", so the subpath, the file and the tsdown entry all keep it and
+      // only the export names (`threeD`) spell it out.
+      "3d",
       "avatar",
       "image",
       "image-edit",

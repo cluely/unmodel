@@ -54,7 +54,14 @@
 //   data/fal/openapi/fal-ai__gpt-image-1.5__edit.json
 //   data/fal/openapi/fal-ai__heygen__v3__lipsync__precision.json
 //   data/fal/openapi/fal-ai__heygen__v3__lipsync__speed.json
+//   data/fal/openapi/fal-ai__hunyuan-3d__v3.1__pro__image-to-3d.json
+//   data/fal/openapi/fal-ai__hunyuan-3d__v3.1__pro__text-to-3d.json
+//   data/fal/openapi/fal-ai__hunyuan-3d__v3.1__rapid__image-to-3d.json
 //   data/fal/openapi/fal-ai__hunyuan-image__v3__text-to-image.json
+//   data/fal/openapi/fal-ai__hunyuan3d__v2.json
+//   data/fal/openapi/fal-ai__hunyuan3d__v2__turbo.json
+//   data/fal/openapi/fal-ai__hyper3d__rodin__v2.5.json
+//   data/fal/openapi/fal-ai__hyper3d__rodin__v2.5__text-to-3d.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__inworld-tts.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
@@ -114,6 +121,9 @@
 //   data/fal/openapi/fal-ai__sync-lipsync__v2__pro.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v3.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v3__image-to-video.json
+//   data/fal/openapi/fal-ai__trellis.json
+//   data/fal/openapi/fal-ai__trellis-2.json
+//   data/fal/openapi/fal-ai__triposr.json
 //   data/fal/openapi/fal-ai__veo3.1.json
 //   data/fal/openapi/fal-ai__veo3.1__extend-video.json
 //   data/fal/openapi/fal-ai__veo3.1__fast.json
@@ -127,10 +137,13 @@
 //   data/fal/openapi/fal-ai__z-image__turbo.json
 //   data/fal/openapi/google__gemini-omni-flash.json
 //   data/fal/openapi/google__nano-banana-2-lite.json
+//   data/fal/openapi/hitem3d__hi3d__v3.0__image-to-3d.json
 //   data/fal/openapi/ideogram__v4.json
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
 //   data/fal/openapi/lightricks__ltx-2.5__text-to-video__pro.json
+//   data/fal/openapi/meshy__v7__image-to-3d.json
+//   data/fal/openapi/meshy__v7__text-to-3d.json
 //   data/fal/openapi/microsoft__mai-image-2.5.json
 //   data/fal/openapi/minimax__h3__image-to-video.json
 //   data/fal/openapi/minimax__h3__text-to-video.json
@@ -141,6 +154,12 @@
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
 //   data/fal/openapi/topaz__upscale__video__precision.json
+//   data/fal/openapi/tripo3d__h3.1__image-to-3d.json
+//   data/fal/openapi/tripo3d__h3.1__text-to-3d.json
+//   data/fal/openapi/tripo3d__p1__image-to-3d.json
+//   data/fal/openapi/tripo3d__p1__text-to-3d.json
+//   data/fal/openapi/tripo3d__tripo__v2.5__image-to-3d.json
+//   data/fal/openapi/tripo3d__tripo__v2.5__multiview-to-3d.json
 //   data/fal/openapi/veed__avatars__audio-to-video.json
 //   data/fal/openapi/veed__lipsync.json
 //   data/fal/openapi/veed__lipsync__v2.json
@@ -220,6 +239,34 @@ export interface FalAudioSetting_f91bce {
   bitrate?: 32000 | 64000 | 128000 | 256000;
   /** Audio format. Default: `"mp3"`. */
   format?: "mp3" | "pcm" | "flac";
+}
+
+/** fal's `File` component. */
+export interface FalFile {
+  /** The URL where the file can be downloaded from. */
+  url: string;
+  /** The mime type of the file. */
+  content_type?: string | null;
+  /** The name of the file. It will be auto-generated if not provided. */
+  file_name?: string | null;
+  /** The size of the file in bytes. */
+  file_size?: number | null;
+}
+
+/** fal's `BasicAnimations` component. */
+export interface FalBasicAnimations {
+  /** Walking animation in GLB format. */
+  walking_glb?: FalFile | null;
+  /** Walking animation in FBX format. */
+  walking_fbx?: FalFile | null;
+  /** Walking armature only in GLB format. */
+  walking_armature_glb?: FalFile | null;
+  /** Running animation in GLB format. */
+  running_glb?: FalFile | null;
+  /** Running animation in FBX format. */
+  running_fbx?: FalFile | null;
+  /** Running armature only in GLB format. */
+  running_armature_glb?: FalFile | null;
 }
 
 /** fal's `RGBColor` component. */
@@ -424,18 +471,6 @@ export interface FalElementInput {
    * Carries a image reference — an https URL or a `data:` URI.
    */
   reference_image_urls?: string[] | null;
-}
-
-/** fal's `File` component. */
-export interface FalFile {
-  /** The URL where the file can be downloaded from. */
-  url: string;
-  /** The mime type of the file. */
-  content_type?: string | null;
-  /** The name of the file. It will be auto-generated if not provided. */
-  file_name?: string | null;
-  /** The size of the file in bytes. */
-  file_size?: number | null;
 }
 
 /** fal's `IPAdapter` component. */
@@ -650,6 +685,68 @@ export interface FalLoudnessNormalizationSetting {
   target_peak?: number;
 }
 
+/**
+ * fal's `ModelUrls` component.
+ *
+ * The name carries a content hash because fal publishes more than one distinct component
+ * under this title; the hash keeps each variant addressable without the names depending on
+ * discovery order.
+ */
+export interface FalModelUrls_15e05d {
+  /** GLB format 3D model. */
+  glb?: FalFile | null;
+  /** FBX format 3D model. */
+  fbx?: FalFile | null;
+  /** OBJ format 3D model. */
+  obj?: FalFile | null;
+  /** MTL material file for OBJ model. */
+  mtl?: FalFile | null;
+  /** Texture image for the 3D model. */
+  texture?: FalFile | null;
+  /** USDZ format 3D model. */
+  usdz?: FalFile | null;
+}
+
+/**
+ * fal's `ModelUrls` component.
+ *
+ * The name carries a content hash because fal publishes more than one distinct component
+ * under this title; the hash keeps each variant addressable without the names depending on
+ * discovery order.
+ */
+export interface FalModelUrls_3cc361 {
+  /** GLB format 3D model. */
+  glb?: FalFile | null;
+  /** FBX format 3D model. */
+  fbx?: FalFile | null;
+  /** Base (untextured) model. */
+  base_model?: FalFile | null;
+  /** PBR-textured model. */
+  pbr_model?: FalFile | null;
+}
+
+/**
+ * fal's `ModelUrls` component.
+ *
+ * The name carries a content hash because fal publishes more than one distinct component
+ * under this title; the hash keeps each variant addressable without the names depending on
+ * discovery order.
+ */
+export interface FalModelUrls_a3b9bc {
+  /** GLB format 3D model. */
+  glb?: FalFile | null;
+  /** FBX format 3D model. */
+  fbx?: FalFile | null;
+  /** OBJ format 3D model. */
+  obj?: FalFile | null;
+  /** USDZ format 3D model. */
+  usdz?: FalFile | null;
+  /** Blender format 3D model. */
+  blend?: FalFile | null;
+  /** STL format 3D model. */
+  stl?: FalFile | null;
+}
+
 /** fal's `Moodboard` component. */
 export interface FalMoodboard {
   /** Krea moodboard identifier (UUID). */
@@ -699,6 +796,26 @@ export interface FalPronunciationDict {
    * tones are 1-5. Example: ['燕少飞/(yan4)(shao3)(fei1)']
    */
   tone_list?: string[];
+}
+
+/** fal's `RodinGen25Addons` component. */
+export interface FalRodinGen25Addons {
+  /**
+   * Selecting HighPack generates 4K resolution texture instead of the default 2K. In Quad
+   * mode, the number of faces becomes ~16× the count set in the quality parameter. Default:
+   * `false`.
+   */
+  high_pack?: boolean;
+}
+
+/** fal's `RodinGen25BbboxField` component. */
+export interface FalRodinGen25BbboxField {
+  /** Width (x axis) dimension for the bounding box constraint. Default: `0`. */
+  width?: number;
+  /** Height (y axis) dimension for the bounding box constraint. Default: `0`. */
+  height?: number;
+  /** Length (z axis) dimension for the bounding box constraint. Default: `0`. */
+  length?: number;
 }
 
 /** fal's `SpeakerConfig` component. */
@@ -767,6 +884,18 @@ export interface FalSync3GenerationOptions {
    * sync-3, so this option is ignored by sync-3.
    */
   occlusion_detection_enabled?: boolean | null;
+}
+
+/** fal's `TextureFiles` component. */
+export interface FalTextureFiles {
+  /** Base color texture. */
+  base_color: FalFile;
+  /** Metallic texture (PBR) */
+  metallic?: FalFile | null;
+  /** Normal texture (PBR) */
+  normal?: FalFile | null;
+  /** Roughness texture (PBR) */
+  roughness?: FalFile | null;
 }
 
 /** fal's `TranscriptionWord` component. */

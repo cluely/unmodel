@@ -1,0 +1,704 @@
+{
+  "metadata": {
+    "category": "image-to-3d",
+    "date": "2026-05-28T15:55:17.800Z",
+    "description": "Rodin V2.5 by Hyper3D generates realistic and production ready 3D models from text or images. ",
+    "display_name": "Hyper3D - Rodin V2.5 - Image to 3D",
+    "group": {
+      "key": "rodin-v2.5",
+      "label": "Image to 3D"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/hyper3d/rodin/v2.5",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "image-to-3d"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9c0a1e/4w033LTFt3oMtN64UMjaB_535f4f42c99240889b095fdbb92c72b7.jpg",
+    "updated_at": "2026-07-13T18:24:58.995Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "Hyper3dRodinV25Input": {
+          "properties": {
+            "TAPose": {
+              "default": false,
+              "description": "Generate characters in T-pose or A-pose format, making them easier to rig and animate in 3D software.",
+              "title": "T/A Pose",
+              "type": "boolean"
+            },
+            "addons": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RodinGen25Addons"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional add-ons. Single values are accepted as a shorthand for a list with one item."
+            },
+            "bbox_condition": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RodinGen25BbboxField"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "This is a controlnet that controls the maximum sized of the generated model."
+            },
+            "enable_creative_mode": {
+              "default": false,
+              "description": "If enabled, the generation will have enhanced generative robustness while ensuring output consistency. This corresponds to `geometry_instruct_mode` being equal to `creative` on the Hyper3D API.",
+              "title": "Enable Creative Mode",
+              "type": "boolean"
+            },
+            "geometry_file_format": {
+              "default": "glb",
+              "description": "Format of the geometry file. Possible values: glb, usdz, fbx, obj, stl. Default is glb.",
+              "enum": [
+                "glb",
+                "usdz",
+                "fbx",
+                "obj",
+                "stl"
+              ],
+              "title": "Geometry File Format",
+              "type": "string"
+            },
+            "hd_texture": {
+              "default": false,
+              "description": "Enables enhanced texture post-processing for higher visual fidelity.",
+              "title": "Hd Texture",
+              "type": "boolean"
+            },
+            "image_urls": {
+              "description": "URL of images to use while generating the 3D model. Required for Image-to-3D mode. Up to 5 images allowed.",
+              "examples": [
+                [
+                  "https://v3.fal.media/files/panda/l7mQrG8plbB42lBNqVjm0_image.png",
+                  "https://v3b.fal.media/files/b/kangaroo/scq50Bf1PB2NZOW8szphV_image.png",
+                  "https://v3.fal.media/files/penguin/X21qtlVMazAtljzRCJD2__image.png"
+                ]
+              ],
+              "items": {
+                "_fal_ui_field": "image",
+                "type": "string"
+              },
+              "maxItems": 5,
+              "minItems": 1,
+              "title": "Image Urls",
+              "type": "array"
+            },
+            "is_micro": {
+              "default": false,
+              "description": "Generate finer micro-scale geometric detail. Only effective with `tier=\"Gen-2.5-Extreme-High\"`.",
+              "title": "Is Micro",
+              "type": "boolean"
+            },
+            "material": {
+              "default": "All",
+              "description": "Material type. PBR: physically-based materials with realistic lighting. Shaded: baked lighting with no PBR maps. All: both PBR and Shaded variants. None: geometry only with no textures.",
+              "enum": [
+                "PBR",
+                "Shaded",
+                "All",
+                "None"
+              ],
+              "title": "Material",
+              "type": "string"
+            },
+            "preview_render": {
+              "default": false,
+              "description": "Generate a preview render image of the 3D model along with the model files.",
+              "title": "Preview Render",
+              "type": "boolean"
+            },
+            "prompt": {
+              "default": "",
+              "description": "A textual prompt to guide model generation. Optional for Image-to-3D mode - if empty, the model auto-generates a prompt from the images.",
+              "examples": [
+                "A futuristic robot with sleek metallic design."
+              ],
+              "maxLength": 1024,
+              "title": "Prompt",
+              "type": "string"
+            },
+            "quality_mesh_option": {
+              "default": "Auto",
+              "description": "Combined quality and mesh type selection. Quad = smooth surfaces, Triangle = detailed geometry. Maps to `mesh_mode` (Quad/Raw) and `quality_override` (face count) on the Hyper3D API. Valid face counts depend on the selected tier. Up to 1M Triangle is supported for tiers Extreme-Low, Low, and Medium. Up to 2M Triangle (as low as 20K Triangle) is supported for tiers High and Extreme-High. Auto option will choose the advised options for each tier:\n1. Gen-2.5-Minimum: 50K Triangle\n2. Gen-2.5-Extreme-Low: 50K Triangle\n3. Gen-2.5-Low: 50K Triangle\n4. Gen-2.5-Medium: 500K Triangle\n5. Gen-2.5-High: 500K Triangle\nGen-2.5-Extreme-High: 1M Triangle.",
+              "enum": [
+                "Auto",
+                "4K Quad",
+                "8K Quad",
+                "18K Quad",
+                "50K Quad",
+                "100K Quad",
+                "200K Quad",
+                "2K Triangle",
+                "20K Triangle",
+                "50K Triangle",
+                "150K Triangle",
+                "500K Triangle",
+                "1M Triangle",
+                "2M Triangle"
+              ],
+              "title": "Quality Mesh Option",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "maximum": 65535,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Seed value for randomization, ranging from 0 to 65535. Optional.",
+              "title": "Seed"
+            },
+            "texture_delight": {
+              "default": false,
+              "description": "Removes baked lighting/highlights from the generated textures.",
+              "title": "Texture Delight",
+              "type": "boolean"
+            },
+            "texture_mode": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "legacy",
+                    "extreme-low",
+                    "low",
+                    "medium",
+                    "high"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Texture generation quality. When unset, the API picks a default appropriate for the tier.",
+              "title": "Texture Mode"
+            },
+            "tier": {
+              "default": "Gen-2.5-High",
+              "description": "Generation tier. Higher tiers produce more detailed meshes but cost more. Extreme-High enables the highest-detail mode and bills at double the base rate. See more info in the [documentation](https://developer.hyper3d.ai/api-specification/rodin-gen2.5#use-gen-2.5-generation-with-following-gen-2.5-tiers). Selecting Gen-2.5-Minimum will automatically configure to a minimum mode, where 50K Triangle is selected, taking priority over quality_mesh_option.",
+              "enum": [
+                "Gen-2.5-Minimum",
+                "Gen-2.5-Extreme-Low",
+                "Gen-2.5-Low",
+                "Gen-2.5-Medium",
+                "Gen-2.5-High",
+                "Gen-2.5-Extreme-High"
+              ],
+              "title": "Tier",
+              "type": "string"
+            },
+            "use_original_alpha": {
+              "default": false,
+              "description": "When enabled, preserves the transparency channel from input images during 3D generation.",
+              "title": "Use Original Alpha",
+              "type": "boolean"
+            }
+          },
+          "title": "RodinGen25ImageTo3DInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "image_urls",
+            "tier",
+            "use_original_alpha",
+            "seed",
+            "geometry_file_format",
+            "material",
+            "quality_mesh_option",
+            "texture_mode",
+            "enable_creative_mode",
+            "hd_texture",
+            "texture_delight",
+            "is_micro",
+            "TAPose",
+            "bbox_condition",
+            "addons",
+            "preview_render"
+          ]
+        },
+        "Hyper3dRodinV25Output": {
+          "properties": {
+            "model_mesh": {
+              "$ref": "#/components/schemas/File",
+              "description": "Generated 3D object file.",
+              "examples": [
+                {
+                  "url": "https://storage.googleapis.com/falserverless/model_tests/video_models/base_basic_shaded.glb"
+                }
+              ]
+            },
+            "model_meshes": {
+              "description": "Additional generated 3D object files returned by Hyper3D besides model_mesh.",
+              "items": {
+                "$ref": "#/components/schemas/File"
+              },
+              "title": "Model Meshes",
+              "type": "array"
+            },
+            "seed": {
+              "description": "Seed value used for generation.",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "textures": {
+              "description": "Generated textures for the 3D object.",
+              "items": {
+                "$ref": "#/components/schemas/Image"
+              },
+              "title": "Textures",
+              "type": "array"
+            }
+          },
+          "required": [
+            "model_mesh",
+            "seed",
+            "textures"
+          ],
+          "title": "ObjectOutputv2",
+          "type": "object",
+          "x-fal-order-properties": [
+            "model_mesh",
+            "model_meshes",
+            "seed",
+            "textures"
+          ]
+        },
+        "Image": {
+          "description": "Represents an image file.",
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "height": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The height of the image in pixels.",
+              "examples": [
+                1024
+              ],
+              "title": "Height"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The width of the image in pixels.",
+              "examples": [
+                1024
+              ],
+              "title": "Width"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "Image",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size",
+            "width",
+            "height"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "RodinGen25Addons": {
+          "properties": {
+            "high_pack": {
+              "default": false,
+              "description": "Selecting HighPack generates 4K resolution texture instead of the default 2K. In Quad mode, the number of faces becomes ~16× the count set in the quality parameter.",
+              "title": "High Pack",
+              "type": "boolean"
+            }
+          },
+          "title": "RodinGen25Addons",
+          "type": "object",
+          "x-fal-order-properties": [
+            "high_pack"
+          ]
+        },
+        "RodinGen25BbboxField": {
+          "properties": {
+            "height": {
+              "default": 0,
+              "description": "Height (y axis) dimension for the bounding box constraint.",
+              "maximum": 2048,
+              "minimum": 1,
+              "title": "Height",
+              "type": "integer"
+            },
+            "length": {
+              "default": 0,
+              "description": "Length (z axis) dimension for the bounding box constraint.",
+              "maximum": 2048,
+              "minimum": 1,
+              "title": "Length",
+              "type": "integer"
+            },
+            "width": {
+              "default": 0,
+              "description": "Width (x axis) dimension for the bounding box constraint.",
+              "maximum": 2048,
+              "minimum": 1,
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "title": "RodinGen25BbboxField",
+          "type": "object",
+          "x-fal-order-properties": [
+            "width",
+            "height",
+            "length"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/hyper3d/rodin/v2.5 queue.",
+      "title": "Queue OpenAPI for fal-ai/hyper3d/rodin/v2.5",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Image-to-3D generation using Rodin Gen-2.5",
+        "category": "image-to-3d",
+        "documentationUrl": "https://fal.ai/models/fal-ai/hyper3d/rodin/v2.5/api",
+        "endpointId": "fal-ai/hyper3d/rodin/v2.5",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/hyper3d/rodin/v2.5",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9c0a1e/4w033LTFt3oMtN64UMjaB_535f4f42c99240889b095fdbb92c72b7.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/hyper3d/rodin/v2.5": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hyper3dRodinV25Input"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/hyper3d/rodin/v2.5/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Hyper3dRodinV25Output"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/hyper3d/rodin/v2.5/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/hyper3d/rodin/v2.5/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "ref": "fal/fal-ai/hunyuan-3d/v3.1/pro/text-to-3d",
+  "params": {
+    "prompt": "a brass astrolabe on a walnut stand"
+  },
+  "url": "https://queue.fal.run/fal-ai/hunyuan-3d/v3.1/pro/text-to-3d",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

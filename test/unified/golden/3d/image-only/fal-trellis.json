@@ -1,0 +1,10 @@
+{
+  "ref": "fal/fal-ai/trellis",
+  "params": {
+    "image_url": "https://example.com/chair.png"
+  },
+  "url": "https://queue.fal.run/fal-ai/trellis",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

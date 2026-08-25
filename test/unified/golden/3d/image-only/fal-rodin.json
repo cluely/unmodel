@@ -1,0 +1,12 @@
+{
+  "ref": "fal/fal-ai/hyper3d/rodin/v2.5",
+  "params": {
+    "image_urls": [
+      "https://example.com/chair.png"
+    ]
+  },
+  "url": "https://queue.fal.run/fal-ai/hyper3d/rodin/v2.5",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -66,6 +66,7 @@ export { video } from "./video";
 export { lipsync } from "./lipsync";
 export { avatar } from "./avatar";
 export { upscale } from "./upscale";
+export { threeD } from "./three-d";
 export { tts } from "./tts";
 export { stt } from "./stt";
 export { music } from "./music";
@@ -113,6 +114,13 @@ export type {
   FalUpscaleResultById,
 } from "./upscale";
 export type {
+  FalThreeDArm,
+  FalThreeDBodyById,
+  FalThreeDEndpointId,
+  FalThreeDParams,
+  FalThreeDResultById,
+} from "./three-d";
+export type {
   FalTtsArm,
   FalTtsBodyById,
   FalTtsEndpointId,
@@ -144,6 +152,7 @@ export {
   FAL_LIPSYNC_ENDPOINTS,
   FAL_AVATAR_ENDPOINTS,
   FAL_UPSCALE_ENDPOINTS,
+  FAL_THREE_D_ENDPOINTS,
   FAL_TTS_ENDPOINTS,
   FAL_STT_ENDPOINTS,
   FAL_MUSIC_ENDPOINTS,
@@ -156,7 +165,7 @@ export type { FalEndpointId } from "./gen/endpoints.gen";
  * `./models.ts` for why a validator reaching it would put every category's
  * rows into every category's bundle.
  */
-export { models } from "./models";
+export { models, provider } from "./models";
 export type { FalModelId } from "./models";
 
 export { FAL_RATES, falCostUSD, falMegapixels, falPriceNote } from "./pricing";

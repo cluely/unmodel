@@ -94,13 +94,13 @@ import type { ValidateResult } from "../result";
 import type { TranslationWarning, Warn } from "../translate/warnings";
 
 /**
- * The eleven media surfaces, each of which gets its own vocabulary, its own
+ * The twelve media surfaces, each of which gets its own vocabulary, its own
  * entry point, and its own adapter set.
  *
  * They are separate categories rather than one `media()` with a mode flag
  * because the vocabularies genuinely do not overlap — `voice` means nothing to
  * an image model, `aspectRatio` nothing to a transcription — and a single type
- * carrying all eleven would be a type whose valid combinations you have to
+ * carrying all twelve would be a type whose valid combinations you have to
  * memorize. The voice-creation pair splits for the same reason at closer
  * range: cloning's input is audio samples, design's is a text prompt, and
  * `description` means metadata on one side and the generative instruction on
@@ -113,11 +113,18 @@ import type { TranslationWarning, Warn } from "../translate/warnings";
  * that is a clip at some models and a still at others, which is precisely the
  * "valid combinations you have to memorize" this list avoids.
  *
- * `upscale` is the newest and splits from `imageEdit` on what comes OUT: an
- * edit is described by what the result should look like, an upscale by how much
- * bigger it should be, and `factor` is meaningless in a vocabulary whose size
- * words are absolute. Half its routes take a clip, which `imageEdit` has no
- * word for and should not grow one.
+ * `upscale` splits from `imageEdit` on what comes OUT: an edit is described by
+ * what the result should look like, an upscale by how much bigger it should be,
+ * and `factor` is meaningless in a vocabulary whose size words are absolute.
+ * Half its routes take a clip, which `imageEdit` has no word for and should not
+ * grow one.
+ *
+ * `"3d"` is the newest, the only id in this union that is not a TypeScript
+ * identifier, and the only one whose OUTPUT is not a frame at all: a mesh has
+ * no width, no aspect ratio and no duration, so none of the sizing words in the
+ * five categories above mean anything to it. It waited for a second witness —
+ * a vocabulary read off one vendor is that vendor's schema with the names
+ * changed — and joined when `tripo3d` gave one.
  */
 export type UnifiedCategory =
   | "image"
@@ -126,6 +133,7 @@ export type UnifiedCategory =
   | "lipsync"
   | "avatar"
   | "upscale"
+  | "3d"
   | "tts"
   | "stt"
   | "music"

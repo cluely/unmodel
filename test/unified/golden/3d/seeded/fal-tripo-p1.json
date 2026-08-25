@@ -1,0 +1,11 @@
+{
+  "ref": "fal/tripo3d/p1/text-to-3d",
+  "params": {
+    "prompt": "a brass astrolabe on a walnut stand",
+    "model_seed": 7
+  },
+  "url": "https://queue.fal.run/tripo3d/p1/text-to-3d",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -136,8 +136,21 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * here WITHOUT a roster change is a barrel leak, and `models.ts` — the merged
    * catalog every category's slice would flow through — is the first place to
    * look (see A12 in test/import-graph.test.ts).
+   *
+   * **Bumped 525 → 620 by wave 3** (474.9 → 561.8 KiB): +19 endpoints and the
+   * `threeD` category, the tenth verb this entry carries. The roster grew 12%
+   * and this number grew 18%, and the gap is accounted for: `fal-ai/trellis-2`
+   * alone publishes thirty sampler and UV-unwrap parameters and `meshy/v7/*`
+   * twenty, so the 3D IR rows are the longest per endpoint in the provider.
    */
-  fal: 525,
+  fal: 620,
+  /**
+   * The native Tripo provider: two validators, one shared module of enums and
+   * cross-field checks, a four-row hand catalog and a credit table. 46.4 KiB
+   * measured — comparable to pixverse and vidu, and for the same reason: a
+   * hand-written provider's weight is its prose and its checks, not a roster.
+   */
+  tripo3d: 55,
 };
 
 /**
@@ -228,6 +241,7 @@ const ALL_UNIFIED_ENTRIES: string[] = [
   "lipsync",
   "avatar",
   "upscale",
+  "3d",
   "tts",
   "stt",
   "music",
@@ -409,7 +423,7 @@ const TTS_PACK_BUDGET_KIB = 850;
  * providers should not pay for a queue in front of a thousand models. Pinned
  * at 1050, the usual ~10% over the measurement.
  */
-const IMAGE_PACK_BUDGET_KIB = 1050;
+const IMAGE_PACK_BUDGET_KIB = 1160;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -807,6 +821,26 @@ const UPSCALE_PACK_BUDGET_KIB = 295;
 const UPSCALE_PACK_PROVIDERS: string[] = ["fal"];
 
 /**
+ * `unmodel/3d`'s budget: the first of the 2026 categories with TWO providers in
+ * its ready-made pack, and the reason its number is not comparable to the three
+ * fal-only ones above. Measured 349.4 KiB at landing, pinned at 385 with the
+ * usual ~10%.
+ *
+ * ~54 KiB above `upscale`, and the split is worth reading because it is not
+ * "more endpoints". fal's nineteen 3D rows account for most of it — Trellis 2
+ * publishes thirty parameters and Meshy twenty, the longest per-endpoint IR in
+ * the provider — and the native `tripo3d` half is ~25 KiB of it: two wire
+ * validators, the version-gate and polycount checks, a four-row hand catalog
+ * and the credit table. Nothing structural: two adapter leaves, no merged
+ * catalog, no retarget layer, and the same ~200 KiB kernel floor every media
+ * pack pays.
+ */
+const THREE_D_PACK_BUDGET_KIB = 385;
+
+/** The two providers `unmodel/3d`'s ready-made pack is allowed to reach. */
+const THREE_D_PACK_PROVIDERS: string[] = ["fal", "tripo3d"];
+
+/**
  * Every pack's budget, keyed by entry name — the map the shared budget test
  * iterates, and the thing that makes "every category has a number" checkable
  * rather than a claim. The per-pack `describe`s below add what a number cannot
@@ -819,6 +853,7 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
   lipsync: LIPSYNC_PACK_BUDGET_KIB,
   avatar: AVATAR_PACK_BUDGET_KIB,
   upscale: UPSCALE_PACK_BUDGET_KIB,
+  "3d": THREE_D_PACK_BUDGET_KIB,
   tts: TTS_PACK_BUDGET_KIB,
   stt: STT_PACK_BUDGET_KIB,
   music: MUSIC_PACK_BUDGET_KIB,
@@ -893,8 +928,18 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // is therefore the SPREAD between the three, and the twin-size test below is
   // the assertion that actually has teeth.
   lipsync: 615,
-  avatar: 425,
+  // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
+  // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
+  // components — the 3D roster added `ModelUrls`, `BasicAnimations` and their
+  // `File` children to it — and every fal-touching pack counts the whole chunk.
+  avatar: 475,
   upscale: 450,
+  // `unmodel/3d`: 534.1 measured. The most expensive of the four small packs
+  // and the only one with two providers, which is most of the difference — the
+  // `tripo3d` half brings four literal model ids, two quality ladders and its
+  // own wire interfaces. The other part is fal's nineteen endpoint interfaces,
+  // where Trellis 2's thirty parameters are one declaration.
+  "3d": 590,
   tts: 2320,
   stt: 2450,
   music: 1360,
@@ -1363,8 +1408,8 @@ describe("unmodel/chat/factory", () => {
 });
 
 describe("unified media entries", () => {
-  test("all eleven are built, so the assertions below assert something", () => {
-    expect(new Set(ALL_UNIFIED_ENTRIES).size).toBe(11);
+  test("all twelve are built, so the assertions below assert something", () => {
+    expect(new Set(ALL_UNIFIED_ENTRIES).size).toBe(12);
     for (const name of ALL_UNIFIED_ENTRIES) {
       expect(existsSync(unifiedEntry(name)), `dist entry for unified/${name}`).toBe(true);
     }
@@ -1883,10 +1928,15 @@ describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the fal-only pack
     // would pull ~30 video wire types, 45 image endpoints and 23 speech
     // rosters into a ten-endpoint bundle without changing a line in
     // `src/unified/<category>.ts`.
-    const others = ["image", "image-edit", "video", "lipsync", "avatar", "upscale", "tts", "stt", "music"]
+    const others = ["image", "image-edit", "video", "lipsync", "avatar", "upscale", "three-d", "tts", "stt", "music"]
       .filter((category) => category !== kase.name);
     for (const category of others) {
-      expect(modules).not.toContain(`src/providers/fal/unified-${category}.ts`);
+      // `three-d` is the one entry here whose leaf name is not its category id:
+      // the leaf is `unified-3d.ts` and the generated slice is `three-d-*`,
+      // because the id is `3d` and a generated file stem has to be an
+      // identifier. Both spellings are checked so neither can leak.
+      const leaf = category === "three-d" ? "3d" : category;
+      expect(modules).not.toContain(`src/providers/fal/unified-${leaf}.ts`);
       expect(modules).not.toContain(`src/providers/fal/gen/${category}-schema.gen.ts`);
     }
     // A12: the merged catalog is for `unmodel/fal` alone. A validator reaching
@@ -1921,6 +1971,91 @@ describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the fal-only pack
     const smallest = Math.min(...sizes.map(([, bytes]) => bytes));
     const drift = (largest - smallest) / largest;
     expect(drift, sizes.map(([name, bytes]) => `${name} ${bytes}`).join(" vs ")).toBeLessThan(0.1);
+  });
+});
+
+/**
+ * `unmodel/3d` — the first of the 2026 categories whose ready-made pack has TWO
+ * providers, and the reason the category exists at all.
+ *
+ * The three packs above are each one provider, and each of their composition
+ * tests is really asking "did the per-category split hold". This one asks
+ * something the others cannot: that an aggregator's resale of a model and that
+ * vendor's own API can sit in one bundle without either dragging the other's
+ * neighbours in. `tripo3d/h3.1/image-to-3d` at fal and `tripo3d/v3.1-20260211`
+ * here are the SAME MODEL reached two ways — that is the comparison the category
+ * was built to make cheap, and this is where the bytes of it are pinned.
+ *
+ * Note the two leaf shapes. fal serves ten categories, so its 3D adapter is
+ * `unified-3d.ts` and the pack must reach it rather than the ten-adapter
+ * `unified.ts` barrel. Tripo serves one, so its adapter IS `unified.ts` — which
+ * is the pixverse/lightricks shape and costs nothing, because there is no
+ * second category behind it to leak.
+ */
+describe("unmodel/3d (the two-provider pack)", () => {
+  test("reaches exactly fal and tripo3d, each through one adapter leaf", () => {
+    const modules = sourceModulesOf(unifiedEntry("3d"));
+    expect(modules).toContain("src/unified/3d.ts");
+    expect(modules).toContain("src/core/unified/kernel.ts");
+
+    const providers = [
+      ...new Set(
+        modules
+          .filter((m) => m.startsWith("src/providers/"))
+          .map((m) => m.split("/")[2] as string),
+      ),
+    ].sort();
+    expect(providers).toEqual([...THREE_D_PACK_PROVIDERS]);
+
+    // fal: the leaf named after the CATEGORY (`unified-3d.ts`), the validator
+    // named after the VERB (`three-d.ts`), and never the ten-adapter barrel.
+    expect(modules).toContain("src/providers/fal/unified-3d.ts");
+    expect(modules).toContain("src/providers/fal/three-d.ts");
+    expect(modules).not.toContain("src/providers/fal/unified.ts");
+    expect(modules).not.toContain("src/providers/fal/models.ts");
+
+    // tripo3d: one category, so `unified.ts` IS the leaf, and both wire routes
+    // ride because the adapter picks between them at compile time.
+    expect(modules).toContain("src/providers/tripo3d/unified.ts");
+    expect(modules).toContain("src/providers/tripo3d/three-d.ts");
+    expect(modules).toContain("src/providers/tripo3d/three-d-from-image.ts");
+
+    // None of fal's other nine categories, which is what the split buys.
+    const others = [
+      "image",
+      "image-edit",
+      "video",
+      "lipsync",
+      "avatar",
+      "upscale",
+      "tts",
+      "stt",
+      "music",
+    ];
+    for (const category of others) {
+      expect(modules).not.toContain(`src/providers/fal/unified-${category}.ts`);
+      expect(modules).not.toContain(`src/providers/fal/gen/${category}-schema.gen.ts`);
+    }
+  });
+
+  test("carries no catalog, availability or retarget layer", () => {
+    const modules = sourceModulesOf(unifiedEntry("3d"));
+    expect(modules.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
+    expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
+    expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
+    // The pipeline IS here, and deliberately: a unified call ends in the
+    // provider's own validator, all four layers of it.
+    expect(modules).toContain("src/core/pipeline.ts");
+  });
+
+  test("the native half is a small fraction of the pack", () => {
+    // A relative assertion, so it survives roster growth on either side. The
+    // point is that adding a native provider beside an aggregator is cheap:
+    // `unmodel/tripo3d` is 46 KiB against fal's 562, and a caller who wants
+    // only Tripo builds `createThreeD([tripo3d])` and pays for that alone.
+    const native = transitiveBytes(entryFile("tripo3d"));
+    const aggregator = transitiveBytes(entryFile("fal"));
+    expect(native).toBeLessThan(aggregator / 4);
   });
 });
 
@@ -2045,15 +2180,16 @@ describe("type-only entries", () => {
   /**
    * Fattest today: fal at ~557 KiB, then openrouter at ~298 and openai at ~297.
    *
-   * **Bumped 460 → 615 by fal's wave 1d**, and the number is a fact about what
-   * this entry IS rather than a regression: `unmodel/fal/types` publishes one
-   * interface per curated endpoint across nine categories — 140 of them — and
-   * every one carries that endpoint's own enums, bounds and doc comment. It is
-   * the only provider in the library whose types entry is a whole aggregator's
-   * catalogue rather than one vendor's API. Zero runtime either way: the
-   * emitted JavaScript is an empty module, which the test above pins.
+   * **Bumped 460 → 615 by fal's wave 1d and 615 → 730 by wave 3** (663.4
+   * measured), and the number is a fact about what this entry IS rather than a
+   * regression: `unmodel/fal/types` publishes one interface per curated
+   * endpoint across TEN categories — 165 of them — and every one carries that
+   * endpoint's own enums, bounds and doc comment. It is the only provider in
+   * the library whose types entry is a whole aggregator's catalogue rather than
+   * one vendor's API. Zero runtime either way: the emitted JavaScript is an
+   * empty module, which the test above pins.
    */
-  const TYPES_ENTRY_DECLARATION_BUDGET_KIB = 615;
+  const TYPES_ENTRY_DECLARATION_BUDGET_KIB = 730;
   /** ~307 KiB today, against 233 KiB for the root entry it extends. */
   const TYPES_HUB_DECLARATION_BUDGET_KIB = 385;
 

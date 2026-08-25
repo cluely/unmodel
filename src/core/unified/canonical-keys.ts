@@ -79,6 +79,15 @@ export const CANONICAL_KEY_LISTS = {
   // all three. No `seed`: an upscaler re-renders a picture it was handed, so
   // the sampling noise a seed pins is a per-model extra where it exists at all.
   upscale: (["model", "source", "factor", "prompt", "providerOptions"] as const),
+  // Five words a fourth time, and the first category whose two content words
+  // are ALTERNATIVES rather than companions: a 3D route is asked for a thing
+  // either by describing it (`prompt`) or by showing it (`image`), and the row
+  // says which of the two that route reads. No `format`: the output mesh's
+  // container is spelled five different ways across the two witnesses
+  // (`geometry_file_format`, `export_format`, `output_format`, a `quad` flag
+  // that forces FBX, and a separate convert CALL at Tripo), so it is not one
+  // word yet. No `n`, no `size`, no `aspectRatio` — a mesh has no frame.
+  "3d": (["model", "prompt", "image", "seed", "providerOptions"] as const),
   tts: ([
     "model",
     "text",

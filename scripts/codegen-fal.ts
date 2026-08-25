@@ -100,8 +100,15 @@ const RETIREMENT_ESCROW_DAYS = 90;
 // ---------------------------------------------------------------------------
 
 /**
- * The nine unmodel verbs fal serves. Sorted, and the sort IS the emission
+ * The ten unmodel verbs fal serves. Sorted, and the sort IS the emission
  * order — `image` before `imageEdit` is plain string order, not a special case.
+ *
+ * `threeD` is the one verb here that is not its category's id: the category is
+ * `"3d"`, which is not a TypeScript identifier and therefore cannot be an
+ * export name, a generated constant stem or a file stem. So the verb is the
+ * identifier spelling and everything derived from it follows —
+ * `three-d-wire.gen.ts`, `FAL_THREE_D_SHAPES`, `FalThreeDBodyById` — while the
+ * package subpath, the CLI's unified id and `endpointLabel` all stay `3d`.
  */
 const VERBS = [
   "avatar",
@@ -110,6 +117,7 @@ const VERBS = [
   "lipsync",
   "music",
   "stt",
+  "threeD",
   "tts",
   "upscale",
   "video",
@@ -143,6 +151,11 @@ const VERB_OUTPUT_MODALITY: Partial<Record<Verb, string>> = {
   lipsync: "video",
   music: "audio",
   stt: "text",
+  // `Modality` grew a `"3d"` member for this: a mesh is not a picture of one,
+  // and every route here also returns a preview render, so reading the modality
+  // off the response schema without a word for the mesh would file the whole
+  // category under `"image"`.
+  threeD: "3d",
   tts: "audio",
   video: "video",
 };
@@ -985,8 +998,21 @@ function imageSizeParts(
   };
 }
 
+/**
+ * The one verb whose wire `resolution` does NOT mean the size of a frame.
+ *
+ * Everywhere else in this provider `resolution` measures a picture — including
+ * at `imageEdit` and `avatar`, which file it as a per-model extra and still
+ * mean pixels by it. At `threeD` it measures a VOXEL GRID: an integer 512 /
+ * 1024 / 1536 at `fal-ai/trellis-2`, a string at Hi3D, describing how finely
+ * the geometry was sampled. Demanding a frame-tier shape class of it would be
+ * the classifier asserting something about the wire that is not true.
+ */
+const RESOLUTION_IS_A_VOXEL_GRID: ReadonlySet<Verb> = new Set<Verb>(["threeD"]);
+
 function classifyShapes(
   endpointId: string,
+  verb: Verb,
   input: ObjectModel,
   registry: ComponentRegistry,
 ): ShapeClass[] {
@@ -1028,7 +1054,9 @@ function classifyShapes(
     } else bad("aspect_ratio", irType(aspect.node));
   }
 
-  const resolution = props["resolution"];
+  // See RESOLUTION_IS_A_VOXEL_GRID: at `threeD` this field is not a frame size
+  // at all, so it gets no shape class and rides as a per-model extra instead.
+  const resolution = RESOLUTION_IS_A_VOXEL_GRID.has(verb) ? undefined : props["resolution"];
   if (resolution !== undefined) {
     if (resolution.node.k === "prim" && resolution.node.t === "string" && resolution.node.enum !== undefined) {
       classes.add("resolutionEnum");
@@ -1125,6 +1153,11 @@ function outputModalities(endpointId: string, verb: Verb, output: ObjectModel): 
     if (/^videos?$/.test(name)) found.add("video");
     if (/^audios?$/.test(name)) found.add("audio");
     if (name === "text" || name === "chunks") found.add("text");
+    // The mesh, under the four names this roster spells it: `model_mesh`,
+    // `model_glb`, `model_urls` and `model_meshes`. Detected rather than taken
+    // on faith from the verb so a mis-curated endpoint still trips the
+    // cross-check below.
+    if (/^model_(mesh|meshes|glb|urls)$/.test(name)) found.add("3d");
   }
   const promised = VERB_OUTPUT_MODALITY[verb];
   if (promised === undefined) {
@@ -1968,6 +2001,29 @@ const CANONICAL_WIRE_PARAMS: Readonly<Partial<Record<Verb, readonly string[]>>> 
   // same field. `creativity`, `resemblance`, `denoise` and the rest stay
   // extras: they are one vendor's dial, not a category's word.
   upscale: ["image_url", "video_url", "upscale_factor", "scale"],
+  // `ThreeDParams` is five words and two of them are alternatives. Both the
+  // image and the seed have several wire spellings across nineteen endpoints
+  // from seven vendors — `image_url` at Tripo, `input_image_url` at Hunyuan3D,
+  // `image_urls` (a LIST) at Rodin, `front_image_url` at Tripo's multiview
+  // route; `seed` at eight and `model_seed` at four — and every one of them is
+  // canonical, because a caller who set `input_image_url` as an extra beside
+  // `image` would be racing the adapter for the same field.
+  //
+  // Note which words are NOT here. `texture`, `pbr`, `quad`, `face_limit`,
+  // `geometry_file_format` and the sampler dials are all extras: each is one
+  // vendor's spelling of an idea the other six spell differently, and a
+  // vocabulary decision made in a provider directory is not a vocabulary
+  // decision. `prompt` IS here, because both witnesses spell it that way and
+  // it is already the same word at `image`, `video` and `music`.
+  threeD: [
+    "prompt",
+    "image_url",
+    "input_image_url",
+    "image_urls",
+    "front_image_url",
+    "seed",
+    "model_seed",
+  ],
   // `TtsParams`: the text, the voice, the language, the codec and the speed.
   // Each of the middle three has several wire spellings here — fal's speech
   // roster is fifteen vendors deep — and the row states which one THIS endpoint
@@ -2114,6 +2170,14 @@ interface UnifiedRow {
   factorWire?: string;
   /** upscale: the multipliers this endpoint offers as a closed set; `[]` = no field. */
   factors?: readonly number[];
+  /** 3d: the input moods this endpoint reads — `["text"]`, `["image"]` or both. */
+  inputs?: readonly string[];
+  /** 3d: the wire parameter the reference image goes in. */
+  imageWire?: string;
+  /** 3d: that wire parameter is an ARRAY of URLs rather than one — Rodin, Trellis 2. */
+  imageWireList?: true;
+  /** 3d: the wire parameter the geometry seed goes in — `seed` or `model_seed`. */
+  seedWire?: string;
   /** tts / music: the wire parameter the words go in — fal's own `textParam`. */
   textWire?: string;
   /** tts: the wire parameter the voice goes in, where the endpoint has a flat one. */
@@ -2298,6 +2362,69 @@ function applyUpscaleRow(model: EndpointModel, row: UnifiedRow): void {
       .filter((value) => Number.isFinite(value));
     if (values.length > 0) (row as { factors?: readonly number[] }).factors = sorted(values);
   }
+}
+
+/**
+ * Where a reference image lands, in preference order, and whether that wire
+ * parameter is a list.
+ *
+ * Four spellings across seven vendors, and the fourth is the interesting one:
+ * `tripo3d/tripo/v2.5/multiview-to-3d` calls its required view
+ * `front_image_url` and files the other three angles as optional siblings, so
+ * the canonical `image` is that route's FRONT view and the rest are extras.
+ * `image_urls` is a list at Rodin and Trellis 2, which is why the flag exists
+ * at all — the adapter writes `[uri]` there and a bare string everywhere else.
+ */
+const THREE_D_IMAGE_WIRE: ReadonlyArray<readonly [name: string, list: boolean]> = [
+  ["image_url", false],
+  ["input_image_url", false],
+  ["front_image_url", false],
+  ["image_urls", true],
+];
+
+/** Where the GEOMETRY seed lands. Tripo publishes three seeds; this is the one that pins the mesh. */
+const THREE_D_SEED_WIRE: readonly string[] = ["seed", "model_seed"];
+
+/**
+ * The 3d row: by which of two moods this route is told what to build.
+ *
+ * The only row in the generator that decides TWO canonical fields at once, and
+ * the reason it can is that `prompt` and `image` are alternatives here rather
+ * than companions. `["text"]` makes `prompt` required and `image` a compile
+ * error; `["image"]` does the reverse; and a route that publishes both — which
+ * is `fal-ai/hyper3d/rodin/v2.5`, where the prompt steers an image-driven
+ * generation and also stands alone — leaves both optional, because requiring
+ * either would make the other unusable.
+ *
+ * An endpoint that declares NEITHER is a curation error rather than a third
+ * state: a 3D route that is told nothing about what to build does not exist,
+ * and `inputs: []` would type both fields `never` and make the row uncallable.
+ */
+function applyThreeDRow(model: EndpointModel, row: UnifiedRow): void {
+  const props = model.input.props;
+  const inputs: string[] = [];
+  if (props["prompt"] !== undefined) inputs.push("text");
+
+  const image = THREE_D_IMAGE_WIRE.find(([name]) => props[name] !== undefined);
+  if (image !== undefined) {
+    inputs.push("image");
+    (row as { imageWire?: string }).imageWire = image[0];
+    if (image[1]) (row as { imageWireList?: true }).imageWireList = true;
+  }
+
+  if (inputs.length === 0) {
+    throw new Error(
+      `${model.id}: curated as "threeD" but its input schema declares neither a \`prompt\` nor any of ` +
+        `${THREE_D_IMAGE_WIRE.map(([name]) => name).join(", ")}. A 3D route that is told nothing about what ` +
+        "to build cannot be served by `unmodel/3d` — teach THREE_D_IMAGE_WIRE its spelling, or curate it out.",
+    );
+  }
+  // Sorted so `["image", "text"]` is the one spelling of the both-arm and the
+  // shared-row hash cannot split on field order.
+  (row as { inputs?: readonly string[] }).inputs = sorted(inputs);
+
+  const seedWire = THREE_D_SEED_WIRE.find((name) => props[name] !== undefined);
+  if (seedWire !== undefined) (row as { seedWire?: string }).seedWire = seedWire;
 }
 
 /**
@@ -2728,6 +2855,7 @@ function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
   if (verb === "video") applyVideoRow(model, row);
   if (verb === "lipsync" || verb === "avatar") applySourceRow(verb, model, row);
   if (verb === "upscale") applyUpscaleRow(model, row);
+  if (verb === "threeD") applyThreeDRow(model, row);
   if (verb === "tts") applyTtsRow(model, row);
   if (verb === "stt") applySttRow(model, row);
   if (verb === "music") applyMusicRow(model, row);
@@ -2856,6 +2984,10 @@ function renderParamsFile(verb: Verb, models: readonly EndpointModel[]): string 
       if (row.factors !== undefined) {
         fields.push(`  factors: [${row.factors.map((value) => num(value)).join(", ")}],`);
       }
+      if (row.inputs !== undefined) fields.push(`  inputs: ${renderStringArray(row.inputs)},`);
+      if (row.imageWire !== undefined) fields.push(`  imageWire: ${quote(row.imageWire)},`);
+      if (row.imageWireList === true) fields.push("  imageWireList: true,");
+      if (row.seedWire !== undefined) fields.push(`  seedWire: ${quote(row.seedWire)},`);
       if (row.textWire !== undefined) fields.push(`  textWire: ${quote(row.textWire)},`);
       if (row.voiceWire !== undefined) fields.push(`  voiceWire: ${quote(row.voiceWire)},`);
       if (row.voices !== undefined) fields.push(`  voices: ${renderStringArray(row.voices)},`);
@@ -3315,7 +3447,7 @@ export function generate(input: GenerateInput): Map<string, string> {
       }
     }
 
-    const shapes = classifyShapes(id, inputModel, registry);
+    const shapes = classifyShapes(id, entry.verb, inputModel, registry);
     const textProp = entry.textParam === undefined ? undefined : inputModel.props[entry.textParam];
     if (entry.textParam !== undefined && textProp === undefined) {
       throw new Error(

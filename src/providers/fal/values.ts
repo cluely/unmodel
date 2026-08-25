@@ -60,6 +60,14 @@ export {
   MODELS as UPSCALE_MODELS,
 } from "./upscale-params";
 
+// The one category whose uniform alias is not its id upper-cased: the category
+// is `3d`, and `3D_MODEL_PARAMS` is not an identifier. `THREE_D` is the same
+// spelling the verb, the generated constants and the file names use.
+export {
+  FAL_THREE_D_MODEL_PARAMS as THREE_D_MODEL_PARAMS,
+  MODELS as THREE_D_MODELS,
+} from "./three-d-params";
+
 export {
   FAL_TTS_DELIVERY as TTS_DELIVERY,
   FAL_TTS_MODEL_PARAMS as TTS_MODEL_PARAMS,

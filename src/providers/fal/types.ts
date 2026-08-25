@@ -20,7 +20,10 @@
  * brings a uniform `<Verb>Body` alias with it — one per endpoint address
  * `unmodel/fal` serves, named after the word you already type on the CLI. All
  * nine are here now: `ImageBody`, `ImageEditBody`, `VideoBody`, `LipsyncBody`,
- * `AvatarBody`, `UpscaleBody`, `TtsBody`, `SttBody` and `MusicBody`. A category
+ * `AvatarBody`, `UpscaleBody`, `ThreeDBody`, `TtsBody`, `SttBody` and
+ * `MusicBody` — `ThreeDBody` rather than `3dBody` because the alias is named
+ * after the CLI verb, and `unmodel validate fal.threeD` is what you type. A
+ * category
  * without a validator would have no address and so correctly no alias:
  * `test/types-entries.test.ts` derives that list from the CLI registry rather
  * than from this file's good intentions.
@@ -61,6 +64,7 @@ import type { FalVideoParams } from "./video";
 import type { FalLipsyncParams } from "./lipsync";
 import type { FalAvatarParams } from "./avatar";
 import type { FalUpscaleParams } from "./upscale";
+import type { FalThreeDParams } from "./three-d";
 import type { FalTtsParams } from "./tts";
 import type { FalSttParams } from "./stt";
 import type { FalMusicParams } from "./music";
@@ -124,6 +128,15 @@ export type AvatarBody = FalAvatarParams;
 export type UpscaleBody = FalUpscaleParams;
 
 /**
+ * The request body `fal.threeD` accepts. Narrow to one with
+ * {@link FalThreeDArm} — which is how `tripo3d/h3.1/text-to-3d`'s three seeds
+ * and `fal-ai/trellis-2`'s thirty sampler dials stay on their own endpoints,
+ * and how `hitem3d/hi3d/v3.0/image-to-3d` types its real `model` field as the
+ * `"hi3dv3.0"` const while every sibling refuses the key.
+ */
+export type ThreeDBody = FalThreeDParams;
+
+/**
  * The request body `fal.tts` accepts. Narrow to one with {@link FalTtsArm} —
  * which is how twenty-three separate voice catalogs stay usable from one
  * address: `FalTtsBodyById["fal-ai/kokoro/french"]["voice"]` is the single
@@ -169,6 +182,12 @@ export type {
   FalUpscaleEndpointId,
   FalUpscaleResultById,
 } from "./upscale";
+export type {
+  FalThreeDArm,
+  FalThreeDBodyById,
+  FalThreeDEndpointId,
+  FalThreeDResultById,
+} from "./three-d";
 export type {
   FalTtsArm,
   FalTtsBodyById,

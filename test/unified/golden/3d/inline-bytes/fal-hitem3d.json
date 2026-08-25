@@ -1,0 +1,10 @@
+{
+  "ref": "fal/hitem3d/hi3d/v3.0/image-to-3d",
+  "params": {
+    "image_url": "data:image/png;base64,aGVsbG8="
+  },
+  "url": "https://queue.fal.run/hitem3d/hi3d/v3.0/image-to-3d",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

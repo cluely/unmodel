@@ -8,7 +8,9 @@
     "snapshot's category is carried into data/fal/manifest.json for the audit command to diff against.",
     "",
     "`endpoints` — one entry per curated endpoint id (the id IS the queue URL path):",
-    "  verb                 REQUIRED. One of image | imageEdit | video | lipsync | upscale | avatar | tts | stt | music.",
+    "  verb                 REQUIRED. One of image | imageEdit | video | lipsync | upscale | avatar | threeD | tts | stt | music.",
+    "                       `threeD` is the one verb that is not its category's id: the category is \"3d\", which is",
+    "                       not a TypeScript identifier and so cannot be an export name or a generated file stem.",
     "  textParam            the property that carries the prompt/text, when the endpoint takes one.",
     "  allowsModelProperty  `model` is a REAL wire field on this endpoint, not a route selector.",
     "                       Codegen HARD-ERRORS on a top-level `model` property unless this says true (risk R6):",
@@ -44,6 +46,11 @@
     "one that takes a still is avatar, which is why fal-ai/sync-lipsync/v3 and fal-ai/sync-lipsync/v3/image-to-video",
     "— one product, two routes — are filed under different verbs. Two avatar rows (veed/avatars, argil/avatars)",
     "take NEITHER: their performer is a catalogued id, which is why the category narrows `image` per model.",
+    "",
+    "`threeD` splits the same way and inside one category: fal files both `text-to-3d` and `image-to-3d` here,",
+    "and each row's `inputs` says which mood that route reads. One endpoint (fal-ai/hyper3d/rodin/v2.5) reads",
+    "BOTH and requires neither. fal's 3d family also holds `3d-to-3d` — mesh in, mesh out — which is excluded",
+    "wholesale below: `unmodel/3d` asks for an object to be made, not refined.",
     "",
     "A note on ids: several are VENDOR-namespaced (`ideogram/v4`, `openai/gpt-image-2`, `krea/v2/...`),",
     "and for those fal's OpenAPI document is written against a different internal route — `ideogram/v4`",
@@ -311,10 +318,38 @@
       "verb": "lipsync",
       "note": "HeyGen Avatar v3 lipsync, speed arm — the same nine parameters as the precision route at half the rate."
     },
+    "fal-ai/hunyuan-3d/v3.1/pro/image-to-3d": {
+      "verb": "threeD",
+      "note": "Tencent's Hunyuan3D 3.1 Pro, image-driven. Its extra views are seven NAMED siblings (`back_image_url`, `top_image_url`, `left_front_image_url`, …) beside the required `input_image_url`, so the canonical `image` is the front view and the rest are extras."
+    },
+    "fal-ai/hunyuan-3d/v3.1/pro/text-to-3d": {
+      "verb": "threeD",
+      "note": "The text-driven half of the same model. `generate_type` picks a textured mesh or a white one — the switch every vendor here spells differently, and the reason `texture` is not vocabulary."
+    },
+    "fal-ai/hunyuan-3d/v3.1/rapid/image-to-3d": {
+      "verb": "threeD",
+      "note": "The fast tier: three parameters in all. Its response carries `material_mtl` and `texture` beside the mesh, which is the one place in this category where the OBJ sidecars are visible on the wire."
+    },
     "fal-ai/hunyuan-image/v3/text-to-image": {
       "verb": "image",
       "textParam": "prompt",
       "note": "Hunyuan Image 3.0, the plain text-to-image route. Its /instruct siblings are editing arms and are not curated in wave 1."
+    },
+    "fal-ai/hunyuan3d/v2": {
+      "verb": "threeD",
+      "note": "Hunyuan3D 2.0, the octree-resolution generation. `textured_mesh` triples the price, which is the conditional rate its pricing row carries."
+    },
+    "fal-ai/hunyuan3d/v2/turbo": {
+      "verb": "threeD",
+      "note": "The turbo arm of the same schema — identical parameter surface, so it shares a generated row. fal publishes NO rate for it: see data/fal/pricing.json."
+    },
+    "fal-ai/hyper3d/rodin/v2.5": {
+      "verb": "threeD",
+      "note": "Hyper3D Rodin v2.5, and the only endpoint in this category that reads BOTH moods: `prompt` and `image_urls` are both optional and the prompt steers an image-driven generation. That is the both-arm of the row's `inputs`, and it is why `ThreeDModelNarrowing` has three populated arms rather than two. `image_urls` is a LIST — the `imageWireList` flag."
+    },
+    "fal-ai/hyper3d/rodin/v2.5/text-to-3d": {
+      "verb": "threeD",
+      "note": "The text-only sibling of the route above: same dials, no image field at all. The pair is the clearest statement in the roster that `inputs` is a fact about a ROUTE rather than about a vendor."
     },
     "fal-ai/ideogram/v3": {
       "verb": "image",
@@ -601,6 +636,18 @@
       "verb": "avatar",
       "note": "The still-driven twin of sync-lipsync/v3 — image in, video out. The split that makes lipsync and avatar separate packs rather than one `sources` arm."
     },
+    "fal-ai/trellis": {
+      "verb": "threeD",
+      "note": "Microsoft TRELLIS — structured-latent 3D generation from one image, and the cheapest row in the category at $0.02."
+    },
+    "fal-ai/trellis-2": {
+      "verb": "threeD",
+      "note": "TRELLIS 2, with thirty parameters — the widest per-endpoint extras surface in this category, all of them sampler and UV-unwrap dials that no second vendor spells the same way."
+    },
+    "fal-ai/triposr": {
+      "verb": "threeD",
+      "note": "Stability's TripoSR. Sub-second feed-forward reconstruction; its `output_format` is a two-value glb/obj enum, one of the four spellings that kept `format` out of the vocabulary."
+    },
     "fal-ai/veo3.1": {
       "verb": "video",
       "textParam": "prompt",
@@ -665,6 +712,11 @@
       "textParam": "prompt",
       "note": "Token-priced rather than per-image — carries an `unpriced` reason, not a rate."
     },
+    "hitem3d/hi3d/v3.0/image-to-3d": {
+      "verb": "threeD",
+      "allowsModelProperty": true,
+      "note": "Hi3D v3.0. `model` is a REAL wire field — a `const \"hi3dv3.0\"` naming the checkpoint — and stays on the wire while the route is still selected by the `endpoint` pseudo-param. Allow-listed under R6, reviewed 2026-08-25 against the live schema."
+    },
     "ideogram/v4": {
       "verb": "image",
       "textParam": "prompt",
@@ -684,6 +736,14 @@
       "verb": "video",
       "textParam": "prompt",
       "note": "LTX-2.5 Pro. Its `duration` enum is [6, 8, 10, \"auto\"] with NO declared type — a mixed-type enum that lowers by its first member, which is why the numeric filter on the duration list is not cosmetic."
+    },
+    "meshy/v7/image-to-3d": {
+      "verb": "threeD",
+      "note": "Meshy 7, image-driven, and the only row here whose extras reach past geometry into RIGGING and animation (`enable_rigging`, `animation_action_id`). Those are 3d-to-3d operations bolted onto a generation call; unmodel serves the generation and leaves the rest as extras."
+    },
+    "meshy/v7/text-to-3d": {
+      "verb": "threeD",
+      "note": "The text-driven half of Meshy 7. Note it publishes both `prompt` and `texture_prompt` — two texts meaning different things, which is why the canonical `prompt` is named per row rather than guessed."
     },
     "microsoft/mai-image-2.5": {
       "verb": "image",
@@ -736,6 +796,30 @@
       "allowsModelProperty": true,
       "note": "Topaz video upscaler. `model` names the Proteus/Artemis/Gaia network (R6 allow-list, reviewed 2026-08-25) and also selects the RATE, which is why its price is conditional."
     },
+    "tripo3d/h3.1/image-to-3d": {
+      "verb": "threeD",
+      "note": "Tripo H3.1 through fal — the same model the NATIVE tripo3d provider serves as `v3.1-20260211`, which is what makes this category's second witness a real comparison. fal renames Tripo's polymorphic `input` to a plain `image_url` and drops `smart_low_poly`, `generate_parts` and `compress`: exactly the kind of disagreement `extras` exists for."
+    },
+    "tripo3d/h3.1/text-to-3d": {
+      "verb": "threeD",
+      "note": "The text-driven half of the same model. Publishes THREE seeds — `model_seed`, `image_seed`, `texture_seed` — and the canonical `seed` maps to the geometry one; the other two are extras."
+    },
+    "tripo3d/p1/image-to-3d": {
+      "verb": "threeD",
+      "note": "Tripo P1, the low-poly series: four parameters, and a `face_limit` in the thousands where the H series takes millions. The narrowest surface in the category."
+    },
+    "tripo3d/p1/text-to-3d": {
+      "verb": "threeD",
+      "note": "The text-driven half of P1."
+    },
+    "tripo3d/tripo/v2.5/image-to-3d": {
+      "verb": "threeD",
+      "note": "Tripo v2.5, the legacy generation, kept because it is still the default many callers have pinned and because its `style` enum is the one deprecated field in this roster."
+    },
+    "tripo3d/tripo/v2.5/multiview-to-3d": {
+      "verb": "threeD",
+      "note": "The multiview arm that unmodel CAN serve: `front_image_url` is required and the other three angles are optional siblings, so the canonical `image` is the front view and the rest ride as extras. Contrast tripo3d/h3.1/multiview-to-3d in `excluded`."
+    },
     "veed/avatars/audio-to-video": {
       "verb": "avatar",
       "note": "VEED Avatars. Takes NO image: the performer is a catalogued `avatar_id` from a 28-value enum. The row that forces `image` to be narrowed per model rather than required by the vocabulary."
@@ -767,20 +851,24 @@
   "excluded": {
     "$comment": "Whole fal categories and specific ids unmodel deliberately does not serve. A reason here is what keeps a future roster widening from quietly re-adding them.",
     "categories": {
+      "3d-to-3d": "12 endpoints that take a MESH and return one — retopology, segmentation, retexture, rigging, part splitting. Real operations with no unmodel verb: `unmodel/3d` asks for an object to be MADE, and a route that refines one you already have is a different question. A `mesh` category is the honest home for them if they are ever wanted.",
+      "ffmpeg-api": "Plumbing (concat, trim, mux). No model, nothing to validate beyond a file list.",
       "llm": "openrouter passthrough — unmodel ships the real openrouter provider, with its own catalog and availability data.",
+      "subtitles": "Plumbing — a rendering step over an stt result.",
       "training": "57 endpoints that start a fine-tune, not a validated inference request.",
       "vision": "34 endpoints doing image-in/text-out — `unmodel/chat` already owns that shape with real multimodal message types.",
-      "3d": "53 endpoints, deferred to wave 3: a 3d vocabulary on a single witness is a guess. It joins when a first-party 3D provider gives a second one.",
-      "ffmpeg-api": "Plumbing (concat, trim, mux). No model, nothing to validate beyond a file list.",
-      "workflow-utils": "Plumbing.",
-      "subtitles": "Plumbing — a rendering step over an stt result."
+      "workflow-utils": "Plumbing."
     },
     "endpoints": {
       "fal-ai/fast-sdxl": "Wave-1e stretch candidate, tried and backed out: its input schema ships NO `x-fal-order-properties`, and codegen hard-errors on that rather than inventing an emission order (an invented order would make fal's next reordering look like a diff in this repo's generated output). Serving it means teaching the generator a documented fallback order, which is new generator work rather than a cheap row. Its price is the unpopulated $0-per-compute-second template besides.",
+      "fal-ai/hunyuan3d-v21": "Hunyuan 3D 2.1 — the plan named it and fal has since marked it `deprecated` (verified against the live listing 2026-08-25). The 2.0 pair and the 3.1 pair are both active and cover the same ground.",
+      "fal-ai/hunyuan_world/image-to-world": "Generates a SCENE (a navigable panorama), not an object. `unmodel/3d`'s vocabulary — one prompt or one image, one mesh out — does not describe it.",
       "fal-ai/kling-video/lipsync/text-to-video": "Text + voice arm — that is TTS composed with lipsync, and composing it here would hide which half failed.",
       "fal-ai/smart-turn": "Turn detection, not transcription — no unmodel verb fits it.",
       "fal-ai/speech-to-text/stream": "Streaming variants are a socket surface, not a queue submit — out of scope for a request validator.",
-      "fal-ai/sync-lipsync/v1.9.0-beta": "Beta id, superseded by v2/v3."
+      "fal-ai/sync-lipsync/v1.9.0-beta": "Beta id, superseded by v2/v3.",
+      "tripo3d/h3.1/multiview-to-3d": "Requires `image_urls` with minItems 2, and `unmodel/3d`'s `image` is ONE reference. A route that cannot be called with a single view cannot be half-served through this vocabulary; its v2.5 sibling is curated in because there the extra angles are optional.",
+      "tripo3d/triposplat": "Gaussian splats rather than a mesh. The output is a point cloud with per-point spherical harmonics — a different artifact with different tooling, and `Modality`'s new `\"3d\"` member would be claiming more than it means."
     }
   }
 }

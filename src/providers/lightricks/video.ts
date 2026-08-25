@@ -103,7 +103,7 @@ function estimate(params: TextToVideoParams, info: ModelInfo | undefined, _ctx: 
  * literal in `finalize`; it must stay an object type with no index
  * signature, or `toSdk` would accept any string.
  */
-type LightricksSdkTargets<B> = { lightricks: () => B };
+export type LightricksSdkTargets<B> = { lightricks: () => B };
 
 function finalize(params: TextToVideoParams): unknown {
   const { api_version, ...body } = params;

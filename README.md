@@ -223,6 +223,31 @@ request.toApi("openai");
 
 Auth moves with the provider; `CHAT_AUTH` from `unmodel/chat` maps each to its header name and scheme. `.toApiSafe()` is the non-throwing form; details and caveats in [docs/validation.md](docs/validation.md#retarget-chat).
 
+## 🔁 Retarget media with `.toApi("fal")`
+
+The same move for image, video and speech: fal re-serves other vendors' media models, so a validated native request can be sent to fal's queue instead.
+
+```ts
+import { video } from "unmodel/kling";
+
+const request = video({
+  model_name: "kling-v2-5-turbo",
+  prompt: "A slow push-in through a rainy neon alley",
+  mode: "pro",
+  duration: "10",
+});
+
+const onFal = request.toApi("fal");
+onFal.request.url; // https://queue.fal.run/fal-ai/kling-video/v2.5-turbo/pro/text-to-video
+{ ...onFal };      // { prompt: "A slow push-in…", negative_prompt: "", duration: "10" }
+onFal.warnings;    // []  ← empty means the mapping was exact
+
+video({ model_name: "kling-v1", prompt: "…" }).toApi("fal");
+//                                             ~~~~~ TypeScript error: fal serves no Kling v1
+```
+
+Auth changes with the host — Kling takes `authorization: Bearer <key>`, fal takes `authorization: Key <FAL_KEY>`. A parameter fal cannot express is an error naming it, never a silent drop; a derived or snapped value is one warning. Six families across image, video and tts, with the mappings and the deliberate refusals in [docs/providers.md](docs/providers.md#media-retargeting--toapifal).
+
 ## 🧾 Check responses
 
 Provider `check*` helpers inspect raw responses and normalize quality and usage signals:

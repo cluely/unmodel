@@ -76,8 +76,15 @@ export interface EndpointAuth {
    * The word before the credential: `authorization: Bearer <key>`. **Absent**
    * when the header value is the bare key, which is the norm for the
    * vendor-specific header names (`x-api-key`, `x-goog-api-key`, `api-key`).
+   *
+   * `"Key"` is fal's, and it is the reason this union is a union rather than a
+   * boolean: `authorization: Key <FAL_KEY>`, the literal word `Key`. fal's own
+   * published OpenAPI security scheme describes the header as a plain API key
+   * and OMITS the prefix, so a formatter that believed the schema would emit a
+   * header fal rejects. It is stated here, and derived nowhere — the same
+   * treatment `"Token"` (vidu) already gets.
    */
-  readonly scheme?: "Bearer" | "Basic" | "Token";
+  readonly scheme?: "Bearer" | "Basic" | "Token" | "Key";
 }
 
 export interface TargetEndpoint {

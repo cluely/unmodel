@@ -1,5 +1,42 @@
-export { video, TEXT_TO_VIDEO_URL, TEXT_TO_VIDEO_V1_URL, TEXT_TO_VIDEO_ENDPOINT } from "./video";
+import type { ExactKeys, Validated } from "../../core/request";
+import type { ValidateOptions } from "../../core/options";
+import type { ValidateResult } from "../../core/result";
+import type { EndpointConstraints } from "../../core/constraint-types";
+import { withApiTarget } from "../../core/translate/media-retarget";
+import type { MediaApiMember } from "../../retarget/types";
+import { video as videoBase, type LightricksSdkTargets, type TextToVideoParams } from "./video";
+import { lightricksVideoToFal, type LightricksVideoFalOverlap } from "./fal-target";
+
+export { TEXT_TO_VIDEO_URL, TEXT_TO_VIDEO_V1_URL, TEXT_TO_VIDEO_ENDPOINT } from "./video";
 export type { TextToVideoParams } from "./video";
+
+/**
+ * `lightricks.video`, with `.toApi("fal")` attached.
+ *
+ * Wired here rather than in `./video.ts` so `unmodel/video` — which reaches
+ * this provider through `./unified-video.ts` → `./video` — pays nothing for a
+ * seam it cannot call. See `core/translate/media-retarget.ts`.
+ */
+export const video = withApiTarget(
+  videoBase as unknown as Parameters<typeof withApiTarget<TextToVideoParams, object>>[0],
+  lightricksVideoToFal,
+) as unknown as {
+  <T extends TextToVideoParams>(
+    params: T & ExactKeys<T, TextToVideoParams>,
+    options?: ValidateOptions<T>,
+  ): Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>> &
+    MediaApiMember<LightricksVideoFalOverlap, T["model"]>;
+  safe<T extends TextToVideoParams>(
+    params: T & ExactKeys<T, TextToVideoParams>,
+    options?: ValidateOptions<T>,
+  ): ValidateResult<
+    Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>> &
+      MediaApiMember<LightricksVideoFalOverlap, T["model"]>
+  >;
+  constraintsFor(modelId: string): EndpointConstraints[];
+};
+
+export { LIGHTRICKS_VIDEO_FAL_OVERLAP, LIGHTRICKS_VIDEO_FAL_REFUSALS } from "./fal-target";
 
 export {
   videoFromImage,

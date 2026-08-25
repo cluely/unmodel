@@ -211,13 +211,13 @@ interface Flux2BodyByModel {
 }
 
 /** Resolves a model id literal to its exact Tier-A arm. */
-type Flux2Arm<M extends string> = M extends keyof Flux2BodyByModel
+export type Flux2Arm<M extends string> = M extends keyof Flux2BodyByModel
   ? Flux2BodyByModel[M]
   : UnknownFlux2ModelBody<M>;
 
 /** Runtime implementation type; the public alias stays closed by default. */
 type AnyFlux2Body = Flux2Body<string>;
-type Flux2ModelInput = keyof Flux2BodyByModel | (string & {});
+export type Flux2ModelInput = keyof Flux2BodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Schema — the loose union of every param any flux-2 route accepts; per-route
@@ -268,7 +268,7 @@ function estimate(_params: AnyFlux2Body, info: ModelInfo | undefined) {
  * literal in `finalize`; it must stay an object type with no index
  * signature, or `toSdk` would accept any string.
  */
-type BflSdkTargets<B> = { "black-forest-labs": () => B };
+export type BflSdkTargets<B> = { "black-forest-labs": () => B };
 
 function finalize(params: AnyFlux2Body): unknown {
   const { model, ...body } = params;

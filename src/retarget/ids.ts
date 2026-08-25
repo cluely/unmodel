@@ -120,6 +120,44 @@ export function isStaticApiTargetId(value: string): value is StaticApiTargetId {
 }
 
 // ---------------------------------------------------------------------------
+// `.toApi` targets for MEDIA requests
+// ---------------------------------------------------------------------------
+
+/**
+ * The `.toApi` vocabulary for **media** — image, video, tts and the rest.
+ *
+ * A separate list rather than an arm of {@link API_TARGET_IDS}, because the two
+ * are built from different things and fail differently. That list is *derived*
+ * (`ids.test.ts` asserts it is exactly the target providers appearing in the
+ * generated availability data, so a models.dev refresh that adds a destination
+ * fails a test rather than producing a runtime "unknown target"). This one
+ * cannot be: models.dev carries no media availability at all, so which media
+ * models a second provider also serves is a fact unmodel has to look up by
+ * hand, endpoint page by endpoint page. The overlap tables in
+ * `src/providers/<p>/fal-target.ts` are that lookup, dated and cited, and a
+ * drift guard asserts every fal endpoint id they name is still in fal's own
+ * curated roster.
+ *
+ * One destination today. fal is the natural first — and, for now, only — one:
+ * it is the single aggregator in this catalog that re-serves other vendors'
+ * *media* models under their own wire semantics, which is what makes a mapping
+ * honest rather than a re-implementation.
+ *
+ * The reverse direction (fal → native) is deliberately out of scope: a fal
+ * request names an endpoint id, and one endpoint id routinely corresponds to
+ * several native routes (`fal-ai/kling-video/v3/pro/text-to-video` is
+ * `kling.video` at `mode: "pro"` *and* `kling.videoV3` depending on which
+ * family the caller is in), so the mapping would have to guess.
+ */
+export const MEDIA_API_TARGET_IDS = ["fal"] as const;
+
+export type MediaApiTargetId = (typeof MEDIA_API_TARGET_IDS)[number];
+
+export function isMediaApiTargetId(value: string): value is MediaApiTargetId {
+  return (MEDIA_API_TARGET_IDS as readonly string[]).includes(value);
+}
+
+// ---------------------------------------------------------------------------
 // `.toSdk` targets
 // ---------------------------------------------------------------------------
 

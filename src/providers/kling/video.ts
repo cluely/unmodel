@@ -206,7 +206,7 @@ function estimate(params: TextToVideoParams, info: ModelInfo | undefined, _ctx: 
  * in `finalize`; it must stay an object type with no index signature, or
  * `toSdk` would accept any string.
  */
-type KlingSdkTargets<B> = { kling: () => B };
+export type KlingSdkTargets<B> = { kling: () => B };
 
 function finalize(params: TextToVideoParams): unknown {
   const body = { ...params };

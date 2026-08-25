@@ -10,9 +10,11 @@
 export {
   API_TARGET_IDS,
   FACTORY_API_TARGET_IDS,
+  MEDIA_API_TARGET_IDS,
   SDK_TARGET_IDS,
   STATIC_API_TARGET_IDS,
   isApiTargetId,
+  isMediaApiTargetId,
   isStaticApiTargetId,
 } from "./ids";
 export type {
@@ -20,6 +22,7 @@ export type {
   ApiTargetId,
   ApiTargetsFor,
   FactoryApiTargetId,
+  MediaApiTargetId,
   SdkTargetId,
   StaticApiTargetId,
 } from "./ids";
@@ -34,4 +37,9 @@ export type {
   GenerateContentBodyFor,
   MessagesBodyFor,
 } from "./dialects";
-export type { Retargeted } from "./types";
+export type {
+  MediaApiMember,
+  MediaOverlapTable,
+  MediaRetargeted,
+  Retargeted,
+} from "./types";

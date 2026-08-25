@@ -482,7 +482,7 @@ function buildSdkParams(
  * takes. Type alias, not interface: an interface has no implicit index
  * signature and cannot satisfy `SdkFormatters`.
  */
-type TtsSdkTargets = { elevenlabs: () => TextToSpeechSdkParams };
+export type TtsSdkTargets = { elevenlabs: () => TextToSpeechSdkParams };
 
 function finalize(params: TextToSpeechParams): unknown {
   const { voice_id, output_format, enable_logging, optimize_streaming_latency, ...body } = params;

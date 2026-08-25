@@ -185,6 +185,38 @@ export interface ValidatedInit<Sdk extends SdkFormatters> {
 }
 
 /**
+ * Hangs `.toApi` / `.toApiSafe` off an already-built result, non-enumerably.
+ *
+ * Extracted from {@link toValidated} because the media seam attaches the pair
+ * to a result the endpoint module built *without* one: a media pack must not
+ * pay for the retarget layer, so `src/providers/<p>/<endpoint>.ts` — which
+ * every pack reaches through its adapter leaf — wires no `api:`, and the
+ * provider's own entry (`unmodel/<p>`, which nothing else imports) adds it
+ * afterwards through `withApiTarget`. Two attach sites, one contract: the
+ * throwing form throws `structural` verbatim so its type keeps naming the
+ * structural cause, and the safe form reports the same message through
+ * `result.errors`.
+ */
+export function attachApi<T extends object>(out: T, api: ApiRetargeter): T {
+  Object.defineProperties(out, {
+    toApi: {
+      value: (target: string): unknown => {
+        const { route, result, structural } = api(target);
+        if (structural !== undefined) throw structural;
+        if (!result.ok) throw new UnmodelValidationError(route, result.errors, result.warnings);
+        return result.params;
+      },
+      enumerable: false,
+    },
+    toApiSafe: {
+      value: (target: string): ValidateResult<object> => api(target).result,
+      enumerable: false,
+    },
+  });
+  return out;
+}
+
+/**
  * Builds the validated result.
  *
  * The argument order is `(body, request, init)` — note that `request` moved
@@ -232,25 +264,11 @@ export function toValidated<
       value: { ...request, headers: { ...request.headers } },
       enumerable: false,
     },
-    ...(api !== undefined && {
-      toApi: {
-        value: (target: string): unknown => {
-          const { route, result, structural } = api(target);
-          // Structural first, so the thrown type stays
-          // `TranslationUnavailableError` rather than collapsing into a
-          // validation error that names no fixable param.
-          if (structural !== undefined) throw structural;
-          if (!result.ok) throw new UnmodelValidationError(route, result.errors, result.warnings);
-          return result.params;
-        },
-        enumerable: false,
-      },
-      toApiSafe: {
-        value: (target: string): ValidateResult<object> => api(target).result,
-        enumerable: false,
-      },
-    }),
   });
+  // Structural failures throw verbatim, so the thrown type stays
+  // `TranslationUnavailableError` rather than collapsing into a validation
+  // error that names no fixable param — see `attachApi`.
+  if (api !== undefined) attachApi(out, api);
   return out as Body & {
     toSdk<K extends Extract<keyof Sdk, string>>(target: K): ReturnType<Sdk[K]>;
     request: Req;

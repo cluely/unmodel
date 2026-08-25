@@ -140,7 +140,8 @@ The pack providers also ship a unified adapter at `unmodel/<provider>/unified`, 
 new ids: Reve's API has no 2.1 version strings — `latest` serves it. Several fal rows are the
 same model unmodel already serves first-party (FLUX at black-forest-labs, Seedream at
 bytedance, Krea, Ideogram, Recraft, Reve): the same weights behind a different queue, which is
-what `.toApi("fal")` is reserved for and why it is not implemented yet.
+what `.toApi("fal")` moves a validated request onto — see
+[Media retargeting](#media-retargeting--toapifal) below.
 **Live — editing:** every image-to-image route is addressed as
 `<provider>.imageEdit`, with each extra route qualified by what it does to the
 picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
@@ -622,9 +623,8 @@ an unrelated pull request. A `retiredOn` date in `curation.json` then ships the 
 is deliberately NOT refreshed by the job: fal publishes no machine-readable rate, so a human
 re-reads the page.
 
-**Not yet:** `.toApi("fal")` — retargeting a first-party media request onto fal's queue needs a
-media retarget layer that does not exist (chat only, today), and `EndpointAuth.scheme` has no
-`"Key"` arm. Also uncurated by decision, with reasons in `curation.json`: fal's `llm` category
+**Retargeting onto fal is live** — see [Media retargeting](#media-retargeting--toapifal).
+Uncurated by decision, with reasons in `curation.json`: fal's `llm` category
 (an OpenRouter passthrough — unmodel ships the real OpenRouter), `training` (57 endpoints that
 start a fine-tune rather than an inference request), `vision` (34 doing image-in/text-out, which
 `unmodel/chat` already owns), `3d` (53 — a 3D vocabulary on a single witness is a guess), and
@@ -853,15 +853,120 @@ still, since its `model` is a user-chosen deployment name rather than a catalog 
 edges **are** emitted into the availability data, so the reserved two-argument overload
 (`toApi("amazon-bedrock", { region })`) is a types + runtime change with no codegen work.
 
-**No media `.toApi`, and that is a scope decision.** Across the providers unmodel
-implements there are exactly 5 multi-provider media groups in the snapshot (2 image, 1
-video, 2 transcription), and the providers one would expect to join —
-black-forest-labs, elevenlabs, deepgram, runway, luma, ideogram, recraft, stability,
-kling, pixverse — are absent from models.dev entirely (they are the ✋ hand catalogs
-above). There is nothing to generate, and their wire formats share no dialect to
-translate through. The retargeting guide (validation.md) says so explicitly, because chat-has-it/media-doesn't
-otherwise reads as an oversight. If hand catalogs ever grow an `equivalentTo` field, the
-same `buildAvailability` machinery consumes it unchanged.
+**Media `.toApi` is a different mechanism, not the same one widened** — see
+[Media retargeting](#media-retargeting--toapifal). Nothing above changes: the providers one
+would expect in a media availability table — black-forest-labs, elevenlabs, kling, pixverse,
+lightricks, minimax — are absent from models.dev entirely (they are the ✋ hand catalogs
+above), so there is still nothing to *generate*, and their wire formats still share no dialect
+to translate through. What changed is the conclusion drawn from that: instead of no media
+retarget at all, the overlap is a hand table per family and the crossing is a hand mapping per
+family, checked against fal's generated wire types.
+
+## Media retargeting — `.toApi("fal")`
+
+`.toApi("fal")` moves a **validated native media request** onto fal's queue: same model, same
+vendor, different host. It is the media counterpart of chat's `.toApi(provider)` and shares its
+contract (`.toApiSafe` for the non-throwing form, a non-enumerable `.warnings`, `.request`
+carrying URL + static non-auth headers and never a credential) — and almost nothing else.
+
+```ts
+import { video } from "unmodel/kling";
+
+const request = video({
+  model_name: "kling-v2-5-turbo",
+  prompt: "A slow push-in through a rainy neon alley",
+  mode: "pro",
+  duration: "10",
+});
+
+const onFal = request.toApi("fal");
+// onFal.request.url  → "https://queue.fal.run/fal-ai/kling-video/v2.5-turbo/pro/text-to-video"
+// { ...onFal }       → { prompt: "…", negative_prompt: "", duration: "10" }
+// onFal.warnings     → []   ← empty means the mapping was exact
+// onFal.toSdk("fal") → { input: { … } }   for @fal-ai/client
+```
+
+Auth is yours, and it *changes*: Kling takes `authorization: Bearer <key>`, fal takes
+`authorization: Key <FAL_KEY>` — the literal word `Key`. That is what
+`EndpointAuth.scheme |= "Key"` is for, and why the media target table carries an `auth` column
+at all: retargeting invalidates the header the caller already wrote.
+
+**Native → fal only.** The reverse is deliberately out of scope: a fal request names an
+endpoint id, and one endpoint id routinely corresponds to several native routes
+(`fal-ai/kling-video/v3/pro/text-to-video` is `kling.video` at `mode: "pro"` *and*
+`kling.videoV3`, depending on which family the caller is in), so the mapping would have to
+guess.
+
+### The loss policy
+
+Stated normatively, and asserted by the goldens in `test/interop/media-retarget.test.ts`:
+
+- a param the target **cannot express** is an **error** naming the param, the fal endpoint and
+  the reason. It is never dropped and never warned — a dropped `camera_control` produces a
+  *different* video, not a lossier one;
+- a param the target expresses **approximately** (a value derived from two source fields, or a
+  structure flattened) is exactly one `approximated_param` warning carrying `requested` and
+  `achieved`;
+- **zero warnings therefore means the mapping was exact.**
+
+### What ships, and what is deliberately refused
+
+Six provider families across three categories, each transcribed from fal's own endpoint pages
+on 2026-08-25 and drift-guarded against fal's curated roster (`FAL_ENDPOINTS`):
+
+| source endpoint | models mapped | fal endpoints |
+|---|---|---|
+| `kling.video` | `kling-v3`, `kling-v2-6`, `kling-v2-5-turbo` | `fal-ai/kling-video/{v3/pro,v3/standard,v2.6/pro,v2.5-turbo/pro}/text-to-video` |
+| `kling.videoFromImage` | the same three | the `…/image-to-video` siblings |
+| `pixverse.video` | `v6` | `fal-ai/pixverse/v6/text-to-video` |
+| `lightricks.video` | `ltx-2-5-pro` | `lightricks/ltx-2.5/text-to-video/pro` |
+| `elevenlabs.tts` | `eleven_v3`, `eleven_multilingual_v2`, `eleven_turbo_v2_5` | `fal-ai/elevenlabs/tts/*` |
+| `minimax.tts` | `speech-2.8-hd`, `speech-2.8-turbo`, `speech-02-hd` | `fal-ai/minimax/speech-*` |
+| `black-forest-labs.image` | `flux-2-pro`, `flux-2-max` | `fal-ai/flux-2-pro`, `fal-ai/flux-2-max` |
+| `black-forest-labs.imageFlux1` | `flux-pro-1.1`, `flux-pro-1.1-ultra`, `flux-dev` | `fal-ai/flux-pro/v1.1`, `…/v1.1-ultra`, `fal-ai/flux/dev` |
+
+Every model outside those rows carries a **recorded reason** in its family's
+`*_FAL_REFUSALS` table rather than a bare "unknown model", and `.toApi` is simply not on the
+result type — the deliberate-exclusion law, applied at both levels. The reasons worth reading
+here rather than in the code:
+
+- **Recraft is refused as a family.** fal's Recraft rows drop `num_images`, `seed` and
+  `negative_prompt` entirely and speak the *legacy* `realistic_image/b_and_w` style vocabulary
+  that Recraft retired in favour of curated names, so 13 of 17 native ids have no endpoint and
+  the four that do would need an invented style-name translation table plus silently dropped
+  colour weights. Quality over count.
+- **Ideogram is not shipped in this wave.** Its v3 shape maps well, but its `aspect_ratio`
+  (a closed `WxH` ratio enum) has no field on fal's `fal-ai/ideogram/v3`, and synthesizing a
+  pixel pair from a ratio is a guess about which pixels Ideogram would have chosen. The v4 arm
+  is worse: `json_prompt` has no string equivalent.
+- **`minimax.video`'s Hailuo-02 arm is refused.** fal's `fal-ai/minimax/hailuo-02/pro/image-to-video`
+  publishes no `duration` and no `resolution`, which is exactly the pair MiniMax's own rate
+  table is built on.
+- **`mode: "std"` on Kling 2.5-turbo and 2.6** — Kling's own default — is refused rather than
+  promoted to fal's pro tier. Resolution and price are the facts a retarget is supposed to
+  preserve, and a warning on a doubled bill is not consent.
+- **`safety_tolerance: 0`** at Black Forest Labs is refused: fal's enum starts at `"1"`, and 0
+  is the *strictest* native setting, so promoting it would loosen moderation.
+- **Zero-retention** (`enable_logging: false` at ElevenLabs), **webhooks**, **seeds where the
+  target has none**, and **account-scoped ids** (pronunciation dictionaries, Kling Elements,
+  PixVerse templates) are refused everywhere. Each is either a privacy request, a determinism
+  request, or unresolvable across accounts.
+
+### Where the machinery lives, and why
+
+The engine is `src/core/translate/media-retarget.ts`, the target table is
+`src/core/translate/media-endpoints.ts`, and each family's overlap table is
+`src/providers/<p>/fal-target.ts`. The seam is applied in **`src/providers/<p>/index.ts`** —
+not in the endpoint module's `finalize`, which is where chat wires its `api:`.
+
+That difference is forced. Every media pack (`unmodel/video`, `unmodel/tts`, …) reaches these
+providers through their `unified-<category>.ts` adapter leaves, and those leaves import
+`./video` / `./tts` / `./image` directly; a seam wired in `finalize` would put the engine and
+every mapping table into twelve bundles whose results have no `.toApi` at all. `index.ts` is
+the one module only `unmodel/<p>` imports, so `withApiTarget` is applied there and the pack
+graphs are byte-identical to what they were. `test/bundle-budget.test.ts` asserts both
+halves — the packs reach none of it, the six provider entries reach all of it, and no module
+but `index.ts` may import a `fal-target`.
 
 ## Architecture implications
 

@@ -1,5 +1,56 @@
+import type { ExactKeys, Validated } from "../../core/request";
+import type { ValidateOptions } from "../../core/options";
+import type { ValidateResult } from "../../core/result";
+import type { EndpointConstraints } from "../../core/constraint-types";
+import { withApiTarget } from "../../core/translate/media-retarget";
+import type { MediaApiMember } from "../../retarget/types";
+import {
+  tts as ttsBase,
+  type TextToSpeechParams,
+  type TextToSpeechQuery,
+  type TtsSdkTargets,
+} from "./tts";
+import { elevenlabsTtsToFal, type ElevenlabsTtsFalOverlap } from "./fal-target";
+
+/**
+ * `elevenlabs.tts`, with `.toApi("fal")` attached.
+ *
+ * Wired here rather than in `./tts.ts` so `unmodel/tts` — which reaches this
+ * provider through `./unified-tts.ts` → `./tts` — pays nothing for a seam it
+ * cannot call. See `core/translate/media-retarget.ts`.
+ *
+ * `model_id` is optional on this route and defaults to
+ * `eleven_multilingual_v2`, so an omitted one still carries `.toApi`: the
+ * default is a mapped model.
+ */
+export const tts = withApiTarget(
+  ttsBase as unknown as Parameters<typeof withApiTarget<TextToSpeechParams, object>>[0],
+  elevenlabsTtsToFal,
+) as unknown as {
+  <T extends TextToSpeechParams>(
+    params: T & ExactKeys<T, TextToSpeechParams>,
+    options?: ValidateOptions<T>,
+  ): Validated<Omit<T, keyof TextToSpeechQuery | "voice_id">, TtsSdkTargets> &
+    MediaApiMember<
+      ElevenlabsTtsFalOverlap,
+      T["model_id"] extends string ? T["model_id"] : "eleven_multilingual_v2"
+    >;
+  safe<T extends TextToSpeechParams>(
+    params: T & ExactKeys<T, TextToSpeechParams>,
+    options?: ValidateOptions<T>,
+  ): ValidateResult<
+    Validated<Omit<T, keyof TextToSpeechQuery | "voice_id">, TtsSdkTargets> &
+      MediaApiMember<
+        ElevenlabsTtsFalOverlap,
+        T["model_id"] extends string ? T["model_id"] : "eleven_multilingual_v2"
+      >
+  >;
+  constraintsFor(modelId: string): EndpointConstraints[];
+};
+
+export { ELEVENLABS_TTS_FAL_OVERLAP, ELEVENLABS_TTS_FAL_REFUSALS } from "./fal-target";
+
 export {
-  tts,
   textToSpeechUrl,
   TEXT_TO_SPEECH_BASE_URL,
   DEFAULT_TTS_MODEL_ID,

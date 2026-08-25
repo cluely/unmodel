@@ -166,7 +166,64 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * measured.
    */
   topaz: 70,
+
+  /**
+   * The six entries that carry the **media retarget seam** — `.toApi("fal")`.
+   *
+   * These are pinned as a group because they are the only entries whose weight
+   * now includes something a *pack* deliberately does not: the engine
+   * (`core/translate/media-retarget.ts`), the target table
+   * (`core/translate/media-endpoints.ts`) and the family's own
+   * `fal-target.ts`. The seam lives in `src/providers/<p>/index.ts` for exactly
+   * that reason — every media pack reaches these providers through their
+   * `unified-<category>.ts` adapter leaves, which import `./video` / `./tts` /
+   * `./image` directly and never the barrel, so the pack graphs are unchanged
+   * (asserted below in "the media retarget seam").
+   *
+   * Measured after the seam landed, pinned at ~×1.1:
+   *
+   * | entry | measured | pinned | what the seam cost it |
+   * |---|---|---|---|
+   * | pixverse | 57.3 | 64 | one endpoint, one model, three refusals |
+   * | lightricks | 60.5 | 68 | one endpoint, one model, the WxH → tier+ratio split |
+   * | black-forest-labs | 89.5 | 100 | five models across two endpoints |
+   * | kling | 122.1 | 135 | six fal endpoints across two source routes |
+   * | elevenlabs | 146.9 | 162 | three models, the widest refusal battery |
+   * | minimax | 205.9 | 227 | three models, plus chat/video/clone/design |
+   *
+   * The engine and the target table are ~9 KiB of the total, shared as one
+   * chunk between all six; the rest is each family's own mapping prose. A
+   * seventh family joining moves only its own row.
+   */
+  pixverse: 64,
+  lightricks: 68,
+  "black-forest-labs": 100,
+  kling: 135,
+  elevenlabs: 162,
+  minimax: 227,
 };
+
+/**
+ * The provider entries that carry `.toApi("fal")`, and the source modules that
+ * prove it. Read by the seam tests below in both directions.
+ */
+const MEDIA_RETARGET_ENTRIES: Array<{ provider: string; falTarget: string }> = [
+  { provider: "kling", falTarget: "src/providers/kling/fal-target.ts" },
+  { provider: "pixverse", falTarget: "src/providers/pixverse/fal-target.ts" },
+  { provider: "lightricks", falTarget: "src/providers/lightricks/fal-target.ts" },
+  { provider: "elevenlabs", falTarget: "src/providers/elevenlabs/fal-target.ts" },
+  { provider: "minimax", falTarget: "src/providers/minimax/fal-target.ts" },
+  {
+    provider: "black-forest-labs",
+    falTarget: "src/providers/black-forest-labs/fal-target.ts",
+  },
+];
+
+/** The modules a media pack must never reach, because `.toApi` is not on its results. */
+const MEDIA_RETARGET_MODULES = [
+  "src/core/translate/media-retarget.ts",
+  "src/core/translate/media-endpoints.ts",
+];
 
 /**
  * `unmodel/chat` is the ready-made 32-provider pack. It carries every concrete
@@ -1535,6 +1592,79 @@ describe("unified media entries", () => {
     expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
     expect(modules.filter((m) => m.startsWith("src/catalog/availability/"))).toEqual([]);
     expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
+  });
+
+  /**
+   * The MEDIA half of the same property, added when `.toApi("fal")` landed.
+   *
+   * The rule above catches the chat retarget layer by directory
+   * (`src/retarget/**`) and by basename (`interop.ts`); neither pattern would
+   * catch `core/translate/media-retarget.ts`, which lives in core, or a
+   * `fal-target.ts` leaf, which lives in a provider directory a pack already
+   * reaches. So they are named.
+   *
+   * This is the assertion the whole seam placement exists to satisfy. A
+   * `Validated` from a unified call has no `.toApi` on its declared type, so
+   * every byte of the engine and every overlap table would be dead weight
+   * here — and both are one careless import away, because the obvious place to
+   * wire `api:` is the endpoint module's own `finalize`, which is precisely
+   * the module twelve packs reach.
+   */
+  test.each(ALL_UNIFIED_ENTRIES)("unmodel/%s carries no media retarget seam", (name) => {
+    const modules = sourceModulesOf(unifiedEntry(name));
+    expect(modules).toContain(`src/unified/${name}.ts`);
+
+    expect(modules.filter((m) => MEDIA_RETARGET_MODULES.includes(m))).toEqual([]);
+    expect(modules.filter((m) => /\/fal-target\.ts$/.test(m))).toEqual([]);
+  });
+});
+
+/**
+ * The media retarget seam, from the other side.
+ *
+ * The pack tests above are negative, and a negative assertion is only worth
+ * something when the positive one holds somewhere: if `withApiTarget` were
+ * deleted tomorrow, every "no media retarget seam" test would still pass. So
+ * this names the six entries that DO carry it and checks the modules are
+ * really there.
+ */
+describe("the media retarget seam", () => {
+  test.each(MEDIA_RETARGET_ENTRIES)(
+    "unmodel/$provider carries the engine, the target table and its own overlap table",
+    ({ provider, falTarget }) => {
+      const modules = sourceModulesOf(entryFile(provider));
+      for (const required of [...MEDIA_RETARGET_MODULES, falTarget]) {
+        expect(modules, `unmodel/${provider} must reach ${required}`).toContain(required);
+      }
+    },
+  );
+
+  /**
+   * And that it is reached from the BARREL, not from an endpoint module —
+   * which is the fact that keeps the packs clean. `unified-<category>.ts`
+   * leaves import `./video` / `./tts` / `./image`; if a `fal-target` import
+   * appeared in one of those, this fails and the pack tests fail with it.
+   */
+  test("no adapter leaf or endpoint module imports a fal-target", () => {
+    const providers = join(ROOT, "src", "providers");
+    const offenders: string[] = [];
+    for (const provider of readdirSync(providers)) {
+      const dir = join(providers, provider);
+      if (!existsSync(dir) || !statSync(dir).isDirectory()) continue;
+      for (const file of readdirSync(dir)) {
+        if (!file.endsWith(".ts") || file === "index.ts" || file === "fal-target.ts") continue;
+        if (file.endsWith(".test.ts") || file.endsWith(".test-d.ts")) continue;
+        const text = readFileSync(join(dir, file), "utf8");
+        if (/from\s+["']\.\/fal-target["']/.test(text)) {
+          offenders.push(`src/providers/${provider}/${file}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      "only src/providers/<p>/index.ts may import ./fal-target — every other module in the " +
+        "directory is reachable from a category pack, which must not pay for the retarget seam",
+    ).toEqual([]);
   });
 });
 

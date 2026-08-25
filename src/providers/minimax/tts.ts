@@ -482,7 +482,7 @@ function estimate(params: T2aParams, info: ModelInfo | undefined, _ctx: Pipeline
  * signature and collapse `keyof` to `string`, so `.toSdk("anything")` would
  * type-check. See `SdkFormatters` in core/request.ts.
  */
-type MinimaxSdkTargets<B> = { minimax: () => B };
+export type MinimaxSdkTargets<B> = { minimax: () => B };
 
 function finalize(params: T2aParams): unknown {
   const body = { ...params };

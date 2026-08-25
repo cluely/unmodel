@@ -1,5 +1,85 @@
+import type { ExactKeys, Validated } from "../../core/request";
+import type { ValidateOptions } from "../../core/options";
+import type { ValidateResult } from "../../core/result";
+import type { EndpointConstraints } from "../../core/constraint-types";
+import { withApiTarget } from "../../core/translate/media-retarget";
+import type { MediaApiMember } from "../../retarget/types";
+import {
+  image as imageBase,
+  type BflSdkTargets,
+  type Flux2Arm,
+  type Flux2Body,
+  type Flux2ModelInput,
+} from "./image";
+import {
+  imageFlux1 as imageFlux1Base,
+  type Flux1Arm,
+  type Flux1Body,
+  type Flux1ModelInput,
+} from "./image-flux1";
+import {
+  bflImageFlux1ToFal,
+  bflImageToFal,
+  type AnyFlux1,
+  type AnyFlux2,
+  type BflImageFalOverlap,
+  type BflImageFlux1FalOverlap,
+} from "./fal-target";
+
+/**
+ * `blackForestLabs.image` (FLUX.2), with `.toApi("fal")` attached.
+ *
+ * Wired here rather than in `./image.ts` so `unmodel/image` — which reaches
+ * this provider through `./unified-image.ts` → `./image` — pays nothing for a
+ * seam it cannot call. See `core/translate/media-retarget.ts`.
+ */
+export const image = withApiTarget(
+  imageBase as unknown as Parameters<typeof withApiTarget<AnyFlux2, object>>[0],
+  bflImageToFal,
+) as unknown as {
+  <M extends Flux2ModelInput, T extends Flux2Arm<M>>(
+    params: T & Flux2Arm<M> & { model: M } & ExactKeys<T, Flux2Arm<M>>,
+    options?: ValidateOptions<T>,
+  ): Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>> &
+    MediaApiMember<BflImageFalOverlap, M>;
+  safe<M extends Flux2ModelInput, T extends Flux2Arm<M>>(
+    params: T & Flux2Arm<M> & { model: M } & ExactKeys<T, Flux2Arm<M>>,
+    options?: ValidateOptions<T>,
+  ): ValidateResult<
+    Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>> &
+      MediaApiMember<BflImageFalOverlap, M>
+  >;
+  constraintsFor(modelId: string): EndpointConstraints[];
+};
+
+/** `blackForestLabs.imageFlux1` (FLUX.1), with `.toApi("fal")`. See {@link image}. */
+export const imageFlux1 = withApiTarget(
+  imageFlux1Base as unknown as Parameters<typeof withApiTarget<AnyFlux1, object>>[0],
+  bflImageFlux1ToFal,
+) as unknown as {
+  <M extends Flux1ModelInput, T extends Flux1Arm<M>>(
+    params: T & Flux1Arm<M> & { model: M } & ExactKeys<T, Flux1Arm<M>>,
+    options?: ValidateOptions<T>,
+  ): Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>> &
+    MediaApiMember<BflImageFlux1FalOverlap, M>;
+  safe<M extends Flux1ModelInput, T extends Flux1Arm<M>>(
+    params: T & Flux1Arm<M> & { model: M } & ExactKeys<T, Flux1Arm<M>>,
+    options?: ValidateOptions<T>,
+  ): ValidateResult<
+    Validated<Omit<T, "model">, BflSdkTargets<Omit<T, "model">>> &
+      MediaApiMember<BflImageFlux1FalOverlap, M>
+  >;
+  constraintsFor(modelId: string): EndpointConstraints[];
+};
+
 export {
-  image,
+  BFL_IMAGE_FAL_OVERLAP,
+  BFL_IMAGE_FAL_REFUSALS,
+  BFL_IMAGE_FLUX1_FAL_OVERLAP,
+  BFL_IMAGE_FLUX1_FAL_REFUSALS,
+} from "./fal-target";
+
+export {
   bflModelUrl,
   BFL_API_BASE_URL,
   BFL_GET_RESULT_URL,
@@ -24,7 +104,6 @@ export type { FluxKontextParams } from "./image-edit";
 export type { BflAspectRatio } from "./aspect";
 
 export {
-  imageFlux1,
   FLUX1_DIMENSION_MULTIPLE,
   FLUX1_MIN_DIMENSION,
   FLUX1_MAX_DIMENSION,

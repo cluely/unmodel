@@ -21,8 +21,42 @@ export const CHAT_COMPLETIONS_URL = chatUrl;
 export { chat, checkChat, estimateChatTokens } from "./chat";
 
 // --- Speech (T2A v2) -------------------------------------------------------
+import type { ExactKeys, Validated } from "../../core/request";
+import type { ValidateOptions } from "../../core/options";
+import type { ValidateResult } from "../../core/result";
+import type { EndpointConstraints } from "../../core/constraint-types";
+import { withApiTarget } from "../../core/translate/media-retarget";
+import type { MediaApiMember } from "../../retarget/types";
+import { tts as ttsBase, type MinimaxSdkTargets, type T2aParams } from "./tts";
+import { minimaxTtsToFal, type MinimaxTtsFalOverlap } from "./fal-target";
+
+/**
+ * `minimax.tts`, with `.toApi("fal")` attached.
+ *
+ * Wired here rather than in `./tts.ts` so `unmodel/tts` — which reaches this
+ * provider through `./unified-tts.ts` → `./tts` — pays nothing for a seam it
+ * cannot call. See `core/translate/media-retarget.ts`.
+ */
+export const tts = withApiTarget(
+  ttsBase as unknown as Parameters<typeof withApiTarget<T2aParams, object>>[0],
+  minimaxTtsToFal,
+) as unknown as {
+  <T extends T2aParams>(
+    params: T & ExactKeys<T, T2aParams>,
+    options?: ValidateOptions<T>,
+  ): Validated<T, MinimaxSdkTargets<T>> & MediaApiMember<MinimaxTtsFalOverlap, T["model"]>;
+  safe<T extends T2aParams>(
+    params: T & ExactKeys<T, T2aParams>,
+    options?: ValidateOptions<T>,
+  ): ValidateResult<
+    Validated<T, MinimaxSdkTargets<T>> & MediaApiMember<MinimaxTtsFalOverlap, T["model"]>
+  >;
+  constraintsFor(modelId: string): EndpointConstraints[];
+};
+
+export { MINIMAX_TTS_FAL_OVERLAP, MINIMAX_TTS_FAL_REFUSALS } from "./fal-target";
+
 export {
-  tts,
   T2A_URL,
   T2A_UW_URL,
   T2A_EMOTIONS,

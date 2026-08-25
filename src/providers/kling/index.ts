@@ -1,11 +1,35 @@
 // The corroborated `POST /v1/videos/*` family — the primary video validators.
 // `model_name` is a body field; both routes are documented on Kling's own
 // apiReference pages (see ./models.ts for the provenance of both families).
-export { video, TEXT2VIDEO_URL, TEXT2VIDEO_MODELS } from "./video";
-export type { TextToVideoParams } from "./video";
+import type { ExactKeys, Validated } from "../../core/request";
+import type { ValidateOptions } from "../../core/options";
+import type { ValidateResult } from "../../core/result";
+import type { EndpointConstraints } from "../../core/constraint-types";
+import { withApiTarget } from "../../core/translate/media-retarget";
+import type { MediaApiMember } from "../../retarget/types";
+import {
+  video as videoBase,
+  type KlingSdkTargets,
+  type TextToVideoArm,
+  type TextToVideoParams,
+} from "./video";
+import {
+  videoFromImage as videoFromImageBase,
+  type ImageToVideoArm,
+  type ImageToVideoParams,
+} from "./video-from-image";
+import {
+  klingVideoFromImageToFal,
+  klingVideoToFal,
+  type KlingVideoFalOverlap,
+  type KlingVideoFromImageFalOverlap,
+} from "./fal-target";
+import type { KlingV1VideoModelId } from "./models";
+
+export { TEXT2VIDEO_URL, TEXT2VIDEO_MODELS } from "./video";
+export type { TextToVideoParams, TextToVideoArm } from "./video";
 
 export {
-  videoFromImage,
   IMAGE2VIDEO_URL,
   IMAGE2VIDEO_MODELS,
   MAX_ELEMENT_LIST,
@@ -13,9 +37,65 @@ export {
 } from "./video-from-image";
 export type {
   ImageToVideoParams,
+  ImageToVideoArm,
   KlingDynamicMask,
   KlingTrajectoryPoint,
 } from "./video-from-image";
+
+/** What `model_name` may be: a catalogued id, or any string at run time. */
+type KlingVideoModelInput = KlingV1VideoModelId | (string & {});
+
+/**
+ * `kling.video`, with `.toApi("fal")` attached.
+ *
+ * Wired here rather than in `./video.ts` so `unmodel/video` — which reaches
+ * this provider through `./unified-video.ts` → `./video` — pays nothing for a
+ * seam it cannot call. See `core/translate/media-retarget.ts`.
+ *
+ * `.toApi` exists for the three ids fal serves (`kling-v3`, `kling-v2-6`,
+ * `kling-v2-5-turbo`) and nowhere else; on the other six the member is simply
+ * not on the type, which is the honest answer for a hand-written overlap
+ * table. See `MediaApiMember` for why that differs from chat's permissive
+ * degradation.
+ */
+export const video = withApiTarget(
+  videoBase as unknown as Parameters<typeof withApiTarget<TextToVideoParams, object>>[0],
+  klingVideoToFal,
+) as unknown as {
+  <M extends KlingVideoModelInput, T extends TextToVideoArm<M>>(
+    params: T & TextToVideoArm<M> & { model_name?: M } & ExactKeys<T, TextToVideoArm<M>>,
+    options?: ValidateOptions<T>,
+  ): Validated<T, KlingSdkTargets<T>> & MediaApiMember<KlingVideoFalOverlap, M>;
+  safe<M extends KlingVideoModelInput, T extends TextToVideoArm<M>>(
+    params: T & TextToVideoArm<M> & { model_name?: M } & ExactKeys<T, TextToVideoArm<M>>,
+    options?: ValidateOptions<T>,
+  ): ValidateResult<Validated<T, KlingSdkTargets<T>> & MediaApiMember<KlingVideoFalOverlap, M>>;
+  constraintsFor(modelId: string): EndpointConstraints[];
+};
+
+/** `kling.videoFromImage`, with `.toApi("fal")` attached. See {@link video}. */
+export const videoFromImage = withApiTarget(
+  videoFromImageBase as unknown as Parameters<typeof withApiTarget<ImageToVideoParams, object>>[0],
+  klingVideoFromImageToFal,
+) as unknown as {
+  <M extends KlingVideoModelInput, T extends ImageToVideoArm<M>>(
+    params: T & ImageToVideoArm<M> & { model_name?: M } & ExactKeys<T, ImageToVideoArm<M>>,
+    options?: ValidateOptions<T>,
+  ): Validated<T, KlingSdkTargets<T>> & MediaApiMember<KlingVideoFromImageFalOverlap, M>;
+  safe<M extends KlingVideoModelInput, T extends ImageToVideoArm<M>>(
+    params: T & ImageToVideoArm<M> & { model_name?: M } & ExactKeys<T, ImageToVideoArm<M>>,
+    options?: ValidateOptions<T>,
+  ): ValidateResult<
+    Validated<T, KlingSdkTargets<T>> & MediaApiMember<KlingVideoFromImageFalOverlap, M>
+  >;
+  constraintsFor(modelId: string): EndpointConstraints[];
+};
+
+export {
+  KLING_VIDEO_FAL_OVERLAP,
+  KLING_VIDEO_FROM_IMAGE_FAL_OVERLAP,
+  KLING_VIDEO_FAL_REFUSALS,
+} from "./fal-target";
 
 // EXPERIMENTAL — the path-addressed family (`POST /text-to-video/{model}`,
 // `/image-to-video/{model}`, `/omni-video/{model}`), recovered from the doc

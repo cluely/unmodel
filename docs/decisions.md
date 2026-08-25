@@ -318,3 +318,50 @@ shipping ahead-of-time compilation (both tracked in the research doc's
 "revisit if" list); or the hot path changing shape to pure predicate checks,
 where ArkType's `.allows()` is ~18× faster and unmatched. Bundle-weight
 pressure alone points at `zod/mini`, a far cheaper move than a library swap.
+
+## 6. `.toApi` attaches in `finalize` for chat and in `index.ts` for media
+
+**Decision.** Chat validators wire the retargeter into their `finalize`
+(`toValidated(body, request, { sdk, api })`). Media validators do not: they wire
+nothing, and their provider entry — `src/providers/<p>/index.ts` — wraps the
+exported validator with `withApiTarget(validator, retargeter)`
+(`src/core/translate/media-retarget.ts`), which hangs `.toApi` / `.toApiSafe`
+non-enumerably off each result.
+
+**Why.** Who imports the endpoint module differs, and that is the whole reason.
+A chat endpoint module is reached by its own entry and by `unmodel/chat`'s
+validator registry — both of which *want* `.toApi`, since a compiled chat result
+carries the provider's retarget surface through. A media endpoint module is
+reached by its own entry **and by up to twelve category packs**, through the
+`unified-<category>.ts` adapter leaves that import `./video` / `./tts` /
+`./image` directly. A unified result's declared type has no `.toApi` on it, so
+every byte of the engine, the target table and the family's overlap table would
+be dead weight in `unmodel/video`, `unmodel/image`, `unmodel/tts` and the rest —
+in bundles that cannot call it.
+
+The obvious place to wire `api:` is therefore exactly the wrong one here, which
+is why this is written down rather than left to be re-derived. `index.ts` is the
+one module only `unmodel/<p>` imports (the barrel-trap rule R1 keeps adapters
+out of it), so the seam applied there costs the packs nothing.
+
+The cost of the split is that the wrapped validator's public type is restated in
+`index.ts` — `withApiTarget` is generic over the *result* and cannot add a member
+to the return of a generic call signature — which is ~12 lines per endpoint and
+the reason the roster is curated rather than exhaustive.
+
+**Therefore, never:**
+
+- Import a `fal-target.ts` from anything but its own directory's `index.ts`.
+  Asserted in `test/bundle-budget.test.ts` ("no adapter leaf or endpoint module
+  imports a fal-target"), because a single stray import silently re-adds the
+  seam to a dozen packs.
+- Wire `api:` into a media endpoint module's `finalize`, for the same reason.
+- Let the per-pack composition tests go vacuous. They are negative assertions,
+  so they are paired with a positive one naming the six entries that *do* carry
+  the seam.
+
+**What would change this.** A media pack that genuinely wants `.toApi` on its
+unified results — which would mean a canonical media retarget vocabulary rather
+than a per-family hand mapping, and a target union derivable from the kernel's
+own model refs. Nothing in the current design points that way: the mapping is
+per wire family by necessity, because media has no shared dialect.

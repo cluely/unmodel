@@ -23,6 +23,7 @@ import { chat } from "../../src/chat/index";
 import { getProviderTyped } from "../../src/catalog/typed.gen";
 import { tts } from "../../src/unified/tts";
 import { image as falImage } from "../../src/providers/fal/image";
+import { video as klingVideo } from "../../src/providers/kling";
 
 bench("chat: one unified call", () => {
   return chat.safe({
@@ -52,3 +53,26 @@ bench("tts: unified pack call", () => {
 bench("fal: image pack call", () => {
   return falImage.safe({ endpoint: "fal-ai/flux/dev", prompt: "a lighthouse" });
 }).types([472, "instantiations"]);
+
+/**
+ * The media retarget seam: `.toApi("fal")` on a native media request.
+ *
+ * Pinned because `MediaApiMember` is a conditional over a per-family overlap
+ * table, evaluated on every call to a wrapped validator — including the calls
+ * that get `unknown` back because the model has no row. That is the shape most
+ * likely to regress as families are added: a table keyed less precisely, or an
+ * arm that distributes, would show up here long before it showed up in a `.d.ts`
+ * byte count.
+ *
+ * The `kling.video` arm is deliberate rather than the cheapest one. It layers
+ * the member on top of `TextToVideoArm`'s own per-model narrowing, so it
+ * measures the seam's cost *in combination with* the narrowing it rides on,
+ * which is the thing an editor actually pays for.
+ */
+bench("media retarget: a native call carrying .toApi", () => {
+  return klingVideo.safe({
+    model_name: "kling-v2-5-turbo",
+    prompt: "a kite",
+    mode: "pro",
+  });
+}).types([628, "instantiations"]);

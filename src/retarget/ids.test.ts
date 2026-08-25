@@ -7,9 +7,11 @@ import type { AvailabilityMap } from "../core/translate/availability-types";
 import {
   API_TARGET_IDS,
   FACTORY_API_TARGET_IDS,
+  MEDIA_API_TARGET_IDS,
   SDK_TARGET_IDS,
   STATIC_API_TARGET_IDS,
   isApiTargetId,
+  isMediaApiTargetId,
   isStaticApiTargetId,
 } from "./ids";
 
@@ -45,6 +47,7 @@ describe("the id lists are well-formed", () => {
     ["API_TARGET_IDS", API_TARGET_IDS],
     ["FACTORY_API_TARGET_IDS", FACTORY_API_TARGET_IDS],
     ["SDK_TARGET_IDS", SDK_TARGET_IDS],
+    ["MEDIA_API_TARGET_IDS", MEDIA_API_TARGET_IDS],
   ] as Array<[string, readonly string[]]>)("%s is sorted and duplicate-free", (_name, ids) => {
     expect([...ids]).toEqual([...new Set(ids)].sort());
   });
@@ -67,6 +70,22 @@ describe("the id lists are well-formed", () => {
     for (const id of FACTORY_API_TARGET_IDS) expect(isStaticApiTargetId(id)).toBe(false);
     expect(isApiTargetId("not-a-provider")).toBe(false);
     expect(isApiTargetId("constructor")).toBe(false);
+    for (const id of MEDIA_API_TARGET_IDS) expect(isMediaApiTargetId(id)).toBe(true);
+    expect(isMediaApiTargetId("constructor")).toBe(false);
+  });
+
+  /**
+   * The media vocabulary is hand-written and cannot be derived — models.dev
+   * carries no media availability — so what keeps it honest is the other
+   * direction: every id here must be a provider unmodel actually ships, and it
+   * must be a `.toSdk` target too, since a retargeted media result offers
+   * `toSdk(target)` for the host it landed on.
+   */
+  test("every media target is a shipped provider and an sdk target", () => {
+    for (const id of MEDIA_API_TARGET_IDS) {
+      expect(providerDirectories(), `${id} has no src/providers/ directory`).toContain(id);
+      expect([...SDK_TARGET_IDS] as string[], `${id} is not a .toSdk target`).toContain(id);
+    }
   });
 });
 

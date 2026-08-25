@@ -1,5 +1,48 @@
-export { video, TEXT_TO_VIDEO_URL, videoConstraints } from "./video";
+import type { ExactKeys, Validated } from "../../core/request";
+import type { ValidateOptions } from "../../core/options";
+import type { ValidateResult } from "../../core/result";
+import type { EndpointConstraints } from "../../core/constraint-types";
+import { withApiTarget } from "../../core/translate/media-retarget";
+import type { MediaApiMember } from "../../retarget/types";
+import { video as videoBase, type PixverseSdkTargets, type TextToVideoParams } from "./video";
+import { pixverseVideoToFal, type PixverseVideoFalOverlap } from "./fal-target";
+
+export { TEXT_TO_VIDEO_URL, videoConstraints } from "./video";
 export type { TextToVideoParams } from "./video";
+
+/**
+ * `pixverse.video`, with `.toApi("fal")` attached.
+ *
+ * The retarget is wired **here** rather than inside `./video.ts` on purpose:
+ * `unmodel/video` reaches this provider through `./unified-video.ts`, which
+ * imports `./video` directly, so a seam wired in that module's `finalize`
+ * would put the retarget engine and the overlap table into a pack that has no
+ * way to call `.toApi` at all. `./index.ts` is the one module only
+ * `unmodel/pixverse` imports. See `core/translate/media-retarget.ts`.
+ *
+ * The declared type is restated rather than inferred because
+ * `withApiTarget` is generic over the *result* and cannot add a member to the
+ * return of a generic call signature; the `MediaApiMember` intersection is
+ * what makes `.toApi` exist for `model: "v6"` and nowhere else.
+ */
+export const video = withApiTarget(
+  videoBase as unknown as Parameters<typeof withApiTarget<TextToVideoParams, object>>[0],
+  pixverseVideoToFal,
+) as unknown as {
+  <T extends TextToVideoParams>(
+    params: T & ExactKeys<T, TextToVideoParams>,
+    options?: ValidateOptions<T>,
+  ): Validated<T, PixverseSdkTargets<T>> & MediaApiMember<PixverseVideoFalOverlap, T["model"]>;
+  safe<T extends TextToVideoParams>(
+    params: T & ExactKeys<T, TextToVideoParams>,
+    options?: ValidateOptions<T>,
+  ): ValidateResult<
+    Validated<T, PixverseSdkTargets<T>> & MediaApiMember<PixverseVideoFalOverlap, T["model"]>
+  >;
+  constraintsFor(modelId: string): EndpointConstraints[];
+};
+
+export { PIXVERSE_VIDEO_FAL_OVERLAP, PIXVERSE_VIDEO_FAL_REFUSALS } from "./fal-target";
 
 export { videoFromImage, IMAGE_TO_VIDEO_URL } from "./video-from-image";
 export type { ImageToVideoParams } from "./video-from-image";

@@ -92,7 +92,17 @@ export type {
   TranslationWarningMeta,
   Warn,
 } from "./core/translate/warnings";
-export type { DialectId, TargetEndpoint } from "./core/translate/endpoints";
+export type { DialectId, EndpointAuth, TargetEndpoint } from "./core/translate/endpoints";
+// The MEDIA retarget vocabulary — `.toApi("fal")` on a validated native image,
+// video or tts request. The engine and the overlap tables stay behind the
+// provider subpaths (`unmodel/kling`, `unmodel/elevenlabs`, …) for the same
+// reason the dialect codecs do: this entry must not acquire either.
+export type {
+  MediaMapContext,
+  MediaOverlapRow,
+  MediaRetargetSpec,
+} from "./core/translate/media-retarget";
+export type { MediaTargetEndpoint } from "./core/translate/media-endpoints";
 // The IR vocabulary, type-only: enough to write a codec or read a warning's
 // meta, with no runtime weight and no dialect pulled in.
 export type {
@@ -140,6 +150,10 @@ export type {
   DialectSdkResult,
   FactoryApiTargetId,
   GeminiSdkParams,
+  MediaApiMember,
+  MediaApiTargetId,
+  MediaOverlapTable,
+  MediaRetargeted,
   Retargeted,
   SdkTargetId,
   StaticApiTargetId,

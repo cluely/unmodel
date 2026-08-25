@@ -176,7 +176,39 @@ CHAT_AUTH.anthropic;  // { header: "x-api-key" }
 CHAT_AUTH.openrouter; // { header: "authorization", scheme: "Bearer" }
 ```
 
-`.toApiSafe(provider)` is the non-throwing form. Retargeting reruns the destination deny/enum rules it has available. For full schema, nested, catalog, context, and budget checks, pass the result through the destination validator. Chat-only, one hop.
+`.toApiSafe(provider)` is the non-throwing form. Retargeting reruns the destination deny/enum rules it has available. For full schema, nested, catalog, context, and budget checks, pass the result through the destination validator. One hop.
+
+## Retarget media
+
+Media requests retarget too, to exactly one destination: `.toApi("fal")`, which moves a validated native image, video or speech request onto fal's queue — same model, same vendor, different host.
+
+```ts
+import { video } from "unmodel/kling";
+
+const request = video({
+  model_name: "kling-v2-5-turbo",
+  prompt: "A slow push-in through a rainy neon alley",
+  mode: "pro",
+  duration: "10",
+});
+
+const onFal = request.toApi("fal");
+onFal.request.url; // https://queue.fal.run/fal-ai/kling-video/v2.5-turbo/pro/text-to-video
+onFal.warnings;    // []  ← empty means the mapping was exact
+onFal.toSdk("fal");// { input: { … } } for @fal-ai/client
+
+video({ model_name: "kling-v1", prompt: "…" }).toApi("fal");
+//                                             ~~~~~ TypeScript error: fal serves no Kling v1
+```
+
+It is a different mechanism from chat's, not the same one widened, and the differences are the ones you will feel:
+
+- **The target union is hand-written, not generated.** models.dev carries no media availability, so which models fal also serves was looked up endpoint page by endpoint page. A model that is not in the table has no `.toApi` on its result type at all — where chat degrades an unrecognised model to the full target union (its catalog is a snapshot that lags releases), a hand table has no such excuse.
+- **The auth scheme changes.** fal wants `authorization: Key <FAL_KEY>` — the literal word `Key`, which fal's own OpenAPI document omits. Your Kling key went in `authorization: Bearer`.
+- **A parameter fal cannot express is an error, not a dropped field.** A derived or snapped value is exactly one `approximated_param` warning carrying what you asked for and what was achieved. So `warnings.length === 0` *means* the mapping was exact.
+- **Native → fal only, one hop.** A fal body has nowhere left to go, and fal → native would have to guess which native route an endpoint id came from.
+
+Which families ship, which are deliberately refused, and why: [docs/providers.md](providers.md#media-retargeting--toapifal).
 
 ## Check responses
 

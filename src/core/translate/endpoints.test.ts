@@ -9,6 +9,8 @@ import {
   resolveEndpoint,
   type TargetEndpoint,
 } from "./endpoints";
+import { FAL_MEDIA_TARGET, MEDIA_TARGETS } from "./media-endpoints";
+import { falQueueUrl } from "../../providers/fal/urls";
 
 // The endpoint table is hand-written (models.dev records `api: null` for azure
 // and google-vertex, and the factory providers have no provider-wide URL at
@@ -138,7 +140,51 @@ describe("endpoint table", () => {
       const { header, scheme } = endpoint.auth;
       expect(header, `${id} has an empty auth header`).not.toBe("");
       expect(header, `${id} spells its auth header with capitals`).toBe(header.toLowerCase());
-      if (scheme !== undefined) expect(["Bearer", "Basic", "Token"]).toContain(scheme);
+      if (scheme !== undefined) expect(["Bearer", "Basic", "Token", "Key"]).toContain(scheme);
+    }
+  });
+});
+
+/**
+ * The MEDIA target table — `./media-endpoints.ts`, the `.toApi("fal")` half.
+ *
+ * A sibling table rather than a row in `ENDPOINTS` (the readers of that one are
+ * all chat-shaped), so it gets the same treatment this file gives every chat
+ * row: the auth header is never in the static headers, and the URL is compared
+ * against the constant the provider module itself exports. `src/core/**` may
+ * not import `src/providers/**` (import-graph rule 2), so the URL is spelled
+ * twice by necessity — and this is what keeps the two spellings the same one.
+ */
+describe("media targets", () => {
+  test("fal's row carries `Key`, and never the credential itself", () => {
+    expect(FAL_MEDIA_TARGET.auth).toEqual({ header: "authorization", scheme: "Key" });
+    // `Authorization: Key <FAL_KEY>` — the literal word `Key`, which fal's own
+    // OpenAPI security scheme omits. Stated, never derived.
+    expect(Object.keys(FAL_MEDIA_TARGET.headers).map((n) => n.toLowerCase())).not.toContain(
+      FAL_MEDIA_TARGET.auth.header,
+    );
+    expect(FAL_MEDIA_TARGET.headers).toEqual({ "content-type": "application/json" });
+  });
+
+  test("every row is reachable by its own id", () => {
+    for (const [id, target] of Object.entries(MEDIA_TARGETS)) {
+      expect(target.id, `${id} is filed under a key that is not its id`).toBe(id);
+    }
+    expect(Object.keys(MEDIA_TARGETS)).toEqual(["fal"]);
+  });
+
+  test("fal's URL builder equals `falQueueUrl` from the provider module", () => {
+    for (const endpointId of [
+      "fal-ai/flux/dev",
+      "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
+      "lightricks/ltx-2.5/text-to-video/pro",
+      // The separators must survive segment-wise encoding: a whole-id
+      // `encodeURIComponent` would produce `fal-ai%2Fflux%2Fdev` and a 404.
+      "fal-ai/some model/with spaces",
+    ]) {
+      expect(FAL_MEDIA_TARGET.url(endpointId), `${endpointId} drifted`).toBe(
+        falQueueUrl(endpointId),
+      );
     }
   });
 });

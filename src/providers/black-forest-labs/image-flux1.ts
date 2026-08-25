@@ -166,13 +166,13 @@ interface Flux1BodyByModel {
 }
 
 /** Resolves a model id literal to its exact Tier-A arm. */
-type Flux1Arm<M extends string> = M extends keyof Flux1BodyByModel
+export type Flux1Arm<M extends string> = M extends keyof Flux1BodyByModel
   ? Flux1BodyByModel[M]
   : UnknownFlux1ModelBody<M>;
 
 /** Runtime implementation type; the public alias stays closed by default. */
 type AnyFlux1Body = Flux1Body<string>;
-type Flux1ModelInput = keyof Flux1BodyByModel | (string & {});
+export type Flux1ModelInput = keyof Flux1BodyByModel | (string & {});
 
 // ---------------------------------------------------------------------------
 // Schema — union of every param any FLUX.1 route accepts; per-route narrowing
@@ -282,7 +282,7 @@ function estimate(_params: AnyFlux1Body, info: ModelInfo | undefined) {
  * literal in `finalize`; it must stay an object type with no index
  * signature, or `toSdk` would accept any string.
  */
-type BflSdkTargets<B> = { "black-forest-labs": () => B };
+export type BflSdkTargets<B> = { "black-forest-labs": () => B };
 
 function finalize(params: AnyFlux1Body): unknown {
   const { model, ...body } = params;

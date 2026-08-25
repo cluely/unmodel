@@ -284,6 +284,23 @@ export function normalizeName(value: string): string {
 /** Substring matches under this length are noise ("v2", "pro"), not signals. */
 const MIN_SUBSTRING_MATCH = 6;
 
+/** "dall-e-3" and "DALLE 3" agree once punctuation stops mattering at all. */
+const compactForm = (value: string): string => normalizeName(value).replace(/-/g, "");
+
+/**
+ * "FLUX1.1 [pro]" and "flux-pro-1.1" are the same tokens in a different
+ * order. Tokens split on both punctuation and alpha↔digit boundaries
+ * ("wan2" → wan,2), and the multiset must match EXACTLY — a subset rule would
+ * let "FLUX.1 [pro]" claim flux-pro-1.1, which is a different model.
+ */
+const tokenForm = (value: string): string =>
+  normalizeName(value)
+    .replace(/([a-z])(\d)/g, "$1-$2")
+    .replace(/(\d)([a-z])/g, "$1-$2")
+    .split("-")
+    .sort()
+    .join("-");
+
 export interface Classified {
   row: AaRow;
   verdict: "aliased" | "auto" | "triage";
@@ -312,22 +329,53 @@ export function classifyRow(
     }
   }
 
-  const probes = [
-    ...(row.slug !== undefined ? [normalizeName(row.slug)] : []),
-    normalizeName(row.name),
+  // AA display names often lead with the creator ("Runway Gen-4 Image",
+  // creator Runway); the catalog id never does, so a creator-stripped variant
+  // of the name joins the probe list.
+  const rawProbes = [
+    ...(row.slug !== undefined ? [row.slug] : []),
+    row.name,
+    ...(row.creator !== undefined &&
+    normalizeName(row.name).startsWith(`${normalizeName(row.creator).split("-")[0]}-`)
+      ? [normalizeName(row.name).slice(normalizeName(row.creator).split("-")[0]!.length + 1)]
+      : []),
   ];
+  const probes = rawProbes.map((value) => ({
+    exact: normalizeName(value),
+    compact: compactForm(value),
+    tokens: tokenForm(value),
+  }));
   for (const candidate of candidates) {
-    const bare = normalizeName(candidate.slice(candidate.indexOf("/") + 1));
-    const full = normalizeName(candidate);
+    const bareRaw = candidate.slice(candidate.indexOf("/") + 1);
+    const forms = [
+      { exact: normalizeName(bareRaw), compact: compactForm(bareRaw), tokens: tokenForm(bareRaw) },
+      {
+        exact: normalizeName(candidate),
+        compact: compactForm(candidate),
+        tokens: tokenForm(candidate),
+      },
+    ];
     for (const probe of probes) {
-      if (probe === bare || probe === full) return { row, verdict: "auto", matchedRef: candidate };
-      if (exactOnly) continue;
-      // One direction only: the leaderboard name inside a LONGER catalog id
-      // ("gemini-3-1-flash-tts" ⊂ "gemini-3-1-flash-tts-preview"). The reverse
-      // would let a generic catalog id ("whisper") swallow every future model
-      // whose name mentions it — those cases are what the alias file is for.
-      if (probe.length >= MIN_SUBSTRING_MATCH && (bare.includes(probe) || full.includes(probe))) {
-        return { row, verdict: "auto", matchedRef: candidate };
+      for (const form of forms) {
+        // The three exact-content matchers, safe for every category including
+        // chat: same spelling, same letters ("dalle3" ≡ "dall-e-3"), or the
+        // same tokens reordered ("flux1-1-pro" ≡ "flux-pro-1.1").
+        if (
+          probe.exact === form.exact ||
+          probe.compact === form.compact ||
+          probe.tokens === form.tokens
+        ) {
+          return { row, verdict: "auto", matchedRef: candidate };
+        }
+        if (exactOnly) continue;
+        // One direction only: the leaderboard name inside a LONGER catalog id
+        // ("gemini-3-1-flash-tts" ⊂ "gemini-3-1-flash-tts-preview"). The
+        // reverse would let a generic catalog id ("whisper") swallow every
+        // future model whose name mentions it — those cases are what the
+        // alias file is for.
+        if (probe.exact.length >= MIN_SUBSTRING_MATCH && form.exact.includes(probe.exact)) {
+          return { row, verdict: "auto", matchedRef: candidate };
+        }
       }
     }
   }

@@ -20,21 +20,27 @@
     "text-to-speech/sonic-3-6": {
       "name": "Sonic 3.6",
       "status": "covered",
-      "refs": ["cartesia/sonic-preview"],
+      "refs": [
+        "cartesia/sonic-preview"
+      ],
       "reason": "No sonic-3.6 model id exists — Sonic 3.6 is the beta behind sonic-preview (docs.cartesia.ai, 2026-08-24).",
       "verified": "2026-08-25"
     },
     "text-to-speech/qwen-audio-3-0-tts-plus": {
       "name": "Qwen-Audio-3.0-TTS-Plus",
       "status": "partial",
-      "refs": ["alibaba (catalog row qwen-audio-3.0-tts-plus)"],
+      "refs": [
+        "alibaba (catalog row qwen-audio-3.0-tts-plus)"
+      ],
       "reason": "Realtime-WebSocket-only on DashScope; catalogued and rejected by name by the unary alibaba.tts validator. A socket-config validator is the open follow-up.",
       "verified": "2026-08-25"
     },
     "text-to-speech/v3-conversational": {
       "name": "v3 Conversational",
       "status": "partial",
-      "refs": ["elevenlabs (catalog row eleven_v3_conversational)"],
+      "refs": [
+        "elevenlabs (catalog row eleven_v3_conversational)"
+      ],
       "reason": "Realtime Text-to-Dialogue WebSocket only; catalogued, not servable by POST /v1/text-to-speech.",
       "verified": "2026-08-25"
     },
@@ -47,40 +53,53 @@
     "text-to-image/mai-image-2-5": {
       "name": "MAI-Image-2.5",
       "status": "partial",
-      "refs": ["azure (createAzure(endpoint).image, deployment-name model)"],
+      "refs": [
+        "azure (createAzure(endpoint).image, deployment-name model)"
+      ],
       "reason": "Microsoft Foundry serves it behind per-resource endpoints and user-chosen deployment names, so azure ships wire validators without unified refs (same doctrine as azure chat).",
       "verified": "2026-08-25"
     },
     "text-to-image/mai-image-2-5-pro": {
       "name": "MAI-Image-2.5-Pro",
       "status": "partial",
-      "refs": ["azure (createAzure(endpoint).image, deployment-name model)"],
+      "refs": [
+        "azure (createAzure(endpoint).image, deployment-name model)"
+      ],
       "reason": "Same Foundry deployment-name doctrine as MAI-Image-2.5.",
       "verified": "2026-08-25"
     },
     "image-editing/mai-image-2-5": {
       "name": "MAI-Image-2.5",
       "status": "partial",
-      "refs": ["azure (createAzure(endpoint).imageEdit, multipart /mai/v1/images/edits)"],
+      "refs": [
+        "azure (createAzure(endpoint).imageEdit, multipart /mai/v1/images/edits)"
+      ],
       "reason": "Same Foundry deployment-name doctrine as the generation route.",
       "verified": "2026-08-25"
     },
     "text-to-video/wan-3-0": {
       "name": "Wan 3.0",
       "status": "covered",
-      "refs": ["alibaba/wan3.0-video"],
+      "refs": [
+        "alibaba/wan3.0-video"
+      ],
       "verified": "2026-08-25"
     },
     "image-to-video/wan-3-0": {
       "name": "Wan 3.0",
       "status": "covered",
-      "refs": ["alibaba/wan3.0-video"],
+      "refs": [
+        "alibaba/wan3.0-video"
+      ],
       "verified": "2026-08-25"
     },
     "text-to-video/wan2-7-260612": {
       "name": "Wan2.7-260612",
       "status": "covered",
-      "refs": ["alibaba/wan2.7-t2v", "alibaba/wan2.7-t2v-2026-06-12"],
+      "refs": [
+        "alibaba/wan2.7-t2v",
+        "alibaba/wan2.7-t2v-2026-06-12"
+      ],
       "reason": "The -260612 suffix is DashScope's dated checkpoint; both the alias id and the dated id are catalogued.",
       "verified": "2026-08-25"
     },
@@ -111,13 +130,17 @@
     "music/with-vocals/mureka-v9": {
       "name": "Mureka V9",
       "status": "covered",
-      "refs": ["mureka/mureka-9"],
+      "refs": [
+        "mureka/mureka-9"
+      ],
       "verified": "2026-08-25"
     },
     "music/with-vocals/mureka-v8": {
       "name": "Mureka V8",
       "status": "covered",
-      "refs": ["mureka/mureka-8"],
+      "refs": [
+        "mureka/mureka-8"
+      ],
       "verified": "2026-08-25"
     },
     "music/with-vocals/minimax-music-2-6": {
@@ -130,6 +153,165 @@
       "name": "MiniMax Music 2.6",
       "status": "excluded",
       "reason": "Same closed-API rationale as the with-vocals entry.",
+      "verified": "2026-08-25"
+    },
+    "text-to-image/google-imagen_imagen-4-ultra": {
+      "name": "Imagen 4 Ultra",
+      "status": "covered",
+      "refs": [
+        "google/imagen-4.0-ultra-generate-001"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-image/google-imagen_imagen-4-standard": {
+      "name": "Imagen 4 Standard",
+      "status": "covered",
+      "refs": [
+        "google/imagen-4.0-generate-001"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-image/google-imagen_imagen-4-fast": {
+      "name": "Imagen 4 Fast",
+      "status": "covered",
+      "refs": [
+        "google/imagen-4.0-fast-generate-001"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-image/stable-diffusion-3-5-large": {
+      "name": "Stable Diffusion 3.5 Large",
+      "status": "covered",
+      "refs": [
+        "stability/sd3.5-large"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-image/stable-diffusion-3-5-large-turbo": {
+      "name": "Stable Diffusion 3.5 Large Turbo",
+      "status": "covered",
+      "refs": [
+        "stability/sd3.5-large-turbo"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-image/stable-diffusion-3-5-medium": {
+      "name": "Stable Diffusion 3.5 Medium",
+      "status": "covered",
+      "refs": [
+        "stability/sd3.5-medium"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-image/stable-diffusion-3-large": {
+      "name": "Stable Diffusion 3 Large",
+      "status": "covered",
+      "refs": [
+        "stability/sd3-large"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-image/stable-diffusion-3-large-turbo": {
+      "name": "Stable Diffusion 3 Large Turbo",
+      "status": "covered",
+      "refs": [
+        "stability/sd3-large-turbo"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-image/stable-diffusion-3-medium": {
+      "name": "Stable Diffusion 3 Medium",
+      "status": "covered",
+      "refs": [
+        "stability/sd3-medium"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-image/dalle-3-hd": {
+      "name": "DALLE 3 HD",
+      "status": "covered",
+      "refs": [
+        "openai/dall-e-3"
+      ],
+      "reason": "HD is dall-e-3's quality parameter, not a separate model id.",
+      "verified": "2026-08-25"
+    },
+    "text-to-image/midjourney-v7-alpha": {
+      "name": "Midjourney v7 Alpha",
+      "status": "excluded",
+      "reason": "Midjourney has no public developer API (Discord/consumer only) — docs/providers.md image Excluded list.",
+      "verified": "2026-08-25"
+    },
+    "text-to-image/midjourney-v6-1": {
+      "name": "Midjourney v6.1",
+      "status": "excluded",
+      "reason": "Same as Midjourney v7 Alpha — no public developer API.",
+      "verified": "2026-08-25"
+    },
+    "text-to-image/midjourney-v6": {
+      "name": "Midjourney v6",
+      "status": "excluded",
+      "reason": "Same as Midjourney v7 Alpha — no public developer API.",
+      "verified": "2026-08-25"
+    },
+    "text-to-image/playground-v3-beta": {
+      "name": "Playground v3 (beta)",
+      "status": "excluded",
+      "reason": "Playground has no public developer API — docs/providers.md image Excluded list.",
+      "verified": "2026-08-25"
+    },
+    "text-to-image/playground-v2-5": {
+      "name": "Playground v2.5",
+      "status": "excluded",
+      "reason": "Same as Playground v3 — no public developer API.",
+      "verified": "2026-08-25"
+    },
+    "text-to-speech/realtime-tts-1-5-max": {
+      "name": "Realtime TTS 1.5 Max",
+      "status": "covered",
+      "refs": [
+        "inworld/inworld-tts-1.5-max"
+      ],
+      "reason": "AA's display name drops the vendor prefix; the API model id is inworld-tts-1.5-max.",
+      "verified": "2026-08-25"
+    },
+    "text-to-speech/realtime-tts-1-5-mini": {
+      "name": "Realtime TTS 1.5 Mini",
+      "status": "covered",
+      "refs": [
+        "inworld/inworld-tts-1.5-mini"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-speech/realtime-tts-2-research-preview": {
+      "name": "Realtime TTS-2 - Research Preview",
+      "status": "covered",
+      "refs": [
+        "inworld/inworld-tts-2"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-speech/lightning-v3-1-pro-june": {
+      "name": "Lightning V3.1 Pro TTS (Jun 2026)",
+      "status": "covered",
+      "refs": [
+        "smallest-ai/lightning_v3.1_pro"
+      ],
+      "verified": "2026-08-25"
+    },
+    "text-to-speech/step-tts-2-mar-2026": {
+      "name": "Step TTS 2 (Mar 2026)",
+      "status": "partial",
+      "refs": [
+        "stepfun (catalog row step-tts-2, deprecated)"
+      ],
+      "reason": "Catalogued, but StepFun's create-speech reference says the endpoint currently supports only stepaudio-2.5-tts, so the id is off the unified roster and warns when sent raw.",
+      "verified": "2026-08-25"
+    },
+    "image-to-video/midjourney-v1": {
+      "name": "Midjourney V1",
+      "status": "excluded",
+      "reason": "Midjourney has no public developer API (the V1 video model included).",
       "verified": "2026-08-25"
     }
   }

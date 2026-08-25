@@ -7,12 +7,14 @@
 //   data/fal/openapi/fal-ai__flux-2-max.json
 //   data/fal/openapi/fal-ai__flux-2-pro.json
 //   data/fal/openapi/fal-ai__flux-2__flash.json
+//   data/fal/openapi/fal-ai__flux-general.json
 //   data/fal/openapi/fal-ai__flux-lora.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1-ultra.json
 //   data/fal/openapi/fal-ai__flux__dev.json
 //   data/fal/openapi/fal-ai__flux__schnell.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5.json
+//   data/fal/openapi/fal-ai__hunyuan-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__nano-banana.json
@@ -21,11 +23,13 @@
 //   data/fal/openapi/fal-ai__qwen-image.json
 //   data/fal/openapi/fal-ai__recraft__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__recraft__v4__text-to-image.json
+//   data/fal/openapi/fal-ai__stable-diffusion-v35-large.json
 //   data/fal/openapi/fal-ai__z-image__turbo.json
 //   data/fal/openapi/google__nano-banana-2-lite.json
 //   data/fal/openapi/ideogram__v4.json
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.5.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -41,14 +45,22 @@
 
 import type {
   FalColorPalette,
+  FalControlLoraWeight,
+  FalControlNetUnion,
+  FalControlNet_097ad1,
+  FalControlNet_17b04b,
+  FalEasyControlWeight,
   FalElementInput,
   FalFile,
+  FalIPAdapter,
   FalImageFile,
+  FalImageFillInput,
   FalImageSize,
   FalImageStyleReference,
   FalImage_28cfa5,
   FalImage_d44dd8,
-  FalLoraWeight,
+  FalLoraWeight_7426f5,
+  FalLoraWeight_cc944c,
   FalMoodboard,
   FalRGBColor,
   FalStyle,
@@ -385,6 +397,176 @@ export interface FalAiFlux2FlashOutput {
 }
 
 /**
+ * The request body `fal-ai/flux-general` accepts.
+ *
+ * FLUX.1 [dev] with the whole conditioning surface bolted on — LoRAs, ControlNets,
+ * ControlNet unions, IP-Adapters, EasyControl weights and a fill image, 32 parameters over
+ * six nested components. The widest input schema in the roster, and the reason
+ * `shared.gen.ts` earns its $ref dedup.
+ *
+ * Docs: https://fal.ai/models/fal-ai/flux-general/api
+ */
+export interface FalAiFluxGeneralInput {
+  /** The prompt to generate an image from. */
+  prompt: string;
+  /** The size of the generated image. */
+  image_size?: FalImageSize | "square_hd" | "square" | "portrait_4_3" | "portrait_16_9" | "landscape_4_3" | "landscape_16_9";
+  /** The number of inference steps to perform. Default: `28`. */
+  num_inference_steps?: number;
+  /**
+   * The same seed and the same prompt given to the same version of the model will output the
+   * same image every time.
+   */
+  seed?: number | null;
+  /**
+   * The LoRAs to use for the image generation. You can use any number of LoRAs and they will
+   * be merged together to generate the final image. Default: `[]`.
+   */
+  loras?: FalLoraWeight_7426f5[];
+  /**
+   * The LoRAs to use for the image generation which use a control image. You can use any
+   * number of LoRAs and they will be merged together to generate the final image. Default:
+   * `[]`.
+   */
+  control_loras?: FalControlLoraWeight[];
+  /**
+   * The controlnets to use for the image generation. Only one controlnet is supported at the
+   * moment. Default: `[]`.
+   */
+  controlnets?: FalControlNet_097ad1[];
+  /**
+   * The controlnet unions to use for the image generation. Only one controlnet is supported
+   * at the moment. Default: `[]`.
+   */
+  controlnet_unions?: FalControlNetUnion[];
+  /** IP-Adapter to use for image generation. Default: `[]`. */
+  ip_adapters?: FalIPAdapter[];
+  /** EasyControl Inputs to use for image generation. Default: `[]`. */
+  easycontrols?: FalEasyControlWeight[];
+  /**
+   * Use an image input to influence the generation. Can be used to fill images in masked
+   * areas.
+   */
+  fill_image?: FalImageFillInput | null;
+  /**
+   * The CFG (Classifier Free Guidance) scale is a measure of how close you want the model to
+   * stick to your prompt when looking for a related image to show you. Default: `3.5`.
+   */
+  guidance_scale?: number;
+  /**
+   * The CFG (Classifier Free Guidance) scale is a measure of how close you want the model to
+   * stick to your prompt when looking for a related image to show you. Default: `3.5`.
+   */
+  real_cfg_scale?: number;
+  /**
+   * Uses classical CFG as in SD1.5, SDXL, etc. Increases generation times and price when set
+   * to be true. If using XLabs IP-Adapter v1, this will be turned on!. Default: `false`.
+   */
+  use_real_cfg?: boolean;
+  /** Uses CFG-zero init sampling as in https://arxiv.org/abs/2503.18886. Default: `false`. */
+  use_cfg_zero?: boolean;
+  /**
+   * If `True`, the media will be returned as a data URI and the output data won't be
+   * available in the request history. Default: `false`.
+   */
+  sync_mode?: boolean;
+  /**
+   * The number of images to generate. This is always set to 1 for streaming output. Default:
+   * `1`.
+   */
+  num_images?: number;
+  /**
+   * If set to true, the safety checker will be enabled. Disabling it requires account
+   * authorization; unauthorized requests are always checked, and images flagged as unsafe
+   * are returned as black images. Default: `true`.
+   */
+  enable_safety_checker?: boolean;
+  /**
+   * URL of Image for Reference-Only. Carries a image reference — an https URL or a `data:`
+   * URI.
+   */
+  reference_image_url?: string;
+  /**
+   * Strength of reference_only generation. Only used if a reference image is provided.
+   * Default: `0.65`.
+   */
+  reference_strength?: number;
+  /**
+   * The percentage of the total timesteps when the reference guidance is to bestarted.
+   * Default: `0`.
+   */
+  reference_start?: number;
+  /**
+   * The percentage of the total timesteps when the reference guidance is to be ended.
+   * Default: `1`.
+   */
+  reference_end?: number;
+  /** Base shift for the scheduled timesteps. Default: `0.5`. */
+  base_shift?: number;
+  /** Max shift for the scheduled timesteps. Default: `1.15`. */
+  max_shift?: number;
+  /** The format of the generated image. Default: `"png"`. */
+  output_format?: "jpeg" | "png";
+  /** Specifies whether beta sigmas ought to be used. Default: `false`. */
+  use_beta_schedule?: boolean;
+  /** Sigmas schedule for the denoising process. */
+  sigma_schedule?: "sgm_uniform" | null;
+  /** Scheduler for the denoising process. Default: `"euler"`. */
+  scheduler?: "euler" | "dpmpp_2m";
+  /**
+   * Negative prompt to steer the image generation away from unwanted features. By default,
+   * we will be using NAG for processing the negative prompt. Default: `""`.
+   */
+  negative_prompt?: string;
+  /**
+   * The scale for NAG. Higher values will result in a image that is more distant to the
+   * negative prompt. Default: `3`.
+   */
+  nag_scale?: number;
+  /**
+   * The tau for NAG. Controls the normalization of the hidden state. Higher values will
+   * result in a less aggressive normalization, but may also lead to unexpected changes with
+   * respect to the original image. Not recommended to change this value. Default: `2.5`.
+   */
+  nag_tau?: number;
+  /**
+   * The alpha value for NAG. This value is used as a final weighting factor for steering the
+   * normalized guidance (positive and negative prompts) in the direction of the positive
+   * prompt. Higher values will result in less steering on the normalized guidance where
+   * lower values will result in considering the positive prompt guidance more. Default:
+   * `0.25`.
+   */
+  nag_alpha?: number;
+  /**
+   * The proportion of steps to apply NAG. After the specified proportion of steps has been
+   * iterated, the remaining steps will use original attention processors in FLUX. Default:
+   * `0.25`.
+   */
+  nag_end?: number;
+}
+
+/**
+ * The result document `fal-ai/flux-general` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface FalAiFluxGeneralOutput {
+  /** The generated image files info. */
+  images: FalImage_d44dd8[];
+  timings: Record<string, number>;
+  /**
+   * Seed of the generated Image. It will be the same value of the one passed in the input or
+   * the randomly generated that was used in case none was passed.
+   */
+  seed: number;
+  /** Whether the generated images contain NSFW concepts. */
+  has_nsfw_concepts: boolean[];
+  /** The prompt used for generating the image. */
+  prompt: string;
+}
+
+/**
  * The request body `fal-ai/flux-lora` accepts.
  *
  * FLUX.1 [dev] with LoRA weights — carries a `loras` array of URL+scale objects.
@@ -407,7 +589,7 @@ export interface FalAiFluxLoraInput {
    * The LoRAs to use for the image generation. You can use any number of LoRAs and they will
    * be merged together to generate the final image. Default: `[]`.
    */
-  loras?: FalLoraWeight[];
+  loras?: FalLoraWeight_cc944c[];
   /**
    * The CFG (Classifier Free Guidance) scale is a measure of how close you want the model to
    * stick to your prompt when looking for a related image to show you. Default: `3.5`.
@@ -749,6 +931,67 @@ export interface FalAiGptImage15Input {
 export interface FalAiGptImage15Output {
   /** The generated images. */
   images: FalImageFile[];
+}
+
+/**
+ * The request body `fal-ai/hunyuan-image/v3/text-to-image` accepts.
+ *
+ * Hunyuan Image 3.0, the plain text-to-image route. Its /instruct siblings are editing
+ * arms and are not curated in wave 1.
+ *
+ * Docs: https://fal.ai/models/fal-ai/hunyuan-image/v3/text-to-image/api
+ */
+export interface FalAiHunyuanImageV3TextToImageInput {
+  /** The text prompt for image-to-image. */
+  prompt: string;
+  /**
+   * The negative prompt to guide the image generation away from certain concepts. Default:
+   * `""`.
+   */
+  negative_prompt?: string;
+  /** The desired size of the generated image. Default: `"square_hd"`. */
+  image_size?: FalImageSize | "square_hd" | "square" | "portrait_4_3" | "portrait_16_9" | "landscape_4_3" | "landscape_16_9";
+  /** The number of images to generate. Default: `1`. */
+  num_images?: number;
+  /** Number of denoising steps. Default: `28`. */
+  num_inference_steps?: number;
+  /**
+   * Controls how much the model adheres to the prompt. Higher values mean stricter
+   * adherence. Default: `7.5`.
+   */
+  guidance_scale?: number;
+  /** Random seed for reproducible results. If None, a random seed is used. */
+  seed?: number | null;
+  /**
+   * If set to true, the safety checker will be enabled. Disabling it requires account
+   * authorization; unauthorized requests are always checked. Default: `true`.
+   */
+  enable_safety_checker?: boolean;
+  /**
+   * If `True`, the media will be returned as a data URI and the output data won't be
+   * available in the request history. Default: `false`.
+   */
+  sync_mode?: boolean;
+  /** The format of the generated image. Default: `"png"`. */
+  output_format?: "jpeg" | "png";
+  /**
+   * Whether to enable prompt expansion. This will use a large language model to expand the
+   * prompt with additional details while maintaining the original meaning. Default: `false`.
+   */
+  enable_prompt_expansion?: boolean;
+}
+
+/**
+ * The result document `fal-ai/hunyuan-image/v3/text-to-image` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface FalAiHunyuanImageV3TextToImageOutput {
+  /** A list of the generated images. */
+  images: FalImage_28cfa5[];
+  /** The base seed used for the generation process. */
+  seed: number;
 }
 
 /**
@@ -1096,7 +1339,7 @@ export interface FalAiQwenImageInput {
    * The LoRAs to use for the image generation. You can use up to 3 LoRAs and they will be
    * merged together to generate the final image. Default: `[]`.
    */
-  loras?: FalLoraWeight[];
+  loras?: FalLoraWeight_cc944c[];
   /**
    * Enable turbo mode for faster generation with high quality. When enabled, uses optimized
    * settings (10 steps, CFG=1.2). Default: `false`.
@@ -1193,6 +1436,88 @@ export interface FalAiRecraftV4TextToImageInput {
  */
 export interface FalAiRecraftV4TextToImageOutput {
   images: FalFile[];
+}
+
+/**
+ * The request body `fal-ai/stable-diffusion-v35-large` accepts.
+ *
+ * Stable Diffusion 3.5 Large. Its `image_size` union carries a third `null` arm the other
+ * imageSizeUnion rows do not, and it still classifies as imageSizeUnion — the nullable arm
+ * lowers away as `.nullable()`.
+ *
+ * Docs: https://fal.ai/models/fal-ai/stable-diffusion-v35-large/api
+ */
+export interface FalAiStableDiffusionV35LargeInput {
+  /** The prompt to generate an image from. */
+  prompt: string;
+  /**
+   * The negative prompt to use. Use it to address details that you don't want in the image.
+   * This could be colors, objects, scenery and even the small details (e.g. moustache,
+   * blurry, low resolution). Default: `""`.
+   */
+  negative_prompt?: string;
+  /** The number of inference steps to perform. Default: `28`. */
+  num_inference_steps?: number;
+  /**
+   * The same seed and the same prompt given to the same version of the model will output the
+   * same image every time.
+   */
+  seed?: number | null;
+  /**
+   * The CFG (Classifier Free Guidance) scale is a measure of how close you want the model to
+   * stick to your prompt when looking for a related image to show you. Default: `3.5`.
+   */
+  guidance_scale?: number;
+  /**
+   * If `True`, the media will be returned as a data URI and the output data won't be
+   * available in the request history. Default: `false`.
+   */
+  sync_mode?: boolean;
+  /** The number of images to generate. Default: `1`. */
+  num_images?: number;
+  /**
+   * If set to true, the safety checker will be enabled. Disabling it requires account
+   * authorization; unauthorized requests are always checked, and images flagged as unsafe
+   * are returned as black images. Default: `true`.
+   */
+  enable_safety_checker?: boolean;
+  /** The format of the generated image. Default: `"jpeg"`. */
+  output_format?: "jpeg" | "png";
+  /** ControlNet for inference. */
+  controlnet?: FalControlNet_17b04b;
+  /**
+   * The size of the generated image. Defaults to landscape_4_3 if no controlnet has been
+   * passed, otherwise defaults to the size of the controlnet conditioning image.
+   */
+  image_size?: FalImageSize | "square_hd" | "square" | "portrait_4_3" | "portrait_16_9" | "landscape_4_3" | "landscape_16_9" | null;
+  /**
+   * The LoRAs to use for the image generation. You can use any number of LoRAs and they will
+   * be merged together to generate the final image. Default: `[]`.
+   */
+  loras?: FalLoraWeight_cc944c[];
+  /** IP-Adapter to use during inference. */
+  ip_adapter?: FalIPAdapter | null;
+}
+
+/**
+ * The result document `fal-ai/stable-diffusion-v35-large` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface FalAiStableDiffusionV35LargeOutput {
+  /** The generated image files info. */
+  images: FalImage_d44dd8[];
+  timings: Record<string, number>;
+  /**
+   * Seed of the generated Image. It will be the same value of the one passed in the input or
+   * the randomly generated that was used in case none was passed.
+   */
+  seed: number;
+  /** Whether the generated images contain NSFW concepts. */
+  has_nsfw_concepts: boolean[];
+  /** The prompt used for generating the image. */
+  prompt: string;
 }
 
 /**
@@ -1508,6 +1833,52 @@ export interface KreaV2MediumTextToImageOutput {
 }
 
 /**
+ * The request body `microsoft/mai-image-2.5` accepts.
+ *
+ * Microsoft MAI-Image-2.5, sized by `aspect_ratio` rather than by pixels. Two of the
+ * roster's provenance quirks at once: fal documents it at the internal route
+ * `fal-ai/mai-image-2.5`, and its `info.x-fal-metadata` carries a documentationUrl but no
+ * `category` (the wizper shape). Carries an `unpriced` reason, not a rate.
+ *
+ * fal serves this endpoint at two live routes: the published id above, and the internal
+ * alias `fal-ai/mai-image-2.5` its OpenAPI document is written against. unmodel submits to
+ * the published id — that is the one fal documents and the one this catalog is keyed on.
+ *
+ * Docs: https://fal.ai/models/fal-ai/mai-image-2.5/api
+ */
+export interface MicrosoftMaiImage25Input {
+  /** The text prompt to generate an image from. */
+  prompt: string;
+  /** The number of images to generate. Default: `1`. */
+  num_images?: number;
+  /**
+   * The aspect ratio of the generated image. Use "auto" to let the model decide based on the
+   * prompt. Default: `"auto"`.
+   */
+  aspect_ratio?: "auto" | "1:1" | "4:3" | "3:4" | "16:9" | "9:16" | "3:2" | "2:3";
+  /** The format of the generated image. Default: `"png"`. */
+  output_format?: "jpeg" | "png" | "webp";
+  /**
+   * If `True`, the media will be returned as a data URI and the output data won't be
+   * available in the request history. Default: `false`.
+   */
+  sync_mode?: boolean;
+}
+
+/**
+ * The result document `microsoft/mai-image-2.5` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface MicrosoftMaiImage25Output {
+  /** The generated images. */
+  images: FalImageFile[];
+  /** The description of the generated images. */
+  description: string;
+}
+
+/**
  * The request body `openai/gpt-image-2` accepts.
  *
  * ChatGPT Images 2.0. Priced per size x quality PLUS unbounded token charges, so its
@@ -1646,7 +2017,7 @@ export interface XaiGrokImagineImageOutput {
 /**
  * Endpoint id → its request body type.
  *
- * A map rather than a union: a union of 28 object types re-instantiates at every
+ * A map rather than a union: a union of 32 object types re-instantiates at every
  * comparison site, while a keyed lookup resolves in one. The per-endpoint narrowing a
  * validator exposes indexes into this, so adding an endpoint costs one line here and
  * nothing at any call site.
@@ -1658,12 +2029,14 @@ export interface FalImageBodyById {
   "fal-ai/flux-2-max": FalAiFlux2MaxInput;
   "fal-ai/flux-2-pro": FalAiFlux2ProInput;
   "fal-ai/flux-2/flash": FalAiFlux2FlashInput;
+  "fal-ai/flux-general": FalAiFluxGeneralInput;
   "fal-ai/flux-lora": FalAiFluxLoraInput;
   "fal-ai/flux-pro/v1.1": FalAiFluxProV11Input;
   "fal-ai/flux-pro/v1.1-ultra": FalAiFluxProV11UltraInput;
   "fal-ai/flux/dev": FalAiFluxDevInput;
   "fal-ai/flux/schnell": FalAiFluxSchnellInput;
   "fal-ai/gpt-image-1.5": FalAiGptImage15Input;
+  "fal-ai/hunyuan-image/v3/text-to-image": FalAiHunyuanImageV3TextToImageInput;
   "fal-ai/ideogram/v3": FalAiIdeogramV3Input;
   "fal-ai/kling-image/v3/text-to-image": FalAiKlingImageV3TextToImageInput;
   "fal-ai/nano-banana": FalAiNanoBananaInput;
@@ -1672,11 +2045,13 @@ export interface FalImageBodyById {
   "fal-ai/qwen-image": FalAiQwenImageInput;
   "fal-ai/recraft/v3/text-to-image": FalAiRecraftV3TextToImageInput;
   "fal-ai/recraft/v4/text-to-image": FalAiRecraftV4TextToImageInput;
+  "fal-ai/stable-diffusion-v35-large": FalAiStableDiffusionV35LargeInput;
   "fal-ai/z-image/turbo": FalAiZImageTurboInput;
   "google/nano-banana-2-lite": GoogleNanoBanana2LiteInput;
   "ideogram/v4": IdeogramV4Input;
   "krea/v2/large/text-to-image": KreaV2LargeTextToImageInput;
   "krea/v2/medium/text-to-image": KreaV2MediumTextToImageInput;
+  "microsoft/mai-image-2.5": MicrosoftMaiImage25Input;
   "openai/gpt-image-2": OpenaiGptImage2Input;
   "reve/2.1/text-to-image": Reve21TextToImageInput;
   "xai/grok-imagine-image": XaiGrokImagineImageInput;
@@ -1690,12 +2065,14 @@ export interface FalImageResultById {
   "fal-ai/flux-2-max": FalAiFlux2MaxOutput;
   "fal-ai/flux-2-pro": FalAiFlux2ProOutput;
   "fal-ai/flux-2/flash": FalAiFlux2FlashOutput;
+  "fal-ai/flux-general": FalAiFluxGeneralOutput;
   "fal-ai/flux-lora": FalAiFluxLoraOutput;
   "fal-ai/flux-pro/v1.1": FalAiFluxProV11Output;
   "fal-ai/flux-pro/v1.1-ultra": FalAiFluxProV11UltraOutput;
   "fal-ai/flux/dev": FalAiFluxDevOutput;
   "fal-ai/flux/schnell": FalAiFluxSchnellOutput;
   "fal-ai/gpt-image-1.5": FalAiGptImage15Output;
+  "fal-ai/hunyuan-image/v3/text-to-image": FalAiHunyuanImageV3TextToImageOutput;
   "fal-ai/ideogram/v3": FalAiIdeogramV3Output;
   "fal-ai/kling-image/v3/text-to-image": FalAiKlingImageV3TextToImageOutput;
   "fal-ai/nano-banana": FalAiNanoBananaOutput;
@@ -1704,11 +2081,13 @@ export interface FalImageResultById {
   "fal-ai/qwen-image": FalAiQwenImageOutput;
   "fal-ai/recraft/v3/text-to-image": FalAiRecraftV3TextToImageOutput;
   "fal-ai/recraft/v4/text-to-image": FalAiRecraftV4TextToImageOutput;
+  "fal-ai/stable-diffusion-v35-large": FalAiStableDiffusionV35LargeOutput;
   "fal-ai/z-image/turbo": FalAiZImageTurboOutput;
   "google/nano-banana-2-lite": GoogleNanoBanana2LiteOutput;
   "ideogram/v4": IdeogramV4Output;
   "krea/v2/large/text-to-image": KreaV2LargeTextToImageOutput;
   "krea/v2/medium/text-to-image": KreaV2MediumTextToImageOutput;
+  "microsoft/mai-image-2.5": MicrosoftMaiImage25Output;
   "openai/gpt-image-2": OpenaiGptImage2Output;
   "reve/2.1/text-to-image": Reve21TextToImageOutput;
   "xai/grok-imagine-image": XaiGrokImagineImageOutput;

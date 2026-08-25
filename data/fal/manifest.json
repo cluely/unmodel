@@ -289,6 +289,14 @@
       "status": "active",
       "updated_at": "2026-04-21T17:46:46.996Z"
     },
+    "fal-ai/flux-general": {
+      "category": "text-to-image",
+      "display_name": "FLUX.1 [dev] with Controlnets and Loras",
+      "file": "openapi/fal-ai__flux-general.json",
+      "sha256": "11e774cfeed39776894a57ec3595834ebcab62bf0d2f08670a33d07670bc6b79",
+      "status": "active",
+      "updated_at": "2026-06-24T10:42:17.837Z"
+    },
     "fal-ai/flux-kontext/dev": {
       "category": "image-to-image",
       "display_name": "FLUX.1 Kontext [dev]",
@@ -408,6 +416,30 @@
       "sha256": "abcf17432eab62f9af2faf0dc585c658e283dc3a37281bd73bb7c1b356ba2974",
       "status": "active",
       "updated_at": "2026-04-21T17:47:54.587Z"
+    },
+    "fal-ai/heygen/v3/lipsync/precision": {
+      "category": "video-to-video",
+      "display_name": "Heygen Lipsync - Precision",
+      "file": "openapi/fal-ai__heygen__v3__lipsync__precision.json",
+      "sha256": "74013dda1d35d16271de81f962405c683922b9ff01e4fd0ac4b7d2a18545eff3",
+      "status": "active",
+      "updated_at": "2026-04-26T23:11:58.879Z"
+    },
+    "fal-ai/heygen/v3/lipsync/speed": {
+      "category": "video-to-video",
+      "display_name": "Heygen Lipsync - Speed",
+      "file": "openapi/fal-ai__heygen__v3__lipsync__speed.json",
+      "sha256": "c1e33ac90f02b122f02406277fb32483e65c620b3d091e2246a81013eaac7cb5",
+      "status": "active",
+      "updated_at": "2026-04-26T23:11:58.879Z"
+    },
+    "fal-ai/hunyuan-image/v3/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "Hunyuan Image",
+      "file": "openapi/fal-ai__hunyuan-image__v3__text-to-image.json",
+      "sha256": "b445732d1a8465d1e065d0ef9d80e2591c92410a228f80723b8ef9cabfacf6c0",
+      "status": "active",
+      "updated_at": "2026-04-21T17:48:19.277Z"
     },
     "fal-ai/ideogram/v3": {
       "category": "text-to-image",
@@ -841,6 +873,14 @@
       "status": "active",
       "updated_at": "2026-07-01T04:56:00.169Z"
     },
+    "fal-ai/stable-diffusion-v35-large": {
+      "category": "text-to-image",
+      "display_name": "Stable Diffusion 3.5 Large",
+      "file": "openapi/fal-ai__stable-diffusion-v35-large.json",
+      "sha256": "923a31a7462516ece7c0098f068950105a4aa870c604b58a32199ef577ff8be1",
+      "status": "active",
+      "updated_at": "2026-06-24T10:45:26.492Z"
+    },
     "fal-ai/sync-lipsync/v2": {
       "category": "video-to-video",
       "display_name": "Sync Lipsync 2.0",
@@ -1008,6 +1048,14 @@
       "sha256": "478f3dae0d7b68d8e61b3cffe91213cc794c37c1b4f7604c6071d66ebc58ce6f",
       "status": "active",
       "updated_at": "2026-08-14T23:11:35.262Z"
+    },
+    "microsoft/mai-image-2.5": {
+      "category": "text-to-image",
+      "display_name": "Mai Image 2.5 Text to Image",
+      "file": "openapi/microsoft__mai-image-2.5.json",
+      "sha256": "3d0f0c9a0b4f4bb39460cb8b68704c121663a56f6a6455b155858ae41a17f7e3",
+      "status": "active",
+      "updated_at": "2026-06-24T00:21:44.881Z"
     },
     "minimax/h3/image-to-video": {
       "category": "unknown",

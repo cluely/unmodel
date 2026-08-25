@@ -1,11 +1,11 @@
 /**
  * The capability table for `unmodel/lipsync`, committed and then **probed**.
  *
- * One provider and eight endpoints, so the table is keyed by REF rather than by
+ * One provider and ten endpoints, so the table is keyed by REF rather than by
  * provider — which is the honest shape here and a departure from its five
  * siblings. At fal the route is a parameter, so "which fields does this
  * support" is a per-ENDPOINT question and a per-provider table would answer it
- * eight ways at once.
+ * ten ways at once.
  *
  * The words mean what they mean everywhere else in this suite:
  *
@@ -87,6 +87,23 @@ const TABLE: Readonly<Record<string, Capability>> = {
   },
   "pixverse/lipsync": {
     ref: "fal/fal-ai/pixverse/lipsync",
+    source: { at: "video_url", support: "native" },
+    audio: { at: "audio_url", support: "native" },
+    seed: "unsupported",
+    mismatch: undefined,
+  },
+  "heygen/v3/lipsync/precision": {
+    ref: "fal/fal-ai/heygen/v3/lipsync/precision",
+    source: { at: "video_url", support: "native" },
+    audio: { at: "audio_url", support: "native" },
+    seed: "unsupported",
+    // HeyGen spells the mismatch idea `enable_dynamic_duration` (a boolean),
+    // which is a third spelling of the idea `sync_mode` and `loop_mode` already
+    // spell two ways — more evidence for keeping it out of the vocabulary.
+    mismatch: undefined,
+  },
+  "heygen/v3/lipsync/speed": {
+    ref: "fal/fal-ai/heygen/v3/lipsync/speed",
     source: { at: "video_url", support: "native" },
     audio: { at: "audio_url", support: "native" },
     seed: "unsupported",

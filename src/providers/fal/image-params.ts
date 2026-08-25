@@ -19,8 +19,8 @@
  * `image_size` presets, the ratios are its `aspect_ratio` enum, the tiers are
  * its `resolution` enum mapped onto the canonical three, and the extras are
  * every parameter it declares that the canonical vocabulary has no word for,
- * typed from that endpoint's own wire interface. Hand-writing 28 rows of that
- * would be 28 transcriptions to keep in step with a weekly refresh.
+ * typed from that endpoint's own wire interface. Hand-writing 32 rows of that
+ * would be 32 transcriptions to keep in step with a weekly refresh.
  *
  * So the table an adapter compiles with, the table a picker renders and the
  * schema a request is validated against all come from one source, and the

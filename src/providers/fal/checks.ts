@@ -386,7 +386,7 @@ export function checkRanges(target: FalCheckTarget, params: Params, ctx: Pipelin
  * The pipeline already warns about a key that is in no schema at all — it
  * compares the body against the category's union schema, which is exactly the
  * union of every endpoint's parameters. What it CANNOT see is the interesting
- * case: `aspect_ratio` is a real `fal.image` parameter, on nine of the 28
+ * case: `aspect_ratio` is a real `fal.image` parameter, on eleven of the 32
  * endpoints, and sending it to `fal-ai/flux/dev` is a mistake the union schema
  * is structurally unable to notice.
  *

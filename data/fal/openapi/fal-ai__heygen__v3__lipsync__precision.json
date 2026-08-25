@@ -1,0 +1,435 @@
+{
+  "metadata": {
+    "category": "video-to-video",
+    "date": "2026-04-14T12:40:39.915Z",
+    "description": "Replace or dub audio on an existing video with high-accuracy avatar-inference lip-sync.",
+    "display_name": "Heygen Lipsync - Precision",
+    "group": {
+      "key": "heygen-lipsync-v3",
+      "label": "Lipsync - Precision"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/heygen/v3/lipsync/precision",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "lipsync",
+      "stylized",
+      "transform",
+      ""
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a963882/KCALnCjdY-gy0UYJWXn3-_22975c38070b4ed290bbcc03cd49e439.jpg",
+    "updated_at": "2026-04-26T23:11:58.879Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "HeygenV3LipsyncPrecisionInput": {
+          "description": "Base request for lip-syncing a video (mode is determined by the endpoint).",
+          "properties": {
+            "audio_url": {
+              "description": "URL of the replacement audio file.",
+              "examples": [
+                "https://v3b.fal.media/files/b/example/new_audio.mp3"
+              ],
+              "title": "Audio Url",
+              "type": "string"
+            },
+            "disable_music_track": {
+              "default": false,
+              "description": "Remove background music from the source video.",
+              "title": "Disable Music Track",
+              "type": "boolean"
+            },
+            "enable_caption": {
+              "default": false,
+              "description": "Generate captions in the output video.",
+              "title": "Enable Caption",
+              "type": "boolean"
+            },
+            "enable_dynamic_duration": {
+              "default": true,
+              "description": "Allow duration adjustment to match the new audio.",
+              "title": "Enable Dynamic Duration",
+              "type": "boolean"
+            },
+            "enable_speech_enhancement": {
+              "default": false,
+              "description": "Enhance the replacement audio quality.",
+              "title": "Enable Speech Enhancement",
+              "type": "boolean"
+            },
+            "end_time": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End time in seconds for partial lipsync.",
+              "title": "End Time"
+            },
+            "start_time": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start time in seconds for partial lipsync.",
+              "title": "Start Time"
+            },
+            "title": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional title for the lipsync job.",
+              "title": "Title"
+            },
+            "video_url": {
+              "description": "URL of the source video to lip-sync.",
+              "examples": [
+                "https://v3b.fal.media/files/b/0a9004c7/FM7Q5tK2b59x66Bl8HC0Z_vt-lang-en.mp4"
+              ],
+              "title": "Video Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "video_url",
+            "audio_url"
+          ],
+          "title": "V3LipsyncBaseRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video_url",
+            "audio_url",
+            "title",
+            "enable_caption",
+            "enable_dynamic_duration",
+            "disable_music_track",
+            "enable_speech_enhancement",
+            "start_time",
+            "end_time"
+          ]
+        },
+        "HeygenV3LipsyncPrecisionOutput": {
+          "description": "Output from the Lipsync API.",
+          "properties": {
+            "caption_file": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/File"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Generated caption file when enable_caption is enabled and HeyGen returns one."
+            },
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "description": "The lip-synced video file with new audio synced.",
+              "examples": [
+                {
+                  "url": "https://v3b.fal.media/files/b/0a8f61f5/SwAbhEQ0tNLthNkyTqCRn_overdubbed.mp4"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video"
+          ],
+          "title": "V3LipsyncOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video",
+            "caption_file"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/heygen/v3/lipsync/precision queue.",
+      "title": "Queue OpenAPI for fal-ai/heygen/v3/lipsync/precision",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Lip-sync a video using Precision mode — higher quality lip-sync.\n\nBilled per second of output video ($0.1000/s).",
+        "category": "video-to-video",
+        "documentationUrl": "https://fal.ai/models/fal-ai/heygen/v3/lipsync/precision/api",
+        "endpointId": "fal-ai/heygen/v3/lipsync/precision",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/heygen/v3/lipsync/precision",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a963882/KCALnCjdY-gy0UYJWXn3-_22975c38070b4ed290bbcc03cd49e439.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/heygen/v3/lipsync/precision": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeygenV3LipsyncPrecisionInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/heygen/v3/lipsync/precision/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HeygenV3LipsyncPrecisionOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/heygen/v3/lipsync/precision/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/heygen/v3/lipsync/precision/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

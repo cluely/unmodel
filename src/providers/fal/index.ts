@@ -21,10 +21,10 @@
  *
  * ## What is here
  *
- * All nine validators — `image` (28 text-to-image endpoints), `imageEdit` (17
- * editing), `video` (30 generation and editing routes), `lipsync` (8),
+ * All nine validators — `image` (32 text-to-image endpoints), `imageEdit` (17
+ * editing), `video` (30 generation and editing routes), `lipsync` (10),
  * `avatar` (8), `upscale` (10), `tts` (23), `stt` (6) and `music` (10) — plus
- * the transport surface and the merged catalog. 140 curated endpoints in all,
+ * the transport surface and the merged catalog. 146 curated endpoints in all,
  * every one of them typed from fal's own published OpenAPI document.
  *
  * ## Two things worth knowing before your first call

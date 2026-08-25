@@ -1,0 +1,692 @@
+{
+  "metadata": {
+    "category": "text-to-image",
+    "date": "2024-10-27T00:00:00.000Z",
+    "description": "Stable Diffusion 3.5 Large is a Multimodal Diffusion Transformer (MMDiT) text-to-image model that features improved performance in image quality, typography, complex prompt understanding, and resource-efficiency.",
+    "display_name": "Stable Diffusion 3.5 Large",
+    "github_url": "https://stability.ai/license",
+    "group": {
+      "key": "sd35-large",
+      "label": "Base"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/stable-diffusion-v35-large",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "diffusion",
+      "typography",
+      "style"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9f91b5/7yzc_pCuxnBZg_SpQRji7_vIEPYJ8y.png",
+    "updated_at": "2026-06-24T10:45:26.492Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ControlNet": {
+          "properties": {
+            "conditioning_scale": {
+              "default": 1,
+              "description": "\n            The scale of the control net weight. This is used to scale the control net weight\n            before merging it with the base model.\n        ",
+              "maximum": 2,
+              "minimum": 0,
+              "title": "Conditioning Scale",
+              "type": "number"
+            },
+            "control_image_url": {
+              "description": "URL of the image to be used as the control image.",
+              "title": "Control Image Url",
+              "type": "string"
+            },
+            "end_percentage": {
+              "default": 1,
+              "description": "\n            The percentage of the image to end applying the controlnet in terms of the total timesteps.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "End Percentage",
+              "type": "number"
+            },
+            "path": {
+              "description": "URL or the path to the control net weights.",
+              "title": "Path",
+              "type": "string"
+            },
+            "start_percentage": {
+              "default": 0,
+              "description": "\n            The percentage of the image to start applying the controlnet in terms of the total timesteps.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Start Percentage",
+              "type": "number"
+            }
+          },
+          "required": [
+            "path",
+            "control_image_url"
+          ],
+          "title": "ControlNet",
+          "type": "object",
+          "x-fal-order-properties": [
+            "path",
+            "control_image_url",
+            "conditioning_scale",
+            "start_percentage",
+            "end_percentage"
+          ]
+        },
+        "IPAdapter": {
+          "properties": {
+            "image_encoder_path": {
+              "description": "Path to the Image Encoder for the IP-Adapter, for example 'openai/clip-vit-large-patch14'",
+              "title": "Image Encoder Path",
+              "type": "string"
+            },
+            "image_encoder_subfolder": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Subfolder in which the image encoder weights exist.",
+              "title": "Image Encoder Subfolder"
+            },
+            "image_encoder_weight_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Name of the image encoder.",
+              "title": "Image Encoder Weight Name"
+            },
+            "image_url": {
+              "description": "URL of Image for IP-Adapter conditioning. ",
+              "title": "Image Url",
+              "type": "string"
+            },
+            "mask_image_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "URL of the mask for the control image.",
+              "title": "Mask Image Url"
+            },
+            "mask_threshold": {
+              "default": 0.5,
+              "description": "Threshold for mask.",
+              "maximum": 0.99,
+              "minimum": 0.01,
+              "title": "Mask Threshold",
+              "type": "number"
+            },
+            "path": {
+              "description": "Hugging Face path to the IP-Adapter",
+              "title": "Path",
+              "type": "string"
+            },
+            "scale": {
+              "description": "Scale for ip adapter.",
+              "title": "Scale",
+              "type": "number"
+            },
+            "subfolder": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Subfolder in which the ip_adapter weights exist",
+              "title": "Subfolder"
+            },
+            "weight_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Name of the safetensors file containing the ip-adapter weights",
+              "title": "Weight Name"
+            }
+          },
+          "required": [
+            "path",
+            "image_encoder_path",
+            "image_url",
+            "scale"
+          ],
+          "title": "IPAdapter",
+          "type": "object",
+          "x-fal-order-properties": [
+            "path",
+            "subfolder",
+            "weight_name",
+            "image_encoder_path",
+            "image_encoder_subfolder",
+            "image_encoder_weight_name",
+            "image_url",
+            "mask_image_url",
+            "mask_threshold",
+            "scale"
+          ]
+        },
+        "Image": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "image/jpeg",
+              "title": "Content Type"
+            },
+            "height": {
+              "title": "Height",
+              "type": "integer"
+            },
+            "url": {
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "url",
+            "width",
+            "height"
+          ],
+          "title": "Image",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "width",
+            "height",
+            "content_type"
+          ]
+        },
+        "ImageSize": {
+          "properties": {
+            "height": {
+              "default": 512,
+              "description": "The height of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Height",
+              "type": "integer"
+            },
+            "width": {
+              "default": 512,
+              "description": "The width of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "title": "ImageSize",
+          "type": "object",
+          "x-fal-order-properties": [
+            "width",
+            "height"
+          ]
+        },
+        "LoraWeight": {
+          "properties": {
+            "path": {
+              "description": "URL or the path to the LoRA weights.",
+              "title": "Path",
+              "type": "string"
+            },
+            "scale": {
+              "default": 1,
+              "description": "\n            The scale of the LoRA weight. This is used to scale the LoRA weight\n            before merging it with the base model.\n        ",
+              "maximum": 4,
+              "minimum": 0,
+              "title": "Scale",
+              "type": "number"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "title": "LoraWeight",
+          "type": "object",
+          "x-fal-order-properties": [
+            "path",
+            "scale"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "StableDiffusionV35LargeInput": {
+          "properties": {
+            "controlnet": {
+              "$ref": "#/components/schemas/ControlNet",
+              "description": "\n            ControlNet for inference.\n        "
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "If set to true, the safety checker will be enabled. Disabling it requires account authorization; unauthorized requests are always checked, and images flagged as unsafe are returned as black images.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "guidance_scale": {
+              "default": 3.5,
+              "description": "\n            The CFG (Classifier Free Guidance) scale is a measure of how close you want\n            the model to stick to your prompt when looking for a related image to show you.\n        ",
+              "maximum": 20,
+              "minimum": 0,
+              "title": "Guidance scale (CFG)",
+              "type": "number"
+            },
+            "image_size": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ImageSize"
+                },
+                {
+                  "enum": [
+                    "square_hd",
+                    "square",
+                    "portrait_4_3",
+                    "portrait_16_9",
+                    "landscape_4_3",
+                    "landscape_16_9"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the generated image. Defaults to landscape_4_3 if no controlnet has been passed, otherwise defaults to the size of the controlnet conditioning image.",
+              "title": "Image Size"
+            },
+            "ip_adapter": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/IPAdapter"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\n            IP-Adapter to use during inference.\n        "
+            },
+            "loras": {
+              "default": [],
+              "description": "\n            The LoRAs to use for the image generation. You can use any number of LoRAs\n            and they will be merged together to generate the final image.\n        ",
+              "examples": [],
+              "items": {
+                "$ref": "#/components/schemas/LoraWeight"
+              },
+              "title": "Loras",
+              "type": "array"
+            },
+            "negative_prompt": {
+              "default": "",
+              "description": "\n            The negative prompt to use. Use it to address details that you don't want\n            in the image. This could be colors, objects, scenery and even the small details\n            (e.g. moustache, blurry, low resolution).\n        ",
+              "examples": [
+                ""
+              ],
+              "title": "Negative Prompt",
+              "type": "string"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "The number of images to generate.",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Num Images",
+              "type": "integer"
+            },
+            "num_inference_steps": {
+              "default": 28,
+              "description": "The number of inference steps to perform.",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Num Inference Steps",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "jpeg",
+              "description": "The format of the generated image.",
+              "enum": [
+                "jpeg",
+                "png"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The prompt to generate an image from.",
+              "examples": [
+                "A dreamlike Japanese garden in perpetual twilight, bathed in bioluminescent cherry blossoms that emit a soft pink-purple glow. Floating paper lanterns drift lazily through the scene, their warm light creating dancing reflections in a mirror-like koi pond. Ethereal mist weaves between ancient stone pathways lined with glowing mushrooms in pastel blues and purples. A traditional wooden bridge arches gracefully over the water, dusted with fallen petals that sparkle like stardust. The scene is captured through a cinematic lens with perfect bokeh, creating an otherworldly atmosphere. In the background, a crescent moon hangs impossibly large in the sky, surrounded by a sea of stars and auroral wisps in teal and violet. Crystal formations emerge from the ground, refracting the ambient light into rainbow prisms. The entire composition follows the golden ratio, with moody film-like color grading reminiscent of Studio Ghibli, enhanced by volumetric god rays filtering through the luminous foliage. 8K resolution, masterful photography, hyperdetailed, magical realism."
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\n            The same seed and the same prompt given to the same version of the model\n            will output the same image every time.\n        ",
+              "title": "Seed"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "TextToImageInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "negative_prompt",
+            "num_inference_steps",
+            "seed",
+            "guidance_scale",
+            "sync_mode",
+            "num_images",
+            "enable_safety_checker",
+            "output_format",
+            "controlnet",
+            "image_size",
+            "loras",
+            "ip_adapter"
+          ]
+        },
+        "StableDiffusionV35LargeOutput": {
+          "properties": {
+            "has_nsfw_concepts": {
+              "description": "Whether the generated images contain NSFW concepts.",
+              "items": {
+                "type": "boolean"
+              },
+              "title": "Has Nsfw Concepts",
+              "type": "array"
+            },
+            "images": {
+              "description": "The generated image files info.",
+              "items": {
+                "$ref": "#/components/schemas/Image"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "prompt": {
+              "description": "The prompt used for generating the image.",
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "description": "\n            Seed of the generated Image. It will be the same value of the one passed in the\n            input or the randomly generated that was used in case none was passed.\n        ",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ],
+          "title": "Output",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/stable-diffusion-v35-large queue.",
+      "title": "Queue OpenAPI for fal-ai/stable-diffusion-v35-large",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate",
+        "category": "text-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/stable-diffusion-v35-large/api",
+        "endpointId": "fal-ai/stable-diffusion-v35-large",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/stable-diffusion-v35-large",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9f91b5/7yzc_pCuxnBZg_SpQRji7_vIEPYJ8y.png"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/stable-diffusion-v35-large": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StableDiffusionV35LargeInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/stable-diffusion-v35-large/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/StableDiffusionV35LargeOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/stable-diffusion-v35-large/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/stable-diffusion-v35-large/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

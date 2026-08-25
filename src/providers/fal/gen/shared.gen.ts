@@ -36,6 +36,7 @@
 //   data/fal/openapi/fal-ai__flux-2-pro__edit.json
 //   data/fal/openapi/fal-ai__flux-2__edit.json
 //   data/fal/openapi/fal-ai__flux-2__flash.json
+//   data/fal/openapi/fal-ai__flux-general.json
 //   data/fal/openapi/fal-ai__flux-kontext__dev.json
 //   data/fal/openapi/fal-ai__flux-lora.json
 //   data/fal/openapi/fal-ai__flux-pro__kontext.json
@@ -51,6 +52,9 @@
 //   data/fal/openapi/fal-ai__gemini-tts.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5__edit.json
+//   data/fal/openapi/fal-ai__heygen__v3__lipsync__precision.json
+//   data/fal/openapi/fal-ai__heygen__v3__lipsync__speed.json
+//   data/fal/openapi/fal-ai__hunyuan-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__inworld-tts.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
@@ -105,6 +109,7 @@
 //   data/fal/openapi/fal-ai__speech-to-text__turbo.json
 //   data/fal/openapi/fal-ai__stable-audio-25__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-audio-3__medium__text-to-audio.json
+//   data/fal/openapi/fal-ai__stable-diffusion-v35-large.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2__pro.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v3.json
@@ -126,6 +131,7 @@
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
 //   data/fal/openapi/lightricks__ltx-2.5__text-to-video__pro.json
+//   data/fal/openapi/microsoft__mai-image-2.5.json
 //   data/fal/openapi/minimax__h3__image-to-video.json
 //   data/fal/openapi/minimax__h3__text-to-video.json
 //   data/fal/openapi/minimax__music-3.json
@@ -242,6 +248,170 @@ export interface FalColorPalette {
   name?: "EMBER" | "FRESH" | "JUNGLE" | "MAGIC" | "MELON" | "MOSAIC" | "PASTEL" | "ULTRAMARINE" | null;
 }
 
+/** fal's `ControlLoraWeight` component. */
+export interface FalControlLoraWeight {
+  /** URL or the path to the LoRA weights. */
+  path: string;
+  /**
+   * The scale of the LoRA weight. This is used to scale the LoRA weight before merging it
+   * with the base model. Providing a dictionary as {"layer_name":layer_scale} allows
+   * per-layer lora scale settings. Layers with no scale provided will have scale 1.0.
+   * Default: `1`.
+   */
+  scale?: Record<string, unknown> | number;
+  /**
+   * URL of the image to be used as the control image. Carries a image reference — an https
+   * URL or a `data:` URI.
+   */
+  control_image_url: string;
+  /** Type of preprocessing to apply to the input image. Default: `"None"`. */
+  preprocess?: "canny" | "depth" | "None";
+}
+
+/** fal's `ControlNetUnionInput` component. */
+export interface FalControlNetUnionInput {
+  /**
+   * URL of the image to be used as the control image. Carries a image reference — an https
+   * URL or a `data:` URI.
+   */
+  control_image_url: string;
+  /**
+   * URL of the mask for the control image. Carries a image reference — an https URL or a
+   * `data:` URI.
+   */
+  mask_image_url?: string;
+  /**
+   * Control Mode for Flux Controlnet Union. Supported values are: - canny: Uses the edges
+   * for guided generation. - tile: Uses the tiles for guided generation. - depth: Utilizes a
+   * grayscale depth map for guided generation. - blur: Adds a blur to the image. - pose:
+   * Uses the pose of the image for guided generation. - gray: Converts the image to
+   * grayscale. - low-quality: Converts the image to a low-quality image.
+   */
+  control_mode: "canny" | "tile" | "depth" | "blur" | "pose" | "gray" | "low-quality";
+  /**
+   * The scale of the control net weight. This is used to scale the control net weight before
+   * merging it with the base model. Default: `1`.
+   */
+  conditioning_scale?: number;
+  /** Threshold for mask. Default: `0.5`. */
+  mask_threshold?: number;
+  /**
+   * The percentage of the image to start applying the controlnet in terms of the total
+   * timesteps. Default: `0`.
+   */
+  start_percentage?: number;
+  /**
+   * The percentage of the image to end applying the controlnet in terms of the total
+   * timesteps. Default: `1`.
+   */
+  end_percentage?: number;
+}
+
+/** fal's `ControlNetUnion` component. */
+export interface FalControlNetUnion {
+  /** URL or the path to the control net weights. */
+  path: string;
+  /** optional URL to the controlnet config.json file. */
+  config_url?: string | null;
+  /** The optional variant if a Hugging Face repo key is used. */
+  variant?: string | null;
+  /** The control images and modes to use for the control net. */
+  controls: FalControlNetUnionInput[];
+}
+
+/**
+ * fal's `ControlNet` component.
+ *
+ * The name carries a content hash because fal publishes more than one distinct component
+ * under this title; the hash keeps each variant addressable without the names depending on
+ * discovery order.
+ */
+export interface FalControlNet_097ad1 {
+  /** URL or the path to the control net weights. */
+  path: string;
+  /** optional URL to the controlnet config.json file. */
+  config_url?: string | null;
+  /** The optional variant if a Hugging Face repo key is used. */
+  variant?: string | null;
+  /**
+   * URL of the image to be used as the control image. Carries a image reference — an https
+   * URL or a `data:` URI.
+   */
+  control_image_url: string;
+  /**
+   * URL of the mask for the control image. Carries a image reference — an https URL or a
+   * `data:` URI.
+   */
+  mask_image_url?: string;
+  /** Threshold for mask. Default: `0.5`. */
+  mask_threshold?: number;
+  /**
+   * The scale of the control net weight. This is used to scale the control net weight before
+   * merging it with the base model. Default: `1`.
+   */
+  conditioning_scale?: number;
+  /**
+   * The percentage of the image to start applying the controlnet in terms of the total
+   * timesteps. Default: `0`.
+   */
+  start_percentage?: number;
+  /**
+   * The percentage of the image to end applying the controlnet in terms of the total
+   * timesteps. Default: `1`.
+   */
+  end_percentage?: number;
+}
+
+/**
+ * fal's `ControlNet` component.
+ *
+ * The name carries a content hash because fal publishes more than one distinct component
+ * under this title; the hash keeps each variant addressable without the names depending on
+ * discovery order.
+ */
+export interface FalControlNet_17b04b {
+  /** URL or the path to the control net weights. */
+  path: string;
+  /**
+   * URL of the image to be used as the control image. Carries a image reference — an https
+   * URL or a `data:` URI.
+   */
+  control_image_url: string;
+  /**
+   * The scale of the control net weight. This is used to scale the control net weight before
+   * merging it with the base model. Default: `1`.
+   */
+  conditioning_scale?: number;
+  /**
+   * The percentage of the image to start applying the controlnet in terms of the total
+   * timesteps. Default: `0`.
+   */
+  start_percentage?: number;
+  /**
+   * The percentage of the image to end applying the controlnet in terms of the total
+   * timesteps. Default: `1`.
+   */
+  end_percentage?: number;
+}
+
+/** fal's `EasyControlWeight` component. */
+export interface FalEasyControlWeight {
+  /**
+   * URL to safetensor weights of control method to be applied. Can also be one of `canny`,
+   * `depth`, `hedsketch`, `inpainting`, `pose`, `seg`, `subject`, `ghibli`.
+   */
+  control_method_url: string;
+  /** Scale for the control method. Default: `1`. */
+  scale?: number;
+  /**
+   * URL of an image to use as a control. Carries a image reference — an https URL or a
+   * `data:` URI.
+   */
+  image_url: string;
+  /** Control type of the image. Must be one of `spatial` or `subject`. */
+  image_control_type: "subject" | "spatial";
+}
+
 /** fal's `ElementInput` component. */
 export interface FalElementInput {
   /**
@@ -268,6 +438,39 @@ export interface FalFile {
   file_size?: number | null;
 }
 
+/** fal's `IPAdapter` component. */
+export interface FalIPAdapter {
+  /** Hugging Face path to the IP-Adapter. */
+  path: string;
+  /** Subfolder in which the ip_adapter weights exist. */
+  subfolder?: string | null;
+  /** Name of the safetensors file containing the ip-adapter weights. */
+  weight_name?: string | null;
+  /**
+   * Path to the Image Encoder for the IP-Adapter, for example
+   * 'openai/clip-vit-large-patch14'.
+   */
+  image_encoder_path: string;
+  /** Subfolder in which the image encoder weights exist. */
+  image_encoder_subfolder?: string | null;
+  /** Name of the image encoder. */
+  image_encoder_weight_name?: string | null;
+  /**
+   * URL of Image for IP-Adapter conditioning. Carries a image reference — an https URL or a
+   * `data:` URI.
+   */
+  image_url: string;
+  /**
+   * URL of the mask for the control image. Carries a image reference — an https URL or a
+   * `data:` URI.
+   */
+  mask_image_url?: string | null;
+  /** Threshold for mask. Default: `0.5`. */
+  mask_threshold?: number;
+  /** Scale for ip adapter. */
+  scale: number;
+}
+
 /** fal's `ImageFile` component. */
 export interface FalImageFile {
   /** The URL where the file can be downloaded from. */
@@ -282,6 +485,15 @@ export interface FalImageFile {
   width?: number | null;
   /** The height of the image. */
   height?: number | null;
+}
+
+/** fal's `ImageFillInput` component. */
+export interface FalImageFillInput {
+  /**
+   * URLs of images to be filled for redux prompting. Default: `[]`. Carries a image
+   * reference — an https URL or a `data:` URI.
+   */
+  fill_image_url?: string | string[];
 }
 
 /** fal's `ImageSize` component. */
@@ -390,8 +602,33 @@ export interface FalKlingV3MultiPromptElement {
   duration?: "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14" | "15";
 }
 
-/** fal's `LoraWeight` component. */
-export interface FalLoraWeight {
+/**
+ * fal's `LoraWeight` component.
+ *
+ * The name carries a content hash because fal publishes more than one distinct component
+ * under this title; the hash keeps each variant addressable without the names depending on
+ * discovery order.
+ */
+export interface FalLoraWeight_7426f5 {
+  /** URL or the path to the LoRA weights. */
+  path: string;
+  /**
+   * The scale of the LoRA weight. This is used to scale the LoRA weight before merging it
+   * with the base model. Providing a dictionary as {"layer_name":layer_scale} allows
+   * per-layer lora scale settings. Layers with no scale provided will have scale 1.0.
+   * Default: `1`.
+   */
+  scale?: Record<string, unknown> | number;
+}
+
+/**
+ * fal's `LoraWeight` component.
+ *
+ * The name carries a content hash because fal publishes more than one distinct component
+ * under this title; the hash keeps each variant addressable without the names depending on
+ * discovery order.
+ */
+export interface FalLoraWeight_cc944c {
   /** URL or the path to the LoRA weights. */
   path: string;
   /**

@@ -97,12 +97,12 @@ export function createLipsync<A extends LipsyncAdapter>(
  * `import { lipsync } from "unmodel/lipsync"` work the same way it does for
  * every other category, and adding a second provider is then a one-line change
  * here rather than a new public surface. It is also the smallest pack in the
- * library by some distance — one validator, one union schema, eight generated
+ * library by some distance — one validator, one union schema, ten generated
  * rows — which is exactly what the category being five words buys.
  *
- * fal serves eight endpoints behind it: sync.'s v2, v2/pro and v3, VEED's two
- * generations, LatentSync, Kling's lipsync route and PixVerse's. The cost is
- * pinned in `test/bundle-budget.test.ts`.
+ * fal serves ten endpoints behind it: sync.'s v2, v2/pro and v3, VEED's two
+ * generations, LatentSync, Kling's lipsync route, PixVerse's, and HeyGen v3's
+ * precision and speed arms. The cost is pinned in `test/bundle-budget.test.ts`.
  */
 export const lipsync = createLipsync([fal]);
 

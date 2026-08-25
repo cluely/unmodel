@@ -1,9 +1,9 @@
 /**
- * `unmodel/lipsync` → fal, across 8 endpoints.
+ * `unmodel/lipsync` → fal, across 10 endpoints.
  *
  * The simplest adapter in this provider, and deliberately so: the category is
- * five words and six of the eight endpoints take exactly two parameters. What
- * the adapter has to get right is small and load-bearing.
+ * five words and seven of the ten endpoints take four wire parameters or fewer.
+ * What the adapter has to get right is small and load-bearing.
  *
  * # The source shape is read off the row, never assumed
  *

@@ -10,7 +10,7 @@
  *
  * The required set for each endpoint comes from `FAL_REQUIRED_PROBES`, which is
  * generated from fal's own OpenAPI `required` list minus everything fal
- * defaults. A hand-written list would be eight transcriptions to keep in step
+ * defaults. A hand-written list would be ten transcriptions to keep in step
  * with a weekly refresh, and the first one to go stale would turn a real
  * regression into a passing sweep.
  */
@@ -38,7 +38,7 @@ const ROWS = fal.modelParams as Readonly<
 >;
 
 test("the sweep covers the whole roster", () => {
-  expect(refs).toHaveLength(8);
+  expect(refs).toHaveLength(10);
 });
 
 /**
@@ -88,7 +88,7 @@ describe.each(refs)("%s", (ref) => {
 
   test("`seed` is accepted exactly where the row declares it", () => {
     // `seed` is CANONICAL here, so it lives in the row's `keys` rather than in
-    // its `extras` — and exactly one of the eight endpoints has it. That is the
+    // its `extras` — and exactly one of the ten endpoints has it. That is the
     // per-model refusal risk R7 asks for, read straight off the generated data
     // rather than transcribed into this file.
     const declared = ROWS[id]?.keys.includes("seed") === true;

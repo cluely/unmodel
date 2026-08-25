@@ -28,7 +28,7 @@ import { upscaleModels } from "./gen/models-upscale.gen";
 import { videoModels } from "./gen/models-video.gen";
 
 /**
- * Every fal model unmodel serves, keyed by endpoint id — all nine verbs, 140
+ * Every fal model unmodel serves, keyed by endpoint id — all nine verbs, 146
  * endpoints.
  *
  * Spread in the verbs' own alphabetical order, which is also `scripts/

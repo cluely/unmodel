@@ -1,0 +1,1184 @@
+{
+  "metadata": {
+    "category": "text-to-image",
+    "date": "2024-08-21T00:00:00.000Z",
+    "description": "A versatile endpoint for the FLUX.1 [dev] model that supports multiple AI extensions including LoRA, ControlNet conditioning, and IP-Adapter integration, enabling comprehensive control over image generation through various guidance methods.",
+    "display_name": "FLUX.1 [dev] with Controlnets and Loras",
+    "group": {
+      "key": "flux-general",
+      "label": "Text to Image"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/flux-general",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "lora",
+      "controlnet",
+      "ip-adapter"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9f91b2/bbpu6j6ryq35Wu6-WHkpA_2mmO6mnS.png",
+    "training_endpoint_ids": [
+      "fal-ai/flux-lora-fast-training",
+      "fal-ai/flux-lora-portrait-trainer",
+      "fal-ai/flux-lora-general-training"
+    ],
+    "updated_at": "2026-06-24T10:42:17.837Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ControlLoraWeight": {
+          "properties": {
+            "control_image_url": {
+              "description": "URL of the image to be used as the control image.",
+              "title": "Control Image Url",
+              "type": "string"
+            },
+            "path": {
+              "description": "URL or the path to the LoRA weights.",
+              "title": "Path",
+              "type": "string"
+            },
+            "preprocess": {
+              "default": "None",
+              "description": "Type of preprocessing to apply to the input image.",
+              "enum": [
+                "canny",
+                "depth",
+                "None"
+              ],
+              "title": "Preprocess",
+              "type": "string"
+            },
+            "scale": {
+              "anyOf": [
+                {
+                  "type": "object"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "default": 1,
+              "description": "\n            The scale of the LoRA weight. This is used to scale the LoRA weight\n            before merging it with the base model. Providing a dictionary as {\"layer_name\":layer_scale} allows per-layer lora scale settings. Layers with no scale provided will have scale 1.0.\n        ",
+              "ge": -4,
+              "le": 4,
+              "title": "Scale"
+            }
+          },
+          "required": [
+            "path",
+            "control_image_url"
+          ],
+          "title": "ControlLoraWeight",
+          "type": "object",
+          "x-fal-order-properties": [
+            "path",
+            "scale",
+            "control_image_url",
+            "preprocess"
+          ]
+        },
+        "ControlNet": {
+          "properties": {
+            "conditioning_scale": {
+              "default": 1,
+              "description": "\n            The scale of the control net weight. This is used to scale the control net weight\n            before merging it with the base model.\n        ",
+              "maximum": 2,
+              "minimum": 0,
+              "title": "Conditioning Scale",
+              "type": "number"
+            },
+            "config_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "optional URL to the controlnet config.json file.",
+              "title": "Config Url"
+            },
+            "control_image_url": {
+              "description": "URL of the image to be used as the control image.",
+              "title": "Control Image Url",
+              "type": "string"
+            },
+            "end_percentage": {
+              "default": 1,
+              "description": "\n            The percentage of the image to end applying the controlnet in terms of the total timesteps.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "End Percentage",
+              "type": "number"
+            },
+            "mask_image_url": {
+              "description": "URL of the mask for the control image.",
+              "title": "Mask Image Url",
+              "type": "string"
+            },
+            "mask_threshold": {
+              "default": 0.5,
+              "description": "Threshold for mask.",
+              "maximum": 0.99,
+              "minimum": 0.01,
+              "title": "Mask Threshold",
+              "type": "number"
+            },
+            "path": {
+              "description": "URL or the path to the control net weights.",
+              "title": "Path",
+              "type": "string"
+            },
+            "start_percentage": {
+              "default": 0,
+              "description": "\n            The percentage of the image to start applying the controlnet in terms of the total timesteps.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Start Percentage",
+              "type": "number"
+            },
+            "variant": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The optional variant if a Hugging Face repo key is used.",
+              "title": "Variant"
+            }
+          },
+          "required": [
+            "path",
+            "control_image_url"
+          ],
+          "title": "ControlNet",
+          "type": "object",
+          "x-fal-order-properties": [
+            "path",
+            "config_url",
+            "variant",
+            "control_image_url",
+            "mask_image_url",
+            "mask_threshold",
+            "conditioning_scale",
+            "start_percentage",
+            "end_percentage"
+          ]
+        },
+        "ControlNetUnion": {
+          "properties": {
+            "config_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "optional URL to the controlnet config.json file.",
+              "title": "Config Url"
+            },
+            "controls": {
+              "description": "The control images and modes to use for the control net.",
+              "items": {
+                "$ref": "#/components/schemas/ControlNetUnionInput"
+              },
+              "title": "Controls",
+              "type": "array"
+            },
+            "path": {
+              "description": "URL or the path to the control net weights.",
+              "title": "Path",
+              "type": "string"
+            },
+            "variant": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The optional variant if a Hugging Face repo key is used.",
+              "title": "Variant"
+            }
+          },
+          "required": [
+            "path",
+            "controls"
+          ],
+          "title": "ControlNetUnion",
+          "type": "object",
+          "x-fal-order-properties": [
+            "path",
+            "config_url",
+            "variant",
+            "controls"
+          ]
+        },
+        "ControlNetUnionInput": {
+          "properties": {
+            "conditioning_scale": {
+              "default": 1,
+              "description": "\n            The scale of the control net weight. This is used to scale the control net weight\n            before merging it with the base model.\n        ",
+              "maximum": 2,
+              "minimum": 0,
+              "title": "Conditioning Scale",
+              "type": "number"
+            },
+            "control_image_url": {
+              "description": "URL of the image to be used as the control image.",
+              "title": "Control Image Url",
+              "type": "string"
+            },
+            "control_mode": {
+              "description": "Control Mode for Flux Controlnet Union. Supported values are:\n        - canny: Uses the edges for guided generation.\n        - tile: Uses the tiles for guided generation.\n        - depth: Utilizes a grayscale depth map for guided generation.\n        - blur: Adds a blur to the image.\n        - pose: Uses the pose of the image for guided generation.\n        - gray: Converts the image to grayscale.\n        - low-quality: Converts the image to a low-quality image.",
+              "enum": [
+                "canny",
+                "tile",
+                "depth",
+                "blur",
+                "pose",
+                "gray",
+                "low-quality"
+              ],
+              "title": "Control Mode",
+              "type": "string"
+            },
+            "end_percentage": {
+              "default": 1,
+              "description": "\n            The percentage of the image to end applying the controlnet in terms of the total timesteps.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "End Percentage",
+              "type": "number"
+            },
+            "mask_image_url": {
+              "description": "URL of the mask for the control image.",
+              "title": "Mask Image Url",
+              "type": "string"
+            },
+            "mask_threshold": {
+              "default": 0.5,
+              "description": "Threshold for mask.",
+              "maximum": 0.99,
+              "minimum": 0.01,
+              "title": "Mask Threshold",
+              "type": "number"
+            },
+            "start_percentage": {
+              "default": 0,
+              "description": "\n            The percentage of the image to start applying the controlnet in terms of the total timesteps.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Start Percentage",
+              "type": "number"
+            }
+          },
+          "required": [
+            "control_image_url",
+            "control_mode"
+          ],
+          "title": "ControlNetUnionInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "control_image_url",
+            "mask_image_url",
+            "control_mode",
+            "conditioning_scale",
+            "mask_threshold",
+            "start_percentage",
+            "end_percentage"
+          ]
+        },
+        "EasyControlWeight": {
+          "properties": {
+            "control_method_url": {
+              "description": "URL to safetensor weights of control method to be applied. Can also be one of `canny`, `depth`, `hedsketch`, `inpainting`, `pose`, `seg`, `subject`, `ghibli` ",
+              "examples": [
+                "canny",
+                "depth",
+                "hedsketch",
+                "inpainting",
+                "pose",
+                "seg",
+                "subject",
+                "ghibli"
+              ],
+              "title": "Control Method Url",
+              "type": "string"
+            },
+            "image_control_type": {
+              "description": "Control type of the image. Must be one of `spatial` or `subject`.",
+              "enum": [
+                "subject",
+                "spatial"
+              ],
+              "title": "Image Control Type",
+              "type": "string"
+            },
+            "image_url": {
+              "description": "URL of an image to use as a control",
+              "title": "Image Url",
+              "type": "string"
+            },
+            "scale": {
+              "default": 1,
+              "description": "Scale for the control method.",
+              "maximum": 2,
+              "minimum": 0,
+              "title": "Scale",
+              "type": "number"
+            }
+          },
+          "required": [
+            "control_method_url",
+            "image_url",
+            "image_control_type"
+          ],
+          "title": "EasyControlWeight",
+          "type": "object",
+          "x-fal-order-properties": [
+            "control_method_url",
+            "scale",
+            "image_url",
+            "image_control_type"
+          ]
+        },
+        "FluxGeneralInput": {
+          "properties": {
+            "base_shift": {
+              "default": 0.5,
+              "description": "Base shift for the scheduled timesteps",
+              "maximum": 5,
+              "minimum": 0.01,
+              "title": "Base Shift",
+              "type": "number"
+            },
+            "control_loras": {
+              "default": [],
+              "description": "\n            The LoRAs to use for the image generation which use a control image. You can use any number of LoRAs\n            and they will be merged together to generate the final image.\n        ",
+              "examples": [],
+              "items": {
+                "$ref": "#/components/schemas/ControlLoraWeight"
+              },
+              "title": "Control Loras",
+              "type": "array"
+            },
+            "controlnet_unions": {
+              "default": [],
+              "description": "\n            The controlnet unions to use for the image generation. Only one controlnet is supported at the moment.\n        ",
+              "items": {
+                "$ref": "#/components/schemas/ControlNetUnion"
+              },
+              "title": "Controlnet Unions",
+              "type": "array"
+            },
+            "controlnets": {
+              "default": [],
+              "description": "\n            The controlnets to use for the image generation. Only one controlnet is supported at the moment.\n        ",
+              "items": {
+                "$ref": "#/components/schemas/ControlNet"
+              },
+              "title": "Controlnets",
+              "type": "array"
+            },
+            "easycontrols": {
+              "default": [],
+              "description": "\n        EasyControl Inputs to use for image generation.\n        ",
+              "items": {
+                "$ref": "#/components/schemas/EasyControlWeight"
+              },
+              "title": "Easycontrols",
+              "type": "array"
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "If set to true, the safety checker will be enabled. Disabling it requires account authorization; unauthorized requests are always checked, and images flagged as unsafe are returned as black images.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "fill_image": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ImageFillInput"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Use an image input to influence the generation. Can be used to fill images in masked areas."
+            },
+            "guidance_scale": {
+              "default": 3.5,
+              "description": "\n            The CFG (Classifier Free Guidance) scale is a measure of how close you want\n            the model to stick to your prompt when looking for a related image to show you.\n        ",
+              "maximum": 20,
+              "minimum": 0,
+              "title": "Guidance scale (CFG)",
+              "type": "number"
+            },
+            "image_size": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ImageSize"
+                },
+                {
+                  "enum": [
+                    "square_hd",
+                    "square",
+                    "portrait_4_3",
+                    "portrait_16_9",
+                    "landscape_4_3",
+                    "landscape_16_9"
+                  ],
+                  "type": "string"
+                }
+              ],
+              "description": "The size of the generated image.",
+              "title": "Image Size"
+            },
+            "ip_adapters": {
+              "default": [],
+              "description": "\n        IP-Adapter to use for image generation.\n        ",
+              "items": {
+                "$ref": "#/components/schemas/IPAdapter"
+              },
+              "title": "Ip Adapters",
+              "type": "array"
+            },
+            "loras": {
+              "default": [],
+              "description": "\n            The LoRAs to use for the image generation. You can use any number of LoRAs\n            and they will be merged together to generate the final image.\n        ",
+              "examples": [],
+              "items": {
+                "$ref": "#/components/schemas/LoraWeight"
+              },
+              "title": "Loras",
+              "type": "array"
+            },
+            "max_shift": {
+              "default": 1.15,
+              "description": "Max shift for the scheduled timesteps",
+              "maximum": 5,
+              "minimum": 0.01,
+              "title": "Max Shift",
+              "type": "number"
+            },
+            "nag_alpha": {
+              "default": 0.25,
+              "description": "\n            The alpha value for NAG. This value is used as a final weighting\n            factor for steering the normalized guidance (positive and negative prompts)\n            in the direction of the positive prompt. Higher values will result in less\n            steering on the normalized guidance where lower values will result in\n            considering the positive prompt guidance more.\n        ",
+              "exclusiveMinimum": 0,
+              "maximum": 1,
+              "title": "NAG alpha",
+              "type": "number"
+            },
+            "nag_end": {
+              "default": 0.25,
+              "description": "\n            The proportion of steps to apply NAG. After the specified proportion\n            of steps has been iterated, the remaining steps will use original\n            attention processors in FLUX.\n        ",
+              "exclusiveMinimum": 0,
+              "maximum": 1,
+              "title": "Proportion of steps to apply NAG",
+              "type": "number"
+            },
+            "nag_scale": {
+              "default": 3,
+              "description": "\n            The scale for NAG. Higher values will result in a image that is more distant\n            to the negative prompt.\n        ",
+              "exclusiveMinimum": 1,
+              "maximum": 10,
+              "title": "NAG scale",
+              "type": "number"
+            },
+            "nag_tau": {
+              "default": 2.5,
+              "description": "\n            The tau for NAG. Controls the normalization of the hidden state.\n            Higher values will result in a less aggressive normalization,\n            but may also lead to unexpected changes with respect to the original image.\n            Not recommended to change this value.\n        ",
+              "exclusiveMinimum": 0,
+              "title": "NAG Tau",
+              "type": "number"
+            },
+            "negative_prompt": {
+              "default": "",
+              "description": "\n            Negative prompt to steer the image generation away from unwanted features.\n            By default, we will be using NAG for processing the negative prompt.\n        ",
+              "title": "Negative Prompt",
+              "type": "string"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "The number of images to generate. This is always set to 1 for streaming output.",
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Num Images",
+              "type": "integer"
+            },
+            "num_inference_steps": {
+              "default": 28,
+              "description": "The number of inference steps to perform.",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Num Inference Steps",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "png",
+              "description": "The format of the generated image.",
+              "enum": [
+                "jpeg",
+                "png"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The prompt to generate an image from.",
+              "examples": [
+                "Extreme close-up of a single tiger eye, direct frontal view. Detailed iris and pupil. Sharp focus on eye texture and color. Natural lighting to capture authentic eye shine and depth. The word \"FLUX\" is painted over it in big, white brush strokes with visible texture."
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "real_cfg_scale": {
+              "default": 3.5,
+              "description": "\n            The CFG (Classifier Free Guidance) scale is a measure of how close you want\n            the model to stick to your prompt when looking for a related image to show you.\n        ",
+              "maximum": 5,
+              "minimum": 0,
+              "title": "Real CFG scale",
+              "type": "number"
+            },
+            "reference_end": {
+              "default": 1,
+              "description": "\n            The percentage of the total timesteps when the reference guidance is to be ended.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Reference End",
+              "type": "number"
+            },
+            "reference_image_url": {
+              "description": "URL of Image for Reference-Only",
+              "title": "Reference Image Url",
+              "type": "string"
+            },
+            "reference_start": {
+              "default": 0,
+              "description": "\n            The percentage of the total timesteps when the reference guidance is to bestarted.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Reference Start",
+              "type": "number"
+            },
+            "reference_strength": {
+              "default": 0.65,
+              "description": "Strength of reference_only generation. Only used if a reference image is provided.",
+              "maximum": 3,
+              "minimum": -3,
+              "title": "Reference Strength",
+              "type": "number"
+            },
+            "scheduler": {
+              "default": "euler",
+              "description": "Scheduler for the denoising process.",
+              "enum": [
+                "euler",
+                "dpmpp_2m"
+              ],
+              "title": "Scheduler",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\n            The same seed and the same prompt given to the same version of the model\n            will output the same image every time.\n        ",
+              "title": "Seed"
+            },
+            "sigma_schedule": {
+              "anyOf": [
+                {
+                  "const": "sgm_uniform",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sigmas schedule for the denoising process.",
+              "title": "Sigma Schedule"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            },
+            "use_beta_schedule": {
+              "default": false,
+              "description": "Specifies whether beta sigmas ought to be used.",
+              "title": "Use Beta Schedule",
+              "type": "boolean"
+            },
+            "use_cfg_zero": {
+              "default": false,
+              "description": "\n            Uses CFG-zero init sampling as in https://arxiv.org/abs/2503.18886.\n        ",
+              "title": "Use CFG-Zero-Init",
+              "type": "boolean"
+            },
+            "use_real_cfg": {
+              "default": false,
+              "description": "\n            Uses classical CFG as in SD1.5, SDXL, etc. Increases generation times and price when set to be true.\n            If using XLabs IP-Adapter v1, this will be turned on!.\n        ",
+              "title": "Use Real CFG",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "TextToImageInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "image_size",
+            "num_inference_steps",
+            "seed",
+            "loras",
+            "control_loras",
+            "controlnets",
+            "controlnet_unions",
+            "ip_adapters",
+            "easycontrols",
+            "fill_image",
+            "guidance_scale",
+            "real_cfg_scale",
+            "use_real_cfg",
+            "use_cfg_zero",
+            "sync_mode",
+            "num_images",
+            "enable_safety_checker",
+            "reference_image_url",
+            "reference_strength",
+            "reference_start",
+            "reference_end",
+            "base_shift",
+            "max_shift",
+            "output_format",
+            "use_beta_schedule",
+            "sigma_schedule",
+            "scheduler",
+            "negative_prompt",
+            "nag_scale",
+            "nag_tau",
+            "nag_alpha",
+            "nag_end"
+          ]
+        },
+        "FluxGeneralOutput": {
+          "properties": {
+            "has_nsfw_concepts": {
+              "description": "Whether the generated images contain NSFW concepts.",
+              "items": {
+                "type": "boolean"
+              },
+              "title": "Has Nsfw Concepts",
+              "type": "array"
+            },
+            "images": {
+              "description": "The generated image files info.",
+              "items": {
+                "$ref": "#/components/schemas/Image"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "prompt": {
+              "description": "The prompt used for generating the image.",
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "description": "\n            Seed of the generated Image. It will be the same value of the one passed in the\n            input or the randomly generated that was used in case none was passed.\n        ",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ],
+          "title": "Output",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ]
+        },
+        "IPAdapter": {
+          "properties": {
+            "image_encoder_path": {
+              "description": "Path to the Image Encoder for the IP-Adapter, for example 'openai/clip-vit-large-patch14'",
+              "title": "Image Encoder Path",
+              "type": "string"
+            },
+            "image_encoder_subfolder": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Subfolder in which the image encoder weights exist.",
+              "title": "Image Encoder Subfolder"
+            },
+            "image_encoder_weight_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Name of the image encoder.",
+              "title": "Image Encoder Weight Name"
+            },
+            "image_url": {
+              "description": "URL of Image for IP-Adapter conditioning. ",
+              "title": "Image Url",
+              "type": "string"
+            },
+            "mask_image_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "URL of the mask for the control image.",
+              "title": "Mask Image Url"
+            },
+            "mask_threshold": {
+              "default": 0.5,
+              "description": "Threshold for mask.",
+              "maximum": 0.99,
+              "minimum": 0.01,
+              "title": "Mask Threshold",
+              "type": "number"
+            },
+            "path": {
+              "description": "Hugging Face path to the IP-Adapter",
+              "title": "Path",
+              "type": "string"
+            },
+            "scale": {
+              "description": "Scale for ip adapter.",
+              "title": "Scale",
+              "type": "number"
+            },
+            "subfolder": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Subfolder in which the ip_adapter weights exist",
+              "title": "Subfolder"
+            },
+            "weight_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Name of the safetensors file containing the ip-adapter weights",
+              "title": "Weight Name"
+            }
+          },
+          "required": [
+            "path",
+            "image_encoder_path",
+            "image_url",
+            "scale"
+          ],
+          "title": "IPAdapter",
+          "type": "object",
+          "x-fal-order-properties": [
+            "path",
+            "subfolder",
+            "weight_name",
+            "image_encoder_path",
+            "image_encoder_subfolder",
+            "image_encoder_weight_name",
+            "image_url",
+            "mask_image_url",
+            "mask_threshold",
+            "scale"
+          ]
+        },
+        "Image": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "image/jpeg",
+              "title": "Content Type"
+            },
+            "height": {
+              "title": "Height",
+              "type": "integer"
+            },
+            "url": {
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "url",
+            "width",
+            "height"
+          ],
+          "title": "Image",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "width",
+            "height",
+            "content_type"
+          ]
+        },
+        "ImageFillInput": {
+          "properties": {
+            "fill_image_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ],
+              "default": [],
+              "description": "URLs of images to be filled for redux prompting",
+              "title": "Fill Image Url"
+            }
+          },
+          "title": "ImageFillInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "fill_image_url"
+          ]
+        },
+        "ImageSize": {
+          "properties": {
+            "height": {
+              "default": 512,
+              "description": "The height of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Height",
+              "type": "integer"
+            },
+            "width": {
+              "default": 512,
+              "description": "The width of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "title": "ImageSize",
+          "type": "object",
+          "x-fal-order-properties": [
+            "width",
+            "height"
+          ]
+        },
+        "LoraWeight": {
+          "properties": {
+            "path": {
+              "description": "URL or the path to the LoRA weights.",
+              "title": "Path",
+              "type": "string"
+            },
+            "scale": {
+              "anyOf": [
+                {
+                  "type": "object"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "default": 1,
+              "description": "\n            The scale of the LoRA weight. This is used to scale the LoRA weight\n            before merging it with the base model. Providing a dictionary as {\"layer_name\":layer_scale} allows per-layer lora scale settings. Layers with no scale provided will have scale 1.0.\n        ",
+              "ge": -4,
+              "le": 4,
+              "title": "Scale"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "title": "LoraWeight",
+          "type": "object",
+          "x-fal-order-properties": [
+            "path",
+            "scale"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/flux-general queue.",
+      "title": "Queue OpenAPI for fal-ai/flux-general",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "FLUX.1 [dev], next generation text-to-image model.",
+        "category": "text-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/flux-general/api",
+        "endpointId": "fal-ai/flux-general",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/flux-general",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9f91b2/bbpu6j6ryq35Wu6-WHkpA_2mmO6mnS.png"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/flux-general": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FluxGeneralInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-general/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/FluxGeneralOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-general/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-general/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

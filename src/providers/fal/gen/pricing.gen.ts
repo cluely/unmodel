@@ -36,6 +36,7 @@
 //   data/fal/openapi/fal-ai__flux-2-pro__edit.json
 //   data/fal/openapi/fal-ai__flux-2__edit.json
 //   data/fal/openapi/fal-ai__flux-2__flash.json
+//   data/fal/openapi/fal-ai__flux-general.json
 //   data/fal/openapi/fal-ai__flux-kontext__dev.json
 //   data/fal/openapi/fal-ai__flux-lora.json
 //   data/fal/openapi/fal-ai__flux-pro__kontext.json
@@ -51,6 +52,9 @@
 //   data/fal/openapi/fal-ai__gemini-tts.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5__edit.json
+//   data/fal/openapi/fal-ai__heygen__v3__lipsync__precision.json
+//   data/fal/openapi/fal-ai__heygen__v3__lipsync__speed.json
+//   data/fal/openapi/fal-ai__hunyuan-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__inworld-tts.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
@@ -105,6 +109,7 @@
 //   data/fal/openapi/fal-ai__speech-to-text__turbo.json
 //   data/fal/openapi/fal-ai__stable-audio-25__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-audio-3__medium__text-to-audio.json
+//   data/fal/openapi/fal-ai__stable-diffusion-v35-large.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2__pro.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v3.json
@@ -126,6 +131,7 @@
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
 //   data/fal/openapi/lightricks__ltx-2.5__text-to-video__pro.json
+//   data/fal/openapi/microsoft__mai-image-2.5.json
 //   data/fal/openapi/minimax__h3__image-to-video.json
 //   data/fal/openapi/minimax__h3__text-to-video.json
 //   data/fal/openapi/minimax__music-3.json
@@ -195,6 +201,7 @@ export const FAL_RATES = {
   "fal-ai/flux-2-pro/edit": { unit: "tiered", rounding: "rounded up to the nearest megapixel", tierKey: "billed megapixel count — the first megapixel of output is priced apart from each extra megapixel of input and output", tiers: [{ when: "the first megapixel of output", usd: 0.03 }, { when: "each extra megapixel of input and output", usd: 0.015 }], source: "https://fal.ai/models/fal-ai/flux-2-pro/edit", verified: "2026-08-24" },
   "fal-ai/flux-2/edit": { unit: "per_megapixel", usd: 0.012, rounding: "billed across input AND output megapixels; input images are resized to 1MP first", source: "https://fal.ai/models/fal-ai/flux-2/edit", verified: "2026-08-24" },
   "fal-ai/flux-2/flash": { unit: "per_megapixel", usd: 0.005, source: "https://fal.ai/models/fal-ai/flux-2/flash", verified: "2026-08-24" },
+  "fal-ai/flux-general": { unit: "per_megapixel", usd: 0.075, rounding: "up to the nearest megapixel", source: "https://fal.ai/models/fal-ai/flux-general", verified: "2026-08-25" },
   "fal-ai/flux-kontext/dev": { unit: "per_megapixel", usd: 0.025, rounding: "up to the nearest megapixel", source: "https://fal.ai/models/fal-ai/flux-kontext/dev", verified: "2026-08-24" },
   "fal-ai/flux-lora": { unit: "per_megapixel", usd: 0.035, rounding: "up to the nearest megapixel", source: "https://fal.ai/models/fal-ai/flux-lora", verified: "2026-08-24" },
   "fal-ai/flux-pro/kontext": { unit: "per_image", usd: 0.04, source: "https://fal.ai/models/fal-ai/flux-pro/kontext", verified: "2026-08-24" },
@@ -210,6 +217,9 @@ export const FAL_RATES = {
   "fal-ai/gemini-tts": { unit: "conditional", tierKey: "`model` (flash or pro), and a TOKEN count no request body carries", tiers: [{ when: "per 1M input tokens, gemini-2.5-flash-tts", usd: 0.5 }, { when: "per 1M output tokens, gemini-2.5-flash-tts", usd: 10 }, { when: "per 1M input tokens, gemini-2.5-pro-tts (double the flash rate)", usd: 1 }, { when: "per 1M output tokens, gemini-2.5-pro-tts (double the flash rate)", usd: 20 }], source: "https://fal.ai/models/fal-ai/gemini-tts", verified: "2026-08-25" },
   "fal-ai/gpt-image-1.5": { unit: "conditional", tierKey: "quality x image_size selects the per-image figure; the total ALSO carries additive per-1,000-token text charges", tiers: [{ when: "quality=\"low\", 1024x1024", usd: 0.009 }, { when: "quality=\"low\", any other size", usd: 0.013 }, { when: "quality=\"medium\", 1024x1024", usd: 0.034 }, { when: "quality=\"medium\", 1024x1536", usd: 0.051 }, { when: "quality=\"medium\", 1536x1024", usd: 0.05 }, { when: "quality=\"high\", 1024x1024", usd: 0.133 }, { when: "quality=\"high\", 1024x1536", usd: 0.2 }, { when: "quality=\"high\", 1536x1024", usd: 0.199 }, { when: "additive, per 1,000 input text tokens", usd: 0.005 }, { when: "additive, per 1,000 output (reasoning) text tokens", usd: 0.01 }], source: "https://fal.ai/models/fal-ai/gpt-image-1.5", verified: "2026-08-24" },
   "fal-ai/gpt-image-1.5/edit": { unit: "conditional", tierKey: "quality x size, plus additive per-1,000-token charges for input text, input image and output text tokens", tiers: [{ when: "quality=\"low\", 1024x1024", usd: 0.009 }, { when: "quality=\"low\", any other size", usd: 0.013 }, { when: "quality=\"medium\", 1024x1024", usd: 0.034 }, { when: "quality=\"medium\", 1024x1536", usd: 0.051 }, { when: "quality=\"medium\", 1536x1024", usd: 0.05 }, { when: "quality=\"high\", 1024x1024", usd: 0.133 }, { when: "quality=\"high\", 1024x1536", usd: 0.2 }, { when: "quality=\"high\", 1536x1024", usd: 0.199 }, { when: "additive, per 1,000 input text tokens", usd: 0.005 }, { when: "additive, per 1,000 input image tokens", usd: 0.008 }, { when: "additive, per 1,000 output (reasoning) text tokens", usd: 0.01 }], source: "https://fal.ai/models/fal-ai/gpt-image-1.5/edit", verified: "2026-08-24" },
+  "fal-ai/heygen/v3/lipsync/precision": { unit: "per_second", usd: 0.1, source: "https://fal.ai/models/fal-ai/heygen/v3/lipsync/precision", verified: "2026-08-25" },
+  "fal-ai/heygen/v3/lipsync/speed": { unit: "per_second", usd: 0.05, source: "https://fal.ai/models/fal-ai/heygen/v3/lipsync/speed", verified: "2026-08-25" },
+  "fal-ai/hunyuan-image/v3/text-to-image": { unit: "per_megapixel", usd: 0.1, source: "https://fal.ai/models/fal-ai/hunyuan-image/v3/text-to-image", verified: "2026-08-25" },
   "fal-ai/ideogram/v3": { unit: "conditional", tierKey: "rendering_speed", tiers: [{ when: "rendering_speed=\"TURBO\"", usd: 0.03 }, { when: "rendering_speed=\"BALANCED\" (the default)", usd: 0.06 }, { when: "rendering_speed=\"QUALITY\"", usd: 0.09 }], source: "https://fal.ai/models/fal-ai/ideogram/v3", verified: "2026-08-24" },
   "fal-ai/inworld-tts": { unit: "per_1000_characters", usd: 0.01, source: "https://fal.ai/models/fal-ai/inworld-tts", verified: "2026-08-25" },
   "fal-ai/kling-image/v3/text-to-image": { unit: "per_image", usd: 0.028, source: "https://fal.ai/models/fal-ai/kling-image/v3/text-to-image", verified: "2026-08-24" },
@@ -264,6 +274,7 @@ export const FAL_RATES = {
   "fal-ai/speech-to-text/turbo": { unit: "per_input_audio_second", usd: 0.0008, source: "https://fal.ai/models/fal-ai/speech-to-text/turbo", verified: "2026-08-25" },
   "fal-ai/stable-audio-25/text-to-audio": { unit: "per_generation", usd: 0.2, source: "https://fal.ai/models/fal-ai/stable-audio-25/text-to-audio", verified: "2026-08-25" },
   "fal-ai/stable-audio-3/medium/text-to-audio": { unit: "per_generation", usd: 0.0376, source: "https://fal.ai/models/fal-ai/stable-audio-3/medium/text-to-audio", verified: "2026-08-25" },
+  "fal-ai/stable-diffusion-v35-large": { unit: "per_megapixel", usd: 0.065, source: "https://fal.ai/models/fal-ai/stable-diffusion-v35-large", verified: "2026-08-25" },
   "fal-ai/sync-lipsync/v2": { unit: "per_video_minute", usd: 3, source: "https://fal.ai/models/fal-ai/sync-lipsync/v2", verified: "2026-08-24" },
   "fal-ai/sync-lipsync/v2/pro": { unit: "per_video_minute", usd: 5, source: "https://fal.ai/models/fal-ai/sync-lipsync/v2/pro", verified: "2026-08-24" },
   "fal-ai/sync-lipsync/v3": { unit: "per_video_minute", usd: 8, source: "https://fal.ai/models/fal-ai/sync-lipsync/v3", verified: "2026-08-24" },
@@ -285,6 +296,7 @@ export const FAL_RATES = {
   "krea/v2/large/text-to-image": { unit: "conditional", tierKey: "image_style_references", tiers: [{ when: "text-to-image", usd: 0.06 }, { when: "using image_style_references", usd: 0.065 }], source: "https://fal.ai/models/krea/v2/large/text-to-image", verified: "2026-08-24" },
   "krea/v2/medium/text-to-image": { unit: "conditional", tierKey: "image_style_references", tiers: [{ when: "text-to-image", usd: 0.03 }, { when: "using image_style_references", usd: 0.035 }], source: "https://fal.ai/models/krea/v2/medium/text-to-image", verified: "2026-08-24" },
   "lightricks/ltx-2.5/text-to-video/pro": { unit: "conditional", tierKey: "resolution", tiers: [{ when: "per second at 720p", usd: 0.12 }, { when: "per second at 1080p", usd: 0.17 }], source: "https://fal.ai/models/lightricks/ltx-2.5/text-to-video/pro", verified: "2026-08-24" },
+  "microsoft/mai-image-2.5": { unpriced: "fal publishes no rate for the PUBLISHED id: the page at https://fal.ai/models/microsoft/mai-image-2.5 states no price at all, and the internal route fal's own OpenAPI documents shows only the unpopulated $0-per-compute-second billing template — the same template wizper shows. Quoting $0 as a rate would be worse than saying nothing, so estimates for this endpoint return {} with this caveat.", source: "https://fal.ai/models/fal-ai/mai-image-2.5", verified: "2026-08-25" },
   "minimax/h3/image-to-video": { unit: "conditional", tierKey: "resolution", tiers: [{ when: "per second at 480P", usd: 0.05 }, { when: "per second at 768P", usd: 0.06 }, { when: "per second at 2K", usd: 0.13 }, { when: "per second at 4K", usd: 0.16 }], source: "https://fal.ai/models/minimax/h3/image-to-video", verified: "2026-08-24" },
   "minimax/h3/text-to-video": { unit: "conditional", tierKey: "resolution", tiers: [{ when: "per second at 480P", usd: 0.05 }, { when: "per second at 768P", usd: 0.06 }, { when: "per second at 2K", usd: 0.13 }, { when: "per second at 4K", usd: 0.16 }], source: "https://fal.ai/models/minimax/h3/text-to-video", verified: "2026-08-24" },
   "minimax/music-3": { unit: "per_generated_audio_second", usd: 0.002, source: "https://fal.ai/models/minimax/music-3", verified: "2026-08-25" },

@@ -7,12 +7,14 @@
 //   data/fal/openapi/fal-ai__flux-2-max.json
 //   data/fal/openapi/fal-ai__flux-2-pro.json
 //   data/fal/openapi/fal-ai__flux-2__flash.json
+//   data/fal/openapi/fal-ai__flux-general.json
 //   data/fal/openapi/fal-ai__flux-lora.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1-ultra.json
 //   data/fal/openapi/fal-ai__flux__dev.json
 //   data/fal/openapi/fal-ai__flux__schnell.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5.json
+//   data/fal/openapi/fal-ai__hunyuan-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__nano-banana.json
@@ -21,11 +23,13 @@
 //   data/fal/openapi/fal-ai__qwen-image.json
 //   data/fal/openapi/fal-ai__recraft__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__recraft__v4__text-to-image.json
+//   data/fal/openapi/fal-ai__stable-diffusion-v35-large.json
 //   data/fal/openapi/fal-ai__z-image__turbo.json
 //   data/fal/openapi/google__nano-banana-2-lite.json
 //   data/fal/openapi/ideogram__v4.json
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.5.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -56,11 +60,13 @@ import type {
   FalAiFlux2Input,
   FalAiFlux2MaxInput,
   FalAiFluxDevInput,
+  FalAiFluxGeneralInput,
   FalAiFluxLoraInput,
   FalAiFluxProV11Input,
   FalAiFluxProV11UltraInput,
   FalAiFluxSchnellInput,
   FalAiGptImage15Input,
+  FalAiHunyuanImageV3TextToImageInput,
   FalAiIdeogramV3Input,
   FalAiKlingImageV3TextToImageInput,
   FalAiNanoBanana2Input,
@@ -69,6 +75,7 @@ import type {
   FalAiQwenImageInput,
   FalAiRecraftV3TextToImageInput,
   FalAiRecraftV4TextToImageInput,
+  FalAiStableDiffusionV35LargeInput,
   FalAiZImageTurboInput,
   GoogleNanoBanana2LiteInput,
   IdeogramV4Input,
@@ -102,6 +109,35 @@ const ROW_018ee1 = {
   extras: {
     background: EXTRA as FalAiGptImage15Input["background"],
     quality: EXTRA as FalAiGptImage15Input["quality"],
+  },
+} as const;
+
+/** microsoft/mai-image-2.5. */
+const ROW_0bf7e4 = {
+  classes: ["aspectRatioEnum"],
+  keys: ["prompt", "num_images", "aspect_ratio", "output_format", "sync_mode"],
+  ratios: ["1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3"],
+  bounds: { num_images: { min: 1, max: 4 } },
+  extras: {},
+} as const;
+
+/**
+ * fal-ai/hunyuan-image/v3/text-to-image.
+ *
+ * The extras are typed from `FalAiHunyuanImageV3TextToImageInput`, so the value an editor
+ * offers here and the value `fal.image` validates are one declaration.
+ */
+const ROW_0fc74e = {
+  classes: ["imageSizeUnion"],
+  keys: ["prompt", "negative_prompt", "image_size", "num_images", "num_inference_steps", "guidance_scale", "seed", "enable_safety_checker", "sync_mode", "output_format", "enable_prompt_expansion"],
+  sizes: ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9"],
+  pixels: { min: 1, max: 14142 },
+  bounds: { num_images: { min: 1, max: 4 } },
+  extras: {
+    num_inference_steps: EXTRA as FalAiHunyuanImageV3TextToImageInput["num_inference_steps"],
+    guidance_scale: EXTRA as FalAiHunyuanImageV3TextToImageInput["guidance_scale"],
+    enable_safety_checker: EXTRA as FalAiHunyuanImageV3TextToImageInput["enable_safety_checker"],
+    enable_prompt_expansion: EXTRA as FalAiHunyuanImageV3TextToImageInput["enable_prompt_expansion"],
   },
 } as const;
 
@@ -196,6 +232,48 @@ const ROW_422a6b = {
   extras: {
     max_images: EXTRA as FalAiBytedanceSeedreamV45TextToImageInput["max_images"],
     enable_safety_checker: EXTRA as FalAiBytedanceSeedreamV45TextToImageInput["enable_safety_checker"],
+  },
+} as const;
+
+/**
+ * fal-ai/flux-general.
+ *
+ * The extras are typed from `FalAiFluxGeneralInput`, so the value an editor offers here
+ * and the value `fal.image` validates are one declaration.
+ */
+const ROW_4271e5 = {
+  classes: ["imageSizeUnion"],
+  keys: ["prompt", "image_size", "num_inference_steps", "seed", "loras", "control_loras", "controlnets", "controlnet_unions", "ip_adapters", "easycontrols", "fill_image", "guidance_scale", "real_cfg_scale", "use_real_cfg", "use_cfg_zero", "sync_mode", "num_images", "enable_safety_checker", "reference_image_url", "reference_strength", "reference_start", "reference_end", "base_shift", "max_shift", "output_format", "use_beta_schedule", "sigma_schedule", "scheduler", "negative_prompt", "nag_scale", "nag_tau", "nag_alpha", "nag_end"],
+  sizes: ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9"],
+  pixels: { min: 1, max: 14142 },
+  bounds: { num_images: { min: 1, max: 10 } },
+  extras: {
+    num_inference_steps: EXTRA as FalAiFluxGeneralInput["num_inference_steps"],
+    loras: EXTRA as FalAiFluxGeneralInput["loras"],
+    control_loras: EXTRA as FalAiFluxGeneralInput["control_loras"],
+    controlnets: EXTRA as FalAiFluxGeneralInput["controlnets"],
+    controlnet_unions: EXTRA as FalAiFluxGeneralInput["controlnet_unions"],
+    ip_adapters: EXTRA as FalAiFluxGeneralInput["ip_adapters"],
+    easycontrols: EXTRA as FalAiFluxGeneralInput["easycontrols"],
+    fill_image: EXTRA as FalAiFluxGeneralInput["fill_image"],
+    guidance_scale: EXTRA as FalAiFluxGeneralInput["guidance_scale"],
+    real_cfg_scale: EXTRA as FalAiFluxGeneralInput["real_cfg_scale"],
+    use_real_cfg: EXTRA as FalAiFluxGeneralInput["use_real_cfg"],
+    use_cfg_zero: EXTRA as FalAiFluxGeneralInput["use_cfg_zero"],
+    enable_safety_checker: EXTRA as FalAiFluxGeneralInput["enable_safety_checker"],
+    reference_image_url: EXTRA as FalAiFluxGeneralInput["reference_image_url"],
+    reference_strength: EXTRA as FalAiFluxGeneralInput["reference_strength"],
+    reference_start: EXTRA as FalAiFluxGeneralInput["reference_start"],
+    reference_end: EXTRA as FalAiFluxGeneralInput["reference_end"],
+    base_shift: EXTRA as FalAiFluxGeneralInput["base_shift"],
+    max_shift: EXTRA as FalAiFluxGeneralInput["max_shift"],
+    use_beta_schedule: EXTRA as FalAiFluxGeneralInput["use_beta_schedule"],
+    sigma_schedule: EXTRA as FalAiFluxGeneralInput["sigma_schedule"],
+    scheduler: EXTRA as FalAiFluxGeneralInput["scheduler"],
+    nag_scale: EXTRA as FalAiFluxGeneralInput["nag_scale"],
+    nag_tau: EXTRA as FalAiFluxGeneralInput["nag_tau"],
+    nag_alpha: EXTRA as FalAiFluxGeneralInput["nag_alpha"],
+    nag_end: EXTRA as FalAiFluxGeneralInput["nag_end"],
   },
 } as const;
 
@@ -441,6 +519,28 @@ const ROW_992166 = {
 } as const;
 
 /**
+ * fal-ai/stable-diffusion-v35-large.
+ *
+ * The extras are typed from `FalAiStableDiffusionV35LargeInput`, so the value an editor
+ * offers here and the value `fal.image` validates are one declaration.
+ */
+const ROW_9b9b0a = {
+  classes: ["imageSizeUnion"],
+  keys: ["prompt", "negative_prompt", "num_inference_steps", "seed", "guidance_scale", "sync_mode", "num_images", "enable_safety_checker", "output_format", "controlnet", "image_size", "loras", "ip_adapter"],
+  sizes: ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9"],
+  pixels: { min: 1, max: 14142 },
+  bounds: { num_images: { min: 1, max: 4 } },
+  extras: {
+    num_inference_steps: EXTRA as FalAiStableDiffusionV35LargeInput["num_inference_steps"],
+    guidance_scale: EXTRA as FalAiStableDiffusionV35LargeInput["guidance_scale"],
+    enable_safety_checker: EXTRA as FalAiStableDiffusionV35LargeInput["enable_safety_checker"],
+    controlnet: EXTRA as FalAiStableDiffusionV35LargeInput["controlnet"],
+    loras: EXTRA as FalAiStableDiffusionV35LargeInput["loras"],
+    ip_adapter: EXTRA as FalAiStableDiffusionV35LargeInput["ip_adapter"],
+  },
+} as const;
+
+/**
  * fal-ai/flux-2.
  *
  * The extras are typed from `FalAiFlux2Input`, so the value an editor offers here and the
@@ -579,12 +679,14 @@ export const FAL_IMAGE_PARAM_SHAPES = {
   "fal-ai/flux-2-max": ROW_53c9c8,
   "fal-ai/flux-2-pro": ROW_53c9c8,
   "fal-ai/flux-2/flash": ROW_7fb5c0,
+  "fal-ai/flux-general": ROW_4271e5,
   "fal-ai/flux-lora": ROW_85ed26,
   "fal-ai/flux-pro/v1.1": ROW_5400e6,
   "fal-ai/flux-pro/v1.1-ultra": ROW_95d754,
   "fal-ai/flux/dev": ROW_bf8492,
   "fal-ai/flux/schnell": ROW_decbc2,
   "fal-ai/gpt-image-1.5": ROW_018ee1,
+  "fal-ai/hunyuan-image/v3/text-to-image": ROW_0fc74e,
   "fal-ai/ideogram/v3": ROW_1d0935,
   "fal-ai/kling-image/v3/text-to-image": ROW_4a991d,
   "fal-ai/nano-banana": ROW_2f0975,
@@ -593,11 +695,13 @@ export const FAL_IMAGE_PARAM_SHAPES = {
   "fal-ai/qwen-image": ROW_992166,
   "fal-ai/recraft/v3/text-to-image": ROW_f88c45,
   "fal-ai/recraft/v4/text-to-image": ROW_7b7441,
+  "fal-ai/stable-diffusion-v35-large": ROW_9b9b0a,
   "fal-ai/z-image/turbo": ROW_928ac6,
   "google/nano-banana-2-lite": ROW_5a37f1,
   "ideogram/v4": ROW_b8e212,
   "krea/v2/large/text-to-image": ROW_257ea3,
   "krea/v2/medium/text-to-image": ROW_257ea3,
+  "microsoft/mai-image-2.5": ROW_0bf7e4,
   "openai/gpt-image-2": ROW_886318,
   "reve/2.1/text-to-image": ROW_764f83,
   "xai/grok-imagine-image": ROW_d14544,
@@ -612,4 +716,4 @@ export const FAL_IMAGE_PARAM_SHAPES = {
  * one generator.
  */
 
-export const FAL_IMAGE_MODELS = ["bytedance/seedream/v5/pro/text-to-image", "fal-ai/bytedance/seedream/v4.5/text-to-image", "fal-ai/flux-2", "fal-ai/flux-2-max", "fal-ai/flux-2-pro", "fal-ai/flux-2/flash", "fal-ai/flux-lora", "fal-ai/flux-pro/v1.1", "fal-ai/flux-pro/v1.1-ultra", "fal-ai/flux/dev", "fal-ai/flux/schnell", "fal-ai/gpt-image-1.5", "fal-ai/ideogram/v3", "fal-ai/kling-image/v3/text-to-image", "fal-ai/nano-banana", "fal-ai/nano-banana-2", "fal-ai/nano-banana-pro", "fal-ai/qwen-image", "fal-ai/recraft/v3/text-to-image", "fal-ai/recraft/v4/text-to-image", "fal-ai/z-image/turbo", "google/nano-banana-2-lite", "ideogram/v4", "krea/v2/large/text-to-image", "krea/v2/medium/text-to-image", "openai/gpt-image-2", "reve/2.1/text-to-image", "xai/grok-imagine-image"] as const;
+export const FAL_IMAGE_MODELS = ["bytedance/seedream/v5/pro/text-to-image", "fal-ai/bytedance/seedream/v4.5/text-to-image", "fal-ai/flux-2", "fal-ai/flux-2-max", "fal-ai/flux-2-pro", "fal-ai/flux-2/flash", "fal-ai/flux-general", "fal-ai/flux-lora", "fal-ai/flux-pro/v1.1", "fal-ai/flux-pro/v1.1-ultra", "fal-ai/flux/dev", "fal-ai/flux/schnell", "fal-ai/gpt-image-1.5", "fal-ai/hunyuan-image/v3/text-to-image", "fal-ai/ideogram/v3", "fal-ai/kling-image/v3/text-to-image", "fal-ai/nano-banana", "fal-ai/nano-banana-2", "fal-ai/nano-banana-pro", "fal-ai/qwen-image", "fal-ai/recraft/v3/text-to-image", "fal-ai/recraft/v4/text-to-image", "fal-ai/stable-diffusion-v35-large", "fal-ai/z-image/turbo", "google/nano-banana-2-lite", "ideogram/v4", "krea/v2/large/text-to-image", "krea/v2/medium/text-to-image", "microsoft/mai-image-2.5", "openai/gpt-image-2", "reve/2.1/text-to-image", "xai/grok-imagine-image"] as const;

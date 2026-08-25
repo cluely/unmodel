@@ -23,13 +23,18 @@
     "",
     "Wave 1a seeded 12 ids spanning all nine verbs. Wave 1b widened image to 28 and imageEdit to 17. Wave 1c",
     "widened video to 30 and built out the two audio-driven categories — lipsync (8) and avatar (8) — which",
-    "are new unmodel categories, not just new fal rows. Wave 1d completes the remaining four: upscale (10 —",
-    "the third and last new unmodel category), tts (23), stt (6) and music (10). All nine verbs are now at",
-    "their full wave-1 roster: 140 endpoints.",
+    "are new unmodel categories, not just new fal rows. Wave 1d completed the remaining four: upscale (10 —",
+    "the third and last new unmodel category), tts (23), stt (6) and music (10). Wave 1e added the stretch",
+    "roster — four image rows and two lipsync rows — bringing image to 32 and lipsync to 10. All nine verbs",
+    "are now at their full wave-1 roster: 146 endpoints.",
     "",
-    "Two roster facts the plan expected differently, both settled against the live listing on 2026-08-25:",
-    "fal serves NINE Kokoro languages rather than twelve (there is no German, Korean or Vietnamese endpoint),",
-    "and the tts roster the plan enumerates by name comes to 23 ids rather than the 19 its heading counted.",
+    "Three roster facts the plan expected differently, all settled against the live listing on 2026-08-25:",
+    "fal serves NINE Kokoro languages rather than twelve (there is no German, Korean or Vietnamese endpoint);",
+    "the tts roster the plan enumerates by name comes to 23 ids rather than the 19 its heading counted; and",
+    "the two heygen v3 lipsync routes the plan lists as avatar stretch require `video_url`, so the input rule",
+    "below files them under lipsync. The stretch bar was CHEAPNESS: a row joins only if it resolves live, its",
+    "price is transcribable, and it lowers into an EXISTING shape class with no new generator work. That is",
+    "why `fal-ai/fast-sdxl` is in `excluded.endpoints` rather than here.",
     "",
     "`upscale` is the one verb with no fixed output modality: an upscaler returns an image from",
     "fal-ai/aura-sr and a clip from fal-ai/seedvr/upscale/video, so the modality is read off each",
@@ -217,6 +222,11 @@
       "textParam": "prompt",
       "note": "The cheapest FLUX.2 arm at $0.005/MP — the low end of the per-megapixel band."
     },
+    "fal-ai/flux-general": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "FLUX.1 [dev] with the whole conditioning surface bolted on — LoRAs, ControlNets, ControlNet unions, IP-Adapters, EasyControl weights and a fill image, 32 parameters over six nested components. The widest input schema in the roster, and the reason `shared.gen.ts` earns its $ref dedup."
+    },
     "fal-ai/flux-kontext/dev": {
       "verb": "imageEdit",
       "textParam": "prompt",
@@ -292,6 +302,19 @@
       "verb": "imageEdit",
       "textParam": "prompt",
       "note": "The edit arm of gpt-image-1.5."
+    },
+    "fal-ai/heygen/v3/lipsync/precision": {
+      "verb": "lipsync",
+      "note": "HeyGen Avatar v3 lipsync, precision arm. The plan filed the two heygen v3 lipsync routes under `avatar`; their live schemas require `video_url` + `audio_url`, so by the input rule that splits this pair of categories they are lipsync. Spells the duration-mismatch idea `enable_dynamic_duration` — a third spelling beside sync-lipsync's `sync_mode` and latentsync's `loop_mode`, which is what keeps it out of the vocabulary."
+    },
+    "fal-ai/heygen/v3/lipsync/speed": {
+      "verb": "lipsync",
+      "note": "HeyGen Avatar v3 lipsync, speed arm — the same nine parameters as the precision route at half the rate."
+    },
+    "fal-ai/hunyuan-image/v3/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Hunyuan Image 3.0, the plain text-to-image route. Its /instruct siblings are editing arms and are not curated in wave 1."
     },
     "fal-ai/ideogram/v3": {
       "verb": "image",
@@ -556,6 +579,11 @@
       "textParam": "prompt",
       "note": "Stable Audio 3 Medium — the one music endpoint here with a flat codec enum, so the only one whose canonical `outputFormat` narrows to a list."
     },
+    "fal-ai/stable-diffusion-v35-large": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Stable Diffusion 3.5 Large. Its `image_size` union carries a third `null` arm the other imageSizeUnion rows do not, and it still classifies as imageSizeUnion — the nullable arm lowers away as `.nullable()`."
+    },
     "fal-ai/sync-lipsync/v2": {
       "verb": "lipsync",
       "allowsModelProperty": true,
@@ -657,6 +685,11 @@
       "textParam": "prompt",
       "note": "LTX-2.5 Pro. Its `duration` enum is [6, 8, 10, \"auto\"] with NO declared type — a mixed-type enum that lowers by its first member, which is why the numeric filter on the duration list is not cosmetic."
     },
+    "microsoft/mai-image-2.5": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Microsoft MAI-Image-2.5, sized by `aspect_ratio` rather than by pixels. Two of the roster's provenance quirks at once: fal documents it at the internal route `fal-ai/mai-image-2.5`, and its `info.x-fal-metadata` carries a documentationUrl but no `category` (the wizper shape). Carries an `unpriced` reason, not a rate."
+    },
     "minimax/h3/image-to-video": {
       "verb": "video",
       "textParam": "prompt",
@@ -743,10 +776,11 @@
       "subtitles": "Plumbing — a rendering step over an stt result."
     },
     "endpoints": {
-      "fal-ai/speech-to-text/stream": "Streaming variants are a socket surface, not a queue submit — out of scope for a request validator.",
+      "fal-ai/fast-sdxl": "Wave-1e stretch candidate, tried and backed out: its input schema ships NO `x-fal-order-properties`, and codegen hard-errors on that rather than inventing an emission order (an invented order would make fal's next reordering look like a diff in this repo's generated output). Serving it means teaching the generator a documented fallback order, which is new generator work rather than a cheap row. Its price is the unpopulated $0-per-compute-second template besides.",
+      "fal-ai/kling-video/lipsync/text-to-video": "Text + voice arm — that is TTS composed with lipsync, and composing it here would hide which half failed.",
       "fal-ai/smart-turn": "Turn detection, not transcription — no unmodel verb fits it.",
-      "fal-ai/sync-lipsync/v1.9.0-beta": "Beta id, superseded by v2/v3.",
-      "fal-ai/kling-video/lipsync/text-to-video": "Text + voice arm — that is TTS composed with lipsync, and composing it here would hide which half failed."
+      "fal-ai/speech-to-text/stream": "Streaming variants are a socket surface, not a queue submit — out of scope for a request validator.",
+      "fal-ai/sync-lipsync/v1.9.0-beta": "Beta id, superseded by v2/v3."
     }
   }
 }

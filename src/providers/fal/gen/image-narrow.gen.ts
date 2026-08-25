@@ -7,12 +7,14 @@
 //   data/fal/openapi/fal-ai__flux-2-max.json
 //   data/fal/openapi/fal-ai__flux-2-pro.json
 //   data/fal/openapi/fal-ai__flux-2__flash.json
+//   data/fal/openapi/fal-ai__flux-general.json
 //   data/fal/openapi/fal-ai__flux-lora.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1-ultra.json
 //   data/fal/openapi/fal-ai__flux__dev.json
 //   data/fal/openapi/fal-ai__flux__schnell.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5.json
+//   data/fal/openapi/fal-ai__hunyuan-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__nano-banana.json
@@ -21,11 +23,13 @@
 //   data/fal/openapi/fal-ai__qwen-image.json
 //   data/fal/openapi/fal-ai__recraft__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__recraft__v4__text-to-image.json
+//   data/fal/openapi/fal-ai__stable-diffusion-v35-large.json
 //   data/fal/openapi/fal-ai__z-image__turbo.json
 //   data/fal/openapi/google__nano-banana-2-lite.json
 //   data/fal/openapi/ideogram__v4.json
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.5.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -67,14 +71,17 @@ const E_679f9b = ["none", "regular"] as const;
 const E_69e3e2 = ["1k", "2k"] as const;
 const E_746a8e = ["png", "jpeg", "webp"] as const;
 const E_74d97f = ["None", "Medium", "Large"] as const;
+const E_7ae612 = ["auto", "1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3"] as const;
 const E_7c0554 = ["jpeg", "png"] as const;
 const E_9373e9 = ["auto", "transparent", "opaque"] as const;
+const E_942b57 = ["sgm_uniform"] as const;
 const E_998324 = ["1:1", "4:3", "3:2", "16:9", "2.35:1", "4:5", "2:3", "9:16"] as const;
 const E_9e0af9 = ["80S_ILLUSTRATION", "90S_NOSTALGIA", "ABSTRACT_ORGANIC", "ANALOG_NOSTALGIA", "ART_BRUT", "ART_DECO", "ART_POSTER", "AURA", "AVANT_GARDE", "BAUHAUS", "BLUEPRINT", "BLURRY_MOTION", "BRIGHT_ART", "C4D_CARTOON", "CHILDRENS_BOOK", "COLLAGE", "COLORING_BOOK_I", "COLORING_BOOK_II", "CUBISM", "DARK_AURA", "DOODLE", "DOUBLE_EXPOSURE", "DRAMATIC_CINEMA", "EDITORIAL", "EMOTIONAL_MINIMAL", "ETHEREAL_PARTY", "EXPIRED_FILM", "FLAT_ART", "FLAT_VECTOR", "FOREST_REVERIE", "GEO_MINIMALIST", "GLASS_PRISM", "GOLDEN_HOUR", "GRAFFITI_I", "GRAFFITI_II", "HALFTONE_PRINT", "HIGH_CONTRAST", "HIPPIE_ERA", "ICONIC", "JAPANDI_FUSION", "JAZZY", "LONG_EXPOSURE", "MAGAZINE_EDITORIAL", "MINIMAL_ILLUSTRATION", "MIXED_MEDIA", "MONOCHROME", "NIGHTLIFE", "OIL_PAINTING", "OLD_CARTOONS", "PAINT_GESTURE", "POP_ART", "RETRO_ETCHING", "RIVIERA_POP", "SPOTLIGHT_80S", "STYLIZED_RED", "SURREAL_COLLAGE", "TRAVEL_POSTER", "VINTAGE_GEO", "VINTAGE_POSTER", "WATERCOLOR", "WEIRD", "WOODBLOCK_PRINT"] as const;
 const E_9f102a = ["low", "medium", "high"] as const;
 const E_a008c0 = ["auto", "21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16", "4:1", "1:4", "8:1", "1:8"] as const;
 const E_a09649 = ["21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16"] as const;
 const E_a13c1b = ["none", "regular", "high"] as const;
+const E_b4f39b = ["euler", "dpmpp_2m"] as const;
 const E_b80dce = ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9", "auto_2K", "auto_4K"] as const;
 const E_cc09d1 = ["none", "low", "regular", "high"] as const;
 const E_d2a2cd = ["auto", "low", "medium", "high"] as const;
@@ -162,6 +169,44 @@ export const FAL_IMAGE_SHAPES = {
       output_format: { t: "string", def: true, enum: E_205460 },
     },
   },
+  "fal-ai/flux-general": {
+    order: ["prompt", "image_size", "num_inference_steps", "seed", "loras", "control_loras", "controlnets", "controlnet_unions", "ip_adapters", "easycontrols", "fill_image", "guidance_scale", "real_cfg_scale", "use_real_cfg", "use_cfg_zero", "sync_mode", "num_images", "enable_safety_checker", "reference_image_url", "reference_strength", "reference_start", "reference_end", "base_shift", "max_shift", "output_format", "use_beta_schedule", "sigma_schedule", "scheduler", "negative_prompt", "nag_scale", "nag_tau", "nag_alpha", "nag_end"],
+    props: {
+      prompt: { t: "string", req: true },
+      image_size: { t: "union", size: { presets: E_2493d0, width: { xmin: 0, max: 14142, default: 512 }, height: { xmin: 0, max: 14142, default: 512 } } },
+      num_inference_steps: { t: "integer", def: true, min: 1, max: 50 },
+      seed: { t: "integer", nul: true },
+      loras: { t: "array", def: true, items: { t: "object" } },
+      control_loras: { t: "array", def: true, items: { t: "object" } },
+      controlnets: { t: "array", def: true, items: { t: "object" } },
+      controlnet_unions: { t: "array", def: true, items: { t: "object" } },
+      ip_adapters: { t: "array", def: true, items: { t: "object" } },
+      easycontrols: { t: "array", def: true, items: { t: "object" } },
+      fill_image: { t: "object", nul: true },
+      guidance_scale: { t: "number", def: true, min: 0, max: 20 },
+      real_cfg_scale: { t: "number", def: true, min: 0, max: 5 },
+      use_real_cfg: { t: "boolean", def: true },
+      use_cfg_zero: { t: "boolean", def: true },
+      sync_mode: { t: "boolean", def: true },
+      num_images: { t: "integer", def: true, min: 1, max: 10 },
+      enable_safety_checker: { t: "boolean", def: true },
+      reference_image_url: { t: "string", media: "image" },
+      reference_strength: { t: "number", def: true, min: -3, max: 3 },
+      reference_start: { t: "number", def: true, min: 0, max: 1 },
+      reference_end: { t: "number", def: true, min: 0, max: 1 },
+      base_shift: { t: "number", def: true, min: 0.01, max: 5 },
+      max_shift: { t: "number", def: true, min: 0.01, max: 5 },
+      output_format: { t: "string", def: true, enum: E_7c0554 },
+      use_beta_schedule: { t: "boolean", def: true },
+      sigma_schedule: { t: "string", nul: true, enum: E_942b57 },
+      scheduler: { t: "string", def: true, enum: E_b4f39b },
+      negative_prompt: { t: "string", def: true },
+      nag_scale: { t: "number", def: true, max: 10, xmin: 1 },
+      nag_tau: { t: "number", def: true, xmin: 0 },
+      nag_alpha: { t: "number", def: true, max: 1, xmin: 0 },
+      nag_end: { t: "number", def: true, max: 1, xmin: 0 },
+    },
+  },
   "fal-ai/flux-lora": {
     order: ["prompt", "image_size", "num_inference_steps", "seed", "loras", "guidance_scale", "sync_mode", "num_images", "enable_safety_checker", "output_format", "acceleration"],
     props: {
@@ -247,6 +292,22 @@ export const FAL_IMAGE_SHAPES = {
       num_images: { t: "integer", def: true, min: 1, max: 4 },
       output_format: { t: "string", def: true, enum: E_205460 },
       sync_mode: { t: "boolean", def: true },
+    },
+  },
+  "fal-ai/hunyuan-image/v3/text-to-image": {
+    order: ["prompt", "negative_prompt", "image_size", "num_images", "num_inference_steps", "guidance_scale", "seed", "enable_safety_checker", "sync_mode", "output_format", "enable_prompt_expansion"],
+    props: {
+      prompt: { t: "string", req: true },
+      negative_prompt: { t: "string", def: true },
+      image_size: { t: "union", def: true, size: { presets: E_2493d0, width: { xmin: 0, max: 14142, default: 512 }, height: { xmin: 0, max: 14142, default: 512 } } },
+      num_images: { t: "integer", def: true, min: 1, max: 4 },
+      num_inference_steps: { t: "integer", def: true, min: 1, max: 50 },
+      guidance_scale: { t: "number", def: true, min: 1, max: 20 },
+      seed: { t: "integer", nul: true },
+      enable_safety_checker: { t: "boolean", def: true },
+      sync_mode: { t: "boolean", def: true },
+      output_format: { t: "string", def: true, enum: E_7c0554 },
+      enable_prompt_expansion: { t: "boolean", def: true },
     },
   },
   "fal-ai/ideogram/v3": {
@@ -365,6 +426,24 @@ export const FAL_IMAGE_SHAPES = {
       enable_safety_checker: { t: "boolean", def: true },
     },
   },
+  "fal-ai/stable-diffusion-v35-large": {
+    order: ["prompt", "negative_prompt", "num_inference_steps", "seed", "guidance_scale", "sync_mode", "num_images", "enable_safety_checker", "output_format", "controlnet", "image_size", "loras", "ip_adapter"],
+    props: {
+      prompt: { t: "string", req: true },
+      negative_prompt: { t: "string", def: true },
+      num_inference_steps: { t: "integer", def: true, min: 1, max: 50 },
+      seed: { t: "integer", nul: true },
+      guidance_scale: { t: "number", def: true, min: 0, max: 20 },
+      sync_mode: { t: "boolean", def: true },
+      num_images: { t: "integer", def: true, min: 1, max: 4 },
+      enable_safety_checker: { t: "boolean", def: true },
+      output_format: { t: "string", def: true, enum: E_7c0554 },
+      controlnet: { t: "object" },
+      image_size: { t: "union", nul: true, size: { presets: E_2493d0, width: { xmin: 0, max: 14142, default: 512 }, height: { xmin: 0, max: 14142, default: 512 } } },
+      loras: { t: "array", def: true, items: { t: "object" } },
+      ip_adapter: { t: "object", nul: true },
+    },
+  },
   "fal-ai/z-image/turbo": {
     order: ["prompt", "image_size", "num_inference_steps", "seed", "sync_mode", "num_images", "enable_safety_checker", "output_format", "acceleration", "enable_prompt_expansion"],
     props: {
@@ -434,6 +513,16 @@ export const FAL_IMAGE_SHAPES = {
       moodboards: { t: "array", def: true, maxItems: 1, items: { t: "object" } },
     },
   },
+  "microsoft/mai-image-2.5": {
+    order: ["prompt", "num_images", "aspect_ratio", "output_format", "sync_mode"],
+    props: {
+      prompt: { t: "string", req: true, minLen: 3, maxLen: 5000 },
+      num_images: { t: "integer", def: true, min: 1, max: 4 },
+      aspect_ratio: { t: "string", def: true, enum: E_7ae612 },
+      output_format: { t: "string", def: true, enum: E_205460 },
+      sync_mode: { t: "boolean", def: true },
+    },
+  },
   "openai/gpt-image-2": {
     order: ["prompt", "image_size", "quality", "num_images", "output_format", "sync_mode"],
     props: {
@@ -495,6 +584,11 @@ export const FAL_IMAGE_CONSTRAINTS = {
   "fal-ai/flux-2/flash": {
     output_format: E_205460,
   },
+  "fal-ai/flux-general": {
+    output_format: E_7c0554,
+    sigma_schedule: E_942b57,
+    scheduler: E_b4f39b,
+  },
   "fal-ai/flux-lora": {
     output_format: E_7c0554,
     acceleration: E_679f9b,
@@ -521,6 +615,9 @@ export const FAL_IMAGE_CONSTRAINTS = {
     background: E_9373e9,
     quality: E_9f102a,
     output_format: E_205460,
+  },
+  "fal-ai/hunyuan-image/v3/text-to-image": {
+    output_format: E_7c0554,
   },
   "fal-ai/ideogram/v3": {
     rendering_speed: E_d6e730,
@@ -558,6 +655,9 @@ export const FAL_IMAGE_CONSTRAINTS = {
     style: E_ec850a,
   },
   "fal-ai/recraft/v4/text-to-image": {},
+  "fal-ai/stable-diffusion-v35-large": {
+    output_format: E_7c0554,
+  },
   "fal-ai/z-image/turbo": {
     output_format: E_205460,
     acceleration: E_a13c1b,
@@ -581,6 +681,10 @@ export const FAL_IMAGE_CONSTRAINTS = {
   "krea/v2/medium/text-to-image": {
     aspect_ratio: E_998324,
     creativity: E_5464cc,
+  },
+  "microsoft/mai-image-2.5": {
+    aspect_ratio: E_7ae612,
+    output_format: E_205460,
   },
   "openai/gpt-image-2": {
     quality: E_d2a2cd,

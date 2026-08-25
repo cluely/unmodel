@@ -199,9 +199,10 @@ the shape that model takes, rather than a request that 422s.
 
 What is deliberately *not* in the vocabulary: "what to do when the audio
 outlasts the clip" is `sync_mode` with five arms at sync., `loop_mode` with two
-at LatentSync, and absent at VEED and Kling. One idea, three vocabularies — so
-it rides as a per-model extra, typed from that endpoint's own wire interface,
-and gets promoted the day two providers agree on a spelling.
+at LatentSync, a plain `enable_dynamic_duration` boolean at HeyGen, and absent
+at VEED and Kling. One idea, four vocabularies — so it rides as a per-model
+extra, typed from that endpoint's own wire interface, and gets promoted the day
+two providers agree on a spelling.
 
 Routes that take a script and a voice id instead of an audio track are TTS
 composed with lipsync; composing them inside one call would hide which half

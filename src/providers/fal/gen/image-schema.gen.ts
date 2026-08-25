@@ -7,12 +7,14 @@
 //   data/fal/openapi/fal-ai__flux-2-max.json
 //   data/fal/openapi/fal-ai__flux-2-pro.json
 //   data/fal/openapi/fal-ai__flux-2__flash.json
+//   data/fal/openapi/fal-ai__flux-general.json
 //   data/fal/openapi/fal-ai__flux-lora.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1-ultra.json
 //   data/fal/openapi/fal-ai__flux__dev.json
 //   data/fal/openapi/fal-ai__flux__schnell.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5.json
+//   data/fal/openapi/fal-ai__hunyuan-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__nano-banana.json
@@ -21,11 +23,13 @@
 //   data/fal/openapi/fal-ai__qwen-image.json
 //   data/fal/openapi/fal-ai__recraft__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__recraft__v4__text-to-image.json
+//   data/fal/openapi/fal-ai__stable-diffusion-v35-large.json
 //   data/fal/openapi/fal-ai__z-image__turbo.json
 //   data/fal/openapi/google__nano-banana-2-lite.json
 //   data/fal/openapi/ideogram__v4.json
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.5.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -34,7 +38,7 @@
 /**
  * The ONE request schema for every `fal.image` endpoint.
  *
- * One `z.looseObject` for the whole category, not 28 per-endpoint schemas: zod objects are
+ * One `z.looseObject` for the whole category, not 32 per-endpoint schemas: zod objects are
  * built eagerly, and a hundred of them would be constructed on import for the one the
  * caller actually used.
  *
@@ -54,10 +58,19 @@ import { z } from "zod";
 const falRGBColorSchema = z.looseObject({ r: z.number().optional(), g: z.number().optional(), b: z.number().optional() });
 const falColorPaletteMemberSchema = z.looseObject({ rgb: falRGBColorSchema, color_weight: z.number().nullable().optional() });
 const falColorPaletteSchema = z.looseObject({ members: z.array(falColorPaletteMemberSchema).nullable().optional(), name: z.enum(["EMBER", "FRESH", "JUNGLE", "MAGIC", "MELON", "MOSAIC", "PASTEL", "ULTRAMARINE"]).nullable().optional() });
+const falControlLoraWeightSchema = z.looseObject({ path: z.string(), scale: z.union([z.record(z.string(), z.unknown()), z.number()]).optional(), control_image_url: z.string(), preprocess: z.enum(["canny", "depth", "None"]).optional() });
+const falControlNetUnionInputSchema = z.looseObject({ control_image_url: z.string(), mask_image_url: z.string().optional(), control_mode: z.enum(["canny", "tile", "depth", "blur", "pose", "gray", "low-quality"]), conditioning_scale: z.number().optional(), mask_threshold: z.number().optional(), start_percentage: z.number().optional(), end_percentage: z.number().optional() });
+const falControlNetUnionSchema = z.looseObject({ path: z.string(), config_url: z.string().nullable().optional(), variant: z.string().nullable().optional(), controls: z.array(falControlNetUnionInputSchema) });
+const falControlNet_097ad1Schema = z.looseObject({ path: z.string(), config_url: z.string().nullable().optional(), variant: z.string().nullable().optional(), control_image_url: z.string(), mask_image_url: z.string().optional(), mask_threshold: z.number().optional(), conditioning_scale: z.number().optional(), start_percentage: z.number().optional(), end_percentage: z.number().optional() });
+const falControlNet_17b04bSchema = z.looseObject({ path: z.string(), control_image_url: z.string(), conditioning_scale: z.number().optional(), start_percentage: z.number().optional(), end_percentage: z.number().optional() });
+const falEasyControlWeightSchema = z.looseObject({ control_method_url: z.string(), scale: z.number().optional(), image_url: z.string(), image_control_type: z.enum(["subject", "spatial"]) });
 const falElementInputSchema = z.looseObject({ frontal_image_url: z.string().nullable().optional(), reference_image_urls: z.array(z.string()).nullable().optional() });
+const falIPAdapterSchema = z.looseObject({ path: z.string(), subfolder: z.string().nullable().optional(), weight_name: z.string().nullable().optional(), image_encoder_path: z.string(), image_encoder_subfolder: z.string().nullable().optional(), image_encoder_weight_name: z.string().nullable().optional(), image_url: z.string(), mask_image_url: z.string().nullable().optional(), mask_threshold: z.number().optional(), scale: z.number() });
+const falImageFillInputSchema = z.looseObject({ fill_image_url: z.union([z.string(), z.array(z.string())]).optional() });
 const falImageSizeSchema = z.looseObject({ width: z.number().optional(), height: z.number().optional() });
 const falImageStyleReferenceSchema = z.looseObject({ image_url: z.string(), strength: z.number().optional() });
-const falLoraWeightSchema = z.looseObject({ path: z.string(), scale: z.number().optional() });
+const falLoraWeight_7426f5Schema = z.looseObject({ path: z.string(), scale: z.union([z.record(z.string(), z.unknown()), z.number()]).optional() });
+const falLoraWeight_cc944cSchema = z.looseObject({ path: z.string(), scale: z.number().optional() });
 const falMoodboardSchema = z.looseObject({ id: z.string(), strength: z.number().optional() });
 const falStyleSchema = z.looseObject({ id: z.string(), strength: z.number().optional() });
 
@@ -83,15 +96,22 @@ export const falImageInputSchema = z.looseObject({
    * details (fal-ai/flux-pro/v1.1-ultra, fal-ai/kling-image/v3/text-to-image,
    * fal-ai/nano-banana, fal-ai/nano-banana-2, fal-ai/nano-banana-pro,
    * google/nano-banana-2-lite, krea/v2/large/text-to-image, krea/v2/medium/text-to-image,
-   * reve/2.1/text-to-image, xai/grok-imagine-image), so the union takes the bare type and
-   * the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
+   * microsoft/mai-image-2.5, reve/2.1/text-to-image, xai/grok-imagine-image), so the union
+   * takes the bare type and the exact vocabulary is enforced per endpoint from
+   * FAL_IMAGE_SHAPES.
    */
   aspect_ratio: z.string().nullable().optional(),
   background: z.enum(["auto", "transparent", "opaque"]).optional(),
   background_color: falRGBColorSchema.nullable().optional(),
+  base_shift: z.number().optional(),
   color_palette: falColorPaletteSchema.nullable().optional(),
   colors: z.array(falRGBColorSchema).optional(),
+  control_loras: z.array(falControlLoraWeightSchema).optional(),
+  controlnet: falControlNet_17b04bSchema.optional(),
+  controlnet_unions: z.array(falControlNetUnionSchema).optional(),
+  controlnets: z.array(falControlNet_097ad1Schema).optional(),
   creativity: z.enum(["raw", "low", "medium", "high"]).optional(),
+  easycontrols: z.array(falEasyControlWeightSchema).optional(),
   elements: z.array(falElementInputSchema).nullable().optional(),
   enable_prompt_expansion: z.boolean().optional(),
   enable_safety_checker: z.boolean().optional(),
@@ -99,11 +119,13 @@ export const falImageInputSchema = z.looseObject({
   enhance_prompt: z.boolean().optional(),
   expand_prompt: z.boolean().optional(),
   expansion_model: z.enum(["None", "Medium", "Large"]).optional(),
+  fill_image: falImageFillInputSchema.nullable().optional(),
   /**
    * Every `fal.image` endpoint types `guidance_scale` as number, but they disagree on the
-   * details (fal-ai/flux-2, fal-ai/flux-2/flash, fal-ai/flux-lora, fal-ai/flux/dev,
-   * fal-ai/flux/schnell, fal-ai/qwen-image), so the union takes the bare type and the exact
-   * vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
+   * details (fal-ai/flux-2, fal-ai/flux-2/flash, fal-ai/flux-general, fal-ai/flux-lora,
+   * fal-ai/flux/dev, fal-ai/flux/schnell, fal-ai/hunyuan-image/v3/text-to-image,
+   * fal-ai/qwen-image, fal-ai/stable-diffusion-v35-large), so the union takes the bare type
+   * and the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
    */
   guidance_scale: z.number().optional(),
   image_prompt_strength: z.number().optional(),
@@ -112,11 +134,12 @@ export const falImageInputSchema = z.looseObject({
    * bytedance/seedream/v5/pro/text-to-image, union at
    * fal-ai/bytedance/seedream/v4.5/text-to-image, union at fal-ai/flux-2, union at
    * fal-ai/flux-2-max, union at fal-ai/flux-2-pro, union at fal-ai/flux-2/flash, union at
-   * fal-ai/flux-lora, union at fal-ai/flux-pro/v1.1, union at fal-ai/flux/dev, union at
-   * fal-ai/flux/schnell, string at fal-ai/gpt-image-1.5, union at fal-ai/ideogram/v3, union
-   * at fal-ai/qwen-image, union at fal-ai/recraft/v3/text-to-image, union at
-   * fal-ai/recraft/v4/text-to-image, union at fal-ai/z-image/turbo, union at ideogram/v4,
-   * union at openai/gpt-image-2.
+   * fal-ai/flux-general, union at fal-ai/flux-lora, union at fal-ai/flux-pro/v1.1, union at
+   * fal-ai/flux/dev, union at fal-ai/flux/schnell, string at fal-ai/gpt-image-1.5, union at
+   * fal-ai/hunyuan-image/v3/text-to-image, union at fal-ai/ideogram/v3, union at
+   * fal-ai/qwen-image, union at fal-ai/recraft/v3/text-to-image, union at
+   * fal-ai/recraft/v4/text-to-image, union at fal-ai/stable-diffusion-v35-large, union at
+   * fal-ai/z-image/turbo, union at ideogram/v4, union at openai/gpt-image-2.
    *
    * Typed `unknown` here deliberately: a union that accepted both would let an endpoint's
    * wrong-typed value through the shape gate. FAL_IMAGE_SHAPES carries the real type per
@@ -127,59 +150,78 @@ export const falImageInputSchema = z.looseObject({
   image_style_references: z.array(falImageStyleReferenceSchema).optional(),
   image_url: z.string().nullable().optional(),
   image_urls: z.array(z.string()).nullable().optional(),
+  ip_adapter: falIPAdapterSchema.nullable().optional(),
+  ip_adapters: z.array(falIPAdapterSchema).optional(),
   limit_generations: z.boolean().optional(),
-  loras: z.array(falLoraWeightSchema).optional(),
+  /**
+   * Every `fal.image` endpoint types `loras` as array, but they disagree on the details
+   * (fal-ai/flux-general, fal-ai/flux-lora, fal-ai/qwen-image,
+   * fal-ai/stable-diffusion-v35-large), so the union takes the bare type and the exact
+   * vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
+   */
+  loras: z.array(z.unknown()).optional(),
   max_images: z.number().optional(),
+  max_shift: z.number().optional(),
   moodboards: z.array(falMoodboardSchema).optional(),
+  nag_alpha: z.number().optional(),
+  nag_end: z.number().optional(),
+  nag_scale: z.number().optional(),
+  nag_tau: z.number().optional(),
   /**
    * Every `fal.image` endpoint types `negative_prompt` as string, but they disagree on the
-   * details (fal-ai/ideogram/v3, fal-ai/kling-image/v3/text-to-image, fal-ai/qwen-image), so
-   * the union takes the bare type and the exact vocabulary is enforced per endpoint from
-   * FAL_IMAGE_SHAPES.
+   * details (fal-ai/flux-general, fal-ai/hunyuan-image/v3/text-to-image, fal-ai/ideogram/v3,
+   * fal-ai/kling-image/v3/text-to-image, fal-ai/qwen-image,
+   * fal-ai/stable-diffusion-v35-large), so the union takes the bare type and the exact
+   * vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
    */
   negative_prompt: z.string().nullable().optional(),
   /**
    * Every `fal.image` endpoint types `num_images` as number, but they disagree on the
    * details (bytedance/seedream/v5/pro/text-to-image,
    * fal-ai/bytedance/seedream/v4.5/text-to-image, fal-ai/flux-2, fal-ai/flux-2/flash,
-   * fal-ai/flux-lora, fal-ai/flux-pro/v1.1, fal-ai/flux-pro/v1.1-ultra, fal-ai/flux/dev,
-   * fal-ai/flux/schnell, fal-ai/gpt-image-1.5, fal-ai/ideogram/v3,
+   * fal-ai/flux-general, fal-ai/flux-lora, fal-ai/flux-pro/v1.1, fal-ai/flux-pro/v1.1-ultra,
+   * fal-ai/flux/dev, fal-ai/flux/schnell, fal-ai/gpt-image-1.5,
+   * fal-ai/hunyuan-image/v3/text-to-image, fal-ai/ideogram/v3,
    * fal-ai/kling-image/v3/text-to-image, fal-ai/nano-banana, fal-ai/nano-banana-2,
-   * fal-ai/nano-banana-pro, fal-ai/qwen-image, fal-ai/z-image/turbo,
-   * google/nano-banana-2-lite, ideogram/v4, openai/gpt-image-2, reve/2.1/text-to-image,
-   * xai/grok-imagine-image), so the union takes the bare type and the exact vocabulary is
-   * enforced per endpoint from FAL_IMAGE_SHAPES.
+   * fal-ai/nano-banana-pro, fal-ai/qwen-image, fal-ai/stable-diffusion-v35-large,
+   * fal-ai/z-image/turbo, google/nano-banana-2-lite, ideogram/v4, microsoft/mai-image-2.5,
+   * openai/gpt-image-2, reve/2.1/text-to-image, xai/grok-imagine-image), so the union takes
+   * the bare type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
    */
   num_images: z.number().optional(),
   /**
    * Every `fal.image` endpoint types `num_inference_steps` as number, but they disagree on
-   * the details (fal-ai/flux-2, fal-ai/flux-lora, fal-ai/flux/dev, fal-ai/flux/schnell,
-   * fal-ai/qwen-image, fal-ai/z-image/turbo), so the union takes the bare type and the exact
-   * vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
+   * the details (fal-ai/flux-2, fal-ai/flux-general, fal-ai/flux-lora, fal-ai/flux/dev,
+   * fal-ai/flux/schnell, fal-ai/hunyuan-image/v3/text-to-image, fal-ai/qwen-image,
+   * fal-ai/stable-diffusion-v35-large, fal-ai/z-image/turbo), so the union takes the bare
+   * type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
    */
   num_inference_steps: z.number().optional(),
   /**
    * Every `fal.image` endpoint types `output_format` as string, but they disagree on the
    * details (bytedance/seedream/v5/pro/text-to-image, fal-ai/flux-2, fal-ai/flux-2-max,
-   * fal-ai/flux-2-pro, fal-ai/flux-2/flash, fal-ai/flux-lora, fal-ai/flux-pro/v1.1,
-   * fal-ai/flux-pro/v1.1-ultra, fal-ai/flux/dev, fal-ai/flux/schnell, fal-ai/gpt-image-1.5,
+   * fal-ai/flux-2-pro, fal-ai/flux-2/flash, fal-ai/flux-general, fal-ai/flux-lora,
+   * fal-ai/flux-pro/v1.1, fal-ai/flux-pro/v1.1-ultra, fal-ai/flux/dev, fal-ai/flux/schnell,
+   * fal-ai/gpt-image-1.5, fal-ai/hunyuan-image/v3/text-to-image,
    * fal-ai/kling-image/v3/text-to-image, fal-ai/nano-banana, fal-ai/nano-banana-2,
-   * fal-ai/nano-banana-pro, fal-ai/qwen-image, fal-ai/z-image/turbo,
-   * google/nano-banana-2-lite, ideogram/v4, openai/gpt-image-2, reve/2.1/text-to-image,
-   * xai/grok-imagine-image), so the union takes the bare type and the exact vocabulary is
-   * enforced per endpoint from FAL_IMAGE_SHAPES.
+   * fal-ai/nano-banana-pro, fal-ai/qwen-image, fal-ai/stable-diffusion-v35-large,
+   * fal-ai/z-image/turbo, google/nano-banana-2-lite, ideogram/v4, microsoft/mai-image-2.5,
+   * openai/gpt-image-2, reve/2.1/text-to-image, xai/grok-imagine-image), so the union takes
+   * the bare type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
    */
   output_format: z.string().optional(),
   /**
    * Every `fal.image` endpoint types `prompt` as string, but they disagree on the details
    * (bytedance/seedream/v5/pro/text-to-image, fal-ai/bytedance/seedream/v4.5/text-to-image,
    * fal-ai/flux-2, fal-ai/flux-2-max, fal-ai/flux-2-pro, fal-ai/flux-2/flash,
-   * fal-ai/flux-lora, fal-ai/flux-pro/v1.1, fal-ai/flux-pro/v1.1-ultra, fal-ai/flux/dev,
-   * fal-ai/flux/schnell, fal-ai/gpt-image-1.5, fal-ai/ideogram/v3,
+   * fal-ai/flux-general, fal-ai/flux-lora, fal-ai/flux-pro/v1.1, fal-ai/flux-pro/v1.1-ultra,
+   * fal-ai/flux/dev, fal-ai/flux/schnell, fal-ai/gpt-image-1.5,
+   * fal-ai/hunyuan-image/v3/text-to-image, fal-ai/ideogram/v3,
    * fal-ai/kling-image/v3/text-to-image, fal-ai/nano-banana, fal-ai/nano-banana-2,
    * fal-ai/nano-banana-pro, fal-ai/qwen-image, fal-ai/recraft/v3/text-to-image,
-   * fal-ai/recraft/v4/text-to-image, fal-ai/z-image/turbo, google/nano-banana-2-lite,
-   * ideogram/v4, krea/v2/large/text-to-image, krea/v2/medium/text-to-image,
+   * fal-ai/recraft/v4/text-to-image, fal-ai/stable-diffusion-v35-large,
+   * fal-ai/z-image/turbo, google/nano-banana-2-lite, ideogram/v4,
+   * krea/v2/large/text-to-image, krea/v2/medium/text-to-image, microsoft/mai-image-2.5,
    * openai/gpt-image-2, reve/2.1/text-to-image, xai/grok-imagine-image), so the union takes
    * the bare type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
    */
@@ -191,6 +233,11 @@ export const falImageInputSchema = z.looseObject({
    */
   quality: z.string().optional(),
   raw: z.boolean().optional(),
+  real_cfg_scale: z.number().optional(),
+  reference_end: z.number().optional(),
+  reference_image_url: z.string().optional(),
+  reference_start: z.number().optional(),
+  reference_strength: z.number().optional(),
   rendering_speed: z.enum(["TURBO", "BALANCED", "QUALITY"]).optional(),
   /**
    * Every `fal.image` endpoint types `resolution` as string, but they disagree on the
@@ -207,7 +254,9 @@ export const falImageInputSchema = z.looseObject({
    * the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
    */
   safety_tolerance: z.string().optional(),
+  scheduler: z.enum(["euler", "dpmpp_2m"]).optional(),
   seed: z.number().nullable().optional(),
+  sigma_schedule: z.enum(["sgm_uniform"]).nullable().optional(),
   /**
    * Every `fal.image` endpoint types `style` as string, but they disagree on the details
    * (fal-ai/ideogram/v3, fal-ai/recraft/v3/text-to-image), so the union takes the bare type
@@ -221,5 +270,8 @@ export const falImageInputSchema = z.looseObject({
   sync_mode: z.boolean().optional(),
   system_prompt: z.string().optional(),
   thinking_level: z.enum(["minimal", "high"]).nullable().optional(),
+  use_beta_schedule: z.boolean().optional(),
+  use_cfg_zero: z.boolean().optional(),
+  use_real_cfg: z.boolean().optional(),
   use_turbo: z.boolean().optional(),
 });

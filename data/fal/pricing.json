@@ -46,13 +46,18 @@
     "    per_generated_audio_minute the same, per minute — ElevenLabs Music, rounded up to the closest minute.",
     "    per_10_seconds             a per-block rate, the sibling of the per_30_seconds Lyria 2 already needed.",
     "",
+    "Wave 1e added six stretch rows and NO new unit, which was one of the three cheapness tests a stretch row",
+    "had to pass: three per_megapixel image rows, two per_second lipsync rows, and one `unpriced` — the",
+    "published microsoft/mai-image-2.5 page states no rate at all, and the internal route fal's own OpenAPI",
+    "documents shows only the unpopulated $0-per-compute-second template that wizper also shows.",
+    "",
     "Verified 2026-08-25 against the live pages.",
     "",
-    "Of the 140 rows here, 49 carry a unit ModelCost can express and therefore reach a generated catalog row;",
-    "the other 91 do not, which is the shape of fal's pricing rather than a gap in this file. The big classes:",
+    "Of the 146 rows here, 51 carry a unit ModelCost can express and therefore reach a generated catalog row;",
+    "the other 95 do not, which is the shape of fal's pricing rather than a gap in this file. The big classes:",
     "conditional (48) needs a field the request often leaves at its default — at video that field is almost",
     "always `resolution` or an audio switch, and fal quotes several of them per THOUSAND TOKENS of rendered",
-    "frames, which no request body counts; per_megapixel (15) needs the output's pixel count, and at upscale",
+    "frames, which no request body counts; per_megapixel (18) needs the output's pixel count, and at upscale",
     "that count is the INPUT file's area times the factor, which a submit body never carries because the",
     "input arrives as a URL; tiered (7) needs a quantity the request does not state. All of them reach an",
     "ESTIMATE through gen/pricing.gen.ts and src/providers/fal/pricing.ts, which computes what it can and",
@@ -465,6 +470,14 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.005 per megapixel."
     },
+    "fal-ai/flux-general": {
+      "unit": "per_megapixel",
+      "usd": 0.075,
+      "rounding": "up to the nearest megapixel",
+      "source": "https://fal.ai/models/fal-ai/flux-general",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.075 per megapixel. Images are billed by rounding up to the nearest megapixel."
+    },
     "fal-ai/flux-kontext/dev": {
       "unit": "per_megapixel",
       "usd": 0.025,
@@ -683,6 +696,27 @@
       "source": "https://fal.ai/models/fal-ai/gpt-image-1.5/edit",
       "verified": "2026-08-24",
       "quote": "Your request will cost different amounts based on the number of images, quality, and size. You will be charged $0.005 per 1,000 input text tokens. You will be charged $0.008 per 1,000 input image tokens. You will be charged $0.010 per 1,000 output text tokens. For low quality, you will be charged $0.009 for 1024x1024 or $0.013 for any other size per image. For medium quality, you will be charged $0.034 for 1024x1024, $0.051 for 1024x1536 and $0.050 for 1536x1024 per image. For high quality, you will be charged $0.133 for 1024x1024, $0.200 for 1024x1536 or $0.199 for 1536x1024 per image."
+    },
+    "fal-ai/heygen/v3/lipsync/precision": {
+      "unit": "per_second",
+      "usd": 0.1,
+      "source": "https://fal.ai/models/fal-ai/heygen/v3/lipsync/precision",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.1 per second."
+    },
+    "fal-ai/heygen/v3/lipsync/speed": {
+      "unit": "per_second",
+      "usd": 0.05,
+      "source": "https://fal.ai/models/fal-ai/heygen/v3/lipsync/speed",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.05 per second."
+    },
+    "fal-ai/hunyuan-image/v3/text-to-image": {
+      "unit": "per_megapixel",
+      "usd": 0.1,
+      "source": "https://fal.ai/models/fal-ai/hunyuan-image/v3/text-to-image",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.1 per megapixel."
     },
     "fal-ai/ideogram/v3": {
       "unit": "conditional",
@@ -1332,6 +1366,13 @@
       "verified": "2026-08-25",
       "quote": "Your request will cost $0.0376 per audio."
     },
+    "fal-ai/stable-diffusion-v35-large": {
+      "unit": "per_megapixel",
+      "usd": 0.065,
+      "source": "https://fal.ai/models/fal-ai/stable-diffusion-v35-large",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.065 per megapixel."
+    },
     "fal-ai/sync-lipsync/v2": {
       "unit": "per_video_minute",
       "usd": 3,
@@ -1651,6 +1692,12 @@
       "source": "https://fal.ai/models/lightricks/ltx-2.5/text-to-video/pro",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.12 per second for 720p or $0.17 per second for 1080p."
+    },
+    "microsoft/mai-image-2.5": {
+      "unpriced": "fal publishes no rate for the PUBLISHED id: the page at https://fal.ai/models/microsoft/mai-image-2.5 states no price at all, and the internal route fal's own OpenAPI documents shows only the unpopulated $0-per-compute-second billing template — the same template wizper shows. Quoting $0 as a rate would be worse than saying nothing, so estimates for this endpoint return {} with this caveat.",
+      "source": "https://fal.ai/models/fal-ai/mai-image-2.5",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0 per compute second."
     },
     "minimax/h3/image-to-video": {
       "unit": "conditional",

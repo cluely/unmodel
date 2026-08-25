@@ -7,12 +7,14 @@
 //   data/fal/openapi/fal-ai__flux-2-max.json
 //   data/fal/openapi/fal-ai__flux-2-pro.json
 //   data/fal/openapi/fal-ai__flux-2__flash.json
+//   data/fal/openapi/fal-ai__flux-general.json
 //   data/fal/openapi/fal-ai__flux-lora.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1-ultra.json
 //   data/fal/openapi/fal-ai__flux__dev.json
 //   data/fal/openapi/fal-ai__flux__schnell.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5.json
+//   data/fal/openapi/fal-ai__hunyuan-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__nano-banana.json
@@ -21,11 +23,13 @@
 //   data/fal/openapi/fal-ai__qwen-image.json
 //   data/fal/openapi/fal-ai__recraft__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__recraft__v4__text-to-image.json
+//   data/fal/openapi/fal-ai__stable-diffusion-v35-large.json
 //   data/fal/openapi/fal-ai__z-image__turbo.json
 //   data/fal/openapi/google__nano-banana-2-lite.json
 //   data/fal/openapi/ideogram__v4.json
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.5.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -174,6 +178,26 @@ export const imageModels = {
     limit: { context: 0 },
   },
   /**
+   * $0.075 per megapixel. Rounding: up to the nearest megapixel. Not on `cost`: ModelCost
+   * has no `per_megapixel` unit and forcing this into one of the four it does have would
+   * ship a number that is wrong for most requests.
+   *
+   * Source: https://fal.ai/models/fal-ai/flux-general — verified 2026-08-25. Quote: “Your
+   * request will cost $0.075 per megapixel. Images are billed by rounding up to the nearest
+   * megapixel.”
+   */
+  "fal-ai/flux-general": {
+    id: "fal-ai/flux-general",
+    name: "FLUX.1 [dev] with Controlnets and Loras",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-06-24",
+    modalities: { input: ["image", "text"], output: ["image"] },
+    limit: { context: 0 },
+  },
+  /**
    * $0.035 per megapixel. Rounding: up to the nearest megapixel. Not on `cost`: ModelCost
    * has no `per_megapixel` unit and forcing this into one of the four it does have would
    * ship a number that is wrong for most requests.
@@ -301,6 +325,25 @@ export const imageModels = {
   "fal-ai/gpt-image-1.5": {
     id: "fal-ai/gpt-image-1.5",
     name: "GPT-Image 1.5",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-04-21",
+    modalities: { input: ["image", "text"], output: ["image"] },
+    limit: { context: 0 },
+  },
+  /**
+   * $0.1 per megapixel. Not on `cost`: ModelCost has no `per_megapixel` unit and forcing
+   * this into one of the four it does have would ship a number that is wrong for most
+   * requests.
+   *
+   * Source: https://fal.ai/models/fal-ai/hunyuan-image/v3/text-to-image — verified
+   * 2026-08-25. Quote: “Your request will cost $0.1 per megapixel.”
+   */
+  "fal-ai/hunyuan-image/v3/text-to-image": {
+    id: "fal-ai/hunyuan-image/v3/text-to-image",
+    name: "Hunyuan Image",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -480,6 +523,25 @@ export const imageModels = {
     cost: { perImage: 0.04 },
   },
   /**
+   * $0.065 per megapixel. Not on `cost`: ModelCost has no `per_megapixel` unit and forcing
+   * this into one of the four it does have would ship a number that is wrong for most
+   * requests.
+   *
+   * Source: https://fal.ai/models/fal-ai/stable-diffusion-v35-large — verified 2026-08-25.
+   * Quote: “Your request will cost $0.065 per megapixel.”
+   */
+  "fal-ai/stable-diffusion-v35-large": {
+    id: "fal-ai/stable-diffusion-v35-large",
+    name: "Stable Diffusion 3.5 Large",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-06-24",
+    modalities: { input: ["image", "text"], output: ["image"] },
+    limit: { context: 0 },
+  },
+  /**
    * $0.005 per megapixel. Not on `cost`: ModelCost has no `per_megapixel` unit and forcing
    * this into one of the four it does have would ship a number that is wrong for most
    * requests.
@@ -587,6 +649,27 @@ export const imageModels = {
     openWeights: false,
     lastUpdated: "2026-06-30",
     modalities: { input: ["text"], output: ["image"] },
+    limit: { context: 0 },
+  },
+  /**
+   * UNPRICED. fal publishes no rate for the PUBLISHED id: the page at
+   * https://fal.ai/models/microsoft/mai-image-2.5 states no price at all, and the internal
+   * route fal's own OpenAPI documents shows only the unpopulated $0-per-compute-second
+   * billing template — the same template wizper shows. Quoting $0 as a rate would be worse
+   * than saying nothing, so estimates for this endpoint return {} with this caveat.
+   *
+   * Source: https://fal.ai/models/fal-ai/mai-image-2.5 — verified 2026-08-25. Quote: “Your
+   * request will cost $0 per compute second.”
+   */
+  "microsoft/mai-image-2.5": {
+    id: "microsoft/mai-image-2.5",
+    name: "Mai Image 2.5 Text to Image",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-06-24",
+    modalities: { input: ["image", "text"], output: ["image"] },
     limit: { context: 0 },
   },
   /**

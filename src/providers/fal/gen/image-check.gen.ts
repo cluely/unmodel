@@ -7,12 +7,14 @@
 //   data/fal/openapi/fal-ai__flux-2-max.json
 //   data/fal/openapi/fal-ai__flux-2-pro.json
 //   data/fal/openapi/fal-ai__flux-2__flash.json
+//   data/fal/openapi/fal-ai__flux-general.json
 //   data/fal/openapi/fal-ai__flux-lora.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1.json
 //   data/fal/openapi/fal-ai__flux-pro__v1.1-ultra.json
 //   data/fal/openapi/fal-ai__flux__dev.json
 //   data/fal/openapi/fal-ai__flux__schnell.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5.json
+//   data/fal/openapi/fal-ai__hunyuan-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__nano-banana.json
@@ -21,11 +23,13 @@
 //   data/fal/openapi/fal-ai__qwen-image.json
 //   data/fal/openapi/fal-ai__recraft__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__recraft__v4__text-to-image.json
+//   data/fal/openapi/fal-ai__stable-diffusion-v35-large.json
 //   data/fal/openapi/fal-ai__z-image__turbo.json
 //   data/fal/openapi/google__nano-banana-2-lite.json
 //   data/fal/openapi/ideogram__v4.json
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.5.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -101,6 +105,32 @@ export type FalImageSchemaChecks = [
   AssertExtends<wire.FalAiFlux2FlashInput["sync_mode"], Gate["sync_mode"]>,
   AssertExtends<wire.FalAiFlux2FlashInput["enable_safety_checker"], Gate["enable_safety_checker"]>,
   AssertExtends<wire.FalAiFlux2FlashInput["output_format"], Gate["output_format"]>,
+  // fal-ai/flux-general
+  AssertExtends<wire.FalAiFluxGeneralInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["num_inference_steps"], Gate["num_inference_steps"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["seed"], Gate["seed"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["guidance_scale"], Gate["guidance_scale"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["real_cfg_scale"], Gate["real_cfg_scale"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["use_real_cfg"], Gate["use_real_cfg"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["use_cfg_zero"], Gate["use_cfg_zero"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["sync_mode"], Gate["sync_mode"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["num_images"], Gate["num_images"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["enable_safety_checker"], Gate["enable_safety_checker"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["reference_image_url"], Gate["reference_image_url"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["reference_strength"], Gate["reference_strength"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["reference_start"], Gate["reference_start"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["reference_end"], Gate["reference_end"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["base_shift"], Gate["base_shift"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["max_shift"], Gate["max_shift"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["use_beta_schedule"], Gate["use_beta_schedule"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["sigma_schedule"], Gate["sigma_schedule"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["scheduler"], Gate["scheduler"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["negative_prompt"], Gate["negative_prompt"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["nag_scale"], Gate["nag_scale"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["nag_tau"], Gate["nag_tau"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["nag_alpha"], Gate["nag_alpha"]>,
+  AssertExtends<wire.FalAiFluxGeneralInput["nag_end"], Gate["nag_end"]>,
   // fal-ai/flux-lora
   AssertExtends<wire.FalAiFluxLoraInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.FalAiFluxLoraInput["num_inference_steps"], Gate["num_inference_steps"]>,
@@ -159,6 +189,17 @@ export type FalImageSchemaChecks = [
   AssertExtends<wire.FalAiGptImage15Input["num_images"], Gate["num_images"]>,
   AssertExtends<wire.FalAiGptImage15Input["output_format"], Gate["output_format"]>,
   AssertExtends<wire.FalAiGptImage15Input["sync_mode"], Gate["sync_mode"]>,
+  // fal-ai/hunyuan-image/v3/text-to-image
+  AssertExtends<wire.FalAiHunyuanImageV3TextToImageInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.FalAiHunyuanImageV3TextToImageInput["negative_prompt"], Gate["negative_prompt"]>,
+  AssertExtends<wire.FalAiHunyuanImageV3TextToImageInput["num_images"], Gate["num_images"]>,
+  AssertExtends<wire.FalAiHunyuanImageV3TextToImageInput["num_inference_steps"], Gate["num_inference_steps"]>,
+  AssertExtends<wire.FalAiHunyuanImageV3TextToImageInput["guidance_scale"], Gate["guidance_scale"]>,
+  AssertExtends<wire.FalAiHunyuanImageV3TextToImageInput["seed"], Gate["seed"]>,
+  AssertExtends<wire.FalAiHunyuanImageV3TextToImageInput["enable_safety_checker"], Gate["enable_safety_checker"]>,
+  AssertExtends<wire.FalAiHunyuanImageV3TextToImageInput["sync_mode"], Gate["sync_mode"]>,
+  AssertExtends<wire.FalAiHunyuanImageV3TextToImageInput["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.FalAiHunyuanImageV3TextToImageInput["enable_prompt_expansion"], Gate["enable_prompt_expansion"]>,
   // fal-ai/ideogram/v3
   AssertExtends<wire.FalAiIdeogramV3Input["image_urls"], Gate["image_urls"]>,
   AssertExtends<wire.FalAiIdeogramV3Input["rendering_speed"], Gate["rendering_speed"]>,
@@ -233,6 +274,16 @@ export type FalImageSchemaChecks = [
   // fal-ai/recraft/v4/text-to-image
   AssertExtends<wire.FalAiRecraftV4TextToImageInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.FalAiRecraftV4TextToImageInput["enable_safety_checker"], Gate["enable_safety_checker"]>,
+  // fal-ai/stable-diffusion-v35-large
+  AssertExtends<wire.FalAiStableDiffusionV35LargeInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.FalAiStableDiffusionV35LargeInput["negative_prompt"], Gate["negative_prompt"]>,
+  AssertExtends<wire.FalAiStableDiffusionV35LargeInput["num_inference_steps"], Gate["num_inference_steps"]>,
+  AssertExtends<wire.FalAiStableDiffusionV35LargeInput["seed"], Gate["seed"]>,
+  AssertExtends<wire.FalAiStableDiffusionV35LargeInput["guidance_scale"], Gate["guidance_scale"]>,
+  AssertExtends<wire.FalAiStableDiffusionV35LargeInput["sync_mode"], Gate["sync_mode"]>,
+  AssertExtends<wire.FalAiStableDiffusionV35LargeInput["num_images"], Gate["num_images"]>,
+  AssertExtends<wire.FalAiStableDiffusionV35LargeInput["enable_safety_checker"], Gate["enable_safety_checker"]>,
+  AssertExtends<wire.FalAiStableDiffusionV35LargeInput["output_format"], Gate["output_format"]>,
   // fal-ai/z-image/turbo
   AssertExtends<wire.FalAiZImageTurboInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.FalAiZImageTurboInput["num_inference_steps"], Gate["num_inference_steps"]>,
@@ -274,6 +325,12 @@ export type FalImageSchemaChecks = [
   AssertExtends<wire.KreaV2MediumTextToImageInput["aspect_ratio"], Gate["aspect_ratio"]>,
   AssertExtends<wire.KreaV2MediumTextToImageInput["creativity"], Gate["creativity"]>,
   AssertExtends<wire.KreaV2MediumTextToImageInput["seed"], Gate["seed"]>,
+  // microsoft/mai-image-2.5
+  AssertExtends<wire.MicrosoftMaiImage25Input["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.MicrosoftMaiImage25Input["num_images"], Gate["num_images"]>,
+  AssertExtends<wire.MicrosoftMaiImage25Input["aspect_ratio"], Gate["aspect_ratio"]>,
+  AssertExtends<wire.MicrosoftMaiImage25Input["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.MicrosoftMaiImage25Input["sync_mode"], Gate["sync_mode"]>,
   // openai/gpt-image-2
   AssertExtends<wire.OpenaiGptImage2Input["prompt"], Gate["prompt"]>,
   AssertExtends<wire.OpenaiGptImage2Input["quality"], Gate["quality"]>,

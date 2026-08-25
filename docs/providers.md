@@ -9,6 +9,10 @@ provider — not their quality ranking.
 - **native** — hand-written wire schemas, deep per-model constraints, own subpath (`unmodel/<id>`).
 - **oai-base** — thin named overlay on the shared OpenAI-compatible chat validator: base URL,
   catalog, and quirk constraints only. Own subpath, ~30 lines each.
+- **generated** — wire types, schemas, per-endpoint constraint data and catalog rows emitted by a
+  codegen from the provider's own published OpenAPI, over a committed snapshot. Behaviour (checks,
+  messages, estimates, docs) is still hand-written beside it. One provider so far: **fal** — see
+  [the fal.ai wave](#falai-wave--one-aggregator-nine-verbs).
 - **catalog-only** — model metadata available via `unmodel/catalog`; no request validator yet.
 - **excluded** — no public developer API today (noted; revisit when one ships).
 
@@ -73,8 +77,10 @@ lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
 resemble (`tts` + `ttsStream`), rime, smallest-ai,
 speechify (`tts` + `ttsStream`), stepfun (StepAudio 2.5), breezeblue (Breeze TTS 2),
 alibaba (Qwen3-TTS on DashScope; the realtime-WebSocket-only ids incl.
-qwen-audio-3.0-tts-plus are catalog rows the unary validator rejects by name).
-All eighteen also ship an adapter at `unmodel/<provider>/unified`, so `tts()` from
+qwen-audio-3.0-tts-plus are catalog rows the unary validator rejects by name),
+fal (23 hosted endpoints — ElevenLabs, MiniMax, Gemini TTS, Chatterbox, Inworld,
+xAI, Seed-Speech, Qwen-3 and nine Kokoro languages — behind one `fal.tts`).
+All nineteen also ship an adapter at `unmodel/<provider>/unified`, so `tts()` from
 `unmodel/tts` reaches them through one canonical vocabulary. Two leaderboard names that
 LOOK like gaps are not: Cartesia "Sonic 3.6" has no model id of its own (it is the beta
 behind `sonic-preview`), and ElevenLabs "v3 Conversational" is the realtime
@@ -84,7 +90,9 @@ behind `sonic-preview`), and ElevenLabs "v3 Conversational" is the realtime
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
 deepgram, elevenlabs (Scribe), gladia, google (13 curated Gemini ids, 6 excluded by name and
 reason), inworld (base64 audio inline in the JSON body, no multipart route), mistral
-(Voxtral), revai, soniox, speechmatics. All twelve also ship an adapter at
+(Voxtral), revai, soniox, speechmatics, fal (6 hosted endpoints — Wizper, fal's own
+speech-to-text + turbo, ElevenLabs Scribe v1/v2, Cohere Transcribe; the `/stream` variants are
+excluded by name as a socket surface). All thirteen also ship an adapter at
 `unmodel/<provider>/unified`, so `stt()` from `unmodel/stt`
 reaches them through one canonical vocabulary — where the `audio` shapes each route accepts
 are enforced at compile time.
@@ -123,10 +131,16 @@ bytedance (`image`, Seedream on BytePlus ModelArk), kling (`image` + `imageOmni`
 `imageSd3`), luma (Photon `image`), runway (`image`), vidu (`imageFromReference`),
 xai (Grok Imagine `image` at /v1/images/generations), azure (Microsoft Foundry MAI-Image-2.5
 family via the `createAzure(endpoint)` factory — deployment-name model field, so wire
-validators only, no unified refs, same doctrine as azure chat).
+validators only, no unified refs, same doctrine as azure chat),
+fal (`image`, 32 hosted endpoints — the FLUX.2 family, Nano Banana 1/2/Pro, GPT Image 1.5/2,
+Seedream 4.5/5 Pro, Ideogram v3/v4, Recraft v3/v4, Krea 2, Kling Image v3, Reve 2.1, Qwen-Image,
+Z-Image, Grok Imagine, Hunyuan Image 3, SD 3.5 Large, FLUX general, MAI-Image-2.5).
 The pack providers also ship a unified adapter at `unmodel/<provider>/unified`, and
-`unmodel/image` carries the ready-made pack over all of them. "Reve 2.1" needs no new ids:
-Reve's API has no 2.1 version strings — `latest` serves it.
+`unmodel/image` carries the ready-made pack over all seventeen of them. "Reve 2.1" needs no
+new ids: Reve's API has no 2.1 version strings — `latest` serves it. Several fal rows are the
+same model unmodel already serves first-party (FLUX at black-forest-labs, Seedream at
+bytedance, Krea, Ideogram, Recraft, Reve): the same weights behind a different queue, which is
+what `.toApi("fal")` is reserved for and why it is not implemented yet.
 **Live — editing:** every image-to-image route is addressed as
 `<provider>.imageEdit`, with each extra route qualified by what it does to the
 picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
@@ -138,10 +152,14 @@ picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
 `imageEditReplaceBackground`), reve (`imageEdit`, `imageEditRemix`), stability
 (`imageEditErase`, `imageEditInpaint`, `imageEditOutpaint`,
 `imageEditSearchAndReplace`, `imageEditSearchAndRecolor`,
-`imageEditRemoveBackground`), luma (`imageEditReframe`).
-Four of the eight — openai, black-forest-labs, ideogram, recraft — ship a
+`imageEditRemoveBackground`), luma (`imageEditReframe`), fal (`imageEdit`, 17 hosted
+endpoints — Nano Banana 1/2/Pro edit, GPT Image 1.5/2 edit, FLUX Kontext / Kontext Max /
+Kontext Multi, FLUX.2 pro/dev edit, FLUX fill and i2i, Seedream 4.5 / 5 Pro edit,
+Qwen-Image-Edit 2511, Qwen Image 3 edit).
+Five of the nine — openai, black-forest-labs, ideogram, recraft, fal — ship a
 unified adapter, and `unmodel/image-edit` carries the ready-made pack over
-them.
+them. No background-removal route is curated at fal in wave 1: it is an
+operation with no prompt, and this vocabulary has no word for it yet.
 Remaining: alibaba (Qwen-Image), baidu, tencent (HunyuanImage), minimax, z-ai, nvidia,
 amazon (Titan/Nova); azure MAI `imageEdit` is live (multipart /mai/v1/images/edits).
 **Excluded (no public API):** midjourney, hidream, pruna, playground, sapiens-ai, eigen-ai,
@@ -159,8 +177,15 @@ MiniMax-H3), pixverse (`video` + `videoFromImage`), runway (`video` +
 `videoModify` / `videoReframe` / `videoUpscale` / `videoAddAudio`), vidu
 (`video` / `videoFromImage` / `videoFromReference`), alibaba (Wan 3.0/2.x + HappyHorse 1.x
 on DashScope video-synthesis, async create-then-poll), xai (Grok Imagine `video` +
-`videoEdit` + `videoExtend` at /v1/videos/*). All thirteen are reachable
+`videoEdit` + `videoExtend` at /v1/videos/*), fal (`video`, 30 hosted endpoints — Seedance
+2.0/2.5, Kling v2.5-turbo/v2.6/v3 and o3 video edit, MiniMax H3 + Hailuo-02, Veo 3.1 and its
+fast / i2v / first-last / extend arms, Wan v2.2/v2.7, LTX-2.5, PixVerse v6, Grok Imagine,
+Gemini Omni Flash). All thirteen are reachable
 through one canonical `video()` at `unmodel/video`.
+fal is the one provider here with **no** `videoFromImage`: at fal the model IS the route, so
+text-to-video, image-to-video, reference and first-last are separate endpoint ids reached
+through the same `fal.video`, and `videoFromImage` exists to qualify a wire-route fork rather
+than a model choice (the argument is recorded in `src/cli-registry.test.ts`).
 Remaining (first-party APIs): tencent (HunyuanVideo).
 Several are also reachable as hosted routes on `unmodel/runway`
 (`hailuo3`, `seedance2*`, `gemini_omni_flash`, `grok_imagine_1_5`, `happyhorse_1_0`).
@@ -169,14 +194,123 @@ API), skywork, sapiens-ai (no public API).
 **Music / audio — live:** elevenlabs (Eleven Music, `music`), stability (Stable Audio 2.x:
 `music` / `musicFromAudio` / `musicInpaint`), google (Lyria 3 Pro / Clip via the Gemini
 Interactions API, `music`), mureka (`music` at /v1/song/generate + `instrumental`,
-async create-then-poll, mureka-7.6…9.5). All four text-to-music routes ship an adapter at
+async create-then-poll, mureka-7.6…9.5), fal (`music`, 10 hosted endpoints — MiniMax Music
+3 / v2.6 / v2, ElevenLabs Music, Lyria 3 Pro + Lyria 2, Stable Audio 2.5 and 3 Medium,
+ACE-Step, DiffRhythm). All five text-to-music routes ship an adapter at
 `unmodel/<provider>/unified` behind `music()` from `unmodel/music`; the audio-conditioned
 Stability routes and mureka's lyrics/extend/stem routes stay wire-only or doc-noted
-(see `src/unified/music.ts`).
-Remaining: sonauto. **Excluded:** suno, udio, producer-ai (no public API);
-minimax music (the native /v1/music_generation API closed to NEW users on 2026-08-20 —
-current ids music-3.0/music-cover; existing subscribers only, so it fails the
-public-accessibility bar).
+(see `src/unified/music.ts`). No sound-effect route is curated at fal: an SFX prompt is not a
+song, and an `sfx` category with one witness would be a guess.
+Remaining: sonauto. **Excluded:** suno, udio, producer-ai (no public API).
+MiniMax music is reachable **only** through fal here: the native
+/v1/music_generation API closed to NEW users on 2026-08-20 (current ids
+music-3.0/music-cover; existing subscribers only, so it fails the public-accessibility
+bar), while `minimax/music-3` on fal's queue is open to anyone with a `FAL_KEY`.
+
+## Lipsync / avatar / upscale wave (fal only, for now)
+
+Three categories that arrived with fal because fal is where their models are hosted. Each is a
+full unmodel category — own vocabulary, own kernel id, own pack, own `unmodel/<category>`
+subpath — rather than an arm bolted onto an existing one, which is what keeps a second
+provider a one-file addition. Examples and the narrowing rules live in
+[surfaces.md](surfaces.md#lipsync).
+
+**Lipsync — `lipsync`, 10 endpoints.** A clip in, an audio track in, a clip whose mouth matches
+the audio out. sync. lipsync v3, v2 and v2/pro; VEED lipsync v1 and v2; LatentSync; Kling
+LipSync (audio-to-video); PixVerse lipsync; HeyGen v3 lipsync precision and speed. Five
+canonical words and no geometry — the output's shape **is** the input's. `fal-ai/sync-lipsync/v2`
+is the roster's reminder that fal's route selector cannot be `model`: it has a real `model` body
+field (`"lipsync-2" | "lipsync-2-pro"`) that stays on the wire while `endpoint` routes.
+Excluded by name: `fal-ai/sync-lipsync/v1.9.0-beta` (superseded) and
+`fal-ai/kling-video/lipsync/text-to-video` (a script + a voice id is TTS composed with lipsync,
+and composing it here would hide which half failed).
+
+**Avatar — `avatar`, 8 endpoints.** A still in, the same audio in, a clip out. sync-lipsync
+v3/image-to-video, ByteDance OmniHuman 1.5, Kling AI Avatar v2 standard and pro, EchoMimic v3,
+LongCat single-avatar, VEED Avatars, Argil Avatars. The split from lipsync is by INPUT rather
+than by vendor, which is why `fal-ai/sync-lipsync/v3` and
+`fal-ai/sync-lipsync/v3/image-to-video` — one product on two routes — land in different
+categories. Two rows take neither a still nor a clip: their performer is a catalogued id, so
+`image` is narrowed per model and types as `never` there.
+
+**Upscale — `upscale`, 10 endpoints.** Clarity Upscaler, Topaz image precision and generative,
+Topaz video precision, ESRGAN, AuraSR, SeedVR upscale image and video, Recraft crisp upscale,
+FLUX video upscale. The only verb in the roster with no fixed modality: seven routes take a
+still and three take a clip, so `source` is narrowed per model and the output modality is read
+off each endpoint's own response schema. `factor` is the one cross-vendor word, and it has
+three answers per model: a range, a closed set (AuraSR upscales by 4 or not at all), or absent.
+
+**Wire notes, shared by all three:** the request is a queue submit to
+`https://queue.fal.run/{endpoint}`, the media arguments are https URLs or `data:` URIs, and the
+result is a queue envelope rather than a file. Polling is out of scope — follow the
+`response_url` fal hands back, never a URL you construct.
+
+## fal.ai wave — one aggregator, nine verbs
+
+fal.ai is a generative-media inference cloud. unmodel serves **146 curated endpoints across
+nine verbs** — `fal.image` (32), `fal.imageEdit` (17), `fal.video` (30), `fal.lipsync` (10),
+`fal.upscale` (10), `fal.avatar` (8), `fal.tts` (23), `fal.stt` (6), `fal.music` (10) — all bare
+ids, all on `unmodel/fal`, with a unified adapter per category behind
+`unmodel/fal/unified`. Tier: **generated**.
+
+**The model IS the route.** `POST https://queue.fal.run/{endpoint_id}` with a flat JSON body and
+no model field in it — the endpoint id is the URL path, at arbitrary depth. So the selector is a
+pseudo-param named `endpoint`, stripped in `finalize` and interpolated into the URL; `model`
+could not be it, because `model` is a **real wire field** on several endpoints
+(`fal-ai/sync-lipsync/v2`, the Topaz and ESRGAN upscalers) and codegen hard-errors on a
+top-level `model` property that curation has not allow-listed. Unified refs are unaffected:
+`"fal/fal-ai/flux/dev"` splits on the FIRST slash, so unified callers still write `model:`.
+
+```ts
+import { image } from "unmodel/fal";
+
+const request = image({ endpoint: "fal-ai/flux/dev", prompt: "a cat", image_size: "landscape_4_3" });
+
+JSON.stringify(request);
+// → {"prompt":"a cat","image_size":"landscape_4_3"}
+request.request.url; // "https://queue.fal.run/fal-ai/flux/dev"
+```
+
+`endpoint` is not enumerable on the result — the body is exactly what fal accepts.
+
+**Auth is prose, never derived.** `Authorization: Key ${FAL_KEY}` — the `Key ` prefix is real and
+fal's own OpenAPI security scheme omits it, so unmodel states it in every validator's JSDoc
+rather than deriving a header from the schema (the vidu `Token` precedent). No unmodel export
+takes your key.
+
+**Types come from fal's own OpenAPI.** fal publishes an OpenAPI 3.0.4 document per endpoint
+through its documented Platform API (`GET https://api.fal.ai/v1/models?endpoint_id=…&expand=openapi-3.0`),
+which makes it the first provider where "types from docs, never SDKs" has a machine-readable
+source. `bun run codegen:fal` regenerates `src/providers/fal/gen/` from committed snapshots in
+`data/fal/openapi/`; `codegen:fal:refresh` re-fetches them; `codegen:fal:audit` crawls the
+roster and reports drift without writing. The generator emits DATA and TYPES only — every check,
+message, estimate and doc comment is hand-written beside it, and no generated file is ever
+hand-edited. See [src/providers/HAND_CATALOGS.md](../src/providers/HAND_CATALOGS.md).
+
+**What is hand-maintained, and on what clock:** `data/fal/curation.json` (which endpoints, under
+which verb, and an `excluded` map with a reason per skip), `data/fal/pricing.json` (every rate
+transcribed from the public model page with its URL, date and exact quote — a curated endpoint
+with neither a rate nor an `unpriced` reason fails codegen), and `data/fal/overlays.json` (every
+deviation from fal's schema, each needing reason + source + verified). Three files because they
+change on three different clocks; one blob would make an overlay look ordinary.
+
+**Roster drift is a real failure mode, not a hypothetical.** `fal-ai/veo3` and `fal-ai/whisper`
+both vanished from fal during the week this integration was designed. A weekly scheduled job
+(`.github/workflows/codegen-fal-refresh.yml`) re-fetches every curated snapshot, reports each
+hash change, status flip and 404, and opens a rolling pull request with the regenerated
+surface; the CI run itself stays offline, because a provider outage must never be able to fail
+an unrelated pull request. A `retiredOn` date in `curation.json` then ships the row as
+`deprecated` for 90 days and hard-fails codegen after that, so it cannot rot silently. Pricing
+is deliberately NOT refreshed by the job: fal publishes no machine-readable rate, so a human
+re-reads the page.
+
+**Not yet:** `.toApi("fal")` — retargeting a first-party media request onto fal's queue needs a
+media retarget layer that does not exist (chat only, today), and `EndpointAuth.scheme` has no
+`"Key"` arm. Also uncurated by decision, with reasons in `curation.json`: fal's `llm` category
+(an OpenRouter passthrough — unmodel ships the real OpenRouter), `training` (57 endpoints that
+start a fine-tune rather than an inference request), `vision` (34 doing image-in/text-out, which
+`unmodel/chat` already owns), `3d` (53 — a 3D vocabulary on a single witness is a guess), and
+the ffmpeg / workflow-utils / subtitles plumbing.
 
 ## LLM creators without a public API today (catalog-only or excluded)
 
@@ -187,7 +321,7 @@ openbmb, nanbeige, tii-falcon, allenai (Olmo — weights only).
 
 ## Unified surfaces — coverage per category
 
-Nine entries take a **standardized camelCase vocabulary** instead of a wire body and
+Eleven entries take a **standardized camelCase vocabulary** instead of a wire body and
 compile it to whichever provider the `"provider/model"` ref names. They are a layer *over*
 the roster above, not a replacement for it: a unified call compiles to a provider's wire
 params and then runs **that provider's own validator**, so there is exactly one definition
@@ -207,33 +341,38 @@ leaves rather than whole validators.
 |---|---|---|---|
 | `unmodel/chat` | `chat` | n/a — three dialect codecs, composed with all 32 concrete provider `chat` validators | 32: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
 | `unmodel/chat/factory` | `createChat` | the same three codecs, no registry | whichever provider validators you register: `createChat({ anthropic, openai })` |
-| `unmodel/image` | `image`, `createImage` | 15 | black-forest-labs, bria, bytedance, google, ideogram, kling, krea, leonardo, luma, openai, recraft, reve, runway, stability, vidu |
-| `unmodel/tts` | `tts`, `createTts` | 15 | cartesia, deepgram, elevenlabs, fish-audio, google, hume, inworld, lmnt, minimax, murf, openai, resemble, rime, smallest-ai, speechify |
-| `unmodel/stt` | `stt`, `createStt` | 12 | assemblyai, cartesia, deepgram, elevenlabs, gladia, google, inworld, mistral, openai, revai, soniox, speechmatics |
-| `unmodel/video` | `video`, `createVideo` | 10 | bytedance, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu |
-| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 4 | black-forest-labs, ideogram, openai, recraft — the four whose primary editing route is *image + prompt, no mask* |
-| `unmodel/music` | `music`, `createMusic` | 2 | elevenlabs, stability |
+| `unmodel/image` | `image`, `createImage` | 17 | black-forest-labs, bria, bytedance, fal, google, ideogram, kling, krea, leonardo, luma, openai, recraft, reve, runway, stability, vidu, xai |
+| `unmodel/tts` | `tts`, `createTts` | 19 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume, inworld, lmnt, minimax, murf, openai, resemble, rime, smallest-ai, speechify, stepfun |
+| `unmodel/stt` | `stt`, `createStt` | 13 | assemblyai, cartesia, deepgram, elevenlabs, fal, gladia, google, inworld, mistral, openai, revai, soniox, speechmatics |
+| `unmodel/video` | `video`, `createVideo` | 13 | alibaba, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu, xai |
+| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 5 | black-forest-labs, fal, ideogram, openai, recraft — the five whose primary editing route is *image + prompt, no mask* |
+| `unmodel/music` | `music`, `createMusic` | 5 | elevenlabs, fal, google, mureka, stability |
+| `unmodel/lipsync` | `lipsync`, `createLipsync` | 1 | fal — 10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider |
+| `unmodel/avatar` | `avatar`, `createAvatar` | 1 | fal — 8 endpoints; the still-driven twin of lipsync |
+| `unmodel/upscale` | `upscale`, `createUpscale` | 1 | fal — 10 endpoints, seven taking a still and three taking a clip |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
 | `unmodel/voice-design` | `voiceDesign`, `createVoiceDesign` | 4 | elevenlabs, fish-audio, inworld, minimax — the unified surface is phase 1 (the generative call); the ElevenLabs/Inworld save steps are wire-only (`voiceDesignSave`, `voiceDesignPublish`) |
 
 **Layout.** Each adapter lives in the provider's own directory as
 `unified-<category>.ts`, re-exported from a single `unified.ts` barrel published as
-`unmodel/<provider>/unified` (36 such subpaths). A provider serving more than one category
+`unmodel/<provider>/unified` (42 such subpaths). A provider serving more than one category
 therefore splits per category, so no pack pays for another category's schemas or catalogs.
 `test/bundle-budget.test.ts` asserts a pack can only reach a provider through that
 provider's uniformly-named endpoint module — which is what makes the address-vs-wire
-rename structural rather than cosmetic.
+rename structural rather than cosmetic. The split is **derived from disk** rather than
+listed: a provider with more than one `unified-<category>.ts` leaf is split, which is what
+keeps a newly split provider from silently skipping every per-category budget.
 
 **Types without runtime.** Every provider in the roster above also publishes
-`unmodel/<provider>/types` (70 subpaths): its wire names verbatim plus one uniform
-`<Endpoint>Body` alias per endpoint address it serves — 155 endpoints in all — and nothing
+`unmodel/<provider>/types` (73 subpaths): its wire names verbatim plus one uniform
+`<Endpoint>Body` alias per endpoint address it serves — 189 endpoints in all — and nothing
 executable. `unmodel/types` is the matching hub for the canonical vocabulary
 (`ChatParams`, `TtsParams`, `ImageParams`, …, `Issue`, `ValidateResult`), deliberately with
-no aggregate of provider wire types. All 71 entries emit an empty JavaScript module, which
+no aggregate of provider wire types. All 74 entries emit an empty JavaScript module, which
 `test/types-entries.test.ts` asserts against a real build alongside the completeness drift
 guard keyed on `src/cli-registry.ts`.
 
-**Values without a validator.** The 36 providers with a unified adapter also publish
+**Values without a validator.** The 42 providers with a unified adapter also publish
 `unmodel/<provider>/values`: the runtime twin of those types — `<CATEGORY>_MODEL_PARAMS`,
 `<CATEGORY>_MODELS` and `<CATEGORY>_FORMAT_SPEC` per category served, plus that provider's own
 published enums (voices, sizes, ratios, durations, codecs, languages) under their own names.
@@ -245,7 +384,7 @@ import-free `<category>-params.ts` leaves that both read: one import from a valu
 subpath because they are 45 KiB. `test/values-entries.test.ts` measures every export against a
 real build and asserts the tables by reference.
 
-**Contract, identical in all nine.** A param a provider cannot express is an **error**
+**Contract, identical in all eleven.** A param a provider cannot express is an **error**
 naming what it does offer; a value it can only express approximately is an
 `approximated_param` **warning** naming both the requested and the achieved value;
 everything else is silent — so zero warnings means the request mapped exactly, asserted per
@@ -284,7 +423,7 @@ wire-exact subpath first, adapter second.
 
 Two different vocabularies, both closed unions, both catalog-id-based.
 
-**`.toSdk(target)` — every endpoint, 155 of them.** (The count is not maintained by hand:
+**`.toSdk(target)` — every endpoint, 189 of them.** (The count is not maintained by hand:
 `src/cli.test.ts`'s drift guard asserts `REGISTRY` + `MULTIPART_ONLY` are exactly the set of
 module-level validators, so that test is the source of truth if this number ever rots.)
 The target set is a property of

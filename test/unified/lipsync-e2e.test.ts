@@ -48,8 +48,8 @@ describe("the pack", () => {
     expect(params.request.url).toBe("https://queue.fal.run/fal-ai/sync-lipsync/v9");
   });
 
-  test("the eight endpoints are one adapter, and the pack is that adapter", () => {
-    expect(falAdapter.models).toHaveLength(8);
+  test("the ten endpoints are one adapter, and the pack is that adapter", () => {
+    expect(falAdapter.models).toHaveLength(10);
     const built = createLipsync([falAdapter]);
     expect([...built.providers]).toEqual(["fal"]);
   });

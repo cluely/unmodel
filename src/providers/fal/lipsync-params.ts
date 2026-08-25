@@ -8,7 +8,7 @@
  *
  * The one field that matters here is `sources` — which shape the performance
  * arrives in. Every row in this category says `["video"]`, and that is a
- * finding rather than a constant: it is what separates these eight endpoints
+ * finding rather than a constant: it is what separates these ten endpoints
  * from the eight in `./avatar-params.ts`, which say `["image"]` or `[]`.
  */
 

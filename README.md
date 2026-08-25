@@ -125,6 +125,23 @@ image({ model: "openai/gpt-image-1", prompt: "...", background: "transparent" })
 image({ model: "openai/gpt-image-2", prompt: "...", background: "transparent" }); // ❌ TypeScript error
 ```
 
+The three newest surfaces are one line each: a clip, a still, and a frame you want bigger.
+
+```ts
+import { lipsync } from "unmodel/lipsync";
+import { avatar } from "unmodel/avatar";
+import { upscale } from "unmodel/upscale";
+
+JSON.stringify(lipsync({ model: "fal/veed/lipsync/v2", source: { url: clip }, audio: { url: vo } }));
+// → {"video_url":"https://ex.com/take.mp4","audio_url":"https://ex.com/vo.wav"}
+
+JSON.stringify(avatar({ model: "fal/fal-ai/sync-lipsync/v3/image-to-video", image: { url: still }, audio: { url: vo } }));
+// → {"image_url":"https://ex.com/face.png","audio_url":"https://ex.com/vo.wav"}
+
+JSON.stringify(upscale({ model: "fal/fal-ai/clarity-upscaler", source: { url: still }, factor: 2 }));
+// → {"image_url":"https://ex.com/face.png","upscale_factor":2}
+```
+
 Same pattern for every surface — inputs, formats, and extras narrow to the selected model. Per-category guides, including audio input routing, multipart helpers, and voice cloning: [docs/surfaces.md](docs/surfaces.md). Full roster: [docs/providers.md](docs/providers.md); per-provider TTS quirks: [docs/tts.md](docs/tts.md).
 
 ## ✅ Validation
@@ -257,6 +274,25 @@ npx unmodel validate unified.stt transcription.json --json
 ## 🏢 Providers
 
 Every implemented provider has its own subpath with native field names, model IDs, routes, pricing, and quirks. Providers whose URL depends on your account expose factories (`createAzure`, `createGoogleVertex`, `createAmazonBedrock`, `createCloudflare`), and `createOpenAICompatible` covers proxies and self-hosted Chat Completions endpoints. Full roster and roadmap: [docs/providers.md](docs/providers.md).
+
+### fal.ai
+
+`unmodel/fal` covers 146 curated endpoints across nine verbs: `image`, `imageEdit`, `video`, `lipsync`, `upscale`, `avatar`, `tts`, `stt`, `music`. Four things here work unlike every other provider.
+
+```ts
+import { image } from "unmodel/fal";
+
+const request = image({ endpoint: "fal-ai/flux/dev", prompt: "a cat", image_size: "landscape_4_3" });
+
+JSON.stringify(request);
+// → {"prompt":"a cat","image_size":"landscape_4_3"}
+request.request.url; // "https://queue.fal.run/fal-ai/flux/dev"
+```
+
+- **The model is the route.** The endpoint id is the URL path, so the selector is a pseudo-param named `endpoint`, stripped before the body goes out. It cannot be `model`, because `model` is a real wire field on some fal endpoints. Unified refs are unaffected: `"fal/fal-ai/flux/dev"` splits on the first slash.
+- **Every request is a queue submit.** `POST https://queue.fal.run/{endpoint}` answers an envelope (`request_id`, `status`, and the `response_url` / `status_url` / `cancel_url` to follow), not a file. Follow the `response_url` fal hands back, never one you build. Polling stays with your transport code.
+- **Auth is `Authorization: Key ${FAL_KEY}`.** The `Key ` prefix is real and fal's own OpenAPI omits it, so unmodel states it in prose rather than deriving it. No unmodel export takes your key.
+- **The types are generated from fal's own published OpenAPI.** `bun run codegen:fal` rebuilds `src/providers/fal/gen/` from committed per-endpoint snapshots. Curation, pricing and overlays stay hand-maintained in `data/fal/`, each row carrying a source URL, a date and a quote.
 
 ## 📚 Docs
 

@@ -1,5 +1,5 @@
 /**
- * `unmodel/image` → fal, across 28 endpoints.
+ * `unmodel/image` → fal, across 32 endpoints.
  *
  * A sibling of `./unified-image-edit`, and a separate module for the reason
  * every split provider here is split: `unmodel/image` and `unmodel/image-edit`

@@ -8,8 +8,8 @@
  *
  * ## Declining is the main job
  *
- * fal prices in ten units and only four of them are a number the catalog can
- * carry. Of the rest:
+ * fal prices in fifteen units and only five of them are a number the catalog
+ * can carry. Of the rest:
  *
  * - **`per_megapixel`** needs the output's dimensions, which a request states
  *   only sometimes. `image_size: "landscape_4_3"` names a preset whose pixel
@@ -48,6 +48,14 @@ export { FAL_RATES } from "./gen/pricing.gen";
 
 /** One megapixel, in pixels. */
 const MEGAPIXEL = 1_000_000;
+
+/** The block each generated-audio unit meters, in words a message can use. */
+const GENERATED_AUDIO_BLOCK: Readonly<Record<string, string>> = {
+  per_generated_audio_second: "second",
+  per_generated_audio_minute: "minute",
+  per_30_seconds: "30 seconds",
+  per_10_seconds: "10 seconds",
+};
 
 /**
  * Megapixels billed for a `width x height` output — the ceiling rule.
@@ -91,6 +99,25 @@ function imageCount(body: Readonly<Record<string, unknown>>): number {
 }
 
 /**
+ * The characters a speech request will be billed for, when the body states
+ * them.
+ *
+ * Two spellings and no third: fal's speech endpoints put the words in `text`
+ * (ElevenLabs, Chatterbox, xAI, ByteDance, Qwen, MiniMax 02) or in `prompt`
+ * (Kokoro, Gemini, MiniMax 2.8), and `data/fal/curation.json` records which
+ * per endpoint. Reading both here rather than threading the curated name into
+ * the rate table keeps `gen/pricing.gen.ts` a table of RATES; the two names
+ * cannot collide, because a `per_1000_characters` rate only ever sits on a
+ * `fal.tts` endpoint and none of those declares both as text.
+ */
+function billedCharacters(body: Readonly<Record<string, unknown>>): number | undefined {
+  const text = body["text"];
+  if (typeof text === "string") return text.length;
+  const prompt = body["prompt"];
+  return typeof prompt === "string" ? prompt.length : undefined;
+}
+
+/**
  * What one request to one endpoint costs, or `undefined` where the request
  * leaves the price open.
  *
@@ -115,6 +142,18 @@ export function falCostUSD(
       if (pixels === undefined) return undefined;
       return rate.usd * falMegapixels(pixels.width, pixels.height) * imageCount(body);
     }
+    // A flat rate per request — fal's "per audio" / "per generation" wording.
+    // The one unit besides `per_image` that a body cannot make wrong.
+    case "per_generation":
+      return rate.usd;
+    // The only INPUT-metered unit a request body settles by itself: the text
+    // is right there. No rounding — fal quotes a rate per 1,000 characters,
+    // not a 1,000-character block, and its own examples bill fractions.
+    case "per_1000_characters": {
+      if (rate.usd === undefined) return undefined;
+      const characters = billedCharacters(body);
+      return characters === undefined ? undefined : (rate.usd * characters) / 1_000;
+    }
     // Everything below needs a fact the request body does not carry, or does
     // not carry reliably. See the module header for why a guess is worse than
     // nothing here.
@@ -138,7 +177,29 @@ export function falPriceNote(endpointId: string): string | undefined {
   const tiers = rate.tiers?.map((tier) => `$${tier.usd} ${tier.when}`).join("; ");
   switch (rate.unit) {
     case "per_image":
+    case "per_generation":
       return undefined;
+    case "per_1000_characters":
+      return (
+        `${endpointId} bills $${rate.usd} per 1,000 characters of input. An estimate is available whenever ` +
+        "the request states the text, which is always — so a `costUSD` here is exact rather than indicative."
+      );
+    case "per_input_audio_second":
+    case "per_audio_minute":
+      return (
+        `${endpointId} bills $${rate.usd} per ${rate.unit === "per_audio_minute" ? "minute" : "second"} of ` +
+        "INPUT audio. unmodel never sees the recording — a submit body carries a URL — so the duration, and " +
+        "therefore the cost, is not something a request states."
+      );
+    case "per_generated_audio_second":
+    case "per_generated_audio_minute":
+    case "per_30_seconds":
+    case "per_10_seconds":
+      return (
+        `${endpointId} bills $${rate.usd} per ${GENERATED_AUDIO_BLOCK[rate.unit]} of GENERATED audio. ` +
+        "The length is the model's answer rather than the request's question at most of these endpoints, " +
+        "so unmodel does not estimate it."
+      );
     case "per_megapixel":
       return (
         `${endpointId} bills $${rate.usd} per megapixel of output, rounded up to the nearest megapixel. ` +

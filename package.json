@@ -91,6 +91,10 @@
       "types": "./dist/unified/avatar.d.ts",
       "default": "./dist/unified/avatar.js"
     },
+    "./upscale": {
+      "types": "./dist/unified/upscale.d.ts",
+      "default": "./dist/unified/upscale.js"
+    },
     "./tts": {
       "types": "./dist/unified/tts.d.ts",
       "default": "./dist/unified/tts.js"

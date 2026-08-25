@@ -9,8 +9,10 @@
     "thing this file may not say.",
     "",
     "Row shape — either a rate:",
-    "  unit      per_image | per_megapixel | per_second | per_video_minute | per_30_seconds |",
-    "            per_1000_characters | per_audio_minute | tiered | conditional | compute_second",
+    "  unit      per_image | per_generation | per_megapixel | per_second | per_video_minute |",
+    "            per_30_seconds | per_10_seconds | per_1000_characters | per_audio_minute |",
+    "            per_input_audio_second | per_generated_audio_second | per_generated_audio_minute |",
+    "            tiered | conditional | compute_second",
     "  usd       the scalar rate in that unit (absent for tiered/conditional — see `tiers`)",
     "  rounding  how fal rounds the billed quantity, verbatim from the page (e.g. megapixels round UP)",
     "  tierKey   what selects the tier (a wire field name, or prose when it is not one field)",
@@ -20,29 +22,42 @@
     "  unpriced  the REASON no rate can be stated, in prose",
     "  source / verified / quote",
     "",
-    "WHICH UNITS REACH `ModelCost` — deliberately only four, the ones `src/core/catalog-types.ts` can express",
-    "exactly, per src/providers/HAND_CATALOGS.md:",
-    "    per_image           → cost.perImage",
-    "    per_second          → cost.perVideoSecond",
-    "    per_1000_characters → cost.perMillionCharacters (×1000 — exact, not a conversion factor)",
-    "    per_audio_minute    → cost.perAudioMinute",
-    "Every other unit — per_megapixel, per_video_minute, per_30_seconds, tiered, conditional, compute_second —",
-    "emits NO `cost` on the generated row, and the rate survives as a provenance comment above it instead.",
-    "`ModelCost` is not widened in wave 1: a per-megapixel rate written into `perImage` would be a number that",
-    "is wrong for every image that is not exactly one megapixel, and `undefined` beats a wrong number.",
-    "Tiered and conditional rates land in the hand pricing table (kling precedent), never here.",
+    "WHICH UNITS REACH `ModelCost` — deliberately only five, and only where the conversion is EXACT. The",
+    "target fields are the four `src/core/catalog-types.ts` publishes, per src/providers/HAND_CATALOGS.md:",
+    "    per_image              → cost.perImage",
+    "    per_second             → cost.perVideoSecond",
+    "    per_1000_characters    → cost.perMillionCharacters (×1000 — exact, not a conversion factor)",
+    "    per_audio_minute       → cost.perAudioMinute",
+    "    per_input_audio_second → cost.perAudioMinute (×60 — exact, same rule as ×1000 above)",
+    "Every other unit emits NO `cost` on the generated row, and the rate survives as a provenance comment",
+    "above it instead. `ModelCost` is not widened in wave 1: a per-megapixel rate written into `perImage`",
+    "would be a number that is wrong for every image that is not exactly one megapixel, and `undefined`",
+    "beats a wrong number. Tiered and conditional rates land in the hand pricing table (kling precedent),",
+    "never here.",
     "",
-    "Verified 2026-08-24 against the live pages.",
+    "Wave 1d added five units, each because fal publishes a rate in it and none of the existing ten said the",
+    "same thing. Note which side of the microphone each one is on — that is what decides whether it can",
+    "reach `perAudioMinute`, whose own definition is \"per minute of audio PROCESSED\":",
+    "    per_generation             a flat rate per request that is not an image — fal's \"per audio\" and",
+    "                               \"per generation\" wording at five music endpoints. `perImage` is an IMAGE",
+    "                               rate, so this reaches the catalog as a comment rather than as a number.",
+    "    per_input_audio_second     a rate per second of INPUT audio (stt). ×60 to perAudioMinute, exactly.",
+    "    per_generated_audio_second a rate per second of GENERATED audio (music). ModelCost has no such field.",
+    "    per_generated_audio_minute the same, per minute — ElevenLabs Music, rounded up to the closest minute.",
+    "    per_10_seconds             a per-block rate, the sibling of the per_30_seconds Lyria 2 already needed.",
     "",
-    "Of the 95 rows here, 24 carry a unit ModelCost can express and therefore reach a generated catalog row;",
-    "the other 71 do not, which is the shape of fal's pricing rather than a gap in this file. The big classes:",
-    "conditional (35) needs a field the request often leaves at its default — at video that field is almost",
+    "Verified 2026-08-25 against the live pages.",
+    "",
+    "Of the 140 rows here, 49 carry a unit ModelCost can express and therefore reach a generated catalog row;",
+    "the other 91 do not, which is the shape of fal's pricing rather than a gap in this file. The big classes:",
+    "conditional (48) needs a field the request often leaves at its default — at video that field is almost",
     "always `resolution` or an audio switch, and fal quotes several of them per THOUSAND TOKENS of rendered",
-    "frames, which no request body counts; per_megapixel (11) needs the output's pixel count; tiered (5) needs",
-    "a quantity the request does not state. All of them reach an ESTIMATE through gen/pricing.gen.ts and",
-    "src/providers/fal/pricing.ts, which computes what it can and returns `undefined` — with a reason available",
-    "from `falPriceNote` — for the rest. A plausible number that is wrong is worse than no number: a caller who",
-    "sees `costUSD` treats it as a budget."
+    "frames, which no request body counts; per_megapixel (15) needs the output's pixel count, and at upscale",
+    "that count is the INPUT file's area times the factor, which a submit body never carries because the",
+    "input arrives as a URL; tiered (7) needs a quantity the request does not state. All of them reach an",
+    "ESTIMATE through gen/pricing.gen.ts and src/providers/fal/pricing.ts, which computes what it can and",
+    "returns `undefined` — with a reason available from `falPriceNote` — for the rest. A plausible number",
+    "that is wrong is worse than no number: a caller who sees `costUSD` treats it as a budget."
   ],
   "endpoints": {
     "alibaba/qwen-image-3/edit": {
@@ -69,6 +84,39 @@
       "source": "https://fal.ai/models/argil/avatars/audio-to-video",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.02 per input second."
+    },
+    "blackforestlabs/flux-video-upscale": {
+      "unit": "conditional",
+      "tierKey": "output resolution x mode (`creativity` 0 is precise, 1 is creative), per second of output",
+      "tiers": [
+        {
+          "when": "per second at 1080p, precise mode",
+          "usd": 0.14
+        },
+        {
+          "when": "per second at 2K, precise mode",
+          "usd": 0.25
+        },
+        {
+          "when": "per second at 4K, precise mode",
+          "usd": 0.55
+        },
+        {
+          "when": "per second at 1080p, creative mode",
+          "usd": 0.2
+        },
+        {
+          "when": "per second at 2K, creative mode",
+          "usd": 0.35
+        },
+        {
+          "when": "per second at 4K, creative mode",
+          "usd": 0.79
+        }
+      ],
+      "source": "https://fal.ai/models/blackforestlabs/flux-video-upscale",
+      "verified": "2026-08-25",
+      "quote": "Billing is calculated per second of output video, by resolution and mode. In precise mode, 1080p costs $0.14 per second, 2K costs $0.25 per second, and 4K costs $0.55 per second. Creative mode costs more at each tier: $0.20, $0.35, and $0.79 per second respectively. A 10-second 1080p clip runs $1.40 in precise mode or $2.00 in creative mode. You are charged for the delivered output only."
     },
     "bytedance/seedance-2.0/image-to-video": {
       "unit": "conditional",
@@ -197,12 +245,32 @@
       "verified": "2026-08-24",
       "quote": "Tentative pricing is $0.0675 per image for images of total area less than or equal to 1536x1536 pixels. For images with area in between 1536x1536 and 2048x2048 pixels, the price is $0.135 per image."
     },
+    "fal-ai/ace-step": {
+      "unit": "per_generated_audio_second",
+      "usd": 0.0002,
+      "source": "https://fal.ai/models/fal-ai/ace-step",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.0002 per second of generated audio. For $1 you can run generate 5000 seconds (83 minutes) of music from lyrics."
+    },
+    "fal-ai/aura-sr": {
+      "unpriced": "Billed per COMPUTE second, not per unit of input or output: the price depends on how long fal's GPU took, which no request body can predict. The page's own compute-second figure reads $0, which is an unpopulated billing template rather than a free tier — quoting it as a rate would be worse than saying nothing. Same shape as fal-ai/wizper.",
+      "source": "https://fal.ai/models/fal-ai/aura-sr",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0 per compute second."
+    },
     "fal-ai/bytedance/omnihuman/v1.5": {
       "unit": "per_second",
       "usd": 0.16,
       "source": "https://fal.ai/models/fal-ai/bytedance/omnihuman/v1.5",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.16 per second."
+    },
+    "fal-ai/bytedance/seed-speech/tts/v2": {
+      "unit": "per_1000_characters",
+      "usd": 0.03,
+      "source": "https://fal.ai/models/fal-ai/bytedance/seed-speech/tts/v2",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.03 per 1000 character."
     },
     "fal-ai/bytedance/seedream/v4.5/edit": {
       "unit": "per_image",
@@ -218,6 +286,20 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.04 per image."
     },
+    "fal-ai/chatterbox/text-to-speech": {
+      "unit": "per_1000_characters",
+      "usd": 0.025,
+      "source": "https://fal.ai/models/fal-ai/chatterbox/text-to-speech",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.025 per 1000 characters."
+    },
+    "fal-ai/chatterbox/text-to-speech/multilingual": {
+      "unit": "per_1000_characters",
+      "usd": 0.025,
+      "source": "https://fal.ai/models/fal-ai/chatterbox/text-to-speech/multilingual",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.025 per 1000 character."
+    },
     "fal-ai/clarity-upscaler": {
       "unit": "per_megapixel",
       "usd": 0.03,
@@ -226,6 +308,20 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.03 per megapixel."
     },
+    "fal-ai/cohere-transcribe": {
+      "unit": "per_input_audio_second",
+      "usd": 0.00006944444,
+      "source": "https://fal.ai/models/fal-ai/cohere-transcribe",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.00006944444 per second."
+    },
+    "fal-ai/diffrhythm": {
+      "unit": "per_10_seconds",
+      "usd": 0.01,
+      "source": "https://fal.ai/models/fal-ai/diffrhythm",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.01 per 10 second of generated audio. For $1 you can run generate 1000s of music from lyrics."
+    },
     "fal-ai/echomimic-v3": {
       "unit": "per_second",
       "usd": 0.2,
@@ -233,6 +329,66 @@
       "source": "https://fal.ai/models/fal-ai/echomimic-v3",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.20 per generated second of video, based on the length of the input audio. For example, a 5-second video will cost $1.00."
+    },
+    "fal-ai/elevenlabs/music": {
+      "unit": "per_generated_audio_minute",
+      "usd": 0.6,
+      "rounding": "rounded UP to the closest minute — a 30-second generation bills as one minute",
+      "source": "https://fal.ai/models/fal-ai/elevenlabs/music",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.6 per output audio minute. The audio will be rounded up to the closest minute. For instance, a generation with 30 seconds output will be billed as 1 minute."
+    },
+    "fal-ai/elevenlabs/speech-to-text": {
+      "unit": "per_audio_minute",
+      "usd": 0.03,
+      "source": "https://fal.ai/models/fal-ai/elevenlabs/speech-to-text",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.03 per minute."
+    },
+    "fal-ai/elevenlabs/speech-to-text/scribe-v2": {
+      "unit": "conditional",
+      "tierKey": "whether `keyterms` are supplied",
+      "tiers": [
+        {
+          "when": "per input audio minute",
+          "usd": 0.008
+        },
+        {
+          "when": "per input audio minute when keyterms are used — 30% more",
+          "usd": 0.0104
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/elevenlabs/speech-to-text/scribe-v2",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.008 per input audio minutes. If keyterm is used, you request will cost %30 more."
+    },
+    "fal-ai/elevenlabs/tts/eleven-v3": {
+      "unit": "per_1000_characters",
+      "usd": 0.1,
+      "source": "https://fal.ai/models/fal-ai/elevenlabs/tts/eleven-v3",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.1 per 1000 character."
+    },
+    "fal-ai/elevenlabs/tts/multilingual-v2": {
+      "unit": "per_1000_characters",
+      "usd": 0.1,
+      "source": "https://fal.ai/models/fal-ai/elevenlabs/tts/multilingual-v2",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.1 per 1000 character."
+    },
+    "fal-ai/elevenlabs/tts/turbo-v2.5": {
+      "unit": "per_1000_characters",
+      "usd": 0.05,
+      "source": "https://fal.ai/models/fal-ai/elevenlabs/tts/turbo-v2.5",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.05 per 1000 character."
+    },
+    "fal-ai/esrgan": {
+      "unit": "compute_second",
+      "usd": 0.00111,
+      "source": "https://fal.ai/models/fal-ai/esrgan",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.00111 per compute second"
     },
     "fal-ai/flux-2": {
       "unit": "per_megapixel",
@@ -394,6 +550,38 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.003 per megapixel. Images are billed by rounding up to the nearest megapixel."
     },
+    "fal-ai/gemini-3.1-flash-tts": {
+      "unit": "per_1000_characters",
+      "usd": 0.05,
+      "source": "https://fal.ai/models/fal-ai/gemini-3.1-flash-tts",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.05 per 1000 character."
+    },
+    "fal-ai/gemini-tts": {
+      "unit": "conditional",
+      "tierKey": "`model` (flash or pro), and a TOKEN count no request body carries",
+      "tiers": [
+        {
+          "when": "per 1M input tokens, gemini-2.5-flash-tts",
+          "usd": 0.5
+        },
+        {
+          "when": "per 1M output tokens, gemini-2.5-flash-tts",
+          "usd": 10
+        },
+        {
+          "when": "per 1M input tokens, gemini-2.5-pro-tts (double the flash rate)",
+          "usd": 1
+        },
+        {
+          "when": "per 1M output tokens, gemini-2.5-pro-tts (double the flash rate)",
+          "usd": 20
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/gemini-tts",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost 0.5$ per 1 M input tokens and 10$ per 1 M output token for flash model. Cost will be double for pro model."
+    },
     "fal-ai/gpt-image-1.5": {
       "unit": "conditional",
       "tierKey": "quality x image_size selects the per-image figure; the total ALSO carries additive per-1,000-token text charges",
@@ -516,6 +704,13 @@
       "source": "https://fal.ai/models/fal-ai/ideogram/v3",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.03 with TURBO, $0.06 with BALANCED, and $0.09 with QUALITY."
+    },
+    "fal-ai/inworld-tts": {
+      "unit": "per_1000_characters",
+      "usd": 0.01,
+      "source": "https://fal.ai/models/fal-ai/inworld-tts",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.01 per 1000 character."
     },
     "fal-ai/kling-image/v3/text-to-image": {
       "unit": "per_image",
@@ -709,6 +904,69 @@
       "verified": "2026-08-24",
       "quote": "For every second of video you generated, you will be charged $0.084 (audio off) or $0.126 (audio on), if voice control is used while generating audio you will be charged $0.154."
     },
+    "fal-ai/kokoro/american-english": {
+      "unit": "per_1000_characters",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/fal-ai/kokoro/american-english",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.02 per 1000 character."
+    },
+    "fal-ai/kokoro/brazilian-portuguese": {
+      "unit": "per_1000_characters",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/fal-ai/kokoro/brazilian-portuguese",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.02 per 1000 character."
+    },
+    "fal-ai/kokoro/british-english": {
+      "unit": "per_1000_characters",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/fal-ai/kokoro/british-english",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.02 per 1000 character."
+    },
+    "fal-ai/kokoro/french": {
+      "unit": "per_1000_characters",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/fal-ai/kokoro/french",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.02 per 1000 character."
+    },
+    "fal-ai/kokoro/hindi": {
+      "unit": "per_1000_characters",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/fal-ai/kokoro/hindi",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.02 per 1000 character."
+    },
+    "fal-ai/kokoro/italian": {
+      "unit": "per_1000_characters",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/fal-ai/kokoro/italian",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.02 per 1000 character."
+    },
+    "fal-ai/kokoro/japanese": {
+      "unit": "per_1000_characters",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/fal-ai/kokoro/japanese",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.02 per 1000 character."
+    },
+    "fal-ai/kokoro/mandarin-chinese": {
+      "unit": "per_1000_characters",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/fal-ai/kokoro/mandarin-chinese",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.02 per 1000 character."
+    },
+    "fal-ai/kokoro/spanish": {
+      "unit": "per_1000_characters",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/fal-ai/kokoro/spanish",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.02 per 1000 character."
+    },
     "fal-ai/latentsync": {
       "unit": "tiered",
       "tierKey": "output video length — a flat fee up to 40 seconds, then per second",
@@ -750,6 +1008,27 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.1 per 30 second."
     },
+    "fal-ai/lyria3/pro": {
+      "unit": "per_generation",
+      "usd": 0.08,
+      "source": "https://fal.ai/models/fal-ai/lyria3/pro",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.08 per audio."
+    },
+    "fal-ai/minimax-music/v2": {
+      "unit": "per_generation",
+      "usd": 0.03,
+      "source": "https://fal.ai/models/fal-ai/minimax-music/v2",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.03 per generation."
+    },
+    "fal-ai/minimax-music/v2.6": {
+      "unit": "per_generation",
+      "usd": 0.15,
+      "source": "https://fal.ai/models/fal-ai/minimax-music/v2.6",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.15 per audio."
+    },
     "fal-ai/minimax/hailuo-02/pro/image-to-video": {
       "unit": "per_second",
       "usd": 0.08,
@@ -763,6 +1042,20 @@
       "source": "https://fal.ai/models/fal-ai/minimax/speech-02-hd",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.1 per 1000 characters."
+    },
+    "fal-ai/minimax/speech-2.8-hd": {
+      "unit": "per_1000_characters",
+      "usd": 0.1,
+      "source": "https://fal.ai/models/fal-ai/minimax/speech-2.8-hd",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.1 per 1000 character."
+    },
+    "fal-ai/minimax/speech-2.8-turbo": {
+      "unit": "per_1000_characters",
+      "usd": 0.06,
+      "source": "https://fal.ai/models/fal-ai/minimax/speech-2.8-turbo",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.06 per 1000 character."
     },
     "fal-ai/nano-banana": {
       "unit": "per_image",
@@ -944,6 +1237,13 @@
       "verified": "2026-08-24",
       "quote": "Billing is calculated per second of video generated. For 360p, your request will cost $0.025 per second without audio and $0.035 per second with audio. For 540p, it will cost $0.035 per second without audio and $0.045 per second with audio. For 720p, it will cost $0.045 per second without audio and $0.060 per second with audio. For 1080p, it will cost $0.090 per second without audio and $0.115 per second with audio."
     },
+    "fal-ai/qwen-3-tts/text-to-speech/1.7b": {
+      "unit": "per_1000_characters",
+      "usd": 0.09,
+      "source": "https://fal.ai/models/fal-ai/qwen-3-tts/text-to-speech/1.7b",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.09 per 1000 character."
+    },
     "fal-ai/qwen-image": {
       "unit": "per_megapixel",
       "usd": 0.02,
@@ -958,6 +1258,13 @@
       "source": "https://fal.ai/models/fal-ai/qwen-image-edit-2511",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.03 per megapixel."
+    },
+    "fal-ai/recraft/upscale/crisp": {
+      "unit": "per_image",
+      "usd": 0.004,
+      "source": "https://fal.ai/models/fal-ai/recraft/upscale/crisp",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.004 per image."
     },
     "fal-ai/recraft/v3/text-to-image": {
       "unit": "conditional",
@@ -982,6 +1289,48 @@
       "source": "https://fal.ai/models/fal-ai/recraft/v4/text-to-image",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.04 per image."
+    },
+    "fal-ai/seedvr/upscale/image": {
+      "unit": "per_megapixel",
+      "usd": 0.001,
+      "rounding": "billed by megapixel of OUTPUT, which is the input's area times the square of `upscale_factor` — a quantity a submit body never carries, because the input arrives as a URL",
+      "source": "https://fal.ai/models/fal-ai/seedvr/upscale/image",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.001 per megapixel."
+    },
+    "fal-ai/seedvr/upscale/video": {
+      "unpriced": "Billed per megapixel of VIDEO DATA — width x height x frames — of the output clip. Both the frame count and the output dimensions are properties of the uploaded video, which unmodel never sees: a submit body carries a URL. `per_megapixel` would name a unit this endpoint does not bill in.",
+      "source": "https://fal.ai/models/fal-ai/seedvr/upscale/video",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.001 per megapixel of video data (width x height x frames). For example, if your upscaled video is 1920x1080 with 121 frames, the total cost will be $0.25."
+    },
+    "fal-ai/speech-to-text": {
+      "unit": "per_input_audio_second",
+      "usd": 0.0008,
+      "source": "https://fal.ai/models/fal-ai/speech-to-text",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.0008 per second."
+    },
+    "fal-ai/speech-to-text/turbo": {
+      "unit": "per_input_audio_second",
+      "usd": 0.0008,
+      "source": "https://fal.ai/models/fal-ai/speech-to-text/turbo",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.0008 per second."
+    },
+    "fal-ai/stable-audio-25/text-to-audio": {
+      "unit": "per_generation",
+      "usd": 0.2,
+      "source": "https://fal.ai/models/fal-ai/stable-audio-25/text-to-audio",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.2 per audio."
+    },
+    "fal-ai/stable-audio-3/medium/text-to-audio": {
+      "unit": "per_generation",
+      "usd": 0.0376,
+      "source": "https://fal.ai/models/fal-ai/stable-audio-3/medium/text-to-audio",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.0376 per audio."
     },
     "fal-ai/sync-lipsync/v2": {
       "unit": "per_video_minute",
@@ -1353,6 +1702,13 @@
       "verified": "2026-08-24",
       "quote": "Video costs $0.05 per second at 480p, $0.06 per second at 768p, $0.13 per second at 2K and $0.16 per second at 4K."
     },
+    "minimax/music-3": {
+      "unit": "per_generated_audio_second",
+      "usd": 0.002,
+      "source": "https://fal.ai/models/minimax/music-3",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.002 per second."
+    },
     "openai/gpt-image-2": {
       "unit": "conditional",
       "tierKey": "quality x image_size selects the per-image figure; the total ALSO carries unbounded per-1M token charges, so no tier here is ever the whole price",
@@ -1556,6 +1912,69 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.25 per image."
     },
+    "topaz/upscale/image/generative": {
+      "unit": "conditional",
+      "tierKey": "`model`, per 24 megapixels of output",
+      "tiers": [
+        {
+          "when": "per 24 megapixels of output with Wonder 3.5 or Wonder 3",
+          "usd": 0.24
+        },
+        {
+          "when": "per 24 megapixels of output with Wonder, Wonder 2, Standard MAX, Redefine, Recover 3, Recovery or Recovery V2",
+          "usd": 0.48
+        }
+      ],
+      "source": "https://fal.ai/models/topaz/upscale/image/generative",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.24 per 24 megapixels of output with Wonder 3.5 or Wonder 3, and $0.48 per 24 megapixels with Wonder, Wonder 2, Standard MAX, Redefine, Recover 3, Recovery or Recovery V2. For example a 6000x4000 result costs $0.24 with Wonder 3.5 and $0.48 with Redefine."
+    },
+    "topaz/upscale/image/precision": {
+      "unit": "tiered",
+      "tierKey": "output megapixels, billed in 24-megapixel blocks",
+      "tiers": [
+        {
+          "when": "per 24 megapixels of output, with any precision model (Standard V2, High Fidelity V2/V3, Low Resolution V2, CGI, Text Refine)",
+          "usd": 0.08
+        }
+      ],
+      "source": "https://fal.ai/models/topaz/upscale/image/precision",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.08 per 24 megapixels of output, with any precision model (Standard V2, High Fidelity V2/V3, Low Resolution V2, CGI, Text Refine). For example a 6000x4000 result costs $0.08 and an 8000x6000 result costs $0.16."
+    },
+    "topaz/upscale/video/precision": {
+      "unit": "conditional",
+      "tierKey": "output resolution x `model`, per 10 seconds of output",
+      "tiers": [
+        {
+          "when": "per 10 seconds at 720p, precision models (Proteus, Artemis, Iris, Dione, Theia, Gaia HQ/CG, Rhea)",
+          "usd": 0.1
+        },
+        {
+          "when": "per 10 seconds at 1080p, precision models",
+          "usd": 0.2
+        },
+        {
+          "when": "per 10 seconds at 4K, precision models",
+          "usd": 0.6
+        },
+        {
+          "when": "per 10 seconds at 4K with Proteus Natural (2x only)",
+          "usd": 0.5
+        },
+        {
+          "when": "per 10 seconds at 720p or 1080p with Gaia 2 (2x, animation)",
+          "usd": 0.1
+        },
+        {
+          "when": "per 10 seconds at 4K with Gaia 2",
+          "usd": 0.3
+        }
+      ],
+      "source": "https://fal.ai/models/topaz/upscale/video/precision",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.10 per 10 seconds of output at 720p, $0.20 at 1080p, and $0.60 at 4K with the precision models (Proteus, Artemis, Iris, Dione, Theia, Gaia HQ/CG, and Rhea). Proteus Natural (2x only) costs $0.10 per 10 seconds at 720p, $0.20 at 1080p, and $0.50 at 4K. Gaia 2 (2x, animation) costs $0.10 at 720p or 1080p and $0.30 at 4K. Longer clips scale with duration, with credits rounded once per job: a 1-minute upscale with the standard precision models costs $0.40 at 720p, $0.80 at 1080p, and $3.10 at 4K. These examples assume 30 fps. The final cost depends on output resolution, duration, and frame rate."
+    },
     "veed/avatars/audio-to-video": {
       "unit": "per_video_minute",
       "usd": 0.3,
@@ -1600,6 +2019,13 @@
       "source": "https://fal.ai/models/xai/grok-imagine-video/text-to-video",
       "verified": "2026-08-24",
       "quote": "For 6s 480p video your request will cost $0.3. At an output resolution of 480p, every second costs $0.05, and at 720p, every second costs $0.07."
+    },
+    "xai/tts/v1": {
+      "unit": "per_1000_characters",
+      "usd": 0.015,
+      "source": "https://fal.ai/models/xai/tts/v1",
+      "verified": "2026-08-25",
+      "quote": "Your request will cost $0.015 per 1000 characters."
     }
   }
 }

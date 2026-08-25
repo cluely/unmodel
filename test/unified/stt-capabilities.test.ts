@@ -39,6 +39,7 @@ import { stt as assemblyai } from "../../src/providers/assemblyai/unified";
 import { stt as cartesia } from "../../src/providers/cartesia/unified-stt";
 import { stt as deepgram } from "../../src/providers/deepgram/unified-stt";
 import { stt as elevenlabs } from "../../src/providers/elevenlabs/unified-stt";
+import { stt as fal } from "../../src/providers/fal/unified-stt";
 import { stt as gladia } from "../../src/providers/gladia/unified";
 import { stt as google } from "../../src/providers/google/unified-stt";
 import { stt as inworld } from "../../src/providers/inworld/unified-stt";
@@ -75,7 +76,20 @@ type TimestampShape =
   /** A plain "emit word timings" flag: `true` when `"word"` was asked for. */
   | "flag"
   /** The route always reports word timings and has no field to say so. */
-  | "implied";
+  | "implied"
+  /**
+   * The route takes no granularity QUESTION at all — every value but `"none"`
+   * is refused by name.
+   *
+   * The sixth shape, and fal is what introduced it. `"implied"` says "you get
+   * word timings whether you ask or not", which is a claim about the RESPONSE
+   * that four providers publish. This one says something weaker and more
+   * honest: fal's transcription schemas declare no granularity field, and none
+   * of them documents what its response contains, so unmodel will not accept a
+   * request that says `"word"` and compile it to nothing. Refusing is what
+   * keeps `timestamps` from meaning "ignored here".
+   */
+  | "absent";
 
 interface Capability {
   ref: string;
@@ -150,6 +164,30 @@ const TABLE: Readonly<Record<string, Capability>> = {
     counts: { speakers: true, minSpeakers: false, maxSpeakers: false },
     timestamps: { shape: "scalar", at: "timestamps_granularity" },
     absentGranularity: "segment",
+  },
+  /**
+   * The aggregator, probed at ElevenLabs Scribe v2 — the fal endpoint with the
+   * most of this table on it. The other five answer these questions
+   * differently: fal's own ASR has no language field at all, Cohere's is a
+   * 14-member enum, and only Wizper publishes a `chunk_level`.
+   *
+   * `languages` and `prompt` are adapter-wide `unsupported` rather than
+   * per-model refusals, which is the one place this provider's usual rule does
+   * not apply: no fal transcription endpoint takes a candidate shortlist or a
+   * vocabulary prompt, so a provider-wide claim is true rather than convenient.
+   */
+  fal: {
+    ref: "fal/fal-ai/elevenlabs/speech-to-text/scribe-v2",
+    adapter: fal,
+    language: "derived",
+    languages: "unsupported",
+    prompt: "unsupported",
+    diarization: { shape: "flag", at: "diarize" },
+    // A bare boolean on the wire: `diarize` has no companion count field, so a
+    // request that names one is refused rather than reduced to `true`.
+    counts: { speakers: false, minSpeakers: false, maxSpeakers: false },
+    timestamps: { shape: "absent" },
+    absentGranularity: "word",
   },
   gladia: {
     ref: "gladia/solaria-1",
@@ -496,6 +534,18 @@ describe.each(rows)("%s", (provider, row) => {
 
   test(`timestamps lands as ${row.timestamps.shape}`, () => {
     const ref = row.timestampsRef ?? row.ref;
+    if (row.timestamps.shape === "absent") {
+      // No granularity field, and no documented claim about the response
+      // either — so every granularity is refused by name and none is silently
+      // accepted. See the `absent` note on TimestampShape.
+      expect(compile(row, { timestamps: "word" }, ref)).toEqual([
+        "invalid_enum_value @ timestamps",
+      ]);
+      expect(compile(row, { timestamps: "segment" }, ref)).toEqual([
+        "invalid_enum_value @ timestamps",
+      ]);
+      return;
+    }
     const compiled = compile(row, { timestamps: "word" }, ref);
     expect(compiled, `${provider} could not compile a timestamps probe`).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
@@ -654,7 +704,7 @@ test("every diarization shape in the category is exercised", () => {
 
 test("every timestamp shape in the category is exercised", () => {
   const shapes = new Set(rows.map(([, row]) => row.timestamps.shape));
-  expect([...shapes].sort()).toEqual(["array", "boolean", "flag", "implied", "scalar"]);
+  expect([...shapes].sort()).toEqual(["absent", "array", "boolean", "flag", "implied", "scalar"]);
 });
 
 test("the implied cells are exactly the four routes with no granularity field", () => {

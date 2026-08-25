@@ -19,12 +19,21 @@
     "                       compile break) until 90 days old; after that codegen hard-fails so the row cannot rot.",
     "",
     "Every id in here must resolve against the Platform API (GET https://api.fal.ai/v1/models?endpoint_id=…);",
-    "`bun run codegen:fal:refresh` fails loudly on one that does not. Verified live 2026-08-24.",
+    "`bun run codegen:fal:refresh` fails loudly on one that does not. Verified live 2026-08-25.",
     "",
     "Wave 1a seeded 12 ids spanning all nine verbs. Wave 1b widened image to 28 and imageEdit to 17. Wave 1c",
     "widened video to 30 and built out the two audio-driven categories — lipsync (8) and avatar (8) — which",
-    "are new unmodel categories, not just new fal rows. Five verbs are still at their seed rows: upscale, tts,",
-    "stt and music land with wave 1d, and the roster reaches its full ~120 in wave 1e.",
+    "are new unmodel categories, not just new fal rows. Wave 1d completes the remaining four: upscale (10 —",
+    "the third and last new unmodel category), tts (23), stt (6) and music (10). All nine verbs are now at",
+    "their full wave-1 roster: 140 endpoints.",
+    "",
+    "Two roster facts the plan expected differently, both settled against the live listing on 2026-08-25:",
+    "fal serves NINE Kokoro languages rather than twelve (there is no German, Korean or Vietnamese endpoint),",
+    "and the tts roster the plan enumerates by name comes to 23 ids rather than the 19 its heading counted.",
+    "",
+    "`upscale` is the one verb with no fixed output modality: an upscaler returns an image from",
+    "fal-ai/aura-sr and a clip from fal-ai/seedvr/upscale/video, so the modality is read off each",
+    "endpoint's own response schema. It is also why the category narrows `source` per model.",
     "",
     "The lipsync/avatar split is by INPUT, not by vendor: an endpoint that takes a video clip is lipsync and",
     "one that takes a still is avatar, which is why fal-ai/sync-lipsync/v3 and fal-ai/sync-lipsync/v3/image-to-video",
@@ -46,6 +55,11 @@
     "argil/avatars/audio-to-video": {
       "verb": "avatar",
       "note": "Argil Avatars — the second preset-performer route, and the second witness that `image` is a per-model fact in this category."
+    },
+    "blackforestlabs/flux-video-upscale": {
+      "verb": "upscale",
+      "textParam": "prompt",
+      "note": "FLUX video upscaler — a vendor-namespaced id whose OpenAPI documents the internal route `/fal-ai/flux-video-upscale` (the ideogram/v4 precedent). The published model page for the vendor id renders no rate; the documented route's page does, and that is what pricing.json cites."
     },
     "bytedance/seedance-2.0/image-to-video": {
       "verb": "video",
@@ -82,10 +96,24 @@
       "textParam": "prompt",
       "note": "Seedream 5.0 Pro. Priced by output pixel AREA in two bands — a conditional whose tier the request settles only once a size is given."
     },
+    "fal-ai/ace-step": {
+      "verb": "music",
+      "textParam": "tags",
+      "note": "ACE-Step. Its prompt is spelled `tags` (a comma-separated style list) and `lyrics` is separate and optional — so the curated textParam is `tags` and `lyrics` rides as an extra."
+    },
+    "fal-ai/aura-sr": {
+      "verb": "upscale",
+      "note": "AuraSR. Its `upscale_factor` is a CONST 4: the endpoint upscales by four or not at all, which is the closed-`factors` arm of the row (`factor: 2` is a compile error naming 4)."
+    },
     "fal-ai/bytedance/omnihuman/v1.5": {
       "verb": "avatar",
       "textParam": "prompt",
       "note": "OmniHuman 1.5 — a still, an audio track, and an optional `mask_url` limiting what moves."
+    },
+    "fal-ai/bytedance/seed-speech/tts/v2": {
+      "verb": "tts",
+      "textParam": "text",
+      "note": "ByteDance Seed Speech v2: 41 voices whose names carry their languages, plus a flat mp3/opus codec field."
     },
     "fal-ai/bytedance/seedream/v4.5/edit": {
       "verb": "imageEdit",
@@ -97,15 +125,67 @@
       "textParam": "prompt",
       "note": "Seedream 4.5, flat per-image."
     },
+    "fal-ai/chatterbox/text-to-speech": {
+      "verb": "tts",
+      "textParam": "text",
+      "note": "Chatterbox. Its `audio_url` is a reference voice to clone rather than an input to transcribe, so it stays an extra: this category has no canonical word for \"speak like this recording\"."
+    },
+    "fal-ai/chatterbox/text-to-speech/multilingual": {
+      "verb": "tts",
+      "textParam": "text",
+      "note": "Chatterbox multilingual — `voice` is a language NAME here (\"english\", \"japanese\") rather than a speaker, which is why the row's voices and its languages are the same 23 words."
+    },
     "fal-ai/clarity-upscaler": {
       "verb": "upscale",
       "textParam": "prompt",
       "note": "Upscaler that steers on a prompt — the `factor?` + `prompt?` shape UpscaleParams is built around."
     },
+    "fal-ai/cohere-transcribe": {
+      "verb": "stt",
+      "note": "Cohere's transcription model: a 14-member language enum of plain subtags, and a `max_new_tokens` ceiling that is an extra rather than a canonical word."
+    },
+    "fal-ai/diffrhythm": {
+      "verb": "music",
+      "textParam": "lyrics",
+      "note": "DiffRhythm: lyrics to song. `lyrics` is the required input and `style_prompt` is the decoration, so the canonical `prompt` maps to the lyrics here — the one endpoint where the two words swap places. Its length is a two-member string enum (\"95s\" | \"285s\")."
+    },
     "fal-ai/echomimic-v3": {
       "verb": "avatar",
       "textParam": "prompt",
       "note": "EchoMimic v3. The one avatar endpoint whose `prompt` is REQUIRED, which is why the category's prompt is a per-model extra rather than a canonical word — three of the eight rows have no prompt at all."
+    },
+    "fal-ai/elevenlabs/music": {
+      "verb": "music",
+      "textParam": "prompt",
+      "note": "ElevenLabs Music. Its length is `music_length_ms` — MILLISECONDS, which is exactly why the canonical word is `durationSeconds` and not `duration` — and its `output_format` is a COMPOSITE codec+rate enum (`mp3_44100_128`), so the row narrows only the codec half."
+    },
+    "fal-ai/elevenlabs/speech-to-text": {
+      "verb": "stt",
+      "note": "ElevenLabs Scribe v1. The one route here with a `diarize` switch, which is what makes the canonical `diarization` expressible at fal at all."
+    },
+    "fal-ai/elevenlabs/speech-to-text/scribe-v2": {
+      "verb": "stt",
+      "note": "ElevenLabs Scribe v2 — adds `keyterms`, which is also what makes its price conditional (+30% when used)."
+    },
+    "fal-ai/elevenlabs/tts/eleven-v3": {
+      "verb": "tts",
+      "textParam": "text",
+      "note": "ElevenLabs v3. Its voice field is an OPEN string (the catalog is per-account and includes clones), so the row publishes no `voices` list and `voice` keeps the wide vocabulary."
+    },
+    "fal-ai/elevenlabs/tts/multilingual-v2": {
+      "verb": "tts",
+      "textParam": "text",
+      "note": "ElevenLabs Multilingual v2 — the generation with `speed`, `style` and `similarity_boost`."
+    },
+    "fal-ai/elevenlabs/tts/turbo-v2.5": {
+      "verb": "tts",
+      "textParam": "text",
+      "note": "ElevenLabs Turbo v2.5, at half the per-character rate of v3."
+    },
+    "fal-ai/esrgan": {
+      "verb": "upscale",
+      "allowsModelProperty": true,
+      "note": "Real-ESRGAN. Its factor is spelled `scale` rather than `upscale_factor` — the second spelling the row's `factorWire` exists for — and `model` names the checkpoint (R6 allow-list, reviewed 2026-08-25)."
     },
     "fal-ai/flux-2": {
       "verb": "image",
@@ -192,6 +272,17 @@
       "textParam": "prompt",
       "note": "Same shape as flux/dev with a much tighter num_inference_steps ceiling (12 vs 50) — the per-endpoint range narrowing the IR exists for."
     },
+    "fal-ai/gemini-3.1-flash-tts": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "Gemini 3.1 Flash TTS: thirty named voices and an 87-member language enum spelled as English NAMES (\"English (US)\"), which the generator maps back to primary subtags."
+    },
+    "fal-ai/gemini-tts": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "allowsModelProperty": true,
+      "note": "Gemini TTS. `model` is a REAL wire field (\"gemini-2.5-flash-tts\" | \"gemini-2.5-pro-tts\") choosing the tier, and it also doubles the price — the sync-lipsync/v2 situation in the speech category. Allow-listed under R6, reviewed 2026-08-25."
+    },
     "fal-ai/gpt-image-1.5": {
       "verb": "image",
       "textParam": "prompt",
@@ -206,6 +297,11 @@
       "verb": "image",
       "textParam": "prompt",
       "note": "Ideogram V3. `rendering_speed` selects one of three per-image rates."
+    },
+    "fal-ai/inworld-tts": {
+      "verb": "tts",
+      "textParam": "text",
+      "note": "Inworld TTS: 118 named voices, each tagged with its language in the name (\"Craig (en)\")."
     },
     "fal-ai/kling-image/v3/text-to-image": {
       "verb": "image",
@@ -271,6 +367,51 @@
       "textParam": "prompt",
       "note": "Kling 3.0 Standard, the cheaper arm of the same schema."
     },
+    "fal-ai/kokoro/american-english": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "Kokoro, one endpoint per language. Twenty American English voices — the largest of the nine lists, and the reason `voices` is per model rather than per adapter."
+    },
+    "fal-ai/kokoro/brazilian-portuguese": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "Kokoro Brazilian Portuguese — three voices. fal serves NINE Kokoro languages, not the twelve the model's own card lists; the three the plan expected (German, Korean, Vietnamese) have no endpoint here."
+    },
+    "fal-ai/kokoro/british-english": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "Kokoro British English — eight voices."
+    },
+    "fal-ai/kokoro/french": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "Kokoro French. Its `voice` is a CONST rather than an enum — one voice, `ff_siwis` — which is the single-value-enum lowering seen from the unified side."
+    },
+    "fal-ai/kokoro/hindi": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "Kokoro Hindi — four voices."
+    },
+    "fal-ai/kokoro/italian": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "Kokoro Italian — two voices."
+    },
+    "fal-ai/kokoro/japanese": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "Kokoro Japanese — five voices."
+    },
+    "fal-ai/kokoro/mandarin-chinese": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "Kokoro Mandarin Chinese — eight voices."
+    },
+    "fal-ai/kokoro/spanish": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "Kokoro Spanish — three voices."
+    },
     "fal-ai/latentsync": {
       "verb": "lipsync",
       "note": "LatentSync. Carries `loop_mode` (\"pingpong\"|\"loop\") — a per-model extra, not vocabulary: sync-lipsync spells the same idea `sync_mode` with five arms, and one word two providers spell differently is not yet canonical."
@@ -285,6 +426,21 @@
       "textParam": "prompt",
       "note": "Google's music model. fal files it under text-to-audio, which is exactly why the verb is curated here."
     },
+    "fal-ai/lyria3/pro": {
+      "verb": "music",
+      "textParam": "prompt",
+      "note": "Lyria 3 Pro. Takes an optional `image_url` to condition on, and returns generated `lyrics` beside the audio."
+    },
+    "fal-ai/minimax-music/v2": {
+      "verb": "music",
+      "textParam": "prompt",
+      "note": "MiniMax Music 2. REQUIRES `lyrics_prompt` beside `prompt`; same honest refusal as music-3."
+    },
+    "fal-ai/minimax-music/v2.6": {
+      "verb": "music",
+      "textParam": "prompt",
+      "note": "MiniMax Music 2.6. Has a real `is_instrumental` switch — one of the two endpoints here where the canonical `instrumental` has anywhere to go."
+    },
     "fal-ai/minimax/hailuo-02/pro/image-to-video": {
       "verb": "video",
       "textParam": "prompt",
@@ -293,7 +449,17 @@
     "fal-ai/minimax/speech-02-hd": {
       "verb": "tts",
       "textParam": "text",
-      "note": "Nested $ref inputs (VoiceSetting / AudioSetting / PronunciationDict) — the component-lowering case."
+      "note": "Nested $ref inputs (VoiceSetting / AudioSetting / PronunciationDict) — the component-lowering case. Its `output_format` is `url | hex`, a DELIVERY switch rather than a codec, which is why the row publishes no codecs."
+    },
+    "fal-ai/minimax/speech-2.8-hd": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "MiniMax Speech 2.8 HD. Its text param is `prompt` where the 02 generation spells it `text`, and its voice lives NESTED in `voice_setting.voice_id` — so this row publishes no `voiceWire` and the canonical `voice` is refused by name, pointing at providerOptions."
+    },
+    "fal-ai/minimax/speech-2.8-turbo": {
+      "verb": "tts",
+      "textParam": "prompt",
+      "note": "MiniMax Speech 2.8 Turbo — same surface as the HD arm at a lower rate."
     },
     "fal-ai/nano-banana": {
       "verb": "image",
@@ -335,6 +501,11 @@
       "textParam": "prompt",
       "note": "PixVerse v6. `duration` is a free integer 1..15 rather than an enum, so `duration` keeps the wide `number`."
     },
+    "fal-ai/qwen-3-tts/text-to-speech/1.7b": {
+      "verb": "tts",
+      "textParam": "text",
+      "note": "Qwen 3 TTS (1.7B). Declares BOTH `text` and `prompt`: `text` is what is spoken and `prompt` is a style instruction, so the curated textParam is `text` and `prompt` stays a per-model extra."
+    },
     "fal-ai/qwen-image": {
       "verb": "image",
       "textParam": "prompt",
@@ -345,6 +516,10 @@
       "textParam": "prompt",
       "note": "Qwen-Image-Edit (2511)."
     },
+    "fal-ai/recraft/upscale/crisp": {
+      "verb": "upscale",
+      "note": "Recraft crisp upscale. Takes NO factor at all — the empty-`factors` arm, which types `factor` as `never` at the call site instead of letting a caller ask for a multiplier the route has nowhere to put."
+    },
     "fal-ai/recraft/v3/text-to-image": {
       "verb": "image",
       "textParam": "prompt",
@@ -354,6 +529,32 @@
       "verb": "image",
       "textParam": "prompt",
       "note": "Recraft V4, flat per-image."
+    },
+    "fal-ai/seedvr/upscale/image": {
+      "verb": "upscale",
+      "note": "SeedVR2 for stills. Offers both a `factor` mode and a `target` one through `upscale_mode`; unmodel's canonical `factor` drives the first and the second is reachable as an extra."
+    },
+    "fal-ai/seedvr/upscale/video": {
+      "verb": "upscale",
+      "note": "SeedVR2 for clips — the sibling that makes `sources` a real narrowing rather than a constant: same vendor, same product, `video_url` instead of `image_url`."
+    },
+    "fal-ai/speech-to-text": {
+      "verb": "stt",
+      "note": "fal's own hosted ASR. Two parameters: the audio and `use_pnc` (punctuation and capitalisation). No language field at all, so `language` is refused by name rather than silently dropped."
+    },
+    "fal-ai/speech-to-text/turbo": {
+      "verb": "stt",
+      "note": "The turbo arm of the same route, same surface and same rate."
+    },
+    "fal-ai/stable-audio-25/text-to-audio": {
+      "verb": "music",
+      "textParam": "prompt",
+      "note": "Stable Audio 2.5. Its length is `seconds_total` — a third spelling for the same idea, and the reason the row states the wire name rather than assuming one."
+    },
+    "fal-ai/stable-audio-3/medium/text-to-audio": {
+      "verb": "music",
+      "textParam": "prompt",
+      "note": "Stable Audio 3 Medium — the one music endpoint here with a flat codec enum, so the only one whose canonical `outputFormat` narrows to a list."
     },
     "fal-ai/sync-lipsync/v2": {
       "verb": "lipsync",
@@ -466,6 +667,11 @@
       "textParam": "prompt",
       "note": "MiniMax Hailuo 3. `resolution` is spelled \"480P\"|\"768P\"|\"2K\"|\"4K\" — upper-case, and two of the four are pixel-count tiers rather than short-edge ones, so the canonical mapping is per endpoint."
     },
+    "minimax/music-3": {
+      "verb": "music",
+      "textParam": "prompt",
+      "note": "MiniMax Music 3 — a vendor-namespaced id documenting `/fal-ai/minimax-music-3`. REQUIRES `lyrics` as well as `prompt`, so a prompt-only unified call is refused by fal's own required check rather than silently under-specified."
+    },
     "openai/gpt-image-2": {
       "verb": "image",
       "textParam": "prompt",
@@ -480,6 +686,22 @@
       "verb": "image",
       "textParam": "prompt",
       "note": "Reve 2.1."
+    },
+    "topaz/upscale/image/generative": {
+      "verb": "upscale",
+      "textParam": "prompt",
+      "allowsModelProperty": true,
+      "note": "Topaz's generative image upscaler: a prompt steers it and `model` picks the Wonder/Recovery network. Same R6 allow-list as its precision sibling, and the reason this category's `prompt` is per-model rather than per-category."
+    },
+    "topaz/upscale/image/precision": {
+      "verb": "upscale",
+      "allowsModelProperty": true,
+      "note": "Topaz's non-generative image upscaler. `model` is a REAL wire field naming the restoration network (\"Standard V2\", \"High Fidelity V3\", …) and stays on the wire; the route is still selected by the `endpoint` pseudo-param. Allow-listed under R6 — reviewed 2026-08-25 against the live schema."
+    },
+    "topaz/upscale/video/precision": {
+      "verb": "upscale",
+      "allowsModelProperty": true,
+      "note": "Topaz video upscaler. `model` names the Proteus/Artemis/Gaia network (R6 allow-list, reviewed 2026-08-25) and also selects the RATE, which is why its price is conditional."
     },
     "veed/avatars/audio-to-video": {
       "verb": "avatar",
@@ -502,6 +724,11 @@
       "verb": "video",
       "textParam": "prompt",
       "note": "xAI Grok Imagine video. Vendor-namespaced: fal documents it at /fal-ai/xai/text-to-video while the published id is xai/grok-imagine-video/text-to-video, and unmodel submits to the published one."
+    },
+    "xai/tts/v1": {
+      "verb": "tts",
+      "textParam": "text",
+      "note": "xAI TTS — a vendor-namespaced id documenting the internal route `/fal-ai/xai-tts/v1`. Its `output_format` is an OBJECT ($ref OutputFormat with codec/sample_rate/bit_rate), not a flat enum, so the row publishes an empty `codecs` and the canonical `outputFormat` is refused by name."
     }
   },
   "excluded": {

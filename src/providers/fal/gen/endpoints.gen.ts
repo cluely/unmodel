@@ -3,6 +3,7 @@
 // Committed snapshots:
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
 //   data/fal/openapi/argil__avatars__audio-to-video.json
+//   data/fal/openapi/blackforestlabs__flux-video-upscale.json
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
@@ -10,11 +11,25 @@
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__text-to-image.json
+//   data/fal/openapi/fal-ai__ace-step.json
+//   data/fal/openapi/fal-ai__aura-sr.json
 //   data/fal/openapi/fal-ai__bytedance__omnihuman__v1.5.json
+//   data/fal/openapi/fal-ai__bytedance__seed-speech__tts__v2.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__edit.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__text-to-image.json
+//   data/fal/openapi/fal-ai__chatterbox__text-to-speech.json
+//   data/fal/openapi/fal-ai__chatterbox__text-to-speech__multilingual.json
 //   data/fal/openapi/fal-ai__clarity-upscaler.json
+//   data/fal/openapi/fal-ai__cohere-transcribe.json
+//   data/fal/openapi/fal-ai__diffrhythm.json
 //   data/fal/openapi/fal-ai__echomimic-v3.json
+//   data/fal/openapi/fal-ai__elevenlabs__music.json
+//   data/fal/openapi/fal-ai__elevenlabs__speech-to-text.json
+//   data/fal/openapi/fal-ai__elevenlabs__speech-to-text__scribe-v2.json
+//   data/fal/openapi/fal-ai__elevenlabs__tts__eleven-v3.json
+//   data/fal/openapi/fal-ai__elevenlabs__tts__multilingual-v2.json
+//   data/fal/openapi/fal-ai__elevenlabs__tts__turbo-v2.5.json
+//   data/fal/openapi/fal-ai__esrgan.json
 //   data/fal/openapi/fal-ai__flux-2.json
 //   data/fal/openapi/fal-ai__flux-2-max.json
 //   data/fal/openapi/fal-ai__flux-2-pro.json
@@ -32,9 +47,12 @@
 //   data/fal/openapi/fal-ai__flux__dev.json
 //   data/fal/openapi/fal-ai__flux__dev__image-to-image.json
 //   data/fal/openapi/fal-ai__flux__schnell.json
+//   data/fal/openapi/fal-ai__gemini-3.1-flash-tts.json
+//   data/fal/openapi/fal-ai__gemini-tts.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5__edit.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
+//   data/fal/openapi/fal-ai__inworld-tts.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__pro.json
 //   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__standard.json
@@ -48,11 +66,25 @@
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
+//   data/fal/openapi/fal-ai__kokoro__american-english.json
+//   data/fal/openapi/fal-ai__kokoro__brazilian-portuguese.json
+//   data/fal/openapi/fal-ai__kokoro__british-english.json
+//   data/fal/openapi/fal-ai__kokoro__french.json
+//   data/fal/openapi/fal-ai__kokoro__hindi.json
+//   data/fal/openapi/fal-ai__kokoro__italian.json
+//   data/fal/openapi/fal-ai__kokoro__japanese.json
+//   data/fal/openapi/fal-ai__kokoro__mandarin-chinese.json
+//   data/fal/openapi/fal-ai__kokoro__spanish.json
 //   data/fal/openapi/fal-ai__latentsync.json
 //   data/fal/openapi/fal-ai__longcat-single-avatar__image-audio-to-video.json
 //   data/fal/openapi/fal-ai__lyria2.json
+//   data/fal/openapi/fal-ai__lyria3__pro.json
+//   data/fal/openapi/fal-ai__minimax-music__v2.json
+//   data/fal/openapi/fal-ai__minimax-music__v2.6.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__minimax__speech-02-hd.json
+//   data/fal/openapi/fal-ai__minimax__speech-2.8-hd.json
+//   data/fal/openapi/fal-ai__minimax__speech-2.8-turbo.json
 //   data/fal/openapi/fal-ai__nano-banana.json
 //   data/fal/openapi/fal-ai__nano-banana-2.json
 //   data/fal/openapi/fal-ai__nano-banana-2__edit.json
@@ -61,10 +93,18 @@
 //   data/fal/openapi/fal-ai__nano-banana__edit.json
 //   data/fal/openapi/fal-ai__pixverse__lipsync.json
 //   data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json
+//   data/fal/openapi/fal-ai__qwen-3-tts__text-to-speech__1.7b.json
 //   data/fal/openapi/fal-ai__qwen-image.json
 //   data/fal/openapi/fal-ai__qwen-image-edit-2511.json
+//   data/fal/openapi/fal-ai__recraft__upscale__crisp.json
 //   data/fal/openapi/fal-ai__recraft__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__recraft__v4__text-to-image.json
+//   data/fal/openapi/fal-ai__seedvr__upscale__image.json
+//   data/fal/openapi/fal-ai__seedvr__upscale__video.json
+//   data/fal/openapi/fal-ai__speech-to-text.json
+//   data/fal/openapi/fal-ai__speech-to-text__turbo.json
+//   data/fal/openapi/fal-ai__stable-audio-25__text-to-audio.json
+//   data/fal/openapi/fal-ai__stable-audio-3__medium__text-to-audio.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2__pro.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v3.json
@@ -88,14 +128,19 @@
 //   data/fal/openapi/lightricks__ltx-2.5__text-to-video__pro.json
 //   data/fal/openapi/minimax__h3__image-to-video.json
 //   data/fal/openapi/minimax__h3__text-to-video.json
+//   data/fal/openapi/minimax__music-3.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
+//   data/fal/openapi/topaz__upscale__image__generative.json
+//   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__precision.json
 //   data/fal/openapi/veed__avatars__audio-to-video.json
 //   data/fal/openapi/veed__lipsync.json
 //   data/fal/openapi/veed__lipsync__v2.json
 //   data/fal/openapi/xai__grok-imagine-image.json
 //   data/fal/openapi/xai__grok-imagine-video__text-to-video.json
+//   data/fal/openapi/xai__tts__v1.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
@@ -193,30 +238,75 @@ export const FAL_LIPSYNC_ENDPOINTS = [
 
 export type FalLipsyncEndpointId = (typeof FAL_LIPSYNC_ENDPOINTS)[number];
 
-/** The one fal endpoint unmodel serves as `fal.music`. */
+/** Every fal endpoint unmodel serves as `fal.music` — 10 of them. */
 export const FAL_MUSIC_ENDPOINTS = [
+  "fal-ai/ace-step",
+  "fal-ai/diffrhythm",
+  "fal-ai/elevenlabs/music",
   "fal-ai/lyria2",
+  "fal-ai/lyria3/pro",
+  "fal-ai/minimax-music/v2",
+  "fal-ai/minimax-music/v2.6",
+  "fal-ai/stable-audio-25/text-to-audio",
+  "fal-ai/stable-audio-3/medium/text-to-audio",
+  "minimax/music-3",
 ] as const;
 
 export type FalMusicEndpointId = (typeof FAL_MUSIC_ENDPOINTS)[number];
 
-/** The one fal endpoint unmodel serves as `fal.stt`. */
+/** Every fal endpoint unmodel serves as `fal.stt` — 6 of them. */
 export const FAL_STT_ENDPOINTS = [
+  "fal-ai/cohere-transcribe",
+  "fal-ai/elevenlabs/speech-to-text",
+  "fal-ai/elevenlabs/speech-to-text/scribe-v2",
+  "fal-ai/speech-to-text",
+  "fal-ai/speech-to-text/turbo",
   "fal-ai/wizper",
 ] as const;
 
 export type FalSttEndpointId = (typeof FAL_STT_ENDPOINTS)[number];
 
-/** The one fal endpoint unmodel serves as `fal.tts`. */
+/** Every fal endpoint unmodel serves as `fal.tts` — 23 of them. */
 export const FAL_TTS_ENDPOINTS = [
+  "fal-ai/bytedance/seed-speech/tts/v2",
+  "fal-ai/chatterbox/text-to-speech",
+  "fal-ai/chatterbox/text-to-speech/multilingual",
+  "fal-ai/elevenlabs/tts/eleven-v3",
+  "fal-ai/elevenlabs/tts/multilingual-v2",
+  "fal-ai/elevenlabs/tts/turbo-v2.5",
+  "fal-ai/gemini-3.1-flash-tts",
+  "fal-ai/gemini-tts",
+  "fal-ai/inworld-tts",
+  "fal-ai/kokoro/american-english",
+  "fal-ai/kokoro/brazilian-portuguese",
+  "fal-ai/kokoro/british-english",
+  "fal-ai/kokoro/french",
+  "fal-ai/kokoro/hindi",
+  "fal-ai/kokoro/italian",
+  "fal-ai/kokoro/japanese",
+  "fal-ai/kokoro/mandarin-chinese",
+  "fal-ai/kokoro/spanish",
   "fal-ai/minimax/speech-02-hd",
+  "fal-ai/minimax/speech-2.8-hd",
+  "fal-ai/minimax/speech-2.8-turbo",
+  "fal-ai/qwen-3-tts/text-to-speech/1.7b",
+  "xai/tts/v1",
 ] as const;
 
 export type FalTtsEndpointId = (typeof FAL_TTS_ENDPOINTS)[number];
 
-/** The one fal endpoint unmodel serves as `fal.upscale`. */
+/** Every fal endpoint unmodel serves as `fal.upscale` — 10 of them. */
 export const FAL_UPSCALE_ENDPOINTS = [
+  "blackforestlabs/flux-video-upscale",
+  "fal-ai/aura-sr",
   "fal-ai/clarity-upscaler",
+  "fal-ai/esrgan",
+  "fal-ai/recraft/upscale/crisp",
+  "fal-ai/seedvr/upscale/image",
+  "fal-ai/seedvr/upscale/video",
+  "topaz/upscale/image/generative",
+  "topaz/upscale/image/precision",
+  "topaz/upscale/video/precision",
 ] as const;
 
 export type FalUpscaleEndpointId = (typeof FAL_UPSCALE_ENDPOINTS)[number];
@@ -261,6 +351,7 @@ export type FalVideoEndpointId = (typeof FAL_VIDEO_ENDPOINTS)[number];
 export const FAL_ENDPOINTS = [
   "alibaba/qwen-image-3/edit",
   "argil/avatars/audio-to-video",
+  "blackforestlabs/flux-video-upscale",
   "bytedance/seedance-2.0/image-to-video",
   "bytedance/seedance-2.0/text-to-video",
   "bytedance/seedance-2.5/image-to-video",
@@ -268,11 +359,25 @@ export const FAL_ENDPOINTS = [
   "bytedance/seedance-2.5/text-to-video",
   "bytedance/seedream/v5/pro/edit",
   "bytedance/seedream/v5/pro/text-to-image",
+  "fal-ai/ace-step",
+  "fal-ai/aura-sr",
   "fal-ai/bytedance/omnihuman/v1.5",
+  "fal-ai/bytedance/seed-speech/tts/v2",
   "fal-ai/bytedance/seedream/v4.5/edit",
   "fal-ai/bytedance/seedream/v4.5/text-to-image",
+  "fal-ai/chatterbox/text-to-speech",
+  "fal-ai/chatterbox/text-to-speech/multilingual",
   "fal-ai/clarity-upscaler",
+  "fal-ai/cohere-transcribe",
+  "fal-ai/diffrhythm",
   "fal-ai/echomimic-v3",
+  "fal-ai/elevenlabs/music",
+  "fal-ai/elevenlabs/speech-to-text",
+  "fal-ai/elevenlabs/speech-to-text/scribe-v2",
+  "fal-ai/elevenlabs/tts/eleven-v3",
+  "fal-ai/elevenlabs/tts/multilingual-v2",
+  "fal-ai/elevenlabs/tts/turbo-v2.5",
+  "fal-ai/esrgan",
   "fal-ai/flux-2",
   "fal-ai/flux-2-max",
   "fal-ai/flux-2-pro",
@@ -290,9 +395,12 @@ export const FAL_ENDPOINTS = [
   "fal-ai/flux/dev",
   "fal-ai/flux/dev/image-to-image",
   "fal-ai/flux/schnell",
+  "fal-ai/gemini-3.1-flash-tts",
+  "fal-ai/gemini-tts",
   "fal-ai/gpt-image-1.5",
   "fal-ai/gpt-image-1.5/edit",
   "fal-ai/ideogram/v3",
+  "fal-ai/inworld-tts",
   "fal-ai/kling-image/v3/text-to-image",
   "fal-ai/kling-video/ai-avatar/v2/pro",
   "fal-ai/kling-video/ai-avatar/v2/standard",
@@ -306,11 +414,25 @@ export const FAL_ENDPOINTS = [
   "fal-ai/kling-video/v3/pro/text-to-video",
   "fal-ai/kling-video/v3/standard/image-to-video",
   "fal-ai/kling-video/v3/standard/text-to-video",
+  "fal-ai/kokoro/american-english",
+  "fal-ai/kokoro/brazilian-portuguese",
+  "fal-ai/kokoro/british-english",
+  "fal-ai/kokoro/french",
+  "fal-ai/kokoro/hindi",
+  "fal-ai/kokoro/italian",
+  "fal-ai/kokoro/japanese",
+  "fal-ai/kokoro/mandarin-chinese",
+  "fal-ai/kokoro/spanish",
   "fal-ai/latentsync",
   "fal-ai/longcat-single-avatar/image-audio-to-video",
   "fal-ai/lyria2",
+  "fal-ai/lyria3/pro",
+  "fal-ai/minimax-music/v2",
+  "fal-ai/minimax-music/v2.6",
   "fal-ai/minimax/hailuo-02/pro/image-to-video",
   "fal-ai/minimax/speech-02-hd",
+  "fal-ai/minimax/speech-2.8-hd",
+  "fal-ai/minimax/speech-2.8-turbo",
   "fal-ai/nano-banana",
   "fal-ai/nano-banana-2",
   "fal-ai/nano-banana-2/edit",
@@ -319,10 +441,18 @@ export const FAL_ENDPOINTS = [
   "fal-ai/nano-banana/edit",
   "fal-ai/pixverse/lipsync",
   "fal-ai/pixverse/v6/text-to-video",
+  "fal-ai/qwen-3-tts/text-to-speech/1.7b",
   "fal-ai/qwen-image",
   "fal-ai/qwen-image-edit-2511",
+  "fal-ai/recraft/upscale/crisp",
   "fal-ai/recraft/v3/text-to-image",
   "fal-ai/recraft/v4/text-to-image",
+  "fal-ai/seedvr/upscale/image",
+  "fal-ai/seedvr/upscale/video",
+  "fal-ai/speech-to-text",
+  "fal-ai/speech-to-text/turbo",
+  "fal-ai/stable-audio-25/text-to-audio",
+  "fal-ai/stable-audio-3/medium/text-to-audio",
   "fal-ai/sync-lipsync/v2",
   "fal-ai/sync-lipsync/v2/pro",
   "fal-ai/sync-lipsync/v3",
@@ -346,14 +476,19 @@ export const FAL_ENDPOINTS = [
   "lightricks/ltx-2.5/text-to-video/pro",
   "minimax/h3/image-to-video",
   "minimax/h3/text-to-video",
+  "minimax/music-3",
   "openai/gpt-image-2",
   "openai/gpt-image-2/edit",
   "reve/2.1/text-to-image",
+  "topaz/upscale/image/generative",
+  "topaz/upscale/image/precision",
+  "topaz/upscale/video/precision",
   "veed/avatars/audio-to-video",
   "veed/lipsync",
   "veed/lipsync/v2",
   "xai/grok-imagine-image",
   "xai/grok-imagine-video/text-to-video",
+  "xai/tts/v1",
 ] as const;
 
 export type FalEndpointId = (typeof FAL_ENDPOINTS)[number];
@@ -362,6 +497,7 @@ export type FalEndpointId = (typeof FAL_ENDPOINTS)[number];
 export const FAL_ENDPOINT_VERBS = {
   "alibaba/qwen-image-3/edit": "imageEdit",
   "argil/avatars/audio-to-video": "avatar",
+  "blackforestlabs/flux-video-upscale": "upscale",
   "bytedance/seedance-2.0/image-to-video": "video",
   "bytedance/seedance-2.0/text-to-video": "video",
   "bytedance/seedance-2.5/image-to-video": "video",
@@ -369,11 +505,25 @@ export const FAL_ENDPOINT_VERBS = {
   "bytedance/seedance-2.5/text-to-video": "video",
   "bytedance/seedream/v5/pro/edit": "imageEdit",
   "bytedance/seedream/v5/pro/text-to-image": "image",
+  "fal-ai/ace-step": "music",
+  "fal-ai/aura-sr": "upscale",
   "fal-ai/bytedance/omnihuman/v1.5": "avatar",
+  "fal-ai/bytedance/seed-speech/tts/v2": "tts",
   "fal-ai/bytedance/seedream/v4.5/edit": "imageEdit",
   "fal-ai/bytedance/seedream/v4.5/text-to-image": "image",
+  "fal-ai/chatterbox/text-to-speech": "tts",
+  "fal-ai/chatterbox/text-to-speech/multilingual": "tts",
   "fal-ai/clarity-upscaler": "upscale",
+  "fal-ai/cohere-transcribe": "stt",
+  "fal-ai/diffrhythm": "music",
   "fal-ai/echomimic-v3": "avatar",
+  "fal-ai/elevenlabs/music": "music",
+  "fal-ai/elevenlabs/speech-to-text": "stt",
+  "fal-ai/elevenlabs/speech-to-text/scribe-v2": "stt",
+  "fal-ai/elevenlabs/tts/eleven-v3": "tts",
+  "fal-ai/elevenlabs/tts/multilingual-v2": "tts",
+  "fal-ai/elevenlabs/tts/turbo-v2.5": "tts",
+  "fal-ai/esrgan": "upscale",
   "fal-ai/flux-2": "image",
   "fal-ai/flux-2-max": "image",
   "fal-ai/flux-2-pro": "image",
@@ -391,9 +541,12 @@ export const FAL_ENDPOINT_VERBS = {
   "fal-ai/flux/dev": "image",
   "fal-ai/flux/dev/image-to-image": "imageEdit",
   "fal-ai/flux/schnell": "image",
+  "fal-ai/gemini-3.1-flash-tts": "tts",
+  "fal-ai/gemini-tts": "tts",
   "fal-ai/gpt-image-1.5": "image",
   "fal-ai/gpt-image-1.5/edit": "imageEdit",
   "fal-ai/ideogram/v3": "image",
+  "fal-ai/inworld-tts": "tts",
   "fal-ai/kling-image/v3/text-to-image": "image",
   "fal-ai/kling-video/ai-avatar/v2/pro": "avatar",
   "fal-ai/kling-video/ai-avatar/v2/standard": "avatar",
@@ -407,11 +560,25 @@ export const FAL_ENDPOINT_VERBS = {
   "fal-ai/kling-video/v3/pro/text-to-video": "video",
   "fal-ai/kling-video/v3/standard/image-to-video": "video",
   "fal-ai/kling-video/v3/standard/text-to-video": "video",
+  "fal-ai/kokoro/american-english": "tts",
+  "fal-ai/kokoro/brazilian-portuguese": "tts",
+  "fal-ai/kokoro/british-english": "tts",
+  "fal-ai/kokoro/french": "tts",
+  "fal-ai/kokoro/hindi": "tts",
+  "fal-ai/kokoro/italian": "tts",
+  "fal-ai/kokoro/japanese": "tts",
+  "fal-ai/kokoro/mandarin-chinese": "tts",
+  "fal-ai/kokoro/spanish": "tts",
   "fal-ai/latentsync": "lipsync",
   "fal-ai/longcat-single-avatar/image-audio-to-video": "avatar",
   "fal-ai/lyria2": "music",
+  "fal-ai/lyria3/pro": "music",
+  "fal-ai/minimax-music/v2": "music",
+  "fal-ai/minimax-music/v2.6": "music",
   "fal-ai/minimax/hailuo-02/pro/image-to-video": "video",
   "fal-ai/minimax/speech-02-hd": "tts",
+  "fal-ai/minimax/speech-2.8-hd": "tts",
+  "fal-ai/minimax/speech-2.8-turbo": "tts",
   "fal-ai/nano-banana": "image",
   "fal-ai/nano-banana-2": "image",
   "fal-ai/nano-banana-2/edit": "imageEdit",
@@ -420,10 +587,18 @@ export const FAL_ENDPOINT_VERBS = {
   "fal-ai/nano-banana/edit": "imageEdit",
   "fal-ai/pixverse/lipsync": "lipsync",
   "fal-ai/pixverse/v6/text-to-video": "video",
+  "fal-ai/qwen-3-tts/text-to-speech/1.7b": "tts",
   "fal-ai/qwen-image": "image",
   "fal-ai/qwen-image-edit-2511": "imageEdit",
+  "fal-ai/recraft/upscale/crisp": "upscale",
   "fal-ai/recraft/v3/text-to-image": "image",
   "fal-ai/recraft/v4/text-to-image": "image",
+  "fal-ai/seedvr/upscale/image": "upscale",
+  "fal-ai/seedvr/upscale/video": "upscale",
+  "fal-ai/speech-to-text": "stt",
+  "fal-ai/speech-to-text/turbo": "stt",
+  "fal-ai/stable-audio-25/text-to-audio": "music",
+  "fal-ai/stable-audio-3/medium/text-to-audio": "music",
   "fal-ai/sync-lipsync/v2": "lipsync",
   "fal-ai/sync-lipsync/v2/pro": "lipsync",
   "fal-ai/sync-lipsync/v3": "lipsync",
@@ -447,14 +622,19 @@ export const FAL_ENDPOINT_VERBS = {
   "lightricks/ltx-2.5/text-to-video/pro": "video",
   "minimax/h3/image-to-video": "video",
   "minimax/h3/text-to-video": "video",
+  "minimax/music-3": "music",
   "openai/gpt-image-2": "image",
   "openai/gpt-image-2/edit": "imageEdit",
   "reve/2.1/text-to-image": "image",
+  "topaz/upscale/image/generative": "upscale",
+  "topaz/upscale/image/precision": "upscale",
+  "topaz/upscale/video/precision": "upscale",
   "veed/avatars/audio-to-video": "avatar",
   "veed/lipsync": "lipsync",
   "veed/lipsync/v2": "lipsync",
   "xai/grok-imagine-image": "image",
   "xai/grok-imagine-video/text-to-video": "video",
+  "xai/tts/v1": "tts",
 } as const;
 
 /**
@@ -468,6 +648,7 @@ export const FAL_ENDPOINT_VERBS = {
 export const FAL_DOC_URLS = {
   "alibaba/qwen-image-3/edit": "https://fal.ai/models/fal-ai/qwen-image-3/edit/api",
   "argil/avatars/audio-to-video": "https://fal.ai/models/Argil/avatars/audio-to-video/api",
+  "blackforestlabs/flux-video-upscale": "https://fal.ai/models/fal-ai/flux-video-upscale/api",
   "bytedance/seedance-2.0/image-to-video": "https://fal.ai/models/fal-ai/seedance-2/image-to-video/api",
   "bytedance/seedance-2.0/text-to-video": "https://fal.ai/models/fal-ai/seedance-2/text-to-video/api",
   "bytedance/seedance-2.5/image-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/image-to-video/api",
@@ -475,11 +656,25 @@ export const FAL_DOC_URLS = {
   "bytedance/seedance-2.5/text-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/text-to-video/api",
   "bytedance/seedream/v5/pro/edit": "https://fal.ai/models/fal-ai/seedream-5-pro/edit/api",
   "bytedance/seedream/v5/pro/text-to-image": "https://fal.ai/models/fal-ai/seedream-5-pro/text-to-image/api",
+  "fal-ai/ace-step": "https://fal.ai/models/fal-ai/ace-step/api",
+  "fal-ai/aura-sr": "https://fal.ai/models/fal-ai/aura-sr/api",
   "fal-ai/bytedance/omnihuman/v1.5": "https://fal.ai/models/fal-ai/bytedance/omnihuman/v1.5/api",
+  "fal-ai/bytedance/seed-speech/tts/v2": "https://fal.ai/models/fal-ai/bytedance/seed-speech/tts/v2/api",
   "fal-ai/bytedance/seedream/v4.5/edit": "https://fal.ai/models/fal-ai/bytedance/seedream/v4.5/edit/api",
   "fal-ai/bytedance/seedream/v4.5/text-to-image": "https://fal.ai/models/fal-ai/bytedance/seedream/v4.5/text-to-image/api",
+  "fal-ai/chatterbox/text-to-speech": "https://fal.ai/models/fal-ai/chatterbox/text-to-speech/api",
+  "fal-ai/chatterbox/text-to-speech/multilingual": "https://fal.ai/models/fal-ai/chatterbox/text-to-speech/multilingual/api",
   "fal-ai/clarity-upscaler": "https://fal.ai/models/fal-ai/clarity-upscaler/api",
+  "fal-ai/cohere-transcribe": "https://fal.ai/models/fal-ai/cohere-transcribe/api",
+  "fal-ai/diffrhythm": "https://fal.ai/models/fal-ai/diffrhythm/api",
   "fal-ai/echomimic-v3": "https://fal.ai/models/fal-ai/echomimic-v3/api",
+  "fal-ai/elevenlabs/music": "https://fal.ai/models/fal-ai/elevenlabs/music/api",
+  "fal-ai/elevenlabs/speech-to-text": "https://fal.ai/models/fal-ai/elevenlabs/speech-to-text/api",
+  "fal-ai/elevenlabs/speech-to-text/scribe-v2": "https://fal.ai/models/fal-ai/elevenlabs/speech-to-text/scribe-v2/api",
+  "fal-ai/elevenlabs/tts/eleven-v3": "https://fal.ai/models/fal-ai/elevenlabs/tts/eleven-v3/api",
+  "fal-ai/elevenlabs/tts/multilingual-v2": "https://fal.ai/models/fal-ai/elevenlabs/tts/multilingual-v2/api",
+  "fal-ai/elevenlabs/tts/turbo-v2.5": "https://fal.ai/models/fal-ai/elevenlabs/tts/turbo-v2.5/api",
+  "fal-ai/esrgan": "https://fal.ai/models/fal-ai/esrgan/api",
   "fal-ai/flux-2": "https://fal.ai/models/fal-ai/flux-2-dev/api",
   "fal-ai/flux-2-max": "https://fal.ai/models/fal-ai/flux-2-max/api",
   "fal-ai/flux-2-pro": "https://fal.ai/models/fal-ai/flux-2-pro/api",
@@ -497,9 +692,12 @@ export const FAL_DOC_URLS = {
   "fal-ai/flux/dev": "https://fal.ai/models/fal-ai/flux/dev/api",
   "fal-ai/flux/dev/image-to-image": "https://fal.ai/models/fal-ai/flux/dev/image-to-image/api",
   "fal-ai/flux/schnell": "https://fal.ai/models/fal-ai/flux/schnell/api",
+  "fal-ai/gemini-3.1-flash-tts": "https://fal.ai/models/fal-ai/gemini-3.1-flash-tts/api",
+  "fal-ai/gemini-tts": "https://fal.ai/models/fal-ai/gemini-tts/api",
   "fal-ai/gpt-image-1.5": "https://fal.ai/models/fal-ai/gpt-image-1.5/api",
   "fal-ai/gpt-image-1.5/edit": "https://fal.ai/models/fal-ai/gpt-image-1.5/edit/api",
   "fal-ai/ideogram/v3": "https://fal.ai/models/fal-ai/ideogram/v3/api",
+  "fal-ai/inworld-tts": "https://fal.ai/models/fal-ai/inworld-tts/api",
   "fal-ai/kling-image/v3/text-to-image": "https://fal.ai/models/fal-ai/kling-image/v3/text-to-image/api",
   "fal-ai/kling-video/ai-avatar/v2/pro": "https://fal.ai/models/fal-ai/kling-video/ai-avatar/v2/pro/api",
   "fal-ai/kling-video/ai-avatar/v2/standard": "https://fal.ai/models/fal-ai/kling-video/ai-avatar/v2/standard/api",
@@ -513,11 +711,25 @@ export const FAL_DOC_URLS = {
   "fal-ai/kling-video/v3/pro/text-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/pro/text-to-video/api",
   "fal-ai/kling-video/v3/standard/image-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/standard/image-to-video/api",
   "fal-ai/kling-video/v3/standard/text-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/standard/text-to-video/api",
+  "fal-ai/kokoro/american-english": "https://fal.ai/models/fal-ai/kokoro/american-english/api",
+  "fal-ai/kokoro/brazilian-portuguese": "https://fal.ai/models/fal-ai/kokoro/brazilian-portuguese/api",
+  "fal-ai/kokoro/british-english": "https://fal.ai/models/fal-ai/kokoro/british-english/api",
+  "fal-ai/kokoro/french": "https://fal.ai/models/fal-ai/kokoro/french/api",
+  "fal-ai/kokoro/hindi": "https://fal.ai/models/fal-ai/kokoro/hindi/api",
+  "fal-ai/kokoro/italian": "https://fal.ai/models/fal-ai/kokoro/italian/api",
+  "fal-ai/kokoro/japanese": "https://fal.ai/models/fal-ai/kokoro/japanese/api",
+  "fal-ai/kokoro/mandarin-chinese": "https://fal.ai/models/fal-ai/kokoro/mandarin-chinese/api",
+  "fal-ai/kokoro/spanish": "https://fal.ai/models/fal-ai/kokoro/spanish/api",
   "fal-ai/latentsync": "https://fal.ai/models/fal-ai/latentsync/api",
   "fal-ai/longcat-single-avatar/image-audio-to-video": "https://fal.ai/models/fal-ai/longcat-single-avatar/image-audio-to-video/api",
   "fal-ai/lyria2": "https://fal.ai/models/fal-ai/lyria2/api",
+  "fal-ai/lyria3/pro": "https://fal.ai/models/fal-ai/lyria3/pro/api",
+  "fal-ai/minimax-music/v2": "https://fal.ai/models/fal-ai/minimax-music/v2/api",
+  "fal-ai/minimax-music/v2.6": "https://fal.ai/models/fal-ai/minimax-music/v2.6/api",
   "fal-ai/minimax/hailuo-02/pro/image-to-video": "https://fal.ai/models/fal-ai/minimax/hailuo-02/pro/image-to-video/api",
   "fal-ai/minimax/speech-02-hd": "https://fal.ai/models/fal-ai/minimax/speech-02-hd/api",
+  "fal-ai/minimax/speech-2.8-hd": "https://fal.ai/models/fal-ai/minimax/speech-2.8-hd/api",
+  "fal-ai/minimax/speech-2.8-turbo": "https://fal.ai/models/fal-ai/minimax/speech-2.8-turbo/api",
   "fal-ai/nano-banana": "https://fal.ai/models/fal-ai/nano-banana/api",
   "fal-ai/nano-banana-2": "https://fal.ai/models/fal-ai/nano-banana-2/api",
   "fal-ai/nano-banana-2/edit": "https://fal.ai/models/fal-ai/nano-banana-2/edit/api",
@@ -526,10 +738,18 @@ export const FAL_DOC_URLS = {
   "fal-ai/nano-banana/edit": "https://fal.ai/models/fal-ai/nano-banana/edit/api",
   "fal-ai/pixverse/lipsync": "https://fal.ai/models/fal-ai/pixverse/lipsync/api",
   "fal-ai/pixverse/v6/text-to-video": "https://fal.ai/models/fal-ai/pixverse/v6/text-to-video/api",
+  "fal-ai/qwen-3-tts/text-to-speech/1.7b": "https://fal.ai/models/fal-ai/qwen-3-tts/text-to-speech/1.7b/api",
   "fal-ai/qwen-image": "https://fal.ai/models/fal-ai/qwen-image/api",
   "fal-ai/qwen-image-edit-2511": "https://fal.ai/models/fal-ai/qwen-image-edit-2511/api",
+  "fal-ai/recraft/upscale/crisp": "https://fal.ai/models/fal-ai/recraft/upscale/crisp/api",
   "fal-ai/recraft/v3/text-to-image": "https://fal.ai/models/fal-ai/recraft/v3/text-to-image/api",
   "fal-ai/recraft/v4/text-to-image": "https://fal.ai/models/fal-ai/recraft/v4/text-to-image/api",
+  "fal-ai/seedvr/upscale/image": "https://fal.ai/models/fal-ai/seedvr/upscale/image/api",
+  "fal-ai/seedvr/upscale/video": "https://fal.ai/models/fal-ai/seedvr/upscale/video/api",
+  "fal-ai/speech-to-text": "https://fal.ai/models/fal-ai/speech-to-text/api",
+  "fal-ai/speech-to-text/turbo": "https://fal.ai/models/fal-ai/speech-to-text/turbo/api",
+  "fal-ai/stable-audio-25/text-to-audio": "https://fal.ai/models/fal-ai/stable-audio-25/text-to-audio/api",
+  "fal-ai/stable-audio-3/medium/text-to-audio": "https://fal.ai/models/fal-ai/stable-audio-3/medium/text-to-audio/api",
   "fal-ai/sync-lipsync/v2": "https://fal.ai/models/fal-ai/sync-lipsync/v2/api",
   "fal-ai/sync-lipsync/v2/pro": "https://fal.ai/models/fal-ai/sync-lipsync/v2/pro/api",
   "fal-ai/sync-lipsync/v3": "https://fal.ai/models/fal-ai/sync-lipsync/v3/api",
@@ -553,14 +773,19 @@ export const FAL_DOC_URLS = {
   "lightricks/ltx-2.5/text-to-video/pro": "https://fal.ai/models/fal-ai/ltx-2.5/text-to-video/pro/api",
   "minimax/h3/image-to-video": "https://fal.ai/models/fal-ai/minimax_h3/image-to-video/api",
   "minimax/h3/text-to-video": "https://fal.ai/models/fal-ai/minimax_h3/text-to-video/api",
+  "minimax/music-3": "https://fal.ai/models/fal-ai/minimax-music-3/api",
   "openai/gpt-image-2": "https://fal.ai/models/fal-ai/gpt-image-2/api",
   "openai/gpt-image-2/edit": "https://fal.ai/models/fal-ai/gpt-image-2/edit/api",
   "reve/2.1/text-to-image": "https://fal.ai/models/fal-ai/reve/v2/text-to-image/api",
+  "topaz/upscale/image/generative": "https://fal.ai/models/fal-ai/topaz/upscale/image/generative/api",
+  "topaz/upscale/image/precision": "https://fal.ai/models/fal-ai/topaz/upscale/image/precision/api",
+  "topaz/upscale/video/precision": "https://fal.ai/models/fal-ai/topaz/upscale/video/precision/api",
   "veed/avatars/audio-to-video": "https://fal.ai/models/VEED/avatars/audio-to-video/api",
   "veed/lipsync": "https://fal.ai/models/VEED/lipsync/api",
   "veed/lipsync/v2": "https://fal.ai/models/VEED/lipsync-v2/api",
   "xai/grok-imagine-image": "https://fal.ai/models/fal-ai/xai/api",
   "xai/grok-imagine-video/text-to-video": "https://fal.ai/models/fal-ai/xai/text-to-video/api",
+  "xai/tts/v1": "https://fal.ai/models/fal-ai/xai-tts/v1/api",
 } as const;
 
 /**
@@ -574,6 +799,7 @@ export const FAL_DOC_URLS = {
 export const FAL_REQUIRED_PROBES = {
   "alibaba/qwen-image-3/edit": ["prompt", "image_urls"],
   "argil/avatars/audio-to-video": ["avatar", "audio_url"],
+  "blackforestlabs/flux-video-upscale": ["video_url"],
   "bytedance/seedance-2.0/image-to-video": ["prompt", "image_url"],
   "bytedance/seedance-2.0/text-to-video": ["prompt"],
   "bytedance/seedance-2.5/image-to-video": ["prompt", "image_url"],
@@ -581,11 +807,25 @@ export const FAL_REQUIRED_PROBES = {
   "bytedance/seedance-2.5/text-to-video": ["prompt"],
   "bytedance/seedream/v5/pro/edit": ["prompt", "image_urls"],
   "bytedance/seedream/v5/pro/text-to-image": ["prompt"],
+  "fal-ai/ace-step": ["tags"],
+  "fal-ai/aura-sr": ["image_url"],
   "fal-ai/bytedance/omnihuman/v1.5": ["image_url", "audio_url"],
+  "fal-ai/bytedance/seed-speech/tts/v2": ["text"],
   "fal-ai/bytedance/seedream/v4.5/edit": ["prompt", "image_urls"],
   "fal-ai/bytedance/seedream/v4.5/text-to-image": ["prompt"],
+  "fal-ai/chatterbox/text-to-speech": ["text"],
+  "fal-ai/chatterbox/text-to-speech/multilingual": ["text"],
   "fal-ai/clarity-upscaler": ["image_url"],
+  "fal-ai/cohere-transcribe": ["audio_url"],
+  "fal-ai/diffrhythm": ["lyrics"],
   "fal-ai/echomimic-v3": ["image_url", "audio_url", "prompt"],
+  "fal-ai/elevenlabs/music": [],
+  "fal-ai/elevenlabs/speech-to-text": ["audio_url"],
+  "fal-ai/elevenlabs/speech-to-text/scribe-v2": ["audio_url"],
+  "fal-ai/elevenlabs/tts/eleven-v3": ["text"],
+  "fal-ai/elevenlabs/tts/multilingual-v2": ["text"],
+  "fal-ai/elevenlabs/tts/turbo-v2.5": ["text"],
+  "fal-ai/esrgan": ["image_url"],
   "fal-ai/flux-2": ["prompt"],
   "fal-ai/flux-2-max": ["prompt"],
   "fal-ai/flux-2-pro": ["prompt"],
@@ -603,9 +843,12 @@ export const FAL_REQUIRED_PROBES = {
   "fal-ai/flux/dev": ["prompt"],
   "fal-ai/flux/dev/image-to-image": ["image_url", "prompt"],
   "fal-ai/flux/schnell": ["prompt"],
+  "fal-ai/gemini-3.1-flash-tts": ["prompt"],
+  "fal-ai/gemini-tts": ["prompt"],
   "fal-ai/gpt-image-1.5": ["prompt"],
   "fal-ai/gpt-image-1.5/edit": ["prompt", "image_urls"],
   "fal-ai/ideogram/v3": ["prompt"],
+  "fal-ai/inworld-tts": ["text"],
   "fal-ai/kling-image/v3/text-to-image": ["prompt"],
   "fal-ai/kling-video/ai-avatar/v2/pro": ["image_url", "audio_url"],
   "fal-ai/kling-video/ai-avatar/v2/standard": ["image_url", "audio_url"],
@@ -619,11 +862,25 @@ export const FAL_REQUIRED_PROBES = {
   "fal-ai/kling-video/v3/pro/text-to-video": [],
   "fal-ai/kling-video/v3/standard/image-to-video": ["start_image_url"],
   "fal-ai/kling-video/v3/standard/text-to-video": [],
+  "fal-ai/kokoro/american-english": [],
+  "fal-ai/kokoro/brazilian-portuguese": ["prompt", "voice"],
+  "fal-ai/kokoro/british-english": ["prompt", "voice"],
+  "fal-ai/kokoro/french": ["prompt", "voice"],
+  "fal-ai/kokoro/hindi": ["prompt", "voice"],
+  "fal-ai/kokoro/italian": ["prompt", "voice"],
+  "fal-ai/kokoro/japanese": ["prompt", "voice"],
+  "fal-ai/kokoro/mandarin-chinese": ["prompt", "voice"],
+  "fal-ai/kokoro/spanish": ["prompt", "voice"],
   "fal-ai/latentsync": ["video_url", "audio_url"],
   "fal-ai/longcat-single-avatar/image-audio-to-video": ["image_url", "audio_url"],
   "fal-ai/lyria2": ["prompt"],
+  "fal-ai/lyria3/pro": ["prompt"],
+  "fal-ai/minimax-music/v2": ["prompt", "lyrics_prompt"],
+  "fal-ai/minimax-music/v2.6": ["prompt"],
   "fal-ai/minimax/hailuo-02/pro/image-to-video": ["prompt", "image_url"],
   "fal-ai/minimax/speech-02-hd": ["text"],
+  "fal-ai/minimax/speech-2.8-hd": ["prompt"],
+  "fal-ai/minimax/speech-2.8-turbo": ["prompt"],
   "fal-ai/nano-banana": ["prompt"],
   "fal-ai/nano-banana-2": ["prompt"],
   "fal-ai/nano-banana-2/edit": ["prompt"],
@@ -632,10 +889,18 @@ export const FAL_REQUIRED_PROBES = {
   "fal-ai/nano-banana/edit": ["prompt", "image_urls"],
   "fal-ai/pixverse/lipsync": ["video_url"],
   "fal-ai/pixverse/v6/text-to-video": ["prompt"],
+  "fal-ai/qwen-3-tts/text-to-speech/1.7b": ["text"],
   "fal-ai/qwen-image": ["prompt"],
   "fal-ai/qwen-image-edit-2511": ["prompt", "image_urls"],
+  "fal-ai/recraft/upscale/crisp": ["image_url"],
   "fal-ai/recraft/v3/text-to-image": ["prompt"],
   "fal-ai/recraft/v4/text-to-image": ["prompt"],
+  "fal-ai/seedvr/upscale/image": ["image_url"],
+  "fal-ai/seedvr/upscale/video": ["video_url"],
+  "fal-ai/speech-to-text": ["audio_url"],
+  "fal-ai/speech-to-text/turbo": ["audio_url"],
+  "fal-ai/stable-audio-25/text-to-audio": ["prompt"],
+  "fal-ai/stable-audio-3/medium/text-to-audio": ["prompt"],
   "fal-ai/sync-lipsync/v2": ["video_url", "audio_url"],
   "fal-ai/sync-lipsync/v2/pro": ["video_url", "audio_url"],
   "fal-ai/sync-lipsync/v3": ["video_url", "audio_url"],
@@ -659,12 +924,17 @@ export const FAL_REQUIRED_PROBES = {
   "lightricks/ltx-2.5/text-to-video/pro": ["prompt"],
   "minimax/h3/image-to-video": ["prompt"],
   "minimax/h3/text-to-video": ["prompt"],
+  "minimax/music-3": ["prompt", "lyrics"],
   "openai/gpt-image-2": ["prompt"],
   "openai/gpt-image-2/edit": ["prompt", "image_urls"],
   "reve/2.1/text-to-image": ["prompt"],
+  "topaz/upscale/image/generative": ["image_url"],
+  "topaz/upscale/image/precision": ["image_url"],
+  "topaz/upscale/video/precision": ["video_url"],
   "veed/avatars/audio-to-video": ["avatar_id", "audio_url"],
   "veed/lipsync": ["video_url", "audio_url"],
   "veed/lipsync/v2": ["video_url", "audio_url"],
   "xai/grok-imagine-image": ["prompt"],
   "xai/grok-imagine-video/text-to-video": ["prompt"],
+  "xai/tts/v1": ["text"],
 } as const;

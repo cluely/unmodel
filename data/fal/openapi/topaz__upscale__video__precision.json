@@ -1,0 +1,477 @@
+{
+  "metadata": {
+    "category": "video-to-video",
+    "date": "2026-08-11T19:10:25.098Z",
+    "description": "Professional video upscaling powered by Topaz Labs. Precision models (Proteus, Artemis, Iris, Dione, Theia, Gaia, Rhea) enhance footage up to 4x while staying faithful to the source. Best for clean, natural upscales of real-world footage.",
+    "display_name": "Topaz Upscale Video Precision",
+    "group": {
+      "key": "topaz-upscale",
+      "label": "Upscale Video Precision"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/topaz/upscale/video/precision",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "upscale",
+      "video"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0aa5f1ec/6RruEcb1mzuNDFal3KsPz.jpg",
+    "updated_at": "2026-08-20T00:07:38.733Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "TopazUpscaleVideoPrecisionInput": {
+          "properties": {
+            "H264_output": {
+              "default": false,
+              "description": "Whether to use H264 codec for output video. Default is H265.",
+              "title": "H264 Output",
+              "type": "boolean"
+            },
+            "compression": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Compression artifact removal level (0.0-1.0). Default varies by model.",
+              "title": "Compression"
+            },
+            "grain": {
+              "anyOf": [
+                {
+                  "maximum": 0.1,
+                  "minimum": 0,
+                  "multipleOf": 0.01,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Film grain amount (0.0-0.1). Default varies by model.",
+              "title": "Grain"
+            },
+            "halo": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Halo reduction level (0.0-1.0). Default varies by model.",
+              "title": "Halo"
+            },
+            "model": {
+              "default": "Proteus",
+              "description": "Precision (non-generative) enhancement model. Proteus fits most real-world footage; Proteus Natural is a softer variant; Iris recovers faces; Dione deinterlaces legacy/interlaced sources; Artemis denoises and sharpens degraded footage; Gaia refines high-quality footage and CG (Gaia 2 upscales animation at 2x); Rhea maximizes fine detail via an internal 4x pass; Theia gives manual detail/fidelity control.",
+              "enum": [
+                "Proteus",
+                "Proteus Natural",
+                "Iris",
+                "Iris Low Quality",
+                "Dione DV",
+                "Dione TV",
+                "Dione Robust",
+                "Dione Dehalo",
+                "Dione Robust Dehalo",
+                "Artemis High Quality",
+                "Artemis Medium Quality",
+                "Artemis Low Quality",
+                "Artemis Strong Halo",
+                "Artemis Medium Halo",
+                "Artemis Aliasing & Moire",
+                "Gaia HQ",
+                "Gaia CG",
+                "Gaia 2",
+                "Rhea",
+                "Theia Fine Tune Detail",
+                "Theia Fine Tune Fidelity"
+              ],
+              "title": "Model",
+              "type": "string"
+            },
+            "noise": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Noise reduction level (0.0-1.0). Default varies by model.",
+              "title": "Noise"
+            },
+            "recover_detail": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Recover original detail level (0.0-1.0). Higher values preserve more original detail.",
+              "title": "Recover Detail"
+            },
+            "target_fps": {
+              "anyOf": [
+                {
+                  "maximum": 60,
+                  "minimum": 16,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Target FPS for the output. Frame interpolation is enabled only when this differs from the source FPS.",
+              "title": "Target Fps"
+            },
+            "upscale_factor": {
+              "default": 2,
+              "description": "Factor to upscale the video by (e.g. 2.0 doubles width and height)",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Upscale Factor",
+              "type": "number"
+            },
+            "video_url": {
+              "description": "URL of the video to upscale",
+              "examples": [
+                "https://v3.fal.media/files/kangaroo/y5-1YTGpun17eSeggZMzX_video-1733468228.mp4"
+              ],
+              "title": "Video Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "video_url"
+          ],
+          "title": "VideoPrecisionUpscaleRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video_url",
+            "model",
+            "upscale_factor",
+            "target_fps",
+            "compression",
+            "noise",
+            "halo",
+            "grain",
+            "recover_detail",
+            "H264_output"
+          ]
+        },
+        "TopazUpscaleVideoPrecisionOutput": {
+          "properties": {
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "description": "The upscaled video file",
+              "examples": [
+                {
+                  "url": "https://v3.fal.media/files/penguin/ztj_LB4gQlW6HIfVs8zX4_upscaled.mp4"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video"
+          ],
+          "title": "VideoUpscaleOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/topaz/upscale/video/precision queue.",
+      "title": "Queue OpenAPI for fal-ai/topaz/upscale/video/precision",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "# Topaz Precision Video Upscale\n\nClassic (non-generative) upscaling and enhancement that stays\nfaithful to the source.\n\n## Models\n- **Proteus** — the default choice for most real-world footage.\n- **Artemis HQ / MQ / LQ** — denoise and sharpen, for progressively\nmore degraded sources.\n- **Gaia HQ / CG** — refinement for high-quality footage and CG\nrenders.\n- **Gaia 2** — frame-by-frame 2x upscaling for animation and motion\ngraphics (billed at half price).\n- **Rhea** — maximum fine detail via an internal 4x pass.\n\nVideos are limited to 5 minutes. `target_fps` enables Apollo frame\ninterpolation only when it differs from the source FPS.",
+        "category": "video-to-video",
+        "documentationUrl": "https://fal.ai/models/fal-ai/topaz/upscale/video/precision/api",
+        "endpointId": "fal-ai/topaz/upscale/video/precision",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/topaz/upscale/video/precision",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0aa5f09b/zsVj7oUynt16lciuJnpDG.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/topaz/upscale/video/precision": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopazUpscaleVideoPrecisionInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/topaz/upscale/video/precision/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/TopazUpscaleVideoPrecisionOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/topaz/upscale/video/precision/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/topaz/upscale/video/precision/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

@@ -52,6 +52,7 @@ import type {
   MusicValidator,
 } from "../core/unified/vocabulary/music";
 import { music as elevenlabs } from "../providers/elevenlabs/unified-music";
+import { music as fal } from "../providers/fal/unified-music";
 import { music as google } from "../providers/google/unified-music";
 import { music as mureka } from "../providers/mureka/unified";
 import { music as stability } from "../providers/stability/unified-music";
@@ -99,7 +100,7 @@ export function createMusic<A extends MusicAdapter>(
  * `test/bundle-budget.test.ts`). `createMusic([…])` above is the way to pay
  * for one provider instead of four.
  */
-export const music = createMusic([elevenlabs, stability, mureka, google]);
+export const music = createMusic([elevenlabs, stability, mureka, google, fal]);
 
 export type {
   AnyMusicAdapter,

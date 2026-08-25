@@ -54,6 +54,7 @@ import { tts as alibaba } from "../../src/providers/alibaba/unified-tts";
 import { tts as cartesia } from "../../src/providers/cartesia/unified-tts";
 import { tts as deepgram } from "../../src/providers/deepgram/unified-tts";
 import { tts as elevenlabs } from "../../src/providers/elevenlabs/unified-tts";
+import { tts as fal } from "../../src/providers/fal/unified-tts";
 import { tts as fishAudio } from "../../src/providers/fish-audio/unified";
 import { tts as google } from "../../src/providers/google/unified-tts";
 import { tts as hume } from "../../src/providers/hume/unified";
@@ -349,6 +350,27 @@ const TABLE: Readonly<Record<string, Capability>> = {
     language: "derived",
     format: { shape: "query", at: "output_format" },
     delivery: { kinds: ["bytes"], by: ["delivery"] },
+    probe: "mp3",
+  },
+  /**
+   * The aggregator, probed at ByteDance Seed Speech — the fal endpoint that
+   * exercises the most of this table at once: a named voice, a real `speed`
+   * multiplier, a language enum of bare subtags, and a flat two-member codec
+   * field. The other twenty-two fal endpoints answer these four questions
+   * differently from each other, which is the whole reason the narrowing at
+   * this provider is per MODEL rather than per adapter.
+   */
+  fal: {
+    ref: "fal/fal-ai/bytedance/seed-speech/tts/v2",
+    voice_id: "stokie_en",
+    adapter: fal,
+    voice: "native",
+    speed: "native",
+    language: "derived",
+    format: { shape: "codec", at: "output_format" },
+    // A queue: the POST answers an envelope and the audio's URL is in the
+    // RESULT document the envelope points at. See src/providers/fal/tts-params.ts.
+    delivery: { kinds: ["url"], by: [] },
     probe: "mp3",
   },
   inworld: {

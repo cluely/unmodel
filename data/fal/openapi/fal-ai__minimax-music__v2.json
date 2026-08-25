@@ -1,0 +1,407 @@
+{
+  "metadata": {
+    "category": "text-to-audio",
+    "date": "2025-10-30T22:33:42.886Z",
+    "description": "Generate music from text prompts using the MiniMax Music 2.0 model, which leverages advanced AI techniques to create high-quality, diverse musical compositions.",
+    "display_name": "Minimax Music",
+    "group": {
+      "key": "minimax-music",
+      "label": "v2.0"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/minimax-music/v2",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "music",
+      "audio"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/penguin/jnrLOiQsmRXqYCI_haHe5_63de465a7ccb447bb3bf9ed6c0c1c88e.jpg",
+    "updated_at": "2026-04-21T17:51:57.425Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "AudioSetting": {
+          "properties": {
+            "bitrate": {
+              "default": 256000,
+              "description": "Bitrate of generated audio",
+              "enum": [
+                32000,
+                64000,
+                128000,
+                256000
+              ],
+              "title": "Bitrate",
+              "type": "integer"
+            },
+            "format": {
+              "default": "mp3",
+              "description": "Audio format",
+              "enum": [
+                "mp3",
+                "pcm",
+                "flac"
+              ],
+              "title": "Format",
+              "type": "string"
+            },
+            "sample_rate": {
+              "default": 44100,
+              "description": "Sample rate of generated audio",
+              "enum": [
+                8000,
+                16000,
+                22050,
+                24000,
+                32000,
+                44100
+              ],
+              "title": "Sample Rate",
+              "type": "integer"
+            }
+          },
+          "title": "AudioSetting",
+          "type": "object",
+          "x-fal-order-properties": [
+            "sample_rate",
+            "bitrate",
+            "format"
+          ]
+        },
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "MinimaxMusicV2Input": {
+          "properties": {
+            "audio_setting": {
+              "$ref": "#/components/schemas/AudioSetting",
+              "description": "Audio configuration settings"
+            },
+            "lyrics_prompt": {
+              "description": "Lyrics of the song. Use n to separate lines. You may add structure tags like [Intro], [Verse], [Chorus], [Bridge], [Outro] to enhance the arrangement. 10-3000 characters.",
+              "examples": [
+                "[verse]Streetlights flicker, the night breeze sighsShadows stretch as I walk aloneAn old coat wraps my silent sorrow\nWandering, longing, where should I go[chorus]Pushing the wooden door, the aroma spreadsIn a familiar corner, a stranger gazes"
+              ],
+              "maxLength": 3000,
+              "minLength": 10,
+              "title": "Lyrics Prompt",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "A description of the music, specifying style, mood, and scenario. 10-300 characters.",
+              "examples": [
+                "Indie folk, melancholic, introspective, longing, solitary walk, coffee shop"
+              ],
+              "maxLength": 2000,
+              "minLength": 10,
+              "title": "Prompt",
+              "type": "string"
+            }
+          },
+          "required": [
+            "prompt",
+            "lyrics_prompt"
+          ],
+          "title": "TextToMusic20Request",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "lyrics_prompt",
+            "audio_setting"
+          ]
+        },
+        "MinimaxMusicV2Output": {
+          "properties": {
+            "audio": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated music",
+              "examples": [
+                {
+                  "url": "https://v3.fal.media/files/lion/b3-wJ5bbmVo8S-KPqDBMK_output.mp3"
+                }
+              ]
+            }
+          },
+          "required": [
+            "audio"
+          ],
+          "title": "MusicV15Output",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/minimax-music/v2 queue.",
+      "title": "Queue OpenAPI for fal-ai/minimax-music/v2",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Text To Music V2 0",
+        "category": "text-to-audio",
+        "documentationUrl": "https://fal.ai/models/fal-ai/minimax-music/v2/api",
+        "endpointId": "fal-ai/minimax-music/v2",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/minimax-music/v2",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/penguin/jnrLOiQsmRXqYCI_haHe5_63de465a7ccb447bb3bf9ed6c0c1c88e.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/minimax-music/v2": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinimaxMusicV2Input"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/minimax-music/v2/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MinimaxMusicV2Output"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/minimax-music/v2/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/minimax-music/v2/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

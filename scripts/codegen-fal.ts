@@ -1171,6 +1171,13 @@ function costFor(row: PricingRow): MediaCostInput | undefined {
       return { perMillionCharacters: row.usd * 1000 };
     case "per_audio_minute":
       return { perAudioMinute: row.usd };
+    // x60, and exact for the same reason x1000 above is: `perAudioMinute` means
+    // a minute of audio PROCESSED, and a per-second stt rate is the same
+    // quantity in a smaller unit. Its music-side twin,
+    // `per_generated_audio_second`, deliberately has no case here — that one
+    // meters audio fal produced, which is not what the field means.
+    case "per_input_audio_second":
+      return { perAudioMinute: row.usd * 60 };
     default:
       return undefined;
   }
@@ -1953,7 +1960,64 @@ const CANONICAL_WIRE_PARAMS: Readonly<Partial<Record<Verb, readonly string[]>>> 
   // eight avatar rows have no prompt at all and one REQUIRES it, so it is a
   // per-model extra rather than a canonical word the category has to answer for.
   avatar: ["image_url", "audio_url", "seed"],
+  // `UpscaleParams` is five words: the ref, the source, the multiplier, an
+  // optional prompt and providerOptions. The source and the multiplier each
+  // have TWO wire spellings across this roster (`image_url` / `video_url`,
+  // `upscale_factor` / `scale`) and both are canonical, because a caller who
+  // set `scale` as an extra beside `factor` would be racing the adapter for the
+  // same field. `creativity`, `resemblance`, `denoise` and the rest stay
+  // extras: they are one vendor's dial, not a category's word.
+  upscale: ["image_url", "video_url", "upscale_factor", "scale"],
+  // `TtsParams`: the text, the voice, the language, the codec and the speed.
+  // Each of the middle three has several wire spellings here — fal's speech
+  // roster is fifteen vendors deep — and the row states which one THIS endpoint
+  // uses rather than the adapter trying all of them.
+  tts: [
+    "voice",
+    "speed",
+    "language",
+    "language_code",
+    "language_boost",
+    "custom_audio_language",
+    "output_format",
+  ],
+  // `SttParams`: the audio, the language and the two switches unmodel has words
+  // for. `task`, `use_pnc`, `keyterms` and `max_new_tokens` stay extras.
+  stt: ["audio_url", "language", "language_code", "chunk_level", "diarize"],
+  // `MusicParams`: the prompt, the length, the instrumental switch, the seed
+  // and the codec. The length alone has FOUR spellings across ten endpoints —
+  // `duration`, `seconds_total`, `music_length_ms` and `music_duration` — one
+  // of them in milliseconds and one a two-member string enum, which is exactly
+  // why the canonical word is `durationSeconds` and the row states the wire.
+  music: [
+    "seed",
+    "duration",
+    "seconds_total",
+    "music_length_ms",
+    "music_duration",
+    "is_instrumental",
+    "force_instrumental",
+    "output_format",
+  ],
 };
+
+/**
+ * The verbs whose curated `textParam` is a CANONICAL word rather than an extra.
+ *
+ * Three of the nine, and the exclusions are the interesting half. `image`,
+ * `imageEdit` and `video` are absent because they already list `prompt`
+ * explicitly above — every one of their endpoints spells it that way, so there
+ * is nothing to look up. `lipsync` and `avatar` are absent on purpose: fal
+ * declares a `text` at `fal-ai/pixverse/lipsync` and a `prompt` at five avatar
+ * routes, and neither category has a canonical word for it (see the avatar
+ * vocabulary — one route REQUIRES a prompt and three have no field at all).
+ *
+ * The three here need the lookup because they genuinely disagree: speech is
+ * `text` at ElevenLabs and `prompt` at Kokoro, and music is `prompt` at Lyria,
+ * `tags` at ACE-Step and `lyrics` at DiffRhythm — where the lyrics ARE the
+ * request.
+ */
+const TEXT_PARAM_IS_CANONICAL: ReadonlySet<Verb> = new Set<Verb>(["upscale", "tts", "music"]);
 
 /** fal's `resolution` vocabulary onto the canonical tiers. `0.5K` has none. */
 function canonicalTier(value: string): string | undefined {
@@ -2046,6 +2110,48 @@ interface UnifiedRow {
   sourceWire?: string;
   /** lipsync / avatar: the wire parameter the audio goes in. */
   audioWire?: string;
+  /** upscale: the wire parameter the multiplier goes in — `upscale_factor` or `scale`. */
+  factorWire?: string;
+  /** upscale: the multipliers this endpoint offers as a closed set; `[]` = no field. */
+  factors?: readonly number[];
+  /** tts / music: the wire parameter the words go in — fal's own `textParam`. */
+  textWire?: string;
+  /** tts: the wire parameter the voice goes in, where the endpoint has a flat one. */
+  voiceWire?: string;
+  /** tts: the voices this endpoint publishes, where it publishes a closed list. */
+  voices?: readonly string[];
+  /** tts: the wire parameter the speed multiplier goes in. */
+  speedWire?: string;
+  /** tts / stt: the wire parameter the language goes in. */
+  languageWire?: string;
+  /** tts / stt: the language field takes any string — no enum to map through. */
+  languageOpen?: true;
+  /** tts / stt: the languages this endpoint offers, as canonical primary subtags. */
+  languages?: readonly string[];
+  /** tts / stt: canonical primary subtag → this endpoint's own spelling of it. */
+  languageValues?: Readonly<Record<string, string>>;
+  /** tts / music: the wire parameter the output codec goes in. */
+  formatWire?: string;
+  /** tts / music: the canonical codecs this endpoint can emit; `[]` = no flat field. */
+  codecs?: readonly string[];
+  /** tts / music: canonical codec → this endpoint's own spelling of it. */
+  codecValues?: Readonly<Record<string, string>>;
+  /** stt: the timing granularities this route can be ASKED for; `[]` = no switch. */
+  timestamps?: readonly string[];
+  /** stt: canonical granularity → this endpoint's own spelling of it. */
+  timestampValues?: Readonly<Record<string, string>>;
+  /** stt: the wire parameter the diarization switch goes in. */
+  diarizeWire?: string;
+  /** music: the wire parameter the length goes in. */
+  lengthWire?: string;
+  /** music: `"ms"` where that parameter counts milliseconds rather than seconds. */
+  lengthUnit?: "ms";
+  /** music: the lengths this endpoint offers as a closed set, in SECONDS. */
+  lengths?: readonly number[];
+  /** music: canonical seconds → the literal this endpoint's length parameter takes. */
+  lengthValues?: Readonly<Record<string, string | number>>;
+  /** music: the wire parameter the instrumental switch goes in. */
+  instrumentalWire?: string;
   /** wire param name → the endpoint whose interface types it. */
   extras: readonly string[];
 }
@@ -2142,6 +2248,379 @@ function applySourceRow(verb: Verb, model: EndpointModel, row: UnifiedRow): void
   if (props["audio_url"] !== undefined) (row as { audioWire?: string }).audioWire = "audio_url";
 }
 
+// ---------------------------------------------------------------------------
+// upscale / tts / stt / music: the wave-1d rows
+// ---------------------------------------------------------------------------
+
+/** Where a multiplier lands, in preference order. Two spellings, ten endpoints. */
+const FACTOR_WIRE_NAMES: readonly string[] = ["upscale_factor", "scale", "scale_factor"];
+
+/**
+ * The upscale row: what goes IN, and by how much.
+ *
+ * `sources` is the same mechanism the two performance categories use, pointed
+ * at a different question: there it separates a clip from a still across two
+ * CATEGORIES, here it separates them inside one — `fal-ai/seedvr/upscale/image`
+ * and `fal-ai/seedvr/upscale/video` are one vendor's one product on two routes,
+ * and an image handed to the second is a compile error rather than a 422.
+ *
+ * `factors` has three states and they are all load-bearing. Absent means the
+ * multiplier is a RANGE (clarity takes any number in 1..4, and {@link
+ * UnifiedRow.bounds} carries the ends); a list means it is a closed set
+ * (`fal-ai/aura-sr` publishes a `const 4` — it upscales by four or not at all);
+ * and an EMPTY list means the endpoint has no multiplier at all, which is
+ * `fal-ai/recraft/upscale/crisp` and which types `factor` as `never` rather
+ * than letting a caller ask for something the route cannot do.
+ */
+function applyUpscaleRow(model: EndpointModel, row: UnifiedRow): void {
+  const props = model.input.props;
+
+  if (props["image_url"] !== undefined) {
+    (row as { sources?: readonly string[] }).sources = ["image"];
+    (row as { sourceWire?: string }).sourceWire = "image_url";
+  } else if (props["video_url"] !== undefined) {
+    (row as { sources?: readonly string[] }).sources = ["video"];
+    (row as { sourceWire?: string }).sourceWire = "video_url";
+  } else {
+    (row as { sources?: readonly string[] }).sources = [];
+  }
+
+  const factorWire = FACTOR_WIRE_NAMES.find((name) => props[name] !== undefined);
+  if (factorWire === undefined) {
+    (row as { factors?: readonly number[] }).factors = [];
+    return;
+  }
+  (row as { factorWire?: string }).factorWire = factorWire;
+  const node = (props[factorWire] as Prop).node;
+  if (node.k === "prim" && node.enum !== undefined) {
+    const values = node.enum
+      .map((value) => (typeof value === "number" ? value : Number(value)))
+      .filter((value) => Number.isFinite(value));
+    if (values.length > 0) (row as { factors?: readonly number[] }).factors = sorted(values);
+  }
+}
+
+/**
+ * English language NAMES onto BCP-47 primary subtags.
+ *
+ * fal's speech endpoints spell a language four different ways — a bare subtag
+ * (`"en"`, wizper), a subtag with a region (`"pt-BR"`, xAI), a capitalised name
+ * (`"Portuguese"`, MiniMax) and a name with a country (`"Portuguese (Brazil)"`,
+ * Gemini) — and the canonical vocabulary spells it one way. This table is the
+ * third and fourth cases; the first two are parsed.
+ *
+ * A name that is NOT here simply does not reach the row's `languages`, and that
+ * is the deliberate failure mode: the list drives completion and the adapter's
+ * wire mapping, so a guess would send a spelling the endpoint refuses. Gaps are
+ * visible (a language an editor does not offer); guesses are not.
+ */
+const LANGUAGE_NAMES: Readonly<Record<string, string>> = {
+  afrikaans: "af", albanian: "sq", amharic: "am", arabic: "ar", armenian: "hy",
+  azerbaijani: "az", bangla: "bn", basque: "eu", belarusian: "be", bengali: "bn",
+  bulgarian: "bg", burmese: "my", catalan: "ca", cebuano: "ceb", chinese: "zh",
+  "chinese mandarin": "zh", croatian: "hr", czech: "cs", danish: "da", dutch: "nl",
+  english: "en", estonian: "et", filipino: "fil", finnish: "fi", french: "fr",
+  galician: "gl", georgian: "ka", german: "de", greek: "el", gujarati: "gu",
+  "haitian creole": "ht", hebrew: "he", hindi: "hi", hungarian: "hu", icelandic: "is",
+  indonesian: "id", italian: "it", japanese: "ja", javanese: "jv", kannada: "kn",
+  konkani: "kok", korean: "ko", lao: "lo", latin: "la", latvian: "lv",
+  lithuanian: "lt", luxembourgish: "lb", macedonian: "mk", maithili: "mai",
+  malagasy: "mg", malay: "ms", malayalam: "ml", marathi: "mr", mongolian: "mn",
+  nepali: "ne", norwegian: "no", "norwegian bokmal": "nb", "norwegian nynorsk": "nn",
+  nynorsk: "nn", odia: "or", pashto: "ps", persian: "fa", polish: "pl",
+  portuguese: "pt", punjabi: "pa", romanian: "ro", russian: "ru", serbian: "sr",
+  sindhi: "sd", sinhala: "si", slovak: "sk", slovenian: "sl", spanish: "es",
+  swahili: "sw", swedish: "sv", tamil: "ta", telugu: "te", thai: "th",
+  turkish: "tr", ukrainian: "uk", urdu: "ur", vietnamese: "vi", welsh: "cy",
+};
+
+/**
+ * One enum member of a language field → the canonical primary subtag it means,
+ * or `undefined` where it means something else.
+ *
+ * `"auto"` is the important `undefined`: "you decide" is not a language, in
+ * exactly the way `"auto"` is not a duration at `durationSeconds`.
+ */
+function canonicalLanguage(value: string): string | undefined {
+  const raw = value.trim();
+  if (raw === "" || /^auto$/i.test(raw)) return undefined;
+  // `"pt-BR"`, `"es_MX"`, `"Chinese,Yue"` — take the primary subtag only where
+  // the head is already one.
+  const head = raw.split(/[-_,]/)[0] as string;
+  if (/^[a-z]{2,3}$/.test(head) && head === head.toLowerCase() && !/\s/.test(raw)) return head;
+  // `"Portuguese (Brazil)"` → `"portuguese"`; `"english"` → `"english"`.
+  const name = raw.replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
+  return LANGUAGE_NAMES[name];
+}
+
+/**
+ * fal's codec spellings onto the canonical {@link AudioFormatCodec} vocabulary.
+ *
+ * `wav` and `pcm` and `linear16` all mean signed 16-bit little-endian PCM —
+ * the first two name a container and a family rather than an encoding, which is
+ * the conflation every speech API makes and the reason the canonical word is
+ * the exact one. `ogg` and `m4a` are deliberately absent: they are containers
+ * that carry more than one codec, and mapping `ogg` to Vorbis would be a guess
+ * about a file whose Opus arm exists on the same enum.
+ */
+const CODEC_NAMES: Readonly<Record<string, string>> = {
+  mp3: "mp3",
+  aac: "aac",
+  flac: "flac",
+  opus: "opus",
+  ogg_opus: "opus",
+  vorbis: "vorbis",
+  wav: "pcm_s16le",
+  pcm: "pcm_s16le",
+  linear16: "pcm_s16le",
+  mulaw: "pcm_mulaw",
+  ulaw: "pcm_mulaw",
+  alaw: "pcm_alaw",
+};
+
+/**
+ * One enum member of an `output_format` field → the canonical codec it means.
+ *
+ * The whole spelling first, then its head — which is what reads ElevenLabs
+ * Music's composite `mp3_44100_128` / `pcm_16000` / `ulaw_8000` enum, where the
+ * member states a codec AND a sample rate AND sometimes a bitrate. Only the
+ * codec half is narrowed here: the legal (codec, rate, bitrate) triples are not
+ * a cross product, which is the argument `TtsModelParams` makes for leaving
+ * `sampleRate` to run time.
+ */
+function canonicalCodec(value: string): string | undefined {
+  const raw = value.trim().toLowerCase();
+  const whole = CODEC_NAMES[raw];
+  if (whole !== undefined) return whole;
+  return CODEC_NAMES[raw.split("_")[0] as string];
+}
+
+/** The enum a property declares, as strings, or `undefined` if it declares none. */
+function enumValues(prop: Prop | undefined): readonly string[] | undefined {
+  if (prop === undefined || prop.node.k !== "prim" || prop.node.enum === undefined) return undefined;
+  return prop.node.enum.map(String);
+}
+
+/**
+ * The canonical→wire map for one enumerated field.
+ *
+ * `preferred` is the endpoint's own default, and it wins where it maps to the
+ * same canonical value as an earlier member: at ElevenLabs Music both
+ * `mp3_22050_32` and `mp3_44100_128` are `mp3`, and sending the 22 kHz one
+ * because it happens to be listed first would quietly downgrade every request
+ * that asked for `"mp3"`. Otherwise the FIRST member wins, which is fal's own
+ * order and therefore reviewable against the model page.
+ */
+function valueMap(
+  members: readonly string[],
+  canonicalize: (value: string) => string | undefined,
+  preferred?: string,
+): { values: string[]; wire: Record<string, string> } {
+  const values: string[] = [];
+  const wire: Record<string, string> = {};
+  for (const member of members) {
+    const key = canonicalize(member);
+    if (key === undefined) continue;
+    if (wire[key] === undefined) {
+      values.push(key);
+      wire[key] = member;
+    } else if (preferred !== undefined && member === preferred) {
+      wire[key] = member;
+    }
+  }
+  return { values, wire };
+}
+
+/** The literal a property declares as its default, as a string. */
+function defaultString(prop: Prop | undefined): string | undefined {
+  const value = prop?.default;
+  return typeof value === "string" ? value : undefined;
+}
+
+/**
+ * The codec half of a tts / music row.
+ *
+ * An EMPTY `codecs` is emitted deliberately and means "this endpoint has no
+ * flat codec field", which is a different fact from "it has one with no
+ * canonical member in it" and a different fact again from "it has none and the
+ * caller may say anything". Three endpoints exercise all three: `xai/tts/v1`
+ * spells its format as an OBJECT (`{ codec, sample_rate, bit_rate }`),
+ * `fal-ai/minimax/speech-02-hd` spells `output_format` as `url | hex` — a
+ * DELIVERY switch wearing a codec's name — and Kokoro has no format field at
+ * all. All three type `outputFormat` as `never`, and the adapter's message
+ * names which of the three it is.
+ */
+function applyFormatRow(model: EndpointModel, row: UnifiedRow): void {
+  const prop = model.input.props["output_format"];
+  if (prop === undefined) {
+    // No field at all — Kokoro. Distinct from the two cases below, and the
+    // adapter's message says which.
+    (row as { codecs?: readonly string[] }).codecs = [];
+    return;
+  }
+  // A field with no canonical member in it is still a field: naming it lets the
+  // adapter say "this one is a delivery switch / an object, not a codec" rather
+  // than "there is nothing here".
+  (row as { formatWire?: string }).formatWire = "output_format";
+  const members = enumValues(prop);
+  if (members === undefined) {
+    // `xai/tts/v1` spells its format as an OBJECT with `codec`, `sample_rate`
+    // and `bit_rate` inside it — a shape the canonical `outputFormat` cannot
+    // reach without flattening, which this library does not do.
+    (row as { codecs?: readonly string[] }).codecs = [];
+    return;
+  }
+  const { values, wire } = valueMap(members, canonicalCodec, defaultString(prop));
+  (row as { codecs?: readonly string[] }).codecs = sorted(values);
+  if (values.length > 0) {
+    (row as { codecValues?: Readonly<Record<string, string>> }).codecValues = wire;
+  }
+}
+
+/** The language half of a tts / stt row — the same shape at both categories. */
+function applyLanguageRow(model: EndpointModel, row: UnifiedRow, names: readonly string[]): void {
+  const props = model.input.props;
+  const wire = names.find((name) => props[name] !== undefined);
+  if (wire === undefined) return;
+  (row as { languageWire?: string }).languageWire = wire;
+  const members = enumValues(props[wire]);
+  if (members === undefined) {
+    // `anyOf[string, null]` with no enum — ElevenLabs takes any BCP-47 code, so
+    // there is nothing to complete and nothing to map.
+    (row as { languageOpen?: true }).languageOpen = true;
+    return;
+  }
+  const mapped = valueMap(members, canonicalLanguage);
+  (row as { languages?: readonly string[] }).languages = sorted(mapped.values);
+  (row as { languageValues?: Readonly<Record<string, string>> }).languageValues = mapped.wire;
+}
+
+/** The wire names a language can land on, per category, in preference order. */
+const TTS_LANGUAGE_WIRE: readonly string[] = [
+  "language",
+  "language_code",
+  "language_boost",
+  "custom_audio_language",
+];
+const STT_LANGUAGE_WIRE: readonly string[] = ["language", "language_code"];
+
+/**
+ * The tts row: which words, which voice, which language, which codec, how fast.
+ *
+ * `voices` is the field this category is built around and the one the plan's
+ * "shared row shape" guess got wrong: the nine Kokoro endpoints DO share a
+ * shape — three parameters, same names, same bounds — and they emphatically do
+ * not share a row, because each publishes its own voices (twenty for American
+ * English, one for French) and that list is the whole reason a caller picks one
+ * endpoint over another. Nine languages, nine rows, one shape.
+ *
+ * A missing `voiceWire` is a fact rather than a gap: MiniMax puts the voice in
+ * `voice_setting.voice_id`, one level down, and unmodel does not flatten
+ * objects into canonical words. The adapter refuses `voice` there by name and
+ * points at `providerOptions`.
+ */
+function applyTtsRow(model: EndpointModel, row: UnifiedRow): void {
+  const props = model.input.props;
+  if (props["voice"] !== undefined) {
+    (row as { voiceWire?: string }).voiceWire = "voice";
+    const members = enumValues(props["voice"]);
+    if (members !== undefined) (row as { voices?: readonly string[] }).voices = members;
+  }
+  if (props["speed"] !== undefined) (row as { speedWire?: string }).speedWire = "speed";
+  applyLanguageRow(model, row, TTS_LANGUAGE_WIRE);
+  applyFormatRow(model, row);
+}
+
+/** fal's `chunk_level` vocabulary onto the canonical timing granularities. */
+const TIMESTAMP_NAMES: Readonly<Record<string, string>> = {
+  segment: "segment",
+  word: "word",
+  character: "character",
+};
+
+/**
+ * The stt row: the language, the granularity, the diarization switch.
+ *
+ * `timestamps: []` is the answer for five of the six endpoints and it is the
+ * honest one. ElevenLabs Scribe always returns word timings and offers no
+ * switch to turn them off; fal's own `speech-to-text` returns whatever it
+ * returns. An empty list types `timestamps` as `never`, which says "this route
+ * does not take the question" — as opposed to a list containing `"none"`, which
+ * would say "you may ask for plain text" and is true nowhere here.
+ */
+function applySttRow(model: EndpointModel, row: UnifiedRow): void {
+  const props = model.input.props;
+  if (props["audio_url"] !== undefined) (row as { audioWire?: string }).audioWire = "audio_url";
+  applyLanguageRow(model, row, STT_LANGUAGE_WIRE);
+
+  const members = enumValues(props["chunk_level"]);
+  const mapped =
+    members === undefined
+      ? { values: [] as string[], wire: {} as Record<string, string> }
+      : valueMap(members, (value) => TIMESTAMP_NAMES[value.trim().toLowerCase()]);
+  (row as { timestamps?: readonly string[] }).timestamps = sorted(mapped.values);
+  if (mapped.values.length > 0) {
+    (row as { timestampValues?: Readonly<Record<string, string>> }).timestampValues = mapped.wire;
+  }
+
+  if (props["diarize"] !== undefined) (row as { diarizeWire?: string }).diarizeWire = "diarize";
+}
+
+/**
+ * Where a clip length lands, in preference order, and in what unit.
+ *
+ * Four spellings across ten endpoints, and `music_length_ms` is why the
+ * canonical word is `durationSeconds` rather than `duration`: a bare number
+ * here means milliseconds at ElevenLabs and seconds everywhere else, and a
+ * caller who guessed wrong would get a track a thousand times too long or too
+ * short with nothing in the request to say so.
+ */
+const MUSIC_LENGTH_WIRE: ReadonlyArray<readonly [name: string, ms: boolean]> = [
+  ["duration", false],
+  ["seconds_total", false],
+  ["music_duration", false],
+  ["music_length_ms", true],
+];
+
+/** Where an instrumental switch lands. Two spellings, two endpoints. */
+const MUSIC_INSTRUMENTAL_WIRE: readonly string[] = ["is_instrumental", "force_instrumental"];
+
+/** The music row: the length, the instrumental switch, the codec. */
+function applyMusicRow(model: EndpointModel, row: UnifiedRow): void {
+  const props = model.input.props;
+
+  const length = MUSIC_LENGTH_WIRE.find(([name]) => props[name] !== undefined);
+  if (length !== undefined) {
+    const [name, ms] = length;
+    (row as { lengthWire?: string }).lengthWire = name;
+    if (ms) (row as { lengthUnit?: "ms" }).lengthUnit = "ms";
+    const node = (props[name] as Prop).node;
+    if (node.k === "prim" && node.enum !== undefined) {
+      // DiffRhythm's `"95s" | "285s"` — a closed set of lengths spelled as
+      // strings, read through the same parser video's `duration` uses.
+      const seconds: number[] = [];
+      const wire: Record<string, string | number> = {};
+      for (const value of node.enum) {
+        const parsed = durationSeconds(value);
+        if (parsed === undefined || seconds.includes(parsed)) continue;
+        seconds.push(parsed);
+        wire[String(parsed)] = value;
+      }
+      if (seconds.length > 0) {
+        (row as { lengths?: readonly number[] }).lengths = seconds.sort((a, b) => a - b);
+        (row as { lengthValues?: Readonly<Record<string, string | number>> }).lengthValues = wire;
+      }
+    }
+  }
+
+  const instrumental = MUSIC_INSTRUMENTAL_WIRE.find((name) => props[name] !== undefined);
+  if (instrumental !== undefined) {
+    (row as { instrumentalWire?: string }).instrumentalWire = instrumental;
+  }
+
+  applyFormatRow(model, row);
+}
+
 /**
  * Wire parameters that may never become a unified `extras` entry, whatever the
  * verb.
@@ -2171,11 +2650,17 @@ const NEVER_AN_EXTRA: ReadonlySet<string> = new Set(["model"]);
 function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
   const props = model.input.props;
   const canonical = new Set(CANONICAL_WIRE_PARAMS[verb] ?? []);
+  // The curated text parameter, where the category treats it as a canonical
+  // word rather than an extra. See TEXT_PARAM_IS_CANONICAL for why only three
+  // of the nine verbs look it up.
+  const textWire = TEXT_PARAM_IS_CANONICAL.has(verb) ? model.curation.textParam : undefined;
+  if (textWire !== undefined) canonical.add(textWire);
   const row: UnifiedRow = {
     classes: model.shapes,
     keys: model.input.order,
     extras: model.input.order.filter((name) => !canonical.has(name) && !NEVER_AN_EXTRA.has(name)),
   };
+  if (textWire !== undefined) (row as { textWire?: string }).textWire = textWire;
 
   const imageSize = props["image_size"];
   if (imageSize !== undefined) {
@@ -2242,6 +2727,10 @@ function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
 
   if (verb === "video") applyVideoRow(model, row);
   if (verb === "lipsync" || verb === "avatar") applySourceRow(verb, model, row);
+  if (verb === "upscale") applyUpscaleRow(model, row);
+  if (verb === "tts") applyTtsRow(model, row);
+  if (verb === "stt") applySttRow(model, row);
+  if (verb === "music") applyMusicRow(model, row);
 
   // Numeric bounds on the canonical params. `strength` is the one that earns
   // this today: `fal-ai/flux/dev/image-to-image` floors it at 0.01, and the
@@ -2263,6 +2752,20 @@ function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
   }
 
   return row;
+}
+
+/**
+ * One canonical→wire value map, as a row field.
+ *
+ * Broken across lines past six entries, which is not cosmetic: Gemini's
+ * `language_code` maps 87 subtags onto 87 spellings, and a single 4 KB line is
+ * a diff nobody can review after a refresh.
+ */
+function renderWireMap(name: string, map: Readonly<Record<string, string>>): string {
+  const keys = sorted(Object.keys(map));
+  const pairs = keys.map((key) => `${propKey(key)}: ${quote(map[key] as string)}`);
+  if (pairs.length <= 6) return `  ${name}: { ${pairs.join(", ")} },`;
+  return `  ${name}: {\n${pairs.map((pair) => `    ${pair},`).join("\n")}\n  },`;
 }
 
 function renderParamsFile(verb: Verb, models: readonly EndpointModel[]): string {
@@ -2349,6 +2852,44 @@ function renderParamsFile(verb: Verb, models: readonly EndpointModel[]): string 
       if (row.sources !== undefined) fields.push(`  sources: ${renderStringArray(row.sources)},`);
       if (row.sourceWire !== undefined) fields.push(`  sourceWire: ${quote(row.sourceWire)},`);
       if (row.audioWire !== undefined) fields.push(`  audioWire: ${quote(row.audioWire)},`);
+      if (row.factorWire !== undefined) fields.push(`  factorWire: ${quote(row.factorWire)},`);
+      if (row.factors !== undefined) {
+        fields.push(`  factors: [${row.factors.map((value) => num(value)).join(", ")}],`);
+      }
+      if (row.textWire !== undefined) fields.push(`  textWire: ${quote(row.textWire)},`);
+      if (row.voiceWire !== undefined) fields.push(`  voiceWire: ${quote(row.voiceWire)},`);
+      if (row.voices !== undefined) fields.push(`  voices: ${renderStringArray(row.voices)},`);
+      if (row.speedWire !== undefined) fields.push(`  speedWire: ${quote(row.speedWire)},`);
+      if (row.languageWire !== undefined) fields.push(`  languageWire: ${quote(row.languageWire)},`);
+      if (row.languageOpen === true) fields.push("  languageOpen: true,");
+      if (row.languages !== undefined) fields.push(`  languages: ${renderStringArray(row.languages)},`);
+      if (row.languageValues !== undefined) fields.push(renderWireMap("languageValues", row.languageValues));
+      if (row.formatWire !== undefined) fields.push(`  formatWire: ${quote(row.formatWire)},`);
+      if (row.codecs !== undefined) fields.push(`  codecs: ${renderStringArray(row.codecs)},`);
+      if (row.codecValues !== undefined) fields.push(renderWireMap("codecValues", row.codecValues));
+      if (row.timestamps !== undefined) fields.push(`  timestamps: ${renderStringArray(row.timestamps)},`);
+      if (row.timestampValues !== undefined) {
+        fields.push(renderWireMap("timestampValues", row.timestampValues));
+      }
+      if (row.diarizeWire !== undefined) fields.push(`  diarizeWire: ${quote(row.diarizeWire)},`);
+      if (row.lengthWire !== undefined) fields.push(`  lengthWire: ${quote(row.lengthWire)},`);
+      if (row.lengthUnit !== undefined) fields.push(`  lengthUnit: ${quote(row.lengthUnit)},`);
+      if (row.lengths !== undefined) {
+        fields.push(`  lengths: [${row.lengths.map((value) => num(value)).join(", ")}],`);
+      }
+      if (row.lengthValues !== undefined) {
+        const wire = row.lengthValues;
+        const pairs = sorted(Object.keys(wire))
+          .map((seconds) => {
+            const value = wire[seconds] as string | number;
+            return `${propKey(seconds)}: ${typeof value === "number" ? num(value) : quote(value)}`;
+          })
+          .join(", ");
+        fields.push(`  lengthValues: { ${pairs} },`);
+      }
+      if (row.instrumentalWire !== undefined) {
+        fields.push(`  instrumentalWire: ${quote(row.instrumentalWire)},`);
+      }
       if (row.bounds !== undefined) {
         const entries = sorted(Object.keys(row.bounds)).map((name) => {
           const bound = (row.bounds as Record<string, { min?: number; max?: number }>)[name] as {

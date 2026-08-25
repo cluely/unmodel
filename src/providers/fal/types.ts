@@ -18,11 +18,10 @@
  * The per-endpoint request bodies are GENERATED from fal's own OpenAPI
  * documents into `./gen/<category>-wire.gen.ts`, and each category's validator
  * brings a uniform `<Verb>Body` alias with it — one per endpoint address
- * `unmodel/fal` serves, named after the word you already type on the CLI.
- * `ImageBody`, `ImageEditBody`, `VideoBody`, `LipsyncBody` and `AvatarBody`
- * are here; `UpscaleBody`, `TtsBody`, `SttBody` and `MusicBody` arrive with
- * their validators in the following waves. Until a category
- * has a validator it has no address, so it correctly has no alias:
+ * `unmodel/fal` serves, named after the word you already type on the CLI. All
+ * nine are here now: `ImageBody`, `ImageEditBody`, `VideoBody`, `LipsyncBody`,
+ * `AvatarBody`, `UpscaleBody`, `TtsBody`, `SttBody` and `MusicBody`. A category
+ * without a validator would have no address and so correctly no alias:
  * `test/types-entries.test.ts` derives that list from the CLI registry rather
  * than from this file's good intentions.
  *
@@ -61,6 +60,10 @@ import type { FalImageEditParams } from "./image-edit";
 import type { FalVideoParams } from "./video";
 import type { FalLipsyncParams } from "./lipsync";
 import type { FalAvatarParams } from "./avatar";
+import type { FalUpscaleParams } from "./upscale";
+import type { FalTtsParams } from "./tts";
+import type { FalSttParams } from "./stt";
+import type { FalMusicParams } from "./music";
 
 /**
  * The request body `fal.image` accepts — every curated text-to-image endpoint,
@@ -112,6 +115,36 @@ export type LipsyncBody = FalLipsyncParams;
  */
 export type AvatarBody = FalAvatarParams;
 
+/**
+ * The request body `fal.upscale` accepts. Narrow to one with
+ * {@link FalUpscaleArm} — which is how the four Topaz and ESRGAN endpoints type
+ * their real `model` field as their own restoration-network enum while every
+ * sibling refuses the key.
+ */
+export type UpscaleBody = FalUpscaleParams;
+
+/**
+ * The request body `fal.tts` accepts. Narrow to one with {@link FalTtsArm} —
+ * which is how twenty-three separate voice catalogs stay usable from one
+ * address: `FalTtsBodyById["fal-ai/kokoro/french"]["voice"]` is the single
+ * literal `"ff_siwis"`, and its American English sibling's is twenty names.
+ */
+export type TtsBody = FalTtsParams;
+
+/**
+ * The request body `fal.stt` accepts. Narrow to one with {@link FalSttArm} —
+ * which is how `fal-ai/wizper`'s 99-language enum and `fal-ai/cohere-transcribe`'s
+ * fourteen stay separate.
+ */
+export type SttBody = FalSttParams;
+
+/**
+ * The request body `fal.music` accepts. Narrow to one with
+ * {@link FalMusicArm} — which is how `music_length_ms` types as a number only
+ * at ElevenLabs Music, where it means milliseconds.
+ */
+export type MusicBody = FalMusicParams;
+
 export type {
   FalVideoArm,
   FalVideoBodyById,
@@ -130,6 +163,30 @@ export type {
   FalAvatarEndpointId,
   FalAvatarResultById,
 } from "./avatar";
+export type {
+  FalUpscaleArm,
+  FalUpscaleBodyById,
+  FalUpscaleEndpointId,
+  FalUpscaleResultById,
+} from "./upscale";
+export type {
+  FalTtsArm,
+  FalTtsBodyById,
+  FalTtsEndpointId,
+  FalTtsResultById,
+} from "./tts";
+export type {
+  FalSttArm,
+  FalSttBodyById,
+  FalSttEndpointId,
+  FalSttResultById,
+} from "./stt";
+export type {
+  FalMusicArm,
+  FalMusicBodyById,
+  FalMusicEndpointId,
+  FalMusicResultById,
+} from "./music";
 
 export type { FalEndpointId } from "./gen/endpoints.gen";
 export type { FalRate, FalRateUnit, FalTier } from "./pricing-types";

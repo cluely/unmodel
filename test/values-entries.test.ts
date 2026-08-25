@@ -102,6 +102,7 @@ const CATEGORY_PREFIX: Readonly<Record<string, string>> = {
   video: "VIDEO",
   lipsync: "LIPSYNC",
   avatar: "AVATAR",
+  upscale: "UPSCALE",
   tts: "TTS",
   stt: "STT",
   music: "MUSIC",
@@ -355,7 +356,7 @@ describe("identity — the published table IS the adapter's table", () => {
       }
     }
     expect(drift).toEqual([]);
-    expect(found.size).toBe(18);
+    expect(found.size).toBe(19);
   });
 });
 
@@ -470,17 +471,27 @@ describe("unmodel/values — the canonical hub", () => {
       "music",
       "stt",
       "tts",
+      "upscale",
       "video",
       "voiceClone",
       "voiceDesign",
     ]);
-    // The two youngest categories, written out: five words each, and the ONE
-    // word that differs between them is the whole reason they are two
+    // The three youngest categories, written out: five words each, and the
+    // words that DIFFER between them are the whole reason they are three
     // categories. A rename here is a breaking change to the request shape, so
     // it has to be typed in a diff.
     const lists = hub["CANONICAL_KEY_LISTS"] as Record<string, readonly string[]>;
     expect(lists["lipsync"]).toEqual(["model", "source", "audio", "seed", "providerOptions"]);
     expect(lists["avatar"]).toEqual(["model", "image", "audio", "seed", "providerOptions"]);
+    expect(lists["upscale"]).toEqual(["model", "source", "factor", "prompt", "providerOptions"]);
+    // `upscale` shares `source` with lipsync and NOTHING else: no `audio`, no
+    // `seed`, and a `factor` that appears nowhere else in the library. That is
+    // the shape of a category that is genuinely its own rather than an arm of
+    // `imageEdit` — whose own list has `size` and `aspectRatio`, both absolute
+    // where this one is a multiplier.
+    expect(lists["upscale"]).not.toContain("size");
+    expect(lists["upscale"]).not.toContain("aspectRatio");
+    expect(lists["imageEdit"]).not.toContain("factor");
   });
 
   test("CHAT_PROVIDERS is unmodel/chat's own array, not a second copy", async () => {
@@ -665,8 +676,23 @@ describe("bundle discipline", () => {
    */
   const EXPORT_BUDGET_KIB = 30;
 
-  /** The whole entry's chunk graph. openai is the fattest at 40.9 KiB. */
-  const ENTRY_BUDGET_KIB = 70; // 61.7 measured for fal after its wave-1c roster growth (2026-08-24).
+  /**
+   * The whole entry's chunk graph.
+   *
+   * **Bumped 70 → 120 by fal's wave 1d**: 107.1 KiB measured, against 40.9 for
+   * openai, the fattest of the hand-written providers. fal is not one vendor's
+   * value lists — it is 140 curated endpoints across nine categories, and this
+   * entry publishes every one of their per-endpoint narrowing rows: nine Kokoro
+   * voice arrays, an 87-member Gemini language map, a 99-member Wizper one, and
+   * ten upscale rows with two media between them.
+   *
+   * Which is the entry doing its job rather than failing it — the whole point
+   * of `unmodel/<p>/values` is a picker that renders the endpoint's OWN
+   * vocabulary — and the invariants that matter are asserted above and unmoved:
+   * no zod, no validators, no catalog, and the same objects the adapters
+   * compile with rather than copies of them.
+   */
+  const ENTRY_BUDGET_KIB = 120;
 
   /** The hub is nine short arrays and two re-exports. 15.6 KiB of chunk graph. */
   const HUB_ENTRY_BUDGET_KIB = 20;

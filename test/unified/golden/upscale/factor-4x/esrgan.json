@@ -1,0 +1,11 @@
+{
+  "ref": "fal/fal-ai/esrgan",
+  "params": {
+    "image_url": "https://example.com/portrait.png",
+    "scale": 4
+  },
+  "url": "https://queue.fal.run/fal-ai/esrgan",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

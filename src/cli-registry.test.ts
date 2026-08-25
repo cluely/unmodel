@@ -64,6 +64,10 @@ const EXPECTED_IDS: readonly string[] = [
   "fal.image",
   "fal.imageEdit",
   "fal.lipsync",
+  "fal.music",
+  "fal.stt",
+  "fal.tts",
+  "fal.upscale",
   "fal.video",
   "fireworks-ai.chat",
   "fish-audio.tts",
@@ -410,10 +414,12 @@ test("the video-category endpoints all use the uniform `video` verb", () => {
  * what makes `unmodel/stt`'s ref union readable — the category entry and the
  * provider entry are the same word.
  *
- * Twelve providers since google joined, and google is the sharpest case the
- * law has: Gemini has no transcription ROUTE at all — audio in and text out is
- * `:generateContent`, the same wire path `google.chat` serves — and the
- * address is still the same word as everyone else's.
+ * Thirteen providers, and two of them are the sharpest cases the law has.
+ * Gemini has no transcription ROUTE at all — audio in and text out is
+ * `:generateContent`, the same wire path `google.chat` serves. fal has six
+ * routes behind one address, because there the endpoint id is a PARAMETER
+ * rather than a path unmodel picked. Both address it as the same word as
+ * everyone else.
  *
  * Written out rather than derived because an id does not carry its category,
  * and because the point of the list is that a rename has to be typed here.
@@ -423,6 +429,10 @@ const STT_IDS: readonly string[] = [
   "cartesia.stt",
   "deepgram.stt",
   "elevenlabs.stt",
+  // Six fal endpoints — Wizper, fal's own ASR and its turbo arm, both
+  // ElevenLabs Scribe generations, and Cohere — behind one address, because at
+  // fal the route is a parameter. Same word all the same.
+  "fal.stt",
   "gladia.stt",
   // Gemini has no dedicated transcription route: `google.stt` is an
   // audio-in/text-out view of `:generateContent`, and the address is uniform
@@ -444,7 +454,7 @@ test("the transcription endpoints all use the uniform `stt` verb", () => {
     expect(id.split(".")[1] ?? "").toBe("stt");
   }
   const providers = [...new Set(STT_IDS.map((id) => id.split(".")[0] as string))].sort();
-  expect(providers).toHaveLength(12);
+  expect(providers).toHaveLength(13);
 
   // The realtime surfaces keep their own names — a socket config is a
   // different endpoint from a batch POST, and collapsing the two would make
@@ -587,12 +597,19 @@ test("the lipsync and avatar endpoints use their categories' own verbs", () => {
 });
 
 /**
- * The music half. Two providers, three routes: the text-to-music route is bare
- * `music` at both, and Stability's two audio-conditioned routes qualify by
- * what they are made from and what they do to a finished track.
+ * The music half. The text-to-music route is bare `music` at every provider
+ * that has one, and Stability's two audio-conditioned routes qualify by what
+ * they are made from and what they do to a finished track.
+ *
+ * fal is one address over ten endpoints, as it is in every other category here:
+ * MiniMax, ElevenLabs, Lyria, Stable Audio, ACE-Step and DiffRhythm are all
+ * reachable through `fal.music` with the endpoint id as a parameter.
  */
 const MUSIC_IDS: readonly string[] = [
   "elevenlabs.music",
+  "fal.music",
+  "google.music",
+  "mureka.music",
   "stability.music",
   "stability.musicFromAudio",
   "stability.musicInpaint",
@@ -605,12 +622,116 @@ test("the music-category endpoints all use the uniform `music` verb", () => {
   }
   const providers = [...new Set(MUSIC_IDS.map((id) => id.split(".")[0] as string))].sort();
   for (const provider of providers) expect(MUSIC_IDS).toContain(`${provider}.music`);
-  expect(providers).toEqual(["elevenlabs", "stability"]);
+  expect(providers).toEqual(["elevenlabs", "fal", "google", "mureka", "stability"]);
 
   const retired = [
     "stability.stableAudioTextToAudio",
     "stability.stableAudioAudioToAudio",
     "stability.stableAudioInpaint",
+  ];
+  for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
+ * The upscale half — the newest category in the library, and the one whose
+ * address had the most alternatives to reject.
+ *
+ * `fal.upscale` is bare, over ten endpoints and two media. There is no
+ * `fal.upscaleVideo`, and the argument is the one `fal.video` already makes:
+ * three of the ten take a clip and seven take a still, and that is a difference
+ * in what goes IN rather than in the route's shape. `fal-ai/seedvr/upscale/image`
+ * and `fal-ai/seedvr/upscale/video` are one vendor's one product on two paths;
+ * qualifying the address would mean maintaining a LIST of which endpoint is
+ * which, where the row's `sources` already states it as data.
+ *
+ * There is no `fal.superResolution` either — the wire words fal files these
+ * under are `image-to-image` and `video-to-video`, and neither is an unmodel
+ * verb.
+ */
+const UPSCALE_IDS: readonly string[] = ["fal.upscale"];
+
+test("the upscale endpoints use the category's own verb", () => {
+  for (const id of UPSCALE_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toMatch(/^upscale([A-Z]|$)/);
+  }
+  // Bare at every provider that serves the category, which is what makes
+  // `unmodel/upscale`'s ref union read the same as the provider surface it
+  // compiles down to.
+  for (const provider of [...new Set(UPSCALE_IDS.map((id) => id.split(".")[0] as string))]) {
+    expect(UPSCALE_IDS).toContain(`${provider}.upscale`);
+  }
+
+  // Disjoint from the two image categories, which is the content of the split:
+  // an edit says what the result should look like, an upscale says how much
+  // bigger it should be.
+  expect(UPSCALE_IDS.filter((id) => IMAGE_GENERATION_IDS.includes(id))).toEqual([]);
+  expect(UPSCALE_IDS.filter((id) => IMAGE_EDIT_IDS.includes(id))).toEqual([]);
+  expect(UPSCALE_IDS.filter((id) => VIDEO_IDS.includes(id))).toEqual([]);
+
+  const retired = ["fal.upscaleVideo", "fal.superResolution", "fal.imageToImage"];
+  for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
+ * The text-to-speech half, written out here for the first time because fal is
+ * the first provider whose speech address is worth pinning against a wire
+ * spelling it could have taken instead.
+ *
+ * Nineteen providers, and the verb is bare at every one of them except the four
+ * that ship a second, STREAMING route — `ttsStream` at Murf, Resemble and
+ * Speechify, `ttsDetailed` at LMNT. Those qualify because a stream is a
+ * different endpoint rather than a different model, which is the same rule
+ * `deepgram.listenLive` follows one category over.
+ */
+const TTS_IDS: readonly string[] = [
+  "alibaba.tts",
+  "breezeblue.tts",
+  "cartesia.tts",
+  "deepgram.tts",
+  "elevenlabs.tts",
+  // Twenty-three endpoints from ten vendors, behind one address: at fal the
+  // route is a parameter, so ElevenLabs, MiniMax, Gemini, Kokoro, Chatterbox,
+  // Inworld, xAI, ByteDance and Qwen all arrive through `fal.tts`.
+  "fal.tts",
+  "fish-audio.tts",
+  "google.tts",
+  "hume.tts",
+  "inworld.tts",
+  "lmnt.tts",
+  "lmnt.ttsDetailed",
+  "minimax.tts",
+  "murf.tts",
+  "murf.ttsStream",
+  "openai.tts",
+  "resemble.tts",
+  "resemble.ttsStream",
+  "rime.tts",
+  "smallest-ai.tts",
+  "speechify.tts",
+  "speechify.ttsStream",
+  "stepfun.tts",
+];
+
+test("the speech endpoints all use the uniform `tts` verb", () => {
+  for (const id of TTS_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toMatch(/^tts([A-Z]|$)/);
+  }
+  // Every provider in the list has the BARE route; the qualified ones are
+  // additions rather than replacements.
+  for (const provider of [...new Set(TTS_IDS.map((id) => id.split(".")[0] as string))]) {
+    expect(TTS_IDS).toContain(`${provider}.tts`);
+  }
+
+  const retired = [
+    "elevenlabs.textToSpeech",
+    "openai.speech",
+    "cartesia.bytes",
+    "deepgram.speak",
+    "minimax.t2aV2",
+    "fal.textToSpeech",
+    "fal.speechToText",
   ];
   for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
 });
@@ -740,6 +861,8 @@ test("every media endpoint addresses its category with that category's verb", ()
     ...VIDEO_IDS,
     ...LIPSYNC_IDS,
     ...AVATAR_IDS,
+    ...UPSCALE_IDS,
+    ...TTS_IDS,
     ...STT_IDS,
     ...MUSIC_IDS,
   ];

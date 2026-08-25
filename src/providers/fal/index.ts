@@ -21,11 +21,11 @@
  *
  * ## What is here
  *
- * Five of the nine validators — `image` (28 text-to-image endpoints),
- * `imageEdit` (17 editing), `video` (30 generation and editing routes),
- * `lipsync` (8) and `avatar` (8) — plus the transport surface and the merged
- * catalog. `upscale`, `tts`, `stt` and `music` land in the following waves, on
- * top of generated files that are already in `./gen/`.
+ * All nine validators — `image` (28 text-to-image endpoints), `imageEdit` (17
+ * editing), `video` (30 generation and editing routes), `lipsync` (8),
+ * `avatar` (8), `upscale` (10), `tts` (23), `stt` (6) and `music` (10) — plus
+ * the transport surface and the merged catalog. 140 curated endpoints in all,
+ * every one of them typed from fal's own published OpenAPI document.
  *
  * ## Two things worth knowing before your first call
  *
@@ -65,6 +65,10 @@ export { imageEdit } from "./image-edit";
 export { video } from "./video";
 export { lipsync } from "./lipsync";
 export { avatar } from "./avatar";
+export { upscale } from "./upscale";
+export { tts } from "./tts";
+export { stt } from "./stt";
+export { music } from "./music";
 
 export type {
   FalImageArm,
@@ -101,6 +105,34 @@ export type {
   FalAvatarParams,
   FalAvatarResultById,
 } from "./avatar";
+export type {
+  FalUpscaleArm,
+  FalUpscaleBodyById,
+  FalUpscaleEndpointId,
+  FalUpscaleParams,
+  FalUpscaleResultById,
+} from "./upscale";
+export type {
+  FalTtsArm,
+  FalTtsBodyById,
+  FalTtsEndpointId,
+  FalTtsParams,
+  FalTtsResultById,
+} from "./tts";
+export type {
+  FalSttArm,
+  FalSttBodyById,
+  FalSttEndpointId,
+  FalSttParams,
+  FalSttResultById,
+} from "./stt";
+export type {
+  FalMusicArm,
+  FalMusicBodyById,
+  FalMusicEndpointId,
+  FalMusicParams,
+  FalMusicResultById,
+} from "./music";
 
 export {
   FAL_ENDPOINTS,
@@ -111,6 +143,10 @@ export {
   FAL_VIDEO_ENDPOINTS,
   FAL_LIPSYNC_ENDPOINTS,
   FAL_AVATAR_ENDPOINTS,
+  FAL_UPSCALE_ENDPOINTS,
+  FAL_TTS_ENDPOINTS,
+  FAL_STT_ENDPOINTS,
+  FAL_MUSIC_ENDPOINTS,
   FAL_REQUIRED_PROBES,
 } from "./gen/endpoints.gen";
 export type { FalEndpointId } from "./gen/endpoints.gen";

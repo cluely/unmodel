@@ -25,6 +25,7 @@ import type { ImageEditParams } from "../../src/core/unified/vocabulary/image-ed
 import type { VideoParams } from "../../src/core/unified/vocabulary/video";
 import type { LipsyncParams } from "../../src/core/unified/vocabulary/lipsync";
 import type { AvatarParams } from "../../src/core/unified/vocabulary/avatar";
+import type { UpscaleParams } from "../../src/core/unified/vocabulary/upscale";
 import type { TtsParams } from "../../src/core/unified/vocabulary/tts";
 import type { SttParams } from "../../src/core/unified/vocabulary/stt";
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
@@ -58,6 +59,7 @@ type Category =
   | "video"
   | "lipsync"
   | "avatar"
+  | "upscale"
   | "tts"
   | "stt"
   | "music"
@@ -102,6 +104,14 @@ expectTrue<IsNever<Unclaimed<"lipsync", LipsyncParams>>>();
 
 expectTrue<IsNever<Unlisted<"avatar", AvatarParams>>>();
 expectTrue<IsNever<Unclaimed<"avatar", AvatarParams>>>();
+
+/**
+ * `upscale` shares `source` with lipsync and nothing else — no `audio`, no
+ * `seed` — and adds `factor`, which appears in no other category's list. That
+ * is what a category being genuinely its own looks like from here.
+ */
+expectTrue<IsNever<Unlisted<"upscale", UpscaleParams>>>();
+expectTrue<IsNever<Unclaimed<"upscale", UpscaleParams>>>();
 
 expectTrue<IsNever<Unlisted<"tts", TtsParams>>>();
 expectTrue<IsNever<Unclaimed<"tts", TtsParams>>>();

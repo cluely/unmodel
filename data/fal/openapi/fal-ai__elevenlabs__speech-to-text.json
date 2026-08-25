@@ -1,0 +1,391 @@
+{
+  "metadata": {
+    "category": "speech-to-text",
+    "date": "2025-02-27T00:00:00.000Z",
+    "description": "Generate text from speech using ElevenLabs advanced speech-to-text model.",
+    "display_name": "ElevenLabs Speech to Text",
+    "group": {
+      "key": "e11-speech-to-text",
+      "label": "Scribe V1"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/elevenlabs/speech-to-text",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "speech"
+    ],
+    "thumbnail_url": "https://storage.googleapis.com/falserverless/web-examples/elevenlabs/elevenlabs_thumbnail.webp",
+    "updated_at": "2026-04-21T17:45:10.484Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ElevenlabsSpeechToTextInput": {
+          "properties": {
+            "audio_url": {
+              "description": "URL of the audio file to transcribe",
+              "examples": [
+                "https://v3.fal.media/files/zebra/zJL_oRY8h5RWwjoK1w7tx_output.mp3"
+              ],
+              "title": "Audio Url",
+              "type": "string"
+            },
+            "diarize": {
+              "default": true,
+              "description": "Whether to annotate who is speaking",
+              "title": "Diarize",
+              "type": "boolean"
+            },
+            "language_code": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Language code of the audio",
+              "examples": [
+                "eng",
+                "spa",
+                "fra",
+                "deu",
+                "jpn"
+              ],
+              "title": "Language Code"
+            },
+            "tag_audio_events": {
+              "default": true,
+              "description": "Tag audio events like laughter, applause, etc.",
+              "title": "Tag Audio Events",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "audio_url"
+          ],
+          "title": "SpeechToTextRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio_url",
+            "language_code",
+            "tag_audio_events",
+            "diarize"
+          ]
+        },
+        "ElevenlabsSpeechToTextOutput": {
+          "properties": {
+            "language_code": {
+              "description": "Detected or specified language code",
+              "title": "Language Code",
+              "type": "string"
+            },
+            "language_probability": {
+              "description": "Confidence in language detection",
+              "title": "Language Probability",
+              "type": "number"
+            },
+            "text": {
+              "description": "The full transcribed text",
+              "title": "Text",
+              "type": "string"
+            },
+            "words": {
+              "description": "Word-level transcription details",
+              "items": {
+                "$ref": "#/components/schemas/TranscriptionWord"
+              },
+              "title": "Words",
+              "type": "array"
+            }
+          },
+          "required": [
+            "text",
+            "language_code",
+            "language_probability",
+            "words"
+          ],
+          "title": "TranscriptionOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "text",
+            "language_code",
+            "language_probability",
+            "words"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "TranscriptionWord": {
+          "properties": {
+            "end": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End time in seconds",
+              "title": "End"
+            },
+            "speaker_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Speaker identifier if diarization was enabled",
+              "title": "Speaker Id"
+            },
+            "start": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start time in seconds",
+              "title": "Start"
+            },
+            "text": {
+              "description": "The transcribed word or audio event",
+              "title": "Text",
+              "type": "string"
+            },
+            "type": {
+              "description": "Type of element (word, spacing, or audio_event)",
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "text",
+            "type"
+          ],
+          "title": "TranscriptionWord",
+          "type": "object",
+          "x-fal-order-properties": [
+            "text",
+            "start",
+            "end",
+            "type",
+            "speaker_id"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/elevenlabs/speech-to-text queue.",
+      "title": "Queue OpenAPI for fal-ai/elevenlabs/speech-to-text",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "ElevenLabs Speech to Text: Transcribe audio with high accuracy.\n\nTransforms spoken audio into text with word-level timestamps and\noptional speaker identification. Supports 99 languages with state-of-the-art accuracy.",
+        "category": "speech-to-text",
+        "documentationUrl": "https://fal.ai/models/fal-ai/elevenlabs/speech-to-text/api",
+        "endpointId": "fal-ai/elevenlabs/speech-to-text",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/elevenlabs/speech-to-text",
+        "thumbnailUrl": "https://storage.googleapis.com/falserverless/web-examples/elevenlabs/elevenlabs_thumbnail.webp"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/elevenlabs/speech-to-text": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ElevenlabsSpeechToTextInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/elevenlabs/speech-to-text/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ElevenlabsSpeechToTextOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/elevenlabs/speech-to-text/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/elevenlabs/speech-to-text/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

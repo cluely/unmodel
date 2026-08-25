@@ -64,6 +64,10 @@ export const TTS_MATRIX_SAMPLES = [
   { provider: "breezeblue", params: { model: "breezeblue/breeze-tts-2", text: "Sample.", voice: "VOICE_ID" } },
   { provider: "alibaba", params: { model: "alibaba/qwen3-tts-flash", text: "Sample.", voice: "Cherry" } },
   { provider: "inworld", params: { model: "inworld/inworld-tts-1.5", text: "Sample.", voice: "VOICE_ID" } },
+  // The aggregator. Its URL is the endpoint id, verbatim, appended to one queue
+  // host — which is what makes the row worth generating rather than writing
+  // down: every other provider here has one path and fal has twenty-three.
+  { provider: "fal", params: { model: "fal/fal-ai/kokoro/american-english", text: "Sample.", voice: "af_heart" } },
 ] as const satisfies readonly { provider: string; params: TtsParams }[];
 
 /** One machine row: nothing here is written down, all three come off `.request`. */

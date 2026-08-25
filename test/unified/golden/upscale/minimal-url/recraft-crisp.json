@@ -1,0 +1,10 @@
+{
+  "ref": "fal/fal-ai/recraft/upscale/crisp",
+  "params": {
+    "image_url": "https://example.com/portrait.png"
+  },
+  "url": "https://queue.fal.run/fal-ai/recraft/upscale/crisp",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

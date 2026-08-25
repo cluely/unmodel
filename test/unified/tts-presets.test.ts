@@ -50,6 +50,7 @@ import { tts } from "../../src/unified/tts";
 import { tts as cartesia } from "../../src/providers/cartesia/unified-tts";
 import { tts as deepgram } from "../../src/providers/deepgram/unified-tts";
 import { tts as elevenlabs } from "../../src/providers/elevenlabs/unified-tts";
+import { tts as fal } from "../../src/providers/fal/unified-tts";
 import { tts as fishAudio } from "../../src/providers/fish-audio/unified";
 import { tts as google } from "../../src/providers/google/unified-tts";
 import { tts as hume } from "../../src/providers/hume/unified";
@@ -85,6 +86,10 @@ const ADAPTERS: readonly Adapter[] = [
   smallestAi,
   speechify,
   inworld,
+  // The aggregator, and the sweep's largest single contribution: 23 endpoints
+  // whose `voices` arrays are the whole reason a caller picks one over another.
+  // Every one of those completions is compiled and validated here.
+  fal,
 ];
 
 /** Every codec the vocabulary has — the pool an off-set neighbour comes from. */
@@ -118,13 +123,34 @@ const LANGUAGE_POOL = ["en", "fr", "de", "es", "pt", "zh", "ja", "ru", "ko", "hi
  * for it — the one required encoding field in the category — so a probe about
  * *anything else* has to carry a valid one.
  */
-function base(provider: string): Record<string, unknown> {
+function base(provider: string, ref: string): Record<string, unknown> {
   const params: Record<string, unknown> = { text: "A probe." };
   if (provider === "openai") params["voice"] = "alloy";
   else if (provider === "google") params["voice"] = "Kore";
-  else if (provider !== "deepgram") params["voice"] = "v1";
+  // fal is the one provider where a per-PROVIDER placeholder cannot exist: the
+  // voice list is per ENDPOINT there (nine Kokoro languages publish nine
+  // different arrays, and MiniMax has no flat voice field at all), so the probe
+  // reads the ref's own row — the same table the sweep is checking.
+  else if (provider === "fal") {
+    const voice = falVoices(ref);
+    if (voice !== undefined) params["voice"] = voice;
+  } else if (provider !== "deepgram") params["voice"] = "v1";
   if (provider === "cartesia") params["outputFormat"] = { format: "mp3", sampleRate: 44100 };
   return params;
+}
+
+/**
+ * A voice this fal endpoint's own row publishes, or `undefined` where it
+ * publishes none.
+ *
+ * `undefined` covers two different cases and both are correct to omit: the
+ * OPEN fields (ElevenLabs, Chatterbox — any string, so there is nothing the
+ * sweep can get wrong) and the endpoints with no flat voice parameter at all
+ * (MiniMax, whose voice is `voice_setting.voice_id`).
+ */
+function falVoices(ref: string): string | undefined {
+  const rows = fal.modelParams as Readonly<Record<string, { voices?: readonly string[] }>>;
+  return rows[ref.slice("fal/".length)]?.voices?.[0];
 }
 
 interface Outcome {
@@ -204,7 +230,7 @@ function spellings(codec: AudioFormatCodec): unknown[] {
 function codecReachable(ref: string, provider: string, codec: AudioFormatCodec): string {
   let last = "no spelling compiles";
   for (const value of spellings(codec)) {
-    const probe = run(ref, { ...base(provider), outputFormat: value });
+    const probe = run(ref, { ...base(provider, ref), outputFormat: value });
     if (probe.ok) return "";
     last = probe.errors.join("; ");
   }
@@ -293,7 +319,7 @@ describe("every declared speech preset is a value the provider accepts", () => {
       ref,
       off,
       () => {
-        const probe = run(ref, { ...base(provider), outputFormat: off });
+        const probe = run(ref, { ...base(provider, ref), outputFormat: off });
         if (probe.ok) return "accepted";
         return probe.errors.some((error) => error.includes("@outputFormat"))
           ? ""
@@ -317,7 +343,7 @@ describe("every declared speech preset is a value the provider accepts", () => {
         ref,
         language,
         () => {
-          const probe = run(ref, { ...base(provider), language });
+          const probe = run(ref, { ...base(provider, ref), language });
           return probe.ok ? "" : probe.errors.join("; ");
         },
       ]);
@@ -342,7 +368,7 @@ describe("every declared speech preset is a value the provider accepts", () => {
       ref,
       off,
       () => {
-        const probe = run(ref, { ...base(provider), language: off });
+        const probe = run(ref, { ...base(provider, ref), language: off });
         if (WARN_ONLY_LANGUAGES.has(provider)) {
           if (!probe.ok) return `refused, but this provider only warns: ${probe.errors.join("; ")}`;
           return probe.warnings.includes("invalid_enum_value@language")
@@ -383,7 +409,7 @@ describe("every declared speech preset is a value the provider accepts", () => {
         ref,
         key,
         () => {
-          const probe = run(ref, { ...base(provider), [key]: SENTINEL });
+          const probe = run(ref, { ...base(provider, ref), [key]: SENTINEL });
           if (!probe.ok) return "";
           return probe.wire.includes(SENTINEL) ? "" : "dropped";
         },

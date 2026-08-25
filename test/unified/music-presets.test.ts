@@ -19,6 +19,7 @@ import type { AudioFormatCodec } from "../../src/core/unified/vocabulary/audio";
 import type { MusicModelParams } from "../../src/core/unified/vocabulary/model-params";
 import { music } from "../../src/unified/music";
 import { music as elevenlabs } from "../../src/providers/elevenlabs/unified-music";
+import { music as fal } from "../../src/providers/fal/unified-music";
 import { music as stability } from "../../src/providers/stability/unified-music";
 
 interface Adapter {
@@ -27,7 +28,7 @@ interface Adapter {
   readonly modelParams?: Readonly<Record<string, MusicModelParams>>;
 }
 
-const ADAPTERS: readonly Adapter[] = [elevenlabs, stability];
+const ADAPTERS: readonly Adapter[] = [elevenlabs, stability, fal];
 
 const ALL_CODECS: readonly AudioFormatCodec[] = [
   "mp3",
@@ -155,8 +156,8 @@ describe("every declared music preset is a value the provider accepts", () => {
   }
 
   test("the sweep is not empty", () => {
-    expect(codecCells.length).toBe(14);
-    expect(extraCells.length).toBe(14);
+    expect(codecCells.length).toBe(24);
+    expect(extraCells.length).toBe(53);
   });
 
   test.each(codecCells)("music %s outputFormat %s", (_ref, _codec, probe) => {
@@ -175,29 +176,46 @@ describe("every declared music preset is a value the provider accepts", () => {
   );
 
   /**
-   * The sibling-refusal check the other two categories make has no run-time
-   * analogue here, and saying so is more useful than manufacturing one.
+   * Both mistakes a caller can make with an extra, and they are two different
+   * messages.
    *
+   * The CROSS-PROVIDER one has always been available here: `steps` is
+   * Stability's and ElevenLabs has no such key, so `ExactKeys` catches it for
+   * typed callers and the canonical envelope check backs that up for JSON and
+   * JavaScript.
+   *
+   * The CROSS-MODEL one arrived with fal, and it is the more useful of the two:
    * `applyExtras` refuses an extra by name when **some other model on the same
-   * adapter** declares it — that is what makes the message able to say "it is
-   * taken by …". Music has no such pair: both ElevenLabs ids share one row and
-   * both Stability ids share another, because their endpoints genuinely do not
-   * differ by model. So the only cross-model mistake available is a *cross
-   * provider* one. `ExactKeys` catches it for typed callers; the canonical
-   * envelope check is the matching runtime backstop for JSON and JavaScript.
+   * adapter** declares it, which is what lets the message say "it is taken by
+   * …". Until fal joined, this category had no such pair — both ElevenLabs ids
+   * shared one row and both Stability ids shared another, because those
+   * endpoints genuinely do not differ by model. An aggregator does: ten
+   * endpoints from six vendors, and `lyrics` exists at three of them.
    */
-  test("the cross-provider case is rejected by the type and runtime backstops", () => {
+  test("both the cross-provider and the cross-model case are rejected", () => {
     // @ts-expect-error — `steps` is Stability's; ElevenLabs' row has no such key.
     const rejected = music.safe({ model: "elevenlabs/music_v1", prompt: "x", steps: 40 });
     expect(rejected.ok).toBe(false);
     if (rejected.ok) return;
     expect(rejected.errors[0]).toMatchObject({ code: "unsupported_param", path: ["steps"] });
 
+    // @ts-expect-error — `lyrics` is on three fal rows and not on Lyria 2's.
+    const crossModel = music.safe({ model: "fal/fal-ai/lyria2", prompt: "x", lyrics: "la la" });
+    expect(crossModel.ok).toBe(false);
+    if (crossModel.ok) return;
+    expect(crossModel.errors[0]).toMatchObject({ code: "unsupported_param", path: ["lyrics"] });
+    // The message names the siblings, which is the half a "not accepted" cannot
+    // say and the half that tells a caller they picked the wrong endpoint.
+    expect(crossModel.errors[0]?.message).toContain("fal-ai/ace-step");
+
+    // The two hand-written providers still have one roster each; the aggregator
+    // has one per endpoint, and that is the difference being asserted.
     for (const adapter of ADAPTERS) {
       const rosters = Object.values(adapter.modelParams ?? {}).map((row) =>
         Object.keys(row.extras ?? {}).sort().join(","),
       );
-      expect(new Set(rosters).size, `${adapter.provider} extras rosters`).toBe(1);
+      const expected = adapter.provider === "fal" ? 10 : 1;
+      expect(new Set(rosters).size, `${adapter.provider} extras rosters`).toBe(expected);
     }
   });
 

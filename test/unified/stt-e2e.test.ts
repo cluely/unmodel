@@ -24,12 +24,16 @@ const audio = (): Blob => new Blob([new Uint8Array(1024)], { type: "audio/wav" }
 const BASE64_AUDIO = "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
 
 describe("the pack", () => {
-  test("registers exactly the twelve transcribe providers, sorted", () => {
+  test("registers exactly the thirteen transcribe providers, sorted", () => {
     expect([...stt.providers]).toEqual([
       "assemblyai",
       "cartesia",
       "deepgram",
       "elevenlabs",
+      // fal is an aggregator: one provider id, six transcription endpoints —
+      // Wizper, fal's own ASR and its turbo arm, both ElevenLabs Scribe
+      // generations, and Cohere.
+      "fal",
       "gladia",
       "google",
       "inworld",

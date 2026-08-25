@@ -21,8 +21,13 @@ import { music } from "../../src/unified/music";
 const PROMPT = "slow post-rock build, brushed drums, no vocals";
 
 describe("the pack", () => {
-  test("registers exactly the four music providers, sorted", () => {
-    expect([...music.providers]).toEqual(["elevenlabs", "google", "mureka", "stability"]);
+  test("registers exactly the five music providers, sorted", () => {
+    // fal is an aggregator: one provider id, ten music endpoints — MiniMax,
+    // ElevenLabs, Lyria, Stable Audio, ACE-Step and DiffRhythm. Two of those
+    // vendors also have first-party adapters in this same pack, which is the
+    // point rather than a duplication: the same model billed by two different
+    // companies is a business decision the ref makes visible.
+    expect([...music.providers]).toEqual(["elevenlabs", "fal", "google", "mureka", "stability"]);
   });
 
   test("a provider outside the pack is structural, not a validation error", () => {

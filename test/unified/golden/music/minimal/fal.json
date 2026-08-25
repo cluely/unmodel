@@ -1,0 +1,10 @@
+{
+  "ref": "fal/fal-ai/lyria2",
+  "params": {
+    "prompt": "slow post-rock build, brushed drums, no vocals"
+  },
+  "url": "https://queue.fal.run/fal-ai/lyria2",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

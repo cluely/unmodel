@@ -1,0 +1,11 @@
+{
+  "ref": "fal/fal-ai/stable-audio-3/medium/text-to-audio",
+  "params": {
+    "prompt": "slow post-rock build, brushed drums, no vocals",
+    "duration": 90
+  },
+  "url": "https://queue.fal.run/fal-ai/stable-audio-3/medium/text-to-audio",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

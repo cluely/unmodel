@@ -14,13 +14,17 @@ import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { tts } from "../../src/unified/tts";
 
 describe("the pack", () => {
-  test("registers exactly the eighteen speech providers, sorted", () => {
+  test("registers exactly the nineteen speech providers, sorted", () => {
     expect([...tts.providers]).toEqual([
       "alibaba",
       "breezeblue",
       "cartesia",
       "deepgram",
       "elevenlabs",
+      // fal is an aggregator: one provider id, twenty-three speech endpoints
+      // from ten vendors. Three of those vendors — ElevenLabs, MiniMax and
+      // Google — also have first-party adapters in this same list.
+      "fal",
       "fish-audio",
       "google",
       "hume",

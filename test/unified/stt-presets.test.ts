@@ -47,6 +47,7 @@ import { stt as assemblyai } from "../../src/providers/assemblyai/unified";
 import { stt as cartesia } from "../../src/providers/cartesia/unified-stt";
 import { stt as deepgram } from "../../src/providers/deepgram/unified-stt";
 import { stt as elevenlabs } from "../../src/providers/elevenlabs/unified-stt";
+import { stt as fal } from "../../src/providers/fal/unified-stt";
 import { stt as gladia } from "../../src/providers/gladia/unified";
 import { stt as google } from "../../src/providers/google/unified-stt";
 import { stt as inworld } from "../../src/providers/inworld/unified-stt";
@@ -76,6 +77,7 @@ const ADAPTERS: readonly Adapter[] = [
   revai,
   cartesia,
   inworld,
+  fal,
 ];
 
 const GRANULARITIES: readonly TimestampGranularity[] = ["none", "word", "segment", "character"];

@@ -25,6 +25,14 @@
       "status": "active",
       "updated_at": "2026-08-20T22:03:42.600Z"
     },
+    "blackforestlabs/flux-video-upscale": {
+      "category": "video-to-video",
+      "display_name": "Flux Video Upscale",
+      "file": "openapi/blackforestlabs__flux-video-upscale.json",
+      "sha256": "29d7ceeba21a13d21f32bd33da2d70aedf6312b50f51f610d7061803e308380f",
+      "status": "active",
+      "updated_at": "2026-08-20T15:20:48.463Z"
+    },
     "bytedance/seedance-2.0/image-to-video": {
       "category": "image-to-video",
       "display_name": "Seedance 2 Image to Video",
@@ -81,6 +89,22 @@
       "status": "active",
       "updated_at": "2026-07-17T03:49:00.715Z"
     },
+    "fal-ai/ace-step": {
+      "category": "text-to-audio",
+      "display_name": "ACE Step",
+      "file": "openapi/fal-ai__ace-step.json",
+      "sha256": "c7ebb5aa3f3528ba1f2946680c27298747b8d9402429f26d12883064088c7aa8",
+      "status": "active",
+      "updated_at": "2026-06-24T10:42:28.949Z"
+    },
+    "fal-ai/aura-sr": {
+      "category": "image-to-image",
+      "display_name": "AuraSR",
+      "file": "openapi/fal-ai__aura-sr.json",
+      "sha256": "8adaa37169e0e2a638cffa589e8de2d62bae32bfcbb735c1cd845c1692adb22c",
+      "status": "active",
+      "updated_at": "2026-05-05T23:02:23.362Z"
+    },
     "fal-ai/bytedance/omnihuman/v1.5": {
       "category": "image-to-video",
       "display_name": "Bytedance Omnihuman V1.5",
@@ -88,6 +112,14 @@
       "sha256": "11dde64504b3ef6c5cefaa24c6893302eaa35b45485b815d254858acba01a60a",
       "status": "active",
       "updated_at": "2026-04-21T17:44:32.423Z"
+    },
+    "fal-ai/bytedance/seed-speech/tts/v2": {
+      "category": "text-to-speech",
+      "display_name": "Bytedance Seed Speech Text to Speech",
+      "file": "openapi/fal-ai__bytedance__seed-speech__tts__v2.json",
+      "sha256": "e736df30b6d411d9120fd71a94c42e44464e87be5c84eea062908bf0681d89b6",
+      "status": "active",
+      "updated_at": "2026-06-24T00:21:44.881Z"
     },
     "fal-ai/bytedance/seedream/v4.5/edit": {
       "category": "image-to-image",
@@ -105,6 +137,22 @@
       "status": "active",
       "updated_at": "2026-04-26T21:58:12.077Z"
     },
+    "fal-ai/chatterbox/text-to-speech": {
+      "category": "text-to-speech",
+      "display_name": "Chatterbox",
+      "file": "openapi/fal-ai__chatterbox__text-to-speech.json",
+      "sha256": "ad2a4fee775545b7d9dc78eb5dab38ce85aeb1910f92775d31c30069f97bd9df",
+      "status": "active",
+      "updated_at": "2026-06-24T10:45:12.824Z"
+    },
+    "fal-ai/chatterbox/text-to-speech/multilingual": {
+      "category": "text-to-speech",
+      "display_name": "Chatterbox",
+      "file": "openapi/fal-ai__chatterbox__text-to-speech__multilingual.json",
+      "sha256": "d9f75bed477472dadf2ea4f6e3d2e320e45c9e8e561ef677feb626833e737b35",
+      "status": "active",
+      "updated_at": "2026-06-24T11:34:12.614Z"
+    },
     "fal-ai/clarity-upscaler": {
       "category": "image-to-image",
       "display_name": "Clarity Upscaler",
@@ -113,6 +161,22 @@
       "status": "active",
       "updated_at": "2026-05-06T21:22:23.372Z"
     },
+    "fal-ai/cohere-transcribe": {
+      "category": "speech-to-text",
+      "display_name": "Cohere Transcribe",
+      "file": "openapi/fal-ai__cohere-transcribe.json",
+      "sha256": "4c99f8fe98c00939441b8bedf5e98fc571be04722d3decc84608cbbc5f302806",
+      "status": "active",
+      "updated_at": "2026-05-12T22:04:21.170Z"
+    },
+    "fal-ai/diffrhythm": {
+      "category": "text-to-audio",
+      "display_name": "DiffRhythm: Lyrics to Song",
+      "file": "openapi/fal-ai__diffrhythm.json",
+      "sha256": "01c9b5b5e663b6d2dab983978db641f98b9444a1c9a1e553ac17498a921e6ed7",
+      "status": "active",
+      "updated_at": "2026-06-24T11:45:25.115Z"
+    },
     "fal-ai/echomimic-v3": {
       "category": "audio-to-video",
       "display_name": "EchoMimic V3",
@@ -120,6 +184,62 @@
       "sha256": "c48281d4a8a996ed7dacdd8bda25ffef99bdd63c8b461278915a6299d3c4617a",
       "status": "active",
       "updated_at": "2026-06-24T16:22:02.802Z"
+    },
+    "fal-ai/elevenlabs/music": {
+      "category": "text-to-audio",
+      "display_name": "Elevenlabs Music",
+      "file": "openapi/fal-ai__elevenlabs__music.json",
+      "sha256": "12dd4e3fedda9c468f453d66eedb8d01f7e6a7bee95754eb7d4d4a94d4214a1e",
+      "status": "active",
+      "updated_at": "2026-08-18T21:02:01.110Z"
+    },
+    "fal-ai/elevenlabs/speech-to-text": {
+      "category": "speech-to-text",
+      "display_name": "ElevenLabs Speech to Text",
+      "file": "openapi/fal-ai__elevenlabs__speech-to-text.json",
+      "sha256": "e81afb131475ff292d1004b5114dac4f2e52f300b1addc91502a52f4efa1bf7c",
+      "status": "active",
+      "updated_at": "2026-04-21T17:45:10.484Z"
+    },
+    "fal-ai/elevenlabs/speech-to-text/scribe-v2": {
+      "category": "speech-to-text",
+      "display_name": "ElevenLabs Speech to Text - Scribe V2",
+      "file": "openapi/fal-ai__elevenlabs__speech-to-text__scribe-v2.json",
+      "sha256": "c759e81311e990aecf404246b05fcd8a9e4a3687f08b62511eb497c87e345037",
+      "status": "active",
+      "updated_at": "2026-04-21T17:45:11.121Z"
+    },
+    "fal-ai/elevenlabs/tts/eleven-v3": {
+      "category": "text-to-audio",
+      "display_name": "Elevenlabs Tts Eleven V3",
+      "file": "openapi/fal-ai__elevenlabs__tts__eleven-v3.json",
+      "sha256": "1b40db5d3c39e5468049dbb0a461c4eb66f7ec27656069bdc00e870dc87d3723",
+      "status": "active",
+      "updated_at": "2026-06-24T10:32:10.977Z"
+    },
+    "fal-ai/elevenlabs/tts/multilingual-v2": {
+      "category": "text-to-audio",
+      "display_name": "ElevenLabs TTS Multilingual v2",
+      "file": "openapi/fal-ai__elevenlabs__tts__multilingual-v2.json",
+      "sha256": "df5e558eee01a33d7c6713debd80b5e6c27e917361d9c9334e3a34931cffd864",
+      "status": "active",
+      "updated_at": "2026-06-24T10:35:06.936Z"
+    },
+    "fal-ai/elevenlabs/tts/turbo-v2.5": {
+      "category": "text-to-speech",
+      "display_name": "ElevenLabs TTS Turbo v2.5",
+      "file": "openapi/fal-ai__elevenlabs__tts__turbo-v2.5.json",
+      "sha256": "b4ec9a569bf60d06fec13f7c34e8244328bcd75f418bd4ed838199da3e3b02a1",
+      "status": "active",
+      "updated_at": "2026-04-21T17:45:15.737Z"
+    },
+    "fal-ai/esrgan": {
+      "category": "image-to-image",
+      "display_name": "Upscale Images",
+      "file": "openapi/fal-ai__esrgan.json",
+      "sha256": "3576323436b2a22e252f4c8e4baafdc9925443470ac69d94091160abb12eb5be",
+      "status": "active",
+      "updated_at": "2026-04-21T17:45:19.095Z"
     },
     "fal-ai/flux-2": {
       "category": "text-to-image",
@@ -257,6 +377,22 @@
       "status": "active",
       "updated_at": "2026-06-24T23:02:10.109Z"
     },
+    "fal-ai/gemini-3.1-flash-tts": {
+      "category": "text-to-speech",
+      "display_name": "Gemini 3.1 Flash Tts",
+      "file": "openapi/fal-ai__gemini-3.1-flash-tts.json",
+      "sha256": "79b055c8e57d508ca86dfe08e783fc918ca0151570345803e95b9ed702dfe029",
+      "status": "active",
+      "updated_at": "2026-04-28T16:29:09.509Z"
+    },
+    "fal-ai/gemini-tts": {
+      "category": "text-to-audio",
+      "display_name": "Gemini TTS",
+      "file": "openapi/fal-ai__gemini-tts.json",
+      "sha256": "ccd3fc0af55e02f460c5ae6dd2baa69e3364625a08abdff380f9e320bf7e9754",
+      "status": "active",
+      "updated_at": "2026-07-01T04:16:38.824Z"
+    },
     "fal-ai/gpt-image-1.5": {
       "category": "text-to-image",
       "display_name": "GPT-Image 1.5",
@@ -280,6 +416,14 @@
       "sha256": "99482933cae18e1979c958689c50227cdf6926fddc98e20f11c9631755e74abb",
       "status": "active",
       "updated_at": "2026-06-24T10:32:24.316Z"
+    },
+    "fal-ai/inworld-tts": {
+      "category": "text-to-speech",
+      "display_name": "Inworld TTS-1.5 Max",
+      "file": "openapi/fal-ai__inworld-tts.json",
+      "sha256": "d22b2fecc35e47318e150dc5513c24b27867314f87c20fc1f96de8c89122d9cd",
+      "status": "active",
+      "updated_at": "2026-05-07T21:11:09.129Z"
     },
     "fal-ai/kling-image/v3/text-to-image": {
       "category": "text-to-image",
@@ -385,6 +529,78 @@
       "status": "active",
       "updated_at": "2026-04-26T22:25:17.147Z"
     },
+    "fal-ai/kokoro/american-english": {
+      "category": "text-to-audio",
+      "display_name": "Kokoro TTS",
+      "file": "openapi/fal-ai__kokoro__american-english.json",
+      "sha256": "2bbbb11550f64fed93a9e935f8c37778a977422d990d0b8763f107f7f2b8e5bf",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:35.768Z"
+    },
+    "fal-ai/kokoro/brazilian-portuguese": {
+      "category": "text-to-audio",
+      "display_name": "Kokoro TTS (Brazilian Portuguese)",
+      "file": "openapi/fal-ai__kokoro__brazilian-portuguese.json",
+      "sha256": "4bd0012711180c85463cb40f22439b8de744a2ddfa622c285799f9bd907aa846",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:36.416Z"
+    },
+    "fal-ai/kokoro/british-english": {
+      "category": "text-to-audio",
+      "display_name": "Kokoro TTS (British English)",
+      "file": "openapi/fal-ai__kokoro__british-english.json",
+      "sha256": "5df65dcf920a83e6aae2840863cc8e0d16c5d51c7c977338f9b442d4ccd88133",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:37.034Z"
+    },
+    "fal-ai/kokoro/french": {
+      "category": "text-to-audio",
+      "display_name": "Kokoro TTS (French)",
+      "file": "openapi/fal-ai__kokoro__french.json",
+      "sha256": "45934b4a11c97028365fb99c3e66eb6777894e423defbe848b996862ada6dbc9",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:37.708Z"
+    },
+    "fal-ai/kokoro/hindi": {
+      "category": "text-to-audio",
+      "display_name": "Kokoro TTS (Hindi)",
+      "file": "openapi/fal-ai__kokoro__hindi.json",
+      "sha256": "c4df439927c005f272a21e9ae10da184d58a3b8f886684438b9f5ef325c7ef10",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:38.488Z"
+    },
+    "fal-ai/kokoro/italian": {
+      "category": "text-to-audio",
+      "display_name": "Kokoro TTS (Italian)",
+      "file": "openapi/fal-ai__kokoro__italian.json",
+      "sha256": "c7f61cd1e33d542675bb2ba4991f1e3255eb414a0dd33d9e7a6a4ba4977d8caf",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:39.130Z"
+    },
+    "fal-ai/kokoro/japanese": {
+      "category": "text-to-audio",
+      "display_name": "Kokoro TTS (Japanese)",
+      "file": "openapi/fal-ai__kokoro__japanese.json",
+      "sha256": "14b0e56f473bd59dbfcc1eab5956f45f7879e0f0be096968b6a39b4a74761cc0",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:39.734Z"
+    },
+    "fal-ai/kokoro/mandarin-chinese": {
+      "category": "text-to-audio",
+      "display_name": "Kokoro TTS (Mandarin Chinese)",
+      "file": "openapi/fal-ai__kokoro__mandarin-chinese.json",
+      "sha256": "fe5615bcc550c75487b75bc898e984f43945bcfca0106877f2194602832084cd",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:40.671Z"
+    },
+    "fal-ai/kokoro/spanish": {
+      "category": "text-to-audio",
+      "display_name": "Kokoro TTS (Spanish)",
+      "file": "openapi/fal-ai__kokoro__spanish.json",
+      "sha256": "dc02c47504692c3be42b5ab45ff6e00ae434a7248737cf619a112a5c6eddca5e",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:41.316Z"
+    },
     "fal-ai/latentsync": {
       "category": "video-to-video",
       "display_name": "LatentSync",
@@ -409,6 +625,30 @@
       "status": "active",
       "updated_at": "2026-07-01T04:13:51.657Z"
     },
+    "fal-ai/lyria3/pro": {
+      "category": "text-to-audio",
+      "display_name": "Lyria 3 Pro",
+      "file": "openapi/fal-ai__lyria3__pro.json",
+      "sha256": "93ce6d71bec34b36b07ab430c1c65f57f7cac7df1ab7d78e29ce25a8283a435d",
+      "status": "active",
+      "updated_at": "2026-07-01T04:49:53.442Z"
+    },
+    "fal-ai/minimax-music/v2": {
+      "category": "text-to-audio",
+      "display_name": "Minimax Music",
+      "file": "openapi/fal-ai__minimax-music__v2.json",
+      "sha256": "c288a4cf1116c9fadf19b4dd4189db5823c98f530e1bd70077d3fc703acd812e",
+      "status": "active",
+      "updated_at": "2026-04-21T17:51:57.425Z"
+    },
+    "fal-ai/minimax-music/v2.6": {
+      "category": "text-to-audio",
+      "display_name": "Minimax Music 2.6",
+      "file": "openapi/fal-ai__minimax-music__v2.6.json",
+      "sha256": "68be670f662be217d5ab4def20fea6e05311d34bd372501cf5c1f8a01cb5506c",
+      "status": "active",
+      "updated_at": "2026-04-21T02:05:12.810Z"
+    },
     "fal-ai/minimax/hailuo-02/pro/image-to-video": {
       "category": "image-to-video",
       "display_name": "MiniMax Hailuo 02 [Pro] (Image to Video)",
@@ -424,6 +664,22 @@
       "sha256": "11df3cea8f1ae51e9dbb62439000564de35d9b8613165b138429217e387b623e",
       "status": "active",
       "updated_at": "2026-06-24T10:36:41.475Z"
+    },
+    "fal-ai/minimax/speech-2.8-hd": {
+      "category": "text-to-speech",
+      "display_name": "MiniMax Speech 2.8 [HD]",
+      "file": "openapi/fal-ai__minimax__speech-2.8-hd.json",
+      "sha256": "d52fadd13fb870d5b602c1fe8e39a450d3a506f5a3ca9120bde53f438b6f7499",
+      "status": "active",
+      "updated_at": "2026-05-07T21:20:34.572Z"
+    },
+    "fal-ai/minimax/speech-2.8-turbo": {
+      "category": "text-to-speech",
+      "display_name": "MiniMax Speech 2.8 [Turbo]",
+      "file": "openapi/fal-ai__minimax__speech-2.8-turbo.json",
+      "sha256": "60abca51597551e75e412f05ecac75168bcac54329416016c5f02558128e9d34",
+      "status": "active",
+      "updated_at": "2026-04-21T17:52:12.732Z"
     },
     "fal-ai/nano-banana": {
       "category": "text-to-image",
@@ -489,6 +745,14 @@
       "status": "active",
       "updated_at": "2026-06-17T18:20:01.178Z"
     },
+    "fal-ai/qwen-3-tts/text-to-speech/1.7b": {
+      "category": "text-to-speech",
+      "display_name": "Qwen 3 TTS - Text to Speech [1.7B]",
+      "file": "openapi/fal-ai__qwen-3-tts__text-to-speech__1.7b.json",
+      "sha256": "e86cbfa06de2401b49b89adad594dc1f183dd2fc5d12d641127e7629d3a9a5f4",
+      "status": "active",
+      "updated_at": "2026-04-21T17:53:22.644Z"
+    },
     "fal-ai/qwen-image": {
       "category": "text-to-image",
       "display_name": "Qwen Image",
@@ -505,6 +769,14 @@
       "status": "active",
       "updated_at": "2026-04-21T17:53:28.138Z"
     },
+    "fal-ai/recraft/upscale/crisp": {
+      "category": "image-to-image",
+      "display_name": "Recraft Crisp Upscale",
+      "file": "openapi/fal-ai__recraft__upscale__crisp.json",
+      "sha256": "0fd3b091554975ecea10c287963daa6a5ffcca6a5e70f7ab9ee8378272bfd911",
+      "status": "active",
+      "updated_at": "2026-07-17T00:27:26.426Z"
+    },
     "fal-ai/recraft/v3/text-to-image": {
       "category": "text-to-image",
       "display_name": "Recraft V3",
@@ -520,6 +792,54 @@
       "sha256": "460cd16ecf72010e168bc002f12621a8902a9149c80b72a84b4c97fe30cc2612",
       "status": "active",
       "updated_at": "2026-04-21T17:54:03.006Z"
+    },
+    "fal-ai/seedvr/upscale/image": {
+      "category": "image-to-image",
+      "display_name": "SeedVR2",
+      "file": "openapi/fal-ai__seedvr__upscale__image.json",
+      "sha256": "580d2e89a31f6ecd53fd07f70aab7601e8fb6771ef924a15cafdcb0d384b8af3",
+      "status": "active",
+      "updated_at": "2026-05-26T23:37:45.620Z"
+    },
+    "fal-ai/seedvr/upscale/video": {
+      "category": "video-to-video",
+      "display_name": "SeedVR2",
+      "file": "openapi/fal-ai__seedvr__upscale__video.json",
+      "sha256": "15fab97b9203edb8adbcf9f58848cd6dbc72e855bd2f09adc09bdf79193e3887",
+      "status": "active",
+      "updated_at": "2026-05-26T23:37:45.620Z"
+    },
+    "fal-ai/speech-to-text": {
+      "category": "speech-to-text",
+      "display_name": "Speech-to-Text",
+      "file": "openapi/fal-ai__speech-to-text.json",
+      "sha256": "11115c77b7030a6b71d305973bb442c7ff72e65c12ab54cc63af0c84b336f3aa",
+      "status": "active",
+      "updated_at": "2026-01-26T21:43:58.071Z"
+    },
+    "fal-ai/speech-to-text/turbo": {
+      "category": "speech-to-text",
+      "display_name": "Speech-to-Text",
+      "file": "openapi/fal-ai__speech-to-text__turbo.json",
+      "sha256": "fcbdfcf9bd4ddde4aae71095543f0771aa91946d72e1329957bcda45730a724f",
+      "status": "active",
+      "updated_at": "2026-01-26T21:43:57.680Z"
+    },
+    "fal-ai/stable-audio-25/text-to-audio": {
+      "category": "text-to-audio",
+      "display_name": "Stable Audio 2.5",
+      "file": "openapi/fal-ai__stable-audio-25__text-to-audio.json",
+      "sha256": "fa6c9ab705398d44df99c25890175539d432aed05fd4be3cda91be31337e2f01",
+      "status": "active",
+      "updated_at": "2026-06-24T10:39:31.754Z"
+    },
+    "fal-ai/stable-audio-3/medium/text-to-audio": {
+      "category": "text-to-audio",
+      "display_name": "Stable Audio 3",
+      "file": "openapi/fal-ai__stable-audio-3__medium__text-to-audio.json",
+      "sha256": "cd0e995e68bb5c2608856ffb5ed87bb0a4bf3ef03aa6dffdbf3ba72839e6d8a9",
+      "status": "active",
+      "updated_at": "2026-07-01T04:56:00.169Z"
     },
     "fal-ai/sync-lipsync/v2": {
       "category": "video-to-video",
@@ -705,6 +1025,14 @@
       "status": "active",
       "updated_at": "2026-08-23T19:36:33.852Z"
     },
+    "minimax/music-3": {
+      "category": "text-to-audio",
+      "display_name": "MiniMax Music 3",
+      "file": "openapi/minimax__music-3.json",
+      "sha256": "60dfbe5f2021dc8bf9127305fc9e58ed1b4bbdcdd4fd94baaf30ca8bd71b198b",
+      "status": "active",
+      "updated_at": "2026-08-18T17:00:49.092Z"
+    },
     "openai/gpt-image-2": {
       "category": "text-to-image",
       "display_name": "GPT Image 2 API",
@@ -728,6 +1056,30 @@
       "sha256": "c4313dfee4630ba840b4b83d4a7e4d603201553eb4279ca090c4ad1d924ad8fc",
       "status": "active",
       "updated_at": "2026-07-17T03:49:40.574Z"
+    },
+    "topaz/upscale/image/generative": {
+      "category": "image-to-image",
+      "display_name": "Topaz Upscale Image Generative",
+      "file": "openapi/topaz__upscale__image__generative.json",
+      "sha256": "a82bdd3d6e7c2b1029ba62d5e95dfce26aa2b214e69fe719af8546f440e5338e",
+      "status": "active",
+      "updated_at": "2026-08-17T20:37:43.524Z"
+    },
+    "topaz/upscale/image/precision": {
+      "category": "video-to-video",
+      "display_name": "Topaz Upscale Image Precision",
+      "file": "openapi/topaz__upscale__image__precision.json",
+      "sha256": "c9233f0e1488573739899ecb5b476c6e802bd0022ee7192dfde51489a2dc12c7",
+      "status": "active",
+      "updated_at": "2026-08-17T20:41:05.255Z"
+    },
+    "topaz/upscale/video/precision": {
+      "category": "video-to-video",
+      "display_name": "Topaz Upscale Video Precision",
+      "file": "openapi/topaz__upscale__video__precision.json",
+      "sha256": "d0ce9bc6118b5fb0b8c379b4216ef34eee9023adab607cb64133ad6c381059d6",
+      "status": "active",
+      "updated_at": "2026-08-20T00:07:38.733Z"
     },
     "veed/avatars/audio-to-video": {
       "category": "audio-to-video",
@@ -768,6 +1120,14 @@
       "sha256": "a82e3769b8a1c4f88e3b93715212ba1263ded99080e3e3c51d2fb60dc42d6187",
       "status": "active",
       "updated_at": "2026-04-26T22:32:05.599Z"
+    },
+    "xai/tts/v1": {
+      "category": "text-to-speech",
+      "display_name": "xAI Text to Speech",
+      "file": "openapi/xai__tts__v1.json",
+      "sha256": "5aae153b9e1522968009e00b8a13e77e967849ae6a0cb7bb7237c1899a311fb3",
+      "status": "active",
+      "updated_at": "2026-06-02T21:56:08.936Z"
     }
   }
 }

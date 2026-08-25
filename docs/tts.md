@@ -1,6 +1,6 @@
 # Text-to-speech integrator's matrix
 
-Fifteen providers, one `tts()`. What follows is the per-provider wire detail that a
+Nineteen providers, one `tts()`. What follows is the per-provider wire detail that a
 canonical vocabulary deliberately hides: where the request goes, which header the
 credential rides in, where the audio comes back, and which endpoint quirks are silent
 no-ops rather than errors.
@@ -29,7 +29,7 @@ the doc URLs the fact was verified against.
 The URL is not always constant, so each row names the request that produced it:
 ElevenLabs interpolates the voice into the path and Deepgram URL-encodes the whole
 option set into the query. Both use a placeholder `VOICE_ID` here. `content-type` is on
-every row because all fifteen are JSON endpoints.
+every row because all nineteen are JSON endpoints.
 
 <!-- gen:tts-matrix — regenerate with `bun run gen:tts-matrix` -->
 
@@ -53,6 +53,7 @@ every row because all fifteen are JSON endpoints.
 | `breezeblue` | POST | `https://api.breeze.blue/v1/text-to-speech/VOICE_ID` | `content-type: application/json` |
 | `alibaba` | POST | `https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation` | `content-type: application/json` |
 | `inworld` | POST | `https://api.inworld.ai/tts/v1/voice` | `content-type: application/json` |
+| `fal` | POST | `https://queue.fal.run/fal-ai/kokoro/american-english` | `content-type: application/json` |
 
 <!-- /gen:tts-matrix -->
 
@@ -62,7 +63,7 @@ Names only. unmodel never handles a credential, which is why none of these appea
 generated table above: `.request.headers` is the headers you cannot choose, and auth is
 the one you must.
 
-Eight shapes across fifteen providers, and the shape is a property of the *provider*,
+Nine shapes across nineteen providers, and the shape is a property of the *provider*,
 not of the endpoint, so it does not vary by route:
 
 | Provider | Header | Scheme |
@@ -85,6 +86,7 @@ not of the endpoint, so it does not vary by route:
 | `breezeblue` | `xi-api-key` | bare key |
 | `alibaba` | `Authorization` | `Bearer <key>` |
 | `inworld` | `authorization` | `Basic <key>` |
+| `fal` | `Authorization` | `Key <key>` |
 
 Chat has the same table as data rather than prose — `CHAT_AUTH` from `unmodel/chat`, an
 `EndpointAuth` per provider, checked against the retarget endpoint table by
@@ -122,6 +124,7 @@ Three shapes: flat (one answer), `byRequestField` (one request field decides), a
 | `breezeblue` | `BREEZEBLUE_TTS_DELIVERY` | by the `delivery` query param — raw bytes, or a 202 job whose audio is a second request away |
 | `alibaba` | `ALIBABA_TTS_DELIVERY` | by `stream` — a 24-hour WAV URL inside the JSON, or Base64-PCM SSE frames |
 | `inworld` | `INWORLD_TTS_DELIVERY` | flat: base64 inside the JSON |
+| `fal` | `FAL_TTS_DELIVERY` | flat: a URL inside the JSON — but of the QUEUE RESULT document, not of the submit response |
 
 `url` is its own kind rather than a flag on `base64` because it is the case where there
 are no bytes in hand yet: a caller who treats it as inline audio gets a string where
@@ -130,7 +133,7 @@ this library reads a response body off a `TtsDeliverySpec`.
 
 ## Response checkers
 
-Three of the fifteen ship one. A checker inspects a *decoded* response for quality and
+Three of the nineteen ship one. A checker inspects a *decoded* response for quality and
 usage signals; where a route answers raw bytes there is nothing to inspect, and where it
 answers a JSON envelope carrying no signal beyond the audio itself there is nothing
 worth reporting.
@@ -141,7 +144,7 @@ worth reporting.
 | `murf` | `checkTts` from `unmodel/murf` | `/v1/speech/generate` answers JSON (`audioFile`, `audioLengthInSeconds`, `remainingCharacterCount`, `wordDurations`). `/v1/speech/stream` answers an audio stream and has none. |
 | `resemble` | `checkTts` from `unmodel/resemble` | The synchronous `/synthesize` answers JSON with `success` and `issues` fields to surface. The streaming `/stream` route answers a chunked WAV stream and has none. |
 
-The other twelve have none, and the reason is per provider rather than a blanket policy:
+The other sixteen have none, and the reason is per provider rather than a blanket policy:
 
 | Provider | Why no checker |
 | --- | --- |
@@ -157,6 +160,10 @@ The other twelve have none, and the reason is per provider rather than a blanket
 | `hume` | JSON with base64 audio and nothing else to report — request validation is the scope. |
 | `speechify` | JSON (`audio_data` + `billable_characters_count` + `speech_marks`) with no quality signal — request validation is the scope. |
 | `inworld` | JSON, but it carries no quality or usage signal beyond `usage.processedCharactersCount`. |
+| `stepfun` | Raw audio bytes, or an SSE stream. |
+| `breezeblue` | Raw audio bytes; the async arm answers a job envelope whose audio is a second request away. |
+| `alibaba` | JSON with a 24-hour WAV URL and a token count — no quality signal to report. |
+| `fal` | The POST answers a queue ENVELOPE rather than audio at all, so the thing worth checking is two hops away. `unmodel/fal`'s `./urls.ts` documents the contract, including the fact that fal's queue declares no failure state. |
 
 ## Quirks
 

@@ -94,24 +94,30 @@ import type { ValidateResult } from "../result";
 import type { TranslationWarning, Warn } from "../translate/warnings";
 
 /**
- * The ten media surfaces, each of which gets its own vocabulary, its own
+ * The eleven media surfaces, each of which gets its own vocabulary, its own
  * entry point, and its own adapter set.
  *
  * They are separate categories rather than one `media()` with a mode flag
  * because the vocabularies genuinely do not overlap — `voice` means nothing to
  * an image model, `aspectRatio` nothing to a transcription — and a single type
- * carrying all ten would be a type whose valid combinations you have to
+ * carrying all eleven would be a type whose valid combinations you have to
  * memorize. The voice-creation pair splits for the same reason at closer
  * range: cloning's input is audio samples, design's is a text prompt, and
  * `description` means metadata on one side and the generative instruction on
  * the other (see `vocabulary/voice-clone.ts`).
  *
- * `lipsync` and `avatar` are the newest pair and the closest call in the list —
- * one vendor's single product often serves both — and they split on the same
- * test as everything else here: what goes IN. Lipsync is handed a performance
- * and preserves it; avatar is handed a face and invents one. Merging them would
- * mean a `source` that is a clip at some models and a still at others, which is
- * precisely the "valid combinations you have to memorize" this list avoids.
+ * `lipsync` and `avatar` are the closest call in the list — one vendor's single
+ * product often serves both — and they split on the same test as everything
+ * else here: what goes IN. Lipsync is handed a performance and preserves it;
+ * avatar is handed a face and invents one. Merging them would mean a `source`
+ * that is a clip at some models and a still at others, which is precisely the
+ * "valid combinations you have to memorize" this list avoids.
+ *
+ * `upscale` is the newest and splits from `imageEdit` on what comes OUT: an
+ * edit is described by what the result should look like, an upscale by how much
+ * bigger it should be, and `factor` is meaningless in a vocabulary whose size
+ * words are absolute. Half its routes take a clip, which `imageEdit` has no
+ * word for and should not grow one.
  */
 export type UnifiedCategory =
   | "image"
@@ -119,6 +125,7 @@ export type UnifiedCategory =
   | "video"
   | "lipsync"
   | "avatar"
+  | "upscale"
   | "tts"
   | "stt"
   | "music"

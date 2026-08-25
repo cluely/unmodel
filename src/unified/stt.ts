@@ -87,6 +87,7 @@ import { stt as mistral } from "../providers/mistral/unified";
 import { stt as openai } from "../providers/openai/unified-stt";
 import { stt as revai } from "../providers/revai/unified";
 import { stt as soniox } from "../providers/soniox/unified";
+import { stt as fal } from "../providers/fal/unified-stt";
 import { stt as speechmatics } from "../providers/speechmatics/unified";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
@@ -138,6 +139,7 @@ export const stt = createStt([
   revai,
   cartesia,
   inworld,
+  fal,
 ]);
 
 export type {

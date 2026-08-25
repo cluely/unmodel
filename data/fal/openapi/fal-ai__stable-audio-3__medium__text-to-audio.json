@@ -1,0 +1,441 @@
+{
+  "metadata": {
+    "category": "text-to-audio",
+    "date": "2026-05-22T15:10:08.656Z",
+    "description": "Stable Audio 3 Medium is a 1.4 billion parameter latent diffusion model that generates high-quality stereo music up to 6 minutes from text prompts, trained on fully licensed data for safe commercial use.",
+    "display_name": "Stable Audio 3",
+    "group": {
+      "key": "SA3",
+      "label": "Text to Audio Medium"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "music",
+      "audio",
+      "stereo"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9b2029/-fLLWd3eyZFK2trS5WZSm_3fcc28379b8e43cba15bd36bf4e573d3.jpg",
+    "updated_at": "2026-07-01T04:56:00.169Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "StableAudio3MediumTextToAudioInput": {
+          "properties": {
+            "bitrate": {
+              "default": "192k",
+              "description": "Audio bitrate for compressed output formats (e.g., mp3, aac, opus). Format e.g. '192k' or '320k'. Ignored for lossless formats (wav, flac).",
+              "title": "Bitrate",
+              "type": "string"
+            },
+            "duration": {
+              "default": 30,
+              "description": "Duration of the generated audio in seconds. The medium model supports up to 380 seconds (~6m20s).",
+              "maximum": 380,
+              "minimum": 1,
+              "title": "Duration",
+              "type": "number"
+            },
+            "enable_prompt_expansion": {
+              "default": false,
+              "description": "If True, the prompt will be expanded using an LLM for more detailed and higher quality results.",
+              "title": "Enable Prompt Expansion",
+              "type": "boolean"
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "Enable NSFW content safety checking.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "guidance_scale": {
+              "default": 1,
+              "description": "Classifier-free guidance scale. Higher values follow the prompt more strictly. Only effective on base (non-distilled) checkpoints.",
+              "maximum": 25,
+              "minimum": 0,
+              "title": "Guidance Scale",
+              "type": "number"
+            },
+            "negative_prompt": {
+              "default": "",
+              "description": "Text description of qualities to avoid in the output.",
+              "title": "Negative Prompt",
+              "type": "string"
+            },
+            "num_inference_steps": {
+              "default": 8,
+              "description": "Number of sampling steps. Post-trained (distilled) checkpoints look good with the default 8 and gain little from going higher.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Num Inference Steps",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "mp3",
+              "description": "Container format for the generated audio output.",
+              "enum": [
+                "mp3",
+                "wav",
+                "flac",
+                "ogg",
+                "opus",
+                "m4a",
+                "aac"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "Text description of the audio to generate.",
+              "examples": [
+                "An anthemic Pop Rock instrumental that fills your head with nostalgic thoughtfulness"
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Random seed for reproducible outputs. Omit for a random seed.",
+              "title": "Seed"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If True, the audio is returned inline as a data URI and the result is not saved to the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "TextToAudioMediumInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "negative_prompt",
+            "duration",
+            "num_inference_steps",
+            "guidance_scale",
+            "seed",
+            "enable_prompt_expansion",
+            "enable_safety_checker",
+            "sync_mode",
+            "output_format",
+            "bitrate",
+            "prompt"
+          ]
+        },
+        "StableAudio3MediumTextToAudioOutput": {
+          "properties": {
+            "audio": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated audio clip."
+            },
+            "prompt": {
+              "description": "The prompt used for generation.",
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "description": "The random seed used for generation.",
+              "title": "Seed",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "audio",
+            "seed",
+            "prompt"
+          ],
+          "title": "AudioOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio",
+            "seed",
+            "prompt"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/stable-audio-3/medium/text-to-audio queue.",
+      "title": "Queue OpenAPI for fal-ai/stable-audio-3/medium/text-to-audio",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Ep Medium T2A",
+        "category": "text-to-audio",
+        "documentationUrl": "https://fal.ai/models/fal-ai/stable-audio-3/medium/text-to-audio/api",
+        "endpointId": "fal-ai/stable-audio-3/medium/text-to-audio",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/stable-audio-3/medium/text-to-audio",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9b2029/-fLLWd3eyZFK2trS5WZSm_3fcc28379b8e43cba15bd36bf4e573d3.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/stable-audio-3/medium/text-to-audio": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StableAudio3MediumTextToAudioInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/stable-audio-3/medium/text-to-audio/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/StableAudio3MediumTextToAudioOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/stable-audio-3/medium/text-to-audio/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/stable-audio-3/medium/text-to-audio/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

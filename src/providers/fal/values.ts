@@ -1,14 +1,21 @@
 /**
  * `unmodel/fal/values` — the **runtime** lists behind this provider's unified
- * surfaces (image, image-edit, video, lipsync, avatar).
+ * surfaces (image, image-edit, video, lipsync, avatar, upscale, tts, stt,
+ * music).
  *
  * Every export here is a readonly (`as const`) array or table a browser can
  * render: the endpoint ids, and the per-endpoint narrowing rows (that
  * endpoint's own `image_size` presets, its `aspect_ratio` vocabulary, the
  * resolution tiers it can express, the clip lengths it offers, the image roles
- * its route serves, the source shape it takes, and the extras it takes). It is the value
+ * its route serves, the source shape it takes, the voices and languages it
+ * publishes, the codecs it can emit, and the extras it takes). It is the value
  * half of `unmodel/fal/types`, for the client-side validation and the pickers
  * a type cannot draw.
+ *
+ * `TTS_DELIVERY` is the one export here that is not a request-side list: it
+ * describes where the audio ENDS UP, which at a queue provider is two hops
+ * away. See `./tts-params.ts` for why the path is relative to the result
+ * document rather than to the submit response.
  *
  * The tables are **the same objects the adapters compile with** — re-exported,
  * never copied — so a picker built from `*_MODEL_PARAMS` and the request the
@@ -47,3 +54,24 @@ export {
   FAL_AVATAR_MODEL_PARAMS as AVATAR_MODEL_PARAMS,
   MODELS as AVATAR_MODELS,
 } from "./avatar-params";
+
+export {
+  FAL_UPSCALE_MODEL_PARAMS as UPSCALE_MODEL_PARAMS,
+  MODELS as UPSCALE_MODELS,
+} from "./upscale-params";
+
+export {
+  FAL_TTS_DELIVERY as TTS_DELIVERY,
+  FAL_TTS_MODEL_PARAMS as TTS_MODEL_PARAMS,
+  MODELS as TTS_MODELS,
+} from "./tts-params";
+
+export {
+  FAL_STT_MODEL_PARAMS as STT_MODEL_PARAMS,
+  MODELS as STT_MODELS,
+} from "./stt-params";
+
+export {
+  FAL_MUSIC_MODEL_PARAMS as MUSIC_MODEL_PARAMS,
+  MODELS as MUSIC_MODELS,
+} from "./music-params";

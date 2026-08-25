@@ -1,0 +1,11 @@
+{
+  "ref": "fal/fal-ai/seedvr/upscale/video",
+  "params": {
+    "video_url": "https://example.com/take-3.mp4",
+    "upscale_factor": 2
+  },
+  "url": "https://queue.fal.run/fal-ai/seedvr/upscale/video",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

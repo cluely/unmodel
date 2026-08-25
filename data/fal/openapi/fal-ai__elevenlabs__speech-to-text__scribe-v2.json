@@ -1,0 +1,630 @@
+{
+  "metadata": {
+    "category": "speech-to-text",
+    "date": "2026-01-14T14:30:10.342Z",
+    "description": "Use Scribe-V2 from ElevenLabs to do blazingly fast speech to text inferences!",
+    "display_name": "ElevenLabs Speech to Text - Scribe V2",
+    "group": {
+      "key": "e11-speech-to-text",
+      "label": "Scribe V2"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/elevenlabs/speech-to-text/scribe-v2",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "speech-to-text"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a8a5d77/3XtHpcC46Sg0ItPRjB6Uk_82a3a831177745b38f925d35a7b5ed66.jpg",
+    "updated_at": "2026-04-21T17:45:11.121Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ElevenlabsSpeechToTextScribeV2Input": {
+          "properties": {
+            "audio_url": {
+              "description": "URL of the audio file to transcribe",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/example_inputs/elevenlabs/scribe_v2_in.mp3"
+              ],
+              "title": "Audio Url",
+              "type": "string"
+            },
+            "diarize": {
+              "default": true,
+              "description": "Whether to annotate who is speaking",
+              "title": "Diarize",
+              "type": "boolean"
+            },
+            "keyterms": {
+              "default": [],
+              "description": "Words or sentences to bias the model towards transcribing. Up to 100 keyterms, max 50 characters each. Adds 30% premium over base transcription price.",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 100,
+              "title": "Keyterms",
+              "type": "array"
+            },
+            "language_code": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Language code of the audio",
+              "examples": [
+                "eng",
+                "spa",
+                "fra",
+                "deu",
+                "jpn"
+              ],
+              "title": "Language Code"
+            },
+            "tag_audio_events": {
+              "default": true,
+              "description": "Tag audio events like laughter, applause, etc.",
+              "title": "Tag Audio Events",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "audio_url"
+          ],
+          "title": "SpeechToTextRequestScribeV2",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio_url",
+            "language_code",
+            "tag_audio_events",
+            "diarize",
+            "keyterms"
+          ]
+        },
+        "ElevenlabsSpeechToTextScribeV2Output": {
+          "properties": {
+            "language_code": {
+              "description": "Detected or specified language code",
+              "examples": [
+                "eng"
+              ],
+              "title": "Language Code",
+              "type": "string"
+            },
+            "language_probability": {
+              "description": "Confidence in language detection",
+              "examples": [
+                1
+              ],
+              "title": "Language Probability",
+              "type": "number"
+            },
+            "text": {
+              "description": "The full transcribed text",
+              "examples": [
+                "Hey, this is a test recording for Scribe version two, which is now available on fal.ai."
+              ],
+              "title": "Text",
+              "type": "string"
+            },
+            "words": {
+              "description": "Word-level transcription details",
+              "examples": [
+                {
+                  "end": 0.539,
+                  "speaker_id": "speaker_0",
+                  "start": 0.079,
+                  "text": "Hey,",
+                  "type": "word"
+                },
+                {
+                  "end": 0.599,
+                  "speaker_id": "speaker_0",
+                  "start": 0.539,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 0.679,
+                  "speaker_id": "speaker_0",
+                  "start": 0.599,
+                  "text": "this",
+                  "type": "word"
+                },
+                {
+                  "end": 0.739,
+                  "speaker_id": "speaker_0",
+                  "start": 0.679,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 0.799,
+                  "speaker_id": "speaker_0",
+                  "start": 0.739,
+                  "text": "is",
+                  "type": "word"
+                },
+                {
+                  "end": 0.939,
+                  "speaker_id": "speaker_0",
+                  "start": 0.799,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 0.939,
+                  "speaker_id": "speaker_0",
+                  "start": 0.939,
+                  "text": "a",
+                  "type": "word"
+                },
+                {
+                  "end": 0.959,
+                  "speaker_id": "speaker_0",
+                  "start": 0.939,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 1.179,
+                  "speaker_id": "speaker_0",
+                  "start": 0.959,
+                  "text": "test",
+                  "type": "word"
+                },
+                {
+                  "end": 1.219,
+                  "speaker_id": "speaker_0",
+                  "start": 1.179,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 1.719,
+                  "speaker_id": "speaker_0",
+                  "start": 1.22,
+                  "text": "recording",
+                  "type": "word"
+                },
+                {
+                  "end": 1.719,
+                  "speaker_id": "speaker_0",
+                  "start": 1.719,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 1.86,
+                  "speaker_id": "speaker_0",
+                  "start": 1.719,
+                  "text": "for",
+                  "type": "word"
+                },
+                {
+                  "end": 1.879,
+                  "speaker_id": "speaker_0",
+                  "start": 1.86,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 2.24,
+                  "speaker_id": "speaker_0",
+                  "start": 1.879,
+                  "text": "Scribe",
+                  "type": "word"
+                },
+                {
+                  "end": 2.319,
+                  "speaker_id": "speaker_0",
+                  "start": 2.24,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 2.759,
+                  "speaker_id": "speaker_0",
+                  "start": 2.319,
+                  "text": "version",
+                  "type": "word"
+                },
+                {
+                  "end": 2.779,
+                  "speaker_id": "speaker_0",
+                  "start": 2.759,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 3.379,
+                  "speaker_id": "speaker_0",
+                  "start": 2.779,
+                  "text": "two,",
+                  "type": "word"
+                },
+                {
+                  "end": 3.399,
+                  "speaker_id": "speaker_0",
+                  "start": 3.379,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 3.519,
+                  "speaker_id": "speaker_0",
+                  "start": 3.399,
+                  "text": "which",
+                  "type": "word"
+                },
+                {
+                  "end": 3.539,
+                  "speaker_id": "speaker_0",
+                  "start": 3.519,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 3.659,
+                  "speaker_id": "speaker_0",
+                  "start": 3.539,
+                  "text": "is",
+                  "type": "word"
+                },
+                {
+                  "end": 3.699,
+                  "speaker_id": "speaker_0",
+                  "start": 3.659,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 3.839,
+                  "speaker_id": "speaker_0",
+                  "start": 3.699,
+                  "text": "now",
+                  "type": "word"
+                },
+                {
+                  "end": 3.839,
+                  "speaker_id": "speaker_0",
+                  "start": 3.839,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 4.319,
+                  "speaker_id": "speaker_0",
+                  "start": 3.839,
+                  "text": "available",
+                  "type": "word"
+                },
+                {
+                  "end": 4.339,
+                  "speaker_id": "speaker_0",
+                  "start": 4.319,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 4.579,
+                  "speaker_id": "speaker_0",
+                  "start": 4.339,
+                  "text": "on",
+                  "type": "word"
+                },
+                {
+                  "end": 4.599,
+                  "speaker_id": "speaker_0",
+                  "start": 4.579,
+                  "text": " ",
+                  "type": "spacing"
+                },
+                {
+                  "end": 5.699,
+                  "speaker_id": "speaker_0",
+                  "start": 4.599,
+                  "text": "fal.ai.",
+                  "type": "word"
+                }
+              ],
+              "items": {
+                "$ref": "#/components/schemas/TranscriptionWord"
+              },
+              "title": "Words",
+              "type": "array"
+            }
+          },
+          "required": [
+            "text",
+            "language_code",
+            "language_probability",
+            "words"
+          ],
+          "title": "TranscriptionOutputV2",
+          "type": "object",
+          "x-fal-order-properties": [
+            "text",
+            "language_code",
+            "language_probability",
+            "words"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "TranscriptionWord": {
+          "properties": {
+            "end": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End time in seconds",
+              "title": "End"
+            },
+            "speaker_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Speaker identifier if diarization was enabled",
+              "title": "Speaker Id"
+            },
+            "start": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start time in seconds",
+              "title": "Start"
+            },
+            "text": {
+              "description": "The transcribed word or audio event",
+              "title": "Text",
+              "type": "string"
+            },
+            "type": {
+              "description": "Type of element (word, spacing, or audio_event)",
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "text",
+            "type"
+          ],
+          "title": "TranscriptionWord",
+          "type": "object",
+          "x-fal-order-properties": [
+            "text",
+            "start",
+            "end",
+            "type",
+            "speaker_id"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/elevenlabs/speech-to-text/scribe-v2 queue.",
+      "title": "Queue OpenAPI for fal-ai/elevenlabs/speech-to-text/scribe-v2",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "ElevenLabs Speech to Text with Scribe V2: Transcribe audio with improved accuracy.\n\nTransforms spoken audio into text with word-level timestamps and\noptional speaker identification. Supports 99 languages with state-of-the-art accuracy.\nScribe V2 offers improved performance and supports keyterms for biasing transcription.",
+        "category": "speech-to-text",
+        "documentationUrl": "https://fal.ai/models/fal-ai/elevenlabs/speech-to-text/scribe-v2/api",
+        "endpointId": "fal-ai/elevenlabs/speech-to-text/scribe-v2",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/elevenlabs/speech-to-text/scribe-v2",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a8a5d77/3XtHpcC46Sg0ItPRjB6Uk_82a3a831177745b38f925d35a7b5ed66.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/elevenlabs/speech-to-text/scribe-v2": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ElevenlabsSpeechToTextScribeV2Input"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/elevenlabs/speech-to-text/scribe-v2/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ElevenlabsSpeechToTextScribeV2Output"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/elevenlabs/speech-to-text/scribe-v2/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/elevenlabs/speech-to-text/scribe-v2/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

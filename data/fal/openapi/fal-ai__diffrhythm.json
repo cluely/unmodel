@@ -1,0 +1,398 @@
+{
+  "metadata": {
+    "category": "text-to-audio",
+    "date": "2025-03-04T00:00:00.000Z",
+    "description": "DiffRhythm is a blazing fast model for transforming lyrics into full songs. It boasts the capability to generate full songs in less than 30 seconds.",
+    "display_name": "DiffRhythm: Lyrics to Song",
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/diffrhythm",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "music"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9f92d5/RI4o31rYekV5K2GHIYOeI_4bbU0wiJ.png",
+    "updated_at": "2026-06-24T11:45:25.115Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "DiffrhythmInput": {
+          "properties": {
+            "cfg_strength": {
+              "default": 4,
+              "description": "The CFG strength to use for the music generation.",
+              "maximum": 10,
+              "minimum": 1,
+              "title": "CFG Strength",
+              "type": "number"
+            },
+            "lyrics": {
+              "description": "The prompt to generate the song from. Must have two sections. Sections start with either [chorus] or a [verse].",
+              "examples": [
+                "[00:10.00]Moonlight spills through broken blinds\n[00:13.20]Your shadow dances on the dashboard shrine\n[00:16.85]Neon ghosts in gasoline rain\n[00:20.40]I hear your laughter down the midnight train\n[00:24.15]Static whispers through frayed wires\n[00:27.65]Guitar strings hum our cathedral choirs\n[00:31.30]Flicker screens show reruns of June\n[00:34.90]I'm drowning in this mercury lagoon\n[00:38.55]Electric veins pulse through concrete skies\n[00:42.10]Your name echoes in the hollow where my heartbeat lies\n[00:45.75]We're satellites trapped in parallel light\n[00:49.25]Burning through the atmosphere of endless night\n[01:00.00]Dusty vinyl spins reverse\n[01:03.45]Our polaroid timeline bleeds through the verse\n[01:07.10]Telescope aimed at dead stars\n[01:10.65]Still tracing constellations through prison bars\n[01:14.30]Electric veins pulse through concrete skies\n[01:17.85]Your name echoes in the hollow where my heartbeat lies\n[01:21.50]We're satellites trapped in parallel light\n[01:25.05]Burning through the atmosphere of endless night\n[02:10.00]Clockwork gears grind moonbeams to rust\n[02:13.50]Our fingerprint smudged by interstellar dust\n[02:17.15]Velvet thunder rolls through my veins\n[02:20.70]Chasing phantom trains through solar plane\n[02:24.35]Electric veins pulse through concrete skies\n[02:27.90]Your name echoes in the hollow where my heartbeat lies\n"
+              ],
+              "title": "Lyrics",
+              "type": "string"
+            },
+            "music_duration": {
+              "default": "95s",
+              "description": "The duration of the music to generate.",
+              "enum": [
+                "95s",
+                "285s"
+              ],
+              "title": "Music Duration",
+              "type": "string"
+            },
+            "num_inference_steps": {
+              "default": 32,
+              "description": "The number of inference steps to use for the music generation.",
+              "maximum": 100,
+              "minimum": 10,
+              "title": "Number of Inference Steps",
+              "type": "integer"
+            },
+            "reference_audio_url": {
+              "description": "The URL of the reference audio to use for the music generation.",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/model_tests/diffrythm/rock_en.wav"
+              ],
+              "title": "Reference Audio URL",
+              "type": "string"
+            },
+            "scheduler": {
+              "default": "euler",
+              "description": "The scheduler to use for the music generation.",
+              "enum": [
+                "euler",
+                "midpoint",
+                "rk4",
+                "implicit_adams"
+              ],
+              "title": "Scheduler",
+              "type": "string"
+            },
+            "style_prompt": {
+              "description": "The style prompt to use for the music generation.",
+              "examples": [
+                "pop"
+              ],
+              "title": "Style Prompt",
+              "type": "string"
+            }
+          },
+          "required": [
+            "lyrics"
+          ],
+          "title": "TextToMusicInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "lyrics",
+            "reference_audio_url",
+            "style_prompt",
+            "music_duration",
+            "cfg_strength",
+            "scheduler",
+            "num_inference_steps"
+          ]
+        },
+        "DiffrhythmOutput": {
+          "properties": {
+            "audio": {
+              "$ref": "#/components/schemas/File",
+              "description": "Generated music file.",
+              "examples": [
+                {
+                  "content_type": "application/octet-stream",
+                  "file_name": "output.wav",
+                  "file_size": 33554520,
+                  "url": "https://v3.fal.media/files/elephant/VV4wtKXBpZL1bNv6en36t_output.wav"
+                }
+              ]
+            }
+          },
+          "required": [
+            "audio"
+          ],
+          "title": "Output",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio"
+          ]
+        },
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/diffrhythm queue.",
+      "title": "Queue OpenAPI for fal-ai/diffrhythm",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate",
+        "category": "text-to-audio",
+        "documentationUrl": "https://fal.ai/models/fal-ai/diffrhythm/api",
+        "endpointId": "fal-ai/diffrhythm",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/diffrhythm",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9f92d5/RI4o31rYekV5K2GHIYOeI_4bbU0wiJ.png"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/diffrhythm": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiffrhythmInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/diffrhythm/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DiffrhythmOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/diffrhythm/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/diffrhythm/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

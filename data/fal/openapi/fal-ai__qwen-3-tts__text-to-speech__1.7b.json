@@ -1,0 +1,639 @@
+{
+  "metadata": {
+    "category": "text-to-speech",
+    "date": "2026-01-26T16:26:09.816Z",
+    "description": "Bring speech to your texts using Qwen3-TTS Custom-Voice model with pre-trained voices or use your custom voice with Qwen3-TTS Clone Voice model",
+    "display_name": "Qwen 3 TTS - Text to Speech [1.7B]",
+    "group": {
+      "key": "qwen-3-tts",
+      "label": "Text to Speech [1.7B]"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/qwen-3-tts/text-to-speech/1.7b",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "text-to-speech"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a8bf558/-9L7FupJfteEP98jc8XPM_825292b8601e47b98a34ab5e5f6b3870.jpg",
+    "updated_at": "2026-04-21T17:53:22.644Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "AudioFile": {
+          "properties": {
+            "bitrate": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The bitrate of the audio (e.g., '192k' or 192000)",
+              "title": "Bitrate"
+            },
+            "channels": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The number of channels in the audio",
+              "title": "Channels"
+            },
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "duration": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The duration of the audio",
+              "title": "Duration"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "sample_rate": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The sample rate of the audio",
+              "title": "Sample Rate"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "AudioFile",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size",
+            "duration",
+            "channels",
+            "sample_rate",
+            "bitrate"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "Qwen3TtsTextToSpeech17bInput": {
+          "properties": {
+            "language": {
+              "default": "Auto",
+              "description": "The language of the voice.",
+              "enum": [
+                "Auto",
+                "English",
+                "Chinese",
+                "Spanish",
+                "French",
+                "German",
+                "Italian",
+                "Japanese",
+                "Korean",
+                "Portuguese",
+                "Russian"
+              ],
+              "examples": [
+                "English"
+              ],
+              "title": "Language",
+              "type": "string"
+            },
+            "max_new_tokens": {
+              "anyOf": [
+                {
+                  "maximum": 8192,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 200,
+              "description": "Maximum number of new codec tokens to generate.",
+              "title": "Max New Tokens"
+            },
+            "prompt": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional prompt to guide the style of the generated speech. This prompt will be ignored if a speaker embedding is provided.",
+              "examples": [
+                "Very happy."
+              ],
+              "title": "Prompt"
+            },
+            "reference_text": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional reference text that was used when creating the speaker embedding. Providing this can improve synthesis quality when using a cloned voice.",
+              "examples": [
+                "Okay. Yeah. I resent you. I love you. I respect you. But you know what? You blew it! And it is all thanks to you."
+              ],
+              "title": "Reference Text"
+            },
+            "repetition_penalty": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 1.05,
+              "description": "Penalty to reduce repeated tokens/codes.",
+              "title": "Repetition Penalty"
+            },
+            "speaker_voice_embedding_file_url": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "ui": {
+                    "field": "url"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "URL to a speaker embedding file in safetensors format, from `fal-ai/qwen-3-tts/clone-voice` endpoint. If provided, the TTS model will use the cloned voice for synthesis instead of the predefined voices.",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/example_outputs/qwen3-tts/clone_out.safetensors"
+              ],
+              "title": "Speaker Voice Embedding File Url"
+            },
+            "subtalker_dosample": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": true,
+              "description": "Sampling switch for the sub-talker.",
+              "title": "Subtalker Dosample"
+            },
+            "subtalker_temperature": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0.9,
+              "description": "Temperature for sub-talker sampling.",
+              "title": "Subtalker Temperature"
+            },
+            "subtalker_top_k": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 50,
+              "description": "Top-k for sub-talker sampling.",
+              "title": "Subtalker Top K"
+            },
+            "subtalker_top_p": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 1,
+              "description": "Top-p for sub-talker sampling.",
+              "title": "Subtalker Top P"
+            },
+            "temperature": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 0,
+                  "maximum": 1,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0.9,
+              "description": "Sampling temperature; higher => more random.",
+              "title": "Temperature"
+            },
+            "text": {
+              "description": "The text to be converted to speech.",
+              "examples": [
+                "I am solving the equation: x = [-b ± √(b²-4ac)] / 2a? Nobody can — it's a disaster (◍•͈⌔•͈◍), very sad!"
+              ],
+              "title": "Text",
+              "type": "string"
+            },
+            "top_k": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 50,
+              "description": "Top-k sampling parameter.",
+              "title": "Top K"
+            },
+            "top_p": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 1,
+              "description": "Top-p sampling parameter.",
+              "title": "Top P"
+            },
+            "voice": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "Vivian",
+                    "Serena",
+                    "Uncle_Fu",
+                    "Dylan",
+                    "Eric",
+                    "Ryan",
+                    "Aiden",
+                    "Ono_Anna",
+                    "Sohee"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The voice to be used for speech synthesis, will be ignored if a speaker embedding is provided. Check out the **[documentation](https://github.com/QwenLM/Qwen3-TTS/tree/main?tab=readme-ov-file#custom-voice-generate)** for each voice's details and which language they primarily support.",
+              "examples": [
+                "Vivian"
+              ],
+              "title": "Voice"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "title": "Qwen3TTSInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "text",
+            "prompt",
+            "voice",
+            "language",
+            "speaker_voice_embedding_file_url",
+            "reference_text",
+            "top_k",
+            "top_p",
+            "temperature",
+            "repetition_penalty",
+            "subtalker_dosample",
+            "subtalker_top_k",
+            "subtalker_top_p",
+            "subtalker_temperature",
+            "max_new_tokens"
+          ]
+        },
+        "Qwen3TtsTextToSpeech17bOutput": {
+          "properties": {
+            "audio": {
+              "$ref": "#/components/schemas/AudioFile",
+              "description": "The generated speech audio file.",
+              "examples": [
+                {
+                  "channels": 1,
+                  "content_type": "audio/mpeg",
+                  "duration": 13.025333333333334,
+                  "file_name": "n5Ynr2aFKUPw1QjLYjB_4_XEdHoD1K.mp3",
+                  "sample_rate": 24000,
+                  "url": "https://storage.googleapis.com/falserverless/example_outputs/qwen3-tts/tts_out.mp3"
+                }
+              ]
+            }
+          },
+          "required": [
+            "audio"
+          ],
+          "title": "Qwen3TTSOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/qwen-3-tts/text-to-speech/1.7b queue.",
+      "title": "Queue OpenAPI for fal-ai/qwen-3-tts/text-to-speech/1.7b",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Custom Voice 17B",
+        "category": "text-to-speech",
+        "documentationUrl": "https://fal.ai/models/fal-ai/qwen-3-tts/text-to-speech/1.7b/api",
+        "endpointId": "fal-ai/qwen-3-tts/text-to-speech/1.7b",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/qwen-3-tts/text-to-speech/1.7b",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a8bf558/-9L7FupJfteEP98jc8XPM_825292b8601e47b98a34ab5e5f6b3870.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/qwen-3-tts/text-to-speech/1.7b": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Qwen3TtsTextToSpeech17bInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/qwen-3-tts/text-to-speech/1.7b/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Qwen3TtsTextToSpeech17bOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/qwen-3-tts/text-to-speech/1.7b/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/qwen-3-tts/text-to-speech/1.7b/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

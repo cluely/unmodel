@@ -17,13 +17,36 @@
  */
 
 import type { ModelInfo } from "../../core/catalog-types";
+import { avatarModels } from "./gen/models-avatar.gen";
 import { imageModels } from "./gen/models-image.gen";
 import { imageEditModels } from "./gen/models-image-edit.gen";
+import { lipsyncModels } from "./gen/models-lipsync.gen";
+import { musicModels } from "./gen/models-music.gen";
+import { sttModels } from "./gen/models-stt.gen";
+import { ttsModels } from "./gen/models-tts.gen";
+import { upscaleModels } from "./gen/models-upscale.gen";
+import { videoModels } from "./gen/models-video.gen";
 
-/** Every fal model unmodel serves, keyed by endpoint id. */
+/**
+ * Every fal model unmodel serves, keyed by endpoint id — all nine verbs, 140
+ * endpoints.
+ *
+ * Spread in the verbs' own alphabetical order, which is also `scripts/
+ * codegen-fal.ts`'s emission order, so a new slice lands in one obvious place.
+ * The ids are disjoint by construction: `data/fal/curation.json` maps each id
+ * to exactly one verb, and a duplicate would be a curation bug rather than a
+ * merge conflict.
+ */
 export const models = {
+  ...avatarModels,
   ...imageModels,
   ...imageEditModels,
+  ...lipsyncModels,
+  ...musicModels,
+  ...sttModels,
+  ...ttsModels,
+  ...upscaleModels,
+  ...videoModels,
 } as const satisfies Record<string, ModelInfo>;
 
 export type FalModelId = keyof typeof models;

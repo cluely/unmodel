@@ -79,6 +79,7 @@ import type { AspectRatio, Dimensions, ResolutionTier, VideoResolution } from ".
 // misplace them.
 import type { AvatarImageInput, AvatarSourceKind } from "./avatar";
 import type { LipsyncSourceFor, LipsyncSourceKind } from "./lipsync";
+import type { UpscaleSourceFor, UpscaleSourceKind } from "./upscale";
 // Type-only, and therefore fine that `./stt` imports this file back: an
 // `import type` is erased before emit, so the cycle exists only in the checker,
 // which resolves it. The alternative — moving the granularity union into
@@ -384,6 +385,42 @@ export interface AvatarModelParams extends ModelParamsBase {
 
 /** An avatar adapter's per-model table, keyed by **bare** model id. */
 export type AvatarModelParamTable = Readonly<Record<string, AvatarModelParams>>;
+
+/**
+ * One upscale route's request surface, beyond the canonical vocabulary.
+ *
+ * Two fields, and this is where the `sources` mechanism stops being a
+ * single-member union pretending to be data:
+ * `fal-ai/seedvr/upscale/image` says `["image"]` and
+ * `fal-ai/seedvr/upscale/video` says `["video"]` — one vendor, one product, one
+ * release, two shapes. At lipsync and avatar the row separates two CATEGORIES;
+ * here it separates two routes inside one.
+ */
+export interface UpscaleModelParams extends ModelParamsBase {
+  /**
+   * The source shapes this route accepts, `as const`. Absent keeps the wide
+   * {@link UpscaleSource}; a single-member list narrows `source` to that shape.
+   */
+  readonly sources?: readonly UpscaleSourceKind[];
+  /**
+   * The multipliers this route offers, as a closed set.
+   *
+   * Absent means the multiplier is a RANGE — every number from 1 to 4 at
+   * Clarity, 1 to 10 at SeedVR — and `factor` keeps the wide `number`, with the
+   * ends enforced by the provider's own bounds check. That is the same "a range
+   * genuinely cannot be a union" argument {@link VideoModelParams.durations}
+   * makes, and it is why this list carries no template tail when it IS present.
+   *
+   * An **empty** list is the compile-time `never`: this route has no multiplier
+   * at all. `fal-ai/recraft/upscale/crisp` is the witness — it upscales to a
+   * size it chooses — and typing `factor` as `never` there says so at the
+   * keystroke rather than at the 422.
+   */
+  readonly factors?: readonly number[];
+}
+
+/** An upscale adapter's per-model table, keyed by **bare** model id. */
+export type UpscaleModelParamTable = Readonly<Record<string, UpscaleModelParams>>;
 
 /**
  * One voice-cloning route's request surface, beyond the canonical vocabulary.
@@ -829,6 +866,57 @@ export type AvatarModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] e
     : ModelParamsFor<A, R> extends { readonly sources: readonly string[] }
       ? { image: AvatarImageOf<ModelParamsFor<A, R>> }
       : { image?: AvatarImageInput };
+
+/**
+ * `sources` → the `source` type on an upscale row; absent keeps the wide union.
+ *
+ * No empty-list arm here, unlike its two cousins, and the asymmetry is a fact
+ * about the category rather than an oversight: an upscaler with nothing to
+ * upscale is not a route. Every row in this build names exactly one shape.
+ */
+export type UpscaleSourceOf<Row> = Row extends {
+  readonly sources: readonly (infer S extends string)[];
+}
+  ? UpscaleSourceFor<Extract<S, UpscaleSourceKind>>
+  : never;
+
+/**
+ * `factors` → the `factor` union; absent keeps the wide `number`.
+ *
+ * **No template tail, ever** — {@link VideoDurationOf}'s rule. A `factors` list
+ * is a closed enum (`fal-ai/aura-sr` publishes exactly `4`) and a route whose
+ * multipliers are open declares no list at all. The empty list falls out of the
+ * same expression: `readonly []` matches with `F = never`, which types `factor`
+ * as `never` — the answer for a route with no multiplier field.
+ */
+export type UpscaleFactorOf<Row> = Row extends {
+  readonly factors: readonly (infer F extends number)[];
+}
+  ? F
+  : number;
+
+/**
+ * The two fields an upscale row narrows, as a complete **replacement** for the
+ * vocabulary's own.
+ *
+ * `SizingArms`'s rule, and this category needs both halves of it: `source` is
+ * REQUIRED and an intersection cannot make an optional property required
+ * (`LipsyncArms`'s sharpest-version argument), while `factor` has a `never` arm
+ * that an intersection with `factor?: number` would quietly widen back to a
+ * number. `UpscaleParamsBase` therefore omits both.
+ */
+type UpscaleArms<Source, Factor> = { source: Source; factor?: Factor };
+
+/**
+ * The `source` and `factor` one ref admits. Degraded — dynamic ref, unknown
+ * provider, unknown model — it restates the wide vocabulary, so a model
+ * released after this snapshot stays callable.
+ */
+export type UpscaleModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? UpscaleArms<UpscaleSourceFor<UpscaleSourceKind>, number>
+  : ModelParamsFor<A, R> extends { readonly sources: readonly string[] }
+    ? UpscaleArms<UpscaleSourceOf<ModelParamsFor<A, R>>, UpscaleFactorOf<ModelParamsFor<A, R>>>
+    : UpscaleArms<UpscaleSourceFor<UpscaleSourceKind>, UpscaleFactorOf<ModelParamsFor<A, R>>>;
 
 /** The one field either voice-creation row narrows. */
 type VoiceArms<Language> = { language?: Language };

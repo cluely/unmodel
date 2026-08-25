@@ -1,0 +1,407 @@
+{
+  "metadata": {
+    "category": "text-to-audio",
+    "date": "2026-08-13T19:47:14.143Z",
+    "description": "MiniMax Music 3 is a high-performance music generation model for creating complete songs up to five minutes long",
+    "display_name": "MiniMax Music 3",
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/minimax/music-3",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "sfx",
+      "audio",
+      "effects",
+      ""
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0aa6363a/E6MV5Yy0mhJ2pOzNHcHAU.jpg",
+    "updated_at": "2026-08-18T17:00:49.092Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "MinimaxMusic3Input": {
+          "properties": {
+            "duration": {
+              "default": 60,
+              "description": "Upper bound on the generated audio length in seconds. The model may stop earlier; the actual duration is returned in the output.",
+              "maximum": 300,
+              "minimum": 1,
+              "title": "Duration",
+              "type": "number"
+            },
+            "guidance_scale": {
+              "default": 1.7,
+              "description": "Classifier-free guidance scale of the flow-matching stage.",
+              "examples": [
+                1.7
+              ],
+              "maximum": 20,
+              "minimum": 0,
+              "title": "Guidance Scale",
+              "type": "number"
+            },
+            "lyrics": {
+              "description": "The lyrics to sing. Structure tags such as [intro], [verse], [pre-chorus], [chorus], [post-chorus], [bridge], [instrumental], [solo] and [outro] must each be on their own line; text on the same line as a leading tag is dropped by the model's input contract.",
+              "examples": [
+                "[verse]\nMorning light filtering through the pine\nEvery quiet street is yours and mine\n[chorus]\nSoftly the world begins to breathe"
+              ],
+              "title": "Lyrics",
+              "type": "string"
+            },
+            "num_inference_steps": {
+              "default": 30,
+              "description": "Number of flow-matching Euler steps per 8-second denoising chunk. More steps improve quality at the cost of speed.",
+              "examples": [
+                30
+              ],
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Num Inference Steps",
+              "type": "integer"
+            },
+            "prompt": {
+              "description": "Music description: style, mood, vocals, instrumentation and arrangement. For precise control use a Structured Caption with global metadata (genre, BPM, key, emotional progression), vocal details, and a section-by-section arrangement.",
+              "examples": [
+                "Genre: acoustic pop. BPM: 96. Key: C major. Warm and intimate, building gently into the chorus. Vocals: soft female lead, close and breathy, light stacked harmonies in the chorus. Arrangement: fingerpicked guitar and soft piano; brushed drums and upright bass enter in the chorus."
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Random seed for reproducibility. If not provided, a random seed will be used.",
+              "title": "Seed"
+            }
+          },
+          "required": [
+            "prompt",
+            "lyrics"
+          ],
+          "title": "MiniMaxMusic3Request",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "lyrics",
+            "duration",
+            "seed",
+            "num_inference_steps",
+            "guidance_scale"
+          ]
+        },
+        "MinimaxMusic3Output": {
+          "properties": {
+            "audio": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated audio file (44.1 kHz 16-bit stereo WAV)."
+            },
+            "duration": {
+              "description": "The actual duration of the generated audio in seconds (may be shorter than the requested duration).",
+              "examples": [
+                60
+              ],
+              "title": "Duration",
+              "type": "number"
+            },
+            "seed": {
+              "description": "The random seed used for the generation process.",
+              "examples": [
+                42
+              ],
+              "title": "Seed",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "audio",
+            "seed",
+            "duration"
+          ],
+          "title": "MiniMaxMusic3Output",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio",
+            "seed",
+            "duration"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/minimax-music-3 queue.",
+      "title": "Queue OpenAPI for fal-ai/minimax-music-3",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate a song from lyrics and a music description using MiniMax Music 3.",
+        "documentationUrl": "https://fal.ai/models/fal-ai/minimax-music-3/api",
+        "endpointId": "fal-ai/minimax-music-3",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/minimax-music-3"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/minimax-music-3": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinimaxMusic3Input"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/minimax-music-3/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MinimaxMusic3Output"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/minimax-music-3/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/minimax-music-3/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

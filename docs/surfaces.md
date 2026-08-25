@@ -12,7 +12,10 @@ One import per category, one camelCase vocabulary, `"provider/model"` refs. Ever
 | [Image generation](#image-generation) | `unmodel/image` | `unmodel/openai`, `unmodel/google`, `unmodel/black-forest-labs` |
 | [Image editing](#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram` |
 | [Video generation](#video-generation) | `unmodel/video` | `unmodel/openai`, `unmodel/google`, `unmodel/runway` |
-| [Music generation](#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/stability` |
+| [Lipsync](#lipsync) | `unmodel/lipsync` | `unmodel/fal` |
+| [Avatar](#avatar) | `unmodel/avatar` | `unmodel/fal` |
+| [Upscale](#upscale) | `unmodel/upscale` | `unmodel/fal` |
+| [Music generation](#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/fal`, `unmodel/stability` |
 | [Voice cloning](#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
 | [Voice design](#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
 | [Realtime audio config](#realtime-audio) | none | `unmodel/openai`, `unmodel/deepgram`, `unmodel/elevenlabs`, etc. |
@@ -236,6 +239,45 @@ The presenters themselves are reached through `providerOptions` — a 28-value
 enum spelled `avatar_id` at one vendor and `avatar` at another is a coincidence
 with a shape rather than a vocabulary. Neither is `prompt`: three of the eight
 rows have no prompt field, one requires one, and two default theirs to `"."`.
+
+## Upscale
+
+Making a frame bigger — the third fal-only category, and the one that splits
+from `unmodel/image-edit` on what comes OUT. An edit is described by what the
+result should look like; an upscale by how much bigger it should be, and
+`factor` has no meaning in a vocabulary whose size words are absolute. Half
+these routes take a CLIP, which `unmodel/image-edit` has no word for.
+
+```ts
+import { upscale } from "unmodel/upscale";
+
+const request = upscale({
+  model: "fal/fal-ai/clarity-upscaler",
+  source: { url: "https://example.com/portrait.png" },
+  factor: 2,
+  prompt: "sharp fabric weave, natural skin texture",
+});
+
+JSON.stringify(request);
+// → {"image_url":"https://example.com/portrait.png","upscale_factor":2,
+//    "prompt":"sharp fabric weave, natural skin texture"}
+```
+
+Both narrowed fields are per model. `source` is a still at seven of the ten
+endpoints and a clip at three — `fal-ai/seedvr/upscale/image` and
+`fal-ai/seedvr/upscale/video` are one vendor's one product on two paths — and
+`factor` has three answers:
+
+```ts
+upscale({ model: "fal/fal-ai/seedvr/upscale/video", source: { url }, factor: 2 });    // ok
+upscale({ model: "fal/fal-ai/aura-sr", source: { url }, factor: 2 });                 // compile error: 4 only
+upscale({ model: "fal/fal-ai/recraft/upscale/crisp", source: { url }, factor: 2 });   // compile error: no factor
+```
+
+`creativity`, `resemblance`, `denoise`, `sharpen` and the rest are per-model
+extras: each is one vendor's dial with no second witness, and `creativity` alone
+is a 0–1 number at Clarity, a 1–6 integer at Topaz and a two-member enum at
+FLUX.
 
 ## Music generation
 

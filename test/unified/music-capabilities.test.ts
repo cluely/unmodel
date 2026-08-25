@@ -21,11 +21,29 @@ import type { AudioFormatRequest } from "../../src/core/unified/vocabulary/audio
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
 import { music } from "../../src/unified/music";
 import { music as elevenlabs } from "../../src/providers/elevenlabs/unified-music";
+import { music as fal } from "../../src/providers/fal/unified-music";
 import { music as google } from "../../src/providers/google/unified-music";
 import { music as mureka } from "../../src/providers/mureka/unified";
 import { music as stability } from "../../src/providers/stability/unified-music";
 
-type Support = "native" | "derived" | "unsupported";
+type Support =
+  | "native"
+  | "derived"
+  /** No wire field, and the ADAPTER says so — one sentence for the whole provider. */
+  | "unsupported"
+  /**
+   * No wire field at THIS ref, and the refusal lives on the generated row
+   * rather than on the adapter.
+   *
+   * The distinction is not pedantry, and fal is what introduced it: every other
+   * provider in this pack is one vendor with one request surface, so
+   * "ElevenLabs Music has no seed" is a true sentence about the adapter. fal is
+   * a queue in front of six vendors, and "fal music has no instrumental switch"
+   * would be false at two of its ten endpoints. So the refusal is per endpoint,
+   * it counts the siblings that DO take the field, and there is nothing on the
+   * adapter to assert. (Risk R7 in the fal plan.)
+   */
+  | "per-model";
 
 /** Where an encoding lands — three of the five placements the speech wave named. */
 type FormatShape = "codec" | "composite" | "object";
@@ -93,6 +111,27 @@ const TABLE: Readonly<Record<string, Capability>> = {
     seed: "unsupported",
     // No output-format field on either route: succeeded tasks answer mp3 +
     // flac/wav URLs unconditionally.
+  },
+  /**
+   * The aggregator, probed at Stable Audio 3 Medium — the one fal music
+   * endpoint with all four of this table's columns on it: a `duration` in
+   * seconds, a `seed`, and a flat codec enum. The other nine answer differently
+   * (ElevenLabs Music counts MILLISECONDS, eight have no codec field at all),
+   * which is why the narrowing here is per MODEL rather than per adapter.
+   *
+   * `instrumental` is the one word this endpoint has no field for: whether
+   * there are vocals is something its prompt says. Two of the ten — MiniMax 2.6
+   * and ElevenLabs Music — do have a switch, and the refusal counts them.
+   */
+  fal: {
+    ref: "fal/fal-ai/stable-audio-3/medium/text-to-audio",
+    adapter: fal,
+    durationSeconds: "native",
+    duration: { at: "duration", perSecond: 1 },
+    instrumental: "per-model",
+    seed: "native",
+    format: { shape: "codec", at: "output_format", inQuery: false },
+    probe: "flac",
   },
   google: {
     ref: "google/lyria-3-pro-preview",
@@ -175,8 +214,12 @@ describe.each(rows)("%s", (provider, row) => {
 
   test.each(scalars)("%s is %s", (field, support, probe, extra, omitBase) => {
     const declared = row.adapter.unsupported?.[field];
-    if (support === "unsupported") {
-      expect(declared, `${provider}.unsupported.${field}`).toBeDefined();
+    if (support === "unsupported" || support === "per-model") {
+      // Either way it is REFUSED at the canonical path — which is the promise.
+      // What differs is where the sentence comes from, and a `per-model` cell
+      // asserts the adapter has NO blanket claim to make.
+      if (support === "unsupported") expect(declared, `${provider}.unsupported.${field}`).toBeDefined();
+      else expect(declared, `${provider} must refuse ${field} per endpoint, not per adapter`).toBeUndefined();
       expect(compile(row, extra as Partial<MusicParams>, { omitBase })).toEqual([
         `unsupported_param @ ${field}`,
       ]);

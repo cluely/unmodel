@@ -158,11 +158,21 @@ export const REGISTRY = {
   "fal.lipsync": () => import("./providers/fal").then((m) => asCli(m.lipsync)),
   "fal.avatar": () => import("./providers/fal").then((m) => asCli(m.avatar)),
 
-  // Music generation. Both providers address their text-to-music route as
+  // Super-resolution. One provider, ten endpoints, and a bare verb — because
+  // the address names what the endpoint DOES, and every one of these does the
+  // same thing. Notably NOT `fal.upscaleVideo`: three of the ten take a clip,
+  // and that is a difference in what goes IN rather than in the route's shape
+  // (the same argument that keeps thirty video endpoints at `fal.video`). The
+  // caller states which by pointing at an endpoint; the type states which by
+  // reading the row's `sources`.
+  "fal.upscale": () => import("./providers/fal").then((m) => asCli(m.upscale)),
+
+  // Music generation. Every provider addresses its text-to-music route as
   // `music`; Stability's two audio-conditioned routes qualify by what they are
   // made from (`musicFromAudio`) and what they do to a finished track
   // (`musicInpaint`), and both are multipart-only.
   "elevenlabs.music": () => import("./providers/elevenlabs").then((m) => asCli(m.music)),
+  "fal.music": () => import("./providers/fal").then((m) => asCli(m.music)),
   "google.music": () => import("./providers/google").then((m) => asCli(m.music)),
   "mureka.music": () => import("./providers/mureka").then((m) => asCli(m.music)),
   "mureka.instrumental": () => import("./providers/mureka").then((m) => asCli(m.instrumental)),
@@ -182,6 +192,10 @@ export const REGISTRY = {
   "elevenlabs.tts": () => import("./providers/elevenlabs").then((m) => asCli(m.tts)),
   "alibaba.tts": () => import("./providers/alibaba").then((m) => asCli(m.tts)),
   "cartesia.tts": () => import("./providers/cartesia").then((m) => asCli(m.tts)),
+  // fal is an aggregator, so `fal.tts` is twenty-three vendors' speech routes
+  // behind one address — the endpoint id is a parameter, exactly as it is at
+  // `fal.image` and `fal.video`.
+  "fal.tts": () => import("./providers/fal").then((m) => asCli(m.tts)),
   "inworld.tts": () => import("./providers/inworld").then((m) => asCli(m.tts)),
   "deepgram.tts": () => import("./providers/deepgram").then((m) => asCli(m.tts)),
   "fish-audio.tts": () => import("./providers/fish-audio").then((m) => asCli(m.tts)),
@@ -210,6 +224,9 @@ export const REGISTRY = {
   // express; the file-upload-only ones are under MULTIPART_ONLY below.
   "elevenlabs.stt": () =>
     import("./providers/elevenlabs").then((m) => asCli(m.stt)),
+  // fal takes its audio by reference (an https URL or a `data:` URI), never as
+  // multipart, so all six of its transcription routes are JSON-expressible.
+  "fal.stt": () => import("./providers/fal").then((m) => asCli(m.stt)),
   // As with `google.tts`: Gemini has no dedicated transcription endpoint, so
   // `google.stt` is an audio-in/text-out view of `:generateContent`. Inline
   // base64 audio, so JSON params can express it — not multipart.
@@ -346,7 +363,7 @@ export type CliEndpointId = keyof typeof REGISTRY;
  * `cli.test.ts` — which asserts REGISTRY names exactly the module-level
  * provider validators — either wrong or full of exceptions.
  *
- * All ten are here — every category ships a ready-made pack. The key after the
+ * All eleven are here — every category ships a ready-made pack. The key after the
  * dot is the **category id** (`imageEdit`), camelCase like every other endpoint
  * id the CLI takes, not the kebab-case package subpath: `unmodel validate`
  * addresses endpoints, and `unmodel/image-edit` is an import.
@@ -373,6 +390,9 @@ export const UNIFIED = {
   // CLI-usable rather than registered on principle.
   "unified.lipsync": () => import("./unified/lipsync").then((m) => asCli(m.lipsync)),
   "unified.avatar": () => import("./unified/avatar").then((m) => asCli(m.avatar)),
+  // Same reason, one category over: `source` is a reference at all ten upscale
+  // routes, whether it names a still or a clip.
+  "unified.upscale": () => import("./unified/upscale").then((m) => asCli(m.upscale)),
   // Registered even though every clone provider here but inworld/minimax takes
   // its samples as a `Blob`: canonical `{ data }` and `{ fileId }` samples are
   // JSON-expressible, and a ref pointed at a file-only route is refused by

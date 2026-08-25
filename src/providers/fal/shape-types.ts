@@ -288,6 +288,111 @@ export interface FalParamShape {
   /** The wire parameter the audio goes in. `audio_url` everywhere so far, stated all the same. */
   audioWire?: string;
   /**
+   * `fal.upscale`: the wire parameter the multiplier goes in — `upscale_factor`
+   * at eight endpoints, `scale` at ESRGAN.
+   */
+  factorWire?: string;
+  /**
+   * `fal.upscale`: the multipliers this endpoint offers, as a CLOSED set.
+   *
+   * Three states, all load-bearing. Absent means the multiplier is a range and
+   * `factor` keeps the wide `number` ({@link bounds} carries the ends). A list
+   * means a closed enum — `fal-ai/aura-sr` publishes a `const 4`, so `factor: 2`
+   * is a compile error naming 4. An EMPTY list means the endpoint has no
+   * multiplier at all (`fal-ai/recraft/upscale/crisp`), which types `factor` as
+   * `never` rather than letting a caller ask for something the route cannot do.
+   */
+  factors?: readonly number[];
+  /**
+   * `fal.tts` / `fal.music`: the wire parameter the words go in.
+   *
+   * Curated rather than derived, because the endpoints genuinely disagree:
+   * speech is `text` at ElevenLabs and `prompt` at Kokoro, and music is
+   * `prompt` at Lyria, `tags` at ACE-Step and `lyrics` at DiffRhythm — where
+   * the lyrics ARE the request and `style_prompt` is the decoration.
+   */
+  textWire?: string;
+  /**
+   * `fal.tts`: the wire parameter the voice goes in, where the endpoint has a
+   * FLAT one. Absent at MiniMax, whose voice is `voice_setting.voice_id` — one
+   * level down, and unmodel does not flatten objects into canonical words.
+   */
+  voiceWire?: string;
+  /**
+   * `fal.tts`: the voices this endpoint publishes, where it publishes a closed
+   * list. Open by the time it reaches a caller (`VoiceOf` keeps the
+   * `(string & {})` tail), because every provider here supports cloned voices
+   * and a closed union would refuse a working request.
+   */
+  voices?: readonly string[];
+  /** `fal.tts`: the wire parameter the speed multiplier goes in. */
+  speedWire?: string;
+  /**
+   * `fal.tts` / `fal.stt`: the wire parameter the language goes in — four
+   * spellings across the speech roster (`language`, `language_code`,
+   * `language_boost`, `custom_audio_language`).
+   */
+  languageWire?: string;
+  /** That field takes any string — ElevenLabs' free-form BCP-47 code, nothing to map. */
+  languageOpen?: true;
+  /** The languages this endpoint offers, as canonical BCP-47 primary subtags. */
+  languages?: readonly string[];
+  /**
+   * Canonical primary subtag → this endpoint's own spelling of it.
+   *
+   * The way back, and it is not cosmetic: Gemini spells English `"English
+   * (US)"` and MiniMax spells it `"English"`, so an adapter that had resolved a
+   * caller's `"en"` would still have nothing to send without this.
+   */
+  languageValues?: Readonly<Record<string, string>>;
+  /** `fal.tts` / `fal.music`: the wire parameter the output codec goes in. */
+  formatWire?: string;
+  /**
+   * The canonical codecs this endpoint can emit.
+   *
+   * An EMPTY list means there is no flat codec field, and three endpoints reach
+   * it three different ways: `xai/tts/v1` spells its format as an OBJECT,
+   * `fal-ai/minimax/speech-02-hd` spells `output_format` as `url | hex` — a
+   * DELIVERY switch wearing a codec's name — and Kokoro has no format field at
+   * all. All three type `outputFormat` as `never`; the adapter's message says
+   * which of the three it is.
+   */
+  codecs?: readonly string[];
+  /** Canonical codec → this endpoint's own spelling (`mp3` → `"mp3_44100_128"`). */
+  codecValues?: Readonly<Record<string, string>>;
+  /**
+   * `fal.stt`: the timing granularities this route can be ASKED for.
+   *
+   * Empty at five of the six, and honestly so: ElevenLabs Scribe always returns
+   * word timings and offers no switch to turn them off. An empty list types
+   * `timestamps` as `never` — "this route does not take the question" — where a
+   * list containing `"none"` would say "you may ask for plain text", which is
+   * true nowhere here.
+   */
+  timestamps?: readonly string[];
+  /** Canonical granularity → this endpoint's own spelling (wizper's `chunk_level`). */
+  timestampValues?: Readonly<Record<string, string>>;
+  /** `fal.stt`: the wire parameter the diarization switch goes in. */
+  diarizeWire?: string;
+  /**
+   * `fal.music`: the wire parameter the length goes in — four spellings across
+   * ten endpoints (`duration`, `seconds_total`, `music_duration`,
+   * `music_length_ms`).
+   */
+  lengthWire?: string;
+  /**
+   * `"ms"` where that parameter counts MILLISECONDS. ElevenLabs Music is the
+   * one, and it is the reason the canonical word is `durationSeconds`: a bare
+   * number means milliseconds there and seconds everywhere else.
+   */
+  lengthUnit?: "ms";
+  /** `fal.music`: the lengths this endpoint offers as a closed set, in SECONDS. */
+  lengths?: readonly number[];
+  /** Canonical seconds → the literal the length parameter takes (`95` → `"95s"`). */
+  lengthValues?: Readonly<Record<string, string | number>>;
+  /** `fal.music`: the wire parameter the instrumental switch goes in. */
+  instrumentalWire?: string;
+  /**
    * Everything this endpoint takes that the canonical vocabulary has no word
    * for, as `{ wireName: EXTRA as T }` — keys for `applyExtras` to read at run
    * time, types for an editor to offer. See `core/unified/vocabulary/model-params.ts`.

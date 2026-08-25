@@ -1,0 +1,362 @@
+{
+  "metadata": {
+    "category": "text-to-audio",
+    "date": "2025-02-14T00:00:00.000Z",
+    "description": "A fast and natural-sounding Japanese text-to-speech model optimized for smooth pronunciation.",
+    "display_name": "Kokoro TTS (Japanese)",
+    "group": {
+      "key": "kokoro-tts",
+      "label": "Japanese"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "model_url": "https://fal.run/fal-ai/kokoro/japanese",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "speech"
+    ],
+    "thumbnail_url": "https://storage.googleapis.com/falserverless/gallery/kokoro.webp",
+    "updated_at": "2026-04-21T17:50:39.734Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "KokoroJapaneseInput": {
+          "properties": {
+            "prompt": {
+              "examples": [
+                "夢を追いかけることを恐れないでください。努力すれば、必ず道は開けます！"
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "speed": {
+              "default": 1,
+              "description": "Speed of the generated audio. Default is 1.0.",
+              "maximum": 5,
+              "minimum": 0.1,
+              "title": "Speed",
+              "type": "number"
+            },
+            "voice": {
+              "description": "Voice ID for the desired voice.",
+              "enum": [
+                "jf_alpha",
+                "jf_gongitsune",
+                "jf_nezumi",
+                "jf_tebukuro",
+                "jm_kumo"
+              ],
+              "examples": [
+                "jf_alpha"
+              ],
+              "title": "Voice",
+              "type": "string"
+            }
+          },
+          "required": [
+            "prompt",
+            "voice"
+          ],
+          "title": "JapaneseRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "voice",
+            "speed"
+          ]
+        },
+        "KokoroJapaneseOutput": {
+          "properties": {
+            "audio": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated music",
+              "examples": [
+                {
+                  "url": "https://fal.media/files/lion/piLhqKO8LJxrWaNg2dVUv_tmpp6eff6zl.wav"
+                }
+              ]
+            }
+          },
+          "required": [
+            "audio"
+          ],
+          "title": "JapaneseOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/kokoro/japanese queue.",
+      "title": "Queue OpenAPI for fal-ai/kokoro/japanese",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate Japanese",
+        "category": "text-to-audio",
+        "documentationUrl": "https://fal.ai/models/fal-ai/kokoro/japanese/api",
+        "endpointId": "fal-ai/kokoro/japanese",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/kokoro/japanese",
+        "thumbnailUrl": "https://storage.googleapis.com/falserverless/gallery/kokoro.webp"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/kokoro/japanese": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KokoroJapaneseInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/kokoro/japanese/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/KokoroJapaneseOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/kokoro/japanese/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/kokoro/japanese/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

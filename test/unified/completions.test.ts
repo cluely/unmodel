@@ -417,6 +417,118 @@ avatar({
     ).toEqual([]);
   });
 
+  /**
+   * Probe 4 — twenty-three speech endpoints, nine of them one product, and the
+   * voice list that decides which is which.
+   *
+   * fal serves Kokoro as one endpoint per language, and the ONLY thing telling
+   * them apart is the `voices` array on each row: twenty for American English,
+   * five for Japanese, one for French. If those rows ever collapsed into a
+   * shared constant — which the generator's dedup would do the moment the
+   * arrays matched — the completion list would silently become the union and a
+   * caller would be offered `af_heart` on a Japanese endpoint. That is what
+   * this probe is for.
+   */
+  test("probe 4 — kokoro completes its own language's voices, and nothing else's", () => {
+    const american = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "fal/fal-ai/kokoro/american-english", text: "hi", voice: "¦" });`);
+    expect(american).toContain("af_heart");
+    expect(american).toContain("am_michael");
+    // Japanese, Mandarin and Hindi voices are on the SAME product one path over.
+    expect(american).not.toContain("jf_alpha");
+    expect(american).not.toContain("zf_xiaobei");
+
+    const japanese = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "fal/fal-ai/kokoro/japanese", text: "hi", voice: "¦" });`);
+    expect(japanese).toContain("jf_alpha");
+    expect(japanese).toContain("jm_kumo");
+    expect(japanese).not.toContain("af_heart");
+
+    // The tail is what keeps `voices` a completion list rather than a gate:
+    // every provider in this category supports cloned voices, so an off-list
+    // string has to keep compiling. `VoiceOf` carries `(string & {})` for
+    // exactly this.
+    expect(
+      semanticErrorsIn(`import { tts } from "./src/unified/tts";
+tts({ model: "fal/fal-ai/kokoro/american-english", text: "hi", voice: "my_cloned_voice" });`),
+    ).toEqual([]);
+    // …and the object spellings survive the narrowing too.
+    expect(
+      semanticErrorsIn(`import { tts } from "./src/unified/tts";
+tts({ model: "fal/fal-ai/kokoro/japanese", text: "hi", voice: { id: "custom" } });`),
+    ).toEqual([]);
+
+    // The three-way `outputFormat` split, at the keystroke: Gemini's field is a
+    // codec, Kokoro has none at all, and both answers are the row's.
+    const codecs = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "fal/fal-ai/gemini-tts", text: "hi", outputFormat: "¦" });`);
+    expect(codecs).toContain("mp3");
+    expect(codecs).toContain("opus");
+    expect(codecs).not.toContain("flac");
+    expect(
+      semanticErrorsIn(`import { tts } from "./src/unified/tts";
+tts({ model: "fal/fal-ai/kokoro/american-english", text: "hi", outputFormat: "mp3" });`).length,
+    ).toBeGreaterThan(0);
+  });
+
+  /**
+   * Probe 4b — the newest category, and the two narrowings it exists for.
+   *
+   * `source` separates a still from a clip INSIDE one category here, which is
+   * the case `unmodel/lipsync` and `unmodel/avatar` split into two categories
+   * to avoid — and it works because the same vendor ships both arms of the same
+   * product, so the row is the only thing that can tell them apart.
+   */
+  test("probe 4b — upscale narrows the source medium and the factor, per model", () => {
+    // The clip arm takes a clip…
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({
+  model: "fal/fal-ai/seedvr/upscale/video",
+  source: { data: "AAAA", mimeType: "video/mp4" },
+});`),
+    ).toEqual([]);
+    // …and refuses the still its own sibling requires.
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({
+  model: "fal/fal-ai/seedvr/upscale/video",
+  source: { data: "AAAA", mimeType: "image/png" },
+});`).length,
+    ).toBeGreaterThan(0);
+
+    // `factor` has three answers and the editor gives each of them: a closed
+    // enum completes its one member…
+    const only = completionsAt(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "fal/fal-ai/aura-sr", source: { url: "https://x/a.png" }, factor: ¦ });`);
+    expect(only).toContain("4");
+
+    // …an absent field is a squiggle rather than a widened number…
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "fal/fal-ai/recraft/upscale/crisp", source: { url: "https://x/a.png" }, factor: 2 });`)
+        .length,
+    ).toBeGreaterThan(0);
+
+    // …and a range keeps the wide `number`, with the ends left to run time.
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "fal/fal-ai/seedvr/upscale/image", source: { url: "https://x/a.png" }, factor: 7 });`),
+    ).toEqual([]);
+
+    // The per-model extras complete from each endpoint's own wire interface —
+    // `creativity` is a 0..1 number at Clarity and a 1..6 integer at Topaz, so
+    // a canonical word for it would have had to pick one.
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "fal/fal-ai/clarity-upscaler", source: { url: "https://x/a.png" }, creativity: 0.35 });`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "fal/fal-ai/esrgan", source: { url: "https://x/a.png" }, creativity: 0.35 });`).length,
+    ).toBeGreaterThan(0);
+  });
+
   test("an endpoint id typed as a plain string still compiles", () => {
     // The other half of the map-over-union choice: a caller who builds the id
     // at run time gets the loose arm rather than a type error. A union of

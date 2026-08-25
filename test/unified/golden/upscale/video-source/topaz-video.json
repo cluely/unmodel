@@ -1,0 +1,11 @@
+{
+  "ref": "fal/topaz/upscale/video/precision",
+  "params": {
+    "video_url": "https://example.com/take-3.mp4",
+    "upscale_factor": 2
+  },
+  "url": "https://queue.fal.run/topaz/upscale/video/precision",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

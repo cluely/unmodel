@@ -1,0 +1,281 @@
+{
+  "metadata": {
+    "category": "speech-to-text",
+    "date": "2025-04-04T15:08:54.913Z",
+    "description": "Leverage the rapid processing capabilities of AI models to enable accurate and efficient real-time speech-to-text transcription.",
+    "display_name": "Speech-to-Text",
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/speech-to-text",
+    "pinned": false,
+    "status": "active",
+    "stream_url": "https://fal.run/fal-ai/speech-to-text/stream",
+    "tags": [
+      ""
+    ],
+    "thumbnail_url": "https://storage.googleapis.com/falserverless/gallery/canary.webp",
+    "updated_at": "2026-01-26T21:43:58.071Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "SpeechToTextInput": {
+          "properties": {
+            "audio_url": {
+              "description": "Local filesystem path (or remote URL) to a long audio file",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/canary/18e15559-ab3e-4f96-9583-be5ddde91e43.mp3"
+              ],
+              "title": "Audio Path",
+              "type": "string"
+            },
+            "use_pnc": {
+              "default": true,
+              "description": "Whether to use Canary's built-in punctuation & capitalization",
+              "title": "Use Punctuation/Capitalization (PnC)",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "audio_url"
+          ],
+          "title": "SpeechInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio_url",
+            "use_pnc"
+          ]
+        },
+        "SpeechToTextOutput": {
+          "properties": {
+            "output": {
+              "description": "The partial or final transcription output from Canary",
+              "title": "Transcribed Text",
+              "type": "string"
+            },
+            "partial": {
+              "default": false,
+              "description": "Indicates if this is a partial (in-progress) transcript",
+              "title": "Partial",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ],
+          "title": "SpeechOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "output",
+            "partial"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/speech-to-text queue.",
+      "title": "Queue OpenAPI for fal-ai/speech-to-text",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Run",
+        "category": "speech-to-text",
+        "documentationUrl": "https://fal.ai/models/fal-ai/speech-to-text/api",
+        "endpointId": "fal-ai/speech-to-text",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/speech-to-text",
+        "thumbnailUrl": "https://storage.googleapis.com/falserverless/gallery/canary.webp"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/speech-to-text": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechToTextInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/speech-to-text/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SpeechToTextOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/speech-to-text/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/speech-to-text/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

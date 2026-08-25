@@ -1,0 +1,392 @@
+{
+  "metadata": {
+    "category": "text-to-speech",
+    "date": "2025-06-01T19:53:08.674Z",
+    "description": "Whether you're working on memes, videos, games, or AI agents, Chatterbox brings your content to life. Use the first tts from resemble ai.",
+    "display_name": "Chatterbox",
+    "group": {
+      "key": "chatterbox",
+      "label": "Text To Speech"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/chatterbox/text-to-speech",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "text-to-speech"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9f91b5/C6BmzEgQMkwwkihT3f3PK_UNKrS2mc.png",
+    "updated_at": "2026-06-24T10:45:12.824Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ChatterboxTextToSpeechInput": {
+          "properties": {
+            "audio_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "https://storage.googleapis.com/chatterbox-demo-samples/prompts/male_rickmorty.mp3",
+              "description": "Optional URL to an audio file to use as a reference for the generated speech. If provided, the model will try to match the style and tone of the reference audio.",
+              "title": "Audio Url"
+            },
+            "cfg": {
+              "default": 0.5,
+              "maximum": 1,
+              "minimum": 0.1,
+              "title": "Cfg",
+              "type": "number"
+            },
+            "exaggeration": {
+              "default": 0.25,
+              "description": "Exaggeration factor for the generated speech (0.0 = no exaggeration, 1.0 = maximum exaggeration).",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Exaggeration",
+              "type": "number"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Useful to control the reproducibility of the generated audio. Assuming all other properties didn't change, a fixed seed should always generate the exact same audio file. Set to 0 for random seed..",
+              "title": "Seed"
+            },
+            "temperature": {
+              "default": 0.7,
+              "description": "Temperature for generation (higher = more creative).",
+              "maximum": 2,
+              "minimum": 0.05,
+              "title": "Temperature",
+              "type": "number"
+            },
+            "text": {
+              "description": "The text to be converted to speech (maximum 5000 characters). You can additionally add the following emotive tags: <laugh>, <chuckle>, <sigh>, <cough>, <sniffle>, <groan>, <yawn>, <gasp>",
+              "examples": [
+                "I just found a hidden treasure in the backyard! Check it out!"
+              ],
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "title": "ChatterboxRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "text",
+            "audio_url",
+            "exaggeration",
+            "temperature",
+            "cfg",
+            "seed"
+          ]
+        },
+        "ChatterboxTextToSpeechOutput": {
+          "properties": {
+            "audio": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated speech audio",
+              "examples": [
+                {
+                  "url": "https://v3.fal.media/files/kangaroo/RQ_pxc7oPdueYqWUqEbPE_tmpjnzvvzx_.wav"
+                }
+              ]
+            }
+          },
+          "required": [
+            "audio"
+          ],
+          "title": "ChatterboxOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio"
+          ]
+        },
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/chatterbox/text-to-speech queue.",
+      "title": "Queue OpenAPI for fal-ai/chatterbox/text-to-speech",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate",
+        "category": "text-to-speech",
+        "documentationUrl": "https://fal.ai/models/fal-ai/chatterbox/text-to-speech/api",
+        "endpointId": "fal-ai/chatterbox/text-to-speech",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/chatterbox/text-to-speech",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9f91b5/C6BmzEgQMkwwkihT3f3PK_UNKrS2mc.png"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/chatterbox/text-to-speech": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatterboxTextToSpeechInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/chatterbox/text-to-speech/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ChatterboxTextToSpeechOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/chatterbox/text-to-speech/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/chatterbox/text-to-speech/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

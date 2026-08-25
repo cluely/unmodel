@@ -1,0 +1,13 @@
+{
+  "ref": "fal/fal-ai/wizper",
+  "audio": {
+    "url": "https://example.com/interview.wav"
+  },
+  "params": {
+    "audio_url": "https://example.com/interview.wav"
+  },
+  "url": "https://queue.fal.run/fal-ai/wizper",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

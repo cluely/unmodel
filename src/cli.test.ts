@@ -540,6 +540,7 @@ test("the unified map names one target per shipped pack", () => {
     "unified.video",
     "unified.lipsync",
     "unified.avatar",
+    "unified.upscale",
     "unified.voiceClone",
     "unified.voiceDesign",
   ]);

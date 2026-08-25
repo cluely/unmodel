@@ -1,0 +1,12 @@
+{
+  "ref": "fal/fal-ai/kokoro/american-english",
+  "voice": "af_heart",
+  "params": {
+    "prompt": "The lighthouse keeper checked the lamp.",
+    "voice": "af_heart"
+  },
+  "url": "https://queue.fal.run/fal-ai/kokoro/american-english",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

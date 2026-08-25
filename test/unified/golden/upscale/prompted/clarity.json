@@ -1,0 +1,12 @@
+{
+  "ref": "fal/fal-ai/clarity-upscaler",
+  "params": {
+    "image_url": "https://example.com/portrait.png",
+    "upscale_factor": 2,
+    "prompt": "sharp fabric weave, natural skin texture"
+  },
+  "url": "https://queue.fal.run/fal-ai/clarity-upscaler",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

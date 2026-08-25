@@ -23,7 +23,7 @@ export default defineConfig({
     // list on its own entry so it gets its own chunk (see that module).
     "values/index": "src/values/index.ts",
     "values/chat-refs": "src/values/chat-refs.ts",
-    // The six unified media surfaces. Each is the kernel plus a factory — the
+    // The eleven unified media surfaces. Each is the kernel plus a factory — the
     // provider adapters are named by the caller, so these entries stay small
     // (pinned in test/bundle-budget.test.ts) no matter how many adapters ship.
     "unified/image": "src/unified/image.ts",
@@ -31,6 +31,7 @@ export default defineConfig({
     "unified/video": "src/unified/video.ts",
     "unified/lipsync": "src/unified/lipsync.ts",
     "unified/avatar": "src/unified/avatar.ts",
+    "unified/upscale": "src/unified/upscale.ts",
     "unified/tts": "src/unified/tts.ts",
     "unified/stt": "src/unified/stt.ts",
     "unified/music": "src/unified/music.ts",

@@ -1,0 +1,376 @@
+{
+  "metadata": {
+    "category": "text-to-audio",
+    "date": "2026-05-20T11:18:49.537Z",
+    "description": "Lyria 3 Pro is the latest music model from Google",
+    "display_name": "Lyria 3 Pro",
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/lyria3/pro",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "audio",
+      "sfx"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9af59e/gZo8cVQPq90KMeAU-tQ7H_5144bb99c04b47038d174c4068bfcada.jpg",
+    "updated_at": "2026-07-01T04:49:53.442Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "Lyria3ProInput": {
+          "properties": {
+            "image_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional image URL to use as inspiration for music generation. The model will create music that matches the mood and theme of the image.",
+              "examples": [
+                "https://v3b.fal.media/files/b/0a93b559/qjT9o0CId1B65PbD6Yp06_9c94501900464c5aa98f302fa4b00375.png"
+              ],
+              "title": "Image Url"
+            },
+            "negative_prompt": {
+              "default": "",
+              "deprecated": true,
+              "description": "Negative prompting is not supported by Lyria 3.",
+              "title": "Negative Prompt",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The text prompt describing the music you want to generate. Include genre, mood, instrumentation, tempo, and vocal style for best results. Lyria 3 supports vocals, lyrics, and multi-language generation.",
+              "examples": [
+                "An energetic electronic dance track with soaring synth leads, punchy four-on-the-floor kick drums, and a catchy vocal hook singing 'Feel the rhythm, feel the night'. 128 BPM."
+              ],
+              "maxLength": 5000,
+              "minLength": 1,
+              "title": "Prompt",
+              "type": "string"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "TextToMusicInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "negative_prompt",
+            "image_url"
+          ]
+        },
+        "Lyria3ProOutput": {
+          "properties": {
+            "audio": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated music as an MP3 file.",
+              "examples": [
+                "https://v3b.fal.media/files/b/0a93b550/klduxmeWsmi304M3zsAlr_output.mp3"
+              ]
+            },
+            "lyrics": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The generated or provided lyrics for the track, if applicable.",
+              "examples": [
+                "Caption: This is a high-energy Progressive House anthem, a subgenre of EDM defined by its massive scale and uplifting melodic content, all polished with a clean, powerful, and wide stereo production aesthetic. The rhythmic foundation is a punchy, heavily compressed four-on-the-floor kick drum, modeled after a classic Roland TR-909, providing a relentless pulse at 128 BPM. Supporting the kick are crisp, bright open hi-hats on the off-beats and a thick clap/snare layer on beats 2 and 4. The harmonic and melodic core is built from multiple synth layers: vast, shimmering supersaw synth pads play a soaring major-key chord progression; a powerful, monophonic sawtooth bassline plays the root notes and is aggressively side-chained to the kick drum to create the genre's signature 'pumping' effect. Above it all, a soaring supersaw lead synth—composed of multiple detuned sawtooth waves to create a thick, wide sound—plays a memorable, uplifting arpeggiated melody. A powerful, clean female vocal delivers the catchy hook, processed with significant hall reverb and delay to make it feel enormous and seamlessly blend with the synths. The entire instrumental bed (pads, lead, bass) is also heavily side-chained to the kick, ensuring every element ducks in volume with each beat to maximize the kick's punch and drive the track forward.\nMosic: 4.5\nBPM: 128.0"
+              ],
+              "title": "Lyrics"
+            }
+          },
+          "required": [
+            "audio"
+          ],
+          "title": "TextToMusicOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio",
+            "lyrics"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/lyria3/pro queue.",
+      "title": "Queue OpenAPI for fal-ai/lyria3/pro",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate full-length songs using Google's Lyria 3 Pro model.\n\nLyria 3 Pro creates complete, structured songs up to 3 minutes long\nfrom text or image prompts. It includes advanced controls for fully\ntimed lyrics and precise tempo control through natural language\ndescriptions.\n\nFor best results, prompts should include:\n- Genre/Style: e.g., \"pop ballad\", \"jazz fusion\", \"cinematic orchestral\"\n- Mood/Emotion: e.g., \"triumphant\", \"intimate\", \"nostalgic\"\n- Instrumentation: e.g., \"full orchestra\", \"acoustic band\", \"electronic production\"\n- Tempo: e.g., \"90 BPM\", \"allegro\", \"moderate groove\"\n- Structure: e.g., \"verse-chorus-verse\", \"build from gentle to powerful\"\n- Vocal style: e.g., \"soulful female vocals\", \"male baritone\", \"choir\"\n- Lyrics: include specific lyrics with timing cues for precise control\n- Language: supports English, German, Spanish, French, Hindi, Japanese, Korean, Portuguese\n\nThe model outputs:\n- Full-length MP3 audio up to 3 minutes at 44.1 kHz / 192 kbps\n- Generated or user-specified lyrics\n- SynthID watermarking for content provenance\n\nSafety filters prevent generation of content mimicking real artists' voices.",
+        "category": "text-to-audio",
+        "documentationUrl": "https://fal.ai/models/fal-ai/lyria3/pro/api",
+        "endpointId": "fal-ai/lyria3/pro",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/lyria3/pro",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9af59e/gZo8cVQPq90KMeAU-tQ7H_5144bb99c04b47038d174c4068bfcada.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/lyria3/pro": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lyria3ProInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/lyria3/pro/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Lyria3ProOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/lyria3/pro/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/lyria3/pro/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

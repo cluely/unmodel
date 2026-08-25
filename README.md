@@ -25,7 +25,7 @@ Every ❌/✅ in this README is pasted from a real `tsc` run or backed by a test
 
 - 🎯 **Per-model types** — `background: "transparent"` on `gpt-image-2` is a compile error, not a 400
 - 🔤 **Real autocomplete** — the 23 real `gpt-image-2` sizes, all 30 Gemini TTS voices; every list proven by a test
-- 🌐 **One vocabulary, ten surfaces** — chat, TTS, STT, image, image edit, video, music, voice clone, voice design, realtime config
+- 🌐 **One vocabulary, thirteen surfaces** — chat, TTS, STT, image, image edit, video, lipsync, avatar, upscale, music, voice clone, voice design, realtime config
 - 🔁 **`.toApi(provider)`** — move a validated chat request to another host serving the same model
 - 💸 **Cost gates** — `.safe({ maxCostUSD })` blocks a runaway request before it leaves the process
 - 🧾 **Response checks** — truncation, refusals, filtering, usage, and catalog-priced cost from raw payloads
@@ -91,7 +91,7 @@ canonical params → provider wire params → provider validator → fetch or SD
 
 Provider validators take provider-native fields, and the validated result is the exact wire body. Unified model refs split on the first slash: `openrouter/anthropic/claude-opus-5` means provider `openrouter`, model `anthropic/claude-opus-5`.
 
-## 🎨 The twelve surfaces
+## 🎨 The thirteen surfaces
 
 | Task | Portable import | Provider-native example |
 | --- | --- | --- |
@@ -103,7 +103,8 @@ Provider validators take provider-native fields, and the validated result is the
 | [🎬 Video generation](docs/surfaces.md#video-generation) | `unmodel/video` | `unmodel/openai`, `unmodel/google`, `unmodel/runway` |
 | [👄 Lipsync](docs/surfaces.md#lipsync) | `unmodel/lipsync` | `unmodel/fal` |
 | [🧑‍🎤 Avatar](docs/surfaces.md#avatar) | `unmodel/avatar` | `unmodel/fal` |
-| [🎵 Music generation](docs/surfaces.md#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/stability` |
+| [🔍 Upscale](docs/surfaces.md#upscale) | `unmodel/upscale` | `unmodel/fal` |
+| [🎵 Music generation](docs/surfaces.md#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/fal`, `unmodel/stability` |
 | [🎙️ Voice cloning](docs/surfaces.md#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
 | [🧪 Voice design](docs/surfaces.md#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
 | [🔌 Realtime audio config](docs/surfaces.md#realtime-audio) | none | `unmodel/openai`, `unmodel/deepgram`, `unmodel/elevenlabs`, etc. |
@@ -259,7 +260,7 @@ Every implemented provider has its own subpath with native field names, model ID
 
 ## 📚 Docs
 
-- 📖 [Surfaces guide](docs/surfaces.md) — all twelve categories, examples, quirks, bundles and custom packs
+- 📖 [Surfaces guide](docs/surfaces.md) — all thirteen categories, examples, quirks, bundles and custom packs
 - ✅ [Validation, cost, and response checks](docs/validation.md)
 - 🔡 [Types and values reference](docs/types-and-values.md)
 - 🔌 [Integrations: fetch, SDKs, catalog, CLI](docs/integrations.md)

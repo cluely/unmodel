@@ -72,6 +72,13 @@ export const CANONICAL_KEY_LISTS = {
   // `image` — because it is one, and because the difference between a clip and
   // a still is the whole reason the two categories are separate.
   avatar: (["model", "image", "audio", "seed", "providerOptions"] as const),
+  // Five words again, and only one of them is shared with the pair above.
+  // `factor` is the category's whole reason for existing — how much BIGGER,
+  // where `imageEdit` asks how the result should LOOK — and `prompt` is here
+  // because three of the ten routes steer on one and it means the same thing at
+  // all three. No `seed`: an upscaler re-renders a picture it was handed, so
+  // the sampling noise a seed pins is a per-model extra where it exists at all.
+  upscale: (["model", "source", "factor", "prompt", "providerOptions"] as const),
   tts: ([
     "model",
     "text",

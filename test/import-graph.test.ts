@@ -591,7 +591,7 @@ describe("unified media surfaces (amendment A5)", () => {
 
   test("A6 — a category entry imports only the kernel, itself, and adapter leaves", () => {
     const entries = FILES.filter((f) => under(f, "src/unified"));
-    expect(entries.length).toBe(10);
+    expect(entries.length).toBe(11);
 
     const violations: string[] = [];
     for (const file of entries) {
@@ -648,7 +648,7 @@ describe("unified media surfaces (amendment A5)", () => {
     expect(violations).toEqual([]);
   });
 
-  test("the ten entries exist, one per category", () => {
+  test("the eleven entries exist, one per category", () => {
     const names = FILES.filter((f) => under(f, "src/unified"))
       .map((f) => f.slice("src/unified/".length, -".ts".length))
       .sort();
@@ -660,6 +660,7 @@ describe("unified media surfaces (amendment A5)", () => {
       "music",
       "stt",
       "tts",
+      "upscale",
       "video",
       "voice-clone",
       "voice-design",

@@ -1,0 +1,10 @@
+{
+  "ref": "fal/fal-ai/clarity-upscaler",
+  "params": {
+    "image_url": "https://example.com/portrait.png"
+  },
+  "url": "https://queue.fal.run/fal-ai/clarity-upscaler",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -3,6 +3,7 @@
 // Committed snapshots:
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
 //   data/fal/openapi/argil__avatars__audio-to-video.json
+//   data/fal/openapi/blackforestlabs__flux-video-upscale.json
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
@@ -10,11 +11,25 @@
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__text-to-image.json
+//   data/fal/openapi/fal-ai__ace-step.json
+//   data/fal/openapi/fal-ai__aura-sr.json
 //   data/fal/openapi/fal-ai__bytedance__omnihuman__v1.5.json
+//   data/fal/openapi/fal-ai__bytedance__seed-speech__tts__v2.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__edit.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__text-to-image.json
+//   data/fal/openapi/fal-ai__chatterbox__text-to-speech.json
+//   data/fal/openapi/fal-ai__chatterbox__text-to-speech__multilingual.json
 //   data/fal/openapi/fal-ai__clarity-upscaler.json
+//   data/fal/openapi/fal-ai__cohere-transcribe.json
+//   data/fal/openapi/fal-ai__diffrhythm.json
 //   data/fal/openapi/fal-ai__echomimic-v3.json
+//   data/fal/openapi/fal-ai__elevenlabs__music.json
+//   data/fal/openapi/fal-ai__elevenlabs__speech-to-text.json
+//   data/fal/openapi/fal-ai__elevenlabs__speech-to-text__scribe-v2.json
+//   data/fal/openapi/fal-ai__elevenlabs__tts__eleven-v3.json
+//   data/fal/openapi/fal-ai__elevenlabs__tts__multilingual-v2.json
+//   data/fal/openapi/fal-ai__elevenlabs__tts__turbo-v2.5.json
+//   data/fal/openapi/fal-ai__esrgan.json
 //   data/fal/openapi/fal-ai__flux-2.json
 //   data/fal/openapi/fal-ai__flux-2-max.json
 //   data/fal/openapi/fal-ai__flux-2-pro.json
@@ -32,9 +47,12 @@
 //   data/fal/openapi/fal-ai__flux__dev.json
 //   data/fal/openapi/fal-ai__flux__dev__image-to-image.json
 //   data/fal/openapi/fal-ai__flux__schnell.json
+//   data/fal/openapi/fal-ai__gemini-3.1-flash-tts.json
+//   data/fal/openapi/fal-ai__gemini-tts.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5.json
 //   data/fal/openapi/fal-ai__gpt-image-1.5__edit.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
+//   data/fal/openapi/fal-ai__inworld-tts.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__pro.json
 //   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__standard.json
@@ -48,11 +66,25 @@
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
+//   data/fal/openapi/fal-ai__kokoro__american-english.json
+//   data/fal/openapi/fal-ai__kokoro__brazilian-portuguese.json
+//   data/fal/openapi/fal-ai__kokoro__british-english.json
+//   data/fal/openapi/fal-ai__kokoro__french.json
+//   data/fal/openapi/fal-ai__kokoro__hindi.json
+//   data/fal/openapi/fal-ai__kokoro__italian.json
+//   data/fal/openapi/fal-ai__kokoro__japanese.json
+//   data/fal/openapi/fal-ai__kokoro__mandarin-chinese.json
+//   data/fal/openapi/fal-ai__kokoro__spanish.json
 //   data/fal/openapi/fal-ai__latentsync.json
 //   data/fal/openapi/fal-ai__longcat-single-avatar__image-audio-to-video.json
 //   data/fal/openapi/fal-ai__lyria2.json
+//   data/fal/openapi/fal-ai__lyria3__pro.json
+//   data/fal/openapi/fal-ai__minimax-music__v2.json
+//   data/fal/openapi/fal-ai__minimax-music__v2.6.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__minimax__speech-02-hd.json
+//   data/fal/openapi/fal-ai__minimax__speech-2.8-hd.json
+//   data/fal/openapi/fal-ai__minimax__speech-2.8-turbo.json
 //   data/fal/openapi/fal-ai__nano-banana.json
 //   data/fal/openapi/fal-ai__nano-banana-2.json
 //   data/fal/openapi/fal-ai__nano-banana-2__edit.json
@@ -61,10 +93,18 @@
 //   data/fal/openapi/fal-ai__nano-banana__edit.json
 //   data/fal/openapi/fal-ai__pixverse__lipsync.json
 //   data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json
+//   data/fal/openapi/fal-ai__qwen-3-tts__text-to-speech__1.7b.json
 //   data/fal/openapi/fal-ai__qwen-image.json
 //   data/fal/openapi/fal-ai__qwen-image-edit-2511.json
+//   data/fal/openapi/fal-ai__recraft__upscale__crisp.json
 //   data/fal/openapi/fal-ai__recraft__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__recraft__v4__text-to-image.json
+//   data/fal/openapi/fal-ai__seedvr__upscale__image.json
+//   data/fal/openapi/fal-ai__seedvr__upscale__video.json
+//   data/fal/openapi/fal-ai__speech-to-text.json
+//   data/fal/openapi/fal-ai__speech-to-text__turbo.json
+//   data/fal/openapi/fal-ai__stable-audio-25__text-to-audio.json
+//   data/fal/openapi/fal-ai__stable-audio-3__medium__text-to-audio.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2__pro.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v3.json
@@ -88,14 +128,19 @@
 //   data/fal/openapi/lightricks__ltx-2.5__text-to-video__pro.json
 //   data/fal/openapi/minimax__h3__image-to-video.json
 //   data/fal/openapi/minimax__h3__text-to-video.json
+//   data/fal/openapi/minimax__music-3.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
+//   data/fal/openapi/topaz__upscale__image__generative.json
+//   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__precision.json
 //   data/fal/openapi/veed__avatars__audio-to-video.json
 //   data/fal/openapi/veed__lipsync.json
 //   data/fal/openapi/veed__lipsync__v2.json
 //   data/fal/openapi/xai__grok-imagine-image.json
 //   data/fal/openapi/xai__grok-imagine-video__text-to-video.json
+//   data/fal/openapi/xai__tts__v1.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
@@ -107,8 +152,44 @@
  * identical interfaces for tsc to compare on every hover.
  */
 
-/** fal's `AudioSetting` component. */
-export interface FalAudioSetting {
+/** fal's `AudioFile` component. */
+export interface FalAudioFile {
+  /** The URL where the file can be downloaded from. */
+  url: string;
+  /** The mime type of the file. */
+  content_type?: string | null;
+  /** The name of the file. It will be auto-generated if not provided. */
+  file_name?: string | null;
+  /** The size of the file in bytes. */
+  file_size?: number | null;
+  /** The duration of the audio. */
+  duration?: number | null;
+  /** The number of channels in the audio. */
+  channels?: number | null;
+  /** The sample rate of the audio. */
+  sample_rate?: number | null;
+  /** The bitrate of the audio (e.g., '192k' or 192000) */
+  bitrate?: string | number | null;
+}
+
+/** fal's `AudioSetting25` component. */
+export interface FalAudioSetting25 {
+  /** Sample rate of generated audio. Default: `44100`. */
+  sample_rate?: 16000 | 24000 | 32000 | 44100;
+  /** Bitrate of generated audio. Default: `256000`. */
+  bitrate?: 32000 | 64000 | 128000 | 256000;
+  /** Audio format. Default: `"mp3"`. */
+  format?: "mp3" | "wav" | "pcm";
+}
+
+/**
+ * fal's `AudioSetting` component.
+ *
+ * The name carries a content hash because fal publishes more than one distinct component
+ * under this title; the hash keeps each variant addressable without the names depending on
+ * discovery order.
+ */
+export interface FalAudioSetting_6f22a6 {
   /** Sample rate of generated audio. Default: `32000`. */
   sample_rate?: 8000 | 16000 | 22050 | 24000 | 32000 | 44100;
   /** Bitrate of generated audio. Default: `128000`. */
@@ -117,6 +198,22 @@ export interface FalAudioSetting {
   format?: "mp3" | "pcm" | "flac";
   /** Number of audio channels (1=mono, 2=stereo) Default: `1`. */
   channel?: 1 | 2;
+}
+
+/**
+ * fal's `AudioSetting` component.
+ *
+ * The name carries a content hash because fal publishes more than one distinct component
+ * under this title; the hash keeps each variant addressable without the names depending on
+ * discovery order.
+ */
+export interface FalAudioSetting_f91bce {
+  /** Sample rate of generated audio. Default: `44100`. */
+  sample_rate?: 8000 | 16000 | 22050 | 24000 | 32000 | 44100;
+  /** Bitrate of generated audio. Default: `256000`. */
+  bitrate?: 32000 | 64000 | 128000 | 256000;
+  /** Audio format. Default: `"mp3"`. */
+  format?: "mp3" | "pcm" | "flac";
 }
 
 /** fal's `RGBColor` component. */
@@ -304,12 +401,58 @@ export interface FalLoraWeight {
   scale?: number;
 }
 
+/** fal's `LoudnessNormalizationSetting` component. */
+export interface FalLoudnessNormalizationSetting {
+  /** Enable loudness normalization for the audio. Default: `true`. */
+  enabled?: boolean;
+  /** Target loudness in LUFS (default -18.0) Default: `-18`. */
+  target_loudness?: number;
+  /** Target loudness range in LU (default 8.0) Default: `8`. */
+  target_range?: number;
+  /** Target peak level in dBTP (default -0.5). Default: `-0.5`. */
+  target_peak?: number;
+}
+
 /** fal's `Moodboard` component. */
 export interface FalMoodboard {
   /** Krea moodboard identifier (UUID). */
   id: string;
   /** How strongly the moodboard influences the generated image. Default: `0.23`. */
   strength?: number;
+}
+
+/** fal's `MusicSection` component. */
+export interface FalMusicSection {
+  /** The name of the section. Must be between 1 and 100 characters. */
+  section_name: string;
+  /** The styles that should be present in this section. */
+  positive_local_styles: string[];
+  /** The styles that should not be present in this section. */
+  negative_local_styles: string[];
+  /** The duration of the section in milliseconds. Must be between 3000ms and 120000ms. */
+  duration_ms: number;
+  /** The lyrics of the section. Each line must be at most 200 characters long. */
+  lines: string[];
+}
+
+/** fal's `MusicCompositionPlan` component. */
+export interface FalMusicCompositionPlan {
+  /** The styles that should be present in the entire song. */
+  positive_global_styles: string[];
+  /** The styles that should not be present in the entire song. */
+  negative_global_styles: string[];
+  /** The sections of the song. */
+  sections: FalMusicSection[];
+}
+
+/** fal's `OutputFormat` component. */
+export interface FalOutputFormat {
+  /** Audio codec. Supported: mp3, wav, pcm, mulaw, alaw. Default: `"mp3"`. */
+  codec?: "mp3" | "wav" | "pcm" | "mulaw" | "alaw";
+  /** Sample rate in Hz. Default: `24000`. */
+  sample_rate?: 8000 | 16000 | 22050 | 24000 | 44100 | 48000;
+  /** Bit rate in bps. Only applicable for MP3 codec. Defaults to 128000 for MP3. */
+  bit_rate?: 32000 | 64000 | 96000 | 128000 | 192000 | null;
 }
 
 /** fal's `PronunciationDict` component. */
@@ -319,6 +462,18 @@ export interface FalPronunciationDict {
    * tones are 1-5. Example: ['燕少飞/(yan4)(shao3)(fei1)']
    */
   tone_list?: string[];
+}
+
+/** fal's `SpeakerConfig` component. */
+export interface FalSpeakerConfig {
+  /** Voice preset for this speaker. */
+  voice: "Achernar" | "Achird" | "Algenib" | "Algieba" | "Alnilam" | "Aoede" | "Autonoe" | "Callirrhoe" | "Charon" | "Despina" | "Enceladus" | "Erinome" | "Fenrir" | "Gacrux" | "Iapetus" | "Kore" | "Laomedeia" | "Leda" | "Orus" | "Pulcherrima" | "Puck" | "Rasalgethi" | "Sadachbia" | "Sadaltager" | "Schedar" | "Sulafat" | "Umbriel" | "Vindemiatrix" | "Zephyr" | "Zubenelgenubi";
+  /**
+   * Alias used to identify this speaker in the prompt. Use this alias as a prefix in the
+   * prompt field, e.g. 'Alice: Hello! Bob: Hi there!'. Must be alphanumeric with no
+   * whitespace.
+   */
+  speaker_id: string;
 }
 
 /** fal's `Style` component. */
@@ -377,6 +532,20 @@ export interface FalSync3GenerationOptions {
   occlusion_detection_enabled?: boolean | null;
 }
 
+/** fal's `TranscriptionWord` component. */
+export interface FalTranscriptionWord {
+  /** The transcribed word or audio event. */
+  text: string;
+  /** Start time in seconds. */
+  start?: number | null;
+  /** End time in seconds. */
+  end?: number | null;
+  /** Type of element (word, spacing, or audio_event) */
+  type: string;
+  /** Speaker identifier if diarization was enabled. */
+  speaker_id?: string | null;
+}
+
 /** fal's `Video` component. */
 export interface FalVideo {
   /** The URL where the file can be downloaded from. */
@@ -409,6 +578,25 @@ export interface FalVideoFile {
   duration?: number | null;
   /** The number of frames in the video. */
   num_frames?: number | null;
+}
+
+/** fal's `VoiceModify` component. */
+export interface FalVoiceModify {
+  /**
+   * Pitch adjustment in semitones. Range: -100 to 100. Positive values raise pitch, negative
+   * values lower it. Default: `0`.
+   */
+  pitch?: number;
+  /**
+   * Intensity/energy of the voice. Range: -100 to 100. Higher values create more energetic
+   * speech. Default: `0`.
+   */
+  intensity?: number;
+  /**
+   * Timbre adjustment. Range: -100 to 100. Affects the tonal quality of the voice. Default:
+   * `0`.
+   */
+  timbre?: number;
 }
 
 /** fal's `VoiceSetting` component. */

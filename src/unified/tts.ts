@@ -76,6 +76,7 @@ import { tts as breezeblue } from "../providers/breezeblue/unified";
 import { tts as cartesia } from "../providers/cartesia/unified-tts";
 import { tts as deepgram } from "../providers/deepgram/unified-tts";
 import { tts as elevenlabs } from "../providers/elevenlabs/unified-tts";
+import { tts as fal } from "../providers/fal/unified-tts";
 import { tts as fishAudio } from "../providers/fish-audio/unified-tts";
 import { tts as google } from "../providers/google/unified-tts";
 import { tts as hume } from "../providers/hume/unified";
@@ -121,10 +122,19 @@ export function createTts<A extends TtsAdapter>(
  * and the return type of a call (each provider's own `Validated`). A generated
  * or dynamically-loaded registry would keep the first and lose the other two.
  *
- * The cost is honest and measured: importing this pulls in eighteen provider
- * validators, their schemas and their catalogs (~430 KiB, pinned in
+ * The cost is honest and measured: importing this pulls in nineteen provider
+ * validators, their schemas and their catalogs (pinned in
  * `test/bundle-budget.test.ts`). `createTts([…])` above is the way to pay
- * for two providers instead of eighteen.
+ * for two providers instead of nineteen.
+ *
+ * fal is the nineteenth and it is not one provider's worth of surface: it is a
+ * queue in front of ten vendors' speech models, so a single ref there reaches
+ * ElevenLabs, MiniMax, Gemini, Kokoro, Chatterbox, Inworld, xAI, ByteDance and
+ * Qwen. Three of those have first-party adapters in this same array, which is
+ * the point rather than a duplication — `elevenlabs/eleven_multilingual_v2` and
+ * `fal/fal-ai/elevenlabs/tts/multilingual-v2` are the same model billed by two
+ * different companies, and which one a caller wants is a business decision the
+ * ref makes visible.
  */
 export const tts = createTts([
   openai,
@@ -145,6 +155,7 @@ export const tts = createTts([
   breezeblue,
   alibaba,
   inworld,
+  fal,
 ]);
 
 export type {

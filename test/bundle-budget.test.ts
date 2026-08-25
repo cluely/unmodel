@@ -151,6 +151,21 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * hand-written provider's weight is its prose and its checks, not a roster.
    */
   tripo3d: 55,
+  /**
+   * The native sync. provider: two validators on ONE url, a shared module of
+   * enums, cross-field checks and two long hand catalogs (62 error codes, 93
+   * dubbing languages), and a five-row model table. 62.0 KiB measured — the
+   * heaviest hand provider in the tree, and the two catalogs are most of the
+   * difference from tripo3d's 46.4.
+   */
+  sync: 70,
+  /**
+   * The native Topaz provider: two validators across two routes, a fifteen-row
+   * per-model SETTINGS table that Topaz's own OpenAPI document does not
+   * contain, a fifteen-row hand catalog and the credit arithmetic. 61.3 KiB
+   * measured.
+   */
+  topaz: 70,
 };
 
 /**
@@ -779,11 +794,22 @@ const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
  * ids to 140. That is the cost of the shared-table trade stated as a number
  * rather than a hope, and it is the figure to weigh when the roster next grows:
  * ~0.5 KiB per curated endpoint, paid by all nine packs.
+ *
+ * **Bumped 275 → 350 by the sync. wave**, measured 318.0 KiB, +71.7 — and this
+ * time the pack DID gain modules of its own, which is what a second provider
+ * is. The sync. half is five files (`unified-lipsync.ts`, `lipsync-params.ts`,
+ * `lipsync.ts`, `shared.ts`, `models.ts`) and the largest single item in it is
+ * `shared.ts`, which carries a 62-code error catalog and a 93-language dubbing
+ * enum as `as const` arrays. Both are DATA a client needs — branching on an
+ * error code is the documented way to handle a failure at sync. — and both are
+ * published through `unmodel/sync/values` for exactly that. The alternative
+ * (typing them and shipping no runtime list) was rejected for the reason
+ * `values-entries.test.ts` exists.
  */
-const LIPSYNC_PACK_BUDGET_KIB = 275;
+const LIPSYNC_PACK_BUDGET_KIB = 350;
 
-/** The one provider `unmodel/lipsync`'s ready-made pack is allowed to reach. */
-const LIPSYNC_PACK_PROVIDERS: string[] = ["fal"];
+/** The two providers `unmodel/lipsync`'s ready-made pack is allowed to reach. */
+const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "sync"];
 
 /**
  * `unmodel/avatar`'s budget: the same shape as its lipsync twin, 4.7 KiB
@@ -797,11 +823,19 @@ const LIPSYNC_PACK_PROVIDERS: string[] = ["fal"];
  * the same ~200 KiB kernel floor. That the two numbers are within 2% of each
  * other is the assertion worth reading — a pack that drifted away from its
  * twin would have acquired something, and this is where it would show.
+ *
+ * **Bumped 280 → 345 by the sync. wave**, measured 312.5 KiB. It stays within
+ * 2% of its lipsync twin, which is the assertion above and is now a stronger
+ * one: the two packs reach the SAME two providers, and at sync. they reach the
+ * same `shared.ts` and the same `models.ts` — so the 5.5 KiB between them is
+ * one adapter leaf and one params leaf apiece, exactly as it should be. If the
+ * avatar pack ever picked up sync.'s lipsync rows, this is the number that
+ * would move.
  */
-const AVATAR_PACK_BUDGET_KIB = 280;
+const AVATAR_PACK_BUDGET_KIB = 345;
 
-/** The one provider `unmodel/avatar`'s ready-made pack is allowed to reach. */
-const AVATAR_PACK_PROVIDERS: string[] = ["fal"];
+/** The two providers `unmodel/avatar`'s ready-made pack is allowed to reach. */
+const AVATAR_PACK_PROVIDERS: string[] = ["fal", "sync"];
 
 /**
  * `unmodel/upscale`'s budget: the third one-provider pack, and the heaviest of
@@ -814,11 +848,20 @@ const AVATAR_PACK_PROVIDERS: string[] = ["fal"];
  * twenty-one-member network enum at the video arm). Nothing structural — one
  * provider, one adapter leaf, no catalog, and the same ~200 KiB kernel floor
  * every media pack pays.
+ *
+ * **Bumped 295 → 375 by the Topaz wave**, measured 337.0 KiB, +72.0. The Topaz
+ * half is fifteen unified rows across two routes, and the rows are the cost:
+ * every one of them carries the whole per-model settings table that Topaz's own
+ * OpenAPI document does NOT contain (`additionalProperties: { type: string }`
+ * is all the spec says), hand-transcribed from fifteen model pages. That
+ * transcription is the entire reason to have a native Topaz provider rather
+ * than only fal's resale of three of its endpoints, so the kilobytes are the
+ * feature.
  */
-const UPSCALE_PACK_BUDGET_KIB = 295;
+const UPSCALE_PACK_BUDGET_KIB = 375;
 
-/** The one provider `unmodel/upscale`'s ready-made pack is allowed to reach. */
-const UPSCALE_PACK_PROVIDERS: string[] = ["fal"];
+/** The two providers `unmodel/upscale`'s ready-made pack is allowed to reach. */
+const UPSCALE_PACK_PROVIDERS: string[] = ["fal", "topaz"];
 
 /**
  * `unmodel/3d`'s budget: the first of the 2026 categories with TWO providers in
@@ -902,6 +945,9 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
  * | `music` | 1234.5 | 1360 | three providers; this is close to the floor a pack can have |
  * | `voice-clone` | 1525.7 | 1690 | the shared vocabulary plus per-provider sample constraints |
  * | `voice-design` | 1332.7 | 1470 | likewise |
+ * | `lipsync` | 472.7 | 545 | fal's ten wire interfaces + sync.'s two `as const` catalogs |
+ * | `avatar` | 466.3 | 545 | its twin, within 2% |
+ * | `upscale` | 508.8 | 560 | fifteen Topaz rows of hand-transcribed per-model settings |
  *
  * `music` at 1234 KiB for three providers is the number to read first: most of
  * every pack here is the shared kernel and vocabulary, not the adapters. A
@@ -927,13 +973,27 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // graphs are 13 files, did not move; `lipsync`'s is 26. The number to watch
   // is therefore the SPREAD between the three, and the twin-size test below is
   // the assertion that actually has teeth.
+  // …and the sync. wave measured 472.7, comfortably under the 615 that
+  // chunking artefact had forced. It is left where it is rather than tightened,
+  // because the artefact is still there and the SPREAD test below is the one
+  // with teeth.
   lipsync: 615,
   // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
   // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
   // components — the 3D roster added `ModelUrls`, `BasicAnimations` and their
   // `File` children to it — and every fal-touching pack counts the whole chunk.
-  avatar: 475,
-  upscale: 450,
+  // Bumped 475 → 545 by the sync. wave: 466.3 measured. The sync. half is one
+  // adapter leaf, one params leaf and a shared module — and the shared module
+  // is what the declaration counts, because its `as const` catalogs (62 error
+  // codes, 93 languages) are literal unions rather than `string[]`.
+  avatar: 545,
+  // Bumped 450 → 560 by the Topaz wave: 508.8 measured, the largest jump of the
+  // three and the one with a real cause rather than a chunking artefact. Topaz
+  // brings FIFTEEN rows whose `extras` are hand-transcribed per-model settings
+  // tables — between eight and twenty-four typed dials each — so `tsc` has
+  // fifteen distinct object types to instantiate where fal's ten share three
+  // shapes. That is the declaration cost of the thing this provider exists for.
+  upscale: 560,
   // `unmodel/3d`: 534.1 measured. The most expensive of the four small packs
   // and the only one with two providers, which is most of the difference — the
   // `tripo3d` half brings four literal model ids, two quality ladders and its
@@ -1865,31 +1925,56 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
 });
 
 /**
- * The three fal-only packs, checked together because the assertion that
- * matters most is a COMPARISON.
+ * The three two-provider media packs, checked together because the assertion
+ * that matters most is a COMPARISON.
  *
  * `fal-ai/sync-lipsync/v3` and `fal-ai/sync-lipsync/v3/image-to-video` are one
  * vendor's one model on two routes, and they are in different categories. If
  * the per-category adapter split ever slipped, the symptom would not be a
  * budget overrun — it would be these two packs quietly becoming the same
- * bundle. So each is pinned to exactly one provider reached through exactly one
- * leaf, and then pinned NOT to contain the other's leaf, its schema, or its
- * generated rows.
+ * bundle. So each is pinned to its exact provider set, each provider reached
+ * through exactly one leaf, and then pinned NOT to contain the other's leaf,
+ * its schema, or its generated rows.
  *
- * fal serves five categories, which makes it the strongest test of the split in
- * the library: `src/providers/fal/unified.ts` re-exports all five adapters, and
+ * The sync. wave sharpened that considerably. At fal the two categories are two
+ * ENDPOINT IDS behind one union schema, so a leak shows up as an extra
+ * generated file. At sync. they are two adapter leaves over ONE url and ONE
+ * shared module — `unified-lipsync.ts` and `unified-avatar.ts`, both importing
+ * `sync/shared.ts` — so the lipsync bundle containing `sync/unified-avatar.ts`
+ * would be a leak with no filename tell at all except this assertion.
+ *
+ * fal serves ten categories, which makes it the strongest test of the split in
+ * the library: `src/providers/fal/unified.ts` re-exports all ten adapters, and
  * either pack importing that barrel instead of its own leaf would pull ~30
- * video wire types and 45 image endpoints into an eight-endpoint bundle without
+ * video wire types and 45 image endpoints into a ten-endpoint bundle without
  * changing a line in `src/unified/lipsync.ts`.
  */
-describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the fal-only packs)", () => {
-  const CASES: Array<{ name: string; providers: string[]; other: string }> = [
-    { name: "lipsync", providers: LIPSYNC_PACK_PROVIDERS, other: "avatar" },
-    { name: "avatar", providers: AVATAR_PACK_PROVIDERS, other: "lipsync" },
+describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the two-provider media packs)", () => {
+  const CASES: Array<{
+    name: string;
+    providers: string[];
+    other: string;
+    /** The native provider's own leaf pair, where it has one. */
+    native?: { provider: string; twin: string };
+  }> = [
+    {
+      name: "lipsync",
+      providers: LIPSYNC_PACK_PROVIDERS,
+      other: "avatar",
+      native: { provider: "sync", twin: "avatar" },
+    },
+    {
+      name: "avatar",
+      providers: AVATAR_PACK_PROVIDERS,
+      other: "lipsync",
+      native: { provider: "sync", twin: "lipsync" },
+    },
     // The third, and the one that makes the sweep below mean something at a
-    // provider serving nine categories: `upscale`'s twin is not one of the
+    // provider serving ten categories: `upscale`'s twin is not one of the
     // other two, so its "…and nothing of the twin" assertion is checked against
-    // `lipsync` and the six-category loop underneath catches the rest.
+    // `lipsync` and the six-category loop underneath catches the rest. Its
+    // native half is a single-leaf provider (`topaz/unified.ts` IS the adapter),
+    // so there is no twin leaf to exclude.
     { name: "upscale", providers: UPSCALE_PACK_PROVIDERS, other: "lipsync" },
   ];
 
@@ -1940,8 +2025,30 @@ describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the fal-only pack
       expect(modules).not.toContain(`src/providers/fal/gen/${category}-schema.gen.ts`);
     }
     // A12: the merged catalog is for `unmodel/fal` alone. A validator reaching
-    // it would put all nine verbs' rows in every pack.
+    // it would put all ten verbs' rows in every pack.
     expect(modules).not.toContain("src/providers/fal/models.ts");
+
+    // The native half, and the sharper version of the same rule: sync. serves
+    // both audio-driven categories from ONE url through two adapter leaves, so
+    // this is the only thing standing between them.
+    const native = kase.native;
+    if (native !== undefined) {
+      expect(modules).toContain(`src/providers/${native.provider}/unified-${kase.name}.ts`);
+      expect(modules).toContain(`src/providers/${native.provider}/${kase.name}.ts`);
+      expect(modules).toContain(`src/providers/${native.provider}/${kase.name}-params.ts`);
+      expect(modules).not.toContain(`src/providers/${native.provider}/unified.ts`);
+      expect(modules).not.toContain(`src/providers/${native.provider}/unified-${native.twin}.ts`);
+      expect(modules).not.toContain(`src/providers/${native.provider}/${native.twin}.ts`);
+      expect(modules).not.toContain(`src/providers/${native.provider}/${native.twin}-params.ts`);
+    }
+    if (kase.name === "upscale") {
+      // Topaz serves one category, so `unified.ts` IS its adapter leaf — the
+      // pixverse/tripo3d shape, and the reason `splitProviders()` is derived
+      // from disk rather than enumerated.
+      expect(modules).toContain("src/providers/topaz/unified.ts");
+      expect(modules).toContain("src/providers/topaz/upscale.ts");
+      expect(modules).toContain("src/providers/topaz/upscale-generative.ts");
+    }
   });
 
   test.each(CASES)("unmodel/$name carries no catalog, availability or retarget layer", (kase) => {
@@ -1960,12 +2067,13 @@ describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the fal-only pack
    * A relative assertion rather than three more absolute ones, because it
    * survives the shared kernel growing and catches the thing an absolute number
    * cannot: one of the three acquiring a module the others have not. All three
-   * are one provider, one adapter, one validator and eight to ten generated
-   * rows — if any of them ever diverges materially, something structural joined
-   * it. (`upscale` is the largest and it is the largest by ten endpoints and
-   * Topaz's seventeen-parameter rows, which is a difference in DATA.)
+   * are two providers, two adapter leaves, two or three validators and ten to
+   * twenty-five rows — if any of them ever diverges materially, something
+   * structural joined it. (`upscale` is the largest and it is the largest by
+   * fifteen Topaz rows of hand-transcribed per-model settings, which is a
+   * difference in DATA.)
    */
-  test("the three fal-only packs stay the same size as each other", () => {
+  test("the three two-provider packs stay the same size as each other", () => {
     const sizes = CASES.map((kase) => [kase.name, transitiveBytes(unifiedEntry(kase.name))] as const);
     const largest = Math.max(...sizes.map(([, bytes]) => bytes));
     const smallest = Math.min(...sizes.map(([, bytes]) => bytes));

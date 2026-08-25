@@ -8,11 +8,12 @@
  */
 import { createUpscale, upscale } from "../../src/unified/upscale";
 import { upscale as falUpscale } from "../../src/providers/fal/unified-upscale";
+import { upscale as topazUpscale } from "../../src/providers/topaz/unified";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import type { UpscaleParams } from "../../src/core/unified/vocabulary/upscale";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
-type PackRefs = UnifiedRef<typeof falUpscale>;
+type PackRefs = UnifiedRef<typeof falUpscale | typeof topazUpscale>;
 
 expectAssignable<PackRefs>("fal/fal-ai/clarity-upscaler");
 expectAssignable<PackRefs>("fal/fal-ai/aura-sr");
@@ -29,6 +30,19 @@ expectAssignable<PackRefs>("fal/topaz/denoise/image");
 // @ts-expect-error — background removal is an EDIT: `unmodel/image-edit`'s question.
 expectAssignable<PackRefs>("fal/fal-ai/birefnet");
 
+// The native half. The ids have SPACES in them because Topaz's `model` field
+// takes product names rather than slugs — see src/providers/topaz/models.ts.
+expectAssignable<PackRefs>("topaz/Standard V2");
+expectAssignable<PackRefs>("topaz/Upscale High Fidelity V3");
+expectAssignable<PackRefs>("topaz/Text Refine");
+expectAssignable<PackRefs>("topaz/Redefine");
+expectAssignable<PackRefs>("topaz/Wonder 3.5");
+expectAssignable<PackRefs>("topaz/Bloom Realism");
+// @ts-expect-error — in the published OpenAPI enum only: no page, no credit table.
+expectAssignable<PackRefs>("topaz/Recovery V2");
+// @ts-expect-error — denoise is a separate route and does not upscale.
+expectAssignable<PackRefs>("topaz/Denoise Max");
+
 const STILL = { url: "https://example.com/portrait.png" } as const;
 const CLIP = { url: "https://example.com/take-3.mp4" } as const;
 
@@ -38,7 +52,7 @@ function refUnionTests(): void {
   // A model newer than this snapshot still works, with a runtime warning.
   upscale({ model: "fal/fal-ai/clarity-upscaler-v2", source: STILL, factor: 3 });
   // A provider with no adapter is a runtime structural error, not a type error.
-  upscale({ model: "topaz/gigapixel", source: STILL });
+  upscale({ model: "clipdrop/image-upscaling", source: STILL });
 
   // @ts-expect-error — `source` is not optional; there is nothing to enlarge.
   upscale({ model: "fal/fal-ai/clarity-upscaler", factor: 2 });
@@ -142,10 +156,15 @@ function providerOptionsTests(): void {
     providerOptions: { fal: { resemblance: 0.8 } },
   });
   upscale({
+    model: "topaz/Redefine",
+    source: STILL,
+    providerOptions: { topaz: { output_format: "png" } },
+  });
+  upscale({
     model: "fal/fal-ai/esrgan",
     source: STILL,
     // @ts-expect-error — not for a provider this pack does not have.
-    providerOptions: { topaz: {} },
+    providerOptions: { sync: {} },
   });
 
   const one = createUpscale([falUpscale]);

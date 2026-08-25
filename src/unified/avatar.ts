@@ -68,6 +68,7 @@ import type {
   AvatarValidator,
 } from "../core/unified/vocabulary/avatar";
 import { avatar as fal } from "../providers/fal/unified-avatar";
+import { avatar as sync } from "../providers/sync/unified-avatar";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
 export type AvatarAdapter = AnyAvatarAdapter;
@@ -90,16 +91,29 @@ export function createAvatar<A extends AvatarAdapter>(
 }
 
 /**
- * Every avatar adapter unmodel ships — one provider today, and the pack exists
- * all the same, for `unmodel/lipsync`'s reason.
+ * Every avatar adapter unmodel ships — two providers, and the second is one
+ * model.
  *
- * fal serves eight endpoints behind it: sync.'s image arm, ByteDance
- * OmniHuman 1.5, Kling's AI Avatar v2 in both grades, LongCat, EchoMimic v3,
- * and the two catalogued-performer routes from VEED and Argil that make
- * `image` a per-model decision rather than a required field. The cost is
- * pinned in `test/bundle-budget.test.ts`.
+ * fal serves eight endpoints: sync.'s image arm, ByteDance OmniHuman 1.5,
+ * Kling's AI Avatar v2 in both grades, LongCat, EchoMimic v3, and the two
+ * catalogued-performer routes from VEED and Argil that make `image` a per-model
+ * decision rather than a required field. sync. serves exactly one — `sync-3`,
+ * the only model at that vendor which reads a still — and it is the same id its
+ * lipsync adapter serves:
+ *
+ * ```ts
+ * lipsync({ model: "sync/sync-3", source: { url: clip },  audio: { url } });
+ * avatar({  model: "sync/sync-3", image:  { url: still }, audio: { url } });
+ * ```
+ *
+ * One URL, one model id, two categories, and nothing telling them apart but the
+ * tag on the input item — which is the clearest possible statement of why the
+ * clip/still split has to be a CATEGORY rather than an optional field. At fal
+ * the same product needs two endpoint ids to say it.
+ *
+ * The cost of both is pinned in `test/bundle-budget.test.ts`.
  */
-export const avatar = createAvatar([fal]);
+export const avatar = createAvatar([fal, sync]);
 
 export type {
   AnyAvatarAdapter,

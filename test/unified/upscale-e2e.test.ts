@@ -2,11 +2,17 @@
  * `unmodel/upscale`, end to end through the ready-made pack.
  *
  * The golden matrix next door pins *what* each ref compiles to; this pins what
- * a caller gets back — fal's own `Validated`, its `.request`, its `.toSdk`, its
- * estimate — plus the two things this category has that its siblings do not: a
- * `factor` with three different per-model answers, and a `model` wire field at
- * four of the ten endpoints that names the restoration NETWORK rather than the
- * route.
+ * a caller gets back — the ref'd provider's own `Validated`, its `.request`,
+ * its `.toSdk`, its estimate — plus the two things this category has that its
+ * siblings do not: a `factor` with three different per-model answers, and a
+ * `model` wire field at four of fal's ten endpoints that names the restoration
+ * NETWORK rather than the route.
+ *
+ * Two providers now, and the native half is where a `Validated` stops looking
+ * like the others: Topaz's submit paths declare only `multipart/form-data`, so
+ * a Topaz result carries `request.body === "form"`, EMPTY headers, and a body
+ * that must be posted through `topaz.toFormData` rather than
+ * `JSON.stringify`.
  */
 import { describe, expect, test } from "bun:test";
 import { UnmodelValidationError } from "../../src/core/issues";
@@ -14,20 +20,22 @@ import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { upscale as falUpscale } from "../../src/providers/fal";
 import { createUpscale, upscale } from "../../src/unified/upscale";
 import { upscale as falAdapter } from "../../src/providers/fal/unified-upscale";
+import { upscale as topazAdapter } from "../../src/providers/topaz/unified";
+import { toFormData, topazCostUSD } from "../../src/providers/topaz";
 
 const STILL = { url: "https://example.com/portrait.png" } as const;
 const CLIP = { url: "https://example.com/take-3.mp4" } as const;
 
 describe("the pack", () => {
-  test("registers exactly the one upscale provider", () => {
-    expect([...upscale.providers]).toEqual(["fal"]);
+  test("registers exactly the two upscale providers", () => {
+    expect([...upscale.providers]).toEqual(["fal", "topaz"]);
   });
 
   test("a provider outside the pack is structural, not a validation error", () => {
-    expect(() => upscale({ model: "topaz/gigapixel", source: STILL } as never)).toThrow(
+    expect(() => upscale({ model: "clipdrop/upscaling", source: STILL } as never)).toThrow(
       TranslationUnavailableError,
     );
-    const result = upscale.safe({ model: "topaz/gigapixel", source: STILL } as never);
+    const result = upscale.safe({ model: "clipdrop/upscaling", source: STILL } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]?.meta?.["structural"]).toBe(true);
@@ -52,10 +60,92 @@ describe("the pack", () => {
     expect(JSON.parse(JSON.stringify(result.params))).toMatchObject({ upscale_factor: 3 });
   });
 
-  test("the ten endpoints are one adapter, and the pack is that adapter", () => {
+  test("each provider is one adapter, and either builds a pack on its own", () => {
     expect(falAdapter.models).toHaveLength(10);
-    const built = createUpscale([falAdapter]);
-    expect([...built.providers]).toEqual(["fal"]);
+    expect(topazAdapter.models).toHaveLength(15);
+    expect([...createUpscale([falAdapter]).providers]).toEqual(["fal"]);
+    expect([...createUpscale([topazAdapter]).providers]).toEqual(["topaz"]);
+  });
+});
+
+/**
+ * The native half, and the three ways its `Validated` differs from fal's.
+ *
+ * Topaz publishes no JSON arm on either submit path, so a valid request is a
+ * FORM — and the framing has to survive to the caller, or they will
+ * `JSON.stringify` a body the API refuses.
+ */
+describe("the result is Topaz's own Validated, and it is multipart", () => {
+  test("the framing, the empty headers and the route are all on `.request`", () => {
+    const result = upscale({
+      model: "topaz/Standard V2",
+      source: STILL,
+      output_width: 4096,
+      output_height: 4096,
+    });
+    expect(JSON.parse(JSON.stringify(result))).toEqual({
+      model: "Standard V2",
+      source_url: STILL.url,
+      output_width: 4096,
+      output_height: 4096,
+    });
+    expect(result.request.url).toBe("https://api.topazlabs.com/image/v1/enhance/async");
+    expect(result.request.method).toBe("POST");
+    // Empty on purpose: `fetch` derives the multipart boundary from the
+    // FormData, and a hand-set content-type would break the request.
+    expect(result.request.headers).toEqual({});
+    expect(result.request.body).toBe("form");
+  });
+
+  test("the ref picks the ROUTE, because Topaz's two model enums are disjoint", () => {
+    const classic = upscale({ model: "topaz/Standard V2", source: STILL });
+    const generative = upscale({ model: "topaz/Redefine", source: STILL, prompt: "a sailing boat" });
+    expect(classic.request.url).toBe("https://api.topazlabs.com/image/v1/enhance/async");
+    expect(generative.request.url).toBe("https://api.topazlabs.com/image/v1/enhance-gen/async");
+  });
+
+  test("the body is what `toFormData` takes, and numbers cross as strings", () => {
+    const result = upscale({
+      model: "topaz/Redefine",
+      source: STILL,
+      prompt: "a wooden sailing boat at anchor",
+      creativity: 4,
+    });
+    const form = toFormData(result);
+    expect(form.get("model")).toBe("Redefine");
+    expect(form.get("source_url")).toBe(STILL.url);
+    expect(form.get("prompt")).toBe("a wooden sailing boat at anchor");
+    // The spec types the whole settings space as
+    // `additionalProperties: { type: string }`, so 4 goes out as "4".
+    expect(form.get("creativity")).toBe("4");
+  });
+
+  test("`factor` is refused, naming the two fields Topaz has instead", () => {
+    const result = upscale.safe({ model: "topaz/Standard V2", source: STILL, factor: 2 } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const issue = result.errors.find((error) => error.path.join(".") === "factor");
+    expect(issue?.code).toBe("unsupported_param");
+    expect(issue?.message).toContain("output_width");
+    expect(issue?.message).toContain("output_height");
+  });
+
+  test("the estimate is EXACT when the request states an output size", () => {
+    // Topaz bills per output megapixel, rounded up to a whole credit: 4096×4096
+    // is 16.8 MP, and `Standard V2` fits 24 MP into one credit — so one credit,
+    // at $0.12. The arithmetic is a pure function of the body, which is rare.
+    expect(topazCostUSD({ model: "Standard V2", outputWidth: 4096, outputHeight: 4096 })).toBeCloseTo(
+      0.12,
+      10,
+    );
+    // Redefine fits 4 MP into a credit, so the same picture is five credits.
+    expect(topazCostUSD({ model: "Redefine", outputWidth: 4096, outputHeight: 4096 })).toBeCloseTo(
+      5 * 0.12,
+      10,
+    );
+    // …and a request that lets Topaz choose the size declines rather than
+    // guessing, because the input is a URL.
+    expect(topazCostUSD({ model: "Standard V2" })).toBeUndefined();
   });
 });
 
@@ -238,12 +328,26 @@ describe("providerOptions", () => {
     const result = upscale.safe({
       model: "fal/fal-ai/clarity-upscaler",
       source: STILL,
-      providerOptions: { topaz: { model: "Wonder 3.5" } },
+      providerOptions: { clipdrop: { upscaling: "x4" } },
     } as never);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.warnings.some((issue) => issue.code === "unknown_param")).toBe(true);
-    expect(JSON.parse(JSON.stringify(result.params))).not.toHaveProperty("model");
+    expect(JSON.parse(JSON.stringify(result.params))).not.toHaveProperty("upscaling");
+  });
+
+  test("…and a block for the OTHER provider in the pack is ignored, not merged", () => {
+    // The sharper half of the same rule now that there are two: `topaz` IS a
+    // provider in this pack, and a `topaz` block on a `fal` ref still must not
+    // reach fal's wire.
+    const result = upscale.safe({
+      model: "fal/fal-ai/clarity-upscaler",
+      source: STILL,
+      providerOptions: { topaz: { output_format: "png" } },
+    } as never);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).not.toHaveProperty("output_format");
   });
 });
 

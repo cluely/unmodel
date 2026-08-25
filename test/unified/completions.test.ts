@@ -472,6 +472,137 @@ tts({ model: "fal/fal-ai/kokoro/american-english", text: "hi", outputFormat: "mp
   });
 
   /**
+   * Probe 5b — the same split at the NATIVE provider, where the model id does
+   * not move.
+   *
+   * Probe 5 makes its point across two fal endpoint ids, which leaves the
+   * comfortable reading that the categories are really about paths. sync. takes
+   * that away: `sync/sync-3` is ONE id at ONE url in BOTH packs, and the only
+   * thing deciding which is the category the caller reached for. If the two
+   * vocabularies ever merged, this is the probe that would go green in the
+   * wrong direction.
+   */
+  test("probe 5b — one native model id, two categories, two narrowings", () => {
+    // The clip arm and the still arm of the same id, each in its own pack.
+    expect(
+      semanticErrorsIn(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "sync/sync-3",
+  source: { data: "AAAA", mimeType: "video/mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+});`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({
+  model: "sync/sync-3",
+  image: { data: "AAAA", mimeType: "image/png" },
+  audio: { url: "https://example.com/vo.wav" },
+});`),
+    ).toEqual([]);
+
+    // …and each refuses the other's medium, on the inline arm where the caller
+    // said what they had.
+    expect(
+      semanticErrorsIn(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "sync/sync-3",
+  source: { data: "AAAA", mimeType: "image/png" },
+  audio: { url: "https://example.com/vo.wav" },
+});`).length,
+    ).toBeGreaterThan(0);
+
+    // `sync-3` is the only sync. model in the avatar pack, and its row says
+    // `sources: ["image"]` — which makes `image` REQUIRED rather than optional.
+    // Omitting it is a squiggle, and that is the sharpest thing the row does.
+    expect(
+      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({ model: "sync/sync-3", audio: { url: "https://example.com/vo.wav" } });`).length,
+    ).toBeGreaterThan(0);
+
+    // A sync. model the avatar pack does not list degrades to the wide arm
+    // rather than failing — the same "a roster is a snapshot" rule every
+    // category has — so the requirement above is a per-MODEL fact and not a
+    // per-provider one.
+    expect(
+      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({ model: "sync/lipsync-9", audio: { url: "https://example.com/vo.wav" } });`),
+    ).toEqual([]);
+  });
+
+  /**
+   * Probe 5c — sync.'s four model-gated `options`, flattened onto the unified
+   * surface and typed per model.
+   *
+   * The reason this is worth a probe rather than a run-time check alone: sync.
+   * IGNORES an option a model does not take, so the API's answer to
+   * `temperature` at `sync-3` is a successful, identically-billed generation in
+   * which the dial did nothing. The editor is the only place that can say so
+   * before the money is spent.
+   */
+  test("probe 5c — the sync. option gate is a squiggle, per model", () => {
+    // `temperature` is a lipsync-2-family dial…
+    expect(
+      semanticErrorsIn(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "sync/lipsync-2",
+  source: { url: "https://example.com/take.mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+  temperature: 0.9,
+});`),
+    ).toEqual([]);
+    // …and sync-3 does expressiveness natively, so it has no switch.
+    expect(
+      semanticErrorsIn(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "sync/sync-3",
+  source: { url: "https://example.com/take.mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+  temperature: 0.9,
+});`).length,
+    ).toBeGreaterThan(0);
+
+    // The emotion is `react-1`'s alone, and it completes as the six-word enum
+    // sync. publishes rather than as a free-form sentence.
+    const emotions = completionsAt(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "sync/react-1",
+  source: { url: "https://example.com/take.mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+  prompt: "¦",
+});`);
+    expect(emotions.sort()).toEqual([
+      "angry",
+      "disgusted",
+      "happy",
+      "neutral",
+      "sad",
+      "surprised",
+    ]);
+
+    // `sync_mode` is the word fal keeps on its resale of these very models, and
+    // it is the same five arms at both — one vendor agreeing with itself
+    // through a reseller, which is why it is an extra at both rather than
+    // canonical vocabulary.
+    const nativeModes = completionsAt(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "sync/lipsync-2",
+  source: { url: "https://example.com/take.mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+  sync_mode: "¦",
+});`);
+    const resoldModes = completionsAt(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "fal/fal-ai/sync-lipsync/v2",
+  source: { url: "https://example.com/take.mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+  sync_mode: "¦",
+});`);
+    expect(nativeModes.sort()).toEqual(["bounce", "cut_off", "loop", "remap", "silence"]);
+    expect(resoldModes.sort()).toEqual(nativeModes.sort());
+  });
+
+  /**
    * Probe 4b — the newest category, and the two narrowings it exists for.
    *
    * `source` separates a still from a clip INSIDE one category here, which is
@@ -526,6 +657,73 @@ upscale({ model: "fal/fal-ai/clarity-upscaler", source: { url: "https://x/a.png"
     expect(
       semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
 upscale({ model: "fal/fal-ai/esrgan", source: { url: "https://x/a.png" }, creativity: 0.35 });`).length,
+    ).toBeGreaterThan(0);
+  });
+
+  /**
+   * Probe 4c — the native upscale provider, and the `never` that means
+   * something different from the other one.
+   *
+   * `factor` is the category's one cross-vendor word and Topaz does not have
+   * it: it states an absolute output size, so all fifteen of its rows publish
+   * an empty `factors` and the field types as `never`. Probe 4b already covers
+   * a `never` at `fal-ai/recraft/upscale/crisp` — this is the second one, with
+   * a different cause, and the pair is what makes the empty list a mechanism
+   * rather than a special case.
+   */
+  test("probe 4c — Topaz refuses `factor`, offers `prompt` on nine of fifteen", () => {
+    // No multiplier anywhere, on either route.
+    for (const model of ["topaz/Standard V2", "topaz/Redefine"]) {
+      expect(
+        semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "${model}", source: { url: "https://x/a.png" }, factor: 2 });`).length,
+        model,
+      ).toBeGreaterThan(0);
+    }
+
+    // `prompt` is the word Topaz DID bring, and it is a route fact: the nine
+    // generative models steer on one and the six classic ones have no field.
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "topaz/Redefine", source: { url: "https://x/a.png" }, prompt: "a sailing boat" });`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "topaz/Standard V2", source: { url: "https://x/a.png" }, prompt: "a sailing boat" });`),
+    ).toEqual([]);
+
+    // The per-model dials are the ones Topaz's OpenAPI document does NOT
+    // contain — hand-transcribed from fifteen model pages — and they complete
+    // as their published enums.
+    const subject = completionsAt(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "topaz/Standard V2", source: { url: "https://x/a.png" }, subjectDetection: "¦" });`);
+    expect(subject.sort()).toEqual(["all", "background", "foreground"]);
+
+    const strength = completionsAt(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "topaz/Wonder 3", source: { url: "https://x/a.png" }, enhancementStrength: "¦" });`);
+    expect(strength.sort()).toEqual(["high", "low", "medium"]);
+
+    // …and a dial from the other route is a squiggle rather than the silent
+    // no-op Topaz itself would answer with.
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "topaz/Standard V2", source: { url: "https://x/a.png" }, creativity: 4 });`).length,
+    ).toBeGreaterThan(0);
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "topaz/Redefine", source: { url: "https://x/a.png" }, strength: 0.5 });`).length,
+    ).toBeGreaterThan(0);
+
+    // The same Topaz product through the two providers offers DIFFERENT dials,
+    // which is the comparison a second provider is for: fal's resale publishes
+    // a flat generic schema, the native rows publish Topaz's own per-model one.
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "topaz/Standard V2", source: { url: "https://x/a.png" }, faceEnhancement: true, faceEnhancementStrength: 0.5, faceEnhancementCreativity: 0.2 });`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
+upscale({ model: "fal/topaz/upscale/image/precision", source: { url: "https://x/a.png" }, faceEnhancement: true });`).length,
     ).toBeGreaterThan(0);
   });
 

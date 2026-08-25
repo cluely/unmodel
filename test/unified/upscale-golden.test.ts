@@ -55,7 +55,7 @@ const caseDirs = readdirSync(GOLDEN, { withFileTypes: true })
 
 test("the upscale golden tree is present", () => {
   // A vacuous suite passes by asserting nothing; this is the guard against it.
-  expect(caseDirs.length).toBeGreaterThanOrEqual(5);
+  expect(caseDirs.length).toBeGreaterThanOrEqual(6);
 });
 
 describe.each(caseDirs)("golden upscale/%s", (name) => {
@@ -100,12 +100,26 @@ describe.each(caseDirs)("golden upscale/%s", (name) => {
       expect(result.warnings).toEqual([]);
     });
 
-    test("`endpoint` never reaches the wire", () => {
-      // fal's route selector is unmodel's, not fal's — the committed body is
-      // the exact fetch payload, and this is the one key that must not be in
-      // it however the request was written.
+    test("the route selector never reaches the wire, whichever kind it is", () => {
+      // At fal the selector is unmodel's own `endpoint` pseudo-param and must
+      // be stripped; at Topaz the URL is chosen from the model and `model` is a
+      // real form field that must SURVIVE. Two opposite facts, one assertion
+      // each, because getting either backwards produces a 4xx.
       expect(Object.keys(fixture.params)).not.toContain("endpoint");
-      expect(fixture.url).toBe(`https://queue.fal.run/${fixture.ref.slice("fal/".length)}`);
+      if (fixture.ref.startsWith("fal/")) {
+        expect(fixture.url).toBe(`https://queue.fal.run/${fixture.ref.slice("fal/".length)}`);
+        expect(Object.keys(fixture.params)).not.toContain("model");
+        expect(fixture.headers).toEqual({ "content-type": "application/json" });
+        return;
+      }
+      const model = fixture.ref.slice(fixture.ref.indexOf("/") + 1);
+      expect(fixture.params["model"]).toBe(model);
+      expect(fixture.url).toMatch(/^https:\/\/api\.topazlabs\.com\/image\/v1\/enhance(-gen)?\/async$/);
+      // Topaz's submit paths declare only `multipart/form-data`, so the headers
+      // are EMPTY on purpose: `fetch` derives the boundary from the FormData and
+      // a hand-set content-type would break the request. Post
+      // `topaz.toFormData(params)`, never `JSON.stringify`.
+      expect(fixture.headers).toEqual({});
     });
   });
 });
@@ -184,5 +198,46 @@ describe("the matrix itself", () => {
     const keys = new Set(all.flatMap(({ fixture }) => Object.keys(fixture.params)));
     expect(keys.has("upscale_factor")).toBe(true);
     expect(keys.has("scale")).toBe(true);
+  });
+
+  /**
+   * The assertion this tree exists for now that the category has two providers,
+   * and the one a "every provider is covered" check cannot make: the same
+   * REQUEST, compiled two ways, producing two different bodies at two different
+   * hosts.
+   *
+   * `described/` is the case both can serve, because `prompt` is the one
+   * canonical word they share — and even there they agree on nothing else. fal
+   * names the source `image_url` and posts JSON to its queue; Topaz names it
+   * `source_url`, keeps the model in the body, and posts a form.
+   */
+  test("the same prompted request compiles differently through each provider", () => {
+    const viaFal = all.find((c) => c.name === "described" && c.fixture.ref.startsWith("fal/"));
+    const natively = all.find((c) => c.name === "described" && c.fixture.ref.startsWith("topaz/"));
+    expect(viaFal, "described/ needs a fal fixture").toBeDefined();
+    expect(natively, "described/ needs a topaz fixture").toBeDefined();
+    if (viaFal === undefined || natively === undefined) return;
+
+    expect(viaFal.fixture.params).not.toEqual(natively.fixture.params);
+    expect(viaFal.fixture.params["prompt"]).toBe(natively.fixture.params["prompt"]);
+    expect(Object.keys(viaFal.fixture.params)).toContain("image_url");
+    expect(Object.keys(natively.fixture.params)).toContain("source_url");
+    expect(viaFal.fixture.headers).toEqual({ "content-type": "application/json" });
+    expect(natively.fixture.headers).toEqual({});
+  });
+
+  /**
+   * `factor` is committed at fal and committed NOWHERE at Topaz, because Topaz
+   * has no multiplier on either route — it states an absolute output size. Read
+   * off the fixtures rather than asserted in prose.
+   */
+  test("no Topaz fixture carries a multiplier, at either spelling", () => {
+    const topaz = all.filter(({ fixture }) => fixture.ref.startsWith("topaz/"));
+    expect(topaz.length).toBeGreaterThanOrEqual(2);
+    for (const { fixture } of topaz) {
+      expect(Object.keys(fixture.params)).not.toContain("upscale_factor");
+      expect(Object.keys(fixture.params)).not.toContain("scale");
+      expect(Object.keys(fixture.params)).not.toContain("factor");
+    }
   });
 });

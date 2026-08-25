@@ -99,12 +99,18 @@ describe.each(caseDirs)("golden avatar/%s", (name) => {
       expect(result.warnings).toEqual([]);
     });
 
-    test("`endpoint` never reaches the wire", () => {
-      // fal's route selector is unmodel's, not fal's — the committed body is
-      // the exact fetch payload, and this is the one key that must not be in
-      // it however the request was written.
+    test("the route selector never reaches the wire, whichever kind it is", () => {
+      // At fal the selector is unmodel's own `endpoint` pseudo-param and must
+      // be stripped; at sync. there is ONE url for the whole provider and
+      // `model` is a real body field that must SURVIVE. Two opposite facts, one
+      // assertion each, because getting either backwards produces a 4xx.
       expect(Object.keys(fixture.params)).not.toContain("endpoint");
-      expect(fixture.url).toBe(`https://queue.fal.run/${fixture.ref.slice("fal/".length)}`);
+      if (fixture.ref.startsWith("fal/")) {
+        expect(fixture.url).toBe(`https://queue.fal.run/${fixture.ref.slice("fal/".length)}`);
+        return;
+      }
+      expect(fixture.params["model"]).toBe(fixture.ref.slice(fixture.ref.indexOf("/") + 1));
+      expect(fixture.url).toBe("https://api.sync.so/v2/generate");
     });
   });
 });
@@ -145,12 +151,37 @@ describe("the matrix itself", () => {
   });
 
   /**
-   * Every committed body carries the voice track, whichever kind of route it
-   * is — the one canonical word this category cannot do without.
+   * Every committed body carries the voice track, whichever kind of route it is
+   * — the one canonical word this category cannot do without. Where it LANDS is
+   * a provider fact: a flat `audio_url` at fal, an `{ type: "audio" }` item in
+   * the `input` array at sync.
    */
-  test("every case commits an audio_url", () => {
+  test("every case commits the voice track, at whichever coordinate", () => {
     for (const { name, fixture } of all) {
-      expect(fixture.params["audio_url"], name).toBeString();
+      if (fixture.ref.startsWith("fal/")) {
+        expect(fixture.params["audio_url"], name).toBeString();
+        continue;
+      }
+      const input = fixture.params["input"] as ReadonlyArray<{ type: string; url?: string }>;
+      const track = input.find((item) => item.type === "audio");
+      expect(track?.url, name).toBeString();
+    }
+  });
+
+  /**
+   * The whole argument for the clip/still split, committed rather than
+   * described: the two sync. fixtures in this tree name the SAME model id as
+   * the ones in `golden/lipsync/`, hit the SAME url, and differ only in the tag
+   * on the first input item.
+   */
+  test("the sync. fixtures differ from their lipsync twins by one tag", () => {
+    const natively = all.filter(({ fixture }) => fixture.ref.startsWith("sync/"));
+    expect(natively.length).toBeGreaterThanOrEqual(2);
+    for (const { name, fixture } of natively) {
+      expect(fixture.ref, name).toBe("sync/sync-3");
+      expect(fixture.url, name).toBe("https://api.sync.so/v2/generate");
+      const input = fixture.params["input"] as ReadonlyArray<{ type: string }>;
+      expect(input[0]?.type, name).toBe("image");
     }
   });
 });

@@ -207,12 +207,14 @@ MiniMax music is reachable **only** through fal here: the native
 music-3.0/music-cover; existing subscribers only, so it fails the public-accessibility
 bar), while `minimax/music-3` on fal's queue is open to anyone with a `FAL_KEY`.
 
-## Lipsync / avatar / upscale wave (fal only, for now)
+## Lipsync / avatar / upscale wave (two providers each)
 
-Three categories that arrived with fal because fal is where their models are hosted. Each is a
-full unmodel category — own vocabulary, own kernel id, own pack, own `unmodel/<category>`
-subpath — rather than an arm bolted onto an existing one, which is what keeps a second
-provider a one-file addition. Examples and the narrowing rules live in
+Three categories that arrived on fal alone because fal is where their models were hosted. Each
+is a full unmodel category — own vocabulary, own kernel id, own pack, own `unmodel/<category>`
+subpath — rather than an arm bolted onto an existing one, which is what was meant to keep a
+second provider a one-file addition. It has now happened in all three: sync. is the second
+witness for lipsync and for avatar, Topaz Labs the second for upscale, and neither of them
+needed a word added to a vocabulary. Examples and the narrowing rules live in
 [surfaces.md](surfaces.md#lipsync).
 
 **Lipsync — `lipsync`, 10 endpoints.** A clip in, an audio track in, a clip whose mouth matches
@@ -225,6 +227,38 @@ Excluded by name: `fal-ai/sync-lipsync/v1.9.0-beta` (superseded) and
 `fal-ai/kling-video/lipsync/text-to-video` (a script + a voice id is TTS composed with lipsync,
 and composing it here would hide which half failed).
 
+**sync. — `sync.lipsync` and `sync.avatar`, 5 models.** Tier: **native**.
+`https://api.sync.so/v2`, JSON bodies, `x-api-key: <SYNC_API_KEY>`, and ONE url —
+`POST /v2/generate` — carrying both addresses. The provider id is `sync` rather than `sync-so`
+because unmodel's provider ids are vendor names and not domains: sync.'s own SDKs import as
+`sync` and read `SYNC_API_KEY`, so the ref reads `"sync/lipsync-2"`. Five models — `sync-3` (the
+default, 4K native, and the only one that reads an image), `lipsync-2`, `lipsync-2-pro`, the
+legacy `lipsync-1.9.0-beta`, and `react-1`, the expressive one that takes an emotion prompt and a
+`model_mode`. Two addresses on one url because the required fields differ: a still narrows
+`model` to `sync-3` and can carry neither `segments` (no timeline to slice) nor `dubParams` (no
+track to extract). That is the same split `unmodel/lipsync` and `unmodel/avatar` make one layer
+up. `input` itself is an ARRAY of tagged items
+(`{ type: "video" | "image" | "audio" | "text", url | assetId }`) under an arity rule — exactly
+one visual item and one audio-or-text item — which type-checks either way and 422s when it is
+wrong, so it is checked here.
+
+Pricing is per second of OUTPUT at 25 fps, and each rate is published as a band whose low end is
+a volume discount rather than an uncertainty: sync-3 $0.107–$0.133, lipsync-2 $0.04–$0.05,
+lipsync-2-pro $0.067–$0.083, lipsync-1.9.0-beta $0.02–$0.025, react-1 $0.133–$0.167.
+
+Not served: `POST /v2/tts` and the `/v2/voices` clone surface, which are an ElevenLabs
+passthrough — unmodel carries ElevenLabs natively, with the real voice roster and the real
+format controls rather than a two-field projection of them — and `/v2/assets`, `/v2/projects`
+and `/v2/batch`, which are storage, organisation and an envelope rather than generation.
+
+The overlap with fal is the comparison this pack exists to make cheap: four of fal's ten lipsync
+endpoints are sync.'s own models resold, so `lipsync({ model: "fal/fal-ai/sync-lipsync/v2", … })`
+and `lipsync({ model: "sync/lipsync-2", … })` are the same weights and compile to visibly
+different bodies. Two flat URL fields (`video_url` / `audio_url`) at fal against a tagged `input`
+array natively; `sync_mode` at the body root at fal against `options.sync_mode` natively; and fal
+accepts inline bytes as a `data:` URI where sync. fetches URLs and asset ids only. Neither is a
+superset of the other.
+
 **Avatar — `avatar`, 8 endpoints.** A still in, the same audio in, a clip out. sync-lipsync
 v3/image-to-video, ByteDance OmniHuman 1.5, Kling AI Avatar v2 standard and pro, EchoMimic v3,
 LongCat single-avatar, VEED Avatars, Argil Avatars. The split from lipsync is by INPUT rather
@@ -233,6 +267,14 @@ than by vendor, which is why `fal-ai/sync-lipsync/v3` and
 categories. Two rows take neither a still nor a clip: their performer is a catalogued id, so
 `image` is narrowed per model and types as `never` there.
 
+**sync. — `sync.avatar`, 1 model.** `sync-3` is the only one of sync.'s five models that reads an
+image, so it is the whole of this provider's avatar roster — and it is the same id, on the same
+url, that `sync.lipsync` serves. This is the first place in the library where the split lands on
+ONE model id rather than on two endpoint ids: at fal the product is `fal-ai/sync-lipsync/v3` and
+`fal-ai/sync-lipsync/v3/image-to-video`, two paths, while here `model` never changes and
+`input[0].type` moves from `"video"` to `"image"`. `image` is required rather than `never` here,
+because sync. catalogues no preset performers and publishes no field to name one.
+
 **Upscale — `upscale`, 10 endpoints.** Clarity Upscaler, Topaz image precision and generative,
 Topaz video precision, ESRGAN, AuraSR, SeedVR upscale image and video, Recraft crisp upscale,
 FLUX video upscale. The only verb in the roster with no fixed modality: seven routes take a
@@ -240,16 +282,64 @@ still and three take a clip, so `source` is narrowed per model and the output mo
 off each endpoint's own response schema. `factor` is the one cross-vendor word, and it has
 three answers per model: a range, a closed set (AuraSR upscales by 4 or not at all), or absent.
 
-**Wire notes, shared by all three:** the request is a queue submit to
+**Topaz Labs — `topaz.upscale` and `topaz.upscaleGenerative`, 15 models.** Tier: **native**.
+`https://api.topazlabs.com/image/v1`, `X-API-Key: <TOPAZ_API_KEY>`, and **multipart/form-data**
+bodies at both addresses: neither path declares a JSON arm, so even a request whose only input is
+a `source_url` is a form. `.request.headers` is empty — the boundary belongs to the `FormData` —
+and `.request.body` is `"form"`; post `topaz.toFormData(params)`. Two addresses because Topaz
+publishes two real urls with disjoint model enums and different dials, `POST /enhance/async` for
+the six classic Gigapixel (GAN) models and `POST /enhance-gen/async` for the nine generative
+Wonder and Bloom ones — the `stability.imageCore` / `ideogram.imageV4` shape. The ids are Topaz's
+own PRODUCT NAMES, spaces and all: `Standard V2`, `High Fidelity V2`, `Upscale High Fidelity V3`,
+`Low Resolution V2`, `CGI` and `Text Refine` on the classic route; `Redefine`, `Wonder`,
+`Wonder 2`, `Wonder 3`, `Wonder 3.5`, `Standard MAX`, `Recover 3`, `Bloom 2` and `Bloom Realism`
+on the generative one. So a ref reads `"topaz/Standard V2"`.
+
+Pricing is credits, per output megapixel, `credits = ceil(outputMP / mpPerCredit)` — 24 MP per
+credit for the Gigapixel family, 4 for Wonder, 2 for Bloom — at $0.12 a credit pay-as-you-go
+($0.10 on Developer, $0.08 on Scale). Topaz bills the OUTPUT's pixel count and the request states
+it, which makes this one of the few media providers whose estimate is EXACT; the other half of
+the same fact is that `output_width` and `output_height` are both optional, so a request that
+names neither (or only one) gets `undefined` rather than a guess.
+
+Topaz has **no `factor`** — it states an absolute output size rather than a multiplier — so the
+category's one cross-vendor word types as `never` at every Topaz ref. That is a DIFFERENT reason
+from `fal-ai/recraft/upscale/crisp`'s `never`, which has no multiplier because it chooses its own
+size, and the two therefore carry different messages. What Topaz did bring the category is a
+second witness for the canonical `prompt`: nine of its fifteen models steer on one.
+
+The per-model tuning dials — `faceEnhancement`, `creativity`, `texture`, `denoise`, `strength`
+and the rest — are not in Topaz's published OpenAPI document, which types the whole space as
+`additionalProperties: { type: string }`. unmodel hand-transcribes them per model from Topaz's
+prose, and Topaz IGNORES a dial a model does not read rather than refusing it, so a wrong dial is
+a silent no-op at the API and a warning here. That transcription is the whole argument for a
+native Topaz provider.
+
+Not served: the rest of the Image API — `/denoise`, `/sharpen`, `/sharpen-gen`, `/restore-gen`,
+`/lighting` and `/matting` clean, sharpen, relight or cut out a picture at the size it arrived,
+and `/tool` ("Transparency Upscale") does enlarge but is a third route with a one-value enum,
+so it would be a third address rather than a model here. Nor the **Video API**, which is not a
+request but a five-step protocol (quote → accept → S3 multipart upload → complete-upload → poll)
+in which only the first step has a body, whose body needs facts about the file that unmodel has
+no words for (`container`, `duration`, `frameCount`, `frameRate`, `resolution`), and whose model
+ids are opaque codes (`prob-4`, `iris-3`, `thd-3`) with no published mapping to the product
+names. `unmodel/upscale` reaches Topaz video through fal
+(`fal/topaz/upscale/video/precision`) instead, which is the sort of gap an aggregator is for.
+
+**Wire notes, shared by all three at fal:** the request is a queue submit to
 `https://queue.fal.run/{endpoint}`, the media arguments are https URLs or `data:` URIs, and the
 result is a queue envelope rather than a file. Polling is out of scope — follow the
-`response_url` fal hands back, never a URL you construct.
+`response_url` fal hands back, never a URL you construct. The two native halves each answer a job
+of their own shape — sync. a 201 carrying a generation id to poll at `GET /v2/generate/{id}`,
+Topaz a `process_id` to poll and then download — and neither accepts a payload in the body, so a
+`{ data }` ref is refused naming that vendor's upload route rather than compiled into a `data:`
+URI it would fail to fetch.
 
 ## 3D wave — the first category with two witnesses
 
 `unmodel/3d` is the fourth category added in 2026 and the only one that did **not** ship on one
-provider. The three above were deferred to fal alone because fal is where their models are
-hosted; this one waited for a second, independent witness, because a 3D vocabulary read off a
+provider. The three above each shipped on fal alone and gained their native second witness
+later; this one waited for one before shipping at all, because a 3D vocabulary read off a
 single vendor would have been that vendor's request schema with the field names changed. Two
 schemas in, `texture` already had five spellings and the output container four more.
 
@@ -406,16 +496,16 @@ leaves rather than whole validators.
 | `unmodel/video` | `video`, `createVideo` | 13 | alibaba, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu, xai |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 5 | black-forest-labs, fal, ideogram, openai, recraft — the five whose primary editing route is *image + prompt, no mask* |
 | `unmodel/music` | `music`, `createMusic` | 5 | elevenlabs, fal, google, mureka, stability |
-| `unmodel/lipsync` | `lipsync`, `createLipsync` | 1 | fal — 10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider |
-| `unmodel/avatar` | `avatar`, `createAvatar` | 1 | fal — 8 endpoints; the still-driven twin of lipsync |
-| `unmodel/upscale` | `upscale`, `createUpscale` | 1 | fal — 10 endpoints, seven taking a still and three taking a clip |
+| `unmodel/lipsync` | `lipsync`, `createLipsync` | 2 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), sync (5 models on one url — four of fal's ten are these same weights resold) |
+| `unmodel/avatar` | `avatar`, `createAvatar` | 2 | fal (8 endpoints; the still-driven twin of lipsync), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item) |
+| `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (10 endpoints, seven taking a still and three taking a clip), topaz (15 models over two routes, stills only, multipart bodies) |
 | `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (4 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
 | `unmodel/voice-design` | `voiceDesign`, `createVoiceDesign` | 4 | elevenlabs, fish-audio, inworld, minimax — the unified surface is phase 1 (the generative call); the ElevenLabs/Inworld save steps are wire-only (`voiceDesignSave`, `voiceDesignPublish`) |
 
 **Layout.** Each adapter lives in the provider's own directory as
 `unified-<category>.ts`, re-exported from a single `unified.ts` barrel published as
-`unmodel/<provider>/unified` (43 such subpaths). A provider serving more than one category
+`unmodel/<provider>/unified` (45 such subpaths). A provider serving more than one category
 therefore splits per category, so no pack pays for another category's schemas or catalogs.
 `test/bundle-budget.test.ts` asserts a pack can only reach a provider through that
 provider's uniformly-named endpoint module — which is what makes the address-vs-wire
@@ -424,15 +514,15 @@ listed: a provider with more than one `unified-<category>.ts` leaf is split, whi
 keeps a newly split provider from silently skipping every per-category budget.
 
 **Types without runtime.** Every provider in the roster above also publishes
-`unmodel/<provider>/types` (73 subpaths): its wire names verbatim plus one uniform
-`<Endpoint>Body` alias per endpoint address it serves — 189 endpoints in all — and nothing
+`unmodel/<provider>/types` (75 subpaths): its wire names verbatim plus one uniform
+`<Endpoint>Body` alias per endpoint address it serves — 196 endpoints in all — and nothing
 executable. `unmodel/types` is the matching hub for the canonical vocabulary
 (`ChatParams`, `TtsParams`, `ImageParams`, …, `Issue`, `ValidateResult`), deliberately with
-no aggregate of provider wire types. All 74 entries emit an empty JavaScript module, which
+no aggregate of provider wire types. All 76 entries emit an empty JavaScript module, which
 `test/types-entries.test.ts` asserts against a real build alongside the completeness drift
 guard keyed on `src/cli-registry.ts`.
 
-**Values without a validator.** The 42 providers with a unified adapter also publish
+**Values without a validator.** The 45 providers with a unified adapter also publish
 `unmodel/<provider>/values`: the runtime twin of those types — `<CATEGORY>_MODEL_PARAMS`,
 `<CATEGORY>_MODELS` and `<CATEGORY>_FORMAT_SPEC` per category served, plus that provider's own
 published enums (voices, sizes, ratios, durations, codecs, languages) under their own names.
@@ -483,7 +573,7 @@ wire-exact subpath first, adapter second.
 
 Two different vocabularies, both closed unions, both catalog-id-based.
 
-**`.toSdk(target)` — every endpoint, 189 of them.** (The count is not maintained by hand:
+**`.toSdk(target)` — every endpoint, 196 of them.** (The count is not maintained by hand:
 `src/cli.test.ts`'s drift guard asserts `REGISTRY` + `MULTIPART_ONLY` are exactly the set of
 module-level validators, so that test is the source of truth if this number ever rots.)
 The target set is a property of

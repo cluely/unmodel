@@ -71,6 +71,7 @@ import type {
   UpscaleValidator,
 } from "../core/unified/vocabulary/upscale";
 import { upscale as fal } from "../providers/fal/unified-upscale";
+import { upscale as topaz } from "../providers/topaz/unified";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
 export type UpscaleAdapter = AnyUpscaleAdapter;
@@ -93,20 +94,32 @@ export function createUpscale<A extends UpscaleAdapter>(
 }
 
 /**
- * Every upscale adapter unmodel ships — one provider today, and the pack exists
- * all the same.
+ * Every upscale adapter unmodel ships — two providers, and they disagree about
+ * the category's one cross-vendor word.
  *
- * One provider is not a reason to skip the pack: the pack is what makes
- * `import { upscale } from "unmodel/upscale"` work the same way it does for
- * every other category, and adding a second provider is then a one-line change
- * here rather than a new public surface.
+ * fal serves ten endpoints across two media: Clarity, AuraSR, Real-ESRGAN,
+ * Recraft and SeedVR for stills; Topaz, SeedVR and FLUX for clips; and Topaz's
+ * generative arm for either. Topaz serves fifteen models at its own API, across
+ * two routes — and brings the category two things fal's resale of it cannot.
  *
- * fal serves ten endpoints behind it, across two media: Clarity, AuraSR,
- * Real-ESRGAN, Recraft and SeedVR for stills; Topaz, SeedVR and FLUX for clips;
- * and Topaz's generative arm for either. The cost is pinned in
- * `test/bundle-budget.test.ts`.
+ * The first is `prompt`: nine of Topaz's fifteen steer on one, which is what
+ * turns a word with one real witness into a word with two.
+ *
+ * The second is a `factor` that is `never`. Topaz has no multiplier anywhere —
+ * it states an ABSOLUTE output size — so `factor: 2` at a Topaz ref is a
+ * compile error, and for a different reason than the category's other `never`:
+ *
+ * ```ts
+ * upscale({ model: "fal/fal-ai/recraft/upscale/crisp", source: { url }, factor: 2 });  // no multiplier: it chooses
+ * upscale({ model: "topaz/Standard V2",                source: { url }, factor: 2 });  // no multiplier: you state a size
+ * ```
+ *
+ * Two ways to have no `factor`, and the refusals say which is which — which is
+ * the sort of thing a vocabulary only learns from a second witness.
+ *
+ * The cost of both is pinned in `test/bundle-budget.test.ts`.
  */
-export const upscale = createUpscale([fal]);
+export const upscale = createUpscale([fal, topaz]);
 
 export type {
   AnyUpscaleAdapter,

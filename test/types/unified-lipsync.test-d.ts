@@ -2,9 +2,9 @@
  * Type-level tests for `unmodel/lipsync`'s ready-made pack. NOT run by
  * `bun test` — this file is only type-checked (`bun run check` / tsc --noEmit).
  *
- * The category is five words and one provider, so most of what is worth pinning
- * is the same four properties every category entry has: the ref union comes
- * from the adapter, the result is the ref'd provider's own `Validated`,
+ * The category is five words and two providers, so most of what is worth
+ * pinning is the same four properties every category entry has: the ref union
+ * comes from BOTH adapters, the result is the ref'd provider's own `Validated`,
  * `providerOptions` is keyed by the pack, and there is no `.toApi`.
  *
  * What is NOT shared with the other entries — and is the reason this wave
@@ -12,11 +12,12 @@
  */
 import { createLipsync, lipsync } from "../../src/unified/lipsync";
 import { lipsync as falLipsync } from "../../src/providers/fal/unified-lipsync";
+import { lipsync as syncLipsync } from "../../src/providers/sync/unified-lipsync";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import type { LipsyncParams } from "../../src/core/unified/vocabulary/lipsync";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
-type PackRefs = UnifiedRef<typeof falLipsync>;
+type PackRefs = UnifiedRef<typeof falLipsync | typeof syncLipsync>;
 
 expectAssignable<PackRefs>("fal/fal-ai/sync-lipsync/v3");
 expectAssignable<PackRefs>("fal/fal-ai/sync-lipsync/v2");
@@ -31,6 +32,18 @@ expectAssignable<PackRefs>("fal/fal-ai/sync-lipsync/v3/image-to-video");
 // @ts-expect-error — the text+voice arm is TTS composed with lipsync; not curated.
 expectAssignable<PackRefs>("fal/fal-ai/kling-video/lipsync/text-to-video");
 
+// The native half: the same vendor's own ids, four of which fal is reselling
+// above under paths of its own devising.
+expectAssignable<PackRefs>("sync/lipsync-2");
+expectAssignable<PackRefs>("sync/lipsync-2-pro");
+expectAssignable<PackRefs>("sync/lipsync-1.9.0-beta");
+expectAssignable<PackRefs>("sync/sync-3");
+expectAssignable<PackRefs>("sync/react-1");
+// @ts-expect-error — in the full backend spec only: no docs page, no rate, no SDK type.
+expectAssignable<PackRefs>("sync/lipsync-2-mini");
+// @ts-expect-error — fal's path for sync.'s model is not sync.'s own id.
+expectAssignable<PackRefs>("sync/fal-ai/sync-lipsync/v2");
+
 const URL_SOURCE = { url: "https://example.com/take-3.mp4" } as const;
 const URL_AUDIO = { url: "https://example.com/vo.wav" } as const;
 
@@ -40,7 +53,7 @@ function refUnionTests(): void {
   // A model newer than this snapshot still works, with a runtime warning.
   lipsync({ model: "fal/fal-ai/sync-lipsync/v4", source: URL_SOURCE, audio: URL_AUDIO });
   // A provider with no adapter is a runtime structural error, not a type error.
-  lipsync({ model: "sync/lipsync-3", source: URL_SOURCE, audio: URL_AUDIO });
+  lipsync({ model: "heygen/lipsync-4", source: URL_SOURCE, audio: URL_AUDIO });
 
   // @ts-expect-error — `audio` is not optional; there is nothing to sync to.
   lipsync({ model: "fal/fal-ai/sync-lipsync/v3", source: URL_SOURCE });
@@ -108,11 +121,17 @@ function providerOptionsTests(): void {
     providerOptions: { fal: { sync_mode: "loop" } },
   });
   lipsync({
+    model: "sync/lipsync-2",
+    source: URL_SOURCE,
+    audio: URL_AUDIO,
+    providerOptions: { sync: { outputFileName: "take-3" } },
+  });
+  lipsync({
     model: "fal/fal-ai/pixverse/lipsync",
     source: URL_SOURCE,
     audio: URL_AUDIO,
     // @ts-expect-error — not for a provider this pack does not have.
-    providerOptions: { sync: {} },
+    providerOptions: { topaz: {} },
   });
 
   const one = createLipsync([falLipsync]);

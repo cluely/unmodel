@@ -12,14 +12,15 @@ import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { avatar as falAvatar } from "../../src/providers/fal";
 import { avatar, createAvatar } from "../../src/unified/avatar";
 import { avatar as falAdapter } from "../../src/providers/fal/unified-avatar";
+import { avatar as syncAdapter } from "../../src/providers/sync/unified-avatar";
 import { lipsync } from "../../src/unified/lipsync";
 
 const STILL = { url: "https://example.com/headshot.png" } as const;
 const VOICE = { url: "https://example.com/vo-french.wav" } as const;
 
 describe("the pack", () => {
-  test("registers exactly the one avatar provider", () => {
-    expect([...avatar.providers]).toEqual(["fal"]);
+  test("registers exactly the two avatar providers", () => {
+    expect([...avatar.providers]).toEqual(["fal", "sync"]);
   });
 
   test("a provider outside the pack is structural, not a validation error", () => {
@@ -46,9 +47,59 @@ describe("the pack", () => {
     expect(params.request.url).toBe("https://queue.fal.run/fal-ai/bytedance/omnihuman/v9");
   });
 
-  test("the eight endpoints are one adapter, and the pack is that adapter", () => {
+  test("each provider is one adapter, and either builds a pack on its own", () => {
     expect(falAdapter.models).toHaveLength(8);
+    expect(syncAdapter.models).toHaveLength(1);
     expect([...createAvatar([falAdapter]).providers]).toEqual(["fal"]);
+    expect([...createAvatar([syncAdapter]).providers]).toEqual(["sync"]);
+  });
+});
+
+/**
+ * The native half, and the reason this category is a sibling of
+ * `unmodel/lipsync` rather than an arm of it.
+ *
+ * `sync/sync-3` is in BOTH packs, at the same URL, under the same model id. The
+ * only thing separating the two requests is the tag on the first input item —
+ * so a single `source` that meant either would put the discriminator in the
+ * caller's head.
+ */
+describe("the result is sync.'s own Validated, and it is one id in two categories", () => {
+  test("the still is an ITEM, tagged `image`", () => {
+    const result = avatar({ model: "sync/sync-3", image: STILL, audio: VOICE });
+    expect(JSON.parse(JSON.stringify(result))).toEqual({
+      model: "sync-3",
+      input: [
+        { type: "image", url: STILL.url },
+        { type: "audio", url: VOICE.url },
+      ],
+    });
+    expect(result.request.url).toBe("https://api.sync.so/v2/generate");
+  });
+
+  test("the same id in the lipsync pack differs by exactly one tag", () => {
+    const still = JSON.parse(
+      JSON.stringify(avatar({ model: "sync/sync-3", image: STILL, audio: VOICE })),
+    ) as { input: Array<{ type: string }> };
+    const clip = JSON.parse(
+      JSON.stringify(
+        lipsync({
+          model: "sync/sync-3",
+          source: { url: "https://example.com/take-3.mp4" },
+          audio: VOICE,
+        }),
+      ),
+    ) as { input: Array<{ type: string }> };
+    expect(still.input[0]?.type).toBe("image");
+    expect(clip.input[0]?.type).toBe("video");
+    expect(still.input[1]?.type).toBe(clip.input[1]?.type);
+  });
+
+  test("`image` is required here, because the row says `sources: [\"image\"]`", () => {
+    const result = avatar.safe({ model: "sync/sync-3", audio: VOICE } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => issue.path.join("."))).toContain("image");
   });
 });
 

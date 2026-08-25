@@ -6,7 +6,8 @@
 possible.**
 
 The first category in the library that did **not** ship on one provider, and that was the
-point. `unmodel/lipsync`, `unmodel/avatar` and `unmodel/upscale` all arrived with fal alone;
+point. `unmodel/lipsync`, `unmodel/avatar` and `unmodel/upscale` all arrived with fal alone
+(they gain their second witnesses in the same release — see the sync./Topaz entry below);
 3D waited for a second, independent witness, because a vocabulary read off a single vendor is
 that vendor's request schema with the field names changed — and 3D is where that shows fastest.
 Two schemas in, `texture` already had five spellings (`texture`, `textured_mesh`,

@@ -1,0 +1,23 @@
+{
+  "ref": "sync/sync-3",
+  "params": {
+    "model": "sync-3",
+    "input": [
+      {
+        "type": "video",
+        "url": "https://example.com/take-3.mp4"
+      },
+      {
+        "type": "audio",
+        "url": "https://example.com/vo-french.wav"
+      }
+    ],
+    "options": {
+      "sync_mode": "bounce"
+    }
+  },
+  "url": "https://api.sync.so/v2/generate",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

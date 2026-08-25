@@ -1,0 +1,21 @@
+{
+  "ref": "sync/sync-3",
+  "params": {
+    "model": "sync-3",
+    "input": [
+      {
+        "type": "image",
+        "url": "https://example.com/headshot.png"
+      },
+      {
+        "type": "audio",
+        "url": "https://example.com/vo-french.wav"
+      }
+    ],
+    "outputFileName": "greeting-take-3"
+  },
+  "url": "https://api.sync.so/v2/generate",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

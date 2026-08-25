@@ -1,0 +1,9 @@
+{
+  "ref": "topaz/Standard V2",
+  "params": {
+    "model": "Standard V2",
+    "source_url": "https://example.com/portrait.png"
+  },
+  "url": "https://api.topazlabs.com/image/v1/enhance/async",
+  "headers": {}
+}

@@ -42,7 +42,7 @@ const DIST = join(ROOT, "dist");
 const PROVIDERS_DIR = join(ROOT, "src", "providers");
 
 /**
- * The 42 providers that ship a values entry: exactly those with a unified
+ * The 45 providers that ship a values entry: exactly those with a unified
  * adapter.
  *
  * Enumerated rather than only derived, so that a provider *losing* its entry
@@ -91,6 +91,8 @@ const PROVIDERS_WITH_VALUES: readonly string[] = [
   "speechmatics",
   "stability",
   "stepfun",
+  "sync",
+  "topaz",
   "tripo3d",
   "vidu",
   "xai",
@@ -189,7 +191,7 @@ describe("values entries exist, one per provider with an adapter", () => {
   test("the enumerated list is exactly the set of providers with an adapter", () => {
     expect(DERIVED_PROVIDERS).toEqual([...PROVIDERS_WITH_VALUES]);
     // A rule that scans an empty set passes by saying nothing.
-    expect(PROVIDERS_WITH_VALUES.length).toBe(43);
+    expect(PROVIDERS_WITH_VALUES.length).toBe(45);
   });
 
   test("every one of them ships a values.ts, and no other provider does", () => {
@@ -237,11 +239,10 @@ describe("completeness — every category an adapter serves has its uniform alia
       }
     }
     expect(missing).toEqual([]);
-    // 64 adapters across the 38 providers today — fal alone brings five (image,
-    // image-edit, video, lipsync, avatar), which is more categories than any
-    // other provider serves. A floor, so the sweep cannot go vacuous if
-    // `adaptersOf` ever stops finding them.
-    expect(categories).toBeGreaterThanOrEqual(63);
+    // 67 adapters across the 45 providers today — fal alone brings ten, which
+    // is more categories than any other provider serves. A floor, so the sweep
+    // cannot go vacuous if `adaptersOf` ever stops finding them.
+    expect(categories).toBeGreaterThanOrEqual(66);
   });
 
   test("the built declaration exports them too, so the promise survives the build", () => {

@@ -1,0 +1,9 @@
+{
+  "image": {
+    "url": "https://example.com/headshot.png"
+  },
+  "audio": {
+    "url": "https://example.com/vo-french.wav"
+  },
+  "outputFileName": "greeting-take-3"
+}

@@ -9,11 +9,12 @@
  */
 import { avatar, createAvatar } from "../../src/unified/avatar";
 import { avatar as falAvatar } from "../../src/providers/fal/unified-avatar";
+import { avatar as syncAvatar } from "../../src/providers/sync/unified-avatar";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import type { AvatarParams } from "../../src/core/unified/vocabulary/avatar";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
-type PackRefs = UnifiedRef<typeof falAvatar>;
+type PackRefs = UnifiedRef<typeof falAvatar | typeof syncAvatar>;
 
 expectAssignable<PackRefs>("fal/fal-ai/sync-lipsync/v3/image-to-video");
 expectAssignable<PackRefs>("fal/fal-ai/bytedance/omnihuman/v1.5");
@@ -25,6 +26,14 @@ expectAssignable<PackRefs>("fal/fal-ai/longcat-single-avatar/image-audio-to-vide
 expectAssignable<PackRefs>("fal/fal-ai/echomimic-v3");
 // @ts-expect-error — the clip-driven arm of the same product is `unmodel/lipsync`.
 expectAssignable<PackRefs>("fal/fal-ai/sync-lipsync/v3");
+
+// The native half — one model, and it is the SAME id `unmodel/lipsync` serves.
+// Only the category and the input tell the two calls apart.
+expectAssignable<PackRefs>("sync/sync-3");
+// @ts-expect-error — the other four sync. models take a clip and refuse a still.
+expectAssignable<PackRefs>("sync/lipsync-2");
+// @ts-expect-error — react-1 is the expressive model and still reads no image.
+expectAssignable<PackRefs>("sync/react-1");
 
 const URL_IMAGE = { url: "https://example.com/headshot.png" } as const;
 const URL_AUDIO = { url: "https://example.com/vo.wav" } as const;

@@ -68,6 +68,7 @@ import type {
   LipsyncValidator,
 } from "../core/unified/vocabulary/lipsync";
 import { lipsync as fal } from "../providers/fal/unified-lipsync";
+import { lipsync as sync } from "../providers/sync/unified-lipsync";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
 export type LipsyncAdapter = AnyLipsyncAdapter;
@@ -90,21 +91,34 @@ export function createLipsync<A extends LipsyncAdapter>(
 }
 
 /**
- * Every lipsync adapter unmodel ships — one provider today, and the pack exists
- * all the same.
+ * Every lipsync adapter unmodel ships — two providers, and the second one is
+ * the first one's supplier.
  *
- * One provider is not a reason to skip the pack: the pack is what makes
- * `import { lipsync } from "unmodel/lipsync"` work the same way it does for
- * every other category, and adding a second provider is then a one-line change
- * here rather than a new public surface. It is also the smallest pack in the
- * library by some distance — one validator, one union schema, ten generated
- * rows — which is exactly what the category being five words buys.
+ * fal serves ten endpoints: sync.'s v2, v2/pro and v3, VEED's two generations,
+ * LatentSync, Kling's lipsync route, PixVerse's, and HeyGen v3's precision and
+ * speed arms. sync. serves five models at its own API, four of which fal is
+ * reselling — which makes this the sharpest comparison in the library, because
+ * the two paths reach the SAME WEIGHTS and still compile to visibly different
+ * bodies:
  *
- * fal serves ten endpoints behind it: sync.'s v2, v2/pro and v3, VEED's two
- * generations, LatentSync, Kling's lipsync route, PixVerse's, and HeyGen v3's
- * precision and speed arms. The cost is pinned in `test/bundle-budget.test.ts`.
+ * ```ts
+ * lipsync({ model: "fal/fal-ai/sync-lipsync/v2", source: { url }, audio: { url } });
+ * // → { model: "lipsync-2", video_url: "…", audio_url: "…" }
+ *
+ * lipsync({ model: "sync/lipsync-2", source: { url }, audio: { url } });
+ * // → { model: "lipsync-2", input: [ { type: "video", url: "…" },
+ * //                                  { type: "audio", url: "…" } ] }
+ * ```
+ *
+ * Two flat URL fields at the reseller; a tagged ARRAY at the vendor. The array
+ * is what carries several voices, `refId`s, `segments` and dubbing — none of
+ * which fal's flattening can express — and the flat pair is what accepts inline
+ * bytes, which sync.'s fetch-only fields do not. Neither is a superset. That
+ * comparison is pinned in the golden tree rather than described.
+ *
+ * The cost of both is pinned in `test/bundle-budget.test.ts`.
  */
-export const lipsync = createLipsync([fal]);
+export const lipsync = createLipsync([fal, sync]);
 
 export type {
   AnyLipsyncAdapter,

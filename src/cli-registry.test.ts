@@ -193,7 +193,11 @@ const EXPECTED_IDS: readonly string[] = [
   "stability.musicInpaint",
   "stepfun.chat",
   "stepfun.tts",
+  "sync.avatar",
+  "sync.lipsync",
   "togetherai.chat",
+  "topaz.upscale",
+  "topaz.upscaleGenerative",
   "tripo3d.threeD",
   "tripo3d.threeDFromImage",
   "upstage.chat",
@@ -547,22 +551,29 @@ test("the voice-creation endpoints use the uniform verbs", () => {
 });
 
 /**
- * The two audio-driven video halves — the newest categories in the library, and
- * the pair that shows the law is about the CATEGORY rather than the vendor.
+ * The two audio-driven video halves — the pair that shows the law is about the
+ * CATEGORY rather than the vendor, and now shows it twice.
  *
  * `fal-ai/sync-lipsync/v3` and `fal-ai/sync-lipsync/v3/image-to-video` are one
  * vendor's one model behind two routes, and they are addressed at
  * `fal.lipsync` and `fal.avatar` respectively — because the address names what
  * the endpoint DOES, and one redubs a performance while the other invents one.
- * Both are bare verbs: one provider serves each today, with one route each, so
- * there is nothing to qualify.
+ *
+ * sync. is that same vendor natively, and it is the stronger case: `POST
+ * /v2/generate` is ONE URL, `model: "sync-3"` is one id, and the only thing
+ * separating `sync.lipsync` from `sync.avatar` is which fields the request may
+ * carry — a still narrows the model to `sync-3` and forbids `segments` (no
+ * timeline) and `dubParams` (no track to extract). Different required fields
+ * behind one path is exactly what a qualified address names everywhere else in
+ * this list; here the two verbs happen to be the two CATEGORY verbs, so neither
+ * needs qualifying.
  *
  * Written out rather than derived for the same reason as every list here: an id
  * does not carry its category, and a rename has to be typed in the diff.
  */
-const LIPSYNC_IDS: readonly string[] = ["fal.lipsync"];
+const LIPSYNC_IDS: readonly string[] = ["fal.lipsync", "sync.lipsync"];
 
-const AVATAR_IDS: readonly string[] = ["fal.avatar"];
+const AVATAR_IDS: readonly string[] = ["fal.avatar", "sync.avatar"];
 
 test("the lipsync and avatar endpoints use their categories' own verbs", () => {
   for (const id of LIPSYNC_IDS) {
@@ -588,13 +599,19 @@ test("the lipsync and avatar endpoints use their categories' own verbs", () => {
 
   // The wire spellings never became addresses. fal files its lipsync routes
   // under `video-to-video` and `text-to-video` and its avatar routes under
-  // `image-to-video` and `audio-to-video`; none of those is an unmodel verb.
+  // `image-to-video` and `audio-to-video`; sync. files both under one path it
+  // calls `generate`, and its own product name for the still arm is "sync-3
+  // image input". None of those is an unmodel verb.
   const retired = [
     "fal.syncLipsync",
     "fal.videoToVideo",
     "fal.audioToVideo",
     "fal.talkingHead",
     "fal.aiAvatar",
+    "sync.generate",
+    "sync.generation",
+    "sync.lipsyncFromImage",
+    "sync.imageToVideo",
   ];
   for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
 });
@@ -636,22 +653,35 @@ test("the music-category endpoints all use the uniform `music` verb", () => {
 });
 
 /**
- * The upscale half — the newest category in the library, and the one whose
- * address had the most alternatives to reject.
+ * The upscale half — the category whose address had the most alternatives to
+ * reject, and the one that now shows both answers to "should a second route
+ * qualify".
  *
- * `fal.upscale` is bare, over ten endpoints and two media. There is no
- * `fal.upscaleVideo`, and the argument is the one `fal.video` already makes:
- * three of the ten take a clip and seven take a still, and that is a difference
- * in what goes IN rather than in the route's shape. `fal-ai/seedvr/upscale/image`
- * and `fal-ai/seedvr/upscale/video` are one vendor's one product on two paths;
- * qualifying the address would mean maintaining a LIST of which endpoint is
- * which, where the row's `sources` already states it as data.
+ * `fal.upscale` is bare, over ten endpoints and two media, and there is NO
+ * `fal.upscaleVideo`: three of the ten take a clip and seven take a still, and
+ * that is a difference in what goes IN rather than in the route's shape.
+ * `fal-ai/seedvr/upscale/image` and `fal-ai/seedvr/upscale/video` are one
+ * vendor's one product on two paths behind one URL shape; qualifying the
+ * address would mean maintaining a LIST of which endpoint is which, where the
+ * row's `sources` already states it as data.
  *
- * There is no `fal.superResolution` either — the wire words fal files these
- * under are `image-to-image` and `video-to-video`, and neither is an unmodel
- * verb.
+ * `topaz.upscaleGenerative` is the opposite case and therefore DOES qualify.
+ * Topaz publishes two real URLs — `/image/v1/enhance/async` and
+ * `/image/v1/enhance-gen/async` — with disjoint model enums and different
+ * dials: `strength` and `fixCompression` on one, `creativity`, `texture`,
+ * `detail` and `prompt` on the other. Two routes with different fields is the
+ * same fork `stability.imageCore` and `ideogram.imageV4` name, and the primary
+ * one stays bare.
+ *
+ * There is no `fal.superResolution` and no `topaz.enhance` — the wire words
+ * these are filed under are `image-to-image`, `video-to-video` and `enhance`,
+ * and none of them is an unmodel verb.
  */
-const UPSCALE_IDS: readonly string[] = ["fal.upscale"];
+const UPSCALE_IDS: readonly string[] = [
+  "fal.upscale",
+  "topaz.upscale",
+  "topaz.upscaleGenerative",
+];
 
 test("the upscale endpoints use the category's own verb", () => {
   for (const id of UPSCALE_IDS) {
@@ -672,7 +702,17 @@ test("the upscale endpoints use the category's own verb", () => {
   expect(UPSCALE_IDS.filter((id) => IMAGE_EDIT_IDS.includes(id))).toEqual([]);
   expect(UPSCALE_IDS.filter((id) => VIDEO_IDS.includes(id))).toEqual([]);
 
-  const retired = ["fal.upscaleVideo", "fal.superResolution", "fal.imageToImage"];
+  const retired = [
+    "fal.upscaleVideo",
+    "fal.superResolution",
+    "fal.imageToImage",
+    "topaz.enhance",
+    "topaz.enhanceGen",
+    "topaz.gigapixel",
+    // Topaz's Video API is a five-step protocol rather than a request; see
+    // src/providers/topaz/models.ts for why it is absent rather than qualified.
+    "topaz.upscaleVideo",
+  ];
   for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
 });
 

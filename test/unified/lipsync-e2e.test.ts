@@ -13,20 +13,21 @@ import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { lipsync as falLipsync } from "../../src/providers/fal";
 import { createLipsync, lipsync } from "../../src/unified/lipsync";
 import { lipsync as falAdapter } from "../../src/providers/fal/unified-lipsync";
+import { lipsync as syncAdapter } from "../../src/providers/sync/unified-lipsync";
 
 const CLIP = { url: "https://example.com/take-3.mp4" } as const;
 const VOICE = { url: "https://example.com/vo-french.wav" } as const;
 
 describe("the pack", () => {
-  test("registers exactly the one lipsync provider", () => {
-    expect([...lipsync.providers]).toEqual(["fal"]);
+  test("registers exactly the two lipsync providers", () => {
+    expect([...lipsync.providers]).toEqual(["fal", "sync"]);
   });
 
   test("a provider outside the pack is structural, not a validation error", () => {
     expect(() =>
-      lipsync({ model: "sync/lipsync-2", source: CLIP, audio: VOICE } as never),
+      lipsync({ model: "heygen/lipsync-4", source: CLIP, audio: VOICE } as never),
     ).toThrow(TranslationUnavailableError);
-    const result = lipsync.safe({ model: "sync/lipsync-2", source: CLIP, audio: VOICE } as never);
+    const result = lipsync.safe({ model: "heygen/lipsync-4", source: CLIP, audio: VOICE } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]?.meta?.["structural"]).toBe(true);
@@ -48,10 +49,85 @@ describe("the pack", () => {
     expect(params.request.url).toBe("https://queue.fal.run/fal-ai/sync-lipsync/v9");
   });
 
-  test("the ten endpoints are one adapter, and the pack is that adapter", () => {
+  test("each provider is one adapter, and either builds a pack on its own", () => {
     expect(falAdapter.models).toHaveLength(10);
-    const built = createLipsync([falAdapter]);
-    expect([...built.providers]).toEqual(["fal"]);
+    expect(syncAdapter.models).toHaveLength(5);
+    expect([...createLipsync([falAdapter]).providers]).toEqual(["fal"]);
+    expect([...createLipsync([syncAdapter]).providers]).toEqual(["sync"]);
+  });
+});
+
+/**
+ * The native half, and the shape that made sync. worth adding: `input` is an
+ * ARRAY of tagged items rather than two flat URL fields, which is what carries
+ * every request mode fal's flattening of the same models cannot express.
+ */
+describe("the result is sync.'s own Validated", () => {
+  test("the clip and the track are ITEMS, and `model` stays on the body", () => {
+    const result = lipsync({ model: "sync/lipsync-2", source: CLIP, audio: VOICE });
+    expect(JSON.parse(JSON.stringify(result))).toEqual({
+      model: "lipsync-2",
+      input: [
+        { type: "video", url: CLIP.url },
+        { type: "audio", url: VOICE.url },
+      ],
+    });
+    expect(result.request.url).toBe("https://api.sync.so/v2/generate");
+    expect(result.request.method).toBe("POST");
+    expect(result.request.headers).toEqual({ "content-type": "application/json" });
+  });
+
+  test("the six `options` dials nest, and the row is the gate", () => {
+    const ok = lipsync({
+      model: "sync/lipsync-2",
+      source: CLIP,
+      audio: VOICE,
+      sync_mode: "remap",
+      temperature: 0.9,
+    });
+    expect(JSON.parse(JSON.stringify(ok))).toMatchObject({
+      options: { sync_mode: "remap", temperature: 0.9 },
+    });
+
+    // `temperature` is a lipsync-2-family dial, and sync-3 does expressiveness
+    // natively — so the row refuses it rather than sending a no-op.
+    const refused = lipsync.safe({
+      model: "sync/sync-3",
+      source: CLIP,
+      audio: VOICE,
+      temperature: 0.9,
+    } as never);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.errors.map((issue) => issue.path.join("."))).toContain("temperature");
+  });
+
+  test("`seed` is refused by name — sync. publishes none anywhere", () => {
+    const result = lipsync.safe({
+      model: "sync/lipsync-2",
+      source: CLIP,
+      audio: VOICE,
+      seed: 7,
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const issue = result.errors.find((error) => error.path.join(".") === "seed");
+    expect(issue?.code).toBe("unsupported_param");
+  });
+
+  test("the arity rule the wire states is enforced before the wire does", () => {
+    // `dubParams` takes the voice out of the clip's own track, so an audio
+    // input alongside it is a contradiction — `generation_input_dub_audio_conflict`
+    // is its own error code at sync., which is how often it happens.
+    const result = lipsync.safe({
+      model: "sync/lipsync-2",
+      source: CLIP,
+      audio: VOICE,
+      dubParams: { providerName: "elevenlabs", targetLang: "fr" },
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => issue.path.join("."))).toContain("dubParams");
   });
 });
 
@@ -168,12 +244,27 @@ describe("providerOptions", () => {
       model: "fal/fal-ai/sync-lipsync/v3",
       source: CLIP,
       audio: VOICE,
-      providerOptions: { sync: { model: "lipsync-2" } },
+      providerOptions: { heygen: { avatar_style: "normal" } },
     } as never);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.warnings.some((issue) => issue.code === "unknown_param")).toBe(true);
-    expect(JSON.parse(JSON.stringify(result.params))).not.toHaveProperty("model");
+    expect(JSON.parse(JSON.stringify(result.params))).not.toHaveProperty("avatar_style");
+  });
+
+  test("…and a block for the OTHER provider in the pack is ignored, not merged", () => {
+    // The sharper half of the same rule now that there are two: `sync` IS a
+    // provider in this pack, and a `sync` block on a `fal` ref still must not
+    // reach fal's wire.
+    const result = lipsync.safe({
+      model: "fal/fal-ai/sync-lipsync/v3",
+      source: CLIP,
+      audio: VOICE,
+      providerOptions: { sync: { outputFileName: "take-3" } },
+    } as never);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).not.toHaveProperty("outputFileName");
   });
 });
 

@@ -102,12 +102,18 @@ describe.each(caseDirs)("golden lipsync/%s", (name) => {
       expect(result.warnings).toEqual([]);
     });
 
-    test("`endpoint` never reaches the wire", () => {
-      // fal's route selector is unmodel's, not fal's — the committed body is
-      // the exact fetch payload, and this is the one key that must not be in
-      // it however the request was written.
+    test("the route selector never reaches the wire, whichever kind it is", () => {
+      // At fal the selector is unmodel's own `endpoint` pseudo-param and must
+      // be stripped; at sync. there is ONE url for the whole provider and
+      // `model` is a real body field that must SURVIVE. Two opposite facts, one
+      // assertion each, because getting either backwards produces a 4xx.
       expect(Object.keys(fixture.params)).not.toContain("endpoint");
-      expect(fixture.url).toBe(`https://queue.fal.run/${fixture.ref.slice("fal/".length)}`);
+      if (fixture.ref.startsWith("fal/")) {
+        expect(fixture.url).toBe(`https://queue.fal.run/${fixture.ref.slice("fal/".length)}`);
+        return;
+      }
+      expect(fixture.params["model"]).toBe(fixture.ref.slice(fixture.ref.indexOf("/") + 1));
+      expect(fixture.url).toBe("https://api.sync.so/v2/generate");
     });
   });
 });
@@ -171,8 +177,44 @@ describe("the matrix itself", () => {
     const fixtures = all.filter((entry) => entry.name === "inline-bytes");
     expect(fixtures.length).toBeGreaterThanOrEqual(1);
     for (const { fixture } of fixtures) {
+      // Every fixture in this case is a fal one, and that is itself a fact
+      // about the category rather than an accident of coverage: sync. fetches
+      // its inputs and has no field a payload can go in, so it refuses the
+      // canonical request this case is built on. See `lipsync-capabilities`.
+      expect(fixture.ref.startsWith("fal/"), fixture.ref).toBe(true);
       expect(fixture.params["video_url"]).toBe("data:video/mp4;base64,AAECAwQF");
       expect(fixture.params["audio_url"]).toBe("data:audio/wav;base64,BgcICQoL");
     }
+  });
+
+  /**
+   * The assertion this tree exists for now that the category has two providers:
+   * the same MODEL, compiled two ways, producing two different bodies.
+   *
+   * `fal/fal-ai/sync-lipsync/v2/pro` and `sync/sync-3` are not the same model —
+   * but `mismatch-mode/` holds one of each, both carrying sync.'s own
+   * `sync_mode` word, and the two land it in different places: at the body root
+   * where fal flattened sync.'s `options` into its schema, and under `options`
+   * where sync. keeps it. Same vendor, same word, two nestings.
+   */
+  test("sync.'s own `sync_mode` lands at two different depths", () => {
+    const fixtures = all.filter((entry) => entry.name === "mismatch-mode");
+    const viaFal = fixtures.find(({ fixture }) => fixture.ref.startsWith("fal/"));
+    const natively = fixtures.find(({ fixture }) => fixture.ref.startsWith("sync/"));
+    expect(viaFal, "mismatch-mode/ needs a fal fixture").toBeDefined();
+    expect(natively, "mismatch-mode/ needs a sync fixture").toBeDefined();
+    if (viaFal === undefined || natively === undefined) return;
+
+    expect(viaFal.fixture.params["sync_mode"]).toBe("bounce");
+    expect(natively.fixture.params["sync_mode"]).toBeUndefined();
+    expect(natively.fixture.params["options"]).toEqual({ sync_mode: "bounce" });
+    // And the clip: two flat URL fields at the reseller, a tagged array at the
+    // vendor.
+    expect(viaFal.fixture.params["video_url"]).toBeString();
+    expect(natively.fixture.params["video_url"]).toBeUndefined();
+    expect(natively.fixture.params["input"]).toEqual([
+      { type: "video", url: "https://example.com/take-3.mp4" },
+      { type: "audio", url: "https://example.com/vo-french.wav" },
+    ]);
   });
 });

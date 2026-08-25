@@ -149,23 +149,43 @@ export const REGISTRY = {
   "vidu.videoFromReference": () => import("./providers/vidu").then((m) => asCli(m.videoFromReference)),
 
   // Lipsync and avatar — the two audio-driven video categories. Both address
-  // their route with the category's own verb, bare, at the one provider that
-  // serves them. They are separate addresses for the same reason they are
-  // separate categories: `fal.lipsync` requires a source CLIP and `fal.avatar`
-  // requires a still, and `fal-ai/sync-lipsync/v3` and
+  // their route with the category's own verb, bare, at both providers that
+  // serve them. They are separate addresses for the same reason they are
+  // separate categories: a lipsync route requires a source CLIP and an avatar
+  // route requires a still, and `fal-ai/sync-lipsync/v3` and
   // `fal-ai/sync-lipsync/v3/image-to-video` — one vendor's one model on two
   // routes — are exactly the pair that would make a merged address ambiguous.
+  //
+  // sync. is that same vendor reached natively, and it makes the point twice
+  // over: its two addresses are ONE URL (`POST /v2/generate`) and one of them
+  // is even the same MODEL id. What separates `sync.lipsync` from
+  // `sync.avatar` is the required fields — a still narrows `model` to `sync-3`
+  // and forbids `segments` (no timeline to slice) and `dubParams` (no track to
+  // extract) — which is what a qualified address names everywhere else here.
   "fal.lipsync": () => import("./providers/fal").then((m) => asCli(m.lipsync)),
+  "sync.lipsync": () => import("./providers/sync").then((m) => asCli(m.lipsync)),
   "fal.avatar": () => import("./providers/fal").then((m) => asCli(m.avatar)),
+  "sync.avatar": () => import("./providers/sync").then((m) => asCli(m.avatar)),
 
-  // Super-resolution. One provider, ten endpoints, and a bare verb — because
-  // the address names what the endpoint DOES, and every one of these does the
-  // same thing. Notably NOT `fal.upscaleVideo`: three of the ten take a clip,
-  // and that is a difference in what goes IN rather than in the route's shape
-  // (the same argument that keeps thirty video endpoints at `fal.video`). The
-  // caller states which by pointing at an endpoint; the type states which by
-  // reading the row's `sources`.
+  // Super-resolution. Two providers, and a bare verb at both — because the
+  // address names what the endpoint DOES, and every one of these does the same
+  // thing. Notably NOT `fal.upscaleVideo`: three of fal's ten take a clip, and
+  // that is a difference in what goes IN rather than in the route's shape (the
+  // same argument that keeps thirty video endpoints at `fal.video`). The caller
+  // states which by pointing at an endpoint; the type states which by reading
+  // the row's `sources`.
+  //
+  // Topaz has TWO, because at a native provider a second URL is a real fork:
+  // `POST /image/v1/enhance/async` (the classic GAN upscalers) and
+  // `/enhance-gen/async` (the generative ones) have disjoint model enums and
+  // different dials — `strength` and `fixCompression` on one, `creativity`,
+  // `texture` and `prompt` on the other. So the extra route qualifies the way
+  // `stability.imageCore` and `ideogram.imageV4` do, and `unmodel/upscale`
+  // hides the fork by picking the URL from the ref.
   "fal.upscale": () => import("./providers/fal").then((m) => asCli(m.upscale)),
+  "topaz.upscale": () => import("./providers/topaz").then((m) => asCli(m.upscale)),
+  "topaz.upscaleGenerative": () =>
+    import("./providers/topaz").then((m) => asCli(m.upscaleGenerative)),
 
   // 3D asset generation. The verb is `threeD` rather than `3d` and the reason is
   // mechanical rather than aesthetic: an endpoint id's second segment is a

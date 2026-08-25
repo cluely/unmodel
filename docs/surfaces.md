@@ -12,9 +12,9 @@ One import per category, one camelCase vocabulary, `"provider/model"` refs. Ever
 | [Image generation](#image-generation) | `unmodel/image` | `unmodel/openai`, `unmodel/google`, `unmodel/black-forest-labs` |
 | [Image editing](#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram` |
 | [Video generation](#video-generation) | `unmodel/video` | `unmodel/openai`, `unmodel/google`, `unmodel/runway` |
-| [Lipsync](#lipsync) | `unmodel/lipsync` | `unmodel/fal` |
-| [Avatar](#avatar) | `unmodel/avatar` | `unmodel/fal` |
-| [Upscale](#upscale) | `unmodel/upscale` | `unmodel/fal` |
+| [Lipsync](#lipsync) | `unmodel/lipsync` | `unmodel/fal`, `unmodel/sync` |
+| [Avatar](#avatar) | `unmodel/avatar` | `unmodel/fal`, `unmodel/sync` |
+| [Upscale](#upscale) | `unmodel/upscale` | `unmodel/fal`, `unmodel/topaz` |
 | [3D generation](#3d-generation) | `unmodel/3d` | `unmodel/tripo3d`, `unmodel/fal` |
 | [Music generation](#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/fal`, `unmodel/stability` |
 | [Voice cloning](#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
@@ -198,6 +198,31 @@ decision the caller makes.
 so a still handed to a clip-only model is a compile error on `source` naming
 the shape that model takes, rather than a request that 422s.
 
+sync. (Sync Labs) is the category's second provider, and the overlap is the
+point: four of fal's ten lipsync endpoints are sync.'s own models resold, so
+the same weights are reachable both ways and the two calls compile to visibly
+different bodies.
+
+```ts
+lipsync({ model: "fal/fal-ai/sync-lipsync/v2", source: { url: clip }, audio: { url: vo } });
+// → {"video_url":"…","audio_url":"…"}
+//   POST https://queue.fal.run/fal-ai/sync-lipsync/v2
+
+lipsync({ model: "sync/lipsync-2", source: { url: clip }, audio: { url: vo } });
+// → {"model":"lipsync-2","input":[{"type":"video","url":"…"},
+//                                 {"type":"audio","url":"…"}]}
+//   POST https://api.sync.so/v2/generate
+```
+
+Two flat URL fields at the reseller, a tagged `input` array at the vendor, and
+the model id in opposite places: at fal the ENDPOINT is the model, so `lipsync-2`
+has moved into the url and out of the body; natively it is a body field. Then
+the array is what carries several voices, `refId`s, segments and dubbing,
+none of which fal's flattening can express. `sync_mode` sits at the body root
+at fal and under `options` natively, and fal accepts inline bytes as a `data:`
+URI where sync. fetches URLs and asset ids only. Neither is a superset of the
+other, which is why both are here.
+
 What is deliberately *not* in the vocabulary: "what to do when the audio
 outlasts the clip" is `sync_mode` with five arms at sync., `loop_mode` with two
 at LatentSync, a plain `enable_dynamic_duration` boolean at HeyGen, and absent
@@ -242,13 +267,33 @@ enum spelled `avatar_id` at one vendor and `avatar` at another is a coincidence
 with a shape rather than a vocabulary. Neither is `prompt`: three of the eight
 rows have no prompt field, one requires one, and two default theirs to `"."`.
 
+At sync., the category's second provider, that same split lands on ONE model id
+rather than on two routes. `sync/sync-3` is reachable from `unmodel/lipsync`
+and from `unmodel/avatar` at the same url, and the only thing separating the two
+calls is the tag on the first input item:
+
+```ts
+lipsync({ model: "sync/sync-3", source: { url: clip },  audio: { url: vo } });
+// → {"model":"sync-3","input":[{"type":"video","url":"…"},
+//                              {"type":"audio","url":"…"}]}
+
+avatar({  model: "sync/sync-3", image:  { url: still }, audio: { url: vo } });
+// → {"model":"sync-3","input":[{"type":"image","url":"…"},
+//                              {"type":"audio","url":"…"}]}
+```
+
+`sync-3` is the only one of sync.'s five models that reads an image, so it is
+the whole of that provider's avatar roster. `image` is **required** there rather
+than `never`: sync. catalogues no preset performers and publishes no field to
+name one, so there is nothing to animate without a picture.
+
 ## Upscale
 
-Making a frame bigger — the third fal-only category, and the one that splits
-from `unmodel/image-edit` on what comes OUT. An edit is described by what the
-result should look like; an upscale by how much bigger it should be, and
-`factor` has no meaning in a vocabulary whose size words are absolute. Half
-these routes take a CLIP, which `unmodel/image-edit` has no word for.
+Making a frame bigger — the category that splits from `unmodel/image-edit` on
+what comes OUT. An edit is described by what the result should look like; an
+upscale by how much bigger it should be, and `factor` has no meaning in a
+vocabulary whose size words are absolute. Some of these routes take a CLIP,
+which `unmodel/image-edit` has no word for.
 
 ```ts
 import { upscale } from "unmodel/upscale";
@@ -281,13 +326,52 @@ extras: each is one vendor's dial with no second witness, and `creativity` alone
 is a 0–1 number at Clarity, a 1–6 integer at Topaz and a two-member enum at
 FLUX.
 
+Topaz Labs is the category's second provider, and at its own API the ROUTE
+follows the model rather than the input: two paths with disjoint model enums —
+`/enhance/async` for the six classic Gigapixel upscalers, `/enhance-gen/async`
+for the nine generative Wonder and Bloom ones — so the ref decides the url and
+there is nothing for the caller to say. The ids are Topaz's own product names,
+spaces and all.
+
+```ts
+import { toFormData } from "unmodel/topaz";
+
+const enlarged = upscale({
+  model: "topaz/Redefine",
+  source: { url: "https://example.com/portrait.png" },
+  prompt: "a wooden sailing boat at anchor",
+});
+
+enlarged.request.url;  // "https://api.topazlabs.com/image/v1/enhance-gen/async"
+enlarged.request.body; // "form" — post toFormData(enlarged), not JSON.stringify
+
+upscale({ model: "topaz/Standard V2", source: { url } });
+// → POST https://api.topazlabs.com/image/v1/enhance/async
+```
+
+Every Topaz body is `multipart/form-data`, because neither path declares a JSON
+arm — which is also why `.request.headers` is empty there: the boundary belongs
+to the `FormData`, and a hand-set content-type would break the request.
+
+`factor` types as `never` at every Topaz ref, for a different reason from
+`fal-ai/recraft/upscale/crisp`'s: Topaz states an absolute output size
+(`output_width`, `output_height`) rather than a multiplier, and a multiplier is
+not derivable from a URL. The two refusals carry different messages because a
+caller can act differently on each. What Topaz brought the category is a
+second witness for `prompt` — nine of its fifteen models steer on one. The
+tuning dials stay per-model extras: they are absent from Topaz's own OpenAPI
+document and hand-transcribed here, and Topaz ignores a dial a model does not
+read rather than refusing it, so a wrong one is a silent no-op at the API and a
+warning here.
+
 ## 3D generation
 
 Asking for an object rather than a picture of one — the first category in the
 library to ship with TWO providers on its first day, and that is the point.
 `unmodel/lipsync`, `unmodel/avatar` and `unmodel/upscale` each shipped on fal
-alone; 3D waited, because a vocabulary read off one vendor is that vendor's
-request schema with the names changed, and 3D is where that shows fastest.
+alone and found their second provider later; 3D waited, because a vocabulary
+read off one vendor is that vendor's request schema with the names changed, and
+3D is where that shows fastest.
 Two schemas in, `texture` already had five spellings — `texture` at Tripo,
 `textured_mesh` at Hunyuan3D, `enable_texture` at Hi3D, `should_texture` at
 Meshy, `texture_mode` at Rodin — and the output container had four more plus a

@@ -1,0 +1,11 @@
+{
+  "ref": "fal/fal-ai/kling-video/ai-avatar/v2/standard",
+  "params": {
+    "image_url": "https://example.com/headshot.png",
+    "audio_url": "https://example.com/vo-french.wav"
+  },
+  "url": "https://queue.fal.run/fal-ai/kling-video/ai-avatar/v2/standard",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

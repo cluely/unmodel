@@ -1,0 +1,12 @@
+{
+  "ref": "fal/fal-ai/latentsync",
+  "params": {
+    "video_url": "https://example.com/take-3.mp4",
+    "audio_url": "https://example.com/vo-french.wav",
+    "seed": 4242
+  },
+  "url": "https://queue.fal.run/fal-ai/latentsync",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

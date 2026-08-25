@@ -1,11 +1,12 @@
 /**
  * `unmodel/fal/values` — the **runtime** lists behind this provider's unified
- * surfaces (image, image-edit).
+ * surfaces (image, image-edit, video, lipsync, avatar).
  *
  * Every export here is a readonly (`as const`) array or table a browser can
  * render: the endpoint ids, and the per-endpoint narrowing rows (that
  * endpoint's own `image_size` presets, its `aspect_ratio` vocabulary, the
- * resolution tiers it can express, and the extras it takes). It is the value
+ * resolution tiers it can express, the clip lengths it offers, the image roles
+ * its route serves, the source shape it takes, and the extras it takes). It is the value
  * half of `unmodel/fal/types`, for the client-side validation and the pickers
  * a type cannot draw.
  *
@@ -31,3 +32,18 @@ export {
   FAL_IMAGE_EDIT_MODEL_PARAMS as IMAGE_EDIT_MODEL_PARAMS,
   MODELS as IMAGE_EDIT_MODELS,
 } from "./image-edit-params";
+
+export {
+  FAL_VIDEO_MODEL_PARAMS as VIDEO_MODEL_PARAMS,
+  MODELS as VIDEO_MODELS,
+} from "./video-params";
+
+export {
+  FAL_LIPSYNC_MODEL_PARAMS as LIPSYNC_MODEL_PARAMS,
+  MODELS as LIPSYNC_MODELS,
+} from "./lipsync-params";
+
+export {
+  FAL_AVATAR_MODEL_PARAMS as AVATAR_MODEL_PARAMS,
+  MODELS as AVATAR_MODELS,
+} from "./avatar-params";

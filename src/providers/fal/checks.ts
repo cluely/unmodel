@@ -421,8 +421,9 @@ export function checkKnownParams(target: FalCheckTarget, params: Params, ctx: Pi
       `${endpointId} declares — it takes ${list(shape.order, "and")}. ` +
       (others.length === 0
         ? ""
-        : `${others.length === 1 ? "One other" : `${others.length} other`} endpoint in this category ` +
-          `does take it${others.length <= 3 ? ` (${others.map((id) => `\`${id}\``).join(", ")})` : ""}, ` +
+        : `${others.length === 1 ? "One other endpoint" : `${others.length} other endpoints`} in this ` +
+          `category ${others.length === 1 ? "does" : "do"} take it` +
+          `${others.length <= 3 ? ` (${others.map((id) => `\`${id}\``).join(", ")})` : ""}, ` +
           "so this reads like a request written for a different one. ") +
       "The request is sent as written all the same — fal adds parameters between snapshot refreshes.",
     meta: { unknown, declared: [...shape.order], ...(others.length > 0 && { takenBy: others }), source },

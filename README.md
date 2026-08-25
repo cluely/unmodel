@@ -91,7 +91,7 @@ canonical params → provider wire params → provider validator → fetch or SD
 
 Provider validators take provider-native fields, and the validated result is the exact wire body. Unified model refs split on the first slash: `openrouter/anthropic/claude-opus-5` means provider `openrouter`, model `anthropic/claude-opus-5`.
 
-## 🎨 The ten surfaces
+## 🎨 The twelve surfaces
 
 | Task | Portable import | Provider-native example |
 | --- | --- | --- |
@@ -101,6 +101,8 @@ Provider validators take provider-native fields, and the validated result is the
 | [🖼️ Image generation](docs/surfaces.md#image-generation) | `unmodel/image` | `unmodel/openai`, `unmodel/google`, `unmodel/black-forest-labs` |
 | [✏️ Image editing](docs/surfaces.md#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram` |
 | [🎬 Video generation](docs/surfaces.md#video-generation) | `unmodel/video` | `unmodel/openai`, `unmodel/google`, `unmodel/runway` |
+| [👄 Lipsync](docs/surfaces.md#lipsync) | `unmodel/lipsync` | `unmodel/fal` |
+| [🧑‍🎤 Avatar](docs/surfaces.md#avatar) | `unmodel/avatar` | `unmodel/fal` |
 | [🎵 Music generation](docs/surfaces.md#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/stability` |
 | [🎙️ Voice cloning](docs/surfaces.md#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
 | [🧪 Voice design](docs/surfaces.md#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
@@ -257,7 +259,7 @@ Every implemented provider has its own subpath with native field names, model ID
 
 ## 📚 Docs
 
-- 📖 [Surfaces guide](docs/surfaces.md) — all ten categories, examples, quirks, bundles and custom packs
+- 📖 [Surfaces guide](docs/surfaces.md) — all twelve categories, examples, quirks, bundles and custom packs
 - ✅ [Validation, cost, and response checks](docs/validation.md)
 - 🔡 [Types and values reference](docs/types-and-values.md)
 - 🔌 [Integrations: fetch, SDKs, catalog, CLI](docs/integrations.md)

@@ -166,7 +166,10 @@ describe("per-endpoint narrowing, from the generated IR", () => {
     // It lists what flux/dev DOES take…
     expect(warning?.message).toContain("image_size");
     // …says the key belongs to siblings, so the caller knows it was not a typo…
-    expect(warning?.message).toContain("endpoint in this category");
+    // …says the key belongs to siblings, and the plural agrees with the count
+    // (ten of them do, so "endpoints … do take it" rather than "endpoint …
+    // does"). The grammar is checked because the message is the product.
+    expect(warning?.message).toMatch(/\d+ other endpoints in this category do take it/);
     // …and links flux/dev's own page.
     expect(warning?.meta).toMatchObject({
       source: "https://fal.ai/models/fal-ai/flux/dev/api",

@@ -1,0 +1,583 @@
+{
+  "metadata": {
+    "category": "image-to-video",
+    "date": "2026-03-28T19:58:40.182Z",
+    "description": "Wan 2.7 is the latest generation AI video model, delivering enhanced motion smoothness, superior scene fidelity, and greater visual coherence.",
+    "display_name": "Wan",
+    "group": {
+      "key": "Wan27",
+      "label": "Image to Video"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/wan/v2.7/image-to-video",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "stylized",
+      "transform",
+      "lipsync"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a94048a/7oM_ro6v_fh2pGHvBbpyc_9db05a8e25034dcbb16db5192560d4af.jpg",
+    "updated_at": "2026-04-26T23:07:28.840Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "VideoFile": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "duration": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The duration of the video",
+              "title": "Duration"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "fps": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The FPS of the video",
+              "title": "Fps"
+            },
+            "height": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The height of the video",
+              "title": "Height"
+            },
+            "num_frames": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The number of frames in the video",
+              "title": "Num Frames"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The width of the video",
+              "title": "Width"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "VideoFile",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size",
+            "width",
+            "height",
+            "fps",
+            "duration",
+            "num_frames"
+          ]
+        },
+        "Wan27I2vInput": {
+          "description": "Input for Wan 2.7 image-to-video generation.\n\nThe wan2.7-i2v model is a unified endpoint supporting:\n- First-frame-to-video (provide image_url)\n- First-and-last-frame-to-video (provide image_url + end_image_url)\n- Video continuation (provide video_url instead of image_url)",
+          "properties": {
+            "audio_url": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "ui": {
+                    "field": "audio"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "URL of driving audio. Supports WAV and MP3. Duration: 2-30s. Max 15 MB.",
+              "title": "Audio Url"
+            },
+            "duration": {
+              "default": 5,
+              "description": "Output video duration in seconds (2-15).",
+              "enum": [
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+              ],
+              "examples": [
+                5,
+                10,
+                15
+              ],
+              "title": "Duration",
+              "type": "integer"
+            },
+            "enable_prompt_expansion": {
+              "default": true,
+              "description": "Enable intelligent prompt rewriting.",
+              "title": "Enable Prompt Expansion",
+              "type": "boolean"
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "Enable content moderation for input and output. Disabling it requires account authorization; unauthorized requests are always checked.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "end_image_url": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "ui": {
+                    "field": "image"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "URL of the last frame image for first-and-last-frame-to-video. Same constraints as image_url.",
+              "title": "End Image Url"
+            },
+            "image_url": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "ui": {
+                    "field": "image"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "URL of the first frame image. Formats: JPEG, JPG, PNG, BMP, WEBP. Max 20 MB.",
+              "examples": [
+                "https://v3b.fal.media/files/b/0a9413bb/qH6QY4JRzWxHOFKtCe70S_uPDJyzKZ.png"
+              ],
+              "title": "Image Url"
+            },
+            "negative_prompt": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Content to avoid in the video. Max 500 characters.",
+              "examples": [
+                "low resolution, errors, worst quality, low quality, incomplete, extra fingers, bad proportions, blurry, distorted"
+              ],
+              "title": "Negative Prompt"
+            },
+            "prompt": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Text prompt describing the desired video. Max 5000 characters.",
+              "examples": [
+                "The massive humpback whale glides slowly through the deep blue water. It turns gracefully, its huge pectoral fin sweeping through the water like a wing. Sunbeams penetrate from above, illuminating the whale's textured skin. Small fish scatter. Awe-inspiring scale and grace."
+              ],
+              "title": "Prompt"
+            },
+            "resolution": {
+              "default": "1080p",
+              "description": "Output video resolution tier.",
+              "enum": [
+                "720p",
+                "1080p"
+              ],
+              "title": "Resolution",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Random seed for reproducibility (0-2147483647).",
+              "title": "Seed"
+            },
+            "video_url": {
+              "anyOf": [
+                {
+                  "limit_description": "Max file size: 100.0MB, Min duration: 2s, Max duration: 10s, Timeout: 30.0s",
+                  "type": "string",
+                  "ui": {
+                    "field": "video"
+                  },
+                  "x-fal": {
+                    "max_duration": 10,
+                    "max_file_size": 104857600,
+                    "min_duration": 2,
+                    "timeout": 30
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "URL of a video clip to continue from. Format: MP4, MOV. Duration: 2-10s. Max 100 MB. Cannot be combined with image_url.",
+              "title": "Video Url"
+            }
+          },
+          "title": "Wan27ImageToVideoInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "image_url",
+            "end_image_url",
+            "video_url",
+            "audio_url",
+            "resolution",
+            "duration",
+            "negative_prompt",
+            "enable_prompt_expansion",
+            "seed",
+            "enable_safety_checker"
+          ]
+        },
+        "Wan27I2vOutput": {
+          "description": "Output for Wan 2.7 image-to-video generation.",
+          "properties": {
+            "actual_prompt": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The actual prompt used if prompt rewriting was enabled.",
+              "title": "Actual Prompt"
+            },
+            "seed": {
+              "description": "The seed used for generation.",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "video": {
+              "$ref": "#/components/schemas/VideoFile",
+              "description": "The generated video file."
+            }
+          },
+          "required": [
+            "video",
+            "seed"
+          ],
+          "title": "Wan27ImageToVideoOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video",
+            "seed",
+            "actual_prompt"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/wan-27-i2v queue.",
+      "title": "Queue OpenAPI for fal-ai/wan-27-i2v",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate video from image or video input using WAN 2.7 I2V model.\n\nScenarios:\n- First-frame-to-video: provide image_url\n- First+last-frame-to-video: provide image_url + end_image_url\n- Video continuation: provide video_url\n- Any scenario can include driving audio via audio_url",
+        "category": "unknown",
+        "documentationUrl": "https://fal.ai/models/fal-ai/wan-27-i2v/api",
+        "endpointId": "fal-ai/wan-27-i2v",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/wan-27-i2v",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a94811b/GCSdpyCjbIT-xBWFdqy7S_6820dcbd2a7b413fbd8445412edd3150.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/wan-27-i2v": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Wan27I2vInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/wan-27-i2v/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Wan27I2vOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/wan-27-i2v/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/wan-27-i2v/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

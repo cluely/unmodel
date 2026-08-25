@@ -57,8 +57,11 @@ const EXPECTED_IDS: readonly string[] = [
   "elevenlabs.voiceClone",
   "elevenlabs.voiceDesign",
   "elevenlabs.voiceDesignSave",
+  "fal.avatar",
   "fal.image",
   "fal.imageEdit",
+  "fal.lipsync",
+  "fal.video",
   "fireworks-ai.chat",
   "fish-audio.tts",
   "fish-audio.voiceClone",
@@ -303,6 +306,19 @@ test("the image-generation endpoints all use the uniform `image` verb", () => {
  */
 const VIDEO_IDS: readonly string[] = [
   "bytedance.video",
+  // ONE id for 30 endpoints, and the one place in this list where the absence
+  // of a `videoFromImage` sibling is a decision rather than a gap. Elsewhere a
+  // qualified id names a second wire ROUTE — `runway.video` and
+  // `runway.videoFromImage` are two POST paths with two bodies. At fal there is
+  // no second route to name: `fal-ai/veo3.1` and `fal-ai/veo3.1/image-to-video`
+  // are one URL shape and one body shape whose PATH is a parameter, and
+  // `minimax/h3/image-to-video` settles it by making its `image_url` optional —
+  // the same endpoint is text-to-video or image-to-video depending on the
+  // request. A `fal.videoFromImage` would have to be defined by a list of
+  // endpoint ids rather than by a rule, and the list would need editing every
+  // week. Which arm an endpoint serves is a fact on its generated row that
+  // `unified-video.ts` reads; see src/providers/fal/video.ts.
+  "fal.video",
   "google.video",
   "kling.video",
   "kling.videoFromImage",
@@ -342,7 +358,7 @@ test("the video-category endpoints all use the uniform `video` verb", () => {
   // ref a caller reaches for first is the same word everywhere.
   const providers = [...new Set(VIDEO_IDS.map((id) => id.split(".")[0] as string))].sort();
   for (const provider of providers) expect(VIDEO_IDS).toContain(`${provider}.video`);
-  expect(providers).toHaveLength(10);
+  expect(providers).toHaveLength(11);
 
   const retired = [
     "bytedance.contentGenerationTasks",
@@ -507,6 +523,59 @@ test("the voice-creation endpoints use the uniform verbs", () => {
 });
 
 /**
+ * The two audio-driven video halves — the newest categories in the library, and
+ * the pair that shows the law is about the CATEGORY rather than the vendor.
+ *
+ * `fal-ai/sync-lipsync/v3` and `fal-ai/sync-lipsync/v3/image-to-video` are one
+ * vendor's one model behind two routes, and they are addressed at
+ * `fal.lipsync` and `fal.avatar` respectively — because the address names what
+ * the endpoint DOES, and one redubs a performance while the other invents one.
+ * Both are bare verbs: one provider serves each today, with one route each, so
+ * there is nothing to qualify.
+ *
+ * Written out rather than derived for the same reason as every list here: an id
+ * does not carry its category, and a rename has to be typed in the diff.
+ */
+const LIPSYNC_IDS: readonly string[] = ["fal.lipsync"];
+
+const AVATAR_IDS: readonly string[] = ["fal.avatar"];
+
+test("the lipsync and avatar endpoints use their categories' own verbs", () => {
+  for (const id of LIPSYNC_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toMatch(/^lipsync([A-Z]|$)/);
+  }
+  for (const id of AVATAR_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toMatch(/^avatar([A-Z]|$)/);
+  }
+  // Both are bare, at every provider that serves them — which is what makes
+  // `unmodel/lipsync`'s and `unmodel/avatar`'s ref unions read the same as the
+  // provider surfaces they compile down to.
+  for (const provider of [...new Set([...LIPSYNC_IDS, ...AVATAR_IDS].map((id) => id.split(".")[0] as string))]) {
+    expect(LIPSYNC_IDS).toContain(`${provider}.lipsync`);
+    expect(AVATAR_IDS).toContain(`${provider}.avatar`);
+  }
+
+  // The two categories are disjoint from each other and from video, which is
+  // the whole content of the split: a clip in, a still in, or neither.
+  expect(LIPSYNC_IDS.filter((id) => AVATAR_IDS.includes(id))).toEqual([]);
+  expect([...LIPSYNC_IDS, ...AVATAR_IDS].filter((id) => VIDEO_IDS.includes(id))).toEqual([]);
+
+  // The wire spellings never became addresses. fal files its lipsync routes
+  // under `video-to-video` and `text-to-video` and its avatar routes under
+  // `image-to-video` and `audio-to-video`; none of those is an unmodel verb.
+  const retired = [
+    "fal.syncLipsync",
+    "fal.videoToVideo",
+    "fal.audioToVideo",
+    "fal.talkingHead",
+    "fal.aiAvatar",
+  ];
+  for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
  * The music half. Two providers, three routes: the text-to-music route is bare
  * `music` at both, and Stability's two audio-conditioned routes qualify by
  * what they are made from and what they do to a finished track.
@@ -647,7 +716,7 @@ test("the image-edit endpoints all use the uniform `imageEdit` verb", () => {
 });
 
 /**
- * The law, closed. Every endpoint in the six media categories now addresses its
+ * The law, closed. Every endpoint in the media categories addresses its
  * category with the category's own verb — which is what makes the six unified
  * entries' ref unions readable, because the word a caller types at
  * `unmodel/<category>` and the word they type at `unmodel/<provider>` are the
@@ -658,6 +727,8 @@ test("every media endpoint addresses its category with that category's verb", ()
     ...IMAGE_GENERATION_IDS,
     ...IMAGE_EDIT_IDS,
     ...VIDEO_IDS,
+    ...LIPSYNC_IDS,
+    ...AVATAR_IDS,
     ...STT_IDS,
     ...MUSIC_IDS,
   ];

@@ -1,0 +1,417 @@
+{
+  "metadata": {
+    "category": "audio-to-video",
+    "date": "2025-09-01T09:42:32.378Z",
+    "description": "High-quality avatar videos that feel real, generated from your audio",
+    "display_name": "Avatars Audio to Video",
+    "group": {
+      "key": "argil-avatar",
+      "label": "Audio to Video"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/argil/avatars/audio-to-video",
+    "pinned": false,
+    "status": "active",
+    "tags": [],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9f9a46/Gdzgjh37t0K2wz3FvC3Ln_kCn9Nl7J.png",
+    "updated_at": "2026-08-20T22:03:42.600Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "AvatarsAudioToVideoInput": {
+          "properties": {
+            "audio_url": {
+              "examples": [
+                {
+                  "url": "https://argildotai.s3.us-east-1.amazonaws.com/fal-resource/example_fal.mp3"
+                }
+              ],
+              "title": "Audio Url",
+              "type": "string"
+            },
+            "avatar": {
+              "enum": [
+                "Mia outdoor (UGC)",
+                "Lara (Masterclass)",
+                "Ines (UGC)",
+                "Maria (Masterclass)",
+                "Emma (UGC)",
+                "Sienna (Masterclass)",
+                "Elena (UGC)",
+                "Jasmine (Masterclass)",
+                "Amara (Masterclass)",
+                "Ryan podcast (UGC)",
+                "Tyler (Masterclass)",
+                "Jayse (Masterclass)",
+                "Paul (Masterclass)",
+                "Matteo (UGC)",
+                "Daniel car (UGC)",
+                "Dario (Masterclass)",
+                "Viva (Masterclass)",
+                "Chen (Masterclass)",
+                "Alex (Masterclass)",
+                "Vanessa (UGC)",
+                "Laurent (UGC)",
+                "Noemie car (UGC)",
+                "Brandon (UGC)",
+                "Byron (Masterclass)",
+                "Calista (Masterclass)",
+                "Milo (Masterclass)",
+                "Fabien (Masterclass)",
+                "Rose (UGC)"
+              ],
+              "examples": [
+                "Noemie car (UGC)"
+              ],
+              "title": "Avatar",
+              "type": "string"
+            },
+            "remove_background": {
+              "default": false,
+              "description": "Enabling the remove background feature will result in a 50% increase in the price.",
+              "title": "Remove Background",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "avatar",
+            "audio_url"
+          ],
+          "title": "InferenceRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "avatar",
+            "audio_url",
+            "remove_background"
+          ]
+        },
+        "AvatarsAudioToVideoOutput": {
+          "properties": {
+            "moderation_error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Moderation Error"
+            },
+            "moderation_flagged": {
+              "default": false,
+              "title": "Moderation Flagged",
+              "type": "boolean"
+            },
+            "moderation_transcription": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Moderation Transcription"
+            },
+            "video": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Video"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "examples": [
+                {
+                  "url": "https://argildotai.s3.us-east-1.amazonaws.com/fal-resource/example_fal.mp4"
+                }
+              ]
+            }
+          },
+          "title": "InferenceResult",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video",
+            "moderation_flagged",
+            "moderation_transcription",
+            "moderation_error"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "Video": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "Video",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the Argil/avatars/audio-to-video queue.",
+      "title": "Queue OpenAPI for Argil/avatars/audio-to-video",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Process Inference Endpoint",
+        "category": "audio-to-video",
+        "documentationUrl": "https://fal.ai/models/Argil/avatars/audio-to-video/api",
+        "endpointId": "Argil/avatars/audio-to-video",
+        "playgroundUrl": "https://fal.ai/models/Argil/avatars/audio-to-video",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9f9a46/Gdzgjh37t0K2wz3FvC3Ln_kCn9Nl7J.png"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/Argil/avatars/audio-to-video": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarsAudioToVideoInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/Argil/avatars/audio-to-video/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AvatarsAudioToVideoOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/Argil/avatars/audio-to-video/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/Argil/avatars/audio-to-video/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

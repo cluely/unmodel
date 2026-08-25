@@ -73,6 +73,12 @@ import type {
 } from "../types";
 import type { AudioFormat, AudioFormatCodec, AudioFormatRequest } from "./audio";
 import type { AspectRatio, Dimensions, ResolutionTier, VideoResolution } from "./common";
+// Type-only, and the same erased-at-emit cycle `./stt` and `./tts` below
+// document: the media shapes belong to their own category's vocabulary, and
+// filing them under "shared" purely to dodge an edge the checker handles would
+// misplace them.
+import type { AvatarImageInput, AvatarSourceKind } from "./avatar";
+import type { LipsyncSourceFor, LipsyncSourceKind } from "./lipsync";
 // Type-only, and therefore fine that `./stt` imports this file back: an
 // `import type` is erased before emit, so the cycle exists only in the checker,
 // which resolves it. The alternative — moving the granularity union into
@@ -332,6 +338,52 @@ export interface MusicModelParams extends ModelParamsBase {
 
 /** A music adapter's per-model table, keyed by **bare** model id. */
 export type MusicModelParamTable = Readonly<Record<string, MusicModelParams>>;
+
+/**
+ * One lipsync route's request surface, beyond the canonical vocabulary.
+ *
+ * A single field, and it is the one the category is built on. `stt` narrows
+ * its input shape per **adapter** (`audioInputs`) because a provider's
+ * transcribe routes agree about how audio arrives; that is not true here. fal
+ * alone serves eight lipsync endpoints and eight avatar ones under one
+ * provider id, and which shape a route takes is the difference between the two
+ * categories — so the unit of declaration is the model, exactly as it is for
+ * image sizes and video durations.
+ */
+export interface LipsyncModelParams extends ModelParamsBase {
+  /**
+   * The source shapes this route accepts, `as const`.
+   *
+   * Absent keeps the wide {@link LipsyncSource}. An **empty** list is the
+   * compile-time `never`: it says this route takes no source at all, which is
+   * a fact about `veed/avatars`-shaped routes in the sibling category and is
+   * spelled the same way here so the two read alike.
+   */
+  readonly sources?: readonly LipsyncSourceKind[];
+}
+
+/** A lipsync adapter's per-model table, keyed by **bare** model id. */
+export type LipsyncModelParamTable = Readonly<Record<string, LipsyncModelParams>>;
+
+/**
+ * One avatar route's request surface, beyond the canonical vocabulary.
+ *
+ * The same single field as its lipsync twin, and the same argument. What
+ * differs is what an empty list means in practice: at avatar it is not
+ * hypothetical, it is `veed/avatars/audio-to-video` and
+ * `argil/avatars/audio-to-video`, whose performer is a catalogued id rather
+ * than a picture.
+ */
+export interface AvatarModelParams extends ModelParamsBase {
+  /**
+   * The still shapes this route accepts, `as const`. Absent keeps the wide
+   * optional `image`; `["image"]` makes it REQUIRED; `[]` types it `never`.
+   */
+  readonly sources?: readonly AvatarSourceKind[];
+}
+
+/** An avatar adapter's per-model table, keyed by **bare** model id. */
+export type AvatarModelParamTable = Readonly<Record<string, AvatarModelParams>>;
 
 /**
  * One voice-cloning route's request surface, beyond the canonical vocabulary.
@@ -702,6 +754,81 @@ type MusicArms<Format> = { outputFormat?: Format };
 export type MusicModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
   ? MusicArms<AudioFormatRequest>
   : MusicArms<AudioFormatOf<ModelParamsFor<A, R>>>;
+
+// ---------------------------------------------------------------------------
+// The two performance categories: row → the caller's types
+// ---------------------------------------------------------------------------
+
+/**
+ * `sources` → the `source` type; absent keeps the wide union, empty is `never`.
+ *
+ * The empty case is checked FIRST and separately, because `readonly []` does
+ * match `readonly (infer S)[]` with `S = never`, and `LipsyncSourceFor<never>`
+ * is `never` — a REQUIRED property of type `never`, which makes the whole call
+ * uncallable with an error that names no fix. `source?: never` says the same
+ * thing in a message a caller can act on: this route takes no source, omit it.
+ */
+export type LipsyncSourceOf<Row> = Row extends {
+  readonly sources: readonly (infer S extends string)[];
+}
+  ? LipsyncSourceFor<Extract<S, LipsyncSourceKind>>
+  : never;
+
+/**
+ * The one field a lipsync row narrows, as a complete **replacement** for the
+ * vocabulary's own.
+ *
+ * `SizingArms`'s rule, and this category has the sharpest version of it: the
+ * arms differ in whether the property is REQUIRED, and an intersection cannot
+ * make an optional property required. `LipsyncParamsBase` therefore omits
+ * `source` entirely, so this is the only source of its type — which is also
+ * why a still handed to a clip-only model is one error on `source` rather than
+ * a silently-widened union.
+ */
+type LipsyncArms<Source> = { source: Source };
+
+/**
+ * The `source` one ref admits. Degraded — dynamic ref, unknown provider,
+ * unknown model — it restates the wide vocabulary, so a model released after
+ * this snapshot stays callable.
+ */
+export type LipsyncModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? LipsyncArms<LipsyncSourceFor<LipsyncSourceKind>>
+  : ModelParamsFor<A, R> extends { readonly sources: readonly [] }
+    ? { source?: never }
+    : ModelParamsFor<A, R> extends { readonly sources: readonly string[] }
+      ? LipsyncArms<LipsyncSourceOf<ModelParamsFor<A, R>>>
+      : LipsyncArms<LipsyncSourceFor<LipsyncSourceKind>>;
+
+/**
+ * `sources` → the `image` type on an avatar row; the empty list is checked
+ * first for {@link LipsyncSourceOf}'s reason.
+ */
+export type AvatarImageOf<Row> = Row extends {
+  readonly sources: readonly (infer S extends string)[];
+}
+  ? [Extract<S, AvatarSourceKind>] extends [never]
+    ? never
+    : AvatarImageInput
+  : never;
+
+/**
+ * The one field an avatar row narrows, as a complete **replacement**.
+ *
+ * Three arms rather than two, because "required", "forbidden" and "unknown"
+ * are three different answers and a caller deserves the right message for
+ * each: a still route requires `image`, a preset-performer route types it
+ * `never` (and says so at the keystroke rather than at the 400), and a ref this
+ * build cannot read keeps the wide optional arm so a model released after this
+ * snapshot stays callable.
+ */
+export type AvatarModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? { image?: AvatarImageInput }
+  : ModelParamsFor<A, R> extends { readonly sources: readonly [] }
+    ? { image?: never }
+    : ModelParamsFor<A, R> extends { readonly sources: readonly string[] }
+      ? { image: AvatarImageOf<ModelParamsFor<A, R>> }
+      : { image?: AvatarImageInput };
 
 /** The one field either voice-creation row narrows. */
 type VoiceArms<Language> = { language?: Language };

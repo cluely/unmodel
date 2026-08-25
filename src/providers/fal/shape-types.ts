@@ -226,9 +226,88 @@ export interface FalParamShape {
    */
   bounds?: Readonly<Record<string, { min?: number; max?: number }>>;
   /**
+   * `fal.video` only: the clip lengths this endpoint offers, in SECONDS.
+   *
+   * Absent means the endpoint's lengths are a range rather than a list —
+   * `fal-ai/pixverse/v6/text-to-video` takes any integer 1..15 — and `duration`
+   * then keeps the wide `number`, with the range enforced through
+   * {@link bounds}. Present, the list is exhaustive and closed.
+   *
+   * The seconds are canonical, never the wire spelling: kling writes `"5"`,
+   * veo3.1 writes `"8s"` and wan writes the integer `5`, and all three mean a
+   * number of seconds. {@link durationWire} is the way back.
+   */
+  durations?: readonly number[];
+  /** Canonical seconds → the literal this endpoint's `duration` actually takes. */
+  durationWire?: Readonly<Record<string, string | number>>;
+  /**
+   * `fal.video` only: the canonical `VideoResolution` tiers this endpoint can
+   * express, after mapping its own spelling.
+   *
+   * An EMPTY list is a fact rather than a gap, and it is emitted deliberately:
+   * `minimax/h3` offers `"768P"` and `"2K"`, neither of which is a canonical
+   * tier, so it has a resolution field and no canonical tier to put in it. The
+   * adapter's refusal reads differently from the one it gives an endpoint with
+   * no resolution field at all, which is why the two cases are distinguishable
+   * here.
+   */
+  resolutions?: readonly string[];
+  /** Canonical tier → the spelling this endpoint's own `resolution` enum uses. */
+  resolutionWire?: Readonly<Record<string, string>>;
+  /**
+   * `fal.video` only: the `VideoImageRole` arms this endpoint serves.
+   *
+   * This is what lets thirty endpoints share ONE address. text-to-video,
+   * image-to-video, first-and-last-frame and reference-to-video are four fal
+   * ids and one route shape, so `fal.video`'s adapter reads the roles rather
+   * than switching on the id — and an empty list types `image` as `never` at
+   * the call site for the text-only routes.
+   */
+  roles?: readonly string[];
+  /**
+   * Role → the wire parameter that carries it. fal spells the opening frame
+   * `image_url`, `start_image_url` and `first_frame_url` at three different
+   * vendors; the role is what they have in common.
+   */
+  roleWire?: Readonly<Record<string, string>>;
+  /** `fal.video` only: the wire parameter a source CLIP goes in, where there is one. */
+  videoWire?: string;
+  /**
+   * `fal.lipsync` / `fal.avatar`: the shapes the performance may arrive in —
+   * `["video"]` for a clip, `["image"]` for a still, `[]` for the two avatar
+   * routes whose performer is a catalogued id and who take neither.
+   *
+   * The categories split on exactly this word, so it is stated per model rather
+   * than assumed per category: `fal-ai/sync-lipsync/v3` and
+   * `fal-ai/sync-lipsync/v3/image-to-video` are one product on two routes, and
+   * the only thing that tells them apart is which shape they accept.
+   */
+  sources?: readonly string[];
+  /** The wire parameter the source goes in — `video_url` or `image_url`. */
+  sourceWire?: string;
+  /** The wire parameter the audio goes in. `audio_url` everywhere so far, stated all the same. */
+  audioWire?: string;
+  /**
    * Everything this endpoint takes that the canonical vocabulary has no word
    * for, as `{ wireName: EXTRA as T }` — keys for `applyExtras` to read at run
    * time, types for an editor to offer. See `core/unified/vocabulary/model-params.ts`.
    */
   extras?: Readonly<Record<string, unknown>>;
 }
+
+/**
+ * Compile-time assignability gate for the generated `<verb>-check.gen.ts`
+ * files (the idea is ArkType's `type.declare<T>()` — make renderer drift a
+ * `tsc` error instead of a shipped bug; see docs/research/arktype-evaluation.md).
+ *
+ * `<verb>-wire.gen.ts` and `<verb>-schema.gen.ts` are rendered from the same
+ * IR by two different emitters, so a bug in either one — or in the schema
+ * file's field-merge rules — makes the loose gate reject a body the wire type
+ * promises is legal. `AssertExtends<Wire[K], Gate[K]>` is that invariant, per
+ * field: the check file instantiates one per primitive-shaped field, and the
+ * constraint fails compilation when the two renderers disagree. Object-shaped
+ * fields are skipped there, not here: an `interface` has no implicit index
+ * signature, so it can never extend a `looseObject`'s input type, and the
+ * per-endpoint truth for those lives in the SHAPES rows anyway.
+ */
+export type AssertExtends<Sub extends Super, Super> = Sub;

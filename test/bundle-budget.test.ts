@@ -95,21 +95,37 @@ function splitProviders(): ReadonlySet<string> {
  */
 const BUDGET_KIB: Readonly<Record<string, number>> = {
   anthropic: 150,
-  groq: 125,
+  /**
+   * Bumped 125 → 138 (125.9 measured) when `core/standard-schema.ts` joined
+   * the four-layer engine: the pipeline's layer 1 now consumes any Standard
+   * Schema validator instead of naming zod, and the vendored interface plus
+   * the one adapter ride in every pipeline-bearing graph (~1 KiB). groq was
+   * already within a kilobyte of its pin, so the seam is what tipped it, not
+   * what filled it.
+   */
+  groq: 138,
   google: 310,
   deepinfra: 190,
   openrouter: 400,
   vercel: 355,
   /**
-   * fal at 197.5 KiB measured, pinned at 220.
+   * fal at 336.2 KiB measured, pinned at 370.
    *
    * The only entry here whose weight is GENERATED rather than transcribed, and
    * the shape of it is worth stating because it will grow in a way the others
-   * do not: fal serves 45 endpoints across two categories today and ~100 across
-   * nine when the remaining waves land, and each one ships four rows — a wire
-   * interface (type-only, free at run time), an IR row the check battery reads,
-   * a unified row a picker renders, and a catalog row. Only the last three are
-   * bytes.
+   * do not: fal serves 91 endpoints across five categories today and ~120
+   * across nine when the remaining waves land, and each one ships four rows — a
+   * wire interface (type-only, free at run time), an IR row the check battery
+   * reads, a unified row a picker renders, and a catalog row. Only the last
+   * three are bytes.
+   *
+   * **Bumped 220 → 370 by wave 1c** (197.5 → 336.2 KiB): +46 endpoints and, more
+   * to the point, three whole categories. This entry is the ONE place in the
+   * library that legitimately carries all of fal at once — `unmodel/fal` is the
+   * hand surface, and `./models.ts` merges every verb's catalog slice for it —
+   * so it is also the entry where the per-category split cannot help. That is
+   * why the packs are measured separately below: a caller who wants lipsync
+   * pays 223 KiB, not this.
    *
    * So this number tracks the ROSTER, not the code: `src/providers/fal/*.ts` is
    * ~1,500 hand-written lines and will stay about there, while `gen/` scales
@@ -118,7 +134,7 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * catalog every category's slice would flow through — is the first place to
    * look (see A12 in test/import-graph.test.ts).
    */
-  fal: 220,
+  fal: 370,
 };
 
 /**
@@ -134,8 +150,13 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
  */
 const CHAT_BUDGET_KIB = 1800;
 
-/** Provider-free compiler/factory entry; 144.0 KiB measured, ~4% headroom. */
-const CHAT_FACTORY_BUDGET_KIB = 150;
+/**
+ * Provider-free compiler/factory entry; 150.2 KiB measured, pinned at 158.
+ * Bumped 150 → 158 when `core/standard-schema.ts` joined the engine (the
+ * Standard Schema seam — see the groq note in BUDGET_KIB above); the entry
+ * was at ~144 with ~4% headroom before the wave-1c growth plus the seam.
+ */
+const CHAT_FACTORY_BUDGET_KIB = 158;
 
 /**
  * `dist/chat/index.d.ts` on its own — declarations, not chunks.
@@ -201,6 +222,8 @@ const ALL_UNIFIED_ENTRIES: string[] = [
   "image",
   "image-edit",
   "video",
+  "lipsync",
+  "avatar",
   "tts",
   "stt",
   "music",
@@ -396,9 +419,9 @@ const IMAGE_PACK_BUDGET_KIB = 1050;
 const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog/openai.gen.ts"];
 
 /**
- * `unmodel/video`'s budget: the kernel plus ten video providers — twenty-one
- * endpoint modules between them, because six of the ten serve more than one
- * route and Kling alone contributes five.
+ * `unmodel/video`'s budget: the kernel plus eleven video providers —
+ * twenty-two endpoint modules between them, because six of them serve more than
+ * one route and Kling alone contributes five.
  *
  * 606 KiB measured, pinned at 670 with the same ~10% headroom as everything
  * above. It sits between the speech and image packs and for the same structural
@@ -416,8 +439,20 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  * (with their 13-member pixel-pair reductions) and Kling's 15 rows across three
  * route families are the two biggest contributors. The `extras` objects are
  * `undefined`s and cost about what a name list would.
+ *
+ * **Bumped 670 → 930 by fal**, which is the largest single-provider jump this
+ * table has recorded: 646.9 → 844.4 KiB, +198 from ONE adapter. The shape of
+ * the spend is the opposite of the other ten providers': fal contributes one
+ * adapter, one validator and one union schema, and then thirty endpoints' worth
+ * of GENERATED data — the IR the check battery narrows with, the unified rows
+ * (each carrying its own duration list, tier map, ratio enum and role→wire
+ * map), thirty catalog rows, thirty wire interfaces, and the shared 95-row rate
+ * table. This pack roughly doubles its model count to get them.
+ *
+ * It is also the pack where `createVideo([…])` earns its keep hardest: a caller
+ * who wants Sora and Veo now skips 198 KiB of fal by naming two adapters.
  */
-const VIDEO_PACK_BUDGET_KIB = 670;
+const VIDEO_PACK_BUDGET_KIB = 930;
 
 /**
  * The two generated catalogs this pack legitimately reaches.
@@ -430,9 +465,10 @@ const VIDEO_PACK_BUDGET_KIB = 670;
  */
 const VIDEO_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog/openai.gen.ts"];
 
-/** The ten providers `unmodel/video`'s ready-made pack is allowed to reach. */
+/** The eleven providers `unmodel/video`'s ready-made pack is allowed to reach. */
 const VIDEO_PACK_PROVIDERS: string[] = [
   "bytedance",
+  "fal",
   "google",
   "kling",
   "lightricks",
@@ -687,6 +723,51 @@ const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
 ];
 
 /**
+ * `unmodel/lipsync`'s budget: the kernel plus ONE provider serving eight
+ * endpoints. Measured 222.9 KiB at landing, pinned at 245 with the usual ~10%.
+ *
+ * The number is the interesting part, because it is nothing like the ~120 the
+ * plan guessed, and the gap is not fal's fault. **Two hundred of those
+ * kilobytes are the shared floor every media pack pays** — `core/pipeline.ts`
+ * with its four-layer engine, `core/request.ts`, `core/tokens.ts`,
+ * `core/issue-sink.ts`, the kernel and `core/unified/derive.ts` — and they are
+ * there whether a pack has one provider or fifteen. What the fal half actually
+ * costs is small and countable: the union schema, the eight-row IR, the eight
+ * unified rows, eight catalog rows, the queue URL helpers, and
+ * `gen/pricing.gen.ts`.
+ *
+ * `gen/pricing.gen.ts` is the one line item worth naming, because it is
+ * shared across all NINE fal verbs rather than scoped to this one: every
+ * curated endpoint's rate lives in a single generated table, so this pack
+ * carries 95 rows to use 8. Splitting it per verb was considered and refused
+ * for the reason its own header gives — a price is a fact about an ENDPOINT,
+ * and nine copies of the same lookup is a worse trade than a few kilobytes.
+ * Revisit if the roster passes ~200 endpoints.
+ */
+const LIPSYNC_PACK_BUDGET_KIB = 245;
+
+/** The one provider `unmodel/lipsync`'s ready-made pack is allowed to reach. */
+const LIPSYNC_PACK_PROVIDERS: string[] = ["fal"];
+
+/**
+ * `unmodel/avatar`'s budget: the same shape as its lipsync twin, 4.7 KiB
+ * heavier. Measured 227.6 KiB at landing, pinned at 250.
+ *
+ * The difference between the two packs is exactly what the categories differ
+ * by: avatar's eight endpoints publish more parameters (OmniHuman's mask and
+ * turbo switches, LongCat's ten knobs, and the two 28-value performer enums at
+ * VEED and Argil), so its generated wire types and IR rows are longer. Nothing
+ * structural: both reach one provider, neither reaches a catalog, and both pay
+ * the same ~200 KiB kernel floor. That the two numbers are within 2% of each
+ * other is the assertion worth reading — a pack that drifted away from its
+ * twin would have acquired something, and this is where it would show.
+ */
+const AVATAR_PACK_BUDGET_KIB = 250;
+
+/** The one provider `unmodel/avatar`'s ready-made pack is allowed to reach. */
+const AVATAR_PACK_PROVIDERS: string[] = ["fal"];
+
+/**
  * Every pack's budget, keyed by entry name — the map the shared budget test
  * iterates, and the thing that makes "every category has a number" checkable
  * rather than a claim. The per-pack `describe`s below add what a number cannot
@@ -696,6 +777,8 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
   image: IMAGE_PACK_BUDGET_KIB,
   "image-edit": IMAGE_EDIT_PACK_BUDGET_KIB,
   video: VIDEO_PACK_BUDGET_KIB,
+  lipsync: LIPSYNC_PACK_BUDGET_KIB,
+  avatar: AVATAR_PACK_BUDGET_KIB,
   tts: TTS_PACK_BUDGET_KIB,
   stt: STT_PACK_BUDGET_KIB,
   music: MUSIC_PACK_BUDGET_KIB,
@@ -754,6 +837,14 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   image: 1260,
   "image-edit": 1660,
   video: 1880,
+  // The two youngest packs, and the cheapest declarations in the table —
+  // measured 358.2 and 364.8 KiB. Both categories are five canonical words with
+  // one narrowed field, so there is very little for `tsc` to instantiate: no
+  // `SizingArms` XOR, no duration enums, no codec matrix. What they do carry is
+  // fal's eight per-endpoint wire interfaces each, which is why they are not
+  // smaller still.
+  lipsync: 395,
+  avatar: 405,
   tts: 2320,
   stt: 2450,
   music: 1360,
@@ -1036,7 +1127,7 @@ describe("unmodel/chat", () => {
   test("its provider graph is exactly the enumerated 55 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
-      "src/providers/alibaba/index.ts",
+      "src/providers/alibaba/chat.ts",
       "src/providers/anthropic/chat.ts",
       "src/providers/anthropic/constraints.ts",
       "src/providers/anthropic/interop.ts",
@@ -1221,7 +1312,7 @@ describe("unmodel/chat/factory", () => {
 
 describe("unified media entries", () => {
   test("all eight are built, so the assertions below assert something", () => {
-    expect(new Set(ALL_UNIFIED_ENTRIES).size).toBe(8);
+    expect(new Set(ALL_UNIFIED_ENTRIES).size).toBe(10);
     for (const name of ALL_UNIFIED_ENTRIES) {
       expect(existsSync(unifiedEntry(name)), `dist entry for unified/${name}`).toBe(true);
     }
@@ -1464,7 +1555,11 @@ describe("unmodel/video (the third ready-made pack)", () => {
     expect(providers).toEqual(VIDEO_PACK_PROVIDERS);
 
     // pixverse and lightricks serve video only, so their adapter is the
-    // unsuffixed leaf; the other eight split per category.
+    // unsuffixed leaf; the other nine split per category. fal is the sharpest
+    // case for the split in this pack: it serves FIVE categories, so a barrel
+    // import here would drag its image, image-edit, lipsync and avatar
+    // surfaces — validators, union schemas and generated rows — into a video
+    // bundle that can never call them.
     const SINGLE = new Set(["pixverse", "lightricks"]);
     for (const provider of VIDEO_PACK_PROVIDERS) {
       const leaf = SINGLE.has(provider) ? "unified" : "unified-video";
@@ -1652,7 +1747,7 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
     expect(modules).toContain("src/core/pipeline.ts");
   });
 
-  test("the six packs are independent — none pulls another's entry in", () => {
+  test("the ten packs are independent — none pulls another's entry in", () => {
     for (const name of ALL_UNIFIED_ENTRIES) {
       const modules = sourceModulesOf(unifiedEntry(name));
       for (const other of ALL_UNIFIED_ENTRIES) {
@@ -1662,6 +1757,96 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
         );
       }
     }
+  });
+});
+
+/**
+ * The two audio-driven packs, checked together because the assertion that
+ * matters most is a COMPARISON.
+ *
+ * `fal-ai/sync-lipsync/v3` and `fal-ai/sync-lipsync/v3/image-to-video` are one
+ * vendor's one model on two routes, and they are in different categories. If
+ * the per-category adapter split ever slipped, the symptom would not be a
+ * budget overrun — it would be these two packs quietly becoming the same
+ * bundle. So each is pinned to exactly one provider reached through exactly one
+ * leaf, and then pinned NOT to contain the other's leaf, its schema, or its
+ * generated rows.
+ *
+ * fal serves five categories, which makes it the strongest test of the split in
+ * the library: `src/providers/fal/unified.ts` re-exports all five adapters, and
+ * either pack importing that barrel instead of its own leaf would pull ~30
+ * video wire types and 45 image endpoints into an eight-endpoint bundle without
+ * changing a line in `src/unified/lipsync.ts`.
+ */
+describe("unmodel/lipsync and unmodel/avatar (the two performance packs)", () => {
+  const CASES: Array<{ name: string; providers: string[]; other: string }> = [
+    { name: "lipsync", providers: LIPSYNC_PACK_PROVIDERS, other: "avatar" },
+    { name: "avatar", providers: AVATAR_PACK_PROVIDERS, other: "lipsync" },
+  ];
+
+  test.each(CASES)("unmodel/$name reaches exactly $providers, through its own leaf", (kase) => {
+    const modules = sourceModulesOf(unifiedEntry(kase.name));
+    expect(modules).toContain(`src/unified/${kase.name}.ts`);
+    expect(modules).toContain("src/core/unified/kernel.ts");
+
+    const providers = [
+      ...new Set(
+        modules
+          .filter((m) => m.startsWith("src/providers/"))
+          .map((m) => m.split("/")[2] as string),
+      ),
+    ].sort();
+    expect(providers).toEqual([...kase.providers]);
+
+    // The leaf, not the barrel — the whole point of the split at a provider
+    // that serves five categories.
+    expect(modules).toContain(`src/providers/fal/unified-${kase.name}.ts`);
+    expect(modules).not.toContain("src/providers/fal/unified.ts");
+    // The rename made structural: the pack reaches fal only through a file
+    // named after the category's own verb.
+    expect(modules).toContain(`src/providers/fal/${kase.name}.ts`);
+
+    // …and nothing of the twin, which is the assertion this describe exists
+    // for. One product, two routes, two bundles.
+    expect(modules).not.toContain(`src/providers/fal/unified-${kase.other}.ts`);
+    expect(modules).not.toContain(`src/providers/fal/${kase.other}.ts`);
+    expect(modules).not.toContain(`src/providers/fal/gen/${kase.other}-schema.gen.ts`);
+    expect(modules).not.toContain(`src/providers/fal/gen/${kase.other}-params.gen.ts`);
+
+    // Nor of fal's other three categories.
+    for (const category of ["image", "image-edit", "video"]) {
+      expect(modules).not.toContain(`src/providers/fal/unified-${category}.ts`);
+      expect(modules).not.toContain(`src/providers/fal/gen/${category}-schema.gen.ts`);
+    }
+    // A12: the merged catalog is for `unmodel/fal` alone. A validator reaching
+    // it would put all nine verbs' rows in every pack.
+    expect(modules).not.toContain("src/providers/fal/models.ts");
+  });
+
+  test.each(CASES)("unmodel/$name carries no catalog, availability or retarget layer", (kase) => {
+    const modules = sourceModulesOf(unifiedEntry(kase.name));
+    expect(modules.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
+    expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
+    expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
+    // The pipeline IS here, and deliberately: a unified call ends in the
+    // provider's own validator, all four layers of it.
+    expect(modules).toContain("src/core/pipeline.ts");
+  });
+
+  /**
+   * The twins stay within 10% of each other.
+   *
+   * A relative assertion rather than a second absolute one, because it survives
+   * the shared kernel growing and catches the thing an absolute number cannot:
+   * one of the two acquiring a module the other has not. Both packs are one
+   * provider, one adapter, one validator and eight generated rows — if they
+   * ever diverge materially, something structural joined one of them.
+   */
+  test("the two performance packs stay the same size as each other", () => {
+    const lipsync = transitiveBytes(unifiedEntry("lipsync"));
+    const avatar = transitiveBytes(unifiedEntry("avatar"));
+    const drift = Math.abs(lipsync - avatar) / Math.max(lipsync, avatar);
+    expect(drift, `lipsync ${lipsync} vs avatar ${avatar}`).toBeLessThan(0.1);
   });
 });
 

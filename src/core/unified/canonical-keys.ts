@@ -63,6 +63,15 @@ export const CANONICAL_KEY_LISTS = {
     "aspectRatio",
     "providerOptions",
   ] as const),
+  // Five words. A clip goes in, an audio track goes in, and the geometry of
+  // what comes out is the geometry of what went in — so there is no `size`,
+  // no `duration` and no `aspectRatio` to state. `sync_mode` / `loop_mode` are
+  // per-model extras rather than vocabulary: see `vocabulary/lipsync.ts`.
+  lipsync: (["model", "source", "audio", "seed", "providerOptions"] as const),
+  // The still-driven twin, and the same five words with `source` spelled
+  // `image` — because it is one, and because the difference between a clip and
+  // a still is the whole reason the two categories are separate.
+  avatar: (["model", "image", "audio", "seed", "providerOptions"] as const),
   tts: ([
     "model",
     "text",

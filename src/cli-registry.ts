@@ -102,6 +102,7 @@ export const REGISTRY = {
   "reve.imageEditRemix": () => import("./providers/reve").then((m) => asCli(m.imageEditRemix)),
 
   // Video generation and post-production
+  "alibaba.video": () => import("./providers/alibaba").then((m) => asCli(m.video)),
   "openai.video": () => import("./providers/openai").then((m) => asCli(m.video)),
   "google.video": () =>
     import("./providers/google").then((m) => asCli(m.video)),
@@ -134,15 +135,37 @@ export const REGISTRY = {
     import("./providers/minimax").then((m) => asCli(m.videoV2)),
   "pixverse.video": () => import("./providers/pixverse").then((m) => asCli(m.video)),
   "pixverse.videoFromImage": () => import("./providers/pixverse").then((m) => asCli(m.videoFromImage)),
+  // fal serves 30 video endpoints behind ONE address, for `fal.image`'s reason
+  // and one of its own: text-to-video, image-to-video, first-and-last-frame
+  // interpolation, reference-to-video and clip editing are not different wire
+  // ROUTES at fal, they are different KEYS on one route shape whose path is a
+  // parameter. `minimax/h3/image-to-video` settles it — its `image_url` is
+  // optional, so the same endpoint is text-to-video or image-to-video depending
+  // on the request, and a `fal.videoFromImage` address would have to be defined
+  // by a list rather than a rule. See src/providers/fal/video.ts.
+  "fal.video": () => import("./providers/fal").then((m) => asCli(m.video)),
   "vidu.video": () => import("./providers/vidu").then((m) => asCli(m.video)),
   "vidu.videoFromImage": () => import("./providers/vidu").then((m) => asCli(m.videoFromImage)),
   "vidu.videoFromReference": () => import("./providers/vidu").then((m) => asCli(m.videoFromReference)),
+
+  // Lipsync and avatar — the two audio-driven video categories. Both address
+  // their route with the category's own verb, bare, at the one provider that
+  // serves them. They are separate addresses for the same reason they are
+  // separate categories: `fal.lipsync` requires a source CLIP and `fal.avatar`
+  // requires a still, and `fal-ai/sync-lipsync/v3` and
+  // `fal-ai/sync-lipsync/v3/image-to-video` — one vendor's one model on two
+  // routes — are exactly the pair that would make a merged address ambiguous.
+  "fal.lipsync": () => import("./providers/fal").then((m) => asCli(m.lipsync)),
+  "fal.avatar": () => import("./providers/fal").then((m) => asCli(m.avatar)),
 
   // Music generation. Both providers address their text-to-music route as
   // `music`; Stability's two audio-conditioned routes qualify by what they are
   // made from (`musicFromAudio`) and what they do to a finished track
   // (`musicInpaint`), and both are multipart-only.
   "elevenlabs.music": () => import("./providers/elevenlabs").then((m) => asCli(m.music)),
+  "google.music": () => import("./providers/google").then((m) => asCli(m.music)),
+  "mureka.music": () => import("./providers/mureka").then((m) => asCli(m.music)),
+  "mureka.instrumental": () => import("./providers/mureka").then((m) => asCli(m.instrumental)),
   "stability.music": () => import("./providers/stability").then((m) => asCli(m.music)),
 
   // Text to speech. Every provider addresses its synthesis route as `tts`
@@ -157,6 +180,7 @@ export const REGISTRY = {
   "google.tts": () => import("./providers/google").then((m) => asCli(m.tts)),
   "openai.tts": () => import("./providers/openai").then((m) => asCli(m.tts)),
   "elevenlabs.tts": () => import("./providers/elevenlabs").then((m) => asCli(m.tts)),
+  "alibaba.tts": () => import("./providers/alibaba").then((m) => asCli(m.tts)),
   "cartesia.tts": () => import("./providers/cartesia").then((m) => asCli(m.tts)),
   "inworld.tts": () => import("./providers/inworld").then((m) => asCli(m.tts)),
   "deepgram.tts": () => import("./providers/deepgram").then((m) => asCli(m.tts)),
@@ -171,6 +195,7 @@ export const REGISTRY = {
   "resemble.ttsStream": () =>
     import("./providers/resemble").then((m) => asCli(m.ttsStream)),
   "rime.tts": () => import("./providers/rime").then((m) => asCli(m.tts)),
+  "breezeblue.tts": () => import("./providers/breezeblue").then((m) => asCli(m.tts)),
   "smallest-ai.tts": () => import("./providers/smallest-ai").then((m) => asCli(m.tts)),
   "speechify.tts": () => import("./providers/speechify").then((m) => asCli(m.tts)),
   "speechify.ttsStream": () =>
@@ -263,7 +288,7 @@ export const REGISTRY = {
     import("./providers/soniox").then((m) => asCli(m.realtimeTranscription)),
 
   // OpenAI-compatible fleet overlays (chat completions dialect)
-  "alibaba.chat": () => import("./providers/alibaba").then((m) => asCli(m.chat)),
+  "alibaba.chat": () => import("./providers/alibaba/chat").then((m) => asCli(m.chat)),
   "baseten.chat": () => import("./providers/baseten").then((m) => asCli(m.chat)),
   "cerebras.chat": () => import("./providers/cerebras").then((m) => asCli(m.chat)),
   "deepinfra.chat": () => import("./providers/deepinfra").then((m) => asCli(m.chat)),
@@ -287,10 +312,15 @@ export const REGISTRY = {
   "scaleway.chat": () => import("./providers/scaleway").then((m) => asCli(m.chat)),
   "siliconflow.chat": () => import("./providers/siliconflow").then((m) => asCli(m.chat)),
   "stepfun.chat": () => import("./providers/stepfun").then((m) => asCli(m.chat)),
+  "stepfun.tts": () => import("./providers/stepfun").then((m) => asCli(m.tts)),
   "togetherai.chat": () => import("./providers/togetherai").then((m) => asCli(m.chat)),
   "upstage.chat": () => import("./providers/upstage").then((m) => asCli(m.chat)),
   "vercel.chat": () => import("./providers/vercel").then((m) => asCli(m.chat)),
   "xai.chat": () => import("./providers/xai").then((m) => asCli(m.chat)),
+  "xai.image": () => import("./providers/xai").then((m) => asCli(m.image)),
+  "xai.video": () => import("./providers/xai").then((m) => asCli(m.video)),
+  "xai.videoEdit": () => import("./providers/xai").then((m) => asCli(m.videoEdit)),
+  "xai.videoExtend": () => import("./providers/xai").then((m) => asCli(m.videoExtend)),
   "zhipuai.chat": () => import("./providers/zhipuai").then((m) => asCli(m.chat)),
 } satisfies Record<string, () => Promise<CliValidator>>;
 
@@ -316,10 +346,10 @@ export type CliEndpointId = keyof typeof REGISTRY;
  * `cli.test.ts` — which asserts REGISTRY names exactly the module-level
  * provider validators — either wrong or full of exceptions.
  *
- * All six are here — every category now ships a ready-made pack. The key after
- * the dot is the **category id** (`imageEdit`), camelCase like every other
- * endpoint id the CLI takes, not the kebab-case package subpath: `unmodel
- * validate` addresses endpoints, and `unmodel/image-edit` is an import.
+ * All ten are here — every category ships a ready-made pack. The key after the
+ * dot is the **category id** (`imageEdit`), camelCase like every other endpoint
+ * id the CLI takes, not the kebab-case package subpath: `unmodel validate`
+ * addresses endpoints, and `unmodel/image-edit` is an import.
  *
  * `unified.stt` and `unified.image-edit` are registered even though some
  * of their providers take their media as a `Blob`: the canonical `audio` is
@@ -337,6 +367,12 @@ export const UNIFIED = {
   "unified.tts": () => import("./unified/tts").then((m) => asCli(m.tts)),
   "unified.stt": () => import("./unified/stt").then((m) => asCli(m.stt)),
   "unified.video": () => import("./unified/video").then((m) => asCli(m.video)),
+  // Both media inputs are `{ url }` or `{ data }` at every route in these two
+  // categories — fal takes its files as references and never as multipart — so
+  // a JSON document expresses them exactly, and both surfaces are genuinely
+  // CLI-usable rather than registered on principle.
+  "unified.lipsync": () => import("./unified/lipsync").then((m) => asCli(m.lipsync)),
+  "unified.avatar": () => import("./unified/avatar").then((m) => asCli(m.avatar)),
   // Registered even though every clone provider here but inworld/minimax takes
   // its samples as a `Blob`: canonical `{ data }` and `{ fileId }` samples are
   // JSON-expressible, and a ref pointed at a file-only route is refused by

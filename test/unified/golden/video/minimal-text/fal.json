@@ -1,0 +1,10 @@
+{
+  "ref": "fal/fal-ai/veo3.1/fast",
+  "params": {
+    "prompt": "a drone shot over a fjord at sunrise"
+  },
+  "url": "https://queue.fal.run/fal-ai/veo3.1/fast",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "ref": "fal/fal-ai/kling-video/lipsync/audio-to-video",
+  "params": {
+    "video_url": "data:video/mp4;base64,AAECAwQF",
+    "audio_url": "data:audio/wav;base64,BgcICQoL"
+  },
+  "url": "https://queue.fal.run/fal-ai/kling-video/lipsync/audio-to-video",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

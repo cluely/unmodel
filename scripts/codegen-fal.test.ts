@@ -215,9 +215,14 @@ describe("codegen-fal: the fixture", () => {
     for (const [name, content] of a) expect(b.get(name)).toBe(content);
   });
 
-  test("emits exactly five files per populated verb, plus the three shared ones", () => {
+  test("emits exactly six files per populated verb, plus the three shared ones", () => {
     expect([...fixture().keys()]).toEqual([
       "endpoints.gen.ts",
+      // The schema/wire agreement proof. Type-only and imported by nothing —
+      // it exists so `tsc --noEmit` fails when the two renderers disagree
+      // about a field, rather than shipping a gate that rejects a body the
+      // wire type promised was legal. See `AssertExtends` in shape-types.ts.
+      "image-check.gen.ts",
       "image-narrow.gen.ts",
       "image-params.gen.ts",
       "image-schema.gen.ts",
@@ -229,6 +234,7 @@ describe("codegen-fal: the fixture", () => {
       // splitting it by verb would put the same lookup in nine files.
       "pricing.gen.ts",
       "shared.gen.ts",
+      "tts-check.gen.ts",
       "tts-narrow.gen.ts",
       "tts-params.gen.ts",
       "tts-schema.gen.ts",
@@ -459,14 +465,43 @@ describe("codegen-fal: the fixture", () => {
     expect([...models.matchAll(/limit: \{ context: 0/g)]).toHaveLength(2);
   });
 
-  test("only the schema module imports zod; the rest are data or types", () => {
+  /**
+   * Only the schema module imports zod as a VALUE.
+   *
+   * The check files name `z` too, and that is not an exception to the rule:
+   * theirs is `import type { z }`, erased before emit, and its only job is to
+   * spell `z.input<typeof schema>` so the assignability assertion has a gate
+   * type to compare against. Nothing imports a check file, so no bundle sees
+   * either the import or the module. Asserted as a `import type` rather than
+   * skipped, because a check file that ever imported zod for real would put the
+   * schema behind every `unmodel/fal/values` import.
+   */
+  test("only the schema module imports zod as a value; the rest are data or types", () => {
     for (const [name, content] of fixture()) {
       if (name.endsWith("-schema.gen.ts")) {
         expect(content, name).toContain('import { z } from "zod";');
         continue;
       }
+      if (name.endsWith("-check.gen.ts")) {
+        expect(content, name).toContain('import type { z } from "zod";');
+        expect(content, name).not.toContain('import { z } from "zod";');
+        continue;
+      }
       expect(content, name).not.toContain('from "zod"');
     }
+  });
+
+  test("the check file asserts per-field wire → gate assignability, primitive fields only", () => {
+    const check = fixture().get("image-check.gen.ts") as string;
+    // One assertion per primitive-shaped field, per endpoint, against the
+    // category gate's input type.
+    expect(check).toContain('AssertExtends<wire.AcmeAlphaInput["prompt"], Gate["prompt"]>');
+    expect(check).toContain('AssertExtends<wire.AcmeBetaInput["sync_mode"], Gate["sync_mode"]>');
+    expect(check).toContain("type Gate = z.input<typeof falImageInputSchema>;");
+    // `image_size` is a union with a component arm, so it is skipped: an
+    // interface has no implicit index signature and can never extend a
+    // `looseObject` input — asserting it would fail tsc on every correct build.
+    expect(check).not.toContain('["image_size"]');
   });
 
   test("no generated module reaches the pipeline, a validator or the catalog index", () => {
@@ -830,19 +865,38 @@ describe("codegen-fal: the committed fal snapshots", () => {
   });
 
   /**
-   * `duration` — same word, same TYPE, different vocabularies.
+   * `duration` — one word, four types, and the merge rule that refuses to
+   * pretend otherwise.
    *
-   * `"5" | "10"` at kling, `"4s" | "6s" | "8s"` at veo3.1. The merge rule takes
-   * the bare type for the category and leaves each endpoint's enum in its IR
-   * row, which is the whole reason the IR exists.
+   * `"5" | "10"` at kling, `"4s" | "6s" | "8s"` at veo3.1, the INTEGER `5` at
+   * wan and minimax, and a free integer 1..15 at pixverse. Through wave 1a the
+   * curated video roster was two kling/veo endpoints and the category type was
+   * a clean `z.string()`; widening to thirty endpoints in wave 1c brought the
+   * numeric spellings in and the union type is now `z.unknown()`, which is the
+   * documented answer for a divergent parameter rather than a regression: a
+   * `z.union([z.string(), z.number()])` would let `duration: "8s"` through the
+   * shape gate at kling, which fal refuses.
+   *
+   * The real type survives per endpoint in the IR, which is the whole reason
+   * the IR exists — and the fact that the category type had to widen the moment
+   * the roster grew is the argument against ever hoisting a shared fragment,
+   * made by the data rather than by a comment.
    */
-  test("duration is a string at every video endpoint, with per-endpoint vocabularies", () => {
-    expect(file("video-schema.gen.ts")).toContain("duration: z.string().optional(),");
-    expect(file("video-schema.gen.ts")).toContain("but they disagree on");
+  test("duration diverges across the video roster and is therefore `unknown` in the union", () => {
+    const schema = file("video-schema.gen.ts");
+    expect(schema).toContain("duration: z.unknown().optional(),");
+    expect(schema).toContain("`duration` means different things at different endpoints");
+    expect(schema).toContain("FAL_VIDEO_SHAPES carries the real type per");
     const narrow = file("video-narrow.gen.ts");
     expect(narrow).toContain('["5", "10"]');
     expect(narrow).toContain('["4s", "6s", "8s"]');
-    expect(file("video-params.gen.ts")).toContain('"durationStringEnum"');
+    const params = file("video-params.gen.ts");
+    expect(params).toContain('"durationStringEnum"');
+    expect(params).toContain('"durationNumber"');
+    // …and both spellings resolve to the SAME canonical seconds, which is what
+    // `unmodel/video`'s `duration: 5` compiles through.
+    expect(params).toContain('durationWire: { "10": "10", "5": "5" }');
+    expect(params).toContain('durationWire: { "4": "4s", "6": "6s", "8": "8s" }');
   });
 
   /** wizper — `const` properties, and a metadata block that is NOT complete. */
@@ -893,12 +947,41 @@ describe("codegen-fal: the committed fal snapshots", () => {
     }
   });
 
-  test("conditional and tiered rates never reach ModelCost", () => {
-    // veo3.1's rate depends on `generate_audio`; kling's on `duration`.
+  /**
+   * Conditional and tiered rates never reach `ModelCost`; flat ones do.
+   *
+   * Asserted per ROW rather than per file, because wave 1c is the first wave
+   * where both kinds share a catalog: twenty-eight of the thirty video rows are
+   * conditional or tiered and carry a provenance comment instead of a number,
+   * while `fal-ai/minimax/hailuo-02/pro/image-to-video` and
+   * `fal-ai/kling-video/o3/pro/video-to-video/edit` publish one flat per-second
+   * rate each and correctly carry `cost.perVideoSecond`. A whole-file
+   * `not.toContain("cost:")` would have to be deleted the first time a flat
+   * rate joined, which is precisely when the invariant starts being worth
+   * checking.
+   */
+  test("conditional and tiered rates never reach ModelCost; flat per-second rates do", () => {
     const video = file("models-video.gen.ts");
     expect(video).toContain("Conditional pricing on generate_audio × resolution");
-    expect(video).not.toContain("cost:");
     expect(video).toContain("belongs in the");
+    // The two flat rates, on the wire where `ModelCost` can carry them exactly.
+    expect(video).toContain("cost: { perVideoSecond: 0.08 }");
+    expect(video).toContain("cost: { perVideoSecond: 0.168 }");
+
+    const rates = pricing["endpoints"] as Record<string, Json>;
+    for (const [id, entry] of Object.entries(curation["endpoints"] as Json) as Array<
+      [string, Record<string, Json>]
+    >) {
+      const unit = String((rates[id] as Record<string, Json> | undefined)?.["unit"]);
+      if (unit !== "conditional" && unit !== "tiered") continue;
+      const verb = String(entry["verb"]).replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+      const rows = file(`models-${verb}.gen.ts`);
+      const row = rows.slice(rows.indexOf(`${JSON.stringify(id)}: {`));
+      const end = row.indexOf("\n  },");
+      expect(row.slice(0, end), `${id} is ${String(unit)} and must not carry a scalar cost`).not.toContain(
+        "cost:",
+      );
+    }
   });
 
   test("every generated catalog row cites its source and quotes the page", () => {

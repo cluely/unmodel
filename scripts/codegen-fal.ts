@@ -1632,6 +1632,74 @@ ${fields.join("\n")}
 `;
 }
 
+function renderCheckFile(verb: Verb, models: readonly EndpointModel[]): string {
+  // A field is checkable when its wire type can extend the gate's input
+  // without an implicit-index-signature mismatch: primitives, enums, and
+  // arrays/unions built only from them. Object-shaped fields (ref, object,
+  // record, unknown) are interfaces on the wire side, and an interface never
+  // extends a `looseObject` input — their per-endpoint truth is enforced at
+  // run time from the SHAPES rows instead.
+  const checkable = (node: Node): boolean => {
+    switch (node.k) {
+      case "prim":
+        return true;
+      case "nullable":
+        return checkable(node.inner);
+      case "array":
+        return checkable(node.items);
+      case "union":
+        return node.arms.every(checkable);
+      default:
+        return false;
+    }
+  };
+
+  const slug = verbSlug(verb);
+  const gateName = `fal${pascalCase(verb)}InputSchema`;
+  const lines: string[] = [];
+  for (const model of models) {
+    const names = model.input.order.filter((name) =>
+      checkable((model.input.props[name] as Prop).node),
+    );
+    if (names.length === 0) continue;
+    lines.push(`  // ${model.id}`);
+    for (const name of names) {
+      lines.push(
+        `  AssertExtends<wire.${model.inputTypeName}[${JSON.stringify(name)}], Gate[${JSON.stringify(name)}]>,`,
+      );
+    }
+  }
+  if (lines.length === 0) return "";
+
+  return `${header(models.map((model) => model.snapshotFile))}
+${renderDoc(
+  [
+    `Schema/wire agreement checks for every \`fal.${verb}\` endpoint — TYPE ONLY, imported by nothing.`,
+    "",
+    `\`${slug}-wire.gen.ts\` and \`${slug}-schema.gen.ts\` render from the same IR through two emitters. This`,
+    "file is the proof they still agree: for every primitive-shaped input field, the wire type must be",
+    "assignable to the category gate's input — a field the schema emits as `z.string()` while the wire",
+    "interface says `number` fails `tsc` right here instead of shipping a gate that rejects legal bodies.",
+    "",
+    "Nothing imports this file. It exists for `tsc --noEmit`, costs zero runtime bytes, and joins no",
+    "entry's graph.",
+  ],
+  "",
+)}
+import type { z } from "zod";
+
+import type { AssertExtends } from "../shape-types";
+import type { ${gateName} } from "./${slug}-schema.gen";
+import type * as wire from "./${slug}-wire.gen";
+
+type Gate = z.input<typeof ${gateName}>;
+
+export type Fal${pascalCase(verb)}SchemaChecks = [
+${lines.join("\n")}
+];
+`;
+}
+
 function renderNarrowFile(verb: Verb, models: readonly EndpointModel[], registry: ComponentRegistry): string {
   // Enum vocabularies are hoisted and shared: wizper's `language` alone is 99
   // entries, and it would otherwise be written twice (shapes + constraints)
@@ -1823,6 +1891,32 @@ const IMAGE_SIZE_COMPONENTS = new Map<string, ObjectModel>();
  * one category and an extra in another: `image_url` IS the subject of an edit
  * and is merely a style reference on a text-to-image route.
  */
+/**
+ * The wire names a `VideoImageRole` arm can land on, per role, in preference
+ * order.
+ *
+ * fal's video endpoints spell the same three jobs six different ways —
+ * `image_url` at seedance and hailuo, `start_image_url` at kling v3,
+ * `first_frame_url` at veo3.1's interpolation route; `end_image_url`,
+ * `last_frame_url` and `tail_image_url` for the closing frame — and the role
+ * is the thing they have in common. So the adapter asks the row "which wire
+ * name is your `first`?" rather than trying six names.
+ *
+ * Preference order matters where an endpoint declares two of a role's
+ * spellings, which none does today; stating it is what makes the answer stable
+ * if one ever does.
+ */
+const VIDEO_ROLE_WIRE: ReadonlyArray<readonly [role: string, names: readonly string[]]> = [
+  ["first", ["image_url", "start_image_url", "first_frame_url"]],
+  ["last", ["end_image_url", "last_frame_url", "tail_image_url"]],
+  ["reference", ["image_urls", "reference_image_urls"]],
+];
+
+const VIDEO_ROLE_WIRE_NAMES: readonly string[] = VIDEO_ROLE_WIRE.flatMap(([, names]) => names);
+
+/** The wire names a source CLIP lands on — `video` in the canonical vocabulary. */
+const VIDEO_SOURCE_WIRE_NAMES: readonly string[] = ["video_url", "video_urls"];
+
 const CANONICAL_WIRE_PARAMS: Readonly<Partial<Record<Verb, readonly string[]>>> = {
   // `ImageParams` has words for shape, tier, count, seed, a negative prompt,
   // an output format and a delivery mode.
@@ -1834,6 +1928,31 @@ const CANONICAL_WIRE_PARAMS: Readonly<Partial<Record<Verb, readonly string[]>>> 
   // never grew a tier word; inventing one on fal's witness alone would put a
   // vocabulary decision in a provider directory.
   imageEdit: ["prompt", "image_size", "aspect_ratio", "num_images", "seed", "output_format", "width", "height", "image_url", "image_urls", "strength"],
+  // `VideoParams` has words for the prompt, the shape, the tier, the length, a
+  // negative prompt, a seed — and for the two media inputs, which is the half
+  // that needs listing rather than deriving. Every wire name a `VideoImageRole`
+  // arm can land on is canonical here, because otherwise `start_image_url`
+  // would be BOTH the target of `image: { role: "first" }` and a per-model
+  // extra a caller could set independently, and the two would race.
+  video: [
+    "prompt",
+    "aspect_ratio",
+    "resolution",
+    "duration",
+    "negative_prompt",
+    "seed",
+    ...VIDEO_ROLE_WIRE_NAMES,
+    ...VIDEO_SOURCE_WIRE_NAMES,
+  ],
+  // `LipsyncParams` is five words and two of them are media. `sync_mode` and
+  // `loop_mode` are deliberately NOT here: one provider's word for "what to do
+  // when the audio outlasts the clip" is not vocabulary, so they stay extras
+  // until a second provider spells the same idea.
+  lipsync: ["video_url", "audio_url", "seed"],
+  // `AvatarParams`, the still-driven twin. Note `prompt` is absent: three of the
+  // eight avatar rows have no prompt at all and one REQUIRES it, so it is a
+  // per-model extra rather than a canonical word the category has to answer for.
+  avatar: ["image_url", "audio_url", "seed"],
 };
 
 /** fal's `resolution` vocabulary onto the canonical tiers. `0.5K` has none. */
@@ -1849,6 +1968,51 @@ function canonicalRatios(values: readonly (string | number)[]): string[] {
   return values.filter((value): value is string => typeof value === "string" && /^\d+:\d+$/.test(value));
 }
 
+/**
+ * fal's `resolution` vocabulary onto the canonical VIDEO tiers.
+ *
+ * Exact spellings only, case-insensitively — `"480P"` is `480p` and `"4K"` is
+ * `4k`, and that is the whole of the mapping. The refusals are the interesting
+ * half: `minimax/h3` offers `"768P"` and `"2K"`, `wan/v2.2-a14b` offers
+ * `"580p"`, `pixverse/v6` offers `"360p"` and `"540p"`, and none of those is a
+ * canonical `VideoResolution`. Rounding `"768P"` to `720p` would send a caller
+ * who asked for 720p a taller frame and say nothing about it, and rounding
+ * `"2K"` to either neighbour is a coin toss — so those spellings simply do not
+ * appear in the canonical list, the adapter refuses the tiers this endpoint
+ * cannot express by name, and a caller who wants 768P writes it through
+ * `providerOptions`. A vocabulary that lies is worse than one with gaps.
+ */
+function canonicalVideoTier(value: string): string | undefined {
+  const normalized = value.trim().toLowerCase();
+  return normalized === "480p" ||
+    normalized === "720p" ||
+    normalized === "1080p" ||
+    normalized === "1440p" ||
+    normalized === "4k"
+    ? normalized
+    : undefined;
+}
+
+/**
+ * The seconds a `duration` enum member means, or `undefined` when it means
+ * something else.
+ *
+ * Three spellings across this roster and one non-answer: kling writes `"5"`,
+ * veo3.1 writes `"8s"`, wan writes the integer `5`, and seedance and ltx-2.5
+ * both offer `"auto"` — "you decide" — which is not a length and must not
+ * become one. `lightricks/ltx-2.5/text-to-video/pro` is the sharpest case: its
+ * enum is `[6, 8, 10, "auto"]` with no declared `type` at all, so the members
+ * arrive as a mixed array and the filter is what keeps `"auto"` out of a
+ * `readonly number[]`.
+ */
+function durationSeconds(value: string | number): number | undefined {
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+  const match = /^(\d+(?:\.\d+)?)s?$/i.exec(value.trim());
+  if (match === null) return undefined;
+  const seconds = Number(match[1]);
+  return Number.isFinite(seconds) ? seconds : undefined;
+}
+
 interface UnifiedRow {
   classes: readonly string[];
   keys: readonly string[];
@@ -1862,9 +2026,147 @@ interface UnifiedRow {
   pixels?: { min?: number; max?: number };
   /** Numeric bounds on the CANONICAL params, so an adapter can respect a floor. */
   bounds?: Readonly<Record<string, { min?: number; max?: number }>>;
+  /** video: the clip lengths this endpoint offers, in seconds. */
+  durations?: readonly number[];
+  /** video: canonical seconds → the literal this endpoint's `duration` takes. */
+  durationWire?: Readonly<Record<string, string | number>>;
+  /** video: the canonical `VideoResolution` tiers this endpoint can express. */
+  resolutions?: readonly string[];
+  /** video: canonical tier → the spelling this endpoint's `resolution` uses. */
+  resolutionWire?: Readonly<Record<string, string>>;
+  /** video: the `VideoImageRole` arms this endpoint serves, sorted. */
+  roles?: readonly string[];
+  /** video: role → the wire parameter that carries it. */
+  roleWire?: Readonly<Record<string, string>>;
+  /** video: the wire parameter a source CLIP goes in, where the route takes one. */
+  videoWire?: string;
+  /** lipsync / avatar: the source shapes this endpoint accepts. */
+  sources?: readonly string[];
+  /** lipsync / avatar: the wire parameter the source goes in. */
+  sourceWire?: string;
+  /** lipsync / avatar: the wire parameter the audio goes in. */
+  audioWire?: string;
   /** wire param name → the endpoint whose interface types it. */
   extras: readonly string[];
 }
+
+/**
+ * The three things a video row narrows beyond shape: the lengths, the tiers,
+ * and which image ROLES this endpoint's route serves.
+ *
+ * The roles are what make one `fal.video` address honest across thirty
+ * endpoints. text-to-video, image-to-video, first-and-last-frame and
+ * reference-to-video are four different fal ids and ONE route shape, so the
+ * adapter cannot branch on the endpoint id — it reads `roles` and answers
+ * "this endpoint has no `last` frame" by name. An endpoint that serves no role
+ * at all gets an empty list, which is the compile-time `never` for `image`.
+ */
+function applyVideoRow(model: EndpointModel, row: UnifiedRow): void {
+  const props = model.input.props;
+
+  const duration = props["duration"];
+  if (duration?.node.k === "prim" && duration.node.enum !== undefined) {
+    const seconds: number[] = [];
+    const wire: Record<string, string | number> = {};
+    for (const value of duration.node.enum) {
+      const parsed = durationSeconds(value);
+      // `"auto"` is not a length. See `durationSeconds`.
+      if (parsed === undefined || seconds.includes(parsed)) continue;
+      seconds.push(parsed);
+      wire[String(parsed)] = value;
+    }
+    if (seconds.length > 0) {
+      (row as { durations?: readonly number[] }).durations = seconds.sort((a, b) => a - b);
+      (row as { durationWire?: Readonly<Record<string, string | number>> }).durationWire = wire;
+    }
+  }
+
+  const resolution = props["resolution"];
+  if (resolution?.node.k === "prim" && resolution.node.enum !== undefined) {
+    const tiers: string[] = [];
+    const wire: Record<string, string> = {};
+    for (const value of resolution.node.enum) {
+      const tier = canonicalVideoTier(String(value));
+      if (tier === undefined || tiers.includes(tier)) continue;
+      tiers.push(tier);
+      wire[tier] = String(value);
+    }
+    // An EMPTY list is meaningful and is emitted: it says "this endpoint has a
+    // resolution field and not one canonical tier in it", which is a different
+    // fact from "no resolution field", and the adapter's message differs.
+    (row as { resolutions?: readonly string[] }).resolutions = tiers;
+    if (tiers.length > 0) {
+      (row as { resolutionWire?: Readonly<Record<string, string>> }).resolutionWire = wire;
+    }
+  } else if (resolution === undefined) {
+    (row as { resolutions?: readonly string[] }).resolutions = [];
+  }
+
+  const roles: string[] = [];
+  const roleWire: Record<string, string> = {};
+  for (const [role, names] of VIDEO_ROLE_WIRE) {
+    const found = names.find((name) => props[name] !== undefined);
+    if (found === undefined) continue;
+    roles.push(role);
+    roleWire[role] = found;
+  }
+  (row as { roles?: readonly string[] }).roles = roles;
+  if (roles.length > 0) {
+    (row as { roleWire?: Readonly<Record<string, string>> }).roleWire = roleWire;
+  }
+
+  const videoWire = VIDEO_SOURCE_WIRE_NAMES.find((name) => props[name] !== undefined);
+  if (videoWire !== undefined) (row as { videoWire?: string }).videoWire = videoWire;
+}
+
+/**
+ * The lipsync / avatar row: which SHAPE the performance comes in.
+ *
+ * The categories split on exactly this — a clip in is lipsync, a still in is
+ * avatar — so a row states the shape it takes rather than the adapter
+ * inferring it from a wire name. Two avatar endpoints (`veed/avatars`,
+ * `argil/avatars`) take NEITHER: their performer is a catalogued id, and their
+ * empty `sources` is what types `image` as `never` at the call site instead of
+ * letting a caller send a still to a route that has nowhere to put it.
+ */
+function applySourceRow(verb: Verb, model: EndpointModel, row: UnifiedRow): void {
+  const props = model.input.props;
+  const wireName = verb === "lipsync" ? "video_url" : "image_url";
+  const kind = verb === "lipsync" ? "video" : "image";
+  if (props[wireName] !== undefined) {
+    (row as { sources?: readonly string[] }).sources = [kind];
+    (row as { sourceWire?: string }).sourceWire = wireName;
+  } else {
+    (row as { sources?: readonly string[] }).sources = [];
+  }
+  if (props["audio_url"] !== undefined) (row as { audioWire?: string }).audioWire = "audio_url";
+}
+
+/**
+ * Wire parameters that may never become a unified `extras` entry, whatever the
+ * verb.
+ *
+ * `model` is the whole list, and it is not a style rule — it is a name
+ * collision that reduces a call to `never`. Every unified category declares
+ * `model` as the `"provider/model"` REF, and an extras key of the same name
+ * lands in the same intersection: `("fal/fal-ai/sync-lipsync/v2" | (string & {}))
+ * & ("lipsync-2" | "lipsync-2-pro" | undefined)` is `never`, and TypeScript
+ * reduces the whole params object with it. Every field in the call then reports
+ * "Type 'string' is not assignable to type 'never'", none of them naming the
+ * cause. Measured on `fal-ai/sync-lipsync/v2`, the one curated endpoint with a
+ * real `model` body field.
+ *
+ * It stays a real wire parameter at the HAND surface — `fal.lipsync({ endpoint:
+ * "fal-ai/sync-lipsync/v2", model: "lipsync-2-pro", … })` is typed from the
+ * endpoint's own enum and goes out as written — and unified callers reach it
+ * through `providerOptions.fal.model`, which is merged before validation and
+ * checked by the same IR. What is refused is only the ONE spelling that would
+ * silently break the surface it collided with.
+ *
+ * This is the same collision that made the route selector `endpoint` rather
+ * than `model` (risk R6), one layer up.
+ */
+const NEVER_AN_EXTRA: ReadonlySet<string> = new Set(["model"]);
 
 function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
   const props = model.input.props;
@@ -1872,7 +2174,7 @@ function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
   const row: UnifiedRow = {
     classes: model.shapes,
     keys: model.input.order,
-    extras: model.input.order.filter((name) => !canonical.has(name)),
+    extras: model.input.order.filter((name) => !canonical.has(name) && !NEVER_AN_EXTRA.has(name)),
   };
 
   const imageSize = props["image_size"];
@@ -1937,6 +2239,9 @@ function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
       (row as { tierWire?: Readonly<Record<string, string>> }).tierWire = wire;
     }
   }
+
+  if (verb === "video") applyVideoRow(model, row);
+  if (verb === "lipsync" || verb === "avatar") applySourceRow(verb, model, row);
 
   // Numeric bounds on the canonical params. `strength` is the one that earns
   // this today: `fal-ai/flux/dev/image-to-image` floors it at 0.01, and the
@@ -2009,6 +2314,41 @@ function renderParamsFile(verb: Verb, models: readonly EndpointModel[]): string 
         if (row.pixels.max !== undefined) parts.push(`max: ${num(row.pixels.max)}`);
         fields.push(`  pixels: { ${parts.join(", ")} },`);
       }
+      if (row.durations !== undefined) {
+        fields.push(`  durations: [${row.durations.map((value) => num(value)).join(", ")}],`);
+      }
+      if (row.durationWire !== undefined) {
+        const wire = row.durationWire;
+        const pairs = sorted(Object.keys(wire))
+          .map((seconds) => {
+            const value = wire[seconds] as string | number;
+            return `${propKey(seconds)}: ${typeof value === "number" ? num(value) : quote(value)}`;
+          })
+          .join(", ");
+        fields.push(`  durationWire: { ${pairs} },`);
+      }
+      if (row.resolutions !== undefined) {
+        fields.push(`  resolutions: ${renderStringArray(row.resolutions)},`);
+      }
+      if (row.resolutionWire !== undefined) {
+        const wire = row.resolutionWire;
+        const pairs = sorted(Object.keys(wire))
+          .map((tier) => `${propKey(tier)}: ${quote(wire[tier] as string)}`)
+          .join(", ");
+        fields.push(`  resolutionWire: { ${pairs} },`);
+      }
+      if (row.roles !== undefined) fields.push(`  roles: ${renderStringArray(row.roles)},`);
+      if (row.roleWire !== undefined) {
+        const wire = row.roleWire;
+        const pairs = sorted(Object.keys(wire))
+          .map((role) => `${propKey(role)}: ${quote(wire[role] as string)}`)
+          .join(", ");
+        fields.push(`  roleWire: { ${pairs} },`);
+      }
+      if (row.videoWire !== undefined) fields.push(`  videoWire: ${quote(row.videoWire)},`);
+      if (row.sources !== undefined) fields.push(`  sources: ${renderStringArray(row.sources)},`);
+      if (row.sourceWire !== undefined) fields.push(`  sourceWire: ${quote(row.sourceWire)},`);
+      if (row.audioWire !== undefined) fields.push(`  audioWire: ${quote(row.audioWire)},`);
       if (row.bounds !== undefined) {
         const entries = sorted(Object.keys(row.bounds)).map((name) => {
           const bound = (row.bounds as Record<string, { min?: number; max?: number }>)[name] as {
@@ -2534,6 +2874,8 @@ export function generate(input: GenerateInput): Map<string, string> {
     const slug = verbSlug(verb);
     files.set(`${slug}-wire.gen.ts`, renderWireFile(verb, slice, registry));
     files.set(`${slug}-schema.gen.ts`, renderSchemaFile(verb, slice, registry));
+    const checkFile = renderCheckFile(verb, slice);
+    if (checkFile !== "") files.set(`${slug}-check.gen.ts`, checkFile);
     files.set(`${slug}-narrow.gen.ts`, renderNarrowFile(verb, slice, registry));
     files.set(`${slug}-params.gen.ts`, renderParamsFile(verb, slice));
     files.set(`models-${slug}.gen.ts`, renderModelsFile(verb, slice));

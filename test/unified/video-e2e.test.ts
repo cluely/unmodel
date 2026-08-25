@@ -23,9 +23,10 @@ import { video as klingAdapter } from "../../src/providers/kling/unified-video";
 import { video as openaiAdapter } from "../../src/providers/openai/unified";
 
 describe("the pack", () => {
-  test("registers exactly the ten video providers, sorted", () => {
+  test("registers exactly the twelve video providers, sorted", () => {
     expect([...video.providers]).toEqual([
       "bytedance",
+      "fal",
       "google",
       "kling",
       "lightricks",
@@ -35,6 +36,7 @@ describe("the pack", () => {
       "pixverse",
       "runway",
       "vidu",
+      "xai",
     ]);
   });
 

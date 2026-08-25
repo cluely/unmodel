@@ -43,6 +43,7 @@ import { describe, expect, test } from "bun:test";
 import type { VideoParams } from "../../src/core/unified/vocabulary/video";
 import { video } from "../../src/unified/video";
 import { video as bytedance } from "../../src/providers/bytedance/unified-video";
+import { video as fal } from "../../src/providers/fal/unified-video";
 import { video as google } from "../../src/providers/google/unified-video";
 import { video as kling } from "../../src/providers/kling/unified-video";
 import { video as lightricks } from "../../src/providers/lightricks/unified";
@@ -52,6 +53,7 @@ import { video as openai } from "../../src/providers/openai/unified";
 import { video as pixverse } from "../../src/providers/pixverse/unified";
 import { video as runway } from "../../src/providers/runway/unified-video";
 import { video as vidu } from "../../src/providers/vidu/unified-video";
+import { video as xai } from "../../src/providers/xai/unified-video";
 
 type Support = "native" | "derived" | "implicit" | "declared" | "refused";
 
@@ -262,6 +264,39 @@ const TABLE: Readonly<Record<string, Capability>> = {
     seed: "refused",
     n: "declared",
   },
+  /**
+   * fal is the odd row, and the one worth reading twice.
+   *
+   * Every other row profiles a provider. This one profiles an ENDPOINT — fal
+   * serves thirty behind one address, so there is no such thing as "what fal
+   * supports"; there is only what `fal-ai/veo3.1/fast` supports, and the row
+   * next to it in the roster answers differently. That is why every refusal in
+   * fal's adapter is `refused` rather than `declared`: a provider-wide
+   * `unsupported` would be false at the majority of fal's own endpoints (risk
+   * R7), so there is not one on the adapter at all.
+   *
+   * `fal-ai/veo3.1/fast` is chosen because it is the richest TEXT-to-video
+   * surface in the roster — a suffixed duration, a tier field, a closed ratio
+   * enum, a negative prompt and a seed — so five cells are exercised without a
+   * `base`, and the three image roles plus `video` are all genuinely absent.
+   */
+  fal: {
+    ref: "fal/fal-ai/veo3.1/fast",
+    adapter: fal,
+    // `"8s"` — the one duration spelling in the pack with a unit glued on, and
+    // the reason the canonical word is a plain number.
+    duration: { support: "derived", class: "suffixed", at: "duration" },
+    size: { class: "tier-field", at: "resolution" },
+    resolution: "native",
+    aspectRatio: "native",
+    imageFirst: "refused",
+    imageLast: "refused",
+    imageReference: "refused",
+    video: "refused",
+    negativePrompt: "native",
+    seed: "native",
+    n: "refused",
+  },
   lightricks: {
     ref: "lightricks/ltx-2-5-fast",
     adapter: lightricks,
@@ -278,6 +313,23 @@ const TABLE: Readonly<Record<string, Capability>> = {
     imageLast: "native",
     imageReference: "refused",
     video: "declared",
+    negativePrompt: "declared",
+    seed: "declared",
+    n: "declared",
+  },
+  xai: {
+    ref: "xai/grok-imagine-video-1.5",
+    adapter: xai,
+    duration: { support: "native", class: "number", at: "duration" },
+    size: { class: "tier-field", at: "resolution" },
+    resolution: "native",
+    aspectRatio: "native",
+    imageFirst: "native",
+    imageLast: "refused",
+    imageReference: "native",
+    // A source clip belongs to the separate edits/extensions endpoints, which
+    // `xai.videoEdit` / `xai.videoExtend` validate — refused by hand, naming them.
+    video: "refused",
     negativePrompt: "declared",
     seed: "declared",
     n: "declared",

@@ -23,6 +23,8 @@ import type { CanonicalKeyOf } from "../../src/core/unified/kernel";
 import type { ImageParams } from "../../src/core/unified/vocabulary/image";
 import type { ImageEditParams } from "../../src/core/unified/vocabulary/image-edit";
 import type { VideoParams } from "../../src/core/unified/vocabulary/video";
+import type { LipsyncParams } from "../../src/core/unified/vocabulary/lipsync";
+import type { AvatarParams } from "../../src/core/unified/vocabulary/avatar";
 import type { TtsParams } from "../../src/core/unified/vocabulary/tts";
 import type { SttParams } from "../../src/core/unified/vocabulary/stt";
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
@@ -40,16 +42,38 @@ import { expectTrue, type IsNever } from "./helpers";
  */
 type AllKeys<T> = T extends unknown ? Extract<keyof T, string> : never;
 
+/**
+ * The categories, written once rather than twice.
+ *
+ * `UnifiedCategory` itself would be the obvious constraint and is deliberately
+ * not used: this file exists to catch a list and a type drifting apart, and
+ * constraining it by the very union the list is keyed on would let a category
+ * added to one and forgotten in the other pass silently. Spelled out here, a
+ * new category is a compile error in this file until someone writes its two
+ * assertions below.
+ */
+type Category =
+  | "image"
+  | "imageEdit"
+  | "video"
+  | "lipsync"
+  | "avatar"
+  | "tts"
+  | "stt"
+  | "music"
+  | "voiceClone"
+  | "voiceDesign";
+
 /** Vocabulary keys the kernel's list does not accept: a valid request refused. */
 type Unlisted<
-  C extends "image" | "imageEdit" | "video" | "tts" | "stt" | "music" | "voiceClone" | "voiceDesign",
+  C extends Category,
   P,
 > =
   Exclude<AllKeys<P>, CanonicalKeyOf<C>>;
 
 /** List keys no vocabulary declares: a param accepted that nothing compiles. */
 type Unclaimed<
-  C extends "image" | "imageEdit" | "video" | "tts" | "stt" | "music" | "voiceClone" | "voiceDesign",
+  C extends Category,
   P,
 > =
   Exclude<CanonicalKeyOf<C>, AllKeys<P>>;
@@ -62,6 +86,22 @@ expectTrue<IsNever<Unclaimed<"imageEdit", ImageEditParams>>>();
 
 expectTrue<IsNever<Unlisted<"video", VideoParams>>>();
 expectTrue<IsNever<Unclaimed<"video", VideoParams>>>();
+
+/**
+ * The two performance categories, and the one asymmetry worth reading.
+ *
+ * `LipsyncParams.source` is REQUIRED and `AvatarParams.image` is OPTIONAL, and
+ * both are in their category's key list all the same — the list answers "may a
+ * caller write this key", not "must they". Which of the two an avatar model
+ * requires is a per-model fact `AvatarModelNarrowing` states, and a key list
+ * cannot express a per-model requirement without becoming a second copy of the
+ * rows.
+ */
+expectTrue<IsNever<Unlisted<"lipsync", LipsyncParams>>>();
+expectTrue<IsNever<Unclaimed<"lipsync", LipsyncParams>>>();
+
+expectTrue<IsNever<Unlisted<"avatar", AvatarParams>>>();
+expectTrue<IsNever<Unclaimed<"avatar", AvatarParams>>>();
 
 expectTrue<IsNever<Unlisted<"tts", TtsParams>>>();
 expectTrue<IsNever<Unclaimed<"tts", TtsParams>>>();

@@ -21,11 +21,11 @@
  *
  * ## What is here
  *
- * Two of the nine validators — `image` (28 text-to-image endpoints) and
- * `imageEdit` (17 editing endpoints) — plus the transport surface and the
- * merged catalog. `video`, `lipsync`, `upscale`, `avatar`, `tts`, `stt` and
- * `music` land in the following waves, on top of generated files that are
- * already in `./gen/`.
+ * Five of the nine validators — `image` (28 text-to-image endpoints),
+ * `imageEdit` (17 editing), `video` (30 generation and editing routes),
+ * `lipsync` (8) and `avatar` (8) — plus the transport surface and the merged
+ * catalog. `upscale`, `tts`, `stt` and `music` land in the following waves, on
+ * top of generated files that are already in `./gen/`.
  *
  * ## Two things worth knowing before your first call
  *
@@ -62,6 +62,9 @@ export type {
 
 export { image } from "./image";
 export { imageEdit } from "./image-edit";
+export { video } from "./video";
+export { lipsync } from "./lipsync";
+export { avatar } from "./avatar";
 
 export type {
   FalImageArm,
@@ -77,6 +80,27 @@ export type {
   FalImageEditParams,
   FalImageEditResultById,
 } from "./image-edit";
+export type {
+  FalVideoArm,
+  FalVideoBodyById,
+  FalVideoEndpointId,
+  FalVideoParams,
+  FalVideoResultById,
+} from "./video";
+export type {
+  FalLipsyncArm,
+  FalLipsyncBodyById,
+  FalLipsyncEndpointId,
+  FalLipsyncParams,
+  FalLipsyncResultById,
+} from "./lipsync";
+export type {
+  FalAvatarArm,
+  FalAvatarBodyById,
+  FalAvatarEndpointId,
+  FalAvatarParams,
+  FalAvatarResultById,
+} from "./avatar";
 
 export {
   FAL_ENDPOINTS,
@@ -84,6 +108,9 @@ export {
   FAL_DOC_URLS,
   FAL_IMAGE_ENDPOINTS,
   FAL_IMAGE_EDIT_ENDPOINTS,
+  FAL_VIDEO_ENDPOINTS,
+  FAL_LIPSYNC_ENDPOINTS,
+  FAL_AVATAR_ENDPOINTS,
   FAL_REQUIRED_PROBES,
 } from "./gen/endpoints.gen";
 export type { FalEndpointId } from "./gen/endpoints.gen";

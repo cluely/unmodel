@@ -2,11 +2,19 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
+//   data/fal/openapi/argil__avatars__audio-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__text-to-image.json
+//   data/fal/openapi/fal-ai__bytedance__omnihuman__v1.5.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__edit.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__text-to-image.json
 //   data/fal/openapi/fal-ai__clarity-upscaler.json
+//   data/fal/openapi/fal-ai__echomimic-v3.json
 //   data/fal/openapi/fal-ai__flux-2.json
 //   data/fal/openapi/fal-ai__flux-2-max.json
 //   data/fal/openapi/fal-ai__flux-2-pro.json
@@ -28,8 +36,22 @@
 //   data/fal/openapi/fal-ai__gpt-image-1.5__edit.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
+//   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__pro.json
+//   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__standard.json
+//   data/fal/openapi/fal-ai__kling-video__lipsync__audio-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
+//   data/fal/openapi/fal-ai__latentsync.json
+//   data/fal/openapi/fal-ai__longcat-single-avatar__image-audio-to-video.json
 //   data/fal/openapi/fal-ai__lyria2.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__minimax__speech-02-hd.json
 //   data/fal/openapi/fal-ai__nano-banana.json
 //   data/fal/openapi/fal-ai__nano-banana-2.json
@@ -37,24 +59,43 @@
 //   data/fal/openapi/fal-ai__nano-banana-pro.json
 //   data/fal/openapi/fal-ai__nano-banana-pro__edit.json
 //   data/fal/openapi/fal-ai__nano-banana__edit.json
+//   data/fal/openapi/fal-ai__pixverse__lipsync.json
+//   data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json
 //   data/fal/openapi/fal-ai__qwen-image.json
 //   data/fal/openapi/fal-ai__qwen-image-edit-2511.json
 //   data/fal/openapi/fal-ai__recraft__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__recraft__v4__text-to-image.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2.json
+//   data/fal/openapi/fal-ai__sync-lipsync__v2__pro.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v3.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v3__image-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1.json
+//   data/fal/openapi/fal-ai__veo3.1__extend-video.json
+//   data/fal/openapi/fal-ai__veo3.1__fast.json
+//   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
+//   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
+//   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
+//   data/fal/openapi/fal-ai__wan__v2.7__text-to-video.json
 //   data/fal/openapi/fal-ai__wizper.json
 //   data/fal/openapi/fal-ai__z-image__turbo.json
+//   data/fal/openapi/google__gemini-omni-flash.json
 //   data/fal/openapi/google__nano-banana-2-lite.json
 //   data/fal/openapi/ideogram__v4.json
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
+//   data/fal/openapi/lightricks__ltx-2.5__text-to-video__pro.json
+//   data/fal/openapi/minimax__h3__image-to-video.json
+//   data/fal/openapi/minimax__h3__text-to-video.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
+//   data/fal/openapi/veed__avatars__audio-to-video.json
+//   data/fal/openapi/veed__lipsync.json
+//   data/fal/openapi/veed__lipsync__v2.json
 //   data/fal/openapi/xai__grok-imagine-image.json
+//   data/fal/openapi/xai__grok-imagine-video__text-to-video.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
@@ -205,6 +246,53 @@ export interface FalImage_d44dd8 {
   content_type?: string | null;
 }
 
+/** fal's `KlingV3ComboElementInput` component. */
+export interface FalKlingV3ComboElementInput {
+  /**
+   * The frontal image of the element (main view). Carries a image reference — an https URL
+   * or a `data:` URI.
+   */
+  frontal_image_url?: string | null;
+  /**
+   * Additional reference images from different angles. 1-3 images supported. At least one
+   * image is required. Carries a image reference — an https URL or a `data:` URI.
+   */
+  reference_image_urls?: string[] | null;
+  /**
+   * The video URL of the element. A request can only have one element with a video. Carries
+   * a video reference — an https URL or a `data:` URI.
+   */
+  video_url?: string | null;
+  /**
+   * The voice ID for this element. The voice will be binded to the element and references to
+   * this element will use the binded voice. Get voice IDs from the following endpoint:
+   * https://fal.ai/models/fal-ai/kling-video/create-voice.
+   */
+  voice_id?: string | null;
+}
+
+/** fal's `KlingV3ImageElementInput` component. */
+export interface FalKlingV3ImageElementInput {
+  /**
+   * The frontal image of the element (main view). Carries a image reference — an https URL
+   * or a `data:` URI.
+   */
+  frontal_image_url?: string | null;
+  /**
+   * Additional reference images from different angles. 1-3 images supported. At least one
+   * image is required. Carries a image reference — an https URL or a `data:` URI.
+   */
+  reference_image_urls?: string[] | null;
+}
+
+/** fal's `KlingV3MultiPromptElement` component. */
+export interface FalKlingV3MultiPromptElement {
+  /** The prompt for this shot. */
+  prompt: string;
+  /** The duration of this shot in seconds. Default: `"5"`. */
+  duration?: "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14" | "15";
+}
+
 /** fal's `LoraWeight` component. */
 export interface FalLoraWeight {
   /** URL or the path to the LoRA weights. */
@@ -287,6 +375,40 @@ export interface FalSync3GenerationOptions {
    * sync-3, so this option is ignored by sync-3.
    */
   occlusion_detection_enabled?: boolean | null;
+}
+
+/** fal's `Video` component. */
+export interface FalVideo {
+  /** The URL where the file can be downloaded from. */
+  url: string;
+  /** The mime type of the file. */
+  content_type?: string | null;
+  /** The name of the file. It will be auto-generated if not provided. */
+  file_name?: string | null;
+  /** The size of the file in bytes. */
+  file_size?: number | null;
+}
+
+/** fal's `VideoFile` component. */
+export interface FalVideoFile {
+  /** The URL where the file can be downloaded from. */
+  url: string;
+  /** The mime type of the file. */
+  content_type?: string | null;
+  /** The name of the file. It will be auto-generated if not provided. */
+  file_name?: string | null;
+  /** The size of the file in bytes. */
+  file_size?: number | null;
+  /** The width of the video. */
+  width?: number | null;
+  /** The height of the video. */
+  height?: number | null;
+  /** The FPS of the video. */
+  fps?: number | null;
+  /** The duration of the video. */
+  duration?: number | null;
+  /** The number of frames in the video. */
+  num_frames?: number | null;
 }
 
 /** fal's `VoiceSetting` component. */

@@ -591,7 +591,7 @@ describe("unified media surfaces (amendment A5)", () => {
 
   test("A6 — a category entry imports only the kernel, itself, and adapter leaves", () => {
     const entries = FILES.filter((f) => under(f, "src/unified"));
-    expect(entries.length).toBe(8);
+    expect(entries.length).toBe(10);
 
     const violations: string[] = [];
     for (const file of entries) {
@@ -648,13 +648,15 @@ describe("unified media surfaces (amendment A5)", () => {
     expect(violations).toEqual([]);
   });
 
-  test("the eight entries exist, one per category", () => {
+  test("the ten entries exist, one per category", () => {
     const names = FILES.filter((f) => under(f, "src/unified"))
       .map((f) => f.slice("src/unified/".length, -".ts".length))
       .sort();
     expect(names).toEqual([
+      "avatar",
       "image",
       "image-edit",
+      "lipsync",
       "music",
       "stt",
       "tts",
@@ -1069,9 +1071,15 @@ describe("generated provider modules (amendments A10-A12)", () => {
     const violations: string[] = [];
     for (const file of generated) {
       const isSchema = /-schema\.gen\.ts$/.test(file);
+      const isCheck = /-check\.gen\.ts$/.test(file);
       for (const ref of importsOf(file)) {
         if (ref.specifier === "zod") {
-          if (!isSchema) {
+          // `<cat>-check.gen.ts` names zod too, type-only: `import type { z }`
+          // is erased before emit, and its one job is `z.input<typeof schema>`
+          // so the wire/gate assignability assertions have a gate type. A check
+          // file importing zod as a VALUE gets no carve-out — nothing imports a
+          // check file today, but the rule should not depend on that staying true.
+          if (!isSchema && !(isCheck && ref.typeOnly)) {
             violations.push(
               violation(file, ref, "only `<category>-schema.gen.ts` may import zod — the rest is data"),
             );
@@ -1094,10 +1102,10 @@ describe("generated provider modules (amendments A10-A12)", () => {
     expect(violations).toEqual([]);
   });
 
-  test("A10: wire.gen, narrow.gen, params.gen and models.gen import types only", () => {
+  test("A10: wire.gen, narrow.gen, params.gen, check.gen and models.gen import types only", () => {
     const violations: string[] = [];
     const dataOnly = generated.filter((file) =>
-      /-(wire|narrow|params)\.gen\.ts$/.test(file) || /\/models-[a-z-]+\.gen\.ts$/.test(file),
+      /-(wire|narrow|params|check)\.gen\.ts$/.test(file) || /\/models-[a-z-]+\.gen\.ts$/.test(file),
     );
     expect(dataOnly.length).toBeGreaterThanOrEqual(20);
     for (const file of dataOnly) {

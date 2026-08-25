@@ -1,0 +1,386 @@
+{
+  "metadata": {
+    "category": "text-to-video",
+    "date": "2025-12-02T09:03:38.171Z",
+    "description": "Kling 2.6 Pro: Top-tier text-to-video with cinematic visuals, fluid motion, and native audio generation.",
+    "display_name": "Kling Video v2.6 Text to Video",
+    "group": {
+      "key": "kling-video/v2.6",
+      "label": "Text to Video"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/kling-video/v2.6/pro/text-to-video",
+    "pinned": false,
+    "status": "active",
+    "tags": [],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a84aab6/uMErfUYxq7gJBJ0-MOKS7_2640fde44b6049a59bc34adf72e38ed7.jpg",
+    "updated_at": "2026-07-21T18:22:20.463Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "KlingVideoV26ProTextToVideoInput": {
+          "properties": {
+            "aspect_ratio": {
+              "default": "16:9",
+              "description": "The aspect ratio of the generated video frame",
+              "enum": [
+                "16:9",
+                "9:16",
+                "1:1"
+              ],
+              "title": "Aspect Ratio",
+              "type": "string"
+            },
+            "cfg_scale": {
+              "default": 0.5,
+              "description": "\n            The CFG (Classifier Free Guidance) scale is a measure of how close you want\n            the model to stick to your prompt.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Cfg Scale",
+              "type": "number"
+            },
+            "duration": {
+              "default": "5",
+              "description": "The duration of the generated video in seconds",
+              "enum": [
+                "5",
+                "10"
+              ],
+              "title": "Duration",
+              "type": "string"
+            },
+            "generate_audio": {
+              "default": true,
+              "description": "Whether to generate native audio for the video. Supports Chinese and English voice output. Other languages are automatically translated to English. For English speech, use lowercase letters; for acronyms or proper nouns, use uppercase.",
+              "title": "Generate Audio",
+              "type": "boolean"
+            },
+            "negative_prompt": {
+              "default": "blur, distort, and low quality",
+              "maxLength": 2500,
+              "title": "Negative Prompt",
+              "type": "string"
+            },
+            "prompt": {
+              "examples": [
+                "Old friends reuniting at a train station after 20 years, one exclaims 'Is that really you?!' other tearfully replies 'I promised I'd come back, didn't I?', train whistle, steam hissing, emotional orchestral swell, crowd murmur"
+              ],
+              "maxLength": 2500,
+              "title": "Prompt",
+              "type": "string"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "TextToVideoV26ProRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "duration",
+            "aspect_ratio",
+            "negative_prompt",
+            "cfg_scale",
+            "generate_audio"
+          ]
+        },
+        "KlingVideoV26ProTextToVideoOutput": {
+          "properties": {
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated video",
+              "examples": [
+                {
+                  "content_type": "video/mp4",
+                  "file_name": "output.mp4",
+                  "file_size": 8195664,
+                  "url": "https://v3b.fal.media/files/b/0a84ab71/8hPbLs7n59WhWY-BN69yX_output.mp4"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video"
+          ],
+          "title": "TextToVideoV26ProOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/kling-video/v2.6/pro/text-to-video queue.",
+      "title": "Queue OpenAPI for fal-ai/kling-video/v2.6/pro/text-to-video",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Kling V2.6 (pro) Text to Video API.\n\nThe Kling V2.6 model is the latest generation of text-to-video with\nimproved visual quality and motion consistency. This version also\nsupports native audio generation when the `sound` parameter is enabled.",
+        "category": "text-to-video",
+        "documentationUrl": "https://fal.ai/models/fal-ai/kling-video/v2.6/pro/text-to-video/api",
+        "endpointId": "fal-ai/kling-video/v2.6/pro/text-to-video",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/kling-video/v2.6/pro/text-to-video",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a84aab6/uMErfUYxq7gJBJ0-MOKS7_2640fde44b6049a59bc34adf72e38ed7.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/kling-video/v2.6/pro/text-to-video": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KlingVideoV26ProTextToVideoInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/v2.6/pro/text-to-video/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/KlingVideoV26ProTextToVideoOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/v2.6/pro/text-to-video/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/v2.6/pro/text-to-video/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "source": {
+    "url": "https://example.com/take-3.mp4"
+  },
+  "audio": {
+    "url": "https://example.com/vo-french.wav"
+  },
+  "sync_mode": "bounce"
+}

@@ -1,0 +1,616 @@
+{
+  "metadata": {
+    "category": "image-to-video",
+    "date": "2025-07-28T15:58:39.979Z",
+    "description": "fal-ai/wan/v2.2-A14B/image-to-video",
+    "display_name": "Wan v2.2 A14B",
+    "group": {
+      "key": "wan-v22-large",
+      "label": "Image to Video"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/wan/v2.2-a14B/image-to-video",
+    "pinned": false,
+    "status": "active",
+    "tags": [],
+    "thumbnail_url": "https://v3.fal.media/files/penguin/xWl1TIQn-uRe7BsctByJk_3e01d1a4f7ff488c9483be0d81f5a3cc.jpg",
+    "updated_at": "2026-04-21T17:56:26.445Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "WanV22A14bImageToVideoInput": {
+          "properties": {
+            "acceleration": {
+              "default": "regular",
+              "description": "Acceleration level to use. The more acceleration, the faster the generation, but with lower quality. The recommended value is 'regular'.",
+              "enum": [
+                "none",
+                "regular"
+              ],
+              "examples": [
+                "regular"
+              ],
+              "title": "Acceleration",
+              "type": "string"
+            },
+            "adjust_fps_for_interpolation": {
+              "default": true,
+              "description": "If true, the number of frames per second will be multiplied by the number of interpolated frames plus one. For example, if the generated frames per second is 16 and the number of interpolated frames is 1, the final frames per second will be 32. If false, the passed frames per second will be used as-is.",
+              "examples": [
+                true
+              ],
+              "title": "Adjust FPS for Interpolation",
+              "type": "boolean"
+            },
+            "aspect_ratio": {
+              "default": "auto",
+              "description": "Aspect ratio of the generated video. If 'auto', the aspect ratio will be determined automatically based on the input image.",
+              "enum": [
+                "auto",
+                "16:9",
+                "9:16",
+                "1:1"
+              ],
+              "title": "Aspect Ratio",
+              "type": "string"
+            },
+            "enable_output_safety_checker": {
+              "default": false,
+              "description": "If set to true, output video will be checked for safety after generation.",
+              "examples": [
+                false
+              ],
+              "title": "Enable Output Safety Checker",
+              "type": "boolean"
+            },
+            "enable_prompt_expansion": {
+              "default": false,
+              "description": "Whether to enable prompt expansion. This will use a large language model to expand the prompt with additional details while maintaining the original meaning.",
+              "examples": [
+                false
+              ],
+              "title": "Enable Prompt Expansion",
+              "type": "boolean"
+            },
+            "enable_safety_checker": {
+              "default": false,
+              "description": "If set to true, input data will be checked for safety before processing. Disabling it requires account authorization; unauthorized requests are always checked.",
+              "examples": [
+                true
+              ],
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "end_image_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "URL of the end image.",
+              "title": "End Image URL"
+            },
+            "frames_per_second": {
+              "anyOf": [
+                {
+                  "maximum": 60,
+                  "minimum": 4,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 16,
+              "description": "Frames per second of the generated video. Must be between 4 to 60. When using interpolation and `adjust_fps_for_interpolation` is set to true (default true,) the final FPS will be multiplied by the number of interpolated frames plus one. For example, if the generated frames per second is 16 and the number of interpolated frames is 1, the final frames per second will be 32. If `adjust_fps_for_interpolation` is set to false, this value will be used as-is.",
+              "examples": [
+                16
+              ],
+              "title": "Frames per Second"
+            },
+            "guidance_scale": {
+              "default": 3.5,
+              "description": "Classifier-free guidance scale. Higher values give better adherence to the prompt but may decrease quality.",
+              "examples": [
+                3.5
+              ],
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Guidance Scale (1st Stage)",
+              "type": "number"
+            },
+            "guidance_scale_2": {
+              "default": 3.5,
+              "description": "Guidance scale for the second stage of the model. This is used to control the adherence to the prompt in the second stage of the model.",
+              "examples": [
+                3.5
+              ],
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Guidance Scale (2nd Stage)",
+              "type": "number"
+            },
+            "image_url": {
+              "description": "URL of the input image. If the input image does not match the chosen aspect ratio, it is resized and center cropped.",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/model_tests/wan/dragon-warrior.jpg"
+              ],
+              "title": "Image URL",
+              "type": "string"
+            },
+            "interpolator_model": {
+              "default": "film",
+              "description": "The model to use for frame interpolation. If None, no interpolation is applied.",
+              "enum": [
+                "none",
+                "film",
+                "rife"
+              ],
+              "examples": [
+                "film"
+              ],
+              "title": "Interpolator Model",
+              "type": "string"
+            },
+            "negative_prompt": {
+              "default": "",
+              "description": "Negative prompt for video generation.",
+              "title": "Negative Prompt",
+              "type": "string"
+            },
+            "num_frames": {
+              "default": 81,
+              "description": "Number of frames to generate. Must be between 17 to 161 (inclusive).",
+              "examples": [
+                81
+              ],
+              "maximum": 161,
+              "minimum": 17,
+              "title": "Number of Frames",
+              "type": "integer"
+            },
+            "num_inference_steps": {
+              "default": 27,
+              "description": "Number of inference steps for sampling. Higher values give better quality but take longer.",
+              "examples": [
+                27
+              ],
+              "maximum": 40,
+              "minimum": 2,
+              "title": "Number of Inference Steps",
+              "type": "integer"
+            },
+            "num_interpolated_frames": {
+              "default": 1,
+              "description": "Number of frames to interpolate between each pair of generated frames. Must be between 0 and 4.",
+              "examples": [
+                1
+              ],
+              "maximum": 4,
+              "minimum": 0,
+              "title": "Number of Interpolated Frames",
+              "type": "integer"
+            },
+            "prompt": {
+              "description": "The text prompt to guide video generation.",
+              "examples": [
+                "The white dragon warrior stands still, eyes full of determination and strength. The camera slowly moves closer or circles around the warrior, highlighting the powerful presence and heroic spirit of the character."
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "resolution": {
+              "default": "720p",
+              "description": "Resolution of the generated video (480p, 580p, or 720p).",
+              "enum": [
+                "480p",
+                "580p",
+                "720p"
+              ],
+              "examples": [
+                "720p"
+              ],
+              "title": "Resolution",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Random seed for reproducibility. If None, a random seed is chosen.",
+              "title": "Seed"
+            },
+            "shift": {
+              "default": 5,
+              "description": "Shift value for the video. Must be between 1.0 and 10.0.",
+              "examples": [
+                5
+              ],
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Shift",
+              "type": "number"
+            },
+            "video_quality": {
+              "default": "high",
+              "description": "The quality of the output video. Higher quality means better visual quality but larger file size.",
+              "enum": [
+                "low",
+                "medium",
+                "high",
+                "maximum"
+              ],
+              "examples": [
+                "high"
+              ],
+              "title": "Video Quality",
+              "type": "string"
+            },
+            "video_write_mode": {
+              "default": "balanced",
+              "description": "The write mode of the output video. Faster write mode means faster results but larger file size, balanced write mode is a good compromise between speed and quality, and small write mode is the slowest but produces the smallest file size.",
+              "enum": [
+                "fast",
+                "balanced",
+                "small"
+              ],
+              "examples": [
+                "balanced"
+              ],
+              "title": "Video Write Mode",
+              "type": "string"
+            }
+          },
+          "required": [
+            "prompt",
+            "image_url"
+          ],
+          "title": "WanI2VRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "image_url",
+            "prompt",
+            "num_frames",
+            "frames_per_second",
+            "negative_prompt",
+            "seed",
+            "resolution",
+            "aspect_ratio",
+            "num_inference_steps",
+            "enable_safety_checker",
+            "enable_output_safety_checker",
+            "enable_prompt_expansion",
+            "acceleration",
+            "guidance_scale",
+            "guidance_scale_2",
+            "shift",
+            "interpolator_model",
+            "num_interpolated_frames",
+            "adjust_fps_for_interpolation",
+            "video_quality",
+            "video_write_mode",
+            "end_image_url"
+          ]
+        },
+        "WanV22A14bImageToVideoOutput": {
+          "properties": {
+            "prompt": {
+              "default": "",
+              "description": "The text prompt used for video generation.",
+              "examples": [
+                "The white dragon warrior stands still, eyes full of determination and strength. The camera slowly moves closer or circles around the warrior, highlighting the powerful presence and heroic spirit of the character."
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "description": "The seed used for generation.",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated video file.",
+              "examples": [
+                {
+                  "url": "https://v3.fal.media/files/lion/Fbuh3lO_HMT-pS0DATbio_tmp08c3v477.mp4"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video",
+            "seed"
+          ],
+          "title": "WanI2VResponse",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video",
+            "prompt",
+            "seed"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/wan/v2.2-a14b/image-to-video queue.",
+      "title": "Queue OpenAPI for fal-ai/wan/v2.2-a14b/image-to-video",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Endpoint for generating a video from an image.",
+        "category": "image-to-video",
+        "documentationUrl": "https://fal.ai/models/fal-ai/wan/v2.2-a14b/image-to-video/api",
+        "endpointId": "fal-ai/wan/v2.2-a14b/image-to-video",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/wan/v2.2-a14b/image-to-video",
+        "thumbnailUrl": "https://v3.fal.media/files/penguin/xWl1TIQn-uRe7BsctByJk_3e01d1a4f7ff488c9483be0d81f5a3cc.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/wan/v2.2-a14b/image-to-video": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WanV22A14bImageToVideoInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/wan/v2.2-a14b/image-to-video/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/WanV22A14bImageToVideoOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/wan/v2.2-a14b/image-to-video/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/wan/v2.2-a14b/image-to-video/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

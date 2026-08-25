@@ -170,6 +170,73 @@ JSON.stringify(request);
 
 Adding `image`, `video`, or a reference image selects the matching route. unmodel validates job submission. Polling and downloads stay with your transport code.
 
+## Lipsync
+
+Redubbing a clip: a video goes in, an audio track goes in, and a clip whose
+mouth matches the audio comes out.
+
+```ts
+import { lipsync } from "unmodel/lipsync";
+
+const request = lipsync({
+  model: "fal/fal-ai/sync-lipsync/v3",
+  source: { url: "https://example.com/take-3.mp4" },
+  audio: { url: "https://example.com/vo-french.wav" },
+});
+```
+
+Five words — `model`, `source`, `audio`, `seed`, `providerOptions` — and no
+size, length or shape, because the output's geometry **is** the input's. That
+is what separates this from `unmodel/video`, where every one of those is a
+decision the caller makes.
+
+`source` narrows to the ref. Which shape a route accepts is a per-model fact,
+so a still handed to a clip-only model is a compile error on `source` naming
+the shape that model takes, rather than a request that 422s.
+
+What is deliberately *not* in the vocabulary: "what to do when the audio
+outlasts the clip" is `sync_mode` with five arms at sync., `loop_mode` with two
+at LatentSync, and absent at VEED and Kling. One idea, three vocabularies — so
+it rides as a per-model extra, typed from that endpoint's own wire interface,
+and gets promoted the day two providers agree on a spelling.
+
+Routes that take a script and a voice id instead of an audio track are TTS
+composed with lipsync; composing them inside one call would hide which half
+failed, so they are not curated.
+
+## Avatar
+
+Making a still speak — the twin of lipsync, split from it by what goes in.
+`fal-ai/sync-lipsync/v3` and `fal-ai/sync-lipsync/v3/image-to-video` are one
+vendor's one model behind two routes, and they land at two different entry
+points here.
+
+```ts
+import { avatar } from "unmodel/avatar";
+
+const request = avatar({
+  model: "fal/fal-ai/sync-lipsync/v3/image-to-video",
+  image: { url: "https://example.com/headshot.png" },
+  audio: { url: "https://example.com/vo.wav" },
+});
+```
+
+`image` narrows to the ref in three directions. Most routes animate a picture
+you supply, and there it is **required**. Two of the eight animate a
+**catalogued performer** instead — `veed/avatars/audio-to-video` and
+`argil/avatars/audio-to-video` pick from a closed list of trained presenters and
+have no image field at all — and there it types as `never`:
+
+```ts
+avatar({ model: "fal/veed/avatars/audio-to-video", audio: { url } });                  // ok
+avatar({ model: "fal/veed/avatars/audio-to-video", image: { url }, audio: { url } });  // compile error
+```
+
+The presenters themselves are reached through `providerOptions` — a 28-value
+enum spelled `avatar_id` at one vendor and `avatar` at another is a coincidence
+with a shape rather than a vocabulary. Neither is `prompt`: three of the eight
+rows have no prompt field, one requires one, and two default theirs to `"."`.
+
 ## Music generation
 
 ```ts

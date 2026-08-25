@@ -1,0 +1,398 @@
+{
+  "metadata": {
+    "category": "image-to-video",
+    "date": "2025-09-23T14:00:56.925Z",
+    "description": "Omnihuman v1.5 is a new and improved version of Omnihuman. It generates video using an image of a human figure paired with an audio file. It produces vivid, high-quality videos where the character’s emotions and movements maintain a strong correlation with the audio.",
+    "display_name": "Bytedance Omnihuman V1.5",
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/bytedance/omnihuman/v1.5",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "image-to-video",
+      "lipsync",
+      ""
+    ],
+    "thumbnail_url": "https://v3.fal.media/files/penguin/E4JFEyBXM1DccJUOvp5_e_6414b61bc2e141edb34671e5308addef.jpg",
+    "updated_at": "2026-04-21T17:44:32.423Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "BytedanceOmnihumanV15Input": {
+          "properties": {
+            "audio_url": {
+              "description": "The URL of the audio file to generate the video. Audio must be under 30s long for 1080p generation and under 60s long for 720p generation.",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/example_inputs/omnihuman_v15_input_audio.mp3"
+              ],
+              "title": "Audio Url",
+              "type": "string"
+            },
+            "image_url": {
+              "description": "The URL of the image used to generate the video",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/example_inputs/omnihuman_v15_input_image.png"
+              ],
+              "title": "Image Url",
+              "type": "string"
+            },
+            "mask_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The URL of the mask image to apply to the image. Only the person in the white area of the mask will speak.",
+              "title": "Mask Url"
+            },
+            "prompt": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The text prompt used to guide the video generation.",
+              "title": "Prompt"
+            },
+            "resolution": {
+              "default": "1080p",
+              "description": "The resolution of the generated video. Defaults to 1080p. 720p generation is faster and higher in quality. 1080p generation is limited to 30s audio and 720p generation is limited to 60s audio.",
+              "enum": [
+                "720p",
+                "1080p"
+              ],
+              "title": "Resolution",
+              "type": "string"
+            },
+            "turbo_mode": {
+              "default": false,
+              "description": "Generate a video at a faster rate with a slight quality trade-off.",
+              "title": "Turbo Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "image_url",
+            "audio_url"
+          ],
+          "title": "OmniHumanv15Input",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "image_url",
+            "mask_url",
+            "audio_url",
+            "turbo_mode",
+            "resolution"
+          ]
+        },
+        "BytedanceOmnihumanV15Output": {
+          "properties": {
+            "duration": {
+              "description": "Duration of audio input/video output as used for billing.",
+              "title": "Duration",
+              "type": "number"
+            },
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "description": "Generated video file",
+              "examples": [
+                {
+                  "url": "https://storage.googleapis.com/falserverless/example_outputs/omnihuman_v15_output.mp4"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video",
+            "duration"
+          ],
+          "title": "OmniHumanv15Output",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video",
+            "duration"
+          ]
+        },
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/bytedance/omnihuman/v1.5 queue.",
+      "title": "Queue OpenAPI for fal-ai/bytedance/omnihuman/v1.5",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate incredibly accurate videos of human beings speaking a dialogue using Bytednce's OmniHuman v1.5 model.\n\nThis endpoint allows you to provide an image of a human along with an audio file\nto generate a video. The model will animate the image based on the audio.",
+        "category": "image-to-video",
+        "documentationUrl": "https://fal.ai/models/fal-ai/bytedance/omnihuman/v1.5/api",
+        "endpointId": "fal-ai/bytedance/omnihuman/v1.5",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/bytedance/omnihuman/v1.5",
+        "thumbnailUrl": "https://v3.fal.media/files/penguin/E4JFEyBXM1DccJUOvp5_e_6414b61bc2e141edb34671e5308addef.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/bytedance/omnihuman/v1.5": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BytedanceOmnihumanV15Input"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/bytedance/omnihuman/v1.5/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/BytedanceOmnihumanV15Output"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/bytedance/omnihuman/v1.5/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/bytedance/omnihuman/v1.5/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

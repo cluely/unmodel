@@ -1,0 +1,13 @@
+{
+  "ref": "fal/fal-ai/kling-video/v3/pro/image-to-video",
+  "params": {
+    "prompt": "the fox walks from one bank to the other",
+    "duration": "5",
+    "start_image_url": "https://example.com/frame.png",
+    "end_image_url": "https://example.com/last.png"
+  },
+  "url": "https://queue.fal.run/fal-ai/kling-video/v3/pro/image-to-video",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

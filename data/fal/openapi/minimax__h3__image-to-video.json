@@ -1,0 +1,449 @@
+{
+  "metadata": {
+    "category": "image-to-video",
+    "date": "2026-07-31T05:54:55.532Z",
+    "description": "MiniMax H3 is a frontier video model. This endpoint animates a supplied image into 2K video, using it as the opening frame or pairs a first and last frame to control a transition between two images with the aspect ratio following the input.",
+    "display_name": "MiniMax H3 Image to Video",
+    "group": {
+      "key": "hailuo-03-new",
+      "label": "Image to Video"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/minimax/h3/image-to-video",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "stylized",
+      "transform",
+      "lipsync"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0aa42dac/wjm-S2eWgG8vU2uJoRwPx.jpg",
+    "updated_at": "2026-08-19T20:14:50.287Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "Minimax_h3ImageToVideoInput": {
+          "properties": {
+            "duration": {
+              "default": 5,
+              "description": "The duration of the video in seconds.",
+              "maximum": 15,
+              "minimum": 5,
+              "title": "Duration",
+              "type": "integer"
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "If set to true, the safety checker will be enabled.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "end_image_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional URL of the image to use as the last frame, for first-to-last keyframe generation.",
+              "title": "End Image URL"
+            },
+            "image_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional URL of the image to use as the first frame. When provided, the output aspect ratio follows this image. When omitted, the request is handled as text-to-video (16:9 by default).",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/example_inputs/hailuo23/pro_i2v_in.jpg"
+              ],
+              "title": "Image URL"
+            },
+            "prompt": {
+              "description": "Text prompt for video generation",
+              "examples": [
+                "The camera slowly pulls back from the scene, revealing the full landscape as clouds drift overhead and light shifts across the terrain."
+              ],
+              "maxLength": 50000,
+              "minLength": 1,
+              "title": "Prompt",
+              "type": "string"
+            },
+            "prompt_expansion_mode": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "disabled",
+                    "fast",
+                    "balanced",
+                    "quality"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "balanced",
+              "description": "Which prompt expander to use. 'disabled' skips prompt expansion. 'fast' uses fal's own expansion (~1s). 'quality' always uses MiniMax's H3-Context-IR (~30s). 'balanced' uses H3-Context-IR for reference-to-video, and for image-to-video over 5s, except at 480P; all text-to-video uses fal's expansion.",
+              "title": "Prompt Expansion Mode"
+            },
+            "resolution": {
+              "default": "2K",
+              "description": "The resolution of the generated video. 480P and 768P are native generation modes; 2K and 4K upscale a 768P base result.",
+              "enum": [
+                "480P",
+                "768P",
+                "2K",
+                "4K"
+              ],
+              "title": "Resolution",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Random seed. A random seed is selected when omitted.",
+              "title": "Seed"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "Return the generated video as base64 instead of a CDN URL.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "ImageToVideoHailuo03Input",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "duration",
+            "resolution",
+            "seed",
+            "enable_safety_checker",
+            "sync_mode",
+            "prompt_expansion_mode",
+            "image_url",
+            "end_image_url"
+          ]
+        },
+        "Minimax_h3ImageToVideoOutput": {
+          "properties": {
+            "expanded_prompt": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The prompt after expansion, as sent to the model. Null when prompt expansion was disabled, left the prompt unchanged, or was performed internally by MiniMax's hosted API.",
+              "title": "Expanded Prompt"
+            },
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated video"
+            }
+          },
+          "required": [
+            "video"
+          ],
+          "title": "ImageToVideoHailuo03Output",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video",
+            "expanded_prompt"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/minimax_h3/image-to-video queue.",
+      "title": "Queue OpenAPI for fal-ai/minimax_h3/image-to-video",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Image-text-to-video: ``image_url`` optional; text-only routes to t2v.",
+        "category": "unknown",
+        "documentationUrl": "https://fal.ai/models/fal-ai/minimax_h3/image-to-video/api",
+        "endpointId": "fal-ai/minimax_h3/image-to-video",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/minimax_h3/image-to-video",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0aa630dc/KDbB3ZNLAKkmeh9YogO-c.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/minimax_h3/image-to-video": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Minimax_h3ImageToVideoInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/minimax_h3/image-to-video/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Minimax_h3ImageToVideoOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/minimax_h3/image-to-video/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/minimax_h3/image-to-video/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

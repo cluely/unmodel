@@ -1,0 +1,11 @@
+{
+  "ref": "fal/fal-ai/sync-lipsync/v3/image-to-video",
+  "params": {
+    "image_url": "https://example.com/headshot.png",
+    "audio_url": "https://example.com/vo-french.wav"
+  },
+  "url": "https://queue.fal.run/fal-ai/sync-lipsync/v3/image-to-video",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

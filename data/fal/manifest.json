@@ -17,6 +17,54 @@
       "status": "active",
       "updated_at": "2026-08-04T22:31:58.927Z"
     },
+    "argil/avatars/audio-to-video": {
+      "category": "audio-to-video",
+      "display_name": "Avatars Audio to Video",
+      "file": "openapi/argil__avatars__audio-to-video.json",
+      "sha256": "fa017df851715c7628e8b7f60b1aff89aaf8948c4d9630e5cb56ab5d34844f33",
+      "status": "active",
+      "updated_at": "2026-08-20T22:03:42.600Z"
+    },
+    "bytedance/seedance-2.0/image-to-video": {
+      "category": "image-to-video",
+      "display_name": "Seedance 2 Image to Video",
+      "file": "openapi/bytedance__seedance-2.0__image-to-video.json",
+      "sha256": "dd8b23a24480d075bba11c8893482d726662f5c4d4a28cd0116921766d14e03e",
+      "status": "active",
+      "updated_at": "2026-06-22T18:20:04.465Z"
+    },
+    "bytedance/seedance-2.0/text-to-video": {
+      "category": "text-to-video",
+      "display_name": "Seedance 2.0 Text to Video API",
+      "file": "openapi/bytedance__seedance-2.0__text-to-video.json",
+      "sha256": "1f8b6f9fbee615eb0b61283cb8f4c45d1d824e7c2d66d2bba6af5dc7afb179f7",
+      "status": "active",
+      "updated_at": "2026-07-10T18:12:05.187Z"
+    },
+    "bytedance/seedance-2.5/image-to-video": {
+      "category": "unknown",
+      "display_name": "Seedance 2.5 Image to Video",
+      "file": "openapi/bytedance__seedance-2.5__image-to-video.json",
+      "sha256": "fcc549a1b1bb1e82c2e28cdda578c6327d4a60e6397e9ba1edd59c2f31212820",
+      "status": "active",
+      "updated_at": "2026-08-17T06:33:25.388Z"
+    },
+    "bytedance/seedance-2.5/reference-to-video": {
+      "category": "image-to-video",
+      "display_name": "Seedance 2.5 Reference to Video",
+      "file": "openapi/bytedance__seedance-2.5__reference-to-video.json",
+      "sha256": "369e1a1af3bd80cc8fe15445bbd53addcc085588d8bf903c9a3bf79a3f9b153c",
+      "status": "active",
+      "updated_at": "2026-08-17T06:34:03.712Z"
+    },
+    "bytedance/seedance-2.5/text-to-video": {
+      "category": "unknown",
+      "display_name": "Seedance 2.5 Text to Video",
+      "file": "openapi/bytedance__seedance-2.5__text-to-video.json",
+      "sha256": "60491e22d09f2beb8c030d7e9351ce35a882f41e57ef905c6e4e1c3c4c7bb75c",
+      "status": "active",
+      "updated_at": "2026-08-17T06:32:36.819Z"
+    },
     "bytedance/seedream/v5/pro/edit": {
       "category": "image-to-image",
       "display_name": "Seedream 5.0 Pro Image Editing",
@@ -32,6 +80,14 @@
       "sha256": "b35e305e14ab0a76a1237f107f1ea9ba7aafd68f10f7b7b78b125c5d84dbd2a7",
       "status": "active",
       "updated_at": "2026-07-17T03:49:00.715Z"
+    },
+    "fal-ai/bytedance/omnihuman/v1.5": {
+      "category": "image-to-video",
+      "display_name": "Bytedance Omnihuman V1.5",
+      "file": "openapi/fal-ai__bytedance__omnihuman__v1.5.json",
+      "sha256": "11dde64504b3ef6c5cefaa24c6893302eaa35b45485b815d254858acba01a60a",
+      "status": "active",
+      "updated_at": "2026-04-21T17:44:32.423Z"
     },
     "fal-ai/bytedance/seedream/v4.5/edit": {
       "category": "image-to-image",
@@ -56,6 +112,14 @@
       "sha256": "270d228f197b988eea32b81cc4320309d8f0633fdb8b0ea595d79b260dd40054",
       "status": "active",
       "updated_at": "2026-05-06T21:22:23.372Z"
+    },
+    "fal-ai/echomimic-v3": {
+      "category": "audio-to-video",
+      "display_name": "EchoMimic V3",
+      "file": "openapi/fal-ai__echomimic-v3.json",
+      "sha256": "c48281d4a8a996ed7dacdd8bda25ffef99bdd63c8b461278915a6299d3c4617a",
+      "status": "active",
+      "updated_at": "2026-06-24T16:22:02.802Z"
     },
     "fal-ai/flux-2": {
       "category": "text-to-image",
@@ -225,6 +289,38 @@
       "status": "active",
       "updated_at": "2026-04-26T22:25:17.147Z"
     },
+    "fal-ai/kling-video/ai-avatar/v2/pro": {
+      "category": "image-to-video",
+      "display_name": "Kling AI Avatar v2 Pro",
+      "file": "openapi/fal-ai__kling-video__ai-avatar__v2__pro.json",
+      "sha256": "b6c2b3aa0061b39d6aa8981877b91904487884037c36c2e2766a0402f02f5389",
+      "status": "active",
+      "updated_at": "2026-04-26T22:25:17.147Z"
+    },
+    "fal-ai/kling-video/ai-avatar/v2/standard": {
+      "category": "image-to-video",
+      "display_name": "Kling AI Avatar v2 Standard",
+      "file": "openapi/fal-ai__kling-video__ai-avatar__v2__standard.json",
+      "sha256": "8bb31aff07444e1c47f69365b74e1ed533298475db0b820cd01ef4fc9fe736e4",
+      "status": "active",
+      "updated_at": "2026-04-26T22:25:17.147Z"
+    },
+    "fal-ai/kling-video/lipsync/audio-to-video": {
+      "category": "text-to-video",
+      "display_name": "Kling LipSync Audio-to-Video",
+      "file": "openapi/fal-ai__kling-video__lipsync__audio-to-video.json",
+      "sha256": "f83660b9ed558c298edaadf346e96dcaf4340a53835455a8452716fbe02dbf06",
+      "status": "active",
+      "updated_at": "2026-04-26T22:25:17.147Z"
+    },
+    "fal-ai/kling-video/o3/pro/video-to-video/edit": {
+      "category": "video-to-video",
+      "display_name": "Kling O3 Edit Video [Pro]",
+      "file": "openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json",
+      "sha256": "998808fecd35156fea34180648fd68cc4e1dd195e486c54382516b481c74ee80",
+      "status": "active",
+      "updated_at": "2026-04-26T22:25:17.147Z"
+    },
     "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": {
       "category": "image-to-video",
       "display_name": "Kling Video",
@@ -233,6 +329,78 @@
       "status": "active",
       "updated_at": "2026-04-26T22:25:17.147Z"
     },
+    "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": {
+      "category": "text-to-video",
+      "display_name": "Kling v2.5 Text to Video",
+      "file": "openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json",
+      "sha256": "244ce99aaccbfd9ac2ac949062724e345256a247ffa6fcbea95620b179770a46",
+      "status": "active",
+      "updated_at": "2026-04-26T22:25:17.147Z"
+    },
+    "fal-ai/kling-video/v2.6/pro/image-to-video": {
+      "category": "image-to-video",
+      "display_name": "Kling Video v2.6 Image to Video",
+      "file": "openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json",
+      "sha256": "149289b774ef6f870d62ce9dec52f24b6ef190b016095590c4e72558f738b083",
+      "status": "active",
+      "updated_at": "2026-07-21T18:22:42.212Z"
+    },
+    "fal-ai/kling-video/v2.6/pro/text-to-video": {
+      "category": "text-to-video",
+      "display_name": "Kling Video v2.6 Text to Video",
+      "file": "openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json",
+      "sha256": "f360c6c9af7be08222551d29b28e12f0b5c25fe602970a64334ecbb084197d1b",
+      "status": "active",
+      "updated_at": "2026-07-21T18:22:20.463Z"
+    },
+    "fal-ai/kling-video/v3/pro/image-to-video": {
+      "category": "image-to-video",
+      "display_name": "Kling Video v3 Image to Video [Pro]",
+      "file": "openapi/fal-ai__kling-video__v3__pro__image-to-video.json",
+      "sha256": "81f02305198474211e7b7efc5ed278009f1eb04e4c2d12155ff1051a4df2780a",
+      "status": "active",
+      "updated_at": "2026-05-29T18:50:02.672Z"
+    },
+    "fal-ai/kling-video/v3/pro/text-to-video": {
+      "category": "text-to-video",
+      "display_name": "Kling Video v3 Text to Video [Pro]",
+      "file": "openapi/fal-ai__kling-video__v3__pro__text-to-video.json",
+      "sha256": "22f11ae77672df3142b1a3fc4d6cb0d333252b9ad8f5c8cd1564cfd9f7eab69d",
+      "status": "active",
+      "updated_at": "2026-04-26T22:25:17.147Z"
+    },
+    "fal-ai/kling-video/v3/standard/image-to-video": {
+      "category": "image-to-video",
+      "display_name": "Kling Video v3 Image to Video [Standard]",
+      "file": "openapi/fal-ai__kling-video__v3__standard__image-to-video.json",
+      "sha256": "d325a1e38d35867bd20eaa4be4eb308071cf816672cc6597203ed6666f5caf17",
+      "status": "active",
+      "updated_at": "2026-04-26T22:25:17.147Z"
+    },
+    "fal-ai/kling-video/v3/standard/text-to-video": {
+      "category": "text-to-video",
+      "display_name": "Kling Video v3 Text to Video [Standard]",
+      "file": "openapi/fal-ai__kling-video__v3__standard__text-to-video.json",
+      "sha256": "78ee24206efd7c155ed60538e2aad1d61fecfa72e7298c423a206b3b9dc6e71e",
+      "status": "active",
+      "updated_at": "2026-04-26T22:25:17.147Z"
+    },
+    "fal-ai/latentsync": {
+      "category": "video-to-video",
+      "display_name": "LatentSync",
+      "file": "openapi/fal-ai__latentsync.json",
+      "sha256": "537b387864d1a9b97a4a57b08134631f0730c3ae48a22689f76907477d185140",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:44.046Z"
+    },
+    "fal-ai/longcat-single-avatar/image-audio-to-video": {
+      "category": "audio-to-video",
+      "display_name": "Longcat Single Avatar",
+      "file": "openapi/fal-ai__longcat-single-avatar__image-audio-to-video.json",
+      "sha256": "cf357030e7c039ef2fca1c4a3b79fa7488134aa5ec424e2cacf9a3e7fa5b3cc8",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:57.018Z"
+    },
     "fal-ai/lyria2": {
       "category": "text-to-audio",
       "display_name": "Lyria2",
@@ -240,6 +408,14 @@
       "sha256": "6b545576039ae0fd0f0d03cd0ae4566ea90c996a3bb177858d3f3440fd94b4b1",
       "status": "active",
       "updated_at": "2026-07-01T04:13:51.657Z"
+    },
+    "fal-ai/minimax/hailuo-02/pro/image-to-video": {
+      "category": "image-to-video",
+      "display_name": "MiniMax Hailuo 02 [Pro] (Image to Video)",
+      "file": "openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json",
+      "sha256": "4acefab149ded7299948247b12fd0571f665ed391a3fb56d71f679d9ae24632c",
+      "status": "active",
+      "updated_at": "2026-04-21T17:52:00.135Z"
     },
     "fal-ai/minimax/speech-02-hd": {
       "category": "text-to-speech",
@@ -297,6 +473,22 @@
       "status": "active",
       "updated_at": "2026-06-26T20:56:24.634Z"
     },
+    "fal-ai/pixverse/lipsync": {
+      "category": "video-to-video",
+      "display_name": "PixVerse Lipsync",
+      "file": "openapi/fal-ai__pixverse__lipsync.json",
+      "sha256": "6ef1987dd6c86ccf8b3c7e7a69afed93d1dfdc1f40be7cb0175229cae5d8ba33",
+      "status": "active",
+      "updated_at": "2026-06-24T10:43:13.728Z"
+    },
+    "fal-ai/pixverse/v6/text-to-video": {
+      "category": "text-to-video",
+      "display_name": "PixVerse V6 Text To Video",
+      "file": "openapi/fal-ai__pixverse__v6__text-to-video.json",
+      "sha256": "f7aa7267ddf547c62e270b5e2713468cfd46ed33997411a2af5e4a2a2495dbd2",
+      "status": "active",
+      "updated_at": "2026-06-17T18:20:01.178Z"
+    },
     "fal-ai/qwen-image": {
       "category": "text-to-image",
       "display_name": "Qwen Image",
@@ -337,6 +529,14 @@
       "status": "active",
       "updated_at": "2026-06-26T20:57:54.183Z"
     },
+    "fal-ai/sync-lipsync/v2/pro": {
+      "category": "video-to-video",
+      "display_name": "Sync Lipsync",
+      "file": "openapi/fal-ai__sync-lipsync__v2__pro.json",
+      "sha256": "d81f5b0626109f9e34cbb5acd6984bbcefde6dc2080714cea8cfc84d1d3d9c2b",
+      "status": "active",
+      "updated_at": "2026-07-14T22:03:08.165Z"
+    },
     "fal-ai/sync-lipsync/v3": {
       "category": "video-to-video",
       "display_name": "sync-3 Lipsync",
@@ -361,6 +561,70 @@
       "status": "active",
       "updated_at": "2026-04-28T16:29:09.509Z"
     },
+    "fal-ai/veo3.1/extend-video": {
+      "category": "video-to-video",
+      "display_name": "Veo 3.1",
+      "file": "openapi/fal-ai__veo3.1__extend-video.json",
+      "sha256": "7810eeecba3fc3a7c11bd8e1d848186c773f890d4d8db9de8f53ce4800f1bd82",
+      "status": "active",
+      "updated_at": "2026-04-28T16:29:09.509Z"
+    },
+    "fal-ai/veo3.1/fast": {
+      "category": "text-to-video",
+      "display_name": "Veo 3.1 Fast",
+      "file": "openapi/fal-ai__veo3.1__fast.json",
+      "sha256": "a761c12a716c5bf6a67cece3c16e595d3c05bb1d8ff1b0175d827a8a29a2bbd1",
+      "status": "active",
+      "updated_at": "2026-04-28T16:29:09.509Z"
+    },
+    "fal-ai/veo3.1/first-last-frame-to-video": {
+      "category": "image-to-video",
+      "display_name": "Veo 3.1",
+      "file": "openapi/fal-ai__veo3.1__first-last-frame-to-video.json",
+      "sha256": "459de7b3d1441945e865c009dd35b709e802a0cbb977b32b48f580fc43368875",
+      "status": "active",
+      "updated_at": "2026-04-28T16:29:09.509Z"
+    },
+    "fal-ai/veo3.1/image-to-video": {
+      "category": "image-to-video",
+      "display_name": "Veo 3.1",
+      "file": "openapi/fal-ai__veo3.1__image-to-video.json",
+      "sha256": "5fd021f9497c8b2a15d50e641b795147bf51bafcaf354bc3f6ffe86b07490b27",
+      "status": "active",
+      "updated_at": "2026-04-28T16:29:09.509Z"
+    },
+    "fal-ai/wan/v2.2-a14b/image-to-video": {
+      "category": "image-to-video",
+      "display_name": "Wan v2.2 A14B",
+      "file": "openapi/fal-ai__wan__v2.2-a14b__image-to-video.json",
+      "sha256": "f9d3394c12f807a88900c67dbe4d4fa06cc2f1209bef10fdecbcc97e70f7dbb3",
+      "status": "active",
+      "updated_at": "2026-04-21T17:56:26.445Z"
+    },
+    "fal-ai/wan/v2.2-a14b/text-to-video": {
+      "category": "text-to-video",
+      "display_name": "Wan-2.2 Text-to-Video A14B",
+      "file": "openapi/fal-ai__wan__v2.2-a14b__text-to-video.json",
+      "sha256": "c16e22f845978a55e96f8f53f72fe01b09c5f647aeecd1ae94e65546fa783df4",
+      "status": "active",
+      "updated_at": "2026-04-21T17:56:29.422Z"
+    },
+    "fal-ai/wan/v2.7/image-to-video": {
+      "category": "unknown",
+      "display_name": "Wan",
+      "file": "openapi/fal-ai__wan__v2.7__image-to-video.json",
+      "sha256": "dc9d556a2f251672b3bb481407027b1b109ef343370c4b8549073c3a10b65d15",
+      "status": "active",
+      "updated_at": "2026-04-26T23:07:28.840Z"
+    },
+    "fal-ai/wan/v2.7/text-to-video": {
+      "category": "text-to-video",
+      "display_name": "Wan Text to Video",
+      "file": "openapi/fal-ai__wan__v2.7__text-to-video.json",
+      "sha256": "72ad95f7107974b5fb8e9b399b64c7b31d01c1eeeaaa2ae4177e2704370cf0b4",
+      "status": "active",
+      "updated_at": "2026-04-26T23:07:28.840Z"
+    },
     "fal-ai/wizper": {
       "category": "speech-to-text",
       "display_name": "Wizper (Whisper v3 -- fal.ai edition)",
@@ -376,6 +640,14 @@
       "sha256": "0b7cab26ddead60ef4f8c357dbfbd47bfd3fbae9cbb5637df8a52b0469cbaf4e",
       "status": "active",
       "updated_at": "2026-07-09T03:35:06.702Z"
+    },
+    "google/gemini-omni-flash": {
+      "category": "text-to-video",
+      "display_name": "Gemini Omni Flash",
+      "file": "openapi/google__gemini-omni-flash.json",
+      "sha256": "22a0ed08db206f6fc056bd6665b0618334216933e2a52e76f74b5621f1e80d0d",
+      "status": "active",
+      "updated_at": "2026-07-09T23:22:29.670Z"
     },
     "google/nano-banana-2-lite": {
       "category": "text-to-image",
@@ -409,6 +681,30 @@
       "status": "active",
       "updated_at": "2026-06-30T18:57:25.450Z"
     },
+    "lightricks/ltx-2.5/text-to-video/pro": {
+      "category": "text-to-video",
+      "display_name": "Ltx 2.5 Text to Video Fast",
+      "file": "openapi/lightricks__ltx-2.5__text-to-video__pro.json",
+      "sha256": "478f3dae0d7b68d8e61b3cffe91213cc794c37c1b4f7604c6071d66ebc58ce6f",
+      "status": "active",
+      "updated_at": "2026-08-14T23:11:35.262Z"
+    },
+    "minimax/h3/image-to-video": {
+      "category": "unknown",
+      "display_name": "MiniMax H3 Image to Video",
+      "file": "openapi/minimax__h3__image-to-video.json",
+      "sha256": "9163157b227ee3045d2b55814f3f1325731093351130185c961616a946a3efe1",
+      "status": "active",
+      "updated_at": "2026-08-19T20:14:50.287Z"
+    },
+    "minimax/h3/text-to-video": {
+      "category": "unknown",
+      "display_name": "MiniMax H3 Text to Video",
+      "file": "openapi/minimax__h3__text-to-video.json",
+      "sha256": "dd6b94678a9fb959bf4fc652d80a5dc07b5b887482994ca3c2e0f0ac44e9159a",
+      "status": "active",
+      "updated_at": "2026-08-23T19:36:33.852Z"
+    },
     "openai/gpt-image-2": {
       "category": "text-to-image",
       "display_name": "GPT Image 2 API",
@@ -433,11 +729,43 @@
       "status": "active",
       "updated_at": "2026-07-17T03:49:40.574Z"
     },
+    "veed/avatars/audio-to-video": {
+      "category": "audio-to-video",
+      "display_name": "Avatars",
+      "file": "openapi/veed__avatars__audio-to-video.json",
+      "sha256": "28a45c9a30e1a0e025cb2cc6f3e52c15265658beb2ebf29c28bd03a86ce4b917",
+      "status": "active",
+      "updated_at": "2026-01-26T21:43:38.412Z"
+    },
+    "veed/lipsync": {
+      "category": "video-to-video",
+      "display_name": "Lipsync",
+      "file": "openapi/veed__lipsync.json",
+      "sha256": "f4f07e5a04970f4bbdc77a49b4adbf53154be987f1f900052f193dd6bf02ab86",
+      "status": "active",
+      "updated_at": "2026-07-13T18:53:13.852Z"
+    },
+    "veed/lipsync/v2": {
+      "category": "video-to-video",
+      "display_name": "VEED Lipsync",
+      "file": "openapi/veed__lipsync__v2.json",
+      "sha256": "bc21d1f686fa2a7910944c4ba5b02c80b238a55069fa1733c39f65bd219bd663",
+      "status": "active",
+      "updated_at": "2026-07-21T18:12:34.098Z"
+    },
     "xai/grok-imagine-image": {
       "category": "text-to-image",
       "display_name": "Grok Imagine Image",
       "file": "openapi/xai__grok-imagine-image.json",
       "sha256": "fd9bcb073bf30954554a95de6af225cb72dc589423e2629c68116e1badb2aad3",
+      "status": "active",
+      "updated_at": "2026-04-26T22:32:05.599Z"
+    },
+    "xai/grok-imagine-video/text-to-video": {
+      "category": "text-to-video",
+      "display_name": "Grok Imagine Video",
+      "file": "openapi/xai__grok-imagine-video__text-to-video.json",
+      "sha256": "a82e3769b8a1c4f88e3b93715212ba1263ded99080e3e3c51d2fb60dc42d6187",
       "status": "active",
       "updated_at": "2026-04-26T22:32:05.599Z"
     }

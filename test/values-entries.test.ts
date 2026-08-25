@@ -42,7 +42,7 @@ const DIST = join(ROOT, "dist");
 const PROVIDERS_DIR = join(ROOT, "src", "providers");
 
 /**
- * The 37 providers that ship a values entry: exactly those with a unified
+ * The 42 providers that ship a values entry: exactly those with a unified
  * adapter.
  *
  * Enumerated rather than only derived, so that a provider *losing* its entry
@@ -51,8 +51,10 @@ const PROVIDERS_DIR = join(ROOT, "src", "providers");
  * here, which is the point.
  */
 const PROVIDERS_WITH_VALUES: readonly string[] = [
+  "alibaba",
   "assemblyai",
   "black-forest-labs",
+  "breezeblue",
   "bria",
   "bytedance",
   "cartesia",
@@ -73,6 +75,7 @@ const PROVIDERS_WITH_VALUES: readonly string[] = [
   "luma",
   "minimax",
   "mistral",
+  "mureka",
   "murf",
   "openai",
   "pixverse",
@@ -87,7 +90,9 @@ const PROVIDERS_WITH_VALUES: readonly string[] = [
   "speechify",
   "speechmatics",
   "stability",
+  "stepfun",
   "vidu",
+  "xai",
 ];
 
 /** `"imageEdit"` → `"IMAGE_EDIT"`; every other category is its own name upper-cased. */
@@ -95,6 +100,8 @@ const CATEGORY_PREFIX: Readonly<Record<string, string>> = {
   image: "IMAGE",
   imageEdit: "IMAGE_EDIT",
   video: "VIDEO",
+  lipsync: "LIPSYNC",
+  avatar: "AVATAR",
   tts: "TTS",
   stt: "STT",
   music: "MUSIC",
@@ -173,7 +180,7 @@ describe("values entries exist, one per provider with an adapter", () => {
   test("the enumerated list is exactly the set of providers with an adapter", () => {
     expect(DERIVED_PROVIDERS).toEqual([...PROVIDERS_WITH_VALUES]);
     // A rule that scans an empty set passes by saying nothing.
-    expect(PROVIDERS_WITH_VALUES.length).toBe(37);
+    expect(PROVIDERS_WITH_VALUES.length).toBe(42);
   });
 
   test("every one of them ships a values.ts, and no other provider does", () => {
@@ -221,10 +228,11 @@ describe("completeness — every category an adapter serves has its uniform alia
       }
     }
     expect(missing).toEqual([]);
-    // 60 adapters across the 37 providers today — fal brought two, image and
-    // image-edit. A floor, so the sweep cannot go vacuous if `adaptersOf` ever
-    // stops finding them.
-    expect(categories).toBeGreaterThanOrEqual(60);
+    // 64 adapters across the 38 providers today — fal alone brings five (image,
+    // image-edit, video, lipsync, avatar), which is more categories than any
+    // other provider serves. A floor, so the sweep cannot go vacuous if
+    // `adaptersOf` ever stops finding them.
+    expect(categories).toBeGreaterThanOrEqual(63);
   });
 
   test("the built declaration exports them too, so the promise survives the build", () => {
@@ -271,7 +279,7 @@ describe("identity — the published table IS the adapter's table", () => {
       }
     }
     expect(drift).toEqual([]);
-    expect(checked).toBeGreaterThanOrEqual(58);
+    expect(checked).toBeGreaterThanOrEqual(61);
   });
 
   test("every model id in <CAT>_MODELS has a row in <CAT>_MODEL_PARAMS", async () => {
@@ -455,8 +463,10 @@ describe("unmodel/values — the canonical hub", () => {
       Record<string, unknown>;
     expect(hub["CANONICAL_KEY_LISTS"]).toBe(kernel["CANONICAL_KEY_LISTS"]);
     expect(Object.keys(hub["CANONICAL_KEY_LISTS"] as object).sort()).toEqual([
+      "avatar",
       "image",
       "imageEdit",
+      "lipsync",
       "music",
       "stt",
       "tts",
@@ -464,6 +474,13 @@ describe("unmodel/values — the canonical hub", () => {
       "voiceClone",
       "voiceDesign",
     ]);
+    // The two youngest categories, written out: five words each, and the ONE
+    // word that differs between them is the whole reason they are two
+    // categories. A rename here is a breaking change to the request shape, so
+    // it has to be typed in a diff.
+    const lists = hub["CANONICAL_KEY_LISTS"] as Record<string, readonly string[]>;
+    expect(lists["lipsync"]).toEqual(["model", "source", "audio", "seed", "providerOptions"]);
+    expect(lists["avatar"]).toEqual(["model", "image", "audio", "seed", "providerOptions"]);
   });
 
   test("CHAT_PROVIDERS is unmodel/chat's own array, not a second copy", async () => {

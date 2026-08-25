@@ -1,0 +1,11 @@
+{
+  "ref": "fal/fal-ai/sync-lipsync/v2",
+  "params": {
+    "video_url": "data:video/mp4;base64,AAECAwQF",
+    "audio_url": "data:audio/wav;base64,BgcICQoL"
+  },
+  "url": "https://queue.fal.run/fal-ai/sync-lipsync/v2",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

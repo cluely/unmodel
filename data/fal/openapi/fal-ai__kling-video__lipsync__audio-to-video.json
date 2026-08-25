@@ -1,0 +1,353 @@
+{
+  "metadata": {
+    "category": "text-to-video",
+    "date": "2025-03-27T00:00:00.000Z",
+    "description": "Kling LipSync is an audio-to-video model that generates realistic lip movements from audio input.",
+    "display_name": "Kling LipSync Audio-to-Video",
+    "duration_estimate": 12,
+    "group": {
+      "key": "kling-video-lipsync",
+      "label": "LipSync (Audio to Video)"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/kling-video/lipsync/audio-to-video",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "audio to video",
+      "lipsync"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/elephant/njNipNC0TkA9fJguiS1NB_c75b090e2ebb4d9581d21d66cfc4a0d3.jpg",
+    "updated_at": "2026-04-26T22:25:17.147Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "KlingVideoLipsyncAudioToVideoInput": {
+          "properties": {
+            "audio_url": {
+              "_fal_ui_field": "audio",
+              "description": "The URL of the audio to generate the lip sync for. Minimum duration is 2s and maximum duration is 60s. Maximum file size is 5MB.",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/kling/kling-audio.mp3"
+              ],
+              "title": "Audio Url",
+              "type": "string"
+            },
+            "video_url": {
+              "_fal_ui_field": "video",
+              "description": "The URL of the video to generate the lip sync for. Supports .mp4/.mov, ≤100MB, 2–10s, 720p/1080p only, width/height 720–1920px.",
+              "examples": [
+                "https://fal.media/files/koala/8teUPbRRMtAUTORDvqy0l.mp4"
+              ],
+              "title": "Video Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "video_url",
+            "audio_url"
+          ],
+          "title": "LipsyncA2VRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video_url",
+            "audio_url"
+          ]
+        },
+        "KlingVideoLipsyncAudioToVideoOutput": {
+          "properties": {
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated video",
+              "examples": [
+                {
+                  "url": "https://storage.googleapis.com/falserverless/kling/kling_output.mp4"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video"
+          ],
+          "title": "LipsyncA2VOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/kling-video/lipsync/audio-to-video queue.",
+      "title": "Queue OpenAPI for fal-ai/kling-video/lipsync/audio-to-video",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Kling Lipsync Audio to Video API.",
+        "category": "text-to-video",
+        "documentationUrl": "https://fal.ai/models/fal-ai/kling-video/lipsync/audio-to-video/api",
+        "endpointId": "fal-ai/kling-video/lipsync/audio-to-video",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/kling-video/lipsync/audio-to-video",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/elephant/njNipNC0TkA9fJguiS1NB_c75b090e2ebb4d9581d21d66cfc4a0d3.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/kling-video/lipsync/audio-to-video": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KlingVideoLipsyncAudioToVideoInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/lipsync/audio-to-video/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/KlingVideoLipsyncAudioToVideoOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/lipsync/audio-to-video/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/lipsync/audio-to-video/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

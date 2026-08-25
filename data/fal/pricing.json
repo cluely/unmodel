@@ -34,15 +34,15 @@
     "",
     "Verified 2026-08-24 against the live pages.",
     "",
-    "Of the 54 rows here, 12 carry a unit `ModelCost` can express and therefore reach a generated catalog",
-    "row; the other 42 do not, which is the shape of fal's pricing rather than a gap in this file. The",
-    "big classes: per_megapixel (11) needs the output's pixel count, which a request states only when it",
-    "writes `image_size: { width, height }` and not when it names a preset; conditional (15) needs a",
-    "field the request often leaves at its default; tiered (3) needs a quantity the request does not",
-    "state. All of them reach an ESTIMATE through gen/pricing.gen.ts and src/providers/fal/pricing.ts,",
-    "which computes what it can and returns `undefined` — with a reason available from `falPriceNote` —",
-    "for the rest. A plausible number that is wrong is worse than no number: a caller who sees `costUSD`",
-    "treats it as a budget."
+    "Of the 95 rows here, 24 carry a unit ModelCost can express and therefore reach a generated catalog row;",
+    "the other 71 do not, which is the shape of fal's pricing rather than a gap in this file. The big classes:",
+    "conditional (35) needs a field the request often leaves at its default — at video that field is almost",
+    "always `resolution` or an audio switch, and fal quotes several of them per THOUSAND TOKENS of rendered",
+    "frames, which no request body counts; per_megapixel (11) needs the output's pixel count; tiered (5) needs",
+    "a quantity the request does not state. All of them reach an ESTIMATE through gen/pricing.gen.ts and",
+    "src/providers/fal/pricing.ts, which computes what it can and returns `undefined` — with a reason available",
+    "from `falPriceNote` — for the rest. A plausible number that is wrong is worse than no number: a caller who",
+    "sees `costUSD` treats it as a budget."
   ],
   "endpoints": {
     "alibaba/qwen-image-3/edit": {
@@ -61,6 +61,103 @@
       "source": "https://fal.ai/models/alibaba/qwen-image-3/edit",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.04 per generated image at 1K resolution, and $0.075 per generated image at 2K resolution."
+    },
+    "argil/avatars/audio-to-video": {
+      "unit": "per_second",
+      "usd": 0.02,
+      "rounding": "billed on the INPUT audio's seconds rather than the output clip's",
+      "source": "https://fal.ai/models/argil/avatars/audio-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.02 per input second."
+    },
+    "bytedance/seedance-2.0/image-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution — quoted per 1000 tokens",
+      "tiers": [
+        {
+          "when": "per 1000 tokens at 480p, 720p or 1080p",
+          "usd": 0.014
+        },
+        {
+          "when": "per 1000 tokens at 4k",
+          "usd": 0.008
+        }
+      ],
+      "source": "https://fal.ai/models/bytedance/seedance-2.0/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.014 per 1000 tokens for 480p, 720p and 1080p. Your request will cost $0.008 per 1000 tokens for 4k."
+    },
+    "bytedance/seedance-2.0/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution — quoted per 1000 tokens, with 4k cheaper per token than 1080p",
+      "tiers": [
+        {
+          "when": "per 1000 tokens at 480p, 720p or 1080p",
+          "usd": 0.014
+        },
+        {
+          "when": "per 1000 tokens at 4k",
+          "usd": 0.008
+        }
+      ],
+      "source": "https://fal.ai/models/bytedance/seedance-2.0/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.014 per 1000 tokens for 480p, 720p and 1080p. Your request will cost $0.008 per 1000 tokens for 4k . The number of tokens is given by (height of output video * width of output video * duration * 24) / 1024."
+    },
+    "bytedance/seedance-2.5/image-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution — quoted per 1000 tokens; input images are not billed",
+      "tiers": [
+        {
+          "when": "per 1000 tokens at 480p or 720p",
+          "usd": 0.0214
+        },
+        {
+          "when": "per 1000 tokens at 1080p",
+          "usd": 0.0234
+        }
+      ],
+      "source": "https://fal.ai/models/bytedance/seedance-2.5/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "You are charged $0.0214 per 1000 tokens at both 480p and 720p. Input images are not billed — you pay only for generated output."
+    },
+    "bytedance/seedance-2.5/reference-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution, times 0.6 when any video reference is supplied (and then input video seconds are billed too)",
+      "tiers": [
+        {
+          "when": "per 1000 tokens at 480p or 720p",
+          "usd": 0.0214
+        },
+        {
+          "when": "per 1000 tokens at 1080p",
+          "usd": 0.0234
+        },
+        {
+          "when": "with video references, roughly per second of generated 720p video",
+          "usd": 0.2838
+        }
+      ],
+      "source": "https://fal.ai/models/bytedance/seedance-2.5/reference-to-video",
+      "verified": "2026-08-24",
+      "quote": "You are charged $0.0214 per 1000 tokens at both 480p and 720p. If any video references are provided, the price is multiplied by 0.6. Image and audio references are not billed."
+    },
+    "bytedance/seedance-2.5/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution — the rate is quoted per 1000 tokens, and tokens are (width x height x duration x 24) / 1024",
+      "tiers": [
+        {
+          "when": "per 1000 tokens at 480p or 720p",
+          "usd": 0.0214
+        },
+        {
+          "when": "per 1000 tokens at 1080p",
+          "usd": 0.0234
+        }
+      ],
+      "source": "https://fal.ai/models/bytedance/seedance-2.5/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.0214 per 1000 tokens for 480p and 720p video and roughly 0.0234 per 1000 tokens for 1080p. The number of tokens is roughly given by (height of output video * width of output video * duration * 24) / 1024."
     },
     "bytedance/seedream/v5/pro/edit": {
       "unit": "conditional",
@@ -100,6 +197,13 @@
       "verified": "2026-08-24",
       "quote": "Tentative pricing is $0.0675 per image for images of total area less than or equal to 1536x1536 pixels. For images with area in between 1536x1536 and 2048x2048 pixels, the price is $0.135 per image."
     },
+    "fal-ai/bytedance/omnihuman/v1.5": {
+      "unit": "per_second",
+      "usd": 0.16,
+      "source": "https://fal.ai/models/fal-ai/bytedance/omnihuman/v1.5",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.16 per second."
+    },
     "fal-ai/bytedance/seedream/v4.5/edit": {
       "unit": "per_image",
       "usd": 0.04,
@@ -121,6 +225,14 @@
       "source": "https://fal.ai/models/fal-ai/clarity-upscaler",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.03 per megapixel."
+    },
+    "fal-ai/echomimic-v3": {
+      "unit": "per_second",
+      "usd": 0.2,
+      "rounding": "the generated clip's length follows the INPUT audio's, so the billed seconds are the audio's",
+      "source": "https://fal.ai/models/fal-ai/echomimic-v3",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.20 per generated second of video, based on the length of the input audio. For example, a 5-second video will cost $1.00."
     },
     "fal-ai/flux-2": {
       "unit": "per_megapixel",
@@ -412,6 +524,35 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.028 per image."
     },
+    "fal-ai/kling-video/ai-avatar/v2/pro": {
+      "unit": "per_second",
+      "usd": 0.115,
+      "source": "https://fal.ai/models/fal-ai/kling-video/ai-avatar/v2/pro",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.115 per second."
+    },
+    "fal-ai/kling-video/ai-avatar/v2/standard": {
+      "unit": "per_second",
+      "usd": 0.0562,
+      "source": "https://fal.ai/models/fal-ai/kling-video/ai-avatar/v2/standard",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.0562 per second."
+    },
+    "fal-ai/kling-video/lipsync/audio-to-video": {
+      "unit": "per_second",
+      "usd": 0.014,
+      "rounding": "billed on the INPUT video's seconds, rounded up to the next 5-second increment — a 3s clip bills as 5s",
+      "source": "https://fal.ai/models/fal-ai/kling-video/lipsync/audio-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will be priced $0.014 per input video seconds, rolling up to closest 5 second increment. For example, if your video's duration is 3 seconds, it will be billed as a 5 second video"
+    },
+    "fal-ai/kling-video/o3/pro/video-to-video/edit": {
+      "unit": "per_second",
+      "usd": 0.168,
+      "source": "https://fal.ai/models/fal-ai/kling-video/o3/pro/video-to-video/edit",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generated you will be charged $0.168 For example, a 5s video will cost $0.84."
+    },
     "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": {
       "unit": "tiered",
       "tierKey": "duration",
@@ -429,12 +570,192 @@
       "verified": "2026-08-24",
       "quote": "For 5s video your request will cost $0.35. For every additional second you will be charged $0.07."
     },
+    "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": {
+      "unit": "tiered",
+      "tierKey": "duration",
+      "tiers": [
+        {
+          "when": "duration=\"5\"",
+          "usd": 0.35
+        },
+        {
+          "when": "each additional second beyond 5",
+          "usd": 0.07
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "For 5s video your request will cost $0.35. For every aditional second you will be charged $0.07."
+    },
+    "fal-ai/kling-video/v2.6/pro/image-to-video": {
+      "unit": "conditional",
+      "tierKey": "generate_audio, and whether voice control is used",
+      "tiers": [
+        {
+          "when": "per second, audio off",
+          "usd": 0.07
+        },
+        {
+          "when": "per second, audio on",
+          "usd": 0.14
+        },
+        {
+          "when": "per second, audio on with voice control",
+          "usd": 0.168
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/kling-video/v2.6/pro/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "Videos generated without audio cost $0.07 per second. Videos with native audio cost $0.14 per second, and videos with native audio and voice control cost $0.168 per second."
+    },
+    "fal-ai/kling-video/v2.6/pro/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "generate_audio",
+      "tiers": [
+        {
+          "when": "per second, audio off",
+          "usd": 0.07
+        },
+        {
+          "when": "per second, audio on",
+          "usd": 0.14
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/kling-video/v2.6/pro/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generated, you will be charged $0.07 (audio off) or $0.14 (audio on). For example, a 5s video with audio on will cost $0.70"
+    },
+    "fal-ai/kling-video/v3/pro/image-to-video": {
+      "unit": "conditional",
+      "tierKey": "generate_audio, and whether voice control is used",
+      "tiers": [
+        {
+          "when": "per second, audio off",
+          "usd": 0.112
+        },
+        {
+          "when": "per second, audio on",
+          "usd": 0.168
+        },
+        {
+          "when": "per second, audio on with voice control",
+          "usd": 0.196
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/kling-video/v3/pro/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generated, you will be charged $0.112 (audio off) or $0.168 (audio on), if voice control is used while generating audio you will be charged $0.196."
+    },
+    "fal-ai/kling-video/v3/pro/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "generate_audio, and whether voice control is used",
+      "tiers": [
+        {
+          "when": "per second, audio off",
+          "usd": 0.112
+        },
+        {
+          "when": "per second, audio on",
+          "usd": 0.168
+        },
+        {
+          "when": "per second, audio on with voice control",
+          "usd": 0.196
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/kling-video/v3/pro/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generated, you will be charged $0.112 (audio off) or $0.168 (audio on), if voice control is used while generating audio you will be charged $0.196."
+    },
+    "fal-ai/kling-video/v3/standard/image-to-video": {
+      "unit": "conditional",
+      "tierKey": "generate_audio, and whether voice control is used",
+      "tiers": [
+        {
+          "when": "per second, audio off",
+          "usd": 0.084
+        },
+        {
+          "when": "per second, audio on",
+          "usd": 0.126
+        },
+        {
+          "when": "per second, audio on with voice control",
+          "usd": 0.154
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/kling-video/v3/standard/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generated, you will be charged $0.084 (audio off) or $0.126 (audio on), if voice control is used while generating audio you will be charged $0.154."
+    },
+    "fal-ai/kling-video/v3/standard/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "generate_audio, and whether voice control is used",
+      "tiers": [
+        {
+          "when": "per second, audio off",
+          "usd": 0.084
+        },
+        {
+          "when": "per second, audio on",
+          "usd": 0.126
+        },
+        {
+          "when": "per second, audio on with voice control",
+          "usd": 0.154
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/kling-video/v3/standard/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generated, you will be charged $0.084 (audio off) or $0.126 (audio on), if voice control is used while generating audio you will be charged $0.154."
+    },
+    "fal-ai/latentsync": {
+      "unit": "tiered",
+      "tierKey": "output video length — a flat fee up to 40 seconds, then per second",
+      "tiers": [
+        {
+          "when": "flat, for videos up to 40 seconds",
+          "usd": 0.2
+        },
+        {
+          "when": "per second of output video beyond 40 seconds",
+          "usd": 0.005
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/latentsync",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.2 for videos up to 40 seconds. For longer videos, you will be charged $0.005 per second of output video."
+    },
+    "fal-ai/longcat-single-avatar/image-audio-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution",
+      "tiers": [
+        {
+          "when": "per video second at 480p",
+          "usd": 0.15
+        },
+        {
+          "when": "per video second at 720p",
+          "usd": 0.3
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/longcat-single-avatar/image-audio-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.3 per video second for 720p, $0.15 per video second for 480p."
+    },
     "fal-ai/lyria2": {
       "unit": "per_30_seconds",
       "usd": 0.1,
       "source": "https://fal.ai/models/fal-ai/lyria2",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.1 per 30 second."
+    },
+    "fal-ai/minimax/hailuo-02/pro/image-to-video": {
+      "unit": "per_second",
+      "usd": 0.08,
+      "source": "https://fal.ai/models/fal-ai/minimax/hailuo-02/pro/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "For each second of video generated, it will cost $0.08/sec. A single 6 second video will cost $0.48/video."
     },
     "fal-ai/minimax/speech-02-hd": {
       "unit": "per_1000_characters",
@@ -565,6 +886,64 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.039 per image."
     },
+    "fal-ai/pixverse/lipsync": {
+      "unit": "conditional",
+      "tierKey": "whether `audio_url` is supplied or the endpoint speaks `text` itself",
+      "tiers": [
+        {
+          "when": "per second of output video, with audio supplied",
+          "usd": 0.04
+        },
+        {
+          "when": "per 100 characters of `text`, when no audio is supplied",
+          "usd": 0.24
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/pixverse/lipsync",
+      "verified": "2026-08-24",
+      "quote": "For every second of output videos your request will cost $0.04. If audio is not provided for every 100 characters your request will cost $0.24."
+    },
+    "fal-ai/pixverse/v6/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution x generate_audio_switch",
+      "tiers": [
+        {
+          "when": "per second at 360p, audio off",
+          "usd": 0.025
+        },
+        {
+          "when": "per second at 360p, audio on",
+          "usd": 0.035
+        },
+        {
+          "when": "per second at 540p, audio off",
+          "usd": 0.035
+        },
+        {
+          "when": "per second at 540p, audio on",
+          "usd": 0.045
+        },
+        {
+          "when": "per second at 720p, audio off",
+          "usd": 0.045
+        },
+        {
+          "when": "per second at 720p, audio on",
+          "usd": 0.06
+        },
+        {
+          "when": "per second at 1080p, audio off",
+          "usd": 0.09
+        },
+        {
+          "when": "per second at 1080p, audio on",
+          "usd": 0.115
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/pixverse/v6/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "Billing is calculated per second of video generated. For 360p, your request will cost $0.025 per second without audio and $0.035 per second with audio. For 540p, it will cost $0.035 per second without audio and $0.045 per second with audio. For 720p, it will cost $0.045 per second without audio and $0.060 per second with audio. For 1080p, it will cost $0.090 per second without audio and $0.115 per second with audio."
+    },
     "fal-ai/qwen-image": {
       "unit": "per_megapixel",
       "usd": 0.02,
@@ -611,6 +990,13 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $3 per minute of video."
     },
+    "fal-ai/sync-lipsync/v2/pro": {
+      "unit": "per_video_minute",
+      "usd": 5,
+      "source": "https://fal.ai/models/fal-ai/sync-lipsync/v2/pro",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $5 per minute."
+    },
     "fal-ai/sync-lipsync/v3": {
       "unit": "per_video_minute",
       "usd": 8,
@@ -650,6 +1036,176 @@
       "verified": "2026-08-24",
       "quote": "For every second of video you generate you will be charged $0.20 without audio or $0.40 with audio for 720p or 1080p. At 4k, you will be charged $0.40 per second without audio, or $0.60 with."
     },
+    "fal-ai/veo3.1/extend-video": {
+      "unit": "conditional",
+      "tierKey": "generate_audio",
+      "tiers": [
+        {
+          "when": "per second, audio off",
+          "usd": 0.2
+        },
+        {
+          "when": "per second, audio on",
+          "usd": 0.4
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/veo3.1/extend-video",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generated, you will be charged $0.20 (audio off) or $0.40 (audio on). For example, a 5s video with audio on will cost $2."
+    },
+    "fal-ai/veo3.1/fast": {
+      "unit": "conditional",
+      "tierKey": "generate_audio x resolution",
+      "tiers": [
+        {
+          "when": "resolution 720p or 1080p, generate_audio=false",
+          "usd": 0.1
+        },
+        {
+          "when": "resolution 720p or 1080p, generate_audio=true",
+          "usd": 0.15
+        },
+        {
+          "when": "resolution 4k, generate_audio=false",
+          "usd": 0.3
+        },
+        {
+          "when": "resolution 4k, generate_audio=true",
+          "usd": 0.35
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/veo3.1/fast",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generate you will be charged $0.10 without audio or $0.15 with audio for 720p or 1080p. At 4k, you will be charged $0.30 per second without audio, or $0.35 with."
+    },
+    "fal-ai/veo3.1/first-last-frame-to-video": {
+      "unit": "conditional",
+      "tierKey": "generate_audio x resolution",
+      "tiers": [
+        {
+          "when": "resolution 720p or 1080p, generate_audio=false",
+          "usd": 0.2
+        },
+        {
+          "when": "resolution 720p or 1080p, generate_audio=true",
+          "usd": 0.4
+        },
+        {
+          "when": "resolution 4k, generate_audio=false",
+          "usd": 0.4
+        },
+        {
+          "when": "resolution 4k, generate_audio=true",
+          "usd": 0.6
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/veo3.1/first-last-frame-to-video",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generate you will be charged $0.20 without audio or $0.40 with audio for 720p or 1080p. At 4k, you will be charged $0.40 per second without audio, or $0.60 with."
+    },
+    "fal-ai/veo3.1/image-to-video": {
+      "unit": "conditional",
+      "tierKey": "generate_audio x resolution",
+      "tiers": [
+        {
+          "when": "resolution 720p or 1080p, generate_audio=false",
+          "usd": 0.2
+        },
+        {
+          "when": "resolution 720p or 1080p, generate_audio=true",
+          "usd": 0.4
+        },
+        {
+          "when": "resolution 4k, generate_audio=false",
+          "usd": 0.4
+        },
+        {
+          "when": "resolution 4k, generate_audio=true",
+          "usd": 0.6
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/veo3.1/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generate you will be charged $0.20 without audio or $0.40 with audio for 720p or 1080p. At 4k, you will be charged $0.40 per second without audio, or $0.60 with."
+    },
+    "fal-ai/wan/v2.2-a14b/image-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution",
+      "rounding": "video seconds are counted at 16 frames per second, whatever `frames_per_second` asks for",
+      "tiers": [
+        {
+          "when": "per video second at 480p",
+          "usd": 0.04
+        },
+        {
+          "when": "per video second at 580p",
+          "usd": 0.06
+        },
+        {
+          "when": "per video second at 720p",
+          "usd": 0.08
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/wan/v2.2-a14b/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.08 per video second for 720p, $0.06 per video second for 580p, $0.04 per video second for 480p. Video seconds are calculated at 16 frames per second."
+    },
+    "fal-ai/wan/v2.2-a14b/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution",
+      "rounding": "video seconds are counted at 16 frames per second, whatever `frames_per_second` asks for",
+      "tiers": [
+        {
+          "when": "per video second at 480p",
+          "usd": 0.04
+        },
+        {
+          "when": "per video second at 580p",
+          "usd": 0.06
+        },
+        {
+          "when": "per video second at 720p",
+          "usd": 0.08
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/wan/v2.2-a14b/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.08 per video second for 720p, $0.06 per video second for 580p, $0.04 per video second for 480p. Video seconds are calculated at 16 frames per second."
+    },
+    "fal-ai/wan/v2.7/image-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution",
+      "tiers": [
+        {
+          "when": "per second at 720p",
+          "usd": 0.1
+        },
+        {
+          "when": "per second at 1080p",
+          "usd": 0.15
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/wan/v2.7/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.1 per second for 720p resolution. For 1080p your request will cost $0.15 per second."
+    },
+    "fal-ai/wan/v2.7/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution",
+      "tiers": [
+        {
+          "when": "per second at 720p",
+          "usd": 0.1
+        },
+        {
+          "when": "per second at 1080p",
+          "usd": 0.15
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/wan/v2.7/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.1 per second for 720p resolution. For 1080p your request will cost $0.15 per second."
+    },
     "fal-ai/wizper": {
       "unpriced": "Billed per COMPUTE second, not per unit of input or output: the price of a transcription depends on how long fal's GPU took, which no request body can predict. The page's own compute-second figure reads $0, which is an unpopulated billing template rather than a free tier — quoting it as a rate would be worse than saying nothing. Estimates for this endpoint return {} with this caveat.",
       "source": "https://fal.ai/models/fal-ai/wizper",
@@ -662,6 +1218,12 @@
       "source": "https://fal.ai/models/fal-ai/z-image/turbo",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.005 per megapixel."
+    },
+    "google/gemini-omni-flash": {
+      "unpriced": "Billed by TOKEN consumption ($21.875 per million), not by any unit a request states. The page offers ~$0.125 per second of 720p video as an approximation, and an approximation is not a rate: the token count depends on the frames the model actually renders. The video twin of google/nano-banana-2-lite, and `undefined` for the same reason.",
+      "source": "https://fal.ai/models/google/gemini-omni-flash",
+      "verified": "2026-08-24",
+      "quote": "Billing is based on total token consumption. Tokens cost $21.875 per 1 million tokens. For 720p video this costs approximately $0.125 per second of video."
     },
     "google/nano-banana-2-lite": {
       "unpriced": "Priced purely in input/output TOKENS (text and image, per 1M), so what a request costs depends on token counts no request body bounds. The endpoint's own billing record carries billing_unit \"units\" with a placeholder price of 1 rather than a dollar rate, and quoting a placeholder as a rate would be worse than saying nothing. Estimates for this endpoint return {}.",
@@ -723,6 +1285,73 @@
       "source": "https://fal.ai/models/krea/v2/medium/text-to-image",
       "verified": "2026-08-24",
       "quote": "For every image you generate, you will be charged $0.030 (text-to-image) or $0.035 (using image_style_references)."
+    },
+    "lightricks/ltx-2.5/text-to-video/pro": {
+      "unit": "conditional",
+      "tierKey": "resolution",
+      "tiers": [
+        {
+          "when": "per second at 720p",
+          "usd": 0.12
+        },
+        {
+          "when": "per second at 1080p",
+          "usd": 0.17
+        }
+      ],
+      "source": "https://fal.ai/models/lightricks/ltx-2.5/text-to-video/pro",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.12 per second for 720p or $0.17 per second for 1080p."
+    },
+    "minimax/h3/image-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution",
+      "tiers": [
+        {
+          "when": "per second at 480P",
+          "usd": 0.05
+        },
+        {
+          "when": "per second at 768P",
+          "usd": 0.06
+        },
+        {
+          "when": "per second at 2K",
+          "usd": 0.13
+        },
+        {
+          "when": "per second at 4K",
+          "usd": 0.16
+        }
+      ],
+      "source": "https://fal.ai/models/minimax/h3/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "Video costs $0.05 per second at 480p, $0.06 per second at 768p, $0.13 per second at 2K and $0.16 per second at 4K."
+    },
+    "minimax/h3/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution",
+      "tiers": [
+        {
+          "when": "per second at 480P",
+          "usd": 0.05
+        },
+        {
+          "when": "per second at 768P",
+          "usd": 0.06
+        },
+        {
+          "when": "per second at 2K",
+          "usd": 0.13
+        },
+        {
+          "when": "per second at 4K",
+          "usd": 0.16
+        }
+      ],
+      "source": "https://fal.ai/models/minimax/h3/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "Video costs $0.05 per second at 480p, $0.06 per second at 768p, $0.13 per second at 2K and $0.16 per second at 4K."
     },
     "openai/gpt-image-2": {
       "unit": "conditional",
@@ -927,12 +1556,50 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.25 per image."
     },
+    "veed/avatars/audio-to-video": {
+      "unit": "per_video_minute",
+      "usd": 0.3,
+      "source": "https://fal.ai/models/veed/avatars/audio-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.3 per minute."
+    },
+    "veed/lipsync": {
+      "unit": "per_video_minute",
+      "usd": 0.4,
+      "source": "https://fal.ai/models/veed/lipsync",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.4 per minute."
+    },
+    "veed/lipsync/v2": {
+      "unit": "per_second",
+      "usd": 0.07,
+      "source": "https://fal.ai/models/veed/lipsync/v2",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.07 for every second of output video."
+    },
     "xai/grok-imagine-image": {
       "unit": "per_image",
       "usd": 0.02,
       "source": "https://fal.ai/models/xai/grok-imagine-image",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.02 per image."
+    },
+    "xai/grok-imagine-video/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "resolution",
+      "tiers": [
+        {
+          "when": "per second at 480p",
+          "usd": 0.05
+        },
+        {
+          "when": "per second at 720p",
+          "usd": 0.07
+        }
+      ],
+      "source": "https://fal.ai/models/xai/grok-imagine-video/text-to-video",
+      "verified": "2026-08-24",
+      "quote": "For 6s 480p video your request will cost $0.3. At an output resolution of 480p, every second costs $0.05, and at 720p, every second costs $0.07."
     }
   }
 }

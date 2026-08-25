@@ -1,0 +1,12 @@
+{
+  "ref": "fal/fal-ai/sync-lipsync/v2/pro",
+  "params": {
+    "video_url": "https://example.com/take-3.mp4",
+    "audio_url": "https://example.com/vo-french.wav",
+    "sync_mode": "bounce"
+  },
+  "url": "https://queue.fal.run/fal-ai/sync-lipsync/v2/pro",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

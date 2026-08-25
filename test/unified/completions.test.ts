@@ -168,7 +168,7 @@ image({ model: "¦", prompt: "x" });`);
 });
 
 /**
- * fal — the three probes that matter for a GENERATED provider.
+ * fal — the probes that matter for a GENERATED provider.
  *
  * Every other entry in this file checks a table someone typed. fal's tables are
  * emitted by `scripts/codegen-fal.ts` from fal's own OpenAPI, and 28 endpoints
@@ -257,6 +257,164 @@ image({ endpoint: "fal-ai/flux/dev", prompt: "x", num_inference_steps: 4 });`),
     const sibling = semanticErrorsIn(`import { image } from "./src/providers/fal";
 image({ endpoint: "fal-ai/flux/dev", prompt: "x", aspect_ratio: "16:9" });`);
     expect(sibling.length).toBeGreaterThan(0);
+  });
+
+  /**
+   * Probe 3 — the video roster, where "one address, thirty endpoints" is under
+   * the most pressure.
+   *
+   * `duration` is FOUR different types across these thirty (kling's `"5"`,
+   * veo3.1's `"8s"`, wan's integer `5`, pixverse's free 1..15), so the category
+   * schema had to widen it to `unknown` and the completion list is the ONLY
+   * place a caller learns which spelling their endpoint wants. If the by-id map
+   * ever collapsed, this list would go to `string` and say nothing.
+   */
+  test("probe 3 — kling-via-fal completes its own duration enum, and refuses a sibling's", () => {
+    const kling = completionsAt(`import { video } from "./src/providers/fal";
+video({ endpoint: "fal-ai/kling-video/v2.6/pro/text-to-video", prompt: "x", duration: "¦" });`);
+    expect(kling.sort()).toEqual(["10", "5"]);
+
+    // The same field one endpoint over: veo3.1 glues the unit on.
+    const veo = completionsAt(`import { video } from "./src/providers/fal";
+video({ endpoint: "fal-ai/veo3.1/fast", prompt: "x", duration: "¦" });`);
+    expect(veo.sort()).toEqual(["4s", "6s", "8s"]);
+
+    // …and kling v3 offers thirteen where v2.6 offers two — the same vendor,
+    // one version apart, which is exactly the difference a per-PROVIDER table
+    // would erase.
+    const klingV3 = completionsAt(`import { video } from "./src/providers/fal";
+video({ endpoint: "fal-ai/kling-video/v3/pro/text-to-video", prompt: "x", duration: "¦" });`);
+    expect(klingV3).toHaveLength(13);
+    expect(klingV3).toContain("15");
+
+    // Through the UNIFIED surface the canonical `duration` is a plain NUMBER,
+    // narrowed to that endpoint's own seconds — the whole reason the canonical
+    // word is unit-free.
+    const unified = semanticErrorsIn(`import { video } from "./src/unified/video";
+video({ model: "fal/fal-ai/kling-video/v2.6/pro/text-to-video", prompt: "x", duration: 7 });`);
+    expect(unified.length).toBeGreaterThan(0);
+    expect(
+      semanticErrorsIn(`import { video } from "./src/unified/video";
+video({ model: "fal/fal-ai/kling-video/v2.6/pro/text-to-video", prompt: "x", duration: 10 });`),
+    ).toEqual([]);
+  });
+
+  test("probe 3b — a cross-model extra is an error, not a widened `unknown`", () => {
+    // `cfg_scale` is a kling parameter and exists on no veo3.1 route. The
+    // failure this guards is the one `ModelExtras` degradation makes tempting:
+    // widen the extras to "every name in the build" and every knob compiles at
+    // every endpoint, which is a green build and a 422.
+    const wrong = semanticErrorsIn(`import { video } from "./src/unified/video";
+video({ model: "fal/fal-ai/veo3.1/fast", prompt: "x", cfg_scale: 0.5 });`);
+    expect(wrong.length).toBeGreaterThan(0);
+
+    const right = semanticErrorsIn(`import { video } from "./src/unified/video";
+video({ model: "fal/fal-ai/kling-video/v3/pro/text-to-video", prompt: "x", cfg_scale: 0.5 });`);
+    expect(right).toEqual([]);
+
+    // …and the reverse direction, so the assertion is about the ROW rather
+    // than about `cfg_scale` being unreachable: veo3.1's `safety_tolerance`
+    // does not exist at kling.
+    expect(
+      semanticErrorsIn(`import { video } from "./src/unified/video";
+video({ model: "fal/fal-ai/kling-video/v3/pro/text-to-video", prompt: "x", safety_tolerance: "4" });`)
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
+  /**
+   * Probe 5 — the two youngest categories, and the narrowing they were built
+   * for.
+   *
+   * `unmodel/lipsync` takes a clip and `unmodel/avatar` takes a still, and at
+   * the type level `{ url }` is `{ url }` either way — so the check can only
+   * bite where the caller says what they have, on the INLINE arm's `mimeType`.
+   * That is the squiggle this probe is about, and it is the compile-time half
+   * of a split that would otherwise only exist in prose.
+   */
+  test("probe 5 — a still handed to a clip-only lipsync model is a squiggle", () => {
+    const still = semanticErrorsIn(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "fal/fal-ai/sync-lipsync/v3",
+  source: { data: "AAAA", mimeType: "image/png" },
+  audio: { url: "https://example.com/vo.wav" },
+});`);
+    expect(still.length).toBeGreaterThan(0);
+
+    // The clip compiles, so the assertion above is about the medium and not
+    // about the inline arm being unreachable.
+    expect(
+      semanticErrorsIn(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "fal/fal-ai/sync-lipsync/v3",
+  source: { data: "AAAA", mimeType: "video/mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+});`),
+    ).toEqual([]);
+
+    // …and the same still is exactly right one category over, at the OTHER
+    // route of the same vendor's same model.
+    expect(
+      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({
+  model: "fal/fal-ai/sync-lipsync/v3/image-to-video",
+  image: { data: "AAAA", mimeType: "image/png" },
+  audio: { url: "https://example.com/vo.wav" },
+});`),
+    ).toEqual([]);
+  });
+
+  test("probe 5b — `image` is required, forbidden or wide, per avatar model", () => {
+    // Required at the six still-driven routes…
+    expect(
+      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({ model: "fal/fal-ai/kling-video/ai-avatar/v2/pro", audio: { url: "https://x/a.wav" } });`)
+        .length,
+    ).toBeGreaterThan(0);
+
+    // …forbidden at the two whose performer is a catalogued id…
+    expect(
+      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({
+  model: "fal/veed/avatars/audio-to-video",
+  image: { url: "https://x/face.png" },
+  audio: { url: "https://x/a.wav" },
+});`).length,
+    ).toBeGreaterThan(0);
+
+    // …and omitting it there is exactly right.
+    expect(
+      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({ model: "fal/veed/avatars/audio-to-video", audio: { url: "https://x/a.wav" } });`),
+    ).toEqual([]);
+
+    // The presenter enum completes at the HAND surface, exactly — the by-id map
+    // types `avatar_id` as VEED's own 28 names on VEED's endpoint and as a
+    // compile error anywhere else, which is what makes "reach it through
+    // `providerOptions`" a real answer rather than a shrug.
+    const performers = completionsAt(`import { avatar } from "./src/providers/fal";
+avatar({ endpoint: "veed/avatars/audio-to-video", audio_url: "https://x/a.wav", avatar_id: "¦" });`);
+    expect(performers).toContain("emily_primary");
+    expect(performers).toContain("marcus_side");
+    // Argil's list is a different 28, on a differently-named field.
+    const argil = completionsAt(`import { avatar } from "./src/providers/fal";
+avatar({ endpoint: "argil/avatars/audio-to-video", audio_url: "https://x/a.wav", avatar: "¦" });`);
+    expect(argil).toContain("Emma (UGC)");
+    expect(argil).not.toContain("emily_primary");
+
+    // Through `providerOptions` the escape hatch stays OPEN but the list is
+    // only as complete as the adapter's `Wire` interface — which declares the
+    // three fields it writes and not the per-model extras. That is the
+    // documented trade in `core/unified/types.ts`, asserted rather than
+    // assumed: the key compiles, and completing it is the hand surface's job.
+    expect(
+      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({
+  model: "fal/veed/avatars/audio-to-video",
+  audio: { url: "https://x/a.wav" },
+  providerOptions: { fal: { avatar_id: "emily_primary" } },
+});`),
+    ).toEqual([]);
   });
 
   test("an endpoint id typed as a plain string still compiles", () => {

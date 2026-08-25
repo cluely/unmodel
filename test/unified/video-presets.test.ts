@@ -40,6 +40,8 @@ import type { VideoModelParams } from "../../src/core/unified/vocabulary/model-p
 import type { VideoParams } from "../../src/core/unified/vocabulary/video";
 import { video } from "../../src/unified/video";
 import { video as bytedance } from "../../src/providers/bytedance/unified-video";
+import { video as fal } from "../../src/providers/fal/unified-video";
+import { FAL_REQUIRED_PROBES } from "../../src/providers/fal/gen/endpoints.gen";
 import { video as google } from "../../src/providers/google/unified-video";
 import { video as kling } from "../../src/providers/kling/unified-video";
 import { video as lightricks } from "../../src/providers/lightricks/unified";
@@ -67,6 +69,7 @@ const ADAPTERS: readonly Adapter[] = [
   pixverse,
   bytedance,
   lightricks,
+  fal,
 ];
 
 const IMAGE_URL = "https://example.com/frame.png";
@@ -85,7 +88,38 @@ const BYTES =
  * them. Each entry is dropped for the field currently under test, so the probe
  * is always the caller's value and never the placeholder.
  */
+/**
+ * fal's required sets, DERIVED rather than transcribed.
+ *
+ * `FAL_REQUIRED_PROBES` is generated from each endpoint's OpenAPI `required`
+ * list minus everything fal supplies a default for — the same subtraction
+ * `checkRequired` makes — so this map is fal's own answer to "what must a probe
+ * carry", refreshed weekly with the snapshots. Thirty hand-written entries
+ * would be thirty transcriptions to keep in step, and the first one to go stale
+ * would turn a real regression into a passing sweep.
+ *
+ * Only the MEDIA requirements survive the translation: `prompt` is supplied by
+ * the sweep already, and the canonical fields under test (`duration`,
+ * `resolution`, `aspectRatio`) are exactly what a `REQUIRED` entry must not
+ * pre-fill.
+ */
+const FAL_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Object.fromEntries(
+  Object.entries(FAL_REQUIRED_PROBES).flatMap(([id, names]) => {
+    const need = names as readonly string[];
+    const params: Partial<VideoParams> = {};
+    if (need.some((name) => /(^|_)image_urls?$/.test(name) || /frame_url$/.test(name))) {
+      const roles: VideoParams["image"] = need.some((name) => /^(last_frame_url|end_image_url)$/.test(name))
+        ? [{ url: IMAGE_URL }, { url: IMAGE_URL, role: "last" }]
+        : { url: IMAGE_URL };
+      (params as { image?: VideoParams["image"] }).image = roles;
+    }
+    if (need.includes("video_url")) (params as { video?: VideoParams["video"] }).video = { url: CLIP_URL };
+    return Object.keys(params).length === 0 ? [] : [[`fal/${id}`, params] as const];
+  }),
+);
+
 const REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = {
+  ...FAL_REQUIRED,
   "runway/gen4.5": { aspectRatio: "16:9", duration: 5 },
   "runway/gen4_turbo": { aspectRatio: "16:9" },
   "runway/veo3.1": { aspectRatio: "16:9" },

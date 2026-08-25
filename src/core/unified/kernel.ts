@@ -71,6 +71,8 @@ const CANONICAL_KEYS: Readonly<Record<UnifiedCategory, ReadonlySet<string>>> = O
   image: new Set<string>(CANONICAL_KEY_LISTS.image),
   imageEdit: new Set<string>(CANONICAL_KEY_LISTS.imageEdit),
   video: new Set<string>(CANONICAL_KEY_LISTS.video),
+  lipsync: new Set<string>(CANONICAL_KEY_LISTS.lipsync),
+  avatar: new Set<string>(CANONICAL_KEY_LISTS.avatar),
   tts: new Set<string>(CANONICAL_KEY_LISTS.tts),
   stt: new Set<string>(CANONICAL_KEY_LISTS.stt),
   music: new Set<string>(CANONICAL_KEY_LISTS.music),

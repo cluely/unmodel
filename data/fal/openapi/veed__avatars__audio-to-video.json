@@ -1,0 +1,379 @@
+{
+  "metadata": {
+    "category": "audio-to-video",
+    "date": "2025-05-28T14:17:50.831Z",
+    "description": "Generate high-quality videos with UGC-like avatars from audio",
+    "display_name": "Avatars",
+    "group": {
+      "key": "veed-avatars-1",
+      "label": "Audio To Video"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/veed/avatars/audio-to-video",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "lipsync",
+      "audio-to-video"
+    ],
+    "thumbnail_url": "https://storage.googleapis.com/falserverless/gallery/veed_logo.webp",
+    "updated_at": "2026-01-26T21:43:38.412Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "AvatarsAudioToVideoInput": {
+          "properties": {
+            "audio_url": {
+              "examples": [
+                "https://v3.fal.media/files/lion/OXiM5_Cve4kQ0ZcXmVzq4_product_presentation.mp3"
+              ],
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "title": "Audio Url",
+              "type": "string"
+            },
+            "avatar_id": {
+              "description": "The avatar to use for the video",
+              "enum": [
+                "emily_vertical_primary",
+                "emily_vertical_secondary",
+                "marcus_vertical_primary",
+                "marcus_vertical_secondary",
+                "mira_vertical_primary",
+                "mira_vertical_secondary",
+                "jasmine_vertical_primary",
+                "jasmine_vertical_secondary",
+                "jasmine_vertical_walking",
+                "aisha_vertical_walking",
+                "elena_vertical_primary",
+                "elena_vertical_secondary",
+                "any_male_vertical_primary",
+                "any_female_vertical_primary",
+                "any_male_vertical_secondary",
+                "any_female_vertical_secondary",
+                "any_female_vertical_walking",
+                "emily_primary",
+                "emily_side",
+                "marcus_primary",
+                "marcus_side",
+                "aisha_walking",
+                "elena_primary",
+                "elena_side",
+                "any_male_primary",
+                "any_female_primary",
+                "any_male_side",
+                "any_female_side"
+              ],
+              "title": "Avatar Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "avatar_id",
+            "audio_url"
+          ],
+          "title": "Audio2VideoInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "avatar_id",
+            "audio_url"
+          ]
+        },
+        "AvatarsAudioToVideoOutput": {
+          "properties": {
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "examples": [
+                {
+                  "content_type": "video/mp4",
+                  "url": "https://v3.fal.media/files/panda/kt9d4vZ8Mfw_WzYnvr2Q0_tmp0ir4znsr.mp4"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video"
+          ],
+          "title": "AvatarsAppOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video"
+          ]
+        },
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the VEED/avatars/audio-to-video queue.",
+      "title": "Queue OpenAPI for VEED/avatars/audio-to-video",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Audio To Video",
+        "category": "audio-to-video",
+        "documentationUrl": "https://fal.ai/models/VEED/avatars/audio-to-video/api",
+        "endpointId": "VEED/avatars/audio-to-video",
+        "playgroundUrl": "https://fal.ai/models/VEED/avatars/audio-to-video",
+        "thumbnailUrl": "https://storage.googleapis.com/falserverless/gallery/veed_logo.webp"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/VEED/avatars/audio-to-video": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarsAudioToVideoInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/VEED/avatars/audio-to-video/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AvatarsAudioToVideoOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/VEED/avatars/audio-to-video/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/VEED/avatars/audio-to-video/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

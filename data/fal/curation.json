@@ -21,9 +21,15 @@
     "Every id in here must resolve against the Platform API (GET https://api.fal.ai/v1/models?endpoint_id=…);",
     "`bun run codegen:fal:refresh` fails loudly on one that does not. Verified live 2026-08-24.",
     "",
-    "Wave 1a seeded 12 ids spanning all nine verbs. Wave 1b widened image to 28 and imageEdit to 17 —",
-    "the two categories that ship end-to-end today — leaving the other seven verbs at their seed rows.",
-    "The remaining ~55 land with their own waves; this file is the only thing that has to change.",
+    "Wave 1a seeded 12 ids spanning all nine verbs. Wave 1b widened image to 28 and imageEdit to 17. Wave 1c",
+    "widened video to 30 and built out the two audio-driven categories — lipsync (8) and avatar (8) — which",
+    "are new unmodel categories, not just new fal rows. Five verbs are still at their seed rows: upscale, tts,",
+    "stt and music land with wave 1d, and the roster reaches its full ~120 in wave 1e.",
+    "",
+    "The lipsync/avatar split is by INPUT, not by vendor: an endpoint that takes a video clip is lipsync and",
+    "one that takes a still is avatar, which is why fal-ai/sync-lipsync/v3 and fal-ai/sync-lipsync/v3/image-to-video",
+    "— one product, two routes — are filed under different verbs. Two avatar rows (veed/avatars, argil/avatars)",
+    "take NEITHER: their performer is a catalogued id, which is why the category narrows `image` per model.",
     "",
     "A note on ids: several are VENDOR-namespaced (`ideogram/v4`, `openai/gpt-image-2`, `krea/v2/...`),",
     "and for those fal's OpenAPI document is written against a different internal route — `ideogram/v4`",
@@ -37,6 +43,35 @@
       "textParam": "prompt",
       "note": "Qwen Image 3 editing, conditional on a 1K/2K `resolution`."
     },
+    "argil/avatars/audio-to-video": {
+      "verb": "avatar",
+      "note": "Argil Avatars — the second preset-performer route, and the second witness that `image` is a per-model fact in this category."
+    },
+    "bytedance/seedance-2.0/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Seedance 2.0 image-to-video, first/last frames."
+    },
+    "bytedance/seedance-2.0/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Seedance 2.0 text-to-video — a 4k resolution tier its 2.5 sibling does not offer."
+    },
+    "bytedance/seedance-2.5/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Seedance 2.5 image-to-video. `image_url` opens the clip and `end_image_url` closes it — the first/last pair VideoImageRole exists for."
+    },
+    "bytedance/seedance-2.5/reference-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Seedance 2.5 reference-to-video: `image_urls`, `audio_urls` and `video_urls` are all reference LISTS the prompt addresses as @Image1/@Audio1/@Video1. The reference arm of VideoImageRole."
+    },
+    "bytedance/seedance-2.5/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Seedance 2.5 text-to-video. `duration` is a string enum whose first member is \"auto\" — a length the model chooses — beside the seconds 4..30, which is why a duration list is filtered to the numeric members."
+    },
     "bytedance/seedream/v5/pro/edit": {
       "verb": "imageEdit",
       "textParam": "prompt",
@@ -46,6 +81,11 @@
       "verb": "image",
       "textParam": "prompt",
       "note": "Seedream 5.0 Pro. Priced by output pixel AREA in two bands — a conditional whose tier the request settles only once a size is given."
+    },
+    "fal-ai/bytedance/omnihuman/v1.5": {
+      "verb": "avatar",
+      "textParam": "prompt",
+      "note": "OmniHuman 1.5 — a still, an audio track, and an optional `mask_url` limiting what moves."
     },
     "fal-ai/bytedance/seedream/v4.5/edit": {
       "verb": "imageEdit",
@@ -61,6 +101,11 @@
       "verb": "upscale",
       "textParam": "prompt",
       "note": "Upscaler that steers on a prompt — the `factor?` + `prompt?` shape UpscaleParams is built around."
+    },
+    "fal-ai/echomimic-v3": {
+      "verb": "avatar",
+      "textParam": "prompt",
+      "note": "EchoMimic v3. The one avatar endpoint whose `prompt` is REQUIRED, which is why the category's prompt is a per-model extra rather than a canonical word — three of the eight rows have no prompt at all."
     },
     "fal-ai/flux-2": {
       "verb": "image",
@@ -167,15 +212,83 @@
       "textParam": "prompt",
       "note": "Kling Image v3."
     },
+    "fal-ai/kling-video/ai-avatar/v2/pro": {
+      "verb": "avatar",
+      "textParam": "prompt",
+      "note": "Kling AI Avatar v2 Pro, at 2x the Standard rate."
+    },
+    "fal-ai/kling-video/ai-avatar/v2/standard": {
+      "verb": "avatar",
+      "textParam": "prompt",
+      "note": "Kling AI Avatar v2 Standard. Its `prompt` defaults to \".\", which is fal's way of spelling \"required by the wire, meaningless to the caller\"."
+    },
+    "fal-ai/kling-video/lipsync/audio-to-video": {
+      "verb": "lipsync",
+      "note": "Kling LipSync. fal files it under text-to-video, which is exactly the lossiness that makes the verb map hand-curated. Its sibling /lipsync/text-to-video is excluded — that arm is TTS composed with lipsync."
+    },
+    "fal-ai/kling-video/o3/pro/video-to-video/edit": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Kling O3 Pro video-to-video edit — a source CLIP plus reference images, which is the one video row whose canonical input is `video` rather than `image`."
+    },
     "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": {
       "verb": "video",
       "textParam": "prompt",
       "note": "`duration` is a STRING enum here (\"5\" | \"10\") against veo3.1's (\"4s\" | \"6s\" | \"8s\") — same word, same type, different vocabulary. Also the only ui.field:\"image\" media hint in the wave-1a set (tail_image_url)."
     },
+    "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "The text-to-video sibling of the wave-1a kling v2.5-turbo row — same route shape, different endpoint id, which is exactly why fal needs no `videoFromImage` address."
+    },
+    "fal-ai/kling-video/v2.6/pro/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Kling 2.6 Pro image-to-video, with a `voice_ids` array its text sibling has not got."
+    },
+    "fal-ai/kling-video/v2.6/pro/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Kling 2.6 Pro. Two durations only (\"5\"|\"10\") where v3 offers thirteen."
+    },
+    "fal-ai/kling-video/v3/pro/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Kling 3.0 Pro image-to-video. Its first frame is `start_image_url`, not `image_url` — the media-naming rule has to read the stem rather than match a fixed name."
+    },
+    "fal-ai/kling-video/v3/pro/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Kling 3.0 Pro. `duration` is a STRING enum of the seconds 3..15 — the durationStringEnum class, and a different vocabulary from veo3.1's (\"4s\"|\"6s\"|\"8s\") for the same word."
+    },
+    "fal-ai/kling-video/v3/standard/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Kling 3.0 Standard image-to-video."
+    },
+    "fal-ai/kling-video/v3/standard/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Kling 3.0 Standard, the cheaper arm of the same schema."
+    },
+    "fal-ai/latentsync": {
+      "verb": "lipsync",
+      "note": "LatentSync. Carries `loop_mode` (\"pingpong\"|\"loop\") — a per-model extra, not vocabulary: sync-lipsync spells the same idea `sync_mode` with five arms, and one word two providers spell differently is not yet canonical."
+    },
+    "fal-ai/longcat-single-avatar/image-audio-to-video": {
+      "verb": "avatar",
+      "textParam": "prompt",
+      "note": "LongCat single-avatar, image + audio arm. Its /audio-to-video sibling is the still-less arm and is not curated — one route per shape is enough."
+    },
     "fal-ai/lyria2": {
       "verb": "music",
       "textParam": "prompt",
       "note": "Google's music model. fal files it under text-to-audio, which is exactly why the verb is curated here."
+    },
+    "fal-ai/minimax/hailuo-02/pro/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Hailuo 02 Pro. The one flat per-second rate in this category — no resolution field, no audio switch, so its estimate is a number rather than `undefined`."
     },
     "fal-ai/minimax/speech-02-hd": {
       "verb": "tts",
@@ -212,6 +325,16 @@
       "textParam": "prompt",
       "note": "The edit arm of the original Nano Banana, flat per-image."
     },
+    "fal-ai/pixverse/lipsync": {
+      "verb": "lipsync",
+      "textParam": "text",
+      "note": "PixVerse lipsync. The one endpoint here whose `audio_url` is OPTIONAL: it also takes `text` + `voice_id` and speaks the line itself. unmodel's canonical `audio` is required, so the TTS arm is reachable only through `providerOptions` — deliberately, per the excluded kling text-to-video row."
+    },
+    "fal-ai/pixverse/v6/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "PixVerse v6. `duration` is a free integer 1..15 rather than an enum, so `duration` keeps the wide `number`."
+    },
     "fal-ai/qwen-image": {
       "verb": "image",
       "textParam": "prompt",
@@ -237,6 +360,10 @@
       "allowsModelProperty": true,
       "note": "`model` is a REAL wire field (\"lipsync-2\" | \"lipsync-2-pro\") and stays on the wire; the route is still selected by the `endpoint` pseudo-param. Allow-listed under R6 — reviewed 2026-08-24 against the live schema. Its `sync_mode` is a five-arm string enum where flux's is a boolean: the divergence that forbids hoisting a shared \"common fal params\" fragment."
     },
+    "fal-ai/sync-lipsync/v2/pro": {
+      "verb": "lipsync",
+      "note": "sync. lipsync-2-pro as its own endpoint. Same three parameters as v2 minus the `model` field, because the id already says which model."
+    },
     "fal-ai/sync-lipsync/v3": {
       "verb": "lipsync",
       "note": "Clip-in lipsync. Carries a nested `options` object two components deep (Sync3GenerationOptions → Sync3ActiveSpeakerDetection)."
@@ -250,6 +377,46 @@
       "textParam": "prompt",
       "note": "fal-ai/veo3 was already GONE when this plan was written — veo3.1 is the live id. Its price is conditional on `generate_audio`, which is why conditional rates never reach ModelCost."
     },
+    "fal-ai/veo3.1/extend-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Veo 3.1 extend. Its `duration` and `resolution` are `const` rather than enums — fal's single-value spelling, which lowers to a one-member enum and therefore still classifies."
+    },
+    "fal-ai/veo3.1/fast": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Veo 3.1 Fast — half the rate of the base row, same conditional shape (generate_audio x resolution)."
+    },
+    "fal-ai/veo3.1/first-last-frame-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Veo 3.1 first-and-last-frame interpolation: `first_frame_url` AND `last_frame_url`, both required. The endpoint that makes VideoImageRole's \"last\" arm load-bearing."
+    },
+    "fal-ai/veo3.1/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Veo 3.1 image-to-video."
+    },
+    "fal-ai/wan/v2.2-a14b/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Wan 2.2 A14B image-to-video, first/last frames."
+    },
+    "fal-ai/wan/v2.2-a14b/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Wan 2.2 A14B. Lengths are `num_frames` at a chosen `frames_per_second` rather than a `duration` field, so this row publishes no duration vocabulary at all."
+    },
+    "fal-ai/wan/v2.7/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Wan 2.7 image-to-video, which also accepts a `video_url` to continue from and an `audio_url` to drive lip motion — three media kinds on one route, none of them required."
+    },
+    "fal-ai/wan/v2.7/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Wan 2.7. `duration` is an INTEGER enum (2..15) where kling's is a string enum of the same numbers — the durationNumber class beside durationStringEnum."
+    },
     "fal-ai/wizper": {
       "verb": "stt",
       "note": "fal-ai/whisper is gone; wizper is the live Whisper-v3 endpoint. Billed per compute-second, so it carries an `unpriced` reason rather than a rate. Two `const` properties (chunk_level, version) — the single-value-enum lowering."
@@ -258,6 +425,11 @@
       "verb": "image",
       "textParam": "prompt",
       "note": "Z-Image Turbo — the cheapest row in the category at $0.005/MP, and the one per-megapixel page that states no rounding rule."
+    },
+    "google/gemini-omni-flash": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Gemini Omni Flash. Token-priced, so it carries an `unpriced` reason rather than a rate — the video twin of google/nano-banana-2-lite."
     },
     "google/nano-banana-2-lite": {
       "verb": "image",
@@ -279,6 +451,21 @@
       "textParam": "prompt",
       "note": "Krea 2 medium."
     },
+    "lightricks/ltx-2.5/text-to-video/pro": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "LTX-2.5 Pro. Its `duration` enum is [6, 8, 10, \"auto\"] with NO declared type — a mixed-type enum that lowers by its first member, which is why the numeric filter on the duration list is not cosmetic."
+    },
+    "minimax/h3/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "MiniMax Hailuo 3 image-to-video. Both `image_url` and `end_image_url` are OPTIONAL here, so the first-frame arm is a request shape rather than a route."
+    },
+    "minimax/h3/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "MiniMax Hailuo 3. `resolution` is spelled \"480P\"|\"768P\"|\"2K\"|\"4K\" — upper-case, and two of the four are pixel-count tiers rather than short-edge ones, so the canonical mapping is per endpoint."
+    },
     "openai/gpt-image-2": {
       "verb": "image",
       "textParam": "prompt",
@@ -294,10 +481,27 @@
       "textParam": "prompt",
       "note": "Reve 2.1."
     },
+    "veed/avatars/audio-to-video": {
+      "verb": "avatar",
+      "note": "VEED Avatars. Takes NO image: the performer is a catalogued `avatar_id` from a 28-value enum. The row that forces `image` to be narrowed per model rather than required by the vocabulary."
+    },
+    "veed/lipsync": {
+      "verb": "lipsync",
+      "note": "VEED lipsync v1, kept beside v2 because it is a fifth of the price per minute and still live."
+    },
+    "veed/lipsync/v2": {
+      "verb": "lipsync",
+      "note": "VEED lipsync v2 — the minimal shape of the category: a clip, an audio track, nothing else. Vendor-namespaced (fal documents it at /VEED/lipsync-v2)."
+    },
     "xai/grok-imagine-image": {
       "verb": "image",
       "textParam": "prompt",
       "note": "xAI's Grok Imagine, flat per-image."
+    },
+    "xai/grok-imagine-video/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "xAI Grok Imagine video. Vendor-namespaced: fal documents it at /fal-ai/xai/text-to-video while the published id is xai/grok-imagine-video/text-to-video, and unmodel submits to the published one."
     }
   },
   "excluded": {

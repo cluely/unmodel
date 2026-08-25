@@ -1,0 +1,13 @@
+{
+  "ref": "fal/fal-ai/wan/v2.7/text-to-video",
+  "params": {
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "9:16"
+  },
+  "url": "https://queue.fal.run/fal-ai/wan/v2.7/text-to-video",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

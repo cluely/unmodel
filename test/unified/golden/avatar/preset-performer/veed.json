@@ -1,0 +1,11 @@
+{
+  "ref": "fal/veed/avatars/audio-to-video",
+  "params": {
+    "audio_url": "https://example.com/vo-french.wav",
+    "avatar_id": "emily_primary"
+  },
+  "url": "https://queue.fal.run/veed/avatars/audio-to-video",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

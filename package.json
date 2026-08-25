@@ -83,6 +83,14 @@
       "types": "./dist/unified/video.d.ts",
       "default": "./dist/unified/video.js"
     },
+    "./lipsync": {
+      "types": "./dist/unified/lipsync.d.ts",
+      "default": "./dist/unified/lipsync.js"
+    },
+    "./avatar": {
+      "types": "./dist/unified/avatar.d.ts",
+      "default": "./dist/unified/avatar.js"
+    },
     "./tts": {
       "types": "./dist/unified/tts.d.ts",
       "default": "./dist/unified/tts.js"
@@ -107,9 +115,17 @@
       "types": "./dist/providers/alibaba/index.d.ts",
       "default": "./dist/providers/alibaba/index.js"
     },
+    "./alibaba/unified": {
+      "types": "./dist/providers/alibaba/unified.d.ts",
+      "default": "./dist/providers/alibaba/unified.js"
+    },
     "./alibaba/types": {
       "types": "./dist/providers/alibaba/types.d.ts",
       "default": "./dist/providers/alibaba/types.js"
+    },
+    "./alibaba/values": {
+      "types": "./dist/providers/alibaba/values.d.ts",
+      "default": "./dist/providers/alibaba/values.js"
     },
     "./amazon-bedrock": {
       "types": "./dist/providers/amazon-bedrock/index.d.ts",
@@ -174,6 +190,22 @@
     "./black-forest-labs/values": {
       "types": "./dist/providers/black-forest-labs/values.d.ts",
       "default": "./dist/providers/black-forest-labs/values.js"
+    },
+    "./breezeblue": {
+      "types": "./dist/providers/breezeblue/index.d.ts",
+      "default": "./dist/providers/breezeblue/index.js"
+    },
+    "./breezeblue/unified": {
+      "types": "./dist/providers/breezeblue/unified.d.ts",
+      "default": "./dist/providers/breezeblue/unified.js"
+    },
+    "./breezeblue/types": {
+      "types": "./dist/providers/breezeblue/types.d.ts",
+      "default": "./dist/providers/breezeblue/types.js"
+    },
+    "./breezeblue/values": {
+      "types": "./dist/providers/breezeblue/values.d.ts",
+      "default": "./dist/providers/breezeblue/values.js"
     },
     "./bria": {
       "types": "./dist/providers/bria/index.d.ts",
@@ -607,6 +639,22 @@
       "types": "./dist/providers/moonshotai/types.d.ts",
       "default": "./dist/providers/moonshotai/types.js"
     },
+    "./mureka": {
+      "types": "./dist/providers/mureka/index.d.ts",
+      "default": "./dist/providers/mureka/index.js"
+    },
+    "./mureka/unified": {
+      "types": "./dist/providers/mureka/unified.d.ts",
+      "default": "./dist/providers/mureka/unified.js"
+    },
+    "./mureka/types": {
+      "types": "./dist/providers/mureka/types.d.ts",
+      "default": "./dist/providers/mureka/types.js"
+    },
+    "./mureka/values": {
+      "types": "./dist/providers/mureka/values.d.ts",
+      "default": "./dist/providers/mureka/values.js"
+    },
     "./murf": {
       "types": "./dist/providers/murf/index.d.ts",
       "default": "./dist/providers/murf/index.js"
@@ -907,9 +955,17 @@
       "types": "./dist/providers/stepfun/index.d.ts",
       "default": "./dist/providers/stepfun/index.js"
     },
+    "./stepfun/unified": {
+      "types": "./dist/providers/stepfun/unified.d.ts",
+      "default": "./dist/providers/stepfun/unified.js"
+    },
     "./stepfun/types": {
       "types": "./dist/providers/stepfun/types.d.ts",
       "default": "./dist/providers/stepfun/types.js"
+    },
+    "./stepfun/values": {
+      "types": "./dist/providers/stepfun/values.d.ts",
+      "default": "./dist/providers/stepfun/values.js"
     },
     "./togetherai": {
       "types": "./dist/providers/togetherai/index.d.ts",
@@ -955,9 +1011,17 @@
       "types": "./dist/providers/xai/index.d.ts",
       "default": "./dist/providers/xai/index.js"
     },
+    "./xai/unified": {
+      "types": "./dist/providers/xai/unified.d.ts",
+      "default": "./dist/providers/xai/unified.js"
+    },
     "./xai/types": {
       "types": "./dist/providers/xai/types.d.ts",
       "default": "./dist/providers/xai/types.js"
+    },
+    "./xai/values": {
+      "types": "./dist/providers/xai/values.d.ts",
+      "default": "./dist/providers/xai/values.js"
     },
     "./zhipuai": {
       "types": "./dist/providers/zhipuai/index.d.ts",
@@ -990,6 +1054,7 @@
     "gen:tts-matrix": "bun scripts/gen-tts-matrix.ts",
     "test": "bun test",
     "check": "tsc --noEmit",
+    "bench:types": "tsx test/type-bench/index.bench.ts --benchErrorOnThresholdExceeded",
     "changeset": "changeset",
     "lint:pkg": "publint && attw --pack . --profile esm-only",
     "prepublishOnly": "bun run build && bun run lint:pkg"
@@ -1001,12 +1066,14 @@
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.116.0",
     "@arethetypeswrong/cli": "^0.18.5",
+    "@ark/attest": "^0.56.3",
     "@changesets/cli": "^3.0.0",
     "@google/genai": "^2.17.0",
     "@types/bun": "latest",
     "openai": "^7.4.0",
     "publint": "^0.3.23",
     "tsdown": "^0.22.14",
+    "tsx": "^4.23.12",
     "typescript": "^5.9.3"
   },
   "engines": {

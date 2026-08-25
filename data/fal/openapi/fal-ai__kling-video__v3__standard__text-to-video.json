@@ -1,0 +1,475 @@
+{
+  "metadata": {
+    "category": "text-to-video",
+    "date": "2026-02-04T15:48:44.935Z",
+    "description": "Kling 3.0 Standard: Top-tier text-to-video with cinematic visuals, fluid motion, and native audio generation, with multi-shot support.",
+    "display_name": "Kling Video v3 Text to Video [Standard]",
+    "group": {
+      "key": "kling-v3",
+      "label": "Text To Video (standard)"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/kling-video/v3/standard/text-to-video",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "text-to-video"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a8cfc9f/dei5OqFRB9HK8AgSHwk8f_9a5eea197b3045d1be55aedb0213f6f9.jpg",
+    "updated_at": "2026-04-26T22:25:17.147Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "KlingV3MultiPromptElement": {
+          "properties": {
+            "duration": {
+              "default": "5",
+              "description": "The duration of this shot in seconds",
+              "enum": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "11",
+                "12",
+                "13",
+                "14",
+                "15"
+              ],
+              "title": "Duration",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The prompt for this shot.",
+              "title": "Prompt",
+              "type": "string"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "KlingV3MultiPromptElement",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "duration"
+          ]
+        },
+        "KlingVideoV3StandardTextToVideoInput": {
+          "properties": {
+            "aspect_ratio": {
+              "default": "16:9",
+              "description": "The aspect ratio of the generated video frame",
+              "enum": [
+                "16:9",
+                "9:16",
+                "1:1"
+              ],
+              "title": "Aspect Ratio",
+              "type": "string"
+            },
+            "cfg_scale": {
+              "default": 0.5,
+              "description": "\n            The CFG (Classifier Free Guidance) scale is a measure of how close you want\n            the model to stick to your prompt.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Cfg Scale",
+              "type": "number"
+            },
+            "duration": {
+              "default": "5",
+              "description": "The duration of the generated video in seconds",
+              "enum": [
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "11",
+                "12",
+                "13",
+                "14",
+                "15"
+              ],
+              "title": "Duration",
+              "type": "string"
+            },
+            "generate_audio": {
+              "default": true,
+              "description": "Whether to generate native audio for the video. Supports Chinese and English voice output. Other languages are automatically translated to English. For English speech, use lowercase letters; for acronyms or proper nouns, use uppercase.",
+              "title": "Generate Audio",
+              "type": "boolean"
+            },
+            "multi_prompt": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/components/schemas/KlingV3MultiPromptElement"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "List of prompts for multi-shot video generation. If provided, overrides the single prompt and divides the video into multiple shots with specified prompts and durations.",
+              "examples": [
+                null
+              ],
+              "title": "Multi Prompt"
+            },
+            "negative_prompt": {
+              "default": "blur, distort, and low quality",
+              "maxLength": 2500,
+              "title": "Negative Prompt",
+              "type": "string"
+            },
+            "prompt": {
+              "anyOf": [
+                {
+                  "maxLength": 2500,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Text prompt for video generation. Either prompt or multi_prompt must be provided, but not both.",
+              "examples": [
+                "Cinematic drone shot flying through ancient stone ruins covered in moss and vines at golden hour. Camera starts low, rises through crumbling archways, revealing a vast misty valley beyond. Volumetric light rays pierce through gaps in the stone. Epic scale, photorealistic, 8K quality."
+              ],
+              "title": "Prompt"
+            },
+            "shot_type": {
+              "default": "customize",
+              "description": "The type of multi-shot video generation. 'intelligent' lets the model automatically determine shot structure.",
+              "enum": [
+                "customize",
+                "intelligent"
+              ],
+              "title": "Shot Type",
+              "type": "string"
+            }
+          },
+          "title": "TextToVideoV3StandardRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "duration",
+            "multi_prompt",
+            "generate_audio",
+            "shot_type",
+            "aspect_ratio",
+            "negative_prompt",
+            "cfg_scale"
+          ]
+        },
+        "KlingVideoV3StandardTextToVideoOutput": {
+          "properties": {
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated video",
+              "examples": [
+                {
+                  "content_type": "video/mp4",
+                  "file_name": "output.mp4",
+                  "file_size": 6797486,
+                  "url": "https://storage.googleapis.com/falserverless/example_outputs/kling-v3/standard-t2v/out.mp4"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video"
+          ],
+          "title": "TextToVideoV3StandardOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/kling-video/v3/standard/text-to-video queue.",
+      "title": "Queue OpenAPI for fal-ai/kling-video/v3/standard/text-to-video",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Kling V3 (standard) Text to Video API.\n\nThe Kling V3 model is the latest generation of text-to-video with\nimproved visual quality and motion consistency. This version also\nsupports native audio generation when the `generate_audio` parameter is enabled.",
+        "category": "text-to-video",
+        "documentationUrl": "https://fal.ai/models/fal-ai/kling-video/v3/standard/text-to-video/api",
+        "endpointId": "fal-ai/kling-video/v3/standard/text-to-video",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/kling-video/v3/standard/text-to-video",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a8cfc9f/dei5OqFRB9HK8AgSHwk8f_9a5eea197b3045d1be55aedb0213f6f9.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/kling-video/v3/standard/text-to-video": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KlingVideoV3StandardTextToVideoInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/v3/standard/text-to-video/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/KlingVideoV3StandardTextToVideoOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/v3/standard/text-to-video/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/v3/standard/text-to-video/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

@@ -2,11 +2,19 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
+//   data/fal/openapi/argil__avatars__audio-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__text-to-image.json
+//   data/fal/openapi/fal-ai__bytedance__omnihuman__v1.5.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__edit.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__text-to-image.json
 //   data/fal/openapi/fal-ai__clarity-upscaler.json
+//   data/fal/openapi/fal-ai__echomimic-v3.json
 //   data/fal/openapi/fal-ai__flux-2.json
 //   data/fal/openapi/fal-ai__flux-2-max.json
 //   data/fal/openapi/fal-ai__flux-2-pro.json
@@ -28,8 +36,22 @@
 //   data/fal/openapi/fal-ai__gpt-image-1.5__edit.json
 //   data/fal/openapi/fal-ai__ideogram__v3.json
 //   data/fal/openapi/fal-ai__kling-image__v3__text-to-image.json
+//   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__pro.json
+//   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__standard.json
+//   data/fal/openapi/fal-ai__kling-video__lipsync__audio-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
+//   data/fal/openapi/fal-ai__latentsync.json
+//   data/fal/openapi/fal-ai__longcat-single-avatar__image-audio-to-video.json
 //   data/fal/openapi/fal-ai__lyria2.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__minimax__speech-02-hd.json
 //   data/fal/openapi/fal-ai__nano-banana.json
 //   data/fal/openapi/fal-ai__nano-banana-2.json
@@ -37,24 +59,43 @@
 //   data/fal/openapi/fal-ai__nano-banana-pro.json
 //   data/fal/openapi/fal-ai__nano-banana-pro__edit.json
 //   data/fal/openapi/fal-ai__nano-banana__edit.json
+//   data/fal/openapi/fal-ai__pixverse__lipsync.json
+//   data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json
 //   data/fal/openapi/fal-ai__qwen-image.json
 //   data/fal/openapi/fal-ai__qwen-image-edit-2511.json
 //   data/fal/openapi/fal-ai__recraft__v3__text-to-image.json
 //   data/fal/openapi/fal-ai__recraft__v4__text-to-image.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2.json
+//   data/fal/openapi/fal-ai__sync-lipsync__v2__pro.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v3.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v3__image-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1.json
+//   data/fal/openapi/fal-ai__veo3.1__extend-video.json
+//   data/fal/openapi/fal-ai__veo3.1__fast.json
+//   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
+//   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
+//   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
+//   data/fal/openapi/fal-ai__wan__v2.7__text-to-video.json
 //   data/fal/openapi/fal-ai__wizper.json
 //   data/fal/openapi/fal-ai__z-image__turbo.json
+//   data/fal/openapi/google__gemini-omni-flash.json
 //   data/fal/openapi/google__nano-banana-2-lite.json
 //   data/fal/openapi/ideogram__v4.json
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
+//   data/fal/openapi/lightricks__ltx-2.5__text-to-video__pro.json
+//   data/fal/openapi/minimax__h3__image-to-video.json
+//   data/fal/openapi/minimax__h3__text-to-video.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
+//   data/fal/openapi/veed__avatars__audio-to-video.json
+//   data/fal/openapi/veed__lipsync.json
+//   data/fal/openapi/veed__lipsync__v2.json
 //   data/fal/openapi/xai__grok-imagine-image.json
+//   data/fal/openapi/xai__grok-imagine-video__text-to-video.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
@@ -67,9 +108,16 @@
  * cannot also be the router.
  */
 
-/** The one fal endpoint unmodel serves as `fal.avatar`. */
+/** Every fal endpoint unmodel serves as `fal.avatar` — 8 of them. */
 export const FAL_AVATAR_ENDPOINTS = [
+  "argil/avatars/audio-to-video",
+  "fal-ai/bytedance/omnihuman/v1.5",
+  "fal-ai/echomimic-v3",
+  "fal-ai/kling-video/ai-avatar/v2/pro",
+  "fal-ai/kling-video/ai-avatar/v2/standard",
+  "fal-ai/longcat-single-avatar/image-audio-to-video",
   "fal-ai/sync-lipsync/v3/image-to-video",
+  "veed/avatars/audio-to-video",
 ] as const;
 
 export type FalAvatarEndpointId = (typeof FAL_AVATAR_ENDPOINTS)[number];
@@ -131,10 +179,16 @@ export const FAL_IMAGE_EDIT_ENDPOINTS = [
 
 export type FalImageEditEndpointId = (typeof FAL_IMAGE_EDIT_ENDPOINTS)[number];
 
-/** Every fal endpoint unmodel serves as `fal.lipsync` — 2 of them. */
+/** Every fal endpoint unmodel serves as `fal.lipsync` — 8 of them. */
 export const FAL_LIPSYNC_ENDPOINTS = [
+  "fal-ai/kling-video/lipsync/audio-to-video",
+  "fal-ai/latentsync",
+  "fal-ai/pixverse/lipsync",
   "fal-ai/sync-lipsync/v2",
+  "fal-ai/sync-lipsync/v2/pro",
   "fal-ai/sync-lipsync/v3",
+  "veed/lipsync",
+  "veed/lipsync/v2",
 ] as const;
 
 export type FalLipsyncEndpointId = (typeof FAL_LIPSYNC_ENDPOINTS)[number];
@@ -167,10 +221,38 @@ export const FAL_UPSCALE_ENDPOINTS = [
 
 export type FalUpscaleEndpointId = (typeof FAL_UPSCALE_ENDPOINTS)[number];
 
-/** Every fal endpoint unmodel serves as `fal.video` — 2 of them. */
+/** Every fal endpoint unmodel serves as `fal.video` — 30 of them. */
 export const FAL_VIDEO_ENDPOINTS = [
+  "bytedance/seedance-2.0/image-to-video",
+  "bytedance/seedance-2.0/text-to-video",
+  "bytedance/seedance-2.5/image-to-video",
+  "bytedance/seedance-2.5/reference-to-video",
+  "bytedance/seedance-2.5/text-to-video",
+  "fal-ai/kling-video/o3/pro/video-to-video/edit",
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
+  "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
+  "fal-ai/kling-video/v2.6/pro/image-to-video",
+  "fal-ai/kling-video/v2.6/pro/text-to-video",
+  "fal-ai/kling-video/v3/pro/image-to-video",
+  "fal-ai/kling-video/v3/pro/text-to-video",
+  "fal-ai/kling-video/v3/standard/image-to-video",
+  "fal-ai/kling-video/v3/standard/text-to-video",
+  "fal-ai/minimax/hailuo-02/pro/image-to-video",
+  "fal-ai/pixverse/v6/text-to-video",
   "fal-ai/veo3.1",
+  "fal-ai/veo3.1/extend-video",
+  "fal-ai/veo3.1/fast",
+  "fal-ai/veo3.1/first-last-frame-to-video",
+  "fal-ai/veo3.1/image-to-video",
+  "fal-ai/wan/v2.2-a14b/image-to-video",
+  "fal-ai/wan/v2.2-a14b/text-to-video",
+  "fal-ai/wan/v2.7/image-to-video",
+  "fal-ai/wan/v2.7/text-to-video",
+  "google/gemini-omni-flash",
+  "lightricks/ltx-2.5/text-to-video/pro",
+  "minimax/h3/image-to-video",
+  "minimax/h3/text-to-video",
+  "xai/grok-imagine-video/text-to-video",
 ] as const;
 
 export type FalVideoEndpointId = (typeof FAL_VIDEO_ENDPOINTS)[number];
@@ -178,11 +260,19 @@ export type FalVideoEndpointId = (typeof FAL_VIDEO_ENDPOINTS)[number];
 /** Every curated endpoint id, across all verbs, sorted. */
 export const FAL_ENDPOINTS = [
   "alibaba/qwen-image-3/edit",
+  "argil/avatars/audio-to-video",
+  "bytedance/seedance-2.0/image-to-video",
+  "bytedance/seedance-2.0/text-to-video",
+  "bytedance/seedance-2.5/image-to-video",
+  "bytedance/seedance-2.5/reference-to-video",
+  "bytedance/seedance-2.5/text-to-video",
   "bytedance/seedream/v5/pro/edit",
   "bytedance/seedream/v5/pro/text-to-image",
+  "fal-ai/bytedance/omnihuman/v1.5",
   "fal-ai/bytedance/seedream/v4.5/edit",
   "fal-ai/bytedance/seedream/v4.5/text-to-image",
   "fal-ai/clarity-upscaler",
+  "fal-ai/echomimic-v3",
   "fal-ai/flux-2",
   "fal-ai/flux-2-max",
   "fal-ai/flux-2-pro",
@@ -204,8 +294,22 @@ export const FAL_ENDPOINTS = [
   "fal-ai/gpt-image-1.5/edit",
   "fal-ai/ideogram/v3",
   "fal-ai/kling-image/v3/text-to-image",
+  "fal-ai/kling-video/ai-avatar/v2/pro",
+  "fal-ai/kling-video/ai-avatar/v2/standard",
+  "fal-ai/kling-video/lipsync/audio-to-video",
+  "fal-ai/kling-video/o3/pro/video-to-video/edit",
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
+  "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
+  "fal-ai/kling-video/v2.6/pro/image-to-video",
+  "fal-ai/kling-video/v2.6/pro/text-to-video",
+  "fal-ai/kling-video/v3/pro/image-to-video",
+  "fal-ai/kling-video/v3/pro/text-to-video",
+  "fal-ai/kling-video/v3/standard/image-to-video",
+  "fal-ai/kling-video/v3/standard/text-to-video",
+  "fal-ai/latentsync",
+  "fal-ai/longcat-single-avatar/image-audio-to-video",
   "fal-ai/lyria2",
+  "fal-ai/minimax/hailuo-02/pro/image-to-video",
   "fal-ai/minimax/speech-02-hd",
   "fal-ai/nano-banana",
   "fal-ai/nano-banana-2",
@@ -213,24 +317,43 @@ export const FAL_ENDPOINTS = [
   "fal-ai/nano-banana-pro",
   "fal-ai/nano-banana-pro/edit",
   "fal-ai/nano-banana/edit",
+  "fal-ai/pixverse/lipsync",
+  "fal-ai/pixverse/v6/text-to-video",
   "fal-ai/qwen-image",
   "fal-ai/qwen-image-edit-2511",
   "fal-ai/recraft/v3/text-to-image",
   "fal-ai/recraft/v4/text-to-image",
   "fal-ai/sync-lipsync/v2",
+  "fal-ai/sync-lipsync/v2/pro",
   "fal-ai/sync-lipsync/v3",
   "fal-ai/sync-lipsync/v3/image-to-video",
   "fal-ai/veo3.1",
+  "fal-ai/veo3.1/extend-video",
+  "fal-ai/veo3.1/fast",
+  "fal-ai/veo3.1/first-last-frame-to-video",
+  "fal-ai/veo3.1/image-to-video",
+  "fal-ai/wan/v2.2-a14b/image-to-video",
+  "fal-ai/wan/v2.2-a14b/text-to-video",
+  "fal-ai/wan/v2.7/image-to-video",
+  "fal-ai/wan/v2.7/text-to-video",
   "fal-ai/wizper",
   "fal-ai/z-image/turbo",
+  "google/gemini-omni-flash",
   "google/nano-banana-2-lite",
   "ideogram/v4",
   "krea/v2/large/text-to-image",
   "krea/v2/medium/text-to-image",
+  "lightricks/ltx-2.5/text-to-video/pro",
+  "minimax/h3/image-to-video",
+  "minimax/h3/text-to-video",
   "openai/gpt-image-2",
   "openai/gpt-image-2/edit",
   "reve/2.1/text-to-image",
+  "veed/avatars/audio-to-video",
+  "veed/lipsync",
+  "veed/lipsync/v2",
   "xai/grok-imagine-image",
+  "xai/grok-imagine-video/text-to-video",
 ] as const;
 
 export type FalEndpointId = (typeof FAL_ENDPOINTS)[number];
@@ -238,11 +361,19 @@ export type FalEndpointId = (typeof FAL_ENDPOINTS)[number];
 /** Which verb serves each endpoint — the inverse of the lists above. */
 export const FAL_ENDPOINT_VERBS = {
   "alibaba/qwen-image-3/edit": "imageEdit",
+  "argil/avatars/audio-to-video": "avatar",
+  "bytedance/seedance-2.0/image-to-video": "video",
+  "bytedance/seedance-2.0/text-to-video": "video",
+  "bytedance/seedance-2.5/image-to-video": "video",
+  "bytedance/seedance-2.5/reference-to-video": "video",
+  "bytedance/seedance-2.5/text-to-video": "video",
   "bytedance/seedream/v5/pro/edit": "imageEdit",
   "bytedance/seedream/v5/pro/text-to-image": "image",
+  "fal-ai/bytedance/omnihuman/v1.5": "avatar",
   "fal-ai/bytedance/seedream/v4.5/edit": "imageEdit",
   "fal-ai/bytedance/seedream/v4.5/text-to-image": "image",
   "fal-ai/clarity-upscaler": "upscale",
+  "fal-ai/echomimic-v3": "avatar",
   "fal-ai/flux-2": "image",
   "fal-ai/flux-2-max": "image",
   "fal-ai/flux-2-pro": "image",
@@ -264,8 +395,22 @@ export const FAL_ENDPOINT_VERBS = {
   "fal-ai/gpt-image-1.5/edit": "imageEdit",
   "fal-ai/ideogram/v3": "image",
   "fal-ai/kling-image/v3/text-to-image": "image",
+  "fal-ai/kling-video/ai-avatar/v2/pro": "avatar",
+  "fal-ai/kling-video/ai-avatar/v2/standard": "avatar",
+  "fal-ai/kling-video/lipsync/audio-to-video": "lipsync",
+  "fal-ai/kling-video/o3/pro/video-to-video/edit": "video",
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": "video",
+  "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": "video",
+  "fal-ai/kling-video/v2.6/pro/image-to-video": "video",
+  "fal-ai/kling-video/v2.6/pro/text-to-video": "video",
+  "fal-ai/kling-video/v3/pro/image-to-video": "video",
+  "fal-ai/kling-video/v3/pro/text-to-video": "video",
+  "fal-ai/kling-video/v3/standard/image-to-video": "video",
+  "fal-ai/kling-video/v3/standard/text-to-video": "video",
+  "fal-ai/latentsync": "lipsync",
+  "fal-ai/longcat-single-avatar/image-audio-to-video": "avatar",
   "fal-ai/lyria2": "music",
+  "fal-ai/minimax/hailuo-02/pro/image-to-video": "video",
   "fal-ai/minimax/speech-02-hd": "tts",
   "fal-ai/nano-banana": "image",
   "fal-ai/nano-banana-2": "image",
@@ -273,24 +418,43 @@ export const FAL_ENDPOINT_VERBS = {
   "fal-ai/nano-banana-pro": "image",
   "fal-ai/nano-banana-pro/edit": "imageEdit",
   "fal-ai/nano-banana/edit": "imageEdit",
+  "fal-ai/pixverse/lipsync": "lipsync",
+  "fal-ai/pixverse/v6/text-to-video": "video",
   "fal-ai/qwen-image": "image",
   "fal-ai/qwen-image-edit-2511": "imageEdit",
   "fal-ai/recraft/v3/text-to-image": "image",
   "fal-ai/recraft/v4/text-to-image": "image",
   "fal-ai/sync-lipsync/v2": "lipsync",
+  "fal-ai/sync-lipsync/v2/pro": "lipsync",
   "fal-ai/sync-lipsync/v3": "lipsync",
   "fal-ai/sync-lipsync/v3/image-to-video": "avatar",
   "fal-ai/veo3.1": "video",
+  "fal-ai/veo3.1/extend-video": "video",
+  "fal-ai/veo3.1/fast": "video",
+  "fal-ai/veo3.1/first-last-frame-to-video": "video",
+  "fal-ai/veo3.1/image-to-video": "video",
+  "fal-ai/wan/v2.2-a14b/image-to-video": "video",
+  "fal-ai/wan/v2.2-a14b/text-to-video": "video",
+  "fal-ai/wan/v2.7/image-to-video": "video",
+  "fal-ai/wan/v2.7/text-to-video": "video",
   "fal-ai/wizper": "stt",
   "fal-ai/z-image/turbo": "image",
+  "google/gemini-omni-flash": "video",
   "google/nano-banana-2-lite": "image",
   "ideogram/v4": "image",
   "krea/v2/large/text-to-image": "image",
   "krea/v2/medium/text-to-image": "image",
+  "lightricks/ltx-2.5/text-to-video/pro": "video",
+  "minimax/h3/image-to-video": "video",
+  "minimax/h3/text-to-video": "video",
   "openai/gpt-image-2": "image",
   "openai/gpt-image-2/edit": "imageEdit",
   "reve/2.1/text-to-image": "image",
+  "veed/avatars/audio-to-video": "avatar",
+  "veed/lipsync": "lipsync",
+  "veed/lipsync/v2": "lipsync",
   "xai/grok-imagine-image": "image",
+  "xai/grok-imagine-video/text-to-video": "video",
 } as const;
 
 /**
@@ -303,11 +467,19 @@ export const FAL_ENDPOINT_VERBS = {
  */
 export const FAL_DOC_URLS = {
   "alibaba/qwen-image-3/edit": "https://fal.ai/models/fal-ai/qwen-image-3/edit/api",
+  "argil/avatars/audio-to-video": "https://fal.ai/models/Argil/avatars/audio-to-video/api",
+  "bytedance/seedance-2.0/image-to-video": "https://fal.ai/models/fal-ai/seedance-2/image-to-video/api",
+  "bytedance/seedance-2.0/text-to-video": "https://fal.ai/models/fal-ai/seedance-2/text-to-video/api",
+  "bytedance/seedance-2.5/image-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/image-to-video/api",
+  "bytedance/seedance-2.5/reference-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/reference-to-video/api",
+  "bytedance/seedance-2.5/text-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/text-to-video/api",
   "bytedance/seedream/v5/pro/edit": "https://fal.ai/models/fal-ai/seedream-5-pro/edit/api",
   "bytedance/seedream/v5/pro/text-to-image": "https://fal.ai/models/fal-ai/seedream-5-pro/text-to-image/api",
+  "fal-ai/bytedance/omnihuman/v1.5": "https://fal.ai/models/fal-ai/bytedance/omnihuman/v1.5/api",
   "fal-ai/bytedance/seedream/v4.5/edit": "https://fal.ai/models/fal-ai/bytedance/seedream/v4.5/edit/api",
   "fal-ai/bytedance/seedream/v4.5/text-to-image": "https://fal.ai/models/fal-ai/bytedance/seedream/v4.5/text-to-image/api",
   "fal-ai/clarity-upscaler": "https://fal.ai/models/fal-ai/clarity-upscaler/api",
+  "fal-ai/echomimic-v3": "https://fal.ai/models/fal-ai/echomimic-v3/api",
   "fal-ai/flux-2": "https://fal.ai/models/fal-ai/flux-2-dev/api",
   "fal-ai/flux-2-max": "https://fal.ai/models/fal-ai/flux-2-max/api",
   "fal-ai/flux-2-pro": "https://fal.ai/models/fal-ai/flux-2-pro/api",
@@ -329,8 +501,22 @@ export const FAL_DOC_URLS = {
   "fal-ai/gpt-image-1.5/edit": "https://fal.ai/models/fal-ai/gpt-image-1.5/edit/api",
   "fal-ai/ideogram/v3": "https://fal.ai/models/fal-ai/ideogram/v3/api",
   "fal-ai/kling-image/v3/text-to-image": "https://fal.ai/models/fal-ai/kling-image/v3/text-to-image/api",
+  "fal-ai/kling-video/ai-avatar/v2/pro": "https://fal.ai/models/fal-ai/kling-video/ai-avatar/v2/pro/api",
+  "fal-ai/kling-video/ai-avatar/v2/standard": "https://fal.ai/models/fal-ai/kling-video/ai-avatar/v2/standard/api",
+  "fal-ai/kling-video/lipsync/audio-to-video": "https://fal.ai/models/fal-ai/kling-video/lipsync/audio-to-video/api",
+  "fal-ai/kling-video/o3/pro/video-to-video/edit": "https://fal.ai/models/fal-ai/kling-video/o3/pro/video-to-video/edit/api",
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": "https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/image-to-video/api",
+  "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": "https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/text-to-video/api",
+  "fal-ai/kling-video/v2.6/pro/image-to-video": "https://fal.ai/models/fal-ai/kling-video/v2.6/pro/image-to-video/api",
+  "fal-ai/kling-video/v2.6/pro/text-to-video": "https://fal.ai/models/fal-ai/kling-video/v2.6/pro/text-to-video/api",
+  "fal-ai/kling-video/v3/pro/image-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/pro/image-to-video/api",
+  "fal-ai/kling-video/v3/pro/text-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/pro/text-to-video/api",
+  "fal-ai/kling-video/v3/standard/image-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/standard/image-to-video/api",
+  "fal-ai/kling-video/v3/standard/text-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/standard/text-to-video/api",
+  "fal-ai/latentsync": "https://fal.ai/models/fal-ai/latentsync/api",
+  "fal-ai/longcat-single-avatar/image-audio-to-video": "https://fal.ai/models/fal-ai/longcat-single-avatar/image-audio-to-video/api",
   "fal-ai/lyria2": "https://fal.ai/models/fal-ai/lyria2/api",
+  "fal-ai/minimax/hailuo-02/pro/image-to-video": "https://fal.ai/models/fal-ai/minimax/hailuo-02/pro/image-to-video/api",
   "fal-ai/minimax/speech-02-hd": "https://fal.ai/models/fal-ai/minimax/speech-02-hd/api",
   "fal-ai/nano-banana": "https://fal.ai/models/fal-ai/nano-banana/api",
   "fal-ai/nano-banana-2": "https://fal.ai/models/fal-ai/nano-banana-2/api",
@@ -338,24 +524,43 @@ export const FAL_DOC_URLS = {
   "fal-ai/nano-banana-pro": "https://fal.ai/models/fal-ai/nano-banana-pro/api",
   "fal-ai/nano-banana-pro/edit": "https://fal.ai/models/fal-ai/nano-banana-pro/edit/api",
   "fal-ai/nano-banana/edit": "https://fal.ai/models/fal-ai/nano-banana/edit/api",
+  "fal-ai/pixverse/lipsync": "https://fal.ai/models/fal-ai/pixverse/lipsync/api",
+  "fal-ai/pixverse/v6/text-to-video": "https://fal.ai/models/fal-ai/pixverse/v6/text-to-video/api",
   "fal-ai/qwen-image": "https://fal.ai/models/fal-ai/qwen-image/api",
   "fal-ai/qwen-image-edit-2511": "https://fal.ai/models/fal-ai/qwen-image-edit-2511/api",
   "fal-ai/recraft/v3/text-to-image": "https://fal.ai/models/fal-ai/recraft/v3/text-to-image/api",
   "fal-ai/recraft/v4/text-to-image": "https://fal.ai/models/fal-ai/recraft/v4/text-to-image/api",
   "fal-ai/sync-lipsync/v2": "https://fal.ai/models/fal-ai/sync-lipsync/v2/api",
+  "fal-ai/sync-lipsync/v2/pro": "https://fal.ai/models/fal-ai/sync-lipsync/v2/pro/api",
   "fal-ai/sync-lipsync/v3": "https://fal.ai/models/fal-ai/sync-lipsync/v3/api",
   "fal-ai/sync-lipsync/v3/image-to-video": "https://fal.ai/models/fal-ai/sync-lipsync/v3/image-to-video/api",
   "fal-ai/veo3.1": "https://fal.ai/models/fal-ai/veo3.1/api",
+  "fal-ai/veo3.1/extend-video": "https://fal.ai/models/fal-ai/veo3.1/extend-video/api",
+  "fal-ai/veo3.1/fast": "https://fal.ai/models/fal-ai/veo3.1/fast/api",
+  "fal-ai/veo3.1/first-last-frame-to-video": "https://fal.ai/models/fal-ai/veo3.1/first-last-frame-to-video/api",
+  "fal-ai/veo3.1/image-to-video": "https://fal.ai/models/fal-ai/veo3.1/image-to-video/api",
+  "fal-ai/wan/v2.2-a14b/image-to-video": "https://fal.ai/models/fal-ai/wan/v2.2-a14b/image-to-video/api",
+  "fal-ai/wan/v2.2-a14b/text-to-video": "https://fal.ai/models/fal-ai/wan/v2.2-a14b/text-to-video/api",
+  "fal-ai/wan/v2.7/image-to-video": "https://fal.ai/models/fal-ai/wan-27-i2v/api",
+  "fal-ai/wan/v2.7/text-to-video": "https://fal.ai/models/fal-ai/wan-27-t2v/text-to-video/api",
   "fal-ai/wizper": "https://fal.ai/models/fal-ai/wizper/api",
   "fal-ai/z-image/turbo": "https://fal.ai/models/fal-ai/z-image/turbo/api",
+  "google/gemini-omni-flash": "https://fal.ai/models/fal-ai/gemini-omni-flash/api",
   "google/nano-banana-2-lite": "https://fal.ai/models/fal-ai/nano-banana-lite/api",
   "ideogram/v4": "https://fal.ai/models/fal-ai/ideogram-v4/api",
   "krea/v2/large/text-to-image": "https://fal.ai/models/fal-ai/krea/v2/large/text-to-image/api",
   "krea/v2/medium/text-to-image": "https://fal.ai/models/fal-ai/krea/v2/medium/text-to-image/api",
+  "lightricks/ltx-2.5/text-to-video/pro": "https://fal.ai/models/fal-ai/ltx-2.5/text-to-video/pro/api",
+  "minimax/h3/image-to-video": "https://fal.ai/models/fal-ai/minimax_h3/image-to-video/api",
+  "minimax/h3/text-to-video": "https://fal.ai/models/fal-ai/minimax_h3/text-to-video/api",
   "openai/gpt-image-2": "https://fal.ai/models/fal-ai/gpt-image-2/api",
   "openai/gpt-image-2/edit": "https://fal.ai/models/fal-ai/gpt-image-2/edit/api",
   "reve/2.1/text-to-image": "https://fal.ai/models/fal-ai/reve/v2/text-to-image/api",
+  "veed/avatars/audio-to-video": "https://fal.ai/models/VEED/avatars/audio-to-video/api",
+  "veed/lipsync": "https://fal.ai/models/VEED/lipsync/api",
+  "veed/lipsync/v2": "https://fal.ai/models/VEED/lipsync-v2/api",
   "xai/grok-imagine-image": "https://fal.ai/models/fal-ai/xai/api",
+  "xai/grok-imagine-video/text-to-video": "https://fal.ai/models/fal-ai/xai/text-to-video/api",
 } as const;
 
 /**
@@ -368,11 +573,19 @@ export const FAL_DOC_URLS = {
  */
 export const FAL_REQUIRED_PROBES = {
   "alibaba/qwen-image-3/edit": ["prompt", "image_urls"],
+  "argil/avatars/audio-to-video": ["avatar", "audio_url"],
+  "bytedance/seedance-2.0/image-to-video": ["prompt", "image_url"],
+  "bytedance/seedance-2.0/text-to-video": ["prompt"],
+  "bytedance/seedance-2.5/image-to-video": ["prompt", "image_url"],
+  "bytedance/seedance-2.5/reference-to-video": ["prompt"],
+  "bytedance/seedance-2.5/text-to-video": ["prompt"],
   "bytedance/seedream/v5/pro/edit": ["prompt", "image_urls"],
   "bytedance/seedream/v5/pro/text-to-image": ["prompt"],
+  "fal-ai/bytedance/omnihuman/v1.5": ["image_url", "audio_url"],
   "fal-ai/bytedance/seedream/v4.5/edit": ["prompt", "image_urls"],
   "fal-ai/bytedance/seedream/v4.5/text-to-image": ["prompt"],
   "fal-ai/clarity-upscaler": ["image_url"],
+  "fal-ai/echomimic-v3": ["image_url", "audio_url", "prompt"],
   "fal-ai/flux-2": ["prompt"],
   "fal-ai/flux-2-max": ["prompt"],
   "fal-ai/flux-2-pro": ["prompt"],
@@ -394,8 +607,22 @@ export const FAL_REQUIRED_PROBES = {
   "fal-ai/gpt-image-1.5/edit": ["prompt", "image_urls"],
   "fal-ai/ideogram/v3": ["prompt"],
   "fal-ai/kling-image/v3/text-to-image": ["prompt"],
+  "fal-ai/kling-video/ai-avatar/v2/pro": ["image_url", "audio_url"],
+  "fal-ai/kling-video/ai-avatar/v2/standard": ["image_url", "audio_url"],
+  "fal-ai/kling-video/lipsync/audio-to-video": ["video_url", "audio_url"],
+  "fal-ai/kling-video/o3/pro/video-to-video/edit": ["prompt", "video_url"],
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": ["prompt", "image_url"],
+  "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": ["prompt"],
+  "fal-ai/kling-video/v2.6/pro/image-to-video": ["prompt", "start_image_url"],
+  "fal-ai/kling-video/v2.6/pro/text-to-video": ["prompt"],
+  "fal-ai/kling-video/v3/pro/image-to-video": ["start_image_url"],
+  "fal-ai/kling-video/v3/pro/text-to-video": [],
+  "fal-ai/kling-video/v3/standard/image-to-video": ["start_image_url"],
+  "fal-ai/kling-video/v3/standard/text-to-video": [],
+  "fal-ai/latentsync": ["video_url", "audio_url"],
+  "fal-ai/longcat-single-avatar/image-audio-to-video": ["image_url", "audio_url"],
   "fal-ai/lyria2": ["prompt"],
+  "fal-ai/minimax/hailuo-02/pro/image-to-video": ["prompt", "image_url"],
   "fal-ai/minimax/speech-02-hd": ["text"],
   "fal-ai/nano-banana": ["prompt"],
   "fal-ai/nano-banana-2": ["prompt"],
@@ -403,22 +630,41 @@ export const FAL_REQUIRED_PROBES = {
   "fal-ai/nano-banana-pro": ["prompt"],
   "fal-ai/nano-banana-pro/edit": ["prompt", "image_urls"],
   "fal-ai/nano-banana/edit": ["prompt", "image_urls"],
+  "fal-ai/pixverse/lipsync": ["video_url"],
+  "fal-ai/pixverse/v6/text-to-video": ["prompt"],
   "fal-ai/qwen-image": ["prompt"],
   "fal-ai/qwen-image-edit-2511": ["prompt", "image_urls"],
   "fal-ai/recraft/v3/text-to-image": ["prompt"],
   "fal-ai/recraft/v4/text-to-image": ["prompt"],
   "fal-ai/sync-lipsync/v2": ["video_url", "audio_url"],
+  "fal-ai/sync-lipsync/v2/pro": ["video_url", "audio_url"],
   "fal-ai/sync-lipsync/v3": ["video_url", "audio_url"],
   "fal-ai/sync-lipsync/v3/image-to-video": ["image_url", "audio_url"],
   "fal-ai/veo3.1": ["prompt"],
+  "fal-ai/veo3.1/extend-video": ["prompt", "video_url"],
+  "fal-ai/veo3.1/fast": ["prompt"],
+  "fal-ai/veo3.1/first-last-frame-to-video": ["prompt", "first_frame_url", "last_frame_url"],
+  "fal-ai/veo3.1/image-to-video": ["prompt", "image_url"],
+  "fal-ai/wan/v2.2-a14b/image-to-video": ["image_url", "prompt"],
+  "fal-ai/wan/v2.2-a14b/text-to-video": ["prompt"],
+  "fal-ai/wan/v2.7/image-to-video": [],
+  "fal-ai/wan/v2.7/text-to-video": ["prompt"],
   "fal-ai/wizper": ["audio_url"],
   "fal-ai/z-image/turbo": ["prompt"],
+  "google/gemini-omni-flash": ["prompt"],
   "google/nano-banana-2-lite": ["prompt"],
   "ideogram/v4": ["prompt"],
   "krea/v2/large/text-to-image": ["prompt"],
   "krea/v2/medium/text-to-image": ["prompt"],
+  "lightricks/ltx-2.5/text-to-video/pro": ["prompt"],
+  "minimax/h3/image-to-video": ["prompt"],
+  "minimax/h3/text-to-video": ["prompt"],
   "openai/gpt-image-2": ["prompt"],
   "openai/gpt-image-2/edit": ["prompt", "image_urls"],
   "reve/2.1/text-to-image": ["prompt"],
+  "veed/avatars/audio-to-video": ["avatar_id", "audio_url"],
+  "veed/lipsync": ["video_url", "audio_url"],
+  "veed/lipsync/v2": ["video_url", "audio_url"],
   "xai/grok-imagine-image": ["prompt"],
+  "xai/grok-imagine-video/text-to-video": ["prompt"],
 } as const;

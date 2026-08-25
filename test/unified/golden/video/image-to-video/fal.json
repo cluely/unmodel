@@ -1,0 +1,12 @@
+{
+  "ref": "fal/bytedance/seedance-2.5/image-to-video",
+  "params": {
+    "prompt": "the fox turns and walks into the snow",
+    "duration": "8",
+    "image_url": "https://example.com/frame.png"
+  },
+  "url": "https://queue.fal.run/bytedance/seedance-2.5/image-to-video",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -1,0 +1,82 @@
+name: Leaderboard audit (Artificial Analysis)
+
+# Weekly, after both refresh workflows have had their say (models.dev daily at
+# 06:17, fal Mondays at 05:23): pulls every ranked model from Artificial
+# Analysis's Data API and cross-checks it against what unmodel serves. The
+# native provider wave (7fdc549) started from exactly this audit run by hand;
+# this workflow is that audit on a schedule, so coverage drift surfaces weekly
+# instead of whenever someone remembers to look.
+#
+# Report only, delivered to ONE rolling issue (label `leaderboard-audit`) —
+# widening a roster is a curation decision, never an automated one, and the
+# issue is where the triage checklist lives. Nothing here commits.
+#
+# Requires the ARTIFICIALANALYSIS_API_KEY repo secret (free tier:
+# https://artificialanalysis.ai/api-key-management-redirect — 100 requests per
+# fixed 24h window shared across the account; a run spends ~12).
+
+on:
+  schedule:
+    - cron: "41 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun install --frozen-lockfile
+
+      # Refresh the models.dev snapshot and regenerate the catalog IN THIS
+      # RUNNER ONLY (nothing is committed — delivery is an issue, and the
+      # daily codegen-refresh workflow owns the actual snapshot PR). This is
+      # what makes the chat cross-check compare against today's catalog
+      # rather than the last merged one.
+      - name: Refresh catalogs locally
+        run: bun run codegen:refresh
+
+      - name: Run the leaderboard audit
+        run: bun scripts/leaderboard-audit.ts --out /tmp/leaderboard-report.md
+        env:
+          ARTIFICIALANALYSIS_API_KEY: ${{ secrets.ARTIFICIALANALYSIS_API_KEY }}
+
+      # One rolling issue: created on the first run, body replaced on every
+      # run after (and reopened if someone closed it — closing does not stop
+      # the drift, resolving the rows does). The date header makes a stale
+      # body self-evident.
+      - name: Upsert the rolling issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          {
+            echo "_Run of $(date -u +%F) — [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})._"
+            echo
+            cat /tmp/leaderboard-report.md
+          } > /tmp/issue-body.md
+
+          gh label create leaderboard-audit \
+            --description "Weekly Artificial Analysis coverage audit" \
+            --color 1D76DB --force
+
+          number="$(gh issue list --label leaderboard-audit --state all \
+            --json number --jq '.[0].number // empty' --limit 1)"
+          if [ -z "$number" ]; then
+            gh issue create \
+              --title "Weekly leaderboard audit" \
+              --label leaderboard-audit \
+              --body-file /tmp/issue-body.md
+          else
+            gh issue edit "$number" --body-file /tmp/issue-body.md
+            state="$(gh issue view "$number" --json state --jq .state)"
+            if [ "$state" = "CLOSED" ]; then
+              gh issue reopen "$number"
+            fi
+          fi

@@ -1,0 +1,136 @@
+{
+  "$comment": [
+    "HAND-MAINTAINED — the memory of every leaderboard triage decision, read by",
+    "scripts/leaderboard-audit.ts. Keys are '<aa-endpoint>/<slug>' where Artificial",
+    "Analysis publishes a slug, else '<aa-endpoint>/<normalized display name>'",
+    "(lowercase, parentheticals and resolution suffixes dropped, non-alphanumerics",
+    "collapsed to '-'; music and speech-to-text rows have no slug). Statuses:",
+    "'covered' = reachable through a unified surface; refs are 'provider/model'",
+    "and are re-validated against the live coverage sweep every run.",
+    "'partial' = served outside the unified surface (a realtime-only catalog row,",
+    "a deployment-name wire validator); reason required, refs advisory.",
+    "'excluded' = no public developer API; reason required. An entry here never",
+    "resurfaces as a gap (the data/fal/curation.json excluded doctrine), and the",
+    "audit reports stale keys, so a retired leaderboard name cannot linger.",
+    "Seeded 2026-08-25 from the native provider wave's audit (commit 7fdc549);",
+    "keys seeded before the first live run use normalized display names and get",
+    "re-keyed to real slugs as the audit reports them stale."
+  ],
+  "entries": {
+    "text-to-speech/sonic-3-6": {
+      "name": "Sonic 3.6",
+      "status": "covered",
+      "refs": ["cartesia/sonic-preview"],
+      "reason": "No sonic-3.6 model id exists — Sonic 3.6 is the beta behind sonic-preview (docs.cartesia.ai, 2026-08-24).",
+      "verified": "2026-08-25"
+    },
+    "text-to-speech/qwen-audio-3-0-tts-plus": {
+      "name": "Qwen-Audio-3.0-TTS-Plus",
+      "status": "partial",
+      "refs": ["alibaba (catalog row qwen-audio-3.0-tts-plus)"],
+      "reason": "Realtime-WebSocket-only on DashScope; catalogued and rejected by name by the unary alibaba.tts validator. A socket-config validator is the open follow-up.",
+      "verified": "2026-08-25"
+    },
+    "text-to-speech/v3-conversational": {
+      "name": "v3 Conversational",
+      "status": "partial",
+      "refs": ["elevenlabs (catalog row eleven_v3_conversational)"],
+      "reason": "Realtime Text-to-Dialogue WebSocket only; catalogued, not servable by POST /v1/text-to-speech.",
+      "verified": "2026-08-25"
+    },
+    "text-to-speech/luna-tts": {
+      "name": "Luna TTS",
+      "status": "excluded",
+      "reason": "VUI Labs is contact-gated: no published API docs, docs domain does not resolve (checked 2026-08-24).",
+      "verified": "2026-08-25"
+    },
+    "text-to-image/mai-image-2-5": {
+      "name": "MAI-Image-2.5",
+      "status": "partial",
+      "refs": ["azure (createAzure(endpoint).image, deployment-name model)"],
+      "reason": "Microsoft Foundry serves it behind per-resource endpoints and user-chosen deployment names, so azure ships wire validators without unified refs (same doctrine as azure chat).",
+      "verified": "2026-08-25"
+    },
+    "text-to-image/mai-image-2-5-pro": {
+      "name": "MAI-Image-2.5-Pro",
+      "status": "partial",
+      "refs": ["azure (createAzure(endpoint).image, deployment-name model)"],
+      "reason": "Same Foundry deployment-name doctrine as MAI-Image-2.5.",
+      "verified": "2026-08-25"
+    },
+    "image-editing/mai-image-2-5": {
+      "name": "MAI-Image-2.5",
+      "status": "partial",
+      "refs": ["azure (createAzure(endpoint).imageEdit, multipart /mai/v1/images/edits)"],
+      "reason": "Same Foundry deployment-name doctrine as the generation route.",
+      "verified": "2026-08-25"
+    },
+    "text-to-video/wan-3-0": {
+      "name": "Wan 3.0",
+      "status": "covered",
+      "refs": ["alibaba/wan3.0-video"],
+      "verified": "2026-08-25"
+    },
+    "image-to-video/wan-3-0": {
+      "name": "Wan 3.0",
+      "status": "covered",
+      "refs": ["alibaba/wan3.0-video"],
+      "verified": "2026-08-25"
+    },
+    "text-to-video/wan2-7-260612": {
+      "name": "Wan2.7-260612",
+      "status": "covered",
+      "refs": ["alibaba/wan2.7-t2v", "alibaba/wan2.7-t2v-2026-06-12"],
+      "reason": "The -260612 suffix is DashScope's dated checkpoint; both the alias id and the dated id are catalogued.",
+      "verified": "2026-08-25"
+    },
+    "text-to-video/magi-2-preview": {
+      "name": "MAGI-2 Preview",
+      "status": "excluded",
+      "reason": "Sand.ai publishes MAGI-2 Preview as open weights on Hugging Face only; no hosted API anywhere (checked 2026-08-24).",
+      "verified": "2026-08-25"
+    },
+    "music/with-vocals/suno-v5-5": {
+      "name": "Suno V5.5",
+      "status": "excluded",
+      "reason": "No official public Suno API exists (curated-partner beta only; third-party resellers are unofficial).",
+      "verified": "2026-08-25"
+    },
+    "music/with-vocals/suno-v5": {
+      "name": "Suno V5",
+      "status": "excluded",
+      "reason": "Same as Suno V5.5 — no official public API.",
+      "verified": "2026-08-25"
+    },
+    "music/with-vocals/suno-v4-5": {
+      "name": "Suno V4.5",
+      "status": "excluded",
+      "reason": "Same as Suno V5.5 — no official public API.",
+      "verified": "2026-08-25"
+    },
+    "music/with-vocals/mureka-v9": {
+      "name": "Mureka V9",
+      "status": "covered",
+      "refs": ["mureka/mureka-9"],
+      "verified": "2026-08-25"
+    },
+    "music/with-vocals/mureka-v8": {
+      "name": "Mureka V8",
+      "status": "covered",
+      "refs": ["mureka/mureka-8"],
+      "verified": "2026-08-25"
+    },
+    "music/with-vocals/minimax-music-2-6": {
+      "name": "MiniMax Music 2.6",
+      "status": "excluded",
+      "reason": "MiniMax's native /v1/music_generation API closed to NEW users on 2026-08-20 (current ids music-3.0/music-cover, existing subscribers only) — fails the public-accessibility bar.",
+      "verified": "2026-08-25"
+    },
+    "music/instrumental/minimax-music-2-6": {
+      "name": "MiniMax Music 2.6",
+      "status": "excluded",
+      "reason": "Same closed-API rationale as the with-vocals entry.",
+      "verified": "2026-08-25"
+    }
+  }
+}

@@ -33,6 +33,7 @@ import type { Issue } from "../core/issues";
 import type { ValidateResult } from "../core/result";
 import type { ValidateOptions } from "../core/options";
 import { createIssueSink, partition, reportUnknownTopLevelKeys } from "../core/pipeline";
+import { shapeIssues } from "../core/standard-schema";
 import { resolveEndpoint } from "../core/translate/endpoints";
 import { TranslationUnavailableError } from "../core/translate/errors";
 import { createWarningSink } from "../core/translate/warnings";
@@ -104,17 +105,10 @@ export function runChat(
   const sink = createIssueSink(options);
 
   // --- Canonical shape ------------------------------------------------------
-  const parsed = chatParamsSchema.safeParse(params);
-  if (!parsed.success) {
-    for (const issue of parsed.error.issues) {
-      sink.report({
-        code: "invalid_shape",
-        path: issue.path.filter(
-          (segment): segment is string | number =>
-            typeof segment === "string" || typeof segment === "number",
-        ),
-        message: issue.message,
-      });
+  const shape = shapeIssues(chatParamsSchema, params);
+  if (shape !== undefined) {
+    for (const issue of shape) {
+      sink.report({ code: "invalid_shape", path: issue.path, message: issue.message });
     }
     return { result: { ok: false, ...partition(sink.issues) } };
   }

@@ -276,3 +276,45 @@ kinds mean three things.
 **What would change this.** Google shipping a dedicated speech or transcription
 endpoint. Then `google.tts` / `google.stt` retarget to it and the chat overlap
 becomes history rather than design.
+
+---
+
+## 5. Validation runs on zod, behind a Standard Schema seam — not ArkType, not zod/mini
+
+**Decision.** The wire schemas are zod 4, imported from the classic barrel, and
+they are pure runtime gates: no public type is derived from a schema
+(`z.infer` appears nowhere), error formatting is unmodel's own, and the
+pipeline consumes schemas through the vendor-neutral `StandardSchemaV1`
+interface (`src/core/standard-schema.ts`), not through `z.ZodType`.
+
+**Why.** Evaluated against ArkType 2.x in 2026-08, with first-party
+measurements — see `docs/research/arktype-evaluation.md` for the full study.
+ArkType's compiled validators really are ~11–18× faster under our passthrough
+semantics, and it bundles smaller than the full zod barrel. But the win lands
+on a cold path (three `safeParse` call-sites, once per request build) while
+its costs land on the hot ones: schema construction is ~6.3× slower at import
+time — this package builds ~292 schemas eagerly at module scope, and cheap
+imports are what the per-entry budget architecture exists to protect — its
+inference costs ~4.7× the type instantiations, paid by every consumer's `tsc`,
+and its global type registry retains heap across GC (arktype#1584). The parts
+of ArkType worth having were taken instead: `@ark/attest` instantiation
+budgets (`bun run bench:types`), the Standard Schema seam, and the
+`type.declare`-style codegen width checks (`<cat>-check.gen.ts`).
+
+**Therefore, never:**
+
+- Put `z.ZodType` back in a public signature. The seam is the contract;
+  zod-specific behavior belongs behind an `instanceof` check that degrades
+  gracefully (see `reportUnknownTopLevelKeys`).
+- Derive a public type from a schema. The moment `z.infer` enters the public
+  surface, the validator choice stops being an implementation detail and every
+  future evaluation like this one becomes a breaking change.
+- Assume `~standard.validate` throws synchronously. zod's goes async when the
+  *value* throws mid-read; `shapeIssues` documents and contains this.
+
+**What would change this.** The attest benches showing zod as a measurable
+share of instantiation cost; ArkType fixing its registry retention and
+shipping ahead-of-time compilation (both tracked in the research doc's
+"revisit if" list); or the hot path changing shape to pure predicate checks,
+where ArkType's `.allows()` is ~18× faster and unmatched. Bundle-weight
+pressure alone points at `zod/mini`, a far cheaper move than a library swap.

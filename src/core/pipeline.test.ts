@@ -476,3 +476,76 @@ describe("ValidateOptions.media: a path that names nothing is reported", () => {
     if (other.ok) expect(other.warnings.map((w) => w.code)).toContain("media_declaration_dropped");
   });
 });
+
+describe("Standard Schema seam", () => {
+  // A minimal hand-rolled Standard Schema validator — no zod anywhere. Proves
+  // layer 1 consumes `~standard.validate` and nothing vendor-specific, so any
+  // conforming validator can be plugged into a PipelineSpec.
+  const handRolled = {
+    "~standard": {
+      version: 1 as const,
+      vendor: "test",
+      validate: (value: unknown) => {
+        const params = value as Record<string, unknown>;
+        if (typeof params.model !== "string") {
+          return { issues: [{ message: "model must be a string", path: ["model"] }] };
+        }
+        if (params.text !== undefined && typeof params.text !== "string") {
+          // Object path segments are part of the spec; exercise that form too.
+          return { issues: [{ message: "text must be a string", path: [{ key: "text" }] }] };
+        }
+        return { value };
+      },
+    },
+  };
+
+  const validateStandard = createValidator<TestParams>({
+    endpoint: "test.standard",
+    schema: handRolled,
+    modelId: (p) => p.model,
+    catalog,
+  });
+
+  test("a non-zod validator passes valid params through", () => {
+    const r = validateStandard.safe({ model: "test-model", text: "hi" });
+    expect(r.ok).toBe(true);
+  });
+
+  test("failures map to invalid_shape with both path segment forms", () => {
+    const bad = validateStandard.safe({ model: 42 } as unknown as TestParams);
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) {
+      expect(bad.errors[0]?.code).toBe("invalid_shape");
+      expect(bad.errors[0]?.path).toEqual(["model"]);
+    }
+
+    const badText = validateStandard.safe({ model: "test-model", text: 1 } as unknown as TestParams);
+    expect(badText.ok).toBe(false);
+    if (!badText.ok) expect(badText.errors[0]?.path).toEqual(["text"]);
+  });
+
+  test("an async validator is a config error, not a validation failure", () => {
+    const asyncSchema = {
+      "~standard": {
+        version: 1 as const,
+        vendor: "test",
+        validate: async (value: unknown) => ({ value }),
+      },
+    };
+    const v = createValidator<TestParams>({
+      endpoint: "test.async",
+      schema: asyncSchema,
+      modelId: (p) => p.model,
+      catalog,
+    });
+    expect(() => v.safe({ model: "test-model" })).toThrow(/synchronous/);
+  });
+
+  test("unknown-key reporting degrades gracefully off zod (skipped, not thrown)", () => {
+    const r = validateStandard.safe({ model: "test-model", tempratur: 1 } as TestParams);
+    expect(r.ok).toBe(true);
+    // A zod-backed spec would warn unknown_param here; a foreign validator has
+    // no introspectable shape, so the check skips rather than guessing.
+    if (r.ok) expect(r.warnings.map((w) => w.code)).not.toContain("unknown_param");
+  });
+});

@@ -23,6 +23,7 @@ jobs:
       # Gate publishing on the same checks CI runs — CI is a separate,
       # non-blocking workflow, so a red commit must not reach npm.
       - run: bun run check
+      - run: bun run bench:types
       - run: bun test
       - run: bun run build
       - name: Create release PR or publish

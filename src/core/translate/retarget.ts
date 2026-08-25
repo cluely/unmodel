@@ -5,7 +5,7 @@
  * endpoint table and the warning contract, and nothing about any specific
  * provider. That is what lets it live in `src/core/` at all — core never
  * imports `src/providers/**` (import-graph rule 1), so every provider-shaped
- * fact (the target's zod schema, its constraint tables, its SDK formatters,
+ * fact (the target's wire schema, its constraint tables, its SDK formatters,
  * the dialect codecs) arrives through the spec.
  *
  * Two paths, and the split is the whole performance story. Measured over the
@@ -16,7 +16,7 @@
  * re-validate. They never touch the IR, so they carry no round-trip risk at
  * all. Only the remaining ~8% pay for an encode/decode pair.
  */
-import type { ZodType } from "zod";
+import { shapeIssues, type StandardSchemaV1 } from "../standard-schema";
 import type { Issue } from "../issues";
 import type { EndpointConstraints } from "../constraint-types";
 import { checkConstraints } from "./constraint-check";
@@ -46,7 +46,7 @@ export { TranslationUnavailableError } from "./errors";
  */
 export interface TargetValidation {
   /** The target dialect's loose wire schema (validation layer 1). */
-  schema?: ZodType;
+  schema?: StandardSchemaV1;
   /** The target provider's constraint tables for this endpoint (layer 3). */
   constraints?: readonly EndpointConstraints[];
 }
@@ -129,18 +129,13 @@ function defaultSdkFor(
 const SCHEMA_SEVERITY = "error" as const;
 
 /** Runs validation layer 1 (shape) against the target dialect's schema. */
-function checkSchema(schema: ZodType | undefined, body: object, out: Issue[]): void {
+function checkSchema(schema: StandardSchemaV1 | undefined, body: object, out: Issue[]): void {
   if (schema === undefined) return;
-  const parsed = schema.safeParse(body);
-  if (parsed.success) return;
-  for (const issue of parsed.error.issues) {
+  for (const issue of shapeIssues(schema, body) ?? []) {
     out.push({
       severity: SCHEMA_SEVERITY,
       code: "invalid_shape",
-      path: issue.path.filter(
-        (segment): segment is string | number =>
-          typeof segment === "string" || typeof segment === "number",
-      ),
+      path: issue.path,
       message: issue.message,
     });
   }

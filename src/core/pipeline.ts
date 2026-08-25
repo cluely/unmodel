@@ -7,6 +7,7 @@ import type { ModelInfo } from "./catalog-types";
 import type { EndpointConstraints, FamilyRule } from "./constraint-types";
 import { heuristicTokenizer, type Tokenizer } from "./tokens";
 import { createIssueSink, partition } from "./issue-sink";
+import { shapeIssues, type StandardSchemaV1 } from "./standard-schema";
 
 /**
  * The severity table and the collector now live in `./issue-sink.ts`, a leaf
@@ -34,8 +35,11 @@ export interface PipelineContext {
 export interface PipelineSpec<P, V = P> {
   /** Qualified endpoint name used in error messages, e.g. "openai.chat". */
   endpoint: string;
-  /** Loose zod schema for wire shape; unknown keys must pass through. */
-  schema: z.ZodType;
+  /**
+   * Loose wire-shape schema — any Standard Schema validator (zod in-repo);
+   * unknown keys must pass through.
+   */
+  schema: StandardSchemaV1;
   modelId: (params: P) => string | undefined;
   /** Generated catalog for this provider (models.gen.ts `models`). */
   catalog: Record<string, ModelInfo>;
@@ -184,16 +188,10 @@ export function createValidator<P, V = P>(spec: PipelineSpec<P, V>): Validator<P
     };
 
     // Layer 1: shape.
-    const parsed = spec.schema.safeParse(params);
-    if (!parsed.success) {
-      for (const zodIssue of parsed.error.issues) {
-        ctx.report({
-          code: "invalid_shape",
-          path: zodIssue.path.filter(
-            (seg): seg is string | number => typeof seg === "string" || typeof seg === "number",
-          ),
-          message: zodIssue.message,
-        });
+    const shape = shapeIssues(spec.schema, params);
+    if (shape !== undefined) {
+      for (const issue of shape) {
+        ctx.report({ code: "invalid_shape", path: issue.path, message: issue.message });
       }
       return { ok: false, ...partition(issues) };
     }
@@ -363,7 +361,7 @@ function inspectionFailureMessage(err: unknown): string {
  * verbatim instead of forking the message.
  */
 export function reportUnknownTopLevelKeys(
-  schema: z.ZodType,
+  schema: StandardSchemaV1,
   params: unknown,
   ctx: { readonly endpoint: string; report(issue: IssueInput): void },
 ): void {

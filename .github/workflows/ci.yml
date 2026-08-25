@@ -28,6 +28,10 @@ jobs:
           git add -A
           git diff --cached --exit-code
       - run: bun run check
+      # Type-instantiation budgets (test/type-bench/). Counts are deterministic
+      # for a pinned TypeScript version, so the frozen lockfile makes this
+      # reproducible; the gate fails at >20% over the committed baselines.
+      - run: bun run bench:types
       - run: bun test
       - run: bun run build
       - run: bun run lint:pkg

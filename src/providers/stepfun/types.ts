@@ -37,6 +37,7 @@
  * Endpoints:
  *
  * - `stepfun.chat` → `ChatBody`
+ * - `stepfun.tts` → `TtsBody` (already the wire name — see below)
  */
 
 import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
@@ -85,9 +86,21 @@ export type {
   ChatFinishReason,
 } from "../openai-compatible/check";
 
+export type {
+  TtsBody,
+  StepfunResponseFormat,
+  StepfunSampleRate,
+  StepfunPronunciationRule,
+  StepfunTtsModelId,
+} from "./tts";
+
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.
 // Pure type aliases: no rename, no runtime, no cost.
+//
+// No alias is declared for `stepfun.tts`: the category name is ALREADY this
+// provider's wire name (`TtsBody`), re-exported above. The wire name wins —
+// an alias here would be a rename, and the law forbids it.
 // ---------------------------------------------------------------------------
 
 export type ChatBody<ModelId extends string = StepfunTextModelId> = ChatCompletionsBodyBase<ModelId>;

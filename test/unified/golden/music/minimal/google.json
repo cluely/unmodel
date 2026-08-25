@@ -1,0 +1,11 @@
+{
+  "ref": "google/lyria-3-pro-preview",
+  "params": {
+    "model": "lyria-3-pro-preview",
+    "input": "slow post-rock build, brushed drums, no vocals"
+  },
+  "url": "https://generativelanguage.googleapis.com/v1beta/interactions",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

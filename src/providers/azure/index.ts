@@ -1,5 +1,8 @@
 /**
- * unmodel/azure — Azure OpenAI (Microsoft Foundry Models) Chat Completions.
+ * unmodel/azure — Azure OpenAI (Microsoft Foundry Models) Chat Completions,
+ * plus Microsoft Foundry's MAI image surface (`azure.image` /
+ * `azure.imageEdit` on `POST {endpoint}/mai/v1/images/...` — see ./image.ts
+ * and ./image-edit.ts for those wire notes).
  *
  * The wire body is the standard OpenAI Chat Completions dialect; what differs
  * from other OpenAI-compatible providers is the URL and the meaning of
@@ -44,10 +47,11 @@
  * ```
  */
 import { createOpenAICompatible, type OpenAICompatibleProvider } from "../openai-compatible";
-import { resolveModelInfo } from "../../core/catalog-lookup";
-import type { ModelInfo } from "../../core/catalog-types";
 import { models, provider } from "../../catalog/azure.gen";
 import type { AzureTextModelId } from "../../catalog/azure.gen";
+import { createDeploymentCatalog } from "./deployment-catalog";
+import { azureMaiImagesGenerationsUrl, createMaiImage, type AzureMaiImage } from "./image";
+import { azureMaiImagesEditsUrl, createMaiImageEdit, type AzureMaiImageEdit } from "./image-edit";
 
 export interface AzureConfig {
   /**
@@ -64,8 +68,30 @@ export interface AzureConfig {
   apiVersion?: string;
 }
 
-/** The standard validator surface, bound to one Azure resource endpoint. */
-export type AzureProvider = OpenAICompatibleProvider<AzureTextModelId>;
+/**
+ * The standard validator surface, bound to one Azure resource endpoint: the
+ * OpenAI-compatible chat overlay, plus the Microsoft Foundry **MAI image**
+ * surface (`POST {endpoint}/mai/v1/images/generations` and
+ * `POST {endpoint}/mai/v1/images/edits` — see ./image.ts and ./image-edit.ts).
+ * `model` on every surface is the user-chosen deployment name.
+ */
+export interface AzureProvider extends OpenAICompatibleProvider<AzureTextModelId> {
+  /**
+   * Validates params for POST {endpoint}/mai/v1/images/generations (the MAI
+   * image models: MAI-Image-2.5 family and MAI-Image-2e). JSON endpoint.
+   */
+  image: AzureMaiImage;
+  /** {endpoint}/mai/v1/images/generations. */
+  imageUrl: string;
+  /**
+   * Validates params for POST {endpoint}/mai/v1/images/edits (2.5 family
+   * only — MAI-Image-2e is text-to-image only). Multipart endpoint: send
+   * `toMaiEditFormData(validated)` as the fetch body, never JSON.
+   */
+  imageEdit: AzureMaiImageEdit;
+  /** {endpoint}/mai/v1/images/edits. */
+  imageEditUrl: string;
+}
 
 /**
  * v1-route chat completions URL for an Azure resource endpoint:
@@ -78,30 +104,13 @@ export function azureChatCompletionsUrl(endpoint: string, apiVersion?: string): 
 
 /**
  * Azure deployments are user-named, so the pipeline's exact catalog lookup
- * would miss e.g. "gpt-4o-2024-08-06" or "gpt-5-prod". This proxy routes
- * every lookup through core's shared `resolveModelInfo` semantics ("models/"
- * strip, exact match, date-suffix strip, longest "-"/"." boundary prefix);
- * names that still don't resolve surface as `unknown_model` warnings.
+ * would miss e.g. "gpt-4o-2024-08-06" or "gpt-5-prod". The proxy (shared with
+ * the MAI image surfaces — see ./deployment-catalog.ts) routes every lookup
+ * through core's shared `resolveModelInfo` semantics ("models/" strip, exact
+ * match, date-suffix strip, longest "-"/"." boundary prefix); names that
+ * still don't resolve surface as `unknown_model` warnings.
  */
-const deploymentCatalog: Record<string, ModelInfo> = new Proxy(
-  models as Record<string, ModelInfo>,
-  {
-    get: (target, prop, receiver) =>
-      typeof prop === "string" ? resolveModelInfo(target, prop) : Reflect.get(target, prop, receiver),
-    // The pipeline guards lookups with Object.hasOwn (prototype-pollution
-    // safety), so ownership must be claimed for every resolvable deployment
-    // name. resolveModelInfo itself hasOwn-guards, so ids like "constructor"
-    // still report absent.
-    has: (target, prop) =>
-      typeof prop === "string" ? resolveModelInfo(target, prop) !== undefined : Reflect.has(target, prop),
-    getOwnPropertyDescriptor: (target, prop) => {
-      if (typeof prop !== "string") return Reflect.getOwnPropertyDescriptor(target, prop);
-      const info = resolveModelInfo(target, prop);
-      if (info === undefined) return undefined;
-      return { value: info, enumerable: true, configurable: true, writable: false };
-    },
-  },
-);
+const deploymentCatalog = createDeploymentCatalog(models);
 
 /**
  * Creates a validator surface bound to one Azure resource. See the module
@@ -121,14 +130,36 @@ const deploymentCatalog: Record<string, ModelInfo> = new Proxy(
  * available, since the wire body is the standard chat-completions dialect.
  */
 export function createAzure(config: AzureConfig): AzureProvider {
-  return createOpenAICompatible<AzureTextModelId, never, "azure">({
+  const chat = createOpenAICompatible<AzureTextModelId, never, "azure">({
     id: provider.id,
     chatUrl: azureChatCompletionsUrl(config.endpoint, config.apiVersion),
     catalog: deploymentCatalog,
   });
+  // The MAI image surfaces take no api-version: the /mai/v1 docs show none
+  // (config.apiVersion applies to the /openai/v1 chat route only).
+  return {
+    ...chat,
+    image: createMaiImage(config.endpoint),
+    imageUrl: azureMaiImagesGenerationsUrl(config.endpoint),
+    imageEdit: createMaiImageEdit(config.endpoint),
+    imageEditUrl: azureMaiImagesEditsUrl(config.endpoint),
+  };
 }
 
 export { models, provider };
+export { azureMaiImagesGenerationsUrl, createMaiImage } from "./image";
+export { azureMaiImagesEditsUrl, createMaiImageEdit, toMaiEditFormData } from "./image-edit";
+export {
+  maiImageModels,
+  MAI_IMAGE_MODEL_IDS,
+  MAI_IMAGE_EDIT_MODEL_IDS,
+  MAI_IMAGE_MIN_DIMENSION,
+  MAI_IMAGE_MAX_TOTAL_PIXELS,
+  MAI_IMAGE_PROMPT_MAX_TOKENS,
+} from "./mai-image-models";
+export type { AzureMaiImageModelId, AzureMaiImageEditModelId } from "./mai-image-models";
+export type { MaiImagesGenerationsBody, AzureMaiImage } from "./image";
+export type { MaiImagesEditsBody, AzureMaiImageEdit } from "./image-edit";
 export type {
   AzureModelId,
   AzureTextModelId,

@@ -104,7 +104,7 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * what filled it.
    */
   groq: 138,
-  google: 310,
+  google: 345, // 313.8 measured after the Lyria music surface (2026-08-24); same ~10% headroom.
   deepinfra: 190,
   openrouter: 400,
   vercel: 355,
@@ -337,7 +337,7 @@ const VOICE_DESIGN_PACK_BUDGET_KIB = 190;
  * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
  * is +0.1 net against the kernel's own shrink.
  */
-const TTS_PACK_BUDGET_KIB = 515;
+const TTS_PACK_BUDGET_KIB = 630;
 
 /**
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
@@ -467,6 +467,7 @@ const VIDEO_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
 
 /** The eleven providers `unmodel/video`'s ready-made pack is allowed to reach. */
 const VIDEO_PACK_PROVIDERS: string[] = [
+  "alibaba",
   "bytedance",
   "fal",
   "google",
@@ -478,6 +479,7 @@ const VIDEO_PACK_PROVIDERS: string[] = [
   "pixverse",
   "runway",
   "vidu",
+  "xai",
 ];
 
 /**
@@ -509,6 +511,7 @@ const IMAGE_PACK_PROVIDERS: string[] = [
   "runway",
   "stability",
   "vidu",
+  "xai",
 ];
 
 /**
@@ -634,13 +637,15 @@ const STT_PACK_PROVIDERS: string[] = [
  * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
  * is +0.1 net against the kernel's own shrink.
  */
-const MUSIC_PACK_BUDGET_KIB = 168;
+const MUSIC_PACK_BUDGET_KIB = 235;
 
 /** The two providers `unmodel/music`'s ready-made pack is allowed to reach. */
-const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "stability"];
+const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "google", "mureka", "stability"];
 
 /** The fifteen providers `unmodel/tts`'s ready-made pack is allowed to reach. */
 const TTS_PACK_PROVIDERS: string[] = [
+  "alibaba",
+  "breezeblue",
   "cartesia",
   "deepgram",
   "elevenlabs",
@@ -656,6 +661,7 @@ const TTS_PACK_PROVIDERS: string[] = [
   "rime",
   "smallest-ai",
   "speechify",
+  "stepfun",
 ];
 
 /**
@@ -1186,11 +1192,11 @@ describe("unmodel/chat", () => {
       "src/providers/sarvam/index.ts",
       "src/providers/scaleway/index.ts",
       "src/providers/siliconflow/index.ts",
-      "src/providers/stepfun/index.ts",
+      "src/providers/stepfun/chat.ts",
       "src/providers/togetherai/index.ts",
       "src/providers/upstage/index.ts",
       "src/providers/vercel/index.ts",
-      "src/providers/xai/index.ts",
+      "src/providers/xai/chat.ts",
       "src/providers/zhipuai/index.ts",
     ]);
   });
@@ -1202,6 +1208,7 @@ describe("unmodel/chat", () => {
     expect(modules).toContain("src/catalog/chat-profiles.gen.ts");
 
     expect(modules.filter((m) => m.startsWith("src/catalog/availability/"))).toEqual([
+      "src/catalog/availability/alibaba.gen.ts",
       "src/catalog/availability/anthropic.gen.ts",
       "src/catalog/availability/baseten.gen.ts",
       "src/catalog/availability/friendli.gen.ts",
@@ -1212,6 +1219,7 @@ describe("unmodel/chat", () => {
       "src/catalog/availability/openai.gen.ts",
       "src/catalog/availability/scaleway.gen.ts",
       "src/catalog/availability/siliconflow.gen.ts",
+      "src/catalog/availability/stepfun.gen.ts",
       "src/catalog/availability/xai.gen.ts",
     ]);
 
@@ -1718,13 +1726,20 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
     ].sort();
     expect(providers).toEqual(MUSIC_PACK_PROVIDERS);
 
-    // Both serve more than one category, so both adapters are suffixed leaves,
-    // and both endpoint modules are addressed as `music.ts` — the rename made
-    // structural, exactly as in the other four packs.
+    // Providers that serve more than one category split their adapter per
+    // category and this pack imports only the music half; mureka is
+    // single-modality, so its adapter honestly lives at `unified.ts` (the
+    // smallest-ai arrangement). Every endpoint module is addressed as
+    // `music.ts` either way — the rename made structural, exactly as in the
+    // other packs.
+    const SPLIT = splitProviders();
     for (const provider of MUSIC_PACK_PROVIDERS) {
-      expect(modules).toContain(`src/providers/${provider}/unified-music.ts`);
+      const leaf = SPLIT.has(provider) ? "unified-music" : "unified";
+      expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
       expect(modules).toContain(`src/providers/${provider}/music.ts`);
-      expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
+      if (SPLIT.has(provider)) {
+        expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
+      }
     }
     // Stability's two audio-conditioned routes are wire-only in v1 — they live
     // in the same module as `music`, so what this pins is that no *adapter*
@@ -1969,9 +1984,9 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
  */
 describe("type-only entries", () => {
   /** Fattest today: openrouter at ~298 KiB, openai at ~297 KiB. */
-  const TYPES_ENTRY_DECLARATION_BUDGET_KIB = 340;
+  const TYPES_ENTRY_DECLARATION_BUDGET_KIB = 460;
   /** ~307 KiB today, against 233 KiB for the root entry it extends. */
-  const TYPES_HUB_DECLARATION_BUDGET_KIB = 340;
+  const TYPES_HUB_DECLARATION_BUDGET_KIB = 385;
 
   const typesEntry = (provider: string): string =>
     join(DIST, "providers", provider, "types.d.ts");

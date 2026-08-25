@@ -181,6 +181,9 @@ export type {
 
 export type { ChatResponseLike, GoogleFinishReason } from "./check";
 
+import type { CreateMusicInteractionBody } from "./music";
+export type { CreateMusicInteractionBody, GoogleLyriaArm } from "./music";
+
 export type { TtsResponseLike, GoogleTtsFinishReason } from "./tts-check";
 
 export type {
@@ -213,6 +216,9 @@ export type {
 
 export type ChatBody = GenerateContentBody;
 export type ImageBody<FutureModel extends string = never> = GenerateImagesBody<FutureModel>;
+/** `google.music`'s body — POST /v1beta/interactions with a Lyria model. */
+export type MusicBody<FutureModel extends string = never> =
+  CreateMusicInteractionBody<FutureModel>;
 export type SttBody<FutureModel extends string = never> = GenerateSttBody<FutureModel>;
 export type TtsBody<FutureModel extends string = never> = GenerateTtsBody<FutureModel>;
 export type VideoBody = GenerateVideosBody;

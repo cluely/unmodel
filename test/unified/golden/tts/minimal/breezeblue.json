@@ -1,0 +1,12 @@
+{
+  "ref": "breezeblue/breeze-tts-2",
+  "voice": "voc_demo",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "model_id": "breeze-tts-2"
+  },
+  "url": "https://api.breeze.blue/v1/text-to-speech/voc_demo",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

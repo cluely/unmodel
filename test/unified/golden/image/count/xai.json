@@ -1,0 +1,13 @@
+{
+  "ref": "xai/grok-imagine-image-2.0",
+  "params": {
+    "model": "grok-imagine-image-2.0",
+    "prompt": "a lighthouse in fog",
+    "aspect_ratio": "1:1",
+    "n": 2
+  },
+  "url": "https://api.x.ai/v1/images/generations",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

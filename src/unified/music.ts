@@ -52,6 +52,8 @@ import type {
   MusicValidator,
 } from "../core/unified/vocabulary/music";
 import { music as elevenlabs } from "../providers/elevenlabs/unified-music";
+import { music as google } from "../providers/google/unified-music";
+import { music as mureka } from "../providers/mureka/unified";
 import { music as stability } from "../providers/stability/unified-music";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
@@ -78,24 +80,26 @@ export function createMusic<A extends MusicAdapter>(
  * Every music adapter unmodel ships, assembled by hand — the smallest pack in
  * the library, and the one whose *omissions* are the interesting part.
  *
- * **Two providers, one route each.** Stability's `musicFromAudio` (audio-to-
+ * **Small pack, narrow routes.** Stability's `musicFromAudio` (audio-to-
  * audio) and `musicInpaint` are deliberately not unified in v1: both take an
  * `audio` Blob plus controls no other provider has (`strength`,
  * `mask_start`/`mask_end`), so a canonical vocabulary for them would be a
  * vocabulary of one — which is a rename with extra steps, not a translation.
- * They stay wire-only on `unmodel/stability`.
+ * They stay wire-only on `unmodel/stability`. Mureka's lyrics/extend/stem
+ * routes stay wire-notes on `unmodel/mureka` for the same reason; its adapter
+ * dispatches `instrumental: true` to POST /v1/instrumental/generate.
  *
  * **The one conversion.** ElevenLabs counts milliseconds and Stability counts
  * seconds, which is exactly why the canonical word is `durationSeconds`;
  * ×1000 is exact and therefore silent, and a length that lands between two
  * milliseconds is refused rather than rounded.
  *
- * The cost is honest and measured: importing this pulls in both providers'
- * validators, schemas and catalogs (~145 KiB, pinned in
+ * The cost is honest and measured: importing this pulls in all four
+ * providers' validators, schemas and catalogs (pinned in
  * `test/bundle-budget.test.ts`). `createMusic([…])` above is the way to pay
- * for one provider instead of two.
+ * for one provider instead of four.
  */
-export const music = createMusic([elevenlabs, stability]);
+export const music = createMusic([elevenlabs, stability, mureka, google]);
 
 export type {
   AnyMusicAdapter,

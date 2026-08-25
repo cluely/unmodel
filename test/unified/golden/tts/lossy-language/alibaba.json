@@ -1,0 +1,33 @@
+{
+  "ref": "alibaba/qwen3-tts-flash",
+  "voice": "Cherry",
+  "params": {
+    "model": "qwen3-tts-flash",
+    "input": {
+      "text": "The lighthouse keeper checked the lamp.",
+      "voice": "Cherry",
+      "language_type": "Portuguese"
+    }
+  },
+  "url": "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "language"
+      ],
+      "message": "`language` \"pt-BR\" was sent as \"pt\" \u2014 this model's language field is a bare ISO 639-1 code, so the regional subtag \"BR\" is not expressible and the accent it selects is the model's default.",
+      "meta": {
+        "requested": "pt-BR",
+        "achieved": "pt",
+        "dropped": "BR",
+        "source": "https://www.alibabacloud.com/help/en/model-studio/qwen-tts"
+      },
+      "from": "unified.tts",
+      "to": "alibaba.tts"
+    }
+  ]
+}

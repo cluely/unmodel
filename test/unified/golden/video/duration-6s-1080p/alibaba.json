@@ -1,0 +1,18 @@
+{
+  "ref": "alibaba/wan2.7-t2v",
+  "params": {
+    "model": "wan2.7-t2v",
+    "input": {
+      "prompt": "a drone shot over a fjord at sunrise"
+    },
+    "parameters": {
+      "duration": 6,
+      "resolution": "1080P"
+    }
+  },
+  "url": "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis",
+  "headers": {
+    "content-type": "application/json",
+    "x-dashscope-async": "enable"
+  }
+}

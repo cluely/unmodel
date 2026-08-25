@@ -1198,14 +1198,25 @@ stt({ file: new Blob([]), model: "ink-whisper", language: "¦" });`);
     for (const id of ["sonic-3.5", "sonic-3", "sonic-preview", "sonic-latest"]) {
       expect(entries).toContain(id);
     }
-    // ...plus the three cataloged sonic ids that are OFF that enum and still
-    // valid — the dated snapshot and the two "older models". Those three are
-    // the whole justification for the tail: `checkTtsModelKind` reports them at
-    // *warning* severity, so refusing them at compile time would be wrong.
-    for (const id of ["sonic-3.5-2026-05-04", "sonic-2", "sonic-turbo"]) {
+    // ...plus the cataloged sonic ids that are OFF that enum and still
+    // valid — the dated snapshots and the "older models" rows (the 2026-08-24
+    // sweep added the older-models page's still-working dated ids). They are
+    // the whole justification for the tail: `checkTtsModelKind` reports them
+    // at *warning* severity, so refusing them at compile time would be wrong.
+    for (const id of [
+      "sonic-3.5-2026-05-04",
+      "sonic-2",
+      "sonic-turbo",
+      "sonic-3-2026-01-12",
+      "sonic-3-2025-10-27",
+      "sonic-2-2025-06-11",
+      "sonic-2-2025-05-08",
+      "sonic-2-2025-04-16",
+      "sonic-turbo-2025-06-04",
+    ]) {
       expect(entries).toContain(id);
     }
-    expect(entries.length).toBe(7);
+    expect(entries.length).toBe(13);
     // A completion list cannot show the tail itself; that a *fourth* off-enum
     // id like "sonic-9-future" still compiles is pinned in
     // test/types/cartesia.test-d.ts, where this field alone has no

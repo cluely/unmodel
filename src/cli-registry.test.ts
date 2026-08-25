@@ -17,6 +17,8 @@ import { MULTIPART_ONLY, REGISTRY } from "./cli-registry";
 
 const EXPECTED_IDS: readonly string[] = [
   "alibaba.chat",
+  "alibaba.tts",
+  "alibaba.video",
   "anthropic.chat",
   "assemblyai.stt",
   "baseten.chat",
@@ -29,6 +31,7 @@ const EXPECTED_IDS: readonly string[] = [
   "black-forest-labs.imageEditOutpainting",
   "black-forest-labs.imageEditVto",
   "black-forest-labs.imageFlux1",
+  "breezeblue.tts",
   "bria.image",
   "bria.imageEdit",
   "bria.imageLite",
@@ -70,6 +73,7 @@ const EXPECTED_IDS: readonly string[] = [
   "gladia.stt",
   "google.chat",
   "google.image",
+  "google.music",
   "google.stt",
   "google.tts",
   "google.video",
@@ -123,6 +127,8 @@ const EXPECTED_IDS: readonly string[] = [
   "mistral.chat",
   "mistral.stt",
   "moonshotai.chat",
+  "mureka.instrumental",
+  "mureka.music",
   "murf.tts",
   "murf.ttsStream",
   "nebius.chat",
@@ -181,6 +187,7 @@ const EXPECTED_IDS: readonly string[] = [
   "stability.musicFromAudio",
   "stability.musicInpaint",
   "stepfun.chat",
+  "stepfun.tts",
   "togetherai.chat",
   "upstage.chat",
   "vercel.chat",
@@ -189,6 +196,10 @@ const EXPECTED_IDS: readonly string[] = [
   "vidu.videoFromImage",
   "vidu.videoFromReference",
   "xai.chat",
+  "xai.image",
+  "xai.video",
+  "xai.videoEdit",
+  "xai.videoExtend",
   "zhipuai.chat",
 ];
 

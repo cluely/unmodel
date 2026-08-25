@@ -62,6 +62,7 @@ const CASES: readonly Case[] = [
     extras: { num_inference_steps: 20, guidance_scale: 4.5, acceleration: "high" },
   },
   { ref: "ideogram/ideogram-3.0-quality", extras: { magic_prompt: "AUTO", style_type: "DESIGN" } },
+  { ref: "xai/grok-imagine-image-2.0", extras: { user: "u-1" } },
   { ref: "recraft/recraftv3", extras: { style: "Photorealism", block_nsfw: true } },
   { ref: "stability/sd3.5-large", extras: { style_preset: "anime", cfg_scale: 4 } },
   {

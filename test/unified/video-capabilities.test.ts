@@ -42,6 +42,7 @@
 import { describe, expect, test } from "bun:test";
 import type { VideoParams } from "../../src/core/unified/vocabulary/video";
 import { video } from "../../src/unified/video";
+import { video as alibaba } from "../../src/providers/alibaba/unified-video";
 import { video as bytedance } from "../../src/providers/bytedance/unified-video";
 import { video as fal } from "../../src/providers/fal/unified-video";
 import { video as google } from "../../src/providers/google/unified-video";
@@ -315,6 +316,22 @@ const TABLE: Readonly<Record<string, Capability>> = {
     video: "declared",
     negativePrompt: "declared",
     seed: "declared",
+    n: "declared",
+  },
+  alibaba: {
+    ref: "alibaba/wan2.7-t2v",
+    adapter: alibaba,
+    duration: { support: "native", class: "number", at: "parameters.duration" },
+    size: { class: "tier-field", at: "parameters.resolution" },
+    // "1080p" → "1080P" — a case change, not a loss.
+    resolution: "derived",
+    aspectRatio: "native",
+    imageFirst: "refused",
+    imageLast: "refused",
+    imageReference: "refused",
+    video: "refused",
+    negativePrompt: "native",
+    seed: "native",
     n: "declared",
   },
   xai: {

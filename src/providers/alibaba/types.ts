@@ -20,11 +20,12 @@
  * Two families of name live here, and `docs/decisions.md` §2 is why:
  *
  * - the **wire names** (`ChatMessage`, `ChatSystemMessage`,
- *   `ChatDeveloperMessage`, …) — re-exported verbatim, because they are how
- *   you find the endpoint in the provider's own documentation;
- * - the **uniform category aliases** (`ChatBody`) — one per endpoint address
- *   this provider serves, named after the word you already type at
- *   `unmodel/alibaba` and on the CLI.
+ *   `ChatDeveloperMessage`, `VideoSynthesisParams`, `TtsGenerationParams`, …)
+ *   — re-exported verbatim, because they are how you find the endpoint in the
+ *   provider's own documentation;
+ * - the **uniform category aliases** (`ChatBody`, `VideoBody`, `TtsBody`) —
+ *   one per endpoint address this provider serves, named after the word you
+ *   already type at `unmodel/alibaba` and on the CLI.
  *
  * The aliases are pure `export type X = Y`: additions, never renames. Where an
  * alias name already IS the wire name, the wire name wins and no duplicate is
@@ -37,10 +38,14 @@
  * Endpoints:
  *
  * - `alibaba.chat` → `ChatBody`
+ * - `alibaba.video` → `VideoBody` (DashScope video-synthesis, async)
+ * - `alibaba.tts` → `TtsBody` (DashScope multimodal-generation)
  */
 
 import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
 import type { AlibabaTextModelId } from "../../catalog/alibaba.gen";
+import type { VideoSynthesisParams } from "./video";
+import type { TtsGenerationParams } from "./tts";
 
 export type {
   AlibabaModelId,
@@ -85,9 +90,33 @@ export type {
   ChatFinishReason,
 } from "../openai-compatible/check";
 
+// The DashScope media wires — the same leaves `alibaba.video` / `alibaba.tts`
+// validate against.
+export type {
+  VideoSynthesisParams,
+  AlibabaVideoInput,
+  AlibabaVideoParameters,
+  AlibabaVideoMedia,
+  AlibabaVideoMediaType,
+  AlibabaVideoResolution,
+  AlibabaVideoModelRule,
+} from "./video";
+
+export type { TtsGenerationParams, AlibabaTtsInput, AlibabaLanguageType } from "./tts";
+
+// Hand-maintained media catalog ids (models.dev tracks none of these).
+export type {
+  AlibabaMediaModelId,
+  AlibabaVideoGenerationModelId,
+  AlibabaTtsGenerationModelId,
+  AlibabaRealtimeTtsModelId,
+} from "./models";
+
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.
 // Pure type aliases: no rename, no runtime, no cost.
 // ---------------------------------------------------------------------------
 
 export type ChatBody<ModelId extends string = AlibabaTextModelId> = ChatCompletionsBodyBase<ModelId>;
+export type VideoBody = VideoSynthesisParams;
+export type TtsBody = TtsGenerationParams;

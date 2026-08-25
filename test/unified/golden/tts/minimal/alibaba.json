@@ -1,0 +1,15 @@
+{
+  "ref": "alibaba/qwen3-tts-flash",
+  "voice": "Cherry",
+  "params": {
+    "model": "qwen3-tts-flash",
+    "input": {
+      "text": "The lighthouse keeper checked the lamp.",
+      "voice": "Cherry"
+    }
+  },
+  "url": "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

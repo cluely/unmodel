@@ -54,8 +54,8 @@
  *
  * ## Why you might assemble the pack yourself
  *
- * That `image` is the ready-made pack: all fifteen providers, and therefore all
- * fifteen providers' catalogs and validators, in one bundle. `createImage([…])`
+ * That `image` is the ready-made pack: all sixteen providers, and therefore all
+ * sixteen providers' catalogs and validators, in one bundle. `createImage([…])`
  * takes the adapters you name instead, and the bundle contains those providers
  * and no others — which is the difference between a 40 KiB entry and a 500 KiB
  * one for someone who ships to a browser:
@@ -97,6 +97,7 @@ import { image as reve } from "../providers/reve/unified";
 import { image as runway } from "../providers/runway/unified-image";
 import { image as stability } from "../providers/stability/unified-image";
 import { image as vidu } from "../providers/vidu/unified-image";
+import { image as xai } from "../providers/xai/unified-image";
 
 /**
  * An adapter for this category. Provider adapters live at
@@ -158,10 +159,10 @@ export function createImage<A extends ImageAdapter>(
  * different auth, so both belong; which you want depends on whose key you
  * hold.
  *
- * The cost is honest and measured: importing this pulls in sixteen provider
+ * The cost is honest and measured: importing this pulls in seventeen provider
  * validators, their schemas and their catalogs, pinned in
  * `test/bundle-budget.test.ts`. `createImage([…])` above is the way to pay for
- * two providers instead of sixteen.
+ * two providers instead of seventeen.
  */
 export const image = createImage([
   openai,
@@ -180,6 +181,7 @@ export const image = createImage([
   leonardo,
   krea,
   reve,
+  xai,
 ]);
 
 export type {

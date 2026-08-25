@@ -1,22 +1,12 @@
 /**
  * unmodel/stepfun — StepFun's (阶跃星辰) OpenAI-compatible Chat Completions
  * endpoint ("step-*" models), validated against the generated models.dev
- * catalog. This is the first-party api.stepfun.com service — models.dev
- * tracks the Hugging Face org separately as "stepfun-ai".
+ * catalog, plus the speech endpoint `stepfun.tts`
+ * (POST https://api.stepfun.ai/v1/audio/speech, `stepaudio-2.5-tts`). Chat is
+ * the first-party api.stepfun.com service — models.dev tracks the Hugging
+ * Face org separately as "stepfun-ai".
  */
-import { createOpenAICompatible } from "../openai-compatible";
-import { models, provider } from "../../catalog/stepfun.gen";
-import type { StepfunTextModelId } from "../../catalog/stepfun.gen";
-import { availability } from "../../catalog/availability/stepfun.gen";
-
-const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<StepfunTextModelId, typeof availability, "stepfun">({
-    id: provider.id,
-    // Generated from models.dev: https://api.stepfun.com/v1
-    baseUrl: provider.api,
-    catalog: models,
-    availability,
-  });
+import { chat, chatUrl, checkChat, estimateChatTokens, models, provider } from "./chat";
 
 /** POST https://api.stepfun.com/v1/chat/completions */
 const CHAT_COMPLETIONS_URL = chatUrl;
@@ -29,3 +19,23 @@ export type {
   StepfunAudioModelId,
   StepfunVideoModelId,
 } from "../../catalog/stepfun.gen";
+
+export {
+  tts,
+  AUDIO_SPEECH_URL,
+  STEP_PLAN_AUDIO_SPEECH_URL,
+  REALTIME_AUDIO_WS_URL,
+  MAX_INSTRUCTION_CHARACTERS,
+  SPEECH_MAX_INPUT_CHARACTERS,
+  RESPONSE_FORMATS,
+  SAMPLE_RATES,
+  SYSTEM_VOICES,
+} from "./tts";
+export type {
+  TtsBody,
+  StepfunResponseFormat,
+  StepfunSampleRate,
+  StepfunPronunciationRule,
+  StepfunTtsModelId,
+} from "./tts";
+export { speechModels } from "./audio-models";

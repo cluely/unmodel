@@ -145,6 +145,41 @@ export {
   type NarrowedSttGenerationConfig,
   type UnknownSttBody,
 } from "./stt";
+export {
+  CREATE_INTERACTION_URL,
+  music,
+  musicInteractionUrl,
+  type CreateMusicInteractionBody,
+  type CreateMusicSdkParams,
+  type MusicSdkTargets,
+  type GoogleInteractionImageMimeType,
+  type GoogleInteractionMediaResolution,
+  type GoogleInteractionServiceTier,
+  type GoogleLyriaArm,
+  type GoogleLyriaAudioMimeType,
+  type GoogleLyriaAudioResponseFormat,
+  type GoogleLyriaContentBlock,
+  type GoogleLyriaGenerationConfig,
+  type GoogleLyriaImageBlock,
+  type GoogleLyriaInput,
+  type GoogleLyriaTextBlock,
+  type LyriaClipBody,
+  type LyriaProBody,
+  type UnknownLyriaBody,
+} from "./music";
+export {
+  LYRIA_PRICE_PER_SONG_USD,
+  lyriaRealtimeModel,
+  musicModels,
+  type GoogleLyriaModelId,
+} from "./lyria-models";
+export {
+  INTERACTIONS_API_DOCS_URL,
+  LYRIA_CLIP_DURATION_SECONDS,
+  LYRIA_MAX_INPUT_IMAGES,
+  LYRIA_MUSIC_DOCS_URL,
+  LYRIA_REALTIME_MODEL_ID,
+} from "./music-params";
 export { chatModels, ttsModelOverrides } from "./chat-tts-overlay";
 export {
   audioPromptTokens,

@@ -1,0 +1,14 @@
+{
+  "ref": "xai/grok-imagine-video-1.5",
+  "params": {
+    "model": "grok-imagine-video-1.5",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": 8,
+    "resolution": "1080p",
+    "aspect_ratio": "16:9"
+  },
+  "url": "https://api.x.ai/v1/videos/generations",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

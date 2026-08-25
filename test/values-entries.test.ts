@@ -324,7 +324,7 @@ describe("identity — the published table IS the adapter's table", () => {
       }
     }
     expect(drift).toEqual([]);
-    expect(found).toBe(16);
+    expect(found).toBe(19);
   });
 
   test("the speech delivery descriptors are the adapter's own too", async () => {
@@ -355,7 +355,7 @@ describe("identity — the published table IS the adapter's table", () => {
       }
     }
     expect(drift).toEqual([]);
-    expect(found.size).toBe(15);
+    expect(found.size).toBe(18);
   });
 });
 
@@ -666,7 +666,7 @@ describe("bundle discipline", () => {
   const EXPORT_BUDGET_KIB = 30;
 
   /** The whole entry's chunk graph. openai is the fattest at 40.9 KiB. */
-  const ENTRY_BUDGET_KIB = 60;
+  const ENTRY_BUDGET_KIB = 70; // 61.7 measured for fal after its wave-1c roster growth (2026-08-24).
 
   /** The hub is nine short arrays and two re-exports. 15.6 KiB of chunk graph. */
   const HUB_ENTRY_BUDGET_KIB = 20;

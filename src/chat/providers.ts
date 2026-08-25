@@ -10,7 +10,7 @@
  */
 import type { ChatProviderRegistry } from "./factory";
 
-import { chat as alibabaChat } from "../providers/alibaba";
+import { chat as alibabaChat } from "../providers/alibaba/chat";
 import { chat as anthropicChat } from "../providers/anthropic/chat";
 import { chat as basetenChat } from "../providers/baseten";
 import { chat as cerebrasChat } from "../providers/cerebras";
@@ -36,11 +36,11 @@ import { chat as perplexityChat } from "../providers/perplexity";
 import { chat as sarvamChat } from "../providers/sarvam";
 import { chat as scalewayChat } from "../providers/scaleway";
 import { chat as siliconflowChat } from "../providers/siliconflow";
-import { chat as stepfunChat } from "../providers/stepfun";
+import { chat as stepfunChat } from "../providers/stepfun/chat";
 import { chat as togetheraiChat } from "../providers/togetherai";
 import { chat as upstageChat } from "../providers/upstage";
 import { chat as vercelChat } from "../providers/vercel";
-import { chat as xaiChat } from "../providers/xai";
+import { chat as xaiChat } from "../providers/xai/chat";
 import { chat as zhipuaiChat } from "../providers/zhipuai";
 
 /** Provider id -> the exact validator exported by that provider subpath. */

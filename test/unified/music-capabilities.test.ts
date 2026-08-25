@@ -21,12 +21,14 @@ import type { AudioFormatRequest } from "../../src/core/unified/vocabulary/audio
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
 import { music } from "../../src/unified/music";
 import { music as elevenlabs } from "../../src/providers/elevenlabs/unified-music";
+import { music as google } from "../../src/providers/google/unified-music";
+import { music as mureka } from "../../src/providers/mureka/unified";
 import { music as stability } from "../../src/providers/stability/unified-music";
 
 type Support = "native" | "derived" | "unsupported";
 
-/** Where an encoding lands — two of the five placements the speech wave named. */
-type FormatShape = "codec" | "composite";
+/** Where an encoding lands — three of the five placements the speech wave named. */
+type FormatShape = "codec" | "composite" | "object";
 
 interface Capability {
   ref: string;
@@ -34,14 +36,28 @@ interface Capability {
     provider: string;
     unsupported?: Readonly<Partial<Record<string, string>>>;
   }>;
+  /**
+   * Canonical params every plain probe for this provider must carry. Mureka is
+   * the entry that needs one: the song route requires `lyrics` (a per-model
+   * extra), so a bare prompt is (correctly) rejected before any row could be
+   * observed.
+   */
+  base?: Partial<MusicParams>;
+  /**
+   * The full extra set for the `instrumental` probe, when `base` cannot ride
+   * along — mureka's `instrumental: true` compiles to the instrumental route,
+   * where the song route's `lyrics` is a cross-route error.
+   */
+  instrumentalProbe?: Partial<MusicParams>;
   durationSeconds: Support;
-  /** The wire field the duration lands in, and the factor applied to it. */
-  duration: { at: string; perSecond: number };
+  /** The wire field the duration lands in, and the factor applied to it. Absent when `durationSeconds` is unsupported. */
+  duration?: { at: string; perSecond: number };
   instrumental: Support;
   seed: Support;
-  format: { shape: FormatShape; at: string; inQuery: boolean };
+  /** Absent when the provider has no output-format field at all. */
+  format?: { shape: FormatShape; at: string; inQuery: boolean };
   /** An encoding this provider can express — the probe for the format row. */
-  probe: AudioFormatRequest;
+  probe?: AudioFormatRequest;
 }
 
 const TABLE: Readonly<Record<string, Capability>> = {
@@ -65,6 +81,28 @@ const TABLE: Readonly<Record<string, Capability>> = {
     format: { shape: "codec", at: "output_format", inQuery: false },
     probe: "mp3",
   },
+  mureka: {
+    ref: "mureka/mureka-9.5",
+    adapter: mureka,
+    // POST /v1/song/generate requires `lyrics` (per-model extra) …
+    base: { lyrics: "[Verse]\nBrushed drums under a slow tide." } as Partial<MusicParams>,
+    // … and the instrumental route refuses it, so that probe rides alone.
+    instrumentalProbe: { instrumental: true },
+    durationSeconds: "unsupported",
+    instrumental: "derived",
+    seed: "unsupported",
+    // No output-format field on either route: succeeded tasks answer mp3 +
+    // flac/wav URLs unconditionally.
+  },
+  google: {
+    ref: "google/lyria-3-pro-preview",
+    adapter: google,
+    durationSeconds: "unsupported",
+    instrumental: "unsupported",
+    seed: "native",
+    format: { shape: "object", at: "response_format", inQuery: false },
+    probe: "mp3",
+  },
 };
 
 const PROBE_PROMPT = "slow post-rock build, brushed drums";
@@ -76,8 +114,13 @@ interface Compiled {
   url: string;
 }
 
-function compile(row: Capability, extra: Partial<MusicParams>): Compiled | string[] {
-  const result = music.safe({ model: row.ref, prompt: PROBE_PROMPT, ...extra } as never);
+function compile(
+  row: Capability,
+  extra: Partial<MusicParams>,
+  { omitBase = false }: { omitBase?: boolean } = {},
+): Compiled | string[] {
+  const base = omitBase ? undefined : row.base;
+  const result = music.safe({ model: row.ref, prompt: PROBE_PROMPT, ...base, ...extra } as never);
   if (!result.ok) return result.errors.map((issue) => `${issue.code} @ ${issue.path.join(".")}`);
   const request = result.params as unknown as { request: { url: string } };
   return {
@@ -117,24 +160,31 @@ test("the table covers exactly the providers in the pack", () => {
 });
 
 describe.each(rows)("%s", (provider, row) => {
+  const instrumentalExtra = row.instrumentalProbe ?? { instrumental: true };
   const scalars = [
-    ["durationSeconds", row.durationSeconds, PROBE_SECONDS, { durationSeconds: PROBE_SECONDS }],
-    ["instrumental", row.instrumental, true, { instrumental: true }],
-    ["seed", row.seed, PROBE_SEED, { seed: PROBE_SEED }],
+    [
+      "durationSeconds",
+      row.durationSeconds,
+      PROBE_SECONDS,
+      { durationSeconds: PROBE_SECONDS },
+      false,
+    ],
+    ["instrumental", row.instrumental, true, instrumentalExtra, row.instrumentalProbe !== undefined],
+    ["seed", row.seed, PROBE_SEED, { seed: PROBE_SEED }, false],
   ] as const;
 
-  test.each(scalars)("%s is %s", (field, support, probe, extra) => {
+  test.each(scalars)("%s is %s", (field, support, probe, extra, omitBase) => {
     const declared = row.adapter.unsupported?.[field];
     if (support === "unsupported") {
       expect(declared, `${provider}.unsupported.${field}`).toBeDefined();
-      expect(compile(row, extra as Partial<MusicParams>)).toEqual([
+      expect(compile(row, extra as Partial<MusicParams>, { omitBase })).toEqual([
         `unsupported_param @ ${field}`,
       ]);
       return;
     }
     expect(declared, `${provider} must not declare ${field} unsupported`).toBeUndefined();
 
-    const compiled = compile(row, extra as Partial<MusicParams>);
+    const compiled = compile(row, extra as Partial<MusicParams>, { omitBase });
     expect(compiled, `${provider} could not compile a ${field} probe`).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
     expect(carries(compiled, probe), `${provider} ${field} verbatim`).toBe(support === "native");
@@ -152,7 +202,13 @@ describe.each(rows)("%s", (provider, row) => {
    * the only number in this category that can be wrong in a way the API will
    * happily accept.
    */
-  test(`durationSeconds lands at \`${row.duration.at}\` × ${row.duration.perSecond}`, () => {
+  test(`durationSeconds ${row.duration ? `lands at \`${row.duration.at}\` × ${row.duration.perSecond}` : "has no wire field"}`, () => {
+    if (row.duration === undefined) {
+      // The provider has no duration field at all — the scalar row above
+      // already proved the kernel rejects it before compile.
+      expect(row.durationSeconds).toBe("unsupported");
+      return;
+    }
     const compiled = compile(row, { durationSeconds: PROBE_SECONDS });
     expect(compiled).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
@@ -160,6 +216,7 @@ describe.each(rows)("%s", (provider, row) => {
   });
 
   test("a duration that is not a whole number of wire units is refused, not rounded", () => {
+    if (row.duration === undefined) return;
     // 90.0005 s is 90000.5 ms — expressible at Stability (seconds are
     // fractional there) and not at ElevenLabs, whose field counts integers.
     const compiled = compile(row, { durationSeconds: 90.0005 });
@@ -170,7 +227,13 @@ describe.each(rows)("%s", (provider, row) => {
     expect(compiled).toEqual(["invalid_shape @ durationSeconds"]);
   });
 
-  test(`outputFormat lands as a ${row.format.shape} at \`${row.format.at}\``, () => {
+  test(`outputFormat ${row.format ? `lands as a ${row.format.shape} at \`${row.format.at}\`` : "has no wire field"}`, () => {
+    if (row.format === undefined || row.probe === undefined) {
+      // No format field anywhere on the wire — the kernel must say so.
+      expect(row.adapter.unsupported?.outputFormat, `${provider}.unsupported.outputFormat`).toBeDefined();
+      expect(compile(row, { outputFormat: "mp3" })).toEqual(["unsupported_param @ outputFormat"]);
+      return;
+    }
     const compiled = compile(row, { outputFormat: row.probe });
     expect(compiled).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
@@ -187,20 +250,30 @@ describe.each(rows)("%s", (provider, row) => {
     if (row.format.shape === "composite") {
       // codec + rate (+ bitrate), joined — the shape that has to be assembled.
       expect(String(value)).toMatch(/^[a-z0-9]+_\d+(_\d+)?$/);
-    } else {
+    } else if (row.format.shape === "codec") {
       expect(String(value)).not.toMatch(/_\d/);
+    } else {
+      // "object" — a nested response-format block (google's Interactions API).
+      expect(typeof value).toBe("object");
     }
   });
 
-  test("an unsupported codec is an invalid_enum_value naming what IS offered", () => {
-    // `vorbis` is offered by neither provider — the one codec in the
-    // vocabulary that no music route encodes.
-    expect(compile(row, { outputFormat: "vorbis" })).toEqual(["invalid_enum_value @ outputFormat"]);
+  test("an unsupported codec is refused, never silently sent", () => {
+    // `vorbis` is offered by no music route — the one codec in the vocabulary
+    // nothing here encodes. Providers with a format field name what IS
+    // offered; providers without one reject the param outright.
+    expect(compile(row, { outputFormat: "vorbis" })).toEqual([
+      row.format === undefined
+        ? "unsupported_param @ outputFormat"
+        : "invalid_enum_value @ outputFormat",
+    ]);
   });
 });
 
 test("both duration units in the category are exercised", () => {
-  const units = new Set(rows.map(([, row]) => row.duration.perSecond));
+  const units = new Set(
+    rows.flatMap(([, row]) => (row.duration === undefined ? [] : [row.duration.perSecond])),
+  );
   expect([...units].sort((a, b) => a - b)).toEqual([1, 1000]);
 });
 
@@ -255,7 +328,12 @@ describe("no silent drops, over the whole outputFormat matrix", () => {
         }
       }
     }
-    expect(accepted, `${provider} accepted nothing at all`).toBeGreaterThan(0);
+    if (row.format === undefined) {
+      // No format field on the wire — the kernel must have refused every cell.
+      expect(accepted, `${provider} has no format field yet accepted an encoding`).toBe(0);
+    } else {
+      expect(accepted, `${provider} accepted nothing at all`).toBeGreaterThan(0);
+    }
     expect(dropped, `${provider} accepted and ignored an encoding`).toEqual([]);
   });
 
@@ -269,7 +347,10 @@ describe("no silent drops, over the whole outputFormat matrix", () => {
       { durationSeconds: 90 },
       { durationSeconds: 0.5 },
       { instrumental: true },
-      { instrumental: false },
+      // Route-dispatch adapters (mureka) have no wire field for the default:
+      // `instrumental: false` IS the song route, so bare and false compile
+      // identically there — a route selection, not a dropped control.
+      ...(row.instrumentalProbe === undefined ? [{ instrumental: false }] : []),
       { seed: 0 },
       { seed: PROBE_SEED },
       { durationSeconds: 45, seed: 1, instrumental: true },

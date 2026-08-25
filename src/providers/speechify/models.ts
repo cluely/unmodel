@@ -3,7 +3,7 @@
 // https://docs.speechify.ai/build/guides/concepts/api-limits,
 // https://docs.speechify.ai/openapi/api-reference.json (the live OpenAPI 3.1
 // spec behind the API reference) and https://speechify.ai/pricing
-// (last checked 2026-08-13).
+// (last checked 2026-08-24).
 //
 // MODEL IDS: the `model` body param is a closed enum in the OpenAPI spec —
 // `simba-english`, `simba-multilingual`, `simba-3.0`, `simba-3.2`. There is
@@ -63,9 +63,10 @@ const ttsModels = {
     limit: { context: 0, characters: 20000 },
     cost: { perMillionCharacters: 10 },
   },
-  // `deprecated: true` in GET /v1/audio/models. Speechify is explicit that
-  // the flag is advisory — "a deprecated model stays fully supported and
-  // behaves exactly as before, with nothing scheduled for removal".
+  // `deprecated: true` in GET /v1/audio/models. Removal is now scheduled
+  // (docs.speechify.ai/tts/guides/concepts/models, 2026-08-24): both legacy
+  // ids are "Retired from API version 2026-09-21" and "switched off on
+  // 2026-11-21" — unreachable on EVERY API version after that date.
   "simba-multilingual": {
     id: "simba-multilingual",
     name: "Simba Multilingual",

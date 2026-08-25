@@ -1,0 +1,13 @@
+{
+  "ref": "stepfun/stepaudio-2.5-tts",
+  "voice": "vibrant-youth",
+  "params": {
+    "model": "stepaudio-2.5-tts",
+    "input": "The lighthouse keeper checked the lamp.",
+    "voice": "vibrant-youth"
+  },
+  "url": "https://api.stepfun.ai/v1/audio/speech",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

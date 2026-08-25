@@ -1,0 +1,12 @@
+{
+  "ref": "mureka/mureka-9.5",
+  "params": {
+    "lyrics": "[Verse]\nBrushed drums under a slow tide.",
+    "model": "mureka-9.5",
+    "prompt": "slow post-rock build, brushed drums, no vocals"
+  },
+  "url": "https://api.mureka.ai/v1/song/generate",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

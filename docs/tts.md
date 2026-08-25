@@ -49,6 +49,9 @@ every row because all fifteen are JSON endpoints.
 | `resemble` | POST | `https://f.cluster.resemble.ai/synthesize` | `content-type: application/json` |
 | `smallest-ai` | POST | `https://api.smallest.ai/waves/v1/tts` | `accept: audio/wav`<br>`content-type: application/json` |
 | `speechify` | POST | `https://api.speechify.ai/v1/audio/speech` | `content-type: application/json` |
+| `stepfun` | POST | `https://api.stepfun.ai/v1/audio/speech` | `content-type: application/json` |
+| `breezeblue` | POST | `https://api.breeze.blue/v1/text-to-speech/VOICE_ID` | `content-type: application/json` |
+| `alibaba` | POST | `https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation` | `content-type: application/json` |
 | `inworld` | POST | `https://api.inworld.ai/tts/v1/voice` | `content-type: application/json` |
 
 <!-- /gen:tts-matrix -->
@@ -78,6 +81,9 @@ not of the endpoint, so it does not vary by route:
 | `resemble` | `authorization` | `Bearer <key>` |
 | `smallest-ai` | `authorization` | `Bearer <key>` |
 | `speechify` | `authorization` | `Bearer <key>` |
+| `stepfun` | `authorization` | `Bearer <key>` |
+| `breezeblue` | `xi-api-key` | bare key |
+| `alibaba` | `Authorization` | `Bearer <key>` |
 | `inworld` | `authorization` | `Basic <key>` |
 
 Chat has the same table as data rather than prose — `CHAT_AUTH` from `unmodel/chat`, an
@@ -112,6 +118,9 @@ Three shapes: flat (one answer), `byRequestField` (one request field decides), a
 | `resemble` | `RESEMBLE_TTS_DELIVERY` | flat: base64 inside the JSON |
 | `smallest-ai` | `SMALLEST_TTS_DELIVERY` | flat: raw bytes |
 | `speechify` | `SPEECHIFY_TTS_DELIVERY` | flat: base64 inside the JSON |
+| `stepfun` | `STEPFUN_TTS_DELIVERY` | by `stream_format` — raw bytes, or an SSE stream |
+| `breezeblue` | `BREEZEBLUE_TTS_DELIVERY` | by the `delivery` query param — raw bytes, or a 202 job whose audio is a second request away |
+| `alibaba` | `ALIBABA_TTS_DELIVERY` | by `stream` — a 24-hour WAV URL inside the JSON, or Base64-PCM SSE frames |
 | `inworld` | `INWORLD_TTS_DELIVERY` | flat: base64 inside the JSON |
 
 `url` is its own kind rather than a flag on `base64` because it is the case where there

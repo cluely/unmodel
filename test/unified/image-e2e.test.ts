@@ -16,7 +16,7 @@ import { image as ideogramAdapter } from "../../src/providers/ideogram/unified-i
 import { image as openaiAdapter } from "../../src/providers/openai/unified";
 
 describe("the pack", () => {
-  test("registers exactly the sixteen image providers, sorted", () => {
+  test("registers exactly the seventeen image providers, sorted", () => {
     expect([...image.providers]).toEqual([
       "black-forest-labs",
       "bria",
@@ -38,6 +38,7 @@ describe("the pack", () => {
       "runway",
       "stability",
       "vidu",
+      "xai",
     ]);
   });
 

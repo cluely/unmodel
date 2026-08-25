@@ -13,8 +13,8 @@
  * });
  * ```
  *
- * That `tts` is the ready-made pack: all fifteen providers, and therefore
- * all fifteen providers' catalogs and validators, in one bundle. To pay for
+ * That `tts` is the ready-made pack: all eighteen providers, and therefore
+ * all eighteen providers' catalogs and validators, in one bundle. To pay for
  * only the ones you call, build your own from the adapter leaves:
  *
  * ```ts
@@ -71,6 +71,8 @@ import type {
   TtsParams,
   TtsValidator,
 } from "../core/unified/vocabulary/tts";
+import { tts as alibaba } from "../providers/alibaba/unified-tts";
+import { tts as breezeblue } from "../providers/breezeblue/unified";
 import { tts as cartesia } from "../providers/cartesia/unified-tts";
 import { tts as deepgram } from "../providers/deepgram/unified-tts";
 import { tts as elevenlabs } from "../providers/elevenlabs/unified-tts";
@@ -86,6 +88,7 @@ import { tts as resemble } from "../providers/resemble/unified";
 import { tts as rime } from "../providers/rime/unified";
 import { tts as smallestAi } from "../providers/smallest-ai/unified";
 import { tts as speechify } from "../providers/speechify/unified";
+import { tts as stepfun } from "../providers/stepfun/unified";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
 export type TtsAdapter = AnyTtsAdapter;
@@ -118,10 +121,10 @@ export function createTts<A extends TtsAdapter>(
  * and the return type of a call (each provider's own `Validated`). A generated
  * or dynamically-loaded registry would keep the first and lose the other two.
  *
- * The cost is honest and measured: importing this pulls in fifteen provider
+ * The cost is honest and measured: importing this pulls in eighteen provider
  * validators, their schemas and their catalogs (~430 KiB, pinned in
  * `test/bundle-budget.test.ts`). `createTts([…])` above is the way to pay
- * for two providers instead of fifteen.
+ * for two providers instead of eighteen.
  */
 export const tts = createTts([
   openai,
@@ -138,6 +141,9 @@ export const tts = createTts([
   resemble,
   smallestAi,
   speechify,
+  stepfun,
+  breezeblue,
+  alibaba,
   inworld,
 ]);
 

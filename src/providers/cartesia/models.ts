@@ -1,8 +1,8 @@
 // Hand-maintained — Cartesia is not in models.dev; refresh from
 // https://docs.cartesia.ai/api-reference/tts/bytes,
 // https://docs.cartesia.ai/api-reference/stt/transcribe,
-// https://docs.cartesia.ai/build-with-cartesia/models/tts, and
-// https://docs.cartesia.ai/pricing (last checked 2026-08-13).
+// https://docs.cartesia.ai/build-with-cartesia/tts-models/{latest,preview,older-models},
+// and https://docs.cartesia.ai/pricing (last checked 2026-08-24).
 //
 // PRICING: Cartesia bills in credits, not USD — standard TTS is ~1 credit per
 // character (Pro Voice Clone ~1.5), batch STT with ink-whisper is 1 credit per
@@ -16,8 +16,13 @@
 //
 // NOT LISTED (deliberate): `sonic-english` and `sonic-multilingual` appear on
 // third-party leaderboards but are absent from every reachable Cartesia doc
-// page — the older-models page is behind the docs login, so no id, status or
-// pricing can be sourced for them. Likewise `ink-2-turn-detection-end_turn`:
+// page — including the now-public older-models page, which enumerates only
+// dated sonic-3/sonic-2/sonic-turbo/sonic snapshots — so no id, status or
+// pricing can be sourced for them. Also not listed: snapshots the
+// older-models page marks "Sunsetted" (sonic-2-2025-03-07,
+// sonic-turbo-2025-03-07, sonic-2024-12-12, sonic-2024-10-19 and the bare
+// `sonic` alias) — those ids no longer work at all, so carrying them would
+// only manufacture dead catalog rows. Likewise `ink-2-turn-detection-end_turn`:
 // the realtime STT reference enumerates only `ink-2` and `ink-whisper` for
 // its `model` query param. Guessing an id would be worse than omitting it.
 //
@@ -76,6 +81,10 @@ export const models = {
     limit: { context: 0 },
   },
   // Alias that always resolves to the latest sonic model on Cartesia's side.
+  // The older-models page (checked 2026-08-24) now files it under "Deprecated
+  // Aliases" ("sonic-latest → use sonic-preview"), yet it is still in the
+  // tts/bytes model_id enum — comment only, no status flip, until the two
+  // pages agree.
   "sonic-latest": {
     id: "sonic-latest",
     name: "Sonic (latest alias)",
@@ -88,10 +97,13 @@ export const models = {
     limit: { context: 0 },
   },
   // "a beta model, not intended for production usage, and can change without
-  // notice" — docs.cartesia.ai/build-with-cartesia/models/tts.
+  // notice". What the alias serves moves: "Sonic 3.6 is only available as a
+  // beta release, available on `sonic-preview` today" —
+  // docs.cartesia.ai/build-with-cartesia/tts-models/preview (2026-08-24).
+  // There is NO `sonic-3.6` model_id; this alias is the only way to reach it.
   "sonic-preview": {
     id: "sonic-preview",
-    name: "Sonic Preview",
+    name: "Sonic Preview (currently Sonic 3.6 beta)",
     family: "sonic",
     attachment: false,
     reasoning: false,
@@ -124,6 +136,87 @@ export const models = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
+    status: "deprecated",
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+  // Dated snapshots from the older-models page (2026-08-24). Only the ids the
+  // page still lists as working are here; the page's sunset lines — "sonic-2
+  // and all sonic-2-* snapshots will stop working after October 20, 2026",
+  // ditto sonic-turbo-* — mean every deprecated row below dies on 2026-10-20.
+  "sonic-3-2026-01-12": {
+    id: "sonic-3-2026-01-12",
+    name: "Sonic 3 (2026-01-12 snapshot)",
+    family: "sonic",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2026-01-12",
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+  "sonic-3-2025-10-27": {
+    id: "sonic-3-2025-10-27",
+    name: "Sonic 3 (2025-10-27 snapshot)",
+    family: "sonic",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2025-10-27",
+    status: "deprecated",
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+  "sonic-2-2025-06-11": {
+    id: "sonic-2-2025-06-11",
+    name: "Sonic 2 (2025-06-11 snapshot)",
+    family: "sonic",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2025-06-11",
+    status: "deprecated",
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+  "sonic-2-2025-05-08": {
+    id: "sonic-2-2025-05-08",
+    name: "Sonic 2 (2025-05-08 snapshot)",
+    family: "sonic",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2025-05-08",
+    status: "deprecated",
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+  "sonic-2-2025-04-16": {
+    id: "sonic-2-2025-04-16",
+    name: "Sonic 2 (2025-04-16 snapshot)",
+    family: "sonic",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2025-04-16",
+    status: "deprecated",
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+  "sonic-turbo-2025-06-04": {
+    id: "sonic-turbo-2025-06-04",
+    name: "Sonic Turbo (2025-06-04 snapshot)",
+    family: "sonic",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2025-06-04",
     status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },

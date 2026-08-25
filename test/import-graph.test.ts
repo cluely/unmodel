@@ -332,12 +332,14 @@ describe("chat (amendment A1)", () => {
    * a barrel, which is the honest module for them until they grow one.
    */
   const CHAT_REGISTRY_IMPORTS = new Set([
+    "src/providers/alibaba/chat.ts",
+    "src/providers/stepfun/chat.ts",
+    "src/providers/xai/chat.ts",
     "src/providers/anthropic/chat.ts",
     "src/providers/google/chat.ts",
     "src/providers/minimax/chat.ts",
     "src/providers/openai/chat.ts",
     ...[
-      "alibaba",
       "baseten",
       "cerebras",
       "deepinfra",
@@ -359,11 +361,9 @@ describe("chat (amendment A1)", () => {
       "sarvam",
       "scaleway",
       "siliconflow",
-      "stepfun",
       "togetherai",
       "upstage",
       "vercel",
-      "xai",
       "zhipuai",
     ].map((provider) => `src/providers/${provider}/index.ts`),
   ]);

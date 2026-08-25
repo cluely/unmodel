@@ -37,10 +37,20 @@
  * Endpoints:
  *
  * - `xai.chat` → `ChatBody`
+ * - `xai.image` → `ImageBody`
+ * - `xai.video` → `VideoBody`
+ * - `xai.videoEdit` → `VideoEditBody`
+ * - `xai.videoExtend` → `VideoExtendBody`
  */
 
 import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
 import type { XaiTextModelId } from "../../catalog/xai.gen";
+import type { ImageGenerationsParams } from "./image";
+import type {
+  VideoEditsParams,
+  VideoExtensionsParams,
+  VideoGenerationsParams,
+} from "./video";
 
 export type {
   XaiModelId,
@@ -85,9 +95,36 @@ export type {
   ChatFinishReason,
 } from "../openai-compatible/check";
 
+// The Grok Imagine wire shapes — the same leaves `xai.image` / `xai.video` /
+// `xai.videoEdit` / `xai.videoExtend` validate against.
+export type {
+  ImageGenerationsParams,
+  XaiImageAspectRatio,
+  XaiImageResolution,
+  XaiImageResponseFormat,
+  XaiStorageOptions,
+} from "./image";
+
+export type {
+  VideoGenerationsParams,
+  VideoEditsParams,
+  VideoExtensionsParams,
+  XaiMediaInput,
+  XaiReferenceAudio,
+  XaiVideoOutput,
+  XaiVideoResolution,
+  XaiVideoAspectRatio,
+} from "./video";
+
+export type { XaiImageGenerationModelId, XaiVideoGenerationModelId } from "./models";
+
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.
 // Pure type aliases: no rename, no runtime, no cost.
 // ---------------------------------------------------------------------------
 
 export type ChatBody<ModelId extends string = XaiTextModelId> = ChatCompletionsBodyBase<ModelId>;
+export type ImageBody = ImageGenerationsParams;
+export type VideoBody = VideoGenerationsParams;
+export type VideoEditBody = VideoEditsParams;
+export type VideoExtendBody = VideoExtensionsParams;

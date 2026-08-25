@@ -60,6 +60,9 @@ export const TTS_MATRIX_SAMPLES = [
   { provider: "resemble", params: { model: "resemble/resemble-ultra", text: "Sample.", voice: "VOICE_ID" } },
   { provider: "smallest-ai", params: { model: "smallest-ai/lightning_v3.1", text: "Sample.", voice: "VOICE_ID" } },
   { provider: "speechify", params: { model: "speechify/simba-3.2", text: "Sample.", voice: "VOICE_ID" } },
+  { provider: "stepfun", params: { model: "stepfun/stepaudio-2.5-tts", text: "Sample.", voice: "vibrant-youth" } },
+  { provider: "breezeblue", params: { model: "breezeblue/breeze-tts-2", text: "Sample.", voice: "VOICE_ID" } },
+  { provider: "alibaba", params: { model: "alibaba/qwen3-tts-flash", text: "Sample.", voice: "Cherry" } },
   { provider: "inworld", params: { model: "inworld/inworld-tts-1.5", text: "Sample.", voice: "VOICE_ID" } },
 ] as const satisfies readonly { provider: string; params: TtsParams }[];
 

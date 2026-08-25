@@ -64,6 +64,7 @@ import { image as reve } from "../../src/providers/reve/unified";
 import { image as runway } from "../../src/providers/runway/unified-image";
 import { image as stability } from "../../src/providers/stability/unified-image";
 import { image as vidu } from "../../src/providers/vidu/unified-image";
+import { image as xai } from "../../src/providers/xai/unified-image";
 
 type Support = "native" | "derived" | "implicit" | "declared" | "refused";
 
@@ -483,6 +484,24 @@ const TABLE: Readonly<Record<string, Capability>> = {
     deliveryBase64: "implicit",
     warns: ["dimensions"],
     why: { deliveryBase64: "both create routes answer inline with the image; there is no delivery field" },
+  },
+  xai: {
+    ref: "xai/grok-imagine-image-2.0",
+    adapter: xai,
+    size: { class: "ratio-enum", at: "aspect_ratio" },
+    tier: "resolution",
+    sizeString: null,
+    extra: { user: "unmodel-probe" },
+    aspectRatio: "native",
+    dimensions: "derived",
+    resolution: "native",
+    n: "native",
+    seed: "declared",
+    negativePrompt: "declared",
+    outputFormat: "declared",
+    deliveryUrl: "native",
+    deliveryBase64: "derived",
+    warns: ["dimensions"],
   },
 };
 

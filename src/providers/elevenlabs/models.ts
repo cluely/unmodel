@@ -2,7 +2,7 @@
 //   https://elevenlabs.io/docs/models            (model ids, per-request character limits, deprecations)
 //   https://elevenlabs.io/pricing/api            (usage-based API rates, billed in USD)
 //   https://elevenlabs.io/docs/api-reference/speech-to-text/convert (batch STT model ids)
-// Verified 2026-08-13.
+// Verified 2026-08-24.
 //
 // Pricing conversions (documented so the arithmetic never rots unexplained):
 // - TTS Multilingual v2 / v3 class: $0.10 per 1,000 characters
@@ -127,6 +127,42 @@ const ttsModels = {
     limit: { context: 0, characters: 30000 },
     cost: { perMillionCharacters: TTS_FLASH_PER_MILLION_CHARACTERS },
   },
+  // Legacy row the docs/models page still lists; kept for catalog
+  // completeness per the COVERAGE note. No class rate is published for the
+  // v1 generation on elevenlabs.io/pricing/api, so `cost` is omitted.
+  eleven_multilingual_v1: {
+    id: "eleven_multilingual_v1",
+    name: "Eleven Multilingual v1",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    status: "deprecated",
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+} as const satisfies Record<string, ModelInfo>;
+
+/**
+ * WebSocket-only TTS. "Our most expressive, realtime speech synthesis model
+ * (~280ms)" — elevenlabs.io/docs/models (2026-08-24). Served over the
+ * realtime Text to Dialogue WebSocket, which unmodel does not validate;
+ * listed for catalog completeness, and the unary text-to-speech validator
+ * rejects it because POST /v1/text-to-speech/{voice_id} cannot serve it.
+ * elevenlabs.io/pricing/api publishes no separate USD rate, so `cost` is
+ * omitted.
+ */
+const realtimeTtsModels = {
+  eleven_v3_conversational: {
+    id: "eleven_v3_conversational",
+    name: "Eleven v3 Conversational",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 /**
@@ -204,6 +240,18 @@ const speechToSpeechModels = {
     openWeights: false,
     modalities: { input: ["audio"], output: ["audio"] },
     limit: { context: 0, characters: 10000 },
+  },
+  // Legacy row the docs/models page still lists (English-only voice changer).
+  eleven_english_sts_v1: {
+    id: "eleven_english_sts_v1",
+    name: "Eleven English Speech to Speech v1",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    status: "deprecated",
+    modalities: { input: ["audio"], output: ["audio"] },
+    limit: { context: 0 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
@@ -301,6 +349,7 @@ const generativeAudioModels = {
 
 export const models = {
   ...ttsModels,
+  ...realtimeTtsModels,
   ...sttModels,
   ...realtimeSttModels,
   ...speechToSpeechModels,
@@ -327,6 +376,8 @@ export type ElevenlabsVoiceDesignModelId = keyof typeof textToVoiceModels;
 export type ElevenlabsVoiceCloneModelId = keyof typeof voiceCloneModels;
 /** WebSocket-only STT ids — not accepted by the batch endpoint. */
 export type ElevenlabsRealtimeSttModelId = keyof typeof realtimeSttModels;
+/** WebSocket-only TTS ids (Text to Dialogue realtime) — not accepted by POST /v1/text-to-speech. */
+export type ElevenlabsRealtimeTtsModelId = keyof typeof realtimeTtsModels;
 export type ElevenlabsModelId = keyof typeof models;
 
 /** Runtime allow-list backing the text-to-speech endpoint's model gate. */

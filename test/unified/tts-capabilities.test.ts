@@ -50,6 +50,7 @@ import type {
   TtsParams,
 } from "../../src/core/unified/vocabulary/tts";
 import { tts } from "../../src/unified/tts";
+import { tts as alibaba } from "../../src/providers/alibaba/unified-tts";
 import { tts as cartesia } from "../../src/providers/cartesia/unified-tts";
 import { tts as deepgram } from "../../src/providers/deepgram/unified-tts";
 import { tts as elevenlabs } from "../../src/providers/elevenlabs/unified-tts";
@@ -65,6 +66,8 @@ import { tts as resemble } from "../../src/providers/resemble/unified";
 import { tts as rime } from "../../src/providers/rime/unified";
 import { tts as smallestAi } from "../../src/providers/smallest-ai/unified";
 import { tts as speechify } from "../../src/providers/speechify/unified";
+import { tts as stepfun } from "../../src/providers/stepfun/unified";
+import { tts as breezeblue } from "../../src/providers/breezeblue/unified";
 
 type Support = "native" | "derived" | "unsupported" | "ref";
 
@@ -101,7 +104,8 @@ interface Capability {
   voice: Support;
   speed: Support;
   language: Support;
-  format: { shape: FormatShape; at: string };
+  /** Absent when the provider has no output-format field at all (alibaba: fixed WAV/PCM). */
+  format?: { shape: FormatShape; at: string };
   /**
    * How the audio comes back: every `kind` the adapter's descriptor can
    * produce, sorted, and the request fields that choose between them — empty
@@ -114,7 +118,7 @@ interface Capability {
    */
   delivery: { kinds: readonly TtsDeliveryKind[]; by: readonly string[] };
   /** An encoding this provider can express — the probe for the format row. */
-  probe: AudioFormatRequest;
+  probe?: AudioFormatRequest;
 }
 
 /** Every arm a descriptor can resolve to, flattened across models and variants. */
@@ -314,6 +318,39 @@ const TABLE: Readonly<Record<string, Capability>> = {
     delivery: { kinds: ["base64"], by: [] },
     probe: { format: "mp3", sampleRate: 24000, bitrate: 128000 },
   },
+  stepfun: {
+    ref: "stepfun/stepaudio-2.5-tts",
+    voice_id: "vibrant-youth",
+    adapter: stepfun,
+    voice: "native",
+    speed: "native",
+    language: "unsupported",
+    format: { shape: "codec", at: "response_format" },
+    delivery: { kinds: ["bytes", "sse"], by: ["stream_format"] },
+    probe: "mp3",
+  },
+  alibaba: {
+    ref: "alibaba/qwen3-tts-flash",
+    voice_id: "Cherry",
+    adapter: alibaba,
+    voice: "native",
+    speed: "unsupported",
+    language: "derived",
+    // No format field anywhere on the wire: the response is a fixed 24 kHz
+    // WAV URL (or Base64-PCM SSE frames when `stream: true`).
+    delivery: { kinds: ["sse", "url"], by: ["stream"] },
+  },
+  breezeblue: {
+    ref: "breezeblue/breeze-tts-2",
+    voice_id: "voc_demo",
+    adapter: breezeblue,
+    voice: "native",
+    speed: "unsupported",
+    language: "derived",
+    format: { shape: "query", at: "output_format" },
+    delivery: { kinds: ["bytes"], by: ["delivery"] },
+    probe: "mp3",
+  },
   inworld: {
     ref: "inworld/inworld-tts-2",
     voice_id: "Dennis",
@@ -460,7 +497,13 @@ describe.each(rows)("%s", (provider, row) => {
     }
   });
 
-  test(`outputFormat lands as a ${row.format.shape} at \`${row.format.at}\``, () => {
+  test(`outputFormat ${row.format ? `lands as a ${row.format.shape} at \`${row.format.at}\`` : "has no wire field"}`, () => {
+    if (row.format === undefined || row.probe === undefined) {
+      // No encoding field anywhere on the wire — the kernel must say so.
+      expect(row.adapter.unsupported?.outputFormat, `${provider}.unsupported.outputFormat`).toBeDefined();
+      expect(compile(row, { outputFormat: "mp3" })).toEqual(["unsupported_param @ outputFormat"]);
+      return;
+    }
     const compiled = compile(row, { outputFormat: row.probe });
     expect(compiled).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
@@ -516,16 +559,23 @@ describe.each(rows)("%s", (provider, row) => {
     }
   });
 
-  test("an unsupported codec is an invalid_enum_value naming what IS offered", () => {
-    // `vorbis` is offered by none of the fifteen — the one codec in the
-    // vocabulary that no provider in this pack encodes.
+  test("an unsupported codec is refused, never silently sent", () => {
+    // `vorbis` is offered by no provider in this pack — the one codec in the
+    // vocabulary that nothing here encodes. Providers with a format field name
+    // what IS offered; a provider without one rejects the param outright.
     const compiled = compile(row, { outputFormat: "vorbis" });
-    expect(compiled).toEqual(["invalid_enum_value @ outputFormat"]);
+    expect(compiled).toEqual([
+      row.format === undefined
+        ? "unsupported_param @ outputFormat"
+        : "invalid_enum_value @ outputFormat",
+    ]);
   });
 });
 
 test("every format shape in the category is exercised by some provider", () => {
-  const shapes = new Set(rows.map(([, row]) => row.format.shape));
+  const shapes = new Set(
+    rows.flatMap(([, row]) => (row.format === undefined ? [] : [row.format.shape])),
+  );
   expect([...shapes].sort()).toEqual(["codec", "composite", "header", "object", "query"]);
 });
 
@@ -534,11 +584,20 @@ test("every delivery kind in the category is exercised by some provider", () => 
   expect([...kinds].sort()).toEqual([...TTS_DELIVERY_KINDS].sort());
 });
 
-test("the five providers whose delivery a request field moves are exactly these", () => {
+test("the eight providers whose delivery a request field moves are exactly these", () => {
   // The reason the descriptor is on the adapter and not on a `TtsModelParams`
   // row: at a third of the providers a static per-model value would be wrong.
   const moved = rows.filter(([, row]) => row.delivery.by.length > 0).map(([provider]) => provider);
-  expect(moved.sort()).toEqual(["deepgram", "google", "minimax", "murf", "openai"]);
+  expect(moved.sort()).toEqual([
+    "alibaba",
+    "breezeblue",
+    "deepgram",
+    "google",
+    "minimax",
+    "murf",
+    "openai",
+    "stepfun",
+  ]);
 });
 
 test("murf is the one provider whose delivery the model ref decides", () => {
@@ -620,14 +679,19 @@ describe("no silent drops, over the whole outputFormat matrix", () => {
             // check falls back to "the format field exists".
             const landed =
               needsFormat || Array.isArray(bare)
-                ? wireValue(compiled, row.format.at) !== undefined
+                ? row.format !== undefined && wireValue(compiled, row.format.at) !== undefined
                 : serialize(compiled) !== serialize(bare);
             if (!landed) dropped.push(JSON.stringify(outputFormat));
           }
         }
       }
     }
-    expect(accepted, `${provider} accepted nothing at all`).toBeGreaterThan(0);
+    if (row.format === undefined) {
+      // No format field on the wire — the kernel must have refused every cell.
+      expect(accepted, `${provider} has no format field yet accepted an encoding`).toBe(0);
+    } else {
+      expect(accepted, `${provider} accepted nothing at all`).toBeGreaterThan(0);
+    }
     expect(dropped, `${provider} accepted and ignored an encoding`).toEqual([]);
   });
 });

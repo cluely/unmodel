@@ -38,11 +38,14 @@
  *
  * - `azure` is factory-configured (its URL needs configuration a bare
  *   model ref cannot carry), so it has no `unmodel validate` endpoint id.
- *   `ChatBody` names the body its `chat` validator takes all the same.
+ *   `ChatBody`, `ImageBody` and `ImageEditBody` name the bodies its `chat`,
+ *   `image` and `imageEdit` validators take all the same.
  */
 
 import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
 import type { AzureTextModelId } from "../../catalog/azure.gen";
+import type { MaiImagesGenerationsBody } from "./image";
+import type { MaiImagesEditsBody } from "./image-edit";
 
 export type {
   AzureModelId,
@@ -55,6 +58,12 @@ export type {
 // Declared in this provider's own `index.ts`; re-exported here type-only so the
 // types entry is complete on its own.
 export type { AzureConfig, AzureProvider } from "./index";
+
+// The MAI image surface (POST {endpoint}/mai/v1/images/generations and
+// /mai/v1/images/edits) — wire names first, per docs/decisions.md §2.
+export type { MaiImagesGenerationsBody, AzureMaiImage } from "./image";
+export type { MaiImagesEditsBody, AzureMaiImageEdit } from "./image-edit";
+export type { AzureMaiImageModelId, AzureMaiImageEditModelId } from "./mai-image-models";
 
 // The OpenAI-compatible chat dialect this overlay speaks. The wire leaf is the
 // same one `azure.chat` validates against, so what type-checks here is
@@ -97,3 +106,9 @@ export type {
 // ---------------------------------------------------------------------------
 
 export type ChatBody<ModelId extends string = AzureTextModelId> = ChatCompletionsBodyBase<ModelId>;
+
+/** `azure.image`'s body — POST {endpoint}/mai/v1/images/generations. */
+export type ImageBody = MaiImagesGenerationsBody;
+
+/** `azure.imageEdit`'s multipart params — POST {endpoint}/mai/v1/images/edits. */
+export type ImageEditBody = MaiImagesEditsBody;

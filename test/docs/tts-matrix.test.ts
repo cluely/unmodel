@@ -45,10 +45,10 @@ describe("docs/tts.md machine columns", () => {
     expect(parseMachineTable(doc).map((r) => r.provider).sort()).toEqual([...tts.providers].sort());
   });
 
-  test("carries fifteen rows, one per provider, none duplicated", () => {
+  test("carries eighteen rows, one per provider, none duplicated", () => {
     const rows = parseMachineTable(doc);
-    expect(rows).toHaveLength(15);
-    expect(new Set(rows.map((r) => r.provider)).size).toBe(15);
+    expect(rows).toHaveLength(18);
+    expect(new Set(rows.map((r) => r.provider)).size).toBe(18);
   });
 
   test.each(ttsMatrixRows())("$provider row matches the live .request", (live) => {

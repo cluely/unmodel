@@ -14,8 +14,10 @@ import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { tts } from "../../src/unified/tts";
 
 describe("the pack", () => {
-  test("registers exactly the fifteen speech providers, sorted", () => {
+  test("registers exactly the eighteen speech providers, sorted", () => {
     expect([...tts.providers]).toEqual([
+      "alibaba",
+      "breezeblue",
       "cartesia",
       "deepgram",
       "elevenlabs",
@@ -31,6 +33,7 @@ describe("the pack", () => {
       "rime",
       "smallest-ai",
       "speechify",
+      "stepfun",
     ]);
   });
 

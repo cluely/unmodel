@@ -1,0 +1,30 @@
+{
+  "ref": "breezeblue/breeze-tts-2",
+  "voice": "voc_demo",
+  "params": {
+    "text": "The lighthouse keeper checked the lamp.",
+    "model_id": "breeze-tts-2",
+    "language_code": "pt"
+  },
+  "url": "https://api.breeze.blue/v1/text-to-speech/voc_demo",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "language"
+      ],
+      "message": "`language` \"pt-BR\" was sent as \"pt\" \u2014 this model's language field is a bare ISO 639-1 code, so the regional subtag \"BR\" is not expressible and the accent it selects is the model's default.",
+      "meta": {
+        "requested": "pt-BR",
+        "achieved": "pt",
+        "dropped": "BR",
+        "source": "https://docs.breezeblue.ai/api-reference/text-to-speech/convert-text-to-speech"
+      },
+      "from": "unified.tts",
+      "to": "breezeblue.tts"
+    }
+  ]
+}

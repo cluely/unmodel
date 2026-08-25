@@ -1,6 +1,6 @@
 /**
  * `unmodel/google/values` — the **runtime** lists behind this provider's
- * unified surfaces (image, video, tts, stt).
+ * unified surfaces (image, video, tts, stt, music).
  *
  * Every export here is a readonly (`as const`) array or table a browser can
  * render: the model ids, the per-model narrowing rows (allowed sizes, ratios,
@@ -34,6 +34,14 @@ export {
 } from "./tts-params";
 
 export { GOOGLE_STT_MODEL_PARAMS as STT_MODEL_PARAMS, MODELS as STT_MODELS } from "./stt-params";
+
+export {
+  GOOGLE_MUSIC_MODEL_PARAMS as MUSIC_MODEL_PARAMS,
+  MODELS as MUSIC_MODELS,
+  FORMAT as MUSIC_FORMAT_SPEC,
+  LYRIA_MAX_INPUT_IMAGES,
+  LYRIA_CLIP_DURATION_SECONDS,
+} from "./music-params";
 
 export {
   GEMINI_IMAGE_ASPECT_RATIOS,

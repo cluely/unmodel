@@ -22,7 +22,7 @@ provider — not their quality ranking.
 | openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + image + imageEdit + tts + stt + video + realtime session done) | ✅ | complete for the documented REST surface |
 | anthropic | llm | native (the reference) | **native** (`chat`, the `/v1/messages` wire format — done) | ✅ | |
 | google | llm, image, video, tts, stt | native | **native** (`chat` + `tts` + `stt` + Imagen `image` + Veo `video` done) | ✅ | `tts` and `stt` are dedicated Tier-A surfaces — required AUDIO modality, XOR'd `speechConfig`, bounded speaker tuple, 78-language table, closed audio MIME set, typed `audioTranscriptionConfig`. Both post to `:generateContent`, which is also what `chat` serves, so the same ids stay valid there too — one shared check battery backs both surfaces |
-| xai (grok) | llm, image, video, stt | openai-compatible (+anthropic-compat) | **oai-base** (live) | ✅ (`xai`) | grok-imagine image/video are native-style, later |
+| xai (grok) | llm, image, video, stt | openai-compatible (+anthropic-compat) | **oai-base** (chat) + native `image`/`video`/`videoEdit`/`videoExtend` (Grok Imagine, live) | ✅ (`xai`) | |
 | groq | inference (chat + Whisper STT) | openai-compatible | **oai-base** (live) | ✅ | Whisper STT covered by speech wave via oai audio shape |
 | cerebras | inference | openai-compatible | **oai-base** (live) | ✅ | |
 | openrouter | aggregator (400+ models) | openai-compatible | **oai-base** (live) | ✅ (349 models) | |
@@ -31,7 +31,7 @@ provider — not their quality ranking.
 | cartesia | tts (Sonic, r6), stt (Ink) | native | **native** (TTS+STT live; realtime configs live) | ✋ | `ttsWebsocket` (generation message) + `sttWebsocket` (connection query set) |
 | inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT is inline base64 (no multipart); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
 | soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `stt` + `realtimeTranscription` config message |
-| stepfun | llm (r83), tts (r5), image-edit | openai-compatible | **oai-base** (chat live) | ✅ | TTS via speech wave |
+| stepfun | llm (r83), tts (r5), image-edit | openai-compatible | **oai-base** (chat live) + native `tts` (stepaudio-2.5-tts, live) | ✅ | speech is a hand catalog mirroring the generated rows |
 
 ## Wave 2 — inference hosts & aggregators (all openai-compatible, all in models.dev → oai-base)
 
@@ -71,9 +71,14 @@ types): openai (tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15), cart
 deepgram (Aura 1/2), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave), inworld,
 lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
 resemble (`tts` + `ttsStream`), rime, smallest-ai,
-speechify (`tts` + `ttsStream`).
-All fifteen also ship an adapter at `unmodel/<provider>/unified`, so `tts()` from
-`unmodel/tts` reaches them through one canonical vocabulary.
+speechify (`tts` + `ttsStream`), stepfun (StepAudio 2.5), breezeblue (Breeze TTS 2),
+alibaba (Qwen3-TTS on DashScope; the realtime-WebSocket-only ids incl.
+qwen-audio-3.0-tts-plus are catalog rows the unary validator rejects by name).
+All eighteen also ship an adapter at `unmodel/<provider>/unified`, so `tts()` from
+`unmodel/tts` reaches them through one canonical vocabulary. Two leaderboard names that
+LOOK like gaps are not: Cartesia "Sonic 3.6" has no model id of its own (it is the beta
+behind `sonic-preview`), and ElevenLabs "v3 Conversational" is the realtime
+`eleven_v3_conversational` (catalog row; Text-to-Dialogue WebSocket only).
 **Live — STT:** every provider addresses the route as `stt` — openai
 (gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
@@ -97,9 +102,10 @@ openai (`realtimeSession`), cartesia (`ttsWebsocket`, `sttWebsocket`), deepgram 
 (`realtimeTranscription`).
 **Realtime still to do:** the streaming/live socket configs of assemblyai, gladia and
 speechmatics, plus Cartesia's sibling turn-detection socket (`/stt/turns/websocket`).
-**TTS still to do (leaderboard order):** typecast, alibaba (Qwen-TTS), stepfun,
+**TTS still to do (leaderboard order):** typecast,
 gradium, async, microsoft/azure, mistral (Voxtral TTS), boson-ai, neuphonic, amazon (Polly),
-nvidia (Magpie), zyphra.
+nvidia (Magpie), zyphra. **Excluded (no public developer API):** VUI Labs (Luna TTS —
+contact-gated, no published docs).
 **STT still to do:** azure, smallest-ai, alibaba, deepinfra, xai, amazon,
 nvidia, gradium, reson8, modulate, cohere (stt).
 
@@ -114,9 +120,13 @@ Kontext — api.bfl.ai, `unmodel/black-forest-labs`), bria (`image` + `imageLite
 bytedance (`image`, Seedream on BytePlus ModelArk), kling (`image` + `imageOmni`), krea
 (`image`), leonardo (`image`, Lucid / Phoenix), recraft (`image`), ideogram (v3 `image` + v4
 `imageV4`), reve (`image` + `imageV2`), stability (Stable Image `image` / `imageCore` /
-`imageSd3`), luma (Photon `image`), runway (`image`), vidu (`imageFromReference`).
-All fifteen also ship a unified adapter at `unmodel/<provider>/unified`, and
-`unmodel/image` carries the ready-made pack over all of them.
+`imageSd3`), luma (Photon `image`), runway (`image`), vidu (`imageFromReference`),
+xai (Grok Imagine `image` at /v1/images/generations), azure (Microsoft Foundry MAI-Image-2.5
+family via the `createAzure(endpoint)` factory — deployment-name model field, so wire
+validators only, no unified refs, same doctrine as azure chat).
+The pack providers also ship a unified adapter at `unmodel/<provider>/unified`, and
+`unmodel/image` carries the ready-made pack over all of them. "Reve 2.1" needs no new ids:
+Reve's API has no 2.1 version strings — `latest` serves it.
 **Live — editing:** every image-to-image route is addressed as
 `<provider>.imageEdit`, with each extra route qualified by what it does to the
 picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
@@ -132,8 +142,8 @@ picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
 Four of the eight — openai, black-forest-labs, ideogram, recraft — ship a
 unified adapter, and `unmodel/image-edit` carries the ready-made pack over
 them.
-Remaining: microsoft-ai, xai (grok-imagine), alibaba (Qwen-Image/Wan), fal (aggregator),
-baidu, tencent (HunyuanImage), minimax, z-ai, nvidia, amazon (Titan/Nova).
+Remaining: alibaba (Qwen-Image), baidu, tencent (HunyuanImage), minimax, z-ai, nvidia,
+amazon (Titan/Nova); azure MAI `imageEdit` is live (multipart /mai/v1/images/edits).
 **Excluded (no public API):** midjourney, hidream, pruna, playground, sapiens-ai, eigen-ai,
 deepseek (Janus — weights only).
 
@@ -147,17 +157,26 @@ bytedance (`video`, Seedance / Dreamina Seedance), kling (`video` /
 MiniMax-H3), pixverse (`video` + `videoFromImage`), runway (`video` +
 `videoFromImage` + `videoFromVideo`), luma (Ray, `video`, plus post-production
 `videoModify` / `videoReframe` / `videoUpscale` / `videoAddAudio`), vidu
-(`video` / `videoFromImage` / `videoFromReference`). All ten are reachable
+(`video` / `videoFromImage` / `videoFromReference`), alibaba (Wan 3.0/2.x + HappyHorse 1.x
+on DashScope video-synthesis, async create-then-poll), xai (Grok Imagine `video` +
+`videoEdit` + `videoExtend` at /v1/videos/*). All thirteen are reachable
 through one canonical `video()` at `unmodel/video`.
-Remaining (first-party APIs): alibaba (Wan), xai (grok-imagine), tencent (HunyuanVideo).
-Several of these are already reachable as hosted routes on `unmodel/runway`
-(`hailuo3`, `seedance2*`, `gemini_omni_flash`, `grok_imagine_1_5`).
-**Excluded:** pika, genmo/haiper, sand-ai, skywork, sapiens-ai (no public API).
+Remaining (first-party APIs): tencent (HunyuanVideo).
+Several are also reachable as hosted routes on `unmodel/runway`
+(`hailuo3`, `seedance2*`, `gemini_omni_flash`, `grok_imagine_1_5`, `happyhorse_1_0`).
+**Excluded:** pika, genmo/haiper, sand-ai (MAGI-2 Preview is open weights on HF, no hosted
+API), skywork, sapiens-ai (no public API).
 **Music / audio — live:** elevenlabs (Eleven Music, `music`), stability (Stable Audio 2.x:
-`music` / `musicFromAudio` / `musicInpaint`). Both text-to-music routes ship an adapter at
-`unmodel/<provider>/unified` behind `music()` from `unmodel/music`; the two
-audio-conditioned Stability routes are wire-only (see `src/unified/music.ts`).
-Remaining: mureka, sonauto. **Excluded:** suno, udio, producer-ai (no public API).
+`music` / `musicFromAudio` / `musicInpaint`), google (Lyria 3 Pro / Clip via the Gemini
+Interactions API, `music`), mureka (`music` at /v1/song/generate + `instrumental`,
+async create-then-poll, mureka-7.6…9.5). All four text-to-music routes ship an adapter at
+`unmodel/<provider>/unified` behind `music()` from `unmodel/music`; the audio-conditioned
+Stability routes and mureka's lyrics/extend/stem routes stay wire-only or doc-noted
+(see `src/unified/music.ts`).
+Remaining: sonauto. **Excluded:** suno, udio, producer-ai (no public API);
+minimax music (the native /v1/music_generation API closed to NEW users on 2026-08-20 —
+current ids music-3.0/music-cover; existing subscribers only, so it fails the
+public-accessibility bar).
 
 ## LLM creators without a public API today (catalog-only or excluded)
 

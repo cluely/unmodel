@@ -1140,6 +1140,7 @@
     "codegen:fal:check": "bun scripts/codegen-fal.ts --check",
     "codegen:fal:audit": "bun scripts/codegen-fal.ts --audit",
     "gen:tts-matrix": "bun scripts/gen-tts-matrix.ts",
+    "audit:leaderboard": "bun scripts/leaderboard-audit.ts",
     "test": "bun test",
     "check": "tsc --noEmit",
     "bench:types": "tsx test/type-bench/index.bench.ts --benchErrorOnThresholdExceeded",

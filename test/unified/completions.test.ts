@@ -18,7 +18,7 @@
  * So this suite asks `getCompletionsAtPosition` directly. If it fails, the
  * autocomplete the library exists to provide is broken, whatever tsc says.
  */
-import { describe, expect, test } from "bun:test";
+import { describe, expect, setDefaultTimeout, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
@@ -33,6 +33,11 @@ import {
   RECRAFT_V3_STYLES,
   RECRAFT_V3_VECTOR_STYLES,
 } from "../../src/providers/recraft/styles";
+
+// The first completion request builds the full program (every provider plus
+// the generated catalog); on CI runners that cold start alone can exceed the
+// 5s default and lands on whichever test happens to run first.
+setDefaultTimeout(30_000);
 
 const REPO = join(import.meta.dir, "../..");
 const PROBE = join(REPO, "__completions_probe__.ts");

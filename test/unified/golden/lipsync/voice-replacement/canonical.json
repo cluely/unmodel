@@ -1,0 +1,8 @@
+{
+  "source": {
+    "url": "https://example.com/interview.mov"
+  },
+  "audio": {
+    "url": "https://example.com/clean-take.wav"
+  }
+}

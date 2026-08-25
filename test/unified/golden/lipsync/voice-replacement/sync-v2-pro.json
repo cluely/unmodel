@@ -1,0 +1,20 @@
+{
+  "ref": "sync/lipsync-2-pro",
+  "params": {
+    "model": "lipsync-2-pro",
+    "input": [
+      {
+        "type": "video",
+        "url": "https://example.com/interview.mov"
+      },
+      {
+        "type": "audio",
+        "url": "https://example.com/clean-take.wav"
+      }
+    ]
+  },
+  "url": "https://api.sync.so/v2/generate",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

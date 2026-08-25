@@ -1,5 +1,5 @@
 /**
- * `unmodel/lipsync` → sync., the category's second provider.
+ * `unmodel/lipsync` → sync., the category's first native provider.
  *
  * # The one that makes the category a category
  *

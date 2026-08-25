@@ -806,10 +806,17 @@ const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
  * (typing them and shipping no runtime list) was rejected for the reason
  * `values-entries.test.ts` exists.
  */
-const LIPSYNC_PACK_BUDGET_KIB = 350;
+// **Bumped 350 → 445 by the natives wave**, measured 395.2 KiB, +77. The two
+// halves added are a native provider apiece: VEED brings one validator, one
+// zod schema and a row with NOTHING on it; HeyGen brings two validators, a
+// schema with five nested objects (background, caption, watermark,
+// voice_settings, engine) and two rows of a dozen extras each. HeyGen is most
+// of the delta and the schema is most of HeyGen — which is the shape of the
+// thing this pack is for.
+const LIPSYNC_PACK_BUDGET_KIB = 445;
 
-/** The two providers `unmodel/lipsync`'s ready-made pack is allowed to reach. */
-const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "sync"];
+/** The four providers `unmodel/lipsync`'s ready-made pack is allowed to reach. */
+const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
 
 /**
  * `unmodel/avatar`'s budget: the same shape as its lipsync twin, 4.7 KiB
@@ -832,10 +839,17 @@ const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "sync"];
  * avatar pack ever picked up sync.'s lipsync rows, this is the number that
  * would move.
  */
-const AVATAR_PACK_BUDGET_KIB = 345;
+// **Bumped 345 → 445 by the natives wave**, measured 396.4 KiB. It stays
+// within 2% of its lipsync twin, which is the assertion above and is now the
+// strongest version of it there has been: the two packs reach the SAME FOUR
+// providers, and at three of them they reach the same `shared.ts` and the same
+// `models.ts`. The 1.2 KiB between them is one adapter leaf and one params
+// leaf apiece. If the avatar pack ever picked up HeyGen's lipsync rows, this
+// is the number that would move.
+const AVATAR_PACK_BUDGET_KIB = 445;
 
-/** The two providers `unmodel/avatar`'s ready-made pack is allowed to reach. */
-const AVATAR_PACK_PROVIDERS: string[] = ["fal", "sync"];
+/** The four providers `unmodel/avatar`'s ready-made pack is allowed to reach. */
+const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
 
 /**
  * `unmodel/upscale`'s budget: the third one-provider pack, and the heaviest of
@@ -1925,8 +1939,8 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
 });
 
 /**
- * The three two-provider media packs, checked together because the assertion
- * that matters most is a COMPARISON.
+ * The three media packs with a native half, checked together because the
+ * assertion that matters most is a COMPARISON.
  *
  * `fal-ai/sync-lipsync/v3` and `fal-ai/sync-lipsync/v3/image-to-video` are one
  * vendor's one model on two routes, and they are in different categories. If
@@ -1936,12 +1950,14 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
  * through exactly one leaf, and then pinned NOT to contain the other's leaf,
  * its schema, or its generated rows.
  *
- * The sync. wave sharpened that considerably. At fal the two categories are two
- * ENDPOINT IDS behind one union schema, so a leak shows up as an extra
- * generated file. At sync. they are two adapter leaves over ONE url and ONE
+ * The native waves sharpened that considerably, and there are now THREE native
+ * providers serving both audio-driven categories. At fal the two categories are
+ * two ENDPOINT IDS behind one union schema, so a leak shows up as an extra
+ * generated file. At sync., VEED and HeyGen they are two adapter leaves over a
  * shared module — `unified-lipsync.ts` and `unified-avatar.ts`, both importing
- * `sync/shared.ts` — so the lipsync bundle containing `sync/unified-avatar.ts`
- * would be a leak with no filename tell at all except this assertion.
+ * that provider's `shared.ts` — so a lipsync bundle containing
+ * `heygen/unified-avatar.ts` would be a leak with no filename tell at all
+ * except this assertion. (At sync. the two leaves even reach the same URL.)
  *
  * fal serves ten categories, which makes it the strongest test of the split in
  * the library: `src/providers/fal/unified.ts` re-exports all ten adapters, and
@@ -1949,25 +1965,37 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
  * video wire types and 45 image endpoints into a ten-endpoint bundle without
  * changing a line in `src/unified/lipsync.ts`.
  */
-describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the two-provider media packs)", () => {
+describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the packs with native halves)", () => {
   const CASES: Array<{
     name: string;
     providers: string[];
     other: string;
-    /** The native provider's own leaf pair, where it has one. */
-    native?: { provider: string; twin: string };
+    /** Every native provider that serves BOTH audio-driven categories. */
+    natives?: Array<{ provider: string; twin: string }>;
   }> = [
     {
       name: "lipsync",
       providers: LIPSYNC_PACK_PROVIDERS,
       other: "avatar",
-      native: { provider: "sync", twin: "avatar" },
+      // Three native providers, each serving both categories through two leaves
+      // — and at sync. through ONE url, at VEED through two urls with disjoint
+      // schemas, at HeyGen through two urls with different response shapes. All
+      // three would leak with no filename tell but this.
+      natives: [
+        { provider: "sync", twin: "avatar" },
+        { provider: "veed", twin: "avatar" },
+        { provider: "heygen", twin: "avatar" },
+      ],
     },
     {
       name: "avatar",
       providers: AVATAR_PACK_PROVIDERS,
       other: "lipsync",
-      native: { provider: "sync", twin: "lipsync" },
+      natives: [
+        { provider: "sync", twin: "lipsync" },
+        { provider: "veed", twin: "lipsync" },
+        { provider: "heygen", twin: "lipsync" },
+      ],
     },
     // The third, and the one that makes the sweep below mean something at a
     // provider serving ten categories: `upscale`'s twin is not one of the
@@ -2031,8 +2059,7 @@ describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the two-provider 
     // The native half, and the sharper version of the same rule: sync. serves
     // both audio-driven categories from ONE url through two adapter leaves, so
     // this is the only thing standing between them.
-    const native = kase.native;
-    if (native !== undefined) {
+    for (const native of kase.natives ?? []) {
       expect(modules).toContain(`src/providers/${native.provider}/unified-${kase.name}.ts`);
       expect(modules).toContain(`src/providers/${native.provider}/${kase.name}.ts`);
       expect(modules).toContain(`src/providers/${native.provider}/${kase.name}-params.ts`);
@@ -2062,23 +2089,25 @@ describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the two-provider 
   });
 
   /**
-   * The three stay within 10% of each other.
+   * The three stay within 20% of each other.
    *
    * A relative assertion rather than three more absolute ones, because it
    * survives the shared kernel growing and catches the thing an absolute number
-   * cannot: one of the three acquiring a module the others have not. All three
-   * are two providers, two adapter leaves, two or three validators and ten to
-   * twenty-five rows — if any of them ever diverges materially, something
-   * structural joined it. (`upscale` is the largest and it is the largest by
-   * fifteen Topaz rows of hand-transcribed per-model settings, which is a
-   * difference in DATA.)
+   * cannot: one of the three acquiring a module the others have not.
+   *
+   * **Widened from 10% to 20% by the natives wave**, measured 15.0%. The two
+   * audio-driven packs went from two providers to FOUR and `upscale` stayed at
+   * two, so the spread is now a difference in ROSTER rather than in structure —
+   * which is exactly the thing the assertion was written to tolerate and the
+   * absolute budgets above are written to catch. The pair that has to stay tight
+   * is `lipsync` against `avatar`, and the twin test below holds them to 2%.
    */
-  test("the three two-provider packs stay the same size as each other", () => {
+  test("the three media packs stay within a fifth of each other", () => {
     const sizes = CASES.map((kase) => [kase.name, transitiveBytes(unifiedEntry(kase.name))] as const);
     const largest = Math.max(...sizes.map(([, bytes]) => bytes));
     const smallest = Math.min(...sizes.map(([, bytes]) => bytes));
     const drift = (largest - smallest) / largest;
-    expect(drift, sizes.map(([name, bytes]) => `${name} ${bytes}`).join(" vs ")).toBeLessThan(0.1);
+    expect(drift, sizes.map(([name, bytes]) => `${name} ${bytes}`).join(" vs ")).toBeLessThan(0.2);
   });
 });
 

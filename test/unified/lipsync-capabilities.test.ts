@@ -26,7 +26,9 @@ import { describe, expect, test } from "bun:test";
 import type { LipsyncParams } from "../../src/core/unified/vocabulary/lipsync";
 import { lipsync } from "../../src/unified/lipsync";
 import { lipsync as fal } from "../../src/providers/fal/unified-lipsync";
+import { lipsync as heygen } from "../../src/providers/heygen/unified-lipsync";
 import { lipsync as sync } from "../../src/providers/sync/unified-lipsync";
+import { lipsync as veed } from "../../src/providers/veed/unified-lipsync";
 
 type Support = "native" | "derived" | "unsupported";
 
@@ -46,7 +48,12 @@ interface Capability {
   inline: "derived" | "unsupported";
   /**
    * This endpoint's own word for "what to do when the audio outlasts the clip",
-   * as a dot path — `sync_mode` at fal, `options.sync_mode` at sync.
+   * as a dot path — `sync_mode` at fal, `options.sync_mode` at sync.,
+   * `enable_dynamic_duration` at HeyGen, and nothing at all at VEED.
+   *
+   * Four vendors and three spellings with no shared value space is the whole
+   * argument for keeping the idea out of the vocabulary; the column is what
+   * makes it a fact rather than a claim.
    */
   mismatch: string | undefined;
 }
@@ -143,10 +150,12 @@ const TABLE: Readonly<Record<string, Capability>> = {
     source: { at: "video_url", support: "native" },
     audio: { at: "audio_url", support: "native" },
     seed: "unsupported",
-    // HeyGen spells the mismatch idea `enable_dynamic_duration` (a boolean),
-    // which is a third spelling of the idea `sync_mode` and `loop_mode` already
-    // spell two ways — more evidence for keeping it out of the vocabulary.
-    mismatch: undefined,
+    // HeyGen spells the mismatch idea `enable_dynamic_duration` — a BOOLEAN,
+    // where sync. has a five-arm enum and LatentSync a two-arm one — and fal's
+    // resale keeps the name and the shape, exactly as it keeps sync.'s
+    // `sync_mode`. A vendor agreeing with itself through a reseller is one
+    // witness; see the test at the bottom of this file.
+    mismatch: "enable_dynamic_duration",
   },
   "heygen/v3/lipsync/speed": {
     ref: "fal/fal-ai/heygen/v3/lipsync/speed",
@@ -155,7 +164,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     source: { at: "video_url", support: "native" },
     audio: { at: "audio_url", support: "native" },
     seed: "unsupported",
-    mismatch: undefined,
+    mismatch: "enable_dynamic_duration",
   },
 
   // ---- sync., the native half ---------------------------------------------
@@ -191,6 +200,48 @@ const TABLE: Readonly<Record<string, Capability>> = {
     audio: { at: "input.1.url", support: "native" },
     seed: "unsupported",
     mismatch: "options.sync_mode",
+  },
+
+  // ---- VEED, natively -----------------------------------------------------
+  // The smallest row in the table, and the emptiness is the finding:
+  // `Lipsync20Input` is `{ video_url, audio_url }`, both required, and
+  // `additionalProperties: false`. No seed, no mismatch word, no dials at all —
+  // so a caller reaching fal's resale of this very model gets a `data:` URI
+  // arm the vendor does not publish.
+  "veed/lipsync-2.0": {
+    ref: "veed/lipsync-2.0",
+    url: "https://api.veed.io/v1/lipsync-2.0",
+    inline: "unsupported",
+    source: { at: "video_url", support: "native" },
+    audio: { at: "audio_url", support: "native" },
+    seed: "unsupported",
+    mismatch: undefined,
+  },
+
+  // ---- HeyGen, natively ---------------------------------------------------
+  // Two ids that are ONE wire field: `mode` decides quality and price and
+  // nothing else, so both rows are identical except for what they cost. The
+  // media fields are tagged OBJECTS rather than flat URLs, and the third arm of
+  // HeyGen's own `oneOf` (`base64`) is on the AVATAR route's `image` and not
+  // here — which is why `inline` is `unsupported` at a provider that does take
+  // bytes one category over.
+  "heygen/lipsync-speed": {
+    ref: "heygen/lipsync-speed",
+    url: "https://api.heygen.com/v3/lipsyncs",
+    inline: "unsupported",
+    source: { at: "video.url", support: "native" },
+    audio: { at: "audio.url", support: "native" },
+    seed: "unsupported",
+    mismatch: "enable_dynamic_duration",
+  },
+  "heygen/lipsync-precision": {
+    ref: "heygen/lipsync-precision",
+    url: "https://api.heygen.com/v3/lipsyncs",
+    inline: "unsupported",
+    source: { at: "video.url", support: "native" },
+    audio: { at: "audio.url", support: "native" },
+    seed: "unsupported",
+    mismatch: "enable_dynamic_duration",
   },
 };
 
@@ -239,11 +290,16 @@ test("the table covers every endpoint both adapters serve", () => {
   expect(syncRows.length).toBeGreaterThanOrEqual(3);
   const syncModels: readonly string[] = sync.models;
   for (const id of syncRows) expect(syncModels).toContain(id);
+  // The two native halves added with this wave are small enough to exhaust,
+  // and exhausting them is the point: VEED has one lipsync model and HeyGen
+  // has two that are one wire field.
+  expect((byProvider.get("veed") ?? []).sort()).toEqual([...veed.models].sort());
+  expect((byProvider.get("heygen") ?? []).sort()).toEqual([...heygen.models].sort());
   expect([...byProvider.keys()].sort()).toEqual([...lipsync.providers]);
 });
 
-test("the pack registers exactly two providers", () => {
-  expect([...lipsync.providers]).toEqual(["fal", "sync"]);
+test("the pack registers exactly four providers", () => {
+  expect([...lipsync.providers]).toEqual(["fal", "heygen", "sync", "veed"]);
 });
 
 describe.each(rows)("%s", (name, row) => {
@@ -301,6 +357,9 @@ describe.each(rows)("%s", (name, row) => {
     for (const [word, value] of [
       ["sync_mode", "bounce"],
       ["loop_mode", "pingpong"],
+      // HeyGen's spelling, and the reason the column exists: an on/off switch
+      // cannot be the same canonical word as a five-strategy enum.
+      ["enable_dynamic_duration", false],
     ] as const) {
       const compiled = compile(row, { [word]: value } as never);
       // The row states the PATH the word lands at, because the same word nests
@@ -355,9 +414,12 @@ describe("no silent drops, over the whole vocabulary", () => {
  * still, this test fails and the `sources` mechanism is what will carry it.
  */
 test("every endpoint in this category is clip-driven", () => {
-  const ROWS = { ...fal.modelParams, ...sync.modelParams } as Readonly<
-    Record<string, { readonly sources?: readonly string[] }>
-  >;
+  const ROWS = {
+    ...fal.modelParams,
+    ...heygen.modelParams,
+    ...sync.modelParams,
+    ...veed.modelParams,
+  } as Readonly<Record<string, { readonly sources?: readonly string[] }>>;
   const declared = Object.values(ROWS).map((entry) => [...(entry.sources ?? [])]);
   expect(declared.every((sources) => sources.length === 1 && sources[0] === "video")).toBe(true);
   for (const [, row] of rows) expect(ROWS[bare(row.ref)]?.sources).toEqual(["video"]);
@@ -413,4 +475,81 @@ test("the same sync. model disagrees with itself through the two providers", () 
       .extras,
   );
   for (const mode of ["segments", "dubParams"]) expect(falExtras, mode).not.toContain(mode);
+});
+
+/**
+ * The promotion rule, run against four vendors and recorded as a NEGATIVE.
+ *
+ * `unmodel/lipsync` has never had a canonical word for "what happens when the
+ * track and the clip are different lengths", and the rule for adding one is:
+ * two INDEPENDENT vendors carrying it compatibly. The natives wave was where
+ * that finally had enough witnesses to test, and the answer is still no. Here
+ * is the whole evidence base, read off the table above rather than asserted:
+ *
+ * | vendor | field | value space |
+ * |---|---|---|
+ * | sync. | `sync_mode` / `options.sync_mode` | 5-arm enum |
+ * | LatentSync (fal) | `loop_mode` | 2-arm enum |
+ * | HeyGen | `enable_dynamic_duration` | boolean |
+ * | VEED | — | the route has no such field |
+ *
+ * Two of the four rows are the same vendor twice: fal's resale of sync.'s
+ * models keeps `sync_mode`, and fal's resale of HeyGen's keeps
+ * `enable_dynamic_duration`. A vendor agreeing with itself through a reseller
+ * is ONE witness, which is what makes the count three rather than five.
+ *
+ * Three independent spellings with three shapes and one outright absence is not
+ * a vocabulary: a canonical word would have to pick a value space, and a
+ * boolean and a five-strategy enum have none in common. So it stays a per-model
+ * extra at every provider that has one, and this test fails the day two of them
+ * agree — which is the day to promote it.
+ */
+test("no duration-mismatch word is shared by two independent vendors", () => {
+  /** ref → the mismatch field it declares, with the reseller rows folded in. */
+  const spelling = new Map<string, string>();
+  for (const [, row] of rows) {
+    if (row.mismatch === undefined) continue;
+    spelling.set(row.ref, row.mismatch.split(".").pop() as string);
+  }
+
+  /** Which VENDOR each ref's model actually belongs to, reseller or not. */
+  const vendorOf = (ref: string): string => {
+    if (ref.startsWith("sync/") || ref.includes("sync-lipsync")) return "sync";
+    if (ref.startsWith("heygen/") || ref.includes("/heygen/")) return "heygen";
+    if (ref.includes("latentsync")) return "latentsync";
+    return providerOf(ref);
+  };
+
+  const vendors = new Map<string, Set<string>>();
+  for (const [ref, word] of spelling) {
+    const set = vendors.get(word) ?? new Set<string>();
+    set.add(vendorOf(ref));
+    vendors.set(word, set);
+  }
+
+  // Three distinct spellings, each carried by exactly one vendor.
+  expect([...vendors.keys()].sort()).toEqual([
+    "enable_dynamic_duration",
+    "loop_mode",
+    "sync_mode",
+  ]);
+  const shared = [...vendors.entries()]
+    .filter(([, who]) => who.size > 1)
+    .map(([word, who]) => `${word}: ${[...who].sort().join(", ")}`);
+  expect(shared, "a mismatch word now has two independent vendors — promote it").toEqual([]);
+
+  // …and `sync_mode` really is carried at two PROVIDERS by one vendor, which is
+  // the distinction the rule turns on.
+  expect([...(vendors.get("sync_mode") ?? [])]).toEqual(["sync"]);
+  const syncModeRefs = [...spelling].filter(([, word]) => word === "sync_mode").map(([ref]) => ref);
+  expect(new Set(syncModeRefs.map(providerOf)).size).toBe(2);
+
+  // The fourth vendor is the sharpest evidence of all: VEED publishes no field
+  // at all, so a canonical word would be unmappable there whichever shape it
+  // took.
+  const veedRow = TABLE["veed/lipsync-2.0"] as Capability;
+  expect(veedRow.mismatch).toBeUndefined();
+  expect(
+    Object.keys((veed.modelParams["lipsync-2.0"] as { extras: Record<string, unknown> }).extras),
+  ).toEqual([]);
 });

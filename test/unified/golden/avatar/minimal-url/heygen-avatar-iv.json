@@ -1,0 +1,18 @@
+{
+  "ref": "heygen/avatar_iv",
+  "params": {
+    "type": "image",
+    "engine": {
+      "type": "avatar_iv"
+    },
+    "image": {
+      "type": "url",
+      "url": "https://example.com/headshot.png"
+    },
+    "audio_url": "https://example.com/vo-french.wav"
+  },
+  "url": "https://api.heygen.com/v3/videos",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

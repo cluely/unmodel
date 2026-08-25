@@ -1,0 +1,11 @@
+{
+  "ref": "fal/veed/lipsync/v2",
+  "params": {
+    "video_url": "https://example.com/interview.mov",
+    "audio_url": "https://example.com/clean-take.wav"
+  },
+  "url": "https://queue.fal.run/veed/lipsync/v2",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -101,8 +101,8 @@ Provider validators take provider-native fields, and the validated result is the
 | [🖼️ Image generation](docs/surfaces.md#image-generation) | `unmodel/image` | `unmodel/openai`, `unmodel/google`, `unmodel/black-forest-labs` |
 | [✏️ Image editing](docs/surfaces.md#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram` |
 | [🎬 Video generation](docs/surfaces.md#video-generation) | `unmodel/video` | `unmodel/openai`, `unmodel/google`, `unmodel/runway` |
-| [👄 Lipsync](docs/surfaces.md#lipsync) | `unmodel/lipsync` | `unmodel/fal`, `unmodel/sync` |
-| [🧑‍🎤 Avatar](docs/surfaces.md#avatar) | `unmodel/avatar` | `unmodel/fal`, `unmodel/sync` |
+| [👄 Lipsync](docs/surfaces.md#lipsync) | `unmodel/lipsync` | `unmodel/fal`, `unmodel/heygen`, `unmodel/sync`, `unmodel/veed` |
+| [🧑‍🎤 Avatar](docs/surfaces.md#avatar) | `unmodel/avatar` | `unmodel/fal`, `unmodel/heygen`, `unmodel/sync`, `unmodel/veed` |
 | [🔍 Upscale](docs/surfaces.md#upscale) | `unmodel/upscale` | `unmodel/fal`, `unmodel/topaz` |
 | [🧊 3D generation](docs/surfaces.md#3d-generation) | `unmodel/3d` | `unmodel/tripo3d`, `unmodel/fal` |
 | [🎵 Music generation](docs/surfaces.md#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/fal`, `unmodel/stability` |
@@ -134,7 +134,7 @@ import { avatar } from "unmodel/avatar";
 import { upscale } from "unmodel/upscale";
 import { threeD } from "unmodel/3d";
 
-JSON.stringify(lipsync({ model: "fal/veed/lipsync/v2", source: { url: clip }, audio: { url: vo } }));
+JSON.stringify(lipsync({ model: "veed/lipsync-2.0", source: { url: clip }, audio: { url: vo } }));
 // → {"video_url":"https://ex.com/take.mp4","audio_url":"https://ex.com/vo.wav"}
 
 JSON.stringify(avatar({ model: "fal/fal-ai/sync-lipsync/v3/image-to-video", image: { url: still }, audio: { url: vo } }));

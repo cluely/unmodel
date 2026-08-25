@@ -68,7 +68,9 @@ import type {
   LipsyncValidator,
 } from "../core/unified/vocabulary/lipsync";
 import { lipsync as fal } from "../providers/fal/unified-lipsync";
+import { lipsync as heygen } from "../providers/heygen/unified-lipsync";
 import { lipsync as sync } from "../providers/sync/unified-lipsync";
+import { lipsync as veed } from "../providers/veed/unified-lipsync";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
 export type LipsyncAdapter = AnyLipsyncAdapter;
@@ -91,14 +93,14 @@ export function createLipsync<A extends LipsyncAdapter>(
 }
 
 /**
- * Every lipsync adapter unmodel ships — two providers, and the second one is
- * the first one's supplier.
+ * Every lipsync adapter unmodel ships — four providers, and three of them are
+ * vendors fal is reselling.
  *
  * fal serves ten endpoints: sync.'s v2, v2/pro and v3, VEED's two generations,
  * LatentSync, Kling's lipsync route, PixVerse's, and HeyGen v3's precision and
- * speed arms. sync. serves five models at its own API, four of which fal is
- * reselling — which makes this the sharpest comparison in the library, because
- * the two paths reach the SAME WEIGHTS and still compile to visibly different
+ * speed arms. The other three are those same vendors reached at their own APIs
+ * — which makes this the sharpest comparison in the library, because several of
+ * these paths reach the SAME WEIGHTS and still compile to visibly different
  * bodies:
  *
  * ```ts
@@ -108,17 +110,33 @@ export function createLipsync<A extends LipsyncAdapter>(
  * lipsync({ model: "sync/lipsync-2", source: { url }, audio: { url } });
  * // → { model: "lipsync-2", input: [ { type: "video", url: "…" },
  * //                                  { type: "audio", url: "…" } ] }
+ *
+ * lipsync({ model: "veed/lipsync-2.0", source: { url }, audio: { url } });
+ * // → { video_url: "…", audio_url: "…" }
+ *
+ * lipsync({ model: "heygen/lipsync-speed", source: { url }, audio: { url } });
+ * // → { video: { type: "url", url: "…" }, audio: { type: "url", url: "…" }, mode: "speed" }
  * ```
  *
- * Two flat URL fields at the reseller; a tagged ARRAY at the vendor. The array
- * is what carries several voices, `refId`s, `segments` and dubbing — none of
- * which fal's flattening can express — and the flat pair is what accepts inline
- * bytes, which sync.'s fetch-only fields do not. Neither is a superset. That
- * comparison is pinned in the golden tree rather than described.
+ * Four wire shapes for one request. Two flat URL fields at fal; a tagged ARRAY
+ * at sync., which is what carries several voices, `refId`s, `segments` and
+ * dubbing; two flat fields and NOTHING ELSE at VEED, whose whole input schema
+ * is those two required URLs; and tagged OBJECTS plus a `mode` at HeyGen, where
+ * the ref names a price rather than a model. None of them is a superset of
+ * another. That comparison is pinned in the golden tree rather than described.
  *
- * The cost of both is pinned in `test/bundle-budget.test.ts`.
+ * The four also settle the category's oldest open question by failing to answer
+ * it. `unmodel/lipsync` has never had a canonical word for "what happens when
+ * the track outlasts the clip", and the promotion rule asks for two independent
+ * vendors spelling one compatibly. What the fourth provider produced was a
+ * fourth answer: `sync_mode` (a five-arm enum) at sync., `loop_mode` (two arms)
+ * at LatentSync, `enable_dynamic_duration` (a boolean) at HeyGen, and no field
+ * at all at VEED. Three shapes and an absence is not a vocabulary; see
+ * `core/unified/vocabulary/lipsync.ts`.
+ *
+ * The cost of all four is pinned in `test/bundle-budget.test.ts`.
  */
-export const lipsync = createLipsync([fal, sync]);
+export const lipsync = createLipsync([fal, heygen, sync, veed]);
 
 export type {
   AnyLipsyncAdapter,

@@ -999,6 +999,38 @@
       "types": "./dist/providers/vercel/types.d.ts",
       "default": "./dist/providers/vercel/types.js"
     },
+    "./heygen": {
+      "types": "./dist/providers/heygen/index.d.ts",
+      "default": "./dist/providers/heygen/index.js"
+    },
+    "./heygen/unified": {
+      "types": "./dist/providers/heygen/unified.d.ts",
+      "default": "./dist/providers/heygen/unified.js"
+    },
+    "./heygen/types": {
+      "types": "./dist/providers/heygen/types.d.ts",
+      "default": "./dist/providers/heygen/types.js"
+    },
+    "./heygen/values": {
+      "types": "./dist/providers/heygen/values.d.ts",
+      "default": "./dist/providers/heygen/values.js"
+    },
+    "./veed": {
+      "types": "./dist/providers/veed/index.d.ts",
+      "default": "./dist/providers/veed/index.js"
+    },
+    "./veed/unified": {
+      "types": "./dist/providers/veed/unified.d.ts",
+      "default": "./dist/providers/veed/unified.js"
+    },
+    "./veed/types": {
+      "types": "./dist/providers/veed/types.d.ts",
+      "default": "./dist/providers/veed/types.js"
+    },
+    "./veed/values": {
+      "types": "./dist/providers/veed/values.d.ts",
+      "default": "./dist/providers/veed/values.js"
+    },
     "./sync": {
       "types": "./dist/providers/sync/index.d.ts",
       "default": "./dist/providers/sync/index.js"

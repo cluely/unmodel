@@ -68,7 +68,9 @@ import type {
   AvatarValidator,
 } from "../core/unified/vocabulary/avatar";
 import { avatar as fal } from "../providers/fal/unified-avatar";
+import { avatar as heygen } from "../providers/heygen/unified-avatar";
 import { avatar as sync } from "../providers/sync/unified-avatar";
+import { avatar as veed } from "../providers/veed/unified-avatar";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
 export type AvatarAdapter = AnyAvatarAdapter;
@@ -91,8 +93,8 @@ export function createAvatar<A extends AvatarAdapter>(
 }
 
 /**
- * Every avatar adapter unmodel ships — two providers, and the second is one
- * model.
+ * Every avatar adapter unmodel ships — four providers, and between them three
+ * different answers to what `{ data, mimeType }` means.
  *
  * fal serves eight endpoints: sync.'s image arm, ByteDance OmniHuman 1.5,
  * Kling's AI Avatar v2 in both grades, LongCat, EchoMimic v3, and the two
@@ -111,9 +113,25 @@ export function createAvatar<A extends AvatarAdapter>(
  * clip/still split has to be a CATEGORY rather than an optional field. At fal
  * the same product needs two endpoint ids to say it.
  *
- * The cost of both is pinned in `test/bundle-budget.test.ts`.
+ * VEED and HeyGen are the two native halves added next, and they land on the
+ * two ends of this category's `image` mechanism. VEED's `fabric-1.0` is
+ * `sources: ["image"]` with a REQUIRED `resolution` extra the vocabulary has no
+ * word for — the one route here that insists on being told an output size. And
+ * VEED is simultaneously a `sources: []` row through fal, because
+ * `veed/avatars/audio-to-video` is a presenter library with no native endpoint
+ * at all (`POST /v1/avatars` is a 404). Same vendor, opposite rows, two
+ * products.
+ *
+ * HeyGen brings the third answer to inline bytes. fal compiles `{ data,
+ * mimeType }` into a `data:` URI in a field that fetches URLs; sync. and VEED
+ * refuse it, because their fields only fetch; HeyGen has a real third arm on
+ * its own `oneOf` — `{ type: "base64", media_type, data }` — so the bytes go
+ * there structurally. Its `audio_url` does NOT have that arm, so one request
+ * accepts bytes for the still and refuses them for the track.
+ *
+ * The cost of all four is pinned in `test/bundle-budget.test.ts`.
  */
-export const avatar = createAvatar([fal, sync]);
+export const avatar = createAvatar([fal, heygen, sync, veed]);
 
 export type {
   AnyAvatarAdapter,

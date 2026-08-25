@@ -201,7 +201,8 @@ the shape that model takes, rather than a request that 422s.
 sync. (Sync Labs) is the category's second provider, and the overlap is the
 point: four of fal's ten lipsync endpoints are sync.'s own models resold, so
 the same weights are reachable both ways and the two calls compile to visibly
-different bodies.
+different bodies. (Two more of fal's ten are HeyGen's, which is the third
+provider here, and two more are VEED's, which is the fourth.)
 
 ```ts
 lipsync({ model: "fal/fal-ai/sync-lipsync/v2", source: { url: clip }, audio: { url: vo } });
@@ -223,12 +224,41 @@ at fal and under `options` natively, and fal accepts inline bytes as a `data:`
 URI where sync. fetches URLs and asset ids only. Neither is a superset of the
 other, which is why both are here.
 
+VEED and HeyGen are the category's third and fourth providers, and between the
+four there are now four wire shapes for one request:
+
+```ts
+lipsync({ model: "veed/lipsync-2.0", source: { url: clip }, audio: { url: vo } });
+// → {"video_url":"…","audio_url":"…"}
+//   POST https://api.veed.io/v1/lipsync-2.0
+
+lipsync({ model: "heygen/lipsync-precision", source: { url: clip }, audio: { url: vo } });
+// → {"video":{"type":"url","url":"…"},"audio":{"type":"url","url":"…"},"mode":"precision"}
+//   POST https://api.heygen.com/v3/lipsyncs
+```
+
+VEED's is the smallest request surface in the library: `Lipsync20Input` is those
+two required URLs and `additionalProperties: false`, so its row declares **no
+extras at all** and every dial a caller reaches for from a neighbouring provider
+is a compile error before it is a 422. HeyGen's is the other shape entirely —
+the media fields are tagged objects, and the ref names a PRICE rather than a
+model, because `POST /v3/lipsyncs` has no model field and `mode: "speed" |
+"precision"` is a 2× difference per second. Four providers, four route
+selectors: a pseudo-param stripped into the url at fal, a real `model` body
+field that survives at sync., no selector at all at VEED (the model is the
+path), and a real field under a *different name from the id* at HeyGen.
+
 What is deliberately *not* in the vocabulary: "what to do when the audio
-outlasts the clip" is `sync_mode` with five arms at sync., `loop_mode` with two
-at LatentSync, a plain `enable_dynamic_duration` boolean at HeyGen, and absent
-at VEED and Kling. One idea, four vocabularies — so it rides as a per-model
-extra, typed from that endpoint's own wire interface, and gets promoted the day
-two providers agree on a spelling.
+outlasts the clip". With four providers the promotion rule is finally testable —
+two independent vendors spelling one word compatibly — and the answer is still
+no. sync. spells it `sync_mode` with five arms, LatentSync `loop_mode` with two,
+HeyGen `enable_dynamic_duration` as a boolean, and VEED does not spell it at
+all. fal's resale keeps sync.'s word on sync.'s models and HeyGen's word on
+HeyGen's, which makes five rows and three vendors: a vendor agreeing with itself
+through a reseller is one witness. A canonical word would have to pick a value
+space, and a boolean and a five-strategy enum have none in common. So it stays a
+per-model extra, typed from that endpoint's own wire interface, and
+`test/unified/lipsync-capabilities.test.ts` fails the day two of them agree.
 
 Routes that take a script and a voice id instead of an audio track are TTS
 composed with lipsync; composing them inside one call would hide which half
@@ -252,7 +282,7 @@ const request = avatar({
 ```
 
 `image` narrows to the ref in three directions. Most routes animate a picture
-you supply, and there it is **required**. Two of the eight animate a
+you supply, and there it is **required**. Two of the twelve animate a
 **catalogued performer** instead — `veed/avatars/audio-to-video` and
 `argil/avatars/audio-to-video` pick from a closed list of trained presenters and
 have no image field at all — and there it types as `never`:
@@ -264,7 +294,7 @@ avatar({ model: "fal/veed/avatars/audio-to-video", image: { url }, audio: { url 
 
 The presenters themselves are reached through `providerOptions` — a 28-value
 enum spelled `avatar_id` at one vendor and `avatar` at another is a coincidence
-with a shape rather than a vocabulary. Neither is `prompt`: three of the eight
+with a shape rather than a vocabulary. Neither is `prompt`: three of fal's eight
 rows have no prompt field, one requires one, and two default theirs to `"."`.
 
 At sync., the category's second provider, that same split lands on ONE model id
@@ -286,6 +316,54 @@ avatar({  model: "sync/sync-3", image:  { url: still }, audio: { url: vo } });
 the whole of that provider's avatar roster. `image` is **required** there rather
 than `never`: sync. catalogues no preset performers and publishes no field to
 name one, so there is nothing to animate without a picture.
+
+VEED is the same vendor as one of the two performer routes above, and the
+opposite row. `veed/avatars/audio-to-video` at fal is `sources: []`; VEED's own
+API has no presenter roster at all (`POST /v1/avatars` answers a real JSON 404),
+and what it does have is `fabric-1.0` — a picture you supply. It is also the one
+route in the category that requires a word the vocabulary has not got:
+
+```ts
+avatar({ model: "veed/fabric-1.0", image: { url }, audio: { url }, resolution: "480p" });
+// → {"image_url":"…","audio_url":"…","resolution":"480p"}
+
+avatar({ model: "veed/fabric-1.0", image: { url }, audio: { url } });  // refused by NAME
+```
+
+`FabricInput.resolution` is `required` with no `default`, so VEED answers 422
+without it — and it is what the price is conditioned on: $0.08 per second of
+output at 480p, $0.15 at 720p. unmodel does not pick one for you, because a
+default it invented would be a line item; the refusal quotes both rates instead.
+
+HeyGen brings the third answer to inline bytes:
+
+```ts
+avatar({ model: "heygen/avatar_iv", image: { data, mimeType: "image/png" }, audio: { url } });
+// → {"type":"image","engine":{"type":"avatar_iv"},
+//    "image":{"type":"base64","media_type":"image/png","data":"…"},"audio_url":"…"}
+```
+
+fal builds a `data:` URI and puts it in a field that fetches URLs; sync. and
+VEED refuse bytes, because their fields only fetch; HeyGen has a real
+`{ type: "base64", … }` arm on its own `oneOf`, so the bytes go in structurally.
+Its `audio_url` does *not* have that arm, so one request accepts bytes for the
+still and refuses them for the track — an asymmetry that is HeyGen's, and the
+refusal says so rather than reading as a contradiction.
+
+Two of HeyGen's three engines are here. `avatar_iii` is in its catalog and at
+its wire address and not in this pack: its own engine config says it does not
+render raw image input, and this adapter compiles the raw-image arm. The
+catalogued-look arm (`type: "avatar"`, `avatar_id`) is wire-only for a typed
+reason rather than an oversight — an avatar row can say `image` is required,
+forbidden or unknown and never "optional", and `avatar_iv` and `avatar_v` serve
+both arms, so the pack compiles the one whose inputs a caller actually has (a
+HeyGen `avatar_id` is a look you first train, at $1.00, and discover at
+`GET /v3/avatars/looks`; there is no published roster). Reach it directly:
+
+```ts
+import { avatar } from "unmodel/heygen";
+avatar({ type: "avatar", avatar_id: "abc123", audio_url: vo, engine: { type: "avatar_iii" } });
+```
 
 ## Upscale
 

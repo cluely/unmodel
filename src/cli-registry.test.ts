@@ -83,6 +83,8 @@ const EXPECTED_IDS: readonly string[] = [
   "google.tts",
   "google.video",
   "groq.chat",
+  "heygen.avatar",
+  "heygen.lipsync",
   "huggingface.chat",
   "hume.tts",
   "ideogram.image",
@@ -201,6 +203,8 @@ const EXPECTED_IDS: readonly string[] = [
   "tripo3d.threeD",
   "tripo3d.threeDFromImage",
   "upstage.chat",
+  "veed.avatar",
+  "veed.lipsync",
   "vercel.chat",
   "vidu.imageFromReference",
   "vidu.video",
@@ -571,9 +575,14 @@ test("the voice-creation endpoints use the uniform verbs", () => {
  * Written out rather than derived for the same reason as every list here: an id
  * does not carry its category, and a rename has to be typed in the diff.
  */
-const LIPSYNC_IDS: readonly string[] = ["fal.lipsync", "sync.lipsync"];
+const LIPSYNC_IDS: readonly string[] = [
+  "fal.lipsync",
+  "heygen.lipsync",
+  "sync.lipsync",
+  "veed.lipsync",
+];
 
-const AVATAR_IDS: readonly string[] = ["fal.avatar", "sync.avatar"];
+const AVATAR_IDS: readonly string[] = ["fal.avatar", "heygen.avatar", "sync.avatar", "veed.avatar"];
 
 test("the lipsync and avatar endpoints use their categories' own verbs", () => {
   for (const id of LIPSYNC_IDS) {
@@ -612,6 +621,24 @@ test("the lipsync and avatar endpoints use their categories' own verbs", () => {
     "sync.generation",
     "sync.lipsyncFromImage",
     "sync.imageToVideo",
+    // VEED files its two models under their product slugs and HeyGen under
+    // `videos` and `lipsyncs`; neither vendor's word is an unmodel verb, and
+    // neither route's INPUT kind gets to qualify an address that already names
+    // what it does.
+    "veed.fabric",
+    "veed.lipsync20",
+    "veed.talkingAvatar",
+    "veed.backgroundRemoval",
+    "heygen.video",
+    "heygen.videos",
+    "heygen.createVideo",
+    "heygen.avatarFromImage",
+    "heygen.lipsyncs",
+    // HeyGen's TTS is a deliberate exclusion rather than a rename: see
+    // src/providers/heygen/models.ts for why a row with no model id, no
+    // published voice roster and no format control is not shipped.
+    "heygen.tts",
+    "heygen.speech",
   ];
   for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
 });

@@ -603,6 +603,126 @@ lipsync({
   });
 
   /**
+   * Probe 5d — the VEED row with NOTHING on it, and the required extra one
+   * category over.
+   *
+   * The two ends of the range this wave added, and both are compile-time facts
+   * rather than run-time ones. `Lipsync20Input` is two required URLs and
+   * `additionalProperties: false`, so VEED's lipsync row declares no extras at
+   * all — every dial a caller reaches for from a neighbouring provider is a
+   * squiggle before it is a 422. And `FabricInput.resolution` is `required`
+   * with no `default`, which makes it the only per-model extra in the category
+   * whose absence is a broken request.
+   */
+  test("probe 5d — VEED offers nothing to set, and insists on one thing", () => {
+    // The whole request, and there is no third field to add.
+    expect(
+      semanticErrorsIn(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "veed/lipsync-2.0",
+  source: { url: "https://example.com/take.mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+});`),
+    ).toEqual([]);
+
+    // Every neighbouring vendor's duration-mismatch word is a squiggle here,
+    // which is the compile-time half of the promotion-rule finding: VEED has no
+    // field for the idea at all.
+    for (const word of ["sync_mode: \"bounce\"", "loop_mode: \"loop\"", "enable_dynamic_duration: false"]) {
+      expect(
+        semanticErrorsIn(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "veed/lipsync-2.0",
+  source: { url: "https://example.com/take.mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+  ${word},
+});`).length,
+        word,
+      ).toBeGreaterThan(0);
+    }
+
+    // …and the still route's `resolution` completes as VEED's two values,
+    // which are a 2× price fork rather than a quality preference.
+    const resolutions = completionsAt(`import { avatar } from "./src/unified/avatar";
+avatar({
+  model: "veed/fabric-1.0",
+  image: { url: "https://example.com/headshot.png" },
+  audio: { url: "https://example.com/vo.wav" },
+  resolution: "¦",
+});`);
+    expect(resolutions.sort()).toEqual(["480p", "720p"]);
+
+    // HeyGen's `resolution` is the same WORD at the same category with a
+    // different list — which is exactly what a per-model extra is for.
+    const heygenResolutions = completionsAt(`import { avatar } from "./src/unified/avatar";
+avatar({
+  model: "heygen/avatar_iv",
+  image: { url: "https://example.com/headshot.png" },
+  audio: { url: "https://example.com/vo.wav" },
+  resolution: "¦",
+});`);
+    expect(heygenResolutions.sort()).toEqual(["1080p", "4k", "720p"]);
+  });
+
+  /**
+   * Probe 5e — HeyGen's engine gate, which is the sharpest per-model narrowing
+   * in either audio-driven category.
+   *
+   * `expressiveness` is Avatar IV only and `reference_look_id` is Avatar V
+   * only, and the two engines are otherwise the same request. HeyGen REJECTS
+   * the wrong one rather than ignoring it, so this is a 400 saved rather than a
+   * silent no-op — but it is still a compile-time answer, which is the only
+   * kind that arrives before the money is spent.
+   */
+  test("probe 5e — the HeyGen engine gate is a squiggle, in both directions", () => {
+    const good = (model: string, extra: string): string =>
+      `import { avatar } from "./src/unified/avatar";
+avatar({
+  model: "heygen/${model}",
+  image: { url: "https://example.com/headshot.png" },
+  audio: { url: "https://example.com/vo.wav" },
+  ${extra},
+});`;
+    expect(semanticErrorsIn(good("avatar_iv", 'expressiveness: "high"'))).toEqual([]);
+    expect(semanticErrorsIn(good("avatar_v", 'reference_look_id: "look_abc"'))).toEqual([]);
+    expect(semanticErrorsIn(good("avatar_v", 'expressiveness: "high"')).length).toBeGreaterThan(0);
+    expect(
+      semanticErrorsIn(good("avatar_iv", 'reference_look_id: "look_abc"')).length,
+    ).toBeGreaterThan(0);
+
+    // Avatar III is in HeyGen's catalog and at its wire address and NOT in this
+    // pack, because it does not render raw image input. An unrostered ref
+    // degrades to the wide arm rather than failing — the roster-is-a-snapshot
+    // rule — so the absence shows up as `image` becoming optional.
+    expect(
+      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({ model: "heygen/avatar_iii", audio: { url: "https://example.com/vo.wav" } });`),
+    ).toEqual([]);
+
+    // The lipsync half: the two ids are one wire field, so both complete the
+    // same extras, and `enable_dynamic_duration` is a BOOLEAN rather than the
+    // five-arm enum the same idea has at sync.
+    expect(
+      semanticErrorsIn(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "heygen/lipsync-precision",
+  source: { url: "https://example.com/take.mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+  enable_dynamic_duration: false,
+});`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { lipsync } from "./src/unified/lipsync";
+lipsync({
+  model: "heygen/lipsync-speed",
+  source: { url: "https://example.com/take.mp4" },
+  audio: { url: "https://example.com/vo.wav" },
+  enable_dynamic_duration: "bounce",
+});`).length,
+    ).toBeGreaterThan(0);
+  });
+
+  /**
    * Probe 4b — the newest category, and the two narrowings it exists for.
    *
    * `source` separates a still from a clip INSIDE one category here, which is

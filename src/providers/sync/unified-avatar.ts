@@ -1,5 +1,5 @@
 /**
- * `unmodel/avatar` → sync., the category's second provider.
+ * `unmodel/avatar` → sync., the category's first native provider.
  *
  * # One model, and it is the same model the lipsync adapter serves
  *

@@ -1,0 +1,18 @@
+{
+  "ref": "heygen/lipsync-speed",
+  "params": {
+    "video": {
+      "type": "url",
+      "url": "https://example.com/take-3.mp4"
+    },
+    "audio": {
+      "type": "url",
+      "url": "https://example.com/vo-french.wav"
+    },
+    "mode": "speed"
+  },
+  "url": "https://api.heygen.com/v3/lipsyncs",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

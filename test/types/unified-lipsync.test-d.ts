@@ -12,12 +12,16 @@
  */
 import { createLipsync, lipsync } from "../../src/unified/lipsync";
 import { lipsync as falLipsync } from "../../src/providers/fal/unified-lipsync";
+import { lipsync as heygenLipsync } from "../../src/providers/heygen/unified-lipsync";
 import { lipsync as syncLipsync } from "../../src/providers/sync/unified-lipsync";
+import { lipsync as veedLipsync } from "../../src/providers/veed/unified-lipsync";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import type { LipsyncParams } from "../../src/core/unified/vocabulary/lipsync";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
-type PackRefs = UnifiedRef<typeof falLipsync | typeof syncLipsync>;
+type PackRefs = UnifiedRef<
+  typeof falLipsync | typeof heygenLipsync | typeof syncLipsync | typeof veedLipsync
+>;
 
 expectAssignable<PackRefs>("fal/fal-ai/sync-lipsync/v3");
 expectAssignable<PackRefs>("fal/fal-ai/sync-lipsync/v2");
@@ -44,6 +48,25 @@ expectAssignable<PackRefs>("sync/lipsync-2-mini");
 // @ts-expect-error — fal's path for sync.'s model is not sync.'s own id.
 expectAssignable<PackRefs>("sync/fal-ai/sync-lipsync/v2");
 
+// VEED natively: ONE id, and it is the vendor's own slug rather than either of
+// fal's two paths for the same family.
+expectAssignable<PackRefs>("veed/lipsync-2.0");
+// @ts-expect-error — the still-driven model is `unmodel/avatar`.
+expectAssignable<PackRefs>("veed/fabric-1.0");
+// @ts-expect-error — fal's paths for VEED's models are not VEED's own ids.
+expectAssignable<PackRefs>("veed/lipsync/v2");
+
+// HeyGen natively: two ids that are ONE wire field. `mode: "speed" |
+// "precision"` is the only thing separating two products with two pages and a
+// 2× price difference, so the ids are HeyGen's own doc slugs and the adapter
+// writes `mode` back from the ref.
+expectAssignable<PackRefs>("heygen/lipsync-speed");
+expectAssignable<PackRefs>("heygen/lipsync-precision");
+// @ts-expect-error — the wire VALUE is not the id; `mode` is not a ref.
+expectAssignable<PackRefs>("heygen/speed");
+// @ts-expect-error — the avatar engines are the other category.
+expectAssignable<PackRefs>("heygen/avatar_iv");
+
 const URL_SOURCE = { url: "https://example.com/take-3.mp4" } as const;
 const URL_AUDIO = { url: "https://example.com/vo.wav" } as const;
 
@@ -53,7 +76,7 @@ function refUnionTests(): void {
   // A model newer than this snapshot still works, with a runtime warning.
   lipsync({ model: "fal/fal-ai/sync-lipsync/v4", source: URL_SOURCE, audio: URL_AUDIO });
   // A provider with no adapter is a runtime structural error, not a type error.
-  lipsync({ model: "heygen/lipsync-4", source: URL_SOURCE, audio: URL_AUDIO });
+  lipsync({ model: "topaz/Standard V2", source: URL_SOURCE, audio: URL_AUDIO });
 
   // @ts-expect-error — `audio` is not optional; there is nothing to sync to.
   lipsync({ model: "fal/fal-ai/sync-lipsync/v3", source: URL_SOURCE });
@@ -189,6 +212,52 @@ function extrasNarrowingTests(): void {
     // @ts-expect-error — VEED's schema has neither field.
     loop_mode: "loop",
   });
+
+  // The fourth spelling of the duration mismatch, and the reason there is still
+  // no canonical word for it: HeyGen's is a BOOLEAN.
+  lipsync({
+    model: "heygen/lipsync-precision",
+    source: URL_SOURCE,
+    audio: URL_AUDIO,
+    enable_dynamic_duration: false,
+    start_time: 2,
+    end_time: 8,
+  });
+  lipsync({
+    model: "heygen/lipsync-speed",
+    source: URL_SOURCE,
+    audio: URL_AUDIO,
+    // @ts-expect-error — sync.'s five-arm enum is not HeyGen's on/off switch.
+    enable_dynamic_duration: "bounce",
+  });
+  lipsync({
+    model: "heygen/lipsync-speed",
+    source: URL_SOURCE,
+    audio: URL_AUDIO,
+    // @ts-expect-error — deprecated AND ignored, so no row declares it.
+    enable_caption: true,
+  });
+  // `fps_mode`'s tail is OPEN, because HeyGen's schema types the field as a
+  // plain string and the three values live only in its description.
+  lipsync({ model: "heygen/lipsync-speed", source: URL_SOURCE, audio: URL_AUDIO, fps_mode: "cfr" });
+  lipsync({ model: "heygen/lipsync-speed", source: URL_SOURCE, audio: URL_AUDIO, fps_mode: "vfr2" });
+
+  // The other end of the range: VEED's row has NO extras at all, because
+  // `Lipsync20Input` is two required URLs and `additionalProperties: false`.
+  lipsync({ model: "veed/lipsync-2.0", source: URL_SOURCE, audio: URL_AUDIO });
+  lipsync({
+    model: "veed/lipsync-2.0",
+    source: URL_SOURCE,
+    audio: URL_AUDIO,
+    // @ts-expect-error — there is no third field on this wire to put it in.
+    enable_dynamic_duration: false,
+  });
+  // `seed` is a canonical word rather than an extra, so it stays type-legal
+  // everywhere and is refused at run time by the adapter that has no field for
+  // it. That asymmetry is deliberate: the vocabulary is the same five words at
+  // every provider, and which of them a route can honour is a run-time answer
+  // with a message. VEED publishes no seed on any of its ten operations.
+  lipsync({ model: "veed/lipsync-2.0", source: URL_SOURCE, audio: URL_AUDIO, seed: 7 });
 
   // The REAL `model` wire field, on the one endpoint that has one — and the
   // one wire parameter this provider's generator refuses to make an extra.

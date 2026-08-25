@@ -5,23 +5,38 @@
  * fal the route is a parameter, so "which fields does this support" is a
  * per-ENDPOINT question.
  *
- * The row that earns this file is `image`. Seven of the nine endpoints require
- * a still; two — `veed/avatars` and `argil/avatars` — animate a catalogued
- * presenter out of a closed enum and have no image field at all. That is a
- * three-valued cell (`required` / `forbidden` / …never `optional`, in this
- * build), and it is the only capability table in the suite where a canonical
- * word's REQUIREDNESS varies by model rather than its support.
+ * The row that earns this file is `image`. Ten of the twelve endpoints require
+ * a still; two — `veed/avatars` and `argil/avatars`, both reached through fal —
+ * animate a catalogued presenter out of a closed enum and have no image field
+ * at all. That is a three-valued cell (`required` / `forbidden` / …never
+ * `optional`, in this build), and it is the only capability table in the suite
+ * where a canonical word's REQUIREDNESS varies by model rather than its
+ * support.
  *
- * The ninth row is the native one, and it is the same MODEL ID the lipsync
- * table serves: `sync/sync-3` is in both categories, and nothing separates the
- * two calls but the tag on the input item. At fal the same product needs two
- * endpoint ids to say that.
+ * Three of the twelve are native, and each adds something the fal rows cannot:
+ *
+ * - `sync/sync-3` is the same MODEL ID the lipsync table serves, at the same
+ *   URL. Nothing separates the two calls but the tag on the input item; at fal
+ *   the same product needs two endpoint ids to say that.
+ * - `veed/fabric-1.0` is the same VENDOR as `veed/avatars` with the opposite
+ *   row — `sources: ["image"]` against `sources: []` — because VEED's presenter
+ *   library has no native endpoint (`POST /v1/avatars` is a 404). It is also
+ *   the one route in the category that REQUIRES a word the vocabulary has not
+ *   got.
+ * - `heygen/avatar_iv` and `heygen/avatar_v` make `inline` a three-valued
+ *   column: bytes are `derived` into a `data:` URI at fal, `unsupported` at
+ *   sync. and VEED, and `structural` here — HeyGen's own `oneOf` has a
+ *   `base64` arm, so the media type is a FIELD rather than a prefix. Its
+ *   `audio_url` has no such arm, so one request accepts bytes for the still and
+ *   refuses them for the track.
  */
 import { describe, expect, test } from "bun:test";
 import type { AvatarParams } from "../../src/core/unified/vocabulary/avatar";
 import { avatar } from "../../src/unified/avatar";
 import { avatar as fal } from "../../src/providers/fal/unified-avatar";
+import { avatar as heygen } from "../../src/providers/heygen/unified-avatar";
 import { avatar as sync } from "../../src/providers/sync/unified-avatar";
+import { avatar as veed } from "../../src/providers/veed/unified-avatar";
 
 type Support = "native" | "unsupported";
 
@@ -44,10 +59,13 @@ interface Capability {
   /** Where the still lands, as a dot path into the body. */
   imageAt: string;
   /**
-   * What happens to `{ data, mimeType }`. fal fetches a `data:` URI; sync.
-   * fetches URLs and asset ids only, and refuses bytes by name.
+   * What happens to `{ data, mimeType }` — and this category now has THREE
+   * answers rather than two. fal fetches a `data:` URI it builds; sync. and
+   * VEED fetch URLs (and asset ids) only and refuse bytes by name; HeyGen has
+   * a real third arm on its own `oneOf`, so the bytes land STRUCTURALLY as
+   * `{ type: "base64", media_type, data }` rather than encoded into a string.
    */
-  inline: "derived" | "unsupported";
+  inline: "derived" | "unsupported" | "structural";
   /** Where the voice track lands, as a dot path into the body. */
   audio: { at: string; support: Support };
   seed: Support;
@@ -150,6 +168,48 @@ const TABLE: Readonly<Record<string, Capability>> = {
     audio: { at: "input.1.url", support: "native" },
     seed: "unsupported",
   },
+
+  // ---- VEED, natively -----------------------------------------------------
+  // The same vendor as `veed/avatars` two rows up, and the OPPOSITE row.
+  // Natively VEED animates a picture you supply; its presenter library has no
+  // native endpoint at all (`POST /v1/avatars` answers a real JSON 404). And it
+  // is the one route in the category that requires a word the vocabulary has
+  // not got: `resolution`, with no default and a 2× price fork behind it.
+  "veed/fabric-1.0": {
+    ref: "veed/fabric-1.0",
+    url: "https://api.veed.io/v1/fabric-1.0",
+    imageAt: "image_url",
+    inline: "unsupported",
+    image: "required",
+    audio: { at: "audio_url", support: "native" },
+    seed: "unsupported",
+    requires: { resolution: "720p" },
+  },
+
+  // ---- HeyGen, natively ---------------------------------------------------
+  // The two engines that render raw image input — Avatar III does not, by its
+  // own engine config, which is why it is in the catalog and not in this
+  // adapter. The still goes in STRUCTURALLY as base64 and the track cannot;
+  // that asymmetry is HeyGen's own and is the third answer in the `inline`
+  // column.
+  "heygen/avatar_iv": {
+    ref: "heygen/avatar_iv",
+    url: "https://api.heygen.com/v3/videos",
+    imageAt: "image.url",
+    inline: "structural",
+    image: "required",
+    audio: { at: "audio_url", support: "native" },
+    seed: "unsupported",
+  },
+  "heygen/avatar_v": {
+    ref: "heygen/avatar_v",
+    url: "https://api.heygen.com/v3/videos",
+    imageAt: "image.url",
+    inline: "structural",
+    image: "required",
+    audio: { at: "audio_url", support: "native" },
+    seed: "unsupported",
+  },
 };
 
 const STILL = { url: "https://example.com/headshot.png" } as const;
@@ -184,9 +244,12 @@ function compile(row: Capability, extra: Partial<AvatarParams> = {}): Compiled |
  * but this table walks the roster with a computed id, so it needs the string
  * index the literal table deliberately does not have.
  */
-const ROWS = { ...fal.modelParams, ...sync.modelParams } as Readonly<
-  Record<string, { readonly sources?: readonly string[] }>
->;
+const ROWS = {
+  ...fal.modelParams,
+  ...heygen.modelParams,
+  ...sync.modelParams,
+  ...veed.modelParams,
+} as Readonly<Record<string, { readonly sources?: readonly string[] }>>;
 
 const rows = Object.entries(TABLE);
 
@@ -203,11 +266,13 @@ test("the table covers every endpoint both adapters serve", () => {
   }
   expect((byProvider.get("fal") ?? []).sort()).toEqual([...fal.models].sort());
   expect((byProvider.get("sync") ?? []).sort()).toEqual([...sync.models].sort());
+  expect((byProvider.get("veed") ?? []).sort()).toEqual([...veed.models].sort());
+  expect((byProvider.get("heygen") ?? []).sort()).toEqual([...heygen.models].sort());
   expect([...byProvider.keys()].sort()).toEqual([...avatar.providers]);
 });
 
-test("the pack registers exactly two providers", () => {
-  expect([...avatar.providers]).toEqual(["fal", "sync"]);
+test("the pack registers exactly four providers", () => {
+  expect([...avatar.providers]).toEqual(["fal", "heygen", "sync", "veed"]);
 });
 
 /**
@@ -215,10 +280,10 @@ test("the pack registers exactly two providers", () => {
  * field the type reads is the same one the adapter reads, so a drift between
  * "what compiles" and "what the editor offers" is not expressible.
  */
-test("seven endpoints take a still and two take a catalogued performer", () => {
+test("ten endpoints take a still and two take a catalogued performer", () => {
   const still = rows.filter(([, row]) => row.image === "required");
   const preset = rows.filter(([, row]) => row.image === "forbidden");
-  expect(still).toHaveLength(7);
+  expect(still).toHaveLength(10);
   expect(preset).toHaveLength(2);
   for (const [, row] of still) {
     expect([...(ROWS[bare(row.ref)]?.sources ?? [])]).toEqual(["image"]);
@@ -278,13 +343,23 @@ describe.each(rows)("%s", (name, row) => {
       image: { data: "AAAA", mimeType: "image/png" },
     } as Partial<AvatarParams>);
     if (row.inline === "unsupported") {
-      // sync. FETCHES its inputs: a media item takes a `url` or an `assetId`
-      // and nothing in the JSON body is a payload.
+      // sync. and VEED FETCH their inputs: the field takes a URL (or, at
+      // sync., an asset id) and nothing in the JSON body is a payload.
       expect(compiled).toEqual(["unsupported_param @ image"]);
       return;
     }
     expect(compiled).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
+    if (row.inline === "structural") {
+      // HeyGen has a real third arm: the media type is its own FIELD rather
+      // than a prefix on a string, so nothing is encoded into a URI here.
+      expect(compiled.body["image"]).toEqual({
+        type: "base64",
+        media_type: "image/png",
+        data: "AAAA",
+      });
+      return;
+    }
     expect(pluck(compiled.body, row.imageAt)).toBe("data:image/png;base64,AAAA");
   });
 
@@ -373,4 +448,45 @@ test("sync/sync-3 is in this category AND in lipsync, as the same id", () => {
   // The one difference from the lipsync call: the tag on the first input item.
   expect(pluck(body, "input.0.type")).toBe("image");
   expect(pluck(body, "input.1.type")).toBe("audio");
+});
+
+/**
+ * Three answers to one canonical shape, counted rather than described.
+ *
+ * `{ data, mimeType }` is one word in `AvatarParams` and it means three
+ * different things across this pack — which is exactly what a capability table
+ * is for. A category with one answer does not need the column; a category with
+ * three needs it committed.
+ */
+test("inline bytes have three distinct fates across the pack", () => {
+  const byFate = new Map<string, string[]>();
+  for (const [, row] of rows) {
+    if (row.image === "forbidden") continue;
+    const list = byFate.get(row.inline) ?? [];
+    list.push(row.ref);
+    byFate.set(row.inline, list);
+  }
+  expect([...byFate.keys()].sort()).toEqual(["derived", "structural", "unsupported"]);
+
+  // …and the providers behind each fate are the ones the header claims.
+  const providersFor = (fate: string): string[] =>
+    [...new Set((byFate.get(fate) ?? []).map((ref) => ref.slice(0, ref.indexOf("/"))))].sort();
+  expect(providersFor("derived")).toEqual(["fal"]);
+  expect(providersFor("unsupported")).toEqual(["sync", "veed"]);
+  expect(providersFor("structural")).toEqual(["heygen"]);
+
+  // The asymmetry inside one HeyGen request: the still takes bytes, the track
+  // does not, and the refusal says why rather than contradicting its neighbour.
+  const bytes = avatar.safe({
+    model: "heygen/avatar_iv",
+    image: { data: "AAAA", mimeType: "image/png" },
+    audio: { data: "BBBB", mimeType: "audio/wav" },
+  } as never);
+  expect(bytes.ok).toBe(false);
+  if (bytes.ok) return;
+  const paths = bytes.errors.map((issue) => issue.path.join("."));
+  expect(paths).toContain("audio");
+  expect(paths).not.toContain("image");
+  const issue = bytes.errors.find((error) => error.path.join(".") === "audio");
+  expect(issue?.message).toContain("`image` does have a `base64` arm");
 });

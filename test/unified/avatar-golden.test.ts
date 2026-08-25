@@ -100,17 +100,43 @@ describe.each(caseDirs)("golden avatar/%s", (name) => {
     });
 
     test("the route selector never reaches the wire, whichever kind it is", () => {
-      // At fal the selector is unmodel's own `endpoint` pseudo-param and must
-      // be stripped; at sync. there is ONE url for the whole provider and
-      // `model` is a real body field that must SURVIVE. Two opposite facts, one
-      // assertion each, because getting either backwards produces a 4xx.
+      // Four providers, four answers, and getting any of them backwards is a
+      // 4xx rather than a wrong picture:
+      //
+      // | provider | selector | where it ends up |
+      // |---|---|---|
+      // | fal | `endpoint`, unmodel's own pseudo-param | the URL, stripped from the body |
+      // | sync. | `model`, a real body field | the body, at ONE url for the whole provider |
+      // | VEED | none | the PATH is the model |
+      // | HeyGen | `mode` / `engine.type`, real body fields | the body, under a different name from the id |
       expect(Object.keys(fixture.params)).not.toContain("endpoint");
-      if (fixture.ref.startsWith("fal/")) {
-        expect(fixture.url).toBe(`https://queue.fal.run/${fixture.ref.slice("fal/".length)}`);
+      const provider = fixture.ref.slice(0, fixture.ref.indexOf("/"));
+      const model = fixture.ref.slice(fixture.ref.indexOf("/") + 1);
+      if (provider === "fal") {
+        expect(fixture.url).toBe(`https://queue.fal.run/${model}`);
         return;
       }
-      expect(fixture.params["model"]).toBe(fixture.ref.slice(fixture.ref.indexOf("/") + 1));
-      expect(fixture.url).toBe("https://api.sync.so/v2/generate");
+      if (provider === "sync") {
+        expect(fixture.params["model"]).toBe(model);
+        expect(fixture.url).toBe("https://api.sync.so/v2/generate");
+        return;
+      }
+      if (provider === "veed") {
+        // The id is the last path segment, and there is no selector in the body
+        // at all — the smallest possible answer to "which model".
+        expect(fixture.params["model"]).toBeUndefined();
+        expect(fixture.url).toBe(`https://api.veed.io/v1/${model}`);
+        return;
+      }
+      expect(provider).toBe("heygen");
+      // One url per CATEGORY, and the id is spelled differently on the wire
+      // from the way a ref spells it: `lipsync-speed` becomes `mode: "speed"`
+      // and `avatar_iv` becomes `engine: { type: "avatar_iv" }`.
+      expect(fixture.params["model"]).toBeUndefined();
+      expect(fixture.url.startsWith("https://api.heygen.com/v3/")).toBe(true);
+      const mode = fixture.params["mode"];
+      const engine = fixture.params["engine"] as { type?: string } | undefined;
+      expect(mode === undefined ? engine?.type : `lipsync-${String(mode)}`).toBe(model);
     });
   });
 });
@@ -158,13 +184,21 @@ describe("the matrix itself", () => {
    */
   test("every case commits the voice track, at whichever coordinate", () => {
     for (const { name, fixture } of all) {
-      if (fixture.ref.startsWith("fal/")) {
-        expect(fixture.params["audio_url"], name).toBeString();
+      const provider = fixture.ref.slice(0, fixture.ref.indexOf("/"));
+      if (provider === "sync") {
+        // The one provider where the track is an ITEM in a tagged array rather
+        // than a field: `input[]` is what carries several voices, `refId`s,
+        // `segments` and dubbing.
+        const input = fixture.params["input"] as ReadonlyArray<{ type: string; url?: string }>;
+        const track = input.find((item) => item.type === "audio");
+        expect(track?.url, name).toBeString();
         continue;
       }
-      const input = fixture.params["input"] as ReadonlyArray<{ type: string; url?: string }>;
-      const track = input.find((item) => item.type === "audio");
-      expect(track?.url, name).toBeString();
+      // fal, VEED and HeyGen all spell it `audio_url`, and at HeyGen that is
+      // itself a finding: the neighbouring `image` field on the SAME request is
+      // a tagged object with three arms, and the track is a bare string with
+      // one.
+      expect(fixture.params["audio_url"], name).toBeString();
     }
   });
 

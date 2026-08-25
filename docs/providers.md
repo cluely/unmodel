@@ -207,18 +207,39 @@ MiniMax music is reachable **only** through fal here: the native
 music-3.0/music-cover; existing subscribers only, so it fails the public-accessibility
 bar), while `minimax/music-3` on fal's queue is open to anyone with a `FAL_KEY`.
 
-## Lipsync / avatar / upscale wave (two providers each)
+## Lipsync / avatar / upscale wave (four providers, four providers, two)
 
 Three categories that arrived on fal alone because fal is where their models were hosted. Each
 is a full unmodel category — own vocabulary, own kernel id, own pack, own `unmodel/<category>`
 subpath — rather than an arm bolted onto an existing one, which is what was meant to keep a
-second provider a one-file addition. It has now happened in all three: sync. is the second
-witness for lipsync and for avatar, Topaz Labs the second for upscale, and neither of them
-needed a word added to a vocabulary. Examples and the narrowing rules live in
-[surfaces.md](surfaces.md#lipsync).
+second provider a one-file addition. It has now happened four times over: sync., VEED and
+HeyGen are native witnesses for lipsync and for avatar, Topaz Labs the second for upscale, and
+**not one of them needed a word added to a vocabulary**. Examples and the narrowing rules live
+in [surfaces.md](surfaces.md#lipsync).
 
-**Lipsync — `lipsync`, 10 endpoints.** A clip in, an audio track in, a clip whose mouth matches
-the audio out. sync. lipsync v3, v2 and v2/pro; VEED lipsync v1 and v2; LatentSync; Kling
+The four lipsync providers are also the strongest evidence the library has for a vocabulary
+decision it declined to make. `unmodel/lipsync` has never had a canonical word for "what
+happens when the track and the clip are different lengths", and the rule for adding one is two
+INDEPENDENT vendors spelling it compatibly. With four providers the count is finally testable,
+and the answer is still no:
+
+| vendor | field | value space |
+|---|---|---|
+| sync. (natively, and resold at fal) | `sync_mode` / `options.sync_mode` | 5-arm enum: `bounce`, `loop`, `cut_off`, `silence`, `remap` |
+| LatentSync (at fal) | `loop_mode` | 2-arm enum |
+| HeyGen (natively, and resold at fal) | `enable_dynamic_duration` | boolean, default `true` |
+| VEED | — | the route has **no such field** |
+
+Five rows, three vendors: fal's resale of sync.'s models keeps `sync_mode` and its resale of
+HeyGen's keeps `enable_dynamic_duration`, and a vendor agreeing with itself through a reseller
+is one witness. Three spellings with three shapes and one outright absence is not a vocabulary
+— a canonical word would have to pick a value space, and a boolean and a five-strategy enum
+have none in common — so it stays a per-model extra everywhere. `test/unified/lipsync-capabilities.test.ts`
+holds that as an assertion that FAILS the day two of them agree, which is the day to promote
+it.
+
+**Lipsync — `lipsync`, 18 refs across four providers.** A clip in, an audio track in, a clip
+whose mouth matches the audio out. Ten at fal, five at sync., one at VEED, two at HeyGen. sync. lipsync v3, v2 and v2/pro; VEED lipsync v1 and v2; LatentSync; Kling
 LipSync (audio-to-video); PixVerse lipsync; HeyGen v3 lipsync precision and speed. Five
 canonical words and no geometry — the output's shape **is** the input's. `fal-ai/sync-lipsync/v2`
 is the roster's reminder that fal's route selector cannot be `model`: it has a real `model` body
@@ -259,7 +280,8 @@ array natively; `sync_mode` at the body root at fal against `options.sync_mode` 
 accepts inline bytes as a `data:` URI where sync. fetches URLs and asset ids only. Neither is a
 superset of the other.
 
-**Avatar — `avatar`, 8 endpoints.** A still in, the same audio in, a clip out. sync-lipsync
+**Avatar — `avatar`, 12 refs across four providers.** A still in, the same audio in, a clip out.
+Eight at fal, one at sync., one at VEED, two at HeyGen. sync-lipsync
 v3/image-to-video, ByteDance OmniHuman 1.5, Kling AI Avatar v2 standard and pro, EchoMimic v3,
 LongCat single-avatar, VEED Avatars, Argil Avatars. The split from lipsync is by INPUT rather
 than by vendor, which is why `fal-ai/sync-lipsync/v3` and
@@ -274,6 +296,137 @@ ONE model id rather than on two endpoint ids: at fal the product is `fal-ai/sync
 `fal-ai/sync-lipsync/v3/image-to-video`, two paths, while here `model` never changes and
 `input[0].type` moves from `"video"` to `"image"`. `image` is required rather than `never` here,
 because sync. catalogues no preset performers and publishes no field to name one.
+
+**VEED — `veed.lipsync` and `veed.avatar`, 2 models.** Tier: **native**.
+`https://api.veed.io/v1`, JSON bodies, `Authorization: Bearer vp_…` (`VEED_API_KEY`), and two
+URLs with disjoint schemas: `POST /v1/lipsync-2.0` takes `{ video_url, audio_url }` and
+`POST /v1/fabric-1.0` takes `{ image_url, audio_url, resolution }`. Everything here comes from
+one publicly fetchable OpenAPI 3.1.0 document (`https://api.veed.io/openapi.json`, 10
+operations, 21 schemas) whose components are also served standalone at
+`/schemas/{Name}.json` — the same URL every response carries in its own `$schema`. There was no
+SDK tiebreak to run: VEED ships no client in any language.
+
+Three facts about that document decide the whole provider. **Every request schema is
+`additionalProperties: false`**, so an undeclared key is a 422 with no job created rather than a
+field VEED ignores — the opposite of sync. and Topaz, and the reason unmodel's unknown-param
+check reports an ERROR here where theirs report warnings. **Every media field is a URL with the
+pattern `^[Hh][Tt][Tt][Pp][Ss]?://` and an 8192-character ceiling**, and VEED publishes no
+upload arm of any kind — no multipart, no base64, no asset ids — so a `data:` URI, an `s3://`
+reference and a bare path are three 422s that look like URLs. And **`resolution` on `fabric-1.0`
+is `required` with no `default`**, which makes `{ image_url, audio_url }` alone a 422 and makes
+this the only route in either audio-driven category that needs a word the vocabulary has not
+got. It rides as a per-model extra and the refusal quotes both rates, because unmodel picking
+one would be a line item: 480p is $0.08 per second of output and 720p is $0.15.
+
+Pricing is unusually good here: it is IN THE SPEC. Each submit operation carries an
+`x-veed-pricing` extension with currency, unit, rounding and a `rates` array that may be
+conditioned on a request field — `{"rates":[{"amount":0.07}],"unit":"second","rounding":"exact"}`
+on lipsync, and the two-way `resolution` fork on fabric. So the rates unmodel carries change in
+the same diff as a schema change rather than drifting away from a marketing page. (Where the
+published numbers DO disagree, `https://www.veed.io/api` says Fabric is "$0.08–$0.20/sec"; the
+model page, the tools page and the machine-readable extension all say $0.08–$0.15, and the
+outlier is not followed.)
+
+Neither address estimates. The rate is per second of GENERATED video and the generated video's
+length is the input's, behind a URL unmodel never fetches; VEED publishes no pre-flight quote
+endpoint either.
+
+Not served: the `video-background-removal` family — three variants and six of VEED's ten
+operations. It is a real, priced, publicly documented product that matches no category unmodel
+has (it mattes a subject out of a clip and returns a WebM with an alpha channel, or two files on
+h264), and a one-provider `matting` category read off a single witness is exactly what this
+library declines to build. Also not served because it does not exist: a presenter roster. fal
+sells `veed/avatars/audio-to-video`, a library of trained presenters named by `avatar_id`, and
+`POST /v1/avatars` answers a real JSON 404 — so the same vendor is a `sources: []` row at fal
+and a `sources: ["image"]` row here, two products that happen to share a name.
+
+⚠️ **Keys are not self-serve.** The docs, the schemas and the playground are fully public with
+no login, but every page's footer reads "API access is granted on request" and links to
+`https://www.veed.io/contact-sales`. That is a credential gate rather than a documentation gate,
+which is why the types here are as exact as any in the library and were nonetheless never
+exercised against a live key.
+
+**HeyGen — `heygen.avatar` and `heygen.lipsync`, 5 models.** Tier: **native**.
+`https://api.heygen.com/v3`, JSON bodies, `x-api-key: <HEYGEN_API_KEY>`, two URLs with two
+response shapes and two status enums. Typed from a 1.16 MB OpenAPI 3.1.0 document with 98 paths
+and 300 schemas — the most complete spec in this wave — curated hard down to the generation
+surface.
+
+**Two traps this provider exists to have already walked into.** HeyGen serves TWO OpenAPI
+documents and both answer 200: `developers.heygen.com/openapi.yaml` is a v4.0.8 document with 52
+v1/v2 paths whose only `/v3` route is `/v3/template/{id}`, and it contains no `/v3/videos` at
+all; `developers.heygen.com/openapi/external-api.json` is the current one. A refresh pointed at
+the first would emit a v2-shaped provider and nothing would fail loudly, so the URL is pinned
+with that note. And `docs.heygen.com` is gone: it 301s to `developers.heygen.com`, but the old
+canonical slugs 404 at the new host (`/reference/create-an-avatar-video-v2` → 404; the live page
+is `/reference/create-video`). Every URL this provider cites was re-resolved by fetching it
+rather than by rewriting the hostname.
+
+**There is no `model` field on either route, and both defaults are prices.** `POST /v3/videos`
+has an `engine` discriminated union — `avatar_iii`, `avatar_iv` (applied when `engine` is
+omitted), `avatar_v` — and those three are what unmodel catalogs, because they are three
+products with three documentation pages and a four-fold price spread. `POST /v3/lipsyncs` has
+`mode: "speed" | "precision"` (default `"speed"`), two products with two pages and a 2× price
+difference, catalogued as `lipsync-speed` and `lipsync-precision` after HeyGen's own doc slugs.
+Both unified adapters write the wire value out explicitly on every call: a ref that names a
+price should not depend on a server-side default to get it.
+
+`POST /v3/videos` is a `oneOf` on `type` with four arms and unmodel serves two: `"avatar"`
+requires `avatar_id` and declares no `image`, `"image"` requires `image` and declares no
+`avatar_id`, and both are `additionalProperties: false` — so the wrong field for the arm is a
+400, which is HeyGen's own documented example error ("Exactly one visual source required").
+Six more cross-field rules are stated in prose on individually-optional fields and checked here:
+Avatar III does not render raw image input; `expressiveness` is Avatar IV only and
+`motion_prompt` is not Avatar III, and HeyGen REJECTS both rather than ignoring them; `script`
+and the audio fields are mutually exclusive; `voice_id` is required with a script unless
+`avatar_id` supplies a default voice; `voice_settings` is silently ignored when the audio is
+uploaded (a warning, because it is a no-op rather than a refusal); and `output_format: "webm"`
+rejects any `background` value.
+
+Pricing is public USD with no login, and two of the five rows carry a band because HeyGen's
+table is keyed by engine × AVATAR TYPE and the avatar type lives on the look rather than in the
+request: Avatar III $0.0167/sec (digital twin, studio) to $0.0433 (photo), Avatar IV $0.05
+(photo) to $0.0667, Avatar V $0.0667 exactly (digital twins only), lipsync speed $0.0333 and
+precision $0.0667 exactly. The rows carry the top of each band — an upper bound, which is the
+right direction for one. Nothing estimates: every rate is per second of output and the output's
+length follows the audio's.
+
+`Idempotency-Key` is accepted on both POSTs (1–255 characters, a 24-hour replay window, 409
+`request_in_progress` on an overlapping retry) and is worth using: renders are billed by the
+second. The self-serve concurrency ceiling is 10 in-flight jobs across video generation, Video
+Agent sessions and translations together, with a `Retry-After` on the 429; no per-endpoint RPM
+figures are published. v1 and v2 endpoints are supported until **October 31, 2026**, and nothing
+here is modelled on them.
+
+**Not served, and why each one.** `POST /v3/voices/speech` — TTS, and the closest call in this
+wave. There is no model id on the wire at all (the engine is fixed to Starfish and stated only
+in `voice_id`'s prose), `voice_id` is an account-scoped handle from `GET /v3/voices` with no
+published roster, `input_type` is typed as a bare `string` with its two arms in a description,
+and there is no output format, sample rate, codec or bitrate control — which is most of what
+`unmodel/tts`'s vocabulary is made of. A `heygen.tts` would be a row that narrows nothing: a
+me-too entry widening the tts matrix while telling a caller less than every other row in it. It
+joins the day HeyGen publishes a voice roster or a second engine. (`POST /v1/audio/text_to_speech`
+is the v1 spelling of the same thing and is on the sunset list besides.)
+`type: "cinematic_avatar"` — a prompt-to-video model wearing an avatar route's URL: 4–15
+seconds, $7.00 flat, Seedance-backed, whose required fields are a `prompt` and an ARRAY of look
+ids and which takes no audio at all. `type: "studio"` — a `scenes` array of up to 50, which is a
+timeline document rather than a generation request. Video translation, background removal,
+HyperFrames, AI clipping and filler-word removal — five more priced products, none matching a
+category unmodel has. And the platform surface (avatars, looks, voices, assets, brand kits,
+glossaries, folders, webhooks, templates, workflows, podcasts, video agents, realtime streaming,
+batches, bulk statuses) — it mints and lists the ids a generation request names, which unmodel
+types, and generates nothing.
+
+**Argil** was researched alongside HeyGen in the same round and is **not** implemented. It has a
+real, self-serve, fully public API (`https://api.argil.ai/v1`, `x-api-key`) and two things
+unmodel needs and cannot get from it: there is **no aggregated OpenAPI document** — the one
+`llms.txt` advertises, `https://docs.argil.ai/openapi.yml`, returns 404, and the schemas exist
+only as per-endpoint YAML fences inside 23 separate `.md` pages that would have to be scraped
+and stitched — and there is **no published USD pricing**, only credits per minute, with the
+$/credit rate visible solely inside the app. A row unmodel cannot price and a schema it can only
+reconstruct is a row it should not ship; Argil's avatars remain reachable through fal
+(`fal/argil/avatars/audio-to-video`), whose resale does publish a presenter enum. Argil also
+documents no rate limits at all.
 
 **Upscale — `upscale`, 10 endpoints.** Clarity Upscaler, Topaz image precision and generative,
 Topaz video precision, ESRGAN, AuraSR, SeedVR upscale image and video, Recraft crisp upscale,
@@ -329,11 +482,27 @@ names. `unmodel/upscale` reaches Topaz video through fal
 **Wire notes, shared by all three at fal:** the request is a queue submit to
 `https://queue.fal.run/{endpoint}`, the media arguments are https URLs or `data:` URIs, and the
 result is a queue envelope rather than a file. Polling is out of scope — follow the
-`response_url` fal hands back, never a URL you construct. The two native halves each answer a job
-of their own shape — sync. a 201 carrying a generation id to poll at `GET /v2/generate/{id}`,
-Topaz a `process_id` to poll and then download — and neither accepts a payload in the body, so a
-`{ data }` ref is refused naming that vendor's upload route rather than compiled into a `data:`
-URI it would fail to fetch.
+`response_url` fal hands back, never a URL you construct. Each native half answers a job of its
+own shape: sync. a 201 carrying a generation id to poll at `GET /v2/generate/{id}`; Topaz a
+`process_id` to poll and then download; VEED a 202 carrying a `job_id` readable only at its own
+model's path (`GET /v1/<model>/{job_id}`, no model-agnostic job route), with a
+spec-declared ten-second poll interval and no webhooks; HeyGen a `{ data: { video_id } }` or
+`{ data: { lipsync_id } }` over two DIFFERENT status enums (`processing` on the video route,
+`running` on the lipsync one — a shared `switch` over them falls through).
+
+**Inline bytes now have three fates in one category, which is why the capability table has a
+column for it.** fal builds a `data:` URI and puts it in a field that fetches URLs. sync. and
+VEED refuse bytes by name, because their fields only fetch — sync.'s naming
+`POST /v2/assets/upload`, VEED's naming the fact that it publishes no upload endpoint of any
+kind. HeyGen has a real third arm on its own `oneOf`, `{ type: "base64", media_type, data }`, so
+the bytes land structurally rather than encoded into a string — and its `audio_url` does NOT
+have that arm, so one HeyGen request accepts bytes for the still and refuses them for the track.
+That asymmetry is the vendor's, and the refusal says so.
+
+**Two kinds of failure at VEED, and code that checks `res.ok` sees one of them.** A submit
+rejected at the HTTP layer creates no job and carries an eight-member `error.code`; a job that
+was ACCEPTED and then failed carries a seven-member, disjoint `result.error.code` and arrives
+through the GET with a 200. Both vocabularies are exported from `unmodel/veed/values`.
 
 ## 3D wave — the first category with two witnesses
 
@@ -496,8 +665,8 @@ leaves rather than whole validators.
 | `unmodel/video` | `video`, `createVideo` | 13 | alibaba, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu, xai |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 5 | black-forest-labs, fal, ideogram, openai, recraft — the five whose primary editing route is *image + prompt, no mask* |
 | `unmodel/music` | `music`, `createMusic` | 5 | elevenlabs, fal, google, mureka, stability |
-| `unmodel/lipsync` | `lipsync`, `createLipsync` | 2 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), sync (5 models on one url — four of fal's ten are these same weights resold) |
-| `unmodel/avatar` | `avatar`, `createAvatar` | 2 | fal (8 endpoints; the still-driven twin of lipsync), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item) |
+| `unmodel/lipsync` | `lipsync`, `createLipsync` | 4 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
+| `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (the two engines that render raw image input — Avatar III does not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
 | `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (10 endpoints, seven taking a still and three taking a clip), topaz (15 models over two routes, stills only, multipart bodies) |
 | `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (4 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
@@ -505,7 +674,7 @@ leaves rather than whole validators.
 
 **Layout.** Each adapter lives in the provider's own directory as
 `unified-<category>.ts`, re-exported from a single `unified.ts` barrel published as
-`unmodel/<provider>/unified` (45 such subpaths). A provider serving more than one category
+`unmodel/<provider>/unified` (47 such subpaths). A provider serving more than one category
 therefore splits per category, so no pack pays for another category's schemas or catalogs.
 `test/bundle-budget.test.ts` asserts a pack can only reach a provider through that
 provider's uniformly-named endpoint module — which is what makes the address-vs-wire
@@ -522,7 +691,7 @@ no aggregate of provider wire types. All 76 entries emit an empty JavaScript mod
 `test/types-entries.test.ts` asserts against a real build alongside the completeness drift
 guard keyed on `src/cli-registry.ts`.
 
-**Values without a validator.** The 45 providers with a unified adapter also publish
+**Values without a validator.** The 47 providers with a unified adapter also publish
 `unmodel/<provider>/values`: the runtime twin of those types — `<CATEGORY>_MODEL_PARAMS`,
 `<CATEGORY>_MODELS` and `<CATEGORY>_FORMAT_SPEC` per category served, plus that provider's own
 published enums (voices, sizes, ratios, durations, codecs, languages) under their own names.
@@ -552,7 +721,45 @@ refused with the upload path spelled out; Stability's
 other provider has, so a canonical vocabulary for them would be a vocabulary of one; Hume's
 voice design IS its TTS wire (a description-only `/v0/tts` call, fully expressible through
 `unmodel/hume`'s own `tts`), so a `voiceDesign` adapter there would return a TTS `Validated`
-from a design call and muddle what the result is.
+from a design call and muddle what the result is; HeyGen's `POST /v3/voices/speech` publishes
+no model id, no voice roster and no format control, so a `heygen.tts` row would narrow nothing
+and is excluded rather than shipped thin; VEED's presenter library has no native endpoint at all
+(`POST /v1/avatars` is a real JSON 404), so `veed/fabric-1.0` is `sources: ["image"]` while the
+same vendor's `fal/veed/avatars/audio-to-video` is `sources: []`; and HeyGen's catalogued-look
+arm (`type: "avatar"`) is wire-only for a typed reason rather than an oversight — an avatar row
+can say `image` is required, forbidden or unknown and never "optional", and `avatar_iv` and
+`avatar_v` serve BOTH arms, so the pack compiles the one whose inputs a caller actually has.
+
+**Researched and declined (native).** Two vendors were researched in the same rounds as the
+natives above, found to have real public APIs, and deliberately not implemented. Both are
+reachable through fal today, which is what an aggregator is for.
+
+*Argil* (`https://api.argil.ai/v1`, `x-api-key`, self-serve on a paid plan) — avatar only.
+Two blockers, and each alone would be enough. There is **no aggregated OpenAPI document**: the
+one `llms.txt` advertises (`https://docs.argil.ai/openapi.yml`) returns 404, as do
+`openapi.yaml`, `openapi.json`, `docs.json`, `mint.json` and the `api-reference/` variants, so
+the schemas exist only as per-endpoint YAML fences inside 23 separate `.md` pages that would
+have to be scraped and stitched — fragile against a docs-template change in a way a pinned
+document is not. And there is **no published USD pricing**: 160 credits per minute of video, 20
+per minute of voice, 20 per video of avatar royalty, with the $/credit rate visible only inside
+the app. A row unmodel cannot price is a row whose `ModelCost` would be empty and whose estimate
+would be a guess. Argil also documents no rate limits at all (verified by grep over the full
+99 KB docs dump), and its create-then-render two-step (`POST /videos` answers `201` with status
+`IDLE` and starts nothing; generation begins at `POST /videos/{id}/render`) is a second request
+shape the avatar category has no vocabulary for. `fal/argil/avatars/audio-to-video` is the
+supported route, and fal's resale does publish the presenter enum.
+
+*Tencent Hunyuan3D native* (Tencent Cloud "AI3D") — 3D. A real hosted commercial API exists and
+is not open-source-only, but it is a Tencent Cloud product rather than a product API: auth is
+**TC3-HMAC-SHA256 request signing** rather than a bearer token or a header key, the operation is
+selected by an `X-TC-Action` header (`SubmitHunyuanTo3DProJob`, `SubmitHunyuanTo3DRapidJob`)
+against a versioned `X-TC-Version` and a regional `X-TC-Region` rather than by a path, and the
+English documentation describes a superseded version — third-party clients calling the older
+`hunyuan.*` actions fail against the current AI3D endpoints. unmodel builds request bodies and
+never touches credentials; a provider whose request cannot be composed without computing a
+signature over it is a provider whose `.request` object would be a half-truth. The Hunyuan3D
+models themselves are already served — `fal.threeD` carries Hunyuan3D 2.0, turbo, and 3.1 Pro
+text/image and Rapid image.
 
 **Voice creation, and who is out.** The clone pack's excluded providers each carry a
 documented reason rather than a gap: Speechify is wire-only (consent ceremony, above);

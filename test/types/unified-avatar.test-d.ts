@@ -9,12 +9,16 @@
  */
 import { avatar, createAvatar } from "../../src/unified/avatar";
 import { avatar as falAvatar } from "../../src/providers/fal/unified-avatar";
+import { avatar as heygenAvatar } from "../../src/providers/heygen/unified-avatar";
 import { avatar as syncAvatar } from "../../src/providers/sync/unified-avatar";
+import { avatar as veedAvatar } from "../../src/providers/veed/unified-avatar";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import type { AvatarParams } from "../../src/core/unified/vocabulary/avatar";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
-type PackRefs = UnifiedRef<typeof falAvatar | typeof syncAvatar>;
+type PackRefs = UnifiedRef<
+  typeof falAvatar | typeof heygenAvatar | typeof syncAvatar | typeof veedAvatar
+>;
 
 expectAssignable<PackRefs>("fal/fal-ai/sync-lipsync/v3/image-to-video");
 expectAssignable<PackRefs>("fal/fal-ai/bytedance/omnihuman/v1.5");
@@ -35,6 +39,26 @@ expectAssignable<PackRefs>("sync/lipsync-2");
 // @ts-expect-error — react-1 is the expressive model and still reads no image.
 expectAssignable<PackRefs>("sync/react-1");
 
+// VEED's still-driven model. Its clip-driven one is `unmodel/lipsync`, and its
+// PRESENTER library has no native endpoint at all — that product is reachable
+// only through fal, which is why `fal/veed/avatars/audio-to-video` is above and
+// `veed/avatars` is not a ref anywhere.
+expectAssignable<PackRefs>("veed/fabric-1.0");
+// @ts-expect-error — the clip route is the other category.
+expectAssignable<PackRefs>("veed/lipsync-2.0");
+// @ts-expect-error — VEED's presenter library is a fal-only product.
+expectAssignable<PackRefs>("veed/avatars");
+
+// HeyGen's two image-capable engines. Avatar III is in the catalog and at the
+// wire address and NOT here: its own engine config says it does not render raw
+// image input, and this adapter compiles the raw-image arm.
+expectAssignable<PackRefs>("heygen/avatar_iv");
+expectAssignable<PackRefs>("heygen/avatar_v");
+// @ts-expect-error — "Not supported for raw image input (type: \"image\")".
+expectAssignable<PackRefs>("heygen/avatar_iii");
+// @ts-expect-error — the lipsync modes are the other category.
+expectAssignable<PackRefs>("heygen/lipsync-speed");
+
 const URL_IMAGE = { url: "https://example.com/headshot.png" } as const;
 const URL_AUDIO = { url: "https://example.com/vo.wav" } as const;
 
@@ -44,7 +68,7 @@ function refUnionTests(): void {
   // A model newer than this snapshot still works, with a runtime warning.
   avatar({ model: "fal/fal-ai/omnihuman/v2", image: URL_IMAGE, audio: URL_AUDIO });
   // A provider with no adapter is a runtime structural error, not a type error.
-  avatar({ model: "heygen/avatar-4", image: URL_IMAGE, audio: URL_AUDIO });
+  avatar({ model: "topaz/Standard V2", image: URL_IMAGE, audio: URL_AUDIO });
 
   // @ts-expect-error — `audio` is not optional; there is nothing to speak.
   avatar({ model: "fal/fal-ai/sync-lipsync/v3/image-to-video", image: URL_IMAGE });
@@ -74,6 +98,31 @@ function imageArmTests(): void {
   avatar({ model: "fal/argil/avatars/audio-to-video", audio: URL_AUDIO });
   // @ts-expect-error — there is nowhere on VEED's wire to put a face.
   avatar({ model: "fal/veed/avatars/audio-to-video", image: URL_IMAGE, audio: URL_AUDIO });
+
+  // Required at VEED too — and VEED is the one route in the category that also
+  // demands a word the vocabulary has not got. `resolution` is in
+  // `FabricInput.required` with no default, so it rides as a per-model extra.
+  avatar({ model: "veed/fabric-1.0", image: URL_IMAGE, audio: URL_AUDIO, resolution: "720p" });
+  avatar({
+    model: "veed/fabric-1.0",
+    image: URL_IMAGE,
+    audio: URL_AUDIO,
+    // @ts-expect-error — VEED's two resolutions are a closed enum, and a 2× price fork.
+    resolution: "1080p",
+  });
+
+  // HeyGen's per-engine extras are disjoint, in both directions.
+  avatar({ model: "heygen/avatar_iv", image: URL_IMAGE, audio: URL_AUDIO, expressiveness: "high" });
+  avatar({
+    model: "heygen/avatar_v",
+    image: URL_IMAGE,
+    audio: URL_AUDIO,
+    reference_look_id: "look_abc",
+  });
+  // @ts-expect-error — `expressiveness` is REJECTED on Avatar V, not ignored.
+  avatar({ model: "heygen/avatar_v", image: URL_IMAGE, audio: URL_AUDIO, expressiveness: "high" });
+  // @ts-expect-error — `reference_look_id` lives inside Avatar V's own engine config.
+  avatar({ model: "heygen/avatar_iv", image: URL_IMAGE, audio: URL_AUDIO, reference_look_id: "x" });
 
   // The inline arm carries its media type, for `LipsyncVideoSource`'s reason.
   avatar({
@@ -118,7 +167,7 @@ function providerOptionsTests(): void {
     model: "fal/argil/avatars/audio-to-video",
     audio: URL_AUDIO,
     // @ts-expect-error — not for a provider this pack does not have.
-    providerOptions: { heygen: {} },
+    providerOptions: { topaz: {} },
   });
 
   const one = createAvatar([falAvatar]);

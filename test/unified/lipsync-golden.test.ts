@@ -103,17 +103,43 @@ describe.each(caseDirs)("golden lipsync/%s", (name) => {
     });
 
     test("the route selector never reaches the wire, whichever kind it is", () => {
-      // At fal the selector is unmodel's own `endpoint` pseudo-param and must
-      // be stripped; at sync. there is ONE url for the whole provider and
-      // `model` is a real body field that must SURVIVE. Two opposite facts, one
-      // assertion each, because getting either backwards produces a 4xx.
+      // Four providers, four answers, and getting any of them backwards is a
+      // 4xx rather than a wrong picture:
+      //
+      // | provider | selector | where it ends up |
+      // |---|---|---|
+      // | fal | `endpoint`, unmodel's own pseudo-param | the URL, stripped from the body |
+      // | sync. | `model`, a real body field | the body, at ONE url for the whole provider |
+      // | VEED | none | the PATH is the model |
+      // | HeyGen | `mode` / `engine.type`, real body fields | the body, under a different name from the id |
       expect(Object.keys(fixture.params)).not.toContain("endpoint");
-      if (fixture.ref.startsWith("fal/")) {
-        expect(fixture.url).toBe(`https://queue.fal.run/${fixture.ref.slice("fal/".length)}`);
+      const provider = fixture.ref.slice(0, fixture.ref.indexOf("/"));
+      const model = fixture.ref.slice(fixture.ref.indexOf("/") + 1);
+      if (provider === "fal") {
+        expect(fixture.url).toBe(`https://queue.fal.run/${model}`);
         return;
       }
-      expect(fixture.params["model"]).toBe(fixture.ref.slice(fixture.ref.indexOf("/") + 1));
-      expect(fixture.url).toBe("https://api.sync.so/v2/generate");
+      if (provider === "sync") {
+        expect(fixture.params["model"]).toBe(model);
+        expect(fixture.url).toBe("https://api.sync.so/v2/generate");
+        return;
+      }
+      if (provider === "veed") {
+        // The id is the last path segment, and there is no selector in the body
+        // at all — the smallest possible answer to "which model".
+        expect(fixture.params["model"]).toBeUndefined();
+        expect(fixture.url).toBe(`https://api.veed.io/v1/${model}`);
+        return;
+      }
+      expect(provider).toBe("heygen");
+      // One url per CATEGORY, and the id is spelled differently on the wire
+      // from the way a ref spells it: `lipsync-speed` becomes `mode: "speed"`
+      // and `avatar_iv` becomes `engine: { type: "avatar_iv" }`.
+      expect(fixture.params["model"]).toBeUndefined();
+      expect(fixture.url.startsWith("https://api.heygen.com/v3/")).toBe(true);
+      const mode = fixture.params["mode"];
+      const engine = fixture.params["engine"] as { type?: string } | undefined;
+      expect(mode === undefined ? engine?.type : `lipsync-${String(mode)}`).toBe(model);
     });
   });
 });
@@ -217,4 +243,60 @@ describe("the matrix itself", () => {
       { type: "audio", url: "https://example.com/vo-french.wav" },
     ]);
   });
+});
+
+/**
+ * Four providers, one request, four bodies — committed side by side.
+ *
+ * `voice-replacement/` exists to hold exactly this: the same clip and the same
+ * track pointed at each of the pack's four providers, so the wire shapes can be
+ * read off one directory listing rather than argued about. Two flat URL fields
+ * at fal; a tagged ARRAY at sync.; two flat fields AND NOTHING ELSE at VEED,
+ * whose whole input schema is those two required URLs; tagged OBJECTS plus a
+ * `mode` at HeyGen, where the ref names a price rather than a model.
+ *
+ * None of them is a superset of another, which is the argument for the category
+ * having a vocabulary at all.
+ */
+test("the four-way case commits four different bodies for one request", () => {
+  const dir = join(GOLDEN, "voice-replacement");
+  const byProvider = new Map<string, Fixture>();
+  for (const file of readdirSync(dir)) {
+    if (!file.endsWith(".json") || file === "canonical.json") continue;
+    const fixture = readJson<Fixture>(join(dir, file));
+    byProvider.set(fixture.ref.slice(0, fixture.ref.indexOf("/")), fixture);
+  }
+  expect([...byProvider.keys()].sort()).toEqual(["fal", "heygen", "sync", "veed"]);
+
+  const fal = byProvider.get("fal") as Fixture;
+  const sync = byProvider.get("sync") as Fixture;
+  const veed = byProvider.get("veed") as Fixture;
+  const heygen = byProvider.get("heygen") as Fixture;
+
+  // fal: two flat strings, and the route is in the URL.
+  expect(Object.keys(fal.params).sort()).toEqual(["audio_url", "video_url"]);
+  // sync.: a tagged array, and `model` survives onto the wire.
+  expect(sync.params["input"]).toBeArray();
+  expect(sync.params["model"]).toBe("lipsync-2-pro");
+  // VEED: the same two flat strings as fal — and no third key is even
+  // expressible, because `Lipsync20Input` is `additionalProperties: false`.
+  expect(Object.keys(veed.params).sort()).toEqual(["audio_url", "video_url"]);
+  // HeyGen: tagged objects, plus the mode the ref named.
+  expect(heygen.params["video"]).toEqual({
+    type: "url",
+    url: "https://example.com/interview.mov",
+  });
+  expect(heygen.params["mode"]).toBe("precision");
+
+  // No two of them have the same key set…
+  const shapes = [fal, sync, veed, heygen].map((f) => Object.keys(f.params).sort().join(","));
+  expect(new Set(shapes).size).toBeGreaterThanOrEqual(3);
+  // …and the one pair that DOES (fal and VEED) differs in what is reachable
+  // rather than in what a minimal request looks like: fal's row declares
+  // `sync_mode`, VEED's declares nothing at all.
+  expect(shapes[0]).toBe(shapes[2]);
+
+  // Four URLs, four hosts.
+  const urls = [fal.url, sync.url, veed.url, heygen.url];
+  expect(new Set(urls).size).toBe(4);
 });

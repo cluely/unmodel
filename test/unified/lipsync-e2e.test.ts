@@ -11,23 +11,30 @@ import { describe, expect, test } from "bun:test";
 import { UnmodelValidationError } from "../../src/core/issues";
 import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { lipsync as falLipsync } from "../../src/providers/fal";
+import { lipsync as heygenLipsync } from "../../src/providers/heygen";
 import { createLipsync, lipsync } from "../../src/unified/lipsync";
 import { lipsync as falAdapter } from "../../src/providers/fal/unified-lipsync";
+import { lipsync as heygenAdapter } from "../../src/providers/heygen/unified-lipsync";
 import { lipsync as syncAdapter } from "../../src/providers/sync/unified-lipsync";
+import { lipsync as veedAdapter } from "../../src/providers/veed/unified-lipsync";
 
 const CLIP = { url: "https://example.com/take-3.mp4" } as const;
 const VOICE = { url: "https://example.com/vo-french.wav" } as const;
 
 describe("the pack", () => {
-  test("registers exactly the two lipsync providers", () => {
-    expect([...lipsync.providers]).toEqual(["fal", "sync"]);
+  test("registers exactly the four lipsync providers", () => {
+    expect([...lipsync.providers]).toEqual(["fal", "heygen", "sync", "veed"]);
   });
 
   test("a provider outside the pack is structural, not a validation error", () => {
     expect(() =>
-      lipsync({ model: "heygen/lipsync-4", source: CLIP, audio: VOICE } as never),
+      lipsync({ model: "topaz/Standard V2", source: CLIP, audio: VOICE } as never),
     ).toThrow(TranslationUnavailableError);
-    const result = lipsync.safe({ model: "heygen/lipsync-4", source: CLIP, audio: VOICE } as never);
+    const result = lipsync.safe({
+      model: "topaz/Standard V2",
+      source: CLIP,
+      audio: VOICE,
+    } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]?.meta?.["structural"]).toBe(true);
@@ -49,11 +56,15 @@ describe("the pack", () => {
     expect(params.request.url).toBe("https://queue.fal.run/fal-ai/sync-lipsync/v9");
   });
 
-  test("each provider is one adapter, and either builds a pack on its own", () => {
+  test("each provider is one adapter, and any of them builds a pack on its own", () => {
     expect(falAdapter.models).toHaveLength(10);
     expect(syncAdapter.models).toHaveLength(5);
+    expect(veedAdapter.models).toHaveLength(1);
+    expect(heygenAdapter.models).toHaveLength(2);
     expect([...createLipsync([falAdapter]).providers]).toEqual(["fal"]);
     expect([...createLipsync([syncAdapter]).providers]).toEqual(["sync"]);
+    expect([...createLipsync([veedAdapter]).providers]).toEqual(["veed"]);
+    expect([...createLipsync([heygenAdapter]).providers]).toEqual(["heygen"]);
   });
 });
 
@@ -244,12 +255,12 @@ describe("providerOptions", () => {
       model: "fal/fal-ai/sync-lipsync/v3",
       source: CLIP,
       audio: VOICE,
-      providerOptions: { heygen: { avatar_style: "normal" } },
+      providerOptions: { topaz: { model: "Standard V2" } },
     } as never);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.warnings.some((issue) => issue.code === "unknown_param")).toBe(true);
-    expect(JSON.parse(JSON.stringify(result.params))).not.toHaveProperty("avatar_style");
+    expect(JSON.parse(JSON.stringify(result.params))).not.toHaveProperty("model");
   });
 
   test("…and a block for the OTHER provider in the pack is ignored, not merged", () => {
@@ -265,6 +276,147 @@ describe("providerOptions", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(JSON.parse(JSON.stringify(result.params))).not.toHaveProperty("outputFileName");
+  });
+});
+
+/**
+ * The two natives added with this wave, and the two ends of the range they
+ * bracket: the smallest request surface in the library, and the only ref in the
+ * category that names a PRICE rather than a model.
+ */
+describe("the result is VEED's own Validated, and there is nothing else in it", () => {
+  test("two fields, both canonical, and no third thing to say", () => {
+    const result = lipsync({ model: "veed/lipsync-2.0", source: CLIP, audio: VOICE });
+    expect(JSON.parse(JSON.stringify(result))).toEqual({
+      video_url: CLIP.url,
+      audio_url: VOICE.url,
+    });
+    expect(result.request.url).toBe("https://api.veed.io/v1/lipsync-2.0");
+    expect(result.request.method).toBe("POST");
+    expect(result.warnings).toEqual([]);
+    // The model id never reaches the wire here, because at VEED the model IS
+    // the path — a fourth shape of route selector in one category.
+    expect(JSON.parse(JSON.stringify(result))).not.toHaveProperty("model");
+  });
+
+  test("inline bytes are refused by name, and the message names the fal route", () => {
+    const result = lipsync.safe({
+      model: "veed/lipsync-2.0",
+      source: { data: "AAECAwQF", mimeType: "video/mp4" },
+      audio: VOICE,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const issue = result.errors.find((error) => error.path.join(".") === "source");
+    expect(issue?.code).toBe("unsupported_param");
+    expect(issue?.message).toContain("publishes no upload endpoint");
+    expect(issue?.message).toContain("fal/veed/lipsync/v2");
+  });
+
+  test("`seed` is refused rather than dropped, and there is nothing else to refuse", () => {
+    const seeded = lipsync.safe({ model: "veed/lipsync-2.0", source: CLIP, audio: VOICE, seed: 7 });
+    expect(seeded.ok).toBe(false);
+    if (seeded.ok) return;
+    expect(seeded.errors.map((issue) => issue.path.join("."))).toContain("seed");
+    // …and the row genuinely has no extras, which is what makes `seed` the only
+    // canonical word this provider has to answer for.
+    expect(
+      Object.keys(
+        (veedAdapter.modelParams["lipsync-2.0"] as { extras: Record<string, unknown> }).extras,
+      ),
+    ).toEqual([]);
+  });
+
+  test("no estimate, even though VEED publishes an exact per-second rate", () => {
+    // $0.07/sec, `rounding: "exact"`, in the spec's own `x-veed-pricing`. What
+    // is missing is the DURATION, which is the input clip's, behind a URL.
+    const result = lipsync.safe({ model: "veed/lipsync-2.0", source: CLIP, audio: VOICE });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.estimate?.costUSD).toBeUndefined();
+  });
+});
+
+describe("the result is HeyGen's own Validated, and the ref names a price", () => {
+  test("the ref becomes `mode`, and the media fields become tagged objects", () => {
+    const result = lipsync({ model: "heygen/lipsync-precision", source: CLIP, audio: VOICE });
+    expect(JSON.parse(JSON.stringify(result))).toEqual({
+      video: { type: "url", url: CLIP.url },
+      audio: { type: "url", url: VOICE.url },
+      mode: "precision",
+    });
+    expect(result.request.url).toBe("https://api.heygen.com/v3/lipsyncs");
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("the default mode is written out rather than left to the server", () => {
+    // `mode` defaults to `"speed"` at HeyGen. A ref that names a price should
+    // not depend on a server-side default to get it, so the adapter writes it.
+    const result = lipsync({ model: "heygen/lipsync-speed", source: CLIP, audio: VOICE });
+    expect(JSON.parse(JSON.stringify(result))).toHaveProperty("mode", "speed");
+  });
+
+  test("the two ids are one wire field, and they differ only in price", () => {
+    const speed = JSON.parse(
+      JSON.stringify(lipsync({ model: "heygen/lipsync-speed", source: CLIP, audio: VOICE })),
+    ) as Record<string, unknown>;
+    const precision = JSON.parse(
+      JSON.stringify(lipsync({ model: "heygen/lipsync-precision", source: CLIP, audio: VOICE })),
+    ) as Record<string, unknown>;
+    expect(Object.keys(speed).sort()).toEqual(Object.keys(precision).sort());
+    expect({ ...speed, mode: undefined }).toEqual({ ...precision, mode: undefined });
+  });
+
+  test("it ends in the SAME validator the hand surface calls", () => {
+    const unified = lipsync({ model: "heygen/lipsync-speed", source: CLIP, audio: VOICE });
+    const byHand = heygenLipsync({
+      video: { type: "url", url: CLIP.url },
+      audio: { type: "url", url: VOICE.url },
+      mode: "speed",
+    });
+    expect(JSON.parse(JSON.stringify(unified))).toEqual(JSON.parse(JSON.stringify(byHand)));
+    expect(unified.request.url).toBe(byHand.request.url);
+  });
+
+  test("the duration-mismatch extra is a BOOLEAN here, and it arrives typed", () => {
+    const result = lipsync({
+      model: "heygen/lipsync-speed",
+      source: CLIP,
+      audio: VOICE,
+      enable_dynamic_duration: false,
+      start_time: 2,
+      end_time: 8,
+    });
+    const body = JSON.parse(JSON.stringify(result)) as Record<string, unknown>;
+    expect(body["enable_dynamic_duration"]).toBe(false);
+    expect(body["start_time"]).toBe(2);
+    expect(body["end_time"]).toBe(8);
+  });
+
+  test("a backwards partial-lipsync window is refused by HeyGen's own validator", () => {
+    const result = lipsync.safe({
+      model: "heygen/lipsync-speed",
+      source: CLIP,
+      audio: VOICE,
+      start_time: 9,
+      end_time: 3,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => issue.path.join("."))).toContain("start_time");
+  });
+
+  test("inline bytes are refused, and the sibling category accepts them", () => {
+    const result = lipsync.safe({
+      model: "heygen/lipsync-speed",
+      source: { data: "AAECAwQF", mimeType: "video/mp4" },
+      audio: VOICE,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const issue = result.errors.find((error) => error.path.join(".") === "source");
+    expect(issue?.code).toBe("unsupported_param");
+    expect(issue?.message).toContain("no inline arm");
   });
 });
 

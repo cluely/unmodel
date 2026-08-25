@@ -1,0 +1,12 @@
+{
+  "ref": "veed/fabric-1.0",
+  "params": {
+    "image_url": "https://example.com/headshot.png",
+    "audio_url": "https://example.com/vo-french.wav",
+    "resolution": "480p"
+  },
+  "url": "https://api.veed.io/v1/fabric-1.0",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

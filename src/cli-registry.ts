@@ -149,7 +149,7 @@ export const REGISTRY = {
   "vidu.videoFromReference": () => import("./providers/vidu").then((m) => asCli(m.videoFromReference)),
 
   // Lipsync and avatar — the two audio-driven video categories. Both address
-  // their route with the category's own verb, bare, at both providers that
+  // their route with the category's own verb, bare, at all four providers that
   // serve them. They are separate addresses for the same reason they are
   // separate categories: a lipsync route requires a source CLIP and an avatar
   // route requires a still, and `fal-ai/sync-lipsync/v3` and
@@ -162,10 +162,22 @@ export const REGISTRY = {
   // `sync.avatar` is the required fields — a still narrows `model` to `sync-3`
   // and forbids `segments` (no timeline to slice) and `dubParams` (no track to
   // extract) — which is what a qualified address names everywhere else here.
+  //
+  // VEED and HeyGen make the same split three more ways, and every one of them
+  // is a bare category verb because every one of them is a whole address:
+  // VEED publishes two URLs with disjoint schemas (`/v1/lipsync-2.0` takes a
+  // clip, `/v1/fabric-1.0` takes a still and a required `resolution`); HeyGen
+  // publishes two URLs with two response shapes and two status enums
+  // (`/v3/lipsyncs` preserves a performance, `/v3/videos` invents one). Four
+  // vendors, four wire shapes, two verbs — which is the point of the verbs.
   "fal.lipsync": () => import("./providers/fal").then((m) => asCli(m.lipsync)),
+  "heygen.lipsync": () => import("./providers/heygen").then((m) => asCli(m.lipsync)),
   "sync.lipsync": () => import("./providers/sync").then((m) => asCli(m.lipsync)),
+  "veed.lipsync": () => import("./providers/veed").then((m) => asCli(m.lipsync)),
   "fal.avatar": () => import("./providers/fal").then((m) => asCli(m.avatar)),
+  "heygen.avatar": () => import("./providers/heygen").then((m) => asCli(m.avatar)),
   "sync.avatar": () => import("./providers/sync").then((m) => asCli(m.avatar)),
+  "veed.avatar": () => import("./providers/veed").then((m) => asCli(m.avatar)),
 
   // Super-resolution. Two providers, and a bare verb at both — because the
   // address names what the endpoint DOES, and every one of these does the same

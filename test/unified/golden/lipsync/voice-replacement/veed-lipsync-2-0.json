@@ -1,0 +1,11 @@
+{
+  "ref": "veed/lipsync-2.0",
+  "params": {
+    "video_url": "https://example.com/interview.mov",
+    "audio_url": "https://example.com/clean-take.wav"
+  },
+  "url": "https://api.veed.io/v1/lipsync-2.0",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

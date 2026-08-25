@@ -43,6 +43,7 @@
  * `gpt-codex` on another). It is useful only as a negative probe.
  */
 import { z } from "zod";
+import { pascalCase, quote } from "./emit";
 import type {
   AvailabilityEntry,
   AvailabilityMap,
@@ -670,20 +671,6 @@ export function buildAvailability(snapshot: unknown, overrides: unknown): Availa
 // ---------------------------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------------------------
-
-/** "amazon-bedrock" → "AmazonBedrock"; "302ai" → "_302ai". */
-function pascalCase(id: string): string {
-  const pascal = id
-    .split(/[^a-zA-Z0-9]+/)
-    .filter(Boolean)
-    .map((part) => (part[0]?.toUpperCase() ?? "") + part.slice(1))
-    .join("");
-  return /^[0-9]/.test(pascal) ? `_${pascal}` : pascal;
-}
-
-function quote(value: string): string {
-  return JSON.stringify(value);
-}
 
 function renderEntry(entry: AvailabilityEntry): string {
   if (typeof entry === "string") return quote(entry);

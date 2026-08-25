@@ -1,3 +1,6 @@
 data/models-dev.json linguist-generated=true
+data/fal/openapi/*.json linguist-generated=true
+data/fal/manifest.json linguist-generated=true
 src/catalog/*.gen.ts linguist-generated=true
 src/catalog/index.ts linguist-generated=true
+src/providers/fal/gen/*.gen.ts linguist-generated=true

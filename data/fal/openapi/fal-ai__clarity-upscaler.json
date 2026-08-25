@@ -1,0 +1,467 @@
+{
+  "metadata": {
+    "category": "image-to-image",
+    "date": "2024-02-04T00:00:00.000Z",
+    "description": "Clarity upscaler for upscaling images with high very fidelity.",
+    "display_name": "Clarity Upscaler",
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/clarity-upscaler",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "upscaling"
+    ],
+    "thumbnail_animated_url": "https://storage.googleapis.com/falserverless/gallery/controlnet-tile-upscaler-animated.webp",
+    "thumbnail_url": "https://storage.googleapis.com/falserverless/gallery/controlnet-tile-upscaler.webp",
+    "updated_at": "2026-05-06T21:22:23.372Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ClarityUpscalerInput": {
+          "properties": {
+            "creativity": {
+              "default": 0.35,
+              "description": "\n            The creativity of the model. The higher the creativity, the more the model will deviate from the prompt.\n            Refers to the denoise strength of the sampling.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Creativity",
+              "type": "number"
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "If set to false, the safety checker will be disabled.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "guidance_scale": {
+              "default": 4,
+              "description": "\n            The CFG (Classifier Free Guidance) scale is a measure of how close you want\n            the model to stick to your prompt when looking for a related image to show you.\n        ",
+              "maximum": 20,
+              "minimum": 0,
+              "title": "Guidance scale (CFG)",
+              "type": "number"
+            },
+            "image_url": {
+              "description": "The URL of the image to upscale.",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/gallery/NOCA_Mick-Thompson.resized.resized.jpg"
+              ],
+              "title": "Image Url",
+              "type": "string"
+            },
+            "negative_prompt": {
+              "default": "(worst quality, low quality, normal quality:2)",
+              "description": "The negative prompt to use. Use it to address details that you don't want in the image.",
+              "examples": [
+                "(worst quality, low quality, normal quality:2)"
+              ],
+              "title": "Negative Prompt",
+              "type": "string"
+            },
+            "num_inference_steps": {
+              "default": 18,
+              "description": "The number of inference steps to perform.",
+              "maximum": 50,
+              "minimum": 4,
+              "title": "Num Inference Steps",
+              "type": "integer"
+            },
+            "prompt": {
+              "default": "masterpiece, best quality, highres",
+              "description": "The prompt to use for generating the image. Be as descriptive as possible for best results.",
+              "examples": [
+                "masterpiece, best quality, highres"
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "resemblance": {
+              "default": 0.6,
+              "description": "\n            The resemblance of the upscaled image to the original image. The higher the resemblance, the more the model will try to keep the original image.\n            Refers to the strength of the ControlNet.\n        ",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Resemblance",
+              "type": "number"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\n            The same seed and the same prompt given to the same version of Stable Diffusion\n            will output the same image every time.\n        ",
+              "title": "Seed"
+            },
+            "upscale_factor": {
+              "default": 2,
+              "description": "The upscale factor",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Upscale Factor",
+              "type": "number"
+            }
+          },
+          "required": [
+            "image_url"
+          ],
+          "title": "Input",
+          "type": "object",
+          "x-fal-order-properties": [
+            "image_url",
+            "prompt",
+            "upscale_factor",
+            "negative_prompt",
+            "creativity",
+            "resemblance",
+            "guidance_scale",
+            "num_inference_steps",
+            "seed",
+            "enable_safety_checker"
+          ]
+        },
+        "ClarityUpscalerOutput": {
+          "properties": {
+            "image": {
+              "$ref": "#/components/schemas/Image",
+              "description": "The URL of the generated image."
+            },
+            "seed": {
+              "description": "The seed used to generate the image.",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "description": "The timings of the different steps in the workflow.",
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "image",
+            "seed",
+            "timings"
+          ],
+          "title": "Output",
+          "type": "object",
+          "x-fal-order-properties": [
+            "image",
+            "seed",
+            "timings"
+          ]
+        },
+        "Image": {
+          "description": "Represents an image file.",
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "height": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The height of the image in pixels.",
+              "examples": [
+                1024
+              ],
+              "title": "Height"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The width of the image in pixels.",
+              "examples": [
+                1024
+              ],
+              "title": "Width"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "Image",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size",
+            "width",
+            "height"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/clarity-upscaler queue.",
+      "title": "Queue OpenAPI for fal-ai/clarity-upscaler",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate Image",
+        "category": "image-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/clarity-upscaler/api",
+        "endpointId": "fal-ai/clarity-upscaler",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/clarity-upscaler",
+        "thumbnailUrl": "https://storage.googleapis.com/falserverless/gallery/controlnet-tile-upscaler.webp"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/clarity-upscaler": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClarityUpscalerInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/clarity-upscaler/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ClarityUpscalerOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/clarity-upscaler/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/clarity-upscaler/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

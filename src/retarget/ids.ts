@@ -151,6 +151,7 @@ export const SDK_TARGET_IDS = [
   "deepinfra",
   "deepseek",
   "elevenlabs",
+  "fal",
   "fireworks-ai",
   "fish-audio",
   "friendli",

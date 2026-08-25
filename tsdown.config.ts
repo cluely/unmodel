@@ -82,6 +82,8 @@ export default defineConfig({
     "providers/elevenlabs/unified": "src/providers/elevenlabs/unified.ts",
     "providers/elevenlabs/types": "src/providers/elevenlabs/types.ts",
     "providers/elevenlabs/values": "src/providers/elevenlabs/values.ts",
+    "providers/fal/index": "src/providers/fal/index.ts",
+    "providers/fal/types": "src/providers/fal/types.ts",
     "providers/fireworks-ai/index": "src/providers/fireworks-ai/index.ts",
     "providers/fireworks-ai/types": "src/providers/fireworks-ai/types.ts",
     "providers/fish-audio/index": "src/providers/fish-audio/index.ts",

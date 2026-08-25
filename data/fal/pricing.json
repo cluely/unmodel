@@ -1,0 +1,143 @@
+{
+  "$comment": [
+    "HAND-TRANSCRIBED from each endpoint's PUBLIC model page (https://fal.ai/models/<id>). fal publishes no",
+    "machine-readable price anywhere — not in the Platform API, not in the OpenAPI document — so every rate here",
+    "is a human reading a sentence and writing down what it said, which is why each row carries the exact `quote`",
+    "it was read from, the `source` URL it was read at, and the date it was `verified`.",
+    "",
+    "A curated endpoint with neither a rate nor an `unpriced` reason FAILS codegen. Silence about price is the one",
+    "thing this file may not say.",
+    "",
+    "Row shape — either a rate:",
+    "  unit      per_image | per_megapixel | per_second | per_video_minute | per_30_seconds |",
+    "            per_1000_characters | per_audio_minute | tiered | conditional | compute_second",
+    "  usd       the scalar rate in that unit (absent for tiered/conditional — see `tiers`)",
+    "  rounding  how fal rounds the billed quantity, verbatim from the page (e.g. megapixels round UP)",
+    "  tierKey   what selects the tier (a wire field name, or prose when it is not one field)",
+    "  tiers     [{ when, usd }] — the rates, each labelled by the condition that selects it",
+    "  source / verified / quote",
+    "…or an explicit non-price:",
+    "  unpriced  the REASON no rate can be stated, in prose",
+    "  source / verified / quote",
+    "",
+    "WHICH UNITS REACH `ModelCost` — deliberately only four, the ones `src/core/catalog-types.ts` can express",
+    "exactly, per src/providers/HAND_CATALOGS.md:",
+    "    per_image           → cost.perImage",
+    "    per_second          → cost.perVideoSecond",
+    "    per_1000_characters → cost.perMillionCharacters (×1000 — exact, not a conversion factor)",
+    "    per_audio_minute    → cost.perAudioMinute",
+    "Every other unit — per_megapixel, per_video_minute, per_30_seconds, tiered, conditional, compute_second —",
+    "emits NO `cost` on the generated row, and the rate survives as a provenance comment above it instead.",
+    "`ModelCost` is not widened in wave 1: a per-megapixel rate written into `perImage` would be a number that",
+    "is wrong for every image that is not exactly one megapixel, and `undefined` beats a wrong number.",
+    "Tiered and conditional rates land in the hand pricing table (kling precedent), never here.",
+    "",
+    "Verified 2026-08-24 against the live pages."
+  ],
+  "endpoints": {
+    "fal-ai/clarity-upscaler": {
+      "unit": "per_megapixel",
+      "usd": 0.03,
+      "rounding": "billed by megapixel of OUTPUT, which at upscale_factor 4 is 16× the input area",
+      "source": "https://fal.ai/models/fal-ai/clarity-upscaler",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.03 per megapixel."
+    },
+    "fal-ai/flux/dev": {
+      "unit": "per_megapixel",
+      "usd": 0.025,
+      "rounding": "up to the nearest megapixel",
+      "source": "https://fal.ai/models/fal-ai/flux/dev",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.025 per megapixel. Images are billed by rounding up to the nearest megapixel."
+    },
+    "fal-ai/flux/schnell": {
+      "unit": "per_megapixel",
+      "usd": 0.003,
+      "rounding": "up to the nearest megapixel",
+      "source": "https://fal.ai/models/fal-ai/flux/schnell",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.003 per megapixel. Images are billed by rounding up to the nearest megapixel."
+    },
+    "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": {
+      "unit": "tiered",
+      "tierKey": "duration",
+      "tiers": [
+        { "when": "duration=\"5\"", "usd": 0.35 },
+        { "when": "each additional second beyond 5", "usd": 0.07 }
+      ],
+      "source": "https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "For 5s video your request will cost $0.35. For every additional second you will be charged $0.07."
+    },
+    "fal-ai/lyria2": {
+      "unit": "per_30_seconds",
+      "usd": 0.1,
+      "source": "https://fal.ai/models/fal-ai/lyria2",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.1 per 30 second."
+    },
+    "fal-ai/minimax/speech-02-hd": {
+      "unit": "per_1000_characters",
+      "usd": 0.1,
+      "source": "https://fal.ai/models/fal-ai/minimax/speech-02-hd",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.1 per 1000 characters."
+    },
+    "fal-ai/nano-banana-2/edit": {
+      "unit": "conditional",
+      "tierKey": "resolution, plus additive surcharges for enable_web_search and thinking_level",
+      "tiers": [
+        { "when": "resolution=\"1K\" (the standard rate)", "usd": 0.08 },
+        { "when": "resolution=\"0.5K\" — 0.75× standard", "usd": 0.06 },
+        { "when": "resolution=\"2K\" — 1.5× standard", "usd": 0.12 },
+        { "when": "resolution=\"4K\" — 2× standard", "usd": 0.16 },
+        { "when": "additive, if web search is used", "usd": 0.015 },
+        { "when": "additive, if high thinking is used", "usd": 0.002 }
+      ],
+      "source": "https://fal.ai/models/fal-ai/nano-banana-2/edit",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.08 per image. 2K and 4K outputs will be charged at 1.5 times and 2 times the standard rate, respectively. 0.5K (512px) resolution outputs will be charged at 0.75 times the standard rate. If web search is used, an additional $0.015 will be charged. If high thinking is used, an additional $0.002 will be charged."
+    },
+    "fal-ai/sync-lipsync/v2": {
+      "unit": "per_video_minute",
+      "usd": 3,
+      "source": "https://fal.ai/models/fal-ai/sync-lipsync/v2",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $3 per minute of video."
+    },
+    "fal-ai/sync-lipsync/v3": {
+      "unit": "per_video_minute",
+      "usd": 8,
+      "source": "https://fal.ai/models/fal-ai/sync-lipsync/v3",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $8 per minute."
+    },
+    "fal-ai/sync-lipsync/v3/image-to-video": {
+      "unit": "per_second",
+      "usd": 0.1333,
+      "source": "https://fal.ai/models/fal-ai/sync-lipsync/v3/image-to-video",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.1333 per output second."
+    },
+    "fal-ai/veo3.1": {
+      "unit": "conditional",
+      "tierKey": "generate_audio × resolution",
+      "tiers": [
+        { "when": "resolution 720p or 1080p, generate_audio=false", "usd": 0.2 },
+        { "when": "resolution 720p or 1080p, generate_audio=true", "usd": 0.4 },
+        { "when": "resolution 4k, generate_audio=false", "usd": 0.4 },
+        { "when": "resolution 4k, generate_audio=true", "usd": 0.6 }
+      ],
+      "source": "https://fal.ai/models/fal-ai/veo3.1",
+      "verified": "2026-08-24",
+      "quote": "For every second of video you generate you will be charged $0.20 without audio or $0.40 with audio for 720p or 1080p. At 4k, you will be charged $0.40 per second without audio, or $0.60 with."
+    },
+    "fal-ai/wizper": {
+      "unpriced": "Billed per COMPUTE second, not per unit of input or output: the price of a transcription depends on how long fal's GPU took, which no request body can predict. The page's own compute-second figure reads $0, which is an unpopulated billing template rather than a free tier — quoting it as a rate would be worse than saying nothing. Estimates for this endpoint return {} with this caveat.",
+      "source": "https://fal.ai/models/fal-ai/wizper",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0 per compute second."
+    }
+  }
+}

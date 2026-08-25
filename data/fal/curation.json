@@ -1,0 +1,104 @@
+{
+  "$comment": [
+    "HAND-MAINTAINED. The fal.ai endpoint roster: which endpoints unmodel serves, and under which verb.",
+    "",
+    "fal's own `category` is LOSSY and is never the source of this map — music hides in `text-to-audio`,",
+    "tts is split across two categories, and edits / upscale / background-removal are all folded into",
+    "`image-to-image`. So the verb is curated here by hand and `scripts/codegen-fal.ts` reads it; the",
+    "snapshot's category is carried into data/fal/manifest.json for the audit command to diff against.",
+    "",
+    "`endpoints` — one entry per curated endpoint id (the id IS the queue URL path):",
+    "  verb                 REQUIRED. One of image | imageEdit | video | lipsync | upscale | avatar | tts | stt | music.",
+    "  textParam            the property that carries the prompt/text, when the endpoint takes one.",
+    "  allowsModelProperty  `model` is a REAL wire field on this endpoint, not a route selector.",
+    "                       Codegen HARD-ERRORS on a top-level `model` property unless this says true (risk R6):",
+    "                       unmodel routes with the `endpoint` pseudo-param, so a genuine `model` field must be",
+    "                       a deliberate, reviewed exception rather than a silently swallowed collision.",
+    "  note                 why this id is here, or what is unusual about it.",
+    "  retiredOn            ISO date fal retired it. The row still ships as status:\"deprecated\" (a warning, not a",
+    "                       compile break) until 90 days old; after that codegen hard-fails so the row cannot rot.",
+    "",
+    "Every id in here must resolve against the Platform API (GET https://api.fal.ai/v1/models?endpoint_id=…);",
+    "`bun run codegen:fal:refresh` fails loudly on one that does not. Verified live 2026-08-24.",
+    "",
+    "Wave 1a seeds 12 ids — the smallest set that spans all nine verbs and every lowering rule the generator",
+    "implements. The full ~100-endpoint roster lands in wave 1e; this file is the only thing that has to change."
+  ],
+  "endpoints": {
+    "fal-ai/clarity-upscaler": {
+      "verb": "upscale",
+      "textParam": "prompt",
+      "note": "Upscaler that steers on a prompt — the `factor?` + `prompt?` shape UpscaleParams is built around."
+    },
+    "fal-ai/flux/dev": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "The anyOf[$ref ImageSize, string enum] `image_size` union — the imageSizeUnion shape class."
+    },
+    "fal-ai/flux/schnell": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Same shape as flux/dev with a much tighter num_inference_steps ceiling (12 vs 50) — the per-endpoint range narrowing the IR exists for."
+    },
+    "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "`duration` is a STRING enum here (\"5\" | \"10\") against veo3.1's (\"4s\" | \"6s\" | \"8s\") — same word, same type, different vocabulary. Also the only ui.field:\"image\" media hint in the wave-1a set (tail_image_url)."
+    },
+    "fal-ai/lyria2": {
+      "verb": "music",
+      "textParam": "prompt",
+      "note": "Google's music model. fal files it under text-to-audio, which is exactly why the verb is curated here."
+    },
+    "fal-ai/minimax/speech-02-hd": {
+      "verb": "tts",
+      "textParam": "text",
+      "note": "Nested $ref inputs (VoiceSetting / AudioSetting / PronunciationDict) — the component-lowering case."
+    },
+    "fal-ai/nano-banana-2/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "aspectRatioEnum + resolutionEnum, and a multi-image `image_urls` array."
+    },
+    "fal-ai/sync-lipsync/v2": {
+      "verb": "lipsync",
+      "allowsModelProperty": true,
+      "note": "`model` is a REAL wire field (\"lipsync-2\" | \"lipsync-2-pro\") and stays on the wire; the route is still selected by the `endpoint` pseudo-param. Allow-listed under R6 — reviewed 2026-08-24 against the live schema. Its `sync_mode` is a five-arm string enum where flux's is a boolean: the divergence that forbids hoisting a shared \"common fal params\" fragment."
+    },
+    "fal-ai/sync-lipsync/v3": {
+      "verb": "lipsync",
+      "note": "Clip-in lipsync. Carries a nested `options` object two components deep (Sync3GenerationOptions → Sync3ActiveSpeakerDetection)."
+    },
+    "fal-ai/sync-lipsync/v3/image-to-video": {
+      "verb": "avatar",
+      "note": "The still-driven twin of sync-lipsync/v3 — image in, video out. The split that makes lipsync and avatar separate packs rather than one `sources` arm."
+    },
+    "fal-ai/veo3.1": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "fal-ai/veo3 was already GONE when this plan was written — veo3.1 is the live id. Its price is conditional on `generate_audio`, which is why conditional rates never reach ModelCost."
+    },
+    "fal-ai/wizper": {
+      "verb": "stt",
+      "note": "fal-ai/whisper is gone; wizper is the live Whisper-v3 endpoint. Billed per compute-second, so it carries an `unpriced` reason rather than a rate. Two `const` properties (chunk_level, version) — the single-value-enum lowering."
+    }
+  },
+  "excluded": {
+    "$comment": "Whole fal categories and specific ids unmodel deliberately does not serve. A reason here is what keeps a future roster widening from quietly re-adding them.",
+    "categories": {
+      "llm": "openrouter passthrough — unmodel ships the real openrouter provider, with its own catalog and availability data.",
+      "training": "57 endpoints that start a fine-tune, not a validated inference request.",
+      "vision": "34 endpoints doing image-in/text-out — `unmodel/chat` already owns that shape with real multimodal message types.",
+      "3d": "53 endpoints, deferred to wave 3: a 3d vocabulary on a single witness is a guess. It joins when a first-party 3D provider gives a second one.",
+      "ffmpeg-api": "Plumbing (concat, trim, mux). No model, nothing to validate beyond a file list.",
+      "workflow-utils": "Plumbing.",
+      "subtitles": "Plumbing — a rendering step over an stt result."
+    },
+    "endpoints": {
+      "fal-ai/speech-to-text/stream": "Streaming variants are a socket surface, not a queue submit — out of scope for a request validator.",
+      "fal-ai/smart-turn": "Turn detection, not transcription — no unmodel verb fits it.",
+      "fal-ai/sync-lipsync/v1.9.0-beta": "Beta id, superseded by v2/v3.",
+      "fal-ai/kling-video/lipsync/text-to-video": "Text + voice arm — that is TTS composed with lipsync, and composing it here would hide which half failed."
+    }
+  }
+}

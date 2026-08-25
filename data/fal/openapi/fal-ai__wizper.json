@@ -1,0 +1,597 @@
+{
+  "metadata": {
+    "category": "speech-to-text",
+    "date": "2024-04-08T00:00:00.000Z",
+    "description": "[Experimental] Whisper v3 Large -- but optimized by our inference wizards. Same WER, double the performance!",
+    "display_name": "Wizper (Whisper v3 -- fal.ai edition)",
+    "github_url": "https://github.com/openai/whisper/blob/main/LICENSE",
+    "highlighted": false,
+    "is_favorited": null,
+    "model_url": "https://fal.run/fal-ai/wizper",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "transcription",
+      "speech"
+    ],
+    "thumbnail_animated_url": "https://storage.googleapis.com/falserverless/gallery/wizper-animated.webp",
+    "thumbnail_url": "https://storage.googleapis.com/falserverless/gallery/wizper.webp",
+    "updated_at": "2026-04-21T17:56:32.256Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "WhisperChunk": {
+          "properties": {
+            "text": {
+              "description": "Transcription of the chunk",
+              "title": "Text",
+              "type": "string"
+            },
+            "timestamp": {
+              "description": "Start and end timestamp of the chunk",
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              ],
+              "title": "Timestamp",
+              "type": "array"
+            }
+          },
+          "required": [
+            "timestamp",
+            "text"
+          ],
+          "title": "WhisperChunk",
+          "type": "object",
+          "x-fal-order-properties": [
+            "timestamp",
+            "text"
+          ]
+        },
+        "WizperInput": {
+          "properties": {
+            "audio_url": {
+              "description": "URL of the audio file to transcribe. Supported formats: mp3, mp4, mpeg, mpga, m4a, wav or webm.",
+              "examples": [
+                "https://ihlhivqvotguuqycfcvj.supabase.co/storage/v1/object/public/public-text-to-speech/scratch-testing/earth-history-19mins.mp3"
+              ],
+              "title": "Audio Url",
+              "type": "string"
+            },
+            "chunk_level": {
+              "const": "segment",
+              "default": "segment",
+              "description": "Level of the chunks to return.",
+              "title": "Chunk Level",
+              "type": "string"
+            },
+            "language": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "af",
+                    "am",
+                    "ar",
+                    "as",
+                    "az",
+                    "ba",
+                    "be",
+                    "bg",
+                    "bn",
+                    "bo",
+                    "br",
+                    "bs",
+                    "ca",
+                    "cs",
+                    "cy",
+                    "da",
+                    "de",
+                    "el",
+                    "en",
+                    "es",
+                    "et",
+                    "eu",
+                    "fa",
+                    "fi",
+                    "fo",
+                    "fr",
+                    "gl",
+                    "gu",
+                    "ha",
+                    "haw",
+                    "he",
+                    "hi",
+                    "hr",
+                    "ht",
+                    "hu",
+                    "hy",
+                    "id",
+                    "is",
+                    "it",
+                    "ja",
+                    "jw",
+                    "ka",
+                    "kk",
+                    "km",
+                    "kn",
+                    "ko",
+                    "la",
+                    "lb",
+                    "ln",
+                    "lo",
+                    "lt",
+                    "lv",
+                    "mg",
+                    "mi",
+                    "mk",
+                    "ml",
+                    "mn",
+                    "mr",
+                    "ms",
+                    "mt",
+                    "my",
+                    "ne",
+                    "nl",
+                    "nn",
+                    "no",
+                    "oc",
+                    "pa",
+                    "pl",
+                    "ps",
+                    "pt",
+                    "ro",
+                    "ru",
+                    "sa",
+                    "sd",
+                    "si",
+                    "sk",
+                    "sl",
+                    "sn",
+                    "so",
+                    "sq",
+                    "sr",
+                    "su",
+                    "sv",
+                    "sw",
+                    "ta",
+                    "te",
+                    "tg",
+                    "th",
+                    "tk",
+                    "tl",
+                    "tr",
+                    "tt",
+                    "uk",
+                    "ur",
+                    "uz",
+                    "vi",
+                    "yi",
+                    "yo",
+                    "zh"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "en",
+              "description": "\n        Language of the audio file.\n        If translate is selected as the task, the audio will be translated to\n        English, regardless of the language selected. If `None` is passed,\n        the language will be automatically detected. This will also increase\n        the inference time.\n        ",
+              "examples": [
+                null
+              ],
+              "title": "Language"
+            },
+            "max_segment_len": {
+              "default": 29,
+              "description": "Maximum speech segment duration in seconds before splitting.",
+              "maximum": 29,
+              "minimum": 10,
+              "title": "Max Segment Len",
+              "type": "integer"
+            },
+            "merge_chunks": {
+              "default": true,
+              "description": "Whether to merge consecutive chunks. When enabled, chunks are merged if their combined duration does not exceed max_segment_len.",
+              "title": "Merge Chunks",
+              "type": "boolean"
+            },
+            "task": {
+              "default": "transcribe",
+              "description": "Task to perform on the audio file. Either transcribe or translate.",
+              "enum": [
+                "transcribe",
+                "translate"
+              ],
+              "title": "Task",
+              "type": "string"
+            },
+            "version": {
+              "const": "3",
+              "default": "3",
+              "description": "Version of the model to use. All of the models are the Whisper large variant.",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "audio_url"
+          ],
+          "title": "WhisperInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio_url",
+            "task",
+            "language",
+            "chunk_level",
+            "max_segment_len",
+            "merge_chunks",
+            "version"
+          ]
+        },
+        "WizperOutput": {
+          "properties": {
+            "chunks": {
+              "description": "Timestamp chunks of the audio file",
+              "items": {
+                "$ref": "#/components/schemas/WhisperChunk"
+              },
+              "title": "Chunks",
+              "type": "array"
+            },
+            "languages": {
+              "description": "List of languages that the audio file is inferred to be. Defaults to null.",
+              "items": {
+                "enum": [
+                  "af",
+                  "am",
+                  "ar",
+                  "as",
+                  "az",
+                  "ba",
+                  "be",
+                  "bg",
+                  "bn",
+                  "bo",
+                  "br",
+                  "bs",
+                  "ca",
+                  "cs",
+                  "cy",
+                  "da",
+                  "de",
+                  "el",
+                  "en",
+                  "es",
+                  "et",
+                  "eu",
+                  "fa",
+                  "fi",
+                  "fo",
+                  "fr",
+                  "gl",
+                  "gu",
+                  "ha",
+                  "haw",
+                  "he",
+                  "hi",
+                  "hr",
+                  "ht",
+                  "hu",
+                  "hy",
+                  "id",
+                  "is",
+                  "it",
+                  "ja",
+                  "jw",
+                  "ka",
+                  "kk",
+                  "km",
+                  "kn",
+                  "ko",
+                  "la",
+                  "lb",
+                  "ln",
+                  "lo",
+                  "lt",
+                  "lv",
+                  "mg",
+                  "mi",
+                  "mk",
+                  "ml",
+                  "mn",
+                  "mr",
+                  "ms",
+                  "mt",
+                  "my",
+                  "ne",
+                  "nl",
+                  "nn",
+                  "no",
+                  "oc",
+                  "pa",
+                  "pl",
+                  "ps",
+                  "pt",
+                  "ro",
+                  "ru",
+                  "sa",
+                  "sd",
+                  "si",
+                  "sk",
+                  "sl",
+                  "sn",
+                  "so",
+                  "sq",
+                  "sr",
+                  "su",
+                  "sv",
+                  "sw",
+                  "ta",
+                  "te",
+                  "tg",
+                  "th",
+                  "tk",
+                  "tl",
+                  "tr",
+                  "tt",
+                  "uk",
+                  "ur",
+                  "uz",
+                  "vi",
+                  "yi",
+                  "yo",
+                  "zh"
+                ],
+                "type": "string"
+              },
+              "title": "Languages",
+              "type": "array"
+            },
+            "text": {
+              "description": "Transcription of the audio file",
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          "required": [
+            "text",
+            "chunks",
+            "languages"
+          ],
+          "title": "WhisperOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "text",
+            "chunks",
+            "languages"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/wizper queue.",
+      "title": "Queue OpenAPI for fal-ai/wizper",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Transcribe an audio file using the Whisper model.",
+        "category": "speech-to-text",
+        "documentationUrl": "https://fal.ai/models/fal-ai/wizper/api",
+        "endpointId": "fal-ai/wizper",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/wizper",
+        "thumbnailUrl": "https://storage.googleapis.com/falserverless/gallery/wizper.webp"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/wizper": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WizperInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/wizper/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/WizperOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/wizper/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/wizper/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

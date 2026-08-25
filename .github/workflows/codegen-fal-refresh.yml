@@ -1,0 +1,98 @@
+name: Codegen refresh (fal)
+
+# Weekly, not daily like the models.dev refresh, and deliberately separate from
+# it: this job hits fal's Platform API for one document per curated endpoint,
+# and its diffs need a human who can read an OpenAPI change.
+#
+# It is also the ONLY place fal drift is caught. `bun run codegen:fal` in ci.yml
+# is offline — it regenerates from the committed snapshots — because a provider
+# outage must never be able to fail an unrelated pull request. That trade is
+# what this schedule pays for: `fal-ai/veo3` and `fal-ai/whisper` both vanished
+# from fal during the week this integration was designed, so an endpoint going
+# away is a routine event, not a hypothetical.
+
+on:
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun install --frozen-lockfile
+
+      # Fails loudly if a curated endpoint 404s or has flipped to a non-active
+      # status. Runs BEFORE the refresh so the log says what changed even when
+      # the refresh itself then throws.
+      - name: Snapshot drift check
+        continue-on-error: true
+        run: bun run codegen:fal:check
+        env:
+          # Optional: the Platform API is keyless, and the output is
+          # byte-identical either way. A key only buys rate limit.
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+
+      - name: Refresh fal snapshots and regenerate
+        run: bun run codegen:fal:refresh
+        env:
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+
+      # Roster drift: endpoints fal added in categories we already serve, and
+      # curated ids that have gone. Report only — widening the roster is a
+      # curation decision, never an automated one.
+      - name: Roster audit (report only)
+        continue-on-error: true
+        run: bun run codegen:fal:audit
+        env:
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+
+      - name: Create changeset if the generated surface changed
+        run: |
+          if [ -n "$(git status --porcelain src/providers/fal)" ]; then
+            cat > .changeset/fal-schema-refresh.md <<'EOF'
+          ---
+          "unmodel": patch
+          ---
+
+          chore: refresh fal.ai endpoint schemas
+          EOF
+          fi
+
+      # NOTE: PRs opened with the default GITHUB_TOKEN do not trigger other
+      # workflows (GitHub Actions limitation), so the CI workflow will NOT run
+      # on this PR and it cannot merge if branch protection requires checks.
+      # Fix: create a PAT or GitHub App token with contents+pull-requests
+      # write access, store it as a repo secret, and pass it via the action's
+      # `token:` input below.
+      - name: Open or update pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: codegen/fal-refresh
+          commit-message: "chore: refresh fal.ai endpoint schemas"
+          title: "chore: refresh fal.ai endpoint schemas"
+          body: |
+            Automated refresh of the committed fal.ai OpenAPI snapshots
+            (`data/fal/openapi/`, `data/fal/manifest.json`) and everything
+            `scripts/codegen-fal.ts` generates from them.
+
+            **Review the schema diff, not just the generated diff.** A changed
+            enum, a tightened bound or a renamed parameter is fal changing its
+            wire; the generated files are only how that reaches callers.
+
+            Pricing is NOT refreshed here — `data/fal/pricing.json` is
+            hand-transcribed from public model pages, and fal publishes no
+            machine-readable rate. Check the `source` URLs when a model's
+            capabilities change.
+
+            This PR was created by the scheduled `codegen-fal-refresh`
+            workflow. The branch is rolling: subsequent runs update this same
+            PR until it is merged or closed.

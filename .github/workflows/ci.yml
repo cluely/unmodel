@@ -17,6 +17,12 @@ jobs:
       - name: Codegen drift check
         run: |
           bun run codegen
+          # Regenerates src/providers/fal/gen/** from the committed
+          # data/fal/ snapshots. Offline by design: the fal generator only
+          # touches the network under --refresh/--check/--audit, so a fal
+          # outage can never fail an unrelated pull request. Snapshot drift is
+          # caught weekly by codegen-fal-refresh.yml instead.
+          bun run codegen:fal
           # `git diff --exit-code` alone misses newly created untracked files
           # (e.g. a snapshot update that adds a new provider's .gen.ts).
           git add -A

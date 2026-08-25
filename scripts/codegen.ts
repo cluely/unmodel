@@ -12,6 +12,21 @@
  */
 import { z } from "zod";
 import { buildAvailability, overridesSchema, renderAvailabilityFile } from "./availability";
+import {
+  camelCase,
+  num,
+  pascalCase,
+  quote,
+  renderLimit,
+  renderStringArray,
+  sortKeysDeep,
+} from "./emit";
+
+// `sortKeysDeep` moved to ./emit when scripts/codegen-fal.ts needed the same
+// canonicalization for its OpenAPI snapshots. Re-exported here because it is
+// this script's `--refresh` contract as much as that one's, and callers
+// (scripts/codegen.test.ts) already name it at this address.
+export { sortKeysDeep } from "./emit";
 
 const SNAPSHOT_URL = "https://models.dev/api.json";
 const SNAPSHOT_PATH = new URL("../data/models-dev.json", import.meta.url).pathname;
@@ -114,34 +129,6 @@ const CHAT_FACTORY_PROVIDERS: ReadonlySet<string> = new Set([
   "google-vertex",
 ]);
 
-function quote(value: string): string {
-  return JSON.stringify(value);
-}
-
-function num(value: number): string {
-  return JSON.stringify(value);
-}
-
-/** "amazon-bedrock" → "AmazonBedrock"; "openai" → "Openai"; "302ai" → "_302ai". */
-function pascalCase(id: string): string {
-  const pascal = id
-    .split(/[^a-zA-Z0-9]+/)
-    .filter(Boolean)
-    .map((part) => (part[0]?.toUpperCase() ?? "") + part.slice(1))
-    .join("");
-  return /^[0-9]/.test(pascal) ? `_${pascal}` : pascal;
-}
-
-/** "amazon-bedrock" → "amazonBedrock". */
-function camelCase(id: string): string {
-  const pascal = pascalCase(id);
-  return (pascal[0]?.toLowerCase() ?? "") + pascal.slice(1);
-}
-
-function renderStringArray(values: readonly string[]): string {
-  return `[${values.map(quote).join(", ")}]`;
-}
-
 function renderCost(cost: NonNullable<RawModel["cost"]>): string | undefined {
   const fields: string[] = [];
   const push = (key: string, value: number | undefined) => {
@@ -155,14 +142,6 @@ function renderCost(cost: NonNullable<RawModel["cost"]>): string | undefined {
   push("inputAudio", cost.input_audio);
   push("outputAudio", cost.output_audio);
   if (fields.length === 0) return undefined;
-  return `{ ${fields.join(", ")} }`;
-}
-
-/** `{ context: 200000, output: 64000 }` — one spelling, shared by both emitters. */
-function renderLimit(limit: RawModel["limit"]): string {
-  const fields = [`context: ${num(limit.context)}`];
-  if (limit.output !== undefined) fields.push(`output: ${num(limit.output)}`);
-  if (limit.input !== undefined) fields.push(`input: ${num(limit.input)}`);
   return `{ ${fields.join(", ")} }`;
 }
 
@@ -703,19 +682,6 @@ export function generate(snapshot: unknown, overrides?: unknown): Map<string, st
     files.set("chat-profiles.gen.ts", renderChatProfilesFile(scope));
   }
   return files;
-}
-
-/** Recursively sorts object keys so the committed snapshot diffs cleanly. */
-export function sortKeysDeep(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortKeysDeep);
-  if (typeof value === "object" && value !== null) {
-    const sorted: Record<string, unknown> = {};
-    for (const key of Object.keys(value).sort()) {
-      sorted[key] = sortKeysDeep((value as Record<string, unknown>)[key]);
-    }
-    return sorted;
-  }
-  return value;
 }
 
 async function main(): Promise<void> {

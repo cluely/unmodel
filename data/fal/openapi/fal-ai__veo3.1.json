@@ -1,0 +1,428 @@
+{
+  "metadata": {
+    "category": "text-to-video",
+    "date": "2025-10-08T17:01:21.561Z",
+    "description": "Veo 3.1 by Google, the most advanced AI video generation model in the world. With sound on!",
+    "display_name": "Veo 3.1",
+    "group": {
+      "key": "veo3.1",
+      "label": "Text to Video"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/veo3.1",
+    "pinned": false,
+    "status": "active",
+    "tags": [],
+    "thumbnail_url": "https://v3b.fal.media/files/b/tiger/TGTZBJyLk9HdwjB6SB90e.png",
+    "updated_at": "2026-04-28T16:29:09.509Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "Veo31Input": {
+          "properties": {
+            "aspect_ratio": {
+              "default": "16:9",
+              "description": "Aspect ratio of the generated video",
+              "enum": [
+                "16:9",
+                "9:16"
+              ],
+              "title": "Aspect Ratio",
+              "type": "string"
+            },
+            "auto_fix": {
+              "default": true,
+              "description": "Whether to automatically attempt to fix prompts that fail content policy or other validation checks by rewriting them.",
+              "title": "Auto Fix",
+              "type": "boolean"
+            },
+            "duration": {
+              "default": "8s",
+              "description": "The duration of the generated video.",
+              "enum": [
+                "4s",
+                "6s",
+                "8s"
+              ],
+              "title": "Duration",
+              "type": "string"
+            },
+            "generate_audio": {
+              "default": true,
+              "description": "Whether to generate audio for the video.",
+              "title": "Generate Audio",
+              "type": "boolean"
+            },
+            "negative_prompt": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A negative prompt to guide the video generation.",
+              "title": "Negative Prompt"
+            },
+            "prompt": {
+              "description": "The text prompt describing the video you want to generate",
+              "examples": [
+                "Two person street interview in New York City.\nSample Dialogue:\nHost: \"Did you hear the news?\"\nPerson: \"Yes! Veo 3.1 is now available on fal. If you want to see it, go check their website.\""
+              ],
+              "maxLength": 20000,
+              "title": "Prompt",
+              "type": "string"
+            },
+            "resolution": {
+              "default": "720p",
+              "description": "The resolution of the generated video.",
+              "enum": [
+                "720p",
+                "1080p",
+                "4k"
+              ],
+              "title": "Resolution",
+              "type": "string"
+            },
+            "safety_tolerance": {
+              "default": "4",
+              "description": "The safety tolerance level for content moderation. 1 is the most strict (blocks most content), 6 is the least strict.",
+              "enum": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6"
+              ],
+              "title": "Safety Tolerance",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The seed for the random number generator.",
+              "title": "Seed"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "Veo31TextToVideoInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "aspect_ratio",
+            "duration",
+            "negative_prompt",
+            "resolution",
+            "generate_audio",
+            "seed",
+            "auto_fix",
+            "safety_tolerance"
+          ]
+        },
+        "Veo31Output": {
+          "properties": {
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated video.",
+              "examples": [
+                {
+                  "url": "https://v3b.fal.media/files/b/kangaroo/oUCiZjQwEy6bIQdPUSLDF_output.mp4"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video"
+          ],
+          "title": "Veo31TextToVideoOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/veo3.1 queue.",
+      "title": "Queue OpenAPI for fal-ai/veo3.1",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate videos using Google's Veo 3.1 model.\n\nFor best results, prompts should be descriptive and clear. Include:\n- Subject: What you want in the video (object, person, animal, scenery)\n- Context: The background/setting\n- Action: What the subject is doing\n- Style: Film style keywords (horror, noir, cartoon etc.)\n- Camera motion (optional): aerial view, tracking shot etc.\n- Composition (optional): wide shot, close-up etc.\n- Ambiance (optional): Color and lighting details\n\nMore details are available in our [prompting guide](https://blog.fal.ai/mastering-video-generation-with-veo-2-a-comprehensive-guide/).\n\nThe model supports:\n- 720p or 1080p resolution videos\n- 5-8 second duration at 24 FPS\n- Both 16:9 (landscape) and 9:16 (portrait) aspect ratios\n\nSafety filters prevent generation of inappropriate content.",
+        "category": "text-to-video",
+        "documentationUrl": "https://fal.ai/models/fal-ai/veo3.1/api",
+        "endpointId": "fal-ai/veo3.1",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/veo3.1",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/tiger/TGTZBJyLk9HdwjB6SB90e.png"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/veo3.1": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Veo31Input"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/veo3.1/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Veo31Output"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/veo3.1/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/veo3.1/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

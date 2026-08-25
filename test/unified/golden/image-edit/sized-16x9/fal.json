@@ -1,0 +1,17 @@
+{
+  "ref": "fal/fal-ai/nano-banana-2/edit",
+  "image": {
+    "url": "https://example.com/street.png"
+  },
+  "params": {
+    "prompt": "make it winter",
+    "image_urls": [
+      "https://example.com/street.png"
+    ],
+    "aspect_ratio": "16:9"
+  },
+  "url": "https://queue.fal.run/fal-ai/nano-banana-2/edit",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

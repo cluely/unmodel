@@ -28,7 +28,10 @@ import type {
  */
 export interface FalAiKlingVideoV25TurboProImageToVideoInput {
   prompt: string;
-  /** URL of the image to be used for the video. */
+  /**
+   * URL of the image to be used for the video. Carries a image reference — an https URL or a
+   * `data:` URI.
+   */
   image_url: string;
   /** The duration of the generated video in seconds. Default: `"5"`. */
   duration?: "5" | "10";
@@ -40,8 +43,8 @@ export interface FalAiKlingVideoV25TurboProImageToVideoInput {
    */
   cfg_scale?: number;
   /**
-   * URL of the image to be used for the end of the video. Carries a image reference (fal's
-   * own `ui.field` hint).
+   * URL of the image to be used for the end of the video. Carries a image reference — an
+   * https URL or a `data:` URI.
    */
   tail_image_url?: string | null;
 }

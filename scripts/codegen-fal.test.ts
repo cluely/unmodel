@@ -215,7 +215,7 @@ describe("codegen-fal: the fixture", () => {
     for (const [name, content] of a) expect(b.get(name)).toBe(content);
   });
 
-  test("emits exactly five files per populated verb, plus the two shared ones", () => {
+  test("emits exactly five files per populated verb, plus the three shared ones", () => {
     expect([...fixture().keys()]).toEqual([
       "endpoints.gen.ts",
       "image-narrow.gen.ts",
@@ -224,6 +224,10 @@ describe("codegen-fal: the fixture", () => {
       "image-wire.gen.ts",
       "models-image.gen.ts",
       "models-tts.gen.ts",
+      // The rate table `src/providers/fal/pricing.ts` computes from. Shared
+      // rather than per-verb because a price is a fact about an ENDPOINT, and
+      // splitting it by verb would put the same lookup in nine files.
+      "pricing.gen.ts",
       "shared.gen.ts",
       "tts-narrow.gen.ts",
       "tts-params.gen.ts",
@@ -296,11 +300,137 @@ describe("codegen-fal: the fixture", () => {
     expect(fixture().get("image-narrow.gen.ts") as string).toContain("width: { xmin: 0, max: 4096, default: 512 }");
   });
 
-  test("endpoints with an identical surface share one row constant", () => {
+  /**
+   * Row sharing keys on the WHOLE surface, not on the parameter names.
+   *
+   * `acme/alpha` and `acme/beta` declare the same four parameters in the same
+   * order, and they still get two rows — because `num_images` tops out at 4 on
+   * one and 8 on the other. That is the assertion worth having: a row is what
+   * the unified surface narrows a caller against, so two endpoints sharing one
+   * would publish a limit that is wrong for one of them, and `num_images: 8`
+   * would autocomplete on a route that refuses it.
+   *
+   * The sharing itself is proved against the real snapshots below, where
+   * genuinely identical pairs exist (`fal-ai/flux-2-max` and
+   * `fal-ai/flux-2-pro`, the two Krea variants, two of the kontext routes).
+   */
+  test("a differing bound splits the row, even with an identical parameter list", () => {
     const params = fixture().get("image-params.gen.ts") as string;
-    const shared = /Shared by 2 endpoints with an identical surface: acme\/alpha, acme\/beta/.test(params);
-    expect(shared, params).toBe(true);
-    expect([...params.matchAll(/^const ROW_/gm)]).toHaveLength(1);
+    expect(params).toContain('keys: ["prompt", "image_size", "num_images", "sync_mode"]');
+    expect(params).toContain("bounds: { num_images: { min: 1, max: 4 } }");
+    expect(params).toContain("bounds: { num_images: { min: 1, max: 8 } }");
+    expect([...params.matchAll(/^const ROW_/gm)], params).toHaveLength(2);
+    expect(params).not.toContain("Shared by");
+  });
+
+  /**
+   * The media rule, in both directions.
+   *
+   * fal documents a `ui.field` hint for file inputs and emits one almost
+   * nowhere — once across the whole committed snapshot set — so a detector
+   * built on it alone would classify one parameter in fifty. The parameter's
+   * NAME is therefore the primary source, and the rule is deliberately narrow:
+   * a name must BOTH end in `_url`/`_urls` AND name a medium.
+   *
+   * Both halves matter, and this test is here because both halves have an
+   * obvious wrong version. Drop the suffix requirement and `image_size` (a
+   * union) and `num_images` (an integer) become media parameters, and
+   * `checkMediaRefs` starts telling callers their image count is not a valid
+   * URL. Drop the medium requirement and `webhook_url` becomes one.
+   */
+  test("media is read off the parameter name, and only when the name is sure", () => {
+    const classified = withInput((input) => {
+      const props = (inputOf(input.snapshots, "acme/alpha") as { properties: Json }).properties as Json;
+      props["image_url"] = { type: "string" };
+      props["mask_url"] = { type: "string" };
+      props["reference_video_urls"] = { type: "array", items: { type: "string" } };
+      // An address, not media — the reason the rule needs a medium WORD and
+      // not merely a `_url` suffix. (`num_images`, already on the fixture, is
+      // the other direction: a medium word with no suffix, and an integer.)
+      props["webhook_url"] = { type: "string" };
+      (inputOf(input.snapshots, "acme/alpha") as { "x-fal-order-properties": string[] })[
+        "x-fal-order-properties"
+      ].push("image_url", "mask_url", "reference_video_urls", "webhook_url");
+    })();
+    const narrow = classified.get("image-narrow.gen.ts") as string;
+    const alpha = narrow.slice(narrow.indexOf('"acme/alpha"'), narrow.indexOf('"acme/beta"'));
+
+    expect(alpha).toContain('image_url: { t: "string", media: "image" }');
+    // A mask is an image, which is what makes the rule a WORD list rather than
+    // a "does it say image" check.
+    expect(alpha).toContain('mask_url: { t: "string", media: "image" }');
+    // …and the medium word may sit anywhere in the stem, including on an array.
+    expect(alpha).toMatch(/reference_video_urls: \{ t: "array".*media: "video"/);
+
+    // The two that must NOT be classified.
+    expect(alpha).toContain('webhook_url: { t: "string" }');
+    expect(alpha).not.toMatch(/webhook_url: \{[^}]*media/);
+    expect(alpha).not.toMatch(/num_images: \{[^}]*media/);
+  });
+
+  test("a `media` overlay states a kind the name rule cannot see, or unsays one", () => {
+    const base = (input: { snapshots: Json; overlays: Json }): void => {
+      const props = (inputOf(input.snapshots, "acme/alpha") as { properties: Json }).properties as Json;
+      props["source"] = { type: "string" };
+      props["image_url"] = { type: "string" };
+      (inputOf(input.snapshots, "acme/alpha") as { "x-fal-order-properties": string[] })[
+        "x-fal-order-properties"
+      ].push("source", "image_url");
+    };
+
+    // Stated: a parameter the rule cannot classify, because `source` neither
+    // ends in `_url` nor names a medium.
+    const stated = withInput((input) => {
+      base(input);
+      (input.overlays["endpoints"] as Json)["acme/alpha"] = [
+        {
+          kind: "media",
+          param: "source",
+          value: "video",
+          reason: "fal takes the clip here and the name says nothing about it",
+          source: "https://example.com/docs",
+          verified: "2026-08-24",
+        },
+      ];
+    })();
+    expect(stated.get("image-narrow.gen.ts") as string).toContain(
+      'source: { t: "string", media: "video" }',
+    );
+
+    // Unsaid: the same overlay with no `value` suppresses a classification the
+    // rule made — the direction that matters when a heuristic is WRONG rather
+    // than merely silent.
+    const suppressed = withInput((input) => {
+      base(input);
+      (input.overlays["endpoints"] as Json)["acme/alpha"] = [
+        {
+          kind: "media",
+          param: "image_url",
+          reason: "this one is an opaque asset id at this endpoint, not a fetchable reference",
+          source: "https://example.com/docs",
+          verified: "2026-08-24",
+        },
+      ];
+    })();
+    const narrow = suppressed.get("image-narrow.gen.ts") as string;
+    const alpha = narrow.slice(narrow.indexOf('"acme/alpha"'), narrow.indexOf('"acme/beta"'));
+    expect(alpha).toContain('image_url: { t: "string" }');
+    expect(alpha).not.toMatch(/image_url: \{[^}]*media/);
+  });
+
+  test("a `media` overlay naming no parameter fails", () => {
+    expect(
+      withInput((input) => {
+        (input.overlays["endpoints"] as Json)["acme/alpha"] = [
+          {
+            kind: "media",
+            reason: "no param",
+            source: "https://example.com/docs",
+            verified: "2026-08-24",
+          },
+        ];
+      }),
+    ).toThrow(/media` overlay with no `param`/);
   });
 
   test("required probes are `required` MINUS everything fal defaults", () => {
@@ -406,13 +536,28 @@ describe("codegen-fal: the fixture", () => {
     ).toThrow(/x-fal-order-properties.*missing/s);
   });
 
-  test("the submit URL is derived and asserted, never taken from metadata", () => {
+  /**
+   * The submit URL is derived from the document and asserted, never taken from
+   * `metadata.model_url` — that field is the SYNC host, and trusting it would
+   * turn every request into a blocking one.
+   *
+   * What is asserted is the HOST, not the path. The path in a fal OpenAPI
+   * document is not always the endpoint id: a vendor-namespaced id is written
+   * against an internal `fal-ai/…` alias (`ideogram/v4` → `/fal-ai/ideogram-v4`,
+   * `xai/grok-imagine-image` → `/fal-ai/xai`). Both spellings are live routes —
+   * probed unauthenticated on 2026-08-24, each answering 401 where a fabricated
+   * id answers 404 — and unmodel submits to the published id, because that is
+   * the one fal documents and the one this catalog is keyed on. So the
+   * generator locates the submit path structurally and holds the line where it
+   * matters: the queue host.
+   */
+  test("the submit host is derived and asserted, never taken from metadata", () => {
     const run = withInput((input) => {
       (input.snapshots["acme/alpha"] as { openapi: { servers: Array<{ url: string }> } }).openapi.servers = [
         { url: "https://fal.run" },
       ];
     });
-    expect(run).toThrow(/expected https:\/\/queue\.fal\.run\/acme\/alpha/);
+    expect(run).toThrow(/document server is "https:\/\/fal\.run", expected "https:\/\/queue\.fal\.run"/);
   });
 
   test("a curated endpoint with no pricing row fails", () => {
@@ -594,14 +739,51 @@ describe("codegen-fal: the committed fal snapshots", () => {
     }
   });
 
-  /** flux/dev — the `anyOf[$ref ImageSize, preset enum]` union. */
+  /**
+   * flux/dev — the `anyOf[$ref ImageSize, preset enum]` union.
+   *
+   * The last two assertions are the division of labour in one test. At 28
+   * curated image endpoints `image_size` genuinely means different things —
+   * a union here, a bare preset enum there, absent elsewhere — so the CATEGORY
+   * schema declines to pick a winner and types it `unknown`. That is not a
+   * loss: the presets and the pixel ceilings survive per endpoint in the IR
+   * and in the params row, where `checkImageSize` reads them and can say which
+   * endpoint's ceiling was exceeded. A union schema that guessed one spelling
+   * would accept requests half these endpoints refuse.
+   */
   test("flux: image_size lowers to a union plus a flattened size block", () => {
     const narrow = file("image-narrow.gen.ts");
     expect(narrow).toContain('"fal-ai/flux/dev"');
     expect(narrow).toMatch(/image_size: \{ t: "union", def: true, size: \{ presets: E_\w+, width: \{ xmin: 0, max: 14142, default: 512 \}/);
-    expect(file("image-params.gen.ts")).toContain('classes: ["imageSizeUnion"]');
-    // The presets survive as a real vocabulary, not as `string`.
-    expect(file("image-schema.gen.ts")).toContain('"landscape_16_9"');
+    const params = file("image-params.gen.ts");
+    expect(params).toContain('classes: ["imageSizeUnion"]');
+    // The presets survive as a real vocabulary, not as `string` — in the row
+    // the unified adapter and `unmodel/fal/values` both read.
+    expect(params).toContain('sizes: ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9"]');
+    expect(narrow).toContain('"landscape_16_9"');
+    // …and the category schema refuses to pick a winner, exactly as it does
+    // for `num_inference_steps` in the next test.
+    expect(file("image-schema.gen.ts")).toContain("image_size: z.unknown()");
+  });
+
+  /**
+   * Endpoints whose whole surface matches share one frozen row.
+   *
+   * The d.ts cost of a per-endpoint literal is real at a hundred endpoints,
+   * and two identical rows would also imply a distinction fal does not make.
+   * `flux-2-max` and `flux-2-pro` take exactly the same parameters with
+   * exactly the same bounds — only the price differs, and price is not on this
+   * row.
+   */
+  test("endpoints with an identical surface share one row constant", () => {
+    const params = file("image-params.gen.ts");
+    expect(params).toContain(
+      "Shared by 2 endpoints with an identical surface: fal-ai/flux-2-max, fal-ai/flux-2-pro.",
+    );
+    // Fewer row constants than endpoints is the whole point of the sharing.
+    const rows = [...params.matchAll(/^const ROW_/gm)].length;
+    const endpoints = [...params.matchAll(/^  "[^"]+": ROW_/gm)].length;
+    expect(rows, `${rows} rows for ${endpoints} endpoints`).toBeLessThan(endpoints);
   });
 
   /** flux/dev vs flux/schnell — the reason per-endpoint bounds exist. */

@@ -51,6 +51,7 @@ import { image } from "../../src/unified/image";
 import { image as blackForestLabs } from "../../src/providers/black-forest-labs/unified-image";
 import { image as bria } from "../../src/providers/bria/unified";
 import { image as bytedance } from "../../src/providers/bytedance/unified-image";
+import { image as fal } from "../../src/providers/fal/unified-image";
 import { image as google } from "../../src/providers/google/unified-image";
 import { image as ideogram } from "../../src/providers/ideogram/unified-image";
 import { image as kling } from "../../src/providers/kling/unified-image";
@@ -397,6 +398,48 @@ const TABLE: Readonly<Record<string, Capability>> = {
     outputFormat: "declared",
     deliveryUrl: "declared",
     deliveryBase64: "declared",
+  },
+  /**
+   * fal is the one provider here whose rows are GENERATED, so this entry is
+   * checking the generator as much as the adapter: `sizes`, the extras and the
+   * key list all come off fal's own published OpenAPI.
+   *
+   * `fal-ai/flux/dev` is the representative ref because it is the category's
+   * commonest shape — `image_size` as `anyOf[{width,height}, preset enum]`,
+   * which is 16 of the 28 endpoints. Every canonical size word therefore lands
+   * on ONE wire key by a different route: a preset goes verbatim, pixels go
+   * straight through, and a ratio or a bare tier is solved into pixels because
+   * `image_size` has no ratio spelling to carry them.
+   *
+   * `negativePrompt` is `refused` rather than `declared`, and that distinction
+   * is the whole of risk R7: fal is a queue in front of many vendors, so
+   * `negative_prompt` is absent on every flux route and present on
+   * `fal-ai/kling-image/v3/text-to-image`. A provider-wide `unsupported` would
+   * be a false claim about the majority of fal's own endpoints, so this adapter
+   * declares none at all and every refusal names the endpoint.
+   */
+  fal: {
+    ref: "fal/fal-ai/flux/dev",
+    adapter: fal,
+    size: { class: "pixels", at: "image_size" },
+    tier: "image_size",
+    sizeString: "native",
+    extra: { num_inference_steps: 20 },
+    aspectRatio: "derived",
+    dimensions: "native",
+    resolution: "derived",
+    n: "native",
+    seed: "native",
+    negativePrompt: "refused",
+    outputFormat: "native",
+    deliveryUrl: "implicit",
+    deliveryBase64: "derived",
+    why: {
+      deliveryUrl:
+        "a fal queue submit answers with a URL on the CDN unless `sync_mode` asks otherwise, so " +
+        "`\"url\"` is already what happens and sending `sync_mode: false` would say it louder rather " +
+        "than differently",
+    },
   },
   krea: {
     ref: "krea/krea-2/large",

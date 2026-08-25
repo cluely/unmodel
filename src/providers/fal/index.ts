@@ -19,13 +19,22 @@
  * worth knowing before you poll: there is no `FAILED` status, and
  * `metadata.model_url` is the SYNC host, not the submit URL.
  *
- * ## Wave 1a
+ * ## What is here
  *
- * This entry currently exports the transport surface only — the URL helpers and
- * the queue envelope. The nine validators (`fal.image`, `fal.imageEdit`,
- * `fal.video`, `fal.lipsync`, `fal.upscale`, `fal.avatar`, `fal.tts`,
- * `fal.stt`, `fal.music`), their catalog slices and the unified adapters land
- * in the following waves, on top of the generated files in `./gen/`.
+ * Two of the nine validators — `image` (28 text-to-image endpoints) and
+ * `imageEdit` (17 editing endpoints) — plus the transport surface and the
+ * merged catalog. `video`, `lipsync`, `upscale`, `avatar`, `tts`, `stt` and
+ * `music` land in the following waves, on top of generated files that are
+ * already in `./gen/`.
+ *
+ * ## Two things worth knowing before your first call
+ *
+ * The route is a parameter called `endpoint`, not `model` — `model` is a real
+ * body field on several fal endpoints and cannot also be the router. And the
+ * POST answers a queue ENVELOPE rather than an image: follow the
+ * `response_url` it hands back, and do not read `status: "COMPLETED"` as
+ * success. `./urls.ts` documents both, including the fact that fal's queue
+ * declares no failure state at all.
  */
 
 export {
@@ -50,3 +59,42 @@ export type {
   FalShapeClass,
   FalSizeSpec,
 } from "./shape-types";
+
+export { image } from "./image";
+export { imageEdit } from "./image-edit";
+
+export type {
+  FalImageArm,
+  FalImageBodyById,
+  FalImageEndpointId,
+  FalImageParams,
+  FalImageResultById,
+} from "./image";
+export type {
+  FalImageEditArm,
+  FalImageEditBodyById,
+  FalImageEditEndpointId,
+  FalImageEditParams,
+  FalImageEditResultById,
+} from "./image-edit";
+
+export {
+  FAL_ENDPOINTS,
+  FAL_ENDPOINT_VERBS,
+  FAL_DOC_URLS,
+  FAL_IMAGE_ENDPOINTS,
+  FAL_IMAGE_EDIT_ENDPOINTS,
+  FAL_REQUIRED_PROBES,
+} from "./gen/endpoints.gen";
+export type { FalEndpointId } from "./gen/endpoints.gen";
+
+/**
+ * The merged catalog. Imported HERE and nowhere else in this provider — see
+ * `./models.ts` for why a validator reaching it would put every category's
+ * rows into every category's bundle.
+ */
+export { models } from "./models";
+export type { FalModelId } from "./models";
+
+export { FAL_RATES, falCostUSD, falMegapixels, falPriceNote } from "./pricing";
+export type { FalRate, FalRateUnit, FalTier } from "./pricing-types";

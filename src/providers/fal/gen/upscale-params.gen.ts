@@ -5,27 +5,73 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.upscale` endpoint lets a caller state geometry and duration, and which
- * wire keys it takes.
+ * How each `fal.upscale` endpoint lets a caller state geometry, and which wire keys it
+ * takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
  * liability, and the classes are exhaustive by construction — an endpoint whose geometry
  * parameters fit none of them fails codegen rather than falling through.
  *
- * `keys` is fal's own parameter list, in fal's own order. Which of those keys is a
- * canonical unified word and which is a per-model extra is a HAND decision that lands with
- * each category's adapter; this file states the fact, not the mapping.
+ * The rest is the per-model narrowing the unified surface reads: `sizes` / `ratios` /
+ * `tiers` are this endpoint's own vocabulary for the canonical size words, and `extras` is
+ * everything it takes that the canonical vocabulary has no word for, typed from that
+ * endpoint's own wire interface.
+ *
+ * `keys` is fal's own parameter list, in fal's own order.
  */
 
 import type { FalParamShape } from "../shape-types";
+import type {
+  FalAiClarityUpscalerInput,
+} from "./upscale-wire.gen";
 
-/** fal-ai/clarity-upscaler. */
-const ROW_891765 = {
+/**
+ * The value half of an `extras` entry: `undefined` at run time, the cast's type
+ * at compile time.
+ *
+ * Declared here rather than imported from `core/unified/derive` on purpose —
+ * a generated module is DATA, and importing a runtime value from the unified
+ * kernel would put that kernel behind every `unmodel/fal/values` import. It is
+ * the same one-line definition, and `test/import-graph.test.ts` is what keeps
+ * the rule it protects honest.
+ */
+const EXTRA: never = undefined as never;
+
+/**
+ * fal-ai/clarity-upscaler.
+ *
+ * The extras are typed from `FalAiClarityUpscalerInput`, so the value an editor offers
+ * here and the value `fal.upscale` validates are one declaration.
+ */
+const ROW_f05bb7 = {
   classes: ["scaleFactor"],
   keys: ["image_url", "prompt", "upscale_factor", "negative_prompt", "creativity", "resemblance", "guidance_scale", "num_inference_steps", "seed", "enable_safety_checker"],
+  extras: {
+    image_url: EXTRA as FalAiClarityUpscalerInput["image_url"],
+    prompt: EXTRA as FalAiClarityUpscalerInput["prompt"],
+    upscale_factor: EXTRA as FalAiClarityUpscalerInput["upscale_factor"],
+    negative_prompt: EXTRA as FalAiClarityUpscalerInput["negative_prompt"],
+    creativity: EXTRA as FalAiClarityUpscalerInput["creativity"],
+    resemblance: EXTRA as FalAiClarityUpscalerInput["resemblance"],
+    guidance_scale: EXTRA as FalAiClarityUpscalerInput["guidance_scale"],
+    num_inference_steps: EXTRA as FalAiClarityUpscalerInput["num_inference_steps"],
+    seed: EXTRA as FalAiClarityUpscalerInput["seed"],
+    enable_safety_checker: EXTRA as FalAiClarityUpscalerInput["enable_safety_checker"],
+  },
 } as const;
 
 export const FAL_UPSCALE_PARAM_SHAPES = {
-  "fal-ai/clarity-upscaler": ROW_891765,
+  "fal-ai/clarity-upscaler": ROW_f05bb7,
 } as const satisfies Record<string, FalParamShape>;
+
+/**
+ * Every `fal.upscale` endpoint id, in the order the table above keys them.
+ *
+ * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
+ * model list without reaching for a second generated module — the leaf rule (A10b in
+ * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
+ * one generator.
+ */
+
+export const FAL_UPSCALE_MODELS = ["fal-ai/clarity-upscaler"] as const;

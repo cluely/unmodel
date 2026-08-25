@@ -1,0 +1,468 @@
+{
+  "metadata": {
+    "category": "image-to-image",
+    "date": "2025-05-28T18:38:52.637Z",
+    "description": "Frontier image editing model.",
+    "display_name": "FLUX.1 Kontext [dev]",
+    "group": {
+      "key": "flux-kontext",
+      "label": "Kontext [dev] -- editing"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/flux-kontext/dev",
+    "pinned": false,
+    "status": "active",
+    "stream_url": "https://fal.run/fal-ai/flux-kontext/dev/stream",
+    "tags": [],
+    "thumbnail_url": "https://storage.googleapis.com/fal_cdn/fal/Sound-3.jpg",
+    "updated_at": "2026-04-21T17:47:04.191Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "FluxKontextLoraDevInput": {
+          "properties": {
+            "acceleration": {
+              "default": "none",
+              "description": "The speed of the generation. The higher the speed, the faster the generation.",
+              "enum": [
+                "none",
+                "regular",
+                "high"
+              ],
+              "title": "Acceleration",
+              "type": "string"
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "If set to true, the safety checker will be enabled. Disabling it requires account authorization; unauthorized requests are always checked, and images flagged as unsafe are returned as black images.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "guidance_scale": {
+              "default": 2.5,
+              "description": "\n            The CFG (Classifier Free Guidance) scale is a measure of how close you want\n            the model to stick to your prompt when looking for a related image to show you.\n        ",
+              "maximum": 20,
+              "minimum": 1,
+              "title": "Guidance scale (CFG)",
+              "type": "number"
+            },
+            "image_url": {
+              "description": "The URL of the image to edit.\n\nMax width: 14142px, Max height: 14142px, Timeout: 20s",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/example_inputs/kontext_example_input.webp"
+              ],
+              "title": "Image URL",
+              "type": "string",
+              "x-fal": {
+                "max_height": 14142,
+                "max_width": 14142,
+                "timeout": 20
+              }
+            },
+            "num_images": {
+              "default": 1,
+              "description": "The number of images to generate.",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Num Images",
+              "type": "integer"
+            },
+            "num_inference_steps": {
+              "default": 28,
+              "description": "The number of inference steps to perform.",
+              "maximum": 50,
+              "minimum": 10,
+              "title": "Num Inference Steps",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "jpeg",
+              "description": "Output format",
+              "enum": [
+                "jpeg",
+                "png"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The prompt to edit the image.",
+              "examples": [
+                "Change the setting to a day time, add a lot of people walking the sidewalk while maintaining the same style of the painting"
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "resolution_mode": {
+              "default": "match_input",
+              "description": "\n            Determines how the output resolution is set for image editing.\n            - `auto`: The model selects an optimal resolution from a predefined set that best matches the input image's aspect ratio. This is the recommended setting for most use cases as it's what the model was trained on.\n            - `match_input`: The model will attempt to use the same resolution as the input image. The resolution will be adjusted to be compatible with the model's requirements (e.g. dimensions must be multiples of 16 and within supported limits).\n            Apart from these, a few aspect ratios are also supported.\n            ",
+              "enum": [
+                "auto",
+                "match_input",
+                "1:1",
+                "16:9",
+                "21:9",
+                "3:2",
+                "2:3",
+                "4:5",
+                "5:4",
+                "3:4",
+                "4:3",
+                "9:16",
+                "9:21"
+              ],
+              "title": "Resolution Mode",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\n            The same seed and the same prompt given to the same version of the model\n            will output the same image every time.\n        ",
+              "title": "Seed"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt",
+            "image_url"
+          ],
+          "title": "DevKontextEditInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "image_url",
+            "num_inference_steps",
+            "seed",
+            "guidance_scale",
+            "sync_mode",
+            "num_images",
+            "enable_safety_checker",
+            "output_format",
+            "acceleration",
+            "resolution_mode"
+          ]
+        },
+        "FluxKontextLoraDevOutput": {
+          "properties": {
+            "has_nsfw_concepts": {
+              "description": "Whether the generated images contain NSFW concepts.",
+              "items": {
+                "type": "boolean"
+              },
+              "title": "Has Nsfw Concepts",
+              "type": "array"
+            },
+            "images": {
+              "description": "The generated image files info.",
+              "examples": [
+                [
+                  {
+                    "content_type": "image/jpeg",
+                    "height": 768,
+                    "url": "https://storage.googleapis.com/falserverless/example_outputs/kontext_example_output.jpeg",
+                    "width": 1024
+                  }
+                ]
+              ],
+              "items": {
+                "$ref": "#/components/schemas/Image"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "prompt": {
+              "description": "The prompt used for generating the image.",
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "description": "\n            Seed of the generated Image. It will be the same value of the one passed in the\n            input or the randomly generated that was used in case none was passed.\n        ",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ],
+          "title": "KontextEditOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ]
+        },
+        "Image": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "image/jpeg",
+              "title": "Content Type"
+            },
+            "height": {
+              "title": "Height",
+              "type": "integer"
+            },
+            "url": {
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "url",
+            "width",
+            "height"
+          ],
+          "title": "Image",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "width",
+            "height",
+            "content_type"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/flux-kontext-lora/dev queue.",
+      "title": "Queue OpenAPI for fal-ai/flux-kontext-lora/dev",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "FLUX.1 Kontext [dev] -- Frontier image editing model.",
+        "documentationUrl": "https://fal.ai/models/fal-ai/flux-kontext-lora/dev/api",
+        "endpointId": "fal-ai/flux-kontext-lora/dev",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/flux-kontext-lora/dev"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/flux-kontext-lora/dev": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FluxKontextLoraDevInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-kontext-lora/dev/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/FluxKontextLoraDevOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-kontext-lora/dev/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-kontext-lora/dev/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

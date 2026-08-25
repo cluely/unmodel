@@ -29,6 +29,15 @@ const falSync3ActiveSpeakerDetectionSchema = z.looseObject({ auto_detect: z.bool
 const falSync3GenerationOptionsSchema = z.looseObject({ sync_mode: z.enum(["cut_off", "loop", "bounce", "silence", "remap"]).nullable().optional(), model_mode: z.enum(["lips", "face", "head", "lipsync", "emotion", "talking_head"]).nullable().optional(), prompt: z.enum(["happy", "sad", "angry", "disgusted", "surprised", "neutral"]).nullable().optional(), temperature: z.number().nullable().optional(), active_speaker_detection: falSync3ActiveSpeakerDetectionSchema.nullable().optional(), occlusion_detection_enabled: z.boolean().nullable().optional() });
 
 export const falLipsyncInputSchema = z.looseObject({
+  /**
+   * The endpoint to submit to — unmodel's route selector, not a fal body field.
+   *
+   * Stripped in `finalize` and interpolated into `.request.url`; fal never receives it. It
+   * is declared here only so the pipeline does not report the one required parameter as an
+   * unknown one. The selector is `endpoint` rather than `model` because `model` is a REAL
+   * wire field on several fal endpoints.
+   */
+  endpoint: z.string(),
   audio_url: z.string().optional(),
   model: z.enum(["lipsync-2", "lipsync-2-pro"]).optional(),
   options: falSync3GenerationOptionsSchema.nullable().optional(),

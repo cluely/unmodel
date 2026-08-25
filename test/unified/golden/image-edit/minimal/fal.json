@@ -1,0 +1,14 @@
+{
+  "ref": "fal/fal-ai/flux-pro/kontext",
+  "image": {
+    "url": "https://example.com/street.png"
+  },
+  "params": {
+    "prompt": "make it winter",
+    "image_url": "https://example.com/street.png"
+  },
+  "url": "https://queue.fal.run/fal-ai/flux-pro/kontext",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

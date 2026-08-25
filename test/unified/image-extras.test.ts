@@ -51,6 +51,16 @@ const CASES: readonly Case[] = [
     at: ["parameters"],
   },
   { ref: "black-forest-labs/flux-2-flex", extras: { guidance: 5, steps: 20 } },
+  {
+    // fal's extras are the only GENERATED ones in this list: they are every
+    // parameter the endpoint's own OpenAPI declares that the canonical
+    // vocabulary has no word for, typed from that endpoint's wire interface.
+    // So this case is really asking whether the generator's `extras` block and
+    // `applyExtras` agree about what a key is — which is the same identity
+    // promise, one derivation further back.
+    ref: "fal/fal-ai/flux/dev",
+    extras: { num_inference_steps: 20, guidance_scale: 4.5, acceleration: "high" },
+  },
   { ref: "ideogram/ideogram-3.0-quality", extras: { magic_prompt: "AUTO", style_type: "DESIGN" } },
   { ref: "recraft/recraftv3", extras: { style: "Photorealism", block_nsfw: true } },
   { ref: "stability/sd3.5-large", extras: { style_preset: "anime", cfg_scale: 4 } },

@@ -81,6 +81,10 @@ import type {
 import { image as blackForestLabs } from "../providers/black-forest-labs/unified-image";
 import { image as bria } from "../providers/bria/unified";
 import { image as bytedance } from "../providers/bytedance/unified-image";
+// The LEAF, never `../providers/fal/unified` — that barrel also carries the
+// image-EDIT adapter, and importing it here would ship fal's editing
+// validator, schema and narrowing tables inside `unmodel/image`.
+import { image as fal } from "../providers/fal/unified-image";
 import { image as google } from "../providers/google/unified-image";
 import { image as ideogram } from "../providers/ideogram/unified-image";
 import { image as kling } from "../providers/kling/unified-image";
@@ -145,14 +149,24 @@ export function createImage<A extends ImageAdapter>(
  * and the difference between them belongs in the warnings rather than in which
  * import you remembered.
  *
- * The cost is honest and measured: importing this pulls in fifteen provider
+ * fal is the sixteenth, and the odd one out in a way worth naming: it is a
+ * QUEUE in front of many vendors' models rather than a vendor, so its 28 refs
+ * include second routes to models other adapters here also serve
+ * (`fal/fal-ai/flux/dev` beside `black-forest-labs/flux-dev`,
+ * `fal/krea/v2/large/text-to-image` beside `krea/krea-2/large`). Those are
+ * genuinely different endpoints with different bodies, different prices and
+ * different auth, so both belong; which you want depends on whose key you
+ * hold.
+ *
+ * The cost is honest and measured: importing this pulls in sixteen provider
  * validators, their schemas and their catalogs, pinned in
  * `test/bundle-budget.test.ts`. `createImage([…])` above is the way to pay for
- * two providers instead of fifteen.
+ * two providers instead of sixteen.
  */
 export const image = createImage([
   openai,
   google,
+  fal,
   blackForestLabs,
   ideogram,
   recraft,

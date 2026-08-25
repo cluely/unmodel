@@ -27,10 +27,14 @@ import type {
 export interface FalAiSyncLipsyncV3ImageToVideoInput {
   /**
    * URL of the input image. sync-3 animates the face in the image so it lip-syncs to the
-   * provided audio (image-to-video). Supported image formats: JPEG, PNG and WebP.
+   * provided audio (image-to-video). Supported image formats: JPEG, PNG and WebP. Carries a
+   * image reference — an https URL or a `data:` URI.
    */
   image_url: string;
-  /** URL of the input audio. The output video matches its duration. */
+  /**
+   * URL of the input audio. The output video matches its duration. Carries a audio reference
+   * — an https URL or a `data:` URI.
+   */
   audio_url: string;
 }
 

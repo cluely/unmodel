@@ -57,6 +57,8 @@ const EXPECTED_IDS: readonly string[] = [
   "elevenlabs.voiceClone",
   "elevenlabs.voiceDesign",
   "elevenlabs.voiceDesignSave",
+  "fal.image",
+  "fal.imageEdit",
   "fireworks-ai.chat",
   "fish-audio.tts",
   "fish-audio.voiceClone",
@@ -225,6 +227,11 @@ const IMAGE_GENERATION_IDS: readonly string[] = [
   "bria.image",
   "bria.imageLite",
   "bytedance.image",
+  // ONE id for 28 endpoints. At fal the endpoint id IS the URL path, so
+  // `fal.image` takes an `endpoint` param rather than forking into 28
+  // addresses — the qualified ids in this list exist to name a second wire
+  // ROUTE at one provider, and fal has one route with a variable path.
+  "fal.image",
   "google.image",
   "ideogram.image",
   "ideogram.imageV4",
@@ -557,6 +564,7 @@ const IMAGE_EDIT_IDS: readonly string[] = [
   "black-forest-labs.imageEditOutpainting",
   "black-forest-labs.imageEditVto",
   "bria.imageEdit",
+  "fal.imageEdit",
   "ideogram.imageEdit",
   "ideogram.imageEditReframe",
   "ideogram.imageEditRemix",
@@ -587,6 +595,7 @@ test("the image-edit endpoints all use the uniform `imageEdit` verb", () => {
   expect(providers).toEqual([
     "black-forest-labs",
     "bria",
+    "fal",
     "ideogram",
     "luma",
     "openai",
@@ -594,10 +603,10 @@ test("the image-edit endpoints all use the uniform `imageEdit` verb", () => {
     "reve",
     "stability",
   ]);
-  // The five whose primary route is "prompt + one image, no mask" address it as
-  // bare `imageEdit` — which is the ref `unmodel/image-edit` reaches for, and
-  // therefore the half of the law with teeth.
-  for (const provider of ["black-forest-labs", "bria", "ideogram", "openai", "recraft", "reve"]) {
+  // The seven whose primary route is "prompt + one image, no mask" address it
+  // as bare `imageEdit` — which is the ref `unmodel/image-edit` reaches for,
+  // and therefore the half of the law with teeth.
+  for (const provider of ["black-forest-labs", "bria", "fal", "ideogram", "openai", "recraft", "reve"]) {
     expect(IMAGE_EDIT_IDS).toContain(`${provider}.imageEdit`);
   }
 

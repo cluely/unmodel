@@ -29,6 +29,15 @@ const falPronunciationDictSchema = z.looseObject({ tone_list: z.array(z.string()
 const falVoiceSettingSchema = z.looseObject({ voice_id: z.string().optional(), speed: z.number().optional(), vol: z.number().optional(), pitch: z.number().optional(), emotion: z.enum(["happy", "sad", "angry", "fearful", "disgusted", "surprised", "neutral"]).nullable().optional(), english_normalization: z.boolean().optional() });
 
 export const falTtsInputSchema = z.looseObject({
+  /**
+   * The endpoint to submit to — unmodel's route selector, not a fal body field.
+   *
+   * Stripped in `finalize` and interpolated into `.request.url`; fal never receives it. It
+   * is declared here only so the pipeline does not report the one required parameter as an
+   * unknown one. The selector is `endpoint` rather than `model` because `model` is a REAL
+   * wire field on several fal endpoints.
+   */
+  endpoint: z.string(),
   audio_setting: falAudioSettingSchema.optional(),
   language_boost: z.enum(["Chinese", "Chinese,Yue", "English", "Arabic", "Russian", "Spanish", "French", "Portuguese", "German", "Turkish", "Dutch", "Ukrainian", "Vietnamese", "Indonesian", "Japanese", "Italian", "Korean", "Thai", "Polish", "Romanian", "Greek", "Czech", "Finnish", "Hindi", "Bulgarian", "Danish", "Hebrew", "Malay", "Slovak", "Swedish", "Croatian", "Hungarian", "Norwegian", "Slovenian", "Catalan", "Nynorsk", "Afrikaans", "auto"]).nullable().optional(),
   output_format: z.enum(["url", "hex"]).optional(),

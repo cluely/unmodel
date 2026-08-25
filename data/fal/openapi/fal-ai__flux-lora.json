@@ -1,0 +1,514 @@
+{
+  "metadata": {
+    "category": "text-to-image",
+    "date": "2024-08-01T00:00:00.000Z",
+    "description": "Super fast endpoint for the FLUX.1 [dev] model with LoRA support, enabling rapid and high-quality image generation using pre-trained LoRA adaptations for personalization, specific styles, brand identities, and product-specific outputs.",
+    "display_name": "FLUX.1 [dev] with LoRAs",
+    "group": {
+      "key": "flux-lora",
+      "label": "Text to Image"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/flux-lora",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "lora",
+      "personalization"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9f91af/UMrx6t6mc59z33d20WIQP_iBIZYKKq.png",
+    "training_endpoint_ids": [
+      "fal-ai/flux-lora-fast-training",
+      "fal-ai/turbo-flux-trainer",
+      "fal-ai/flux-lora-portrait-trainer"
+    ],
+    "updated_at": "2026-06-24T10:31:43.297Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "FluxLoraInput": {
+          "properties": {
+            "acceleration": {
+              "default": "none",
+              "description": "Acceleration level for image generation. 'regular' balances speed and quality.",
+              "enum": [
+                "none",
+                "regular"
+              ],
+              "title": "Acceleration",
+              "type": "string"
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "If set to true, the safety checker will be enabled.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "guidance_scale": {
+              "default": 3.5,
+              "description": "\n            The CFG (Classifier Free Guidance) scale is a measure of how close you want\n            the model to stick to your prompt when looking for a related image to show you.\n        ",
+              "maximum": 35,
+              "minimum": 0,
+              "title": "Guidance scale (CFG)",
+              "type": "number"
+            },
+            "image_size": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ImageSize"
+                },
+                {
+                  "enum": [
+                    "square_hd",
+                    "square",
+                    "portrait_4_3",
+                    "portrait_16_9",
+                    "landscape_4_3",
+                    "landscape_16_9"
+                  ],
+                  "type": "string"
+                }
+              ],
+              "default": "landscape_4_3",
+              "description": "The size of the generated image.",
+              "title": "Image Size"
+            },
+            "loras": {
+              "default": [],
+              "description": "\n            The LoRAs to use for the image generation. You can use any number of LoRAs\n            and they will be merged together to generate the final image.\n        ",
+              "examples": [],
+              "items": {
+                "$ref": "#/components/schemas/LoraWeight"
+              },
+              "title": "Loras",
+              "type": "array"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "The number of images to generate. This is always set to 1 for streaming output.",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Num Images",
+              "type": "integer"
+            },
+            "num_inference_steps": {
+              "default": 28,
+              "description": "The number of inference steps to perform.",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Num Inference Steps",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "jpeg",
+              "description": "The format of the generated image.",
+              "enum": [
+                "jpeg",
+                "png"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The prompt to generate an image from.",
+              "examples": [
+                "Extreme close-up of a single tiger eye, direct frontal view. Detailed iris and pupil. Sharp focus on eye texture and color. Natural lighting to capture authentic eye shine and depth. The word \"FLUX\" is painted over it in big, white brush strokes with visible texture."
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\n            The same seed and the same prompt given to the same version of the model\n            will output the same image every time.\n        ",
+              "title": "Seed"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "TextToImageInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "image_size",
+            "num_inference_steps",
+            "seed",
+            "loras",
+            "guidance_scale",
+            "sync_mode",
+            "num_images",
+            "enable_safety_checker",
+            "output_format",
+            "acceleration"
+          ]
+        },
+        "FluxLoraOutput": {
+          "properties": {
+            "has_nsfw_concepts": {
+              "description": "Whether the generated images contain NSFW concepts.",
+              "items": {
+                "type": "boolean"
+              },
+              "title": "Has Nsfw Concepts",
+              "type": "array"
+            },
+            "images": {
+              "description": "The generated image files info.",
+              "items": {
+                "$ref": "#/components/schemas/Image"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "prompt": {
+              "description": "The prompt used for generating the image.",
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "description": "\n            Seed of the generated Image. It will be the same value of the one passed in the\n            input or the randomly generated that was used in case none was passed.\n        ",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ],
+          "title": "Output",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ]
+        },
+        "Image": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "image/jpeg",
+              "title": "Content Type"
+            },
+            "height": {
+              "title": "Height",
+              "type": "integer"
+            },
+            "url": {
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "url",
+            "width",
+            "height"
+          ],
+          "title": "Image",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "width",
+            "height",
+            "content_type"
+          ]
+        },
+        "ImageSize": {
+          "properties": {
+            "height": {
+              "default": 512,
+              "description": "The height of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Height",
+              "type": "integer"
+            },
+            "width": {
+              "default": 512,
+              "description": "The width of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "title": "ImageSize",
+          "type": "object",
+          "x-fal-order-properties": [
+            "width",
+            "height"
+          ]
+        },
+        "LoraWeight": {
+          "properties": {
+            "path": {
+              "description": "URL or the path to the LoRA weights.",
+              "title": "Path",
+              "type": "string"
+            },
+            "scale": {
+              "default": 1,
+              "description": "\n            The scale of the LoRA weight. This is used to scale the LoRA weight\n            before merging it with the base model.\n        ",
+              "maximum": 4,
+              "minimum": 0,
+              "title": "Scale",
+              "type": "number"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "title": "LoraWeight",
+          "type": "object",
+          "x-fal-order-properties": [
+            "path",
+            "scale"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/flux-lora queue.",
+      "title": "Queue OpenAPI for fal-ai/flux-lora",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "FLUX.1 [dev], next generation text-to-image model.",
+        "category": "text-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/flux-lora/api",
+        "endpointId": "fal-ai/flux-lora",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/flux-lora",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9f91af/UMrx6t6mc59z33d20WIQP_iBIZYKKq.png"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/flux-lora": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FluxLoraInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-lora/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/FluxLoraOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-lora/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-lora/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

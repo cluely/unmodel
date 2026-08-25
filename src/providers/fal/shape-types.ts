@@ -95,8 +95,20 @@ export interface FalPropSpec {
   nul?: true;
   /** fal supplies a default, so omitting it is always safe. */
   def?: true;
-  /** The closed vocabulary, when the parameter has one (`enum` or `const`). */
+  /** The vocabulary, when the parameter has one (`enum` or `const`). */
   enum?: readonly (string | number)[];
+  /**
+   * The vocabulary above is a SUGGESTION rather than a closed set.
+   *
+   * fal writes this as `anyOf: [{ type: "string", enum: [...] }, { type:
+   * "string" }]` — "these values, or any other string". `flux-pro/v1.1-ultra`
+   * lists nine aspect ratios and still accepts `"1234:567"`.
+   *
+   * The distinction is the difference between an error and a warning:
+   * `checkEnums` refuses an unlisted value on a closed enum and merely reports
+   * one here, because refusing it would reject a request fal accepts.
+   */
+  open?: true;
   /** `minimum` / `maximum` — inclusive. */
   min?: number;
   max?: number;
@@ -158,10 +170,65 @@ export type FalShapeClass =
   /** No geometry or duration parameter at all — the endpoint decides. */
   | "fixedGeometry";
 
-/** What one endpoint offers the unified layer, before any hand mapping. */
+/**
+ * What one endpoint offers the unified layer.
+ *
+ * This is both halves of the narrowing: `classes` is what the adapter branches
+ * on, and the rest IS the row `modelParams` publishes — the same object, not a
+ * copy of it. A row here that disagreed with the table a picker renders would
+ * be exactly the drift `unmodel/fal/values` exists to make impossible, so
+ * there is only ever one.
+ */
 export interface FalParamShape {
   /** Every geometry/duration class this endpoint exhibits, sorted. */
   classes: readonly FalShapeClass[];
   /** fal's own parameter list, in fal's own order. */
   keys: readonly string[];
+  /**
+   * The literal `size` values this endpoint takes — fal's own preset names
+   * (`"landscape_4_3"`), which are what the wire accepts rather than a
+   * translation of it. No free-form tail: explicit pixels reach the same
+   * endpoint through `dimensions`, so for THIS spelling the list is the limit.
+   */
+  sizes?: readonly string[];
+  /** The canonical `W:H` ratios this endpoint's `aspect_ratio` enum lists. */
+  ratios?: readonly string[];
+  /**
+   * The ratio list is a set of presets rather than a limit — fal declared the
+   * enum open (`anyOf[{enum}, {string}]`), so any `W:H` is accepted.
+   */
+  ratioFreeform?: true;
+  /** The canonical tiers this endpoint's `resolution` enum can express. */
+  tiers?: readonly string[];
+  /**
+   * Canonical tier → the spelling this endpoint's own `resolution` enum uses.
+   *
+   * fal writes `"1K"` and the canonical vocabulary writes `"1k"`, so an
+   * adapter that has resolved a caller's tier still needs the way back to the
+   * wire. Generated rather than lower-cased at run time because the two
+   * vocabularies agree by coincidence rather than by rule — `"0.5K"` has no
+   * canonical tier at all, and a future endpoint may spell one differently
+   * again.
+   */
+  tierWire?: Readonly<Record<string, string>>;
+  /**
+   * The per-dimension bounds on an explicit `image_size: { width, height }`,
+   * so a ratio can be solved into pixels this endpoint accepts.
+   */
+  pixels?: { min?: number; max?: number };
+  /**
+   * Numeric bounds on the CANONICAL params, keyed by wire name.
+   *
+   * So an adapter can respect a floor rather than send a value the endpoint
+   * refuses. `fal-ai/flux/dev/image-to-image` floors `strength` at 0.01 while
+   * the canonical scale starts at 0, and canonical 0 — "keep the source" — is
+   * the commonest thing anyone asks an image-to-image route for.
+   */
+  bounds?: Readonly<Record<string, { min?: number; max?: number }>>;
+  /**
+   * Everything this endpoint takes that the canonical vocabulary has no word
+   * for, as `{ wireName: EXTRA as T }` — keys for `applyExtras` to read at run
+   * time, types for an editor to offer. See `core/unified/vocabulary/model-params.ts`.
+   */
+  extras?: Readonly<Record<string, unknown>>;
 }

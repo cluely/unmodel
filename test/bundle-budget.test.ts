@@ -30,6 +30,33 @@ const ROOT = resolve(import.meta.dir, "..");
 const DIST = join(ROOT, "dist");
 
 /**
+ * Providers whose adapters are SPLIT one file per category, derived from disk.
+ *
+ * Derived rather than enumerated, and that is the whole point of the change:
+ * a hand-written list has one failure mode nothing else here catches. Add a
+ * second category to a provider that already had one, forget to add it to the
+ * list, and every assertion below quietly checks the WRONG file — it looks for
+ * `unified.ts`, finds it (the barrel is still there), and passes while the
+ * pack silently ships the other category's validators. Green build, and the
+ * exact regression these budgets exist to prevent.
+ *
+ * A provider with more than one `unified-<category>.ts` on disk is split, by
+ * definition. There is nothing to keep in step, so nothing can fall out of it.
+ */
+function splitProviders(): ReadonlySet<string> {
+  const split = new Set<string>();
+  const providers = join(ROOT, "src", "providers");
+  for (const provider of readdirSync(providers)) {
+    const dir = join(providers, provider);
+    if (!existsSync(dir) || !statSync(dir).isDirectory()) continue;
+    const leaves = readdirSync(dir).filter((file) => /^unified-.+\.ts$/.test(file) && !file.endsWith(".test.ts"));
+    if (leaves.length > 1) split.add(provider);
+  }
+  return split;
+}
+
+
+/**
  * Committed budgets, in KiB of unminified ESM (chunk graph, `zod` excluded —
  * it is a real dependency, not part of unmodel's own weight).
  *
@@ -73,6 +100,25 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
   deepinfra: 190,
   openrouter: 400,
   vercel: 355,
+  /**
+   * fal at 197.5 KiB measured, pinned at 220.
+   *
+   * The only entry here whose weight is GENERATED rather than transcribed, and
+   * the shape of it is worth stating because it will grow in a way the others
+   * do not: fal serves 45 endpoints across two categories today and ~100 across
+   * nine when the remaining waves land, and each one ships four rows — a wire
+   * interface (type-only, free at run time), an IR row the check battery reads,
+   * a unified row a picker renders, and a catalog row. Only the last three are
+   * bytes.
+   *
+   * So this number tracks the ROSTER, not the code: `src/providers/fal/*.ts` is
+   * ~1,500 hand-written lines and will stay about there, while `gen/` scales
+   * with `data/fal/curation.json`. A jump here after a wave is expected; a jump
+   * here WITHOUT a roster change is a barrel leak, and `models.ts` — the merged
+   * catalog every category's slice would flow through — is the first place to
+   * look (see A12 in test/import-graph.test.ts).
+   */
+  fal: 220,
 };
 
 /**
@@ -318,8 +364,25 @@ const TTS_PACK_BUDGET_KIB = 515;
  * and `core/unified/canonical-keys.ts` — the params vocabulary, moved out of
  * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
  * is +0.1 net against the kernel's own shrink.
+ *
+ * **Bumped 820 → 1050 by fal**, and this one IS a real, large addition to the
+ * graph rather than drift — exactly the case this file's header says to
+ * investigate rather than wave through. 780.5 → 952.5 KiB, +172 from one
+ * provider, and the investigation is short because the bytes are all one kind
+ * of thing: fal serves 28 text-to-image endpoints behind a single address, and
+ * every one of them ships a generated narrowing row. `image-narrow.gen.ts`
+ * (the per-endpoint IR the check battery reads) and `image-params.gen.ts` (the
+ * per-endpoint unified row a picker renders) are ~600 and ~550 lines of pure
+ * data between them, and `models-image.gen.ts` is 28 catalog rows with their
+ * pricing provenance.
+ *
+ * That is the cost of the thing being bought, not overhead around it: fal
+ * roughly doubles this pack's model count on its own. It is also why
+ * `createImage([…])` matters more than it did — a caller who wants two
+ * providers should not pay for a queue in front of a thousand models. Pinned
+ * at 1050, the usual ~10% over the measurement.
  */
-const IMAGE_PACK_BUDGET_KIB = 820;
+const IMAGE_PACK_BUDGET_KIB = 1050;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -382,17 +445,22 @@ const VIDEO_PACK_PROVIDERS: string[] = [
 ];
 
 /**
- * The fifteen providers `unmodel/image`'s ready-made pack is allowed to reach.
+ * The sixteen providers `unmodel/image`'s ready-made pack is allowed to reach.
  *
  * google is on this list for its Imagen adapter only: `google/unified.ts`
  * imports `./image` and `./constraints`, never `.`, so the gemini chat codec
  * and the translate layer stay out — which the composition test below is what
  * actually holds down.
+ *
+ * fal is the sixteenth and the one that moved the budget: it is a queue in
+ * front of many vendors rather than a vendor, so it brings 28 endpoints and
+ * their generated narrowing rows on its own.
  */
 const IMAGE_PACK_PROVIDERS: string[] = [
   "black-forest-labs",
   "bria",
   "bytedance",
+  "fal",
   "google",
   "ideogram",
   "kling",
@@ -589,8 +657,15 @@ const TTS_PACK_PROVIDERS: string[] = [
  * and `core/unified/canonical-keys.ts` — the params vocabulary, moved out of
  * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
  * is +0.1 net against the kernel's own shrink.
+ *
+ * **Bumped 310 → 470 by fal**, for the same reason and in the same shape as
+ * the image pack: 287.2 → 425.9 KiB, +139 from one provider serving 17 editing
+ * endpoints behind a single address. The bytes are the generated per-endpoint
+ * rows — the IR the check battery narrows with, the unified rows a picker
+ * renders, and 17 catalog rows — and this pack more than triples its model
+ * count to get them. Pinned at 470, the usual ~10% over the measurement.
  */
-const IMAGE_EDIT_PACK_BUDGET_KIB = 310;
+const IMAGE_EDIT_PACK_BUDGET_KIB = 470;
 
 /**
  * The one generated catalog this pack legitimately reaches.
@@ -602,9 +677,10 @@ const IMAGE_EDIT_PACK_BUDGET_KIB = 310;
  */
 const IMAGE_EDIT_PACK_CATALOGS: string[] = ["src/catalog/openai.gen.ts"];
 
-/** The four providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
+/** The five providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
 const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
   "black-forest-labs",
+  "fal",
   "ideogram",
   "openai",
   "recraft",
@@ -625,6 +701,64 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
   music: MUSIC_PACK_BUDGET_KIB,
   "voice-clone": VOICE_CLONE_PACK_BUDGET_KIB,
   "voice-design": VOICE_DESIGN_PACK_BUDGET_KIB,
+};
+
+/**
+ * What each pack costs an EDITOR, as opposed to a bundler.
+ *
+ * The budgets above measure JavaScript, which is what a browser downloads.
+ * These measure declarations, which is what `tsc` reads on every keystroke —
+ * and the two move independently. A per-model narrowing table is a handful of
+ * bytes of JavaScript (an object of `undefined`s) and a full union of literal
+ * types in the declaration; adding one adapter with 28 models can leave the JS
+ * budget almost still and put megabytes in front of the language server.
+ *
+ * That failure mode has a precedent in this repo — the chat-entry declaration
+ * regressed 48% before anyone noticed, because nothing measured it — and it is
+ * the reason `test/unified/completions.test.ts` carries a 30-second timeout as
+ * a canary. A canary tells you something died; these numbers tell you what.
+ *
+ * ## Why the graph and not the file
+ *
+ * `dist/unified/image.d.ts` is a few hundred BYTES: rolldown emits the packs'
+ * declarations as re-export stubs over shared chunks, so `statSync` on the
+ * entry measures the stub and nothing it points at. `tsc` follows the whole
+ * graph, so this does too — which is also why the numbers overlap heavily
+ * between packs (they share `core/unified/**` and every provider they have in
+ * common) and why a single pack's number moving is more interesting than the
+ * total.
+ *
+ * ## The numbers
+ *
+ * Measured, then pinned ~10% over — the same convention as every other budget
+ * in this file, and the same instruction applies: find out which declaration
+ * joined the graph before raising one.
+ *
+ * | pack | measured | pinned | what dominates |
+ * |---|---|---|---|
+ * | `image` | 1138.8 | 1260 | 16 providers' per-model tables; fal's 28 endpoint rows are the newest and largest single block |
+ * | `image-edit` | 1502.4 | 1660 | 5 providers, but `ImageEditInputFor` distributes over each adapter's `imageInputs` |
+ * | `video` | 1701.7 | 1880 | duration x resolution x ratio matrices at ten providers |
+ * | `tts` | 2101.6 | 2320 | voice unions — thousands of literal ids across fifteen providers |
+ * | `stt` | 2222.6 | 2450 | language unions, which are longer than the voice ones |
+ * | `music` | 1234.5 | 1360 | three providers; this is close to the floor a pack can have |
+ * | `voice-clone` | 1525.7 | 1690 | the shared vocabulary plus per-provider sample constraints |
+ * | `voice-design` | 1332.7 | 1470 | likewise |
+ *
+ * `music` at 1234 KiB for three providers is the number to read first: most of
+ * every pack here is the shared kernel and vocabulary, not the adapters. A
+ * pack that jumps well above its neighbours has acquired something structural,
+ * not another model.
+ */
+const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
+  image: 1260,
+  "image-edit": 1660,
+  video: 1880,
+  tts: 2320,
+  stt: 2450,
+  music: 1360,
+  "voice-clone": 1690,
+  "voice-design": 1470,
 };
 
 const FROM_IMPORT = /^[ \t]*(?:import|export)\s[^;]*?\sfrom\s*["']([^"']+)["']/gm;
@@ -1103,6 +1237,17 @@ describe("unified media entries", () => {
     expect(Object.keys(PACK_BUDGET_KIB).sort()).toEqual([...ALL_UNIFIED_ENTRIES].sort());
   });
 
+  test.each(Object.entries(PACK_DECLARATION_BUDGET_KIB))(
+    "unmodel/%s declares under %i KiB",
+    (name, budget) => {
+      const entry = join(DIST, "unified", `${name}.d.ts`);
+      expect(existsSync(entry), `dist declaration for ${name}`).toBe(true);
+      const kib =
+        transitiveDeclarations(entry).reduce((total, file) => total + statSync(file).size, 0) / 1024;
+      expect(kib, `unified/${name}.d.ts graph is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(budget);
+    },
+  );
+
   test.each(Object.entries(PACK_BUDGET_KIB))("unmodel/%s stays under %i KiB", (name, budget) => {
     const kib = transitiveBytes(unifiedEntry(name)) / 1024;
     expect(kib, `unified/${name} is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(budget);
@@ -1156,25 +1301,15 @@ describe("unmodel/tts (the first ready-made pack)", () => {
     expect(providers).toEqual(TTS_PACK_PROVIDERS);
 
     // One adapter leaf per provider, and it is what pulled the provider in.
-    // Nine of the fifteen serve more than one category (fish-audio and lmnt
-    // joined the split when their voice-clone adapters landed), so their
-    // adapters are split per category and this pack imports only the speech
-    // half — see the
-    // independence test below. Google is the newest and the one with the most
-    // to lose by a barrel: `google/unified.ts` also exports the Imagen, Veo and
-    // stt adapters, and reaching it here would put three more
-    // validators and the generated catalog in a tts bundle.
-    const SPLIT = new Set([
-      "cartesia",
-      "deepgram",
-      "elevenlabs",
-      "fish-audio",
-      "google",
-      "inworld",
-      "lmnt",
-      "minimax",
-      "openai",
-    ]);
+    // The providers that serve more than one category split their adapter per
+    // category, and this pack imports only the speech half — see the
+    // independence test below. Which providers those are is read off disk by
+    // {@link splitProviders} rather than listed here, so a provider that grows
+    // a second category cannot quietly go on being checked against its barrel.
+    // Google has the most to lose by a barrel: `google/unified.ts` also exports
+    // the Imagen, Veo and stt adapters, and reaching it here would put three
+    // more validators and the generated catalog in a tts bundle.
+    const SPLIT = splitProviders();
     for (const provider of TTS_PACK_PROVIDERS) {
       const leaf = SPLIT.has(provider) ? "unified-tts" : "unified";
       expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
@@ -1249,25 +1384,13 @@ describe("unmodel/image (the second ready-made pack)", () => {
     expect(providers).toEqual(IMAGE_PACK_PROVIDERS);
 
     // One adapter leaf per provider, and it is what pulled the provider in.
-    // The eleven providers that serve more than one category split their
-    // adapter per category, and each pack imports only its own half — which is
-    // what the independence test below is measuring in bytes. The image-edit
-    // wave added three: black-forest-labs, ideogram and recraft each grew an
-    // editing adapter, and a single `unified.ts` holding both would have put
-    // their edit validators in this pack for nothing.
-    const SPLIT = new Set([
-      "black-forest-labs",
-      "bytedance",
-      "google",
-      "ideogram",
-      "kling",
-      "luma",
-      "openai",
-      "recraft",
-      "runway",
-      "stability",
-      "vidu",
-    ]);
+    // The providers that serve more than one category split their adapter per
+    // category, and each pack imports only its own half — which is what the
+    // independence test below is measuring in bytes. fal is the newest and the
+    // starkest: one `unified.ts` holding both its adapters would put 17
+    // editing endpoints' narrowing tables and their schema into a pack that
+    // can never call them.
+    const SPLIT = splitProviders();
     for (const provider of IMAGE_PACK_PROVIDERS) {
       const leaf = SPLIT.has(provider) ? "unified-image" : "unified";
       expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
@@ -1412,7 +1535,7 @@ describe("unmodel/stt (the fourth ready-made pack)", () => {
 
     // Six of the twelve serve transcription only, so their adapter is the
     // unsuffixed leaf; the other six split per category.
-    const SPLIT = new Set(["cartesia", "deepgram", "elevenlabs", "google", "inworld", "openai"]);
+    const SPLIT = splitProviders();
     for (const provider of STT_PACK_PROVIDERS) {
       const leaf = SPLIT.has(provider) ? "unified-stt" : "unified";
       expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);

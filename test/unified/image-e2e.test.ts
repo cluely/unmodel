@@ -16,11 +16,16 @@ import { image as ideogramAdapter } from "../../src/providers/ideogram/unified-i
 import { image as openaiAdapter } from "../../src/providers/openai/unified";
 
 describe("the pack", () => {
-  test("registers exactly the fifteen image providers, sorted", () => {
+  test("registers exactly the sixteen image providers, sorted", () => {
     expect([...image.providers]).toEqual([
       "black-forest-labs",
       "bria",
       "bytedance",
+      // fal is a QUEUE in front of many vendors rather than a vendor, so some
+      // of its refs are second routes to models another adapter here also
+      // serves. Both belong: they are different endpoints, with different
+      // bodies, prices and keys.
+      "fal",
       "google",
       "ideogram",
       "kling",

@@ -30,16 +30,16 @@ export const FAL_LIPSYNC_SHAPES = {
     order: ["model", "video_url", "audio_url", "sync_mode"],
     props: {
       model: { t: "string", def: true, enum: E_eef5c7 },
-      video_url: { t: "string", req: true },
-      audio_url: { t: "string", req: true },
+      video_url: { t: "string", req: true, media: "video" },
+      audio_url: { t: "string", req: true, media: "audio" },
       sync_mode: { t: "string", def: true, enum: E_e6245b },
     },
   },
   "fal-ai/sync-lipsync/v3": {
     order: ["video_url", "audio_url", "sync_mode", "options"],
     props: {
-      video_url: { t: "string", req: true },
-      audio_url: { t: "string", req: true },
+      video_url: { t: "string", req: true, media: "video" },
+      audio_url: { t: "string", req: true, media: "audio" },
       sync_mode: { t: "string", def: true, enum: E_e6245b },
       options: { t: "object", nul: true },
     },

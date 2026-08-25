@@ -1,0 +1,448 @@
+{
+  "metadata": {
+    "category": "text-to-image",
+    "date": "2026-01-29T00:28:58.441Z",
+    "description": "Generate highly aesthetic images with xAI's Grok Imagine Image generation model.",
+    "display_name": "Grok Imagine Image",
+    "group": {
+      "key": "grok-imagine-image",
+      "label": "Text to Image"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/xai/grok-imagine-image",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "xai",
+      "grok",
+      "text-to-image"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a8c4b97/vZlFRoT1SBs5XMoVqN_P5_f4b2e3f42dcc4f06a18953fda2b5c942.jpg",
+    "updated_at": "2026-04-26T22:32:05.599Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ImageFile": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "height": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The height of the image",
+              "title": "Height"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The width of the image",
+              "title": "Width"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "ImageFile",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size",
+            "width",
+            "height"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "XaiInput": {
+          "properties": {
+            "aspect_ratio": {
+              "default": "1:1",
+              "description": "Aspect ratio of the generated image.",
+              "enum": [
+                "2:1",
+                "20:9",
+                "19.5:9",
+                "16:9",
+                "4:3",
+                "3:2",
+                "1:1",
+                "2:3",
+                "3:4",
+                "9:16",
+                "9:19.5",
+                "9:20",
+                "1:2"
+              ],
+              "title": "Aspect Ratio",
+              "type": "string"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "Number of images to generate.",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Number of Images",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "jpeg",
+              "description": "The format of the generated image.",
+              "enum": [
+                "jpeg",
+                "png",
+                "webp"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "Text description of the desired image.",
+              "examples": [
+                "Abstract human silhouette, golden particles ready to burst outward representing joy, data visualization style, emotional expression through particles, artistic scientific"
+              ],
+              "maxLength": 8000,
+              "title": "Prompt",
+              "type": "string"
+            },
+            "resolution": {
+              "default": "1k",
+              "description": "Resolution of the generated image. `1k` for standard resolution, `2k` for high resolution.",
+              "enum": [
+                "1k",
+                "2k"
+              ],
+              "title": "Resolution",
+              "type": "string"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "XAIImageInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "num_images",
+            "aspect_ratio",
+            "resolution",
+            "output_format",
+            "sync_mode"
+          ]
+        },
+        "XaiOutput": {
+          "properties": {
+            "images": {
+              "description": "The URL of the generated image.",
+              "examples": [
+                [
+                  {
+                    "url": "https://v3b.fal.media/files/b/0a8b90b7/9avg_nKJmcVinjQHJR_Ja.jpg"
+                  }
+                ]
+              ],
+              "items": {
+                "$ref": "#/components/schemas/ImageFile"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "revised_prompt": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The enhanced prompt that was used to generate the image.",
+              "title": "Revised Prompt"
+            }
+          },
+          "required": [
+            "images"
+          ],
+          "title": "XAIImageOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "revised_prompt"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/xai queue.",
+      "title": "Queue OpenAPI for fal-ai/xai",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate an image based on a text description using Grok Imagine.",
+        "category": "text-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/xai/api",
+        "endpointId": "fal-ai/xai",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/xai",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a8a20b0/ie5jtOxPXeNSIuXTd6Msu_3d54610e2c3044e1a41505654be1305d.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/xai": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/XaiInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/xai/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/XaiOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/xai/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/xai/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

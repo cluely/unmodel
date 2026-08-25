@@ -50,6 +50,7 @@ import { imageEdit } from "../../src/unified/image-edit";
 import { image as blackForestLabs } from "../../src/providers/black-forest-labs/unified-image";
 import { image as bria } from "../../src/providers/bria/unified";
 import { image as bytedance } from "../../src/providers/bytedance/unified-image";
+import { image as fal } from "../../src/providers/fal/unified-image";
 import { image as google } from "../../src/providers/google/unified-image";
 import { image as ideogram } from "../../src/providers/ideogram/unified-image";
 import { image as kling } from "../../src/providers/kling/unified-image";
@@ -63,6 +64,7 @@ import { image as runway } from "../../src/providers/runway/unified-image";
 import { image as stability } from "../../src/providers/stability/unified-image";
 import { image as vidu } from "../../src/providers/vidu/unified-image";
 import { imageEdit as blackForestLabsEdit } from "../../src/providers/black-forest-labs/unified-image-edit";
+import { imageEdit as falEdit } from "../../src/providers/fal/unified-image-edit";
 import { imageEdit as ideogramEdit } from "../../src/providers/ideogram/unified-image-edit";
 import { imageEdit as openaiEdit } from "../../src/providers/openai/unified-image-edit";
 import { imageEdit as recraftEdit } from "../../src/providers/recraft/unified-image-edit";
@@ -82,6 +84,7 @@ const IMAGE_ADAPTERS: readonly Adapter[] = [
   stability,
   luma,
   bytedance,
+  fal,
   runway,
   kling,
   vidu,
@@ -94,6 +97,7 @@ const IMAGE_ADAPTERS: readonly Adapter[] = [
 const EDIT_ADAPTERS: readonly (Adapter & { readonly imageInputs: readonly string[] })[] = [
   openaiEdit,
   blackForestLabsEdit,
+  falEdit,
   ideogramEdit,
   recraftEdit,
 ];
@@ -108,6 +112,14 @@ const BASE: Readonly<Record<string, Record<string, unknown>>> = {
   },
   "vidu/viduq1": { providerOptions: { vidu: { images: ["https://example.com/a.png"] } } },
   "vidu/viduq2": { providerOptions: { vidu: { images: ["https://example.com/a.png"] } } },
+  // fal's route-required params come from the generator, not from a reading of
+  // the docs: `FAL_REQUIRED_PROBES` in `gen/endpoints.gen.ts` is each
+  // endpoint's OpenAPI `required` list MINUS everything fal supplies a default
+  // for, which is exactly "what a caller must send". Across the 45 curated
+  // image and image-edit endpoints that subtraction leaves `prompt` (which the
+  // sweep already sends) and the source image (which `EDIT_ADAPTERS` sends), so
+  // no fal ref needs an entry here — and if a future roster adds one that does,
+  // the sweep fails naming it rather than passing quietly.
 };
 
 /**

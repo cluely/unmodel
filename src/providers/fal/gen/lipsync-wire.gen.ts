@@ -35,9 +35,9 @@ export interface FalAiSyncLipsyncV2Input {
    * `lipsync-2` for the same duration. Default: `"lipsync-2"`.
    */
   model?: "lipsync-2" | "lipsync-2-pro";
-  /** URL of the input video. */
+  /** URL of the input video. Carries a video reference — an https URL or a `data:` URI. */
   video_url: string;
-  /** URL of the input audio. */
+  /** URL of the input audio. Carries a audio reference — an https URL or a `data:` URI. */
   audio_url: string;
   /** Lipsync mode when audio and video durations are out of sync. Default: `"cut_off"`. */
   sync_mode?: "cut_off" | "loop" | "bounce" | "silence" | "remap";
@@ -63,9 +63,9 @@ export interface FalAiSyncLipsyncV2Output {
  * Docs: https://fal.ai/models/fal-ai/sync-lipsync/v3/api
  */
 export interface FalAiSyncLipsyncV3Input {
-  /** URL of the input video. */
+  /** URL of the input video. Carries a video reference — an https URL or a `data:` URI. */
   video_url: string;
-  /** URL of the input audio. */
+  /** URL of the input audio. Carries a audio reference — an https URL or a `data:` URI. */
   audio_url: string;
   /** Lipsync mode when audio and video durations are out of sync. Default: `"cut_off"`. */
   sync_mode?: "cut_off" | "loop" | "bounce" | "silence" | "remap";

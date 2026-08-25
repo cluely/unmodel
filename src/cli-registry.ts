@@ -62,11 +62,19 @@ export const REGISTRY = {
   "leonardo.image": () => import("./providers/leonardo").then((m) => asCli(m.image)),
   "reve.image": () => import("./providers/reve").then((m) => asCli(m.image)),
   "reve.imageV2": () => import("./providers/reve").then((m) => asCli(m.imageV2)),
+  // fal serves 28 text-to-image endpoints behind ONE address, because at fal
+  // the endpoint id is the URL path rather than a route fork: `fal.image` takes
+  // an `endpoint` param and interpolates it. That is also why there is no
+  // `fal.imageFlux2` or the like — the qualified ids above exist to name a
+  // second wire ROUTE at one provider, and fal has one route with a variable
+  // path.
+  "fal.image": () => import("./providers/fal").then((m) => asCli(m.image)),
   "vidu.imageFromReference": () =>
     import("./providers/vidu").then((m) => asCli(m.imageFromReference)),
 
   // Image editing (URL/base64 image inputs — the multipart-only editors are
   // listed under MULTIPART_ONLY below)
+  "fal.imageEdit": () => import("./providers/fal").then((m) => asCli(m.imageEdit)),
   "black-forest-labs.imageEditFill": () =>
     import("./providers/black-forest-labs").then((m) => asCli(m.imageEditFill)),
   "black-forest-labs.imageEditExpand": () =>

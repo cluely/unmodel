@@ -5,27 +5,66 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.music` endpoint lets a caller state geometry and duration, and which wire
- * keys it takes.
+ * How each `fal.music` endpoint lets a caller state geometry, and which wire keys it
+ * takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
  * liability, and the classes are exhaustive by construction — an endpoint whose geometry
  * parameters fit none of them fails codegen rather than falling through.
  *
- * `keys` is fal's own parameter list, in fal's own order. Which of those keys is a
- * canonical unified word and which is a per-model extra is a HAND decision that lands with
- * each category's adapter; this file states the fact, not the mapping.
+ * The rest is the per-model narrowing the unified surface reads: `sizes` / `ratios` /
+ * `tiers` are this endpoint's own vocabulary for the canonical size words, and `extras` is
+ * everything it takes that the canonical vocabulary has no word for, typed from that
+ * endpoint's own wire interface.
+ *
+ * `keys` is fal's own parameter list, in fal's own order.
  */
 
 import type { FalParamShape } from "../shape-types";
+import type {
+  FalAiLyria2Input,
+} from "./music-wire.gen";
 
-/** fal-ai/lyria2. */
-const ROW_08afec = {
+/**
+ * The value half of an `extras` entry: `undefined` at run time, the cast's type
+ * at compile time.
+ *
+ * Declared here rather than imported from `core/unified/derive` on purpose —
+ * a generated module is DATA, and importing a runtime value from the unified
+ * kernel would put that kernel behind every `unmodel/fal/values` import. It is
+ * the same one-line definition, and `test/import-graph.test.ts` is what keeps
+ * the rule it protects honest.
+ */
+const EXTRA: never = undefined as never;
+
+/**
+ * fal-ai/lyria2.
+ *
+ * The extras are typed from `FalAiLyria2Input`, so the value an editor offers here and the
+ * value `fal.music` validates are one declaration.
+ */
+const ROW_3ec774 = {
   classes: ["fixedGeometry"],
   keys: ["prompt", "negative_prompt", "seed"],
+  extras: {
+    prompt: EXTRA as FalAiLyria2Input["prompt"],
+    negative_prompt: EXTRA as FalAiLyria2Input["negative_prompt"],
+    seed: EXTRA as FalAiLyria2Input["seed"],
+  },
 } as const;
 
 export const FAL_MUSIC_PARAM_SHAPES = {
-  "fal-ai/lyria2": ROW_08afec,
+  "fal-ai/lyria2": ROW_3ec774,
 } as const satisfies Record<string, FalParamShape>;
+
+/**
+ * Every `fal.music` endpoint id, in the order the table above keys them.
+ *
+ * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
+ * model list without reaching for a second generated module — the leaf rule (A10b in
+ * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
+ * one generator.
+ */
+
+export const FAL_MUSIC_MODELS = ["fal-ai/lyria2"] as const;

@@ -1,0 +1,496 @@
+{
+  "metadata": {
+    "category": "image-to-image",
+    "date": "2026-07-21T10:47:46.112Z",
+    "description": "Generates images from a text prompt at resolutions up to 2048×2048, with automatic prompt rewriting and prompt-guided resolution selection, building on Qwen's strength in complex text rendering and precise prompt adherence",
+    "display_name": "Qwen Image 3 Image Editing",
+    "group": {
+      "key": "qwen-image-3",
+      "label": "Image Editing"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/alibaba/qwen-image-3/edit",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "stylized",
+      "transform",
+      "typography"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0aa32168/Sh5wWmoqniWOUsvLNk1Qu.jpg",
+    "updated_at": "2026-08-04T22:31:58.927Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "ImageSize": {
+          "properties": {
+            "height": {
+              "default": 512,
+              "description": "The height of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Height",
+              "type": "integer"
+            },
+            "width": {
+              "default": 512,
+              "description": "The width of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "title": "ImageSize",
+          "type": "object",
+          "x-fal-order-properties": [
+            "width",
+            "height"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "QwenImage3EditInput": {
+          "description": "Input for Qwen Image 3 image editing with reference images.",
+          "properties": {
+            "enable_prompt_expansion": {
+              "default": true,
+              "description": "Enable automatic LLM prompt rewriting for better results.",
+              "title": "Enable Prompt Expansion",
+              "type": "boolean"
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "Enable content moderation for input and output. Disabling it requires account authorization; unauthorized requests are always checked.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "image_size": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ImageSize"
+                },
+                {
+                  "enum": [
+                    "square_hd",
+                    "square",
+                    "portrait_4_3",
+                    "portrait_16_9",
+                    "landscape_4_3",
+                    "landscape_16_9"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the generated image. If not provided, the model determines the resolution automatically. Total number of pixels must be between 512x512 and 2048x2048.",
+              "title": "Image Size"
+            },
+            "image_urls": {
+              "description": "Reference images for editing (1-3 images required). Order matters: reference as 'image 1', 'image 2', 'image 3' in prompt. Resolution: 384-2048px each dimension. Max size: 10MB each. Formats: JPEG, JPG, PNG (no alpha), WEBP.",
+              "examples": [
+                [
+                  "https://v3b.fal.media/files/b/0a8bf01f/TUehdcnBygWa1-SnEbp3K_image_123.png"
+                ]
+              ],
+              "items": {
+                "type": "string"
+              },
+              "title": "Image Urls",
+              "type": "array"
+            },
+            "negative_prompt": {
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "",
+              "description": "Content to avoid in the generated image. Max 500 characters.",
+              "examples": [
+                "low resolution, error, worst quality, low quality, deformed"
+              ],
+              "title": "Negative Prompt"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "The number of images to generate.",
+              "maximum": 6,
+              "minimum": 1,
+              "title": "Num Images",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "png",
+              "description": "The format of the generated image.",
+              "enum": [
+                "jpeg",
+                "png",
+                "webp"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "Text prompt describing the desired edit. Supports Chinese and English. Max 5000 characters.",
+              "examples": [
+                "Change the wolves into extremely realistic small puppies of different colors."
+              ],
+              "maxLength": 5000,
+              "minLength": 1,
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Random seed for reproducibility (0-2147483647).",
+              "title": "Seed"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt",
+            "image_urls"
+          ],
+          "title": "QwenImage3EditInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "negative_prompt",
+            "image_size",
+            "enable_prompt_expansion",
+            "seed",
+            "enable_safety_checker",
+            "sync_mode",
+            "num_images",
+            "output_format",
+            "image_urls"
+          ]
+        },
+        "QwenImage3EditOutput": {
+          "properties": {
+            "images": {
+              "description": "Generated images.",
+              "examples": [
+                [
+                  {
+                    "url": "https://v3b.fal.media/files/b/0a8bf01f/5ZVeoOz6DtJUq6-f4SIsc_WawZPkPJ.png"
+                  }
+                ]
+              ],
+              "items": {
+                "$ref": "#/components/schemas/File"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "seed": {
+              "description": "The seed used for generation.",
+              "examples": [
+                42
+              ],
+              "title": "Seed",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "images",
+            "seed"
+          ],
+          "title": "QwenImage3EditOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "seed"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/qwen-image-3/edit queue.",
+      "title": "Queue OpenAPI for fal-ai/qwen-image-3/edit",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Edit images using Qwen Image 3 Pro.",
+        "documentationUrl": "https://fal.ai/models/fal-ai/qwen-image-3/edit/api",
+        "endpointId": "fal-ai/qwen-image-3/edit",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/qwen-image-3/edit"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/qwen-image-3/edit": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QwenImage3EditInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/qwen-image-3/edit/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QwenImage3EditOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/qwen-image-3/edit/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/qwen-image-3/edit/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

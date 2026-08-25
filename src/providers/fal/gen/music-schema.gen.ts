@@ -25,6 +25,15 @@
 import { z } from "zod";
 
 export const falMusicInputSchema = z.looseObject({
+  /**
+   * The endpoint to submit to — unmodel's route selector, not a fal body field.
+   *
+   * Stripped in `finalize` and interpolated into `.request.url`; fal never receives it. It
+   * is declared here only so the pipeline does not report the one required parameter as an
+   * unknown one. The selector is `endpoint` rather than `model` because `model` is a REAL
+   * wire field on several fal endpoints.
+   */
+  endpoint: z.string(),
   negative_prompt: z.string().optional(),
   prompt: z.string().optional(),
   seed: z.number().nullable().optional(),

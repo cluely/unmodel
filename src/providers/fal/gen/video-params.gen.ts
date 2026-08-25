@@ -6,34 +6,94 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.video` endpoint lets a caller state geometry and duration, and which wire
- * keys it takes.
+ * How each `fal.video` endpoint lets a caller state geometry, and which wire keys it
+ * takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
  * liability, and the classes are exhaustive by construction — an endpoint whose geometry
  * parameters fit none of them fails codegen rather than falling through.
  *
- * `keys` is fal's own parameter list, in fal's own order. Which of those keys is a
- * canonical unified word and which is a per-model extra is a HAND decision that lands with
- * each category's adapter; this file states the fact, not the mapping.
+ * The rest is the per-model narrowing the unified surface reads: `sizes` / `ratios` /
+ * `tiers` are this endpoint's own vocabulary for the canonical size words, and `extras` is
+ * everything it takes that the canonical vocabulary has no word for, typed from that
+ * endpoint's own wire interface.
+ *
+ * `keys` is fal's own parameter list, in fal's own order.
  */
 
 import type { FalParamShape } from "../shape-types";
+import type {
+  FalAiKlingVideoV25TurboProImageToVideoInput,
+  FalAiVeo31Input,
+} from "./video-wire.gen";
 
-/** fal-ai/veo3.1. */
-const ROW_533832 = {
+/**
+ * The value half of an `extras` entry: `undefined` at run time, the cast's type
+ * at compile time.
+ *
+ * Declared here rather than imported from `core/unified/derive` on purpose —
+ * a generated module is DATA, and importing a runtime value from the unified
+ * kernel would put that kernel behind every `unmodel/fal/values` import. It is
+ * the same one-line definition, and `test/import-graph.test.ts` is what keeps
+ * the rule it protects honest.
+ */
+const EXTRA: never = undefined as never;
+
+/**
+ * fal-ai/veo3.1.
+ *
+ * The extras are typed from `FalAiVeo31Input`, so the value an editor offers here and the
+ * value `fal.video` validates are one declaration.
+ */
+const ROW_d2eb55 = {
   classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
   keys: ["prompt", "aspect_ratio", "duration", "negative_prompt", "resolution", "generate_audio", "seed", "auto_fix", "safety_tolerance"],
+  ratios: ["16:9", "9:16"],
+  extras: {
+    prompt: EXTRA as FalAiVeo31Input["prompt"],
+    aspect_ratio: EXTRA as FalAiVeo31Input["aspect_ratio"],
+    duration: EXTRA as FalAiVeo31Input["duration"],
+    negative_prompt: EXTRA as FalAiVeo31Input["negative_prompt"],
+    resolution: EXTRA as FalAiVeo31Input["resolution"],
+    generate_audio: EXTRA as FalAiVeo31Input["generate_audio"],
+    seed: EXTRA as FalAiVeo31Input["seed"],
+    auto_fix: EXTRA as FalAiVeo31Input["auto_fix"],
+    safety_tolerance: EXTRA as FalAiVeo31Input["safety_tolerance"],
+  },
 } as const;
 
-/** fal-ai/kling-video/v2.5-turbo/pro/image-to-video. */
-const ROW_d8f63d = {
+/**
+ * fal-ai/kling-video/v2.5-turbo/pro/image-to-video.
+ *
+ * The extras are typed from `FalAiKlingVideoV25TurboProImageToVideoInput`, so the value an
+ * editor offers here and the value `fal.video` validates are one declaration.
+ */
+const ROW_deafe6 = {
   classes: ["durationStringEnum"],
   keys: ["prompt", "image_url", "duration", "negative_prompt", "cfg_scale", "tail_image_url"],
+  extras: {
+    prompt: EXTRA as FalAiKlingVideoV25TurboProImageToVideoInput["prompt"],
+    image_url: EXTRA as FalAiKlingVideoV25TurboProImageToVideoInput["image_url"],
+    duration: EXTRA as FalAiKlingVideoV25TurboProImageToVideoInput["duration"],
+    negative_prompt: EXTRA as FalAiKlingVideoV25TurboProImageToVideoInput["negative_prompt"],
+    cfg_scale: EXTRA as FalAiKlingVideoV25TurboProImageToVideoInput["cfg_scale"],
+    tail_image_url: EXTRA as FalAiKlingVideoV25TurboProImageToVideoInput["tail_image_url"],
+  },
 } as const;
 
 export const FAL_VIDEO_PARAM_SHAPES = {
-  "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": ROW_d8f63d,
-  "fal-ai/veo3.1": ROW_533832,
+  "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": ROW_deafe6,
+  "fal-ai/veo3.1": ROW_d2eb55,
 } as const satisfies Record<string, FalParamShape>;
+
+/**
+ * Every `fal.video` endpoint id, in the order the table above keys them.
+ *
+ * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
+ * model list without reaching for a second generated module — the leaf rule (A10b in
+ * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
+ * one generator.
+ */
+
+export const FAL_VIDEO_MODELS = ["fal-ai/kling-video/v2.5-turbo/pro/image-to-video", "fal-ai/veo3.1"] as const;

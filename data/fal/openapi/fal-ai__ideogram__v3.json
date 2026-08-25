@@ -1,0 +1,714 @@
+{
+  "metadata": {
+    "category": "text-to-image",
+    "date": "2025-05-01T16:04:02.805Z",
+    "description": "Generate high-quality images, posters, and logos with Ideogram V3. Features exceptional typography handling and realistic outputs optimized for commercial and creative use.",
+    "display_name": "Ideogram Text to Image",
+    "group": {
+      "key": "ideogram-v3",
+      "label": "Text to Image"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/ideogram/v3",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "realism",
+      "typography"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9f91a8/JsTVqtZydplqvV_XGPvTV_5FOy6fcj.png",
+    "updated_at": "2026-06-24T10:32:24.316Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ColorPalette": {
+          "properties": {
+            "members": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/components/schemas/ColorPaletteMember"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A list of color palette members that define the color palette",
+              "title": "Members"
+            },
+            "name": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "EMBER",
+                    "FRESH",
+                    "JUNGLE",
+                    "MAGIC",
+                    "MELON",
+                    "MOSAIC",
+                    "PASTEL",
+                    "ULTRAMARINE"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A color palette preset value",
+              "title": "Name"
+            }
+          },
+          "title": "ColorPalette",
+          "type": "object",
+          "x-fal-order-properties": [
+            "members",
+            "name"
+          ]
+        },
+        "ColorPaletteMember": {
+          "properties": {
+            "color_weight": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0.05,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0.5,
+              "description": "The weight of the color in the color palette",
+              "title": "Color Weight"
+            },
+            "rgb": {
+              "$ref": "#/components/schemas/RGBColor",
+              "description": "RGB color value for the palette member"
+            }
+          },
+          "required": [
+            "rgb"
+          ],
+          "title": "ColorPaletteMember",
+          "type": "object",
+          "x-fal-order-properties": [
+            "rgb",
+            "color_weight"
+          ]
+        },
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "IdeogramV3Input": {
+          "properties": {
+            "color_palette": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ColorPalette"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A color palette for generation, must EITHER be specified via one of the presets (name) or explicitly via hexadecimal representations of the color with optional weights (members)"
+            },
+            "expand_prompt": {
+              "default": true,
+              "description": "Determine if MagicPrompt should be used in generating the request or not.",
+              "title": "Expand Prompt",
+              "type": "boolean"
+            },
+            "image_size": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ImageSize"
+                },
+                {
+                  "enum": [
+                    "square_hd",
+                    "square",
+                    "portrait_4_3",
+                    "portrait_16_9",
+                    "landscape_4_3",
+                    "landscape_16_9"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "square_hd",
+              "description": "The resolution of the generated image",
+              "title": "Image Size"
+            },
+            "image_urls": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A set of images to use as style references (maximum total size 10MB across all style references). The images should be in JPEG, PNG or WebP format",
+              "title": "Image Urls"
+            },
+            "negative_prompt": {
+              "default": "",
+              "description": "Description of what to exclude from an image. Descriptions in the prompt take precedence to descriptions in the negative prompt.",
+              "title": "Negative Prompt",
+              "type": "string"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "Number of images to generate.",
+              "maximum": 8,
+              "minimum": 1,
+              "title": "Num Images",
+              "type": "integer"
+            },
+            "prompt": {
+              "examples": [
+                "The Bone Forest stretched across the horizon, its trees fashioned from the ossified remains of ancient leviathans that once swam through the sky. Shamans with antlers growing from their shoulders and eyes that revealed the true nature of any being they beheld conducted rituals to commune with the spirits that still inhabited the calcified grove. In sky writes \"Ideogram V3 in fal.ai\""
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "rendering_speed": {
+              "default": "BALANCED",
+              "description": "The rendering speed to use.",
+              "enum": [
+                "TURBO",
+                "BALANCED",
+                "QUALITY"
+              ],
+              "title": "Rendering Speed",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Seed for the random number generator",
+              "title": "Seed"
+            },
+            "style": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "AUTO",
+                    "GENERAL",
+                    "REALISTIC",
+                    "DESIGN"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The style type to generate with. Cannot be used with style_codes.",
+              "title": "Style"
+            },
+            "style_codes": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A list of 8 character hexadecimal codes representing the style of the image. Cannot be used in conjunction with style_reference_images or style",
+              "title": "Style Codes"
+            },
+            "style_preset": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "80S_ILLUSTRATION",
+                    "90S_NOSTALGIA",
+                    "ABSTRACT_ORGANIC",
+                    "ANALOG_NOSTALGIA",
+                    "ART_BRUT",
+                    "ART_DECO",
+                    "ART_POSTER",
+                    "AURA",
+                    "AVANT_GARDE",
+                    "BAUHAUS",
+                    "BLUEPRINT",
+                    "BLURRY_MOTION",
+                    "BRIGHT_ART",
+                    "C4D_CARTOON",
+                    "CHILDRENS_BOOK",
+                    "COLLAGE",
+                    "COLORING_BOOK_I",
+                    "COLORING_BOOK_II",
+                    "CUBISM",
+                    "DARK_AURA",
+                    "DOODLE",
+                    "DOUBLE_EXPOSURE",
+                    "DRAMATIC_CINEMA",
+                    "EDITORIAL",
+                    "EMOTIONAL_MINIMAL",
+                    "ETHEREAL_PARTY",
+                    "EXPIRED_FILM",
+                    "FLAT_ART",
+                    "FLAT_VECTOR",
+                    "FOREST_REVERIE",
+                    "GEO_MINIMALIST",
+                    "GLASS_PRISM",
+                    "GOLDEN_HOUR",
+                    "GRAFFITI_I",
+                    "GRAFFITI_II",
+                    "HALFTONE_PRINT",
+                    "HIGH_CONTRAST",
+                    "HIPPIE_ERA",
+                    "ICONIC",
+                    "JAPANDI_FUSION",
+                    "JAZZY",
+                    "LONG_EXPOSURE",
+                    "MAGAZINE_EDITORIAL",
+                    "MINIMAL_ILLUSTRATION",
+                    "MIXED_MEDIA",
+                    "MONOCHROME",
+                    "NIGHTLIFE",
+                    "OIL_PAINTING",
+                    "OLD_CARTOONS",
+                    "PAINT_GESTURE",
+                    "POP_ART",
+                    "RETRO_ETCHING",
+                    "RIVIERA_POP",
+                    "SPOTLIGHT_80S",
+                    "STYLIZED_RED",
+                    "SURREAL_COLLAGE",
+                    "TRAVEL_POSTER",
+                    "VINTAGE_GEO",
+                    "VINTAGE_POSTER",
+                    "WATERCOLOR",
+                    "WEIRD",
+                    "WOODBLOCK_PRINT"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Style preset for generation. The chosen style preset will guide the generation.",
+              "title": "Style Preset"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "BaseTextToImageInputV3",
+          "type": "object",
+          "x-fal-order-properties": [
+            "image_urls",
+            "rendering_speed",
+            "color_palette",
+            "style_codes",
+            "style",
+            "expand_prompt",
+            "num_images",
+            "seed",
+            "sync_mode",
+            "style_preset",
+            "prompt",
+            "image_size",
+            "negative_prompt"
+          ]
+        },
+        "IdeogramV3Output": {
+          "properties": {
+            "images": {
+              "examples": [
+                [
+                  {
+                    "url": "https://v3.fal.media/files/penguin/lHdRabS80guysb8Zw1kul_image.png"
+                  }
+                ]
+              ],
+              "items": {
+                "$ref": "#/components/schemas/File"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "seed": {
+              "description": "Seed used for the random number generator",
+              "examples": [
+                123456
+              ],
+              "title": "Seed",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "images",
+            "seed"
+          ],
+          "title": "OutputV3",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "seed"
+          ]
+        },
+        "ImageSize": {
+          "properties": {
+            "height": {
+              "default": 512,
+              "description": "The height of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Height",
+              "type": "integer"
+            },
+            "width": {
+              "default": 512,
+              "description": "The width of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "title": "ImageSize",
+          "type": "object",
+          "x-fal-order-properties": [
+            "width",
+            "height"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "RGBColor": {
+          "properties": {
+            "b": {
+              "default": 0,
+              "description": "Blue color value",
+              "maximum": 255,
+              "minimum": 0,
+              "title": "B",
+              "type": "integer"
+            },
+            "g": {
+              "default": 0,
+              "description": "Green color value",
+              "maximum": 255,
+              "minimum": 0,
+              "title": "G",
+              "type": "integer"
+            },
+            "r": {
+              "default": 0,
+              "description": "Red color value",
+              "maximum": 255,
+              "minimum": 0,
+              "title": "R",
+              "type": "integer"
+            }
+          },
+          "title": "RGBColor",
+          "type": "object",
+          "x-fal-order-properties": [
+            "r",
+            "g",
+            "b"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/ideogram/v3 queue.",
+      "title": "Queue OpenAPI for fal-ai/ideogram/v3",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Ideogram V3",
+        "category": "text-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/ideogram/v3/api",
+        "endpointId": "fal-ai/ideogram/v3",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/ideogram/v3",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9f91a8/JsTVqtZydplqvV_XGPvTV_5FOy6fcj.png"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/ideogram/v3": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeogramV3Input"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/ideogram/v3/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/IdeogramV3Output"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/ideogram/v3/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/ideogram/v3/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

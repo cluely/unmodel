@@ -1,0 +1,11 @@
+{
+  "ref": "fal/fal-ai/flux/dev",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "image_size": {
+      "width": 1344,
+      "height": 768
+    }
+  },
+  "url": "https://queue.fal.run/fal-ai/flux/dev"
+}

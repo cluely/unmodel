@@ -40,6 +40,7 @@ import type {
 } from "../../src/core/unified/vocabulary/image-edit";
 import { imageEdit } from "../../src/unified/image-edit";
 import { imageEdit as blackForestLabs } from "../../src/providers/black-forest-labs/unified-image-edit";
+import { imageEdit as fal } from "../../src/providers/fal/unified-image-edit";
 import { imageEdit as ideogram } from "../../src/providers/ideogram/unified-image-edit";
 import { imageEdit as openai } from "../../src/providers/openai/unified-image-edit";
 import { imageEdit as recraft } from "../../src/providers/recraft/unified-image-edit";
@@ -149,6 +150,44 @@ const TABLE: Readonly<Record<string, Capability>> = {
     outputFormat: "declared",
     aspectRatio: "derived",
     dimensions: "derived",
+  },
+  /**
+   * fal, whose rows are GENERATED from its own published OpenAPI, so this entry
+   * checks the generator as much as the adapter.
+   *
+   * `fal-ai/flux/dev/image-to-image` is the representative ref for one reason:
+   * it is the ONE endpoint in fal's 17 that declares a `strength` field. The
+   * other sixteen are instruction editing, which has no dial between keeping
+   * and replacing the input, so `strength` there is refused by name rather than
+   * declared unsupported adapter-wide — the same R7 rule the generation table
+   * documents. Picking a ref that could not exercise `strength` at all would
+   * have left the category's most-approximated word untested here.
+   *
+   * `size: null` and both shape columns `refused`, because this route has no
+   * geometry field of ANY kind — its generated class is `fixedGeometry`, and an
+   * image-to-image re-render comes back at the shape it was given. That is the
+   * commonest and most sensible thing an editing route can do, and it is
+   * `refused` rather than `declared` for the usual fal reason: sibling
+   * endpoints in the same adapter (the kontext routes, the nano-banana edits)
+   * do carry `aspect_ratio`.
+   *
+   * The `strength` scale starts at **0.01, not 0**. fal's schema floors it
+   * there, so canonical 0 — "keep the source" — has no exact wire value and
+   * the adapter clamps up to the floor and warns. Declaring the scale here is
+   * what makes that visible rather than a surprise.
+   */
+  fal: {
+    ref: "fal/fal-ai/flux/dev/image-to-image",
+    adapter: fal,
+    size: null,
+    sizeString: null,
+    extra: { num_inference_steps: 20 },
+    strength: { at: "strength", atZero: 0.01, atOne: 1 },
+    n: "native",
+    seed: "native",
+    outputFormat: "native",
+    aspectRatio: "refused",
+    dimensions: "refused",
   },
   recraft: {
     ref: "recraft/recraftv4_1",
@@ -498,8 +537,19 @@ describe.each(rows)("%s", (provider, row) => {
       if (row.size === null) {
         // Both spellings of a shape are refused, which is the honest answer for
         // a route whose output takes the input's shape.
-        expect(row.aspectRatio).toBe("declared");
-        expect(row.dimensions).toBe("declared");
+        //
+        // Refused EITHER WAY, and the table may say which. `declared` is an
+        // adapter-wide gap (Recraft: no Recraft editing route has a shape
+        // field); `refused` is model-dependent (fal: this endpoint has none,
+        // and the kontext endpoints in the same adapter do). Both are a
+        // rejection at the canonical path — which is the property this column
+        // is about — and the row's own `aspectRatio` / `dimensions` tests have
+        // already checked the distinction against the adapter's `unsupported`
+        // record. Pinning `declared` here would say that a provider serving one
+        // route with a shape field and one without has to lie about one of
+        // them.
+        expect(["declared", "refused"]).toContain(row.aspectRatio);
+        expect(["declared", "refused"]).toContain(row.dimensions);
         return;
       }
       const compiled = compile(row, { aspectRatio: PROBE.aspectRatio });

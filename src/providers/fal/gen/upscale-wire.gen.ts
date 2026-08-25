@@ -25,7 +25,10 @@ import type {
  * Docs: https://fal.ai/models/fal-ai/clarity-upscaler/api
  */
 export interface FalAiClarityUpscalerInput {
-  /** The URL of the image to upscale. */
+  /**
+   * The URL of the image to upscale. Carries a image reference — an https URL or a `data:`
+   * URI.
+   */
   image_url: string;
   /**
    * The prompt to use for generating the image. Be as descriptive as possible for best

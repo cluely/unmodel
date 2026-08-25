@@ -1,0 +1,546 @@
+{
+  "metadata": {
+    "category": "text-to-image",
+    "date": "2025-08-04T17:48:45.350Z",
+    "description": "Qwen-Image is an image generation foundation model in the Qwen series that achieves significant advances in complex text rendering and precise image editing. ",
+    "display_name": "Qwen Image",
+    "group": {
+      "key": "qwen-image",
+      "label": "Text to Image"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/qwen-image",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "text-to-image"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9f91b6/68wKdpl_xQVqBi3yNfnrY_ewDq2sZK.png",
+    "training_endpoint_ids": [
+      "fal-ai/qwen-image-trainer-v2",
+      "fal-ai/qwen-image-trainer"
+    ],
+    "updated_at": "2026-06-24T10:39:09.765Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "Image": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "image/jpeg",
+              "title": "Content Type"
+            },
+            "height": {
+              "title": "Height",
+              "type": "integer"
+            },
+            "url": {
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "url",
+            "width",
+            "height"
+          ],
+          "title": "Image",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "width",
+            "height",
+            "content_type"
+          ]
+        },
+        "ImageSize": {
+          "properties": {
+            "height": {
+              "default": 512,
+              "description": "The height of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Height",
+              "type": "integer"
+            },
+            "width": {
+              "default": 512,
+              "description": "The width of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "title": "ImageSize",
+          "type": "object",
+          "x-fal-order-properties": [
+            "width",
+            "height"
+          ]
+        },
+        "LoraWeight": {
+          "properties": {
+            "path": {
+              "description": "URL or the path to the LoRA weights.",
+              "title": "Path",
+              "type": "string"
+            },
+            "scale": {
+              "default": 1,
+              "description": "\n            The scale of the LoRA weight. This is used to scale the LoRA weight\n            before merging it with the base model.\n        ",
+              "maximum": 4,
+              "minimum": 0,
+              "title": "Scale",
+              "type": "number"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "title": "LoraWeight",
+          "type": "object",
+          "x-fal-order-properties": [
+            "path",
+            "scale"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "QwenImageInput": {
+          "properties": {
+            "acceleration": {
+              "default": "none",
+              "description": "Acceleration level for image generation. Options: 'none', 'regular', 'high'. Higher acceleration increases speed. 'regular' balances speed and quality. 'high' is recommended for images without text.",
+              "enum": [
+                "none",
+                "regular",
+                "high"
+              ],
+              "examples": [
+                "none"
+              ],
+              "title": "Acceleration",
+              "type": "string"
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "If set to true, the safety checker will be enabled. Disabling it requires account authorization; unauthorized requests are always checked, and images flagged as unsafe are returned as black images.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "guidance_scale": {
+              "default": 2.5,
+              "description": "\n            The CFG (Classifier Free Guidance) scale is a measure of how close you want\n            the model to stick to your prompt when looking for a related image to show you.\n        ",
+              "maximum": 20,
+              "minimum": 0,
+              "title": "Guidance scale",
+              "type": "number"
+            },
+            "image_size": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ImageSize"
+                },
+                {
+                  "enum": [
+                    "square_hd",
+                    "square",
+                    "portrait_4_3",
+                    "portrait_16_9",
+                    "landscape_4_3",
+                    "landscape_16_9"
+                  ],
+                  "type": "string"
+                }
+              ],
+              "default": "landscape_4_3",
+              "description": "The size of the generated image.",
+              "title": "Image Size"
+            },
+            "loras": {
+              "default": [],
+              "description": "\n            The LoRAs to use for the image generation. You can use up to 3 LoRAs\n            and they will be merged together to generate the final image.\n        ",
+              "examples": [],
+              "items": {
+                "$ref": "#/components/schemas/LoraWeight"
+              },
+              "title": "Loras",
+              "type": "array"
+            },
+            "negative_prompt": {
+              "default": " ",
+              "description": "The negative prompt for the generation",
+              "examples": [
+                "blurry, ugly"
+              ],
+              "title": "Negative Prompt",
+              "type": "string"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "The number of images to generate.",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Num Images",
+              "type": "integer"
+            },
+            "num_inference_steps": {
+              "default": 30,
+              "description": "The number of inference steps to perform.",
+              "maximum": 250,
+              "minimum": 2,
+              "title": "Num Inference Steps",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "png",
+              "description": "The format of the generated image.",
+              "enum": [
+                "jpeg",
+                "png"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The prompt to generate the image with",
+              "examples": [
+                "Mount Fuji with cherry blossoms in the foreground, clear sky, peaceful spring day, soft natural light, realistic landscape."
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\n            The same seed and the same prompt given to the same version of the model\n            will output the same image every time.\n        ",
+              "title": "Seed"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            },
+            "use_turbo": {
+              "default": false,
+              "description": "Enable turbo mode for faster generation with high quality. When enabled, uses optimized settings (10 steps, CFG=1.2).",
+              "examples": [
+                true
+              ],
+              "title": "Use Turbo",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "BaseQwenImageInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "image_size",
+            "num_inference_steps",
+            "seed",
+            "guidance_scale",
+            "sync_mode",
+            "num_images",
+            "enable_safety_checker",
+            "output_format",
+            "negative_prompt",
+            "acceleration",
+            "loras",
+            "use_turbo"
+          ]
+        },
+        "QwenImageOutput": {
+          "properties": {
+            "has_nsfw_concepts": {
+              "description": "Whether the generated images contain NSFW concepts.",
+              "items": {
+                "type": "boolean"
+              },
+              "title": "Has Nsfw Concepts",
+              "type": "array"
+            },
+            "images": {
+              "description": "The generated image files info.",
+              "examples": [
+                [
+                  {
+                    "content_type": "image/jpeg",
+                    "height": 768,
+                    "url": "https://v3.fal.media/files/rabbit/KoIbq6nhDBDPxDQrivW-m.png",
+                    "width": 1024
+                  }
+                ]
+              ],
+              "items": {
+                "$ref": "#/components/schemas/Image"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "prompt": {
+              "description": "The prompt used for generating the image.",
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "description": "\n            Seed of the generated Image. It will be the same value of the one passed in the\n            input or the randomly generated that was used in case none was passed.\n        ",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ],
+          "title": "QwenImageOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/qwen-image queue.",
+      "title": "Queue OpenAPI for fal-ai/qwen-image",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Qwen-Image with parallel CFG and LoRA support, generate images with the Qwen Image model.",
+        "category": "text-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/qwen-image/api",
+        "endpointId": "fal-ai/qwen-image",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/qwen-image",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9f91b6/68wKdpl_xQVqBi3yNfnrY_ewDq2sZK.png"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/qwen-image": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QwenImageInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/qwen-image/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QwenImageOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/qwen-image/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/qwen-image/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

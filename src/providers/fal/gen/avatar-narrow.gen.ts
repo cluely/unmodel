@@ -27,8 +27,8 @@ export const FAL_AVATAR_SHAPES = {
   "fal-ai/sync-lipsync/v3/image-to-video": {
     order: ["image_url", "audio_url"],
     props: {
-      image_url: { t: "string", req: true },
-      audio_url: { t: "string", req: true },
+      image_url: { t: "string", req: true, media: "image" },
+      audio_url: { t: "string", req: true, media: "audio" },
     },
   },
 } as const satisfies Record<string, FalEndpointShape>;

@@ -47,9 +47,14 @@ const png = (bytes = 64): Blob => new Blob([new Uint8Array(bytes)], { type: "ima
 const URL_IMAGE = "https://example.com/street.png";
 
 describe("the pack", () => {
-  test("registers exactly the four image-edit providers, sorted", () => {
+  test("registers exactly the five image-edit providers, sorted", () => {
     expect([...imageEdit.providers]).toEqual([
       "black-forest-labs",
+      // fal contributes 17 editing endpoints — more than the other four
+      // providers together — because it is a queue in front of many vendors.
+      // Its mask-driven routes are still excluded, on the same rule that keeps
+      // Stability's out: `mask_url` is not a word this vocabulary has.
+      "fal",
       "ideogram",
       "openai",
       "recraft",

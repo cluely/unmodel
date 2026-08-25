@@ -27,7 +27,7 @@ export const FAL_UPSCALE_SHAPES = {
   "fal-ai/clarity-upscaler": {
     order: ["image_url", "prompt", "upscale_factor", "negative_prompt", "creativity", "resemblance", "guidance_scale", "num_inference_steps", "seed", "enable_safety_checker"],
     props: {
-      image_url: { t: "string", req: true },
+      image_url: { t: "string", req: true, media: "image" },
       prompt: { t: "string", def: true },
       upscale_factor: { t: "number", def: true, min: 1, max: 4 },
       negative_prompt: { t: "string", def: true },

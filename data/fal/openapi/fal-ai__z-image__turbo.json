@@ -1,0 +1,538 @@
+{
+  "metadata": {
+    "category": "text-to-image",
+    "date": "2025-11-26T14:38:10.381Z",
+    "description": "Z-Image Turbo is a super fast text-to-image model of 6B parameters developed by Tongyi-MAI.",
+    "display_name": "Z Image Turbo",
+    "group": {
+      "key": "z-image-turbo",
+      "label": "Text to Image"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/z-image/turbo",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "turbo",
+      "z-image",
+      "fast"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/koala/Pvji5sM6n6oNIo-p0Xsn__245f3d4eb5df4952aa80ec74f4afd7f2.jpg",
+    "training_endpoint_ids": [
+      "fal-ai/z-image-trainer",
+      "fal-ai/z-image-turbo-trainer-v2"
+    ],
+    "updated_at": "2026-07-09T03:35:06.702Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ImageFile": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "height": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The height of the image",
+              "title": "Height"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The width of the image",
+              "title": "Width"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "ImageFile",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size",
+            "width",
+            "height"
+          ]
+        },
+        "ImageSize": {
+          "properties": {
+            "height": {
+              "default": 512,
+              "description": "The height of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Height",
+              "type": "integer"
+            },
+            "width": {
+              "default": 512,
+              "description": "The width of the generated image.",
+              "exclusiveMinimum": 0,
+              "maximum": 14142,
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "title": "ImageSize",
+          "type": "object",
+          "x-fal-order-properties": [
+            "width",
+            "height"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "ZImageTurboInput": {
+          "properties": {
+            "acceleration": {
+              "default": "regular",
+              "description": "The acceleration level to use.",
+              "enum": [
+                "none",
+                "regular",
+                "high"
+              ],
+              "title": "Acceleration",
+              "type": "string"
+            },
+            "enable_prompt_expansion": {
+              "default": false,
+              "description": "Whether to enable prompt expansion. Note: this will increase the price by 0.0025 credits per request.",
+              "title": "Enable Prompt Expansion",
+              "type": "boolean"
+            },
+            "enable_safety_checker": {
+              "default": true,
+              "description": "If set to true, the safety checker will be enabled. Disabling it requires account authorization; unauthorized requests are always checked, and images flagged as unsafe are returned as black images.",
+              "title": "Enable Safety Checker",
+              "type": "boolean"
+            },
+            "image_size": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ImageSize"
+                },
+                {
+                  "enum": [
+                    "square_hd",
+                    "square",
+                    "portrait_4_3",
+                    "portrait_16_9",
+                    "landscape_4_3",
+                    "landscape_16_9"
+                  ],
+                  "type": "string"
+                }
+              ],
+              "default": "landscape_4_3",
+              "description": "The size of the generated image.",
+              "title": "Image Size"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "The number of images to generate.",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Number of Images",
+              "type": "integer"
+            },
+            "num_inference_steps": {
+              "default": 8,
+              "description": "The number of inference steps to perform.",
+              "maximum": 8,
+              "minimum": 1,
+              "title": "Number of Inference Steps",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "png",
+              "description": "The format of the generated image.",
+              "enum": [
+                "jpeg",
+                "png",
+                "webp"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The prompt to generate an image from.",
+              "examples": [
+                "A hyper-realistic, close-up portrait of a tribal elder from the Omo Valley, painted with intricate white chalk patterns and adorned with a headdress made of dried flowers, seed pods, and rusted bottle caps. The focus is razor-sharp on the texture of the skin, showing every pore, wrinkle, and scar that tells a story of survival. The background is a blurred, smoky hut interior, with the warm glow of a cooking fire reflecting in the subject's dark, soulful eyes. Shot on a Leica M6 with Kodak Portra 400 film grain aesthetic."
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\n            The same seed and the same prompt given to the same version of the model\n            will output the same image every time.\n        ",
+              "title": "Seed"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "ZImageTurboTextToImageInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "image_size",
+            "num_inference_steps",
+            "seed",
+            "sync_mode",
+            "num_images",
+            "enable_safety_checker",
+            "output_format",
+            "acceleration",
+            "enable_prompt_expansion"
+          ]
+        },
+        "ZImageTurboOutput": {
+          "properties": {
+            "has_nsfw_concepts": {
+              "description": "Whether the generated images contain NSFW concepts.",
+              "items": {
+                "type": "boolean"
+              },
+              "title": "Has Nsfw Concepts",
+              "type": "array"
+            },
+            "images": {
+              "description": "The generated image files info.",
+              "examples": [
+                [
+                  {
+                    "content_type": "image/png",
+                    "height": 768,
+                    "url": "https://storage.googleapis.com/falserverless/example_outputs/z-image-turbo-output.png",
+                    "width": 1024
+                  }
+                ]
+              ],
+              "items": {
+                "$ref": "#/components/schemas/ImageFile"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "prompt": {
+              "description": "The prompt used for generating the image.",
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "description": "Seed of the generated Image. It will be the same value of the one passed in the input or the randomly generated that was used in case none was passed.",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "description": "The timings of the generation process.",
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ],
+          "title": "ZImageTurboOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/z-image/turbo queue.",
+      "title": "Queue OpenAPI for fal-ai/z-image/turbo",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Generate images using Z-Image Turbo at lightning speed.",
+        "category": "text-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/z-image/turbo/api",
+        "endpointId": "fal-ai/z-image/turbo",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/z-image/turbo",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/koala/Pvji5sM6n6oNIo-p0Xsn__245f3d4eb5df4952aa80ec74f4afd7f2.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/z-image/turbo": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZImageTurboInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/z-image/turbo/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ZImageTurboOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/z-image/turbo/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/z-image/turbo/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

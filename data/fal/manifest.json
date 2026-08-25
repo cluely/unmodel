@@ -9,6 +9,46 @@
     "re-downloading every document."
   ],
   "endpoints": {
+    "alibaba/qwen-image-3/edit": {
+      "category": "image-to-image",
+      "display_name": "Qwen Image 3 Image Editing",
+      "file": "openapi/alibaba__qwen-image-3__edit.json",
+      "sha256": "6c962574d533918f74c9128b5a1bef721f2b3579a542737106e62a8213d9e8cf",
+      "status": "active",
+      "updated_at": "2026-08-04T22:31:58.927Z"
+    },
+    "bytedance/seedream/v5/pro/edit": {
+      "category": "image-to-image",
+      "display_name": "Seedream 5.0 Pro Image Editing",
+      "file": "openapi/bytedance__seedream__v5__pro__edit.json",
+      "sha256": "1c1b8e2fb4d863ce72b3a427e9e4ffff9a56dd9b7387bc05c16e4795aab637b5",
+      "status": "active",
+      "updated_at": "2026-07-17T03:47:17.078Z"
+    },
+    "bytedance/seedream/v5/pro/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "Seedream 5.0 Pro Text to Image",
+      "file": "openapi/bytedance__seedream__v5__pro__text-to-image.json",
+      "sha256": "b35e305e14ab0a76a1237f107f1ea9ba7aafd68f10f7b7b78b125c5d84dbd2a7",
+      "status": "active",
+      "updated_at": "2026-07-17T03:49:00.715Z"
+    },
+    "fal-ai/bytedance/seedream/v4.5/edit": {
+      "category": "image-to-image",
+      "display_name": "Bytedance Seedream V4.5 Edit",
+      "file": "openapi/fal-ai__bytedance__seedream__v4.5__edit.json",
+      "sha256": "7d3c64ddb990e827e8d955e42890be17305801e9ca501b4a8f74cd997125e0f8",
+      "status": "active",
+      "updated_at": "2026-04-26T21:58:12.077Z"
+    },
+    "fal-ai/bytedance/seedream/v4.5/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "Bytedance Seedream V4.5 Text To Image",
+      "file": "openapi/fal-ai__bytedance__seedream__v4.5__text-to-image.json",
+      "sha256": "0986412cb92166d176bb8ea63cd5187b55869048c1a2b99b306ce29876794aec",
+      "status": "active",
+      "updated_at": "2026-04-26T21:58:12.077Z"
+    },
     "fal-ai/clarity-upscaler": {
       "category": "image-to-image",
       "display_name": "Clarity Upscaler",
@@ -16,6 +56,118 @@
       "sha256": "270d228f197b988eea32b81cc4320309d8f0633fdb8b0ea595d79b260dd40054",
       "status": "active",
       "updated_at": "2026-05-06T21:22:23.372Z"
+    },
+    "fal-ai/flux-2": {
+      "category": "text-to-image",
+      "display_name": "FLUX 2",
+      "file": "openapi/fal-ai__flux-2.json",
+      "sha256": "a786efb7baff9c4215af3b463d83a30d42077ad5491ca468a27649b7ddf17413",
+      "status": "active",
+      "updated_at": "2026-05-27T00:51:44.726Z"
+    },
+    "fal-ai/flux-2-max": {
+      "category": "text-to-image",
+      "display_name": "Flux 2 Max",
+      "file": "openapi/fal-ai__flux-2-max.json",
+      "sha256": "6d3369bec1046473ec5ff8a7d002f048a11236529f91b81d392693f5e906246e",
+      "status": "active",
+      "updated_at": "2026-04-21T17:46:41.909Z"
+    },
+    "fal-ai/flux-2-pro": {
+      "category": "text-to-image",
+      "display_name": "Flux 2 Pro",
+      "file": "openapi/fal-ai__flux-2-pro.json",
+      "sha256": "885596edd5931e0bfc306f9d0b9dd1ca13628da22c8ab2753f6a8884bef9f173",
+      "status": "active",
+      "updated_at": "2026-04-21T17:46:42.940Z"
+    },
+    "fal-ai/flux-2-pro/edit": {
+      "category": "image-to-image",
+      "display_name": "FLUX 2 Pro Edit",
+      "file": "openapi/fal-ai__flux-2-pro__edit.json",
+      "sha256": "29ae172962c22d3562c0bf364394e886907d89ad1be277def407e842d6d762ec",
+      "status": "active",
+      "updated_at": "2026-04-21T17:46:43.441Z"
+    },
+    "fal-ai/flux-2/edit": {
+      "category": "image-to-image",
+      "display_name": "FLUX 2 Edit",
+      "file": "openapi/fal-ai__flux-2__edit.json",
+      "sha256": "962a1a16ab80062da0b3d6b6b631714fc08c9b13d544ff4623b14afa5513f340",
+      "status": "active",
+      "updated_at": "2026-04-21T17:46:46.279Z"
+    },
+    "fal-ai/flux-2/flash": {
+      "category": "text-to-image",
+      "display_name": "FLUX 2 Flash",
+      "file": "openapi/fal-ai__flux-2__flash.json",
+      "sha256": "ee809381b342e078219b52b038f974d8020558782003850b7252aa01ba33f4d9",
+      "status": "active",
+      "updated_at": "2026-04-21T17:46:46.996Z"
+    },
+    "fal-ai/flux-kontext/dev": {
+      "category": "image-to-image",
+      "display_name": "FLUX.1 Kontext [dev]",
+      "file": "openapi/fal-ai__flux-kontext__dev.json",
+      "sha256": "2ae1beac3a9adeb561bb824285ba081127265ae5961552c8f9b47c6eaf8962e9",
+      "status": "active",
+      "updated_at": "2026-04-21T17:47:04.191Z"
+    },
+    "fal-ai/flux-lora": {
+      "category": "text-to-image",
+      "display_name": "FLUX.1 [dev] with LoRAs",
+      "file": "openapi/fal-ai__flux-lora.json",
+      "sha256": "42baaa52d6183e31bc3f87a2936488627d472350b5494f0453fa82aeab384396",
+      "status": "active",
+      "updated_at": "2026-06-24T10:31:43.297Z"
+    },
+    "fal-ai/flux-pro/kontext": {
+      "category": "image-to-image",
+      "display_name": "FLUX.1 Kontext [pro]",
+      "file": "openapi/fal-ai__flux-pro__kontext.json",
+      "sha256": "a4b46020129e08fb7cc45766e98cfaeae900d094186341ed177ec2f90c853735",
+      "status": "active",
+      "updated_at": "2026-04-21T17:47:19.221Z"
+    },
+    "fal-ai/flux-pro/kontext/max": {
+      "category": "image-to-image",
+      "display_name": "FLUX.1 Kontext [max]",
+      "file": "openapi/fal-ai__flux-pro__kontext__max.json",
+      "sha256": "c7218e329bb6e9e41ab6625407a0a7ba4442963dc0c6c50aa7c299a69644898f",
+      "status": "active",
+      "updated_at": "2026-06-24T10:34:48.394Z"
+    },
+    "fal-ai/flux-pro/kontext/max/multi": {
+      "category": "image-to-image",
+      "display_name": "FLUX.1 Kontext [max]",
+      "file": "openapi/fal-ai__flux-pro__kontext__max__multi.json",
+      "sha256": "c358f22bdc0aea243b56012efd074829a8f88d64780276699461bcb1bdef7d72",
+      "status": "active",
+      "updated_at": "2026-06-24T10:37:10.810Z"
+    },
+    "fal-ai/flux-pro/v1.1": {
+      "category": "text-to-image",
+      "display_name": "FLUX1.1 [pro]",
+      "file": "openapi/fal-ai__flux-pro__v1.1.json",
+      "sha256": "7316333d4cca228c1202a7b3be56a6fcda03fdb423c7b171caed020f75f8fa0c",
+      "status": "active",
+      "updated_at": "2026-04-21T17:47:23.571Z"
+    },
+    "fal-ai/flux-pro/v1.1-ultra": {
+      "category": "text-to-image",
+      "display_name": "FLUX1.1 [pro] ultra",
+      "file": "openapi/fal-ai__flux-pro__v1.1-ultra.json",
+      "sha256": "acc9ce2093b2816530a45fd4e0e369d11b7afe126d7de5b20ac8c165c659d245",
+      "status": "active",
+      "updated_at": "2026-04-21T17:47:24.374Z"
+    },
+    "fal-ai/flux-pro/v1/fill": {
+      "category": "image-to-image",
+      "display_name": "FLUX.1 [pro] Fill",
+      "file": "openapi/fal-ai__flux-pro__v1__fill.json",
+      "sha256": "90a7669f12a3c4ea89589d4cb9054ee0ebc7a4b95b58b9272f6edfd21776a6c2",
+      "status": "active",
+      "updated_at": "2026-04-21T17:47:29.481Z"
     },
     "fal-ai/flux/dev": {
       "category": "text-to-image",
@@ -25,6 +177,14 @@
       "status": "active",
       "updated_at": "2026-04-21T17:47:32.206Z"
     },
+    "fal-ai/flux/dev/image-to-image": {
+      "category": "image-to-image",
+      "display_name": "FLUX.1 [dev]",
+      "file": "openapi/fal-ai__flux__dev__image-to-image.json",
+      "sha256": "010d67206cffc25d67c0c1ced6157259c06b669eb94488bd508b6bf628c45adc",
+      "status": "active",
+      "updated_at": "2026-06-24T10:32:41.401Z"
+    },
     "fal-ai/flux/schnell": {
       "category": "text-to-image",
       "display_name": "FLUX.1 [schnell]",
@@ -32,6 +192,38 @@
       "sha256": "5a3deb2a26870a5363c197c6f03ab92a907d3f68d4885505fee923909615ca00",
       "status": "active",
       "updated_at": "2026-06-24T23:02:10.109Z"
+    },
+    "fal-ai/gpt-image-1.5": {
+      "category": "text-to-image",
+      "display_name": "GPT-Image 1.5",
+      "file": "openapi/fal-ai__gpt-image-1.5.json",
+      "sha256": "2f72f41255d3c2273302ad902490eef93c85a1b5749f2505ff403715622fcc04",
+      "status": "active",
+      "updated_at": "2026-04-21T17:47:52.211Z"
+    },
+    "fal-ai/gpt-image-1.5/edit": {
+      "category": "image-to-image",
+      "display_name": "GPT-Image 1.5",
+      "file": "openapi/fal-ai__gpt-image-1.5__edit.json",
+      "sha256": "abcf17432eab62f9af2faf0dc585c658e283dc3a37281bd73bb7c1b356ba2974",
+      "status": "active",
+      "updated_at": "2026-04-21T17:47:54.587Z"
+    },
+    "fal-ai/ideogram/v3": {
+      "category": "text-to-image",
+      "display_name": "Ideogram Text to Image",
+      "file": "openapi/fal-ai__ideogram__v3.json",
+      "sha256": "99482933cae18e1979c958689c50227cdf6926fddc98e20f11c9631755e74abb",
+      "status": "active",
+      "updated_at": "2026-06-24T10:32:24.316Z"
+    },
+    "fal-ai/kling-image/v3/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "Kling Image",
+      "file": "openapi/fal-ai__kling-image__v3__text-to-image.json",
+      "sha256": "0ad50b556221241650c8aea4fcb9e9781aa5ac2d25d0d27e285dbd54eeece8f9",
+      "status": "active",
+      "updated_at": "2026-04-26T22:25:17.147Z"
     },
     "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": {
       "category": "image-to-video",
@@ -57,6 +249,22 @@
       "status": "active",
       "updated_at": "2026-06-24T10:36:41.475Z"
     },
+    "fal-ai/nano-banana": {
+      "category": "text-to-image",
+      "display_name": "Nano Banana",
+      "file": "openapi/fal-ai__nano-banana.json",
+      "sha256": "28b5040d8ff3633970f3081e600c0597f15e4238cbde9e86b04c9e907deb63b6",
+      "status": "active",
+      "updated_at": "2026-06-24T10:31:30.626Z"
+    },
+    "fal-ai/nano-banana-2": {
+      "category": "text-to-image",
+      "display_name": "Nano Banana 2",
+      "file": "openapi/fal-ai__nano-banana-2.json",
+      "sha256": "3d8791ea66b38e7686ebf62d1b187bf41f1d7dfda7bd2b597e36184c995008d2",
+      "status": "active",
+      "updated_at": "2026-06-11T00:04:55.093Z"
+    },
     "fal-ai/nano-banana-2/edit": {
       "category": "image-to-image",
       "display_name": "Nano Banana 2",
@@ -64,6 +272,62 @@
       "sha256": "43fe2dd7b386eed51a97b8b6c318ddf0a0b3c0d4897b23cc97ef28075f55ad84",
       "status": "active",
       "updated_at": "2026-08-19T19:54:05.061Z"
+    },
+    "fal-ai/nano-banana-pro": {
+      "category": "text-to-image",
+      "display_name": "Nano Banana Pro",
+      "file": "openapi/fal-ai__nano-banana-pro.json",
+      "sha256": "ba5874325bcb0c042fd62f80ba382c1b4d8c259f92b2ffffd9ae911332549b36",
+      "status": "active",
+      "updated_at": "2026-04-28T16:29:09.509Z"
+    },
+    "fal-ai/nano-banana-pro/edit": {
+      "category": "image-to-image",
+      "display_name": "Nano Banana Pro",
+      "file": "openapi/fal-ai__nano-banana-pro__edit.json",
+      "sha256": "775c74f9db98ade9a6bcb45278e7f42ef99ffa71ed7f25fff9e16da33f5c4f9b",
+      "status": "active",
+      "updated_at": "2026-06-18T17:13:56.639Z"
+    },
+    "fal-ai/nano-banana/edit": {
+      "category": "image-to-image",
+      "display_name": "Nano Banana",
+      "file": "openapi/fal-ai__nano-banana__edit.json",
+      "sha256": "4623929b748b918ee98a1c42cc74ab2cc6273ad2f202c944a5171a691d28afa4",
+      "status": "active",
+      "updated_at": "2026-06-26T20:56:24.634Z"
+    },
+    "fal-ai/qwen-image": {
+      "category": "text-to-image",
+      "display_name": "Qwen Image",
+      "file": "openapi/fal-ai__qwen-image.json",
+      "sha256": "a6b73e2981fc51db8ead23d7eb1bf6043a5c5ba2910ddc7541a909001ca7c190",
+      "status": "active",
+      "updated_at": "2026-06-24T10:39:09.765Z"
+    },
+    "fal-ai/qwen-image-edit-2511": {
+      "category": "image-to-image",
+      "display_name": "Qwen Image Edit 2511",
+      "file": "openapi/fal-ai__qwen-image-edit-2511.json",
+      "sha256": "957519fdc3d6b2ce9041c4678fb90b4374f41c87e7e8b34ff8b5d54a56d2d7d0",
+      "status": "active",
+      "updated_at": "2026-04-21T17:53:28.138Z"
+    },
+    "fal-ai/recraft/v3/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "Recraft V3",
+      "file": "openapi/fal-ai__recraft__v3__text-to-image.json",
+      "sha256": "059434c0dfa68691922f1f74297228f4c21caba9d018fdf4ee4198d427d8e558",
+      "status": "active",
+      "updated_at": "2026-04-21T17:54:01.874Z"
+    },
+    "fal-ai/recraft/v4/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "Recraft V4",
+      "file": "openapi/fal-ai__recraft__v4__text-to-image.json",
+      "sha256": "460cd16ecf72010e168bc002f12621a8902a9149c80b72a84b4c97fe30cc2612",
+      "status": "active",
+      "updated_at": "2026-04-21T17:54:03.006Z"
     },
     "fal-ai/sync-lipsync/v2": {
       "category": "video-to-video",
@@ -104,6 +368,78 @@
       "sha256": "10678e600674b048988b92476c0a7ba1fab59338b1250d94939eddb1b1cbb759",
       "status": "active",
       "updated_at": "2026-04-21T17:56:32.256Z"
+    },
+    "fal-ai/z-image/turbo": {
+      "category": "text-to-image",
+      "display_name": "Z Image Turbo",
+      "file": "openapi/fal-ai__z-image__turbo.json",
+      "sha256": "0b7cab26ddead60ef4f8c357dbfbd47bfd3fbae9cbb5637df8a52b0469cbaf4e",
+      "status": "active",
+      "updated_at": "2026-07-09T03:35:06.702Z"
+    },
+    "google/nano-banana-2-lite": {
+      "category": "text-to-image",
+      "display_name": "Nano Banana 2 Lite",
+      "file": "openapi/google__nano-banana-2-lite.json",
+      "sha256": "9547500e2569e53e075a92be71b88e23b163e976b0ac34b258d87a6e10b42f37",
+      "status": "active",
+      "updated_at": "2026-08-19T21:49:37.630Z"
+    },
+    "ideogram/v4": {
+      "category": "text-to-image",
+      "display_name": "Ideogram V4.0 Text to Image",
+      "file": "openapi/ideogram__v4.json",
+      "sha256": "e3b7daed103e73a55dede3bee8a1eebf108faad7b79f5ca97ef7330bb3b03ace",
+      "status": "active",
+      "updated_at": "2026-07-06T12:50:57.937Z"
+    },
+    "krea/v2/large/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "Krea 2 Large",
+      "file": "openapi/krea__v2__large__text-to-image.json",
+      "sha256": "2a9f329aa8948e0cbbbee8e26e64b3ca153468b73832fc547ee675b85069ed4a",
+      "status": "active",
+      "updated_at": "2026-06-30T18:57:25.450Z"
+    },
+    "krea/v2/medium/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "Krea 2 Medium",
+      "file": "openapi/krea__v2__medium__text-to-image.json",
+      "sha256": "fa88c1320977ed4dda93c871ac89285e0477ee865aa426e85c8b3a0b3b7e3181",
+      "status": "active",
+      "updated_at": "2026-06-30T18:57:25.450Z"
+    },
+    "openai/gpt-image-2": {
+      "category": "text-to-image",
+      "display_name": "GPT Image 2 API",
+      "file": "openapi/openai__gpt-image-2.json",
+      "sha256": "2de93477365a5e80235bd770e0a25573df1619bf5cdbf677ffeea5947415eb33",
+      "status": "active",
+      "updated_at": "2026-06-11T00:04:42.458Z"
+    },
+    "openai/gpt-image-2/edit": {
+      "category": "image-to-image",
+      "display_name": "GPT Image 2 API",
+      "file": "openapi/openai__gpt-image-2__edit.json",
+      "sha256": "11619a48a40bbf01afaf1054daf64a6fb57ea1ef3572d44a594e4ddd0cb70c4a",
+      "status": "active",
+      "updated_at": "2026-08-13T21:01:03.124Z"
+    },
+    "reve/2.1/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "Reve 2.1",
+      "file": "openapi/reve__2.1__text-to-image.json",
+      "sha256": "c4313dfee4630ba840b4b83d4a7e4d603201553eb4279ca090c4ad1d924ad8fc",
+      "status": "active",
+      "updated_at": "2026-07-17T03:49:40.574Z"
+    },
+    "xai/grok-imagine-image": {
+      "category": "text-to-image",
+      "display_name": "Grok Imagine Image",
+      "file": "openapi/xai__grok-imagine-image.json",
+      "sha256": "fd9bcb073bf30954554a95de6af225cb72dc589423e2629c68116e1badb2aad3",
+      "status": "active",
+      "updated_at": "2026-04-26T22:32:05.599Z"
     }
   }
 }

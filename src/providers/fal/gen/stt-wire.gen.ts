@@ -28,7 +28,7 @@ import type {
 export interface FalAiWizperInput {
   /**
    * URL of the audio file to transcribe. Supported formats: mp3, mp4, mpeg, mpga, m4a, wav
-   * or webm.
+   * or webm. Carries a audio reference — an https URL or a `data:` URI.
    */
   audio_url: string;
   /**

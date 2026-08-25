@@ -1,0 +1,428 @@
+{
+  "metadata": {
+    "category": "image-to-image",
+    "date": "2024-11-21T00:00:00.000Z",
+    "description": "FLUX.1 [pro] Fill is a high-performance endpoint for the FLUX.1 [pro] model that enables rapid transformation of existing images, delivering high-quality style transfers and image modifications with the core FLUX capabilities.",
+    "display_name": "FLUX.1 [pro] Fill",
+    "group": {
+      "key": "flux-pro",
+      "label": "FLUX.1 [pro] Fill"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/flux-pro/v1/fill",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "editing"
+    ],
+    "thumbnail_url": "https://storage.googleapis.com/falserverless/gallery/fluxpro.jpg",
+    "updated_at": "2026-04-21T17:47:29.481Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "FluxProV1FillInput": {
+          "properties": {
+            "enhance_prompt": {
+              "default": false,
+              "description": "Whether to enhance the prompt for better results.",
+              "title": "Enhance Prompt",
+              "type": "boolean"
+            },
+            "image_url": {
+              "description": "The image URL to generate an image from. Needs to match the dimensions of the mask.",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/flux-lora/example-images/knight.jpeg"
+              ],
+              "title": "Image URL",
+              "type": "string"
+            },
+            "mask_url": {
+              "description": "The mask URL to inpaint the image. Needs to match the dimensions of the input image.",
+              "examples": [
+                "https://storage.googleapis.com/falserverless/flux-lora/example-images/mask_knight.jpeg"
+              ],
+              "title": "Mask URL",
+              "type": "string"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "The number of images to generate.",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Num Images",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "jpeg",
+              "description": "The format of the generated image.",
+              "enum": [
+                "jpeg",
+                "png"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The prompt to fill the masked part of the image.",
+              "examples": [
+                "A knight in shining armour holding a greatshield with \"FAL\" on it"
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "safety_tolerance": {
+              "default": "2",
+              "description": "The safety tolerance level for the generated image. 1 being the most strict and 5 being the most permissive.",
+              "enum": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6"
+              ],
+              "title": "Safety Tolerance",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\n            The same seed and the same prompt given to the same version of the model\n            will output the same image every time.\n        ",
+              "title": "Seed"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt",
+            "image_url",
+            "mask_url"
+          ],
+          "title": "FluxProFillInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "seed",
+            "sync_mode",
+            "num_images",
+            "output_format",
+            "safety_tolerance",
+            "enhance_prompt",
+            "image_url",
+            "mask_url"
+          ]
+        },
+        "FluxProV1FillOutput": {
+          "properties": {
+            "has_nsfw_concepts": {
+              "description": "Whether the generated images contain NSFW concepts.",
+              "items": {
+                "type": "boolean"
+              },
+              "title": "Has Nsfw Concepts",
+              "type": "array"
+            },
+            "images": {
+              "description": "The generated image files info.",
+              "items": {
+                "$ref": "#/components/schemas/registry__image__fast_sdxl__models__Image"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "prompt": {
+              "description": "The prompt used for generating the image.",
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "description": "\n            Seed of the generated Image. It will be the same value of the one passed in the\n            input or the randomly generated that was used in case none was passed.\n        ",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ],
+          "title": "Output",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "registry__image__fast_sdxl__models__Image": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "image/jpeg",
+              "title": "Content Type"
+            },
+            "height": {
+              "title": "Height",
+              "type": "integer"
+            },
+            "url": {
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "url",
+            "width",
+            "height"
+          ],
+          "title": "Image",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "width",
+            "height",
+            "content_type"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/flux-pro/v1/fill queue.",
+      "title": "Queue OpenAPI for fal-ai/flux-pro/v1/fill",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "FLUX.1 Fill [pro] API, next generation inpainting/outpainting model.\n\nAll usages of this model must comply with [FLUX.1 PRO Terms of Service](https://blackforestlabs.ai/terms-of-service/).",
+        "category": "image-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/flux-pro/v1/fill/api",
+        "endpointId": "fal-ai/flux-pro/v1/fill",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/flux-pro/v1/fill",
+        "thumbnailUrl": "https://storage.googleapis.com/falserverless/gallery/fluxpro.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/flux-pro/v1/fill": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FluxProV1FillInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-pro/v1/fill/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/FluxProV1FillOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-pro/v1/fill/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-pro/v1/fill/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

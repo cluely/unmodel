@@ -21,24 +21,151 @@
     "Every id in here must resolve against the Platform API (GET https://api.fal.ai/v1/models?endpoint_id=…);",
     "`bun run codegen:fal:refresh` fails loudly on one that does not. Verified live 2026-08-24.",
     "",
-    "Wave 1a seeds 12 ids — the smallest set that spans all nine verbs and every lowering rule the generator",
-    "implements. The full ~100-endpoint roster lands in wave 1e; this file is the only thing that has to change."
+    "Wave 1a seeded 12 ids spanning all nine verbs. Wave 1b widened image to 28 and imageEdit to 17 —",
+    "the two categories that ship end-to-end today — leaving the other seven verbs at their seed rows.",
+    "The remaining ~55 land with their own waves; this file is the only thing that has to change.",
+    "",
+    "A note on ids: several are VENDOR-namespaced (`ideogram/v4`, `openai/gpt-image-2`, `krea/v2/...`),",
+    "and for those fal's OpenAPI document is written against a different internal route — `ideogram/v4`",
+    "documents `/fal-ai/ideogram-v4`, `xai/grok-imagine-image` documents `/fal-ai/xai`. BOTH are live",
+    "(probed unauthenticated 2026-08-24: each answers 401, a fabricated id answers 404). The id here is",
+    "the PUBLISHED one — what fal documents, what the catalog is keyed on, and what unmodel submits to."
   ],
   "endpoints": {
+    "alibaba/qwen-image-3/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "Qwen Image 3 editing, conditional on a 1K/2K `resolution`."
+    },
+    "bytedance/seedream/v5/pro/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "Seedream 5.0 Pro editing. Priced by output area PLUS an additive surcharge per extra input image."
+    },
+    "bytedance/seedream/v5/pro/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Seedream 5.0 Pro. Priced by output pixel AREA in two bands — a conditional whose tier the request settles only once a size is given."
+    },
+    "fal-ai/bytedance/seedream/v4.5/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "Seedream 4.5 editing, flat per-image."
+    },
+    "fal-ai/bytedance/seedream/v4.5/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Seedream 4.5, flat per-image."
+    },
     "fal-ai/clarity-upscaler": {
       "verb": "upscale",
       "textParam": "prompt",
       "note": "Upscaler that steers on a prompt — the `factor?` + `prompt?` shape UpscaleParams is built around."
+    },
+    "fal-ai/flux-2": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "FLUX.2 [dev], the open-weights generation."
+    },
+    "fal-ai/flux-2-max": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "FLUX.2 [max]. Tiered like flux-2-pro, at 2.3x the rate."
+    },
+    "fal-ai/flux-2-pro": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "FLUX.2 [pro] — the anyOf[$ref ImageSize, string enum] `image_size` union, and a TIERED price (first megapixel apart from each extra) that never reaches ModelCost."
+    },
+    "fal-ai/flux-2-pro/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "FLUX.2 [pro] editing, tiered per megapixel across input AND output."
+    },
+    "fal-ai/flux-2/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "FLUX.2 [dev] editing — billed on input and output megapixels, with inputs resized to 1MP first."
+    },
+    "fal-ai/flux-2/flash": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "The cheapest FLUX.2 arm at $0.005/MP — the low end of the per-megapixel band."
+    },
+    "fal-ai/flux-kontext/dev": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "The open-weights Kontext."
+    },
+    "fal-ai/flux-lora": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "FLUX.1 [dev] with LoRA weights — carries a `loras` array of URL+scale objects."
+    },
+    "fal-ai/flux-pro/kontext": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "FLUX.1 Kontext [pro] — single-image instruction editing. unmodel also serves Kontext first-party at `unmodel/black-forest-labs`."
+    },
+    "fal-ai/flux-pro/kontext/max": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "FLUX.1 Kontext [max]."
+    },
+    "fal-ai/flux-pro/kontext/max/multi": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "Kontext [max] multi — takes `image_urls` (a LIST) where its siblings take a single `image_url`. The multi-image arm the media naming rule has to classify as an array of image refs."
+    },
+    "fal-ai/flux-pro/v1.1": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "FLUX1.1 [pro]."
+    },
+    "fal-ai/flux-pro/v1.1-ultra": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "FLUX1.1 [pro] ultra — sizes by `aspect_ratio` with no pixel field, so it is the aspectRatioEnum arm of this category rather than an imageSizeUnion one."
+    },
+    "fal-ai/flux-pro/v1/fill": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "FLUX.1 [pro] fill — inpainting, so it carries a `mask_url` alongside `image_url`. The second media kind in this category."
     },
     "fal-ai/flux/dev": {
       "verb": "image",
       "textParam": "prompt",
       "note": "The anyOf[$ref ImageSize, string enum] `image_size` union — the imageSizeUnion shape class."
     },
+    "fal-ai/flux/dev/image-to-image": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "FLUX.1 [dev] image-to-image — a `strength` re-render rather than an instruction edit."
+    },
     "fal-ai/flux/schnell": {
       "verb": "image",
       "textParam": "prompt",
       "note": "Same shape as flux/dev with a much tighter num_inference_steps ceiling (12 vs 50) — the per-endpoint range narrowing the IR exists for."
+    },
+    "fal-ai/gpt-image-1.5": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "GPT Image 1.5. Same size x quality conditional shape as gpt-image-2."
+    },
+    "fal-ai/gpt-image-1.5/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "The edit arm of gpt-image-1.5."
+    },
+    "fal-ai/ideogram/v3": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Ideogram V3. `rendering_speed` selects one of three per-image rates."
+    },
+    "fal-ai/kling-image/v3/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Kling Image v3."
     },
     "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": {
       "verb": "video",
@@ -55,10 +182,55 @@
       "textParam": "text",
       "note": "Nested $ref inputs (VoiceSetting / AudioSetting / PronunciationDict) — the component-lowering case."
     },
+    "fal-ai/nano-banana": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "The original Nano Banana (Gemini 2.5 Flash Image), flat per-image."
+    },
+    "fal-ai/nano-banana-2": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Google's Gemini 3 Pro Image. `resolution` multiplies the rate and two booleans add surcharges — the conditional-pricing case that keeps rates out of ModelCost."
+    },
     "fal-ai/nano-banana-2/edit": {
       "verb": "imageEdit",
       "textParam": "prompt",
       "note": "aspectRatioEnum + resolutionEnum, and a multi-image `image_urls` array."
+    },
+    "fal-ai/nano-banana-pro": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Nano Banana Pro. Same conditional shape as nano-banana-2 with a narrower `resolution` enum (no 0.5K)."
+    },
+    "fal-ai/nano-banana-pro/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "The edit arm of nano-banana-pro, conditional on `resolution`."
+    },
+    "fal-ai/nano-banana/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "The edit arm of the original Nano Banana, flat per-image."
+    },
+    "fal-ai/qwen-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Qwen-Image, per megapixel."
+    },
+    "fal-ai/qwen-image-edit-2511": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "Qwen-Image-Edit (2511)."
+    },
+    "fal-ai/recraft/v3/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Recraft V3. A vector `style` doubles the rate, so the tier key is a style name rather than a size or a speed."
+    },
+    "fal-ai/recraft/v4/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Recraft V4, flat per-image."
     },
     "fal-ai/sync-lipsync/v2": {
       "verb": "lipsync",
@@ -81,6 +253,51 @@
     "fal-ai/wizper": {
       "verb": "stt",
       "note": "fal-ai/whisper is gone; wizper is the live Whisper-v3 endpoint. Billed per compute-second, so it carries an `unpriced` reason rather than a rate. Two `const` properties (chunk_level, version) — the single-value-enum lowering."
+    },
+    "fal-ai/z-image/turbo": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Z-Image Turbo — the cheapest row in the category at $0.005/MP, and the one per-megapixel page that states no rounding rule."
+    },
+    "google/nano-banana-2-lite": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Token-priced rather than per-image — carries an `unpriced` reason, not a rate."
+    },
+    "ideogram/v4": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Ideogram V4. Like v3, but each `rendering_speed` tier is a PER-MEGAPIXEL rate — the same tier key meaning a different unit one version apart."
+    },
+    "krea/v2/large/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Krea 2 large. unmodel also serves Krea first-party (`unmodel/krea`); this is the same model behind fal's queue."
+    },
+    "krea/v2/medium/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Krea 2 medium."
+    },
+    "openai/gpt-image-2": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "ChatGPT Images 2.0. Priced per size x quality PLUS unbounded token charges, so its estimate is undefined however the request is written."
+    },
+    "openai/gpt-image-2/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "The edit arm of gpt-image-2. Its per-size table INCLUDES one input image, which is why its figures differ from the text-to-image sibling's."
+    },
+    "reve/2.1/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "Reve 2.1."
+    },
+    "xai/grok-imagine-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "xAI's Grok Imagine, flat per-image."
     }
   },
   "excluded": {

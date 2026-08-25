@@ -1,0 +1,517 @@
+{
+  "metadata": {
+    "category": "image-to-image",
+    "date": "2025-05-29T04:53:59.306Z",
+    "description": "FLUX.1 Kontext [max] is a model with greatly improved prompt adherence and typography generation meet premium consistency for editing without compromise on speed. \n ",
+    "display_name": "FLUX.1 Kontext [max]",
+    "group": {
+      "key": "flux-pro-kontext",
+      "label": "Kontext [max] -- Editing"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/flux-pro/kontext/max",
+    "pinned": false,
+    "status": "active",
+    "tags": [],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9f91ac/S_XdqqwSzXvTx90JvwNqA_74St34QO.png",
+    "updated_at": "2026-06-24T10:34:48.394Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "FluxProKontextMaxInput": {
+          "properties": {
+            "aspect_ratio": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "21:9",
+                    "16:9",
+                    "4:3",
+                    "3:2",
+                    "1:1",
+                    "2:3",
+                    "3:4",
+                    "9:16",
+                    "9:21"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The aspect ratio of the generated image.",
+              "title": "Aspect Ratio"
+            },
+            "enhance_prompt": {
+              "default": false,
+              "description": "Whether to enhance the prompt for better results.",
+              "title": "Enhance Prompt",
+              "type": "boolean"
+            },
+            "guidance_scale": {
+              "default": 3.5,
+              "description": "\n            The CFG (Classifier Free Guidance) scale is a measure of how close you want\n            the model to stick to your prompt when looking for a related image to show you.\n        ",
+              "maximum": 20,
+              "minimum": 1,
+              "title": "Guidance scale (CFG)",
+              "type": "number"
+            },
+            "image_url": {
+              "description": "Image prompt for the omni model.",
+              "examples": [
+                "https://v3.fal.media/files/rabbit/rmgBxhwGYb2d3pl3x9sKf_output.png"
+              ],
+              "minLength": 1,
+              "title": "Image URL",
+              "type": "string"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "The number of images to generate.",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Num Images",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "jpeg",
+              "description": "The format of the generated image.",
+              "enum": [
+                "jpeg",
+                "png"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The prompt to generate an image from.",
+              "examples": [
+                "Put a donut next to the flour."
+              ],
+              "title": "Prompt",
+              "type": "string"
+            },
+            "safety_tolerance": {
+              "default": "2",
+              "description": "The safety tolerance level for the generated image. 1 being the most strict and 5 being the most permissive.",
+              "enum": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6"
+              ],
+              "title": "Safety Tolerance",
+              "type": "string"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\n            The same seed and the same prompt given to the same version of the model\n            will output the same image every time.\n        ",
+              "title": "Seed"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt",
+            "image_url"
+          ],
+          "title": "FluxKontextInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "seed",
+            "guidance_scale",
+            "sync_mode",
+            "num_images",
+            "output_format",
+            "safety_tolerance",
+            "enhance_prompt",
+            "aspect_ratio",
+            "image_url"
+          ]
+        },
+        "FluxProKontextMaxOutput": {
+          "properties": {
+            "has_nsfw_concepts": {
+              "description": "Whether the generated images contain NSFW concepts.",
+              "items": {
+                "type": "boolean"
+              },
+              "title": "Has Nsfw Concepts",
+              "type": "array"
+            },
+            "images": {
+              "description": "The generated image files info.",
+              "examples": [
+                [
+                  {
+                    "height": 1024,
+                    "url": "https://fal.media/files/tiger/7dSJbIU_Ni-0Zp9eaLsvR_fe56916811d84ac69c6ffc0d32dca151.jpg",
+                    "width": 1024
+                  }
+                ]
+              ],
+              "items": {
+                "$ref": "#/components/schemas/fal__toolkit__image__image__Image"
+              },
+              "title": "Images",
+              "type": "array"
+            },
+            "prompt": {
+              "description": "The prompt used for generating the image.",
+              "title": "Prompt",
+              "type": "string"
+            },
+            "seed": {
+              "description": "\n            Seed of the generated Image. It will be the same value of the one passed in the\n            input or the randomly generated that was used in case none was passed.\n        ",
+              "title": "Seed",
+              "type": "integer"
+            },
+            "timings": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "title": "Timings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ],
+          "title": "FluxKontextOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images",
+            "timings",
+            "seed",
+            "has_nsfw_concepts",
+            "prompt"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "fal__toolkit__image__image__Image": {
+          "description": "Represents an image file.",
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "height": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The height of the image in pixels.",
+              "examples": [
+                1024
+              ],
+              "title": "Height"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The width of the image in pixels.",
+              "examples": [
+                1024
+              ],
+              "title": "Width"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "Image",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size",
+            "width",
+            "height"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/flux-pro/kontext/max queue.",
+      "title": "Queue OpenAPI for fal-ai/flux-pro/kontext/max",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "FLUX.1 Kontext [Max] -- Frontier image editing model.\n\nKontext Max is a more powerful version of Kontext that can handle more complex tasks.",
+        "category": "image-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/flux-pro/kontext/max/api",
+        "endpointId": "fal-ai/flux-pro/kontext/max",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/flux-pro/kontext/max",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9f91ac/S_XdqqwSzXvTx90JvwNqA_74St34QO.png"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/flux-pro/kontext/max": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FluxProKontextMaxInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-pro/kontext/max/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/FluxProKontextMaxOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-pro/kontext/max/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/flux-pro/kontext/max/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

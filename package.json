@@ -303,6 +303,14 @@
       "types": "./dist/providers/fal/types.d.ts",
       "default": "./dist/providers/fal/types.js"
     },
+    "./fal/unified": {
+      "types": "./dist/providers/fal/unified.d.ts",
+      "default": "./dist/providers/fal/unified.js"
+    },
+    "./fal/values": {
+      "types": "./dist/providers/fal/values.d.ts",
+      "default": "./dist/providers/fal/values.js"
+    },
     "./fireworks-ai": {
       "types": "./dist/providers/fireworks-ai/index.d.ts",
       "default": "./dist/providers/fireworks-ai/index.js"

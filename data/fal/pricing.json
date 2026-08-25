@@ -32,9 +32,88 @@
     "is wrong for every image that is not exactly one megapixel, and `undefined` beats a wrong number.",
     "Tiered and conditional rates land in the hand pricing table (kling precedent), never here.",
     "",
-    "Verified 2026-08-24 against the live pages."
+    "Verified 2026-08-24 against the live pages.",
+    "",
+    "Of the 54 rows here, 12 carry a unit `ModelCost` can express and therefore reach a generated catalog",
+    "row; the other 42 do not, which is the shape of fal's pricing rather than a gap in this file. The",
+    "big classes: per_megapixel (11) needs the output's pixel count, which a request states only when it",
+    "writes `image_size: { width, height }` and not when it names a preset; conditional (15) needs a",
+    "field the request often leaves at its default; tiered (3) needs a quantity the request does not",
+    "state. All of them reach an ESTIMATE through gen/pricing.gen.ts and src/providers/fal/pricing.ts,",
+    "which computes what it can and returns `undefined` — with a reason available from `falPriceNote` —",
+    "for the rest. A plausible number that is wrong is worse than no number: a caller who sees `costUSD`",
+    "treats it as a budget."
   ],
   "endpoints": {
+    "alibaba/qwen-image-3/edit": {
+      "unit": "conditional",
+      "tierKey": "resolution of the generated image (1K vs 2K)",
+      "tiers": [
+        {
+          "when": "per generated image at 1K resolution",
+          "usd": 0.04
+        },
+        {
+          "when": "per generated image at 2K resolution",
+          "usd": 0.075
+        }
+      ],
+      "source": "https://fal.ai/models/alibaba/qwen-image-3/edit",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.04 per generated image at 1K resolution, and $0.075 per generated image at 2K resolution."
+    },
+    "bytedance/seedream/v5/pro/edit": {
+      "unit": "conditional",
+      "tierKey": "output pixel area (<=1536x1536 vs 1536x1536..2048x2048), plus an additive surcharge per input image beyond the first",
+      "tiers": [
+        {
+          "when": "output image of total area <= 1536x1536 pixels",
+          "usd": 0.0675
+        },
+        {
+          "when": "output image with area between 1536x1536 and 2048x2048 pixels",
+          "usd": 0.135
+        },
+        {
+          "when": "additive, per output image, for each additional input image beyond the first",
+          "usd": 0.0045
+        }
+      ],
+      "source": "https://fal.ai/models/bytedance/seedream/v5/pro/edit",
+      "verified": "2026-08-24",
+      "quote": "You will be charged for both input and output images. The first input image is not charged, and every additional input image will cost $0.0045. Tentative pricing is $0.0675+ $(0.0045 x number of additional input images) per output image for images of total area less than or equal to 1536x1536 pixels. For output images with area in between 1536x1536 and 2048x2048 pixels, the price is $0.135 + $(0.0045 x number of additional input images) per image."
+    },
+    "bytedance/seedream/v5/pro/text-to-image": {
+      "unit": "conditional",
+      "tierKey": "total pixel area of the generated image",
+      "tiers": [
+        {
+          "when": "images of total area <= 1536x1536 pixels",
+          "usd": 0.0675
+        },
+        {
+          "when": "images with area between 1536x1536 and 2048x2048 pixels",
+          "usd": 0.135
+        }
+      ],
+      "source": "https://fal.ai/models/bytedance/seedream/v5/pro/text-to-image",
+      "verified": "2026-08-24",
+      "quote": "Tentative pricing is $0.0675 per image for images of total area less than or equal to 1536x1536 pixels. For images with area in between 1536x1536 and 2048x2048 pixels, the price is $0.135 per image."
+    },
+    "fal-ai/bytedance/seedream/v4.5/edit": {
+      "unit": "per_image",
+      "usd": 0.04,
+      "source": "https://fal.ai/models/fal-ai/bytedance/seedream/v4.5/edit",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.04 per image."
+    },
+    "fal-ai/bytedance/seedream/v4.5/text-to-image": {
+      "unit": "per_image",
+      "usd": 0.04,
+      "source": "https://fal.ai/models/fal-ai/bytedance/seedream/v4.5/text-to-image",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.04 per image."
+    },
     "fal-ai/clarity-upscaler": {
       "unit": "per_megapixel",
       "usd": 0.03,
@@ -42,6 +121,142 @@
       "source": "https://fal.ai/models/fal-ai/clarity-upscaler",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.03 per megapixel."
+    },
+    "fal-ai/flux-2": {
+      "unit": "per_megapixel",
+      "usd": 0.012,
+      "source": "https://fal.ai/models/fal-ai/flux-2",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.012 per megapixel."
+    },
+    "fal-ai/flux-2-max": {
+      "unit": "tiered",
+      "tierKey": "processed megapixel count — the first processed megapixel is priced apart from each additional megapixel",
+      "tiers": [
+        {
+          "when": "the first processed megapixel",
+          "usd": 0.07
+        },
+        {
+          "when": "each additional megapixel",
+          "usd": 0.03
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/flux-2-max",
+      "verified": "2026-08-24",
+      "quote": "The first processed megapixel will cost $0.07. Each additional megapixel will cost 0.03"
+    },
+    "fal-ai/flux-2-pro": {
+      "unit": "tiered",
+      "rounding": "rounded up to the nearest megapixel",
+      "tierKey": "billed megapixel count — the first megapixel of output is priced apart from each extra megapixel of input and output",
+      "tiers": [
+        {
+          "when": "the first megapixel of output",
+          "usd": 0.03
+        },
+        {
+          "when": "each extra megapixel of input and output",
+          "usd": 0.015
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/flux-2-pro",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.03 for the first megapixel of output, plus $0.015 per extra megapixel of input and output, rounded up to the nearest megapixel. For example, a 1024x1024 image will cost $0.03, and a 1920x1080 image will cost $0.045 ($0.03 for first megapixel + $0.015 for the second megapixel). Similarly, a 512x512 output will cost $0.03 ($0.03 for 0.25 megapixels, rounded to 1 megapixel)"
+    },
+    "fal-ai/flux-2-pro/edit": {
+      "unit": "tiered",
+      "rounding": "rounded up to the nearest megapixel",
+      "tierKey": "billed megapixel count — the first megapixel of output is priced apart from each extra megapixel of input and output",
+      "tiers": [
+        {
+          "when": "the first megapixel of output",
+          "usd": 0.03
+        },
+        {
+          "when": "each extra megapixel of input and output",
+          "usd": 0.015
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/flux-2-pro/edit",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.03 for the first megapixel of output, plus $0.015 per extra megapixel of input and output, rounded up to the nearest megapixel."
+    },
+    "fal-ai/flux-2/edit": {
+      "unit": "per_megapixel",
+      "usd": 0.012,
+      "rounding": "billed across input AND output megapixels; input images are resized to 1MP first",
+      "source": "https://fal.ai/models/fal-ai/flux-2/edit",
+      "verified": "2026-08-24",
+      "quote": "Requests cost $0.012 per megapixel of input and output. Input images will be resized to 1MP. For example, a 1024x1024 generation with 512*512 size image input will cost 0.024 (1 MP input + 1 MP output, each costing 0.012)."
+    },
+    "fal-ai/flux-2/flash": {
+      "unit": "per_megapixel",
+      "usd": 0.005,
+      "source": "https://fal.ai/models/fal-ai/flux-2/flash",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.005 per megapixel."
+    },
+    "fal-ai/flux-kontext/dev": {
+      "unit": "per_megapixel",
+      "usd": 0.025,
+      "rounding": "up to the nearest megapixel",
+      "source": "https://fal.ai/models/fal-ai/flux-kontext/dev",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.025 per megapixel. Images are billed by rounding up to the nearest megapixel."
+    },
+    "fal-ai/flux-lora": {
+      "unit": "per_megapixel",
+      "usd": 0.035,
+      "rounding": "up to the nearest megapixel",
+      "source": "https://fal.ai/models/fal-ai/flux-lora",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.035 per megapixel. Images are billed by rounding up to the nearest megapixel."
+    },
+    "fal-ai/flux-pro/kontext": {
+      "unit": "per_image",
+      "usd": 0.04,
+      "source": "https://fal.ai/models/fal-ai/flux-pro/kontext",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.04 per image."
+    },
+    "fal-ai/flux-pro/kontext/max": {
+      "unit": "per_image",
+      "usd": 0.08,
+      "source": "https://fal.ai/models/fal-ai/flux-pro/kontext/max",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.08 per image."
+    },
+    "fal-ai/flux-pro/kontext/max/multi": {
+      "unit": "per_image",
+      "usd": 0.08,
+      "source": "https://fal.ai/models/fal-ai/flux-pro/kontext/max/multi",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.08 per image."
+    },
+    "fal-ai/flux-pro/v1.1": {
+      "unit": "per_megapixel",
+      "usd": 0.04,
+      "rounding": "up to the nearest megapixel",
+      "source": "https://fal.ai/models/fal-ai/flux-pro/v1.1",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.04 per megapixel. Images are billed by rounding up to the nearest megapixel."
+    },
+    "fal-ai/flux-pro/v1.1-ultra": {
+      "unit": "per_image",
+      "usd": 0.06,
+      "rounding": "the page also states images are billed by rounding up to the nearest megapixel, which its per-image headline rate does not use",
+      "source": "https://fal.ai/models/fal-ai/flux-pro/v1.1-ultra",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.06 per image. Images are billed by rounding up to the nearest megapixel."
+    },
+    "fal-ai/flux-pro/v1/fill": {
+      "unit": "per_megapixel",
+      "usd": 0.05,
+      "rounding": "up to the nearest megapixel",
+      "source": "https://fal.ai/models/fal-ai/flux-pro/v1/fill",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.05 per megapixel. Images are billed by rounding up to the nearest megapixel."
     },
     "fal-ai/flux/dev": {
       "unit": "per_megapixel",
@@ -51,6 +266,14 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.025 per megapixel. Images are billed by rounding up to the nearest megapixel."
     },
+    "fal-ai/flux/dev/image-to-image": {
+      "unit": "per_megapixel",
+      "usd": 0.03,
+      "rounding": "up to the nearest megapixel",
+      "source": "https://fal.ai/models/fal-ai/flux/dev/image-to-image",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.03 per megapixel. Images are billed by rounding up to the nearest megapixel."
+    },
     "fal-ai/flux/schnell": {
       "unit": "per_megapixel",
       "usd": 0.003,
@@ -59,12 +282,148 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.003 per megapixel. Images are billed by rounding up to the nearest megapixel."
     },
+    "fal-ai/gpt-image-1.5": {
+      "unit": "conditional",
+      "tierKey": "quality x image_size selects the per-image figure; the total ALSO carries additive per-1,000-token text charges",
+      "tiers": [
+        {
+          "when": "quality=\"low\", 1024x1024",
+          "usd": 0.009
+        },
+        {
+          "when": "quality=\"low\", any other size",
+          "usd": 0.013
+        },
+        {
+          "when": "quality=\"medium\", 1024x1024",
+          "usd": 0.034
+        },
+        {
+          "when": "quality=\"medium\", 1024x1536",
+          "usd": 0.051
+        },
+        {
+          "when": "quality=\"medium\", 1536x1024",
+          "usd": 0.05
+        },
+        {
+          "when": "quality=\"high\", 1024x1024",
+          "usd": 0.133
+        },
+        {
+          "when": "quality=\"high\", 1024x1536",
+          "usd": 0.2
+        },
+        {
+          "when": "quality=\"high\", 1536x1024",
+          "usd": 0.199
+        },
+        {
+          "when": "additive, per 1,000 input text tokens",
+          "usd": 0.005
+        },
+        {
+          "when": "additive, per 1,000 output (reasoning) text tokens",
+          "usd": 0.01
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/gpt-image-1.5",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost different amounts based on the number of images, quality, and size. You will be charged $0.005 per 1,000 input text tokens. You will be charged $0.010 per 1,000 output text tokens. For low quality, you will be charged $0.009 for 1024x1024 or $0.013 for any other size per image. For medium quality, you will be charged $0.034 for 1024x1024, $0.051 for 1024x1536 and $0.050 for 1536x1024 per image. For high quality, you will be charged $0.133 for 1024x1024, $0.200 for 1024x1536 or $0.199 for 1536x1024 per image."
+    },
+    "fal-ai/gpt-image-1.5/edit": {
+      "unit": "conditional",
+      "tierKey": "quality x size, plus additive per-1,000-token charges for input text, input image and output text tokens",
+      "tiers": [
+        {
+          "when": "quality=\"low\", 1024x1024",
+          "usd": 0.009
+        },
+        {
+          "when": "quality=\"low\", any other size",
+          "usd": 0.013
+        },
+        {
+          "when": "quality=\"medium\", 1024x1024",
+          "usd": 0.034
+        },
+        {
+          "when": "quality=\"medium\", 1024x1536",
+          "usd": 0.051
+        },
+        {
+          "when": "quality=\"medium\", 1536x1024",
+          "usd": 0.05
+        },
+        {
+          "when": "quality=\"high\", 1024x1024",
+          "usd": 0.133
+        },
+        {
+          "when": "quality=\"high\", 1024x1536",
+          "usd": 0.2
+        },
+        {
+          "when": "quality=\"high\", 1536x1024",
+          "usd": 0.199
+        },
+        {
+          "when": "additive, per 1,000 input text tokens",
+          "usd": 0.005
+        },
+        {
+          "when": "additive, per 1,000 input image tokens",
+          "usd": 0.008
+        },
+        {
+          "when": "additive, per 1,000 output (reasoning) text tokens",
+          "usd": 0.01
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/gpt-image-1.5/edit",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost different amounts based on the number of images, quality, and size. You will be charged $0.005 per 1,000 input text tokens. You will be charged $0.008 per 1,000 input image tokens. You will be charged $0.010 per 1,000 output text tokens. For low quality, you will be charged $0.009 for 1024x1024 or $0.013 for any other size per image. For medium quality, you will be charged $0.034 for 1024x1024, $0.051 for 1024x1536 and $0.050 for 1536x1024 per image. For high quality, you will be charged $0.133 for 1024x1024, $0.200 for 1024x1536 or $0.199 for 1536x1024 per image."
+    },
+    "fal-ai/ideogram/v3": {
+      "unit": "conditional",
+      "tierKey": "rendering_speed",
+      "tiers": [
+        {
+          "when": "rendering_speed=\"TURBO\"",
+          "usd": 0.03
+        },
+        {
+          "when": "rendering_speed=\"BALANCED\" (the default)",
+          "usd": 0.06
+        },
+        {
+          "when": "rendering_speed=\"QUALITY\"",
+          "usd": 0.09
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/ideogram/v3",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.03 with TURBO, $0.06 with BALANCED, and $0.09 with QUALITY."
+    },
+    "fal-ai/kling-image/v3/text-to-image": {
+      "unit": "per_image",
+      "usd": 0.028,
+      "source": "https://fal.ai/models/fal-ai/kling-image/v3/text-to-image",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.028 per image."
+    },
     "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": {
       "unit": "tiered",
       "tierKey": "duration",
       "tiers": [
-        { "when": "duration=\"5\"", "usd": 0.35 },
-        { "when": "each additional second beyond 5", "usd": 0.07 }
+        {
+          "when": "duration=\"5\"",
+          "usd": 0.35
+        },
+        {
+          "when": "each additional second beyond 5",
+          "usd": 0.07
+        }
       ],
       "source": "https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
       "verified": "2026-08-24",
@@ -84,20 +443,166 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.1 per 1000 characters."
     },
+    "fal-ai/nano-banana": {
+      "unit": "per_image",
+      "usd": 0.039,
+      "source": "https://fal.ai/models/fal-ai/nano-banana",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.039 per image."
+    },
+    "fal-ai/nano-banana-2": {
+      "unit": "conditional",
+      "tierKey": "resolution, plus additive surcharges for enable_web_search and thinking_level",
+      "tiers": [
+        {
+          "when": "resolution=\"1K\" (the standard rate)",
+          "usd": 0.08
+        },
+        {
+          "when": "resolution=\"0.5K\" — 0.75x standard",
+          "usd": 0.06
+        },
+        {
+          "when": "resolution=\"2K\" — 1.5x standard",
+          "usd": 0.12
+        },
+        {
+          "when": "resolution=\"4K\" — 2x standard",
+          "usd": 0.16
+        },
+        {
+          "when": "additive, if web search is used",
+          "usd": 0.015
+        },
+        {
+          "when": "additive, if high thinking is used",
+          "usd": 0.002
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/nano-banana-2",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.08 per image. 2K and 4K outputs will be charged at 1.5 times and 2 times the standard rate, respectively. 0.5K (512px) resolution outputs will be charged at 0.75 times the standard rate. If web search is used, an additional $0.015 will be charged. If high thinking is used, an additional $0.002 will be charged."
+    },
     "fal-ai/nano-banana-2/edit": {
       "unit": "conditional",
       "tierKey": "resolution, plus additive surcharges for enable_web_search and thinking_level",
       "tiers": [
-        { "when": "resolution=\"1K\" (the standard rate)", "usd": 0.08 },
-        { "when": "resolution=\"0.5K\" — 0.75× standard", "usd": 0.06 },
-        { "when": "resolution=\"2K\" — 1.5× standard", "usd": 0.12 },
-        { "when": "resolution=\"4K\" — 2× standard", "usd": 0.16 },
-        { "when": "additive, if web search is used", "usd": 0.015 },
-        { "when": "additive, if high thinking is used", "usd": 0.002 }
+        {
+          "when": "resolution=\"1K\" (the standard rate)",
+          "usd": 0.08
+        },
+        {
+          "when": "resolution=\"0.5K\" — 0.75× standard",
+          "usd": 0.06
+        },
+        {
+          "when": "resolution=\"2K\" — 1.5× standard",
+          "usd": 0.12
+        },
+        {
+          "when": "resolution=\"4K\" — 2× standard",
+          "usd": 0.16
+        },
+        {
+          "when": "additive, if web search is used",
+          "usd": 0.015
+        },
+        {
+          "when": "additive, if high thinking is used",
+          "usd": 0.002
+        }
       ],
       "source": "https://fal.ai/models/fal-ai/nano-banana-2/edit",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.08 per image. 2K and 4K outputs will be charged at 1.5 times and 2 times the standard rate, respectively. 0.5K (512px) resolution outputs will be charged at 0.75 times the standard rate. If web search is used, an additional $0.015 will be charged. If high thinking is used, an additional $0.002 will be charged."
+    },
+    "fal-ai/nano-banana-pro": {
+      "unit": "conditional",
+      "tierKey": "resolution, plus an additive surcharge for enable_web_search",
+      "tiers": [
+        {
+          "when": "resolution=\"1K\" or \"2K\" (the standard rate — only 4K is documented as multiplied)",
+          "usd": 0.15
+        },
+        {
+          "when": "resolution=\"4K\" — double the standard rate",
+          "usd": 0.3
+        },
+        {
+          "when": "additive, if web search is used",
+          "usd": 0.015
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/nano-banana-pro",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.15 per image. 4K outputs will be charged at double the standard rate. If web search is used, an additional $0.015 will be charged."
+    },
+    "fal-ai/nano-banana-pro/edit": {
+      "unit": "conditional",
+      "tierKey": "resolution, plus an additive surcharge for enable_web_search",
+      "tiers": [
+        {
+          "when": "standard (non-4K) output",
+          "usd": 0.15
+        },
+        {
+          "when": "resolution=\"4K\" — double the standard rate",
+          "usd": 0.3
+        },
+        {
+          "when": "additive, if web search is used",
+          "usd": 0.015
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/nano-banana-pro/edit",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.15 per image. 4K outputs will be charged at double the standard rate. If web search is used, an additional $0.015 will be charged."
+    },
+    "fal-ai/nano-banana/edit": {
+      "unit": "per_image",
+      "usd": 0.039,
+      "source": "https://fal.ai/models/fal-ai/nano-banana/edit",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.039 per image."
+    },
+    "fal-ai/qwen-image": {
+      "unit": "per_megapixel",
+      "usd": 0.02,
+      "rounding": "Images are billed by rounding up to the nearest megapixel.",
+      "source": "https://fal.ai/models/fal-ai/qwen-image",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.02 per megapixel. Images are billed by rounding up to the nearest megapixel."
+    },
+    "fal-ai/qwen-image-edit-2511": {
+      "unit": "per_megapixel",
+      "usd": 0.03,
+      "source": "https://fal.ai/models/fal-ai/qwen-image-edit-2511",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.03 per megapixel."
+    },
+    "fal-ai/recraft/v3/text-to-image": {
+      "unit": "conditional",
+      "tierKey": "style — vector styles cost 2x",
+      "tiers": [
+        {
+          "when": "a non-vector style",
+          "usd": 0.04
+        },
+        {
+          "when": "a vector style",
+          "usd": 0.08
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/recraft/v3/text-to-image",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.04 per image (or $0.08 if you are using a vector style)."
+    },
+    "fal-ai/recraft/v4/text-to-image": {
+      "unit": "per_image",
+      "usd": 0.04,
+      "source": "https://fal.ai/models/fal-ai/recraft/v4/text-to-image",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.04 per image."
     },
     "fal-ai/sync-lipsync/v2": {
       "unit": "per_video_minute",
@@ -124,10 +629,22 @@
       "unit": "conditional",
       "tierKey": "generate_audio × resolution",
       "tiers": [
-        { "when": "resolution 720p or 1080p, generate_audio=false", "usd": 0.2 },
-        { "when": "resolution 720p or 1080p, generate_audio=true", "usd": 0.4 },
-        { "when": "resolution 4k, generate_audio=false", "usd": 0.4 },
-        { "when": "resolution 4k, generate_audio=true", "usd": 0.6 }
+        {
+          "when": "resolution 720p or 1080p, generate_audio=false",
+          "usd": 0.2
+        },
+        {
+          "when": "resolution 720p or 1080p, generate_audio=true",
+          "usd": 0.4
+        },
+        {
+          "when": "resolution 4k, generate_audio=false",
+          "usd": 0.4
+        },
+        {
+          "when": "resolution 4k, generate_audio=true",
+          "usd": 0.6
+        }
       ],
       "source": "https://fal.ai/models/fal-ai/veo3.1",
       "verified": "2026-08-24",
@@ -138,6 +655,284 @@
       "source": "https://fal.ai/models/fal-ai/wizper",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0 per compute second."
+    },
+    "fal-ai/z-image/turbo": {
+      "unit": "per_megapixel",
+      "usd": 0.005,
+      "source": "https://fal.ai/models/fal-ai/z-image/turbo",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.005 per megapixel."
+    },
+    "google/nano-banana-2-lite": {
+      "unpriced": "Priced purely in input/output TOKENS (text and image, per 1M), so what a request costs depends on token counts no request body bounds. The endpoint's own billing record carries billing_unit \"units\" with a placeholder price of 1 rather than a dollar rate, and quoting a placeholder as a rate would be worse than saying nothing. Estimates for this endpoint return {}.",
+      "source": "https://fal.ai/models/google/nano-banana-2-lite",
+      "verified": "2026-08-24",
+      "quote": "Text tokens (per 1M): $0.3125 input, $1.875 output. Image tokens (per 1M): $0.3125 input, $37.50 output. Output images are generated at a fixed 1K (1024x1024px)"
+    },
+    "ideogram/v4": {
+      "unit": "conditional",
+      "tierKey": "rendering_speed — each tier is a PER-MEGAPIXEL rate, not a per-image one",
+      "tiers": [
+        {
+          "when": "rendering_speed=\"TURBO\", per megapixel",
+          "usd": 0.0075
+        },
+        {
+          "when": "rendering_speed=\"BALANCED\", per megapixel",
+          "usd": 0.015
+        },
+        {
+          "when": "rendering_speed=\"QUALITY\", per megapixel",
+          "usd": 0.025
+        }
+      ],
+      "source": "https://fal.ai/models/ideogram/v4",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.0075 per megapixel in TURBO mode, $0.015 per megapixel in BALANCED mode, or $0.025 per megapixel in QUALITY mode. For example, a 2048 x 2048 image will cost $0.03, $0.06 or $0.10 based on the mode."
+    },
+    "krea/v2/large/text-to-image": {
+      "unit": "conditional",
+      "tierKey": "image_style_references",
+      "tiers": [
+        {
+          "when": "text-to-image",
+          "usd": 0.06
+        },
+        {
+          "when": "using image_style_references",
+          "usd": 0.065
+        }
+      ],
+      "source": "https://fal.ai/models/krea/v2/large/text-to-image",
+      "verified": "2026-08-24",
+      "quote": "For every image you generate, you will be charged $0.060 (text-to-image) or $0.065 (using image_style_references)."
+    },
+    "krea/v2/medium/text-to-image": {
+      "unit": "conditional",
+      "tierKey": "image_style_references",
+      "tiers": [
+        {
+          "when": "text-to-image",
+          "usd": 0.03
+        },
+        {
+          "when": "using image_style_references",
+          "usd": 0.035
+        }
+      ],
+      "source": "https://fal.ai/models/krea/v2/medium/text-to-image",
+      "verified": "2026-08-24",
+      "quote": "For every image you generate, you will be charged $0.030 (text-to-image) or $0.035 (using image_style_references)."
+    },
+    "openai/gpt-image-2": {
+      "unit": "conditional",
+      "tierKey": "quality x image_size selects the per-image figure; the total ALSO carries unbounded per-1M token charges, so no tier here is ever the whole price",
+      "tiers": [
+        {
+          "when": "1024x768, quality=\"low\"",
+          "usd": 0.005
+        },
+        {
+          "when": "1024x768, quality=\"medium\"",
+          "usd": 0.037
+        },
+        {
+          "when": "1024x768, quality=\"high\"",
+          "usd": 0.145
+        },
+        {
+          "when": "1024x1024, quality=\"low\"",
+          "usd": 0.006
+        },
+        {
+          "when": "1024x1024, quality=\"medium\"",
+          "usd": 0.053
+        },
+        {
+          "when": "1024x1024, quality=\"high\"",
+          "usd": 0.211
+        },
+        {
+          "when": "1024x1536, quality=\"low\"",
+          "usd": 0.005
+        },
+        {
+          "when": "1024x1536, quality=\"medium\"",
+          "usd": 0.042
+        },
+        {
+          "when": "1024x1536, quality=\"high\"",
+          "usd": 0.165
+        },
+        {
+          "when": "1920x1080, quality=\"low\"",
+          "usd": 0.005
+        },
+        {
+          "when": "1920x1080, quality=\"medium\"",
+          "usd": 0.04
+        },
+        {
+          "when": "1920x1080, quality=\"high\"",
+          "usd": 0.158
+        },
+        {
+          "when": "2560x1440, quality=\"low\"",
+          "usd": 0.007
+        },
+        {
+          "when": "2560x1440, quality=\"medium\"",
+          "usd": 0.056
+        },
+        {
+          "when": "2560x1440, quality=\"high\"",
+          "usd": 0.222
+        },
+        {
+          "when": "3840x2160, quality=\"low\"",
+          "usd": 0.012
+        },
+        {
+          "when": "3840x2160, quality=\"medium\"",
+          "usd": 0.101
+        },
+        {
+          "when": "3840x2160, quality=\"high\"",
+          "usd": 0.401
+        },
+        {
+          "when": "additive, text tokens per 1M input",
+          "usd": 5
+        },
+        {
+          "when": "additive, text tokens per 1M output",
+          "usd": 10
+        },
+        {
+          "when": "additive, image tokens per 1M input",
+          "usd": 8
+        },
+        {
+          "when": "additive, image tokens per 1M output",
+          "usd": 30
+        }
+      ],
+      "rounding": "total cost is rounded up to the closest hundredth of a cent ($0.0001)",
+      "source": "https://fal.ai/models/openai/gpt-image-2",
+      "verified": "2026-08-24",
+      "quote": "Text tokens (per 1M): $5.00 input, $1.25 cached, $10.00 output. Image tokens (per 1M): $8.00 input, $2.00 cached, $30.00 output. Changing the quality parameter significantly affects cost; by default we use high. Total cost is rounded up to the closest hundredth of a cent ($0.0001.) The following table shows the pricing of ChatGPT Images 2.0 from a technical standpoint. | Size | Low Quality | Medium Quality | High Quality | | 1024 x 768 | $0.005 | $0.037 | $0.145 | | 1024 x 1024 | $0.006 | $0.053 | $0.211 | | 1024 x 1536 | $0.005 | $0.042 | $0.165 | | 1920 x 1080 | $0.005 | $0.040 | $0.158 | | 2560 x 1440 | $0.007 | $0.056 | $0.222 | | 3840 x 2160 | $0.012 | $0.101 | $0.401 |"
+    },
+    "openai/gpt-image-2/edit": {
+      "unit": "conditional",
+      "tierKey": "quality x image_size selects the per-image figure (this table INCLUDES one input image); the total ALSO carries unbounded per-1M token charges, so no tier here is ever the whole price",
+      "tiers": [
+        {
+          "when": "1024x768, quality=\"low\"",
+          "usd": 0.011
+        },
+        {
+          "when": "1024x768, quality=\"medium\"",
+          "usd": 0.043
+        },
+        {
+          "when": "1024x768, quality=\"high\"",
+          "usd": 0.151
+        },
+        {
+          "when": "1024x1024, quality=\"low\"",
+          "usd": 0.015
+        },
+        {
+          "when": "1024x1024, quality=\"medium\"",
+          "usd": 0.061
+        },
+        {
+          "when": "1024x1024, quality=\"high\"",
+          "usd": 0.219
+        },
+        {
+          "when": "1024x1536, quality=\"low\"",
+          "usd": 0.018
+        },
+        {
+          "when": "1024x1536, quality=\"medium\"",
+          "usd": 0.054
+        },
+        {
+          "when": "1024x1536, quality=\"high\"",
+          "usd": 0.178
+        },
+        {
+          "when": "1920x1080, quality=\"low\"",
+          "usd": 0.017
+        },
+        {
+          "when": "1920x1080, quality=\"medium\"",
+          "usd": 0.053
+        },
+        {
+          "when": "1920x1080, quality=\"high\"",
+          "usd": 0.158
+        },
+        {
+          "when": "2560x1440, quality=\"low\"",
+          "usd": 0.019
+        },
+        {
+          "when": "2560x1440, quality=\"medium\"",
+          "usd": 0.068
+        },
+        {
+          "when": "2560x1440, quality=\"high\"",
+          "usd": 0.234
+        },
+        {
+          "when": "3840x2160, quality=\"low\"",
+          "usd": 0.024
+        },
+        {
+          "when": "3840x2160, quality=\"medium\"",
+          "usd": 0.113
+        },
+        {
+          "when": "3840x2160, quality=\"high\"",
+          "usd": 0.413
+        },
+        {
+          "when": "additive, text tokens per 1M input",
+          "usd": 5
+        },
+        {
+          "when": "additive, text tokens per 1M output",
+          "usd": 10
+        },
+        {
+          "when": "additive, image tokens per 1M input",
+          "usd": 8
+        },
+        {
+          "when": "additive, image tokens per 1M output",
+          "usd": 30
+        }
+      ],
+      "rounding": "total cost is rounded up to the closest hundredth of a cent ($0.0001)",
+      "source": "https://fal.ai/models/openai/gpt-image-2/edit",
+      "verified": "2026-08-24",
+      "quote": "Text tokens (per 1M): $5.00 input, $1.25 cached, $10.00 output. Image tokens (per 1M): $8.00 input, $2.00 cached, $30.00 output. Total cost is rounded up to the closest hundredth of a cent ($0.0001). The following table shows the pricing of ChatGPT Images 2.0 from a technical standpoint, including one input image. | Size | Low Quality | Medium Quality | High Quality | | 1024 x 768 | $0.011 | $0.043 | $0.151 | | 1024 x 1024 | $0.015 | $0.061 | $0.219 | | 1024 x 1536 | $0.018 | $0.054 | $0.178 | | 1920 x 1080 | $0.017 | $0.053 | $0.158 | | 2560 x 1440 | $0.019 | $0.068 | $0.234 | | 3840 x 2160 | $0.024 | $0.113 | $0.413 | This implies the following: Longer prompts increase the cost, more complex requests (involving use of world knowledge, etc.) cost more, and larger images cost more."
+    },
+    "reve/2.1/text-to-image": {
+      "unit": "per_image",
+      "usd": 0.25,
+      "source": "https://fal.ai/models/reve/2.1/text-to-image",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.25 per image."
+    },
+    "xai/grok-imagine-image": {
+      "unit": "per_image",
+      "usd": 0.02,
+      "source": "https://fal.ai/models/xai/grok-imagine-image",
+      "verified": "2026-08-24",
+      "quote": "Your request will cost $0.02 per image."
     }
   }
 }

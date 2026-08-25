@@ -30,7 +30,7 @@ export const FAL_STT_SHAPES = {
   "fal-ai/wizper": {
     order: ["audio_url", "task", "language", "chunk_level", "max_segment_len", "merge_chunks", "version"],
     props: {
-      audio_url: { t: "string", req: true },
+      audio_url: { t: "string", req: true, media: "audio" },
       task: { t: "string", def: true, enum: E_ab6460 },
       language: { t: "string", nul: true, def: true, enum: E_610762 },
       chunk_level: { t: "string", def: true, enum: E_5f6594 },

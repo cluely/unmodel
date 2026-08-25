@@ -6,34 +6,86 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.lipsync` endpoint lets a caller state geometry and duration, and which
- * wire keys it takes.
+ * How each `fal.lipsync` endpoint lets a caller state geometry, and which wire keys it
+ * takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
  * liability, and the classes are exhaustive by construction — an endpoint whose geometry
  * parameters fit none of them fails codegen rather than falling through.
  *
- * `keys` is fal's own parameter list, in fal's own order. Which of those keys is a
- * canonical unified word and which is a per-model extra is a HAND decision that lands with
- * each category's adapter; this file states the fact, not the mapping.
+ * The rest is the per-model narrowing the unified surface reads: `sizes` / `ratios` /
+ * `tiers` are this endpoint's own vocabulary for the canonical size words, and `extras` is
+ * everything it takes that the canonical vocabulary has no word for, typed from that
+ * endpoint's own wire interface.
+ *
+ * `keys` is fal's own parameter list, in fal's own order.
  */
 
 import type { FalParamShape } from "../shape-types";
+import type {
+  FalAiSyncLipsyncV2Input,
+  FalAiSyncLipsyncV3Input,
+} from "./lipsync-wire.gen";
 
-/** fal-ai/sync-lipsync/v2. */
-const ROW_115fe6 = {
+/**
+ * The value half of an `extras` entry: `undefined` at run time, the cast's type
+ * at compile time.
+ *
+ * Declared here rather than imported from `core/unified/derive` on purpose —
+ * a generated module is DATA, and importing a runtime value from the unified
+ * kernel would put that kernel behind every `unmodel/fal/values` import. It is
+ * the same one-line definition, and `test/import-graph.test.ts` is what keeps
+ * the rule it protects honest.
+ */
+const EXTRA: never = undefined as never;
+
+/**
+ * fal-ai/sync-lipsync/v2.
+ *
+ * The extras are typed from `FalAiSyncLipsyncV2Input`, so the value an editor offers here
+ * and the value `fal.lipsync` validates are one declaration.
+ */
+const ROW_3527a8 = {
   classes: ["fixedGeometry"],
   keys: ["model", "video_url", "audio_url", "sync_mode"],
+  extras: {
+    model: EXTRA as FalAiSyncLipsyncV2Input["model"],
+    video_url: EXTRA as FalAiSyncLipsyncV2Input["video_url"],
+    audio_url: EXTRA as FalAiSyncLipsyncV2Input["audio_url"],
+    sync_mode: EXTRA as FalAiSyncLipsyncV2Input["sync_mode"],
+  },
 } as const;
 
-/** fal-ai/sync-lipsync/v3. */
-const ROW_8ebb6b = {
+/**
+ * fal-ai/sync-lipsync/v3.
+ *
+ * The extras are typed from `FalAiSyncLipsyncV3Input`, so the value an editor offers here
+ * and the value `fal.lipsync` validates are one declaration.
+ */
+const ROW_546f72 = {
   classes: ["fixedGeometry"],
   keys: ["video_url", "audio_url", "sync_mode", "options"],
+  extras: {
+    video_url: EXTRA as FalAiSyncLipsyncV3Input["video_url"],
+    audio_url: EXTRA as FalAiSyncLipsyncV3Input["audio_url"],
+    sync_mode: EXTRA as FalAiSyncLipsyncV3Input["sync_mode"],
+    options: EXTRA as FalAiSyncLipsyncV3Input["options"],
+  },
 } as const;
 
 export const FAL_LIPSYNC_PARAM_SHAPES = {
-  "fal-ai/sync-lipsync/v2": ROW_115fe6,
-  "fal-ai/sync-lipsync/v3": ROW_8ebb6b,
+  "fal-ai/sync-lipsync/v2": ROW_3527a8,
+  "fal-ai/sync-lipsync/v3": ROW_546f72,
 } as const satisfies Record<string, FalParamShape>;
+
+/**
+ * Every `fal.lipsync` endpoint id, in the order the table above keys them.
+ *
+ * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
+ * model list without reaching for a second generated module — the leaf rule (A10b in
+ * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
+ * one generator.
+ */
+
+export const FAL_LIPSYNC_MODELS = ["fal-ai/sync-lipsync/v2", "fal-ai/sync-lipsync/v3"] as const;

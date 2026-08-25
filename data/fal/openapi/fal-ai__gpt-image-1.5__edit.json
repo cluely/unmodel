@@ -1,0 +1,486 @@
+{
+  "metadata": {
+    "category": "image-to-image",
+    "date": "2025-12-16T18:38:20.664Z",
+    "description": "GPT Image 1.5 generates high-fidelity images with strong prompt adherence, preserving composition, lighting, and fine-grained detail.",
+    "display_name": "GPT-Image 1.5",
+    "group": {
+      "key": "gpt-image-1.5",
+      "label": "Edit Image"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/gpt-image-1.5/edit",
+    "pinned": false,
+    "status": "active",
+    "stream_url": "https://fal.run/fal-ai/gpt-image-1.5/edit/stream",
+    "tags": [
+      "openai",
+      "gpt-image"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a875814/3KvlvWItvogHIOuPRWIVl_001c9e77742a4ff2a829a8ece127c0d1.jpg",
+    "updated_at": "2026-04-21T17:47:54.587Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "GptImage15EditInput": {
+          "properties": {
+            "background": {
+              "default": "auto",
+              "description": "Background for the generated image",
+              "enum": [
+                "auto",
+                "transparent",
+                "opaque"
+              ],
+              "title": "Background",
+              "type": "string"
+            },
+            "image_size": {
+              "default": "auto",
+              "description": "Aspect ratio for the generated image",
+              "enum": [
+                "auto",
+                "1024x1024",
+                "1536x1024",
+                "1024x1536"
+              ],
+              "title": "Image Size",
+              "type": "string"
+            },
+            "image_urls": {
+              "description": "The URLs of the images to use as a reference for the generation.",
+              "examples": [
+                [
+                  "https://v3b.fal.media/files/b/0a8691af/9Se_1_VX1wzTjjTOpWbs9_bb39c2eb-1a41-4749-b1d0-cf134abc8bbf.png"
+                ]
+              ],
+              "items": {
+                "type": "string"
+              },
+              "title": "Image URLs",
+              "type": "array"
+            },
+            "input_fidelity": {
+              "default": "high",
+              "description": "Input fidelity for the generated image",
+              "enum": [
+                "low",
+                "high"
+              ],
+              "title": "Input Fidelity",
+              "type": "string"
+            },
+            "mask_image_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The URL of the mask image to use for the generation. This indicates what part of the image to edit.",
+              "title": "Mask Image URL"
+            },
+            "num_images": {
+              "default": 1,
+              "description": "Number of images to generate",
+              "examples": [
+                1
+              ],
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Number of Images",
+              "type": "integer"
+            },
+            "output_format": {
+              "default": "png",
+              "description": "Output format for the images",
+              "enum": [
+                "jpeg",
+                "png",
+                "webp"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt": {
+              "description": "The prompt for image generation",
+              "examples": [
+                "Same workers, same beam, same lunch boxes - but they're all on their phones now. One is taking a selfie. One is on a call looking annoyed. Same danger, new priorities. A hard hat has AirPods."
+              ],
+              "maxLength": 32000,
+              "minLength": 2,
+              "title": "Prompt",
+              "type": "string"
+            },
+            "quality": {
+              "default": "high",
+              "description": "Quality for the generated image",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ],
+              "title": "Quality",
+              "type": "string"
+            },
+            "sync_mode": {
+              "default": false,
+              "description": "If `True`, the media will be returned as a data URI and the output data won't be available in the request history.",
+              "title": "Sync Mode",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "prompt",
+            "image_urls"
+          ],
+          "title": "EditImageRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "image_urls",
+            "image_size",
+            "background",
+            "quality",
+            "input_fidelity",
+            "num_images",
+            "output_format",
+            "sync_mode",
+            "mask_image_url"
+          ]
+        },
+        "GptImage15EditOutput": {
+          "properties": {
+            "images": {
+              "description": "The generated images.",
+              "examples": [
+                [
+                  {
+                    "content_type": "image/png",
+                    "file_name": "yUt7tifLSbg1WzWWgfj2o.png",
+                    "height": 1024,
+                    "url": "https://v3b.fal.media/files/b/0a8691b0/yUt7tifLSbg1WzWWgfj2o.png",
+                    "width": 1024
+                  }
+                ]
+              ],
+              "items": {
+                "$ref": "#/components/schemas/ImageFile"
+              },
+              "title": "Images",
+              "type": "array"
+            }
+          },
+          "required": [
+            "images"
+          ],
+          "title": "EditImageResponse",
+          "type": "object",
+          "x-fal-order-properties": [
+            "images"
+          ]
+        },
+        "ImageFile": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "height": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The height of the image",
+              "title": "Height"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            },
+            "width": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The width of the image",
+              "title": "Width"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "ImageFile",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size",
+            "width",
+            "height"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/gpt-image-1.5/edit queue.",
+      "title": "Queue OpenAPI for fal-ai/gpt-image-1.5/edit",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "GPT Image 1.5 is OpenAI's new state-of-the-art image generation model. It is\na natively multimodal language model that accepts both text and image inputs, and produces image outputs.\nIt is the successor to GPT Image 1.\n\nUse it as an image-to-image (editing) API through fal!",
+        "category": "image-to-image",
+        "documentationUrl": "https://fal.ai/models/fal-ai/gpt-image-1.5/edit/api",
+        "endpointId": "fal-ai/gpt-image-1.5/edit",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/gpt-image-1.5/edit",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a875814/3KvlvWItvogHIOuPRWIVl_001c9e77742a4ff2a829a8ece127c0d1.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/gpt-image-1.5/edit": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GptImage15EditInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/gpt-image-1.5/edit/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GptImage15EditOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/gpt-image-1.5/edit/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/gpt-image-1.5/edit/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

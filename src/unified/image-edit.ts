@@ -96,6 +96,10 @@ import type {
   ImageEditValidator,
 } from "../core/unified/vocabulary/image-edit";
 import { imageEdit as blackForestLabs } from "../providers/black-forest-labs/unified-image-edit";
+// The LEAF, never `../providers/fal/unified` — that barrel also carries the
+// text-to-image adapter, and importing it here would ship fal's generation
+// validator, schema and narrowing tables inside `unmodel/image-edit`.
+import { imageEdit as fal } from "../providers/fal/unified-image-edit";
 import { imageEdit as ideogram } from "../providers/ideogram/unified-image-edit";
 import { imageEdit as openai } from "../providers/openai/unified-image-edit";
 import { imageEdit as recraft } from "../providers/recraft/unified-image-edit";
@@ -131,19 +135,26 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * `stt`, the per-ref `image` narrowing. A generated or
  * dynamically-loaded registry would keep the first and lose the other three.
  *
- * Four providers rather than the eight that ship an editing route, and the four
+ * Five providers rather than the nine that ship an editing route, and the five
  * are exactly the ones with a route this vocabulary can express: image, prompt,
  * no mask. Stability's six routes, Luma's reframe and BFL's FLUX Tools family
  * are all mask- or geometry-driven; Bria's `imageEdit` and Reve's are neither
  * (they are prompt-driven), and they are the obvious next adapters — they are
  * out of this wave rather than out of the category.
  *
- * The cost is honest and measured: importing this pulls in four provider
- * validators, their schemas and their catalogs (~250 KiB, pinned in
- * `test/bundle-budget.test.ts`). `createImageEdit([…])` above is the way to pay
- * for two providers instead of four.
+ * fal is the newest and contributes the most refs by a wide margin — 17
+ * editing endpoints against the other four providers' handful — because it is
+ * a queue in front of many vendors rather than a vendor. Its mask-driven
+ * routes are excluded here on exactly the rule above: `fal-ai/flux-pro/v1/fill`
+ * takes a `mask_url` this vocabulary has no word for, so it stays reachable by
+ * name at `unmodel/fal` and its mask arrives as a per-model extra.
+ *
+ * The cost is honest and measured: importing this pulls in five provider
+ * validators, their schemas and their catalogs, pinned in
+ * `test/bundle-budget.test.ts`. `createImageEdit([…])` above is the way to pay
+ * for two providers instead of five.
  */
-export const imageEdit = createImageEdit([openai, blackForestLabs, ideogram, recraft]);
+export const imageEdit = createImageEdit([openai, blackForestLabs, fal, ideogram, recraft]);
 
 export type {
   AnyImageEditAdapter,

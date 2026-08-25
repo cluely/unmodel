@@ -148,6 +148,8 @@ function importsOf(file: string): ImportRef[] {
 const isWireLeaf = (file: string): boolean => /^src\/providers\/[^/]+\/wire\.ts$/.test(file);
 const isInterop = (file: string): boolean => /^src\/providers\/[^/]+\/interop\.ts$/.test(file);
 const isCatalogGen = (file: string): boolean => /^src\/catalog\/.*\.gen\.ts$/.test(file);
+/** A generated provider module — `src/providers/<p>/gen/*.gen.ts`. See A10-A12. */
+const isGenerated = (file: string): boolean => /^src\/providers\/[^/]+\/gen\/.+\.gen\.ts$/.test(file);
 const under = (file: string, dir: string): boolean => file.startsWith(`${dir}/`);
 
 /** `"src/providers/anthropic/wire.ts"` → `"anthropic"`. */
@@ -617,12 +619,13 @@ describe("unified media surfaces (amendment A5)", () => {
   test("A7 — an adapter imports only its own provider, the kernel, and warning types", () => {
     const adapters = FILES.filter(isUnifiedAdapter);
     // A floor rather than an equality, and it moves when a wave lands: 29 held
-    // through the image and speech waves, and Gemini joining both audio
-    // categories added `google/unified-tts.ts` and `google/unified-stt.ts`. A
-    // rule that scans an empty set passes by saying nothing, and this one is
-    // the reason a category entry can import an adapter leaf without dragging
-    // that provider's neighbours in.
-    expect(adapters.length).toBeGreaterThanOrEqual(31);
+    // through the image and speech waves, Gemini joining both audio categories
+    // added `google/unified-tts.ts` and `google/unified-stt.ts`, and fal
+    // arrived with two at once (`unified-image.ts`, `unified-image-edit.ts`) —
+    // 33. A rule that scans an empty set passes by saying nothing, and this one
+    // is the reason a category entry can import an adapter leaf without
+    // dragging that provider's neighbours in.
+    expect(adapters.length).toBeGreaterThanOrEqual(33);
 
     const violations: string[] = [];
     for (const file of adapters) {
@@ -955,6 +958,20 @@ describe("value entries (amendment A9)", () => {
    * the rule that keeps them cheap: their own provider directory, and the
    * kernel's `EXTRA`/type surface. A zod import, a validator or a catalog here
    * would move straight through the values entry into a client bundle.
+   *
+   * **Amendment A10b — the generated-params carve-out.** A provider whose rows
+   * are generated has its table under `gen/`, so the leaf has to be able to
+   * reach in there. But `gen/` is not one kind of thing: `<cat>-schema.gen.ts`
+   * is the only generated module that imports zod, and a leaf that re-exported
+   * from it would put a category's whole request schema behind
+   * `unmodel/<p>/values` — the exact 30–80 KiB failure A9 exists to prevent,
+   * arriving by a new door.
+   *
+   * So the carve-out is exactly one file: `./gen/<category>-params.gen.ts`,
+   * matching the leaf's own category, and nothing else under `gen/`. That is
+   * also why the generator emits the model-id list into the params file rather
+   * than leaving the leaf to fetch it from `endpoints.gen.ts` — with this rule
+   * there is no second module for it to fetch it from.
    */
   test("a <category>-params leaf imports only its provider and the kernel", () => {
     const leaves = FILES.filter((f) => /^src\/providers\/[^/]+\/[a-z-]+-params\.ts$/.test(f));
@@ -963,12 +980,27 @@ describe("value entries (amendment A9)", () => {
     const violations: string[] = [];
     for (const file of leaves) {
       const provider = providerOf(file) as string;
+      // `image-edit-params.ts` → `image-edit`.
+      const category = /\/([a-z-]+)-params\.ts$/.exec(file)?.[1] as string;
       for (const ref of importsOf(file)) {
         if (ref.specifier === "zod") {
           violations.push(violation(file, ref, "a params leaf holds data, not a schema"));
           continue;
         }
         if (under(ref.target, "src/core/unified")) continue;
+        if (isGenerated(ref.target)) {
+          if (ref.target === `src/providers/${provider}/gen/${category}-params.gen.ts`) continue;
+          violations.push(
+            violation(
+              file,
+              ref,
+              `a params leaf may reach exactly one generated module — ./gen/${category}-params.gen.ts — ` +
+                "and no other (A10b: `<cat>-schema.gen.ts` imports zod, and a leaf that re-exported from " +
+                "it would put a whole category's request schema behind `unmodel/<p>/values`)",
+            ),
+          );
+          continue;
+        }
         if (providerOf(ref.target) === provider && !isCatalogGen(ref.target)) continue;
         violations.push(
           violation(
@@ -976,6 +1008,152 @@ describe("value entries (amendment A9)", () => {
             ref,
             "a params leaf may import only its own provider directory and src/core/unified/**",
           ),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+});
+
+/**
+ * Amendments A10–A12 — the generated provider modules under
+ * `src/providers/<p>/gen/**`.
+ *
+ * fal is the first provider here whose types are GENERATED rather than
+ * transcribed: `scripts/codegen-fal.ts` reads fal's own published OpenAPI
+ * documents and emits ~48 files. That is a new kind of module in this tree, and
+ * it arrives with a new way to be expensive — a generated file is written by a
+ * template, so a single line in the generator becomes a hundred imports in the
+ * tree, and nobody reviews a hundred imports.
+ *
+ * The core thesis these rules protect is **the generator emits data and types;
+ * hand code owns behaviour**. Each amendment is one way that could stop being
+ * true:
+ *
+ * - **A10** — a `gen/` module is data. `<cat>-wire.gen.ts` is type-only (it
+ *   costs nothing to import a body type); only `<cat>-schema.gen.ts` may import
+ *   zod, because it IS the schema; and no generated module may import the
+ *   pipeline, the request layer, a validator or a catalog barrel. A generated
+ *   file that reached `createValidator` would be a generated *behaviour*, which
+ *   is the line this whole design is drawn on.
+ * - **A11** — `gen/` is private to its provider. A second provider importing
+ *   another's generated tables would couple two rosters through a refresh.
+ * - **A12** — the merged catalog `models.ts` is importable from `index.ts` and
+ *   nothing else. This one needs its own assertion because A7's cross-provider
+ *   rule cannot see it: `unified-image.ts` importing `./models` is a
+ *   SAME-DIRECTORY import, which every other rule here allows. And it is the
+ *   single most expensive mistake available in this provider — `models.ts` is
+ *   the union of every verb's rows, so one edge from an adapter would put the
+ *   editing catalog in the generation pack and, once the later waves land,
+ *   seven more categories in both.
+ */
+describe("generated provider modules (amendments A10-A12)", () => {
+  const GEN = /^src\/providers\/([^/]+)\/gen\/(.+)\.gen\.ts$/;
+  const generated = FILES.filter((file) => GEN.test(file));
+
+  /** Modules a generated file may never reach: behaviour, not data. */
+  const FORBIDDEN = [
+    "src/core/pipeline.ts",
+    "src/core/request.ts",
+    "src/core/options.ts",
+    "src/core/result.ts",
+  ];
+
+  test("there are generated provider modules, so these rules assert something", () => {
+    expect(generated.length).toBeGreaterThanOrEqual(40);
+    // fal is the witness today; the rules are written for any provider.
+    expect(generated.some((file) => file.startsWith("src/providers/fal/gen/"))).toBe(true);
+  });
+
+  test("A10: only <cat>-schema.gen.ts imports zod, and nothing imports behaviour", () => {
+    const violations: string[] = [];
+    for (const file of generated) {
+      const isSchema = /-schema\.gen\.ts$/.test(file);
+      for (const ref of importsOf(file)) {
+        if (ref.specifier === "zod") {
+          if (!isSchema) {
+            violations.push(
+              violation(file, ref, "only `<category>-schema.gen.ts` may import zod — the rest is data"),
+            );
+          }
+          continue;
+        }
+        if (FORBIDDEN.includes(ref.target)) {
+          violations.push(
+            violation(file, ref, "a generated module is data; behaviour is hand-written beside it"),
+          );
+          continue;
+        }
+        if (/\/(index|models|constraints|checks|pricing)\.ts$/.test(ref.target) && !ref.typeOnly) {
+          violations.push(
+            violation(file, ref, "a generated module may not import a provider's hand modules as values"),
+          );
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("A10: wire.gen, narrow.gen, params.gen and models.gen import types only", () => {
+    const violations: string[] = [];
+    const dataOnly = generated.filter((file) =>
+      /-(wire|narrow|params)\.gen\.ts$/.test(file) || /\/models-[a-z-]+\.gen\.ts$/.test(file),
+    );
+    expect(dataOnly.length).toBeGreaterThanOrEqual(20);
+    for (const file of dataOnly) {
+      for (const ref of importsOf(file)) {
+        if (ref.typeOnly) continue;
+        violations.push(
+          violation(file, ref, "a data module states facts; every import it needs is a type"),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("A11: a provider's gen/ directory is reachable only from that provider", () => {
+    const violations: string[] = [];
+    for (const file of FILES) {
+      for (const ref of importsOf(file)) {
+        const match = GEN.exec(ref.target);
+        if (match === null) continue;
+        const owner = match[1] as string;
+        if (providerOf(file) === owner) continue;
+        violations.push(
+          violation(file, ref, `src/providers/${owner}/gen/** is private to ${owner} (A11)`),
+        );
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  /**
+   * A12, and the assertion that earns its own test: nothing but `index.ts`
+   * imports the merged catalog.
+   *
+   * Spelled as a positive list rather than as "no adapter imports it", so that
+   * a future `retarget.ts` or `interop.ts` reaching for it also fails. The
+   * merged catalog exists for exactly one caller — the provider's public entry,
+   * which is the one place a caller has asked for every model fal serves.
+   */
+  test("A12: the merged catalog is importable from index.ts and nowhere else", () => {
+    const merged = FILES.filter((file) => /^src\/providers\/([^/]+)\/models\.ts$/.test(file));
+    const withGenSlices = merged.filter((file) =>
+      importsOf(file).some((ref) => GEN.test(ref.target)),
+    );
+    expect(withGenSlices.length).toBeGreaterThanOrEqual(1);
+
+    const violations: string[] = [];
+    for (const catalog of withGenSlices) {
+      const provider = providerOf(catalog) as string;
+      for (const file of FILES) {
+        if (file === catalog) continue;
+        if (!importsOf(file).some((ref) => ref.target === catalog)) continue;
+        if (file === `src/providers/${provider}/index.ts`) continue;
+        violations.push(
+          `${file} imports "./models" — the merged catalog is the union of every verb's rows, so any ` +
+            "other importer ships every category's catalog to reach one (A12). Import " +
+            "`./gen/models-<verb>.gen.ts` instead.",
         );
       }
     }

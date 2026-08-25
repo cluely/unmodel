@@ -1,0 +1,9 @@
+{
+  "ref": "fal/fal-ai/nano-banana-2",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "resolution": "1K",
+    "aspect_ratio": "16:9"
+  },
+  "url": "https://queue.fal.run/fal-ai/nano-banana-2"
+}

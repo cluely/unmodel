@@ -33,7 +33,7 @@ export const FAL_VIDEO_SHAPES = {
     order: ["prompt", "image_url", "duration", "negative_prompt", "cfg_scale", "tail_image_url"],
     props: {
       prompt: { t: "string", req: true, maxLen: 2500 },
-      image_url: { t: "string", req: true },
+      image_url: { t: "string", req: true, media: "image" },
       duration: { t: "string", def: true, enum: E_9e3bd1 },
       negative_prompt: { t: "string", def: true, maxLen: 2500 },
       cfg_scale: { t: "number", def: true, min: 0, max: 1 },

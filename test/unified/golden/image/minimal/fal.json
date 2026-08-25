@@ -1,0 +1,7 @@
+{
+  "ref": "fal/fal-ai/flux/dev",
+  "params": {
+    "prompt": "a lighthouse in fog"
+  },
+  "url": "https://queue.fal.run/fal-ai/flux/dev"
+}

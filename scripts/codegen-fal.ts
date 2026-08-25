@@ -191,9 +191,22 @@ const overlaySchema = z.looseObject({
     "typeOverride",
     "shapeClass",
     "durationsAreSeconds",
+    /**
+     * The media kind a parameter carries, stated by hand.
+     *
+     * The escape hatch for `mediaFromName`, which classifies a parameter only
+     * when its name both ends in `_url`/`_urls` and names a medium. A fal
+     * endpoint that spells a file input any other way — or one the rule
+     * classifies WRONGLY — is corrected here. `value` is the kind (`"image"`,
+     * `"video"`, `"audio"`, `"file"`); omitting it SUPPRESSES a classification
+     * the rule made.
+     */
+    "media",
     "note",
   ]),
   param: z.string().optional(),
+  /** The value the overlay asserts, for the kinds that carry one (`media`). */
+  value: z.string().optional(),
   reason: z.string(),
   source: z.string(),
   verified: z.string(),
@@ -338,6 +351,12 @@ type Node =
       k: "prim";
       t: PrimType;
       enum?: readonly (string | number)[];
+      /**
+       * The enum is a SUGGESTION, not a closed set — fal spells this
+       * `anyOf: [{enum: [...]}, {type: "string"}]`, i.e. "these values, or any
+       * other string". An unlisted value is a warning, never a refusal.
+       */
+      open?: true;
       min?: number;
       max?: number;
       xmin?: number;
@@ -574,7 +593,9 @@ function lowerObject(raw: Schema, pointer: string, ctx: LowerCtx, deps: Set<stri
       hasDefault: "default" in schema,
       default: schema["default"],
       description,
-      media: lowered.media,
+      // fal's own `ui.field` wins where it exists; the parameter's name is the
+      // fallback, and in practice the rule that fires. See mediaFromName.
+      media: lowered.media ?? mediaFromName(name),
     };
   }
   return { props, order: orderList };
@@ -591,6 +612,96 @@ function mediaOf(schema: Schema): string | undefined {
   if (typeof ui !== "object" || ui === null) return undefined;
   const field = (ui as Record<string, unknown>)["field"];
   return typeof field === "string" ? field : undefined;
+}
+
+/**
+ * The media word a parameter's own NAME carries — the fallback for
+ * {@link mediaOf}, and in practice the rule that does the work.
+ *
+ * fal documents a `ui.field` hint and almost never emits one: across the
+ * wave-1a snapshots it appears exactly ONCE, on `tail_image_url`, and even
+ * there it is buried in `anyOf[0]` rather than on the property. A media
+ * detector built on it alone would classify one parameter in twelve endpoints
+ * and miss every `image_url` fal serves, so the name is the primary source and
+ * `ui.field` is the override that wins when fal bothers to state it.
+ *
+ * ## Why the rule is narrow
+ *
+ * Only a name ending in `_url` / `_urls` (or the bare `url`) is considered at
+ * all, and only when what precedes it NAMES a medium. Two failure modes are
+ * being avoided, and they pull in opposite directions:
+ *
+ * - Classifying every `*_url` as media would sweep in `webhook_url`,
+ *   `response_url`, `status_url` and `cancel_url` — plumbing that carries an
+ *   address, not a file. `checkMediaRefs` would then tell a caller their
+ *   webhook was not a valid image reference.
+ * - Classifying every parameter containing "image" would sweep in
+ *   `image_size`, `num_images` and `enable_safety_checker` — a number and a
+ *   boolean asked to be a URL.
+ *
+ * Requiring BOTH halves — a medium word and a URL suffix — is what makes the
+ * rule safe enough to apply without review. A parameter this misses is simply
+ * an unclassified string, which is the status quo; a parameter it gets wrong
+ * would be a false error at run time. When fal names something in a way this
+ * cannot see, a `media` overlay states it by hand.
+ */
+const MEDIA_NAME_WORDS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(^|_)(image|img|photo|picture|mask|frame|thumbnail|logo|garment|face)$/, "image"],
+  [/(^|_)(video|clip|footage)$/, "video"],
+  [/(^|_)(audio|voice|speech|music|sound)$/, "audio"],
+];
+
+/** Names that end in `_url` and are addresses rather than media. */
+const MEDIA_NAME_DENY = /^(webhook|callback|redirect|response|status|cancel|queue|docs?|documentation)(_urls?)?$/;
+
+/**
+ * Collapses fal's OPEN-ENUM idiom into one primitive.
+ *
+ * fal spells "these values, or any other string" as
+ * `anyOf: [{ type: "string", enum: [...] }, { type: "string" }]` — a suggested
+ * vocabulary beside the bare type. `flux-pro/v1.1-ultra`'s `aspect_ratio` is
+ * the canonical case: nine ratios listed, and a free `"1234:567"` accepted.
+ *
+ * Left as a two-arm union it would be wrong three ways over: the TypeScript
+ * type would be `"21:9" | … | string`, which collapses to `string` and offers
+ * no completions; the zod schema would be a pointless `union([enum, string])`;
+ * and the shape classifier would refuse to classify it at all, because a
+ * `union` is not one of the geometry shapes an adapter can branch on.
+ *
+ * Collapsed, all three come out right: `"21:9" | … | (string & {})` keeps the
+ * completions while accepting any string, the schema is a bare `z.string()`,
+ * and the classifier sees the string-with-enum it knows how to file. The
+ * `open` flag is what carries "unlisted is a warning, not an error" through to
+ * the check battery.
+ *
+ * Only fires when every arm is the same primitive type, at least one arm lists
+ * values, and at least one does not — a genuinely closed union of two enums is
+ * a different thing and stays a union.
+ */
+function openEnumOf(arms: readonly Lowered[]): Node | undefined {
+  const nodes = arms.map((arm) => arm.node);
+  if (!nodes.every((node): node is Extract<Node, { k: "prim" }> => node.k === "prim")) return undefined;
+  const first = nodes[0] as Extract<Node, { k: "prim" }>;
+  if (!nodes.every((node) => node.t === first.t)) return undefined;
+  const listed = nodes.filter((node) => node.enum !== undefined);
+  const bare = nodes.filter((node) => node.enum === undefined);
+  if (listed.length === 0 || bare.length === 0) return undefined;
+  const values: (string | number)[] = [];
+  for (const node of listed) for (const value of node.enum ?? []) if (!values.includes(value)) values.push(value);
+  return { k: "prim", t: first.t, enum: values, open: true };
+}
+
+function mediaFromName(name: string): string | undefined {
+  if (MEDIA_NAME_DENY.test(name)) return undefined;
+  const stem = name === "url" ? "" : /_urls?$/.test(name) ? name.replace(/_urls?$/, "") : undefined;
+  if (stem === undefined) return undefined;
+  // A bare `url` inside a component (fal's `File`, `Image`, `Audio`) is that
+  // component's own payload; the component's title names the medium, not the
+  // property, so a bare `url` stays unclassified here and is classified by the
+  // property that REFERENCES the component.
+  if (stem === "") return undefined;
+  for (const [pattern, kind] of MEDIA_NAME_WORDS) if (pattern.test(stem)) return kind;
+  return undefined;
 }
 
 function numberOf(schema: Schema, key: string): number | undefined {
@@ -621,6 +732,8 @@ function lowerNode(schema: Schema, pointer: string, ctx: LowerCtx, deps: Set<str
       const only = lowered[0] as Lowered;
       return { node: only.node, nullable: nullable || only.nullable, media: armMedia };
     }
+    const openEnum = openEnumOf(lowered);
+    if (openEnum !== undefined) return { node: openEnum, nullable, media: armMedia };
     return {
       node: { k: "union", arms: lowered.map((entry) => entry.node) },
       nullable,
@@ -714,9 +827,16 @@ function lowerNode(schema: Schema, pointer: string, ctx: LowerCtx, deps: Set<str
 
 function tsType(node: Node, registry: ComponentRegistry): string {
   switch (node.k) {
-    case "prim":
-      if (node.enum !== undefined) return node.enum.map((value) => literal(value)).join(" | ");
+    case "prim": {
+      if (node.enum !== undefined) {
+        const listed = node.enum.map((value) => literal(value)).join(" | ");
+        // The open-enum tail keeps completions (the listed values are what an
+        // editor offers) without closing a set fal left open.
+        if (node.open !== true) return listed;
+        return `${listed} | (${node.t === "string" ? "string" : "number"} & {})`;
+      }
       return node.t === "boolean" ? "boolean" : node.t === "string" ? "string" : "number";
+    }
     case "array": {
       const inner = tsType(node.items, registry);
       return /[ |]/.test(inner) ? `(${inner})[]` : `${inner}[]`;
@@ -764,6 +884,11 @@ function zodExpr(node: Node, componentSchemaName: (hash: string) => string): str
   switch (node.k) {
     case "prim": {
       if (node.enum !== undefined) {
+        // An OPEN enum is a bare type here: fal accepts any string, so a
+        // `z.enum` would refuse values the endpoint takes. The listed values
+        // survive in the IR, where the check battery downgrades an unlisted
+        // one to a warning instead of an error.
+        if (node.open === true) return node.t === "string" ? "z.string()" : "z.number()";
         return node.t === "string"
           ? `z.enum([${node.enum.map((value) => quote(String(value))).join(", ")}])`
           : `z.literal([${node.enum.map((value) => num(Number(value))).join(", ")}])`;
@@ -949,6 +1074,11 @@ interface EndpointModel {
   input: ObjectModel;
   output: ObjectModel;
   inputTypeName: string;
+  /**
+   * fal's internal route for this endpoint, when it differs from the published
+   * id (vendor-namespaced ids only). Provenance, never the URL.
+   */
+  routeAlias?: string;
   outputTypeName: string;
   requiredProbes: string[];
   shapes: ShapeClass[];
@@ -1242,7 +1372,7 @@ function propDoc(prop: Prop, indent: string): string {
     lines.push(/[.!?:)\]]$/.test(text) ? text : `${text}.`);
   }
   if (prop.hasDefault) lines.push(`Default: \`${literal(prop.default)}\`.`);
-  if (prop.media !== undefined) lines.push(`Carries a ${prop.media} reference (fal's own \`ui.field\` hint).`);
+  if (prop.media !== undefined) lines.push(`Carries a ${prop.media} reference — an https URL or a \`data:\` URI.`);
   if (lines.length === 0) return "";
   return renderDoc(lines, indent);
 }
@@ -1302,6 +1432,14 @@ ${fields}
     iface(model.inputTypeName, model.input, [
       `The request body \`${model.id}\` accepts.`,
       ...(model.curation.note === undefined ? [] : ["", model.curation.note]),
+      ...(model.routeAlias === undefined
+        ? []
+        : [
+            "",
+            `fal serves this endpoint at two live routes: the published id above, and the internal alias`,
+            `\`${model.routeAlias}\` its OpenAPI document is written against. unmodel submits to the published`,
+            "id — that is the one fal documents and the one this catalog is keyed on.",
+          ]),
       "",
       `Docs: ${model.docUrl}`,
     ]),
@@ -1449,6 +1587,24 @@ function renderSchemaFile(verb: Verb, models: readonly EndpointModel[], registry
     return `${comment}  ${propKey(name)}: ${expr}.optional(),`;
   });
 
+  // The route selector. It is NOT a wire parameter — `finalize` strips it into
+  // the URL and fal never sees it — but it has to be declared here anyway,
+  // because the pipeline reports any key the schema does not know as
+  // `unknown_param`. Without this line every single fal request would carry a
+  // warning about the one parameter unmodel itself requires. (Krea's `model`
+  // is the same trick for the same reason.) Declaring it does not widen the
+  // wire body: nothing reads the schema to build the request.
+  const routeField = `${renderDoc(
+    [
+      "The endpoint to submit to — unmodel's route selector, not a fal body field.",
+      "",
+      "Stripped in `finalize` and interpolated into `.request.url`; fal never receives it. It is declared here",
+      "only so the pipeline does not report the one required parameter as an unknown one. The selector is",
+      "`endpoint` rather than `model` because `model` is a REAL wire field on several fal endpoints.",
+    ],
+    "  ",
+  )}  endpoint: z.string(),`;
+
   return `${header(models.map((model) => model.snapshotFile))}
 ${renderDoc(
   [
@@ -1470,6 +1626,7 @@ ${renderDoc(
 import { z } from "zod";
 ${componentBlocks.length === 0 ? "" : `\n${componentBlocks.join("\n")}\n`}
 export const fal${pascalCase(verb)}InputSchema = z.looseObject({
+${routeField}
 ${fields.join("\n")}
 });
 `;
@@ -1494,6 +1651,7 @@ function renderNarrowFile(verb: Verb, models: readonly EndpointModel[], registry
     switch (node.k) {
       case "prim":
         if (node.enum !== undefined) fields.push(`enum: ${enumName(node.enum)}`);
+        if (node.open === true) fields.push("open: true");
         if (node.min !== undefined) fields.push(`min: ${num(node.min)}`);
         if (node.max !== undefined) fields.push(`max: ${num(node.max)}`);
         if (node.xmin !== undefined) fields.push(`xmin: ${num(node.xmin)}`);
@@ -1624,24 +1782,256 @@ ${constraintRows}
 `;
 }
 
+/** One dimension of the explicit-`image_size` arm, through a `$ref` or inline. */
+function imageSizeDimension(
+  node: Node,
+  axis: "width" | "height",
+): { min?: number; xmin?: number; max?: number } | undefined {
+  const object =
+    node.k === "object"
+      ? node
+      : node.k === "ref"
+        ? IMAGE_SIZE_COMPONENTS.get(node.hash)
+        : undefined;
+  const prop = object?.props[axis];
+  if (prop === undefined || prop.node.k !== "prim") return undefined;
+  const spec: { min?: number; xmin?: number; max?: number } = {};
+  if (prop.node.min !== undefined) spec.min = prop.node.min;
+  if (prop.node.xmin !== undefined) spec.xmin = prop.node.xmin;
+  if (prop.node.max !== undefined) spec.max = prop.node.max;
+  return spec;
+}
+
+/**
+ * Component models by hash, populated by `generate()` before the params files
+ * are rendered.
+ *
+ * A module-level map rather than another parameter threaded through four
+ * emitters: the registry is finalized by the time anything renders, and this
+ * lookup is the only place a params row has to resolve a `$ref`.
+ */
+const IMAGE_SIZE_COMPONENTS = new Map<string, ObjectModel>();
+
+/**
+ * The wire parameters each verb's unified adapter maps from a canonical word,
+ * and which therefore are NOT per-model extras.
+ *
+ * Everything an endpoint declares that is not on this list becomes an `extras`
+ * entry on its row — typed from that endpoint's own wire interface, so the
+ * completion a caller sees and the value the provider validates are one
+ * declaration. The list is per verb because the same wire name is canonical in
+ * one category and an extra in another: `image_url` IS the subject of an edit
+ * and is merely a style reference on a text-to-image route.
+ */
+const CANONICAL_WIRE_PARAMS: Readonly<Partial<Record<Verb, readonly string[]>>> = {
+  // `ImageParams` has words for shape, tier, count, seed, a negative prompt,
+  // an output format and a delivery mode.
+  image: ["prompt", "image_size", "aspect_ratio", "resolution", "num_images", "seed", "negative_prompt", "output_format", "sync_mode", "width", "height"],
+  // `ImageEditParams` has FEWER: no `resolution`, no `negativePrompt`, no
+  // `outputDelivery`. Those three wire fields are therefore per-model EXTRAS
+  // here, not canonical words — which is the correct answer rather than a gap
+  // to paper over. An edit's size normally follows its input, so the category
+  // never grew a tier word; inventing one on fal's witness alone would put a
+  // vocabulary decision in a provider directory.
+  imageEdit: ["prompt", "image_size", "aspect_ratio", "num_images", "seed", "output_format", "width", "height", "image_url", "image_urls", "strength"],
+};
+
+/** fal's `resolution` vocabulary onto the canonical tiers. `0.5K` has none. */
+function canonicalTier(value: string): string | undefined {
+  const match = /^([0-9.]+)k$/i.exec(value.trim());
+  if (match === null) return undefined;
+  const scale = Number(match[1]);
+  return scale === 1 ? "1k" : scale === 2 ? "2k" : scale === 4 ? "4k" : undefined;
+}
+
+/** Canonical `W:H` spellings, from an enum that may hold other things too. */
+function canonicalRatios(values: readonly (string | number)[]): string[] {
+  return values.filter((value): value is string => typeof value === "string" && /^\d+:\d+$/.test(value));
+}
+
+interface UnifiedRow {
+  classes: readonly string[];
+  keys: readonly string[];
+  sizes?: readonly string[];
+  ratios?: readonly string[];
+  ratioFreeform?: true;
+  tiers?: readonly string[];
+  /** canonical tier → the spelling THIS endpoint's `resolution` enum uses. */
+  tierWire?: Readonly<Record<string, string>>;
+  /** The per-dimension bounds on an explicit `image_size: { width, height }`. */
+  pixels?: { min?: number; max?: number };
+  /** Numeric bounds on the CANONICAL params, so an adapter can respect a floor. */
+  bounds?: Readonly<Record<string, { min?: number; max?: number }>>;
+  /** wire param name → the endpoint whose interface types it. */
+  extras: readonly string[];
+}
+
+function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
+  const props = model.input.props;
+  const canonical = new Set(CANONICAL_WIRE_PARAMS[verb] ?? []);
+  const row: UnifiedRow = {
+    classes: model.shapes,
+    keys: model.input.order,
+    extras: model.input.order.filter((name) => !canonical.has(name)),
+  };
+
+  const imageSize = props["image_size"];
+  if (imageSize !== undefined) {
+    // fal's presets are literal `size` values — `"landscape_4_3"` is what the
+    // endpoint takes, not a translation of one. Explicit pixels reach the same
+    // endpoint through `dimensions`, so `size` gets no free-form tail: here the
+    // list genuinely IS the limit for this spelling.
+    //
+    // The presets sit on the string arm of the `anyOf[$ref ImageSize, enum]`
+    // union, so a union has to be searched rather than read.
+    const arms = imageSize.node.k === "union" ? imageSize.node.arms : [imageSize.node];
+    const presets = arms
+      .flatMap((arm) => (arm.k === "prim" && arm.t === "string" && arm.enum !== undefined ? [arm.enum] : []))
+      .flat();
+    if (presets.length > 0) (row as { sizes?: readonly string[] }).sizes = presets.map(String);
+    // The explicit-dimensions arm's bounds, so the adapter can solve a ratio
+    // into pixels this endpoint actually accepts rather than into a guess.
+    const object = arms.find((arm) => arm.k === "ref" || arm.k === "object");
+    if (object !== undefined) {
+      const width = imageSizeDimension(object, "width");
+      const bounds: { min?: number; max?: number } = {};
+      if (width?.min !== undefined) bounds.min = width.min;
+      else if (width?.xmin !== undefined) bounds.min = width.xmin + 1;
+      if (width?.max !== undefined) bounds.max = width.max;
+      if (bounds.min !== undefined || bounds.max !== undefined) {
+        (row as { pixels?: { min?: number; max?: number } }).pixels = bounds;
+      }
+    }
+  }
+
+  const aspect = props["aspect_ratio"];
+  if (aspect?.node.k === "prim" && aspect.node.enum !== undefined) {
+    const ratios = canonicalRatios(aspect.node.enum);
+    if (ratios.length > 0) (row as { ratios?: readonly string[] }).ratios = ratios;
+    // An OPEN enum accepts any string, so the list is a set of presets rather
+    // than a limit — which is exactly what `ratioFreeform` means.
+    if (aspect.node.open === true) (row as { ratioFreeform?: true }).ratioFreeform = true;
+  }
+
+  // `tiers` types the canonical `resolution` field, so it is only meaningful
+  // for a category that HAS one. On `imageEdit` the wire `resolution` is an
+  // extra, and a row claiming tiers there would narrow a word that category
+  // does not have.
+  const resolution = canonical.has("resolution") ? props["resolution"] : undefined;
+  if (resolution?.node.k === "prim" && resolution.node.enum !== undefined) {
+    const tiers: string[] = [];
+    for (const value of resolution.node.enum) {
+      const tier = canonicalTier(String(value));
+      if (tier !== undefined && !tiers.includes(tier)) tiers.push(tier);
+    }
+    if (tiers.length > 0) {
+      (row as { tiers?: readonly string[] }).tiers = tiers;
+      // fal spells the tiers `"1K"` / `"2K"`; the canonical vocabulary spells
+      // them `"1k"` / `"2k"`. The adapter needs the way back, and the
+      // generator is the only place that has seen both.
+      const wire: Record<string, string> = {};
+      for (const value of resolution.node.enum) {
+        const tier = canonicalTier(String(value));
+        if (tier !== undefined && wire[tier] === undefined) wire[tier] = String(value);
+      }
+      (row as { tierWire?: Readonly<Record<string, string>> }).tierWire = wire;
+    }
+  }
+
+  // Numeric bounds on the canonical params. `strength` is the one that earns
+  // this today: `fal-ai/flux/dev/image-to-image` floors it at 0.01, and the
+  // canonical scale starts at 0 — so an adapter that did not know the floor
+  // would send a value fal refuses for the commonest thing a caller can ask
+  // ("keep the source").
+  const bounds: Record<string, { min?: number; max?: number }> = {};
+  for (const name of canonical) {
+    const prop = props[name];
+    if (prop?.node.k !== "prim") continue;
+    if (prop.node.t !== "number" && prop.node.t !== "integer") continue;
+    const entry: { min?: number; max?: number } = {};
+    if (prop.node.min !== undefined) entry.min = prop.node.min;
+    if (prop.node.max !== undefined) entry.max = prop.node.max;
+    if (entry.min !== undefined || entry.max !== undefined) bounds[name] = entry;
+  }
+  if (Object.keys(bounds).length > 0) {
+    (row as { bounds?: Readonly<Record<string, { min?: number; max?: number }>> }).bounds = bounds;
+  }
+
+  return row;
+}
+
 function renderParamsFile(verb: Verb, models: readonly EndpointModel[]): string {
-  // Endpoints with the same geometry classes and the same parameter set share
-  // one frozen row. The d.ts cost of a per-endpoint literal is real at 100
-  // endpoints, and identical rows would also imply a distinction fal does not
-  // make.
-  const rows = new Map<string, { classes: readonly string[]; keys: readonly string[] }>();
+  // Endpoints with the same geometry classes and the same parameter surface
+  // share one frozen row. The d.ts cost of a per-endpoint literal is real at a
+  // hundred endpoints, and identical rows would also imply a distinction fal
+  // does not make.
+  const rows = new Map<string, UnifiedRow>();
   const rowName = new Map<string, string>();
+  const rowOwner = new Map<string, EndpointModel>();
   for (const model of models) {
-    const row = { classes: model.shapes, keys: model.input.order };
+    const row = unifiedRow(verb, model);
     const key = hash6(canonical(row));
-    rows.set(key, row);
+    if (!rows.has(key)) {
+      rows.set(key, row);
+      rowOwner.set(key, model);
+    }
     rowName.set(model.id, `ROW_${key}`);
+  }
+
+  const wireTypes = new Set<string>();
+  for (const key of rows.keys()) {
+    const row = rows.get(key) as UnifiedRow;
+    if (row.extras.length > 0) wireTypes.add((rowOwner.get(key) as EndpointModel).inputTypeName);
   }
 
   const rowBlock = sorted([...rows.keys()])
     .map((key) => {
-      const row = rows.get(key) as { classes: readonly string[]; keys: readonly string[] };
+      const row = rows.get(key) as UnifiedRow;
+      const owner = rowOwner.get(key) as EndpointModel;
       const shared = models.filter((model) => rowName.get(model.id) === `ROW_${key}`);
+      const fields: string[] = [
+        `  classes: ${renderStringArray(row.classes)},`,
+        `  keys: ${renderStringArray(row.keys)},`,
+      ];
+      if (row.sizes !== undefined) fields.push(`  sizes: ${renderStringArray(row.sizes)},`);
+      if (row.ratios !== undefined) fields.push(`  ratios: ${renderStringArray(row.ratios)},`);
+      if (row.ratioFreeform === true) fields.push("  ratioFreeform: true,");
+      if (row.tiers !== undefined) fields.push(`  tiers: ${renderStringArray(row.tiers)},`);
+      if (row.tierWire !== undefined) {
+        const pairs = sorted(Object.keys(row.tierWire))
+          .map((tier) => `${propKey(tier)}: ${quote((row.tierWire as Record<string, string>)[tier] as string)}`)
+          .join(", ");
+        fields.push(`  tierWire: { ${pairs} },`);
+      }
+      if (row.pixels !== undefined) {
+        const parts: string[] = [];
+        if (row.pixels.min !== undefined) parts.push(`min: ${num(row.pixels.min)}`);
+        if (row.pixels.max !== undefined) parts.push(`max: ${num(row.pixels.max)}`);
+        fields.push(`  pixels: { ${parts.join(", ")} },`);
+      }
+      if (row.bounds !== undefined) {
+        const entries = sorted(Object.keys(row.bounds)).map((name) => {
+          const bound = (row.bounds as Record<string, { min?: number; max?: number }>)[name] as {
+            min?: number;
+            max?: number;
+          };
+          const parts: string[] = [];
+          if (bound.min !== undefined) parts.push(`min: ${num(bound.min)}`);
+          if (bound.max !== undefined) parts.push(`max: ${num(bound.max)}`);
+          return `${propKey(name)}: { ${parts.join(", ")} }`;
+        });
+        fields.push(`  bounds: { ${entries.join(", ")} },`);
+      }
+      const extras =
+        row.extras.length === 0
+          ? "  extras: {},"
+          : `  extras: {\n${row.extras
+              .map(
+                (name) =>
+                  `    ${propKey(name)}: EXTRA as ${owner.inputTypeName}[${quote(name)}],`,
+              )
+              .join("\n")}\n  },`;
+      fields.push(extras);
       return `${renderDoc(
         [
           shared.length === 1
@@ -1649,38 +2039,147 @@ function renderParamsFile(verb: Verb, models: readonly EndpointModel[]): string 
             : `Shared by ${shared.length} endpoints with an identical surface: ${shared
                 .map((model) => model.id)
                 .join(", ")}.`,
+          ...(row.extras.length === 0
+            ? []
+            : [
+                "",
+                `The extras are typed from \`${owner.inputTypeName}\`, so the value an editor offers here and the`,
+                "value `fal." + verb + "` validates are one declaration.",
+              ]),
         ],
         "",
       )}const ROW_${key} = {
-  classes: ${renderStringArray(row.classes)},
-  keys: ${renderStringArray(row.keys)},
+${fields.join("\n")}
 } as const;`;
     })
     .join("\n\n");
 
+  const importLine =
+    wireTypes.size === 0
+      ? ""
+      : `import type {\n${sorted([...wireTypes])
+          .map((name) => `  ${name},`)
+          .join("\n")}\n} from "./${verbSlug(verb)}-wire.gen";\n`;
+
   return `${header(models.map((model) => model.snapshotFile))}
 ${renderDoc(
   [
-    `How each \`fal.${verb}\` endpoint lets a caller state geometry and duration, and which wire keys it takes.`,
+    `How each \`fal.${verb}\` endpoint lets a caller state geometry, and which wire keys it takes.`,
     "",
     "`classes` is what the unified adapter branches on. One branch per shape class, never one per endpoint: at a",
     "hundred endpoints a per-endpoint switch is both unreadable and a d.ts liability, and the classes are",
     "exhaustive by construction — an endpoint whose geometry parameters fit none of them fails codegen rather",
     "than falling through.",
     "",
-    "`keys` is fal's own parameter list, in fal's own order. Which of those keys is a canonical unified word and",
-    "which is a per-model extra is a HAND decision that lands with each category's adapter; this file states the",
-    "fact, not the mapping.",
+    "The rest is the per-model narrowing the unified surface reads: `sizes` / `ratios` / `tiers` are this",
+    "endpoint's own vocabulary for the canonical size words, and `extras` is everything it takes that the",
+    "canonical vocabulary has no word for, typed from that endpoint's own wire interface.",
+    "",
+    "`keys` is fal's own parameter list, in fal's own order.",
   ],
   "",
 )}
 import type { FalParamShape } from "../shape-types";
+${importLine}
+/**
+ * The value half of an \`extras\` entry: \`undefined\` at run time, the cast's type
+ * at compile time.
+ *
+ * Declared here rather than imported from \`core/unified/derive\` on purpose —
+ * a generated module is DATA, and importing a runtime value from the unified
+ * kernel would put that kernel behind every \`unmodel/fal/values\` import. It is
+ * the same one-line definition, and \`test/import-graph.test.ts\` is what keeps
+ * the rule it protects honest.
+ */
+const EXTRA: never = undefined as never;
 
 ${rowBlock}
 
 export const FAL_${verbConst(verb)}_PARAM_SHAPES = {
 ${models.map((model) => `  ${quote(model.id)}: ${rowName.get(model.id)},`).join("\n")}
 } as const satisfies Record<string, FalParamShape>;
+
+${renderDoc(
+  [
+    `Every \`fal.${verb}\` endpoint id, in the order the table above keys them.`,
+    "",
+    "Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a model list without",
+    "reaching for a second generated module — the leaf rule (A10b in test/import-graph.test.ts) allows it",
+    "exactly one, and this is it. Same ids, same order, one generator.",
+  ],
+  "",
+)}
+export const FAL_${verbConst(verb)}_MODELS = ${renderStringArray(models.map((model) => model.id))} as const;
+`;
+}
+
+/**
+ * The rate table `src/providers/fal/pricing.ts` computes from.
+ *
+ * This is the pricing half of "the generator emits DATA, hand code owns
+ * BEHAVIOR". `data/fal/pricing.json` is a human reading a sentence off a model
+ * page and writing down what it said; this file is that transcription in a
+ * shape a function can read; and `pricing.ts` is the arithmetic — the
+ * per-megapixel ceiling rule, the tier lookups, and the decision to answer
+ * `undefined` rather than guess.
+ *
+ * Emitting it rather than hand-writing a second copy is the whole point. A
+ * hand table would be 54 rates transcribed twice, and the second copy would be
+ * the one that went stale after a refresh: `pricing.json` fails codegen when a
+ * curated endpoint has no rate, but nothing could make it fail when a hand
+ * table disagreed with it.
+ *
+ * Note what is here that `models-*.gen.ts` cannot carry: `ModelCost` expresses
+ * exactly four units, so a per-megapixel, tiered or conditional rate reaches
+ * the catalog only as a provenance comment. It reaches an ESTIMATE through
+ * this file.
+ */
+function renderPricingFile(models: readonly EndpointModel[]): string {
+  const rows = models
+    .map((model) => {
+      const row = model.pricing;
+      const fields: string[] = [];
+      if (row.unpriced !== undefined) {
+        fields.push(`unpriced: ${quote(row.unpriced)}`);
+      } else {
+        if (row.unit !== undefined) fields.push(`unit: ${quote(row.unit)}`);
+        if (row.usd !== undefined) fields.push(`usd: ${num(row.usd)}`);
+        if (row.rounding !== undefined) fields.push(`rounding: ${quote(row.rounding)}`);
+        if (row.tierKey !== undefined) fields.push(`tierKey: ${quote(row.tierKey)}`);
+        if (row.tiers !== undefined) {
+          const tiers = row.tiers
+            .map((tier) => `{ when: ${quote(tier.when)}, usd: ${num(tier.usd)} }`)
+            .join(", ");
+          fields.push(`tiers: [${tiers}]`);
+        }
+      }
+      fields.push(`source: ${quote(row.source)}`);
+      fields.push(`verified: ${quote(row.verified)}`);
+      return `  ${quote(model.id)}: { ${fields.join(", ")} },`;
+    })
+    .join("\n");
+
+  return `${header(models.map((model) => model.snapshotFile))}
+${renderDoc(
+  [
+    "Every curated fal endpoint's published rate, as data.",
+    "",
+    "Transcribed from each endpoint's public model page into `data/fal/pricing.json` — quote, source URL and",
+    "date included there — and emitted here in the shape `../pricing.ts` computes from. fal publishes no",
+    "machine-readable rate anywhere, in the Platform API or the OpenAPI document, so a human read a sentence",
+    "for every row below.",
+    "",
+    "A rate here is NOT a cost. `per_megapixel` needs the request's dimensions, `tiered` needs a quantity and",
+    "`conditional` needs whichever field selects the tier — and when the request leaves that open, the honest",
+    "answer is `undefined`. That arithmetic, and that refusal, live in `../pricing.ts`.",
+  ],
+  "",
+)}
+import type { FalRate } from "../pricing-types";
+
+export const FAL_RATES = {
+${rows}
+} as const satisfies Record<string, FalRate>;
 `;
 }
 
@@ -1816,19 +2315,52 @@ export function generate(input: GenerateInput): Map<string, string> {
     // The submit URL is DERIVED and then asserted, never trusted from
     // `metadata.model_url` — that field is the SYNC host (`fal.run`), and using
     // it as the submit URL would silently produce blocking requests.
-    const submitPath = `/${id}`;
+    //
+    // ## The document's path is not always the endpoint id
+    //
+    // For an id under `fal-ai/`, the OpenAPI `paths` key IS the id. For an id
+    // under a VENDOR namespace it is not, and the difference is not cosmetic:
+    //
+    //   alibaba/qwen-image-3/edit        → /fal-ai/qwen-image-3/edit
+    //   bytedance/seedream/v5/pro/edit   → /fal-ai/seedream-5-pro/edit
+    //   ideogram/v4                      → /fal-ai/ideogram-v4
+    //   google/nano-banana-2-lite        → /fal-ai/nano-banana-lite
+    //   xai/grok-imagine-image           → /fal-ai/xai
+    //
+    // Both spellings are live routes — probed unauthenticated on 2026-08-24,
+    // each answering 401 (auth required, route resolves) where a fabricated id
+    // answers 404. The path in the document is fal's INTERNAL alias; the
+    // `endpoint_id` the listing publishes is the documented, catalog-keyed,
+    // user-typed route, and it is the one unmodel builds `.request.url` from.
+    //
+    // So the submit path is located STRUCTURALLY — the one path that is not a
+    // `/requests/{request_id}` sub-path — rather than by matching the id. What
+    // still gets asserted is everything that matters: that there is exactly one
+    // such path, that it carries a POST, and that the server is the queue host.
     const serverUrl = doc.servers[0]?.url ?? "";
+    const submitPaths = Object.keys(doc.paths).filter((path) => !path.includes("/requests/"));
+    if (submitPaths.length !== 1) {
+      throw new Error(
+        `${id}: expected exactly one non-\`/requests/\` path in the snapshot, found ` +
+          `${submitPaths.length} (${submitPaths.join(", ") || "none"}). The submit route is located by shape, ` +
+          "not by name, because a vendor-namespaced id and its document's path legitimately differ.",
+      );
+    }
+    const submitPath = submitPaths[0] as string;
     const post = (doc.paths[submitPath] as { post?: unknown } | undefined)?.post;
     if (post === undefined) {
-      throw new Error(`${id}: no POST ${submitPath} in the snapshot's paths — the id is not the submit route`);
+      throw new Error(`${id}: ${submitPath} declares no POST — the document's only route is not a submit route`);
     }
-    if (`${serverUrl}${submitPath}` !== `${QUEUE_BASE_URL}/${id}`) {
+    if (serverUrl !== QUEUE_BASE_URL) {
       throw new Error(
-        `${id}: submit URL is ${serverUrl}${submitPath}, expected ${QUEUE_BASE_URL}/${id}. ` +
+        `${id}: document server is ${quote(serverUrl)}, expected ${quote(QUEUE_BASE_URL)}. ` +
           "unmodel routes fal by interpolating the endpoint id into the queue host; a different host means a " +
           "different contract.",
       );
     }
+    // Recorded, not corrected: the alias is a true fact about fal's routing and
+    // belongs in the provenance, but it never becomes the URL.
+    const routeAlias = submitPath === `/${id}` ? undefined : submitPath.slice(1);
 
     assertModellable(doc.components.schemas, "#/components/schemas", ctx);
 
@@ -1939,6 +2471,7 @@ export function generate(input: GenerateInput): Map<string, string> {
       input: inputModel,
       output: outputModel,
       inputTypeName: `${typeBase}Input`,
+      routeAlias,
       outputTypeName: `${typeBase}Output`,
       requiredProbes: inputModel.order.filter((name) => {
         const prop = inputModel.props[name] as Prop;
@@ -1968,14 +2501,32 @@ export function generate(input: GenerateInput): Map<string, string> {
             "must be deleted, not carried.",
         );
       }
+      if (overlay.kind === "media") {
+        if (overlay.param === undefined) {
+          throw new Error(
+            `data/fal/overlays.json: ${id} has a \`media\` overlay with no \`param\` — a media kind is a ` +
+              "statement about one parameter, so there is nothing for this one to correct.",
+          );
+        }
+        const prop = model.input.props[overlay.param] as Prop;
+        // Stated wins over inferred, in both directions: a `value` sets the
+        // kind, and omitting it suppresses a classification `mediaFromName`
+        // made in error.
+        if (overlay.value === undefined) delete prop.media;
+        else prop.media = overlay.value;
+      }
     }
   }
 
   registry.finalize();
 
+  IMAGE_SIZE_COMPONENTS.clear();
+  for (const component of registry.ordered()) IMAGE_SIZE_COMPONENTS.set(component.hash, component.model);
+
   const files = new Map<string, string>();
   const allSources = models.map((model) => model.snapshotFile);
   files.set("endpoints.gen.ts", renderEndpointsFile(models));
+  files.set("pricing.gen.ts", renderPricingFile(models));
   files.set("shared.gen.ts", renderSharedFile(registry, allSources));
   for (const verb of VERBS) {
     const slice = models.filter((model) => model.verb === verb);

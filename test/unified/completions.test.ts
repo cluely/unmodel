@@ -167,6 +167,110 @@ image({ model: "¦", prompt: "x" });`);
   });
 });
 
+/**
+ * fal — the three probes that matter for a GENERATED provider.
+ *
+ * Every other entry in this file checks a table someone typed. fal's tables are
+ * emitted by `scripts/codegen-fal.ts` from fal's own OpenAPI, and 28 endpoints
+ * behind one address is the exact shape that quietly stops completing: a union
+ * of 28 arms, or a `Record<string, unknown>` fallback that swallows the roster,
+ * both compile fine and both leave an editor with nothing to say.
+ *
+ * The by-id map (`FalImageArm<Id>` indexing `FalImageBodyById`) is what keeps
+ * these green, and it was chosen over a 28-arm union on measurement: at 30 arms
+ * the union cost 8,908 instantiations against the map's 3,127, could not
+ * express `ExactKeys` per arm (`keyof (A|B)` is the key INTERSECTION), and
+ * could not accept a dynamically-typed endpoint id at all. Probes 1 and 6 below
+ * are the two halves of that, at the editor.
+ */
+describe("fal: the generated endpoint tables reach the editor", () => {
+  test("probe 1 — `image_size` completes flux/dev's own presets, tail and all", () => {
+    const entries = completionsAt(`import { image } from "./src/providers/fal";
+image({ endpoint: "fal-ai/flux/dev", prompt: "x", image_size: "¦" });`);
+    // The six presets flux/dev publishes, and nothing from a sibling endpoint.
+    expect(entries.sort()).toEqual([
+      "landscape_16_9",
+      "landscape_4_3",
+      "portrait_16_9",
+      "portrait_4_3",
+      "square",
+      "square_hd",
+    ]);
+  });
+
+  test("probe 1b — the same field on a sibling completes a DIFFERENT list", () => {
+    // `gpt-image-1.5` sizes by a three-value enum spelled as pixels. If the
+    // narrowing had collapsed to the category union, both endpoints would offer
+    // the union of every endpoint's presets and neither list would be true.
+    const entries = completionsAt(`import { image } from "./src/providers/fal";
+image({ endpoint: "fal-ai/gpt-image-1.5", prompt: "x", image_size: "¦" });`);
+    expect(entries.sort()).toEqual(["1024x1024", "1024x1536", "1536x1024"]);
+  });
+
+  test("probe 2 — nano-banana narrows per model across ONE unified adapter", () => {
+    // Three nano-banana endpoints, one `fal` adapter, three different
+    // `resolution` vocabularies. This is the case a per-provider (rather than
+    // per-model) table would get wrong, and fal is where it is most visible
+    // because the three are the same vendor's model at three sizes.
+    const two = completionsAt(`import { image } from "./src/providers/fal";
+image({ endpoint: "fal-ai/nano-banana-2", prompt: "x", resolution: "¦" });`);
+    expect(two.sort()).toEqual(["0.5K", "1K", "2K", "4K"]);
+
+    // The Pro variant drops 0.5K — a real difference, and one the pricing
+    // transcription depends on (its rate table has no 0.5K row either).
+    const pro = completionsAt(`import { image } from "./src/providers/fal";
+image({ endpoint: "fal-ai/nano-banana-pro", prompt: "x", resolution: "¦" });`);
+    expect(pro).not.toContain("0.5K");
+    expect(pro).toContain("4K");
+
+    // …and through the UNIFIED surface, where the ref carries the endpoint, the
+    // canonical `resolution` narrows to the tiers that endpoint can express.
+    const unified = completionsAt(`import { image } from "./src/unified/image";
+image({ model: "fal/fal-ai/nano-banana-2", prompt: "x", resolution: "¦" });`);
+    expect(unified.sort()).toEqual(["1k", "2k", "4k"]);
+  });
+
+  test("probe 6 — a typo'd key is still a squiggle at a 28-endpoint table", () => {
+    // The failure this guards is silent: widen the params type by one
+    // `Record<string, unknown>` and every misspelling on every fal endpoint
+    // compiles. At 28 endpoints that is 28 endpoints' worth of typos going to
+    // the wire, and `unknown_param` is only a warning.
+    const errors = semanticErrorsIn(`import { image } from "./src/providers/fal";
+image({ endpoint: "fal-ai/flux/dev", prompt: "x", num_inferene_steps: 4 });`);
+    expect(errors.length).toBeGreaterThan(0);
+    // `ExactKeys` maps every key the arm does not declare to `never`, so the
+    // squiggle reads "not assignable to type 'never'" and lands ON the offending
+    // key — the key is identified by the squiggle's POSITION, which is what an
+    // editor shows, rather than by its text. Asserting the text would be
+    // asserting a TypeScript message format.
+    expect(errors.join(" ")).toContain("not assignable to type 'never'");
+
+    // The correctly spelled key compiles, so the assertion above is about the
+    // typo and not about the field being unreachable.
+    expect(
+      semanticErrorsIn(`import { image } from "./src/providers/fal";
+image({ endpoint: "fal-ai/flux/dev", prompt: "x", num_inference_steps: 4 });`),
+    ).toEqual([]);
+
+    // …and a key that belongs to a SIBLING endpoint is refused just as loudly:
+    // `aspect_ratio` is a real `fal.image` parameter, on nine other endpoints.
+    const sibling = semanticErrorsIn(`import { image } from "./src/providers/fal";
+image({ endpoint: "fal-ai/flux/dev", prompt: "x", aspect_ratio: "16:9" });`);
+    expect(sibling.length).toBeGreaterThan(0);
+  });
+
+  test("an endpoint id typed as a plain string still compiles", () => {
+    // The other half of the map-over-union choice: a caller who builds the id
+    // at run time gets the loose arm rather than a type error. A union of
+    // literal arms cannot express this at all.
+    expect(
+      semanticErrorsIn(`import { image } from "./src/providers/fal";
+declare const chosen: string;
+image({ endpoint: chosen, prompt: "x", whatever: 1 });`),
+    ).toEqual([]);
+  });
+});
+
 describe("unified imageEdit: same guarantees on the edit surface", () => {
   test("size completes the edit model's presets", () => {
     const entries = completionsAt(`import { imageEdit } from "./src/unified/image-edit";

@@ -4,7 +4,8 @@
  * --noEmit). MiniMax ships no official JS SDK for these routes, so the tests
  * exercise the closed enum unions on the raw wire params.
  */
-import { video, videoV2 } from "../../src/providers/minimax";
+import { video, videoV2, checkTts, MINIMAX_BASE_RESP_INFO } from "../../src/providers/minimax";
+import type { MinimaxBaseRespInfo } from "../../src/providers/minimax";
 import type { MinimaxV2ContentType, MinimaxV2Role } from "../../src/providers/minimax";
 import { expectAssignable } from "./helpers";
 
@@ -123,4 +124,35 @@ function videoV2ContentVocabularyTypeTests(): void {
   });
 }
 
-export { videoGenerationTypeTests, videoGenerationV2TypeTests, videoV2ContentVocabularyTypeTests };
+/**
+ * `MINIMAX_BASE_RESP_INFO` serves two reads without a cast, and both are
+ * pinned because they pull in opposite directions: the checker's own
+ * open-tailed `finishReason` must index the table (the numeric index
+ * signature), while an exact key must keep its literal payload (the `as
+ * const` table). A `Partial<Record<…>>` declaration would satisfy the first
+ * by destroying the second.
+ */
+function baseRespInfoTypeTests(): void {
+  const report = checkTts({ base_resp: { status_code: 1002, status_msg: "rate limit exceeded" } });
+  if (report.finishReason !== undefined && report.finishReason !== 0) {
+    // The adopter's exact line: the checker's output indexes its companion table.
+    const info = MINIMAX_BASE_RESP_INFO[report.finishReason];
+    expectAssignable<MinimaxBaseRespInfo | undefined>(info);
+    // @ts-expect-error — an open-code lookup can miss; `info` is possibly undefined.
+    info.statusMsg;
+  }
+  // Exact keys keep their literal payloads.
+  const authRetryable: false = MINIMAX_BASE_RESP_INFO[1004].retryable;
+  const timeoutMsg: "timeout" = MINIMAX_BASE_RESP_INFO[1001].statusMsg;
+  // @ts-expect-error — `0` (success) carries no `retryable` at all.
+  MINIMAX_BASE_RESP_INFO[0].retryable;
+  void authRetryable;
+  void timeoutMsg;
+}
+
+export {
+  videoGenerationTypeTests,
+  videoGenerationV2TypeTests,
+  videoV2ContentVocabularyTypeTests,
+  baseRespInfoTypeTests,
+};

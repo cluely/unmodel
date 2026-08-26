@@ -109,8 +109,15 @@ export interface MinimaxBaseRespInfo {
  * The table is exported because the codes ride on MiniMax's music and video
  * routes too (`./video.ts` records the same envelope): a caller polling those
  * reads the same numbers off responses this checker never sees.
+ *
+ * The declared type is the literal table INTERSECTED with a numeric index
+ * signature, so both reads work without a cast: an exact key keeps its
+ * literal payload (`INFO[1004].retryable` is the literal `false`), and the
+ * checker's own open-tailed output indexes it too
+ * (`INFO[report.finishReason]` is `MinimaxBaseRespInfo | undefined`).
+ * A `Partial<Record<…>>` would allow the second at the price of the first.
  */
-export const MINIMAX_BASE_RESP_INFO = {
+const MINIMAX_BASE_RESP_TABLE = {
   0: { statusMsg: "success" },
   1000: { statusMsg: "unknown error" },
   1001: { statusMsg: "timeout", retryable: true },
@@ -120,6 +127,10 @@ export const MINIMAX_BASE_RESP_INFO = {
   1042: { statusMsg: "invalid characters exceed `10%`", retryable: false },
   2013: { statusMsg: "invalid input parameters", retryable: false },
 } as const satisfies Record<number, MinimaxBaseRespInfo>;
+
+export const MINIMAX_BASE_RESP_INFO: typeof MINIMAX_BASE_RESP_TABLE & {
+  readonly [code: number]: MinimaxBaseRespInfo | undefined;
+} = MINIMAX_BASE_RESP_TABLE;
 
 /**
  * Structural subset of a non-streaming `POST /v1/t2a_v2` response
@@ -161,7 +172,7 @@ export interface MinimaxT2aResponseLike {
 }
 
 const catalog: Record<string, ModelInfo> = speechModels;
-const baseRespInfo: Record<number, MinimaxBaseRespInfo> = MINIMAX_BASE_RESP_INFO;
+const baseRespInfo: Partial<Record<number, MinimaxBaseRespInfo>> = MINIMAX_BASE_RESP_INFO;
 
 /**
  * Inspects a `POST /v1/t2a_v2` JSON response. Never throws.

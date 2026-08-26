@@ -26,13 +26,27 @@ jobs:
       - run: bun run bench:types
       - run: bun test
       - run: bun run build
+      # npm Trusted Publishing (OIDC): the registry trusts THIS workflow's
+      # identity directly — no NPM_TOKEN secret anywhere, nothing to rotate.
+      # The trusted publisher is registered on npmjs.com (package unmodel →
+      # Settings → Publishing access: GitHub Actions, cluely/unmodel,
+      # release.yml). OIDC needs npm >= 11.5.1, so pin a current Node and
+      # upgrade npm explicitly rather than trusting the runner image.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install -g npm@latest && npm --version
+      # changesets/action refuses to publish when it finds neither an .npmrc
+      # nor an NPM_TOKEN env. With OIDC there is deliberately no token, so
+      # give it a token-free .npmrc to detect; `npm publish` then falls
+      # through to the OIDC exchange.
+      - run: echo "provenance=true" > "$HOME/.npmrc"
       - name: Create release PR or publish
         uses: changesets/action@v1
         with:
+          # Publishes ANY version not yet on the registry — a hand-edited
+          # package.json version pushed to main releases exactly like a
+          # changesets "Version Packages" merge does.
           publish: bunx changeset publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          # Emit an npm provenance attestation (uses the id-token: write
-          # permission granted above; changeset publish shells out to npm).
-          NPM_CONFIG_PROVENANCE: "true"

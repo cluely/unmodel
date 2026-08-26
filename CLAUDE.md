@@ -137,14 +137,14 @@ bun run audit:leaderboard | audit:atlascloud | gen:tts-matrix
 
 ## Adopter feedback
 
-External complaints and feature requests (a user's list, an issue batch) run through this process — twice now, and both times every single claim came back **partly** right, so the process is the product:
+External complaints and feature requests (a user's list, an issue batch) run through this process. Assume every claim is **partly** right — accurate about the friction, wrong about the cause or the fix — so the verification is the product:
 
 1. **Verify before ranking.** Check every claim adversarially against three sources: the repo, a scratch install of the *published* version, and the provider's live docs/API. Reproduce with probes; before-states come from `git archive <old-sha>`, never from memory.
-2. **Look beside the claim.** The highest-value finds are bugs the complaint walks past — in the last round all five real bugs were adjacent to what was reported, not named by it. A verification isn't done until it answers "what does this evidence expose that the user didn't say?"
+2. **Look beside the claim.** The highest-value finds are bugs a complaint walks past — adjacent to what was reported, not named by it. A verification isn't done until it answers "what does this evidence expose that the user didn't say?"
 3. **Per item, produce four things**: a facts verdict (yes/partly/no, with evidence), a philosophy fit (which principle acts or refuses), a recommendation (act / act-modified / decline), and a scope estimate.
 4. **Rank in tiers**: verified bugs → cheap data/curation acts → documentation for things that already exist ("it already exists but nobody can find it" is a docs bug, fixed as one) → new scope (a new vendor must clear the research bar recorded in `docs/providers.md`) → declines.
-5. **Record every decline where tooling reads it** — `data/*/curation.json` excluded maps, `docs/decisions.md`, module headers — with reason + source + date. A reason the audit script cannot parse is not recorded (we shipped that bug once: exclusion keys the audit couldn't read, so it re-suggested the excluded endpoints weekly).
-6. **Genuine roster/product forks go to the owner** with pros and cons, not a unilateral pick. Precedents the owner has set: demand-driven curation beats roster tidiness (an adopter's production call sites are a curation signal), and multi-generation families are fine (kling serves v2.5/v2.6/v3 side by side).
+5. **Record every decline where tooling reads it** — `data/*/curation.json` excluded maps, `docs/decisions.md`, module headers — with reason + source + date. A reason the audit script cannot parse is not recorded: the excluded thing gets re-suggested on every audit run, forever.
+6. **Genuine roster/product forks go to the owner** with pros and cons, not a unilateral pick. Owner precedents: demand-driven curation beats roster tidiness (an adopter's production call sites are a curation signal), and multi-generation families are fine (kling serves v2.5/v2.6/v3 side by side).
 7. **The reply to the adopter carries the corrections too** — where they were wrong (and what to do instead) is as valuable as what got fixed.
 
 ## Parallel sessions

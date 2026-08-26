@@ -1174,7 +1174,12 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // chunking artefact had forced. It is left where it is rather than tightened,
   // because the artefact is still there and the SPREAD test below is the one
   // with teeth.
-  lipsync: 615,
+  // 2026-08-26: the artefact turned out to be PLATFORM-SENSITIVE too — the
+  // same commit measures ~556 KiB on macOS and 698.0 KiB on the Linux release
+  // runner, because rolldown-plugin-dts assigns one shared-vocabulary chunk to
+  // a different side of the lipsync/avatar boundary per platform. 770 is the
+  // Linux figure ×1.1; the number that matters is still the SPREAD test.
+  lipsync: 770,
   // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
   // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
   // components — the 3D roster added `ModelUrls`, `BasicAnimations` and their

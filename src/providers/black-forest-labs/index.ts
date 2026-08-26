@@ -165,3 +165,28 @@ export type {
   BflFlux1EditModelId,
   BflFluxToolsModelId,
 } from "./models";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";
+
+/**
+ * Per-model body maps, exported so a declaration-emitting consumer can name
+ * them. They appear in the inferred result of every call on this entry (the
+ * `…Arm<M>` types index them), so leaving them private produced TS4023/TS4058
+ * — "has or is using name '…' from external module … but cannot be named" —
+ * which no re-export elsewhere could reach. See src/core/carriers.ts.
+ */
+export type { Flux2BodyByModel } from "./image";
+export type { Flux1BodyByModel } from "./image-flux1";
+export type { FluxFillBodyByModel } from "./image-edit-flux1";
+
+/**
+ * The fal bodies this provider's `.toApi("fal")` maps onto. One type-only
+ * line, so a consumer emitting its own declarations can name the result — see
+ * src/core/carriers.ts.
+ */
+export type { FalFlux2Max, FalFlux2Pro, FalFluxDev, FalFluxProV11, FalFluxProV11Ultra } from "./fal-target";
+export type { BflImageFalOverlap, BflImageFlux1FalOverlap } from "./fal-target";
+export type { BflSdkTargets } from "./image";

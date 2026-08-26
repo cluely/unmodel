@@ -237,7 +237,7 @@ export type CreateMusicInteractionBody<FutureModel extends string = never> =
   | LyriaClipBody
   | UnknownLyriaBody<FutureModel>;
 
-interface CreateMusicBodyByModel {
+export interface CreateMusicBodyByModel {
   "lyria-3-pro-preview": LyriaProBody;
   "lyria-3-clip-preview": LyriaClipBody;
 }

@@ -365,3 +365,156 @@ unified results — which would mean a canonical media retarget vocabulary rathe
 than a per-family hand mapping, and a target union derivable from the kernel's
 own model refs. Nothing in the current design points that way: the mapping is
 per wire family by necessity, because media has no shared dialect.
+
+---
+
+## 7. `unmodel/chat` compiles Chat Completions; `/v1/responses` is a substrate item, not a fifth dialect
+
+**Decision.** `unmodel/chat` targets OpenAI through `POST /v1/chat/completions`
+and only that. OpenAI's Responses API is not a `DialectId`, has no codec in
+`src/chat/compile.ts`, and will not get one. When unmodel serves it, it will be
+as `openai.chatResponses` — a wire-exact validator at `unmodel/openai`, sitting
+beside `chat` the way `google-vertex`'s `chat` / `chatMaas` / `chatRawPredict`
+sit beside each other. That surface is queued, not built.
+
+The immediate consequence, and the reason this entry exists at all: the nine
+OpenAI catalog rows that `/v1/chat/completions` refuses — `gpt-5.3-codex`,
+`gpt-5.3-codex-spark`, three `text-embedding-*`, three image rows and
+`gpt-realtime-2.1` — are no longer `ChatModelRef` arms
+(`chatScopeExclude` in `data/availability-overrides.json`), and `openai.chat`
+warns on them by name (`NON_CHAT_ROUTES` in `src/providers/openai/chat.ts`).
+Until v0.3.1 they were offered by autocomplete, compiled clean and addressed the
+chat endpoint: nine refs that could only ever come back 400.
+
+**Why.**
+
+*OpenAI's own position is that Chat Completions is supported.* "While Chat
+Completions remains supported, Responses is recommended for all new projects"
+(developers.openai.com/api/docs/guides/migrate-to-responses, checked
+2026-08-26). Chat Completions is not on the deprecations page — the only entry
+there is Assistants. So compiling to it is not a bet on a dying route; the
+recommendation is about new projects, and `unmodel/chat`'s promise is that one
+request object reaches thirty-two providers, not that it reaches OpenAI's
+newest surface first.
+
+*What does not migrate is real, and it is not a rename.* Responses adds
+capabilities that have no Chat Completions spelling at all: the built-in tools
+(web search, file search, computer use, code interpreter, remote MCP), reasoning
+summaries, `previous_response_id` / `store` statefulness, encrypted reasoning,
+`background`, `include`, `truncation`, and `image_url.detail: "original"` (the
+Responses-only fourth value — Chat Completions takes `auto | low | high`, which
+is what `openai-compatible/wire.ts` declares). The codex models are the extreme
+case: they have no Chat Completions form whatsoever. A "translation" that
+silently dropped that list would be a worse answer than not offering it.
+
+*The unified surface cannot carry it, structurally.* Provider → dialect is 1:1
+in four places, each of which would need a second key with nothing to key it
+on: `DialectId` (`core/translate/endpoints.ts`), `DialectOf<P>`
+(`retarget/dialects.ts`), the three-decoder set in `src/chat/compile.ts` whose
+own header calls a fourth codec "a deliberate, reviewable edit", and the
+one-validator-per-provider registry in `src/chat/providers.ts`. There is no ref
+syntax that selects a *surface* — `"openai/gpt-5.2"` names a provider and a
+model, and that is the whole vocabulary. A Responses codec would also serve
+exactly one addressable provider, against thirty-two on `openai-chat`. This is
+decision #1's answer, applied: a gap in the unified layer is expressed as a
+typed refusal, not as a workaround.
+
+**Therefore, never:**
+
+- Add `"openai-responses"` to `DialectId` and wire a codec into
+  `src/chat/compile.ts`. `bedrock-converse` is the standing precedent for a
+  dialect that exists in the table with no codec and refuses refs; a *fifth*
+  dialect that reaches one provider is not that.
+- Reach for `providerOptions.openai` to smuggle a Responses-only field into a
+  Chat Completions body. The bucket is merged verbatim into a
+  `/v1/chat/completions` request; `previous_response_id` there is a 400.
+- Re-add the nine refs by loosening `chatScopeExclude`. `test/chat/refs.test.ts`
+  asserts every surviving `openai/…` ref is an `OpenaiChatModelId`, which is the
+  type `NonChatModelId` shapes.
+
+**What would change this.** Either half of the keying problem being solved:
+a per-model or explicit surface selector at the ref layer (a syntax that can say
+"openai, but the other surface" without widening every result type), **or** a
+second provider adopting the Responses wire format, which would make it a
+dialect in the sense the other four are — a format several providers speak —
+rather than one vendor's second route. Until then the honest shape is a
+substrate address: `openai.chatResponses`, wire-exact, reached by name.
+
+---
+
+## 8. `detail` is canonical vocabulary; `verbosity` is not — the witness rule, applied twice in one wave
+
+**Decision.** `ChatFilePart.detail?: "auto" | "low" | "medium" | "high"` is part
+of the unified chat vocabulary. OpenAI's `verbosity` is not, and lives at
+`providerOptions.openai.verbosity` — typed, enumerated and gated there, but not
+promoted.
+
+**Why.** The rule is the same one that deferred `unmodel/3d` to wave 3 and keeps
+`creativity`/`resemblance` out of `unmodel/upscale`: *a word joins the canonical
+vocabulary when a second provider independently has the same concept.* Both
+halves of this wave were tested against it and it answered differently, which is
+what makes it a rule rather than a preference.
+
+*`detail` has two witnesses, and unmodel was already paying for the gap twice.*
+OpenAI spells it `image_url.detail` (`auto | low | high`, default `auto`);
+Gemini spells it per-`Part` `mediaResolution.level`
+(`MEDIA_RESOLUTION_{UNSPECIFIED,LOW,MEDIUM,HIGH}`, which overrides the
+request-level `generationConfig.mediaResolution`). Both are first-party,
+documented, and about exactly one thing: how many tokens the attachment costs.
+The evidence that they are the same concept was already in the codebase, as a
+matched pair of warnings — `openai-compatible/interop.ts` dropped
+`image_url.detail` saying it "is an OpenAI chat-completions concept with no
+equivalent in the other dialects", and `google/interop.ts` said the mirror
+sentence about `mediaResolution`. Two encoders each asserting the other's field
+does not exist is the signature of a missing vocabulary word.
+
+The union is taken, not the intersection — the `ChatReasoningEffort` rule.
+`medium` is Gemini's and OpenAI has no equivalent, so the Chat Completions codec
+raises it to `high` with an `approximated_param` rather than making it
+unsayable. Rounding *up* is deliberate: a request that costs a few more tokens
+is recoverable, one that quietly loses resolution on a document scan is not.
+Anthropic has no per-attachment hint at all (`/v1/messages` sizes an image by
+its pixel dimensions), so it drops it with a named `dropped_param` — the same
+sentence, now said once, on the one crossing where it is true.
+
+The estimate half rides along, because a token hint that does not move the token
+estimate is decoration. `imageTokensByDetail` on `EndpointConstraints` is
+catalog-driven and sparse on purpose: Gemini publishes 280 tokens for an image
+or PDF page at `MEDIA_RESOLUTION_LOW`, so that row exists; **OpenAI's table
+deliberately has none**, because its vision guide states that `low` does not
+always use fewer tokens than `high` on current models. The historical
+85-token low-detail figure is a GPT-4o-era number, and a plausible wrong number
+in an estimate is worse than a coarse right one.
+
+*`verbosity` has one witness, and the fix was somewhere else.* It is first-party
+and documented (`low | medium | high`, default `medium`), and unmodel has typed,
+enumerated and validated it since 0.1 — but a repo-wide search and a live check
+of OpenRouter's, Gemini's and Anthropic's chat references found no second
+provider with the concept. Anthropic's `output_config.effort` is *effort*, which
+`ChatReasoning` already carries. So it stays out of `ChatParams`. What was
+actually wrong was that `providerOptions.openai` was typed off the *shared*
+`openai-chat` dialect body, which by design excludes the twelve params only
+OpenAI's endpoint takes — so the one place a caller writes `verbosity` completed
+nothing and checked nothing, while the validator two layers down knew all three
+legal values. That bucket now reads the endpoint body, and
+`verbosity: "extreme"` is a compile error instead of a runtime one.
+
+**Therefore, never:**
+
+- Promote a param on the strength of one provider having it, however
+  well-documented. The bar is a second *independent* vocabulary, not a good
+  vendor doc.
+- Take the intersection when the union is expressible. A level one dialect lacks
+  becomes an `approximated_param`, not an unsayable request.
+- Put a per-level token figure in a constraint table because it is widely
+  repeated. `imageTokensByDetail` rows carry a URL and a date, or they do not
+  exist.
+- Add `detail: "original"`. It is a Responses-only value on Responses-only input
+  images (see §7).
+
+**What would change this.** For `verbosity`: a second provider shipping a
+response-length dial that is not an effort bucket — at which point it is a
+canonical field and the openai bucket keeps its own spelling anyway. For
+`detail`: a fourth level with two witnesses, or a provider that expresses
+resolution as a number rather than a bucket, which would make the union the
+wrong shape rather than the wrong width.

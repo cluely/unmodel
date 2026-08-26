@@ -545,6 +545,14 @@
       "status": "active",
       "updated_at": "2026-04-26T22:25:17.147Z"
     },
+    "fal-ai/kling-video/o1/video-to-video/edit": {
+      "category": "video-to-video",
+      "display_name": "Kling O1 Edit Video [Pro]",
+      "file": "openapi/fal-ai__kling-video__o1__video-to-video__edit.json",
+      "sha256": "5e51fe7ec09fd6e929c68061f2836633fb6f91071228322e22bf0fa58c43e49d",
+      "status": "active",
+      "updated_at": "2026-04-26T22:25:17.147Z"
+    },
     "fal-ai/kling-video/o3/pro/video-to-video/edit": {
       "category": "video-to-video",
       "display_name": "Kling O3 Edit Video [Pro]",
@@ -592,6 +600,14 @@
       "sha256": "81f02305198474211e7b7efc5ed278009f1eb04e4c2d12155ff1051a4df2780a",
       "status": "active",
       "updated_at": "2026-05-29T18:50:02.672Z"
+    },
+    "fal-ai/kling-video/v3/pro/motion-control": {
+      "category": "video-to-video",
+      "display_name": "Kling Video",
+      "file": "openapi/fal-ai__kling-video__v3__pro__motion-control.json",
+      "sha256": "6c3a8373d4010f7dc0fcad2922523f707dcd6cf4a85a1a2ce11dbdad109fe16c",
+      "status": "active",
+      "updated_at": "2026-07-17T23:34:08.711Z"
     },
     "fal-ai/kling-video/v3/pro/text-to-video": {
       "category": "text-to-video",
@@ -697,6 +713,14 @@
       "status": "active",
       "updated_at": "2026-04-21T17:50:44.046Z"
     },
+    "fal-ai/lightx/relight": {
+      "category": "video-to-video",
+      "display_name": "Lightx",
+      "file": "openapi/fal-ai__lightx__relight.json",
+      "sha256": "8ebcd85a90ce6f533b6335f5804127401b68aa25e424d8e9725cf67e2da28ee4",
+      "status": "active",
+      "updated_at": "2026-04-21T17:50:47.930Z"
+    },
     "fal-ai/longcat-single-avatar/image-audio-to-video": {
       "category": "audio-to-video",
       "display_name": "Longcat Single Avatar",
@@ -744,6 +768,14 @@
       "sha256": "4acefab149ded7299948247b12fd0571f665ed391a3fb56d71f679d9ae24632c",
       "status": "active",
       "updated_at": "2026-04-21T17:52:00.135Z"
+    },
+    "fal-ai/minimax/hailuo-2.3/pro/text-to-video": {
+      "category": "text-to-video",
+      "display_name": "MiniMax Hailuo 2.3 [Pro] (Text to Video)",
+      "file": "openapi/fal-ai__minimax__hailuo-2.3__pro__text-to-video.json",
+      "sha256": "a57d11748d92a1de18807de3be7682fc726fb369f1f84ba5d381dc4c181b5e56",
+      "status": "active",
+      "updated_at": "2026-04-21T17:52:04.297Z"
     },
     "fal-ai/minimax/speech-02-hd": {
       "category": "text-to-speech",
@@ -1033,6 +1065,14 @@
       "status": "active",
       "updated_at": "2026-04-28T16:29:09.509Z"
     },
+    "fal-ai/veo3.1/reference-to-video": {
+      "category": "image-to-video",
+      "display_name": "Veo 3.1",
+      "file": "openapi/fal-ai__veo3.1__reference-to-video.json",
+      "sha256": "6b6f3cb4789543c0e137f3e3c857f6e8093a10933182f7f9180627e11981a924",
+      "status": "active",
+      "updated_at": "2026-04-28T16:29:09.509Z"
+    },
     "fal-ai/wan/v2.2-a14b/image-to-video": {
       "category": "image-to-video",
       "display_name": "Wan v2.2 A14B",
@@ -1165,17 +1205,17 @@
       "category": "unknown",
       "display_name": "MiniMax H3 Image to Video",
       "file": "openapi/minimax__h3__image-to-video.json",
-      "sha256": "9163157b227ee3045d2b55814f3f1325731093351130185c961616a946a3efe1",
+      "sha256": "29fcb5ccb7849af015c29b4c891857a1e51618fd92afa62e1e8a378fa63df1a2",
       "status": "active",
-      "updated_at": "2026-08-19T20:14:50.287Z"
+      "updated_at": "2026-08-25T17:41:07.462Z"
     },
     "minimax/h3/text-to-video": {
       "category": "unknown",
       "display_name": "MiniMax H3 Text to Video",
       "file": "openapi/minimax__h3__text-to-video.json",
-      "sha256": "dd6b94678a9fb959bf4fc652d80a5dc07b5b887482994ca3c2e0f0ac44e9159a",
+      "sha256": "85a96b6d63d2efea347880e03fdd0c089cbec0ea9a7d52016322c4edfadeebcc",
       "status": "active",
-      "updated_at": "2026-08-23T19:36:33.852Z"
+      "updated_at": "2026-08-26T06:41:51.586Z"
     },
     "minimax/music-3": {
       "category": "text-to-audio",
@@ -1224,6 +1264,14 @@
       "sha256": "c9233f0e1488573739899ecb5b476c6e802bd0022ee7192dfde51489a2dc12c7",
       "status": "active",
       "updated_at": "2026-08-17T20:41:05.255Z"
+    },
+    "topaz/upscale/video/generative": {
+      "category": "video-to-video",
+      "display_name": "Topaz Upscale Video Generative",
+      "file": "openapi/topaz__upscale__video__generative.json",
+      "sha256": "8b6432e757f35a0f196b3643b4e2ff1ba67326df727686ad2698b4106f6f190f",
+      "status": "active",
+      "updated_at": "2026-08-17T20:38:38.965Z"
     },
     "topaz/upscale/video/precision": {
       "category": "video-to-video",

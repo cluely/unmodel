@@ -257,7 +257,7 @@ export interface FalParamShape {
   /**
    * `fal.video` only: the `VideoImageRole` arms this endpoint serves.
    *
-   * This is what lets thirty endpoints share ONE address. text-to-video,
+   * This is what lets thirty-five endpoints share ONE address. text-to-video,
    * image-to-video, first-and-last-frame and reference-to-video are four fal
    * ids and one route shape, so `fal.video`'s adapter reads the roles rather
    * than switching on the id — and an empty list types `image` as `never` at

@@ -148,6 +148,20 @@ const TABLE: Readonly<Record<string, Capability>> = {
     prompt: "unsupported",
     creativity: undefined,
   },
+  "topaz/video-generative": {
+    ref: "fal/topaz/upscale/video/generative",
+    url: "https://queue.fal.run/topaz/upscale/video/generative",
+    inline: "derived",
+    source: { at: "video_url", kind: "video" },
+    factor: { at: "upscale_factor", range: [1, 4] },
+    // The asymmetry worth pinning: at IMAGE, `generative` is the prompt-steered
+    // half of the precision/generative split. At VIDEO it is not — Starlight
+    // invents detail with no prompt at all, so this row reads like its
+    // precision sibling on every column and differs only in the `model` enum
+    // (and in costing four times as much).
+    prompt: "unsupported",
+    creativity: undefined,
+  },
   "flux-video-upscale": {
     ref: "fal/blackforestlabs/flux-video-upscale",
     url: "https://queue.fal.run/blackforestlabs/flux-video-upscale",

@@ -10,13 +10,14 @@
 //   data/fal/openapi/fal-ai__seedvr__upscale__video.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__generative.json
 //   data/fal/openapi/topaz__upscale__video__precision.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
  * The ONE request schema for every `fal.upscale` endpoint.
  *
- * One `z.looseObject` for the whole category, not 10 per-endpoint schemas: zod objects are
+ * One `z.looseObject` for the whole category, not 11 per-endpoint schemas: zod objects are
  * built eagerly, and a hundred of them would be constructed on import for the one the
  * caller actually used.
  *
@@ -78,8 +79,8 @@ export const falUpscaleInputSchema = z.looseObject({
   /**
    * Every `fal.upscale` endpoint types `model` as string, but they disagree on the details
    * (fal-ai/esrgan, topaz/upscale/image/generative, topaz/upscale/image/precision,
-   * topaz/upscale/video/precision), so the union takes the bare type and the exact
-   * vocabulary is enforced per endpoint from FAL_UPSCALE_SHAPES.
+   * topaz/upscale/video/generative, topaz/upscale/video/precision), so the union takes the
+   * bare type and the exact vocabulary is enforced per endpoint from FAL_UPSCALE_SHAPES.
    */
   model: z.string().optional(),
   negative_prompt: z.string().optional(),
@@ -115,6 +116,7 @@ export const falUpscaleInputSchema = z.looseObject({
    */
   seed: z.number().nullable().optional(),
   sharpen: z.number().nullable().optional(),
+  softness: z.number().nullable().optional(),
   strength: z.number().nullable().optional(),
   subject_detection: z.enum(["All", "Foreground", "Background"]).optional(),
   sync_mode: z.boolean().optional(),
@@ -127,8 +129,8 @@ export const falUpscaleInputSchema = z.looseObject({
    * details (blackforestlabs/flux-video-upscale, fal-ai/aura-sr, fal-ai/clarity-upscaler,
    * fal-ai/seedvr/upscale/image, fal-ai/seedvr/upscale/video,
    * topaz/upscale/image/generative, topaz/upscale/image/precision,
-   * topaz/upscale/video/precision), so the union takes the bare type and the exact
-   * vocabulary is enforced per endpoint from FAL_UPSCALE_SHAPES.
+   * topaz/upscale/video/generative, topaz/upscale/video/precision), so the union takes the
+   * bare type and the exact vocabulary is enforced per endpoint from FAL_UPSCALE_SHAPES.
    */
   upscale_factor: z.number().optional(),
   upscale_mode: z.enum(["target", "factor"]).optional(),

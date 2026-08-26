@@ -269,3 +269,21 @@ export type {
   GoogleAudioModelId,
   GoogleVideoModelId,
 } from "../../catalog/google.gen";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";
+
+export type { GenerateContentArm, GoogleChatResultKind } from "./chat";
+
+/**
+ * Per-model body maps, exported so a declaration-emitting consumer can name
+ * them. They appear in the inferred result of every call on this entry (the
+ * `…Arm<M>` types index them), so leaving them private produced TS4023/TS4058
+ * — "has or is using name '…' from external module … but cannot be named" —
+ * which no re-export elsewhere could reach. See src/core/carriers.ts.
+ */
+export type { GenerateImagesBodyByModel } from "./image";
+export type { CreateMusicBodyByModel } from "./music";
+export type { GenerateTtsBodyByModel } from "./tts";

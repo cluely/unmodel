@@ -116,6 +116,13 @@ export const REGISTRY = {
   "luma.videoAddAudio": () => import("./providers/luma").then((m) => asCli(m.videoAddAudio)),
   "bytedance.video": () =>
     import("./providers/bytedance").then((m) => asCli(m.video)),
+  // ONE id for 23 curated models, and — unlike fal — no pseudo-param behind it:
+  // Atlas serves every video model from one url and `model` is a real, required
+  // body field naming both the model AND the route, so `atlascloud.video` needs
+  // no `atlascloud.videoFromImage` sibling to reach image-to-video. The route
+  // fork is the model id (`bytedance/seedance-2.5/image-to-video`).
+  "atlascloud.video": () =>
+    import("./providers/atlascloud").then((m) => asCli(m.video)),
   "kling.video": () => import("./providers/kling").then((m) => asCli(m.video)),
   "kling.videoFromImage": () => import("./providers/kling").then((m) => asCli(m.videoFromImage)),
   // EXPERIMENTAL path-addressed family — uncorroborated routes, see
@@ -328,6 +335,24 @@ export const REGISTRY = {
   // is multipart-only, below).
   "speechify.voiceConsentChallenge": () =>
     import("./providers/speechify").then((m) => asCli(m.voiceConsentChallenge)),
+
+  // Dubbing — "same clip, new language". No unified category carries it: the
+  // house already declined the operation once, by name and with a reason, at
+  // `heygen/models.ts` ("no unmodel vocabulary for 'same clip, new language'"),
+  // and the two witnesses do not share a request shape — ElevenLabs is a
+  // two-request project/target model with an editable transcript, a revision
+  // counter and a `stale` state; HeyGen `/v3/video-translations` is a one-shot
+  // job. So these are wire-only addresses, `dub` for the operation and
+  // `dubLanguage` qualifying the extra route by what makes it different.
+  //
+  // `elevenlabs.dub` is `body: "form"` and is registered HERE rather than under
+  // MULTIPART_ONLY because its file is OPTIONAL — `source_url` is the
+  // documented alternative — which is the `ideogram.image` case exactly: a
+  // multipart route whose params a JSON ref can express, so the CLI can reach
+  // it and `src/cli.ts` prints the multipart note.
+  "elevenlabs.dub": () => import("./providers/elevenlabs").then((m) => asCli(m.dub)),
+  "elevenlabs.dubLanguage": () =>
+    import("./providers/elevenlabs").then((m) => asCli(m.dubLanguage)),
 
   // Realtime session configs — the JSON config object a socket surface takes
   // (a connection-URL query set, a first configuration message, or a per-chunk

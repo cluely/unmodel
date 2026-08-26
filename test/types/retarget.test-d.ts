@@ -15,6 +15,7 @@ import type { Validated } from "../../src/core/request";
 import type { DialectId } from "../../src/core/translate/endpoints";
 import type { Warn } from "../../src/core/translate/warnings";
 import type { ApiModelFor, ApiTargetsFor, StaticApiTargetId } from "../../src/retarget/ids";
+import type { ChatCompletionCreateParams } from "openai/resources/chat/completions";
 import type { MessagesBody } from "../../src/providers/anthropic/wire";
 import type { GenerateContentBody } from "../../src/providers/google/wire";
 import type {
@@ -135,6 +136,40 @@ viaOpenRouter.toApiSafe("groq");
 viaOpenRouter.toSdk("openai");
 // @ts-expect-error — a chat-completions body has no anthropic SDK shape.
 viaOpenRouter.toSdk("anthropic");
+
+// ---------------------------------------------------------------------------
+// What `.toSdk` on a RETARGETED result is and is not
+//
+// `src/retarget/types.ts` used to promise that `openai.chat.completions.create(
+// r.toSdk("openai"))` "type-checks without a cast". It does not, and never did:
+// this is the dialect BASE body — ~30 destinations share it — so
+// `reasoning_effort` and `service_tier` are open `string`s that fail `create()`
+// BEFORE `stream` is ever reached, and none of those three widths is a bug.
+// Fixing `stream` on the unified surface did not make that sentence true, so
+// the sentence changed instead.
+//
+// Nothing pinned it either way, which is why an untested prose guarantee
+// survived a release. It is pinned now, through the same `Open` narrowing
+// `test/types/chat.test-d.ts` documents — restated here rather than imported,
+// because a test file is not a module two suites should share a helper across.
+// ---------------------------------------------------------------------------
+
+type RetargetSdkComparable<T, Open extends PropertyKey> = Omit<T, "messages" | Open> &
+  Pick<ChatCompletionCreateParams, "messages">;
+
+declare const openRouterSdk: RetargetSdkComparable<
+  ReturnType<typeof viaOpenRouter.toSdk<"openai">>,
+  "reasoning_effort" | "service_tier" | "stream"
+>;
+expectAssignable<ChatCompletionCreateParams>(openRouterSdk);
+
+// And the three widths are real, not incidental — each one is a field where
+// unmodel genuinely does not know which of ~30 vocabularies applies.
+expectAssignable<string | null | undefined>(
+  viaOpenRouter.toSdk("openai").reasoning_effort,
+);
+expectAssignable<string | null | undefined>(viaOpenRouter.toSdk("openai").service_tier);
+expectAssignable<boolean | null | undefined>(viaOpenRouter.toSdk("openai").stream);
 
 // `toApiSafe` returns the same payload behind a ValidateResult.
 const safe = claude.toApiSafe("openrouter");

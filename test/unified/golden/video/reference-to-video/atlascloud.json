@@ -1,0 +1,12 @@
+{
+  "ref": "atlascloud/bytedance/seedance-2.5/reference-to-video",
+  "params": {
+    "model": "bytedance/seedance-2.5/reference-to-video",
+    "prompt": "@fox trots through the same snowfield at dusk",
+    "reference_images": [
+      "https://example.com/frame.png"
+    ],
+    "duration": 5
+  },
+  "url": "https://api.atlascloud.ai/api/v1/model/generateVideo"
+}

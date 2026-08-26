@@ -99,7 +99,7 @@ describe("the `model` field that is not the route", () => {
     expect(issue?.code).toBe("unknown_param");
     // The count is the useful half: `model` at Clarity reads like a request
     // written for Topaz, and the message says so.
-    expect(issue?.message).toContain("4 other endpoints in this category do take it");
+    expect(issue?.message).toContain("5 other endpoints in this category do take it");
   });
 });
 

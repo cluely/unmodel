@@ -13,7 +13,7 @@
  * `fal-ai/veo3.1/image-to-video` are the same route — one URL shape, one body
  * shape, one validator — with a different path segment, and the path is a
  * PARAMETER here (`endpoint`) rather than a fork in the code. Adding
- * `fal.videoFromImage` would mean deciding which of the thirty curated
+ * `fal.videoFromImage` would mean deciding which of the thirty-five curated
  * endpoints belong to it, and the answer would be a list rather than a rule:
  * `minimax/h3/image-to-video` takes its `image_url` OPTIONALLY, so it is a
  * text-to-video route and an image-to-video route depending on the request.
@@ -26,13 +26,13 @@
  * `src/cli-registry.test.ts` video list carries this argument in prose so a
  * future reader does not "fix" the asymmetry.
  *
- * ## One schema, thirty endpoints, per-endpoint narrowing
+ * ## One schema, thirty-five endpoints, per-endpoint narrowing
  *
  * As at `fal.image`: ONE `z.looseObject` for the category, with every bound,
  * requirement and vocabulary living on the generated `FAL_VIDEO_SHAPES` rows
  * that `./checks.ts` reads at run time. It matters more here than anywhere
  * else in this provider, because `duration` is genuinely four different types
- * across these thirty endpoints — the string enum `"5"` at kling, the
+ * across these thirty-five endpoints — the string enum `"5"` at kling, the
  * suffixed string `"8s"` at veo3.1, the integer enum `5` at wan, and a free
  * integer 1..15 at pixverse — and a union schema that accepted all four would
  * accept `"8s"` at kling, which fal refuses.
@@ -44,7 +44,7 @@
  * ## Cost
  *
  * Almost entirely `undefined`, and this is the category where that is most
- * defensible. Twenty-two of the thirty rows are `conditional`: the rate turns
+ * defensible. Twenty-six of the thirty-five rows are `conditional`: the rate turns
  * on `resolution`, on `generate_audio`, or — at seedance and gemini-omni — on
  * a TOKEN count computed from the frames actually rendered, which no request
  * body carries. Two endpoints (`fal-ai/minimax/hailuo-02/pro/image-to-video`,

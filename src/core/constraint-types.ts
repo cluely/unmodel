@@ -35,6 +35,19 @@ export interface EndpointConstraints {
   media?: Partial<Record<"image" | "audio" | "video", MediaRule>>;
   /** Fixed token cost charged per attached image, for estimation. */
   imageTokens?: number;
+  /**
+   * Per-resolution-hint override of {@link imageTokens}, keyed by the
+   * canonical `ChatFilePart.detail` vocabulary (`auto` is {@link imageTokens}
+   * by definition and is therefore not a key here).
+   *
+   * Present only where a provider documents a *fixed* number for a level.
+   * Gemini does: `MEDIA_RESOLUTION_LOW` is a flat per-image budget. OpenAI
+   * deliberately does not have a row — its vision guide states that `low` does
+   * not always cost fewer tokens than `high` on current models, so a number
+   * here would be a guess dressed as a catalog fact, which is exactly what
+   * caveats are for and catalogs are not.
+   */
+  imageTokensByDetail?: Partial<Record<"low" | "medium" | "high", number>>;
 }
 
 /** Prefix/pattern rule for high-cardinality endpoints (chat-scale model lists). */

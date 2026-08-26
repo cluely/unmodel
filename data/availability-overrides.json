@@ -14,7 +14,12 @@
     "exact (glob-free) ref that matches nothing fails codegen so upstream renames surface.",
     "",
     "force — equivalences the heuristic misses. Refs must be exact and must resolve to",
-    "in-scope chat rows; a force pair merges the two models' groups."
+    "in-scope chat rows; a force pair merges the two models' groups.",
+    "",
+    "chatScopeExclude — rows removed from the three unmodel/chat ref tables because the",
+    "provider serves them on a different wire surface than its chat endpoint. models.dev",
+    "records modalities, not routes, so codegen cannot derive this. Same \"<provider>:<id>\"",
+    "spelling, and every entry must match at least one in-scope text model."
   ],
 
   "providers": [
@@ -70,5 +75,22 @@
     "google-vertex:*claude*": "Vertex serves Claude through an Anthropic-shaped rawPredict surface that unmodel has no module for (models.dev also carries a separate google-vertex-anthropic provider unmodel does not implement). Deny until that endpoint exists; the google-vertex.chatRawPredict surface rule in scripts/availability.ts is already in place for when it does."
   },
 
-  "force": []
+  "force": [],
+
+  "chatScopeExclude": [
+    "openai:chatgpt-image-*",
+    "openai:gpt-image-*",
+    "openai:gpt-realtime-*",
+    "openai:*-codex",
+    "openai:*-codex-*",
+    "openai:text-embedding-*"
+  ],
+
+  "$chatScopeExcludeNotes": {
+    "openai:*-codex, openai:*-codex-*": "gpt-5.3-codex and gpt-5.3-codex-spark are served by POST /v1/responses only — developers.openai.com/api/docs/models/gpt-5.3-codex lists \"Chat Completions | v1/chat/completions | Not supported\" (checked 2026-08-26). unmodel/chat compiles Chat Completions and has no /v1/responses validator (docs/decisions.md #7), so a ref for these compiled a body the API refuses. The substrate keeps accepting them with a signpost warning naming the route; only the unified ref is withdrawn.",
+    "openai:text-embedding-*": "Embeddings answer POST /v1/embeddings. models.dev files them as text-out, which is how they reached a chat ref table at all. Note the availability half already drops them on the billing signal in scripts/availability.ts (`isChatRow`) — this list is what the weaker `isTextModel` in chatScope needs.",
+    "openai:gpt-image-*, openai:chatgpt-image-*": "Image generation answers POST /v1/images/generations, which is `image` from unmodel/openai. They are text-out in models.dev because they accept and echo text.",
+    "openai:gpt-realtime-*": "The realtime family answers the WebRTC/WebSocket realtime API, not chat/completions.",
+    "$scope": "This mirrors `NonChatModelId` in src/providers/openai/chat.ts, which states the same six families as a TYPE (so it can shape `OpenaiChatModelId`) and therefore cannot be read by codegen. `test/chat/refs.test.ts` asserts the two agree. `dall-e-*` is in the type and deliberately absent here: models.dev files DALL·E as image-out only, so `isTextModel` already excludes it and an entry would be inert — and inert entries fail codegen."
+  }
 }

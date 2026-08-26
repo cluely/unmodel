@@ -19,7 +19,7 @@
  * With this entry declared, rolldown gives the generated array a chunk of its
  * own — it is reached from two entries — and `dist/values/index.js` stays
  * **2.4 KiB**. Delete the entry and export `CHAT_MODEL_REFS` from the hub
- * instead, and rolldown inlines all 1,339 strings into that entry: the file
+ * instead, and rolldown inlines all 1,330 strings into that entry: the file
  * every consumer downloads goes to **49 KiB**, a 20× regression on the obvious
  * specifier. A bundler that tree-shakes recovers it (measured: one import of
  * `ASPECT_RATIO_PRESETS` from the fat hub still shook to 0.17 KiB), but the

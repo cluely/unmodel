@@ -30,3 +30,8 @@ export type {
 /** POST target for chat: {baseUrl}/chat/completions. */
 export const CHAT_COMPLETIONS_URL = chatUrl;
 export { chat, checkChat, estimateChatTokens };
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";

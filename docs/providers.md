@@ -23,7 +23,7 @@ provider — not their quality ranking.
 
 | Provider | Categories | API style | Tier | models.dev | Notes |
 |---|---|---|---|---|---|
-| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + image + imageEdit + tts + stt + video + realtime session done) | ✅ | complete for the documented REST surface |
+| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + image + imageEdit + tts + stt + video + realtime session done) | ✅ | complete for the REST surface unmodel serves; `POST /v1/responses` is deliberately absent — see decisions.md §7. `openai.chat` warns on the nine catalog rows Chat Completions refuses (codex, embeddings, image, realtime) and names the route each is served on |
 | anthropic | llm | native (the reference) | **native** (`chat`, the `/v1/messages` wire format — done) | ✅ | |
 | google | llm, image, video, tts, stt | native | **native** (`chat` + `tts` + `stt` + Imagen `image` + Veo `video` done) | ✅ | `tts` and `stt` are dedicated Tier-A surfaces — required AUDIO modality, XOR'd `speechConfig`, bounded speaker tuple, 78-language table, closed audio MIME set, typed `audioTranscriptionConfig`. Both post to `:generateContent`, which is also what `chat` serves, so the same ids stay valid there too — one shared check battery backs both surfaces |
 | xai (grok) | llm, image, video, stt | openai-compatible (+anthropic-compat) | **oai-base** (chat) + native `image`/`video`/`videoEdit`/`videoExtend` (Grok Imagine, live) | ✅ (`xai`) | |
@@ -31,7 +31,7 @@ provider — not their quality ranking.
 | cerebras | inference | openai-compatible | **oai-base** (live) | ✅ | |
 | openrouter | aggregator (400+ models) | openai-compatible | **oai-base** (live) | ✅ (349 models) | |
 | huggingface | aggregator (router.huggingface.co) | openai-compatible | **oai-base** (live) | ✅ | |
-| elevenlabs | tts (r11), stt (Scribe, r1), music | native | **native** (TTS+STT+music live; realtime configs live) | ✋ | per-character pricing; `textToSpeechStreamInput` + `speechToTextRealtime` validate the socket configs |
+| elevenlabs | tts (r11), stt (Scribe, r1), music, dubbing | native | **native** (TTS+STT+music+dubbing live; realtime configs live) | ✋ | per-character pricing; `textToSpeechStreamInput` + `speechToTextRealtime` validate the socket configs; `dub` + `dubLanguage` are wire-only (no `unmodel/dubbing` — see "Dubbing" below) |
 | cartesia | tts (Sonic, r6), stt (Ink) | native | **native** (TTS+STT live; realtime configs live) | ✋ | `ttsWebsocket` (generation message) + `sttWebsocket` (connection query set) |
 | inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT is inline base64 (no multipart); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
 | soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `stt` + `realtimeTranscription` config message |
@@ -159,8 +159,10 @@ Kontext Multi, FLUX.2 pro/dev edit, FLUX fill and i2i, Seedream 4.5 / 5 Pro edit
 Qwen-Image-Edit 2511, Qwen Image 3 edit).
 Five of the nine — openai, black-forest-labs, ideogram, recraft, fal — ship a
 unified adapter, and `unmodel/image-edit` carries the ready-made pack over
-them. No background-removal route is curated at fal in wave 1: it is an
-operation with no prompt, and this vocabulary has no word for it yet.
+them. No background-removal route is curated at fal: it is an operation
+with no prompt, and this vocabulary has no word for it yet — seventeen of those routes now
+carry the reason by name in `data/fal/curation.json`'s `excluded.endpoints`, which ships as
+`FAL_EXCLUDED`.
 Remaining: alibaba (Qwen-Image), baidu, tencent (HunyuanImage), minimax, z-ai, nvidia,
 amazon (Titan/Nova); azure MAI `imageEdit` is live (multipart /mai/v1/images/edits).
 **Excluded (no public API):** midjourney, hidream, pruna, playground, sapiens-ai, eigen-ai,
@@ -178,15 +180,29 @@ MiniMax-H3), pixverse (`video` + `videoFromImage`), runway (`video` +
 `videoModify` / `videoReframe` / `videoUpscale` / `videoAddAudio`), vidu
 (`video` / `videoFromImage` / `videoFromReference`), alibaba (Wan 3.0/2.x + HappyHorse 1.x
 on DashScope video-synthesis, async create-then-poll), xai (Grok Imagine `video` +
-`videoEdit` + `videoExtend` at /v1/videos/*), fal (`video`, 30 hosted endpoints — Seedance
-2.0/2.5, Kling v2.5-turbo/v2.6/v3 and o3 video edit, MiniMax H3 + Hailuo-02, Veo 3.1 and its
-fast / i2v / first-last / extend arms, Wan v2.2/v2.7, LTX-2.5, PixVerse v6, Grok Imagine,
-Gemini Omni Flash). All thirteen are reachable
+`videoEdit` + `videoExtend` at /v1/videos/*), fal (`video`, 35 hosted endpoints — Seedance
+2.0/2.5, Kling v2.5-turbo/v2.6/v3, v3 motion-control and the o1/o3 video edits, MiniMax H3 +
+Hailuo-02 + Hailuo-2.3, Veo 3.1 and its fast / i2v / first-last / extend / reference arms, Wan
+v2.2/v2.7, LTX-2.5, PixVerse v6, Grok Imagine, Gemini Omni Flash, Light-X relight),
+atlascloud (`video`, 23 curated models on ONE url — Seedance 2.5 / 2.0 / 2.0-mini / 2.0-fast /
+v1.5-pro, Wan 3.0 + 3.0-prime, Veo 3.1; async create-then-poll, `ATLASCLOUD_API_KEY`).
+All fourteen are reachable
 through one canonical `video()` at `unmodel/video`.
-fal is the one provider here with **no** `videoFromImage`: at fal the model IS the route, so
-text-to-video, image-to-video, reference and first-last are separate endpoint ids reached
-through the same `fal.video`, and `videoFromImage` exists to qualify a wire-route fork rather
-than a model choice (the argument is recorded in `src/cli-registry.test.ts`).
+fal and atlascloud are the two providers here with **no** `videoFromImage`, for opposite
+reasons. At fal the model IS the route, so text-to-video, image-to-video, reference and
+first-last are separate endpoint ids reached through the same `fal.video`, and
+`videoFromImage` exists to qualify a wire-route fork rather than a model choice. At Atlas there
+is one POST path for every video model and `model` is a real, required BODY field naming the
+model *and* the task — `bytedance/seedance-2.5/text-to-video` and `.../image-to-video` are two
+refs with two OpenAPI documents — so a qualified id would again name a model choice rather than
+a second route (the argument is recorded in `src/cli-registry.test.ts`).
+Atlas resells weights unmodel already reaches: `bytedance/seedance-*` is also `bytedance.video`
+(ByteDance's own ModelArk) and `fal.video`, and `google/veo3.1/*` is also `google.video` and
+`fal.video` — three transports, three visibly different bodies, and no normalisation between
+them. **No `atlascloud` model ships a cost:** Atlas publishes no unit for its rates (its catalog
+carries a bare `base_price` on 335 of 337 media rows and its model page renders the same figure
+as a per-run price, a per-second rate and a per-1000-token rate), so the caveat ships instead —
+`ATLASCLOUD_PRICING_CAVEAT` on `unmodel/atlascloud`.
 Remaining (first-party APIs): tencent (HunyuanVideo).
 Several are also reachable as hosted routes on `unmodel/runway`
 (`hailuo3`, `seedance2*`, `gemini_omni_flash`, `grok_imagine_1_5`, `happyhorse_1_0`).
@@ -429,11 +445,11 @@ reconstruct is a row it should not ship; Argil's avatars remain reachable throug
 (`fal/argil/avatars/audio-to-video`), whose resale does publish a presenter enum. Argil also
 documents no rate limits at all.
 
-**Upscale — `upscale`, 10 endpoints.** Clarity Upscaler, Topaz image precision and generative,
-Topaz video precision, ESRGAN, AuraSR, SeedVR upscale image and video, Recraft crisp upscale,
-FLUX video upscale. The only verb in the roster with no fixed modality: seven routes take a
-still and three take a clip, so `source` is narrowed per model and the output modality is read
-off each endpoint's own response schema. `factor` is the one cross-vendor word, and it has
+**Upscale — `upscale`, 11 endpoints.** Clarity Upscaler, Topaz image precision and generative,
+Topaz video precision and generative, ESRGAN, AuraSR, SeedVR upscale image and video, Recraft
+crisp upscale, FLUX video upscale. The only verb in the roster with no fixed modality: seven
+routes take a still and four take a clip, so `source` is narrowed per model and the output
+modality is read off each endpoint's own response schema. `factor` is the one cross-vendor word, and it has
 three answers per model: a range, a closed set (AuraSR upscales by 4 or not at all), or absent.
 
 **Topaz Labs — `topaz.upscale` and `topaz.upscaleGenerative`, 15 models.** Tier: **native**.
@@ -561,9 +577,9 @@ lands in each row's extras rather than in the vocabulary.
 
 ## fal.ai wave — one aggregator, ten verbs
 
-fal.ai is a generative-media inference cloud. unmodel serves **165 curated endpoints across
-ten verbs** — `fal.image` (32), `fal.imageEdit` (17), `fal.video` (30), `fal.lipsync` (10),
-`fal.upscale` (10), `fal.avatar` (8), `fal.threeD` (19), `fal.tts` (23), `fal.stt` (6),
+fal.ai is a generative-media inference cloud. unmodel serves **171 curated endpoints across
+ten verbs** — `fal.image` (32), `fal.imageEdit` (17), `fal.video` (35), `fal.lipsync` (10),
+`fal.upscale` (11), `fal.avatar` (8), `fal.threeD` (19), `fal.tts` (23), `fal.stt` (6),
 `fal.music` (10) — all bare ids, all on `unmodel/fal`, with a unified adapter per category behind
 `unmodel/fal/unified`. Tier: **generated**.
 
@@ -623,6 +639,49 @@ an unrelated pull request. A `retiredOn` date in `curation.json` then ships the 
 is deliberately NOT refreshed by the job: fal publishes no machine-readable rate, so a human
 re-reads the page.
 
+**An uncurated endpoint id still routes — that arm is the point, not a gap.** The roster is a
+snapshot of a catalog that grows weekly, so `fal.video({ endpoint: "fal-ai/whatever-shipped-on-tuesday" })`
+compiles, produces the right URL and sends the body verbatim. Refusing an id fal added last
+Tuesday would make unmodel the reason a valid request failed. What that path gives you is the
+URL, the auth prose and the body untouched. What it does not give you is everything curation
+buys: no per-endpoint type (`FalVideoArm<Id>` widens to `Record<string, unknown>`, so nothing
+completes and nothing is refused at compile time), no required / enum / range / media checks —
+`src/providers/fal/checks.ts` stands down for that id entirely — no doc URL in messages, and no
+rate, so the estimate is empty.
+
+Two signals survive, and one of them is the whole safety net:
+
+```ts
+const r = video.safe({ endpoint: "fal-ai/some-new-route", prompt: "a cat", frobnicate: 3 });
+r.ok && r.params.request.url; // "https://queue.fal.run/fal-ai/some-new-route"
+r.ok && r.estimate;           // {}  ← no rate for an id that is not in pricing.json
+r.ok && r.warnings.map((w) => [w.code, w.path.join(".")]);
+// → [["unknown_param", "frobnicate"], ["unknown_model", "model"]]
+```
+
+`prompt` is *not* warned about: the `unknown_param` warnings come from
+`reportUnknownTopLevelKeys` in `src/core/pipeline.ts` against the CATEGORY's union schema, so
+every key any curated video endpoint declares stays quiet, and only the genuinely unrecognised
+one speaks. Measured across the 171-endpoint roster that is **15.6% of keys on average, and zero
+keys for 58% of endpoints** — a smaller noise floor than "one warning per parameter" suggests.
+Auto-suppressing it was asked for and declined: the widened arm is the one path where the TYPE
+system has also stood down, so removing the last remaining signal would let a `promt` typo go out
+unremarked on the call with the least help. A caller who wants silence at one uncurated call site
+has it, per call and losslessly:
+
+```ts
+video.safe({ endpoint: "fal-ai/some-new-route", prompt: "a cat", frobnicate: 3 },
+           { severity: { unknown_param: "off" } });
+// warnings → [["unknown_model", …]]   ← the routing signal stays
+```
+
+An id unmodel **declined** is told apart from one it has simply never seen. The 66 entries under
+`excluded.endpoints` in `data/fal/curation.json` each carry a written reason, ship to the runtime
+as `FAL_EXCLUDED` / `FAL_EXCLUDED_CATEGORIES` from `unmodel/fal`, and arrive as a second warning
+beginning ``unmodel deliberately does not serve `fal-ai/ffmpeg-api/compose`: …`` — so "we chose
+not to serve this" stops reaching callers as "the catalog is a week behind". The request is still
+routed and sent as written; it is a curation decision, never a claim that fal refuses the call.
+
 **Retargeting onto fal is live** — see [Media retargeting](#media-retargeting--toapifal).
 Uncurated by decision, with reasons in `curation.json`: fal's `llm` category
 (an OpenRouter passthrough — unmodel ships the real OpenRouter), `training` (57 endpoints that
@@ -667,7 +726,7 @@ leaves rather than whole validators.
 | `unmodel/music` | `music`, `createMusic` | 5 | elevenlabs, fal, google, mureka, stability |
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 4 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
 | `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (the two engines that render raw image input — Avatar III does not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
-| `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (10 endpoints, seven taking a still and three taking a clip), topaz (15 models over two routes, stills only, multipart bodies) |
+| `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (11 endpoints, seven taking a still and four taking a clip), topaz (15 models over two routes, stills only, multipart bodies) |
 | `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (4 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
 | `unmodel/voice-design` | `voiceDesign`, `createVoiceDesign` | 4 | elevenlabs, fish-audio, inworld, minimax — the unified surface is phase 1 (the generative call); the ElevenLabs/Inworld save steps are wire-only (`voiceDesignSave`, `voiceDesignPublish`) |
@@ -699,7 +758,7 @@ The tables are the **same objects** the adapter compiles with, which is why they
 import-free `<category>-params.ts` leaves that both read: one import from a values entry costs
 ~1 KiB (19.4 KiB at the worst, runway's) instead of the 30–82 KiB a validator would drag.
 `unmodel/values` is the canonical hub (the closed unions as arrays, `CANONICAL_KEY_LISTS`,
-`CHAT_PROVIDERS`) and `unmodel/values/chat-refs` carries the 1,339 chat refs on their own
+`CHAT_PROVIDERS`) and `unmodel/values/chat-refs` carries the 1,330 chat refs on their own
 subpath because they are 45 KiB. `test/values-entries.test.ts` measures every export against a
 real build and asserts the tables by reference.
 
@@ -769,6 +828,24 @@ models.ts already catalogs unvalidated capabilities and this is one); Google's
 voice; smallest.ai's `add_voice` survives only in archived docs (the current docs describe
 cloning as console-only); OpenAI, Gemini, Deepgram, Murf and Rime publish no self-serve
 voice-creation endpoint at all.
+
+**Dubbing — shipped as wire, declined as a category.** `elevenlabs.dub` (multipart,
+`POST /v1/dubbing/project`) and `elevenlabs.dubLanguage` (JSON,
+`POST /v1/dubbing/project/{id}/language`) are wire-only addresses at `unmodel/elevenlabs`,
+and there is no `unmodel/dubbing`. The reason is the witness rule, applied to two witnesses
+that disagree: `src/providers/heygen/models.ts` already declines `POST /v3/video-translations`
+by name — "no unmodel vocabulary for 'same clip, new language'" — and ElevenLabs' shape does
+not match it. ElevenLabs is a two-request project/target model with an editable transcript, a
+monotonic `revision`, a `stale` output state, `keyterms`, `translations`, `cloning_strength`
+and `webhook_ids`; HeyGen's is a one-shot job. A canonical `{ source, targetLanguage }` would
+have nowhere to put either half, which is the "vocabulary of one" refusal that also keeps
+Stability's `musicFromAudio` wire-only — here it applies twice rather than once. Revisit when
+a third witness lands or when the two shapes converge. Three ElevenLabs dubbing surfaces are
+deliberately unserved and say so in `dubbing.ts`: legacy `POST /v1/dubbing` (it cannot select
+Dubbing v2 at all, and shipping both would put two addresses on one verb), the Studio resource
+family (`/v1/dubbing/resource/*` — a timeline editor, the same refusal HeyGen's `type: "studio"`
+gets), and the SDK's `v1DubbingRealtime` types (no client, no REST path, no published connect
+URL — it needs its own research pass before it can be typed from documents).
 
 **Roadmap.** Every category with more than one provider now has a pack, so a new adapter is
 the unit of growth rather than a new entry. The voice-creation pair landed exactly the way

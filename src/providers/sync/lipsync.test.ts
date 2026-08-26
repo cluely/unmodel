@@ -54,6 +54,33 @@ describe("the wire", () => {
     expect(ERRORS_URL).toBe("https://api.sync.so/v2/errors");
   });
 
+  test("generationUrl carries the three documented query params — and the XOR is a compile error", () => {
+    // The no-arg call is the regression guard: an optional second argument
+    // must not change what every existing caller already gets.
+    expect(generationUrl("gen_abc123")).toBe("https://api.sync.so/v2/generate/gen_abc123");
+
+    expect(generationUrl("gen_abc123", { include: "progress" })).toBe(
+      "https://api.sync.so/v2/generate/gen_abc123?include=progress",
+    );
+    expect(generationUrl("gen_abc123", { wait: true, timeout: 8 })).toBe(
+      "https://api.sync.so/v2/generate/gen_abc123?wait=true&timeout=8",
+    );
+    // `wait: false` is a real value, not an omission.
+    expect(generationUrl("gen_abc123", { wait: false })).toBe(
+      "https://api.sync.so/v2/generate/gen_abc123?wait=false",
+    );
+
+    // `GenerationId` is typed `string`, not a uuid, so the path segment is encoded.
+    expect(generationUrl("gen abc/123")).toBe(
+      "https://api.sync.so/v2/generate/gen%20abc%2F123",
+    );
+
+    // sync. documents it: "Cannot be combined with include=progress." The
+    // union says so at compile time rather than at the 400.
+    // @ts-expect-error `wait` and `include: "progress"` are mutually exclusive.
+    expect(generationUrl("gen_abc123", { wait: true, include: "progress" })).toContain("include");
+  });
+
   test('`.toSdk("sync")` returns the body unchanged', () => {
     const params = lipsync({ model: "lipsync-2", input: [CLIP, VOICE] });
     expect(params.toSdk("sync")).toEqual({ model: "lipsync-2", input: [CLIP, VOICE] });

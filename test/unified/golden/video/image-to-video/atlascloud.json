@@ -1,0 +1,10 @@
+{
+  "ref": "atlascloud/bytedance/seedance-2.0/image-to-video",
+  "params": {
+    "model": "bytedance/seedance-2.0/image-to-video",
+    "prompt": "the fox turns and walks into the snow",
+    "image": "https://example.com/frame.png",
+    "duration": 8
+  },
+  "url": "https://api.atlascloud.ai/api/v1/model/generateVideo"
+}

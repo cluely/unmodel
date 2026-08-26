@@ -1,0 +1,13 @@
+{
+  "ref": "atlascloud/bytedance/seedance-2.5/reference-to-video",
+  "params": {
+    "model": "bytedance/seedance-2.5/reference-to-video",
+    "prompt": "keep the shot and turn the sky to dusk",
+    "reference_videos": [
+      "https://example.com/clip.mp4"
+    ],
+    "duration": -1,
+    "omni_reference_task_type": "edit"
+  },
+  "url": "https://api.atlascloud.ai/api/v1/model/generateVideo"
+}

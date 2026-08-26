@@ -43,6 +43,7 @@ import { describe, expect, test } from "bun:test";
 import type { VideoParams } from "../../src/core/unified/vocabulary/video";
 import { video } from "../../src/unified/video";
 import { video as alibaba } from "../../src/providers/alibaba/unified-video";
+import { video as atlascloud } from "../../src/providers/atlascloud/unified-video";
 import { video as bytedance } from "../../src/providers/bytedance/unified-video";
 import { video as fal } from "../../src/providers/fal/unified-video";
 import { video as google } from "../../src/providers/google/unified-video";
@@ -349,6 +350,43 @@ const TABLE: Readonly<Record<string, Capability>> = {
     video: "refused",
     negativePrompt: "declared",
     seed: "declared",
+    n: "declared",
+  },
+  /**
+   * The second row that profiles an ENDPOINT rather than a provider, and it
+   * gets there the opposite way from fal's.
+   *
+   * At fal the endpoint id is the URL path. At Atlas there is ONE url for every
+   * video model and `model` is a real, required body field naming the model
+   * *and the task*: `bytedance/seedance-2.0/text-to-video` and
+   * `.../image-to-video` are two refs with two Input schemas. So "what
+   * atlascloud supports" has no answer either — only "what this ref supports" —
+   * and every gap below is `refused` rather than `declared`, because a
+   * provider-wide `unsupported` would be false at the sibling id.
+   *
+   * The text route of Seedance 2.0 is chosen because it is the richest TEXT
+   * surface in this roster (four canonical tiers including native 4k, the
+   * six-shape ratio enum, a seed) and because all four media cells are
+   * genuinely absent from its schema — which is the fact worth pinning: a
+   * caller who adds `image` here is told to pick the `/image-to-video` ref, not
+   * silently rerouted to a model with a different price.
+   */
+  atlascloud: {
+    ref: "atlascloud/bytedance/seedance-2.0/text-to-video",
+    adapter: atlascloud,
+    duration: { support: "native", class: "number", at: "duration" },
+    size: { class: "tier-field", at: "resolution" },
+    resolution: "native",
+    aspectRatio: "native",
+    // Four refusals, one reason: this ref IS the text route.
+    imageFirst: "refused",
+    imageLast: "refused",
+    imageReference: "refused",
+    video: "refused",
+    // Veo 3.1 is the one family on Atlas with a `negative_prompt`, so a
+    // provider-wide declaration would be false at three of the 23 refs.
+    negativePrompt: "refused",
+    seed: "native",
     n: "declared",
   },
 };

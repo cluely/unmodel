@@ -68,12 +68,14 @@
 //   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__pro.json
 //   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__standard.json
 //   data/fal/openapi/fal-ai__kling-video__lipsync__audio-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o1__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__motion-control.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
@@ -87,12 +89,14 @@
 //   data/fal/openapi/fal-ai__kokoro__mandarin-chinese.json
 //   data/fal/openapi/fal-ai__kokoro__spanish.json
 //   data/fal/openapi/fal-ai__latentsync.json
+//   data/fal/openapi/fal-ai__lightx__relight.json
 //   data/fal/openapi/fal-ai__longcat-single-avatar__image-audio-to-video.json
 //   data/fal/openapi/fal-ai__lyria2.json
 //   data/fal/openapi/fal-ai__lyria3__pro.json
 //   data/fal/openapi/fal-ai__minimax-music__v2.json
 //   data/fal/openapi/fal-ai__minimax-music__v2.6.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-2.3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__minimax__speech-02-hd.json
 //   data/fal/openapi/fal-ai__minimax__speech-2.8-hd.json
 //   data/fal/openapi/fal-ai__minimax__speech-2.8-turbo.json
@@ -129,6 +133,7 @@
 //   data/fal/openapi/fal-ai__veo3.1__fast.json
 //   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__reference-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
@@ -153,6 +158,7 @@
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__generative.json
 //   data/fal/openapi/topaz__upscale__video__precision.json
 //   data/fal/openapi/tripo3d__h3.1__image-to-3d.json
 //   data/fal/openapi/tripo3d__h3.1__text-to-3d.json
@@ -252,12 +258,14 @@ export const FAL_RATES = {
   "fal-ai/kling-video/ai-avatar/v2/pro": { unit: "per_second", usd: 0.115, source: "https://fal.ai/models/fal-ai/kling-video/ai-avatar/v2/pro", verified: "2026-08-24" },
   "fal-ai/kling-video/ai-avatar/v2/standard": { unit: "per_second", usd: 0.0562, source: "https://fal.ai/models/fal-ai/kling-video/ai-avatar/v2/standard", verified: "2026-08-24" },
   "fal-ai/kling-video/lipsync/audio-to-video": { unit: "per_second", usd: 0.014, rounding: "billed on the INPUT video's seconds, rounded up to the next 5-second increment — a 3s clip bills as 5s", source: "https://fal.ai/models/fal-ai/kling-video/lipsync/audio-to-video", verified: "2026-08-24" },
+  "fal-ai/kling-video/o1/video-to-video/edit": { unit: "per_second", usd: 0.168, source: "https://fal.ai/models/fal-ai/kling-video/o1/video-to-video/edit", verified: "2026-08-26" },
   "fal-ai/kling-video/o3/pro/video-to-video/edit": { unit: "per_second", usd: 0.168, source: "https://fal.ai/models/fal-ai/kling-video/o3/pro/video-to-video/edit", verified: "2026-08-24" },
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": { unit: "tiered", tierKey: "duration", tiers: [{ when: "duration=\"5\"", usd: 0.35 }, { when: "each additional second beyond 5", usd: 0.07 }], source: "https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/image-to-video", verified: "2026-08-24" },
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": { unit: "tiered", tierKey: "duration", tiers: [{ when: "duration=\"5\"", usd: 0.35 }, { when: "each additional second beyond 5", usd: 0.07 }], source: "https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/text-to-video", verified: "2026-08-24" },
   "fal-ai/kling-video/v2.6/pro/image-to-video": { unit: "conditional", tierKey: "generate_audio, and whether voice control is used", tiers: [{ when: "per second, audio off", usd: 0.07 }, { when: "per second, audio on", usd: 0.14 }, { when: "per second, audio on with voice control", usd: 0.168 }], source: "https://fal.ai/models/fal-ai/kling-video/v2.6/pro/image-to-video", verified: "2026-08-24" },
   "fal-ai/kling-video/v2.6/pro/text-to-video": { unit: "conditional", tierKey: "generate_audio", tiers: [{ when: "per second, audio off", usd: 0.07 }, { when: "per second, audio on", usd: 0.14 }], source: "https://fal.ai/models/fal-ai/kling-video/v2.6/pro/text-to-video", verified: "2026-08-24" },
   "fal-ai/kling-video/v3/pro/image-to-video": { unit: "conditional", tierKey: "generate_audio, and whether voice control is used", tiers: [{ when: "per second, audio off", usd: 0.112 }, { when: "per second, audio on", usd: 0.168 }, { when: "per second, audio on with voice control", usd: 0.196 }], source: "https://fal.ai/models/fal-ai/kling-video/v3/pro/image-to-video", verified: "2026-08-24" },
+  "fal-ai/kling-video/v3/pro/motion-control": { unit: "per_second", usd: 0.168, source: "https://fal.ai/models/fal-ai/kling-video/v3/pro/motion-control", verified: "2026-08-26" },
   "fal-ai/kling-video/v3/pro/text-to-video": { unit: "conditional", tierKey: "generate_audio, and whether voice control is used", tiers: [{ when: "per second, audio off", usd: 0.112 }, { when: "per second, audio on", usd: 0.168 }, { when: "per second, audio on with voice control", usd: 0.196 }], source: "https://fal.ai/models/fal-ai/kling-video/v3/pro/text-to-video", verified: "2026-08-24" },
   "fal-ai/kling-video/v3/standard/image-to-video": { unit: "conditional", tierKey: "generate_audio, and whether voice control is used", tiers: [{ when: "per second, audio off", usd: 0.084 }, { when: "per second, audio on", usd: 0.126 }, { when: "per second, audio on with voice control", usd: 0.154 }], source: "https://fal.ai/models/fal-ai/kling-video/v3/standard/image-to-video", verified: "2026-08-24" },
   "fal-ai/kling-video/v3/standard/text-to-video": { unit: "conditional", tierKey: "generate_audio, and whether voice control is used", tiers: [{ when: "per second, audio off", usd: 0.084 }, { when: "per second, audio on", usd: 0.126 }, { when: "per second, audio on with voice control", usd: 0.154 }], source: "https://fal.ai/models/fal-ai/kling-video/v3/standard/text-to-video", verified: "2026-08-24" },
@@ -271,12 +279,14 @@ export const FAL_RATES = {
   "fal-ai/kokoro/mandarin-chinese": { unit: "per_1000_characters", usd: 0.02, source: "https://fal.ai/models/fal-ai/kokoro/mandarin-chinese", verified: "2026-08-25" },
   "fal-ai/kokoro/spanish": { unit: "per_1000_characters", usd: 0.02, source: "https://fal.ai/models/fal-ai/kokoro/spanish", verified: "2026-08-25" },
   "fal-ai/latentsync": { unit: "tiered", tierKey: "output video length — a flat fee up to 40 seconds, then per second", tiers: [{ when: "flat, for videos up to 40 seconds", usd: 0.2 }, { when: "per second of output video beyond 40 seconds", usd: 0.005 }], source: "https://fal.ai/models/fal-ai/latentsync", verified: "2026-08-24" },
+  "fal-ai/lightx/relight": { unit: "per_second", usd: 0.1, source: "https://fal.ai/models/fal-ai/lightx/relight", verified: "2026-08-26" },
   "fal-ai/longcat-single-avatar/image-audio-to-video": { unit: "conditional", tierKey: "resolution", tiers: [{ when: "per video second at 480p", usd: 0.15 }, { when: "per video second at 720p", usd: 0.3 }], source: "https://fal.ai/models/fal-ai/longcat-single-avatar/image-audio-to-video", verified: "2026-08-24" },
   "fal-ai/lyria2": { unit: "per_30_seconds", usd: 0.1, source: "https://fal.ai/models/fal-ai/lyria2", verified: "2026-08-24" },
   "fal-ai/lyria3/pro": { unit: "per_generation", usd: 0.08, source: "https://fal.ai/models/fal-ai/lyria3/pro", verified: "2026-08-25" },
   "fal-ai/minimax-music/v2": { unit: "per_generation", usd: 0.03, source: "https://fal.ai/models/fal-ai/minimax-music/v2", verified: "2026-08-25" },
   "fal-ai/minimax-music/v2.6": { unit: "per_generation", usd: 0.15, source: "https://fal.ai/models/fal-ai/minimax-music/v2.6", verified: "2026-08-25" },
   "fal-ai/minimax/hailuo-02/pro/image-to-video": { unit: "per_second", usd: 0.08, source: "https://fal.ai/models/fal-ai/minimax/hailuo-02/pro/image-to-video", verified: "2026-08-24" },
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video": { unit: "per_generation", usd: 0.49, source: "https://fal.ai/models/fal-ai/minimax/hailuo-2.3/pro/text-to-video", verified: "2026-08-26" },
   "fal-ai/minimax/speech-02-hd": { unit: "per_1000_characters", usd: 0.1, source: "https://fal.ai/models/fal-ai/minimax/speech-02-hd", verified: "2026-08-24" },
   "fal-ai/minimax/speech-2.8-hd": { unit: "per_1000_characters", usd: 0.1, source: "https://fal.ai/models/fal-ai/minimax/speech-2.8-hd", verified: "2026-08-25" },
   "fal-ai/minimax/speech-2.8-turbo": { unit: "per_1000_characters", usd: 0.06, source: "https://fal.ai/models/fal-ai/minimax/speech-2.8-turbo", verified: "2026-08-25" },
@@ -313,6 +323,7 @@ export const FAL_RATES = {
   "fal-ai/veo3.1/fast": { unit: "conditional", tierKey: "generate_audio x resolution", tiers: [{ when: "resolution 720p or 1080p, generate_audio=false", usd: 0.1 }, { when: "resolution 720p or 1080p, generate_audio=true", usd: 0.15 }, { when: "resolution 4k, generate_audio=false", usd: 0.3 }, { when: "resolution 4k, generate_audio=true", usd: 0.35 }], source: "https://fal.ai/models/fal-ai/veo3.1/fast", verified: "2026-08-24" },
   "fal-ai/veo3.1/first-last-frame-to-video": { unit: "conditional", tierKey: "generate_audio x resolution", tiers: [{ when: "resolution 720p or 1080p, generate_audio=false", usd: 0.2 }, { when: "resolution 720p or 1080p, generate_audio=true", usd: 0.4 }, { when: "resolution 4k, generate_audio=false", usd: 0.4 }, { when: "resolution 4k, generate_audio=true", usd: 0.6 }], source: "https://fal.ai/models/fal-ai/veo3.1/first-last-frame-to-video", verified: "2026-08-24" },
   "fal-ai/veo3.1/image-to-video": { unit: "conditional", tierKey: "generate_audio x resolution", tiers: [{ when: "resolution 720p or 1080p, generate_audio=false", usd: 0.2 }, { when: "resolution 720p or 1080p, generate_audio=true", usd: 0.4 }, { when: "resolution 4k, generate_audio=false", usd: 0.4 }, { when: "resolution 4k, generate_audio=true", usd: 0.6 }], source: "https://fal.ai/models/fal-ai/veo3.1/image-to-video", verified: "2026-08-24" },
+  "fal-ai/veo3.1/reference-to-video": { unit: "conditional", tierKey: "generate_audio × resolution", tiers: [{ when: "resolution 720p or 1080p, generate_audio=false", usd: 0.2 }, { when: "resolution 720p or 1080p, generate_audio=true", usd: 0.4 }, { when: "resolution 4k, generate_audio=false", usd: 0.4 }, { when: "resolution 4k, generate_audio=true", usd: 0.6 }], source: "https://fal.ai/models/fal-ai/veo3.1/reference-to-video", verified: "2026-08-26" },
   "fal-ai/wan/v2.2-a14b/image-to-video": { unit: "conditional", rounding: "video seconds are counted at 16 frames per second, whatever `frames_per_second` asks for", tierKey: "resolution", tiers: [{ when: "per video second at 480p", usd: 0.04 }, { when: "per video second at 580p", usd: 0.06 }, { when: "per video second at 720p", usd: 0.08 }], source: "https://fal.ai/models/fal-ai/wan/v2.2-a14b/image-to-video", verified: "2026-08-24" },
   "fal-ai/wan/v2.2-a14b/text-to-video": { unit: "conditional", rounding: "video seconds are counted at 16 frames per second, whatever `frames_per_second` asks for", tierKey: "resolution", tiers: [{ when: "per video second at 480p", usd: 0.04 }, { when: "per video second at 580p", usd: 0.06 }, { when: "per video second at 720p", usd: 0.08 }], source: "https://fal.ai/models/fal-ai/wan/v2.2-a14b/text-to-video", verified: "2026-08-24" },
   "fal-ai/wan/v2.7/image-to-video": { unit: "conditional", tierKey: "resolution", tiers: [{ when: "per second at 720p", usd: 0.1 }, { when: "per second at 1080p", usd: 0.15 }], source: "https://fal.ai/models/fal-ai/wan/v2.7/image-to-video", verified: "2026-08-24" },
@@ -337,6 +348,7 @@ export const FAL_RATES = {
   "reve/2.1/text-to-image": { unit: "per_image", usd: 0.25, source: "https://fal.ai/models/reve/2.1/text-to-image", verified: "2026-08-24" },
   "topaz/upscale/image/generative": { unit: "conditional", tierKey: "`model`, per 24 megapixels of output", tiers: [{ when: "per 24 megapixels of output with Wonder 3.5 or Wonder 3", usd: 0.24 }, { when: "per 24 megapixels of output with Wonder, Wonder 2, Standard MAX, Redefine, Recover 3, Recovery or Recovery V2", usd: 0.48 }], source: "https://fal.ai/models/topaz/upscale/image/generative", verified: "2026-08-25" },
   "topaz/upscale/image/precision": { unit: "tiered", tierKey: "output megapixels, billed in 24-megapixel blocks", tiers: [{ when: "per 24 megapixels of output, with any precision model (Standard V2, High Fidelity V2/V3, Low Resolution V2, CGI, Text Refine)", usd: 0.08 }], source: "https://fal.ai/models/topaz/upscale/image/precision", verified: "2026-08-25" },
+  "topaz/upscale/video/generative": { unit: "conditional", tierKey: "`model` x output resolution, per 10 seconds of output", tiers: [{ when: "per 10 seconds of output up to 1080p with Starlight Precise 2.5, Starlight HQ, Starlight Mini or Starlight Sharp", usd: 1.2 }, { when: "per 10 seconds of output in 4K with Starlight Precise 2.5, Starlight HQ, Starlight Mini or Starlight Sharp", usd: 2.6 }, { when: "per 10 seconds of output up to 1080p with Starlight Fast 2", usd: 0.6 }, { when: "per 10 seconds of output in 4K with Starlight Fast 2", usd: 1.3 }], source: "https://fal.ai/models/topaz/upscale/video/generative", verified: "2026-08-26" },
   "topaz/upscale/video/precision": { unit: "conditional", tierKey: "output resolution x `model`, per 10 seconds of output", tiers: [{ when: "per 10 seconds at 720p, precision models (Proteus, Artemis, Iris, Dione, Theia, Gaia HQ/CG, Rhea)", usd: 0.1 }, { when: "per 10 seconds at 1080p, precision models", usd: 0.2 }, { when: "per 10 seconds at 4K, precision models", usd: 0.6 }, { when: "per 10 seconds at 4K with Proteus Natural (2x only)", usd: 0.5 }, { when: "per 10 seconds at 720p or 1080p with Gaia 2 (2x, animation)", usd: 0.1 }, { when: "per 10 seconds at 4K with Gaia 2", usd: 0.3 }], source: "https://fal.ai/models/topaz/upscale/video/precision", verified: "2026-08-25" },
   "tripo3d/h3.1/image-to-3d": { unit: "conditional", tierKey: "`texture` and `texture_quality`, plus stacking add-ons for `geometry_quality` and `quad`", tiers: [{ when: "per generation without textures (`texture: false`)", usd: 0.2 }, { when: "per generation with standard textures", usd: 0.3 }, { when: "per generation with HD textures (`texture_quality: \"detailed\"`)", usd: 0.4 }, { when: "added when `geometry_quality: \"detailed\"`", usd: 0.2 }, { when: "added when `quad: true`", usd: 0.05 }], source: "https://fal.ai/models/tripo3d/h3.1/image-to-3d", verified: "2026-08-25" },
   "tripo3d/h3.1/text-to-3d": { unit: "conditional", tierKey: "`texture` and `texture_quality`, plus stacking add-ons for `geometry_quality` and `quad`", tiers: [{ when: "per generation without textures (`texture: false`)", usd: 0.1 }, { when: "per generation with standard textures", usd: 0.2 }, { when: "per generation with HD textures (`texture_quality: \"detailed\"`)", usd: 0.3 }, { when: "added when `geometry_quality: \"detailed\"`", usd: 0.2 }, { when: "added when `quad: true`", usd: 0.05 }], source: "https://fal.ai/models/tripo3d/h3.1/text-to-3d", verified: "2026-08-25" },

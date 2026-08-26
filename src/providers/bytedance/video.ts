@@ -284,7 +284,7 @@ export type ContentGenerationTasksBody<FutureModel extends string = never> =
   | Seedance10ProFastBody
   | UnknownVideoModelBody<FutureModel>;
 
-interface VideoBodyByModel {
+export interface VideoBodyByModel {
   "dreamina-seedance-2-5-260628": DreaminaSeedance25Body;
   "dreamina-seedance-2-0-260128": DreaminaSeedance20Body;
   "dreamina-seedance-2-0-fast-260128": DreaminaSeedance20FastBody;

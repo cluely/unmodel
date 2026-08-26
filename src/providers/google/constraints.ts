@@ -53,6 +53,28 @@ export const INLINE_PDF_MAX_BYTES = 50 * 1024 * 1024;
 export const GEMINI_IMAGE_TOKENS = 258;
 
 /**
+ * What one image or PDF page costs at `MEDIA_RESOLUTION_LOW`: "280 tokens"
+ * (video is priced per frame instead, at 70). Source:
+ * {@link GEMINI_MEDIA_RESOLUTION_DOCS_URL}, verified 2026-08-26.
+ *
+ * The counter-intuitive part is worth stating rather than rediscovering: LOW
+ * is *higher* than the 258-token default for a small image, because the
+ * default is "258 tokens if both dimensions ≤ 384 px" — one tile — while LOW
+ * is a flat per-image budget that also covers larger images which would
+ * otherwise tile into several. It is a cap, not a discount, and only pays for
+ * itself on attachments big enough to tile.
+ *
+ * This is the one level any provider documents as a fixed number, which is why
+ * `imageTokensByDetail` carries `low` and nothing else. MEDIUM and HIGH are
+ * described qualitatively; a number for them would be a guess.
+ */
+export const GEMINI_LOW_RES_IMAGE_TOKENS = 280;
+
+/** Where the per-level token budgets and the per-`Part` override are documented. */
+export const GEMINI_MEDIA_RESOLUTION_DOCS_URL =
+  "https://ai.google.dev/gemini-api/docs/media-resolution";
+
+/**
  * "Models with a 1M context window can process videos up to 1 hour long at
  * default media resolution." Source: GOOGLE_MEDIA_DOC_URLS.video
  */
@@ -536,6 +558,7 @@ export const chatFamilyRules: readonly FamilyRule[] = [
     family: "Gemini models",
     match: (modelId) => modelId.startsWith("gemini"),
     imageTokens: GEMINI_IMAGE_TOKENS,
+    imageTokensByDetail: { low: GEMINI_LOW_RES_IMAGE_TOKENS },
     media: {
       image: { maxBytes: INLINE_MEDIA_MAX_BYTES, formats: GEMINI_IMAGE_FORMATS },
       audio: {

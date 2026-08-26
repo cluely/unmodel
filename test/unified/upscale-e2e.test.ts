@@ -61,7 +61,7 @@ describe("the pack", () => {
   });
 
   test("each provider is one adapter, and either builds a pack on its own", () => {
-    expect(falAdapter.models).toHaveLength(10);
+    expect(falAdapter.models).toHaveLength(11);
     expect(topazAdapter.models).toHaveLength(15);
     expect([...createUpscale([falAdapter]).providers]).toEqual(["fal"]);
     expect([...createUpscale([topazAdapter]).providers]).toEqual(["topaz"]);
@@ -241,7 +241,7 @@ describe("`factor` has three answers", () => {
     expect(issue?.message).toContain("upscales to a size it chooses");
     // …and it counts the siblings that DO take one, rather than claiming fal
     // has no multiplier (risk R7).
-    expect(issue?.message).toContain("of the 10 fal upscale endpoints");
+    expect(issue?.message).toContain("of the 11 fal upscale endpoints");
   });
 });
 

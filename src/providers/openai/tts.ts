@@ -121,7 +121,7 @@ export type SpeechBody<FutureModel extends string = never> =
   | Gpt4oMiniTtsSnapshotBody
   | UnknownSpeechModelBody<FutureModel>;
 
-interface SpeechBodyByModel {
+export interface SpeechBodyByModel {
   "tts-1": Tts1Body;
   "tts-1-hd": Tts1HdBody;
   "gpt-4o-mini-tts": Gpt4oMiniTtsBody;

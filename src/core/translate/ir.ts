@@ -108,6 +108,21 @@ export type IRPart =
       mediaType?: string;
       data: IRData;
       filename?: string;
+      /**
+       * How much resolution the provider should spend on this attachment.
+       * IR-first-class rather than a `passthrough` key because two dialects
+       * express it: OpenAI's `image_url.detail` (`auto | low | high`) and
+       * Gemini's per-`Part` `mediaResolution.level`
+       * (`MEDIA_RESOLUTION_{UNSPECIFIED,LOW,MEDIUM,HIGH}`). The union carries
+       * `medium` because Gemini has it; the OpenAI decoder narrows it to
+       * `high` with an `approximated_param`, and Anthropic — which has no
+       * equivalent — drops it with a named warning.
+       *
+       * Both interop encoders used to warn `dropped_param` here, on both
+       * sides of the same concept. A hint two dialects share is a vocabulary
+       * word, not a loss.
+       */
+      detail?: "auto" | "low" | "medium" | "high";
       cache?: IRCacheBreakpoint;
     }
   | { type: "reasoning"; text?: string; signature?: string; redacted?: string; budget?: number }

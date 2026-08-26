@@ -94,9 +94,78 @@ export const DOCS_BASE = "https://sync.so/docs";
 /** `POST /v2/generate` — create a generation. Both verbs post here. */
 export const GENERATE_URL = `${SYNC_BASE_URL}/v2/generate`;
 
-/** `GET /v2/generate/{id}` — poll a submitted generation. */
-export function generationUrl(id: string): string {
-  return `${SYNC_BASE_URL}/v2/generate/${id}`;
+/**
+ * The three documented query params of `GET /v2/generate/{id}`, and the one
+ * combination the spec forbids.
+ *
+ * Transcribed verbatim from `https://sync.so/docs/openapi.json` (verified
+ * 2026-08-26):
+ *
+ * - **`wait`** — "When true, long-poll: hold the request open until the
+ *   generation reaches a terminal status (COMPLETED/FAILED/REJECTED) or the
+ *   timeout elapses, then return the latest state. Waits are short (10s max) —
+ *   treat this as a convenience for jobs about to finish, and poll again (the
+ *   response includes a `Retry-After: 2` header) or use a webhook for longer
+ *   jobs. wait=true responses also carry `X-Sync-Wait-Mode: long_poll` and
+ *   `X-Sync-Wait-Timeout-Seconds` headers. **Cannot be combined with
+ *   include=progress.**"
+ * - **`timeout`** — "Max seconds to hold a wait=true request open (default 5,
+ *   max 10 — values outside 1-10 are rejected with a 400). On timeout the
+ *   current (non-terminal) generation is returned with HTTP 200, so check
+ *   `status` and poll again, or use a webhook for long jobs."
+ * - **`include`** — "Comma-separated extra fields to include. include=progress
+ *   adds a progress_percent field (fetched live from the inference service)."
+ *
+ * The mutual exclusion is the union's job: `include: "progress"` and
+ * `wait`/`timeout` are two arms with `?: never` on the other's keys, the same
+ * device `docs/decisions.md` §4 uses for `google.tts`'s XOR'd `speechConfig`.
+ * Writing both is a compile error rather than a 400 twenty seconds later.
+ *
+ * ⚠️ `progress_percent` is described only on the `include` param. It is NOT a
+ * declared property of `type_common:Generation` (whose props are `createdAt`,
+ * `error`, `errorCode`, `id`, `input`, `model`, `options`, `outputDuration`,
+ * `outputUrl`, `outputFileName`, `segments`, `segmentOutputUrl`,
+ * `synthesizedAudioUrl`, `status`, `webhookUrl`, `projectId`), so nothing types
+ * it and no generated model carries it.
+ *
+ * `@sync.so/sdk@0.3.0` cannot express any of the three — `generations.get(id,
+ * requestOptions?)` takes transport options only (timeoutInSeconds, maxRetries,
+ * abortSignal, headers) and ships no `GetGenerationRequest`. Docs over SDK: a
+ * tiebreaker settles a disagreement, not an absence (the same call this module
+ * already records for `Image` input, above).
+ */
+export type SyncGenerationQuery =
+  | { wait?: boolean; timeout?: number; include?: never }
+  | { include: "progress"; wait?: never; timeout?: never };
+
+/**
+ * `GET /v2/generate/{id}` — poll a submitted generation, with the documented
+ * query params appended.
+ *
+ * ```ts
+ * generationUrl("gen_abc");                        // …/v2/generate/gen_abc
+ * generationUrl("gen_abc", { wait: true, timeout: 8 });
+ * generationUrl("gen_abc", { include: "progress" });
+ * ```
+ *
+ * This builds a STRING and nothing else: it is **NOT validated by unmodel**,
+ * and it is exported for convenience (the `breezeblue.textToSpeechStreamUrl`
+ * precedent). Polling is transport — no fetch, no retry loop, no `Retry-After`
+ * handling, and no `Generation` response type, which is why sync.'s response
+ * shape stays prose in this module's header.
+ *
+ * See {@link SyncGenerationQuery} for the params verbatim, the 1-10 `timeout`
+ * range that answers 400 outside it, the response headers a `wait=true` call
+ * carries, and the `progress_percent` caveat.
+ */
+export function generationUrl(id: string, query: SyncGenerationQuery = {}): string {
+  const base = `${SYNC_BASE_URL}/v2/generate/${encodeURIComponent(id)}`;
+  const search = new URLSearchParams();
+  if (query.include !== undefined) search.set("include", query.include);
+  if (query.wait !== undefined) search.set("wait", String(query.wait));
+  if (query.timeout !== undefined) search.set("timeout", String(query.timeout));
+  const qs = search.toString();
+  return qs === "" ? base : `${base}?${qs}`;
 }
 
 /**

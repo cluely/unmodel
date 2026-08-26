@@ -41,3 +41,8 @@ export type { SonioxTranscriptionStatus, TranscriptionResponseLike } from "./che
 
 export { models, provider, ASYNC_MODEL_IDS, REALTIME_MODEL_IDS } from "./models";
 export type { SonioxModelId, SonioxAsyncModelId, SonioxRealtimeModelId } from "./models";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";

@@ -1,0 +1,8 @@
+{
+  "ref": "atlascloud/bytedance/seedance-2.0/text-to-video",
+  "params": {
+    "model": "bytedance/seedance-2.0/text-to-video",
+    "prompt": "a drone shot over a fjord at sunrise"
+  },
+  "url": "https://api.atlascloud.ai/api/v1/model/generateVideo"
+}

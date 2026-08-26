@@ -1,0 +1,493 @@
+{
+  "metadata": {
+    "category": "video-to-video",
+    "date": "2026-03-05T10:04:10.677Z",
+    "description": "Transfer movements from a reference video to any character image. Cost-effective mode for motion transfer, perfect for portraits and simple animations.",
+    "display_name": "Kling Video",
+    "group": {
+      "key": "Motion-Control-3",
+      "label": "Pro"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/kling-video/v3/pro/motion-control",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "stylized",
+      "transform",
+      "editing"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a90eee3/9FBKg0W0qDGikoxwCWZ7P_9328cc2a34f044b29591eb247e8f2ee4.jpg",
+    "updated_at": "2026-07-17T23:34:08.711Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "KlingV3ImageElementInput": {
+          "properties": {
+            "frontal_image_url": {
+              "anyOf": [
+                {
+                  "limit_description": "Max file size: 10.0MB, Min width: 300px, Min height: 300px, Min aspect ratio: 0.40, Max aspect ratio: 2.50, Timeout: 20.0s",
+                  "type": "string",
+                  "ui": {
+                    "field": "image"
+                  },
+                  "x-fal": {
+                    "max_aspect_ratio": 2.5,
+                    "max_file_size": 10485760,
+                    "min_aspect_ratio": 0.4,
+                    "min_height": 300,
+                    "min_width": 300,
+                    "timeout": 20
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The frontal image of the element (main view).",
+              "title": "Frontal Image Url"
+            },
+            "reference_image_urls": {
+              "anyOf": [
+                {
+                  "items": {
+                    "_fal_ui_field": "image",
+                    "limit_description": "Max file size: 10.0MB, Min width: 300px, Min height: 300px, Min aspect ratio: 0.40, Max aspect ratio: 2.50, Timeout: 20.0s",
+                    "type": "string",
+                    "ui": {
+                      "field": "image"
+                    },
+                    "x-fal": {
+                      "max_aspect_ratio": 2.5,
+                      "max_file_size": 10485760,
+                      "min_aspect_ratio": 0.4,
+                      "min_height": 300,
+                      "min_width": 300,
+                      "timeout": 20
+                    }
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Additional reference images from different angles. 1-3 images supported. At least one image is required.",
+              "title": "Reference Image Urls"
+            }
+          },
+          "title": "KlingV3ImageElementInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "frontal_image_url",
+            "reference_image_urls"
+          ]
+        },
+        "KlingVideoV3ProMotionControlInput": {
+          "properties": {
+            "character_orientation": {
+              "description": "Controls whether the output character's orientation matches the reference image or video. 'video': orientation matches reference video - better for complex motions (max 30s). 'image': orientation matches reference image - better for following camera movements (max 10s).",
+              "enum": [
+                "image",
+                "video"
+              ],
+              "examples": [
+                "image"
+              ],
+              "title": "Character Orientation",
+              "type": "string"
+            },
+            "elements": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/components/schemas/KlingV3ImageElementInput"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional element for facial consistency binding. Upload a facial element to enhance identity preservation in the generated video. Only 1 element is supported. Reference in prompt as @Element1. Element binding is only supported when character_orientation is 'video'.",
+              "examples": [
+                null
+              ],
+              "title": "Elements"
+            },
+            "image_url": {
+              "_fal_ui_field": "image",
+              "description": "Reference image URL. The characters, backgrounds, and other elements in the generated video are based on this reference image. Characters should have clear body proportions, avoid occlusion, and occupy more than 5% of the image area.",
+              "examples": [
+                "https://v3b.fal.media/files/b/0a90ffa7/TNErq9yD7ZxGRATjfAqnh_EIgJSN67.png"
+              ],
+              "limit_description": "Max file size: 10.0MB, Min width: 340px, Min height: 340px, Max width: 3850px, Max height: 3850px, Min aspect ratio: 0.40, Max aspect ratio: 2.50, Timeout: 20.0s",
+              "title": "Image Url",
+              "type": "string",
+              "x-fal": {
+                "max_aspect_ratio": 2.5,
+                "max_file_size": 10485760,
+                "max_height": 3850,
+                "max_width": 3850,
+                "min_aspect_ratio": 0.4,
+                "min_height": 340,
+                "min_width": 340,
+                "timeout": 20
+              }
+            },
+            "keep_original_sound": {
+              "default": true,
+              "description": "Whether to keep the original sound from the reference video.",
+              "title": "Keep Original Sound",
+              "type": "boolean"
+            },
+            "prompt": {
+              "anyOf": [
+                {
+                  "maxLength": 2500,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "examples": [
+                "A man dancing"
+              ],
+              "title": "Prompt"
+            },
+            "video_url": {
+              "_fal_ui_field": "video",
+              "description": "Reference video URL. The character actions in the generated video will be consistent with this reference video. Should contain a realistic style character with entire body or upper body visible, including head, without obstruction. Duration limit depends on character_orientation: 10s max for 'image', 30s max for 'video'.",
+              "examples": [
+                "https://v3b.fal.media/files/b/0a90ff92/hklvF__w53diz6Rve7f5__JuDW2xl0mr6sJ_Kjz3Vxe_vidoeook%20(1)_1.mp4"
+              ],
+              "limit_description": "Max file size: 100.0MB, Min width: 340px, Min height: 340px, Max width: 3850px, Max height: 3850px, Min duration: 3.0s, Max duration: 30.05s, Timeout: 30.0s",
+              "title": "Video Url",
+              "type": "string",
+              "x-fal": {
+                "max_duration": 30.05,
+                "max_file_size": 104857600,
+                "max_height": 3850,
+                "max_width": 3850,
+                "min_duration": 3,
+                "min_height": 340,
+                "min_width": 340,
+                "timeout": 30
+              }
+            }
+          },
+          "required": [
+            "image_url",
+            "video_url",
+            "character_orientation"
+          ],
+          "title": "MotionControlV3ProRequest",
+          "type": "object",
+          "x-fal-order-properties": [
+            "prompt",
+            "image_url",
+            "video_url",
+            "keep_original_sound",
+            "character_orientation",
+            "elements"
+          ]
+        },
+        "KlingVideoV3ProMotionControlOutput": {
+          "properties": {
+            "video": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated video",
+              "examples": [
+                {
+                  "url": "https://v3b.fal.media/files/b/0a90ffb9/CnmmxIvK05VAq4gG8WiEQ_output.mp4"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video"
+          ],
+          "title": "MotionControlV3ProOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "video"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/kling-video/v3/pro/motion-control queue.",
+      "title": "Queue OpenAPI for fal-ai/kling-video/v3/pro/motion-control",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Kling V3 (pro) Motion Control API.\n\nGenerate videos where character actions match a reference video while\nthe visual appearance is based on a reference image. Pro mode generates\nhigher quality video output.\n\nV3 adds support for element binding to enhance facial consistency.\nWhen an element is provided, the character's facial identity is better\npreserved across the generated video. Element binding requires\ncharacter_orientation='video'.\n\nCharacter orientation controls output pose direction and video limits:\n- 'video': Matches reference video orientation - better for complex motions (max 30s)\n- 'image': Matches reference image orientation - better for camera movements (max 10s)",
+        "category": "video-to-video",
+        "documentationUrl": "https://fal.ai/models/fal-ai/kling-video/v3/pro/motion-control/api",
+        "endpointId": "fal-ai/kling-video/v3/pro/motion-control",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/kling-video/v3/pro/motion-control",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a90eee3/9FBKg0W0qDGikoxwCWZ7P_9328cc2a34f044b29591eb247e8f2ee4.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/kling-video/v3/pro/motion-control": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KlingVideoV3ProMotionControlInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/v3/pro/motion-control/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/KlingVideoV3ProMotionControlOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/v3/pro/motion-control/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/kling-video/v3/pro/motion-control/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

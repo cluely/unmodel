@@ -122,6 +122,31 @@ export const overridesSchema = z.object({
    * silently dropping the override.
    */
   force: z.array(z.tuple([rowRefSchema, rowRefSchema])).default([]),
+  /**
+   * Rows a provider serves on a **different wire surface** than its chat
+   * endpoint, removed from `unmodel/chat`'s ref tables.
+   *
+   * models.dev records a modality signature, not a route. `chatScope`'s
+   * `isTextModel` therefore admits every text-out row a provider lists,
+   * including the ones that provider's OWN chat endpoint rejects — OpenAI's
+   * codex models (`/v1/responses` only), its embeddings, its image and
+   * realtime rows. Each of those shipped as a `ChatModelRef` that compiled to
+   * a Chat Completions body the API refuses. The reachability knowledge exists
+   * in the repo (`NonChatModelId` in `src/providers/openai/chat.ts`) but as a
+   * *type*, which codegen cannot enumerate — so it is restated here, as data,
+   * with the same `"<provider>:<idGlob>"` spelling `deny` and `force` use.
+   *
+   * Scope is deliberately narrow: this filters the three `unmodel/chat` tables
+   * only, NOT the per-provider availability tables. `.toApi` is a substrate
+   * question — `openai.chat` still accepts these ids with a warning, because
+   * refusing what the API might one day fulfil is not this library's job.
+   *
+   * Unlike `deny`, EVERY entry (glob or not) must match at least one in-scope
+   * row. The set is small and hand-curated per provider, so an entry that
+   * matches nothing is an upstream rename that has silently stopped excluding
+   * something, and that is exactly the failure this field exists to prevent.
+   */
+  chatScopeExclude: z.array(rowRefSchema).default([]),
 });
 
 export type AvailabilityOverrides = z.output<typeof overridesSchema>;
@@ -281,13 +306,19 @@ function globToRegExp(glob: string): RegExp {
   return new RegExp(`^${body}$`);
 }
 
-interface RowMatcher {
+/**
+ * A parsed `"<providerGlob>:<idGlob>"`. Exported alongside
+ * {@link parseRowRef} / {@link rowRefMatches} because `scripts/codegen.ts`
+ * applies the same spelling to `chatScopeExclude`, and two glob dialects for
+ * one file's refs would be a silent trap.
+ */
+export interface RowMatcher {
   provider: RegExp;
   id: RegExp;
   exact: boolean;
 }
 
-function parseRowRef(ref: string): RowMatcher {
+export function parseRowRef(ref: string): RowMatcher {
   const colon = ref.indexOf(":");
   const provider = ref.slice(0, colon);
   const id = ref.slice(colon + 1);
@@ -298,8 +329,12 @@ function parseRowRef(ref: string): RowMatcher {
   };
 }
 
+export function rowRefMatches(m: RowMatcher, provider: string, id: string): boolean {
+  return m.provider.test(provider) && m.id.test(id);
+}
+
 function matches(m: RowMatcher, row: Row): boolean {
-  return m.provider.test(row.provider) && m.id.test(row.id);
+  return rowRefMatches(m, row.provider, row.id);
 }
 
 function compare(a: string, b: string): number {

@@ -11,7 +11,11 @@
  *   voices through `timbre_weights` (up to 4, weights 1–100).
  * - Non-streaming responses return the audio hex-encoded in
  *   `data.audio` (or a URL when `output_format: "url"`), so this is a JSON
- *   API — but unmodel validates requests only, so there is no checker here.
+ *   API. The reference declares exactly one HTTP response — `200` — and
+ *   reports failure IN BAND on `base_resp.status_code` (0 success, 1000
+ *   unknown, 1001 timeout, 1002 rate limit, 1004 auth failed, 1039 TPM limit,
+ *   1042 invalid-character ratio, 2013 invalid params; verified 2026-08-26).
+ *   `./tts-check.ts` reads that envelope back — `checkTts`.
  * - Auth is `Authorization: Bearer <MINIMAX_API_KEY>` — unmodel never touches
  *   keys; add the header yourself when fetching.
  * - This is the INTERNATIONAL platform. The China platform (api.minimaxi.com)

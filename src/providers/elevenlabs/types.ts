@@ -37,6 +37,8 @@
  *
  * Endpoints:
  *
+ * - `elevenlabs.dub` → `DubBody`
+ * - `elevenlabs.dubLanguage` → `DubLanguageBody`
  * - `elevenlabs.music` → `MusicBody`
  * - `elevenlabs.speechToTextRealtime` → `SpeechToTextRealtimeBody`
  * - `elevenlabs.stt` → `SttBody`
@@ -47,6 +49,8 @@
  * - `elevenlabs.voiceDesignSave` → `VoiceDesignSaveBody`
  */
 
+import type { DubbingProjectParams } from "./dubbing";
+import type { DubbingLanguageParams } from "./dubbing-language";
 import type { MusicParams } from "./music";
 import type { SpeechToTextRealtimeParams } from "./speech-to-text-realtime";
 import type { SpeechToTextParams } from "./stt";
@@ -119,7 +123,31 @@ export type {
   CreateVoiceFromPreviewSdkParams,
 } from "./voice-design-save";
 
-export type { ElevenlabsTranscriptionLike, ElevenlabsTranscriptLike } from "./check";
+export type { DubbingProjectParams, DubbingProjectSdkParams } from "./dubbing";
+
+export type {
+  DubbingLanguageParams,
+  DubbingLanguageBody,
+  DubbingLanguageSdkParams,
+  DubbingVoiceSettings,
+} from "./dubbing-language";
+
+export type {
+  ElevenlabsDubbingLanguage,
+  ElevenlabsDubbingV1Language,
+  ElevenlabsDubbingV2Language,
+} from "./dubbing-languages";
+
+export type {
+  ElevenlabsTranscriptionLike,
+  ElevenlabsTranscriptLike,
+  ElevenlabsDubbingProjectLike,
+  ElevenlabsDubbingProjectStatus,
+  ElevenlabsDubbingLanguageLike,
+  ElevenlabsDubbingLanguageStatus,
+  ElevenlabsDubbingErrorLike,
+  ElevenlabsDubbingWarningLike,
+} from "./check";
 
 export type {
   ElevenlabsModelId,
@@ -129,6 +157,7 @@ export type {
   ElevenlabsMusicModelId,
   ElevenlabsVoiceDesignModelId,
   ElevenlabsVoiceCloneModelId,
+  ElevenlabsDubbingModelId,
 } from "./models";
 
 // ---------------------------------------------------------------------------
@@ -142,6 +171,14 @@ export type {
 // says which bytes go where.
 // ---------------------------------------------------------------------------
 
+export type DubBody = DubbingProjectParams;
+/**
+ * The params `elevenlabs.dubLanguage` takes — `project_id` included, because
+ * that is what you hand the validator. The bytes that actually go on the wire
+ * are `DubbingLanguageBody`, which is this minus the path segment; the alias
+ * follows the ADDRESS, the same way `TtsBody` keeps `voice_id`.
+ */
+export type DubLanguageBody = DubbingLanguageParams;
 export type MusicBody = MusicParams;
 export type SpeechToTextRealtimeBody = SpeechToTextRealtimeParams;
 export type SttBody = SpeechToTextParams;

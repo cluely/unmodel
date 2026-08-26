@@ -39,6 +39,8 @@ import { describe, expect, test } from "bun:test";
 import type { VideoModelParams } from "../../src/core/unified/vocabulary/model-params";
 import type { VideoParams } from "../../src/core/unified/vocabulary/video";
 import { video } from "../../src/unified/video";
+import { video as atlascloud } from "../../src/providers/atlascloud/unified-video";
+import { videoShapeRules } from "../../src/providers/atlascloud/constraints";
 import { video as bytedance } from "../../src/providers/bytedance/unified-video";
 import { video as fal } from "../../src/providers/fal/unified-video";
 import { FAL_REQUIRED_PROBES } from "../../src/providers/fal/gen/endpoints.gen";
@@ -70,6 +72,7 @@ const ADAPTERS: readonly Adapter[] = [
   bytedance,
   lightricks,
   fal,
+  atlascloud,
 ];
 
 const IMAGE_URL = "https://example.com/frame.png";
@@ -94,9 +97,9 @@ const BYTES =
  * `FAL_REQUIRED_PROBES` is generated from each endpoint's OpenAPI `required`
  * list minus everything fal supplies a default for — the same subtraction
  * `checkRequired` makes — so this map is fal's own answer to "what must a probe
- * carry", refreshed weekly with the snapshots. Thirty hand-written entries
- * would be thirty transcriptions to keep in step, and the first one to go stale
- * would turn a real regression into a passing sweep.
+ * carry", refreshed weekly with the snapshots. Thirty-five hand-written entries
+ * would be thirty-five transcriptions to keep in step, and the first one to go
+ * stale would turn a real regression into a passing sweep.
  *
  * Only the MEDIA requirements survive the translation: `prompt` is supplied by
  * the sweep already, and the canonical fields under test (`duration`,
@@ -108,9 +111,16 @@ const FAL_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Object.from
     const need = names as readonly string[];
     const params: Partial<VideoParams> = {};
     if (need.some((name) => /(^|_)image_urls?$/.test(name) || /frame_url$/.test(name))) {
+      // Three arms, one per wire spelling the roster actually requires: a
+      // named pair of frames is `first` + `last`; a required `image_urls` LIST
+      // is a `reference` row (veo3.1/reference-to-video is the first of them,
+      // and a row whose roles are `["reference"]` refuses the default `first`);
+      // a single frame is the opening one.
       const roles: VideoParams["image"] = need.some((name) => /^(last_frame_url|end_image_url)$/.test(name))
         ? [{ url: IMAGE_URL }, { url: IMAGE_URL, role: "last" }]
-        : { url: IMAGE_URL };
+        : need.some((name) => /(^|_)image_urls$/.test(name))
+          ? [{ url: IMAGE_URL, role: "reference" }]
+          : { url: IMAGE_URL };
       (params as { image?: VideoParams["image"] }).image = roles;
     }
     if (need.includes("video_url")) (params as { video?: VideoParams["video"] }).video = { url: CLIP_URL };
@@ -118,8 +128,39 @@ const FAL_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Object.from
   }),
 );
 
+/**
+ * Atlas's required sets, DERIVED for the same reason fal's are.
+ *
+ * `videoShapeRules[id].required` is each model's own OpenAPI `required` list,
+ * transcribed once in `src/providers/atlascloud/constraints.ts` and read by
+ * `checkRequired` — so this map is the provider's own answer to "what must a
+ * probe carry", and twenty-three hand-written entries would be twenty-three
+ * transcriptions to keep in step.
+ *
+ * Only the MEDIA requirements survive the translation, exactly as at fal:
+ * `prompt` is supplied by the sweep already, and the canonical fields under
+ * test (`duration`, `resolution`, `aspectRatio`) are never required by an
+ * Atlas schema, so nothing here can pre-fill the field being measured.
+ *
+ * `images` is Veo 3.1's reference array and `image` is a first frame — the same
+ * split `resolveImageSlots` reads, which is why the two map to different roles.
+ */
+const ATLASCLOUD_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Object.fromEntries(
+  Object.entries(videoShapeRules).flatMap(([id, rule]) => {
+    const need = rule?.required ?? [];
+    const params: Partial<VideoParams> = {};
+    if (need.includes("images")) {
+      (params as { image?: VideoParams["image"] }).image = [{ url: IMAGE_URL, role: "reference" }];
+    } else if (need.includes("image")) {
+      (params as { image?: VideoParams["image"] }).image = { url: IMAGE_URL };
+    }
+    return Object.keys(params).length === 0 ? [] : [[`atlascloud/${id}`, params] as const];
+  }),
+);
+
 const REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = {
   ...FAL_REQUIRED,
+  ...ATLASCLOUD_REQUIRED,
   "runway/gen4.5": { aspectRatio: "16:9", duration: 5 },
   "runway/gen4_turbo": { aspectRatio: "16:9" },
   "runway/veo3.1": { aspectRatio: "16:9" },

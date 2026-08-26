@@ -6,22 +6,27 @@
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o1__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__motion-control.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
+//   data/fal/openapi/fal-ai__lightx__relight.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-2.3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1.json
 //   data/fal/openapi/fal-ai__veo3.1__extend-video.json
 //   data/fal/openapi/fal-ai__veo3.1__fast.json
 //   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__reference-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
@@ -168,6 +173,24 @@ export const videoModels = {
   /**
    * $0.168 per second.
    *
+   * Source: https://fal.ai/models/fal-ai/kling-video/o1/video-to-video/edit — verified
+   * 2026-08-26. Quote: “Your request will cost $0.168 per second.”
+   */
+  "fal-ai/kling-video/o1/video-to-video/edit": {
+    id: "fal-ai/kling-video/o1/video-to-video/edit",
+    name: "Kling O1 Edit Video [Pro]",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-04-26",
+    modalities: { input: ["image", "text", "video"], output: ["video"] },
+    limit: { context: 0 },
+    cost: { perVideoSecond: 0.168 },
+  },
+  /**
+   * $0.168 per second.
+   *
    * Source: https://fal.ai/models/fal-ai/kling-video/o3/pro/video-to-video/edit — verified
    * 2026-08-24. Quote: “For every second of video you generated you will be charged $0.168
    * For example, a 5s video will cost $0.84.”
@@ -299,6 +322,24 @@ export const videoModels = {
     limit: { context: 0 },
   },
   /**
+   * $0.168 per second.
+   *
+   * Source: https://fal.ai/models/fal-ai/kling-video/v3/pro/motion-control — verified
+   * 2026-08-26. Quote: “Your request will cost $0.168 per second.”
+   */
+  "fal-ai/kling-video/v3/pro/motion-control": {
+    id: "fal-ai/kling-video/v3/pro/motion-control",
+    name: "Kling Video",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-07-17",
+    modalities: { input: ["image", "text", "video"], output: ["video"] },
+    limit: { context: 0 },
+    cost: { perVideoSecond: 0.168 },
+  },
+  /**
    * Conditional pricing on generate_audio, and whether voice control is used:
    *   $0.112 — per second, audio off
    *   $0.168 — per second, audio on
@@ -371,6 +412,24 @@ export const videoModels = {
     limit: { context: 0 },
   },
   /**
+   * $0.1 per second.
+   *
+   * Source: https://fal.ai/models/fal-ai/lightx/relight — verified 2026-08-26. Quote: “Your
+   * request will cost 0.1$ per output video second.”
+   */
+  "fal-ai/lightx/relight": {
+    id: "fal-ai/lightx/relight",
+    name: "Lightx",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-04-21",
+    modalities: { input: ["image", "text", "video"], output: ["video"] },
+    limit: { context: 0 },
+    cost: { perVideoSecond: 0.1 },
+  },
+  /**
    * $0.08 per second.
    *
    * Source: https://fal.ai/models/fal-ai/minimax/hailuo-02/pro/image-to-video — verified
@@ -388,6 +447,25 @@ export const videoModels = {
     modalities: { input: ["image", "text"], output: ["video"] },
     limit: { context: 0 },
     cost: { perVideoSecond: 0.08 },
+  },
+  /**
+   * $0.49 per generation. Not on `cost`: ModelCost has no `per_generation` unit and forcing
+   * this into one of the four it does have would ship a number that is wrong for most
+   * requests.
+   *
+   * Source: https://fal.ai/models/fal-ai/minimax/hailuo-2.3/pro/text-to-video — verified
+   * 2026-08-26. Quote: “Your request will cost $0.49 per video generation.”
+   */
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video": {
+    id: "fal-ai/minimax/hailuo-2.3/pro/text-to-video",
+    name: "MiniMax Hailuo 2.3 [Pro] (Text to Video)",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-04-21",
+    modalities: { input: ["text"], output: ["video"] },
+    limit: { context: 0 },
   },
   /**
    * Conditional pricing on resolution x generate_audio_switch:
@@ -533,6 +611,32 @@ export const videoModels = {
    */
   "fal-ai/veo3.1/image-to-video": {
     id: "fal-ai/veo3.1/image-to-video",
+    name: "Veo 3.1",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-04-28",
+    modalities: { input: ["image", "text"], output: ["video"] },
+    limit: { context: 0 },
+  },
+  /**
+   * Conditional pricing on generate_audio × resolution:
+   *   $0.2 — resolution 720p or 1080p, generate_audio=false
+   *   $0.4 — resolution 720p or 1080p, generate_audio=true
+   *   $0.4 — resolution 4k, generate_audio=false
+   *   $0.6 — resolution 4k, generate_audio=true
+   * Not on `cost`: a rate that depends on the request cannot be a scalar. It belongs in the
+   * hand pricing table, where the estimate can read the body or honestly return undefined.
+   *
+   * Source: https://fal.ai/models/fal-ai/veo3.1/reference-to-video — verified 2026-08-26.
+   * Quote: “For every second of video you generate you will be charged $0.20 without audio
+   * or $0.40 with audio for 720p or 1080p. At 4k, you will be charged $0.40 per second
+   * without audio, or $0.60 with audio. For example, 8 second video at 1080p with audio on
+   * will cost $3.20”
+   */
+  "fal-ai/veo3.1/reference-to-video": {
+    id: "fal-ai/veo3.1/reference-to-video",
     name: "Veo 3.1",
     attachment: false,
     reasoning: false,
@@ -698,7 +802,7 @@ export const videoModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    lastUpdated: "2026-08-19",
+    lastUpdated: "2026-08-25",
     modalities: { input: ["image", "text"], output: ["video"] },
     limit: { context: 0 },
   },
@@ -722,7 +826,7 @@ export const videoModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    lastUpdated: "2026-08-23",
+    lastUpdated: "2026-08-26",
     modalities: { input: ["text"], output: ["video"] },
     limit: { context: 0 },
   },

@@ -53,10 +53,16 @@ import { FAL_MEDIA_TARGET } from "../../core/translate/media-endpoints";
 import type { FalTtsBodyById } from "../fal/interop";
 import type { TextToSpeechParams } from "./tts";
 
-type ById = FalTtsBodyById;
-type FalElevenV3 = ById["fal-ai/elevenlabs/tts/eleven-v3"];
-type FalElevenMultilingualV2 = ById["fal-ai/elevenlabs/tts/multilingual-v2"];
-type FalElevenTurboV25 = ById["fal-ai/elevenlabs/tts/turbo-v2.5"];
+// The per-endpoint aliases below are `export`ed rather than private, and it is
+// not decoration: they are the exact symbols `<Provider>…FalOverlap`'s
+// `ReturnType` resolves to, so a consumer that emits declarations around a
+// result carrying `.toApi("fal")` cannot name it without them (TS4023, "has or
+// is using name 'FalAiFlux2ProInput' … but cannot be named"). Type-only, and
+// re-exported one line from ./index.ts. See src/core/carriers.ts.
+export type ById = FalTtsBodyById;
+export type FalElevenV3 = ById["fal-ai/elevenlabs/tts/eleven-v3"];
+export type FalElevenMultilingualV2 = ById["fal-ai/elevenlabs/tts/multilingual-v2"];
+export type FalElevenTurboV25 = ById["fal-ai/elevenlabs/tts/turbo-v2.5"];
 
 /**
  * The params no fal ElevenLabs row publishes, refused on every arm.

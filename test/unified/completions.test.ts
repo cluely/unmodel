@@ -1528,7 +1528,7 @@ describe("unified chat: the ready entry", () => {
   test("model completes the whole ref table", () => {
     const entries = completionsAt(`import { chat } from "./src/chat/index";
 chat({ model: "¦" });`);
-    // 1,339 refs in the committed snapshot. Pinned as a floor plus three
+    // 1,330 refs in the committed snapshot. Pinned as a floor plus three
     // spot checks: an exact count would churn on every catalog refresh, while
     // a collapse to zero — the failure this suite exists for — cannot hide
     // under either assertion.
@@ -1915,13 +1915,39 @@ chat({ model: "openai/gpt-5.2", messages: [], providerOptions: { anthropic: { ¦
 chat({ model: "openai/gpt-5.2", messages: [], providerOptions: { openai: { ¦ } } });`);
     expect(openai).toContain("logprobs");
     expect(openai).toContain("response_format");
-    // A bucket completes its DIALECT's shared body, which is what the compiler
-    // merges into. Endpoint-only extras — openai's `store`, the field doc's own
-    // example — live on `ChatCompletionsBody` in the provider module and so do
-    // not complete; they still COMPILE, through the open arm every level of the
-    // bucket carries. That is the honest boundary, and it is asserted here so
-    // it cannot be mistaken for a completion the type forgot.
-    expect(openai).not.toContain("store");
+    // The openai bucket is the ONE bucket typed off its provider's endpoint
+    // body rather than the shared dialect body, so the twelve params only
+    // OpenAI's route takes complete here too. `store` was the witness for the
+    // opposite assertion until v0.3.1: it compiled (the open arm) and
+    // completed nothing, while `openai.chat`'s own schema had typed and
+    // validated it all along.
+    expect(openai).toContain("store");
+    expect(openai).toContain("verbosity");
+    expect(openai).toContain("web_search_options");
+    expect(openai).toContain("prompt_cache_key");
+    // Everyone else still completes their dialect body and nothing more:
+    // `store` is not an Anthropic param and must not appear on that bucket.
+    expect(anthropic).not.toContain("store");
+    expect(anthropic).not.toContain("verbosity");
+  });
+
+  test("the openai bucket's own enums complete AND gate", () => {
+    const verbosity = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [], providerOptions: { openai: { verbosity: "¦" } } });`);
+    // Three values, because `openai.chat` refuses a fourth — the one bucket
+    // where the leaf `(string & {})` hatch would promise something the runtime
+    // does not honour. `test/types/chat.test-d.ts` pins the gate.
+    expect(verbosity.sort()).toEqual(["high", "low", "medium"]);
+
+    // `service_tier` gets both: OpenAI's six complete (the endpoint body names
+    // them; the shared dialect body leaves it an open `string`, so this used
+    // to complete nothing) and the leaf hatch stays, because unmodel really
+    // does carry an unrecognised tier through — `test/types/chat.test-d.ts`
+    // compiles `"a_tier_shipped_next_month"` right below the `"extreme"`
+    // refusal, which is the pair worth reading together.
+    const tier = completionsAt(`import { chat } from "./src/chat/index";
+chat({ model: "openai/gpt-5.2", messages: [], providerOptions: { openai: { service_tier: "¦" } } });`);
+    expect(tier.sort()).toEqual(["auto", "default", "fast", "flex", "priority", "scale"]);
   });
 
   test("values complete too, and nest", () => {

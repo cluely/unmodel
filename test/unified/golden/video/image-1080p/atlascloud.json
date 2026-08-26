@@ -1,0 +1,12 @@
+{
+  "ref": "atlascloud/google/veo3.1/image-to-video",
+  "params": {
+    "model": "google/veo3.1/image-to-video",
+    "prompt": "the fox turns and walks into the snow",
+    "image": "https://example.com/frame.png",
+    "duration": 8,
+    "resolution": "1080p",
+    "aspect_ratio": "16:9"
+  },
+  "url": "https://api.atlascloud.ai/api/v1/model/generateVideo"
+}

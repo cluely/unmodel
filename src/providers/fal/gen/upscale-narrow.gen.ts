@@ -10,6 +10,7 @@
 //   data/fal/openapi/fal-ai__seedvr__upscale__video.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__generative.json
 //   data/fal/openapi/topaz__upscale__video__precision.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
@@ -47,6 +48,7 @@ const E_9d91ea = ["v1", "v2"] as const;
 const E_9f102a = ["low", "medium", "high"] as const;
 const E_be1dd4 = ["fast", "balanced", "small"] as const;
 const E_cce0e8 = [0, 1] as const;
+const E_e742f6 = ["Starlight Precise 2.6", "Starlight HQ", "Starlight Mini", "Starlight Sharp", "Starlight Fast 2"] as const;
 
 export const FAL_UPSCALE_SHAPES = {
   "blackforestlabs/flux-video-upscale": {
@@ -170,6 +172,17 @@ export const FAL_UPSCALE_SHAPES = {
       strength: { t: "number", nul: true, min: 0.01, max: 1 },
     },
   },
+  "topaz/upscale/video/generative": {
+    order: ["video_url", "model", "upscale_factor", "target_fps", "softness", "H264_output"],
+    props: {
+      video_url: { t: "string", req: true, media: "video" },
+      model: { t: "string", def: true, enum: E_e742f6 },
+      upscale_factor: { t: "number", def: true, min: 1, max: 4 },
+      target_fps: { t: "integer", nul: true, min: 16, max: 60 },
+      softness: { t: "number", nul: true, min: 1, max: 5 },
+      H264_output: { t: "boolean", def: true },
+    },
+  },
   "topaz/upscale/video/precision": {
     order: ["video_url", "model", "upscale_factor", "target_fps", "compression", "noise", "halo", "grain", "recover_detail", "H264_output"],
     props: {
@@ -230,6 +243,9 @@ export const FAL_UPSCALE_CONSTRAINTS = {
     model: E_3f5672,
     output_format: E_7c0554,
     subject_detection: E_7dddd1,
+  },
+  "topaz/upscale/video/generative": {
+    model: E_e742f6,
   },
   "topaz/upscale/video/precision": {
     model: E_7476e4,

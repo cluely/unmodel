@@ -20,6 +20,7 @@ One import per category, one camelCase vocabulary, `"provider/model"` refs. Ever
 | [Voice cloning](#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
 | [Voice design](#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
 | [Realtime audio config](#realtime-audio) | none | `unmodel/openai`, `unmodel/deepgram`, `unmodel/elevenlabs`, etc. |
+| [Dubbing](#dubbing) | none | `unmodel/elevenlabs` |
 
 See the full [provider and endpoint roster](providers.md), and the [TTS integrator's matrix](tts.md) for per-provider auth, response delivery and wire quirks.
 
@@ -587,6 +588,34 @@ JSON.stringify(request);
 
 The unified surface is phase 1, the generative call. ElevenLabs and Inworld return previews that a second, provider-shaped call persists. Those saves are wire-only (`elevenlabs.voiceDesignSave`, `inworld.voiceDesignPublish`) because their correlating handles share no vocabulary. MiniMax is single-phase. Fish Audio's candidates are deliberately ephemeral. Hume's voice design rides its own TTS wire, on `unmodel/hume`.
 
+## Dubbing
+
+Wire-only, at `unmodel/elevenlabs`. There is no `unmodel/dubbing` and there deliberately will not be one until a second vendor's request shape agrees with this one — HeyGen's `/v3/video-translations` is the other witness and it is a one-shot job where ElevenLabs is a two-request project/target model with an editable transcript, a revision counter and a `stale` state. See the [provider roster](providers.md) for the recorded reason.
+
+```ts
+import { dub, dubLanguage, dubToFormData } from "unmodel/elevenlabs";
+
+const project = dub({
+  source_url: "https://example.com/promo.mp4",
+  model_id: "dubbing_v2",
+  source_language: "en",
+});
+
+const created = await fetch(project.request.url, {
+  method: "POST",
+  headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY ?? "" },
+  body: dubToFormData(project),
+}).then((r) => r.json());
+
+// …poll GET /v1/dubbing/project/{project_id} until status === "ready"…
+
+const target = dubLanguage({ project_id: created.project_id, target_language: "es-MX" });
+```
+
+Four things the wire types carry that the docs make you dig for. The reference page most search results land on 308-redirects to the **legacy** `/v1/dubbing` route, which has no `model_id` at all and cannot reach Dubbing v2. `target_language` is narrowed per model against ElevenLabs' published BCP-47 tables — Dubbing v2 takes 94 base tags plus 14 dialects, Dubbing v1 takes 86 base tags and **no** dialects, so `es-MX` on v1 is refused by name with `es` suggested. Polling is two-level with a third axis: a language target can be `completed` and hold a **stale** output, which `checkDubbingLanguage` catches by comparing `output_revision` against `revision`. And the only v2 output is a signed, time-limited **audio** track — a dubbed video needs the legacy route or a Studio render, neither of which this surface reaches.
+
+Cost is not knowable at request time: the rate is per minute of source media per language target, and the body carries a Blob or a URL, never a duration. `checkDubbingProject` prices it once the project GET reports `media.duration_s`. Polling, downloads and the Studio timeline stay out of scope, as they do everywhere else here.
+
 ## Realtime audio
 
 unmodel validates realtime config objects, not socket lifecycles:
@@ -623,7 +652,7 @@ The package is marked `sideEffects: false`.
 | `unmodel/<provider>/unified` | one provider's unified adapters, where available |
 | `unmodel/<provider>/types`, `unmodel/types` | types only (the emitted JavaScript is an empty module) |
 | `unmodel/<provider>/values`, `unmodel/values` | the runtime lists behind those types: arrays and per-model tables, ~1 KiB per import |
-| `unmodel/values/chat-refs` | the 1,339 `"provider/model"` chat refs as an array (45 KiB) |
+| `unmodel/values/chat-refs` | the 1,330 `"provider/model"` chat refs as an array (45 KiB) |
 
 Build a narrow chat pack with concrete provider validators:
 

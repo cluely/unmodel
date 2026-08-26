@@ -145,3 +145,56 @@ export interface FalQueueSubmitResponse {
 
 /** The whole status enum. `COMPLETED` does NOT mean the request succeeded. */
 export type FalQueueStatus = "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED";
+
+/**
+ * The failure half of a result document — what `response_url` answers when the
+ * request failed.
+ *
+ * This is the type that makes {@link FalQueueSubmitResponse}'s "there is no
+ * `FAILED`" note actionable. `status` reaches `COMPLETED` either way, so the
+ * only place a failure is expressible is the result body, and it arrives as
+ * `error` / `error_type` rather than as a status.
+ *
+ * **Transcribed from fal's prose, not from a schema.** Every one of the 171
+ * committed OpenAPI snapshots in `data/fal/openapi/` declares exactly one
+ * response code — `200` — across all 684 operations, so there is no generated
+ * error type to point at and no machine-readable source for one. These two
+ * field names come from fal's queue documentation and from the note already
+ * written on {@link FalQueueSubmitResponse}; anything beyond them would be a
+ * guess, so the interface stays at two fields rather than inventing a third.
+ */
+export interface FalQueueError {
+  /** Human-grade failure message. Its presence IS the failure signal. */
+  error: string;
+  /** fal's own name for the failure class, when it sends one. */
+  error_type?: string;
+}
+
+/**
+ * One endpoint's result document, as it actually arrives: the success shape or
+ * a failure, never narrowed for you.
+ *
+ * The success half is generated. `FalVideoResultById["fal-ai/veo3.1"]` (and its
+ * nine siblings — see `./types.ts`) is fal's own declared output schema for
+ * that endpoint, which is why this generic takes the shape rather than naming
+ * one:
+ *
+ * ```ts
+ * import type { FalQueueResult, FalVideoResultById } from "unmodel/fal/types";
+ *
+ * const body: FalQueueResult<FalVideoResultById["fal-ai/veo3.1"]> =
+ *   await (await fetch(submit.response_url!)).json();
+ *
+ * if ("error" in body) throw new Error(body.error); // narrows to FalQueueError
+ * body.video.url;                                   // narrows to the success shape
+ * ```
+ *
+ * `"error" in body` is the discriminant on purpose: no fal result schema
+ * declares an `error` property, so the `in` check separates the two arms
+ * without a tag fal does not send. Pinned by `test/types/fal.test-d.ts`.
+ *
+ * Nothing here validates: this is a compile-time shape for a document unmodel
+ * never sees. `unmodel/fal` compiles the REQUEST; polling and reading the
+ * result are yours, like every other queue provider here.
+ */
+export type FalQueueResult<T> = T | FalQueueError;

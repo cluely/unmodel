@@ -19,7 +19,7 @@ export default defineConfig({
     // listed here for their declarations, not their code.
     "types/index": "src/types/index.ts",
     // The value entries: the runtime twins of the types above. `values/index` is
-    // the canonical vocabulary as arrays; `values/chat-refs` is the 1,339-ref
+    // the canonical vocabulary as arrays; `values/chat-refs` is the 1,330-ref
     // list on its own entry so it gets its own chunk (see that module).
     "values/index": "src/values/index.ts",
     "values/chat-refs": "src/values/chat-refs.ts",
@@ -52,6 +52,10 @@ export default defineConfig({
     "providers/assemblyai/unified": "src/providers/assemblyai/unified.ts",
     "providers/assemblyai/types": "src/providers/assemblyai/types.ts",
     "providers/assemblyai/values": "src/providers/assemblyai/values.ts",
+    "providers/atlascloud/index": "src/providers/atlascloud/index.ts",
+    "providers/atlascloud/unified": "src/providers/atlascloud/unified.ts",
+    "providers/atlascloud/types": "src/providers/atlascloud/types.ts",
+    "providers/atlascloud/values": "src/providers/atlascloud/values.ts",
     "providers/azure/index": "src/providers/azure/index.ts",
     "providers/azure/types": "src/providers/azure/types.ts",
     "providers/baseten/index": "src/providers/baseten/index.ts",

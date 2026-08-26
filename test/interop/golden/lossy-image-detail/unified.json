@@ -1,0 +1,25 @@
+{
+  "$comment": [
+    "The same request in the canonical vocabulary. `medium` is Gemini's level, so this compiles",
+    "for google with nothing to say — the loss is entirely on the OUT side, and the two",
+    "to-<dialect>.json fixtures commit it: openai-chat rounds up to `high`, anthropic-messages",
+    "drops the hint. That asymmetry is the argument for the union-not-intersection rule:",
+    "taking the intersection would make `medium` unsayable to the one dialect that has it."
+  ],
+  "model": "google/gemini-2.5-flash",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "What is in this image?" },
+        {
+          "type": "file",
+          "mediaType": "image/png",
+          "data": "iVBORw0KGgoAAAANSUhEUg==",
+          "detail": "medium"
+        }
+      ]
+    }
+  ],
+  "maxOutputTokens": 512
+}

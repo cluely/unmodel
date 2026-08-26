@@ -207,7 +207,7 @@ export type GenerationsBody<FutureModel extends string = never> =
   | PhoenixV09Body
   | UnknownLeonardoModelBody<FutureModel>;
 
-interface LeonardoBodyByModel {
+export interface LeonardoBodyByModel {
   "lucid-origin": LucidOriginBody;
   "lucid-realism": LucidRealismBody;
   "phoenix-v1.0": PhoenixV1Body;

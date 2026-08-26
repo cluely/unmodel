@@ -171,10 +171,58 @@ type FallbackChatResult<R extends string> = Validated<
   ChatSdkTargets<ChatDialectOf<R>, ChatModelOf<R>>
 >;
 
-/** The params shape the provider sees (Gemini restores its URL-only model). */
-type ProviderParamsFor<R extends string> = ChatBody<R> & {
+/**
+ * The params shape the provider sees (Gemini restores its URL-only model).
+ *
+ * `stream` is threaded from the CALLER's params rather than inherited from the
+ * dialect body, and that is the one field this type reshapes rather than
+ * forwards. The reason is that the compiler already knows the answer:
+ * `src/chat/encode.ts` writes `stream` onto the wire body **if and only if the
+ * caller wrote it** (and never for Gemini, whose streaming is a different
+ * method, not a flag). The declared dialect body says `stream?: boolean | null`
+ * because that is what the wire documents — correctly, and it must not move —
+ * but a *result* type carrying a key the request demonstrably does not have is
+ * a violation of decision #1's "the enumerable properties are the provider's
+ * exact wire body", not an application of it.
+ *
+ * It also happens to be the whole reason `client.chat.completions.create(
+ * chat({…}).toSdk("openai"))` needed a cast. `stream` is the discriminant in
+ * all three SDKs — a union of `stream?: false` and `stream: true` — so an open
+ * `boolean` matched neither overload and the call fell through to the base
+ * signature, where `.choices` does not exist. Omitting the key resolves the
+ * non-streaming arm; `stream: true` resolves the streaming one; `stream: false`
+ * stays the literal. The unified surface is doing the narrowing the test suite
+ * used to do by hand.
+ *
+ * What this does NOT do is type the *wire* `stream` as `false`. That would be a
+ * lie for every streaming caller, and `ChatCompletionsBodyBase.stream` /
+ * `MessagesBody.stream` stay exactly as the docs write them.
+ *
+ * Gemini is excluded from the whole mechanism because Gemini has no streaming
+ * *flag*: `stream: true` there selects `:streamGenerateContent`, a different
+ * URL, and the body never gains a key. The encoder's own condition reads
+ * `targetDialect !== "gemini"`; this mirrors it, because a `stream` key on a
+ * `generateContent` body would be exactly the kind of claim about the wire this
+ * change exists to stop making.
+ *
+ * **Cost, measured** (R4 — this sits on the hot autocomplete path, so it is
+ * recorded rather than assumed). `tsc --noEmit --extendedDiagnostics` over the
+ * whole repo: types 659,060 → 664,816 (+0.9%), instantiations 1,213,671 →
+ * 1,236,002 (+1.8%), check time 6.22s → 6.42s. `bun run bench:types`: the
+ * `chat: one unified call` case 9,717 → 9,921 instantiations (+2.1%) and
+ * `chat: media path declaration` 9,963 → 10,109 (+1.5%); the four non-chat
+ * cases did not move. One extra conditional per chat result, and it buys a
+ * hand-off that previously needed a cast.
+ */
+type StreamFor<R extends string, Params> = ChatDialectOf<R> extends "gemini"
+  ? unknown
+  : "stream" extends keyof Params
+    ? { stream: Params["stream" & keyof Params] }
+    : unknown;
+
+type ProviderParamsFor<R extends string, Params> = Omit<ChatBody<R>, "stream"> & {
   model: ChatModelOf<R>;
-};
+} & StreamFor<R, Params>;
 
 type UnregisteredResult<R extends string> = string extends ChatProviderOf<R>
   ? // A ref that is not statically resolvable at all. Must stay callable: a
@@ -188,9 +236,9 @@ type UnregisteredResult<R extends string> = string extends ChatProviderOf<R>
     // throws every time.
     UnregisteredChatProvider<ChatProviderOf<R>, UnservableReason<ChatProviderOf<R>>>;
 
-type RegisteredProviderResult<Registry, R extends string> =
+type RegisteredProviderResult<Registry, R extends string, Params> =
   ChatProviderOf<R> extends keyof Registry
-    ? ChatProviderResult<Registry[ChatProviderOf<R>], ProviderParamsFor<R>>
+    ? ChatProviderResult<Registry[ChatProviderOf<R>], ProviderParamsFor<R, Params>>
     : UnregisteredResult<R>;
 
 /**
@@ -208,9 +256,16 @@ type RegisteredProviderResult<Registry, R extends string> =
  * them into overloads would make `result.toSdk("openai")` compile against a
  * value that may be the Anthropic arm at runtime. Narrow on `target` first —
  * the union is discriminated by it.
+ *
+ * `Params` is the caller's whole request object, and only one field is read
+ * from it: `stream`. See {@link ProviderParamsFor} for why a result keyed on
+ * the *ref* alone was less precise than the runtime it describes. It defaults
+ * to `ChatParams` so the type stays writable by hand
+ * (`ChatPackResult<Registry, "openai/gpt-5">`), which is what the two-parameter
+ * form meant before and what `ChatResult<R>` in `./index.ts` still offers.
  */
-export type ChatPackResult<Registry, R extends string> = R extends string
-  ? RegisteredProviderResult<Registry, R> & ChatResultMeta<R>
+export type ChatPackResult<Registry, R extends string, Params = ChatParams> = R extends string
+  ? RegisteredProviderResult<Registry, R, Params> & ChatResultMeta<R>
   : never;
 
 /** Callable surface returned by {@link createChat}. */
@@ -218,11 +273,11 @@ export interface ChatValidator<Registry extends ChatProviderRegistry> {
   <T extends ChatParams>(
     params: T & ExactKeys<T, ChatParams>,
     options?: ChatOptions,
-  ): ChatPackResult<Registry, T["model"] & string>;
+  ): ChatPackResult<Registry, T["model"] & string, T>;
   safe<T extends ChatParams>(
     params: T & ExactKeys<T, ChatParams>,
     options?: ChatOptions,
-  ): ValidateResult<ChatPackResult<Registry, T["model"] & string>>;
+  ): ValidateResult<ChatPackResult<Registry, T["model"] & string, T>>;
   safeUnknown(
     params: unknown,
     options?: ChatOptions,
@@ -334,3 +389,9 @@ export type {
   ChatSdkTargets,
 } from "./public-types";
 export type { ChatParams, ChatProviderId } from "./types";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883). This
+// entry is the one the reported repro imported.
+export type * from "../core/carriers";

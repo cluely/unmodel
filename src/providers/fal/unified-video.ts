@@ -1,10 +1,10 @@
 /**
- * `unmodel/video` → fal, across 30 endpoints and one address.
+ * `unmodel/video` → fal, across 35 endpoints and one address.
  *
  * # The roles are the dispatch, and the endpoint id is not
  *
  * Every other adapter in this category branches on a model id or a route
- * family. This one cannot: at fal the route IS the id, thirty of them, and a
+ * family. This one cannot: at fal the route IS the id, thirty-five of them, and a
  * switch would need a new arm every week. What it branches on instead is the
  * generated row's `roles` — which of `first`, `last` and `reference` this
  * endpoint's schema has a wire field for — plus `videoWire` for the routes that
@@ -56,7 +56,7 @@
  * # Per-model facts live on the rows, not on the adapter
  *
  * No adapter-wide `unsupported` here — risk R7. `negative_prompt` exists on
- * kling and veo3.1 and on no seedance route; `seed` exists on eleven of thirty;
+ * kling and veo3.1 and on no seedance route; `seed` exists on thirteen of thirty-five;
  * `aspect_ratio` on twenty. A provider-wide "fal cannot do N" would be false at
  * the majority of fal's own endpoints, so every refusal in this file names the
  * endpoint and is derived from that endpoint's own generated key list.
@@ -105,7 +105,7 @@ const ROWS = FAL_VIDEO_MODEL_PARAMS as Readonly<Record<string, FalVideoRow>>;
  * `never` for every key and silently un-narrows the whole hand surface. The
  * per-model extras reach the body through `applyExtras`'s own cast.
  *
- * Every media key any of the thirty endpoints uses is listed, because the
+ * Every media key any of the thirty-five endpoints uses is listed, because the
  * adapter writes whichever one that endpoint's row names — and a key missing
  * here would be a compile error at exactly the line that writes it, which is
  * the point.
@@ -147,7 +147,7 @@ function docs(model: string): string | undefined {
 /**
  * One `unsupported_param`, phrased against the endpoint rather than the
  * provider — and counting how many of its siblings DO take the field, because
- * "fal has no negative prompt" would be false at twelve of the thirty.
+ * "fal has no negative prompt" would be false at eighteen of the thirty-five.
  */
 function refuse(
   ctx: CompileContext<VideoParams>,
@@ -199,7 +199,7 @@ function applyShared(
     else refuse(ctx, "seed", "seed", row);
   }
   if (input.n !== undefined) {
-    // Not one of the thirty publishes a count field: fal's video endpoints
+    // Not one of the thirty-five publishes a count field: fal's video endpoints
     // render exactly one clip per submit, and the queue is how you ask for
     // more. Stated as a refusal rather than an adapter-wide `unsupported`
     // because the sentence should name the endpoint the caller chose.

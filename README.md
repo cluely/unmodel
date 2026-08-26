@@ -164,7 +164,7 @@ Same pattern for every surface — inputs, formats, and extras narrow to the sel
 
 ## ✅ Validation
 
-Invalid params throw `UnmodelValidationError`. Use `.safe()` to get issues back as values:
+Invalid params throw `UnmodelValidationError`. Check it with `UnmodelValidationError.isInstance(error)` rather than `instanceof` — it survives a second copy of the package and a Worker realm boundary — and never retry it: validation is a pure function of the params, so the second attempt fails on the same issue as the first. Use `.safe()` to get issues back as values:
 
 ```ts
 const result = chat.safe({
@@ -196,7 +196,7 @@ const result = tts.safe({ model: "elevenlabs/eleven_multilingual_v2", text, voic
 result.ok && result.estimate.costUSD; // 0.0024
 ```
 
-`.safeUnknown()`, severity options, cost arithmetic, and future model IDs: [docs/validation.md](docs/validation.md).
+`.safeUnknown()`, severity options, cost arithmetic, future model IDs, and the error/retry patterns for durable runtimes: [docs/validation.md](docs/validation.md).
 
 ## 🔁 Retarget chat with `.toApi()`
 

@@ -176,6 +176,7 @@ export const SDK_TARGET_IDS = [
   "amazon-bedrock",
   "anthropic",
   "assemblyai",
+  "atlascloud",
   "azure",
   "baseten",
   "black-forest-labs",

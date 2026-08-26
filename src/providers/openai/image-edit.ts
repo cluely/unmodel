@@ -180,7 +180,7 @@ export type ImageEditBody<FutureModel extends string = never> =
   | DallE2EditBody
   | UnknownImageEditModelBody<FutureModel>;
 
-interface ImageEditBodyByModel {
+export interface ImageEditBodyByModel {
   "gpt-image-1": GptImage1EditBody;
   "gpt-image-1-mini": GptImage1MiniEditBody;
   "gpt-image-1.5": GptImage15EditBody;

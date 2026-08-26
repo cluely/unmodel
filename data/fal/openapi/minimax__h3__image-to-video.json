@@ -21,7 +21,7 @@
       "lipsync"
     ],
     "thumbnail_url": "https://v3b.fal.media/files/b/0aa42dac/wjm-S2eWgG8vU2uJoRwPx.jpg",
-    "updated_at": "2026-08-19T20:14:50.287Z"
+    "updated_at": "2026-08-25T17:41:07.462Z"
   },
   "openapi": {
     "components": {
@@ -160,7 +160,7 @@
                 }
               ],
               "default": "balanced",
-              "description": "Which prompt expander to use. 'disabled' skips prompt expansion. 'fast' uses fal's own expansion (~1s). 'quality' always uses MiniMax's H3-Context-IR (~30s). 'balanced' uses H3-Context-IR for reference-to-video, and for image-to-video over 5s, except at 480P; all text-to-video uses fal's expansion.",
+              "description": "How much effort to spend rewriting the prompt before generation. 'disabled' skips prompt expansion. 'fast' returns in about a second. 'quality' spends up to ~30s on a richer prompt. 'balanced' picks per request.",
               "title": "Prompt Expansion Mode"
             },
             "resolution": {

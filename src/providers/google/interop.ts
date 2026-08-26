@@ -75,6 +75,56 @@ function stripModelsPrefix(modelId: string): string {
   return modelId.startsWith("models/") ? modelId.slice("models/".length) : modelId;
 }
 
+// ---------------------------------------------------------------------------
+// Per-part media resolution ⇄ the canonical `detail` hint
+//
+// Gemini's `Part.mediaResolution.level` and OpenAI's `image_url.detail` are the
+// same concept — how many tokens the attachment costs — which is why `detail`
+// is IR-first-class rather than a passthrough key. Gemini has the wider
+// vocabulary (a real `MEDIUM`), so it is the union's source; the OpenAI decoder
+// narrows `medium` to `high` and says so.
+//
+// `MEDIA_RESOLUTION_UNSPECIFIED` ⇄ `"auto"`: both mean "the provider decides",
+// so the pair round-trips rather than half-translating.
+// ---------------------------------------------------------------------------
+
+const MEDIA_RESOLUTION_LEVELS: Readonly<Record<string, "auto" | "low" | "medium" | "high">> = {
+  MEDIA_RESOLUTION_UNSPECIFIED: "auto",
+  MEDIA_RESOLUTION_LOW: "low",
+  MEDIA_RESOLUTION_MEDIUM: "medium",
+  MEDIA_RESOLUTION_HIGH: "high",
+};
+
+const MEDIA_RESOLUTION_FOR: Readonly<Record<"auto" | "low" | "medium" | "high", string>> = {
+  auto: "MEDIA_RESOLUTION_UNSPECIFIED",
+  low: "MEDIA_RESOLUTION_LOW",
+  medium: "MEDIA_RESOLUTION_MEDIUM",
+  high: "MEDIA_RESOLUTION_HIGH",
+};
+
+/**
+ * `Part.mediaResolution.level` is typed as an open `string` on the wire (the
+ * REST field is an enum, but Gemini ships new levels ahead of documenting
+ * them), so a level this codec does not recognise is dropped by name rather
+ * than passed off as one of the four.
+ */
+function detailFromLevel(
+  level: string | undefined,
+  path: Array<string | number>,
+  warn: Warn,
+): { detail?: "auto" | "low" | "medium" | "high" } {
+  if (level === undefined) return {};
+  const detail = MEDIA_RESOLUTION_LEVELS[level];
+  if (detail !== undefined) return { detail };
+  warn({
+    code: "dropped_param",
+    path: [...path, "mediaResolution", "level"],
+    message: `\`mediaResolution.level: "${level}"\` is not one of the four levels Gemini documents (${Object.keys(MEDIA_RESOLUTION_LEVELS).join(", ")}), so it could not be carried as a canonical \`detail\`; the media itself is carried, the hint is not.`,
+    meta: { param: "mediaResolution.level", detail: level },
+  });
+  return {};
+}
+
 /**
  * `fileData.fileUri` is two different things wearing one field name, and the
  * IR distinguishes them where the wire does not.
@@ -165,14 +215,21 @@ function encodePart(
   pending: PendingCall[],
   warn: Warn,
 ): IRPart | undefined {
-  if (part.videoMetadata !== undefined || part.mediaResolution !== undefined) {
+  // `mediaResolution` used to be dropped alongside `videoMetadata` with a
+  // warning saying it "has no equivalent in the other dialects". OpenAI's
+  // `image_url.detail` is that equivalent, so the level is carried into the IR
+  // and each decoder pays its own cost for it (openai narrows `medium`,
+  // anthropic drops it by name). `videoMetadata` genuinely has no second
+  // witness and still goes.
+  if (part.videoMetadata !== undefined) {
     warn({
       code: "dropped_param",
       path,
       message:
-        "Gemini's per-part `videoMetadata` / `mediaResolution` hints have no equivalent in the other dialects; the media itself is carried, the hints are not.",
+        "Gemini's per-part `videoMetadata` hint (clip offsets and frame rate) has no equivalent in the other dialects; the media itself is carried, the hint is not.",
     });
   }
+  const detail = detailFromLevel(part.mediaResolution?.level, path, warn);
   if (part.text !== undefined) {
     if (part.thought === true) {
       return {
@@ -188,6 +245,7 @@ function encodePart(
       type: "media",
       mediaType: part.inlineData.mimeType,
       data: { kind: "base64", base64: part.inlineData.data },
+      ...detail,
     };
   }
   if (part.fileData !== undefined) {
@@ -198,6 +256,7 @@ function encodePart(
       data: isGeminiFileHandle(fileUri)
         ? { kind: "file", dialect: DIALECT, ref: fileUri }
         : { kind: "url", url: fileUri },
+      ...detail,
     };
   }
   if (part.functionCall !== undefined) {
@@ -459,6 +518,16 @@ export function decodeGemini(ir: ChatIR, warn: Warn, ctx?: DecodeContext): Gemin
           }
           break;
         case "media": {
+          // Gemini is the one dialect whose resolution hint hangs off the part
+          // itself and applies to every media kind (images, PDFs, video), so
+          // there is nothing to narrow and nothing to drop: the canonical
+          // `detail` maps 1:1 onto a level. The request-level
+          // `generationConfig.mediaResolution` is a different, coarser knob and
+          // stays reachable through `providerOptions.google`.
+          const mediaResolution =
+            part.detail === undefined
+              ? {}
+              : { mediaResolution: { level: MEDIA_RESOLUTION_FOR[part.detail] } };
           if (part.data.kind === "file") {
             // Gemini's own handle round-trips verbatim; a foreign one cannot
             // be resolved here at all, so it is dropped with a named warning.
@@ -469,6 +538,7 @@ export function decodeGemini(ir: ChatIR, warn: Warn, ctx?: DecodeContext): Gemin
                   fileUri: part.data.ref,
                   ...(mimeType !== undefined && { mimeType }),
                 },
+                ...mediaResolution,
               });
               break;
             }
@@ -502,7 +572,10 @@ export function decodeGemini(ir: ChatIR, warn: Warn, ctx?: DecodeContext): Gemin
                 meta: { url: part.data.url },
               });
             }
-            parts.push({ fileData: { fileUri: part.data.url, ...(mimeType !== undefined && { mimeType }) } });
+            parts.push({
+              fileData: { fileUri: part.data.url, ...(mimeType !== undefined && { mimeType }) },
+              ...mediaResolution,
+            });
             break;
           }
           if (part.mediaType === undefined) {
@@ -514,7 +587,10 @@ export function decodeGemini(ir: ChatIR, warn: Warn, ctx?: DecodeContext): Gemin
             });
             break;
           }
-          parts.push({ inlineData: { mimeType: part.mediaType, data: part.data.base64 } });
+          parts.push({
+            inlineData: { mimeType: part.mediaType, data: part.data.base64 },
+            ...mediaResolution,
+          });
           break;
         }
         case "tool-call":

@@ -220,7 +220,7 @@ export type ImageGenerationsBody<FutureModel extends string = never> =
   | Seedream40Body
   | UnknownImageModelBody<FutureModel>;
 
-interface ImageBodyByModel {
+export interface ImageBodyByModel {
   "dola-seedream-5-0-pro-260628": Seedream50ProBody;
   "seedream-5-0-260128": Seedream50Body;
   "seedream-5-0-lite-260128": Seedream50LiteBody;

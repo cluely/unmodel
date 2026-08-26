@@ -158,7 +158,7 @@ export type Flux1Body<FutureModel extends string = never> =
   | FluxUltraFinetunedBody
   | UnknownFlux1ModelBody<FutureModel>;
 
-interface Flux1BodyByModel {
+export interface Flux1BodyByModel {
   "flux-pro-1.1": FluxPro11Body;
   "flux-dev": FluxDevBody;
   "flux-pro-1.1-ultra": FluxUltraBody;

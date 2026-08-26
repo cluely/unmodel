@@ -52,10 +52,16 @@ import { FAL_MEDIA_TARGET } from "../../core/translate/media-endpoints";
 import type { FalTtsBodyById } from "../fal/interop";
 import type { T2aParams } from "./tts";
 
-type ById = FalTtsBodyById;
-type FalSpeech28Hd = ById["fal-ai/minimax/speech-2.8-hd"];
-type FalSpeech28Turbo = ById["fal-ai/minimax/speech-2.8-turbo"];
-type FalSpeech02Hd = ById["fal-ai/minimax/speech-02-hd"];
+// The per-endpoint aliases below are `export`ed rather than private, and it is
+// not decoration: they are the exact symbols `<Provider>…FalOverlap`'s
+// `ReturnType` resolves to, so a consumer that emits declarations around a
+// result carrying `.toApi("fal")` cannot name it without them (TS4023, "has or
+// is using name 'FalAiFlux2ProInput' … but cannot be named"). Type-only, and
+// re-exported one line from ./index.ts. See src/core/carriers.ts.
+export type ById = FalTtsBodyById;
+export type FalSpeech28Hd = ById["fal-ai/minimax/speech-2.8-hd"];
+export type FalSpeech28Turbo = ById["fal-ai/minimax/speech-2.8-turbo"];
+export type FalSpeech02Hd = ById["fal-ai/minimax/speech-02-hd"];
 
 /** fal's `voice_setting.emotion` enum — MiniMax's, minus three, plus `neutral`. */
 const FAL_EMOTIONS = new Set(["happy", "sad", "angry", "fearful", "disgusted", "surprised"]);

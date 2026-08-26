@@ -39,6 +39,12 @@ import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost"
 import { findMediaDeclaration } from "../../core/media/check";
 import { models, STT_MODEL_IDS, type ElevenlabsSttModelId } from "./models";
 import { speechToTextConstraints } from "./constraints";
+import {
+  checkKeytermRules,
+  KEYTERMS_MAX,
+  KEYTERM_MAX_CHARACTERS,
+  KEYTERM_MAX_WORDS,
+} from "./keyterms";
 
 export const SPEECH_TO_TEXT_URL = "https://api.elevenlabs.io/v1/speech-to-text";
 
@@ -49,10 +55,14 @@ const MODELS_DOCS_URL = "https://elevenlabs.io/docs/models";
  * Documented `keyterms` limits — STT_DOCS_URL: "The number of keyterms cannot
  * exceed 1000. The length of each keyterm must be less than 50 characters.
  * Keyterms can contain at most 5 words (after normalisation)."
+ *
+ * The numbers themselves live in `./keyterms.ts`, because Dubbing publishes
+ * the identical three and two copies is two chances to update one of them.
+ * These names are the public API of this route and do not move.
  */
-export const STT_KEYTERMS_MAX = 1000;
-export const STT_KEYTERM_MAX_CHARACTERS = 50;
-export const STT_KEYTERM_MAX_WORDS = 5;
+export const STT_KEYTERMS_MAX = KEYTERMS_MAX;
+export const STT_KEYTERM_MAX_CHARACTERS = KEYTERM_MAX_CHARACTERS;
+export const STT_KEYTERM_MAX_WORDS = KEYTERM_MAX_WORDS;
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror the multipart form fields exactly (snake_case).
@@ -311,34 +321,18 @@ function checkPairings(
  * Per-keyterm limits the count-only zod cap cannot express: "The length of
  * each keyterm must be less than 50 characters. Keyterms can contain at most
  * 5 words (after normalisation)." (STT_DOCS_URL).
+ *
+ * The battery is shared with Dubbing (`./keyterms.ts`), which publishes the
+ * same two rules and one more. `disallowedCharacters` is deliberately NOT
+ * passed here: the `<>{}[]\` refusal is documented on the dubbing route only,
+ * and applying it here would reject a request ElevenLabs accepts.
  */
 function checkKeyterms(
   params: SpeechToTextParams,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
-  const keyterms = params.keyterms;
-  if (!Array.isArray(keyterms)) return;
-  keyterms.forEach((term, index) => {
-    if (typeof term !== "string") return;
-    if (term.length >= STT_KEYTERM_MAX_CHARACTERS) {
-      ctx.report({
-        code: "invalid_shape",
-        path: ["keyterms", index],
-        message: `keyterm ${JSON.stringify(term)} is ${term.length} characters; each keyterm must be less than ${STT_KEYTERM_MAX_CHARACTERS} characters.`,
-        meta: { limit: STT_KEYTERM_MAX_CHARACTERS, actual: term.length, source: STT_DOCS_URL },
-      });
-    }
-    const words = term.split(/\s+/u).filter((word) => word !== "");
-    if (words.length > STT_KEYTERM_MAX_WORDS) {
-      ctx.report({
-        code: "invalid_shape",
-        path: ["keyterms", index],
-        message: `keyterm ${JSON.stringify(term)} has ${words.length} words; a keyterm can contain at most ${STT_KEYTERM_MAX_WORDS} words.`,
-        meta: { limit: STT_KEYTERM_MAX_WORDS, actual: words.length, source: STT_DOCS_URL },
-      });
-    }
-  });
+  checkKeytermRules(params.keyterms, ctx, { source: STT_DOCS_URL });
 }
 
 const STT_MODEL_ID_SET = new Set<string>(STT_MODEL_IDS);

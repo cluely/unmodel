@@ -10,6 +10,7 @@
 //   data/fal/openapi/fal-ai__seedvr__upscale__video.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__generative.json
 //   data/fal/openapi/topaz__upscale__video__precision.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
@@ -121,6 +122,13 @@ export type FalUpscaleSchemaChecks = [
   AssertExtends<wire.TopazUpscaleImagePrecisionInput["denoise"], Gate["denoise"]>,
   AssertExtends<wire.TopazUpscaleImagePrecisionInput["fix_compression"], Gate["fix_compression"]>,
   AssertExtends<wire.TopazUpscaleImagePrecisionInput["strength"], Gate["strength"]>,
+  // topaz/upscale/video/generative
+  AssertExtends<wire.TopazUpscaleVideoGenerativeInput["video_url"], Gate["video_url"]>,
+  AssertExtends<wire.TopazUpscaleVideoGenerativeInput["model"], Gate["model"]>,
+  AssertExtends<wire.TopazUpscaleVideoGenerativeInput["upscale_factor"], Gate["upscale_factor"]>,
+  AssertExtends<wire.TopazUpscaleVideoGenerativeInput["target_fps"], Gate["target_fps"]>,
+  AssertExtends<wire.TopazUpscaleVideoGenerativeInput["softness"], Gate["softness"]>,
+  AssertExtends<wire.TopazUpscaleVideoGenerativeInput["H264_output"], Gate["H264_output"]>,
   // topaz/upscale/video/precision
   AssertExtends<wire.TopazUpscaleVideoPrecisionInput["video_url"], Gate["video_url"]>,
   AssertExtends<wire.TopazUpscaleVideoPrecisionInput["model"], Gate["model"]>,

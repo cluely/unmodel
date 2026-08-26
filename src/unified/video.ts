@@ -17,10 +17,10 @@
  * `{ seconds: "5", size: "1280x720" }`; to `"kling/kling-v3"` and it compiles
  * to `{ duration: "5", mode: "pro", aspect_ratio: "16:9" }`. Add
  * `image: { url }` and it becomes an image-to-video request at whichever
- * provider the ref names — a different endpoint at five of the thirteen, a
+ * provider the ref names — a different endpoint at five of the fourteen, a
  * different field at the rest, and the same six words either way.
  *
- * `createVideo([…])` takes the adapters you name instead of all thirteen, and the
+ * `createVideo([…])` takes the adapters you name instead of all fourteen, and the
  * bundle then contains those providers and no others:
  *
  * ```ts
@@ -71,6 +71,7 @@ import type {
   VideoValidator,
 } from "../core/unified/vocabulary/video";
 import { video as alibaba } from "../providers/alibaba/unified-video";
+import { video as atlascloud } from "../providers/atlascloud/unified-video";
 import { video as bytedance } from "../providers/bytedance/unified-video";
 import { video as fal } from "../providers/fal/unified-video";
 import { video as google } from "../providers/google/unified-video";
@@ -122,7 +123,7 @@ export function createVideo<A extends VideoAdapter>(
  *
  * One adapter per provider, always — a ref resolves to exactly one, and
  * `createUnified` throws on a second claiming the same id. This is the category
- * where that matters most: six of these thirteen providers have more than one
+ * where that matters most: six of these fourteen providers have more than one
  * video route, Kling has five across two route families, and fal has thirty
  * behind a single address whose path is a parameter. Every one of them
  * dispatches inside `compile` — on the model id, on the inputs, or on both —
@@ -130,16 +131,20 @@ export function createVideo<A extends VideoAdapter>(
  * `image: { url }` instead of remembering which import turns a still into a
  * clip.
  *
- * The cost is honest and measured: importing this pulls in thirteen providers'
- * validators (twenty-two endpoint modules between them), their schemas and
+ * The cost is honest and measured: importing this pulls in fourteen providers'
+ * validators (twenty-three endpoint modules between them), their schemas and
  * their catalogs, pinned in `test/bundle-budget.test.ts`. `createVideo([…])`
- * above is the way to pay for two providers instead of thirteen.
+ * above is the way to pay for two providers instead of fourteen.
  *
- * fal is the newest and the odd one out: it is one adapter over THIRTY
- * endpoints, because at fal the route is a parameter rather than a fork. Its
- * `compile` therefore branches on the generated per-endpoint row — which image
- * roles that endpoint's schema has a field for — instead of on the model id,
- * which is what lets a roster that grows weekly not grow this file.
+ * fal and atlascloud are the two aggregators, and they are odd in opposite
+ * ways. fal is one adapter over thirty-five endpoints, because at fal the route
+ * IS the URL path and therefore a parameter; its `compile` branches on the
+ * generated per-endpoint row rather than on the model id, which is what lets a
+ * roster that grows weekly not grow this file. Atlas Cloud is one adapter over
+ * one url, because at Atlas `model` is a real body field naming both the model
+ * and the task — so `bytedance/seedance-2.5/text-to-video` and
+ * `.../image-to-video` are two REFS with two request schemas, and its `compile`
+ * checks the caller's inputs against the route their ref already named.
  */
 export const video = createVideo([
   openai,
@@ -155,6 +160,7 @@ export const video = createVideo([
   fal,
   xai,
   alibaba,
+  atlascloud,
 ]);
 
 export type {
@@ -192,3 +198,8 @@ export type {
   UnifiedValidator,
   UnregisteredUnifiedProvider,
 } from "../core/unified/types";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../core/carriers";

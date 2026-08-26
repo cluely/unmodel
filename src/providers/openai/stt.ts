@@ -186,7 +186,7 @@ export type TranscriptionBody<FutureModel extends string = never> =
   | Gpt4oTranscribeDiarizeBody
   | UnknownTranscriptionModelBody<FutureModel>;
 
-interface TranscriptionBodyByModel {
+export interface TranscriptionBodyByModel {
   "whisper-1": Whisper1Body;
   "gpt-transcribe": GptTranscribeBody;
   "gpt-4o-transcribe": Gpt4oTranscribeBody;

@@ -68,12 +68,14 @@
 //   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__pro.json
 //   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__standard.json
 //   data/fal/openapi/fal-ai__kling-video__lipsync__audio-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o1__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__motion-control.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
@@ -87,12 +89,14 @@
 //   data/fal/openapi/fal-ai__kokoro__mandarin-chinese.json
 //   data/fal/openapi/fal-ai__kokoro__spanish.json
 //   data/fal/openapi/fal-ai__latentsync.json
+//   data/fal/openapi/fal-ai__lightx__relight.json
 //   data/fal/openapi/fal-ai__longcat-single-avatar__image-audio-to-video.json
 //   data/fal/openapi/fal-ai__lyria2.json
 //   data/fal/openapi/fal-ai__lyria3__pro.json
 //   data/fal/openapi/fal-ai__minimax-music__v2.json
 //   data/fal/openapi/fal-ai__minimax-music__v2.6.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-2.3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__minimax__speech-02-hd.json
 //   data/fal/openapi/fal-ai__minimax__speech-2.8-hd.json
 //   data/fal/openapi/fal-ai__minimax__speech-2.8-turbo.json
@@ -129,6 +133,7 @@
 //   data/fal/openapi/fal-ai__veo3.1__fast.json
 //   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__reference-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
@@ -153,6 +158,7 @@
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__generative.json
 //   data/fal/openapi/topaz__upscale__video__precision.json
 //   data/fal/openapi/tripo3d__h3.1__image-to-3d.json
 //   data/fal/openapi/tripo3d__h3.1__text-to-3d.json
@@ -779,6 +785,21 @@ export interface FalMusicCompositionPlan {
   sections: FalMusicSection[];
 }
 
+/** fal's `OmniVideoElementInput` component. */
+export interface FalOmniVideoElementInput {
+  /**
+   * The frontal image of the element (main view). Max file size: 10.0MB, Min width: 300px,
+   * Min height: 300px, Min aspect ratio: 0.40, Max aspect ratio: 2.50, Timeout: 20.0s.
+   * Carries a image reference — an https URL or a `data:` URI.
+   */
+  frontal_image_url: string;
+  /**
+   * Additional reference images from different angles. 1-3 images supported. At least one
+   * image is required. Carries a image reference — an https URL or a `data:` URI.
+   */
+  reference_image_urls?: string[];
+}
+
 /** fal's `OutputFormat` component. */
 export interface FalOutputFormat {
   /** Audio codec. Supported: mp3, wav, pcm, mulaw, alaw. Default: `"mp3"`. */
@@ -796,6 +817,18 @@ export interface FalPronunciationDict {
    * tones are 1-5. Example: ['燕少飞/(yan4)(shao3)(fei1)']
    */
   tone_list?: string[];
+}
+
+/** fal's `RelightParameters` component. */
+export interface FalRelightParameters {
+  /** Text prompt describing the desired lighting condition. */
+  relight_prompt: string;
+  /** Direction of the light source (used for IC-light). Default: `"Left"`. */
+  bg_source?: "Left" | "Right" | "Top" | "Bottom";
+  /** Classifier-free guidance scale for relighting. Default: `2`. */
+  cfg?: number;
+  /** Whether to use sky masking for outdoor scenes. Default: `false`. */
+  use_sky_mask?: boolean;
 }
 
 /** fal's `RodinGen25Addons` component. */

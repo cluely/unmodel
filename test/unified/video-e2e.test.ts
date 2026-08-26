@@ -23,9 +23,10 @@ import { video as klingAdapter } from "../../src/providers/kling/unified-video";
 import { video as openaiAdapter } from "../../src/providers/openai/unified";
 
 describe("the pack", () => {
-  test("registers exactly the thirteen video providers, sorted", () => {
+  test("registers exactly the fourteen video providers, sorted", () => {
     expect([...video.providers]).toEqual([
       "alibaba",
+      "atlascloud",
       "bytedance",
       "fal",
       "google",

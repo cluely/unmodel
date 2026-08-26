@@ -1,0 +1,22 @@
+{
+  "model": "google/gemini-2.5-flash",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "What is in this image?"
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==",
+            "detail": "low"
+          }
+        }
+      ]
+    }
+  ],
+  "max_completion_tokens": 512
+}

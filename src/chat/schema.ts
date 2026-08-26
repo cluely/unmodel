@@ -73,6 +73,7 @@ const filePartSchema = z
     mediaType: z.string().optional(),
     data: z.union([z.string(), fileHandleSchema]),
     filename: z.string().optional(),
+    detail: z.enum(["auto", "low", "medium", "high"]).optional(),
     cache: cacheSchema.optional(),
   })
   .superRefine((part, ctx) => {

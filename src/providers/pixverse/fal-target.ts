@@ -47,7 +47,13 @@ const PROMPT_MAX_BYTES = 2048;
 
 const ENDPOINT = "fal-ai/pixverse/v6/text-to-video";
 
-type FalPixverseV6 = FalVideoBodyById["fal-ai/pixverse/v6/text-to-video"];
+// The per-endpoint aliases below are `export`ed rather than private, and it is
+// not decoration: they are the exact symbols `<Provider>…FalOverlap`'s
+// `ReturnType` resolves to, so a consumer that emits declarations around a
+// result carrying `.toApi("fal")` cannot name it without them (TS4023, "has or
+// is using name 'FalAiFlux2ProInput' … but cannot be named"). Type-only, and
+// re-exported one line from ./index.ts. See src/core/carriers.ts.
+export type FalPixverseV6 = FalVideoBodyById["fal-ai/pixverse/v6/text-to-video"];
 
 /**
  * `pixverse.video` params → `fal-ai/pixverse/v6/text-to-video`.

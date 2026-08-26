@@ -1,0 +1,37 @@
+{
+  "$comment": [
+    "`medium` is the one level of the canonical `detail` union that only Gemini has:",
+    "image_url.detail takes auto | low | high (the fourth value `original` is Responses-only,",
+    "and /v1/responses is a substrate item — decisions.md §7). The crossing rounds UP rather",
+    "than down, matching how ChatReasoningEffort narrows an effort the target lacks: a request",
+    "that costs a few more tokens is recoverable, one that silently loses resolution on a",
+    "document scan is not. Loud either way — a caller who wrote `medium` asked for something",
+    "this dialect cannot give."
+  ],
+  "body": {
+    "model": "gpt-5.2",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          { "type": "text", "text": "What is in this image?" },
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==",
+              "detail": "high"
+            }
+          }
+        ]
+      }
+    ],
+    "max_completion_tokens": 512
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": ["messages", 0, "content", 1, "detail"],
+      "meta": { "from": "medium", "to": "high" }
+    }
+  ]
+}

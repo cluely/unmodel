@@ -113,7 +113,7 @@ export type FluxFillParams<FutureModel extends string = never> =
   | FluxFillFinetunedBody
   | UnknownFluxFillBody<FutureModel>;
 
-interface FluxFillBodyByModel {
+export interface FluxFillBodyByModel {
   "flux-pro-1.0-fill": FluxFillBody;
   "flux-pro-1.0-fill-finetuned": FluxFillFinetunedBody;
 }

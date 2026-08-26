@@ -176,6 +176,7 @@ export type {
 export type {
   ChatCache,
   ChatFilePart,
+  ChatMediaDetail,
   ChatMessage,
   ChatModelRef,
   ChatNativeTool,
@@ -210,3 +211,9 @@ export { sniffImage } from "./core/media/image";
 export type { SniffedImage } from "./core/media/image";
 export { findMediaDeclaration, reportMediaIssues } from "./core/media/check";
 export type { MediaCheckInput } from "./core/media/check";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts. Every one of these is already exported above by name —
+// this line exists so the SET stays in step with the other 90 entries and the
+// A13 sweep pin has one rule to check rather than two.
+export type * from "./core/carriers";

@@ -375,6 +375,21 @@ function decodeMedia(
   const mediaType =
     part.mediaType ?? (part.data.kind === "url" ? inferMediaTypeFromUrl(part.data.url) : undefined);
 
+  // The one dialect of the three with no per-attachment resolution hint at
+  // all. `/v1/messages` sizes images by their pixel dimensions and nothing
+  // else, so there is no field to approximate into — the honest answer is to
+  // say the hint is gone. (The sentence is the one the OpenAI encoder used to
+  // fire on `image_url.detail` before Gemini's per-part `mediaResolution` made
+  // it a canonical word rather than a one-dialect concept.)
+  if (part.detail !== undefined) {
+    warn({
+      code: "dropped_param",
+      path: [...path, "detail"],
+      message: `\`detail: "${part.detail}"\` is a resolution hint OpenAI and Gemini both carry per attachment and Anthropic has no equivalent for; the media itself is carried, the hint is not. Resize the image before sending if the token cost matters.`,
+      meta: { detail: part.detail },
+    });
+  }
+
   if (part.data.kind === "file") {
     if (part.data.dialect === DIALECT) {
       return { type: "image", source: { type: "file", file_id: part.data.ref }, ...cache };

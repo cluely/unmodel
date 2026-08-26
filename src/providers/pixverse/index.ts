@@ -82,3 +82,16 @@ export type { PixverseQuality, VideoCostInputs } from "./pricing";
 // validated here.
 export { models, provider, CREDIT_USD } from "./models";
 export type { PixverseModelId } from "./models";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";
+
+/**
+ * The fal bodies this provider's `.toApi("fal")` maps onto. One type-only
+ * line, so a consumer emitting its own declarations can name the result — see
+ * src/core/carriers.ts.
+ */
+export type { FalPixverseV6 } from "./fal-target";
+export type { PixverseVideoFalOverlap } from "./fal-target";

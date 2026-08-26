@@ -1,0 +1,12 @@
+{
+  "ref": "atlascloud/bytedance/seedance-2.0/reference-to-video",
+  "params": {
+    "model": "bytedance/seedance-2.0/reference-to-video",
+    "prompt": "restyle the clip as a pencil sketch",
+    "reference_videos": [
+      "https://example.com/clip.mp4"
+    ],
+    "duration": 5
+  },
+  "url": "https://api.atlascloud.ai/api/v1/model/generateVideo"
+}

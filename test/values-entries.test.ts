@@ -53,6 +53,7 @@ const PROVIDERS_DIR = join(ROOT, "src", "providers");
 const PROVIDERS_WITH_VALUES: readonly string[] = [
   "alibaba",
   "assemblyai",
+  "atlascloud",
   "black-forest-labs",
   "breezeblue",
   "bria",
@@ -193,7 +194,7 @@ describe("values entries exist, one per provider with an adapter", () => {
   test("the enumerated list is exactly the set of providers with an adapter", () => {
     expect(DERIVED_PROVIDERS).toEqual([...PROVIDERS_WITH_VALUES]);
     // A rule that scans an empty set passes by saying nothing.
-    expect(PROVIDERS_WITH_VALUES.length).toBe(47);
+    expect(PROVIDERS_WITH_VALUES.length).toBe(48);
   });
 
   test("every one of them ships a values.ts, and no other provider does", () => {
@@ -241,10 +242,12 @@ describe("completeness — every category an adapter serves has its uniform alia
       }
     }
     expect(missing).toEqual([]);
-    // 67 adapters across the 45 providers today — fal alone brings ten, which
+    // 69 adapters across the 48 providers today — fal alone brings ten, which
     // is more categories than any other provider serves. A floor, so the sweep
-    // cannot go vacuous if `adaptersOf` ever stops finding them.
-    expect(categories).toBeGreaterThanOrEqual(66);
+    // cannot go vacuous if `adaptersOf` ever stops finding them. atlascloud
+    // added two (its `unified.ts` barrel and its `unified-video.ts` leaf both
+    // export the same adapter object, and this sweep walks files).
+    expect(categories).toBeGreaterThanOrEqual(68);
   });
 
   test("the built declaration exports them too, so the promise survives the build", () => {
@@ -291,7 +294,7 @@ describe("identity — the published table IS the adapter's table", () => {
       }
     }
     expect(drift).toEqual([]);
-    expect(checked).toBeGreaterThanOrEqual(61);
+    expect(checked).toBeGreaterThanOrEqual(63);
   });
 
   test("every model id in <CAT>_MODELS has a row in <CAT>_MODEL_PARAMS", async () => {
@@ -524,7 +527,7 @@ describe("unmodel/values — the canonical hub", () => {
     expect((hub["CHAT_PROVIDERS"] as readonly string[]).length).toBe(32);
   });
 
-  test("the hub does NOT carry the 1,339 chat refs — they are their own subpath", async () => {
+  test("the hub does NOT carry the 1,330 chat refs — they are their own subpath", async () => {
     const hub = (await import(join(ROOT, "src", "values", "index.ts"))) as Record<string, unknown>;
     expect(hub["CHAT_MODEL_REFS"]).toBeUndefined();
     const entry = (await import(join(ROOT, "src", "values", "chat-refs.ts"))) as Record<
@@ -727,7 +730,7 @@ describe("bundle discipline", () => {
   /** …of which any single export shakes to at most 1.5 KiB (CANONICAL_KEY_LISTS). */
   const HUB_EXPORT_BUDGET_KIB = 3;
 
-  /** 1,339 refs: 48.4 KiB of chunk, 49.2 shaken. Pinned so a refresh is visible. */
+  /** 1,330 refs: 48.4 KiB of chunk, 49.2 shaken. Pinned so a refresh is visible. */
   const CHAT_REFS_BUDGET_KIB = 58;
 
   test("the build is present, so the budgets below assert something", () => {
@@ -763,7 +766,7 @@ describe("bundle discipline", () => {
         "the list to an import-free leaf and re-export it from there, the way " +
         "`google/image-constraints.ts` and the `<category>-params.ts` leaves do.",
     ).toEqual([]);
-    expect(measured).toBeGreaterThanOrEqual(250);
+    expect(measured).toBeGreaterThanOrEqual(255);
     // …and the measurement is not vacuously zero. A probe that resolves nothing
     // reports ~0.03 KiB for every export and this budget then proves nothing,
     // which is precisely the trap the note on `PROBE_DIR` describes.
@@ -827,12 +830,12 @@ describe("bundle discipline", () => {
     }
     expect(
       over,
-      "the hub is nine short arrays; an export this expensive means the 1,339 chat refs, or a " +
+      "the hub is nine short arrays; an export this expensive means the 1,330 chat refs, or a " +
         "provider, got in",
     ).toEqual([]);
   }, 60_000);
 
-  test(`the chat-ref entry is the ONLY place the 1,339 refs live, and costs under ${CHAT_REFS_BUDGET_KIB} KiB`, async () => {
+  test(`the chat-ref entry is the ONLY place the 1,330 refs live, and costs under ${CHAT_REFS_BUDGET_KIB} KiB`, async () => {
     const kib = graphKiB(join(DIST, "values", "chat-refs.js"));
     expect(kib, `values/chat-refs is ${kib.toFixed(1)} KiB`).toBeLessThanOrEqual(
       CHAT_REFS_BUDGET_KIB,

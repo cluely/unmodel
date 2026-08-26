@@ -248,15 +248,23 @@ describe("layer 3 runs against the compiled body", () => {
 // ---------------------------------------------------------------------------
 
 describe("ChatServiceTier's openai arm", () => {
-  test("equals `ChatCompletionsBody.service_tier`, in both directions", () => {
+  /**
+   * This used to be a two-direction drift guard over a hand-written copy:
+   * `src/chat/types.ts` restated OpenAI's six tiers because `src/chat/**` may
+   * not import `src/providers/openai/chat.ts`, and only a test could see both.
+   * The copy is gone — `retarget/dialects.ts` re-exports the endpoint body
+   * through the one module amendment A1 lets this directory name, so the arm
+   * IS the field. What is left is the identity assertion, which fails the day
+   * someone reintroduces a copy, plus the runtime half the type never covered.
+   */
+  test("IS `ChatCompletionsBody.service_tier`, not a copy of it", () => {
     type Wire = NonNullable<Exclude<ChatCompletionsBody["service_tier"], null>>;
     type Unified = ChatServiceTierFor<"openai-chat">;
-    type MissingFromUnified = Exclude<Wire, Unified>;
-    type ExtraInUnified = Exclude<Unified, Wire>;
-    const _noMissing: MissingFromUnified[] = [];
-    const _noExtra: ExtraInUnified[] = [];
-    void _noMissing;
-    void _noExtra;
+    type Exact<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+      ? true
+      : false;
+    const _identical: Exact<Wire, Unified> = true;
+    void _identical;
     // The runtime half: the six are what a caller can send today, and the
     // encoder forwards them verbatim.
     for (const tier of ["auto", "default", "flex", "scale", "priority", "fast"] as const) {

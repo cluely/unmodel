@@ -6,22 +6,27 @@
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o1__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__motion-control.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
+//   data/fal/openapi/fal-ai__lightx__relight.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-2.3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1.json
 //   data/fal/openapi/fal-ai__veo3.1__extend-video.json
 //   data/fal/openapi/fal-ai__veo3.1__fast.json
 //   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__reference-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
@@ -46,6 +51,8 @@ import type {
   FalKlingV3ComboElementInput,
   FalKlingV3ImageElementInput,
   FalKlingV3MultiPromptElement,
+  FalOmniVideoElementInput,
+  FalRelightParameters,
   FalVideoFile,
 } from "./shared.gen";
 
@@ -394,6 +401,58 @@ export interface BytedanceSeedance25TextToVideoOutput {
 }
 
 /**
+ * The request body `fal-ai/kling-video/o1/video-to-video/edit` accepts.
+ *
+ * Kling O1 edit — curated on DEMAND, not on capability: it is the PREVIOUS generation of
+ * the Omni edit line (o1 published 2025-12-01, the curated o3/pro/video-to-video/edit
+ * 2026-02-04), and its schema is o3's minus `shot_type`. It brings one new $ref component
+ * of its own, `OmniVideoElementInput`, whose `frontal_image_url` is required where o3's
+ * KlingV3ImageElementInput makes it nullable. Ten newer o3 routes remain uncurated — see
+ * the o3-family sweep noted in `excluded.$comment`.
+ *
+ * Docs: https://fal.ai/models/fal-ai/kling-video/o1/video-to-video/edit/api
+ */
+export interface FalAiKlingVideoO1VideoToVideoEditInput {
+  /**
+   * Use @Element1, @Element2 to reference elements and @Image1, @Image2 to reference images
+   * in order.
+   */
+  prompt: string;
+  /**
+   * Reference video URL. Only .mp4/.mov formats supported, 3-10 seconds duration, 720-2160px
+   * resolution, max 200MB. Max file size: 200.0MB, Min width: 720px, Min height: 720px, Max
+   * width: 2160px, Max height: 2160px, Min duration: 3.0s, Max duration: 10.05s, Min FPS:
+   * 24.0, Max FPS: 60.0, Timeout: 30.0s. Carries a video reference — an https URL or a
+   * `data:` URI.
+   */
+  video_url: string;
+  /** Whether to keep the original audio from the video. Default: `false`. */
+  keep_audio?: boolean;
+  /**
+   * Reference images for style/appearance. Reference in prompt as @Image1, @Image2, etc.
+   * Maximum 4 total (elements + reference images) when using video. Carries a image
+   * reference — an https URL or a `data:` URI.
+   */
+  image_urls?: string[] | null;
+  /**
+   * Elements (characters/objects) to include. Reference in prompt as @Element1, @Element2,
+   * etc. Maximum 4 total (elements + reference images) when using video.
+   */
+  elements?: FalOmniVideoElementInput[] | null;
+}
+
+/**
+ * The result document `fal-ai/kling-video/o1/video-to-video/edit` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface FalAiKlingVideoO1VideoToVideoEditOutput {
+  /** The generated video. */
+  video: FalFile;
+}
+
+/**
  * The request body `fal-ai/kling-video/o3/pro/video-to-video/edit` accepts.
  *
  * Kling O3 Pro video-to-video edit — a source CLIP plus reference images, which is the one
@@ -668,6 +727,65 @@ export interface FalAiKlingVideoV3ProImageToVideoOutput {
 }
 
 /**
+ * The request body `fal-ai/kling-video/v3/pro/motion-control` accepts.
+ *
+ * Kling v3 Pro motion control — a still driven by a reference clip's motion. The FIRST
+ * video row with a required, defaultless, non-media ENUM (`character_orientation`), which
+ * is why the routing probe reads the IR's enum rather than filling every required prop
+ * with the prompt. Its `image_url` is a CHARACTER reference, not an opening frame, but the
+ * media-naming rule files it as VideoImageRole's `first` and there is no `role` overlay
+ * kind to say otherwise; a caller writing role:"reference" is refused. Reachable through
+ * providerOptions.fal.character_orientation.
+ *
+ * Docs: https://fal.ai/models/fal-ai/kling-video/v3/pro/motion-control/api
+ */
+export interface FalAiKlingVideoV3ProMotionControlInput {
+  prompt?: string | null;
+  /**
+   * Reference image URL. The characters, backgrounds, and other elements in the generated
+   * video are based on this reference image. Characters should have clear body proportions,
+   * avoid occlusion, and occupy more than 5% of the image area. Carries a image reference —
+   * an https URL or a `data:` URI.
+   */
+  image_url: string;
+  /**
+   * Reference video URL. The character actions in the generated video will be consistent
+   * with this reference video. Should contain a realistic style character with entire body
+   * or upper body visible, including head, without obstruction. Duration limit depends on
+   * character_orientation: 10s max for 'image', 30s max for 'video'. Carries a video
+   * reference — an https URL or a `data:` URI.
+   */
+  video_url: string;
+  /** Whether to keep the original sound from the reference video. Default: `true`. */
+  keep_original_sound?: boolean;
+  /**
+   * Controls whether the output character's orientation matches the reference image or
+   * video. 'video': orientation matches reference video - better for complex motions (max
+   * 30s). 'image': orientation matches reference image - better for following camera
+   * movements (max 10s).
+   */
+  character_orientation: "image" | "video";
+  /**
+   * Optional element for facial consistency binding. Upload a facial element to enhance
+   * identity preservation in the generated video. Only 1 element is supported. Reference in
+   * prompt as @Element1. Element binding is only supported when character_orientation is
+   * 'video'.
+   */
+  elements?: FalKlingV3ImageElementInput[] | null;
+}
+
+/**
+ * The result document `fal-ai/kling-video/v3/pro/motion-control` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface FalAiKlingVideoV3ProMotionControlOutput {
+  /** The generated video. */
+  video: FalFile;
+}
+
+/**
  * The request body `fal-ai/kling-video/v3/pro/text-to-video` accepts.
  *
  * Kling 3.0 Pro. `duration` is a STRING enum of the seconds 3..15 — the durationStringEnum
@@ -842,6 +960,65 @@ export interface FalAiKlingVideoV3StandardTextToVideoOutput {
 }
 
 /**
+ * The request body `fal-ai/lightx/relight` accepts.
+ *
+ * Light-X video relighting. Its canonical input is the CLIP (`video_url`, the only
+ * required field) and the prompt is OPTIONAL — omitted, Light-X auto-captions the video,
+ * which is exactly why VideoParamsBase types `prompt` as optional. `relight_parameters` is
+ * a nested `anyOf[$ref, null]` object, the fal-ai/flux-general `fill_image` lowering
+ * verbatim; FalPropSpec has no `props` for objects, so its own required `relight_prompt`
+ * is checked by fal rather than by unmodel. There is no relight VERB: bria, lightx,
+ * image-apps-v2 and iclight-v2 spell the same idea four ways and no two agree — see
+ * `excluded.endpoints` for bria/fibo-edit/relight. Two `note` overlays record what fal's
+ * prose gets wrong here.
+ *
+ * Docs: https://fal.ai/models/fal-ai/lightx/relight/api
+ */
+export interface FalAiLightxRelightInput {
+  /** URL of the input video. Carries a video reference — an https URL or a `data:` URI. */
+  video_url: string;
+  /** Optional text prompt. If omitted, Light-X will auto-caption the video. */
+  prompt?: string | null;
+  /** Random seed for reproducibility. If None, a random seed is chosen. */
+  seed?: number | null;
+  /** Relight condition type. Default: `"ic"`. */
+  relit_cond_type?: "ic" | "ref" | "hdr" | "bg";
+  /**
+   * Relighting parameters (required for relight_condition_type='ic'). Not used for 'bg'
+   * (which expects a background image URL instead).
+   */
+  relight_parameters?: FalRelightParameters | null;
+  /**
+   * URL of conditioning image. Required for relight_condition_type='ref'/'hdr'. Also
+   * required for relight_condition_type='bg' (background image). Carries a image reference —
+   * an https URL or a `data:` URI.
+   */
+  relit_cond_img_url?: string | null;
+  /**
+   * Frame index to use as reference to relight the video with reference. Must be less than
+   * the number of generated frames (default 49). Default: `0`.
+   */
+  ref_id?: number;
+}
+
+/**
+ * The result document `fal-ai/lightx/relight` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface FalAiLightxRelightOutput {
+  /** The generated video file. */
+  video: FalFile;
+  /** The seed used for generation. */
+  seed: number;
+  /** Optional: normalized/processed input video (if produced by the pipeline). */
+  input_video?: FalFile | null;
+  /** Optional: visualization/debug video (if produced by the pipeline). */
+  viz_video?: FalFile | null;
+}
+
+/**
  * The request body `fal-ai/minimax/hailuo-02/pro/image-to-video` accepts.
  *
  * Hailuo 02 Pro. The one flat per-second rate in this category — no resolution field, no
@@ -869,6 +1046,38 @@ export interface FalAiMinimaxHailuo02ProImageToVideoInput {
  * not the body of the submit response itself, which is the queue envelope.
  */
 export interface FalAiMinimaxHailuo02ProImageToVideoOutput {
+  /** The generated video. */
+  video: FalFile;
+}
+
+/**
+ * The request body `fal-ai/minimax/hailuo-2.3/pro/text-to-video` accepts.
+ *
+ * MiniMax Hailuo 2.3 [Pro] text-to-video — two parameters and nothing else (`prompt`,
+ * `prompt_optimizer`): no duration, no resolution, no aspect ratio, so through the unified
+ * surface it takes a prompt and reports every other canonical field as unsupported.
+ * Curated for its PRICE shape as much as its output: $0.49 per generation is the only flat
+ * per-generation rate in the video roster, which makes it the one fal video endpoint whose
+ * `estimate.costUSD` is an exact number from a request body alone. It is NOT the current
+ * MiniMax generation — `minimax/h3/{text,image}-to-video` (Hailuo 3, 2026-07-31) are
+ * curated above and are a generation newer than 2.3 (2025-10-27).
+ *
+ * Docs: https://fal.ai/models/fal-ai/minimax/hailuo-2.3/pro/text-to-video/api
+ */
+export interface FalAiMinimaxHailuo23ProTextToVideoInput {
+  /** Text prompt for video generation. */
+  prompt: string;
+  /** Whether to use the model's prompt optimizer. Default: `true`. */
+  prompt_optimizer?: boolean;
+}
+
+/**
+ * The result document `fal-ai/minimax/hailuo-2.3/pro/text-to-video` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface FalAiMinimaxHailuo23ProTextToVideoOutput {
   /** The generated video. */
   video: FalFile;
 }
@@ -1183,6 +1392,56 @@ export interface FalAiVeo31ImageToVideoInput {
  * not the body of the submit response itself, which is the queue envelope.
  */
 export interface FalAiVeo31ImageToVideoOutput {
+  /** The generated video. */
+  video: FalFile;
+}
+
+/**
+ * The request body `fal-ai/veo3.1/reference-to-video` accepts.
+ *
+ * Veo 3.1 reference-to-video — the last member of the veo3.1 base family. `duration` is a
+ * `const "8s"`, the one-value-enum spelling extend-video already documents, and this is
+ * the FIRST video row whose required set includes a media ARRAY (`image_urls`), which is
+ * why the two probe derivations had to learn the `reference` role and the array wrap. Its
+ * price table is byte-identical to the fal-ai/veo3.1 row above.
+ *
+ * Docs: https://fal.ai/models/fal-ai/veo3.1/reference-to-video/api
+ */
+export interface FalAiVeo31ReferenceToVideoInput {
+  /** The text prompt describing the video you want to generate. */
+  prompt: string;
+  /** The aspect ratio of the generated video. Default: `"16:9"`. */
+  aspect_ratio?: "16:9" | "9:16";
+  /** The duration of the generated video. Default: `"8s"`. */
+  duration?: "8s";
+  /** The resolution of the generated video. Default: `"720p"`. */
+  resolution?: "720p" | "1080p" | "4k";
+  /** Whether to generate audio for the video. Default: `true`. */
+  generate_audio?: boolean;
+  /**
+   * Whether to automatically attempt to fix prompts that fail content policy or other
+   * validation checks by rewriting them. Default: `false`.
+   */
+  auto_fix?: boolean;
+  /**
+   * The safety tolerance level for content moderation. 1 is the most strict (blocks most
+   * content), 6 is the least strict. Default: `"4"`.
+   */
+  safety_tolerance?: "1" | "2" | "3" | "4" | "5" | "6";
+  /**
+   * URLs of the reference images to use for consistent subject appearance. Carries a image
+   * reference — an https URL or a `data:` URI.
+   */
+  image_urls: string[];
+}
+
+/**
+ * The result document `fal-ai/veo3.1/reference-to-video` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface FalAiVeo31ReferenceToVideoOutput {
   /** The generated video. */
   video: FalFile;
 }
@@ -1654,10 +1913,9 @@ export interface MinimaxH3ImageToVideoInput {
   /** Return the generated video as base64 instead of a CDN URL. Default: `false`. */
   sync_mode?: boolean;
   /**
-   * Which prompt expander to use. 'disabled' skips prompt expansion. 'fast' uses fal's own
-   * expansion (~1s). 'quality' always uses MiniMax's H3-Context-IR (~30s). 'balanced' uses
-   * H3-Context-IR for reference-to-video, and for image-to-video over 5s, except at 480P;
-   * all text-to-video uses fal's expansion. Default: `"balanced"`.
+   * How much effort to spend rewriting the prompt before generation. 'disabled' skips prompt
+   * expansion. 'fast' returns in about a second. 'quality' spends up to ~30s on a richer
+   * prompt. 'balanced' picks per request. Default: `"balanced"`.
    */
   prompt_expansion_mode?: "disabled" | "fast" | "balanced" | "quality" | null;
   /**
@@ -1721,10 +1979,9 @@ export interface MinimaxH3TextToVideoInput {
   /** Return the generated video as base64 instead of a CDN URL. Default: `false`. */
   sync_mode?: boolean;
   /**
-   * Which prompt expander to use. 'disabled' skips prompt expansion. 'fast' uses fal's own
-   * expansion (~1s). 'quality' always uses MiniMax's H3-Context-IR (~30s). 'balanced' uses
-   * H3-Context-IR for reference-to-video, and for image-to-video over 5s, except at 480P;
-   * all text-to-video uses fal's expansion. Default: `"balanced"`.
+   * How much effort to spend rewriting the prompt before generation. 'disabled' skips prompt
+   * expansion. 'fast' returns in about a second. 'quality' spends up to ~30s on a richer
+   * prompt. 'balanced' picks per request. Default: `"balanced"`.
    */
   prompt_expansion_mode?: "disabled" | "fast" | "balanced" | "quality" | null;
   /** The aspect ratio of the generated video. Default: `"16:9"`. */
@@ -1787,7 +2044,7 @@ export interface XaiGrokImagineVideoTextToVideoOutput {
 /**
  * Endpoint id → its request body type.
  *
- * A map rather than a union: a union of 30 object types re-instantiates at every
+ * A map rather than a union: a union of 35 object types re-instantiates at every
  * comparison site, while a keyed lookup resolves in one. The per-endpoint narrowing a
  * validator exposes indexes into this, so adding an endpoint costs one line here and
  * nothing at any call site.
@@ -1798,22 +2055,27 @@ export interface FalVideoBodyById {
   "bytedance/seedance-2.5/image-to-video": BytedanceSeedance25ImageToVideoInput;
   "bytedance/seedance-2.5/reference-to-video": BytedanceSeedance25ReferenceToVideoInput;
   "bytedance/seedance-2.5/text-to-video": BytedanceSeedance25TextToVideoInput;
+  "fal-ai/kling-video/o1/video-to-video/edit": FalAiKlingVideoO1VideoToVideoEditInput;
   "fal-ai/kling-video/o3/pro/video-to-video/edit": FalAiKlingVideoO3ProVideoToVideoEditInput;
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": FalAiKlingVideoV25TurboProImageToVideoInput;
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": FalAiKlingVideoV25TurboProTextToVideoInput;
   "fal-ai/kling-video/v2.6/pro/image-to-video": FalAiKlingVideoV26ProImageToVideoInput;
   "fal-ai/kling-video/v2.6/pro/text-to-video": FalAiKlingVideoV26ProTextToVideoInput;
   "fal-ai/kling-video/v3/pro/image-to-video": FalAiKlingVideoV3ProImageToVideoInput;
+  "fal-ai/kling-video/v3/pro/motion-control": FalAiKlingVideoV3ProMotionControlInput;
   "fal-ai/kling-video/v3/pro/text-to-video": FalAiKlingVideoV3ProTextToVideoInput;
   "fal-ai/kling-video/v3/standard/image-to-video": FalAiKlingVideoV3StandardImageToVideoInput;
   "fal-ai/kling-video/v3/standard/text-to-video": FalAiKlingVideoV3StandardTextToVideoInput;
+  "fal-ai/lightx/relight": FalAiLightxRelightInput;
   "fal-ai/minimax/hailuo-02/pro/image-to-video": FalAiMinimaxHailuo02ProImageToVideoInput;
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video": FalAiMinimaxHailuo23ProTextToVideoInput;
   "fal-ai/pixverse/v6/text-to-video": FalAiPixverseV6TextToVideoInput;
   "fal-ai/veo3.1": FalAiVeo31Input;
   "fal-ai/veo3.1/extend-video": FalAiVeo31ExtendVideoInput;
   "fal-ai/veo3.1/fast": FalAiVeo31FastInput;
   "fal-ai/veo3.1/first-last-frame-to-video": FalAiVeo31FirstLastFrameToVideoInput;
   "fal-ai/veo3.1/image-to-video": FalAiVeo31ImageToVideoInput;
+  "fal-ai/veo3.1/reference-to-video": FalAiVeo31ReferenceToVideoInput;
   "fal-ai/wan/v2.2-a14b/image-to-video": FalAiWanV22A14bImageToVideoInput;
   "fal-ai/wan/v2.2-a14b/text-to-video": FalAiWanV22A14bTextToVideoInput;
   "fal-ai/wan/v2.7/image-to-video": FalAiWanV27ImageToVideoInput;
@@ -1832,22 +2094,27 @@ export interface FalVideoResultById {
   "bytedance/seedance-2.5/image-to-video": BytedanceSeedance25ImageToVideoOutput;
   "bytedance/seedance-2.5/reference-to-video": BytedanceSeedance25ReferenceToVideoOutput;
   "bytedance/seedance-2.5/text-to-video": BytedanceSeedance25TextToVideoOutput;
+  "fal-ai/kling-video/o1/video-to-video/edit": FalAiKlingVideoO1VideoToVideoEditOutput;
   "fal-ai/kling-video/o3/pro/video-to-video/edit": FalAiKlingVideoO3ProVideoToVideoEditOutput;
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": FalAiKlingVideoV25TurboProImageToVideoOutput;
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": FalAiKlingVideoV25TurboProTextToVideoOutput;
   "fal-ai/kling-video/v2.6/pro/image-to-video": FalAiKlingVideoV26ProImageToVideoOutput;
   "fal-ai/kling-video/v2.6/pro/text-to-video": FalAiKlingVideoV26ProTextToVideoOutput;
   "fal-ai/kling-video/v3/pro/image-to-video": FalAiKlingVideoV3ProImageToVideoOutput;
+  "fal-ai/kling-video/v3/pro/motion-control": FalAiKlingVideoV3ProMotionControlOutput;
   "fal-ai/kling-video/v3/pro/text-to-video": FalAiKlingVideoV3ProTextToVideoOutput;
   "fal-ai/kling-video/v3/standard/image-to-video": FalAiKlingVideoV3StandardImageToVideoOutput;
   "fal-ai/kling-video/v3/standard/text-to-video": FalAiKlingVideoV3StandardTextToVideoOutput;
+  "fal-ai/lightx/relight": FalAiLightxRelightOutput;
   "fal-ai/minimax/hailuo-02/pro/image-to-video": FalAiMinimaxHailuo02ProImageToVideoOutput;
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video": FalAiMinimaxHailuo23ProTextToVideoOutput;
   "fal-ai/pixverse/v6/text-to-video": FalAiPixverseV6TextToVideoOutput;
   "fal-ai/veo3.1": FalAiVeo31Output;
   "fal-ai/veo3.1/extend-video": FalAiVeo31ExtendVideoOutput;
   "fal-ai/veo3.1/fast": FalAiVeo31FastOutput;
   "fal-ai/veo3.1/first-last-frame-to-video": FalAiVeo31FirstLastFrameToVideoOutput;
   "fal-ai/veo3.1/image-to-video": FalAiVeo31ImageToVideoOutput;
+  "fal-ai/veo3.1/reference-to-video": FalAiVeo31ReferenceToVideoOutput;
   "fal-ai/wan/v2.2-a14b/image-to-video": FalAiWanV22A14bImageToVideoOutput;
   "fal-ai/wan/v2.2-a14b/text-to-video": FalAiWanV22A14bTextToVideoOutput;
   "fal-ai/wan/v2.7/image-to-video": FalAiWanV27ImageToVideoOutput;

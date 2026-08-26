@@ -228,3 +228,16 @@ export type {
   KlingImageModelId,
   KlingOmniImageModelId,
 } from "./models";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";
+
+/**
+ * The fal bodies this provider's `.toApi("fal")` maps onto. One type-only
+ * line, so a consumer emitting its own declarations can name the result — see
+ * src/core/carriers.ts.
+ */
+export type { FalKlingV25Image, FalKlingV25Text, FalKlingV26Image, FalKlingV26Text, FalKlingV3Image, FalKlingV3Text } from "./fal-target";
+export type { KlingVideoFalOverlap, KlingVideoFromImageFalOverlap } from "./fal-target";

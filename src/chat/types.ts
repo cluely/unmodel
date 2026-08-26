@@ -55,7 +55,12 @@
  *   callable. The union drives autocomplete, it does not gate the API.
  */
 import type { ChatModelRef, ChatProviderId } from "../catalog/chat-refs.gen";
-import type { DialectBody, DialectNativeTool } from "../retarget/dialects";
+import type {
+  DialectBody,
+  DialectNativeTool,
+  OpenAiChatBody,
+  OpenAiOnlyChatParam,
+} from "../retarget/dialects";
 import type { ChatDialect } from "./public-types";
 
 export type { ChatModelRef, ChatProviderId };
@@ -118,8 +123,42 @@ export interface ChatFilePart {
   mediaType?: string;
   data: string | { fileId: string; provider: ChatProviderId | (string & {}) };
   filename?: string;
+  /**
+   * How much resolution the provider should spend on this attachment — the
+   * cost/latency lever, not a quality request. See {@link ChatMediaDetail}.
+   */
+  detail?: ChatMediaDetail;
   cache?: ChatCache;
 }
+
+/**
+ * The union of every dialect's per-attachment resolution vocabulary, not the
+ * intersection — the same rule {@link ChatReasoningEffort} states, for the same
+ * reason.
+ *
+ * Two witnesses, which is what got it promoted out of `providerOptions`.
+ * OpenAI spells it `image_url.detail` (`auto | low | high`, default `auto`);
+ * Gemini spells it per-`Part` `mediaResolution.level`
+ * (`MEDIA_RESOLUTION_{UNSPECIFIED,LOW,MEDIUM,HIGH}`, which overrides the
+ * request-level `generationConfig.mediaResolution`). Both are first-party and
+ * documented; both are about how many tokens the attachment costs.
+ *
+ * The union takes `medium` because Gemini has it. Targeting OpenAI narrows
+ * `medium` → `high` with an `approximated_param` warning, exactly as
+ * `ChatReasoningEffort` narrows an effort the target does not have. Anthropic
+ * has no equivalent at all and drops it with a named `dropped_param` — the
+ * sentence both interop encoders used to fire on the *wire* surface, now said
+ * once, in the one place it is true.
+ *
+ * `auto` is the provider default on both sides and round-trips
+ * (OpenAI `"auto"` ⇄ Gemini `MEDIA_RESOLUTION_UNSPECIFIED`), so writing it is
+ * never a loss.
+ *
+ * Deliberately NOT here: OpenAI's fourth value `original`. It exists only on
+ * the Responses API's input images — Chat Completions takes three — and
+ * `/v1/responses` is a substrate item, not a dialect (decisions.md §7).
+ */
+export type ChatMediaDetail = "auto" | "low" | "medium" | "high";
 
 /**
  * An assistant turn's tool call, replayed back as conversation history.
@@ -317,19 +356,18 @@ export type ChatResponseFormat =
   | { type: "json-schema"; name?: string; schema: Record<string, unknown>; strict?: boolean };
 
 /**
- * OpenAI's six service tiers.
+ * OpenAI's six service tiers, read off OpenAI's own endpoint body.
  *
- * Hand-written rather than derived, and deliberately so: the shared
- * `openai-chat` wire type leaves `service_tier` a bare `string` because ~30
- * providers reuse that body and most define their own tiers, so the closed list
- * lives on the endpoint that owns it — `ChatCompletionsBody.service_tier` in
- * `src/providers/openai/chat.ts`, which `src/chat/**` may not import (the
- * import-graph amendment allows only `retarget/dialects.ts` and the three
- * codecs). A test may import both, so `test/chat/provider-options.test.ts`
- * asserts this union equals that field's in both directions — a copy with a
- * drift guard, rather than a copy.
+ * This used to be a hand-written copy with a drift-guard test, because the
+ * shared `openai-chat` wire type leaves `service_tier` a bare `string` (~30
+ * providers reuse that body and most define their own tiers) and the closed
+ * list lives on the endpoint that owns it — which `src/chat/**` may not
+ * import. It is derived now: `retarget/dialects.ts` re-exports
+ * {@link OpenAiChatBody} through the one module this directory is allowed to
+ * name, so the copy is gone and the guard it needed became an identity
+ * assertion instead.
  */
-type OpenAiChatServiceTier = "auto" | "default" | "flex" | "scale" | "priority" | "fast";
+type OpenAiChatServiceTier = NonNullable<Exclude<OpenAiChatBody["service_tier"], null>>;
 
 /**
  * One dialect's service-tier vocabulary, read off that dialect's own wire body
@@ -369,7 +407,8 @@ type BucketDialect<P> = P extends "anthropic"
     : "openai-chat";
 
 /**
- * A deep partial that keeps a `string` tail at every level.
+ * A deep partial that keeps unknown keys legal at every level, and — in
+ * `"values"` mode — a `string` tail on every closed enum too.
  *
  * Two escape hatches have to survive, because they are what `providerOptions`
  * is *for*: an unknown KEY at any depth (`{ google: { generationConfig: {
@@ -378,24 +417,89 @@ type BucketDialect<P> = P extends "anthropic"
  * on a body whose enum predates it), which the leaf arm carries. Without the
  * leaf arm this type would contradict the `(string & {})` convention stated in
  * this module's own header — the wire enums are snapshots too.
+ *
+ * `Mode` exists because that second hatch is only honest where the runtime
+ * agrees. It does, everywhere the bucket is a *dialect base*: `anthropic`'s
+ * codec forwards an unrecognised `service_tier` verbatim, which
+ * `test/chat/provider-options.test.ts` pins. It does not for the params
+ * {@link OpenAiOnlyChatParam} names — `verbosity: "extreme"` is
+ * `[invalid_shape] expected one of "low"|"medium"|"high"` from `openai.chat`'s
+ * own schema, today, at run time. A type that admits a value the library
+ * itself refuses is not an escape hatch; it is a compile-time promise the
+ * runtime breaks. Those keys are opened for unknown *keys* and closed on
+ * *values*.
  */
-type Openable<T> = T extends readonly (infer E)[]
-  ? ReadonlyArray<Openable<E>> | Array<Openable<E>>
+type Openable<T, Mode extends "values" | "keys" = "values"> = T extends readonly (infer E)[]
+  ? ReadonlyArray<Openable<E, Mode>> | Array<Openable<E, Mode>>
   : T extends (...args: never[]) => unknown
     ? T
     : T extends object
-      ? { [K in keyof T]?: Openable<T[K]> } & Record<string, unknown>
-      : string extends T
+      ? { [K in keyof T]?: Openable<T[K], Mode> } & Record<string, unknown>
+      : Mode extends "keys"
         ? T
-        : T extends string
-          ? T | (string & {})
-          : T;
+        : string extends T
+          ? T
+          : T extends string
+            ? T | (string & {})
+            : T;
 
 /**
- * One provider's bucket: that provider's dialect body, minus the two fields the
- * compiler owns outright.
+ * The body a provider's bucket is typed off.
+ *
+ * Everyone gets their dialect base, which is what the compiler merges the
+ * bucket into — except `openai`, which gets its own endpoint body. The
+ * difference is twelve params (`store`, `verbosity`, `web_search_options`, the
+ * `prompt_cache_*` trio, …): OpenAI's endpoint takes them, the shared
+ * `openai-chat` dialect body deliberately does not carry them because ~30
+ * other providers reuse it, and `openai.chat`'s schema has typed, enumerated
+ * and validated every one of them all along. Before the special case the
+ * bucket completed none of them and checked none of them — the library knew
+ * the answer everywhere except where the caller types it.
+ *
+ * No other provider gets an endpoint arm, and that is not an oversight: the
+ * compat fleet's endpoint bodies *are* the dialect base, and `anthropic` and
+ * `google` already reach theirs through `DialectBody`.
  */
-type ChatProviderBucket<P> = Openable<Omit<DialectBody<BucketDialect<P>, string>, "model" | "messages">>;
+type ChatProviderBucketBody<P> = P extends "openai"
+  ? OpenAiChatBody
+  : DialectBody<BucketDialect<P>, string>;
+
+/**
+ * One provider's bucket: that provider's body, minus the two fields the
+ * compiler owns outright.
+ *
+ * `Omit` alone did not remove `messages`. `Openable`'s `Record<string,
+ * unknown>` arm re-admitted every key `Omit` had just taken away, so
+ * `providerOptions.openai.messages` type-checked — and at run time it
+ * *replaced the compiled messages array wholesale*, with no warning. The
+ * quietest failure on this surface: a request whose entire conversation came
+ * from an escape hatch, invisible in a diff. `?: never` states the subtraction
+ * in a form the index signature cannot undo.
+ *
+ * `model` is deliberately NOT subtracted the same way, even though `Omit`
+ * takes it out too. Gemini puts the model in the URL, and
+ * `providerOptions.google.model` is a real, tested override of exactly that
+ * (`test/chat/streaming.test.ts` — the streaming URL is rewritten from the one
+ * the validator produced precisely so the override survives). Closing it would
+ * delete a supported escape hatch to fix a different one.
+ */
+type ChatProviderBucket<P> = (P extends "openai"
+  ? OpenAiChatBucket
+  : Openable<Omit<ChatProviderBucketBody<P>, "model" | "messages">>) & {
+  messages?: never;
+};
+
+/**
+ * OpenAI's bucket in two halves: the shared dialect params keep both escape
+ * hatches, and the twelve {@link OpenAiOnlyChatParam} ones keep only the key
+ * hatch. Splitting here rather than inside `Openable` is what stops the
+ * narrowing leaking onto anyone else's bucket — `metadata` is an OpenAI-only
+ * param *and* a field Anthropic's `/v1/messages` declares, and the anthropic
+ * bucket must keep reading it from `MessagesBody`.
+ */
+type OpenAiChatBucket = Openable<Omit<OpenAiChatBody, "model" | "messages" | OpenAiOnlyChatParam>> & {
+  [K in OpenAiOnlyChatParam]?: Openable<OpenAiChatBody[K], "keys">;
+};
 
 /**
  * Providers unmodel knows and whose buckets the runtime tolerates, but which
@@ -507,10 +611,21 @@ export interface ChatParams {
    *
    * A bucket is typed as its provider's **dialect** body, which is what the
    * compiler merges it into — so the shared `openai-chat` params complete, and
-   * endpoint-only extras like OpenAI's own `store` or openrouter's `provider`
-   * do not, because they live on those providers' own body types. They still
-   * compile: every level of a bucket keeps an open arm, for exactly this and
-   * for a wire enum that grows between releases.
+   * one provider's endpoint-only extras (openrouter's `provider` routing
+   * block) do not, because they live on that provider's own body type. They
+   * still compile: every level of a bucket keeps an open arm, for exactly this
+   * and for a wire enum that grows between releases.
+   *
+   * `openai` is the one exception, and `verbosity` is the reason to know it:
+   * that bucket is typed off `/v1/chat/completions`' own body, so all twelve
+   * OpenAI-only params (`store`, `verbosity`, `web_search_options`, the
+   * `prompt_cache_*` trio, …) complete AND check. `verbosity: "low"` is the
+   * canonical example of what belongs here rather than in the vocabulary
+   * above: first-party, documented, enumerated — and a single witness, since
+   * neither Gemini, Anthropic nor OpenRouter has an equivalent, which is
+   * exactly the bar a canonical `ChatParams` field has to clear.
+   * `verbosity: "extreme"` is a compile error, because `openai.chat` refuses
+   * it at run time.
    */
   providerOptions?: ChatProviderOptions;
 }

@@ -74,7 +74,15 @@ export class UnmodelValidationError extends Error {
     this.warnings = warnings;
   }
 
-  /** Cross-realm/cross-copy safe alternative to instanceof. */
+  /**
+   * Cross-realm/cross-copy safe alternative to instanceof.
+   *
+   * Deterministic by construction, so a `true` here means STOP, never retry:
+   * validation is a pure function of the params and the second attempt fails
+   * on the same issue as the first. Classify on the near side of any
+   * serialization boundary — `structuredClone` returns `name: "Error"` with no
+   * `issues`, so this answers `false` about its own clone (docs/validation.md).
+   */
   static isInstance(error: unknown): error is UnmodelValidationError {
     return (
       typeof error === "object" &&

@@ -547,9 +547,9 @@ describe("chat (amendment A1)", () => {
  *   is a value import after one refactor, and the rule that admits neither is
  *   the rule nobody has to think about.
  * - **A6** a category entry (`src/unified/**`) sees the kernel, its own
- *   directory, and provider adapter leaves — nothing else in a provider
- *   directory, ever. This is what makes a ready-made pack cost exactly its
- *   adapters.
+ *   directory, provider adapter leaves, and — type-only — the shared
+ *   declaration-portability carriers. Nothing else in a provider directory,
+ *   ever. This is what makes a ready-made pack cost exactly its adapters.
  * - **A7** an adapter sees its own provider directory, the kernel and the
  *   translation warning types.
  *
@@ -599,6 +599,22 @@ describe("unified media surfaces (amendment A5)", () => {
         if (under(ref.target, "src/core/unified")) continue;
         if (under(ref.target, "src/unified")) continue;
         if (isUnifiedAdapter(ref.target)) continue;
+        // The one carve-out, and the same shape as A1's for
+        // `src/retarget/dialects.ts`: a type-only re-export of the shared
+        // declaration-portability carriers. Without it, any consumer that
+        // emits its own `.d.ts` around a pack call gets TS2742/TS2883 —
+        // TypeScript can only name a symbol through a module already in the
+        // program, so the carriers must be reachable from the entry the
+        // consumer imported. Type-only is what keeps A5's promise intact: this
+        // is erased, so no kernel byte and no provider byte moves.
+        if (ref.target === "src/core/carriers.ts") {
+          if (!ref.typeOnly) {
+            violations.push(
+              violation(file, ref, "src/core/carriers.ts is a type barrel — use `export type *`"),
+            );
+          }
+          continue;
+        }
         violations.push(
           violation(
             file,
@@ -607,13 +623,25 @@ describe("unified media surfaces (amendment A5)", () => {
               ? "a category entry reaches a provider only through its unified.ts adapter — anything " +
                   "else drags that provider's validator, schema and catalog into an entry whose " +
                   "whole proposition is that you pay for the adapters you name"
-              : "src/unified may import only src/core/unified/**, its own directory, and " +
-                  "src/providers/*/unified.ts",
+              : "src/unified may import only src/core/unified/**, its own directory, " +
+                  "src/providers/*/unified.ts and type-only src/core/carriers.ts",
           ),
         );
       }
     }
     expect(violations).toEqual([]);
+  });
+
+  test("A6 — every category entry carries the portability carriers, type-only", () => {
+    // A sweep that is 11-of-12 is worse than none: the one entry that missed
+    // it fails only in a downstream project's build, which is exactly the
+    // failure mode this whole item is about.
+    const entries = FILES.filter((f) => under(f, "src/unified"));
+    const missing = entries.filter(
+      (file) =>
+        !importsOf(file).some((ref) => ref.target === "src/core/carriers.ts" && ref.typeOnly),
+    );
+    expect(missing).toEqual([]);
   });
 
   test("A7 — an adapter imports only its own provider, the kernel, and warning types", () => {
@@ -700,6 +728,70 @@ describe("unified media surfaces (amendment A5)", () => {
  * `test/types-entries.test.ts` asserts the other half — that the built
  * JavaScript really is empty — against a real build.
  */
+/**
+ * Amendment A13 — the declaration-portability carriers reach every entry.
+ *
+ * TypeScript can only name a symbol through a module **already in the
+ * program**. A downstream package that emits its own `.d.ts` around
+ * `chat(...)`, `image(...)` or any validated result therefore fails with
+ * TS2742 (flat `node_modules`, TS 5.9) or TS2883 (pnpm-style layout, TS 7)
+ * naming a private `dist/*-<hash>` chunk — even for types unmodel already
+ * exports publicly, because the consumer never imported the entry that exports
+ * them. The only fix is reachability *from the entry they did import*, which
+ * makes this a per-entry obligation and therefore something a sweep can miss.
+ *
+ * `test/types/declaration-portability.test.ts` is the end-to-end proof against
+ * a real `dist/`; this is the cheap structural guard that catches a NEW entry
+ * added without the line, before anyone has to build.
+ *
+ * Type-only, everywhere, without exception: `src/core/carriers.ts` is a barrel
+ * of `export type`, so a value import of it would be a runtime edge from every
+ * provider entry to `src/retarget/types.ts` for zero benefit.
+ */
+describe("declaration-portability carriers (amendment A13)", () => {
+  const CARRIERS = "src/core/carriers.ts";
+
+  test("every provider entry re-exports them, type-only", () => {
+    const entries = FILES.filter((f) => /^src\/providers\/[^/]+\/index\.ts$/.test(f));
+    expect(entries.length).toBeGreaterThanOrEqual(70);
+
+    const violations: string[] = [];
+    for (const file of entries) {
+      const ref = importsOf(file).find((candidate) => candidate.target === CARRIERS);
+      if (ref === undefined) {
+        violations.push(
+          `${file} does not re-export ${CARRIERS} — a consumer emitting declarations around ` +
+            "this entry's results will fail with TS2742/TS2883 naming a private dist chunk",
+        );
+        continue;
+      }
+      if (!ref.typeOnly) violations.push(violation(file, ref, "must be `export type *`"));
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("the chat entries and the root carry them too", () => {
+    for (const file of ["src/chat/index.ts", "src/chat/factory.ts", "src/index.ts"]) {
+      const ref = importsOf(file).find((candidate) => candidate.target === CARRIERS);
+      expect(ref, `${file} must re-export ${CARRIERS}`).toBeDefined();
+      expect(ref?.typeOnly, `${file} must use \`export type *\``).toBe(true);
+    }
+  });
+
+  test("the carriers module itself imports no provider and no catalog", () => {
+    for (const ref of importsOf(CARRIERS)) {
+      expect(
+        under(ref.target, "src/providers") || isCatalogGen(ref.target),
+        `${CARRIERS} imports "${ref.specifier}" — it is reachable from every entry, so a ` +
+          "provider or catalog edge here lands in all of them",
+      ).toBe(false);
+      expect(ref.typeOnly, `${CARRIERS} re-exports "${ref.specifier}" — use \`export type\``).toBe(
+        true,
+      );
+    }
+  });
+});
+
 describe("type-only entries (amendment A8)", () => {
   const isProviderTypesEntry = (file: string): boolean =>
     /^src\/providers\/[^/]+\/types\.ts$/.test(file);
@@ -830,7 +922,7 @@ describe("type-only entries (amendment A8)", () => {
  *   `-params` leaf beside it, and both read the same object;
  * - the hub sees the canonical value modules, the chat ref array and
  *   `src/chat/refs.ts` — enumerated, because each is a chunk;
- * - the 1,339-ref array has exactly ONE importer, for the reason A3 pins the
+ * - the 1,330-ref array has exactly ONE importer, for the reason A3 pins the
  *   profile table: it is 45 KiB, and a second importer would put it in a second
  *   entry without changing a line of the entry that acquired it.
  *
@@ -920,7 +1012,7 @@ describe("value entries (amendment A9)", () => {
     expect([...reached].sort()).toEqual([...HUB_IMPORTS].sort());
   });
 
-  test("the 1,339-ref array has exactly one importer, and it is its own entry", () => {
+  test("the 1,330-ref array has exactly one importer, and it is its own entry", () => {
     const importers = FILES.filter((file) =>
       importsOf(file).some((ref) => ref.target === REF_VALUES),
     );

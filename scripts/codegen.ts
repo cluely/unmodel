@@ -11,7 +11,13 @@
  * CI verifies drift with `bun run codegen && git diff --exit-code`.
  */
 import { z } from "zod";
-import { buildAvailability, overridesSchema, renderAvailabilityFile } from "./availability";
+import {
+  buildAvailability,
+  overridesSchema,
+  parseRowRef,
+  renderAvailabilityFile,
+  rowRefMatches,
+} from "./availability";
 import {
   camelCase,
   num,
@@ -404,18 +410,49 @@ export function getModelTyped(providerId: string, modelId: string): ModelInfo | 
 // source, and the same reasoning says nothing else should be added either.
 // ---------------------------------------------------------------------------
 
-/** A text-output model — the rows `unmodel/chat` can address. */
+/**
+ * A text-output model — necessary for `unmodel/chat`, and not sufficient.
+ *
+ * models.dev records a *modality signature*, not a *route*, so this predicate
+ * cannot tell a chat model from an embedding, an image model or a codex model
+ * its own provider serves on a different endpoint. Those are named per
+ * provider in `chatScopeExclude` (data/availability-overrides.json) and
+ * subtracted below — see {@link chatScope}.
+ */
 function isTextModel(model: RawModel): boolean {
   return model.modalities.output.includes("text");
 }
 
-/** Providers reachable as `"provider/model"`, sorted, with their text models. */
+/**
+ * Providers reachable as `"provider/model"`, sorted, with their chat models.
+ *
+ * Two filters, and the second is the one that took a shipped defect to find.
+ * `isTextModel` admits every text-out row a provider lists; a provider's own
+ * chat endpoint may serve only a subset of those. OpenAI is the witness: nine
+ * of its rows — `gpt-5.3-codex` and `-spark` (which OpenAI documents as
+ * "Chat Completions: Not supported", served by `/v1/responses` only), three
+ * `text-embedding-*`, three image rows and `gpt-realtime-2.1` — shipped as
+ * `ChatModelRef` arms that compiled to a Chat Completions body the API
+ * refuses, with no warning anywhere. Autocomplete offered nine refs that
+ * cannot work.
+ *
+ * The knowledge already existed in-tree, as `NonChatModelId` in
+ * `src/providers/openai/chat.ts` — but as a *type*, which codegen cannot
+ * enumerate (and codegen must not import from `src/` anyway). So it is
+ * restated as data in the overrides file, where it is reviewable, and the
+ * substrate keeps its own copy for the warning it emits on the same ids.
+ */
 function chatScope(
   providers: readonly RawProvider[],
   overrides: z.output<typeof overridesSchema>,
 ): Array<{ id: string; models: RawModel[] }> {
   const byId = new Map(providers.map((provider) => [provider.id, provider]));
   const targetOnly = new Set(overrides.targetOnly);
+  const excludes = overrides.chatScopeExclude.map((ref) => ({
+    ref,
+    matcher: parseRowRef(ref),
+    hits: 0,
+  }));
   const scope: Array<{ id: string; models: RawModel[] }> = [];
   for (const id of [...overrides.providers].sort()) {
     if (targetOnly.has(id) || CHAT_FACTORY_PROVIDERS.has(id)) continue;
@@ -425,9 +462,30 @@ function chatScope(
     }
     const models = Object.values(provider.models)
       .filter(isTextModel)
+      .filter((model) => {
+        let excluded = false;
+        for (const entry of excludes) {
+          if (!rowRefMatches(entry.matcher, id, model.id)) continue;
+          entry.hits += 1;
+          excluded = true;
+        }
+        return !excluded;
+      })
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     if (models.length === 0) continue;
     scope.push({ id, models });
+  }
+  // Every entry must earn its place, globs included — see the field's doc in
+  // scripts/availability.ts. An entry that matches nothing is an upstream
+  // rename that has silently stopped excluding a row that cannot be called.
+  const inert = excludes.filter((entry) => entry.hits === 0).map((entry) => entry.ref);
+  if (inert.length > 0) {
+    throw new Error(
+      `availability overrides: chatScopeExclude ${inert
+        .map((ref) => `"${ref}"`)
+        .join(", ")} matched no in-scope text model. An entry that matches nothing means ` +
+        "the row was renamed upstream and is back in the chat ref tables — fix the ref or remove it.",
+    );
   }
   return scope;
 }

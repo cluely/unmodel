@@ -8,7 +8,7 @@
  * nine different category packs reach this provider and none should pay for the
  * others' validators, zod schemas and generated narrowing tables. That matters
  * more here than at any other provider: fal is the only one serving nine
- * categories, so a single `unified.ts` holding all of them would put ~30 video
+ * categories, so a single `unified.ts` holding all of them would put ~35 video
  * wire types into the 8-endpoint lipsync pack and 23 speech rosters into the
  * 10-endpoint music one. Import this subpath to get all nine; the ready-made
  * packs import the leaves directly, and `test/bundle-budget.test.ts` measures

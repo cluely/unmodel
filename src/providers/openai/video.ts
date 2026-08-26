@@ -136,7 +136,7 @@ export type VideosBody<FutureModel extends string = never> =
   | DefaultVideoModelBody
   | UnknownVideoModelBody<FutureModel>;
 
-interface VideosBodyByModel {
+export interface VideosBodyByModel {
   "sora-2": Sora2Body;
   "sora-2-2025-10-06": Sora2Snapshot20251006Body;
   "sora-2-2025-12-08": Sora2Snapshot20251208Body;

@@ -363,7 +363,7 @@ export type GenerateTtsBody<FutureModel extends string = never> =
   | GoogleTts31FlashBody
   | UnknownTtsBody<FutureModel>;
 
-interface GenerateTtsBodyByModel {
+export interface GenerateTtsBodyByModel {
   "gemini-2.5-flash-preview-tts": GoogleTts25FlashBody;
   "gemini-2.5-pro-preview-tts": GoogleTts25ProBody;
   "gemini-3.1-flash-tts-preview": GoogleTts31FlashBody;

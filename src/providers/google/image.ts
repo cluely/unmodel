@@ -173,7 +173,7 @@ export type GenerateImagesBody<FutureModel extends string = never> =
   | ImagenFastBody
   | UnknownImagenBody<FutureModel>;
 
-interface GenerateImagesBodyByModel {
+export interface GenerateImagesBodyByModel {
   "imagen-4.0-generate-001": ImagenStandardBody;
   "imagen-4.0-ultra-generate-001": ImagenUltraBody;
   "imagen-4.0-fast-generate-001": ImagenFastBody;

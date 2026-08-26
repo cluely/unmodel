@@ -47,7 +47,6 @@ const M_IMAGE_TEXT__TEXT_IMAGE = { input: ["image", "text"], output: ["text", "i
 const M_PDF_IMAGE_TEXT_AUDIO__TEXT = { input: ["pdf", "image", "text", "audio"], output: ["text"] } as const;
 const M_PDF_IMAGE_TEXT__IMAGE_TEXT = { input: ["pdf", "image", "text"], output: ["image", "text"] } as const;
 const M_PDF_IMAGE_TEXT__TEXT = { input: ["pdf", "image", "text"], output: ["text"] } as const;
-const M_TEXT_AUDIO_IMAGE__TEXT_AUDIO = { input: ["text", "audio", "image"], output: ["text", "audio"] } as const;
 const M_TEXT_AUDIO_PDF__TEXT = { input: ["text", "audio", "pdf"], output: ["text"] } as const;
 const M_TEXT_AUDIO_VIDEO_IMAGE__TEXT = { input: ["text", "audio", "video", "image"], output: ["text"] } as const;
 const M_TEXT_AUDIO__TEXT = { input: ["text", "audio"], output: ["text"] } as const;
@@ -686,7 +685,6 @@ export const chatProfiles: ChatCatalog = {
     "z-ai/glm-5.2": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 1000000, output: 131072 }, cost: { input: 0, output: 0 } },
   },
   "openai": {
-    "chatgpt-image-latest": { attachment: true, reasoning: false, toolCall: false, temperature: false, modalities: M_TEXT_IMAGE__TEXT_IMAGE, limit: { context: 0, output: 0, input: 0 } },
     "gpt-3.5-turbo": { attachment: false, reasoning: false, toolCall: false, structuredOutput: false, temperature: true, status: "deprecated", modalities: M_TEXT__TEXT, limit: { context: 16385, output: 4096 }, cost: { input: 0.5, output: 1.5, cacheRead: 0 } },
     "gpt-4": { attachment: true, reasoning: false, toolCall: true, structuredOutput: false, temperature: true, status: "deprecated", modalities: M_TEXT__TEXT, limit: { context: 8192, output: 8192 }, cost: { input: 30, output: 60 } },
     "gpt-4-turbo": { attachment: true, reasoning: false, toolCall: true, structuredOutput: false, temperature: true, status: "deprecated", modalities: M_TEXT_IMAGE__TEXT, limit: { context: 128000, output: 4096 }, cost: { input: 10, output: 30 } },
@@ -707,8 +705,6 @@ export const chatProfiles: ChatCatalog = {
     "gpt-5.2-chat-latest": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 128000, output: 16384 }, cost: { input: 1.75, output: 14, cacheRead: 0.175 } },
     "gpt-5.2-pro": { attachment: true, reasoning: true, toolCall: true, structuredOutput: false, temperature: false, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 400000, output: 128000, input: 272000 }, cost: { input: 21, output: 168 } },
     "gpt-5.3-chat-latest": { attachment: true, reasoning: false, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 128000, output: 16384 }, cost: { input: 1.75, output: 14, cacheRead: 0.175 } },
-    "gpt-5.3-codex": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 400000, output: 128000, input: 272000 }, cost: { input: 1.75, output: 14, cacheRead: 0.175 } },
-    "gpt-5.3-codex-spark": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 128000, output: 32000, input: 100000 }, cost: { input: 1.75, output: 14, cacheRead: 0.175 } },
     "gpt-5.4": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 1050000, output: 128000, input: 922000 }, cost: { input: 2.5, output: 15, cacheRead: 0.25 } },
     "gpt-5.4-mini": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 400000, output: 128000, input: 272000 }, cost: { input: 0.75, output: 4.5, cacheRead: 0.075 } },
     "gpt-5.4-nano": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 400000, output: 128000, input: 272000 }, cost: { input: 0.2, output: 1.25, cacheRead: 0.02 } },
@@ -719,18 +715,12 @@ export const chatProfiles: ChatCatalog = {
     "gpt-5.6-luna": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 1050000, output: 128000, input: 922000 }, cost: { input: 0.2, output: 1.2, cacheRead: 0.02, cacheWrite: 0.25 } },
     "gpt-5.6-sol": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 1050000, output: 128000, input: 922000 }, cost: { input: 5, output: 30, cacheRead: 0.5, cacheWrite: 6.25 } },
     "gpt-5.6-terra": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 1050000, output: 128000, input: 922000 }, cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 2.5 } },
-    "gpt-image-1-mini": { attachment: true, reasoning: false, toolCall: false, temperature: false, modalities: M_TEXT_IMAGE__TEXT_IMAGE, limit: { context: 0, output: 0, input: 0 } },
-    "gpt-image-1.5": { attachment: true, reasoning: false, toolCall: false, temperature: false, modalities: M_TEXT_IMAGE__TEXT_IMAGE, limit: { context: 0, output: 0, input: 0 } },
-    "gpt-realtime-2.1": { attachment: true, reasoning: true, toolCall: true, structuredOutput: false, temperature: false, modalities: M_TEXT_AUDIO_IMAGE__TEXT_AUDIO, limit: { context: 128000, output: 32000, input: 96000 }, cost: { input: 4, output: 24, cacheRead: 0.4, inputAudio: 32, outputAudio: 64 } },
     "o1": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, status: "deprecated", modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 200000, output: 100000 }, cost: { input: 15, output: 60, cacheRead: 7.5 } },
     "o1-pro": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, status: "deprecated", modalities: M_TEXT_IMAGE__TEXT, limit: { context: 200000, output: 100000 }, cost: { input: 150, output: 600 } },
     "o3": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 200000, output: 100000 }, cost: { input: 2, output: 8, cacheRead: 0.5 } },
     "o3-mini": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, status: "deprecated", modalities: M_TEXT__TEXT, limit: { context: 200000, output: 100000 }, cost: { input: 1.1, output: 4.4, cacheRead: 0.55 } },
     "o3-pro": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 200000, output: 100000 }, cost: { input: 20, output: 80 } },
     "o4-mini": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: false, status: "deprecated", modalities: M_TEXT_IMAGE__TEXT, limit: { context: 200000, output: 100000 }, cost: { input: 1.1, output: 4.4, cacheRead: 0.275 } },
-    "text-embedding-3-large": { attachment: false, reasoning: false, toolCall: false, temperature: false, modalities: M_TEXT__TEXT, limit: { context: 8191, output: 3072 }, cost: { input: 0.13, output: 0 } },
-    "text-embedding-3-small": { attachment: false, reasoning: false, toolCall: false, temperature: false, modalities: M_TEXT__TEXT, limit: { context: 8191, output: 1536 }, cost: { input: 0.02, output: 0 } },
-    "text-embedding-ada-002": { attachment: false, reasoning: false, toolCall: false, temperature: false, modalities: M_TEXT__TEXT, limit: { context: 8192, output: 1536 }, cost: { input: 0.1, output: 0 } },
   },
   "openrouter": {
     "ai21/jamba-large-1.7": { attachment: false, reasoning: false, toolCall: true, structuredOutput: false, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 256000, output: 4096 }, cost: { input: 2, output: 8 } },

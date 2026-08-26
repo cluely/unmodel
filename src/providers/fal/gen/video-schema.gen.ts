@@ -6,22 +6,27 @@
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o1__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__motion-control.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
+//   data/fal/openapi/fal-ai__lightx__relight.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-2.3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1.json
 //   data/fal/openapi/fal-ai__veo3.1__extend-video.json
 //   data/fal/openapi/fal-ai__veo3.1__fast.json
 //   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__reference-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
@@ -36,7 +41,7 @@
 /**
  * The ONE request schema for every `fal.video` endpoint.
  *
- * One `z.looseObject` for the whole category, not 30 per-endpoint schemas: zod objects are
+ * One `z.looseObject` for the whole category, not 35 per-endpoint schemas: zod objects are
  * built eagerly, and a hundred of them would be constructed on import for the one the
  * caller actually used.
  *
@@ -56,6 +61,8 @@ import { z } from "zod";
 const falKlingV3ComboElementInputSchema = z.looseObject({ frontal_image_url: z.string().nullable().optional(), reference_image_urls: z.array(z.string()).nullable().optional(), video_url: z.string().nullable().optional(), voice_id: z.string().nullable().optional() });
 const falKlingV3ImageElementInputSchema = z.looseObject({ frontal_image_url: z.string().nullable().optional(), reference_image_urls: z.array(z.string()).nullable().optional() });
 const falKlingV3MultiPromptElementSchema = z.looseObject({ prompt: z.string(), duration: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]).optional() });
+const falOmniVideoElementInputSchema = z.looseObject({ frontal_image_url: z.string(), reference_image_urls: z.array(z.string()).optional() });
+const falRelightParametersSchema = z.looseObject({ relight_prompt: z.string(), bg_source: z.enum(["Left", "Right", "Top", "Bottom"]).optional(), cfg: z.number().optional(), use_sky_mask: z.boolean().optional() });
 
 export const falVideoInputSchema = z.looseObject({
   /**
@@ -78,11 +85,11 @@ export const falVideoInputSchema = z.looseObject({
    * fal-ai/kling-video/v3/standard/text-to-video, fal-ai/pixverse/v6/text-to-video,
    * fal-ai/veo3.1, fal-ai/veo3.1/extend-video, fal-ai/veo3.1/fast,
    * fal-ai/veo3.1/first-last-frame-to-video, fal-ai/veo3.1/image-to-video,
-   * fal-ai/wan/v2.2-a14b/image-to-video, fal-ai/wan/v2.2-a14b/text-to-video,
-   * fal-ai/wan/v2.7/text-to-video, google/gemini-omni-flash,
-   * lightricks/ltx-2.5/text-to-video/pro, minimax/h3/text-to-video,
-   * xai/grok-imagine-video/text-to-video), so the union takes the bare type and the exact
-   * vocabulary is enforced per endpoint from FAL_VIDEO_SHAPES.
+   * fal-ai/veo3.1/reference-to-video, fal-ai/wan/v2.2-a14b/image-to-video,
+   * fal-ai/wan/v2.2-a14b/text-to-video, fal-ai/wan/v2.7/text-to-video,
+   * google/gemini-omni-flash, lightricks/ltx-2.5/text-to-video/pro,
+   * minimax/h3/text-to-video, xai/grok-imagine-video/text-to-video), so the union takes the
+   * bare type and the exact vocabulary is enforced per endpoint from FAL_VIDEO_SHAPES.
    */
   aspect_ratio: z.string().optional(),
   audio_url: z.string().nullable().optional(),
@@ -91,6 +98,7 @@ export const falVideoInputSchema = z.looseObject({
   bitrate_mode: z.enum(["standard", "high"]).optional(),
   camera_motion: z.enum(["dolly_in", "dolly_out", "dolly_left", "dolly_right", "jib_up", "jib_down", "static", "focus_shift"]).nullable().optional(),
   cfg_scale: z.number().optional(),
+  character_orientation: z.enum(["image", "video"]).optional(),
   /**
    * `duration` means different things at different endpoints — string at
    * bytedance/seedance-2.0/image-to-video, string at bytedance/seedance-2.0/text-to-video,
@@ -107,11 +115,11 @@ export const falVideoInputSchema = z.looseObject({
    * fal-ai/kling-video/v3/standard/text-to-video, number at
    * fal-ai/pixverse/v6/text-to-video, string at fal-ai/veo3.1, string at
    * fal-ai/veo3.1/extend-video, string at fal-ai/veo3.1/fast, string at
-   * fal-ai/veo3.1/first-last-frame-to-video, string at fal-ai/veo3.1/image-to-video, number
-   * at fal-ai/wan/v2.7/image-to-video, number at fal-ai/wan/v2.7/text-to-video, number at
-   * google/gemini-omni-flash, number at lightricks/ltx-2.5/text-to-video/pro, number at
-   * minimax/h3/image-to-video, number at minimax/h3/text-to-video, number at
-   * xai/grok-imagine-video/text-to-video.
+   * fal-ai/veo3.1/first-last-frame-to-video, string at fal-ai/veo3.1/image-to-video, string
+   * at fal-ai/veo3.1/reference-to-video, number at fal-ai/wan/v2.7/image-to-video, number at
+   * fal-ai/wan/v2.7/text-to-video, number at google/gemini-omni-flash, number at
+   * lightricks/ltx-2.5/text-to-video/pro, number at minimax/h3/image-to-video, number at
+   * minimax/h3/text-to-video, number at xai/grok-imagine-video/text-to-video.
    *
    * Typed `unknown` here deliberately: a union that accepted both would let an endpoint's
    * wrong-typed value through the shape gate. FAL_VIDEO_SHAPES carries the real type per
@@ -121,8 +129,9 @@ export const falVideoInputSchema = z.looseObject({
   duration: z.unknown().optional(),
   /**
    * Every `fal.video` endpoint types `elements` as array, but they disagree on the details
-   * (fal-ai/kling-video/o3/pro/video-to-video/edit,
-   * fal-ai/kling-video/v3/pro/image-to-video,
+   * (fal-ai/kling-video/o1/video-to-video/edit,
+   * fal-ai/kling-video/o3/pro/video-to-video/edit, fal-ai/kling-video/v3/pro/image-to-video,
+   * fal-ai/kling-video/v3/pro/motion-control,
    * fal-ai/kling-video/v3/standard/image-to-video), so the union takes the bare type and the
    * exact vocabulary is enforced per endpoint from FAL_VIDEO_SHAPES.
    */
@@ -144,6 +153,7 @@ export const falVideoInputSchema = z.looseObject({
   image_urls: z.array(z.string()).nullable().optional(),
   interpolator_model: z.enum(["none", "film", "rife"]).optional(),
   keep_audio: z.boolean().optional(),
+  keep_original_sound: z.boolean().optional(),
   last_frame_url: z.string().optional(),
   multi_prompt: z.array(falKlingV3MultiPromptElementSchema).nullable().optional(),
   /**
@@ -168,18 +178,21 @@ export const falVideoInputSchema = z.looseObject({
    * Every `fal.video` endpoint types `prompt` as string, but they disagree on the details
    * (bytedance/seedance-2.0/image-to-video, bytedance/seedance-2.0/text-to-video,
    * bytedance/seedance-2.5/image-to-video, bytedance/seedance-2.5/reference-to-video,
-   * bytedance/seedance-2.5/text-to-video, fal-ai/kling-video/o3/pro/video-to-video/edit,
+   * bytedance/seedance-2.5/text-to-video, fal-ai/kling-video/o1/video-to-video/edit,
+   * fal-ai/kling-video/o3/pro/video-to-video/edit,
    * fal-ai/kling-video/v2.5-turbo/pro/image-to-video,
    * fal-ai/kling-video/v2.5-turbo/pro/text-to-video,
    * fal-ai/kling-video/v2.6/pro/image-to-video, fal-ai/kling-video/v2.6/pro/text-to-video,
-   * fal-ai/kling-video/v3/pro/image-to-video, fal-ai/kling-video/v3/pro/text-to-video,
-   * fal-ai/kling-video/v3/standard/image-to-video,
-   * fal-ai/kling-video/v3/standard/text-to-video,
-   * fal-ai/minimax/hailuo-02/pro/image-to-video, fal-ai/pixverse/v6/text-to-video,
+   * fal-ai/kling-video/v3/pro/image-to-video, fal-ai/kling-video/v3/pro/motion-control,
+   * fal-ai/kling-video/v3/pro/text-to-video, fal-ai/kling-video/v3/standard/image-to-video,
+   * fal-ai/kling-video/v3/standard/text-to-video, fal-ai/lightx/relight,
+   * fal-ai/minimax/hailuo-02/pro/image-to-video,
+   * fal-ai/minimax/hailuo-2.3/pro/text-to-video, fal-ai/pixverse/v6/text-to-video,
    * fal-ai/veo3.1, fal-ai/veo3.1/extend-video, fal-ai/veo3.1/fast,
    * fal-ai/veo3.1/first-last-frame-to-video, fal-ai/veo3.1/image-to-video,
-   * fal-ai/wan/v2.2-a14b/image-to-video, fal-ai/wan/v2.2-a14b/text-to-video,
-   * fal-ai/wan/v2.7/image-to-video, fal-ai/wan/v2.7/text-to-video, google/gemini-omni-flash,
+   * fal-ai/veo3.1/reference-to-video, fal-ai/wan/v2.2-a14b/image-to-video,
+   * fal-ai/wan/v2.2-a14b/text-to-video, fal-ai/wan/v2.7/image-to-video,
+   * fal-ai/wan/v2.7/text-to-video, google/gemini-omni-flash,
    * lightricks/ltx-2.5/text-to-video/pro, minimax/h3/image-to-video,
    * minimax/h3/text-to-video, xai/grok-imagine-video/text-to-video), so the union takes the
    * bare type and the exact vocabulary is enforced per endpoint from FAL_VIDEO_SHAPES.
@@ -187,18 +200,22 @@ export const falVideoInputSchema = z.looseObject({
   prompt: z.string().nullable().optional(),
   prompt_expansion_mode: z.enum(["disabled", "fast", "balanced", "quality"]).nullable().optional(),
   prompt_optimizer: z.boolean().optional(),
+  ref_id: z.number().optional(),
+  relight_parameters: falRelightParametersSchema.nullable().optional(),
+  relit_cond_img_url: z.string().nullable().optional(),
+  relit_cond_type: z.enum(["ic", "ref", "hdr", "bg"]).optional(),
   /**
    * Every `fal.video` endpoint types `resolution` as string, but they disagree on the
    * details (bytedance/seedance-2.0/image-to-video, bytedance/seedance-2.0/text-to-video,
    * bytedance/seedance-2.5/image-to-video, bytedance/seedance-2.5/reference-to-video,
    * bytedance/seedance-2.5/text-to-video, fal-ai/pixverse/v6/text-to-video, fal-ai/veo3.1,
    * fal-ai/veo3.1/extend-video, fal-ai/veo3.1/fast, fal-ai/veo3.1/first-last-frame-to-video,
-   * fal-ai/veo3.1/image-to-video, fal-ai/wan/v2.2-a14b/image-to-video,
-   * fal-ai/wan/v2.2-a14b/text-to-video, fal-ai/wan/v2.7/image-to-video,
-   * fal-ai/wan/v2.7/text-to-video, lightricks/ltx-2.5/text-to-video/pro,
-   * minimax/h3/image-to-video, minimax/h3/text-to-video,
-   * xai/grok-imagine-video/text-to-video), so the union takes the bare type and the exact
-   * vocabulary is enforced per endpoint from FAL_VIDEO_SHAPES.
+   * fal-ai/veo3.1/image-to-video, fal-ai/veo3.1/reference-to-video,
+   * fal-ai/wan/v2.2-a14b/image-to-video, fal-ai/wan/v2.2-a14b/text-to-video,
+   * fal-ai/wan/v2.7/image-to-video, fal-ai/wan/v2.7/text-to-video,
+   * lightricks/ltx-2.5/text-to-video/pro, minimax/h3/image-to-video,
+   * minimax/h3/text-to-video, xai/grok-imagine-video/text-to-video), so the union takes the
+   * bare type and the exact vocabulary is enforced per endpoint from FAL_VIDEO_SHAPES.
    */
   resolution: z.string().optional(),
   safety_tolerance: z.enum(["1", "2", "3", "4", "5", "6"]).optional(),

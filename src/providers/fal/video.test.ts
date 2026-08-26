@@ -3,7 +3,7 @@
  * IR is doing the most work in this provider.
  *
  * The routing and stripping contract is `fal.image`'s and is asserted there.
- * What is asserted here is what makes THIRTY endpoints share one address
+ * What is asserted here is what makes THIRTY-FIVE endpoints share one address
  * safely:
  *
  * 1. **`duration` is four different types across the roster**, so the category
@@ -16,8 +16,12 @@
  * 3. **A `const` property lowers to a one-value enum**, which is how
  *    `fal-ai/veo3.1/extend-video` (whose `duration` and `resolution` are both
  *    `const`) classifies at all.
- * 4. **Two of the thirty publish a flat rate**, so two estimates are numbers
- *    and twenty-eight are `undefined` with a reason.
+ * 4. **Six of the thirty-five publish a flat rate**, and only ONE of those
+ *    answers a number: the five per-SECOND rows still estimate `undefined`,
+ *    because the billed quantity is the OUTPUT clip's length and no request
+ *    body states it, while `fal-ai/minimax/hailuo-2.3/pro/text-to-video`'s flat
+ *    $0.49 per generation is settled by the fact that a request was made at
+ *    all. Every other row is `undefined` with a reason from `falPriceNote`.
  */
 
 import { describe, expect, test } from "bun:test";
@@ -32,7 +36,7 @@ const FRAME = "https://example.com/frame.png";
 describe("routing", () => {
   test("every curated endpoint routes to a queue URL that round-trips its id", () => {
     // The body is built from each endpoint's OWN required list rather than
-    // hard-coded, which is what lets one loop cover thirty routes whose
+    // hard-coded, which is what lets one loop cover thirty-five routes whose
     // required media ranges from nothing (text-to-video) to two named frames
     // (veo3.1's interpolation route). It also means the loop asserts something
     // stronger than routing: every curated endpoint's required set is
@@ -40,13 +44,22 @@ describe("routing", () => {
     for (const endpoint of FAL_VIDEO_ENDPOINTS) {
       const shape = FAL_VIDEO_SHAPES[endpoint as keyof typeof FAL_VIDEO_SHAPES] as {
         order: readonly string[];
-        props: Readonly<Record<string, { req?: true; def?: true; media?: string; t: string }>>;
+        props: Readonly<
+          Record<string, { req?: true; def?: true; media?: string; t: string; enum?: readonly (string | number)[] }>
+        >;
       };
       const body: Record<string, unknown> = { endpoint };
       for (const name of shape.order) {
         const spec = shape.props[name];
         if (spec?.req !== true || spec.def === true) continue;
-        body[name] = spec.media === undefined ? PROMPT : `https://example.com/asset-${name}`;
+        // The IR's own vocabulary, in three steps: a media reference gets a
+        // URL, a closed enum gets its first member (kling v3 motion-control's
+        // `character_orientation` is required, defaultless and NOT media — the
+        // prompt string is not a legal value for it), and everything else gets
+        // the prompt. An ARRAY-typed prop is then wrapped, because veo3.1's
+        // `image_urls` is the roster's first required media LIST.
+        const value = spec.media === undefined ? (spec.enum?.[0] ?? PROMPT) : `https://example.com/asset-${name}`;
+        body[name] = spec.t === "array" ? [value] : value;
       }
       const params = video(body as never);
       expect(params.request.url, endpoint).toBe(`https://queue.fal.run/${endpoint}`);
@@ -83,7 +96,7 @@ describe("routing", () => {
   });
 });
 
-describe("`duration` — one word, four types, thirty endpoints", () => {
+describe("`duration` — one word, four types, thirty-five endpoints", () => {
   test("kling takes a bare string, veo3.1 a suffixed one, wan an integer", () => {
     expect(
       video({ endpoint: "fal-ai/kling-video/v3/pro/text-to-video", prompt: PROMPT, duration: "12" }).duration,
@@ -217,13 +230,32 @@ describe("degradation", () => {
     if (!result.ok) return;
     expect(result.params.request.url).toBe("https://queue.fal.run/fal-ai/veo4");
     expect(result.warnings.some((issue) => issue.code === "unknown_model")).toBe(true);
+    // Never SEEN and deliberately NOT SERVED are different answers, and only
+    // the second one has a reason to give — see the next case.
+    expect(result.warnings.some((issue) => issue.meta?.["excluded"] === true)).toBe(false);
+  });
+
+  test("an endpoint unmodel deliberately excluded says so, with the recorded reason", () => {
+    // `data/fal/curation.json` has carried these reasons since wave 1 and none
+    // of them reached a caller: the bare `unknown_model` reads as "the catalog
+    // is a week behind", which is the opposite of the truth here.
+    const result = video.safe({ endpoint: "fal-ai/lightx/recamera", video_url: FRAME } as never);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const excluded = result.warnings.find((issue) => issue.meta?.["excluded"] === true);
+    expect(excluded?.code).toBe("unknown_model");
+    expect(excluded?.path).toEqual(["endpoint"]);
+    expect(excluded?.message).toContain("unmodel deliberately does not serve `fal-ai/lightx/recamera`");
+    expect(excluded?.message).toContain("camera");
+    // The request still goes out: an exclusion is a fact about unmodel's
+    // roster, never a claim that fal refuses the call.
+    expect(result.params.request.url).toBe("https://queue.fal.run/fal-ai/lightx/recamera");
   });
 });
 
 describe("estimates", () => {
-  test("the two flat per-second rates are the only endpoints that answer a number", () => {
-    // …and even those answer `undefined` from a request body, because the
-    // billed quantity is the OUTPUT clip's length, which the request states
+  test("a flat per-second rate still answers `undefined`, because the clip's length is not in the body", () => {
+    // The billed quantity is the OUTPUT clip's length, which the request states
     // only sometimes and never for the routes that decide it themselves.
     const priced = video.safe({
       endpoint: "fal-ai/minimax/hailuo-02/pro/image-to-video",
@@ -233,6 +265,20 @@ describe("estimates", () => {
     expect(priced.ok).toBe(true);
     if (!priced.ok) return;
     expect(priced.estimate?.costUSD).toBeUndefined();
+  });
+
+  test("the one per-GENERATION rate is the only video row whose cost is a number", () => {
+    // `per_generation` is the rare unit a body cannot make wrong: the rate is
+    // per request, so there is nothing left to know. It is also why this row
+    // was curated — every other video rate needs a fact the submit body does
+    // not carry.
+    const flat = video.safe({
+      endpoint: "fal-ai/minimax/hailuo-2.3/pro/text-to-video",
+      prompt: PROMPT,
+    });
+    expect(flat.ok).toBe(true);
+    if (!flat.ok) return;
+    expect(flat.estimate?.costUSD).toBe(0.49);
   });
 
   test("a conditional rate says which field would have settled it", () => {

@@ -591,6 +591,74 @@ describe("estimate and budget", () => {
     expect(result.estimate.costUSD).toBeGreaterThan(0);
   });
 
+  /**
+   * The estimate half of the media-resolution fact the check battery already
+   * reads for the video-duration cap. Gemini is the one dialect that publishes
+   * a fixed per-level number, which is why `imageTokensByDetail` carries `low`
+   * and nothing else — and why the OpenAI table deliberately carries none (its
+   * vision guide says `low` does not always cost less than `high`).
+   */
+  test("a per-part MEDIA_RESOLUTION_LOW prices the image at 280, not 258", () => {
+    const result = expectOk(
+      chat.safe({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: "aaaa" },
+              {
+                inlineData: { mimeType: "image/png", data: PNG_1X1 },
+                mediaResolution: { level: "MEDIA_RESOLUTION_LOW" },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    // Higher than the 258 default, which is the counter-intuitive part: LOW is
+    // a flat per-image cap, and the default is one 258-token tile for an image
+    // small enough not to tile.
+    expect(result.estimate.inputTokens).toBe(4 + 1 + 280);
+  });
+
+  test("the request-level mediaResolution applies when a part declares none", () => {
+    const result = expectOk(
+      chat.safe({
+        model: "gemini-2.5-flash",
+        contents: [
+          { role: "user", parts: [{ text: "aaaa" }, { inlineData: { mimeType: "image/png", data: PNG_1X1 } }] },
+        ],
+        generationConfig: { mediaResolution: "MEDIA_RESOLUTION_LOW" },
+      }),
+    );
+    expect(result.estimate.inputTokens).toBe(4 + 1 + 280);
+  });
+
+  test("a part's own level overrides the request-level one, as Gemini documents", () => {
+    const result = expectOk(
+      chat.safe({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: "aaaa" },
+              {
+                inlineData: { mimeType: "image/png", data: PNG_1X1 },
+                mediaResolution: { level: "MEDIA_RESOLUTION_HIGH" },
+              },
+            ],
+          },
+        ],
+        generationConfig: { mediaResolution: "MEDIA_RESOLUTION_LOW" },
+      }),
+    );
+    // HIGH has no published constant, so it falls back to the model-wide 258
+    // rather than inheriting LOW's 280 — the part won, which is the assertion.
+    expect(result.estimate.inputTokens).toBe(4 + 1 + 258);
+  });
+
   test("worst-case cost uses maxOutputTokens; maxCostUSD enforces budget", () => {
     const result = chat.safe(
       {

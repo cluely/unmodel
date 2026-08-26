@@ -59,16 +59,22 @@ import type { KlingShot } from "./v1-routes";
 import type { TextToVideoParams } from "./video";
 import type { ImageToVideoParams } from "./video-from-image";
 
-type ById = FalVideoBodyById;
+// The per-endpoint aliases below are `export`ed rather than private, and it is
+// not decoration: they are the exact symbols `<Provider>…FalOverlap`'s
+// `ReturnType` resolves to, so a consumer that emits declarations around a
+// result carrying `.toApi("fal")` cannot name it without them (TS4023, "has or
+// is using name 'FalAiFlux2ProInput' … but cannot be named"). Type-only, and
+// re-exported one line from ./index.ts. See src/core/carriers.ts.
+export type ById = FalVideoBodyById;
 
-type FalKlingV25Text = ById["fal-ai/kling-video/v2.5-turbo/pro/text-to-video"];
-type FalKlingV26Text = ById["fal-ai/kling-video/v2.6/pro/text-to-video"];
-type FalKlingV3Text =
+export type FalKlingV25Text = ById["fal-ai/kling-video/v2.5-turbo/pro/text-to-video"];
+export type FalKlingV26Text = ById["fal-ai/kling-video/v2.6/pro/text-to-video"];
+export type FalKlingV3Text =
   | ById["fal-ai/kling-video/v3/pro/text-to-video"]
   | ById["fal-ai/kling-video/v3/standard/text-to-video"];
-type FalKlingV25Image = ById["fal-ai/kling-video/v2.5-turbo/pro/image-to-video"];
-type FalKlingV26Image = ById["fal-ai/kling-video/v2.6/pro/image-to-video"];
-type FalKlingV3Image =
+export type FalKlingV25Image = ById["fal-ai/kling-video/v2.5-turbo/pro/image-to-video"];
+export type FalKlingV26Image = ById["fal-ai/kling-video/v2.6/pro/image-to-video"];
+export type FalKlingV3Image =
   | ById["fal-ai/kling-video/v3/pro/image-to-video"]
   | ById["fal-ai/kling-video/v3/standard/image-to-video"];
 

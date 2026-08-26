@@ -6,22 +6,27 @@
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o1__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__motion-control.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
+//   data/fal/openapi/fal-ai__lightx__relight.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-2.3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1.json
 //   data/fal/openapi/fal-ai__veo3.1__extend-video.json
 //   data/fal/openapi/fal-ai__veo3.1__fast.json
 //   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__reference-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
@@ -57,19 +62,24 @@ import type {
   BytedanceSeedance25ImageToVideoInput,
   BytedanceSeedance25ReferenceToVideoInput,
   BytedanceSeedance25TextToVideoInput,
+  FalAiKlingVideoO1VideoToVideoEditInput,
   FalAiKlingVideoO3ProVideoToVideoEditInput,
   FalAiKlingVideoV25TurboProImageToVideoInput,
   FalAiKlingVideoV25TurboProTextToVideoInput,
   FalAiKlingVideoV26ProImageToVideoInput,
   FalAiKlingVideoV26ProTextToVideoInput,
   FalAiKlingVideoV3ProImageToVideoInput,
+  FalAiKlingVideoV3ProMotionControlInput,
   FalAiKlingVideoV3ProTextToVideoInput,
+  FalAiLightxRelightInput,
   FalAiMinimaxHailuo02ProImageToVideoInput,
+  FalAiMinimaxHailuo23ProTextToVideoInput,
   FalAiPixverseV6TextToVideoInput,
   FalAiVeo31ExtendVideoInput,
   FalAiVeo31FirstLastFrameToVideoInput,
   FalAiVeo31ImageToVideoInput,
   FalAiVeo31Input,
+  FalAiVeo31ReferenceToVideoInput,
   FalAiWanV22A14bImageToVideoInput,
   FalAiWanV22A14bTextToVideoInput,
   FalAiWanV27ImageToVideoInput,
@@ -349,6 +359,31 @@ const ROW_56fcd2 = {
 } as const;
 
 /**
+ * fal-ai/veo3.1/reference-to-video.
+ *
+ * The extras are typed from `FalAiVeo31ReferenceToVideoInput`, so the value an editor
+ * offers here and the value `fal.video` validates are one declaration.
+ */
+const ROW_5bd50e = {
+  classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
+  keys: ["prompt", "aspect_ratio", "duration", "resolution", "generate_audio", "auto_fix", "safety_tolerance", "image_urls"],
+  ratios: ["16:9", "9:16"],
+  tiers: ["4k"],
+  tierWire: { "4k": "4k" },
+  durations: [8],
+  durationWire: { "8": "8s" },
+  resolutions: ["720p", "1080p", "4k"],
+  resolutionWire: { "1080p": "1080p", "4k": "4k", "720p": "720p" },
+  roles: ["reference"],
+  roleWire: { reference: "image_urls" },
+  extras: {
+    generate_audio: EXTRA as FalAiVeo31ReferenceToVideoInput["generate_audio"],
+    auto_fix: EXTRA as FalAiVeo31ReferenceToVideoInput["auto_fix"],
+    safety_tolerance: EXTRA as FalAiVeo31ReferenceToVideoInput["safety_tolerance"],
+  },
+} as const;
+
+/**
  * fal-ai/veo3.1/extend-video.
  *
  * The extras are typed from `FalAiVeo31ExtendVideoInput`, so the value an editor offers
@@ -368,6 +403,26 @@ const ROW_6582a4 = {
     generate_audio: EXTRA as FalAiVeo31ExtendVideoInput["generate_audio"],
     auto_fix: EXTRA as FalAiVeo31ExtendVideoInput["auto_fix"],
     safety_tolerance: EXTRA as FalAiVeo31ExtendVideoInput["safety_tolerance"],
+  },
+} as const;
+
+/**
+ * fal-ai/lightx/relight.
+ *
+ * The extras are typed from `FalAiLightxRelightInput`, so the value an editor offers here
+ * and the value `fal.video` validates are one declaration.
+ */
+const ROW_7ba555 = {
+  classes: ["fixedGeometry"],
+  keys: ["video_url", "prompt", "seed", "relit_cond_type", "relight_parameters", "relit_cond_img_url", "ref_id"],
+  resolutions: [],
+  roles: [],
+  videoWire: "video_url",
+  extras: {
+    relit_cond_type: EXTRA as FalAiLightxRelightInput["relit_cond_type"],
+    relight_parameters: EXTRA as FalAiLightxRelightInput["relight_parameters"],
+    relit_cond_img_url: EXTRA as FalAiLightxRelightInput["relit_cond_img_url"],
+    ref_id: EXTRA as FalAiLightxRelightInput["ref_id"],
   },
 } as const;
 
@@ -412,6 +467,25 @@ const ROW_a84ee7 = {
   extras: {
     generate_audio: EXTRA as FalAiKlingVideoV26ProImageToVideoInput["generate_audio"],
     voice_ids: EXTRA as FalAiKlingVideoV26ProImageToVideoInput["voice_ids"],
+  },
+} as const;
+
+/**
+ * fal-ai/kling-video/o1/video-to-video/edit.
+ *
+ * The extras are typed from `FalAiKlingVideoO1VideoToVideoEditInput`, so the value an
+ * editor offers here and the value `fal.video` validates are one declaration.
+ */
+const ROW_a8d7a5 = {
+  classes: ["fixedGeometry"],
+  keys: ["prompt", "video_url", "keep_audio", "image_urls", "elements"],
+  resolutions: [],
+  roles: ["reference"],
+  roleWire: { reference: "image_urls" },
+  videoWire: "video_url",
+  extras: {
+    keep_audio: EXTRA as FalAiKlingVideoO1VideoToVideoEditInput["keep_audio"],
+    elements: EXTRA as FalAiKlingVideoO1VideoToVideoEditInput["elements"],
   },
 } as const;
 
@@ -539,6 +613,26 @@ const ROW_c9c544 = {
 } as const;
 
 /**
+ * fal-ai/kling-video/v3/pro/motion-control.
+ *
+ * The extras are typed from `FalAiKlingVideoV3ProMotionControlInput`, so the value an
+ * editor offers here and the value `fal.video` validates are one declaration.
+ */
+const ROW_d0f391 = {
+  classes: ["fixedGeometry"],
+  keys: ["prompt", "image_url", "video_url", "keep_original_sound", "character_orientation", "elements"],
+  resolutions: [],
+  roles: ["first"],
+  roleWire: { first: "image_url" },
+  videoWire: "video_url",
+  extras: {
+    keep_original_sound: EXTRA as FalAiKlingVideoV3ProMotionControlInput["keep_original_sound"],
+    character_orientation: EXTRA as FalAiKlingVideoV3ProMotionControlInput["character_orientation"],
+    elements: EXTRA as FalAiKlingVideoV3ProMotionControlInput["elements"],
+  },
+} as const;
+
+/**
  * bytedance/seedance-2.5/reference-to-video.
  *
  * The extras are typed from `BytedanceSeedance25ReferenceToVideoInput`, so the value an
@@ -560,6 +654,22 @@ const ROW_d272af = {
     generate_audio: EXTRA as BytedanceSeedance25ReferenceToVideoInput["generate_audio"],
     bitrate_mode: EXTRA as BytedanceSeedance25ReferenceToVideoInput["bitrate_mode"],
     end_user_id: EXTRA as BytedanceSeedance25ReferenceToVideoInput["end_user_id"],
+  },
+} as const;
+
+/**
+ * fal-ai/minimax/hailuo-2.3/pro/text-to-video.
+ *
+ * The extras are typed from `FalAiMinimaxHailuo23ProTextToVideoInput`, so the value an
+ * editor offers here and the value `fal.video` validates are one declaration.
+ */
+const ROW_d768f4 = {
+  classes: ["fixedGeometry"],
+  keys: ["prompt", "prompt_optimizer"],
+  resolutions: [],
+  roles: [],
+  extras: {
+    prompt_optimizer: EXTRA as FalAiMinimaxHailuo23ProTextToVideoInput["prompt_optimizer"],
   },
 } as const;
 
@@ -697,22 +807,27 @@ export const FAL_VIDEO_PARAM_SHAPES = {
   "bytedance/seedance-2.5/image-to-video": ROW_3d92af,
   "bytedance/seedance-2.5/reference-to-video": ROW_d272af,
   "bytedance/seedance-2.5/text-to-video": ROW_e0e300,
+  "fal-ai/kling-video/o1/video-to-video/edit": ROW_a8d7a5,
   "fal-ai/kling-video/o3/pro/video-to-video/edit": ROW_acd737,
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": ROW_f7ec6b,
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": ROW_27477e,
   "fal-ai/kling-video/v2.6/pro/image-to-video": ROW_a84ee7,
   "fal-ai/kling-video/v2.6/pro/text-to-video": ROW_01d4e4,
   "fal-ai/kling-video/v3/pro/image-to-video": ROW_0488be,
+  "fal-ai/kling-video/v3/pro/motion-control": ROW_d0f391,
   "fal-ai/kling-video/v3/pro/text-to-video": ROW_030a77,
   "fal-ai/kling-video/v3/standard/image-to-video": ROW_0488be,
   "fal-ai/kling-video/v3/standard/text-to-video": ROW_030a77,
+  "fal-ai/lightx/relight": ROW_7ba555,
   "fal-ai/minimax/hailuo-02/pro/image-to-video": ROW_f025ff,
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video": ROW_d768f4,
   "fal-ai/pixverse/v6/text-to-video": ROW_551084,
   "fal-ai/veo3.1": ROW_1574c2,
   "fal-ai/veo3.1/extend-video": ROW_6582a4,
   "fal-ai/veo3.1/fast": ROW_1574c2,
   "fal-ai/veo3.1/first-last-frame-to-video": ROW_e450e5,
   "fal-ai/veo3.1/image-to-video": ROW_c3f3a3,
+  "fal-ai/veo3.1/reference-to-video": ROW_5bd50e,
   "fal-ai/wan/v2.2-a14b/image-to-video": ROW_ba5cc1,
   "fal-ai/wan/v2.2-a14b/text-to-video": ROW_082d48,
   "fal-ai/wan/v2.7/image-to-video": ROW_56fcd2,
@@ -733,4 +848,4 @@ export const FAL_VIDEO_PARAM_SHAPES = {
  * one generator.
  */
 
-export const FAL_VIDEO_MODELS = ["bytedance/seedance-2.0/image-to-video", "bytedance/seedance-2.0/text-to-video", "bytedance/seedance-2.5/image-to-video", "bytedance/seedance-2.5/reference-to-video", "bytedance/seedance-2.5/text-to-video", "fal-ai/kling-video/o3/pro/video-to-video/edit", "fal-ai/kling-video/v2.5-turbo/pro/image-to-video", "fal-ai/kling-video/v2.5-turbo/pro/text-to-video", "fal-ai/kling-video/v2.6/pro/image-to-video", "fal-ai/kling-video/v2.6/pro/text-to-video", "fal-ai/kling-video/v3/pro/image-to-video", "fal-ai/kling-video/v3/pro/text-to-video", "fal-ai/kling-video/v3/standard/image-to-video", "fal-ai/kling-video/v3/standard/text-to-video", "fal-ai/minimax/hailuo-02/pro/image-to-video", "fal-ai/pixverse/v6/text-to-video", "fal-ai/veo3.1", "fal-ai/veo3.1/extend-video", "fal-ai/veo3.1/fast", "fal-ai/veo3.1/first-last-frame-to-video", "fal-ai/veo3.1/image-to-video", "fal-ai/wan/v2.2-a14b/image-to-video", "fal-ai/wan/v2.2-a14b/text-to-video", "fal-ai/wan/v2.7/image-to-video", "fal-ai/wan/v2.7/text-to-video", "google/gemini-omni-flash", "lightricks/ltx-2.5/text-to-video/pro", "minimax/h3/image-to-video", "minimax/h3/text-to-video", "xai/grok-imagine-video/text-to-video"] as const;
+export const FAL_VIDEO_MODELS = ["bytedance/seedance-2.0/image-to-video", "bytedance/seedance-2.0/text-to-video", "bytedance/seedance-2.5/image-to-video", "bytedance/seedance-2.5/reference-to-video", "bytedance/seedance-2.5/text-to-video", "fal-ai/kling-video/o1/video-to-video/edit", "fal-ai/kling-video/o3/pro/video-to-video/edit", "fal-ai/kling-video/v2.5-turbo/pro/image-to-video", "fal-ai/kling-video/v2.5-turbo/pro/text-to-video", "fal-ai/kling-video/v2.6/pro/image-to-video", "fal-ai/kling-video/v2.6/pro/text-to-video", "fal-ai/kling-video/v3/pro/image-to-video", "fal-ai/kling-video/v3/pro/motion-control", "fal-ai/kling-video/v3/pro/text-to-video", "fal-ai/kling-video/v3/standard/image-to-video", "fal-ai/kling-video/v3/standard/text-to-video", "fal-ai/lightx/relight", "fal-ai/minimax/hailuo-02/pro/image-to-video", "fal-ai/minimax/hailuo-2.3/pro/text-to-video", "fal-ai/pixverse/v6/text-to-video", "fal-ai/veo3.1", "fal-ai/veo3.1/extend-video", "fal-ai/veo3.1/fast", "fal-ai/veo3.1/first-last-frame-to-video", "fal-ai/veo3.1/image-to-video", "fal-ai/veo3.1/reference-to-video", "fal-ai/wan/v2.2-a14b/image-to-video", "fal-ai/wan/v2.2-a14b/text-to-video", "fal-ai/wan/v2.7/image-to-video", "fal-ai/wan/v2.7/text-to-video", "google/gemini-omni-flash", "lightricks/ltx-2.5/text-to-video/pro", "minimax/h3/image-to-video", "minimax/h3/text-to-video", "xai/grok-imagine-video/text-to-video"] as const;

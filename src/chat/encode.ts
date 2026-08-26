@@ -148,6 +148,7 @@ function encodeFilePart(
 ): IRPart | undefined {
   const cache = cacheOf(part.cache);
   const filename = part.filename !== undefined ? { filename: part.filename } : {};
+  const detail = part.detail !== undefined ? { detail: part.detail } : {};
 
   if (typeof part.data !== "string") {
     const dialect = dialectOf(part.data.provider);
@@ -169,6 +170,7 @@ function encodeFilePart(
       ...(part.mediaType !== undefined && { mediaType: part.mediaType }),
       data: { kind: "file", dialect, ref: part.data.fileId },
       ...filename,
+      ...detail,
       ...cache,
     };
   }
@@ -179,6 +181,7 @@ function encodeFilePart(
     ...(mediaType !== undefined && { mediaType }),
     data,
     ...filename,
+    ...detail,
     ...cache,
   };
 }

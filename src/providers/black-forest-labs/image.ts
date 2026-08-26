@@ -200,7 +200,7 @@ export type Flux2Body<FutureModel extends string = never> =
   | Flux2Klein4bBody
   | UnknownFlux2ModelBody<FutureModel>;
 
-interface Flux2BodyByModel {
+export interface Flux2BodyByModel {
   "flux-2-pro": Flux2ProBody;
   "flux-2-max": Flux2MaxBody;
   "flux-2-pro-preview": Flux2ProPreviewBody;

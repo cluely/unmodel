@@ -41,7 +41,13 @@ import type { FalVideoBodyById } from "../fal/interop";
 import { DEFAULT_FPS } from "./shared";
 import type { TextToVideoParams } from "./video";
 
-type FalLtx25Pro = FalVideoBodyById["lightricks/ltx-2.5/text-to-video/pro"];
+// The per-endpoint aliases below are `export`ed rather than private, and it is
+// not decoration: they are the exact symbols `<Provider>…FalOverlap`'s
+// `ReturnType` resolves to, so a consumer that emits declarations around a
+// result carrying `.toApi("fal")` cannot name it without them (TS4023, "has or
+// is using name 'FalAiFlux2ProInput' … but cannot be named"). Type-only, and
+// re-exported one line from ./index.ts. See src/core/carriers.ts.
+export type FalLtx25Pro = FalVideoBodyById["lightricks/ltx-2.5/text-to-video/pro"];
 
 const ENDPOINT = "lightricks/ltx-2.5/text-to-video/pro";
 

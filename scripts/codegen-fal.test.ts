@@ -645,6 +645,41 @@ describe("codegen-fal: the fixture", () => {
     expect(run).toThrow(/cannot classify `aspect_ratio`/);
   });
 
+  /**
+   * The wire→row direction, which no preset sweep can run.
+   *
+   * `test/unified/image-presets.test.ts` iterates `row.ratios` and asserts each
+   * member compiles — it reads the artifact under suspicion, so a member the
+   * row FAILED to declare is invisible to it. That is how `"2.35:1"` and
+   * `"19.5:9"` were silently dropped by an integers-only pattern in 0.3.0.
+   * This is the guard that makes the class of bug non-recurring: every member
+   * of a CLOSED `aspect_ratio` enum is either in the row or on the one-entry
+   * recorded-refusal list, and anything else stops codegen.
+   */
+  test("every closed `aspect_ratio` member reaches the row, or is a recorded refusal", () => {
+    const withRatios = (members: readonly (string | number)[], open = false) =>
+      withInput((input) => {
+        (inputOf(input.snapshots, "acme/alpha")["properties"] as Json)["aspect_ratio"] = open
+          ? { anyOf: [{ type: "string", enum: [...members] }, { type: "string" }], default: "16:9" }
+          : { type: "string", enum: [...members], default: "16:9" };
+        (inputOf(input.snapshots, "acme/alpha")["x-fal-order-properties"] as string[]).push("aspect_ratio");
+      });
+
+    // Decimals survive — the whole point of mirroring derive.ts's RATIO_SPELLING.
+    const params = withRatios(["16:9", "2.35:1", "9:19.5", "auto"])().get("image-params.gen.ts") as string;
+    expect(params).toContain('ratios: ["16:9", "2.35:1", "9:19.5"]');
+    // …and "auto" is refused without failing, because the refusal is recorded.
+    expect(params).not.toContain('"auto"');
+
+    // Anything else the filter would drop names itself, the endpoint and both lists.
+    expect(withRatios(["16:9", "portrait"])).toThrow(
+      /acme\/alpha: `aspect_ratio` enum member "portrait" reached neither.*"auto"/s,
+    );
+
+    // An OPEN enum is exempt: there the list is a set of presets, not a limit.
+    expect(withRatios(["16:9", "portrait"], true)().get("image-params.gen.ts")).toContain("ratioFreeform: true");
+  });
+
   test("a verb that disagrees with the response schema fails", () => {
     const run = withInput((input) => {
       ((input.curation["endpoints"] as Json)["acme/gamma"] as Json)["verb"] = "video";
@@ -819,6 +854,26 @@ describe("codegen-fal: the committed fal snapshots", () => {
     const rows = [...params.matchAll(/^const ROW_/gm)].length;
     const endpoints = [...params.matchAll(/^  "[^"]+": ROW_/gm)].length;
     expect(rows, `${rows} rows for ${endpoints} endpoints`).toBeLessThan(endpoints);
+  });
+
+  /**
+   * The decimal ratios, against fal's own documents.
+   *
+   * krea publishes `"2.35:1"` (anamorphic) and xai publishes the phone-native
+   * `"19.5:9"` / `"9:19.5"`. unmodel ships a hand-written krea adapter for the
+   * same model that has carried `"2.35:1"` all along
+   * (`src/providers/krea/constraints.ts`), so the fal-routed row dropping it
+   * was the package contradicting itself about one endpoint's vocabulary.
+   */
+  test("krea and xai keep their decimal aspect ratios", () => {
+    const params = file("image-params.gen.ts");
+    expect(params).toContain('ratios: ["1:1", "4:3", "3:2", "16:9", "2.35:1", "4:5", "2:3", "9:16"]');
+    expect(params).toContain(
+      'ratios: ["2:1", "20:9", "19.5:9", "16:9", "4:3", "3:2", "1:1", "2:3", "3:4", "9:16", "9:19.5", "9:20", "1:2"]',
+    );
+    // The wire layers were always right; only the canonical row was short.
+    expect(file("image-narrow.gen.ts")).toContain('"2.35:1"');
+    expect(file("image-wire.gen.ts")).toContain('"19.5:9"');
   });
 
   /** flux/dev vs flux/schnell — the reason per-endpoint bounds exist. */

@@ -108,6 +108,62 @@ Use `<string>` only for model IDs genuinely discovered at runtime. It gives up p
 
 A new model at a registered provider stays callable. It emits `unknown_model` and continues with the checks that do not need catalog metadata.
 
+### Errors, and why none of them is worth retrying
+
+Two error classes leave this library, and each carries a static `isInstance` — the supported check, and the one to reach for:
+
+```ts
+import { TranslationUnavailableError, UnmodelValidationError } from "unmodel";
+
+try {
+  await callTheModel(params);
+} catch (error) {
+  if (UnmodelValidationError.isInstance(error)) error.issues; // [{ code: "invalid_shape", path: ["max_tokens"], … }]
+  if (TranslationUnavailableError.isInstance(error)) error.message;
+  throw error;
+}
+```
+
+Prefer it over `instanceof`. Two copies of unmodel in one dependency tree — or a Worker, a `vm` context, an iframe — give you a structurally identical class from a different realm, and `instanceof` answers `false` for every one of them.
+
+**Both are deterministic, and neither is ever worth a retry.** Validation is a pure function of the params: no network, no clock, no shared state, so the second attempt fails on the same issue as the first. There is no `retryable` field on an unmodel error and deliberately will not be one — a field that reads `false` on 100% of instances is a field that invites a caller to branch on it as though it might one day read `true`.
+
+That leaves two shapes worth writing, and durable-execution runtimes are where the difference shows. Validate **before** the step, so a bad request never becomes a retried one:
+
+```ts
+const result = chat.safe(params);
+if (!result.ok) return { rejected: result.errors }; // never reaches the durable step
+await step.do("call-model", () => fetch(url, { method: "POST", body: JSON.stringify(result.params) }));
+```
+
+Or classify **at the catch** and rethrow as your runtime's terminal error, which is one line in every one of them:
+
+```ts
+import { NonRetryableError } from "cloudflare:workflows";
+
+await step.do("call-model", async () => {
+  try {
+    return await callTheModel(params);
+  } catch (error) {
+    if (UnmodelValidationError.isInstance(error)) throw new NonRetryableError(error.message);
+    throw error; // a 429, a 5xx, a socket hang-up — those are the retryable ones
+  }
+});
+```
+
+Temporal spells that `ApplicationFailure.nonRetryable(...)`, Inngest `NonRetriableError`, Restate `TerminalError`. Same shape, different import.
+
+**Classify before the boundary, not after it.** `structuredClone` — what a durable runtime uses to persist a failure across a step, and what `postMessage` does across a worker — does not round-trip a custom error:
+
+```ts
+const clone = structuredClone(new UnmodelValidationError("openai.chat", issues));
+clone.name;                                 // "Error"  ← not "UnmodelValidationError"
+(clone as UnmodelValidationError).issues;   // undefined
+UnmodelValidationError.isInstance(clone);   // false
+```
+
+The clone keeps `message` and `stack` and nothing else: `name` collapses to `"Error"` because the structured-clone algorithm only preserves the seven native error names, and `issues` is an own property, which it does not carry at all. So an `isInstance` check on the far side of a serialization boundary reports "not a validation error" about a validation error. Decide on the near side and carry the decision, not the instance.
+
 ## Estimating cost
 
 `.safe()` carries an `estimate` alongside the validated body, and `maxCostUSD` turns that estimate into a gate:

@@ -6,22 +6,27 @@
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o1__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__motion-control.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
+//   data/fal/openapi/fal-ai__lightx__relight.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-2.3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1.json
 //   data/fal/openapi/fal-ai__veo3.1__extend-video.json
 //   data/fal/openapi/fal-ai__veo3.1__fast.json
 //   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__reference-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
@@ -103,6 +108,11 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.BytedanceSeedance25TextToVideoInput["generate_audio"], Gate["generate_audio"]>,
   AssertExtends<wire.BytedanceSeedance25TextToVideoInput["bitrate_mode"], Gate["bitrate_mode"]>,
   AssertExtends<wire.BytedanceSeedance25TextToVideoInput["end_user_id"], Gate["end_user_id"]>,
+  // fal-ai/kling-video/o1/video-to-video/edit
+  AssertExtends<wire.FalAiKlingVideoO1VideoToVideoEditInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.FalAiKlingVideoO1VideoToVideoEditInput["video_url"], Gate["video_url"]>,
+  AssertExtends<wire.FalAiKlingVideoO1VideoToVideoEditInput["keep_audio"], Gate["keep_audio"]>,
+  AssertExtends<wire.FalAiKlingVideoO1VideoToVideoEditInput["image_urls"], Gate["image_urls"]>,
   // fal-ai/kling-video/o3/pro/video-to-video/edit
   AssertExtends<wire.FalAiKlingVideoO3ProVideoToVideoEditInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.FalAiKlingVideoO3ProVideoToVideoEditInput["video_url"], Gate["video_url"]>,
@@ -146,6 +156,12 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.FalAiKlingVideoV3ProImageToVideoInput["shot_type"], Gate["shot_type"]>,
   AssertExtends<wire.FalAiKlingVideoV3ProImageToVideoInput["negative_prompt"], Gate["negative_prompt"]>,
   AssertExtends<wire.FalAiKlingVideoV3ProImageToVideoInput["cfg_scale"], Gate["cfg_scale"]>,
+  // fal-ai/kling-video/v3/pro/motion-control
+  AssertExtends<wire.FalAiKlingVideoV3ProMotionControlInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.FalAiKlingVideoV3ProMotionControlInput["image_url"], Gate["image_url"]>,
+  AssertExtends<wire.FalAiKlingVideoV3ProMotionControlInput["video_url"], Gate["video_url"]>,
+  AssertExtends<wire.FalAiKlingVideoV3ProMotionControlInput["keep_original_sound"], Gate["keep_original_sound"]>,
+  AssertExtends<wire.FalAiKlingVideoV3ProMotionControlInput["character_orientation"], Gate["character_orientation"]>,
   // fal-ai/kling-video/v3/pro/text-to-video
   AssertExtends<wire.FalAiKlingVideoV3ProTextToVideoInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.FalAiKlingVideoV3ProTextToVideoInput["duration"], Gate["duration"]>,
@@ -171,11 +187,21 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.FalAiKlingVideoV3StandardTextToVideoInput["aspect_ratio"], Gate["aspect_ratio"]>,
   AssertExtends<wire.FalAiKlingVideoV3StandardTextToVideoInput["negative_prompt"], Gate["negative_prompt"]>,
   AssertExtends<wire.FalAiKlingVideoV3StandardTextToVideoInput["cfg_scale"], Gate["cfg_scale"]>,
+  // fal-ai/lightx/relight
+  AssertExtends<wire.FalAiLightxRelightInput["video_url"], Gate["video_url"]>,
+  AssertExtends<wire.FalAiLightxRelightInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.FalAiLightxRelightInput["seed"], Gate["seed"]>,
+  AssertExtends<wire.FalAiLightxRelightInput["relit_cond_type"], Gate["relit_cond_type"]>,
+  AssertExtends<wire.FalAiLightxRelightInput["relit_cond_img_url"], Gate["relit_cond_img_url"]>,
+  AssertExtends<wire.FalAiLightxRelightInput["ref_id"], Gate["ref_id"]>,
   // fal-ai/minimax/hailuo-02/pro/image-to-video
   AssertExtends<wire.FalAiMinimaxHailuo02ProImageToVideoInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.FalAiMinimaxHailuo02ProImageToVideoInput["image_url"], Gate["image_url"]>,
   AssertExtends<wire.FalAiMinimaxHailuo02ProImageToVideoInput["prompt_optimizer"], Gate["prompt_optimizer"]>,
   AssertExtends<wire.FalAiMinimaxHailuo02ProImageToVideoInput["end_image_url"], Gate["end_image_url"]>,
+  // fal-ai/minimax/hailuo-2.3/pro/text-to-video
+  AssertExtends<wire.FalAiMinimaxHailuo23ProTextToVideoInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.FalAiMinimaxHailuo23ProTextToVideoInput["prompt_optimizer"], Gate["prompt_optimizer"]>,
   // fal-ai/pixverse/v6/text-to-video
   AssertExtends<wire.FalAiPixverseV6TextToVideoInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.FalAiPixverseV6TextToVideoInput["aspect_ratio"], Gate["aspect_ratio"]>,
@@ -241,6 +267,15 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.FalAiVeo31ImageToVideoInput["auto_fix"], Gate["auto_fix"]>,
   AssertExtends<wire.FalAiVeo31ImageToVideoInput["safety_tolerance"], Gate["safety_tolerance"]>,
   AssertExtends<wire.FalAiVeo31ImageToVideoInput["image_url"], Gate["image_url"]>,
+  // fal-ai/veo3.1/reference-to-video
+  AssertExtends<wire.FalAiVeo31ReferenceToVideoInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.FalAiVeo31ReferenceToVideoInput["aspect_ratio"], Gate["aspect_ratio"]>,
+  AssertExtends<wire.FalAiVeo31ReferenceToVideoInput["duration"], Gate["duration"]>,
+  AssertExtends<wire.FalAiVeo31ReferenceToVideoInput["resolution"], Gate["resolution"]>,
+  AssertExtends<wire.FalAiVeo31ReferenceToVideoInput["generate_audio"], Gate["generate_audio"]>,
+  AssertExtends<wire.FalAiVeo31ReferenceToVideoInput["auto_fix"], Gate["auto_fix"]>,
+  AssertExtends<wire.FalAiVeo31ReferenceToVideoInput["safety_tolerance"], Gate["safety_tolerance"]>,
+  AssertExtends<wire.FalAiVeo31ReferenceToVideoInput["image_urls"], Gate["image_urls"]>,
   // fal-ai/wan/v2.2-a14b/image-to-video
   AssertExtends<wire.FalAiWanV22A14bImageToVideoInput["image_url"], Gate["image_url"]>,
   AssertExtends<wire.FalAiWanV22A14bImageToVideoInput["prompt"], Gate["prompt"]>,

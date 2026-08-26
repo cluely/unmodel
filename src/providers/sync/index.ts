@@ -114,6 +114,7 @@ export type {
   SyncEmotion,
   SyncErrorCode,
   SyncGenerationOptions,
+  SyncGenerationQuery,
   SyncGenerationSegment,
   SyncGenerationStatus,
   SyncImageInput,
@@ -133,3 +134,8 @@ export type {
 
 export { models, provider } from "./models";
 export type { SyncCatalogModelId } from "./models";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";

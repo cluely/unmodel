@@ -51,11 +51,20 @@
     "published microsoft/mai-image-2.5 page states no rate at all, and the internal route fal's own OpenAPI",
     "documents shows only the unpopulated $0-per-compute-second template that wizper also shows.",
     "",
-    "Verified 2026-08-25 against the live pages.",
+    "Verified 2026-08-25 against the live pages, and the six rows the v0.3.x adopter wave added on 2026-08-26.",
     "",
-    "Of the 146 rows here, 51 carry a unit ModelCost can express and therefore reach a generated catalog row;",
-    "the other 95 do not, which is the shape of fal's pricing rather than a gap in this file. The big classes:",
-    "conditional (48) needs a field the request often leaves at its default — at video that field is almost",
+    "That wave added NO new unit either — one conditional table byte-identical to fal-ai/veo3.1's (its",
+    "reference-to-video sibling), three flat per_second rows (kling v3 motion-control, the kling o1 edit and",
+    "fal-ai/lightx/relight), one conditional per-10-second table at topaz/upscale/video/generative, and the",
+    "roster's FIRST per_generation video row: fal-ai/minimax/hailuo-2.3/pro/text-to-video's flat $0.49, which",
+    "makes it the one fal video endpoint whose estimate is an exact number from a request body alone. Two",
+    "transcription notes worth keeping: topaz's price sentence enumerates \"Starlight Precise 2.5\" while the",
+    "schema's default is \"Starlight Precise 2.6\" — the quote is transcribed as the page wrote it rather than",
+    "silently upgraded — and fal's lightx page writes its rate as \"0.1$\", which is copied verbatim too.",
+    "",
+    "Of the 171 rows here, 54 carry a unit ModelCost can express and therefore reach a generated catalog row;",
+    "the other 117 do not, which is the shape of fal's pricing rather than a gap in this file. The big classes:",
+    "conditional (66) needs a field the request often leaves at its default — at video that field is almost",
     "always `resolution` or an audio switch, and fal quotes several of them per THOUSAND TOKENS of rendered",
     "frames, which no request body counts; per_megapixel (18) needs the output's pixel count, and at upscale",
     "that count is the INPUT file's area times the factor, which a submit body never carries because the",
@@ -899,6 +908,13 @@
       "verified": "2026-08-24",
       "quote": "Your request will be priced $0.014 per input video seconds, rolling up to closest 5 second increment. For example, if your video's duration is 3 seconds, it will be billed as a 5 second video"
     },
+    "fal-ai/kling-video/o1/video-to-video/edit": {
+      "unit": "per_second",
+      "usd": 0.168,
+      "source": "https://fal.ai/models/fal-ai/kling-video/o1/video-to-video/edit",
+      "verified": "2026-08-26",
+      "quote": "Your request will cost $0.168 per second."
+    },
     "fal-ai/kling-video/o3/pro/video-to-video/edit": {
       "unit": "per_second",
       "usd": 0.168,
@@ -998,6 +1014,13 @@
       "source": "https://fal.ai/models/fal-ai/kling-video/v3/pro/image-to-video",
       "verified": "2026-08-24",
       "quote": "For every second of video you generated, you will be charged $0.112 (audio off) or $0.168 (audio on), if voice control is used while generating audio you will be charged $0.196."
+    },
+    "fal-ai/kling-video/v3/pro/motion-control": {
+      "unit": "per_second",
+      "usd": 0.168,
+      "source": "https://fal.ai/models/fal-ai/kling-video/v3/pro/motion-control",
+      "verified": "2026-08-26",
+      "quote": "Your request will cost $0.168 per second."
     },
     "fal-ai/kling-video/v3/pro/text-to-video": {
       "unit": "conditional",
@@ -1142,6 +1165,13 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.2 for videos up to 40 seconds. For longer videos, you will be charged $0.005 per second of output video."
     },
+    "fal-ai/lightx/relight": {
+      "unit": "per_second",
+      "usd": 0.1,
+      "source": "https://fal.ai/models/fal-ai/lightx/relight",
+      "verified": "2026-08-26",
+      "quote": "Your request will cost 0.1$ per output video second."
+    },
     "fal-ai/longcat-single-avatar/image-audio-to-video": {
       "unit": "conditional",
       "tierKey": "resolution",
@@ -1193,6 +1223,13 @@
       "source": "https://fal.ai/models/fal-ai/minimax/hailuo-02/pro/image-to-video",
       "verified": "2026-08-24",
       "quote": "For each second of video generated, it will cost $0.08/sec. A single 6 second video will cost $0.48/video."
+    },
+    "fal-ai/minimax/hailuo-2.3/pro/text-to-video": {
+      "unit": "per_generation",
+      "usd": 0.49,
+      "source": "https://fal.ai/models/fal-ai/minimax/hailuo-2.3/pro/text-to-video",
+      "verified": "2026-08-26",
+      "quote": "Your request will cost $0.49 per video generation."
     },
     "fal-ai/minimax/speech-02-hd": {
       "unit": "per_1000_characters",
@@ -1676,6 +1713,31 @@
       "source": "https://fal.ai/models/fal-ai/veo3.1/image-to-video",
       "verified": "2026-08-24",
       "quote": "For every second of video you generate you will be charged $0.20 without audio or $0.40 with audio for 720p or 1080p. At 4k, you will be charged $0.40 per second without audio, or $0.60 with."
+    },
+    "fal-ai/veo3.1/reference-to-video": {
+      "unit": "conditional",
+      "tierKey": "generate_audio × resolution",
+      "tiers": [
+        {
+          "when": "resolution 720p or 1080p, generate_audio=false",
+          "usd": 0.2
+        },
+        {
+          "when": "resolution 720p or 1080p, generate_audio=true",
+          "usd": 0.4
+        },
+        {
+          "when": "resolution 4k, generate_audio=false",
+          "usd": 0.4
+        },
+        {
+          "when": "resolution 4k, generate_audio=true",
+          "usd": 0.6
+        }
+      ],
+      "source": "https://fal.ai/models/fal-ai/veo3.1/reference-to-video",
+      "verified": "2026-08-26",
+      "quote": "For every second of video you generate you will be charged $0.20 without audio or $0.40 with audio for 720p or 1080p. At 4k, you will be charged $0.40 per second without audio, or $0.60 with audio. For example, 8 second video at 1080p with audio on will cost $3.20"
     },
     "fal-ai/wan/v2.2-a14b/image-to-video": {
       "unit": "conditional",
@@ -2222,6 +2284,31 @@
       "source": "https://fal.ai/models/topaz/upscale/image/precision",
       "verified": "2026-08-25",
       "quote": "Your request will cost $0.08 per 24 megapixels of output, with any precision model (Standard V2, High Fidelity V2/V3, Low Resolution V2, CGI, Text Refine). For example a 6000x4000 result costs $0.08 and an 8000x6000 result costs $0.16."
+    },
+    "topaz/upscale/video/generative": {
+      "unit": "conditional",
+      "tierKey": "`model` x output resolution, per 10 seconds of output",
+      "tiers": [
+        {
+          "when": "per 10 seconds of output up to 1080p with Starlight Precise 2.5, Starlight HQ, Starlight Mini or Starlight Sharp",
+          "usd": 1.2
+        },
+        {
+          "when": "per 10 seconds of output in 4K with Starlight Precise 2.5, Starlight HQ, Starlight Mini or Starlight Sharp",
+          "usd": 2.6
+        },
+        {
+          "when": "per 10 seconds of output up to 1080p with Starlight Fast 2",
+          "usd": 0.6
+        },
+        {
+          "when": "per 10 seconds of output in 4K with Starlight Fast 2",
+          "usd": 1.3
+        }
+      ],
+      "source": "https://fal.ai/models/topaz/upscale/video/generative",
+      "verified": "2026-08-26",
+      "quote": "Your request will cost $1.20 per 10 seconds of output up to 1080p, and $2.60 per 10 seconds in 4K, with Starlight Precise 2.5, Starlight HQ, Starlight Mini and Starlight Sharp (a 1-minute clip costs $7.00 at 1080p, $15.20 in 4K). Starlight Fast 2 costs half: $0.60 per 10 seconds up to 1080p and $1.30 in 4K ($3.50 and $7.50 per minute)."
     },
     "topaz/upscale/video/precision": {
       "unit": "conditional",

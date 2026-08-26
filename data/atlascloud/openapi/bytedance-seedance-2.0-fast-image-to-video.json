@@ -1,0 +1,247 @@
+{
+  "components": {
+    "schemas": {
+      "Input": {
+        "properties": {
+          "bitrate_mode": {
+            "default": "standard",
+            "description": "Output video bitrate mode. 'high' encodes at a higher bitrate for a crisper, larger file; 'standard' uses the normal bitrate. Does not affect token cost.",
+            "enum": [
+              "standard",
+              "high"
+            ],
+            "type": "string"
+          },
+          "duration": {
+            "default": 5,
+            "description": "Video duration in seconds (4-15), or -1 for model to choose automatically.",
+            "enum": [
+              -1,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15
+            ],
+            "type": "integer",
+            "x-ui-component": "slider"
+          },
+          "generate_audio": {
+            "default": true,
+            "description": "Whether to generate synchronized audio.",
+            "type": "boolean"
+          },
+          "image": {
+            "description": "First-frame image URL, Base64, or asset reference (asset://<ASSET_ID>). The video starts from this image. Formats: jpeg/png/webp/bmp/tiff/gif, dimensions (300,6000)px, aspect ratio (0.4,2.5), max 30MB.",
+            "type": "string"
+          },
+          "last_image": {
+            "description": "Last-frame image URL, Base64, or asset reference. The video transitions from the first frame to this last frame. Same format requirements as image.",
+            "type": "string"
+          },
+          "model": {
+            "default": "bytedance/seedance-2.0-fast/image-to-video",
+            "description": "Model name.",
+            "type": "string"
+          },
+          "prompt": {
+            "default": "The scene comes alive with gentle motion and cinematic lighting",
+            "description": "Text prompt describing the desired video motion. Optional but recommended.",
+            "type": "string"
+          },
+          "ratio": {
+            "default": "adaptive",
+            "description": "Aspect ratio. 'adaptive' matches the first frame image aspect ratio.",
+            "enum": [
+              "16:9",
+              "4:3",
+              "1:1",
+              "3:4",
+              "9:16",
+              "21:9",
+              "adaptive"
+            ],
+            "type": "string"
+          },
+          "resolution": {
+            "default": "720p",
+            "description": "Video resolution.",
+            "enum": [
+              "480p",
+              "720p",
+              "720p-SR",
+              "1080p-SR",
+              "1440p-SR"
+            ],
+            "type": "string"
+          },
+          "return_last_frame": {
+            "default": false,
+            "description": "Whether to return the last frame as a separate image.",
+            "type": "boolean"
+          },
+          "seed": {
+            "default": -1,
+            "description": "Seed integer used to control the randomness of generated content. Value range: [-1, 2^32-1]. The default -1 means a random seed is used. The same seed with the same request produces similar results, but complete consistency is not guaranteed.",
+            "maximum": 4294967295,
+            "minimum": -1,
+            "type": "integer"
+          },
+          "watermark": {
+            "default": false,
+            "description": "Whether to add a watermark.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model",
+          "image"
+        ],
+        "type": "object",
+        "x-order-properties": [
+          "model",
+          "image",
+          "last_image",
+          "prompt",
+          "duration",
+          "resolution",
+          "ratio",
+          "bitrate_mode",
+          "generate_audio",
+          "watermark",
+          "return_last_frame"
+        ]
+      },
+      "PredictionResponse": {
+        "properties": {
+          "completion_tokens": {
+            "description": "Tokens consumed for billing.",
+            "type": "integer"
+          },
+          "created_at": {
+            "description": "ISO timestamp of creation.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "has_nsfw_contents": {
+            "description": "NSFW detection per output.",
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "Unique identifier for the prediction.",
+            "type": "string"
+          },
+          "model": {
+            "description": "Model ID used for the prediction.",
+            "type": "string"
+          },
+          "outputs": {
+            "description": "URLs to generated content (video + optional last frame).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
+            "description": "Status: processing, completed, failed, or timeout.",
+            "type": "string"
+          },
+          "total_tokens": {
+            "description": "Total tokens consumed.",
+            "type": "integer"
+          },
+          "urls": {
+            "description": "Object containing related API endpoints.",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "apiKeyAuth": {
+        "in": "header",
+        "name": "Authorization",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "The AtlasCloud API.",
+    "title": "AtlasCloud API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/model/generateVideo": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResponse"
+                }
+              }
+            },
+            "description": "The request status."
+          }
+        }
+      },
+      "x-api-name": "model_run"
+    },
+    "/api/v1/model/prediction/{request_id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "description": "Request ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResponse"
+                }
+              }
+            },
+            "description": "Result of the request."
+          }
+        }
+      },
+      "x-api-name": "model_result"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.atlascloud.ai"
+    }
+  ]
+}

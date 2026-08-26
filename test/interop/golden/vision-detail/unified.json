@@ -1,0 +1,29 @@
+{
+  "$comment": [
+    "`detail` is the two-witness case that got it promoted out of providerOptions: OpenAI spells",
+    "it image_url.detail, Gemini spells it per-Part mediaResolution.level, and both mean the same",
+    "thing — how many tokens this attachment costs. Both encoders used to DROP it with a",
+    "dropped_param naming the other dialect as having no equivalent, which was two warnings",
+    "asserting a gap that did not exist.",
+    "",
+    "Only two dialects are present, and that is the case rather than an omission: /v1/messages",
+    "sizes images by pixel dimensions and has no per-attachment hint at all. The anthropic arm",
+    "is the lossy-image-detail fixture next door."
+  ],
+  "model": "google/gemini-2.5-flash",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "What is in this image?" },
+        {
+          "type": "file",
+          "mediaType": "image/png",
+          "data": "iVBORw0KGgoAAAANSUhEUg==",
+          "detail": "low"
+        }
+      ]
+    }
+  ],
+  "maxOutputTokens": 512
+}

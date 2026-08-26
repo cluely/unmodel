@@ -21,9 +21,13 @@
     "ANTI-ROT: an overlay naming a parameter the schema no longer declares FAILS codegen. An exception that has",
     "outlived the thing it excepted is worse than no exception — it is a claim about a wire that no longer exists.",
     "",
-    "Wave 1d still ships ZERO overlays, across all 140 curated endpoints — every one of the nine verbs.",
-    "Five things the roster widening might have needed one for turned out to be general LOWERING RULES",
-    "rather than exceptions, and were implemented in scripts/codegen-fal.ts instead — which is the right",
+    "Wave 1d shipped ZERO overlays across all 140 curated endpoints. The v0.3.x roster widening added the",
+    "first two, and both are `note` kind: documentation only, changing no type and no check — the schema and",
+    "the generated types are still exactly what fal published. They record what fal's own PROSE gets wrong",
+    "about `fal-ai/lightx/relight` (see `endpoints` below).",
+    "",
+    "Six things the roster widenings might have needed a real overlay for turned out to be general LOWERING",
+    "RULES rather than exceptions, and were implemented in scripts/codegen-fal.ts instead — which is the right",
     "home for anything true of fal generally rather than of one endpoint:",
     "  • the OPEN ENUM idiom (`anyOf: [{enum: [...]}, {type: \"string\"}]`, \"these values or any other",
     "    string\"), which flux-pro/v1.1-ultra spells for `aspect_ratio`. An unlisted value there warns",
@@ -43,7 +47,16 @@
     "    is on the same enum;",
     "  • the three-state `factors` rule at upscale (a range, a closed set, or none at all), which reads",
     "    `fal-ai/aura-sr`'s `const 4` and `fal-ai/recraft/upscale/crisp`'s missing field without either",
-    "    being an exception to anything.",
+    "    being an exception to anything;",
+    "  • the `aspect_ratio` value `\"auto\"`, which twenty rows offer and which no canonical `ratios` list",
+    "    carries. `AspectRatio` is a SHAPE — a preset or a `W:H` spelling — and there is",
+    "    no canonical word for \"you decide\", the same refusal `durationSeconds` makes for `\"auto\"` because it",
+    "    is not a length. It costs almost nothing: `\"auto\"` is the schema DEFAULT on 17 of those 20 rows, so",
+    "    omitting `aspectRatio` already sends it, and on the three where it is a distinct choice",
+    "    `providerOptions.fal.aspect_ratio` reaches the wire as written. Every OTHER member of a closed",
+    "    `aspect_ratio` enum must reach the row — including decimal spellings like `\"2.35:1\"` and `\"19.5:9\"` —",
+    "    and codegen now FAILS on any it cannot place, naming the endpoint and the member. This bullet is the",
+    "    rule's review: its absence from this list is why an integers-only pattern went unnoticed in 0.3.0.",
     "",
     "The two exceptions the roster does contain are not overlays and do not belong here —",
     "  • `fal-ai/sync-lipsync/v2`'s real `model` wire field is recorded per-id in data/fal/curation.json",
@@ -51,5 +64,22 @@
     "  • the unpriced endpoints are recorded in data/fal/pricing.json as `unpriced` reasons.",
     "Both are statements the schema agrees with. Only a disagreement lands here."
   ],
-  "endpoints": {}
+  "endpoints": {
+    "fal-ai/lightx/relight": [
+      {
+        "kind": "note",
+        "param": "relit_cond_type",
+        "reason": "fal's own prose names a parameter that does not exist. Both `relight_parameters` and `relit_cond_img_url` describe themselves in terms of `relight_condition_type` (\"required for relight_condition_type='ic'\", \"Required for relight_condition_type='ref'/'hdr'\"), and no such field is declared anywhere in the document — the wire field is `relit_cond_type`, with the same four values (ic | ref | hdr | bg, default ic). Recorded rather than corrected: the TYPES are right, and a caller reading fal's page needs to know which of the two spellings goes on the wire.",
+        "source": "https://fal.ai/models/fal-ai/lightx/relight/api",
+        "verified": "2026-08-26"
+      },
+      {
+        "kind": "note",
+        "param": "relight_parameters",
+        "reason": "A conditional requirement OpenAPI cannot state, so unmodel does not check it: `required` is `[\"video_url\"]` alone, but fal's prose says `relight_parameters` is required when the condition type is 'ic' — the DEFAULT — and that `relit_cond_img_url` is required for 'ref', 'hdr' and 'bg'. A request with neither is accepted by this validator and refused by fal. The nested object's own required field (`relight_prompt`) is likewise unchecked: FalPropSpec carries `items` for arrays but no `props` for objects, so `t: \"object\"` is checked only for being a record — the same precedented degradation as fal-ai/flux-general's `fill_image`, `controlnet` and `ip_adapter`.",
+        "source": "https://fal.ai/models/fal-ai/lightx/relight/api",
+        "verified": "2026-08-26"
+      }
+    ]
+  }
 }

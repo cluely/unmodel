@@ -104,21 +104,21 @@ function encodeUserPart(part: ChatUserContentPart, path: Array<string | number>,
     case "text":
       return { type: "text", text: part.text, ...cache };
     case "image_url": {
-      if (part.image_url.detail !== undefined && part.image_url.detail !== "auto") {
-        warn({
-          code: "dropped_param",
-          path: [...path, "image_url", "detail"],
-          message: `\`image_url.detail: "${part.image_url.detail}"\` is an OpenAI chat-completions concept with no equivalent in the other dialects; the image itself is carried, the resolution hint is not.`,
-          meta: { detail: part.image_url.detail },
-        });
-      }
+      // `detail` used to be dropped here with a warning calling it "an OpenAI
+      // chat-completions concept with no equivalent in the other dialects".
+      // Gemini's per-`Part` `mediaResolution.level` is that equivalent, so the
+      // IR carries the hint and the *target* decoder decides what it costs:
+      // Gemini takes it as-is, Anthropic drops it by name, and OpenAI's own
+      // decoder narrows `medium` (which only Gemini has) to `high`.
+      const detail = part.image_url.detail !== undefined ? { detail: part.image_url.detail } : {};
       const parsed = parseDataUrl(part.image_url.url);
       return parsed === undefined
-        ? { type: "media", data: { kind: "url", url: part.image_url.url }, ...cache }
+        ? { type: "media", data: { kind: "url", url: part.image_url.url }, ...detail, ...cache }
         : {
             type: "media",
             mediaType: parsed.mediaType,
             data: { kind: "base64", base64: parsed.base64 },
+            ...detail,
             ...cache,
           };
     }
@@ -431,6 +431,39 @@ function cacheProps(
   return { prompt_cache_breakpoint: { mode: "explicit" } };
 }
 
+/**
+ * The canonical resolution hint, in Chat Completions' own three-value
+ * vocabulary.
+ *
+ * `medium` is Gemini's, and this dialect has no `medium`: `image_url.detail`
+ * documents `auto | low | high` (openai@7.5.0 types it the same way; the
+ * fourth value `original` is Responses-only). Rounding *up* rather than down
+ * is the `ChatReasoningEffort` rule — a request that costs a little more is
+ * recoverable, one that silently loses resolution on a document scan is not —
+ * and it is loud, because a caller who wrote `medium` asked for something this
+ * target cannot give.
+ *
+ * A hint on a NON-image part is dropped rather than mis-attached: this dialect
+ * hangs `detail` off `image_url`, and an `input_audio` or `file` part has
+ * nowhere to put it.
+ */
+function imageDetailFor(
+  part: Extract<IRPart, { type: "media" }>,
+  path: Array<string | number>,
+  warn: Warn,
+): { detail?: "auto" | "low" | "high" } {
+  if (part.detail === undefined) return {};
+  if (part.detail !== "medium") return { detail: part.detail };
+  warn({
+    code: "approximated_param",
+    path: [...path, "detail"],
+    message:
+      '`detail: "medium"` is Gemini\'s middle media-resolution level and chat-completions has no equivalent — `image_url.detail` takes `auto | low | high`. It was raised to `"high"` rather than lowered, so nothing is lost but tokens.',
+    meta: { from: "medium", to: "high" },
+  });
+  return { detail: "high" };
+}
+
 function decodeMediaPart(
   part: Extract<IRPart, { type: "media" }>,
   style: "openai" | "none",
@@ -460,12 +493,24 @@ function decodeMediaPart(
       });
       return undefined;
     }
-    return { type: "image_url", image_url: { url: part.data.url }, ...cache };
+    return {
+      type: "image_url",
+      image_url: { url: part.data.url, ...imageDetailFor(part, path, warn) },
+      ...cache,
+    };
   }
   const base64 = part.data.base64;
   if (isImageMediaType(mediaType)) {
-    return { type: "image_url", image_url: { url: toDataUrl(mediaType as string, base64) }, ...cache };
+    return {
+      type: "image_url",
+      image_url: {
+        url: toDataUrl(mediaType as string, base64),
+        ...imageDetailFor(part, path, warn),
+      },
+      ...cache,
+    };
   }
+  warnNonImageDetail(part, mediaType, path, warn);
   if (isAudioMediaType(mediaType)) {
     const format = mediaType === "audio/wav" || mediaType === "audio/x-wav" ? "wav" : "mp3";
     return { type: "input_audio", input_audio: { data: base64, format }, ...cache };
@@ -478,6 +523,27 @@ function decodeMediaPart(
     },
     ...cache,
   };
+}
+
+/**
+ * This dialect hangs `detail` off `image_url` and nowhere else, so a hint on an
+ * audio or document part has no slot. Gemini's per-`Part` `mediaResolution`
+ * does apply to PDFs and video, so this is a real crossing cost rather than a
+ * caller mistake — it is dropped by name, not silently.
+ */
+function warnNonImageDetail(
+  part: Extract<IRPart, { type: "media" }>,
+  mediaType: string | undefined,
+  path: Array<string | number>,
+  warn: Warn,
+): void {
+  if (part.detail === undefined) return;
+  warn({
+    code: "dropped_param",
+    path: [...path, "detail"],
+    message: `chat-completions carries a resolution hint only on images (\`image_url.detail\`), and this is a \`${mediaType ?? "application/octet-stream"}\` part; the media itself is carried, \`detail: "${part.detail}"\` is not.`,
+    meta: { param: "detail", detail: part.detail },
+  });
 }
 
 function decodeToolChoice(ir: ChatIR): ChatToolChoice | undefined {

@@ -91,13 +91,16 @@ describe("docs/tts.md hand-written columns", () => {
     },
   );
 
-  test("names checkTts for exactly the three providers that export one", async () => {
+  test("names checkTts for exactly the four providers that export one", async () => {
     const withChecker: string[] = [];
     for (const { provider } of TTS_MATRIX_SAMPLES) {
       const entry = (await import(`../../src/providers/${provider}/index`)) as Record<string, unknown>;
       if (typeof entry.checkTts === "function") withChecker.push(provider);
     }
-    expect(withChecker.sort()).toEqual(["google", "murf", "resemble"]);
+    // minimax joined when its in-band `base_resp` envelope was verified against
+    // platform.minimax.io (2026-08-26) — the recorded "no separately verified
+    // error surface" exclusion was conditional, and the condition is now met.
+    expect(withChecker.sort()).toEqual(["google", "minimax", "murf", "resemble"]);
     for (const provider of withChecker) {
       expect(doc).toContain(`| \`${provider}\` | \`checkTts\` from \`unmodel/${provider}\` |`);
     }

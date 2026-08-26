@@ -47,7 +47,7 @@
  * Those tables are the **same objects** the adapters compile with, so a picker
  * and the request it builds cannot disagree.
  *
- * **The 1,339 chat refs.** `CHAT_MODEL_REFS` — the runtime twin of
+ * **The 1,330 chat refs.** `CHAT_MODEL_REFS` — the runtime twin of
  * `ChatModelRef` — is 45 KiB of strings and sits on its own subpath,
  * `unmodel/values/chat-refs`, so that the arrays above stay a rounding error.
  * See that module for the measurement.

@@ -68,12 +68,14 @@
 //   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__pro.json
 //   data/fal/openapi/fal-ai__kling-video__ai-avatar__v2__standard.json
 //   data/fal/openapi/fal-ai__kling-video__lipsync__audio-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o1__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__motion-control.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
@@ -87,12 +89,14 @@
 //   data/fal/openapi/fal-ai__kokoro__mandarin-chinese.json
 //   data/fal/openapi/fal-ai__kokoro__spanish.json
 //   data/fal/openapi/fal-ai__latentsync.json
+//   data/fal/openapi/fal-ai__lightx__relight.json
 //   data/fal/openapi/fal-ai__longcat-single-avatar__image-audio-to-video.json
 //   data/fal/openapi/fal-ai__lyria2.json
 //   data/fal/openapi/fal-ai__lyria3__pro.json
 //   data/fal/openapi/fal-ai__minimax-music__v2.json
 //   data/fal/openapi/fal-ai__minimax-music__v2.6.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-2.3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__minimax__speech-02-hd.json
 //   data/fal/openapi/fal-ai__minimax__speech-2.8-hd.json
 //   data/fal/openapi/fal-ai__minimax__speech-2.8-turbo.json
@@ -129,6 +133,7 @@
 //   data/fal/openapi/fal-ai__veo3.1__fast.json
 //   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__reference-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
@@ -153,6 +158,7 @@
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__generative.json
 //   data/fal/openapi/topaz__upscale__video__precision.json
 //   data/fal/openapi/tripo3d__h3.1__image-to-3d.json
 //   data/fal/openapi/tripo3d__h3.1__text-to-3d.json
@@ -351,7 +357,7 @@ export const FAL_TTS_ENDPOINTS = [
 
 export type FalTtsEndpointId = (typeof FAL_TTS_ENDPOINTS)[number];
 
-/** Every fal endpoint unmodel serves as `fal.upscale` — 10 of them. */
+/** Every fal endpoint unmodel serves as `fal.upscale` — 11 of them. */
 export const FAL_UPSCALE_ENDPOINTS = [
   "blackforestlabs/flux-video-upscale",
   "fal-ai/aura-sr",
@@ -362,34 +368,40 @@ export const FAL_UPSCALE_ENDPOINTS = [
   "fal-ai/seedvr/upscale/video",
   "topaz/upscale/image/generative",
   "topaz/upscale/image/precision",
+  "topaz/upscale/video/generative",
   "topaz/upscale/video/precision",
 ] as const;
 
 export type FalUpscaleEndpointId = (typeof FAL_UPSCALE_ENDPOINTS)[number];
 
-/** Every fal endpoint unmodel serves as `fal.video` — 30 of them. */
+/** Every fal endpoint unmodel serves as `fal.video` — 35 of them. */
 export const FAL_VIDEO_ENDPOINTS = [
   "bytedance/seedance-2.0/image-to-video",
   "bytedance/seedance-2.0/text-to-video",
   "bytedance/seedance-2.5/image-to-video",
   "bytedance/seedance-2.5/reference-to-video",
   "bytedance/seedance-2.5/text-to-video",
+  "fal-ai/kling-video/o1/video-to-video/edit",
   "fal-ai/kling-video/o3/pro/video-to-video/edit",
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
   "fal-ai/kling-video/v2.6/pro/image-to-video",
   "fal-ai/kling-video/v2.6/pro/text-to-video",
   "fal-ai/kling-video/v3/pro/image-to-video",
+  "fal-ai/kling-video/v3/pro/motion-control",
   "fal-ai/kling-video/v3/pro/text-to-video",
   "fal-ai/kling-video/v3/standard/image-to-video",
   "fal-ai/kling-video/v3/standard/text-to-video",
+  "fal-ai/lightx/relight",
   "fal-ai/minimax/hailuo-02/pro/image-to-video",
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video",
   "fal-ai/pixverse/v6/text-to-video",
   "fal-ai/veo3.1",
   "fal-ai/veo3.1/extend-video",
   "fal-ai/veo3.1/fast",
   "fal-ai/veo3.1/first-last-frame-to-video",
   "fal-ai/veo3.1/image-to-video",
+  "fal-ai/veo3.1/reference-to-video",
   "fal-ai/wan/v2.2-a14b/image-to-video",
   "fal-ai/wan/v2.2-a14b/text-to-video",
   "fal-ai/wan/v2.7/image-to-video",
@@ -472,12 +484,14 @@ export const FAL_ENDPOINTS = [
   "fal-ai/kling-video/ai-avatar/v2/pro",
   "fal-ai/kling-video/ai-avatar/v2/standard",
   "fal-ai/kling-video/lipsync/audio-to-video",
+  "fal-ai/kling-video/o1/video-to-video/edit",
   "fal-ai/kling-video/o3/pro/video-to-video/edit",
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
   "fal-ai/kling-video/v2.6/pro/image-to-video",
   "fal-ai/kling-video/v2.6/pro/text-to-video",
   "fal-ai/kling-video/v3/pro/image-to-video",
+  "fal-ai/kling-video/v3/pro/motion-control",
   "fal-ai/kling-video/v3/pro/text-to-video",
   "fal-ai/kling-video/v3/standard/image-to-video",
   "fal-ai/kling-video/v3/standard/text-to-video",
@@ -491,12 +505,14 @@ export const FAL_ENDPOINTS = [
   "fal-ai/kokoro/mandarin-chinese",
   "fal-ai/kokoro/spanish",
   "fal-ai/latentsync",
+  "fal-ai/lightx/relight",
   "fal-ai/longcat-single-avatar/image-audio-to-video",
   "fal-ai/lyria2",
   "fal-ai/lyria3/pro",
   "fal-ai/minimax-music/v2",
   "fal-ai/minimax-music/v2.6",
   "fal-ai/minimax/hailuo-02/pro/image-to-video",
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video",
   "fal-ai/minimax/speech-02-hd",
   "fal-ai/minimax/speech-2.8-hd",
   "fal-ai/minimax/speech-2.8-turbo",
@@ -533,6 +549,7 @@ export const FAL_ENDPOINTS = [
   "fal-ai/veo3.1/fast",
   "fal-ai/veo3.1/first-last-frame-to-video",
   "fal-ai/veo3.1/image-to-video",
+  "fal-ai/veo3.1/reference-to-video",
   "fal-ai/wan/v2.2-a14b/image-to-video",
   "fal-ai/wan/v2.2-a14b/text-to-video",
   "fal-ai/wan/v2.7/image-to-video",
@@ -557,6 +574,7 @@ export const FAL_ENDPOINTS = [
   "reve/2.1/text-to-image",
   "topaz/upscale/image/generative",
   "topaz/upscale/image/precision",
+  "topaz/upscale/video/generative",
   "topaz/upscale/video/precision",
   "tripo3d/h3.1/image-to-3d",
   "tripo3d/h3.1/text-to-3d",
@@ -643,12 +661,14 @@ export const FAL_ENDPOINT_VERBS = {
   "fal-ai/kling-video/ai-avatar/v2/pro": "avatar",
   "fal-ai/kling-video/ai-avatar/v2/standard": "avatar",
   "fal-ai/kling-video/lipsync/audio-to-video": "lipsync",
+  "fal-ai/kling-video/o1/video-to-video/edit": "video",
   "fal-ai/kling-video/o3/pro/video-to-video/edit": "video",
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": "video",
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": "video",
   "fal-ai/kling-video/v2.6/pro/image-to-video": "video",
   "fal-ai/kling-video/v2.6/pro/text-to-video": "video",
   "fal-ai/kling-video/v3/pro/image-to-video": "video",
+  "fal-ai/kling-video/v3/pro/motion-control": "video",
   "fal-ai/kling-video/v3/pro/text-to-video": "video",
   "fal-ai/kling-video/v3/standard/image-to-video": "video",
   "fal-ai/kling-video/v3/standard/text-to-video": "video",
@@ -662,12 +682,14 @@ export const FAL_ENDPOINT_VERBS = {
   "fal-ai/kokoro/mandarin-chinese": "tts",
   "fal-ai/kokoro/spanish": "tts",
   "fal-ai/latentsync": "lipsync",
+  "fal-ai/lightx/relight": "video",
   "fal-ai/longcat-single-avatar/image-audio-to-video": "avatar",
   "fal-ai/lyria2": "music",
   "fal-ai/lyria3/pro": "music",
   "fal-ai/minimax-music/v2": "music",
   "fal-ai/minimax-music/v2.6": "music",
   "fal-ai/minimax/hailuo-02/pro/image-to-video": "video",
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video": "video",
   "fal-ai/minimax/speech-02-hd": "tts",
   "fal-ai/minimax/speech-2.8-hd": "tts",
   "fal-ai/minimax/speech-2.8-turbo": "tts",
@@ -704,6 +726,7 @@ export const FAL_ENDPOINT_VERBS = {
   "fal-ai/veo3.1/fast": "video",
   "fal-ai/veo3.1/first-last-frame-to-video": "video",
   "fal-ai/veo3.1/image-to-video": "video",
+  "fal-ai/veo3.1/reference-to-video": "video",
   "fal-ai/wan/v2.2-a14b/image-to-video": "video",
   "fal-ai/wan/v2.2-a14b/text-to-video": "video",
   "fal-ai/wan/v2.7/image-to-video": "video",
@@ -728,6 +751,7 @@ export const FAL_ENDPOINT_VERBS = {
   "reve/2.1/text-to-image": "image",
   "topaz/upscale/image/generative": "upscale",
   "topaz/upscale/image/precision": "upscale",
+  "topaz/upscale/video/generative": "upscale",
   "topaz/upscale/video/precision": "upscale",
   "tripo3d/h3.1/image-to-3d": "threeD",
   "tripo3d/h3.1/text-to-3d": "threeD",
@@ -819,12 +843,14 @@ export const FAL_DOC_URLS = {
   "fal-ai/kling-video/ai-avatar/v2/pro": "https://fal.ai/models/fal-ai/kling-video/ai-avatar/v2/pro/api",
   "fal-ai/kling-video/ai-avatar/v2/standard": "https://fal.ai/models/fal-ai/kling-video/ai-avatar/v2/standard/api",
   "fal-ai/kling-video/lipsync/audio-to-video": "https://fal.ai/models/fal-ai/kling-video/lipsync/audio-to-video/api",
+  "fal-ai/kling-video/o1/video-to-video/edit": "https://fal.ai/models/fal-ai/kling-video/o1/video-to-video/edit/api",
   "fal-ai/kling-video/o3/pro/video-to-video/edit": "https://fal.ai/models/fal-ai/kling-video/o3/pro/video-to-video/edit/api",
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": "https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/image-to-video/api",
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": "https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/text-to-video/api",
   "fal-ai/kling-video/v2.6/pro/image-to-video": "https://fal.ai/models/fal-ai/kling-video/v2.6/pro/image-to-video/api",
   "fal-ai/kling-video/v2.6/pro/text-to-video": "https://fal.ai/models/fal-ai/kling-video/v2.6/pro/text-to-video/api",
   "fal-ai/kling-video/v3/pro/image-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/pro/image-to-video/api",
+  "fal-ai/kling-video/v3/pro/motion-control": "https://fal.ai/models/fal-ai/kling-video/v3/pro/motion-control/api",
   "fal-ai/kling-video/v3/pro/text-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/pro/text-to-video/api",
   "fal-ai/kling-video/v3/standard/image-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/standard/image-to-video/api",
   "fal-ai/kling-video/v3/standard/text-to-video": "https://fal.ai/models/fal-ai/kling-video/v3/standard/text-to-video/api",
@@ -838,12 +864,14 @@ export const FAL_DOC_URLS = {
   "fal-ai/kokoro/mandarin-chinese": "https://fal.ai/models/fal-ai/kokoro/mandarin-chinese/api",
   "fal-ai/kokoro/spanish": "https://fal.ai/models/fal-ai/kokoro/spanish/api",
   "fal-ai/latentsync": "https://fal.ai/models/fal-ai/latentsync/api",
+  "fal-ai/lightx/relight": "https://fal.ai/models/fal-ai/lightx/relight/api",
   "fal-ai/longcat-single-avatar/image-audio-to-video": "https://fal.ai/models/fal-ai/longcat-single-avatar/image-audio-to-video/api",
   "fal-ai/lyria2": "https://fal.ai/models/fal-ai/lyria2/api",
   "fal-ai/lyria3/pro": "https://fal.ai/models/fal-ai/lyria3/pro/api",
   "fal-ai/minimax-music/v2": "https://fal.ai/models/fal-ai/minimax-music/v2/api",
   "fal-ai/minimax-music/v2.6": "https://fal.ai/models/fal-ai/minimax-music/v2.6/api",
   "fal-ai/minimax/hailuo-02/pro/image-to-video": "https://fal.ai/models/fal-ai/minimax/hailuo-02/pro/image-to-video/api",
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video": "https://fal.ai/models/fal-ai/minimax/hailuo-2.3/pro/text-to-video/api",
   "fal-ai/minimax/speech-02-hd": "https://fal.ai/models/fal-ai/minimax/speech-02-hd/api",
   "fal-ai/minimax/speech-2.8-hd": "https://fal.ai/models/fal-ai/minimax/speech-2.8-hd/api",
   "fal-ai/minimax/speech-2.8-turbo": "https://fal.ai/models/fal-ai/minimax/speech-2.8-turbo/api",
@@ -880,6 +908,7 @@ export const FAL_DOC_URLS = {
   "fal-ai/veo3.1/fast": "https://fal.ai/models/fal-ai/veo3.1/fast/api",
   "fal-ai/veo3.1/first-last-frame-to-video": "https://fal.ai/models/fal-ai/veo3.1/first-last-frame-to-video/api",
   "fal-ai/veo3.1/image-to-video": "https://fal.ai/models/fal-ai/veo3.1/image-to-video/api",
+  "fal-ai/veo3.1/reference-to-video": "https://fal.ai/models/fal-ai/veo3.1/reference-to-video/api",
   "fal-ai/wan/v2.2-a14b/image-to-video": "https://fal.ai/models/fal-ai/wan/v2.2-a14b/image-to-video/api",
   "fal-ai/wan/v2.2-a14b/text-to-video": "https://fal.ai/models/fal-ai/wan/v2.2-a14b/text-to-video/api",
   "fal-ai/wan/v2.7/image-to-video": "https://fal.ai/models/fal-ai/wan-27-i2v/api",
@@ -904,6 +933,7 @@ export const FAL_DOC_URLS = {
   "reve/2.1/text-to-image": "https://fal.ai/models/fal-ai/reve/v2/text-to-image/api",
   "topaz/upscale/image/generative": "https://fal.ai/models/fal-ai/topaz/upscale/image/generative/api",
   "topaz/upscale/image/precision": "https://fal.ai/models/fal-ai/topaz/upscale/image/precision/api",
+  "topaz/upscale/video/generative": "https://fal.ai/models/fal-ai/topaz/upscale/video/generative/api",
   "topaz/upscale/video/precision": "https://fal.ai/models/fal-ai/topaz/upscale/video/precision/api",
   "tripo3d/h3.1/image-to-3d": "https://fal.ai/models/fal-ai/tripo3d/h3.1/image-to-3d/api",
   "tripo3d/h3.1/text-to-3d": "https://fal.ai/models/fal-ai/tripo3d/h3.1/text-to-3d/api",
@@ -995,12 +1025,14 @@ export const FAL_REQUIRED_PROBES = {
   "fal-ai/kling-video/ai-avatar/v2/pro": ["image_url", "audio_url"],
   "fal-ai/kling-video/ai-avatar/v2/standard": ["image_url", "audio_url"],
   "fal-ai/kling-video/lipsync/audio-to-video": ["video_url", "audio_url"],
+  "fal-ai/kling-video/o1/video-to-video/edit": ["prompt", "video_url"],
   "fal-ai/kling-video/o3/pro/video-to-video/edit": ["prompt", "video_url"],
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": ["prompt", "image_url"],
   "fal-ai/kling-video/v2.5-turbo/pro/text-to-video": ["prompt"],
   "fal-ai/kling-video/v2.6/pro/image-to-video": ["prompt", "start_image_url"],
   "fal-ai/kling-video/v2.6/pro/text-to-video": ["prompt"],
   "fal-ai/kling-video/v3/pro/image-to-video": ["start_image_url"],
+  "fal-ai/kling-video/v3/pro/motion-control": ["image_url", "video_url", "character_orientation"],
   "fal-ai/kling-video/v3/pro/text-to-video": [],
   "fal-ai/kling-video/v3/standard/image-to-video": ["start_image_url"],
   "fal-ai/kling-video/v3/standard/text-to-video": [],
@@ -1014,12 +1046,14 @@ export const FAL_REQUIRED_PROBES = {
   "fal-ai/kokoro/mandarin-chinese": ["prompt", "voice"],
   "fal-ai/kokoro/spanish": ["prompt", "voice"],
   "fal-ai/latentsync": ["video_url", "audio_url"],
+  "fal-ai/lightx/relight": ["video_url"],
   "fal-ai/longcat-single-avatar/image-audio-to-video": ["image_url", "audio_url"],
   "fal-ai/lyria2": ["prompt"],
   "fal-ai/lyria3/pro": ["prompt"],
   "fal-ai/minimax-music/v2": ["prompt", "lyrics_prompt"],
   "fal-ai/minimax-music/v2.6": ["prompt"],
   "fal-ai/minimax/hailuo-02/pro/image-to-video": ["prompt", "image_url"],
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video": ["prompt"],
   "fal-ai/minimax/speech-02-hd": ["text"],
   "fal-ai/minimax/speech-2.8-hd": ["prompt"],
   "fal-ai/minimax/speech-2.8-turbo": ["prompt"],
@@ -1056,6 +1090,7 @@ export const FAL_REQUIRED_PROBES = {
   "fal-ai/veo3.1/fast": ["prompt"],
   "fal-ai/veo3.1/first-last-frame-to-video": ["prompt", "first_frame_url", "last_frame_url"],
   "fal-ai/veo3.1/image-to-video": ["prompt", "image_url"],
+  "fal-ai/veo3.1/reference-to-video": ["prompt", "image_urls"],
   "fal-ai/wan/v2.2-a14b/image-to-video": ["image_url", "prompt"],
   "fal-ai/wan/v2.2-a14b/text-to-video": ["prompt"],
   "fal-ai/wan/v2.7/image-to-video": [],
@@ -1080,6 +1115,7 @@ export const FAL_REQUIRED_PROBES = {
   "reve/2.1/text-to-image": ["prompt"],
   "topaz/upscale/image/generative": ["image_url"],
   "topaz/upscale/image/precision": ["image_url"],
+  "topaz/upscale/video/generative": ["video_url"],
   "topaz/upscale/video/precision": ["video_url"],
   "tripo3d/h3.1/image-to-3d": ["image_url"],
   "tripo3d/h3.1/text-to-3d": ["prompt"],
@@ -1094,3 +1130,106 @@ export const FAL_REQUIRED_PROBES = {
   "xai/grok-imagine-video/text-to-video": ["prompt"],
   "xai/tts/v1": ["text"],
 } as const;
+
+/**
+ * Endpoint ids unmodel deliberately does NOT serve, each with the recorded reason.
+ *
+ * Transcribed from `data/fal/curation.json`'s `excluded.endpoints` block, which existed
+ * since wave 1 and reached no caller: an adopter who named one of these got a bare
+ * `unknown_model`, which reads as "the catalog is a week behind" — the opposite of the
+ * truth. `runFalChecks` looks an unknown id up here and hands back the reason, so a
+ * deliberate refusal says so at the API surface.
+ *
+ * This is NOT a census of what fal serves. fal lists ~1,500 endpoints and unmodel curates
+ * a slice of them; an id in neither map was never considered, which is the honest state
+ * and needs no defence. An id HERE was considered and turned down, and the reason is what
+ * keeps a future roster widening from quietly re-adding it. The wire path is unaffected
+ * either way — `fal.<verb>({ endpoint })` routes any id fal serves.
+ */
+export const FAL_EXCLUDED: Readonly<Record<string, string>> = {
+  "bria/fibo-edit/relight": "Fibo Edit [Relight] — prompt-less by construction: its `required` list is [image_url, light_direction, light_type] and the schema declares no prompt at all. `unmodel/image-edit`'s `prompt` is REQUIRED (src/core/unified/vocabulary/image-edit.ts:126) and the fal adapter writes it unconditionally (src/providers/fal/unified-image-edit.ts:445), and an undeclared key is passed through with a warning rather than stripped — so curating it under imageEdit would put a field this endpoint does not declare on the wire on EVERY call, by construction. There is no `relight` verb either, and the witness rule is why: bria's `light_direction` (front|side|bottom|top-down), fal-ai/lightx/relight's `bg_source` (Left|Right|Top|Bottom), image-apps-v2's `lighting_style` and iclight-v2's REQUIRED free-text prompt are four vocabularies for one idea and no two agree. The imageEdit `operation: \"relight\"` arm that could carve out a prompt-less shape has been offered and declined twice (the arms alternative in the plan; vocabulary/upscale.ts:10-29 argues the same case for upscale). The wire-only path already works and is the answer today: `fal.imageEdit({ endpoint: \"bria/fibo-edit/relight\", image_url, light_direction, light_type })` routes and sends the body byte-exact, with one `unknown_model` warning. Verified live 2026-08-26.",
+  "bria/video/background-removal": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "bria/video/background-removal/realtime": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "bria/video/background-removal/v3": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "fal-ai/ben/v2/image": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "fal-ai/ben/v2/video": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "fal-ai/birefnet": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "fal-ai/birefnet/v2": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "fal-ai/birefnet/v2/video": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "fal-ai/bria/background/remove": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "fal-ai/fast-sdxl": "Wave-1e stretch candidate, tried and backed out: its input schema ships NO `x-fal-order-properties`, and codegen hard-errors on that rather than inventing an emission order (an invented order would make fal's next reordering look like a diff in this repo's generated output). Serving it means teaching the generator a documented fallback order, which is new generator work rather than a cheap row. Its price is the unpopulated $0-per-compute-second template besides.",
+  "fal-ai/ffmpeg-api/compose": "fal's media plumbing — compose, trim, scale, mux, blend, extract a frame. `excluded.categories` has said \"Plumbing.\" since wave 1 and it never fired: these report `x-fal-metadata.category: \"video-to-video\"` (probed live 2026-08-26), which IS a category unmodel serves, so `codegen:fal:audit` re-proposed them on every run — the keys `ffmpeg-api` and `workflow-utils` are not fal category values and never were. The sharper reason, in the voice of the `3d-to-3d` entry above: unmodel validates a MODEL request, and these have no model — no model id beyond the endpoint id, nothing to put in a catalog row, and a $0.001-per-compute-second rate that this repo's pricing law sends to \"no cost + a caveat\" (the wizper precedent), so the row would be an empty catalog entry. There is no verb either: `fal-ai/ffmpeg-api/compose` takes `{tracks: Track[]}` and nothing else, which is a file list rather than a request. Two of them do carry real bounds (`trim-video`'s `start_time`/`duration`, and prose-only rules like waveform's odd-numbered `smoothing_window`), so \"nothing to validate\" is overstated — but a validated file list is still not a model call. This list is the complete live set: one clean `bun run codegen:fal:audit` crawl of all 1,472 endpoints on 2026-08-26 found these eleven ffmpeg/workflow-utilities ids active and uncurated in served categories.",
+  "fal-ai/ffmpeg-api/extract-frame": "Media plumbing — same family and same reason as `fal-ai/ffmpeg-api/compose`.",
+  "fal-ai/ffmpeg-api/images-to-video": "Media plumbing — same family and same reason as `fal-ai/ffmpeg-api/compose`.",
+  "fal-ai/ffmpeg-api/merge-audio-video": "Media plumbing — same family and same reason as `fal-ai/ffmpeg-api/compose`.",
+  "fal-ai/ffmpeg-api/merge-videos": "Media plumbing — same family and same reason as `fal-ai/ffmpeg-api/compose`.",
+  "fal-ai/hunyuan3d-v21": "Hunyuan 3D 2.1 — the plan named it and fal has since marked it `deprecated` (verified against the live listing 2026-08-25). The 2.0 pair and the 3.1 pair are both active and cover the same ground.",
+  "fal-ai/hunyuan_world/image-to-world": "Generates a SCENE (a navigable panorama), not an object. `unmodel/3d`'s vocabulary — one prompt or one image, one mesh out — does not describe it.",
+  "fal-ai/ideogram/remove-background": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "fal-ai/image-editing/age-progression": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/baby-version": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/background-change": "fal's structured task routes — 23 ids under `fal-ai/image-editing/*` (age-progression, background-change, broccoli-haircut, cartoonify, hair-change, object-removal, professional-photo, scene-composition, time-of-day, wojak-style, youtube-thumbnails and the rest), each the same underlying editor with the TASK chosen by the route rather than by the request. Their `prompt` is OPTIONAL — `required` is `image_url` alone, probed live 2026-08-26 — where `unmodel/image-edit`'s is required, so the vocabulary would demand of every call the very field these routes exist to make unnecessary. The only shape that could express \"which task\" is an `operation` arm on `ImageEditParams`, and that has been declined twice: a second arm crosses the existing 3-arm size/aspectRatio/dimensions XOR into six through `DistributiveOmit` and forces `prompt` off `ImageEditParamsBase`, which runs straight at the editor-latency risk the plan names (R4). A per-route menu fal invented is also not a vocabulary — `broccoli-haircut` and `youtube-thumbnails` are products, and the list changes when fal's marketing does. Wire-only today: `fal.imageEdit({ endpoint: \"fal-ai/image-editing/<task>\", image_url })`.",
+  "fal-ai/image-editing/broccoli-haircut": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/cartoonify": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/color-correction": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/expression-change": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/face-enhancement": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/hair-change": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/object-removal": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/photo-restoration": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/plushie-style": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/professional-photo": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/realism": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/reframe": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/retouch": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/scene-composition": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/style-transfer": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/text-removal": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/time-of-day": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/weather-effect": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/wojak-style": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/image-editing/youtube-thumbnails": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
+  "fal-ai/imageutils/rembg": "Background removal — the family wave 1 excluded without recording why, which is exactly the state that produces \"why isn't X curated?\". Every one of these routes is PROMPT-LESS (probed live 2026-08-26: fal-ai/imageutils/rembg, fal-ai/birefnet/v2, fal-ai/ben/v2/image, fal-ai/bria/background/remove, fal-ai/ideogram/remove-background, pixelcut/background-removal and veed/video-background-removal each declare `image_url` or `video_url` and no prompt), and `unmodel/image-edit` requires a prompt (vocabulary/image-edit.ts:126) which the fal adapter writes unconditionally (unified-image-edit.ts:445) — so serving one here would send a field the endpoint does not declare on every call, the same construction that excludes bria/fibo-edit/relight. The imageEdit `operation` arm that would carve out a prompt-less shape was offered and declined twice. A cut-out is also not what an EDIT means in this vocabulary: the output is the same picture with the subject isolated, which is a different artifact rather than a differently-instructed one. Wire-only today: `fal.imageEdit({ endpoint, image_url })`.",
+  "fal-ai/kling-video/lipsync/text-to-video": "Text + voice arm — that is TTS composed with lipsync, and composing it here would hide which half failed.",
+  "fal-ai/lightx/recamera": "Light-X's camera sibling of the curated `fal-ai/lightx/relight`, decided in the same wave rather than left unrecorded. It takes `video_url` plus `camera`, `mode`, `trajectory` and `target_pose` (probed live 2026-08-26) and re-shoots a clip along a virtual camera path. `unmodel/video` has no vocabulary for camera motion — no canonical word describes a trajectory, and the nested objects that carry one would be checked only for being records — so the row would be a name with per-model extras and nothing canonical to narrow, which is a catalog entry pretending to be a validator. It is also the clearest evidence that \"relight\" is the wrong axis for a verb: one vendor, two routes, asked for the same way and differing only in what they change. Wire-only today: `fal.video({ endpoint: \"fal-ai/lightx/recamera\", video_url, … })`.",
+  "fal-ai/smart-turn": "Turn detection, not transcription — no unmodel verb fits it.",
+  "fal-ai/speech-to-text/stream": "Streaming variants are a socket surface, not a queue submit — out of scope for a request validator.",
+  "fal-ai/sync-lipsync/v1.9.0-beta": "Beta id, superseded by v2/v3.",
+  "fal-ai/topaz/upscale/image": "The pre-split Topaz image route. Still serves — the Platform API returns a real document and the playground renders — but fal has DELISTED it: `?endpoint_id=` answers with no `metadata` block and the roster crawl does not contain it. Its `model` enum (11) is a strict SUBSET of the precision+generative pair curated above (15): it lacks High Fidelity V3, Wonder 3.5, Wonder 2 and Recover 3, and its 19 properties are exactly that pair's union. Curating a delisted id would also make `codegen:fal:audit` report it GONE forever, since that check diffs against the listing. Verified live 2026-08-26.",
+  "fal-ai/topaz/upscale/video": "The pre-split Topaz video route, delisted like its image sibling (no listing `metadata`, absent from the roster crawl). Its properties are IDENTICAL to topaz/upscale/video/precision; only the `model` enum differs — it carries Starlight and Nyx, which the precision route does not. Starlight is not lost by excluding it: topaz/upscale/video/generative serves a NEWER Starlight (Precise 2.6 vs 2.5), is listed and active, and is curated above. The blocker is price: this route's page quotes one flat table with no model dimension ($0.01/s up to 720p, $0.02/s to 1080p, $0.08/s above) while serving Starlight, which the generative route prices at $1.20 per 10s at 1080p. Two published sentences that cannot both be true is not a catalog row. Verified live 2026-08-26.",
+  "fal-ai/workflow-utilities/auto-subtitle": "Media plumbing — same family and same reason as `fal-ai/ffmpeg-api/compose`.",
+  "fal-ai/workflow-utilities/blend-video": "Media plumbing — same family and same reason as `fal-ai/ffmpeg-api/compose`.",
+  "fal-ai/workflow-utilities/extract-nth-frame": "Media plumbing — same family and same reason as `fal-ai/ffmpeg-api/compose`.",
+  "fal-ai/workflow-utilities/reverse-video": "Media plumbing — same family and same reason as `fal-ai/ffmpeg-api/compose`.",
+  "fal-ai/workflow-utilities/scale-video": "Media plumbing — same family and same reason as `fal-ai/ffmpeg-api/compose`.",
+  "fal-ai/workflow-utilities/trim-video": "Media plumbing — same family and same reason as `fal-ai/ffmpeg-api/compose`.",
+  "pixelcut/background-removal": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "pixelcut/video-background-removal": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "topaz/upscale/image/creative": "Topaz's Bloom family at fal (`model`: Bloom 2 | Bloom | Bloom Realism, plus `autoprompt` and `creativity`), listed and active — held back for one missing fact, and the fact is the price. Nobody has transcribed https://fal.ai/models/topaz/upscale/image/creative, and a curated endpoint with neither a rate nor an `unpriced` reason FAILS codegen; a rate guessed from its precision sibling would be a number a caller treats as a budget. Worth naming as the strongest candidate for the next widening: unmodel's NATIVE topaz provider already catalogs Bloom 2 and Bloom Realism with hand-transcribed settings (src/providers/topaz/models.ts), so fal's resale of the same product is the one Topaz family visible on one half of the package and not the other. Verified live 2026-08-26.",
+  "topaz/upscale/image/transparent": "An alpha-preserving variant of the precision route with NO `model` field at all — three properties (`image_url`, `output_format`, `upscale_factor`), so as a catalog row it would be its precision sibling minus the network choice. Held back on the same missing price transcription as the two `creative` routes, and recorded rather than left to the audit to re-propose every week. Verified live 2026-08-26.",
+  "topaz/upscale/video/creative": "The clip half of the same Bloom/creative family (`prompt`, `creativity`, `realism`, `sharp`), listed and active, held back for the same reason as topaz/upscale/image/creative: its price sentence has not been transcribed, and pricing.json may not be silent about a curated row. Verified live 2026-08-26.",
+  "tripo3d/h3.1/multiview-to-3d": "Requires `image_urls` with minItems 2, and `unmodel/3d`'s `image` is ONE reference. A route that cannot be called with a single view cannot be half-served through this vocabulary; its v2.5 sibling is curated in because there the extra angles are optional.",
+  "tripo3d/triposplat": "Gaussian splats rather than a mesh. The output is a point cloud with per-point spherical harmonics — a different artifact with different tooling, and `Modality`'s new `\"3d\"` member would be claiming more than it means.",
+  "veed/video-background-removal": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "veed/video-background-removal/fast": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+  "veed/video-background-removal/green-screen": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
+};
+
+/**
+ * Whole fal CATEGORIES unmodel does not serve, each with the recorded reason.
+ *
+ * Prose, and prose only: fal's own `category` values are lossy (music hides in
+ * `text-to-audio`, upscale and background-removal are both `image-to-image`), so nothing
+ * enforces a category — enforcement is per id, in {@link FAL_EXCLUDED}. Shipped because
+ * the argument for not serving a whole family is the part a caller asking "why is there no
+ * fal fine-tuning surface?" actually wants.
+ */
+export const FAL_EXCLUDED_CATEGORIES: Readonly<Record<string, string>> = {
+  "3d-to-3d": "12 endpoints that take a MESH and return one — retopology, segmentation, retexture, rigging, part splitting. Real operations with no unmodel verb: `unmodel/3d` asks for an object to be MADE, and a route that refines one you already have is a different question. A `mesh` category is the honest home for them if they are ever wanted.",
+  "ffmpeg-api": "Plumbing (concat, trim, mux). No model, nothing to validate beyond a file list — the full argument, and the eleven live ids it covers, are in `excluded.endpoints` under `fal-ai/ffmpeg-api/compose`.",
+  "llm": "openrouter passthrough — unmodel ships the real openrouter provider, with its own catalog and availability data.",
+  "subtitles": "Plumbing — a rendering step over an stt result.",
+  "training": "57 endpoints that start a fine-tune, not a validated inference request.",
+  "vision": "34 endpoints doing image-in/text-out — `unmodel/chat` already owns that shape with real multimodal message types.",
+  "workflow-utils": "Plumbing — the same argument as `ffmpeg-api`, and the same place to look: `excluded.endpoints`, `fal-ai/ffmpeg-api/compose`. Note the live ids are `fal-ai/workflow-utilities/*`, not `workflow-utils/*`.",
+};

@@ -258,17 +258,49 @@ describe("codegen: chat tables", () => {
     expect(rows).toBeGreaterThan(1000);
   });
 
-  test("the committed table covers every text model of every in-scope provider", () => {
+  /**
+   * Text-output *minus* the rows `chatScopeExclude` names.
+   *
+   * The subtraction is the whole point of that field: models.dev records a
+   * modality signature, not a route, so "text out" admitted nine openai rows
+   * OpenAI's own chat endpoint refuses (codex on `/v1/responses`, embeddings,
+   * image generation, realtime). This assertion is what stops the table
+   * regrowing them, and the `expected` set is computed from the same data file
+   * codegen reads so the two cannot drift.
+   */
+  test("the committed table covers every text model of every in-scope provider", async () => {
+    const overrides = (await Bun.file(
+      new URL("../data/availability-overrides.json", import.meta.url).pathname,
+    ).json()) as { chatScopeExclude: string[] };
+    const excluded = overrides.chatScopeExclude.map((ref) => {
+      const colon = ref.indexOf(":");
+      const glob = (part: string): RegExp =>
+        new RegExp(
+          `^${part
+            .split("*")
+            .map((piece) => piece.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+            .join(".*")}$`,
+        );
+      return { provider: glob(ref.slice(0, colon)), id: glob(ref.slice(colon + 1)) };
+    });
+    const isExcluded = (providerId: string, modelId: string): boolean =>
+      excluded.some((entry) => entry.provider.test(providerId) && entry.id.test(modelId));
+
+    let removed = 0;
     for (const [providerId, models] of Object.entries(chatProfiles)) {
       type TextRows = { models: Record<string, { modalities: { output: readonly string[] } }> };
       const source = (catalog as unknown as Record<string, TextRows | undefined>)[providerId];
       expect(source, providerId).toBeDefined();
-      const expected = Object.entries((source as TextRows).models)
+      const textOut = Object.entries((source as TextRows).models)
         .filter(([, model]) => model.modalities.output.includes("text"))
-        .map(([id]) => id)
-        .sort();
+        .map(([id]) => id);
+      const expected = textOut.filter((id) => !isExcluded(providerId, id)).sort();
+      removed += textOut.length - expected.length;
       expect(Object.keys(models).sort(), providerId).toEqual(expected);
     }
     expect(Object.keys(chatProfiles).length).toBe(32);
+    // A vacuous exclusion list would make the filter above a no-op and this
+    // test a weaker version of what it replaced.
+    expect(removed).toBe(9);
   });
 });

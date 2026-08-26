@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1339 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1330 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -570,7 +570,6 @@ export const CHAT_MODEL_REFS = [
   "nvidia/thinkingmachines/inkling",
   "nvidia/upstage/solar-10.7b-instruct",
   "nvidia/z-ai/glm-5.2",
-  "openai/chatgpt-image-latest",
   "openai/gpt-3.5-turbo",
   "openai/gpt-4",
   "openai/gpt-4-turbo",
@@ -591,8 +590,6 @@ export const CHAT_MODEL_REFS = [
   "openai/gpt-5.2-chat-latest",
   "openai/gpt-5.2-pro",
   "openai/gpt-5.3-chat-latest",
-  "openai/gpt-5.3-codex",
-  "openai/gpt-5.3-codex-spark",
   "openai/gpt-5.4",
   "openai/gpt-5.4-mini",
   "openai/gpt-5.4-nano",
@@ -603,18 +600,12 @@ export const CHAT_MODEL_REFS = [
   "openai/gpt-5.6-luna",
   "openai/gpt-5.6-sol",
   "openai/gpt-5.6-terra",
-  "openai/gpt-image-1-mini",
-  "openai/gpt-image-1.5",
-  "openai/gpt-realtime-2.1",
   "openai/o1",
   "openai/o1-pro",
   "openai/o3",
   "openai/o3-mini",
   "openai/o3-pro",
   "openai/o4-mini",
-  "openai/text-embedding-3-large",
-  "openai/text-embedding-3-small",
-  "openai/text-embedding-ada-002",
   "openrouter/ai21/jamba-large-1.7",
   "openrouter/aion-labs/aion-2.0",
   "openrouter/aion-labs/aion-3.0",

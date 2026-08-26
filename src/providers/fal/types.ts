@@ -43,9 +43,62 @@
  *   num_inference_steps: 4,   // typed to schnell's own ceiling of 12
  * };
  * ```
+ *
+ * ## The RESPONSE documents are here too — `Fal<Verb>ResultById`
+ *
+ * Every `*Body` alias above has a twin nobody finds: the result document each
+ * endpoint answers with, generated from the same OpenAPI document as its
+ * request. Ten maps, one per verb — {@link FalImageResultById},
+ * {@link FalImageEditResultById}, {@link FalVideoResultById},
+ * {@link FalLipsyncResultById}, {@link FalAvatarResultById},
+ * {@link FalUpscaleResultById}, {@link FalThreeDResultById},
+ * {@link FalTtsResultById}, {@link FalSttResultById},
+ * {@link FalMusicResultById} — each keyed by the same endpoint id you routed
+ * with, so the request key and the response key are the same string.
+ *
+ * They are listed here because they existed for three waves before anyone
+ * found them, and the reasonable thing to do without them is to hand-roll
+ * `{ video: { url: string } }` per endpoint, which is fal's schema retyped by
+ * hand and out of date on fal's next revision.
+ *
+ * ```ts
+ * import type {
+ *   FalQueueResult,
+ *   FalQueueSubmitResponse,
+ *   FalVideoResultById,
+ * } from "unmodel/fal/types";
+ *
+ * const submit: FalQueueSubmitResponse = await (await fetch(url, init)).json();
+ * // …poll submit.status_url until status === "COMPLETED"…
+ * const body: FalQueueResult<FalVideoResultById["fal-ai/veo3.1"]> =
+ *   await (await fetch(submit.response_url!)).json();
+ *
+ * if ("error" in body) throw new Error(body.error);
+ * body.video.url; // string
+ * ```
+ *
+ * Three things that surface is NOT. It is not validated — unmodel checks the
+ * request and never sees the response, so these are compile-time shapes for a
+ * document you fetched yourself. It is not a `checkX` helper: fal's result
+ * documents are one per endpoint across ten verbs rather than one per provider,
+ * so there is no single response contract to normalise (a zod mirror of all 171
+ * was asked for and declined for the same reason — 171 schemas restating the
+ * generated types, refreshed on fal's clock, to validate a document unmodel
+ * does not fetch). And it is not a failure discriminator: fal's queue declares
+ * no `FAILED` status, which is what {@link FalQueueResult} and
+ * {@link FalQueueError} are for.
+ *
+ * Uncurated endpoint ids have no entry, in exact symmetry with the request
+ * side: `FalVideoArm<"fal-ai/something-new">` widens to
+ * `Record<string, unknown>` and there is no result row either.
  */
 
-export type { FalQueueStatus, FalQueueSubmitResponse } from "./urls";
+export type {
+  FalQueueError,
+  FalQueueResult,
+  FalQueueStatus,
+  FalQueueSubmitResponse,
+} from "./urls";
 
 export type {
   FalDimensionSpec,
@@ -98,7 +151,7 @@ export type {
  * The request body `fal.video` accepts — every curated video endpoint, keyed by
  * `endpoint`. Narrow to one with {@link FalVideoArm}.
  *
- * Thirty endpoints and one address: text-to-video, image-to-video,
+ * Thirty-five endpoints and one address: text-to-video, image-to-video,
  * first-and-last-frame interpolation, reference-to-video and clip editing are
  * all here, because at fal they are one route shape with a different path. See
  * `./video.ts`.

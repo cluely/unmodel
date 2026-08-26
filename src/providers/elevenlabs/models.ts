@@ -30,6 +30,15 @@
 // elevenlabs.io/pricing/api omit `cost` rather than guess. One id (`ivc`) is
 // SYNTHETIC — POST /v1/voices/add has no model field, and the id names the
 // documented mode so the voice-clone validator has a catalog address.
+//
+// …with one documented exception to "every model id on /docs/models": the two
+// DUBBING ids are real, selectable model ids that page does not list at all.
+// `dubbing_v1` and `dubbing_v2` exist only as the `model_id` enum of
+// POST /v1/dubbing/project, and their rates only on elevenlabs.io/pricing/api.
+// Their block below carries the provenance sentence, the same way `ivc` does
+// for its synthetic id. The rule the note encodes is unchanged: an id joins
+// this catalog when ElevenLabs documents it somewhere a reader can check, and
+// the comment says where.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -50,6 +59,17 @@ const SCRIBE_PER_AUDIO_MINUTE = 0.22 / 60;
 const SCRIBE_REALTIME_PER_AUDIO_MINUTE = 0.39 / 60;
 /** Eleven Music: $0.15 per minute of generated audio. */
 export const MUSIC_PER_AUDIO_MINUTE = 0.15;
+/**
+ * Dubbing v2: "Price per minute" $2.20 (elevenlabs.io/pricing/api).
+ * Per minute of SOURCE media, per language target.
+ */
+export const DUBBING_V2_PER_AUDIO_MINUTE = 2.2;
+/**
+ * Dubbing v1: "Price per minute (without watermark)" $0.50. The $0.33
+ * "with watermark" rate is deliberately NOT this number — see the dubbing
+ * block below for why it is unreachable on the project surface.
+ */
+export const DUBBING_V1_PER_AUDIO_MINUTE = 0.5;
 
 const ttsModels = {
   eleven_v3: {
@@ -285,6 +305,62 @@ const textToVoiceModels = {
 } as const satisfies Record<string, ModelInfo>;
 
 /**
+ * Dubbing — POST /v1/dubbing/project, validated by ./dubbing (the language
+ * targets that actually spend the rate are ./dubbing-language).
+ *
+ * PROVENANCE, because these two are the exception to the COVERAGE note above:
+ * `dubbing_v1` and `dubbing_v2` are NOT listed on elevenlabs.io/docs/models.
+ * They come from the `model_id` enum of the dubbing project-create body
+ * (https://elevenlabs.io/docs/api-reference/dubbing/project/create, the only
+ * place either id is selectable) and their rates from the API pricing table
+ * (https://elevenlabs.io/pricing/api). Both verified 2026-08-26.
+ *
+ * The rates are per minute of SOURCE media, and they are spent once per
+ * language target: the help centre's formula is model × duration × number of
+ * languages, which is what `checkDubbingProject` computes. Note the direction
+ * on `perAudioMinute` — for Scribe it means a minute of transcribed input, for
+ * Music a minute of generated output, and here a minute of the source media
+ * being dubbed.
+ *
+ * `dubbing_v1` carries the NO-WATERMARK rate ($0.50/min), not the $0.33
+ * watermarked one, and that is a fact about the surface rather than a choice:
+ * "Dubbing v2 does not include a watermark toggle… The legacy v1 dubbing flow
+ * and Dubbing Studio were the only places where the watermark discount
+ * existed" (elevenlabs.io/docs/overview/capabilities/dubbing). The project
+ * route has no `watermark` field, so on this surface the discounted rate is
+ * unreachable and a conditional cost would be a caveat pretending to be a
+ * catalog entry.
+ */
+const dubbingModels = {
+  dubbing_v2: {
+    id: "dubbing_v2",
+    name: "Dubbing v2",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    // Audio or video in, a dubbed audio track out: the v2 project surface's
+    // only output field is `outputs.lossless_audio`, a signed URL for an
+    // AUDIO track. A dubbed video comes from the legacy route or a Studio
+    // render, neither of which unmodel serves.
+    modalities: { input: ["audio", "video"], output: ["audio"] },
+    limit: { context: 0 },
+    cost: { perAudioMinute: DUBBING_V2_PER_AUDIO_MINUTE },
+  },
+  dubbing_v1: {
+    id: "dubbing_v1",
+    name: "Dubbing v1",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["audio", "video"], output: ["audio"] },
+    limit: { context: 0 },
+    cost: { perAudioMinute: DUBBING_V1_PER_AUDIO_MINUTE },
+  },
+} as const satisfies Record<string, ModelInfo>;
+
+/**
  * Instant Voice Cloning — POST /v1/voices/add, validated by ./voice-clone.
  * The wire has no model field: `ivc` is a synthetic id naming the documented
  * mode (Instant Voice Cloning), which also reserves `pvc` for the separate
@@ -355,6 +431,7 @@ export const models = {
   ...speechToSpeechModels,
   ...textToVoiceModels,
   ...voiceCloneModels,
+  ...dubbingModels,
   ...generativeAudioModels,
 } as const satisfies Record<string, ModelInfo>;
 
@@ -374,6 +451,8 @@ export type ElevenlabsSttModelId = keyof typeof sttModels;
 export type ElevenlabsVoiceDesignModelId = keyof typeof textToVoiceModels;
 /** The synthetic id addressing POST /v1/voices/add (no model field on the wire). */
 export type ElevenlabsVoiceCloneModelId = keyof typeof voiceCloneModels;
+/** Model ids POST /v1/dubbing/project accepts as `model_id`. */
+export type ElevenlabsDubbingModelId = keyof typeof dubbingModels;
 /** WebSocket-only STT ids — not accepted by the batch endpoint. */
 export type ElevenlabsRealtimeSttModelId = keyof typeof realtimeSttModels;
 /** WebSocket-only TTS ids (Text to Dialogue realtime) — not accepted by POST /v1/text-to-speech. */
@@ -394,3 +473,10 @@ export const REALTIME_STT_MODEL_IDS: readonly string[] = Object.keys(realtimeStt
 export const MUSIC_MODEL_IDS: readonly string[] = Object.keys(musicModels);
 /** Runtime allow-list backing the voice-design endpoint's model gate. */
 export const VOICE_DESIGN_MODEL_IDS: readonly string[] = Object.keys(textToVoiceModels);
+/**
+ * Runtime allow-list backing the dubbing endpoint's model gate — and the
+ * inverse gate everywhere else: `model_id: "dubbing_v2"` resolves in the
+ * catalog, so without this group the tts/stt/music/voice-design validators
+ * would accept a dubbing id unremarked.
+ */
+export const DUBBING_MODEL_IDS: readonly string[] = Object.keys(dubbingModels);

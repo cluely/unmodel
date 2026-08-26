@@ -94,6 +94,19 @@
 // Clipping and filler-word removal are post-production passes over a video you
 // already have.
 //
+// THE SECOND WITNESS HAS SINCE LANDED, and it does not change the answer.
+// `elevenlabs.dub` / `elevenlabs.dubLanguage` ship as WIRE-ONLY addresses
+// (src/providers/elevenlabs/dubbing.ts), which makes ElevenLabs Dubbing the
+// second vendor doing "same clip, new language" in the tree. Two witnesses is
+// the bar for a vocabulary, but the bar is two witnesses that AGREE, and these
+// two share no request shape: ElevenLabs is a two-request project/target model
+// with an editable transcript, a monotonic `revision`, a `stale` output state,
+// `keyterms`, `translations`, `cloning_strength` and `webhook_ids`; HeyGen's
+// is a one-shot job. A canonical `{ source, targetLanguage }` would have
+// nowhere to put either half of that — the "vocabulary of one" refusal applied
+// twice rather than once. Revisit when a third witness lands, or when these
+// two shapes converge.
+//
 // `/v3/avatars`, `/v3/avatars/looks`, `/v3/voices`, `/v3/assets`,
 // `/v3/brand-kits`, `/v3/brand-glossaries`, `/v3/folders`, `/v3/webhooks`,
 // `/v3/templates`, `/v3/workflows`, `/v3/podcasts`, `/v3/video-agents`,

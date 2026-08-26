@@ -54,12 +54,18 @@ import type { FalImageBodyById } from "../fal/interop";
 import type { Flux2Body } from "./image";
 import type { Flux1Body } from "./image-flux1";
 
-type ById = FalImageBodyById;
-type FalFlux2Pro = ById["fal-ai/flux-2-pro"];
-type FalFlux2Max = ById["fal-ai/flux-2-max"];
-type FalFluxProV11 = ById["fal-ai/flux-pro/v1.1"];
-type FalFluxProV11Ultra = ById["fal-ai/flux-pro/v1.1-ultra"];
-type FalFluxDev = ById["fal-ai/flux/dev"];
+// The per-endpoint aliases below are `export`ed rather than private, and it is
+// not decoration: they are the exact symbols `<Provider>…FalOverlap`'s
+// `ReturnType` resolves to, so a consumer that emits declarations around a
+// result carrying `.toApi("fal")` cannot name it without them (TS4023, "has or
+// is using name 'FalAiFlux2ProInput' … but cannot be named"). Type-only, and
+// re-exported one line from ./index.ts. See src/core/carriers.ts.
+export type ById = FalImageBodyById;
+export type FalFlux2Pro = ById["fal-ai/flux-2-pro"];
+export type FalFlux2Max = ById["fal-ai/flux-2-max"];
+export type FalFluxProV11 = ById["fal-ai/flux-pro/v1.1"];
+export type FalFluxProV11Ultra = ById["fal-ai/flux-pro/v1.1-ultra"];
+export type FalFluxDev = ById["fal-ai/flux/dev"];
 
 /**
  * The widest FLUX.2 / FLUX.1 shapes, for reading a param off any arm.

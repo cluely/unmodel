@@ -78,6 +78,7 @@
 export type {
   ChatCache,
   ChatFilePart,
+  ChatMediaDetail,
   ChatMessage,
   ChatModelRef,
   ChatNativeTool,

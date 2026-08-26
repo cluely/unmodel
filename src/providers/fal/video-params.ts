@@ -17,8 +17,8 @@
  * spells them), `resolutions` (the canonical tiers it can express, which is an
  * EMPTY list at `minimax/h3` — it offers `"768P"` and `"2K"`, neither of which
  * is one), and `roles`: which of `first` / `last` / `reference` this endpoint's
- * route serves, plus the wire name each lands on. The roles are what let thirty
- * endpoints share one address; see `./unified-video.ts`.
+ * route serves, plus the wire name each lands on. The roles are what let
+ * thirty-five endpoints share one address; see `./unified-video.ts`.
  */
 
 export {

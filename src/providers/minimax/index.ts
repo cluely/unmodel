@@ -177,5 +177,24 @@ export type {
   MinimaxVoiceModelId,
 } from "./models";
 
-// Every media route returns either JSON audio (t2a) or an async task handle
-// (video), and unmodel validates requests only — so no response checkers here.
+// T2A answers JSON and reports failure IN BAND: the reference declares one
+// HTTP response (200) and puts the outcome on `base_resp.status_code`, so a
+// caller that branches on `res.ok` reads audio off a failed request.
+// `checkTts` is that read-back — sanity, plus the billed character count
+// priced against the catalog. The video routes answer an async task handle
+// carrying the same envelope; polling is transport and stays out of scope.
+export { checkTts } from "./tts-check";
+export type { MinimaxT2aResponseLike, MinimaxBaseRespStatus } from "./tts-check";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";
+
+/**
+ * The fal bodies this provider's `.toApi("fal")` maps onto. One type-only
+ * line, so a consumer emitting its own declarations can name the result — see
+ * src/core/carriers.ts.
+ */
+export type { FalSpeech02Hd, FalSpeech28Hd, FalSpeech28Turbo } from "./fal-target";
+export type { MinimaxTtsFalOverlap } from "./fal-target";

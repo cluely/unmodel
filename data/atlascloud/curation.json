@@ -1,0 +1,233 @@
+{
+  "$comment": [
+    "HAND-MAINTAINED. The Atlas Cloud roster: which of Atlas's 473 models unmodel serves, and why.",
+    "",
+    "WHY ATLAS AT ALL, recorded honestly. This provider was requested as a second transport for the",
+    "Seedance family — models unmodel already reaches at `bytedance.video` (ByteDance's own ModelArk)",
+    "and at `fal.video` (fal.ai's queue). The stated reason was moderation, and that reason is WRONG on",
+    "the public record: Atlas's own Seedance 2.5 page says \"All uploaded portraits go through automatic",
+    "moderation. Non-compliant content will be blocked — not every image can be uploaded\", and its",
+    "schema descriptions add \"Images containing real human faces cannot be uploaded directly; use",
+    "model-generated assets, preset digital characters, or authorized real-person assets.\" fal's",
+    "`image_urls` carries no equivalent restriction. So Atlas moderates the reference-image path MORE",
+    "than fal does, not less. The durable reason is a PARTNER-TRANSPORT one — a contract designating",
+    "Atlas as the permitted vendor for these models — and it is recorded that way here so the next",
+    "reader who checks the moderation claim does not find this file wrong on its face.",
+    "",
+    "THE LIBRARY REASON is independent of the contract and would justify the provider on its own: three",
+    "transports for one set of weights compile to three visibly different bodies, and feeding one to",
+    "another's validator fails. That is docs/decisions.md §1 working rather than redundancy — see the",
+    "diff table at the top of src/providers/atlascloud/video.ts.",
+    "",
+    "SCOPE: VIDEO ONLY, hand-written, no generator. Atlas serves all media from three POST routes",
+    "(`/model/generateVideo`, `/generateImage`, `/generateAudio`) covering nine unmodel verbs, and its",
+    "`type`/`categories` taxonomy is too lossy to be the source of a verb map: seven `suno/chirp-*`",
+    "MUSIC models are filed under TEXT-TO-SPEECH, `tripo-h3.1/image-to-3d` is `type: \"Image\"`, and",
+    "`bytedance/seed-asr-2.0` (speech-to-text) is `type: \"Audio\"`. Hand curation is mandatory, exactly",
+    "as at fal.",
+    "",
+    "`endpoints` — one entry per curated model id. The id is a real, REQUIRED BODY field rather than a",
+    "URL path: Atlas routes every video model through one url and `model` selects both the model and",
+    "the task, which is why there is no `endpoint` pseudo-param anywhere in this provider.",
+    "  verb    REQUIRED. `video` on every row today — this provider serves one category.",
+    "  route   text | image | reference. The id names it, and each route is its OWN OpenAPI document.",
+    "  family  Atlas's own `familyName` from the catalog, verbatim.",
+    "  note    what is unusual about this row.",
+    "",
+    "Every id here resolves against the keyless catalog (GET https://api.atlascloud.ai/api/v1/models)",
+    "and against its own keyless schema (https://static.atlascloud.ai/model/schema/<id-with-dashes>.json),",
+    "and every schema is committed under data/atlascloud/openapi/. Verified live 2026-08-26: 473 rows",
+    "(Video 196 / Image 121 / Text 136 / Audio 20), 473/473 carrying a schema URL, robots.txt on the",
+    "schema host is `Allow: /`.",
+    "",
+    "ROSTER SHAPE. 23 ids: the five Seedance families the adopter named (2.5 x3, 2.0 x3, 2.0-mini x3,",
+    "2.0-fast x3, v1.5-pro x4 = 16), plus the earners at the top of Atlas's own TEXT-TO-VIDEO /",
+    "IMAGE-TO-VIDEO listing — Wan 3.0 and Wan 3.0-prime (Atlas's highest-priority video rows, tagged",
+    "HOT + NEW; 4 ids) and Veo 3.1 (3 ids: a third transport for weights already at `google.video` and",
+    "`fal.video`, which is the sharpest same-weights-different-bodies comparison in the tree).",
+    "Atlas's genuine additions over fal's Seedance roster are the `-mini` tier and the SR/ESR",
+    "resolution ladder (11 resolutions on 2.5 against fal's 3).",
+    "",
+    "NO GENERATOR IN THIS WAVE, and the promotion bar is recorded: `scripts/codegen-atlascloud.ts`",
+    "becomes worth ~1,500 LoC only past roughly 40 curated ids. It would also need two lowering rules",
+    "fal's codegen does not have — `allOf` + `if/then` conditionals become IR constraints instead of a",
+    "hard error (`google/veo3.1/*` has one: \"When resolution is 1080p or 4k, duration must be 8\") — and",
+    "the three-routes-to-nine-verbs mapping would have to come from THIS file, never from",
+    "`type`/`categories`.",
+    "",
+    "DRIFT. `bun run audit:atlascloud` diffs the live catalog against this file and reports gone / new /",
+    "changed, and re-hashes every committed schema snapshot. It never writes. Atlas's doc rot is already",
+    "visible — the official video API reference sends `\"model\": \"kling-v2.0\"`, an id that is not in the",
+    "live catalog — so the gate is as mandatory here as at fal."
+  ],
+  "endpoints": {
+    "alibaba/wan-3.0-prime/image-to-video": {
+      "verb": "video",
+      "route": "image",
+      "family": "wan-3.0",
+      "note": "No `ratio` field at all: the first frame decides the shape. `prompt` is REQUIRED here, unlike on the Seedance image routes where it is \"Optional but recommended\"."
+    },
+    "alibaba/wan-3.0-prime/text-to-video": {
+      "verb": "video",
+      "route": "text",
+      "family": "wan-3.0",
+      "note": "Atlas's highest-priority video row (HOT + NEW). The ONE upper-case resolution enum on the provider: 1080P / 720P / 480P. Its audio toggle is `audio`, not `generate_audio`."
+    },
+    "alibaba/wan-3.0/image-to-video": {
+      "verb": "video",
+      "route": "image",
+      "family": "wan-3.0",
+      "note": "As above, no `ratio`."
+    },
+    "alibaba/wan-3.0/text-to-video": {
+      "verb": "video",
+      "route": "text",
+      "family": "wan-3.0",
+      "note": "Same family, LOWER-case resolutions plus an `-esr` enhancement ladder the prime tier lacks — two spellings of one idea inside one family, which is why every table in this provider is per model."
+    },
+    "bytedance/seedance-2.0-fast/image-to-video": {
+      "verb": "video",
+      "route": "image",
+      "family": "seedance2",
+      "note": "As above."
+    },
+    "bytedance/seedance-2.0-fast/reference-to-video": {
+      "verb": "video",
+      "route": "reference",
+      "family": "seedance2",
+      "note": "As above."
+    },
+    "bytedance/seedance-2.0-fast/text-to-video": {
+      "verb": "video",
+      "route": "text",
+      "family": "seedance2",
+      "note": "Byte-identical schema to the mini tier's, different weights and a different price — which is why the roster names both rather than one."
+    },
+    "bytedance/seedance-2.0-mini/image-to-video": {
+      "verb": "video",
+      "route": "image",
+      "family": "seedance-2.0-mini",
+      "note": "As above, first + last frame."
+    },
+    "bytedance/seedance-2.0-mini/reference-to-video": {
+      "verb": "video",
+      "route": "reference",
+      "family": "seedance-2.0-mini",
+      "note": "As above, with the 9/3/3 reference caps."
+    },
+    "bytedance/seedance-2.0-mini/text-to-video": {
+      "verb": "video",
+      "route": "text",
+      "family": "seedance-2.0-mini",
+      "note": "The `-mini` tier is one of Atlas's two genuine additions over fal's Seedance roster. No native 1080p: `1080p-SR` upscales a 720p render."
+    },
+    "bytedance/seedance-2.0/image-to-video": {
+      "verb": "video",
+      "route": "image",
+      "family": "seedance2",
+      "note": "First + last frame. `bitrate_mode` and `seed` are the 2.0 series' own fields; Seedance 2.5 has neither."
+    },
+    "bytedance/seedance-2.0/reference-to-video": {
+      "verb": "video",
+      "route": "reference",
+      "family": "seedance2",
+      "note": "Reference caps are a third of 2.5's (9/3/3), and `minItems` is 1 rather than 0 — an empty array is a schema violation here and legal on 2.5."
+    },
+    "bytedance/seedance-2.0/text-to-video": {
+      "verb": "video",
+      "route": "text",
+      "family": "seedance2",
+      "note": "The only Seedance on Atlas with NATIVE 4k: \"'4k' is native UHD (3840x2160, 16:9) available on the full Seedance 2.0 models only (not Fast/Mini)\"."
+    },
+    "bytedance/seedance-2.5/image-to-video": {
+      "verb": "video",
+      "route": "image",
+      "family": "seedance-2.5",
+      "note": "The one row in the roster whose `ratio` enum has a single member: \"Seedance 2.5 image-to-video (first-frame and first+last-frame) accepts only 'adaptive': the output preserves the source image's aspect ratio.\""
+    },
+    "bytedance/seedance-2.5/reference-to-video": {
+      "verb": "video",
+      "route": "reference",
+      "family": "seedance-2.5",
+      "note": "The richest row: reference_images (<=30), reference_videos (<=10), reference_audios (<=10), audio-only referencing (unique to 2.5), `omni_reference_task_type`, and the 11-value SR/ESR resolution ladder. This is the id the adopter asked for by name."
+    },
+    "bytedance/seedance-2.5/text-to-video": {
+      "verb": "video",
+      "route": "text",
+      "family": "seedance-2.5",
+      "note": "Seedance 2.5 text-to-video. `duration` is an INTEGER enum [-1, 4..30] whose -1 means \"the model picks the length\" — the same sentinel ModelArk documents, and the one fal's string enum spells \"auto\"."
+    },
+    "bytedance/seedance-v1.5-pro/image-to-video": {
+      "verb": "video",
+      "route": "image",
+      "family": "seedance1.5",
+      "note": "Doc rot recorded: its schema describes `image` and `last_image` as \"The positive prompt for the generation\" — a copy-paste from `prompt`."
+    },
+    "bytedance/seedance-v1.5-pro/image-to-video-fast": {
+      "verb": "video",
+      "route": "image",
+      "family": "seedance1.5",
+      "note": "As above."
+    },
+    "bytedance/seedance-v1.5-pro/text-to-video": {
+      "verb": "video",
+      "route": "text",
+      "family": "seedance1.5",
+      "note": "The family that breaks the house dialect: `aspect_ratio` rather than `ratio`, `camera_fixed`, a [4,12] RANGE rather than an enum, and NO -1 sentinel."
+    },
+    "bytedance/seedance-v1.5-pro/text-to-video-fast": {
+      "verb": "video",
+      "route": "text",
+      "family": "seedance1.5",
+      "note": "720p only, where the non-fast pair also renders 480p."
+    },
+    "google/veo3.1/image-to-video": {
+      "verb": "video",
+      "route": "image",
+      "family": "veo-3.1",
+      "note": "As above. `generate_audio` defaults to FALSE here and to true on every Seedance row — same field name, opposite default."
+    },
+    "google/veo3.1/reference-to-video": {
+      "verb": "video",
+      "route": "reference",
+      "family": "veo-3.1",
+      "note": "Its reference array is `images` (1-3), not `reference_images`. Two Atlas schema bugs recorded: `x-order-properties` lists an `aspect_ratio` that `properties` does not declare, and a stray top-level `seed` object sits beside `properties`."
+    },
+    "google/veo3.1/text-to-video": {
+      "verb": "video",
+      "route": "text",
+      "family": "veo-3.1",
+      "note": "The third transport for Veo 3.1 (also `google.video` natively and `fal.video` on the queue). Carries the roster's only `allOf` + `if/then` conditional: \"When resolution is 1080p or 4k, duration must be 8 (seconds).\""
+    }
+  },
+  "excluded": {
+    "$comment": [
+      "Deliberate exclusions carry recorded reasons (docs/decisions.md §6).",
+      "",
+      "`categories` is a map of ATLAS TAXONOMY KEYS to the reason that whole slice is out, and it is",
+      "DOCUMENTATION — nothing reads it at run time. That is deliberate rather than an oversight: Atlas's",
+      "own categories are not trustworthy enough to gate on (suno music under TEXT-TO-SPEECH, Tripo 3D",
+      "under `type: \"Image\"`, seed-asr speech-to-text under `type: \"Audio\"`), so enforcement is by ID in",
+      "`endpoints` below and in `src/providers/atlascloud/models.ts`, which is the only list a request can",
+      "actually be checked against."
+    ],
+    "categories": {
+      "AUDIO-TO-VIDEO": "4 rows. Audio-driven video is `unmodel/lipsync` and `unmodel/avatar` territory, and neither vocabulary has been checked against Atlas's schemas.",
+      "IMAGE-TO-3D": "As above — `tripo-h3.1/image-to-3d`, also `type: \"Image\"`.",
+      "IMAGE-TO-IMAGE": "Same route, same reason; also where Atlas files its upscalers.",
+      "SPEECH-TO-TEXT": "`/model/generateAudio`, and mis-typed: `bytedance/seed-asr-2.0` is `type: \"Audio\"` on a route that also serves TTS and music.",
+      "TEXT-TO-3D": "3D is a later wave library-wide (`unmodel/3d` has two providers today). Atlas files `tripo-h3.1/text-to-3d` under `type: \"Image\"`, which is the taxonomy problem in one row.",
+      "TEXT-TO-IMAGE": "`/model/generateImage` is a second route with its own per-model schemas. Real work, not blocked — deliberately out of a video-only wave.",
+      "TEXT-TO-SPEECH": "Blocked on curation, not on effort: `elevenlabs/v3/text-to-speech` exposes `voice` as an enum of 21 raw opaque ids (`hpp4J3VqNfWAUOO0d1Us`, ...) with no names, and shipping that enum verbatim violates \"autocomplete is the product\". The slice also mis-files seven `suno/chirp-*` MUSIC models under this key, so it cannot even be read as a TTS list. Hand-curated voice rows first, then a wave.",
+      "VIDEO-TO-VIDEO": "17 rows Atlas files here (restyle, upscale, extend). unmodel reaches the Seedance video-editing path through the `/reference-to-video` ids and their `omni_reference_task_type`, which is where Atlas actually implements it; the rest are upscale/restyle verbs that would need their own curation."
+    },
+    "endpoints": {
+      "atlascloud/chat (the 136 rows at api.atlascloud.ai/v1/models)": "NOT a media route at all: Atlas serves chat from `https://api.atlascloud.ai/v1` in the OpenAI dialect, with an OpenRouter-shaped keyless catalog (`context_length`, `max_output_length`, `input_modalities`, `supported_features`, per-token `pricing`). That is an `openai-compatible` overlay plus a generated catalog — a cheaper and completely separate effort. `data/models-dev.json` has no Atlas entry (184 providers, zero matches), so `/v1/models` would have to be the catalog source. Recorded as the obvious next Atlas wave, not as a gap in this one.",
+      "elevenlabs/v3/text-to-speech": "The autocomplete hazard, by name: `voice` is 21 opaque ElevenLabs ids with no display names. unmodel serves ElevenLabs natively with hand-curated voice rows; an Atlas resale carrying raw ids would be strictly worse than what already ships.",
+      "kwaivgi/kling-v3.0-*, kwaivgi/kling-v2.6-*": "Kling on Atlas is 12+ video routes (pro / std / turbo / 4k, motion-control, avatar) and unmodel already serves Kling natively (`kling.video` and four siblings) and at fal. A Kling-on-Atlas sweep is a roster decision of its own rather than a backfill; recorded so the next widening starts from a decision rather than from whichever id someone asks for first.",
+      "minimax/h3/{text,image,reference}-to-video": "An earner, and still excluded. Its `refers` field is an ARRAY OF TYPED OBJECTS (`{ url, type?: image|video|audio }`) rather than the three flat string arrays that are this provider's whole shape story, and it requires `duration` and `resolution` on every call. That is a fifth reference vocabulary in a provider curated for having one, and unmodel already reaches MiniMax-H3 twice — natively at `minimax.videoV2` and on fal's queue at `minimax/h3/*` — so a third transport buys the least of any row considered. Reconsider if the `refers` shape spreads to other Atlas models.",
+      "suno/chirp-*": "Seven MUSIC models Atlas files under TEXT-TO-SPEECH. Excluded twice over: wrong category in the source data, and music is not this wave.",
+      "xai/grok-imagine-video*, alibaba/happyhorse-*, youchuan/v8.*, vidu/q3-*": "Uncurated video rows in categories this provider already serves. Left out on the CHEAPNESS bar the fal roster uses — a row joins when it resolves live, its price is transcribable, and it lowers into an existing shape class with no new generator work. These fail the middle clause: Atlas publishes no usable price UNIT for any of them (see data/atlascloud/pricing.json), so all 23 curated ids already ship unpriced, and widening the roster widens that hole faster than it widens the surface. `bun run audit:atlascloud` lists them every week."
+    }
+  }
+}

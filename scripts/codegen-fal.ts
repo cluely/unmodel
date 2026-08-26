@@ -173,9 +173,23 @@ const curationEntrySchema = z.looseObject({
   retiredOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
+/**
+ * The `excluded` block — reasons, not rows, and now shipped as data.
+ *
+ * `$comment` keys are prose for the reader of the JSON and are dropped here;
+ * everything else is `id → reason` (or `fal category → reason`) and is emitted
+ * verbatim into `endpoints.gen.ts`, where `runFalChecks` can hand a caller who
+ * names an excluded id the recorded reason instead of a bare `unknown_model`
+ * that implies catalog lag.
+ */
+const curationExcludedSchema = z.looseObject({
+  categories: z.record(z.string(), z.string()).optional(),
+  endpoints: z.record(z.string(), z.string()).optional(),
+});
+
 const curationSchema = z.looseObject({
   endpoints: z.record(z.string(), curationEntrySchema),
-  excluded: z.unknown().optional(),
+  excluded: curationExcludedSchema.optional(),
 });
 
 const pricingRowSchema = z.looseObject({
@@ -1265,7 +1279,20 @@ function header(sources: readonly string[]): string {
 // Emitters
 // ---------------------------------------------------------------------------
 
-function renderEndpointsFile(models: readonly EndpointModel[]): string {
+/** `{ id: reason }` as a typed object literal, `$comment` keys dropped. */
+function renderReasonTable(name: string, reasons: Readonly<Record<string, string>>): string {
+  const keys = sorted(Object.keys(reasons)).filter((key) => !key.startsWith("$"));
+  const rows = keys.map((key) => `  ${quote(key)}: ${quote(reasons[key] as string)},`).join("\n");
+  // Annotated rather than `as const`: the reasons are prose a caller READS, not
+  // a vocabulary a caller picks from, and a hundred string literals in the
+  // declaration would cost every consumer of this file for nothing.
+  return `export const ${name}: Readonly<Record<string, string>> = {\n${rows}\n};`;
+}
+
+function renderEndpointsFile(
+  models: readonly EndpointModel[],
+  excluded: { categories?: Readonly<Record<string, string>>; endpoints?: Readonly<Record<string, string>> },
+): string {
   const byVerb = new Map<Verb, EndpointModel[]>();
   for (const model of models) {
     byVerb.set(model.verb, [...(byVerb.get(model.verb) ?? []), model]);
@@ -1354,6 +1381,35 @@ ${renderDoc(
 )}export const FAL_REQUIRED_PROBES = {
 ${probeRows}
 } as const;
+
+${renderDoc(
+  [
+    "Endpoint ids unmodel deliberately does NOT serve, each with the recorded reason.",
+    "",
+    "Transcribed from `data/fal/curation.json`'s `excluded.endpoints` block, which existed since wave 1 and",
+    "reached no caller: an adopter who named one of these got a bare `unknown_model`, which reads as \"the",
+    "catalog is a week behind\" — the opposite of the truth. `runFalChecks` looks an unknown id up here and",
+    "hands back the reason, so a deliberate refusal says so at the API surface.",
+    "",
+    "This is NOT a census of what fal serves. fal lists ~1,500 endpoints and unmodel curates a slice of them;",
+    "an id in neither map was never considered, which is the honest state and needs no defence. An id HERE was",
+    "considered and turned down, and the reason is what keeps a future roster widening from quietly re-adding",
+    "it. The wire path is unaffected either way — `fal.<verb>({ endpoint })` routes any id fal serves.",
+  ],
+  "",
+)}${renderReasonTable("FAL_EXCLUDED", excluded.endpoints ?? {})}
+
+${renderDoc(
+  [
+    "Whole fal CATEGORIES unmodel does not serve, each with the recorded reason.",
+    "",
+    "Prose, and prose only: fal's own `category` values are lossy (music hides in `text-to-audio`, upscale and",
+    "background-removal are both `image-to-image`), so nothing enforces a category — enforcement is per id, in",
+    "{@link FAL_EXCLUDED}. Shipped because the argument for not serving a whole family is the part a caller",
+    "asking \"why is there no fal fine-tuning surface?\" actually wants.",
+  ],
+  "",
+)}${renderReasonTable("FAL_EXCLUDED_CATEGORIES", excluded.categories ?? {})}
 `;
 }
 
@@ -2083,9 +2139,90 @@ function canonicalTier(value: string): string | undefined {
   return scale === 1 ? "1k" : scale === 2 ? "2k" : scale === 4 ? "4k" : undefined;
 }
 
-/** Canonical `W:H` spellings, from an enum that may hold other things too. */
+/**
+ * Canonical `W:H` spellings, from an enum that may hold other things too.
+ *
+ * The pattern MIRRORS the core's own definition of a ratio spelling —
+ * `RATIO_SPELLING` at src/core/unified/derive.ts:118 — minus the separator
+ * alternatives (`x`, `*`, `×`) fal never emits. Decimals are the half that
+ * matters: `krea/v2/{large,medium}/text-to-image` publish `"2.35:1"` and
+ * `xai/grok-imagine-image` publishes `"19.5:9"` and `"9:19.5"`, and an
+ * integers-only pattern deleted all three — refusing, at both type and run
+ * time, a shape the endpoint declares. `parseRatio`/`toRatioEnum` already
+ * reduce decimals (the hand-written krea adapter says so in prose at
+ * src/providers/krea/unified.ts:63), so the values only have to survive to
+ * reach them.
+ *
+ * ## The one refusal, and why it stays
+ *
+ * `"auto"` is not a shape. `AspectRatio` (src/core/unified/vocabulary/common.ts:44)
+ * is `AspectRatioPreset | (\`${number}:${number}\` & {})` — there is no
+ * canonical word for "you decide", exactly as `durationSeconds` below refuses
+ * `"auto"` because it is not a length. Admitting it would also let
+ * `pixelsToRatio` snap a pixel pair onto a value that names no geometry.
+ *
+ * It costs a caller almost nothing: `"auto"` is the schema DEFAULT on 17 of
+ * the 20 rows whose `aspect_ratio` enum offers it (the nano-banana family and
+ * its edit routes, mai-image-2.5, reve, seedance 2.0/2.5, veo3.1, wan), so omitting
+ * `aspectRatio` already sends it. On the three text-to-image nano-banana rows
+ * where the default is `"1:1"` and `"auto"` is a genuinely distinct choice,
+ * `providerOptions.fal.aspect_ratio` reaches the wire as written, and the raw
+ * `fal.image` surface takes it directly. A vocabulary with a gap beats one
+ * that lies. The rule is listed with the other general lowering rules in
+ * data/fal/overlays.json's `$comment`, which is where a rule true of fal
+ * generally rather than of one endpoint belongs.
+ *
+ * {@link assertRatiosComplete} is what keeps this filter honest: anything it
+ * drops that is not on the recorded refusal list fails codegen.
+ */
 function canonicalRatios(values: readonly (string | number)[]): string[] {
-  return values.filter((value): value is string => typeof value === "string" && /^\d+:\d+$/.test(value));
+  return values.filter(
+    (value): value is string => typeof value === "string" && /^\d+(?:\.\d+)?:\d+(?:\.\d+)?$/.test(value),
+  );
+}
+
+/**
+ * The `aspect_ratio` enum members that are deliberately NOT canonical ratios.
+ *
+ * One member, one reason, argued in {@link canonicalRatios}. Everything else a
+ * closed `aspect_ratio` enum publishes must reach the row.
+ */
+const RATIOS_THAT_ARE_NOT_SHAPES: ReadonlySet<string> = new Set(["auto"]);
+
+/**
+ * Wire enum → row completeness, in the direction no preset sweep can run.
+ *
+ * `test/unified/image-presets.test.ts` iterates `row.ratios` and asserts every
+ * member compiles, which cannot see a member the row FAILED to declare — it
+ * reads the artifact under suspicion. This runs the other way: every value in
+ * a closed `aspect_ratio` enum is either in the row or on the recorded refusal
+ * list, and anything else stops codegen naming the endpoint, the member and
+ * both lists. Same posture as `classifyShapes`'s `bad()`: a value the
+ * generator cannot classify fails loudly rather than vanishing.
+ *
+ * An OPEN enum is exempt on purpose — there the list is a set of presets
+ * rather than a limit, and `ratioFreeform` already says so.
+ *
+ * BACKLOG, deliberately not widened here: the same one-directional narrowing
+ * exists at `tiers` (`canonicalTier`), `resolutions` (`canonicalVideoTier`),
+ * `durations` (`durationSeconds`), `languages` (the language-name table) and
+ * `codecs` (the codec table) — each recognises a wire enum through a
+ * hand-rolled matcher and can lose a member the same way. This guard is the
+ * template for those; `"auto"` at `duration` and `768P`/`2K` at `resolution`
+ * are already-argued refusals that such a guard would have to carry.
+ */
+function assertRatiosComplete(endpointId: string, members: readonly (string | number)[], ratios: readonly string[]): void {
+  for (const member of members) {
+    const value = String(member);
+    if (ratios.includes(value) || RATIOS_THAT_ARE_NOT_SHAPES.has(value)) continue;
+    throw new Error(
+      `${endpointId}: \`aspect_ratio\` enum member ${quote(value)} reached neither the row's canonical ratios ` +
+        `(${ratios.map(quote).join(", ") || "none"}) nor the recorded refusals ` +
+        `(${[...RATIOS_THAT_ARE_NOT_SHAPES].map(quote).join(", ")}). A shape fal publishes and unmodel drops is ` +
+        "a compile error and a runtime refusal for a request fal accepts — widen `canonicalRatios`, or record " +
+        "the refusal in RATIOS_THAT_ARE_NOT_SHAPES with the reason.",
+    );
+  }
 }
 
 /**
@@ -2825,6 +2962,9 @@ function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
     // An OPEN enum accepts any string, so the list is a set of presets rather
     // than a limit — which is exactly what `ratioFreeform` means.
     if (aspect.node.open === true) (row as { ratioFreeform?: true }).ratioFreeform = true;
+    // …and a CLOSED enum is a limit, so every member of it has to be accounted
+    // for. See assertRatiosComplete.
+    else assertRatiosComplete(model.id, aspect.node.enum, ratios);
   }
 
   // `tiers` types the canonical `resolution` field, so it is only meaningful
@@ -3538,7 +3678,7 @@ export function generate(input: GenerateInput): Map<string, string> {
 
   const files = new Map<string, string>();
   const allSources = models.map((model) => model.snapshotFile);
-  files.set("endpoints.gen.ts", renderEndpointsFile(models));
+  files.set("endpoints.gen.ts", renderEndpointsFile(models, curation.excluded ?? {}));
   files.set("pricing.gen.ts", renderPricingFile(models));
   files.set("shared.gen.ts", renderSharedFile(registry, allSources));
   for (const verb of VERBS) {
@@ -3821,7 +3961,7 @@ async function audit(curation: z.output<typeof curationSchema>): Promise<void> {
       now: metadataString(byId.get(id)?.metadata ?? {}, "status") ?? "unknown",
     }))
     .filter((row) => row.was !== row.now);
-  const excluded = new Set(Object.keys((curation.excluded as { endpoints?: object })?.endpoints ?? {}));
+  const excluded = new Set(Object.keys(curation.excluded?.endpoints ?? {}));
   const fresh = sorted(
     listed
       .filter((model) => !curatedIds.includes(model.endpoint_id) && !excluded.has(model.endpoint_id))

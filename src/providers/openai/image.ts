@@ -171,7 +171,7 @@ export type ImagesBody<FutureModel extends string = never> =
   | DallE3Body
   | UnknownImageModelBody<FutureModel>;
 
-interface ImagesBodyByModel {
+export interface ImagesBodyByModel {
   "gpt-image-1": GptImage1Body;
   "gpt-image-1-mini": GptImage1MiniBody;
   "gpt-image-1.5": GptImage15Body;

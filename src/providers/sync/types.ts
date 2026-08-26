@@ -59,6 +59,7 @@ export type {
   SyncEmotion,
   SyncErrorCode,
   SyncGenerationOptions,
+  SyncGenerationQuery,
   SyncGenerationSegment,
   SyncGenerationStatus,
   SyncImageInput,

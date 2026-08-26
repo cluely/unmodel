@@ -1,0 +1,12 @@
+{
+  "prompt": "keep the shot and turn the sky to dusk",
+  "video": {
+    "url": "https://example.com/clip.mp4"
+  },
+  "providerOptions": {
+    "atlascloud": {
+      "duration": -1,
+      "omni_reference_task_type": "edit"
+    }
+  }
+}

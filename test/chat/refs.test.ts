@@ -27,7 +27,8 @@ import {
   type RefProblem,
   type RefProblemKindOf,
 } from "../../src/chat/refs";
-import type { ChatProviderId } from "../../src/catalog/chat-refs.gen";
+import type { ChatModelRef, ChatProviderId } from "../../src/catalog/chat-refs.gen";
+import type { OpenaiChatModelId } from "../../src/providers/openai/chat";
 import { ENDPOINTS, isFactoryEndpoint, resolveEndpoint } from "../../src/core/translate/endpoints";
 
 // --- compile-time: the array and the generated union are the same set -------
@@ -40,6 +41,29 @@ const _noMissing: Missing[] = [];
 const _noExtra: Extra[] = [];
 void _noMissing;
 void _noExtra;
+
+// --- compile-time: no generated ref names a model its provider cannot serve -
+//
+// models.dev records a modality signature, not a route, so `chatScope`'s
+// `isTextModel` used to admit nine openai rows OpenAI's own chat endpoint
+// rejects — codex (`/v1/responses` only), embeddings, image generation,
+// realtime. Each shipped as a `ChatModelRef` that compiled to a body the API
+// refuses, with `ok: true` and no warning anywhere: autocomplete offering nine
+// refs that cannot work.
+//
+// `chatScopeExclude` (data/availability-overrides.json) is what removes them,
+// and `NonChatModelId` (src/providers/openai/chat.ts) is the substrate's own
+// statement of the same fact. This assertion is the join: every surviving
+// `openai/…` ref must be an id `openai.chat` accepts. It fails if the data
+// file drifts from the type, in the direction that matters — a ref coming
+// back. (`src/providers/openai/chat.test.ts` pins the other two corners.)
+type OpenaiRefModelId<R> = R extends `openai/${infer Id}` ? Id : never;
+type UnservableOpenaiRef = Exclude<
+  OpenaiRefModelId<Extract<ChatModelRef, `openai/${string}`>>,
+  OpenaiChatModelId
+>;
+const _noUnservableOpenaiRef: UnservableOpenaiRef[] = [];
+void _noUnservableOpenaiRef;
 
 describe("parseModelRef", () => {
   test("splits on the FIRST slash, so slashed model ids survive", () => {

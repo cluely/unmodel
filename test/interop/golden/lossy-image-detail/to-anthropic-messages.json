@@ -1,0 +1,39 @@
+{
+  "$comment": [
+    "The third dialect has no per-attachment resolution hint at all — /v1/messages sizes an",
+    "image by its pixel dimensions and nothing else — so there is nothing to approximate into",
+    "and the honest answer is to say the hint is gone. This is the arm that keeps `detail` a",
+    "three-dialect vocabulary word with one real loss, rather than a two-dialect concept that",
+    "both sides warned about.",
+    "",
+    "The sentence this warning carries is the one openai-compatible/interop.ts used to fire on",
+    "image_url.detail before Gemini's per-Part mediaResolution turned out to be its equivalent."
+  ],
+  "body": {
+    "model": "claude-opus-5",
+    "max_tokens": 512,
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          { "type": "text", "text": "What is in this image?" },
+          {
+            "type": "image",
+            "source": {
+              "type": "base64",
+              "media_type": "image/png",
+              "data": "iVBORw0KGgoAAAANSUhEUg=="
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "dropped_param",
+      "path": ["messages", 0, "content", 1, "detail"],
+      "meta": { "detail": "medium" }
+    }
+  ]
+}

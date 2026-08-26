@@ -613,5 +613,13 @@ export const chatFamilyRules: readonly FamilyRule[] = [
       },
     },
     imageTokens: 1000,
+    // No `imageTokensByDetail`, deliberately. `image_url.detail` reaches this
+    // endpoint (it is `ChatFilePart.detail` on the unified surface) and the
+    // estimator asks the table for a per-level number — but OpenAI's vision
+    // guide states outright that `low` does not always use fewer tokens than
+    // `high` on current models, and it publishes no per-level constant for the
+    // ones it does. The historical 85-token low-detail figure is a GPT-4o-era
+    // number that would be a guess wearing a catalog's clothes. Estimation is
+    // the one place a plausible wrong number is worse than a coarse right one.
   },
 ];

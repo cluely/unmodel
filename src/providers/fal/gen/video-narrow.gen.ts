@@ -6,22 +6,27 @@
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__o1__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__o3__pro__video-to-video__edit.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.5-turbo__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v2.6__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__kling-video__v3__pro__motion-control.json
 //   data/fal/openapi/fal-ai__kling-video__v3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__image-to-video.json
 //   data/fal/openapi/fal-ai__kling-video__v3__standard__text-to-video.json
+//   data/fal/openapi/fal-ai__lightx__relight.json
 //   data/fal/openapi/fal-ai__minimax__hailuo-02__pro__image-to-video.json
+//   data/fal/openapi/fal-ai__minimax__hailuo-2.3__pro__text-to-video.json
 //   data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1.json
 //   data/fal/openapi/fal-ai__veo3.1__extend-video.json
 //   data/fal/openapi/fal-ai__veo3.1__fast.json
 //   data/fal/openapi/fal-ai__veo3.1__first-last-frame-to-video.json
 //   data/fal/openapi/fal-ai__veo3.1__image-to-video.json
+//   data/fal/openapi/fal-ai__veo3.1__reference-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__image-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.2-a14b__text-to-video.json
 //   data/fal/openapi/fal-ai__wan__v2.7__image-to-video.json
@@ -58,6 +63,7 @@ const E_1c4d6e = ["auto"] as const;
 const E_22df0f = ["7s"] as const;
 const E_22f63d = [24, 25, 50] as const;
 const E_264052 = ["3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"] as const;
+const E_2e6d5b = ["ic", "ref", "hdr", "bg"] as const;
 const E_3d4094 = ["low", "medium", "high", "maximum"] as const;
 const E_430821 = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
 const E_483afe = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const;
@@ -86,9 +92,11 @@ const E_cb3d58 = ["480p", "720p"] as const;
 const E_d33d76 = ["auto", "16:9", "9:16", "1:1"] as const;
 const E_d35463 = ["720p", "1080p"] as const;
 const E_d60f26 = ["480p", "720p", "1080p", "4k"] as const;
+const E_d796f4 = ["8s"] as const;
 const E_e82de1 = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 const E_ee18b7 = ["480p", "580p", "720p"] as const;
 const E_f3cba3 = ["480p", "720p", "1080p"] as const;
+const E_f5f483 = ["image", "video"] as const;
 const E_f908b4 = ["1", "2", "3", "4", "5", "6"] as const;
 
 export const FAL_VIDEO_SHAPES = {
@@ -157,6 +165,16 @@ export const FAL_VIDEO_SHAPES = {
       generate_audio: { t: "boolean", def: true },
       bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
       end_user_id: { t: "string", nul: true },
+    },
+  },
+  "fal-ai/kling-video/o1/video-to-video/edit": {
+    order: ["prompt", "video_url", "keep_audio", "image_urls", "elements"],
+    props: {
+      prompt: { t: "string", req: true, maxLen: 2500 },
+      video_url: { t: "string", req: true, media: "video" },
+      keep_audio: { t: "boolean", def: true },
+      image_urls: { t: "array", nul: true, items: { t: "string", media: "image" }, media: "image" },
+      elements: { t: "array", nul: true, items: { t: "object" } },
     },
   },
   "fal-ai/kling-video/o3/pro/video-to-video/edit": {
@@ -229,6 +247,17 @@ export const FAL_VIDEO_SHAPES = {
       cfg_scale: { t: "number", def: true, min: 0, max: 1 },
     },
   },
+  "fal-ai/kling-video/v3/pro/motion-control": {
+    order: ["prompt", "image_url", "video_url", "keep_original_sound", "character_orientation", "elements"],
+    props: {
+      prompt: { t: "string", nul: true, maxLen: 2500 },
+      image_url: { t: "string", req: true, media: "image" },
+      video_url: { t: "string", req: true, media: "video" },
+      keep_original_sound: { t: "boolean", def: true },
+      character_orientation: { t: "string", req: true, enum: E_f5f483 },
+      elements: { t: "array", nul: true, items: { t: "object" } },
+    },
+  },
   "fal-ai/kling-video/v3/pro/text-to-video": {
     order: ["prompt", "duration", "multi_prompt", "generate_audio", "shot_type", "aspect_ratio", "negative_prompt", "cfg_scale"],
     props: {
@@ -270,6 +299,18 @@ export const FAL_VIDEO_SHAPES = {
       cfg_scale: { t: "number", def: true, min: 0, max: 1 },
     },
   },
+  "fal-ai/lightx/relight": {
+    order: ["video_url", "prompt", "seed", "relit_cond_type", "relight_parameters", "relit_cond_img_url", "ref_id"],
+    props: {
+      video_url: { t: "string", req: true, media: "video" },
+      prompt: { t: "string", nul: true },
+      seed: { t: "integer", nul: true },
+      relit_cond_type: { t: "string", def: true, enum: E_2e6d5b },
+      relight_parameters: { t: "object", nul: true },
+      relit_cond_img_url: { t: "string", nul: true, media: "image" },
+      ref_id: { t: "integer", def: true, min: 0, max: 48 },
+    },
+  },
   "fal-ai/minimax/hailuo-02/pro/image-to-video": {
     order: ["prompt", "image_url", "prompt_optimizer", "end_image_url"],
     props: {
@@ -277,6 +318,13 @@ export const FAL_VIDEO_SHAPES = {
       image_url: { t: "string", req: true, media: "image" },
       prompt_optimizer: { t: "boolean", def: true },
       end_image_url: { t: "string", nul: true, media: "image" },
+    },
+  },
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video": {
+    order: ["prompt", "prompt_optimizer"],
+    props: {
+      prompt: { t: "string", req: true, minLen: 1, maxLen: 2000 },
+      prompt_optimizer: { t: "boolean", def: true },
     },
   },
   "fal-ai/pixverse/v6/text-to-video": {
@@ -366,6 +414,19 @@ export const FAL_VIDEO_SHAPES = {
       auto_fix: { t: "boolean", def: true },
       safety_tolerance: { t: "string", def: true, enum: E_f908b4 },
       image_url: { t: "string", req: true, media: "image" },
+    },
+  },
+  "fal-ai/veo3.1/reference-to-video": {
+    order: ["prompt", "aspect_ratio", "duration", "resolution", "generate_audio", "auto_fix", "safety_tolerance", "image_urls"],
+    props: {
+      prompt: { t: "string", req: true, maxLen: 20000 },
+      aspect_ratio: { t: "string", def: true, enum: E_1bee9f },
+      duration: { t: "string", def: true, enum: E_d796f4 },
+      resolution: { t: "string", def: true, enum: E_a6ebe6 },
+      generate_audio: { t: "boolean", def: true },
+      auto_fix: { t: "boolean", def: true },
+      safety_tolerance: { t: "string", def: true, enum: E_f908b4 },
+      image_urls: { t: "array", req: true, items: { t: "string", media: "image" }, media: "image" },
     },
   },
   "fal-ai/wan/v2.2-a14b/image-to-video": {
@@ -546,6 +607,7 @@ export const FAL_VIDEO_CONSTRAINTS = {
     aspect_ratio: E_856788,
     bitrate_mode: E_4aec3e,
   },
+  "fal-ai/kling-video/o1/video-to-video/edit": {},
   "fal-ai/kling-video/o3/pro/video-to-video/edit": {
     shot_type: E_bc20e2,
   },
@@ -567,6 +629,9 @@ export const FAL_VIDEO_CONSTRAINTS = {
     duration: E_264052,
     shot_type: E_b4ace7,
   },
+  "fal-ai/kling-video/v3/pro/motion-control": {
+    character_orientation: E_f5f483,
+  },
   "fal-ai/kling-video/v3/pro/text-to-video": {
     duration: E_264052,
     shot_type: E_b4ace7,
@@ -581,7 +646,11 @@ export const FAL_VIDEO_CONSTRAINTS = {
     shot_type: E_b4ace7,
     aspect_ratio: E_b590e1,
   },
+  "fal-ai/lightx/relight": {
+    relit_cond_type: E_2e6d5b,
+  },
   "fal-ai/minimax/hailuo-02/pro/image-to-video": {},
+  "fal-ai/minimax/hailuo-2.3/pro/text-to-video": {},
   "fal-ai/pixverse/v6/text-to-video": {
     aspect_ratio: E_81b901,
     resolution: E_c91bf1,
@@ -615,6 +684,12 @@ export const FAL_VIDEO_CONSTRAINTS = {
   "fal-ai/veo3.1/image-to-video": {
     aspect_ratio: E_0d1988,
     duration: E_a0e24c,
+    resolution: E_a6ebe6,
+    safety_tolerance: E_f908b4,
+  },
+  "fal-ai/veo3.1/reference-to-video": {
+    aspect_ratio: E_1bee9f,
+    duration: E_d796f4,
     resolution: E_a6ebe6,
     safety_tolerance: E_f908b4,
   },

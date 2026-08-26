@@ -33,3 +33,8 @@ export type { AiVoiceParams } from "./voice-clone";
 
 export { models, provider, TTS_MODEL_IDS, LMNT_MAX_CHARACTERS } from "./models";
 export type { LmntModelId, LmntTtsModelId, LmntVoiceCloneModelId } from "./models";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";

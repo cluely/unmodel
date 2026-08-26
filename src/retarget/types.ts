@@ -27,10 +27,29 @@ export type Retargeted<P extends ApiTargetId, M extends string> = DialectBody<Di
    * SDK targets of the *target's* dialect, shaped for the target that was
    * asked for. Non-enumerable.
    *
-   * The result is keyed on `K`, not on the dialect, so `openai.chat.completions
-   * .create(r.toSdk("openai"))` type-checks without a cast — and so a target
-   * added to `DialectSdkMap`'s key set without a declared shape is a compile
-   * error rather than a confident lie about the wrong one.
+   * The result is keyed on `K`, not on the dialect, so a target added to
+   * `DialectSdkMap`'s key set without a declared shape is a compile error
+   * rather than a confident lie about the wrong one.
+   *
+   * **This is the dialect BASE body, and it is deliberately wider than any one
+   * SDK's params.** `.toApi` is keyed by dialect because ~30 destinations share
+   * ~4 wire formats, so the body it hands back is the shared one:
+   * `reasoning_effort` and `service_tier` are open `string`s (those 30
+   * providers each narrow them differently), and `stream` is the documented
+   * `boolean | null`. Handing that straight to `openai.chat.completions.create`
+   * does not type-check — it fails on `reasoning_effort` first, then
+   * `service_tier`, then `stream` — and this sentence used to claim it did.
+   *
+   * Callers narrow, which on this surface is the honest answer rather than a
+   * workaround: a retargeted body's vocabulary genuinely is not known to be any
+   * one provider's. `test/types/chat.test-d.ts`'s `SdkComparable` is the shape
+   * of that narrowing (see its `Open` list), and
+   * `test/types/retarget.test-d.ts` now asserts assignability through it, so
+   * the corrected claim is tested instead of asserted.
+   *
+   * The unified surface is different and does not need this: `chat({…})
+   * .toSdk("openai")` is typed from the caller's own params, so it hands off
+   * with no narrowing at all.
    */
   toSdk<K extends DialectSdkTargets<DialectOf<P>>>(target: K): DialectSdkResult<DialectOf<P>, M, K>;
   /** The target's URL, method and static non-auth headers. Non-enumerable. */

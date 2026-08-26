@@ -21,11 +21,13 @@
  *
  * ## What is here
  *
- * All nine validators — `image` (32 text-to-image endpoints), `imageEdit` (17
- * editing), `video` (30 generation and editing routes), `lipsync` (10),
- * `avatar` (8), `upscale` (10), `tts` (23), `stt` (6) and `music` (10) — plus
- * the transport surface and the merged catalog. 146 curated endpoints in all,
- * every one of them typed from fal's own published OpenAPI document.
+ * All ten validators — `image` (32 text-to-image endpoints), `imageEdit` (17
+ * editing), `video` (35 generation and editing routes), `lipsync` (10),
+ * `avatar` (8), `upscale` (11), `threeD` (19), `tts` (23), `stt` (6) and
+ * `music` (10) — plus the transport surface and the merged catalog. 171
+ * curated endpoints in all, every one of them typed from fal's own published
+ * OpenAPI document. Their RESULT documents are typed too, as
+ * `Fal<Verb>ResultById` on `unmodel/fal/types`.
  *
  * ## Two things worth knowing before your first call
  *
@@ -47,7 +49,12 @@ export {
   falSyncUrl,
 } from "./urls";
 
-export type { FalQueueStatus, FalQueueSubmitResponse } from "./urls";
+export type {
+  FalQueueError,
+  FalQueueResult,
+  FalQueueStatus,
+  FalQueueSubmitResponse,
+} from "./urls";
 
 export type {
   FalDimensionSpec,
@@ -157,6 +164,12 @@ export {
   FAL_STT_ENDPOINTS,
   FAL_MUSIC_ENDPOINTS,
   FAL_REQUIRED_PROBES,
+  // The other half of the roster: the ids unmodel was asked for and turned
+  // down, each with the reason `data/fal/curation.json` recorded. Exported so
+  // "why is this not served?" has an answer in the package rather than only in
+  // a data file the package builds from.
+  FAL_EXCLUDED,
+  FAL_EXCLUDED_CATEGORIES,
 } from "./gen/endpoints.gen";
 export type { FalEndpointId } from "./gen/endpoints.gen";
 
@@ -170,3 +183,8 @@ export type { FalModelId } from "./models";
 
 export { FAL_RATES, falCostUSD, falMegapixels, falPriceNote } from "./pricing";
 export type { FalRate, FalRateUnit, FalTier } from "./pricing-types";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";

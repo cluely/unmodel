@@ -133,7 +133,7 @@ this library reads a response body off a `TtsDeliverySpec`.
 
 ## Response checkers
 
-Three of the nineteen ship one. A checker inspects a *decoded* response for quality and
+Four of the nineteen ship one. A checker inspects a *decoded* response for quality and
 usage signals; where a route answers raw bytes there is nothing to inspect, and where it
 answers a JSON envelope carrying no signal beyond the audio itself there is nothing
 worth reporting.
@@ -143,8 +143,9 @@ worth reporting.
 | `google` | `checkTts` from `unmodel/google` | Gemini serves TTS on the shared `:generateContent` route, so a response can finish `STOP` and cleanly contain *text* tokens instead of audio. That case is reported as `invalid_shape` / `empty_audio`, naming retry as the documented remedy, alongside the usual finish-reason and safety-block warnings. |
 | `murf` | `checkTts` from `unmodel/murf` | `/v1/speech/generate` answers JSON (`audioFile`, `audioLengthInSeconds`, `remainingCharacterCount`, `wordDurations`). `/v1/speech/stream` answers an audio stream and has none. |
 | `resemble` | `checkTts` from `unmodel/resemble` | The synchronous `/synthesize` answers JSON with `success` and `issues` fields to surface. The streaming `/stream` route answers a chunked WAV stream and has none. |
+| `minimax` | `checkTts` from `unmodel/minimax` | `/v1/t2a_v2` declares exactly one HTTP response — `200` — and reports failure IN BAND on `base_resp.status_code` (0 success, 1002 rate limit, 1004 auth failed, 1042 invalid-character ratio, …). A non-zero code is reported as `invalid_shape` with `meta.kind: "provider_error"`, quoting the documented `status_msg`; a missing `data.audio` is `empty_audio`; and `extra_info.usage_characters` — the characters MiniMax itself billed — prices the call against the catalog rate. |
 
-The other sixteen have none, and the reason is per provider rather than a blanket policy:
+The other fifteen have none, and the reason is per provider rather than a blanket policy:
 
 | Provider | Why no checker |
 | --- | --- |
@@ -156,7 +157,6 @@ The other sixteen have none, and the reason is per provider rather than a blanke
 | `lmnt` | `/v1/ai/speech/bytes` streams binary. `/v1/ai/speech` does answer JSON (base64 `audio` + word `timestamps`), but the envelope carries no quality or usage signal. |
 | `fish-audio` | A chunked raw audio stream. |
 | `smallest-ai` | Binary audio. |
-| `minimax` | JSON, but unmodel validates requests only: its `data.audio` envelope carries the audio and no separately verified error surface, and an unverified one is not something to catalog. |
 | `hume` | JSON with base64 audio and nothing else to report — request validation is the scope. |
 | `speechify` | JSON (`audio_data` + `billable_characters_count` + `speech_marks`) with no quality signal — request validation is the scope. |
 | `inworld` | JSON, but it carries no quality or usage signal beyond `usage.processedCharactersCount`. |
@@ -175,6 +175,13 @@ because those are the ones a validator can catch and a 200 cannot tell you about
 four are stripped from the JSON body and moved onto `.request.url`. Sending them in the
 body — which an SDK-shaped params object invites — is a silent no-op, and the one that
 costs most is `enable_logging: false`, which is how zero-retention mode is requested.
+
+**MiniMax — 200 for every outcome.** `POST /v1/t2a_v2` documents exactly one HTTP
+response and puts the result on `base_resp.status_code` (`0` is the only success). A
+caller who branches on `res.ok` reads `data.audio` — the empty string — off a request
+that failed authentication or hit a TPM limit. `minimax.checkTts` is the read-back; the
+same envelope rides on MiniMax's music and video routes, which is why it is a checker
+rather than a field on `MINIMAX_TTS_DELIVERY`.
 
 **Deepgram — everything rides in the query string.** The JSON body is exactly `{text}`;
 every other option is URL-encoded onto `.request.url`. Putting `model` in the body is a

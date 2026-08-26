@@ -207,8 +207,31 @@ function mediaRulesFor(modelId: string): Partial<Record<RuledKind, MediaRule>> {
   return merged;
 }
 
-function imageTokensFor(modelId: string): number {
+/**
+ * The per-image token constant, narrowed by a part's own `mediaResolution`
+ * where the table declares a number for that level.
+ *
+ * Gemini is the dialect that documents this: `MEDIA_RESOLUTION_LOW` is a flat
+ * per-image/PDF budget (see `GEMINI_LOW_RES_IMAGE_TOKENS` in ./constraints),
+ * and a per-`Part` level overrides the request-level
+ * `generationConfig.mediaResolution`. The check battery already reads the
+ * request-level value to widen the video-duration cap; this is the estimate
+ * half of the same fact.
+ */
+function imageTokensFor(modelId: string, level?: string): number {
+  const detail =
+    level === "MEDIA_RESOLUTION_LOW"
+      ? "low"
+      : level === "MEDIA_RESOLUTION_MEDIUM"
+        ? "medium"
+        : level === "MEDIA_RESOLUTION_HIGH"
+          ? "high"
+          : undefined;
   for (const constraints of constraintsFor(GENERATE_CONTENT_RULES, stripModelsPrefix(modelId))) {
+    if (detail !== undefined) {
+      const byDetail = constraints.imageTokensByDetail?.[detail];
+      if (byDetail !== undefined) return byDetail;
+    }
     if (constraints.imageTokens !== undefined) return constraints.imageTokens;
   }
   return GEMINI_IMAGE_TOKENS;
@@ -745,7 +768,9 @@ function checkVertexOnlyFields(
 // ---------------------------------------------------------------------------
 
 function estimate(params: GenerateContentBody, info: ModelInfo | undefined, ctx: PipelineContext) {
-  const imageTokens = imageTokensFor(params.model);
+  // The per-part level wins over the request-level one, which is what Gemini
+  // documents: `Part.mediaResolution` overrides `generationConfig.mediaResolution`.
+  const requestLevel = params.generationConfig?.mediaResolution;
   let inputTokens = 0;
 
   const countContent = (content: GoogleContent): void => {
@@ -753,7 +778,9 @@ function estimate(params: GenerateContentBody, info: ModelInfo | undefined, ctx:
     for (const part of content.parts) {
       if (part.text !== undefined) inputTokens += ctx.tokenizer.count(part.text);
       const mimeType = part.inlineData?.mimeType ?? part.fileData?.mimeType;
-      if (mimeType !== undefined && mediaKindOf(mimeType) === "image") inputTokens += imageTokens;
+      if (mimeType !== undefined && mediaKindOf(mimeType) === "image") {
+        inputTokens += imageTokensFor(params.model, part.mediaResolution?.level ?? requestLevel);
+      }
       if (part.functionCall !== undefined) {
         inputTokens += estimateToolDefinitionTokens(ctx.tokenizer, part.functionCall);
       }

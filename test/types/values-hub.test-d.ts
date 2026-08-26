@@ -22,8 +22,8 @@
  * is there, and the annotation is exactly the thing a refactor drops. Pinning
  * the key-sets makes both directions explicit rather than incidental.
  *
- * And `CHAT_MODEL_REFS`, which is generated: 1,339 strings that must be the
- * 1,339 arms of `ChatModelRef`. A models.dev refresh regenerates both files
+ * And `CHAT_MODEL_REFS`, which is generated: 1,330 strings that must be the
+ * 1,330 arms of `ChatModelRef`. A models.dev refresh regenerates both files
  * from one scope, so the only way they can disagree is a codegen change — which
  * is precisely when a compile error is worth having.
  */

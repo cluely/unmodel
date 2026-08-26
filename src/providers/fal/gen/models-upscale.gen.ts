@@ -10,6 +10,7 @@
 //   data/fal/openapi/fal-ai__seedvr__upscale__video.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__generative.json
 //   data/fal/openapi/topaz__upscale__video__precision.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
@@ -223,6 +224,32 @@ export const upscaleModels = {
     openWeights: false,
     lastUpdated: "2026-08-17",
     modalities: { input: ["image"], output: ["image"] },
+    limit: { context: 0 },
+  },
+  /**
+   * Conditional pricing on `model` x output resolution, per 10 seconds of output:
+   *   $1.2 — per 10 seconds of output up to 1080p with Starlight Precise 2.5, Starlight HQ, Starlight Mini or Starlight Sharp
+   *   $2.6 — per 10 seconds of output in 4K with Starlight Precise 2.5, Starlight HQ, Starlight Mini or Starlight Sharp
+   *   $0.6 — per 10 seconds of output up to 1080p with Starlight Fast 2
+   *   $1.3 — per 10 seconds of output in 4K with Starlight Fast 2
+   * Not on `cost`: a rate that depends on the request cannot be a scalar. It belongs in the
+   * hand pricing table, where the estimate can read the body or honestly return undefined.
+   *
+   * Source: https://fal.ai/models/topaz/upscale/video/generative — verified 2026-08-26.
+   * Quote: “Your request will cost $1.20 per 10 seconds of output up to 1080p, and $2.60 per
+   * 10 seconds in 4K, with Starlight Precise 2.5, Starlight HQ, Starlight Mini and Starlight
+   * Sharp (a 1-minute clip costs $7.00 at 1080p, $15.20 in 4K). Starlight Fast 2 costs half:
+   * $0.60 per 10 seconds up to 1080p and $1.30 in 4K ($3.50 and $7.50 per minute).”
+   */
+  "topaz/upscale/video/generative": {
+    id: "topaz/upscale/video/generative",
+    name: "Topaz Upscale Video Generative",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-08-17",
+    modalities: { input: ["video"], output: ["video"] },
     limit: { context: 0 },
   },
   /**

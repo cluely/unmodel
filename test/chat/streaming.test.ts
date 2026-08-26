@@ -30,7 +30,12 @@ describe("in-body streaming", () => {
     const streamed = chat({ model: "openai/gpt-5.2", messages: MESSAGES, stream: true });
 
     expect(streamed.stream).toBe(true);
-    expect(plain.stream).toBeUndefined();
+    // `plain.stream` is no longer readable, and that is the assertion: the
+    // result type carries the key if and only if the caller wrote it, which is
+    // what the encoder has always done. Reading it through a cast keeps the
+    // runtime half pinned — the body must not have grown a `stream: undefined`.
+    expect("stream" in (plain as object)).toBe(false);
+    expect((plain as { stream?: unknown }).stream).toBeUndefined();
     expect(streamed.request.url).toBe(plain.request.url);
     expect(streamed.request.url).toBe("https://api.openai.com/v1/chat/completions");
     expect(streamed.warnings).toEqual([]);

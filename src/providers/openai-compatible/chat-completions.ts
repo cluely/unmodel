@@ -93,8 +93,28 @@ export interface ChatConstraintSpec {
   familyRules?: readonly FamilyRule[];
 }
 
-export function imageTokensFor(spec: ChatConstraintSpec, modelId: string): number {
+/**
+ * The per-image token constant for a model, optionally narrowed by the
+ * attachment's own resolution hint.
+ *
+ * `detail` is the canonical `ChatFilePart.detail` word, which reaches the wire
+ * as `image_url.detail`. It only changes the answer where a constraint table
+ * declares `imageTokensByDetail` — i.e. where a provider documents a fixed
+ * number for that level. OpenAI's does not, and that is a recorded decision
+ * rather than a gap: its vision guide is explicit that `low` does not always
+ * use fewer tokens than `high` on current models, so the estimate stays on the
+ * table's single number instead of inventing a per-level one.
+ */
+export function imageTokensFor(
+  spec: ChatConstraintSpec,
+  modelId: string,
+  detail?: "auto" | "low" | "medium" | "high",
+): number {
   for (const constraints of constraintsFor(spec, modelId)) {
+    if (detail !== undefined && detail !== "auto") {
+      const byDetail = constraints.imageTokensByDetail?.[detail];
+      if (byDetail !== undefined) return byDetail;
+    }
     if (constraints.imageTokens !== undefined) return constraints.imageTokens;
   }
   return DEFAULT_IMAGE_TOKENS;
@@ -302,15 +322,38 @@ export function chatCompletionsChecks(
 // ---------------------------------------------------------------------------
 
 /**
+ * How an image part's token cost is resolved: a flat constant, or a function
+ * of the part's own `image_url.detail`.
+ *
+ * The function form is what `createChatEstimate` passes, so a provider whose
+ * table declares `imageTokensByDetail` prices a `detail: "low"` attachment at
+ * that level's number instead of the model-wide one. Callers who pass a plain
+ * number keep the old behaviour exactly, which is why the parameter is a union
+ * rather than a fourth argument.
+ */
+export type ChatImageTokens =
+  | number
+  | ((detail: "auto" | "low" | "medium" | "high" | undefined) => number);
+
+/**
  * Heuristic prompt-token estimate: text content plus a fixed per-message
- * overhead, tool definitions, tool-call arguments, and a fixed constant per
- * image part. Audio/file parts are not counted.
+ * overhead, tool definitions, tool-call arguments, and a per-image constant
+ * that may vary with the part's own `detail` hint. Audio/file parts are not
+ * counted.
  */
 export function estimateChatTokens(
   params: { messages: ChatMessage[]; tools?: ChatTool[] },
   tokenizer: Tokenizer = heuristicTokenizer,
-  imageTokens: number = DEFAULT_IMAGE_TOKENS,
+  imageTokens: ChatImageTokens = DEFAULT_IMAGE_TOKENS,
 ): number {
+  const tokensForImage = (detail: unknown): number =>
+    typeof imageTokens === "number"
+      ? imageTokens
+      : imageTokens(
+          detail === "auto" || detail === "low" || detail === "medium" || detail === "high"
+            ? detail
+            : undefined,
+        );
   let total = 0;
   for (const message of params.messages) {
     total += PER_MESSAGE_TOKEN_OVERHEAD;
@@ -322,7 +365,7 @@ export function estimateChatTokens(
         if (part.type === "text" && typeof part.text === "string") {
           total += tokenizer.count(part.text);
         } else if (part.type === "image_url") {
-          total += imageTokens;
+          total += tokensForImage((part.image_url as { detail?: unknown } | undefined)?.detail);
         } else if (part.type === "refusal" && typeof part.refusal === "string") {
           total += tokenizer.count(part.refusal);
         }
@@ -353,7 +396,9 @@ export function createChatEstimate(
   ctx: PipelineContext,
 ) => ValidateEstimate {
   return (params, info, ctx) => {
-    const inputTokens = estimateChatTokens(params, ctx.tokenizer, imageTokensFor(spec, params.model));
+    const inputTokens = estimateChatTokens(params, ctx.tokenizer, (detail) =>
+      imageTokensFor(spec, params.model, detail),
+    );
     const costUSD = computeCostUSD(info?.cost, {
       inputTokens,
       outputTokens: params.max_completion_tokens ?? params.max_tokens ?? info?.limit.output ?? 0,

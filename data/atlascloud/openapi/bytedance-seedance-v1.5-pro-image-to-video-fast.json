@@ -1,0 +1,203 @@
+{
+  "components": {
+    "schemas": {
+      "Input": {
+        "properties": {
+          "aspect_ratio": {
+            "description": "The aspect ratio of the generated media.",
+            "enum": [
+              "21:9",
+              "16:9",
+              "4:3",
+              "1:1",
+              "3:4",
+              "9:16"
+            ],
+            "type": "string",
+            "x-ui-component": "select"
+          },
+          "camera_fixed": {
+            "default": false,
+            "description": "Whether to fix the camera position.",
+            "type": "boolean"
+          },
+          "duration": {
+            "default": 5,
+            "description": "The duration of the generated media in seconds.",
+            "maximum": 12,
+            "minimum": 4,
+            "step": 1,
+            "type": "integer"
+          },
+          "generate_audio": {
+            "default": true,
+            "description": "Whether to generate audio.",
+            "type": "boolean"
+          },
+          "image": {
+            "description": "The positive prompt for the generation.",
+            "type": "string"
+          },
+          "last_image": {
+            "description": "The positive prompt for the generation.",
+            "type": "string"
+          },
+          "model": {
+            "default": "bytedance/seedance-v1.5-pro/image-to-video-fast",
+            "description": "model name",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "The positive prompt for the generation.",
+            "type": "string"
+          },
+          "resolution": {
+            "default": "720p",
+            "description": "Video resolution.",
+            "enum": [
+              "720p"
+            ],
+            "type": "string"
+          },
+          "seed": {
+            "default": -1,
+            "description": "The random seed to use for the generation. -1 means a random seed will be used.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model",
+          "image"
+        ],
+        "type": "object",
+        "x-order-properties": [
+          "model",
+          "prompt",
+          "image",
+          "last_image",
+          "aspect_ratio",
+          "duration",
+          "resolution",
+          "generate_audio",
+          "camera_fixed",
+          "seed"
+        ]
+      },
+      "PredictionResponse": {
+        "properties": {
+          "created_at": {
+            "description": "ISO timestamp of when the request was created (e.g., \"2023-04-01T12:34:56.789Z\").",
+            "format": "date-time",
+            "type": "string"
+          },
+          "has_nsfw_contents": {
+            "description": "Array of boolean values indicating NSFW detection for each output.",
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "Unique identifier for the prediction, the ID of the prediction to get.",
+            "type": "string"
+          },
+          "model": {
+            "description": "Model ID used for the prediction.",
+            "type": "string"
+          },
+          "outputs": {
+            "description": "Array of URLs to the generated content (empty when status is not completed).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
+            "description": "Status of the task: created, processing, completed, or failed.",
+            "type": "string"
+          },
+          "urls": {
+            "description": "Object containing related API endpoints.",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "apiKeyAuth": {
+        "in": "header",
+        "name": "Authorization",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "The AtlasCloud API.",
+    "title": "AtlasCloud API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/model/generateVideo": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResponse"
+                }
+              }
+            },
+            "description": "The request status."
+          }
+        }
+      },
+      "x-api-name": "model_run"
+    },
+    "/api/v1/model/result/{request_id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "description": "Request ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResponse"
+                }
+              }
+            },
+            "description": "Result of the request."
+          }
+        }
+      },
+      "x-api-name": "model_result"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.atlascloud.ai"
+    }
+  ]
+}

@@ -10,6 +10,7 @@
 //   data/fal/openapi/fal-ai__seedvr__upscale__video.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__generative.json
 //   data/fal/openapi/topaz__upscale__video__precision.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
@@ -521,6 +522,60 @@ export interface TopazUpscaleImagePrecisionOutput {
 }
 
 /**
+ * The request body `topaz/upscale/video/generative` accepts.
+ *
+ * Topaz's diffusion video upscaler — the Starlight half of the precision/generative split,
+ * the sibling of topaz/upscale/image/generative on the video side. `model` names the
+ * Starlight network (R6 allow-list, reviewed 2026-08-26) and also selects the RATE, like
+ * its precision sibling. Takes NO prompt: the generative image route is prompt-steered,
+ * this one is not. `softness` is not upscale vocabulary and rides as a per-model extra.
+ *
+ * fal serves this endpoint at two live routes: the published id above, and the internal
+ * alias `fal-ai/topaz/upscale/video/generative` its OpenAPI document is written against.
+ * unmodel submits to the published id — that is the one fal documents and the one this
+ * catalog is keyed on.
+ *
+ * Docs: https://fal.ai/models/fal-ai/topaz/upscale/video/generative/api
+ */
+export interface TopazUpscaleVideoGenerativeInput {
+  /** URL of the video to upscale. Carries a video reference — an https URL or a `data:` URI. */
+  video_url: string;
+  /**
+   * Generative diffusion enhancement model. Starlight Precise 2.6 adds realism to
+   * AI-generated video; Starlight HQ maximizes quality on high-resolution sources; Starlight
+   * Mini restores archival footage; Starlight Sharp is fast restoration with sharper detail;
+   * Starlight Fast 2 is the fastest, cheapest diffusion upscaler. Default: `"Starlight
+   * Precise 2.6"`.
+   */
+  model?: "Starlight Precise 2.6" | "Starlight HQ" | "Starlight Mini" | "Starlight Sharp" | "Starlight Fast 2";
+  /** Factor to upscale the video by (e.g. 2.0 doubles width and height) Default: `2`. */
+  upscale_factor?: number;
+  /**
+   * Target FPS for the output. Frame interpolation is enabled only when this differs from
+   * the source FPS.
+   */
+  target_fps?: number | null;
+  /**
+   * How much softening the model applies to the output, from 1 (sharpest) to 5 (softest).
+   * Starlight Precise 2.6 only; leave unset for Topaz's default.
+   */
+  softness?: number | null;
+  /** Whether to use H264 codec for output video. Default is H265. Default: `false`. */
+  H264_output?: boolean;
+}
+
+/**
+ * The result document `topaz/upscale/video/generative` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface TopazUpscaleVideoGenerativeOutput {
+  /** The upscaled video file. */
+  video: FalFile;
+}
+
+/**
  * The request body `topaz/upscale/video/precision` accepts.
  *
  * Topaz video upscaler. `model` names the Proteus/Artemis/Gaia network (R6 allow-list,
@@ -580,7 +635,7 @@ export interface TopazUpscaleVideoPrecisionOutput {
 /**
  * Endpoint id → its request body type.
  *
- * A map rather than a union: a union of 10 object types re-instantiates at every
+ * A map rather than a union: a union of 11 object types re-instantiates at every
  * comparison site, while a keyed lookup resolves in one. The per-endpoint narrowing a
  * validator exposes indexes into this, so adding an endpoint costs one line here and
  * nothing at any call site.
@@ -595,6 +650,7 @@ export interface FalUpscaleBodyById {
   "fal-ai/seedvr/upscale/video": FalAiSeedvrUpscaleVideoInput;
   "topaz/upscale/image/generative": TopazUpscaleImageGenerativeInput;
   "topaz/upscale/image/precision": TopazUpscaleImagePrecisionInput;
+  "topaz/upscale/video/generative": TopazUpscaleVideoGenerativeInput;
   "topaz/upscale/video/precision": TopazUpscaleVideoPrecisionInput;
 }
 
@@ -609,5 +665,6 @@ export interface FalUpscaleResultById {
   "fal-ai/seedvr/upscale/video": FalAiSeedvrUpscaleVideoOutput;
   "topaz/upscale/image/generative": TopazUpscaleImageGenerativeOutput;
   "topaz/upscale/image/precision": TopazUpscaleImagePrecisionOutput;
+  "topaz/upscale/video/generative": TopazUpscaleVideoGenerativeOutput;
   "topaz/upscale/video/precision": TopazUpscaleVideoPrecisionOutput;
 }

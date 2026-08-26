@@ -642,9 +642,17 @@ export interface AnthropicChatResultKind extends ValidatorResultKind {
   // `& MessagesArm<…>` is what keeps the composition idiom compiling: without
   // it, a params object built by `unmodel/chat`'s registry no longer satisfies
   // the arm and the whole result collapses. Verified: 3 spurious errors → 0.
+  //
+  // `stream` is omitted from the arm so the INPUT decides it. The arm is the
+  // declared body, whose `stream?: boolean` is correct wire truth and wrong
+  // about any particular request; `unmodel/chat` knows whether the caller wrote
+  // one (`ProviderParamsFor` in src/chat/factory.ts) and an intersection would
+  // widen its answer straight back to `boolean`. That width is what made
+  // `client.messages.create(chat({…}).toSdk("anthropic"))` need a cast: `stream`
+  // is the discriminant of the SDK's params union.
   readonly output: this["input"] extends MessagesBody
     ? Validated<
-        this["input"] & MessagesArm<this["input"]["model"] & string>,
+        this["input"] & Omit<MessagesArm<this["input"]["model"] & string>, "stream">,
         ChatSdkTargets<this["input"]>,
         AnthropicAvailability,
         this["input"]["model"] & string

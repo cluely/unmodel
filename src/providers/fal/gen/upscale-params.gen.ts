@@ -10,6 +10,7 @@
 //   data/fal/openapi/fal-ai__seedvr__upscale__video.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
+//   data/fal/openapi/topaz__upscale__video__generative.json
 //   data/fal/openapi/topaz__upscale__video__precision.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
@@ -41,6 +42,7 @@ import type {
   FalAiSeedvrUpscaleVideoInput,
   TopazUpscaleImageGenerativeInput,
   TopazUpscaleImagePrecisionInput,
+  TopazUpscaleVideoGenerativeInput,
   TopazUpscaleVideoPrecisionInput,
 } from "./upscale-wire.gen";
 
@@ -178,6 +180,26 @@ const ROW_34b17c = {
 } as const;
 
 /**
+ * topaz/upscale/video/generative.
+ *
+ * The extras are typed from `TopazUpscaleVideoGenerativeInput`, so the value an editor
+ * offers here and the value `fal.upscale` validates are one declaration.
+ */
+const ROW_6d253e = {
+  classes: ["scaleFactor"],
+  keys: ["video_url", "model", "upscale_factor", "target_fps", "softness", "H264_output"],
+  sources: ["video"],
+  sourceWire: "video_url",
+  factorWire: "upscale_factor",
+  bounds: { upscale_factor: { min: 1, max: 4 } },
+  extras: {
+    target_fps: EXTRA as TopazUpscaleVideoGenerativeInput["target_fps"],
+    softness: EXTRA as TopazUpscaleVideoGenerativeInput["softness"],
+    H264_output: EXTRA as TopazUpscaleVideoGenerativeInput["H264_output"],
+  },
+} as const;
+
+/**
  * fal-ai/esrgan.
  *
  * The extras are typed from `FalAiEsrganInput`, so the value an editor offers here and the
@@ -298,6 +320,7 @@ export const FAL_UPSCALE_PARAM_SHAPES = {
   "fal-ai/seedvr/upscale/video": ROW_90aa8e,
   "topaz/upscale/image/generative": ROW_24744c,
   "topaz/upscale/image/precision": ROW_ed4a66,
+  "topaz/upscale/video/generative": ROW_6d253e,
   "topaz/upscale/video/precision": ROW_32b13a,
 } as const satisfies Record<string, FalParamShape>;
 
@@ -310,4 +333,4 @@ export const FAL_UPSCALE_PARAM_SHAPES = {
  * one generator.
  */
 
-export const FAL_UPSCALE_MODELS = ["blackforestlabs/flux-video-upscale", "fal-ai/aura-sr", "fal-ai/clarity-upscaler", "fal-ai/esrgan", "fal-ai/recraft/upscale/crisp", "fal-ai/seedvr/upscale/image", "fal-ai/seedvr/upscale/video", "topaz/upscale/image/generative", "topaz/upscale/image/precision", "topaz/upscale/video/precision"] as const;
+export const FAL_UPSCALE_MODELS = ["blackforestlabs/flux-video-upscale", "fal-ai/aura-sr", "fal-ai/clarity-upscaler", "fal-ai/esrgan", "fal-ai/recraft/upscale/crisp", "fal-ai/seedvr/upscale/image", "fal-ai/seedvr/upscale/video", "topaz/upscale/image/generative", "topaz/upscale/image/precision", "topaz/upscale/video/generative", "topaz/upscale/video/precision"] as const;

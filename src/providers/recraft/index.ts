@@ -66,3 +66,8 @@ export type { RecraftStyleName } from "./styles";
 
 export { models, provider, IMAGE_TO_IMAGE_MODELS, V3_ONLY_MODELS } from "./models";
 export type { RecraftModelId } from "./models";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";

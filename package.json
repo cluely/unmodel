@@ -167,6 +167,22 @@
       "types": "./dist/providers/assemblyai/values.d.ts",
       "default": "./dist/providers/assemblyai/values.js"
     },
+    "./atlascloud": {
+      "types": "./dist/providers/atlascloud/index.d.ts",
+      "default": "./dist/providers/atlascloud/index.js"
+    },
+    "./atlascloud/unified": {
+      "types": "./dist/providers/atlascloud/unified.d.ts",
+      "default": "./dist/providers/atlascloud/unified.js"
+    },
+    "./atlascloud/types": {
+      "types": "./dist/providers/atlascloud/types.d.ts",
+      "default": "./dist/providers/atlascloud/types.js"
+    },
+    "./atlascloud/values": {
+      "types": "./dist/providers/atlascloud/values.d.ts",
+      "default": "./dist/providers/atlascloud/values.js"
+    },
     "./azure": {
       "types": "./dist/providers/azure/index.d.ts",
       "default": "./dist/providers/azure/index.js"
@@ -1140,6 +1156,7 @@
     "codegen:fal:check": "bun scripts/codegen-fal.ts --check",
     "codegen:fal:audit": "bun scripts/codegen-fal.ts --audit",
     "gen:tts-matrix": "bun scripts/gen-tts-matrix.ts",
+    "audit:atlascloud": "bun scripts/atlascloud-audit.ts",
     "audit:leaderboard": "bun scripts/leaderboard-audit.ts",
     "test": "bun test",
     "check": "tsc --noEmit",

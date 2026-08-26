@@ -543,3 +543,119 @@ describe("openai.chat constraintsFor", () => {
     expect(image?.formats).toEqual(["png", "jpeg", "webp", "gif"]);
   });
 });
+
+/**
+ * The substrate signpost, and the three-way agreement behind it.
+ *
+ * OpenAI serves nine ids in its own catalog on routes that are not
+ * /v1/chat/completions, and models.dev files every one of them as text-out —
+ * so before this check they validated clean and addressed the chat endpoint.
+ * The fact is stated three times because three consumers need it in three
+ * forms that cannot read each other:
+ *
+ *   • `NonChatModelId` (./wire.ts) — a TYPE, because it shapes `OpenaiChatModelId`;
+ *   • `NON_CHAT_ROUTES` (./chat.ts) — a runtime table, because a check cannot read a type;
+ *   • `chatScopeExclude` (data/availability-overrides.json) — data, because
+ *     codegen must not import from `src/`.
+ *
+ * These tests pin (2) against (1) and (3). `test/chat/refs.test.ts` pins the
+ * unified half: no `openai/…` chat ref survives that is not a chat model.
+ */
+describe("openai.chat non-chat route signpost", () => {
+  /** The nine ids in the committed snapshot OpenAI does not serve here. */
+  const NON_CHAT_IDS = [
+    "gpt-5.3-codex",
+    "gpt-5.3-codex-spark",
+    "text-embedding-3-large",
+    "text-embedding-3-small",
+    "text-embedding-ada-002",
+    "gpt-image-1-mini",
+    "gpt-image-1.5",
+    "chatgpt-image-latest",
+    "gpt-realtime-2.1",
+  ] as const;
+
+  test("every one of them is in the catalog, so this is not a test about typos", () => {
+    for (const id of NON_CHAT_IDS) expect(catalog[id]).toBeDefined();
+  });
+
+  test("each of them warns and names the route it is actually served on", () => {
+    for (const id of NON_CHAT_IDS) {
+      const result = chat.safe({ model: id, messages: [userMessage("hi")] });
+      // A WARNING, not an error: wire-truth says the substrate never refuses
+      // what the API might fulfil. The typed refusal is `unmodel/chat`'s, and
+      // it happens by the ref not existing at all.
+      expect(result.ok).toBe(true);
+      const signpost = result.warnings.find((issue) => issue.code === "unsupported_capability");
+      expect(signpost, id).toBeDefined();
+      expect(signpost?.path).toEqual(["model"]);
+      expect(signpost?.model).toBe(id);
+      expect(signpost?.message).toContain("not POST /v1/chat/completions");
+      expect(typeof signpost?.meta?.route).toBe("string");
+      // The one thing that must never regress into silence: the request is
+      // still built, at the chat URL, exactly as written.
+      if (!result.ok) continue;
+      expect(result.params.request.url).toBe(CHAT_COMPLETIONS_URL);
+    }
+  });
+
+  test("codex names /v1/responses and says unmodel has no validator for it", () => {
+    const result = chat.safe({ model: "gpt-5.3-codex", messages: [userMessage("hi")] });
+    const signpost = result.warnings.find((issue) => issue.code === "unsupported_capability");
+    expect(signpost?.message).toContain("POST /v1/responses");
+    expect(signpost?.message).toContain("unmodel has no validator");
+  });
+
+  test("the image and realtime families point at the surface that does serve them", () => {
+    const image = chat.safe({ model: "gpt-image-1.5", messages: [userMessage("hi")] });
+    expect(
+      image.warnings.find((i) => i.code === "unsupported_capability")?.message,
+    ).toContain("`image` from `unmodel/openai`");
+    const realtime = chat.safe({ model: "gpt-realtime-2.1", messages: [userMessage("hi")] });
+    expect(
+      realtime.warnings.find((i) => i.code === "unsupported_capability")?.message,
+    ).toContain("`realtimeSession` from `unmodel/openai`");
+  });
+
+  test("a real chat model gets no signpost at all", () => {
+    for (const id of ["gpt-5.2", "gpt-4o", "o3"] as const) {
+      const result = chat.safe({ model: id, messages: [userMessage("hi")] });
+      expect(
+        result.warnings.filter((i) => i.code === "unsupported_capability"),
+      ).toEqual([]);
+    }
+  });
+
+  test("the runtime table and `chatScopeExclude` name the same nine rows", async () => {
+    const overrides = (await Bun.file(
+      new URL("../../../data/availability-overrides.json", import.meta.url).pathname,
+    ).json()) as { chatScopeExclude: string[] };
+    const globs = overrides.chatScopeExclude
+      .filter((ref) => ref.startsWith("openai:"))
+      .map((ref) => {
+        const body = ref
+          .slice("openai:".length)
+          .split("*")
+          .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+          .join(".*");
+        return new RegExp(`^${body}$`);
+      });
+    // Every text-out openai row the data file excludes is a row the check
+    // warns on, and vice versa. Drift in either direction is a silent hole:
+    // a ref that compiles to a 400, or a warning on a model that works.
+    const textOut = Object.keys(catalog).filter((id) =>
+      catalog[id]?.modalities.output.includes("text"),
+    );
+    const excludedByData = textOut.filter((id) => globs.some((re) => re.test(id))).sort();
+    const warnedByCheck = textOut
+      .filter((id) => {
+        const result = chat.safe({ model: id, messages: [userMessage("hi")] });
+        return result.warnings.some(
+          (issue) => issue.code === "unsupported_capability" && issue.path[0] === "model",
+        );
+      })
+      .sort();
+    expect(warnedByCheck).toEqual(excludedByData);
+    expect(warnedByCheck).toEqual([...NON_CHAT_IDS].sort());
+  });
+});

@@ -72,11 +72,11 @@ export const prompt = {
 } satisfies ChatParams;
 ```
 
-The hub deliberately does **not** aggregate provider wire types. The 70 provider entries carry ~2,140 type exports. One module naming all of them is a ~900 KB declaration file every consumer parses to reach one interface. Import the provider you actually call.
+The hub deliberately does **not** aggregate provider wire types. The 79 provider entries carry ~2,470 type exports. One module naming all of them is a ~3.9 MB declaration graph every consumer parses to reach one interface — measured against a real build, as the union of all 79 entries' transitive `.d.ts` files. Import the provider you actually call.
 
 Three properties are tested rather than promised, in `test/types-entries.test.ts` against a real build:
 
-- **zero runtime**: every one of the 71 entries emits an empty JavaScript module.
+- **zero runtime**: every one of the 80 entries emits an empty JavaScript module.
 - **complete**: every endpoint id the CLI can validate has a `<Endpoint>Body` type on its provider's entry, so no endpoint ships with types a release behind.
 - **packaged**: every entry has its `exports` subpath and its build entry.
 
@@ -113,7 +113,7 @@ SPEECH_VOICES === TTS_MODEL_PARAMS["gpt-4o-mini-tts"].voices;            // true
 GEMINI_TTS_VOICES === GOOGLE["gemini-2.5-flash-preview-tts"].voices;     // true
 ```
 
-Each entry exports three uniform names per category it serves: `<CATEGORY>_MODEL_PARAMS`, `<CATEGORY>_MODELS`, and `<CATEGORY>_FORMAT_SPEC` where the category has an audio format spec. Prefixes are `IMAGE_`, `IMAGE_EDIT_`, `VIDEO_`, `TTS_`, `STT_`, `MUSIC_`, `VOICE_CLONE_`, `VOICE_DESIGN_`. Next to those sit the provider's own lists under their own names (`GEMINI_TTS_VOICES`, `GPT_IMAGE_2_SIZES`, `BFL_ASPECT_RATIOS`, `RECRAFT_V3_STYLES`, `KLING_ASPECT_RATIOS`, …). Those are aliases of the same objects the uniform names reach, not a second source of truth, so there is never a question of which one is current. 36 providers ship a values entry: exactly the ones with a unified adapter.
+Each entry exports three uniform names per category it serves: `<CATEGORY>_MODEL_PARAMS`, `<CATEGORY>_MODELS`, and `<CATEGORY>_FORMAT_SPEC` where the category has an audio format spec. Prefixes are `IMAGE_`, `IMAGE_EDIT_`, `VIDEO_`, `TTS_`, `STT_`, `MUSIC_`, `VOICE_CLONE_`, `VOICE_DESIGN_`. Next to those sit the provider's own lists under their own names (`GEMINI_TTS_VOICES`, `GPT_IMAGE_2_SIZES`, `BFL_ASPECT_RATIOS`, `RECRAFT_V3_STYLES`, `KLING_ASPECT_RATIOS`, …). Those are aliases of the same objects the uniform names reach, not a second source of truth, so there is never a question of which one is current. 48 providers ship a values entry: exactly the ones with a unified adapter.
 
 The tables are **the same objects the adapter compiles with**, re-exported not copied, so a picker and the request it builds cannot disagree. `test/values-entries.test.ts` asserts that by reference (`===`), not deep equality.
 
@@ -130,7 +130,7 @@ CANONICAL_KEY_LISTS.tts; // ["model", "text", "voice", "speed", "outputFormat", 
 
 `ASPECT_RATIO_PRESETS`, `RESOLUTION_TIERS`, `VIDEO_RESOLUTIONS`, `IMAGE_OUTPUT_FORMATS`, `OUTPUT_DELIVERIES`, `AUDIO_FORMAT_CODECS`, `AUDIO_CONTAINERS`, `TIMESTAMP_GRANULARITIES`, `AUDIO_INPUT_KINDS`, `CANONICAL_KEY_LISTS` and `CHAT_PROVIDERS`. `test/types/values-hub.test-d.ts` proves each array equal to its union in both directions, so a word added to the vocabulary and forgotten in the array is a compile error, not a picker that quietly offers eight options out of nine.
 
-The 1,339 `"provider/model"` chat refs are the runtime twin of `ChatModelRef`. They get their own subpath because they are 45 KiB:
+The 1,330 `"provider/model"` chat refs are the runtime twin of `ChatModelRef`. They get their own subpath because they are 45 KiB:
 
 ```ts
 import { CHAT_MODEL_REFS } from "unmodel/values/chat-refs";

@@ -70,3 +70,8 @@ export type { ModifyVideoCostInputs } from "./pricing";
 // requests only, so this provider ships no response checker.
 export { models, videoModels, imageModels, provider } from "./models";
 export type { LumaModelId, LumaVideoModelId, LumaImageModelId } from "./models";
+
+// Declaration-portability carriers. One type-only line; see
+// src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
+// name this entry's inferred result types without it (TS2742 / TS2883).
+export type * from "../../core/carriers";

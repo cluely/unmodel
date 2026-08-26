@@ -13,6 +13,7 @@ import type { GeminiSdkConfigKey } from "../core/translate/sdk-shapes";
 import type { MessagesBody, ServerTool } from "../providers/anthropic/wire";
 import type { GenerateContentBody, GoogleTool } from "../providers/google/wire";
 import type { ChatCompletionsBodyBase, ChatCustomTool } from "../providers/openai-compatible/wire";
+import type { ChatCompletionsBodyOf } from "../providers/openai/wire";
 
 /**
  * The wire dialect a `.toApi` destination speaks. `google-vertex` also serves
@@ -50,6 +51,45 @@ export type DialectBody<D, M extends string> = D extends "openai-chat"
     : D extends "gemini"
       ? GenerateContentBodyFor<M>
       : never;
+
+/**
+ * OpenAI's own `/v1/chat/completions` body — the ENDPOINT body, not the
+ * dialect base.
+ *
+ * `DialectBody<"openai-chat", M>` is deliberately the *shared* body: ~30
+ * providers speak this dialect and most of them serve none of OpenAI's own
+ * extras, so the dialect base is where `.toApi` has to key. But one consumer
+ * genuinely wants the endpoint: `providerOptions.openai` is merged into a body
+ * `openai.chat` compiled and `openai.chat` validates, so the bucket that names
+ * it should complete and check what that endpoint declares. Re-exported from
+ * here rather than imported directly because `src/chat/**` may name exactly
+ * one module outside core and its own directory, and this is it (amendment A1,
+ * test/import-graph.test.ts).
+ *
+ * `model` is left open on purpose. The one consumer `Omit`s it (the compiler
+ * owns the model), and closing it to `OpenaiChatModelId` would make this
+ * hub's chunk carry `catalog/openai.gen` — 80 KiB of literal ids in the
+ * declaration graph of every provider's `types.ts` entry, measured at +43 KiB
+ * each across fifty-seven of them.
+ */
+export type OpenAiChatBody = ChatCompletionsBodyOf<string>;
+
+/**
+ * The params OpenAI's endpoint adds over the shared dialect — `audio`,
+ * `metadata`, `modalities`, `moderation`, `prediction`, the three
+ * `prompt_cache_*`, `safety_identifier`, `store`, `verbosity` and
+ * `web_search_options`.
+ *
+ * Derived rather than listed, so it cannot drift from either body. The
+ * distinction matters to `ChatProviderOptions`: the shared half keeps the
+ * escape hatch that lets a value ship ahead of a wire enum (`service_tier` and
+ * `reasoning_effort` are open `string`s in the base for exactly that reason,
+ * and ~30 providers narrow them differently), while every param in THIS set is
+ * one OpenAI alone defines and `openai.chat`'s own schema enumerates — so its
+ * declared vocabulary is the vocabulary, and a value outside it is an
+ * `invalid_shape` error at validate time today.
+ */
+export type OpenAiOnlyChatParam = Exclude<keyof OpenAiChatBody, keyof ChatCompletionsBodyBase>;
 
 /**
  * A **provider-defined** tool as one dialect spells it — the shape that goes

@@ -59,9 +59,9 @@ const ROWS = { ...fal.modelParams, ...topaz.modelParams } as Readonly<
 >;
 
 test("the sweep covers the whole roster", () => {
-  expect(falRefs).toHaveLength(10);
+  expect(falRefs).toHaveLength(11);
   expect(topazRefs).toHaveLength(15);
-  expect(refs).toHaveLength(25);
+  expect(refs).toHaveLength(26);
 });
 
 /**

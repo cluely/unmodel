@@ -1,0 +1,11 @@
+{
+  "ref": "atlascloud/bytedance/seedance-2.5/text-to-video",
+  "params": {
+    "model": "bytedance/seedance-2.5/text-to-video",
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": 5,
+    "resolution": "720p",
+    "ratio": "9:16"
+  },
+  "url": "https://api.atlascloud.ai/api/v1/model/generateVideo"
+}

@@ -1,0 +1,11 @@
+{
+  "ref": "atlascloud/bytedance/seedance-2.5/image-to-video",
+  "params": {
+    "model": "bytedance/seedance-2.5/image-to-video",
+    "prompt": "the fox walks from one bank to the other",
+    "image": "https://example.com/frame.png",
+    "last_image": "https://example.com/last.png",
+    "duration": 5
+  },
+  "url": "https://api.atlascloud.ai/api/v1/model/generateVideo"
+}

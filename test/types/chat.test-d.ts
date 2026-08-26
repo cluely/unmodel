@@ -98,22 +98,17 @@ expectNotAny<typeof claude.thinking>();
 
 /**
  * Comparing a *whole dialect body* against an SDK's create-params runs into
- * three systematic divergences, none of which is about the compiled request
+ * two systematic divergences, neither of which is about the compiled request
  * being wrong. Each is neutralised explicitly below, so what remains asserted
  * is every other field — which is the part that would break if the compiler
  * emitted a wrong one.
  *
- * 1. **`stream` is a discriminant in all three SDKs.** Their params are a union
- *    of a non-streaming arm (`stream?: false`) and a streaming one
- *    (`stream: true`), so an open `stream?: boolean` matches neither until a
- *    caller narrows it — which a caller does, by knowing which call they are
- *    making. `stream?: false` narrows it the same way.
- * 2. **unmodel's content types are supersets of the SDKs' *request* types**
+ * 1. **unmodel's content types are supersets of the SDKs' *request* types**
  *    (`Replace`). A wire `TextBlock` may carry `citations`, which the SDKs type
  *    only on responses, so one `MessageParam` models both directions where the
  *    SDK has separate `…Param` types. Substituting the SDK's own field type is
  *    what makes the rest of the comparison meaningful.
- * 3. **Some dialect fields are deliberately wider than any one SDK's**
+ * 2. **Some dialect fields are deliberately wider than any one SDK's**
  *    (`Open`). The chat-completions dialect is shared by 30 providers who each
  *    narrow `reasoning_effort` and `service_tier` differently, so the base type
  *    keeps them open `string`s; Anthropic's `container` accepts an object form
@@ -124,17 +119,24 @@ expectNotAny<typeof claude.thinking>();
  * Both lists are spelled out one field at a time on purpose: a name that
  * quietly joins them is a field that stopped matching its SDK.
  *
- * The provider subpaths' own type tests need none of this, because there the
- * body's type is the caller's literal `T` — which mentions no field the caller
- * did not write. A unified result is typed from the *ref*, so it always carries
- * the dialect's full optional surface.
+ * **There used to be a third, and its removal is the point.** `stream` is the
+ * discriminant in all three SDKs — their params are a union of `stream?: false`
+ * and `stream: true` — and a unified result carried the dialect's open
+ * `stream?: boolean`, which matches neither arm. This helper neutralised it
+ * with `Omit<T, "stream"> & { stream?: false }`, i.e. the test performed the
+ * narrowing the type would not, and the doc comment here argued that "a caller
+ * narrows, by knowing which call they are making". A caller should not have to:
+ * `src/chat/encode.ts` writes the key if and only if the caller wrote it, so
+ * unmodel always knew. It narrows now (`ProviderParamsFor`, src/chat/factory.ts),
+ * and this helper got shorter — which is the confirmation, since a fix that
+ * needed the special case kept would not have been one.
  */
 type SdkComparable<
   T,
   P extends object,
   Replace extends keyof P,
   Open extends PropertyKey = never,
-> = Omit<T, "stream" | Replace | Open> & Pick<P, Replace> & { stream?: false };
+> = Omit<T, Replace | Open> & Pick<P, Replace>;
 
 /**
  * Fields whose wire type is a superset of the SDK's request type.
@@ -184,6 +186,101 @@ expectAssignable<ChatCompletionCreateParams>(gptSdk);
 expectAssignable<"gpt-5.2" | (string & {})>(gpt.model);
 expectAssignable<"gpt-5.2">(gpt.model);
 expectAssignable<ChatCompletionCreateParams["reasoning_effort"]>(gpt.reasoning_effort);
+
+// ---------------------------------------------------------------------------
+// `stream`: the result carries the key if and only if the caller wrote it
+//
+// This is the whole of the SDK hand-off fix. `client.chat.completions.create`
+// and `client.messages.create` are overloaded on `stream` — a union of
+// `stream?: false` and `stream: true` — so a result carrying an open
+// `boolean` resolved neither overload and `.choices` did not exist on what
+// came back. `src/chat/encode.ts` has always emitted the key only when asked;
+// the type says so now (`ProviderParamsFor`, src/chat/factory.ts).
+//
+// The negative assertions are the load-bearing ones: `stream?: boolean` would
+// satisfy every positive check below and still break `create()`.
+// ---------------------------------------------------------------------------
+
+expectTrue<IsNever<KeyIn<typeof gpt, "stream">>>();
+expectTrue<IsNever<KeyIn<typeof claude, "stream">>>();
+
+const gptStreaming = chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  stream: true,
+});
+expectAssignable<true>(gptStreaming.stream);
+expectAssignable<ChatCompletionCreateParams>(
+  gptStreaming as unknown as SdkComparable<
+    typeof gptStreaming,
+    ChatCompletionCreateParams,
+    OpenAiReplace,
+    OpenAiOpen
+  >,
+);
+
+const gptNotStreaming = chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  stream: false,
+});
+// A literal `false`, not a widened `boolean`: the non-streaming overload takes
+// `stream?: false`, so widening here would break the call the caller spelled
+// out most explicitly.
+expectAssignable<false>(gptNotStreaming.stream);
+
+const claudeStreaming = chat({
+  model: "anthropic/claude-opus-5",
+  messages: [{ role: "user", content: "hi" }],
+  maxOutputTokens: 8,
+  stream: true,
+});
+expectAssignable<true>(claudeStreaming.stream);
+
+// Gemini is exempt from the whole mechanism, and must stay exempt: it has no
+// streaming FLAG. `stream: true` selects `:streamGenerateContent`, a different
+// URL, and the body never gains a key — which is what `src/chat/encode.ts`'s
+// `targetDialect !== "gemini"` guard says and what this pins.
+const geminiStreaming = chat({
+  model: "google/gemini-2.5-flash",
+  messages: [{ role: "user", content: "hi" }],
+  stream: true,
+});
+expectTrue<IsNever<KeyIn<typeof geminiStreaming, "stream">>>();
+
+// The assertion the whole item exists for, and the only one that exercises
+// OVERLOAD RESOLUTION rather than assignability: `create()` is overloaded on
+// `stream`, so a body that is merely *assignable* to the params union can
+// still fall through to the base signature — where the return type is
+// `ChatCompletion | Stream<ChatCompletionChunk>` and `.choices` is a TS2339.
+// That was the adopter's report, and `{ ...body, stream: false }` was their
+// workaround. `declare const` rather than a real client: no network, no
+// runtime, and `src/` still never imports an SDK.
+declare const openaiClient: import("openai").default;
+
+async function sdkHandOffCompiles(): Promise<void> {
+  // No cast, no spread, no `stream: false`. `.choices` resolving at all is the
+  // assertion: it exists on `ChatCompletion` and not on the base overload's
+  // `ChatCompletion | Stream<ChatCompletionChunk>`.
+  const nonStreaming = await openaiClient.chat.completions.create(gpt.toSdk("openai"));
+  expectAssignable<string | null>(nonStreaming.choices[0]?.message.content ?? null);
+
+  // …and the other arm resolves too, which is what makes this a narrowing
+  // rather than a `stream?: false` lie: `for await` only compiles on `Stream`.
+  const streaming = await openaiClient.chat.completions.create(gptStreaming.toSdk("openai"));
+  for await (const chunk of streaming) {
+    expectAssignable<string | null | undefined>(chunk.choices[0]?.delta.content);
+  }
+}
+void sdkHandOffCompiles;
+
+// `anthropic.messages.create` is deliberately NOT called here, and the reason
+// is `AnthropicReplace`, not `stream`. The wire `MessageParam` is a superset of
+// the SDK's request type — a `TextBlock` may carry `citations`, which the SDK
+// types only on responses — so `messages` needs the documented substitution
+// before any comparison means anything, `stream` or no `stream`. The
+// `claudeSync` / `claudeSdk` assertions above make that substitution and then
+// assert the whole body, including the now-narrowed `stream`.
 // @ts-expect-error — OpenAI's gpt-5.2 availability has no Groq target.
 gpt.toApi("groq");
 
@@ -623,6 +720,82 @@ chat({
   // @ts-expect-error — and a declared field's type is checked: `logprobs` is a
   // boolean on that wire body.
   providerOptions: { openai: { logprobs: "yes" } },
+});
+
+// ---------------------------------------------------------------------------
+// The openai bucket is typed off OpenAI's ENDPOINT body, not the shared
+// dialect base — so the twelve params only OpenAI takes complete and check.
+//
+// They used to reach the `Record<string, unknown>` arm and check nothing: the
+// package typed, enumerated and validated `verbosity` in `openai.chat`'s own
+// schema and then handed the caller an untyped bag at the one place they write
+// it. `verbosity` is the canonical example named in `ChatParams
+// .providerOptions`' JSDoc: first-party, documented, single-witness — exactly
+// what belongs in a bucket rather than in the vocabulary.
+// ---------------------------------------------------------------------------
+
+chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  providerOptions: {
+    openai: {
+      verbosity: "low",
+      store: true,
+      safety_identifier: "u1",
+      prompt_cache_key: "k",
+      prompt_cache_options: { mode: "explicit", ttl: "30m" },
+      prompt_cache_retention: "24h",
+      metadata: { run: "42" },
+      modalities: ["text"],
+      moderation: { model: "omni-moderation-latest" },
+      prediction: { type: "content", content: "x" },
+      audio: { format: "mp3", voice: "alloy" },
+      // The key hatch survives inside an OpenAI-only param, one level down.
+      web_search_options: { search_context_size: "high", brand_new_2027_knob: 1 },
+      // …and at the top level, which is what `store` itself needed before it
+      // was reachable by name.
+      another_brand_new_2027_knob: true,
+    },
+  },
+});
+
+chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  // @ts-expect-error — `verbosity` is `low | medium | high`, and `openai.chat`
+  // refuses anything else with `[invalid_shape]` today. Where the runtime
+  // refuses, the type refuses: the leaf `(string & {})` hatch is for enums the
+  // library CARRIES an unknown value through, which this is not.
+  providerOptions: { openai: { verbosity: "extreme" } },
+});
+
+// The shared dialect half is untouched, so the hatch it exists for still
+// works: `service_tier` is an open `string` on the base (~30 providers, ~30
+// vocabularies), and both non-OpenAI codecs carry an unknown tier verbatim.
+chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  providerOptions: { openai: { service_tier: "a_tier_shipped_next_month" } },
+});
+
+// `messages` is the compiler's, and `Omit` alone did not take it: `Openable`'s
+// index signature re-admitted it, and the runtime then replaced the compiled
+// conversation wholesale with no warning at all.
+chat({
+  model: "openai/gpt-5.2",
+  messages: [{ role: "user", content: "hi" }],
+  // @ts-expect-error — a bucket cannot clobber the compiled messages array.
+  providerOptions: { openai: { messages: [{ role: "user", content: "CLOBBERED" }] } },
+});
+
+// `model` is NOT subtracted with it. Gemini's model lives in the URL and
+// `providerOptions.google.model` is a supported override of exactly that —
+// see test/chat/streaming.test.ts, which pins the streaming URL to the one the
+// validator produced so the override survives re-routing.
+chat({
+  model: "google/gemini-2.5-flash",
+  messages: [{ role: "user", content: "hi" }],
+  providerOptions: { google: { model: "models/gemini-2.0-flash" } },
 });
 
 // `serviceTier` completes every dialect's vocabulary and gates none of them:

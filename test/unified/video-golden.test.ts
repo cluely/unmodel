@@ -49,8 +49,19 @@
  * |---|---|
  * | text | `minimal-text`, `duration-*` |
  * | image | `image-to-video`, `image-1080p`, `first-last-frames`, `inline-bytes` |
- * | reference | `reference-to-video` |
- * | video | `video-to-video` |
+ * | reference | `reference-to-video`, `auto-duration` |
+ * | video | `video-to-video`, `auto-duration` |
+ *
+ * `auto-duration` is the one case whose canonical request carries a
+ * `providerOptions` block, and it is the only honest way to pin what it pins.
+ * Atlas Cloud's Seedance schemas declare `duration: -1` — "let the model choose
+ * the length" — as an enum member, and the canonical `duration` cannot carry it:
+ * `core/unified/derive.ts` defines the word as a *positive* number of seconds at
+ * every provider, and a sentinel is not a duration. So the wire value is reached
+ * through the escape hatch, the fixture commits it reaching the wire unchanged
+ * beside `omni_reference_task_type: "edit"` (whose documented rules are exactly
+ * "one reference video, an adaptive ratio, duration -1"), and the case names one
+ * provider because the request is by construction about one provider's wire.
  */
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";

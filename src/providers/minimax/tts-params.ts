@@ -229,8 +229,13 @@ export const MINIMAX_TTS_MODEL_PARAMS = {
 /**
  * Hex, at `data.audio` — or a URL, and `output_format` is which:
  * "Non-streaming responses return the audio hex-encoded in `data.audio` (or a
- * URL when `output_format: "url"`), so this is a JSON API — but unmodel
- * validates requests only, so there is no checker here" (./tts.ts).
+ * URL when `output_format: "url"`), so this is a JSON API" (./tts.ts).
+ *
+ * This descriptor describes DELIVERY and nothing else. MiniMax's failure
+ * surface — `base_resp.status_code` on an HTTP 200 — is a fact about the whole
+ * MiniMax platform (t2a_v2, music_generation, video_generation) rather than
+ * about TTS, so it lives in `./tts-check.ts`'s `checkTts` and not as an arm
+ * here. This value is unchanged by that checker landing.
  *
  * `stream` does not appear here because it does not move the answer: the
  * validator already refuses `output_format: "url"` alongside it — "streaming

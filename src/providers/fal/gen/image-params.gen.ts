@@ -165,25 +165,6 @@ const ROW_1d0935 = {
 } as const;
 
 /**
- * Shared by 2 endpoints with an identical surface: krea/v2/large/text-to-image,
- * krea/v2/medium/text-to-image.
- *
- * The extras are typed from `KreaV2LargeTextToImageInput`, so the value an editor offers
- * here and the value `fal.image` validates are one declaration.
- */
-const ROW_257ea3 = {
-  classes: ["aspectRatioEnum"],
-  keys: ["prompt", "aspect_ratio", "creativity", "seed", "image_style_references", "styles", "moodboards"],
-  ratios: ["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"],
-  extras: {
-    creativity: EXTRA as KreaV2LargeTextToImageInput["creativity"],
-    image_style_references: EXTRA as KreaV2LargeTextToImageInput["image_style_references"],
-    styles: EXTRA as KreaV2LargeTextToImageInput["styles"],
-    moodboards: EXTRA as KreaV2LargeTextToImageInput["moodboards"],
-  },
-} as const;
-
-/**
  * fal-ai/nano-banana.
  *
  * The extras are typed from `FalAiNanoBananaInput`, so the value an editor offers here and
@@ -622,15 +603,23 @@ const ROW_bf8492 = {
   },
 } as const;
 
-/** xai/grok-imagine-image. */
-const ROW_d14544 = {
-  classes: ["aspectRatioEnum", "resolutionEnum"],
-  keys: ["prompt", "num_images", "aspect_ratio", "resolution", "output_format", "sync_mode"],
-  ratios: ["2:1", "20:9", "16:9", "4:3", "3:2", "1:1", "2:3", "3:4", "9:16", "9:20", "1:2"],
-  tiers: ["1k", "2k"],
-  tierWire: { "1k": "1k", "2k": "2k" },
-  bounds: { num_images: { min: 1, max: 4 } },
-  extras: {},
+/**
+ * Shared by 2 endpoints with an identical surface: krea/v2/large/text-to-image,
+ * krea/v2/medium/text-to-image.
+ *
+ * The extras are typed from `KreaV2LargeTextToImageInput`, so the value an editor offers
+ * here and the value `fal.image` validates are one declaration.
+ */
+const ROW_cf6b44 = {
+  classes: ["aspectRatioEnum"],
+  keys: ["prompt", "aspect_ratio", "creativity", "seed", "image_style_references", "styles", "moodboards"],
+  ratios: ["1:1", "4:3", "3:2", "16:9", "2.35:1", "4:5", "2:3", "9:16"],
+  extras: {
+    creativity: EXTRA as KreaV2LargeTextToImageInput["creativity"],
+    image_style_references: EXTRA as KreaV2LargeTextToImageInput["image_style_references"],
+    styles: EXTRA as KreaV2LargeTextToImageInput["styles"],
+    moodboards: EXTRA as KreaV2LargeTextToImageInput["moodboards"],
+  },
 } as const;
 
 /**
@@ -672,6 +661,17 @@ const ROW_f88c45 = {
   },
 } as const;
 
+/** xai/grok-imagine-image. */
+const ROW_fe759e = {
+  classes: ["aspectRatioEnum", "resolutionEnum"],
+  keys: ["prompt", "num_images", "aspect_ratio", "resolution", "output_format", "sync_mode"],
+  ratios: ["2:1", "20:9", "19.5:9", "16:9", "4:3", "3:2", "1:1", "2:3", "3:4", "9:16", "9:19.5", "9:20", "1:2"],
+  tiers: ["1k", "2k"],
+  tierWire: { "1k": "1k", "2k": "2k" },
+  bounds: { num_images: { min: 1, max: 4 } },
+  extras: {},
+} as const;
+
 export const FAL_IMAGE_PARAM_SHAPES = {
   "bytedance/seedream/v5/pro/text-to-image": ROW_301232,
   "fal-ai/bytedance/seedream/v4.5/text-to-image": ROW_422a6b,
@@ -699,12 +699,12 @@ export const FAL_IMAGE_PARAM_SHAPES = {
   "fal-ai/z-image/turbo": ROW_928ac6,
   "google/nano-banana-2-lite": ROW_5a37f1,
   "ideogram/v4": ROW_b8e212,
-  "krea/v2/large/text-to-image": ROW_257ea3,
-  "krea/v2/medium/text-to-image": ROW_257ea3,
+  "krea/v2/large/text-to-image": ROW_cf6b44,
+  "krea/v2/medium/text-to-image": ROW_cf6b44,
   "microsoft/mai-image-2.5": ROW_0bf7e4,
   "openai/gpt-image-2": ROW_886318,
   "reve/2.1/text-to-image": ROW_764f83,
-  "xai/grok-imagine-image": ROW_d14544,
+  "xai/grok-imagine-image": ROW_fe759e,
 } as const satisfies Record<string, FalParamShape>;
 
 /**

@@ -44,9 +44,28 @@
  * warned `unknown_model`, and a curated roster is a snapshot of a catalog that
  * grows weekly. Refusing an endpoint fal added last Tuesday would make unmodel
  * the reason a valid request failed.
+ *
+ * The ONE thing that path adds is a sentence, not a check: an id unmodel
+ * deliberately declined carries a written reason in `data/fal/curation.json`,
+ * the generator ships it as `FAL_EXCLUDED`, and {@link reportExcluded} hands it
+ * back — so "we chose not to serve this" stops arriving as "the catalog is a
+ * week behind".
+ *
+ * What that path deliberately does NOT do is go quiet. An uncurated id still
+ * draws one `unknown_param` per body key outside the CATEGORY union schema —
+ * from `reportUnknownTopLevelKeys` in `src/core/pipeline.ts`, never from this
+ * file, which has already stood down. Measured over this roster, that is 15.6%
+ * of keys on average and zero for 58% of endpoints, so it is a smaller noise
+ * than it sounds. Auto-suppressing it was asked for and declined: the widened
+ * arm is the one path where the TYPE system has also stood down (`video.ts`
+ * types an unknown id's body as `Record<string, unknown>`), so removing the
+ * last remaining signal would let a `promt` typo go out unremarked on the path
+ * with the least help. A caller who wants silence at one uncurated call site
+ * has it, losslessly, per call: `{ severity: { unknown_param: "off" } }`.
  */
 
 import type { PipelineContext } from "../../core/pipeline";
+import { FAL_EXCLUDED } from "./gen/endpoints.gen";
 import type { FalEndpointShape, FalPropSpec, FalSizeSpec } from "./shape-types";
 
 /**
@@ -641,6 +660,37 @@ function categoryParamsOf(
   return index;
 }
 
+/**
+ * A DELIBERATELY unserved endpoint, told apart from a merely unknown one.
+ *
+ * The pipeline has already warned `unknown_model`, whose sentence ends "If
+ * this model is new, catalog data may lag behind" — true for the ~1,300
+ * endpoints nobody has looked at, and false for the handful that were looked
+ * at and turned down. `data/fal/curation.json` has carried a written reason
+ * for each of those since wave 1 and none of it reached a caller; the
+ * generator now ships the block as {@link FAL_EXCLUDED} and this is the seam
+ * that reads it, once, for all ten verbs.
+ *
+ * It stays a WARNING, and the request still goes out: an excluded id is a
+ * curation decision about unmodel's roster, never a claim that fal refuses the
+ * call. `fal.<verb>({ endpoint })` routes anything fal serves — that is the
+ * whole point of the widened arm — and what the caller loses is checks, types
+ * and a price, which is exactly what the reason explains.
+ */
+function reportExcluded(endpointId: string, ctx: PipelineContext): void {
+  const reason = FAL_EXCLUDED[endpointId];
+  if (reason === undefined) return;
+  ctx.report({
+    code: "unknown_model",
+    path: [FAL_ROUTE_PARAM],
+    model: endpointId,
+    message:
+      `unmodel deliberately does not serve \`${endpointId}\`: ${reason} The request is routed and sent as ` +
+      "written all the same, but nothing validated it — this is a recorded decision rather than catalog lag.",
+    meta: { excluded: true, reason },
+  });
+}
+
 export function runFalChecks(
   endpointId: string,
   shapes: Readonly<Record<string, FalEndpointShape>>,
@@ -656,7 +706,10 @@ export function runFalChecks(
   };
   // An id the roster has never seen gets the pipeline's `unknown_model`
   // warning and nothing from here. See the module header.
-  if (target.shape === undefined) return;
+  if (target.shape === undefined) {
+    reportExcluded(endpointId, ctx);
+    return;
+  }
   checkRequired(target, params, ctx);
   checkTypes(target, params, ctx);
   checkRanges(target, params, ctx);

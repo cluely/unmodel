@@ -94,7 +94,30 @@ function splitProviders(): ReadonlySet<string> {
  * endpoints cost. 310 restores the ~8% headroom the 235 had.
  */
 const BUDGET_KIB: Readonly<Record<string, number>> = {
-  anthropic: 150,
+  /**
+   * **Bumped 150 → 165** by the canonical `detail` promotion (150.6 measured,
+   * up 2.2 from 148.4). The same +2.2 to +5.0 KiB lands on every entry that
+   * carries a chat codec, so it is described once here and referenced from
+   * `deepinfra` and `openrouter` below rather than repeated.
+   *
+   * `ChatFilePart.detail` became vocabulary rather than a one-dialect concept,
+   * which turned three warnings into three mappings — and a mapping is code
+   * where a warning was a string. Measured module by module (unminified ESM,
+   * so the prose ships too):
+   *
+   * | module | what it gained |
+   * |---|---|
+   * | `openai-compatible/interop.ts` | `imageDetailFor` (the `medium` → `high` narrowing) + `warnNonImageDetail`, and `detail` threaded through both media branches |
+   * | `google/interop.ts` | the two level ⇄ detail tables and `detailFromLevel`, plus `mediaResolution` on three decode branches |
+   * | `anthropic/interop.ts` | the one `dropped_param` this dialect genuinely owes |
+   * | `chat/encode.ts` + `chat/schema.ts` | carrying the field, and one `z.enum` |
+   * | `openai-compatible/chat-completions.ts` | `estimateChatTokens`' per-part image-token resolver |
+   *
+   * anthropic is the smallest of the three bumps (+2.2) because it pays only
+   * for its own decoder plus the openai-chat codec it already carried; the
+   * openai-dialect fleet pays ~+2.9, and the two-codec entries ~+4.5.
+   */
+  anthropic: 165,
   /**
    * Bumped 125 → 138 (125.9 measured) when `core/standard-schema.ts` joined
    * the four-layer engine: the pipeline's layer 1 now consumes any Standard
@@ -105,9 +128,18 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    */
   groq: 138,
   google: 345, // 313.8 measured after the Lyria music surface (2026-08-24); same ~10% headroom.
-  deepinfra: 190,
-  openrouter: 400,
-  vercel: 355,
+  /** Bumped 190 → 210: 191.8 measured, +4.4 for the `detail` mappings (see `anthropic`). */
+  deepinfra: 210,
+  /** Bumped 400 → 440: 401.9 measured, +4.8 for the `detail` mappings (see `anthropic`). */
+  openrouter: 440,
+  /**
+   * Bumped 355 → 390: 354.8 measured, +4.8 for the same `detail` mappings.
+   * This one did not fail — it landed 0.2 KiB under its pin — and is moved
+   * anyway, because a budget with 0.06% headroom is a tripwire rather than a
+   * budget and the next entry to touch a codec would trip it for a reason that
+   * has nothing to do with that entry.
+   */
+  vercel: 390,
   /**
    * fal at 474.9 KiB measured, pinned at 525.
    *
@@ -166,6 +198,30 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * measured.
    */
   topaz: 70,
+  /**
+   * Atlas Cloud: ONE validator on ONE url, and the heaviest hand provider in
+   * the tree at 72.2 KiB measured — heavier than sync.'s two validators and two
+   * long catalogs, from a single endpoint.
+   *
+   * The reason is the thing that makes this provider interesting rather than a
+   * regression: Atlas publishes one OpenAPI 3.0.0 document PER MODEL, so its 23
+   * curated ids are 23 independent param surfaces rather than one narrowed 23
+   * ways. Every table here is therefore per-id — the deny rows, the enum rows,
+   * the shape rules, the unified rows and the adapter's field-name table are
+   * five tables of twenty-three, and four dialect families inside them disagree
+   * about field names, casing and which route owns which field. `bytedance`
+   * (4,646 LoC across two categories) is pinned at no entry here because it has
+   * no barrel budget; the comparable figure is its 23-model equivalent, which
+   * does not exist.
+   *
+   * NO pricing weight, and that is deliberate: Atlas ships no usable price unit,
+   * so `./pricing.ts` is a caveat plus a transcription table and no row carries
+   * a `cost` — which also keeps `pricing.ts` out of the video PACK entirely
+   * (asserted below), since the validator declares no `estimate` to reach it.
+   *
+   * 80 is 72.2 × 1.1, the same multiple as every row above.
+   */
+  atlascloud: 80,
 
   /**
    * The six entries that carry the **media retarget seam** — `.toApi("fal")`.
@@ -188,18 +244,34 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * | lightricks | 60.5 | 68 | one endpoint, one model, the WxH → tier+ratio split |
    * | black-forest-labs | 89.5 | 100 | five models across two endpoints |
    * | kling | 122.1 | 135 | six fal endpoints across two source routes |
-   * | elevenlabs | 146.9 | 162 | three models, the widest refusal battery |
-   * | minimax | 205.9 | 227 | three models, plus chat/video/clone/design |
+   * | elevenlabs | 183.0 | 202 | three models, the widest refusal battery, plus DUBBING |
+   * | minimax | 209.1 | 227 | three models, plus chat/video/clone/design |
    *
    * The engine and the target table are ~9 KiB of the total, shared as one
    * chunk between all six; the rest is each family's own mapping prose. A
    * seventh family joining moves only its own row.
+   *
+   * **elevenlabs 162 → 202 (measured 146.9 → 183.0), and the seam did not do
+   * it.** `elevenlabs.dub` + `elevenlabs.dubLanguage` landed — two wire
+   * validators with their zod schemas, two response checkers, and
+   * `dubbing-languages.ts`, which is ~194 BCP-47 string literals across two
+   * hand-transcribed tables (94 Dubbing v2 base tags + 14 dialects, 86 Dubbing
+   * v1 tags). The language tables are the bulk of the +36 KiB and they are data
+   * that cannot be generated: ElevenLabs types `target_language` as a bare
+   * `string` and publishes the enumeration only as prose. Pinned at ~×1.10,
+   * the same multiple as every other row in this group.
+   *
+   * **minimax's measured figure moved 205.9 → 209.1 and its pin did not**, which
+   * is the point of the `./models`-not-`./tts` import rule recorded below at
+   * the voice-clone pack: `minimax/tts-check.ts` costs ~3 KiB because it reads
+   * the catalog rates and never the validator's zod schema. Importing `./tts`
+   * there would have dragged that schema into every graph reaching this barrel.
    */
   pixverse: 64,
   lightricks: 68,
   "black-forest-labs": 100,
   kling: 135,
-  elevenlabs: 162,
+  elevenlabs: 202,
   minimax: 227,
 };
 
@@ -541,8 +613,33 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  *
  * It is also the pack where `createVideo([…])` earns its keep hardest: a caller
  * who wants Sora and Veo now skips 198 KiB of fal by naming two adapters.
+ *
+ * **Bumped 1040 → 1170 by atlascloud**, measured 1061.7 KiB, of which the new
+ * provider is 65.8 — read off the `//#region src/providers/atlascloud/*` blocks
+ * in this pack's own chunks rather than estimated. Six modules arrive, and the
+ * split is worth recording because it is the opposite shape from fal's:
+ *
+ * | module | what it is |
+ * |---|---|
+ * | `constraints.ts` | 23 per-MODEL deny tables and enum rows — Atlas publishes one OpenAPI document per model, so there is no shared body to narrow and no row is shared |
+ * | `video.ts` | one validator, one union zod schema over 22 fields, six checks |
+ * | `video-params.ts` | 23 unified rows (tiers, shapes, extras) |
+ * | `unified-video.ts` | the adapter, plus its 23-row field-name table |
+ * | `models.ts` | 23 catalog rows, reached through the validator's `catalog:` |
+ * | `urls.ts` | four strings and three functions |
+ *
+ * fal's +198 was thirty endpoints of GENERATED data behind one adapter and one
+ * schema. This +66 is 23 HAND rows across four dialect families that disagree
+ * about field names (`ratio` vs `aspect_ratio`, `audio` vs `generate_audio`),
+ * about casing (`1080P` at Wan 3.0-prime, `1080p` at Wan 3.0, `-SR` at Seedance
+ * 2.0, `-sr` at 2.5) and about which of the three routes a family's fields live
+ * on. That disagreement IS the weight: it is what the deny tables spell out, and
+ * spelling it out is what makes a param from a sibling route an error naming the
+ * id to pick instead of a 400 from Atlas.
+ *
+ * 1170 restores ~10% headroom, the same multiple every row in this file uses.
  */
-const VIDEO_PACK_BUDGET_KIB = 1040;
+const VIDEO_PACK_BUDGET_KIB = 1170;
 
 /**
  * The two generated catalogs this pack legitimately reaches.
@@ -555,9 +652,10 @@ const VIDEO_PACK_BUDGET_KIB = 1040;
  */
 const VIDEO_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog/openai.gen.ts"];
 
-/** The eleven providers `unmodel/video`'s ready-made pack is allowed to reach. */
+/** The fourteen providers `unmodel/video`'s ready-made pack is allowed to reach. */
 const VIDEO_PACK_PROVIDERS: string[] = [
   "alibaba",
+  "atlascloud",
   "bytedance",
   "fal",
   "google",
@@ -727,8 +825,36 @@ const STT_PACK_PROVIDERS: string[] = [
  * and `core/unified/canonical-keys.ts` — the params vocabulary, moved out of
  * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
  * is +0.1 net against the kernel's own shrink.
+ *
+ * **Bumped 400 → 440 by the v0.3.x fal wave**, and the investigation this
+ * file's header demands was run rather than skipped — in isolation, against a
+ * scratch build of HEAD with ONLY the fal changes applied, so the number is
+ * this workstream's and nobody else's: **376.9 → 401.8 KiB, +24.9**. No module
+ * joined the graph. Two causes, both prose rather than logic:
+ *
+ * - **~16 KiB of it is `FAL_EXCLUDED`**, the `excluded.endpoints` block of
+ *   `data/fal/curation.json` emitted into `gen/endpoints.gen.ts` and read by
+ *   `checks.ts`, which every fal verb already imports. It grew from 9 recorded
+ *   ids to 66 in this wave (the background-removal, `image-editing/*` and
+ *   ffmpeg/workflow families, plus the delisted Topaz pair), and the reasons
+ *   ARE the feature: an adopter who names a deliberately-unserved id used to
+ *   get a bare `unknown_model` that reads as catalog lag. Comments and prose
+ *   ship as real bytes in an unminified ESM build, which is the same accounting
+ *   the type-tightening bump above did.
+ * - **the rest is the six curated endpoints** landing in the shared fal chunks
+ *   this pack pays for whole — `endpoints.gen.ts`'s id lists and doc URLs,
+ *   `pricing.gen.ts`'s six new rate tables, `shared.gen.ts`'s new $ref
+ *   components. `unmodel/music` reaches none of those endpoints; it pays for
+ *   them because they are in modules its own fal half imports.
+ *
+ * It failed here and nowhere else for the reason the 150 → 160 bump records:
+ * this pack had 5.8% headroom where the other five fal packs had ten or more,
+ * so a shared-chunk increment landed on all of them and only this one noticed.
+ * Restoring the ~10% (401.8 × 1.1 ≈ 442, pinned at 440) is what the convention
+ * asks; the alternative was deleting recorded reasons to buy bytes, which is
+ * the thing this wave exists to stop doing.
  */
-const MUSIC_PACK_BUDGET_KIB = 400;
+const MUSIC_PACK_BUDGET_KIB = 440;
 
 /** The five providers `unmodel/music`'s ready-made pack is allowed to reach. */
 const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "fal", "google", "mureka", "stability"];
@@ -1016,8 +1142,8 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
  * | `music` | 1234.5 | 1360 | three providers; this is close to the floor a pack can have |
  * | `voice-clone` | 1525.7 | 1690 | the shared vocabulary plus per-provider sample constraints |
  * | `voice-design` | 1332.7 | 1470 | likewise |
- * | `lipsync` | 472.7 | 545 | fal's ten wire interfaces + sync.'s two `as const` catalogs |
- * | `avatar` | 466.3 | 545 | its twin, within 2% |
+ * | `lipsync` | 541.8 | 615 | fal's ten wire interfaces + sync.'s two `as const` catalogs |
+ * | `avatar` | 545.1 | 600 | its twin, within 2% |
  * | `upscale` | 508.8 | 560 | fifteen Topaz rows of hand-transcribed per-model settings |
  *
  * `music` at 1234 KiB for three providers is the number to read first: most of
@@ -1057,7 +1183,30 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // adapter leaf, one params leaf and a shared module — and the shared module
   // is what the declaration counts, because its `as const` catalogs (62 error
   // codes, 93 languages) are literal unions rather than `string[]`.
-  avatar: 545,
+  //
+  // **Bumped 545 → 600 by the atlascloud wave, and NOT because this pack grew.**
+  // It measured 545.1 — 0.03% over its pin — and `unmodel/avatar` cannot reach
+  // atlascloud: the new provider serves video only and the composition test
+  // above pins avatar's roster unchanged. This is the same CHUNKING artefact
+  // the lipsync note above describes, and it is now on record twice:
+  // rolldown-plugin-dts co-locates the shared vocabulary into chunks whose
+  // membership shifts when the entry list changes, and this walker counts a
+  // whole chunk when an entry touches any of it. Adding four `providers/
+  // atlascloud/*` entries to tsdown.config.ts moved a boundary by ~79 KiB of
+  // shared declarations into avatar's reach and out of nobody's.
+  //
+  // A budget with 0.03% headroom is a tripwire rather than a budget — the next
+  // entry to touch the shared vocabulary would trip it for a reason that has
+  // nothing to do with avatar — so it goes to ~10%, the convention everywhere
+  // else in this file. The assertion with teeth here remains the SPREAD test
+  // below, which holds lipsync (541.8) and avatar (545.1) to 2% of each other
+  // and is unaffected: they moved together, which is what "the chunk moved"
+  // looks like and what "avatar acquired a module" would not.
+  //
+  // Re-checked on the finished wave, which is when the chunk boundary settles:
+  // **543.0** measured, against lipsync's 539.6 — still within 0.7% of each
+  // other, and 600 is measured x 1.1. The artefact reading holds; the pin stays.
+  avatar: 600,
   // Bumped 450 → 560 by the Topaz wave: 508.8 measured, the largest jump of the
   // three and the one with a real cause rather than a chunking artefact. Topaz
   // brings FIFTEEN rows whose `extras` are hand-transcribed per-model settings
@@ -1836,12 +1985,12 @@ describe("unmodel/image (the second ready-made pack)", () => {
 describe("unmodel/video (the third ready-made pack)", () => {
   /**
    * The composition assertion. This pack is the one where "exactly these
-   * providers" is doing the most work: seven of the ten also serve an image or
-   * speech surface, so an adapter that imported its provider's barrel instead
+   * providers" is doing the most work: seven of the fourteen also serve an image
+   * or speech surface, so an adapter that imported its provider's barrel instead
    * of the video leaf would drag a second category's validators and catalogs in
    * without changing a single import in `src/unified/video.ts`.
    */
-  test("it reaches exactly the ten video providers, through their adapters", () => {
+  test("it reaches exactly the fourteen video providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("video"));
     expect(modules).toContain("src/unified/video.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -1856,11 +2005,19 @@ describe("unmodel/video (the third ready-made pack)", () => {
     expect(providers).toEqual(VIDEO_PACK_PROVIDERS);
 
     // pixverse and lightricks serve video only, so their adapter is the
-    // unsuffixed leaf; the other nine split per category. fal is the sharpest
+    // unsuffixed leaf; the other twelve split per category. fal is the sharpest
     // case for the split in this pack: it serves FIVE categories, so a barrel
     // import here would drag its image, image-edit, lipsync and avatar
     // surfaces — validators, union schemas and generated rows — into a video
     // bundle that can never call them.
+    //
+    // atlascloud serves ONE category and still splits, which is the interesting
+    // row: `unified.ts` there is a one-line barrel over `unified-video.ts`, so
+    // this loop demands the leaf and forbids the barrel at a provider that has
+    // nothing behind the barrel to leak. That is deliberate — the shape is what
+    // lets a second Atlas category (image, tts) join without moving a single
+    // import in `src/unified/video.ts`, and a pack that had come to depend on
+    // the barrel would break on the day it did.
     const SINGLE = new Set(["pixverse", "lightricks"]);
     for (const provider of VIDEO_PACK_PROVIDERS) {
       const leaf = SINGLE.has(provider) ? "unified" : "unified-video";
@@ -1875,9 +2032,45 @@ describe("unmodel/video (the third ready-made pack)", () => {
     }
   });
 
+  /**
+   * The R1 barrel trap, at the one provider added this wave — and stated as a
+   * SOURCE fact rather than a graph one, because a graph assertion could not
+   * say it: `models.ts` is legitimately in this pack's graph (every video
+   * validator names its catalog through `createValidator`'s `catalog:`), so
+   * "the pack does not reach it" would be false everywhere and prove nothing.
+   *
+   * What must hold is narrower and is the thing that actually breaks: the
+   * ADAPTER LEAF must not import the catalog. `unmodel/atlascloud/values`
+   * re-exports `video-params.ts` for client-side pickers, and one `./models`
+   * edge in `unified-video.ts` would put twenty-three catalog rows behind every
+   * dropdown — the same failure `test/values-entries.test.ts` budgets against
+   * from the other side. The import-free halves (`constraints.ts`,
+   * `video-params.ts`) are what it may reach, and the validator is where a
+   * model id is looked up.
+   */
+  test("atlascloud's adapter leaf never imports its catalog (R1)", () => {
+    const leaf = readFileSync(
+      join(ROOT, "src", "providers", "atlascloud", "unified-video.ts"),
+      "utf8",
+    );
+    const specifiers = [...leaf.matchAll(/from "(\.[^"]+)"/g)].map((m) => m[1] as string);
+    expect(specifiers).not.toContain("./models");
+    expect(specifiers).not.toContain("./pricing");
+    // …and the positive half, so the assertion cannot pass by the file having
+    // no imports at all.
+    expect(specifiers).toContain("./video-params");
+    expect(specifiers).toContain("./constraints");
+    expect(specifiers).toContain("./video");
+  });
+
   test("its graph carries exactly two catalogs, and no availability or retarget layer", () => {
     const modules = sourceModulesOf(unifiedEntry("video"));
     expect(modules.filter((m) => m.startsWith("src/catalog/")).sort()).toEqual(VIDEO_PACK_CATALOGS);
+    // Atlas ships no usable price unit, so its validator declares no `estimate`
+    // and `pricing.ts` — the caveat plus the transcription table — is reachable
+    // only from `unmodel/atlascloud` and `unmodel/atlascloud/values`, never
+    // from a pack. A row that acquired a `cost` would land here first.
+    expect(modules).not.toContain("src/providers/atlascloud/pricing.ts");
     expect(modules.filter((m) => m.startsWith("src/catalog/availability/"))).toEqual([]);
     expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
     expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
@@ -2445,20 +2638,59 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
  */
 describe("type-only entries", () => {
   /**
-   * Fattest today: fal at ~557 KiB, then openrouter at ~298 and openai at ~297.
+   * Fattest today: fal at 698.8 KiB, then google at 404.3, openai at 319.3 and
+   * openrouter at 298.9.
    *
-   * **Bumped 460 → 615 by fal's wave 1d and 615 → 730 by wave 3** (663.4
-   * measured), and the number is a fact about what this entry IS rather than a
-   * regression: `unmodel/fal/types` publishes one interface per curated
-   * endpoint across TEN categories — 165 of them — and every one carries that
-   * endpoint's own enums, bounds and doc comment. It is the only provider in
-   * the library whose types entry is a whole aggregator's catalogue rather than
-   * one vendor's API. Zero runtime either way: the emitted JavaScript is an
-   * empty module, which the test above pins.
+   * **Bumped 460 → 615 by fal's wave 1d, 615 → 730 by wave 3, and 730 → 770 by
+   * the adopter-feedback wave** (698.8 measured, up 35.4 from 663.4). The
+   * number is a fact about what this entry IS rather than a regression:
+   * `unmodel/fal/types` publishes one interface per curated endpoint across TEN
+   * categories — 171 of them now — plus, since this wave, the ten
+   * `Fal<Verb>ResultById` maps and the `FalQueueResult` / `FalQueueError` pair
+   * they need. Every one carries that endpoint's own enums, bounds and doc
+   * comment. It is the only provider in the library whose types entry is a
+   * whole aggregator's catalogue rather than one vendor's API.
+   *
+   * The 35.4 splits roughly in three and every part was accounted for before
+   * the pin moved: the six newly curated video/upscale endpoints and their
+   * `$ref` children in `gen/shared.gen.ts`; the carrier re-exports
+   * (`src/core/carriers.ts`, +0.2–0.5 on every provider entry, which is why
+   * google/openai/openrouter moved too); and the result-type surfacing, which
+   * names declarations that were already in the graph rather than adding any.
+   * At the old 730 this entry had 4.5% headroom, below this file's ~10%
+   * convention — a tripwire rather than a budget.
+   *
+   * Zero runtime either way: the emitted JavaScript is an empty module, which
+   * the test above pins.
    */
-  const TYPES_ENTRY_DECLARATION_BUDGET_KIB = 730;
-  /** ~307 KiB today, against 233 KiB for the root entry it extends. */
-  const TYPES_HUB_DECLARATION_BUDGET_KIB = 385;
+  const TYPES_ENTRY_DECLARATION_BUDGET_KIB = 770;
+  /**
+   * **Bumped 385 → 425**: 387.7 KiB measured, up 11.9 from 375.8.
+   *
+   * Two causes, and separating them was the point of measuring rather than
+   * bumping. The smaller half is the hub's own growth: `ChatMediaDetail`
+   * joined the canonical vocabulary and `ChatProviderOptions` grew the
+   * OpenAI-only bucket half. The larger half is one shared chunk —
+   * `src/retarget/dialects.ts` now names OpenAI's endpoint body, so
+   * `providers/openai/wire.d.ts` (~5.7 KiB) rides in a chunk this hub already
+   * reached, and `constraint-types` gained `imageTokensByDetail` (+0.8).
+   *
+   * The version of this change that measured **+43 KiB on fifty-seven types
+   * entries** is worth recording, because the fix is not obvious and the
+   * regression was invisible to `tsc`: the wire leaf originally closed `model`
+   * to `OpenaiChatModelId`, which put `catalog/openai.gen` (80 KiB of literal
+   * ids) into the dialect hub's chunk and therefore into every provider's
+   * declaration graph. Making the body generic in its model id
+   * (`ChatCompletionsBodyOf<M>`, closed to the catalog only in `openai/chat.ts`)
+   * took it back to +6.4 each. A hub module must not name a catalog.
+   *
+   * Re-measured on the finished wave, after atlascloud joined: **389.2 KiB**,
+   * up 1.5 from the 387.7 above. The pin STAYS at 425 — 9.2% headroom, which
+   * is this file's ~10% convention already — because a 0.4% drift is not a
+   * reason to loosen a budget. The 1.5 is atlascloud's four ids reaching the
+   * video vocabulary; the hub gained no module.
+   */
+  const TYPES_HUB_DECLARATION_BUDGET_KIB = 425;
 
   const typesEntry = (provider: string): string =>
     join(DIST, "providers", provider, "types.d.ts");

@@ -21,6 +21,7 @@ const EXPECTED_IDS: readonly string[] = [
   "alibaba.video",
   "anthropic.chat",
   "assemblyai.stt",
+  "atlascloud.video",
   "baseten.chat",
   "black-forest-labs.image",
   "black-forest-labs.imageEdit",
@@ -52,6 +53,8 @@ const EXPECTED_IDS: readonly string[] = [
   "deepgram.tts",
   "deepinfra.chat",
   "deepseek.chat",
+  "elevenlabs.dub",
+  "elevenlabs.dubLanguage",
   "elevenlabs.music",
   "elevenlabs.speechToTextRealtime",
   "elevenlabs.stt",
@@ -331,6 +334,16 @@ test("the image-generation endpoints all use the uniform `image` verb", () => {
  * `luma.videoReframe`'s near-namesake, and not here.
  */
 const VIDEO_IDS: readonly string[] = [
+  // ONE id for 23 curated models and NO qualified sibling, for the opposite of
+  // fal's reason. At fal the endpoint id is the URL path, so there is no second
+  // route to name. At Atlas there is one URL for every video model and `model`
+  // is a real body field that names the ROUTE as well as the model:
+  // `bytedance/seedance-2.5/text-to-video` and `.../image-to-video` are two
+  // model ids with two request schemas, not two endpoints. So an
+  // `atlascloud.videoFromImage` would qualify a *model* choice — which is what
+  // the ref already is — rather than a wire route, and the rule this list
+  // encodes is that a qualified id names a second POST path.
+  "atlascloud.video",
   "bytedance.video",
   // ONE id for 30 endpoints, and the one place in this list where the absence
   // of a `videoFromImage` sibling is a decision rather than a gap. Elsewhere a
@@ -384,7 +397,7 @@ test("the video-category endpoints all use the uniform `video` verb", () => {
   // ref a caller reaches for first is the same word everywhere.
   const providers = [...new Set(VIDEO_IDS.map((id) => id.split(".")[0] as string))].sort();
   for (const provider of providers) expect(VIDEO_IDS).toContain(`${provider}.video`);
-  expect(providers).toHaveLength(11);
+  expect(providers).toHaveLength(12);
 
   const retired = [
     "bytedance.contentGenerationTasks",

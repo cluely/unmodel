@@ -1,5 +1,13 @@
 # unmodel
 
+## 0.4.1
+
+### Patch Changes
+
+- Release automation: the package now publishes from GitHub Actions via npm
+  trusted publishing (OIDC) — a version change in package.json pushed to main
+  releases hands-free, with provenance. No tokens stored anywhere.
+
 ## 0.4.0
 
 ### Minor Changes

@@ -18,7 +18,11 @@ export type {
 
 // Only the synchronous route has a checker — /stream returns a WAV stream.
 export { checkTts } from "./check";
-export type { ResembleSynthesisLike, ResembleAudioTimestamps } from "./check";
+export type {
+  ResembleSynthesisLike,
+  ResembleAudioTimestamps,
+  ResembleSynthesisOutcome,
+} from "./check";
 
 export {
   models,

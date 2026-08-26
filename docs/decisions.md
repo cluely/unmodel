@@ -518,3 +518,66 @@ canonical field and the openai bucket keeps its own spelling anyway. For
 `detail`: a fourth level with two witnesses, or a provider that expresses
 resolution as a number rather than a bucket, which would make the union the
 wrong shape rather than the wrong width.
+
+---
+
+## 9. `ResponseReport` has one outcome field — `finishReason` — and one array, named `warnings`
+
+**Decision.** A response checker reports the outcome on `finishReason`, in the
+provider's own vocabulary. `ResponseReport` gets **no second verdict field**
+(`outcome: "ok" | "failed" | "incomplete"` or any relative), and `warnings`
+holds **no `severity: "error"` issues**. `Reason` is constrained to
+`string | number` rather than `string` so that every provider's vocabulary
+fits, including the numeric ones.
+
+**Why no `outcome` union.** Twelve of the twenty checkers already populate
+`finishReason`, and five of them already use it as exactly the terminal signal
+an `outcome` field would carry: `revai.checkJob` answers `"failed"`,
+`gladia`/`soniox` `"error"`, `speechmatics` `"rejected"`, `assemblyai`
+`"error"`. A second field would restate that for twelve checkers and disagree
+with it for none — which is a synonym, not a capability.
+
+Worse, a tri-state collapses the distinction the caller actually needs.
+MiniMax's eight documented `base_resp.status_code` values split **three** ways,
+not two — terminal: `1004` auth, `2013` invalid params, `1042` invalid-character
+ratio; worth retrying after a backoff: `1001` timeout, `1002` rate limit,
+`1039` TPM rate limit; and `1000` "unknown error", which the docs do not
+classify at all. `outcome: "failed"` tells a caller to give up on `1002`, when
+the right move is to wait and send it again. So the answer is the code itself
+on `finishReason` plus `MINIMAX_BASE_RESP_INFO` (`unmodel/minimax`) mapping each
+code to its documented message and, where the message answers it, `retryable` —
+which is also what lands in the issue's `meta.retryable`.
+
+Note the consequence, because it is the one sharp edge: a numeric vocabulary
+makes success **falsy**. MiniMax's `0` is a clean synthesis, so the branch is
+`finishReason !== 0`, never `if (finishReason)`.
+
+**Why no error-severity issues.** `ResponseReport` has exactly one array and it
+is called `warnings`. An `Issue` with `severity: "error"` inside a field named
+`warnings` is self-contradictory, and it buys nothing:
+`warnings.some(w => w.severity === "error")` is the same shape of inference as
+the `warnings.length > 0` it would replace. The request side can partition
+errors from warnings because `partition()` (`src/core/issue-sink.ts`) runs there
+and `.safe()` returns a discriminated `ok`; the response side has no such
+partition, no `ValidateOptions` (no checker takes one, so `options.severity`
+cannot reach a report), and no reason to grow one — the outcome is a field, and
+the findings are findings.
+
+**Therefore, never:**
+
+- Add a verdict field that a checker with a real `finishReason` would have to
+  compute *from* `finishReason`.
+- Flatten a provider's outcome vocabulary to pass/fail on the way into a
+  report. Terminal and retryable are different answers, and the checker is the
+  last place that still knows which one it has.
+- Emit `severity: "error"` from a `check*` function, or add a second array to
+  `ResponseReport` to hold them.
+- Narrow `Reason` back to `string`. It would silently lock out every provider
+  whose envelope answers in codes.
+
+**What would change this.** A response-side surface that genuinely has two
+partitions — a checker that must both refuse a response and report findings
+about it — which would be a new return shape, not a severity flag on the
+existing one. For `outcome`: a provider whose terminal status is *not*
+expressible in its own vocabulary, so there is nothing for `finishReason` to
+mirror.

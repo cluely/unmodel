@@ -35,6 +35,61 @@ Keeping them separate preserves exact-key and model-specific inference on normal
 
 For standardized calls, `result.warnings` reports validation findings and `result.params.warnings` reports compilation loss. The throwing form exposes the latter as `request.warnings`.
 
+### Branching between two requests
+
+Two routes, one `if` — `refArm` and `t2vArm` below are bodies for two different Seedance routes, and `atlas` / `sora` are unified params for two different providers.
+
+A ternary of two `safe()` calls has two result types, so **type the consumer's parameter concretely**: `ValidateResult<{ request: RequestMeta }>` says exactly what a sender needs and accepts every arm.
+
+```ts
+import { video } from "unmodel/atlascloud";
+import { toRequestInit } from "unmodel";
+import type { Issue, RequestMeta, ValidateResult } from "unmodel/types";
+
+function send(result: ValidateResult<{ request: RequestMeta }>) {
+  if (!result.ok) return result.errors satisfies Issue[];
+  return toRequestInit(result.params); // { url, method, headers, body }
+}
+
+send(withRefs ? video.safe(refArm) : video.safe(t2vArm)); // ✅ the ternary
+send(video.safe(t2vArm));                                 // ✅ and a single arm
+```
+
+`ValidateResult<unknown>` works the same way when the consumer only reads `.ok` and `.errors`. So does no wrapper at all: `if (result.ok)` narrows the raw union fine.
+
+Or **hoist the ternary into the params**, so there is one call and one result type. Exactness is untouched — the arms are still checked one at a time, and the result still narrows on the wire discriminant:
+
+```ts
+const result = video.safe(withRefs ? refArm : t2vArm);
+if (result.ok && result.params.model === "bytedance/seedance-2.5/reference-to-video") {
+  result.params.reference_images; // string[]
+}
+
+video.safe(withRefs ? refArm : { model: "bytedance/seedance-2.5/text-to-video", promt: "p" });
+//                                                                              ~~~~~
+// TypeScript error: Object literal may only specify known properties, but 'promt' does
+// not exist in type 'Seedance25TextToVideoBody & …'. Did you mean to write 'prompt'?
+```
+
+What does **not** work is a generic `consume<T>(r: ValidateResult<T>)` over the two-arm ternary:
+
+```ts
+consume(withRefs ? video.safe(refArm) : video.safe(t2vArm));
+// TypeScript error: Property 'reference_images' is missing in type
+// 'Validated<{ model: "bytedance/seedance-2.5/text-to-video"; … }>' but required in
+// type '{ model: "bytedance/seedance-2.5/reference-to-video"; …; reference_images: string[]; }'
+```
+
+TypeScript never unions multiple covariant inference candidates for a naked type parameter: it looks for one best common supertype, finds none, and fixes `T` to the first arm. That is a compiler inference rule, not a variance defect in this library — `Validated` is covariant, and `ValidateResult<VA>` is assignable to `ValidateResult<VA | VB>`. The same error appears for `type Box<T> = { readonly value: T }`, which has no methods at all.
+
+The unified layer needs the recipe less often. `UnifiedResult` keys off the **provider** segment of the ref, so two arms on the same provider are already one result type and even a naked `<T>` infers:
+
+```ts
+consume(wantsAtlas ? video.safe(atlas) : video.safe(atlasImage)); // ✅ both atlascloud/…
+consume(video.safe(wantsAtlas ? atlas : sora));                   // ✅ cross-provider, hoisted
+consume(wantsAtlas ? video.safe(atlas) : video.safe(sora));       // ❌ two providers, two calls
+```
+
 ### What is checked
 
 - Shape, unknown fields, enums, and mutually exclusive params

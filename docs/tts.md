@@ -142,8 +142,8 @@ worth reporting.
 | --- | --- | --- |
 | `google` | `checkTts` from `unmodel/google` | Gemini serves TTS on the shared `:generateContent` route, so a response can finish `STOP` and cleanly contain *text* tokens instead of audio. That case is reported as `invalid_shape` / `empty_audio`, naming retry as the documented remedy, alongside the usual finish-reason and safety-block warnings. |
 | `murf` | `checkTts` from `unmodel/murf` | `/v1/speech/generate` answers JSON (`audioFile`, `audioLengthInSeconds`, `remainingCharacterCount`, `wordDurations`). `/v1/speech/stream` answers an audio stream and has none. |
-| `resemble` | `checkTts` from `unmodel/resemble` | The synchronous `/synthesize` answers JSON with `success` and `issues` fields to surface. The streaming `/stream` route answers a chunked WAV stream and has none. |
-| `minimax` | `checkTts` from `unmodel/minimax` | `/v1/t2a_v2` declares exactly one HTTP response — `200` — and reports failure IN BAND on `base_resp.status_code` (0 success, 1002 rate limit, 1004 auth failed, 1042 invalid-character ratio, …). A non-zero code is reported as `invalid_shape` with `meta.kind: "provider_error"`, quoting the documented `status_msg`; a missing `data.audio` is `empty_audio`; and `extra_info.usage_characters` — the characters MiniMax itself billed — prices the call against the catalog rate. |
+| `resemble` | `checkTts` from `unmodel/resemble` | The synchronous `/synthesize` answers JSON with `success` and `issues` fields to surface. `success` is the outcome, so it rides on `finishReason` (`"success"` / `"failure"`) rather than being inferred from the warning count; the `issues` entries are the findings. The streaming `/stream` route answers a chunked WAV stream and has none. |
+| `minimax` | `checkTts` from `unmodel/minimax` | `/v1/t2a_v2` declares exactly one HTTP response — `200` — and reports failure IN BAND on `base_resp.status_code` (0 success, 1002 rate limit, 1004 auth failed, 1042 invalid-character ratio, …). That code IS `report.finishReason` — MiniMax's vocabulary is numeric, so branch on `!== 0`, never on truthiness. A non-zero code is also reported as `invalid_shape` with `meta.kind: "provider_error"`, quoting the documented `status_msg` and carrying `meta.retryable` where MiniMax's own message answers it (`1002` yes, `1004` no); a missing `data.audio` is `empty_audio`; and `extra_info.usage_characters` — the characters MiniMax itself billed — prices the call against the catalog rate. `MINIMAX_BASE_RESP_INFO` exports the whole code table. |
 
 The other fifteen have none, and the reason is per provider rather than a blanket policy:
 
@@ -179,9 +179,10 @@ costs most is `enable_logging: false`, which is how zero-retention mode is reque
 **MiniMax — 200 for every outcome.** `POST /v1/t2a_v2` documents exactly one HTTP
 response and puts the result on `base_resp.status_code` (`0` is the only success). A
 caller who branches on `res.ok` reads `data.audio` — the empty string — off a request
-that failed authentication or hit a TPM limit. `minimax.checkTts` is the read-back; the
-same envelope rides on MiniMax's music and video routes, which is why it is a checker
-rather than a field on `MINIMAX_TTS_DELIVERY`.
+that failed authentication or hit a TPM limit. `minimax.checkTts` is the read-back, and
+it answers on `report.finishReason` — `0` is the only success, and `0` is falsy, so the
+branch is `!== 0`. The same envelope rides on MiniMax's music and video routes, which is
+why it is a checker rather than a field on `MINIMAX_TTS_DELIVERY`.
 
 **Deepgram — everything rides in the query string.** The JSON body is exactly `{text}`;
 every other option is URL-encoded onto `.request.url`. Putting `model` in the body is a

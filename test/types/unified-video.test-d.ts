@@ -30,13 +30,20 @@ import { video as klingVideo } from "../../src/providers/kling/unified-video";
 import { video as lumaVideo } from "../../src/providers/luma/unified-video";
 import { video as openaiVideo } from "../../src/providers/openai/unified-video";
 import type { UnifiedRef } from "../../src/core/unified/types";
+import type { ValidateResult } from "../../src/core/result";
 import type {
   VideoImageInput,
   VideoImageRole,
   VideoInput,
   VideoParams,
 } from "../../src/core/unified/vocabulary/video";
-import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
+import {
+  expectAssignable,
+  expectNotNever,
+  expectTrue,
+  type IsNever,
+  type KeyIn,
+} from "./helpers";
 
 // ---------------------------------------------------------------------------
 // 1 · The ref union
@@ -335,7 +342,56 @@ expectAssignable<readonly string[]>(openaiVideo.models);
 expectAssignable<"video">(klingVideo.category);
 expectAssignable<readonly string[]>(googleVideo.models);
 
+/**
+ * Branching between two requests at the unified layer — the second half of the
+ * recipe in `docs/validation.md`.
+ *
+ * `UnifiedResult` keys off the PROVIDER segment of the ref, so two arms on the
+ * same provider already produce one result type and a ternary of two `safe()`
+ * calls needs nothing. It is the CROSS-provider ternary that has two result
+ * types, and there the hoist is the answer — the same one the substrate uses,
+ * for the same reason: one call, one inference candidate.
+ */
+declare const wantsAtlas: boolean;
+
+function crossProviderBranchTypeTests(): void {
+  const atlas = {
+    model: "atlascloud/bytedance/seedance-2.5/text-to-video",
+    prompt: "a fox in the snow",
+  } as const;
+  const sora = { model: "openai/sora-2", prompt: "a fox in the snow" } as const;
+
+  // Same provider, two arms: one result type already, so even a naked `<T>`
+  // consumer infers. No hoist needed.
+  const sameProvider = unwrap(
+    wantsAtlas
+      ? video.safe(atlas)
+      : video.safe({
+          model: "atlascloud/bytedance/seedance-2.5/image-to-video",
+          prompt: "a fox in the snow",
+          image: { url: "https://example.com/fox.png" },
+        }),
+  );
+  expectNotNever<typeof sameProvider>();
+
+  // Cross-provider, HOISTED: one call, and the generic consumer infers.
+  const hoisted = unwrap(video.safe(wantsAtlas ? atlas : sora));
+  expectNotNever<typeof hoisted>();
+
+  // @ts-expect-error — cross-provider ternary of two CALLS: two result types,
+  // and TypeScript never unions two covariant candidates for a naked `<T>`.
+  // Not a variance defect — `Validated` is covariant; type the consumer
+  // parameter concretely (`ValidateResult<{ request: RequestMeta }>`) or hoist.
+  unwrap(wantsAtlas ? video.safe(atlas) : video.safe(sora));
+}
+
+/** The generic consumer shape from the adopter report, verbatim. */
+function unwrap<T>(result: ValidateResult<T>): T | undefined {
+  return result.ok ? result.params : undefined;
+}
+
 export {
+  crossProviderBranchTypeTests,
   refUnionTests,
   routeInputTests,
   resultTypeTests,

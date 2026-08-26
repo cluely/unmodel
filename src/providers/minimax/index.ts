@@ -183,8 +183,12 @@ export type {
 // `checkTts` is that read-back — sanity, plus the billed character count
 // priced against the catalog. The video routes answer an async task handle
 // carrying the same envelope; polling is transport and stays out of scope.
-export { checkTts } from "./tts-check";
-export type { MinimaxT2aResponseLike, MinimaxBaseRespStatus } from "./tts-check";
+export { checkTts, MINIMAX_BASE_RESP_INFO } from "./tts-check";
+export type {
+  MinimaxT2aResponseLike,
+  MinimaxBaseRespStatus,
+  MinimaxBaseRespInfo,
+} from "./tts-check";
 
 // Declaration-portability carriers. One type-only line; see
 // src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot

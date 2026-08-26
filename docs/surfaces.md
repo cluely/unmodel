@@ -638,6 +638,59 @@ const socket = new WebSocket(session.request.url, [
 
 OpenAI, Cartesia, Deepgram, ElevenLabs, Inworld, and Soniox expose realtime config validators. See the [provider roster](providers.md) for each surface.
 
+## Response checks
+
+The one surface that runs *after* the call. A `check*` helper takes a decoded response and returns a `ResponseReport` — never throws, never fetches. Import it from the provider that answered:
+
+- **Chat** — `checkChat` at every chat provider (`unmodel/openai`, `unmodel/anthropic`, `unmodel/google`, `unmodel/cohere`, `unmodel/amazon-bedrock`, …).
+- **Async jobs** — `checkJob` (`unmodel/revai`, `unmodel/speechmatics`), `checkPreRecorded` (`unmodel/gladia`), `checkTranscript` (`unmodel/assemblyai`), `checkTranscription` (`unmodel/soniox`), and `checkDubbingProject` / `checkDubbingLanguage` (`unmodel/elevenlabs`).
+- **Media** — `checkImages` (`unmodel/openai`), `checkListen` (`unmodel/deepgram`), `checkStt` (`unmodel/cartesia`), `checkTranscription` (`unmodel/mistral`, `unmodel/elevenlabs`), `checkTts` (`unmodel/google`, `unmodel/murf`, `unmodel/resemble`, `unmodel/minimax`).
+
+Handle HTTP and API error payloads yourself before calling one. What a checker is for is the failure a 200 does not tell you about.
+
+### Three fields, three questions
+
+```ts
+report.finishReason; // WHAT HAPPENED — the provider's own vocabulary
+report.warnings;     // WHAT IS WRONG WITH IT — findings, each with meta.kind
+report.usage;        // WHAT IT COST — tokens, plus costUSD from catalog rates
+```
+
+**`finishReason` is the outcome**, not a warning count. It carries the provider's own words — `"failed"` from Rev AI, `"rejected"` from Speechmatics, `"length"` from a truncated chat — or its own numbers, where that is what the provider publishes. MiniMax's T2A route answers `200` for every outcome and puts the result on `base_resp.status_code`, so that is the vocabulary:
+
+```ts
+import { checkTts } from "unmodel/minimax";
+
+const report = checkTts(await response.json(), { model: "speech-2.8-hd" });
+
+report.finishReason;               // 0     ← the ONLY success, and it is falsy
+report.warnings.length;            // 0
+report.costUSD;                    // 0.0163
+```
+
+Branch on `!== 0`, never on truthiness. **`meta.kind` says which finding** you are looking at, and **`meta.retryable` says whether sending the same request again can work** — the answer a pass/fail verdict cannot give, because a rate limit clears and a bad key does not:
+
+```ts
+report.finishReason;               // 1002
+report.warnings.map((w) => w.meta?.kind);
+// → ["provider_error", "empty_audio"]
+report.warnings[0].meta;
+// → { kind: "provider_error", statusCode: 1002, statusMsg: "rate limit exceeded",
+//     retryable: true, traceId: "01b8bf9bb7433cc7",
+//     source: "https://platform.minimax.io/docs/api-reference/speech-t2a-http" }
+```
+
+The full code table is a value, not a comment — `MINIMAX_BASE_RESP_INFO` from `unmodel/minimax` maps each documented code to its message and, where MiniMax's own message answers it, `retryable`:
+
+```ts
+import { MINIMAX_BASE_RESP_INFO } from "unmodel/minimax";
+
+MINIMAX_BASE_RESP_INFO[1004]; // { statusMsg: "authentication failed", retryable: false }
+MINIMAX_BASE_RESP_INFO[1000]; // { statusMsg: "unknown error" }  ← no retryable: the docs do not say
+```
+
+Why there is no `outcome: "ok" | "failed"` field, and why `warnings` never holds error-severity issues: [decisions.md §9](decisions.md).
+
 ## Bundles and custom packs
 
 The package is marked `sideEffects: false`.

@@ -218,6 +218,7 @@ describe("resemble.checkTts", () => {
     });
     expect(report.warnings).toEqual([]);
     expect(report.costUSD).toBeUndefined();
+    expect(report.finishReason).toBe("success");
   });
 
   test("success: false and empty audio both warn", () => {
@@ -227,6 +228,26 @@ describe("resemble.checkTts", () => {
       "empty_audio",
       "zero_length_audio",
     ]);
+  });
+
+  test("success: false is a terminal finishReason, not a warning to count", () => {
+    expect(checkTts({ success: false, audio_content: "", duration: 0 }).finishReason).toBe(
+      "failure",
+    );
+    // A clip that synthesized but drew a provider issue is NOT terminal: the
+    // outcome and the quality findings are different questions.
+    const withIssues = checkTts({
+      success: true,
+      audio_content: "UklGRg==",
+      duration: 1,
+      issues: ["ssml tag ignored"],
+    });
+    expect(withIssues.finishReason).toBe("success");
+    expect(withIssues.warnings).toHaveLength(1);
+  });
+
+  test("a response that omits `success` reports no outcome rather than assuming one", () => {
+    expect(checkTts({ audio_content: "UklGRg==", duration: 1 }).finishReason).toBeUndefined();
   });
 
   test("provider issues are surfaced one per entry", () => {

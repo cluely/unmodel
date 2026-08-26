@@ -151,10 +151,70 @@ function videoBodyAliasTypeTests(): void {
   video(future);
 }
 
+/**
+ * Branching between two requests, the way `docs/validation.md` documents it.
+ *
+ * A ternary of two `video.safe(...)` CALLS produces a union of two result
+ * types, and TypeScript will not infer a naked `<T>` across it — a stock
+ * inference rule, not a variance defect. The recipe is to hoist the ternary
+ * into the params so there is one call; these assertions exist because that
+ * recipe would be worthless if the hoist cost exactness, and the whole point
+ * of this provider is that `model` names the route.
+ *
+ * So: the SAME two mistakes the direct calls above reject at `:46-53` must
+ * still be rejected when the arm is one side of a hoisted ternary.
+ */
+declare const withRefs: boolean;
+
+function hoistedBranchTypeTests(): void {
+  const refArm = {
+    model: "bytedance/seedance-2.5/reference-to-video",
+    prompt: "@Image1 walks into the snowfield",
+    reference_images: ["https://example.com/fox.png"],
+  } satisfies {
+    model: "bytedance/seedance-2.5/reference-to-video";
+    prompt: string;
+    reference_images: string[];
+  };
+  const t2vArm = {
+    model: "bytedance/seedance-2.5/text-to-video",
+    prompt: "a fox in the snow",
+  } satisfies { model: "bytedance/seedance-2.5/text-to-video"; prompt: string };
+
+  // The clean hoist: one call, one result type, both routes reachable.
+  const result = video.safe(withRefs ? refArm : t2vArm);
+  if (result.ok) {
+    expectAssignable<string>(result.params.request.url);
+    expectAssignable<object>(result.params.toSdk("atlascloud"));
+    // …and the wire body still narrows on its own discriminant.
+    if (result.params.model === "bytedance/seedance-2.5/reference-to-video") {
+      expectAssignable<readonly string[]>(result.params.reference_images);
+    }
+  }
+
+  const typoArm = { model: "bytedance/seedance-2.5/text-to-video", promt: "p" } as const;
+  // @ts-expect-error — ExactKeys survives the hoist: `promt` in ONE arm still fails
+  video.safe(withRefs ? refArm : typoArm);
+
+  const wrongRouteArm = {
+    model: "bytedance/seedance-2.5/text-to-video",
+    prompt: "p",
+    reference_images: ["https://example.com/fox.png"],
+  } satisfies {
+    model: "bytedance/seedance-2.5/text-to-video";
+    prompt: string;
+    reference_images: string[];
+  };
+  // @ts-expect-error — and so does the route check: the reference arrays are
+  // /reference-to-video's, in an arm as much as in a direct call
+  video.safe(withRefs ? refArm : wrongRouteArm);
+}
+
 export {
   routeIsTheModelTypeTests,
   crossFamilyFieldTypeTests,
   resolutionEnumTypeTests,
   mediaRefTypeTests,
   videoBodyAliasTypeTests,
+  hoistedBranchTypeTests,
 };

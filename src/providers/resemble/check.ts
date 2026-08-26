@@ -6,6 +6,11 @@
  * array. The streaming route answers with a chunked WAV stream (no JSON
  * envelope), so it has no checker.
  *
+ * `success` is an in-band outcome on a 200, the same class MiniMax reports on
+ * `base_resp.status_code`, so it is reported on `finishReason` — the field the
+ * job checkers use for a terminal status — and not left to be inferred from
+ * the length of `warnings`.
+ *
  * Response reference:
  * https://docs.resemble.ai/voice-generation/text-to-speech/synchronous
  * (verified 2026-08-13).
@@ -52,11 +57,28 @@ export interface ResembleSynthesisLike {
 }
 
 /**
+ * The synthesis outcome, as `checkTts` reports it on `finishReason`.
+ *
+ * Resemble publishes the outcome as a BOOLEAN (`success`) rather than a status
+ * word, so unlike `RevaiJobStatus` or `SonioxTranscriptionStatus` these two
+ * spellings are the field rendered, not a vocabulary quoted — `finishReason`
+ * carries `string | number`, and the two legal readings of one boolean are
+ * these. Closed rather than tail-open for the same reason: a boolean has
+ * exactly two values, so there is no unrecognized third to tolerate.
+ */
+export type ResembleSynthesisOutcome = "success" | "failure";
+
+/**
  * Inspects a synchronous `/synthesize` JSON response: warns when the request
  * did not succeed, when no audio came back, when the clip is zero-length,
  * and once per entry in the API's own `issues` array. Never throws.
+ *
+ * `finishReason` mirrors `success`, so a terminal failure is one field rather
+ * than a warning count — `success: false` is not a quality finding, it is the
+ * clip not existing. It is absent when the response omits `success` entirely,
+ * which is the one case where the outcome is genuinely unknown.
  */
-export function checkTts(res: ResembleSynthesisLike): ResponseReport {
+export function checkTts(res: ResembleSynthesisLike): ResponseReport<ResembleSynthesisOutcome> {
   const warnings: Issue[] = [];
 
   if (res.success === false) {
@@ -103,5 +125,11 @@ export function checkTts(res: ResembleSynthesisLike): ResponseReport {
   }
 
   // `costUSD` is deliberately omitted — see the module JSDoc.
-  return { warnings, usage: {} };
+  return {
+    warnings,
+    ...(res.success !== undefined && {
+      finishReason: res.success ? ("success" as const) : ("failure" as const),
+    }),
+    usage: {},
+  };
 }

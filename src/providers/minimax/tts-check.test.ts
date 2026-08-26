@@ -11,7 +11,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { checkTts, type MinimaxT2aResponseLike } from "./tts-check";
+import { checkTts, MINIMAX_BASE_RESP_INFO, type MinimaxT2aResponseLike } from "./tts-check";
 import { T2A_HD_PER_MILLION_CHARACTERS } from "./models";
 
 const SUCCESS: MinimaxT2aResponseLike = {
@@ -62,6 +62,64 @@ describe("the in-band failure envelope", () => {
   test("a response with no base_resp at all is not a failure", () => {
     const report = checkTts({ data: { audio: "fffb90c400" } });
     expect(report.warnings).toEqual([]);
+  });
+});
+
+describe("the outcome rides on finishReason, not on a warning count", () => {
+  test("a success reports finishReason 0 — falsy, which is why the branch is `!== 0`", () => {
+    const report = checkTts(SUCCESS);
+    expect(report.finishReason).toBe(0);
+    expect(report.warnings).toEqual([]);
+    // The trap this pins: truthiness reads a clean synthesis as a failure.
+    expect(Boolean(report.finishReason)).toBe(false);
+  });
+
+  test("a retryable failure carries the code and `meta.retryable: true`", () => {
+    const report = checkTts({
+      data: { audio: "" },
+      base_resp: { status_code: 1002, status_msg: "rate limit exceeded" },
+    });
+    expect(report.finishReason).toBe(1002);
+    const failure = report.warnings.find((w) => w.meta?.kind === "provider_error");
+    expect(failure?.meta?.retryable).toBe(true);
+  });
+
+  test("a terminal failure carries the code and `meta.retryable: false`", () => {
+    const report = checkTts({
+      data: { audio: "" },
+      base_resp: { status_code: 1004, status_msg: "authentication failed" },
+    });
+    expect(report.finishReason).toBe(1004);
+    const failure = report.warnings.find((w) => w.meta?.kind === "provider_error");
+    expect(failure?.meta?.retryable).toBe(false);
+    // 1002 and 1004 are both failures; only one is worth sending again. That
+    // distinction is the reason there is no pass/fail verdict field.
+    expect(failure?.meta?.statusCode).toBe(1004);
+  });
+
+  test("an unclassifiable code omits `retryable` rather than guessing", () => {
+    for (const code of [1000, 9999] as const) {
+      const report = checkTts({ ...SUCCESS, base_resp: { status_code: code } });
+      const failure = report.warnings.find((w) => w.meta?.kind === "provider_error");
+      expect(failure?.meta && Object.hasOwn(failure.meta, "retryable")).toBe(false);
+    }
+  });
+
+  test("no base_resp means no outcome to report — the field stays absent", () => {
+    expect(checkTts({ data: { audio: "fffb90c400" } }).finishReason).toBeUndefined();
+  });
+
+  test("MINIMAX_BASE_RESP_INFO covers every documented code with MiniMax's own message", () => {
+    expect(Object.keys(MINIMAX_BASE_RESP_INFO).map(Number)).toEqual([
+      0, 1000, 1001, 1002, 1004, 1039, 1042, 2013,
+    ]);
+    expect(MINIMAX_BASE_RESP_INFO[1039].statusMsg).toBe("TPM rate limit exceeded");
+    expect(MINIMAX_BASE_RESP_INFO[1001].retryable).toBe(true);
+    expect(MINIMAX_BASE_RESP_INFO[2013].retryable).toBe(false);
+    expect(MINIMAX_BASE_RESP_INFO[1042].retryable).toBe(false);
+    // Success and "unknown error" are the two the docs do not classify.
+    expect(Object.hasOwn(MINIMAX_BASE_RESP_INFO[0], "retryable")).toBe(false);
+    expect(Object.hasOwn(MINIMAX_BASE_RESP_INFO[1000], "retryable")).toBe(false);
   });
 });
 

@@ -961,22 +961,22 @@ const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
  * `gen/pricing.gen.ts`.
  *
  * `gen/pricing.gen.ts` is the one line item worth naming, because it is
- * shared across all NINE fal verbs rather than scoped to this one: every
+ * shared across all TEN fal verbs rather than scoped to this one: every
  * curated endpoint's rate lives in a single generated table, so this pack
  * carries the whole roster's rows to use 8. Splitting it per verb was
  * considered and refused for the reason its own header gives — a price is a
- * fact about an ENDPOINT, and nine copies of the same lookup is a worse trade
+ * fact about an ENDPOINT, and ten copies of the same lookup is a worse trade
  * than a few kilobytes. Revisit if the roster passes ~200 endpoints.
  *
  * **Bumped 245 → 275 by wave 1d**, and the investigation this file's header
  * demands was run rather than skipped: measured 246.3 KiB, +23.4 on the wave,
  * and this pack gained NOT ONE module of its own. Every byte is the two tables
- * fal shares across its nine verbs growing with the roster —
+ * fal shares across its ten verbs growing with the roster —
  * `gen/pricing.gen.ts` from 95 rates to 140, and `gen/endpoints.gen.ts`, whose
  * `FAL_DOC_URLS` every adapter reads to cite a source in its refusals, from 95
  * ids to 140. That is the cost of the shared-table trade stated as a number
  * rather than a hope, and it is the figure to weigh when the roster next grows:
- * ~0.5 KiB per curated endpoint, paid by all nine packs.
+ * ~0.5 KiB per curated endpoint, paid by all ten packs.
  *
  * **Bumped 275 → 350 by the sync. wave**, measured 318.0 KiB, +71.7 — and this
  * time the pack DID gain modules of its own, which is what a second provider
@@ -2363,8 +2363,8 @@ describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the packs with na
     expect(modules).not.toContain(`src/providers/fal/gen/${kase.other}-schema.gen.ts`);
     expect(modules).not.toContain(`src/providers/fal/gen/${kase.other}-params.gen.ts`);
 
-    // Nor of fal's other six categories. This is the loop that carries the
-    // weight now that fal serves nine: `unified.ts` re-exports all nine
+    // Nor of fal's other categories. This is the loop that carries the weight
+    // now that fal serves ten: `unified.ts` re-exports all ten
     // adapters, and either pack importing that barrel instead of its own leaf
     // would pull ~30 video wire types, 45 image endpoints and 23 speech
     // rosters into a ten-endpoint bundle without changing a line in
@@ -2650,7 +2650,7 @@ describe("type-only entries", () => {
    * the adopter-feedback wave** (698.8 measured, up 35.4 from 663.4). The
    * number is a fact about what this entry IS rather than a regression:
    * `unmodel/fal/types` publishes one interface per curated endpoint across TEN
-   * categories — 171 of them now — plus, since this wave, the ten
+   * categories — 172 of them now — plus, since this wave, the ten
    * `Fal<Verb>ResultById` maps and the `FalQueueResult` / `FalQueueError` pair
    * they need. Every one carries that endpoint's own enums, bounds and doc
    * comment. It is the only provider in the library whose types entry is a

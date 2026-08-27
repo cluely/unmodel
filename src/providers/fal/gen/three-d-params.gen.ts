@@ -23,8 +23,8 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.threeD` endpoint lets a caller state geometry, and which wire keys it
- * takes.
+ * How each unified-eligible `fal.threeD` endpoint lets a caller state geometry, and which
+ * wire keys it takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
@@ -547,12 +547,12 @@ export const FAL_THREE_D_PARAM_SHAPES = {
 } as const satisfies Record<string, FalParamShape>;
 
 /**
- * Every `fal.threeD` endpoint id, in the order the table above keys them.
+ * Every unified-eligible `fal.threeD` endpoint id, in the order the table above keys them.
  *
- * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
- * model list without reaching for a second generated module — the leaf rule (A10b in
- * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
- * one generator.
+ * Here separately from `endpoints.gen.ts` so the import-free `*-params` leaf can publish
+ * its adapter model list without reaching for a second generated module — the leaf rule
+ * (A10b in test/import-graph.test.ts) allows it exactly one, and this is it. Direct-only
+ * ids remain in the provider-native artifacts.
  */
 
 export const FAL_THREE_D_MODELS = ["fal-ai/hunyuan-3d/v3.1/pro/image-to-3d", "fal-ai/hunyuan-3d/v3.1/pro/text-to-3d", "fal-ai/hunyuan-3d/v3.1/rapid/image-to-3d", "fal-ai/hunyuan3d/v2", "fal-ai/hunyuan3d/v2/turbo", "fal-ai/hyper3d/rodin/v2.5", "fal-ai/hyper3d/rodin/v2.5/text-to-3d", "fal-ai/trellis", "fal-ai/trellis-2", "fal-ai/triposr", "hitem3d/hi3d/v3.0/image-to-3d", "meshy/v7/image-to-3d", "meshy/v7/text-to-3d", "tripo3d/h3.1/image-to-3d", "tripo3d/h3.1/text-to-3d", "tripo3d/p1/image-to-3d", "tripo3d/p1/text-to-3d", "tripo3d/tripo/v2.5/image-to-3d", "tripo3d/tripo/v2.5/multiview-to-3d"] as const;

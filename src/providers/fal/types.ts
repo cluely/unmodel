@@ -19,7 +19,7 @@
  * documents into `./gen/<category>-wire.gen.ts`, and each category's validator
  * brings a uniform `<Verb>Body` alias with it — one per endpoint address
  * `unmodel/fal` serves, named after the word you already type on the CLI. All
- * nine are here now: `ImageBody`, `ImageEditBody`, `VideoBody`, `LipsyncBody`,
+ * ten are here now: `ImageBody`, `ImageEditBody`, `VideoBody`, `LipsyncBody`,
  * `AvatarBody`, `UpscaleBody`, `ThreeDBody`, `TtsBody`, `SttBody` and
  * `MusicBody` — `ThreeDBody` rather than `3dBody` because the alias is named
  * after the CLI verb, and `unmodel validate fal.threeD` is what you type. A
@@ -81,8 +81,8 @@
  * request and never sees the response, so these are compile-time shapes for a
  * document you fetched yourself. It is not a `checkX` helper: fal's result
  * documents are one per endpoint across ten verbs rather than one per provider,
- * so there is no single response contract to normalise (a zod mirror of all 171
- * was asked for and declined for the same reason — 171 schemas restating the
+ * so there is no single response contract to normalise (a zod mirror of all 172
+ * was asked for and declined for the same reason — 172 schemas restating the
  * generated types, refreshed on fal's clock, to validate a document unmodel
  * does not fetch). And it is not a failure discriminator: fal's queue declares
  * no `FAILED` status, which is what {@link FalQueueResult} and

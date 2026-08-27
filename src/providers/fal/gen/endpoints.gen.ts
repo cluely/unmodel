@@ -4,6 +4,7 @@
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
 //   data/fal/openapi/argil__avatars__audio-to-video.json
 //   data/fal/openapi/blackforestlabs__flux-video-upscale.json
+//   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
@@ -236,9 +237,10 @@ export const FAL_IMAGE_ENDPOINTS = [
 
 export type FalImageEndpointId = (typeof FAL_IMAGE_ENDPOINTS)[number];
 
-/** Every fal endpoint unmodel serves as `fal.imageEdit` — 17 of them. */
+/** Every fal endpoint unmodel serves as `fal.imageEdit` — 18 of them. */
 export const FAL_IMAGE_EDIT_ENDPOINTS = [
   "alibaba/qwen-image-3/edit",
+  "bria/fibo-edit/relight",
   "bytedance/seedream/v5/pro/edit",
   "fal-ai/bytedance/seedream/v4.5/edit",
   "fal-ai/flux-2-pro/edit",
@@ -420,6 +422,7 @@ export const FAL_ENDPOINTS = [
   "alibaba/qwen-image-3/edit",
   "argil/avatars/audio-to-video",
   "blackforestlabs/flux-video-upscale",
+  "bria/fibo-edit/relight",
   "bytedance/seedance-2.0/image-to-video",
   "bytedance/seedance-2.0/text-to-video",
   "bytedance/seedance-2.5/image-to-video",
@@ -597,6 +600,7 @@ export const FAL_ENDPOINT_VERBS = {
   "alibaba/qwen-image-3/edit": "imageEdit",
   "argil/avatars/audio-to-video": "avatar",
   "blackforestlabs/flux-video-upscale": "upscale",
+  "bria/fibo-edit/relight": "imageEdit",
   "bytedance/seedance-2.0/image-to-video": "video",
   "bytedance/seedance-2.0/text-to-video": "video",
   "bytedance/seedance-2.5/image-to-video": "video",
@@ -779,6 +783,7 @@ export const FAL_DOC_URLS = {
   "alibaba/qwen-image-3/edit": "https://fal.ai/models/fal-ai/qwen-image-3/edit/api",
   "argil/avatars/audio-to-video": "https://fal.ai/models/Argil/avatars/audio-to-video/api",
   "blackforestlabs/flux-video-upscale": "https://fal.ai/models/fal-ai/flux-video-upscale/api",
+  "bria/fibo-edit/relight": "https://fal.ai/models/bria/fibo-edit/relight/api",
   "bytedance/seedance-2.0/image-to-video": "https://fal.ai/models/fal-ai/seedance-2/image-to-video/api",
   "bytedance/seedance-2.0/text-to-video": "https://fal.ai/models/fal-ai/seedance-2/text-to-video/api",
   "bytedance/seedance-2.5/image-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/image-to-video/api",
@@ -961,6 +966,7 @@ export const FAL_REQUIRED_PROBES = {
   "alibaba/qwen-image-3/edit": ["prompt", "image_urls"],
   "argil/avatars/audio-to-video": ["avatar", "audio_url"],
   "blackforestlabs/flux-video-upscale": ["video_url"],
+  "bria/fibo-edit/relight": ["image_url", "light_direction", "light_type"],
   "bytedance/seedance-2.0/image-to-video": ["prompt", "image_url"],
   "bytedance/seedance-2.0/text-to-video": ["prompt"],
   "bytedance/seedance-2.5/image-to-video": ["prompt", "image_url"],
@@ -1147,7 +1153,6 @@ export const FAL_REQUIRED_PROBES = {
  * either way — `fal.<verb>({ endpoint })` routes any id fal serves.
  */
 export const FAL_EXCLUDED: Readonly<Record<string, string>> = {
-  "bria/fibo-edit/relight": "Fibo Edit [Relight] — prompt-less by construction: its `required` list is [image_url, light_direction, light_type] and the schema declares no prompt at all. `unmodel/image-edit`'s `prompt` is REQUIRED (src/core/unified/vocabulary/image-edit.ts:126) and the fal adapter writes it unconditionally (src/providers/fal/unified-image-edit.ts:445), and an undeclared key is passed through with a warning rather than stripped — so curating it under imageEdit would put a field this endpoint does not declare on the wire on EVERY call, by construction. There is no `relight` verb either, and the witness rule is why: bria's `light_direction` (front|side|bottom|top-down), fal-ai/lightx/relight's `bg_source` (Left|Right|Top|Bottom), image-apps-v2's `lighting_style` and iclight-v2's REQUIRED free-text prompt are four vocabularies for one idea and no two agree. The imageEdit `operation: \"relight\"` arm that could carve out a prompt-less shape has been offered and declined twice (the arms alternative in the plan; vocabulary/upscale.ts:10-29 argues the same case for upscale). The wire-only path already works and is the answer today: `fal.imageEdit({ endpoint: \"bria/fibo-edit/relight\", image_url, light_direction, light_type })` routes and sends the body byte-exact, with one `unknown_model` warning. Verified live 2026-08-26.",
   "bria/video/background-removal": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
   "bria/video/background-removal/realtime": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
   "bria/video/background-removal/v3": "Background removal — same family and same reason as `fal-ai/imageutils/rembg`.",
@@ -1189,7 +1194,7 @@ export const FAL_EXCLUDED: Readonly<Record<string, string>> = {
   "fal-ai/image-editing/weather-effect": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
   "fal-ai/image-editing/wojak-style": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
   "fal-ai/image-editing/youtube-thumbnails": "A structured task route — same family and same reason as `fal-ai/image-editing/background-change`.",
-  "fal-ai/imageutils/rembg": "Background removal — the family wave 1 excluded without recording why, which is exactly the state that produces \"why isn't X curated?\". Every one of these routes is PROMPT-LESS (probed live 2026-08-26: fal-ai/imageutils/rembg, fal-ai/birefnet/v2, fal-ai/ben/v2/image, fal-ai/bria/background/remove, fal-ai/ideogram/remove-background, pixelcut/background-removal and veed/video-background-removal each declare `image_url` or `video_url` and no prompt), and `unmodel/image-edit` requires a prompt (vocabulary/image-edit.ts:126) which the fal adapter writes unconditionally (unified-image-edit.ts:445) — so serving one here would send a field the endpoint does not declare on every call, the same construction that excludes bria/fibo-edit/relight. The imageEdit `operation` arm that would carve out a prompt-less shape was offered and declined twice. A cut-out is also not what an EDIT means in this vocabulary: the output is the same picture with the subject isolated, which is a different artifact rather than a differently-instructed one. Wire-only today: `fal.imageEdit({ endpoint, image_url })`.",
+  "fal-ai/imageutils/rembg": "Background removal — the family wave 1 excluded without recording why, which is exactly the state that produces \"why isn't X curated?\". Every one of these routes is PROMPT-LESS (probed live 2026-08-26: fal-ai/imageutils/rembg, fal-ai/birefnet/v2, fal-ai/ben/v2/image, fal-ai/bria/background/remove, fal-ai/ideogram/remove-background, pixelcut/background-removal and veed/video-background-removal each declare `image_url` or `video_url` and no prompt), and `unmodel/image-edit` requires a prompt (vocabulary/image-edit.ts:126) which the fal adapter writes unconditionally (unified-image-edit.ts:445) — so promoting one into that adapter would send a field the endpoint does not declare on every call. `bria/fibo-edit/relight` is the substrate-only precedent: curated for exact direct requests with `unified: false`, and deliberately absent from the prompt-required adapter. The imageEdit `operation` arm that would carve out a prompt-less shape was offered and declined twice. A cut-out is also not what an EDIT means in this vocabulary: the output is the same picture with the subject isolated, which is a different artifact rather than a differently-instructed one. Wire-only today: `fal.imageEdit({ endpoint, image_url })`.",
   "fal-ai/kling-video/lipsync/text-to-video": "Text + voice arm — that is TTS composed with lipsync, and composing it here would hide which half failed.",
   "fal-ai/lightx/recamera": "Light-X's camera sibling of the curated `fal-ai/lightx/relight`, decided in the same wave rather than left unrecorded. It takes `video_url` plus `camera`, `mode`, `trajectory` and `target_pose` (probed live 2026-08-26) and re-shoots a clip along a virtual camera path. `unmodel/video` has no vocabulary for camera motion — no canonical word describes a trajectory, and the nested objects that carry one would be checked only for being records — so the row would be a name with per-model extras and nothing canonical to narrow, which is a catalog entry pretending to be a validator. It is also the clearest evidence that \"relight\" is the wrong axis for a verb: one vendor, two routes, asked for the same way and differing only in what they change. Wire-only today: `fal.video({ endpoint: \"fal-ai/lightx/recamera\", video_url, … })`.",
   "fal-ai/smart-turn": "Turn detection, not transcription — no unmodel verb fits it.",

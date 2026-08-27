@@ -14,8 +14,8 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.music` endpoint lets a caller state geometry, and which wire keys it
- * takes.
+ * How each unified-eligible `fal.music` endpoint lets a caller state geometry, and which
+ * wire keys it takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
@@ -279,12 +279,12 @@ export const FAL_MUSIC_PARAM_SHAPES = {
 } as const satisfies Record<string, FalParamShape>;
 
 /**
- * Every `fal.music` endpoint id, in the order the table above keys them.
+ * Every unified-eligible `fal.music` endpoint id, in the order the table above keys them.
  *
- * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
- * model list without reaching for a second generated module — the leaf rule (A10b in
- * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
- * one generator.
+ * Here separately from `endpoints.gen.ts` so the import-free `*-params` leaf can publish
+ * its adapter model list without reaching for a second generated module — the leaf rule
+ * (A10b in test/import-graph.test.ts) allows it exactly one, and this is it. Direct-only
+ * ids remain in the provider-native artifacts.
  */
 
 export const FAL_MUSIC_MODELS = ["fal-ai/ace-step", "fal-ai/diffrhythm", "fal-ai/elevenlabs/music", "fal-ai/lyria2", "fal-ai/lyria3/pro", "fal-ai/minimax-music/v2", "fal-ai/minimax-music/v2.6", "fal-ai/stable-audio-25/text-to-audio", "fal-ai/stable-audio-3/medium/text-to-audio", "minimax/music-3"] as const;

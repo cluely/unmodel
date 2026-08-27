@@ -1,16 +1,17 @@
 /**
- * fal's unified adapters, one per category: `image` (28 text-to-image
- * endpoints), `imageEdit` (17 editing), `video` (30 generation and editing
- * routes), `lipsync` (8), `avatar` (8), `upscale` (10), `tts` (23), `stt` (6)
- * and `music` (10).
+ * fal's unified adapters, one per category: `image` (32 text-to-image
+ * endpoints), `imageEdit` (17 editing; the eighteenth direct endpoint is
+ * substrate-only), `video` (35 generation and editing routes), `lipsync` (10),
+ * `avatar` (8), `upscale` (11), `threeD` (19), `tts` (23), `stt` (6) and
+ * `music` (10).
  *
- * A barrel over nine modules rather than one file with nine exports, because
- * nine different category packs reach this provider and none should pay for the
+ * A barrel over ten modules rather than one file with ten exports, because ten
+ * different category packs reach this provider and none should pay for the
  * others' validators, zod schemas and generated narrowing tables. That matters
- * more here than at any other provider: fal is the only one serving nine
+ * more here than at any other provider: fal is the only one serving ten
  * categories, so a single `unified.ts` holding all of them would put ~35 video
  * wire types into the 8-endpoint lipsync pack and 23 speech rosters into the
- * 10-endpoint music one. Import this subpath to get all nine; the ready-made
+ * 10-endpoint music one. Import this subpath to get all ten; the ready-made
  * packs import the leaves directly, and `test/bundle-budget.test.ts` measures
  * that they do.
  */

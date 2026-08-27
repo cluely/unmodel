@@ -62,7 +62,7 @@
     "schema's default is \"Starlight Precise 2.6\" — the quote is transcribed as the page wrote it rather than",
     "silently upgraded — and fal's lightx page writes its rate as \"0.1$\", which is copied verbatim too.",
     "",
-    "Of the 171 rows here, 54 carry a unit ModelCost can express and therefore reach a generated catalog row;",
+    "Of the 172 rows here, 55 carry a unit ModelCost can express and therefore reach a generated catalog row;",
     "the other 117 do not, which is the shape of fal's pricing rather than a gap in this file. The big classes:",
     "conditional (66) needs a field the request often leaves at its default — at video that field is almost",
     "always `resolution` or an audio switch, and fal quotes several of them per THOUSAND TOKENS of rendered",
@@ -131,6 +131,13 @@
       "source": "https://fal.ai/models/blackforestlabs/flux-video-upscale",
       "verified": "2026-08-25",
       "quote": "Billing is calculated per second of output video, by resolution and mode. In precise mode, 1080p costs $0.14 per second, 2K costs $0.25 per second, and 4K costs $0.55 per second. Creative mode costs more at each tier: $0.20, $0.35, and $0.79 per second respectively. A 10-second 1080p clip runs $1.40 in precise mode or $2.00 in creative mode. You are charged for the delivered output only."
+    },
+    "bria/fibo-edit/relight": {
+      "unit": "per_image",
+      "usd": 0.04,
+      "source": "https://fal.ai/models/bria/fibo-edit/relight",
+      "verified": "2026-08-27",
+      "quote": "Your request will cost $0.04 per image."
     },
     "bytedance/seedance-2.0/image-to-video": {
       "unit": "conditional",

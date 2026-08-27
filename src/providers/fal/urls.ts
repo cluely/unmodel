@@ -155,9 +155,9 @@ export type FalQueueStatus = "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED";
  * only place a failure is expressible is the result body, and it arrives as
  * `error` / `error_type` rather than as a status.
  *
- * **Transcribed from fal's prose, not from a schema.** Every one of the 171
+ * **Transcribed from fal's prose, not from a schema.** Every one of the 172
  * committed OpenAPI snapshots in `data/fal/openapi/` declares exactly one
- * response code — `200` — across all 684 operations, so there is no generated
+ * response code — `200` — across all 688 operations, so there is no generated
  * error type to point at and no machine-readable source for one. These two
  * field names come from fal's queue documentation and from the note already
  * written on {@link FalQueueSubmitResponse}; anything beyond them would be a

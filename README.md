@@ -320,7 +320,7 @@ Every implemented provider has its own subpath with native field names, model ID
 
 ### fal.ai
 
-`unmodel/fal` covers 165 curated endpoints across ten verbs: `image`, `imageEdit`, `video`, `lipsync`, `upscale`, `avatar`, `threeD`, `tts`, `stt`, `music`. Four things here work unlike every other provider.
+`unmodel/fal` covers 172 curated endpoints across ten verbs: `image`, `imageEdit`, `video`, `lipsync`, `upscale`, `avatar`, `threeD`, `tts`, `stt`, `music`. Four things here work unlike every other provider.
 
 ```ts
 import { image } from "unmodel/fal";

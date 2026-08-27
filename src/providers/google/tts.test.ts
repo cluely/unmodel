@@ -778,6 +778,50 @@ describe("checkTts", () => {
     expect(report.warnings).toEqual([]);
   });
 
+  test("audio outside the documented first delivery part remains empty", () => {
+    const report = checkTts({
+      candidates: [
+        {
+          finishReason: "STOP",
+          content: {
+            parts: [
+              { text: "unexpected text token" },
+              { inlineData: { mimeType: "audio/mpeg", data: "AAAA" } },
+            ],
+          },
+        },
+      ],
+      modelVersion: MODEL,
+    });
+    expect(report.warnings.map((warning) => warning.meta?.kind)).toEqual(["empty_audio"]);
+  });
+
+  test("an audio MIME type without non-empty bytes or a URI is still empty audio", () => {
+    const emptyParts: unknown[] = [
+      { inlineData: { mimeType: "audio/mpeg" } },
+      { inlineData: { mimeType: "audio/mpeg", data: "" } },
+      { inlineData: { mimeType: "audio/mpeg", data: "   " } },
+      { fileData: { mimeType: "audio/mpeg" } },
+      { fileData: { mimeType: "audio/mpeg", fileUri: "" } },
+      { fileData: { mimeType: "audio/mpeg", fileUri: "   " } },
+    ];
+
+    for (const part of emptyParts) {
+      const report = checkTts({
+        candidates: [{ finishReason: "STOP", content: { parts: [part] } }],
+      });
+      expect(report.warnings.map((warning) => warning.meta?.kind)).toEqual(["empty_audio"]);
+    }
+  });
+
+  test("BLOCK_REASON_UNSPECIFIED is clean and does not hide empty audio", () => {
+    const report = checkTts({
+      candidates: [{ finishReason: "STOP", content: { parts: [] } }],
+      promptFeedback: { blockReason: "BLOCK_REASON_UNSPECIFIED" },
+    });
+    expect(report.warnings.map((warning) => warning.meta?.kind)).toEqual(["empty_audio"]);
+  });
+
   test("a non-audio fileData part still earns the empty-audio warning", () => {
     const report = checkTts({
       candidates: [
@@ -816,5 +860,33 @@ describe("checkTts", () => {
 
   test("an empty response object never throws", () => {
     expect(checkTts({}).warnings).toEqual([]);
+  });
+
+  test("accepts decoded unknown and never throws on null, primitives or malformed nesting", () => {
+    const decoded: unknown[] = [
+      undefined,
+      null,
+      false,
+      42,
+      "not a response",
+      [],
+      { candidates: 1 },
+      { candidates: [null] },
+      { candidates: [{ finishReason: {}, content: { parts: {} } }] },
+      { promptFeedback: "blocked", usageMetadata: [], modelVersion: 31 },
+      { usageMetadata: { promptTokenCount: "12", candidatesTokenCount: {} } },
+    ];
+
+    for (const value of decoded) {
+      expect(() => checkTts(value), JSON.stringify(value)).not.toThrow();
+      expect(checkTts(value).usage, JSON.stringify(value)).toEqual({});
+    }
+  });
+
+  test("a malformed parts container is handled as an audio-less STOP", () => {
+    const report = checkTts({
+      candidates: [{ finishReason: "STOP", content: { parts: { not: "an array" } } }],
+    });
+    expect(report.warnings.map((warning) => warning.meta?.kind)).toEqual(["empty_audio"]);
   });
 });

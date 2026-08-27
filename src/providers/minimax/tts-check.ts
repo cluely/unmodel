@@ -174,6 +174,13 @@ export interface MinimaxT2aResponseLike {
 const catalog: Record<string, ModelInfo> = speechModels;
 const baseRespInfo: Partial<Record<number, MinimaxBaseRespInfo>> = MINIMAX_BASE_RESP_INFO;
 
+/** A decoded JSON object, narrowed without asserting a provider response shape. */
+function objectOf(value: unknown): Readonly<Record<string, unknown>> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Readonly<Record<string, unknown>>)
+    : undefined;
+}
+
 /**
  * Inspects a `POST /v1/t2a_v2` JSON response. Never throws.
  *
@@ -210,14 +217,21 @@ const baseRespInfo: Partial<Record<number, MinimaxBaseRespInfo>> = MINIMAX_BASE_
  * ```
  */
 export function checkTts(
-  res: MinimaxT2aResponseLike,
+  res: unknown,
   options: { model?: string } = {},
 ): ResponseReport<MinimaxBaseRespStatus> {
   const warnings: Issue[] = [];
+  const response = objectOf(res);
+  const baseResp = objectOf(response?.["base_resp"]);
+  const data = objectOf(response?.["data"]);
+  const extraInfo = objectOf(response?.["extra_info"]);
 
-  const status = res.base_resp?.status_code;
+  const status = baseResp?.["status_code"];
   if (typeof status === "number" && status !== 0) {
-    const msg = res.base_resp?.status_msg;
+    const rawMsg = baseResp?.["status_msg"];
+    const msg = typeof rawMsg === "string" ? rawMsg : undefined;
+    const rawTraceId = response?.["trace_id"];
+    const traceId = typeof rawTraceId === "string" ? rawTraceId : undefined;
     const retryable = baseRespInfo[status]?.retryable;
     warnings.push({
       severity: "warning",
@@ -231,14 +245,14 @@ export function checkTts(
         statusCode: status,
         ...(msg != null && msg !== "" && { statusMsg: msg }),
         ...(retryable !== undefined && { retryable }),
-        ...(res.trace_id != null && { traceId: res.trace_id }),
+        ...(traceId !== undefined && { traceId }),
         source: T2A_DOCS,
       },
     });
   }
 
-  const audio = res.data?.audio;
-  if (typeof audio !== "string" || audio === "") {
+  const audio = data?.["audio"];
+  if (typeof audio !== "string" || audio.trim() === "") {
     warnings.push({
       severity: "warning",
       code: "invalid_shape",
@@ -248,7 +262,7 @@ export function checkTts(
     });
   }
 
-  const characters = res.extra_info?.usage_characters;
+  const characters = extraInfo?.["usage_characters"];
   const info = options.model !== undefined ? catalog[options.model] : undefined;
   const costUSD =
     typeof characters === "number" ? computeCharacterCostUSD(info?.cost, characters) : undefined;

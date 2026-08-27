@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
+//   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__edit.json
 //   data/fal/openapi/fal-ai__flux-2-pro__edit.json
@@ -45,11 +46,13 @@ const E_32abe4 = ["auto", "1024x1024", "1536x1024", "1024x1536"] as const;
 const E_375a80 = ["auto", "21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16"] as const;
 const E_38d343 = ["21:9", "16:9", "4:3", "3:2", "1:1", "2:3", "3:4", "9:16", "9:21"] as const;
 const E_3cdbc9 = ["1K", "2K", "4K"] as const;
+const E_48927c = ["front", "side", "bottom", "top-down"] as const;
 const E_4d9df1 = ["auto", "square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9"] as const;
 const E_57e177 = ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9", "auto_1K", "auto_2K"] as const;
 const E_5ae5df = ["0.5K", "1K", "2K", "4K"] as const;
 const E_652908 = ["minimal", "high"] as const;
 const E_7c0554 = ["jpeg", "png"] as const;
+const E_9046a6 = ["midday", "blue hour light", "low-angle sunlight", "sunrise light", "spotlight on subject", "overcast light", "soft overcast daylight lighting", "cloud-filtered lighting", "fog-diffused lighting", "moonlight lighting", "starlight nighttime", "soft bokeh lighting", "harsh studio lighting"] as const;
 const E_9373e9 = ["auto", "transparent", "opaque"] as const;
 const E_9f102a = ["low", "medium", "high"] as const;
 const E_a008c0 = ["auto", "21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16", "4:1", "1:4", "8:1", "1:8"] as const;
@@ -74,6 +77,14 @@ export const FAL_IMAGE_EDIT_SHAPES = {
       num_images: { t: "integer", def: true, min: 1, max: 6 },
       output_format: { t: "string", def: true, enum: E_205460 },
       image_urls: { t: "array", req: true, items: { t: "string", media: "image" }, media: "image" },
+    },
+  },
+  "bria/fibo-edit/relight": {
+    order: ["image_url", "light_direction", "light_type"],
+    props: {
+      image_url: { t: "string", req: true, media: "image" },
+      light_direction: { t: "string", req: true, nul: true, enum: E_48927c },
+      light_type: { t: "string", req: true, enum: E_9046a6 },
     },
   },
   "bytedance/seedream/v5/pro/edit": {
@@ -331,6 +342,10 @@ export const FAL_IMAGE_EDIT_SHAPES = {
 export const FAL_IMAGE_EDIT_CONSTRAINTS = {
   "alibaba/qwen-image-3/edit": {
     output_format: E_205460,
+  },
+  "bria/fibo-edit/relight": {
+    light_direction: E_48927c,
+    light_type: E_9046a6,
   },
   "bytedance/seedream/v5/pro/edit": {
     output_format: E_7c0554,

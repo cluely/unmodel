@@ -51,7 +51,7 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 /**
- * Every fal model unmodel serves, keyed by endpoint id — all nine verbs, 146
+ * Every fal model unmodel serves, keyed by endpoint id — all ten verbs, 172
  * endpoints.
  *
  * Spread in the verbs' own alphabetical order, which is also `scripts/

@@ -30,7 +30,8 @@
  * because they change on three different clocks:
  *   • `data/fal/curation.json` — which endpoints, and under which verb (fal's
  *     own `category` is lossy: music hides in text-to-audio, edits and upscale
- *     are both "image-to-image").
+ *     are both "image-to-image"). `unified: false` keeps an exact provider-
+ *     native row out of a canonical vocabulary that cannot represent it.
  *   • `data/fal/pricing.json` — the rates, transcribed from public model pages
  *     with quote + URL + date, because fal publishes no machine-readable price.
  *   • `data/fal/overlays.json` — every deviation from the published schema.
@@ -167,6 +168,7 @@ const VERB_OUTPUT_MODALITY: Partial<Record<Verb, string>> = {
 
 const curationEntrySchema = z.looseObject({
   verb: z.enum(VERBS),
+  unified: z.literal(false).optional(),
   textParam: z.string().optional(),
   allowsModelProperty: z.boolean().optional(),
   note: z.string().optional(),
@@ -3217,7 +3219,7 @@ ${fields.join("\n")}
   return `${header(models.map((model) => model.snapshotFile))}
 ${renderDoc(
   [
-    `How each \`fal.${verb}\` endpoint lets a caller state geometry, and which wire keys it takes.`,
+    `How each unified-eligible \`fal.${verb}\` endpoint lets a caller state geometry, and which wire keys it takes.`,
     "",
     "`classes` is what the unified adapter branches on. One branch per shape class, never one per endpoint: at a",
     "hundred endpoints a per-endpoint switch is both unreadable and a d.ts liability, and the classes are",
@@ -3254,11 +3256,11 @@ ${models.map((model) => `  ${quote(model.id)}: ${rowName.get(model.id)},`).join(
 
 ${renderDoc(
   [
-    `Every \`fal.${verb}\` endpoint id, in the order the table above keys them.`,
+    `Every unified-eligible \`fal.${verb}\` endpoint id, in the order the table above keys them.`,
     "",
-    "Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a model list without",
-    "reaching for a second generated module — the leaf rule (A10b in test/import-graph.test.ts) allows it",
-    "exactly one, and this is it. Same ids, same order, one generator.",
+    "Here separately from `endpoints.gen.ts` so the import-free `*-params` leaf can publish its adapter model",
+    "list without reaching for a second generated module — the leaf rule (A10b in test/import-graph.test.ts)",
+    "allows it exactly one, and this is it. Direct-only ids remain in the provider-native artifacts.",
   ],
   "",
 )}
@@ -3587,7 +3589,11 @@ export function generate(input: GenerateInput): Map<string, string> {
       }
     }
 
-    const shapes = classifyShapes(id, entry.verb, inputModel, registry);
+    // Shape classes exist only for the unified adapter's canonical lowering.
+    // A direct-only endpoint is still fully represented by its wire/schema/IR
+    // artifacts, and must not be rejected because that separate vocabulary has
+    // no branch for one of its geometry or duration fields.
+    const shapes = entry.unified === false ? [] : classifyShapes(id, entry.verb, inputModel, registry);
     const textProp = entry.textParam === undefined ? undefined : inputModel.props[entry.textParam];
     if (entry.textParam !== undefined && textProp === undefined) {
       throw new Error(
@@ -3684,13 +3690,17 @@ export function generate(input: GenerateInput): Map<string, string> {
   for (const verb of VERBS) {
     const slice = models.filter((model) => model.verb === verb);
     if (slice.length === 0) continue;
+    // Provider-native artifacts describe fal's wire and therefore use the
+    // whole curated slice. `*-params` is the adapter seam: its rows and MODELS
+    // list exist only where the canonical vocabulary can represent the call.
+    const unifiedSlice = slice.filter((model) => model.curation.unified !== false);
     const slug = verbSlug(verb);
     files.set(`${slug}-wire.gen.ts`, renderWireFile(verb, slice, registry));
     files.set(`${slug}-schema.gen.ts`, renderSchemaFile(verb, slice, registry));
     const checkFile = renderCheckFile(verb, slice);
     if (checkFile !== "") files.set(`${slug}-check.gen.ts`, checkFile);
     files.set(`${slug}-narrow.gen.ts`, renderNarrowFile(verb, slice, registry));
-    files.set(`${slug}-params.gen.ts`, renderParamsFile(verb, slice));
+    files.set(`${slug}-params.gen.ts`, renderParamsFile(verb, unifiedSlice));
     files.set(`models-${slug}.gen.ts`, renderModelsFile(verb, slice));
   }
   return new Map(sorted([...files.keys()]).map((name) => [name, files.get(name) as string]));

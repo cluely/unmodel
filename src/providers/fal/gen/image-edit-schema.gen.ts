@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
+//   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__edit.json
 //   data/fal/openapi/fal-ai__flux-2-pro__edit.json
@@ -23,7 +24,7 @@
 /**
  * The ONE request schema for every `fal.imageEdit` endpoint.
  *
- * One `z.looseObject` for the whole category, not 17 per-endpoint schemas: zod objects are
+ * One `z.looseObject` for the whole category, not 18 per-endpoint schemas: zod objects are
  * built eagerly, and a hundred of them would be constructed on import for the one the
  * caller actually used.
  *
@@ -90,9 +91,10 @@ export const falImageEditInputSchema = z.looseObject({
   image_size: z.unknown().nullable().optional(),
   /**
    * Every `fal.imageEdit` endpoint types `image_url` as string, but they disagree on the
-   * details (fal-ai/flux-kontext/dev, fal-ai/flux-pro/kontext, fal-ai/flux-pro/kontext/max,
-   * fal-ai/flux-pro/v1/fill, fal-ai/flux/dev/image-to-image), so the union takes the bare
-   * type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_EDIT_SHAPES.
+   * details (bria/fibo-edit/relight, fal-ai/flux-kontext/dev, fal-ai/flux-pro/kontext,
+   * fal-ai/flux-pro/kontext/max, fal-ai/flux-pro/v1/fill, fal-ai/flux/dev/image-to-image),
+   * so the union takes the bare type and the exact vocabulary is enforced per endpoint from
+   * FAL_IMAGE_EDIT_SHAPES.
    */
   image_url: z.string().optional(),
   /**
@@ -106,6 +108,8 @@ export const falImageEditInputSchema = z.looseObject({
    */
   image_urls: z.array(z.unknown()).optional(),
   input_fidelity: z.enum(["low", "high"]).optional(),
+  light_direction: z.enum(["front", "side", "bottom", "top-down"]).nullable().optional(),
+  light_type: z.enum(["midday", "blue hour light", "low-angle sunlight", "sunrise light", "spotlight on subject", "overcast light", "soft overcast daylight lighting", "cloud-filtered lighting", "fog-diffused lighting", "moonlight lighting", "starlight nighttime", "soft bokeh lighting", "harsh studio lighting"]).optional(),
   limit_generations: z.boolean().optional(),
   mask_image_url: z.string().nullable().optional(),
   mask_url: z.string().nullable().optional(),

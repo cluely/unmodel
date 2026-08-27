@@ -33,6 +33,14 @@
       "status": "active",
       "updated_at": "2026-08-20T15:20:48.463Z"
     },
+    "bria/fibo-edit/relight": {
+      "category": "image-to-image",
+      "display_name": "Fibo Edit [Relight]",
+      "file": "openapi/bria__fibo-edit__relight.json",
+      "sha256": "d69e57ea1a183d51807ad10877812d4790150d4e2c49cabdd4cf4758422ef1e0",
+      "status": "active",
+      "updated_at": "2026-05-20T14:06:50.595Z"
+    },
     "bytedance/seedance-2.0/image-to-video": {
       "category": "image-to-video",
       "display_name": "Seedance 2 Image to Video",

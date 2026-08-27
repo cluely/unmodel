@@ -125,7 +125,14 @@ describe("the outcome rides on finishReason, not on a warning count", () => {
 
 describe("empty audio", () => {
   test("a missing or empty data.audio warns, alongside the status warning", () => {
-    for (const data of [undefined, null, {}, { audio: "" }, { audio: null }] as const) {
+    for (const data of [
+      undefined,
+      null,
+      {},
+      { audio: "" },
+      { audio: "  \n\t" },
+      { audio: null },
+    ] as const) {
       const report = checkTts({ data, base_resp: { status_code: 0 } });
       expect(report.warnings.map((w) => w.meta?.kind)).toEqual(["empty_audio"]);
       expect(report.warnings[0]?.path).toEqual(["data", "audio"]);
@@ -162,8 +169,24 @@ describe("cost, from the characters MiniMax counted", () => {
     expect(checkTts(SUCCESS, { model: "speech-2.8-hd" }).usage).toEqual({});
   });
 
-  test("never throws on a response that is nothing like the documented shape", () => {
-    expect(() => checkTts({} as MinimaxT2aResponseLike)).not.toThrow();
-    expect(() => checkTts({ base_resp: null, data: null, extra_info: null })).not.toThrow();
+  test("accepts decoded unknown and never throws on null, primitives or malformed nesting", () => {
+    const decoded: unknown[] = [
+      undefined,
+      null,
+      false,
+      42,
+      "not a response",
+      [],
+      {},
+      { base_resp: null, data: null, extra_info: null },
+      { base_resp: 1002, data: "audio", extra_info: [] },
+      { base_resp: { status_code: "1002", status_msg: {} }, data: { audio: {} } },
+      { extra_info: { usage_characters: "163" }, trace_id: { nested: true } },
+    ];
+
+    for (const value of decoded) {
+      expect(() => checkTts(value), JSON.stringify(value)).not.toThrow();
+      expect(checkTts(value).usage, JSON.stringify(value)).toEqual({});
+    }
   });
 });

@@ -4,6 +4,7 @@
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
 //   data/fal/openapi/argil__avatars__audio-to-video.json
 //   data/fal/openapi/blackforestlabs__flux-video-upscale.json
+//   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
@@ -194,6 +195,7 @@ export const FAL_RATES = {
   "alibaba/qwen-image-3/edit": { unit: "conditional", tierKey: "resolution of the generated image (1K vs 2K)", tiers: [{ when: "per generated image at 1K resolution", usd: 0.04 }, { when: "per generated image at 2K resolution", usd: 0.075 }], source: "https://fal.ai/models/alibaba/qwen-image-3/edit", verified: "2026-08-24" },
   "argil/avatars/audio-to-video": { unit: "per_second", usd: 0.02, rounding: "billed on the INPUT audio's seconds rather than the output clip's", source: "https://fal.ai/models/argil/avatars/audio-to-video", verified: "2026-08-24" },
   "blackforestlabs/flux-video-upscale": { unit: "conditional", tierKey: "output resolution x mode (`creativity` 0 is precise, 1 is creative), per second of output", tiers: [{ when: "per second at 1080p, precise mode", usd: 0.14 }, { when: "per second at 2K, precise mode", usd: 0.25 }, { when: "per second at 4K, precise mode", usd: 0.55 }, { when: "per second at 1080p, creative mode", usd: 0.2 }, { when: "per second at 2K, creative mode", usd: 0.35 }, { when: "per second at 4K, creative mode", usd: 0.79 }], source: "https://fal.ai/models/blackforestlabs/flux-video-upscale", verified: "2026-08-25" },
+  "bria/fibo-edit/relight": { unit: "per_image", usd: 0.04, source: "https://fal.ai/models/bria/fibo-edit/relight", verified: "2026-08-27" },
   "bytedance/seedance-2.0/image-to-video": { unit: "conditional", tierKey: "resolution — quoted per 1000 tokens", tiers: [{ when: "per 1000 tokens at 480p, 720p or 1080p", usd: 0.014 }, { when: "per 1000 tokens at 4k", usd: 0.008 }], source: "https://fal.ai/models/bytedance/seedance-2.0/image-to-video", verified: "2026-08-24" },
   "bytedance/seedance-2.0/text-to-video": { unit: "conditional", tierKey: "resolution — quoted per 1000 tokens, with 4k cheaper per token than 1080p", tiers: [{ when: "per 1000 tokens at 480p, 720p or 1080p", usd: 0.014 }, { when: "per 1000 tokens at 4k", usd: 0.008 }], source: "https://fal.ai/models/bytedance/seedance-2.0/text-to-video", verified: "2026-08-24" },
   "bytedance/seedance-2.5/image-to-video": { unit: "conditional", tierKey: "resolution — quoted per 1000 tokens; input images are not billed", tiers: [{ when: "per 1000 tokens at 480p or 720p", usd: 0.0214 }, { when: "per 1000 tokens at 1080p", usd: 0.0234 }], source: "https://fal.ai/models/bytedance/seedance-2.5/image-to-video", verified: "2026-08-24" },

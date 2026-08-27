@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
+//   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__edit.json
 //   data/fal/openapi/fal-ai__flux-2-pro__edit.json
@@ -99,6 +100,40 @@ export interface AlibabaQwenImage3EditOutput {
   images: FalFile[];
   /** The seed used for generation. */
   seed: number;
+}
+
+/**
+ * The request body `bria/fibo-edit/relight` accepts.
+ *
+ * Fibo Edit [Relight]. Provider-native only: its request is prompt-less by construction
+ * (`image_url`, `light_direction`, `light_type` are required), while the unified
+ * image-edit vocabulary requires a prompt and would therefore send a field this endpoint
+ * does not declare.
+ *
+ * Docs: https://fal.ai/models/bria/fibo-edit/relight/api
+ */
+export interface BriaFiboEditRelightInput {
+  /** The source image. Carries a image reference — an https URL or a `data:` URI. */
+  image_url: string;
+  /** Where the light comes from. */
+  light_direction: "front" | "side" | "bottom" | "top-down" | null;
+  /** The quality/style/time of day. */
+  light_type: "midday" | "blue hour light" | "low-angle sunlight" | "sunrise light" | "spotlight on subject" | "overcast light" | "soft overcast daylight lighting" | "cloud-filtered lighting" | "fog-diffused lighting" | "moonlight lighting" | "starlight nighttime" | "soft bokeh lighting" | "harsh studio lighting";
+}
+
+/**
+ * The result document `bria/fibo-edit/relight` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface BriaFiboEditRelightOutput {
+  /** Generated image. */
+  image: FalImage_28cfa5;
+  /** Generated images. Default: `[]`. */
+  images?: FalImage_28cfa5[];
+  /** Current instruction. */
+  structured_instruction: Record<string, unknown>;
 }
 
 /**
@@ -1158,13 +1193,14 @@ export interface OpenaiGptImage2EditOutput {
 /**
  * Endpoint id → its request body type.
  *
- * A map rather than a union: a union of 17 object types re-instantiates at every
+ * A map rather than a union: a union of 18 object types re-instantiates at every
  * comparison site, while a keyed lookup resolves in one. The per-endpoint narrowing a
  * validator exposes indexes into this, so adding an endpoint costs one line here and
  * nothing at any call site.
  */
 export interface FalImageEditBodyById {
   "alibaba/qwen-image-3/edit": AlibabaQwenImage3EditInput;
+  "bria/fibo-edit/relight": BriaFiboEditRelightInput;
   "bytedance/seedream/v5/pro/edit": BytedanceSeedreamV5ProEditInput;
   "fal-ai/bytedance/seedream/v4.5/edit": FalAiBytedanceSeedreamV45EditInput;
   "fal-ai/flux-2-pro/edit": FalAiFlux2ProEditInput;
@@ -1186,6 +1222,7 @@ export interface FalImageEditBodyById {
 /** Endpoint id → its result document type. */
 export interface FalImageEditResultById {
   "alibaba/qwen-image-3/edit": AlibabaQwenImage3EditOutput;
+  "bria/fibo-edit/relight": BriaFiboEditRelightOutput;
   "bytedance/seedream/v5/pro/edit": BytedanceSeedreamV5ProEditOutput;
   "fal-ai/bytedance/seedream/v4.5/edit": FalAiBytedanceSeedreamV45EditOutput;
   "fal-ai/flux-2-pro/edit": FalAiFlux2ProEditOutput;

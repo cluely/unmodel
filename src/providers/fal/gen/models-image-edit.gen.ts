@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
+//   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__edit.json
 //   data/fal/openapi/fal-ai__flux-2-pro__edit.json
@@ -56,6 +57,24 @@ export const imageEditModels = {
     lastUpdated: "2026-08-04",
     modalities: { input: ["image", "text"], output: ["image"] },
     limit: { context: 0 },
+  },
+  /**
+   * $0.04 per image.
+   *
+   * Source: https://fal.ai/models/bria/fibo-edit/relight — verified 2026-08-27. Quote: “Your
+   * request will cost $0.04 per image.”
+   */
+  "bria/fibo-edit/relight": {
+    id: "bria/fibo-edit/relight",
+    name: "Fibo Edit [Relight]",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-05-20",
+    modalities: { input: ["image"], output: ["image"] },
+    limit: { context: 0 },
+    cost: { perImage: 0.04 },
   },
   /**
    * Conditional pricing on output pixel area (<=1536x1536 vs 1536x1536..2048x2048), plus an

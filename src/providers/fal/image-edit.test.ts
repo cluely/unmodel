@@ -13,6 +13,7 @@ import { describe, expect, test } from "bun:test";
 import { imageEdit } from "./image-edit";
 import { FAL_IMAGE_EDIT_ENDPOINTS, FAL_REQUIRED_PROBES } from "./gen/endpoints.gen";
 import { FAL_IMAGE_EDIT_SHAPES } from "./gen/image-edit-narrow.gen";
+import { FAL_IMAGE_EDIT_MODELS } from "./gen/image-edit-params.gen";
 
 const PROMPT = "put the cabin in a snowstorm";
 const IMAGE = "https://example.com/cabin.jpg";
@@ -32,10 +33,16 @@ function minimalBody(endpoint: string): Record<string, unknown> {
   const required = FAL_REQUIRED_PROBES[endpoint as keyof typeof FAL_REQUIRED_PROBES] ?? [];
   const body: Record<string, unknown> = { endpoint };
   for (const name of required as readonly string[]) {
-    const spec = (shape.props as Record<string, { t: string; media?: string }>)[name];
+    const spec = (
+      shape.props as Record<
+        string,
+        { t: string; media?: string; enum?: readonly (string | number)[] }
+      >
+    )[name];
     if (spec === undefined) continue;
     if (spec.t === "array") body[name] = [IMAGE];
     else if (spec.media !== undefined) body[name] = IMAGE;
+    else if (spec.enum !== undefined) body[name] = spec.enum[0];
     else body[name] = PROMPT;
   }
   return body;
@@ -71,6 +78,33 @@ describe("routing", () => {
     });
     expect(Object.keys(params).sort()).toEqual(["image_url", "prompt"]);
     expect(params.toSdk("fal")).toEqual({ input: { prompt: PROMPT, image_url: IMAGE } });
+  });
+
+  test("Bria Relight is a known direct request but not a prompt-based unified model", () => {
+    expect(FAL_IMAGE_EDIT_ENDPOINTS).toContain("bria/fibo-edit/relight");
+    expect(FAL_IMAGE_EDIT_MODELS).not.toContain("bria/fibo-edit/relight" as never);
+
+    const result = imageEdit.safe({
+      endpoint: "bria/fibo-edit/relight",
+      image_url: IMAGE,
+      light_direction: "top-down",
+      light_type: "soft overcast daylight lighting",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toEqual([]);
+    const params = result.params;
+    expect(params.request.url).toBe("https://queue.fal.run/bria/fibo-edit/relight");
+    expect(Object.keys(params)).toEqual(["image_url", "light_direction", "light_type"]);
+    expect(params.toSdk("fal")).toEqual({
+      input: {
+        image_url: IMAGE,
+        light_direction: "top-down",
+        light_type: "soft overcast daylight lighting",
+      },
+    });
+    expect(result.estimate.costUSD).toBe(0.04);
   });
 });
 

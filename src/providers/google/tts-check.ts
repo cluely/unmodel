@@ -86,19 +86,39 @@ export type GoogleTtsFinishReason =
 
 const catalog: Record<string, ModelInfo> = ttsModels;
 
+/** A decoded JSON object, narrowed without asserting a provider response shape. */
+function objectOf(value: unknown): Readonly<Record<string, unknown>> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Readonly<Record<string, unknown>>)
+    : undefined;
+}
+
+function isAudioMimeType(value: unknown): boolean {
+  return typeof value === "string" && value.toLowerCase().startsWith("audio/");
+}
+
+function isNonEmptyString(value: unknown): boolean {
+  return typeof value === "string" && value.trim() !== "";
+}
+
 /**
  * Does this candidate carry any actual audio?
  *
  * Both deliveries count: inline base64 (`inlineData`) and a URI to fetch
- * (`fileData`). Scanning only `inlineData` would report `empty_audio` on every
- * `delivery: "URI"` response — a request this same package validates.
+ * (`fileData`). Gemini's documented TTS envelope and this adapter's exported
+ * delivery descriptor both pin the audio to `parts[0]`; accepting a later
+ * part here would let policy pass a response the descriptor cannot extract.
  */
-function hasAudioPart(response: TtsResponseLike): boolean {
-  const parts = response.candidates?.[0]?.content?.parts ?? [];
-  return parts.some((part) => {
-    const mimeType = part?.inlineData?.mimeType ?? part?.fileData?.mimeType;
-    return typeof mimeType === "string" && mimeType.toLowerCase().startsWith("audio/");
-  });
+function hasAudioPart(candidate: Readonly<Record<string, unknown>> | undefined): boolean {
+  const content = objectOf(candidate?.["content"]);
+  const rawParts = content?.["parts"];
+  const entry = objectOf(Array.isArray(rawParts) ? rawParts[0] : undefined);
+  const inlineData = objectOf(entry?.["inlineData"]);
+  const fileData = objectOf(entry?.["fileData"]);
+  return (
+    (isAudioMimeType(inlineData?.["mimeType"]) && isNonEmptyString(inlineData?.["data"])) ||
+    (isAudioMimeType(fileData?.["mimeType"]) && isNonEmptyString(fileData?.["fileUri"]))
+  );
 }
 
 /**
@@ -112,7 +132,8 @@ function hasAudioPart(response: TtsResponseLike): boolean {
  *   (`meta.kind: "content_filtered"`). The guide names a TTS-specific cause:
  *   "vague prompts may fail to trigger the speech synthesis classifier,
  *   resulting in a rejected request (PROHIBITED_CONTENT)".
- * - a clean STOP that carries no `audio/*` part → an empty-audio warning
+ * - a clean STOP without a populated `audio/*` delivery (non-empty
+ *   `inlineData.data` or `fileData.fileUri`) → an empty-audio warning
  *   (`meta.kind: "empty_audio"`). Also documented: "the model occasionally
  *   returns text tokens instead of audio tokens".
  * - usage: promptTokenCount → inputTokens, candidatesTokenCount →
@@ -121,9 +142,13 @@ function hasAudioPart(response: TtsResponseLike): boolean {
  * - `costUSD` is priced from the three hand rows via the response's
  *   `modelVersion` (prefix fallback); undefined when the model is unknown.
  */
-export function checkTts(response: TtsResponseLike): ResponseReport<GoogleTtsFinishReason> {
+export function checkTts(response: unknown): ResponseReport<GoogleTtsFinishReason> {
   const warnings: Issue[] = [];
-  const finishReason = response.candidates?.[0]?.finishReason;
+  const decoded = objectOf(response);
+  const candidates = decoded?.["candidates"];
+  const candidate = Array.isArray(candidates) ? objectOf(candidates[0]) : undefined;
+  const rawFinishReason = candidate?.["finishReason"];
+  const finishReason = typeof rawFinishReason === "string" ? rawFinishReason : undefined;
 
   if (finishReason === "MAX_TOKENS") {
     warnings.push({
@@ -146,8 +171,11 @@ export function checkTts(response: TtsResponseLike): ResponseReport<GoogleTtsFin
     });
   }
 
-  const blockReason = response.promptFeedback?.blockReason;
-  if (blockReason !== undefined && blockReason !== "BLOCK_REASON_UNSPECIFIED") {
+  const promptFeedback = objectOf(decoded?.["promptFeedback"]);
+  const rawBlockReason = promptFeedback?.["blockReason"];
+  const blockReason = typeof rawBlockReason === "string" ? rawBlockReason : undefined;
+  const blocked = blockReason !== undefined && blockReason !== "BLOCK_REASON_UNSPECIFIED";
+  if (blocked) {
     warnings.push({
       severity: "warning",
       code: "unsupported_capability",
@@ -162,41 +190,43 @@ export function checkTts(response: TtsResponseLike): ResponseReport<GoogleTtsFin
   // audio" would be noise rather than news.
   if (
     finishReason === "STOP" &&
-    blockReason === undefined &&
-    response.candidates !== undefined &&
-    !hasAudioPart(response)
+    !blocked &&
+    candidates !== undefined &&
+    !hasAudioPart(candidate)
   ) {
     warnings.push({
       severity: "warning",
       code: "invalid_shape",
       path: ["candidates", 0, "content", "parts"],
       message:
-        "Generation finished normally (finishReason STOP) but no audio/* part came back — neither inlineData nor a fileData URI. " +
+        "Generation finished normally (finishReason STOP) but no populated audio/* part came back — neither non-empty inlineData.data nor fileData.fileUri. " +
         "Gemini TTS occasionally returns text tokens instead of audio tokens; retrying is the documented remedy.",
       meta: { kind: "empty_audio", finishReason, source: GEMINI_TTS_DOCS_URL },
     });
   }
 
-  const meta = response.usageMetadata;
+  const meta = objectOf(decoded?.["usageMetadata"]);
+  const promptTokenCount = meta?.["promptTokenCount"];
+  const candidatesTokenCount = meta?.["candidatesTokenCount"];
+  const cachedContentTokenCount = meta?.["cachedContentTokenCount"];
+  const totalTokenCount = meta?.["totalTokenCount"];
   const usage: UsageReport = {};
-  if (meta?.promptTokenCount !== undefined) usage.inputTokens = meta.promptTokenCount;
-  if (meta?.candidatesTokenCount !== undefined) usage.outputTokens = meta.candidatesTokenCount;
-  if (meta?.cachedContentTokenCount !== undefined) {
-    usage.cachedInputTokens = meta.cachedContentTokenCount;
+  if (typeof promptTokenCount === "number") usage.inputTokens = promptTokenCount;
+  if (typeof candidatesTokenCount === "number") usage.outputTokens = candidatesTokenCount;
+  if (typeof cachedContentTokenCount === "number") {
+    usage.cachedInputTokens = cachedContentTokenCount;
   }
-  if (meta?.totalTokenCount !== undefined) usage.totalTokens = meta.totalTokenCount;
+  if (typeof totalTokenCount === "number") usage.totalTokens = totalTokenCount;
 
-  const info =
-    response.modelVersion === undefined
-      ? undefined
-      : resolveModelInfo(catalog, response.modelVersion);
+  const modelVersion = decoded?.["modelVersion"];
+  const info = typeof modelVersion === "string" ? resolveModelInfo(catalog, modelVersion) : undefined;
   let costUSD: number | undefined;
   if (info !== undefined && meta !== undefined) {
     costUSD = computeCostUSD(info.cost, {
-      ...(meta.promptTokenCount !== undefined && { inputTokens: meta.promptTokenCount }),
-      ...(meta.candidatesTokenCount !== undefined && { outputTokens: meta.candidatesTokenCount }),
-      ...(meta.cachedContentTokenCount !== undefined && {
-        cachedInputTokens: meta.cachedContentTokenCount,
+      ...(typeof promptTokenCount === "number" && { inputTokens: promptTokenCount }),
+      ...(typeof candidatesTokenCount === "number" && { outputTokens: candidatesTokenCount }),
+      ...(typeof cachedContentTokenCount === "number" && {
+        cachedInputTokens: cachedContentTokenCount,
       }),
     });
   }

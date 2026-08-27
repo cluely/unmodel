@@ -36,8 +36,8 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.image` endpoint lets a caller state geometry, and which wire keys it
- * takes.
+ * How each unified-eligible `fal.image` endpoint lets a caller state geometry, and which
+ * wire keys it takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
@@ -708,12 +708,12 @@ export const FAL_IMAGE_PARAM_SHAPES = {
 } as const satisfies Record<string, FalParamShape>;
 
 /**
- * Every `fal.image` endpoint id, in the order the table above keys them.
+ * Every unified-eligible `fal.image` endpoint id, in the order the table above keys them.
  *
- * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
- * model list without reaching for a second generated module — the leaf rule (A10b in
- * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
- * one generator.
+ * Here separately from `endpoints.gen.ts` so the import-free `*-params` leaf can publish
+ * its adapter model list without reaching for a second generated module — the leaf rule
+ * (A10b in test/import-graph.test.ts) allows it exactly one, and this is it. Direct-only
+ * ids remain in the provider-native artifacts.
  */
 
 export const FAL_IMAGE_MODELS = ["bytedance/seedream/v5/pro/text-to-image", "fal-ai/bytedance/seedream/v4.5/text-to-image", "fal-ai/flux-2", "fal-ai/flux-2-max", "fal-ai/flux-2-pro", "fal-ai/flux-2/flash", "fal-ai/flux-general", "fal-ai/flux-lora", "fal-ai/flux-pro/v1.1", "fal-ai/flux-pro/v1.1-ultra", "fal-ai/flux/dev", "fal-ai/flux/schnell", "fal-ai/gpt-image-1.5", "fal-ai/hunyuan-image/v3/text-to-image", "fal-ai/ideogram/v3", "fal-ai/kling-image/v3/text-to-image", "fal-ai/nano-banana", "fal-ai/nano-banana-2", "fal-ai/nano-banana-pro", "fal-ai/qwen-image", "fal-ai/recraft/v3/text-to-image", "fal-ai/recraft/v4/text-to-image", "fal-ai/stable-diffusion-v35-large", "fal-ai/z-image/turbo", "google/nano-banana-2-lite", "ideogram/v4", "krea/v2/large/text-to-image", "krea/v2/medium/text-to-image", "microsoft/mai-image-2.5", "openai/gpt-image-2", "reve/2.1/text-to-image", "xai/grok-imagine-image"] as const;

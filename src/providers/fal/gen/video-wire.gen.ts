@@ -968,9 +968,10 @@ export interface FalAiKlingVideoV3StandardTextToVideoOutput {
  * a nested `anyOf[$ref, null]` object, the fal-ai/flux-general `fill_image` lowering
  * verbatim; FalPropSpec has no `props` for objects, so its own required `relight_prompt`
  * is checked by fal rather than by unmodel. There is no relight VERB: bria, lightx,
- * image-apps-v2 and iclight-v2 spell the same idea four ways and no two agree — see
- * `excluded.endpoints` for bria/fibo-edit/relight. Two `note` overlays record what fal's
- * prose gets wrong here.
+ * image-apps-v2 and iclight-v2 spell the same idea four ways and no two agree.
+ * `bria/fibo-edit/relight` is therefore curated only in the provider-native substrate
+ * (`unified: false`), not promoted into a guessed shared vocabulary. Two `note` overlays
+ * record what fal's prose gets wrong here.
  *
  * Docs: https://fal.ai/models/fal-ai/lightx/relight/api
  */

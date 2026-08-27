@@ -3,14 +3,14 @@
  *
  * ## Why there is only one
  *
- * fal serves a curated slice of ~1,500 endpoints across nine verbs, and every
- * one of them is a different set of parameters, bounds and vocabularies. The
+ * fal serves roughly 1,500 endpoints; unmodel curates 172 of them across ten
+ * verbs, and every one has its own parameters, bounds and vocabularies. The
  * two obvious ways to validate that both fail:
  *
  * - **A schema per endpoint.** zod objects are constructed eagerly, so
- *   importing `unmodel/fal` would build a hundred of them to use one.
- * - **A check per endpoint.** A hundred hand-written check functions is a
- *   hundred places for a message to be phrased differently, and the phrasing
+ *   importing `unmodel/fal` would build hundreds of them to use one.
+ * - **A check per endpoint.** 172 hand-written check functions are 172 places
+ *   for a message to be phrased differently, and the phrasing
  *   is the whole product here.
  *
  * So the split is: the generated `<v>-schema.gen.ts` answers "is this the

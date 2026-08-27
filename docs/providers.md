@@ -153,13 +153,15 @@ picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
 `imageEditReplaceBackground`), reve (`imageEdit`, `imageEditRemix`), stability
 (`imageEditErase`, `imageEditInpaint`, `imageEditOutpaint`,
 `imageEditSearchAndReplace`, `imageEditSearchAndRecolor`,
-`imageEditRemoveBackground`), luma (`imageEditReframe`), fal (`imageEdit`, 17 hosted
+`imageEditRemoveBackground`), luma (`imageEditReframe`), fal (`imageEdit`, 18 hosted
 endpoints — Nano Banana 1/2/Pro edit, GPT Image 1.5/2 edit, FLUX Kontext / Kontext Max /
 Kontext Multi, FLUX.2 pro/dev edit, FLUX fill and i2i, Seedream 4.5 / 5 Pro edit,
-Qwen-Image-Edit 2511, Qwen Image 3 edit).
+Qwen-Image-Edit 2511, Qwen Image 3 edit, and the prompt-less FIBO Relight route).
 Five of the nine — openai, black-forest-labs, ideogram, recraft, fal — ship a
 unified adapter, and `unmodel/image-edit` carries the ready-made pack over
-them. No background-removal route is curated at fal: it is an operation
+them. fal's adapter contains the 17 prompt-based rows; FIBO Relight is exact on
+the provider-native substrate and marked `unified: false`, because the canonical
+image-edit request requires a prompt the route does not accept. No background-removal route is curated at fal: it is an operation
 with no prompt, and this vocabulary has no word for it yet — seventeen of those routes now
 carry the reason by name in `data/fal/curation.json`'s `excluded.endpoints`, which ships as
 `FAL_EXCLUDED`.
@@ -577,11 +579,13 @@ lands in each row's extras rather than in the vocabulary.
 
 ## fal.ai wave — one aggregator, ten verbs
 
-fal.ai is a generative-media inference cloud. unmodel serves **171 curated endpoints across
-ten verbs** — `fal.image` (32), `fal.imageEdit` (17), `fal.video` (35), `fal.lipsync` (10),
+fal.ai is a generative-media inference cloud. unmodel serves **172 curated endpoints across
+ten verbs** — `fal.image` (32), `fal.imageEdit` (18), `fal.video` (35), `fal.lipsync` (10),
 `fal.upscale` (11), `fal.avatar` (8), `fal.threeD` (19), `fal.tts` (23), `fal.stt` (6),
-`fal.music` (10) — all bare ids, all on `unmodel/fal`, with a unified adapter per category behind
-`unmodel/fal/unified`. Tier: **generated**.
+`fal.music` (10) — all bare ids, all on `unmodel/fal`, with a unified adapter over each
+category's eligible rows behind `unmodel/fal/unified`. The one direct-only row is
+`bria/fibo-edit/relight`: `unified: false` keeps a prompt-less body out of the prompt-required
+image-edit vocabulary. Tier: **generated**.
 
 `fal.threeD` is the one verb here that is not its category's id, and the reason is mechanical:
 an endpoint id's second segment is a module export name, and `3d` is not a JavaScript
@@ -662,7 +666,7 @@ r.ok && r.warnings.map((w) => [w.code, w.path.join(".")]);
 `prompt` is *not* warned about: the `unknown_param` warnings come from
 `reportUnknownTopLevelKeys` in `src/core/pipeline.ts` against the CATEGORY's union schema, so
 every key any curated video endpoint declares stays quiet, and only the genuinely unrecognised
-one speaks. Measured across the 171-endpoint roster that is **15.6% of keys on average, and zero
+one speaks. Measured across the 172-endpoint roster that is **15.6% of keys on average, and zero
 keys for 58% of endpoints** — a smaller noise floor than "one warning per parameter" suggests.
 Auto-suppressing it was asked for and declined: the widened arm is the one path where the TYPE
 system has also stood down, so removing the last remaining signal would let a `promt` typo go out
@@ -675,7 +679,7 @@ video.safe({ endpoint: "fal-ai/some-new-route", prompt: "a cat", frobnicate: 3 }
 // warnings → [["unknown_model", …]]   ← the routing signal stays
 ```
 
-An id unmodel **declined** is told apart from one it has simply never seen. The 66 entries under
+An id unmodel **declined** is told apart from one it has simply never seen. The 65 entries under
 `excluded.endpoints` in `data/fal/curation.json` each carry a written reason, ship to the runtime
 as `FAL_EXCLUDED` / `FAL_EXCLUDED_CATEGORIES` from `unmodel/fal`, and arrive as a second warning
 beginning ``unmodel deliberately does not serve `fal-ai/ffmpeg-api/compose`: …`` — so "we chose

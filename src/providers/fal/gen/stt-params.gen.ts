@@ -10,7 +10,8 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.stt` endpoint lets a caller state geometry, and which wire keys it takes.
+ * How each unified-eligible `fal.stt` endpoint lets a caller state geometry, and which
+ * wire keys it takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
@@ -270,12 +271,12 @@ export const FAL_STT_PARAM_SHAPES = {
 } as const satisfies Record<string, FalParamShape>;
 
 /**
- * Every `fal.stt` endpoint id, in the order the table above keys them.
+ * Every unified-eligible `fal.stt` endpoint id, in the order the table above keys them.
  *
- * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
- * model list without reaching for a second generated module — the leaf rule (A10b in
- * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
- * one generator.
+ * Here separately from `endpoints.gen.ts` so the import-free `*-params` leaf can publish
+ * its adapter model list without reaching for a second generated module — the leaf rule
+ * (A10b in test/import-graph.test.ts) allows it exactly one, and this is it. Direct-only
+ * ids remain in the provider-native artifacts.
  */
 
 export const FAL_STT_MODELS = ["fal-ai/cohere-transcribe", "fal-ai/elevenlabs/speech-to-text", "fal-ai/elevenlabs/speech-to-text/scribe-v2", "fal-ai/speech-to-text", "fal-ai/speech-to-text/turbo", "fal-ai/wizper"] as const;

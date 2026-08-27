@@ -5,11 +5,11 @@
  *
  * ## Why an IR exists at all
  *
- * fal serves ~100 curated endpoints across nine verbs, and the obvious layouts
+ * unmodel curates 172 fal endpoints across ten verbs, and the obvious layouts
  * both fail:
  *
  * - **One zod schema per endpoint.** zod objects are built eagerly, so
- *   importing `unmodel/fal` would construct a hundred of them to use one.
+ *   importing `unmodel/fal` would construct hundreds of them to use one.
  * - **One schema per category with every endpoint's bounds folded in.** There
  *   is no such thing: `num_inference_steps` tops out at 50 on `flux/dev` and at
  *   12 on `flux/schnell`, and a schema that accepts the union accepts a request
@@ -18,7 +18,7 @@
  * So the split is: ONE `z.looseObject` per category answers "is this the right
  * shape?", and these rows answer "does this endpoint accept these values?".
  * The rows are plain data — no zod, no closures, no messages — which is what
- * lets a hundred of them cost a few kilobytes and lets every message be
+ * lets 172 of them cost a few kilobytes and lets every message be
  * composed in one place, citing `FAL_DOC_URLS[id]`.
  *
  * ## Why the keys are the allow-list
@@ -82,7 +82,7 @@ export interface FalSizeSpec {
  * One parameter, as one endpoint declares it.
  *
  * Field names are terse (`req`, `nul`, `xmin`) because these rows are the bulk
- * of what `unmodel/fal` ships: at ~100 endpoints × ~10 parameters the
+ * of what `unmodel/fal` ships: at 172 endpoints × ~10 parameters the
  * difference between `required` and `req` is measured in kilobytes of shipped
  * source. Every one of them is documented here, once.
  */

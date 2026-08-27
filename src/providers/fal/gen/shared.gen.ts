@@ -4,6 +4,7 @@
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
 //   data/fal/openapi/argil__avatars__audio-to-video.json
 //   data/fal/openapi/blackforestlabs__flux-video-upscale.json
+//   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json

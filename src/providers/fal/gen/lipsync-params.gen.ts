@@ -14,8 +14,8 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.lipsync` endpoint lets a caller state geometry, and which wire keys it
- * takes.
+ * How each unified-eligible `fal.lipsync` endpoint lets a caller state geometry, and which
+ * wire keys it takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
@@ -191,12 +191,13 @@ export const FAL_LIPSYNC_PARAM_SHAPES = {
 } as const satisfies Record<string, FalParamShape>;
 
 /**
- * Every `fal.lipsync` endpoint id, in the order the table above keys them.
+ * Every unified-eligible `fal.lipsync` endpoint id, in the order the table above keys
+ * them.
  *
- * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
- * model list without reaching for a second generated module — the leaf rule (A10b in
- * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
- * one generator.
+ * Here separately from `endpoints.gen.ts` so the import-free `*-params` leaf can publish
+ * its adapter model list without reaching for a second generated module — the leaf rule
+ * (A10b in test/import-graph.test.ts) allows it exactly one, and this is it. Direct-only
+ * ids remain in the provider-native artifacts.
  */
 
 export const FAL_LIPSYNC_MODELS = ["fal-ai/heygen/v3/lipsync/precision", "fal-ai/heygen/v3/lipsync/speed", "fal-ai/kling-video/lipsync/audio-to-video", "fal-ai/latentsync", "fal-ai/pixverse/lipsync", "fal-ai/sync-lipsync/v2", "fal-ai/sync-lipsync/v2/pro", "fal-ai/sync-lipsync/v3", "veed/lipsync", "veed/lipsync/v2"] as const;

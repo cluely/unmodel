@@ -133,6 +133,9 @@ function videoV2ContentVocabularyTypeTests(): void {
  * by destroying the second.
  */
 function baseRespInfoTypeTests(): void {
+  const decoded = undefined as unknown;
+  expectAssignable<readonly unknown[]>(checkTts(decoded).warnings);
+
   const report = checkTts({ base_resp: { status_code: 1002, status_msg: "rate limit exceeded" } });
   if (report.finishReason !== undefined && report.finishReason !== 0) {
     // The adopter's exact line: the checker's output indexes its companion table.

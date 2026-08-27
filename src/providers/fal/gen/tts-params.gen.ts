@@ -27,7 +27,8 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.tts` endpoint lets a caller state geometry, and which wire keys it takes.
+ * How each unified-eligible `fal.tts` endpoint lets a caller state geometry, and which
+ * wire keys it takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
@@ -790,12 +791,12 @@ export const FAL_TTS_PARAM_SHAPES = {
 } as const satisfies Record<string, FalParamShape>;
 
 /**
- * Every `fal.tts` endpoint id, in the order the table above keys them.
+ * Every unified-eligible `fal.tts` endpoint id, in the order the table above keys them.
  *
- * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
- * model list without reaching for a second generated module — the leaf rule (A10b in
- * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
- * one generator.
+ * Here separately from `endpoints.gen.ts` so the import-free `*-params` leaf can publish
+ * its adapter model list without reaching for a second generated module — the leaf rule
+ * (A10b in test/import-graph.test.ts) allows it exactly one, and this is it. Direct-only
+ * ids remain in the provider-native artifacts.
  */
 
 export const FAL_TTS_MODELS = ["fal-ai/bytedance/seed-speech/tts/v2", "fal-ai/chatterbox/text-to-speech", "fal-ai/chatterbox/text-to-speech/multilingual", "fal-ai/elevenlabs/tts/eleven-v3", "fal-ai/elevenlabs/tts/multilingual-v2", "fal-ai/elevenlabs/tts/turbo-v2.5", "fal-ai/gemini-3.1-flash-tts", "fal-ai/gemini-tts", "fal-ai/inworld-tts", "fal-ai/kokoro/american-english", "fal-ai/kokoro/brazilian-portuguese", "fal-ai/kokoro/british-english", "fal-ai/kokoro/french", "fal-ai/kokoro/hindi", "fal-ai/kokoro/italian", "fal-ai/kokoro/japanese", "fal-ai/kokoro/mandarin-chinese", "fal-ai/kokoro/spanish", "fal-ai/minimax/speech-02-hd", "fal-ai/minimax/speech-2.8-hd", "fal-ai/minimax/speech-2.8-turbo", "fal-ai/qwen-3-tts/text-to-speech/1.7b", "xai/tts/v1"] as const;

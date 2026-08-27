@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/alibaba__qwen-image-3__edit.json
+//   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/fal-ai__bytedance__seedream__v4.5__edit.json
 //   data/fal/openapi/fal-ai__flux-2-pro__edit.json
@@ -53,6 +54,10 @@ export type FalImageEditSchemaChecks = [
   AssertExtends<wire.AlibabaQwenImage3EditInput["num_images"], Gate["num_images"]>,
   AssertExtends<wire.AlibabaQwenImage3EditInput["output_format"], Gate["output_format"]>,
   AssertExtends<wire.AlibabaQwenImage3EditInput["image_urls"], Gate["image_urls"]>,
+  // bria/fibo-edit/relight
+  AssertExtends<wire.BriaFiboEditRelightInput["image_url"], Gate["image_url"]>,
+  AssertExtends<wire.BriaFiboEditRelightInput["light_direction"], Gate["light_direction"]>,
+  AssertExtends<wire.BriaFiboEditRelightInput["light_type"], Gate["light_type"]>,
   // bytedance/seedream/v5/pro/edit
   AssertExtends<wire.BytedanceSeedreamV5ProEditInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.BytedanceSeedreamV5ProEditInput["num_images"], Gate["num_images"]>,

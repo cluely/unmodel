@@ -984,6 +984,8 @@ function googleTtsTypeTests(): void {
 
   const ttsReport = googleCheckTts({ candidates: [{ finishReason: "STOP" }] });
   expectAssignable<ResponseReport<GoogleTtsFinishReason>>(ttsReport);
+  const decoded = undefined as unknown;
+  expectAssignable<ResponseReport<GoogleTtsFinishReason>>(googleCheckTts(decoded));
   expectTrue<HasLiteralMember<GoogleTtsFinishReason, "PROHIBITED_CONTENT">>();
 }
 

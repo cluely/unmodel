@@ -21,6 +21,7 @@ import type {
   FalAvatarBodyById,
   FalAvatarResultById,
   FalImageBodyById,
+  FalImageEditArm,
   FalImageEditBodyById,
   FalImageEditResultById,
   FalImageResultById,
@@ -79,6 +80,11 @@ function falResultShapesAreReal(): void {
   expectNotAny<FalImageResultById["fal-ai/flux/dev"]>();
   expectAssignable<number>({} as FalImageResultById["fal-ai/flux/dev"]["seed"]);
 
+  expectNotAny<FalImageEditResultById["bria/fibo-edit/relight"]>();
+  expectAssignable<string>(
+    {} as FalImageEditResultById["bria/fibo-edit/relight"]["image"]["url"],
+  );
+
   expectNotAny<FalTtsResultById["fal-ai/elevenlabs/tts/eleven-v3"]>();
   expectAssignable<string>(
     {} as FalTtsResultById["fal-ai/elevenlabs/tts/eleven-v3"]["audio"]["url"],
@@ -88,6 +94,36 @@ function falResultShapesAreReal(): void {
   // envelope's `request_id` has no counterpart on a result.
   expectTrue<IsNever<Extract<keyof FalVideoResultById["fal-ai/veo3.1"], "request_id">>>();
   expectAssignable<string>({} as FalQueueSubmitResponse["request_id"]);
+}
+
+/** The prompt-less direct-only row keeps fal's exact request vocabulary. */
+function falBriaRelightRequestIsExact(): void {
+  const request: FalImageEditArm<"bria/fibo-edit/relight"> = {
+    endpoint: "bria/fibo-edit/relight",
+    image_url: "https://example.com/source.png",
+    light_direction: "top-down",
+    light_type: "starlight nighttime",
+  };
+  expectAssignable<"front" | "side" | "bottom" | "top-down" | null>(
+    request.light_direction,
+  );
+
+  const badDirection: FalImageEditArm<"bria/fibo-edit/relight"> = {
+    endpoint: "bria/fibo-edit/relight",
+    image_url: "https://example.com/source.png",
+    // @ts-expect-error — fal publishes exactly four light directions.
+    light_direction: "behind",
+    light_type: "midday",
+  };
+  const badLightType: FalImageEditArm<"bria/fibo-edit/relight"> = {
+    endpoint: "bria/fibo-edit/relight",
+    image_url: "https://example.com/source.png",
+    light_direction: "front",
+    // @ts-expect-error — free-form lighting prose is not this route's contract.
+    light_type: "make it dramatic",
+  };
+  void badDirection;
+  void badLightType;
 }
 
 /** `"error" in body` is the discriminant, because fal sends no other tag. */
@@ -111,4 +147,9 @@ function falQueueResultNarrows(): void {
   expectTrue<IsNever<Extract<keyof FalVideoResultById["fal-ai/veo3.1"], "error">>>();
 }
 
-export { falQueueResultNarrows, falResultMapsMatchTheirRequestMaps, falResultShapesAreReal };
+export {
+  falBriaRelightRequestIsExact,
+  falQueueResultNarrows,
+  falResultMapsMatchTheirRequestMaps,
+  falResultShapesAreReal,
+};

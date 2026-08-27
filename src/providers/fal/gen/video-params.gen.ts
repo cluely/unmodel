@@ -39,8 +39,8 @@
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
- * How each `fal.video` endpoint lets a caller state geometry, and which wire keys it
- * takes.
+ * How each unified-eligible `fal.video` endpoint lets a caller state geometry, and which
+ * wire keys it takes.
  *
  * `classes` is what the unified adapter branches on. One branch per shape class, never one
  * per endpoint: at a hundred endpoints a per-endpoint switch is both unreadable and a d.ts
@@ -840,12 +840,12 @@ export const FAL_VIDEO_PARAM_SHAPES = {
 } as const satisfies Record<string, FalParamShape>;
 
 /**
- * Every `fal.video` endpoint id, in the order the table above keys them.
+ * Every unified-eligible `fal.video` endpoint id, in the order the table above keys them.
  *
- * Here as well as in `endpoints.gen.ts` so the import-free `*-params` leaf can publish a
- * model list without reaching for a second generated module — the leaf rule (A10b in
- * test/import-graph.test.ts) allows it exactly one, and this is it. Same ids, same order,
- * one generator.
+ * Here separately from `endpoints.gen.ts` so the import-free `*-params` leaf can publish
+ * its adapter model list without reaching for a second generated module — the leaf rule
+ * (A10b in test/import-graph.test.ts) allows it exactly one, and this is it. Direct-only
+ * ids remain in the provider-native artifacts.
  */
 
 export const FAL_VIDEO_MODELS = ["bytedance/seedance-2.0/image-to-video", "bytedance/seedance-2.0/text-to-video", "bytedance/seedance-2.5/image-to-video", "bytedance/seedance-2.5/reference-to-video", "bytedance/seedance-2.5/text-to-video", "fal-ai/kling-video/o1/video-to-video/edit", "fal-ai/kling-video/o3/pro/video-to-video/edit", "fal-ai/kling-video/v2.5-turbo/pro/image-to-video", "fal-ai/kling-video/v2.5-turbo/pro/text-to-video", "fal-ai/kling-video/v2.6/pro/image-to-video", "fal-ai/kling-video/v2.6/pro/text-to-video", "fal-ai/kling-video/v3/pro/image-to-video", "fal-ai/kling-video/v3/pro/motion-control", "fal-ai/kling-video/v3/pro/text-to-video", "fal-ai/kling-video/v3/standard/image-to-video", "fal-ai/kling-video/v3/standard/text-to-video", "fal-ai/lightx/relight", "fal-ai/minimax/hailuo-02/pro/image-to-video", "fal-ai/minimax/hailuo-2.3/pro/text-to-video", "fal-ai/pixverse/v6/text-to-video", "fal-ai/veo3.1", "fal-ai/veo3.1/extend-video", "fal-ai/veo3.1/fast", "fal-ai/veo3.1/first-last-frame-to-video", "fal-ai/veo3.1/image-to-video", "fal-ai/veo3.1/reference-to-video", "fal-ai/wan/v2.2-a14b/image-to-video", "fal-ai/wan/v2.2-a14b/text-to-video", "fal-ai/wan/v2.7/image-to-video", "fal-ai/wan/v2.7/text-to-video", "google/gemini-omni-flash", "lightricks/ltx-2.5/text-to-video/pro", "minimax/h3/image-to-video", "minimax/h3/text-to-video", "xai/grok-imagine-video/text-to-video"] as const;

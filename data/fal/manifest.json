@@ -13,9 +13,9 @@
       "category": "image-to-image",
       "display_name": "Qwen Image 3 Image Editing",
       "file": "openapi/alibaba__qwen-image-3__edit.json",
-      "sha256": "6c962574d533918f74c9128b5a1bef721f2b3579a542737106e62a8213d9e8cf",
+      "sha256": "232c9d0f08bf5e8858ef0cb714e5b81a4b46947e43e98d5424669053cda46ad8",
       "status": "active",
-      "updated_at": "2026-08-04T22:31:58.927Z"
+      "updated_at": "2026-08-28T21:08:33.124Z"
     },
     "argil/avatars/audio-to-video": {
       "category": "audio-to-video",
@@ -53,25 +53,25 @@
       "category": "unknown",
       "display_name": "Seedance 2.5 Image to Video",
       "file": "openapi/bytedance__seedance-2.5__image-to-video.json",
-      "sha256": "fcc549a1b1bb1e82c2e28cdda578c6327d4a60e6397e9ba1edd59c2f31212820",
+      "sha256": "6f63d1a30bc54453d8fb2ca867980709a3bb5b4854138f64f180ebd5b8af5a86",
       "status": "active",
-      "updated_at": "2026-08-17T06:33:25.388Z"
+      "updated_at": "2026-08-28T18:46:17.166Z"
     },
     "bytedance/seedance-2.5/reference-to-video": {
       "category": "image-to-video",
       "display_name": "Seedance 2.5 Reference to Video",
       "file": "openapi/bytedance__seedance-2.5__reference-to-video.json",
-      "sha256": "369e1a1af3bd80cc8fe15445bbd53addcc085588d8bf903c9a3bf79a3f9b153c",
+      "sha256": "202578d56773535131d51a7201aec16ebab2010fd26f1a8066e672fb2a79897e",
       "status": "active",
-      "updated_at": "2026-08-17T06:34:03.712Z"
+      "updated_at": "2026-08-28T18:45:04.475Z"
     },
     "bytedance/seedance-2.5/text-to-video": {
       "category": "unknown",
       "display_name": "Seedance 2.5 Text to Video",
       "file": "openapi/bytedance__seedance-2.5__text-to-video.json",
-      "sha256": "60491e22d09f2beb8c030d7e9351ce35a882f41e57ef905c6e4e1c3c4c7bb75c",
+      "sha256": "684659e6d101a46574ec8c593ed8603565c7f7e8a9c5232c6a8c2105df875a5c",
       "status": "active",
-      "updated_at": "2026-08-17T06:32:36.819Z"
+      "updated_at": "2026-08-28T18:45:54.815Z"
     },
     "bytedance/seedream/v5/pro/edit": {
       "category": "image-to-image",
@@ -389,9 +389,9 @@
       "category": "text-to-speech",
       "display_name": "Gemini 3.1 Flash Tts",
       "file": "openapi/fal-ai__gemini-3.1-flash-tts.json",
-      "sha256": "79b055c8e57d508ca86dfe08e783fc918ca0151570345803e95b9ed702dfe029",
+      "sha256": "e37e6e21d18f8718ace4b7c460a16913571fbaddc7805e4ec1c8bff9c1af571a",
       "status": "active",
-      "updated_at": "2026-04-28T16:29:09.509Z"
+      "updated_at": "2026-08-26T16:56:42.491Z"
     },
     "fal-ai/gemini-tts": {
       "category": "text-to-audio",
@@ -1205,7 +1205,7 @@
       "category": "unknown",
       "display_name": "MiniMax H3 Image to Video",
       "file": "openapi/minimax__h3__image-to-video.json",
-      "sha256": "29fcb5ccb7849af015c29b4c891857a1e51618fd92afa62e1e8a378fa63df1a2",
+      "sha256": "8935ad0cbf021fdc5a87a5e5d5f6004f54161c505218a530e3a3f58f4e2fa7a5",
       "status": "active",
       "updated_at": "2026-08-25T17:41:07.462Z"
     },
@@ -1213,7 +1213,7 @@
       "category": "unknown",
       "display_name": "MiniMax H3 Text to Video",
       "file": "openapi/minimax__h3__text-to-video.json",
-      "sha256": "85a96b6d63d2efea347880e03fdd0c089cbec0ea9a7d52016322c4edfadeebcc",
+      "sha256": "e9f050a80571d2f49f62889d0cf014b6825325758384b20e2780489b9603348f",
       "status": "active",
       "updated_at": "2026-08-26T06:41:51.586Z"
     },
@@ -1229,7 +1229,7 @@
       "category": "text-to-image",
       "display_name": "GPT Image 2 API",
       "file": "openapi/openai__gpt-image-2.json",
-      "sha256": "2de93477365a5e80235bd770e0a25573df1619bf5cdbf677ffeea5947415eb33",
+      "sha256": "9b299b9d5be44ab769e299c170670759bed013c37773cf83c3bf03ab5972879a",
       "status": "active",
       "updated_at": "2026-06-11T00:04:42.458Z"
     },
@@ -1237,7 +1237,7 @@
       "category": "image-to-image",
       "display_name": "GPT Image 2 API",
       "file": "openapi/openai__gpt-image-2__edit.json",
-      "sha256": "11619a48a40bbf01afaf1054daf64a6fb57ea1ef3572d44a594e4ddd0cb70c4a",
+      "sha256": "dc91388a431fc0972d496f5b2290620779ed24cd55c585e000b5a3f698b912b9",
       "status": "active",
       "updated_at": "2026-08-13T21:01:03.124Z"
     },
@@ -1253,25 +1253,25 @@
       "category": "image-to-image",
       "display_name": "Topaz Upscale Image Generative",
       "file": "openapi/topaz__upscale__image__generative.json",
-      "sha256": "a82bdd3d6e7c2b1029ba62d5e95dfce26aa2b214e69fe719af8546f440e5338e",
+      "sha256": "a9e95609a6e6d2c170375c50e8e62495a4ae4a11f27b9a22609bdf70fb32f23d",
       "status": "active",
-      "updated_at": "2026-08-17T20:37:43.524Z"
+      "updated_at": "2026-08-28T13:40:47.758Z"
     },
     "topaz/upscale/image/precision": {
       "category": "video-to-video",
       "display_name": "Topaz Upscale Image Precision",
       "file": "openapi/topaz__upscale__image__precision.json",
-      "sha256": "c9233f0e1488573739899ecb5b476c6e802bd0022ee7192dfde51489a2dc12c7",
+      "sha256": "89a2a2e4abb8ee4af68020e49bebf69b6a537518e6b72681877ea00639268e1a",
       "status": "active",
-      "updated_at": "2026-08-17T20:41:05.255Z"
+      "updated_at": "2026-08-28T13:35:32.066Z"
     },
     "topaz/upscale/video/generative": {
       "category": "video-to-video",
       "display_name": "Topaz Upscale Video Generative",
       "file": "openapi/topaz__upscale__video__generative.json",
-      "sha256": "8b6432e757f35a0f196b3643b4e2ff1ba67326df727686ad2698b4106f6f190f",
+      "sha256": "553aba32c49c3b7cb22db05ed6eacecab8f1693a79de6b748180f853e45dd26f",
       "status": "active",
-      "updated_at": "2026-08-17T20:38:38.965Z"
+      "updated_at": "2026-08-28T13:46:17.406Z"
     },
     "topaz/upscale/video/precision": {
       "category": "video-to-video",
@@ -1373,7 +1373,7 @@
       "category": "text-to-speech",
       "display_name": "xAI Text to Speech",
       "file": "openapi/xai__tts__v1.json",
-      "sha256": "5aae153b9e1522968009e00b8a13e77e967849ae6a0cb7bb7237c1899a311fb3",
+      "sha256": "d2cc7358d8299cf29c2500a01cf601c7f32be7bfcc34ace10faf49f7468326b6",
       "status": "active",
       "updated_at": "2026-06-02T21:56:08.936Z"
     }

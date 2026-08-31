@@ -147,12 +147,6 @@
             "prompt_expansion_mode": {
               "anyOf": [
                 {
-                  "enum": [
-                    "disabled",
-                    "fast",
-                    "balanced",
-                    "quality"
-                  ],
                   "type": "string"
                 },
                 {
@@ -160,7 +154,12 @@
                 }
               ],
               "default": "balanced",
-              "description": "How much effort to spend rewriting the prompt before generation. 'disabled' skips prompt expansion. 'fast' returns in about a second. 'quality' spends up to ~30s on a richer prompt. 'balanced' picks per request.",
+              "description": "How much effort to spend rewriting the prompt before generation. 'fast' returns in about a second. 'balanced' picks per request. 'quality' spends up to ~30s on a richer prompt.",
+              "examples": [
+                "fast",
+                "balanced",
+                "quality"
+              ],
               "title": "Prompt Expansion Mode"
             },
             "resolution": {

@@ -375,38 +375,6 @@ const ROW_51c42a = {
   },
 } as const;
 
-/** xai/tts/v1. */
-const ROW_5784b7 = {
-  classes: ["fixedGeometry"],
-  keys: ["text", "voice", "language", "output_format"],
-  textWire: "text",
-  voiceWire: "voice",
-  voices: ["eve", "ara", "rex", "sal", "leo"],
-  languageWire: "language",
-  languages: ["ar", "bn", "de", "en", "es", "fr", "hi", "id", "it", "ja", "ko", "pt", "ru", "tr", "vi", "zh"],
-  languageValues: {
-    ar: "ar-EG",
-    bn: "bn",
-    de: "de",
-    en: "en",
-    es: "es-MX",
-    fr: "fr",
-    hi: "hi",
-    id: "id",
-    it: "it",
-    ja: "ja",
-    ko: "ko",
-    pt: "pt-BR",
-    ru: "ru",
-    tr: "tr",
-    vi: "vi",
-    zh: "zh",
-  },
-  formatWire: "output_format",
-  codecs: [],
-  extras: {},
-} as const;
-
 /** fal-ai/kokoro/american-english. */
 const ROW_5afc05 = {
   classes: ["fixedGeometry"],
@@ -763,6 +731,38 @@ const ROW_f079a6 = {
   extras: {},
 } as const;
 
+/** xai/tts/v1. */
+const ROW_f31987 = {
+  classes: ["fixedGeometry"],
+  keys: ["text", "voice", "language", "output_format"],
+  textWire: "text",
+  voiceWire: "voice",
+  voices: ["carina", "zagan", "helix", "orion", "luna", "iris", "altair", "zenith", "perseus", "helios", "lux", "kepler", "rigel", "cosmo", "celeste", "ursa", "sirius", "lumen", "castor", "naksh", "atlas", "aurora", "liora", "ara", "eve", "leo", "rex", "sal"],
+  languageWire: "language",
+  languages: ["ar", "bn", "de", "en", "es", "fr", "hi", "id", "it", "ja", "ko", "pt", "ru", "tr", "vi", "zh"],
+  languageValues: {
+    ar: "ar-EG",
+    bn: "bn",
+    de: "de",
+    en: "en",
+    es: "es-MX",
+    fr: "fr",
+    hi: "hi",
+    id: "id",
+    it: "it",
+    ja: "ja",
+    ko: "ko",
+    pt: "pt-BR",
+    ru: "ru",
+    tr: "tr",
+    vi: "vi",
+    zh: "zh",
+  },
+  formatWire: "output_format",
+  codecs: [],
+  extras: {},
+} as const;
+
 export const FAL_TTS_PARAM_SHAPES = {
   "fal-ai/bytedance/seed-speech/tts/v2": ROW_6e0c9e,
   "fal-ai/chatterbox/text-to-speech": ROW_1c1fbd,
@@ -786,7 +786,7 @@ export const FAL_TTS_PARAM_SHAPES = {
   "fal-ai/minimax/speech-2.8-hd": ROW_6e87a1,
   "fal-ai/minimax/speech-2.8-turbo": ROW_6e87a1,
   "fal-ai/qwen-3-tts/text-to-speech/1.7b": ROW_646314,
-  "xai/tts/v1": ROW_5784b7,
+  "xai/tts/v1": ROW_f31987,
 } as const satisfies Record<string, FalParamShape>;
 
 /**

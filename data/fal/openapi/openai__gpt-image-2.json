@@ -30,6 +30,17 @@
       "schemas": {
         "GptImage2Input": {
           "properties": {
+            "background": {
+              "default": "auto",
+              "description": "Background for the generated image",
+              "enum": [
+                "auto",
+                "transparent",
+                "opaque"
+              ],
+              "title": "Background",
+              "type": "string"
+            },
             "image_size": {
               "anyOf": [
                 {
@@ -111,6 +122,7 @@
           "x-fal-order-properties": [
             "prompt",
             "image_size",
+            "background",
             "quality",
             "num_images",
             "output_format",

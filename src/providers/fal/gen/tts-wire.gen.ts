@@ -1037,11 +1037,8 @@ export interface XaiTtsV1Input {
    * <whisper>text</whisper>, <slow>text</slow>.
    */
   text: string;
-  /**
-   * Voice to use for synthesis. eve: energetic, upbeat. ara: warm, friendly. rex: confident,
-   * clear. sal: smooth, balanced. leo: authoritative, strong. Default: `"eve"`.
-   */
-  voice?: "eve" | "ara" | "rex" | "sal" | "leo";
+  /** Built-in xAI voice to use for synthesis. Default: `"eve"`. */
+  voice?: "carina" | "zagan" | "helix" | "orion" | "luna" | "iris" | "altair" | "zenith" | "perseus" | "helios" | "lux" | "kepler" | "rigel" | "cosmo" | "celeste" | "ursa" | "sirius" | "lumen" | "castor" | "naksh" | "atlas" | "aurora" | "liora" | "ara" | "eve" | "leo" | "rex" | "sal";
   /**
    * BCP-47 language code or 'auto' for automatic detection. Supported: en, zh, fr, de, hi,
    * id, it, ja, ko, pt-BR, pt-PT, ru, es-MX, es-ES, tr, vi, bn, ar-EG, ar-SA, ar-AE.

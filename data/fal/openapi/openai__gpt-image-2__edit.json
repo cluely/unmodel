@@ -29,6 +29,17 @@
       "schemas": {
         "GptImage2EditInput": {
           "properties": {
+            "background": {
+              "default": "auto",
+              "description": "Background for the generated image",
+              "enum": [
+                "auto",
+                "transparent",
+                "opaque"
+              ],
+              "title": "Background",
+              "type": "string"
+            },
             "image_size": {
               "anyOf": [
                 {
@@ -138,6 +149,7 @@
             "prompt",
             "image_urls",
             "image_size",
+            "background",
             "quality",
             "num_images",
             "output_format",

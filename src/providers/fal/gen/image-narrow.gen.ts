@@ -524,10 +524,11 @@ export const FAL_IMAGE_SHAPES = {
     },
   },
   "openai/gpt-image-2": {
-    order: ["prompt", "image_size", "quality", "num_images", "output_format", "sync_mode"],
+    order: ["prompt", "image_size", "background", "quality", "num_images", "output_format", "sync_mode"],
     props: {
       prompt: { t: "string", req: true, minLen: 2, maxLen: 32000 },
       image_size: { t: "union", def: true, size: { presets: E_f02829, width: { xmin: 0, max: 14142, default: 512 }, height: { xmin: 0, max: 14142, default: 512 } } },
+      background: { t: "string", def: true, enum: E_9373e9 },
       quality: { t: "string", def: true, enum: E_d2a2cd },
       num_images: { t: "integer", def: true, min: 1, max: 4 },
       output_format: { t: "string", def: true, enum: E_205460 },
@@ -687,6 +688,7 @@ export const FAL_IMAGE_CONSTRAINTS = {
     output_format: E_205460,
   },
   "openai/gpt-image-2": {
+    background: E_9373e9,
     quality: E_d2a2cd,
     output_format: E_205460,
   },

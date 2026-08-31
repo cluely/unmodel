@@ -46,6 +46,7 @@ import type { FalEndpointShape } from "../shape-types";
 const E_10194c = ["mp3", "opus"] as const;
 const E_145a6c = ["ef_dora", "em_alex", "em_santa"] as const;
 const E_1a7c70 = ["auto", "on", "off"] as const;
+const E_1b8f0a = ["carina", "zagan", "helix", "orion", "luna", "iris", "altair", "zenith", "perseus", "helios", "lux", "kepler", "rigel", "cosmo", "celeste", "ursa", "sirius", "lumen", "castor", "naksh", "atlas", "aurora", "liora", "ara", "eve", "leo", "rex", "sal"] as const;
 const E_517655 = ["Achernar", "Achird", "Algenib", "Algieba", "Alnilam", "Aoede", "Autonoe", "Callirrhoe", "Charon", "Despina", "Enceladus", "Erinome", "Fenrir", "Gacrux", "Iapetus", "Kore", "Laomedeia", "Leda", "Orus", "Pulcherrima", "Puck", "Rasalgethi", "Sadachbia", "Sadaltager", "Schedar", "Sulafat", "Umbriel", "Vindemiatrix", "Zephyr", "Zubenelgenubi"] as const;
 const E_57b05a = ["Vivian", "Serena", "Uncle_Fu", "Dylan", "Eric", "Ryan", "Aiden", "Ono_Anna", "Sohee"] as const;
 const E_687379 = ["pf_dora", "pm_alex", "pm_santa"] as const;
@@ -69,7 +70,6 @@ const E_e72374 = ["Auto", "English", "Chinese", "Spanish", "French", "German", "
 const E_e933fe = ["Loretta (en)", "Darlene (en)", "Marlene (en)", "Hank (en)", "Evelyn (en)", "Celeste (en)", "Pippa (en)", "Tessa (en)", "Liam (en)", "Callum (en)", "Hamish (en)", "Abby (en)", "Graham (en)", "Rupert (en)", "Mortimer (en)", "Snik (en)", "Anjali (en)", "Saanvi (en)", "Arjun (en)", "Claire (en)", "Oliver (en)", "Simon (en)", "Elliot (en)", "James (en)", "Serena (en)", "Gareth (en)", "Vinny (en)", "Lauren (en)", "Jessica (en)", "Ethan (en)", "Tyler (en)", "Jason (en)", "Chloe (en)", "Veronica (en)", "Victoria (en)", "Miranda (en)", "Sebastian (en)", "Victor (en)", "Malcolm (en)", "Kayla (en)", "Nate (en)", "Jake (en)", "Brian (en)", "Amina (en)", "Kelsey (en)", "Derek (en)", "Grant (en)", "Evan (en)", "Alex (en)", "Ashley (en)", "Craig (en)", "Deborah (en)", "Dennis (en)", "Edward (en)", "Elizabeth (en)", "Hades (en)", "Julia (en)", "Pixie (en)", "Mark (en)", "Olivia (en)", "Priya (en)", "Ronald (en)", "Sarah (en)", "Shaun (en)", "Theodore (en)", "Timothy (en)", "Wendy (en)", "Dominus (en)", "Hana (en)", "Clive (en)", "Carter (en)", "Blake (en)", "Luna (en)", "Yichen (zh)", "Xiaoyin (zh)", "Xinyi (zh)", "Jing (zh)", "Erik (nl)", "Katrien (nl)", "Lennart (nl)", "Lore (nl)", "Alain (fr)", "Hélène (fr)", "Mathieu (fr)", "Étienne (fr)", "Johanna (de)", "Josef (de)", "Gianni (it)", "Orietta (it)", "Asuka (ja)", "Satoshi (ja)", "Hyunwoo (ko)", "Minji (ko)", "Seojun (ko)", "Yoona (ko)", "Szymon (pl)", "Wojciech (pl)", "Heitor (pt)", "Maitê (pt)", "Diego (es)", "Lupita (es)", "Miguel (es)", "Rafael (es)", "Svetlana (ru)", "Elena (ru)", "Dmitry (ru)", "Nikolai (ru)", "Riya (hi)", "Manoj (hi)", "Yael (he)", "Oren (he)", "Nour (ar)", "Omar (ar)"] as const;
 const E_eb9b79 = ["zh", "en", "ja", "es-mx", "id", "pt-br", "ko", "it", "de", "fr"] as const;
 const E_ecabfe = ["wav", "mp3", "ogg_opus"] as const;
-const E_f7be3e = ["eve", "ara", "rex", "sal", "leo"] as const;
 
 export const FAL_TTS_SHAPES = {
   "fal-ai/bytedance/seed-speech/tts/v2": {
@@ -318,7 +318,7 @@ export const FAL_TTS_SHAPES = {
     order: ["text", "voice", "language", "output_format"],
     props: {
       text: { t: "string", req: true, minLen: 1, maxLen: 15000 },
-      voice: { t: "string", def: true, enum: E_f7be3e },
+      voice: { t: "string", def: true, enum: E_1b8f0a },
       language: { t: "string", def: true, enum: E_dd3f91 },
       output_format: { t: "object" },
     },
@@ -411,7 +411,7 @@ export const FAL_TTS_CONSTRAINTS = {
     language: E_e72374,
   },
   "xai/tts/v1": {
-    voice: E_f7be3e,
+    voice: E_1b8f0a,
     language: E_dd3f91,
   },
 } as const;

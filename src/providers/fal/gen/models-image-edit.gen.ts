@@ -53,7 +53,7 @@ export const imageEditModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    lastUpdated: "2026-08-04",
+    lastUpdated: "2026-08-28",
     modalities: { input: ["image", "text"], output: ["image"] },
     limit: { context: 0 },
   },

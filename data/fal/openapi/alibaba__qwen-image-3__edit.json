@@ -2,7 +2,7 @@
   "metadata": {
     "category": "image-to-image",
     "date": "2026-07-21T10:47:46.112Z",
-    "description": "Generates images from a text prompt at resolutions up to 2048×2048, with automatic prompt rewriting and prompt-guided resolution selection, building on Qwen's strength in complex text rendering and precise prompt adherence",
+    "description": "Edits images from one to three reference images and a natural-language instruction, preserving key details such as facial features and identity while applying the requested changes",
     "display_name": "Qwen Image 3 Image Editing",
     "group": {
       "key": "qwen-image-3",
@@ -21,7 +21,7 @@
       "typography"
     ],
     "thumbnail_url": "https://v3b.fal.media/files/b/0aa32168/Sh5wWmoqniWOUsvLNk1Qu.jpg",
-    "updated_at": "2026-08-04T22:31:58.927Z"
+    "updated_at": "2026-08-28T21:08:33.124Z"
   },
   "openapi": {
     "components": {

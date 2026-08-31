@@ -162,7 +162,7 @@ export const ttsModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    lastUpdated: "2026-04-28",
+    lastUpdated: "2026-08-26",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0, characters: 50000 },
     cost: { perMillionCharacters: 50 },

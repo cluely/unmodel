@@ -198,7 +198,7 @@ export const falVideoInputSchema = z.looseObject({
    * bare type and the exact vocabulary is enforced per endpoint from FAL_VIDEO_SHAPES.
    */
   prompt: z.string().nullable().optional(),
-  prompt_expansion_mode: z.enum(["disabled", "fast", "balanced", "quality"]).nullable().optional(),
+  prompt_expansion_mode: z.string().nullable().optional(),
   prompt_optimizer: z.boolean().optional(),
   ref_id: z.number().optional(),
   relight_parameters: falRelightParametersSchema.nullable().optional(),

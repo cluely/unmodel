@@ -330,6 +330,24 @@ const ROW_5a37f1 = {
   },
 } as const;
 
+/**
+ * openai/gpt-image-2.
+ *
+ * The extras are typed from `OpenaiGptImage2Input`, so the value an editor offers here and
+ * the value `fal.image` validates are one declaration.
+ */
+const ROW_632d58 = {
+  classes: ["imageSizeUnion"],
+  keys: ["prompt", "image_size", "background", "quality", "num_images", "output_format", "sync_mode"],
+  sizes: ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9", "auto"],
+  pixels: { min: 1, max: 14142 },
+  bounds: { num_images: { min: 1, max: 4 } },
+  extras: {
+    background: EXTRA as OpenaiGptImage2Input["background"],
+    quality: EXTRA as OpenaiGptImage2Input["quality"],
+  },
+} as const;
+
 /** reve/2.1/text-to-image. */
 const ROW_764f83 = {
   classes: ["aspectRatioEnum"],
@@ -416,23 +434,6 @@ const ROW_85ed26 = {
     guidance_scale: EXTRA as FalAiFluxLoraInput["guidance_scale"],
     enable_safety_checker: EXTRA as FalAiFluxLoraInput["enable_safety_checker"],
     acceleration: EXTRA as FalAiFluxLoraInput["acceleration"],
-  },
-} as const;
-
-/**
- * openai/gpt-image-2.
- *
- * The extras are typed from `OpenaiGptImage2Input`, so the value an editor offers here and
- * the value `fal.image` validates are one declaration.
- */
-const ROW_886318 = {
-  classes: ["imageSizeUnion"],
-  keys: ["prompt", "image_size", "quality", "num_images", "output_format", "sync_mode"],
-  sizes: ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9", "auto"],
-  pixels: { min: 1, max: 14142 },
-  bounds: { num_images: { min: 1, max: 4 } },
-  extras: {
-    quality: EXTRA as OpenaiGptImage2Input["quality"],
   },
 } as const;
 
@@ -702,7 +703,7 @@ export const FAL_IMAGE_PARAM_SHAPES = {
   "krea/v2/large/text-to-image": ROW_cf6b44,
   "krea/v2/medium/text-to-image": ROW_cf6b44,
   "microsoft/mai-image-2.5": ROW_0bf7e4,
-  "openai/gpt-image-2": ROW_886318,
+  "openai/gpt-image-2": ROW_632d58,
   "reve/2.1/text-to-image": ROW_764f83,
   "xai/grok-imagine-image": ROW_fe759e,
 } as const satisfies Record<string, FalParamShape>;

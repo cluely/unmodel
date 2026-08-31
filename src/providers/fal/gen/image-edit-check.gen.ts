@@ -221,6 +221,7 @@ export type FalImageEditSchemaChecks = [
   // openai/gpt-image-2/edit
   AssertExtends<wire.OpenaiGptImage2EditInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.OpenaiGptImage2EditInput["image_urls"], Gate["image_urls"]>,
+  AssertExtends<wire.OpenaiGptImage2EditInput["background"], Gate["background"]>,
   AssertExtends<wire.OpenaiGptImage2EditInput["quality"], Gate["quality"]>,
   AssertExtends<wire.OpenaiGptImage2EditInput["num_images"], Gate["num_images"]>,
   AssertExtends<wire.OpenaiGptImage2EditInput["output_format"], Gate["output_format"]>,

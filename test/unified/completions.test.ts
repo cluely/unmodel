@@ -2863,6 +2863,78 @@ sfx({ model: "fal/mirelo-ai/sfx1.6/text-to-audio", prompt: "p", ¦ });`);
   });
 });
 
+/**
+ * `unmodel/sts` — the category whose interesting completion is the REF list,
+ * because the two vendors' model spaces could hardly be less alike: three real
+ * ids at one and a single synthetic one at the other.
+ */
+describe("unified sts: the voice-conversion narrowing reaches the editor", () => {
+  test("the ref union completes the three real ids and the synthetic one", () => {
+    const refs = completionsAt(`import { sts } from "./src/unified/sts";
+declare const clip: Blob;
+sts({ model: "¦", audio: { file: clip }, voice: "v" });`);
+    expect(refs.sort()).toEqual([
+      "elevenlabs/eleven_english_sts_v1",
+      "elevenlabs/eleven_english_sts_v2",
+      "elevenlabs/eleven_multilingual_sts_v2",
+      "hume/voice-conversion",
+    ]);
+    // The neighbouring category's ids are NOT here, at the vendor that serves
+    // both — the disjoint-wires fact, seen from an editor.
+    expect(refs).not.toContain("elevenlabs/eleven_multilingual_v2");
+    expect(refs).not.toContain("hume/octave-2");
+  });
+
+  test("outputFormat completes each route's own codecs, in both spellings", () => {
+    const elevenlabs = completionsAt(`import { sts } from "./src/unified/sts";
+declare const clip: Blob;
+sts({ model: "elevenlabs/eleven_multilingual_sts_v2", audio: { file: clip }, voice: "v", outputFormat: "¦" });`);
+    expect(elevenlabs.sort()).toEqual(["mp3", "opus", "pcm_alaw", "pcm_mulaw", "pcm_s16le"]);
+
+    // Hume's `format` is a container NAME, so its set is two members wide.
+    const hume = completionsAt(`import { sts } from "./src/unified/sts";
+declare const clip: Blob;
+sts({ model: "hume/voice-conversion", audio: { file: clip }, voice: "v", outputFormat: "¦" });`);
+    expect(hume.sort()).toEqual(["mp3", "pcm_s16le"]);
+
+    const object = completionsAt(`import { sts } from "./src/unified/sts";
+declare const clip: Blob;
+sts({ model: "hume/voice-conversion", audio: { file: clip }, voice: "v", outputFormat: { format: "¦" } });`);
+    expect(object.sort()).toEqual(["mp3", "pcm_s16le"]);
+  });
+
+  test("the extras complete from each route's own wire interface, and cross over nowhere", () => {
+    const elevenlabs = completionsAt(`import { sts } from "./src/unified/sts";
+declare const clip: Blob;
+sts({ model: "elevenlabs/eleven_english_sts_v2", audio: { file: clip }, voice: "v", ¦ });`);
+    expect(elevenlabs).toContain("remove_background_noise");
+    expect(elevenlabs).toContain("voice_settings");
+    expect(elevenlabs).toContain("file_format");
+    expect(elevenlabs).not.toContain("strip_headers");
+
+    const hume = completionsAt(`import { sts } from "./src/unified/sts";
+declare const clip: Blob;
+sts({ model: "hume/voice-conversion", audio: { file: clip }, voice: "v", ¦ });`);
+    expect(hume).toContain("strip_headers");
+    expect(hume).toContain("include_timestamp_types");
+    expect(hume).not.toContain("seed");
+  });
+
+  test("omitting the target voice is one error, on `voice`", () => {
+    // The requiredness this category is built on, seen the way a caller sees
+    // it: `voice` is REQUIRED at both refs, including the one whose wire marks
+    // it optional.
+    for (const ref of ["elevenlabs/eleven_english_sts_v2", "hume/voice-conversion"]) {
+      expect(
+        semanticErrorsIn(`import { sts } from "./src/unified/sts";
+declare const clip: Blob;
+sts({ model: "${ref}", audio: { file: clip } });`).length,
+        ref,
+      ).toBeGreaterThan(0);
+    }
+  });
+});
+
 describe("unified voice creation: narrowing reaches the editor", () => {
   test("the clone ref union completes the synthetic and real ids alike", () => {
     const refs = completionsAt(`import { voiceClone } from "./src/unified/voice-clone";

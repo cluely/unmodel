@@ -59,9 +59,37 @@ const ttsModels = {
 } as const satisfies Record<string, ModelInfo>;
 
 /**
- * Speech-to-speech models — served by Resemble's speech-to-speech API, which
- * unmodel does not validate. Listed for catalog completeness; no USD rate is
- * published, so `cost` is omitted.
+ * Speech-to-speech models — and the reason there is no `resemble.sts` address.
+ *
+ * Resemble's speech-to-speech is NOT its own endpoint. It is the SAME
+ * synthesis route `resemble.tts` already validates, switched into conversion
+ * mode by the payload:
+ * https://docs.resemble.ai/voice-generation/speech-to-speech (fetched
+ * 2026-08-31), verbatim — "Speech-to-speech uses the same synthesis endpoint as
+ * synchronous TTS, but you pass SSML that references a source recording." The
+ * `data` field carries `<resemble:convert src="…">` naming an **HTTPS URL to a
+ * WAV file** ("Files over 50 MB or 300 seconds are trimmed"), and `voice_uuid`
+ * is the target voice — both already typed on `resemble.tts`. So the operation
+ * is reachable today, and a second address for one wire is exactly what
+ * `docs/decisions.md` §2 forbids.
+ *
+ * It is also why Resemble is not an `unmodel/sts` witness: that category's
+ * canonical `audio` is a required multipart `Blob` at both witnesses, and this
+ * route has no file part at all — the source is a URL inside a markup string.
+ * Compiling `{ file: Blob }` into an SSML `src` would mean unmodel hosting the
+ * caller's audio somewhere, which it cannot and will not do.
+ *
+ * SYNTHETIC-ADJACENT IDS. The endpoint has NO `model` field
+ * (https://docs.resemble.ai/getting-started/model-versions, 2026-08-31: "The
+ * model associated with the voice is selected automatically"), so these three
+ * are properties of a voice rather than request values; they are catalogued for
+ * completeness and must never appear in a body.
+ *
+ * NO COST. https://www.resemble.ai/pricing/ (fetched 2026-08-31) has a
+ * "Processing rates" table covering Detect, Intelligence, Identity search and
+ * Watermarker only — no TTS or STS line item — and the plans are credit-based
+ * ("load credits into your account and pay based on actual usage"). No
+ * defensible USD rate exists, so `cost` is omitted.
  */
 const speechToSpeechModels = {
   "sts-v2": {

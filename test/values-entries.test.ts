@@ -118,6 +118,7 @@ const CATEGORY_PREFIX: Readonly<Record<string, string>> = {
   stt: "STT",
   music: "MUSIC",
   sfx: "SFX",
+  sts: "STS",
   voiceClone: "VOICE_CLONE",
   voiceDesign: "VOICE_DESIGN",
 };
@@ -249,8 +250,10 @@ describe("completeness — every category an adapter serves has its uniform alia
     // atlascloud added two (its `unified.ts` barrel and its `unified-video.ts`
     // leaf both export the same adapter object, and this sweep walks files);
     // `sfx` added three (fal's leaf and barrel, ElevenLabs' pair counted once
-    // per file the same way).
-    expect(categories).toBeGreaterThanOrEqual(71);
+    // per file the same way). `sts` added four: two leaves plus their two
+    // barrels — hume's `unified.ts` became a barrel in the same wave, so its
+    // tts adapter is now counted through `unified-tts.ts` as well.
+    expect(categories).toBeGreaterThanOrEqual(76);
   });
 
   test("the built declaration exports them too, so the promise survives the build", () => {
@@ -489,6 +492,7 @@ describe("unmodel/values — the canonical hub", () => {
       "lipsync",
       "music",
       "sfx",
+      "sts",
       "stt",
       "tts",
       "upscale",
@@ -541,6 +545,22 @@ describe("unmodel/values — the canonical hub", () => {
     for (const word of lists["sfx"] as readonly string[]) {
       expect(lists["music"]).toContain(word);
     }
+    expect(lists["sts"]).toEqual([
+      "model",
+      "audio",
+      "voice",
+      "outputFormat",
+      "providerOptions",
+    ]);
+    // `sts` shares `voice` with `tts` and `audio` with `stt`, and it is the
+    // only list carrying BOTH — a recording in, a voice to put on it. What it
+    // does not carry is the words that describe generated speech: no `text`,
+    // no `speed`, no `language`, because all three come from the recording.
+    for (const absent of ["text", "speed", "language", "durationSeconds", "seed", "prompt"]) {
+      expect(lists["sts"]).not.toContain(absent);
+    }
+    expect(lists["tts"]).toContain("voice");
+    expect(lists["stt"]).toContain("audio");
   });
 
   test("CHAT_PROVIDERS is unmodel/chat's own array, not a second copy", async () => {
@@ -747,8 +767,15 @@ describe("bundle discipline", () => {
    */
   const ENTRY_BUDGET_KIB = 140;
 
-  /** The hub is nine short arrays and two re-exports. 15.6 KiB of chunk graph. */
-  const HUB_ENTRY_BUDGET_KIB = 20;
+  /**
+   * The hub is nine short arrays and two re-exports. 15.6 KiB of chunk graph at
+   * landing; **bumped 20 → 24 by the `sts` category**, which added a fourteenth
+   * `CANONICAL_KEY_LISTS` entry to the one module this hub exists to publish.
+   * 20.0 measured — the pin had 0.05 KiB of headroom left, which is what a
+   * fourteen-category hub costs. 24 is measured x 1.2, the slack the
+   * per-provider budget above carries.
+   */
+  const HUB_ENTRY_BUDGET_KIB = 24;
 
   /** …of which any single export shakes to at most 1.5 KiB (CANONICAL_KEY_LISTS). */
   const HUB_EXPORT_BUDGET_KIB = 3;

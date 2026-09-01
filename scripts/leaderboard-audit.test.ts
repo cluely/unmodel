@@ -195,15 +195,25 @@ describe("end to end over fixtures", () => {
     // Chat: the real catalog id matches exactly; the future one does not.
     expect(byKey.get("language")!.auto.map((c) => c.row.id)).toEqual(["l1"]);
     expect(byKey.get("language")!.triage.map((c) => c.row.id)).toEqual(["l2"]);
-    // Speech-to-speech is a category note, not a per-model gap list.
-    expect(result.notServed).toEqual([{ key: "speech-to-speech", total: 1 }]);
+    // Speech-to-speech is swept like any other row now that `unmodel/sts`
+    // ships: "Voice Morph 1" matches nothing in the pack, so it lands in
+    // triage — a real gap to look at rather than a category-shaped hole.
+    expect(byKey.get("speech-to-speech")!.triage.map((c) => c.row.id)).toEqual(["ss1"]);
+    // …and NOTHING is unserved any more: every AA media category the audit
+    // reads now has an unmodel surface behind it.
+    expect(result.notServed).toEqual([]);
     // Seeded aliases that matched nothing in these fixtures surface as stale.
     expect(result.staleAliases).toContain("text-to-video/magi-2-preview");
 
     const report = renderReport(result);
     expect(report).toContain("Totally New Imagegen 9");
     expect(report).toContain("Needs triage:");
-    expect(report).toContain("unmodel has no unified surface");
+    // The "no unified surface" section is GONE from this report, and that is
+    // the point: `unmodel/sts` was the last category-shaped hole, so
+    // speech-to-speech now renders a triage list like every other row.
+    expect(report).not.toContain("unmodel has no unified surface");
+    expect(report).toContain("## speech-to-speech — 1 ranked");
+    expect(report).toContain("Voice Morph 1");
     expect(report).toContain("Data: [Artificial Analysis](https://artificialanalysis.ai)");
   }, 30_000);
 

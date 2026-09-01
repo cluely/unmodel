@@ -1,6 +1,6 @@
 /**
  * `unmodel/hume/values` — the **runtime** lists behind this provider's
- * unified surface (tts).
+ * unified surfaces (tts, sts).
  *
  * Every export here is a readonly (`as const`) array or table a browser can
  * render: the model ids, the per-model narrowing rows (allowed sizes, ratios,
@@ -23,5 +23,11 @@ export {
   FORMAT as TTS_FORMAT_SPEC,
   HUME_TTS_DELIVERY as TTS_DELIVERY,
 } from "./tts-params";
+
+export {
+  HUME_STS_MODEL_PARAMS as STS_MODEL_PARAMS,
+  MODELS as STS_MODELS,
+  FORMAT as STS_FORMAT_SPEC,
+} from "./sts-params";
 
 export { HUME_MODEL_IDS } from "./models";

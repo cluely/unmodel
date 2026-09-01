@@ -499,6 +499,14 @@ export const UNIFIED = {
     import("./unified/voice-clone").then((m) => asCli(m.voiceClone)),
   "unified.voiceDesign": () =>
     import("./unified/voice-design").then((m) => asCli(m.voiceDesign)),
+  // `unified.sts` is deliberately ABSENT, and it is the one pack that is. The
+  // voice-clone argument above turns on canonical `samples` having `{ data }`
+  // and `{ fileId }` arms a JSON document can write; `sts`'s canonical `audio`
+  // has exactly one arm, `{ file: Blob }`, because both witnesses take the
+  // recording as a required binary form part with no reference alternative. So
+  // there is no `sts` request a JSON params document can express, and
+  // registering the pack would offer a surface that refuses every possible
+  // input. Pinned in `src/cli.test.ts`.
 } satisfies Record<string, () => Promise<CliValidator>>;
 
 /** Every unified-category id the CLI serves. */
@@ -527,6 +535,13 @@ export const MULTIPART_ONLY = {
   "stability.imageEditRemoveBackground": "unmodel/stability",
   "stability.musicFromAudio": "unmodel/stability",
   "stability.musicInpaint": "unmodel/stability",
+  // Voice conversion: the WHOLE category is here. `audio` is a required binary
+  // form part at both witnesses with no URL or base64 alternative, so no JSON
+  // params document can express one of these requests — the
+  // `elevenlabs.voiceClone` case, not the `elevenlabs.dub` / `ideogram.image`
+  // one (those are registered because their file is OPTIONAL).
+  "elevenlabs.sts": "unmodel/elevenlabs",
+  "hume.sts": "unmodel/hume",
   "elevenlabs.voiceClone": "unmodel/elevenlabs",
   "fish-audio.voiceClone": "unmodel/fish-audio",
   "cartesia.voiceClone": "unmodel/cartesia",

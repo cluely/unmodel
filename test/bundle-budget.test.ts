@@ -244,7 +244,7 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * | lightricks | 60.5 | 68 | one endpoint, one model, the WxH → tier+ratio split |
    * | black-forest-labs | 89.5 | 100 | five models across two endpoints |
    * | kling | 122.1 | 135 | six fal endpoints across two source routes |
-   * | elevenlabs | 183.0 | 202 | three models, the widest refusal battery, plus DUBBING |
+   * | elevenlabs | 210.7 | 222 | three models, the widest refusal battery, plus DUBBING, SFX and STS |
    * | minimax | 209.1 | 227 | three models, plus chat/video/clone/design |
    *
    * The engine and the target table are ~9 KiB of the total, shared as one
@@ -261,6 +261,15 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * `string` and publishes the enumeration only as prose. Pinned at ~×1.10,
    * the same multiple as every other row in this group.
    *
+   * **elevenlabs 202 → 222 (measured 196.1 → 210.7), and again the seam did not
+   * do it.** `elevenlabs.sts` landed: one multipart validator with its zod
+   * schema, three checks and a `stsToFormData`. The +14.6 KiB is unusually
+   * small for a new endpoint here because the module reuses `./tts`'s 27-value
+   * `output_format` enum and its `ElevenlabsVoiceSettings` rather than
+   * declaring its own — both were already in this barrel's graph. Pinned at
+   * ~×1.05, which is the slack `VOICE_CLONE_PACK_BUDGET_KIB` carries for the
+   * same reason: this is the tightest row in the group and the code is right.
+   *
    * **minimax's measured figure moved 205.9 → 209.1 and its pin did not**, which
    * is the point of the `./models`-not-`./tts` import rule recorded below at
    * the voice-clone pack: `minimax/tts-check.ts` costs ~3 KiB because it reads
@@ -271,7 +280,7 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
   lightricks: 68,
   "black-forest-labs": 100,
   kling: 135,
-  elevenlabs: 202,
+  elevenlabs: 222,
   minimax: 227,
 };
 
@@ -390,6 +399,7 @@ const ALL_UNIFIED_ENTRIES: string[] = [
   "stt",
   "music",
   "sfx",
+  "sts",
   "voice-clone",
   "voice-design",
 ];
@@ -429,8 +439,15 @@ const VOICE_CLONE_PACK_BUDGET_KIB = 232;
  * `inworld/voice-clone.ts` (the design adapter shares its language checks
  * and lang-code enum) — a leaf, not the STT validator it replaced; see the
  * voice-clone accounting above.
+ *
+ * Bumped 190 → 200 by the `sts` category: `core/unified/canonical-keys.ts`
+ * gained a fifth-and-a-half list and `core/unified/kernel.ts` a fourteenth
+ * `Set`, and both are in EVERY media pack's graph. This pack had 0.4 KiB of
+ * headroom before that (189.6 measured at cb314cb, 190.4 after) — the tightest
+ * in the file, and the reason the pin moves rather than the code. 200 is
+ * measured x 1.05, the same slack `VOICE_CLONE_PACK_BUDGET_KIB` carries.
  */
-const VOICE_DESIGN_PACK_BUDGET_KIB = 190;
+const VOICE_DESIGN_PACK_BUDGET_KIB = 200;
 
 /**
  * `unmodel/tts`'s budget: the kernel plus fourteen TTS providers — each
@@ -890,6 +907,35 @@ const SFX_PACK_BUDGET_KIB = 360;
 /** The two providers `unmodel/sfx`'s ready-made pack is allowed to reach. */
 const SFX_PACK_PROVIDERS: string[] = ["elevenlabs", "fal"];
 
+/**
+ * `unmodel/sts`'s budget: the kernel plus two providers, one route each — and
+ * the SMALLEST ready-made pack in the library.
+ *
+ * **184.8 KiB measured on macOS at landing, pinned at 205** — the ~10%
+ * convention this file uses everywhere, rounded up. It lands below
+ * `unmodel/voice-design` (190.4) and well below the previous floor,
+ * `unmodel/sfx` (328.4), and the reason is structural rather than lucky: five
+ * canonical words, one narrowed field, no fal graph at all (fal has no
+ * voice-conversion endpoint, so this is the only audio pack that pays nothing
+ * for `endpoints.gen.ts`, `pricing.gen.ts` and `shared.gen.ts`), and two wire
+ * validators that are a six-field body and a six-field form between them.
+ *
+ * The ElevenLabs half is unusually cheap for this provider: `sts.ts` reuses
+ * `tts.ts`'s 27-value `output_format` enum and its `ElevenlabsVoiceSettings`
+ * rather than declaring its own, so the pack carries `tts.ts` — which is most
+ * of the 184.8 — and nothing else of the provider's five other routes.
+ *
+ * **Flagged for CI confirmation.** JS budgets in this file have proven
+ * platform-stable (upscale and 3d both run ~1.7% under their pins on Linux and
+ * macOS alike), so 205 should hold; if the Linux figure comes in above it,
+ * re-pin from that number and say so here, per the Linux-figure rule in
+ * CLAUDE.md.
+ */
+const STS_PACK_BUDGET_KIB = 205;
+
+/** The two providers `unmodel/sts`'s ready-made pack is allowed to reach. */
+const STS_PACK_PROVIDERS: string[] = ["elevenlabs", "hume"];
+
 /** The five providers `unmodel/music`'s ready-made pack is allowed to reach. */
 const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "fal", "google", "mureka", "stability"];
 
@@ -1132,6 +1178,7 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
   stt: STT_PACK_BUDGET_KIB,
   music: MUSIC_PACK_BUDGET_KIB,
   sfx: SFX_PACK_BUDGET_KIB,
+  sts: STS_PACK_BUDGET_KIB,
   "voice-clone": VOICE_CLONE_PACK_BUDGET_KIB,
   "voice-design": VOICE_DESIGN_PACK_BUDGET_KIB,
 };
@@ -1279,6 +1326,21 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // in above this, re-pin from that number and say so here, per the
   // Linux-figure rule in CLAUDE.md.
   sfx: 520,
+  // `unmodel/sts`: 349.0 measured on macOS — the cheapest declaration in the
+  // table by a wide margin, below `sfx`'s 442.4. Five canonical words, one
+  // narrowed field, and four per-model rows whose largest member is a
+  // five-entry codec list and a five-key extras object.
+  //
+  // Pinned at 420 rather than 384 (measured x1.1) for the reason the `sfx` and
+  // `lipsync` notes above record: this walker counts a whole
+  // rolldown-plugin-dts chunk when an entry touches any of it, and the chunk
+  // boundaries are PLATFORM-SENSITIVE — the same commit has measured ~556 KiB
+  // on macOS and 698.0 on the Linux release runner for one entry. 420 is the
+  // same ~1.20 relative slack its nearest neighbour (`sfx` at 520) carries.
+  // **Flagged for CI confirmation**: if the Linux figure comes in above this,
+  // re-pin from that number and say so here, per the Linux-figure rule in
+  // CLAUDE.md.
+  sts: 420,
   "voice-clone": 1690,
   "voice-design": 1470,
 };
@@ -1744,8 +1806,8 @@ describe("unmodel/chat/factory", () => {
 });
 
 describe("unified media entries", () => {
-  test("all thirteen are built, so the assertions below assert something", () => {
-    expect(new Set(ALL_UNIFIED_ENTRIES).size).toBe(13);
+  test("all fourteen are built, so the assertions below assert something", () => {
+    expect(new Set(ALL_UNIFIED_ENTRIES).size).toBe(14);
     for (const name of ALL_UNIFIED_ENTRIES) {
       expect(existsSync(unifiedEntry(name)), `dist entry for unified/${name}`).toBe(true);
     }
@@ -2300,6 +2362,72 @@ describe("unmodel/sfx (the smallest ready-made pack)", () => {
 
   test("its graph carries no generated catalog, availability data or retarget layer", () => {
     const modules = sourceModulesOf(unifiedEntry("sfx"));
+    expect(modules.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
+    expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
+    expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
+    expect(modules).toContain("src/core/pipeline.ts");
+  });
+});
+
+describe("unmodel/sts (the smallest ready-made pack in the library)", () => {
+  test("it reaches exactly the two voice-conversion providers, through their adapters", () => {
+    const modules = sourceModulesOf(unifiedEntry("sts"));
+    expect(modules).toContain("src/unified/sts.ts");
+    expect(modules).toContain("src/core/unified/kernel.ts");
+
+    const providers = [
+      ...new Set(
+        modules
+          .filter((m) => m.startsWith("src/providers/"))
+          .map((m) => m.split("/")[2] as string),
+      ),
+    ].sort();
+    expect(providers).toEqual(STS_PACK_PROVIDERS);
+
+    // Both providers serve several categories, so both split their adapter and
+    // this pack imports only the voice-conversion half. Unlike `sfx`, the
+    // endpoint module keeps the ADDRESS's own name at both — `sts.ts` — because
+    // neither vendor's wire has a noun of its own to keep (`/v1/speech-to-speech`
+    // and `/v0/tts/voice_conversion/file` are paths, and §2 forbids naming an
+    // address after one).
+    for (const provider of STS_PACK_PROVIDERS) {
+      expect(modules).toContain(`src/providers/${provider}/unified-sts.ts`);
+      expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
+      expect(modules).toContain(`src/providers/${provider}/sts.ts`);
+    }
+  });
+
+  test("it carries no fal graph at all — the only audio pack that does not", () => {
+    const modules = sourceModulesOf(unifiedEntry("sts"));
+    // fal publishes no voice-conversion endpoint, so this pack pays nothing for
+    // `endpoints.gen.ts`, `pricing.gen.ts` and `shared.gen.ts` — the chunks
+    // every other audio pack carries whole. That is most of why it lands below
+    // `unmodel/voice-design`.
+    expect(modules.filter((m) => m.startsWith("src/providers/fal/"))).toEqual([]);
+  });
+
+  test("it carries neither provider's other five routes, bar the one it reuses", () => {
+    const modules = sourceModulesOf(unifiedEntry("sts"));
+    // `elevenlabs/tts.ts` IS here, and deliberately: `sts.ts` reuses its
+    // 27-value `output_format` enum and its `ElevenlabsVoiceSettings` rather
+    // than declaring a second copy of either. Everything else stays out.
+    expect(modules).toContain("src/providers/elevenlabs/tts.ts");
+    for (const absent of [
+      "src/providers/elevenlabs/stt.ts",
+      "src/providers/elevenlabs/music.ts",
+      "src/providers/elevenlabs/sound-effects.ts",
+      "src/providers/elevenlabs/voice-clone.ts",
+      "src/providers/elevenlabs/voice-design.ts",
+      "src/providers/elevenlabs/dubbing.ts",
+      "src/providers/elevenlabs/dubbing-languages.ts",
+      "src/providers/hume/tts.ts",
+    ]) {
+      expect(modules).not.toContain(absent);
+    }
+  });
+
+  test("its graph carries no generated catalog, availability data or retarget layer", () => {
+    const modules = sourceModulesOf(unifiedEntry("sts"));
     expect(modules.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
     expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
     expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);

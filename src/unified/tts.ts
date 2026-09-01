@@ -79,7 +79,7 @@ import { tts as elevenlabs } from "../providers/elevenlabs/unified-tts";
 import { tts as fal } from "../providers/fal/unified-tts";
 import { tts as fishAudio } from "../providers/fish-audio/unified-tts";
 import { tts as google } from "../providers/google/unified-tts";
-import { tts as hume } from "../providers/hume/unified";
+import { tts as hume } from "../providers/hume/unified-tts";
 import { tts as inworld } from "../providers/inworld/unified-tts";
 import { tts as lmnt } from "../providers/lmnt/unified-tts";
 import { tts as minimax } from "../providers/minimax/unified-tts";

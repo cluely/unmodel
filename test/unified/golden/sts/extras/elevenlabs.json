@@ -1,0 +1,30 @@
+{
+  "ref": "elevenlabs/eleven_english_sts_v1",
+  "voice": "21m00Tcm4TlvDq8ikWAM",
+  "params": {
+    "audio": {
+      "@blob": {
+        "size": 64,
+        "type": "audio/wav"
+      }
+    },
+    "model_id": "eleven_english_sts_v1",
+    "remove_background_noise": true,
+    "seed": 12345,
+    "voice_settings": {
+      "stability": 0.4,
+      "speed": 1.1
+    },
+    "file_format": "pcm_s16le_16"
+  },
+  "url": "https://api.elevenlabs.io/v1/speech-to-speech/21m00Tcm4TlvDq8ikWAM?enable_logging=false",
+  "headers": {},
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
+  ]
+}

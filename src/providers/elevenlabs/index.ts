@@ -168,6 +168,23 @@ export type {
 } from "./sound-effects";
 
 export {
+  sts,
+  stsToFormData,
+  speechToSpeechUrl,
+  SPEECH_TO_SPEECH_BASE_URL,
+  DEFAULT_STS_MODEL_ID,
+  STS_FILE_FORMATS,
+  STS_SEED_MIN,
+  STS_SEED_MAX,
+} from "./sts";
+export type {
+  SpeechToSpeechParams,
+  SpeechToSpeechFormFields,
+  SpeechToSpeechSdkParams,
+  ElevenlabsStsFileFormat,
+} from "./sts";
+
+export {
   voiceClone,
   voiceCloneToFormData,
   VOICES_ADD_URL,
@@ -337,6 +354,7 @@ export {
   REALTIME_STT_MODEL_IDS,
   MUSIC_MODEL_IDS,
   SFX_MODEL_IDS,
+  STS_MODEL_IDS,
   VOICE_DESIGN_MODEL_IDS,
   DUBBING_MODEL_IDS,
   MUSIC_PER_AUDIO_MINUTE,
@@ -352,6 +370,7 @@ export type {
   ElevenlabsRealtimeSttModelId,
   ElevenlabsMusicModelId,
   ElevenlabsSfxModelId,
+  ElevenlabsStsModelId,
   ElevenlabsVoiceDesignModelId,
   ElevenlabsVoiceCloneModelId,
   ElevenlabsDubbingModelId,

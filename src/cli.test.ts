@@ -548,6 +548,15 @@ test("the unified map names one target per shipped pack", () => {
   ]);
   // Never both maps: a `unified.*` id is not a provider endpoint.
   expect(Object.keys(REGISTRY).filter((id) => id.startsWith("unified."))).toEqual([]);
+
+  // `unmodel/sts` ships and is deliberately NOT on that list — the only pack
+  // that is not. Its canonical `audio` has exactly one arm, `{ file: Blob }`,
+  // so no JSON params document can express a request and the entry would
+  // refuse every possible input. Both its provider endpoints are in
+  // MULTIPART_ONLY for the same reason, which is what makes the CLI say so.
+  expect(Object.keys(UNIFIED)).not.toContain("unified.sts");
+  expect(Object.keys(MULTIPART_ONLY)).toContain("elevenlabs.sts");
+  expect(Object.keys(MULTIPART_ONLY)).toContain("hume.sts");
 });
 
 // ---------------------------------------------------------------------------

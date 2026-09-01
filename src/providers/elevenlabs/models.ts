@@ -255,9 +255,17 @@ const realtimeSttModels = {
 
 /**
  * Speech-to-speech (voice changer) models — POST /v1/speech-to-speech/{voice_id},
- * which unmodel does not validate. elevenlabs.io/pricing/api prices the route
- * as "Voice Changer", per minute of processed audio — see
- * VOICE_CHANGER_PER_AUDIO_MINUTE for the quote and the character conversion.
+ * validated by ./sts. elevenlabs.io/pricing/api prices the route as "Voice
+ * Changer", per minute of processed audio — see VOICE_CHANGER_PER_AUDIO_MINUTE
+ * for the quote and the character conversion.
+ *
+ * `limit.characters` is a BILLING quota, not a request cap: at the documented
+ * 1,000 characters per minute of processed audio, 10,000 is ten minutes' worth.
+ * The per-request cap is a different, tighter number —
+ * https://elevenlabs.io/docs/capabilities/voice-changer: "Maximum segment
+ * length: 5 minutes" (both fetched 2026-08-31) — and neither becomes a check,
+ * because unmodel cannot read a duration out of a `Blob`. ./sts records the
+ * whole reconciliation.
  */
 const speechToSpeechModels = {
   eleven_multilingual_sts_v2: {
@@ -486,6 +494,8 @@ export type ElevenlabsMusicModelId = keyof typeof musicModels;
 export type ElevenlabsSfxModelId = keyof typeof soundEffectsModels;
 /** Model ids batch POST /v1/speech-to-text accepts. */
 export type ElevenlabsSttModelId = keyof typeof sttModels;
+/** Model ids POST /v1/speech-to-speech/{voice_id} accepts. */
+export type ElevenlabsStsModelId = keyof typeof speechToSpeechModels;
 /** Model ids POST /v1/text-to-voice/design accepts. */
 export type ElevenlabsVoiceDesignModelId = keyof typeof textToVoiceModels;
 /** The synthetic id addressing POST /v1/voices/add (no model field on the wire). */
@@ -512,6 +522,12 @@ export const REALTIME_STT_MODEL_IDS: readonly string[] = Object.keys(realtimeStt
 export const MUSIC_MODEL_IDS: readonly string[] = Object.keys(musicModels);
 /** Runtime allow-list backing the sound-effects endpoint's model gate. */
 export const SFX_MODEL_IDS: readonly string[] = Object.keys(soundEffectsModels);
+/**
+ * Runtime allow-list backing the voice-changer endpoint's model gate — the
+ * catalog stand-in for the `can_do_voice_conversion` property on
+ * GET /v1/models, which unmodel cannot query.
+ */
+export const STS_MODEL_IDS: readonly string[] = Object.keys(speechToSpeechModels);
 /** Runtime allow-list backing the voice-design endpoint's model gate. */
 export const VOICE_DESIGN_MODEL_IDS: readonly string[] = Object.keys(textToVoiceModels);
 /**

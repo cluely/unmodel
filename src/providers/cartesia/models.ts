@@ -26,6 +26,21 @@
 // the realtime STT reference enumerates only `ink-2` and `ink-whisper` for
 // its `model` query param. Guessing an id would be worse than omitting it.
 //
+// NO VOICE CHANGER (deliberate, and the reason is a date). Cartesia's
+// speech-to-speech routes are SUNSET: docs.cartesia.ai/llms-full.txt, from
+// https://docs.cartesia.ai/build-with-cartesia/deprecations, carries them in
+// the "Breaking API changes" table — "These endpoints are being sunset.
+// Requests after an endpoint's sunset date return an error." —
+// `POST /voice-changer/bytes` and `POST /voice-changer/sse`, replacement "—",
+// sunset date **August 20, 2026** (fetched 2026-08-31). Both are also gone from
+// the api-reference index (109 reference stubs, neither among them). So
+// `cartesia.sts` does not exist and Cartesia is not a witness for
+// `unmodel/sts`, even though `@cartesia/cartesia-js` 4.1.0 (published
+// 2026-08-26, six days after the sunset) still ships an undeprecated
+// `VoiceChanger` resource. The SDK is the weaker source here: the docs state
+// the sunset outright, and typing a route that answers an error is the reverse
+// of what this library is for. Revisit if the reference page returns.
+//
 // LIMITS: Cartesia documents no per-request transcript character cap for
 // POST /tts/bytes, so `limit.characters` is omitted (the pipeline skips the
 // character-limit check when it is absent). `limit.context: 0` disables

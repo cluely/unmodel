@@ -79,6 +79,7 @@ const CANONICAL_KEYS: Readonly<Record<UnifiedCategory, ReadonlySet<string>>> = O
   stt: new Set<string>(CANONICAL_KEY_LISTS.stt),
   music: new Set<string>(CANONICAL_KEY_LISTS.music),
   sfx: new Set<string>(CANONICAL_KEY_LISTS.sfx),
+  sts: new Set<string>(CANONICAL_KEY_LISTS.sts),
   voiceClone: new Set<string>(CANONICAL_KEY_LISTS.voiceClone),
   voiceDesign: new Set<string>(CANONICAL_KEY_LISTS.voiceDesign),
 });

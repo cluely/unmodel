@@ -1,0 +1,6 @@
+{
+  "strip_headers": true,
+  "include_timestamp_types": [
+    "word"
+  ]
+}

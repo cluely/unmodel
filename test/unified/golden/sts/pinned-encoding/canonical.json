@@ -1,0 +1,7 @@
+{
+  "outputFormat": {
+    "format": "mp3",
+    "sampleRate": 44100,
+    "bitrate": 128000
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "ref": "hume/voice-conversion",
+  "voice": {
+    "name": "Male English Actor"
+  },
+  "params": {
+    "audio": {
+      "@blob": {
+        "size": 64,
+        "type": "audio/wav"
+      }
+    },
+    "voice": {
+      "name": "Male English Actor"
+    }
+  },
+  "url": "https://api.hume.ai/v0/tts/voice_conversion/file",
+  "headers": {}
+}

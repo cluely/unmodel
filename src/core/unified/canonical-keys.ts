@@ -123,6 +123,13 @@ export const CANONICAL_KEY_LISTS = {
   // it. No `instrumental` and no `loop` — the first is meaningless for a noise,
   // the second has one witness. See `vocabulary/sfx.ts`.
   sfx: (["model", "prompt", "durationSeconds", "outputFormat", "providerOptions"] as const),
+  // Five words, three of them REQUIRED — the only category where the majority
+  // of the vocabulary has to be present. A recording goes in, a target voice
+  // says what it should come out as, and there is no prompt, no length and no
+  // frame because the answer to all three is "whatever the recording did".
+  // No `seed` and no `removeBackgroundNoise`: one witness of two apiece. See
+  // `vocabulary/sts.ts`.
+  sts: (["model", "audio", "voice", "outputFormat", "providerOptions"] as const),
   voiceClone: ([
     "model",
     "operation",

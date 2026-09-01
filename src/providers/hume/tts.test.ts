@@ -316,12 +316,14 @@ describe("hume.tts cost estimation", () => {
 
 describe("hume catalog", () => {
   test("both Octave versions are TTS-shaped with the 5,000-character cap", () => {
-    for (const info of Object.values(models)) {
+    // The voice-conversion row is audio-in/audio-out with no text to cap and no
+    // published rate, so it is deliberately not one of these — see ./models.ts.
+    for (const info of [models.octave, models["octave-2"]]) {
       expect(info.limit.context).toBe(0);
       expect(info.limit.characters).toBe(5000);
       expect(info.modalities.input).toEqual(["text"]);
       expect(info.modalities.output).toEqual(["audio"]);
-      expect(info.cost?.perMillionCharacters).toBe(150);
+      expect(info.cost.perMillionCharacters).toBe(150);
     }
   });
 });

@@ -39,6 +39,7 @@ export default defineConfig({
     "unified/stt": "src/unified/stt.ts",
     "unified/music": "src/unified/music.ts",
     "unified/sfx": "src/unified/sfx.ts",
+    "unified/sts": "src/unified/sts.ts",
     "unified/voice-clone": "src/unified/voice-clone.ts",
     "unified/voice-design": "src/unified/voice-design.ts",
     "providers/alibaba/index": "src/providers/alibaba/index.ts",

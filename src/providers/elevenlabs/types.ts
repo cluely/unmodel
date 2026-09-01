@@ -42,6 +42,7 @@
  * - `elevenlabs.music` → `MusicBody`
  * - `elevenlabs.sfx` → `SfxBody`
  * - `elevenlabs.speechToTextRealtime` → `SpeechToTextRealtimeBody`
+ * - `elevenlabs.sts` → `StsBody`
  * - `elevenlabs.stt` → `SttBody`
  * - `elevenlabs.textToSpeechStreamInput` → `TextToSpeechStreamInputBody`
  * - `elevenlabs.tts` → `TtsBody`
@@ -55,6 +56,7 @@ import type { DubbingLanguageParams } from "./dubbing-language";
 import type { MusicParams } from "./music";
 import type { SoundEffectsParams } from "./sound-effects";
 import type { SpeechToTextRealtimeParams } from "./speech-to-text-realtime";
+import type { SpeechToSpeechParams } from "./sts";
 import type { SpeechToTextParams } from "./stt";
 import type { TextToSpeechStreamInputParams } from "./text-to-speech-stream-input";
 import type { TextToSpeechParams } from "./tts";
@@ -114,6 +116,13 @@ export type {
 } from "./sound-effects";
 
 export type {
+  SpeechToSpeechParams,
+  SpeechToSpeechFormFields,
+  SpeechToSpeechSdkParams,
+  ElevenlabsStsFileFormat,
+} from "./sts";
+
+export type {
   VoicesAddParams,
   VoicesAddSdkParams,
   ElevenlabsVoiceCloneLabelKey,
@@ -163,6 +172,7 @@ export type {
   ElevenlabsSttModelId,
   ElevenlabsRealtimeSttModelId,
   ElevenlabsMusicModelId,
+  ElevenlabsStsModelId,
   ElevenlabsVoiceDesignModelId,
   ElevenlabsVoiceCloneModelId,
   ElevenlabsDubbingModelId,
@@ -190,6 +200,12 @@ export type DubLanguageBody = DubbingLanguageParams;
 export type MusicBody = MusicParams;
 export type SfxBody = SoundEffectsParams;
 export type SpeechToTextRealtimeBody = SpeechToTextRealtimeParams;
+/**
+ * The params `elevenlabs.sts` takes — `voice_id` and the two query params
+ * included, because that is what you hand the validator. The alias follows the
+ * ADDRESS, the same way `TtsBody` keeps `voice_id`.
+ */
+export type StsBody = SpeechToSpeechParams;
 export type SttBody = SpeechToTextParams;
 export type TextToSpeechStreamInputBody = TextToSpeechStreamInputParams;
 export type TtsBody = TextToSpeechParams;

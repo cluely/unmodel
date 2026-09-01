@@ -53,7 +53,8 @@
  * The report also names: alias entries whose key matched no AA row this run
  * (stale — AA renamed or retired the model), `covered` refs that no longer
  * exist in the coverage set (the model left our catalog), and AA categories
- * unmodel has no unified surface for at all (speech-to-speech today).
+ * unmodel has no unified surface for at all (none today — speech-to-speech
+ * was the last one, and `unmodel/sts` closed it).
  *
  * Usage:
  *   bun scripts/leaderboard-audit.ts                 # fetch live, print report
@@ -100,7 +101,14 @@ export const AA_ENDPOINTS: readonly {
   { key: "speech-to-text", path: "/media/speech-to-text/models/free", categories: ["stt"] },
   { key: "music/instrumental", path: "/media/music/instrumental/models/free", categories: ["music"] },
   { key: "music/with-vocals", path: "/media/music/with-vocals/models/free", categories: ["music"] },
-  { key: "speech-to-speech", path: "/media/speech-to-speech/models/free", categories: null },
+  // Was `categories: null` until `unmodel/sts` shipped. The audit now sweeps
+  // it like any other row: an AA speech-to-speech model with no `sts` ref in
+  // this build is a real gap to look at, not a category-shaped hole.
+  {
+    key: "speech-to-speech",
+    path: "/media/speech-to-speech/models/free",
+    categories: ["sts"],
+  },
   { key: "language", path: "/language/models/free", categories: ["chat"] },
 ];
 

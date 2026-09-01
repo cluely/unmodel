@@ -128,6 +128,7 @@ Provider validators take provider-native fields, and the validated result is the
 | [🧊 3D generation](docs/surfaces.md#3d-generation) | `unmodel/3d` | `unmodel/tripo3d`, `unmodel/fal` |
 | [🎵 Music generation](docs/surfaces.md#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/fal`, `unmodel/stability` |
 | [🔊 Sound effects](docs/surfaces.md#sound-effects) | `unmodel/sfx` | `unmodel/elevenlabs`, `unmodel/fal` |
+| [🔁 Voice conversion](docs/surfaces.md#voice-conversion) | `unmodel/sts` | `unmodel/elevenlabs`, `unmodel/hume` |
 | [🎙️ Voice cloning](docs/surfaces.md#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
 | [🧪 Voice design](docs/surfaces.md#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
 | [🔌 Realtime audio config](docs/surfaces.md#realtime-audio) | none | `unmodel/openai`, `unmodel/deepgram`, `unmodel/elevenlabs`, etc. |
@@ -198,6 +199,32 @@ sfx({ model: "fal/sonilo/v1.1/text-to-sound-effects", prompt: "rain on a tin roo
 sfx({ model: "fal/cassetteai/sound-effects-generator", prompt: "rain on a tin roof" });
 // ❌ TypeScript error: `durationSeconds` is required here — the wire answers 422 without it
 ```
+
+`unmodel/sts` is the newest, and the only category where **most of the vocabulary is
+required**: a recording, a target voice, and the ref that picks the model. There is no prompt,
+no length and no frame, because the answer to all three is "whatever the recording did".
+
+```ts
+import { sts } from "unmodel/sts";
+
+const converted = sts({
+  model: "elevenlabs/eleven_multilingual_sts_v2",
+  audio: { file: recording },
+  voice: "21m00Tcm4TlvDq8ikWAM",
+});
+converted.request.url;
+// → "https://api.elevenlabs.io/v1/speech-to-speech/21m00Tcm4TlvDq8ikWAM"
+
+sts({ model: "hume/voice-conversion", audio: { file: recording }, voice: { name: "Male English Actor" } });
+// → { audio: <Blob>, voice: { name: "Male English Actor" } }
+//   the same two words, and at Hume the voice is a form part rather than a URL segment
+
+sts({ model: "elevenlabs/eleven_multilingual_sts_v2", audio: { file: recording } });
+// ❌ TypeScript error: `voice` is required — a conversion with no target is not a conversion
+```
+
+Because `audio` is a required `Blob` at both providers, this whole category is library-only:
+`unmodel validate elevenlabs.sts` tells you so rather than failing with "expected Blob".
 
 Same pattern for every surface — inputs, formats, and extras narrow to the selected model. Per-category guides, including audio input routing, multipart helpers, and voice cloning: [docs/surfaces.md](docs/surfaces.md). Full roster: [docs/providers.md](docs/providers.md); per-provider TTS quirks: [docs/tts.md](docs/tts.md).
 

@@ -1,0 +1,15 @@
+{
+  "ref": "elevenlabs/eleven_english_sts_v2",
+  "voice": "21m00Tcm4TlvDq8ikWAM",
+  "params": {
+    "audio": {
+      "@blob": {
+        "size": 64,
+        "type": "audio/wav"
+      }
+    },
+    "model_id": "eleven_english_sts_v2"
+  },
+  "url": "https://api.elevenlabs.io/v1/speech-to-speech/21m00Tcm4TlvDq8ikWAM?output_format=mp3_44100_128",
+  "headers": {}
+}

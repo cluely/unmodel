@@ -24,8 +24,17 @@ export type {
   HumeOctaveVersion,
 } from "./tts";
 
+export {
+  sts,
+  stsToFormData,
+  VOICE_CONVERSION_URL,
+  VOICE_CONVERSION_JSON_URL,
+  STS_MODEL_ID,
+} from "./sts";
+export type { VoiceConversionBody, VoiceConversionSdkParams } from "./sts";
+
 export { models, provider, HUME_MODEL_IDS } from "./models";
-export type { HumeModelId, HumeTtsModelId } from "./models";
+export type { HumeModelId, HumeTtsModelId, HumeStsModelId } from "./models";
 
 // Declaration-portability carriers. One type-only line; see
 // src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot

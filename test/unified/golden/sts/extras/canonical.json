@@ -1,0 +1,10 @@
+{
+  "remove_background_noise": true,
+  "seed": 12345,
+  "voice_settings": {
+    "stability": 0.4,
+    "speed": 1.1
+  },
+  "file_format": "pcm_s16le_16",
+  "enable_logging": false
+}

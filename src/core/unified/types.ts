@@ -147,6 +147,7 @@ export type UnifiedCategory =
   | "stt"
   | "music"
   | "sfx"
+  | "sts"
   | "voiceClone"
   | "voiceDesign";
 

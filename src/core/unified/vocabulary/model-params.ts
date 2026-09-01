@@ -406,6 +406,27 @@ export interface SfxModelParams extends ModelParamsBase {
 export type SfxModelParamTable = Readonly<Record<string, SfxModelParams>>;
 
 /**
+ * One voice-conversion model's request surface, beyond the canonical
+ * vocabulary.
+ *
+ * The same single-field row as {@link MusicModelParams}, and for a sharper
+ * reason: this category's other three words are all un-narrowable. `audio` is
+ * one shape at both witnesses, `voice` has no closed list at either (per-account
+ * catalogs, thousands of entries, cloned voices), and `model` is the ref
+ * itself. What is left is the encoding, which the two vendors spell in
+ * genuinely different value spaces — a `codec_sampleRate_bitrate` composite at
+ * ElevenLabs, a bare container name at Hume — so the row is what stops
+ * `outputFormat: "opus"` compiling at the one that cannot emit it.
+ */
+export interface StsModelParams extends ModelParamsBase {
+  /** The canonical codecs this model can emit — same contract as {@link TtsModelParams.codecs}. */
+  readonly codecs?: readonly AudioFormatCodec[];
+}
+
+/** A voice-conversion adapter's per-model table, keyed by **bare** model id. */
+export type StsModelParamTable = Readonly<Record<string, StsModelParams>>;
+
+/**
  * One lipsync route's request surface, beyond the canonical vocabulary.
  *
  * A single field, and it is the one the category is built on. `stt` narrows
@@ -884,6 +905,22 @@ type MusicArms<Format> = { outputFormat?: Format };
 export type MusicModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
   ? MusicArms<AudioFormatRequest>
   : MusicArms<AudioFormatOf<ModelParamsFor<A, R>>>;
+
+/** The one field a voice-conversion row narrows. */
+type StsArms<Format> = { outputFormat?: Format };
+
+/**
+ * The `outputFormat` one voice-conversion ref admits, restated wide when the
+ * ref is degraded.
+ *
+ * `MusicModelNarrowing`'s shape, and it obeys the same replacement rule for the
+ * same measured reason: {@link AudioFormatOf} replaces the `format` property
+ * outright rather than intersecting with it, and `StsParamsBase` therefore
+ * omits `outputFormat` so this is its only contextual type.
+ */
+export type StsModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? StsArms<AudioFormatRequest>
+  : StsArms<AudioFormatOf<ModelParamsFor<A, R>>>;
 
 /**
  * The two fields a sound-effect row narrows, as a complete **replacement** for

@@ -37,6 +37,7 @@
  * Endpoints:
  *
  * - `hume.tts` → `TtsBody` (already the wire name — see below)
+ * - `hume.sts` → `StsBody`
  */
 
 export type {
@@ -53,7 +54,11 @@ export type {
   HumeOctaveVersion,
 } from "./tts";
 
-export type { HumeModelId, HumeTtsModelId } from "./models";
+import type { VoiceConversionBody } from "./sts";
+
+export type { VoiceConversionBody, VoiceConversionSdkParams } from "./sts";
+
+export type { HumeModelId, HumeTtsModelId, HumeStsModelId } from "./models";
 
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.
@@ -63,3 +68,5 @@ export type { HumeModelId, HumeTtsModelId } from "./models";
 // provider's wire name (`TtsBody`), re-exported above. The wire name wins —
 // an alias here would be a rename, and the law forbids it.
 // ---------------------------------------------------------------------------
+
+export type StsBody = VoiceConversionBody;

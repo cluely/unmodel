@@ -58,6 +58,7 @@ const EXPECTED_IDS: readonly string[] = [
   "elevenlabs.music",
   "elevenlabs.sfx",
   "elevenlabs.speechToTextRealtime",
+  "elevenlabs.sts",
   "elevenlabs.stt",
   "elevenlabs.textToSpeechStreamInput",
   "elevenlabs.tts",
@@ -91,6 +92,7 @@ const EXPECTED_IDS: readonly string[] = [
   "heygen.avatar",
   "heygen.lipsync",
   "huggingface.chat",
+  "hume.sts",
   "hume.tts",
   "ideogram.image",
   "ideogram.imageEdit",
@@ -758,6 +760,69 @@ test("the sfx-category endpoints all use the uniform `sfx` verb", () => {
   // The almost-chosen spelling. Recorded here rather than in prose alone, so a
   // future rename has to delete an assertion to happen.
   for (const id of ["elevenlabs.soundEffects", "fal.soundEffects"]) {
+    expect(EXPECTED_IDS).not.toContain(id);
+  }
+});
+
+/**
+ * The voice-conversion half, and the only address in the library that was
+ * argued to the owner and back.
+ *
+ * `sts` is the CATEGORY id, so `<provider>.sts` is the uniform verb — the
+ * construction `tts` and `stt` already use, and for the same reason: all three
+ * are the OPERATION's own initialism. That is what settles the objection this
+ * verb collected on the way in.
+ *
+ * **The objection, and why it does not hold.** `sts` reads like ElevenLabs'
+ * wire path (`/v1/speech-to-speech/{voice_id}`), and §2 forbids naming an
+ * address after a wire path or a vendor's product name. But the rule is about a
+ * PROVIDER-LOCAL address borrowing one vendor's spelling — which is exactly why
+ * `elevenlabs.speechToText` was retired and `elevenlabs.stt` was not, even
+ * though ElevenLabs' path is `/v1/speech-to-text`. A category id that eleven
+ * unrelated vendors' paths do not share is a coincidence at one of them, not a
+ * borrowing. Hume's path here is `/v0/tts/voice_conversion/file` and spells
+ * nothing like it.
+ *
+ * **`voiceConvert` was the near-miss**, and it lost on the one property this
+ * test exists to keep: the word you type at `unmodel/<category>` and the word
+ * you type at `unmodel/<provider>` must be the same word. `unmodel/sts` beside
+ * `provider.voiceConvert` breaks it, and `unmodel/voice-convert` beside
+ * `provider.voiceConvert` would have put a fourth `voice*` entry point next to
+ * `voiceClone` and `voiceDesign` for an operation that creates no voice at all
+ * — it spends one. `speechToSpeech` and `voiceChanger` were never candidates:
+ * the first is the wire path spelled out, the second is ElevenLabs' AND
+ * Cartesia's product name.
+ *
+ * Two providers, which is the two-witness floor and not a coincidence: the two
+ * other vendors with a catalogued speech-to-speech model do not have a route
+ * this category can address (`docs/providers.md` records both, with dates).
+ */
+const STS_IDS: readonly string[] = ["elevenlabs.sts", "hume.sts"];
+
+test("the voice-conversion endpoints all use the uniform `sts` verb", () => {
+  for (const id of STS_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    // Bare `sts` everywhere, and `toBe` rather than a prefix match (the `stt`
+    // precedent): no provider ships a second conversion route, so unlike image
+    // and video there is nothing to qualify.
+    expect(id.split(".")[1] ?? "").toBe("sts");
+  }
+  const providers = [...new Set(STS_IDS.map((id) => id.split(".")[0] as string))].sort();
+  expect(providers).toEqual(["elevenlabs", "hume"]);
+
+  // Converting a voice is not creating one. Both providers here also ship a
+  // `tts`, and ElevenLabs ships a `voiceClone` too; the addresses are disjoint
+  // because the wires are, and each refuses the others' model ids by name.
+  for (const id of [...TTS_IDS, ...VOICE_CLONE_IDS]) expect(STS_IDS).not.toContain(id);
+
+  // Every spelling that was considered and rejected. Recorded here rather than
+  // in prose alone, so a future rename has to delete an assertion to happen.
+  for (const id of [
+    "elevenlabs.speechToSpeech",
+    "elevenlabs.voiceChanger",
+    "elevenlabs.voiceConvert",
+    "hume.voiceConversion",
+  ]) {
     expect(EXPECTED_IDS).not.toContain(id);
   }
 });

@@ -31,6 +31,7 @@ import type { TtsParams } from "../../src/core/unified/vocabulary/tts";
 import type { SttParams } from "../../src/core/unified/vocabulary/stt";
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
 import type { SfxParams } from "../../src/core/unified/vocabulary/sfx";
+import type { StsParams } from "../../src/core/unified/vocabulary/sts";
 import type { VoiceCloneParams } from "../../src/core/unified/vocabulary/voice-clone";
 import type { VoiceDesignParams } from "../../src/core/unified/vocabulary/voice-design";
 import { expectTrue, type IsNever } from "./helpers";
@@ -67,6 +68,7 @@ type Category =
   | "stt"
   | "music"
   | "sfx"
+  | "sts"
   | "voiceClone"
   | "voiceDesign";
 
@@ -154,6 +156,16 @@ expectTrue<IsNever<Unclaimed<"music", MusicParams>>>();
  */
 expectTrue<IsNever<Unlisted<"sfx", SfxParams>>>();
 expectTrue<IsNever<Unclaimed<"sfx", SfxParams>>>();
+
+/**
+ * `sts` is the only category where MOST of the list is required — `model`,
+ * `audio` and `voice` all are — and the list says nothing about that, for the
+ * reason the `3d` and `sfx` notes above give: it answers "may a caller write
+ * this key". What it does say is that `voice` is a word here and `text` is not,
+ * which is the whole difference between this category and `tts`.
+ */
+expectTrue<IsNever<Unlisted<"sts", StsParams>>>();
+expectTrue<IsNever<Unclaimed<"sts", StsParams>>>();
 
 expectTrue<IsNever<Unlisted<"voiceClone", VoiceCloneParams>>>();
 expectTrue<IsNever<Unclaimed<"voiceClone", VoiceCloneParams>>>();

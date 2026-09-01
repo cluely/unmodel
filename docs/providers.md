@@ -31,7 +31,7 @@ provider — not their quality ranking.
 | cerebras | inference | openai-compatible | **oai-base** (live) | ✅ | |
 | openrouter | aggregator (400+ models) | openai-compatible | **oai-base** (live) | ✅ (349 models) | |
 | huggingface | aggregator (router.huggingface.co) | openai-compatible | **oai-base** (live) | ✅ | |
-| elevenlabs | tts (r11), stt (Scribe, r1), music, dubbing | native | **native** (TTS+STT+music+dubbing live; realtime configs live) | ✋ | per-character pricing; `textToSpeechStreamInput` + `speechToTextRealtime` validate the socket configs; `dub` + `dubLanguage` are wire-only (no `unmodel/dubbing` — see "Dubbing" below) |
+| elevenlabs | tts (r11), stt (Scribe, r1), music, sfx, sts, dubbing | native | **native** (TTS+STT+music+sfx+sts+dubbing live; realtime configs live) | ✋ | per-character pricing; `textToSpeechStreamInput` + `speechToTextRealtime` validate the socket configs; `dub` + `dubLanguage` are wire-only (no `unmodel/dubbing` — see "Dubbing" below); `sts` (voice changer) is `MULTIPART_ONLY` — its `audio` is a required `Blob` |
 | cartesia | tts (Sonic, r6), stt (Ink) | native | **native** (TTS+STT live; realtime configs live) | ✋ | `ttsWebsocket` (generation message) + `sttWebsocket` (connection query set) |
 | inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT is inline base64 (no multipart); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
 | soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `stt` + `realtimeTranscription` config message |
@@ -636,6 +636,109 @@ disqualifier the lipsync `sync_mode` table above carries. It rides as a per-mode
 typed, and `test/unified/sfx-capabilities.test.ts` holds the decline as an assertion that FAILS
 the day a second vendor spells it compatibly.
 
+## Voice-conversion wave (two providers, and two recorded exclusions)
+
+`unmodel/sts` is voice conversion: a recording goes in, the same performance comes out in a
+different voice. Five canonical words — `model`, `audio`, `voice`, `outputFormat`,
+`providerOptions` — and it is the only category where three of them are **required**. A
+text-to-speech request can leave the voice out and get a default speaker; a conversion with no
+target voice is not a conversion.
+
+**The address is `<provider>.sts`**, the category id, the same construction `tts` and `stt`
+already use: all three are the operation's own initialism rather than a wire path.
+`voiceConvert` was the near-miss and lost on the property `src/cli-registry.test.ts` exists to
+keep — the word you type at `unmodel/<category>` and the word you type at `unmodel/<provider>`
+must be the same word, and `unmodel/voice-convert` would have put a fourth `voice*` entry point
+next to `voiceClone` and `voiceDesign` for an operation that creates no voice at all. It spends
+one. `speechToSpeech` and `voiceChanger` were never candidates (a wire path and a vendor
+product name). The reasoning is pinned in that test's `STS_IDS` block.
+
+**ElevenLabs — `elevenlabs.sts`, 3 models.** Tier: **native**.
+`POST https://api.elevenlabs.io/v1/speech-to-speech/{voice_id}`, `multipart/form-data`,
+`xi-api-key` header. `audio` is `format: binary` and the only member of the schema's `required`
+list — no URL, no base64 — which is what makes this endpoint (and the whole category)
+`MULTIPART_ONLY`. `voice_id` is a PATH segment and `output_format` + `enable_logging` are QUERY
+params, so all three are stripped from the body and live in `.request.url`; the format enum is
+byte-identical to the text-to-speech one, so `sts.ts` reuses it. `voice_settings` is a
+**JSON-encoded string** part, typed structured and serialized by `stsToFormData` (the
+`voiceClone` `labels` arrangement). `model_id` defaults to `eleven_english_sts_v2` server-side
+— the ENGLISH model, not the multilingual one the capability docs recommend. Priced at $0.12
+per minute of processed audio, estimated from
+`options.media = [{ path: ["audio"], durationSeconds }]`.
+
+Two things deliberately absent. `optimize_streaming_latency` is a fourth query param that the
+OpenAPI marks `deprecated: true` **on this operation**, so it is not typed (`elevenlabs.tts`
+still carries it because the field is not marked so there). And the `/stream` sibling is not a
+second address: a normalised diff of the two body schemas is identical except for the schema
+title, and their query sets match, so there is nothing for a second validator to validate —
+unlike `murf.ttsStream` / `resemble.ttsStream`, which exist because those routes genuinely
+differ.
+
+**The 5-minute / 10,000-character tension, resolved.**
+`elevenlabs.io/docs/capabilities/voice-changer` says "Maximum segment length: 5 minutes — split
+longer recordings into chunks"; `elevenlabs.io/docs/models` publishes a 10,000-character limit
+for `eleven_english_sts_v2`/`_v1` annotated "~10 minutes" (both fetched 2026-08-31). They are
+not the same limit: the character figure is a BILLING quota at the documented 1,000 characters
+per minute of processed audio, the five minutes is a per-request segment cap. **No duration
+check ships** — unmodel cannot read a duration out of a `Blob`, and the caller-supplied
+`options.media` declaration is for pricing, not for enforcing a cap the caller might have
+measured differently. `limit.characters` stays on the catalog rows as the billing fact it is.
+
+**Hume — `hume.sts`, 1 synthetic id.** Tier: **native**.
+`POST https://api.hume.ai/v0/tts/voice_conversion/file`, `multipart/form-data`,
+`X-Hume-Api-Key` header. Six fields and that is the complete list: `audio` (required here,
+optional on the `/json` sibling — docs and SDK agree, so it is treated as the contract),
+`voice`, `format`, `context`, `strip_headers`, `include_timestamp_types`. **No model field and
+no `version` either**, unlike `/v0/tts` — so the catalog row is the synthetic id
+`voice-conversion` (HAND_CATALOGS.md), and `hume/voice-conversion` is the ref.
+
+Hume documents **two** multipart encodings for the object fields: the reference's cURL uses
+bracket parts (`voice[name]=…`, `voice[provider]=…`) and its prose says
+`include_timestamp_types` takes indexed brackets, while the official `hume` npm client sends one
+JSON-string part per object and one repeated part per list element. `stsToFormData` emits the
+**SDK's**, for two reasons — it is one uniform rule rather than a mix (a nested `context` has no
+readable bracket spelling), and it is what every user of Hume's own client provably sends. The
+bracket form is documented in the module header for anyone building the form by hand.
+
+**No cost.** `hume.ai/pricing` (checked 2026-08-31) carries "Voice conversion" as a
+feature-availability row across all seven plans with no rate attached, and the page's only usage
+rates are TTS **per-character** rates for a route that takes no text. How an audio-in request
+draws down a character quota is documented nowhere, so `cost` is omitted and the estimate
+returns `undefined` — "Unverifiable → caveat, never catalog". (The page's separate
+"Speech-to-speech" row is flagged `eviToggle` and belongs to EVI, the realtime product.)
+
+**Excluded: cartesia — the route was SUNSET eleven days before this wave landed.**
+`docs.cartesia.ai/llms-full.txt`, from the deprecations page, lists
+`POST /voice-changer/bytes` and `POST /voice-changer/sse` in the "Breaking API changes" table —
+"These endpoints are being sunset. Requests after an endpoint's sunset date return an error." —
+replacement "—", sunset date **August 20, 2026** (fetched 2026-08-31). Both are also gone from
+the api-reference index. `@cartesia/cartesia-js` 4.1.0, published 2026-08-26 (six days *after*
+the sunset), still ships an undeprecated `VoiceChanger` resource, and the OpenAPI spec is
+login-gated so the disagreement cannot be settled from outside — but the docs state the sunset
+outright, and typing a route that answers an error is the reverse of what this library is for.
+Recorded in `src/providers/cartesia/models.ts`. Revisit if the reference page returns.
+
+**Excluded: resemble — its speech-to-speech is a payload mode of a route already addressed.**
+`docs.resemble.ai/voice-generation/speech-to-speech` (fetched 2026-08-31), verbatim:
+"Speech-to-speech uses the same synthesis endpoint as synchronous TTS, but you pass SSML that
+references a source recording." The `data` field carries `<resemble:convert src="…">` naming an
+**HTTPS URL to a WAV file**, and `voice_uuid` is the target — both already typed on
+`resemble.tts` (`POST https://f.cluster.resemble.ai/synthesize`). A second address for one wire
+is what §2 forbids, and the category cannot reach it anyway: `audio` here is a required
+multipart `Blob` and that route has no file part at all. The three `sts-*` catalog ids are voice
+properties, not request values ("The model associated with the voice is selected
+automatically"). Recorded in `src/providers/resemble/models.ts`.
+
+**fal has none** — no voice-conversion endpoint in `data/fal/curation.json` or the generated
+tree — which is why `unmodel/sts` is the only media pack with no fal arm, and most of why it is
+the smallest.
+
+**What is not a canonical word.** Every knob on both wires, because every one has exactly ONE
+witness: `remove_background_noise`, `seed`, `voice_settings`, `file_format` and `enable_logging`
+at ElevenLabs; `strip_headers`, `context` and `include_timestamp_types` at Hume.
+`test/unified/sts-capabilities.test.ts` holds that as an assertion that FAILS the day a name
+appears on both rows.
+
 ## fal.ai wave — one aggregator, eleven verbs
 
 fal.ai is a generative-media inference cloud. unmodel serves **178 curated endpoints across
@@ -807,6 +910,7 @@ leaves rather than whole validators.
 | `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (the two engines that render raw image input — Avatar III does not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
 | `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (11 endpoints, seven taking a still and four taking a clip), topaz (15 models over two routes, stills only, multipart bodies) |
 | `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (4 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
+| `unmodel/sts` | `sts`, `createSts` | 2 | elevenlabs (3 models, `POST /v1/speech-to-speech/{voice_id}`), hume (1 synthetic id, `POST /v0/tts/voice_conversion/file`) — the smallest pack in the library, the only one with no fal arm, and the only category where three of five words are REQUIRED. Both endpoints are `MULTIPART_ONLY`, so there is no `unified.sts` CLI entry |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
 | `unmodel/voice-design` | `voiceDesign`, `createVoiceDesign` | 4 | elevenlabs, fish-audio, inworld, minimax — the unified surface is phase 1 (the generative call); the ElevenLabs/Inworld save steps are wire-only (`voiceDesignSave`, `voiceDesignPublish`) |
 

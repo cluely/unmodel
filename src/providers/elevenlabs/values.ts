@@ -1,6 +1,6 @@
 /**
  * `unmodel/elevenlabs/values` — the **runtime** lists behind this provider's
- * unified surfaces (tts, stt, music, sfx, voice-clone, voice-design).
+ * unified surfaces (tts, stt, music, sfx, sts, voice-clone, voice-design).
  *
  * Every export here is a readonly (`as const`) array or table a browser can
  * render: the model ids, the per-model narrowing rows (allowed sizes, ratios,
@@ -43,6 +43,15 @@ export {
   MODELS as SFX_MODELS,
   FORMAT as SFX_FORMAT_SPEC,
 } from "./sfx-params";
+
+// `STS_FORMAT_SPEC` is byte-identical to `TTS_FORMAT_SPEC` — the two endpoints
+// publish the same 27-value `output_format` enum — and is still its own object:
+// see `./sts-params.ts` for why a `*-params` leaf never imports a sibling's.
+export {
+  ELEVENLABS_STS_MODEL_PARAMS as STS_MODEL_PARAMS,
+  MODELS as STS_MODELS,
+  FORMAT as STS_FORMAT_SPEC,
+} from "./sts-params";
 
 export {
   ELEVENLABS_VOICE_CLONE_MODEL_PARAMS as VOICE_CLONE_MODEL_PARAMS,

@@ -1,0 +1,41 @@
+{
+  "ref": "elevenlabs/eleven_multilingual_sts_v2",
+  "voice": "21m00Tcm4TlvDq8ikWAM",
+  "params": {
+    "audio": {
+      "@blob": {
+        "size": 64,
+        "type": "audio/wav"
+      }
+    },
+    "model_id": "eleven_multilingual_sts_v2"
+  },
+  "url": "https://api.elevenlabs.io/v1/speech-to-speech/21m00Tcm4TlvDq8ikWAM?output_format=mp3_44100_128",
+  "headers": {},
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "outputFormat"
+      ],
+      "meta": {
+        "field": "sampleRate",
+        "value": 44100,
+        "codec": "mp3",
+        "source": "https://elevenlabs.io/docs/api-reference/speech-to-speech/convert"
+      }
+    },
+    {
+      "code": "approximated_param",
+      "path": [
+        "outputFormat"
+      ],
+      "meta": {
+        "field": "bitrate",
+        "value": 128000,
+        "codec": "mp3",
+        "source": "https://elevenlabs.io/docs/api-reference/speech-to-speech/convert"
+      }
+    }
+  ]
+}

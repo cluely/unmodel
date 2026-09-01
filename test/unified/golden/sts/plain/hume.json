@@ -1,0 +1,17 @@
+{
+  "ref": "hume/voice-conversion",
+  "voice": "f898a92e-685f-43fa-985b-a46920f0650b",
+  "params": {
+    "audio": {
+      "@blob": {
+        "size": 64,
+        "type": "audio/wav"
+      }
+    },
+    "voice": {
+      "id": "f898a92e-685f-43fa-985b-a46920f0650b"
+    }
+  },
+  "url": "https://api.hume.ai/v0/tts/voice_conversion/file",
+  "headers": {}
+}

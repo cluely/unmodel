@@ -165,6 +165,12 @@ export type { MusicParams, MusicParamsBase } from "../core/unified/vocabulary/mu
 export type { SfxParams, SfxParamsBase } from "../core/unified/vocabulary/sfx";
 
 export type {
+  StsAudioInput,
+  StsParams,
+  StsParamsBase,
+} from "../core/unified/vocabulary/sts";
+
+export type {
   VoiceCloneParams,
   VoiceCloneParamsBase,
   VoiceCloneParamsFor,

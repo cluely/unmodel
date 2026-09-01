@@ -23,6 +23,11 @@
 // encoded as `limit.characters`. Note this is a PER-UTTERANCE cap, not a
 // per-request one — a request may carry several utterances.
 // `limit.context: 0` disables token-window checks — these are not token models.
+//
+// VOICE CONVERSION: POST /v0/tts/voice_conversion/file has no model field AND
+// no version field, so its row is a synthetic id; see the block comment on
+// `voiceConversionModels` for the id and for why it carries no `cost`
+// (https://www.hume.ai/pricing, checked 2026-08-31).
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -33,7 +38,8 @@ export const provider = {
   doc: "https://dev.hume.ai",
 } as const satisfies ProviderInfo;
 
-export const models = {
+/** Model ids the TTS routes select with `version` — see the header. */
+const ttsModels = {
   // Octave 2 (preview): 11 languages, ~100ms model latency, word/phoneme
   // timestamps. Requires an explicit `voice`.
   "octave-2": {
@@ -65,8 +71,51 @@ export const models = {
   },
 } as const satisfies Record<string, ModelInfo>;
 
+/**
+ * Voice conversion — POST /v0/tts/voice_conversion/file, validated by ./sts.
+ *
+ * SYNTHETIC ID. That route has no `model` field and — unlike /v0/tts — no
+ * `version` field either, so there is no wire value to catalogue and
+ * `voice-conversion` is unmodel's name for the route (HAND_CATALOGS.md).
+ *
+ * NO COST. https://www.hume.ai/pricing (checked 2026-08-31) lists "Voice
+ * conversion" only as a feature-availability row — available on all seven
+ * plans, with no rate attached — and the page's only usage rates are TTS
+ * per-character rates ("$0.15/1,000" down to "$0.05/1,000") for a route that
+ * takes no text. How an audio-in request draws down a character quota is
+ * documented nowhere, so `cost` is omitted rather than guessed. (The page's
+ * separate "Speech-to-speech" row carries `eviToggle: true` and belongs to EVI,
+ * the realtime product — not this route.)
+ *
+ * `limit.characters` is absent for the same reason: there is no text to cap.
+ */
+const voiceConversionModels = {
+  "voice-conversion": {
+    id: "voice-conversion",
+    name: "Octave Voice Conversion",
+    family: "octave",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["audio"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+} as const satisfies Record<string, ModelInfo>;
+
+export const models = { ...ttsModels, ...voiceConversionModels } as const satisfies Record<
+  string,
+  ModelInfo
+>;
+
 export type HumeModelId = keyof typeof models;
 /** Both catalogued Octave versions serve the TTS routes. */
-export type HumeTtsModelId = HumeModelId;
+export type HumeTtsModelId = keyof typeof ttsModels;
+/** The synthetic id addressing POST /v0/tts/voice_conversion/file. */
+export type HumeStsModelId = keyof typeof voiceConversionModels;
 
-export const HUME_MODEL_IDS = ["octave", "octave-2"] as const satisfies readonly HumeModelId[];
+export const HUME_MODEL_IDS = [
+  "octave",
+  "octave-2",
+  "voice-conversion",
+] as const satisfies readonly HumeModelId[];

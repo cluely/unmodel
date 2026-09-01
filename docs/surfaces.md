@@ -17,6 +17,7 @@ One import per category, one camelCase vocabulary, `"provider/model"` refs. Ever
 | [Upscale](#upscale) | `unmodel/upscale` | `unmodel/fal`, `unmodel/topaz` |
 | [3D generation](#3d-generation) | `unmodel/3d` | `unmodel/tripo3d`, `unmodel/fal` |
 | [Music generation](#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/fal`, `unmodel/stability` |
+| [Voice conversion](#voice-conversion) | `unmodel/sts` | `unmodel/elevenlabs`, `unmodel/hume` |
 | [Voice cloning](#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
 | [Voice design](#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
 | [Realtime audio config](#realtime-audio) | none | `unmodel/openai`, `unmodel/deepgram`, `unmodel/elevenlabs`, etc. |
@@ -663,6 +664,109 @@ holds that as an assertion that FAILS on the day it happens.
 SEPARATE `bitrate` field — a kbps-suffixed string — so `outputFormat: { format: "mp3", bitrate:
 192000 }` compiles to `{ output_format: "mp3", bitrate: "192k" }` there and is a typed refusal
 everywhere else.
+
+## Voice conversion
+
+```ts
+import { sts } from "unmodel/sts";
+
+const request = sts({
+  model: "elevenlabs/eleven_multilingual_sts_v2",
+  audio: { file: recording },
+  voice: "21m00Tcm4TlvDq8ikWAM",
+});
+
+Object.keys(request);
+// → ["audio", "model_id"]
+request.request.url;
+// → "https://api.elevenlabs.io/v1/speech-to-speech/21m00Tcm4TlvDq8ikWAM"
+request.request.headers;
+// → {}   — multipart: fetch derives the boundary from the FormData body
+```
+
+Five canonical words, and **three of them are required**: `model`, `audio` and `voice`. No other
+category asks for that much, and it is a fact about the operation rather than about any one
+wire — a recording with no target voice is not a conversion. There is no `text`, no `speed` and
+no `language`, because the words, the timing and the delivery all come from the recording.
+
+### The source is a `Blob`, so the whole category is library-only
+
+Both witnesses take the recording as a **required binary form part** with no URL, no base64 and
+no upload-handle alternative. A `Blob` cannot be written in JSON, so `elevenlabs.sts` and
+`hume.sts` are `MULTIPART_ONLY` and there is no `unified.sts` CLI entry — the only pack without
+one. `unmodel validate elevenlabs.sts` says so instead of failing with "expected Blob".
+
+```ts
+sts({ model: "elevenlabs/eleven_multilingual_sts_v2", audio: { url: "https://ex.com/clip.wav" }, voice: "v" });
+// ❌ TypeScript error: `audio` is `{ file: Blob }` — neither wire fetches a recording
+```
+
+Send it with each provider's own helper:
+
+```ts
+import { sts as elevenlabsSts, stsToFormData } from "unmodel/elevenlabs";
+
+const params = elevenlabsSts({ voice_id: "21m00Tcm4TlvDq8ikWAM", audio: recording });
+await fetch(params.request.url, {
+  method: "POST",
+  headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY! },
+  body: stsToFormData(params),
+});
+```
+
+### `voice` is the word the two providers spell differently
+
+| ref | where the voice goes | spellings | encoding |
+|---|---|---|---|
+| `elevenlabs/eleven_multilingual_sts_v2` (and the two English rows) | a URL **path segment** | `{ id }` and a bare string | `output_format` composite, in the **query string** |
+| `hume/voice-conversion` | a **form part** | `{ id }`, `{ name }`, and a bare string (read as an id) | `format: { type }` object, in the body |
+
+It is the only canonical word in the library that lands outside the request body at one provider
+and inside it at another — which is why an ElevenLabs `sts` result has just two enumerable keys
+and its voice shows up in `.request.url`.
+
+```ts
+sts({ model: "hume/voice-conversion", audio: { file: recording }, voice: { name: "Male English Actor" } });
+// → { audio: <Blob>, voice: { name: "Male English Actor" } }
+
+sts({ model: "elevenlabs/eleven_english_sts_v2", audio: { file: recording }, voice: { name: "Rachel" } });
+// ❌ invalid_shape @ voice — "`voice` on this model is a voice id, so `{ name }` has no
+//    equivalent here — pass the id instead (a bare string is read as one)."
+```
+
+### Cost, and the limit that is not a check
+
+`elevenlabs.sts` is priced at **$0.12 per minute of processed audio**. Duration cannot be read
+out of a `Blob`, so declare it:
+
+```ts
+sts.safe({ model: "elevenlabs/eleven_multilingual_sts_v2", audio: { file: recording }, voice: "v" },
+         { media: [{ path: ["audio"], durationSeconds: 300 }] });
+// → estimate.costUSD === 0.6
+```
+
+`hume.sts` returns no estimate: hume.ai/pricing lists voice conversion as a feature-availability
+row with no rate, and one guessed number breaks trust in every real one.
+
+ElevenLabs publishes two limits that disagree — "Maximum segment length: 5 minutes" on the
+capability page, and a 10,000-character limit annotated "~10 minutes" on the models page. They
+measure different things (a per-request cap and a billing quota at 1,000 characters per minute),
+and **neither becomes a check**: unmodel cannot read a duration out of your bytes, and the
+`options.media` figure you supply is for pricing, not for refusing a request the API may well
+fulfil. See [providers.md](providers.md#voice-conversion-wave-two-providers-and-two-recorded-exclusions).
+
+### What is not a canonical word
+
+All eight knobs, because every one has exactly one witness: `remove_background_noise`, `seed`,
+`voice_settings` (a JSON-string form part on the wire; typed structured here),
+`file_format` and `enable_logging` at ElevenLabs; `strip_headers`, `context` and
+`include_timestamp_types` at Hume. Each rides as a per-model extra typed from its own route's
+wire interface, and each is promoted the day a second vendor spells it the same way.
+
+Two vendors that catalogue speech-to-speech MODELS are deliberately not here — Cartesia's
+`/voice-changer` routes were sunset on 2026-08-20, and Resemble's conversion is an SSML mode of
+the synthesis route already addressed as `resemble.tts`. Both exclusions carry a reason, a
+source and a date in the provider's own `models.ts`.
 
 ## Voice cloning
 

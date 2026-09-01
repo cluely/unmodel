@@ -17,6 +17,7 @@ One import per category, one camelCase vocabulary, `"provider/model"` refs. Ever
 | [Upscale](#upscale) | `unmodel/upscale` | `unmodel/fal`, `unmodel/topaz` |
 | [3D generation](#3d-generation) | `unmodel/3d` | `unmodel/tripo3d`, `unmodel/fal` |
 | [Music generation](#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/fal`, `unmodel/stability` |
+| [Sound effects](#sound-effects) | `unmodel/sfx` | `unmodel/elevenlabs`, `unmodel/fal` |
 | [Voice conversion](#voice-conversion) | `unmodel/sts` | `unmodel/elevenlabs`, `unmodel/hume` |
 | [Voice cloning](#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
 | [Voice design](#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |

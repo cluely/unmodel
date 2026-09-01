@@ -12,6 +12,7 @@
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__text-to-image.json
+//   data/fal/openapi/cassetteai__sound-effects-generator.json
 //   data/fal/openapi/fal-ai__ace-step.json
 //   data/fal/openapi/fal-ai__aura-sr.json
 //   data/fal/openapi/fal-ai__bytedance__omnihuman__v1.5.json
@@ -25,6 +26,7 @@
 //   data/fal/openapi/fal-ai__diffrhythm.json
 //   data/fal/openapi/fal-ai__echomimic-v3.json
 //   data/fal/openapi/fal-ai__elevenlabs__music.json
+//   data/fal/openapi/fal-ai__elevenlabs__sound-effects__v2.json
 //   data/fal/openapi/fal-ai__elevenlabs__speech-to-text.json
 //   data/fal/openapi/fal-ai__elevenlabs__speech-to-text__scribe-v2.json
 //   data/fal/openapi/fal-ai__elevenlabs__tts__eleven-v3.json
@@ -121,6 +123,8 @@
 //   data/fal/openapi/fal-ai__speech-to-text__turbo.json
 //   data/fal/openapi/fal-ai__stable-audio-25__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-audio-3__medium__text-to-audio.json
+//   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__base__text-to-audio.json
+//   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-diffusion-v35-large.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2__pro.json
@@ -154,9 +158,11 @@
 //   data/fal/openapi/minimax__h3__image-to-video.json
 //   data/fal/openapi/minimax__h3__text-to-video.json
 //   data/fal/openapi/minimax__music-3.json
+//   data/fal/openapi/mirelo-ai__sfx1.6__text-to-audio.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
+//   data/fal/openapi/sonilo__v1.1__text-to-sound-effects.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
 //   data/fal/openapi/topaz__upscale__video__generative.json
@@ -292,6 +298,18 @@ export const FAL_MUSIC_ENDPOINTS = [
 ] as const;
 
 export type FalMusicEndpointId = (typeof FAL_MUSIC_ENDPOINTS)[number];
+
+/** Every fal endpoint unmodel serves as `fal.sfx` — 6 of them. */
+export const FAL_SFX_ENDPOINTS = [
+  "cassetteai/sound-effects-generator",
+  "fal-ai/elevenlabs/sound-effects/v2",
+  "fal-ai/stable-audio-3/small/sfx/base/text-to-audio",
+  "fal-ai/stable-audio-3/small/sfx/text-to-audio",
+  "mirelo-ai/sfx1.6/text-to-audio",
+  "sonilo/v1.1/text-to-sound-effects",
+] as const;
+
+export type FalSfxEndpointId = (typeof FAL_SFX_ENDPOINTS)[number];
 
 /** Every fal endpoint unmodel serves as `fal.stt` — 6 of them. */
 export const FAL_STT_ENDPOINTS = [
@@ -430,6 +448,7 @@ export const FAL_ENDPOINTS = [
   "bytedance/seedance-2.5/text-to-video",
   "bytedance/seedream/v5/pro/edit",
   "bytedance/seedream/v5/pro/text-to-image",
+  "cassetteai/sound-effects-generator",
   "fal-ai/ace-step",
   "fal-ai/aura-sr",
   "fal-ai/bytedance/omnihuman/v1.5",
@@ -443,6 +462,7 @@ export const FAL_ENDPOINTS = [
   "fal-ai/diffrhythm",
   "fal-ai/echomimic-v3",
   "fal-ai/elevenlabs/music",
+  "fal-ai/elevenlabs/sound-effects/v2",
   "fal-ai/elevenlabs/speech-to-text",
   "fal-ai/elevenlabs/speech-to-text/scribe-v2",
   "fal-ai/elevenlabs/tts/eleven-v3",
@@ -539,6 +559,8 @@ export const FAL_ENDPOINTS = [
   "fal-ai/speech-to-text/turbo",
   "fal-ai/stable-audio-25/text-to-audio",
   "fal-ai/stable-audio-3/medium/text-to-audio",
+  "fal-ai/stable-audio-3/small/sfx/base/text-to-audio",
+  "fal-ai/stable-audio-3/small/sfx/text-to-audio",
   "fal-ai/stable-diffusion-v35-large",
   "fal-ai/sync-lipsync/v2",
   "fal-ai/sync-lipsync/v2/pro",
@@ -572,9 +594,11 @@ export const FAL_ENDPOINTS = [
   "minimax/h3/image-to-video",
   "minimax/h3/text-to-video",
   "minimax/music-3",
+  "mirelo-ai/sfx1.6/text-to-audio",
   "openai/gpt-image-2",
   "openai/gpt-image-2/edit",
   "reve/2.1/text-to-image",
+  "sonilo/v1.1/text-to-sound-effects",
   "topaz/upscale/image/generative",
   "topaz/upscale/image/precision",
   "topaz/upscale/video/generative",
@@ -608,6 +632,7 @@ export const FAL_ENDPOINT_VERBS = {
   "bytedance/seedance-2.5/text-to-video": "video",
   "bytedance/seedream/v5/pro/edit": "imageEdit",
   "bytedance/seedream/v5/pro/text-to-image": "image",
+  "cassetteai/sound-effects-generator": "sfx",
   "fal-ai/ace-step": "music",
   "fal-ai/aura-sr": "upscale",
   "fal-ai/bytedance/omnihuman/v1.5": "avatar",
@@ -621,6 +646,7 @@ export const FAL_ENDPOINT_VERBS = {
   "fal-ai/diffrhythm": "music",
   "fal-ai/echomimic-v3": "avatar",
   "fal-ai/elevenlabs/music": "music",
+  "fal-ai/elevenlabs/sound-effects/v2": "sfx",
   "fal-ai/elevenlabs/speech-to-text": "stt",
   "fal-ai/elevenlabs/speech-to-text/scribe-v2": "stt",
   "fal-ai/elevenlabs/tts/eleven-v3": "tts",
@@ -717,6 +743,8 @@ export const FAL_ENDPOINT_VERBS = {
   "fal-ai/speech-to-text/turbo": "stt",
   "fal-ai/stable-audio-25/text-to-audio": "music",
   "fal-ai/stable-audio-3/medium/text-to-audio": "music",
+  "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": "sfx",
+  "fal-ai/stable-audio-3/small/sfx/text-to-audio": "sfx",
   "fal-ai/stable-diffusion-v35-large": "image",
   "fal-ai/sync-lipsync/v2": "lipsync",
   "fal-ai/sync-lipsync/v2/pro": "lipsync",
@@ -750,9 +778,11 @@ export const FAL_ENDPOINT_VERBS = {
   "minimax/h3/image-to-video": "video",
   "minimax/h3/text-to-video": "video",
   "minimax/music-3": "music",
+  "mirelo-ai/sfx1.6/text-to-audio": "sfx",
   "openai/gpt-image-2": "image",
   "openai/gpt-image-2/edit": "imageEdit",
   "reve/2.1/text-to-image": "image",
+  "sonilo/v1.1/text-to-sound-effects": "sfx",
   "topaz/upscale/image/generative": "upscale",
   "topaz/upscale/image/precision": "upscale",
   "topaz/upscale/video/generative": "upscale",
@@ -791,6 +821,7 @@ export const FAL_DOC_URLS = {
   "bytedance/seedance-2.5/text-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/text-to-video/api",
   "bytedance/seedream/v5/pro/edit": "https://fal.ai/models/fal-ai/seedream-5-pro/edit/api",
   "bytedance/seedream/v5/pro/text-to-image": "https://fal.ai/models/fal-ai/seedream-5-pro/text-to-image/api",
+  "cassetteai/sound-effects-generator": "https://fal.ai/models/CassetteAI/sound-effects-generator/api",
   "fal-ai/ace-step": "https://fal.ai/models/fal-ai/ace-step/api",
   "fal-ai/aura-sr": "https://fal.ai/models/fal-ai/aura-sr/api",
   "fal-ai/bytedance/omnihuman/v1.5": "https://fal.ai/models/fal-ai/bytedance/omnihuman/v1.5/api",
@@ -804,6 +835,7 @@ export const FAL_DOC_URLS = {
   "fal-ai/diffrhythm": "https://fal.ai/models/fal-ai/diffrhythm/api",
   "fal-ai/echomimic-v3": "https://fal.ai/models/fal-ai/echomimic-v3/api",
   "fal-ai/elevenlabs/music": "https://fal.ai/models/fal-ai/elevenlabs/music/api",
+  "fal-ai/elevenlabs/sound-effects/v2": "https://fal.ai/models/fal-ai/elevenlabs/sound-effects/v2/api",
   "fal-ai/elevenlabs/speech-to-text": "https://fal.ai/models/fal-ai/elevenlabs/speech-to-text/api",
   "fal-ai/elevenlabs/speech-to-text/scribe-v2": "https://fal.ai/models/fal-ai/elevenlabs/speech-to-text/scribe-v2/api",
   "fal-ai/elevenlabs/tts/eleven-v3": "https://fal.ai/models/fal-ai/elevenlabs/tts/eleven-v3/api",
@@ -900,6 +932,8 @@ export const FAL_DOC_URLS = {
   "fal-ai/speech-to-text/turbo": "https://fal.ai/models/fal-ai/speech-to-text/turbo/api",
   "fal-ai/stable-audio-25/text-to-audio": "https://fal.ai/models/fal-ai/stable-audio-25/text-to-audio/api",
   "fal-ai/stable-audio-3/medium/text-to-audio": "https://fal.ai/models/fal-ai/stable-audio-3/medium/text-to-audio/api",
+  "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": "https://fal.ai/models/fal-ai/stable-audio-3/small/sfx/base/text-to-audio/api",
+  "fal-ai/stable-audio-3/small/sfx/text-to-audio": "https://fal.ai/models/fal-ai/stable-audio-3/small/sfx/text-to-audio/api",
   "fal-ai/stable-diffusion-v35-large": "https://fal.ai/models/fal-ai/stable-diffusion-v35-large/api",
   "fal-ai/sync-lipsync/v2": "https://fal.ai/models/fal-ai/sync-lipsync/v2/api",
   "fal-ai/sync-lipsync/v2/pro": "https://fal.ai/models/fal-ai/sync-lipsync/v2/pro/api",
@@ -933,9 +967,11 @@ export const FAL_DOC_URLS = {
   "minimax/h3/image-to-video": "https://fal.ai/models/fal-ai/minimax_h3/image-to-video/api",
   "minimax/h3/text-to-video": "https://fal.ai/models/fal-ai/minimax_h3/text-to-video/api",
   "minimax/music-3": "https://fal.ai/models/fal-ai/minimax-music-3/api",
+  "mirelo-ai/sfx1.6/text-to-audio": "https://fal.ai/models/Mirelo-AI/sfx1.6/text-to-audio/api",
   "openai/gpt-image-2": "https://fal.ai/models/fal-ai/gpt-image-2/api",
   "openai/gpt-image-2/edit": "https://fal.ai/models/fal-ai/gpt-image-2/edit/api",
   "reve/2.1/text-to-image": "https://fal.ai/models/fal-ai/reve/v2/text-to-image/api",
+  "sonilo/v1.1/text-to-sound-effects": "https://fal.ai/models/sonilo/sfx-v1.0/text-to-audio/api",
   "topaz/upscale/image/generative": "https://fal.ai/models/fal-ai/topaz/upscale/image/generative/api",
   "topaz/upscale/image/precision": "https://fal.ai/models/fal-ai/topaz/upscale/image/precision/api",
   "topaz/upscale/video/generative": "https://fal.ai/models/fal-ai/topaz/upscale/video/generative/api",
@@ -974,6 +1010,7 @@ export const FAL_REQUIRED_PROBES = {
   "bytedance/seedance-2.5/text-to-video": ["prompt"],
   "bytedance/seedream/v5/pro/edit": ["prompt", "image_urls"],
   "bytedance/seedream/v5/pro/text-to-image": ["prompt"],
+  "cassetteai/sound-effects-generator": ["prompt", "duration"],
   "fal-ai/ace-step": ["tags"],
   "fal-ai/aura-sr": ["image_url"],
   "fal-ai/bytedance/omnihuman/v1.5": ["image_url", "audio_url"],
@@ -987,6 +1024,7 @@ export const FAL_REQUIRED_PROBES = {
   "fal-ai/diffrhythm": ["lyrics"],
   "fal-ai/echomimic-v3": ["image_url", "audio_url", "prompt"],
   "fal-ai/elevenlabs/music": [],
+  "fal-ai/elevenlabs/sound-effects/v2": ["text"],
   "fal-ai/elevenlabs/speech-to-text": ["audio_url"],
   "fal-ai/elevenlabs/speech-to-text/scribe-v2": ["audio_url"],
   "fal-ai/elevenlabs/tts/eleven-v3": ["text"],
@@ -1083,6 +1121,8 @@ export const FAL_REQUIRED_PROBES = {
   "fal-ai/speech-to-text/turbo": ["audio_url"],
   "fal-ai/stable-audio-25/text-to-audio": ["prompt"],
   "fal-ai/stable-audio-3/medium/text-to-audio": ["prompt"],
+  "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": ["prompt"],
+  "fal-ai/stable-audio-3/small/sfx/text-to-audio": ["prompt"],
   "fal-ai/stable-diffusion-v35-large": ["prompt"],
   "fal-ai/sync-lipsync/v2": ["video_url", "audio_url"],
   "fal-ai/sync-lipsync/v2/pro": ["video_url", "audio_url"],
@@ -1116,9 +1156,11 @@ export const FAL_REQUIRED_PROBES = {
   "minimax/h3/image-to-video": ["prompt"],
   "minimax/h3/text-to-video": ["prompt"],
   "minimax/music-3": ["prompt", "lyrics"],
+  "mirelo-ai/sfx1.6/text-to-audio": ["text_prompt"],
   "openai/gpt-image-2": ["prompt"],
   "openai/gpt-image-2/edit": ["prompt", "image_urls"],
   "reve/2.1/text-to-image": ["prompt"],
+  "sonilo/v1.1/text-to-sound-effects": ["prompt"],
   "topaz/upscale/image/generative": ["image_url"],
   "topaz/upscale/image/precision": ["image_url"],
   "topaz/upscale/video/generative": ["video_url"],

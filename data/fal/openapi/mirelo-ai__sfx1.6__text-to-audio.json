@@ -1,0 +1,409 @@
+{
+  "metadata": {
+    "category": "text-to-audio",
+    "date": "2026-05-15T09:12:55.117Z",
+    "description": "Generate ambient sounds for any text prompt. Now you can turn any SFX into a natural loop for ambient soundscapes.",
+    "display_name": "Mirelo SFX1.6",
+    "group": {
+      "key": "mirelo-sfx1.6",
+      "label": "Text To Audio"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/mirelo-ai/sfx1.6/text-to-audio",
+    "pinned": false,
+    "status": "active",
+    "tags": [
+      "text-to-audio",
+      "sfx"
+    ],
+    "thumbnail_url": "https://v3b.fal.media/files/b/0a9a49f4/j_CsUhacSWsqc9KyZ6X5G_6e551c71998c4f9697cee6bc6f22554d.jpg",
+    "updated_at": "2026-07-01T04:56:00.169Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "Audio": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "Audio",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        "Sfx16TextToAudioInput": {
+          "properties": {
+            "ambience": {
+              "default": false,
+              "description": "When true, generate a seamlessly loopable ambience tile (room tone, rain, drones, etc.). When false, generate a generic text-conditioned SFX of `duration` seconds.",
+              "title": "Ambience",
+              "type": "boolean"
+            },
+            "double_output": {
+              "default": false,
+              "description": "Only used when ambience=true: concatenate the loop with itself for a 2x-length output.",
+              "title": "Double Output",
+              "type": "boolean"
+            },
+            "duration": {
+              "default": 10,
+              "description": "Duration of the generated audio in seconds. The minimum is 0.1s for ordinary sound effects and 1s when ambience=true.",
+              "maximum": 60,
+              "minimum": 0.1,
+              "title": "Duration",
+              "type": "number"
+            },
+            "num_samples": {
+              "default": 2,
+              "description": "Number of variations to generate.",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Num Samples",
+              "type": "integer"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "maximum": 18446744073709552000,
+                  "minimum": -1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Seed for generation. -1 or None for random.",
+              "title": "Seed"
+            },
+            "text_prompt": {
+              "description": "Text prompt for the generated audio.",
+              "examples": [
+                "city ambience"
+              ],
+              "minLength": 4,
+              "title": "Text Prompt",
+              "type": "string"
+            },
+            "upload_audio_format": {
+              "default": "wav",
+              "description": "Audio format for the returned files.",
+              "enum": [
+                "wav",
+                "mp3",
+                "aac",
+                "flac"
+              ],
+              "title": "Upload Audio Format",
+              "type": "string"
+            }
+          },
+          "required": [
+            "text_prompt"
+          ],
+          "title": "TextToAudioInput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "text_prompt",
+            "duration",
+            "ambience",
+            "double_output",
+            "num_samples",
+            "seed",
+            "upload_audio_format"
+          ]
+        },
+        "Sfx16TextToAudioOutput": {
+          "properties": {
+            "audio": {
+              "description": "Generated SFX audio from a text prompt.",
+              "examples": [
+                [
+                  {
+                    "content_type": "audio/wav",
+                    "file_name": "text_to_audio_1.wav",
+                    "url": "https://v3b.fal.media/files/b/kangaroo/text_to_audio_example.wav"
+                  }
+                ]
+              ],
+              "items": {
+                "$ref": "#/components/schemas/Audio"
+              },
+              "title": "Audio",
+              "type": "array"
+            }
+          },
+          "required": [
+            "audio"
+          ],
+          "title": "TextToAudioOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "Generate ambient sounds for any text prompt. Now you can turn any SFX into a natural loop for ambient soundscapes.",
+      "title": "Queue OpenAPI for Mirelo-AI/sfx1.6/text-to-audio",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "Text To Audio",
+        "category": "text-to-audio",
+        "documentationUrl": "https://fal.ai/models/Mirelo-AI/sfx1.6/text-to-audio/api",
+        "endpointId": "Mirelo-AI/sfx1.6/text-to-audio",
+        "playgroundUrl": "https://fal.ai/models/Mirelo-AI/sfx1.6/text-to-audio",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a9a49f4/j_CsUhacSWsqc9KyZ6X5G_6e551c71998c4f9697cee6bc6f22554d.jpg"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/Mirelo-AI/sfx1.6/text-to-audio": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sfx16TextToAudioInput"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/Mirelo-AI/sfx1.6/text-to-audio/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Sfx16TextToAudioOutput"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/Mirelo-AI/sfx1.6/text-to-audio/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/Mirelo-AI/sfx1.6/text-to-audio/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

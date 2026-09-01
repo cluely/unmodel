@@ -19,12 +19,12 @@
  * documents into `./gen/<category>-wire.gen.ts`, and each category's validator
  * brings a uniform `<Verb>Body` alias with it — one per endpoint address
  * `unmodel/fal` serves, named after the word you already type on the CLI. All
- * ten are here now: `ImageBody`, `ImageEditBody`, `VideoBody`, `LipsyncBody`,
- * `AvatarBody`, `UpscaleBody`, `ThreeDBody`, `TtsBody`, `SttBody` and
- * `MusicBody` — `ThreeDBody` rather than `3dBody` because the alias is named
- * after the CLI verb, and `unmodel validate fal.threeD` is what you type. A
- * category
- * without a validator would have no address and so correctly no alias:
+ * eleven are here now: `ImageBody`, `ImageEditBody`, `VideoBody`,
+ * `LipsyncBody`, `AvatarBody`, `UpscaleBody`, `ThreeDBody`, `TtsBody`,
+ * `SttBody`, `MusicBody` and `SfxBody` — `ThreeDBody` rather than `3dBody`
+ * because the alias is named after the CLI verb, and
+ * `unmodel validate fal.threeD` is what you type. A category without a
+ * validator would have no address and so correctly no alias:
  * `test/types-entries.test.ts` derives that list from the CLI registry rather
  * than from this file's good intentions.
  *
@@ -48,13 +48,14 @@
  *
  * Every `*Body` alias above has a twin nobody finds: the result document each
  * endpoint answers with, generated from the same OpenAPI document as its
- * request. Ten maps, one per verb — {@link FalImageResultById},
+ * request. Eleven maps, one per verb — {@link FalImageResultById},
  * {@link FalImageEditResultById}, {@link FalVideoResultById},
  * {@link FalLipsyncResultById}, {@link FalAvatarResultById},
  * {@link FalUpscaleResultById}, {@link FalThreeDResultById},
  * {@link FalTtsResultById}, {@link FalSttResultById},
- * {@link FalMusicResultById} — each keyed by the same endpoint id you routed
- * with, so the request key and the response key are the same string.
+ * {@link FalMusicResultById}, {@link FalSfxResultById} — each keyed by the same
+ * endpoint id you routed with, so the request key and the response key are the
+ * same string.
  *
  * They are listed here because they existed for three waves before anyone
  * found them, and the reasonable thing to do without them is to hand-roll
@@ -80,9 +81,9 @@
  * Three things that surface is NOT. It is not validated — unmodel checks the
  * request and never sees the response, so these are compile-time shapes for a
  * document you fetched yourself. It is not a `checkX` helper: fal's result
- * documents are one per endpoint across ten verbs rather than one per provider,
- * so there is no single response contract to normalise (a zod mirror of all 172
- * was asked for and declined for the same reason — 172 schemas restating the
+ * documents are one per endpoint across eleven verbs rather than one per provider,
+ * so there is no single response contract to normalise (a zod mirror of all 178
+ * was asked for and declined for the same reason — 178 schemas restating the
  * generated types, refreshed on fal's clock, to validate a document unmodel
  * does not fetch). And it is not a failure discriminator: fal's queue declares
  * no `FAILED` status, which is what {@link FalQueueResult} and
@@ -121,6 +122,7 @@ import type { FalThreeDParams } from "./three-d";
 import type { FalTtsParams } from "./tts";
 import type { FalSttParams } from "./stt";
 import type { FalMusicParams } from "./music";
+import type { FalSfxParams } from "./sfx";
 
 /**
  * The request body `fal.image` accepts — every curated text-to-image endpoint,
@@ -211,6 +213,15 @@ export type SttBody = FalSttParams;
  */
 export type MusicBody = FalMusicParams;
 
+/**
+ * The request body `fal.sfx` accepts. Narrow to one with {@link FalSfxArm} —
+ * which is how `cassetteai/sound-effects-generator`'s `duration` types as
+ * REQUIRED while its five siblings leave the same idea optional, and how the
+ * prompt is `text` on one endpoint, `text_prompt` on another and `prompt` on
+ * the rest.
+ */
+export type SfxBody = FalSfxParams;
+
 export type {
   FalVideoArm,
   FalVideoBodyById,
@@ -259,6 +270,12 @@ export type {
   FalMusicEndpointId,
   FalMusicResultById,
 } from "./music";
+export type {
+  FalSfxArm,
+  FalSfxBodyById,
+  FalSfxEndpointId,
+  FalSfxResultById,
+} from "./sfx";
 
 export type { FalEndpointId } from "./gen/endpoints.gen";
 export type { FalRate, FalRateUnit, FalTier } from "./pricing-types";

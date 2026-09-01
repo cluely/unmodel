@@ -345,12 +345,13 @@ export interface FalParamShape {
    */
   seedWire?: string;
   /**
-   * `fal.tts` / `fal.music`: the wire parameter the words go in.
+   * `fal.tts` / `fal.music` / `fal.sfx`: the wire parameter the words go in.
    *
    * Curated rather than derived, because the endpoints genuinely disagree:
-   * speech is `text` at ElevenLabs and `prompt` at Kokoro, and music is
+   * speech is `text` at ElevenLabs and `prompt` at Kokoro, music is
    * `prompt` at Lyria, `tags` at ACE-Step and `lyrics` at DiffRhythm — where
-   * the lyrics ARE the request and `style_prompt` is the decoration.
+   * the lyrics ARE the request and `style_prompt` is the decoration — and a
+   * sound effect is `text` at ElevenLabs and `text_prompt` at Mirelo.
    */
   textWire?: string;
   /**
@@ -386,7 +387,11 @@ export interface FalParamShape {
    * caller's `"en"` would still have nothing to send without this.
    */
   languageValues?: Readonly<Record<string, string>>;
-  /** `fal.tts` / `fal.music`: the wire parameter the output codec goes in. */
+  /**
+   * `fal.tts` / `fal.music` / `fal.sfx`: the wire parameter the output codec
+   * goes in — `output_format` almost everywhere, `audio_format` at Sonilo and
+   * `upload_audio_format` at Mirelo.
+   */
   formatWire?: string;
   /**
    * The canonical codecs this endpoint can emit.
@@ -416,9 +421,10 @@ export interface FalParamShape {
   /** `fal.stt`: the wire parameter the diarization switch goes in. */
   diarizeWire?: string;
   /**
-   * `fal.music`: the wire parameter the length goes in — four spellings across
-   * ten endpoints (`duration`, `seconds_total`, `music_duration`,
-   * `music_length_ms`).
+   * `fal.music` / `fal.sfx`: the wire parameter the length goes in — four
+   * spellings across the ten music endpoints (`duration`, `seconds_total`,
+   * `music_duration`, `music_length_ms`) and two across the six sound-effect
+   * ones (`duration_seconds` at ElevenLabs, `duration` at the rest).
    */
   lengthWire?: string;
   /**
@@ -427,6 +433,57 @@ export interface FalParamShape {
    * number means milliseconds there and seconds everywhere else.
    */
   lengthUnit?: "ms";
+  /**
+   * `fal.sfx`: `[min, max]` seconds, inclusive — the length's own bounds.
+   *
+   * The narrowing spelling of what {@link bounds} carries under the wire name,
+   * and the reason for the second copy is that this is the half the unified
+   * layer reads: `SfxModelParams` is one row type across fal and ElevenLabs,
+   * and the native leaf has no `bounds` map to look in. Both are generated
+   * from the same property, so there is nothing here to drift.
+   *
+   * It stays a RANGE and never becomes a union: the six endpoints span
+   * 0.5–22, 1–180, 1–30, 0.1–60 and 1–120, which is the "a range genuinely
+   * cannot be a union" case {@link durations} makes one category over.
+   */
+  durationRange?: readonly [number, number];
+  /**
+   * `fal.sfx`: that parameter is an INTEGER, so a fractional second is a 422.
+   *
+   * True at Sonilo and CassetteAI and false at the other four, which is why it
+   * is a row field rather than a category rule: `durationSeconds: 2.5` is a
+   * working request at ElevenLabs, Mirelo and Stable Audio and a refusal at the
+   * other two.
+   */
+  durationInt?: true;
+  /**
+   * `fal.sfx`: the length this endpoint uses when the caller states none.
+   *
+   * The field that makes "absence means the PROVIDER's default" sayable instead
+   * of the `"auto"` it looks like: Sonilo silently generates 8 seconds, Mirelo
+   * 10, Stable Audio 30. Absent here means the endpoint documents no number —
+   * ElevenLabs guesses a length from the prompt, which is a different fact and
+   * carries no warning because nothing was invented on the caller's behalf.
+   */
+  durationDefault?: number;
+  /**
+   * `fal.sfx`: the length is in this endpoint's `required` list.
+   *
+   * `cassetteai/sound-effects-generator` is the one, and it is the reason this
+   * category's `durationSeconds` has a required arm at all: a request without
+   * one is a 422 there and a working request at the other five.
+   */
+  durationRequired?: true;
+  /**
+   * `fal.sfx`: the wire parameter a SEPARATE bitrate goes in.
+   *
+   * Stable Audio publishes `bitrate` beside its codec enum, as a kbps-suffixed
+   * string (`"192k"`) rather than a number of bits. Every other endpoint in the
+   * roster either folds the bitrate into a composite enum member
+   * (`mp3_44100_128`) or has no bitrate field at all — and where there is none,
+   * `outputFormat.bitrate` is refused by name rather than dropped.
+   */
+  bitrateWire?: string;
   /** `fal.music`: the lengths this endpoint offers as a closed set, in SECONDS. */
   lengths?: readonly number[];
   /** Canonical seconds → the literal the length parameter takes (`95` → `"95s"`). */

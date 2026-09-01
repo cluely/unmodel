@@ -117,6 +117,7 @@ const CATEGORY_PREFIX: Readonly<Record<string, string>> = {
   tts: "TTS",
   stt: "STT",
   music: "MUSIC",
+  sfx: "SFX",
   voiceClone: "VOICE_CLONE",
   voiceDesign: "VOICE_DESIGN",
 };
@@ -242,12 +243,14 @@ describe("completeness — every category an adapter serves has its uniform alia
       }
     }
     expect(missing).toEqual([]);
-    // 69 adapters across the 48 providers today — fal alone brings ten, which
-    // is more categories than any other provider serves. A floor, so the sweep
-    // cannot go vacuous if `adaptersOf` ever stops finding them. atlascloud
-    // added two (its `unified.ts` barrel and its `unified-video.ts` leaf both
-    // export the same adapter object, and this sweep walks files).
-    expect(categories).toBeGreaterThanOrEqual(68);
+    // 72 adapters across the 48 providers today — fal alone brings eleven,
+    // which is more categories than any other provider serves. A floor, so the
+    // sweep cannot go vacuous if `adaptersOf` ever stops finding them.
+    // atlascloud added two (its `unified.ts` barrel and its `unified-video.ts`
+    // leaf both export the same adapter object, and this sweep walks files);
+    // `sfx` added three (fal's leaf and barrel, ElevenLabs' pair counted once
+    // per file the same way).
+    expect(categories).toBeGreaterThanOrEqual(71);
   });
 
   test("the built declaration exports them too, so the promise survives the build", () => {
@@ -485,6 +488,7 @@ describe("unmodel/values — the canonical hub", () => {
       "imageEdit",
       "lipsync",
       "music",
+      "sfx",
       "stt",
       "tts",
       "upscale",
@@ -517,6 +521,25 @@ describe("unmodel/values — the canonical hub", () => {
     // of them is a separate HTTP call.
     for (const absent of ["size", "aspectRatio", "resolution", "n", "format", "texture"]) {
       expect(lists["3d"]).not.toContain(absent);
+    }
+    expect(lists["sfx"]).toEqual([
+      "model",
+      "prompt",
+      "durationSeconds",
+      "outputFormat",
+      "providerOptions",
+    ]);
+    // `sfx` is the smallest list here, and it is a STRICT SUBSET of `music`'s —
+    // which is exactly why the two are separate categories rather than one. The
+    // words music has and sound effects do not (`instrumental`, `seed`) are
+    // meaningless for a door creak; the length means seconds on one side and
+    // milliseconds on the other; and the floor is 0.5s against 3s. `loop` is
+    // absent because it has ONE vendor witness of five.
+    for (const absent of ["instrumental", "seed", "loop", "n", "negativePrompt"]) {
+      expect(lists["sfx"]).not.toContain(absent);
+    }
+    for (const word of lists["sfx"] as readonly string[]) {
+      expect(lists["music"]).toContain(word);
     }
   });
 

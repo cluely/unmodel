@@ -40,6 +40,7 @@
  * - `elevenlabs.dub` → `DubBody`
  * - `elevenlabs.dubLanguage` → `DubLanguageBody`
  * - `elevenlabs.music` → `MusicBody`
+ * - `elevenlabs.sfx` → `SfxBody`
  * - `elevenlabs.speechToTextRealtime` → `SpeechToTextRealtimeBody`
  * - `elevenlabs.stt` → `SttBody`
  * - `elevenlabs.textToSpeechStreamInput` → `TextToSpeechStreamInputBody`
@@ -52,6 +53,7 @@
 import type { DubbingProjectParams } from "./dubbing";
 import type { DubbingLanguageParams } from "./dubbing-language";
 import type { MusicParams } from "./music";
+import type { SoundEffectsParams } from "./sound-effects";
 import type { SpeechToTextRealtimeParams } from "./speech-to-text-realtime";
 import type { SpeechToTextParams } from "./stt";
 import type { TextToSpeechStreamInputParams } from "./text-to-speech-stream-input";
@@ -104,6 +106,12 @@ export type {
   ElevenlabsMusicTimeRange,
   ElevenlabsMusicOutputFormat,
 } from "./music";
+
+export type {
+  SoundEffectsParams,
+  SoundEffectsSdkParams,
+  ElevenlabsSoundEffectsOutputFormat,
+} from "./sound-effects";
 
 export type {
   VoicesAddParams,
@@ -180,6 +188,7 @@ export type DubBody = DubbingProjectParams;
  */
 export type DubLanguageBody = DubbingLanguageParams;
 export type MusicBody = MusicParams;
+export type SfxBody = SoundEffectsParams;
 export type SpeechToTextRealtimeBody = SpeechToTextRealtimeParams;
 export type SttBody = SpeechToTextParams;
 export type TextToSpeechStreamInputBody = TextToSpeechStreamInputParams;

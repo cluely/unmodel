@@ -1,0 +1,12 @@
+{
+  "ref": "fal/sonilo/v1.1/text-to-sound-effects",
+  "params": {
+    "prompt": "wind chimes on a porch",
+    "duration": 8,
+    "audio_format": "flac"
+  },
+  "url": "https://queue.fal.run/sonilo/v1.1/text-to-sound-effects",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

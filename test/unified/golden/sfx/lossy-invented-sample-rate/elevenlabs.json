@@ -1,0 +1,26 @@
+{
+  "ref": "elevenlabs/eleven_text_to_sound_v2",
+  "params": {
+    "text": "a distant thunderclap",
+    "model_id": "eleven_text_to_sound_v2",
+    "duration_seconds": 6
+  },
+  "url": "https://api.elevenlabs.io/v1/sound-generation?output_format=mp3_44100_192",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "outputFormat"
+      ],
+      "meta": {
+        "field": "sampleRate",
+        "value": 44100,
+        "codec": "mp3",
+        "source": "https://elevenlabs.io/docs/api-reference/text-to-sound-effects/convert"
+      }
+    }
+  ]
+}

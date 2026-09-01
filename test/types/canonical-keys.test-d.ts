@@ -30,6 +30,7 @@ import type { ThreeDParams } from "../../src/core/unified/vocabulary/3d";
 import type { TtsParams } from "../../src/core/unified/vocabulary/tts";
 import type { SttParams } from "../../src/core/unified/vocabulary/stt";
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
+import type { SfxParams } from "../../src/core/unified/vocabulary/sfx";
 import type { VoiceCloneParams } from "../../src/core/unified/vocabulary/voice-clone";
 import type { VoiceDesignParams } from "../../src/core/unified/vocabulary/voice-design";
 import { expectTrue, type IsNever } from "./helpers";
@@ -65,6 +66,7 @@ type Category =
   | "tts"
   | "stt"
   | "music"
+  | "sfx"
   | "voiceClone"
   | "voiceDesign";
 
@@ -136,6 +138,22 @@ expectTrue<IsNever<Unclaimed<"stt", SttParams>>>();
 
 expectTrue<IsNever<Unlisted<"music", MusicParams>>>();
 expectTrue<IsNever<Unclaimed<"music", MusicParams>>>();
+
+/**
+ * `sfx`'s list is a strict SUBSET of `music`'s, and that is the shape of two
+ * categories that split on the wire rather than on taste: the words music has
+ * and sound effects do not (`instrumental`, `seed`) are meaningless for a door
+ * creak, and the one they share by name — `durationSeconds` — means seconds
+ * here and compiles to milliseconds there.
+ *
+ * `durationSeconds` and `outputFormat` are both OPTIONAL on `SfxParams` and
+ * both in the key list, for the reason the `3d` note above gives: the list
+ * answers "may a caller write this key", and which model REQUIRES a length is
+ * what `SfxModelNarrowing` states per row. `loop` is in neither, because it has
+ * one vendor witness of five.
+ */
+expectTrue<IsNever<Unlisted<"sfx", SfxParams>>>();
+expectTrue<IsNever<Unclaimed<"sfx", SfxParams>>>();
 
 expectTrue<IsNever<Unlisted<"voiceClone", VoiceCloneParams>>>();
 expectTrue<IsNever<Unclaimed<"voiceClone", VoiceCloneParams>>>();

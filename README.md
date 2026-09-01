@@ -112,7 +112,7 @@ canonical params → provider wire params → provider validator → fetch or SD
 
 Provider validators take provider-native fields, and the validated result is the exact wire body. Unified model refs split on the first slash: `openrouter/anthropic/claude-opus-5` means provider `openrouter`, model `anthropic/claude-opus-5`.
 
-## 🎨 The fourteen surfaces
+## 🎨 The fifteen surfaces
 
 | Task | Portable import | Provider-native example |
 | --- | --- | --- |
@@ -127,6 +127,7 @@ Provider validators take provider-native fields, and the validated result is the
 | [🔍 Upscale](docs/surfaces.md#upscale) | `unmodel/upscale` | `unmodel/fal`, `unmodel/topaz` |
 | [🧊 3D generation](docs/surfaces.md#3d-generation) | `unmodel/3d` | `unmodel/tripo3d`, `unmodel/fal` |
 | [🎵 Music generation](docs/surfaces.md#music-generation) | `unmodel/music` | `unmodel/elevenlabs`, `unmodel/fal`, `unmodel/stability` |
+| [🔊 Sound effects](docs/surfaces.md#sound-effects) | `unmodel/sfx` | `unmodel/elevenlabs`, `unmodel/fal` |
 | [🎙️ Voice cloning](docs/surfaces.md#voice-cloning) | `unmodel/voice-clone` | `unmodel/elevenlabs`, `unmodel/cartesia`, `unmodel/minimax` |
 | [🧪 Voice design](docs/surfaces.md#voice-design) | `unmodel/voice-design` | `unmodel/elevenlabs`, `unmodel/fish-audio`, `unmodel/minimax` |
 | [🔌 Realtime audio config](docs/surfaces.md#realtime-audio) | none | `unmodel/openai`, `unmodel/deepgram`, `unmodel/elevenlabs`, etc. |
@@ -179,6 +180,23 @@ JSON.stringify(threeD({ model: "fal/tripo3d/h3.1/image-to-3d", image: { url: sti
 
 JSON.stringify(threeD({ model: "tripo3d/v3.1-20260211", image: { url: still } }));
 // → {"model":"v3.1-20260211","input":"https://ex.com/face.png"}
+```
+
+`unmodel/sfx` is the newest, the smallest — four words — and the one where **leaving a field out
+is a decision**. Omitting `durationSeconds` means the provider's own default, which is a
+different number at every vendor and an HTTP 422 at one of them:
+
+```ts
+import { sfx } from "unmodel/sfx";
+
+JSON.stringify(sfx({ model: "elevenlabs/eleven_text_to_sound_v2", prompt: "a door creaking open in a stone hall", durationSeconds: 4 }));
+// → {"text":"a door creaking open in a stone hall","model_id":"eleven_text_to_sound_v2","duration_seconds":4}
+
+sfx({ model: "fal/sonilo/v1.1/text-to-sound-effects", prompt: "rain on a tin roof" });
+// ✅ compiles, and warns: approximated_param — this endpoint will generate 8 seconds
+
+sfx({ model: "fal/cassetteai/sound-effects-generator", prompt: "rain on a tin roof" });
+// ❌ TypeScript error: `durationSeconds` is required here — the wire answers 422 without it
 ```
 
 Same pattern for every surface — inputs, formats, and extras narrow to the selected model. Per-category guides, including audio input routing, multipart helpers, and voice cloning: [docs/surfaces.md](docs/surfaces.md). Full roster: [docs/providers.md](docs/providers.md); per-provider TTS quirks: [docs/tts.md](docs/tts.md).

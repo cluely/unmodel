@@ -12,6 +12,7 @@
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__text-to-image.json
+//   data/fal/openapi/cassetteai__sound-effects-generator.json
 //   data/fal/openapi/fal-ai__ace-step.json
 //   data/fal/openapi/fal-ai__aura-sr.json
 //   data/fal/openapi/fal-ai__bytedance__omnihuman__v1.5.json
@@ -25,6 +26,7 @@
 //   data/fal/openapi/fal-ai__diffrhythm.json
 //   data/fal/openapi/fal-ai__echomimic-v3.json
 //   data/fal/openapi/fal-ai__elevenlabs__music.json
+//   data/fal/openapi/fal-ai__elevenlabs__sound-effects__v2.json
 //   data/fal/openapi/fal-ai__elevenlabs__speech-to-text.json
 //   data/fal/openapi/fal-ai__elevenlabs__speech-to-text__scribe-v2.json
 //   data/fal/openapi/fal-ai__elevenlabs__tts__eleven-v3.json
@@ -121,6 +123,8 @@
 //   data/fal/openapi/fal-ai__speech-to-text__turbo.json
 //   data/fal/openapi/fal-ai__stable-audio-25__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-audio-3__medium__text-to-audio.json
+//   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__base__text-to-audio.json
+//   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-diffusion-v35-large.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2.json
 //   data/fal/openapi/fal-ai__sync-lipsync__v2__pro.json
@@ -154,9 +158,11 @@
 //   data/fal/openapi/minimax__h3__image-to-video.json
 //   data/fal/openapi/minimax__h3__text-to-video.json
 //   data/fal/openapi/minimax__music-3.json
+//   data/fal/openapi/mirelo-ai__sfx1.6__text-to-audio.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
+//   data/fal/openapi/sonilo__v1.1__text-to-sound-effects.json
 //   data/fal/openapi/topaz__upscale__image__generative.json
 //   data/fal/openapi/topaz__upscale__image__precision.json
 //   data/fal/openapi/topaz__upscale__video__generative.json
@@ -183,6 +189,18 @@
  * is byte-identical across a dozen endpoints and would otherwise be a dozen structurally
  * identical interfaces for tsc to compare on every hover.
  */
+
+/** fal's `Audio` component. */
+export interface FalAudio {
+  /** The URL where the file can be downloaded from. */
+  url: string;
+  /** The mime type of the file. */
+  content_type?: string | null;
+  /** The name of the file. It will be auto-generated if not provided. */
+  file_name?: string | null;
+  /** The size of the file in bytes. */
+  file_size?: number | null;
+}
 
 /** fal's `AudioFile` component. */
 export interface FalAudioFile {

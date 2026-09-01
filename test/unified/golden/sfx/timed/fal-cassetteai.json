@@ -1,0 +1,11 @@
+{
+  "ref": "fal/cassetteai/sound-effects-generator",
+  "params": {
+    "prompt": "footsteps on wet gravel",
+    "duration": 4
+  },
+  "url": "https://queue.fal.run/cassetteai/sound-effects-generator",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

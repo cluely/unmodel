@@ -151,6 +151,23 @@ export type {
 } from "./music";
 
 export {
+  sfx,
+  soundEffectsUrl,
+  SOUND_EFFECTS_URL,
+  DEFAULT_SFX_MODEL_ID,
+  SOUND_EFFECTS_OUTPUT_FORMATS,
+  SOUND_EFFECTS_DURATION_SECONDS_MIN,
+  SOUND_EFFECTS_DURATION_SECONDS_MAX,
+  SOUND_EFFECTS_PROMPT_INFLUENCE_MIN,
+  SOUND_EFFECTS_PROMPT_INFLUENCE_MAX,
+} from "./sound-effects";
+export type {
+  SoundEffectsParams,
+  SoundEffectsSdkParams,
+  ElevenlabsSoundEffectsOutputFormat,
+} from "./sound-effects";
+
+export {
   voiceClone,
   voiceCloneToFormData,
   VOICES_ADD_URL,
@@ -297,7 +314,7 @@ export {
 } from "./keyterms";
 
 // No TTS checker: /v1/text-to-speech responds with raw audio bytes, not JSON.
-// Likewise /v1/music, which returns the track's bytes.
+// Likewise /v1/music and /v1/sound-generation, which return the audio's bytes.
 export { checkTranscription, checkDubbingProject, checkDubbingLanguage } from "./check";
 export type {
   ElevenlabsTranscriptionLike,
@@ -319,6 +336,7 @@ export {
   STT_MODEL_IDS,
   REALTIME_STT_MODEL_IDS,
   MUSIC_MODEL_IDS,
+  SFX_MODEL_IDS,
   VOICE_DESIGN_MODEL_IDS,
   DUBBING_MODEL_IDS,
   MUSIC_PER_AUDIO_MINUTE,
@@ -333,6 +351,7 @@ export type {
   ElevenlabsSttModelId,
   ElevenlabsRealtimeSttModelId,
   ElevenlabsMusicModelId,
+  ElevenlabsSfxModelId,
   ElevenlabsVoiceDesignModelId,
   ElevenlabsVoiceCloneModelId,
   ElevenlabsDubbingModelId,

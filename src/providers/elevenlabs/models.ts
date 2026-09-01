@@ -407,7 +407,7 @@ const voiceCloneModels = {
 
 /**
  * Music (POST /v1/music — validated by ./music) and sound-effects
- * (POST /v1/sound-generation — not validated by unmodel) models. The music
+ * (POST /v1/sound-generation — validated by ./sound-effects) models. The music
  * ids carry the $0.15-per-generated-minute rate; the sound-effects id carries
  * the $0.12 one — see SOUND_EFFECTS_PER_AUDIO_MINUTE for the quote.
  */
@@ -465,10 +465,25 @@ const musicModels = {
   music_v1: generativeAudioModels.music_v1,
 } as const satisfies Record<string, ModelInfo>;
 
+/**
+ * Model ids POST /v1/sound-generation accepts — the `SFXModelId` enum on
+ * https://api.elevenlabs.io/openapi.json, which has exactly one member and
+ * declares it the default.
+ *
+ * Disjoint from {@link musicModels} on purpose and by the API's own design:
+ * `elevenlabs.music` refuses this id naming `/v1/music`'s two, and
+ * `elevenlabs.sfx` refuses those two naming this one.
+ */
+const soundEffectsModels = {
+  eleven_text_to_sound_v2: generativeAudioModels.eleven_text_to_sound_v2,
+} as const satisfies Record<string, ModelInfo>;
+
 /** Model ids POST /v1/text-to-speech/{voice_id} accepts. */
 export type ElevenlabsTtsModelId = keyof typeof ttsModels;
 /** Model ids POST /v1/music accepts. */
 export type ElevenlabsMusicModelId = keyof typeof musicModels;
+/** Model ids POST /v1/sound-generation accepts. */
+export type ElevenlabsSfxModelId = keyof typeof soundEffectsModels;
 /** Model ids batch POST /v1/speech-to-text accepts. */
 export type ElevenlabsSttModelId = keyof typeof sttModels;
 /** Model ids POST /v1/text-to-voice/design accepts. */
@@ -495,6 +510,8 @@ export const STT_MODEL_IDS: readonly string[] = Object.keys(sttModels);
 export const REALTIME_STT_MODEL_IDS: readonly string[] = Object.keys(realtimeSttModels);
 /** Runtime allow-list backing the music endpoint's model gate. */
 export const MUSIC_MODEL_IDS: readonly string[] = Object.keys(musicModels);
+/** Runtime allow-list backing the sound-effects endpoint's model gate. */
+export const SFX_MODEL_IDS: readonly string[] = Object.keys(soundEffectsModels);
 /** Runtime allow-list backing the voice-design endpoint's model gate. */
 export const VOICE_DESIGN_MODEL_IDS: readonly string[] = Object.keys(textToVoiceModels);
 /**

@@ -116,6 +116,13 @@ export const CANONICAL_KEY_LISTS = {
     "outputFormat",
     "providerOptions",
   ] as const),
+  // Four words, the smallest list here, and the one whose interesting field is
+  // interesting for its ABSENCE: omitting `durationSeconds` means the
+  // provider's own default (8s at Sonilo, 10 at Mirelo, 30 at Stable Audio, a
+  // prompt-read guess at ElevenLabs) and a 422 at CassetteAI, which requires
+  // it. No `instrumental` and no `loop` — the first is meaningless for a noise,
+  // the second has one witness. See `vocabulary/sfx.ts`.
+  sfx: (["model", "prompt", "durationSeconds", "outputFormat", "providerOptions"] as const),
   voiceClone: ([
     "model",
     "operation",

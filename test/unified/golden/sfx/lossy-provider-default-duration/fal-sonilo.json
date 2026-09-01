@@ -1,0 +1,23 @@
+{
+  "ref": "fal/sonilo/v1.1/text-to-sound-effects",
+  "params": {
+    "prompt": "rain on a tin roof"
+  },
+  "url": "https://queue.fal.run/sonilo/v1.1/text-to-sound-effects",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "durationSeconds"
+      ],
+      "meta": {
+        "achieved": 8,
+        "wire": "duration",
+        "source": "https://fal.ai/models/sonilo/sfx-v1.0/text-to-audio/api"
+      }
+    }
+  ]
+}

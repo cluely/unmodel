@@ -266,6 +266,13 @@
       "verified": "2026-08-24",
       "quote": "Tentative pricing is $0.0675 per image for images of total area less than or equal to 1536x1536 pixels. For images with area in between 1536x1536 and 2048x2048 pixels, the price is $0.135 per image."
     },
+    "cassetteai/sound-effects-generator": {
+      "unit": "per_generation",
+      "usd": 0.01,
+      "source": "https://fal.ai/models/cassetteai/sound-effects-generator",
+      "verified": "2026-08-31",
+      "quote": "Your request will cost $0.01 per generation."
+    },
     "fal-ai/ace-step": {
       "unit": "per_generated_audio_second",
       "usd": 0.0002,
@@ -358,6 +365,13 @@
       "source": "https://fal.ai/models/fal-ai/elevenlabs/music",
       "verified": "2026-08-25",
       "quote": "Your request will cost $0.6 per output audio minute. The audio will be rounded up to the closest minute. For instance, a generation with 30 seconds output will be billed as 1 minute."
+    },
+    "fal-ai/elevenlabs/sound-effects/v2": {
+      "unit": "per_generated_audio_second",
+      "usd": 0.002,
+      "source": "https://fal.ai/models/fal-ai/elevenlabs/sound-effects/v2",
+      "verified": "2026-08-31",
+      "quote": "Your request will cost $0.002 per second."
     },
     "fal-ai/elevenlabs/speech-to-text": {
       "unit": "per_audio_minute",
@@ -1534,6 +1548,20 @@
       "verified": "2026-08-25",
       "quote": "Your request will cost $0.0376 per audio."
     },
+    "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": {
+      "unit": "per_generation",
+      "usd": 0.0283,
+      "source": "https://fal.ai/models/fal-ai/stable-audio-3/small/sfx/base/text-to-audio",
+      "verified": "2026-08-31",
+      "quote": "Your request will cost $0.0283 per audio."
+    },
+    "fal-ai/stable-audio-3/small/sfx/text-to-audio": {
+      "unit": "per_generation",
+      "usd": 0.0206,
+      "source": "https://fal.ai/models/fal-ai/stable-audio-3/small/sfx/text-to-audio",
+      "verified": "2026-08-31",
+      "quote": "Your request will cost $0.0206 per audio."
+    },
     "fal-ai/stable-diffusion-v35-large": {
       "unit": "per_megapixel",
       "usd": 0.065,
@@ -2059,6 +2087,13 @@
       "verified": "2026-08-25",
       "quote": "Your request will cost $0.002 per second."
     },
+    "mirelo-ai/sfx1.6/text-to-audio": {
+      "unit": "per_generated_audio_second",
+      "usd": 0.01,
+      "source": "https://fal.ai/models/mirelo-ai/sfx1.6/text-to-audio",
+      "verified": "2026-08-31",
+      "quote": "Your request will cost $0.01 per second."
+    },
     "openai/gpt-image-2": {
       "unit": "conditional",
       "tierKey": "quality x image_size selects the per-image figure; the total ALSO carries unbounded per-1M token charges, so no tier here is ever the whole price",
@@ -2261,6 +2296,14 @@
       "source": "https://fal.ai/models/reve/2.1/text-to-image",
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.25 per image."
+    },
+    "sonilo/v1.1/text-to-sound-effects": {
+      "unit": "per_generated_audio_second",
+      "usd": 0.0018,
+      "rounding": "per SAMPLE as well as per second — the page bills each of the `num_samples` outputs separately",
+      "source": "https://fal.ai/models/sonilo/v1.1/text-to-sound-effects",
+      "verified": "2026-08-31",
+      "quote": "Your request will cost $0.0018 per second of output and per sample."
     },
     "topaz/upscale/image/generative": {
       "unit": "conditional",

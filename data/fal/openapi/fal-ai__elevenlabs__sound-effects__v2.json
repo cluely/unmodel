@@ -1,0 +1,402 @@
+{
+  "metadata": {
+    "category": "text-to-audio",
+    "date": "2025-09-02T20:11:50.270Z",
+    "description": "Generate sound effects using ElevenLabs advanced sound effects model.",
+    "display_name": "Elevenlabs Sound Effects V2",
+    "group": {
+      "key": "elevenlabs-audio",
+      "label": "Sound Effects V2"
+    },
+    "highlighted": false,
+    "is_favorited": null,
+    "kind": "inference",
+    "license_type": "commercial",
+    "model_url": "https://fal.run/fal-ai/elevenlabs/sound-effects/v2",
+    "pinned": false,
+    "status": "active",
+    "stream_url": "https://fal.ai/models/fal-ai/elevenlabs/sound-effects/v2/stream",
+    "tags": [
+      "sound"
+    ],
+    "thumbnail_url": "https://storage.googleapis.com/falserverless/web-examples/elevenlabs/elevenlabs_thumbnail.webp",
+    "updated_at": "2026-04-21T17:45:09.690Z"
+  },
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ElevenlabsSoundEffectsV2Input": {
+          "properties": {
+            "duration_seconds": {
+              "anyOf": [
+                {
+                  "maximum": 22,
+                  "minimum": 0.5,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Duration in seconds (0.5-22). If None, optimal duration will be determined from prompt.",
+              "title": "Duration Seconds"
+            },
+            "loop": {
+              "default": false,
+              "description": "Whether to create a sound effect that loops smoothly.",
+              "title": "Loop",
+              "type": "boolean"
+            },
+            "output_format": {
+              "default": "mp3_44100_128",
+              "description": "Output format of the generated audio. Formatted as codec_sample_rate_bitrate.",
+              "enum": [
+                "mp3_22050_32",
+                "mp3_44100_32",
+                "mp3_44100_64",
+                "mp3_44100_96",
+                "mp3_44100_128",
+                "mp3_44100_192",
+                "pcm_8000",
+                "pcm_16000",
+                "pcm_22050",
+                "pcm_24000",
+                "pcm_44100",
+                "pcm_48000",
+                "ulaw_8000",
+                "alaw_8000",
+                "opus_48000_32",
+                "opus_48000_64",
+                "opus_48000_96",
+                "opus_48000_128",
+                "opus_48000_192"
+              ],
+              "title": "Output Format",
+              "type": "string"
+            },
+            "prompt_influence": {
+              "default": 0.3,
+              "description": "How closely to follow the prompt (0-1). Higher values mean less variation.",
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Prompt Influence",
+              "type": "number"
+            },
+            "text": {
+              "description": "The text describing the sound effect to generate",
+              "examples": [
+                "Spacious braam suitable for high-impact movie trailer moments",
+                "A gentle wind chime tinkling in a soft breeze"
+              ],
+              "maxLength": 450,
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "title": "SoundEffectRequestV2",
+          "type": "object",
+          "x-fal-order-properties": [
+            "text",
+            "duration_seconds",
+            "prompt_influence",
+            "output_format",
+            "loop"
+          ]
+        },
+        "ElevenlabsSoundEffectsV2Output": {
+          "description": "Output format for generated sound effects",
+          "properties": {
+            "audio": {
+              "$ref": "#/components/schemas/File",
+              "description": "The generated sound effect audio file in MP3 format",
+              "examples": [
+                {
+                  "url": "https://v3.fal.media/files/lion/WgnO-jy6WduosuG_Ibobx_sound_effect.mp3"
+                }
+              ]
+            }
+          },
+          "required": [
+            "audio"
+          ],
+          "title": "SoundEffectOutput",
+          "type": "object",
+          "x-fal-order-properties": [
+            "audio"
+          ]
+        },
+        "File": {
+          "properties": {
+            "content_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The mime type of the file.",
+              "examples": [
+                "image/png"
+              ],
+              "title": "Content Type"
+            },
+            "file_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "title": "File Name"
+            },
+            "file_size": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The size of the file in bytes.",
+              "examples": [
+                4404019
+              ],
+              "title": "File Size"
+            },
+            "url": {
+              "description": "The URL where the file can be downloaded from.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "File",
+          "type": "object",
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size"
+          ]
+        },
+        "QueueStatus": {
+          "properties": {
+            "cancel_url": {
+              "description": "The cancel url.",
+              "type": "string"
+            },
+            "logs": {
+              "additionalProperties": true,
+              "description": "The logs.",
+              "type": "object"
+            },
+            "metrics": {
+              "additionalProperties": true,
+              "description": "The metrics.",
+              "type": "object"
+            },
+            "queue_position": {
+              "description": "The queue position.",
+              "type": "integer"
+            },
+            "request_id": {
+              "description": "The request id.",
+              "type": "string"
+            },
+            "response_url": {
+              "description": "The response url.",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ],
+              "type": "string"
+            },
+            "status_url": {
+              "description": "The status url.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ],
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "description": "Fal Key",
+          "in": "header",
+          "name": "Authorization",
+          "type": "apiKey"
+        }
+      }
+    },
+    "info": {
+      "description": "The OpenAPI schema for the fal-ai/elevenlabs/sound-effects/v2 queue.",
+      "title": "Queue OpenAPI for fal-ai/elevenlabs/sound-effects/v2",
+      "version": "1.0.0",
+      "x-fal-metadata": {
+        "about": "ElevenLabs Sound Effects Generation. V2\n\nTurn text into sound effects for videos, voice-overs or video games using\nstate-of-the-art sound generation technology.",
+        "category": "text-to-audio",
+        "documentationUrl": "https://fal.ai/models/fal-ai/elevenlabs/sound-effects/v2/api",
+        "endpointId": "fal-ai/elevenlabs/sound-effects/v2",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/elevenlabs/sound-effects/v2",
+        "thumbnailUrl": "https://storage.googleapis.com/falserverless/web-examples/elevenlabs/elevenlabs_thumbnail.webp"
+      }
+    },
+    "openapi": "3.0.4",
+    "paths": {
+      "/fal-ai/elevenlabs/sound-effects/v2": {
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ElevenlabsSoundEffectsV2Input"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      },
+      "/fal-ai/elevenlabs/sound-effects/v2/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ElevenlabsSoundEffectsV2Output"
+                  }
+                }
+              },
+              "description": "Result of the request."
+            }
+          }
+        }
+      },
+      "/fal-ai/elevenlabs/sound-effects/v2/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "success": {
+                        "description": "Whether the request was cancelled successfully.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "The request was cancelled."
+            }
+          }
+        }
+      },
+      "/fal-ai/elevenlabs/sound-effects/v2/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "request_id",
+              "required": true,
+              "schema": {
+                "description": "Request ID",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "logs",
+              "required": false,
+              "schema": {
+                "description": "Whether to include logs (`1`) in the response or not (`0`).",
+                "type": "number"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              },
+              "description": "The request status."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ]
+  }
+}

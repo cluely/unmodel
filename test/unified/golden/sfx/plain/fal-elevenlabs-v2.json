@@ -1,0 +1,10 @@
+{
+  "ref": "fal/fal-ai/elevenlabs/sound-effects/v2",
+  "params": {
+    "text": "a heavy oak door creaking open in a stone hall"
+  },
+  "url": "https://queue.fal.run/fal-ai/elevenlabs/sound-effects/v2",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

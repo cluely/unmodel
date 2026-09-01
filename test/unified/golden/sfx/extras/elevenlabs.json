@@ -1,0 +1,14 @@
+{
+  "ref": "elevenlabs/eleven_text_to_sound_v2",
+  "params": {
+    "text": "a looping machine-room hum",
+    "model_id": "eleven_text_to_sound_v2",
+    "duration_seconds": 10,
+    "loop": true,
+    "prompt_influence": 0.8
+  },
+  "url": "https://api.elevenlabs.io/v1/sound-generation",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

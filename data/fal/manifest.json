@@ -97,6 +97,14 @@
       "status": "active",
       "updated_at": "2026-07-17T03:49:00.715Z"
     },
+    "cassetteai/sound-effects-generator": {
+      "category": "text-to-audio",
+      "display_name": "Sound Effects Generator",
+      "file": "openapi/cassetteai__sound-effects-generator.json",
+      "sha256": "929894a6a29fb5ba44f77219bd7e05b8e279bcae8add00cdc2e35f6a79a97008",
+      "status": "active",
+      "updated_at": "2026-04-26T21:42:30.607Z"
+    },
     "fal-ai/ace-step": {
       "category": "text-to-audio",
       "display_name": "ACE Step",
@@ -200,6 +208,14 @@
       "sha256": "12dd4e3fedda9c468f453d66eedb8d01f7e6a7bee95754eb7d4d4a94d4214a1e",
       "status": "active",
       "updated_at": "2026-08-18T21:02:01.110Z"
+    },
+    "fal-ai/elevenlabs/sound-effects/v2": {
+      "category": "text-to-audio",
+      "display_name": "Elevenlabs Sound Effects V2",
+      "file": "openapi/fal-ai__elevenlabs__sound-effects__v2.json",
+      "sha256": "b8ff389d0eaf756e2c3ad5bd25c1d65b9f6167f47433cbb732a048556298d688",
+      "status": "active",
+      "updated_at": "2026-04-21T17:45:09.690Z"
     },
     "fal-ai/elevenlabs/speech-to-text": {
       "category": "speech-to-text",
@@ -969,6 +985,22 @@
       "status": "active",
       "updated_at": "2026-07-01T04:56:00.169Z"
     },
+    "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": {
+      "category": "text-to-audio",
+      "display_name": "Stable Audio 3 Small SFX Base Text to Audio",
+      "file": "openapi/fal-ai__stable-audio-3__small__sfx__base__text-to-audio.json",
+      "sha256": "7d9839b377cd8a015afed4a7bd379d1a3a1744e71b94bed8ce0c3aa7283dc47d",
+      "status": "active",
+      "updated_at": "2026-08-20T22:07:03.945Z"
+    },
+    "fal-ai/stable-audio-3/small/sfx/text-to-audio": {
+      "category": "text-to-audio",
+      "display_name": "Stable Audio 3 Small SFX Text to Audio",
+      "file": "openapi/fal-ai__stable-audio-3__small__sfx__text-to-audio.json",
+      "sha256": "d41edb704d110c1cdf2ea886440dd71ed10c44f71a70752c658a8d588e0bd2ea",
+      "status": "active",
+      "updated_at": "2026-07-01T04:56:00.169Z"
+    },
     "fal-ai/stable-diffusion-v35-large": {
       "category": "text-to-image",
       "display_name": "Stable Diffusion 3.5 Large",
@@ -1233,6 +1265,14 @@
       "status": "active",
       "updated_at": "2026-08-18T17:00:49.092Z"
     },
+    "mirelo-ai/sfx1.6/text-to-audio": {
+      "category": "text-to-audio",
+      "display_name": "Mirelo SFX1.6",
+      "file": "openapi/mirelo-ai__sfx1.6__text-to-audio.json",
+      "sha256": "dfc83e1ceb194056dc8f8aa536fdb8d2508995c588b6b0c0969de5cc72a3a978",
+      "status": "active",
+      "updated_at": "2026-07-01T04:56:00.169Z"
+    },
     "openai/gpt-image-2": {
       "category": "text-to-image",
       "display_name": "GPT Image 2 API",
@@ -1256,6 +1296,14 @@
       "sha256": "c4313dfee4630ba840b4b83d4a7e4d603201553eb4279ca090c4ad1d924ad8fc",
       "status": "active",
       "updated_at": "2026-07-17T03:49:40.574Z"
+    },
+    "sonilo/v1.1/text-to-sound-effects": {
+      "category": "text-to-audio",
+      "display_name": "V1.1 Text to Sound Effects",
+      "file": "openapi/sonilo__v1.1__text-to-sound-effects.json",
+      "sha256": "f59b68feb79f18bedfdb80b0f4ca618ea52661f65af4a73ec60ddc3f9bb9fa77",
+      "status": "active",
+      "updated_at": "2026-07-28T15:48:53.505Z"
     },
     "topaz/upscale/image/generative": {
       "category": "image-to-image",

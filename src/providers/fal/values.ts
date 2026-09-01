@@ -1,7 +1,7 @@
 /**
  * `unmodel/fal/values` — the **runtime** lists behind this provider's unified
- * surfaces (image, image-edit, video, lipsync, avatar, upscale, tts, stt,
- * music).
+ * surfaces (image, image-edit, video, lipsync, avatar, upscale, 3d, tts, stt,
+ * music, sfx).
  *
  * Every export here is a readonly (`as const`) array or table a browser can
  * render: the endpoint ids, and the per-endpoint narrowing rows (that
@@ -83,3 +83,8 @@ export {
   FAL_MUSIC_MODEL_PARAMS as MUSIC_MODEL_PARAMS,
   MODELS as MUSIC_MODELS,
 } from "./music-params";
+
+export {
+  FAL_SFX_MODEL_PARAMS as SFX_MODEL_PARAMS,
+  MODELS as SFX_MODELS,
+} from "./sfx-params";

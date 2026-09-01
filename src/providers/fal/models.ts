@@ -22,6 +22,7 @@ import { imageModels } from "./gen/models-image.gen";
 import { imageEditModels } from "./gen/models-image-edit.gen";
 import { lipsyncModels } from "./gen/models-lipsync.gen";
 import { musicModels } from "./gen/models-music.gen";
+import { sfxModels } from "./gen/models-sfx.gen";
 import { sttModels } from "./gen/models-stt.gen";
 import { threeDModels } from "./gen/models-three-d.gen";
 import { ttsModels } from "./gen/models-tts.gen";
@@ -51,7 +52,7 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 /**
- * Every fal model unmodel serves, keyed by endpoint id — all ten verbs, 172
+ * Every fal model unmodel serves, keyed by endpoint id — all eleven verbs, 178
  * endpoints.
  *
  * Spread in the verbs' own alphabetical order, which is also `scripts/
@@ -66,6 +67,7 @@ export const models = {
   ...imageEditModels,
   ...lipsyncModels,
   ...musicModels,
+  ...sfxModels,
   ...sttModels,
   ...threeDModels,
   ...ttsModels,

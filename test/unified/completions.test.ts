@@ -2766,6 +2766,103 @@ video({ model_name: model, prompt: "x", duration: "¦" });`),
   });
 });
 
+describe("unified sfx: the requiredness narrowing reaches the editor", () => {
+  /**
+   * The failure this guards is the one `SfxModelNarrowing` exists to prevent,
+   * and it is invisible to `tsc --noEmit` on the library itself: if the arms
+   * ever intersected with a base that still declared `durationSeconds?: number`
+   * instead of REPLACING it, CassetteAI's required length would go back to
+   * optional, a prompt-only call would compile, and the failure would arrive as
+   * an HTTP 422. An intersection cannot make an optional property required —
+   * which is `LipsyncArms`' argument, pointed at a number.
+   */
+  test("a required length is a squiggle at the one route that requires it", () => {
+    expect(
+      semanticErrorsIn(`import { sfx } from "./src/unified/sfx";
+sfx({ model: "fal/cassetteai/sound-effects-generator", prompt: "a door creak", durationSeconds: 3 });`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { sfx } from "./src/unified/sfx";
+sfx({ model: "fal/cassetteai/sound-effects-generator", prompt: "a door creak" });`).length,
+    ).toBeGreaterThan(0);
+
+    // Every other catalogued route leaves it optional, because absence there
+    // means that provider's own default rather than a 422.
+    for (const ref of [
+      "elevenlabs/eleven_text_to_sound_v2",
+      "fal/sonilo/v1.1/text-to-sound-effects",
+      "fal/fal-ai/stable-audio-3/small/sfx/text-to-audio",
+    ]) {
+      expect(
+        semanticErrorsIn(`import { sfx } from "./src/unified/sfx";
+sfx({ model: "${ref}", prompt: "a door creak" });`),
+        ref,
+      ).toEqual([]);
+    }
+
+    // …and a ref this build cannot read restates the wide optional arm, so a
+    // model released after this snapshot stays callable.
+    expect(
+      semanticErrorsIn(`import { sfx } from "./src/unified/sfx";
+sfx({ model: "fal/cassetteai/sound-effects-generator-v2", prompt: "a door creak" });`),
+    ).toEqual([]);
+  });
+
+  /**
+   * The codec half, and the reason `AudioFormatOf` replaces the property rather
+   * than intersecting it: an intersection leaves `AudioFormatCodec & C` — a
+   * deferred intersection whose contextual type is no longer a plain literal
+   * union — and the editor's list goes wide while `tsc` stays green.
+   */
+  test("outputFormat completes each route's own codecs, in both spellings", () => {
+    // ElevenLabs' composite: five codecs, and no FLAC.
+    const elevenlabs = completionsAt(`import { sfx } from "./src/unified/sfx";
+sfx({ model: "elevenlabs/eleven_text_to_sound_v2", prompt: "p", outputFormat: "¦" });`);
+    expect(elevenlabs.sort()).toEqual(["mp3", "opus", "pcm_alaw", "pcm_mulaw", "pcm_s16le"]);
+
+    // Sonilo's bare enum: FLAC and AAC, and no Opus.
+    const sonilo = completionsAt(`import { sfx } from "./src/unified/sfx";
+sfx({ model: "fal/sonilo/v1.1/text-to-sound-effects", prompt: "p", outputFormat: "¦" });`);
+    expect(sonilo.sort()).toEqual(["aac", "flac", "mp3", "pcm_s16le"]);
+
+    // The OBJECT spelling is narrowed too — the half a caller reaches for
+    // precisely when they care about the encoding.
+    const object = completionsAt(`import { sfx } from "./src/unified/sfx";
+sfx({ model: "fal/sonilo/v1.1/text-to-sound-effects", prompt: "p", outputFormat: { format: "¦" } });`);
+    expect(object.sort()).toEqual(["aac", "flac", "mp3", "pcm_s16le"]);
+  });
+
+  /**
+   * The extras, and the two-witness decision made visible in an editor:
+   * `loop` completes at ElevenLabs' route and at fal's resale of it — one
+   * vendor, two addresses — and nowhere else.
+   */
+  test("the sfx extras complete from each route's own wire interface", () => {
+    for (const ref of [
+      "elevenlabs/eleven_text_to_sound_v2",
+      "fal/fal-ai/elevenlabs/sound-effects/v2",
+    ]) {
+      expect(
+        semanticErrorsIn(`import { sfx } from "./src/unified/sfx";
+sfx({ model: "${ref}", prompt: "p", loop: true });`),
+        ref,
+      ).toEqual([]);
+    }
+    expect(
+      semanticErrorsIn(`import { sfx } from "./src/unified/sfx";
+sfx({ model: "fal/sonilo/v1.1/text-to-sound-effects", prompt: "p", loop: true });`).length,
+    ).toBeGreaterThan(0);
+
+    // Mirelo's `ambience` is the near-miss `loop` would have needed a second
+    // witness from, and it stays Mirelo's own word.
+    const mirelo = completionsAt(`import { sfx } from "./src/unified/sfx";
+sfx({ model: "fal/mirelo-ai/sfx1.6/text-to-audio", prompt: "p", ¦ });`);
+    expect(mirelo).toContain("ambience");
+    expect(mirelo).toContain("num_samples");
+    expect(mirelo).not.toContain("loop");
+  });
+});
+
 describe("unified voice creation: narrowing reaches the editor", () => {
   test("the clone ref union completes the synthetic and real ids alike", () => {
     const refs = completionsAt(`import { voiceClone } from "./src/unified/voice-clone";

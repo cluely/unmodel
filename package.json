@@ -111,6 +111,10 @@
 			"types": "./dist/unified/music.d.ts",
 			"default": "./dist/unified/music.js"
 		},
+		"./sfx": {
+			"types": "./dist/unified/sfx.d.ts",
+			"default": "./dist/unified/sfx.js"
+		},
 		"./voice-clone": {
 			"types": "./dist/unified/voice-clone.d.ts",
 			"default": "./dist/unified/voice-clone.js"

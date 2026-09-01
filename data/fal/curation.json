@@ -132,6 +132,11 @@
       "textParam": "prompt",
       "note": "Seedream 5.0 Pro. Priced by output pixel AREA in two bands — a conditional whose tier the request settles only once a size is given."
     },
+    "cassetteai/sound-effects-generator": {
+      "verb": "sfx",
+      "textParam": "prompt",
+      "note": "CassetteAI SFX. The one endpoint in this roster whose `duration` is REQUIRED (integer, 1–30) — which is why `unmodel/sfx` has a per-model required arm at all: everywhere else omitting the length is legal and means the provider's own default."
+    },
     "fal-ai/ace-step": {
       "verb": "music",
       "textParam": "tags",
@@ -194,6 +199,11 @@
       "verb": "music",
       "textParam": "prompt",
       "note": "ElevenLabs Music. Its length is `music_length_ms` — MILLISECONDS, which is exactly why the canonical word is `durationSeconds` and not `duration` — and its `output_format` is a COMPOSITE codec+rate enum (`mp3_44100_128`), so the row narrows only the codec half."
+    },
+    "fal-ai/elevenlabs/sound-effects/v2": {
+      "verb": "sfx",
+      "textParam": "text",
+      "note": "ElevenLabs Sound Effects v2, resold. A NARROWED reseller of the native `/v1/sound-generation`: `duration_seconds` caps at 22 rather than 30, `output_format` is a body field rather than a query param, `text` is capped at 450 characters, and there is no `model_id` because the route IS the model. That divergence is the point of curating it beside the native leaf."
     },
     "fal-ai/elevenlabs/speech-to-text": {
       "verb": "stt",
@@ -658,6 +668,16 @@
       "textParam": "prompt",
       "note": "Stable Audio 3 Medium — the one music endpoint here with a flat codec enum, so the only one whose canonical `outputFormat` narrows to a list."
     },
+    "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": {
+      "verb": "sfx",
+      "textParam": "prompt",
+      "note": "Stable Audio 3 Small SFX, base arm — the same surface as its sibling with different sampler defaults (50 steps, guidance 7). Its `output_format` enum is the only CLOSED codec list in the category, and two of its members (`ogg`, `m4a`) are containers rather than encodings: both are already recorded refusals in the generator's FORMATS_THAT_ARE_NOT_CODECS."
+    },
+    "fal-ai/stable-audio-3/small/sfx/text-to-audio": {
+      "verb": "sfx",
+      "textParam": "prompt",
+      "note": "Stable Audio 3 Small SFX. Stability is the fifth SFX vendor and the one unmodel already serves natively elsewhere; it publishes the widest length range here (1–120s, default 30) and the only SEPARATE `bitrate` field, a kbps-suffixed string (\"192k\")."
+    },
     "fal-ai/stable-diffusion-v35-large": {
       "verb": "image",
       "textParam": "prompt",
@@ -814,6 +834,11 @@
       "textParam": "prompt",
       "note": "MiniMax Music 3 — a vendor-namespaced id documenting `/fal-ai/minimax-music-3`. REQUIRES `lyrics` as well as `prompt`, so a prompt-only unified call is refused by fal's own required check rather than silently under-specified."
     },
+    "mirelo-ai/sfx1.6/text-to-audio": {
+      "verb": "sfx",
+      "textParam": "text_prompt",
+      "note": "Mirelo SFX 1.6. Spells the prompt `text_prompt` (min 4 characters) and the encoding `upload_audio_format` — two spellings nothing else in the roster uses. Its `ambience` switch is NOT a loop flag: it changes what is generated (a tileable ambience bed) rather than where the sound ends, so it rides as an extra."
+    },
     "openai/gpt-image-2": {
       "verb": "image",
       "textParam": "prompt",
@@ -828,6 +853,11 @@
       "verb": "image",
       "textParam": "prompt",
       "note": "Reve 2.1."
+    },
+    "sonilo/v1.1/text-to-sound-effects": {
+      "verb": "sfx",
+      "textParam": "prompt",
+      "note": "Sonilo v1.1. Integer `duration` 1–180 with a documented default of 8 — the longest range in the category, and the first witness that absence means the PROVIDER'S default rather than \"auto\". Its encoding field is spelled `audio_format`."
     },
     "topaz/upscale/image/generative": {
       "verb": "upscale",

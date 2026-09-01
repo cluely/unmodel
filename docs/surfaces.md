@@ -581,6 +581,89 @@ music.safe({ model: "fal/fal-ai/diffrhythm", prompt: "slow post-rock build, brus
 
 Audio-conditioned Stability routes stay provider-native because no other provider shares their controls.
 
+## Sound effects
+
+```ts
+import { sfx } from "unmodel/sfx";
+
+const request = sfx({
+  model: "elevenlabs/eleven_text_to_sound_v2",
+  prompt: "a heavy oak door creaking open in a stone hall",
+  durationSeconds: 4,
+  outputFormat: "mp3",
+});
+
+JSON.stringify(request);
+// → {"text":"a heavy oak door creaking open in a stone hall",
+//    "model_id":"eleven_text_to_sound_v2","duration_seconds":4}
+request.request.url;
+// → "https://api.elevenlabs.io/v1/sound-generation?output_format=mp3_44100_128"
+```
+
+Four canonical words — the smallest vocabulary in the library, and every one of them is also a
+`music` word. The two categories are separate because the WIRES are: at ElevenLabs, the one
+vendor serving both, `/v1/music` counts milliseconds with a floor of 3 000 and takes a
+`composition_plan` and a `force_instrumental`, while `/v1/sound-generation` counts seconds with
+a floor of **0.5** and takes a `loop` and a `prompt_influence`. Their model-id enums are
+disjoint and each route refuses the other's ids by name.
+
+### Omitting `durationSeconds` is a decision, and it means five different things
+
+This is the one sharp edge in the category, and it is sharp because the five vendors disagree.
+**Absence means the PROVIDER's default — never `"auto"`**; none of these six wire fields has
+such a value.
+
+| ref | length | absent means | what unmodel does |
+|---|---|---|---|
+| `elevenlabs/eleven_text_to_sound_v2` | 0.5–30 s | the model reads a length off the prompt | nothing — nothing was invented |
+| `fal/fal-ai/elevenlabs/sound-effects/v2` | 0.5–**22** s | the same | nothing |
+| `fal/sonilo/v1.1/text-to-sound-effects` | 1–180 s, **integer** | **8 seconds** | `approximated_param` naming 8 |
+| `fal/mirelo-ai/sfx1.6/text-to-audio` | 0.1–60 s | **10 seconds** | `approximated_param` naming 10 |
+| `fal/fal-ai/stable-audio-3/small/sfx/*` | 1–120 s | **30 seconds** | `approximated_param` naming 30 |
+| `fal/cassetteai/sound-effects-generator` | 1–30 s, **integer** | **HTTP 422** — the field is required | a compile error, and a typed refusal |
+
+```ts
+sfx({ model: "fal/cassetteai/sound-effects-generator", prompt: "footsteps" });
+// error TS2345: Property 'durationSeconds' is missing in type
+//   '{ model: "fal/cassetteai/sound-effects-generator"; prompt: string; }' but required in
+//   type '{ outputFormat?: …; durationSeconds: number; }'.
+
+sfx.safe({ model: "fal/sonilo/v1.1/text-to-sound-effects", prompt: "rain on a tin roof" });
+// → { prompt: "rain on a tin roof" }
+//   approximated_param @ durationSeconds — `durationSeconds` was not set, so
+//   "sonilo/v1.1/text-to-sound-effects" will generate 8 seconds — its own documented default
+//   rather than a length this request asked for. Set it to pin the length.
+```
+
+The default is warned about and **not sent**: writing 8 into `duration` would pin a number the
+provider is free to change, and the request would stop meaning "whatever this endpoint thinks
+best" the day the page does.
+
+### The same model, two ways
+
+`elevenlabs/eleven_text_to_sound_v2` and `fal/fal-ai/elevenlabs/sound-effects/v2` are the same
+model, and fal's copy is strictly **narrower** in four places: the length caps at 22 seconds
+instead of 30, `output_format` moves from the query string into the body, the prompt caps at 450
+characters, and there is no `model_id` because the endpoint IS the model. That comparison is
+what the category exists to make cheap, and it is pinned in `test/unified/golden/sfx/plain/`
+rather than described.
+
+### What is not a canonical word
+
+`loop` — one vendor of five. Mirelo's `ambience` looks like a second witness and is not: it
+produces a tileable ambience *bed*, which changes what is generated rather than where it ends,
+the same disqualifier the lipsync `sync_mode` table carries. `prompt_influence`, `seed`,
+`negative_prompt`, `guidance_scale` and `num_samples` are one vendor's dial apiece. All of them
+ride as per-model extras, typed from that route's own wire interface, and each is promoted the
+day two independent vendors spell it the same way — `test/unified/sfx-capabilities.test.ts`
+holds that as an assertion that FAILS on the day it happens.
+
+`cassetteai/sound-effects-generator` has no encoding field at all, so `outputFormat` types as
+`never` there and is refused by name rather than dropped. Stable Audio is the one route with a
+SEPARATE `bitrate` field — a kbps-suffixed string — so `outputFormat: { format: "mp3", bitrate:
+192000 }` compiles to `{ output_format: "mp3", bitrate: "192k" }` there and is a typed refusal
+everywhere else.
+
 ## Voice cloning
 
 `unmodel/voice-clone` creates a voice from reference recordings. Sample shape narrows per model at compile time: multipart `{ file }` at ElevenLabs, Fish Audio, Cartesia and LMNT, base64 `{ data }` at Inworld, an upload-handle `{ fileId }` at MiniMax. Sample counts are enforced per route, bounds in the message:

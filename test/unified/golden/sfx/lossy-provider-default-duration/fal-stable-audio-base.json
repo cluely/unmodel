@@ -1,0 +1,23 @@
+{
+  "ref": "fal/fal-ai/stable-audio-3/small/sfx/base/text-to-audio",
+  "params": {
+    "prompt": "rain on a tin roof"
+  },
+  "url": "https://queue.fal.run/fal-ai/stable-audio-3/small/sfx/base/text-to-audio",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "durationSeconds"
+      ],
+      "meta": {
+        "achieved": 30,
+        "wire": "duration",
+        "source": "https://fal.ai/models/fal-ai/stable-audio-3/small/sfx/base/text-to-audio/api"
+      }
+    }
+  ]
+}

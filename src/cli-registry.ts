@@ -237,6 +237,15 @@ export const REGISTRY = {
   "mureka.instrumental": () => import("./providers/mureka").then((m) => asCli(m.instrumental)),
   "stability.music": () => import("./providers/stability").then((m) => asCli(m.music)),
 
+  // Sound effects. `sfx` is the uniform category verb, the same way `tts` and
+  // `stt` are: it is the operation's own initialism rather than a wire path,
+  // and neither vendor's URL is spelled anything like it
+  // (`/v1/sound-generation` at ElevenLabs, six queue paths at fal). Deliberately
+  // NOT `soundEffects` — the address follows the CATEGORY id, and the category
+  // is `sfx`.
+  "elevenlabs.sfx": () => import("./providers/elevenlabs").then((m) => asCli(m.sfx)),
+  "fal.sfx": () => import("./providers/fal").then((m) => asCli(m.sfx)),
+
   // Text to speech. Every provider addresses its synthesis route as `tts`
   // (the address-vs-wire law): the wire spellings differ wildly
   // (/v1/text-to-speech/{voice_id}, /tts/bytes, /v1/speak, /v1/t2a_v2,
@@ -458,6 +467,7 @@ export const UNIFIED = {
   "unified.image": () => import("./unified/image").then((m) => asCli(m.image)),
   "unified.imageEdit": () => import("./unified/image-edit").then((m) => asCli(m.imageEdit)),
   "unified.music": () => import("./unified/music").then((m) => asCli(m.music)),
+  "unified.sfx": () => import("./unified/sfx").then((m) => asCli(m.sfx)),
   "unified.tts": () => import("./unified/tts").then((m) => asCli(m.tts)),
   "unified.stt": () => import("./unified/stt").then((m) => asCli(m.stt)),
   "unified.video": () => import("./unified/video").then((m) => asCli(m.video)),

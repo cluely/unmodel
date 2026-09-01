@@ -1,0 +1,13 @@
+{
+  "ref": "fal/fal-ai/stable-audio-3/small/sfx/text-to-audio",
+  "params": {
+    "prompt": "a distant thunderclap",
+    "duration": 6,
+    "output_format": "mp3",
+    "bitrate": "192k"
+  },
+  "url": "https://queue.fal.run/fal-ai/stable-audio-3/small/sfx/text-to-audio",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

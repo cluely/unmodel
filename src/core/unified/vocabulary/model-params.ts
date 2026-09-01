@@ -342,6 +342,70 @@ export interface MusicModelParams extends ModelParamsBase {
 export type MusicModelParamTable = Readonly<Record<string, MusicModelParams>>;
 
 /**
+ * One sound-effect model's request surface, beyond the canonical vocabulary.
+ *
+ * Five fields, four of which describe ONE canonical word. `durationSeconds` is
+ * the field this category is built around, and it is the first number in the
+ * library where the interesting question is not "which values" but **"what
+ * does absence mean"** — and the six routes in the first build answer it three
+ * different ways:
+ *
+ * | endpoint | range | whole | absent means |
+ * |---|---|---|---|
+ * | `elevenlabs/eleven_text_to_sound_v2` | 0.5–30 | no | the model reads a length off the prompt |
+ * | `fal/fal-ai/elevenlabs/sound-effects/v2` | 0.5–22 | no | the same, at a narrower cap |
+ * | `fal/sonilo/v1.1/text-to-sound-effects` | 1–180 | **yes** | **8 seconds** |
+ * | `fal/mirelo-ai/sfx1.6/text-to-audio` | 0.1–60 | no | **10 seconds** |
+ * | `fal/fal-ai/stable-audio-3/small/sfx/*` | 1–120 | no | **30 seconds** |
+ * | `fal/cassetteai/sound-effects-generator` | 1–30 | **yes** | **HTTP 422** — the field is required |
+ *
+ * So the row states all four facts and the adapters spend them separately:
+ * {@link durationRequired} becomes a REQUIRED property at compile time (and a
+ * `missing_param` at run time), {@link durationDefault} becomes an
+ * `approximated_param` naming the number the provider will pick,
+ * {@link durationRange} and {@link durationInt} become the bounds and
+ * whole-number checks. Absence is never compiled to a literal `"auto"`: none of
+ * these six wires has such a value, and inventing one would put a string in a
+ * numeric field.
+ *
+ * {@link durationRange} stays a range and never becomes a union —
+ * {@link VideoModelParams.durations}' argument, at six endpoints that span
+ * 0.1 to 180 seconds.
+ */
+export interface SfxModelParams extends ModelParamsBase {
+  /** The canonical codecs this model can emit — same contract as {@link TtsModelParams.codecs}. */
+  readonly codecs?: readonly AudioFormatCodec[];
+  /**
+   * `[min, max]` seconds, inclusive. Absent means this build has no bounds for
+   * the route, which degrades to the provider's own check rather than to a
+   * guess.
+   */
+  readonly durationRange?: readonly [number, number];
+  /** The wire field is an INTEGER, so a fractional second is a refusal. */
+  readonly durationInt?: true;
+  /**
+   * The length the provider uses when the caller states none.
+   *
+   * Present is what makes the `approximated_param` honest — it names the
+   * number. **Absent is not "no default"**: it is "the provider does not
+   * publish one", which at both ElevenLabs routes means the model reads a
+   * length off the prompt. Nothing is invented there, so nothing warns.
+   */
+  readonly durationDefault?: number;
+  /**
+   * Omitting the length is a wire error at this route.
+   *
+   * One witness (`cassetteai/sound-effects-generator`) and it is enough,
+   * because the alternative is shipping a request the API answers 422 to. See
+   * {@link SfxModelNarrowing} for the three arms this produces.
+   */
+  readonly durationRequired?: true;
+}
+
+/** A sound-effect adapter's per-model table, keyed by **bare** model id. */
+export type SfxModelParamTable = Readonly<Record<string, SfxModelParams>>;
+
+/**
  * One lipsync route's request surface, beyond the canonical vocabulary.
  *
  * A single field, and it is the one the category is built on. `stt` narrows
@@ -820,6 +884,39 @@ type MusicArms<Format> = { outputFormat?: Format };
 export type MusicModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
   ? MusicArms<AudioFormatRequest>
   : MusicArms<AudioFormatOf<ModelParamsFor<A, R>>>;
+
+/**
+ * The two fields a sound-effect row narrows, as a complete **replacement** for
+ * the vocabulary's own.
+ *
+ * `SizingArms`'s rule, and this category needs the sharpest half of it —
+ * {@link LipsyncArms}' argument, one word over: the arms differ in whether
+ * `durationSeconds` is REQUIRED, and an intersection cannot make an optional
+ * property required. `SfxParamsBase` therefore declares neither field, so this
+ * is the only source of both contextual types.
+ *
+ * `Duration` is always `number` and never a union — the six routes' lengths are
+ * ranges, not enums ({@link VideoDurationOf}'s rule). What varies is the
+ * QUESTION MARK, which is the whole point.
+ */
+type SfxArms<Format> = { outputFormat?: Format; durationSeconds?: number };
+
+/**
+ * The `outputFormat` / `durationSeconds` pair one ref admits.
+ *
+ * Three arms, and the category needs every one. A route that requires a length
+ * says so at the keystroke rather than at the 422
+ * (`cassetteai/sound-effects-generator`); every other catalogued route leaves it
+ * optional, where absence means that provider's own default; and a ref this
+ * build cannot read restates the wide optional pair, so a model released after
+ * this snapshot stays callable. That is the avatar three-arm requiredness
+ * precedent, pointed at a number instead of a picture.
+ */
+export type SfxModelNarrowing<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? SfxArms<AudioFormatRequest>
+  : ModelParamsFor<A, R> extends { readonly durationRequired: true }
+    ? { outputFormat?: AudioFormatOf<ModelParamsFor<A, R>>; durationSeconds: number }
+    : SfxArms<AudioFormatOf<ModelParamsFor<A, R>>>;
 
 // ---------------------------------------------------------------------------
 // The two performance categories: row → the caller's types

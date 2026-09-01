@@ -1,0 +1,9 @@
+{
+  "prompt": "a distant thunderclap",
+  "durationSeconds": 6,
+  "outputFormat": {
+    "format": "mp3",
+    "sampleRate": 44100,
+    "bitrate": 192000
+  }
+}

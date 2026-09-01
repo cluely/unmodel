@@ -13,7 +13,7 @@
  * The **one standardized vocabulary** the unified surfaces speak:
  * {@link ChatParams}, {@link ImageParams}, {@link ImageEditParams},
  * {@link VideoParams}, {@link TtsParams}, {@link SttParams},
- * {@link MusicParams} — plus the words they are built from
+ * {@link MusicParams}, {@link SfxParams} — plus the words they are built from
  * ({@link AspectRatio}, {@link AudioFormat}, {@link Voice},
  * {@link Diarization}, {@link Dimensions}, the media input refs), the
  * `"provider/model"` ref unions ({@link ChatModelRef},
@@ -162,6 +162,8 @@ export type {
 
 export type { MusicParams, MusicParamsBase } from "../core/unified/vocabulary/music";
 
+export type { SfxParams, SfxParamsBase } from "../core/unified/vocabulary/sfx";
+
 export type {
   VoiceCloneParams,
   VoiceCloneParamsBase,
@@ -212,6 +214,7 @@ export type {
   ModelParams,
   ModelParamsBase,
   MusicModelParams,
+  SfxModelParams,
   SttModelParams,
   TtsModelParams,
   VideoModelParams,

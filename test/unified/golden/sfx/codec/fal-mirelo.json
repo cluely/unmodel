@@ -1,0 +1,12 @@
+{
+  "ref": "fal/mirelo-ai/sfx1.6/text-to-audio",
+  "params": {
+    "text_prompt": "wind chimes on a porch",
+    "duration": 8,
+    "upload_audio_format": "flac"
+  },
+  "url": "https://queue.fal.run/mirelo-ai/sfx1.6/text-to-audio",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

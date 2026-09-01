@@ -101,7 +101,7 @@ const RETIREMENT_ESCROW_DAYS = 90;
 // ---------------------------------------------------------------------------
 
 /**
- * The ten unmodel verbs fal serves. Sorted, and the sort IS the emission
+ * The eleven unmodel verbs fal serves. Sorted, and the sort IS the emission
  * order — `image` before `imageEdit` is plain string order, not a special case.
  *
  * `threeD` is the one verb here that is not its category's id: the category is
@@ -110,6 +110,12 @@ const RETIREMENT_ESCROW_DAYS = 90;
  * identifier spelling and everything derived from it follows —
  * `three-d-wire.gen.ts`, `FAL_THREE_D_SHAPES`, `FalThreeDBodyById` — while the
  * package subpath, the CLI's unified id and `endpointLabel` all stay `3d`.
+ *
+ * `sfx` sits beside `music` and is emphatically not it: fal files both under
+ * `text-to-audio`, which is exactly why the verb is curated here rather than
+ * read off fal's own category. A door creak is not a song — the floor moves
+ * from 3 seconds to 0.5 and there is nothing for `instrumental` to mean — so
+ * the two get separate addresses over the same fal category.
  */
 const VERBS = [
   "avatar",
@@ -117,6 +123,7 @@ const VERBS = [
   "imageEdit",
   "lipsync",
   "music",
+  "sfx",
   "stt",
   "threeD",
   "tts",
@@ -151,6 +158,7 @@ const VERB_OUTPUT_MODALITY: Partial<Record<Verb, string>> = {
   imageEdit: "image",
   lipsync: "video",
   music: "audio",
+  sfx: "audio",
   stt: "text",
   // `Modality` grew a `"3d"` member for this: a mesh is not a picture of one,
   // and every route here also returns a preview render, so reading the modality
@@ -2113,12 +2121,33 @@ const CANONICAL_WIRE_PARAMS: Readonly<Partial<Record<Verb, readonly string[]>>> 
     "force_instrumental",
     "output_format",
   ],
+  // `SfxParams` is FOUR words — the prompt, the length, the encoding and the
+  // ref — and the shortest canonical list in this table. `seed` is absent on
+  // purpose: two of the six endpoints publish one, and the category's own
+  // vocabulary declined it (see `core/unified/vocabulary/sfx.ts`), so it rides
+  // as a per-model extra rather than being claimed here.
+  //
+  // The length has two spellings (`duration_seconds` at ElevenLabs, `duration`
+  // at the other four vendors) and the encoding has three
+  // (`output_format`, `audio_format`, `upload_audio_format`) — every one of
+  // them canonical, because a caller who set `audio_format` as an extra beside
+  // `outputFormat` would be racing the adapter for the same field. `bitrate` is
+  // here for the same reason: Stable Audio publishes it as a SEPARATE field
+  // beside the codec, and it is where `outputFormat.bitrate` lands.
+  sfx: [
+    "duration_seconds",
+    "duration",
+    "output_format",
+    "audio_format",
+    "upload_audio_format",
+    "bitrate",
+  ],
 };
 
 /**
  * The verbs whose curated `textParam` is a CANONICAL word rather than an extra.
  *
- * Three of the nine, and the exclusions are the interesting half. `image`,
+ * Four of the eleven, and the exclusions are the interesting half. `image`,
  * `imageEdit` and `video` are absent because they already list `prompt`
  * explicitly above — every one of their endpoints spells it that way, so there
  * is nothing to look up. `lipsync` and `avatar` are absent on purpose: fal
@@ -2126,12 +2155,18 @@ const CANONICAL_WIRE_PARAMS: Readonly<Partial<Record<Verb, readonly string[]>>> 
  * routes, and neither category has a canonical word for it (see the avatar
  * vocabulary — one route REQUIRES a prompt and three have no field at all).
  *
- * The three here need the lookup because they genuinely disagree: speech is
- * `text` at ElevenLabs and `prompt` at Kokoro, and music is `prompt` at Lyria,
+ * The four here need the lookup because they genuinely disagree: speech is
+ * `text` at ElevenLabs and `prompt` at Kokoro, music is `prompt` at Lyria,
  * `tags` at ACE-Step and `lyrics` at DiffRhythm — where the lyrics ARE the
- * request.
+ * request — and sound effects are `text` at ElevenLabs, `prompt` at three
+ * vendors and `text_prompt` at Mirelo.
  */
-const TEXT_PARAM_IS_CANONICAL: ReadonlySet<Verb> = new Set<Verb>(["upscale", "tts", "music"]);
+const TEXT_PARAM_IS_CANONICAL: ReadonlySet<Verb> = new Set<Verb>([
+  "music",
+  "sfx",
+  "tts",
+  "upscale",
+]);
 
 /** fal's `resolution` vocabulary onto the canonical tiers. `0.5K` has none. */
 function canonicalTier(value: string): string | undefined {
@@ -2347,10 +2382,20 @@ interface UnifiedRow {
   timestampValues?: Readonly<Record<string, string>>;
   /** stt: the wire parameter the diarization switch goes in. */
   diarizeWire?: string;
-  /** music: the wire parameter the length goes in. */
+  /** music / sfx: the wire parameter the length goes in. */
   lengthWire?: string;
   /** music: `"ms"` where that parameter counts milliseconds rather than seconds. */
   lengthUnit?: "ms";
+  /** sfx: `[min, max]` seconds — the narrowing spelling of the length's bounds. */
+  durationRange?: readonly [number, number];
+  /** sfx: that parameter is an INTEGER — a fractional second is a 422. */
+  durationInt?: true;
+  /** sfx: the length the endpoint documents when the caller states none. */
+  durationDefault?: number;
+  /** sfx: the length is in the endpoint's `required` list — omitting it is a 422. */
+  durationRequired?: true;
+  /** sfx: the wire parameter a separate bitrate goes in — Stable Audio's `"192k"`. */
+  bitrateWire?: string;
   /** music: the lengths this endpoint offers as a closed set, in SECONDS. */
   lengths?: readonly number[];
   /** music: canonical seconds → the literal this endpoint's length parameter takes. */
@@ -2766,8 +2811,13 @@ function defaultString(prop: Prop | undefined): string | undefined {
  * all. All three type `outputFormat` as `never`, and the adapter's message
  * names which of the three it is.
  */
-function applyFormatRow(model: EndpointModel, row: UnifiedRow): void {
-  const prop = model.input.props["output_format"];
+function applyFormatRow(
+  model: EndpointModel,
+  row: UnifiedRow,
+  names: readonly string[] = FORMAT_WIRE,
+): void {
+  const formatWire = names.find((name) => model.input.props[name] !== undefined);
+  const prop = formatWire === undefined ? undefined : model.input.props[formatWire];
   if (prop === undefined) {
     // No field at all — Kokoro. Distinct from the two cases below, and the
     // adapter's message says which.
@@ -2777,7 +2827,7 @@ function applyFormatRow(model: EndpointModel, row: UnifiedRow): void {
   // A field with no canonical member in it is still a field: naming it lets the
   // adapter say "this one is a delivery switch / an object, not a codec" rather
   // than "there is nothing here".
-  (row as { formatWire?: string }).formatWire = "output_format";
+  (row as { formatWire?: string }).formatWire = formatWire;
   const members = enumValues(prop);
   if (members === undefined) {
     // `xai/tts/v1` spells its format as an OBJECT with `codec`, `sample_rate`
@@ -2797,6 +2847,18 @@ function applyFormatRow(model: EndpointModel, row: UnifiedRow): void {
     assertCodecsComplete(model.id, members, values);
   }
 }
+
+/**
+ * Where an output encoding lands, in preference order.
+ *
+ * `output_format` is the spelling at tts, music and four of the six sound-effect
+ * endpoints; the sfx roster adds `audio_format` (Sonilo) and
+ * `upload_audio_format` (Mirelo), which are the same field with the vendor's own
+ * name on it. Preference order never matters in practice — no endpoint publishes
+ * two — but it is stated rather than assumed so a future one that does resolves
+ * the same way on every run.
+ */
+const FORMAT_WIRE: readonly string[] = ["output_format", "audio_format", "upload_audio_format"];
 
 /** The language half of a tts / stt row — the same shape at both categories. */
 function applyLanguageRow(model: EndpointModel, row: UnifiedRow, names: readonly string[]): void {
@@ -2943,6 +3005,62 @@ function applyMusicRow(model: EndpointModel, row: UnifiedRow): void {
 }
 
 /**
+ * Where a sound effect's length lands. Two spellings and no third:
+ * `duration_seconds` at ElevenLabs, `duration` at the other four vendors —
+ * both already in seconds, so unlike music there is no unit to state.
+ */
+const SFX_LENGTH_WIRE: readonly string[] = ["duration_seconds", "duration"];
+
+/**
+ * The sfx row: the length, its bounds, its INT-ness, its default and its
+ * REQUIREDNESS; the codec; and the separate bitrate field where the endpoint
+ * publishes one.
+ *
+ * The length is what this row exists for, and it is the one place in the
+ * library where "the caller said nothing" has three different answers across
+ * six endpoints. ElevenLabs guesses a length from the prompt; Sonilo silently
+ * uses 8 seconds, Mirelo 10, Stable Audio 30; CassetteAI answers 422, because
+ * there the field is REQUIRED. So the row carries all of it — the wire name,
+ * the range, whether it is a whole number, the documented default, and whether
+ * omitting it is legal at all — and the adapter turns those into an
+ * `approximated_param` naming the number, or a refusal naming the field. See
+ * `core/unified/vocabulary/sfx.ts` on why absence may never mean `"auto"`.
+ *
+ * Four of the five are `duration*` rather than `length*` because the unified
+ * layer READS them: `durationRequired` is what
+ * {@link SfxModelNarrowing} turns into a required property, and a narrowing
+ * field carries the vocabulary's spelling (`sources`, `factors`, `inputs`)
+ * while a wire fact carries fal's (`lengthWire`, `bitrateWire`).
+ */
+function applySfxRow(model: EndpointModel, row: UnifiedRow): void {
+  const props = model.input.props;
+
+  const wire = SFX_LENGTH_WIRE.find((name) => props[name] !== undefined);
+  if (wire !== undefined) {
+    const prop = props[wire] as Prop;
+    (row as { lengthWire?: string }).lengthWire = wire;
+    const node = prop.node;
+    if (node.k === "prim") {
+      if (node.t === "integer") (row as { durationInt?: true }).durationInt = true;
+      if (node.min !== undefined && node.max !== undefined) {
+        (row as { durationRange?: readonly [number, number] }).durationRange = [node.min, node.max];
+      }
+    }
+    if (typeof prop.default === "number") {
+      (row as { durationDefault?: number }).durationDefault = prop.default;
+    }
+    if (prop.required) (row as { durationRequired?: true }).durationRequired = true;
+  }
+
+  // Stable Audio publishes the bitrate as its own field beside the codec — a
+  // kbps-suffixed string (`"192k"`) rather than a number — where every other
+  // endpoint in this roster either folds it into a composite enum or has none.
+  if (props["bitrate"] !== undefined) (row as { bitrateWire?: string }).bitrateWire = "bitrate";
+
+  applyFormatRow(model, row);
+}
+
+/**
  * Wire parameters that may never become a unified `extras` entry, whatever the
  * verb.
  *
@@ -3056,6 +3174,7 @@ function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
   if (verb === "tts") applyTtsRow(model, row);
   if (verb === "stt") applySttRow(model, row);
   if (verb === "music") applyMusicRow(model, row);
+  if (verb === "sfx") applySfxRow(model, row);
 
   // Numeric bounds on the canonical params. `strength` is the one that earns
   // this today: `fal-ai/flux/dev/image-to-image` floors it at 0.01, and the
@@ -3216,6 +3335,17 @@ function renderParamsFile(verb: Verb, models: readonly EndpointModel[]): string 
           .join(", ");
         fields.push(`  lengthValues: { ${pairs} },`);
       }
+      if (row.durationRange !== undefined) {
+        fields.push(
+          `  durationRange: [${num(row.durationRange[0])}, ${num(row.durationRange[1])}],`,
+        );
+      }
+      if (row.durationInt === true) fields.push("  durationInt: true,");
+      if (row.durationDefault !== undefined) {
+        fields.push(`  durationDefault: ${num(row.durationDefault)},`);
+      }
+      if (row.durationRequired === true) fields.push("  durationRequired: true,");
+      if (row.bitrateWire !== undefined) fields.push(`  bitrateWire: ${quote(row.bitrateWire)},`);
       if (row.instrumentalWire !== undefined) {
         fields.push(`  instrumentalWire: ${quote(row.instrumentalWire)},`);
       }

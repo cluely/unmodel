@@ -56,6 +56,7 @@ const EXPECTED_IDS: readonly string[] = [
   "elevenlabs.dub",
   "elevenlabs.dubLanguage",
   "elevenlabs.music",
+  "elevenlabs.sfx",
   "elevenlabs.speechToTextRealtime",
   "elevenlabs.stt",
   "elevenlabs.textToSpeechStreamInput",
@@ -68,6 +69,7 @@ const EXPECTED_IDS: readonly string[] = [
   "fal.imageEdit",
   "fal.lipsync",
   "fal.music",
+  "fal.sfx",
   "fal.stt",
   "fal.threeD",
   "fal.tts",
@@ -693,6 +695,46 @@ test("the music-category endpoints all use the uniform `music` verb", () => {
 });
 
 /**
+ * The sound-effects half, and the newest entry in the address law.
+ *
+ * `sfx` is the CATEGORY id, so `<provider>.sfx` is the uniform verb — the same
+ * construction `tts` and `stt` already use, and for the same reason: all three
+ * are the operation's own initialism rather than a wire path. Neither vendor
+ * spells its URL anything like it (`/v1/sound-generation` at ElevenLabs, six
+ * queue paths at fal), which is precisely the address-vs-wire law (decisions.md
+ * §2) doing its job rather than an exception to it.
+ *
+ * `soundEffects` was the alternative and was rejected: the address follows the
+ * category, and a category whose entry point is `unmodel/sfx` cannot have
+ * `provider.soundEffects` as its address without breaking the one property this
+ * test exists to keep — that the word you type at `unmodel/<category>` and the
+ * word you type at `unmodel/<provider>` are the same word.
+ */
+const SFX_IDS: readonly string[] = ["elevenlabs.sfx", "fal.sfx"];
+
+test("the sfx-category endpoints all use the uniform `sfx` verb", () => {
+  for (const id of SFX_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toMatch(/^sfx([A-Z]|$)/);
+  }
+  const providers = [...new Set(SFX_IDS.map((id) => id.split(".")[0] as string))].sort();
+  for (const provider of providers) expect(SFX_IDS).toContain(`${provider}.sfx`);
+  expect(providers).toEqual(["elevenlabs", "fal"]);
+
+  // Sound effects are NOT music, at the one provider that serves both: the two
+  // wires are disjoint and so are their model-id enums. A shared address would
+  // have made `elevenlabs.music` accept `eleven_text_to_sound_v2`, which it
+  // refuses by name.
+  expect(SFX_IDS.filter((id) => MUSIC_IDS.includes(id))).toEqual([]);
+
+  // The almost-chosen spelling. Recorded here rather than in prose alone, so a
+  // future rename has to delete an assertion to happen.
+  for (const id of ["elevenlabs.soundEffects", "fal.soundEffects"]) {
+    expect(EXPECTED_IDS).not.toContain(id);
+  }
+});
+
+/**
  * The upscale half — the category whose address had the most alternatives to
  * reject, and the one that now shows both answers to "should a second route
  * qualify".
@@ -1025,6 +1067,7 @@ test("every media endpoint addresses its category with that category's verb", ()
     ...TTS_IDS,
     ...STT_IDS,
     ...MUSIC_IDS,
+    ...SFX_IDS,
   ];
   // No id belongs to two categories — `imageEdit` vs `image` is the pair where
   // a prefix test alone would say yes twice.

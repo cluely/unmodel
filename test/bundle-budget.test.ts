@@ -389,6 +389,7 @@ const ALL_UNIFIED_ENTRIES: string[] = [
   "tts",
   "stt",
   "music",
+  "sfx",
   "voice-clone",
   "voice-design",
 ];
@@ -862,6 +863,33 @@ const STT_PACK_PROVIDERS: string[] = [
  */
 const MUSIC_PACK_BUDGET_KIB = 440;
 
+/**
+ * `unmodel/sfx`'s budget: the kernel plus two providers, one route each.
+ *
+ * **327.6 KiB measured on macOS at landing, pinned at 360** — the ~10%
+ * convention this file uses everywhere. It is the SMALLEST ready-made pack in
+ * the library, below `unmodel/3d` (378.5) and `unmodel/upscale` (368.7), and
+ * the reason is structural rather than lucky: four canonical words, one
+ * narrowed field, no sizing arms, no voice catalogs and no language tables. The
+ * number is dominated by the shared kernel, `core/unified/derive.ts` and the
+ * fal chunks (`endpoints.gen.ts`, `pricing.gen.ts`, `shared.gen.ts`) that every
+ * fal-touching pack pays for whole.
+ *
+ * The ElevenLabs half is unusually cheap for this provider — `sound-effects.ts`
+ * is a five-field body against `music.ts`'s 673-line composition-plan schema —
+ * which is most of why this pack lands 85 KiB under its music sibling while
+ * reaching the same two of that pack's five providers.
+ *
+ * **Flagged for CI confirmation.** JS budgets in this file have proven
+ * platform-stable (upscale and 3d both run ~1.7% under their pins on Linux and
+ * macOS alike), so 360 should hold; the declaration budget below is the one
+ * with a recorded platform artefact.
+ */
+const SFX_PACK_BUDGET_KIB = 360;
+
+/** The two providers `unmodel/sfx`'s ready-made pack is allowed to reach. */
+const SFX_PACK_PROVIDERS: string[] = ["elevenlabs", "fal"];
+
 /** The five providers `unmodel/music`'s ready-made pack is allowed to reach. */
 const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "fal", "google", "mureka", "stability"];
 
@@ -1103,6 +1131,7 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
   tts: TTS_PACK_BUDGET_KIB,
   stt: STT_PACK_BUDGET_KIB,
   music: MUSIC_PACK_BUDGET_KIB,
+  sfx: SFX_PACK_BUDGET_KIB,
   "voice-clone": VOICE_CLONE_PACK_BUDGET_KIB,
   "voice-design": VOICE_DESIGN_PACK_BUDGET_KIB,
 };
@@ -1234,6 +1263,22 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   tts: 2320,
   stt: 2450,
   music: 1360,
+  // `unmodel/sfx`: 442.4 measured on macOS, the cheapest declaration in the
+  // table — four canonical words, one narrowed field, and per-model rows whose
+  // largest member is a five-entry codec list. The two Stable Audio endpoints
+  // SHARE one generated row (identical surfaces, different sampler defaults),
+  // so six endpoints cost five row types.
+  //
+  // Pinned at 520 rather than 487 (measured x1.1) for the reason the `lipsync`
+  // note above records: this walker counts a whole rolldown-plugin-dts chunk
+  // when an entry touches any of it, and the chunk boundaries are
+  // PLATFORM-SENSITIVE — the same commit has measured ~556 KiB on macOS and
+  // 698.0 on the Linux release runner for one entry. 520 is the same ~1.17
+  // relative slack its nearest neighbours (`3d` at 590, `upscale` at 560)
+  // already carry. **Flagged for CI confirmation**: if the Linux figure comes
+  // in above this, re-pin from that number and say so here, per the
+  // Linux-figure rule in CLAUDE.md.
+  sfx: 520,
   "voice-clone": 1690,
   "voice-design": 1470,
 };
@@ -1699,8 +1744,8 @@ describe("unmodel/chat/factory", () => {
 });
 
 describe("unified media entries", () => {
-  test("all twelve are built, so the assertions below assert something", () => {
-    expect(new Set(ALL_UNIFIED_ENTRIES).size).toBe(12);
+  test("all thirteen are built, so the assertions below assert something", () => {
+    expect(new Set(ALL_UNIFIED_ENTRIES).size).toBe(13);
     for (const name of ALL_UNIFIED_ENTRIES) {
       expect(existsSync(unifiedEntry(name)), `dist entry for unified/${name}`).toBe(true);
     }
@@ -2208,6 +2253,60 @@ describe("unmodel/stt (the fourth ready-made pack)", () => {
   });
 });
 
+describe("unmodel/sfx (the smallest ready-made pack)", () => {
+  test("it reaches exactly the two sound-effect providers, through their adapters", () => {
+    const modules = sourceModulesOf(unifiedEntry("sfx"));
+    expect(modules).toContain("src/unified/sfx.ts");
+    expect(modules).toContain("src/core/unified/kernel.ts");
+
+    const providers = [
+      ...new Set(
+        modules
+          .filter((m) => m.startsWith("src/providers/"))
+          .map((m) => m.split("/")[2] as string),
+      ),
+    ].sort();
+    expect(providers).toEqual(SFX_PACK_PROVIDERS);
+
+    // Both providers serve several categories, so both split their adapter and
+    // this pack imports only the sound-effect half. The endpoint module is
+    // addressed as `sfx.ts` at fal and `sound-effects.ts` at ElevenLabs — the
+    // address-vs-wire law in one line: the ADDRESS is `elevenlabs.sfx`, and the
+    // file keeps the wire's own name (`POST /v1/sound-generation`), exactly as
+    // `anthropic/messages`-shaped names do elsewhere.
+    for (const provider of SFX_PACK_PROVIDERS) {
+      expect(modules).toContain(`src/providers/${provider}/unified-sfx.ts`);
+      expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
+    }
+    expect(modules).toContain("src/providers/fal/sfx.ts");
+    expect(modules).toContain("src/providers/elevenlabs/sound-effects.ts");
+  });
+
+  test("it carries neither provider's MUSIC half, which is the whole split", () => {
+    const modules = sourceModulesOf(unifiedEntry("sfx"));
+    // The one assertion this category exists to be able to make. `music` and
+    // `sfx` are separate wires at the one vendor that serves both, and a pack
+    // that dragged the 673-line composition-plan schema in for a door creak
+    // would be the merge this category refused, made real in bytes.
+    expect(modules).not.toContain("src/providers/elevenlabs/music.ts");
+    expect(modules).not.toContain("src/providers/elevenlabs/unified-music.ts");
+    expect(modules).not.toContain("src/providers/fal/music.ts");
+    expect(modules).not.toContain("src/providers/fal/unified-music.ts");
+    // ElevenLabs is in five packs; sfx must carry only its sound-effects route.
+    expect(modules).not.toContain("src/providers/elevenlabs/tts.ts");
+    expect(modules).not.toContain("src/providers/elevenlabs/stt.ts");
+    expect(modules).not.toContain("src/providers/elevenlabs/voice-clone.ts");
+  });
+
+  test("its graph carries no generated catalog, availability data or retarget layer", () => {
+    const modules = sourceModulesOf(unifiedEntry("sfx"));
+    expect(modules.filter((m) => m.startsWith("src/catalog/"))).toEqual([]);
+    expect(modules.filter((m) => m.startsWith("src/retarget/"))).toEqual([]);
+    expect(modules.filter((m) => m.endsWith("/interop.ts"))).toEqual([]);
+    expect(modules).toContain("src/core/pipeline.ts");
+  });
+});
+
 describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
   test("it reaches exactly the two music providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("music"));
@@ -2259,7 +2358,7 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
     expect(modules).toContain("src/core/pipeline.ts");
   });
 
-  test("the eleven packs are independent — none pulls another's entry in", () => {
+  test("the packs are independent — none pulls another's entry in", () => {
     for (const name of ALL_UNIFIED_ENTRIES) {
       const modules = sourceModulesOf(unifiedEntry(name));
       for (const other of ALL_UNIFIED_ENTRIES) {

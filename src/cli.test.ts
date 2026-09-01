@@ -535,6 +535,7 @@ test("the unified map names one target per shipped pack", () => {
     "unified.image",
     "unified.imageEdit",
     "unified.music",
+    "unified.sfx",
     "unified.tts",
     "unified.stt",
     "unified.video",

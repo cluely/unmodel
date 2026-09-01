@@ -94,7 +94,7 @@ import type { ValidateResult } from "../result";
 import type { TranslationWarning, Warn } from "../translate/warnings";
 
 /**
- * The twelve media surfaces, each of which gets its own vocabulary, its own
+ * The thirteen media surfaces, each of which gets its own vocabulary, its own
  * entry point, and its own adapter set.
  *
  * They are separate categories rather than one `media()` with a mode flag
@@ -119,12 +119,21 @@ import type { TranslationWarning, Warn } from "../translate/warnings";
  * Half its routes take a clip, which `imageEdit` has no word for and should not
  * grow one.
  *
- * `"3d"` is the newest, the only id in this union that is not a TypeScript
- * identifier, and the only one whose OUTPUT is not a frame at all: a mesh has
- * no width, no aspect ratio and no duration, so none of the sizing words in the
- * five categories above mean anything to it. It waited for a second witness —
- * a vocabulary read off one vendor is that vendor's schema with the names
- * changed — and joined when `tripo3d` gave one.
+ * `"3d"` is the only id in this union that is not a TypeScript identifier, and
+ * the only one whose OUTPUT is not a frame at all: a mesh has no width, no
+ * aspect ratio and no duration, so none of the sizing words in the five
+ * categories above mean anything to it. It waited for a second witness — a
+ * vocabulary read off one vendor is that vendor's schema with the names changed
+ * — and joined when `tripo3d` gave one.
+ *
+ * `"sfx"` is the newest and the smallest, and it splits from `music` on the
+ * wire rather than on taste: the two endpoints at the one vendor that serves
+ * both are disjoint, with disjoint model-id enums, a length in milliseconds on
+ * one side and seconds on the other, and a floor of 3 000 ms against one of
+ * half a second. Merging them would force `instrumental?: boolean` onto a door
+ * creak and a three-second floor onto a footstep. It arrived with five
+ * independent vendor witnesses, which is the most any category here has had on
+ * its first day.
  */
 export type UnifiedCategory =
   | "image"
@@ -137,6 +146,7 @@ export type UnifiedCategory =
   | "tts"
   | "stt"
   | "music"
+  | "sfx"
   | "voiceClone"
   | "voiceDesign";
 

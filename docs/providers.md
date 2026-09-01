@@ -218,8 +218,12 @@ async create-then-poll, mureka-7.6…9.5), fal (`music`, 10 hosted endpoints —
 ACE-Step, DiffRhythm). All five text-to-music routes ship an adapter at
 `unmodel/<provider>/unified` behind `music()` from `unmodel/music`; the audio-conditioned
 Stability routes and mureka's lyrics/extend/stem routes stay wire-only or doc-noted
-(see `src/unified/music.ts`). No sound-effect route is curated at fal: an SFX prompt is not a
-song, and an `sfx` category with one witness would be a guess.
+(see `src/unified/music.ts`). Sound effects are a **separate category** — `unmodel/sfx`, six
+curated fal routes plus ElevenLabs natively; an SFX prompt is not a song, and the two wires are
+disjoint at the one vendor that serves both. (This paragraph used to say an `sfx` category
+"with one witness would be a guess". That was wrong on the facts, not just on the conclusion:
+the live roster has FIVE independent vendors — elevenlabs, sonilo, cassetteai, stability,
+mirelo — and the vocabulary was never the blocker. See the sound-effects wave below.)
 Remaining: sonauto. **Excluded:** suno, udio, producer-ai (no public API).
 MiniMax music is reachable **only** through fal here: the native
 /v1/music_generation API closed to NEW users on 2026-08-20 (current ids
@@ -577,12 +581,63 @@ the category exists to make cheap. Where they disagree on a word — fal renames
 to `image_url` and drops `smart_low_poly`, `generate_parts` and `compress` — the disagreement
 lands in each row's extras rather than in the vocabulary.
 
-## fal.ai wave — one aggregator, ten verbs
+## Sound-effects wave — five witnesses on day one
 
-fal.ai is a generative-media inference cloud. unmodel serves **172 curated endpoints across
-ten verbs** — `fal.image` (32), `fal.imageEdit` (18), `fal.video` (35), `fal.lipsync` (10),
+`unmodel/sfx` is the fifth category added in 2026 and the one that arrived with the most
+evidence behind it: **five independent vendors**, four of them reachable through fal and one of
+them — ElevenLabs — natively as well. It is also the smallest vocabulary in the library, four
+words, every one of which is also a `music` word.
+
+That subset relationship is the whole argument for a separate category rather than an arm of
+`music`. At ElevenLabs, the one vendor serving both, the two wires are disjoint and so are
+their model-id enums: `/v1/music` counts MILLISECONDS with a floor of 3 000 and takes a
+`composition_plan` and a `force_instrumental`, while `/v1/sound-generation` counts seconds with
+a floor of **0.5** and takes a `loop` and a `prompt_influence`. Merging them would have pushed
+the category floor from three seconds to half of one and put `instrumental?: boolean` on a door
+creak. Each route refuses the other's ids by name.
+
+**ElevenLabs — `elevenlabs.sfx`, 1 model.** Tier: **native**.
+`POST https://api.elevenlabs.io/v1/sound-generation`, JSON body, `xi-api-key` header. `text` is
+the only required field; `output_format` is a **query param** (the `/v1/music` placement, and
+the same trap: sending it in the body is a silent no-op) whose 21-member enum is NOT the music
+one — there is no 48 kHz MP3 arm here, so a shared constant would have accepted four values
+this endpoint rejects. The catalog row already existed and gains its $0.12-per-generated-minute
+rate; the endpoint answers raw audio bytes plus a `character-cost` header, so there is no
+response checker.
+
+**fal — `fal.sfx`, 6 endpoints from five vendors.** ElevenLabs Sound Effects v2, Sonilo v1.1,
+CassetteAI, Mirelo SFX 1.6, and both arms of Stable Audio 3 Small SFX. fal files every one of
+them under `text-to-audio` — the same category it files Lyria under — which is exactly why the
+verb is curated rather than read off fal's own listing.
+
+The ElevenLabs route here is a **narrowed reseller**, and pinning that is half the reason it is
+curated beside the native leaf: the length caps at 22 seconds rather than 30, `output_format`
+is a body field rather than a query param, `text` caps at 450 characters, and there is no
+`model_id` because the endpoint IS the model. That is the `sync_mode` vs `options.sync_mode`
+lesson recorded above, in a category where the two surfaces are both served.
+
+**The vocabulary decision this category is built on** is what omitting `durationSeconds` means.
+Five vendors, three answers: both ElevenLabs routes read a length off the prompt (nothing is
+invented, so nothing warns), Sonilo silently generates 8 seconds, Mirelo 10 and Stable Audio 30
+(a documented default, so an `approximated_param` names it), and CassetteAI answers **HTTP 422**
+because the field is required there (a compile error, through the avatar three-arm requiredness
+precedent). Absence therefore means the PROVIDER's default and never `"auto"` — none of the six
+wire fields has such a value, and writing a string into a numeric field to mean "you decide"
+would be a request none of them accepts. The full table is in
+[surfaces.md](surfaces.md#sound-effects).
+
+`loop` is the word the two-witness rule kept out. One vendor of five publishes it, and Mirelo's
+`ambience` is a near-miss that changes what is generated rather than where it ends — the same
+disqualifier the lipsync `sync_mode` table above carries. It rides as a per-model extra, fully
+typed, and `test/unified/sfx-capabilities.test.ts` holds the decline as an assertion that FAILS
+the day a second vendor spells it compatibly.
+
+## fal.ai wave — one aggregator, eleven verbs
+
+fal.ai is a generative-media inference cloud. unmodel serves **178 curated endpoints across
+eleven verbs** — `fal.image` (32), `fal.imageEdit` (18), `fal.video` (35), `fal.lipsync` (10),
 `fal.upscale` (11), `fal.avatar` (8), `fal.threeD` (19), `fal.tts` (23), `fal.stt` (6),
-`fal.music` (10) — all bare ids, all on `unmodel/fal`, with a unified adapter over each
+`fal.music` (10), `fal.sfx` (6) — all bare ids, all on `unmodel/fal`, with a unified adapter over each
 category's eligible rows behind `unmodel/fal/unified`. The one direct-only row is
 `bria/fibo-edit/relight`: `unified: false` keeps a prompt-less body out of the prompt-required
 image-edit vocabulary. Tier: **generated**.
@@ -717,7 +772,7 @@ openbmb, nanbeige, tii-falcon, allenai (Olmo — weights only).
 
 ## Unified surfaces — coverage per category
 
-Twelve entries take a **standardized camelCase vocabulary** instead of a wire body and
+Thirteen entries take a **standardized camelCase vocabulary** instead of a wire body and
 compile it to whichever provider the `"provider/model"` ref names. They are a layer *over*
 the roster above, not a replacement for it: a unified call compiles to a provider's wire
 params and then runs **that provider's own validator**, so there is exactly one definition
@@ -743,6 +798,7 @@ leaves rather than whole validators.
 | `unmodel/video` | `video`, `createVideo` | 13 | alibaba, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu, xai |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 5 | black-forest-labs, fal, ideogram, openai, recraft — the five whose primary editing route is *image + prompt, no mask* |
 | `unmodel/music` | `music`, `createMusic` | 5 | elevenlabs, fal, google, mureka, stability |
+| `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (1 model, `POST /v1/sound-generation`), fal (6 endpoints from five vendors, ElevenLabs' own among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 4 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
 | `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (the two engines that render raw image input — Avatar III does not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
 | `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (11 endpoints, seven taking a still and four taking a clip), topaz (15 models over two routes, stills only, multipart bodies) |
@@ -762,7 +818,7 @@ keeps a newly split provider from silently skipping every per-category budget.
 
 **Types without runtime.** Every provider in the roster above also publishes
 `unmodel/<provider>/types` (75 subpaths): its wire names verbatim plus one uniform
-`<Endpoint>Body` alias per endpoint address it serves — 196 endpoints in all — and nothing
+`<Endpoint>Body` alias per endpoint address it serves — 205 endpoints in all — and nothing
 executable. `unmodel/types` is the matching hub for the canonical vocabulary
 (`ChatParams`, `TtsParams`, `ImageParams`, …, `Issue`, `ValidateResult`), deliberately with
 no aggregate of provider wire types. All 76 entries emit an empty JavaScript module, which
@@ -781,7 +837,7 @@ import-free `<category>-params.ts` leaves that both read: one import from a valu
 subpath because they are 45 KiB. `test/values-entries.test.ts` measures every export against a
 real build and asserts the tables by reference.
 
-**Contract, identical in all eleven.** A param a provider cannot express is an **error**
+**Contract, identical in every media category.** A param a provider cannot express is an **error**
 naming what it does offer; a value it can only express approximately is an
 `approximated_param` **warning** naming both the requested and the achieved value;
 everything else is silent — so zero warnings means the request mapped exactly, asserted per

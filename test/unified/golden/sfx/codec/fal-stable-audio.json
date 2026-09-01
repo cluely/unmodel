@@ -1,0 +1,12 @@
+{
+  "ref": "fal/fal-ai/stable-audio-3/small/sfx/text-to-audio",
+  "params": {
+    "prompt": "wind chimes on a porch",
+    "duration": 8,
+    "output_format": "flac"
+  },
+  "url": "https://queue.fal.run/fal-ai/stable-audio-3/small/sfx/text-to-audio",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

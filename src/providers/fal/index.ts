@@ -21,12 +21,12 @@
  *
  * ## What is here
  *
- * All ten validators — `image` (32 text-to-image endpoints), `imageEdit` (18
- * editing), `video` (35 generation and editing routes), `lipsync` (10),
- * `avatar` (8), `upscale` (11), `threeD` (19), `tts` (23), `stt` (6) and
- * `music` (10) — plus the transport surface and the merged catalog. 172
- * curated endpoints in all, every one of them typed from fal's own published
- * OpenAPI document. Their RESULT documents are typed too, as
+ * All eleven validators — `image` (32 text-to-image endpoints), `imageEdit`
+ * (18 editing), `video` (35 generation and editing routes), `lipsync` (10),
+ * `avatar` (8), `upscale` (11), `threeD` (19), `tts` (23), `stt` (6),
+ * `music` (10) and `sfx` (6) — plus the transport surface and the merged
+ * catalog. 178 curated endpoints in all, every one of them typed from fal's own
+ * published OpenAPI document. Their RESULT documents are typed too, as
  * `Fal<Verb>ResultById` on `unmodel/fal/types`.
  *
  * ## Two things worth knowing before your first call
@@ -77,6 +77,7 @@ export { threeD } from "./three-d";
 export { tts } from "./tts";
 export { stt } from "./stt";
 export { music } from "./music";
+export { sfx } from "./sfx";
 
 export type {
   FalImageArm,
@@ -148,6 +149,13 @@ export type {
   FalMusicParams,
   FalMusicResultById,
 } from "./music";
+export type {
+  FalSfxArm,
+  FalSfxBodyById,
+  FalSfxEndpointId,
+  FalSfxParams,
+  FalSfxResultById,
+} from "./sfx";
 
 export {
   FAL_ENDPOINTS,
@@ -163,6 +171,7 @@ export {
   FAL_TTS_ENDPOINTS,
   FAL_STT_ENDPOINTS,
   FAL_MUSIC_ENDPOINTS,
+  FAL_SFX_ENDPOINTS,
   FAL_REQUIRED_PROBES,
   // The other half of the roster: the ids unmodel was asked for and turned
   // down, each with the reason `data/fal/curation.json` recorded. Exported so

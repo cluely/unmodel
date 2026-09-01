@@ -142,13 +142,13 @@ image({ model: "stability/stable-image-ultra", prompt: "x", aspectRatio: "¦" })
     expect(entries).not.toContain("4:3");
   });
 
-  test("background on gpt-image-1 offers transparent; gpt-image-2 must not", () => {
+  test("background offers all three values on every GPT image model", () => {
     const v1 = completionsAt(`import { image } from "./src/unified/image";
 image({ model: "openai/gpt-image-1", prompt: "x", background: "¦" });`);
     expect(v1.sort()).toEqual(["auto", "opaque", "transparent"]);
     const v2 = completionsAt(`import { image } from "./src/unified/image";
 image({ model: "openai/gpt-image-2", prompt: "x", background: "¦" });`);
-    expect(v2.sort()).toEqual(["auto", "opaque"]);
+    expect(v2.sort()).toEqual(["auto", "opaque", "transparent"]);
   });
 
   test("property names include the model's extras", () => {

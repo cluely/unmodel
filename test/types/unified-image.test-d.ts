@@ -252,10 +252,12 @@ function sizeNarrowingTests(): void {
 
 function extrasNarrowingTests(): void {
   // THE case this whole mechanism exists for. The OpenAI SDK's own type offers
-  // `transparent` on every GPT image model; gpt-image-2 answers a recorded 400
-  // (test/fixtures/provider-errors/openai/images-gpt-image-2-background.json).
-  image({ model: "openai/gpt-image-1", prompt: "hi", background: "transparent" });
+  // `quality: "hd"` on every image model; only dall-e-3 accepts it — the GPT
+  // image quality ladder is auto/low/medium/high.
+  image({ model: "openai/dall-e-3", prompt: "hi", quality: "hd" });
   // @ts-expect-error — and the same word on gpt-image-2 does not compile.
+  image({ model: "openai/gpt-image-2", prompt: "hi", quality: "hd" });
+  image({ model: "openai/gpt-image-1", prompt: "hi", background: "transparent" });
   image({ model: "openai/gpt-image-2", prompt: "hi", background: "transparent" });
   image({ model: "openai/gpt-image-2", prompt: "hi", background: "opaque" });
   image({ model: "openai/gpt-image-2", prompt: "hi", background: null });

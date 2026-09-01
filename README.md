@@ -14,16 +14,37 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.png" width="720" alt="The OpenAI SDK compiles background: 'transparent' for gpt-image-2 and the API answers 400; unmodel makes the same object a compile error">
+  <img src="assets/hero.png" width="720" alt="The OpenAI SDK types Sora's size the same for every model: it refuses the 1920x1080 that sora-2-pro documents and prices, and compiles the 1792x1024 that sora-2 cannot render; unmodel types the documented matrix per model">
 </p>
 
 unmodel checks your request against what the provider actually accepts, before you send it. Optional cross-provider params compile to real wire bodies. Raw responses get checked for truncation, refusals, filtering, usage, and cost. It never sends anything, never sees a credential. You keep `fetch`, your SDK, and your keys.
 
-Every ❌/✅ in this README is pasted from a real `tsc` run or backed by a test — including the hero image above, where the 400 response is a recorded fixture.
+Every ❌/✅ in this README is pasted from a real `tsc` run or backed by a test — including the hero above, where both compile errors come from `tsc` against `openai@7.4.0` and this package.
+
+The hero is the whole pitch in one union. The official SDK types Sora's `size` the same for every model, and the one union is wrong in both directions:
+
+```ts
+// openai@7.4.0
+await client.videos.create({ model: "sora-2-pro", prompt: "…", size: "1920x1080" });
+// ❌ error TS2322: Type '"1920x1080"' is not assignable to type 'VideoSize | undefined'.
+//    The 1080p that sora-2-pro documents, prices, and renders — the SDK won't compile it.
+//    (16- and 20-second clips? Also documented, also refused: VideoSeconds stops at "12".)
+
+await client.videos.create({ model: "sora-2", prompt: "…", size: "1792x1024" });
+// ✅ compiles — for a resolution sora-2 does not render (720p only), so the API refuses it
+
+// unmodel — the documented matrix, per model
+import { video } from "unmodel/openai";
+
+video({ model: "sora-2-pro", prompt: "…", size: "1920x1080", seconds: "16" }); // ✅
+video({ model: "sora-2", prompt: "…", size: "1792x1024" });
+// ❌ error TS2322: Type '"1792x1024"' is not assignable to type 'SoraBaseSize | undefined'.
+//    sora-2 renders 720p only — the mistake the SDK compiles is a compile error here
+```
 
 ## ✨ Features
 
-- 🎯 **Per-model types** — `background: "transparent"` on `gpt-image-2` is a compile error, not a 400
+- 🎯 **Per-model types** — `size: "1792x1024"` on `sora-2` is a compile error, not a 400 — and the 1080p the official SDK won't compile at all is just `sora-2-pro`'s documented size
 - 🔤 **Real autocomplete** — the 23 real `gpt-image-2` sizes, all 30 Gemini TTS voices; every list proven by a test
 - 🌐 **One vocabulary, fourteen surfaces** — chat, TTS, STT, image, image edit, video, lipsync, avatar, upscale, 3D, music, voice clone, voice design, realtime config
 - 🔁 **`.toApi(provider)`** — move a validated chat request to another host serving the same model
@@ -122,8 +143,8 @@ const request = image({
 JSON.stringify(request);
 // → {"model":"gpt-image-2","prompt":"a lighthouse in fog","size":"1360x768"}
 
-image({ model: "openai/gpt-image-1", prompt: "...", background: "transparent" }); // ✅
-image({ model: "openai/gpt-image-2", prompt: "...", background: "transparent" }); // ❌ TypeScript error
+image({ model: "openai/dall-e-3", prompt: "...", quality: "hd" });    // ✅
+image({ model: "openai/gpt-image-2", prompt: "...", quality: "hd" }); // ❌ TypeScript error
 ```
 
 The four newest surfaces are one line each: a clip, a still, a frame you want bigger, and an object.

@@ -27,20 +27,6 @@ const GPT_IMAGE_MODERATIONS = ["low", "auto"] as const;
 const DALL_E_RESPONSE_FORMATS = ["url", "b64_json"] as const;
 const INPUT_FIDELITIES = ["high", "low"] as const;
 
-/**
- * `background` values gpt-image-2 accepts. WIDENED from a blanket deny on
- * 2026-08-13: the current docs reject only `transparent`, not the parameter —
- * "`gpt-image-2` and `gpt-image-2-2026-04-21` do not support transparent
- * backgrounds. Requests with `background` set to `transparent` will return an
- * error for these models; use `opaque` or `auto` instead." (openai@7.4.0
- * OpenAPI-generated docstring) and "`gpt-image-2` doesn't currently support
- * transparent backgrounds." (image-generation guide). The recorded 400
- * (test/fixtures/provider-errors/openai/images-gpt-image-2-background.json)
- * was captured with `background: "transparent"`, so it is still explained by
- * this narrower rule — and `opaque`/`auto` are no longer false-positived.
- */
-const GPT_IMAGE_2_BACKGROUNDS = ["opaque", "auto"] as const;
-
 /** "This parameter is only supported for `dall-e-3`." — images/create. */
 const STYLE_IS_DALL_E_3_ONLY: DenyRule = {
   reason: "`style` is only supported for dall-e-3",
@@ -89,12 +75,19 @@ const GPT_IMAGE_ENUMS: EndpointConstraints["enums"] = {
  * gpt-image-2 accepts arbitrary "WIDTHxHEIGHT" sizes (divisible by 16, aspect
  * ratio at most 3:1, max edge 3840px, 655,360–8,294,400 total pixels), so
  * `size` carries no enum here — see checkGptImage2Size in images.ts.
+ *
+ * `background` takes all three values, including `transparent`:
+ * "Transparent backgrounds are available for supported GPT Image models. For
+ * `gpt-image-2` and `gpt-image-2-2026-04-21`, this support is in preview."
+ * (images/create and images/createEdit references, checked 2026-08-31). The
+ * `transparent`↔`output_format` coupling both references state is enforced by
+ * checkTransparentOutputFormat in images-shared.ts.
  */
 const GPT_IMAGE_2_ENUMS: EndpointConstraints["enums"] = {
   quality: GPT_IMAGE_QUALITIES,
   output_format: GPT_IMAGE_OUTPUT_FORMATS,
   moderation: GPT_IMAGE_MODERATIONS,
-  background: GPT_IMAGE_2_BACKGROUNDS,
+  background: ["transparent", "opaque", "auto"],
 };
 
 /**

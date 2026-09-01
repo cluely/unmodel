@@ -170,67 +170,49 @@ describe("openai.image happy path", () => {
   });
 });
 
-describe("openai.image gpt-image-2 transparent background (ground truth)", () => {
-  // The recorded 400 was captured with background: "transparent"; the current
-  // docs narrow the rule to that value ("use `opaque` or `auto` instead"),
-  // so unmodel narrows the enum rather than denying the whole param.
-  const fixturePath = join(
-    import.meta.dir,
-    "..",
-    "..",
-    "..",
-    "test",
-    "fixtures",
-    "provider-errors",
-    "openai",
-    "images-gpt-image-2-background.json",
-  );
-
-  test("the recorded fixture request is rejected", () => {
-    const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
-      request: { body: Record<string, unknown> };
-    };
-    expect(fixture.request.body.background).toBe("transparent");
-
-    const r = safeUnchecked(fixture.request.body);
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "invalid_enum_value");
-      expect(issue?.path).toEqual(["background"]);
-      expect(issue?.message).toContain('"opaque", "auto"');
+describe("openai.image gpt-image-2 background (ground truth)", () => {
+  // "Transparent backgrounds are available for supported GPT Image models.
+  // For `gpt-image-2` and `gpt-image-2-2026-04-21`, this support is in
+  // preview." — images/create reference, checked 2026-08-31.
+  test("every documented background value passes on both gpt-image-2 ids", () => {
+    for (const model of ["gpt-image-2", "gpt-image-2-2026-04-21"] as const) {
+      for (const background of ["transparent", "opaque", "auto"] as const) {
+        const r = image.safe({ model, prompt: "x", background });
+        expect(r.ok).toBe(true);
+      }
     }
   });
 
-  test("transparent on the dated gpt-image-2 snapshot is rejected too", () => {
-    const r = safeUnchecked({
-      model: "gpt-image-2-2026-04-21",
+  test('transparent with output_format "jpeg" is rejected — jpeg has no alpha channel', () => {
+    const r = image.safe({
+      model: "gpt-image-2",
       prompt: "x",
       background: "transparent",
+      output_format: "jpeg",
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_enum_value");
+    if (!r.ok) {
+      const issue = r.errors.find((e) => e.code === "unsupported_param");
+      expect(issue?.path).toEqual(["output_format"]);
+      expect(issue?.message).toContain("png");
+    }
   });
 
-  test("opaque and auto pass — the docs only reject transparent", () => {
-    for (const background of ["opaque", "auto"] as const) {
-      const r = image.safe({ model: "gpt-image-2", prompt: "x", background });
+  test("transparent with png, webp, or the default format passes", () => {
+    for (const output_format of ["png", "webp", undefined] as const) {
+      const r = image.safe({
+        model: "gpt-image-1",
+        prompt: "x",
+        background: "transparent",
+        ...(output_format === undefined ? {} : { output_format }),
+      });
       expect(r.ok).toBe(true);
     }
   });
 
-  test("the throwing form throws on the rejected value", () => {
-    const imagesUnchecked = image as unknown as (params: unknown) => unknown;
-    let caught: unknown;
-    try {
-      imagesUnchecked({ model: "gpt-image-2", prompt: "x", background: "transparent" });
-    } catch (error) {
-      caught = error;
-    }
-    expect(UnmodelValidationError.isInstance(caught)).toBe(true);
-  });
-
-  test("constraintsFor exposes the narrowed background enum", () => {
+  test("constraintsFor exposes the full background enum", () => {
     expect(image.constraintsFor("gpt-image-2")[0]?.enums?.background).toEqual([
+      "transparent",
       "opaque",
       "auto",
     ]);
@@ -443,21 +425,6 @@ describe("openai constraint provenance", () => {
           expect(typeof fixture.recorded).toBe("string");
         }
       }
-    }
-  });
-
-  test("the recorded gpt-image-2 background fixtures still describe a rejected request", () => {
-    for (const name of [
-      "images-gpt-image-2-background.json",
-      "images-gpt-image-2-2026-04-21-background.json",
-    ]) {
-      const fixture = JSON.parse(readFileSync(join(fixturesDir, name), "utf8")) as {
-        request: { body: Record<string, unknown> };
-        response: { status: number };
-      };
-      expect(fixture.response.status).toBe(400);
-      const r = safeUnchecked(fixture.request.body);
-      expect(r.ok).toBe(false);
     }
   });
 });

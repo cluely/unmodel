@@ -108,23 +108,28 @@ describe("openai.imageEdit per-model rules", () => {
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["input_fidelity"]);
   });
 
-  test("transparent background is rejected on gpt-image-2 but opaque passes", () => {
-    const bad = safeUnchecked({
+  test("transparent background passes on gpt-image-2 — preview support, both ids", () => {
+    for (const model of ["gpt-image-2", "gpt-image-2-2026-04-21"] as const) {
+      const r = imageEdit.safe({
+        model,
+        image: png(),
+        prompt: "x",
+        background: "transparent",
+      });
+      expect(r.ok).toBe(true);
+    }
+  });
+
+  test('transparent with output_format "jpeg" is rejected on edits too', () => {
+    const r = safeUnchecked({
       model: "gpt-image-2",
       image: png(),
       prompt: "x",
       background: "transparent",
+      output_format: "jpeg",
     });
-    expect(bad.ok).toBe(false);
-    if (!bad.ok) expect(bad.errors[0]?.code).toBe("invalid_enum_value");
-
-    const good = imageEdit.safe({
-      model: "gpt-image-2",
-      image: png(),
-      prompt: "x",
-      background: "opaque",
-    });
-    expect(good.ok).toBe(true);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["output_format"]);
   });
 
   test("gpt-image-2 free-form sizes follow the documented pixel band", () => {

@@ -46,24 +46,13 @@ const OUTPUT_COMPRESSION = EXTRA as number | null;
 const USER = EXTRA as string;
 
 /**
- * gpt-image-1 / -1-mini / -1.5 on **generations**.
- *
- * `background` keeps `"transparent"` here and loses it two rows down, which is
- * the whole reason this table is per-model: the SDK's own type offers
- * `transparent` on every GPT image model, and gpt-image-2 answers a recorded
- * 400 (`test/fixtures/provider-errors/openai/images-gpt-image-2-background.json`).
+ * Every GPT image model on **generations**. `background` carries all three
+ * values on every row — gpt-image-2's `transparent` support is in preview
+ * (images/create reference, checked 2026-08-31) — so the per-model split
+ * below is about sizes and tiers, not extras.
  */
-const GPT_IMAGE_1_EXTRAS = {
+const GPT_IMAGE_EXTRAS = {
   background: EXTRA as "transparent" | "opaque" | "auto" | null,
-  quality: GPT_IMAGE_QUALITY,
-  moderation: MODERATION,
-  output_compression: OUTPUT_COMPRESSION,
-  user: USER,
-} as const;
-
-/** gpt-image-2 / -2-2026-04-21 on generations: the same list minus `transparent`. */
-const GPT_IMAGE_2_EXTRAS = {
-  background: EXTRA as "opaque" | "auto" | null,
   quality: GPT_IMAGE_QUALITY,
   moderation: MODERATION,
   output_compression: OUTPUT_COMPRESSION,
@@ -88,13 +77,9 @@ const DALL_E_2_EXTRAS = {
  * image input at high fidelity automatically" and rejects it.
  */
 const GPT_IMAGE_EDIT_EXTRAS = {
-  ...GPT_IMAGE_1_EXTRAS,
+  ...GPT_IMAGE_EXTRAS,
   input_fidelity: EXTRA as "high" | "low" | null,
 } as const;
-
-const GPT_IMAGE_MINI_EDIT_EXTRAS = GPT_IMAGE_1_EXTRAS;
-
-const GPT_IMAGE_2_EDIT_EXTRAS = GPT_IMAGE_2_EXTRAS;
 
 // ---------------------------------------------------------------------------
 // The tables
@@ -114,28 +99,28 @@ export const OPENAI_IMAGE_MODEL_PARAMS = {
     sizes: GPT_IMAGE_2_SIZES,
     sizeFreeform: true,
     tiers: GPT_IMAGE_2_TIERS,
-    extras: GPT_IMAGE_2_EXTRAS,
+    extras: GPT_IMAGE_EXTRAS,
   },
   "gpt-image-2-2026-04-21": {
     sizes: GPT_IMAGE_2_SIZES,
     sizeFreeform: true,
     tiers: GPT_IMAGE_2_TIERS,
-    extras: GPT_IMAGE_2_EXTRAS,
+    extras: GPT_IMAGE_EXTRAS,
   },
   "gpt-image-1.5": {
     sizes: GPT_IMAGE_1_SIZE_VALUES,
     tiers: GPT_IMAGE_1_TIERS,
-    extras: GPT_IMAGE_1_EXTRAS,
+    extras: GPT_IMAGE_EXTRAS,
   },
   "gpt-image-1": {
     sizes: GPT_IMAGE_1_SIZE_VALUES,
     tiers: GPT_IMAGE_1_TIERS,
-    extras: GPT_IMAGE_1_EXTRAS,
+    extras: GPT_IMAGE_EXTRAS,
   },
   "gpt-image-1-mini": {
     sizes: GPT_IMAGE_1_SIZE_VALUES,
     tiers: GPT_IMAGE_1_TIERS,
-    extras: GPT_IMAGE_1_EXTRAS,
+    extras: GPT_IMAGE_EXTRAS,
   },
   "dall-e-3": {
     sizes: DALL_E_3_SIZE_VALUES,
@@ -154,13 +139,13 @@ export const OPENAI_IMAGE_EDIT_MODEL_PARAMS = {
     sizes: GPT_IMAGE_2_SIZES,
     sizeFreeform: true,
     tiers: GPT_IMAGE_2_TIERS,
-    extras: GPT_IMAGE_2_EDIT_EXTRAS,
+    extras: GPT_IMAGE_EXTRAS,
   },
   "gpt-image-2-2026-04-21": {
     sizes: GPT_IMAGE_2_SIZES,
     sizeFreeform: true,
     tiers: GPT_IMAGE_2_TIERS,
-    extras: GPT_IMAGE_2_EDIT_EXTRAS,
+    extras: GPT_IMAGE_EXTRAS,
   },
   "gpt-image-1.5": {
     sizes: GPT_IMAGE_1_SIZE_VALUES,
@@ -175,7 +160,7 @@ export const OPENAI_IMAGE_EDIT_MODEL_PARAMS = {
   "gpt-image-1-mini": {
     sizes: GPT_IMAGE_1_SIZE_VALUES,
     tiers: GPT_IMAGE_1_TIERS,
-    extras: GPT_IMAGE_MINI_EDIT_EXTRAS,
+    extras: GPT_IMAGE_EXTRAS,
   },
   "chatgpt-image-latest": {
     sizes: GPT_IMAGE_1_SIZE_VALUES,

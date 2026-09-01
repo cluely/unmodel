@@ -315,10 +315,10 @@ function modelNarrowingTests(): void {
   // @ts-expect-error
   imageEdit({ ...base, model: "recraft/recraftv3", image: { file }, size: "1024x1024" });
 
-  // The same `background` split as on generations: `transparent` on the
-  // gpt-image-1 family, and not on gpt-image-2.
+  // `background` takes all three values on every GPT image model —
+  // gpt-image-2's transparent support is in preview (createEdit reference,
+  // checked 2026-08-31).
   imageEdit({ ...base, model: "openai/gpt-image-1", image: { file }, background: "transparent" });
-  // @ts-expect-error
   imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, background: "transparent" });
   imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, background: "auto" });
 

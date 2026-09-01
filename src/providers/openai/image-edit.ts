@@ -34,7 +34,12 @@ import type { EndpointConstraints, MediaRule } from "../../core/constraint-types
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
 import { imagesModels } from "./images-models";
 import { imagesEditConstraints } from "./constraints";
-import { checkGptImage2Size, createPromptLimitCheck, type GptImage2Size } from "./images-shared";
+import {
+  checkGptImage2Size,
+  checkTransparentOutputFormat,
+  createPromptLimitCheck,
+  type GptImage2Size,
+} from "./images-shared";
 
 export const IMAGES_EDITS_URL = "https://api.openai.com/v1/images/edits";
 
@@ -111,7 +116,7 @@ export interface ChatgptImageLatestEditBody extends GptImageEditBase {
   model: "chatgpt-image-latest";
 }
 
-export interface GptImage2EditBody extends Omit<GptImageEditBase, "background" | "size"> {
+export interface GptImage2EditBody extends Omit<GptImageEditBase, "size"> {
   model: "gpt-image-2";
   /**
    * Free-form "WIDTHxHEIGHT": both edges divisible by 16, long:short ratio at
@@ -119,11 +124,6 @@ export interface GptImage2EditBody extends Omit<GptImageEditBase, "background" |
    * GptImage2Size presets autocomplete the documented rule space.
    */
   size?: GptImage2Size | null;
-  /**
-   * "`gpt-image-2` and `gpt-image-2-2026-04-21` do not support transparent
-   * backgrounds ... use `opaque` or `auto` instead."
-   */
-  background?: "opaque" | "auto" | null;
   /**
    * "For `gpt-image-2`, omit this parameter; the API doesn't allow changing
    * it because the model processes every image input at high fidelity
@@ -378,7 +378,13 @@ const validator = createValidator<AnyImageEditBody, unknown>({
   modelId: (params) => params.model ?? DEFAULT_IMAGE_EDIT_MODEL_ID,
   catalog: imagesModels,
   constraints: imagesEditConstraints,
-  checks: [checkImageCount, checkUploads, checkGptImage2Size, checkPromptLimit],
+  checks: [
+    checkImageCount,
+    checkUploads,
+    checkGptImage2Size,
+    checkTransparentOutputFormat,
+    checkPromptLimit,
+  ],
   // No token/cost estimate: image cost depends on generated output tokens,
   // which are unknown before the call.
   finalize,
@@ -387,9 +393,8 @@ const validator = createValidator<AnyImageEditBody, unknown>({
 /**
  * Validates params for POST /v1/images/edits. Known models get their exact
  * per-model param surface at compile time (e.g. `input_fidelity` is a compile
- * error for gpt-image-2 and gpt-image-1-mini, `background: "transparent"` is a
- * compile error for gpt-image-2); unknown models fall back to a loose arm with
- * a runtime unknown_model warning.
+ * error for gpt-image-2 and gpt-image-1-mini); unknown models fall back to a
+ * loose arm with a runtime unknown_model warning.
  *
  * This is a multipart endpoint: the validated output's enumerable props are
  * the validated params (including the image Blobs), and the raw-fetch path is

@@ -39,24 +39,23 @@ Already have a client, or build the body in one place and send it from another? 
 `unmodel/<provider>/types` is one provider's whole type surface: the doc-corrected wire bodies, the per-model arms, the closed enums and preset unions, the model-id unions, the response `*Like` shapes.
 
 ```ts
-import type { ImageBody } from "unmodel/openai/types";
+import type { VideoBody } from "unmodel/openai/types";
 
 const body = {
-  model: "gpt-image-2",
-  prompt: "a lighthouse at dusk",
-  size: "3840x1280",
-  background: "transparent",
-} satisfies ImageBody;
+  model: "sora-2",
+  prompt: "a paper boat sails a rain gutter",
+  seconds: "16",
+  size: "1792x1024",
+} satisfies VideoBody;
 ```
 
 ```text
-error TS1360: Type '{ model: "gpt-image-2"; prompt: string; size: "3840x1280"; background: "transparent"; }'
-  does not satisfy the expected type 'ImageBody'.
-  Types of property 'background' are incompatible.
-    Type '"transparent"' is not assignable to type '"auto" | "opaque" | null | undefined'.
+error TS1360: Type '{ model: "sora-2"; prompt: string; seconds: "16"; size: "1792x1024"; }' does not satisfy the expected type 'VideoBody'.
+  Types of property 'size' are incompatible.
+    Type '"1792x1024"' is not assignable to type 'SoraBaseSize | undefined'.
 ```
 
-A real `tsc` message, and the point of the entry. `gpt-image-2` returns a 400 for a transparent background, so the type does not have the value. `size` stays open to the documented `WIDTHxHEIGHT` rule space, closed to everything else. Use `satisfies`, not an annotation, so the literal types survive.
+A real `tsc` message, and the point of the entry. `sora-2` renders 720p only, so its arm does not have the value — while `seconds: "16"` passes, a documented duration the official SDK's `VideoSeconds` union refuses to compile on any model. Use `satisfies`, not an annotation, so the literal types survive.
 
 Each provider entry exports its **wire names verbatim**: `MessagesBody`, `ListenParams`, `Flux2Body`, straight from the vendor's docs. On top sits one uniform `<Endpoint>Body` alias per endpoint address it serves: `ChatBody`, `TtsBody`, `SttBody`, `ImageBody`, `ImageEditBody`, `VideoBody`, `MusicBody`, plus qualified extras (`ImageFlux1Body`, `TtsStreamBody`, `VideoV3FromImageBody`). Aliases are additions, never renames. Where the alias already *is* the wire name (cohere's `ChatBody`, hume's `TtsBody`), the wire name wins, no duplicate.
 

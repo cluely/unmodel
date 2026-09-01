@@ -125,8 +125,8 @@ expectTrue<Same<XaiChatBody<"grok-4">["model"], "grok-4" | (string & {})>>();
 // The future-model escape hatch: a known id passed as the parameter does NOT
 // opt that model out of its exact arm (the same property openai.test-d.ts pins
 // on `ImagesBody` itself, asserted here through the alias).
-// @ts-expect-error — gpt-image-2 has no transparent background, aliased or not
-const knownAsFuture: OpenaiImageBody<"gpt-image-2"> = { model: "gpt-image-2", prompt: "x", background: "transparent" };
+// @ts-expect-error — gpt-image-2's exact arm still applies, aliased or not
+const knownAsFuture: OpenaiImageBody<"gpt-image-2"> = { model: "gpt-image-2", prompt: "x", response_format: "url" };
 void knownAsFuture;
 
 // ---------------------------------------------------------------------------

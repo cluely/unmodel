@@ -93,6 +93,14 @@ function refUnionTests(): void {
   // @ts-expect-error — and `"8k"` is not one of the five tiers.
   video({ model: "openai/sora-2", prompt: "hi", resolution: "8k" });
 
+  // Tiers also narrow per model (docs/surfaces.md quotes this pair): sora-2
+  // renders 720p only; 1080p and 16-second clips are sora-2-pro's documented
+  // matrix — which the openai@7.4.0 SDK refuses to compile at all (pinned in
+  // openai.test-d.ts).
+  video({ model: "openai/sora-2-pro", prompt: "hi", resolution: "1080p", duration: 16 });
+  // @ts-expect-error — sora-2 renders 720p only; 1080p needs sora-2-pro
+  video({ model: "openai/sora-2", prompt: "hi", resolution: "1080p" });
+
   // A field the provider does not support is a RUNTIME error (declared on the
   // adapter), never a compile error: the vocabulary is one shape for everyone.
   video({ model: "luma/ray-2", prompt: "hi", seed: 7 });

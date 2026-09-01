@@ -7,7 +7,11 @@ import type { ValidateResult } from "../../core/result";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { imagesModels } from "./images-models";
 import { imageConstraints } from "./constraints";
-import { checkPromptCharacterLimit, checkGptImage2Size } from "./images-shared";
+import {
+  checkPromptCharacterLimit,
+  checkGptImage2Size,
+  checkTransparentOutputFormat,
+} from "./images-shared";
 import type {
   DALL_E_2_SIZE_VALUES,
   DALL_E_3_SIZE_VALUES,
@@ -43,6 +47,12 @@ export const IMAGES_GENERATIONS_URL = "https://api.openai.com/v1/images/generati
 
 interface GptImageBaseBody {
   prompt: string;
+  /**
+   * `transparent` is available on every GPT image model — in preview for
+   * gpt-image-2 and its dated snapshot (images/create reference, checked
+   * 2026-08-31) — and requires `output_format` `png` (the default) or `webp`,
+   * enforced by checkTransparentOutputFormat.
+   */
   background?: "transparent" | "opaque" | "auto" | null;
   moderation?: "low" | "auto" | null;
   n?: number | null;
@@ -87,7 +97,7 @@ export interface GptImage15Body extends GptImageBaseBody {
 // behavior, and the image-generation guide calls gpt-image-2 the current
 // generation model. The gpt-image-2 arms therefore stay (checked 2026-08-13).
 
-export interface GptImage2Body extends Omit<GptImageBaseBody, "background" | "size"> {
+export interface GptImage2Body extends Omit<GptImageBaseBody, "size"> {
   model: "gpt-image-2";
   /**
    * gpt-image-2 additionally accepts arbitrary "WIDTHxHEIGHT" sizes: both
@@ -96,14 +106,6 @@ export interface GptImage2Body extends Omit<GptImageBaseBody, "background" | "si
    * are enforced at runtime by checkGptImage2Size.
    */
   size?: GptImage2Size | null;
-  /**
-   * gpt-image-2 does NOT support transparent backgrounds: "Requests with
-   * `background` set to `transparent` will return an error for these models;
-   * use `opaque` or `auto` instead." The `transparent` arm the SDK allows is
-   * removed here so the mistake is a compile error (recorded 400:
-   * test/fixtures/provider-errors/openai/images-gpt-image-2-background.json).
-   */
-  background?: "opaque" | "auto" | null;
 }
 
 
@@ -282,7 +284,12 @@ const validator = createValidator<AnyImagesBody, unknown>({
   modelId: (params) => params.model,
   catalog: imagesModels,
   constraints: imageConstraints,
-  checks: [checkEditsOnlyModel, checkGptImage2Size, checkPromptCharacterLimit],
+  checks: [
+    checkEditsOnlyModel,
+    checkGptImage2Size,
+    checkTransparentOutputFormat,
+    checkPromptCharacterLimit,
+  ],
   // No token/cost estimate: image cost depends on generated output tokens,
   // which are unknown before the call.
   finalize,
@@ -290,8 +297,8 @@ const validator = createValidator<AnyImagesBody, unknown>({
 
 /**
  * Validates params for POST /v1/images/generations. Known models get their
- * exact per-model param surface at compile time (e.g. `background` is a
- * compile error for gpt-image-2); unknown models fall back to a loose arm
+ * exact per-model param surface at compile time (e.g. `n: 4` is a compile
+ * error for dall-e-3); unknown models fall back to a loose arm
  * with a runtime unknown_model warning. `.toSdk("openai")` returns the wire body
  * unchanged in shape — OpenAI's SDK params are wire-shaped.
  */

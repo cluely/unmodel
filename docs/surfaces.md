@@ -126,8 +126,8 @@ JSON.stringify(request);
 Sizing and extras narrow by model:
 
 ```ts
-image({ model: "openai/gpt-image-1", prompt: "...", background: "transparent" }); // ✅
-image({ model: "openai/gpt-image-2", prompt: "...", background: "transparent" }); // ❌ TypeScript error
+image({ model: "openai/dall-e-3", prompt: "...", quality: "hd" });    // ✅
+image({ model: "openai/gpt-image-2", prompt: "...", quality: "hd" }); // ❌ TypeScript error
 ```
 
 `size`, `aspectRatio`, and `dimensions` describe the same decision and are mutually exclusive.
@@ -174,6 +174,13 @@ JSON.stringify(request);
 ```
 
 Adding `image`, `video`, or a reference image selects the matching route. unmodel validates job submission. Polling and downloads stay with your transport code.
+
+Resolutions and durations narrow by model — including the ones the official SDK gets wrong (`openai@7.4.0` refuses `1920x1080` and `seconds: "16"` outright, and compiles `1792x1024` on `sora-2`, which renders 720p only):
+
+```ts
+video({ model: "openai/sora-2-pro", prompt: "...", resolution: "1080p", duration: 16 }); // ✅
+video({ model: "openai/sora-2", prompt: "...", resolution: "1080p" }); // ❌ TypeScript error
+```
 
 ## Lipsync
 

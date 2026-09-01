@@ -193,21 +193,22 @@ describe("an extra on a model that does not take it is refused", () => {
 });
 
 describe("the provider's own checks still run over an extra", () => {
-  test("gpt-image-2 refuses `transparent`, quoting the rule the 400 states", () => {
-    // The flagship "the SDK's types are wrong" case, reached the way a
-    // JavaScript caller reaches it — the type would have stopped a TS one.
+  test('gpt-image-2 refuses `quality: "hd"`, quoting the documented ladder', () => {
+    // The "the SDK's types are wrong" case, reached the way a JavaScript
+    // caller reaches it — the type would have stopped a TS one: the SDK
+    // offers `hd` on every image model, but only dall-e-3 accepts it.
     const result = image.safe({
       model: "openai/gpt-image-2",
       prompt: PROMPT,
-      background: "transparent",
+      quality: "hd",
     } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({
       code: "invalid_enum_value",
-      path: ["background"],
+      path: ["quality"],
     });
-    expect(result.errors[0]!.message).toContain("opaque");
+    expect(result.errors[0]!.message).toContain("high");
     // Identity means the wire name and the canonical name are the same word,
     // so there is no rename to explain and no "(compiled from …)" suffix.
     expect(result.errors[0]!.message).not.toContain("compiled from");

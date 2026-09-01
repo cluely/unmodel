@@ -221,11 +221,10 @@ function imagesTypeTests(): void {
   // Unknown models fall back to the loose escape arm.
   image({ model: "gpt-image-9", prompt: "x", some_future_param: true });
 
-  // gpt-image-2 accepts the two non-transparent background values.
+  // gpt-image-2 accepts all three background values — transparent support is
+  // in preview (images/create reference, checked 2026-08-31).
   image({ model: "gpt-image-2", prompt: "x", background: "auto" });
   image({ model: "gpt-image-2-2026-04-21", prompt: "x", background: "opaque" });
-
-  // @ts-expect-error — GROUND TRUTH: gpt-image-2 has no transparent background
   image({ model: "gpt-image-2", prompt: "x", background: "transparent" });
 
   // Aliasing the public body union must not route a known discriminant through
@@ -234,7 +233,7 @@ function imagesTypeTests(): void {
   const aliasedInvalid: ImagesBody = {
     model: "gpt-image-2",
     prompt: "x",
-    background: "transparent",
+    response_format: "url",
   };
   void aliasedInvalid;
 
@@ -250,12 +249,9 @@ function imagesTypeTests(): void {
   const knownAsFuture: ImagesBody<"gpt-image-2"> = {
     model: "gpt-image-2",
     prompt: "x",
-    background: "transparent",
+    response_format: "url",
   };
   void knownAsFuture;
-
-  // @ts-expect-error — the dated gpt-image-2 snapshot rejects `transparent` too
-  image({ model: "gpt-image-2-2026-04-21", prompt: "x", background: "transparent" });
 
   // @ts-expect-error — `style` is dall-e-3 only
   image({ model: "gpt-image-1", prompt: "x", style: "vivid" });
@@ -321,6 +317,19 @@ function videoTypeTests(): void {
 
   // @ts-expect-error — seconds is a string enum on the wire
   video({ model: "sora-2", prompt: "x", seconds: 8 });
+
+  // openai@7.4.0's own VideoCreateParams, pinned because the README hero and
+  // docs quote them: one closed `size` union for every model refuses the
+  // 1080p sora-2-pro documents and prices, refuses the documented 16- and
+  // 20-second durations, and compiles 1024p on sora-2 (720p only). An SDK
+  // bump that fixes any of these fails here — re-verify the README hero,
+  // docs/types-and-values.md and docs/surfaces.md before repinning.
+  // @ts-expect-error — the SDK refuses sora-2-pro's documented 1080p
+  expectAssignable<VideoCreateParams>({ model: "sora-2-pro", prompt: "x", size: "1920x1080" });
+  // @ts-expect-error — the SDK refuses the documented 16-second duration
+  expectAssignable<VideoCreateParams>({ model: "sora-2", prompt: "x", seconds: "16" });
+  // …while a size sora-2 does not render compiles clean:
+  expectAssignable<VideoCreateParams>({ model: "sora-2", prompt: "x", size: "1792x1024" });
 
   // @ts-expect-error — bogus top-level param on a known arm
   video({ model: "sora-2-pro", prompt: "x", bogus_thing: 1 });
@@ -496,7 +505,6 @@ function imageEditTypeTests(): void {
   // @ts-expect-error — input_fidelity is unsupported for gpt-image-1-mini
   imageEdit({ model: "gpt-image-1-mini", image: file, prompt: "x", input_fidelity: "high" });
 
-  // @ts-expect-error — gpt-image-2 has no transparent background
   imageEdit({ model: "gpt-image-2", image: file, prompt: "x", background: "transparent" });
 
   // @ts-expect-error — aliasing cannot send a known id through the loose arm
@@ -504,7 +512,7 @@ function imageEditTypeTests(): void {
     model: "gpt-image-2",
     image: file,
     prompt: "x",
-    background: "transparent",
+    response_format: "url",
   };
   void aliasedInvalid;
   const future: ImageEditBody<"gpt-image-9"> = {

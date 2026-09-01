@@ -146,6 +146,31 @@ export function checkGptImage2Size(
 }
 
 /**
+ * Enforces the `transparent`↔`output_format` coupling both image routes
+ * document — "When using `transparent`, set the output format to `png` or
+ * `webp`." (images/create and images/createEdit references) and "use `png`
+ * (the default) or `webp`; `jpeg` isn't supported with transparent
+ * backgrounds" (image-generation guide), checked 2026-08-31. `output_format`
+ * defaults to `png`, so only an explicit `jpeg` conflicts.
+ */
+export function checkTransparentOutputFormat(
+  params: { model?: string },
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const { background, output_format } = params as { background?: unknown; output_format?: unknown };
+  if (background !== "transparent" || output_format !== "jpeg") return;
+  ctx.report({
+    code: "unsupported_param",
+    path: ["output_format"],
+    ...(typeof params.model === "string" ? { model: params.model } : {}),
+    message:
+      '`output_format: "jpeg"` does not support `background: "transparent"` — jpeg has no alpha channel; use `png` (the default) or `webp`.',
+    meta: { value: "jpeg", allowed: ["png", "webp"], source: IMAGES_CREATE_DOCS },
+  });
+}
+
+/**
  * Enforces the documented per-model prompt cap ("The maximum length is 32000
  * characters for the GPT image models, 1000 characters for `dall-e-2` and
  * 4000 characters for `dall-e-3`" — images/create), carried on the catalog as

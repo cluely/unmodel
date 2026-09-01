@@ -413,8 +413,14 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * voice-clone rows live there, and MiniMax's speech rows price the preview
  * synthesis), and the six `voice-clone.ts` wire validators with their zod
  * schemas.
+ *
+ * Bumped 220 → 232 by the container-drop fix: `resolveAudioFormat` gained the
+ * branch that warns when an endpoint declares no container list and the caller
+ * asked for one anyway, and `core/unified/derive.ts` is in every media pack's
+ * graph. 220.9 measured, which is the tightest headroom in this file and the
+ * reason the pin moves rather than the code; 232 is measured x 1.05.
  */
-const VOICE_CLONE_PACK_BUDGET_KIB = 220;
+const VOICE_CLONE_PACK_BUDGET_KIB = 232;
 
 /**
  * `unmodel/voice-design`'s budget: the kernel plus four design providers.

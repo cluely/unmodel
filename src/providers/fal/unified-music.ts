@@ -17,6 +17,8 @@
  * calls it `lyrics`, because DiffRhythm turns lyrics into a song and its
  * `style_prompt` is the decoration. The curated `textParam` records which, and
  * this adapter writes the canonical `prompt` to whichever name the row names.
+ * At DiffRhythm that name is a field the model SINGS, so the write is lossy in
+ * a way no 4xx reports and the compile warns — see SUNG_TEXT_WIRES.
  *
  * Two endpoints (`minimax/music-3`, `fal-ai/minimax-music/v2`) REQUIRE a second
  * text field beside the prompt, and unmodel does not invent one: a prompt-only
@@ -38,6 +40,24 @@
  * Risk R7. `seed` exists at six of the ten, a length field at six, an
  * instrumental switch at two. A provider-wide claim would be false at the
  * majority of fal's own music endpoints.
+ *
+ * # Recorded limitation: vendor semantics do not cross the aggregator
+ *
+ * ElevenLabs documents that `force_instrumental` is IGNORED when a
+ * `composition_plan` is present, and the native adapter warns
+ * (`src/providers/elevenlabs/music.ts`, `meta.ignored: true`). Through
+ * `fal/fal-ai/elevenlabs/music` the same pair compiles with zero warnings,
+ * because everything in this provider is generated from fal's own OpenAPI
+ * documents and fal's document does not carry that sentence. Hand-writing it
+ * here would be the per-endpoint check battery `./checks.ts` exists to refuse:
+ * one endpoint's vendor prose inside a file that serves 172 of them.
+ *
+ * What would change it: an OVERLAY seam that lets `data/fal/overlays.json`
+ * carry a cross-field rule with its source and date, the way `enumAdd` already
+ * carries an enum member — then the fact is data, generated, refreshable and
+ * auditable, and this adapter still holds no hand-written vendor knowledge.
+ * Until then the native `elevenlabs/music_v1` ref is the one that warns, and
+ * that difference is documented in `docs/providers.md`.
  */
 
 import {
@@ -100,12 +120,29 @@ function write(body: FalMusicWire, wire: string, value: string | number | boolea
   (body as unknown as Record<string, unknown>)[wire] = value;
 }
 
-/** The endpoints whose row declares a given field, for a refusal that counts. */
-function takers(pick: (row: FalMusicRow) => unknown): number {
+/**
+ * Wire text fields whose content is **sung**, word for word, rather than
+ * described.
+ *
+ * DiffRhythm turns lyrics into a song — `style_prompt` is where the description
+ * goes — so its curated `textParam` is `lyrics`, and that is where the canonical
+ * `prompt` has to land. It is the only field there is, so this is not a refusal;
+ * but "slow post-rock build, brushed drums" reaching a `lyrics` field means
+ * those words come back sung, which is a different answer from the one every
+ * other endpoint in this category gives, and a caller only finds that out by
+ * listening.
+ */
+const SUNG_TEXT_WIRES: ReadonlySet<string> = new Set(["lyrics"]);
+
+/**
+ * The endpoints whose row declares a given field — a refusal that counts, and
+ * where the list is short enough to read, one that names.
+ */
+function takers(pick: (row: FalMusicRow) => unknown): readonly string[] {
   return Object.keys(ROWS).filter((id) => {
     const row = ROWS[id];
     return row !== undefined && pick(row) !== undefined;
-  }).length;
+  });
 }
 
 /** See `unified-tts.ts`: this endpoint's own encoding capabilities, from its row. */
@@ -141,7 +178,7 @@ function applyLength(
       path: ["durationSeconds"],
       message:
         `"${ctx.model}" decides how long the track is and declares no length parameter, so ` +
-        `\`durationSeconds\` has nothing to become. ${takers((r) => r.lengthWire)} of the ` +
+        `\`durationSeconds\` has nothing to become. ${takers((r) => r.lengthWire).length} of the ` +
         `${Object.keys(ROWS).length} fal music endpoints do take one.`,
       meta: { source: docs(ctx.model), declared: [...row.keys] },
     });
@@ -195,8 +232,10 @@ function applyInstrumental(
       path: ["instrumental"],
       message:
         `"${ctx.model}" declares no instrumental switch, so \`instrumental\` has nothing to become. ` +
-        `${takers((r) => r.instrumentalWire)} of the ${Object.keys(ROWS).length} fal music endpoints ` +
-        "do take one; at the rest, whether there are vocals is something the prompt says.",
+        `${takers((r) => r.instrumentalWire)
+          .map((id) => JSON.stringify(id))
+          .join(" and ")} do take one; at the rest, whether there are vocals is something the ` +
+        "prompt says.",
       meta: { source: docs(ctx.model), declared: [...row.keys] },
     });
     return;
@@ -220,7 +259,7 @@ function applyFormat(
       path: ["outputFormat"],
       message:
         `"${ctx.model}" answers a fixed encoding and declares no output-format parameter, so ` +
-        `\`outputFormat\` has nothing to become. ${takers((r) => r.formatWire)} of the ` +
+        `\`outputFormat\` has nothing to become. ${takers((r) => r.formatWire).length} of the ` +
         `${Object.keys(ROWS).length} fal music endpoints let you choose.`,
       meta: { source: docs(ctx.model), declared: [...row.keys] },
     });
@@ -258,6 +297,17 @@ export const music = {
     const textWire = row?.textWire ?? "prompt";
     ctx.from([textWire], "prompt");
     write(body, textWire, input.prompt);
+    if (SUNG_TEXT_WIRES.has(textWire)) {
+      ctx.warn({
+        code: "approximated_param",
+        path: ["prompt"],
+        message:
+          `"${ctx.model}" sings its \`${textWire}\` field word for word and has no separate field ` +
+          `for a description of the sound, so \`prompt\` was written to \`${textWire}\` and will be ` +
+          "sung verbatim. A description belongs in this endpoint's own steering extra.",
+        meta: { wire: textWire, source: docs(ctx.model), declared: row === undefined ? [] : [...row.keys] },
+      });
+    }
 
     applyLength(input, body, row, ctx);
     applyInstrumental(input, body, row, ctx);

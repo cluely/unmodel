@@ -734,6 +734,35 @@ describe("codegen-fal: the fixture", () => {
     expect(withRatios(["16:9", "portrait"], true)().get("image-params.gen.ts")).toContain("ratioFreeform: true");
   });
 
+  /**
+   * The same guard at `output_format`, where the loss is an encoding rather
+   * than a shape. `fal-ai/stable-audio-3/medium/text-to-audio` publishes seven
+   * members and the row carries five; `ogg` and `m4a` are argued declines, and
+   * this is what makes the argument a record instead of a comment.
+   */
+  test("every closed `output_format` member reaches the row, or is a recorded refusal", () => {
+    const withFormats = (members: readonly string[], open = false) =>
+      withInput((input) => {
+        (inputOf(input.snapshots, "acme/gamma")["properties"] as Json)["output_format"] = open
+          ? { anyOf: [{ type: "string", enum: [...members] }, { type: "string" }], default: members[0] }
+          : { type: "string", enum: [...members], default: members[0] };
+        (inputOf(input.snapshots, "acme/gamma")["x-fal-order-properties"] as string[]).push("output_format");
+      });
+
+    // `wav` IS an encoding here (fal's spelling of 16-bit PCM); `ogg` is not.
+    const params = withFormats(["mp3", "wav", "ogg"])().get("tts-params.gen.ts") as string;
+    expect(params).toContain('codecs: ["mp3", "pcm_s16le"]');
+    expect(params).not.toContain('"ogg"');
+
+    // Anything else the matcher would drop names itself, the endpoint and both lists.
+    expect(withFormats(["mp3", "webm"])).toThrow(
+      /acme\/gamma: `output_format` enum member "webm" reached neither.*"m4a"/s,
+    );
+
+    // An OPEN enum is exempt, for the reason it is exempt at ratios.
+    expect(withFormats(["mp3", "webm"], true)().get("tts-params.gen.ts")).toContain('codecs: ["mp3"]');
+  });
+
   test("a verb that disagrees with the response schema fails", () => {
     const run = withInput((input) => {
       ((input.curation["endpoints"] as Json)["acme/gamma"] as Json)["verb"] = "video";

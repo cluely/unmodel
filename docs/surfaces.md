@@ -549,6 +549,36 @@ JSON.stringify(request);
 //    "music_length_ms":45000,"force_instrumental":true}
 ```
 
+Five canonical words, and they answer a wrong ref in two different places. `outputFormat` narrows **at compile time** — a row that declares no codecs types its `format` as `never` — because an encoding is a shape the row can enumerate. `durationSeconds`, `instrumental` and `seed` are *presence* words: the type accepts them at every ref, and the endpoint that has no field for one refuses it **at run time**, naming the siblings that do.
+
+```ts
+music({ model: "fal/fal-ai/lyria2", prompt: "a chair", outputFormat: "mp3" });
+// error TS2322: Type 'string' is not assignable to type
+//   'Omit<AudioFormat, "format"> & { format: never; }'.
+
+music.safe({
+  model: "fal/fal-ai/stable-audio-3/medium/text-to-audio",
+  prompt: "a chair",
+  instrumental: true,
+});
+// → unsupported_param @ instrumental
+//   "fal-ai/stable-audio-3/medium/text-to-audio" declares no instrumental switch, so
+//   `instrumental` has nothing to become. "fal-ai/elevenlabs/music" and
+//   "fal-ai/minimax-music/v2.6" do take one; at the rest, whether there are vocals is
+//   something the prompt says.
+```
+
+That is the category-wide rule, not a fal quirk: `instrumental` reaches `force_instrumental` at ElevenLabs, `is_instrumental` at MiniMax and a different **route** at Mureka (`POST /v1/instrumental/generate`), and none of those is a shape the type can narrow to. The wire spellings themselves are refused everywhere — `is_instrumental` is not a canonical word, and a gap in the vocabulary is a typed refusal rather than a wire word smuggled through.
+
+A third answer exists for the case where the word does land but does not mean the same thing. DiffRhythm's only text field is the one it *sings*, so a prompt written there comes back as lyrics — that compiles, and warns:
+
+```ts
+music.safe({ model: "fal/fal-ai/diffrhythm", prompt: "slow post-rock build, brushed drums" });
+// → { lyrics: "slow post-rock build, brushed drums" }
+//   approximated_param @ prompt — "fal-ai/diffrhythm" sings its `lyrics` field word for
+//   word and has no separate field for a description of the sound, …
+```
+
 Audio-conditioned Stability routes stay provider-native because no other provider shares their controls.
 
 ## Voice cloning

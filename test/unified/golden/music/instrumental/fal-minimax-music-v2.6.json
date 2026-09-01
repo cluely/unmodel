@@ -1,0 +1,11 @@
+{
+  "ref": "fal/fal-ai/minimax-music/v2.6",
+  "params": {
+    "prompt": "slow post-rock build, brushed drums, no vocals",
+    "is_instrumental": true
+  },
+  "url": "https://queue.fal.run/fal-ai/minimax-music/v2.6",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

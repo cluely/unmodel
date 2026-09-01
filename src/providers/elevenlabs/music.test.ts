@@ -9,7 +9,13 @@ import {
   MUSIC_PROMPT_MAX_CHARACTERS,
   MUSIC_FINETUNE_STRENGTH_MAX,
 } from "./music";
-import { models, MUSIC_MODEL_IDS, MUSIC_PER_AUDIO_MINUTE } from "./models";
+import {
+  models,
+  MUSIC_MODEL_IDS,
+  MUSIC_PER_AUDIO_MINUTE,
+  SOUND_EFFECTS_PER_AUDIO_MINUTE,
+  VOICE_CHANGER_PER_AUDIO_MINUTE,
+} from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -321,6 +327,24 @@ describe("elevenlabs.music cost estimation", () => {
   test("catalog carries $0.15 per generated minute", () => {
     expect(models.music_v2.cost?.perAudioMinute).toBe(MUSIC_PER_AUDIO_MINUTE);
     expect(MUSIC_PER_AUDIO_MINUTE).toBe(0.15);
+  });
+
+  /**
+   * The two rates on the same page that this catalog shipped as "no USD rate
+   * published" — a false provenance claim rather than the "unverifiable →
+   * caveat" rule acting. Pinned here beside Music because the same
+   * elevenlabs.io/pricing/api card set carries all three, so one refresh pass
+   * either updates every number or fails this file.
+   */
+  test("sound effects and voice changer carry the $0.12 per-minute rate", () => {
+    expect(SOUND_EFFECTS_PER_AUDIO_MINUTE).toBe(0.12);
+    expect(VOICE_CHANGER_PER_AUDIO_MINUTE).toBe(0.12);
+    expect(models.eleven_text_to_sound_v2.cost?.perAudioMinute).toBe(
+      SOUND_EFFECTS_PER_AUDIO_MINUTE,
+    );
+    for (const id of ["eleven_multilingual_sts_v2", "eleven_english_sts_v2", "eleven_english_sts_v1"] as const) {
+      expect(models[id].cost?.perAudioMinute, id).toBe(VOICE_CHANGER_PER_AUDIO_MINUTE);
+    }
   });
 
   test("music_length_ms drives the estimate", () => {

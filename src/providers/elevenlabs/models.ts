@@ -70,6 +70,25 @@ export const DUBBING_V2_PER_AUDIO_MINUTE = 2.2;
  * block below for why it is unreachable on the project surface.
  */
 export const DUBBING_V1_PER_AUDIO_MINUTE = 0.5;
+/**
+ * Voice changer (speech-to-speech): $0.12 per minute of processed audio.
+ *
+ * https://elevenlabs.io/pricing/api, verified 2026-08-31, FAQ verbatim:
+ * "Voice Changer and Voice Isolator $0.12 per minute. Sound Effects $0.12 per
+ * minute." The page's own `voice_changer` card states the same number under
+ * "Price per minute". The unit is a minute of INPUT audio, and
+ * https://elevenlabs.io/docs/capabilities/voice-changer states the conversion
+ * the character limits on these rows are quoted in: "Billing: 1,000 characters
+ * per minute of processed audio".
+ */
+export const VOICE_CHANGER_PER_AUDIO_MINUTE = 0.12;
+/**
+ * Sound effects: $0.12 per minute of generated audio — same page, same
+ * verified date, same sentence ("Sound Effects $0.12 per minute"), and the
+ * page's `sound_effects` card carries it under "Price per minute" too. Here the
+ * minute is OUTPUT, the way Eleven Music's is.
+ */
+export const SOUND_EFFECTS_PER_AUDIO_MINUTE = 0.12;
 
 const ttsModels = {
   eleven_v3: {
@@ -236,8 +255,9 @@ const realtimeSttModels = {
 
 /**
  * Speech-to-speech (voice changer) models — POST /v1/speech-to-speech/{voice_id},
- * which unmodel does not validate. elevenlabs.io/pricing/api publishes no
- * separate USD rate for them, so `cost` is omitted.
+ * which unmodel does not validate. elevenlabs.io/pricing/api prices the route
+ * as "Voice Changer", per minute of processed audio — see
+ * VOICE_CHANGER_PER_AUDIO_MINUTE for the quote and the character conversion.
  */
 const speechToSpeechModels = {
   eleven_multilingual_sts_v2: {
@@ -250,6 +270,7 @@ const speechToSpeechModels = {
     modalities: { input: ["audio"], output: ["audio"] },
     // 10,000 characters per request — https://elevenlabs.io/docs/models
     limit: { context: 0, characters: 10000 },
+    cost: { perAudioMinute: VOICE_CHANGER_PER_AUDIO_MINUTE },
   },
   eleven_english_sts_v2: {
     id: "eleven_english_sts_v2",
@@ -260,6 +281,7 @@ const speechToSpeechModels = {
     openWeights: false,
     modalities: { input: ["audio"], output: ["audio"] },
     limit: { context: 0, characters: 10000 },
+    cost: { perAudioMinute: VOICE_CHANGER_PER_AUDIO_MINUTE },
   },
   // Legacy row the docs/models page still lists (English-only voice changer).
   eleven_english_sts_v1: {
@@ -272,6 +294,7 @@ const speechToSpeechModels = {
     status: "deprecated",
     modalities: { input: ["audio"], output: ["audio"] },
     limit: { context: 0 },
+    cost: { perAudioMinute: VOICE_CHANGER_PER_AUDIO_MINUTE },
   },
 } as const satisfies Record<string, ModelInfo>;
 
@@ -385,8 +408,8 @@ const voiceCloneModels = {
 /**
  * Music (POST /v1/music — validated by ./music) and sound-effects
  * (POST /v1/sound-generation — not validated by unmodel) models. The music
- * ids carry the $0.15-per-generated-minute rate; sound effects publish no USD
- * rate on elevenlabs.io/pricing/api, so that entry omits `cost`.
+ * ids carry the $0.15-per-generated-minute rate; the sound-effects id carries
+ * the $0.12 one — see SOUND_EFFECTS_PER_AUDIO_MINUTE for the quote.
  */
 const generativeAudioModels = {
   music_v2: {
@@ -420,6 +443,7 @@ const generativeAudioModels = {
     openWeights: false,
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
+    cost: { perAudioMinute: SOUND_EFFECTS_PER_AUDIO_MINUTE },
   },
 } as const satisfies Record<string, ModelInfo>;
 

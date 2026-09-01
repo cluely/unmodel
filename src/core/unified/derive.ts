@@ -2237,7 +2237,29 @@ export function resolveAudioFormat(
   const asked = typeof request === "string" ? undefined : request.container;
   const containers = spec.containers?.[codec];
   if (containers === undefined) {
-    resolved.container = format.container;
+    // No list for this codec means no wire field for a container: whatever the
+    // endpoint wraps the codec in is what arrives, and the canonical default is
+    // the only honest claim about it. A caller who *asked* for something else
+    // asked for a thing that cannot be sent, so it is on the record — accepting
+    // it silently is the drop the loss contract forbids.
+    const canonical = DEFAULT_CONTAINER[codec];
+    resolved.container = canonical;
+    if (asked !== undefined && asked !== canonical) {
+      ctx.warn({
+        code: "approximated_param",
+        path: [...ctx.path],
+        message:
+          `\`${paramOf(ctx)}\` has no container parameter on this model, which serves ` +
+          `${JSON.stringify(codec)} in ${JSON.stringify(canonical)}; the requested ` +
+          `${JSON.stringify(asked)} was not sent.`,
+        meta: {
+          codec,
+          requested: asked,
+          achieved: canonical,
+          ...(spec.source !== undefined && { source: spec.source }),
+        },
+      });
+    }
   } else if (asked !== undefined && !containers.includes(asked)) {
     issues.push(
       ...bad(ctx, {

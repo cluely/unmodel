@@ -2205,12 +2205,14 @@ const RATIOS_THAT_ARE_NOT_SHAPES: ReadonlySet<string> = new Set(["auto"]);
  * An OPEN enum is exempt on purpose — there the list is a set of presets
  * rather than a limit, and `ratioFreeform` already says so.
  *
+ * {@link assertCodecsComplete} is the same guard at `output_format`, written
+ * from this template.
+ *
  * BACKLOG, deliberately not widened here: the same one-directional narrowing
  * exists at `tiers` (`canonicalTier`), `resolutions` (`canonicalVideoTier`),
- * `durations` (`durationSeconds`), `languages` (the language-name table) and
- * `codecs` (the codec table) — each recognises a wire enum through a
- * hand-rolled matcher and can lose a member the same way. This guard is the
- * template for those; `"auto"` at `duration` and `768P`/`2K` at `resolution`
+ * `durations` (`durationSeconds`) and `languages` (the language-name table) —
+ * each recognises a wire enum through a hand-rolled matcher and can lose a
+ * member the same way. `"auto"` at `duration` and `768P`/`2K` at `resolution`
  * are already-argued refusals that such a guard would have to carry.
  */
 function assertRatiosComplete(endpointId: string, members: readonly (string | number)[], ratios: readonly string[]): void {
@@ -2625,9 +2627,9 @@ function canonicalLanguage(value: string): string | undefined {
  * `wav` and `pcm` and `linear16` all mean signed 16-bit little-endian PCM —
  * the first two name a container and a family rather than an encoding, which is
  * the conflation every speech API makes and the reason the canonical word is
- * the exact one. `ogg` and `m4a` are deliberately absent: they are containers
- * that carry more than one codec, and mapping `ogg` to Vorbis would be a guess
- * about a file whose Opus arm exists on the same enum.
+ * the exact one. What is deliberately absent is listed — with its reason — in
+ * {@link FORMATS_THAT_ARE_NOT_CODECS}, where {@link assertCodecsComplete} can
+ * read it.
  */
 const CODEC_NAMES: Readonly<Record<string, string>> = {
   mp3: "mp3",
@@ -2659,6 +2661,54 @@ function canonicalCodec(value: string): string | undefined {
   const whole = CODEC_NAMES[raw];
   if (whole !== undefined) return whole;
   return CODEC_NAMES[raw.split("_")[0] as string];
+}
+
+/**
+ * `output_format` enum members that are NOT an encoding — the recorded
+ * refusals, with the argument for each, in the one place
+ * {@link assertCodecsComplete} reads.
+ *
+ * A reason that lives only in a comment is not recorded: the next fal spelling
+ * lands beside these, the guard has nothing to compare it against, and the
+ * member vanishes into a row nobody notices is short.
+ */
+const FORMATS_THAT_ARE_NOT_CODECS: Readonly<Record<string, string>> = {
+  ogg: "a container, not an encoding — it carries Vorbis or Opus, and `fal-ai/stable-audio-3/medium/text-to-audio` spells `opus` on the same enum, so mapping `ogg` to Vorbis would be a guess about which arm the file takes",
+  m4a: "a container, not an encoding — it carries AAC or ALAC, and the same enum already spells `aac`",
+  url: "a DELIVERY switch wearing a codec's name: MiniMax's `output_format` picks how the audio comes back (a link) rather than how it is encoded",
+  hex: "the other arm of MiniMax's delivery switch — hex-encoded bytes in the response body, still not an encoding",
+};
+
+/**
+ * Wire enum → row completeness at `output_format`, the direction no preset
+ * sweep can run.
+ *
+ * The codec twin of {@link assertRatiosComplete}, and the same argument:
+ * `test/unified/tts-presets.test.ts` iterates `row.codecs` and asserts each
+ * member compiles, which reads the artifact under suspicion and cannot see a
+ * member the row FAILED to declare. Here every member of a CLOSED
+ * `output_format` enum either canonicalises into the row's `codecs` or is named
+ * in {@link FORMATS_THAT_ARE_NOT_CODECS} with its reason; anything else stops
+ * codegen naming the endpoint, the member and both lists. A codec fal publishes
+ * and unmodel drops is `outputFormat` typed `never` for an encoding fal would
+ * have produced.
+ *
+ * An OPEN enum is exempt for the reason it is exempt at ratios: there the list
+ * is a set of presets rather than a limit.
+ */
+function assertCodecsComplete(endpointId: string, members: readonly string[], codecs: readonly string[]): void {
+  for (const member of members) {
+    const canonical = canonicalCodec(member);
+    if (canonical !== undefined && codecs.includes(canonical)) continue;
+    if (FORMATS_THAT_ARE_NOT_CODECS[member.trim().toLowerCase()] !== undefined) continue;
+    throw new Error(
+      `${endpointId}: \`output_format\` enum member ${quote(member)} reached neither the row's canonical codecs ` +
+        `(${codecs.map(quote).join(", ") || "none"}) nor the recorded refusals ` +
+        `(${Object.keys(FORMATS_THAT_ARE_NOT_CODECS).map(quote).join(", ")}). An encoding fal publishes and ` +
+        "unmodel drops types `outputFormat` as `never` for a request fal accepts — widen `CODEC_NAMES`, or " +
+        "record the refusal in FORMATS_THAT_ARE_NOT_CODECS with the reason.",
+    );
+  }
 }
 
 /** The enum a property declares, as strings, or `undefined` if it declares none. */
@@ -2740,6 +2790,11 @@ function applyFormatRow(model: EndpointModel, row: UnifiedRow): void {
   (row as { codecs?: readonly string[] }).codecs = sorted(values);
   if (values.length > 0) {
     (row as { codecValues?: Readonly<Record<string, string>> }).codecValues = wire;
+  }
+  // A CLOSED enum is a limit, so every member of it has to be accounted for.
+  // See assertCodecsComplete.
+  if (prop.node.k === "prim" && prop.node.open !== true) {
+    assertCodecsComplete(model.id, members, values);
   }
 }
 

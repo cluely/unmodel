@@ -686,6 +686,21 @@ beginning ``unmodel deliberately does not serve `fal-ai/ffmpeg-api/compose`: …
 not to serve this" stops reaching callers as "the catalog is a week behind". The request is still
 routed and sent as written; it is a curation decision, never a claim that fal refuses the call.
 
+**Vendor semantics do not cross the aggregator — one case, recorded.** Everything here is
+generated from fal's own OpenAPI documents, so a rule a vendor states in prose and not in its
+schema does not arrive. The live instance: ElevenLabs documents that `force_instrumental` is
+ignored when a `composition_plan` is present, and `elevenlabs.music` warns on the pair
+(`unsupported_param` with `meta.ignored: true`); `fal.music` at `fal-ai/elevenlabs/music`
+compiles the same pair with **zero warnings**, at the wire address and through
+`unmodel/music` alike. Hand-writing that one rule into `src/providers/fal/unified-music.ts`
+is the per-endpoint check battery [`src/providers/fal/checks.ts`](../src/providers/fal/checks.ts)
+exists to refuse: one endpoint's vendor prose inside a file that serves 172. So it is a
+documented limitation, not a bug — and the native `elevenlabs/music_v1` ref is the one that
+warns. **What would change it:** an overlay kind in `data/fal/overlays.json` for a cross-field
+rule carrying reason + source + verified date, the way `enumAdd` already carries an enum
+member. Then the fact is data — generated, refreshable, auditable — and the adapter still
+holds no hand-written vendor knowledge.
+
 **Retargeting onto fal is live** — see [Media retargeting](#media-retargeting--toapifal).
 Uncurated by decision, with reasons in `curation.json`: fal's `llm` category
 (an OpenRouter passthrough — unmodel ships the real OpenRouter), `training` (57 endpoints that

@@ -1,0 +1,31 @@
+{
+  "ref": "fal/fal-ai/diffrhythm",
+  "params": {
+    "lyrics": "slow post-rock build, brushed drums, no vocals"
+  },
+  "url": "https://queue.fal.run/fal-ai/diffrhythm",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "prompt"
+      ],
+      "meta": {
+        "wire": "lyrics",
+        "source": "https://fal.ai/models/fal-ai/diffrhythm/api",
+        "declared": [
+          "lyrics",
+          "reference_audio_url",
+          "style_prompt",
+          "music_duration",
+          "cfg_strength",
+          "scheduler",
+          "num_inference_steps"
+        ]
+      }
+    }
+  ]
+}

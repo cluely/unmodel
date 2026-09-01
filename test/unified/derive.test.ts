@@ -899,6 +899,36 @@ describe("resolveAudioFormat", () => {
     expect(ctx.warnings).toEqual([]);
   });
 
+  /**
+   * The other half of that branch, and the one that was a silent drop: a spec
+   * with no list for the codec has no wire field for a container either, so an
+   * explicit ask is unsendable. It cannot be an ERROR — the endpoint does serve
+   * the codec, and the list naming what it offers does not exist — so it is the
+   * substitution it actually is.
+   */
+  test("no container list plus an explicit ask is a substitution, so it warns", () => {
+    const ctx = ctxAt("outputFormat");
+    const out = resolveAudioFormat({ format: "mp3", container: "webm" }, SPEC, ctx);
+    expect(out.value).toMatchObject({ codec: "mp3", wire: "mp3", container: "mp3" });
+    expect(ctx.warnings).toHaveLength(1);
+    expect(ctx.warnings[0]!.code).toBe("approximated_param");
+    expect(ctx.warnings[0]!.message).toContain("no container parameter");
+    expect(ctx.warnings[0]!.meta).toMatchObject({
+      codec: "mp3",
+      requested: "webm",
+      achieved: "mp3",
+      source: "https://docs.example/audio",
+    });
+  });
+
+  test("no container list plus an ask FOR the canonical default is silent", () => {
+    const ctx = ctxAt("outputFormat");
+    expect(
+      resolveAudioFormat({ format: "mp3", container: "mp3" }, SPEC, ctx).value,
+    ).toMatchObject({ container: "mp3" });
+    expect(ctx.warnings).toEqual([]);
+  });
+
   test("a rate or bitrate off the list is an error listing the list", () => {
     const rate = resolveAudioFormat(
       { format: "pcm_s16le", container: "wav", sampleRate: 8000 },

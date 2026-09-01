@@ -1,0 +1,11 @@
+{
+  "ref": "fal/fal-ai/elevenlabs/music",
+  "params": {
+    "prompt": "slow post-rock build, brushed drums, no vocals",
+    "force_instrumental": true
+  },
+  "url": "https://queue.fal.run/fal-ai/elevenlabs/music",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

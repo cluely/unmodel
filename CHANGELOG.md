@@ -1,5 +1,390 @@
 # unmodel
 
+## 0.5.0
+
+### Minor Changes
+
+- 19faf5f: Accept `background: "transparent"` on `gpt-image-2` and `gpt-image-2-2026-04-21`,
+  on both `openai.image` and `openai.imageEdit` and through the `unmodel/image` /
+  `unmodel/image-edit` packs. OpenAI shipped transparent-background support for
+  these models in preview (images/create and createEdit references, checked
+  2026-08-31), so the per-model arms regain the `transparent` value, the
+  constraint enum widens, and the recorded 400 fixtures that pinned the old
+  refusal are retired. Retired compile errors: `background: "transparent"` on a
+  gpt-image-2 generation or edit no longer errors.
+
+  Both image routes also gain the documented `transparent`↔`output_format`
+  coupling check: `background: "transparent"` with `output_format: "jpeg"` is
+  rejected before send on every GPT image model — jpeg has no alpha channel; use
+  `png` (the default) or `webp`.
+
+  The README hero and docs champion example move from the retired gpt-image-2
+  transparent 400 to Sora's size matrix: `openai@7.4.0` types `size` with one
+  closed `VideoSize` union for every model, refusing the 1920x1080 (and 16/20s
+  durations) that sora-2-pro documents and prices while compiling 1024p sizes
+  sora-2 cannot render. unmodel's per-model arms carry the documented matrix,
+  and the SDK-side claims are pinned in type tests so an SDK fix fails loudly.
+
+- cb314cb: **Mureka can take a prompt-only vocal request.** `mureka.musicFromPrompt` is a
+  new wire address for `POST /v1/song/easy-generate` ("Prompt to song"), the route
+  that writes the lyrics itself. It is typed from the OpenAPI document embedded in
+  the docs bundle (`SongEasyGenerateReq`, verified 2026-08-31): every field is
+  optional — `model` included, which both generate routes require — `prompt` is
+  capped at **2000** characters, and `styles` takes one or more of a closed
+  thirteen-value enum (`pop`, `rock`, `jazz`, `r&b`, `edm`, `ambient`, `folk`,
+  `latin`, `k-pop`, `j-pop`, `house`, `gospel`, `lo-fi`), published as `STYLES` on
+  `unmodel/mureka` and `unmodel/mureka/values`. It is async like its siblings and
+  polls with the `songQueryUrl()` that already shipped.
+
+  **The music adapter now dispatches three ways**, and this is a behavior change:
+  - `instrumental: true` → `POST /v1/instrumental/generate`
+  - a `lyrics` extra → `POST /v1/song/generate`
+  - neither → `POST /v1/song/easy-generate`
+
+  So `music({ model: "mureka/mureka-9.5", prompt })` **used to be an
+  `invalid_shape` error on `lyrics` and is now a successful compile to a different
+  URL**, with zero warnings. `gender`, `melody_id` and `instrumental_id` are
+  absent from the new route's body and are refused there with the route that does
+  take each one named. Nothing is fabricated on the way: the canonical `prompt`
+  reaches `prompt` unchanged and Mureka writes the words.
+
+  **One wart, written down rather than smoothed over.** The effective cap on the
+  canonical `prompt` is now route-dependent — 2000 characters on easy-generate,
+  1024 on the other two — so the same prompt can pass or fail depending on whether
+  a `lyrics` extra rode along with it. Each wire schema carries its own accurate
+  cap; the adapter and module headers say so.
+
+  `styles` stays a per-model extra rather than canonical vocabulary: no other
+  music provider in the roster has any style or genre field, so it has one witness
+  (decisions.md §8).
+
+  ### Corrections for the report this came from
+  - **"Every other music provider writes lyrics from the prompt" was 2 of 4**, not
+    4 of 4. ElevenLabs Music and Google Lyria take prompt-only vocals; Stability
+    has no vocals at all; and at fal, `minimax/music-3` and
+    `fal-ai/minimax-music/v2` refuse a prompt-only request exactly as Mureka did,
+    which is a standing recorded decision (unmodel does not invent lyrics), not an
+    oversight.
+  - **`styles` is an array, not a single style**, and `prompt` is optional too — a
+    `styles`-only request is legal. The route also carries `reference_id`,
+    `vocal_id`, `n` and `stream`.
+  - The related silent-prompt-to-lyrics defect at `fal/fal-ai/diffrhythm` was
+    fixed separately: that compile has carried an `approximated_param` since the
+    previous release.
+
+- a0388cc: **A container you asked for is never silently dropped.** `resolveAudioFormat`
+  had one branch that accepted an explicit `outputFormat.container` without
+  checking it: when an endpoint declares no container list for a codec, it has no
+  wire field for a container either, so the ask could not be sent — and nothing
+  said so. `{ format: "opus", container: "webm" }` was an error at
+  `elevenlabs/music_v1` and a silent success at `fal/fal-ai/elevenlabs/music`.
+  It is now an `approximated_param` warning naming the container the endpoint
+  actually serves, and the resolved format reports that container rather than the
+  one that was asked for. This reaches 2 fal music rows and 3 fal speech rows
+  generically; every hand-written adapter declares its containers and is
+  unchanged.
+
+  **DiffRhythm sings your prompt, and now says so.** `fal/fal-ai/diffrhythm`'s only
+  text field is `lyrics` — the words the model sings — so a canonical `prompt`
+  written there comes back sung verbatim. That compile now carries an
+  `approximated_param` on `prompt`.
+
+  **Two shipped pricing rows were wrong about their own provenance.** The
+  ElevenLabs catalog claimed elevenlabs.io/pricing/api "publishes no separate USD
+  rate" for speech-to-speech and for sound effects. The page publishes both, in
+  the same card set and tier this catalog already reads for Music and Dubbing:
+  "Voice Changer and Voice Isolator $0.12 per minute. Sound Effects $0.12 per
+  minute" (verified 2026-08-31). `eleven_multilingual_sts_v2`,
+  `eleven_english_sts_v2`, `eleven_english_sts_v1` and `eleven_text_to_sound_v2`
+  now carry `cost.perAudioMinute`, and `unmodel/elevenlabs` exports the two rates
+  beside the ones it already published:
+  - `VOICE_CHANGER_PER_AUDIO_MINUTE` (new)
+  - `SOUND_EFFECTS_PER_AUDIO_MINUTE` (new)
+
+  **A codec fal publishes can no longer vanish from a row.** `codegen:fal` now
+  runs `assertCodecsComplete` over every closed `output_format` enum, the twin of
+  the `aspect_ratio` guard: each member either canonicalises into the row's
+  `codecs` or is named in a recorded-refusal set with its argument. The `ogg` and
+  `m4a` declines at `fal-ai/stable-audio-3/medium/text-to-audio`, and MiniMax's
+  `url`/`hex` delivery switch, moved out of generator comments into that set.
+
+  **The instrumental refusal names its siblings** instead of counting them:
+  `"fal-ai/elevenlabs/music" and "fal-ai/minimax-music/v2.6" do take one`.
+
+  ### Corrections for the report this came from
+  - **Nothing types canonical `instrumental` as `never`.**
+    `music.safe({ model: "fal/fal-ai/minimax-music/v2.6", prompt, instrumental: true })`
+    compiles and sends `is_instrumental: true`; the same word reaches
+    `force_instrumental` at ElevenLabs Music and Mureka's
+    `POST /v1/instrumental/generate` route. Only `outputFormat` narrows to `never`
+    at a music ref, and only where the row declares no codecs.
+  - **The wire spelling `is_instrumental` is refused by design**, at both layers,
+    and is on no row's `extras`. A gap in the canonical vocabulary is a typed
+    refusal, never a wire word smuggled through — so it is not the workaround it
+    was taken for.
+  - `docs/surfaces.md` now states which music words narrow at compile time and
+    which refuse at run time, with the executed output of both.
+
+- de52e8a: **New category: `unmodel/sfx` — text to sound effects, two providers, seven refs.**
+
+  The fifth category added in 2026 and the one that arrived with the most evidence
+  behind it: **five independent vendor witnesses on day one** — ElevenLabs, Sonilo,
+  CassetteAI, Stability and Mirelo — where `3d` shipped with two and `lipsync`,
+  `avatar` and `upscale` each shipped with one.
+
+  ```ts
+  import { sfx } from "unmodel/sfx";
+
+  sfx({
+    model: "elevenlabs/eleven_text_to_sound_v2",
+    prompt: "a heavy oak door creaking open in a stone hall",
+    durationSeconds: 4,
+    outputFormat: "mp3",
+  });
+  // → { text: "…", model_id: "eleven_text_to_sound_v2", duration_seconds: 4 }
+  //   …with ?output_format=mp3_44100_128 on the URL, because at this endpoint the
+  //   format is a QUERY param.
+  ```
+
+  **Four canonical words** — `model`, `prompt`, `durationSeconds?`, `outputFormat?`
+  plus `providerOptions` — the smallest vocabulary in the library, and every one of
+  them is also a `music` word.
+
+  **Why it is not `unmodel/music`.** At ElevenLabs, the one vendor serving both, the
+  two wires are disjoint and so are their model-id enums: `/v1/music` counts
+  MILLISECONDS with a floor of 3 000 and takes a `composition_plan` and a
+  `force_instrumental`; `/v1/sound-generation` counts seconds with a floor of **0.5**
+  and takes a `loop` and a `prompt_influence`. Merging them would have pushed the
+  category floor from three seconds to half of one and put `instrumental?: boolean`
+  on a door creak.
+
+  **Omitting `durationSeconds` means the PROVIDER's default, never `"auto"`** — the
+  decision the category is built on, because the five vendors give three different
+  answers:
+
+  | ref                                                                            | absent means                            | what you get                                     |
+  | ------------------------------------------------------------------------------ | --------------------------------------- | ------------------------------------------------ |
+  | `elevenlabs/eleven_text_to_sound_v2`, `fal/fal-ai/elevenlabs/sound-effects/v2` | the model reads a length off the prompt | nothing — nothing was invented, so nothing warns |
+  | `fal/sonilo/v1.1/text-to-sound-effects`                                        | 8 seconds                               | `approximated_param` naming 8                    |
+  | `fal/mirelo-ai/sfx1.6/text-to-audio`                                           | 10 seconds                              | `approximated_param` naming 10                   |
+  | `fal/fal-ai/stable-audio-3/small/sfx/*`                                        | 30 seconds                              | `approximated_param` naming 30                   |
+  | `fal/cassetteai/sound-effects-generator`                                       | HTTP 422 — the field is required        | a **compile error**, and a typed refusal         |
+
+  The default is warned about and never sent: writing 8 into `duration` would pin a
+  number the provider is free to change.
+
+  **New addresses.**
+  - `elevenlabs.sfx` — `POST /v1/sound-generation`, typed from the live
+    `api.elevenlabs.io/openapi.json`. `text` required; `duration_seconds` 0.5–30
+    nullable; `loop`; `prompt_influence` 0–1; `model_id`; `output_format` as a
+    **query param** whose 21-member enum is NOT `/v1/music`'s (there is no 48 kHz
+    MP3 arm here, so `SOUND_EFFECTS_OUTPUT_FORMATS` is its own constant rather than
+    a shared one that would have accepted four values this endpoint rejects). The
+    catalog row already existed and now carries its $0.12-per-generated-minute rate.
+  - `fal.sfx` — six curated endpoints from five vendors, taking `unmodel/fal` to
+    **178 endpoints across eleven verbs**: `fal-ai/elevenlabs/sound-effects/v2`,
+    `sonilo/v1.1/text-to-sound-effects`, `cassetteai/sound-effects-generator`,
+    `mirelo-ai/sfx1.6/text-to-audio`, and both arms of
+    `fal-ai/stable-audio-3/small/sfx/*`.
+
+  **The overlap is deliberate and NARROWED.** fal's resale of ElevenLabs' model
+  differs from the native route four ways: the length caps at 22 seconds instead of
+  30, `output_format` moves from the query string into the body, `text` caps at 450
+  characters, and there is no `model_id` because the endpoint IS the model. That
+  comparison is pinned in `test/unified/golden/sfx/plain/` rather than described.
+
+  **`loop` is deliberately not a canonical word.** One vendor of five publishes it.
+  Mirelo's `ambience` looks like a second witness and is not — it produces a tileable
+  ambience _bed_, which changes what is generated rather than where it ends, the same
+  disqualifier the lipsync `sync_mode` table carries. It rides as a per-model extra,
+  fully typed, and `test/unified/sfx-capabilities.test.ts` holds the decline as an
+  assertion that FAILS the day a second vendor spells it compatibly. Same for
+  `prompt_influence`, `seed`, `negative_prompt`, `guidance_scale` and `num_samples`.
+
+  **Correction to a recorded reason.** `docs/providers.md` said no SFX route was
+  curated because "an `sfx` category with one witness would be a guess". That was
+  wrong on the facts, not just on the conclusion: the live roster has five
+  independent vendors, and the vocabulary was never the blocker. The sentence is
+  replaced, and the six ids are now curated rather than declined.
+
+  **Also new:** `unmodel/elevenlabs` gains `sfx`, `soundEffectsUrl`,
+  `SOUND_EFFECTS_URL`, `SOUND_EFFECTS_OUTPUT_FORMATS`, `DEFAULT_SFX_MODEL_ID`,
+  `SFX_MODEL_IDS` and the bounds constants; `unmodel/elevenlabs/types` gains
+  `SfxBody`; `unmodel/fal/types` gains `SfxBody` and `FalSfxArm` /
+  `FalSfxBodyById` / `FalSfxResultById`; both providers' `/values` entries gain
+  `SFX_MODEL_PARAMS` and `SFX_MODELS` (ElevenLabs' also `SFX_FORMAT_SPEC`);
+  `unmodel/types` gains `SfxParams`, `SfxParamsBase` and `SfxModelParams`; and the
+  CLI gains `elevenlabs.sfx`, `fal.sfx` and `unified.sfx`.
+
+- c1228c4: **New category: `unmodel/sts` — voice conversion, two providers, four refs.**
+
+  A recording goes in, the same performance comes out in a different voice. The
+  sixth category added in 2026 and the smallest pack in the library, and the only
+  one where **three of five canonical words are required**.
+
+  ```ts
+  import { sts } from "unmodel/sts";
+
+  sts({
+    model: "elevenlabs/eleven_multilingual_sts_v2",
+    audio: { file: recording },
+    voice: "21m00Tcm4TlvDq8ikWAM",
+  });
+  // → { audio: <Blob>, model_id: "eleven_multilingual_sts_v2" }
+  //   …posted to /v1/speech-to-speech/21m00Tcm4TlvDq8ikWAM, because at this
+  //   endpoint the voice is a URL PATH segment.
+
+  sts({
+    model: "hume/voice-conversion",
+    audio: { file: recording },
+    voice: { name: "Male English Actor" },
+  });
+  // → { audio: <Blob>, voice: { name: "Male English Actor" } }
+  ```
+
+  **Five canonical words** — `model`, `audio`, `voice`, `outputFormat?` plus
+  `providerOptions`. `model`, `audio` and `voice` are all **required**: a
+  text-to-speech request can omit the voice and get a default speaker, and a
+  conversion with no target voice is not a conversion. There is no `text`, no
+  `speed` and no `language`, because the words, the timing and the delivery all
+  come from the recording.
+
+  **The address is `<provider>.sts`** — the category id, the same construction
+  `tts` and `stt` use, all three being the operation's own initialism rather than
+  a wire path. `voiceConvert` was the near-miss and lost on the property
+  `src/cli-registry.test.ts` exists to keep: the word you type at
+  `unmodel/<category>` and the word you type at `unmodel/<provider>` must be the
+  same word, and `unmodel/voice-convert` would have put a fourth `voice*` entry
+  point next to `voiceClone` and `voiceDesign` for an operation that creates no
+  voice at all — it spends one. Retired before they ever shipped, and pinned in
+  that test so a rename has to delete an assertion: `elevenlabs.speechToSpeech`
+  (the wire path), `elevenlabs.voiceChanger` (ElevenLabs' _and_ Cartesia's product
+  name), `elevenlabs.voiceConvert`, `hume.voiceConversion`.
+
+  **The whole category is library-only, by design.** `audio` is a required binary
+  form part at both witnesses with no URL, base64 or upload-handle alternative, so
+  no JSON params document can express a request: `elevenlabs.sts` and `hume.sts`
+  are `MULTIPART_ONLY` and there is deliberately **no `unified.sts` CLI entry** —
+  the only pack without one. Send it with each provider's own
+  `stsToFormData(validated)`.
+
+  **New addresses.**
+  - `elevenlabs.sts` — `POST /v1/speech-to-speech/{voice_id}`, multipart, typed
+    from the live `api.elevenlabs.io/openapi.json` (re-fetched 2026-08-31). Three
+    models. `voice_id` is a PATH segment and `output_format` + `enable_logging` are
+    QUERY params, so all three are stripped from the body and live in
+    `.request.url`; the 27-value format enum is byte-identical to the
+    text-to-speech one and is reused rather than re-declared. `voice_settings` is a
+    **JSON-encoded string** part — typed structured, serialized by `stsToFormData`.
+    `model_id` defaults to `eleven_english_sts_v2` server-side (the English model,
+    not the multilingual one the docs recommend). Priced at $0.12 per minute of
+    processed audio, estimated from
+    `options.media = [{ path: ["audio"], durationSeconds }]`.
+  - `hume.sts` — `POST /v0/tts/voice_conversion/file`, multipart. Six fields and
+    that is the complete list. **No model field and no `version`**, so the catalog
+    row is the synthetic id `voice-conversion` and the ref is
+    `hume/voice-conversion`. No cost: hume.ai/pricing carries voice conversion as a
+    feature-availability row with no rate attached, so the estimate returns
+    `undefined` rather than a guess.
+
+  **`voice` is the word the two vendors spell differently**, and it is the only
+  canonical word in the library that lands outside the request body at one provider
+  and inside it at another: a URL path segment at ElevenLabs (`{ id }` only —
+  `{ name }` is an error naming the id) and a form part at Hume (`{ id }` and
+  `{ name }` both, which is what the canonical `Voice`'s three arms exist for).
+
+  **Two deliberate ElevenLabs omissions.** `optimize_streaming_latency` is a fourth
+  query param the OpenAPI marks `deprecated: true` _on this operation_, so it is
+  not typed. And `/v1/speech-to-speech/{voice_id}/stream` is not a second address:
+  a normalised diff of the two body schemas is identical except for the schema
+  title, and their query sets match, so there is nothing for a second validator to
+  validate.
+
+  **The 5-minute / 10,000-character tension, resolved as no check.** The capability
+  page says "Maximum segment length: 5 minutes"; the models page publishes a
+  10,000-character limit annotated "~10 minutes". They measure different things —
+  a per-request cap and a billing quota at 1,000 characters per minute — and
+  neither becomes a check, because unmodel cannot read a duration out of a `Blob`
+  and the `options.media` figure is for pricing, not for refusing a request the API
+  may well fulfil.
+
+  **Two vendors with catalogued speech-to-speech models are excluded, each with a
+  reason, a source and a date recorded in its own `models.ts`.**
+  - **cartesia** — `POST /voice-changer/bytes` and `/voice-changer/sse` are
+    **sunset**: the deprecations page lists them under "These endpoints are being
+    sunset. Requests after an endpoint's sunset date return an error." with
+    replacement "—" and sunset date **August 20, 2026** (fetched 2026-08-31), and
+    both are gone from the api-reference index. `@cartesia/cartesia-js` 4.1.0,
+    published six days _after_ that date, still ships an undeprecated
+    `VoiceChanger` resource; the docs are the stronger source, and typing a route
+    that answers an error is the reverse of what this library is for.
+  - **resemble** — its speech-to-speech is not a separate endpoint. It is the same
+    `POST /synthesize` route already addressed as `resemble.tts`, switched into
+    conversion mode by passing SSML containing `<resemble:convert src="…">` — where
+    the source is an **HTTPS URL**, not a file part. A second address for one wire
+    is what the naming law forbids, and the category cannot reach it anyway.
+
+  **What is not a canonical word:** every knob on both wires, because every one has
+  exactly ONE witness — `remove_background_noise`, `seed`, `voice_settings`,
+  `file_format`, `enable_logging` at ElevenLabs; `strip_headers`, `context`,
+  `include_timestamp_types` at Hume. Each is a per-model extra typed from its own
+  route's wire interface, and `test/unified/sts-capabilities.test.ts` holds the
+  decline as an assertion that FAILS the day a name appears on both rows.
+
+  **Also new:** `unmodel/elevenlabs` gains `sts`, `stsToFormData`,
+  `speechToSpeechUrl`, `SPEECH_TO_SPEECH_BASE_URL`, `DEFAULT_STS_MODEL_ID`,
+  `STS_FILE_FORMATS`, `STS_SEED_MIN`/`STS_SEED_MAX` and `STS_MODEL_IDS`;
+  `unmodel/hume` gains `sts`, `stsToFormData`, `VOICE_CONVERSION_URL`,
+  `VOICE_CONVERSION_JSON_URL` and `STS_MODEL_ID`; both providers' `/types` entries
+  gain `StsBody` (plus `SpeechToSpeechParams`/`SpeechToSpeechFormFields`/
+  `SpeechToSpeechSdkParams`/`ElevenlabsStsFileFormat` and
+  `VoiceConversionBody`/`VoiceConversionSdkParams`); both `/values` entries gain
+  `STS_MODEL_PARAMS`, `STS_MODELS` and `STS_FORMAT_SPEC`; `unmodel/types` gains
+  `StsParams`, `StsParamsBase` and `StsAudioInput`; and the CLI gains
+  `elevenlabs.sts` and `hume.sts` as `MULTIPART_ONLY` entries.
+
+  **Also:** `unmodel/hume/unified` becomes a barrel over `unified-tts.ts` and
+  `unified-sts.ts`, so `unmodel/tts` no longer reaches this provider through a
+  module that also carries the conversion adapter. The exported names are
+  unchanged. And `scripts/leaderboard-audit.ts`'s `speech-to-speech` row moves from
+  `categories: null` to `["sts"]` — the last AA media category unmodel had no
+  surface for, so the weekly audit now sweeps it like any other.
+
+### Patch Changes
+
+- 6ba935c: **`MINIMAX_BASE_RESP_INFO` is now indexable by the checker's own `finishReason`.**
+  An adopter hit TS7053 pairing the two exports this library ships side by side:
+  `checkTts`'s `finishReason` is open-tailed (`MinimaxBaseRespStatus` carries a
+  `(number & {})` arm, because MiniMax can mint codes we have not transcribed), but
+  the table declared only exact numeric keys, so `MINIMAX_BASE_RESP_INFO[report.finishReason]`
+  needed a widening cast.
+
+  The export's declared type is now the literal table intersected with a numeric
+  index signature — both reads work without a cast, and both are pinned in
+  `test/types/minimax.test-d.ts`:
+  - `MINIMAX_BASE_RESP_INFO[report.finishReason]` → `MinimaxBaseRespInfo | undefined`
+  - `MINIMAX_BASE_RESP_INFO[1004].retryable` → still the literal `false`
+
+  **Declined as asked:** typing the export `Partial<Record<MinimaxBaseRespStatus, …>>`
+  would have allowed the first read by destroying the second — every exact-key
+  lookup would degrade to `MinimaxBaseRespInfo | undefined` and every literal
+  payload to its wide type. An accessor function was also unnecessary once the
+  intersection carries both.
+
+- 3960356: Add `bria/fibo-edit/relight` to fal's exact provider-native `imageEdit` surface
+  without exposing it through the prompt-required unified adapter. Its request
+  and result types, enums, checks, route, catalog row, and $0.04-per-image price
+  are generated from fal's published schema and documented model page.
+
+  Also let Google and MiniMax `checkTts` inspect decoded `unknown` JSON safely;
+  nulls, primitives, and malformed nested values now produce a report instead of
+  throwing, while the exported structural response interfaces remain available
+  for callers that want them. Google's checker now counts audio only when an
+  `audio/*` part carries non-empty inline bytes or a non-empty file URI, and an
+  unspecified prompt block reason no longer hides an empty-audio warning.
+  The Google checker now also follows the exported delivery descriptor exactly:
+  only the documented first response part can satisfy the audio check.
+
 ## 0.4.2
 
 ### Patch Changes
@@ -9,9 +394,8 @@
   and the live provider docs before anything was written. Both turned out to be right about the
   friction and wrong about the cause, so what shipped is not what was asked for — and the
   corrections are recorded here too.
-  
+
   ## Fixed
-  
   - **MiniMax's in-band failure is now the report's outcome, not a warning count.**
     `minimax.checkTts` returns `ResponseReport<MinimaxBaseRespStatus>` and puts
     `base_resp.status_code` on `finishReason` — the same field the five job checkers
@@ -20,49 +404,41 @@
     auth failure and a cosmetic finding were distinguishable only by reading warning text.
     **`0` is the only success and `0` is falsy**: branch on `finishReason !== 0`, never on
     truthiness.
-  
   - **`resemble.checkTts` too.** `success: false` was the same defect at the provider MiniMax's
     module header cites as its precedent, so the precedent was teaching the wrong thing. It now
     returns `ResponseReport<ResembleSynthesisOutcome>` with `finishReason: "success" | "failure"`,
     absent when the response omits `success` entirely.
-  
+
   ## Added
-  
   - **`MINIMAX_BASE_RESP_INFO`** from `unmodel/minimax` — the eight documented
     `base_resp.status_code` values as data rather than a JSDoc table, each mapping to MiniMax's own
     `statusMsg` and, where that message answers it, `retryable`. `1002` (rate limit) is `true`,
     `1004` (auth failed) is `false`, and `1000` ("unknown error") carries no `retryable` at all,
     because the docs do not classify it and a guess there would make the other seven untrustworthy.
     The same value lands on the issue's `meta.retryable`. Type: `MinimaxBaseRespInfo`.
-  
   - **`ResponseReport`'s `Reason` parameter accepts `string | number`** (default still `string`).
     A vocabulary is whatever the provider publishes, and MiniMax publishes numbers — the old
     `string` constraint locked the one provider whose route reports every outcome in band out of
     the field that exists to carry it. Fully additive: every existing annotation, including
     `const x: string | undefined = r.finishReason`, still compiles.
-  
   - **`docs/validation.md` § "Branching between two requests"** — the recipe for
     `cond ? safe(a) : safe(b)`, with every ✅/❌ pasted from a real `tsc` run and pinned by
     `test/types/atlascloud.test-d.ts` and `test/types/unified-video.test-d.ts`.
-  
   - **`docs/surfaces.md` § "Response checks"** — the response-check surface had no section at
     all; it was documented only in per-provider tables and module JSDoc.
-  
+
   ## Declined, with the reason
-  
   - **No `outcome` union on `ResponseReport`** (`docs/decisions.md` §9). It would restate
     `finishReason` for the twelve checkers that already answer, and it would collapse the
-    distinction the caller actually needs: MiniMax's codes split *three* ways, not two, and
+    distinction the caller actually needs: MiniMax's codes split _three_ ways, not two, and
     `outcome: "failed"` tells a caller to give up on a `1002` rate limit that clears in a second.
-  
   - **No error-severity issues in `warnings`** (§9). `ResponseReport` has exactly one array and it
     is named `warnings`; an `Issue` with `severity: "error"` inside it is self-contradictory, and
     `warnings.some(w => w.severity === "error")` is not an improvement on the `warnings.length > 0`
     it would replace. The request side can partition because `partition()` runs there and `.safe()`
     returns a discriminated `ok`; the response side has no such partition.
-  
   - **No variance change to `ValidateResult` / `Validated`, and no `ValidateResultLike`.** The
-    reported cause was wrong: `Validated` is *already* covariant (`ValidateResult<VA>` is assignable
+    reported cause was wrong: `Validated` is _already_ covariant (`ValidateResult<VA>` is assignable
     to `ValidateResult<VA | VB>`), and `toSdk` is already method shorthand. What actually fails is a
     stock TypeScript rule — it never unions multiple covariant inference candidates for a naked type
     parameter — and it reproduces on `type Box<T> = { readonly value: T }`, which has no members to
@@ -70,17 +446,16 @@
     `*Like` in this repo is an input-position reader for untrusted provider responses, never a
     loosened unmodel output. The fix is on the consumer's side of the call, and it is now
     documented: type the parameter `ValidateResult<{ request: RequestMeta }>`, which accepts the raw
-    ternary *and* single-arm results and still feeds `toRequestInit`, or hoist the ternary into the
+    ternary _and_ single-arm results and still feeds `toRequestInit`, or hoist the ternary into the
     params so there is one call. The hoist costs no exactness — a typo'd key or a wrong-route field
     in either arm still fails to compile.
-  
+
   ## Still filed
-  
+
   A `ResponseIssueKind` union for the sixteen ad-hoc `meta.kind` values across the checkers.
   `docs/tts.md` tells callers to branch on `meta.kind: "provider_error"`, but `Issue.meta` is
   `Record<string, unknown>`, so the documented discriminator is not reachable in strict TypeScript
   without a cast. It is a larger, separate change and is not in this release.
-
 
 ## 0.4.1
 

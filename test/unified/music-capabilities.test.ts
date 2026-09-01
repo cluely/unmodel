@@ -56,9 +56,10 @@ interface Capability {
   }>;
   /**
    * Canonical params every plain probe for this provider must carry. Mureka is
-   * the entry that needs one: the song route requires `lyrics` (a per-model
-   * extra), so a bare prompt is (correctly) rejected before any row could be
-   * observed.
+   * the entry that carries one: a bare prompt there compiles to the
+   * prompt-to-song route, so the `lyrics` extra is what pins these probes to
+   * `POST /v1/song/generate` — the arm with the widest control surface, and the
+   * one a row that dropped silently would be hardest to spot on.
    */
   base?: Partial<MusicParams>;
   /**
@@ -102,15 +103,19 @@ const TABLE: Readonly<Record<string, Capability>> = {
   mureka: {
     ref: "mureka/mureka-9.5",
     adapter: mureka,
-    // POST /v1/song/generate requires `lyrics` (per-model extra) …
+    // The `lyrics` extra pins these probes to POST /v1/song/generate …
     base: { lyrics: "[Verse]\nBrushed drums under a slow tide." } as Partial<MusicParams>,
     // … and the instrumental route refuses it, so that probe rides alone.
     instrumentalProbe: { instrumental: true },
     durationSeconds: "unsupported",
+    // Three routes, no wire field: `instrumental: true` IS
+    // /v1/instrumental/generate, and false-or-absent is one of the two sung
+    // routes (see `instrumentalProbe`, and the `minimal` golden case for the
+    // prompt-only arm).
     instrumental: "derived",
     seed: "unsupported",
-    // No output-format field on either route: succeeded tasks answer mp3 +
-    // flac/wav URLs unconditionally.
+    // No output-format field on any of the three routes: succeeded tasks
+    // answer mp3 + flac/wav URLs unconditionally.
   },
   /**
    * The aggregator, probed at Stable Audio 3 Medium — the one fal music

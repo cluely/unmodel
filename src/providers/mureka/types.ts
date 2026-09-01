@@ -21,7 +21,7 @@
  * - the **wire names** (`SongGenerateBody`, `InstrumentalGenerateBody`, the
  *   task shapes) — re-exported verbatim, because they are how you find the
  *   endpoint in the provider's own documentation (`SongGenerateReq`,
- *   `InstrumentalGenerateReq` on the spec);
+ *   `SongEasyGenerateReq`, `InstrumentalGenerateReq` on the spec);
  * - the **uniform category aliases** — one per endpoint address this provider
  *   serves, named after the word you already type at `unmodel/mureka` and on
  *   the CLI.
@@ -32,8 +32,11 @@
  * Endpoints:
  *
  * - `mureka.music` → `MusicBody` (alias of `SongGenerateBody`)
+ * - `mureka.musicFromPrompt` → `MusicFromPromptBody` (alias of `SongEasyGenerateBody`)
  * - `mureka.instrumental` → `InstrumentalBody` (alias of `InstrumentalGenerateBody`)
  */
+
+export type { SongEasyGenerateBody, MurekaStyle } from "./music-from-prompt";
 
 export type {
   SongGenerateBody,
@@ -61,8 +64,11 @@ export type {
 // ---------------------------------------------------------------------------
 
 import type { InstrumentalGenerateBody, SongGenerateBody } from "./music";
+import type { SongEasyGenerateBody } from "./music-from-prompt";
 
 /** `mureka.music` — POST /v1/song/generate. */
 export type MusicBody = SongGenerateBody;
+/** `mureka.musicFromPrompt` — POST /v1/song/easy-generate. */
+export type MusicFromPromptBody = SongEasyGenerateBody;
 /** `mureka.instrumental` — POST /v1/instrumental/generate. */
 export type InstrumentalBody = InstrumentalGenerateBody;

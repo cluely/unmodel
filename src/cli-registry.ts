@@ -234,6 +234,8 @@ export const REGISTRY = {
   "fal.music": () => import("./providers/fal").then((m) => asCli(m.music)),
   "google.music": () => import("./providers/google").then((m) => asCli(m.music)),
   "mureka.music": () => import("./providers/mureka").then((m) => asCli(m.music)),
+  "mureka.musicFromPrompt": () =>
+    import("./providers/mureka").then((m) => asCli(m.musicFromPrompt)),
   "mureka.instrumental": () => import("./providers/mureka").then((m) => asCli(m.instrumental)),
   "stability.music": () => import("./providers/stability").then((m) => asCli(m.music)),
 

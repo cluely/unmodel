@@ -141,6 +141,7 @@ const EXPECTED_IDS: readonly string[] = [
   "moonshotai.chat",
   "mureka.instrumental",
   "mureka.music",
+  "mureka.musicFromPrompt",
   "murf.tts",
   "murf.ttsStream",
   "nebius.chat",
@@ -660,18 +661,40 @@ test("the lipsync and avatar endpoints use their categories' own verbs", () => {
 
 /**
  * The music half. The text-to-music route is bare `music` at every provider
- * that has one, and Stability's two audio-conditioned routes qualify by what
- * they are made from and what they do to a finished track.
+ * that has one, and the extra routes qualify by what they are made from
+ * (`musicFromAudio`, `musicFromPrompt`) or what they do to a finished track
+ * (`musicInpaint`).
  *
  * fal is one address over ten endpoints, as it is in every other category here:
  * MiniMax, ElevenLabs, Lyria, Stable Audio, ACE-Step and DiffRhythm are all
  * reachable through `fal.music` with the endpoint id as a parameter.
+ *
+ * **Mureka's bare verb is the least typical route in the category.**
+ * `mureka.music` is `POST /v1/song/generate`, which requires hand-written
+ * lyrics — where every other provider's bare `music` takes a prompt and sings
+ * words of its own. Mureka's route that does *that* is `mureka.musicFromPrompt`
+ * (`POST /v1/song/easy-generate`), qualified by what it is made from, which is
+ * exactly what §2 prescribes for an extra route. The primary/extra split is a
+ * fact about Mureka's own API — one route is the lyrics-to-song product and the
+ * other is built on top of it — so the bare verb stays where it is; swapping
+ * the two would be a breaking rename that buys uniformity of *behaviour* at the
+ * cost of the address no longer naming the provider's own primary route.
+ *
+ * **`mureka.instrumental` is deliberately not on this list**, and it is the one
+ * media id that fails the law rather than qualifying under it: a bare noun that
+ * never carries the uniform verb, where §2 asks for `musicInstrumental` (an
+ * extra route named by what it makes). It is real, it is pinned in
+ * `EXPECTED_IDS` above, and it is asserted below so the exception cannot be
+ * mistaken for an oversight. Renaming it is a breaking change and belongs to
+ * its own changeset — this list is where that has to be typed out when it
+ * happens.
  */
 const MUSIC_IDS: readonly string[] = [
   "elevenlabs.music",
   "fal.music",
   "google.music",
   "mureka.music",
+  "mureka.musicFromPrompt",
   "stability.music",
   "stability.musicFromAudio",
   "stability.musicInpaint",
@@ -685,6 +708,11 @@ test("the music-category endpoints all use the uniform `music` verb", () => {
   const providers = [...new Set(MUSIC_IDS.map((id) => id.split(".")[0] as string))].sort();
   for (const provider of providers) expect(MUSIC_IDS).toContain(`${provider}.music`);
   expect(providers).toEqual(["elevenlabs", "fal", "google", "mureka", "stability"]);
+
+  // The recorded exception, made executable: it exists, it is reachable, and
+  // it would not pass the assertion above.
+  expect(EXPECTED_IDS).toContain("mureka.instrumental");
+  expect("instrumental").not.toMatch(/^music([A-Z]|$)/);
 
   const retired = [
     "stability.stableAudioTextToAudio",

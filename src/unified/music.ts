@@ -88,7 +88,10 @@ export function createMusic<A extends MusicAdapter>(
  * vocabulary of one — which is a rename with extra steps, not a translation.
  * They stay wire-only on `unmodel/stability`. Mureka's lyrics/extend/stem
  * routes stay wire-notes on `unmodel/mureka` for the same reason; its adapter
- * dispatches `instrumental: true` to POST /v1/instrumental/generate.
+ * dispatches all three of its generate routes — `instrumental: true` to
+ * POST /v1/instrumental/generate, a `lyrics` extra to POST /v1/song/generate,
+ * and a bare prompt to POST /v1/song/easy-generate, where Mureka writes the
+ * lyrics itself.
  *
  * **The one conversion.** ElevenLabs counts milliseconds and Stability counts
  * seconds, which is exactly why the canonical word is `durationSeconds`;

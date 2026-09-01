@@ -9,7 +9,12 @@ import {
   LYRICS_MAX_CHARACTERS,
   PROMPT_MAX_CHARACTERS,
 } from "./music";
-import { models, MUREKA_SONG_MODEL_IDS, MUREKA_INSTRUMENTAL_MODEL_IDS } from "./models";
+import {
+  musicFromPrompt,
+  EASY_GENERATE_PROMPT_MAX_CHARACTERS,
+  SONG_EASY_GENERATE_URL,
+} from "./music-from-prompt";
+import { models, MUREKA_SONG_MODEL_IDS, MUREKA_INSTRUMENTAL_MODEL_IDS, STYLES } from "./models";
 import { music as musicAdapter } from "./unified";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
@@ -23,6 +28,11 @@ const safeSongUnchecked = music.safe as unknown as (
 ) => ValidateResult<Record<string, unknown>>;
 
 const safeInstrumentalUnchecked = instrumental.safe as unknown as (
+  params: unknown,
+  options?: ValidateOptions,
+) => ValidateResult<Record<string, unknown>>;
+
+const safeFromPromptUnchecked = musicFromPrompt.safe as unknown as (
   params: unknown,
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
@@ -269,6 +279,113 @@ describe("mureka.instrumental (POST /v1/instrumental/generate)", () => {
   });
 });
 
+describe("mureka.musicFromPrompt (POST /v1/song/easy-generate)", () => {
+  test("happy path: wire-pure body, url, identity toSdk", () => {
+    const params = {
+      model: "auto" as const,
+      styles: ["pop", "rock"] as const,
+      prompt: "A bright summer love song with a catchy chorus",
+      n: 1,
+    };
+    const v = musicFromPrompt(params);
+    expect(Object.keys(v)).toEqual(["model", "styles", "prompt", "n"]);
+    expect(JSON.parse(JSON.stringify(v))).toEqual(params);
+    expect(v.request.url).toBe(SONG_EASY_GENERATE_URL);
+    expect(v.request.method).toBe("POST");
+    expect(v.request.headers["content-type"]).toBe("application/json");
+    expect(v.toSdk("mureka")).toEqual(params);
+  });
+
+  test("every field is optional — `SongEasyGenerateReq` declares no `required`", () => {
+    const r = musicFromPrompt.safe({});
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+    // …including `model`, which BOTH generate routes require.
+    expect(musicFromPrompt.safe({ prompt: "dream pop, airy" }).ok).toBe(true);
+  });
+
+  test("every documented model id passes clean", () => {
+    for (const model of MUREKA_SONG_MODEL_IDS) {
+      const r = musicFromPrompt.safe({ model, prompt: "jazz trio, late night" });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("every style on the thirteen-value enum is accepted, together", () => {
+    const r = musicFromPrompt.safe({ model: "auto", styles: STYLES });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+    // The spelling that gets mangled on the way out of the docs bundle.
+    expect(STYLES).toContain("r&b");
+  });
+
+  test("a style off the enum is rejected", () => {
+    const r = safeFromPromptUnchecked({ model: "auto", styles: ["dubstep"] });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["styles", 0]);
+  });
+
+  test("the prompt cap is 2000 here, not the 1024 of the other two routes", () => {
+    const atTheOtherCap = "a".repeat(PROMPT_MAX_CHARACTERS + 1);
+    expect(musicFromPrompt.safe({ model: "auto", prompt: atTheOtherCap }).ok).toBe(true);
+    expect(
+      musicFromPrompt.safe({
+        model: "auto",
+        prompt: "a".repeat(EASY_GENERATE_PROMPT_MAX_CHARACTERS),
+      }).ok,
+    ).toBe(true);
+    const over = safeFromPromptUnchecked({
+      model: "auto",
+      prompt: "a".repeat(EASY_GENERATE_PROMPT_MAX_CHARACTERS + 1),
+    });
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.path).toEqual(["prompt"]);
+  });
+
+  test("mureka-o2 rejects vocal_id — the one per-model gate this route states", () => {
+    const r = safeFromPromptUnchecked({ model: "mureka-o2", vocal_id: "vocal_1" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.some((e) => e.path[0] === "vocal_id")).toBe(true);
+    expect(musicFromPrompt.safe({ model: "mureka-9.5", vocal_id: "vocal_1" }).ok).toBe(true);
+    expect(musicFromPrompt.constraintsFor("mureka-o2").at(0)?.deny?.vocal_id?.source).toContain(
+      "post-v1-song-easy-generate",
+    );
+  });
+
+  test("melody_id and gender are absent from this body — unknown params, warned", () => {
+    for (const field of ["melody_id", "gender", "lyrics"] as const) {
+      const r = safeFromPromptUnchecked({ model: "auto", [field]: "x" });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("unknown_param");
+    }
+  });
+
+  test("n shares the song route's bounds and billing note", () => {
+    expect(safeFromPromptUnchecked({ model: "auto", n: 4 }).ok).toBe(false);
+    expect(musicFromPrompt.safe({ model: "auto", n: 3 }).ok).toBe(true);
+  });
+
+  test("unknown model warns (may be a new release)", () => {
+    const r = musicFromPrompt.safe({ model: "mureka-10" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+
+  test("no combination rule fires: the spec states none for this body", () => {
+    const r = musicFromPrompt.safe({
+      model: "auto",
+      prompt: "jazz",
+      styles: ["jazz"],
+      reference_id: "ref_1",
+      vocal_id: "vocal_1",
+      stream: true,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+});
+
 describe("mureka poll helpers (async create-then-poll)", () => {
   test("songQueryUrl and instrumentalQueryUrl build the documented GET paths", () => {
     expect(songQueryUrl("1436211")).toBe("https://api.mureka.ai/v1/song/query/1436211");
@@ -348,11 +465,83 @@ describe("mureka unified music adapter", () => {
     expect(validated.ok).toBe(true);
   });
 
-  test("song route without lyrics fails, naming both ways out", () => {
+  test("no lyrics extra compiles to the prompt-to-song route, with zero warnings", () => {
+    const { ctx, failures, warnings } = fakeCtx("auto");
+    const call = musicAdapter.compile(
+      { model: "mureka/auto", prompt: "synthwave" } as MusicParams,
+      ctx,
+    );
+    expect(failures).toEqual([]);
+    expect(warnings).toEqual([]);
+    expect(call.params).toEqual({ model: "auto", prompt: "synthwave" });
+    const validated = call.validate(call.params);
+    expect(validated.ok).toBe(true);
+    if (validated.ok) {
+      expect(validated.params.request.url).toBe(SONG_EASY_GENERATE_URL);
+      expect(validated.warnings).toEqual([]);
+    }
+  });
+
+  test("styles ride to the prompt-to-song route as a per-model extra", () => {
+    const { ctx, failures } = fakeCtx("mureka-9.5");
+    const call = musicAdapter.compile(
+      { model: "mureka/mureka-9.5", prompt: "summer", styles: ["pop", "k-pop"] } as MusicParams,
+      ctx,
+    );
+    expect(failures).toEqual([]);
+    expect(call.params).toEqual({
+      model: "mureka-9.5",
+      prompt: "summer",
+      styles: ["pop", "k-pop"],
+    });
+    expect(call.validate(call.params).ok).toBe(true);
+  });
+
+  test("an empty lyrics extra still selects the song route and fails, naming all three", () => {
     const { ctx, failures } = fakeCtx("auto");
-    musicAdapter.compile({ model: "mureka/auto", prompt: "synthwave" } as MusicParams, ctx);
+    musicAdapter.compile(
+      { model: "mureka/auto", prompt: "synthwave", lyrics: "" } as unknown as MusicParams,
+      ctx,
+    );
     expect(failures.map((f) => f.path)).toEqual([["lyrics"]]);
+    expect(failures[0]?.message).toContain("easy-generate");
     expect(failures[0]?.message).toContain("instrumental: true");
+  });
+
+  test("the three arms are three URLs, chosen by two words", () => {
+    const arms = [
+      [{ prompt: "synthwave" }, SONG_EASY_GENERATE_URL],
+      [{ prompt: "synthwave", lyrics: LYRICS }, SONG_GENERATE_URL],
+      [{ prompt: "synthwave", instrumental: true }, INSTRUMENTAL_GENERATE_URL],
+    ] as const;
+    for (const [extra, url] of arms) {
+      const { ctx, failures } = fakeCtx("auto");
+      const call = musicAdapter.compile(
+        { model: "mureka/auto", ...extra } as unknown as MusicParams,
+        ctx,
+      );
+      expect(failures, url).toEqual([]);
+      const validated = call.validate(call.params);
+      expect(validated.ok, url).toBe(true);
+      if (validated.ok) expect(validated.params.request.url).toBe(url);
+    }
+  });
+
+  test("gender, melody_id and instrumental_id fail on the prompt-to-song route", () => {
+    for (const [field, route] of [
+      ["gender", "/v1/song/generate"],
+      ["melody_id", "/v1/song/generate"],
+      ["instrumental_id", "/v1/instrumental/generate"],
+    ] as const) {
+      const { ctx, failures } = fakeCtx("auto");
+      const call = musicAdapter.compile(
+        { model: "mureka/auto", prompt: "synthwave", [field]: "female" } as unknown as MusicParams,
+        ctx,
+      );
+      expect(failures.map((f) => f.path[0])).toEqual([field]);
+      expect(failures[0]?.message).toContain(route);
+      expect(field in (call.params as Record<string, unknown>)).toBe(false);
+    }
   });
 
   test("instrumental: true compiles to the instrumental route", () => {

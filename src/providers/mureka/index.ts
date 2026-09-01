@@ -30,6 +30,15 @@ export type {
 } from "./music";
 
 export {
+  musicFromPrompt,
+  musicFromPromptConstraints,
+  SONG_EASY_GENERATE_URL,
+  EASY_GENERATE_PROMPT_MAX_CHARACTERS,
+  STYLES,
+} from "./music-from-prompt";
+export type { SongEasyGenerateBody, MurekaStyle } from "./music-from-prompt";
+
+export {
   models,
   provider,
   MUREKA_SONG_MODEL_IDS,

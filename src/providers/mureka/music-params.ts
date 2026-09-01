@@ -17,7 +17,7 @@
 
 import { EXTRA } from "../../core/unified/derive";
 import type { MusicModelParamTable } from "../../core/unified/vocabulary/music";
-import type { MurekaGender } from "./models";
+import type { MurekaGender, MurekaStyle } from "./models";
 
 /** The six wire model ids — the ref union for `mureka/…`. `auto` = latest regular model. */
 export const MODELS = [
@@ -31,31 +31,39 @@ export const MODELS = [
 
 export const SONG_DOCS =
   "https://platform.mureka.ai/docs/api/operations/post-v1-song-generate.html";
+export const EASY_GENERATE_DOCS =
+  "https://platform.mureka.ai/docs/api/operations/post-v1-song-easy-generate.html";
 export const INSTRUMENTAL_DOCS =
   "https://platform.mureka.ai/docs/api/operations/post-v1-instrumental-generate.html";
 
 /**
- * Extras shared by every id, on whichever route the `instrumental` flag
+ * Extras shared by every id, on whichever of the three routes the adapter
  * selects: the words the canonical music vocabulary has no spelling for.
  *
- * - `lyrics` — REQUIRED by the song route (it is "Lyrics to song"); the
- *   adapter fails compilation without it unless `instrumental: true`.
+ * - `lyrics` — REQUIRED by the song route (it is "Lyrics to song"), and its
+ *   PRESENCE is what selects that route; omit it and the adapter compiles to
+ *   the prompt-to-song route, which writes the lyrics for you.
+ * - `styles` — one or more of the thirteen values on `POST
+ *   /v1/song/easy-generate`'s enum; single-witness, so it is an extra rather
+ *   than canonical vocabulary.
  * - `n` — tracks per request, default 2, max 3 — every one is billed.
  * - `stream` — opts the task into a `streaming` phase with a `stream_url`.
  */
 const SHARED_EXTRAS = {
   lyrics: EXTRA as string,
+  styles: EXTRA as readonly MurekaStyle[],
   n: EXTRA as number,
   stream: EXTRA as boolean,
 } as const;
 
 /**
- * The regular models' full control surface. The reference ids are
- * route-specific — `reference_id`/`vocal_id`/`melody_id`/`gender` belong to
- * `POST /v1/song/generate` and `instrumental_id` to
- * `POST /v1/instrumental/generate` — a fact a per-MODEL row cannot carry, so
- * the adapter enforces it at compile time (see `unified.ts`) and the row
- * declares the union of both routes' extras.
+ * The regular models' full control surface. The controls are route-specific —
+ * `gender`/`melody_id` belong to `POST /v1/song/generate` alone,
+ * `instrumental_id` to `POST /v1/instrumental/generate` alone, and
+ * `reference_id`/`vocal_id` to the two sung routes — a fact a per-MODEL row
+ * cannot carry, because every model serves more than one route. So the row
+ * declares the union of all three routes' extras and the adapter enforces the
+ * split at compile time (see `unified.ts`).
  */
 export const REGULAR_EXTRAS = {
   ...SHARED_EXTRAS,

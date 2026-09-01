@@ -212,13 +212,17 @@ Several are also reachable as hosted routes on `unmodel/runway`
 API), skywork, sapiens-ai (no public API).
 **Music / audio — live:** elevenlabs (Eleven Music, `music`), stability (Stable Audio 2.x:
 `music` / `musicFromAudio` / `musicInpaint`), google (Lyria 3 Pro / Clip via the Gemini
-Interactions API, `music`), mureka (`music` at /v1/song/generate + `instrumental`,
-async create-then-poll, mureka-7.6…9.5), fal (`music`, 10 hosted endpoints — MiniMax Music
+Interactions API, `music`), mureka (`music` at /v1/song/generate, `musicFromPrompt` at
+/v1/song/easy-generate + `instrumental`, async create-then-poll, mureka-7.6…9.5), fal
+(`music`, 10 hosted endpoints — MiniMax Music
 3 / v2.6 / v2, ElevenLabs Music, Lyria 3 Pro + Lyria 2, Stable Audio 2.5 and 3 Medium,
 ACE-Step, DiffRhythm). All five text-to-music routes ship an adapter at
 `unmodel/<provider>/unified` behind `music()` from `unmodel/music`; the audio-conditioned
 Stability routes and mureka's lyrics/extend/stem routes stay wire-only or doc-noted
-(see `src/unified/music.ts`). Sound effects are a **separate category** — `unmodel/sfx`, six
+(see `src/unified/music.ts`). Mureka is the one adapter with three arms:
+`instrumental: true` picks the instrumental route, a `lyrics` extra picks the
+lyrics-to-song route, and a bare prompt picks /v1/song/easy-generate, which writes the
+lyrics from the prompt. Sound effects are a **separate category** — `unmodel/sfx`, six
 curated fal routes plus ElevenLabs natively; an SFX prompt is not a song, and the two wires are
 disjoint at the one vendor that serves both. (This paragraph used to say an `sfx` category
 "with one witness would be a guess". That was wrong on the facts, not just on the conclusion:
@@ -818,7 +822,7 @@ keeps a newly split provider from silently skipping every per-category budget.
 
 **Types without runtime.** Every provider in the roster above also publishes
 `unmodel/<provider>/types` (75 subpaths): its wire names verbatim plus one uniform
-`<Endpoint>Body` alias per endpoint address it serves — 205 endpoints in all — and nothing
+`<Endpoint>Body` alias per endpoint address it serves — 206 endpoints in all — and nothing
 executable. `unmodel/types` is the matching hub for the canonical vocabulary
 (`ChatParams`, `TtsParams`, `ImageParams`, …, `Issue`, `ValidateResult`), deliberately with
 no aggregate of provider wire types. All 76 entries emit an empty JavaScript module, which

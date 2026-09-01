@@ -1,13 +1,15 @@
 // Hand-maintained — Mureka is not in models.dev; refresh from
 // https://platform.mureka.ai/docs/api/operations/post-v1-song-generate.html,
+// https://platform.mureka.ai/docs/api/operations/post-v1-song-easy-generate.html,
 // https://platform.mureka.ai/docs/api/operations/post-v1-instrumental-generate.html,
 // https://platform.mureka.ai/docs/en/changelog.html and
-// https://platform.mureka.ai/pricing (last checked 2026-08-24).
+// https://platform.mureka.ai/pricing (last checked 2026-08-31).
 //
 // MODEL IDS: the OpenAPI document embedded in the docs bundle (the source of
 // every field on the operation pages above) gives `POST /v1/song/generate` a
 // closed `model` enum of exactly six values — `auto`, `mureka-7.6`,
-// `mureka-o2`, `mureka-8`, `mureka-9`, `mureka-9.5` — and
+// `mureka-o2`, `mureka-8`, `mureka-9`, `mureka-9.5` —
+// `POST /v1/song/easy-generate` the same six, and
 // `POST /v1/instrumental/generate` the same enum minus `mureka-o2`. "Use auto
 // to select the latest version of the regular model" (both operations), so
 // `auto` is a real wire value that aliases the newest non-o release rather
@@ -37,9 +39,11 @@
 // songs"), so a request that omits `n` bills two songs, not one.
 //
 // LIMITS: `limit.context: 0` disables token-window checks — these are not
-// token models. The documented input caps (`lyrics` ≤ 5000 characters,
-// `prompt` ≤ 1024 characters) are per-field, not per-request, so they live in
-// the validators' schemas in ./music.ts rather than on `limit.characters`.
+// token models. The documented input caps are per-field, not per-request, and
+// one of them is per-ROUTE as well (`prompt` ≤ 1024 characters on the two
+// generate routes, ≤ 2000 on `/v1/song/easy-generate`; `lyrics` ≤ 5000), so
+// they live in each validator's own schema — ./music.ts and
+// ./music-from-prompt.ts — rather than on `limit.characters`.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -148,6 +152,32 @@ export type MurekaInstrumentalModelId = (typeof MUREKA_INSTRUMENTAL_MODEL_IDS)[n
  */
 export const GENDERS = ["female", "male"] as const;
 export type MurekaGender = (typeof GENDERS)[number];
+
+/**
+ * `styles` on the prompt-to-song route: "Control music generation by inputting
+ * styles. Select one or more styles from the enum." A closed thirteen-value
+ * list, verbatim from the spec — `r&b` really is spelled with the ampersand,
+ * and `k-pop`/`j-pop`/`lo-fi` really are hyphenated. It is the one control
+ * `POST /v1/song/easy-generate` has that neither generate route does, and no
+ * other music provider in the roster has any style/genre field, so it stays a
+ * per-model extra rather than canonical vocabulary (decisions.md §8).
+ */
+export const STYLES = [
+  "pop",
+  "rock",
+  "jazz",
+  "r&b",
+  "edm",
+  "ambient",
+  "folk",
+  "latin",
+  "k-pop",
+  "j-pop",
+  "house",
+  "gospel",
+  "lo-fi",
+] as const;
+export type MurekaStyle = (typeof STYLES)[number];
 
 /**
  * Task lifecycle of both query routes (`GET /v1/song/query/{task_id}`,

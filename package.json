@@ -1,6 +1,6 @@
 {
 	"name": "unmodel",
-	"version": "0.5.0",
+	"version": "0.5.1",
 	"description": "Validation layer for LLM API calls: catalog-aware, zod-powered request validation and response sanity checks for every provider — bring your own SDK or fetch.",
 	"type": "module",
 	"license": "MIT",

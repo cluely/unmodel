@@ -31,22 +31,23 @@ export const availability = {
   "grok-4.3": {
     "amazon-bedrock": { id: "xai.grok-4.3", narrows: { drops: ["pdf"] } },
     "openrouter": "x-ai/grok-4.3",
-    "vercel": "xai/grok-4.3",
+    "vercel": "spacexai/grok-4.3",
     "xai": "grok-4.3",
   },
   "grok-4.5": {
     "openrouter": "x-ai/grok-4.5",
-    "vercel": "xai/grok-4.5",
+    "vercel": "spacexai/grok-4.5",
     "xai": "grok-4.5",
   },
   "grok-4.6": {
+    "amazon-bedrock": { id: "xai.grok-4.6", narrows: { drops: ["pdf"] } },
     "openrouter": "x-ai/grok-4.6",
-    "vercel": { id: "xai/grok-4.6", narrows: { drops: ["image", "pdf"] } },
+    "vercel": { id: "spacexai/grok-4.6", narrows: { drops: ["pdf"] } },
     "xai": "grok-4.6",
   },
   "grok-build-0.1": {
     "openrouter": "x-ai/grok-build-0.1",
-    "vercel": { id: "xai/grok-build-0.1", narrows: { drops: ["pdf"] } },
+    "vercel": { id: "spacexai/grok-build-0.1", narrows: { drops: ["pdf"] } },
     "xai": "grok-build-0.1",
   },
 } as const satisfies AvailabilityMap;

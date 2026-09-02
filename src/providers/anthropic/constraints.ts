@@ -5,10 +5,30 @@ import type { AnthropicModelId } from "../../catalog/anthropic.gen";
 export const VISION_DOCS = "https://platform.claude.com/docs/en/build-with-claude/vision";
 /** Thinking/sampling compatibility source (verified 2026-08-12). */
 export const THINKING_DOCS = "https://platform.claude.com/docs/en/build-with-claude/thinking";
+/** Fable 5.1's per-model departures from the generation (verified 2026-09-02). */
+export const FABLE_5_1_DOCS =
+  "https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1";
 
 /**
- * Claude Opus 4.7+, Opus 4.8, Opus 5, Sonnet 5 and Fable 5 ("Claude 4.7 and
- * later" generations):
+ * Models that removed forced tool use. `tool_choice: {"type": "any"}` and
+ * `{"type": "tool", "name": …}` return a 400 `invalid_request_error` (the API
+ * message is `tool_choice: type 'tool' and 'any' are not supported for this
+ * model`), thinking on or off; `auto` and `none` are unaffected.
+ *
+ * A list rather than a `chatConstraints` entry because this is a VALUE-level
+ * refusal on one param: `deny` would withdraw `tool_choice` entirely and
+ * `enums` compares scalars, while `tool_choice` is an object. The documented
+ * replacements are `strict: true` on the tool or structured outputs, which is
+ * what the message names.
+ */
+export const FORCED_TOOL_USE_REMOVED_MODEL_IDS = ["claude-fable-5-1"] as const;
+
+/** A model id whose generation refuses `tool_choice` any/tool. */
+export type ForcedToolUseRemovedModelId = (typeof FORCED_TOOL_USE_REMOVED_MODEL_IDS)[number];
+
+/**
+ * Claude Opus 4.7+, Opus 4.8, Opus 5, Sonnet 5, Fable 5 and Fable 5.1
+ * ("Claude 4.7 and later" generations):
  *
  * - Sampling parameters were removed. `top_k` rejects ANY value (API
  *   deprecation note: "any value will be rejected with a 400 error") and is
@@ -31,6 +51,7 @@ const GEN_4_7_PLUS: EndpointConstraints = {
 
 export const chatConstraints = {
   "claude-fable-5": GEN_4_7_PLUS,
+  "claude-fable-5-1": GEN_4_7_PLUS,
   "claude-opus-4-7": GEN_4_7_PLUS,
   "claude-opus-4-8": GEN_4_7_PLUS,
   "claude-opus-5": GEN_4_7_PLUS,

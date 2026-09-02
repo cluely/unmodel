@@ -13,6 +13,22 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "Qwen/Qwen3.8-2.4T-A95B": {
+    id: "Qwen/Qwen3.8-2.4T-A95B",
+    name: "Qwen3.8-Max",
+    family: "qwen",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-12",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1010000, output: 131072 },
+    cost: { input: 2, output: 6, cacheRead: 0.25 },
+  },
   "moonshotai/Kimi-K3": {
     id: "moonshotai/Kimi-K3",
     name: "Kimi K3",
@@ -45,10 +61,26 @@ export const models = {
     limit: { context: 1048576, output: 262144 },
     cost: { input: 1.2, output: 5, cacheRead: 0.27 },
   },
+  "zai-org/GLM-5.3-Flash": {
+    id: "zai-org/GLM-5.3-Flash",
+    name: "GLM 5.3 Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.45, output: 1.5, cacheRead: 0.09 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type ModalModelId = keyof typeof models;
-export type ModalTextModelId = "moonshotai/Kimi-K3" | "thinkingmachines/Inkling-NVFP4";
+export type ModalTextModelId = "Qwen/Qwen3.8-2.4T-A95B" | "moonshotai/Kimi-K3" | "thinkingmachines/Inkling-NVFP4" | "zai-org/GLM-5.3-Flash";
 export type ModalImageModelId = never;
 export type ModalAudioModelId = never;
 export type ModalVideoModelId = never;

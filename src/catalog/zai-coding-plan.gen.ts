@@ -77,10 +77,58 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
+  "glm-5.3": {
+    id: "glm-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
+  "glm-5.3-flash": {
+    id: "glm-5.3-flash",
+    name: "GLM-5.3-Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
+  "glm-5.3-highspeed": {
+    id: "glm-5.3-highspeed",
+    name: "GLM-5.3 Highspeed",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type ZaiCodingPlanModelId = keyof typeof models;
-export type ZaiCodingPlanTextModelId = "glm-4.7" | "glm-5-turbo" | "glm-5.2" | "glm-5.2-highspeed";
+export type ZaiCodingPlanTextModelId = "glm-4.7" | "glm-5-turbo" | "glm-5.2" | "glm-5.2-highspeed" | "glm-5.3" | "glm-5.3-flash" | "glm-5.3-highspeed";
 export type ZaiCodingPlanImageModelId = never;
 export type ZaiCodingPlanAudioModelId = never;
 export type ZaiCodingPlanVideoModelId = never;

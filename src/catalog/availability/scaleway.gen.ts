@@ -19,6 +19,19 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "deepseek-v4-flash-0731": {
+    "alibaba": "deepseek-v4-flash-0731",
+    "baseten": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4-flash-0731",
+    "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-0731",
+    "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "nvidia": "deepseek-ai/deepseek-v4-flash-0731",
+    "openrouter": "deepseek/deepseek-v4-flash-0731",
+    "scaleway": "deepseek-v4-flash-0731",
+    "togetherai": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "vercel": "deepseek/deepseek-v4-flash-0731",
+  },
   "gemma-4-26b-a4b-it": {
     "cloudflare-workers-ai": "@cf/google/gemma-4-26b-a4b-it",
     "deepinfra": "google/gemma-4-26B-A4B-it",

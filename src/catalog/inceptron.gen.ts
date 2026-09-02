@@ -13,22 +13,6 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "MiniMaxAI/MiniMax-M2.5": {
-    id: "MiniMaxAI/MiniMax-M2.5",
-    name: "MiniMax M2.5",
-    family: "minimax",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-02-12",
-    lastUpdated: "2026-02-12",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 196608, output: 196608 },
-    cost: { input: 0.22, output: 0.9, cacheRead: 0.05, cacheWrite: 0 },
-  },
   "deepseek-ai/DeepSeek-V4-Flash-0731": {
     id: "deepseek-ai/DeepSeek-V4-Flash-0731",
     name: "DeepSeek V4 Flash 0731",
@@ -61,7 +45,7 @@ export const models = {
     lastUpdated: "2026-04-21",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0.6, output: 3.41, cacheRead: 0.2, cacheWrite: 0 },
+    cost: { input: 0.53, output: 3.39, cacheRead: 0.17, cacheWrite: 0 },
   },
   "moonshotai/Kimi-K2.7-Code": {
     id: "moonshotai/Kimi-K2.7-Code",
@@ -78,7 +62,7 @@ export const models = {
     lastUpdated: "2026-06-12",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0.67, output: 3.4, cacheRead: 0.15, cacheWrite: 0 },
+    cost: { input: 0.66, output: 3.4, cacheRead: 0.18, cacheWrite: 0 },
   },
   "zai-org/GLM-5.2": {
     id: "zai-org/GLM-5.2",
@@ -92,15 +76,14 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-06-13",
     lastUpdated: "2026-06-13",
-    status: "alpha",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 1048576 },
-    cost: { input: 0.75, output: 2.9, cacheRead: 0.17, cacheWrite: 0 },
+    cost: { input: 0.71, output: 2.35, cacheRead: 0.12, cacheWrite: 0 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type InceptronModelId = keyof typeof models;
-export type InceptronTextModelId = "MiniMaxAI/MiniMax-M2.5" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "zai-org/GLM-5.2";
+export type InceptronTextModelId = "deepseek-ai/DeepSeek-V4-Flash-0731" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "zai-org/GLM-5.2";
 export type InceptronImageModelId = never;
 export type InceptronAudioModelId = never;
 export type InceptronVideoModelId = never;

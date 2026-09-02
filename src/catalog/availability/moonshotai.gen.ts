@@ -90,6 +90,7 @@ export const availability = {
     "moonshotai": "kimi-k3",
     "nebius": { id: "moonshotai/Kimi-K3", narrows: { drops: ["image", "video"] } },
     "novita-ai": "moonshotai/kimi-k3",
+    "nvidia": "moonshotai/kimi-k3",
     "openrouter": "moonshotai/kimi-k3",
     "togetherai": "moonshotai/Kimi-K3",
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000, drops: ["video"] } },

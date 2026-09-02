@@ -160,6 +160,26 @@ export const GEMINI_THINKING_LEVELS = [
   "HIGH",
 ] as const;
 
+/** The per-model "Levels Supported" table (verified 2026-09-02). */
+export const GEMINI_THINKING_DOCS_URL = "https://ai.google.dev/gemini-api/docs/thinking";
+
+/**
+ * Models that reject `MINIMAL` even though the wire enum offers it: both model
+ * pages carry "Note: `minimal` is not supported and returns an error", and the
+ * thinking guide's table lists them as "low, medium, high".
+ *
+ * Kept to the two ids the docs say *return an error* for, rather than derived
+ * from that table's omissions. Every other row states which levels are
+ * supported and stays silent on what an unlisted one does, and a refusal the
+ * API would have fulfilled is the one failure this library must not have —
+ * `gemini-3.6-flash` and `gemini-3.5-flash` still take MINIMAL, so this is a
+ * per-model fact and not a generation-wide one.
+ */
+export const GEMINI_NO_MINIMAL_THINKING_MODEL_IDS = [
+  "gemini-3.7-flash",
+  "gemini-3.8-flash",
+] as const;
+
 /** `enum (MediaResolution)`. */
 export const GEMINI_MEDIA_RESOLUTIONS = [
   "MEDIA_RESOLUTION_UNSPECIFIED",

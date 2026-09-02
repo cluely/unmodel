@@ -137,6 +137,23 @@ export const models = {
     limit: { context: 1048576, output: 393216 },
     cost: { input: 0.14, output: 0.28, cacheRead: 0.0028 },
   },
+  "deepseek-ai/deepseek-v4-flash-0731": {
+    id: "deepseek-ai/deepseek-v4-flash-0731",
+    name: "DeepSeek V4 Flash 0731",
+    family: "deepseek-flash",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-07-31",
+    lastUpdated: "2026-07-31",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0, output: 0 },
+  },
   "deepseek-ai/deepseek-v4-pro": {
     id: "deepseek-ai/deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
@@ -153,6 +170,22 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 393216 },
     cost: { input: 0.435, output: 0.87, cacheRead: 0.003625 },
+  },
+  "deepseek-ai/deepseek-v4-pro-0813": {
+    id: "deepseek-ai/deepseek-v4-pro-0813",
+    name: "DeepSeek V4 Pro 0813",
+    family: "deepseek-thinking",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-22",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0, output: 0 },
   },
   "google/gemma-2-2b-it": {
     id: "google/gemma-2-2b-it",
@@ -430,6 +463,23 @@ export const models = {
     limit: { context: 128000, output: 16384 },
     cost: { input: 0, output: 0 },
   },
+  "meta/muse-glimmer-30b": {
+    id: "meta/muse-glimmer-30b",
+    name: "Muse Glimmer 30B",
+    family: "muse",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2026-01-04",
+    releaseDate: "2026-08-10",
+    lastUpdated: "2026-08-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 131072, output: 131072 },
+    cost: { input: 0, output: 0 },
+  },
   "microsoft/phi-4-mini-instruct": {
     id: "microsoft/phi-4-mini-instruct",
     name: "Phi-4-Mini",
@@ -673,6 +723,22 @@ export const models = {
     status: "deprecated",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
+    cost: { input: 0, output: 0 },
+  },
+  "moonshotai/kimi-k3": {
+    id: "moonshotai/kimi-k3",
+    name: "Kimi K3",
+    family: "kimi-k3",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: true,
+    releaseDate: "2026-07-16",
+    lastUpdated: "2026-07-16",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
     cost: { input: 0, output: 0 },
   },
   "nvidia/active-speaker-detection": {
@@ -1514,7 +1580,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type NvidiaModelId = keyof typeof models;
-export type NvidiaTextModelId = "abacusai/dracarys-llama-3.1-70b-instruct" | "baai/bge-m3" | "bytedance/seed-oss-36b-instruct" | "deepseek-ai/deepseek-v4-flash" | "deepseek-ai/deepseek-v4-pro" | "google/gemma-2-2b-it" | "google/gemma-3-12b-it" | "google/gemma-3-4b-it" | "google/gemma-3n-e2b-it" | "google/gemma-3n-e4b-it" | "google/gemma-4-31b-it" | "google/google-paligemma" | "meta/esm2-650m" | "meta/esmfold" | "meta/llama-3.1-70b-instruct" | "meta/llama-3.1-8b-instruct" | "meta/llama-3.2-11b-vision-instruct" | "meta/llama-3.2-1b-instruct" | "meta/llama-3.2-3b-instruct" | "meta/llama-3.2-90b-vision-instruct" | "meta/llama-3.3-70b-instruct" | "meta/llama-4-maverick-17b-128e-instruct" | "meta/llama-guard-4-12b" | "microsoft/phi-4-mini-instruct" | "microsoft/phi-4-multimodal-instruct" | "minimaxai/minimax-m2.7" | "minimaxai/minimax-m3" | "mistralai/magistral-small-2506" | "mistralai/ministral-14b-instruct-2512" | "mistralai/mistral-7b-instruct-v0.3" | "mistralai/mistral-large-3-675b-instruct-2512" | "mistralai/mistral-medium-3-instruct" | "mistralai/mistral-medium-3.5-128b" | "mistralai/mistral-nemotron" | "mistralai/mistral-small-4-119b-2603" | "mistralai/mixtral-8x22b-instruct" | "mistralai/mixtral-8x7b-instruct" | "moonshotai/kimi-k2-instruct-0905" | "moonshotai/kimi-k2.6" | "nvidia/active-speaker-detection" | "nvidia/bevformer" | "nvidia/cosmos-reason2-8b" | "nvidia/gliner-pii" | "nvidia/llama-3.1-nemotron-70b-instruct" | "nvidia/llama-3.1-nemotron-nano-8b-v1" | "nvidia/llama-3.1-nemotron-nano-vl-8b-v1" | "nvidia/llama-3.1-nemotron-safety-guard-8b-v3" | "nvidia/llama-3.1-nemotron-ultra-253b-v1" | "nvidia/llama-3.3-nemotron-super-49b-v1" | "nvidia/llama-3.3-nemotron-super-49b-v1.5" | "nvidia/llama-3_2-nemoretriever-300m-embed-v1" | "nvidia/llama-nemotron-embed-vl-1b-v2" | "nvidia/llama-nemotron-rerank-vl-1b-v2" | "nvidia/nemotron-3-content-safety" | "nvidia/nemotron-3-nano-30b-a3b" | "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning" | "nvidia/nemotron-3-super-120b-a12b" | "nvidia/nemotron-3-ultra-550b-a55b" | "nvidia/nemotron-3.5-lightning-30b-a3b" | "nvidia/nemotron-content-safety-reasoning-4b" | "nvidia/nemotron-mini-4b-instruct" | "nvidia/nemotron-nano-12b-v2-vl" | "nvidia/nemotron-voicechat" | "nvidia/nv-embed-v1" | "nvidia/nv-embedcode-7b-v1" | "nvidia/nvidia-nemotron-nano-9b-v2" | "nvidia/rerank-qa-mistral-4b" | "nvidia/riva-translate-4b-instruct-v1.1" | "nvidia/sparsedrive" | "nvidia/streampetr" | "nvidia/studiovoice" | "nvidia/synthetic-video-detector" | "nvidia/usdcode" | "nvidia/usdvalidate" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "openai/whisper-large-v3" | "poolside/laguna-xs-2.1" | "qwen/qwen2.5-coder-32b-instruct" | "qwen/qwen3-coder-480b-a35b-instruct" | "qwen/qwen3-next-80b-a3b-instruct" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-397b-a17b" | "sarvamai/sarvam-m" | "stepfun-ai/step-3.5-flash" | "stepfun-ai/step-3.7-flash" | "thinkingmachines/inkling" | "upstage/solar-10.7b-instruct" | "z-ai/glm-5.2";
+export type NvidiaTextModelId = "abacusai/dracarys-llama-3.1-70b-instruct" | "baai/bge-m3" | "bytedance/seed-oss-36b-instruct" | "deepseek-ai/deepseek-v4-flash" | "deepseek-ai/deepseek-v4-flash-0731" | "deepseek-ai/deepseek-v4-pro" | "deepseek-ai/deepseek-v4-pro-0813" | "google/gemma-2-2b-it" | "google/gemma-3-12b-it" | "google/gemma-3-4b-it" | "google/gemma-3n-e2b-it" | "google/gemma-3n-e4b-it" | "google/gemma-4-31b-it" | "google/google-paligemma" | "meta/esm2-650m" | "meta/esmfold" | "meta/llama-3.1-70b-instruct" | "meta/llama-3.1-8b-instruct" | "meta/llama-3.2-11b-vision-instruct" | "meta/llama-3.2-1b-instruct" | "meta/llama-3.2-3b-instruct" | "meta/llama-3.2-90b-vision-instruct" | "meta/llama-3.3-70b-instruct" | "meta/llama-4-maverick-17b-128e-instruct" | "meta/llama-guard-4-12b" | "meta/muse-glimmer-30b" | "microsoft/phi-4-mini-instruct" | "microsoft/phi-4-multimodal-instruct" | "minimaxai/minimax-m2.7" | "minimaxai/minimax-m3" | "mistralai/magistral-small-2506" | "mistralai/ministral-14b-instruct-2512" | "mistralai/mistral-7b-instruct-v0.3" | "mistralai/mistral-large-3-675b-instruct-2512" | "mistralai/mistral-medium-3-instruct" | "mistralai/mistral-medium-3.5-128b" | "mistralai/mistral-nemotron" | "mistralai/mistral-small-4-119b-2603" | "mistralai/mixtral-8x22b-instruct" | "mistralai/mixtral-8x7b-instruct" | "moonshotai/kimi-k2-instruct-0905" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k3" | "nvidia/active-speaker-detection" | "nvidia/bevformer" | "nvidia/cosmos-reason2-8b" | "nvidia/gliner-pii" | "nvidia/llama-3.1-nemotron-70b-instruct" | "nvidia/llama-3.1-nemotron-nano-8b-v1" | "nvidia/llama-3.1-nemotron-nano-vl-8b-v1" | "nvidia/llama-3.1-nemotron-safety-guard-8b-v3" | "nvidia/llama-3.1-nemotron-ultra-253b-v1" | "nvidia/llama-3.3-nemotron-super-49b-v1" | "nvidia/llama-3.3-nemotron-super-49b-v1.5" | "nvidia/llama-3_2-nemoretriever-300m-embed-v1" | "nvidia/llama-nemotron-embed-vl-1b-v2" | "nvidia/llama-nemotron-rerank-vl-1b-v2" | "nvidia/nemotron-3-content-safety" | "nvidia/nemotron-3-nano-30b-a3b" | "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning" | "nvidia/nemotron-3-super-120b-a12b" | "nvidia/nemotron-3-ultra-550b-a55b" | "nvidia/nemotron-3.5-lightning-30b-a3b" | "nvidia/nemotron-content-safety-reasoning-4b" | "nvidia/nemotron-mini-4b-instruct" | "nvidia/nemotron-nano-12b-v2-vl" | "nvidia/nemotron-voicechat" | "nvidia/nv-embed-v1" | "nvidia/nv-embedcode-7b-v1" | "nvidia/nvidia-nemotron-nano-9b-v2" | "nvidia/rerank-qa-mistral-4b" | "nvidia/riva-translate-4b-instruct-v1.1" | "nvidia/sparsedrive" | "nvidia/streampetr" | "nvidia/studiovoice" | "nvidia/synthetic-video-detector" | "nvidia/usdcode" | "nvidia/usdvalidate" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "openai/whisper-large-v3" | "poolside/laguna-xs-2.1" | "qwen/qwen2.5-coder-32b-instruct" | "qwen/qwen3-coder-480b-a35b-instruct" | "qwen/qwen3-next-80b-a3b-instruct" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-397b-a17b" | "sarvamai/sarvam-m" | "stepfun-ai/step-3.5-flash" | "stepfun-ai/step-3.7-flash" | "thinkingmachines/inkling" | "upstage/solar-10.7b-instruct" | "z-ai/glm-5.2";
 export type NvidiaImageModelId = "black-forest-labs/flux.1-dev" | "black-forest-labs/flux_1-kontext-dev" | "black-forest-labs/flux_1-schnell" | "black-forest-labs/flux_2-klein-4b" | "qwen/qwen-image" | "qwen/qwen-image-edit";
 export type NvidiaAudioModelId = "nvidia/magpie-tts-zeroshot";
 export type NvidiaVideoModelId = "nvidia/cosmos-predict1-5b" | "nvidia/cosmos-transfer1-7b" | "nvidia/cosmos-transfer2_5-2b";

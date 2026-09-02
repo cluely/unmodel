@@ -13,59 +13,6 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "DeepSeek-V4-Flash-0731": {
-    id: "DeepSeek-V4-Flash-0731",
-    name: "DeepSeek V4 Flash 0731",
-    family: "deepseek-flash",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2025-05",
-    releaseDate: "2026-07-31",
-    lastUpdated: "2026-07-31",
-    status: "beta",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 512000, output: 384000 },
-    cost: { input: 0, output: 0, cacheRead: 0 },
-  },
-  "GLM-5.2-NVFP4": {
-    id: "GLM-5.2-NVFP4",
-    name: "GLM-5.2 NVFP4",
-    family: "glm",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-06-13",
-    lastUpdated: "2026-06-13",
-    status: "beta",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 512000, output: 131072 },
-    cost: { input: 0, output: 0, cacheRead: 0 },
-  },
-  "Kimi-K2.7-Code": {
-    id: "Kimi-K2.7-Code",
-    name: "Kimi K2.7 Code",
-    family: "kimi-k2",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: false,
-    openWeights: true,
-    knowledge: "2025-01",
-    releaseDate: "2026-06-12",
-    lastUpdated: "2026-06-12",
-    status: "beta",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262144, output: 262144 },
-    cost: { input: 0, output: 0, cacheRead: 0 },
-  },
   "Qwen/Qwen3.6-35B-A3B-FP8": {
     id: "Qwen/Qwen3.6-35B-A3B-FP8",
     name: "Qwen3.6 35B A3B FP8",
@@ -83,10 +30,27 @@ export const models = {
     limit: { context: 262144, output: 262144 },
     cost: { input: 0, output: 0, cacheRead: 0 },
   },
+  "Qwen3.8-27B": {
+    id: "Qwen3.8-27B",
+    name: "Qwen3.8-27B",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    status: "beta",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 262144, output: 262144 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type HetznerModelId = keyof typeof models;
-export type HetznerTextModelId = "DeepSeek-V4-Flash-0731" | "GLM-5.2-NVFP4" | "Kimi-K2.7-Code" | "Qwen/Qwen3.6-35B-A3B-FP8";
+export type HetznerTextModelId = "Qwen/Qwen3.6-35B-A3B-FP8" | "Qwen3.8-27B";
 export type HetznerImageModelId = never;
 export type HetznerAudioModelId = never;
 export type HetznerVideoModelId = never;

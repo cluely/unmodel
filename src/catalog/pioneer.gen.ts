@@ -54,7 +54,7 @@ export const models = {
     releaseDate: "2026-03-18",
     lastUpdated: "2026-03-18",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 204800, output: 131072 },
+    limit: { context: 204800, output: 131000 },
     cost: { input: 0.279, output: 1.2, cacheRead: 0.279, cacheWrite: 0.279 },
   },
   "MiniMaxAI/MiniMax-M3": {
@@ -129,7 +129,7 @@ export const models = {
     releaseDate: "2025-04",
     lastUpdated: "2025-04",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 16384 },
+    limit: { context: 131072, output: 8192 },
     cost: { input: 0.9, output: 0.9, cacheRead: 0.9, cacheWrite: 0.9 },
   },
   "Qwen/Qwen3-4B-Base": {
@@ -157,7 +157,7 @@ export const models = {
     releaseDate: "2025-07-31",
     lastUpdated: "2025-07-31",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 131072 },
+    limit: { context: 32768, output: 32768 },
     cost: { input: 0.2, output: 0.2, cacheRead: 0.2, cacheWrite: 0.2 },
   },
   "Qwen/Qwen3-8B": {
@@ -173,7 +173,7 @@ export const models = {
     releaseDate: "2025-03-31",
     lastUpdated: "2025-04-28",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 131072 },
+    limit: { context: 40960, output: 40960 },
     cost: { input: 0.2, output: 0.2, cacheRead: 0.2, cacheWrite: 0.2 },
   },
   "Qwen/Qwen3.5-9B": {
@@ -253,7 +253,7 @@ export const models = {
     releaseDate: "2026-04-22",
     lastUpdated: "2026-04-22",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1050000, output: 131072 },
+    limit: { context: 1050000, output: 131000 },
     cost: { input: 0.435, output: 0.87, cacheRead: 0.0036, cacheWrite: 0.435 },
   },
   "claude-3-7-sonnet-latest": {
@@ -626,7 +626,7 @@ export const models = {
     releaseDate: "2025-12-17",
     lastUpdated: "2025-12-17",
     modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
-    limit: { context: 1048576, output: 65535 },
+    limit: { context: 1000000, output: 65000 },
     cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0.083333 },
   },
   "gemini-3.1-flash-lite": {
@@ -660,7 +660,7 @@ export const models = {
     releaseDate: "2026-02-19",
     lastUpdated: "2026-02-19",
     modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
-    limit: { context: 1048576, output: 65536 },
+    limit: { context: 1000000, output: 64000 },
     cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0.375 },
   },
   "gemini-3.5-flash": {
@@ -677,7 +677,7 @@ export const models = {
     releaseDate: "2026-05-19",
     lastUpdated: "2026-05-19",
     modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
-    limit: { context: 1048576, output: 65536 },
+    limit: { context: 1000000, output: 64000 },
     cost: { input: 1.5, output: 9, cacheRead: 0.15, cacheWrite: 0.083333 },
   },
   "gemini-3.5-flash-lite": {
@@ -931,13 +931,13 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2024-09-30",
     releaseDate: "2025-11-13",
     lastUpdated: "2025-11-13",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 400000, output: 128000, input: 272000 },
+    limit: { context: 400000, output: 131072, input: 272000 },
     cost: { input: 1.25, output: 10, cacheRead: 0.125, cacheWrite: 1.25 },
   },
   "gpt-5.3-codex": {
@@ -948,7 +948,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-08-31",
     releaseDate: "2026-02-05",
@@ -965,7 +965,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-08-31",
     releaseDate: "2026-03-05",
@@ -982,7 +982,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-08-31",
     releaseDate: "2026-03-17",
@@ -999,7 +999,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-08-31",
     releaseDate: "2026-03-17",
@@ -1105,7 +1105,7 @@ export const models = {
     releaseDate: "2024-06-30",
     lastUpdated: "2024-07-23",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 16384 },
+    limit: { context: 128000, output: 8192 },
     cost: { input: 0.2, output: 0.2, cacheRead: 0.2, cacheWrite: 0.2 },
   },
   "meta-llama/Llama-3.2-1B": {
@@ -1185,7 +1185,7 @@ export const models = {
     releaseDate: "2024-12-06",
     lastUpdated: "2024-12-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 131072 },
+    limit: { context: 16384, output: 16384 },
     cost: { input: 0.9, output: 0.9, cacheRead: 0.9, cacheWrite: 0.9 },
   },
   "meta/muse-spark-1.1": {
@@ -1233,7 +1233,7 @@ export const models = {
     releaseDate: "2026-04-29",
     lastUpdated: "2026-04-29",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262144, output: 131072 },
+    limit: { context: 256000, output: 131072 },
     cost: { input: 1.5, output: 7.5, cacheRead: 1.5, cacheWrite: 1.5 },
   },
   "mistralai/Codestral-22B-v0.1": {
@@ -1308,7 +1308,7 @@ export const models = {
     releaseDate: "2024-07-01",
     lastUpdated: "2024-07-01",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 128000 },
+    limit: { context: 128000, output: 128000 },
     cost: { input: 0.02, output: 0.03, cacheRead: 0.02, cacheWrite: 0.02 },
   },
   "mistralai/Mistral-Small-4-119B-2603": {
@@ -1324,7 +1324,7 @@ export const models = {
     releaseDate: "2026-03-16",
     lastUpdated: "2026-03-16",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262144, output: 65536 },
+    limit: { context: 32000, output: 32000 },
     cost: { input: 0.15, output: 0.6, cacheRead: 0.015, cacheWrite: 0.15 },
   },
   "mistralai/Pixtral-12B-2409": {
@@ -1357,7 +1357,7 @@ export const models = {
     releaseDate: "2026-04-21",
     lastUpdated: "2026-04-21",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 262144, output: 131072 },
+    limit: { context: 262000, output: 131072 },
     cost: { input: 0.95, output: 4, cacheRead: 0.34, cacheWrite: 0.95 },
   },
   "moonshotai/Kimi-K2.7-Code": {
@@ -1374,7 +1374,7 @@ export const models = {
     releaseDate: "2026-06-12",
     lastUpdated: "2026-06-12",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 262144, output: 32768 },
+    limit: { context: 256000, output: 32768 },
     cost: { input: 0.95, output: 4, cacheRead: 0.19, cacheWrite: 0.95 },
   },
   "moonshotai/Kimi-K3": {
@@ -1420,7 +1420,7 @@ export const models = {
     releaseDate: "2026-03-11",
     lastUpdated: "2026-03-11",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 32000 },
+    limit: { context: 256000, output: 32000 },
     cost: { input: 0.09, output: 0.45, cacheRead: 0.09, cacheWrite: 0.09 },
   },
   "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16": {
@@ -1437,6 +1437,22 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 65000 },
     cost: { input: 0.5, output: 2.5, cacheRead: 0.15, cacheWrite: 0.5 },
+  },
+  "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16": {
+    id: "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+    name: "Nemotron 3.5 Lightning 30B A3B",
+    family: "nemotron",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-11",
+    lastUpdated: "2026-08-11",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 8192, output: 4096 },
+    cost: { input: 0.5, output: 0.5, cacheRead: 0.5, cacheWrite: 0.5 },
   },
   "openai/gpt-oss-120b": {
     id: "openai/gpt-oss-120b",
@@ -1530,7 +1546,7 @@ export const models = {
     releaseDate: "2026-04-20",
     lastUpdated: "2026-04-20",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 65536 },
+    limit: { context: 240000, output: 64000 },
     cost: { input: 1.04, output: 6.24, cacheRead: 0.208, cacheWrite: 1.3 },
   },
   "qwen3.6-plus": {
@@ -1546,7 +1562,7 @@ export const models = {
     releaseDate: "2026-04-02",
     lastUpdated: "2026-04-02",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1000000, output: 65536 },
+    limit: { context: 1000000, output: 64000 },
     cost: { input: 0.325, output: 1.95, cacheRead: 0.065, cacheWrite: 0.40625 },
   },
   "qwen3.7-max": {
@@ -1561,7 +1577,7 @@ export const models = {
     releaseDate: "2026-05-21",
     lastUpdated: "2026-05-21",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 65536 },
+    limit: { context: 991000, output: 64000 },
     cost: { input: 1.25, output: 3.75, cacheRead: 0.25, cacheWrite: 1.5625 },
   },
   "qwen3.7-plus": {
@@ -1577,7 +1593,7 @@ export const models = {
     releaseDate: "2026-06-02",
     lastUpdated: "2026-06-02",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1000000, output: 65536 },
+    limit: { context: 1000000, output: 64000 },
     cost: { input: 0.32, output: 1.28, cacheRead: 0.064, cacheWrite: 0.4 },
   },
   "sakana/fugu-ultra": {
@@ -1609,7 +1625,7 @@ export const models = {
     releaseDate: "2026-04-07",
     lastUpdated: "2026-04-07",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 202752, output: 131072 },
+    limit: { context: 202000, output: 131072 },
     cost: { input: 0.98, output: 3.08, cacheRead: 0.182, cacheWrite: 0.98 },
   },
   "zai-org/GLM-5.2": {
@@ -1625,13 +1641,13 @@ export const models = {
     releaseDate: "2026-06-13",
     lastUpdated: "2026-06-13",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 128000 },
+    limit: { context: 1040000, output: 128000 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.26, cacheWrite: 1.4 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type PioneerModelId = keyof typeof models;
-export type PioneerTextModelId = "HuggingFaceTB/SmolLM3-3B-Base" | "LiquidAI/LFM2-24B-A2B" | "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen2.5-Coder-0.5B" | "Qwen/Qwen3-1.7B-Base" | "Qwen/Qwen3-235B-A22B-Instruct-2507" | "Qwen/Qwen3-32B" | "Qwen/Qwen3-4B-Base" | "Qwen/Qwen3-4B-Instruct-2507" | "Qwen/Qwen3-8B" | "Qwen/Qwen3.5-9B" | "Qwen/Qwen3.6-27B" | "Qwen/Qwen3.6-35B-A3B" | "XiaomiMiMo/MiMo-V2.5" | "XiaomiMiMo/MiMo-V2.5-Pro" | "claude-3-7-sonnet-latest" | "claude-fable-5" | "claude-haiku-4-5" | "claude-opus-4-1" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "deepseek-ai/DeepSeek-V3" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Pro" | "devstral-2" | "fastino/gliguard-LLMGuardrails-300M" | "fastino/gliner2-base-v1" | "fastino/gliner2-large-v1" | "fastino/gliner2-multi-large-v1" | "fastino/gliner2-multi-v1" | "fastino/gliner2-privacy-filter-PII-multi" | "gemini-3-flash" | "gemini-3.1-flash-lite" | "gemini-3.1-pro" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "google/diffusiongemma-26B-A4B-it" | "google/gemma-3-4b-pt" | "google/gemma-4-12B-it" | "google/gemma-4-31B-it" | "google/gemma-4-E2B-it" | "google/gemma-4-E4B-it" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-mini" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5.1" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "grok-4.5" | "meta-llama/Llama-3.1-8B-Instruct" | "meta-llama/Llama-3.2-1B" | "meta-llama/Llama-3.2-1B-Instruct" | "meta-llama/Llama-3.2-3B" | "meta-llama/Llama-3.2-3B-Instruct" | "meta-llama/Llama-3.3-70B-Instruct" | "meta/muse-spark-1.1" | "mistral-large-3" | "mistral-medium-3.5" | "mistralai/Codestral-22B-v0.1" | "mistralai/Magistral-Small-2506" | "mistralai/Ministral-8B-Instruct-2410" | "mistralai/Mistral-7B-Instruct-v0.3" | "mistralai/Mistral-Nemo-Instruct-2407" | "mistralai/Mistral-Small-4-119B-2603" | "mistralai/Pixtral-12B-2409" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16" | "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8" | "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "pioneer/auto" | "poolside/laguna-s-2.1" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus" | "sakana/fugu-ultra" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2";
+export type PioneerTextModelId = "HuggingFaceTB/SmolLM3-3B-Base" | "LiquidAI/LFM2-24B-A2B" | "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen2.5-Coder-0.5B" | "Qwen/Qwen3-1.7B-Base" | "Qwen/Qwen3-235B-A22B-Instruct-2507" | "Qwen/Qwen3-32B" | "Qwen/Qwen3-4B-Base" | "Qwen/Qwen3-4B-Instruct-2507" | "Qwen/Qwen3-8B" | "Qwen/Qwen3.5-9B" | "Qwen/Qwen3.6-27B" | "Qwen/Qwen3.6-35B-A3B" | "XiaomiMiMo/MiMo-V2.5" | "XiaomiMiMo/MiMo-V2.5-Pro" | "claude-3-7-sonnet-latest" | "claude-fable-5" | "claude-haiku-4-5" | "claude-opus-4-1" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "deepseek-ai/DeepSeek-V3" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Pro" | "devstral-2" | "fastino/gliguard-LLMGuardrails-300M" | "fastino/gliner2-base-v1" | "fastino/gliner2-large-v1" | "fastino/gliner2-multi-large-v1" | "fastino/gliner2-multi-v1" | "fastino/gliner2-privacy-filter-PII-multi" | "gemini-3-flash" | "gemini-3.1-flash-lite" | "gemini-3.1-pro" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "google/diffusiongemma-26B-A4B-it" | "google/gemma-3-4b-pt" | "google/gemma-4-12B-it" | "google/gemma-4-31B-it" | "google/gemma-4-E2B-it" | "google/gemma-4-E4B-it" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-mini" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5.1" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "grok-4.5" | "meta-llama/Llama-3.1-8B-Instruct" | "meta-llama/Llama-3.2-1B" | "meta-llama/Llama-3.2-1B-Instruct" | "meta-llama/Llama-3.2-3B" | "meta-llama/Llama-3.2-3B-Instruct" | "meta-llama/Llama-3.3-70B-Instruct" | "meta/muse-spark-1.1" | "mistral-large-3" | "mistral-medium-3.5" | "mistralai/Codestral-22B-v0.1" | "mistralai/Magistral-Small-2506" | "mistralai/Ministral-8B-Instruct-2410" | "mistralai/Mistral-7B-Instruct-v0.3" | "mistralai/Mistral-Nemo-Instruct-2407" | "mistralai/Mistral-Small-4-119B-2603" | "mistralai/Pixtral-12B-2409" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16" | "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8" | "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16" | "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "pioneer/auto" | "poolside/laguna-s-2.1" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus" | "sakana/fugu-ultra" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2";
 export type PioneerImageModelId = never;
 export type PioneerAudioModelId = never;
 export type PioneerVideoModelId = never;

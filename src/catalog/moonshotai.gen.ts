@@ -97,7 +97,7 @@ export const models = {
     id: "kimi-k2.5",
     name: "Kimi K2.5",
     family: "kimi-k2",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,

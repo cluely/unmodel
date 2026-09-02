@@ -290,9 +290,9 @@ export interface BytedanceSeedance25ReferenceToVideoInput {
   /**
    * Reference audio to guide video generation. Refer to them in the prompt as @Audio1,
    * @Audio2, etc. Supported formats: MP3, WAV. Up to 10 files. Each file must be 1.8 to 30.2
-   * seconds and no larger than 15 MB; combined duration must not exceed 30.2 seconds. If
-   * audio is provided, at least one reference image or video is required. Carries a audio
-   * reference — an https URL or a `data:` URI.
+   * seconds and no larger than 15 MB; combined duration must not exceed 30.2 seconds. At
+   * least one reference image or video is required. Carries a audio reference — an https URL
+   * or a `data:` URI.
    */
   audio_urls?: string[];
   /**
@@ -1914,11 +1914,11 @@ export interface MinimaxH3ImageToVideoInput {
   /** Return the generated video as base64 instead of a CDN URL. Default: `false`. */
   sync_mode?: boolean;
   /**
-   * How much effort to spend rewriting the prompt before generation. 'disabled' skips prompt
-   * expansion. 'fast' returns in about a second. 'quality' spends up to ~30s on a richer
-   * prompt. 'balanced' picks per request. Default: `"balanced"`.
+   * How much effort to spend rewriting the prompt before generation. 'fast' returns in about
+   * a second. 'balanced' picks per request. 'quality' spends up to ~30s on a richer prompt.
+   * Default: `"balanced"`.
    */
-  prompt_expansion_mode?: "disabled" | "fast" | "balanced" | "quality" | null;
+  prompt_expansion_mode?: string | null;
   /**
    * Optional URL of the image to use as the first frame. When provided, the output aspect
    * ratio follows this image. When omitted, the request is handled as text-to-video (16:9 by
@@ -1980,11 +1980,11 @@ export interface MinimaxH3TextToVideoInput {
   /** Return the generated video as base64 instead of a CDN URL. Default: `false`. */
   sync_mode?: boolean;
   /**
-   * How much effort to spend rewriting the prompt before generation. 'disabled' skips prompt
-   * expansion. 'fast' returns in about a second. 'quality' spends up to ~30s on a richer
-   * prompt. 'balanced' picks per request. Default: `"balanced"`.
+   * How much effort to spend rewriting the prompt before generation. 'fast' returns in about
+   * a second. 'balanced' picks per request. 'quality' spends up to ~30s on a richer prompt.
+   * Default: `"balanced"`.
    */
-  prompt_expansion_mode?: "disabled" | "fast" | "balanced" | "quality" | null;
+  prompt_expansion_mode?: string | null;
   /** The aspect ratio of the generated video. Default: `"16:9"`. */
   aspect_ratio?: "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16";
 }

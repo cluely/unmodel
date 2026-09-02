@@ -38,9 +38,6 @@ export const availability = {
     "togetherai": "openai/gpt-oss-120b",
     "vercel": "openai/gpt-oss-120b",
   },
-  "zai-glm-4.7": {
-    "cerebras": "zai-glm-4.7",
-  },
 } as const satisfies AvailabilityMap;
 
 export type CerebrasAvailability = typeof availability;

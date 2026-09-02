@@ -13,9 +13,9 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "glm-5.2-fp4": {
-    id: "glm-5.2-fp4",
-    name: "GLM 5.2 FP4",
+  "glm-5.3-fp4": {
+    id: "glm-5.3-fp4",
+    name: "GLM 5.3 FP4",
     family: "glm",
     attachment: false,
     reasoning: true,
@@ -23,8 +23,8 @@ export const models = {
     structuredOutput: true,
     temperature: true,
     openWeights: true,
-    releaseDate: "2026-06-13",
-    lastUpdated: "2026-06-13",
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
     cost: { input: 1.12, output: 4.4, cacheRead: 0 },
@@ -64,7 +64,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type CoralbricksModelId = keyof typeof models;
-export type CoralbricksTextModelId = "glm-5.2-fp4" | "gpt-oss-120b" | "kimi-k3";
+export type CoralbricksTextModelId = "glm-5.3-fp4" | "gpt-oss-120b" | "kimi-k3";
 export type CoralbricksImageModelId = never;
 export type CoralbricksAudioModelId = never;
 export type CoralbricksVideoModelId = never;

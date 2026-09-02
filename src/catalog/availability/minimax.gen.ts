@@ -20,7 +20,7 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  */
 export const availability = {
   "MiniMax-M2": {
-    "amazon-bedrock": "minimax.minimax-m2",
+    "amazon-bedrock": { id: "minimax.minimax-m2", narrows: { context: 204608 } },
     "huggingface": "MiniMaxAI/MiniMax-M2",
     "minimax": "MiniMax-M2",
     "novita-ai": "minimax/minimax-m2",
@@ -74,10 +74,10 @@ export const availability = {
     "huggingface": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288, drops: ["video"] } },
     "minimax": "MiniMax-M3",
     "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image", "video"] } },
-    "nvidia": "minimaxai/minimax-m3",
+    "nvidia": { id: "minimaxai/minimax-m3", narrows: { context: 1000000 } },
     "openrouter": "minimax/minimax-m3",
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288, drops: ["video"] } },
-    "vercel": { id: "minimax/minimax-m3", narrows: { drops: ["video"] } },
+    "vercel": { id: "minimax/minimax-m3", narrows: { context: 512000, drops: ["video"] } },
   },
 } as const satisfies AvailabilityMap;
 

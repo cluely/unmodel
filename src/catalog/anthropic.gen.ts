@@ -28,6 +28,23 @@ export const models = {
     limit: { context: 1000000, output: 128000 },
     cost: { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
   },
+  "claude-fable-5-1": {
+    id: "claude-fable-5-1",
+    name: "Claude Fable 5.1",
+    family: "claude-fable",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06",
+    releaseDate: "2026-09-01",
+    lastUpdated: "2026-09-01",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 10, output: 50, cacheRead: 0.25, cacheWrite: 12.5 },
+  },
   "claude-haiku-4-5": {
     id: "claude-haiku-4-5",
     name: "Claude Haiku 4.5 (latest)",
@@ -235,7 +252,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AnthropicModelId = keyof typeof models;
-export type AnthropicTextModelId = "claude-fable-5" | "claude-haiku-4-5" | "claude-haiku-4-5-20251001" | "claude-opus-4-5" | "claude-opus-4-5-20251101" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-5-20250929" | "claude-sonnet-4-6" | "claude-sonnet-5";
+export type AnthropicTextModelId = "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-haiku-4-5-20251001" | "claude-opus-4-5" | "claude-opus-4-5-20251101" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-5-20250929" | "claude-sonnet-4-6" | "claude-sonnet-5";
 export type AnthropicImageModelId = never;
 export type AnthropicAudioModelId = never;
 export type AnthropicVideoModelId = never;

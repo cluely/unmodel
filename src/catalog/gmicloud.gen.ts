@@ -13,6 +13,36 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "MiniMaxAI/MiniMax-M2.7": {
+    id: "MiniMaxAI/MiniMax-M2.7",
+    name: "MiniMax-M2.7",
+    family: "minimax",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-03-18",
+    lastUpdated: "2026-03-18",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 196608, output: 131072 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.06 },
+  },
+  "MiniMaxAI/MiniMax-M3": {
+    id: "MiniMaxAI/MiniMax-M3",
+    name: "MiniMax-M3",
+    family: "minimax",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-06-01",
+    lastUpdated: "2026-06-01",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 512000 },
+    cost: { input: 0.6, output: 2.4, cacheRead: 0.12 },
+  },
   "Qwen/Qwen3.7-Max": {
     id: "Qwen/Qwen3.7-Max",
     name: "Qwen3.7 Max",
@@ -227,7 +257,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GmicloudModelId = keyof typeof models;
-export type GmicloudTextModelId = "Qwen/Qwen3.7-Max" | "anthropic/claude-opus-4.6" | "anthropic/claude-opus-4.7" | "anthropic/claude-opus-4.8" | "anthropic/claude-sonnet-4.6" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Pro" | "moonshotai/Kimi-K2.6" | "moonshotai/kimi-k2.7-code-highspeed" | "openai/gpt-5.5" | "zai-org/GLM-5-FP8" | "zai-org/GLM-5.1-FP8" | "zai-org/GLM-5.2-FP8";
+export type GmicloudTextModelId = "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen3.7-Max" | "anthropic/claude-opus-4.6" | "anthropic/claude-opus-4.7" | "anthropic/claude-opus-4.8" | "anthropic/claude-sonnet-4.6" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Pro" | "moonshotai/Kimi-K2.6" | "moonshotai/kimi-k2.7-code-highspeed" | "openai/gpt-5.5" | "zai-org/GLM-5-FP8" | "zai-org/GLM-5.1-FP8" | "zai-org/GLM-5.2-FP8";
 export type GmicloudImageModelId = never;
 export type GmicloudAudioModelId = never;
 export type GmicloudVideoModelId = never;

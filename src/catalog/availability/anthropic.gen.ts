@@ -25,6 +25,12 @@ export const availability = {
     "openrouter": "anthropic/claude-fable-5",
     "vercel": "anthropic/claude-fable-5",
   },
+  "claude-fable-5-1": {
+    "amazon-bedrock": "anthropic.claude-fable-5-1",
+    "anthropic": "claude-fable-5-1",
+    "openrouter": "anthropic/claude-fable-5.1",
+    "vercel": "anthropic/claude-fable-5.1",
+  },
   "claude-haiku-4-5": {
     "amazon-bedrock": "anthropic.claude-haiku-4-5-20251001-v1:0",
     "anthropic": "claude-haiku-4-5",

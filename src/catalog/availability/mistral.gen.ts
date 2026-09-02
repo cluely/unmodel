@@ -24,6 +24,7 @@ export const availability = {
   },
   "devstral-2512": {
     "mistral": "devstral-2512",
+    "openrouter": "mistralai/devstral-2512",
   },
   "devstral-latest": {
     "mistral": "devstral-latest",
@@ -48,7 +49,6 @@ export const availability = {
   },
   "magistral-small": {
     "mistral": "magistral-small",
-    "vercel": "mistral/magistral-small",
   },
   "ministral-3b-latest": {
     "mistral": "ministral-3b-latest",
@@ -119,6 +119,9 @@ export const availability = {
   },
   "voxtral-small-latest": {
     "mistral": "voxtral-small-latest",
+  },
+  "zai-glm-5-2": {
+    "mistral": "zai-glm-5-2",
   },
 } as const satisfies AvailabilityMap;
 

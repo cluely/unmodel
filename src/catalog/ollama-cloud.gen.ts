@@ -97,6 +97,36 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 976000, output: 131072 },
   },
+  "glm-5.3": {
+    id: "glm-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+  },
+  "glm-5.3-flash": {
+    id: "glm-5.3-flash",
+    name: "GLM-5.3-Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+  },
   "gpt-oss:120b": {
     id: "gpt-oss:120b",
     name: "gpt-oss:120b",
@@ -293,7 +323,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type OllamaCloudModelId = keyof typeof models;
-export type OllamaCloudTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash:0731" | "deepseek-v4-pro" | "gemma4:31b" | "glm-5.1" | "glm-5.2" | "gpt-oss:120b" | "gpt-oss:20b" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "minimax-m2.5" | "minimax-m2.7" | "minimax-m3" | "mistral-large-3:675b" | "nemotron-3-nano:30b" | "nemotron-3-super" | "nemotron-3-ultra" | "qwen3.5:397b";
+export type OllamaCloudTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash:0731" | "deepseek-v4-pro" | "gemma4:31b" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss:120b" | "gpt-oss:20b" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "minimax-m2.5" | "minimax-m2.7" | "minimax-m3" | "mistral-large-3:675b" | "nemotron-3-nano:30b" | "nemotron-3-super" | "nemotron-3-ultra" | "qwen3.5:397b";
 export type OllamaCloudImageModelId = never;
 export type OllamaCloudAudioModelId = never;
 export type OllamaCloudVideoModelId = never;

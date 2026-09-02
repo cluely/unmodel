@@ -143,6 +143,22 @@ export const models = {
     limit: { context: 262144, output: 65536 },
     cost: { input: 0.32, output: 3.2 },
   },
+  "qwen/qwen3.8-27b": {
+    id: "qwen/qwen3.8-27b",
+    name: "Qwen3.8 27B",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 262144, output: 32768 },
+    cost: { input: 0.4, output: 3, cacheRead: 0.2 },
+  },
   "zai-org/glm-5.2": {
     id: "zai-org/glm-5.2",
     name: "GLM-5.2",
@@ -159,10 +175,26 @@ export const models = {
     limit: { context: 1048576, output: 131072 },
     cost: { input: 1, output: 4 },
   },
+  "zai-org/glm-5.3": {
+    id: "zai-org/glm-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 1, output: 4, cacheRead: 0.3 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type AiandModelId = keyof typeof models;
-export type AiandTextModelId = "deepseek-ai/deepseek-v4-flash" | "deepseek-ai/deepseek-v4-pro" | "google/gemma-4-31b-it" | "moonshotai/kimi-k2.7-code" | "moonshotai/kimi-k3" | "motif-technologies/motif-3" | "openai/gpt-oss-120b" | "qwen/qwen3.6-27b" | "zai-org/glm-5.2";
+export type AiandTextModelId = "deepseek-ai/deepseek-v4-flash" | "deepseek-ai/deepseek-v4-pro" | "google/gemma-4-31b-it" | "moonshotai/kimi-k2.7-code" | "moonshotai/kimi-k3" | "motif-technologies/motif-3" | "openai/gpt-oss-120b" | "qwen/qwen3.6-27b" | "qwen/qwen3.8-27b" | "zai-org/glm-5.2" | "zai-org/glm-5.3";
 export type AiandImageModelId = never;
 export type AiandAudioModelId = never;
 export type AiandVideoModelId = never;

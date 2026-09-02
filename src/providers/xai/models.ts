@@ -1,12 +1,12 @@
 // Hand-supplemented — models.dev's xai snapshot (src/catalog/xai.gen.ts)
-// already tracks four of the five Imagine ids (grok-imagine-image,
+// tracks all five Imagine ids (grok-imagine-image, grok-imagine-image-2.0,
 // grok-imagine-image-quality, grok-imagine-video, grok-imagine-video-1.5) but
-// carries no cost for any of them, and is missing grok-imagine-image-2.0
-// entirely. Refresh from
+// carries no cost for any of them. Refresh from
 //   https://docs.x.ai/developers/models                                (model list + Imagine pricing table)
-//   https://docs.x.ai/developers/model-capabilities/imagine            (image endpoints)
+//   https://docs.x.ai/developers/model-capabilities/images/generation  (image endpoints)
+//   https://docs.x.ai/developers/model-capabilities/images/editing     (image edit endpoint)
 //   https://docs.x.ai/developers/model-capabilities/video/generation   (video endpoints)
-// Verified 2026-08-24.
+// Verified 2026-09-02.
 //
 // Pricing (the "Imagine Pricing" table on https://docs.x.ai/developers/models,
 // quoted verbatim — flat per-image / per-second rates, no arithmetic needed):
@@ -18,15 +18,13 @@
 // The docs page lists these as five separate models with five separate rates —
 // none is documented as an alias of another.
 //
-// The four snapshot-tracked rows are MIRRORED by hand rather than imported:
-// pulling `src/catalog/xai.gen.ts` in here would put the generated chat
-// catalog inside the `unmodel/image` and `unmodel/video` packs, whose catalog
-// graphs are pinned in test/bundle-budget.test.ts (same trade as
-// google/tts-models.ts). Cross-check the mirrored fields against the
-// generated file on each codegen refresh; if models.dev ever grows real cost
-// data for these ids, reconcile the rates here. The one truly hand row
-// (grok-imagine-image-2.0) follows HAND_CATALOGS.md: `limit.context: 0`
-// because it is not a token-context model.
+// All five rows are MIRRORED by hand rather than imported: pulling
+// `src/catalog/xai.gen.ts` in here would put the generated chat catalog inside
+// the `unmodel/image` and `unmodel/video` packs, whose catalog graphs are
+// pinned in test/bundle-budget.test.ts (same trade as google/tts-models.ts).
+// Cross-check the mirrored fields against the generated file on each codegen
+// refresh; if models.dev ever grows real cost data for these ids, reconcile
+// the rates here. `models.test.ts` makes that cross-check mechanical.
 
 import type { ModelInfo } from "../../core/catalog-types";
 
@@ -67,20 +65,15 @@ export const imageModels = {
     limit: { context: 8000, output: 0 },
     cost: { perImage: IMAGE_PER_IMAGE_USD },
   },
-  // Missing from models.dev; the primary id in every example on
-  // https://docs.x.ai/developers/model-capabilities/imagine.
+  // Text-to-image here; the same id also drives POST /v1/images/edits.
   "grok-imagine-image-2.0": {
+    ...IMAGINE_BASE,
     id: "grok-imagine-image-2.0",
     name: "Grok Imagine Image 2.0",
-    family: "grok",
-    attachment: true,
-    reasoning: false,
-    toolCall: false,
-    temperature: false,
-    openWeights: false,
-    // Text-to-image here; the same id also drives POST /v1/images/edits.
-    modalities: { input: ["text", "image"], output: ["image"] },
-    limit: { context: 0 },
+    releaseDate: "2026-08-07",
+    lastUpdated: "2026-08-07",
+    modalities: { input: ["text", "image", "pdf"], output: ["image", "pdf"] },
+    limit: { context: 8000, output: 0 },
     cost: { perImage: IMAGE_2_0_PER_IMAGE_USD },
   },
   "grok-imagine-image-quality": {

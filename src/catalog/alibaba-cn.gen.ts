@@ -255,7 +255,7 @@ export const models = {
     lastUpdated: "2026-02-11",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 202752, output: 16384 },
-    cost: { input: 0.86, output: 3.15 },
+    cost: { input: 0.573, output: 2.58 },
   },
   "glm-5.1": {
     id: "glm-5.1",
@@ -271,7 +271,7 @@ export const models = {
     lastUpdated: "2026-04-14",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 202752, output: 128000 },
-    cost: { input: 0.87, output: 3.48, cacheRead: 0.17 },
+    cost: { input: 0.825, output: 3.301, cacheRead: 0.17 },
   },
   "glm-5.2": {
     id: "glm-5.2",
@@ -578,7 +578,7 @@ export const models = {
     lastUpdated: "2025-09-11",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 32768 },
-    cost: { input: 0.115, output: 0.287, reasoning: 1.147 },
+    cost: { input: 0.115, output: 0.287, cacheRead: 0.012, cacheWrite: 0.144, reasoning: 1.147 },
   },
   "qwen-plus-character": {
     id: "qwen-plus-character",
@@ -1122,7 +1122,7 @@ export const models = {
     lastUpdated: "2026-02-16",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 65536 },
-    cost: { input: 0.43, output: 2.58, reasoning: 2.58 },
+    cost: { input: 0.172, output: 1.032, reasoning: 1.032 },
   },
   "qwen3.5-flash": {
     id: "qwen3.5-flash",
@@ -1251,6 +1251,21 @@ export const models = {
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 1000000, output: 64000 },
     cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0.625 },
+  },
+  "qwen3.8-flash": {
+    id: "qwen3.8-flash",
+    name: "Qwen3.8 Flash",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.11875, output: 0.40073, cacheRead: 0.01187, cacheWrite: 0.14844 },
   },
   "qwen3.8-max": {
     id: "qwen3.8-max",
@@ -1383,7 +1398,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AlibabaCnModelId = keyof typeof models;
-export type AlibabaCnTextModelId = "MiniMax-M2.5" | "MiniMax/MiniMax-M2.7" | "deepseek-r1" | "deepseek-r1-0528" | "deepseek-r1-distill-llama-70b" | "deepseek-r1-distill-llama-8b" | "deepseek-r1-distill-qwen-1-5b" | "deepseek-r1-distill-qwen-14b" | "deepseek-r1-distill-qwen-32b" | "deepseek-r1-distill-qwen-7b" | "deepseek-v3" | "deepseek-v3-1" | "deepseek-v3-2-exp" | "deepseek-v4-flash" | "deepseek-v4-pro" | "glm-5" | "glm-5.1" | "glm-5.2" | "kimi-k2-thinking" | "kimi-k2.5" | "kimi-k2.6" | "kimi/kimi-k2.5" | "moonshot-kimi-k2-instruct" | "qvq-max" | "qwen-deep-research" | "qwen-doc-turbo" | "qwen-flash" | "qwen-long" | "qwen-math-plus" | "qwen-math-turbo" | "qwen-max" | "qwen-mt-plus" | "qwen-mt-turbo" | "qwen-omni-turbo" | "qwen-omni-turbo-realtime" | "qwen-plus" | "qwen-plus-character" | "qwen-turbo" | "qwen-vl-max" | "qwen-vl-ocr" | "qwen-vl-plus" | "qwen2-5-14b-instruct" | "qwen2-5-32b-instruct" | "qwen2-5-72b-instruct" | "qwen2-5-7b-instruct" | "qwen2-5-coder-32b-instruct" | "qwen2-5-coder-7b-instruct" | "qwen2-5-math-72b-instruct" | "qwen2-5-math-7b-instruct" | "qwen2-5-omni-7b" | "qwen2-5-vl-72b-instruct" | "qwen2-5-vl-7b-instruct" | "qwen3-14b" | "qwen3-235b-a22b" | "qwen3-32b" | "qwen3-8b" | "qwen3-asr-flash" | "qwen3-coder-30b-a3b-instruct" | "qwen3-coder-480b-a35b-instruct" | "qwen3-coder-flash" | "qwen3-coder-plus" | "qwen3-max" | "qwen3-next-80b-a3b-instruct" | "qwen3-next-80b-a3b-thinking" | "qwen3-omni-flash" | "qwen3-omni-flash-realtime" | "qwen3-vl-235b-a22b" | "qwen3-vl-30b-a3b" | "qwen3-vl-plus" | "qwen3.5-397b-a17b" | "qwen3.5-flash" | "qwen3.5-plus" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-max" | "qwq-32b" | "qwq-plus" | "siliconflow/deepseek-r1-0528" | "siliconflow/deepseek-v3-0324" | "siliconflow/deepseek-v3.1-terminus" | "siliconflow/deepseek-v3.2" | "tongyi-intent-detect-v3";
+export type AlibabaCnTextModelId = "MiniMax-M2.5" | "MiniMax/MiniMax-M2.7" | "deepseek-r1" | "deepseek-r1-0528" | "deepseek-r1-distill-llama-70b" | "deepseek-r1-distill-llama-8b" | "deepseek-r1-distill-qwen-1-5b" | "deepseek-r1-distill-qwen-14b" | "deepseek-r1-distill-qwen-32b" | "deepseek-r1-distill-qwen-7b" | "deepseek-v3" | "deepseek-v3-1" | "deepseek-v3-2-exp" | "deepseek-v4-flash" | "deepseek-v4-pro" | "glm-5" | "glm-5.1" | "glm-5.2" | "kimi-k2-thinking" | "kimi-k2.5" | "kimi-k2.6" | "kimi/kimi-k2.5" | "moonshot-kimi-k2-instruct" | "qvq-max" | "qwen-deep-research" | "qwen-doc-turbo" | "qwen-flash" | "qwen-long" | "qwen-math-plus" | "qwen-math-turbo" | "qwen-max" | "qwen-mt-plus" | "qwen-mt-turbo" | "qwen-omni-turbo" | "qwen-omni-turbo-realtime" | "qwen-plus" | "qwen-plus-character" | "qwen-turbo" | "qwen-vl-max" | "qwen-vl-ocr" | "qwen-vl-plus" | "qwen2-5-14b-instruct" | "qwen2-5-32b-instruct" | "qwen2-5-72b-instruct" | "qwen2-5-7b-instruct" | "qwen2-5-coder-32b-instruct" | "qwen2-5-coder-7b-instruct" | "qwen2-5-math-72b-instruct" | "qwen2-5-math-7b-instruct" | "qwen2-5-omni-7b" | "qwen2-5-vl-72b-instruct" | "qwen2-5-vl-7b-instruct" | "qwen3-14b" | "qwen3-235b-a22b" | "qwen3-32b" | "qwen3-8b" | "qwen3-asr-flash" | "qwen3-coder-30b-a3b-instruct" | "qwen3-coder-480b-a35b-instruct" | "qwen3-coder-flash" | "qwen3-coder-plus" | "qwen3-max" | "qwen3-next-80b-a3b-instruct" | "qwen3-next-80b-a3b-thinking" | "qwen3-omni-flash" | "qwen3-omni-flash-realtime" | "qwen3-vl-235b-a22b" | "qwen3-vl-30b-a3b" | "qwen3-vl-plus" | "qwen3.5-397b-a17b" | "qwen3.5-flash" | "qwen3.5-plus" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max" | "qwq-32b" | "qwq-plus" | "siliconflow/deepseek-r1-0528" | "siliconflow/deepseek-v3-0324" | "siliconflow/deepseek-v3.1-terminus" | "siliconflow/deepseek-v3.2" | "tongyi-intent-detect-v3";
 export type AlibabaCnImageModelId = never;
 export type AlibabaCnAudioModelId = "qwen-omni-turbo" | "qwen-omni-turbo-realtime" | "qwen2-5-omni-7b" | "qwen3-omni-flash" | "qwen3-omni-flash-realtime";
 export type AlibabaCnVideoModelId = never;

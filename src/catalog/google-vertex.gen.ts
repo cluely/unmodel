@@ -12,6 +12,39 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "claude-fable-5-1@default": {
+    id: "claude-fable-5-1@default",
+    name: "Claude Fable 5.1",
+    family: "claude-fable",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06",
+    releaseDate: "2026-09-01",
+    lastUpdated: "2026-09-01",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 10, output: 50, cacheRead: 0.25, cacheWrite: 12.5 },
+  },
+  "claude-fable-5@default": {
+    id: "claude-fable-5@default",
+    name: "Claude Fable 5",
+    family: "claude-fable",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-01-31",
+    releaseDate: "2026-06-09",
+    lastUpdated: "2026-06-09",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
+  },
   "claude-haiku-4-5@20251001": {
     id: "claude-haiku-4-5@20251001",
     name: "Claude Haiku 4.5",
@@ -222,7 +255,7 @@ export const models = {
     status: "deprecated",
     modalities: { input: ["text", "pdf"], output: ["text"] },
     limit: { context: 163840, output: 32768 },
-    cost: { input: 0.6, output: 1.7 },
+    cost: { input: 0.6, output: 1.7, cacheRead: 0.06 },
   },
   "deepseek-ai/deepseek-v3.2-maas": {
     id: "deepseek-ai/deepseek-v3.2-maas",
@@ -255,7 +288,7 @@ export const models = {
     lastUpdated: "2025-06-17",
     modalities: { input: ["text", "image", "audio", "video", "pdf"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
-    cost: { input: 0.3, output: 2.5, cacheRead: 0.075, cacheWrite: 0.383 },
+    cost: { input: 0.3, output: 2.5, cacheRead: 0.03, inputAudio: 1 },
   },
   "gemini-2.5-flash-image": {
     id: "gemini-2.5-flash-image",
@@ -368,7 +401,7 @@ export const models = {
     lastUpdated: "2026-05-28",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
     limit: { context: 65536, output: 32768 },
-    cost: { input: 2, output: 120 },
+    cost: { input: 2, output: 120, cacheRead: 0.2 },
   },
   "gemini-3.1-flash-image": {
     id: "gemini-3.1-flash-image",
@@ -384,7 +417,7 @@ export const models = {
     lastUpdated: "2026-05-28",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text", "image"] },
     limit: { context: 131072, output: 32768 },
-    cost: { input: 0.5, output: 60 },
+    cost: { input: 0.5, output: 60, cacheRead: 0.05 },
   },
   "gemini-3.1-flash-lite": {
     id: "gemini-3.1-flash-lite",
@@ -504,7 +537,40 @@ export const models = {
     lastUpdated: "2026-07-21",
     modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
-    cost: { input: 1.5, output: 7.5, cacheRead: 0.15, inputAudio: 1.5 },
+    cost: { input: 0.75, output: 3.75, cacheRead: 0.075, inputAudio: 0.75 },
+  },
+  "gemini-3.7-flash": {
+    id: "gemini-3.7-flash",
+    name: "Gemini 3.7 Flash",
+    family: "gemini-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2026-03",
+    releaseDate: "2026-08-13",
+    lastUpdated: "2026-08-13",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 0.75, output: 3.75, cacheRead: 0.075, inputAudio: 0.75 },
+  },
+  "gemini-3.8-flash": {
+    id: "gemini-3.8-flash",
+    name: "Gemini 3.8 Flash",
+    family: "gemini-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 0.75, output: 3.75, cacheRead: 0.075, inputAudio: 0.75 },
   },
   "gemini-embedding-001": {
     id: "gemini-embedding-001",
@@ -532,9 +598,9 @@ export const models = {
     structuredOutput: true,
     temperature: true,
     openWeights: false,
-    knowledge: "2025-01",
-    releaseDate: "2026-05-19",
-    lastUpdated: "2026-05-19",
+    knowledge: "2026-03",
+    releaseDate: "2026-08-13",
+    lastUpdated: "2026-08-13",
     modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
     cost: { input: 1.5, output: 9, cacheRead: 0.15, inputAudio: 1.5 },
@@ -548,9 +614,9 @@ export const models = {
     toolCall: true,
     temperature: true,
     openWeights: false,
-    knowledge: "2025-01",
-    releaseDate: "2026-05-07",
-    lastUpdated: "2026-05-07",
+    knowledge: "2026-03",
+    releaseDate: "2026-07-21",
+    lastUpdated: "2026-07-21",
     modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
     cost: { input: 0.25, output: 1.5, cacheRead: 0.025, inputAudio: 0.5 },
@@ -606,7 +672,7 @@ export const models = {
     status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0.6, output: 2.5 },
+    cost: { input: 0.6, output: 2.5, cacheRead: 0.06 },
   },
   "openai/gpt-oss-120b-maas": {
     id: "openai/gpt-oss-120b-maas",
@@ -637,7 +703,7 @@ export const models = {
     status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131072, output: 32768 },
-    cost: { input: 0.07, output: 0.25 },
+    cost: { input: 0.07, output: 0.25, cacheRead: 0.007 },
   },
   "qwen/qwen3-235b-a22b-instruct-2507-maas": {
     id: "qwen/qwen3-235b-a22b-instruct-2507-maas",
@@ -672,7 +738,7 @@ export const models = {
     status: "deprecated",
     modalities: { input: ["text", "pdf"], output: ["text"] },
     limit: { context: 200000, output: 128000 },
-    cost: { input: 0.6, output: 2.2 },
+    cost: { input: 0.6, output: 2.2, cacheRead: 0.06 },
   },
   "zai-org/glm-5-maas": {
     id: "zai-org/glm-5-maas",
@@ -693,7 +759,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GoogleVertexModelId = keyof typeof models;
-export type GoogleVertexTextModelId = "claude-haiku-4-5@20251001" | "claude-opus-4-1@20250805" | "claude-opus-4-5@20251101" | "claude-opus-4-6@default" | "claude-opus-4-7@default" | "claude-opus-4-8@default" | "claude-opus-4@20250514" | "claude-opus-5@default" | "claude-sonnet-4-5@20250929" | "claude-sonnet-4-6@default" | "claude-sonnet-4@20250514" | "claude-sonnet-5@default" | "deepseek-ai/deepseek-v3.1-maas" | "deepseek-ai/deepseek-v3.2-maas" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-embedding-001" | "gemini-flash-latest" | "gemini-flash-lite-latest" | "meta/llama-3.3-70b-instruct-maas" | "meta/llama-4-maverick-17b-128e-instruct-maas" | "moonshotai/kimi-k2-thinking-maas" | "openai/gpt-oss-120b-maas" | "openai/gpt-oss-20b-maas" | "qwen/qwen3-235b-a22b-instruct-2507-maas" | "zai-org/glm-4.7-maas" | "zai-org/glm-5-maas";
+export type GoogleVertexTextModelId = "claude-fable-5-1@default" | "claude-fable-5@default" | "claude-haiku-4-5@20251001" | "claude-opus-4-1@20250805" | "claude-opus-4-5@20251101" | "claude-opus-4-6@default" | "claude-opus-4-7@default" | "claude-opus-4-8@default" | "claude-opus-4@20250514" | "claude-opus-5@default" | "claude-sonnet-4-5@20250929" | "claude-sonnet-4-6@default" | "claude-sonnet-4@20250514" | "claude-sonnet-5@default" | "deepseek-ai/deepseek-v3.1-maas" | "deepseek-ai/deepseek-v3.2-maas" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-embedding-001" | "gemini-flash-latest" | "gemini-flash-lite-latest" | "meta/llama-3.3-70b-instruct-maas" | "meta/llama-4-maverick-17b-128e-instruct-maas" | "moonshotai/kimi-k2-thinking-maas" | "openai/gpt-oss-120b-maas" | "openai/gpt-oss-20b-maas" | "qwen/qwen3-235b-a22b-instruct-2507-maas" | "zai-org/glm-4.7-maas" | "zai-org/glm-5-maas";
 export type GoogleVertexImageModelId = "gemini-2.5-flash-image" | "gemini-3-pro-image" | "gemini-3.1-flash-image";
 export type GoogleVertexAudioModelId = "gemini-2.5-flash-tts" | "gemini-2.5-pro-tts";
 export type GoogleVertexVideoModelId = never;

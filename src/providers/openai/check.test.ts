@@ -64,8 +64,8 @@ describe("checkChat", () => {
     // prompt_tokens INCLUDES cache_write_tokens on this API; billing them at
     // input + cacheWrite would double-charge (2.25x instead of 1.25x).
     const cost = models["gpt-5.6"].cost;
-    expect(cost?.input).toBe(5);
-    expect(cost?.cacheWrite).toBe(6.25);
+    expect(cost?.input).toBe(4);
+    expect(cost?.cacheWrite).toBe(5);
     const report = checkChat({
       model: "gpt-5.6",
       usage: {
@@ -75,7 +75,7 @@ describe("checkChat", () => {
       },
     });
     expect(report.usage.cacheWriteTokens).toBe(1_000_000);
-    expect(report.costUSD).toBeCloseTo(6.25, 10);
+    expect(report.costUSD).toBeCloseTo(5, 10);
   });
 
   test("mixed fresh + cached + cache-written prompt tokens price each bucket once", () => {

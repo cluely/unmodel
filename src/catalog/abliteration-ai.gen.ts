@@ -43,10 +43,25 @@ export const models = {
     limit: { context: 1000000, output: 999990, input: 1000000 },
     cost: { input: 5, output: 5, cacheRead: 0.5 },
   },
+  "abliterated-model-large-v2": {
+    id: "abliterated-model-large-v2",
+    name: "Abliterated Model Large V2",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-29",
+    lastUpdated: "2026-08-31",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 999990, input: 1000000 },
+    cost: { input: 5, output: 5, cacheRead: 0.5 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type AbliterationAiModelId = keyof typeof models;
-export type AbliterationAiTextModelId = "abliterated-model" | "abliterated-model-large";
+export type AbliterationAiTextModelId = "abliterated-model" | "abliterated-model-large" | "abliterated-model-large-v2";
 export type AbliterationAiImageModelId = never;
 export type AbliterationAiAudioModelId = never;
 export type AbliterationAiVideoModelId = never;

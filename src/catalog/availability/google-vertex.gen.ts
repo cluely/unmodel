@@ -120,6 +120,17 @@ export const availability = {
     "openrouter": "google/gemini-3.6-flash",
     "vercel": { id: "google/gemini-3.6-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
+  "gemini-3.7-flash": {
+    "google": "gemini-3.7-flash",
+    "google-vertex": "gemini-3.7-flash",
+    "openrouter": "google/gemini-3.7-flash",
+    "vercel": { id: "google/gemini-3.7-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
+  },
+  "gemini-3.8-flash": {
+    "google": "gemini-3.8-flash",
+    "google-vertex": "gemini-3.8-flash",
+    "openrouter": "google/gemini-3.8-flash",
+  },
   "gemini-flash-latest": {
     "google": "gemini-flash-latest",
     "google-vertex": "gemini-flash-latest",
@@ -171,7 +182,6 @@ export const availability = {
     "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-20b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-20b",
-    "fireworks-ai": "accounts/fireworks/models/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chatMaas" },
     "groq": "openai/gpt-oss-20b",
     "huggingface": "openai/gpt-oss-20b",

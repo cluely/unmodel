@@ -140,10 +140,26 @@ export const models = {
     limit: { context: 524288, output: 65536 },
     cost: { input: 1.4, output: 4.4, cacheRead: 1.4 },
   },
+  "hf:zai-org/GLM-5.3-Flash": {
+    id: "hf:zai-org/GLM-5.3-Flash",
+    name: "GLM-5.3-Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 524288, output: 65536 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.04 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type SyntheticModelId = keyof typeof models;
-export type SyntheticTextModelId = "hf:MiniMaxAI/MiniMax-M3" | "hf:Qwen/Qwen3.6-27B" | "hf:moonshotai/Kimi-K2.7-Code" | "hf:moonshotai/Kimi-K3" | "hf:nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4" | "hf:openai/gpt-oss-120b" | "hf:zai-org/GLM-4.7-Flash" | "hf:zai-org/GLM-5.2";
+export type SyntheticTextModelId = "hf:MiniMaxAI/MiniMax-M3" | "hf:Qwen/Qwen3.6-27B" | "hf:moonshotai/Kimi-K2.7-Code" | "hf:moonshotai/Kimi-K3" | "hf:nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4" | "hf:openai/gpt-oss-120b" | "hf:zai-org/GLM-4.7-Flash" | "hf:zai-org/GLM-5.2" | "hf:zai-org/GLM-5.3-Flash";
 export type SyntheticImageModelId = never;
 export type SyntheticAudioModelId = never;
 export type SyntheticVideoModelId = never;

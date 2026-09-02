@@ -51,7 +51,7 @@ export const availability = {
     "nvidia": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
     "openrouter": "google/gemma-4-31b-it",
     "siliconflow": { id: "google/gemma-4-31B-it", narrows: { drops: ["image"] } },
-    "vercel": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
+    "vercel": "google/gemma-4-31b-it",
   },
   "zai-org/GLM-5.1": {
     "baseten": "zai-org/GLM-5.1",
@@ -80,6 +80,17 @@ export const availability = {
     "togetherai": { id: "zai-org/GLM-5.2", narrows: { context: 512000 } },
     "vercel": "zai/glm-5.2",
     "zhipuai": "glm-5.2",
+  },
+  "zai-org/GLM-5.3": {
+    "baseten": "zai-org/GLM-5.3",
+    "cloudflare-workers-ai": "@cf/zai-org/glm-5.3",
+    "deepinfra": "zai-org/GLM-5.3",
+    "friendli": "zai-org/GLM-5.3",
+    "huggingface": "zai-org/GLM-5.3",
+    "openrouter": "z-ai/glm-5.3",
+    "togetherai": "zai-org/GLM-5.3",
+    "vercel": { id: "zai/glm-5.3", narrows: { context: 1000000 } },
+    "zhipuai": { id: "glm-5.3", narrows: { context: 1000000 } },
   },
 } as const satisfies AvailabilityMap;
 

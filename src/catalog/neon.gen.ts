@@ -503,7 +503,7 @@ export const models = {
     lastUpdated: "2026-07-09",
     modalities: { input: ["text", "image", "pdf"], output: ["text", "image"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
-    cost: { input: 1, output: 6, cacheRead: 0.1 },
+    cost: { input: 0.2, output: 1.2, cacheRead: 0.02, cacheWrite: 0.25 },
   },
   "gpt-5-6-sol": {
     id: "gpt-5-6-sol",
@@ -520,7 +520,7 @@ export const models = {
     lastUpdated: "2026-07-09",
     modalities: { input: ["text", "image", "pdf"], output: ["text", "image"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
-    cost: { input: 5, output: 30, cacheRead: 0.5 },
+    cost: { input: 5, output: 30, cacheRead: 0.5, cacheWrite: 6.25 },
   },
   "gpt-5-6-terra": {
     id: "gpt-5-6-terra",
@@ -537,7 +537,7 @@ export const models = {
     lastUpdated: "2026-07-09",
     modalities: { input: ["text", "image", "pdf"], output: ["text", "image"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
-    cost: { input: 2.5, output: 15, cacheRead: 0.25 },
+    cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 2.5 },
   },
   "gpt-5-mini": {
     id: "gpt-5-mini",
@@ -587,7 +587,7 @@ export const models = {
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131072, output: 25000 },
-    cost: { input: 0.072, output: 0.28 },
+    cost: { input: 0.15, output: 0.6 },
   },
   "gpt-oss-20b": {
     id: "gpt-oss-20b",
@@ -603,7 +603,7 @@ export const models = {
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131072, output: 25000 },
-    cost: { input: 0.05, output: 0.2 },
+    cost: { input: 0.07, output: 0.3 },
   },
   "inkling": {
     id: "inkling",
@@ -619,6 +619,7 @@ export const models = {
     lastUpdated: "2026-07-15",
     modalities: { input: ["text", "image", "audio"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
+    cost: { input: 1, output: 4.05, cacheRead: 0.17 },
   },
   "kimi-k3": {
     id: "kimi-k3",

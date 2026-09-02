@@ -8,7 +8,7 @@ describe("unmodel/deepseek", () => {
 
   test("a catalog model validates and stays wire-pure", () => {
     const params = {
-      model: "deepseek-chat" as const,
+      model: "deepseek-v4-flash" as const,
       messages: [{ role: "user" as const, content: "hi" }],
     };
     const v = chat(params);
@@ -29,7 +29,7 @@ describe("unmodel/deepseek", () => {
 
   test("checkChat maps usage from a minimal response", () => {
     const report = checkChat({
-      model: "deepseek-chat",
+      model: "deepseek-v4-flash",
       choices: [{ finish_reason: "stop" }],
       usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
     });

@@ -28,7 +28,7 @@ export const models = {
     lastUpdated: "2026-07-31",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 384000 },
-    cost: { input: 0.7, output: 1.9, cacheRead: 0.125 },
+    cost: { input: 0.3, output: 0.7, cacheRead: 0.06 },
   },
   "gemma4-31b": {
     id: "gemma4-31b",
@@ -110,7 +110,7 @@ export const models = {
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 131072 },
-    cost: { input: 4, output: 20 },
+    cost: { input: 4, output: 20, cacheRead: 0.8 },
   },
   "llama3-3-70b": {
     id: "llama3-3-70b",

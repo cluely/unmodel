@@ -28,6 +28,24 @@ export const models = {
     limit: { context: 8191, output: 3072 },
     cost: { input: 0.1, output: 0 },
   },
+  "deepseek-v4-flash-0731": {
+    id: "deepseek-v4-flash-0731",
+    name: "DeepSeek V4 Flash 0731",
+    family: "deepseek-flash",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-07-31",
+    lastUpdated: "2026-07-31",
+    status: "beta",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 256000, output: 16384 },
+    cost: { input: 0.468, output: 0.936, cacheRead: 0.0936, reasoning: 0.936 },
+  },
   "gemma-4-26b-a4b-it": {
     id: "gemma-4-26b-a4b-it",
     name: "Gemma 4 26B A4B IT",
@@ -242,7 +260,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type ScalewayModelId = keyof typeof models;
-export type ScalewayTextModelId = "bge-multilingual-gemma2" | "gemma-4-26b-a4b-it" | "glm-5.2" | "gpt-oss-120b" | "llama-3.3-70b-instruct" | "mistral-medium-3.5-128b" | "mistral-small-3.2-24b-instruct-2506" | "pixtral-12b-2409" | "qwen3-235b-a22b-instruct-2507" | "qwen3-coder-30b-a3b-instruct" | "qwen3-embedding-8b" | "qwen3.5-397b-a17b" | "qwen3.6-35b-a3b" | "whisper-large-v3";
+export type ScalewayTextModelId = "bge-multilingual-gemma2" | "deepseek-v4-flash-0731" | "gemma-4-26b-a4b-it" | "glm-5.2" | "gpt-oss-120b" | "llama-3.3-70b-instruct" | "mistral-medium-3.5-128b" | "mistral-small-3.2-24b-instruct-2506" | "pixtral-12b-2409" | "qwen3-235b-a22b-instruct-2507" | "qwen3-coder-30b-a3b-instruct" | "qwen3-embedding-8b" | "qwen3.5-397b-a17b" | "qwen3.6-35b-a3b" | "whisper-large-v3";
 export type ScalewayImageModelId = never;
 export type ScalewayAudioModelId = never;
 export type ScalewayVideoModelId = never;

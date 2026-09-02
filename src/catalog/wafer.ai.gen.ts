@@ -76,7 +76,7 @@ export const models = {
     releaseDate: "2026-06-01",
     lastUpdated: "2026-06-01",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1048576, output: 128000 },
+    limit: { context: 1048576, output: 512000 },
     cost: { input: 0.33, output: 1.32, cacheRead: 0.07, cacheWrite: 0 },
   },
   "glm5.2-fast": {

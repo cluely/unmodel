@@ -1900,6 +1900,8 @@ export interface OpenaiGptImage2Input {
    * 8,294,400. Default: `"landscape_4_3"`.
    */
   image_size?: FalImageSize | "square_hd" | "square" | "portrait_4_3" | "portrait_16_9" | "landscape_4_3" | "landscape_16_9" | "auto";
+  /** Background for the generated image. Default: `"auto"`. */
+  background?: "auto" | "transparent" | "opaque";
   /**
    * Quality for the generated image. Use 'auto' to let the model pick the best quality for
    * the prompt. Default: `"high"`.

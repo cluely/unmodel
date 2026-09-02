@@ -625,7 +625,7 @@ export const models = {
     releaseDate: "2026-06-01",
     lastUpdated: "2026-06-01",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 512000, output: 128000 },
+    limit: { context: 1048576, output: 512000 },
     cost: { input: 0.6, output: 2.4 },
   },
   "moonshotai/kimi-k2-0905": {

@@ -45,26 +45,10 @@ export const models = {
     limit: { context: 131072, output: 40960 },
     cost: { input: 0.35, output: 0.75 },
   },
-  "zai-glm-4.7": {
-    id: "zai-glm-4.7",
-    name: "Z.AI GLM-4.7",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-01-07",
-    lastUpdated: "2026-06-10",
-    status: "beta",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 40960 },
-    cost: { input: 2.25, output: 2.75, cacheRead: 2.25, cacheWrite: 0 },
-  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type CerebrasModelId = keyof typeof models;
-export type CerebrasTextModelId = "gemma-4-31b" | "gpt-oss-120b" | "zai-glm-4.7";
+export type CerebrasTextModelId = "gemma-4-31b" | "gpt-oss-120b";
 export type CerebrasImageModelId = never;
 export type CerebrasAudioModelId = never;
 export type CerebrasVideoModelId = never;

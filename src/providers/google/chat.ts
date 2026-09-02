@@ -47,8 +47,10 @@ import {
   GEMINI_LOGPROBS_RANGE,
   GEMINI_MAX_STOP_SEQUENCES,
   GEMINI_MEDIA_RESOLUTIONS,
+  GEMINI_NO_MINIMAL_THINKING_MODEL_IDS,
   GEMINI_RESPONSE_MODALITIES,
   GEMINI_TEMPERATURE_RANGE,
+  GEMINI_THINKING_DOCS_URL,
   GEMINI_THINKING_LEVELS,
   GENERATE_CONTENT_API_DOCS_URL,
   GOOGLE_MEDIA_DOC_URLS,
@@ -387,6 +389,27 @@ function checkGenerationConfigRanges(
       model,
       message: `\`generationConfig.thinkingConfig.thinkingLevel\` must be one of ${GEMINI_THINKING_LEVELS.join(", ")}; got ${JSON.stringify(thinkingLevel)}.`,
       meta: { value: thinkingLevel, allowed: [...GEMINI_THINKING_LEVELS], source },
+    });
+  } else if (
+    thinkingLevel !== undefined &&
+    thinkingLevel.toUpperCase() === "MINIMAL" &&
+    GEMINI_NO_MINIMAL_THINKING_MODEL_IDS.includes(
+      stripModelsPrefix(model) as (typeof GEMINI_NO_MINIMAL_THINKING_MODEL_IDS)[number],
+    )
+  ) {
+    const allowed = GEMINI_THINKING_LEVELS.filter(
+      (level) => level !== "MINIMAL" && level !== "THINKING_LEVEL_UNSPECIFIED",
+    );
+    ctx.report({
+      code: "invalid_enum_value",
+      path: ["generationConfig", "thinkingConfig", "thinkingLevel"],
+      model,
+      message: `\`generationConfig.thinkingConfig.thinkingLevel: "${thinkingLevel}"\` is not supported on "${model}" and returns an error; it accepts ${allowed.join(", ")}.`,
+      meta: {
+        value: thinkingLevel,
+        allowed: [...allowed],
+        source: GEMINI_THINKING_DOCS_URL,
+      },
     });
   }
 

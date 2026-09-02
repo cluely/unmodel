@@ -54,7 +54,6 @@ export const availability = {
   "glm-4.6v": {
     "novita-ai": "zai-org/glm-4.6v",
     "openrouter": "z-ai/glm-4.6v",
-    "vercel": { id: "zai/glm-4.6v", narrows: { drops: ["video"] } },
     "zhipuai": "glm-4.6v",
   },
   "glm-4.7": {
@@ -122,6 +121,27 @@ export const availability = {
     "togetherai": { id: "zai-org/GLM-5.2", narrows: { context: 512000 } },
     "vercel": "zai/glm-5.2",
     "zhipuai": "glm-5.2",
+  },
+  "glm-5.3": {
+    "baseten": "zai-org/GLM-5.3",
+    "cloudflare-workers-ai": "@cf/zai-org/glm-5.3",
+    "deepinfra": "zai-org/GLM-5.3",
+    "friendli": "zai-org/GLM-5.3",
+    "huggingface": "zai-org/GLM-5.3",
+    "openrouter": "z-ai/glm-5.3",
+    "togetherai": "zai-org/GLM-5.3",
+    "vercel": "zai/glm-5.3",
+    "zhipuai": "glm-5.3",
+  },
+  "glm-5.3-flash": {
+    "baseten": { id: "zai-org/GLM-5.3-Flash", narrows: { drops: ["video", "pdf"] } },
+    "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.3-flash", narrows: { drops: ["video", "pdf"] } },
+    "deepinfra": "zai-org/GLM-5.3-Flash",
+    "huggingface": { id: "zai-org/GLM-5.3-Flash", narrows: { drops: ["video", "pdf"] } },
+    "openrouter": { id: "z-ai/glm-5.3-flash", narrows: { drops: ["pdf"] } },
+    "togetherai": { id: "zai-org/GLM-5.3-Flash", narrows: { drops: ["pdf"] } },
+    "vercel": { id: "zai/glm-5.3-flash", narrows: { drops: ["video", "pdf"] } },
+    "zhipuai": "glm-5.3-flash",
   },
   "glm-5v-turbo": {
     "openrouter": { id: "z-ai/glm-5v-turbo", narrows: { drops: ["pdf"] } },

@@ -191,6 +191,22 @@ export const models = {
     limit: { context: 262144, output: 262144 },
     cost: { input: 0.47, output: 3.19 },
   },
+  "qwen3.8-27b": {
+    id: "qwen3.8-27b",
+    name: "Qwen3.8-27B",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 262144, output: 262144 },
+    cost: { input: 0, output: 0 },
+  },
   "qwen3guard-gen-0.6b": {
     id: "qwen3guard-gen-0.6b",
     name: "Qwen3Guard-Gen-0.6B",
@@ -203,6 +219,7 @@ export const models = {
     lastUpdated: "2026-01-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 32768, output: 16384 },
+    cost: { input: 0, output: 0 },
   },
   "qwen3guard-gen-8b": {
     id: "qwen3guard-gen-8b",
@@ -216,11 +233,12 @@ export const models = {
     lastUpdated: "2026-01-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 32768, output: 16384 },
+    cost: { input: 0, output: 0 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type OvhcloudModelId = keyof typeof models;
-export type OvhcloudTextModelId = "gpt-oss-120b" | "gpt-oss-20b" | "meta-llama-3_3-70b-instruct" | "mistral-7b-instruct-v0.3" | "mistral-nemo-instruct-2407" | "mistral-small-3.2-24b-instruct-2506" | "qwen2.5-vl-72b-instruct" | "qwen3-32b" | "qwen3-coder-30b-a3b-instruct" | "qwen3.5-397b-a17b" | "qwen3.5-9b" | "qwen3.6-27b" | "qwen3guard-gen-0.6b" | "qwen3guard-gen-8b";
+export type OvhcloudTextModelId = "gpt-oss-120b" | "gpt-oss-20b" | "meta-llama-3_3-70b-instruct" | "mistral-7b-instruct-v0.3" | "mistral-nemo-instruct-2407" | "mistral-small-3.2-24b-instruct-2506" | "qwen2.5-vl-72b-instruct" | "qwen3-32b" | "qwen3-coder-30b-a3b-instruct" | "qwen3.5-397b-a17b" | "qwen3.5-9b" | "qwen3.6-27b" | "qwen3.8-27b" | "qwen3guard-gen-0.6b" | "qwen3guard-gen-8b";
 export type OvhcloudImageModelId = never;
 export type OvhcloudAudioModelId = never;
 export type OvhcloudVideoModelId = never;

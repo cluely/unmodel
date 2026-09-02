@@ -21,7 +21,7 @@
       "lipsync"
     ],
     "thumbnail_url": "https://v3b.fal.media/files/b/0aa30ee1/AvoWQSXcqJuX5CggoM3uh.jpg",
-    "updated_at": "2026-08-17T06:34:03.712Z"
+    "updated_at": "2026-08-28T18:45:04.475Z"
   },
   "openapi": {
     "components": {
@@ -156,7 +156,7 @@
               "type": "string"
             },
             "audio_urls": {
-              "description": "Reference audio to guide video generation. Refer to them in the prompt as @Audio1, @Audio2, etc. Supported formats: MP3, WAV. Up to 10 files. Each file must be 1.8 to 30.2 seconds and no larger than 15 MB; combined duration must not exceed 30.2 seconds. If audio is provided, at least one reference image or video is required.",
+              "description": "Reference audio to guide video generation. Refer to them in the prompt as @Audio1, @Audio2, etc. Supported formats: MP3, WAV. Up to 10 files. Each file must be 1.8 to 30.2 seconds and no larger than 15 MB; combined duration must not exceed 30.2 seconds. At least one reference image or video is required.",
               "items": {
                 "_fal_ui_field": "audio",
                 "type": "string"

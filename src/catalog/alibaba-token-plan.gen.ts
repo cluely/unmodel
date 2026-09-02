@@ -96,6 +96,22 @@ export const models = {
     limit: { context: 1000000, output: 384000 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
+  "deepseek-v4-pro-0813": {
+    id: "deepseek-v4-pro-0813",
+    name: "DeepSeek V4 Pro 0813",
+    family: "deepseek-thinking",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-22",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
   "glm-5": {
     id: "glm-5",
     name: "GLM-5",
@@ -333,6 +349,21 @@ export const models = {
     limit: { context: 1000000, output: 65536 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
+  "qwen3.8-flash": {
+    id: "qwen3.8-flash",
+    name: "Qwen3.8 Flash",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
   "qwen3.8-max": {
     id: "qwen3.8-max",
     name: "Qwen3.8 Max",
@@ -397,7 +428,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AlibabaTokenPlanModelId = keyof typeof models;
-export type AlibabaTokenPlanTextModelId = "MiniMax-M2.5" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "glm-5" | "glm-5.1" | "glm-5.2" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "qwen3.6-flash" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-max" | "qwen3.8-max-preview";
+export type AlibabaTokenPlanTextModelId = "MiniMax-M2.5" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "glm-5" | "glm-5.1" | "glm-5.2" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "qwen3.6-flash" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max" | "qwen3.8-max-preview";
 export type AlibabaTokenPlanImageModelId = "qwen-image-2.0" | "qwen-image-2.0-pro" | "wan2.7-image" | "wan2.7-image-pro";
 export type AlibabaTokenPlanAudioModelId = never;
 export type AlibabaTokenPlanVideoModelId = "happyhorse-1.1-i2v" | "happyhorse-1.1-r2v" | "happyhorse-1.1-t2v";

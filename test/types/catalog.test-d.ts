@@ -3,15 +3,16 @@
  * by `bun test` — this file is only type-checked (`bun run check` / tsc
  * --noEmit).
  *
- * The two entries are the same 184-provider object with two declarations, and
+ * The two entries are the same 212-provider object with two declarations, and
  * what is pinned here is that each keeps its half of the bargain:
  *
  * - `unmodel/catalog` stays widened, because its declaration is ~4 KiB and is
  *   what a project resolves when it only wants `ProviderId`. Dropping the
  *   annotation would take it to ~3.6 MB (test/bundle-budget.test.ts pins it).
  * - `unmodel/catalog/typed` keeps the literals the `.gen` files already
- *   computed. 184 providers ship a catalog and 71 have a provider subpath, so
- *   for ~113 providers these are the ONLY typed access to their model ids.
+ *   computed. 212 providers ship a catalog and 37 of those also have a
+ *   provider subpath, so for 175 providers these are the ONLY typed access to
+ *   their model ids.
  *
  * The honesty assertions matter as much as the payoff ones: a KNOWN pair
  * resolves to a non-optional row, and everything else keeps `| undefined`.

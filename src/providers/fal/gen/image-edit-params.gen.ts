@@ -227,6 +227,26 @@ const ROW_792393 = {
 } as const;
 
 /**
+ * openai/gpt-image-2/edit.
+ *
+ * The extras are typed from `OpenaiGptImage2EditInput`, so the value an editor offers here
+ * and the value `fal.imageEdit` validates are one declaration.
+ */
+const ROW_9718c7 = {
+  classes: ["imageSizeUnion"],
+  keys: ["prompt", "image_urls", "image_size", "background", "quality", "num_images", "output_format", "sync_mode", "mask_url"],
+  sizes: ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9", "auto"],
+  pixels: { min: 1, max: 14142 },
+  bounds: { num_images: { min: 1, max: 4 } },
+  extras: {
+    background: EXTRA as OpenaiGptImage2EditInput["background"],
+    quality: EXTRA as OpenaiGptImage2EditInput["quality"],
+    sync_mode: EXTRA as OpenaiGptImage2EditInput["sync_mode"],
+    mask_url: EXTRA as OpenaiGptImage2EditInput["mask_url"],
+  },
+} as const;
+
+/**
  * alibaba/qwen-image-3/edit.
  *
  * The extras are typed from `AlibabaQwenImage3EditInput`, so the value an editor offers
@@ -368,25 +388,6 @@ const ROW_f174c0 = {
   },
 } as const;
 
-/**
- * openai/gpt-image-2/edit.
- *
- * The extras are typed from `OpenaiGptImage2EditInput`, so the value an editor offers here
- * and the value `fal.imageEdit` validates are one declaration.
- */
-const ROW_fc9529 = {
-  classes: ["imageSizeUnion"],
-  keys: ["prompt", "image_urls", "image_size", "quality", "num_images", "output_format", "sync_mode", "mask_url"],
-  sizes: ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9", "auto"],
-  pixels: { min: 1, max: 14142 },
-  bounds: { num_images: { min: 1, max: 4 } },
-  extras: {
-    quality: EXTRA as OpenaiGptImage2EditInput["quality"],
-    sync_mode: EXTRA as OpenaiGptImage2EditInput["sync_mode"],
-    mask_url: EXTRA as OpenaiGptImage2EditInput["mask_url"],
-  },
-} as const;
-
 export const FAL_IMAGE_EDIT_PARAM_SHAPES = {
   "alibaba/qwen-image-3/edit": ROW_ba33e1,
   "bytedance/seedream/v5/pro/edit": ROW_1540d1,
@@ -404,7 +405,7 @@ export const FAL_IMAGE_EDIT_PARAM_SHAPES = {
   "fal-ai/nano-banana-pro/edit": ROW_3512f3,
   "fal-ai/nano-banana/edit": ROW_459272,
   "fal-ai/qwen-image-edit-2511": ROW_5553cd,
-  "openai/gpt-image-2/edit": ROW_fc9529,
+  "openai/gpt-image-2/edit": ROW_9718c7,
 } as const satisfies Record<string, FalParamShape>;
 
 /**

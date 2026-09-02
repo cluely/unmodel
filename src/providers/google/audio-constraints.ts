@@ -108,6 +108,8 @@ export const GEMINI_STT_MODEL_IDS = [
   "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
   "gemini-3.6-flash",
+  "gemini-3.7-flash",
+  "gemini-3.8-flash",
   "gemini-flash-latest",
   "gemini-flash-lite-latest",
 ] as const;
@@ -131,8 +133,6 @@ export const GEMINI_STT_EXCLUDED_IDS: Readonly<Record<string, string>> = {
     "it is a Live API translation model — its audio arrives over the bidiGenerateContent WebSocket, not this unary generateContent route",
   "gemini-embedding-2":
     "it is an embedding model served by :embedContent (its output limit is 1 token), so it cannot return a transcript",
-  "gemini-robotics-er-1.6-preview":
-    "it is an embodied-reasoning model; Google documents no transcription behaviour for it",
   "deep-research-preview-04-2026":
     "it is the agentic Deep Research surface (it emits images alongside text), not a transcription model",
   "deep-research-max-preview-04-2026":

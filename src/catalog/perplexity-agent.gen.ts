@@ -109,6 +109,23 @@ export const models = {
     limit: { context: 200000, output: 64000 },
     cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
+  "deepseek/deepseek-v4-flash-0731": {
+    id: "deepseek/deepseek-v4-flash-0731",
+    name: "DeepSeek V4 Flash 0731",
+    family: "deepseek-flash",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-07-31",
+    lastUpdated: "2026-07-31",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0.13, output: 0.26, cacheRead: 0.028 },
+  },
   "google/gemini-2.5-flash": {
     id: "google/gemini-2.5-flash",
     name: "Gemini 2.5 Flash",
@@ -334,10 +351,27 @@ export const models = {
     limit: { context: 2000000, output: 30000 },
     cost: { input: 0.2, output: 0.5, cacheRead: 0.05 },
   },
+  "xai/grok-4.6": {
+    id: "xai/grok-4.6",
+    name: "Grok 4.6",
+    family: "grok",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2026-02-01",
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-12",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 500000, output: 500000 },
+    cost: { input: 2, output: 6, cacheRead: 0.5 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type PerplexityAgentModelId = keyof typeof models;
-export type PerplexityAgentTextModelId = "anthropic/claude-haiku-4-5" | "anthropic/claude-opus-4-5" | "anthropic/claude-opus-4-6" | "anthropic/claude-opus-4-7" | "anthropic/claude-sonnet-4-5" | "anthropic/claude-sonnet-4-6" | "google/gemini-2.5-flash" | "google/gemini-2.5-pro" | "google/gemini-3-flash-preview" | "google/gemini-3.1-pro-preview" | "moonshot-ai/kimi-k2.7-code" | "moonshot-ai/kimi-k3" | "nvidia/nemotron-3-super-120b-a12b" | "openai/gpt-5-mini" | "openai/gpt-5.1" | "openai/gpt-5.2" | "openai/gpt-5.4" | "openai/gpt-5.5" | "perplexity/sonar" | "xai/grok-4-1-fast-non-reasoning";
+export type PerplexityAgentTextModelId = "anthropic/claude-haiku-4-5" | "anthropic/claude-opus-4-5" | "anthropic/claude-opus-4-6" | "anthropic/claude-opus-4-7" | "anthropic/claude-sonnet-4-5" | "anthropic/claude-sonnet-4-6" | "deepseek/deepseek-v4-flash-0731" | "google/gemini-2.5-flash" | "google/gemini-2.5-pro" | "google/gemini-3-flash-preview" | "google/gemini-3.1-pro-preview" | "moonshot-ai/kimi-k2.7-code" | "moonshot-ai/kimi-k3" | "nvidia/nemotron-3-super-120b-a12b" | "openai/gpt-5-mini" | "openai/gpt-5.1" | "openai/gpt-5.2" | "openai/gpt-5.4" | "openai/gpt-5.5" | "perplexity/sonar" | "xai/grok-4-1-fast-non-reasoning" | "xai/grok-4.6";
 export type PerplexityAgentImageModelId = never;
 export type PerplexityAgentAudioModelId = never;
 export type PerplexityAgentVideoModelId = never;

@@ -13,8 +13,8 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "auto": {
-    id: "auto",
+  "trustedrouter/auto": {
+    id: "trustedrouter/auto",
     name: "Auto",
     attachment: true,
     reasoning: true,
@@ -27,8 +27,8 @@ export const models = {
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
   },
-  "cheap": {
-    id: "cheap",
+  "trustedrouter/cheap": {
+    id: "trustedrouter/cheap",
     name: "Cheap",
     attachment: true,
     reasoning: true,
@@ -41,8 +41,8 @@ export const models = {
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
   },
-  "e2e": {
-    id: "e2e",
+  "trustedrouter/e2e": {
+    id: "trustedrouter/e2e",
     name: "End-to-End Encrypted",
     attachment: true,
     reasoning: true,
@@ -55,8 +55,8 @@ export const models = {
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
   },
-  "fast": {
-    id: "fast",
+  "trustedrouter/fast": {
+    id: "trustedrouter/fast",
     name: "Fast",
     attachment: true,
     reasoning: true,
@@ -69,8 +69,8 @@ export const models = {
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
   },
-  "synth": {
-    id: "synth",
+  "trustedrouter/synth": {
+    id: "trustedrouter/synth",
     name: "Synth",
     attachment: true,
     reasoning: true,
@@ -83,8 +83,8 @@ export const models = {
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
   },
-  "synth-code": {
-    id: "synth-code",
+  "trustedrouter/synth-code": {
+    id: "trustedrouter/synth-code",
     name: "Synth Code",
     attachment: true,
     reasoning: true,
@@ -97,8 +97,8 @@ export const models = {
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
   },
-  "zdr": {
-    id: "zdr",
+  "trustedrouter/zdr": {
+    id: "trustedrouter/zdr",
     name: "Zero Data Retention",
     attachment: true,
     reasoning: true,
@@ -114,7 +114,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type TrustedrouterModelId = keyof typeof models;
-export type TrustedrouterTextModelId = "auto" | "cheap" | "e2e" | "fast" | "synth" | "synth-code" | "zdr";
+export type TrustedrouterTextModelId = "trustedrouter/auto" | "trustedrouter/cheap" | "trustedrouter/e2e" | "trustedrouter/fast" | "trustedrouter/synth" | "trustedrouter/synth-code" | "trustedrouter/zdr";
 export type TrustedrouterImageModelId = never;
 export type TrustedrouterAudioModelId = never;
 export type TrustedrouterVideoModelId = never;

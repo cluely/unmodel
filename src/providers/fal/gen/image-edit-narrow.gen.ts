@@ -318,11 +318,12 @@ export const FAL_IMAGE_EDIT_SHAPES = {
     },
   },
   "openai/gpt-image-2/edit": {
-    order: ["prompt", "image_urls", "image_size", "quality", "num_images", "output_format", "sync_mode", "mask_url"],
+    order: ["prompt", "image_urls", "image_size", "background", "quality", "num_images", "output_format", "sync_mode", "mask_url"],
     props: {
       prompt: { t: "string", req: true, minLen: 2, maxLen: 32000 },
       image_urls: { t: "array", req: true, maxItems: 16, items: { t: "string", media: "image" }, media: "image" },
       image_size: { t: "union", def: true, size: { presets: E_f02829, width: { xmin: 0, max: 14142, default: 512 }, height: { xmin: 0, max: 14142, default: 512 } } },
+      background: { t: "string", def: true, enum: E_9373e9 },
       quality: { t: "string", def: true, enum: E_d2a2cd },
       num_images: { t: "integer", def: true, min: 1, max: 4 },
       output_format: { t: "string", def: true, enum: E_205460 },
@@ -417,6 +418,7 @@ export const FAL_IMAGE_EDIT_CONSTRAINTS = {
     acceleration: E_a13c1b,
   },
   "openai/gpt-image-2/edit": {
+    background: E_9373e9,
     quality: E_d2a2cd,
     output_format: E_205460,
   },

@@ -5,7 +5,7 @@
 import type { ModelInfo, ProviderInfo } from "../core/catalog-types";
 
 export const provider = {
-  id: "scx",
+  id: "scx-ai",
   name: "SCX.ai",
   env: ["SCX_API_KEY"],
   doc: "https://platform.scx.ai/docs",
@@ -13,6 +13,22 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "GLM-5.2": {
+    id: "GLM-5.2",
+    name: "GLM-5.2",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-06-13",
+    lastUpdated: "2026-06-13",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.55, output: 1.784, cacheRead: 0.111 },
+  },
   "MiniMax-M2.7": {
     id: "MiniMax-M2.7",
     name: "MiniMax-M2.7",
@@ -26,8 +42,24 @@ export const models = {
     releaseDate: "2026-03-18",
     lastUpdated: "2026-03-18",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 192000, output: 64000 },
+    limit: { context: 196608, output: 196608 },
     cost: { input: 0.48, output: 1.79, cacheRead: 0.05 },
+  },
+  "Qwen3.8-Max": {
+    id: "Qwen3.8-Max",
+    name: "Qwen3.8 Max",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-03",
+    lastUpdated: "2026-08-03",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 131072, input: 983616 },
+    cost: { input: 1.815, output: 5.4461, cacheRead: 0.17, cacheWrite: 2.5 },
   },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
@@ -47,8 +79,8 @@ export const models = {
   },
 } as const satisfies Record<string, ModelInfo>;
 
-export type ScxModelId = keyof typeof models;
-export type ScxTextModelId = "MiniMax-M2.7" | "gpt-oss-120b";
-export type ScxImageModelId = never;
-export type ScxAudioModelId = never;
-export type ScxVideoModelId = never;
+export type ScxAiModelId = keyof typeof models;
+export type ScxAiTextModelId = "GLM-5.2" | "MiniMax-M2.7" | "Qwen3.8-Max" | "gpt-oss-120b";
+export type ScxAiImageModelId = never;
+export type ScxAiAudioModelId = never;
+export type ScxAiVideoModelId = never;

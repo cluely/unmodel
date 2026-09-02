@@ -815,6 +815,40 @@ describe("generationConfig ranges and enums", () => {
     );
   });
 
+  test("thinkingLevel MINIMAL fails on the two models whose docs say it errors", () => {
+    for (const model of ["gemini-3.7-flash", "gemini-3.8-flash", "models/gemini-3.8-flash"]) {
+      const issue = expectError(
+        chat.safe({
+          model,
+          contents: HELLO,
+          generationConfig: { thinkingConfig: { thinkingLevel: "MINIMAL" } },
+        }),
+        "invalid_enum_value",
+      );
+      expect(issue.path).toEqual(["generationConfig", "thinkingConfig", "thinkingLevel"]);
+      expect(issue.meta?.allowed).toEqual(["LOW", "MEDIUM", "HIGH"]);
+    }
+
+    // The levels those models do accept, and the generation that still takes
+    // MINIMAL — the restriction is per-model, not per-family.
+    for (const thinkingLevel of ["LOW", "MEDIUM", "HIGH"]) {
+      expectOk(
+        chat.safe({
+          model: "gemini-3.8-flash",
+          contents: HELLO,
+          generationConfig: { thinkingConfig: { thinkingLevel } },
+        }),
+      );
+    }
+    expectOk(
+      chat.safe({
+        model: "gemini-3.6-flash",
+        contents: HELLO,
+        generationConfig: { thinkingConfig: { thinkingLevel: "MINIMAL" } },
+      }),
+    );
+  });
+
   test("a model that cannot return the requested modality fails", () => {
     const issue = expectError(
       chat.safe({

@@ -13,38 +13,6 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "deepseek-chat": {
-    id: "deepseek-chat",
-    name: "DeepSeek Chat",
-    family: "deepseek",
-    attachment: true,
-    reasoning: false,
-    toolCall: true,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2025-09",
-    releaseDate: "2025-12-01",
-    lastUpdated: "2026-02-28",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 384000 },
-    cost: { input: 0.14, output: 0.28, cacheRead: 0.0028 },
-  },
-  "deepseek-reasoner": {
-    id: "deepseek-reasoner",
-    name: "DeepSeek Reasoner",
-    family: "deepseek-thinking",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2025-09",
-    releaseDate: "2025-12-01",
-    lastUpdated: "2026-02-28",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 384000 },
-    cost: { input: 0.14, output: 0.28, cacheRead: 0.0028, reasoning: 0.28 },
-  },
   "deepseek-v4-flash": {
     id: "deepseek-v4-flash",
     name: "DeepSeek V4 Flash",
@@ -62,6 +30,23 @@ export const models = {
     limit: { context: 1000000, output: 384000 },
     cost: { input: 0.14, output: 0.28, cacheRead: 0.0028, reasoning: 0.28 },
   },
+  "deepseek-v4-flash-vision-exp": {
+    id: "deepseek-v4-flash-vision-exp",
+    name: "DeepSeek V4 Flash Vision Exp",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-21",
+    lastUpdated: "2026-08-21",
+    status: "beta",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0.14, output: 0.28, cacheRead: 0.0028, reasoning: 0.28 },
+  },
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
@@ -71,9 +56,9 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-12",
-    lastUpdated: "2026-08-12",
+    lastUpdated: "2026-08-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 384000 },
     cost: { input: 0.435, output: 0.87, cacheRead: 0.003625, reasoning: 0.87 },
@@ -81,7 +66,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type DeepseekModelId = keyof typeof models;
-export type DeepseekTextModelId = "deepseek-chat" | "deepseek-reasoner" | "deepseek-v4-flash" | "deepseek-v4-pro";
+export type DeepseekTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro";
 export type DeepseekImageModelId = never;
 export type DeepseekAudioModelId = never;
 export type DeepseekVideoModelId = never;

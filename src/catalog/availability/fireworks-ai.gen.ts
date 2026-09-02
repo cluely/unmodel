@@ -19,46 +19,38 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
-  "accounts/fireworks/models/deepseek-v4-flash": {
-    "azure": "deepseek-v4-flash",
-    "deepinfra": "deepseek-ai/DeepSeek-V4-Flash",
-    "deepseek": "deepseek-v4-flash",
-    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash",
-    "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
-    "nebius": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 131072 } },
-    "novita-ai": "deepseek/deepseek-v4-flash",
-    "nvidia": "deepseek-ai/deepseek-v4-flash",
-    "openrouter": "deepseek/deepseek-v4-flash",
-    "siliconflow": "deepseek-ai/DeepSeek-V4-Flash",
-    "vercel": "deepseek/deepseek-v4-flash",
-  },
   "accounts/fireworks/models/deepseek-v4-flash-0731": {
     "alibaba": "deepseek-v4-flash-0731",
     "baseten": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4-flash-0731",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-0731",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "nvidia": "deepseek-ai/deepseek-v4-flash-0731",
     "openrouter": "deepseek/deepseek-v4-flash-0731",
+    "scaleway": { id: "deepseek-v4-flash-0731", narrows: { context: 256000 } },
     "togetherai": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "vercel": "deepseek/deepseek-v4-flash-0731",
   },
-  "accounts/fireworks/models/deepseek-v4-pro": {
-    "azure": "deepseek-v4-pro",
-    "baseten": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 262144 } },
-    "deepinfra": "deepseek-ai/DeepSeek-V4-Pro",
-    "deepseek": "deepseek-v4-pro",
-    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-pro",
-    "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
-    "nebius": "deepseek-ai/DeepSeek-V4-Pro",
-    "novita-ai": "deepseek/deepseek-v4-pro",
-    "nvidia": "deepseek-ai/deepseek-v4-pro",
-    "openrouter": "deepseek/deepseek-v4-pro",
-    "siliconflow": "deepseek-ai/DeepSeek-V4-Pro",
-    "togetherai": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 512000 } },
-    "vercel": "deepseek/deepseek-v4-pro",
+  "accounts/fireworks/models/deepseek-v4-pro-0813": {
+    "baseten": "deepseek-ai/DeepSeek-V4-Pro-0813",
+    "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4-pro-0813",
+    "deepinfra": "deepseek-ai/DeepSeek-V4-Pro-0813",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-pro-0813",
+    "huggingface": "deepseek-ai/DeepSeek-V4-Pro-0813",
+    "nvidia": "deepseek-ai/deepseek-v4-pro-0813",
+    "openrouter": "deepseek/deepseek-v4-pro-0813",
+    "togetherai": "deepseek-ai/DeepSeek-V4-Pro-0813",
+    "vercel": "deepseek/deepseek-v4-pro-0813",
   },
   "accounts/fireworks/models/glm-5p2": {
     "fireworks-ai": "accounts/fireworks/models/glm-5p2",
+  },
+  "accounts/fireworks/models/glm-5p3": {
+    "fireworks-ai": "accounts/fireworks/models/glm-5p3",
+  },
+  "accounts/fireworks/models/glm-5p3-flash": {
+    "fireworks-ai": "accounts/fireworks/models/glm-5p3-flash",
   },
   "accounts/fireworks/models/gpt-oss-120b": {
     "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
@@ -76,19 +68,15 @@ export const availability = {
     "togetherai": "openai/gpt-oss-120b",
     "vercel": "openai/gpt-oss-120b",
   },
-  "accounts/fireworks/models/gpt-oss-20b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
-    "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-20b", narrows: { context: 128000 } },
-    "deepinfra": "openai/gpt-oss-20b",
-    "fireworks-ai": "accounts/fireworks/models/gpt-oss-20b",
-    "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chatMaas" },
-    "groq": "openai/gpt-oss-20b",
-    "huggingface": "openai/gpt-oss-20b",
-    "novita-ai": "openai/gpt-oss-20b",
-    "nvidia": "openai/gpt-oss-20b",
-    "openrouter": "openai/gpt-oss-20b",
-    "togetherai": "openai/gpt-oss-20b",
-    "vercel": "openai/gpt-oss-20b",
+  "accounts/fireworks/models/inkling": {
+    "baseten": { id: "thinkingmachines/inkling", narrows: { drops: ["audio"] } },
+    "deepinfra": { id: "thinkingmachines/Inkling", narrows: { context: 524288 } },
+    "fireworks-ai": "accounts/fireworks/models/inkling",
+    "huggingface": { id: "thinkingmachines/Inkling", narrows: { drops: ["audio"] } },
+    "nvidia": "thinkingmachines/inkling",
+    "openrouter": "thinkingmachines/inkling",
+    "togetherai": { id: "thinkingmachines/Inkling", narrows: { context: 524288 } },
+    "vercel": { id: "thinkingmachines/inkling", narrows: { context: 256000, drops: ["audio"] } },
   },
   "accounts/fireworks/models/kimi-k2p6": {
     "fireworks-ai": "accounts/fireworks/models/kimi-k2p6",
@@ -104,12 +92,10 @@ export const availability = {
     "moonshotai": "kimi-k3",
     "nebius": { id: "moonshotai/Kimi-K3", narrows: { drops: ["image"] } },
     "novita-ai": "moonshotai/kimi-k3",
+    "nvidia": "moonshotai/kimi-k3",
     "openrouter": "moonshotai/kimi-k3",
     "togetherai": "moonshotai/Kimi-K3",
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000 } },
-  },
-  "accounts/fireworks/models/minimax-m2p7": {
-    "fireworks-ai": "accounts/fireworks/models/minimax-m2p7",
   },
   "accounts/fireworks/models/minimax-m3": {
     "deepinfra": "MiniMaxAI/MiniMax-M3",
@@ -122,20 +108,26 @@ export const availability = {
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["video"] } },
     "vercel": { id: "minimax/minimax-m3", narrows: { drops: ["video"] } },
   },
+  "accounts/fireworks/models/muse-glimmer-30b": {
+    "fireworks-ai": "accounts/fireworks/models/muse-glimmer-30b",
+    "nvidia": "meta/muse-glimmer-30b",
+    "openrouter": "meta/muse-glimmer-30b",
+    "vercel": "meta/muse-glimmer-30b",
+  },
+  "accounts/fireworks/models/nemotron-3-ultra-nvfp4": {
+    "fireworks-ai": "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+  },
+  "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": {
+    "fireworks-ai": "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+  },
   "accounts/fireworks/models/qwen3p7-plus": {
     "fireworks-ai": "accounts/fireworks/models/qwen3p7-plus",
   },
+  "accounts/fireworks/models/qwen3p8-max": {
+    "fireworks-ai": "accounts/fireworks/models/qwen3p8-max",
+  },
   "accounts/fireworks/routers/glm-5p2-fast": {
     "fireworks-ai": "accounts/fireworks/routers/glm-5p2-fast",
-  },
-  "accounts/fireworks/routers/kimi-k2p6-fast": {
-    "fireworks-ai": "accounts/fireworks/routers/kimi-k2p6-fast",
-  },
-  "accounts/fireworks/routers/kimi-k2p6-turbo": {
-    "fireworks-ai": "accounts/fireworks/routers/kimi-k2p6-turbo",
-  },
-  "accounts/fireworks/routers/kimi-k2p7-code-fast": {
-    "fireworks-ai": "accounts/fireworks/routers/kimi-k2p7-code-fast",
   },
   "accounts/fireworks/routers/kimi-k3-fast": {
     "fireworks-ai": "accounts/fireworks/routers/kimi-k3-fast",

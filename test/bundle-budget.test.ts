@@ -314,10 +314,18 @@ const MEDIA_RETARGET_MODULES = [
  * slim profile export for discovery, which is ~379 KiB (22%) of the number
  * below for data no validation path reads.
  *
- * 1718.7 KiB measured; 1800 leaves ~4.5% headroom. Applications that need a
- * narrow graph use `unmodel/chat/factory` below.
+ * 1853.4 KiB measured; 2040 restores the ~10% headroom every other row uses.
+ * Bumped 1800 → 2040 by a models.dev refresh: the snapshot gained 28 providers
+ * and the 3.7/3.8-flash, qwen3.8, fable-5.1, glm-5.3 and v4 generations, and
+ * this entry carries a catalog per provider. No module joined the graph — the
+ * import-graph test and the composition tests below still pin the shape, and
+ * the 4.5% the old number left was consumed by data, not by code. Measured
+ * identically on macOS and on a linux/amd64 build, so this row is not one of
+ * the platform-sensitive chunk pins (see the lipsync note below).
+ *
+ * Applications that need a narrow graph use `unmodel/chat/factory` below.
  */
-const CHAT_BUDGET_KIB = 1800;
+const CHAT_BUDGET_KIB = 2040;
 
 /**
  * Provider-free compiler/factory entry; 150.2 KiB measured, pinned at 158.
@@ -358,10 +366,12 @@ const CATALOG_DECLARATION_BUDGET_KIB = 8;
 
 /**
  * …and the opt-in entry's own ceiling, so the heavy half cannot grow unnoticed
- * either. 3607.1 KiB measured; 4200 leaves ~14% for catalog growth (the
- * snapshot gains providers between releases, and each one lands here).
+ * either. 4498.2 KiB measured; 4950 leaves ~10% for catalog growth (the
+ * snapshot gains providers between releases, and each one lands here — the
+ * refresh that took this past 4200 added 28 of them at once). Measured
+ * identically on macOS and on a linux/amd64 build.
  */
-const TYPED_CATALOG_DECLARATION_BUDGET_KIB = 4200;
+const TYPED_CATALOG_DECLARATION_BUDGET_KIB = 4950;
 
 /**
  * Every category entry. All six ship a ready-made pack now, so each has its own

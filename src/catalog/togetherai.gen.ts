@@ -303,6 +303,22 @@ export const models = {
     limit: { context: 512000, output: 384000 },
     cost: { input: 1.74, output: 3.48, cacheRead: 0.2 },
   },
+  "deepseek-ai/DeepSeek-V4-Pro-0813": {
+    id: "deepseek-ai/DeepSeek-V4-Pro-0813",
+    name: "DeepSeek V4 Pro 0813",
+    family: "deepseek-thinking",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-22",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 384000 },
+    cost: { input: 1.32, output: 3.96, cacheRead: 0.13 },
+  },
   "essentialai/Rnj-1-Instruct": {
     id: "essentialai/Rnj-1-Instruct",
     name: "Rnj-1 Instruct",
@@ -580,10 +596,42 @@ export const models = {
     limit: { context: 512000, output: 164000 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
   },
+  "zai-org/GLM-5.3": {
+    id: "zai-org/GLM-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 262144 },
+    cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
+  },
+  "zai-org/GLM-5.3-Flash": {
+    id: "zai-org/GLM-5.3-Flash",
+    name: "GLM-5.3-Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048575, output: 400000 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.03 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type TogetheraiModelId = keyof typeof models;
-export type TogetheraiTextModelId = "LiquidAI/LFM2-24B-A2B" | "MiniMaxAI/MiniMax-M2.5" | "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen2.5-7B-Instruct-Turbo" | "Qwen/Qwen3-235B-A22B-Instruct-2507-tput" | "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8" | "Qwen/Qwen3-Coder-Next-FP8" | "Qwen/Qwen3.5-397B-A17B" | "Qwen/Qwen3.5-9B" | "Qwen/Qwen3.6-Plus" | "Qwen/Qwen3.7-Max" | "deepcogito/cogito-v2-1-671b" | "deepseek-ai/DeepSeek-R1" | "deepseek-ai/DeepSeek-V3" | "deepseek-ai/DeepSeek-V3-1" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "essentialai/Rnj-1-Instruct" | "google/gemma-3n-E4B-it" | "google/gemma-4-31B-it" | "meta-llama/Llama-3.3-70B-Instruct-Turbo" | "meta-llama/Meta-Llama-3-8B-Instruct-Lite" | "moonshotai/Kimi-K2.5" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/nemotron-3-ultra-550b-a55b" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "pearl-ai/gemma-4-31b-it" | "thinkingmachines/Inkling" | "zai-org/GLM-5" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2";
+export type TogetheraiTextModelId = "LiquidAI/LFM2-24B-A2B" | "MiniMaxAI/MiniMax-M2.5" | "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen2.5-7B-Instruct-Turbo" | "Qwen/Qwen3-235B-A22B-Instruct-2507-tput" | "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8" | "Qwen/Qwen3-Coder-Next-FP8" | "Qwen/Qwen3.5-397B-A17B" | "Qwen/Qwen3.5-9B" | "Qwen/Qwen3.6-Plus" | "Qwen/Qwen3.7-Max" | "deepcogito/cogito-v2-1-671b" | "deepseek-ai/DeepSeek-R1" | "deepseek-ai/DeepSeek-V3" | "deepseek-ai/DeepSeek-V3-1" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "essentialai/Rnj-1-Instruct" | "google/gemma-3n-E4B-it" | "google/gemma-4-31B-it" | "meta-llama/Llama-3.3-70B-Instruct-Turbo" | "meta-llama/Meta-Llama-3-8B-Instruct-Lite" | "moonshotai/Kimi-K2.5" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/nemotron-3-ultra-550b-a55b" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "pearl-ai/gemma-4-31b-it" | "thinkingmachines/Inkling" | "zai-org/GLM-5" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
 export type TogetheraiImageModelId = never;
 export type TogetheraiAudioModelId = never;
 export type TogetheraiVideoModelId = never;

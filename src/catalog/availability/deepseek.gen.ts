@@ -19,18 +19,10 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
-  "deepseek-chat": {
-    "deepseek": "deepseek-chat",
-    "openrouter": { id: "deepseek/deepseek-chat", narrows: { context: 163840 } },
-  },
-  "deepseek-reasoner": {
-    "deepseek": "deepseek-reasoner",
-  },
   "deepseek-v4-flash": {
     "azure": "deepseek-v4-flash",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash",
     "deepseek": "deepseek-v4-flash",
-    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
     "nebius": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 131072 } },
     "novita-ai": "deepseek/deepseek-v4-flash",
@@ -39,12 +31,16 @@ export const availability = {
     "siliconflow": "deepseek-ai/DeepSeek-V4-Flash",
     "vercel": "deepseek/deepseek-v4-flash",
   },
+  "deepseek-v4-flash-vision-exp": {
+    "deepseek": "deepseek-v4-flash-vision-exp",
+    "openrouter": "deepseek/deepseek-v4-flash-vision-exp",
+    "vercel": "deepseek/deepseek-v4-flash-vision-exp",
+  },
   "deepseek-v4-pro": {
     "azure": "deepseek-v4-pro",
-    "baseten": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 262144 } },
+    "baseten": "deepseek-ai/DeepSeek-V4-Pro",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Pro",
     "deepseek": "deepseek-v4-pro",
-    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-pro",
     "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
     "nebius": "deepseek-ai/DeepSeek-V4-Pro",
     "novita-ai": "deepseek/deepseek-v4-pro",

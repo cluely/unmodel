@@ -31,6 +31,7 @@ export const availability = {
   },
   "muse-spark-1.2-contributor": {
     "meta": "muse-spark-1.2-contributor",
+    "openrouter": "meta/muse-spark-1.2-contributor",
     "vercel": { id: "meta/muse-spark-1.2-contributor", narrows: { drops: ["video", "audio"] } },
   },
 } as const satisfies AvailabilityMap;

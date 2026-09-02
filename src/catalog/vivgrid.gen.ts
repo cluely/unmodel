@@ -97,6 +97,23 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 2, output: 12, cacheRead: 0.2 },
   },
+  "gemini-3.7-flash": {
+    id: "gemini-3.7-flash",
+    name: "Gemini 3.7 Flash",
+    family: "gemini-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2026-03",
+    releaseDate: "2026-08-13",
+    lastUpdated: "2026-08-13",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 0.75, output: 3.75, cacheRead: 0.075 },
+  },
   "glm-5.2": {
     id: "glm-5.2",
     name: "GLM-5.2",
@@ -112,6 +129,38 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 128000 },
     cost: { input: 1.2, output: 4.2, cacheRead: 0.3 },
+  },
+  "glm-5.3": {
+    id: "glm-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 1.2, output: 4.2, cacheRead: 0.26 },
+  },
+  "glm-5.3-flash": {
+    id: "glm-5.3-flash",
+    name: "GLM-5.3-Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.04 },
   },
   "gpt-5-mini": {
     id: "gpt-5-mini",
@@ -334,7 +383,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type VivgridModelId = keyof typeof models;
-export type VivgridTextModelId = "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-pro" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-pro-preview" | "glm-5.2" | "gpt-5-mini" | "gpt-5.1-codex" | "gpt-5.1-codex-max" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "kimi-k3";
+export type VivgridTextModelId = "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-pro" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-pro-preview" | "gemini-3.7-flash" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-5-mini" | "gpt-5.1-codex" | "gpt-5.1-codex-max" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "kimi-k3";
 export type VivgridImageModelId = never;
 export type VivgridAudioModelId = never;
 export type VivgridVideoModelId = never;

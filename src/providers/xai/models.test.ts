@@ -11,9 +11,10 @@ import {
 // refresh" instruction, made mechanical.
 import { models as generatedModels } from "../../catalog/xai.gen";
 
-/** The four snapshot-tracked Imagine ids the mirror carries, per route. */
+/** The five snapshot-tracked Imagine ids the mirror carries, per route. */
 const MIRRORED = [
   ["grok-imagine-image", imageModels],
+  ["grok-imagine-image-2.0", imageModels],
   ["grok-imagine-image-quality", imageModels],
   ["grok-imagine-video", videoModels],
   ["grok-imagine-video-1.5", videoModels],
@@ -46,15 +47,12 @@ test("every mirrored Imagine row equals its generated row except the added cost"
 });
 
 /**
- * The one truly hand row: `grok-imagine-image-2.0` exists only because
- * models.dev does not track it. The day the generated catalog gains it, this
- * fails and says so — the longhand row should then become a mirror.
+ * The docs-quoted rate for the id the capability guide recommends. Kept as its
+ * own case because the generated row carries no cost at all: the mirror test
+ * above proves the row matches, this one proves the rate is the documented
+ * per-image price rather than whatever a refresh might invent.
  */
-test("grok-imagine-image-2.0 stays absent from the generated catalog", () => {
-  expect(
-    (generatedModels as Record<string, unknown>)["grok-imagine-image-2.0"],
-    "models.dev now tracks grok-imagine-image-2.0 — turn the hand row in ./models into a mirror",
-  ).toBeUndefined();
+test("grok-imagine-image-2.0 carries the docs-quoted per-image rate", () => {
   expect(imageModels["grok-imagine-image-2.0"].cost).toEqual({
     perImage: IMAGE_2_0_PER_IMAGE_USD,
   });

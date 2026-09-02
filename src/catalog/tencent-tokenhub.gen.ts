@@ -43,10 +43,25 @@ export const models = {
     limit: { context: 256000, output: 64000 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
+  "hy4-preview": {
+    id: "hy4-preview",
+    name: "Hy4 preview",
+    family: "Hy",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-28",
+    lastUpdated: "2026-08-28",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1024000, output: 64000 },
+    cost: { input: 0.834, output: 2.501, cacheRead: 0.042 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type TencentTokenhubModelId = keyof typeof models;
-export type TencentTokenhubTextModelId = "hy3" | "hy3-preview";
+export type TencentTokenhubTextModelId = "hy3" | "hy3-preview" | "hy4-preview";
 export type TencentTokenhubImageModelId = never;
 export type TencentTokenhubAudioModelId = never;
 export type TencentTokenhubVideoModelId = never;

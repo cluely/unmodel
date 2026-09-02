@@ -27,7 +27,15 @@ import { sniffImage } from "../../core/media/image";
 import type { SniffedImage } from "../../core/media/image";
 import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check";
 import type { MediaDeclaration } from "../../core/options";
-import { chatConstraints, chatFamilyRules, THINKING_DOCS, VISION_DOCS } from "./constraints";
+import {
+  chatConstraints,
+  chatFamilyRules,
+  FABLE_5_1_DOCS,
+  FORCED_TOOL_USE_REMOVED_MODEL_IDS,
+  THINKING_DOCS,
+  VISION_DOCS,
+} from "./constraints";
+import type { ForcedToolUseRemovedModelId } from "./constraints";
 import { messagesSchema } from "./wire";
 import type { MessagesBody } from "./wire";
 import type {
@@ -291,6 +299,29 @@ export function checkThinkingCompatibility(
       meta: { source: THINKING_DOCS },
     });
   }
+}
+
+/**
+ * Forced tool use is refused outright on the generations that removed it —
+ * unlike the thinking-scoped rule above, which only applies while manual
+ * extended thinking is on.
+ */
+export function checkForcedToolUse(
+  params: MessagesBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const choice = params.tool_choice?.type;
+  if (choice !== "any" && choice !== "tool") return;
+  const model = params.model;
+  if (!FORCED_TOOL_USE_REMOVED_MODEL_IDS.some((id) => isModelOrSnapshot(model, id))) return;
+  ctx.report({
+    code: "unsupported_param",
+    path: ["tool_choice"],
+    model,
+    message: `tool_choice "${choice}" forces tool use, which "${model}" does not support; use "auto"/"none" with \`strict: true\` on the tool, or structured outputs.`,
+    meta: { source: FABLE_5_1_DOCS },
+  });
 }
 
 /** Stricter per-image dimension cap once a request carries more than 20 images (vision docs). */
@@ -568,7 +599,7 @@ const validator = createValidator<MessagesBody, Validated<MessagesBody, ChatSdkT
   catalog: models,
   constraints: chatConstraints,
   familyRules: chatFamilyRules,
-  checks: [checkCapabilities, checkThinkingCompatibility, checkImageMedia],
+  checks: [checkCapabilities, checkThinkingCompatibility, checkForcedToolUse, checkImageMedia],
   estimate: estimateMessages,
   promptPath: ["messages"],
   finalize,
@@ -577,11 +608,12 @@ const validator = createValidator<MessagesBody, Validated<MessagesBody, ChatSdkT
 // ---------------------------------------------------------------------------
 // Per-model narrowing (Tier A)
 //
-// Three facts this endpoint already refuses at call time, moved to compile
-// time. Each is DERIVED — from the deny table or from the catalog — so no
-// hand-copied id list exists to drift, and `chat.test.ts` pins the resolved
-// unions so a `bun run codegen` that flips a flag surfaces as a test diff
-// rather than as a silent break in a caller's code.
+// Four facts this endpoint already refuses at call time, moved to compile
+// time. Each is DERIVED — from the deny table, from the catalog, or from the
+// same list `checkForcedToolUse` reads — so no hand-copied id list exists to
+// drift, and `chat.test.ts` pins the resolved unions so a `bun run codegen`
+// that flips a flag surfaces as a test diff rather than as a silent break in
+// a caller's code.
 //
 // Deliberately NOT narrowed:
 //
@@ -611,13 +643,14 @@ type FixedSamplingModelId = ModelsWhereFalse<typeof models, "temperature">;
 
 /**
  * `checkThinkingCompatibility` refuses `thinking: {type: "disabled"}` here: the
- * model always thinks. Snapshots (`claude-fable-5-20260601`) stay open through
- * `model`'s own `(string & {})` tail, exactly as `isModelOrSnapshot` allows.
+ * model always thinks (adaptive thinking is on and cannot be turned off).
+ * Snapshots (`claude-fable-5-20260601`) stay open through `model`'s own
+ * `(string & {})` tail, exactly as `isModelOrSnapshot` allows.
  */
-type ThinkingAlwaysOnModelId = "claude-fable-5";
+type ThinkingAlwaysOnModelId = "claude-fable-5" | "claude-fable-5-1";
 
 /**
- * `MessagesBody` with the three per-model fields replaced for one model id.
+ * `MessagesBody` with the four per-model fields replaced for one model id.
  *
  * A **replacement**, not an intersection: intersecting `temperature?: 1` with
  * the base's `temperature?: number` gives `number`, which is the whole
@@ -627,7 +660,7 @@ type ThinkingAlwaysOnModelId = "claude-fable-5";
  */
 export type MessagesArm<M extends string> = Omit<
   MessagesBody,
-  "model" | "temperature" | "top_k" | "thinking"
+  "model" | "temperature" | "top_k" | "thinking" | "tool_choice"
 > & {
   model: M;
   temperature?: M extends FixedSamplingModelId ? 1 : number;
@@ -635,6 +668,9 @@ export type MessagesArm<M extends string> = Omit<
   thinking?: M extends ThinkingAlwaysOnModelId
     ? Exclude<NonNullable<MessagesBody["thinking"]>, { type: "disabled" }>
     : MessagesBody["thinking"];
+  tool_choice?: M extends ForcedToolUseRemovedModelId
+    ? Exclude<NonNullable<MessagesBody["tool_choice"]>, { type: "any" } | { type: "tool" }>
+    : MessagesBody["tool_choice"];
 };
 
 /** Registry-instantiable form of this endpoint's generic result. */

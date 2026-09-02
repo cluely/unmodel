@@ -72,7 +72,6 @@ const E_572d7d = ["none", "film", "rife"] as const;
 const E_5764d4 = ["auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"] as const;
 const E_679f9b = ["none", "regular"] as const;
 const E_754fe9 = [6, 8, 10, "auto"] as const;
-const E_80727a = ["disabled", "fast", "balanced", "quality"] as const;
 const E_81b901 = ["16:9", "4:3", "1:1", "3:4", "9:16", "2:3", "3:2", "21:9"] as const;
 const E_856788 = ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 const E_960098 = ["720p"] as const;
@@ -540,7 +539,7 @@ export const FAL_VIDEO_SHAPES = {
       seed: { t: "integer", nul: true },
       enable_safety_checker: { t: "boolean", def: true },
       sync_mode: { t: "boolean", def: true },
-      prompt_expansion_mode: { t: "string", nul: true, def: true, enum: E_80727a },
+      prompt_expansion_mode: { t: "string", nul: true, def: true },
       image_url: { t: "string", nul: true, media: "image" },
       end_image_url: { t: "string", nul: true, media: "image" },
     },
@@ -554,7 +553,7 @@ export const FAL_VIDEO_SHAPES = {
       seed: { t: "integer", nul: true },
       enable_safety_checker: { t: "boolean", def: true },
       sync_mode: { t: "boolean", def: true },
-      prompt_expansion_mode: { t: "string", nul: true, def: true, enum: E_80727a },
+      prompt_expansion_mode: { t: "string", nul: true, def: true },
       aspect_ratio: { t: "string", def: true, enum: E_e82de1 },
     },
   },
@@ -730,11 +729,9 @@ export const FAL_VIDEO_CONSTRAINTS = {
   },
   "minimax/h3/image-to-video": {
     resolution: E_a54268,
-    prompt_expansion_mode: E_80727a,
   },
   "minimax/h3/text-to-video": {
     resolution: E_a54268,
-    prompt_expansion_mode: E_80727a,
     aspect_ratio: E_e82de1,
   },
   "xai/grok-imagine-video/text-to-video": {

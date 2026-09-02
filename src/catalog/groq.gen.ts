@@ -213,6 +213,22 @@ export const models = {
     limit: { context: 131072, output: 16384 },
     cost: { input: 0.6, output: 3, cacheRead: 0.3 },
   },
+  "qwen/qwen3.8-27b": {
+    id: "qwen/qwen3.8-27b",
+    name: "Qwen3.8 27B",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 131042, output: 16384 },
+    cost: { input: 0.8, output: 4 },
+  },
   "whisper-large-v3": {
     id: "whisper-large-v3",
     name: "Whisper",
@@ -244,7 +260,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GroqModelId = keyof typeof models;
-export type GroqTextModelId = "allam-2-7b" | "groq/compound" | "groq/compound-mini" | "llama-3.1-8b-instant" | "llama-3.3-70b-versatile" | "meta-llama/llama-prompt-guard-2-22m" | "meta-llama/llama-prompt-guard-2-86m" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "openai/gpt-oss-safeguard-20b" | "qwen/qwen3.6-27b" | "whisper-large-v3" | "whisper-large-v3-turbo";
+export type GroqTextModelId = "allam-2-7b" | "groq/compound" | "groq/compound-mini" | "llama-3.1-8b-instant" | "llama-3.3-70b-versatile" | "meta-llama/llama-prompt-guard-2-22m" | "meta-llama/llama-prompt-guard-2-86m" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "openai/gpt-oss-safeguard-20b" | "qwen/qwen3.6-27b" | "qwen/qwen3.8-27b" | "whisper-large-v3" | "whisper-large-v3-turbo";
 export type GroqImageModelId = never;
 export type GroqAudioModelId = "canopylabs/orpheus-arabic-saudi" | "canopylabs/orpheus-v1-english";
 export type GroqVideoModelId = never;

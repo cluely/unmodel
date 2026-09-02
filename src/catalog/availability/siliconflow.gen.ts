@@ -159,7 +159,6 @@ export const availability = {
     "azure": "deepseek-v4-flash",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash",
     "deepseek": "deepseek-v4-flash",
-    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
     "nebius": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 131072 } },
     "novita-ai": "deepseek/deepseek-v4-flash",
@@ -170,10 +169,9 @@ export const availability = {
   },
   "deepseek-ai/DeepSeek-V4-Pro": {
     "azure": "deepseek-v4-pro",
-    "baseten": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 262144 } },
+    "baseten": "deepseek-ai/DeepSeek-V4-Pro",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Pro",
     "deepseek": "deepseek-v4-pro",
-    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-pro",
     "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
     "nebius": "deepseek-ai/DeepSeek-V4-Pro",
     "novita-ai": "deepseek/deepseek-v4-pro",
@@ -201,7 +199,7 @@ export const availability = {
     "nvidia": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
     "openrouter": "google/gemma-4-31b-it",
     "siliconflow": "google/gemma-4-31B-it",
-    "vercel": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
+    "vercel": "google/gemma-4-31b-it",
   },
   "inclusionAI/Ling-flash-2.0": {
     "siliconflow": "inclusionAI/Ling-flash-2.0",

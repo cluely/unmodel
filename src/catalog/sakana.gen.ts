@@ -60,10 +60,26 @@ export const models = {
     limit: { context: 1000000, output: 1000000 },
     cost: { input: 5, output: 30, cacheRead: 0.5 },
   },
+  "sakana-namazu": {
+    id: "sakana-namazu",
+    name: "Sakana Namazu",
+    family: "sakana-namazu",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-03",
+    lastUpdated: "2026-08-03",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 262144, output: 65536 },
+    cost: { input: 0.95, output: 4, cacheRead: 0.15 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type SakanaModelId = keyof typeof models;
-export type SakanaTextModelId = "fugu" | "fugu-ultra" | "fugu-ultra-20260615";
+export type SakanaTextModelId = "fugu" | "fugu-ultra" | "fugu-ultra-20260615" | "sakana-namazu";
 export type SakanaImageModelId = never;
 export type SakanaAudioModelId = never;
 export type SakanaVideoModelId = never;

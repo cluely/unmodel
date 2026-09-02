@@ -60,7 +60,6 @@ export const availability = {
     "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-20b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-20b",
-    "fireworks-ai": "accounts/fireworks/models/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chatMaas" },
     "groq": "openai/gpt-oss-20b",
     "huggingface": "openai/gpt-oss-20b",
@@ -81,6 +80,14 @@ export const availability = {
     "openrouter": "qwen/qwen3.6-27b",
     "siliconflow": { id: "Qwen/Qwen3.6-27B", narrows: { drops: ["image"] } },
     "vercel": "alibaba/qwen3.6-27b",
+  },
+  "qwen/qwen3.8-27b": {
+    "cloudflare-workers-ai": "@cf/qwen/qwen3.8-27b",
+    "deepinfra": "Qwen/Qwen3.8-27B",
+    "groq": "qwen/qwen3.8-27b",
+    "huggingface": "Qwen/Qwen3.8-27B",
+    "openrouter": "qwen/qwen3.8-27b",
+    "vercel": "alibaba/qwen3.8-27b",
   },
   "whisper-large-v3": {
     "groq": "whisper-large-v3",

@@ -164,10 +164,42 @@ export const models = {
     limit: { context: 524288, output: 32768 },
     cost: { input: 1.54, output: 4.84 },
   },
+  "zai-org/GLM-5.3": {
+    id: "zai-org/GLM-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-29",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 327680, output: 32768 },
+    cost: { input: 1.75, output: 5.82 },
+  },
+  "zai-org/GLM-5.3-Flash": {
+    id: "zai-org/GLM-5.3-Flash",
+    name: "GLM-5.3-Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-29",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 327680, output: 16384 },
+    cost: { input: 0.29, output: 0.58 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type BergetModelId = keyof typeof models;
-export type BergetTextModelId = "google/gemma-4-31B-it" | "meta-llama/Llama-3.3-70B-Instruct" | "mistralai/Mistral-Medium-3.5-128B" | "mistralai/Mistral-Small-3.2-24B-Instruct-2506" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K3" | "openai/gpt-oss-120b" | "zai-org/GLM-4.7" | "zai-org/GLM-5.2";
+export type BergetTextModelId = "google/gemma-4-31B-it" | "meta-llama/Llama-3.3-70B-Instruct" | "mistralai/Mistral-Medium-3.5-128B" | "mistralai/Mistral-Small-3.2-24B-Instruct-2506" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K3" | "openai/gpt-oss-120b" | "zai-org/GLM-4.7" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
 export type BergetImageModelId = never;
 export type BergetAudioModelId = never;
 export type BergetVideoModelId = never;

@@ -55,8 +55,8 @@ export const models = {
     limit: { context: 32000, output: 4096 },
     cost: { input: 0.0575, output: 0 },
   },
-  "Qwen/Qwen3.6-35B-A3B-FP8": {
-    id: "Qwen/Qwen3.6-35B-A3B-FP8",
+  "Qwen/Qwen3.6-35B-A3B": {
+    id: "Qwen/Qwen3.6-35B-A3B",
     name: "Qwen3.6 35B-A3B",
     family: "qwen",
     attachment: true,
@@ -70,6 +70,22 @@ export const models = {
     modalities: { input: ["text", "image", "video", "audio"], output: ["text"] },
     limit: { context: 262144, output: 65536 },
     cost: { input: 0.345, output: 1.38 },
+  },
+  "Qwen/Qwen3.8-27B": {
+    id: "Qwen/Qwen3.8-27B",
+    name: "Qwen3.8-27B",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 262144, output: 262144 },
+    cost: { input: 0.87, output: 3.5 },
   },
   "evroc/roc": {
     id: "evroc/roc",
@@ -241,7 +257,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type EvrocModelId = keyof typeof models;
-export type EvrocTextModelId = "KBLab/kb-whisper-large" | "Qwen/Qwen3-Embedding-8B" | "Qwen/Qwen3-Reranker-4B" | "Qwen/Qwen3.6-35B-A3B-FP8" | "evroc/roc" | "google/gemma-4-26B-A4B-it" | "intfloat/multilingual-e5-large-instruct" | "mistralai/Mistral-Medium-3.5-128B" | "mistralai/Voxtral-Small-24B-2507" | "moonshotai/Kimi-K2.6" | "nvidia/Llama-3.3-70B-Instruct-FP8" | "openai/gpt-oss-120b" | "openai/whisper-large-v3" | "openai/whisper-large-v3-turbo" | "zai-org/GLM-5.2";
+export type EvrocTextModelId = "KBLab/kb-whisper-large" | "Qwen/Qwen3-Embedding-8B" | "Qwen/Qwen3-Reranker-4B" | "Qwen/Qwen3.6-35B-A3B" | "Qwen/Qwen3.8-27B" | "evroc/roc" | "google/gemma-4-26B-A4B-it" | "intfloat/multilingual-e5-large-instruct" | "mistralai/Mistral-Medium-3.5-128B" | "mistralai/Voxtral-Small-24B-2507" | "moonshotai/Kimi-K2.6" | "nvidia/Llama-3.3-70B-Instruct-FP8" | "openai/gpt-oss-120b" | "openai/whisper-large-v3" | "openai/whisper-large-v3-turbo" | "zai-org/GLM-5.2";
 export type EvrocImageModelId = never;
 export type EvrocAudioModelId = never;
 export type EvrocVideoModelId = never;

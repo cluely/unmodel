@@ -47,6 +47,22 @@ export const models = {
     limit: { context: 1048576, output: 393215 },
     cost: { input: 0.14, output: 0.28, cacheRead: 0.028 },
   },
+  "umans-deepseek-v4-pro-0813": {
+    id: "umans-deepseek-v4-pro-0813",
+    name: "DeepSeek V4 Pro",
+    family: "deepseek-thinking",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-22",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 393215 },
+    cost: { input: 1.32, output: 3.96, cacheRead: 0.044 },
+  },
   "umans-flash": {
     id: "umans-flash",
     name: "Umans Flash",
@@ -62,22 +78,6 @@ export const models = {
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
     cost: { input: 0.15, output: 1, cacheRead: 0.05 },
-  },
-  "umans-glm-5.1": {
-    id: "umans-glm-5.1",
-    name: "GLM 5.1",
-    family: "glm",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-04-07",
-    lastUpdated: "2026-04-07",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 204800, output: 131072 },
-    cost: { input: 1.4, output: 4.4, cacheRead: 0.29 },
   },
   "umans-glm-5.2": {
     id: "umans-glm-5.2",
@@ -131,7 +131,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type UmansAiModelId = keyof typeof models;
-export type UmansAiTextModelId = "umans-coder" | "umans-deepseek-v4-flash-0731" | "umans-flash" | "umans-glm-5.1" | "umans-glm-5.2" | "umans-kimi-k2.7" | "umans-kimi-k3";
+export type UmansAiTextModelId = "umans-coder" | "umans-deepseek-v4-flash-0731" | "umans-deepseek-v4-pro-0813" | "umans-flash" | "umans-glm-5.2" | "umans-kimi-k2.7" | "umans-kimi-k3";
 export type UmansAiImageModelId = never;
 export type UmansAiAudioModelId = never;
 export type UmansAiVideoModelId = never;

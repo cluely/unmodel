@@ -124,6 +124,17 @@ export const availability = {
     "openrouter": "google/gemini-3.6-flash",
     "vercel": { id: "google/gemini-3.6-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
+  "gemini-3.7-flash": {
+    "google": "gemini-3.7-flash",
+    "google-vertex": "gemini-3.7-flash",
+    "openrouter": "google/gemini-3.7-flash",
+    "vercel": { id: "google/gemini-3.7-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
+  },
+  "gemini-3.8-flash": {
+    "google": "gemini-3.8-flash",
+    "google-vertex": "gemini-3.8-flash",
+    "openrouter": "google/gemini-3.8-flash",
+  },
   "gemini-flash-latest": {
     "google": "gemini-flash-latest",
     "google-vertex": "gemini-flash-latest",
@@ -131,9 +142,6 @@ export const availability = {
   "gemini-flash-lite-latest": {
     "google": "gemini-flash-lite-latest",
     "google-vertex": "gemini-flash-lite-latest",
-  },
-  "gemini-robotics-er-1.6-preview": {
-    "google": "gemini-robotics-er-1.6-preview",
   },
   "gemma-4-26b-a4b-it": {
     "cloudflare-workers-ai": { id: "@cf/google/gemma-4-26b-a4b-it", narrows: { context: 256000 } },
@@ -153,7 +161,7 @@ export const availability = {
     "nvidia": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
     "openrouter": "google/gemma-4-31b-it",
     "siliconflow": { id: "google/gemma-4-31B-it", narrows: { drops: ["image"] } },
-    "vercel": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
+    "vercel": "google/gemma-4-31b-it",
   },
 } as const satisfies AvailabilityMap;
 

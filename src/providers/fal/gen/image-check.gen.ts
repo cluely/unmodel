@@ -333,6 +333,7 @@ export type FalImageSchemaChecks = [
   AssertExtends<wire.MicrosoftMaiImage25Input["sync_mode"], Gate["sync_mode"]>,
   // openai/gpt-image-2
   AssertExtends<wire.OpenaiGptImage2Input["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.OpenaiGptImage2Input["background"], Gate["background"]>,
   AssertExtends<wire.OpenaiGptImage2Input["quality"], Gate["quality"]>,
   AssertExtends<wire.OpenaiGptImage2Input["num_images"], Gate["num_images"]>,
   AssertExtends<wire.OpenaiGptImage2Input["output_format"], Gate["output_format"]>,

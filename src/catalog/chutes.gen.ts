@@ -94,6 +94,22 @@ export const models = {
     limit: { context: 262144, output: 65536 },
     cost: { input: 0.3, output: 2, cacheRead: 0.029999999999999992 },
   },
+  "Qwen/Qwen3.8-27B-TEE": {
+    id: "Qwen/Qwen3.8-27B-TEE",
+    name: "Qwen3.8 27B TEE",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-16",
+    lastUpdated: "2026-08-16",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 262144, output: 65536 },
+    cost: { input: 0.32, output: 2.5, cacheRead: 0.031999999999999994 },
+  },
   "deepseek-ai/DeepSeek-V3.2-TEE": {
     id: "deepseek-ai/DeepSeek-V3.2-TEE",
     name: "DeepSeek V3.2 TEE",
@@ -126,7 +142,7 @@ export const models = {
     lastUpdated: "2026-08-02",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
-    cost: { input: 0.14, output: 0.28, cacheRead: 0.013999999999999999 },
+    cost: { input: 0.44, output: 1.32, cacheRead: 0.04399999999999999 },
   },
   "google/gemma-4-31B-turbo-TEE": {
     id: "google/gemma-4-31B-turbo-TEE",
@@ -228,7 +244,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type ChutesModelId = keyof typeof models;
-export type ChutesTextModelId = "Nemotron-3-Nano-Omni-30B-TEE" | "Qwen/Qwen3-235B-A22B-Thinking-2507-TEE" | "Qwen/Qwen3-32B-TEE" | "Qwen/Qwen3.5-397B-A17B-TEE" | "Qwen/Qwen3.6-27B-TEE" | "deepseek-ai/DeepSeek-V3.2-TEE" | "deepseek-ai/DeepSeek-V4-Flash-0731-TEE" | "google/gemma-4-31B-turbo-TEE" | "moonshotai/Kimi-K2.6-TEE" | "moonshotai/Kimi-K3-TEE" | "unsloth/Mistral-Nemo-Instruct-2407-TEE" | "zai-org/GLM-5.1-TEE" | "zai-org/GLM-5.2-TEE";
+export type ChutesTextModelId = "Nemotron-3-Nano-Omni-30B-TEE" | "Qwen/Qwen3-235B-A22B-Thinking-2507-TEE" | "Qwen/Qwen3-32B-TEE" | "Qwen/Qwen3.5-397B-A17B-TEE" | "Qwen/Qwen3.6-27B-TEE" | "Qwen/Qwen3.8-27B-TEE" | "deepseek-ai/DeepSeek-V3.2-TEE" | "deepseek-ai/DeepSeek-V4-Flash-0731-TEE" | "google/gemma-4-31B-turbo-TEE" | "moonshotai/Kimi-K2.6-TEE" | "moonshotai/Kimi-K3-TEE" | "unsloth/Mistral-Nemo-Instruct-2407-TEE" | "zai-org/GLM-5.1-TEE" | "zai-org/GLM-5.2-TEE";
 export type ChutesImageModelId = never;
 export type ChutesAudioModelId = never;
 export type ChutesVideoModelId = never;

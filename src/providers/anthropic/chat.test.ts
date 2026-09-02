@@ -775,6 +775,43 @@ describe("anthropic.chat thinking compatibility", () => {
     }
   });
 
+  test("forced tool use on claude-fable-5-1 is rejected, thinking or not", () => {
+    for (const choice of [{ type: "any" }, { type: "tool", name: "get_weather" }] as const) {
+      const result = chat.safe({
+        model: "claude-fable-5-1",
+        max_tokens: 1024,
+        messages: HI,
+        // @ts-expect-error — `any`/`tool` are excluded from this model's
+        // `tool_choice` arm: it removed forced tool use.
+        tool_choice: choice,
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.code).toBe("unsupported_param");
+        expect(result.errors[0]?.path).toEqual(["tool_choice"]);
+        expect(result.errors[0]?.message).toContain("structured outputs");
+      }
+    }
+  });
+
+  test("auto/none stay valid on claude-fable-5-1, and any stays valid on fable-5", () => {
+    for (const choice of [{ type: "auto" }, { type: "none" }] as const) {
+      expect(
+        chat.safe({ model: "claude-fable-5-1", max_tokens: 1024, messages: HI, tool_choice: choice })
+          .ok,
+      ).toBe(true);
+    }
+    expect(
+      chat.safe({
+        model: "claude-fable-5",
+        max_tokens: 1024,
+        messages: HI,
+        tool_choice: { type: "any" },
+      }).ok,
+    ).toBe(true);
+  });
+
   test("thinking disabled at effort xhigh on claude-opus-5 is rejected", () => {
     const result = chat.safe({
       model: "claude-opus-5",

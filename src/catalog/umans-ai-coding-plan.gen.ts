@@ -47,6 +47,22 @@ export const models = {
     limit: { context: 1048576, output: 393215 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
+  "umans-deepseek-v4-pro-0813": {
+    id: "umans-deepseek-v4-pro-0813",
+    name: "DeepSeek V4 Pro",
+    family: "deepseek-thinking",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-22",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 393215 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
   "umans-flash": {
     id: "umans-flash",
     name: "Umans Flash",
@@ -61,22 +77,6 @@ export const models = {
     lastUpdated: "2026-04-17",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-  },
-  "umans-glm-5.1": {
-    id: "umans-glm-5.1",
-    name: "GLM 5.1",
-    family: "glm",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-04-07",
-    lastUpdated: "2026-04-07",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 204800, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
   "umans-glm-5.2": {
@@ -147,7 +147,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type UmansAiCodingPlanModelId = keyof typeof models;
-export type UmansAiCodingPlanTextModelId = "umans-coder" | "umans-deepseek-v4-flash-0731" | "umans-flash" | "umans-glm-5.1" | "umans-glm-5.2" | "umans-kimi-k2.7" | "umans-kimi-k3" | "umans-qwen3.6-35b-a3b";
+export type UmansAiCodingPlanTextModelId = "umans-coder" | "umans-deepseek-v4-flash-0731" | "umans-deepseek-v4-pro-0813" | "umans-flash" | "umans-glm-5.2" | "umans-kimi-k2.7" | "umans-kimi-k3" | "umans-qwen3.6-35b-a3b";
 export type UmansAiCodingPlanImageModelId = never;
 export type UmansAiCodingPlanAudioModelId = never;
 export type UmansAiCodingPlanVideoModelId = never;

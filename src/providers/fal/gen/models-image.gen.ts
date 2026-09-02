@@ -717,7 +717,7 @@ export const imageModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    lastUpdated: "2026-06-11",
+    lastUpdated: "2026-09-01",
     modalities: { input: ["image", "text"], output: ["image"] },
     limit: { context: 0 },
   },

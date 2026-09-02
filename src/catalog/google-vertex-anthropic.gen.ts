@@ -12,6 +12,39 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "claude-fable-5-1@default": {
+    id: "claude-fable-5-1@default",
+    name: "Claude Fable 5.1",
+    family: "claude-fable",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06",
+    releaseDate: "2026-09-01",
+    lastUpdated: "2026-09-01",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 10, output: 50, cacheRead: 0.25, cacheWrite: 12.5 },
+  },
+  "claude-fable-5@default": {
+    id: "claude-fable-5@default",
+    name: "Claude Fable 5",
+    family: "claude-fable",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-01-31",
+    releaseDate: "2026-06-09",
+    lastUpdated: "2026-06-09",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
+  },
   "claude-haiku-4-5@20251001": {
     id: "claude-haiku-4-5@20251001",
     name: "Claude Haiku 4.5",
@@ -210,7 +243,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GoogleVertexAnthropicModelId = keyof typeof models;
-export type GoogleVertexAnthropicTextModelId = "claude-haiku-4-5@20251001" | "claude-opus-4-1@20250805" | "claude-opus-4-5@20251101" | "claude-opus-4-6@default" | "claude-opus-4-7@default" | "claude-opus-4-8@default" | "claude-opus-4@20250514" | "claude-opus-5@default" | "claude-sonnet-4-5@20250929" | "claude-sonnet-4-6@default" | "claude-sonnet-4@20250514" | "claude-sonnet-5@default";
+export type GoogleVertexAnthropicTextModelId = "claude-fable-5-1@default" | "claude-fable-5@default" | "claude-haiku-4-5@20251001" | "claude-opus-4-1@20250805" | "claude-opus-4-5@20251101" | "claude-opus-4-6@default" | "claude-opus-4-7@default" | "claude-opus-4-8@default" | "claude-opus-4@20250514" | "claude-opus-5@default" | "claude-sonnet-4-5@20250929" | "claude-sonnet-4-6@default" | "claude-sonnet-4@20250514" | "claude-sonnet-5@default";
 export type GoogleVertexAnthropicImageModelId = never;
 export type GoogleVertexAnthropicAudioModelId = never;
 export type GoogleVertexAnthropicVideoModelId = never;

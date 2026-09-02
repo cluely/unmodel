@@ -209,10 +209,15 @@ type FixedSampling = ModelsWhereFalse<typeof anthropicModels, "temperature">;
 expectTrue<
   Equals<
     FixedSampling,
-    "claude-fable-5" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-5"
+    | "claude-fable-5"
+    | "claude-fable-5-1"
+    | "claude-opus-4-7"
+    | "claude-opus-4-8"
+    | "claude-opus-5"
+    | "claude-sonnet-5"
   >
 >();
-/** …and the deny table resolves to exactly the same five ids. */
+/** …and the deny table resolves to exactly the same six ids. */
 expectTrue<Equals<FixedSampling, Extract<keyof typeof anthropicChatConstraints, string>>>();
 
 function anthropicPerModelTypeTests(): void {
@@ -227,6 +232,15 @@ function anthropicPerModelTypeTests(): void {
   chat({ model: "claude-opus-5", max_tokens: 16, messages: [], top_k: 40 });
   // @ts-expect-error — fable-5 always thinks; `disabled` is excluded.
   chat({ model: "claude-fable-5", max_tokens: 16, messages: [], thinking: { type: "disabled" } });
+
+  // @ts-expect-error — fable-5.1 always thinks too.
+  chat({ model: "claude-fable-5-1", max_tokens: 16, messages: [], thinking: { type: "disabled" } });
+  // @ts-expect-error — fable-5.1 removed forced tool use; any/tool return a 400.
+  chat({ model: "claude-fable-5-1", max_tokens: 16, messages: [], tool_choice: { type: "any" } });
+
+  // …while the unforced choices stay, and the previous release is untouched.
+  chat({ model: "claude-fable-5-1", max_tokens: 16, messages: [], tool_choice: { type: "auto" } });
+  chat({ model: "claude-fable-5", max_tokens: 16, messages: [], tool_choice: { type: "any" } });
 
   // The other two thinking modes stay, on fable-5 and everywhere else.
   chat({ model: "claude-fable-5", max_tokens: 16, messages: [], thinking: { type: "adaptive" } });

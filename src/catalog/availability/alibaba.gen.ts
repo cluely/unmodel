@@ -22,10 +22,13 @@ export const availability = {
   "deepseek-v4-flash-0731": {
     "alibaba": "deepseek-v4-flash-0731",
     "baseten": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4-flash-0731",
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-0731",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "nvidia": "deepseek-ai/deepseek-v4-flash-0731",
     "openrouter": "deepseek/deepseek-v4-flash-0731",
+    "scaleway": { id: "deepseek-v4-flash-0731", narrows: { context: 256000 } },
     "togetherai": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "vercel": "deepseek/deepseek-v4-flash-0731",
   },
@@ -277,6 +280,11 @@ export const availability = {
     "alibaba": "qwen3.7-plus",
     "openrouter": { id: "qwen/qwen3.7-plus", narrows: { drops: ["video"] } },
     "vercel": { id: "alibaba/qwen3.7-plus", narrows: { drops: ["video"] } },
+  },
+  "qwen3.8-flash": {
+    "alibaba": "qwen3.8-flash",
+    "openrouter": "qwen/qwen3.8-flash",
+    "vercel": { id: "alibaba/qwen3.8-flash", narrows: { context: 991000, drops: ["video"] } },
   },
   "qwen3.8-max": {
     "alibaba": "qwen3.8-max",

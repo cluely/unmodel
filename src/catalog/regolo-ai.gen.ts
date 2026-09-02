@@ -267,9 +267,9 @@ export const models = {
     limit: { context: 262144, output: 8192 },
     cost: { input: 0.15, output: 0.6 },
   },
-  "qwen3.6-27b": {
-    id: "qwen3.6-27b",
-    name: "Qwen3.6 27B",
+  "qwen3.8-27b": {
+    id: "qwen3.8-27b",
+    name: "Qwen3.8 27B",
     family: "qwen",
     attachment: true,
     reasoning: true,
@@ -277,8 +277,8 @@ export const models = {
     structuredOutput: true,
     temperature: true,
     openWeights: true,
-    releaseDate: "2026-04-22",
-    lastUpdated: "2026-04-22",
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 120000, output: 120000 },
     cost: { input: 0.58, output: 2.42 },
@@ -286,7 +286,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type RegoloAiModelId = keyof typeof models;
-export type RegoloAiTextModelId = "apertus-70b" | "brick-complexity-pro" | "brick-v1-beta" | "deepseek-ocr-2" | "faster-whisper-large-v3" | "gemma4-31b" | "glm5.2" | "gpt-oss-120b" | "gpt-oss-20b" | "llama-3.3-70b-instruct" | "mistral-small-4-119b" | "qwen3-coder-next" | "qwen3-embedding-8b" | "qwen3-reranker-4b" | "qwen3.5-122b" | "qwen3.5-9b" | "qwen3.6-27b";
+export type RegoloAiTextModelId = "apertus-70b" | "brick-complexity-pro" | "brick-v1-beta" | "deepseek-ocr-2" | "faster-whisper-large-v3" | "gemma4-31b" | "glm5.2" | "gpt-oss-120b" | "gpt-oss-20b" | "llama-3.3-70b-instruct" | "mistral-small-4-119b" | "qwen3-coder-next" | "qwen3-embedding-8b" | "qwen3-reranker-4b" | "qwen3.5-122b" | "qwen3.5-9b" | "qwen3.8-27b";
 export type RegoloAiImageModelId = "qwen-image";
 export type RegoloAiAudioModelId = never;
 export type RegoloAiVideoModelId = never;

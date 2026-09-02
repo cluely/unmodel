@@ -27,7 +27,7 @@ export const models = {
     lastUpdated: "2026-06-13",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 202752, output: 202752 },
-    cost: { input: 1.05, output: 4.4, cacheRead: 0.2, cacheWrite: 0 },
+    cost: { input: 0.6, output: 2, cacheRead: 0.15, cacheWrite: 0 },
   },
   "deepseek/deepseek-v4-flash": {
     id: "deepseek/deepseek-v4-flash",
@@ -61,7 +61,7 @@ export const models = {
     lastUpdated: "2026-07-31",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 1048576 },
-    cost: { input: 0.14, output: 0.28, cacheRead: 0.028, cacheWrite: 0 },
+    cost: { input: 0.08, output: 0.18, cacheRead: 0.016, cacheWrite: 0 },
   },
   "moonshotai/kimi-k2.6": {
     id: "moonshotai/kimi-k2.6",
@@ -144,7 +144,7 @@ export const models = {
     lastUpdated: "2026-06-13",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 202752, output: 202752 },
-    cost: { input: 1.05, output: 4.4, cacheRead: 0.2, cacheWrite: 0 },
+    cost: { input: 0.6, output: 2, cacheRead: 0.15, cacheWrite: 0 },
   },
   "zai-org/GLM-5.1-FP8": {
     id: "zai-org/GLM-5.1-FP8",

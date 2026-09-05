@@ -332,7 +332,7 @@ export const models = {
     lastUpdated: "2026-07-21",
     modalities: { input: ["text", "image", "audio", "video"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
-    cost: { input: 1.5, output: 7.5, cacheRead: 0.15, cacheWrite: 1.5 },
+    cost: { input: 0.75, output: 3.75, cacheRead: 0.075, cacheWrite: 0.75 },
   },
   "gemini/gemini-3.7-flash": {
     id: "gemini/gemini-3.7-flash",
@@ -347,6 +347,22 @@ export const models = {
     knowledge: "2026-03",
     releaseDate: "2026-08-13",
     lastUpdated: "2026-08-13",
+    modalities: { input: ["text", "image", "audio", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 0.75, output: 3.75, cacheRead: 0.075, cacheWrite: 0.75 },
+  },
+  "gemini/gemini-3.8-flash": {
+    id: "gemini/gemini-3.8-flash",
+    name: "Gemini 3.8 Flash",
+    family: "gemini-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
     modalities: { input: ["text", "image", "audio", "video"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
     cost: { input: 0.75, output: 3.75, cacheRead: 0.075, cacheWrite: 0.75 },
@@ -729,7 +745,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 131072 },
+    limit: { context: 262144, output: 131072, input: 192000 },
     cost: { input: 0.16, output: 0.64, cacheRead: 0.04, cacheWrite: 0.16 },
   },
   "tencent/hy4-preview": {
@@ -962,7 +978,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type CrossmodelModelId = keyof typeof models;
-export type CrossmodelTextModelId = "anthropic/claude-fable-5" | "anthropic/claude-fable-5-1" | "anthropic/claude-haiku-4-5" | "anthropic/claude-opus-4-7" | "anthropic/claude-opus-4-8" | "anthropic/claude-opus-5" | "anthropic/claude-sonnet-4-6" | "anthropic/claude-sonnet-5" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-vision-exp" | "deepseek/deepseek-v4-pro" | "gemini/gemini-2.5-flash" | "gemini/gemini-2.5-flash-lite" | "gemini/gemini-2.5-pro" | "gemini/gemini-3-flash-preview" | "gemini/gemini-3.1-pro-preview" | "gemini/gemini-3.5-flash" | "gemini/gemini-3.5-flash-lite" | "gemini/gemini-3.6-flash" | "gemini/gemini-3.7-flash" | "minimax/minimax-m2.7" | "minimax/minimax-m3" | "moonshot/kimi-k2.5" | "moonshot/kimi-k2.6" | "moonshot/kimi-k2.7-code" | "moonshot/kimi-k3" | "openai/gpt-4o-mini" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.5" | "openai/gpt-5.5-pro" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-terra" | "qwen/qwen3.6-flash" | "qwen/qwen3.6-plus" | "qwen/qwen3.7-flash" | "qwen/qwen3.7-max" | "qwen/qwen3.7-plus" | "qwen/qwen3.8-flash" | "qwen/qwen3.8-max" | "tencent/hy3" | "tencent/hy4-preview" | "x-ai/grok-4.3" | "x-ai/grok-4.5" | "x-ai/grok-4.6" | "x-ai/grok-build-0.1" | "xiaomi/mimo-v2.5" | "xiaomi/mimo-v2.5-pro" | "z-ai/glm-4.7" | "z-ai/glm-5" | "z-ai/glm-5-turbo" | "z-ai/glm-5.1" | "z-ai/glm-5.2" | "z-ai/glm-5.3" | "z-ai/glm-5.3-flash";
+export type CrossmodelTextModelId = "anthropic/claude-fable-5" | "anthropic/claude-fable-5-1" | "anthropic/claude-haiku-4-5" | "anthropic/claude-opus-4-7" | "anthropic/claude-opus-4-8" | "anthropic/claude-opus-5" | "anthropic/claude-sonnet-4-6" | "anthropic/claude-sonnet-5" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-vision-exp" | "deepseek/deepseek-v4-pro" | "gemini/gemini-2.5-flash" | "gemini/gemini-2.5-flash-lite" | "gemini/gemini-2.5-pro" | "gemini/gemini-3-flash-preview" | "gemini/gemini-3.1-pro-preview" | "gemini/gemini-3.5-flash" | "gemini/gemini-3.5-flash-lite" | "gemini/gemini-3.6-flash" | "gemini/gemini-3.7-flash" | "gemini/gemini-3.8-flash" | "minimax/minimax-m2.7" | "minimax/minimax-m3" | "moonshot/kimi-k2.5" | "moonshot/kimi-k2.6" | "moonshot/kimi-k2.7-code" | "moonshot/kimi-k3" | "openai/gpt-4o-mini" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.5" | "openai/gpt-5.5-pro" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-terra" | "qwen/qwen3.6-flash" | "qwen/qwen3.6-plus" | "qwen/qwen3.7-flash" | "qwen/qwen3.7-max" | "qwen/qwen3.7-plus" | "qwen/qwen3.8-flash" | "qwen/qwen3.8-max" | "tencent/hy3" | "tencent/hy4-preview" | "x-ai/grok-4.3" | "x-ai/grok-4.5" | "x-ai/grok-4.6" | "x-ai/grok-build-0.1" | "xiaomi/mimo-v2.5" | "xiaomi/mimo-v2.5-pro" | "z-ai/glm-4.7" | "z-ai/glm-5" | "z-ai/glm-5-turbo" | "z-ai/glm-5.1" | "z-ai/glm-5.2" | "z-ai/glm-5.3" | "z-ai/glm-5.3-flash";
 export type CrossmodelImageModelId = never;
 export type CrossmodelAudioModelId = never;
 export type CrossmodelVideoModelId = never;

@@ -333,6 +333,7 @@ export const models = {
     knowledge: "2025-08-31",
     releaseDate: "2025-12-11",
     lastUpdated: "2025-12-11",
+    status: "deprecated",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 128000, output: 16384 },
     cost: { input: 1.75, output: 14, cacheRead: 0.175 },
@@ -367,6 +368,7 @@ export const models = {
     knowledge: "2025-08-31",
     releaseDate: "2026-03-03",
     lastUpdated: "2026-03-03",
+    status: "deprecated",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 128000, output: 16384 },
     cost: { input: 1.75, output: 14, cacheRead: 0.175 },
@@ -574,6 +576,22 @@ export const models = {
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 2.5 },
+  },
+  "gpt-6-astra": {
+    id: "gpt-6-astra",
+    name: "GPT-6 Astra",
+    family: "gpt-astra",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    releaseDate: "2026-09-04",
+    lastUpdated: "2026-09-04",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
   },
   "gpt-image-1": {
     id: "gpt-image-1",
@@ -807,7 +825,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type OpenaiModelId = keyof typeof models;
-export type OpenaiTextModelId = "chatgpt-image-latest" | "gpt-3.5-turbo" | "gpt-4" | "gpt-4-turbo" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-2024-05-13" | "gpt-4o-2024-08-06" | "gpt-4o-2024-11-20" | "gpt-4o-mini" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.2" | "gpt-5.2-chat-latest" | "gpt-5.2-pro" | "gpt-5.3-chat-latest" | "gpt-5.3-codex" | "gpt-5.3-codex-spark" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-image-1-mini" | "gpt-image-1.5" | "gpt-realtime-2.1" | "o1" | "o1-pro" | "o3" | "o3-mini" | "o3-pro" | "o4-mini" | "text-embedding-3-large" | "text-embedding-3-small" | "text-embedding-ada-002";
+export type OpenaiTextModelId = "chatgpt-image-latest" | "gpt-3.5-turbo" | "gpt-4" | "gpt-4-turbo" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-2024-05-13" | "gpt-4o-2024-08-06" | "gpt-4o-2024-11-20" | "gpt-4o-mini" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.2" | "gpt-5.2-chat-latest" | "gpt-5.2-pro" | "gpt-5.3-chat-latest" | "gpt-5.3-codex" | "gpt-5.3-codex-spark" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-image-1-mini" | "gpt-image-1.5" | "gpt-realtime-2.1" | "o1" | "o1-pro" | "o3" | "o3-mini" | "o3-pro" | "o4-mini" | "text-embedding-3-large" | "text-embedding-3-small" | "text-embedding-ada-002";
 export type OpenaiImageModelId = "chatgpt-image-latest" | "gpt-image-1" | "gpt-image-1-mini" | "gpt-image-1.5" | "gpt-image-2";
 export type OpenaiAudioModelId = "gpt-realtime-2.1";
 export type OpenaiVideoModelId = never;

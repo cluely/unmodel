@@ -92,7 +92,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 202752, output: 64000 },
+    limit: { context: 202752, output: 128000, input: 192000 },
     cost: { input: 0.14, output: 0.58 },
   },
   "Kimi-K2.5": {

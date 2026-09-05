@@ -551,6 +551,22 @@ export const models = {
     limit: { context: 1048576, output: 384000 },
     cost: { input: 0.08, output: 0.18, cacheRead: 0.016 },
   },
+  "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp": {
+    id: "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+    name: "DeepSeek V4 Flash Vision Exp",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-21",
+    lastUpdated: "2026-08-21",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 384000 },
+    cost: { input: 0.44, output: 1.32, cacheRead: 0.14 },
+  },
   "deepseek-ai/DeepSeek-V4-Pro": {
     id: "deepseek-ai/DeepSeek-V4-Pro",
     name: "DeepSeek V4 Pro",
@@ -853,7 +869,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 64000 },
+    limit: { context: 262144, output: 128000, input: 192000 },
     cost: { input: 0.14, output: 0.58, cacheRead: 0.035 },
   },
   "thinkingmachines/Inkling": {
@@ -1023,7 +1039,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type DeepinfraModelId = keyof typeof models;
-export type DeepinfraTextModelId = "ByteDance/Seed-2.0-code" | "ByteDance/Seed-2.0-mini" | "ByteDance/Seed-2.0-pro" | "MiniMaxAI/MiniMax-M2.5" | "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen3-235B-A22B-Instruct-2507" | "Qwen/Qwen3-30B-A3B" | "Qwen/Qwen3-32B" | "Qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo" | "Qwen/Qwen3-Max" | "Qwen/Qwen3-Next-80B-A3B-Instruct" | "Qwen/Qwen3-VL-235B-A22B-Instruct" | "Qwen/Qwen3.5-122B-A10B" | "Qwen/Qwen3.5-27B" | "Qwen/Qwen3.5-35B-A3B" | "Qwen/Qwen3.5-397B-A17B" | "Qwen/Qwen3.5-9B" | "Qwen/Qwen3.6-27B" | "Qwen/Qwen3.6-35B-A3B" | "Qwen/Qwen3.7-Max" | "Qwen/Qwen3.8-2.4T-A95B" | "Qwen/Qwen3.8-27B" | "Qwen/Qwen3.8-Max" | "XiaomiMiMo/MiMo-V2.5" | "XiaomiMiMo/MiMo-V2.5-Pro" | "deepseek-ai/DeepSeek-R1-0528" | "deepseek-ai/DeepSeek-V3" | "deepseek-ai/DeepSeek-V3-0324" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V3.2" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "google/gemma-4-26B-A4B-it" | "google/gemma-4-31B-it" | "google/gemma-4-E4B-it" | "meta-llama/Llama-3.3-70B-Instruct-Turbo" | "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8" | "meta-llama/Llama-4-Scout-17B-16E-Instruct" | "moonshotai/Kimi-K2.5" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/Llama-3.3-Nemotron-Super-49B-v1.5" | "nvidia/Nemotron-3-Nano-30B-A3B" | "nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "stepfun-ai/Step-3.7-Flash" | "tencent/Hy3" | "thinkingmachines/Inkling" | "thinkingmachines/Inkling-Small" | "zai-org/GLM-4.6" | "zai-org/GLM-4.7" | "zai-org/GLM-4.7-Flash" | "zai-org/GLM-5" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
+export type DeepinfraTextModelId = "ByteDance/Seed-2.0-code" | "ByteDance/Seed-2.0-mini" | "ByteDance/Seed-2.0-pro" | "MiniMaxAI/MiniMax-M2.5" | "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen3-235B-A22B-Instruct-2507" | "Qwen/Qwen3-30B-A3B" | "Qwen/Qwen3-32B" | "Qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo" | "Qwen/Qwen3-Max" | "Qwen/Qwen3-Next-80B-A3B-Instruct" | "Qwen/Qwen3-VL-235B-A22B-Instruct" | "Qwen/Qwen3.5-122B-A10B" | "Qwen/Qwen3.5-27B" | "Qwen/Qwen3.5-35B-A3B" | "Qwen/Qwen3.5-397B-A17B" | "Qwen/Qwen3.5-9B" | "Qwen/Qwen3.6-27B" | "Qwen/Qwen3.6-35B-A3B" | "Qwen/Qwen3.7-Max" | "Qwen/Qwen3.8-2.4T-A95B" | "Qwen/Qwen3.8-27B" | "Qwen/Qwen3.8-Max" | "XiaomiMiMo/MiMo-V2.5" | "XiaomiMiMo/MiMo-V2.5-Pro" | "deepseek-ai/DeepSeek-R1-0528" | "deepseek-ai/DeepSeek-V3" | "deepseek-ai/DeepSeek-V3-0324" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V3.2" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "google/gemma-4-26B-A4B-it" | "google/gemma-4-31B-it" | "google/gemma-4-E4B-it" | "meta-llama/Llama-3.3-70B-Instruct-Turbo" | "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8" | "meta-llama/Llama-4-Scout-17B-16E-Instruct" | "moonshotai/Kimi-K2.5" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/Llama-3.3-Nemotron-Super-49B-v1.5" | "nvidia/Nemotron-3-Nano-30B-A3B" | "nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "stepfun-ai/Step-3.7-Flash" | "tencent/Hy3" | "thinkingmachines/Inkling" | "thinkingmachines/Inkling-Small" | "zai-org/GLM-4.6" | "zai-org/GLM-4.7" | "zai-org/GLM-4.7-Flash" | "zai-org/GLM-5" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
 export type DeepinfraImageModelId = never;
 export type DeepinfraAudioModelId = never;
 export type DeepinfraVideoModelId = never;

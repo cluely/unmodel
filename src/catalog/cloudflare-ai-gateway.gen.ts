@@ -107,6 +107,23 @@ export const models = {
     limit: { context: 1000000, output: 128000 },
     cost: { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
   },
+  "anthropic/claude-fable-5.1": {
+    id: "anthropic/claude-fable-5.1",
+    name: "Claude Fable 5.1",
+    family: "claude-fable",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06",
+    releaseDate: "2026-09-01",
+    lastUpdated: "2026-09-01",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 10, output: 50, cacheRead: 0.25, cacheWrite: 12.5 },
+  },
   "anthropic/claude-haiku-4.5": {
     id: "anthropic/claude-haiku-4.5",
     name: "Claude Haiku 4.5 (latest)",
@@ -734,7 +751,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type CloudflareAiGatewayModelId = keyof typeof models;
-export type CloudflareAiGatewayTextModelId = "alibaba/qwen3-max" | "alibaba/qwen3.5-397b-a17b" | "alibaba/qwen3.7-max" | "alibaba/qwen3.7-plus" | "alibaba/qwen3.8-max" | "anthropic/claude-fable-5" | "anthropic/claude-haiku-4.5" | "anthropic/claude-opus-4.5" | "anthropic/claude-opus-4.6" | "anthropic/claude-opus-4.7" | "anthropic/claude-opus-4.8" | "anthropic/claude-opus-5" | "anthropic/claude-sonnet-4.5" | "anthropic/claude-sonnet-4.6" | "anthropic/claude-sonnet-5" | "deepseek/deepseek-v4-pro" | "moonshotai/kimi-k3" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-4o" | "openai/gpt-4o-mini" | "openai/gpt-5" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5.1" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.4-pro" | "openai/gpt-5.5" | "openai/gpt-5.5-pro" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-terra" | "openai/o3" | "openai/o3-mini" | "openai/o4-mini" | "xai/grok-4.20-0309-non-reasoning" | "xai/grok-4.20-0309-reasoning" | "xai/grok-4.3" | "xai/grok-4.5" | "xai/grok-4.6";
+export type CloudflareAiGatewayTextModelId = "alibaba/qwen3-max" | "alibaba/qwen3.5-397b-a17b" | "alibaba/qwen3.7-max" | "alibaba/qwen3.7-plus" | "alibaba/qwen3.8-max" | "anthropic/claude-fable-5" | "anthropic/claude-fable-5.1" | "anthropic/claude-haiku-4.5" | "anthropic/claude-opus-4.5" | "anthropic/claude-opus-4.6" | "anthropic/claude-opus-4.7" | "anthropic/claude-opus-4.8" | "anthropic/claude-opus-5" | "anthropic/claude-sonnet-4.5" | "anthropic/claude-sonnet-4.6" | "anthropic/claude-sonnet-5" | "deepseek/deepseek-v4-pro" | "moonshotai/kimi-k3" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-4o" | "openai/gpt-4o-mini" | "openai/gpt-5" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5.1" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.4-pro" | "openai/gpt-5.5" | "openai/gpt-5.5-pro" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-terra" | "openai/o3" | "openai/o3-mini" | "openai/o4-mini" | "xai/grok-4.20-0309-non-reasoning" | "xai/grok-4.20-0309-reasoning" | "xai/grok-4.3" | "xai/grok-4.5" | "xai/grok-4.6";
 export type CloudflareAiGatewayImageModelId = never;
 export type CloudflareAiGatewayAudioModelId = never;
 export type CloudflareAiGatewayVideoModelId = never;

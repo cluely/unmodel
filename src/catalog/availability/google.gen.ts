@@ -134,6 +134,7 @@ export const availability = {
     "google": "gemini-3.8-flash",
     "google-vertex": "gemini-3.8-flash",
     "openrouter": "google/gemini-3.8-flash",
+    "vercel": { id: "google/gemini-3.8-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-flash-latest": {
     "google": "gemini-flash-latest",

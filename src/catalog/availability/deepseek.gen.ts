@@ -24,7 +24,6 @@ export const availability = {
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash",
     "deepseek": "deepseek-v4-flash",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
-    "nebius": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 131072 } },
     "novita-ai": "deepseek/deepseek-v4-flash",
     "nvidia": "deepseek-ai/deepseek-v4-flash",
     "openrouter": "deepseek/deepseek-v4-flash",
@@ -32,7 +31,10 @@ export const availability = {
     "vercel": "deepseek/deepseek-v4-flash",
   },
   "deepseek-v4-flash-vision-exp": {
+    "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
     "deepseek": "deepseek-v4-flash-vision-exp",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
+    "huggingface": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
     "openrouter": "deepseek/deepseek-v4-flash-vision-exp",
     "vercel": "deepseek/deepseek-v4-flash-vision-exp",
   },

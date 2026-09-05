@@ -46,21 +46,21 @@ export const models = {
     limit: { context: 262144, output: 32768 },
     cost: { input: 0.4, output: 1 },
   },
-  "glm-5-2": {
-    id: "glm-5-2",
-    name: "GLM-5.2",
+  "glm-5-3-flash": {
+    id: "glm-5-3-flash",
+    name: "GLM-5.3-Flash",
     family: "glm",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: true,
-    releaseDate: "2026-06-13",
-    lastUpdated: "2026-06-13",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 393216, output: 131072 },
-    cost: { input: 1.5, output: 5.25, cacheRead: 0.375 },
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.4, output: 1.25, cacheRead: 0.1 },
   },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
@@ -146,7 +146,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type TinfoilModelId = keyof typeof models;
-export type TinfoilTextModelId = "deepseek-v4-flash" | "gemma4-31b" | "glm-5-2" | "gpt-oss-120b" | "gpt-oss-safeguard-120b" | "kimi-k3" | "llama3-3-70b" | "nomic-embed-text";
+export type TinfoilTextModelId = "deepseek-v4-flash" | "gemma4-31b" | "glm-5-3-flash" | "gpt-oss-120b" | "gpt-oss-safeguard-120b" | "kimi-k3" | "llama3-3-70b" | "nomic-embed-text";
 export type TinfoilImageModelId = never;
 export type TinfoilAudioModelId = never;
 export type TinfoilVideoModelId = never;

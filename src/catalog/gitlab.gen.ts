@@ -28,6 +28,22 @@ export const models = {
     limit: { context: 1000000, output: 128000 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
+  "duo-chat-fable-5-1": {
+    id: "duo-chat-fable-5-1",
+    name: "Agentic Chat (Claude Fable 5.1)",
+    family: "claude-fable",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06",
+    releaseDate: "2026-09-01",
+    lastUpdated: "2026-09-01",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
   "duo-chat-gpt-5-1": {
     id: "duo-chat-gpt-5-1",
     name: "Agentic Chat (GPT-5.1)",
@@ -396,7 +412,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GitlabModelId = keyof typeof models;
-export type GitlabTextModelId = "duo-chat-fable-5" | "duo-chat-gpt-5-1" | "duo-chat-gpt-5-2" | "duo-chat-gpt-5-2-codex" | "duo-chat-gpt-5-3-codex" | "duo-chat-gpt-5-4" | "duo-chat-gpt-5-4-mini" | "duo-chat-gpt-5-4-nano" | "duo-chat-gpt-5-5" | "duo-chat-gpt-5-6-luna" | "duo-chat-gpt-5-6-sol" | "duo-chat-gpt-5-6-terra" | "duo-chat-gpt-5-codex" | "duo-chat-gpt-5-mini" | "duo-chat-haiku-4-5" | "duo-chat-opus-4-5" | "duo-chat-opus-4-6" | "duo-chat-opus-4-7" | "duo-chat-opus-4-8" | "duo-chat-opus-5" | "duo-chat-sonnet-4-5" | "duo-chat-sonnet-4-6" | "duo-chat-sonnet-5";
+export type GitlabTextModelId = "duo-chat-fable-5" | "duo-chat-fable-5-1" | "duo-chat-gpt-5-1" | "duo-chat-gpt-5-2" | "duo-chat-gpt-5-2-codex" | "duo-chat-gpt-5-3-codex" | "duo-chat-gpt-5-4" | "duo-chat-gpt-5-4-mini" | "duo-chat-gpt-5-4-nano" | "duo-chat-gpt-5-5" | "duo-chat-gpt-5-6-luna" | "duo-chat-gpt-5-6-sol" | "duo-chat-gpt-5-6-terra" | "duo-chat-gpt-5-codex" | "duo-chat-gpt-5-mini" | "duo-chat-haiku-4-5" | "duo-chat-opus-4-5" | "duo-chat-opus-4-6" | "duo-chat-opus-4-7" | "duo-chat-opus-4-8" | "duo-chat-opus-5" | "duo-chat-sonnet-4-5" | "duo-chat-sonnet-4-6" | "duo-chat-sonnet-5";
 export type GitlabImageModelId = never;
 export type GitlabAudioModelId = never;
 export type GitlabVideoModelId = never;

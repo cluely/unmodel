@@ -123,6 +123,7 @@ import * as modelscopeGen from "./modelscope.gen";
 import * as moonshotaiGen from "./moonshotai.gen";
 import * as moonshotaiCnGen from "./moonshotai-cn.gen";
 import * as morphGen from "./morph.gen";
+import * as nanGen from "./nan.gen";
 import * as nanoGptGen from "./nano-gpt.gen";
 import * as nearaiGen from "./nearai.gen";
 import * as nebiusGen from "./nebius.gen";
@@ -342,6 +343,7 @@ export type ProviderId =
   | "moonshotai"
   | "moonshotai-cn"
   | "morph"
+  | "nan"
   | "nano-gpt"
   | "nearai"
   | "nebius"
@@ -569,6 +571,7 @@ export const catalogTyped = {
   "moonshotai": moonshotaiGen,
   "moonshotai-cn": moonshotaiCnGen,
   "morph": morphGen,
+  "nan": nanGen,
   "nano-gpt": nanoGptGen,
   "nearai": nearaiGen,
   "nebius": nebiusGen,

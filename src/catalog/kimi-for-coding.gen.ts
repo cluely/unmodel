@@ -8,7 +8,7 @@ export const provider = {
   id: "kimi-for-coding",
   name: "Kimi For Coding",
   env: ["KIMI_API_KEY"],
-  doc: "https://www.kimi.com/code/docs/en/third-party-tools/other-coding-agents.html",
+  doc: "https://www.kimi.com/code/docs/en/kimi-code/models.html",
   api: "https://api.kimi.com/coding/v1",
 } as const satisfies ProviderInfo;
 
@@ -17,7 +17,7 @@ export const models = {
     id: "k3",
     name: "Kimi K3",
     family: "kimi-k3",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
@@ -33,7 +33,7 @@ export const models = {
     id: "k3-256k",
     name: "Kimi K3-256K",
     family: "kimi-k3",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,

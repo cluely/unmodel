@@ -46,7 +46,6 @@ export const availability = {
     "deepinfra": "moonshotai/Kimi-K2.5",
     "huggingface": "moonshotai/Kimi-K2.5",
     "moonshotai": "kimi-k2.5",
-    "nebius": { id: "moonshotai/Kimi-K2.5", narrows: { context: 256000, drops: ["video"] } },
     "novita-ai": "moonshotai/kimi-k2.5",
     "openrouter": { id: "moonshotai/kimi-k2.5", narrows: { drops: ["video"] } },
     "togetherai": { id: "moonshotai/Kimi-K2.5", narrows: { drops: ["video"] } },

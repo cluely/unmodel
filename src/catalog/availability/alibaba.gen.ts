@@ -26,6 +26,7 @@ export const availability = {
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-0731",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "nebius": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "nvidia": "deepseek-ai/deepseek-v4-flash-0731",
     "openrouter": "deepseek/deepseek-v4-flash-0731",
     "scaleway": { id: "deepseek-v4-flash-0731", narrows: { context: 256000 } },
@@ -39,7 +40,7 @@ export const availability = {
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
-    "nebius": { id: "zai-org/GLM-5.2", narrows: { context: 432000 } },
+    "nebius": "zai-org/GLM-5.2",
     "novita-ai": "zai-org/glm-5.2",
     "nvidia": "z-ai/glm-5.2",
     "openrouter": "z-ai/glm-5.2",
@@ -108,7 +109,6 @@ export const availability = {
   },
   "qwen2-5-vl-72b-instruct": {
     "alibaba": "qwen2-5-vl-72b-instruct",
-    "nebius": { id: "Qwen/Qwen2.5-VL-72B-Instruct", narrows: { context: 128000 } },
     "novita-ai": { id: "qwen/qwen2.5-vl-72b-instruct", narrows: { context: 32768 } },
     "openrouter": { id: "qwen/qwen2.5-vl-72b-instruct", narrows: { context: 128000 } },
   },
@@ -129,7 +129,6 @@ export const availability = {
     "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 16384 } },
     "deepinfra": { id: "Qwen/Qwen3-32B", narrows: { context: 40960 } },
     "huggingface": "Qwen/Qwen3-32B",
-    "nebius": { id: "Qwen/Qwen3-32B", narrows: { context: 128000 } },
     "openrouter": "qwen/qwen3-32b",
   },
   "qwen3-8b": {
@@ -289,7 +288,6 @@ export const availability = {
   "qwen3.8-max": {
     "alibaba": "qwen3.8-max",
     "deepinfra": { id: "Qwen/Qwen3.8-Max", narrows: { context: 256000 } },
-    "openrouter": { id: "qwen/qwen3.8-max", narrows: { drops: ["pdf"] } },
     "vercel": { id: "alibaba/qwen3.8-max", narrows: { drops: ["video", "pdf"] } },
   },
   "qwq-plus": {

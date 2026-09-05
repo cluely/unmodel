@@ -430,6 +430,22 @@ export const models = {
     limit: { context: 1000000, output: 65536 },
     cost: { input: 0.9375, output: 4.6875, cacheRead: 0.09375 },
   },
+  "gemini-3-8-flash": {
+    id: "gemini-3-8-flash",
+    name: "Gemini 3.8 Flash",
+    family: "gemini-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
+    modalities: { input: ["text", "image", "audio", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 65536 },
+    cost: { input: 0.9375, output: 4.6875, cacheRead: 0.09375 },
+  },
   "gemini-3-flash-preview": {
     id: "gemini-3-flash-preview",
     name: "Gemini 3 Flash Preview",
@@ -1157,6 +1173,37 @@ export const models = {
     limit: { context: 1000000, output: 128000 },
     cost: { input: 3.125, output: 18.75, cacheRead: 0.3125, cacheWrite: 3.90625 },
   },
+  "openai-gpt-6-astra": {
+    id: "openai-gpt-6-astra",
+    name: "GPT-6 Astra",
+    family: "gpt",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    releaseDate: "2026-09-05",
+    lastUpdated: "2026-09-04",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
+  },
+  "openai-gpt-6-astra-pro": {
+    id: "openai-gpt-6-astra-pro",
+    name: "GPT-6 Astra Pro",
+    family: "gpt",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    openWeights: false,
+    releaseDate: "2026-09-05",
+    lastUpdated: "2026-09-05",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1050000, output: 128000 },
+    cost: { input: 12.5, output: 62.5, cacheRead: 1.25, cacheWrite: 15.625 },
+  },
   "openai-gpt-oss-120b": {
     id: "openai-gpt-oss-120b",
     name: "OpenAI GPT OSS 120B",
@@ -1653,7 +1700,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type VeniceModelId = keyof typeof models;
-export type VeniceTextModelId = "aion-labs-aion-3-0" | "aion-labs-aion-3-0-mini" | "claude-fable-5" | "claude-fable-5-1" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-4-8-fast" | "claude-opus-5" | "claude-opus-5-fast" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-flash-0731-fast" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "gemini-3-1-pro-preview" | "gemini-3-5-flash" | "gemini-3-5-flash-lite" | "gemini-3-6-flash" | "gemini-3-7-flash" | "gemini-3-flash-preview" | "gemma-4-uncensored" | "google-gemma-3-27b-it" | "google-gemma-4-26b-a4b-it" | "google-gemma-4-31b-it" | "grok-4-20" | "grok-4-20-multi-agent" | "grok-4-3" | "grok-4-5" | "grok-4-6" | "grok-build-0-1" | "hermes-3-llama-3.1-405b" | "inkling" | "kimi-k2-5" | "kimi-k2-6" | "kimi-k2-7-code" | "kimi-k3" | "kimi-k3-fast-api" | "llama-3.2-3b" | "llama-3.3-70b" | "mercury-2" | "minimax-m25" | "minimax-m27" | "minimax-m3-preview" | "mistral-small-2603" | "mistral-small-3-2-24b-instruct" | "nvidia-nemotron-3-nano-30b-a3b" | "nvidia-nemotron-3-ultra-550b-a55b" | "olafangensan-glm-4.7-flash-heretic" | "openai-gpt-4o-2024-11-20" | "openai-gpt-4o-mini-2024-07-18" | "openai-gpt-52" | "openai-gpt-52-codex" | "openai-gpt-53-codex" | "openai-gpt-54" | "openai-gpt-54-mini" | "openai-gpt-54-pro" | "openai-gpt-55" | "openai-gpt-55-pro" | "openai-gpt-56-luna" | "openai-gpt-56-luna-pro" | "openai-gpt-56-sol" | "openai-gpt-56-sol-pro" | "openai-gpt-56-terra" | "openai-gpt-56-terra-pro" | "openai-gpt-oss-120b" | "qwen-3-6-plus" | "qwen-3-7-max" | "qwen-3-7-plus" | "qwen-3-8-2-4t-a95b" | "qwen-3-8-27b" | "qwen-3-8-max" | "qwen3-235b-a22b-instruct-2507" | "qwen3-235b-a22b-thinking-2507" | "qwen3-5-35b-a3b" | "qwen3-5-397b-a17b" | "qwen3-5-9b" | "qwen3-6-27b" | "qwen3-6-35b-a3b" | "qwen3-coder-480b-a35b-instruct-turbo" | "qwen3-next-80b" | "qwen3-vl-235b-a22b" | "seed-2-1-turbo" | "venice-uncensored-1-2" | "venice-uncensored-role-play" | "xiaomi-mimo-v2-5" | "z-ai-glm-5-3" | "z-ai-glm-5-3-flash" | "z-ai-glm-5-turbo" | "z-ai-glm-5v-turbo" | "zai-org-glm-4.6" | "zai-org-glm-4.7" | "zai-org-glm-4.7-flash" | "zai-org-glm-5" | "zai-org-glm-5-1" | "zai-org-glm-5-2";
+export type VeniceTextModelId = "aion-labs-aion-3-0" | "aion-labs-aion-3-0-mini" | "claude-fable-5" | "claude-fable-5-1" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-4-8-fast" | "claude-opus-5" | "claude-opus-5-fast" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-flash-0731-fast" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "gemini-3-1-pro-preview" | "gemini-3-5-flash" | "gemini-3-5-flash-lite" | "gemini-3-6-flash" | "gemini-3-7-flash" | "gemini-3-8-flash" | "gemini-3-flash-preview" | "gemma-4-uncensored" | "google-gemma-3-27b-it" | "google-gemma-4-26b-a4b-it" | "google-gemma-4-31b-it" | "grok-4-20" | "grok-4-20-multi-agent" | "grok-4-3" | "grok-4-5" | "grok-4-6" | "grok-build-0-1" | "hermes-3-llama-3.1-405b" | "inkling" | "kimi-k2-5" | "kimi-k2-6" | "kimi-k2-7-code" | "kimi-k3" | "kimi-k3-fast-api" | "llama-3.2-3b" | "llama-3.3-70b" | "mercury-2" | "minimax-m25" | "minimax-m27" | "minimax-m3-preview" | "mistral-small-2603" | "mistral-small-3-2-24b-instruct" | "nvidia-nemotron-3-nano-30b-a3b" | "nvidia-nemotron-3-ultra-550b-a55b" | "olafangensan-glm-4.7-flash-heretic" | "openai-gpt-4o-2024-11-20" | "openai-gpt-4o-mini-2024-07-18" | "openai-gpt-52" | "openai-gpt-52-codex" | "openai-gpt-53-codex" | "openai-gpt-54" | "openai-gpt-54-mini" | "openai-gpt-54-pro" | "openai-gpt-55" | "openai-gpt-55-pro" | "openai-gpt-56-luna" | "openai-gpt-56-luna-pro" | "openai-gpt-56-sol" | "openai-gpt-56-sol-pro" | "openai-gpt-56-terra" | "openai-gpt-56-terra-pro" | "openai-gpt-6-astra" | "openai-gpt-6-astra-pro" | "openai-gpt-oss-120b" | "qwen-3-6-plus" | "qwen-3-7-max" | "qwen-3-7-plus" | "qwen-3-8-2-4t-a95b" | "qwen-3-8-27b" | "qwen-3-8-max" | "qwen3-235b-a22b-instruct-2507" | "qwen3-235b-a22b-thinking-2507" | "qwen3-5-35b-a3b" | "qwen3-5-397b-a17b" | "qwen3-5-9b" | "qwen3-6-27b" | "qwen3-6-35b-a3b" | "qwen3-coder-480b-a35b-instruct-turbo" | "qwen3-next-80b" | "qwen3-vl-235b-a22b" | "seed-2-1-turbo" | "venice-uncensored-1-2" | "venice-uncensored-role-play" | "xiaomi-mimo-v2-5" | "z-ai-glm-5-3" | "z-ai-glm-5-3-flash" | "z-ai-glm-5-turbo" | "z-ai-glm-5v-turbo" | "zai-org-glm-4.6" | "zai-org-glm-4.7" | "zai-org-glm-4.7-flash" | "zai-org-glm-5" | "zai-org-glm-5-1" | "zai-org-glm-5-2";
 export type VeniceImageModelId = never;
 export type VeniceAudioModelId = never;
 export type VeniceVideoModelId = never;

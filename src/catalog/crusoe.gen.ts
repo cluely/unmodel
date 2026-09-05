@@ -13,6 +13,21 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "Qwen/Qwen3-235B-A22B-Instruct-2507": {
+    id: "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    name: "Qwen3 235B-A22B Instruct 2507",
+    family: "qwen",
+    attachment: false,
+    reasoning: false,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2025-07-21",
+    lastUpdated: "2025-07-21",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 262144, output: 16384 },
+    cost: { input: 0.22, output: 0.8, cacheRead: 0.11 },
+  },
   "deepseek-ai/DeepSeek-V3-0324": {
     id: "deepseek-ai/DeepSeek-V3-0324",
     name: "DeepSeek V3 0324",
@@ -76,6 +91,36 @@ export const models = {
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
     cost: { input: 0.7, output: 3.5, cacheRead: 0.35 },
+  },
+  "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B": {
+    id: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    name: "Nemotron 3 Nano 30B A3B",
+    family: "nemotron",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2025-12-15",
+    lastUpdated: "2025-12-15",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 262144, output: 262144 },
+    cost: { input: 0.05, output: 0.2, cacheRead: 0.03 },
+  },
+  "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B": {
+    id: "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B",
+    name: "Nemotron 3 Super 120B A12B",
+    family: "nemotron",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-03-11",
+    lastUpdated: "2026-03-11",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 262144, output: 262144 },
+    cost: { input: 0.3, output: 2.4, cacheRead: 0.15 },
   },
   "nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B": {
     id: "nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B",
@@ -143,7 +188,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type CrusoeModelId = keyof typeof models;
-export type CrusoeTextModelId = "deepseek-ai/DeepSeek-V3-0324" | "google/gemma-4-31b-it" | "meta-llama/Llama-3.3-70B-Instruct" | "moonshotai/Kimi-K2.6" | "nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B" | "openai/gpt-oss-120b" | "zai/GLM-5.1" | "zai/GLM-5.2";
+export type CrusoeTextModelId = "Qwen/Qwen3-235B-A22B-Instruct-2507" | "deepseek-ai/DeepSeek-V3-0324" | "google/gemma-4-31b-it" | "meta-llama/Llama-3.3-70B-Instruct" | "moonshotai/Kimi-K2.6" | "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B" | "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B" | "nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B" | "openai/gpt-oss-120b" | "zai/GLM-5.1" | "zai/GLM-5.2";
 export type CrusoeImageModelId = never;
 export type CrusoeAudioModelId = never;
 export type CrusoeVideoModelId = never;

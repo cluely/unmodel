@@ -144,6 +144,38 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0 },
   },
+  "GLM-5.3": {
+    id: "GLM-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
+  "GLM-5.3-Flash": {
+    id: "GLM-5.3-Flash",
+    name: "GLM-5.3-Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
   "Kimi-K2.5": {
     id: "Kimi-K2.5",
     name: "Kimi K2.5",
@@ -272,6 +304,21 @@ export const models = {
     limit: { context: 1048576, output: 512000 },
     cost: { input: 0, output: 0, cacheRead: 0 },
   },
+  "Qwen3.8-Flash": {
+    id: "Qwen3.8-Flash",
+    name: "Qwen3.8 Flash",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
   "Qwen3.8-Max": {
     id: "Qwen3.8-Max",
     name: "Qwen3.8 Max",
@@ -290,7 +337,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type ScnetTokenPlanModelId = keyof typeof models;
-export type ScnetTokenPlanTextModelId = "DeepSeek-V3.2" | "DeepSeek-V4-Flash" | "DeepSeek-V4-Flash-0731" | "DeepSeek-V4-Pro" | "DeepSeek-V4-Pro-0813" | "GLM-5" | "GLM-5.1" | "GLM-5.2" | "Kimi-K2.5" | "Kimi-K2.6" | "Kimi-K2.7-Code" | "Kimi-K3" | "MiMo-V2.5-Pro" | "MiniMax-M2.5" | "MiniMax-M2.7" | "MiniMax-M3" | "Qwen3.8-Max";
+export type ScnetTokenPlanTextModelId = "DeepSeek-V3.2" | "DeepSeek-V4-Flash" | "DeepSeek-V4-Flash-0731" | "DeepSeek-V4-Pro" | "DeepSeek-V4-Pro-0813" | "GLM-5" | "GLM-5.1" | "GLM-5.2" | "GLM-5.3" | "GLM-5.3-Flash" | "Kimi-K2.5" | "Kimi-K2.6" | "Kimi-K2.7-Code" | "Kimi-K3" | "MiMo-V2.5-Pro" | "MiniMax-M2.5" | "MiniMax-M2.7" | "MiniMax-M3" | "Qwen3.8-Flash" | "Qwen3.8-Max";
 export type ScnetTokenPlanImageModelId = never;
 export type ScnetTokenPlanAudioModelId = never;
 export type ScnetTokenPlanVideoModelId = never;

@@ -30,11 +30,41 @@ export const models = {
     limit: { context: 1000000, output: 384000 },
     cost: { input: 0.14, output: 0.28, cacheRead: 0.0028 },
   },
+  "DeepSeek-V4-Flash-Vision-Exp": {
+    id: "DeepSeek-V4-Flash-Vision-Exp",
+    name: "DeepSeek V4 Flash Vision Exp",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-21",
+    lastUpdated: "2026-08-21",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0.14, output: 0.28, cacheRead: 0.0028 },
+  },
+  "MiniCPM5-1B": {
+    id: "MiniCPM5-1B",
+    name: "MiniCPM5-1B",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-05-19",
+    lastUpdated: "2026-05-19",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 131072, output: 131072 },
+    cost: { input: 0.124, output: 0.7425, cacheRead: 0.124 },
+  },
   "Qwen3.8-Flash-Next": {
     id: "Qwen3.8-Flash-Next",
     name: "Qwen3.8 Flash Next",
     family: "qwen",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
@@ -42,14 +72,14 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-08-27",
     lastUpdated: "2026-08-27",
-    modalities: { input: ["text"], output: ["text"] },
+    modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 131072 },
     cost: { input: 0.15, output: 0.47, cacheRead: 0.016 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type AmdModelId = keyof typeof models;
-export type AmdTextModelId = "DeepSeek-V4-Flash" | "Qwen3.8-Flash-Next";
+export type AmdTextModelId = "DeepSeek-V4-Flash" | "DeepSeek-V4-Flash-Vision-Exp" | "MiniCPM5-1B" | "Qwen3.8-Flash-Next";
 export type AmdImageModelId = never;
 export type AmdAudioModelId = never;
 export type AmdVideoModelId = never;

@@ -79,6 +79,22 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
   },
+  "cline-pass/glm-5.3-flash": {
+    id: "cline-pass/glm-5.3-flash",
+    name: "cline-pass/glm-5.3-flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.03 },
+  },
   "cline-pass/kimi-k2.6": {
     id: "cline-pass/kimi-k2.6",
     name: "Kimi K2.6",
@@ -226,7 +242,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type ClinePassModelId = keyof typeof models;
-export type ClinePassTextModelId = "cline-pass/deepseek-v4-flash" | "cline-pass/deepseek-v4-pro" | "cline-pass/glm-5.2" | "cline-pass/glm-5.3" | "cline-pass/kimi-k2.6" | "cline-pass/kimi-k2.7-code" | "cline-pass/kimi-k3" | "cline-pass/mimo-v2.5" | "cline-pass/mimo-v2.5-pro" | "cline-pass/minimax-m3" | "cline-pass/qwen3.7-max" | "cline-pass/qwen3.7-plus" | "cline-pass/qwen3.8-max";
+export type ClinePassTextModelId = "cline-pass/deepseek-v4-flash" | "cline-pass/deepseek-v4-pro" | "cline-pass/glm-5.2" | "cline-pass/glm-5.3" | "cline-pass/glm-5.3-flash" | "cline-pass/kimi-k2.6" | "cline-pass/kimi-k2.7-code" | "cline-pass/kimi-k3" | "cline-pass/mimo-v2.5" | "cline-pass/mimo-v2.5-pro" | "cline-pass/minimax-m3" | "cline-pass/qwen3.7-max" | "cline-pass/qwen3.7-plus" | "cline-pass/qwen3.8-max";
 export type ClinePassImageModelId = never;
 export type ClinePassAudioModelId = never;
 export type ClinePassVideoModelId = never;

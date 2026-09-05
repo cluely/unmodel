@@ -194,6 +194,11 @@ export const availability = {
     "openrouter": "openai/gpt-5.6-terra",
     "vercel": "openai/gpt-5.6-terra",
   },
+  "gpt-6-astra": {
+    "openai": "gpt-6-astra",
+    "openrouter": "openai/gpt-6-astra",
+    "vercel": "openai/gpt-6-astra",
+  },
   "gpt-image-1-mini": {
     "openai": "gpt-image-1-mini",
   },

@@ -435,10 +435,26 @@ export const models = {
     limit: { context: 1048576, output: 1048576 },
     cost: { input: 0.76, output: 2.42, cacheRead: 0.14 },
   },
+  "zai-org/GLM-5.3-Flash": {
+    id: "zai-org/GLM-5.3-Flash",
+    name: "GLM 5.3 Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.05 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type WandbModelId = keyof typeof models;
-export type WandbTextModelId = "JetBrains/Mellum2-12B-A2.5B-Instruct" | "MiniMaxAI/MiniMax-M3" | "OpenPipe/Qwen3-14B-Instruct" | "Qwen/Qwen3-30B-A3B-Instruct-2507" | "Qwen/Qwen3.5-35B-A3B" | "Qwen/Qwen3.6-27B" | "Qwen/Qwen3.6-35B-A3B" | "Qwen/Qwen3.8-27B" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "google/gemma-4-31B-it" | "ibm-granite/granite-4.1-8b" | "ibm-granite/granite-4.2-8b" | "meta-llama/Llama-3.1-70B-Instruct" | "meta-llama/Llama-3.1-8B-Instruct" | "meta-llama/Llama-3.3-70B-Instruct" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" | "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "zai-org/GLM-5.2";
+export type WandbTextModelId = "JetBrains/Mellum2-12B-A2.5B-Instruct" | "MiniMaxAI/MiniMax-M3" | "OpenPipe/Qwen3-14B-Instruct" | "Qwen/Qwen3-30B-A3B-Instruct-2507" | "Qwen/Qwen3.5-35B-A3B" | "Qwen/Qwen3.6-27B" | "Qwen/Qwen3.6-35B-A3B" | "Qwen/Qwen3.8-27B" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "google/gemma-4-31B-it" | "ibm-granite/granite-4.1-8b" | "ibm-granite/granite-4.2-8b" | "meta-llama/Llama-3.1-70B-Instruct" | "meta-llama/Llama-3.1-8B-Instruct" | "meta-llama/Llama-3.3-70B-Instruct" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" | "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3-Flash";
 export type WandbImageModelId = never;
 export type WandbAudioModelId = never;
 export type WandbVideoModelId = never;

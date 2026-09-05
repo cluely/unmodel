@@ -704,7 +704,7 @@ export const models = {
     releaseDate: "2026-04-08",
     lastUpdated: "2026-07-09",
     modalities: { input: ["text", "image", "pdf", "video"], output: ["text"] },
-    limit: { context: 1000000, output: 32000 },
+    limit: { context: 1048576, output: 131072 },
     cost: { input: 1.25, output: 4.25, cacheRead: 0.15 },
   },
   "meta/muse-spark-1.2": {
@@ -1769,7 +1769,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 64000 },
+    limit: { context: 256000, output: 128000, input: 192000 },
     cost: { input: 0.18, output: 0.59, cacheRead: 0.059 },
   },
   "tencent/hy3-free": {
@@ -1784,7 +1784,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 64000 },
+    limit: { context: 256000, output: 128000, input: 192000 },
     cost: { input: 0, output: 0 },
   },
   "z-ai/glm-4.5": {

@@ -496,23 +496,6 @@ export const models = {
     limit: { context: 262000, output: 262000 },
     cost: { input: 0.223, output: 0.39 },
   },
-  "glm-4.7": {
-    id: "glm-4.7",
-    name: "GLM-4.7",
-    family: "glm",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2025-04",
-    releaseDate: "2025-12-22",
-    lastUpdated: "2025-12-22",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 202752, output: 202752 },
-    cost: { input: 0.78, output: 2.785 },
-  },
   "glm-4.7-flash": {
     id: "glm-4.7-flash",
     name: "GLM-4.7-Flash",
@@ -925,22 +908,6 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 128000, output: 128000 },
     cost: { input: 0.996, output: 2.989 },
-  },
-  "hermes-4-70b": {
-    id: "hermes-4-70b",
-    name: "Hermes 4 70B",
-    attachment: false,
-    reasoning: false,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2023-12",
-    releaseDate: "2025-08-26",
-    lastUpdated: "2025-08-26",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 128000, output: 128000 },
-    cost: { input: 0.129, output: 0.399 },
   },
   "kimi-k2.5": {
     id: "kimi-k2.5",
@@ -1520,7 +1487,7 @@ export const models = {
     lastUpdated: "2025-01-27",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 32000, output: 32000 },
-    cost: { input: 0.25, output: 0.747 },
+    cost: { input: 1.014, output: 1.014 },
   },
   "qwen3-235b-a22b-instruct-2507": {
     id: "qwen3-235b-a22b-instruct-2507",
@@ -1567,8 +1534,8 @@ export const models = {
     releaseDate: "2025-04",
     lastUpdated: "2025-04",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 40000, output: 40000 },
-    cost: { input: 0.099, output: 0.299 },
+    limit: { context: 32000, output: 32000 },
+    cost: { input: 0.089, output: 0.312 },
   },
   "qwen3-coder-30b-a3b-instruct": {
     id: "qwen3-coder-30b-a3b-instruct",
@@ -1810,7 +1777,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type CortecsModelId = keyof typeof models;
-export type CortecsTextModelId = "apertus-70b" | "claude-4-5-sonnet" | "claude-4-6-sonnet" | "claude-haiku-4-5" | "claude-opus-5" | "claude-opus4-5" | "claude-opus4-6" | "claude-opus4-7" | "claude-opus4-8" | "claude-sonnet-4" | "claude-sonnet-5" | "codestral-2508" | "cosmos3-super-reasoner" | "deepseek-r1-0528" | "deepseek-v3.2" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "devstral-2512" | "gemini-2.5-flash" | "gemini-2.5-pro" | "gemini-3.1-flash-lite" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemma-3-27b-it" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "glm-4.7" | "glm-4.7-flash" | "glm-5" | "glm-5-turbo" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "glm-5v-turbo" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-mini" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5.1" | "gpt-5.4" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-oss-120b" | "gpt-oss-20b" | "gpt-oss-safeguard-120b" | "hermes-4-405b" | "hermes-4-70b" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "llama-3.1-405b-instruct" | "llama-3.1-8b-instruct" | "llama-3.1-nemotron-ultra-253b-v1" | "llama-3.3-70b-instruct" | "minicpm-v-4.5" | "minimax-m2" | "minimax-m2.1" | "minimax-m2.5" | "minimax-m2.7" | "minimax-m3" | "ministral-14b-2512" | "ministral-3b-2512" | "ministral-8b-2512" | "mistral-7b-instruct-v0.2" | "mistral-7b-instruct-v0.3" | "mistral-large-2402" | "mistral-large-2512" | "mistral-medium-3.5" | "mistral-nemo-instruct-2407" | "mistral-small-2503" | "mistral-small-2603" | "mistral-small-3.2-24b-instruct-2506" | "mixtral-8x7B-instruct-v0.1" | "nemotron-nano-v2-12b" | "nova-2-lite" | "nova-lite-v1" | "nova-micro-v1" | "nova-pro-v1" | "nvidia-nemotron-3-nano-30b-a3b" | "nvidia-nemotron-3-nano-omni" | "pixtral-12b-2409" | "pixtral-large-2502" | "qwen2.5-vl-72b-instruct" | "qwen3-235b-a22b-instruct-2507" | "qwen3-30b-a3b-instruct-2507" | "qwen3-32b" | "qwen3-coder-30b-a3b-instruct" | "qwen3-coder-next" | "qwen3-next-80b-a3b-thinking" | "qwen3-vl-235b-a22b" | "qwen3.5-122b-a10b" | "qwen3.5-397b-a17b" | "qwen3.5-9b" | "qwen3.6-27b" | "qwen3.6-35b-a3b" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-flash-next" | "qwen3guard-gen-0.6b" | "qwen3guard-gen-8b" | "voxtral-small-2507";
+export type CortecsTextModelId = "apertus-70b" | "claude-4-5-sonnet" | "claude-4-6-sonnet" | "claude-haiku-4-5" | "claude-opus-5" | "claude-opus4-5" | "claude-opus4-6" | "claude-opus4-7" | "claude-opus4-8" | "claude-sonnet-4" | "claude-sonnet-5" | "codestral-2508" | "cosmos3-super-reasoner" | "deepseek-r1-0528" | "deepseek-v3.2" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "devstral-2512" | "gemini-2.5-flash" | "gemini-2.5-pro" | "gemini-3.1-flash-lite" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemma-3-27b-it" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "glm-4.7-flash" | "glm-5" | "glm-5-turbo" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "glm-5v-turbo" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-mini" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5.1" | "gpt-5.4" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-oss-120b" | "gpt-oss-20b" | "gpt-oss-safeguard-120b" | "hermes-4-405b" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "llama-3.1-405b-instruct" | "llama-3.1-8b-instruct" | "llama-3.1-nemotron-ultra-253b-v1" | "llama-3.3-70b-instruct" | "minicpm-v-4.5" | "minimax-m2" | "minimax-m2.1" | "minimax-m2.5" | "minimax-m2.7" | "minimax-m3" | "ministral-14b-2512" | "ministral-3b-2512" | "ministral-8b-2512" | "mistral-7b-instruct-v0.2" | "mistral-7b-instruct-v0.3" | "mistral-large-2402" | "mistral-large-2512" | "mistral-medium-3.5" | "mistral-nemo-instruct-2407" | "mistral-small-2503" | "mistral-small-2603" | "mistral-small-3.2-24b-instruct-2506" | "mixtral-8x7B-instruct-v0.1" | "nemotron-nano-v2-12b" | "nova-2-lite" | "nova-lite-v1" | "nova-micro-v1" | "nova-pro-v1" | "nvidia-nemotron-3-nano-30b-a3b" | "nvidia-nemotron-3-nano-omni" | "pixtral-12b-2409" | "pixtral-large-2502" | "qwen2.5-vl-72b-instruct" | "qwen3-235b-a22b-instruct-2507" | "qwen3-30b-a3b-instruct-2507" | "qwen3-32b" | "qwen3-coder-30b-a3b-instruct" | "qwen3-coder-next" | "qwen3-next-80b-a3b-thinking" | "qwen3-vl-235b-a22b" | "qwen3.5-122b-a10b" | "qwen3.5-397b-a17b" | "qwen3.5-9b" | "qwen3.6-27b" | "qwen3.6-35b-a3b" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-flash-next" | "qwen3guard-gen-0.6b" | "qwen3guard-gen-8b" | "voxtral-small-2507";
 export type CortecsImageModelId = never;
 export type CortecsAudioModelId = never;
 export type CortecsVideoModelId = never;

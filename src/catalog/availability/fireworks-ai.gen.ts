@@ -26,11 +26,20 @@ export const availability = {
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-0731",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "nebius": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "nvidia": "deepseek-ai/deepseek-v4-flash-0731",
     "openrouter": "deepseek/deepseek-v4-flash-0731",
     "scaleway": { id: "deepseek-v4-flash-0731", narrows: { context: 256000 } },
     "togetherai": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "vercel": "deepseek/deepseek-v4-flash-0731",
+  },
+  "accounts/fireworks/models/deepseek-v4-flash-vision-exp": {
+    "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+    "deepseek": "deepseek-v4-flash-vision-exp",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
+    "huggingface": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+    "openrouter": "deepseek/deepseek-v4-flash-vision-exp",
+    "vercel": "deepseek/deepseek-v4-flash-vision-exp",
   },
   "accounts/fireworks/models/deepseek-v4-pro-0813": {
     "baseten": "deepseek-ai/DeepSeek-V4-Pro-0813",
@@ -61,7 +70,7 @@ export const availability = {
     "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chatMaas" },
     "groq": "openai/gpt-oss-120b",
     "huggingface": "openai/gpt-oss-120b",
-    "nebius": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
+    "nebius": "openai/gpt-oss-120b",
     "nvidia": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
     "openrouter": "openai/gpt-oss-120b",
     "scaleway": { id: "gpt-oss-120b", narrows: { context: 128000 } },
@@ -122,6 +131,9 @@ export const availability = {
   },
   "accounts/fireworks/models/qwen3p7-plus": {
     "fireworks-ai": "accounts/fireworks/models/qwen3p7-plus",
+  },
+  "accounts/fireworks/models/qwen3p8-2p4t-a95b": {
+    "fireworks-ai": "accounts/fireworks/models/qwen3p8-2p4t-a95b",
   },
   "accounts/fireworks/models/qwen3p8-max": {
     "fireworks-ai": "accounts/fireworks/models/qwen3p8-max",

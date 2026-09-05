@@ -13,6 +13,21 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "Qwen3.8-27B": {
+    id: "Qwen3.8-27B",
+    name: "Qwen3.8 27B",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: false,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 32768, output: 32768 },
+    cost: { input: 0.41, output: 2.5, cacheRead: 0.08 },
+  },
   "auto": {
     id: "auto",
     name: "Auto Route",
@@ -920,7 +935,7 @@ export const models = {
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
-    cost: { input: 0.13, output: 0.4, cacheRead: 0.024 },
+    cost: { input: 0.075, output: 0.25, cacheRead: 0.015 },
   },
   "gpt-3.5-turbo": {
     id: "gpt-3.5-turbo",
@@ -1430,6 +1445,22 @@ export const models = {
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 2.5 },
   },
+  "gpt-6-astra": {
+    id: "gpt-6-astra",
+    name: "GPT-6 Astra",
+    family: "gpt",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    releaseDate: "2026-09-03",
+    lastUpdated: "2026-09-03",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1050000, output: 1050000 },
+    cost: { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
+  },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
     name: "GPT OSS 120B",
@@ -1651,7 +1682,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 64000 },
+    limit: { context: 262144, output: 128000, input: 192000 },
     cost: { input: 0.14, output: 0.58, cacheRead: 0.035 },
   },
   "kimi-k2": {
@@ -2193,7 +2224,7 @@ export const models = {
     releaseDate: "2026-04-08",
     lastUpdated: "2026-07-09",
     modalities: { input: ["text", "image", "pdf", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 32000 },
+    limit: { context: 1048576, output: 131072 },
     cost: { input: 1.25, output: 4.25, cacheRead: 0.15 },
   },
   "muse-spark-1.2": {
@@ -2211,6 +2242,54 @@ export const models = {
     modalities: { input: ["text", "image", "video", "pdf", "audio"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
     cost: { input: 1.25, output: 4.25, cacheRead: 0.15 },
+  },
+  "muse-spark-1.2-contributor": {
+    id: "muse-spark-1.2-contributor",
+    name: "Muse Spark 1.2 Contributor",
+    family: "muse",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-06",
+    lastUpdated: "2026-08-06",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.1, output: 0.2, cacheRead: 0.002 },
+  },
+  "muse-spark-1.3": {
+    id: "muse-spark-1.3",
+    name: "Muse Spark 1.3",
+    family: "muse",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
+    modalities: { input: ["text", "image", "video", "pdf", "audio"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 1.25, output: 4.25, cacheRead: 0.15 },
+  },
+  "muse-spark-1.3-contributor": {
+    id: "muse-spark-1.3-contributor",
+    name: "Muse Spark 1.3 Contributor",
+    family: "muse",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.1, output: 0.2, cacheRead: 0.002 },
   },
   "nemotron-3-ultra-550b": {
     id: "nemotron-3-ultra-550b",
@@ -2789,22 +2868,6 @@ export const models = {
     limit: { context: 1000000, output: 64000 },
     cost: { input: 0.4, output: 1.6, cacheRead: 0.08, cacheWrite: 0.5 },
   },
-  "qwen3.8-27b": {
-    id: "qwen3.8-27b",
-    name: "Qwen3.8 27B",
-    family: "qwen",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-08-14",
-    lastUpdated: "2026-08-14",
-    modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1000000, output: 32768 },
-    cost: { input: 0.42, output: 3, cacheRead: 0.085 },
-  },
   "qwen3.8-flash": {
     id: "qwen3.8-flash",
     name: "Qwen3.8 Flash",
@@ -2966,7 +3029,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type LlmgatewayModelId = keyof typeof models;
-export type LlmgatewayTextModelId = "auto" | "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-haiku-4-5-20251001" | "claude-opus-4-1-20250805" | "claude-opus-4-5-20251101" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-5-20250929" | "claude-sonnet-4-6" | "claude-sonnet-5" | "codestral-2508" | "custom" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro" | "devstral-2512" | "ernie-4.5-vl-424b-a47b" | "fugu-ultra" | "gemini-2.5-flash" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3.1-flash-lite" | "gemini-3.1-pro-preview" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-pro-latest" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "glm-4-32b-0414-128k" | "glm-4.5" | "glm-4.5-air" | "glm-4.5-airx" | "glm-4.5-x" | "glm-4.5v" | "glm-4.6" | "glm-4.6v" | "glm-4.6v-flashx" | "glm-4.7" | "glm-4.7-flash" | "glm-4.7-flashx" | "glm-5" | "glm-5.1" | "glm-5.2" | "glm-5.2-fast" | "glm-5.3" | "glm-5.3-flash" | "gpt-3.5-turbo" | "gpt-4" | "gpt-4-turbo" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-mini" | "gpt-4o-mini-transcribe" | "gpt-4o-transcribe" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.2-pro" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-oss-120b" | "gpt-oss-20b" | "grok-4" | "grok-4-1-fast-non-reasoning" | "grok-4-1-fast-reasoning" | "grok-4-20-beta-0309-non-reasoning" | "grok-4-20-beta-0309-reasoning" | "grok-4-20-non-reasoning" | "grok-4-20-reasoning" | "grok-4-3" | "grok-4-5" | "grok-4-6" | "grok-build-0-1" | "hy3" | "kimi-k2" | "kimi-k2-thinking" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k2.7-code-highspeed" | "kimi-k3" | "kimi-k3-fast" | "ling-3.0-flash" | "llama-3-70b-instruct" | "llama-3.1-70b-instruct" | "llama-3.2-11b-instruct" | "llama-3.2-3b-instruct" | "llama-3.3-70b-instruct" | "llama-4-maverick-17b-instruct" | "llama-4-scout-17b-instruct" | "mimo-v2.5" | "mimo-v2.5-pro" | "minimax-m2" | "minimax-m2.1" | "minimax-m2.1-lightning" | "minimax-m2.5" | "minimax-m2.5-highspeed" | "minimax-m2.7" | "minimax-m2.7-highspeed" | "minimax-m3" | "minimax-text-01" | "ministral-14b-2512" | "ministral-3b-2512" | "ministral-8b-2512" | "mistral-large-2512" | "mistral-large-latest" | "mistral-small-2506" | "muse-spark-1.1" | "muse-spark-1.2" | "nemotron-3-ultra-550b" | "o1" | "o3" | "o3-mini" | "o4-mini" | "qwen-coder-plus" | "qwen-flash" | "qwen-max" | "qwen-omni-turbo" | "qwen-plus" | "qwen-plus-latest" | "qwen3-235b-a22b-fp8" | "qwen3-235b-a22b-instruct-2507" | "qwen3-235b-a22b-thinking-2507" | "qwen3-32b" | "qwen3-coder-30b-a3b-instruct" | "qwen3-coder-480b-a35b-instruct" | "qwen3-coder-flash" | "qwen3-coder-next" | "qwen3-coder-plus" | "qwen3-max" | "qwen3-next-80b-a3b-instruct" | "qwen3-next-80b-a3b-thinking" | "qwen3-vl-235b-a22b-instruct" | "qwen3-vl-235b-a22b-thinking" | "qwen3-vl-30b-a3b-instruct" | "qwen3-vl-flash" | "qwen3-vl-plus" | "qwen3.5-9b" | "qwen3.6-35b-a3b" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-27b" | "qwen3.8-flash" | "qwen3.8-max" | "qwen35-397b-a17b" | "seed-1-6-250615" | "seed-1-6-250915" | "seed-1-6-flash-250715" | "seed-1-8-251228" | "sonar" | "sonar-pro" | "sonar-reasoning-pro";
+export type LlmgatewayTextModelId = "Qwen3.8-27B" | "auto" | "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-haiku-4-5-20251001" | "claude-opus-4-1-20250805" | "claude-opus-4-5-20251101" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-5-20250929" | "claude-sonnet-4-6" | "claude-sonnet-5" | "codestral-2508" | "custom" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro" | "devstral-2512" | "ernie-4.5-vl-424b-a47b" | "fugu-ultra" | "gemini-2.5-flash" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3.1-flash-lite" | "gemini-3.1-pro-preview" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-pro-latest" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "glm-4-32b-0414-128k" | "glm-4.5" | "glm-4.5-air" | "glm-4.5-airx" | "glm-4.5-x" | "glm-4.5v" | "glm-4.6" | "glm-4.6v" | "glm-4.6v-flashx" | "glm-4.7" | "glm-4.7-flash" | "glm-4.7-flashx" | "glm-5" | "glm-5.1" | "glm-5.2" | "glm-5.2-fast" | "glm-5.3" | "glm-5.3-flash" | "gpt-3.5-turbo" | "gpt-4" | "gpt-4-turbo" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-mini" | "gpt-4o-mini-transcribe" | "gpt-4o-transcribe" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.2-pro" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-oss-120b" | "gpt-oss-20b" | "grok-4" | "grok-4-1-fast-non-reasoning" | "grok-4-1-fast-reasoning" | "grok-4-20-beta-0309-non-reasoning" | "grok-4-20-beta-0309-reasoning" | "grok-4-20-non-reasoning" | "grok-4-20-reasoning" | "grok-4-3" | "grok-4-5" | "grok-4-6" | "grok-build-0-1" | "hy3" | "kimi-k2" | "kimi-k2-thinking" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k2.7-code-highspeed" | "kimi-k3" | "kimi-k3-fast" | "ling-3.0-flash" | "llama-3-70b-instruct" | "llama-3.1-70b-instruct" | "llama-3.2-11b-instruct" | "llama-3.2-3b-instruct" | "llama-3.3-70b-instruct" | "llama-4-maverick-17b-instruct" | "llama-4-scout-17b-instruct" | "mimo-v2.5" | "mimo-v2.5-pro" | "minimax-m2" | "minimax-m2.1" | "minimax-m2.1-lightning" | "minimax-m2.5" | "minimax-m2.5-highspeed" | "minimax-m2.7" | "minimax-m2.7-highspeed" | "minimax-m3" | "minimax-text-01" | "ministral-14b-2512" | "ministral-3b-2512" | "ministral-8b-2512" | "mistral-large-2512" | "mistral-large-latest" | "mistral-small-2506" | "muse-spark-1.1" | "muse-spark-1.2" | "muse-spark-1.2-contributor" | "muse-spark-1.3" | "muse-spark-1.3-contributor" | "nemotron-3-ultra-550b" | "o1" | "o3" | "o3-mini" | "o4-mini" | "qwen-coder-plus" | "qwen-flash" | "qwen-max" | "qwen-omni-turbo" | "qwen-plus" | "qwen-plus-latest" | "qwen3-235b-a22b-fp8" | "qwen3-235b-a22b-instruct-2507" | "qwen3-235b-a22b-thinking-2507" | "qwen3-32b" | "qwen3-coder-30b-a3b-instruct" | "qwen3-coder-480b-a35b-instruct" | "qwen3-coder-flash" | "qwen3-coder-next" | "qwen3-coder-plus" | "qwen3-max" | "qwen3-next-80b-a3b-instruct" | "qwen3-next-80b-a3b-thinking" | "qwen3-vl-235b-a22b-instruct" | "qwen3-vl-235b-a22b-thinking" | "qwen3-vl-30b-a3b-instruct" | "qwen3-vl-flash" | "qwen3-vl-plus" | "qwen3.5-9b" | "qwen3.6-35b-a3b" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max" | "qwen35-397b-a17b" | "seed-1-6-250615" | "seed-1-6-250915" | "seed-1-6-flash-250715" | "seed-1-8-251228" | "sonar" | "sonar-pro" | "sonar-reasoning-pro";
 export type LlmgatewayImageModelId = never;
 export type LlmgatewayAudioModelId = "qwen-omni-turbo";
 export type LlmgatewayVideoModelId = never;

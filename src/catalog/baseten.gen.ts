@@ -343,6 +343,22 @@ export const models = {
     limit: { context: 1048576, output: 262144 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.14 },
   },
+  "zai-org/GLM-5.3-Fast": {
+    id: "zai-org/GLM-5.3-Fast",
+    name: "GLM 5.3 Fast",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 262144 },
+    cost: { input: 2.1, output: 6.6 },
+  },
   "zai-org/GLM-5.3-Flash": {
     id: "zai-org/GLM-5.3-Flash",
     name: "GLM 5.3 Flash",
@@ -362,7 +378,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type BasetenModelId = keyof typeof models;
-export type BasetenTextModelId = "MiniMaxAI/MiniMax-M2.5" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "moonshotai/Kimi-K2.5" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" | "nvidia/Nemotron-120B-A12B" | "openai/gpt-oss-120b" | "thinkingmachines/inkling" | "thinkingmachines/inkling-small" | "zai-org/GLM-4.7" | "zai-org/GLM-5" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.2-Fast" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
+export type BasetenTextModelId = "MiniMaxAI/MiniMax-M2.5" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "moonshotai/Kimi-K2.5" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" | "nvidia/Nemotron-120B-A12B" | "openai/gpt-oss-120b" | "thinkingmachines/inkling" | "thinkingmachines/inkling-small" | "zai-org/GLM-4.7" | "zai-org/GLM-5" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.2-Fast" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Fast" | "zai-org/GLM-5.3-Flash";
 export type BasetenImageModelId = never;
 export type BasetenAudioModelId = never;
 export type BasetenVideoModelId = never;

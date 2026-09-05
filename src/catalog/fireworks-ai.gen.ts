@@ -30,6 +30,22 @@ export const models = {
     limit: { context: 1000000, output: 384000 },
     cost: { input: 0.22, output: 0.66, cacheRead: 0.007 },
   },
+  "accounts/fireworks/models/deepseek-v4-flash-vision-exp": {
+    id: "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
+    name: "DeepSeek V4 Flash Vision Exp",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-21",
+    lastUpdated: "2026-08-21",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0.22, output: 0.66, cacheRead: 0.007 },
+  },
   "accounts/fireworks/models/deepseek-v4-pro-0813": {
     id: "accounts/fireworks/models/deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
@@ -72,7 +88,7 @@ export const models = {
     temperature: true,
     openWeights: true,
     releaseDate: "2026-08-14",
-    lastUpdated: "2026-08-28",
+    lastUpdated: "2026-09-04",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
@@ -88,7 +104,7 @@ export const models = {
     temperature: true,
     openWeights: false,
     releaseDate: "2026-08-26",
-    lastUpdated: "2026-08-26",
+    lastUpdated: "2026-09-04",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0.15, output: 0.5, cacheRead: 0.03 },
@@ -247,6 +263,22 @@ export const models = {
     limit: { context: 262144, output: 65536 },
     cost: { input: 0.4, output: 1.6, cacheRead: 0.08 },
   },
+  "accounts/fireworks/models/qwen3p8-2p4t-a95b": {
+    id: "accounts/fireworks/models/qwen3p8-2p4t-a95b",
+    name: "Qwen3.8 2.4T A95B",
+    family: "qwen",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-12",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 262144, output: 131072 },
+    cost: { input: 2, output: 6, cacheRead: 0.25 },
+  },
   "accounts/fireworks/models/qwen3p8-max": {
     id: "accounts/fireworks/models/qwen3p8-max",
     name: "Qwen3.8 Max",
@@ -296,7 +328,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type FireworksAiModelId = keyof typeof models;
-export type FireworksAiTextModelId = "accounts/fireworks/models/deepseek-v4-flash-0731" | "accounts/fireworks/models/deepseek-v4-pro-0813" | "accounts/fireworks/models/glm-5p2" | "accounts/fireworks/models/glm-5p3" | "accounts/fireworks/models/glm-5p3-flash" | "accounts/fireworks/models/gpt-oss-120b" | "accounts/fireworks/models/inkling" | "accounts/fireworks/models/kimi-k2p6" | "accounts/fireworks/models/kimi-k2p7-code" | "accounts/fireworks/models/kimi-k3" | "accounts/fireworks/models/minimax-m3" | "accounts/fireworks/models/muse-glimmer-30b" | "accounts/fireworks/models/nemotron-3-ultra-nvfp4" | "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b" | "accounts/fireworks/models/qwen3p7-plus" | "accounts/fireworks/models/qwen3p8-max" | "accounts/fireworks/routers/glm-5p2-fast" | "accounts/fireworks/routers/kimi-k3-fast";
+export type FireworksAiTextModelId = "accounts/fireworks/models/deepseek-v4-flash-0731" | "accounts/fireworks/models/deepseek-v4-flash-vision-exp" | "accounts/fireworks/models/deepseek-v4-pro-0813" | "accounts/fireworks/models/glm-5p2" | "accounts/fireworks/models/glm-5p3" | "accounts/fireworks/models/glm-5p3-flash" | "accounts/fireworks/models/gpt-oss-120b" | "accounts/fireworks/models/inkling" | "accounts/fireworks/models/kimi-k2p6" | "accounts/fireworks/models/kimi-k2p7-code" | "accounts/fireworks/models/kimi-k3" | "accounts/fireworks/models/minimax-m3" | "accounts/fireworks/models/muse-glimmer-30b" | "accounts/fireworks/models/nemotron-3-ultra-nvfp4" | "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b" | "accounts/fireworks/models/qwen3p7-plus" | "accounts/fireworks/models/qwen3p8-2p4t-a95b" | "accounts/fireworks/models/qwen3p8-max" | "accounts/fireworks/routers/glm-5p2-fast" | "accounts/fireworks/routers/kimi-k3-fast";
 export type FireworksAiImageModelId = never;
 export type FireworksAiAudioModelId = never;
 export type FireworksAiVideoModelId = never;

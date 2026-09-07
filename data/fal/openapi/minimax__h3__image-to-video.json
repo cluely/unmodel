@@ -116,7 +116,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Optional URL of the image to use as the last frame, for first-to-last keyframe generation.",
+              "description": "Optional URL of the image to use as the last frame. It may be provided alone for end-only keyframe generation; in that case the output canvas follows this image.",
               "title": "End Image URL"
             },
             "image_url": {
@@ -128,7 +128,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Optional URL of the image to use as the first frame. When provided, the output aspect ratio follows this image. When omitted, the request is handled as text-to-video (16:9 by default).",
+              "description": "Optional URL of the image to use as the first frame. When provided, the output canvas follows this image. If only end_image_url is provided, the canvas follows that last frame instead. If both images are omitted, the request is handled as text-to-video (16:9 by default).",
               "examples": [
                 "https://storage.googleapis.com/falserverless/example_inputs/hailuo23/pro_i2v_in.jpg"
               ],

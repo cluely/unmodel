@@ -1920,14 +1920,16 @@ export interface MinimaxH3ImageToVideoInput {
    */
   prompt_expansion_mode?: string | null;
   /**
-   * Optional URL of the image to use as the first frame. When provided, the output aspect
-   * ratio follows this image. When omitted, the request is handled as text-to-video (16:9 by
-   * default). Carries a image reference — an https URL or a `data:` URI.
+   * Optional URL of the image to use as the first frame. When provided, the output canvas
+   * follows this image. If only end_image_url is provided, the canvas follows that last
+   * frame instead. If both images are omitted, the request is handled as text-to-video (16:9
+   * by default). Carries a image reference — an https URL or a `data:` URI.
    */
   image_url?: string | null;
   /**
-   * Optional URL of the image to use as the last frame, for first-to-last keyframe
-   * generation. Carries a image reference — an https URL or a `data:` URI.
+   * Optional URL of the image to use as the last frame. It may be provided alone for
+   * end-only keyframe generation; in that case the output canvas follows this image. Carries
+   * a image reference — an https URL or a `data:` URI.
    */
   end_image_url?: string | null;
 }

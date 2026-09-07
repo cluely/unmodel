@@ -1245,7 +1245,7 @@
       "category": "unknown",
       "display_name": "MiniMax H3 Image to Video",
       "file": "openapi/minimax__h3__image-to-video.json",
-      "sha256": "8935ad0cbf021fdc5a87a5e5d5f6004f54161c505218a530e3a3f58f4e2fa7a5",
+      "sha256": "9d41b611dac1a4353c8f6e195dcd4bcd2aa51b7f2061dbfe5820c01e04ac1162",
       "status": "active",
       "updated_at": "2026-08-25T17:41:07.462Z"
     },
@@ -1290,12 +1290,12 @@
       "updated_at": "2026-08-13T21:01:03.124Z"
     },
     "reve/2.1/text-to-image": {
-      "category": "text-to-image",
-      "display_name": "Reve 2.1",
+      "category": "",
+      "display_name": "reve/2.1/text-to-image",
       "file": "openapi/reve__2.1__text-to-image.json",
-      "sha256": "c4313dfee4630ba840b4b83d4a7e4d603201553eb4279ca090c4ad1d924ad8fc",
-      "status": "active",
-      "updated_at": "2026-07-17T03:49:40.574Z"
+      "sha256": "b7f91a784a4a18cc6221693057a8d4830b55b48358efefc8bd0ba85488e76e86",
+      "status": "unknown",
+      "updated_at": ""
     },
     "sonilo/v1.1/text-to-sound-effects": {
       "category": "text-to-audio",
@@ -1325,17 +1325,17 @@
       "category": "video-to-video",
       "display_name": "Topaz Upscale Video Generative",
       "file": "openapi/topaz__upscale__video__generative.json",
-      "sha256": "8aa88fe62b310fe12589dd414d5be4708a58b53795296f4fb464ed6eff85814f",
+      "sha256": "904b4b35ce18143dded6886ecc19a0a71a972c49976aba13f67dd8ae1862f7b6",
       "status": "active",
-      "updated_at": "2026-09-01T22:05:37.279Z"
+      "updated_at": "2026-09-05T01:07:15.958Z"
     },
     "topaz/upscale/video/precision": {
       "category": "video-to-video",
       "display_name": "Topaz Upscale Video Precision",
       "file": "openapi/topaz__upscale__video__precision.json",
-      "sha256": "71c6f43b452576835989d2d143fc77a57a9c88c653bd3a2bfaf4012df518c607",
+      "sha256": "b7ba26e257712214027a11e5d2635387e2d279f42992f2035ec8c07d8e779880",
       "status": "active",
-      "updated_at": "2026-09-01T22:05:37.279Z"
+      "updated_at": "2026-09-05T01:07:15.958Z"
     },
     "tripo3d/h3.1/image-to-3d": {
       "category": "image-to-3d",

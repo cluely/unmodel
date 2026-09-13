@@ -402,6 +402,22 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 1.5, output: 9, cacheRead: 0.15, inputAudio: 1.5 },
   },
+  "gemini-3.5-flash-lite": {
+    id: "gemini-3.5-flash-lite",
+    name: "Gemini 3.5 Flash Lite",
+    family: "gemini-flash-lite",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2026-03",
+    releaseDate: "2026-07-21",
+    lastUpdated: "2026-07-21",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+  },
   "gemini-embedding": {
     id: "gemini-embedding",
     name: "Gemini Embedding 001",
@@ -790,7 +806,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type SapAiCoreModelId = keyof typeof models;
-export type SapAiCoreTextModelId = "amazon--nova-lite" | "amazon--nova-micro" | "amazon--nova-pro" | "amazon--titan-embed-text" | "anthropic--claude-3-haiku" | "anthropic--claude-3-opus" | "anthropic--claude-3-sonnet" | "anthropic--claude-3.5-sonnet" | "anthropic--claude-3.7-sonnet" | "anthropic--claude-4-opus" | "anthropic--claude-4-sonnet" | "anthropic--claude-4.5-haiku" | "anthropic--claude-4.5-opus" | "anthropic--claude-4.5-sonnet" | "anthropic--claude-4.6-opus" | "anthropic--claude-4.6-sonnet" | "anthropic--claude-4.7-opus" | "anthropic--claude-4.8-opus" | "cohere--command-a-reasoning" | "gemini-2.5-flash" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3.1-flash-lite" | "gemini-3.5-flash" | "gemini-embedding" | "gemini-embedding-2" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5.2" | "gpt-5.4" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "mistralai--mistral-medium" | "mistralai--mistral-medium-instruct" | "mistralai--mistral-small" | "nvidia--llama-3.2-nv-embedqa-1b" | "sap-abap-1" | "sonar" | "sonar-deep-research" | "sonar-pro" | "text-embedding-3-large" | "text-embedding-3-small";
+export type SapAiCoreTextModelId = "amazon--nova-lite" | "amazon--nova-micro" | "amazon--nova-pro" | "amazon--titan-embed-text" | "anthropic--claude-3-haiku" | "anthropic--claude-3-opus" | "anthropic--claude-3-sonnet" | "anthropic--claude-3.5-sonnet" | "anthropic--claude-3.7-sonnet" | "anthropic--claude-4-opus" | "anthropic--claude-4-sonnet" | "anthropic--claude-4.5-haiku" | "anthropic--claude-4.5-opus" | "anthropic--claude-4.5-sonnet" | "anthropic--claude-4.6-opus" | "anthropic--claude-4.6-sonnet" | "anthropic--claude-4.7-opus" | "anthropic--claude-4.8-opus" | "cohere--command-a-reasoning" | "gemini-2.5-flash" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3.1-flash-lite" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-embedding" | "gemini-embedding-2" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5.2" | "gpt-5.4" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "mistralai--mistral-medium" | "mistralai--mistral-medium-instruct" | "mistralai--mistral-small" | "nvidia--llama-3.2-nv-embedqa-1b" | "sap-abap-1" | "sonar" | "sonar-deep-research" | "sonar-pro" | "text-embedding-3-large" | "text-embedding-3-small";
 export type SapAiCoreImageModelId = never;
 export type SapAiCoreAudioModelId = never;
 export type SapAiCoreVideoModelId = never;

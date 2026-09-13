@@ -96,6 +96,23 @@ export const models = {
     limit: { context: 1048576, output: 262144 },
     cost: { input: 1.32, output: 3.96 },
   },
+  "deepseek-ai/DeepSeek-V4.1-Flash": {
+    id: "deepseek-ai/DeepSeek-V4.1-Flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 32768 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.03 },
+  },
   "moonshotai/Kimi-K2.5": {
     id: "moonshotai/Kimi-K2.5",
     name: "Kimi K2.5",
@@ -331,7 +348,7 @@ export const models = {
     id: "zai-org/GLM-5.3",
     name: "GLM 5.3",
     family: "glm",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
@@ -339,9 +356,25 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-08-14",
     lastUpdated: "2026-08-14",
-    modalities: { input: ["text"], output: ["text"] },
+    modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 262144 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.14 },
+  },
+  "zai-org/GLM-5.3-Fast": {
+    id: "zai-org/GLM-5.3-Fast",
+    name: "GLM 5.3 Fast",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 262144 },
+    cost: { input: 2.1, output: 6.6 },
   },
   "zai-org/GLM-5.3-Flash": {
     id: "zai-org/GLM-5.3-Flash",
@@ -352,7 +385,7 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image"], output: ["text"] },
@@ -362,7 +395,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type BasetenModelId = keyof typeof models;
-export type BasetenTextModelId = "MiniMaxAI/MiniMax-M2.5" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "moonshotai/Kimi-K2.5" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" | "nvidia/Nemotron-120B-A12B" | "openai/gpt-oss-120b" | "thinkingmachines/inkling" | "thinkingmachines/inkling-small" | "zai-org/GLM-4.7" | "zai-org/GLM-5" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.2-Fast" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
+export type BasetenTextModelId = "MiniMaxAI/MiniMax-M2.5" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "deepseek-ai/DeepSeek-V4.1-Flash" | "moonshotai/Kimi-K2.5" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" | "nvidia/Nemotron-120B-A12B" | "openai/gpt-oss-120b" | "thinkingmachines/inkling" | "thinkingmachines/inkling-small" | "zai-org/GLM-4.7" | "zai-org/GLM-5" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.2-Fast" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Fast" | "zai-org/GLM-5.3-Flash";
 export type BasetenImageModelId = never;
 export type BasetenAudioModelId = never;
 export type BasetenVideoModelId = never;

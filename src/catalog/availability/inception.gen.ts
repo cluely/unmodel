@@ -24,6 +24,11 @@ export const availability = {
     "openrouter": "inception/mercury-2",
     "vercel": "inception/mercury-2",
   },
+  "mercury-2.5": {
+    "inception": "mercury-2.5",
+    "openrouter": "inception/mercury-2.5",
+    "vercel": "inception/mercury-2.5",
+  },
   "mercury-edit-2": {
     "inception": "mercury-edit-2",
   },

@@ -43,6 +43,37 @@ export const models = {
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 128000 },
   },
+  "deepseek-v4-flash": {
+    id: "deepseek-v4-flash",
+    name: "DeepSeek V4 Flash",
+    family: "deepseek-flash",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-04-24",
+    lastUpdated: "2026-04-24",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+  },
+  "glm-5.3": {
+    id: "glm-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+  },
   "gpt-5.6-sol": {
     id: "gpt-5.6-sol",
     name: "GPT-5.6 Sol",
@@ -62,7 +93,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AgentrouterModelId = keyof typeof models;
-export type AgentrouterTextModelId = "claude-opus-4-8" | "claude-opus-5" | "gpt-5.6-sol";
+export type AgentrouterTextModelId = "claude-opus-4-8" | "claude-opus-5" | "deepseek-v4-flash" | "glm-5.3" | "gpt-5.6-sol";
 export type AgentrouterImageModelId = never;
 export type AgentrouterAudioModelId = never;
 export type AgentrouterVideoModelId = never;

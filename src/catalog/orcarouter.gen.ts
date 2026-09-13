@@ -704,7 +704,7 @@ export const models = {
     releaseDate: "2026-04-08",
     lastUpdated: "2026-07-09",
     modalities: { input: ["text", "image", "pdf", "video"], output: ["text"] },
-    limit: { context: 1000000, output: 32000 },
+    limit: { context: 1048576, output: 131072 },
     cost: { input: 1.25, output: 4.25, cacheRead: 0.15 },
   },
   "meta/muse-spark-1.2": {
@@ -1726,22 +1726,6 @@ export const models = {
     limit: { context: 262144, output: 32768 },
     cost: { input: 0.33, output: 2.4 },
   },
-  "qwen/qwen3.8-27b-free": {
-    id: "qwen/qwen3.8-27b-free",
-    name: "Qwen3.8 27B (free)",
-    family: "qwen",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-08-14",
-    lastUpdated: "2026-08-14",
-    modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 65536, output: 32768 },
-    cost: { input: 0, output: 0 },
-  },
   "qwen/qwen3.8-max": {
     id: "qwen/qwen3.8-max",
     name: "Qwen3.8 Max",
@@ -1769,7 +1753,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 64000 },
+    limit: { context: 256000, output: 128000, input: 192000 },
     cost: { input: 0.18, output: 0.59, cacheRead: 0.059 },
   },
   "tencent/hy3-free": {
@@ -1784,7 +1768,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 64000 },
+    limit: { context: 256000, output: 128000, input: 192000 },
     cost: { input: 0, output: 0 },
   },
   "z-ai/glm-4.5": {
@@ -1923,17 +1907,33 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 128000 },
     cost: { input: 0.075, output: 0.25 },
   },
+  "z-ai/glm-5.3-flash-free": {
+    id: "z-ai/glm-5.3-flash-free",
+    name: "GLM-5.3-Flash (free)",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 0, output: 0 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type OrcarouterModelId = keyof typeof models;
-export type OrcarouterTextModelId = "anthropic/claude-fable-5" | "anthropic/claude-haiku-4.5" | "anthropic/claude-opus-4.5" | "anthropic/claude-opus-4.6" | "anthropic/claude-opus-4.7" | "anthropic/claude-opus-4.8" | "anthropic/claude-opus-5" | "anthropic/claude-sonnet-4.5" | "anthropic/claude-sonnet-4.6" | "anthropic/claude-sonnet-5" | "deepseek/deepseek-chat" | "deepseek/deepseek-reasoner" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-0731" | "deepseek/deepseek-v4-flash-free" | "deepseek/deepseek-v4-flash-vision-exp" | "deepseek/deepseek-v4-pro" | "deepseek/deepseek-v4-pro-0813" | "google/gemini-2.5-flash" | "google/gemini-2.5-flash-lite" | "google/gemini-2.5-pro" | "google/gemini-3-flash-preview" | "google/gemini-3.1-flash-lite" | "google/gemini-3.1-flash-lite-preview" | "google/gemini-3.1-pro-preview" | "google/gemini-3.1-pro-preview-customtools" | "google/gemini-3.5-flash" | "google/gemini-3.5-flash-lite" | "google/gemini-3.6-flash" | "google/gemini-flash-latest" | "google/gemini-flash-lite-latest" | "google/gemini-robotics-er-1.6-preview" | "google/gemma-4-26b-a4b-it" | "google/gemma-4-31b-it" | "grok/grok-4.3" | "grok/grok-4.5" | "grok/grok-4.6" | "kimi/kimi-k2.5" | "kimi/kimi-k2.6" | "kimi/kimi-k2.7-code" | "kimi/kimi-k3" | "meta/muse-spark-1.1" | "meta/muse-spark-1.2" | "minimax/minimax-m2.5" | "minimax/minimax-m2.5-highspeed" | "minimax/minimax-m2.7" | "minimax/minimax-m2.7-highspeed" | "minimax/minimax-m3" | "openai/gpt-3.5-turbo" | "openai/gpt-4" | "openai/gpt-4-turbo" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-4o" | "openai/gpt-4o-2024-05-13" | "openai/gpt-4o-2024-08-06" | "openai/gpt-4o-2024-11-20" | "openai/gpt-4o-mini" | "openai/gpt-5" | "openai/gpt-5-chat-latest" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5-pro" | "openai/gpt-5.1" | "openai/gpt-5.1-chat-latest" | "openai/gpt-5.1-codex" | "openai/gpt-5.1-codex-mini" | "openai/gpt-5.2" | "openai/gpt-5.2-chat-latest" | "openai/gpt-5.2-codex" | "openai/gpt-5.2-pro" | "openai/gpt-5.3-codex" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.4-pro" | "openai/gpt-5.5" | "openai/gpt-5.5-pro" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-terra" | "openai/gpt-oss-120b" | "orcarouter/auto" | "orcarouter/free" | "orcarouter/fusion" | "orcarouter/fusion-flash" | "orcarouter/fusion-mini" | "qwen/qwen3-max" | "qwen/qwen3-vl-235b-a22b-instruct" | "qwen/qwen3-vl-235b-a22b-thinking" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-27b" | "qwen/qwen3.5-35b-a3b" | "qwen/qwen3.5-397b-a17b" | "qwen/qwen3.5-flash" | "qwen/qwen3.5-plus" | "qwen/qwen3.6-35b-a3b" | "qwen/qwen3.6-flash" | "qwen/qwen3.6-plus" | "qwen/qwen3.7-flash" | "qwen/qwen3.7-max" | "qwen/qwen3.7-plus" | "qwen/qwen3.8-27b" | "qwen/qwen3.8-27b-free" | "qwen/qwen3.8-max" | "tencent/hy3" | "tencent/hy3-free" | "z-ai/glm-4.5" | "z-ai/glm-4.5-air" | "z-ai/glm-4.6" | "z-ai/glm-4.7" | "z-ai/glm-5" | "z-ai/glm-5.1" | "z-ai/glm-5.2" | "z-ai/glm-5.3" | "z-ai/glm-5.3-flash";
+export type OrcarouterTextModelId = "anthropic/claude-fable-5" | "anthropic/claude-haiku-4.5" | "anthropic/claude-opus-4.5" | "anthropic/claude-opus-4.6" | "anthropic/claude-opus-4.7" | "anthropic/claude-opus-4.8" | "anthropic/claude-opus-5" | "anthropic/claude-sonnet-4.5" | "anthropic/claude-sonnet-4.6" | "anthropic/claude-sonnet-5" | "deepseek/deepseek-chat" | "deepseek/deepseek-reasoner" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-0731" | "deepseek/deepseek-v4-flash-free" | "deepseek/deepseek-v4-flash-vision-exp" | "deepseek/deepseek-v4-pro" | "deepseek/deepseek-v4-pro-0813" | "google/gemini-2.5-flash" | "google/gemini-2.5-flash-lite" | "google/gemini-2.5-pro" | "google/gemini-3-flash-preview" | "google/gemini-3.1-flash-lite" | "google/gemini-3.1-flash-lite-preview" | "google/gemini-3.1-pro-preview" | "google/gemini-3.1-pro-preview-customtools" | "google/gemini-3.5-flash" | "google/gemini-3.5-flash-lite" | "google/gemini-3.6-flash" | "google/gemini-flash-latest" | "google/gemini-flash-lite-latest" | "google/gemini-robotics-er-1.6-preview" | "google/gemma-4-26b-a4b-it" | "google/gemma-4-31b-it" | "grok/grok-4.3" | "grok/grok-4.5" | "grok/grok-4.6" | "kimi/kimi-k2.5" | "kimi/kimi-k2.6" | "kimi/kimi-k2.7-code" | "kimi/kimi-k3" | "meta/muse-spark-1.1" | "meta/muse-spark-1.2" | "minimax/minimax-m2.5" | "minimax/minimax-m2.5-highspeed" | "minimax/minimax-m2.7" | "minimax/minimax-m2.7-highspeed" | "minimax/minimax-m3" | "openai/gpt-3.5-turbo" | "openai/gpt-4" | "openai/gpt-4-turbo" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-4o" | "openai/gpt-4o-2024-05-13" | "openai/gpt-4o-2024-08-06" | "openai/gpt-4o-2024-11-20" | "openai/gpt-4o-mini" | "openai/gpt-5" | "openai/gpt-5-chat-latest" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5-pro" | "openai/gpt-5.1" | "openai/gpt-5.1-chat-latest" | "openai/gpt-5.1-codex" | "openai/gpt-5.1-codex-mini" | "openai/gpt-5.2" | "openai/gpt-5.2-chat-latest" | "openai/gpt-5.2-codex" | "openai/gpt-5.2-pro" | "openai/gpt-5.3-codex" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.4-pro" | "openai/gpt-5.5" | "openai/gpt-5.5-pro" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-terra" | "openai/gpt-oss-120b" | "orcarouter/auto" | "orcarouter/free" | "orcarouter/fusion" | "orcarouter/fusion-flash" | "orcarouter/fusion-mini" | "qwen/qwen3-max" | "qwen/qwen3-vl-235b-a22b-instruct" | "qwen/qwen3-vl-235b-a22b-thinking" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-27b" | "qwen/qwen3.5-35b-a3b" | "qwen/qwen3.5-397b-a17b" | "qwen/qwen3.5-flash" | "qwen/qwen3.5-plus" | "qwen/qwen3.6-35b-a3b" | "qwen/qwen3.6-flash" | "qwen/qwen3.6-plus" | "qwen/qwen3.7-flash" | "qwen/qwen3.7-max" | "qwen/qwen3.7-plus" | "qwen/qwen3.8-27b" | "qwen/qwen3.8-max" | "tencent/hy3" | "tencent/hy3-free" | "z-ai/glm-4.5" | "z-ai/glm-4.5-air" | "z-ai/glm-4.6" | "z-ai/glm-4.7" | "z-ai/glm-5" | "z-ai/glm-5.1" | "z-ai/glm-5.2" | "z-ai/glm-5.3" | "z-ai/glm-5.3-flash" | "z-ai/glm-5.3-flash-free";
 export type OrcarouterImageModelId = never;
 export type OrcarouterAudioModelId = never;
 export type OrcarouterVideoModelId = never;

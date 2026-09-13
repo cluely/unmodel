@@ -319,6 +319,23 @@ export const models = {
     limit: { context: 1048576, output: 384000 },
     cost: { input: 1.32, output: 3.96, cacheRead: 0.13 },
   },
+  "deepseek-ai/DeepSeek-V4.1-Flash": {
+    id: "deepseek-ai/DeepSeek-V4.1-Flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 384000 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.006 },
+  },
   "essentialai/Rnj-1-Instruct": {
     id: "essentialai/Rnj-1-Instruct",
     name: "Rnj-1 Instruct",
@@ -621,7 +638,7 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
@@ -631,7 +648,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type TogetheraiModelId = keyof typeof models;
-export type TogetheraiTextModelId = "LiquidAI/LFM2-24B-A2B" | "MiniMaxAI/MiniMax-M2.5" | "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen2.5-7B-Instruct-Turbo" | "Qwen/Qwen3-235B-A22B-Instruct-2507-tput" | "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8" | "Qwen/Qwen3-Coder-Next-FP8" | "Qwen/Qwen3.5-397B-A17B" | "Qwen/Qwen3.5-9B" | "Qwen/Qwen3.6-Plus" | "Qwen/Qwen3.7-Max" | "deepcogito/cogito-v2-1-671b" | "deepseek-ai/DeepSeek-R1" | "deepseek-ai/DeepSeek-V3" | "deepseek-ai/DeepSeek-V3-1" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "essentialai/Rnj-1-Instruct" | "google/gemma-3n-E4B-it" | "google/gemma-4-31B-it" | "meta-llama/Llama-3.3-70B-Instruct-Turbo" | "meta-llama/Meta-Llama-3-8B-Instruct-Lite" | "moonshotai/Kimi-K2.5" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/nemotron-3-ultra-550b-a55b" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "pearl-ai/gemma-4-31b-it" | "thinkingmachines/Inkling" | "zai-org/GLM-5" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
+export type TogetheraiTextModelId = "LiquidAI/LFM2-24B-A2B" | "MiniMaxAI/MiniMax-M2.5" | "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen2.5-7B-Instruct-Turbo" | "Qwen/Qwen3-235B-A22B-Instruct-2507-tput" | "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8" | "Qwen/Qwen3-Coder-Next-FP8" | "Qwen/Qwen3.5-397B-A17B" | "Qwen/Qwen3.5-9B" | "Qwen/Qwen3.6-Plus" | "Qwen/Qwen3.7-Max" | "deepcogito/cogito-v2-1-671b" | "deepseek-ai/DeepSeek-R1" | "deepseek-ai/DeepSeek-V3" | "deepseek-ai/DeepSeek-V3-1" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "deepseek-ai/DeepSeek-V4.1-Flash" | "essentialai/Rnj-1-Instruct" | "google/gemma-3n-E4B-it" | "google/gemma-4-31B-it" | "meta-llama/Llama-3.3-70B-Instruct-Turbo" | "meta-llama/Meta-Llama-3-8B-Instruct-Lite" | "moonshotai/Kimi-K2.5" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "moonshotai/Kimi-K3" | "nvidia/nemotron-3-ultra-550b-a55b" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "pearl-ai/gemma-4-31b-it" | "thinkingmachines/Inkling" | "zai-org/GLM-5" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
 export type TogetheraiImageModelId = never;
 export type TogetheraiAudioModelId = never;
 export type TogetheraiVideoModelId = never;

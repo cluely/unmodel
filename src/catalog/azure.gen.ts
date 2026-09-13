@@ -226,7 +226,6 @@ export const models = {
     knowledge: "2026-01-31",
     releaseDate: "2026-06-30",
     lastUpdated: "2026-06-30",
-    status: "beta",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 128000 },
     cost: { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
@@ -876,7 +875,6 @@ export const models = {
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
     lastUpdated: "2026-07-09",
-    status: "beta",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 0.2, output: 1.2, cacheRead: 0.02, cacheWrite: 0.25 },
@@ -894,10 +892,9 @@ export const models = {
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
     lastUpdated: "2026-07-09",
-    status: "beta",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
-    cost: { input: 5, output: 30, cacheRead: 0.5, cacheWrite: 6.25 },
+    cost: { input: 4, output: 20, cacheRead: 0.5, cacheWrite: 6.25 },
   },
   "gpt-5.6-terra": {
     id: "gpt-5.6-terra",
@@ -912,10 +909,26 @@ export const models = {
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
     lastUpdated: "2026-07-09",
-    status: "beta",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 2.5 },
+  },
+  "gpt-6-astra": {
+    id: "gpt-6-astra",
+    name: "GPT-6 Astra",
+    family: "gpt-astra",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-04-30",
+    releaseDate: "2026-09-04",
+    lastUpdated: "2026-09-04",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
   },
   "gpt-chat-latest": {
     id: "gpt-chat-latest",
@@ -990,7 +1003,6 @@ export const models = {
     openWeights: false,
     releaseDate: "2025-06-27",
     lastUpdated: "2025-06-27",
-    status: "beta",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 128000, output: 8192, input: 128000 },
     cost: { input: 0.2, output: 0.5, cacheRead: 0.05 },
@@ -1006,7 +1018,6 @@ export const models = {
     openWeights: false,
     releaseDate: "2025-06-27",
     lastUpdated: "2025-06-27",
-    status: "beta",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 128000, output: 8192, input: 128000 },
     cost: { input: 0.2, output: 0.5, cacheRead: 0.05 },
@@ -1044,6 +1055,23 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262000, output: 8192 },
     cost: { input: 2, output: 6 },
+  },
+  "grok-4.6": {
+    id: "grok-4.6",
+    name: "Grok 4.6",
+    family: "grok",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2026-02-01",
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-12",
+    status: "beta",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 200000, output: 128000 },
   },
   "kimi-k2.5": {
     id: "kimi-k2.5",
@@ -1414,7 +1442,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AzureModelId = keyof typeof models;
-export type AzureTextModelId = "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-mythos-5" | "claude-opus-4-1" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "codestral-2501" | "codex-mini" | "cohere-command-a" | "cohere-embed-v-4-0" | "cohere-embed-v3-english" | "cohere-embed-v3-multilingual" | "deepseek-r1" | "deepseek-v3.2" | "deepseek-v3.2-speciale" | "deepseek-v4-flash" | "deepseek-v4-pro" | "gpt-3.5-turbo-0125" | "gpt-3.5-turbo-1106" | "gpt-3.5-turbo-instruct" | "gpt-4-turbo" | "gpt-4-turbo-vision" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-mini" | "gpt-5" | "gpt-5-codex" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-max" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-chat-latest" | "gpt-image-1.5" | "grok-4-1-fast-non-reasoning" | "grok-4-1-fast-reasoning" | "grok-4-20-non-reasoning" | "grok-4-20-reasoning" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "llama-3.3-70b-instruct" | "llama-4-maverick-17b-128e-instruct-fp8" | "llama-4-scout-17b-16e-instruct" | "ministral-3b" | "mistral-medium-2505" | "mistral-small-2503" | "model-router" | "o1" | "o3" | "o3-mini" | "o4-mini" | "phi-4" | "phi-4-mini" | "phi-4-mini-reasoning" | "phi-4-multimodal" | "phi-4-reasoning" | "phi-4-reasoning-plus" | "text-embedding-3-large" | "text-embedding-3-small" | "text-embedding-ada-002";
+export type AzureTextModelId = "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-mythos-5" | "claude-opus-4-1" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "codestral-2501" | "codex-mini" | "cohere-command-a" | "cohere-embed-v-4-0" | "cohere-embed-v3-english" | "cohere-embed-v3-multilingual" | "deepseek-r1" | "deepseek-v3.2" | "deepseek-v3.2-speciale" | "deepseek-v4-flash" | "deepseek-v4-pro" | "gpt-3.5-turbo-0125" | "gpt-3.5-turbo-1106" | "gpt-3.5-turbo-instruct" | "gpt-4-turbo" | "gpt-4-turbo-vision" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-mini" | "gpt-5" | "gpt-5-codex" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-max" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-chat-latest" | "gpt-image-1.5" | "grok-4-1-fast-non-reasoning" | "grok-4-1-fast-reasoning" | "grok-4-20-non-reasoning" | "grok-4-20-reasoning" | "grok-4.6" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "llama-3.3-70b-instruct" | "llama-4-maverick-17b-128e-instruct-fp8" | "llama-4-scout-17b-16e-instruct" | "ministral-3b" | "mistral-medium-2505" | "mistral-small-2503" | "model-router" | "o1" | "o3" | "o3-mini" | "o4-mini" | "phi-4" | "phi-4-mini" | "phi-4-mini-reasoning" | "phi-4-multimodal" | "phi-4-reasoning" | "phi-4-reasoning-plus" | "text-embedding-3-large" | "text-embedding-3-small" | "text-embedding-ada-002";
 export type AzureImageModelId = "gpt-5.1" | "gpt-5.1-codex" | "gpt-image-1" | "gpt-image-1.5" | "gpt-image-2";
 export type AzureAudioModelId = "gpt-5.1" | "gpt-5.1-codex";
 export type AzureVideoModelId = never;

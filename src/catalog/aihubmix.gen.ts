@@ -426,6 +426,23 @@ export const models = {
     limit: { context: 1000000, output: 384000 },
     cost: { input: 0.6918, output: 2.0754, cacheRead: 0.023058 },
   },
+  "deepseek-v4.1-flash": {
+    id: "deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0.155, output: 0.62, cacheRead: 0.0031 },
+  },
   "doubao-seed-2-0-code-preview": {
     id: "doubao-seed-2-0-code-preview",
     name: "Doubao Seed 2.0 Code Preview",
@@ -667,7 +684,7 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
@@ -1290,7 +1307,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AihubmixModelId = keyof typeof models;
-export type AihubmixTextModelId = "alicloud-deepseek-v4-flash" | "alicloud-deepseek-v4-pro" | "alicloud-glm-5.1" | "claude-fable-5" | "claude-opus-4-6" | "claude-opus-4-6-think" | "claude-opus-4-7" | "claude-opus-4-7-think" | "claude-opus-4-8" | "claude-opus-4-8-think" | "claude-opus-5" | "claude-sonnet-4-6" | "claude-sonnet-4-6-think" | "claude-sonnet-5" | "coding-glm-5.1" | "coding-glm-5.1-free" | "coding-minimax-m2.7" | "coding-minimax-m2.7-free" | "coding-minimax-m2.7-highspeed" | "coding-xiaomi-mimo-v2.5" | "coding-xiaomi-mimo-v2.5-pro" | "deep-deepseek-v4-flash" | "deep-deepseek-v4-pro" | "deepseek-v4-flash-0731" | "deepseek-v4-pro-0813" | "doubao-seed-2-0-code-preview" | "doubao-seed-2-0-lite-260428" | "doubao-seed-2-0-mini-260428" | "doubao-seed-2-0-pro" | "gemini-2.5-flash" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3.1-flash-lite" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.7-flash" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "glm-5v-turbo" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "grok-4.3" | "grok-4.5" | "grok-4.6" | "grok-build-0.1" | "hy3-preview" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k2.7-code-highspeed" | "kimi-k3" | "minimax-m2.7" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-2.4t-a95b" | "qwen3.8-max" | "xiaomi-mimo-v2.5" | "xiaomi-mimo-v2.5-free" | "xiaomi-mimo-v2.5-pro" | "xiaomi-mimo-v2.5-pro-free" | "zai-glm-5.1";
+export type AihubmixTextModelId = "alicloud-deepseek-v4-flash" | "alicloud-deepseek-v4-pro" | "alicloud-glm-5.1" | "claude-fable-5" | "claude-opus-4-6" | "claude-opus-4-6-think" | "claude-opus-4-7" | "claude-opus-4-7-think" | "claude-opus-4-8" | "claude-opus-4-8-think" | "claude-opus-5" | "claude-sonnet-4-6" | "claude-sonnet-4-6-think" | "claude-sonnet-5" | "coding-glm-5.1" | "coding-glm-5.1-free" | "coding-minimax-m2.7" | "coding-minimax-m2.7-free" | "coding-minimax-m2.7-highspeed" | "coding-xiaomi-mimo-v2.5" | "coding-xiaomi-mimo-v2.5-pro" | "deep-deepseek-v4-flash" | "deep-deepseek-v4-pro" | "deepseek-v4-flash-0731" | "deepseek-v4-pro-0813" | "deepseek-v4.1-flash" | "doubao-seed-2-0-code-preview" | "doubao-seed-2-0-lite-260428" | "doubao-seed-2-0-mini-260428" | "doubao-seed-2-0-pro" | "gemini-2.5-flash" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3.1-flash-lite" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.7-flash" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "glm-5v-turbo" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "grok-4.3" | "grok-4.5" | "grok-4.6" | "grok-build-0.1" | "hy3-preview" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k2.7-code-highspeed" | "kimi-k3" | "minimax-m2.7" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-2.4t-a95b" | "qwen3.8-max" | "xiaomi-mimo-v2.5" | "xiaomi-mimo-v2.5-free" | "xiaomi-mimo-v2.5-pro" | "xiaomi-mimo-v2.5-pro-free" | "zai-glm-5.1";
 export type AihubmixImageModelId = never;
 export type AihubmixAudioModelId = never;
 export type AihubmixVideoModelId = never;

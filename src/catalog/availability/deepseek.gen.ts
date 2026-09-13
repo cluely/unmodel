@@ -19,20 +19,25 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "deepseek-flash": {
+    "deepseek": "deepseek-flash",
+  },
   "deepseek-v4-flash": {
-    "azure": "deepseek-v4-flash",
-    "deepinfra": "deepseek-ai/DeepSeek-V4-Flash",
+    "azure": { id: "deepseek-v4-flash", narrows: { drops: ["image"] } },
+    "deepinfra": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { drops: ["image"] } },
     "deepseek": "deepseek-v4-flash",
-    "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
-    "nebius": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 131072 } },
-    "novita-ai": "deepseek/deepseek-v4-flash",
-    "nvidia": "deepseek-ai/deepseek-v4-flash",
-    "openrouter": "deepseek/deepseek-v4-flash",
-    "siliconflow": "deepseek-ai/DeepSeek-V4-Flash",
-    "vercel": "deepseek/deepseek-v4-flash",
+    "huggingface": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { drops: ["image"] } },
+    "novita-ai": { id: "deepseek/deepseek-v4-flash", narrows: { drops: ["image"] } },
+    "nvidia": { id: "deepseek-ai/deepseek-v4-flash", narrows: { drops: ["image"] } },
+    "openrouter": { id: "deepseek/deepseek-v4-flash", narrows: { drops: ["image"] } },
+    "siliconflow": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { drops: ["image"] } },
+    "vercel": { id: "deepseek/deepseek-v4-flash", narrows: { drops: ["image"] } },
   },
   "deepseek-v4-flash-vision-exp": {
+    "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
     "deepseek": "deepseek-v4-flash-vision-exp",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
+    "huggingface": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
     "openrouter": "deepseek/deepseek-v4-flash-vision-exp",
     "vercel": "deepseek/deepseek-v4-flash-vision-exp",
   },

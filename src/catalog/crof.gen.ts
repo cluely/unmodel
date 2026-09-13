@@ -62,6 +62,22 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0.08, output: 0.1, cacheRead: 0.003 },
   },
+  "deepseek-v4-flash-vision-exp": {
+    id: "deepseek-v4-flash-vision-exp",
+    name: "DeepSeek V4 Flash Vision Exp",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-21",
+    lastUpdated: "2026-08-21",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.08, output: 0.2, cacheRead: 0.007 },
+  },
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
@@ -168,7 +184,7 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
@@ -380,7 +396,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type CrofModelId = keyof typeof models;
-export type CrofTextModelId = "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "gemma-4-31b-it" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "greg-1-mini" | "greg-2-super" | "greg-2-ultra" | "greg-rp" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "kimi-k3-eco" | "mimo-v2.5-pro" | "qwen3.5-397b-a17b" | "qwen3.5-9b" | "qwen3.6-27b" | "qwen3.8-27b";
+export type CrofTextModelId = "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "gemma-4-31b-it" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "greg-1-mini" | "greg-2-super" | "greg-2-ultra" | "greg-rp" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "kimi-k3-eco" | "mimo-v2.5-pro" | "qwen3.5-397b-a17b" | "qwen3.5-9b" | "qwen3.6-27b" | "qwen3.8-27b";
 export type CrofImageModelId = never;
 export type CrofAudioModelId = never;
 export type CrofVideoModelId = never;

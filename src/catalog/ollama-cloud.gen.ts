@@ -55,6 +55,37 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 1048576 },
   },
+  "deepseek-v4-pro:0813": {
+    id: "deepseek-v4-pro:0813",
+    name: "DeepSeek V4 Pro 0813",
+    family: "deepseek-thinking",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-22",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+  },
+  "deepseek-v4.1-flash": {
+    id: "deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 384000 },
+  },
   "gemma4:31b": {
     id: "gemma4:31b",
     name: "gemma4:31b",
@@ -323,7 +354,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type OllamaCloudModelId = keyof typeof models;
-export type OllamaCloudTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash:0731" | "deepseek-v4-pro" | "gemma4:31b" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss:120b" | "gpt-oss:20b" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "minimax-m2.5" | "minimax-m2.7" | "minimax-m3" | "mistral-large-3:675b" | "nemotron-3-nano:30b" | "nemotron-3-super" | "nemotron-3-ultra" | "qwen3.5:397b";
+export type OllamaCloudTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash:0731" | "deepseek-v4-pro" | "deepseek-v4-pro:0813" | "deepseek-v4.1-flash" | "gemma4:31b" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss:120b" | "gpt-oss:20b" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "minimax-m2.5" | "minimax-m2.7" | "minimax-m3" | "mistral-large-3:675b" | "nemotron-3-nano:30b" | "nemotron-3-super" | "nemotron-3-ultra" | "qwen3.5:397b";
 export type OllamaCloudImageModelId = never;
 export type OllamaCloudAudioModelId = never;
 export type OllamaCloudVideoModelId = never;

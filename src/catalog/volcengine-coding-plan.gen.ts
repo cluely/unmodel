@@ -111,6 +111,22 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0 },
   },
+  "glm-5.3-flash": {
+    id: "glm-5.3-flash",
+    name: "GLM-5.3-Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
   "kimi-k2.7-code": {
     id: "kimi-k2.7-code",
     name: "Kimi K2.7 Code",
@@ -126,6 +142,22 @@ export const models = {
     lastUpdated: "2026-06-12",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
+  "kimi-k3": {
+    id: "kimi-k3",
+    name: "Kimi K3",
+    family: "kimi-k3",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: true,
+    releaseDate: "2026-07-16",
+    lastUpdated: "2026-07-16",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0 },
   },
   "minimax-m3": {
@@ -146,7 +178,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type VolcengineCodingPlanModelId = keyof typeof models;
-export type VolcengineCodingPlanTextModelId = "deepseek-v4-flash" | "deepseek-v4-pro" | "doubao-seed-2.0-lite" | "doubao-seed-2.1-turbo" | "doubao-seed-evolving" | "glm-5.3" | "kimi-k2.7-code" | "minimax-m3";
+export type VolcengineCodingPlanTextModelId = "deepseek-v4-flash" | "deepseek-v4-pro" | "doubao-seed-2.0-lite" | "doubao-seed-2.1-turbo" | "doubao-seed-evolving" | "glm-5.3" | "glm-5.3-flash" | "kimi-k2.7-code" | "kimi-k3" | "minimax-m3";
 export type VolcengineCodingPlanImageModelId = never;
 export type VolcengineCodingPlanAudioModelId = never;
 export type VolcengineCodingPlanVideoModelId = never;

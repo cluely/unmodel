@@ -27,6 +27,40 @@ export const models = {
     limit: { context: 8192, output: 8192 },
     cost: { input: 0.8897, output: 1.4675, cacheRead: 0.0924 },
   },
+  "glm-5.3": {
+    id: "glm-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    status: "beta",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 256000, output: 131072 },
+    cost: { input: 1.791, output: 8.9436, cacheRead: 0.1733 },
+  },
+  "glm-latest": {
+    id: "glm-latest",
+    name: "GLM (latest)",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    status: "beta",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 256000, output: 131072 },
+    cost: { input: 1.791, output: 8.9436, cacheRead: 0.1733 },
+  },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
     name: "gpt-oss-120b",
@@ -127,7 +161,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type PrivatemodeAiModelId = keyof typeof models;
-export type PrivatemodeAiTextModelId = "deepseek-ocr-2" | "gpt-oss-120b" | "kimi-k2.6" | "kimi-latest" | "qwen3-embedding-4b" | "voxtral-mini-3b" | "whisper-large-v3";
+export type PrivatemodeAiTextModelId = "deepseek-ocr-2" | "glm-5.3" | "glm-latest" | "gpt-oss-120b" | "kimi-k2.6" | "kimi-latest" | "qwen3-embedding-4b" | "voxtral-mini-3b" | "whisper-large-v3";
 export type PrivatemodeAiImageModelId = never;
 export type PrivatemodeAiAudioModelId = never;
 export type PrivatemodeAiVideoModelId = never;

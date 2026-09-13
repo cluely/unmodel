@@ -13,6 +13,40 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "claude-fable-5": {
+    id: "claude-fable-5",
+    name: "Claude Fable 5",
+    family: "claude-fable",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-01-31",
+    releaseDate: "2026-06-09",
+    lastUpdated: "2026-06-09",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 10, output: 50, cacheRead: 1.25, cacheWrite: 12.5 },
+  },
+  "claude-fable-5-1": {
+    id: "claude-fable-5-1",
+    name: "Claude Fable 5.1",
+    family: "claude-fable",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06",
+    releaseDate: "2026-09-01",
+    lastUpdated: "2026-09-01",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 10, output: 50, cacheRead: 0.5, cacheWrite: 12.5 },
+  },
   "deepseek-v3.2": {
     id: "deepseek-v3.2",
     name: "DeepSeek-V3.2",
@@ -62,6 +96,22 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 384000 },
     cost: { input: 0.435, output: 0.87, cacheRead: 0.003625 },
+  },
+  "deepseek-v4-pro-0813": {
+    id: "deepseek-v4-pro-0813",
+    name: "DeepSeek V4 Pro 0813",
+    family: "deepseek-thinking",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-22",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 1.35, output: 3, cacheRead: 0.05, reasoning: 3 },
   },
   "gemini-3.1-flash-lite-preview": {
     id: "gemini-3.1-flash-lite-preview",
@@ -114,6 +164,22 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 0.75, output: 3.75, cacheRead: 0.075 },
   },
+  "gemini-3.8-flash": {
+    id: "gemini-3.8-flash",
+    name: "Gemini 3.8 Flash",
+    family: "gemini-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 128000 },
+    cost: { input: 0.75, output: 3.75, cacheRead: 0.15 },
+  },
   "glm-5.2": {
     id: "glm-5.2",
     name: "GLM-5.2",
@@ -155,7 +221,7 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
@@ -364,6 +430,23 @@ export const models = {
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 2.5, output: 15, cacheRead: 0.25, cacheWrite: 3.125 },
   },
+  "gpt-6-astra": {
+    id: "gpt-6-astra",
+    name: "GPT-6 Astra",
+    family: "gpt-astra",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-04-30",
+    releaseDate: "2026-09-04",
+    lastUpdated: "2026-09-04",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
+  },
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
@@ -383,7 +466,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type VivgridModelId = keyof typeof models;
-export type VivgridTextModelId = "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-pro" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-pro-preview" | "gemini-3.7-flash" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-5-mini" | "gpt-5.1-codex" | "gpt-5.1-codex-max" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "kimi-k3";
+export type VivgridTextModelId = "claude-fable-5" | "claude-fable-5-1" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-pro-preview" | "gemini-3.7-flash" | "gemini-3.8-flash" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-5-mini" | "gpt-5.1-codex" | "gpt-5.1-codex-max" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "kimi-k3";
 export type VivgridImageModelId = never;
 export type VivgridAudioModelId = never;
 export type VivgridVideoModelId = never;

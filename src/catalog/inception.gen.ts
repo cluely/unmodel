@@ -30,6 +30,23 @@ export const models = {
     limit: { context: 128000, output: 50000 },
     cost: { input: 0.25, output: 0.75, cacheRead: 0.025 },
   },
+  "mercury-2.5": {
+    id: "mercury-2.5",
+    name: "Mercury 2.5",
+    family: "mercury",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2025-11-01",
+    releaseDate: "2026-09-08",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 260000, output: 65536 },
+    cost: { input: 0.04, output: 0.15, cacheRead: 0.004 },
+  },
   "mercury-edit-2": {
     id: "mercury-edit-2",
     name: "Mercury Edit 2",
@@ -47,7 +64,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type InceptionModelId = keyof typeof models;
-export type InceptionTextModelId = "mercury-2" | "mercury-edit-2";
+export type InceptionTextModelId = "mercury-2" | "mercury-2.5" | "mercury-edit-2";
 export type InceptionImageModelId = never;
 export type InceptionAudioModelId = never;
 export type InceptionVideoModelId = never;

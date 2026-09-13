@@ -30,6 +30,23 @@ export const models = {
     limit: { context: 1000000, output: 384000 },
     cost: { input: 0.1596, output: 0.399, cacheRead: 0.0456 },
   },
+  "deepseek-v4.1-flash": {
+    id: "deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0.255552, output: 1.27776, cacheRead: 0.0127776 },
+  },
   "devstral-2-123b-instruct-2512": {
     id: "devstral-2-123b-instruct-2512",
     name: "Devstral 2",
@@ -255,6 +272,38 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
     cost: { input: 1.254, output: 5.016, cacheRead: 0.3135 },
+  },
+  "glm-5.3": {
+    id: "glm-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 1.27754, output: 5.11016, cacheRead: 0.319385 },
+  },
+  "glm-5.3-flash": {
+    id: "glm-5.3-flash",
+    name: "GLM-5.3-Flash",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.127754, output: 0.511016, cacheRead: 0.0255508 },
   },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
@@ -611,7 +660,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GreenptModelId = keyof typeof models;
-export type GreenptTextModelId = "deepseek-v4-flash-0731" | "devstral-2-123b-instruct-2512" | "gemma-3-27b-it" | "gemma4" | "glm-5.1" | "glm-5.2" | "glm-5.2-caveman" | "glm-5.2-caveman-lite" | "glm-5.2-caveman-ultra" | "glm-5.2-honey" | "glm-5.2-honey-lite" | "glm-5.2-honey-ultra" | "glm-5.2-ponytail" | "glm-5.2-ponytail-lite" | "glm-5.2-ponytail-ultra" | "gpt-oss-120b" | "green-l" | "green-l-raw" | "green-r" | "green-r-raw" | "green-s" | "green-s-pro" | "holo2-30b-a3b" | "kimi-k2.6" | "kimi-k2.6-fast" | "kimi-k2.7-code" | "kimi-k3" | "llama-3.3-70b-instruct" | "minimax-m2.5" | "mistral-medium-3.5-128b" | "mistral-small-3.2-24b-instruct-2506" | "pixtral-12b-2409" | "qwen3-235b-a22b-instruct-2507" | "qwen3-coder-30b-a3b-instruct" | "qwen3.5-397b-a17b" | "qwen3.6-35b-a3b" | "voxtral-small-24b-2507";
+export type GreenptTextModelId = "deepseek-v4-flash-0731" | "deepseek-v4.1-flash" | "devstral-2-123b-instruct-2512" | "gemma-3-27b-it" | "gemma4" | "glm-5.1" | "glm-5.2" | "glm-5.2-caveman" | "glm-5.2-caveman-lite" | "glm-5.2-caveman-ultra" | "glm-5.2-honey" | "glm-5.2-honey-lite" | "glm-5.2-honey-ultra" | "glm-5.2-ponytail" | "glm-5.2-ponytail-lite" | "glm-5.2-ponytail-ultra" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss-120b" | "green-l" | "green-l-raw" | "green-r" | "green-r-raw" | "green-s" | "green-s-pro" | "holo2-30b-a3b" | "kimi-k2.6" | "kimi-k2.6-fast" | "kimi-k2.7-code" | "kimi-k3" | "llama-3.3-70b-instruct" | "minimax-m2.5" | "mistral-medium-3.5-128b" | "mistral-small-3.2-24b-instruct-2506" | "pixtral-12b-2409" | "qwen3-235b-a22b-instruct-2507" | "qwen3-coder-30b-a3b-instruct" | "qwen3.5-397b-a17b" | "qwen3.6-35b-a3b" | "voxtral-small-24b-2507";
 export type GreenptImageModelId = never;
 export type GreenptAudioModelId = never;
 export type GreenptVideoModelId = never;

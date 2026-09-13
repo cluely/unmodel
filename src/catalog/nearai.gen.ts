@@ -13,22 +13,6 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "Qwen/Qwen3-30B-A3B-Instruct-2507": {
-    id: "Qwen/Qwen3-30B-A3B-Instruct-2507",
-    name: "Qwen3 30B-A3B Instruct 2507",
-    family: "qwen",
-    attachment: false,
-    reasoning: false,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2025-07-29",
-    lastUpdated: "2025-07-29",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 32768 },
-    cost: { input: 0.15, output: 0.55 },
-  },
   "Qwen/Qwen3-Embedding-0.6B": {
     id: "Qwen/Qwen3-Embedding-0.6B",
     name: "Qwen3 Embedding 0.6B",
@@ -41,8 +25,8 @@ export const models = {
     releaseDate: "2025-06-03",
     lastUpdated: "2025-06-03",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 40960, output: 1024 },
-    cost: { input: 0.01, output: 0 },
+    limit: { context: 32768, output: 1024 },
+    cost: { input: 0.01, output: 0.01 },
   },
   "Qwen/Qwen3-Reranker-0.6B": {
     id: "Qwen/Qwen3-Reranker-0.6B",
@@ -72,24 +56,8 @@ export const models = {
     releaseDate: "2025-09-23",
     lastUpdated: "2025-09-23",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 256000, output: 32768 },
+    limit: { context: 16384, output: 8192 },
     cost: { input: 0.15, output: 0.55 },
-  },
-  "Qwen/Qwen3.5-122B-A10B": {
-    id: "Qwen/Qwen3.5-122B-A10B",
-    name: "Qwen3.5 122B-A10B",
-    family: "qwen",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-02-23",
-    lastUpdated: "2026-02-23",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
-    cost: { input: 0.4, output: 3.2 },
   },
   "Qwen/Qwen3.6-35B-A3B-FP8": {
     id: "Qwen/Qwen3.6-35B-A3B-FP8",
@@ -104,7 +72,7 @@ export const models = {
     releaseDate: "2026-04-17",
     lastUpdated: "2026-04-17",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 32768 },
+    limit: { context: 262144, output: 8192 },
     cost: { input: 0.17, output: 1.1, cacheRead: 0.056 },
   },
   "anthropic/claude-haiku-4-5": {
@@ -169,7 +137,7 @@ export const models = {
     lastUpdated: "2025-09-29",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 200000, output: 64000 },
-    cost: { input: 3, output: 15.5, cacheRead: 0.3, cacheWrite: 3.75 },
+    cost: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
   },
   "anthropic/claude-sonnet-4-6": {
     id: "anthropic/claude-sonnet-4-6",
@@ -198,7 +166,7 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-01-14",
     lastUpdated: "2026-01-14",
-    modalities: { input: ["text", "image"], output: ["image"] },
+    modalities: { input: ["text"], output: ["image"] },
     limit: { context: 128000, output: 128000 },
     cost: { input: 1, output: 1 },
   },
@@ -253,23 +221,6 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 1.25, output: 10, cacheRead: 0.125 },
   },
-  "google/gemini-3-pro": {
-    id: "google/gemini-3-pro",
-    name: "Gemini 3 Pro Preview",
-    family: "gemini-pro",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: false,
-    knowledge: "2025-01",
-    releaseDate: "2025-11-18",
-    lastUpdated: "2025-11-18",
-    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
-    limit: { context: 1048576, output: 65536 },
-    cost: { input: 1.25, output: 15, cacheRead: 0 },
-  },
   "google/gemini-3.1-flash-lite": {
     id: "google/gemini-3.1-flash-lite",
     name: "Gemini 3.1 Flash Lite",
@@ -303,22 +254,6 @@ export const models = {
     modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
     cost: { input: 1.5, output: 9, cacheRead: 0.15, inputAudio: 1.5 },
-  },
-  "google/gemma-4-31B-it": {
-    id: "google/gemma-4-31B-it",
-    name: "Gemma 4 31B IT",
-    family: "gemma",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-04-02",
-    lastUpdated: "2026-04-02",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 32768 },
-    cost: { input: 0.13, output: 0.4, cacheRead: 0.026 },
   },
   "openai/gpt-4.1": {
     id: "openai/gpt-4.1",
@@ -454,7 +389,7 @@ export const models = {
     lastUpdated: "2025-12-11",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 400000, output: 128000, input: 272000 },
-    cost: { input: 1.8, output: 15.5, cacheRead: 0.18 },
+    cost: { input: 1.75, output: 14, cacheRead: 0.175 },
   },
   "openai/gpt-5.4": {
     id: "openai/gpt-5.4",
@@ -524,22 +459,6 @@ export const models = {
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 5, output: 30, cacheRead: 0.5 },
   },
-  "openai/gpt-oss-120b": {
-    id: "openai/gpt-oss-120b",
-    name: "GPT-OSS 120B",
-    family: "gpt-oss",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2025-08-05",
-    lastUpdated: "2025-08-05",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131000, output: 32768 },
-    cost: { input: 0.15, output: 0.55 },
-  },
   "openai/o3": {
     id: "openai/o3",
     name: "o3",
@@ -604,7 +523,7 @@ export const models = {
     lastUpdated: "2023-11-06",
     modalities: { input: ["audio"], output: ["text"] },
     limit: { context: 448, output: 448 },
-    cost: { input: 0.01, output: 0 },
+    cost: { input: 0.01, output: 0.01 },
   },
   "zai-org/GLM-5.1-FP8": {
     id: "zai-org/GLM-5.1-FP8",
@@ -619,13 +538,13 @@ export const models = {
     releaseDate: "2026-03-27",
     lastUpdated: "2026-03-27",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 202752, output: 131072 },
-    cost: { input: 0.85, output: 3.3 },
+    limit: { context: 202752, output: 16384 },
+    cost: { input: 1.4, output: 4.4 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type NearaiModelId = keyof typeof models;
-export type NearaiTextModelId = "Qwen/Qwen3-30B-A3B-Instruct-2507" | "Qwen/Qwen3-Embedding-0.6B" | "Qwen/Qwen3-Reranker-0.6B" | "Qwen/Qwen3-VL-30B-A3B-Instruct" | "Qwen/Qwen3.5-122B-A10B" | "Qwen/Qwen3.6-35B-A3B-FP8" | "anthropic/claude-haiku-4-5" | "anthropic/claude-opus-4-6" | "anthropic/claude-opus-4-7" | "anthropic/claude-sonnet-4-5" | "anthropic/claude-sonnet-4-6" | "google/gemini-2.5-flash" | "google/gemini-2.5-flash-lite" | "google/gemini-2.5-pro" | "google/gemini-3-pro" | "google/gemini-3.1-flash-lite" | "google/gemini-3.5-flash" | "google/gemma-4-31B-it" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-5" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5.1" | "openai/gpt-5.2" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.5" | "openai/gpt-oss-120b" | "openai/o3" | "openai/o3-mini" | "openai/o4-mini" | "openai/whisper-large-v3" | "zai-org/GLM-5.1-FP8";
+export type NearaiTextModelId = "Qwen/Qwen3-Embedding-0.6B" | "Qwen/Qwen3-Reranker-0.6B" | "Qwen/Qwen3-VL-30B-A3B-Instruct" | "Qwen/Qwen3.6-35B-A3B-FP8" | "anthropic/claude-haiku-4-5" | "anthropic/claude-opus-4-6" | "anthropic/claude-opus-4-7" | "anthropic/claude-sonnet-4-5" | "anthropic/claude-sonnet-4-6" | "google/gemini-2.5-flash" | "google/gemini-2.5-flash-lite" | "google/gemini-2.5-pro" | "google/gemini-3.1-flash-lite" | "google/gemini-3.5-flash" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-5" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5.1" | "openai/gpt-5.2" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.5" | "openai/o3" | "openai/o3-mini" | "openai/o4-mini" | "openai/whisper-large-v3" | "zai-org/GLM-5.1-FP8";
 export type NearaiImageModelId = "black-forest-labs/FLUX.2-klein-4B";
 export type NearaiAudioModelId = never;
 export type NearaiVideoModelId = never;

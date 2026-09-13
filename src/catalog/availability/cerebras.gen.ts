@@ -19,9 +19,6 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
-  "gemma-4-31b": {
-    "cerebras": "gemma-4-31b",
-  },
   "gpt-oss-120b": {
     "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
     "cerebras": "gpt-oss-120b",
@@ -31,12 +28,15 @@ export const availability = {
     "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chatMaas" },
     "groq": "openai/gpt-oss-120b",
     "huggingface": "openai/gpt-oss-120b",
-    "nebius": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
+    "nebius": "openai/gpt-oss-120b",
     "nvidia": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
     "openrouter": "openai/gpt-oss-120b",
     "scaleway": { id: "gpt-oss-120b", narrows: { context: 128000 } },
     "togetherai": "openai/gpt-oss-120b",
     "vercel": "openai/gpt-oss-120b",
+  },
+  "qwen-3.8-27b": {
+    "cerebras": "qwen-3.8-27b",
   },
 } as const satisfies AvailabilityMap;
 

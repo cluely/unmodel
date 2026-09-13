@@ -653,8 +653,8 @@ export const models = {
     releaseDate: "2026-08-14",
     lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 1048576 },
-    cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
+    limit: { context: 1048576, output: 128000 },
+    cost: { input: 0.95, output: 3.4, cacheRead: 0.2 },
   },
   "glm-5.3-flash": {
     id: "glm-5.3-flash",
@@ -665,7 +665,7 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
@@ -735,7 +735,7 @@ export const models = {
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
-    cost: { input: 2.85, output: 14.25, cacheRead: 0.285 },
+    cost: { input: 2.55, output: 12.95, cacheRead: 0.285 },
   },
   "llama-4-maverick": {
     id: "llama-4-maverick",
@@ -1273,6 +1273,23 @@ export const models = {
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 2, output: 12, cacheRead: 0.2 },
   },
+  "openai-gpt-6-astra": {
+    id: "openai-gpt-6-astra",
+    name: "OpenAI GPT-6 Astra",
+    family: "gpt-astra",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-04-30",
+    releaseDate: "2026-09-04",
+    lastUpdated: "2026-09-04",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 10, output: 50, cacheRead: 1 },
+  },
   "openai-gpt-image-1": {
     id: "openai-gpt-image-1",
     name: "GPT Image 1",
@@ -1527,7 +1544,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type DigitaloceanModelId = keyof typeof models;
-export type DigitaloceanTextModelId = "alibaba-qwen3-32b" | "all-mini-lm-l6-v2" | "anthropic-claude-3-opus" | "anthropic-claude-3.5-haiku" | "anthropic-claude-3.5-sonnet" | "anthropic-claude-3.7-sonnet" | "anthropic-claude-4.1-opus" | "anthropic-claude-4.5-haiku" | "anthropic-claude-4.5-sonnet" | "anthropic-claude-4.6-sonnet" | "anthropic-claude-5-sonnet" | "anthropic-claude-fable-5" | "anthropic-claude-fable-5.1" | "anthropic-claude-haiku-4.5" | "anthropic-claude-opus-4" | "anthropic-claude-opus-4.5" | "anthropic-claude-opus-4.6" | "anthropic-claude-opus-4.7" | "anthropic-claude-opus-4.8" | "anthropic-claude-opus-5" | "anthropic-claude-sonnet-4" | "arcee-trinity-large-thinking" | "bge-m3" | "bge-reranker-v2-m3" | "deepseek-3.2" | "deepseek-4-flash" | "deepseek-r1-distill-llama-70b" | "deepseek-v3" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "e5-large-v2" | "gemma-4-31B-it" | "glm-5" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gte-large-en-v1.5" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k3" | "llama-4-maverick" | "llama3-8b-instruct" | "llama3.3-70b-instruct" | "mimo-v2.5-pro" | "minimax-m2.5" | "ministral-3-8b-instruct-2512" | "mistral-3-14B" | "mistral-7b-instruct-v0.3" | "mistral-nemo-instruct-2407" | "multi-qa-mpnet-base-dot-v1" | "nemotron-3-nano-30b" | "nemotron-3-nano-omni" | "nemotron-3-ultra-550b" | "nemotron-nano-12b-v2-vl" | "nvidia-nemotron-3-super-120b" | "openai-gpt-4.1" | "openai-gpt-4o" | "openai-gpt-4o-mini" | "openai-gpt-5" | "openai-gpt-5-mini" | "openai-gpt-5-nano" | "openai-gpt-5.1-codex-max" | "openai-gpt-5.2" | "openai-gpt-5.2-pro" | "openai-gpt-5.3-codex" | "openai-gpt-5.4" | "openai-gpt-5.4-mini" | "openai-gpt-5.4-nano" | "openai-gpt-5.4-pro" | "openai-gpt-5.5" | "openai-gpt-5.6-luna" | "openai-gpt-5.6-sol" | "openai-gpt-5.6-terra" | "openai-gpt-image-1.5" | "openai-gpt-image-2" | "openai-gpt-oss-120b" | "openai-gpt-oss-20b" | "openai-o1" | "openai-o3" | "openai-o3-mini" | "qwen-2.5-14b-instruct" | "qwen3-coder-flash" | "qwen3-embedding-0.6b" | "qwen3.5-397b-a17b" | "qwen3.8-max";
+export type DigitaloceanTextModelId = "alibaba-qwen3-32b" | "all-mini-lm-l6-v2" | "anthropic-claude-3-opus" | "anthropic-claude-3.5-haiku" | "anthropic-claude-3.5-sonnet" | "anthropic-claude-3.7-sonnet" | "anthropic-claude-4.1-opus" | "anthropic-claude-4.5-haiku" | "anthropic-claude-4.5-sonnet" | "anthropic-claude-4.6-sonnet" | "anthropic-claude-5-sonnet" | "anthropic-claude-fable-5" | "anthropic-claude-fable-5.1" | "anthropic-claude-haiku-4.5" | "anthropic-claude-opus-4" | "anthropic-claude-opus-4.5" | "anthropic-claude-opus-4.6" | "anthropic-claude-opus-4.7" | "anthropic-claude-opus-4.8" | "anthropic-claude-opus-5" | "anthropic-claude-sonnet-4" | "arcee-trinity-large-thinking" | "bge-m3" | "bge-reranker-v2-m3" | "deepseek-3.2" | "deepseek-4-flash" | "deepseek-r1-distill-llama-70b" | "deepseek-v3" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "e5-large-v2" | "gemma-4-31B-it" | "glm-5" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gte-large-en-v1.5" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k3" | "llama-4-maverick" | "llama3-8b-instruct" | "llama3.3-70b-instruct" | "mimo-v2.5-pro" | "minimax-m2.5" | "ministral-3-8b-instruct-2512" | "mistral-3-14B" | "mistral-7b-instruct-v0.3" | "mistral-nemo-instruct-2407" | "multi-qa-mpnet-base-dot-v1" | "nemotron-3-nano-30b" | "nemotron-3-nano-omni" | "nemotron-3-ultra-550b" | "nemotron-nano-12b-v2-vl" | "nvidia-nemotron-3-super-120b" | "openai-gpt-4.1" | "openai-gpt-4o" | "openai-gpt-4o-mini" | "openai-gpt-5" | "openai-gpt-5-mini" | "openai-gpt-5-nano" | "openai-gpt-5.1-codex-max" | "openai-gpt-5.2" | "openai-gpt-5.2-pro" | "openai-gpt-5.3-codex" | "openai-gpt-5.4" | "openai-gpt-5.4-mini" | "openai-gpt-5.4-nano" | "openai-gpt-5.4-pro" | "openai-gpt-5.5" | "openai-gpt-5.6-luna" | "openai-gpt-5.6-sol" | "openai-gpt-5.6-terra" | "openai-gpt-6-astra" | "openai-gpt-image-1.5" | "openai-gpt-image-2" | "openai-gpt-oss-120b" | "openai-gpt-oss-20b" | "openai-o1" | "openai-o3" | "openai-o3-mini" | "qwen-2.5-14b-instruct" | "qwen3-coder-flash" | "qwen3-embedding-0.6b" | "qwen3.5-397b-a17b" | "qwen3.8-max";
 export type DigitaloceanImageModelId = "fal-ai/fast-sdxl" | "fal-ai/flux/schnell" | "openai-gpt-image-1" | "openai-gpt-image-1.5" | "openai-gpt-image-2" | "stable-diffusion-3.5-large";
 export type DigitaloceanAudioModelId = "fal-ai/elevenlabs/tts/multilingual-v2" | "fal-ai/stable-audio-25/text-to-audio" | "qwen3-tts-voicedesign";
 export type DigitaloceanVideoModelId = "wan2-2-t2v-a14b";

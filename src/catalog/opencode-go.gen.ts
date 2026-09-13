@@ -28,7 +28,7 @@ export const models = {
     lastUpdated: "2026-07-31",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 384000 },
-    cost: { input: 0.22, output: 0.66, cacheRead: 0.007 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.003 },
   },
   "deepseek-v4-flash-vision-exp": {
     id: "deepseek-v4-flash-vision-exp",
@@ -44,7 +44,7 @@ export const models = {
     lastUpdated: "2026-08-21",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1000000, output: 384000 },
-    cost: { input: 0.22, output: 0.66, cacheRead: 0.007 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.003 },
   },
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
@@ -62,6 +62,23 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 384000 },
     cost: { input: 0.66, output: 1.98, cacheRead: 0.022 },
+  },
+  "deepseek-v4.1-flash": {
+    id: "deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.003 },
   },
   "glm-5": {
     id: "glm-5",
@@ -130,19 +147,19 @@ export const models = {
   },
   "glm-5.3-flash": {
     id: "glm-5.3-flash",
-    name: "GLM-5.3-Flash (2x usage)",
+    name: "GLM-5.3-Flash",
     family: "glm",
     attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
-    cost: { input: 0.075, output: 0.25, cacheRead: 0.015 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.03 },
   },
   "gpt-5.6-luna": {
     id: "gpt-5.6-luna",
@@ -207,7 +224,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 64000 },
+    limit: { context: 256000, output: 128000, input: 192000 },
     cost: { input: 0.14, output: 0.58, cacheRead: 0.035 },
   },
   "hy4-preview": {
@@ -449,10 +466,25 @@ export const models = {
     openWeights: false,
     releaseDate: "2026-09-02",
     lastUpdated: "2026-09-02",
-    status: "deprecated",
     modalities: { input: ["text", "image", "video", "pdf", "audio"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
     cost: { input: 0.1, output: 0.2, cacheRead: 0.002 },
+  },
+  "omen-alpha": {
+    id: "omen-alpha",
+    name: "Omen Alpha",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-04",
+    lastUpdated: "2026-09-04",
+    status: "deprecated",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 500000, output: 128000 },
+    cost: { input: 0.2, output: 0.66, cacheRead: 0.04 },
   },
   "ox-alpha-free": {
     id: "ox-alpha-free",
@@ -568,7 +600,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type OpencodeGoModelId = keyof typeof models;
-export type OpencodeGoTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro" | "glm-5" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-5.6-luna" | "grok-4.5" | "grok-4.6" | "hy3" | "hy4-preview" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "longcat-2.0" | "mimo-v2-omni" | "mimo-v2-pro" | "mimo-v2.5" | "mimo-v2.5-pro" | "minimax-m2.5" | "minimax-m2.7" | "minimax-m3" | "muse-spark-1.2-contributor" | "muse-spark-1.3-contributor" | "ox-alpha-free" | "qwen3.5-plus" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max";
+export type OpencodeGoTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro" | "deepseek-v4.1-flash" | "glm-5" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-5.6-luna" | "grok-4.5" | "grok-4.6" | "hy3" | "hy4-preview" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "longcat-2.0" | "mimo-v2-omni" | "mimo-v2-pro" | "mimo-v2.5" | "mimo-v2.5-pro" | "minimax-m2.5" | "minimax-m2.7" | "minimax-m3" | "muse-spark-1.2-contributor" | "muse-spark-1.3-contributor" | "omen-alpha" | "ox-alpha-free" | "qwen3.5-plus" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max";
 export type OpencodeGoImageModelId = never;
 export type OpencodeGoAudioModelId = never;
 export type OpencodeGoVideoModelId = never;

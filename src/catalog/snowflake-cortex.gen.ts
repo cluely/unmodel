@@ -398,7 +398,7 @@ export const models = {
     id: "snowflake-llama3.3-70b",
     name: "Llama-3.3-70B-Instruct",
     family: "llama",
-    attachment: true,
+    attachment: false,
     reasoning: false,
     toolCall: true,
     temperature: true,

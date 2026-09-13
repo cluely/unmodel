@@ -80,6 +80,23 @@ export const models = {
     limit: { context: 1048576, output: 262144 },
     cost: { input: 1.437216, output: 4.311648, cacheRead: 0.047907 },
   },
+  "deepseek-v4.1-flash": {
+    id: "deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 26214 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.03 },
+  },
   "gemma-4-26b-a4b-it": {
     id: "gemma-4-26b-a4b-it",
     name: "Gemma 4 26B A4B IT",
@@ -94,7 +111,7 @@ export const models = {
     lastUpdated: "2026-07-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 256000, output: 25600 },
-    cost: { input: 0.116, output: 0.38, cacheWrite: 0.058 },
+    cost: { input: 0.102, output: 0.356, cacheRead: 0.051 },
   },
   "glm-5": {
     id: "glm-5",
@@ -109,7 +126,7 @@ export const models = {
     lastUpdated: "2026-08-16",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 202752, output: 20275 },
-    cost: { input: 0.85, output: 2.774, cacheWrite: 0.425 },
+    cost: { input: 0.86, output: 2.752, cacheRead: 0.43 },
   },
   "glm-5.1": {
     id: "glm-5.1",
@@ -125,7 +142,7 @@ export const models = {
     lastUpdated: "2026-07-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 202750, output: 3276 },
-    cost: { input: 1.29, output: 4.22, cacheWrite: 0.645 },
+    cost: { input: 1.318, output: 4.308, cacheRead: 0.659 },
   },
   "glm-5.2": {
     id: "glm-5.2",
@@ -147,7 +164,7 @@ export const models = {
     id: "glm-5.3",
     name: "GLM-5.3",
     family: "glm",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
@@ -155,7 +172,7 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-08-28",
     lastUpdated: "2026-08-31",
-    modalities: { input: ["text"], output: ["text"] },
+    modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 262144 },
     cost: { input: 1.52432, output: 4.79072, cacheRead: 0.283088 },
   },
@@ -168,7 +185,7 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-31",
     modalities: { input: ["text", "image"], output: ["text"] },
@@ -189,7 +206,38 @@ export const models = {
     lastUpdated: "2026-07-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 128072, output: 13107 },
-    cost: { input: 0.188, output: 0.7, cacheWrite: 0.094 },
+    cost: { input: 0.168, output: 0.66, cacheRead: 0.084 },
+  },
+  "inkling": {
+    id: "inkling",
+    name: "Inkling",
+    family: "ling",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-15",
+    lastUpdated: "2026-09-05",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 32768 },
+    cost: { input: 1.0888, output: 4.40964, cacheRead: 0.185096 },
+  },
+  "kimi-k2-thinking": {
+    id: "kimi-k2-thinking",
+    name: "Kimi K2 Thinking",
+    family: "kimi-thinking",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2024-08",
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 262144, output: 26214 },
+    cost: { input: 0.6, output: 2.5, cacheRead: 0.3 },
   },
   "kimi-k2.5": {
     id: "kimi-k2.5",
@@ -206,7 +254,7 @@ export const models = {
     lastUpdated: "2026-07-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 26214 },
-    cost: { input: 0.5284, output: 2.785, cacheWrite: 0.2642 },
+    cost: { input: 0.5584, output: 2.935, cacheRead: 0.2792 },
   },
   "kimi-k2.6": {
     id: "kimi-k2.6",
@@ -272,7 +320,7 @@ export const models = {
     lastUpdated: "2026-07-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 128000, output: 12800 },
-    cost: { input: 0.6066, output: 1.0386, cacheWrite: 0.3033 },
+    cost: { input: 0.6066, output: 1.0386, cacheRead: 0.3033 },
   },
   "llama-4-maverick-17b-128e-instruct-fp8": {
     id: "llama-4-maverick-17b-128e-instruct-fp8",
@@ -288,7 +336,7 @@ export const models = {
     lastUpdated: "2026-07-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 430000, output: 43000 },
-    cost: { input: 0.274, output: 0.8992, cacheWrite: 0.137 },
+    cost: { input: 0.255, output: 0.8365, cacheRead: 0.1275 },
   },
   "minimax-m2.7": {
     id: "minimax-m2.7",
@@ -303,7 +351,7 @@ export const models = {
     lastUpdated: "2026-07-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262100, output: 6553 },
-    cost: { input: 0.426, output: 1.62, cacheWrite: 0.213 },
+    cost: { input: 0.396, output: 1.464, cacheRead: 0.198 },
   },
   "minimax-m3": {
     id: "minimax-m3",
@@ -334,7 +382,7 @@ export const models = {
     lastUpdated: "2026-07-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 106000, output: 10600 },
-    cost: { input: 0.445, output: 2.145, cacheWrite: 0.2225 },
+    cost: { input: 0.445, output: 2.145, cacheRead: 0.2225 },
   },
   "qwen3-next-80b-a3b-instruct": {
     id: "qwen3-next-80b-a3b-instruct",
@@ -350,7 +398,7 @@ export const models = {
     lastUpdated: "2026-07-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 26214 },
-    cost: { input: 0.1175, output: 1.136, cacheWrite: 0.05875 },
+    cost: { input: 0.1175, output: 1.136, cacheRead: 0.05875 },
   },
   "qwen3.6-flash": {
     id: "qwen3.6-flash",
@@ -512,7 +560,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type HyperModelId = keyof typeof models;
-export type HyperTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "gemma-4-26b-a4b-it" | "glm-5" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss-120b" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "llama-3.3-70b-instruct" | "llama-4-maverick-17b-128e-instruct-fp8" | "minimax-m2.7" | "minimax-m3" | "qwen3-coder-480b-a35b-instruct-int4-mixed-ar" | "qwen3-next-80b-a3b-instruct" | "qwen3.6-flash" | "qwen3.6-max" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-flash" | "qwen3.8-max";
+export type HyperTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "deepseek-v4.1-flash" | "gemma-4-26b-a4b-it" | "glm-5" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss-120b" | "inkling" | "kimi-k2-thinking" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "llama-3.3-70b-instruct" | "llama-4-maverick-17b-128e-instruct-fp8" | "minimax-m2.7" | "minimax-m3" | "qwen3-coder-480b-a35b-instruct-int4-mixed-ar" | "qwen3-next-80b-a3b-instruct" | "qwen3.6-flash" | "qwen3.6-max" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-flash" | "qwen3.8-max";
 export type HyperImageModelId = never;
 export type HyperAudioModelId = never;
 export type HyperVideoModelId = never;

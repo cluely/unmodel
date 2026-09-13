@@ -12,23 +12,6 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "gemma-4-31b": {
-    id: "gemma-4-31b",
-    name: "Gemma 4 31B IT",
-    family: "gemma",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-04-02",
-    lastUpdated: "2026-07-01",
-    status: "beta",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 131072, output: 40960 },
-    cost: { input: 0.99, output: 1.49 },
-  },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
     name: "GPT OSS 120B",
@@ -45,10 +28,26 @@ export const models = {
     limit: { context: 131072, output: 40960 },
     cost: { input: 0.35, output: 0.75 },
   },
+  "qwen-3.8-27b": {
+    id: "qwen-3.8-27b",
+    name: "Qwen3.8 27B",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-09-03",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 65536, output: 32768 },
+    cost: { input: 0.99, output: 1.49 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type CerebrasModelId = keyof typeof models;
-export type CerebrasTextModelId = "gemma-4-31b" | "gpt-oss-120b";
+export type CerebrasTextModelId = "gpt-oss-120b" | "qwen-3.8-27b";
 export type CerebrasImageModelId = never;
 export type CerebrasAudioModelId = never;
 export type CerebrasVideoModelId = never;

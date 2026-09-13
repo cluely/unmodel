@@ -17,18 +17,18 @@ export const models = {
     id: "deepseek-v4-flash",
     name: "DeepSeek V4 Flash",
     family: "deepseek-flash",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
     openWeights: true,
     knowledge: "2025-05",
-    releaseDate: "2026-07-31",
-    lastUpdated: "2026-07-31",
-    modalities: { input: ["text"], output: ["text"] },
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1000000, output: 384000 },
-    cost: { input: 0.242, output: 0.726, cacheRead: 0.0077, reasoning: 0.726 },
+    cost: { input: 0.165, output: 0.66, cacheRead: 0.0033, reasoning: 0.66 },
   },
   "deepseek-v4-flash-vision-exp": {
     id: "deepseek-v4-flash-vision-exp",
@@ -103,7 +103,7 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image"], output: ["text"] },
@@ -126,22 +126,6 @@ export const models = {
     limit: { context: 1048576, output: 131072 },
     cost: { input: 0.5077, output: 1.0154, cacheRead: 0.0042 },
   },
-  "mimo-v2.5-pro-ultraspeed": {
-    id: "mimo-v2.5-pro-ultraspeed",
-    name: "MiMo V2.5 Pro UltraSpeed",
-    family: "mimo",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2024-12",
-    releaseDate: "2026-06-08",
-    lastUpdated: "2026-06-09",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
-    cost: { input: 1.5231, output: 3.0462, cacheRead: 0.0127 },
-  },
   "qwen3.8-max": {
     id: "qwen3.8-max",
     name: "Qwen 3.8 Max",
@@ -160,7 +144,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AboveModelId = keyof typeof models;
-export type AboveTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro" | "glm-5.2" | "glm-5.2-fast" | "glm-5.3-flash" | "mimo-v2.5-pro" | "mimo-v2.5-pro-ultraspeed" | "qwen3.8-max";
+export type AboveTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro" | "glm-5.2" | "glm-5.2-fast" | "glm-5.3-flash" | "mimo-v2.5-pro" | "qwen3.8-max";
 export type AboveImageModelId = never;
 export type AboveAudioModelId = never;
 export type AboveVideoModelId = never;

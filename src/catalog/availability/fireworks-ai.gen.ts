@@ -26,11 +26,20 @@ export const availability = {
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-0731",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "nebius": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "nvidia": "deepseek-ai/deepseek-v4-flash-0731",
     "openrouter": "deepseek/deepseek-v4-flash-0731",
     "scaleway": { id: "deepseek-v4-flash-0731", narrows: { context: 256000 } },
     "togetherai": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "vercel": "deepseek/deepseek-v4-flash-0731",
+  },
+  "accounts/fireworks/models/deepseek-v4-flash-vision-exp": {
+    "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+    "deepseek": "deepseek-v4-flash-vision-exp",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
+    "huggingface": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+    "openrouter": "deepseek/deepseek-v4-flash-vision-exp",
+    "vercel": "deepseek/deepseek-v4-flash-vision-exp",
   },
   "accounts/fireworks/models/deepseek-v4-pro-0813": {
     "baseten": "deepseek-ai/DeepSeek-V4-Pro-0813",
@@ -42,6 +51,9 @@ export const availability = {
     "openrouter": "deepseek/deepseek-v4-pro-0813",
     "togetherai": "deepseek-ai/DeepSeek-V4-Pro-0813",
     "vercel": "deepseek/deepseek-v4-pro-0813",
+  },
+  "accounts/fireworks/models/deepseek-v4p1-flash": {
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4p1-flash",
   },
   "accounts/fireworks/models/glm-5p2": {
     "fireworks-ai": "accounts/fireworks/models/glm-5p2",
@@ -61,7 +73,7 @@ export const availability = {
     "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chatMaas" },
     "groq": "openai/gpt-oss-120b",
     "huggingface": "openai/gpt-oss-120b",
-    "nebius": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
+    "nebius": "openai/gpt-oss-120b",
     "nvidia": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
     "openrouter": "openai/gpt-oss-120b",
     "scaleway": { id: "gpt-oss-120b", narrows: { context: 128000 } },
@@ -108,6 +120,9 @@ export const availability = {
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["video"] } },
     "vercel": { id: "minimax/minimax-m3", narrows: { drops: ["video"] } },
   },
+  "accounts/fireworks/models/mistral-large-3-fp8": {
+    "fireworks-ai": "accounts/fireworks/models/mistral-large-3-fp8",
+  },
   "accounts/fireworks/models/muse-glimmer-30b": {
     "fireworks-ai": "accounts/fireworks/models/muse-glimmer-30b",
     "nvidia": "meta/muse-glimmer-30b",
@@ -123,11 +138,17 @@ export const availability = {
   "accounts/fireworks/models/qwen3p7-plus": {
     "fireworks-ai": "accounts/fireworks/models/qwen3p7-plus",
   },
+  "accounts/fireworks/models/qwen3p8-2p4t-a95b": {
+    "fireworks-ai": "accounts/fireworks/models/qwen3p8-2p4t-a95b",
+  },
   "accounts/fireworks/models/qwen3p8-max": {
     "fireworks-ai": "accounts/fireworks/models/qwen3p8-max",
   },
   "accounts/fireworks/routers/glm-5p2-fast": {
     "fireworks-ai": "accounts/fireworks/routers/glm-5p2-fast",
+  },
+  "accounts/fireworks/routers/glm-5p3-fast": {
+    "fireworks-ai": "accounts/fireworks/routers/glm-5p3-fast",
   },
   "accounts/fireworks/routers/kimi-k3-fast": {
     "fireworks-ai": "accounts/fireworks/routers/kimi-k3-fast",

@@ -137,7 +137,7 @@ export const models = {
     releaseDate: "2026-01-28",
     lastUpdated: "2026-01-28",
     modalities: { input: ["text", "image", "pdf"], output: ["image", "pdf"] },
-    limit: { context: 8000, output: 0 },
+    limit: { context: 16000, output: 0 },
   },
   "grok-imagine-image-2.0": {
     id: "grok-imagine-image-2.0",
@@ -151,7 +151,7 @@ export const models = {
     releaseDate: "2026-08-07",
     lastUpdated: "2026-08-07",
     modalities: { input: ["text", "image", "pdf"], output: ["image", "pdf"] },
-    limit: { context: 8000, output: 0 },
+    limit: { context: 64000, output: 0 },
   },
   "grok-imagine-image-quality": {
     id: "grok-imagine-image-quality",
@@ -165,7 +165,7 @@ export const models = {
     releaseDate: "2026-04-03",
     lastUpdated: "2026-04-03",
     modalities: { input: ["text", "image", "pdf"], output: ["image", "pdf"] },
-    limit: { context: 8000, output: 0 },
+    limit: { context: 16000, output: 0 },
   },
   "grok-imagine-video": {
     id: "grok-imagine-video",

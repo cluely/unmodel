@@ -30,6 +30,22 @@ export const models = {
     limit: { context: 1000000, output: 65536 },
     cost: { input: 0, output: 0, cacheRead: 0 },
   },
+  "deepseek-v4-pro": {
+    id: "deepseek-v4-pro",
+    name: "DeepSeek V4 Pro",
+    family: "deepseek-thinking",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-22",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
   "glm-5.2": {
     id: "glm-5.2",
     name: "GLM-5.2",
@@ -44,6 +60,22 @@ export const models = {
     lastUpdated: "2026-06-13",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
+  "kimi-k3": {
+    id: "kimi-k3",
+    name: "Kimi K3",
+    family: "kimi-k3",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: true,
+    releaseDate: "2026-07-16",
+    lastUpdated: "2026-07-16",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
     cost: { input: 0, output: 0, cacheRead: 0 },
   },
   "sensenova-6.8-flash-lite": {
@@ -64,7 +96,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type SensenovaModelId = keyof typeof models;
-export type SensenovaTextModelId = "deepseek-v4-flash" | "glm-5.2" | "sensenova-6.8-flash-lite";
+export type SensenovaTextModelId = "deepseek-v4-flash" | "deepseek-v4-pro" | "glm-5.2" | "kimi-k3" | "sensenova-6.8-flash-lite";
 export type SensenovaImageModelId = never;
 export type SensenovaAudioModelId = never;
 export type SensenovaVideoModelId = never;

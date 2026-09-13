@@ -392,7 +392,7 @@ export const models = {
     openWeights: false,
     releaseDate: "2026-07-19",
     lastUpdated: "2026-07-19",
-    status: "beta",
+    status: "deprecated",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },

@@ -26,7 +26,7 @@ export const models = {
     releaseDate: "2026-04-08",
     lastUpdated: "2026-07-09",
     modalities: { input: ["text", "image", "pdf", "video"], output: ["text"] },
-    limit: { context: 1000000, output: 32000 },
+    limit: { context: 1048576, output: 131072 },
     cost: { input: 1.25, output: 4.25, cacheRead: 0.15 },
   },
   "muse-spark-1.2": {
@@ -61,10 +61,42 @@ export const models = {
     limit: { context: 1048576, output: 131072 },
     cost: { input: 0.1, output: 0.2, cacheRead: 0.002 },
   },
+  "muse-spark-1.3": {
+    id: "muse-spark-1.3",
+    name: "Muse Spark 1.3",
+    family: "muse",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
+    modalities: { input: ["text", "image", "video", "pdf", "audio"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 1.25, output: 4.25, cacheRead: 0.15 },
+  },
+  "muse-spark-1.3-contributor": {
+    id: "muse-spark-1.3-contributor",
+    name: "Muse Spark 1.3 Contributor",
+    family: "muse",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-02",
+    lastUpdated: "2026-09-02",
+    modalities: { input: ["text", "image", "video", "pdf", "audio"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.1, output: 0.2, cacheRead: 0.002 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type MetaModelId = keyof typeof models;
-export type MetaTextModelId = "muse-spark-1.1" | "muse-spark-1.2" | "muse-spark-1.2-contributor";
+export type MetaTextModelId = "muse-spark-1.1" | "muse-spark-1.2" | "muse-spark-1.2-contributor" | "muse-spark-1.3" | "muse-spark-1.3-contributor";
 export type MetaImageModelId = never;
 export type MetaAudioModelId = never;
 export type MetaVideoModelId = never;

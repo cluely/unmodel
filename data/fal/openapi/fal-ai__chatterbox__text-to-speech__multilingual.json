@@ -90,8 +90,8 @@
             },
             "temperature": {
               "default": 0.8,
-              "description": "Controls randomness and variation in generation (0.05-5.0). Higher values create more varied speech patterns.",
-              "maximum": 5,
+              "description": "Controls randomness and variation in generation (0.05-2.0). Higher values create more varied speech patterns.",
+              "maximum": 2,
               "minimum": 0.05,
               "title": "Temperature",
               "type": "number"

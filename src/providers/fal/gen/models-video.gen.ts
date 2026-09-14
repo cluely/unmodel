@@ -142,7 +142,7 @@ export const videoModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    lastUpdated: "2026-08-28",
+    lastUpdated: "2026-09-09",
     modalities: { input: ["audio", "image", "text", "video"], output: ["video"] },
     limit: { context: 0 },
   },

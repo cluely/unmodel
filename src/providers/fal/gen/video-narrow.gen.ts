@@ -68,6 +68,7 @@ const E_3d4094 = ["low", "medium", "high", "maximum"] as const;
 const E_430821 = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
 const E_483afe = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const;
 const E_4aec3e = ["standard", "high"] as const;
+const E_51bb21 = ["reference", "editing", "extension"] as const;
 const E_572d7d = ["none", "film", "rife"] as const;
 const E_5764d4 = ["auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"] as const;
 const E_679f9b = ["none", "regular"] as const;
@@ -140,9 +141,10 @@ export const FAL_VIDEO_SHAPES = {
     },
   },
   "bytedance/seedance-2.5/reference-to-video": {
-    order: ["prompt", "image_urls", "video_urls", "audio_urls", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
+    order: ["prompt", "task", "image_urls", "video_urls", "audio_urls", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "seed", "end_user_id"],
     props: {
       prompt: { t: "string", req: true },
+      task: { t: "string", def: true, enum: E_51bb21 },
       image_urls: { t: "array", items: { t: "string", media: "image" }, media: "image" },
       video_urls: { t: "array", items: { t: "string", media: "video" }, media: "video" },
       audio_urls: { t: "array", items: { t: "string", media: "audio" }, media: "audio" },
@@ -151,6 +153,7 @@ export const FAL_VIDEO_SHAPES = {
       aspect_ratio: { t: "string", def: true, enum: E_856788 },
       generate_audio: { t: "boolean", def: true },
       bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
+      seed: { t: "integer", nul: true },
       end_user_id: { t: "string", nul: true },
     },
   },
@@ -595,6 +598,7 @@ export const FAL_VIDEO_CONSTRAINTS = {
     bitrate_mode: E_4aec3e,
   },
   "bytedance/seedance-2.5/reference-to-video": {
+    task: E_51bb21,
     resolution: E_f3cba3,
     duration: E_a4e098,
     aspect_ratio: E_856788,

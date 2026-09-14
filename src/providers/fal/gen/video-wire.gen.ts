@@ -273,6 +273,13 @@ export interface BytedanceSeedance25ReferenceToVideoInput {
   /** The text prompt used to generate the video. */
   prompt: string;
   /**
+   * The type of video generation task. Reference uses the supplied media as guidance.
+   * Editing modifies a reference video and automatically coerces aspect_ratio and duration
+   * to auto. Extension continues a reference video and automatically coerces aspect_ratio to
+   * auto. Default: `"reference"`.
+   */
+  task?: "reference" | "editing" | "extension";
+  /**
    * Reference images to guide video generation. Refer to them in the prompt as @Image1,
    * @Image2, etc. Supported formats: JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, HEIF. Max 30 MB
    * per image. Up to 30 images. Total files across all modalities must not exceed 50.
@@ -322,6 +329,11 @@ export interface BytedanceSeedance25ReferenceToVideoInput {
    * model; 'standard' uses the default bitrate. Default: `"standard"`.
    */
   bitrate_mode?: "standard" | "high";
+  /**
+   * Random seed for reproducibility. Note that results may still vary slightly even with the
+   * same seed.
+   */
+  seed?: number | null;
   /** The unique user ID of the end user. */
   end_user_id?: string | null;
 }
@@ -1920,14 +1932,16 @@ export interface MinimaxH3ImageToVideoInput {
    */
   prompt_expansion_mode?: string | null;
   /**
-   * Optional URL of the image to use as the first frame. When provided, the output aspect
-   * ratio follows this image. When omitted, the request is handled as text-to-video (16:9 by
-   * default). Carries a image reference — an https URL or a `data:` URI.
+   * Optional URL of the image to use as the first frame. When provided, the output canvas
+   * follows this image. If only end_image_url is provided, the canvas follows that last
+   * frame instead. If both images are omitted, the request is handled as text-to-video (16:9
+   * by default). Carries a image reference — an https URL or a `data:` URI.
    */
   image_url?: string | null;
   /**
-   * Optional URL of the image to use as the last frame, for first-to-last keyframe
-   * generation. Carries a image reference — an https URL or a `data:` URI.
+   * Optional URL of the image to use as the last frame. It may be provided alone for
+   * end-only keyframe generation; in that case the output canvas follows this image. Carries
+   * a image reference — an https URL or a `data:` URI.
    */
   end_image_url?: string | null;
 }

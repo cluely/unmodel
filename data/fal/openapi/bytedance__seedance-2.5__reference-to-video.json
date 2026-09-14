@@ -21,7 +21,7 @@
       "lipsync"
     ],
     "thumbnail_url": "https://v3b.fal.media/files/b/0aa30ee1/AvoWQSXcqJuX5CggoM3uh.jpg",
-    "updated_at": "2026-08-28T18:45:04.475Z"
+    "updated_at": "2026-09-09T17:43:56.710Z"
   },
   "openapi": {
     "components": {
@@ -263,6 +263,29 @@
               "title": "Resolution",
               "type": "string"
             },
+            "seed": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Random seed for reproducibility. Note that results may still vary slightly even with the same seed.",
+              "title": "Seed"
+            },
+            "task": {
+              "default": "reference",
+              "description": "The type of video generation task. Reference uses the supplied media as guidance. Editing modifies a reference video and automatically coerces aspect_ratio and duration to auto. Extension continues a reference video and automatically coerces aspect_ratio to auto.",
+              "enum": [
+                "reference",
+                "editing",
+                "extension"
+              ],
+              "title": "Task",
+              "type": "string"
+            },
             "video_urls": {
               "description": "Reference videos to guide video generation. Refer to them in the prompt as @Video1, @Video2, etc. Supported formats: MP4, MOV. Up to 10 videos. Each video must be 1.8 to 30.2 seconds and no larger than 200 MB; combined duration must not exceed 30.2 seconds. Dimensions must be 300 to 6,000 pixels per side, aspect ratio 0.4 to 2.5, and frame rate 24 to 60 FPS.",
               "items": {
@@ -280,6 +303,7 @@
           "type": "object",
           "x-fal-order-properties": [
             "prompt",
+            "task",
             "image_urls",
             "video_urls",
             "audio_urls",
@@ -288,6 +312,7 @@
             "aspect_ratio",
             "generate_audio",
             "bitrate_mode",
+            "seed",
             "end_user_id"
           ]
         },

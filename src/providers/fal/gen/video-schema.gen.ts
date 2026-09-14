@@ -234,6 +234,7 @@ export const falVideoInputSchema = z.looseObject({
   style: z.enum(["anime", "3d_animation", "clay", "comic", "cyberpunk"]).nullable().optional(),
   sync_mode: z.boolean().optional(),
   tail_image_url: z.string().nullable().optional(),
+  task: z.enum(["reference", "editing", "extension"]).optional(),
   thinking_type: z.enum(["enabled", "disabled", "auto"]).nullable().optional(),
   video_quality: z.enum(["low", "medium", "high", "maximum"]).optional(),
   video_url: z.string().nullable().optional(),

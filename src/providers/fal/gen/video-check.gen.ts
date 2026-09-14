@@ -91,6 +91,7 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.BytedanceSeedance25ImageToVideoInput["end_user_id"], Gate["end_user_id"]>,
   // bytedance/seedance-2.5/reference-to-video
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["task"], Gate["task"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["image_urls"], Gate["image_urls"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["video_urls"], Gate["video_urls"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["audio_urls"], Gate["audio_urls"]>,
@@ -99,6 +100,7 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["aspect_ratio"], Gate["aspect_ratio"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["generate_audio"], Gate["generate_audio"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["bitrate_mode"], Gate["bitrate_mode"]>,
+  AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["seed"], Gate["seed"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["end_user_id"], Gate["end_user_id"]>,
   // bytedance/seedance-2.5/text-to-video
   AssertExtends<wire.BytedanceSeedance25TextToVideoInput["prompt"], Gate["prompt"]>,

@@ -57,16 +57,31 @@
             "scale": {
               "anyOf": [
                 {
+                  "additionalProperties": {
+                    "maximum": 4,
+                    "minimum": -4,
+                    "type": "number"
+                  },
+                  "examples": [
+                    {
+                      "transformer": 0.8
+                    }
+                  ],
+                  "title": "Per-layer LoRA scales",
                   "type": "object"
                 },
                 {
+                  "examples": [
+                    1
+                  ],
+                  "maximum": 4,
+                  "minimum": -4,
+                  "title": "Uniform LoRA scale",
                   "type": "number"
                 }
               ],
               "default": 1,
               "description": "\n            The scale of the LoRA weight. This is used to scale the LoRA weight\n            before merging it with the base model. Providing a dictionary as {\"layer_name\":layer_scale} allows per-layer lora scale settings. Layers with no scale provided will have scale 1.0.\n        ",
-              "ge": -4,
-              "le": 4,
               "title": "Scale"
             }
           },
@@ -952,16 +967,31 @@
             "scale": {
               "anyOf": [
                 {
+                  "additionalProperties": {
+                    "maximum": 4,
+                    "minimum": -4,
+                    "type": "number"
+                  },
+                  "examples": [
+                    {
+                      "transformer": 0.8
+                    }
+                  ],
+                  "title": "Per-layer LoRA scales",
                   "type": "object"
                 },
                 {
+                  "examples": [
+                    1
+                  ],
+                  "maximum": 4,
+                  "minimum": -4,
+                  "title": "Uniform LoRA scale",
                   "type": "number"
                 }
               ],
               "default": 1,
               "description": "\n            The scale of the LoRA weight. This is used to scale the LoRA weight\n            before merging it with the base model. Providing a dictionary as {\"layer_name\":layer_scale} allows per-layer lora scale settings. Layers with no scale provided will have scale 1.0.\n        ",
-              "ge": -4,
-              "le": 4,
               "title": "Scale"
             }
           },

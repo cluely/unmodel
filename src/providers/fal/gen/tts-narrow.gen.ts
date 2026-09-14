@@ -104,7 +104,7 @@ export const FAL_TTS_SHAPES = {
       voice: { t: "string", def: true },
       custom_audio_language: { t: "string", nul: true, enum: E_78c6e3 },
       exaggeration: { t: "number", def: true, min: 0.25, max: 2 },
-      temperature: { t: "number", def: true, min: 0.05, max: 5 },
+      temperature: { t: "number", def: true, min: 0.05, max: 2 },
       cfg_scale: { t: "number", def: true, min: 0, max: 1 },
       seed: { t: "integer", nul: true },
     },

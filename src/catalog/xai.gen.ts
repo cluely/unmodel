@@ -137,35 +137,7 @@ export const models = {
     releaseDate: "2026-01-28",
     lastUpdated: "2026-01-28",
     modalities: { input: ["text", "image", "pdf"], output: ["image", "pdf"] },
-    limit: { context: 8000, output: 0 },
-  },
-  "grok-imagine-image-2.0": {
-    id: "grok-imagine-image-2.0",
-    name: "Grok Imagine Image 2.0",
-    family: "grok",
-    attachment: true,
-    reasoning: false,
-    toolCall: false,
-    temperature: false,
-    openWeights: false,
-    releaseDate: "2026-08-07",
-    lastUpdated: "2026-08-07",
-    modalities: { input: ["text", "image", "pdf"], output: ["image", "pdf"] },
-    limit: { context: 8000, output: 0 },
-  },
-  "grok-imagine-image-quality": {
-    id: "grok-imagine-image-quality",
-    name: "Grok Imagine Image Quality",
-    family: "grok",
-    attachment: true,
-    reasoning: false,
-    toolCall: false,
-    temperature: false,
-    openWeights: false,
-    releaseDate: "2026-04-03",
-    lastUpdated: "2026-04-03",
-    modalities: { input: ["text", "image", "pdf"], output: ["image", "pdf"] },
-    limit: { context: 8000, output: 0 },
+    limit: { context: 16000, output: 0 },
   },
   "grok-imagine-video": {
     id: "grok-imagine-video",
@@ -199,6 +171,6 @@ export const models = {
 
 export type XaiModelId = keyof typeof models;
 export type XaiTextModelId = "grok-4.20-0309-non-reasoning" | "grok-4.20-0309-reasoning" | "grok-4.20-multi-agent-0309" | "grok-4.3" | "grok-4.5" | "grok-4.6" | "grok-build-0.1";
-export type XaiImageModelId = "grok-imagine-image" | "grok-imagine-image-2.0" | "grok-imagine-image-quality";
+export type XaiImageModelId = "grok-imagine-image";
 export type XaiAudioModelId = never;
 export type XaiVideoModelId = "grok-imagine-video" | "grok-imagine-video-1.5";

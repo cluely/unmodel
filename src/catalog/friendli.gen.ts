@@ -26,12 +26,12 @@ export const models = {
     releaseDate: "2026-02-12",
     lastUpdated: "2026-02-12",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 196608, output: 196608 },
+    limit: { context: 196608, output: 131072 },
     cost: { input: 0.3, output: 1.2, cacheRead: 0.06 },
   },
   "deepseek-ai/DeepSeek-V3.2": {
     id: "deepseek-ai/DeepSeek-V3.2",
-    name: "DeepSeek-V3.2",
+    name: "DeepSeek V3.2",
     family: "deepseek",
     attachment: false,
     reasoning: true,
@@ -39,10 +39,11 @@ export const models = {
     structuredOutput: true,
     temperature: true,
     openWeights: true,
+    knowledge: "2024-07",
     releaseDate: "2025-12-01",
     lastUpdated: "2025-12-01",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 163840, output: 163840 },
+    limit: { context: 163840, output: 64000 },
     cost: { input: 0.5, output: 1.5, cacheRead: 0.25 },
   },
   "google/gemma-4-31B-it": {
@@ -74,7 +75,7 @@ export const models = {
     releaseDate: "2026-04-07",
     lastUpdated: "2026-04-07",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 202752, output: 202752 },
+    limit: { context: 202752, output: 131072 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
   },
   "zai-org/GLM-5.2": {
@@ -90,7 +91,7 @@ export const models = {
     releaseDate: "2026-06-13",
     lastUpdated: "2026-06-13",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 131072 },
+    limit: { context: 1048576, output: 131072 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
   },
   "zai-org/GLM-5.3": {
@@ -106,13 +107,29 @@ export const models = {
     releaseDate: "2026-08-14",
     lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 1048576 },
-    cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 1.26, output: 3.96, cacheRead: 0.234 },
+  },
+  "zai-org/GLM-5.3-Flash": {
+    id: "zai-org/GLM-5.3-Flash",
+    name: "GLM-5.3-Flash",
+    family: "glm-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.03 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type FriendliModelId = keyof typeof models;
-export type FriendliTextModelId = "MiniMaxAI/MiniMax-M2.5" | "deepseek-ai/DeepSeek-V3.2" | "google/gemma-4-31B-it" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3";
+export type FriendliTextModelId = "MiniMaxAI/MiniMax-M2.5" | "deepseek-ai/DeepSeek-V3.2" | "google/gemma-4-31B-it" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
 export type FriendliImageModelId = never;
 export type FriendliAudioModelId = never;
 export type FriendliVideoModelId = never;

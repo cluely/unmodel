@@ -13,6 +13,22 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "glm-5.3-flash-fp4": {
+    id: "glm-5.3-flash-fp4",
+    name: "GLM 5.3 Flash FP4",
+    family: "glm-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0 },
+  },
   "glm-5.3-fp4": {
     id: "glm-5.3-fp4",
     name: "GLM 5.3 FP4",
@@ -64,7 +80,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type CoralbricksModelId = keyof typeof models;
-export type CoralbricksTextModelId = "glm-5.3-fp4" | "gpt-oss-120b" | "kimi-k3";
+export type CoralbricksTextModelId = "glm-5.3-flash-fp4" | "glm-5.3-fp4" | "gpt-oss-120b" | "kimi-k3";
 export type CoralbricksImageModelId = never;
 export type CoralbricksAudioModelId = never;
 export type CoralbricksVideoModelId = never;

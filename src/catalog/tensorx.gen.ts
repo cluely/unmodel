@@ -112,6 +112,23 @@ export const models = {
     limit: { context: 1048576, output: 384000 },
     cost: { input: 1.75, output: 3.5, cacheRead: 0.4375, cacheWrite: 2.185 },
   },
+  "deepseek/deepseek-v4.1-flash": {
+    id: "deepseek/deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 384000 },
+    cost: { input: 0.5, output: 1.5, cacheRead: 0.13 },
+  },
   "minimax/minimax-m2.5": {
     id: "minimax/minimax-m2.5",
     name: "MiniMax-M2.5",
@@ -418,7 +435,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type TensorxModelId = keyof typeof models;
-export type TensorxTextModelId = "deepseek/deepseek-chat-v3.1" | "deepseek/deepseek-r1-0528" | "deepseek/deepseek-v3.2" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-0731" | "deepseek/deepseek-v4-pro" | "minimax/minimax-m2.5" | "minimax/minimax-m3" | "moonshotai/kimi-k2.5" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k2.7-code" | "moonshotai/kimi-k3" | "nvidia/nemotron-3-super-120b-a12b" | "openai/gpt-oss-120b" | "qwen/qwen3-235b-a22b-2507" | "qwen/qwen3-coder-30b-a3b-instruct" | "qwen/qwen3-vl-235b-a22b-instruct" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-9b" | "z-ai/glm-4.7" | "z-ai/glm-5" | "z-ai/glm-5-turbo" | "z-ai/glm-5.1" | "z-ai/glm-5.2" | "z-ai/glm-5v-turbo";
+export type TensorxTextModelId = "deepseek/deepseek-chat-v3.1" | "deepseek/deepseek-r1-0528" | "deepseek/deepseek-v3.2" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-0731" | "deepseek/deepseek-v4-pro" | "deepseek/deepseek-v4.1-flash" | "minimax/minimax-m2.5" | "minimax/minimax-m3" | "moonshotai/kimi-k2.5" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k2.7-code" | "moonshotai/kimi-k3" | "nvidia/nemotron-3-super-120b-a12b" | "openai/gpt-oss-120b" | "qwen/qwen3-235b-a22b-2507" | "qwen/qwen3-coder-30b-a3b-instruct" | "qwen/qwen3-vl-235b-a22b-instruct" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-9b" | "z-ai/glm-4.7" | "z-ai/glm-5" | "z-ai/glm-5-turbo" | "z-ai/glm-5.1" | "z-ai/glm-5.2" | "z-ai/glm-5v-turbo";
 export type TensorxImageModelId = never;
 export type TensorxAudioModelId = never;
 export type TensorxVideoModelId = never;

@@ -828,6 +828,7 @@ export const models = {
     knowledge: "2025-01-01",
     releaseDate: "2025-11-13",
     lastUpdated: "2025-11-13",
+    status: "deprecated",
     modalities: { input: ["pdf", "image", "text"], output: ["text"] },
     limit: { context: 128000, output: 64000 },
     cost: { input: 1.25, output: 10, cacheRead: 0.12 },

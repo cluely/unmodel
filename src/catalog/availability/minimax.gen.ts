@@ -42,7 +42,6 @@ export const availability = {
     "friendli": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
     "huggingface": "MiniMaxAI/MiniMax-M2.5",
     "minimax": "MiniMax-M2.5",
-    "nebius": { id: "MiniMaxAI/MiniMax-M2.5", narrows: { context: 196608 } },
     "novita-ai": "minimax/minimax-m2.5",
     "openrouter": "minimax/minimax-m2.5",
     "togetherai": "MiniMaxAI/MiniMax-M2.5",
@@ -70,7 +69,7 @@ export const availability = {
   },
   "MiniMax-M3": {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
-    "fireworks-ai": { id: "accounts/fireworks/models/minimax-m3", narrows: { context: 512000 } },
+    "fireworks-ai": { id: "accounts/fireworks/models/minimax-m3", narrows: { context: 512000, drops: ["image", "video"] } },
     "huggingface": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288, drops: ["video"] } },
     "minimax": "MiniMax-M3",
     "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image", "video"] } },

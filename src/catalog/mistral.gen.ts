@@ -559,10 +559,26 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.14 },
   },
+  "zai-glm-5-3": {
+    id: "zai-glm-5-3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 1.4, output: 4.4, cacheRead: 0.14 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type MistralModelId = keyof typeof models;
-export type MistralTextModelId = "codestral-latest" | "devstral-2512" | "devstral-latest" | "devstral-medium-2507" | "devstral-medium-latest" | "devstral-small-2505" | "devstral-small-2507" | "labs-devstral-small-2512" | "magistral-medium-latest" | "magistral-small" | "ministral-3b-latest" | "ministral-8b-latest" | "mistral-embed" | "mistral-large-2411" | "mistral-large-2512" | "mistral-large-latest" | "mistral-medium-2505" | "mistral-medium-2508" | "mistral-medium-2604" | "mistral-medium-latest" | "mistral-nemo" | "mistral-small-2506" | "mistral-small-2603" | "mistral-small-latest" | "open-mistral-7b" | "open-mistral-nemo" | "open-mixtral-8x22b" | "open-mixtral-8x7b" | "pixtral-12b" | "pixtral-large-latest" | "voxtral-mini-latest" | "voxtral-small-latest" | "zai-glm-5-2";
+export type MistralTextModelId = "codestral-latest" | "devstral-2512" | "devstral-latest" | "devstral-medium-2507" | "devstral-medium-latest" | "devstral-small-2505" | "devstral-small-2507" | "labs-devstral-small-2512" | "magistral-medium-latest" | "magistral-small" | "ministral-3b-latest" | "ministral-8b-latest" | "mistral-embed" | "mistral-large-2411" | "mistral-large-2512" | "mistral-large-latest" | "mistral-medium-2505" | "mistral-medium-2508" | "mistral-medium-2604" | "mistral-medium-latest" | "mistral-nemo" | "mistral-small-2506" | "mistral-small-2603" | "mistral-small-latest" | "open-mistral-7b" | "open-mistral-nemo" | "open-mixtral-8x22b" | "open-mixtral-8x7b" | "pixtral-12b" | "pixtral-large-latest" | "voxtral-mini-latest" | "voxtral-small-latest" | "zai-glm-5-2" | "zai-glm-5-3";
 export type MistralImageModelId = never;
 export type MistralAudioModelId = "voxtral-mini-tts-latest";
 export type MistralVideoModelId = never;

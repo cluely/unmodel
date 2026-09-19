@@ -445,7 +445,7 @@ export const models = {
   "@cf/zai-org/glm-5.3-flash": {
     id: "@cf/zai-org/glm-5.3-flash",
     name: "Glm 5.3 Flash",
-    family: "glm",
+    family: "glm-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,

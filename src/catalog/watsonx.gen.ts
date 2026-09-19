@@ -32,7 +32,7 @@ export const models = {
     id: "meta-llama/llama-3-3-70b-instruct",
     name: "Llama-3.3-70B-Instruct",
     family: "llama",
-    attachment: true,
+    attachment: false,
     reasoning: false,
     toolCall: true,
     temperature: true,

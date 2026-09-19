@@ -45,6 +45,23 @@ export const models = {
     limit: { context: 262144, output: 65536 },
     cost: { input: 0.45, output: 3.6, cacheRead: 0.45 },
   },
+  "hf:deepseek-ai/DeepSeek-V4.1-Flash": {
+    id: "hf:deepseek-ai/DeepSeek-V4.1-Flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 524288, output: 65536 },
+    cost: { input: 0.6, output: 1.2, cacheRead: 0.03 },
+  },
   "hf:moonshotai/Kimi-K2.7-Code": {
     id: "hf:moonshotai/Kimi-K2.7-Code",
     name: "Kimi K2.7 Code",
@@ -143,13 +160,13 @@ export const models = {
   "hf:zai-org/GLM-5.3-Flash": {
     id: "hf:zai-org/GLM-5.3-Flash",
     name: "GLM-5.3-Flash",
-    family: "glm",
+    family: "glm-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image"], output: ["text"] },
@@ -159,7 +176,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type SyntheticModelId = keyof typeof models;
-export type SyntheticTextModelId = "hf:MiniMaxAI/MiniMax-M3" | "hf:Qwen/Qwen3.6-27B" | "hf:moonshotai/Kimi-K2.7-Code" | "hf:moonshotai/Kimi-K3" | "hf:nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4" | "hf:openai/gpt-oss-120b" | "hf:zai-org/GLM-4.7-Flash" | "hf:zai-org/GLM-5.2" | "hf:zai-org/GLM-5.3-Flash";
+export type SyntheticTextModelId = "hf:MiniMaxAI/MiniMax-M3" | "hf:Qwen/Qwen3.6-27B" | "hf:deepseek-ai/DeepSeek-V4.1-Flash" | "hf:moonshotai/Kimi-K2.7-Code" | "hf:moonshotai/Kimi-K3" | "hf:nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4" | "hf:openai/gpt-oss-120b" | "hf:zai-org/GLM-4.7-Flash" | "hf:zai-org/GLM-5.2" | "hf:zai-org/GLM-5.3-Flash";
 export type SyntheticImageModelId = never;
 export type SyntheticAudioModelId = never;
 export type SyntheticVideoModelId = never;

@@ -239,18 +239,34 @@ export const models = {
   "glm-5.3-flash": {
     id: "glm-5.3-flash",
     name: "GLM-5.3-Flash",
-    family: "glm",
+    family: "glm-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
-    cost: { input: 0.075, output: 0.25, cacheRead: 0.015, cacheWrite: 0 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.03, cacheWrite: 0 },
+  },
+  "glm-5.3-flashx": {
+    id: "glm-5.3-flashx",
+    name: "GLM-5.3-FlashX",
+    family: "glm-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-18",
+    lastUpdated: "2026-09-18",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.37, output: 1.25, cacheRead: 0.075, cacheWrite: 0 },
   },
   "glm-5v-turbo": {
     id: "glm-5v-turbo",
@@ -270,7 +286,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type ZaiModelId = keyof typeof models;
-export type ZaiTextModelId = "glm-4.5" | "glm-4.5-air" | "glm-4.5-flash" | "glm-4.5v" | "glm-4.6" | "glm-4.6v" | "glm-4.7" | "glm-4.7-flash" | "glm-4.7-flashx" | "glm-5" | "glm-5-turbo" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "glm-5v-turbo";
+export type ZaiTextModelId = "glm-4.5" | "glm-4.5-air" | "glm-4.5-flash" | "glm-4.5v" | "glm-4.6" | "glm-4.6v" | "glm-4.7" | "glm-4.7-flash" | "glm-4.7-flashx" | "glm-5" | "glm-5-turbo" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "glm-5.3-flashx" | "glm-5v-turbo";
 export type ZaiImageModelId = never;
 export type ZaiAudioModelId = never;
 export type ZaiVideoModelId = never;

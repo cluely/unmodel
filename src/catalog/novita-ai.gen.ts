@@ -1606,7 +1606,7 @@ export const models = {
   "zai-org/glm-4.7-flash": {
     id: "zai-org/glm-4.7-flash",
     name: "GLM-4.7-Flash",
-    family: "glm",
+    family: "glm-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,

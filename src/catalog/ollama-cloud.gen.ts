@@ -25,6 +25,7 @@ export const models = {
     lastUpdated: "2026-04-24",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.22, output: 0.66, cacheRead: 0.007 },
   },
   "deepseek-v4-flash:0731": {
     id: "deepseek-v4-flash:0731",
@@ -41,6 +42,7 @@ export const models = {
     lastUpdated: "2026-07-31",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.22, output: 0.66, cacheRead: 0.007 },
   },
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
@@ -54,6 +56,40 @@ export const models = {
     lastUpdated: "2026-04-24",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.66, output: 1.98, cacheRead: 0.022 },
+  },
+  "deepseek-v4-pro:0813": {
+    id: "deepseek-v4-pro:0813",
+    name: "DeepSeek V4 Pro 0813",
+    family: "deepseek-thinking",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-12",
+    lastUpdated: "2026-08-22",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.66, output: 1.98, cacheRead: 0.022 },
+  },
+  "deepseek-v4.1-flash": {
+    id: "deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 384000 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.003 },
   },
   "gemma4:31b": {
     id: "gemma4:31b",
@@ -68,6 +104,7 @@ export const models = {
     lastUpdated: "2026-04-08",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
+    cost: { input: 0.14, output: 0.4, cacheRead: 0.05 },
   },
   "glm-5.1": {
     id: "glm-5.1",
@@ -81,6 +118,7 @@ export const models = {
     lastUpdated: "2026-04-07",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 202752, output: 131072 },
+    cost: { input: 1, output: 3.2, cacheRead: 0.2 },
   },
   "glm-5.2": {
     id: "glm-5.2",
@@ -96,6 +134,7 @@ export const models = {
     lastUpdated: "2026-06-13",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 976000, output: 131072 },
+    cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
   },
   "glm-5.3": {
     id: "glm-5.3",
@@ -111,11 +150,12 @@ export const models = {
     lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
+    cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
   },
   "glm-5.3-flash": {
     id: "glm-5.3-flash",
     name: "GLM-5.3-Flash",
-    family: "glm",
+    family: "glm-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -126,6 +166,7 @@ export const models = {
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.03 },
   },
   "gpt-oss:120b": {
     id: "gpt-oss:120b",
@@ -139,6 +180,7 @@ export const models = {
     lastUpdated: "2026-01-19",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131072, output: 32768 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.014 },
   },
   "gpt-oss:20b": {
     id: "gpt-oss:20b",
@@ -152,6 +194,7 @@ export const models = {
     lastUpdated: "2026-01-19",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131072, output: 32768 },
+    cost: { input: 0.07, output: 0.3, cacheRead: 0.035 },
   },
   "kimi-k2.5": {
     id: "kimi-k2.5",
@@ -178,6 +221,7 @@ export const models = {
     lastUpdated: "2026-04-20",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
+    cost: { input: 0.95, output: 4, cacheRead: 0.16 },
   },
   "kimi-k2.7-code": {
     id: "kimi-k2.7-code",
@@ -194,6 +238,7 @@ export const models = {
     lastUpdated: "2026-06-12",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
+    cost: { input: 0.95, output: 4, cacheRead: 0.19 },
   },
   "kimi-k3": {
     id: "kimi-k3",
@@ -209,6 +254,7 @@ export const models = {
     lastUpdated: "2026-07-27",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
+    cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
   "minimax-m2.5": {
     id: "minimax-m2.5",
@@ -236,6 +282,7 @@ export const models = {
     lastUpdated: "2026-03-18",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 196608, output: 196608 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.06 },
   },
   "minimax-m3": {
     id: "minimax-m3",
@@ -251,6 +298,7 @@ export const models = {
     lastUpdated: "2026-05-31",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 512000, output: 131072 },
+    cost: { input: 0.6, output: 2.4, cacheRead: 0.12 },
   },
   "mistral-large-3:675b": {
     id: "mistral-large-3:675b",
@@ -264,6 +312,7 @@ export const models = {
     lastUpdated: "2026-01-19",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
+    cost: { input: 0.5, output: 1.5 },
   },
   "nemotron-3-nano:30b": {
     id: "nemotron-3-nano:30b",
@@ -278,6 +327,7 @@ export const models = {
     lastUpdated: "2026-01-19",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.06, output: 0.24 },
   },
   "nemotron-3-super": {
     id: "nemotron-3-super",
@@ -292,6 +342,7 @@ export const models = {
     lastUpdated: "2026-03-12",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 65536 },
+    cost: { input: 0.015, output: 0.6, cacheRead: 0.015 },
   },
   "nemotron-3-ultra": {
     id: "nemotron-3-ultra",
@@ -306,6 +357,7 @@ export const models = {
     lastUpdated: "2026-06-04",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 128000 },
+    cost: { input: 0.1, output: 3, cacheRead: 0.1 },
   },
   "qwen3.5:397b": {
     id: "qwen3.5:397b",
@@ -319,11 +371,12 @@ export const models = {
     lastUpdated: "2026-02-17",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 65536 },
+    cost: { input: 0.6, output: 3.6 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type OllamaCloudModelId = keyof typeof models;
-export type OllamaCloudTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash:0731" | "deepseek-v4-pro" | "gemma4:31b" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss:120b" | "gpt-oss:20b" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "minimax-m2.5" | "minimax-m2.7" | "minimax-m3" | "mistral-large-3:675b" | "nemotron-3-nano:30b" | "nemotron-3-super" | "nemotron-3-ultra" | "qwen3.5:397b";
+export type OllamaCloudTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash:0731" | "deepseek-v4-pro" | "deepseek-v4-pro:0813" | "deepseek-v4.1-flash" | "gemma4:31b" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss:120b" | "gpt-oss:20b" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "minimax-m2.5" | "minimax-m2.7" | "minimax-m3" | "mistral-large-3:675b" | "nemotron-3-nano:30b" | "nemotron-3-super" | "nemotron-3-ultra" | "qwen3.5:397b";
 export type OllamaCloudImageModelId = never;
 export type OllamaCloudAudioModelId = never;
 export type OllamaCloudVideoModelId = never;

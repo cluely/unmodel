@@ -25,7 +25,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 64000 },
+    limit: { context: 256000, output: 128000, input: 192000 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
   "hy3-preview": {

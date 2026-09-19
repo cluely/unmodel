@@ -13,22 +13,39 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "deepseek-v4-flash": {
-    id: "deepseek-v4-flash",
-    name: "DeepSeek V4 Flash",
+  "deepseek-flash": {
+    id: "deepseek-flash",
+    name: "DeepSeek V4.1 Flash",
     family: "deepseek-flash",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
     openWeights: true,
     knowledge: "2025-05",
-    releaseDate: "2026-07-31",
-    lastUpdated: "2026-07-31",
-    modalities: { input: ["text"], output: ["text"] },
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1000000, output: 384000 },
-    cost: { input: 0.14, output: 0.28, cacheRead: 0.0028, reasoning: 0.28 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.003, reasoning: 0.6 },
+  },
+  "deepseek-v4-flash": {
+    id: "deepseek-v4-flash",
+    name: "DeepSeek V4 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.003, reasoning: 0.6 },
   },
   "deepseek-v4-flash-vision-exp": {
     id: "deepseek-v4-flash-vision-exp",
@@ -39,13 +56,13 @@ export const models = {
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
-    releaseDate: "2026-08-21",
-    lastUpdated: "2026-08-21",
-    status: "beta",
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1000000, output: 384000 },
-    cost: { input: 0.14, output: 0.28, cacheRead: 0.0028, reasoning: 0.28 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.003, reasoning: 0.6 },
   },
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
@@ -66,7 +83,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type DeepseekModelId = keyof typeof models;
-export type DeepseekTextModelId = "deepseek-v4-flash" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro";
+export type DeepseekTextModelId = "deepseek-flash" | "deepseek-v4-flash" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro";
 export type DeepseekImageModelId = never;
 export type DeepseekAudioModelId = never;
 export type DeepseekVideoModelId = never;

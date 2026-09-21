@@ -140,7 +140,7 @@
           "type": "object"
         },
         "SfxV10TextToAudioInput": {
-          "description": "sfx-v1.0 /text-to-audio schema: plain-language field help for the product\nPlayground. Duration is an advanced integer; flash and seed are hidden.",
+          "description": "sfx-v1.0 /text-to-audio schema: plain-language field help for the product\nPlayground. Duration accepts fractional seconds; flash and seed are hidden.",
           "properties": {
             "audio_format": {
               "default": "aac",
@@ -156,11 +156,11 @@
             },
             "duration": {
               "default": 8,
-              "description": "How long the audio should be, in seconds.",
+              "description": "How long the audio should be, in seconds (0.5 to 180).",
               "maximum": 180,
-              "minimum": 1,
+              "minimum": 0.5,
               "title": "Duration",
-              "type": "integer"
+              "type": "number"
             },
             "prompt": {
               "description": "Describe the sound you want to create.",

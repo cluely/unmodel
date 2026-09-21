@@ -236,14 +236,21 @@
               },
               "title": "Audio",
               "type": "array"
+            },
+            "model": {
+              "pattern": "^sfx-[0-9]+\\.[0-9]+$",
+              "title": "Model",
+              "type": "string"
             }
           },
           "required": [
+            "model",
             "audio"
           ],
           "title": "TextToAudioOutput",
           "type": "object",
           "x-fal-order-properties": [
+            "model",
             "audio"
           ]
         }

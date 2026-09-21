@@ -116,7 +116,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Optional URL of the image to use as the last frame, for first-to-last keyframe generation.",
+              "description": "Optional URL of the image to use as the last frame. It may be provided alone for end-only keyframe generation; in that case the output canvas follows this image.",
               "title": "End Image URL"
             },
             "image_url": {
@@ -128,7 +128,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Optional URL of the image to use as the first frame. When provided, the output aspect ratio follows this image. When omitted, the request is handled as text-to-video (16:9 by default).",
+              "description": "Optional URL of the image to use as the first frame. When provided, the output canvas follows this image. If only end_image_url is provided, the canvas follows that last frame instead. If both images are omitted, the request is handled as text-to-video (16:9 by default).",
               "examples": [
                 "https://storage.googleapis.com/falserverless/example_inputs/hailuo23/pro_i2v_in.jpg"
               ],
@@ -154,8 +154,9 @@
                 }
               ],
               "default": "balanced",
-              "description": "How much effort to spend rewriting the prompt before generation. 'fast' returns in about a second. 'balanced' picks per request. 'quality' spends up to ~30s on a richer prompt.",
+              "description": "How much effort to spend rewriting the prompt before generation. 'disabled' skips prompt expansion. 'fast' returns in about a second. 'balanced' picks per request. 'quality' spends up to ~30s on a richer prompt.",
               "examples": [
+                "disabled",
                 "fast",
                 "balanced",
                 "quality"
@@ -191,6 +192,20 @@
               "description": "Return the generated video as base64 instead of a CDN URL.",
               "title": "Sync Mode",
               "type": "boolean"
+            },
+            "target_audio_url": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional URL of an audio clip at least 2 seconds long (maximum 15 MB) to pin to the generated soundtrack. Longer clips are trimmed to the requested video duration, keeping the beginning. The original audio replaces the output soundtrack, padded with silence if shorter than the video, without changing playback speed. Exceptionally high sample rates may be resampled to 96 kHz. Accepts an HTTP(S) URL or a base64 data URI.",
+              "title": "Target Audio Url"
             }
           },
           "required": [
@@ -206,6 +221,7 @@
             "enable_safety_checker",
             "sync_mode",
             "prompt_expansion_mode",
+            "target_audio_url",
             "image_url",
             "end_image_url"
           ]

@@ -1,26 +1,4 @@
 {
-  "metadata": {
-    "category": "text-to-image",
-    "date": "2026-07-13T18:05:02.658Z",
-    "description": "Generate high-quality images from text prompts with strong prompt adherence, layout intelligence, and accurate text rendering using Reve 2.1.",
-    "display_name": "Reve 2.1",
-    "group": {
-      "key": "reve-2",
-      "label": "Reve 2.1 Text to Image"
-    },
-    "highlighted": false,
-    "is_favorited": null,
-    "kind": "inference",
-    "license_type": "commercial",
-    "model_url": "https://fal.run/reve/2.1/text-to-image",
-    "pinned": false,
-    "status": "active",
-    "tags": [
-      "text-to-image"
-    ],
-    "thumbnail_url": "https://v3b.fal.media/files/b/0aa21a93/9BujwayMMtMwLEJCmjd0w.jpg",
-    "updated_at": "2026-07-17T03:49:40.574Z"
-  },
   "openapi": {
     "components": {
       "schemas": {

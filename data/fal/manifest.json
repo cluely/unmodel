@@ -29,15 +29,15 @@
       "category": "video-to-video",
       "display_name": "Flux Video Upscale",
       "file": "openapi/blackforestlabs__flux-video-upscale.json",
-      "sha256": "a5d64fb3e25ce74fe64a8377dbd6653ca935f0f0a421c07adb4f0275cece0798",
+      "sha256": "380b76112bb1b3fc2a7b36b3fcacf1c9981625d713a90da68706dc8bc5ce5079",
       "status": "active",
-      "updated_at": "2026-08-31T17:57:42.705Z"
+      "updated_at": "2026-09-08T06:53:57.669Z"
     },
     "bria/fibo-edit/relight": {
       "category": "image-to-image",
       "display_name": "Fibo Edit [Relight]",
       "file": "openapi/bria__fibo-edit__relight.json",
-      "sha256": "d69e57ea1a183d51807ad10877812d4790150d4e2c49cabdd4cf4758422ef1e0",
+      "sha256": "9aec2f6441082127443472b691bf638bee7f5bf014133b16c244773d910940fc",
       "status": "active",
       "updated_at": "2026-05-20T14:06:50.595Z"
     },
@@ -69,9 +69,9 @@
       "category": "image-to-video",
       "display_name": "Seedance 2.5 Reference to Video",
       "file": "openapi/bytedance__seedance-2.5__reference-to-video.json",
-      "sha256": "2a85e1232ebb87e89512b8aff620e480e1d68e3c50ffad7036988098ac3fd0c5",
+      "sha256": "01cee68c1a9767e401f06318bd9922a278f73266532adfc0e465819d97331864",
       "status": "active",
-      "updated_at": "2026-08-28T18:45:04.475Z"
+      "updated_at": "2026-09-09T17:43:56.710Z"
     },
     "bytedance/seedance-2.5/text-to-video": {
       "category": "unknown",
@@ -133,9 +133,9 @@
       "category": "text-to-speech",
       "display_name": "Bytedance Seed Speech Text to Speech",
       "file": "openapi/fal-ai__bytedance__seed-speech__tts__v2.json",
-      "sha256": "e736df30b6d411d9120fd71a94c42e44464e87be5c84eea062908bf0681d89b6",
+      "sha256": "e12e64be267cf64047c4b84ed9c0de3a5591d8ac80347473ff444945ff7bd109",
       "status": "active",
-      "updated_at": "2026-06-24T00:21:44.881Z"
+      "updated_at": "2026-09-14T08:57:45.338Z"
     },
     "fal-ai/bytedance/seedream/v4.5/edit": {
       "category": "image-to-image",
@@ -165,7 +165,7 @@
       "category": "text-to-speech",
       "display_name": "Chatterbox",
       "file": "openapi/fal-ai__chatterbox__text-to-speech__multilingual.json",
-      "sha256": "d9f75bed477472dadf2ea4f6e3d2e320e45c9e8e561ef677feb626833e737b35",
+      "sha256": "8f614f96ffefe799fbc04e3c074481c243e6910025d42f58bfb2b5c50cb536f6",
       "status": "active",
       "updated_at": "2026-06-24T11:34:12.614Z"
     },
@@ -205,9 +205,9 @@
       "category": "text-to-audio",
       "display_name": "Elevenlabs Music",
       "file": "openapi/fal-ai__elevenlabs__music.json",
-      "sha256": "12dd4e3fedda9c468f453d66eedb8d01f7e6a7bee95754eb7d4d4a94d4214a1e",
+      "sha256": "a1de422e0f964c8d1ff8442ec8803de8a0ee0ab248dae7bf2803ee5f91032c13",
       "status": "active",
-      "updated_at": "2026-08-18T21:02:01.110Z"
+      "updated_at": "2026-09-15T03:31:04.015Z"
     },
     "fal-ai/elevenlabs/sound-effects/v2": {
       "category": "text-to-audio",
@@ -317,7 +317,7 @@
       "category": "text-to-image",
       "display_name": "FLUX.1 [dev] with Controlnets and Loras",
       "file": "openapi/fal-ai__flux-general.json",
-      "sha256": "11e774cfeed39776894a57ec3595834ebcab62bf0d2f08670a33d07670bc6b79",
+      "sha256": "a5ad1bf0f9a6077bd81500fc288a55af5db076126187261bcd0c57051fd29c6c",
       "status": "active",
       "updated_at": "2026-06-24T10:42:17.837Z"
     },
@@ -509,7 +509,7 @@
       "category": "image-to-3d",
       "display_name": "Hyper3D - Rodin V2.5 - Image to 3D",
       "file": "openapi/fal-ai__hyper3d__rodin__v2.5.json",
-      "sha256": "ca4e4d033dd1c98ff7b50adcf9052488919a5684eed12654a23cb55b01a96735",
+      "sha256": "02205f3762cc54aab96f86223089728173bb416560e3cae9a6cd7abf6e9d64e6",
       "status": "active",
       "updated_at": "2026-07-13T18:24:58.995Z"
     },
@@ -517,7 +517,7 @@
       "category": "text-to-3d",
       "display_name": "Hyper3D - Rodin V2.5 - Text to 3D",
       "file": "openapi/fal-ai__hyper3d__rodin__v2.5__text-to-3d.json",
-      "sha256": "76edfaa5594c719cca8cad35443a3fa5adfe393ed3e9f4143b04854144d3fc64",
+      "sha256": "8ef7f40ad8731671f937973418f2227faeea20e9c0931842744fe151eb6b41af",
       "status": "active",
       "updated_at": "2026-07-13T18:24:40.753Z"
     },
@@ -1181,9 +1181,9 @@
       "category": "image-to-3d",
       "display_name": "Hi3D Image to 3D",
       "file": "openapi/hitem3d__hi3d__v3.0__image-to-3d.json",
-      "sha256": "81b3504ecbed32f3206afb5c9ed8350a64a8de8712814d1ced9d1776b6c904ec",
+      "sha256": "e39f5fad4c46baf8f1076544875de48e0830fbdcb4c5bf0a4c6222f620e66b47",
       "status": "active",
-      "updated_at": "2026-08-19T19:58:51.233Z"
+      "updated_at": "2026-09-09T20:37:32.440Z"
     },
     "ideogram/v4": {
       "category": "text-to-image",
@@ -1221,7 +1221,7 @@
       "category": "image-to-3d",
       "display_name": "V7 Image to 3D",
       "file": "openapi/meshy__v7__image-to-3d.json",
-      "sha256": "a840ce7b23f1d6ee7fe32f488a3897990982ab03ff24f832078a6949a252e42d",
+      "sha256": "b1b6de044cd6fdde11cc259f549bce386ac52116ab33ee8cd60ae17429ca029d",
       "status": "active",
       "updated_at": "2026-08-11T22:02:14.440Z"
     },
@@ -1229,7 +1229,7 @@
       "category": "text-to-3d",
       "display_name": "V7 Text to 3D",
       "file": "openapi/meshy__v7__text-to-3d.json",
-      "sha256": "0c42ad9133685bade310b4a7fb8b97f17bd92b79dd3f055eadf061343d051c08",
+      "sha256": "d6a26374bbe2d5f53a9ae550204ac9a7d20f596fde4a1c7b10115204fb18de4f",
       "status": "active",
       "updated_at": "2026-08-24T11:50:18.611Z"
     },
@@ -1245,7 +1245,7 @@
       "category": "unknown",
       "display_name": "MiniMax H3 Image to Video",
       "file": "openapi/minimax__h3__image-to-video.json",
-      "sha256": "8935ad0cbf021fdc5a87a5e5d5f6004f54161c505218a530e3a3f58f4e2fa7a5",
+      "sha256": "06b42d2b630269e046b306fd27e1439097a4e538c92bc39d28d16b34923cbe20",
       "status": "active",
       "updated_at": "2026-08-25T17:41:07.462Z"
     },
@@ -1253,7 +1253,7 @@
       "category": "unknown",
       "display_name": "MiniMax H3 Text to Video",
       "file": "openapi/minimax__h3__text-to-video.json",
-      "sha256": "e9f050a80571d2f49f62889d0cf014b6825325758384b20e2780489b9603348f",
+      "sha256": "8523954d82d44d7a663184733decd9025bbfc83449ec8f7f4c16f165b6bbd71c",
       "status": "active",
       "updated_at": "2026-08-26T06:41:51.586Z"
     },
@@ -1269,7 +1269,7 @@
       "category": "text-to-audio",
       "display_name": "Mirelo SFX1.6",
       "file": "openapi/mirelo-ai__sfx1.6__text-to-audio.json",
-      "sha256": "dfc83e1ceb194056dc8f8aa536fdb8d2508995c588b6b0c0969de5cc72a3a978",
+      "sha256": "5b37123eacc9d429c3887d78c1f4a50f775674edd627379a563f4496d104fed1",
       "status": "active",
       "updated_at": "2026-07-01T04:56:00.169Z"
     },
@@ -1290,18 +1290,18 @@
       "updated_at": "2026-08-13T21:01:03.124Z"
     },
     "reve/2.1/text-to-image": {
-      "category": "text-to-image",
-      "display_name": "Reve 2.1",
+      "category": "",
+      "display_name": "reve/2.1/text-to-image",
       "file": "openapi/reve__2.1__text-to-image.json",
-      "sha256": "c4313dfee4630ba840b4b83d4a7e4d603201553eb4279ca090c4ad1d924ad8fc",
-      "status": "active",
-      "updated_at": "2026-07-17T03:49:40.574Z"
+      "sha256": "b7f91a784a4a18cc6221693057a8d4830b55b48358efefc8bd0ba85488e76e86",
+      "status": "unknown",
+      "updated_at": ""
     },
     "sonilo/v1.1/text-to-sound-effects": {
       "category": "text-to-audio",
       "display_name": "V1.1 Text to Sound Effects",
       "file": "openapi/sonilo__v1.1__text-to-sound-effects.json",
-      "sha256": "f59b68feb79f18bedfdb80b0f4ca618ea52661f65af4a73ec60ddc3f9bb9fa77",
+      "sha256": "94e34a9cbb420e5324ef5759e63fcbafd844fffa58293b269eb501f889a75b29",
       "status": "active",
       "updated_at": "2026-07-28T15:48:53.505Z"
     },
@@ -1317,7 +1317,7 @@
       "category": "video-to-video",
       "display_name": "Topaz Upscale Image Precision",
       "file": "openapi/topaz__upscale__image__precision.json",
-      "sha256": "ef41a28e0d59cd24aea1efd8e60ee392f00c1bec52807fce3ca56afc3cc0a81e",
+      "sha256": "90a7dd075ffb4cde44c4fd6d54f2464ded80f50eb8304b99296fff4586148ba7",
       "status": "active",
       "updated_at": "2026-08-31T17:55:19.832Z"
     },
@@ -1325,17 +1325,17 @@
       "category": "video-to-video",
       "display_name": "Topaz Upscale Video Generative",
       "file": "openapi/topaz__upscale__video__generative.json",
-      "sha256": "8aa88fe62b310fe12589dd414d5be4708a58b53795296f4fb464ed6eff85814f",
+      "sha256": "904b4b35ce18143dded6886ecc19a0a71a972c49976aba13f67dd8ae1862f7b6",
       "status": "active",
-      "updated_at": "2026-09-01T22:05:37.279Z"
+      "updated_at": "2026-09-05T01:07:15.958Z"
     },
     "topaz/upscale/video/precision": {
       "category": "video-to-video",
       "display_name": "Topaz Upscale Video Precision",
       "file": "openapi/topaz__upscale__video__precision.json",
-      "sha256": "71c6f43b452576835989d2d143fc77a57a9c88c653bd3a2bfaf4012df518c607",
+      "sha256": "b7ba26e257712214027a11e5d2635387e2d279f42992f2035ec8c07d8e779880",
       "status": "active",
-      "updated_at": "2026-09-01T22:05:37.279Z"
+      "updated_at": "2026-09-05T01:07:15.958Z"
     },
     "tripo3d/h3.1/image-to-3d": {
       "category": "image-to-3d",

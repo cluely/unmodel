@@ -91,6 +91,39 @@ const ROW_00b04c = {
 } as const;
 
 /**
+ * meshy/v7/image-to-3d.
+ *
+ * The extras are typed from `MeshyV7ImageTo3dInput`, so the value an editor offers here
+ * and the value `fal.threeD` validates are one declaration.
+ */
+const ROW_32969c = {
+  classes: ["fixedGeometry"],
+  keys: ["image_url", "model_type", "topology", "target_polycount", "symmetry_mode", "should_remesh", "should_texture", "enable_pbr", "is_a_t_pose", "pose_mode", "texture_prompt", "texture_image_url", "enable_rigging", "rigging_height_meters", "enable_animation", "animation_action_id", "enable_safety_checker", "geometry_resolution", "ultra_mode"],
+  inputs: ["image"],
+  imageWire: "image_url",
+  extras: {
+    model_type: EXTRA as MeshyV7ImageTo3dInput["model_type"],
+    topology: EXTRA as MeshyV7ImageTo3dInput["topology"],
+    target_polycount: EXTRA as MeshyV7ImageTo3dInput["target_polycount"],
+    symmetry_mode: EXTRA as MeshyV7ImageTo3dInput["symmetry_mode"],
+    should_remesh: EXTRA as MeshyV7ImageTo3dInput["should_remesh"],
+    should_texture: EXTRA as MeshyV7ImageTo3dInput["should_texture"],
+    enable_pbr: EXTRA as MeshyV7ImageTo3dInput["enable_pbr"],
+    is_a_t_pose: EXTRA as MeshyV7ImageTo3dInput["is_a_t_pose"],
+    pose_mode: EXTRA as MeshyV7ImageTo3dInput["pose_mode"],
+    texture_prompt: EXTRA as MeshyV7ImageTo3dInput["texture_prompt"],
+    texture_image_url: EXTRA as MeshyV7ImageTo3dInput["texture_image_url"],
+    enable_rigging: EXTRA as MeshyV7ImageTo3dInput["enable_rigging"],
+    rigging_height_meters: EXTRA as MeshyV7ImageTo3dInput["rigging_height_meters"],
+    enable_animation: EXTRA as MeshyV7ImageTo3dInput["enable_animation"],
+    animation_action_id: EXTRA as MeshyV7ImageTo3dInput["animation_action_id"],
+    enable_safety_checker: EXTRA as MeshyV7ImageTo3dInput["enable_safety_checker"],
+    geometry_resolution: EXTRA as MeshyV7ImageTo3dInput["geometry_resolution"],
+    ultra_mode: EXTRA as MeshyV7ImageTo3dInput["ultra_mode"],
+  },
+} as const;
+
+/**
  * fal-ai/hunyuan-3d/v3.1/pro/text-to-3d.
  *
  * The extras are typed from `FalAiHunyuan3dV31ProTextTo3dInput`, so the value an editor
@@ -166,38 +199,6 @@ const ROW_451592 = {
     guidance_scale: EXTRA as FalAiHunyuan3dV2Input["guidance_scale"],
     octree_resolution: EXTRA as FalAiHunyuan3dV2Input["octree_resolution"],
     textured_mesh: EXTRA as FalAiHunyuan3dV2Input["textured_mesh"],
-  },
-} as const;
-
-/**
- * meshy/v7/image-to-3d.
- *
- * The extras are typed from `MeshyV7ImageTo3dInput`, so the value an editor offers here
- * and the value `fal.threeD` validates are one declaration.
- */
-const ROW_7e658e = {
-  classes: ["fixedGeometry"],
-  keys: ["image_url", "model_type", "topology", "target_polycount", "symmetry_mode", "should_remesh", "should_texture", "enable_pbr", "is_a_t_pose", "pose_mode", "texture_prompt", "texture_image_url", "enable_rigging", "rigging_height_meters", "enable_animation", "animation_action_id", "enable_safety_checker", "ultra_mode"],
-  inputs: ["image"],
-  imageWire: "image_url",
-  extras: {
-    model_type: EXTRA as MeshyV7ImageTo3dInput["model_type"],
-    topology: EXTRA as MeshyV7ImageTo3dInput["topology"],
-    target_polycount: EXTRA as MeshyV7ImageTo3dInput["target_polycount"],
-    symmetry_mode: EXTRA as MeshyV7ImageTo3dInput["symmetry_mode"],
-    should_remesh: EXTRA as MeshyV7ImageTo3dInput["should_remesh"],
-    should_texture: EXTRA as MeshyV7ImageTo3dInput["should_texture"],
-    enable_pbr: EXTRA as MeshyV7ImageTo3dInput["enable_pbr"],
-    is_a_t_pose: EXTRA as MeshyV7ImageTo3dInput["is_a_t_pose"],
-    pose_mode: EXTRA as MeshyV7ImageTo3dInput["pose_mode"],
-    texture_prompt: EXTRA as MeshyV7ImageTo3dInput["texture_prompt"],
-    texture_image_url: EXTRA as MeshyV7ImageTo3dInput["texture_image_url"],
-    enable_rigging: EXTRA as MeshyV7ImageTo3dInput["enable_rigging"],
-    rigging_height_meters: EXTRA as MeshyV7ImageTo3dInput["rigging_height_meters"],
-    enable_animation: EXTRA as MeshyV7ImageTo3dInput["enable_animation"],
-    animation_action_id: EXTRA as MeshyV7ImageTo3dInput["animation_action_id"],
-    enable_safety_checker: EXTRA as MeshyV7ImageTo3dInput["enable_safety_checker"],
-    ultra_mode: EXTRA as MeshyV7ImageTo3dInput["ultra_mode"],
   },
 } as const;
 
@@ -418,31 +419,14 @@ const ROW_d30124 = {
 } as const;
 
 /**
- * fal-ai/hunyuan-3d/v3.1/rapid/image-to-3d.
- *
- * The extras are typed from `FalAiHunyuan3dV31RapidImageTo3dInput`, so the value an editor
- * offers here and the value `fal.threeD` validates are one declaration.
- */
-const ROW_e73704 = {
-  classes: ["fixedGeometry"],
-  keys: ["input_image_url", "enable_pbr", "enable_geometry"],
-  inputs: ["image"],
-  imageWire: "input_image_url",
-  extras: {
-    enable_pbr: EXTRA as FalAiHunyuan3dV31RapidImageTo3dInput["enable_pbr"],
-    enable_geometry: EXTRA as FalAiHunyuan3dV31RapidImageTo3dInput["enable_geometry"],
-  },
-} as const;
-
-/**
  * meshy/v7/text-to-3d.
  *
  * The extras are typed from `MeshyV7TextTo3dInput`, so the value an editor offers here and
  * the value `fal.threeD` validates are one declaration.
  */
-const ROW_ef0112 = {
+const ROW_e13d32 = {
   classes: ["fixedGeometry"],
-  keys: ["prompt", "mode", "seed", "model_type", "topology", "target_polycount", "should_remesh", "symmetry_mode", "enable_pbr", "is_a_t_pose", "pose_mode", "enable_prompt_expansion", "texture_prompt", "texture_image_url", "enable_rigging", "rigging_height_meters", "enable_animation", "animation_action_id", "enable_safety_checker", "ultra_mode"],
+  keys: ["prompt", "mode", "seed", "model_type", "topology", "target_polycount", "should_remesh", "symmetry_mode", "enable_pbr", "is_a_t_pose", "pose_mode", "enable_prompt_expansion", "texture_prompt", "texture_image_url", "enable_rigging", "rigging_height_meters", "enable_animation", "animation_action_id", "enable_safety_checker", "geometry_resolution", "ultra_mode"],
   inputs: ["text"],
   seedWire: "seed",
   extras: {
@@ -463,7 +447,25 @@ const ROW_ef0112 = {
     enable_animation: EXTRA as MeshyV7TextTo3dInput["enable_animation"],
     animation_action_id: EXTRA as MeshyV7TextTo3dInput["animation_action_id"],
     enable_safety_checker: EXTRA as MeshyV7TextTo3dInput["enable_safety_checker"],
+    geometry_resolution: EXTRA as MeshyV7TextTo3dInput["geometry_resolution"],
     ultra_mode: EXTRA as MeshyV7TextTo3dInput["ultra_mode"],
+  },
+} as const;
+
+/**
+ * fal-ai/hunyuan-3d/v3.1/rapid/image-to-3d.
+ *
+ * The extras are typed from `FalAiHunyuan3dV31RapidImageTo3dInput`, so the value an editor
+ * offers here and the value `fal.threeD` validates are one declaration.
+ */
+const ROW_e73704 = {
+  classes: ["fixedGeometry"],
+  keys: ["input_image_url", "enable_pbr", "enable_geometry"],
+  inputs: ["image"],
+  imageWire: "input_image_url",
+  extras: {
+    enable_pbr: EXTRA as FalAiHunyuan3dV31RapidImageTo3dInput["enable_pbr"],
+    enable_geometry: EXTRA as FalAiHunyuan3dV31RapidImageTo3dInput["enable_geometry"],
   },
 } as const;
 
@@ -536,8 +538,8 @@ export const FAL_THREE_D_PARAM_SHAPES = {
   "fal-ai/trellis-2": ROW_81b3e0,
   "fal-ai/triposr": ROW_44f57e,
   "hitem3d/hi3d/v3.0/image-to-3d": ROW_7ed3a9,
-  "meshy/v7/image-to-3d": ROW_7e658e,
-  "meshy/v7/text-to-3d": ROW_ef0112,
+  "meshy/v7/image-to-3d": ROW_32969c,
+  "meshy/v7/text-to-3d": ROW_e13d32,
   "tripo3d/h3.1/image-to-3d": ROW_a41072,
   "tripo3d/h3.1/text-to-3d": ROW_d30124,
   "tripo3d/p1/image-to-3d": ROW_c32e56,

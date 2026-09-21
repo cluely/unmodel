@@ -330,7 +330,7 @@ export interface FalControlLoraWeight {
    * per-layer lora scale settings. Layers with no scale provided will have scale 1.0.
    * Default: `1`.
    */
-  scale?: Record<string, unknown> | number;
+  scale?: Record<string, number> | number;
   /**
    * URL of the image to be used as the control image. Carries a image reference — an https
    * URL or a `data:` URI.
@@ -669,7 +669,7 @@ export interface FalKlingV3MultiPromptElement {
  * under this title; the hash keeps each variant addressable without the names depending on
  * discovery order.
  */
-export interface FalLoraWeight_7426f5 {
+export interface FalLoraWeight_6fc7f4 {
   /** URL or the path to the LoRA weights. */
   path: string;
   /**
@@ -678,7 +678,7 @@ export interface FalLoraWeight_7426f5 {
    * per-layer lora scale settings. Layers with no scale provided will have scale 1.0.
    * Default: `1`.
    */
-  scale?: Record<string, unknown> | number;
+  scale?: Record<string, number> | number;
 }
 
 /**

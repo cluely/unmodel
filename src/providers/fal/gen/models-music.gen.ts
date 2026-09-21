@@ -86,7 +86,7 @@ export const musicModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    lastUpdated: "2026-08-18",
+    lastUpdated: "2026-09-15",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
   },

@@ -476,10 +476,10 @@ export interface TopazUpscaleImagePrecisionInput {
   /**
    * Precision upscaling model. Standard V2 fits most photos; High Fidelity V3/V2 preserve
    * detail in professional shots; Low Resolution V2 recovers compressed sources; CGI targets
-   * art and rendered graphics; Text Refine keeps text and shapes crisp. Default: `"Standard
-   * V2"`.
+   * art and rendered graphics; Text Refine keeps text and shapes crisp; Faces restores
+   * facial detail with Face Recovery 3. Default: `"Standard V2"`.
    */
-  model?: "Standard V2" | "High Fidelity V3" | "High Fidelity V2" | "Low Resolution V2" | "CGI" | "Text Refine";
+  model?: "Standard V2" | "High Fidelity V3" | "High Fidelity V2" | "Low Resolution V2" | "CGI" | "Text Refine" | "Faces";
   /** Factor to upscale the image by (e.g. 2.0 doubles width and height) Default: `2`. */
   upscale_factor?: number;
   /** Default: `false`. */

@@ -142,7 +142,7 @@ export const videoModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    lastUpdated: "2026-08-28",
+    lastUpdated: "2026-09-09",
     modalities: { input: ["audio", "image", "text", "video"], output: ["video"] },
     limit: { context: 0 },
   },
@@ -803,7 +803,7 @@ export const videoModels = {
     toolCall: false,
     openWeights: false,
     lastUpdated: "2026-08-25",
-    modalities: { input: ["image", "text"], output: ["video"] },
+    modalities: { input: ["audio", "image", "text"], output: ["video"] },
     limit: { context: 0 },
   },
   /**
@@ -827,7 +827,7 @@ export const videoModels = {
     toolCall: false,
     openWeights: false,
     lastUpdated: "2026-08-26",
-    modalities: { input: ["text"], output: ["video"] },
+    modalities: { input: ["audio", "text"], output: ["video"] },
     limit: { context: 0 },
   },
   /**

@@ -91,6 +91,7 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.BytedanceSeedance25ImageToVideoInput["end_user_id"], Gate["end_user_id"]>,
   // bytedance/seedance-2.5/reference-to-video
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["task"], Gate["task"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["image_urls"], Gate["image_urls"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["video_urls"], Gate["video_urls"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["audio_urls"], Gate["audio_urls"]>,
@@ -99,6 +100,7 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["aspect_ratio"], Gate["aspect_ratio"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["generate_audio"], Gate["generate_audio"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["bitrate_mode"], Gate["bitrate_mode"]>,
+  AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["seed"], Gate["seed"]>,
   AssertExtends<wire.BytedanceSeedance25ReferenceToVideoInput["end_user_id"], Gate["end_user_id"]>,
   // bytedance/seedance-2.5/text-to-video
   AssertExtends<wire.BytedanceSeedance25TextToVideoInput["prompt"], Gate["prompt"]>,
@@ -362,6 +364,7 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.MinimaxH3ImageToVideoInput["enable_safety_checker"], Gate["enable_safety_checker"]>,
   AssertExtends<wire.MinimaxH3ImageToVideoInput["sync_mode"], Gate["sync_mode"]>,
   AssertExtends<wire.MinimaxH3ImageToVideoInput["prompt_expansion_mode"], Gate["prompt_expansion_mode"]>,
+  AssertExtends<wire.MinimaxH3ImageToVideoInput["target_audio_url"], Gate["target_audio_url"]>,
   AssertExtends<wire.MinimaxH3ImageToVideoInput["image_url"], Gate["image_url"]>,
   AssertExtends<wire.MinimaxH3ImageToVideoInput["end_image_url"], Gate["end_image_url"]>,
   // minimax/h3/text-to-video
@@ -372,6 +375,7 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.MinimaxH3TextToVideoInput["enable_safety_checker"], Gate["enable_safety_checker"]>,
   AssertExtends<wire.MinimaxH3TextToVideoInput["sync_mode"], Gate["sync_mode"]>,
   AssertExtends<wire.MinimaxH3TextToVideoInput["prompt_expansion_mode"], Gate["prompt_expansion_mode"]>,
+  AssertExtends<wire.MinimaxH3TextToVideoInput["target_audio_url"], Gate["target_audio_url"]>,
   AssertExtends<wire.MinimaxH3TextToVideoInput["aspect_ratio"], Gate["aspect_ratio"]>,
   // xai/grok-imagine-video/text-to-video
   AssertExtends<wire.XaiGrokImagineVideoTextToVideoInput["prompt"], Gate["prompt"]>,

@@ -17,10 +17,13 @@
     "status": "active",
     "tags": [
       "utility",
-      "editing"
+      "editing",
+      "upscale",
+      "video-upscaling",
+      ""
     ],
     "thumbnail_url": "https://v3b.fal.media/files/b/0aa7182f/Frq0vrwqyitVDqknXCE-t.jpg",
-    "updated_at": "2026-08-31T17:57:42.705Z"
+    "updated_at": "2026-09-08T06:53:57.669Z"
   },
   "openapi": {
     "components": {

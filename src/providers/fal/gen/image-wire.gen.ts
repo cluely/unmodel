@@ -59,7 +59,7 @@ import type {
   FalImageStyleReference,
   FalImage_28cfa5,
   FalImage_d44dd8,
-  FalLoraWeight_7426f5,
+  FalLoraWeight_6fc7f4,
   FalLoraWeight_cc944c,
   FalMoodboard,
   FalRGBColor,
@@ -422,7 +422,7 @@ export interface FalAiFluxGeneralInput {
    * The LoRAs to use for the image generation. You can use any number of LoRAs and they will
    * be merged together to generate the final image. Default: `[]`.
    */
-  loras?: FalLoraWeight_7426f5[];
+  loras?: FalLoraWeight_6fc7f4[];
   /**
    * The LoRAs to use for the image generation which use a control image. You can use any
    * number of LoRAs and they will be merged together to generate the final image. Default:

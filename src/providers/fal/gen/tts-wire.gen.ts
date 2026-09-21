@@ -190,7 +190,7 @@ export interface FalAiChatterboxTextToSpeechMultilingualInput {
    */
   exaggeration?: number;
   /**
-   * Controls randomness and variation in generation (0.05-5.0). Higher values create more
+   * Controls randomness and variation in generation (0.05-2.0). Higher values create more
    * varied speech patterns. Default: `0.8`.
    */
   temperature?: number;

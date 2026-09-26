@@ -26,11 +26,37 @@ export const availability = {
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-0731",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "nebius": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "nvidia": "deepseek-ai/deepseek-v4-flash-0731",
     "openrouter": "deepseek/deepseek-v4-flash-0731",
     "scaleway": { id: "deepseek-v4-flash-0731", narrows: { context: 256000 } },
+    "siliconflow": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "togetherai": "deepseek-ai/DeepSeek-V4-Flash-0731",
     "vercel": "deepseek/deepseek-v4-flash-0731",
+  },
+  "accounts/fireworks/models/deepseek-v4-flash-vision-exp": {
+    "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+    "deepseek": "deepseek-v4-flash-vision-exp",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
+    "huggingface": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+    "openrouter": "deepseek/deepseek-v4-flash-vision-exp",
+    "siliconflow": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+    "vercel": "deepseek/deepseek-v4-flash-vision-exp",
+  },
+  "accounts/fireworks/models/deepseek-v4-pro": {
+    "azure": "deepseek-v4-pro",
+    "baseten": "deepseek-ai/DeepSeek-V4-Pro",
+    "deepinfra": "deepseek-ai/DeepSeek-V4-Pro",
+    "deepseek": "deepseek-v4-pro",
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4-pro",
+    "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
+    "nebius": "deepseek-ai/DeepSeek-V4-Pro",
+    "novita-ai": "deepseek/deepseek-v4-pro",
+    "nvidia": "deepseek-ai/deepseek-v4-pro",
+    "openrouter": "deepseek/deepseek-v4-pro",
+    "siliconflow": "deepseek-ai/DeepSeek-V4-Pro",
+    "togetherai": { id: "deepseek-ai/DeepSeek-V4-Pro", narrows: { context: 512000 } },
+    "vercel": "deepseek/deepseek-v4-pro",
   },
   "accounts/fireworks/models/deepseek-v4-pro-0813": {
     "baseten": "deepseek-ai/DeepSeek-V4-Pro-0813",
@@ -38,10 +64,19 @@ export const availability = {
     "deepinfra": "deepseek-ai/DeepSeek-V4-Pro-0813",
     "fireworks-ai": "accounts/fireworks/models/deepseek-v4-pro-0813",
     "huggingface": "deepseek-ai/DeepSeek-V4-Pro-0813",
+    "nebius": { id: "deepseek-ai/DeepSeek-V4-Pro-0813", narrows: { context: 979000 } },
     "nvidia": "deepseek-ai/deepseek-v4-pro-0813",
     "openrouter": "deepseek/deepseek-v4-pro-0813",
+    "siliconflow": "deepseek-ai/DeepSeek-V4-Pro-0813",
     "togetherai": "deepseek-ai/DeepSeek-V4-Pro-0813",
     "vercel": "deepseek/deepseek-v4-pro-0813",
+  },
+  "accounts/fireworks/models/deepseek-v4p1-flash": {
+    "fireworks-ai": "accounts/fireworks/models/deepseek-v4p1-flash",
+  },
+  "accounts/fireworks/models/ember-1": {
+    "fireworks-ai": "accounts/fireworks/models/ember-1",
+    "openrouter": "fireworks/ember-1",
   },
   "accounts/fireworks/models/glm-5p2": {
     "fireworks-ai": "accounts/fireworks/models/glm-5p2",
@@ -53,7 +88,7 @@ export const availability = {
     "fireworks-ai": "accounts/fireworks/models/glm-5p3-flash",
   },
   "accounts/fireworks/models/gpt-oss-120b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
@@ -61,7 +96,7 @@ export const availability = {
     "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chatMaas" },
     "groq": "openai/gpt-oss-120b",
     "huggingface": "openai/gpt-oss-120b",
-    "nebius": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
+    "nebius": "openai/gpt-oss-120b",
     "nvidia": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
     "openrouter": "openai/gpt-oss-120b",
     "scaleway": { id: "gpt-oss-120b", narrows: { context: 128000 } },
@@ -74,7 +109,7 @@ export const availability = {
     "fireworks-ai": "accounts/fireworks/models/inkling",
     "huggingface": { id: "thinkingmachines/Inkling", narrows: { drops: ["audio"] } },
     "nvidia": "thinkingmachines/inkling",
-    "openrouter": "thinkingmachines/inkling",
+    "openrouter": { id: "thinkingmachines/inkling", narrows: { context: 524288 } },
     "togetherai": { id: "thinkingmachines/Inkling", narrows: { context: 524288 } },
     "vercel": { id: "thinkingmachines/inkling", narrows: { context: 256000, drops: ["audio"] } },
   },
@@ -85,6 +120,7 @@ export const availability = {
     "fireworks-ai": "accounts/fireworks/models/kimi-k2p7-code",
   },
   "accounts/fireworks/models/kimi-k3": {
+    "alibaba": "kimi-k3",
     "baseten": "moonshotai/Kimi-K3",
     "deepinfra": "moonshotai/Kimi-K3",
     "fireworks-ai": "accounts/fireworks/models/kimi-k3",
@@ -94,19 +130,24 @@ export const availability = {
     "novita-ai": "moonshotai/kimi-k3",
     "nvidia": "moonshotai/kimi-k3",
     "openrouter": "moonshotai/kimi-k3",
+    "siliconflow": "moonshotai/Kimi-K3",
     "togetherai": "moonshotai/Kimi-K3",
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000 } },
+  },
+  "accounts/fireworks/models/minimax-m2p7": {
+    "fireworks-ai": "accounts/fireworks/models/minimax-m2p7",
   },
   "accounts/fireworks/models/minimax-m3": {
     "deepinfra": "MiniMaxAI/MiniMax-M3",
     "fireworks-ai": "accounts/fireworks/models/minimax-m3",
-    "huggingface": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["video"] } },
+    "huggingface": "MiniMaxAI/MiniMax-M3",
     "minimax": "MiniMax-M3",
-    "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image", "video"] } },
+    "nebius": "MiniMaxAI/MiniMax-M3",
     "nvidia": "minimaxai/minimax-m3",
     "openrouter": "minimax/minimax-m3",
-    "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["video"] } },
-    "vercel": { id: "minimax/minimax-m3", narrows: { drops: ["video"] } },
+    "siliconflow": "MiniMaxAI/MiniMax-M3",
+    "togetherai": "MiniMaxAI/MiniMax-M3",
+    "vercel": "minimax/minimax-m3",
   },
   "accounts/fireworks/models/muse-glimmer-30b": {
     "fireworks-ai": "accounts/fireworks/models/muse-glimmer-30b",
@@ -123,15 +164,49 @@ export const availability = {
   "accounts/fireworks/models/qwen3p7-plus": {
     "fireworks-ai": "accounts/fireworks/models/qwen3p7-plus",
   },
+  "accounts/fireworks/models/qwen3p8-2p4t-a95b": {
+    "fireworks-ai": "accounts/fireworks/models/qwen3p8-2p4t-a95b",
+  },
   "accounts/fireworks/models/qwen3p8-max": {
     "fireworks-ai": "accounts/fireworks/models/qwen3p8-max",
+  },
+  "accounts/fireworks/routers/deepseek-flash-latest": {
+    "fireworks-ai": "accounts/fireworks/routers/deepseek-flash-latest",
+    "openrouter": "~deepseek/deepseek-flash-latest",
   },
   "accounts/fireworks/routers/glm-5p2-fast": {
     "fireworks-ai": "accounts/fireworks/routers/glm-5p2-fast",
   },
+  "accounts/fireworks/routers/glm-5p3-fast": {
+    "fireworks-ai": "accounts/fireworks/routers/glm-5p3-fast",
+  },
+  "accounts/fireworks/routers/glm-fast-latest": {
+    "fireworks-ai": "accounts/fireworks/routers/glm-fast-latest",
+  },
+  "accounts/fireworks/routers/glm-flash-latest": {
+    "fireworks-ai": "accounts/fireworks/routers/glm-flash-latest",
+    "openrouter": "~z-ai/glm-flash-latest",
+  },
+  "accounts/fireworks/routers/glm-latest": {
+    "fireworks-ai": "accounts/fireworks/routers/glm-latest",
+    "openrouter": "~z-ai/glm-latest",
+  },
+  "accounts/fireworks/routers/kimi-fast-latest": {
+    "fireworks-ai": "accounts/fireworks/routers/kimi-fast-latest",
+  },
   "accounts/fireworks/routers/kimi-k3-fast": {
     "fireworks-ai": "accounts/fireworks/routers/kimi-k3-fast",
     "vercel": { id: "moonshotai/kimi-k3-fast", narrows: { context: 1000000 } },
+  },
+  "accounts/fireworks/routers/kimi-latest": {
+    "fireworks-ai": "accounts/fireworks/routers/kimi-latest",
+    "openrouter": "~moonshotai/kimi-latest",
+  },
+  "accounts/fireworks/routers/minimax-latest": {
+    "fireworks-ai": "accounts/fireworks/routers/minimax-latest",
+  },
+  "accounts/fireworks/routers/qwen-max-latest": {
+    "fireworks-ai": "accounts/fireworks/routers/qwen-max-latest",
   },
 } as const satisfies AvailabilityMap;
 

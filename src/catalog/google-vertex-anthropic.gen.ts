@@ -159,6 +159,23 @@ export const models = {
     limit: { context: 200000, output: 32000 },
     cost: { input: 15, output: 75, cacheRead: 1.5, cacheWrite: 18.75 },
   },
+  "claude-opus-5-5@default": {
+    id: "claude-opus-5-5@default",
+    name: "Claude Opus 5.5",
+    family: "claude-opus",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06",
+    releaseDate: "2026-09-22",
+    lastUpdated: "2026-09-22",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 },
+  },
   "claude-opus-5@default": {
     id: "claude-opus-5@default",
     name: "Claude Opus 5",
@@ -243,7 +260,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GoogleVertexAnthropicModelId = keyof typeof models;
-export type GoogleVertexAnthropicTextModelId = "claude-fable-5-1@default" | "claude-fable-5@default" | "claude-haiku-4-5@20251001" | "claude-opus-4-1@20250805" | "claude-opus-4-5@20251101" | "claude-opus-4-6@default" | "claude-opus-4-7@default" | "claude-opus-4-8@default" | "claude-opus-4@20250514" | "claude-opus-5@default" | "claude-sonnet-4-5@20250929" | "claude-sonnet-4-6@default" | "claude-sonnet-4@20250514" | "claude-sonnet-5@default";
+export type GoogleVertexAnthropicTextModelId = "claude-fable-5-1@default" | "claude-fable-5@default" | "claude-haiku-4-5@20251001" | "claude-opus-4-1@20250805" | "claude-opus-4-5@20251101" | "claude-opus-4-6@default" | "claude-opus-4-7@default" | "claude-opus-4-8@default" | "claude-opus-4@20250514" | "claude-opus-5-5@default" | "claude-opus-5@default" | "claude-sonnet-4-5@20250929" | "claude-sonnet-4-6@default" | "claude-sonnet-4@20250514" | "claude-sonnet-5@default";
 export type GoogleVertexAnthropicImageModelId = never;
 export type GoogleVertexAnthropicAudioModelId = never;
 export type GoogleVertexAnthropicVideoModelId = never;

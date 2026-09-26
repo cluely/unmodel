@@ -178,6 +178,23 @@ export const models = {
     limit: { context: 1000000, output: 128000 },
     cost: { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
   },
+  "claude-opus-5-5": {
+    id: "claude-opus-5-5",
+    name: "Claude Opus 5.5",
+    family: "claude-opus",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06",
+    releaseDate: "2026-09-22",
+    lastUpdated: "2026-09-22",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 },
+  },
   "claude-sonnet-4-5": {
     id: "claude-sonnet-4-5",
     name: "Claude Sonnet 4.5",
@@ -225,7 +242,6 @@ export const models = {
     knowledge: "2026-01-31",
     releaseDate: "2026-06-30",
     lastUpdated: "2026-06-30",
-    status: "beta",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 128000 },
     cost: { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
@@ -387,7 +403,7 @@ export const models = {
     lastUpdated: "2024-01-25",
     status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 16384, output: 16384 },
+    limit: { context: 16384, output: 4096 },
     cost: { input: 0.5, output: 1.5 },
   },
   "gpt-3.5-turbo-1106": {
@@ -404,7 +420,7 @@ export const models = {
     lastUpdated: "2023-11-06",
     status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 16384, output: 16384 },
+    limit: { context: 16384, output: 4096 },
     cost: { input: 1, output: 2 },
   },
   "gpt-3.5-turbo-instruct": {
@@ -621,7 +637,7 @@ export const models = {
     releaseDate: "2025-10-06",
     lastUpdated: "2025-10-06",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 400000, output: 272000 },
+    limit: { context: 400000, output: 128000, input: 272000 },
     cost: { input: 15, output: 120 },
   },
   "gpt-5.1": {
@@ -824,7 +840,6 @@ export const models = {
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
     lastUpdated: "2026-07-09",
-    status: "beta",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 1, output: 6, cacheRead: 0.1, cacheWrite: 1.25 },
@@ -842,7 +857,6 @@ export const models = {
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
     lastUpdated: "2026-07-09",
-    status: "beta",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 5, output: 30, cacheRead: 0.5 },
@@ -860,7 +874,6 @@ export const models = {
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
     lastUpdated: "2026-07-09",
-    status: "beta",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 2.5, output: 15, cacheRead: 0.25, cacheWrite: 3.125 },
@@ -879,7 +892,7 @@ export const models = {
     lastUpdated: "2026-05-28",
     status: "beta",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
-    limit: { context: 128000, output: 16384, input: 111616 },
+    limit: { context: 400000, output: 128000, input: 272000 },
     cost: { input: 5, output: 30, cacheRead: 0.5 },
   },
   "kimi-k2.5": {
@@ -1200,7 +1213,7 @@ export const models = {
     releaseDate: "2024-01-25",
     lastUpdated: "2024-01-25",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 8191, output: 3072 },
+    limit: { context: 8192, output: 3072 },
     cost: { input: 0.13, output: 0 },
   },
   "text-embedding-3-small": {
@@ -1214,7 +1227,7 @@ export const models = {
     releaseDate: "2024-01-25",
     lastUpdated: "2024-01-25",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 8191, output: 1536 },
+    limit: { context: 8192, output: 1536 },
     cost: { input: 0.02, output: 0 },
   },
   "text-embedding-ada-002": {
@@ -1234,7 +1247,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AzureCognitiveServicesModelId = keyof typeof models;
-export type AzureCognitiveServicesTextModelId = "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-mythos-5" | "claude-opus-4-1" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "codestral-2501" | "codex-mini" | "cohere-command-a" | "cohere-embed-v-4-0" | "cohere-embed-v3-english" | "cohere-embed-v3-multilingual" | "deepseek-r1" | "deepseek-v3.2" | "deepseek-v3.2-speciale" | "gpt-3.5-turbo-0125" | "gpt-3.5-turbo-1106" | "gpt-3.5-turbo-instruct" | "gpt-4-turbo" | "gpt-4-turbo-vision" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-mini" | "gpt-5" | "gpt-5-codex" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-chat-latest" | "kimi-k2.5" | "kimi-k2.6" | "llama-3.3-70b-instruct" | "llama-4-maverick-17b-128e-instruct-fp8" | "llama-4-scout-17b-16e-instruct" | "ministral-3b" | "mistral-medium-2505" | "mistral-small-2503" | "model-router" | "o1" | "o3" | "o3-mini" | "o4-mini" | "phi-4" | "phi-4-mini" | "phi-4-mini-reasoning" | "phi-4-multimodal" | "phi-4-reasoning" | "phi-4-reasoning-plus" | "text-embedding-3-large" | "text-embedding-3-small" | "text-embedding-ada-002";
+export type AzureCognitiveServicesTextModelId = "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-mythos-5" | "claude-opus-4-1" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-opus-5-5" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "codestral-2501" | "codex-mini" | "cohere-command-a" | "cohere-embed-v-4-0" | "cohere-embed-v3-english" | "cohere-embed-v3-multilingual" | "deepseek-r1" | "deepseek-v3.2" | "deepseek-v3.2-speciale" | "gpt-3.5-turbo-0125" | "gpt-3.5-turbo-1106" | "gpt-3.5-turbo-instruct" | "gpt-4-turbo" | "gpt-4-turbo-vision" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-mini" | "gpt-5" | "gpt-5-codex" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-chat-latest" | "kimi-k2.5" | "kimi-k2.6" | "llama-3.3-70b-instruct" | "llama-4-maverick-17b-128e-instruct-fp8" | "llama-4-scout-17b-16e-instruct" | "ministral-3b" | "mistral-medium-2505" | "mistral-small-2503" | "model-router" | "o1" | "o3" | "o3-mini" | "o4-mini" | "phi-4" | "phi-4-mini" | "phi-4-mini-reasoning" | "phi-4-multimodal" | "phi-4-reasoning" | "phi-4-reasoning-plus" | "text-embedding-3-large" | "text-embedding-3-small" | "text-embedding-ada-002";
 export type AzureCognitiveServicesImageModelId = "gpt-5.1" | "gpt-5.1-codex";
 export type AzureCognitiveServicesAudioModelId = "gpt-5.1" | "gpt-5.1-codex";
 export type AzureCognitiveServicesVideoModelId = never;

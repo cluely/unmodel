@@ -683,7 +683,7 @@ export const models = {
     releaseDate: "2026-02-12",
     lastUpdated: "2026-02-12",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 204800, output: 131100 },
+    limit: { context: 204800, output: 131072 },
     cost: { input: 0.3, output: 1.2, cacheRead: 0.03 },
   },
   "minimax/minimax-m2.5-highspeed": {
@@ -699,7 +699,7 @@ export const models = {
     releaseDate: "2026-02-12",
     lastUpdated: "2026-02-12",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 204800, output: 131100 },
+    limit: { context: 204800, output: 131072 },
     cost: { input: 0.6, output: 2.4, cacheRead: 0.03 },
   },
   "minimax/minimax-m2.7": {
@@ -779,7 +779,7 @@ export const models = {
     releaseDate: "2025-09-05",
     lastUpdated: "2025-09-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 262144 },
+    limit: { context: 262144, output: 98304 },
     cost: { input: 0.6, output: 2.5 },
   },
   "moonshotai/kimi-k2-instruct": {
@@ -809,7 +809,7 @@ export const models = {
     releaseDate: "2025-11-07",
     lastUpdated: "2026-06-29",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 262144 },
+    limit: { context: 262144, output: 98304 },
     cost: { input: 0.6, output: 2.5, cacheRead: 0.15 },
   },
   "moonshotai/kimi-k2.5": {
@@ -1606,7 +1606,7 @@ export const models = {
   "zai-org/glm-4.7-flash": {
     id: "zai-org/glm-4.7-flash",
     name: "GLM-4.7-Flash",
-    family: "glm",
+    family: "glm-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,

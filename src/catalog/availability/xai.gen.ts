@@ -30,6 +30,7 @@ export const availability = {
   },
   "grok-4.3": {
     "amazon-bedrock": { id: "xai.grok-4.3", narrows: { drops: ["pdf"] } },
+    "google-vertex": { id: "xai/grok-4.3", narrows: { context: 200000, drops: ["pdf"] } },
     "openrouter": "x-ai/grok-4.3",
     "vercel": "spacexai/grok-4.3",
     "xai": "grok-4.3",
@@ -41,9 +42,16 @@ export const availability = {
   },
   "grok-4.6": {
     "amazon-bedrock": { id: "xai.grok-4.6", narrows: { drops: ["pdf"] } },
+    "azure": { id: "grok-4.6", narrows: { context: 200000, drops: ["pdf"] } },
+    "google-vertex": { id: "xai/grok-4.6", narrows: { drops: ["pdf"] } },
     "openrouter": "x-ai/grok-4.6",
     "vercel": { id: "spacexai/grok-4.6", narrows: { drops: ["pdf"] } },
     "xai": "grok-4.6",
+  },
+  "grok-4.7": {
+    "openrouter": "x-ai/grok-4.7",
+    "vercel": { id: "spacexai/grok-4.7", narrows: { drops: ["pdf"] } },
+    "xai": "grok-4.7",
   },
   "grok-build-0.1": {
     "openrouter": "x-ai/grok-build-0.1",

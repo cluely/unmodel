@@ -16,19 +16,18 @@ export const models = {
   "umans-coder": {
     id: "umans-coder",
     name: "Umans Coder",
-    family: "kimi-k2",
+    family: "glm-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: false,
     openWeights: true,
-    knowledge: "2025-01",
-    releaseDate: "2026-06-12",
-    lastUpdated: "2026-06-12",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262144, output: 32768 },
-    cost: { input: 0.95, output: 4, cacheRead: 0.19 },
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131071 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.03 },
   },
   "umans-deepseek-v4-flash-0731": {
     id: "umans-deepseek-v4-flash-0731",
@@ -79,38 +78,21 @@ export const models = {
     limit: { context: 262144, output: 32768 },
     cost: { input: 0.15, output: 1, cacheRead: 0.05 },
   },
-  "umans-glm-5.2": {
-    id: "umans-glm-5.2",
-    name: "GLM 5.2",
-    family: "glm",
-    attachment: false,
+  "umans-glm-5.3-flash": {
+    id: "umans-glm-5.3-flash",
+    name: "GLM 5.3 Flash",
+    family: "glm-flash",
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
     openWeights: true,
-    releaseDate: "2026-06-13",
-    lastUpdated: "2026-06-13",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 405504, output: 131072 },
-    cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
-  },
-  "umans-kimi-k2.7": {
-    id: "umans-kimi-k2.7",
-    name: "Kimi K2.7 Code",
-    family: "kimi-k2",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: false,
-    openWeights: true,
-    knowledge: "2025-01",
-    releaseDate: "2026-06-12",
-    lastUpdated: "2026-06-12",
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 262144, output: 32768 },
-    cost: { input: 0.95, output: 4, cacheRead: 0.19 },
+    limit: { context: 1048576, output: 131071 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.03 },
   },
   "umans-kimi-k3": {
     id: "umans-kimi-k3",
@@ -131,7 +113,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type UmansAiModelId = keyof typeof models;
-export type UmansAiTextModelId = "umans-coder" | "umans-deepseek-v4-flash-0731" | "umans-deepseek-v4-pro-0813" | "umans-flash" | "umans-glm-5.2" | "umans-kimi-k2.7" | "umans-kimi-k3";
+export type UmansAiTextModelId = "umans-coder" | "umans-deepseek-v4-flash-0731" | "umans-deepseek-v4-pro-0813" | "umans-flash" | "umans-glm-5.3-flash" | "umans-kimi-k3";
 export type UmansAiImageModelId = never;
 export type UmansAiAudioModelId = never;
 export type UmansAiVideoModelId = never;

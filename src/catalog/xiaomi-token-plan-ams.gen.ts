@@ -118,10 +118,40 @@ export const models = {
     limit: { context: 8192, output: 8192 },
     cost: { input: 0, output: 0 },
   },
+  "mimo-v2.6-flash": {
+    id: "mimo-v2.6-flash",
+    name: "MiMo-V2.6-Flash",
+    family: "mimo",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-22",
+    lastUpdated: "2026-09-22",
+    modalities: { input: ["text", "image", "audio", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
+  "mimo-v2.6-pro": {
+    id: "mimo-v2.6-pro",
+    name: "MiMo-V2.6-Pro",
+    family: "mimo",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-22",
+    lastUpdated: "2026-09-22",
+    modalities: { input: ["text", "image", "audio", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type XiaomiTokenPlanAmsModelId = keyof typeof models;
-export type XiaomiTokenPlanAmsTextModelId = "mimo-v2-pro" | "mimo-v2.5" | "mimo-v2.5-pro";
+export type XiaomiTokenPlanAmsTextModelId = "mimo-v2-pro" | "mimo-v2.5" | "mimo-v2.5-pro" | "mimo-v2.6-flash" | "mimo-v2.6-pro";
 export type XiaomiTokenPlanAmsImageModelId = never;
 export type XiaomiTokenPlanAmsAudioModelId = "mimo-v2-tts" | "mimo-v2.5-tts" | "mimo-v2.5-tts-voiceclone" | "mimo-v2.5-tts-voicedesign";
 export type XiaomiTokenPlanAmsVideoModelId = never;

@@ -22,6 +22,7 @@ export const availability = {
   "LongCat-2.0": {
     "longcat": "LongCat-2.0",
     "openrouter": "meituan/longcat-2.0",
+    "siliconflow": "meituan-longcat/LongCat-2.0",
   },
 } as const satisfies AvailabilityMap;
 

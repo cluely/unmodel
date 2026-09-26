@@ -6,10 +6,10 @@ import type { ModelInfo, ProviderInfo } from "../core/catalog-types";
 
 export const provider = {
   id: "minimax-cn",
-  name: "MiniMax (minimaxi.com)",
+  name: "MiniMax (minimax.cn)",
   env: ["MINIMAX_API_KEY"],
   doc: "https://platform.minimaxi.com/docs/guides/quickstart",
-  api: "https://api.minimaxi.com/anthropic/v1",
+  api: "https://api.minimax.cn/anthropic/v1",
 } as const satisfies ProviderInfo;
 
 export const models = {
@@ -115,7 +115,7 @@ export const models = {
     releaseDate: "2026-06-01",
     lastUpdated: "2026-06-25",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 512000 },
+    limit: { context: 1000000, output: 512000 },
     cost: { input: 0.3, output: 1.2, cacheRead: 0.06 },
   },
 } as const satisfies Record<string, ModelInfo>;

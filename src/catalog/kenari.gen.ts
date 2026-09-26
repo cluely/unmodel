@@ -109,6 +109,23 @@ export const models = {
     limit: { context: 1000000, output: 128000 },
     cost: { input: 0, output: 0 },
   },
+  "deepseek-v4-1-flash": {
+    id: "deepseek-v4-1-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0, output: 0 },
+  },
   "deepseek-v4-flash": {
     id: "deepseek-v4-flash",
     name: "DeepSeek V4 Flash",
@@ -378,13 +395,13 @@ export const models = {
   "glm-5-3-flash": {
     id: "glm-5-3-flash",
     name: "GLM-5.3-Flash",
-    family: "glm",
+    family: "glm-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
@@ -597,7 +614,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 64000 },
+    limit: { context: 256000, output: 128000, input: 192000 },
     cost: { input: 0, output: 0 },
   },
   "hy3:free": {
@@ -612,7 +629,7 @@ export const models = {
     releaseDate: "2026-07-06",
     lastUpdated: "2026-07-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 64000 },
+    limit: { context: 256000, output: 128000, input: 192000 },
     cost: { input: 0, output: 0 },
   },
   "kimi-k2-6": {
@@ -962,7 +979,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type KenariModelId = keyof typeof models;
-export type KenariTextModelId = "claude-fable-5" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "deepseek-v4-flash" | "deepseek-v4-flash:free" | "deepseek-v4-pro" | "gemini-2-5-flash" | "gemini-2-5-flash-lite" | "gemini-3-1-flash-lite" | "gemini-3-1-pro" | "gemini-3-5-flash" | "gemini-3-6-flash" | "gemini-3-7-flash" | "gemma-4-31b-it" | "glm-4-7-flash:free" | "glm-5-1" | "glm-5-2" | "glm-5-3" | "glm-5-3-flash" | "gpt-5-4-mini" | "gpt-5-5" | "gpt-5-6-luna" | "gpt-5-6-sol" | "gpt-5-6-terra" | "gpt-oss-120b" | "gpt-oss-20b" | "grok-4-5" | "grok-4-6" | "grok-build-0-1" | "hy3" | "hy3:free" | "kimi-k2-6" | "kimi-k2-6:free" | "kimi-k2-7-code" | "kimi-k2-7-code:free" | "kimi-k3" | "mimo-v2-5" | "mimo-v2-5-pro" | "mimo-v2-5:free" | "minimax-m2-7" | "minimax-m2-7-highspeed" | "minimax-m3" | "mistral-large:free" | "mistral-medium-3-5:free" | "nemotron-3-nano-30b-a3b" | "nemotron-3-super-120b-a12b" | "nemotron-3-super-120b-a12b:free" | "nemotron-3-ultra-550b-a55b" | "qwen3-7-plus" | "qwen3-8-max" | "step-3-7-flash" | "step-3-7-flash:free" | "whisper-large-v3-turbo";
+export type KenariTextModelId = "claude-fable-5" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "deepseek-v4-1-flash" | "deepseek-v4-flash" | "deepseek-v4-flash:free" | "deepseek-v4-pro" | "gemini-2-5-flash" | "gemini-2-5-flash-lite" | "gemini-3-1-flash-lite" | "gemini-3-1-pro" | "gemini-3-5-flash" | "gemini-3-6-flash" | "gemini-3-7-flash" | "gemma-4-31b-it" | "glm-4-7-flash:free" | "glm-5-1" | "glm-5-2" | "glm-5-3" | "glm-5-3-flash" | "gpt-5-4-mini" | "gpt-5-5" | "gpt-5-6-luna" | "gpt-5-6-sol" | "gpt-5-6-terra" | "gpt-oss-120b" | "gpt-oss-20b" | "grok-4-5" | "grok-4-6" | "grok-build-0-1" | "hy3" | "hy3:free" | "kimi-k2-6" | "kimi-k2-6:free" | "kimi-k2-7-code" | "kimi-k2-7-code:free" | "kimi-k3" | "mimo-v2-5" | "mimo-v2-5-pro" | "mimo-v2-5:free" | "minimax-m2-7" | "minimax-m2-7-highspeed" | "minimax-m3" | "mistral-large:free" | "mistral-medium-3-5:free" | "nemotron-3-nano-30b-a3b" | "nemotron-3-super-120b-a12b" | "nemotron-3-super-120b-a12b:free" | "nemotron-3-ultra-550b-a55b" | "qwen3-7-plus" | "qwen3-8-max" | "step-3-7-flash" | "step-3-7-flash:free" | "whisper-large-v3-turbo";
 export type KenariImageModelId = "gpt-image-2" | "grok-imagine-image-2-0";
 export type KenariAudioModelId = "gemini-3-1-flash-tts";
 export type KenariVideoModelId = never;

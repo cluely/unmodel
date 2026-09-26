@@ -13,6 +13,39 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "deepseek-v4.1-flash-fast-fp4": {
+    id: "deepseek-v4.1-flash-fast-fp4",
+    name: "DeepSeek V4.1 Flash FP4",
+    family: "deepseek-flash",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0, cacheWrite: 0.09 },
+  },
+  "glm-5.3-flash-fp4": {
+    id: "glm-5.3-flash-fp4",
+    name: "GLM 5.3 Flash FP4",
+    family: "glm-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0, cacheWrite: 0.23 },
+  },
   "glm-5.3-fp4": {
     id: "glm-5.3-fp4",
     name: "GLM 5.3 FP4",
@@ -27,7 +60,7 @@ export const models = {
     lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
-    cost: { input: 1.12, output: 4.4, cacheRead: 0 },
+    cost: { input: 1.12, output: 4.4, cacheRead: 0, cacheWrite: 1.68 },
   },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
@@ -43,28 +76,12 @@ export const models = {
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131072, output: 32768 },
-    cost: { input: 0.12, output: 0.6, cacheRead: 0 },
-  },
-  "kimi-k3": {
-    id: "kimi-k3",
-    name: "Kimi K3",
-    family: "kimi-k3",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: false,
-    openWeights: true,
-    releaseDate: "2026-07-16",
-    lastUpdated: "2026-07-16",
-    modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
-    cost: { input: 3, output: 15, cacheRead: 0 },
+    cost: { input: 0.12, output: 0.6, cacheRead: 0, cacheWrite: 0.18 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type CoralbricksModelId = keyof typeof models;
-export type CoralbricksTextModelId = "glm-5.3-fp4" | "gpt-oss-120b" | "kimi-k3";
+export type CoralbricksTextModelId = "deepseek-v4.1-flash-fast-fp4" | "glm-5.3-flash-fp4" | "glm-5.3-fp4" | "gpt-oss-120b";
 export type CoralbricksImageModelId = never;
 export type CoralbricksAudioModelId = never;
 export type CoralbricksVideoModelId = never;

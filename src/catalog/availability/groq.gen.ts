@@ -41,7 +41,7 @@ export const availability = {
     "groq": "meta-llama/llama-prompt-guard-2-86m",
   },
   "openai/gpt-oss-120b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
@@ -49,7 +49,7 @@ export const availability = {
     "google-vertex": { id: "openai/gpt-oss-120b-maas", endpoint: "google-vertex.chatMaas" },
     "groq": "openai/gpt-oss-120b",
     "huggingface": "openai/gpt-oss-120b",
-    "nebius": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
+    "nebius": "openai/gpt-oss-120b",
     "nvidia": { id: "openai/gpt-oss-120b", narrows: { context: 128000 } },
     "openrouter": "openai/gpt-oss-120b",
     "scaleway": { id: "gpt-oss-120b", narrows: { context: 128000 } },
@@ -57,7 +57,7 @@ export const availability = {
     "vercel": "openai/gpt-oss-120b",
   },
   "openai/gpt-oss-20b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-20b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-20b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chatMaas" },

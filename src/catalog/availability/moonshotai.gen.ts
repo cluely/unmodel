@@ -19,39 +19,6 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
-  "kimi-k2-0711-preview": {
-    "moonshotai": "kimi-k2-0711-preview",
-  },
-  "kimi-k2-0905-preview": {
-    "moonshotai": "kimi-k2-0905-preview",
-  },
-  "kimi-k2-thinking": {
-    "amazon-bedrock": { id: "moonshot.kimi-k2-thinking", narrows: { context: 262143 } },
-    "google-vertex": { id: "moonshotai/kimi-k2-thinking-maas", endpoint: "google-vertex.chatMaas" },
-    "huggingface": "moonshotai/Kimi-K2-Thinking",
-    "moonshotai": "kimi-k2-thinking",
-    "novita-ai": "moonshotai/kimi-k2-thinking",
-    "openrouter": "moonshotai/kimi-k2-thinking",
-    "vercel": { id: "moonshotai/kimi-k2-thinking", narrows: { context: 216144 } },
-  },
-  "kimi-k2-thinking-turbo": {
-    "moonshotai": "kimi-k2-thinking-turbo",
-  },
-  "kimi-k2-turbo-preview": {
-    "moonshotai": "kimi-k2-turbo-preview",
-  },
-  "kimi-k2.5": {
-    "azure": { id: "kimi-k2.5", narrows: { drops: ["video"] } },
-    "baseten": { id: "moonshotai/Kimi-K2.5", narrows: { context: 262000, drops: ["video"] } },
-    "deepinfra": "moonshotai/Kimi-K2.5",
-    "huggingface": "moonshotai/Kimi-K2.5",
-    "moonshotai": "kimi-k2.5",
-    "nebius": { id: "moonshotai/Kimi-K2.5", narrows: { context: 256000, drops: ["video"] } },
-    "novita-ai": "moonshotai/kimi-k2.5",
-    "openrouter": { id: "moonshotai/kimi-k2.5", narrows: { drops: ["video"] } },
-    "togetherai": { id: "moonshotai/Kimi-K2.5", narrows: { drops: ["video"] } },
-    "vercel": { id: "moonshotai/kimi-k2.5", narrows: { context: 262114, drops: ["video"] } },
-  },
   "kimi-k2.6": {
     "azure": { id: "kimi-k2.6", narrows: { drops: ["video"] } },
     "baseten": { id: "moonshotai/Kimi-K2.6", narrows: { context: 262000, drops: ["video"] } },
@@ -75,6 +42,7 @@ export const availability = {
     "nebius": { id: "moonshotai/Kimi-K2.7-Code", narrows: { drops: ["image", "video"] } },
     "novita-ai": "moonshotai/kimi-k2.7-code",
     "openrouter": { id: "moonshotai/kimi-k2.7-code", narrows: { drops: ["video"] } },
+    "siliconflow": { id: "moonshotai/Kimi-K2.7-Code", narrows: { drops: ["video"] } },
     "togetherai": { id: "moonshotai/Kimi-K2.7-Code", narrows: { drops: ["image", "video"] } },
     "vercel": { id: "moonshotai/kimi-k2.7-code", narrows: { context: 256000, drops: ["video"] } },
   },
@@ -83,6 +51,7 @@ export const availability = {
     "vercel": { id: "moonshotai/kimi-k2.7-code-highspeed", narrows: { drops: ["video"] } },
   },
   "kimi-k3": {
+    "alibaba": { id: "kimi-k3", narrows: { drops: ["video"] } },
     "baseten": { id: "moonshotai/Kimi-K3", narrows: { drops: ["video"] } },
     "deepinfra": { id: "moonshotai/Kimi-K3", narrows: { drops: ["video"] } },
     "fireworks-ai": { id: "accounts/fireworks/models/kimi-k3", narrows: { drops: ["video"] } },
@@ -92,6 +61,7 @@ export const availability = {
     "novita-ai": "moonshotai/kimi-k3",
     "nvidia": "moonshotai/kimi-k3",
     "openrouter": "moonshotai/kimi-k3",
+    "siliconflow": { id: "moonshotai/Kimi-K3", narrows: { drops: ["video"] } },
     "togetherai": "moonshotai/Kimi-K3",
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000, drops: ["video"] } },
   },

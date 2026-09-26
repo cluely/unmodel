@@ -34,6 +34,16 @@ export const availability = {
     "openrouter": "meta/muse-spark-1.2-contributor",
     "vercel": { id: "meta/muse-spark-1.2-contributor", narrows: { drops: ["video", "audio"] } },
   },
+  "muse-spark-1.3": {
+    "meta": "muse-spark-1.3",
+    "openrouter": "meta/muse-spark-1.3",
+    "vercel": { id: "meta/muse-spark-1.3", narrows: { drops: ["video", "audio"] } },
+  },
+  "muse-spark-1.3-contributor": {
+    "meta": "muse-spark-1.3-contributor",
+    "openrouter": "meta/muse-spark-1.3-contributor",
+    "vercel": { id: "meta/muse-spark-1.3-contributor", narrows: { drops: ["video", "audio"] } },
+  },
 } as const satisfies AvailabilityMap;
 
 export type MetaAvailability = typeof availability;

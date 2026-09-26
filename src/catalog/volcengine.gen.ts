@@ -254,10 +254,26 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 1.18747, output: 4.15615, cacheRead: 0.29687 },
   },
+  "glm-5-3-flash-260828": {
+    id: "glm-5-3-flash-260828",
+    name: "GLM-5.3-Flash",
+    family: "glm-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.11875, output: 0.41563, cacheRead: 0.03414 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type VolcengineModelId = keyof typeof models;
-export type VolcengineTextModelId = "deepseek-v4-flash-ga-260731" | "deepseek-v4-pro-ga-260813" | "doubao-seed-1-6-251015" | "doubao-seed-1-6-flash-250828" | "doubao-seed-1-6-vision-250815" | "doubao-seed-1-8-251228" | "doubao-seed-2-0-code-preview-260215" | "doubao-seed-2-0-lite-260428" | "doubao-seed-2-0-mini-260428" | "doubao-seed-2-0-pro-260215" | "doubao-seed-2-1-pro-260628" | "doubao-seed-2-1-turbo-260628" | "doubao-seed-character-260628" | "doubao-seed-evolving" | "glm-5-2-260617";
+export type VolcengineTextModelId = "deepseek-v4-flash-ga-260731" | "deepseek-v4-pro-ga-260813" | "doubao-seed-1-6-251015" | "doubao-seed-1-6-flash-250828" | "doubao-seed-1-6-vision-250815" | "doubao-seed-1-8-251228" | "doubao-seed-2-0-code-preview-260215" | "doubao-seed-2-0-lite-260428" | "doubao-seed-2-0-mini-260428" | "doubao-seed-2-0-pro-260215" | "doubao-seed-2-1-pro-260628" | "doubao-seed-2-1-turbo-260628" | "doubao-seed-character-260628" | "doubao-seed-evolving" | "glm-5-2-260617" | "glm-5-3-flash-260828";
 export type VolcengineImageModelId = never;
 export type VolcengineAudioModelId = never;
 export type VolcengineVideoModelId = never;

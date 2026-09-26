@@ -78,6 +78,12 @@ export const availability = {
     "openrouter": "anthropic/claude-opus-5",
     "vercel": "anthropic/claude-opus-5",
   },
+  "claude-opus-5-5": {
+    "amazon-bedrock": "anthropic.claude-opus-5-5",
+    "anthropic": "claude-opus-5-5",
+    "openrouter": "anthropic/claude-opus-5.5",
+    "vercel": "anthropic/claude-opus-5.5",
+  },
   "claude-sonnet-4-5": {
     "amazon-bedrock": { id: "anthropic.claude-sonnet-4-5-20250929-v1:0", narrows: { context: 200000 } },
     "anthropic": "claude-sonnet-4-5",

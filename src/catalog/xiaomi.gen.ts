@@ -113,10 +113,55 @@ export const models = {
     limit: { context: 1048576, output: 131072 },
     cost: { input: 1.305, output: 2.61, cacheRead: 0.0108 },
   },
+  "mimo-v2.6-flash": {
+    id: "mimo-v2.6-flash",
+    name: "MiMo-V2.6-Flash",
+    family: "mimo",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-22",
+    lastUpdated: "2026-09-22",
+    modalities: { input: ["text", "image", "audio", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.14, output: 0.28, cacheRead: 0.0028 },
+  },
+  "mimo-v2.6-pro": {
+    id: "mimo-v2.6-pro",
+    name: "MiMo-V2.6-Pro",
+    family: "mimo",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-22",
+    lastUpdated: "2026-09-22",
+    modalities: { input: ["text", "image", "audio", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.435, output: 0.87, cacheRead: 0.0036 },
+  },
+  "mimo-v2.6-pro-ultraspeed": {
+    id: "mimo-v2.6-pro-ultraspeed",
+    name: "MiMo-V2.6-Pro-UltraSpeed",
+    family: "mimo",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-21",
+    lastUpdated: "2026-09-21",
+    modalities: { input: ["text", "image", "audio", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 4.35, output: 8.7, cacheRead: 0.036 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type XiaomiModelId = keyof typeof models;
-export type XiaomiTextModelId = "mimo-v2-flash" | "mimo-v2-omni" | "mimo-v2-pro" | "mimo-v2.5" | "mimo-v2.5-pro" | "mimo-v2.5-pro-ultraspeed";
+export type XiaomiTextModelId = "mimo-v2-flash" | "mimo-v2-omni" | "mimo-v2-pro" | "mimo-v2.5" | "mimo-v2.5-pro" | "mimo-v2.5-pro-ultraspeed" | "mimo-v2.6-flash" | "mimo-v2.6-pro" | "mimo-v2.6-pro-ultraspeed";
 export type XiaomiImageModelId = never;
 export type XiaomiAudioModelId = never;
 export type XiaomiVideoModelId = never;

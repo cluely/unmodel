@@ -18,8 +18,10 @@ export type ProviderId =
   | "agentrouter"
   | "agnes"
   | "ai-router"
+  | "ai21"
   | "aiand"
   | "aihubmix"
+  | "ainetcafe"
   | "aixy"
   | "aki-io"
   | "alibaba"
@@ -91,6 +93,8 @@ export type ProviderId =
   | "impossibl"
   | "inception"
   | "inceptron"
+  | "inco"
+  | "infer"
   | "inference"
   | "inferx"
   | "infomaniak"
@@ -100,7 +104,8 @@ export type ProviderId =
   | "jiekou"
   | "kenari"
   | "kilo"
-  | "kimi-for-coding"
+  | "kimi-code-plan-cn"
+  | "kimi-code-plan-global"
   | "klokintegration"
   | "kosmik"
   | "kuae-cloud-coding-plan"
@@ -115,6 +120,7 @@ export type ProviderId =
   | "lucidquery"
   | "lynkr"
   | "meganova"
+  | "melious"
   | "merge-gateway"
   | "meta"
   | "minimax"
@@ -131,6 +137,7 @@ export type ProviderId =
   | "moonshotai"
   | "moonshotai-cn"
   | "morph"
+  | "nan"
   | "nano-gpt"
   | "nearai"
   | "nebius"
@@ -140,6 +147,7 @@ export type ProviderId =
   | "nova"
   | "novita-ai"
   | "nvidia"
+  | "oci"
   | "ofox"
   | "ollama-cloud"
   | "openai"
@@ -184,6 +192,7 @@ export type ProviderId =
   | "subconscious"
   | "submodel"
   | "synthetic"
+  | "tempr"
   | "tencent-coding-plan"
   | "tencent-token-plan"
   | "tencent-tokenhub"
@@ -203,11 +212,13 @@ export type ProviderId =
   | "vancine"
   | "venice"
   | "vercel"
+  | "vispark"
   | "vivgrid"
   | "volcengine"
   | "volcengine-coding-plan"
   | "vultr"
   | "wafer.ai"
+  | "wallaby"
   | "wandb"
   | "watsonx"
   | "xai"
@@ -229,7 +240,7 @@ export type ProviderId =
  *
  * The widening is a BUNDLE decision, not a taste one, and it is the reason
  * `unmodel/catalog/typed` exists next to this entry. The annotation erases all
- * 212 `.gen` namespaces from this module's declaration —
+ * 223 `.gen` namespaces from this module's declaration —
  * `dist/catalog/index.d.ts` imports nothing but `catalog-types` and stays a
  * few KiB. Dropping it in favour of `satisfies` pulls every generated
  * namespace into the bundled declaration and takes that file to ~3.6 MB, which

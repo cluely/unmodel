@@ -6,10 +6,10 @@ import type { ModelInfo, ProviderInfo } from "../core/catalog-types";
 
 export const provider = {
   id: "minimax-cn-coding-plan",
-  name: "MiniMax Token Plan (minimaxi.com)",
+  name: "MiniMax Token Plan (minimax.cn)",
   env: ["MINIMAX_API_KEY"],
   doc: "https://platform.minimaxi.com/docs/token-plan/intro",
-  api: "https://api.minimaxi.com/anthropic/v1",
+  api: "https://api.minimax.cn/anthropic/v1",
 } as const satisfies ProviderInfo;
 
 export const models = {

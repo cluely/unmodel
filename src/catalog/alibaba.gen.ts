@@ -46,6 +46,22 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.28, cacheWrite: 0 },
   },
+  "kimi-k3": {
+    id: "kimi-k3",
+    name: "Kimi K3",
+    family: "kimi-k3",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: true,
+    releaseDate: "2026-07-16",
+    lastUpdated: "2026-07-16",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 3, output: 15, cacheRead: 0.3 },
+  },
   "qvq-max": {
     id: "qvq-max",
     name: "QVQ Max",
@@ -826,7 +842,7 @@ export const models = {
     releaseDate: "2026-05-21",
     lastUpdated: "2026-05-21",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 65536 },
+    limit: { context: 1000000, output: 131072 },
     cost: { input: 2.5, output: 7.5, cacheRead: 0.5, cacheWrite: 3.125 },
   },
   "qwen3.7-plus": {
@@ -842,7 +858,7 @@ export const models = {
     releaseDate: "2026-06-02",
     lastUpdated: "2026-06-04",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1000000, output: 65536 },
+    limit: { context: 1000000, output: 131072 },
     cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0.625 },
   },
   "qwen3.8-flash": {
@@ -895,7 +911,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AlibabaModelId = keyof typeof models;
-export type AlibabaTextModelId = "deepseek-v4-flash-0731" | "glm-5.2" | "qvq-max" | "qwen-flash" | "qwen-max" | "qwen-mt-plus" | "qwen-mt-turbo" | "qwen-omni-turbo" | "qwen-omni-turbo-realtime" | "qwen-plus" | "qwen-plus-character-ja" | "qwen-turbo" | "qwen-vl-max" | "qwen-vl-ocr" | "qwen-vl-plus" | "qwen2-5-14b-instruct" | "qwen2-5-32b-instruct" | "qwen2-5-72b-instruct" | "qwen2-5-7b-instruct" | "qwen2-5-omni-7b" | "qwen2-5-vl-72b-instruct" | "qwen2-5-vl-7b-instruct" | "qwen3-14b" | "qwen3-235b-a22b" | "qwen3-32b" | "qwen3-8b" | "qwen3-asr-flash" | "qwen3-coder-30b-a3b-instruct" | "qwen3-coder-480b-a35b-instruct" | "qwen3-coder-flash" | "qwen3-coder-plus" | "qwen3-livetranslate-flash-realtime" | "qwen3-max" | "qwen3-next-80b-a3b-instruct" | "qwen3-next-80b-a3b-thinking" | "qwen3-omni-flash" | "qwen3-omni-flash-realtime" | "qwen3-vl-235b-a22b" | "qwen3-vl-30b-a3b" | "qwen3-vl-plus" | "qwen3.5-122b-a10b" | "qwen3.5-27b" | "qwen3.5-35b-a3b" | "qwen3.5-397b-a17b" | "qwen3.5-plus" | "qwen3.6-27b" | "qwen3.6-35b-a3b" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max" | "qwq-plus";
+export type AlibabaTextModelId = "deepseek-v4-flash-0731" | "glm-5.2" | "kimi-k3" | "qvq-max" | "qwen-flash" | "qwen-max" | "qwen-mt-plus" | "qwen-mt-turbo" | "qwen-omni-turbo" | "qwen-omni-turbo-realtime" | "qwen-plus" | "qwen-plus-character-ja" | "qwen-turbo" | "qwen-vl-max" | "qwen-vl-ocr" | "qwen-vl-plus" | "qwen2-5-14b-instruct" | "qwen2-5-32b-instruct" | "qwen2-5-72b-instruct" | "qwen2-5-7b-instruct" | "qwen2-5-omni-7b" | "qwen2-5-vl-72b-instruct" | "qwen2-5-vl-7b-instruct" | "qwen3-14b" | "qwen3-235b-a22b" | "qwen3-32b" | "qwen3-8b" | "qwen3-asr-flash" | "qwen3-coder-30b-a3b-instruct" | "qwen3-coder-480b-a35b-instruct" | "qwen3-coder-flash" | "qwen3-coder-plus" | "qwen3-livetranslate-flash-realtime" | "qwen3-max" | "qwen3-next-80b-a3b-instruct" | "qwen3-next-80b-a3b-thinking" | "qwen3-omni-flash" | "qwen3-omni-flash-realtime" | "qwen3-vl-235b-a22b" | "qwen3-vl-30b-a3b" | "qwen3-vl-plus" | "qwen3.5-122b-a10b" | "qwen3.5-27b" | "qwen3.5-35b-a3b" | "qwen3.5-397b-a17b" | "qwen3.5-plus" | "qwen3.6-27b" | "qwen3.6-35b-a3b" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max" | "qwq-plus";
 export type AlibabaImageModelId = never;
 export type AlibabaAudioModelId = "qwen-omni-turbo" | "qwen-omni-turbo-realtime" | "qwen2-5-omni-7b" | "qwen3-livetranslate-flash-realtime" | "qwen3-omni-flash" | "qwen3-omni-flash-realtime";
 export type AlibabaVideoModelId = never;

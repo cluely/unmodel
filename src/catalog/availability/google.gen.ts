@@ -59,13 +59,12 @@ export const availability = {
   },
   "gemini-3-pro-image": {
     "google": "gemini-3-pro-image",
-    "google-vertex": { id: "gemini-3-pro-image", narrows: { context: 65536 } },
+    "google-vertex": "gemini-3-pro-image",
     "openrouter": "google/gemini-3-pro-image",
-    "vercel": { id: "google/gemini-3-pro-image", narrows: { context: 65536 } },
+    "vercel": "google/gemini-3-pro-image",
   },
   "gemini-3-pro-image-preview": {
     "google": "gemini-3-pro-image-preview",
-    "openrouter": { id: "google/gemini-3-pro-image-preview", narrows: { context: 65536 } },
   },
   "gemini-3.1-flash-image": {
     "google": "gemini-3.1-flash-image",
@@ -75,7 +74,6 @@ export const availability = {
   },
   "gemini-3.1-flash-image-preview": {
     "google": "gemini-3.1-flash-image-preview",
-    "openrouter": { id: "google/gemini-3.1-flash-image-preview", narrows: { drops: ["pdf"] } },
   },
   "gemini-3.1-flash-lite": {
     "google": "gemini-3.1-flash-lite",
@@ -134,10 +132,12 @@ export const availability = {
     "google": "gemini-3.8-flash",
     "google-vertex": "gemini-3.8-flash",
     "openrouter": "google/gemini-3.8-flash",
+    "vercel": { id: "google/gemini-3.8-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-flash-latest": {
     "google": "gemini-flash-latest",
     "google-vertex": "gemini-flash-latest",
+    "openrouter": "~google/gemini-flash-latest",
   },
   "gemini-flash-lite-latest": {
     "google": "gemini-flash-lite-latest",

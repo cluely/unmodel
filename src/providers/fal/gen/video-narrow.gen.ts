@@ -57,6 +57,7 @@ import type { FalEndpointShape } from "../shape-types";
 // named by both tables below, and often by several endpoints.
 const E_043347 = ["enabled", "disabled", "auto"] as const;
 const E_07fbe5 = ["16:9", "4:3", "3:2", "1:1", "2:3", "3:4", "9:16"] as const;
+const E_0c6c55 = ["auto", "H264", "H265"] as const;
 const E_0d1988 = ["auto", "16:9", "9:16"] as const;
 const E_1bee9f = ["16:9", "9:16"] as const;
 const E_1c4d6e = ["auto"] as const;
@@ -68,6 +69,7 @@ const E_3d4094 = ["low", "medium", "high", "maximum"] as const;
 const E_430821 = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
 const E_483afe = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const;
 const E_4aec3e = ["standard", "high"] as const;
+const E_51bb21 = ["reference", "editing", "extension"] as const;
 const E_572d7d = ["none", "film", "rife"] as const;
 const E_5764d4 = ["auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"] as const;
 const E_679f9b = ["none", "regular"] as const;
@@ -100,7 +102,7 @@ const E_f908b4 = ["1", "2", "3", "4", "5", "6"] as const;
 
 export const FAL_VIDEO_SHAPES = {
   "bytedance/seedance-2.0/image-to-video": {
-    order: ["prompt", "image_url", "end_image_url", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
+    order: ["prompt", "image_url", "end_image_url", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "end_user_id"],
     props: {
       prompt: { t: "string", req: true },
       image_url: { t: "string", req: true, media: "image" },
@@ -110,11 +112,12 @@ export const FAL_VIDEO_SHAPES = {
       aspect_ratio: { t: "string", def: true, enum: E_856788 },
       generate_audio: { t: "boolean", def: true },
       bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
+      codec: { t: "string", def: true, enum: E_0c6c55 },
       end_user_id: { t: "string", nul: true },
     },
   },
   "bytedance/seedance-2.0/text-to-video": {
-    order: ["prompt", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
+    order: ["prompt", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "end_user_id"],
     props: {
       prompt: { t: "string", req: true },
       resolution: { t: "string", def: true, enum: E_d60f26 },
@@ -122,47 +125,56 @@ export const FAL_VIDEO_SHAPES = {
       aspect_ratio: { t: "string", def: true, enum: E_856788 },
       generate_audio: { t: "boolean", def: true },
       bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
+      codec: { t: "string", def: true, enum: E_0c6c55 },
       end_user_id: { t: "string", nul: true },
     },
   },
   "bytedance/seedance-2.5/image-to-video": {
-    order: ["prompt", "image_url", "end_image_url", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
+    order: ["prompt", "image_url", "end_image_url", "resolution", "draft", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "end_user_id"],
     props: {
       prompt: { t: "string", req: true },
       image_url: { t: "string", req: true, media: "image" },
       end_image_url: { t: "string", nul: true, media: "image" },
       resolution: { t: "string", def: true, enum: E_f3cba3 },
+      draft: { t: "boolean", def: true },
       duration: { t: "string", def: true, enum: E_a4e098 },
       aspect_ratio: { t: "string", def: true, enum: E_1c4d6e },
       generate_audio: { t: "boolean", def: true },
       bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
+      codec: { t: "string", def: true, enum: E_0c6c55 },
       end_user_id: { t: "string", nul: true },
     },
   },
   "bytedance/seedance-2.5/reference-to-video": {
-    order: ["prompt", "image_urls", "video_urls", "audio_urls", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
+    order: ["prompt", "task", "image_urls", "video_urls", "audio_urls", "resolution", "draft", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "seed", "end_user_id"],
     props: {
       prompt: { t: "string", req: true },
+      task: { t: "string", def: true, enum: E_51bb21 },
       image_urls: { t: "array", items: { t: "string", media: "image" }, media: "image" },
       video_urls: { t: "array", items: { t: "string", media: "video" }, media: "video" },
       audio_urls: { t: "array", items: { t: "string", media: "audio" }, media: "audio" },
       resolution: { t: "string", def: true, enum: E_f3cba3 },
+      draft: { t: "boolean", def: true },
       duration: { t: "string", def: true, enum: E_a4e098 },
       aspect_ratio: { t: "string", def: true, enum: E_856788 },
       generate_audio: { t: "boolean", def: true },
       bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
+      codec: { t: "string", def: true, enum: E_0c6c55 },
+      seed: { t: "integer", nul: true },
       end_user_id: { t: "string", nul: true },
     },
   },
   "bytedance/seedance-2.5/text-to-video": {
-    order: ["prompt", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
+    order: ["prompt", "resolution", "draft", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "end_user_id"],
     props: {
       prompt: { t: "string", req: true },
       resolution: { t: "string", def: true, enum: E_f3cba3 },
+      draft: { t: "boolean", def: true },
       duration: { t: "string", def: true, enum: E_a4e098 },
       aspect_ratio: { t: "string", def: true, enum: E_856788 },
       generate_audio: { t: "boolean", def: true },
       bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
+      codec: { t: "string", def: true, enum: E_0c6c55 },
       end_user_id: { t: "string", nul: true },
     },
   },
@@ -531,7 +543,7 @@ export const FAL_VIDEO_SHAPES = {
     },
   },
   "minimax/h3/image-to-video": {
-    order: ["prompt", "duration", "resolution", "seed", "enable_safety_checker", "sync_mode", "prompt_expansion_mode", "image_url", "end_image_url"],
+    order: ["prompt", "duration", "resolution", "seed", "enable_safety_checker", "sync_mode", "prompt_expansion_mode", "target_audio_url", "image_url", "end_image_url"],
     props: {
       prompt: { t: "string", req: true, minLen: 1, maxLen: 50000 },
       duration: { t: "integer", def: true, min: 5, max: 15 },
@@ -540,12 +552,13 @@ export const FAL_VIDEO_SHAPES = {
       enable_safety_checker: { t: "boolean", def: true },
       sync_mode: { t: "boolean", def: true },
       prompt_expansion_mode: { t: "string", nul: true, def: true },
+      target_audio_url: { t: "string", nul: true, minLen: 1, media: "audio" },
       image_url: { t: "string", nul: true, media: "image" },
       end_image_url: { t: "string", nul: true, media: "image" },
     },
   },
   "minimax/h3/text-to-video": {
-    order: ["prompt", "duration", "resolution", "seed", "enable_safety_checker", "sync_mode", "prompt_expansion_mode", "aspect_ratio"],
+    order: ["prompt", "duration", "resolution", "seed", "enable_safety_checker", "sync_mode", "prompt_expansion_mode", "target_audio_url", "aspect_ratio"],
     props: {
       prompt: { t: "string", req: true, minLen: 1, maxLen: 50000 },
       duration: { t: "integer", def: true, min: 5, max: 15 },
@@ -554,6 +567,7 @@ export const FAL_VIDEO_SHAPES = {
       enable_safety_checker: { t: "boolean", def: true },
       sync_mode: { t: "boolean", def: true },
       prompt_expansion_mode: { t: "string", nul: true, def: true },
+      target_audio_url: { t: "string", nul: true, minLen: 1, media: "audio" },
       aspect_ratio: { t: "string", def: true, enum: E_e82de1 },
     },
   },
@@ -581,30 +595,36 @@ export const FAL_VIDEO_CONSTRAINTS = {
     duration: E_5764d4,
     aspect_ratio: E_856788,
     bitrate_mode: E_4aec3e,
+    codec: E_0c6c55,
   },
   "bytedance/seedance-2.0/text-to-video": {
     resolution: E_d60f26,
     duration: E_5764d4,
     aspect_ratio: E_856788,
     bitrate_mode: E_4aec3e,
+    codec: E_0c6c55,
   },
   "bytedance/seedance-2.5/image-to-video": {
     resolution: E_f3cba3,
     duration: E_a4e098,
     aspect_ratio: E_1c4d6e,
     bitrate_mode: E_4aec3e,
+    codec: E_0c6c55,
   },
   "bytedance/seedance-2.5/reference-to-video": {
+    task: E_51bb21,
     resolution: E_f3cba3,
     duration: E_a4e098,
     aspect_ratio: E_856788,
     bitrate_mode: E_4aec3e,
+    codec: E_0c6c55,
   },
   "bytedance/seedance-2.5/text-to-video": {
     resolution: E_f3cba3,
     duration: E_a4e098,
     aspect_ratio: E_856788,
     bitrate_mode: E_4aec3e,
+    codec: E_0c6c55,
   },
   "fal-ai/kling-video/o1/video-to-video/edit": {},
   "fal-ai/kling-video/o3/pro/video-to-video/edit": {

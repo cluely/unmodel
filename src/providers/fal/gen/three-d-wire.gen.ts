@@ -343,8 +343,7 @@ export interface FalAiHyper3dRodinV25Input {
    */
   image_urls?: string[];
   /**
-   * Generation tier. Higher tiers produce more detailed meshes but cost more. Extreme-High
-   * enables the highest-detail mode and bills at double the base rate. See more info in the
+   * Generation tier. Higher tiers produce more detailed meshes. See more info in the
    * [documentation](https://developer.hyper3d.ai/api-specification/rodin-gen2.5#use-gen-2.5-generation-with-following-gen-2.5-tiers).
    * Selecting Gen-2.5-Minimum will automatically configure to a minimum mode, where 50K
    * Triangle is selected, taking priority over quality_mesh_option. Default:
@@ -446,8 +445,7 @@ export interface FalAiHyper3dRodinV25TextTo3dInput {
   /** A textual prompt to guide model generation. Required for Text-to-3D mode. */
   prompt: string;
   /**
-   * Generation tier. Higher tiers produce more detailed meshes but cost more. Extreme-High
-   * enables the highest-detail mode and bills at double the base rate. See more info in the
+   * Generation tier. Higher tiers produce more detailed meshes. See more info in the
    * [documentation](https://developer.hyper3d.ai/api-specification/rodin-gen2.5#use-gen-2.5-generation-with-following-gen-2.5-tiers).
    * Selecting Gen-2.5-Minimum will automatically configure to a minimum mode, where 50K
    * Triangle is selected, taking priority over quality_mesh_option. Default:
@@ -944,10 +942,11 @@ export interface MeshyV7ImageTo3dInput {
    * `true`.
    */
   enable_safety_checker?: boolean;
+  /** Geometry resolution. Meshy-7 supports standard and 2k. */
+  geometry_resolution?: "standard" | "2k" | null;
   /**
-   * Enable higher-fidelity geometry with finer surface detail. Only available for standard
-   * generation (ultra requires Meshy-7; it cannot be combined with smart topology or
-   * lowpoly). Default: `false`.
+   * Deprecated: use geometry_resolution='2k'. If both fields are provided,
+   * geometry_resolution takes precedence. Default: `false`.
    */
   ultra_mode?: boolean;
 }
@@ -1088,10 +1087,11 @@ export interface MeshyV7TextTo3dInput {
    * `true`.
    */
   enable_safety_checker?: boolean;
+  /** Geometry resolution. Meshy-7 supports standard and 2k. */
+  geometry_resolution?: "standard" | "2k" | null;
   /**
-   * Enable higher-fidelity geometry with finer surface detail on the preview (geometry)
-   * step. Only available for standard generation (ultra requires Meshy-7; it cannot be
-   * combined with smart topology or lowpoly). Default: `false`.
+   * Deprecated: use geometry_resolution='2k'. If both fields are provided,
+   * geometry_resolution takes precedence. Default: `false`.
    */
   ultra_mode?: boolean;
 }

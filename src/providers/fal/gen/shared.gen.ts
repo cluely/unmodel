@@ -330,7 +330,7 @@ export interface FalControlLoraWeight {
    * per-layer lora scale settings. Layers with no scale provided will have scale 1.0.
    * Default: `1`.
    */
-  scale?: Record<string, unknown> | number;
+  scale?: Record<string, number> | number;
   /**
    * URL of the image to be used as the control image. Carries a image reference — an https
    * URL or a `data:` URI.
@@ -669,7 +669,7 @@ export interface FalKlingV3MultiPromptElement {
  * under this title; the hash keeps each variant addressable without the names depending on
  * discovery order.
  */
-export interface FalLoraWeight_7426f5 {
+export interface FalLoraWeight_6fc7f4 {
   /** URL or the path to the LoRA weights. */
   path: string;
   /**
@@ -678,7 +678,7 @@ export interface FalLoraWeight_7426f5 {
    * per-layer lora scale settings. Layers with no scale provided will have scale 1.0.
    * Default: `1`.
    */
-  scale?: Record<string, unknown> | number;
+  scale?: Record<string, number> | number;
 }
 
 /**
@@ -807,7 +807,7 @@ export interface FalMusicCompositionPlan {
 /** fal's `OmniVideoElementInput` component. */
 export interface FalOmniVideoElementInput {
   /**
-   * The frontal image of the element (main view). Max file size: 10.0MB, Min width: 300px,
+   * The frontal image of the element (main view). Max file size: 50.0MB, Min width: 300px,
    * Min height: 300px, Min aspect ratio: 0.40, Max aspect ratio: 2.50, Timeout: 20.0s.
    * Carries a image reference — an https URL or a `data:` URI.
    */
@@ -1034,6 +1034,14 @@ export interface FalVoiceSetting {
    * increase in latency. Default: `false`.
    */
   english_normalization?: boolean;
+}
+
+/** fal's `WatermarkInfo` component. */
+export interface FalWatermarkInfo {
+  /** Watermark scheme identifier. Default: `"sc44k-1"`. */
+  scheme?: string;
+  /** The 40-bit message embedded in the audio, hex. */
+  message_hex: string;
 }
 
 /** fal's `WhisperChunk` component. */

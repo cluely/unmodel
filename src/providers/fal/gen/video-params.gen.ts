@@ -244,49 +244,26 @@ const ROW_27477e = {
 } as const;
 
 /**
- * bytedance/seedance-2.0/image-to-video.
+ * bytedance/seedance-2.5/text-to-video.
  *
- * The extras are typed from `BytedanceSeedance20ImageToVideoInput`, so the value an editor
+ * The extras are typed from `BytedanceSeedance25TextToVideoInput`, so the value an editor
  * offers here and the value `fal.video` validates are one declaration.
  */
-const ROW_2c170b = {
+const ROW_2add9a = {
   classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
-  keys: ["prompt", "image_url", "end_image_url", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
+  keys: ["prompt", "resolution", "draft", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "end_user_id"],
   ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
-  tiers: ["4k"],
-  tierWire: { "4k": "4k" },
-  durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-  durationWire: { "10": "10", "11": "11", "12": "12", "13": "13", "14": "14", "15": "15", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9" },
-  resolutions: ["480p", "720p", "1080p", "4k"],
-  resolutionWire: { "1080p": "1080p", "480p": "480p", "4k": "4k", "720p": "720p" },
-  roles: ["first", "last"],
-  roleWire: { first: "image_url", last: "end_image_url" },
-  extras: {
-    generate_audio: EXTRA as BytedanceSeedance20ImageToVideoInput["generate_audio"],
-    bitrate_mode: EXTRA as BytedanceSeedance20ImageToVideoInput["bitrate_mode"],
-    end_user_id: EXTRA as BytedanceSeedance20ImageToVideoInput["end_user_id"],
-  },
-} as const;
-
-/**
- * bytedance/seedance-2.5/image-to-video.
- *
- * The extras are typed from `BytedanceSeedance25ImageToVideoInput`, so the value an editor
- * offers here and the value `fal.video` validates are one declaration.
- */
-const ROW_3d92af = {
-  classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
-  keys: ["prompt", "image_url", "end_image_url", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
   durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
   durationWire: { "10": "10", "11": "11", "12": "12", "13": "13", "14": "14", "15": "15", "16": "16", "17": "17", "18": "18", "19": "19", "20": "20", "21": "21", "22": "22", "23": "23", "24": "24", "25": "25", "26": "26", "27": "27", "28": "28", "29": "29", "30": "30", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9" },
   resolutions: ["480p", "720p", "1080p"],
   resolutionWire: { "1080p": "1080p", "480p": "480p", "720p": "720p" },
-  roles: ["first", "last"],
-  roleWire: { first: "image_url", last: "end_image_url" },
+  roles: [],
   extras: {
-    generate_audio: EXTRA as BytedanceSeedance25ImageToVideoInput["generate_audio"],
-    bitrate_mode: EXTRA as BytedanceSeedance25ImageToVideoInput["bitrate_mode"],
-    end_user_id: EXTRA as BytedanceSeedance25ImageToVideoInput["end_user_id"],
+    draft: EXTRA as BytedanceSeedance25TextToVideoInput["draft"],
+    generate_audio: EXTRA as BytedanceSeedance25TextToVideoInput["generate_audio"],
+    bitrate_mode: EXTRA as BytedanceSeedance25TextToVideoInput["bitrate_mode"],
+    codec: EXTRA as BytedanceSeedance25TextToVideoInput["codec"],
+    end_user_id: EXTRA as BytedanceSeedance25TextToVideoInput["end_user_id"],
   },
 } as const;
 
@@ -296,9 +273,9 @@ const ROW_3d92af = {
  * The extras are typed from `MinimaxH3TextToVideoInput`, so the value an editor offers
  * here and the value `fal.video` validates are one declaration.
  */
-const ROW_51ea5b = {
+const ROW_38584f = {
   classes: ["aspectRatioEnum", "durationNumber", "resolutionEnum"],
-  keys: ["prompt", "duration", "resolution", "seed", "enable_safety_checker", "sync_mode", "prompt_expansion_mode", "aspect_ratio"],
+  keys: ["prompt", "duration", "resolution", "seed", "enable_safety_checker", "sync_mode", "prompt_expansion_mode", "target_audio_url", "aspect_ratio"],
   ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
   tiers: ["2k", "4k"],
   tierWire: { "2k": "2K", "4k": "4K" },
@@ -310,6 +287,7 @@ const ROW_51ea5b = {
     enable_safety_checker: EXTRA as MinimaxH3TextToVideoInput["enable_safety_checker"],
     sync_mode: EXTRA as MinimaxH3TextToVideoInput["sync_mode"],
     prompt_expansion_mode: EXTRA as MinimaxH3TextToVideoInput["prompt_expansion_mode"],
+    target_audio_url: EXTRA as MinimaxH3TextToVideoInput["target_audio_url"],
   },
 } as const;
 
@@ -384,6 +362,34 @@ const ROW_5bd50e = {
 } as const;
 
 /**
+ * bytedance/seedance-2.5/reference-to-video.
+ *
+ * The extras are typed from `BytedanceSeedance25ReferenceToVideoInput`, so the value an
+ * editor offers here and the value `fal.video` validates are one declaration.
+ */
+const ROW_60fe08 = {
+  classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
+  keys: ["prompt", "task", "image_urls", "video_urls", "audio_urls", "resolution", "draft", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "seed", "end_user_id"],
+  ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+  durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+  durationWire: { "10": "10", "11": "11", "12": "12", "13": "13", "14": "14", "15": "15", "16": "16", "17": "17", "18": "18", "19": "19", "20": "20", "21": "21", "22": "22", "23": "23", "24": "24", "25": "25", "26": "26", "27": "27", "28": "28", "29": "29", "30": "30", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9" },
+  resolutions: ["480p", "720p", "1080p"],
+  resolutionWire: { "1080p": "1080p", "480p": "480p", "720p": "720p" },
+  roles: ["reference"],
+  roleWire: { reference: "image_urls" },
+  videoWire: "video_urls",
+  extras: {
+    task: EXTRA as BytedanceSeedance25ReferenceToVideoInput["task"],
+    audio_urls: EXTRA as BytedanceSeedance25ReferenceToVideoInput["audio_urls"],
+    draft: EXTRA as BytedanceSeedance25ReferenceToVideoInput["draft"],
+    generate_audio: EXTRA as BytedanceSeedance25ReferenceToVideoInput["generate_audio"],
+    bitrate_mode: EXTRA as BytedanceSeedance25ReferenceToVideoInput["bitrate_mode"],
+    codec: EXTRA as BytedanceSeedance25ReferenceToVideoInput["codec"],
+    end_user_id: EXTRA as BytedanceSeedance25ReferenceToVideoInput["end_user_id"],
+  },
+} as const;
+
+/**
  * fal-ai/veo3.1/extend-video.
  *
  * The extras are typed from `FalAiVeo31ExtendVideoInput`, so the value an editor offers
@@ -427,14 +433,38 @@ const ROW_7ba555 = {
 } as const;
 
 /**
- * bytedance/seedance-2.0/text-to-video.
+ * minimax/h3/image-to-video.
  *
- * The extras are typed from `BytedanceSeedance20TextToVideoInput`, so the value an editor
+ * The extras are typed from `MinimaxH3ImageToVideoInput`, so the value an editor offers
+ * here and the value `fal.video` validates are one declaration.
+ */
+const ROW_7cc0a6 = {
+  classes: ["durationNumber", "resolutionEnum"],
+  keys: ["prompt", "duration", "resolution", "seed", "enable_safety_checker", "sync_mode", "prompt_expansion_mode", "target_audio_url", "image_url", "end_image_url"],
+  tiers: ["2k", "4k"],
+  tierWire: { "2k": "2K", "4k": "4K" },
+  resolutions: ["480p", "4k"],
+  resolutionWire: { "480p": "480P", "4k": "4K" },
+  roles: ["first", "last"],
+  roleWire: { first: "image_url", last: "end_image_url" },
+  bounds: { duration: { min: 5, max: 15 } },
+  extras: {
+    enable_safety_checker: EXTRA as MinimaxH3ImageToVideoInput["enable_safety_checker"],
+    sync_mode: EXTRA as MinimaxH3ImageToVideoInput["sync_mode"],
+    prompt_expansion_mode: EXTRA as MinimaxH3ImageToVideoInput["prompt_expansion_mode"],
+    target_audio_url: EXTRA as MinimaxH3ImageToVideoInput["target_audio_url"],
+  },
+} as const;
+
+/**
+ * bytedance/seedance-2.0/image-to-video.
+ *
+ * The extras are typed from `BytedanceSeedance20ImageToVideoInput`, so the value an editor
  * offers here and the value `fal.video` validates are one declaration.
  */
-const ROW_8216e2 = {
+const ROW_a3417f = {
   classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
-  keys: ["prompt", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
+  keys: ["prompt", "image_url", "end_image_url", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "end_user_id"],
   ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
   tiers: ["4k"],
   tierWire: { "4k": "4k" },
@@ -442,11 +472,13 @@ const ROW_8216e2 = {
   durationWire: { "10": "10", "11": "11", "12": "12", "13": "13", "14": "14", "15": "15", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9" },
   resolutions: ["480p", "720p", "1080p", "4k"],
   resolutionWire: { "1080p": "1080p", "480p": "480p", "4k": "4k", "720p": "720p" },
-  roles: [],
+  roles: ["first", "last"],
+  roleWire: { first: "image_url", last: "end_image_url" },
   extras: {
-    generate_audio: EXTRA as BytedanceSeedance20TextToVideoInput["generate_audio"],
-    bitrate_mode: EXTRA as BytedanceSeedance20TextToVideoInput["bitrate_mode"],
-    end_user_id: EXTRA as BytedanceSeedance20TextToVideoInput["end_user_id"],
+    generate_audio: EXTRA as BytedanceSeedance20ImageToVideoInput["generate_audio"],
+    bitrate_mode: EXTRA as BytedanceSeedance20ImageToVideoInput["bitrate_mode"],
+    codec: EXTRA as BytedanceSeedance20ImageToVideoInput["codec"],
+    end_user_id: EXTRA as BytedanceSeedance20ImageToVideoInput["end_user_id"],
   },
 } as const;
 
@@ -633,31 +665,6 @@ const ROW_d0f391 = {
 } as const;
 
 /**
- * bytedance/seedance-2.5/reference-to-video.
- *
- * The extras are typed from `BytedanceSeedance25ReferenceToVideoInput`, so the value an
- * editor offers here and the value `fal.video` validates are one declaration.
- */
-const ROW_d272af = {
-  classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
-  keys: ["prompt", "image_urls", "video_urls", "audio_urls", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
-  ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
-  durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
-  durationWire: { "10": "10", "11": "11", "12": "12", "13": "13", "14": "14", "15": "15", "16": "16", "17": "17", "18": "18", "19": "19", "20": "20", "21": "21", "22": "22", "23": "23", "24": "24", "25": "25", "26": "26", "27": "27", "28": "28", "29": "29", "30": "30", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9" },
-  resolutions: ["480p", "720p", "1080p"],
-  resolutionWire: { "1080p": "1080p", "480p": "480p", "720p": "720p" },
-  roles: ["reference"],
-  roleWire: { reference: "image_urls" },
-  videoWire: "video_urls",
-  extras: {
-    audio_urls: EXTRA as BytedanceSeedance25ReferenceToVideoInput["audio_urls"],
-    generate_audio: EXTRA as BytedanceSeedance25ReferenceToVideoInput["generate_audio"],
-    bitrate_mode: EXTRA as BytedanceSeedance25ReferenceToVideoInput["bitrate_mode"],
-    end_user_id: EXTRA as BytedanceSeedance25ReferenceToVideoInput["end_user_id"],
-  },
-} as const;
-
-/**
  * fal-ai/minimax/hailuo-2.3/pro/text-to-video.
  *
  * The extras are typed from `FalAiMinimaxHailuo23ProTextToVideoInput`, so the value an
@@ -674,47 +681,26 @@ const ROW_d768f4 = {
 } as const;
 
 /**
- * minimax/h3/image-to-video.
+ * bytedance/seedance-2.5/image-to-video.
  *
- * The extras are typed from `MinimaxH3ImageToVideoInput`, so the value an editor offers
- * here and the value `fal.video` validates are one declaration.
- */
-const ROW_d8d8ea = {
-  classes: ["durationNumber", "resolutionEnum"],
-  keys: ["prompt", "duration", "resolution", "seed", "enable_safety_checker", "sync_mode", "prompt_expansion_mode", "image_url", "end_image_url"],
-  tiers: ["2k", "4k"],
-  tierWire: { "2k": "2K", "4k": "4K" },
-  resolutions: ["480p", "4k"],
-  resolutionWire: { "480p": "480P", "4k": "4K" },
-  roles: ["first", "last"],
-  roleWire: { first: "image_url", last: "end_image_url" },
-  bounds: { duration: { min: 5, max: 15 } },
-  extras: {
-    enable_safety_checker: EXTRA as MinimaxH3ImageToVideoInput["enable_safety_checker"],
-    sync_mode: EXTRA as MinimaxH3ImageToVideoInput["sync_mode"],
-    prompt_expansion_mode: EXTRA as MinimaxH3ImageToVideoInput["prompt_expansion_mode"],
-  },
-} as const;
-
-/**
- * bytedance/seedance-2.5/text-to-video.
- *
- * The extras are typed from `BytedanceSeedance25TextToVideoInput`, so the value an editor
+ * The extras are typed from `BytedanceSeedance25ImageToVideoInput`, so the value an editor
  * offers here and the value `fal.video` validates are one declaration.
  */
-const ROW_e0e300 = {
+const ROW_d90d61 = {
   classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
-  keys: ["prompt", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "end_user_id"],
-  ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+  keys: ["prompt", "image_url", "end_image_url", "resolution", "draft", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "end_user_id"],
   durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
   durationWire: { "10": "10", "11": "11", "12": "12", "13": "13", "14": "14", "15": "15", "16": "16", "17": "17", "18": "18", "19": "19", "20": "20", "21": "21", "22": "22", "23": "23", "24": "24", "25": "25", "26": "26", "27": "27", "28": "28", "29": "29", "30": "30", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9" },
   resolutions: ["480p", "720p", "1080p"],
   resolutionWire: { "1080p": "1080p", "480p": "480p", "720p": "720p" },
-  roles: [],
+  roles: ["first", "last"],
+  roleWire: { first: "image_url", last: "end_image_url" },
   extras: {
-    generate_audio: EXTRA as BytedanceSeedance25TextToVideoInput["generate_audio"],
-    bitrate_mode: EXTRA as BytedanceSeedance25TextToVideoInput["bitrate_mode"],
-    end_user_id: EXTRA as BytedanceSeedance25TextToVideoInput["end_user_id"],
+    draft: EXTRA as BytedanceSeedance25ImageToVideoInput["draft"],
+    generate_audio: EXTRA as BytedanceSeedance25ImageToVideoInput["generate_audio"],
+    bitrate_mode: EXTRA as BytedanceSeedance25ImageToVideoInput["bitrate_mode"],
+    codec: EXTRA as BytedanceSeedance25ImageToVideoInput["codec"],
+    end_user_id: EXTRA as BytedanceSeedance25ImageToVideoInput["end_user_id"],
   },
 } as const;
 
@@ -766,6 +752,31 @@ const ROW_eb0baf = {
 } as const;
 
 /**
+ * bytedance/seedance-2.0/text-to-video.
+ *
+ * The extras are typed from `BytedanceSeedance20TextToVideoInput`, so the value an editor
+ * offers here and the value `fal.video` validates are one declaration.
+ */
+const ROW_edf14a = {
+  classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
+  keys: ["prompt", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "end_user_id"],
+  ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+  tiers: ["4k"],
+  tierWire: { "4k": "4k" },
+  durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  durationWire: { "10": "10", "11": "11", "12": "12", "13": "13", "14": "14", "15": "15", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9" },
+  resolutions: ["480p", "720p", "1080p", "4k"],
+  resolutionWire: { "1080p": "1080p", "480p": "480p", "4k": "4k", "720p": "720p" },
+  roles: [],
+  extras: {
+    generate_audio: EXTRA as BytedanceSeedance20TextToVideoInput["generate_audio"],
+    bitrate_mode: EXTRA as BytedanceSeedance20TextToVideoInput["bitrate_mode"],
+    codec: EXTRA as BytedanceSeedance20TextToVideoInput["codec"],
+    end_user_id: EXTRA as BytedanceSeedance20TextToVideoInput["end_user_id"],
+  },
+} as const;
+
+/**
  * fal-ai/minimax/hailuo-02/pro/image-to-video.
  *
  * The extras are typed from `FalAiMinimaxHailuo02ProImageToVideoInput`, so the value an
@@ -802,11 +813,11 @@ const ROW_f7ec6b = {
 } as const;
 
 export const FAL_VIDEO_PARAM_SHAPES = {
-  "bytedance/seedance-2.0/image-to-video": ROW_2c170b,
-  "bytedance/seedance-2.0/text-to-video": ROW_8216e2,
-  "bytedance/seedance-2.5/image-to-video": ROW_3d92af,
-  "bytedance/seedance-2.5/reference-to-video": ROW_d272af,
-  "bytedance/seedance-2.5/text-to-video": ROW_e0e300,
+  "bytedance/seedance-2.0/image-to-video": ROW_a3417f,
+  "bytedance/seedance-2.0/text-to-video": ROW_edf14a,
+  "bytedance/seedance-2.5/image-to-video": ROW_d90d61,
+  "bytedance/seedance-2.5/reference-to-video": ROW_60fe08,
+  "bytedance/seedance-2.5/text-to-video": ROW_2add9a,
   "fal-ai/kling-video/o1/video-to-video/edit": ROW_a8d7a5,
   "fal-ai/kling-video/o3/pro/video-to-video/edit": ROW_acd737,
   "fal-ai/kling-video/v2.5-turbo/pro/image-to-video": ROW_f7ec6b,
@@ -834,8 +845,8 @@ export const FAL_VIDEO_PARAM_SHAPES = {
   "fal-ai/wan/v2.7/text-to-video": ROW_eb0baf,
   "google/gemini-omni-flash": ROW_b8747a,
   "lightricks/ltx-2.5/text-to-video/pro": ROW_c9c544,
-  "minimax/h3/image-to-video": ROW_d8d8ea,
-  "minimax/h3/text-to-video": ROW_51ea5b,
+  "minimax/h3/image-to-video": ROW_7cc0a6,
+  "minimax/h3/text-to-video": ROW_38584f,
   "xai/grok-imagine-video/text-to-video": ROW_b944e0,
 } as const satisfies Record<string, FalParamShape>;
 

@@ -141,8 +141,9 @@
                 }
               ],
               "default": "balanced",
-              "description": "How much effort to spend rewriting the prompt before generation. 'fast' returns in about a second. 'balanced' picks per request. 'quality' spends up to ~30s on a richer prompt.",
+              "description": "How much effort to spend rewriting the prompt before generation. 'disabled' skips prompt expansion. 'fast' returns in about a second. 'balanced' picks per request. 'quality' spends up to ~30s on a richer prompt.",
               "examples": [
+                "disabled",
                 "fast",
                 "balanced",
                 "quality"
@@ -178,6 +179,20 @@
               "description": "Return the generated video as base64 instead of a CDN URL.",
               "title": "Sync Mode",
               "type": "boolean"
+            },
+            "target_audio_url": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional URL of an audio clip at least 2 seconds long (maximum 15 MB) to pin to the generated soundtrack. Longer clips are trimmed to the requested video duration, keeping the beginning. The original audio replaces the output soundtrack, padded with silence if shorter than the video, without changing playback speed. Exceptionally high sample rates may be resampled to 96 kHz. Accepts an HTTP(S) URL or a base64 data URI.",
+              "title": "Target Audio Url"
             }
           },
           "required": [
@@ -193,6 +208,7 @@
             "enable_safety_checker",
             "sync_mode",
             "prompt_expansion_mode",
+            "target_audio_url",
             "aspect_ratio"
           ]
         },

@@ -96,7 +96,7 @@ export const FAL_SFX_SHAPES = {
     order: ["prompt", "duration", "audio_format"],
     props: {
       prompt: { t: "string", req: true },
-      duration: { t: "integer", def: true, min: 1, max: 180 },
+      duration: { t: "number", def: true, min: 0.5, max: 180 },
       audio_format: { t: "string", def: true, enum: E_e13f72 },
     },
   },

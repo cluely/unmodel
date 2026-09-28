@@ -93,6 +93,7 @@ export const falThreeDInputSchema = z.looseObject({
   generate_type: z.enum(["Normal", "Geometry"]).optional(),
   geometry_file_format: z.enum(["glb", "usdz", "fbx", "obj", "stl"]).optional(),
   geometry_quality: z.enum(["standard", "detailed"]).optional(),
+  geometry_resolution: z.enum(["standard", "2k"]).nullable().optional(),
   guidance_scale: z.number().optional(),
   hd_texture: z.boolean().optional(),
   image_seed: z.number().nullable().optional(),

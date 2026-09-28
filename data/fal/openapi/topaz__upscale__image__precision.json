@@ -205,14 +205,15 @@
             },
             "model": {
               "default": "Standard V2",
-              "description": "Precision upscaling model. Standard V2 fits most photos; High Fidelity V3/V2 preserve detail in professional shots; Low Resolution V2 recovers compressed sources; CGI targets art and rendered graphics; Text Refine keeps text and shapes crisp.",
+              "description": "Precision upscaling model. Standard V2 fits most photos; High Fidelity V3/V2 preserve detail in professional shots; Low Resolution V2 recovers compressed sources; CGI targets art and rendered graphics; Text Refine keeps text and shapes crisp; Faces restores facial detail with Face Recovery 3.",
               "enum": [
                 "Standard V2",
                 "High Fidelity V3",
                 "High Fidelity V2",
                 "Low Resolution V2",
                 "CGI",
-                "Text Refine"
+                "Text Refine",
+                "Faces"
               ],
               "title": "Model",
               "type": "string"
@@ -327,7 +328,7 @@
       "title": "Queue OpenAPI for fal-ai/topaz/upscale/image/precision",
       "version": "1.0.0",
       "x-fal-metadata": {
-        "about": "# Topaz Precision Image Upscale (Gigapixel)\n\nClassic (non-generative) upscaling that stays faithful to the\nsource pixels.\n\n## Models\n- **Standard V2** — general-purpose, fits most photos.\n- **High Fidelity V2** — preserves fine detail in professional\nshots.\n- **Low Resolution V2** — recovers compressed, low-quality sources.\n- **CGI** — artwork and rendered graphics.\n- **Text Refine** — keeps text and shapes crisp.",
+        "about": "# Topaz Precision Image Upscale (Gigapixel)\n\nClassic (non-generative) upscaling that stays faithful to the\nsource pixels.\n\n## Models\n- **Standard V2** — general-purpose, fits most photos.\n- **High Fidelity V2** — preserves fine detail in professional\nshots.\n- **Low Resolution V2** — recovers compressed, low-quality sources.\n- **CGI** — artwork and rendered graphics.\n- **Text Refine** — keeps text and shapes crisp.\n- **Faces** — Face Recovery 3, restores facial detail.",
         "category": "video-to-video",
         "documentationUrl": "https://fal.ai/models/fal-ai/topaz/upscale/image/precision/api",
         "endpointId": "fal-ai/topaz/upscale/image/precision",

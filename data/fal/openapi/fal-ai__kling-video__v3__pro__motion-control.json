@@ -96,14 +96,14 @@
             "frontal_image_url": {
               "anyOf": [
                 {
-                  "limit_description": "Max file size: 10.0MB, Min width: 300px, Min height: 300px, Min aspect ratio: 0.40, Max aspect ratio: 2.50, Timeout: 20.0s",
+                  "limit_description": "Max file size: 50.0MB, Min width: 300px, Min height: 300px, Min aspect ratio: 0.40, Max aspect ratio: 2.50, Timeout: 20.0s",
                   "type": "string",
                   "ui": {
                     "field": "image"
                   },
                   "x-fal": {
                     "max_aspect_ratio": 2.5,
-                    "max_file_size": 10485760,
+                    "max_file_size": 52428800,
                     "min_aspect_ratio": 0.4,
                     "min_height": 300,
                     "min_width": 300,
@@ -122,14 +122,14 @@
                 {
                   "items": {
                     "_fal_ui_field": "image",
-                    "limit_description": "Max file size: 10.0MB, Min width: 300px, Min height: 300px, Min aspect ratio: 0.40, Max aspect ratio: 2.50, Timeout: 20.0s",
+                    "limit_description": "Max file size: 50.0MB, Min width: 300px, Min height: 300px, Min aspect ratio: 0.40, Max aspect ratio: 2.50, Timeout: 20.0s",
                     "type": "string",
                     "ui": {
                       "field": "image"
                     },
                     "x-fal": {
                       "max_aspect_ratio": 2.5,
-                      "max_file_size": 10485760,
+                      "max_file_size": 52428800,
                       "min_aspect_ratio": 0.4,
                       "min_height": 300,
                       "min_width": 300,

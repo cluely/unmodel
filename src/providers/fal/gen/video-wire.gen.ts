@@ -109,6 +109,11 @@ export interface BytedanceSeedance20ImageToVideoInput {
    * model; 'standard' uses the default bitrate. Default: `"standard"`.
    */
   bitrate_mode?: "standard" | "high";
+  /**
+   * 'auto' retains default video codec behaviour; 'H264' uses H.264; 'H265' uses H.265.
+   * Default: `"auto"`.
+   */
+  codec?: "auto" | "H264" | "H265";
   /** The unique user ID of the end user. */
   end_user_id?: string | null;
 }
@@ -168,6 +173,11 @@ export interface BytedanceSeedance20TextToVideoInput {
    * model; 'standard' uses the default bitrate. Default: `"standard"`.
    */
   bitrate_mode?: "standard" | "high";
+  /**
+   * 'auto' retains default video codec behaviour; 'H264' uses H.264; 'H265' uses H.265.
+   * Default: `"auto"`.
+   */
+  codec?: "auto" | "H264" | "H265";
   /** The unique user ID of the end user. */
   end_user_id?: string | null;
 }
@@ -218,6 +228,11 @@ export interface BytedanceSeedance25ImageToVideoInput {
    */
   resolution?: "480p" | "720p" | "1080p";
   /**
+   * Generate a draft preview at 480p, overriding resolution. Returns a draft_id for
+   * completing the draft at 1080p within seven days. Default: `false`.
+   */
+  draft?: boolean;
+  /**
    * Duration of the video in seconds. Supports 4 to 30 seconds, or auto to let the model
    * decide based on the prompt. Default: `"auto"`.
    */
@@ -238,6 +253,11 @@ export interface BytedanceSeedance25ImageToVideoInput {
    * model; 'standard' uses the default bitrate. Default: `"standard"`.
    */
   bitrate_mode?: "standard" | "high";
+  /**
+   * 'auto' retains default video codec behaviour; 'H264' uses H.264; 'H265' uses H.265.
+   * Default: `"auto"`.
+   */
+  codec?: "auto" | "H264" | "H265";
   /** The unique user ID of the end user. */
   end_user_id?: string | null;
 }
@@ -253,6 +273,11 @@ export interface BytedanceSeedance25ImageToVideoOutput {
   video: FalFile;
   /** The seed used for generation. */
   seed: number;
+  /**
+   * The draft ID, or null when draft mode is disabled. Complete this draft within seven days
+   * using the same account.
+   */
+  draft_id?: string | null;
 }
 
 /**
@@ -272,6 +297,13 @@ export interface BytedanceSeedance25ImageToVideoOutput {
 export interface BytedanceSeedance25ReferenceToVideoInput {
   /** The text prompt used to generate the video. */
   prompt: string;
+  /**
+   * The type of video generation task. Reference uses the supplied media as guidance.
+   * Editing modifies a reference video and automatically coerces aspect_ratio and duration
+   * to auto. Extension continues a reference video and automatically coerces aspect_ratio to
+   * auto. Default: `"reference"`.
+   */
+  task?: "reference" | "editing" | "extension";
   /**
    * Reference images to guide video generation. Refer to them in the prompt as @Image1,
    * @Image2, etc. Supported formats: JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, HEIF. Max 30 MB
@@ -301,6 +333,11 @@ export interface BytedanceSeedance25ReferenceToVideoInput {
    */
   resolution?: "480p" | "720p" | "1080p";
   /**
+   * Generate a draft preview at 480p, overriding resolution. Returns a draft_id for
+   * completing the draft at 1080p within seven days. Default: `false`.
+   */
+  draft?: boolean;
+  /**
    * Duration of the video in seconds. Supports 4 to 30 seconds, or auto to let the model
    * decide based on the prompt. Default: `"auto"`.
    */
@@ -322,6 +359,16 @@ export interface BytedanceSeedance25ReferenceToVideoInput {
    * model; 'standard' uses the default bitrate. Default: `"standard"`.
    */
   bitrate_mode?: "standard" | "high";
+  /**
+   * 'auto' retains default video codec behaviour; 'H264' uses H.264; 'H265' uses H.265.
+   * Default: `"auto"`.
+   */
+  codec?: "auto" | "H264" | "H265";
+  /**
+   * Random seed for reproducibility. Note that results may still vary slightly even with the
+   * same seed.
+   */
+  seed?: number | null;
   /** The unique user ID of the end user. */
   end_user_id?: string | null;
 }
@@ -337,6 +384,11 @@ export interface BytedanceSeedance25ReferenceToVideoOutput {
   video: FalFile;
   /** The seed used for generation. */
   seed: number;
+  /**
+   * The draft ID, or null when draft mode is disabled. Complete this draft within seven days
+   * using the same account.
+   */
+  draft_id?: string | null;
 }
 
 /**
@@ -362,6 +414,11 @@ export interface BytedanceSeedance25TextToVideoInput {
    */
   resolution?: "480p" | "720p" | "1080p";
   /**
+   * Generate a draft preview at 480p, overriding resolution. Returns a draft_id for
+   * completing the draft at 1080p within seven days. Default: `false`.
+   */
+  draft?: boolean;
+  /**
    * Duration of the video in seconds. Supports 4 to 30 seconds, or auto to let the model
    * decide based on the prompt. Default: `"auto"`.
    */
@@ -383,6 +440,11 @@ export interface BytedanceSeedance25TextToVideoInput {
    * model; 'standard' uses the default bitrate. Default: `"standard"`.
    */
   bitrate_mode?: "standard" | "high";
+  /**
+   * 'auto' retains default video codec behaviour; 'H264' uses H.264; 'H265' uses H.265.
+   * Default: `"auto"`.
+   */
+  codec?: "auto" | "H264" | "H265";
   /** The unique user ID of the end user. */
   end_user_id?: string | null;
 }
@@ -398,6 +460,11 @@ export interface BytedanceSeedance25TextToVideoOutput {
   video: FalFile;
   /** The seed used for generation. */
   seed: number;
+  /**
+   * The draft ID, or null when draft mode is disabled. Complete this draft within seven days
+   * using the same account.
+   */
+  draft_id?: string | null;
 }
 
 /**
@@ -1914,20 +1981,31 @@ export interface MinimaxH3ImageToVideoInput {
   /** Return the generated video as base64 instead of a CDN URL. Default: `false`. */
   sync_mode?: boolean;
   /**
-   * How much effort to spend rewriting the prompt before generation. 'fast' returns in about
-   * a second. 'balanced' picks per request. 'quality' spends up to ~30s on a richer prompt.
-   * Default: `"balanced"`.
+   * How much effort to spend rewriting the prompt before generation. 'disabled' skips prompt
+   * expansion. 'fast' returns in about a second. 'balanced' picks per request. 'quality'
+   * spends up to ~30s on a richer prompt. Default: `"balanced"`.
    */
   prompt_expansion_mode?: string | null;
   /**
-   * Optional URL of the image to use as the first frame. When provided, the output aspect
-   * ratio follows this image. When omitted, the request is handled as text-to-video (16:9 by
-   * default). Carries a image reference — an https URL or a `data:` URI.
+   * Optional URL of an audio clip at least 2 seconds long (maximum 15 MB) to pin to the
+   * generated soundtrack. Longer clips are trimmed to the requested video duration, keeping
+   * the beginning. The original audio replaces the output soundtrack, padded with silence if
+   * shorter than the video, without changing playback speed. Exceptionally high sample rates
+   * may be resampled to 96 kHz. Accepts an HTTP(S) URL or a base64 data URI. Carries a audio
+   * reference — an https URL or a `data:` URI.
+   */
+  target_audio_url?: string | null;
+  /**
+   * Optional URL of the image to use as the first frame. When provided, the output canvas
+   * follows this image. If only end_image_url is provided, the canvas follows that last
+   * frame instead. If both images are omitted, the request is handled as text-to-video (16:9
+   * by default). Carries a image reference — an https URL or a `data:` URI.
    */
   image_url?: string | null;
   /**
-   * Optional URL of the image to use as the last frame, for first-to-last keyframe
-   * generation. Carries a image reference — an https URL or a `data:` URI.
+   * Optional URL of the image to use as the last frame. It may be provided alone for
+   * end-only keyframe generation; in that case the output canvas follows this image. Carries
+   * a image reference — an https URL or a `data:` URI.
    */
   end_image_url?: string | null;
 }
@@ -1980,11 +2058,20 @@ export interface MinimaxH3TextToVideoInput {
   /** Return the generated video as base64 instead of a CDN URL. Default: `false`. */
   sync_mode?: boolean;
   /**
-   * How much effort to spend rewriting the prompt before generation. 'fast' returns in about
-   * a second. 'balanced' picks per request. 'quality' spends up to ~30s on a richer prompt.
-   * Default: `"balanced"`.
+   * How much effort to spend rewriting the prompt before generation. 'disabled' skips prompt
+   * expansion. 'fast' returns in about a second. 'balanced' picks per request. 'quality'
+   * spends up to ~30s on a richer prompt. Default: `"balanced"`.
    */
   prompt_expansion_mode?: string | null;
+  /**
+   * Optional URL of an audio clip at least 2 seconds long (maximum 15 MB) to pin to the
+   * generated soundtrack. Longer clips are trimmed to the requested video duration, keeping
+   * the beginning. The original audio replaces the output soundtrack, padded with silence if
+   * shorter than the video, without changing playback speed. Exceptionally high sample rates
+   * may be resampled to 96 kHz. Accepts an HTTP(S) URL or a base64 data URI. Carries a audio
+   * reference — an https URL or a `data:` URI.
+   */
+  target_audio_url?: string | null;
   /** The aspect ratio of the generated video. Default: `"16:9"`. */
   aspect_ratio?: "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16";
 }

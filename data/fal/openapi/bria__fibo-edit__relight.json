@@ -112,13 +112,21 @@
             },
             "structured_instruction": {
               "additionalProperties": true,
-              "description": "Current instruction.",
+              "deprecated": true,
+              "description": "Deprecated, use `vgl`. The same document under the old name.",
               "title": "Structured Instruction",
+              "type": "object"
+            },
+            "vgl": {
+              "additionalProperties": true,
+              "description": "The VGL document the image was generated from.",
+              "title": "Vgl",
               "type": "object"
             }
           },
           "required": [
             "image",
+            "vgl",
             "structured_instruction"
           ],
           "title": "FiboEditExtraEPOutputModel",
@@ -126,6 +134,7 @@
           "x-fal-order-properties": [
             "image",
             "images",
+            "vgl",
             "structured_instruction"
           ]
         },

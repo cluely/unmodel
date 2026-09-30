@@ -3,6 +3,12 @@
     "schemas": {
       "Input": {
         "properties": {
+          "draft": {
+            "default": false,
+            "description": "Generate a draft preview at 480p, overriding resolution. The response carries a draft_id for completing the draft at 1080p with bytedance/seedance-2.5/draft-complete within seven days. A draft is billed as a normal 480p render.",
+            "type": "boolean",
+            "x-ui-component": "switch"
+          },
           "duration": {
             "default": 5,
             "description": "Video duration in seconds (4-30), or -1 for model to choose automatically.",
@@ -124,7 +130,8 @@
           "output_format",
           "generate_audio",
           "watermark",
-          "return_last_frame"
+          "return_last_frame",
+          "draft"
         ]
       },
       "PredictionData": {
@@ -136,6 +143,14 @@
           "created_at": {
             "description": "ISO timestamp of creation.",
             "format": "date-time",
+            "type": "string"
+          },
+          "draft": {
+            "description": "True when this task is a 480p draft render.",
+            "type": "boolean"
+          },
+          "draft_id": {
+            "description": "Pass as draft_id to bytedance/seedance-2.5/draft-complete to render the 1080p final (valid for 7 days).",
             "type": "string"
           },
           "has_nsfw_contents": {

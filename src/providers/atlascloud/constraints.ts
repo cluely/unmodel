@@ -413,6 +413,7 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
 const SEEDANCE_25_ONLY = {
   output_format:
     "`output_format` (mp4/mov) is a Seedance 2.5 parameter; every other Atlas video model always returns mp4",
+  draft: "`draft` (a 480p preview completed later at 1080p) is a Seedance 2.5 parameter on Atlas",
 } as const;
 
 /**

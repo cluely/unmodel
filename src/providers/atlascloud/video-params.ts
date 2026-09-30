@@ -96,6 +96,7 @@ const SEEDANCE_2X_EXTRAS = {
 const SEEDANCE_25_EXTRAS = {
   ...SEEDANCE_2X_EXTRAS,
   output_format: EXTRA as (typeof VIDEO_OUTPUT_FORMATS)[number],
+  draft: EXTRA as boolean,
 } as const;
 
 const SEEDANCE_25_REFERENCE_EXTRAS = {

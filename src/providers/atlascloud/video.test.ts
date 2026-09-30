@@ -602,6 +602,23 @@ describe("a param from another family is named, not swallowed", () => {
       output_format: "mov",
     }))).toEqual(["unsupported_param@output_format"]);
   });
+
+  test("`draft` is a Seedance 2.5 field on all three routes", () => {
+    for (const body of [
+      { model: "bytedance/seedance-2.5/text-to-video", prompt: "p" },
+      { model: "bytedance/seedance-2.5/image-to-video", image: IMAGE_URL },
+      { model: "bytedance/seedance-2.5/reference-to-video", prompt: "p", reference_images: [IMAGE_URL] },
+    ]) {
+      const result = safeUnchecked({ ...body, draft: true });
+      expect(codes(result)).toEqual([]);
+      expect(result.warnings.map((warning) => warning.code)).not.toContain("unknown_param");
+    }
+    expect(codes(safeUnchecked({
+      model: "bytedance/seedance-2.0/text-to-video",
+      prompt: "p",
+      draft: true,
+    }))).toEqual(["unsupported_param@draft"]);
+  });
 });
 
 // ---------------------------------------------------------------------------

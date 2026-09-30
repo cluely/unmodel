@@ -83,6 +83,9 @@ function crossFamilyFieldTypeTests(): void {
   video({ model: "bytedance/seedance-2.5/text-to-video", prompt: "hi", bitrate_mode: "high" });
   // @ts-expect-error — `output_format` is 2.5's alone
   video({ model: "bytedance/seedance-2.0/text-to-video", prompt: "hi", output_format: "mov" });
+  video({ model: "bytedance/seedance-2.5/text-to-video", prompt: "hi", draft: true });
+  // @ts-expect-error: `draft` is 2.5's alone
+  video({ model: "bytedance/seedance-2.0/text-to-video", prompt: "hi", draft: true });
   // @ts-expect-error — Seedance 2.x spells the shape field `ratio`
   video({ model: "bytedance/seedance-2.0/text-to-video", prompt: "hi", aspect_ratio: "16:9" });
   // @ts-expect-error — …and v1.5 pro spells it `aspect_ratio`

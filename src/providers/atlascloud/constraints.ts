@@ -138,8 +138,21 @@ export const SEEDANCE_20_SMALL_RESOLUTIONS = [
 export const SEEDANCE_15_RESOLUTIONS = ["720p", "480p"] as const;
 export const SEEDANCE_15_FAST_RESOLUTIONS = ["720p"] as const;
 
-/** Wan 3.0 prime `resolution` — UPPER-case P, unlike every other row here. */
-export const WAN_PRIME_RESOLUTIONS = ["1080P", "720P", "480P"] as const;
+/**
+ * Wan 3.0 prime `resolution`: the same lower-case list, `-esr` ladder
+ * included, that Wan 3.0 publishes: "Output resolution. Native tiers: 480p,
+ * 720p, 1080p. ESR tiers: 720p-esr, 1080p-esr, 1440p-esr, 4k-esr." (both prime
+ * documents, re-read 2026-09-30).
+ */
+export const WAN_PRIME_RESOLUTIONS = [
+  "1080p",
+  "720p",
+  "480p",
+  "720p-esr",
+  "1080p-esr",
+  "1440p-esr",
+  "4k-esr",
+] as const;
 
 /** Wan 3.0 `resolution` — lower-case, with an `-esr` enhancement ladder. */
 export const WAN_RESOLUTIONS = [

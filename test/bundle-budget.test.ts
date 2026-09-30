@@ -665,9 +665,8 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  * fal's +198 was thirty endpoints of GENERATED data behind one adapter and one
  * schema. This +66 is 23 HAND rows across four dialect families that disagree
  * about field names (`ratio` vs `aspect_ratio`, `audio` vs `generate_audio`),
- * about casing (`1080P` at Wan 3.0-prime, `1080p` at Wan 3.0, `-SR` at Seedance
- * 2.0, `-sr` at 2.5) and about which of the three routes a family's fields live
- * on. That disagreement IS the weight: it is what the deny tables spell out, and
+ * about casing (`-SR` at Seedance 2.0, `-sr` at 2.5) and about which of the
+ * three routes a family's fields live on. That disagreement IS the weight: it is what the deny tables spell out, and
  * spelling it out is what makes a param from a sibling route an error naming the
  * id to pick instead of a 400 from Atlas.
  *

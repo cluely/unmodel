@@ -43,7 +43,7 @@ export const models = {
     lastUpdated: "2026-07-31",
     status: "beta",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 16384 },
+    limit: { context: 256000, output: 32768 },
     cost: { input: 0.468, output: 0.936, cacheRead: 0.0936, reasoning: 0.936 },
   },
   "gemma-4-26b-a4b-it": {
@@ -241,6 +241,23 @@ export const models = {
     limit: { context: 128000, output: 16384 },
     cost: { input: 0.25, output: 1.5 },
   },
+  "qwen3.8-27b": {
+    id: "qwen3.8-27b",
+    name: "Qwen3.8 27B",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    status: "beta",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 262144, output: 32768 },
+    cost: { input: 0.684, output: 3.762, cacheRead: 0.137, reasoning: 3.762 },
+  },
   "whisper-large-v3": {
     id: "whisper-large-v3",
     name: "Whisper Large v3",
@@ -260,7 +277,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type ScalewayModelId = keyof typeof models;
-export type ScalewayTextModelId = "bge-multilingual-gemma2" | "deepseek-v4-flash-0731" | "gemma-4-26b-a4b-it" | "glm-5.2" | "gpt-oss-120b" | "llama-3.3-70b-instruct" | "mistral-medium-3.5-128b" | "mistral-small-3.2-24b-instruct-2506" | "pixtral-12b-2409" | "qwen3-235b-a22b-instruct-2507" | "qwen3-coder-30b-a3b-instruct" | "qwen3-embedding-8b" | "qwen3.5-397b-a17b" | "qwen3.6-35b-a3b" | "whisper-large-v3";
+export type ScalewayTextModelId = "bge-multilingual-gemma2" | "deepseek-v4-flash-0731" | "gemma-4-26b-a4b-it" | "glm-5.2" | "gpt-oss-120b" | "llama-3.3-70b-instruct" | "mistral-medium-3.5-128b" | "mistral-small-3.2-24b-instruct-2506" | "pixtral-12b-2409" | "qwen3-235b-a22b-instruct-2507" | "qwen3-coder-30b-a3b-instruct" | "qwen3-embedding-8b" | "qwen3.5-397b-a17b" | "qwen3.6-35b-a3b" | "qwen3.8-27b" | "whisper-large-v3";
 export type ScalewayImageModelId = never;
 export type ScalewayAudioModelId = never;
 export type ScalewayVideoModelId = never;

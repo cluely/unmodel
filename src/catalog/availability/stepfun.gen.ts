@@ -42,6 +42,10 @@ export const availability = {
     "stepfun": "step-3.7-flash",
     "vercel": { id: "stepfun/step-3.7-flash", narrows: { drops: ["video"] } },
   },
+  "step-5-preview": {
+    "stepfun": "step-5-preview",
+    "vercel": { id: "stepfun/step-5-preview", narrows: { drops: ["video"] } },
+  },
   "stepaudio-2.5-asr": {
     "stepfun": "stepaudio-2.5-asr",
   },

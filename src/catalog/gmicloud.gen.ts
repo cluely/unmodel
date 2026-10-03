@@ -58,6 +58,36 @@ export const models = {
     limit: { context: 1000000, output: 65536 },
     cost: { input: 2.5, output: 7.5, cacheRead: 0.25, cacheWrite: 3.125 },
   },
+  "Qwen/Qwen3.8-Flash": {
+    id: "Qwen/Qwen3.8-Flash",
+    name: "Qwen3.8 Flash",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    openWeights: false,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048575, output: 131072 },
+    cost: { input: 0.16, output: 0.47, cacheRead: 0.016, cacheWrite: 0.2 },
+  },
+  "Qwen/Qwen3.8-Max": {
+    id: "Qwen/Qwen3.8-Max",
+    name: "Qwen3.8 Max",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-03",
+    lastUpdated: "2026-08-03",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 262144, output: 131072 },
+    cost: { input: 2, output: 6, cacheRead: 0.25, cacheWrite: 2.5 },
+  },
   "anthropic/claude-opus-4.6": {
     id: "anthropic/claude-opus-4.6",
     name: "Claude Opus 4.6",
@@ -257,7 +287,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GmicloudModelId = keyof typeof models;
-export type GmicloudTextModelId = "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen3.7-Max" | "anthropic/claude-opus-4.6" | "anthropic/claude-opus-4.7" | "anthropic/claude-opus-4.8" | "anthropic/claude-sonnet-4.6" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Pro" | "moonshotai/Kimi-K2.6" | "moonshotai/kimi-k2.7-code-highspeed" | "openai/gpt-5.5" | "zai-org/GLM-5-FP8" | "zai-org/GLM-5.1-FP8" | "zai-org/GLM-5.2-FP8";
+export type GmicloudTextModelId = "MiniMaxAI/MiniMax-M2.7" | "MiniMaxAI/MiniMax-M3" | "Qwen/Qwen3.7-Max" | "Qwen/Qwen3.8-Flash" | "Qwen/Qwen3.8-Max" | "anthropic/claude-opus-4.6" | "anthropic/claude-opus-4.7" | "anthropic/claude-opus-4.8" | "anthropic/claude-sonnet-4.6" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Pro" | "moonshotai/Kimi-K2.6" | "moonshotai/kimi-k2.7-code-highspeed" | "openai/gpt-5.5" | "zai-org/GLM-5-FP8" | "zai-org/GLM-5.1-FP8" | "zai-org/GLM-5.2-FP8";
 export type GmicloudImageModelId = never;
 export type GmicloudAudioModelId = never;
 export type GmicloudVideoModelId = never;

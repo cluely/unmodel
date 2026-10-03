@@ -26,7 +26,7 @@ export const models = {
     lastUpdated: "2025-01-04",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 256000, output: 4096 },
-    cost: { input: 0.3, output: 0.9 },
+    cost: { input: 0.3, output: 0.9, cacheRead: 0.03 },
   },
   "devstral-2512": {
     id: "devstral-2512",
@@ -163,22 +163,6 @@ export const models = {
     limit: { context: 128000, output: 16384 },
     cost: { input: 2, output: 5 },
   },
-  "magistral-small": {
-    id: "magistral-small",
-    name: "Magistral Small",
-    family: "magistral-small",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2025-06",
-    releaseDate: "2025-03-17",
-    lastUpdated: "2025-03-17",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 128000, output: 128000 },
-    cost: { input: 0.5, output: 1.5 },
-  },
   "ministral-3b-latest": {
     id: "ministral-3b-latest",
     name: "Ministral 3B (latest)",
@@ -256,7 +240,7 @@ export const models = {
     lastUpdated: "2025-12-02",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0.5, output: 1.5 },
+    cost: { input: 0.5, output: 1.5, cacheRead: 0.05 },
   },
   "mistral-large-latest": {
     id: "mistral-large-latest",
@@ -272,7 +256,7 @@ export const models = {
     lastUpdated: "2025-12-02",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0.5, output: 1.5 },
+    cost: { input: 0.5, output: 1.5, cacheRead: 0.05 },
   },
   "mistral-medium-2505": {
     id: "mistral-medium-2505",
@@ -320,7 +304,7 @@ export const models = {
     lastUpdated: "2026-04-29",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 1.5, output: 7.5 },
+    cost: { input: 1.5, output: 7.5, cacheRead: 0.15 },
   },
   "mistral-medium-latest": {
     id: "mistral-medium-latest",
@@ -336,7 +320,7 @@ export const models = {
     lastUpdated: "2026-04-29",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 1.5, output: 7.5 },
+    cost: { input: 1.5, output: 7.5, cacheRead: 0.15 },
   },
   "mistral-nemo": {
     id: "mistral-nemo",
@@ -384,7 +368,7 @@ export const models = {
     lastUpdated: "2026-03-16",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 256000, output: 256000 },
-    cost: { input: 0.15, output: 0.6 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.015 },
   },
   "mistral-small-latest": {
     id: "mistral-small-latest",
@@ -400,7 +384,7 @@ export const models = {
     lastUpdated: "2026-03-16",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 256000, output: 256000 },
-    cost: { input: 0.15, output: 0.6 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.015 },
   },
   "open-mistral-7b": {
     id: "open-mistral-7b",
@@ -559,10 +543,26 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.14 },
   },
+  "zai-glm-5-3": {
+    id: "zai-glm-5-3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 1.4, output: 4.4, cacheRead: 0.14 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type MistralModelId = keyof typeof models;
-export type MistralTextModelId = "codestral-latest" | "devstral-2512" | "devstral-latest" | "devstral-medium-2507" | "devstral-medium-latest" | "devstral-small-2505" | "devstral-small-2507" | "labs-devstral-small-2512" | "magistral-medium-latest" | "magistral-small" | "ministral-3b-latest" | "ministral-8b-latest" | "mistral-embed" | "mistral-large-2411" | "mistral-large-2512" | "mistral-large-latest" | "mistral-medium-2505" | "mistral-medium-2508" | "mistral-medium-2604" | "mistral-medium-latest" | "mistral-nemo" | "mistral-small-2506" | "mistral-small-2603" | "mistral-small-latest" | "open-mistral-7b" | "open-mistral-nemo" | "open-mixtral-8x22b" | "open-mixtral-8x7b" | "pixtral-12b" | "pixtral-large-latest" | "voxtral-mini-latest" | "voxtral-small-latest" | "zai-glm-5-2";
+export type MistralTextModelId = "codestral-latest" | "devstral-2512" | "devstral-latest" | "devstral-medium-2507" | "devstral-medium-latest" | "devstral-small-2505" | "devstral-small-2507" | "labs-devstral-small-2512" | "magistral-medium-latest" | "ministral-3b-latest" | "ministral-8b-latest" | "mistral-embed" | "mistral-large-2411" | "mistral-large-2512" | "mistral-large-latest" | "mistral-medium-2505" | "mistral-medium-2508" | "mistral-medium-2604" | "mistral-medium-latest" | "mistral-nemo" | "mistral-small-2506" | "mistral-small-2603" | "mistral-small-latest" | "open-mistral-7b" | "open-mistral-nemo" | "open-mixtral-8x22b" | "open-mixtral-8x7b" | "pixtral-12b" | "pixtral-large-latest" | "voxtral-mini-latest" | "voxtral-small-latest" | "zai-glm-5-2" | "zai-glm-5-3";
 export type MistralImageModelId = never;
 export type MistralAudioModelId = "voxtral-mini-tts-latest";
 export type MistralVideoModelId = never;

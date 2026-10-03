@@ -6,9 +6,9 @@ import type { ModelInfo, ProviderInfo } from "../core/catalog-types";
 
 export const provider = {
   id: "wandb",
-  name: "Weights & Biases",
+  name: "CoreWeave",
   env: ["WANDB_API_KEY"],
-  doc: "https://docs.wandb.ai/guides/integrations/inference/",
+  doc: "https://docs.wandb.ai/inference",
   api: "https://api.inference.wandb.ai/v1",
 } as const satisfies ProviderInfo;
 
@@ -223,6 +223,39 @@ export const models = {
     limit: { context: 1048576, output: 1048576 },
     cost: { input: 1.31, output: 3.96, cacheRead: 0.044 },
   },
+  "deepseek-ai/DeepSeek-V4.1-Flash": {
+    id: "deepseek-ai/DeepSeek-V4.1-Flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.2, output: 0.65, cacheRead: 0.03 },
+  },
+  "google/gemma-4-26B-A4B-it": {
+    id: "google/gemma-4-26B-A4B-it",
+    name: "Gemma 4 26B A4B",
+    family: "gemma",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-04-02",
+    lastUpdated: "2026-04-02",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 262144, output: 262144 },
+    cost: { input: 0.1, output: 0.3, cacheRead: 0.05 },
+  },
   "google/gemma-4-31B-it": {
     id: "google/gemma-4-31B-it",
     name: "Gemma 4 31B",
@@ -281,6 +314,7 @@ export const models = {
     structuredOutput: true,
     temperature: true,
     openWeights: true,
+    knowledge: "2023-12",
     releaseDate: "2024-07-23",
     lastUpdated: "2024-07-23",
     modalities: { input: ["text"], output: ["text"] },
@@ -369,7 +403,7 @@ export const models = {
     lastUpdated: "2026-06-04",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0.75, output: 2.75, cacheRead: 0.15 },
+    cost: { input: 0.5, output: 2.15, cacheRead: 0.1 },
   },
   "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B": {
     id: "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B",
@@ -385,7 +419,7 @@ export const models = {
     lastUpdated: "2026-08-11",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0.1, output: 0.25, cacheRead: 0.05 },
+    cost: { input: 0.07, output: 0.2, cacheRead: 0.04 },
   },
   "openai/gpt-oss-120b": {
     id: "openai/gpt-oss-120b",
@@ -435,10 +469,26 @@ export const models = {
     limit: { context: 1048576, output: 1048576 },
     cost: { input: 0.76, output: 2.42, cacheRead: 0.14 },
   },
+  "zai-org/GLM-5.3-Flash": {
+    id: "zai-org/GLM-5.3-Flash",
+    name: "GLM 5.3 Flash",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.05 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type WandbModelId = keyof typeof models;
-export type WandbTextModelId = "JetBrains/Mellum2-12B-A2.5B-Instruct" | "MiniMaxAI/MiniMax-M3" | "OpenPipe/Qwen3-14B-Instruct" | "Qwen/Qwen3-30B-A3B-Instruct-2507" | "Qwen/Qwen3.5-35B-A3B" | "Qwen/Qwen3.6-27B" | "Qwen/Qwen3.6-35B-A3B" | "Qwen/Qwen3.8-27B" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "google/gemma-4-31B-it" | "ibm-granite/granite-4.1-8b" | "ibm-granite/granite-4.2-8b" | "meta-llama/Llama-3.1-70B-Instruct" | "meta-llama/Llama-3.1-8B-Instruct" | "meta-llama/Llama-3.3-70B-Instruct" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" | "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "zai-org/GLM-5.2";
+export type WandbTextModelId = "JetBrains/Mellum2-12B-A2.5B-Instruct" | "MiniMaxAI/MiniMax-M3" | "OpenPipe/Qwen3-14B-Instruct" | "Qwen/Qwen3-30B-A3B-Instruct-2507" | "Qwen/Qwen3.5-35B-A3B" | "Qwen/Qwen3.6-27B" | "Qwen/Qwen3.6-35B-A3B" | "Qwen/Qwen3.8-27B" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "deepseek-ai/DeepSeek-V4.1-Flash" | "google/gemma-4-26B-A4B-it" | "google/gemma-4-31B-it" | "ibm-granite/granite-4.1-8b" | "ibm-granite/granite-4.2-8b" | "meta-llama/Llama-3.1-70B-Instruct" | "meta-llama/Llama-3.1-8B-Instruct" | "meta-llama/Llama-3.3-70B-Instruct" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" | "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3-Flash";
 export type WandbImageModelId = never;
 export type WandbAudioModelId = never;
 export type WandbVideoModelId = never;

@@ -224,7 +224,7 @@ export const models = {
     releaseDate: "2025-04-14",
     lastUpdated: "2025-04-14",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
-    limit: { context: 1047576, output: 32768 },
+    limit: { context: 128000, output: 32000 },
   },
   "openai-gpt-5": {
     id: "openai-gpt-5",
@@ -241,7 +241,7 @@ export const models = {
     lastUpdated: "2025-08-07",
     status: "beta",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 400000, output: 128000, input: 272000 },
+    limit: { context: 272000, output: 8192, input: 272000 },
   },
   "openai-gpt-5-mini": {
     id: "openai-gpt-5-mini",
@@ -275,7 +275,7 @@ export const models = {
     lastUpdated: "2025-08-07",
     status: "beta",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 400000, output: 128000, input: 272000 },
+    limit: { context: 272000, output: 8192, input: 272000 },
   },
   "openai-gpt-5.1": {
     id: "openai-gpt-5.1",
@@ -291,7 +291,7 @@ export const models = {
     releaseDate: "2025-11-13",
     lastUpdated: "2025-11-13",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 400000, output: 128000, input: 272000 },
+    limit: { context: 272000, output: 8192, input: 272000 },
   },
   "openai-gpt-5.2": {
     id: "openai-gpt-5.2",
@@ -398,7 +398,7 @@ export const models = {
     id: "snowflake-llama3.3-70b",
     name: "Llama-3.3-70B-Instruct",
     family: "llama",
-    attachment: true,
+    attachment: false,
     reasoning: false,
     toolCall: true,
     temperature: true,

@@ -26,13 +26,23 @@ export const availability = {
   },
   "muse-spark-1.2": {
     "meta": "muse-spark-1.2",
-    "openrouter": "meta/muse-spark-1.2",
+    "openrouter": { id: "meta/muse-spark-1.2", narrows: { drops: ["audio"] } },
     "vercel": { id: "meta/muse-spark-1.2", narrows: { drops: ["video", "audio"] } },
   },
   "muse-spark-1.2-contributor": {
     "meta": "muse-spark-1.2-contributor",
-    "openrouter": "meta/muse-spark-1.2-contributor",
+    "openrouter": { id: "meta/muse-spark-1.2-contributor", narrows: { drops: ["audio"] } },
     "vercel": { id: "meta/muse-spark-1.2-contributor", narrows: { drops: ["video", "audio"] } },
+  },
+  "muse-spark-1.3": {
+    "meta": "muse-spark-1.3",
+    "openrouter": { id: "meta/muse-spark-1.3", narrows: { drops: ["audio"] } },
+    "vercel": { id: "meta/muse-spark-1.3", narrows: { drops: ["video", "audio"] } },
+  },
+  "muse-spark-1.3-contributor": {
+    "meta": "muse-spark-1.3-contributor",
+    "openrouter": { id: "meta/muse-spark-1.3-contributor", narrows: { drops: ["audio"] } },
+    "vercel": { id: "meta/muse-spark-1.3-contributor", narrows: { drops: ["video", "audio"] } },
   },
 } as const satisfies AvailabilityMap;
 

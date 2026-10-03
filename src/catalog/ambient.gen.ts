@@ -97,6 +97,38 @@ export const models = {
     limit: { context: 262144, output: 262144 },
     cost: { input: 0.69, output: 3.49, cacheRead: 0.14, cacheWrite: 0 },
   },
+  "qwen/qwen3.6-27b": {
+    id: "qwen/qwen3.6-27b",
+    name: "Qwen3.6 27B",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-04-22",
+    lastUpdated: "2026-04-22",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 32768, output: 8192 },
+    cost: { input: 0.32, output: 3.2, cacheRead: 0.16, cacheWrite: 0 },
+  },
+  "qwen/qwen3.8-27b": {
+    id: "qwen/qwen3.8-27b",
+    name: "Qwen3.8 27B",
+    family: "qwen",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 32768, output: 8192 },
+    cost: { input: 0.32, output: 3.2, cacheRead: 0.16, cacheWrite: 0 },
+  },
   "stepfun/step-3.7-flash": {
     id: "stepfun/step-3.7-flash",
     name: "Step 3.7 Flash",
@@ -181,7 +213,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AmbientModelId = keyof typeof models;
-export type AmbientTextModelId = "ambient/large" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-0731" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k2.7-code" | "stepfun/step-3.7-flash" | "xiaomi/mimo-v2.5" | "z-ai/glm-5.2" | "zai-org/GLM-5.1-FP8" | "zai-org/GLM-5.2-FP8";
+export type AmbientTextModelId = "ambient/large" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-0731" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k2.7-code" | "qwen/qwen3.6-27b" | "qwen/qwen3.8-27b" | "stepfun/step-3.7-flash" | "xiaomi/mimo-v2.5" | "z-ai/glm-5.2" | "zai-org/GLM-5.1-FP8" | "zai-org/GLM-5.2-FP8";
 export type AmbientImageModelId = never;
 export type AmbientAudioModelId = never;
 export type AmbientVideoModelId = never;

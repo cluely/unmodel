@@ -115,7 +115,7 @@ export const models = {
     releaseDate: "2026-06-01",
     lastUpdated: "2026-06-25",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 512000 },
+    limit: { context: 1000000, output: 512000 },
     cost: { input: 0.3, output: 1.2, cacheRead: 0.06 },
   },
 } as const satisfies Record<string, ModelInfo>;

@@ -46,6 +46,22 @@ export const models = {
     limit: { context: 256000, output: 32768 },
     cost: { input: 0.1, output: 0.5 },
   },
+  "glm5.3-754b": {
+    id: "glm5.3-754b",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 524288, output: 81920 },
+    cost: { input: 1, output: 3.5, cacheRead: 0.25 },
+  },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
     name: "GPT OSS 120B",
@@ -61,23 +77,6 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 128000, output: 32768 },
     cost: { input: 0.15, output: 0.55 },
-  },
-  "kimi-k2.7-code-1100b": {
-    id: "kimi-k2.7-code-1100b",
-    name: "Kimi K2.7 Code",
-    family: "kimi-k2",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: false,
-    openWeights: true,
-    knowledge: "2025-01",
-    releaseDate: "2026-06-12",
-    lastUpdated: "2026-06-12",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262144, output: 81920 },
-    cost: { input: 0.86, output: 3, cacheRead: 0.18 },
   },
   "mistral4-119b": {
     id: "mistral4-119b",
@@ -130,7 +129,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AkiIoModelId = keyof typeof models;
-export type AkiIoTextModelId = "deepseek-v4-flash-0731-284b" | "gemma4-26b" | "gpt-oss-120b" | "kimi-k2.7-code-1100b" | "mistral4-119b" | "qwen3.6-35b" | "qwen3.8-27b";
+export type AkiIoTextModelId = "deepseek-v4-flash-0731-284b" | "gemma4-26b" | "glm5.3-754b" | "gpt-oss-120b" | "mistral4-119b" | "qwen3.6-35b" | "qwen3.8-27b";
 export type AkiIoImageModelId = never;
 export type AkiIoAudioModelId = never;
 export type AkiIoVideoModelId = never;

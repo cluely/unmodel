@@ -13,22 +13,23 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "deepseek-v4-flash": {
-    id: "deepseek-v4-flash",
-    name: "DeepSeek V4 Flash 0731",
+  "deepseek-v4-1-flash": {
+    id: "deepseek-v4-1-flash",
+    name: "DeepSeek V4.1 Flash",
     family: "deepseek-flash",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
     openWeights: true,
     knowledge: "2025-05",
-    releaseDate: "2026-07-31",
-    lastUpdated: "2026-07-31",
-    modalities: { input: ["text"], output: ["text"] },
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    status: "beta",
+    modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 384000 },
-    cost: { input: 0.3, output: 0.7, cacheRead: 0.06 },
+    cost: { input: 0.65, output: 1.45, cacheRead: 0.13 },
   },
   "gemma4-31b": {
     id: "gemma4-31b",
@@ -46,9 +47,9 @@ export const models = {
     limit: { context: 262144, output: 32768 },
     cost: { input: 0.4, output: 1 },
   },
-  "glm-5-2": {
-    id: "glm-5-2",
-    name: "GLM-5.2",
+  "glm-5-3": {
+    id: "glm-5-3",
+    name: "GLM-5.3",
     family: "glm",
     attachment: false,
     reasoning: true,
@@ -56,11 +57,27 @@ export const models = {
     structuredOutput: true,
     temperature: true,
     openWeights: true,
-    releaseDate: "2026-06-13",
-    lastUpdated: "2026-06-13",
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 393216, output: 131072 },
-    cost: { input: 1.5, output: 5.25, cacheRead: 0.375 },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 1.8, output: 5.75, cacheRead: 0.45 },
+  },
+  "glm-5-3-flash": {
+    id: "glm-5-3-flash",
+    name: "GLM-5.3-Flash",
+    family: "glm-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-26",
+    lastUpdated: "2026-08-26",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.4, output: 1.25, cacheRead: 0.1 },
   },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
@@ -84,7 +101,7 @@ export const models = {
     name: "gpt-oss-safeguard-120b",
     family: "gpt-oss",
     attachment: false,
-    reasoning: true,
+    reasoning: false,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
@@ -116,7 +133,7 @@ export const models = {
     id: "llama3-3-70b",
     name: "Llama-3.3-70B-Instruct",
     family: "llama",
-    attachment: true,
+    attachment: false,
     reasoning: false,
     toolCall: true,
     temperature: true,
@@ -146,7 +163,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type TinfoilModelId = keyof typeof models;
-export type TinfoilTextModelId = "deepseek-v4-flash" | "gemma4-31b" | "glm-5-2" | "gpt-oss-120b" | "gpt-oss-safeguard-120b" | "kimi-k3" | "llama3-3-70b" | "nomic-embed-text";
+export type TinfoilTextModelId = "deepseek-v4-1-flash" | "gemma4-31b" | "glm-5-3" | "glm-5-3-flash" | "gpt-oss-120b" | "gpt-oss-safeguard-120b" | "kimi-k3" | "llama3-3-70b" | "nomic-embed-text";
 export type TinfoilImageModelId = never;
 export type TinfoilAudioModelId = never;
 export type TinfoilVideoModelId = never;

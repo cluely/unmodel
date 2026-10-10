@@ -28,55 +28,22 @@ export const models = {
     limit: { context: 1048576, output: 512000 },
     cost: { input: 0.24, output: 0.96, cacheRead: 0.048 },
   },
-  "deepseek-v4-flash": {
-    id: "deepseek-v4-flash",
-    name: "DeepSeek V4 Flash",
-    family: "deepseek-flash",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2025-05",
-    releaseDate: "2026-04-24",
-    lastUpdated: "2026-04-24",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 384000 },
-    cost: { input: 0.22, output: 0.66, cacheRead: 0.007 },
-  },
-  "deepseek-v4-flash-vision-exp": {
-    id: "deepseek-v4-flash-vision-exp",
-    name: "DeepSeek V4 Flash Vision Exp",
+  "deepseek-v4.1-flash": {
+    id: "deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
     family: "deepseek-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
-    releaseDate: "2026-08-21",
-    lastUpdated: "2026-08-21",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1000000, output: 384000 },
-    cost: { input: 0.22, output: 0.66, cacheRead: 0.007 },
-  },
-  "deepseek-v4-pro": {
-    id: "deepseek-v4-pro",
-    name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
     openWeights: true,
     knowledge: "2025-05",
-    releaseDate: "2026-04-24",
-    lastUpdated: "2026-04-24",
-    modalities: { input: ["text"], output: ["text"] },
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1000000, output: 384000 },
-    cost: { input: 0.66, output: 1.98, cacheRead: 0.022 },
+    cost: { input: 0.24, output: 0.96, cacheRead: 0.0048 },
   },
   "glm-5.3": {
     id: "glm-5.3",
@@ -97,18 +64,18 @@ export const models = {
   "glm-5.3-flash": {
     id: "glm-5.3-flash",
     name: "GLM-5.3-Flash",
-    family: "glm",
+    family: "glm-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
-    openWeights: false,
+    openWeights: true,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
-    cost: { input: 0.06, output: 0.2, cacheRead: 0.012 },
+    cost: { input: 0.12, output: 0.4, cacheRead: 0.024 },
   },
   "hy4-preview": {
     id: "hy4-preview",
@@ -174,7 +141,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type VancineModelId = keyof typeof models;
-export type VancineTextModelId = "MiniMax-M3" | "deepseek-v4-flash" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro" | "glm-5.3" | "glm-5.3-flash" | "hy4-preview" | "kimi-k3" | "qwen3.8-flash" | "qwen3.8-max";
+export type VancineTextModelId = "MiniMax-M3" | "deepseek-v4.1-flash" | "glm-5.3" | "glm-5.3-flash" | "hy4-preview" | "kimi-k3" | "qwen3.8-flash" | "qwen3.8-max";
 export type VancineImageModelId = never;
 export type VancineAudioModelId = never;
 export type VancineVideoModelId = never;

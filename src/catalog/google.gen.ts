@@ -57,7 +57,7 @@ export const models = {
     releaseDate: "2025-10-07",
     lastUpdated: "2025-10-07",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 131072, output: 65536 },
+    limit: { context: 128000, output: 64000 },
     cost: { input: 1.25, output: 10 },
   },
   "gemini-2.5-flash": {
@@ -189,7 +189,7 @@ export const models = {
     releaseDate: "2026-05-28",
     lastUpdated: "2026-05-28",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 65536, output: 32768 },
     cost: { input: 2, output: 120 },
   },
   "gemini-3-pro-image-preview": {
@@ -221,7 +221,7 @@ export const models = {
     releaseDate: "2026-05-28",
     lastUpdated: "2026-05-28",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text", "image"] },
-    limit: { context: 65536, output: 65536 },
+    limit: { context: 131072, output: 32768 },
     cost: { input: 0.5, output: 60 },
   },
   "gemini-3.1-flash-image-preview": {
@@ -271,7 +271,7 @@ export const models = {
     releaseDate: "2026-06-30",
     lastUpdated: "2026-06-30",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
-    limit: { context: 65536, output: 65536 },
+    limit: { context: 65536, output: 4096 },
     cost: { input: 0.25, output: 30 },
   },
   "gemini-3.1-flash-lite-preview": {

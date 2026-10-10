@@ -29,6 +29,21 @@ export const models = {
     limit: { context: 128000, output: 128000 },
     cost: { input: 0.351, output: 0.555 },
   },
+  "@cf/cloudflare/clef-omni": {
+    id: "@cf/cloudflare/clef-omni",
+    name: "Clef Omni",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-10-09",
+    lastUpdated: "2026-10-09",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 65536, output: 65536 },
+    cost: { input: 0.15, output: 0 },
+  },
   "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": {
     id: "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
     name: "Deepseek R1 Distill Qwen 32B",
@@ -60,7 +75,7 @@ export const models = {
     releaseDate: "2026-07-31",
     lastUpdated: "2026-07-31",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1310720, output: 1048576 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 0.44, output: 1.32, cacheRead: 0.014 },
   },
   "@cf/deepseek-ai/deepseek-v4-pro-0813": {
@@ -93,7 +108,7 @@ export const models = {
     lastUpdated: "2026-04-02",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 256000, output: 16384 },
-    cost: { input: 0.1, output: 0.3 },
+    cost: { input: 0.1, output: 0.3, cacheRead: 0.05 },
   },
   "@cf/ibm-granite/granite-4.0-h-micro": {
     id: "@cf/ibm-granite/granite-4.0-h-micro",
@@ -105,8 +120,8 @@ export const models = {
     structuredOutput: false,
     temperature: true,
     openWeights: true,
-    releaseDate: "2025-10-07",
-    lastUpdated: "2025-10-07",
+    releaseDate: "2025-10-02",
+    lastUpdated: "2025-10-02",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131000, output: 131000 },
     cost: { input: 0.017, output: 0.112 },
@@ -234,15 +249,16 @@ export const models = {
     id: "@cf/mistralai/mistral-small-3.1-24b-instruct",
     name: "Mistral Small 3.1 24B Instruct",
     family: "mistral-small",
-    attachment: false,
+    attachment: true,
     reasoning: false,
     toolCall: true,
     structuredOutput: false,
     temperature: true,
     openWeights: true,
-    releaseDate: "2025-03-18",
-    lastUpdated: "2025-03-18",
-    modalities: { input: ["text"], output: ["text"] },
+    knowledge: "2024-06",
+    releaseDate: "2025-03-17",
+    lastUpdated: "2025-03-17",
+    modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 128000, output: 128000 },
     cost: { input: 0.351, output: 0.555 },
   },
@@ -439,13 +455,13 @@ export const models = {
     releaseDate: "2026-08-14",
     lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1310720, output: 1310720 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
   },
   "@cf/zai-org/glm-5.3-flash": {
     id: "@cf/zai-org/glm-5.3-flash",
     name: "Glm 5.3 Flash",
-    family: "glm",
+    family: "glm-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -455,13 +471,13 @@ export const models = {
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1310720, output: 1048576 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 0.15, output: 0.5, cacheRead: 0.03 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type CloudflareWorkersAiModelId = keyof typeof models;
-export type CloudflareWorkersAiTextModelId = "@cf/aisingapore/gemma-sea-lion-v4-27b-it" | "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b" | "@cf/deepseek-ai/deepseek-v4-flash-0731" | "@cf/deepseek-ai/deepseek-v4-pro-0813" | "@cf/google/gemma-4-26b-a4b-it" | "@cf/ibm-granite/granite-4.0-h-micro" | "@cf/meta/llama-3.1-8b-instruct-fp8" | "@cf/meta/llama-3.2-11b-vision-instruct" | "@cf/meta/llama-3.2-1b-instruct" | "@cf/meta/llama-3.2-3b-instruct" | "@cf/meta/llama-3.3-70b-instruct-fp8-fast" | "@cf/meta/llama-4-scout-17b-16e-instruct" | "@cf/meta/llama-guard-3-8b" | "@cf/mistralai/mistral-small-3.1-24b-instruct" | "@cf/moonshotai/kimi-k2.6" | "@cf/moonshotai/kimi-k2.7-code" | "@cf/nvidia/nemotron-3-120b-a12b" | "@cf/openai/gpt-oss-120b" | "@cf/openai/gpt-oss-20b" | "@cf/qwen/qwen2.5-coder-32b-instruct" | "@cf/qwen/qwen3-30b-a3b-fp8" | "@cf/qwen/qwen3.8-27b" | "@cf/qwen/qwq-32b" | "@cf/zai-org/glm-4.7-flash" | "@cf/zai-org/glm-5.2" | "@cf/zai-org/glm-5.3" | "@cf/zai-org/glm-5.3-flash";
+export type CloudflareWorkersAiTextModelId = "@cf/aisingapore/gemma-sea-lion-v4-27b-it" | "@cf/cloudflare/clef-omni" | "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b" | "@cf/deepseek-ai/deepseek-v4-flash-0731" | "@cf/deepseek-ai/deepseek-v4-pro-0813" | "@cf/google/gemma-4-26b-a4b-it" | "@cf/ibm-granite/granite-4.0-h-micro" | "@cf/meta/llama-3.1-8b-instruct-fp8" | "@cf/meta/llama-3.2-11b-vision-instruct" | "@cf/meta/llama-3.2-1b-instruct" | "@cf/meta/llama-3.2-3b-instruct" | "@cf/meta/llama-3.3-70b-instruct-fp8-fast" | "@cf/meta/llama-4-scout-17b-16e-instruct" | "@cf/meta/llama-guard-3-8b" | "@cf/mistralai/mistral-small-3.1-24b-instruct" | "@cf/moonshotai/kimi-k2.6" | "@cf/moonshotai/kimi-k2.7-code" | "@cf/nvidia/nemotron-3-120b-a12b" | "@cf/openai/gpt-oss-120b" | "@cf/openai/gpt-oss-20b" | "@cf/qwen/qwen2.5-coder-32b-instruct" | "@cf/qwen/qwen3-30b-a3b-fp8" | "@cf/qwen/qwen3.8-27b" | "@cf/qwen/qwq-32b" | "@cf/zai-org/glm-4.7-flash" | "@cf/zai-org/glm-5.2" | "@cf/zai-org/glm-5.3" | "@cf/zai-org/glm-5.3-flash";
 export type CloudflareWorkersAiImageModelId = never;
 export type CloudflareWorkersAiAudioModelId = never;
 export type CloudflareWorkersAiVideoModelId = never;

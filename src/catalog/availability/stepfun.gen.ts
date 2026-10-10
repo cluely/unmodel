@@ -37,10 +37,16 @@ export const availability = {
   "step-3.7-flash": {
     "deepinfra": "stepfun-ai/Step-3.7-Flash",
     "huggingface": "stepfun-ai/Step-3.7-Flash",
+    "novita-ai": "stepfun/step-3.7-flash",
     "nvidia": { id: "stepfun-ai/step-3.7-flash", narrows: { drops: ["video"] } },
     "openrouter": "stepfun/step-3.7-flash",
     "stepfun": "step-3.7-flash",
     "vercel": { id: "stepfun/step-3.7-flash", narrows: { drops: ["video"] } },
+  },
+  "step-5-preview": {
+    "openrouter": "stepfun/step-5-preview",
+    "stepfun": "step-5-preview",
+    "vercel": { id: "stepfun/step-5-preview", narrows: { drops: ["video"] } },
   },
   "stepaudio-2.5-asr": {
     "stepfun": "stepaudio-2.5-asr",

@@ -19,6 +19,10 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "codestral-2508": {
+    "mistral": "codestral-2508",
+    "openrouter": "mistralai/codestral-2508",
+  },
   "codestral-latest": {
     "mistral": "codestral-latest",
   },
@@ -41,17 +45,45 @@ export const availability = {
   "devstral-small-2507": {
     "mistral": "devstral-small-2507",
   },
+  "glm-5-2": {
+    "alibaba": { id: "glm-5.2", narrows: { context: 1000000 } },
+    "baseten": "zai-org/GLM-5.2",
+    "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.2", narrows: { context: 262144 } },
+    "deepinfra": "zai-org/GLM-5.2",
+    "friendli": "zai-org/GLM-5.2",
+    "google-vertex": { id: "zai-org/glm-5.2-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 1000000 } },
+    "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
+    "mistral": "glm-5-2",
+    "nebius": "zai-org/GLM-5.2",
+    "novita-ai": "zai-org/glm-5.2",
+    "nvidia": { id: "z-ai/glm-5.2", narrows: { context: 1000000 } },
+    "openrouter": "z-ai/glm-5.2",
+    "scaleway": { id: "glm-5.2", narrows: { context: 256000 } },
+    "siliconflow": "zai-org/GLM-5.2",
+    "togetherai": { id: "zai-org/GLM-5.2", narrows: { context: 1048575 } },
+    "vercel": { id: "zai/glm-5.2", narrows: { context: 1000000 } },
+    "zhipuai": { id: "glm-5.2", narrows: { context: 1000000 } },
+  },
   "labs-devstral-small-2512": {
     "mistral": "labs-devstral-small-2512",
+  },
+  "labs-leanstral-1-5-1": {
+    "mistral": "labs-leanstral-1-5-1",
   },
   "magistral-medium-latest": {
     "mistral": "magistral-medium-latest",
   },
-  "magistral-small": {
-    "mistral": "magistral-small",
+  "ministral-14b-2512": {
+    "mistral": "ministral-14b-2512",
+  },
+  "ministral-3b-2512": {
+    "mistral": "ministral-3b-2512",
   },
   "ministral-3b-latest": {
     "mistral": "ministral-3b-latest",
+  },
+  "ministral-8b-2512": {
+    "mistral": "ministral-8b-2512",
   },
   "ministral-8b-latest": {
     "mistral": "ministral-8b-latest",
@@ -62,6 +94,10 @@ export const availability = {
   "mistral-large-2512": {
     "mistral": "mistral-large-2512",
     "openrouter": "mistralai/mistral-large-2512",
+  },
+  "mistral-large-4": {
+    "mistral": "mistral-large-4",
+    "vercel": { id: "mistral/mistral-large-4", narrows: { context: 524288 } },
   },
   "mistral-large-latest": {
     "mistral": "mistral-large-latest",
@@ -81,7 +117,6 @@ export const availability = {
   },
   "mistral-nemo": {
     "mistral": "mistral-nemo",
-    "novita-ai": { id: "mistralai/mistral-nemo", narrows: { context: 60288 } },
     "openrouter": "mistralai/mistral-nemo",
     "vercel": "mistral/mistral-nemo",
   },
@@ -109,7 +144,6 @@ export const availability = {
   },
   "pixtral-12b": {
     "mistral": "pixtral-12b",
-    "vercel": "mistral/pixtral-12b",
   },
   "pixtral-large-latest": {
     "mistral": "pixtral-large-latest",
@@ -117,11 +151,17 @@ export const availability = {
   "voxtral-mini-latest": {
     "mistral": "voxtral-mini-latest",
   },
+  "voxtral-small-2507": {
+    "mistral": "voxtral-small-2507",
+  },
   "voxtral-small-latest": {
     "mistral": "voxtral-small-latest",
   },
   "zai-glm-5-2": {
     "mistral": "zai-glm-5-2",
+  },
+  "zai-glm-5-3": {
+    "mistral": "zai-glm-5-3",
   },
 } as const satisfies AvailabilityMap;
 

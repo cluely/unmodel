@@ -108,7 +108,7 @@ export const models = {
     lastUpdated: "2026-08-16",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 65536 },
-    cost: { input: 0.32, output: 2.5, cacheRead: 0.031999999999999994 },
+    cost: { input: 0.24, output: 2.2, cacheRead: 0.023999999999999994 },
   },
   "deepseek-ai/DeepSeek-V3.2-TEE": {
     id: "deepseek-ai/DeepSeek-V3.2-TEE",
@@ -175,7 +175,7 @@ export const models = {
     lastUpdated: "2026-04-21",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 65535 },
-    cost: { input: 0.58, output: 3.4, cacheRead: 0.05799999999999998 },
+    cost: { input: 0.5, output: 2.85, cacheRead: 0.04999999999999999 },
   },
   "moonshotai/Kimi-K3-TEE": {
     id: "moonshotai/Kimi-K3-TEE",

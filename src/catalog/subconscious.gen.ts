@@ -13,9 +13,26 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "subconscious/glm-5.2": {
-    id: "subconscious/glm-5.2",
-    name: "GLM-5.2",
+  "subconscious/deepseek-v4.1-flash-marathon": {
+    id: "subconscious/deepseek-v4.1-flash-marathon",
+    name: "DeepSeek V4.1 Flash Marathon",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 5000000, output: 384000 },
+    cost: { input: 0.14, output: 0.28, cacheRead: 0.0028 },
+  },
+  "subconscious/glm-5.3-marathon": {
+    id: "subconscious/glm-5.3-marathon",
+    name: "GLM-5.3 Marathon",
     family: "glm",
     attachment: false,
     reasoning: true,
@@ -23,31 +40,16 @@ export const models = {
     structuredOutput: true,
     temperature: true,
     openWeights: true,
-    releaseDate: "2026-06-13",
-    lastUpdated: "2026-06-13",
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 131072 },
+    limit: { context: 5000000, output: 131072 },
     cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
-  },
-  "subconscious/tim-qwen3.6-27b": {
-    id: "subconscious/tim-qwen3.6-27b",
-    name: "TIM-Qwen3.6 27B",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: false,
-    releaseDate: "2026-05-11",
-    lastUpdated: "2026-05-11",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 8192, output: 5000, input: 8192 },
-    cost: { input: 0.3, output: 3, cacheRead: 0.15 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type SubconsciousModelId = keyof typeof models;
-export type SubconsciousTextModelId = "subconscious/glm-5.2" | "subconscious/tim-qwen3.6-27b";
+export type SubconsciousTextModelId = "subconscious/deepseek-v4.1-flash-marathon" | "subconscious/glm-5.3-marathon";
 export type SubconsciousImageModelId = never;
 export type SubconsciousAudioModelId = never;
 export type SubconsciousVideoModelId = never;

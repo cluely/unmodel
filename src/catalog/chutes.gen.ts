@@ -92,7 +92,7 @@ export const models = {
     lastUpdated: "2026-04-22",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 65536 },
-    cost: { input: 0.3, output: 2, cacheRead: 0.029999999999999992 },
+    cost: { input: 0.25, output: 2, cacheRead: 0.024999999999999994 },
   },
   "Qwen/Qwen3.8-27B-TEE": {
     id: "Qwen/Qwen3.8-27B-TEE",
@@ -108,7 +108,7 @@ export const models = {
     lastUpdated: "2026-08-16",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 65536 },
-    cost: { input: 0.32, output: 2.5, cacheRead: 0.031999999999999994 },
+    cost: { input: 0.039, output: 1.25, cacheRead: 0.003899999999999999 },
   },
   "deepseek-ai/DeepSeek-V3.2-TEE": {
     id: "deepseek-ai/DeepSeek-V3.2-TEE",
@@ -175,7 +175,7 @@ export const models = {
     lastUpdated: "2026-04-21",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 65535 },
-    cost: { input: 0.58, output: 3.4, cacheRead: 0.05799999999999998 },
+    cost: { input: 0.45, output: 1.95, cacheRead: 0.04499999999999999 },
   },
   "moonshotai/Kimi-K3-TEE": {
     id: "moonshotai/Kimi-K3-TEE",
@@ -191,7 +191,7 @@ export const models = {
     lastUpdated: "2026-07-29",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 1048576, output: 65535 },
-    cost: { input: 3, output: 15, cacheRead: 0.29999999999999993 },
+    cost: { input: 1.85, output: 9.5, cacheRead: 0.18499999999999997 },
   },
   "unsloth/Mistral-Nemo-Instruct-2407-TEE": {
     id: "unsloth/Mistral-Nemo-Instruct-2407-TEE",

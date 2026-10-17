@@ -112,6 +112,23 @@ export const models = {
     limit: { context: 1000000, output: 384000 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
+  "deepseek-v4.1-flash": {
+    id: "deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
   "glm-5": {
     id: "glm-5",
     name: "GLM-5",
@@ -156,6 +173,22 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-06-13",
     lastUpdated: "2026-06-13",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
+  "glm-5.3": {
+    id: "glm-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -392,7 +425,7 @@ export const models = {
     openWeights: false,
     releaseDate: "2026-07-19",
     lastUpdated: "2026-07-19",
-    status: "beta",
+    status: "deprecated",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -428,7 +461,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AlibabaTokenPlanCnModelId = keyof typeof models;
-export type AlibabaTokenPlanCnTextModelId = "MiniMax-M2.5" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "glm-5" | "glm-5.1" | "glm-5.2" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "qwen3.6-flash" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max" | "qwen3.8-max-preview";
+export type AlibabaTokenPlanCnTextModelId = "MiniMax-M2.5" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "deepseek-v4.1-flash" | "glm-5" | "glm-5.1" | "glm-5.2" | "glm-5.3" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "qwen3.6-flash" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max" | "qwen3.8-max-preview";
 export type AlibabaTokenPlanCnImageModelId = "qwen-image-2.0" | "qwen-image-2.0-pro" | "wan2.7-image" | "wan2.7-image-pro";
 export type AlibabaTokenPlanCnAudioModelId = never;
 export type AlibabaTokenPlanCnVideoModelId = "happyhorse-1.1-i2v" | "happyhorse-1.1-r2v" | "happyhorse-1.1-t2v";

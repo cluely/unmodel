@@ -71,7 +71,7 @@ export const models = {
     lastUpdated: "2026-02-13",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 204800, output: 131072 },
-    cost: { input: 0.6, output: 2.4, cacheRead: 0.06, cacheWrite: 0.375 },
+    cost: { input: 0.6, output: 2.4, cacheRead: 0.03, cacheWrite: 0.375 },
   },
   "MiniMax-M2.7": {
     id: "MiniMax-M2.7",
@@ -115,7 +115,7 @@ export const models = {
     releaseDate: "2026-06-01",
     lastUpdated: "2026-06-25",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 512000 },
+    limit: { context: 1000000, output: 512000 },
     cost: { input: 0.3, output: 1.2, cacheRead: 0.06 },
   },
 } as const satisfies Record<string, ModelInfo>;

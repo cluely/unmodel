@@ -88,6 +88,20 @@ export const models = {
     limit: { context: 256000, output: 256000, input: 256000 },
     cost: { input: 0.185, output: 1.11, cacheRead: 0.037 },
   },
+  "step-5-preview": {
+    id: "step-5-preview",
+    name: "Step 5 Preview",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    openWeights: false,
+    releaseDate: "2026-09-16",
+    lastUpdated: "2026-09-20",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 65536, input: 1000000 },
+    cost: { input: 0.959, output: 2.741, cacheRead: 0.048 },
+  },
   "step-tts-2": {
     id: "step-tts-2",
     name: "Step TTS 2",
@@ -133,7 +147,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type StepfunModelId = keyof typeof models;
-export type StepfunTextModelId = "step-1-32k" | "step-2-16k" | "step-3.5-flash" | "step-3.5-flash-2603" | "step-3.7-flash" | "stepaudio-2.5-asr";
+export type StepfunTextModelId = "step-1-32k" | "step-2-16k" | "step-3.5-flash" | "step-3.5-flash-2603" | "step-3.7-flash" | "step-5-preview" | "stepaudio-2.5-asr";
 export type StepfunImageModelId = never;
 export type StepfunAudioModelId = "step-tts-2" | "stepaudio-2.5-tts";
 export type StepfunVideoModelId = never;

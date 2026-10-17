@@ -139,22 +139,6 @@ export const models = {
     limit: { context: 1000000, output: 65536 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
-  "qwen3.6-flash": {
-    id: "qwen3.6-flash",
-    name: "Qwen3.6 Flash",
-    family: "qwen3.6",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: false,
-    releaseDate: "2026-04-27",
-    lastUpdated: "2026-04-27",
-    modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1000000, output: 65536 },
-    cost: { input: 0.1875, output: 1.125, cacheWrite: 0.234375 },
-  },
   "qwen3.6-plus": {
     id: "qwen3.6-plus",
     name: "Qwen3.6 Plus",
@@ -170,21 +154,6 @@ export const models = {
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 1000000, output: 65536 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-  },
-  "qwen3.7-max": {
-    id: "qwen3.7-max",
-    name: "Qwen3.7 Max",
-    family: "qwen",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    temperature: true,
-    openWeights: false,
-    releaseDate: "2026-05-21",
-    lastUpdated: "2026-05-21",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 65536 },
-    cost: { input: 2.5, output: 7.5, cacheRead: 0.5, cacheWrite: 3.125 },
   },
   "qwen3.7-plus": {
     id: "qwen3.7-plus",
@@ -205,7 +174,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AlibabaCodingPlanModelId = keyof typeof models;
-export type AlibabaCodingPlanTextModelId = "MiniMax-M2.5" | "glm-4.7" | "glm-5" | "kimi-k2.5" | "qwen3-coder-next" | "qwen3-coder-plus" | "qwen3-max-2026-01-23" | "qwen3.5-plus" | "qwen3.6-flash" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus";
+export type AlibabaCodingPlanTextModelId = "MiniMax-M2.5" | "glm-4.7" | "glm-5" | "kimi-k2.5" | "qwen3-coder-next" | "qwen3-coder-plus" | "qwen3-max-2026-01-23" | "qwen3.5-plus" | "qwen3.6-plus" | "qwen3.7-plus";
 export type AlibabaCodingPlanImageModelId = never;
 export type AlibabaCodingPlanAudioModelId = never;
 export type AlibabaCodingPlanVideoModelId = never;

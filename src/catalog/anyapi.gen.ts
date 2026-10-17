@@ -271,7 +271,7 @@ export const models = {
     temperature: true,
     openWeights: true,
     knowledge: "2024-11",
-    releaseDate: "2024-11-01",
+    releaseDate: "2025-12-02",
     lastUpdated: "2025-12-02",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },

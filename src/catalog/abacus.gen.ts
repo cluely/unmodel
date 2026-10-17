@@ -536,7 +536,7 @@ export const models = {
   },
   "gemini-3-pro-image-preview": {
     id: "gemini-3-pro-image-preview",
-    name: "Nano Banana Pro",
+    name: "Nano Banana Pro Preview",
     family: "gemini-pro",
     attachment: true,
     reasoning: true,
@@ -568,7 +568,7 @@ export const models = {
   },
   "gemini-3.1-flash-image-preview": {
     id: "gemini-3.1-flash-image-preview",
-    name: "Nano Banana 2",
+    name: "Nano Banana 2 Preview",
     family: "gemini-flash",
     attachment: true,
     reasoning: true,
@@ -1376,7 +1376,7 @@ export const models = {
     id: "meta-llama/Meta-Llama-3.3-70B-Instruct",
     name: "Llama-3.3-70B-Instruct",
     family: "llama",
-    attachment: true,
+    attachment: false,
     reasoning: false,
     toolCall: true,
     temperature: true,

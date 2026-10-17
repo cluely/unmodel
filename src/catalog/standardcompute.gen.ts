@@ -8,7 +8,7 @@ export const provider = {
   id: "standardcompute",
   name: "Standard Compute",
   env: ["STANDARDCOMPUTE_API_KEY"],
-  doc: "https://standardcompute.com/models",
+  doc: "https://docs.standardcompute.com/models",
   api: "https://api.stdcmpt.com/v1",
 } as const satisfies ProviderInfo;
 
@@ -24,9 +24,9 @@ export const models = {
     temperature: true,
     openWeights: false,
     releaseDate: "2026-03-01",
-    lastUpdated: "2026-08-24",
+    lastUpdated: "2026-10-13",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1000000, output: 24576 },
+    limit: { context: 1000000, output: 50000, input: 850000 },
     cost: { input: 0, output: 0 },
   },
 } as const satisfies Record<string, ModelInfo>;

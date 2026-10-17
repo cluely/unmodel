@@ -331,38 +331,6 @@ export const models = {
     limit: { context: 262000, output: 262000 },
     cost: { input: 0.25, output: 1 },
   },
-  "Qwen/Qwen3-VL-235B-A22B-Instruct": {
-    id: "Qwen/Qwen3-VL-235B-A22B-Instruct",
-    name: "Qwen/Qwen3-VL-235B-A22B-Instruct",
-    family: "qwen",
-    attachment: true,
-    reasoning: false,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: false,
-    releaseDate: "2025-10-04",
-    lastUpdated: "2025-11-25",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262000, output: 262000 },
-    cost: { input: 0.3, output: 1.5 },
-  },
-  "Qwen/Qwen3-VL-235B-A22B-Thinking": {
-    id: "Qwen/Qwen3-VL-235B-A22B-Thinking",
-    name: "Qwen/Qwen3-VL-235B-A22B-Thinking",
-    family: "qwen",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: false,
-    releaseDate: "2025-10-04",
-    lastUpdated: "2025-11-25",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262000, output: 262000 },
-    cost: { input: 0.45, output: 3.5 },
-  },
   "Qwen/Qwen3-VL-30B-A3B-Instruct": {
     id: "Qwen/Qwen3-VL-30B-A3B-Instruct",
     name: "Qwen/Qwen3-VL-30B-A3B-Instruct",
@@ -554,22 +522,6 @@ export const models = {
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 65536 },
     cost: { input: 0.23, output: 1.86 },
-  },
-  "baidu/ERNIE-4.5-300B-A47B": {
-    id: "baidu/ERNIE-4.5-300B-A47B",
-    name: "baidu/ERNIE-4.5-300B-A47B",
-    family: "ernie",
-    attachment: false,
-    reasoning: false,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: false,
-    releaseDate: "2025-07-02",
-    lastUpdated: "2025-11-25",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131000, output: 131000 },
-    cost: { input: 0.28, output: 1.1 },
   },
   "deepseek-ai/DeepSeek-OCR": {
     id: "deepseek-ai/DeepSeek-OCR",
@@ -765,7 +717,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type SiliconflowCnModelId = keyof typeof models;
-export type SiliconflowCnTextModelId = "ByteDance-Seed/Seed-OSS-36B-Instruct" | "PaddlePaddle/PaddleOCR-VL-1.5" | "Pro/MiniMaxAI/MiniMax-M2.5" | "Pro/deepseek-ai/DeepSeek-R1" | "Pro/deepseek-ai/DeepSeek-V3" | "Pro/deepseek-ai/DeepSeek-V3.1-Terminus" | "Pro/deepseek-ai/DeepSeek-V3.2" | "Pro/moonshotai/Kimi-K2.5" | "Pro/moonshotai/Kimi-K2.6" | "Pro/zai-org/GLM-5" | "Pro/zai-org/GLM-5.1" | "Qwen/Qwen2.5-72B-Instruct" | "Qwen/Qwen2.5-7B-Instruct" | "Qwen/Qwen3-14B" | "Qwen/Qwen3-235B-A22B-Thinking-2507" | "Qwen/Qwen3-30B-A3B-Instruct-2507" | "Qwen/Qwen3-32B" | "Qwen/Qwen3-8B" | "Qwen/Qwen3-Coder-30B-A3B-Instruct" | "Qwen/Qwen3-Coder-480B-A35B-Instruct" | "Qwen/Qwen3-VL-235B-A22B-Instruct" | "Qwen/Qwen3-VL-235B-A22B-Thinking" | "Qwen/Qwen3-VL-30B-A3B-Instruct" | "Qwen/Qwen3-VL-30B-A3B-Thinking" | "Qwen/Qwen3-VL-32B-Instruct" | "Qwen/Qwen3-VL-32B-Thinking" | "Qwen/Qwen3-VL-8B-Instruct" | "Qwen/Qwen3.5-122B-A10B" | "Qwen/Qwen3.5-27B" | "Qwen/Qwen3.5-35B-A3B" | "Qwen/Qwen3.5-397B-A17B" | "Qwen/Qwen3.5-4B" | "Qwen/Qwen3.5-9B" | "Qwen/Qwen3.6-35B-A3B" | "baidu/ERNIE-4.5-300B-A47B" | "deepseek-ai/DeepSeek-OCR" | "deepseek-ai/DeepSeek-R1" | "deepseek-ai/DeepSeek-V3" | "deepseek-ai/DeepSeek-V3.1-Terminus" | "deepseek-ai/DeepSeek-V3.2" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Pro" | "inclusionAI/Ling-flash-2.0" | "stepfun-ai/Step-3.5-Flash" | "tencent/Hunyuan-A13B-Instruct" | "zai-org/GLM-4.5-Air" | "zai-org/GLM-5.2";
+export type SiliconflowCnTextModelId = "ByteDance-Seed/Seed-OSS-36B-Instruct" | "PaddlePaddle/PaddleOCR-VL-1.5" | "Pro/MiniMaxAI/MiniMax-M2.5" | "Pro/deepseek-ai/DeepSeek-R1" | "Pro/deepseek-ai/DeepSeek-V3" | "Pro/deepseek-ai/DeepSeek-V3.1-Terminus" | "Pro/deepseek-ai/DeepSeek-V3.2" | "Pro/moonshotai/Kimi-K2.5" | "Pro/moonshotai/Kimi-K2.6" | "Pro/zai-org/GLM-5" | "Pro/zai-org/GLM-5.1" | "Qwen/Qwen2.5-72B-Instruct" | "Qwen/Qwen2.5-7B-Instruct" | "Qwen/Qwen3-14B" | "Qwen/Qwen3-235B-A22B-Thinking-2507" | "Qwen/Qwen3-30B-A3B-Instruct-2507" | "Qwen/Qwen3-32B" | "Qwen/Qwen3-8B" | "Qwen/Qwen3-Coder-30B-A3B-Instruct" | "Qwen/Qwen3-Coder-480B-A35B-Instruct" | "Qwen/Qwen3-VL-30B-A3B-Instruct" | "Qwen/Qwen3-VL-30B-A3B-Thinking" | "Qwen/Qwen3-VL-32B-Instruct" | "Qwen/Qwen3-VL-32B-Thinking" | "Qwen/Qwen3-VL-8B-Instruct" | "Qwen/Qwen3.5-122B-A10B" | "Qwen/Qwen3.5-27B" | "Qwen/Qwen3.5-35B-A3B" | "Qwen/Qwen3.5-397B-A17B" | "Qwen/Qwen3.5-4B" | "Qwen/Qwen3.5-9B" | "Qwen/Qwen3.6-35B-A3B" | "deepseek-ai/DeepSeek-OCR" | "deepseek-ai/DeepSeek-R1" | "deepseek-ai/DeepSeek-V3" | "deepseek-ai/DeepSeek-V3.1-Terminus" | "deepseek-ai/DeepSeek-V3.2" | "deepseek-ai/DeepSeek-V4-Flash" | "deepseek-ai/DeepSeek-V4-Pro" | "inclusionAI/Ling-flash-2.0" | "stepfun-ai/Step-3.5-Flash" | "tencent/Hunyuan-A13B-Instruct" | "zai-org/GLM-4.5-Air" | "zai-org/GLM-5.2";
 export type SiliconflowCnImageModelId = never;
 export type SiliconflowCnAudioModelId = never;
 export type SiliconflowCnVideoModelId = never;

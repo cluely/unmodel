@@ -13,9 +13,9 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "Qwen/Qwen3.6-35B-A3B-FP8": {
-    id: "Qwen/Qwen3.6-35B-A3B-FP8",
-    name: "Qwen3.6 35B A3B FP8",
+  "Qwen3.8-27B": {
+    id: "Qwen3.8-27B",
+    name: "Qwen3.8 27B",
     family: "qwen",
     attachment: false,
     reasoning: true,
@@ -23,32 +23,16 @@ export const models = {
     structuredOutput: true,
     temperature: true,
     openWeights: true,
-    releaseDate: "2026-04-17",
-    lastUpdated: "2026-04-17",
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
     status: "beta",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 65536 },
-  },
-  "Qwen3.6-27B": {
-    id: "Qwen3.6-27B",
-    name: "Qwen3.6 27B",
-    family: "qwen",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-04-22",
-    lastUpdated: "2026-04-22",
-    status: "beta",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 196608, output: 65536 },
+    limit: { context: 131072, output: 32768 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type BlueclawModelId = keyof typeof models;
-export type BlueclawTextModelId = "Qwen/Qwen3.6-35B-A3B-FP8" | "Qwen3.6-27B";
+export type BlueclawTextModelId = "Qwen3.8-27B";
 export type BlueclawImageModelId = never;
 export type BlueclawAudioModelId = never;
 export type BlueclawVideoModelId = never;

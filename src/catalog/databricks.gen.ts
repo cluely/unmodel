@@ -209,6 +209,23 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 2, output: 12, cacheRead: 0.2 },
   },
+  "databricks-gemini-3-5-flash": {
+    id: "databricks-gemini-3-5-flash",
+    name: "Gemini 3.5 Flash",
+    family: "gemini-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2025-01",
+    releaseDate: "2026-05-19",
+    lastUpdated: "2026-05-19",
+    modalities: { input: ["text", "image", "video", "audio"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 1.5, output: 9, cacheRead: 0.15, inputAudio: 1.5 },
+  },
   "databricks-gemini-3-flash": {
     id: "databricks-gemini-3-flash",
     name: "Gemini 3 Flash Preview",
@@ -515,7 +532,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type DatabricksModelId = keyof typeof models;
-export type DatabricksTextModelId = "databricks-claude-haiku-4-5" | "databricks-claude-opus-4-1" | "databricks-claude-opus-4-5" | "databricks-claude-opus-4-6" | "databricks-claude-opus-4-7" | "databricks-claude-sonnet-4" | "databricks-claude-sonnet-4-5" | "databricks-claude-sonnet-4-6" | "databricks-gemini-2-5-flash" | "databricks-gemini-2-5-pro" | "databricks-gemini-3-1-flash-lite" | "databricks-gemini-3-1-pro" | "databricks-gemini-3-flash" | "databricks-gemini-3-pro" | "databricks-glm-5-2" | "databricks-gpt-5" | "databricks-gpt-5-1" | "databricks-gpt-5-2" | "databricks-gpt-5-4" | "databricks-gpt-5-4-mini" | "databricks-gpt-5-4-nano" | "databricks-gpt-5-5" | "databricks-gpt-5-6-luna" | "databricks-gpt-5-6-sol" | "databricks-gpt-5-6-terra" | "databricks-gpt-5-mini" | "databricks-gpt-5-nano" | "databricks-gpt-oss-120b" | "databricks-gpt-oss-20b" | "databricks-kimi-k2-7-code";
+export type DatabricksTextModelId = "databricks-claude-haiku-4-5" | "databricks-claude-opus-4-1" | "databricks-claude-opus-4-5" | "databricks-claude-opus-4-6" | "databricks-claude-opus-4-7" | "databricks-claude-sonnet-4" | "databricks-claude-sonnet-4-5" | "databricks-claude-sonnet-4-6" | "databricks-gemini-2-5-flash" | "databricks-gemini-2-5-pro" | "databricks-gemini-3-1-flash-lite" | "databricks-gemini-3-1-pro" | "databricks-gemini-3-5-flash" | "databricks-gemini-3-flash" | "databricks-gemini-3-pro" | "databricks-glm-5-2" | "databricks-gpt-5" | "databricks-gpt-5-1" | "databricks-gpt-5-2" | "databricks-gpt-5-4" | "databricks-gpt-5-4-mini" | "databricks-gpt-5-4-nano" | "databricks-gpt-5-5" | "databricks-gpt-5-6-luna" | "databricks-gpt-5-6-sol" | "databricks-gpt-5-6-terra" | "databricks-gpt-5-mini" | "databricks-gpt-5-nano" | "databricks-gpt-oss-120b" | "databricks-gpt-oss-20b" | "databricks-kimi-k2-7-code";
 export type DatabricksImageModelId = never;
 export type DatabricksAudioModelId = never;
 export type DatabricksVideoModelId = never;

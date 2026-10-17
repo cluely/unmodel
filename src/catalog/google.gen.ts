@@ -57,7 +57,7 @@ export const models = {
     releaseDate: "2025-10-07",
     lastUpdated: "2025-10-07",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 131072, output: 65536 },
+    limit: { context: 128000, output: 64000 },
     cost: { input: 1.25, output: 10 },
   },
   "gemini-2.5-flash": {
@@ -189,7 +189,7 @@ export const models = {
     releaseDate: "2026-05-28",
     lastUpdated: "2026-05-28",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 65536, output: 32768 },
     cost: { input: 2, output: 120 },
   },
   "gemini-3-pro-image-preview": {
@@ -221,7 +221,7 @@ export const models = {
     releaseDate: "2026-05-28",
     lastUpdated: "2026-05-28",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text", "image"] },
-    limit: { context: 65536, output: 65536 },
+    limit: { context: 131072, output: 32768 },
     cost: { input: 0.5, output: 60 },
   },
   "gemini-3.1-flash-image-preview": {
@@ -271,7 +271,7 @@ export const models = {
     releaseDate: "2026-06-30",
     lastUpdated: "2026-06-30",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
-    limit: { context: 65536, output: 65536 },
+    limit: { context: 65536, output: 4096 },
     cost: { input: 0.25, output: 30 },
   },
   "gemini-3.1-flash-lite-preview": {
@@ -458,6 +458,23 @@ export const models = {
     modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
     cost: { input: 0.75, output: 3.75, cacheRead: 0.075, inputAudio: 0.75 },
+  },
+  "gemini-4-argon": {
+    id: "gemini-4-argon",
+    name: "Gemini 4 Argon",
+    family: "gemini",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2026-03",
+    releaseDate: "2026-10-13",
+    lastUpdated: "2026-10-13",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 32768 },
+    cost: { input: 2, output: 10, cacheRead: 0.1, inputAudio: 2 },
   },
   "gemini-embedding-001": {
     id: "gemini-embedding-001",
@@ -648,7 +665,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GoogleModelId = keyof typeof models;
-export type GoogleTextModelId = "deep-research-max-preview-04-2026" | "deep-research-preview-04-2026" | "gemini-2.5-computer-use-preview-10-2025" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3-pro-image-preview" | "gemini-3.1-flash-image" | "gemini-3.1-flash-image-preview" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-image" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-flash-live-preview" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.5-live-translate-preview" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-embedding-001" | "gemini-embedding-2" | "gemini-flash-latest" | "gemini-flash-lite-latest" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "lyria-3-clip-preview" | "lyria-3-pro-preview";
+export type GoogleTextModelId = "deep-research-max-preview-04-2026" | "deep-research-preview-04-2026" | "gemini-2.5-computer-use-preview-10-2025" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3-pro-image-preview" | "gemini-3.1-flash-image" | "gemini-3.1-flash-image-preview" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-image" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-flash-live-preview" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.5-live-translate-preview" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-4-argon" | "gemini-embedding-001" | "gemini-embedding-2" | "gemini-flash-latest" | "gemini-flash-lite-latest" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "lyria-3-clip-preview" | "lyria-3-pro-preview";
 export type GoogleImageModelId = "deep-research-max-preview-04-2026" | "deep-research-preview-04-2026" | "gemini-2.5-flash-image" | "gemini-3-pro-image" | "gemini-3-pro-image-preview" | "gemini-3.1-flash-image" | "gemini-3.1-flash-image-preview" | "gemini-3.1-flash-lite-image";
 export type GoogleAudioModelId = "gemini-2.5-flash-preview-tts" | "gemini-2.5-pro-preview-tts" | "gemini-3.1-flash-live-preview" | "gemini-3.1-flash-tts-preview" | "gemini-3.5-live-translate-preview" | "lyria-3-clip-preview" | "lyria-3-pro-preview";
 export type GoogleVideoModelId = "gemini-omni-flash-preview" | "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview" | "veo-3.1-lite-generate-preview";

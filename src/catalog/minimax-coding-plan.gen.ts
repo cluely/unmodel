@@ -118,10 +118,25 @@ export const models = {
     limit: { context: 1048576, output: 512000 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
+  "MiniMax-M3.1-Flash-Preview": {
+    id: "MiniMax-M3.1-Flash-Preview",
+    name: "MiniMax-M3.1-Flash-Preview",
+    family: "minimax",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-27",
+    lastUpdated: "2026-09-27",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 512000 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type MinimaxCodingPlanModelId = keyof typeof models;
-export type MinimaxCodingPlanTextModelId = "MiniMax-M2" | "MiniMax-M2.1" | "MiniMax-M2.5" | "MiniMax-M2.5-highspeed" | "MiniMax-M2.7" | "MiniMax-M2.7-highspeed" | "MiniMax-M3";
+export type MinimaxCodingPlanTextModelId = "MiniMax-M2" | "MiniMax-M2.1" | "MiniMax-M2.5" | "MiniMax-M2.5-highspeed" | "MiniMax-M2.7" | "MiniMax-M2.7-highspeed" | "MiniMax-M3" | "MiniMax-M3.1-Flash-Preview";
 export type MinimaxCodingPlanImageModelId = never;
 export type MinimaxCodingPlanAudioModelId = never;
 export type MinimaxCodingPlanVideoModelId = never;

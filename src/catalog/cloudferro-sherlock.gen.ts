@@ -62,22 +62,6 @@ export const models = {
     limit: { context: 131000, output: 131000 },
     cost: { input: 2.92, output: 2.92 },
   },
-  "speakleash/Bielik-11B-v2.6-Instruct": {
-    id: "speakleash/Bielik-11B-v2.6-Instruct",
-    name: "Bielik 11B v2.6 Instruct",
-    attachment: false,
-    reasoning: false,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2025-03",
-    releaseDate: "2025-03-13",
-    lastUpdated: "2025-03-13",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 32000, output: 32000 },
-    cost: { input: 0.67, output: 0.67 },
-  },
   "speakleash/Bielik-11B-v3.0-Instruct": {
     id: "speakleash/Bielik-11B-v3.0-Instruct",
     name: "Bielik 11B v3.0 Instruct",
@@ -94,10 +78,26 @@ export const models = {
     limit: { context: 32000, output: 32000 },
     cost: { input: 0.67, output: 0.67 },
   },
+  "zai-org/GLM-5.3": {
+    id: "zai-org/GLM-5.3",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 262144, output: 131072 },
+    cost: { input: 0.34, output: 4.48 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type CloudferroSherlockModelId = keyof typeof models;
-export type CloudferroSherlockTextModelId = "MiniMaxAI/MiniMax-M2.5" | "meta-llama/Llama-3.3-70B-Instruct" | "openai/gpt-oss-120b" | "speakleash/Bielik-11B-v2.6-Instruct" | "speakleash/Bielik-11B-v3.0-Instruct";
+export type CloudferroSherlockTextModelId = "MiniMaxAI/MiniMax-M2.5" | "meta-llama/Llama-3.3-70B-Instruct" | "openai/gpt-oss-120b" | "speakleash/Bielik-11B-v3.0-Instruct" | "zai-org/GLM-5.3";
 export type CloudferroSherlockImageModelId = never;
 export type CloudferroSherlockAudioModelId = never;
 export type CloudferroSherlockVideoModelId = never;

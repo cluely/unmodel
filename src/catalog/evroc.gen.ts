@@ -184,7 +184,7 @@ export const models = {
     id: "nvidia/Llama-3.3-70B-Instruct-FP8",
     name: "Llama-3.3-70B-Instruct",
     family: "llama",
-    attachment: true,
+    attachment: false,
     reasoning: false,
     toolCall: true,
     temperature: true,

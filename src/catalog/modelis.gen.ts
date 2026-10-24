@@ -141,7 +141,7 @@ export const models = {
     releaseDate: "2026-05-21",
     lastUpdated: "2026-05-21",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 65536 },
+    limit: { context: 1000000, output: 131072 },
     cost: { input: 3, output: 9 },
   },
   "qwen/qwen3.7-plus": {

@@ -40,6 +40,7 @@ export const models = {
     knowledge: "2025-04",
     releaseDate: "2025-12-22",
     lastUpdated: "2025-12-22",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 202752, output: 16384 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -87,6 +88,7 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-02-03",
     lastUpdated: "2026-02-03",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 65536 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -103,6 +105,7 @@ export const models = {
     knowledge: "2025-04",
     releaseDate: "2025-07-23",
     lastUpdated: "2025-07-23",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000000, output: 65536 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -119,6 +122,7 @@ export const models = {
     knowledge: "2025-04",
     releaseDate: "2026-01-23",
     lastUpdated: "2026-01-23",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -127,7 +131,7 @@ export const models = {
     id: "qwen3.5-plus",
     name: "Qwen3.5 Plus",
     family: "qwen",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     temperature: true,
@@ -139,27 +143,11 @@ export const models = {
     limit: { context: 1000000, output: 65536 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
-  "qwen3.6-flash": {
-    id: "qwen3.6-flash",
-    name: "Qwen3.6 Flash",
-    family: "qwen3.6",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: false,
-    releaseDate: "2026-04-27",
-    lastUpdated: "2026-04-27",
-    modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1000000, output: 65536 },
-    cost: { input: 0.1875, output: 1.125, cacheWrite: 0.234375 },
-  },
   "qwen3.6-plus": {
     id: "qwen3.6-plus",
     name: "Qwen3.6 Plus",
     family: "qwen",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     temperature: true,
@@ -170,21 +158,6 @@ export const models = {
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 1000000, output: 65536 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-  },
-  "qwen3.7-max": {
-    id: "qwen3.7-max",
-    name: "Qwen3.7 Max",
-    family: "qwen",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    temperature: true,
-    openWeights: false,
-    releaseDate: "2026-05-21",
-    lastUpdated: "2026-05-21",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 65536 },
-    cost: { input: 2.5, output: 7.5, cacheRead: 0.5, cacheWrite: 3.125 },
   },
   "qwen3.7-plus": {
     id: "qwen3.7-plus",
@@ -205,7 +178,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AlibabaCodingPlanCnModelId = keyof typeof models;
-export type AlibabaCodingPlanCnTextModelId = "MiniMax-M2.5" | "glm-4.7" | "glm-5" | "kimi-k2.5" | "qwen3-coder-next" | "qwen3-coder-plus" | "qwen3-max-2026-01-23" | "qwen3.5-plus" | "qwen3.6-flash" | "qwen3.6-plus" | "qwen3.7-max" | "qwen3.7-plus";
+export type AlibabaCodingPlanCnTextModelId = "MiniMax-M2.5" | "glm-4.7" | "glm-5" | "kimi-k2.5" | "qwen3-coder-next" | "qwen3-coder-plus" | "qwen3-max-2026-01-23" | "qwen3.5-plus" | "qwen3.6-plus" | "qwen3.7-plus";
 export type AlibabaCodingPlanCnImageModelId = never;
 export type AlibabaCodingPlanCnAudioModelId = never;
 export type AlibabaCodingPlanCnVideoModelId = never;

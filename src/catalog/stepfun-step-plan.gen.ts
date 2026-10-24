@@ -16,9 +16,11 @@ export const models = {
   "step-3.5-flash": {
     id: "step-3.5-flash",
     name: "Step 3.5 Flash",
+    family: "step",
     attachment: false,
     reasoning: true,
     toolCall: true,
+    structuredOutput: true,
     temperature: true,
     openWeights: true,
     knowledge: "2025-01",
@@ -30,9 +32,11 @@ export const models = {
   "step-3.5-flash-2603": {
     id: "step-3.5-flash-2603",
     name: "Step 3.5 Flash 2603",
+    family: "step",
     attachment: false,
     reasoning: true,
     toolCall: true,
+    structuredOutput: true,
     temperature: true,
     openWeights: true,
     knowledge: "2025-01",
@@ -47,6 +51,7 @@ export const models = {
     attachment: true,
     reasoning: true,
     toolCall: true,
+    structuredOutput: true,
     temperature: true,
     openWeights: true,
     knowledge: "2026-03-01",
@@ -54,6 +59,20 @@ export const models = {
     lastUpdated: "2026-05-29",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 256000, output: 256000, input: 256000 },
+  },
+  "step-5-preview": {
+    id: "step-5-preview",
+    name: "Step 5 Preview",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-16",
+    lastUpdated: "2026-09-20",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 65536, input: 1000000 },
   },
   "step-router-v1": {
     id: "step-router-v1",
@@ -72,7 +91,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type StepfunStepPlanModelId = keyof typeof models;
-export type StepfunStepPlanTextModelId = "step-3.5-flash" | "step-3.5-flash-2603" | "step-3.7-flash" | "step-router-v1";
+export type StepfunStepPlanTextModelId = "step-3.5-flash" | "step-3.5-flash-2603" | "step-3.7-flash" | "step-5-preview" | "step-router-v1";
 export type StepfunStepPlanImageModelId = never;
 export type StepfunStepPlanAudioModelId = never;
 export type StepfunStepPlanVideoModelId = never;

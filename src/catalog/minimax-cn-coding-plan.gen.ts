@@ -6,10 +6,10 @@ import type { ModelInfo, ProviderInfo } from "../core/catalog-types";
 
 export const provider = {
   id: "minimax-cn-coding-plan",
-  name: "MiniMax Token Plan (minimaxi.com)",
+  name: "MiniMax Token Plan (minimax.cn)",
   env: ["MINIMAX_API_KEY"],
   doc: "https://platform.minimaxi.com/docs/token-plan/intro",
-  api: "https://api.minimaxi.com/anthropic/v1",
+  api: "https://api.minimax.cn/anthropic/v1",
 } as const satisfies ProviderInfo;
 
 export const models = {
@@ -24,6 +24,7 @@ export const models = {
     openWeights: true,
     releaseDate: "2025-10-27",
     lastUpdated: "2025-10-27",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 204800, output: 131072 },
     cost: { input: 0, output: 0 },
@@ -39,6 +40,7 @@ export const models = {
     openWeights: true,
     releaseDate: "2025-12-23",
     lastUpdated: "2025-12-23",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 204800, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -54,6 +56,7 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-02-12",
     lastUpdated: "2026-02-12",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 204800, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -69,6 +72,7 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-02-13",
     lastUpdated: "2026-02-13",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 204800, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -84,6 +88,7 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-03-18",
     lastUpdated: "2026-03-18",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 204800, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -99,6 +104,7 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-03-18",
     lastUpdated: "2026-03-18",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 204800, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -110,18 +116,51 @@ export const models = {
     attachment: true,
     reasoning: true,
     toolCall: true,
+    structuredOutput: false,
     temperature: true,
     openWeights: true,
     releaseDate: "2026-06-01",
     lastUpdated: "2026-06-25",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 512000 },
+    limit: { context: 1000000, output: 524288 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
+  "MiniMax-M3.1-Flash": {
+    id: "MiniMax-M3.1-Flash",
+    name: "MiniMax-M3.1-Flash",
+    family: "minimax",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: false,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-10-19",
+    lastUpdated: "2026-10-19",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 524288 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
+  "MiniMax-M3.1-Flash-Preview": {
+    id: "MiniMax-M3.1-Flash-Preview",
+    name: "MiniMax-M3.1-Flash-Preview",
+    family: "minimax",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09-27",
+    lastUpdated: "2026-09-27",
+    status: "deprecated",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 512000 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type MinimaxCnCodingPlanModelId = keyof typeof models;
-export type MinimaxCnCodingPlanTextModelId = "MiniMax-M2" | "MiniMax-M2.1" | "MiniMax-M2.5" | "MiniMax-M2.5-highspeed" | "MiniMax-M2.7" | "MiniMax-M2.7-highspeed" | "MiniMax-M3";
+export type MinimaxCnCodingPlanTextModelId = "MiniMax-M2" | "MiniMax-M2.1" | "MiniMax-M2.5" | "MiniMax-M2.5-highspeed" | "MiniMax-M2.7" | "MiniMax-M2.7-highspeed" | "MiniMax-M3" | "MiniMax-M3.1-Flash" | "MiniMax-M3.1-Flash-Preview";
 export type MinimaxCnCodingPlanImageModelId = never;
 export type MinimaxCnCodingPlanAudioModelId = never;
 export type MinimaxCnCodingPlanVideoModelId = never;

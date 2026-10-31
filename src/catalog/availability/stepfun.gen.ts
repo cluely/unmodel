@@ -19,15 +19,8 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
-  "step-1-32k": {
-    "stepfun": "step-1-32k",
-  },
-  "step-2-16k": {
-    "stepfun": "step-2-16k",
-  },
   "step-3.5-flash": {
     "huggingface": "stepfun-ai/Step-3.5-Flash",
-    "nvidia": "stepfun-ai/step-3.5-flash",
     "openrouter": "stepfun/step-3.5-flash",
     "stepfun": "step-3.5-flash",
   },
@@ -37,10 +30,18 @@ export const availability = {
   "step-3.7-flash": {
     "deepinfra": "stepfun-ai/Step-3.7-Flash",
     "huggingface": "stepfun-ai/Step-3.7-Flash",
-    "nvidia": { id: "stepfun-ai/step-3.7-flash", narrows: { drops: ["video"] } },
+    "novita-ai": "stepfun/step-3.7-flash",
     "openrouter": "stepfun/step-3.7-flash",
     "stepfun": "step-3.7-flash",
     "vercel": { id: "stepfun/step-3.7-flash", narrows: { drops: ["video"] } },
+  },
+  "step-5-preview": {
+    "deepinfra": "stepfun-ai/Step-5-Preview",
+    "novita-ai": "stepfun/step-5-preview",
+    "nvidia": { id: "stepfun-ai/step-5-preview", narrows: { drops: ["video"] } },
+    "openrouter": "stepfun/step-5-preview",
+    "stepfun": "step-5-preview",
+    "vercel": { id: "stepfun/step-5-preview", narrows: { drops: ["video"] } },
   },
   "stepaudio-2.5-asr": {
     "stepfun": "stepaudio-2.5-asr",

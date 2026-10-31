@@ -155,11 +155,11 @@ export const models = {
     temperature: false,
     openWeights: true,
     knowledge: "2025-01",
-    releaseDate: "2026-01",
-    lastUpdated: "2026-01",
+    releaseDate: "2026-01-27",
+    lastUpdated: "2026-01-27",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0.6, output: 3, cacheRead: 0.1 },
+    cost: { input: 4, output: 16, cacheRead: 0.8 },
   },
 } as const satisfies Record<string, ModelInfo>;
 

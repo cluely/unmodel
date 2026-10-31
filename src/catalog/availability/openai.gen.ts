@@ -24,8 +24,6 @@ export const availability = {
   },
   "gpt-3.5-turbo": {
     "openai": "gpt-3.5-turbo",
-    "openrouter": "openai/gpt-3.5-turbo",
-    "vercel": "openai/gpt-3.5-turbo",
   },
   "gpt-4": {
     "openai": "gpt-4",
@@ -34,17 +32,15 @@ export const availability = {
   "gpt-4-turbo": {
     "azure": "gpt-4-turbo",
     "openai": "gpt-4-turbo",
-    "openrouter": "openai/gpt-4-turbo",
-    "vercel": "openai/gpt-4-turbo",
   },
   "gpt-4.1": {
-    "azure": { id: "gpt-4.1", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-4.1",
     "openai": "gpt-4.1",
     "openrouter": "openai/gpt-4.1",
     "vercel": "openai/gpt-4.1",
   },
   "gpt-4.1-mini": {
-    "azure": { id: "gpt-4.1-mini", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-4.1-mini",
     "openai": "gpt-4.1-mini",
     "openrouter": "openai/gpt-4.1-mini",
     "vercel": "openai/gpt-4.1-mini",
@@ -56,7 +52,7 @@ export const availability = {
     "vercel": "openai/gpt-4.1-nano",
   },
   "gpt-4o": {
-    "azure": { id: "gpt-4o", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-4o",
     "openai": "gpt-4o",
     "openrouter": "openai/gpt-4o",
     "vercel": "openai/gpt-4o",
@@ -74,7 +70,7 @@ export const availability = {
     "openrouter": "openai/gpt-4o-2024-11-20",
   },
   "gpt-4o-mini": {
-    "azure": { id: "gpt-4o-mini", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-4o-mini",
     "openai": "gpt-4o-mini",
     "openrouter": "openai/gpt-4o-mini",
     "vercel": "openai/gpt-4o-mini",
@@ -114,18 +110,12 @@ export const availability = {
     "openrouter": "openai/gpt-5.2",
     "vercel": "openai/gpt-5.2",
   },
-  "gpt-5.2-chat-latest": {
-    "openai": "gpt-5.2-chat-latest",
-  },
   "gpt-5.2-pro": {
     "openai": "gpt-5.2-pro",
     "openrouter": "openai/gpt-5.2-pro",
   },
-  "gpt-5.3-chat-latest": {
-    "openai": "gpt-5.3-chat-latest",
-  },
   "gpt-5.3-codex": {
-    "azure": { id: "gpt-5.3-codex", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5.3-codex",
     "openai": "gpt-5.3-codex",
     "openrouter": "openai/gpt-5.3-codex",
     "vercel": "openai/gpt-5.3-codex",
@@ -134,7 +124,7 @@ export const availability = {
     "openai": "gpt-5.3-codex-spark",
   },
   "gpt-5.4": {
-    "amazon-bedrock": { id: "openai.gpt-5.4", narrows: { context: 272000 } },
+    "amazon-bedrock": { id: "openai.gpt-5.4", narrows: { context: 1000000 } },
     "azure": "gpt-5.4",
     "openai": "gpt-5.4",
     "openrouter": "openai/gpt-5.4",
@@ -159,7 +149,7 @@ export const availability = {
     "vercel": "openai/gpt-5.4-pro",
   },
   "gpt-5.5": {
-    "amazon-bedrock": { id: "openai.gpt-5.5", narrows: { context: 272000 } },
+    "amazon-bedrock": { id: "openai.gpt-5.5", narrows: { context: 1000000 } },
     "azure": "gpt-5.5",
     "openai": "gpt-5.5",
     "openrouter": "openai/gpt-5.5",
@@ -194,6 +184,47 @@ export const availability = {
     "openrouter": "openai/gpt-5.6-terra",
     "vercel": "openai/gpt-5.6-terra",
   },
+  "gpt-6-astra": {
+    "amazon-bedrock": "openai.gpt-6-astra",
+    "azure": "gpt-6-astra",
+    "openai": "gpt-6-astra",
+    "openrouter": "openai/gpt-6-astra",
+    "vercel": "openai/gpt-6-astra",
+  },
+  "gpt-6-luna": {
+    "amazon-bedrock": "openai.gpt-6-luna",
+    "azure": "gpt-6-luna",
+    "openai": "gpt-6-luna",
+    "openrouter": "openai/gpt-6-luna",
+    "vercel": "openai/gpt-6-luna",
+  },
+  "gpt-6-sol": {
+    "amazon-bedrock": "openai.gpt-6-sol",
+    "azure": "gpt-6-sol",
+    "openai": "gpt-6-sol",
+    "openrouter": "openai/gpt-6-sol",
+    "vercel": "openai/gpt-6-sol",
+  },
+  "gpt-6.1-sol": {
+    "amazon-bedrock": "openai.gpt-6.1-sol",
+    "azure": "gpt-6.1-sol",
+    "openai": "gpt-6.1-sol",
+    "openrouter": "openai/gpt-6.1-sol",
+    "vercel": "openai/gpt-6.1-sol",
+  },
+  "gpt-6.1-terra": {
+    "amazon-bedrock": "openai.gpt-6.1-terra",
+    "azure": "gpt-6.1-terra",
+    "openai": "gpt-6.1-terra",
+    "openrouter": "openai/gpt-6.1-terra",
+    "vercel": "openai/gpt-6.1-terra",
+  },
+  "gpt-daybreak-blue-latest": {
+    "openai": "gpt-daybreak-blue-latest",
+  },
+  "gpt-daybreak-red-latest": {
+    "openai": "gpt-daybreak-red-latest",
+  },
   "gpt-image-1-mini": {
     "openai": "gpt-image-1-mini",
   },
@@ -203,19 +234,18 @@ export const availability = {
   },
   "gpt-realtime-2.1": {
     "openai": "gpt-realtime-2.1",
+    "vercel": { id: "openai/gpt-realtime-2.1", narrows: { drops: ["image"] } },
   },
   "o1": {
-    "azure": { id: "o1", narrows: { drops: ["pdf"] } },
+    "azure": "o1",
     "openai": "o1",
-    "openrouter": "openai/o1",
     "vercel": "openai/o1",
   },
   "o1-pro": {
     "openai": "o1-pro",
-    "openrouter": "openai/o1-pro",
   },
   "o3": {
-    "azure": { id: "o3", narrows: { drops: ["pdf"] } },
+    "azure": "o3",
     "openai": "o3",
     "openrouter": "openai/o3",
     "vercel": "openai/o3",
@@ -223,7 +253,6 @@ export const availability = {
   "o3-mini": {
     "azure": "o3-mini",
     "openai": "o3-mini",
-    "openrouter": "openai/o3-mini",
     "vercel": "openai/o3-mini",
   },
   "o3-pro": {
@@ -234,7 +263,6 @@ export const availability = {
   "o4-mini": {
     "azure": "o4-mini",
     "openai": "o4-mini",
-    "openrouter": "openai/o4-mini",
     "vercel": "openai/o4-mini",
   },
 } as const satisfies AvailabilityMap;

@@ -24,6 +24,7 @@ export const models = {
     openWeights: false,
     releaseDate: "2026-05-25",
     lastUpdated: "2026-05-25",
+    status: "deprecated",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 512000, output: 65536 },
     cost: { input: 0, output: 0 },
@@ -58,10 +59,25 @@ export const models = {
     limit: { context: 1000000, output: 65536 },
     cost: { input: 0.45, output: 0.9, cacheRead: 0.0038 },
   },
+  "agnes-3.0-flash": {
+    id: "agnes-3.0-flash",
+    name: "Agnes 3.0 Flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-09",
+    lastUpdated: "2026-09",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 512000, output: 65536 },
+    cost: { input: 0, output: 0 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type AgnesModelId = keyof typeof models;
-export type AgnesTextModelId = "agnes-2.0-flash" | "agnes-2.5-flash" | "agnes-2.5-pro-alpha";
+export type AgnesTextModelId = "agnes-2.0-flash" | "agnes-2.5-flash" | "agnes-2.5-pro-alpha" | "agnes-3.0-flash";
 export type AgnesImageModelId = never;
 export type AgnesAudioModelId = never;
 export type AgnesVideoModelId = never;

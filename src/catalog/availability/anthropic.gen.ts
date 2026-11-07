@@ -22,6 +22,7 @@ export const availability = {
   "claude-fable-5": {
     "amazon-bedrock": "anthropic.claude-fable-5",
     "anthropic": "claude-fable-5",
+    "deepinfra": "anthropic/claude-fable-5",
     "openrouter": "anthropic/claude-fable-5",
     "vercel": "anthropic/claude-fable-5",
   },
@@ -42,6 +43,12 @@ export const availability = {
     "anthropic": "claude-haiku-4-5-20251001",
     "openrouter": "anthropic/claude-haiku-4.5",
     "vercel": "anthropic/claude-haiku-4.5",
+  },
+  "claude-haiku-5-5": {
+    "amazon-bedrock": "anthropic.claude-haiku-5-5",
+    "anthropic": "claude-haiku-5-5",
+    "openrouter": "anthropic/claude-haiku-5.5",
+    "vercel": "anthropic/claude-haiku-5.5",
   },
   "claude-opus-4-5": {
     "amazon-bedrock": "anthropic.claude-opus-4-5-20251101-v1:0",
@@ -78,14 +85,20 @@ export const availability = {
     "openrouter": "anthropic/claude-opus-5",
     "vercel": "anthropic/claude-opus-5",
   },
+  "claude-opus-5-5": {
+    "amazon-bedrock": "anthropic.claude-opus-5-5",
+    "anthropic": "claude-opus-5-5",
+    "openrouter": "anthropic/claude-opus-5.5",
+    "vercel": "anthropic/claude-opus-5.5",
+  },
   "claude-sonnet-4-5": {
-    "amazon-bedrock": { id: "anthropic.claude-sonnet-4-5-20250929-v1:0", narrows: { context: 200000 } },
+    "amazon-bedrock": "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic": "claude-sonnet-4-5",
     "openrouter": "anthropic/claude-sonnet-4.5",
     "vercel": "anthropic/claude-sonnet-4.5",
   },
   "claude-sonnet-4-5-20250929": {
-    "amazon-bedrock": { id: "anthropic.claude-sonnet-4-5-20250929-v1:0", narrows: { context: 200000 } },
+    "amazon-bedrock": "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic": "claude-sonnet-4-5-20250929",
     "openrouter": "anthropic/claude-sonnet-4.5",
     "vercel": "anthropic/claude-sonnet-4.5",
@@ -101,6 +114,12 @@ export const availability = {
     "anthropic": "claude-sonnet-5",
     "openrouter": "anthropic/claude-sonnet-5",
     "vercel": "anthropic/claude-sonnet-5",
+  },
+  "claude-sonnet-5-5": {
+    "amazon-bedrock": "anthropic.claude-sonnet-5-5",
+    "anthropic": "claude-sonnet-5-5",
+    "openrouter": "anthropic/claude-sonnet-5.5",
+    "vercel": "anthropic/claude-sonnet-5.5",
   },
 } as const satisfies AvailabilityMap;
 

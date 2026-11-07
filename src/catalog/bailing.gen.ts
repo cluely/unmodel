@@ -9,7 +9,7 @@ export const provider = {
   name: "Bailing",
   env: ["BAILING_API_TOKEN"],
   doc: "https://alipaytbox.yuque.com/sxs0ba/ling/intro",
-  api: "https://api.tbox.cn/api/llm/v1/chat/completions",
+  api: "https://api.tbox.cn/api/llm/v1",
 } as const satisfies ProviderInfo;
 
 export const models = {

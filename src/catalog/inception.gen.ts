@@ -8,7 +8,7 @@ export const provider = {
   id: "inception",
   name: "Inception",
   env: ["INCEPTION_API_KEY"],
-  doc: "https://platform.inceptionlabs.ai/docs",
+  doc: "https://docs.inceptionlabs.ai/get-started/models",
   api: "https://api.inceptionlabs.ai/v1/",
 } as const satisfies ProviderInfo;
 
@@ -30,24 +30,59 @@ export const models = {
     limit: { context: 128000, output: 50000 },
     cost: { input: 0.25, output: 0.75, cacheRead: 0.025 },
   },
+  "mercury-2.5": {
+    id: "mercury-2.5",
+    name: "Mercury 2.5",
+    family: "mercury",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2025-11-01",
+    releaseDate: "2026-09-08",
+    lastUpdated: "2026-09-08",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 260000, output: 65536 },
+    cost: { input: 0.2, output: 0.75, cacheRead: 0.02 },
+  },
+  "mercury-3": {
+    id: "mercury-3",
+    name: "Mercury 3",
+    family: "mercury",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-10-16",
+    lastUpdated: "2026-10-20",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.1, output: 0.35, cacheRead: 0.01 },
+  },
   "mercury-edit-2": {
     id: "mercury-edit-2",
     name: "Mercury Edit 2",
+    family: "mercury",
     attachment: false,
-    reasoning: true,
+    reasoning: false,
     toolCall: false,
+    structuredOutput: false,
     temperature: true,
     openWeights: false,
     releaseDate: "2026-03-30",
     lastUpdated: "2026-03-30",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 128000, output: 8192 },
+    limit: { context: 32000, output: 8192 },
     cost: { input: 0.25, output: 0.75, cacheRead: 0.025 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type InceptionModelId = keyof typeof models;
-export type InceptionTextModelId = "mercury-2" | "mercury-edit-2";
+export type InceptionTextModelId = "mercury-2" | "mercury-2.5" | "mercury-3" | "mercury-edit-2";
 export type InceptionImageModelId = never;
 export type InceptionAudioModelId = never;
 export type InceptionVideoModelId = never;

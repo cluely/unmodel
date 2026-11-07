@@ -17,7 +17,7 @@ export const models = {
     id: "alibaba/qwen3.6-35b-a3b",
     name: "Qwen3.6 35B-A3B",
     family: "qwen",
-    attachment: true,
+    attachment: false,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,

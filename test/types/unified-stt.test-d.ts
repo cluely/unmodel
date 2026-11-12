@@ -184,6 +184,7 @@ type PackRefs = UnifiedRef<
 expectAssignable<PackRefs>("openai/whisper-1");
 expectAssignable<PackRefs>("openai/gpt-4o-transcribe-diarize");
 expectAssignable<PackRefs>("assemblyai/universal-3-5-pro");
+expectAssignable<PackRefs>("assemblyai/universal-3-6-pro-preview");
 expectAssignable<PackRefs>("elevenlabs/scribe_v2");
 expectAssignable<PackRefs>("soniox/stt-async-v5");
 // @ts-expect-error — a realtime-only model is not a batch ref…
@@ -345,6 +346,9 @@ function extrasNarrowingTests(): void {
   stt({ model: "assemblyai/universal-3-5-pro", audio: { url }, summarization: true });
   // @ts-expect-error — and `slam-1` is gated away from both.
   stt({ model: "assemblyai/slam-1", audio: { url }, auto_chapters: true });
+  stt({ model: "assemblyai/universal-3-6-pro-preview", audio: { url }, disfluencies: true });
+  // @ts-expect-error — the preview too: temperature "only takes effect on the Universal-3.5 Pro model".
+  stt({ model: "assemblyai/universal-3-6-pro-preview", audio: { url }, temperature: 0.2 });
 
   // Rev AI: human-only one way, machine-only the other, low-cost in between.
   stt({ model: "revai/human", audio: { url }, rush: true });

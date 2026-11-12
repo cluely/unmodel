@@ -422,8 +422,10 @@ function effectiveModels(params: TranscriptBody): readonly string[] {
 }
 
 /**
- * `prompt`, `temperature` and `remove_audio_tags` are documented as
- * "Supported: Universal-3.5 Pro only" (SUBMIT_DOCS).
+ * `prompt` and `remove_audio_tags` are "only supported for the Universal-3.5
+ * Pro model", and `temperature` "only takes effect on the Universal-3.5 Pro
+ * model" (SUBMIT_DOCS, 2026-11-12) — so a routing without universal-3-5-pro,
+ * `universal-3-6-pro-preview` included, cannot carry them.
  */
 const PRO_ONLY_PARAMS = ["prompt", "temperature", "remove_audio_tags"] as const;
 
@@ -565,8 +567,8 @@ function checkKeytermsPrompt(
   const count = params.keyterms_prompt?.length ?? 0;
   if (count === 0) return;
   // The docs publish caps only for universal-3-5-pro (1,000) and
-  // universal-2 (200); other routings (universal-3-pro, slam-1) have no
-  // documented cap, so they are not checked.
+  // universal-2 (200); other routings (universal-3-6-pro-preview,
+  // universal-3-pro, slam-1) have no documented cap, so they are not checked.
   const routing = effectiveModels(params);
   const capped = routing.includes("universal-3-5-pro")
     ? { cap: KEYTERMS_MAX_PRO, model: "universal-3-5-pro" }

@@ -12,6 +12,8 @@ import {
   STATIC_ENTITY_MAX_TERM_CHARACTERS,
 } from "./stt";
 import { models } from "./models";
+import { MODELS } from "./stt-params";
+import { stt as unifiedStt } from "../../unified/stt";
 
 const AUDIO = "https://cdn.assemblyai.com/upload/abc123";
 
@@ -405,5 +407,44 @@ describe("assemblyai.stt redact_static_entities + webhook headers (doc audit 202
         webhook_auth_header_value: "secret",
       }).ok,
     ).toBe(true);
+  });
+});
+
+describe("assemblyai.stt universal-3-6-pro-preview (model refresh 2026-11-12)", () => {
+  const PREVIEW = "universal-3-6-pro-preview";
+  const oneHour = { media: [{ path: ["audio_url"] as const, durationSeconds: 3600 }] };
+
+  test("validates as a catalogued beta model, and is never priced from a guess", () => {
+    expect(models[PREVIEW].status).toBe("beta");
+    expect(MODELS).toContain(PREVIEW);
+    const r = stt.safe({ audio_url: AUDIO, speech_models: [PREVIEW] }, oneHour);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([]);
+    // assemblyai.com/pricing publishes no pre-recorded rate for the preview.
+    expect(r.estimate.costUSD).toBeUndefined();
+  });
+
+  test("Universal-3.5-Pro-only params are refused on a preview-only routing", () => {
+    const r = stt.safe({ audio_url: AUDIO, speech_models: [PREVIEW], prompt: "Acme Corp earnings" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]).toMatchObject({ code: "unsupported_param", path: ["prompt"], model: PREVIEW });
+      expect(r.errors[0]?.message).toContain('"universal-3-5-pro"');
+    }
+    // …and accepted once the routing can fall through to universal-3-5-pro.
+    expect(
+      stt.safe({
+        audio_url: AUDIO,
+        speech_models: [PREVIEW, "universal-3-5-pro"],
+        prompt: "Acme Corp earnings",
+      }).ok,
+    ).toBe(true);
+  });
+
+  test("the unified ref compiles to a one-element routing list", () => {
+    const params = unifiedStt({ model: `assemblyai/${PREVIEW}`, audio: { url: AUDIO } });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({ audio_url: AUDIO, speech_models: [PREVIEW] });
+    expect(params.warnings).toEqual([]);
   });
 });

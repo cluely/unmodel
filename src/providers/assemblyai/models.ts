@@ -1,5 +1,6 @@
 // Hand-maintained — AssemblyAI is not in models.dev; refresh from
-// https://www.assemblyai.com/docs/getting-started/models and
+// https://www.assemblyai.com/docs/getting-started/models,
+// https://www.assemblyai.com/docs/pre-recorded-audio/select-the-speech-model and
 // https://www.assemblyai.com/pricing (last checked 2026-08-13).
 //
 // STREAMING: the realtime WebSocket API reuses the SAME `speech_model` id as
@@ -60,6 +61,23 @@ export const models = {
     family: "universal",
     ...STT,
     cost: { perAudioMinute: U2_USD_PER_MINUTE },
+  },
+  // https://www.assemblyai.com/docs/pre-recorded-audio/select-the-speech-model
+  // (2026-11-12): "| **Universal-3.6 Pro Preview** Preview |
+  // `"speech_models": ["universal-3-6-pro-preview"]` | Our next-generation
+  // pre-recorded model, currently in preview. Supports 32 languages. | Early
+  // access to the next-generation pre-recorded model. |" — self-serve, no
+  // waitlist. `status: "beta"` is the closest ModelInfo word for the vendor's
+  // "Preview" ("Preview models are subject to change."). No cost: the pricing
+  // page (https://www.assemblyai.com/pricing, 2026-11-12) prices only
+  // Universal-3.5 Pro ($0.21/hr) and Universal-2 ($0.15/hr) pre-recorded, and
+  // its every "Universal-3.6 Pro" row is the Realtime product.
+  "universal-3-6-pro-preview": {
+    id: "universal-3-6-pro-preview",
+    name: "Universal-3.6 Pro Preview",
+    family: "universal",
+    ...STT,
+    status: "beta",
   },
   // Superseded by universal-3-5-pro: the API still accepts it but responds
   // with an informational warning suggesting the newer model

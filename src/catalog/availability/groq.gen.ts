@@ -22,12 +22,6 @@ export const availability = {
   "allam-2-7b": {
     "groq": "allam-2-7b",
   },
-  "groq/compound": {
-    "groq": "groq/compound",
-  },
-  "groq/compound-mini": {
-    "groq": "groq/compound-mini",
-  },
   "llama-3.1-8b-instant": {
     "groq": "llama-3.1-8b-instant",
   },

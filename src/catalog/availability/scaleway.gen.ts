@@ -146,7 +146,7 @@ export const availability = {
   "qwen3.8-27b": {
     "cloudflare-workers-ai": { id: "@cf/qwen/qwen3.8-27b", narrows: { drops: ["video"] } },
     "deepinfra": "Qwen/Qwen3.8-27B",
-    "groq": { id: "qwen/qwen3.8-27b", narrows: { context: 131042, drops: ["video"] } },
+    "groq": { id: "qwen/qwen3.8-27b", narrows: { context: 131072, drops: ["video"] } },
     "huggingface": { id: "Qwen/Qwen3.8-27B", narrows: { drops: ["video"] } },
     "nebius": { id: "Qwen/Qwen3.8-27B", narrows: { drops: ["video"] } },
     "novita-ai": "qwen/qwen3.8-27b",

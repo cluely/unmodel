@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1445 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1443 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -290,8 +290,6 @@ export type ChatModelRef =
   | "google/lyria-3-clip-preview"
   | "google/lyria-3-pro-preview"
   | "groq/allam-2-7b"
-  | "groq/groq/compound"
-  | "groq/groq/compound-mini"
   | "groq/llama-3.1-8b-instant"
   | "groq/llama-3.3-70b-versatile"
   | "groq/meta-llama/llama-prompt-guard-2-22m"

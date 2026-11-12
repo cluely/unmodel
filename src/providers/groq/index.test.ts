@@ -8,7 +8,7 @@ describe("unmodel/groq", () => {
 
   test("a catalog model validates ok and the result is wire-pure", () => {
     const params = {
-      model: "llama-3.1-8b-instant" as const,
+      model: "openai/gpt-oss-20b" as const,
       messages: [{ role: "user" as const, content: "hi" }],
     };
     const r = chat.safe(params);
@@ -20,6 +20,18 @@ describe("unmodel/groq", () => {
       expect(r.params.request.url).toBe(CHAT_COMPLETIONS_URL);
       expect(r.params.request.method).toBe("POST");
     }
+  });
+
+  // https://console.groq.com/docs/deprecations (checked 2026-11-12): "This
+  // deprecation applies to free and developer-tier usage; enterprise customers
+  // with a committed-spend contract are not affected." The id stays reachable.
+  test("a deprecated, still-served model validates with a deprecated_model warning", () => {
+    const r = chat.safe({
+      model: "llama-3.1-8b-instant",
+      messages: [{ role: "user", content: "hi" }],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 
   test("unknown model warns and names the groq catalog", () => {

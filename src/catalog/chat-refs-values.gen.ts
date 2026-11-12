@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1445 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1443 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -252,8 +252,6 @@ export const CHAT_MODEL_REFS = [
   "google/lyria-3-clip-preview",
   "google/lyria-3-pro-preview",
   "groq/allam-2-7b",
-  "groq/groq/compound",
-  "groq/groq/compound-mini",
   "groq/llama-3.1-8b-instant",
   "groq/llama-3.3-70b-versatile",
   "groq/meta-llama/llama-prompt-guard-2-22m",

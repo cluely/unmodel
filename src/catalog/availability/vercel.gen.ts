@@ -132,7 +132,7 @@ export const availability = {
   "alibaba/qwen3.8-27b": {
     "cloudflare-workers-ai": { id: "@cf/qwen/qwen3.8-27b", narrows: { drops: ["pdf"] } },
     "deepinfra": { id: "Qwen/Qwen3.8-27B", narrows: { drops: ["pdf"] } },
-    "groq": { id: "qwen/qwen3.8-27b", narrows: { context: 131042, drops: ["pdf"] } },
+    "groq": { id: "qwen/qwen3.8-27b", narrows: { context: 131072, drops: ["pdf"] } },
     "huggingface": { id: "Qwen/Qwen3.8-27B", narrows: { drops: ["pdf"] } },
     "nebius": { id: "Qwen/Qwen3.8-27B", narrows: { drops: ["pdf"] } },
     "novita-ai": { id: "qwen/qwen3.8-27b", narrows: { drops: ["pdf"] } },

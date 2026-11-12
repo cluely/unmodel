@@ -57,7 +57,7 @@ export const availability = {
   "Qwen/Qwen3.8-27B": {
     "cloudflare-workers-ai": "@cf/qwen/qwen3.8-27b",
     "deepinfra": "Qwen/Qwen3.8-27B",
-    "groq": { id: "qwen/qwen3.8-27b", narrows: { context: 131042 } },
+    "groq": { id: "qwen/qwen3.8-27b", narrows: { context: 131072 } },
     "huggingface": "Qwen/Qwen3.8-27B",
     "nebius": "Qwen/Qwen3.8-27B",
     "novita-ai": "qwen/qwen3.8-27b",

@@ -121087,6 +121087,7 @@
     "models": {
       "allam-2-7b": {
         "attachment": false,
+        "canonical_model_id": "sdaia/allam-2-7b",
         "cost": {
           "input": 0,
           "output": 0
@@ -121115,6 +121116,7 @@
       },
       "canopylabs/orpheus-arabic-saudi": {
         "attachment": false,
+        "canonical_model_id": "canopylabs/orpheus-arabic-saudi",
         "description": "Speech generation model for controllable voice, narration, and audio delivery",
         "family": "canopylabs",
         "id": "canopylabs/orpheus-arabic-saudi",
@@ -121133,14 +121135,20 @@
         },
         "name": "Canopy Labs Orpheus Arabic Saudi",
         "open_weights": false,
+        "provider": {
+          "api": "https://api.groq.com/openai/v1",
+          "npm": "@ai-sdk/openai"
+        },
         "reasoning": false,
         "release_date": "2025-12-16",
         "status": "beta",
         "temperature": false,
-        "tool_call": false
+        "tool_call": false,
+        "type": "speech"
       },
       "canopylabs/orpheus-v1-english": {
         "attachment": false,
+        "canonical_model_id": "canopylabs/orpheus-v1-english",
         "description": "Speech generation model for controllable voice, narration, and audio delivery",
         "family": "canopylabs",
         "id": "canopylabs/orpheus-v1-english",
@@ -121159,64 +121167,20 @@
         },
         "name": "Canopy Labs Orpheus V1 English",
         "open_weights": false,
+        "provider": {
+          "api": "https://api.groq.com/openai/v1",
+          "npm": "@ai-sdk/openai"
+        },
         "reasoning": false,
         "release_date": "2025-12-19",
         "status": "beta",
         "temperature": false,
-        "tool_call": false
-      },
-      "groq/compound": {
-        "attachment": false,
-        "description": "General-purpose chat model for instruction following, writing, and analysis",
-        "family": "groq",
-        "id": "groq/compound",
-        "last_updated": "2025-09-04",
-        "limit": {
-          "context": 131072,
-          "output": 8192
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Compound",
-        "open_weights": false,
-        "reasoning": false,
-        "release_date": "2025-09-04",
-        "temperature": true,
-        "tool_call": false
-      },
-      "groq/compound-mini": {
-        "attachment": false,
-        "description": "Efficient model for low-latency assistance, extraction, and routine automation",
-        "family": "groq",
-        "id": "groq/compound-mini",
-        "last_updated": "2025-09-04",
-        "limit": {
-          "context": 131072,
-          "output": 8192
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Compound Mini",
-        "open_weights": false,
-        "reasoning": false,
-        "release_date": "2025-09-04",
-        "temperature": true,
-        "tool_call": false
+        "tool_call": false,
+        "type": "speech"
       },
       "llama-3.1-8b-instant": {
         "attachment": false,
+        "canonical_model_id": "meta/llama-3.1-8b-instruct",
         "cost": {
           "input": 0.05,
           "output": 0.08
@@ -121242,11 +121206,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-07-23",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
       "llama-3.3-70b-versatile": {
         "attachment": false,
+        "canonical_model_id": "meta/llama-3.3-70b-instruct",
         "cost": {
           "input": 0.59,
           "output": 0.79
@@ -121272,11 +121238,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-12-06",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
       "meta-llama/llama-prompt-guard-2-22m": {
         "attachment": false,
+        "canonical_model_id": "meta/llama-prompt-guard-2-22m",
         "cost": {
           "input": 0.03,
           "output": 0.03
@@ -121284,7 +121252,7 @@
         "description": "Safety model for policy screening, moderation, and risk-aware routing workflows",
         "family": "llama",
         "id": "meta-llama/llama-prompt-guard-2-22m",
-        "last_updated": "2025-05-29",
+        "last_updated": "2025-04-29",
         "limit": {
           "context": 512,
           "output": 512
@@ -121300,13 +121268,14 @@
         "name": "Llama Prompt Guard 2 22M",
         "open_weights": true,
         "reasoning": false,
-        "release_date": "2025-05-29",
+        "release_date": "2025-04-29",
         "status": "beta",
         "temperature": false,
         "tool_call": false
       },
       "meta-llama/llama-prompt-guard-2-86m": {
         "attachment": false,
+        "canonical_model_id": "meta/llama-prompt-guard-2-86m",
         "cost": {
           "input": 0.04,
           "output": 0.04
@@ -121314,7 +121283,7 @@
         "description": "Safety model for policy screening, moderation, and risk-aware routing workflows",
         "family": "llama",
         "id": "meta-llama/llama-prompt-guard-2-86m",
-        "last_updated": "2025-05-29",
+        "last_updated": "2025-04-29",
         "limit": {
           "context": 512,
           "output": 512
@@ -121330,13 +121299,14 @@
         "name": "Prompt Guard 2 86M",
         "open_weights": true,
         "reasoning": false,
-        "release_date": "2025-05-29",
+        "release_date": "2025-04-29",
         "status": "beta",
         "temperature": false,
         "tool_call": false
       },
       "openai/gpt-oss-120b": {
         "attachment": false,
+        "canonical_model_id": "openai/gpt-oss-120b",
         "cost": {
           "cache_read": 0.075,
           "input": 0.15,
@@ -121345,7 +121315,8 @@
         "description": "Open GPT reasoning model for self-hosted agents and controllable deployments",
         "family": "gpt-oss",
         "id": "openai/gpt-oss-120b",
-        "last_updated": "2025-10-21",
+        "knowledge": "2024-06",
+        "last_updated": "2025-08-05",
         "limit": {
           "context": 131072,
           "output": 65536
@@ -121378,6 +121349,7 @@
       },
       "openai/gpt-oss-20b": {
         "attachment": false,
+        "canonical_model_id": "openai/gpt-oss-20b",
         "cost": {
           "cache_read": 0.0375,
           "input": 0.075,
@@ -121386,7 +121358,8 @@
         "description": "Open-weight GPT model for self-hosted reasoning and instruction-following workloads",
         "family": "gpt-oss",
         "id": "openai/gpt-oss-20b",
-        "last_updated": "2025-09-25",
+        "knowledge": "2024-06",
+        "last_updated": "2025-08-05",
         "limit": {
           "context": 131072,
           "output": 65536
@@ -121419,14 +121392,16 @@
       },
       "openai/gpt-oss-safeguard-20b": {
         "attachment": false,
+        "canonical_model_id": "openai/gpt-oss-safeguard-20b",
         "cost": {
+          "cache_read": 0.0375,
           "input": 0.075,
           "output": 0.3
         },
         "description": "Safety model for policy screening, moderation, and risk-aware routing workflows",
         "family": "gpt-oss",
         "id": "openai/gpt-oss-safeguard-20b",
-        "last_updated": "2026-06-29",
+        "last_updated": "2025-10-29",
         "limit": {
           "context": 131072,
           "output": 65536
@@ -121460,6 +121435,7 @@
       },
       "qwen/qwen3.6-27b": {
         "attachment": true,
+        "canonical_model_id": "alibaba/qwen3.6-27b",
         "cost": {
           "cache_read": 0.3,
           "input": 0.6,
@@ -121495,12 +121471,14 @@
           }
         ],
         "release_date": "2026-04-22",
+        "status": "deprecated",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "qwen/qwen3.8-27b": {
         "attachment": true,
+        "canonical_model_id": "alibaba/qwen3.8-27b",
         "cost": {
           "input": 0.8,
           "output": 4
@@ -121510,7 +121488,7 @@
         "id": "qwen/qwen3.8-27b",
         "last_updated": "2026-08-14",
         "limit": {
-          "context": 131042,
+          "context": 131072,
           "output": 16384
         },
         "modalities": {
@@ -121538,19 +121516,21 @@
           }
         ],
         "release_date": "2026-08-14",
+        "status": "beta",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "whisper-large-v3": {
-        "attachment": false,
+        "attachment": true,
+        "canonical_model_id": "openai/whisper-large-v3",
         "description": "Speech transcription model for accurate audio-to-text and captioning workflows",
         "family": "whisper",
         "id": "whisper-large-v3",
-        "last_updated": "2025-09-05",
+        "last_updated": "2023-11-06",
         "limit": {
-          "context": 0,
-          "output": 0
+          "context": 448,
+          "output": 448
         },
         "modalities": {
           "input": [
@@ -121563,19 +121543,21 @@
         "name": "Whisper",
         "open_weights": true,
         "reasoning": false,
-        "release_date": "2023-09-01",
+        "release_date": "2023-11-06",
         "temperature": true,
-        "tool_call": false
+        "tool_call": false,
+        "type": "transcription"
       },
       "whisper-large-v3-turbo": {
-        "attachment": false,
+        "attachment": true,
+        "canonical_model_id": "openai/whisper-large-v3-turbo",
         "description": "Speech transcription model for accurate audio-to-text and captioning workflows",
         "family": "whisper",
         "id": "whisper-large-v3-turbo",
         "last_updated": "2024-10-01",
         "limit": {
-          "context": 0,
-          "output": 0
+          "context": 448,
+          "output": 448
         },
         "modalities": {
           "input": [
@@ -121590,7 +121572,8 @@
         "reasoning": false,
         "release_date": "2024-10-01",
         "temperature": true,
-        "tool_call": false
+        "tool_call": false,
+        "type": "transcription"
       }
     },
     "name": "Groq",

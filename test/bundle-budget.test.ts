@@ -1082,8 +1082,22 @@ const TTS_PACK_PROVIDERS: string[] = [
  * rows — the IR the check battery narrows with, the unified rows a picker
  * renders, and 17 catalog rows — and this pack more than triples its model
  * count to get them. Pinned at 470, the usual ~10% over the measurement.
+ *
+ * **Bumped 530 → 685 by revana**, measured 621.1 KiB (macOS), up from 526.5,
+ * of which the new provider is 92.0 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks. It is very nearly
+ * the image pack's addition (95.2), and for a reason that is a property of the
+ * WIRE rather than of this adapter: `revana.imageEdit` is a narrower VIEW of
+ * `revana.image` over the same route (decisions.md §4), so it carries the same
+ * check battery (27.1) and the same picture slice — all 59 catalog rows
+ * (15.1), their shape rows (12.4) and listed prices (5.5) — to serve the 46 of
+ * them that edit. What is this pack's own is the 46 unified rows (4.4) and the
+ * adapter (3.0).
+ *
+ * Forty-six refs join for those 92 KiB, more than the other five providers
+ * serve between them. 685 is the measurement x 1.1.
  */
-const IMAGE_EDIT_PACK_BUDGET_KIB = 530;
+const IMAGE_EDIT_PACK_BUDGET_KIB = 685;
 
 /**
  * The one generated catalog this pack legitimately reaches.
@@ -1095,13 +1109,14 @@ const IMAGE_EDIT_PACK_BUDGET_KIB = 530;
  */
 const IMAGE_EDIT_PACK_CATALOGS: string[] = ["src/catalog/openai.gen.ts"];
 
-/** The five providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
+/** The six providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
 const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
   "black-forest-labs",
   "fal",
   "ideogram",
   "openai",
   "recraft",
+  "revana",
 ];
 
 /**
@@ -2904,7 +2919,7 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
    * that can never call it, without changing a single import in
    * `src/unified/image-edit.ts`.
    */
-  test("it reaches exactly the four image-edit providers, through their adapters", () => {
+  test("it reaches exactly the six image-edit providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("image-edit"));
     expect(modules).toContain("src/unified/image-edit.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -2919,8 +2934,8 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
     expect(providers).toEqual(IMAGE_EDIT_PACK_PROVIDERS);
 
     for (const provider of IMAGE_EDIT_PACK_PROVIDERS) {
-      // All four serve two categories, so all four adapters are suffixed
-      // leaves and the barrel is never in this graph.
+      // All six serve more than one category, so all six adapters are
+      // suffixed leaves and the barrel is never in this graph.
       expect(modules).toContain(`src/providers/${provider}/unified-image-edit.ts`);
       expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
       // Every provider's editing endpoint module is addressed as

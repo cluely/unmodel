@@ -69,6 +69,7 @@ import { imageEdit as falEdit } from "../../src/providers/fal/unified-image-edit
 import { imageEdit as ideogramEdit } from "../../src/providers/ideogram/unified-image-edit";
 import { imageEdit as openaiEdit } from "../../src/providers/openai/unified-image-edit";
 import { imageEdit as recraftEdit } from "../../src/providers/recraft/unified-image-edit";
+import { imageEdit as revanaEdit } from "../../src/providers/revana/unified-image-edit";
 
 interface Adapter {
   readonly provider: string;
@@ -102,6 +103,7 @@ const EDIT_ADAPTERS: readonly (Adapter & { readonly imageInputs: readonly string
   falEdit,
   ideogramEdit,
   recraftEdit,
+  revanaEdit,
 ];
 
 /** A route's own required params, none of which has a canonical word. */

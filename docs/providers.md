@@ -66,6 +66,21 @@ routes on the same subpath (`minimax.tts` / `video` / `videoV2`,
 `mistral.stt`). **bytedance** is a separate native subpath for the BytePlus
 ModelArk image/video routes — the Doubao chat overlay above is still to do.
 
+**perplexity** addresses Sonar Chat Completions (`POST /chat/completions`, the documented
+alias of `/v1/sonar`), which the Agent API superseded but Perplexity still serves: "Sonar
+Chat Completions support ended on September 27, 2026. Synchronous and streaming requests
+keep working: they are being reformulated as Agent API requests"
+([migration overview](https://docs.perplexity.ai/docs/agent-api/migrate-from-sonar/overview),
+2026-11-12). All four sonar ids stay reachable and warn `deprecated_model`; `checkChat`
+reports the billed `usage.cost.total_cost`. Open owner decisions: the Agent API
+(`POST /v1/agent`, Responses-shaped — decisions.md §7), the Embeddings and Decisions APIs
+(no unmodel surface takes either), the documented `file_url` / `pdf_url` / `video_url` /
+string `image_url` content parts (refused today — accepting them needs a perplexity-specific
+message type the shared openai-compatible factory cannot express), and request-fee-aware
+pre-send estimates. **Excluded:** the Orchestrator API (`/orchestrator/v1`) — "Orchestrator
+API is in private preview." ([orchestrator models](https://docs.perplexity.ai/docs/orchestrator/models),
+2026-11-12).
+
 ## Speech wave — TTS / STT (native APIs, hand-maintained catalogs ✋)
 
 **Live — TTS:** every provider addresses its synthesis route as `tts` (the address-vs-wire

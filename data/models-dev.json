@@ -199972,9 +199972,43 @@
     ],
     "id": "mistral",
     "models": {
-      "codestral-latest": {
-        "attachment": false,
+      "codestral-2508": {
+        "attachment": true,
+        "canonical_model_id": "mistral/codestral-2508",
         "cost": {
+          "cache_read": 0.03,
+          "input": 0.3,
+          "output": 0.9
+        },
+        "description": "Mistral code model for low-latency completion, fill-in-the-middle, and code generation",
+        "family": "codestral",
+        "id": "codestral-2508",
+        "last_updated": "2025-07-30",
+        "limit": {
+          "context": 256000,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Codestral 25.08",
+        "open_weights": false,
+        "reasoning": false,
+        "release_date": "2025-07-30",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "codestral-latest": {
+        "attachment": true,
+        "cost": {
+          "cache_read": 0.03,
           "input": 0.3,
           "output": 0.9
         },
@@ -199989,7 +200023,8 @@
         },
         "modalities": {
           "input": [
-            "text"
+            "text",
+            "pdf"
           ],
           "output": [
             "text"
@@ -199999,6 +200034,51 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-05-29",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "deepseek-v4-1-flash-1017": {
+        "attachment": false,
+        "canonical_model_id": "deepseek/deepseek-v4.1-flash-1017",
+        "cost": {
+          "cache_read": 0.007,
+          "input": 0.3,
+          "output": 1.2
+        },
+        "description": "October 17 update of DeepSeek V4.1 Flash with improved reasoning, coding, agentic tasks, and visual understanding",
+        "family": "deepseek-flash",
+        "id": "deepseek-v4-1-flash-1017",
+        "knowledge": "2025-05",
+        "last_updated": "2026-10-17",
+        "limit": {
+          "context": 1048576,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "DeepSeek V4.1 Flash 1017",
+        "open_weights": true,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "none",
+              "low",
+              "high",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-10-17",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
@@ -200064,37 +200144,6 @@
         "temperature": true,
         "tool_call": true
       },
-      "devstral-medium-2507": {
-        "attachment": false,
-        "cost": {
-          "input": 0.4,
-          "output": 2
-        },
-        "description": "Legacy model retained for compatibility with older integrations",
-        "family": "devstral",
-        "id": "devstral-medium-2507",
-        "knowledge": "2025-05",
-        "last_updated": "2025-07-10",
-        "limit": {
-          "context": 128000,
-          "output": 128000
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Devstral Medium",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2025-07-10",
-        "status": "deprecated",
-        "temperature": true,
-        "tool_call": true
-      },
       "devstral-medium-latest": {
         "attachment": false,
         "cost": {
@@ -200126,20 +200175,21 @@
         "temperature": true,
         "tool_call": true
       },
-      "devstral-small-2505": {
+      "glm-5-2": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-5.2",
         "cost": {
-          "input": 0.1,
-          "output": 0.3
+          "cache_read": 0.14,
+          "input": 1.4,
+          "output": 4.4
         },
-        "description": "Legacy model retained for compatibility with older integrations",
-        "family": "devstral",
-        "id": "devstral-small-2505",
-        "knowledge": "2025-05",
-        "last_updated": "2025-05-07",
+        "description": "Open flagship GLM for long-horizon coding agents and million-token context work",
+        "family": "glm",
+        "id": "glm-5-2",
+        "last_updated": "2026-06-13",
         "limit": {
-          "context": 128000,
-          "output": 128000
+          "context": 1048576,
+          "output": 131072
         },
         "modalities": {
           "input": [
@@ -200149,47 +200199,27 @@
             "text"
           ]
         },
-        "name": "Devstral Small 2505",
+        "name": "GLM-5.2",
         "open_weights": true,
-        "reasoning": false,
-        "release_date": "2025-05-07",
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "none",
+              "high",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-06-13",
         "status": "deprecated",
-        "temperature": true,
-        "tool_call": true
-      },
-      "devstral-small-2507": {
-        "attachment": false,
-        "cost": {
-          "input": 0.1,
-          "output": 0.3
-        },
-        "description": "Legacy model retained for compatibility with older integrations",
-        "family": "devstral",
-        "id": "devstral-small-2507",
-        "knowledge": "2025-05",
-        "last_updated": "2025-07-10",
-        "limit": {
-          "context": 128000,
-          "output": 128000
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Devstral Small",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2025-07-10",
-        "status": "deprecated",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "labs-devstral-small-2512": {
-        "attachment": false,
+        "attachment": true,
         "cost": {
           "input": 0,
           "output": 0
@@ -200220,8 +200250,49 @@
         "temperature": true,
         "tool_call": true
       },
+      "labs-leanstral-1-5-1": {
+        "attachment": true,
+        "cost": {
+          "input": 0,
+          "output": 0
+        },
+        "description": "An updated Lean 4 formal proof engineering model optimised for automated theorem proving and autoformalization. 119B total parameters, 6.5B active.",
+        "family": "leanstral",
+        "id": "labs-leanstral-1-5-1",
+        "last_updated": "2026-06-30",
+        "limit": {
+          "context": 262144,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Leanstral 1.5",
+        "open_weights": true,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "none",
+              "high"
+            ]
+          }
+        ],
+        "release_date": "2026-06-30",
+        "status": "deprecated",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
       "magistral-medium-latest": {
-        "attachment": false,
+        "attachment": true,
         "cost": {
           "input": 2,
           "output": 5
@@ -200232,12 +200303,13 @@
         "knowledge": "2025-06",
         "last_updated": "2025-03-20",
         "limit": {
-          "context": 128000,
+          "context": 262144,
           "output": 16384
         },
         "modalities": {
           "input": [
-            "text"
+            "text",
+            "image"
           ],
           "output": [
             "text"
@@ -200246,47 +200318,94 @@
         "name": "Magistral Medium (latest)",
         "open_weights": true,
         "reasoning": true,
-        "reasoning_options": [],
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "none",
+              "high"
+            ]
+          }
+        ],
         "release_date": "2025-03-17",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
-      "magistral-small": {
-        "attachment": false,
+      "ministral-14b-2512": {
+        "attachment": true,
+        "canonical_model_id": "mistral/ministral-3-14b-instruct-2512",
         "cost": {
-          "input": 0.5,
-          "output": 1.5
+          "cache_read": 0.02,
+          "input": 0.2,
+          "output": 0.2
         },
-        "description": "Mistral reasoning model for transparent analysis, math, and complex decisions",
-        "family": "magistral-small",
-        "id": "magistral-small",
-        "knowledge": "2025-06",
-        "last_updated": "2025-03-17",
+        "description": "Open vision-language model for efficient local deployment, instruction following, and tool use",
+        "family": "ministral",
+        "id": "ministral-14b-2512",
+        "last_updated": "2025-12-02",
         "limit": {
-          "context": 128000,
-          "output": 128000
+          "context": 262144,
+          "output": 262144
         },
         "modalities": {
           "input": [
-            "text"
+            "text",
+            "image",
+            "pdf"
           ],
           "output": [
             "text"
           ]
         },
-        "name": "Magistral Small",
+        "name": "Ministral 3 14B",
         "open_weights": true,
-        "reasoning": true,
-        "reasoning_options": [],
-        "release_date": "2025-03-17",
+        "reasoning": false,
+        "release_date": "2025-12-02",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "ministral-3b-2512": {
+        "attachment": true,
+        "canonical_model_id": "mistral/ministral-3-3b-instruct-2512",
+        "cost": {
+          "cache_read": 0.01,
+          "input": 0.1,
+          "output": 0.1
+        },
+        "description": "Compact open vision-language model for edge deployment, instruction following, and tool use",
+        "family": "ministral",
+        "id": "ministral-3b-2512",
+        "last_updated": "2025-12-02",
+        "limit": {
+          "context": 131072,
+          "output": 262144
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Ministral 3 3B",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-12-02",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "ministral-3b-latest": {
-        "attachment": false,
+        "attachment": true,
         "cost": {
-          "input": 0.04,
-          "output": 0.04
+          "cache_read": 0.01,
+          "input": 0.1,
+          "output": 0.1
         },
         "description": "Compact Mistral model for edge, latency-sensitive, and cost-efficient workloads",
         "family": "ministral",
@@ -200294,12 +200413,14 @@
         "knowledge": "2024-10",
         "last_updated": "2024-10-04",
         "limit": {
-          "context": 128000,
+          "context": 131072,
           "output": 128000
         },
         "modalities": {
           "input": [
-            "text"
+            "text",
+            "image",
+            "pdf"
           ],
           "output": [
             "text"
@@ -200309,14 +200430,50 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-10-01",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "ministral-8b-2512": {
+        "attachment": true,
+        "canonical_model_id": "mistral/ministral-3-8b-instruct-2512",
+        "cost": {
+          "cache_read": 0.015,
+          "input": 0.15,
+          "output": 0.15
+        },
+        "description": "Compact open vision-language model for edge deployment, instruction following, and tool use",
+        "family": "ministral",
+        "id": "ministral-8b-2512",
+        "last_updated": "2025-12-02",
+        "limit": {
+          "context": 262144,
+          "output": 262144
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Ministral 3 8B",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-12-02",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "ministral-8b-latest": {
-        "attachment": false,
+        "attachment": true,
         "cost": {
-          "input": 0.1,
-          "output": 0.1
+          "cache_read": 0.015,
+          "input": 0.15,
+          "output": 0.15
         },
         "description": "Compact Mistral model for edge, latency-sensitive, and cost-efficient workloads",
         "family": "ministral",
@@ -200324,12 +200481,14 @@
         "knowledge": "2024-10",
         "last_updated": "2024-10-04",
         "limit": {
-          "context": 128000,
+          "context": 262144,
           "output": 128000
         },
         "modalities": {
           "input": [
-            "text"
+            "text",
+            "image",
+            "pdf"
           ],
           "output": [
             "text"
@@ -200339,6 +200498,7 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-10-01",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
@@ -200369,41 +200529,13 @@
         "reasoning": false,
         "release_date": "2023-12-11",
         "temperature": false,
-        "tool_call": false
-      },
-      "mistral-large-2411": {
-        "attachment": false,
-        "cost": {
-          "input": 2,
-          "output": 6
-        },
-        "description": "Flagship Mistral model for advanced reasoning, coding, and multilingual work",
-        "family": "mistral-large",
-        "id": "mistral-large-2411",
-        "knowledge": "2024-11",
-        "last_updated": "2024-11-18",
-        "limit": {
-          "context": 131072,
-          "output": 16384
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Mistral Large 2.1",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2024-11-18",
-        "temperature": true,
-        "tool_call": true
+        "tool_call": false,
+        "type": "embedding"
       },
       "mistral-large-2512": {
         "attachment": true,
         "cost": {
+          "cache_read": 0.05,
           "input": 0.5,
           "output": 1.5
         },
@@ -200419,7 +200551,8 @@
         "modalities": {
           "input": [
             "text",
-            "image"
+            "image",
+            "pdf"
           ],
           "output": [
             "text"
@@ -200429,12 +200562,104 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-11-01",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "mistral-large-4": {
+        "attachment": true,
+        "canonical_model_id": "mistral/mistral-large-4",
+        "cost": {
+          "cache_read": 0.07,
+          "input": 0.7,
+          "output": 2.1
+        },
+        "description": "Mistral's 1T-parameter multimodal MoE for reasoning, coding, and agentic work",
+        "family": "mistral-large",
+        "id": "mistral-large-4",
+        "last_updated": "2026-10-06",
+        "limit": {
+          "context": 1048576,
+          "output": 262144
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Mistral Large 4",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        ],
+        "release_date": "2026-10-06",
+        "status": "beta",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "mistral-large-4-0-8": {
+        "attachment": true,
+        "canonical_model_id": "mistral/mistral-large-4",
+        "cost": {
+          "cache_read": 0.07,
+          "input": 0.7,
+          "output": 2.1
+        },
+        "description": "Mistral's 1T-parameter multimodal MoE for reasoning, coding, and agentic work",
+        "family": "mistral-large",
+        "id": "mistral-large-4-0-8",
+        "last_updated": "2026-10-06",
+        "limit": {
+          "context": 1048576,
+          "output": 262144
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Mistral Large 4.0.8",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        ],
+        "release_date": "2026-10-06",
+        "status": "beta",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "mistral-large-latest": {
         "attachment": true,
         "cost": {
+          "cache_read": 0.05,
           "input": 0.5,
           "output": 1.5
         },
@@ -200450,7 +200675,8 @@
         "modalities": {
           "input": [
             "text",
-            "image"
+            "image",
+            "pdf"
           ],
           "output": [
             "text"
@@ -200460,6 +200686,7 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-11-01",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
@@ -200491,6 +200718,7 @@
         "open_weights": false,
         "reasoning": false,
         "release_date": "2025-05-07",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
@@ -200522,12 +200750,14 @@
         "open_weights": false,
         "reasoning": false,
         "release_date": "2025-08-12",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
       "mistral-medium-2604": {
         "attachment": true,
         "cost": {
+          "cache_read": 0.15,
           "input": 1.5,
           "output": 7.5
         },
@@ -200542,7 +200772,8 @@
         "modalities": {
           "input": [
             "text",
-            "image"
+            "image",
+            "pdf"
           ],
           "output": [
             "text"
@@ -200567,7 +200798,9 @@
       },
       "mistral-medium-latest": {
         "attachment": true,
+        "canonical_model_id": "mistral/mistral-medium-latest",
         "cost": {
+          "cache_read": 0.15,
           "input": 1.5,
           "output": 7.5
         },
@@ -200582,7 +200815,8 @@
         "modalities": {
           "input": [
             "text",
-            "image"
+            "image",
+            "pdf"
           ],
           "output": [
             "text"
@@ -200605,38 +200839,8 @@
         "temperature": true,
         "tool_call": true
       },
-      "mistral-nemo": {
-        "attachment": false,
-        "cost": {
-          "input": 0.15,
-          "output": 0.15
-        },
-        "description": "Efficient Mistral-NVIDIA open model for multilingual chat and local deployment",
-        "family": "mistral-nemo",
-        "id": "mistral-nemo",
-        "knowledge": "2024-07",
-        "last_updated": "2024-07-01",
-        "limit": {
-          "context": 128000,
-          "output": 128000
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Mistral Nemo",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2024-07-01",
-        "temperature": true,
-        "tool_call": true
-      },
       "mistral-small-2506": {
-        "attachment": false,
+        "attachment": true,
         "cost": {
           "input": 0.1,
           "output": 0.3
@@ -200663,12 +200867,14 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2025-06-20",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
       "mistral-small-2603": {
         "attachment": true,
         "cost": {
+          "cache_read": 0.015,
           "input": 0.15,
           "output": 0.6
         },
@@ -200678,13 +200884,14 @@
         "knowledge": "2025-06",
         "last_updated": "2026-03-16",
         "limit": {
-          "context": 256000,
+          "context": 262144,
           "output": 256000
         },
         "modalities": {
           "input": [
             "text",
-            "image"
+            "image",
+            "pdf"
           ],
           "output": [
             "text"
@@ -200703,12 +200910,14 @@
           }
         ],
         "release_date": "2026-03-16",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "mistral-small-latest": {
         "attachment": true,
         "cost": {
+          "cache_read": 0.015,
           "input": 0.15,
           "output": 0.6
         },
@@ -200718,13 +200927,14 @@
         "knowledge": "2025-06",
         "last_updated": "2026-03-16",
         "limit": {
-          "context": 256000,
+          "context": 262144,
           "output": 256000
         },
         "modalities": {
           "input": [
             "text",
-            "image"
+            "image",
+            "pdf"
           ],
           "output": [
             "text"
@@ -200743,36 +200953,7 @@
           }
         ],
         "release_date": "2026-03-16",
-        "temperature": true,
-        "tool_call": true
-      },
-      "open-mistral-7b": {
-        "attachment": false,
-        "cost": {
-          "input": 0.25,
-          "output": 0.25
-        },
-        "description": "Mistral model for multilingual chat, reasoning, and tool-assisted workflows",
-        "family": "mistral",
-        "id": "open-mistral-7b",
-        "knowledge": "2023-12",
-        "last_updated": "2023-09-27",
-        "limit": {
-          "context": 8000,
-          "output": 8000
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Mistral 7B",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2023-09-27",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
@@ -200807,66 +200988,6 @@
         "temperature": true,
         "tool_call": true
       },
-      "open-mixtral-8x22b": {
-        "attachment": false,
-        "cost": {
-          "input": 2,
-          "output": 6
-        },
-        "description": "Mistral model for multilingual chat, reasoning, and tool-assisted workflows",
-        "family": "mixtral",
-        "id": "open-mixtral-8x22b",
-        "knowledge": "2024-04",
-        "last_updated": "2024-04-17",
-        "limit": {
-          "context": 64000,
-          "output": 64000
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Mixtral 8x22B",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2024-04-17",
-        "temperature": true,
-        "tool_call": true
-      },
-      "open-mixtral-8x7b": {
-        "attachment": false,
-        "cost": {
-          "input": 0.7,
-          "output": 0.7
-        },
-        "description": "Mistral model for multilingual chat, reasoning, and tool-assisted workflows",
-        "family": "mixtral",
-        "id": "open-mixtral-8x7b",
-        "knowledge": "2024-01",
-        "last_updated": "2023-12-11",
-        "limit": {
-          "context": 32000,
-          "output": 32000
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Mixtral 8x7B",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2023-12-11",
-        "temperature": true,
-        "tool_call": true
-      },
       "pixtral-12b": {
         "attachment": true,
         "cost": {
@@ -200895,46 +201016,16 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-09-01",
-        "temperature": true,
-        "tool_call": true
-      },
-      "pixtral-large-latest": {
-        "attachment": true,
-        "cost": {
-          "input": 2,
-          "output": 6
-        },
-        "description": "Mistral's larger vision model for document-heavy image understanding and chat",
-        "family": "pixtral",
-        "id": "pixtral-large-latest",
-        "knowledge": "2024-11",
-        "last_updated": "2024-11-04",
-        "limit": {
-          "context": 128000,
-          "output": 128000
-        },
-        "modalities": {
-          "input": [
-            "text",
-            "image"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Pixtral Large (latest)",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2024-11-01",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
       "voxtral-mini-latest": {
-        "attachment": false,
+        "attachment": true,
         "description": "Speech transcription model for accurate audio-to-text and captioning workflows",
         "family": "voxtral",
         "id": "voxtral-mini-latest",
-        "last_updated": "2026-02-01",
+        "last_updated": "2026-02-04",
         "limit": {
           "context": 0,
           "output": 0
@@ -200950,16 +201041,17 @@
         "name": "Voxtral Mini (latest)",
         "open_weights": false,
         "reasoning": false,
-        "release_date": "2026-02-01",
+        "release_date": "2026-02-04",
         "temperature": false,
-        "tool_call": false
+        "tool_call": false,
+        "type": "transcription"
       },
       "voxtral-mini-tts-latest": {
         "attachment": false,
         "description": "Multilingual text-to-speech model with zero-shot voice cloning",
         "family": "voxtral",
         "id": "voxtral-mini-tts-latest",
-        "last_updated": "2026-03-01",
+        "last_updated": "2026-03-23",
         "limit": {
           "context": 0,
           "output": 0
@@ -200973,30 +201065,64 @@
           ]
         },
         "name": "Voxtral Mini TTS (latest)",
-        "open_weights": false,
+        "open_weights": true,
         "reasoning": false,
-        "release_date": "2026-03-01",
+        "release_date": "2026-03-23",
         "temperature": false,
-        "tool_call": false
+        "tool_call": false,
+        "type": "speech"
+      },
+      "voxtral-small-2507": {
+        "attachment": true,
+        "cost": {
+          "input": 0.1,
+          "output": 0.4
+        },
+        "description": "Instruct model with native audio input for speech understanding and tool use",
+        "family": "voxtral",
+        "id": "voxtral-small-2507",
+        "last_updated": "2025-07-15",
+        "limit": {
+          "context": 32768,
+          "output": 32000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "audio",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Voxtral Small",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-07-15",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
       },
       "voxtral-small-latest": {
         "attachment": true,
         "cost": {
           "input": 0.1,
-          "output": 0.3
+          "output": 0.4
         },
         "description": "Instruct model with native audio input for speech understanding and tool use",
         "family": "voxtral",
         "id": "voxtral-small-latest",
         "last_updated": "2025-07-15",
         "limit": {
-          "context": 32000,
+          "context": 32768,
           "output": 32000
         },
         "modalities": {
           "input": [
             "text",
-            "audio"
+            "audio",
+            "pdf"
           ],
           "output": [
             "text"
@@ -201006,11 +201132,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2025-07-15",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "zai-glm-5-2": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-5.2",
         "cost": {
           "cache_read": 0.14,
           "input": 1.4,
@@ -201021,7 +201149,7 @@
         "id": "zai-glm-5-2",
         "last_updated": "2026-06-13",
         "limit": {
-          "context": 1000000,
+          "context": 1048576,
           "output": 131072
         },
         "modalities": {
@@ -201039,13 +201167,101 @@
           {
             "type": "effort",
             "values": [
+              "none",
               "high",
               "max"
             ]
           }
         ],
         "release_date": "2026-06-13",
-        "status": "beta",
+        "status": "deprecated",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "zai-glm-5-3": {
+        "attachment": false,
+        "canonical_model_id": "zhipuai/glm-5.3",
+        "cost": {
+          "cache_read": 0.14,
+          "input": 1.4,
+          "output": 4.4
+        },
+        "description": "Flagship GLM model for long-horizon coding, agents, and complex project delivery",
+        "family": "glm",
+        "id": "zai-glm-5-3",
+        "last_updated": "2026-08-14",
+        "limit": {
+          "context": 1048576,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GLM-5.3",
+        "open_weights": true,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "high",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-08-14",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "zai-glm-5-3-flash": {
+        "attachment": true,
+        "canonical_model_id": "zhipuai/glm-5.3-flash",
+        "cost": {
+          "cache_read": 0.03,
+          "input": 0.15,
+          "output": 0.5
+        },
+        "description": "Native multimodal GLM model for efficient coding and long-horizon agent tasks",
+        "family": "glm-flash",
+        "id": "zai-glm-5-3-flash",
+        "last_updated": "2026-08-26",
+        "limit": {
+          "context": 1048576,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "video",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GLM-5.3-Flash",
+        "open_weights": true,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "high",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-08-26",
         "structured_output": true,
         "temperature": true,
         "tool_call": true

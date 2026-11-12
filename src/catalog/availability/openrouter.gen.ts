@@ -282,6 +282,7 @@ export const availability = {
     "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
     "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "mistral": { id: "deepseek-v4-1-flash-1017", narrows: { drops: ["image"] } },
     "nebius": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "novita-ai": "deepseek/deepseek-v4.1-flash-1017",
     "openrouter": "deepseek/deepseek-v4.1-flash-1017",
@@ -657,6 +658,7 @@ export const availability = {
     "vercel": { id: "minimax/minimax-m3.1-flash", narrows: { drops: ["video"] } },
   },
   "mistralai/codestral-2508": {
+    "mistral": "codestral-2508",
     "openrouter": "mistralai/codestral-2508",
   },
   "mistralai/devstral-2512": {
@@ -679,7 +681,7 @@ export const availability = {
     "openrouter": "mistralai/mistral-large-2407",
   },
   "mistralai/mistral-large-2512": {
-    "mistral": { id: "mistral-large-2512", narrows: { drops: ["pdf"] } },
+    "mistral": "mistral-large-2512",
     "openrouter": "mistralai/mistral-large-2512",
   },
   "mistralai/mistral-large-4-0": {
@@ -695,7 +697,6 @@ export const availability = {
     "openrouter": "mistralai/mistral-medium-3.1",
   },
   "mistralai/mistral-nemo": {
-    "mistral": { id: "mistral-nemo", narrows: { context: 128000 } },
     "openrouter": "mistralai/mistral-nemo",
     "vercel": "mistral/mistral-nemo",
   },
@@ -707,7 +708,7 @@ export const availability = {
     "openrouter": "mistralai/mistral-small-24b-instruct-2501",
   },
   "mistralai/mistral-small-2603": {
-    "mistral": { id: "mistral-small-2603", narrows: { context: 256000 } },
+    "mistral": "mistral-small-2603",
     "openrouter": "mistralai/mistral-small-2603",
   },
   "mistralai/mistral-small-3.1-24b-instruct": {
@@ -1706,6 +1707,7 @@ export const availability = {
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
+    "mistral": "glm-5-2",
     "nebius": "zai-org/GLM-5.2",
     "novita-ai": "zai-org/glm-5.2",
     "openrouter": "z-ai/glm-5.2",

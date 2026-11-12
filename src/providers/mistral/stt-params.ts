@@ -12,20 +12,25 @@
 import { EXTRA } from "../../core/unified/derive";
 import type { SttModelParamTable } from "../../core/unified/vocabulary/stt";
 
-/** The five Voxtral batch models — the ref union for `mistral/…`. */
+/** The Voxtral batch models — the ref union for `mistral/…`. */
 export const MODELS = [
   "voxtral-mini-latest",
   "voxtral-mini-2602",
   "voxtral-mini-2507",
   "voxtral-small-latest",
   "voxtral-small-2507",
+  "voxtral-mini-transcribe-3-0",
+  "voxtral-mini-transcribe-3",
+  "voxtral-mini-transcribe-latest",
+  "voxtral-small-transcribe-3-0",
+  "voxtral-small-transcribe-3",
+  "voxtral-small-transcribe-latest",
 ] as const;
 
 /**
- * The five Voxtral ids share one row, because they share one schema: there is
- * no per-model constraint table on this endpoint at all, and the one rule that
- * exists (`timestamp_granularities` "is not compatible with `language`") is a
- * *combination* rule that applies to every id equally.
+ * The five pre-Voxtral 3 ids share one row, because they share one schema, and
+ * the one rule they carry (`timestamp_granularities` "is not compatible with
+ * `language`") is a *combination* rule that applies to every id equally.
  *
  * `timestamps` carries `"none"` because it is genuinely expressible here — the
  * field is absent by default and the route returns no timings without it — plus
@@ -44,10 +49,27 @@ export const VOXTRAL_ROW = {
   },
 } as const;
 
+/**
+ * The Voxtral 3 ids: the same schema, minus word timings — "Word timestamps
+ * are gone. timestamp_granularities accepts segment only, and word returns a
+ * 400 error." (https://docs.mistral.ai/studio/audio/migrate-from-voxtral-2,
+ * 2026-11-12).
+ */
+export const VOXTRAL_3_ROW = {
+  timestamps: ["none", "segment"],
+  extras: VOXTRAL_ROW.extras,
+} as const;
+
 export const MISTRAL_STT_MODEL_PARAMS = {
   "voxtral-mini-latest": VOXTRAL_ROW,
   "voxtral-mini-2602": VOXTRAL_ROW,
   "voxtral-mini-2507": VOXTRAL_ROW,
   "voxtral-small-latest": VOXTRAL_ROW,
   "voxtral-small-2507": VOXTRAL_ROW,
+  "voxtral-mini-transcribe-3-0": VOXTRAL_3_ROW,
+  "voxtral-mini-transcribe-3": VOXTRAL_3_ROW,
+  "voxtral-mini-transcribe-latest": VOXTRAL_3_ROW,
+  "voxtral-small-transcribe-3-0": VOXTRAL_3_ROW,
+  "voxtral-small-transcribe-3": VOXTRAL_3_ROW,
+  "voxtral-small-transcribe-latest": VOXTRAL_3_ROW,
 } as const satisfies SttModelParamTable;

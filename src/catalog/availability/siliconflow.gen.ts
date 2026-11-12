@@ -314,6 +314,7 @@ export const availability = {
     "deepinfra": { id: "zai-org/GLM-5.2", narrows: { context: 1048576 } },
     "friendli": { id: "zai-org/GLM-5.2", narrows: { context: 1048576 } },
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
+    "mistral": { id: "glm-5-2", narrows: { context: 1048576 } },
     "nebius": { id: "zai-org/GLM-5.2", narrows: { context: 1048576 } },
     "novita-ai": { id: "zai-org/glm-5.2", narrows: { context: 1048576 } },
     "openrouter": { id: "z-ai/glm-5.2", narrows: { context: 1048576 } },

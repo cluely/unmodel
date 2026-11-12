@@ -39,6 +39,7 @@ export const availability = {
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
+    "mistral": "glm-5-2",
     "nebius": "zai-org/GLM-5.2",
     "novita-ai": "zai-org/glm-5.2",
     "openrouter": "z-ai/glm-5.2",

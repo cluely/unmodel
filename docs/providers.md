@@ -110,7 +110,9 @@ openai (`realtimeSession`), cartesia (`ttsWebsocket`, `sttWebsocket`), deepgram 
 `speechToTextRealtime`), inworld (`realtimeTranscribeConfig`, `realtimeVoiceContext`), soniox
 (`realtimeTranscription`).
 **Realtime still to do:** the streaming/live socket configs of assemblyai, gladia and
-speechmatics, plus Cartesia's sibling turn-detection socket (`/stt/turns/websocket`).
+speechmatics, plus Cartesia's sibling turn-detection socket (`/stt/turns/websocket`) and
+mistral's Voxtral realtime transcription socket (`/v1/audio/transcriptions/realtime` — its
+model ids are catalogued, and `mistral.stt` rejects them by name).
 **TTS still to do (leaderboard order):** typecast,
 gradium, async, microsoft/azure, mistral (Voxtral TTS), boson-ai, neuphonic, amazon (Polly),
 nvidia (Magpie), zyphra. **Excluded (no public developer API):** VUI Labs (Luna TTS —

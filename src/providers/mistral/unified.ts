@@ -47,9 +47,9 @@ export const stt = {
       "POST /v1/audio/transcriptions takes one two-letter `language` and has no candidate-set " +
       "field; omit `language` to let Voxtral detect.",
     prompt:
-      "Voxtral takes no prose prompt — `context_bias` is a list of terms that may contain " +
-      "neither commas nor whitespace, so a sentence cannot be one; send it through " +
-      "`providerOptions.mistral`.",
+      "POST /v1/audio/transcriptions has no prompt field — its nearest feature is the " +
+      "`context_bias` list (vocabulary terms; on the Voxtral 3 ids, free-form passages too); " +
+      "send it through `providerOptions.mistral`.",
   },
   compile(
     input: SttParamsFor<"file" | "url" | "fileId">,

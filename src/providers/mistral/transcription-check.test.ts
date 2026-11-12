@@ -29,6 +29,15 @@ describe("mistral.checkTranscription", () => {
     expect(report.costUSD).toBeCloseTo(0.003, 10);
   });
 
+  test("Voxtral Mini Transcribe 3 prices at $0.0035/min", () => {
+    const report = checkTranscription({
+      model: "voxtral-mini-transcribe-3",
+      text: "hi",
+      usage: { prompt_audio_seconds: 600 },
+    });
+    expect(report.costUSD).toBeCloseTo(0.035, 10);
+  });
+
   test("an empty transcript warns", () => {
     const report = checkTranscription({
       model: "voxtral-mini-2602",

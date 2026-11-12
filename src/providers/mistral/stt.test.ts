@@ -230,6 +230,108 @@ describe("mistral.stt media + cost", () => {
   });
 });
 
+describe("mistral.stt Voxtral 3", () => {
+  test.each([
+    ["voxtral-mini-transcribe-3-0", 0.0035],
+    ["voxtral-mini-transcribe-3", 0.0035],
+    ["voxtral-mini-transcribe-latest", 0.0035],
+    ["voxtral-small-transcribe-3-0", 0.004],
+    ["voxtral-small-transcribe-3", 0.004],
+    ["voxtral-small-transcribe-latest", 0.004],
+  ])("%s validates and prices at its card rate", (model, perMinute) => {
+    const r = stt.safe(
+      { model, file: audio() },
+      { media: [{ path: ["file"], durationSeconds: 600 }] },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(10 * perMinute, 10);
+    }
+  });
+
+  test("Voxtral 3 has no audio-length cap to enforce", () => {
+    const r = stt.safe(
+      { model: "voxtral-mini-transcribe-3", file: audio() },
+      { media: [{ path: ["file"], durationSeconds: 5 * 60 * 60 }] },
+    );
+    expect(r.ok).toBe(true);
+  });
+
+  test("segment timestamps are accepted, word timestamps are refused", () => {
+    expect(
+      stt.safe({
+        model: "voxtral-mini-transcribe-3",
+        file: audio(),
+        timestamp_granularities: ["segment"],
+      }).ok,
+    ).toBe(true);
+    const r = stt.safe({
+      model: "voxtral-small-transcribe-3",
+      file: audio(),
+      timestamp_granularities: ["word"],
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_enum_value");
+      expect(r.errors[0]?.path).toEqual(["timestamp_granularities"]);
+      expect(r.errors[0]?.message).toContain('accepts "segment"');
+    }
+  });
+
+  test("diarization needs segment timestamps", () => {
+    const bare = stt.safe({ model: "voxtral-mini-transcribe-3", file: audio(), diarize: true });
+    expect(bare.ok).toBe(false);
+    if (!bare.ok) {
+      expect(bare.errors[0]?.path).toEqual(["diarize"]);
+      expect(bare.errors[0]?.message).toContain('timestamp_granularities: ["segment"]');
+    }
+    expect(
+      stt.safe({
+        model: "voxtral-mini-transcribe-3",
+        file: audio(),
+        diarize: true,
+        timestamp_granularities: ["segment"],
+      }).ok,
+    ).toBe(true);
+    // The pairing is Voxtral 3's; Voxtral Mini Transcribe 2 diarizes without it.
+    expect(stt.safe({ model: "voxtral-mini-2602", file: audio(), diarize: true }).ok).toBe(true);
+  });
+
+  test("context_bias takes phrases and has no fixed count", () => {
+    const r = stt.safe({
+      model: "voxtral-mini-transcribe-3",
+      file: audio(),
+      context_bias: [
+        "Alder Creek Design",
+        "A call between two architects, about a cabin build.",
+        ...Array.from({ length: MAX_CONTEXT_BIAS_TERMS }, (_, i) => `term_${i}`),
+      ],
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  test.each([
+    "voxtral-mini-transcribe-realtime-3-0",
+    "voxtral-mini-transcribe-realtime-3",
+    "voxtral-mini-transcribe-realtime-latest",
+    "voxtral-mini-realtime-latest",
+  ])("the realtime id %s is rejected as websocket-only", (model) => {
+    const r = stt.safe({ model, file: audio() });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => e.code)).toEqual(["unsupported_capability"]);
+      expect(r.errors[0]?.message).toContain("WebSocket");
+      expect(r.warnings.map((w) => w.code)).not.toContain("unknown_model");
+    }
+  });
+
+  test("the realtime rows carry their per-minute rates", () => {
+    expect(transcriptionModels["voxtral-mini-transcribe-realtime-3"]?.cost?.perAudioMinute).toBe(0.008);
+    expect(transcriptionModels["voxtral-mini-realtime-latest"]?.cost?.perAudioMinute).toBe(0.006);
+  });
+});
+
 describe("mistral.toFormData", () => {
   test("repeats array fields under their plain name and drops nulls", () => {
     const file = audio();

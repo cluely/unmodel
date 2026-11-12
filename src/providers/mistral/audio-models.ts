@@ -1,13 +1,17 @@
 // Hand-maintained supplement — models.dev's mistral snapshot
-// (src/catalog/mistral.gen.ts) carries only the `voxtral-*-latest` aliases,
-// with no audio pricing and no dated transcription ids. Refresh from
+// (src/catalog/mistral.gen.ts) carries the `voxtral-*-latest` aliases and
+// `voxtral-small-2507`, with no audio pricing, and none of the transcribe-only
+// dated ids. Refresh from
 //   https://docs.mistral.ai/models/model-cards/voxtral-mini-transcribe-26-02           (voxtral-mini-2602)
 //   https://docs.mistral.ai/models/model-cards/voxtral-mini-transcribe-25-07           (voxtral-mini-2507)
 //   https://docs.mistral.ai/models/model-cards/voxtral-small-25-07                     (voxtral-small-2507)
 //   https://docs.mistral.ai/models/model-cards/voxtral-mini-transcribe-realtime-26-02  (realtime)
+//   https://docs.mistral.ai/models/voxtral-mini-transcribe-3-0                         (Voxtral Mini Transcribe 3)
+//   https://docs.mistral.ai/models/voxtral-small-transcribe-3-0                        (Voxtral Small Transcribe 3)
+//   https://docs.mistral.ai/models/voxtral-mini-transcribe-realtime-3-0                (Voxtral Realtime 3)
 //   https://docs.mistral.ai/inference/pricing                                          (rates)
 //   https://docs.mistral.ai/studio/audio/speech_to_text/offline_transcription          (endpoint + per-model audio caps)
-// Verified 2026-08-13.
+// Verified 2026-08-13; the Voxtral 3 rows and the realtime alias 2026-11-12.
 //
 // Pricing: the docs render EUR by default with a USD toggle; the USD figures
 // below are the ones the pages carry alongside each EUR price
@@ -21,6 +25,10 @@
 // bound is the audio length, which `ModelLimit` cannot express; it lives in
 // {@link TRANSCRIPTION_MAX_AUDIO_SECONDS} and is enforced by ./transcription.
 // voxtral-small keeps its generated 32k context (it is also a chat model).
+// The Voxtral 3 cards say "Context 32k" while the limits page gives "Context
+// window, shared by the audio and context_bias 65,536 tokens"
+// (https://docs.mistral.ai/studio/audio/specs-and-limits/limits, 2026-11-12) —
+// the two disagree, so those rows stay at 0 too.
 
 import type { ModelInfo } from "../../core/catalog-types";
 import { models } from "../../catalog/mistral.gen";
@@ -37,7 +45,32 @@ const TRANSCRIBE = {
   limit: { context: 0 },
 } as const;
 
-/** Dated transcription ids the generated catalog lacks. */
+/**
+ * The Voxtral 3 generation: "October 20, 2026 Public Preview"
+ * (https://docs.mistral.ai/models/voxtral-mini-transcribe-3-0, 2026-11-12),
+ * recorded as `status: "beta"`.
+ */
+const VOXTRAL_3 = { ...TRANSCRIBE, releaseDate: "2026-10-20", status: "beta" } as const;
+
+const VOXTRAL_MINI_TRANSCRIBE_3 = {
+  ...VOXTRAL_3,
+  name: "Voxtral Mini Transcribe 3",
+  cost: { perAudioMinute: 0.0035 },
+} as const;
+
+const VOXTRAL_SMALL_TRANSCRIBE_3 = {
+  ...VOXTRAL_3,
+  name: "Voxtral Small Transcribe 3",
+  cost: { perAudioMinute: 0.004 },
+} as const;
+
+const VOXTRAL_MINI_TRANSCRIBE_REALTIME_3 = {
+  ...VOXTRAL_3,
+  name: "Voxtral Mini Transcribe Realtime 3",
+  cost: { perAudioMinute: 0.008 },
+} as const;
+
+/** Transcription ids the generated catalog lacks. */
 export const transcriptionSupplementModels = {
   "voxtral-mini-2602": {
     ...TRANSCRIBE,
@@ -68,20 +101,67 @@ export const transcriptionSupplementModels = {
     releaseDate: "2026-02-04",
     cost: { perAudioMinute: 0.006 },
   },
-  /** Dated snapshot of the chat-capable Voxtral Small (also transcribes). */
-  "voxtral-small-2507": {
-    id: "voxtral-small-2507",
-    name: "Voxtral Small",
-    family: "voxtral",
-    attachment: true,
-    reasoning: false,
-    toolCall: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2025-07-15",
-    modalities: { input: ["text", "audio"], output: ["text"] },
-    limit: { context: 32_000, output: 32_000 },
-    cost: { perAudioMinute: 0.004, input: 0.1, output: 0.4 },
+  /**
+   * `"names":["voxtral-mini-transcribe-realtime-2602","voxtral-mini-realtime-latest"]`
+   * (https://docs.mistral.ai/models/voxtral-mini-transcribe-realtime-26-02,
+   * page source, 2026-11-12): the realtime model above, under its alias.
+   */
+  "voxtral-mini-realtime-latest": {
+    ...TRANSCRIBE,
+    id: "voxtral-mini-realtime-latest",
+    name: "Voxtral Mini Transcribe Realtime",
+    releaseDate: "2026-02-04",
+    cost: { perAudioMinute: 0.006 },
+  },
+  /**
+   * Voxtral Mini Transcribe 3 — "voxtral-mini-transcribe-3-0 +2 … Price i USD
+   * EUR $0.0035 /Min" (https://docs.mistral.ai/models/voxtral-mini-transcribe-3-0,
+   * 2026-11-12); pricing page: "Voxtral Mini Transcribe 3 ↗ $0.0035 /Min
+   * $0.00035 /Min". Alias array
+   * `["voxtral-mini-transcribe-3-0","voxtral-mini-transcribe-3","voxtral-mini-transcribe-latest"]`.
+   */
+  "voxtral-mini-transcribe-3-0": { ...VOXTRAL_MINI_TRANSCRIBE_3, id: "voxtral-mini-transcribe-3-0" },
+  "voxtral-mini-transcribe-3": { ...VOXTRAL_MINI_TRANSCRIBE_3, id: "voxtral-mini-transcribe-3" },
+  "voxtral-mini-transcribe-latest": {
+    ...VOXTRAL_MINI_TRANSCRIBE_3,
+    id: "voxtral-mini-transcribe-latest",
+  },
+  /**
+   * Voxtral Small Transcribe 3 — "voxtral-small-transcribe-3-0 +2 … Price i
+   * USD EUR $0.004 /Min"
+   * (https://docs.mistral.ai/models/voxtral-small-transcribe-3-0, 2026-11-12);
+   * pricing page: "Voxtral Small Transcribe 3 ↗ $0.004 /Min $0.0004 /Min".
+   * Alias array
+   * `["voxtral-small-transcribe-3-0","voxtral-small-transcribe-3","voxtral-small-transcribe-latest"]`.
+   */
+  "voxtral-small-transcribe-3-0": {
+    ...VOXTRAL_SMALL_TRANSCRIBE_3,
+    id: "voxtral-small-transcribe-3-0",
+  },
+  "voxtral-small-transcribe-3": { ...VOXTRAL_SMALL_TRANSCRIBE_3, id: "voxtral-small-transcribe-3" },
+  "voxtral-small-transcribe-latest": {
+    ...VOXTRAL_SMALL_TRANSCRIBE_3,
+    id: "voxtral-small-transcribe-latest",
+  },
+  /**
+   * Voxtral Mini Transcribe Realtime 3 — "voxtral-mini-transcribe-realtime-3-0
+   * +2 … Context i -- Price i USD EUR $0.008 /Min"
+   * (https://docs.mistral.ai/models/voxtral-mini-transcribe-realtime-3-0,
+   * 2026-11-12); pricing page: "Voxtral Mini Transcribe Realtime 3 ↗ $0.008
+   * /Min $0.0008 /Min". A realtime model like the 2602 one above, so `stt`
+   * rejects it by name.
+   */
+  "voxtral-mini-transcribe-realtime-3-0": {
+    ...VOXTRAL_MINI_TRANSCRIBE_REALTIME_3,
+    id: "voxtral-mini-transcribe-realtime-3-0",
+  },
+  "voxtral-mini-transcribe-realtime-3": {
+    ...VOXTRAL_MINI_TRANSCRIBE_REALTIME_3,
+    id: "voxtral-mini-transcribe-realtime-3",
+  },
+  "voxtral-mini-transcribe-realtime-latest": {
+    ...VOXTRAL_MINI_TRANSCRIBE_REALTIME_3,
+    id: "voxtral-mini-transcribe-realtime-latest",
   },
 } as const satisfies Record<string, ModelInfo>;
 
@@ -89,13 +169,15 @@ export type MistralTranscriptionSupplementModelId = keyof typeof transcriptionSu
 
 /**
  * Catalog used by the `transcription` validator: the full generated mistral
- * catalog, plus audio pricing supplemented onto the `-latest` aliases the
- * transcription endpoint documents, plus the dated ids above. If the generated
- * file ever grows real audio pricing, drop these overrides — they would shadow
- * it.
+ * catalog, plus audio pricing supplemented onto the generated Voxtral rows the
+ * transcription endpoint documents, plus the ids above. If the generated file
+ * ever grows real audio pricing, drop these overrides — they would shadow it.
  *
  * `voxtral-mini-latest` "runs Voxtral Mini Transcribe 2", so it is priced and
- * capped identically to `voxtral-mini-2602`.
+ * capped identically to `voxtral-mini-2602`. The two Voxtral Small ids are one
+ * model (`"names":["voxtral-small-2507","voxtral-small-latest"]`), priced
+ * "Voxtral Small ↗ $0.004 /Min $0.0004 /Min $0.4 /M Tokens" (pricing page,
+ * 2026-11-12); their token rates are the generated ones.
  */
 export const transcriptionModels: Record<string, ModelInfo> = {
   ...models,
@@ -105,7 +187,11 @@ export const transcriptionModels: Record<string, ModelInfo> = {
   },
   "voxtral-small-latest": {
     ...models["voxtral-small-latest"],
-    cost: { ...models["voxtral-small-latest"].cost, perAudioMinute: 0.004, output: 0.4 },
+    cost: { ...models["voxtral-small-latest"].cost, perAudioMinute: 0.004 },
+  },
+  "voxtral-small-2507": {
+    ...models["voxtral-small-2507"],
+    cost: { ...models["voxtral-small-2507"].cost, perAudioMinute: 0.004 },
   },
   ...transcriptionSupplementModels,
 };
@@ -127,14 +213,47 @@ export const TRANSCRIPTION_MAX_AUDIO_SECONDS: Readonly<Record<string, number>> =
 };
 
 /**
+ * The Voxtral 3 transcription ids: "model Required. voxtral-mini-transcribe-3
+ * or voxtral-small-transcribe-3 ."
+ * (https://docs.mistral.ai/studio/audio/speech-to-text/transcribe-files,
+ * 2026-11-12), plus each card's dated id and `-latest` alias. They document no
+ * audio-length cap — only the 65,536-token window the audio shares with
+ * `context_bias` — so they are absent from
+ * {@link TRANSCRIPTION_MAX_AUDIO_SECONDS}, and `./stt` applies their own rules
+ * (segment timestamps only, diarization needs them, no fixed `context_bias`
+ * count).
+ */
+export const VOXTRAL_3_TRANSCRIPTION_MODEL_IDS = [
+  "voxtral-mini-transcribe-3-0",
+  "voxtral-mini-transcribe-3",
+  "voxtral-mini-transcribe-latest",
+  "voxtral-small-transcribe-3-0",
+  "voxtral-small-transcribe-3",
+  "voxtral-small-transcribe-latest",
+] as const;
+
+/**
  * Model ids POST /v1/audio/transcriptions accepts. The endpoint docs name
  * `voxtral-mini-latest` ("via audio/transcriptions"), the OpenAPI examples add
- * `voxtral-mini-2507`, and the max-audio-length FAQ covers the Voxtral Small
- * transcription path too.
+ * `voxtral-mini-2507`, the max-audio-length FAQ covers the Voxtral Small
+ * transcription path too, and the Voxtral 3 ids join them.
  */
-export const TRANSCRIPTION_MODEL_IDS: readonly string[] = Object.keys(
-  TRANSCRIPTION_MAX_AUDIO_SECONDS,
-);
+export const TRANSCRIPTION_MODEL_IDS: readonly string[] = [
+  ...Object.keys(TRANSCRIPTION_MAX_AUDIO_SECONDS),
+  ...VOXTRAL_3_TRANSCRIPTION_MODEL_IDS,
+];
 
-/** Realtime (WebSocket) ids that POST /v1/audio/transcriptions cannot serve. */
-export const REALTIME_MODEL_IDS: readonly string[] = ["voxtral-mini-transcribe-realtime-2602"];
+/**
+ * Realtime (WebSocket) ids that POST /v1/audio/transcriptions cannot serve.
+ * The Voxtral 3 realtime guide connects to
+ * `wss://api.mistral.ai/v1/audio/transcriptions/realtime?model=voxtral-mini-transcribe-realtime-3`
+ * (https://docs.mistral.ai/studio/audio/speech-to-text/transcribe-in-realtime,
+ * 2026-11-12).
+ */
+export const REALTIME_MODEL_IDS: readonly string[] = [
+  "voxtral-mini-transcribe-realtime-2602",
+  "voxtral-mini-realtime-latest",
+  "voxtral-mini-transcribe-realtime-3-0",
+  "voxtral-mini-transcribe-realtime-3",
+  "voxtral-mini-transcribe-realtime-latest",
+];

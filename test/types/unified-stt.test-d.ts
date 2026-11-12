@@ -310,6 +310,12 @@ function timestampNarrowingTests(): void {
   // @ts-expect-error — same at Cartesia, whose array's only member is "word".
   stt({ model: "cartesia/ink-whisper", audio: { file }, timestamps: "character" });
   stt({ model: "cartesia/ink-whisper", audio: { file }, timestamps: "none" });
+
+  // Voxtral 3 dropped word timings; the earlier Voxtral ids keep them.
+  stt({ model: "mistral/voxtral-mini-transcribe-3", audio: { url }, timestamps: "segment" });
+  // @ts-expect-error — "timestamp_granularities accepts segment only, and word returns a 400 error".
+  stt({ model: "mistral/voxtral-mini-transcribe-3", audio: { url }, timestamps: "word" });
+  stt({ model: "mistral/voxtral-mini-latest", audio: { url }, timestamps: "word" });
 }
 
 function languageNarrowingTests(): void {

@@ -406,6 +406,7 @@ export const availability = {
     "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
     "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "mistral": { id: "deepseek-v4-1-flash-1017", narrows: { drops: ["image"] } },
     "nebius": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "novita-ai": "deepseek/deepseek-v4.1-flash-1017",
     "openrouter": "deepseek/deepseek-v4.1-flash-1017",
@@ -790,13 +791,13 @@ export const availability = {
     "vercel": "mistral/mistral-large-3",
   },
   "mistral/mistral-large-4": {
+    "mistral": "mistral-large-4",
     "vercel": "mistral/mistral-large-4",
   },
   "mistral/mistral-medium-3.5": {
     "vercel": "mistral/mistral-medium-3.5",
   },
   "mistral/mistral-nemo": {
-    "mistral": { id: "mistral-nemo", narrows: { context: 128000 } },
     "openrouter": "mistralai/mistral-nemo",
     "vercel": "mistral/mistral-nemo",
   },
@@ -1546,6 +1547,7 @@ export const availability = {
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
+    "mistral": "glm-5-2",
     "nebius": "zai-org/GLM-5.2",
     "novita-ai": "zai-org/glm-5.2",
     "openrouter": "z-ai/glm-5.2",

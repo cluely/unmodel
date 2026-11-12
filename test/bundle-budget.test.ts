@@ -801,8 +801,8 @@ const STT_PACK_BUDGET_KIB = 790;
  * Both are load-bearing rather than leaked:
  *
  * - `mistral/audio-models.ts` supplements `src/catalog/mistral.gen.ts`, which
- *   carries only the `voxtral-*-latest` aliases and none of the dated
- *   transcription ids or the per-minute rates;
+ *   carries the `voxtral-*-latest` aliases and `voxtral-small-2507` but none of
+ *   the transcribe-only dated ids or the per-minute rates;
  * - `google/stt.ts` reads `src/catalog/google.gen.ts` **directly** — the one
  *   endpoint in the audio packs that does. It is the choice the STT budget's
  *   note above argues: thirteen curated ids with nothing to doc-correct, whose
@@ -1661,14 +1661,21 @@ describe("unmodel/chat", () => {
    * `google/constraints.ts` re-exports every name, so those bytes were already
    * in this graph — inside `constraints.ts` — and this line is where they went.
    *
-   * **55 → 57 with the Gemini 4 / 3.8 TTS wave (2026-11-12)**, both google's:
+   * **55 → 59 with the 2026-11-12 model wave.** Two are google's:
    * `google/thinking-constraints.ts` is the import-free leaf the thinking
    * tables moved to so `google/tts-checks.ts` can enforce the Gemini 4 rules
    * for all three generateContent surfaces (bytes that were inside
    * `constraints.ts`), and `google/tts-models.ts` is reached by the chat
    * overlay for the two Gemini 3.8 TTS hand rows models.dev does not carry.
+   *
+   * The other two are mistral's chat rules, and both are chat's own,
+   * not barrel leakage: `mistral/chat-models.ts` is the catalog `mistral.chat`
+   * now validates against (the vendor aliases and doc corrections models.dev
+   * lacks, layered on the generated catalog already in this graph), and
+   * `mistral/constraints.ts` is the type-only leaf holding the Large 4 / GLM 5.3
+   * `reasoning_effort` ladders — the groq/upstage pattern.
    */
-  test("its provider graph is exactly the enumerated 57 modules", () => {
+  test("its provider graph is exactly the enumerated 59 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
       "src/providers/alibaba/chat.ts",
@@ -1713,6 +1720,9 @@ describe("unmodel/chat", () => {
       // endpoint. Deleting these three lines requires giving mistral a
       // `chat.ts` leaf, not loosening the assertion.
       "src/providers/mistral/audio-models.ts",
+      // Chat's own: the overlaid catalog and the reasoning_effort ladders.
+      "src/providers/mistral/chat-models.ts",
+      "src/providers/mistral/constraints.ts",
       "src/providers/mistral/index.ts",
       "src/providers/mistral/stt.ts",
       "src/providers/mistral/transcription-check.ts",

@@ -245,6 +245,17 @@ export function encodeAnthropic(body: MessagesBody, warn: Warn): ChatIR {
 
   const toolNames = new Map<string, string>();
   body.messages.forEach((message: MessageParam, index) => {
+    if (message.role === "system") {
+      // The IR's message roles are user/assistant; an operator instruction
+      // injected mid-conversation is an Anthropic-only channel.
+      warn({
+        code: "dropped_content",
+        path: ["messages", index],
+        message:
+          "a mid-conversation `system` message is an Anthropic-only operator channel with no equivalent message role in the other dialects; it was dropped. Put the instruction in the top-level `system` instead.",
+      });
+      return;
+    }
     const content = message.content;
     if (typeof content === "string") {
       ir.messages.push({ role: message.role, content: [{ type: "text", text: content }] });

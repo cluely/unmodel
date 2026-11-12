@@ -105,7 +105,16 @@ export type ContentBlock =
   | RedactedThinkingBlock;
 
 export interface MessageParam {
-  role: "user" | "assistant";
+  /**
+   * `"system"` is a mid-conversation system message (stable, no beta header)
+   * on Claude Fable 5 / 5.1 / 5.2, Opus 4.8 / 5 / 5.5, Sonnet 5.5 and Haiku
+   * 5.5 — not on Sonnet 5 or earlier models, which take the top-level `system`
+   * only. It cannot be `messages[0]` and cannot sit between a `tool_use` and
+   * its `tool_result` (both refused here); it must follow a user turn, or an
+   * assistant turn ending in a server tool result, and precede an assistant
+   * turn or end the array.
+   */
+  role: "user" | "assistant" | "system";
   content: string | ContentBlock[];
 }
 
@@ -214,7 +223,8 @@ export interface MessagesBody {
    * headers do not include beta headers; add your own.
    */
   context_management?: Record<string, unknown>;
-  inference_geo?: string;
+  /** `null` means the workspace's default inference geography. */
+  inference_geo?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -225,7 +235,7 @@ export interface MessagesBody {
 const looseBlock = z.looseObject({ type: z.string() });
 
 const messageSchema = z.looseObject({
-  role: z.enum(["user", "assistant"]),
+  role: z.enum(["user", "assistant", "system"]),
   content: z.union([z.string(), z.array(looseBlock)]),
 });
 
@@ -266,7 +276,7 @@ export const messagesSchema = z
     container: z.unknown().optional(),
     mcp_servers: z.array(z.looseObject({})).optional(),
     context_management: z.looseObject({}).optional(),
-    inference_geo: z.string().optional(),
+    inference_geo: z.string().nullable().optional(),
   })
   .superRefine((params, ctx) => {
     const first = params.messages[0];

@@ -943,30 +943,44 @@ describe("anthropic.chat image media rules", () => {
     if (!result.ok) expect(result.errors[0]?.code).toBe("media_too_large");
   });
 
-  test("more than 20 images triggers the stricter 2000px per-dimension limit", () => {
-    const wide = Buffer.from(pngBytes(2100, 100)).toString("base64");
-    const image = {
-      type: "image",
-      source: { type: "base64", media_type: "image/png", data: wide },
-    } as const;
-    const twentyOne = chat.safe({
-      model: "claude-sonnet-4-5",
-      max_tokens: 100,
-      messages: [{ role: "user", content: Array.from({ length: 21 }, () => image) }],
-    });
-    expect(twentyOne.ok).toBe(false);
-    if (!twentyOne.ok) {
-      expect(twentyOne.errors.every((e) => e.code === "media_dimensions_exceeded")).toBe(true);
-      expect(twentyOne.errors).toHaveLength(21);
+  test("more than 20 images: a warning above the documented 3,000 px safe bound, nothing below it", () => {
+    const imageOf = (width: number) =>
+      ({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: "image/png",
+          data: Buffer.from(pngBytes(width, 100)).toString("base64"),
+        },
+      }) as const;
+    const many = (width: number, count: number) =>
+      chat.safe({
+        model: "claude-sonnet-4-6",
+        max_tokens: 100,
+        messages: [{ role: "user", content: Array.from({ length: count }, () => imageOf(width)) }],
+      });
+
+    // 2,100 px images are within the documented safe bound: no issue at all.
+    const safe = many(2100, 21);
+    expect(safe.ok).toBe(true);
+    if (safe.ok) expect(safe.warnings).toEqual([]);
+
+    // Above 3,000 px the exact limit is unstated, so the request still
+    // validates and every image carries a warning naming the safe bound.
+    const large = many(3100, 21);
+    expect(large.ok).toBe(true);
+    if (large.ok) {
+      expect(large.warnings).toHaveLength(21);
+      expect(large.warnings.every((w) => w.code === "media_dimensions_exceeded")).toBe(true);
+      expect(large.warnings.every((w) => w.severity === "warning")).toBe(true);
+      expect(large.warnings[0]?.meta?.maxWidth).toBe(3000);
+      expect(large.warnings[0]?.message).toContain("3000 px");
     }
 
-    // The same images in a 20-image request are fine (2100px < 8000px).
-    const twenty = chat.safe({
-      model: "claude-sonnet-4-5",
-      max_tokens: 100,
-      messages: [{ role: "user", content: Array.from({ length: 20 }, () => image) }],
-    });
+    // The same images in a 20-image request are fine (3100px < 8000px).
+    const twenty = many(3100, 20);
     expect(twenty.ok).toBe(true);
+    if (twenty.ok) expect(twenty.warnings).toEqual([]);
   });
 
   test("image count above the per-request cap (100 on 200k-context models) is rejected", () => {
@@ -1497,5 +1511,60 @@ describe("anthropic.chat wave: tools, prefill, speed", () => {
   test("speed rides on the exact wire body", () => {
     const validated = chat({ model: "claude-opus-5-5", max_tokens: 16, messages: HI, speed: "fast" });
     expect(Object.keys(validated).sort()).toEqual(["max_tokens", "messages", "model", "speed"]);
+  });
+});
+
+describe("anthropic.chat mid-conversation system messages", () => {
+  test("a system message after a user turn validates, and rides on the wire body", () => {
+    const result = chat.safe({
+      model: "claude-opus-5-5",
+      max_tokens: 16,
+      messages: [
+        { role: "user", content: "Bonjour" },
+        { role: "system", content: "Answer in French from here on." },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.warnings).toEqual([]);
+      expect(result.params.messages[1]?.role).toBe("system");
+    }
+  });
+
+  test("a system message cannot be the first message", () => {
+    const result = chat.safe({
+      model: "claude-opus-5-5",
+      max_tokens: 16,
+      messages: [
+        { role: "system", content: "Be brief." },
+        { role: "user", content: "hi" },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]?.code).toBe("invalid_shape");
+      expect(result.errors[0]?.path).toEqual(["messages", 0, "role"]);
+    }
+  });
+
+  test("a system message cannot sit between a tool_use and its tool_result", () => {
+    const result = chat.safe({
+      model: "claude-opus-5-5",
+      max_tokens: 16,
+      messages: [
+        { role: "user", content: "Weather?" },
+        { role: "assistant", content: [{ type: "tool_use", id: "t1", name: "weather", input: {} }] },
+        { role: "system", content: "Be terse." },
+        { role: "user", content: [{ type: "tool_result", tool_use_id: "t1", content: "Sunny" }] },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.some((e) => e.path.join(".") === "messages.1.content.0.id")).toBe(true);
+  });
+
+  test("inference_geo accepts null (the workspace default)", () => {
+    const result = chat.safe({ model: "claude-opus-5-5", max_tokens: 16, messages: HI, inference_geo: null });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings).toEqual([]);
   });
 });

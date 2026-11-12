@@ -93,11 +93,22 @@ expectAssignable<MessagesBody["model"]>("claude-future-model");
 chat({ model: "claude-opus-4-6", max_tokens: 1, messages: [{ role: "user", content: "x" }] });
 chat({ model: "claude-future-model", max_tokens: 1, messages: [{ role: "user", content: "x" }] });
 
+// A mid-conversation system message is a wire role (refused as messages[0] at
+// run time); "developer" is OpenAI's spelling and not an Anthropic role.
+chat({
+  model: "claude-opus-5-5",
+  max_tokens: 1,
+  messages: [
+    { role: "user", content: "x" },
+    { role: "system", content: "Answer in French from here on." },
+  ],
+  inference_geo: null,
+});
 chat({
   model: "claude-sonnet-4-5",
   max_tokens: 1,
-  // @ts-expect-error — role must be "user" | "assistant".
-  messages: [{ role: "system", content: "x" }],
+  // @ts-expect-error — role must be "user" | "assistant" | "system".
+  messages: [{ role: "developer", content: "x" }],
 });
 
 chat({

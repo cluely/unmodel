@@ -471,9 +471,19 @@ export function checkSpeed(
   });
 }
 
-/** Stricter per-image dimension cap once a request carries more than 20 images (vision docs). */
+/**
+ * Requests with more than 20 images get a stricter per-image dimension limit
+ * whose exact figure the vision docs withhold ("Images exceeding the stricter
+ * limit are rejected with an `invalid_request_error` whose message references
+ * “many-image requests” and states the current limit in pixels"); 3,000 px is
+ * the documented safe bound ("resize each image so that neither dimension
+ * exceeds 3,000 px, or keep the request to 20 or fewer image and document
+ * blocks"). Above it the issue is a WARNING: the real limit may be higher, and
+ * refusing a request the API fulfils is the one failure this library must
+ * never have.
+ */
 const MANY_IMAGE_THRESHOLD = 20;
-const MANY_IMAGE_MAX_DIMENSION = 2000;
+const MANY_IMAGE_SAFE_DIMENSION = 3000;
 
 interface ImagePart {
   path: Array<string | number>;
@@ -486,9 +496,9 @@ interface ImagePart {
  * Enforces the image media rules (format allowlist, size, dimensions) via the
  * shared reporter. Base64 sources are sniffed; URL/file sources are checked
  * against `options.media` declarations. Also enforces the request-level
- * vision limits: the stricter 2000px per-dimension cap on requests with more
- * than 20 images, and the per-request image count cap (100 for 200k-context
- * models, 600 otherwise).
+ * vision limits: the stricter per-dimension limit on requests with more than
+ * 20 images (a warning above the documented 3,000 px safe bound), and the
+ * per-request image count cap (100 for 200k-context models, 600 otherwise).
  */
 export function checkImageMedia(
   params: MessagesBody,
@@ -549,19 +559,20 @@ export function checkImageMedia(
       const dims = part.sniffed ?? part.declaration;
       const width = dims?.width;
       const height = dims?.height;
-      const tooWide = width !== undefined && width > MANY_IMAGE_MAX_DIMENSION;
-      const tooTall = height !== undefined && height > MANY_IMAGE_MAX_DIMENSION;
+      const tooWide = width !== undefined && width > MANY_IMAGE_SAFE_DIMENSION;
+      const tooTall = height !== undefined && height > MANY_IMAGE_SAFE_DIMENSION;
       if (!tooWide && !tooTall) continue;
       ctx.report({
         code: "media_dimensions_exceeded",
+        severity: "warning",
         path: part.path,
         model: params.model,
-        message: `Image is ${width ?? "?"}x${height ?? "?"} px in a request with ${parts.length} images; requests with more than ${MANY_IMAGE_THRESHOLD} images cap each image at ${MANY_IMAGE_MAX_DIMENSION}px per dimension.`,
+        message: `Image is ${width ?? "?"}x${height ?? "?"} px in a request with ${parts.length} images; requests with more than ${MANY_IMAGE_THRESHOLD} images apply a stricter per-dimension limit the vision docs leave unstated — ${MANY_IMAGE_SAFE_DIMENSION} px is documented as safe on all platforms. Resize to ${MANY_IMAGE_SAFE_DIMENSION} px or keep the request to ${MANY_IMAGE_THRESHOLD} or fewer image and document blocks.`,
         meta: {
           ...(width !== undefined && { width }),
           ...(height !== undefined && { height }),
-          maxWidth: MANY_IMAGE_MAX_DIMENSION,
-          maxHeight: MANY_IMAGE_MAX_DIMENSION,
+          maxWidth: MANY_IMAGE_SAFE_DIMENSION,
+          maxHeight: MANY_IMAGE_SAFE_DIMENSION,
           images: parts.length,
           source: VISION_DOCS,
         },
@@ -874,10 +885,10 @@ export interface AnthropicChatResultKind extends ValidatorResultKind {
  * (the official SDK's params are wire-shaped — assignability is asserted in
  * test/types/anthropic.test-d.ts, so src never imports the SDK) and
  * `.request` carries url/method/static headers — including the required
- * `anthropic-version: 2023-06-01`, which `/v1/messages` rejects the request
- * without. Auth is your job: Anthropic takes the key in an `x-api-key` header,
- * bare (no `Bearer`), which is the header the OpenAI-shaped providers do *not*
- * use.
+ * `anthropic-version` header, pinned to `2023-06-01`, the API version these
+ * rules describe (`/v1/messages` rejects a request without one). Auth is your
+ * job: the Claude API accepts the key either bare in an `x-api-key` header or
+ * as `Authorization: Bearer <key>`, which is what the current SDKs send.
  *
  * `.toSdk("ai-sdk")` returns the Vercel AI SDK's `generateText` options
  * (no `model` — you supply the provider instance; wrap tool schemas with

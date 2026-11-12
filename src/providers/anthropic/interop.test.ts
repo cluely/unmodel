@@ -228,3 +228,23 @@ describe("passthrough", () => {
     expect(ir.passthrough?.["anthropic-messages"]?.["thinking"]).toEqual({ type: "adaptive" });
   });
 });
+
+describe("mid-conversation system messages", () => {
+  test("are dropped with a named warning: the IR has no system message role", () => {
+    const { ir, warnings } = encode(
+      claudeBody({
+        messages: [
+          { role: "user", content: "Bonjour" },
+          { role: "system", content: "Answer in French from here on." },
+          { role: "user", content: "Quelle heure est-il ?" },
+        ],
+      }),
+    );
+
+    expect(ir.messages.map((m) => m.role)).toEqual(["user", "user"]);
+    expect(warnings.map((w) => ({ code: w.code, path: w.path }))).toEqual([
+      { code: "dropped_content", path: ["messages", 1] },
+    ]);
+    expect(warnings[0]?.message).toContain("top-level `system`");
+  });
+});

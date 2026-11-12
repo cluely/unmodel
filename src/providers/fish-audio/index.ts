@@ -54,6 +54,7 @@ export {
   provider,
   TTS_MODEL_IDS,
   S2_MODEL_IDS,
+  MULTI_SPEAKER_MODEL_IDS,
   VOICE_DESIGN_MODEL_IDS,
 } from "./models";
 export type {

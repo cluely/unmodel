@@ -10,7 +10,7 @@ import {
   MP3_BITRATES,
   OPUS_BITRATES,
 } from "./tts";
-import { models, TTS_MODEL_IDS, S2_MODEL_IDS } from "./models";
+import { models, TTS_MODEL_IDS, S2_MODEL_IDS, MULTI_SPEAKER_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -113,6 +113,24 @@ describe("fish-audio.tts model gate", () => {
   test("S2_MODEL_IDS is the s2 family and excludes s1", () => {
     expect([...S2_MODEL_IDS].sort()).toEqual(["s2-pro", "s2.1-pro", "s2.1-pro-free"]);
   });
+
+  test("MULTI_SPEAKER_MODEL_IDS is the S2 family plus drama-3, never s1", () => {
+    expect([...MULTI_SPEAKER_MODEL_IDS].sort()).toEqual([
+      "drama-3",
+      "s2-pro",
+      "s2.1-pro",
+      "s2.1-pro-free",
+    ]);
+  });
+
+  test("drama-3 validates clean and rides the model header", () => {
+    const r = tts.safe({ model: "drama-3", text: "[calm] The ship had been silent." });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.params.request.headers.model).toBe("drama-3");
+    }
+  });
 });
 
 describe("fish-audio.tts enums", () => {
@@ -199,20 +217,36 @@ describe("fish-audio.tts codec pairing", () => {
 });
 
 describe("fish-audio.tts multi-speaker and loudness gates", () => {
-  test("a reference_id array on s1 is rejected as S2-only", () => {
+  test("a reference_id array on s1 is rejected, naming the multi-speaker models", () => {
     const r = tts.safe({ model: "s1", text: "hi", reference_id: ["a", "b"] });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       const err = r.errors.find((e) => e.code === "unsupported_capability");
       expect(err?.path).toEqual(["reference_id"]);
-      expect(err?.meta?.allowed).toEqual([...S2_MODEL_IDS]);
+      expect(err?.meta?.allowed).toEqual([...MULTI_SPEAKER_MODEL_IDS]);
+      expect(err?.message).toContain("drama-3");
     }
   });
 
-  test("a reference_id array on the S2 family passes", () => {
-    for (const model of S2_MODEL_IDS) {
+  test("a reference_id array on the S2 family and drama-3 passes", () => {
+    for (const model of MULTI_SPEAKER_MODEL_IDS) {
       expect(tts.safe({ model, text: "hi", reference_id: ["a", "b"] }).ok).toBe(true);
     }
+  });
+
+  // The drama-3 feature page's own curl: header `model: drama-3`, three voices.
+  test("drama-3 accepts a multi-speaker scene", () => {
+    const r = tts.safe({
+      model: "drama-3",
+      text: "<|speaker:0|>[calm] The ship had been silent.<|speaker:1|>[low] Status report.",
+      reference_id: [
+        "c70cfb98867a4bfb9ae20d2401257b92",
+        "bf322df2096a46f18c579d0baa36f41d",
+        "f3a2b90078d54a65af4b95f63bc7798e",
+      ],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
   });
 
   test("a single reference_id string on s1 passes", () => {
@@ -237,6 +271,13 @@ describe("fish-audio.tts multi-speaker and loudness gates", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
+  // The docs name `s1` as the only no-op; nothing is documented for drama-3.
+  test("prosody.normalize_loudness on drama-3 is clean", () => {
+    const r = tts.safe({ model: "drama-3", text: "hi", prosody: { normalize_loudness: false } });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
   test("an unknown model does not trigger the family gates", () => {
     const r = tts.safe({ model: "s9-pro", text: "hi", reference_id: ["a", "b"] });
     expect(r.ok).toBe(true);
@@ -257,6 +298,19 @@ describe("fish-audio.tts msgpack-only references", () => {
       expect(warn?.code).toBe("unsupported_param");
       expect(warn?.meta?.contentType).toBe(MSGPACK_CONTENT_TYPE);
     }
+  });
+
+  test("nested references on drama-3 are accepted as multi-speaker", () => {
+    const r = tts.safe({
+      model: "drama-3",
+      text: "hi",
+      references: [
+        [{ audio: new Uint8Array([1]), text: "a" }],
+        [{ audio: new Uint8Array([2]), text: "b" }],
+      ],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.path[0])).toEqual(["references"]);
   });
 
   test("nested references on s1 are rejected as multi-speaker", () => {
@@ -284,6 +338,13 @@ describe("fish-audio.tts cost estimation", () => {
     const r = tts.safe({ model: "s2-pro", text });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo((300 * 15) / 1_000_000, 12);
+  });
+
+  test("drama-3 prices at its $50 / M UTF-8 bytes list rate", () => {
+    const text = "a".repeat(1000);
+    const r = tts.safe({ model: "drama-3", text });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo((1000 * 50) / 1_000_000, 12);
   });
 
   test("the free tier prices at zero", () => {

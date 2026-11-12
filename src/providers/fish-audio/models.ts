@@ -1,9 +1,11 @@
 // Hand-maintained — Fish Audio is not in models.dev; refresh from
 //   https://docs.fish.audio/developer-guide/models-pricing/models-overview          (model ids, capabilities, languages)
 //   https://docs.fish.audio/developer-guide/models-pricing/pricing-and-rate-limits  (USD rates per model)
-//   https://docs.fish.audio/api-reference/endpoint/openapi-v1/text-to-speech        (the `model` HEADER enum POST /v1/tts accepts)
+//   https://docs.fish.audio/api-reference/openapi.json                              (the `model` HEADER enum POST /v1/tts accepts)
+//   https://docs.fish.audio/developer-guide/getting-started/changelog               (launch dates, new ids)
 //   https://docs.fish.audio/developer-guide/models-pricing/deprecations             (retired ids)
-// Verified 2026-08-13.
+// Verified 2026-11-12. The header enum and the pricing page are the authority
+// for the id list: models-overview does not list `drama-3` (2026-11-12).
 //
 // PRICING UNIT — read before trusting `perMillionCharacters`: Fish Audio
 // publishes "$15.00 / M UTF-8 bytes", not per character. `ModelCost` has no
@@ -13,7 +15,7 @@
 // character costs 3–4 bytes, which the docs call out explicitly
 // ("1M UTF-8 bytes is approximately 180,000 English words").
 //
-// COVERAGE: the four TTS ids below are exactly the `model` header enum plus
+// COVERAGE: the five TTS ids below are exactly the `model` header enum plus
 // the two retired `speech-*` ids, `voice-design-1` is the required `model`
 // header of POST /v1/voice-design, and `fast` is a SYNTHETIC id — POST /model
 // (voice cloning) has no model field, so the id names its documented
@@ -85,6 +87,29 @@ const ttsModels = {
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
     cost: { perMillionCharacters: PER_MILLION_UTF8_BYTES },
+  },
+  // Changelog, October 13, 2026: "Text-to-speech model you direct in plain
+  // language … Use model ID `drama-3` in the API"; a value of the `model`
+  // header enum (openapi.json, 2026-11-12). Multi-speaker: "Multi-speaker
+  // dialogue synthesis is available with the S2 family … and `drama-3`, not
+  // `s1`" (TTSRequest). Open weights: https://huggingface.co/fishaudio/drama-3
+  // publishes the checkpoint under the "Fish Audio Community License".
+  "drama-3": {
+    id: "drama-3",
+    name: "Fish Audio Drama 3",
+    family: "drama",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: true,
+    releaseDate: "2026-10-13",
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+    // "| `drama-3` | $50.00 / M UTF-8 bytes |" — pricing-and-rate-limits,
+    // 2026-11-12. A launch promotion bills "$10.00 / M UTF-8 bytes, 80% off
+    // the list price" "Through November 30, 2026 (until December 1, 00:00
+    // PT / 08:00 UTC)"; the catalog carries the list price.
+    cost: { perMillionCharacters: 50 },
   },
   // "Legacy model available for existing integrations" — 13 languages,
   // "4 billion parameters", emotional control via `(parenthesis)` syntax.
@@ -196,9 +221,21 @@ export const TTS_MODEL_IDS: readonly string[] = Object.keys(ttsModels);
 export const VOICE_DESIGN_MODEL_IDS: readonly string[] = Object.keys(voiceDesignModels);
 
 /**
- * The S2 generation — the only models that accept multi-speaker
- * `reference_id` arrays and honour `prosody.normalize_loudness`.
+ * The S2 generation (`family: "s2"`) — the models `prosody.normalize_loudness`
+ * is documented for: "Applies to the S2 family (`s2-pro`, `s2.1-pro`,
+ * `s2.1-pro-free`)" (ProsodyControl, openapi.json, 2026-11-12).
  */
 export const S2_MODEL_IDS: readonly string[] = Object.keys(ttsModels).filter(
   (id) => (ttsModels as Record<string, ModelInfo>)[id]?.family === "s2",
 );
+
+/**
+ * The models that accept multi-speaker dialogue — a `reference_id` array or a
+ * nested `references` array: "Multi-speaker dialogue synthesis is available
+ * with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3`,
+ * not `s1`" (TTSRequest, openapi.json, 2026-11-12).
+ */
+export const MULTI_SPEAKER_MODEL_IDS: readonly string[] = [
+  ...S2_MODEL_IDS,
+  "drama-3" satisfies FishAudioTtsModelId,
+];

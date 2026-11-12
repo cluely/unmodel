@@ -128,13 +128,15 @@ openai (`realtimeSession`), cartesia (`ttsWebsocket`, `sttWebsocket`), deepgram 
 **Realtime still to do:** the streaming/live socket configs of assemblyai, gladia and
 speechmatics, plus Cartesia's sibling turn-detection socket (`/stt/turns/websocket`) and
 mistral's Voxtral realtime transcription socket (`/v1/audio/transcriptions/realtime` — its
-model ids are catalogued, and `mistral.stt` rejects them by name).
+model ids are catalogued, and `mistral.stt` rejects them by name), and fish-audio's
+`transcribe-stream-1` (Preview, MessagePack-only `wss://api.fish.audio/v1/asr/realtime`).
 **TTS still to do (leaderboard order):** typecast,
 gradium, async, microsoft/azure, mistral (Voxtral TTS), boson-ai, neuphonic, amazon (Polly),
 nvidia (Magpie), zyphra. **Excluded (no public developer API):** VUI Labs (Luna TTS —
 contact-gated, no published docs).
 **STT still to do:** azure, smallest-ai, alibaba, deepinfra, xai, amazon,
-nvidia, gradium, reson8, modulate, cohere (stt).
+nvidia, gradium, reson8, modulate, cohere (stt), fish-audio (`transcribe-1-pro` and the deprecated
+`transcribe-1` on `POST /v1/asr`, model in a header, multipart or MessagePack).
 
 ## Image wave (native APIs unless noted)
 

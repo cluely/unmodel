@@ -36,7 +36,13 @@ import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCharacterCostUSD } from "../../core/cost";
-import { models, TTS_MODEL_IDS, S2_MODEL_IDS, type FishAudioTtsModelId } from "./models";
+import {
+  models,
+  TTS_MODEL_IDS,
+  S2_MODEL_IDS,
+  MULTI_SPEAKER_MODEL_IDS,
+  type FishAudioTtsModelId,
+} from "./models";
 
 export const TTS_URL = "https://api.fish.audio/v1/tts";
 
@@ -125,8 +131,9 @@ export interface TtsBody {
   /** "Nucleus sampling diversity"; range 0–1, default 0.7. */
   top_p?: number | null;
   /**
-   * Voice model id. An ARRAY selects multi-speaker dialogue, which is
-   * "only available with the S2 family … not `s1`".
+   * Voice model id. An ARRAY selects multi-speaker dialogue, which "is
+   * available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and
+   * `drama-3`, not `s1`".
    */
   reference_id?: string | string[] | null;
   /**
@@ -216,7 +223,10 @@ const LATENCY_SET = new Set<string>(TTS_LATENCIES);
 const MP3_BITRATE_SET = new Set<number>(MP3_BITRATES);
 const OPUS_BITRATE_SET = new Set<number>(OPUS_BITRATES);
 const TTS_MODEL_ID_SET = new Set<string>(TTS_MODEL_IDS);
-const S2_MODEL_ID_SET = new Set<string>(S2_MODEL_IDS);
+const MULTI_SPEAKER_MODEL_ID_SET = new Set<string>(MULTI_SPEAKER_MODEL_IDS);
+
+/** The one model `prosody.normalize_loudness` is documented as a no-op on. */
+const NORMALIZE_LOUDNESS_NO_OP_MODEL = "s1";
 
 function modelOf(params: TtsBody): string {
   return params.model ?? DEFAULT_TTS_MODEL;
@@ -315,9 +325,10 @@ function checkBitrateFormatPairing(
 }
 
 /**
- * "Multi-speaker dialogue synthesis is only available with the S2 family
- * (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`), not `s1`." A `reference_id` array
- * (or a nested `references` array-of-arrays) is the multi-speaker form.
+ * "Multi-speaker dialogue synthesis is available with the S2 family
+ * (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3`, not `s1`"
+ * (TTSRequest, 2026-11-12). A `reference_id` array (or a nested `references`
+ * array-of-arrays) is the multi-speaker form.
  */
 function checkMultiSpeaker(
   params: TtsBody,
@@ -325,16 +336,17 @@ function checkMultiSpeaker(
   ctx: PipelineContext,
 ): void {
   const model = modelOf(params);
-  // Unknown to the catalog → no family known; stay quiet rather than guess.
-  if (info === undefined || S2_MODEL_ID_SET.has(model)) return;
+  // Unknown to the catalog → nothing documented about it; stay quiet rather
+  // than guess.
+  if (info === undefined || MULTI_SPEAKER_MODEL_ID_SET.has(model)) return;
 
   if (Array.isArray(params.reference_id)) {
     ctx.report({
       code: "unsupported_capability",
       path: ["reference_id"],
       model,
-      message: `a \`reference_id\` array requests multi-speaker dialogue, which is only available with the S2 family (${S2_MODEL_IDS.join(", ")}); "${model}" is single-speaker only.`,
-      meta: { allowed: [...S2_MODEL_IDS], source: TTS_DOCS },
+      message: `a \`reference_id\` array requests multi-speaker dialogue, which is available with ${MULTI_SPEAKER_MODEL_IDS.join(", ")}; "${model}" is single-speaker only.`,
+      meta: { allowed: [...MULTI_SPEAKER_MODEL_IDS], source: TTS_DOCS },
     });
   }
   const references = params.references;
@@ -343,8 +355,8 @@ function checkMultiSpeaker(
       code: "unsupported_capability",
       path: ["references"],
       model,
-      message: `a nested \`references\` array (ReferenceAudio[][]) requests multi-speaker dialogue, which is only available with the S2 family (${S2_MODEL_IDS.join(", ")}); "${model}" is single-speaker only.`,
-      meta: { allowed: [...S2_MODEL_IDS], source: TTS_DOCS },
+      message: `a nested \`references\` array (ReferenceAudio[][]) requests multi-speaker dialogue, which is available with ${MULTI_SPEAKER_MODEL_IDS.join(", ")}; "${model}" is single-speaker only.`,
+      meta: { allowed: [...MULTI_SPEAKER_MODEL_IDS], source: TTS_DOCS },
     });
   }
 }
@@ -352,22 +364,24 @@ function checkMultiSpeaker(
 /**
  * "`normalize_loudness` … Applies to the S2 family …; on `s1` it is accepted
  * but has no effect." The request is fulfilled, so this is a warning about a
- * silent no-op rather than an error.
+ * silent no-op rather than an error. Only `s1` is named: the docs say nothing
+ * of `drama-3` either way, and an undocumented effect is not a documented
+ * no-op.
  */
 function checkNormalizeLoudness(
   params: TtsBody,
-  info: ModelInfo | undefined,
+  _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
   const model = modelOf(params);
-  if (info === undefined || S2_MODEL_ID_SET.has(model)) return;
+  if (model !== NORMALIZE_LOUDNESS_NO_OP_MODEL) return;
   if (params.prosody?.normalize_loudness == null) return;
   ctx.report({
     code: "unsupported_param",
     severity: "warning",
     path: ["prosody", "normalize_loudness"],
     model,
-    message: `\`prosody.normalize_loudness\` is accepted but has no effect on "${model}"; loudness normalization applies to the S2 family only.`,
+    message: `\`prosody.normalize_loudness\` is accepted but has no effect on "${model}"; it is documented for the S2 family (${S2_MODEL_IDS.join(", ")}).`,
     meta: { ignored: true, allowed: [...S2_MODEL_IDS], source: TTS_DOCS },
   });
 }

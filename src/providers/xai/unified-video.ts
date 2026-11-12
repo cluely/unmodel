@@ -10,14 +10,14 @@
  *
  * | canonical | wire | class |
  * |---|---|---|
- * | `prompt` | `prompt` | rename; required on every mode of this wire |
+ * | `prompt` | `prompt` | rename; required for text-to-video only (the validator checks it) |
  * | `model` (ref tail) | `model` | rename |
  * | `image` (role `first`) | `image.url` | {@link requireMediaUrl} — URL or file_id only |
  * | `image` (role `reference`) | `reference_images[].url` | same; no reference route on grok-imagine-video-1.5-lite |
  * | `image` (role `last`) | — | no wire field: {@link unsupportedSlot} |
  * | `duration` | `duration` | plain number; range 1–15 checked by the validator |
  * | `resolution` | `resolution` | identity — xAI spells `480p`/`720p`/`1080p` canonically |
- * | `aspectRatio` | `aspect_ratio` | **S1** {@link toRatioEnum}, seven values |
+ * | `aspectRatio` | `aspect_ratio` | **S1** {@link toRatioEnum}, nine values |
  * | `video` | — | the edit/extend routes: `xai.videoEdit` / `xai.videoExtend` |
  * | `n`, `seed`, `negativePrompt` | — | declared gaps |
  *
@@ -99,22 +99,13 @@ export const video = {
     ctx.from(["reference_images"], "image");
     ctx.from(["aspect_ratio"], "aspectRatio");
 
-    // "Required for text-to-video (T2V) and reference-to-video (R2V)" — and
-    // the image-to-video examples all carry one too; the wire marks `prompt`
-    // required, so an absent one is reported here rather than as a zod error
-    // on an empty string this file invented.
-    if (input.prompt === undefined) {
-      ctx.fail({
-        code: "invalid_shape",
-        path: ["prompt"],
-        message:
-          "`prompt` is required on POST /v1/videos/generations — for image-to-video it describes " +
-          "the animation, so it cannot be omitted here.",
-        meta: { source: VIDEO_DOCS },
-      });
-    }
-
-    const body: XaiVideoWire = { model: ctx.model, prompt: input.prompt ?? "" };
+    // `prompt` is "required only for text-to-video"; the validator's own
+    // check answers a text-only request without one, so an absent prompt is
+    // simply not written.
+    const body: XaiVideoWire = {
+      model: ctx.model,
+      ...(input.prompt !== undefined && { prompt: input.prompt }),
+    };
 
     ctx.take(
       resolveVideoRoute(

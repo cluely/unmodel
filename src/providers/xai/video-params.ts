@@ -30,13 +30,15 @@ export const MODELS = [
  * (every integer from 1 to 15), which cannot be a list, so `duration` keeps
  * the wide `number` and the validator's range check answers at run time.
  *
- * The three resolutions and seven ratios are the wire enums verbatim — xAI
+ * The three resolutions and nine ratios are the wire enums verbatim — xAI
  * spells both exactly the way the canonical vocabulary does, so every value
- * here is also the value that goes on the wire.
+ * here is also the value that goes on the wire. "| Aspect ratio | Yes: 1:1,
+ * 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 21:9, 5:2 |" for all three ids
+ * (https://docs.x.ai/developers/model-capabilities/video/overview, 2026-11-12).
  */
 export const XAI_VIDEO_ROW = {
   resolutions: ["480p", "720p", "1080p"],
-  ratios: ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"],
+  ratios: ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "21:9", "5:2"],
   extras: {
     reference_audios: EXTRA as XaiReferenceAudio[],
     output: EXTRA as XaiVideoOutput,

@@ -95,15 +95,45 @@ describe("xai.video model gate", () => {
 });
 
 describe("xai.video input pairing", () => {
-  test("image and reference_images cannot be combined", () => {
+  test("grok-imagine-video cannot combine image and reference_images", () => {
+    const r = video.safe({
+      model: "grok-imagine-video",
+      prompt: "hi",
+      image: { url: IMAGE },
+      reference_images: [{ url: IMAGE }],
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => [e.code, e.path])).toEqual([
+        ["invalid_shape", ["reference_images"]],
+      ]);
+      expect(r.errors[0]?.message).toContain("grok-imagine-video-1.5");
+    }
+  });
+
+  test("grok-imagine-video-1.5 pins image as the first frame of a reference clip", () => {
+    // "On `grok-imagine-video-1.5`, `image` combined with `reference_images`,
+    // `reference_audios`, `last_frame`, or `keyframes` is reference-to-video
+    // with a pinned first frame." — video/generation guide (2026-11-12).
     const r = video.safe({
       model: "grok-imagine-video-1.5",
       prompt: "hi",
       image: { url: IMAGE },
       reference_images: [{ url: IMAGE }],
     });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.path).toEqual(["reference_images"]);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("21:9 and 5:2 are documented aspect ratios on every video id", () => {
+    for (const model of VIDEO_MODEL_IDS) {
+      for (const aspect_ratio of ["21:9", "5:2"] as const) {
+        expect(video.safe({ model, prompt: "hi", aspect_ratio }).ok).toBe(true);
+      }
+    }
+    expect(
+      safeUnchecked({ model: "grok-imagine-video-1.5", prompt: "hi", aspect_ratio: "2:1" }).ok,
+    ).toBe(false);
   });
 
   test("a media input takes url XOR file_id", () => {
@@ -176,9 +206,27 @@ describe("xai.video input pairing", () => {
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["duration"]);
   });
 
-  test("prompt is required", () => {
-    const r = safeUnchecked({ model: "grok-imagine-video-1.5", image: { url: IMAGE } });
-    expect(r.ok).toBe(false);
+  test("prompt is required for text-to-video only", () => {
+    const textOnly = video.safe({ model: "grok-imagine-video-1.5" });
+    expect(textOnly.ok).toBe(false);
+    if (!textOnly.ok) {
+      expect(textOnly.errors.map((e) => [e.code, e.path])).toEqual([["invalid_shape", ["prompt"]]]);
+    }
+
+    // "`prompt` is optional for any request that includes `image`,
+    // `reference_images`, `last_frame`, or `keyframes`" — video/generation guide.
+    expect(video.safe({ model: "grok-imagine-video-1.5", image: { url: IMAGE } }).ok).toBe(true);
+    expect(
+      video.safe({ model: "grok-imagine-video-1.5", reference_images: [{ url: IMAGE }] }).ok,
+    ).toBe(true);
+    const lastFrame = safeUnchecked({
+      model: "grok-imagine-video-1.5",
+      last_frame: { url: IMAGE },
+    });
+    expect(lastFrame.ok).toBe(true);
+    if (lastFrame.ok) expect(lastFrame.warnings.map((w) => w.code)).toEqual(["unknown_param"]);
+
+    expect(safeUnchecked({ model: "grok-imagine-video-1.5", prompt: "" }).ok).toBe(false);
   });
 });
 
@@ -201,21 +249,22 @@ describe("xai.videoEdit and xai.videoExtend", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
   });
 
-  test("extensions: duration is 2–10, default 6 prices the estimate", () => {
+  test("extensions: duration is 2–10, and no estimate", () => {
     const v = videoExtend({
-      model: "grok-imagine-video-1.5",
+      model: "grok-imagine-video",
       prompt: "The camera keeps rising",
       video: { url: CLIP },
     });
     expect(v.request.url).toBe(VIDEO_EXTENSIONS_URL);
 
     const r = videoExtend.safe({
-      model: "grok-imagine-video-1.5",
+      model: "grok-imagine-video",
       prompt: "The camera keeps rising",
       video: { url: CLIP },
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.08 * 6, 10);
+    // The input clip bills "$0.01 / sec" and its length is not in the body.
+    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
 
     const bad = videoExtend.safe({
       model: "grok-imagine-video-1.5",
@@ -246,6 +295,74 @@ describe("xai.video pricing", () => {
     const defaulted = video.safe({ model: "grok-imagine-video", prompt: "hi" });
     expect(defaulted.ok).toBe(true);
     if (defaulted.ok) expect(defaulted.estimate.costUSD).toBeCloseTo(0.05 * 8, 10);
+  });
+
+  test("the rate follows the requested resolution (rendered pricing table)", () => {
+    // 1.5: "480p | $0.08 / sec", "720p | $0.14 / sec", "1080p | $0.25 / sec".
+    expect(videoPriceUSD("grok-imagine-video-1.5", 10, { resolution: "720p" })).toBeCloseTo(1.4, 10);
+    expect(videoPriceUSD("grok-imagine-video-1.5", 10, { resolution: "1080p" })).toBeCloseTo(
+      2.5,
+      10,
+    );
+    // lite: "720p | $0.03 / sec", "1080p | $0.14 / sec".
+    expect(videoPriceUSD("grok-imagine-video-1.5-lite", 10, { resolution: "720p" })).toBeCloseTo(
+      0.3,
+      10,
+    );
+    expect(videoPriceUSD("grok-imagine-video-1.5-lite", 10, { resolution: "1080p" })).toBeCloseTo(
+      1.4,
+      10,
+    );
+    // classic: "720p | $0.07 / sec"; no published 1080p rate, so no number.
+    expect(videoPriceUSD("grok-imagine-video", 10, { resolution: "720p" })).toBeCloseTo(0.7, 10);
+    expect(videoPriceUSD("grok-imagine-video", 10, { resolution: "1080p" })).toBeUndefined();
+
+    const r = video.safe({
+      model: "grok-imagine-video-1.5",
+      prompt: "hi",
+      duration: 12,
+      resolution: "720p",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.14 * 12, 10);
+  });
+
+  test("each input image adds the table's per-image fee", () => {
+    // "$0.01 / img" on 1.5 and lite, "$0.002 / img" on grok-imagine-video.
+    const first = video.safe({
+      model: "grok-imagine-video-1.5",
+      prompt: "hi",
+      image: { url: IMAGE },
+      duration: 12,
+      resolution: "720p",
+    });
+    expect(first.ok).toBe(true);
+    if (first.ok) expect(first.estimate.costUSD).toBeCloseTo(0.14 * 12 + 0.01, 10);
+
+    const references = video.safe({
+      model: "grok-imagine-video",
+      prompt: "hi",
+      reference_images: [{ url: IMAGE }, { url: IMAGE }, { url: IMAGE }],
+    });
+    expect(references.ok).toBe(true);
+    if (references.ok) expect(references.estimate.costUSD).toBeCloseTo(0.05 * 8 + 3 * 0.002, 10);
+
+    expect(
+      videoPriceUSD("grok-imagine-video-1.5-lite", 5, { inputImages: 1 }),
+    ).toBeCloseTo(0.02 * 5 + 0.01, 10);
+  });
+
+  test("documented aliases validate and price as the row they serve", () => {
+    for (const model of ["grok-imagine-video-1.5-preview", "grok-imagine-video-1.5-2026-05-30"]) {
+      const r = video.safe({ model, prompt: "hi", duration: 10 });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings).toEqual([]);
+        expect(r.estimate.costUSD).toBeCloseTo(0.8, 10);
+      }
+    }
+    const undocumented = video.safe({ model: "grok-imagine-video-1.5-latest", prompt: "hi" });
+    expect(undocumented.ok).toBe(false);
   });
 
   test("maxCostUSD turns an expensive clip into over_budget", () => {

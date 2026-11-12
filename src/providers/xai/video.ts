@@ -14,10 +14,16 @@
  * - ASYNC submit: every POST answers `{request_id}`. Poll
  *   `videoStatusUrl(requestId)` until `status` is "done" (then `video.url`
  *   carries the MP4), "failed" (`error.code`/`error.message`) or "expired".
- * - `prompt` is required ("Required for text-to-video (T2V) and
- *   reference-to-video (R2V)"); with an `image` it drives the animation.
+ * - `prompt` is required for text-to-video only: "`prompt` is optional for
+ *   any request that includes `image`, `reference_images`, `last_frame`, or
+ *   `keyframes`; it is required only for text-to-video." (generation guide,
+ *   2026-11-12). The REST reference still reads "Required for text-to-video
+ *   (T2V) and reference-to-video (R2V)" and the OpenAPI schema has no
+ *   `required` list, so a reference-only request is not refused for it.
  * - `image` (i2v first frame, JPEG/PNG/WebP) and `reference_images` (R2V)
- *   are `{url}` or `{file_id}` objects and cannot be combined in one request.
+ *   are `{url}` or `{file_id}` objects. grok-imagine-video cannot combine
+ *   them; on grok-imagine-video-1.5 `image` is the pinned first frame of a
+ *   reference-to-video clip ({@link checkGenerationInputs}).
  * - `reference_audios`: up to 3 voices ({url} of a ≤15s clip, or a preset
  *   {voice_id} from the TTS roster), referenced in the prompt as <AUDIO_0>…
  * - `duration` 1–15 s (default 8); edits have NO duration field (output
@@ -29,7 +35,10 @@
  *   ({@link VIDEO_TEXT_IMAGE_ONLY_MODELS}).
  * - `model` is optional on the wire and xAI documents no server-side default,
  *   so an omitted model skips model-dependent checks and produces no estimate.
- * - Billing is per second of generated video (see ./models.ts).
+ *   Documented aliases (`VIDEO_MODEL_ALIASES` in ./models.ts) validate and
+ *   price as the row they serve.
+ * - Billing is per second of generated video by resolution, plus a per-image
+ *   fee for input images (see ./models.ts).
  * - Auth is `Authorization: Bearer <XAI_API_KEY>` — unmodel never touches
  *   keys; add the header yourself when fetching.
  */
@@ -41,7 +50,14 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { videoModels, VIDEO_MODEL_IDS, type XaiVideoGenerationModelId } from "./models";
+import {
+  videoModels,
+  VIDEO_INPUT_IMAGE_USD,
+  VIDEO_MODEL_ALIASES,
+  VIDEO_MODEL_IDS,
+  VIDEO_RATES,
+  type XaiVideoGenerationModelId,
+} from "./models";
 import type { XaiStorageOptions } from "./image";
 
 export const VIDEO_GENERATIONS_URL = "https://api.x.ai/v1/videos/generations";
@@ -61,9 +77,25 @@ const VIDEO_REFERENCE = "https://docs.x.ai/developers/rest-api-reference/inferen
 /** Documented `resolution` values. Default is 480p. */
 export const VIDEO_RESOLUTIONS = ["480p", "720p", "1080p"] as const;
 export type XaiVideoResolution = (typeof VIDEO_RESOLUTIONS)[number];
+const DEFAULT_VIDEO_RESOLUTION: XaiVideoResolution = "480p";
 
-/** Documented `aspect_ratio` values. Default is "16:9". */
-export const VIDEO_ASPECT_RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"] as const;
+/**
+ * Documented `aspect_ratio` values. Default is "16:9". "* `aspect_ratio`
+ * ("1:1" | "16:9" | "9:16" | "4:3" | "3:4" | "3:2" | "2:3" | "21:9" | "5:2")"
+ * — https://docs.x.ai/developers/rest-api-reference/inference/videos
+ * (2026-11-12); the OpenAPI `VideoAspectRatio` enum is the same nine.
+ */
+export const VIDEO_ASPECT_RATIOS = [
+  "1:1",
+  "16:9",
+  "9:16",
+  "4:3",
+  "3:4",
+  "3:2",
+  "2:3",
+  "21:9",
+  "5:2",
+] as const;
 export type XaiVideoAspectRatio = (typeof VIDEO_ASPECT_RATIOS)[number];
 
 /** `duration` bounds on /generations ("Default: 8", range 1–15). */
@@ -122,15 +154,18 @@ export interface XaiVideoOutput {
 
 export interface VideoGenerationsParams {
   /**
-   * Required for text-to-video and reference-to-video; with `image` it
-   * describes the animation.
+   * Required for text-to-video; optional once `image` or reference inputs
+   * are present, where it describes the animation.
    */
-  prompt: string;
+  prompt?: string;
   /** Optional on the wire; xAI documents no default, so name one explicitly. */
   model?: XaiVideoGenerationModelId | (string & {});
   /** First frame for image-to-video (JPEG, PNG, WebP). */
   image?: XaiMediaInput;
-  /** Reference-to-video subject images. Cannot be combined with `image`. */
+  /**
+   * Reference-to-video subject images. grok-imagine-video cannot combine them
+   * with `image`; grok-imagine-video-1.5 pins `image` as the first frame.
+   */
   reference_images?: XaiMediaInput[];
   /** Up to 3 reference voices, addressed in the prompt as <AUDIO_0>…<AUDIO_2>. */
   reference_audios?: XaiReferenceAudio[];
@@ -195,7 +230,8 @@ const storageOptionsSchema = z.looseObject({
 });
 
 const generationsSchema = z.looseObject({
-  prompt: z.string().min(1, "prompt is required"),
+  // Required for text-to-video only — checkGenerationPrompt answers that.
+  prompt: z.string().min(1, "prompt must not be empty").optional(),
   model: z.string().optional(),
   image: mediaInputSchema.optional(),
   reference_images: z.array(mediaInputSchema).optional(),
@@ -231,20 +267,70 @@ const extensionsSchema = z.looseObject({
 // Checks
 // ---------------------------------------------------------------------------
 
-const VIDEO_MODEL_ID_SET = new Set<string>(VIDEO_MODEL_IDS);
+/** Every `model` value the video routes accept: the catalog ids and their documented aliases. */
+const ACCEPTED_VIDEO_MODELS: readonly string[] = [
+  ...VIDEO_MODEL_IDS,
+  ...Object.keys(VIDEO_MODEL_ALIASES),
+];
+const ACCEPTED_VIDEO_MODEL_SET = new Set<string>(ACCEPTED_VIDEO_MODELS);
+
+/**
+ * The catalog row a request's `model` names: the id itself, or the row a
+ * documented alias serves.
+ */
+function resolveVideoModel(model: string | undefined): string | undefined {
+  return model !== undefined && Object.hasOwn(VIDEO_MODEL_ALIASES, model)
+    ? VIDEO_MODEL_ALIASES[model as keyof typeof VIDEO_MODEL_ALIASES]
+    : model;
+}
 
 function checkModelEnum(
   params: { model?: string },
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
-  if (params.model === undefined || VIDEO_MODEL_ID_SET.has(params.model)) return;
+  if (params.model === undefined || ACCEPTED_VIDEO_MODEL_SET.has(params.model)) return;
   ctx.report({
     code: "invalid_enum_value",
     path: ["model"],
     model: params.model,
-    message: `\`model\` must be one of ${VIDEO_MODEL_IDS.map((v) => JSON.stringify(v)).join(", ")}; got ${JSON.stringify(params.model)}.`,
-    meta: { allowed: [...VIDEO_MODEL_IDS], value: params.model, source: VIDEO_DOCS },
+    message: `\`model\` must be one of ${ACCEPTED_VIDEO_MODELS.map((v) => JSON.stringify(v)).join(", ")}; got ${JSON.stringify(params.model)}.`,
+    meta: { allowed: [...ACCEPTED_VIDEO_MODELS], value: params.model, source: VIDEO_DOCS },
+  });
+}
+
+/** The inputs whose presence makes `prompt` optional on /v1/videos/generations. */
+const PROMPT_OPTIONAL_WITH = [
+  "image",
+  "reference_images",
+  "reference_audios",
+  "last_frame",
+  "keyframes",
+] as const;
+
+/**
+ * "`prompt` is optional for any request that includes `image`,
+ * `reference_images`, `last_frame`, or `keyframes`; it is required only for
+ * text-to-video." — https://docs.x.ai/developers/model-capabilities/video/generation
+ * (2026-11-12). `reference_audios` counts as a reference input too, and
+ * `last_frame` / `keyframes` are read off the loose body: an untyped key
+ * still makes the request something other than text-to-video.
+ */
+function checkGenerationPrompt(
+  params: VideoGenerationsParams,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.prompt !== undefined) return;
+  const body = params as unknown as Record<string, unknown>;
+  if (PROMPT_OPTIONAL_WITH.some((key) => body[key] !== undefined)) return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["prompt"],
+    message:
+      "`prompt` is required for text-to-video; it may be omitted only when one of " +
+      `${PROMPT_OPTIONAL_WITH.map((key) => `\`${key}\``).join(", ")} is present.`,
+    meta: { source: VIDEO_DOCS },
   });
 }
 
@@ -268,9 +354,20 @@ function checkMediaInput(
   });
 }
 
+/**
+ * The one model that refuses `image` beside reference inputs: "Classic
+ * `grok-imagine-video` still rejects `last_frame` and `keyframes` and rejects
+ * combining `image` with reference inputs." Elsewhere the pair is valid: "On
+ * `grok-imagine-video-1.5`, `image` combined with `reference_images`,
+ * `reference_audios`, `last_frame`, or `keyframes` is reference-to-video with
+ * a pinned first frame." (https://docs.x.ai/developers/model-capabilities/video/generation,
+ * 2026-11-12)
+ */
+const NO_PINNED_FRAME_MODEL = "grok-imagine-video";
+
 function checkGenerationInputs(
   params: VideoGenerationsParams,
-  _info: ModelInfo | undefined,
+  info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
   checkMediaInput(params.image, ["image"], ctx);
@@ -278,14 +375,19 @@ function checkGenerationInputs(
     checkMediaInput(ref, ["reference_images", index], ctx);
   }
 
-  // "Cannot combine `image` + `reference_images` in one request."
-  if (params.image !== undefined && params.reference_images !== undefined) {
+  if (
+    info?.id === NO_PINNED_FRAME_MODEL &&
+    params.image !== undefined &&
+    params.reference_images !== undefined
+  ) {
     ctx.report({
       code: "invalid_shape",
       path: ["reference_images"],
+      model: info.id,
       message:
-        "`image` (image-to-video) and `reference_images` (reference-to-video) cannot be combined " +
-        "in one request; send one or the other.",
+        `${JSON.stringify(NO_PINNED_FRAME_MODEL)} cannot combine \`image\` (image-to-video) with ` +
+        "`reference_images` (reference-to-video); send one or the other, or use " +
+        "grok-imagine-video-1.5, which pins `image` as the first frame of a reference-to-video clip.",
       meta: { source: VIDEO_DOCS },
     });
   }
@@ -444,17 +546,39 @@ function checkEditInputs(
 }
 
 // ---------------------------------------------------------------------------
-// Estimation — xAI bills per second of generated video, so the estimate is
-// (requested seconds) × the model's published rate. Edits carry no estimate:
-// the output length matches the input clip (capped at 8.7 s), which the
-// request body does not know.
+// Estimation — xAI bills per second of generated video at the requested
+// resolution, plus a fee per input image (./models.ts VIDEO_RATES,
+// VIDEO_INPUT_IMAGE_USD). Edits and extensions carry no estimate: both take a
+// source clip whose length the request body does not carry — an edit's
+// output matches it (capped at 8.7 s), and grok-imagine-video bills the input
+// clip itself at "$0.01 / sec".
 // ---------------------------------------------------------------------------
 
-/** USD for one generation, or undefined when the model (or its rate) is unknown. */
-export function videoPriceUSD(model: string | undefined, durationSeconds: number): number | undefined {
-  if (model === undefined) return undefined;
-  const rate = (videoModels as Record<string, ModelInfo>)[model]?.cost?.perVideoSecond;
-  return rate === undefined ? undefined : rate * durationSeconds;
+/** What besides the model and the duration moves the price of one generation. */
+export interface XaiVideoPriceOptions {
+  /** Default "480p", the wire default. */
+  resolution?: XaiVideoResolution | (string & {});
+  /** Input images: `image` plus each `reference_images` entry. Default 0. */
+  inputImages?: number;
+}
+
+/**
+ * USD for one generation, or undefined when the model is unknown or has no
+ * published rate at that resolution (grok-imagine-video at "1080p").
+ * Documented aliases price as the row they serve.
+ */
+export function videoPriceUSD(
+  model: string | undefined,
+  durationSeconds: number,
+  options: XaiVideoPriceOptions = {},
+): number | undefined {
+  const id = resolveVideoModel(model);
+  if (id === undefined || !Object.hasOwn(VIDEO_RATES, id)) return undefined;
+  const known = id as XaiVideoGenerationModelId;
+  const rates: Readonly<Partial<Record<string, number>>> = VIDEO_RATES[known];
+  const rate = rates[options.resolution ?? DEFAULT_VIDEO_RESOLUTION];
+  if (rate === undefined) return undefined;
+  return rate * durationSeconds + VIDEO_INPUT_IMAGE_USD[known] * (options.inputImages ?? 0);
 }
 
 function estimateGeneration(
@@ -462,16 +586,10 @@ function estimateGeneration(
   _info: ModelInfo | undefined,
   _ctx: PipelineContext,
 ) {
-  const costUSD = videoPriceUSD(params.model, params.duration ?? DEFAULT_VIDEO_DURATION);
-  return costUSD === undefined ? {} : { costUSD };
-}
-
-function estimateExtension(
-  params: VideoExtensionsParams,
-  _info: ModelInfo | undefined,
-  _ctx: PipelineContext,
-) {
-  const costUSD = videoPriceUSD(params.model, params.duration ?? DEFAULT_EXTENSION_DURATION);
+  const costUSD = videoPriceUSD(params.model, params.duration ?? DEFAULT_VIDEO_DURATION, {
+    resolution: params.resolution ?? DEFAULT_VIDEO_RESOLUTION,
+    inputImages: (params.image === undefined ? 0 : 1) + (params.reference_images?.length ?? 0),
+  });
   return costUSD === undefined ? {} : { costUSD };
 }
 
@@ -513,10 +631,11 @@ interface XaiVideoValidator<P extends { model?: string }> {
 const generationsValidator = createValidator<VideoGenerationsParams, unknown>({
   endpoint: "xai.video",
   schema: generationsSchema,
-  modelId: (params) => params.model,
+  modelId: (params) => resolveVideoModel(params.model),
   catalog: videoModels,
   checks: [
     checkModelEnum,
+    checkGenerationPrompt,
     checkGenerationInputs,
     checkReferenceSupport,
     checkGenerationDuration,
@@ -530,7 +649,7 @@ const generationsValidator = createValidator<VideoGenerationsParams, unknown>({
 const editsValidator = createValidator<VideoEditsParams, unknown>({
   endpoint: "xai.videoEdit",
   schema: editsSchema,
-  modelId: (params) => params.model,
+  modelId: (params) => resolveVideoModel(params.model),
   catalog: videoModels,
   checks: [checkModelEnum, sourceClipModelCheck("/v1/videos/edits"), checkEditInputs],
   promptPath: ["prompt"],
@@ -540,7 +659,7 @@ const editsValidator = createValidator<VideoEditsParams, unknown>({
 const extensionsValidator = createValidator<VideoExtensionsParams, unknown>({
   endpoint: "xai.videoExtend",
   schema: extensionsSchema,
-  modelId: (params) => params.model,
+  modelId: (params) => resolveVideoModel(params.model),
   catalog: videoModels,
   checks: [
     checkModelEnum,
@@ -548,7 +667,6 @@ const extensionsValidator = createValidator<VideoExtensionsParams, unknown>({
     checkEditInputs,
     checkExtensionDuration,
   ],
-  estimate: estimateExtension,
   promptPath: ["prompt"],
   finalize: finalizeTo(VIDEO_EXTENSIONS_URL),
 });
@@ -564,8 +682,10 @@ const extensionsValidator = createValidator<VideoExtensionsParams, unknown>({
  * is at `video.url`), "failed" or "expired". Auth is your job: add
  * `authorization: Bearer <XAI_API_KEY>` when fetching.
  *
- * Cost is the published per-second rate × the requested duration (default
- * 8 s), e.g. grok-imagine-video-1.5 at $0.080/s × 8 = $0.64.
+ * Cost is the published per-second rate at the requested resolution (default
+ * 480p) × the requested duration (default 8 s), plus the per-image fee for
+ * each input image — e.g. grok-imagine-video-1.5 at 720p: $0.14/s × 12 +
+ * $0.01 for the first frame = $1.69.
  *
  * ```ts
  * const params = xai.video({
@@ -590,6 +710,8 @@ export const videoEdit = editsValidator as unknown as XaiVideoValidator<VideoEdi
 /**
  * Validates raw wire params for xAI `POST /v1/videos/extensions` — append
  * 2–10 seconds (default 6) of new footage to an existing clip. Same async
- * flow as {@link video}; cost is rate × the requested extension seconds.
+ * flow as {@link video}. No cost estimate: grok-imagine-video bills the input
+ * clip per second ("$0.01 / sec") on top of the new footage, and the clip's
+ * length is not in the request.
  */
 export const videoExtend = extensionsValidator as unknown as XaiVideoValidator<VideoExtensionsParams>;

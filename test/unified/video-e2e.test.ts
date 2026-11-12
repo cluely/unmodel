@@ -173,6 +173,21 @@ describe("route derivation", () => {
     ).toBe(true);
   });
 
+  test("xai's prompt is optional once the request carries an image", () => {
+    const params = video({
+      model: "xai/grok-imagine-video-1.5",
+      image: { url: "https://example.com/a.png" },
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "grok-imagine-video-1.5",
+      image: { url: "https://example.com/a.png" },
+    });
+    const textOnly = video.safe({ model: "xai/grok-imagine-video-1.5" });
+    expect(textOnly.ok).toBe(false);
+    if (textOnly.ok) return;
+    expect(textOnly.errors[0]).toMatchObject({ code: "invalid_shape", path: ["prompt"] });
+  });
+
   test("two images claiming one keyframe is a shape error, not a last-one-wins", () => {
     const result = video.safe({
       model: "kling/kling-v3",

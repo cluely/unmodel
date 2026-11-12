@@ -48,8 +48,11 @@ export const XAI_IMAGE_RATIOS = [
  * endpoint, and the ids differ only in output quality and price.
  *
  * No `sizes`: the wire has no `WxH` field of any kind — shape is
- * `aspect_ratio` and size is the two-tier `resolution` — so `size` types as
- * `never` and an editor steers callers to `aspectRatio` + `resolution`.
+ * `aspect_ratio` and size is the `resolution` tier — so `size` types as
+ * `never` and an editor steers callers to `aspectRatio` + `resolution`. The
+ * wire's third tier, `"1.5k"`, has no canonical spelling, and neither does
+ * grok-imagine-image-2.0's `quality`; both stay reachable through
+ * `providerOptions.xai`.
  */
 export const XAI_IMAGE_ROW = {
   ratios: XAI_IMAGE_RATIOS,

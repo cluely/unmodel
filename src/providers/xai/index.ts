@@ -25,6 +25,7 @@ export {
   IMAGE_GENERATIONS_URL,
   IMAGE_ASPECT_RATIOS,
   IMAGE_RESOLUTIONS,
+  IMAGE_QUALITIES,
   IMAGE_RESPONSE_FORMATS,
   IMAGE_MAX_N,
 } from "./image";
@@ -32,6 +33,7 @@ export type {
   ImageGenerationsParams,
   XaiImageAspectRatio,
   XaiImageResolution,
+  XaiImageQuality,
   XaiImageResponseFormat,
   XaiStorageOptions,
 } from "./image";
@@ -62,6 +64,7 @@ export type {
   VideoGenerationsParams,
   VideoEditsParams,
   VideoExtensionsParams,
+  XaiVideoPriceOptions,
   XaiMediaInput,
   XaiReferenceAudio,
   XaiVideoOutput,
@@ -84,6 +87,12 @@ export {
   VIDEO_PER_SECOND_USD,
   VIDEO_1_5_PER_SECOND_USD,
   VIDEO_1_5_LITE_PER_SECOND_USD,
+  IMAGE_RATES,
+  IMAGE_MEDIUM_RATES,
+  VIDEO_RATES,
+  VIDEO_INPUT_IMAGE_USD,
+  IMAGE_MODEL_ALIASES,
+  VIDEO_MODEL_ALIASES,
 } from "./models";
 export type { XaiImageGenerationModelId, XaiVideoGenerationModelId } from "./models";
 

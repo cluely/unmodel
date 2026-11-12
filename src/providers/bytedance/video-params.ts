@@ -13,13 +13,12 @@ import { EXTRA } from "../../core/unified/derive";
 import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 import { OMNI_REFERENCE_TASK_TYPES } from "./constraints";
 
-/** The seven catalogued ids on this route — the `bytedance/…` ref union. */
+/** The six catalogued ids on this route — the `bytedance/…` ref union. */
 export const MODELS = [
   "dreamina-seedance-2-5-260628",
   "dreamina-seedance-2-0-260128",
   "dreamina-seedance-2-0-fast-260128",
   "dreamina-seedance-2-0-mini-260615",
-  "seedance-1-5-pro-251215",
   "seedance-1-0-pro-250528",
   "seedance-1-0-pro-fast-251015",
 ] as const;
@@ -37,7 +36,7 @@ export const RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"] as const;
  * **No `durations` anywhere on this provider**, and that is the row shape doing
  * its job rather than an omission: `videoSchema` types `duration` as
  * `z.number().int()` and `checkDuration` enforces inclusive per-model *bounds*
- * (4–30 on 2.5, 4–15 on the 2.0 series, 4–12 on 1.5 pro, 2–12 on the 1.0 pros).
+ * (4–30 on 2.5, 4–15 on the 2.0 series, 2–12 on the 1.0 pros).
  * A range is not an enum, and spelling 27 literals to describe a `>=` would put
  * a wall of numbers in a completion list and still be wrong at the edges. So
  * `duration` stays the wide `number` here and the endpoint's own bounds answer,
@@ -50,8 +49,8 @@ export const RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"] as const;
  *
  * The extras are the generation knobs, gated exactly as `constraints.ts` gates
  * them: `generate_audio` is denied on the 1.0 pros, `camera_fixed` on the 2.x
- * series, `frames` everywhere but the 1.0 pros, `draft` everywhere but 1.5 pro,
- * and `omni_reference_task_type` everywhere but Dreamina 2.5. Transport
+ * series, `frames` everywhere but the 1.0 pros, and `omni_reference_task_type`
+ * everywhere but Dreamina 2.5. Transport
  * (`callback_url`, `execution_expires_after`, `priority`, `service_tier`) and
  * `output_format` (which is the canonical `outputFormat`'s spelling on a
  * category that has no such word) stay on `providerOptions.bytedance`.
@@ -99,15 +98,6 @@ export const BYTEDANCE_VIDEO_MODEL_PARAMS = {
   },
   "dreamina-seedance-2-0-fast-260128": SEEDANCE_2_0_SMALL_ROW,
   "dreamina-seedance-2-0-mini-260615": SEEDANCE_2_0_SMALL_ROW,
-  "seedance-1-5-pro-251215": {
-    resolutions: ["480p", "720p", "1080p"],
-    ratios: RATIOS,
-    extras: {
-      ...AUDIO_2X_EXTRAS,
-      camera_fixed: EXTRA as boolean,
-      draft: EXTRA as boolean,
-    },
-  },
   "seedance-1-0-pro-250528": SEEDANCE_1_0_ROW,
   "seedance-1-0-pro-fast-251015": SEEDANCE_1_0_ROW,
 } as const satisfies VideoModelParamTable;

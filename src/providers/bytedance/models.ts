@@ -38,10 +38,9 @@
 //   catalog number cannot express that, so `cost.perVideoSecond` carries the
 //   documented *price-example* rate for the model's DEFAULT resolution at
 //   16:9 with no input video (Pricing → "Price examples"), and ./pricing.ts
-//   re-derives the rate per resolution (and, for Seedance 1.5 pro, per
-//   `generate_audio`). Requests that feed a reference VIDEO bill for the
-//   input seconds too — unmodel cannot read the duration of a remote URL, so
-//   those estimates are a floor, not a quote.
+//   re-derives the rate per resolution. Requests that feed a reference VIDEO
+//   bill for the input seconds too — unmodel cannot read the duration of a
+//   remote URL, so those estimates are a floor, not a quote.
 //
 // Deliberately absent — the third deprecation batch (notified 2026-03-17,
 // deactivated 2026-05-13, https://docs.byteplus.com/en/docs/ModelArk/1350667)
@@ -274,21 +273,6 @@ export const videoModels = {
     // Pricing 1544106. A limited-time 60% discount runs to 2026-09-07; the
     // catalog carries the list price.
     cost: { perVideoSecond: 0.08 },
-  },
-  "seedance-1-5-pro-251215": {
-    id: "seedance-1-5-pro-251215",
-    name: "Seedance 1.5 pro",
-    family: "seedance",
-    attachment: true,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    releaseDate: "2025-12-15",
-    modalities: { input: ["text", "image"], output: ["video"] },
-    limit: { context: 0 },
-    // 720p (default) 16:9 with audio (`generate_audio` defaults to true):
-    // 0.26 USD per 5s = 0.052 USD/s; silent halves it — Pricing 1544106.
-    cost: { perVideoSecond: 0.052 },
   },
   "seedance-1-0-pro-250528": {
     id: "seedance-1-0-pro-250528",

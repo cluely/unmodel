@@ -436,22 +436,10 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
   "dreamina-seedance-2-0-260128": SEEDANCE_20_SHAPE,
   "dreamina-seedance-2-0-fast-260128": SEEDANCE_20_SHAPE,
   "dreamina-seedance-2-0-mini-260615": SEEDANCE_20_SHAPE,
-  "seedance-1-5-pro-251215": {
-    minDuration: 4,
-    maxDuration: 12,
-    allowsAutoDuration: true,
-    maxReferenceImages: 0,
-    maxReferenceVideos: 0,
-    maxReferenceAudio: 0,
-    supportsLastFrame: true,
-    supportsAudioOnlyReference: false,
-    supportsAdaptiveRatioForTextToVideo: true,
-    forcesAdaptiveRatioForImageToVideo: false,
-  },
   "seedance-1-0-pro-250528": {
     minDuration: 2,
     maxDuration: 12,
-    // The `-1` behaviour table covers the 2.x and 1.5 pro models only.
+    // The `-1` behaviour table covers the 2.x models only.
     allowsAutoDuration: false,
     maxReferenceImages: 0,
     maxReferenceVideos: 0,
@@ -479,8 +467,8 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
 };
 
 const LEGACY_ONLY = {
-  seed: "`seed` is supported by Seedance 1.5 pro / 1.0 pro / 1.0 pro fast only",
-  camera_fixed: "`camera_fixed` is supported by Seedance 1.5 pro / 1.0 pro / 1.0 pro fast only",
+  seed: "`seed` is supported by Seedance 1.0 pro / 1.0 pro fast only",
+  camera_fixed: "`camera_fixed` is supported by Seedance 1.0 pro / 1.0 pro fast only",
 } as const;
 
 const FRAMES_ONLY = {
@@ -488,7 +476,7 @@ const FRAMES_ONLY = {
 } as const;
 
 const DRAFT_ONLY = {
-  draft: "draft mode is a Seedance 1.5 pro capability",
+  draft: "draft mode is not available on this model",
 } as const;
 
 const SEEDANCE_25_ONLY = {
@@ -503,7 +491,7 @@ const PRIORITY_ONLY = {
 
 const AUDIO_ONLY = {
   generate_audio:
-    "`generate_audio` is supported by Dreamina Seedance 2.5, the 2.0 series and Seedance 1.5 pro only; Seedance 1.0 always generates silent video",
+    "`generate_audio` is supported by Dreamina Seedance 2.5 and the 2.0 series only; Seedance 1.0 always generates silent video",
 } as const;
 
 const seedance2xDeny: Record<string, DenyRule> = {
@@ -562,18 +550,6 @@ export const videoConstraints: Readonly<
       resolution: ["480p", "720p"],
       ratio: VIDEO_RATIOS,
       service_tier: ["default"],
-    },
-  },
-  "seedance-1-5-pro-251215": {
-    deny: {
-      ...denyTable(FRAMES_ONLY, VIDEO_API_SOURCE),
-      ...denyTable(SEEDANCE_25_ONLY, VIDEO_API_SOURCE),
-      ...denyTable(PRIORITY_ONLY, VIDEO_API_SOURCE),
-    },
-    enums: {
-      resolution: ["480p", "720p", "1080p"],
-      ratio: VIDEO_RATIOS,
-      service_tier: SERVICE_TIERS,
     },
   },
   "seedance-1-0-pro-250528": {

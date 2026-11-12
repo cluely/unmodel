@@ -11,7 +11,7 @@
  *   unmodel's scope — `contentGenerationTaskUrl(id)` builds it) or supply a
  *   `callback_url`. Task records live 7 days; result URLs expire after 24h.
  * - `content` is a chat-style array: `{type:"text"}`, `{type:"image_url"}`,
- *   `{type:"video_url"}`, `{type:"audio_url"}` and Seedance 1.5 pro's
+ *   `{type:"video_url"}`, `{type:"audio_url"}` and the draft-mode
  *   `{type:"draft_task"}`. `role` selects the scenario — `first_frame` /
  *   `last_frame` (image-to-video) versus `reference_image` /
  *   `reference_video` / `reference_audio` (omni reference); the docs state
@@ -24,7 +24,7 @@
  *   an error"). unmodel validates the body fields; text commands ride inside
  *   `content[].text` untouched, so prefer the body form to get any checking
  *   at all.
- * - `duration: -1` means "the model picks the length" (2.x and 1.5 pro only)
+ * - `duration: -1` means "the model picks the length" (2.x only)
  *   and `frames` (Seedance 1.0 only) takes precedence over `duration`.
  * - This route is AP-only: `eu-west-1` currently serves the chat and image
  *   APIs (https://docs.byteplus.com/en/docs/ModelArk/2191806).
@@ -115,7 +115,7 @@ export interface ArkAudioContent {
   role?: "reference_audio";
 }
 
-/** Seedance 1.5 pro draft mode: generate the final video from a draft task. */
+/** Draft mode: generate the final video from a draft task's id. */
 export interface ArkDraftTaskContent {
   type: "draft_task";
   draft_task: { id: string };
@@ -160,13 +160,13 @@ export interface DreaminaSeedance25Body extends ContentGenerationTasksCore {
   output_format?: "mp4" | "mov";
   /** Online inference only for this model — `flex` is not supported. */
   service_tier?: "default";
-  /** Seedance 1.5 pro / 1.0 only. */
+  /** Seedance 1.0 only. */
   seed?: never;
-  /** Seedance 1.5 pro / 1.0 only. */
+  /** Seedance 1.0 only. */
   camera_fixed?: never;
   /** Seedance 1.0 only. */
   frames?: never;
-  /** Seedance 1.5 pro only. */
+  /** Not available on this model. */
   draft?: never;
 }
 
@@ -182,13 +182,13 @@ interface Seedance20Fields extends ContentGenerationTasksCore {
   omni_reference_task_type?: never;
   /** Dreamina Seedance 2.5 only — the 2.0 series always outputs mp4. */
   output_format?: never;
-  /** Seedance 1.5 pro / 1.0 only. */
+  /** Seedance 1.0 only. */
   seed?: never;
-  /** Seedance 1.5 pro / 1.0 only. */
+  /** Seedance 1.0 only. */
   camera_fixed?: never;
   /** Seedance 1.0 only. */
   frames?: never;
-  /** Seedance 1.5 pro only. */
+  /** Not available on this model. */
   draft?: never;
 }
 
@@ -208,30 +208,6 @@ export interface DreaminaSeedance20MiniBody extends Seedance20Fields {
   resolution?: "480p" | "720p";
 }
 
-/** Seedance 1.5 pro: image-to-video + audio + draft mode, no omni reference. */
-export interface Seedance15ProBody extends ContentGenerationTasksCore {
-  model: "seedance-1-5-pro-251215";
-  content: Array<ArkTextContent | ArkImageContent | ArkDraftTaskContent>;
-  resolution?: "480p" | "720p" | "1080p";
-  /** Synchronized audio in the output. Default true. */
-  generate_audio?: boolean;
-  /** Cheap 480p preview pass; incompatible with `return_last_frame`/`flex`. */
-  draft?: boolean;
-  /** -1 (random) to 2147483647. Default -1. */
-  seed?: number;
-  /** Ask the model to hold the camera still. Default false. */
-  camera_fixed?: boolean;
-  service_tier?: "default" | "flex";
-  /** Dreamina Seedance 2.5 only. */
-  omni_reference_task_type?: never;
-  /** Dreamina Seedance 2.5 only. */
-  output_format?: never;
-  /** Seedance 1.0 only. */
-  frames?: never;
-  /** Dreamina Seedance 2.5 / 2.0 series only. */
-  priority?: never;
-}
-
 interface Seedance10Fields extends ContentGenerationTasksCore {
   content: Array<ArkTextContent | ArkImageContent>;
   resolution?: "480p" | "720p" | "1080p";
@@ -244,7 +220,7 @@ interface Seedance10Fields extends ContentGenerationTasksCore {
   service_tier?: "default" | "flex";
   /** Seedance 1.0 always outputs silent video. */
   generate_audio?: never;
-  /** Seedance 1.5 pro only. */
+  /** Not available on this model. */
   draft?: never;
   /** Dreamina Seedance 2.5 / 2.0 series only. */
   priority?: never;
@@ -279,7 +255,6 @@ export type ContentGenerationTasksBody<FutureModel extends string = never> =
   | DreaminaSeedance20Body
   | DreaminaSeedance20FastBody
   | DreaminaSeedance20MiniBody
-  | Seedance15ProBody
   | Seedance10ProBody
   | Seedance10ProFastBody
   | UnknownVideoModelBody<FutureModel>;
@@ -289,7 +264,6 @@ export interface VideoBodyByModel {
   "dreamina-seedance-2-0-260128": DreaminaSeedance20Body;
   "dreamina-seedance-2-0-fast-260128": DreaminaSeedance20FastBody;
   "dreamina-seedance-2-0-mini-260615": DreaminaSeedance20MiniBody;
-  "seedance-1-5-pro-251215": Seedance15ProBody;
   "seedance-1-0-pro-250528": Seedance10ProBody;
   "seedance-1-0-pro-fast-251015": Seedance10ProFastBody;
 }
@@ -497,7 +471,7 @@ function checkContent(
   cap(tally.referenceAudio, rule.maxReferenceAudio, "reference audio clips", ["content"], "audio input is a Dreamina Seedance 2.5 / 2.0 series capability.");
   cap(tally.firstFrame, 1, "first-frame images", ["content"], "");
   cap(tally.lastFrame, rule.supportsLastFrame ? 1 : 0, "last-frame images", ["content"], "it supports first-frame image-to-video only.");
-  cap(tally.draftTask, model === "seedance-1-5-pro-251215" ? 1 : 0, "draft task references", ["content"], "draft mode is a Seedance 1.5 pro capability.");
+  cap(tally.draftTask, 0, "draft task references", ["content"], "draft mode is not available on this model.");
 
   const frames = tally.firstFrame + tally.lastFrame;
   const references = tally.referenceImage + tally.referenceVideo + tally.referenceAudio;
@@ -544,7 +518,7 @@ function checkDuration(
       code: "invalid_enum_value",
       path: ["duration"],
       model: params.model,
-      message: `\`duration: -1\` (model-selected length) is documented for Dreamina Seedance 2.x and Seedance 1.5 pro; "${params.model}" takes ${rule.minDuration}–${rule.maxDuration} seconds.`,
+      message: `\`duration: -1\` (model-selected length) is documented for Dreamina Seedance 2.x only; "${params.model}" takes ${rule.minDuration}–${rule.maxDuration} seconds.`,
       meta: { min: rule.minDuration, max: rule.maxDuration, source: VIDEO_API_SOURCE },
     });
     return;
@@ -657,7 +631,7 @@ function checkOmniTaskType(
   }
 }
 
-/** Draft mode (Seedance 1.5 pro) forces 480p and excludes flex/last-frame. */
+/** Draft mode generates 480p only. */
 function checkDraft(
   params: AnyContentGenerationTasksBody,
   _info: ModelInfo | undefined,
@@ -676,24 +650,6 @@ function checkDraft(
       meta: { value: resolution, source },
     });
   }
-  if (record["return_last_frame"] === true) {
-    ctx.report({
-      code: "unsupported_capability",
-      path: ["return_last_frame"],
-      model: params.model,
-      message: "draft mode does not support the last-frame return function.",
-      meta: { source },
-    });
-  }
-  if (record["service_tier"] === "flex") {
-    ctx.report({
-      code: "unsupported_capability",
-      path: ["service_tier"],
-      model: params.model,
-      message: "draft mode does not support offline inference (`service_tier: \"flex\"`).",
-      meta: { source },
-    });
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -709,9 +665,6 @@ function estimate(params: AnyContentGenerationTasksBody, info: ModelInfo | undef
     resolution: typeof record["resolution"] === "string" ? (record["resolution"] as string) : undefined,
     duration: typeof record["duration"] === "number" ? (record["duration"] as number) : undefined,
     frames: typeof record["frames"] === "number" ? (record["frames"] as number) : undefined,
-    generateAudio:
-      typeof record["generate_audio"] === "boolean" ? (record["generate_audio"] as boolean) : undefined,
-    draft: typeof record["draft"] === "boolean" ? (record["draft"] as boolean) : undefined,
   });
   return costUSD === undefined ? {} : { costUSD };
 }
@@ -762,7 +715,7 @@ const validator = createValidator<AnyContentGenerationTasksBody, unknown>({
  *
  * ```ts
  * const params = bytedance.video({
- *   model: "seedance-1-5-pro-251215",
+ *   model: "dreamina-seedance-2-0-260128",
  *   content: [{ type: "text", text: "The kitten is yawning at the camera." }],
  *   resolution: "720p",
  *   ratio: "16:9",

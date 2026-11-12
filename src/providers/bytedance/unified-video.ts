@@ -19,7 +19,7 @@
  * | `duration` | `duration` | plain seconds; per-model bounds on the way out |
  * | `resolution` | `resolution` | **S6** — the one provider whose four tiers *are* the canonical four |
  * | `aspectRatio` | `ratio` | **S1**, minus `adaptive` (which is not a shape) |
- * | `seed` | `seed` | Seedance 1.x only; the 2.x arms deny it by name |
+ * | `seed` | `seed` | Seedance 1.0 only; the 2.x arms deny it by name |
  *
  * `resolution` is the pleasant case in this category: `480p`, `720p`, `1080p`
  * and `4k` are ModelArk's own spellings, so four of the five canonical tiers

@@ -15,10 +15,9 @@
  *
  * VIDEOS bill by token — `price = token unit price × tokens` with
  * `tokens = (input video duration + output video duration) × width × height ×
- * fps / 1024` — which makes the effective rate a function of resolution (and
- * of `generate_audio` on Seedance 1.5 pro, whose token rate doubles with
- * audio). The tables below carry the documented USD-per-second figures from
- * the "Price examples" section (16:9 output, no input video). Two things the
+ * fps / 1024` — which makes the effective rate a function of resolution. The
+ * tables below carry the documented USD-per-second figures from the "Price
+ * examples" section (16:9 output, no input video). Two things the
  * estimate therefore does NOT include, both documented here so the number is
  * never mistaken for a quote:
  * - Reference VIDEO input is billed as extra seconds; unmodel cannot read the
@@ -217,8 +216,6 @@ const VIDEO_USD_PER_SECOND: Readonly<Record<string, Readonly<Record<string, numb
   "dreamina-seedance-2-0-260128": { "480p": 0.07, "720p": 0.15, "1080p": 0.37, "4k": 0.78 },
   "dreamina-seedance-2-0-fast-260128": { "480p": 0.06, "720p": 0.12 },
   "dreamina-seedance-2-0-mini-260615": { "480p": 0.04, "720p": 0.08 },
-  // Video with audio (`generate_audio` defaults to true); silent halves it.
-  "seedance-1-5-pro-251215": { "480p": 0.024, "720p": 0.052, "1080p": 0.116 },
   "seedance-1-0-pro-250528": { "480p": 0.024, "720p": 0.052, "1080p": 0.122 },
   "seedance-1-0-pro-fast-251015": { "480p": 0.01, "720p": 0.02, "1080p": 0.048 },
 };
@@ -229,7 +226,6 @@ const DEFAULT_RESOLUTION: Readonly<Record<string, string>> = {
   "dreamina-seedance-2-0-260128": "720p",
   "dreamina-seedance-2-0-fast-260128": "720p",
   "dreamina-seedance-2-0-mini-260615": "720p",
-  "seedance-1-5-pro-251215": "720p",
   "seedance-1-0-pro-250528": "1080p",
   "seedance-1-0-pro-fast-251015": "1080p",
 };
@@ -239,7 +235,6 @@ const DEFAULT_DURATION: Readonly<Record<string, number>> = {
   "dreamina-seedance-2-0-260128": 5,
   "dreamina-seedance-2-0-fast-260128": 5,
   "dreamina-seedance-2-0-mini-260615": 5,
-  "seedance-1-5-pro-251215": 5,
   "seedance-1-0-pro-250528": 5,
   "seedance-1-0-pro-fast-251015": 5,
 };
@@ -248,16 +243,7 @@ export interface VideoPricingFields {
   resolution?: string | undefined;
   duration?: number | undefined;
   frames?: number | undefined;
-  generateAudio?: boolean | undefined;
-  /** Draft mode (Seedance 1.5 pro) bills at a documented token factor. */
-  draft?: boolean | undefined;
 }
-
-/**
- * Seedance 1.5 pro draft-mode token conversion factors: "0.7 for silent
- * videos, 0.6 for audio videos" (1544106).
- */
-const DRAFT_FACTOR = { audio: 0.6, silent: 0.7 } as const;
 
 /** USD per second of output video for a model + request configuration. */
 export function videoUsdPerSecond(model: string, fields: VideoPricingFields): number | undefined {
@@ -265,17 +251,7 @@ export function videoUsdPerSecond(model: string, fields: VideoPricingFields): nu
   if (table === undefined) return undefined;
   const resolution = fields.resolution ?? DEFAULT_RESOLUTION[model];
   if (resolution === undefined) return undefined;
-  const rate = table[resolution];
-  if (rate === undefined) return undefined;
-
-  // Seedance 1.5 pro is the one model whose rate depends on audio: the table
-  // holds the with-audio rate (the documented default) and silent halves it.
-  const silent = fields.generateAudio === false;
-  const base = model === "seedance-1-5-pro-251215" && silent ? rate / 2 : rate;
-  if (model === "seedance-1-5-pro-251215" && fields.draft === true) {
-    return base * (silent ? DRAFT_FACTOR.silent : DRAFT_FACTOR.audio);
-  }
-  return base;
+  return table[resolution];
 }
 
 /**

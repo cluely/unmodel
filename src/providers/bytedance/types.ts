@@ -66,7 +66,6 @@ export type {
   DreaminaSeedance20Body,
   DreaminaSeedance20FastBody,
   DreaminaSeedance20MiniBody,
-  Seedance15ProBody,
   Seedance10ProBody,
   Seedance10ProFastBody,
   UnknownVideoModelBody,

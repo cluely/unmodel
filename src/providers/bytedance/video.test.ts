@@ -43,7 +43,7 @@ function pngDataUri(width: number, height: number): string {
 describe("bytedance.video happy path", () => {
   test("returns the exact wire body plus request metadata", () => {
     const v = video({
-      model: "seedance-1-5-pro-251215",
+      model: "seedance-1-0-pro-250528",
       content: [{ type: "text", text: "The kitten is yawning at the camera." }],
       resolution: "720p",
       ratio: "16:9",
@@ -54,7 +54,7 @@ describe("bytedance.video happy path", () => {
     });
 
     expect(JSON.parse(JSON.stringify(v))).toEqual({
-      model: "seedance-1-5-pro-251215",
+      model: "seedance-1-0-pro-250528",
       content: [{ type: "text", text: "The kitten is yawning at the camera." }],
       resolution: "720p",
       ratio: "16:9",
@@ -110,7 +110,7 @@ describe("bytedance.video happy path", () => {
 
   test("unknown content types warn instead of failing", () => {
     const r = safeUnchecked({
-      model: "seedance-1-5-pro-251215",
+      model: "seedance-1-0-pro-250528",
       content: [TEXT, { type: "sticker_url", sticker_url: { url: "https://x/a.png" } }],
     });
     expect(r.ok).toBe(true);
@@ -121,14 +121,14 @@ describe("bytedance.video happy path", () => {
   });
 
   test("empty content fails the shape check", () => {
-    const r = safeUnchecked({ model: "seedance-1-5-pro-251215", content: [] });
+    const r = safeUnchecked({ model: "seedance-1-0-pro-250528", content: [] });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
   });
 
   test("a content item missing its payload fails", () => {
     const r = safeUnchecked({
-      model: "seedance-1-5-pro-251215",
+      model: "seedance-1-0-pro-250528",
       content: [{ type: "image_url" }],
     });
     expect(r.ok).toBe(false);
@@ -162,7 +162,7 @@ describe("bytedance.video per-model param enforcement", () => {
   });
 
   test("frames is Seedance 1.0 only", () => {
-    const r = safeUnchecked({ model: "seedance-1-5-pro-251215", content: [TEXT], frames: 121 });
+    const r = safeUnchecked({ model: "dreamina-seedance-2-0-260128", content: [TEXT], frames: 121 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["frames"]);
     expect(safeUnchecked({ model: "seedance-1-0-pro-250528", content: [TEXT], frames: 121 }).ok).toBe(
@@ -238,12 +238,12 @@ describe("bytedance.video output-spec rules", () => {
       true,
     );
     const tooShort = safeUnchecked({
-      model: "seedance-1-5-pro-251215",
+      model: "dreamina-seedance-2-0-260128",
       content: [TEXT],
       duration: 2,
     });
     expect(tooShort.ok).toBe(false);
-    if (!tooShort.ok) expect(tooShort.errors[0]?.message).toContain("4–12 seconds");
+    if (!tooShort.ok) expect(tooShort.errors[0]?.message).toContain("4–15 seconds");
 
     const tooLong = safeUnchecked({
       model: "dreamina-seedance-2-0-260128",
@@ -256,10 +256,10 @@ describe("bytedance.video output-spec rules", () => {
     ).toBe(true);
   });
 
-  test("duration -1 is documented for 2.x and 1.5 pro only", () => {
-    expect(safeUnchecked({ model: "seedance-1-5-pro-251215", content: [TEXT], duration: -1 }).ok).toBe(
-      true,
-    );
+  test("duration -1 is documented for 2.x only", () => {
+    expect(
+      safeUnchecked({ model: "dreamina-seedance-2-0-260128", content: [TEXT], duration: -1 }).ok,
+    ).toBe(true);
     const legacy = safeUnchecked({
       model: "seedance-1-0-pro-250528",
       content: [TEXT],
@@ -320,9 +320,9 @@ describe("bytedance.video output-spec rules", () => {
 });
 
 describe("bytedance.video content rules", () => {
-  test("omni reference input is rejected on the 1.x models", () => {
+  test("omni reference input is rejected on the 1.0 models", () => {
     const r = safeUnchecked({
-      model: "seedance-1-5-pro-251215",
+      model: "seedance-1-0-pro-250528",
       content: [TEXT, IMAGE("reference_image"), VIDEO],
     });
     expect(r.ok).toBe(false);
@@ -377,19 +377,13 @@ describe("bytedance.video content rules", () => {
     );
   });
 
-  test("draft task references are Seedance 1.5 pro only", () => {
-    expect(
-      safeUnchecked({
-        model: "seedance-1-5-pro-251215",
-        content: [{ type: "draft_task", draft_task: { id: "cgt-123" } }],
-      }).ok,
-    ).toBe(true);
+  test("draft task references are refused where draft mode is unavailable", () => {
     const r = safeUnchecked({
       model: "seedance-1-0-pro-250528",
       content: [{ type: "draft_task", draft_task: { id: "cgt-123" } }],
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.message).toContain("draft mode is a Seedance 1.5 pro capability");
+    if (!r.ok) expect(r.errors[0]?.message).toContain("does not accept draft task references");
   });
 
   test("inline frame images are measured against the documented bounds", () => {
@@ -427,23 +421,15 @@ describe("bytedance.video content rules", () => {
     ).toBe(true);
   });
 
-  test("draft mode forces 480p and excludes flex + last-frame return", () => {
+  test("draft mode generates 480p only", () => {
     const r = safeUnchecked({
-      model: "seedance-1-5-pro-251215",
+      model: "ep-20260101-video",
       content: [TEXT],
       draft: true,
       resolution: "720p",
-      return_last_frame: true,
-      service_tier: "flex",
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors.map((e) => e.path[0]).sort()).toEqual([
-        "resolution",
-        "return_last_frame",
-        "service_tier",
-      ]);
-    }
+    if (!r.ok) expect(r.errors.map((e) => e.path[0])).toEqual(["resolution"]);
   });
 
   test("throwing form raises UnmodelValidationError", () => {
@@ -464,14 +450,6 @@ describe("bytedance.video cost estimation", () => {
       0.78,
       10,
     );
-    // Seedance 1.5 pro halves with silent output and applies the draft factor.
-    expect(videoUsdPerSecond("seedance-1-5-pro-251215", { generateAudio: false })).toBeCloseTo(
-      0.026,
-      10,
-    );
-    expect(
-      videoUsdPerSecond("seedance-1-5-pro-251215", { resolution: "480p", draft: true }),
-    ).toBeCloseTo(0.024 * 0.6, 10);
   });
 
   test("the estimate uses the documented duration default", () => {

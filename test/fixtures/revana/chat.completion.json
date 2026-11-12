@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "body": {
+    "id": "chat_99e251d4112004f4fb6204f3",
+    "object": "chat.completion",
+    "created": 1794516895,
+    "model": "gpt-6-luna",
+    "choices": [
+      {
+        "index": 0,
+        "message": { "role": "assistant", "content": "ok" },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 8,
+      "completion_tokens": 4,
+      "total_tokens": 12,
+      "prompt_tokens_details": { "cached_tokens": 0 },
+      "cost_usd": 0.000006
+    }
+  }
+}

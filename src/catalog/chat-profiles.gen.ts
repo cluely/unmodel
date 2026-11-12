@@ -446,9 +446,13 @@ export const chatProfiles: ChatCatalog = {
     "LongCat-2.0": { attachment: false, reasoning: true, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 1000000, output: 131072 }, cost: { input: 0.75, output: 2.95, cacheRead: 0.015 } },
   },
   "meta": {
-    "muse-spark-1.1": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_PDF_VIDEO__TEXT, limit: { context: 1000000, output: 32000 }, cost: { input: 1.25, output: 4.25, cacheRead: 0.15 } },
+    "muse-ember-1.0": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO_PDF_AUDIO__TEXT, limit: { context: 1048576, output: 524288 }, cost: { input: 0.1, output: 0.5, cacheRead: 0.004 } },
+    "muse-spark-1.1": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_PDF_VIDEO__TEXT, limit: { context: 1048576, output: 131072 }, cost: { input: 1.25, output: 4.25, cacheRead: 0.15 } },
     "muse-spark-1.2": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO_PDF_AUDIO__TEXT, limit: { context: 1048576, output: 131072 }, cost: { input: 1.25, output: 4.25, cacheRead: 0.15 } },
     "muse-spark-1.2-contributor": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO_PDF_AUDIO__TEXT, limit: { context: 1048576, output: 131072 }, cost: { input: 0.1, output: 0.2, cacheRead: 0.002 } },
+    "muse-spark-1.3": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO_PDF_AUDIO__TEXT, limit: { context: 1048576, output: 131072 }, cost: { input: 1.25, output: 4.25, cacheRead: 0.15 } },
+    "muse-spark-1.3-contributor": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO_PDF_AUDIO__TEXT, limit: { context: 1048576, output: 131072 }, cost: { input: 0.1, output: 0.2, cacheRead: 0.002 } },
+    "muse-wonder-1.0": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO_PDF_AUDIO__TEXT, limit: { context: 1048576, output: 131072 }, cost: { input: 4, output: 20, cacheRead: 0.2 } },
   },
   "minimax": {
     "MiniMax-M2": { attachment: false, reasoning: true, toolCall: true, temperature: true, status: "deprecated", modalities: M_TEXT__TEXT, limit: { context: 204800, output: 131072 }, cost: { input: 0.3, output: 1.2 } },

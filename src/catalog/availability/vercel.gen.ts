@@ -671,7 +671,7 @@ export const availability = {
     "vercel": "meta/muse-glimmer-30b",
   },
   "meta/muse-spark-1.1": {
-    "meta": { id: "muse-spark-1.1", narrows: { context: 1000000 } },
+    "meta": "muse-spark-1.1",
     "openrouter": "meta/muse-spark-1.1",
     "vercel": "meta/muse-spark-1.1",
   },
@@ -686,10 +686,12 @@ export const availability = {
     "vercel": "meta/muse-spark-1.2-contributor",
   },
   "meta/muse-spark-1.3": {
+    "meta": "muse-spark-1.3",
     "openrouter": "meta/muse-spark-1.3",
     "vercel": "meta/muse-spark-1.3",
   },
   "meta/muse-spark-1.3-contributor": {
+    "meta": "muse-spark-1.3-contributor",
     "openrouter": "meta/muse-spark-1.3-contributor",
     "vercel": "meta/muse-spark-1.3-contributor",
   },
@@ -700,6 +702,7 @@ export const availability = {
     "vercel": "meta/muse-spark-open",
   },
   "meta/muse-wonder-1.0": {
+    "meta": "muse-wonder-1.0",
     "vercel": "meta/muse-wonder-1.0",
   },
   "microsoft/mai-transcribe-2": {

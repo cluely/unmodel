@@ -1775,6 +1775,7 @@ describe("unmodel/chat", () => {
       "src/catalog/availability/deepseek.gen.ts",
       "src/catalog/availability/friendli.gen.ts",
       "src/catalog/availability/google.gen.ts",
+      "src/catalog/availability/meta.gen.ts",
       // A region of its own because minimax/chat.ts's chunk holds a second
       // module (constraints.ts); in a one-module chunk the bundler inlines this
       // single-use table at its call site — the same bytes, unnamed.

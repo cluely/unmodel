@@ -583,7 +583,7 @@ export const availability = {
     "vercel": "meta/muse-glimmer-30b",
   },
   "meta/muse-spark-1.1": {
-    "meta": { id: "muse-spark-1.1", narrows: { context: 1000000 } },
+    "meta": "muse-spark-1.1",
     "openrouter": "meta/muse-spark-1.1",
     "vercel": { id: "meta/muse-spark-1.1", narrows: { drops: ["video"] } },
   },
@@ -598,10 +598,12 @@ export const availability = {
     "vercel": { id: "meta/muse-spark-1.2-contributor", narrows: { drops: ["video"] } },
   },
   "meta/muse-spark-1.3": {
+    "meta": "muse-spark-1.3",
     "openrouter": "meta/muse-spark-1.3",
     "vercel": { id: "meta/muse-spark-1.3", narrows: { drops: ["video"] } },
   },
   "meta/muse-spark-1.3-contributor": {
+    "meta": "muse-spark-1.3-contributor",
     "openrouter": "meta/muse-spark-1.3-contributor",
     "vercel": { id: "meta/muse-spark-1.3-contributor", narrows: { drops: ["video"] } },
   },

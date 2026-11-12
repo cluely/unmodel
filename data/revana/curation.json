@@ -1,0 +1,48 @@
+{
+  "$comment": "Hand-maintained. What Revana's catalog cannot say about its own roster: which video models are the lipsync and avatar views (the catalog files both under kind \"video\"), and which routes unmodel deliberately does not address. Every entry carries a reason, a source and the date it was verified; scripts/codegen-revana.ts parses this file and fails on an id the catalog no longer lists.",
+  "views": {
+    "lipsync": {
+      "bytedance-lipsync": {
+        "reason": "Re-voices an existing clip: tasks is [\"video_to_video\"], capabilities.audio_input is true, and the API answers a clip without a sound with \"bytedance-lipsync needs input.audio_url: the voice or sound it animates to.\"",
+        "source": "https://api.revana.si/v1/models + POST /v1/generations/quote",
+        "date": "2026-11-12"
+      }
+    },
+    "avatar": {
+      "kling-avatar-pro": {
+        "reason": "Animates a still to a sound: tasks is [\"image_to_video\"], capabilities.audio_input is true, and input.audio_url is the driver (\"A sound to drive the video (talking avatars, lip sync)\").",
+        "source": "https://api.revana.si/v1/models + https://revana.si/openapi.json (ModelInput.audio_url)",
+        "date": "2026-11-12"
+      },
+      "kling-avatar-std": {
+        "reason": "Animates a still to a sound: tasks is [\"image_to_video\"], capabilities.audio_input is true, and input.audio_url is the driver (\"A sound to drive the video (talking avatars, lip sync)\").",
+        "source": "https://api.revana.si/v1/models + https://revana.si/openapi.json (ModelInput.audio_url)",
+        "date": "2026-11-12"
+      },
+      "omnihuman-1.5": {
+        "reason": "Animates a still to a sound: tasks is [\"image_to_video\"], capabilities.audio_input is true, and the API answers a picture without a sound with \"omnihuman-1.5 needs input.audio_url: the voice or sound it animates to.\"",
+        "source": "https://api.revana.si/v1/models + POST /v1/generations/quote",
+        "date": "2026-11-12"
+      },
+      "omnihuman-2.0": {
+        "reason": "Animates a still to a sound: \"one picture and a voice track (4 seconds to 5 minutes) become a 720p video of that person speaking\"; the API answers a picture without a sound with \"omnihuman-2.0 needs input.audio_url: the voice or sound it animates to.\"",
+        "source": "https://revana.si/llms-full.txt (OmniHuman 2.0 API) + POST /v1/generations/quote",
+        "date": "2026-11-12"
+      }
+    }
+  },
+  "excluded": {
+    "routes": {
+      "POST /v1/queue/revana/{model_id}": {
+        "reason": "A second, fal-shaped spelling of the jobs POST /v1/generations already runs (\"Existing /v1/generations and /v1/videos continue to work unchanged\"), with fal aliases for three models only and no cancel, SSE or fal.run(). unmodel addresses the native route; a caller who wants fal's body shape has unmodel/fal.",
+        "source": "https://revana.si/queue.md",
+        "date": "2026-11-12"
+      },
+      "POST /v1/videos": {
+        "reason": "Named once, in passing (\"Existing /v1/generations and /v1/videos continue to work unchanged\"), and documented nowhere: not in the OpenAPI document, the docs or llms-full.txt. A route with no published shape cannot be typed.",
+        "source": "https://revana.si/queue.md",
+        "date": "2026-11-12"
+      }
+    }
+  }
+}

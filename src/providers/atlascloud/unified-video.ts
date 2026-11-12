@@ -70,16 +70,16 @@
  *
  * # `resolution` is the interesting column here
  *
- * Atlas spells the same tier four ways, and one family has no native spelling
+ * Atlas spells the same tier three ways, and one family has no native spelling
  * for two of the tiers it can render:
  *
  * | canonical | Seedance 2.5 | Seedance 2.0 | Seedance 2.0 mini/fast | Wan 3.0 prime | Wan 3.0 | Veo 3.1 |
  * |---|---|---|---|---|---|---|
- * | `480p` | `480p` | `480p` | `480p` | `480P` | `480p` | — |
- * | `720p` | `720p` | `720p` | `720p` | `720P` | `720p` | `720p` |
- * | `1080p` | `1080p` | `1080p` | `1080p-SR` | `1080P` | `1080p` | `1080p` |
- * | `1440p` | `1440p-sr` | `1440p-SR` | `1440p-SR` | — | `1440p-esr` | — |
- * | `4k` | `4k-esr` | `4k` | — | — | `4k-esr` | `4k` |
+ * | `480p` | `480p` | `480p` | `480p` | `480p` | `480p` | — |
+ * | `720p` | `720p` | `720p` | `720p` | `720p` | `720p` | `720p` |
+ * | `1080p` | `1080p` | `1080p` | `1080p-SR` | `1080p` | `1080p` | `1080p` |
+ * | `1440p` | `1440p-sr` | `1440p-SR` | `1440p-SR` | `1440p-esr` | `1440p-esr` | — |
+ * | `4k` | `4k-esr` | `4k` | — | `4k-esr` | `4k-esr` | `4k` |
  *
  * The `-sr` / `-esr` rows are Atlas's upscale ladder — "Every -sr and -esr
  * option first generates the nearest native source, then upscales or enhances
@@ -140,9 +140,6 @@ const SEEDANCE_20_SMALL_TIERS: TierMap = {
 
 const SEEDANCE_15_TIERS: TierMap = { "480p": "480p", "720p": "720p" };
 const SEEDANCE_15_FAST_TIERS: TierMap = { "720p": "720p" };
-
-/** The one UPPER-case enum on this provider. */
-const WAN_PRIME_TIERS: TierMap = { "480p": "480P", "720p": "720P", "1080p": "1080P" };
 
 const WAN_TIERS: TierMap = {
   "480p": "480p",
@@ -282,8 +279,8 @@ const ROWS: Readonly<Partial<Record<string, AtlasWireRow>>> = {
   "bytedance/seedance-v1.5-pro/image-to-video": seedance15(IMAGE, SEEDANCE_15_TIERS),
   "bytedance/seedance-v1.5-pro/text-to-video-fast": seedance15(TEXT, SEEDANCE_15_FAST_TIERS),
   "bytedance/seedance-v1.5-pro/image-to-video-fast": seedance15(IMAGE, SEEDANCE_15_FAST_TIERS),
-  "alibaba/wan-3.0-prime/text-to-video": wan(TEXT, WAN_PRIME_TIERS),
-  "alibaba/wan-3.0-prime/image-to-video": wan(IMAGE, WAN_PRIME_TIERS, NO_SHAPE),
+  "alibaba/wan-3.0-prime/text-to-video": wan(TEXT, WAN_TIERS),
+  "alibaba/wan-3.0-prime/image-to-video": wan(IMAGE, WAN_TIERS, NO_SHAPE),
   "alibaba/wan-3.0/text-to-video": wan(TEXT, WAN_TIERS),
   "alibaba/wan-3.0/image-to-video": wan(IMAGE, WAN_TIERS, NO_SHAPE),
   "google/veo3.1/text-to-video": veo(TEXT),

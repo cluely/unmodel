@@ -508,16 +508,13 @@ describe("resolution", () => {
       .toEqual(["invalid_enum_value@resolution"]);
   });
 
-  test("Wan 3.0-prime is the one UPPER-case enum on the provider", () => {
-    expect(codes(safeUnchecked({ model: "alibaba/wan-3.0-prime/text-to-video", prompt: "p", resolution: "1080P" })))
-      .toEqual([]);
-    expect(codes(safeUnchecked({ model: "alibaba/wan-3.0-prime/text-to-video", prompt: "p", resolution: "1080p" })))
-      .toEqual(["invalid_enum_value@resolution"]);
-    // …and plain Wan 3.0 is the mirror image.
-    expect(codes(safeUnchecked({ model: "alibaba/wan-3.0/text-to-video", prompt: "p", resolution: "1080p" })))
-      .toEqual([]);
-    expect(codes(safeUnchecked({ model: "alibaba/wan-3.0/text-to-video", prompt: "p", resolution: "1080P" })))
-      .toEqual(["invalid_enum_value@resolution"]);
+  test("Wan 3.0-prime takes the same lower-case ladder as Wan 3.0", () => {
+    for (const model of ["alibaba/wan-3.0-prime/text-to-video", "alibaba/wan-3.0/text-to-video"]) {
+      expect(codes(safeUnchecked({ model, prompt: "p", resolution: "1080p" }))).toEqual([]);
+      expect(codes(safeUnchecked({ model, prompt: "p", resolution: "4k-esr" }))).toEqual([]);
+      expect(codes(safeUnchecked({ model, prompt: "p", resolution: "1080P" })))
+        .toEqual(["invalid_enum_value@resolution"]);
+    }
   });
 
   test("the v1.5-pro fast pair renders 720p only", () => {

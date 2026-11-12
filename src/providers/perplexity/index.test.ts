@@ -20,6 +20,20 @@ describe("perplexity", () => {
     expect(v.request.method).toBe("POST");
   });
 
+  // models.dev marks every sonar row deprecated (snapshot 2026-11-12), and they
+  // stay reachable: "Sonar Chat Completions support ended on September 27,
+  // 2026. Synchronous and streaming requests keep working: they are being
+  // reformulated as Agent API requests"
+  // (https://docs.perplexity.ai/docs/agent-api/migrate-from-sonar/overview, 2026-11-12).
+  test("every sonar id still validates, warning deprecated_model", () => {
+    for (const model of ["sonar", "sonar-pro", "sonar-reasoning-pro", "sonar-deep-research"] as const) {
+      expect(models[model].status).toBe("deprecated");
+      const r = chat.safe({ model, messages: [{ role: "user", content: "hi" }] });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+    }
+  });
+
   test("unknown models warn and name the perplexity catalog", () => {
     const r = chat.safe({
       model: "not-a-perplexity-model",

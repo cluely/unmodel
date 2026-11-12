@@ -1093,10 +1093,10 @@ export const chatProfiles: ChatCatalog = {
     "~z-ai/glm-latest": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 1048576, output: 943718 }, cost: { input: 0.0699, output: 1.4, cacheRead: 0.0689 } },
   },
   "perplexity": {
-    "sonar": { attachment: false, reasoning: false, toolCall: false, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 128000, output: 4096 }, cost: { input: 1, output: 1 } },
-    "sonar-deep-research": { attachment: false, reasoning: true, toolCall: false, temperature: false, modalities: M_TEXT__TEXT, limit: { context: 128000, output: 32768 }, cost: { input: 2, output: 8, reasoning: 3 } },
-    "sonar-pro": { attachment: true, reasoning: false, toolCall: false, temperature: true, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 200000, output: 8192 }, cost: { input: 3, output: 15 } },
-    "sonar-reasoning-pro": { attachment: true, reasoning: true, toolCall: false, temperature: true, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 128000, output: 4096 }, cost: { input: 2, output: 8 } },
+    "sonar": { attachment: false, reasoning: false, toolCall: false, temperature: true, status: "deprecated", modalities: M_TEXT__TEXT, limit: { context: 128000, output: 4096 }, cost: { input: 1, output: 1 } },
+    "sonar-deep-research": { attachment: false, reasoning: true, toolCall: false, temperature: false, status: "deprecated", modalities: M_TEXT__TEXT, limit: { context: 128000, output: 32768 }, cost: { input: 2, output: 8, reasoning: 3 } },
+    "sonar-pro": { attachment: true, reasoning: false, toolCall: false, temperature: true, status: "deprecated", modalities: M_TEXT_IMAGE__TEXT, limit: { context: 200000, output: 8192 }, cost: { input: 3, output: 15 } },
+    "sonar-reasoning-pro": { attachment: true, reasoning: true, toolCall: false, temperature: true, status: "deprecated", modalities: M_TEXT_IMAGE__TEXT, limit: { context: 128000, output: 4096 }, cost: { input: 2, output: 8 } },
   },
   "sarvam": {
     "sarvam-105b": { attachment: false, reasoning: true, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 131072, output: 131072 }, cost: { input: 0.15790269, output: 0.63161075, cacheRead: 0.05263423 } },

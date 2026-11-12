@@ -40,12 +40,12 @@
  * - **Nested checks.** Groq's `messages[].name` rule is an `extraCheck`, not a
  *   deny table, and target-side re-validation runs deny/enum tables only.
  *
- * ## Why this table is two entries wide and stays that way
+ * ## Why this table is three entries wide and stays small
  *
  * **This module is imported by every chat endpoint module**: each one passes
  * `targetValidationFor` to `createToApi`, so ~35 provider bundles pay for
- * whatever appears in `TABLES` below. Both entries are pure-literal leaves of
- * a few hundred bytes, and that is the bar for adding a third.
+ * whatever appears in `TABLES` below. All three entries are pure-literal
+ * leaves of a few hundred bytes, and that is the bar for adding a fourth.
  *
  * `unmodel/chat` used to keep a larger parallel table for the same layer,
  * because it compiles bodies *for* anthropic, openai and google rather than
@@ -59,6 +59,7 @@ import type { EndpointConstraints } from "../core/constraint-types";
 import type { TargetEndpoint } from "../core/translate/endpoints";
 import { chatFamilyRules as groqChatRules } from "../providers/groq/constraints";
 import { chatFamilyRules as upstageChatRules } from "../providers/upstage/constraints";
+import { chatFamilyRules as zhipuaiChatRules } from "../providers/zhipuai/constraints";
 
 /** Target validation inputs, per resolved endpoint. Mirrors `TargetValidation`. */
 export interface TargetConstraints {
@@ -75,6 +76,7 @@ export interface TargetConstraints {
 const TABLES: Readonly<Record<string, readonly EndpointConstraints[]>> = Object.freeze({
   "groq.chat": groqChatRules,
   "upstage.chat": upstageChatRules,
+  "zhipuai.chat": zhipuaiChatRules,
 });
 
 /**

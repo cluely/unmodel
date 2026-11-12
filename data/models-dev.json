@@ -377941,7 +377941,7 @@
   },
   "zhipuai": {
     "api": "https://open.bigmodel.cn/api/paas/v4",
-    "doc": "https://docs.z.ai/guides/overview/pricing",
+    "doc": "https://docs.bigmodel.cn/cn/guide/start/pricing",
     "env": [
       "ZHIPU_API_KEY"
     ],
@@ -377949,6 +377949,7 @@
     "models": {
       "glm-4.5": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-4.5",
         "cost": {
           "cache_read": 0.11,
           "cache_write": 0,
@@ -377958,6 +377959,9 @@
         "description": "Hybrid-reasoning GLM release that made the 4.5 line broadly useful",
         "family": "glm",
         "id": "glm-4.5",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
         "knowledge": "2025-04",
         "last_updated": "2025-07-28",
         "limit": {
@@ -377986,15 +377990,31 @@
       },
       "glm-4.5-air": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-4.5-air",
         "cost": {
-          "cache_read": 0.03,
+          "cache_read": 0.0239,
           "cache_write": 0,
-          "input": 0.2,
-          "output": 1.1
+          "input": 0.11952,
+          "output": 0.89637,
+          "tiers": [
+            {
+              "cache_read": 0.03585,
+              "cache_write": 0,
+              "input": 0.17927,
+              "output": 1.19516,
+              "tier": {
+                "size": 32000,
+                "type": "context"
+              }
+            }
+          ]
         },
         "description": "Lighter GLM-4.5 variant for fast coding assistance and cheaper agents",
         "family": "glm-air",
         "id": "glm-4.5-air",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
         "knowledge": "2025-04",
         "last_updated": "2025-07-28",
         "limit": {
@@ -378023,6 +378043,7 @@
       },
       "glm-4.5-flash": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-4.5-flash",
         "cost": {
           "cache_read": 0,
           "cache_write": 0,
@@ -378032,6 +378053,9 @@
         "description": "Efficient GLM model for fast reasoning, coding, and agent workflows",
         "family": "glm-flash",
         "id": "glm-4.5-flash",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
         "knowledge": "2025-04",
         "last_updated": "2025-07-28",
         "limit": {
@@ -378047,7 +378071,7 @@
           ]
         },
         "name": "GLM-4.5-Flash",
-        "open_weights": true,
+        "open_weights": false,
         "reasoning": true,
         "reasoning_options": [
           {
@@ -378060,13 +378084,31 @@
       },
       "glm-4.5v": {
         "attachment": true,
+        "canonical_model_id": "zhipuai/glm-4.5v",
         "cost": {
-          "input": 0.6,
-          "output": 1.8
+          "cache_read": 0.05976,
+          "cache_write": 0,
+          "input": 0.29879,
+          "output": 0.89637,
+          "tiers": [
+            {
+              "cache_read": 0.11952,
+              "cache_write": 0,
+              "input": 0.59758,
+              "output": 1.79274,
+              "tier": {
+                "size": 32000,
+                "type": "context"
+              }
+            }
+          ]
         },
         "description": "GLM vision model for visual reasoning, documents, and multimodal agents",
         "family": "glm",
         "id": "glm-4.5v",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
         "knowledge": "2025-04",
         "last_updated": "2025-08-11",
         "limit": {
@@ -378097,6 +378139,7 @@
       },
       "glm-4.6": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-4.6",
         "cost": {
           "cache_read": 0.11,
           "cache_write": 0,
@@ -378106,6 +378149,9 @@
         "description": "Late GLM-4 workhorse for coding agents, reasoning, and structured tasks",
         "family": "glm",
         "id": "glm-4.6",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
         "knowledge": "2025-04",
         "last_updated": "2025-09-30",
         "limit": {
@@ -378134,13 +378180,31 @@
       },
       "glm-4.6v": {
         "attachment": true,
+        "canonical_model_id": "zhipuai/glm-4.6v",
         "cost": {
-          "input": 0.3,
-          "output": 0.9
+          "cache_read": 0.02988,
+          "cache_write": 0,
+          "input": 0.1494,
+          "output": 0.44819,
+          "tiers": [
+            {
+              "cache_read": 0.05976,
+              "cache_write": 0,
+              "input": 0.29879,
+              "output": 0.89637,
+              "tier": {
+                "size": 32000,
+                "type": "context"
+              }
+            }
+          ]
         },
         "description": "GLM vision model for visual reasoning, documents, and multimodal agents",
         "family": "glm",
         "id": "glm-4.6v",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
         "knowledge": "2025-04",
         "last_updated": "2025-12-08",
         "limit": {
@@ -378169,13 +378233,68 @@
         "temperature": true,
         "tool_call": true
       },
+      "glm-4.6v-flash": {
+        "attachment": true,
+        "canonical_model_id": "zhipuai/glm-4.6v-flash",
+        "cost": {
+          "cache_read": 0,
+          "cache_write": 0,
+          "input": 0,
+          "output": 0
+        },
+        "description": "Lightweight GLM vision model for visual reasoning, documents, and multimodal agents",
+        "family": "glm-flash",
+        "id": "glm-4.6v-flash",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
+        "last_updated": "2025-12-08",
+        "limit": {
+          "context": 128000,
+          "output": 32768
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GLM-4.6V-Flash",
+        "open_weights": true,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "toggle"
+          }
+        ],
+        "release_date": "2025-12-08",
+        "temperature": true,
+        "tool_call": true
+      },
       "glm-4.7": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-4.7",
         "cost": {
-          "cache_read": 0.11,
+          "cache_read": 0.08964,
           "cache_write": 0,
-          "input": 0.6,
-          "output": 2.2
+          "input": 0.44819,
+          "output": 2.09153,
+          "tiers": [
+            {
+              "cache_read": 0.11952,
+              "cache_write": 0,
+              "input": 0.59758,
+              "output": 2.39032,
+              "tier": {
+                "size": 32000,
+                "type": "context"
+              }
+            }
+          ]
         },
         "description": "Mature GLM model for dependable coding, reasoning, and structured agent tasks",
         "family": "glm",
@@ -378211,6 +378330,7 @@
       },
       "glm-4.7-flash": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-4.7-flash",
         "cost": {
           "cache_read": 0,
           "cache_write": 0,
@@ -378220,6 +378340,9 @@
         "description": "Budget GLM lane for fast coding help, routing, and everyday automation",
         "family": "glm-flash",
         "id": "glm-4.7-flash",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
         "knowledge": "2025-04",
         "last_updated": "2026-01-19",
         "limit": {
@@ -378248,15 +378371,19 @@
       },
       "glm-4.7-flashx": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-4.7-flashx",
         "cost": {
-          "cache_read": 0.01,
+          "cache_read": 0.01494,
           "cache_write": 0,
-          "input": 0.07,
-          "output": 0.4
+          "input": 0.0747,
+          "output": 0.44819
         },
         "description": "Efficient GLM model for fast reasoning, coding, and agent workflows",
         "family": "glm-flash",
         "id": "glm-4.7-flashx",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
         "knowledge": "2025-04",
         "last_updated": "2026-01-19",
         "limit": {
@@ -378285,11 +378412,24 @@
       },
       "glm-5": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-5",
         "cost": {
-          "cache_read": 0.2,
+          "cache_read": 0.1494,
           "cache_write": 0,
-          "input": 1,
-          "output": 3.2
+          "input": 0.59758,
+          "output": 2.68911,
+          "tiers": [
+            {
+              "cache_read": 0.22409,
+              "cache_write": 0,
+              "input": 0.89637,
+              "output": 3.28669,
+              "tier": {
+                "size": 32000,
+                "type": "context"
+              }
+            }
+          ]
         },
         "description": "General GLM flagship for coding, analysis, and tool-heavy engineering workflows",
         "family": "glm",
@@ -378297,7 +378437,7 @@
         "interleaved": {
           "field": "reasoning_content"
         },
-        "last_updated": "2026-02-11",
+        "last_updated": "2026-02-12",
         "limit": {
           "context": 204800,
           "output": 131072
@@ -378318,17 +378458,30 @@
             "type": "toggle"
           }
         ],
-        "release_date": "2026-02-11",
+        "release_date": "2026-02-12",
         "temperature": true,
         "tool_call": true
       },
       "glm-5.1": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-5.1",
         "cost": {
-          "cache_read": 0.26,
+          "cache_read": 0.19421,
           "cache_write": 0,
-          "input": 1.4,
-          "output": 4.4
+          "input": 0.89637,
+          "output": 3.58548,
+          "tiers": [
+            {
+              "cache_read": 0.29879,
+              "cache_write": 0,
+              "input": 1.19516,
+              "output": 4.18306,
+              "tier": {
+                "size": 32000,
+                "type": "context"
+              }
+            }
+          ]
         },
         "description": "Strong GLM coding model for agentic engineering, terminals, and repository generation",
         "family": "glm",
@@ -378336,7 +378489,7 @@
         "interleaved": {
           "field": "reasoning_content"
         },
-        "last_updated": "2026-03-27",
+        "last_updated": "2026-04-07",
         "limit": {
           "context": 200000,
           "output": 131072
@@ -378350,25 +378503,26 @@
           ]
         },
         "name": "GLM-5.1",
-        "open_weights": false,
+        "open_weights": true,
         "reasoning": true,
         "reasoning_options": [
           {
             "type": "toggle"
           }
         ],
-        "release_date": "2026-03-27",
+        "release_date": "2026-04-07",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "glm-5.2": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-5.2",
         "cost": {
-          "cache_read": 0.26,
+          "cache_read": 0.29879,
           "cache_write": 0,
-          "input": 1.4,
-          "output": 4.4
+          "input": 1.19516,
+          "output": 4.18306
         },
         "description": "Open flagship GLM for long-horizon coding agents and million-token context work",
         "family": "glm",
@@ -378390,9 +378544,12 @@
           ]
         },
         "name": "GLM-5.2",
-        "open_weights": false,
+        "open_weights": true,
         "reasoning": true,
         "reasoning_options": [
+          {
+            "type": "toggle"
+          },
           {
             "type": "effort",
             "values": [
@@ -378408,11 +378565,12 @@
       },
       "glm-5.3": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-5.3",
         "cost": {
-          "cache_read": 0.26,
+          "cache_read": 0.29879,
           "cache_write": 0,
-          "input": 1.4,
-          "output": 4.4
+          "input": 1.19516,
+          "output": 4.18306
         },
         "description": "Flagship GLM model for long-horizon coding, agents, and complex project delivery",
         "family": "glm",
@@ -378453,14 +378611,15 @@
       },
       "glm-5.3-flash": {
         "attachment": true,
+        "canonical_model_id": "zhipuai/glm-5.3-flash",
         "cost": {
-          "cache_read": 0.015,
+          "cache_read": 0.03436,
           "cache_write": 0,
-          "input": 0.075,
-          "output": 0.25
+          "input": 0.11952,
+          "output": 0.41831
         },
         "description": "Native multimodal GLM model for efficient coding and long-horizon agent tasks",
-        "family": "glm",
+        "family": "glm-flash",
         "id": "glm-5.3-flash",
         "interleaved": {
           "field": "reasoning_content"
@@ -378482,7 +378641,7 @@
           ]
         },
         "name": "GLM-5.3-Flash",
-        "open_weights": false,
+        "open_weights": true,
         "reasoning": true,
         "reasoning_options": [
           {
@@ -378499,13 +378658,75 @@
         "temperature": true,
         "tool_call": true
       },
+      "glm-5.3-flashx": {
+        "attachment": true,
+        "canonical_model_id": "zhipuai/glm-5.3-flash",
+        "cost": {
+          "cache_read": 0.08516,
+          "cache_write": 0,
+          "input": 0.29879,
+          "output": 1.04577
+        },
+        "description": "High-speed GLM-5.3-Flash serving option for coding and agent workflows",
+        "family": "glm-flash",
+        "id": "glm-5.3-flashx",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
+        "last_updated": "2026-09-18",
+        "limit": {
+          "context": 1000000,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "video",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GLM-5.3-FlashX",
+        "open_weights": true,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "high",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-09-18",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
       "glm-5v-turbo": {
         "attachment": true,
+        "canonical_model_id": "zhipuai/glm-5v-turbo",
         "cost": {
-          "cache_read": 1.2,
+          "cache_read": 0.17927,
           "cache_write": 0,
-          "input": 5,
-          "output": 22
+          "input": 0.74698,
+          "output": 3.28669,
+          "tiers": [
+            {
+              "cache_read": 0.26891,
+              "cache_write": 0,
+              "input": 1.04577,
+              "output": 3.88427,
+              "tier": {
+                "size": 32000,
+                "type": "context"
+              }
+            }
+          ]
         },
         "description": "Fast GLM vision model for screenshots, documents, and multimodal agent tasks",
         "family": "glm",

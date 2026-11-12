@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1438 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1440 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -1482,6 +1482,7 @@ export type ChatModelRef =
   | "zhipuai/glm-4.5v"
   | "zhipuai/glm-4.6"
   | "zhipuai/glm-4.6v"
+  | "zhipuai/glm-4.6v-flash"
   | "zhipuai/glm-4.7"
   | "zhipuai/glm-4.7-flash"
   | "zhipuai/glm-4.7-flashx"
@@ -1490,4 +1491,5 @@ export type ChatModelRef =
   | "zhipuai/glm-5.2"
   | "zhipuai/glm-5.3"
   | "zhipuai/glm-5.3-flash"
+  | "zhipuai/glm-5.3-flashx"
   | "zhipuai/glm-5v-turbo";

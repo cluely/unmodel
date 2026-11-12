@@ -560,6 +560,7 @@ export const availability = {
   },
   "zai-org/GLM-4.6V-Flash": {
     "huggingface": "zai-org/GLM-4.6V-Flash",
+    "zhipuai": { id: "glm-4.6v-flash", narrows: { context: 128000 } },
   },
   "zai-org/GLM-4.7": {
     "amazon-bedrock": "zai.glm-4.7",

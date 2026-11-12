@@ -1678,8 +1678,13 @@ describe("unmodel/chat", () => {
    * **+1 (→ 60) with `minimax/constraints.ts`** (2026-11-12): the MiniMax-M3 /
    * M3.1-Flash deny and enum tables, a types-only literal leaf imported by
    * `minimax/chat.ts` — the groq/upstage shape, not barrel leakage.
+   *
+   * **55 → 56 with zhipuai's GLM-5.3 rules** (56 measured, 2026-11-12):
+   * `zhipuai/constraints.ts` is the import-free enum leaf
+   * `retarget/target-constraints.ts` registers for `.toApi("zhipuai")`, the
+   * same shape as `groq/constraints.ts`. No catalog came with it.
    */
-  test("its provider graph is exactly the enumerated 60 modules", () => {
+  test("its provider graph is exactly the enumerated 61 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
       "src/providers/alibaba/chat.ts",
@@ -1752,6 +1757,7 @@ describe("unmodel/chat", () => {
       "src/providers/upstage/index.ts",
       "src/providers/vercel/index.ts",
       "src/providers/xai/chat.ts",
+      "src/providers/zhipuai/constraints.ts",
       "src/providers/zhipuai/index.ts",
     ]);
   });

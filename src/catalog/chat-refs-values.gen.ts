@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1438 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1440 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -1444,6 +1444,7 @@ export const CHAT_MODEL_REFS = [
   "zhipuai/glm-4.5v",
   "zhipuai/glm-4.6",
   "zhipuai/glm-4.6v",
+  "zhipuai/glm-4.6v-flash",
   "zhipuai/glm-4.7",
   "zhipuai/glm-4.7-flash",
   "zhipuai/glm-4.7-flashx",
@@ -1452,5 +1453,6 @@ export const CHAT_MODEL_REFS = [
   "zhipuai/glm-5.2",
   "zhipuai/glm-5.3",
   "zhipuai/glm-5.3-flash",
+  "zhipuai/glm-5.3-flashx",
   "zhipuai/glm-5v-turbo",
 ] as const satisfies readonly ChatModelRef[];

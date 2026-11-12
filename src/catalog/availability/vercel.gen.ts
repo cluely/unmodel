@@ -1602,6 +1602,7 @@ export const availability = {
     "novita-ai": "zai-org/glm-5.3-flashX",
     "openrouter": "z-ai/glm-5.3-flashx",
     "vercel": "zai/glm-5.3-flashx",
+    "zhipuai": "glm-5.3-flashx",
   },
   "zai/glm-5.3-flashx-legal": {
     "openrouter": "z-ai/glm-5.3-flashx-legal",

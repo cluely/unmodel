@@ -639,6 +639,7 @@ export const availability = {
     "novita-ai": "zai-org/glm-5.3-flashX",
     "openrouter": "z-ai/glm-5.3-flashx",
     "vercel": { id: "zai/glm-5.3-flashx", narrows: { context: 1000000, drops: ["video"] } },
+    "zhipuai": { id: "glm-5.3-flashx", narrows: { context: 1000000 } },
   },
 } as const satisfies AvailabilityMap;
 

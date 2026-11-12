@@ -1752,6 +1752,7 @@ export const availability = {
     "novita-ai": "zai-org/glm-5.3-flashX",
     "openrouter": "z-ai/glm-5.3-flashx",
     "vercel": { id: "zai/glm-5.3-flashx", narrows: { context: 1000000, drops: ["video"] } },
+    "zhipuai": { id: "glm-5.3-flashx", narrows: { context: 1000000 } },
   },
   "z-ai/glm-5.3-flashx-legal": {
     "openrouter": "z-ai/glm-5.3-flashx-legal",

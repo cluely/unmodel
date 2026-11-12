@@ -54,6 +54,10 @@ export const availability = {
     "openrouter": "z-ai/glm-4.6v",
     "zhipuai": "glm-4.6v",
   },
+  "glm-4.6v-flash": {
+    "huggingface": { id: "zai-org/GLM-4.6V-Flash", narrows: { drops: ["video"] } },
+    "zhipuai": "glm-4.6v-flash",
+  },
   "glm-4.7": {
     "amazon-bedrock": "zai.glm-4.7",
     "deepinfra": { id: "zai-org/GLM-4.7", narrows: { context: 202752 } },
@@ -146,6 +150,12 @@ export const availability = {
     "togetherai": { id: "zai-org/GLM-5.3-Flash", narrows: { drops: ["pdf"] } },
     "vercel": { id: "zai/glm-5.3-flash", narrows: { drops: ["video", "pdf"] } },
     "zhipuai": "glm-5.3-flash",
+  },
+  "glm-5.3-flashx": {
+    "novita-ai": { id: "zai-org/glm-5.3-flashX", narrows: { drops: ["pdf"] } },
+    "openrouter": { id: "z-ai/glm-5.3-flashx", narrows: { drops: ["pdf"] } },
+    "vercel": { id: "zai/glm-5.3-flashx", narrows: { drops: ["video", "pdf"] } },
+    "zhipuai": "glm-5.3-flashx",
   },
   "glm-5v-turbo": {
     "openrouter": { id: "z-ai/glm-5v-turbo", narrows: { drops: ["pdf"] } },

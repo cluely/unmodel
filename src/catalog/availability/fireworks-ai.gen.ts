@@ -37,6 +37,7 @@ export const availability = {
     "fireworks-ai": "accounts/fireworks/models/glm-5p3-flash",
   },
   "accounts/fireworks/models/kimi-k3": {
+    "alibaba": "kimi-k3",
     "baseten": "moonshotai/Kimi-K3",
     "deepinfra": "moonshotai/Kimi-K3",
     "fireworks-ai": "accounts/fireworks/models/kimi-k3",

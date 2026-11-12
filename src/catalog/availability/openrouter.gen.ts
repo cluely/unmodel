@@ -776,6 +776,7 @@ export const availability = {
     "vercel": { id: "moonshotai/kimi-k2.7-code", narrows: { context: 256000 } },
   },
   "moonshotai/kimi-k3": {
+    "alibaba": { id: "kimi-k3", narrows: { drops: ["video"] } },
     "baseten": { id: "moonshotai/Kimi-K3", narrows: { drops: ["video"] } },
     "deepinfra": { id: "moonshotai/Kimi-K3", narrows: { drops: ["video"] } },
     "fireworks-ai": { id: "accounts/fireworks/models/kimi-k3", narrows: { drops: ["video"] } },
@@ -1211,7 +1212,6 @@ export const availability = {
     "openrouter": "qwen/qwen-plus",
   },
   "qwen/qwen2.5-vl-72b-instruct": {
-    "alibaba": "qwen2-5-vl-72b-instruct",
     "openrouter": "qwen/qwen2.5-vl-72b-instruct",
   },
   "qwen/qwen3-14b": {
@@ -1363,6 +1363,7 @@ export const availability = {
     "vercel": { id: "alibaba/qwen3.6-plus", narrows: { drops: ["video"] } },
   },
   "qwen/qwen3.7-flash": {
+    "alibaba": "qwen3.7-flash",
     "openrouter": "qwen/qwen3.7-flash",
     "vercel": { id: "alibaba/qwen3.7-flash", narrows: { context: 991000, drops: ["video"] } },
   },
@@ -1414,6 +1415,7 @@ export const availability = {
     "vercel": { id: "alibaba/qwen3.8-max-prime", narrows: { drops: ["video"] } },
   },
   "qwen/qwen3.8-omni-flash": {
+    "alibaba": "qwen3.8-omni-flash",
     "openrouter": "qwen/qwen3.8-omni-flash",
     "vercel": { id: "alibaba/qwen3.8-omni-flash", narrows: { drops: ["audio", "video"] } },
   },

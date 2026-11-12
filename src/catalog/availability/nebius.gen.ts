@@ -103,6 +103,7 @@ export const availability = {
     "vercel": { id: "meta/muse-spark-open", narrows: { drops: ["video"] } },
   },
   "moonshotai/Kimi-K3": {
+    "alibaba": "kimi-k3",
     "baseten": "moonshotai/Kimi-K3",
     "deepinfra": "moonshotai/Kimi-K3",
     "fireworks-ai": "accounts/fireworks/models/kimi-k3",

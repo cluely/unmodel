@@ -19,12 +19,14 @@
  *   `ap-northeast-1`, `cn-hongkong`) — so both URL helpers take an optional
  *   base, and `core/request.ts`'s `reroute()` re-targets a validated request.
  *   Model, endpoint region and API key must match.
- * - ONE ROUTE, FOUR PROTOCOLS, and `model` picks one (VIDEO_MODEL_RULES):
+ * - ONE ROUTE, SEVERAL PROTOCOLS, and `model` picks one (VIDEO_MODEL_RULES):
  *   wan3.0 (a typed `media` array + `resolution`/`ratio`/`duration`/`audio`),
  *   wan2.7 t2v (`resolution` + `ratio`), wan2.7 i2v (a `media` array of
- *   first_frame/last_frame/driving_audio/first_clip), the legacy wan2.6-and-
- *   earlier protocol (`size` strings like "1920*1080"), and HappyHorse
- *   (`resolution` + `ratio`, `media` on the i2v/r2v/edit routes).
+ *   first_frame/last_frame/driving_audio/first_clip), wan2.7 r2v (a `media`
+ *   array of reference_image/reference_video/first_frame + `resolution` +
+ *   `ratio`), the legacy wan2.6-and-earlier protocol (`size` strings like
+ *   "1920*1080"), and HappyHorse (`resolution` + `ratio`, `media` on the
+ *   i2v/r2v/edit routes).
  * - PRICING: USD per second of output video, per resolution tier, from the
  *   Singapore tables of the model-pricing page (VIDEO_PRICE_PER_SECOND_USD).
  *   wan3.0-video publishes no international rate and produces no estimate;
@@ -76,6 +78,8 @@ export const VIDEO_HEADERS: Readonly<Record<string, string>> = Object.freeze({
 const T2V_DOCS = "https://www.alibabacloud.com/help/en/model-studio/text-to-video-api-reference";
 const I2V_DOCS =
   "https://www.alibabacloud.com/help/en/model-studio/image-to-video-general-api-reference";
+const R2V_DOCS =
+  "https://www.alibabacloud.com/help/en/model-studio/wan-video-to-video-api-reference";
 const WAN3_DOCS =
   "https://www.alibabacloud.com/help/en/model-studio/wan3-video-generation-api-reference";
 const HH_T2V_DOCS =
@@ -141,6 +145,13 @@ const range = (from: number, to: number): readonly number[] =>
 /** wan3.0's `duration` range, plus `-1` ("Smart duration mode"). */
 export const WAN3_DURATIONS = range(2, 30);
 export const WAN27_DURATIONS = range(2, 15);
+/**
+ * wan2.7-r2v's `duration` when `input.media` carries a reference video ("2–10
+ * if the references include a video; 2–15 otherwise" — WAN27_DURATIONS).
+ */
+export const WAN27_R2V_VIDEO_DURATIONS = range(2, 10);
+/** wan2.7-r2v: "Reference images + Reference videos ≤ 5." */
+export const WAN27_R2V_MAX_REFERENCES = 5;
 export const HAPPYHORSE_DURATIONS = range(3, 15);
 
 // ---------------------------------------------------------------------------
@@ -186,6 +197,39 @@ export interface AlibabaVideoModelRule {
   audioSetting?: boolean;
 }
 
+/**
+ * wan3.0-video and wan3.0-video-prime share one request surface — the wan3
+ * reference lists both ids under one `model` field ("High-speed version with
+ * capabilities aligned to the standard version", checked 2026-11-12).
+ */
+const WAN3_RULE: AlibabaVideoModelRule = {
+  docs: WAN3_DOCS,
+  promptMaxCharacters: 20000,
+  // "either `prompt` OR `media` required" — checkInput enforces the pair.
+  promptRequired: false,
+  negativePrompt: false,
+  audioUrl: false,
+  media: {
+    first_frame: 1,
+    last_frame: 1,
+    reference_image: 10,
+    reference_video: 5,
+    reference_audio: 5,
+    file: 1,
+    link: 1,
+  },
+  resolutions: ["480P", "720P", "1080P"],
+  defaultResolution: "1080P",
+  // "adaptive" (the default) follows the input media.
+  ratios: ["adaptive", "16:9", "4:3", "1:1", "3:4", "9:16"],
+  defaultRatio: "adaptive",
+  durations: WAN3_DURATIONS,
+  defaultDuration: 5,
+  smartDuration: true,
+  promptExtend: false,
+  audioFlag: true,
+};
+
 const WAN27_T2V_RULE: AlibabaVideoModelRule = {
   docs: T2V_DOCS,
   promptMaxCharacters: 5000,
@@ -211,6 +255,39 @@ const WAN27_I2V_RULE: AlibabaVideoModelRule = {
   mediaRequired: true,
   resolutions: ["720P", "1080P"],
   defaultResolution: "1080P",
+  durations: WAN27_DURATIONS,
+  defaultDuration: 5,
+  promptExtend: true,
+};
+
+/**
+ * wan2.7-r2v, transcribed from R2V_DOCS (checked 2026-11-12): `media[].type`
+ * "reference_image, reference_video, first_frame"; "first_frame: maximum of 1
+ * image"; "At least 1 reference image or reference video" and "Reference
+ * images + Reference videos ≤ 5" (both checkInput route pairings); resolution
+ * "720P, 1080P; default 1080P"; ratio "16:9 (default), 9:16, 1:1, 4:3, 3:4";
+ * duration "2–10 if the references include a video; 2–15 otherwise"
+ * (checkParameters); prompt required, "Up to 5,000 characters";
+ * negative_prompt "Up to 500 characters"; prompt_extend, watermark and seed
+ * documented. `reference_voice` is an optional audio-URL field on a media
+ * entry, not a media type.
+ */
+const WAN27_R2V_RULE: AlibabaVideoModelRule = {
+  docs: R2V_DOCS,
+  promptMaxCharacters: 5000,
+  promptRequired: true,
+  negativePrompt: true,
+  audioUrl: false,
+  media: {
+    reference_image: WAN27_R2V_MAX_REFERENCES,
+    reference_video: WAN27_R2V_MAX_REFERENCES,
+    first_frame: 1,
+  },
+  mediaRequired: true,
+  resolutions: ["720P", "1080P"],
+  defaultResolution: "1080P",
+  ratios: ["16:9", "9:16", "1:1", "4:3", "3:4"],
+  defaultRatio: "16:9",
   durations: WAN27_DURATIONS,
   defaultDuration: 5,
   promptExtend: true,
@@ -282,38 +359,15 @@ const HH_R2V_RULE: AlibabaVideoModelRule = {
  * the model does not take that field, and the checks below say so.
  */
 export const VIDEO_MODEL_RULES: Readonly<Record<string, AlibabaVideoModelRule>> = {
-  "wan3.0-video": {
-    docs: WAN3_DOCS,
-    promptMaxCharacters: 20000,
-    // "either `prompt` OR `media` required" — checkInput enforces the pair.
-    promptRequired: false,
-    negativePrompt: false,
-    audioUrl: false,
-    media: {
-      first_frame: 1,
-      last_frame: 1,
-      reference_image: 10,
-      reference_video: 5,
-      reference_audio: 5,
-      file: 1,
-      link: 1,
-    },
-    resolutions: ["480P", "720P", "1080P"],
-    defaultResolution: "1080P",
-    // "adaptive" (the default) follows the input media.
-    ratios: ["adaptive", "16:9", "4:3", "1:1", "3:4", "9:16"],
-    defaultRatio: "adaptive",
-    durations: WAN3_DURATIONS,
-    defaultDuration: 5,
-    smartDuration: true,
-    promptExtend: false,
-    audioFlag: true,
-  },
+  "wan3.0-video": WAN3_RULE,
+  "wan3.0-video-prime": WAN3_RULE,
   "wan2.7-t2v": WAN27_T2V_RULE,
   "wan2.7-t2v-2026-06-12": WAN27_T2V_RULE,
   "wan2.7-t2v-2026-04-25": WAN27_T2V_RULE,
   "wan2.7-i2v-2026-04-25": WAN27_I2V_RULE,
   "wan2.7-i2v": WAN27_I2V_RULE,
+  "wan2.7-r2v": WAN27_R2V_RULE,
+  "wan2.7-r2v-2026-06-12": WAN27_R2V_RULE,
   "wan2.6-t2v": WAN26_T2V_RULE,
   // Same wan2.6 protocol; only 5s/10s durations ("Only values 5 and 10").
   // `shot_type` stays allowed: the docs gate it to "the wan2.6 series".
@@ -377,7 +431,8 @@ export const VIDEO_MODEL_RULES: Readonly<Record<string, AlibabaVideoModelRule>> 
 
 // ---------------------------------------------------------------------------
 // Pricing — USD per second of output video, Singapore tables of the pricing
-// page (2026-08-24). wan3.0-video has no international row and is absent.
+// page (2026-08-24; the wan3.0-video-prime and wan2.7-r2v rows 2026-11-12).
+// wan3.0-video has no international row and is absent.
 // ---------------------------------------------------------------------------
 
 const WAN27_PRICE = { "720P": 0.1, "1080P": 0.15 } as const;
@@ -387,11 +442,18 @@ const HH_10_PRICE = { "720P": 0.14, "1080P": 0.24 } as const;
 export const VIDEO_PRICE_PER_SECOND_USD: Readonly<
   Record<string, Readonly<Partial<Record<AlibabaVideoResolution, number>>>>
 > = {
+  // "wan3.0-video-prime | International | 480P | $0.068/second | No free quota
+  // | 720P | $0.14/second | 1080P | $0.28/second"
+  "wan3.0-video-prime": { "480P": 0.068, "720P": 0.14, "1080P": 0.28 },
   "wan2.7-t2v": WAN27_PRICE,
   "wan2.7-t2v-2026-06-12": WAN27_PRICE,
   "wan2.7-t2v-2026-04-25": WAN27_PRICE,
   "wan2.7-i2v-2026-04-25": WAN27_PRICE,
   "wan2.7-i2v": WAN27_PRICE,
+  // "wan2.7-r2v | International | Audio video | 720P | $0.10/second | No free
+  // quota | 1080P | $0.15/second" — the same rows for the dated snapshot.
+  "wan2.7-r2v": WAN27_PRICE,
+  "wan2.7-r2v-2026-06-12": WAN27_PRICE,
   "wan2.6-t2v": WAN27_PRICE,
   "wan2.6-t2v-us": WAN27_PRICE,
   "wan2.5-t2v-preview": { "480P": 0.05, "720P": 0.1, "1080P": 0.15 },
@@ -418,6 +480,12 @@ export interface AlibabaVideoMedia {
   type: AlibabaVideoMediaType | (string & {});
   /** Public URL or `data:{MIME};base64,{data}`. */
   url: string;
+  /**
+   * wan2.7-r2v only, beside a `reference_image` / `reference_video` entry: a
+   * WAV/MP3 URL (1–10 s, ≤15 MB) used as the voice reference; it "takes
+   * precedence" over a reference video's own audio.
+   */
+  reference_voice?: string;
 }
 
 export interface AlibabaVideoInput {
@@ -427,7 +495,7 @@ export interface AlibabaVideoInput {
   negative_prompt?: string;
   /** Custom soundtrack URL, WAV/MP3 (wan2.7/2.6/2.5 t2v only). */
   audio_url?: string;
-  /** Typed media inputs (wan3 / wan2.7-i2v / happyhorse i2v-r2v-edit). */
+  /** Typed media inputs (wan3 / wan2.7 i2v-r2v / happyhorse i2v-r2v-edit). */
   media?: AlibabaVideoMedia[];
 }
 
@@ -477,7 +545,15 @@ const videoSchema = z.looseObject({
       )
       .optional(),
     audio_url: z.string().optional(),
-    media: z.array(z.looseObject({ type: z.string(), url: z.string() })).optional(),
+    media: z
+      .array(
+        z.looseObject({
+          type: z.string(),
+          url: z.string(),
+          reference_voice: z.string().optional(),
+        }),
+      )
+      .optional(),
   }),
   parameters: z
     .looseObject({
@@ -605,6 +681,27 @@ function checkInput(
         });
       }
     }
+    if (model.startsWith("wan2.7-r2v") && media !== undefined && media.length > 0) {
+      const references =
+        (counts.get("reference_image") ?? 0) + (counts.get("reference_video") ?? 0);
+      if (references === 0) {
+        ctx.report({
+          code: "invalid_shape",
+          path: ["input", "media"],
+          model,
+          message: `"${model}" needs at least 1 \`reference_image\` or \`reference_video\` media entry; a \`first_frame\` alone is not a reference.`,
+          meta: { source: rule.docs },
+        });
+      } else if (references > WAN27_R2V_MAX_REFERENCES) {
+        ctx.report({
+          code: "invalid_shape",
+          path: ["input", "media"],
+          model,
+          message: `"${model}" accepts at most ${WAN27_R2V_MAX_REFERENCES} reference images and reference videos combined; got ${references}.`,
+          meta: { max: WAN27_R2V_MAX_REFERENCES, count: references, source: rule.docs },
+        });
+      }
+    }
     if (model.startsWith("wan2.7-i2v") && media !== undefined && media.length > 0) {
       const hasFirst = (counts.get("first_frame") ?? 0) > 0;
       const hasClip = (counts.get("first_clip") ?? 0) > 0;
@@ -655,7 +752,7 @@ function checkInput(
       code: "unsupported_param",
       path: ["input", "negative_prompt"],
       model,
-      message: `\`input.negative_prompt\` is a wan t2v/i2v field; "${model}" does not document it.`,
+      message: `\`input.negative_prompt\` is a wan2.x t2v/i2v/r2v field; "${model}" does not document it.`,
       meta: { source: rule.docs },
     });
   }
@@ -751,6 +848,18 @@ function checkParameters(
         meta: { source: rule.docs },
       });
     } else if (
+      model.startsWith("wan2.7-r2v") &&
+      params.input?.media?.some((entry) => entry?.type === "reference_video") === true &&
+      !WAN27_R2V_VIDEO_DURATIONS.includes(p.duration)
+    ) {
+      ctx.report({
+        code: "invalid_enum_value",
+        path: ["parameters", "duration"],
+        model,
+        message: `\`parameters.duration\` must be 2–10 seconds for "${model}" when \`input.media\` includes a \`reference_video\` (2–15 without one); got ${p.duration}.`,
+        meta: { allowed: [...WAN27_R2V_VIDEO_DURATIONS], value: p.duration, source: rule.docs },
+      });
+    } else if (
       !rule.durations.includes(p.duration) &&
       !(rule.smartDuration === true && p.duration === -1)
     ) {
@@ -769,9 +878,9 @@ function checkParameters(
   }
 
   const gates: ReadonlyArray<[keyof AlibabaVideoParameters, boolean, string]> = [
-    ["prompt_extend", rule.promptExtend, "the wan t2v/i2v models"],
+    ["prompt_extend", rule.promptExtend, "the wan2.x t2v/i2v/r2v models"],
     ["shot_type", rule.shotType === true, '"wan2.6-t2v" (with `prompt_extend: true`)'],
-    ["audio", rule.audioFlag === true, '"wan3.0-video"'],
+    ["audio", rule.audioFlag === true, '"wan3.0-video" and "wan3.0-video-prime"'],
     ["audio_setting", rule.audioSetting === true, '"happyhorse-1.0-video-edit"'],
   ];
   for (const [field, allowed, takers] of gates) {
@@ -869,8 +978,8 @@ const validator = createValidator<VideoSynthesisParams, unknown>({
 /**
  * Validates raw wire params for DashScope
  * `POST /api/v1/services/aigc/video-generation/video-synthesis` — the Wan
- * (3.0 / 2.7 / 2.6 / 2.5 / 2.2 / 2.1) and HappyHorse video models on the
- * international platform.
+ * (3.0 / 3.0-prime / 2.7 / 2.6 / 2.5 / 2.2 / 2.1) and HappyHorse video models
+ * on the international platform.
  *
  * The returned object's enumerable props are the exact fetch JSON body;
  * Alibaba ships no official JS SDK for DashScope, so `.toSdk("alibaba")`

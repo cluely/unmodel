@@ -158,6 +158,7 @@ export const availability = {
     "togetherai": "meta-models/Muse-Spark-Open-816B-A42B",
   },
   "moonshotai/Kimi-K3": {
+    "alibaba": "kimi-k3",
     "baseten": "moonshotai/Kimi-K3",
     "deepinfra": "moonshotai/Kimi-K3",
     "fireworks-ai": "accounts/fireworks/models/kimi-k3",

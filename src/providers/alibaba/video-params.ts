@@ -15,11 +15,14 @@ import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 /** Every video-synthesis model — the `alibaba/…` ref union. */
 export const MODELS = [
   "wan3.0-video",
+  "wan3.0-video-prime",
   "wan2.7-t2v",
   "wan2.7-t2v-2026-06-12",
   "wan2.7-t2v-2026-04-25",
   "wan2.7-i2v-2026-04-25",
   "wan2.7-i2v",
+  "wan2.7-r2v",
+  "wan2.7-r2v-2026-06-12",
   "wan2.6-t2v",
   "wan2.6-t2v-us",
   "wan2.5-t2v-preview",
@@ -78,6 +81,11 @@ const WAN27_I2V_EXTRAS = {
   watermark: EXTRA as boolean,
 } as const;
 
+const WAN27_R2V_EXTRAS = {
+  prompt_extend: EXTRA as boolean,
+  watermark: EXTRA as boolean,
+} as const;
+
 const WAN26_EXTRAS = {
   prompt_extend: EXTRA as boolean,
   watermark: EXTRA as boolean,
@@ -104,6 +112,14 @@ const HAPPYHORSE_EDIT_EXTRAS = {
   audio_setting: EXTRA as "auto" | "origin",
 } as const;
 
+/** wan3.0-video and wan3.0-video-prime share one request surface. */
+const WAN3_ROW = {
+  durations: seconds(2, 30),
+  resolutions: ["480p", "720p", "1080p"],
+  ratios: WAN_RATIOS,
+  extras: WAN3_EXTRAS,
+} as const;
+
 const WAN27_T2V_ROW = {
   durations: seconds(2, 15),
   resolutions: ["720p", "1080p"],
@@ -117,6 +133,17 @@ const WAN27_I2V_ROW = {
   resolutions: ["720p", "1080p"],
   ratios: [],
   extras: WAN27_I2V_EXTRAS,
+} as const;
+
+/**
+ * Durations are the no-reference-video range; with a `video` reference the
+ * provider validator narrows them to 2–10 seconds.
+ */
+const WAN27_R2V_ROW = {
+  durations: seconds(2, 15),
+  resolutions: ["720p", "1080p"],
+  ratios: WAN_RATIOS,
+  extras: WAN27_R2V_EXTRAS,
 } as const;
 
 const HH_T2V_ROW = {
@@ -134,17 +161,15 @@ const HH_I2V_ROW = {
 } as const;
 
 export const ALIBABA_VIDEO_MODEL_PARAMS = {
-  "wan3.0-video": {
-    durations: seconds(2, 30),
-    resolutions: ["480p", "720p", "1080p"],
-    ratios: WAN_RATIOS,
-    extras: WAN3_EXTRAS,
-  },
+  "wan3.0-video": WAN3_ROW,
+  "wan3.0-video-prime": WAN3_ROW,
   "wan2.7-t2v": WAN27_T2V_ROW,
   "wan2.7-t2v-2026-06-12": WAN27_T2V_ROW,
   "wan2.7-t2v-2026-04-25": WAN27_T2V_ROW,
   "wan2.7-i2v-2026-04-25": WAN27_I2V_ROW,
   "wan2.7-i2v": WAN27_I2V_ROW,
+  "wan2.7-r2v": WAN27_R2V_ROW,
+  "wan2.7-r2v-2026-06-12": WAN27_R2V_ROW,
   "wan2.6-t2v": {
     durations: seconds(2, 15),
     resolutions: ["720p", "1080p"],

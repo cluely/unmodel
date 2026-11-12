@@ -434,6 +434,7 @@ export const availability = {
     "vercel": { id: "moonshotai/kimi-k2.7-code", narrows: { context: 256000, drops: ["video"] } },
   },
   "moonshotai/Kimi-K3": {
+    "alibaba": "kimi-k3",
     "baseten": "moonshotai/Kimi-K3",
     "deepinfra": "moonshotai/Kimi-K3",
     "fireworks-ai": "accounts/fireworks/models/kimi-k3",

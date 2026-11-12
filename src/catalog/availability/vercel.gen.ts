@@ -70,6 +70,7 @@ export const availability = {
     "vercel": "alibaba/qwen3-vl-instruct",
   },
   "alibaba/qwen3.5-flash": {
+    "alibaba": { id: "qwen3.5-flash", narrows: { drops: ["pdf"] } },
     "vercel": "alibaba/qwen3.5-flash",
   },
   "alibaba/qwen3.5-plus": {
@@ -103,6 +104,7 @@ export const availability = {
     "vercel": "alibaba/qwen3.6-plus",
   },
   "alibaba/qwen3.7-flash": {
+    "alibaba": { id: "qwen3.7-flash", narrows: { drops: ["pdf"] } },
     "openrouter": { id: "qwen/qwen3.7-flash", narrows: { drops: ["pdf"] } },
     "vercel": "alibaba/qwen3.7-flash",
   },
@@ -160,6 +162,7 @@ export const availability = {
     "vercel": "alibaba/qwen3.8-max-prime",
   },
   "alibaba/qwen3.8-omni-flash": {
+    "alibaba": "qwen3.8-omni-flash",
     "openrouter": "qwen/qwen3.8-omni-flash",
     "vercel": "alibaba/qwen3.8-omni-flash",
   },
@@ -852,6 +855,7 @@ export const availability = {
     "vercel": "moonshotai/kimi-k2.7-code-highspeed",
   },
   "moonshotai/kimi-k3": {
+    "alibaba": { id: "kimi-k3", narrows: { drops: ["pdf"] } },
     "baseten": { id: "moonshotai/Kimi-K3", narrows: { drops: ["pdf"] } },
     "deepinfra": { id: "moonshotai/Kimi-K3", narrows: { drops: ["pdf"] } },
     "fireworks-ai": { id: "accounts/fireworks/models/kimi-k3", narrows: { drops: ["pdf"] } },

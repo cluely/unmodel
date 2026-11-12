@@ -75,6 +75,7 @@ export const availability = {
     "vercel": "deepseek/deepseek-v4.1-flash-fast",
   },
   "moonshotai/Kimi-K3": {
+    "alibaba": "kimi-k3",
     "baseten": "moonshotai/Kimi-K3",
     "deepinfra": "moonshotai/Kimi-K3",
     "fireworks-ai": "accounts/fireworks/models/kimi-k3",

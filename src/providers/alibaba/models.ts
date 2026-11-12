@@ -2,7 +2,8 @@
 // omni chat models (src/catalog/alibaba.gen.ts; its AlibabaVideoModelId union
 // is `never` and AlibabaAudioModelId names only the qwen-omni chat ids), so
 // the DashScope video-synthesis and Qwen-TTS ids live here. Refresh from
-//   https://www.alibabacloud.com/help/en/model-studio/wan3-video-generation-api-reference   (wan3.0-video)
+//   https://www.alibabacloud.com/help/en/model-studio/wan3-video-generation-api-reference   (wan3.0-video, wan3.0-video-prime)
+//   https://www.alibabacloud.com/help/en/model-studio/wan-video-to-video-api-reference      (wan2.7 r2v)
 //   https://www.alibabacloud.com/help/en/model-studio/text-to-video-api-reference           (wan t2v ids + protocols)
 //   https://www.alibabacloud.com/help/en/model-studio/image-to-video-general-api-reference  (wan2.7 i2v)
 //   https://www.alibabacloud.com/help/en/model-studio/happyhorse-text-to-video-api-reference
@@ -13,7 +14,8 @@
 //   https://www.alibabacloud.com/help/en/model-studio/qwen-tts-api    (TTS request/response reference)
 //   https://www.alibabacloud.com/help/en/model-studio/realtime-tts-user-guide (WebSocket-only TTS ids)
 //   https://www.alibabacloud.com/help/en/model-studio/model-pricing   (USD list prices, Singapore tables)
-// (last checked 2026-08-24). This is the INTERNATIONAL platform; the China
+// (last checked 2026-08-24; the wan3.0-video-prime and wan2.7-r2v rows
+// 2026-11-12). This is the INTERNATIONAL platform; the China
 // (Beijing) deployment publishes different prices and extra ids.
 //
 // MODEL IDS: two of the video ids below — `wan2.7-t2v-2026-04-25` and
@@ -74,12 +76,14 @@ const VIDEO = {
 const T2V_MODALITIES = { input: ["text"], output: ["video"] } as const;
 const I2V_MODALITIES = { input: ["text", "image"], output: ["video"] } as const;
 const V2V_MODALITIES = { input: ["text", "image", "video"], output: ["video"] } as const;
+/** wan2.7-r2v also takes a `reference_voice` audio URL for timbre cloning. */
+const R2V_MODALITIES = { input: ["text", "image", "video", "audio"], output: ["video"] } as const;
 
 /**
  * Models POST /api/v1/services/aigc/video-generation/video-synthesis accepts
  * on the international platform. Each documents its own protocol (wan3 media
- * array / wan2.7 resolution+ratio / legacy `size` / happyhorse); ./video
- * encodes the differences in VIDEO_MODEL_RULES.
+ * array / wan2.7 resolution+ratio / wan2.7 i2v and r2v media arrays / legacy
+ * `size` / happyhorse); ./video encodes the differences in VIDEO_MODEL_RULES.
  */
 export const videoModels = {
   // Wan 3.0 all-in-one (t2v / i2v / r2v / v2v through one `media` array).
@@ -90,6 +94,20 @@ export const videoModels = {
     family: "wan3.0",
     ...VIDEO,
     modalities: { input: ["text", "image", "video", "audio"], output: ["video"] },
+  },
+  // The high-speed wan3.0 tier, same request surface as wan3.0-video: "Model
+  // name. Valid values: | wan3.0-video-prime | : High-speed version with
+  // capabilities aligned to the standard version" (wan3 reference, checked
+  // 2026-11-12). Pricing page, Singapore (2026-11-12): "wan3.0-video-prime |
+  // International | 480P | $0.068/second | No free quota | 720P | $0.14/second
+  // | 1080P | $0.28/second" → default-config (1080P) rate 0.28.
+  "wan3.0-video-prime": {
+    id: "wan3.0-video-prime",
+    name: "Wan 3.0 Video Prime",
+    family: "wan3.0",
+    ...VIDEO,
+    modalities: { input: ["text", "image", "video", "audio"], output: ["video"] },
+    cost: { perVideoSecond: 0.28 },
   },
   // Wan 2.7 text-to-video ("new protocol": resolution + ratio).
   // $0.10/s at 720P, $0.15/s at 1080P (default) → default-config rate 0.15.
@@ -137,6 +155,28 @@ export const videoModels = {
     family: "wan2.7",
     ...VIDEO,
     modalities: V2V_MODALITIES,
+    cost: { perVideoSecond: 0.15 },
+  },
+  // Wan 2.7 reference-to-video (media array: reference_image / reference_video
+  // / first_frame, plus an optional `reference_voice` audio URL on a media
+  // entry). Pricing page, Singapore (2026-11-12): "wan2.7-r2v | International
+  // | Audio video | 720P | $0.10/second | No free quota | 1080P |
+  // $0.15/second", the same rows for wan2.7-r2v-2026-06-12 → default-config
+  // (1080P) rate 0.15.
+  "wan2.7-r2v": {
+    id: "wan2.7-r2v",
+    name: "Wan 2.7 R2V",
+    family: "wan2.7",
+    ...VIDEO,
+    modalities: R2V_MODALITIES,
+    cost: { perVideoSecond: 0.15 },
+  },
+  "wan2.7-r2v-2026-06-12": {
+    id: "wan2.7-r2v-2026-06-12",
+    name: "Wan 2.7 R2V (2026-06-12)",
+    family: "wan2.7",
+    ...VIDEO,
+    modalities: R2V_MODALITIES,
     cost: { perVideoSecond: 0.15 },
   },
   // Legacy protocol (`size` strings). $0.10/s 720P, $0.15/s 1080P (default

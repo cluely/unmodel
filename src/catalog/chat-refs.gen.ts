@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1440 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1438 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -55,6 +55,7 @@ export type ChatProviderId =
 export type ChatModelRef =
   | "alibaba/deepseek-v4-flash-0731"
   | "alibaba/glm-5.2"
+  | "alibaba/kimi-k3"
   | "alibaba/qvq-max"
   | "alibaba/qwen-flash"
   | "alibaba/qwen-max"
@@ -68,13 +69,7 @@ export type ChatModelRef =
   | "alibaba/qwen-vl-max"
   | "alibaba/qwen-vl-ocr"
   | "alibaba/qwen-vl-plus"
-  | "alibaba/qwen2-5-14b-instruct"
-  | "alibaba/qwen2-5-32b-instruct"
-  | "alibaba/qwen2-5-72b-instruct"
-  | "alibaba/qwen2-5-7b-instruct"
   | "alibaba/qwen2-5-omni-7b"
-  | "alibaba/qwen2-5-vl-72b-instruct"
-  | "alibaba/qwen2-5-vl-7b-instruct"
   | "alibaba/qwen3-14b"
   | "alibaba/qwen3-235b-a22b"
   | "alibaba/qwen3-32b"
@@ -97,16 +92,19 @@ export type ChatModelRef =
   | "alibaba/qwen3.5-27b"
   | "alibaba/qwen3.5-35b-a3b"
   | "alibaba/qwen3.5-397b-a17b"
+  | "alibaba/qwen3.5-flash"
   | "alibaba/qwen3.5-plus"
   | "alibaba/qwen3.6-27b"
   | "alibaba/qwen3.6-35b-a3b"
   | "alibaba/qwen3.6-flash"
   | "alibaba/qwen3.6-max-preview"
   | "alibaba/qwen3.6-plus"
+  | "alibaba/qwen3.7-flash"
   | "alibaba/qwen3.7-max"
   | "alibaba/qwen3.7-plus"
   | "alibaba/qwen3.8-flash"
   | "alibaba/qwen3.8-max"
+  | "alibaba/qwen3.8-omni-flash"
   | "alibaba/qwq-plus"
   | "anthropic/claude-fable-5"
   | "anthropic/claude-fable-5-1"

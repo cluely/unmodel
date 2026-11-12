@@ -351,20 +351,30 @@ describe("re-validating against the target (the groq case)", () => {
   });
 
   test("a family rule that does not match the target model does not fire", () => {
-    // upstage's only deny is scoped to the solar-mini family. The one real
-    // edge into upstage lands on solar-pro4, so the rule must NOT apply —
-    // applying a family's denies to every model would reject requests the
-    // target accepts. (The matching half is exercised in
+    // upstage's only deny is scoped to the solar-mini family. The real edges
+    // into upstage land on solar-pro4 and solar-mini4, so the rule must NOT
+    // apply — applying a family's denies to every model (or to every id that
+    // merely starts with the family's name) would reject requests the target
+    // accepts. (The matching half is exercised in
     // src/retarget/target-constraints.test.ts, which does not depend on which
     // upstage models the catalog happens to carry.)
-    const routed = openrouterChat({
+    const pro = openrouterChat({
       model: "upstage/solar-pro4",
       messages: [{ role: "user", content: "hi" }],
       reasoning_effort: "low",
     }).toApi("upstage");
 
-    expect(routed.model).toBe("solar-pro4");
-    expect((routed as unknown as { reasoning_effort?: string }).reasoning_effort).toBe("low");
+    expect(pro.model).toBe("solar-pro4");
+    expect((pro as unknown as { reasoning_effort?: string }).reasoning_effort).toBe("low");
+
+    const mini = openrouterChat({
+      model: "upstage/solar-mini4",
+      messages: [{ role: "user", content: "hi" }],
+      reasoning_effort: "low",
+    }).toApi("upstage");
+
+    expect(mini.model).toBe("solar-mini4");
+    expect((mini as unknown as { reasoning_effort?: string }).reasoning_effort).toBe("low");
   });
 });
 

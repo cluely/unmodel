@@ -22,6 +22,10 @@ export const availability = {
   "solar-mini": {
     "upstage": "solar-mini",
   },
+  "solar-mini4": {
+    "openrouter": "upstage/solar-mini4",
+    "upstage": "solar-mini4",
+  },
   "solar-pro2": {
     "upstage": "solar-pro2",
   },

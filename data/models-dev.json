@@ -340351,8 +340351,56 @@
         "temperature": true,
         "tool_call": true
       },
+      "solar-mini4": {
+        "attachment": false,
+        "canonical_model_id": "upstage/solar-mini4",
+        "cost": {
+          "cache_read": 0.01,
+          "input": 0.1,
+          "output": 0.4
+        },
+        "description": "Upstage's compact, cost-efficient model for agentic use",
+        "family": "solar-mini",
+        "id": "solar-mini4",
+        "knowledge": "2026-02",
+        "last_updated": "2026-09-22",
+        "limit": {
+          "context": 524288,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Solar Mini 4",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "none",
+              "minimal",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-09-22",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
       "solar-pro2": {
         "attachment": false,
+        "canonical_model_id": "upstage/solar-pro2",
         "cost": {
           "input": 0.25,
           "output": 0.25
@@ -340392,6 +340440,7 @@
       },
       "solar-pro3": {
         "attachment": false,
+        "canonical_model_id": "upstage/solar-pro3",
         "cost": {
           "input": 0.25,
           "output": 0.25
@@ -340400,7 +340449,7 @@
         "family": "solar-pro",
         "id": "solar-pro3",
         "knowledge": "2025-03",
-        "last_updated": "2026-01",
+        "last_updated": "2026-03-23",
         "limit": {
           "context": 131072,
           "output": 8192
@@ -340426,12 +340475,13 @@
             ]
           }
         ],
-        "release_date": "2026-01",
+        "release_date": "2026-01-26",
         "temperature": true,
         "tool_call": true
       },
       "solar-pro4": {
         "attachment": false,
+        "canonical_model_id": "upstage/solar-pro4",
         "cost": {
           "cache_read": 0.06,
           "input": 0.3,

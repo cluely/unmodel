@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1443 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1444 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -1099,6 +1099,7 @@ export const CHAT_MODEL_REFS = [
   "togetherai/zai-org/GLM-5.3",
   "togetherai/zai-org/GLM-5.3-Flash",
   "upstage/solar-mini",
+  "upstage/solar-mini4",
   "upstage/solar-pro2",
   "upstage/solar-pro3",
   "upstage/solar-pro4",

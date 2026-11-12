@@ -97,6 +97,13 @@ describe("upstage — family-scoped denies", () => {
   test("does NOT fire on a model outside the family", () => {
     expect(retargetTo("upstage", "solar-pro4", { reasoning_effort: "low" }).result.ok).toBe(true);
   });
+
+  test("does NOT fire on solar-mini4, whose id only shares the family's prefix", () => {
+    expect(retargetTo("upstage", "solar-mini4", { reasoning_effort: "low" }).result.ok).toBe(true);
+    expect(
+      retargetTo("upstage", "solar-mini4-260922", { reasoning_effort: "low" }).result.ok,
+    ).toBe(true);
+  });
 });
 
 describe("zhipuai — family-scoped enum narrowing", () => {

@@ -1225,6 +1225,7 @@ export const chatProfiles: ChatCatalog = {
   },
   "upstage": {
     "solar-mini": { attachment: false, reasoning: false, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 32768, output: 4096 }, cost: { input: 0.15, output: 0.15 } },
+    "solar-mini4": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 524288, output: 131072 }, cost: { input: 0.1, output: 0.4, cacheRead: 0.01 } },
     "solar-pro2": { attachment: false, reasoning: true, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 65536, output: 8192 }, cost: { input: 0.25, output: 0.25 } },
     "solar-pro3": { attachment: false, reasoning: true, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 131072, output: 8192 }, cost: { input: 0.25, output: 0.25 } },
     "solar-pro4": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 524288, output: 131072 }, cost: { input: 0.3, output: 1.2, cacheRead: 0.06 } },

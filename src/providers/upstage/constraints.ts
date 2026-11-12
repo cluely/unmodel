@@ -19,6 +19,16 @@ export const UPSTAGE_CHAT_DOC =
  * The reference's reasoning matrix: solar-mini does not accept
  * `reasoning_effort` at all — sending any value returns HTTP 400. Matched as
  * a family so dated snapshots (e.g. solar-mini-250422) are covered too.
+ *
+ * The predicate matches `solar-mini` and `solar-mini-*` only, and must stay
+ * that narrow: solar-mini4 (and its snapshot solar-mini4-260922) is a
+ * different model that accepts `reasoning_effort`, although models.dev files
+ * it under family "solar-mini" — matching on the catalog's family field would
+ * refuse requests Upstage fulfils.
+ * https://console.upstage.ai/docs/capabilities/generate/reasoning (checked
+ * 2026-11-12): "`solar-mini4` follows the same rules as `solar-pro4`: the same
+ * effort values turn reasoning on and off, and its thought process is
+ * returned the same way."
  */
 export const chatFamilyRules: readonly FamilyRule[] = [
   {

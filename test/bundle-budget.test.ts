@@ -291,13 +291,18 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * the voice-clone pack: `minimax/tts-check.ts` costs ~3 KiB because it reads
    * the catalog rates and never the validator's zod schema. Importing `./tts`
    * there would have dragged that schema into every graph reaching this barrel.
+   *
+   * **minimax 227 → 250 at the 2026-11-12 model wave (227.0 measured).** The
+   * barrel's own growth: the MiniMax-M3 / M3.1-Flash deny and enum tables and
+   * the three H3 rows on `minimax.videoV2`; the shared generated chat-refs
+   * table every barrel reaches is what crossed the line, not a new edge.
    */
   pixverse: 64,
   lightricks: 68,
   "black-forest-labs": 100,
   kling: 135,
   elevenlabs: 222,
-  minimax: 227,
+  minimax: 250,
 };
 
 /**

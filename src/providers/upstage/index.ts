@@ -1,7 +1,7 @@
 /**
  * unmodel/upstage — Upstage's OpenAI-compatible Chat Completions endpoint
- * (the Solar model family: solar-pro4/pro3/pro2/mini), validated against the
- * generated models.dev catalog.
+ * (the Solar model family: solar-pro4/mini4/pro3/pro2/mini), validated
+ * against the generated models.dev catalog.
  *
  * The current API reference (https://console.upstage.ai/api/docs/for-agents/raw,
  * checked 2026-08-13) documents POST https://api.upstage.ai/v1/chat/completions

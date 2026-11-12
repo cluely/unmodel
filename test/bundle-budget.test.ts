@@ -1674,8 +1674,12 @@ describe("unmodel/chat", () => {
    * lacks, layered on the generated catalog already in this graph), and
    * `mistral/constraints.ts` is the type-only leaf holding the Large 4 / GLM 5.3
    * `reasoning_effort` ladders — the groq/upstage pattern.
+   *
+   * **+1 (→ 60) with `minimax/constraints.ts`** (2026-11-12): the MiniMax-M3 /
+   * M3.1-Flash deny and enum tables, a types-only literal leaf imported by
+   * `minimax/chat.ts` — the groq/upstage shape, not barrel leakage.
    */
-  test("its provider graph is exactly the enumerated 59 modules", () => {
+  test("its provider graph is exactly the enumerated 60 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
       "src/providers/alibaba/chat.ts",
@@ -1716,6 +1720,7 @@ describe("unmodel/chat", () => {
       // minimax media endpoint. The leaf pins chat's minimax cost to the chat
       // dialect + its two generated catalogs, permanently.
       "src/providers/minimax/chat.ts",
+      "src/providers/minimax/constraints.ts",
       // Barrel leakage, measured: mistral's index re-exports its transcribe
       // endpoint. Deleting these three lines requires giving mistral a
       // `chat.ts` leaf, not loosening the assertion.
@@ -1764,6 +1769,10 @@ describe("unmodel/chat", () => {
       "src/catalog/availability/deepseek.gen.ts",
       "src/catalog/availability/friendli.gen.ts",
       "src/catalog/availability/google.gen.ts",
+      // A region of its own because minimax/chat.ts's chunk holds a second
+      // module (constraints.ts); in a one-module chunk the bundler inlines this
+      // single-use table at its call site — the same bytes, unnamed.
+      "src/catalog/availability/minimax.gen.ts",
       "src/catalog/availability/mistral.gen.ts",
       // Not new bytes: this table was always in the graph, inlined into its
       // importer with no region marker. It keeps its own region since

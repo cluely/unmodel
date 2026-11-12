@@ -5,13 +5,12 @@ import {
   VIDEO_GENERATION_V2_URL,
   VIDEO_V2_QUERY_URL,
   VIDEO_V2_MAX_REFERENCE_IMAGES,
-  VIDEO_V2_USD_PER_SECOND,
-  VIDEO_V2_USD_PER_EXTRA_IMAGE,
-  VIDEO_V2_RESOLUTIONS,
-  VIDEO_V2_DURATIONS,
+  VIDEO_V2_MODEL_IDS,
+  VIDEO_V2_MODEL_RULES,
+  VIDEO_V2_PROMPT_EXPANSION_MODES,
   VIDEO_V2_RATIOS,
 } from "./video-v2";
-import type { MinimaxV2Role } from "./video-v2";
+import type { MinimaxV2Role, MinimaxVideoV2Resolution } from "./video-v2";
 import { videoV2Models } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
@@ -46,7 +45,13 @@ describe("minimax.videoV2 wire shape", () => {
     expect(videoV2QueryUrl("abc123")).toBe(`${VIDEO_V2_QUERY_URL}/abc123`);
   });
 
-  test("only MiniMax-H3 is accepted", () => {
+  test("only the H3 line is accepted", () => {
+    expect([...VIDEO_V2_MODEL_IDS]).toEqual([
+      "MiniMax-H3",
+      "MiniMax-H3-Highspeed",
+      "MiniMax-H3-Lite",
+      "MiniMax-H3-Max",
+    ]);
     const r = videoV2.safe({
       model: "MiniMax-Hailuo-2.3",
       content: [text()],
@@ -59,7 +64,7 @@ describe("minimax.videoV2 wire shape", () => {
   });
 
   test("an off-catalog model warns unknown_model alongside the enum error", () => {
-    // The v2 catalog holds MiniMax-H3 only, so every other id — including the
+    // The v2 catalog holds the H3 line only, so every other id — including the
     // v1 route's real models — misses the catalog as well as the enum.
     const r = videoV2.safe({
       model: "MiniMax-Hailuo-2.3",
@@ -111,31 +116,22 @@ describe("minimax.videoV2 wire shape", () => {
     if (!badRatio.ok) expect(badRatio.errors[0]?.path).toEqual(["ratio"]);
   });
 
-  test("every documented resolution / duration / ratio preset validates", () => {
+  test("every model's documented resolution / duration / ratio preset validates", () => {
     // Keep in sync with MinimaxVideoV2Resolution, MinimaxVideoV2Duration and
-    // MinimaxVideoV2Ratio — the unions are closed, so every value they
-    // advertise has to pass the runtime checks that back them.
-    for (const resolution of VIDEO_V2_RESOLUTIONS) {
-      const r = videoV2.safe({
-        model: "MiniMax-H3",
-        content: [text()],
-        resolution,
-        duration: 6,
-        ratio: "16:9",
-      });
-      expect(r.ok, `resolution ${resolution} should validate`).toBe(true);
-      if (r.ok) expect(r.warnings, `resolution ${resolution} should be warning-free`).toEqual([]);
-    }
-    for (const duration of VIDEO_V2_DURATIONS) {
-      const r = videoV2.safe({
-        model: "MiniMax-H3",
-        content: [text()],
-        resolution: "768P",
-        duration,
-        ratio: "16:9",
-      });
-      expect(r.ok, `duration ${duration} should validate`).toBe(true);
-      if (r.ok) expect(r.warnings, `duration ${duration} should be warning-free`).toEqual([]);
+    // MinimaxVideoV2Ratio — the unions are closed, so every value a model's
+    // rule advertises has to pass the runtime checks that back them.
+    for (const model of VIDEO_V2_MODEL_IDS) {
+      const rule = VIDEO_V2_MODEL_RULES[model as keyof typeof VIDEO_V2_MODEL_RULES];
+      for (const resolution of Object.keys(rule.usdPerSecond) as MinimaxVideoV2Resolution[]) {
+        const r = videoV2.safe({ model, content: [text()], resolution, duration: 6, ratio: "16:9" });
+        expect(r.ok, `${model} ${resolution} should validate`).toBe(true);
+        if (r.ok) expect(r.warnings, `${model} ${resolution} should be warning-free`).toEqual([]);
+      }
+      for (const duration of rule.durations) {
+        const r = videoV2.safe({ model, content: [text()], resolution: "768P", duration, ratio: "16:9" });
+        expect(r.ok, `${model} duration ${duration} should validate`).toBe(true);
+        if (r.ok) expect(r.warnings, `${model} duration ${duration} should be warning-free`).toEqual([]);
+      }
     }
     for (const ratio of VIDEO_V2_RATIOS) {
       // "adaptive" is legal on the wire but not for text-to-video, so it is
@@ -274,9 +270,149 @@ describe("minimax.videoV2 content rules", () => {
   });
 });
 
+describe("minimax.videoV2 per-model rules", () => {
+  test("MiniMax-H3 renders 768P/2K; the other three 480P/768P", () => {
+    const h3At480 = videoV2.safe({
+      model: "MiniMax-H3",
+      content: [text()],
+      resolution: "480P",
+      duration: 6,
+      ratio: "16:9",
+    });
+    expect(h3At480.ok).toBe(false);
+    if (!h3At480.ok) {
+      expect(h3At480.errors[0]?.path).toEqual(["resolution"]);
+      expect(h3At480.errors[0]?.message).toContain('"768P", "2K" for "MiniMax-H3"');
+    }
+    for (const model of ["MiniMax-H3-Highspeed", "MiniMax-H3-Lite", "MiniMax-H3-Max"] as const) {
+      const at2k = videoV2.safe({ model, content: [text()], resolution: "2K", duration: 6, ratio: "16:9" });
+      expect(at2k.ok, model).toBe(false);
+      if (!at2k.ok) expect(at2k.errors[0]?.message).toContain(`"480P", "768P" for "${model}"`);
+    }
+  });
+
+  test("MiniMax-H3-Max starts at 5 seconds; the others at 4", () => {
+    const max4 = videoV2.safe({
+      model: "MiniMax-H3-Max",
+      content: [text()],
+      resolution: "768P",
+      duration: 4,
+      ratio: "16:9",
+    });
+    expect(max4.ok).toBe(false);
+    if (!max4.ok) {
+      expect(max4.errors[0]?.path).toEqual(["duration"]);
+      expect(max4.errors[0]?.message).toContain('between 5 and 15 seconds for "MiniMax-H3-Max"');
+    }
+    for (const model of ["MiniMax-H3", "MiniMax-H3-Highspeed", "MiniMax-H3-Lite"] as const) {
+      const r = videoV2.safe({ model, content: [text()], resolution: "768P", duration: 4, ratio: "16:9" });
+      expect(r.ok, model).toBe(true);
+    }
+  });
+
+  test("MiniMax-H3-Lite needs a concrete ratio for reference-to-video", () => {
+    const content = [text(), image("reference_image")];
+    for (const ratio of [undefined, "adaptive"] as const) {
+      const r = videoV2.safe({
+        model: "MiniMax-H3-Lite",
+        content,
+        resolution: "768P",
+        duration: 6,
+        ...(ratio !== undefined && { ratio }),
+      });
+      expect(r.ok, `ratio ${ratio}`).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.path).toEqual(["ratio"]);
+        expect(r.errors[0]?.message).toContain('"MiniMax-H3-Lite" does not support an "adaptive"');
+      }
+    }
+    expect(
+      videoV2.safe({ model: "MiniMax-H3-Lite", content, resolution: "768P", duration: 6, ratio: "9:16" })
+        .ok,
+    ).toBe(true);
+    // The other models default reference-to-video to "adaptive" without complaint.
+    expect(
+      videoV2.safe({ model: "MiniMax-H3-Highspeed", content, resolution: "768P", duration: 6 }).ok,
+    ).toBe(true);
+  });
+
+  test("extra.prompt_expansion_mode is MiniMax-H3-Max's, and closed", () => {
+    for (const mode of VIDEO_V2_PROMPT_EXPANSION_MODES) {
+      const r = videoV2.safe({
+        model: "MiniMax-H3-Max",
+        content: [text()],
+        resolution: "768P",
+        duration: 6,
+        ratio: "16:9",
+        extra: { prompt_expansion_mode: mode },
+      });
+      expect(r.ok, mode).toBe(true);
+      if (r.ok) expect(r.warnings, mode).toEqual([]);
+    }
+
+    // "Do not pass `balance`, an empty string, a Boolean value, or other
+    // undeclared fields."
+    const base = { model: "MiniMax-H3-Max", content: [text()], resolution: "768P", duration: 6, ratio: "16:9" };
+    for (const mode of ["balance", ""]) {
+      const r = safeUnchecked({ ...base, extra: { prompt_expansion_mode: mode } });
+      expect(r.ok, JSON.stringify(mode)).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["extra", "prompt_expansion_mode"]);
+    }
+    expect(safeUnchecked({ ...base, extra: { prompt_expansion_mode: true } }).ok).toBe(false);
+    expect(safeUnchecked({ ...base, extra: { seed: 1 } }).ok).toBe(false);
+
+    // Documented for MiniMax-H3-Max only: elsewhere it is flagged, not refused.
+    const onH3 = videoV2.safe({
+      model: "MiniMax-H3",
+      content: [text()],
+      resolution: "768P",
+      duration: 6,
+      ratio: "16:9",
+      extra: { prompt_expansion_mode: "quality" },
+    });
+    expect(onH3.ok).toBe(true);
+    if (onH3.ok) {
+      expect(onH3.warnings.map((w) => [w.code, w.path])).toEqual([["unsupported_param", ["extra"]]]);
+    }
+  });
+});
+
 describe("minimax.videoV2 pricing", () => {
+  test("every model prices per second at each resolution it renders", () => {
+    const expected: Record<string, Partial<Record<MinimaxVideoV2Resolution, number>>> = {
+      "MiniMax-H3": { "768P": 0.08, "2K": 0.13 },
+      "MiniMax-H3-Highspeed": { "480P": 0.04, "768P": 0.06 },
+      "MiniMax-H3-Lite": { "480P": 0.025, "768P": 0.04 },
+      "MiniMax-H3-Max": { "480P": 0.05, "768P": 0.08 },
+    };
+    for (const [model, rates] of Object.entries(expected)) {
+      // The catalog row carries the 768P rate, the one tier all four render.
+      const row: { cost: { perVideoSecond: number } } =
+        videoV2Models[model as keyof typeof videoV2Models];
+      expect(row.cost.perVideoSecond).toBe(rates["768P"]!);
+      for (const [resolution, rate] of Object.entries(rates)) {
+        const r = videoV2.safe({
+          model,
+          content: [text()],
+          resolution: resolution as MinimaxVideoV2Resolution,
+          duration: 10,
+          ratio: "16:9",
+        });
+        expect(r.ok, `${model} ${resolution}`).toBe(true);
+        if (r.ok) expect(r.estimate.costUSD, `${model} ${resolution}`).toBeCloseTo(rate * 10, 10);
+      }
+    }
+  });
+
+  test("MiniMax-H3-Max bills images beyond the first two at $0.074", () => {
+    const content = [text(), ...Array.from({ length: 4 }, () => image("reference_image"))];
+    const r = videoV2.safe({ model: "MiniMax-H3-Max", content, resolution: "480P", duration: 5 });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.05 * 5 + 2 * 0.074, 10);
+  });
+
   test("output seconds are billed per resolution", () => {
-    expect(VIDEO_V2_USD_PER_SECOND["768P"]).toBe(0.08);
+    expect(VIDEO_V2_MODEL_RULES["MiniMax-H3"].usdPerSecond["768P"]).toBe(0.08);
     expect(videoV2Models["MiniMax-H3"].cost.perVideoSecond).toBe(0.08);
     const p768 = videoV2.safe({
       model: "MiniMax-H3",
@@ -309,7 +445,10 @@ describe("minimax.videoV2 pricing", () => {
     });
     expect(r.ok).toBe(true);
     if (r.ok) {
-      expect(r.estimate.costUSD).toBeCloseTo(0.08 * 6 + 2 * VIDEO_V2_USD_PER_EXTRA_IMAGE, 10);
+      expect(r.estimate.costUSD).toBeCloseTo(
+        0.08 * 6 + 2 * VIDEO_V2_MODEL_RULES["MiniMax-H3"].usdPerExtraImage,
+        10,
+      );
     }
   });
 

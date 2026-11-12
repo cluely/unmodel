@@ -182,7 +182,7 @@ bytedance (`video`, Seedance / Dreamina Seedance), kling (`video` /
 `videoFromImage` on `POST /v1/videos/*`, plus the EXPERIMENTAL path-addressed
 `videoV3` / `videoV3FromImage` / `videoOmni`), lightricks (LTX-2: `video` /
 `videoFromImage` / `videoFromAudio`), minimax (`video` Hailuo + `videoV2`
-MiniMax-H3), pixverse (`video` + `videoFromImage`), runway (`video` +
+MiniMax-H3 / -Highspeed / -Lite / -Max), pixverse (`video` + `videoFromImage`), runway (`video` +
 `videoFromImage` + `videoFromVideo`), luma (Ray, `video`, plus post-production
 `videoModify` / `videoReframe` / `videoUpscale` / `videoAddAudio`), vidu
 (`video` / `videoFromImage` / `videoFromReference`), alibaba (Wan 3.0/2.x + HappyHorse 1.x

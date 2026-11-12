@@ -641,7 +641,7 @@ export const availability = {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
     "fireworks-ai": { id: "accounts/fireworks/models/minimax-m3", narrows: { context: 512000, drops: ["image", "video"] } },
     "huggingface": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288, drops: ["video"] } },
-    "minimax": "MiniMax-M3",
+    "minimax": { id: "MiniMax-M3", narrows: { context: 1000000 } },
     "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image", "video"] } },
     "novita-ai": { id: "minimax/minimax-m3", narrows: { context: 1000000 } },
     "openrouter": "minimax/minimax-m3",
@@ -651,6 +651,7 @@ export const availability = {
   },
   "minimax/minimax-m3.1-flash": {
     "huggingface": { id: "MiniMaxAI/MiniMax-M3.1-Flash", narrows: { context: 1000000, drops: ["video"] } },
+    "minimax": { id: "MiniMax-M3.1-Flash", narrows: { context: 1000000 } },
     "nebius": { id: "MiniMaxAI/MiniMax-M3.1-Flash", narrows: { drops: ["video"] } },
     "novita-ai": { id: "minimax/minimax-m3.1-flash", narrows: { context: 1000000 } },
     "nvidia": { id: "minimaxai/minimax-m3.1-flash", narrows: { context: 262144 } },

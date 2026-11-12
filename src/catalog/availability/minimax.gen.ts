@@ -65,11 +65,20 @@ export const availability = {
     "huggingface": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288, drops: ["video"] } },
     "minimax": "MiniMax-M3",
     "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image", "video"] } },
-    "novita-ai": { id: "minimax/minimax-m3", narrows: { context: 1000000 } },
+    "novita-ai": "minimax/minimax-m3",
     "openrouter": "minimax/minimax-m3",
     "siliconflow": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["video"] } },
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
     "vercel": { id: "minimax/minimax-m3", narrows: { context: 512000, drops: ["video"] } },
+  },
+  "MiniMax-M3.1-Flash": {
+    "huggingface": { id: "MiniMaxAI/MiniMax-M3.1-Flash", narrows: { drops: ["video"] } },
+    "minimax": "MiniMax-M3.1-Flash",
+    "nebius": { id: "MiniMaxAI/MiniMax-M3.1-Flash", narrows: { drops: ["video"] } },
+    "novita-ai": "minimax/minimax-m3.1-flash",
+    "nvidia": { id: "minimaxai/minimax-m3.1-flash", narrows: { context: 262144 } },
+    "openrouter": "minimax/minimax-m3.1-flash",
+    "vercel": { id: "minimax/minimax-m3.1-flash", narrows: { drops: ["video"] } },
   },
 } as const satisfies AvailabilityMap;
 

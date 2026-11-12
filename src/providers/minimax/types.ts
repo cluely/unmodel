@@ -86,6 +86,8 @@ export type {
   MinimaxVideoV2Resolution,
   MinimaxVideoV2Duration,
   MinimaxVideoV2Ratio,
+  MinimaxVideoV2Extra,
+  MinimaxVideoV2PromptExpansionMode,
 } from "./video-v2";
 
 export type {

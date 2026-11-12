@@ -15,6 +15,9 @@ import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 /** Every video model, both routes — the `minimax/…` ref union. */
 export const MODELS = [
   "MiniMax-H3",
+  "MiniMax-H3-Highspeed",
+  "MiniMax-H3-Lite",
+  "MiniMax-H3-Max",
   "MiniMax-Hailuo-2.3",
   "MiniMax-Hailuo-2.3-Fast",
   "MiniMax-Hailuo-02",
@@ -44,10 +47,11 @@ export const MODELS = [
  * reports as an `unsupported_param` pointing at `MiniMax-H3`. The type now says
  * it first.
  *
- * `MiniMax-H3` is the v2 route and the mirror image: `duration` and
- * `resolution` are both **required** there (they are what the generation is
- * billed by), so its lists are the full documented enums — every integer 4–15,
- * and the two tiers `768P`/`2K` answer for.
+ * The four `MiniMax-H3*` models are the v2 route and the mirror image:
+ * `duration` and `resolution` are both **required** there (they are what the
+ * generation is billed by), so their lists are each model's full documented
+ * enums — every integer 4–15 (5–15 on `-Max`), and the tiers `768P`/`2K`
+ * (`MiniMax-H3`) or `480P`/`768P` (the other three) answer for.
  *
  * `prompt_optimizer` is a v1 field and is on all nine v1 rows; the v2 body has
  * no such key. `fast_pretreatment` is gated to the three Hailuo models by
@@ -58,6 +62,16 @@ export const V1_EXTRAS = { prompt_optimizer: EXTRA as boolean } as const;
 export const HAILUO_EXTRAS = {
   prompt_optimizer: EXTRA as boolean,
   fast_pretreatment: EXTRA as boolean,
+} as const;
+
+/** The v2 shapes — every concrete `ratio` ("adaptive" is not a shape). */
+export const V2_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
+
+/** The three H3 variants: 480P and 768P, never 2K. */
+export const H3_VARIANT_ROW = {
+  durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  resolutions: ["480p", "720p"],
+  ratios: V2_RATIOS,
 } as const;
 
 /** The 01 generation: 6 seconds, no expressible tier, no shape. */
@@ -72,7 +86,13 @@ export const MINIMAX_VIDEO_MODEL_PARAMS = {
   "MiniMax-H3": {
     durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     resolutions: ["720p", "1440p"],
-    ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+    ratios: V2_RATIOS,
+  },
+  "MiniMax-H3-Highspeed": H3_VARIANT_ROW,
+  "MiniMax-H3-Lite": H3_VARIANT_ROW,
+  "MiniMax-H3-Max": {
+    ...H3_VARIANT_ROW,
+    durations: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
   },
   "MiniMax-Hailuo-2.3": {
     durations: [6, 10],

@@ -48,10 +48,44 @@ function videoGenerationV2TypeTests(): void {
     ratio: "21:9",
   });
 
+  // The H3 variants are model literals, and 480P is on the route (theirs —
+  // MiniMax-H3 itself renders 768P/2K, which the runtime checks per model).
+  videoV2({
+    model: "MiniMax-H3-Highspeed",
+    content: [{ type: "text", text: "hi" }],
+    resolution: "480P",
+    duration: 6,
+    ratio: "16:9",
+  });
+  videoV2({
+    model: "MiniMax-H3-Lite",
+    content: [{ type: "text", text: "hi" }],
+    resolution: "768P",
+    duration: 4,
+    ratio: "9:16",
+  });
+  videoV2({
+    model: "MiniMax-H3-Max",
+    content: [{ type: "text", text: "hi" }],
+    resolution: "480P",
+    duration: 5,
+    ratio: "1:1",
+    extra: { prompt_expansion_mode: "quality" },
+  });
+  videoV2({
+    model: "MiniMax-H3-Max",
+    content: [{ type: "text", text: "hi" }],
+    resolution: "768P",
+    duration: 5,
+    ratio: "1:1",
+    // @ts-expect-error — "balance" is the misspelling the docs warn about; the mode is "balanced"
+    extra: { prompt_expansion_mode: "balance" },
+  });
+
   videoV2({
     model: "MiniMax-H3",
     content: [{ type: "text", text: "hi" }],
-    // @ts-expect-error — 768P and 2K are the whole documented set on this route
+    // @ts-expect-error — 480P, 768P and 2K are the whole documented set on this route
     resolution: "1080P",
     duration: 6,
     ratio: "16:9",

@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1437 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1438 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -400,6 +400,7 @@ export type ChatModelRef =
   | "minimax/MiniMax-M2.7"
   | "minimax/MiniMax-M2.7-highspeed"
   | "minimax/MiniMax-M3"
+  | "minimax/MiniMax-M3.1-Flash"
   | "mistral/codestral-2508"
   | "mistral/codestral-latest"
   | "mistral/deepseek-v4-1-flash-1017"

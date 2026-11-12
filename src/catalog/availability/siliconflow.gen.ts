@@ -29,7 +29,7 @@ export const availability = {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
     "fireworks-ai": { id: "accounts/fireworks/models/minimax-m3", narrows: { context: 512000, drops: ["image"] } },
     "huggingface": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
-    "minimax": "MiniMax-M3",
+    "minimax": { id: "MiniMax-M3", narrows: { context: 1000000 } },
     "nebius": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["image"] } },
     "novita-ai": { id: "minimax/minimax-m3", narrows: { context: 1000000 } },
     "openrouter": "minimax/minimax-m3",

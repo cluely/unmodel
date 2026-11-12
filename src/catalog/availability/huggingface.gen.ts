@@ -68,6 +68,7 @@ export const availability = {
   },
   "MiniMaxAI/MiniMax-M3.1-Flash": {
     "huggingface": "MiniMaxAI/MiniMax-M3.1-Flash",
+    "minimax": "MiniMax-M3.1-Flash",
     "nebius": "MiniMaxAI/MiniMax-M3.1-Flash",
     "novita-ai": "minimax/minimax-m3.1-flash",
     "nvidia": { id: "minimaxai/minimax-m3.1-flash", narrows: { context: 262144 } },

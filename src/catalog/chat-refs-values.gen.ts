@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1437 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1438 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -362,6 +362,7 @@ export const CHAT_MODEL_REFS = [
   "minimax/MiniMax-M2.7",
   "minimax/MiniMax-M2.7-highspeed",
   "minimax/MiniMax-M3",
+  "minimax/MiniMax-M3.1-Flash",
   "mistral/codestral-2508",
   "mistral/codestral-latest",
   "mistral/deepseek-v4-1-flash-1017",

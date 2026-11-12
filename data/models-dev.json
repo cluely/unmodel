@@ -198811,6 +198811,7 @@
         "reasoning": true,
         "reasoning_options": [],
         "release_date": "2025-10-27",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
@@ -198843,6 +198844,7 @@
         "reasoning": true,
         "reasoning_options": [],
         "release_date": "2025-12-23",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
@@ -198875,13 +198877,14 @@
         "reasoning": true,
         "reasoning_options": [],
         "release_date": "2026-02-12",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
       "MiniMax-M2.5-highspeed": {
         "attachment": false,
         "cost": {
-          "cache_read": 0.06,
+          "cache_read": 0.03,
           "cache_write": 0.375,
           "input": 0.6,
           "output": 2.4
@@ -198907,6 +198910,7 @@
         "reasoning": true,
         "reasoning_options": [],
         "release_date": "2026-02-13",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
@@ -198939,6 +198943,7 @@
         "reasoning": true,
         "reasoning_options": [],
         "release_date": "2026-03-18",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
@@ -198971,6 +198976,7 @@
         "reasoning": true,
         "reasoning_options": [],
         "release_date": "2026-03-18",
+        "status": "deprecated",
         "temperature": true,
         "tool_call": true
       },
@@ -199002,8 +199008,8 @@
         "id": "MiniMax-M3",
         "last_updated": "2026-06-25",
         "limit": {
-          "context": 1048576,
-          "output": 512000
+          "context": 1000000,
+          "output": 524288
         },
         "modalities": {
           "input": [
@@ -199024,6 +199030,53 @@
           }
         ],
         "release_date": "2026-06-01",
+        "structured_output": false,
+        "temperature": true,
+        "tool_call": true
+      },
+      "MiniMax-M3.1-Flash": {
+        "attachment": true,
+        "canonical_model_id": "minimax/MiniMax-M3.1-Flash",
+        "cost": {
+          "cache_read": 0.015,
+          "input": 0.15,
+          "output": 0.6
+        },
+        "description": "Frontier multimodal coding model with 1M context window and tunable thinking depth",
+        "family": "minimax",
+        "id": "MiniMax-M3.1-Flash",
+        "last_updated": "2026-10-19",
+        "limit": {
+          "context": 1000000,
+          "output": 524288
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "MiniMax-M3.1-Flash",
+        "open_weights": true,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-10-19",
+        "structured_output": false,
         "temperature": true,
         "tool_call": true
       }

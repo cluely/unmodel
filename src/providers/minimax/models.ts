@@ -24,11 +24,14 @@
 //   ./video-generation prices the exact request from the full table in
 //   VIDEO_PRICE_USD. Reading `cost.perVideoSecond` alone therefore gives the
 //   default-configuration rate, not every configuration's rate.
-// - MiniMax-H3 is genuinely billed per second of output: $0.08/s at 768P
-//   (the entry's `perVideoSecond`) and $0.13/s at 2K (an override in
-//   ./video-generation-v2, mirroring the Veo pattern). Input material is
-//   billed separately (images beyond the first 5 at $0.04 each; reference
-//   video by input duration) — see ./video-generation-v2.
+// - The H3 line (MiniMax-H3, -Highspeed, -Lite, -Max) is genuinely billed per
+//   second of output, by model and resolution; each entry's `perVideoSecond`
+//   is its 768P rate, the one resolution all four render, and the other tier
+//   (2K on MiniMax-H3, 480P on the rest) is priced from VIDEO_V2_MODEL_RULES
+//   in ./video-v2, mirroring the Veo pattern. Input material is billed
+//   separately (images beyond a per-model free quota; reference video by
+//   input duration) — see ./video-v2. H3 rates re-read from
+//   https://platform.minimax.io/docs/pricing/overview on 2026-11-12.
 // - The 01-generation video ids (T2V-01, T2V-01-Director, I2V-01,
 //   I2V-01-Director, I2V-01-live, S2V-01) are documented API values with no
 //   published USD rate, so they carry no `cost`.
@@ -256,7 +259,16 @@ export const videoModels = {
   },
 } as const satisfies Record<string, ModelInfo>;
 
-/** Models POST /v2/video_generation accepts (the H3 multimodal route). */
+/**
+ * Models POST /v2/video_generation accepts (the H3 multimodal route): "Model
+ * name. Currently available: `MiniMax-H3`, `MiniMax-H3-Highspeed`,
+ * `MiniMax-H3-Lite`, `MiniMax-H3-Max`." — and each "Supports text-to-video,
+ * image-to-video (first / last frame), and reference-to-video (reference
+ * image / video / audio)"
+ * (https://platform.minimax.io/docs/api-reference/video/generation/api/v2-video-generation.json,
+ * 2026-11-12). The three variants keep `openWeights: false`: no MiniMax page
+ * states open weights for them (the self-host guide covers MiniMax H3).
+ */
 export const videoV2Models = {
   "MiniMax-H3": {
     id: "MiniMax-H3",
@@ -265,8 +277,38 @@ export const videoV2Models = {
     ...VIDEO,
     openWeights: true,
     modalities: { input: ["text", "image", "video", "audio"], output: ["video"] },
-    // $0.08 per second at 768P; 2K ($0.13/s) is an override in
-    // ./video-generation-v2.
+    // "MiniMax-H3 | 768P | $0.08" per second of output; 2K ($0.13/s) is in
+    // VIDEO_V2_MODEL_RULES (pricing/overview, 2026-11-12).
+    cost: { perVideoSecond: 0.08 },
+  },
+  "MiniMax-H3-Highspeed": {
+    id: "MiniMax-H3-Highspeed",
+    name: "MiniMax H3 Highspeed",
+    family: "h3",
+    ...VIDEO,
+    modalities: { input: ["text", "image", "video", "audio"], output: ["video"] },
+    // "MiniMax-H3-Highspeed | 768P | $0.06" per second of output; 480P
+    // ($0.04/s) is in VIDEO_V2_MODEL_RULES (pricing/overview, 2026-11-12).
+    cost: { perVideoSecond: 0.06 },
+  },
+  "MiniMax-H3-Lite": {
+    id: "MiniMax-H3-Lite",
+    name: "MiniMax H3 Lite",
+    family: "h3",
+    ...VIDEO,
+    modalities: { input: ["text", "image", "video", "audio"], output: ["video"] },
+    // "MiniMax-H3-Lite | 768P | $0.04" per second of output; 480P ($0.025/s)
+    // is in VIDEO_V2_MODEL_RULES (pricing/overview, 2026-11-12).
+    cost: { perVideoSecond: 0.04 },
+  },
+  "MiniMax-H3-Max": {
+    id: "MiniMax-H3-Max",
+    name: "MiniMax H3 Max",
+    family: "h3",
+    ...VIDEO,
+    modalities: { input: ["text", "image", "video", "audio"], output: ["video"] },
+    // "MiniMax-H3-Max | 768P | $0.08" per second of output; 480P ($0.05/s) is
+    // in VIDEO_V2_MODEL_RULES (pricing/overview, 2026-11-12).
     cost: { perVideoSecond: 0.08 },
   },
 } as const satisfies Record<string, ModelInfo>;

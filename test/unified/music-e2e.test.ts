@@ -21,13 +21,20 @@ import { music } from "../../src/unified/music";
 const PROMPT = "slow post-rock build, brushed drums, no vocals";
 
 describe("the pack", () => {
-  test("registers exactly the five music providers, sorted", () => {
+  test("registers exactly the six music providers, sorted", () => {
     // fal is an aggregator: one provider id, ten music endpoints — MiniMax,
     // ElevenLabs, Lyria, Stable Audio, ACE-Step and DiffRhythm. Two of those
     // vendors also have first-party adapters in this same pack, which is the
     // point rather than a duplication: the same model billed by two different
     // companies is a business decision the ref makes visible.
-    expect([...music.providers]).toEqual(["elevenlabs", "fal", "google", "mureka", "stability"]);
+    expect([...music.providers]).toEqual([
+      "elevenlabs",
+      "fal",
+      "google",
+      "mureka",
+      "revana",
+      "stability",
+    ]);
   });
 
   test("a provider outside the pack is structural, not a validation error", () => {
@@ -238,6 +245,76 @@ describe("the routes this category deliberately does not unify", () => {
     const direct = elevenlabsMusic({ prompt: PROMPT, model_id: "music_v1", music_length_ms: 45000 });
     const unified = music({ model: "elevenlabs/music_v1", prompt: PROMPT, durationSeconds: 45 });
     expect(JSON.parse(JSON.stringify(unified))).toEqual(JSON.parse(JSON.stringify(direct)));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// revana — the one provider a bare prompt does not reach
+// ---------------------------------------------------------------------------
+
+describe("revana: a music request needs `style` or `lyrics`, and the vocabulary has neither", () => {
+  const REF = "revana/suno-v6";
+
+  test("a canonical request alone is refused by `revana.music`, in the API's own sentence", () => {
+    const result = music.safe({ model: REF, prompt: PROMPT });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]!.code).toBe("invalid_shape");
+    expect(result.errors[0]!.message).toBe(
+      'Send `input.style` (a genre and sound, such as "indie folk, warm vocals") or `input.lyrics`, ' +
+        "with `input.prompt` for the idea.",
+    );
+  });
+
+  test("`prompt` is never written to `style` to make it pass — the two are different fields", () => {
+    const params = music({ model: REF, prompt: PROMPT, style: "post-rock, brushed drums" });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "suno-v6",
+      input: { prompt: PROMPT, style: "post-rock, brushed drums" },
+    });
+    expect(params.request.url).toBe("https://api.revana.si/v1/generations");
+    expect(params.toSdk("revana")).toEqual(JSON.parse(JSON.stringify(params)));
+    expect(params.warnings).toEqual([]);
+    // One job, billed per job at the listed rate — what the quote endpoint
+    // answered for a styled request (`test/fixtures/revana/quote-oracle.json`).
+    const safe = music.safe({ model: REF, prompt: PROMPT, style: "post-rock, brushed drums" });
+    expect(safe.ok && safe.estimate?.costUSD).toBeCloseTo(0.08, 6);
+  });
+
+  test("`instrumental` reaches the wire, and `revana.music` holds its rule against `lyrics`", () => {
+    const params = music({ model: REF, prompt: PROMPT, style: "post-rock", instrumental: true });
+    expect((params as unknown as { input: Record<string, unknown> }).input).toEqual({
+      prompt: PROMPT,
+      instrumental: true,
+      style: "post-rock",
+    });
+    const both = music.safe({ model: REF, prompt: PROMPT, lyrics: "la la", instrumental: true });
+    expect(both.ok).toBe(false);
+    if (both.ok) return;
+    expect(both.errors[0]).toMatchObject({ code: "invalid_shape", path: ["instrumental"] });
+    expect(both.errors[0]!.message).toContain("An instrumental has no words");
+  });
+
+  test("the length, the seed and the encoding are declared gaps naming the four fields there are", () => {
+    const result = music.safe({
+      model: REF,
+      prompt: PROMPT,
+      style: "post-rock",
+      durationSeconds: 90,
+      seed: 7,
+      outputFormat: "mp3",
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["durationSeconds"]],
+      ["unsupported_param", ["seed"]],
+      ["unsupported_param", ["outputFormat"]],
+    ]);
+    for (const issue of result.errors) {
+      expect(issue.message).toContain("`prompt`, `style`, `lyrics` and `instrumental`");
+    }
   });
 });
 

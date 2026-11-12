@@ -968,8 +968,20 @@ const STT_PACK_PROVIDERS: string[] = [
  * Restoring the ~10% (401.8 × 1.1 ≈ 442, pinned at 440) is what the convention
  * asks; the alternative was deleting recorded reasons to buy bytes, which is
  * the thing this wave exists to stop doing.
+ *
+ * **Bumped 440 → 525 by revana**, measured 477.5 KiB (macOS), up from 423.0, of
+ * which the new provider is 52.5 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks. ONE model
+ * (`suno-v6`), and its own slice is 5.7: the adapter (2.4), the address (1.2),
+ * its generated row (0.9) and the music catalog, shape and price tables (1.2
+ * together). The other 46.8 is what every revana address carries because all
+ * of them are ONE route: the shared check battery (`checks.ts`, 27.1), the id
+ * lists for every kind (6.5), and 13.1 of estimate, schema, route and address
+ * derivations. That floor is the number to weigh at revana, not this pack's
+ * share of it: it is paid once per pack however many models the pack reaches.
+ * 525 is the measurement x 1.1.
  */
-const MUSIC_PACK_BUDGET_KIB = 440;
+const MUSIC_PACK_BUDGET_KIB = 525;
 
 /**
  * `unmodel/sfx`'s budget: the kernel plus two providers, one route each.
@@ -1027,8 +1039,15 @@ const STS_PACK_BUDGET_KIB = 205;
 /** The two providers `unmodel/sts`'s ready-made pack is allowed to reach. */
 const STS_PACK_PROVIDERS: string[] = ["elevenlabs", "hume"];
 
-/** The five providers `unmodel/music`'s ready-made pack is allowed to reach. */
-const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "fal", "google", "mureka", "stability"];
+/** The six providers `unmodel/music`'s ready-made pack is allowed to reach. */
+const MUSIC_PACK_PROVIDERS: string[] = [
+  "elevenlabs",
+  "fal",
+  "google",
+  "mureka",
+  "revana",
+  "stability",
+];
 
 /** The twenty providers `unmodel/tts`'s ready-made pack is allowed to reach. */
 const TTS_PACK_PROVIDERS: string[] = [

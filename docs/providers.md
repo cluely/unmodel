@@ -87,7 +87,8 @@ API is in private preview." ([orchestrator models](https://docs.perplexity.ai/do
 law — the wire spellings `/v1/text-to-speech/{voice_id}`, `/tts/bytes`, `/v1/speak`,
 `/v1/t2a_v2`, `/synthesize`, `:generateContent` survive only on the URL constants and wire
 types): openai (tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15), cartesia,
-deepgram (Aura 1/2), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave), inworld,
+deepgram (Aura 1/2), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave — deprecated,
+access ends 2026-11-13; see `hume.sts` below), inworld,
 lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
 resemble (`tts` + `ttsStream`), rime, smallest-ai,
 speechify (`tts` + `ttsStream`), stepfun (StepAudio 3, StepAudio 2.5), breezeblue (Breeze TTS 2 and
@@ -739,6 +740,16 @@ rates are TTS **per-character** rates for a route that takes no text. How an aud
 draws down a character quota is documented nowhere, so `cost` is omitted and the estimate
 returns `undefined` — "Unverifiable → caveat, never catalog". (The page's separate
 "Speech-to-speech" row is flagged `eviToggle` and belongs to EVI, the realtime product.)
+
+**Sunset — every Hume row is `status: "deprecated"`.** Hume's changelog, last captured at
+`https://web.archive.org/web/20261003165626/https://dev.hume.ai/changelog` (read 2026-11-12):
+"Hume is sunsetting the TTS and EVI APIs. Access ends November 13, 2026 at 12:01 a.m. EST, and
+both APIs remain fully supported until then." Voice conversion ships under `/v0/tts/` as a "TTS
+API addition", so `hume/voice-conversion` is flagged with `hume/octave` and `hume/octave-2`,
+and every `hume.tts` / `hume.sts` request warns `deprecated_model`. The live docs and pricing
+URLs answer 308 to Hume's Audio Decisions docs; `src/providers/hume/models.ts` cites the
+archived captures. Removing `unmodel/hume` after the cutoff (which leaves `unmodel/sts` one
+witness) is an owner decision.
 
 **Excluded: cartesia — the route was SUNSET eleven days before this wave landed.**
 `docs.cartesia.ai/build-with-cartesia/tts-models/api-changes` lists

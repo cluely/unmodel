@@ -15,5 +15,13 @@
   "url": "https://api.hume.ai/v0/tts",
   "headers": {
     "content-type": "application/json"
-  }
+  },
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
+  ]
 }

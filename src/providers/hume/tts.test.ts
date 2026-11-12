@@ -95,16 +95,27 @@ describe("hume.tts happy path", () => {
 });
 
 describe("hume.tts version → Octave mapping", () => {
-  test('version "2" resolves to the octave-2 catalog row', () => {
-    const r = tts.safe({ utterances: [{ text: "x", voice: { id: "v1" } }], version: "2" });
+  test('version "2" resolves to the octave-2 catalog row and prices at its half rate', () => {
+    const r = tts.safe({
+      utterances: [{ text: "a".repeat(1000), voice: { id: "v1" } }],
+      version: "2",
+    });
     expect(r.ok).toBe(true);
-    // octave-2 is a preview model, so it carries status "beta" (not deprecated).
-    expect(models["octave-2"].status).toBe("beta");
+    // 1,000 billed characters at Octave 2's $75/1M ("$$0.075/1,000").
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.075, 10);
+  });
+
+  test('version "1" prices at the Octave 1 rate', () => {
+    const r = tts.safe({ utterances: [{ text: "a".repeat(1000) }], version: "1" });
+    expect(r.ok).toBe(true);
+    // 1,000 billed characters at Octave 1's $150/1M ("$$0.15/1,000").
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.15, 10);
   });
 
   test("an omitted version still costs and caps against the octave row", () => {
     const r = tts.safe({ utterances: [{ text: "a".repeat(1000) }] });
     expect(r.ok).toBe(true);
+    // The higher of the two rates, so the estimate is a ceiling either way.
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.15, 10);
   });
 
@@ -259,7 +270,8 @@ describe("hume.tts documented rejections (doc audit 2026-08-13)", () => {
       include_timestamp_types: ["word", "phoneme"],
     });
     expect(two.ok).toBe(true);
-    if (two.ok) expect(two.warnings).toEqual([]);
+    // The one warning is the sunset (./models.ts), not the field.
+    if (two.ok) expect(two.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
 
     const empty = tts.safe({
       utterances: [{ text: "x" }],
@@ -267,7 +279,7 @@ describe("hume.tts documented rejections (doc audit 2026-08-13)", () => {
       include_timestamp_types: [],
     });
     expect(empty.ok).toBe(true);
-    if (empty.ok) expect(empty.warnings).toEqual([]);
+    if (empty.ok) expect(empty.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 
   test("instant_mode on the non-streaming route warns", () => {
@@ -323,7 +335,23 @@ describe("hume catalog", () => {
       expect(info.limit.characters).toBe(5000);
       expect(info.modalities.input).toEqual(["text"]);
       expect(info.modalities.output).toEqual(["audio"]);
-      expect(info.cost.perMillionCharacters).toBe(150);
+    }
+  });
+
+  test("each version carries its own Creator rate — Octave 2 is metered at half", () => {
+    expect(models.octave.cost.perMillionCharacters).toBe(150);
+    expect(models["octave-2"].cost.perMillionCharacters).toBe(75);
+  });
+
+  test("every row is deprecated — Hume ends TTS API access on 2026-11-13", () => {
+    for (const info of Object.values(models)) expect(info.status).toBe("deprecated");
+    for (const version of ["1", "2"] as const) {
+      const r = tts.safe({ utterances: [{ text: "x", voice: { id: "v" } }], version });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+        expect(r.warnings[0]?.model).toBe(version === "2" ? "octave-2" : "octave");
+      }
     }
   });
 });

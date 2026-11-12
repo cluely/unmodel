@@ -10,9 +10,14 @@
  * documented values are `"1"` and `"2"` — not numbers. Omitting it lets Hume
  * "automatically route the request to the most appropriate model". unmodel
  * resolves an omitted `version` to the `octave` catalog row so the character
- * cap and cost still apply; both versions share one cap and one published
- * rate, so nothing depends on which model actually serves the request, and
- * this is deliberately NOT a claim about Hume's routing.
+ * cap and cost still apply. Both versions share one cap, and Octave 1's rate
+ * is the higher of the two (Octave 2 is "metered at half rate" — ./models.ts),
+ * so whichever model serves the request the cap holds and the estimate is a
+ * ceiling; this is deliberately NOT a claim about Hume's routing.
+ *
+ * SUNSET: Hume ends TTS API access on November 13, 2026 at 12:01 a.m. EST;
+ * every catalog row is `status: "deprecated"`, so each request warns
+ * `deprecated_model`. Source and quote in ./models.ts.
  *
  * CAPS ARE PER UTTERANCE, NOT PER REQUEST: "5,000 characters per Utterance"
  * for `text`, "1,000 characters per Utterance" for `description`. A request
@@ -306,11 +311,13 @@ function checkInstantMode(
 // ---------------------------------------------------------------------------
 
 /**
- * Billed per character at the plan's published rate ($0.15 per 1,000
- * characters on Creator, stepping down to $0.05 on Business —
- * https://www.hume.ai/pricing; models.ts carries the highest of those as
- * `perMillionCharacters: 150`). `context` utterances are excluded from the
- * count — "These will not be converted to speech output".
+ * Billed per character at the plan's published rate for the Octave version
+ * (Octave 1: $0.15 per 1,000 characters on Creator, stepping down to $0.05 on
+ * Business; Octave 2: half that, $0.075 down to $0.025 — the archived
+ * https://www.hume.ai/pricing cited in models.ts, which carries each version's
+ * highest rate as `perMillionCharacters`: 150 and 75). `context` utterances
+ * are excluded from the count — "These will not be converted to speech
+ * output".
  *
  * UNVERIFIED WORST CASE — the `num_generations` multiplier below is an
  * ASSUMPTION, not a sourced rate. Hume publishes no statement that a request
@@ -401,7 +408,7 @@ const validator = createValidator<TtsBody, unknown>({
   endpoint: "hume.tts",
   schema,
   // See the module JSDoc: an omitted `version` resolves to `octave` purely so
-  // the (identical) cap and rate still apply.
+  // the shared cap and the higher (Octave 1) rate still apply.
   modelId: (params) => (params.version === "2" ? "octave-2" : "octave"),
   catalog: models,
   checks: [checkUtteranceLengths, checkVersionTwoVoice, checkTimestampTypes, checkInstantMode],
@@ -418,8 +425,9 @@ const validator = createValidator<TtsBody, unknown>({
  * headers. Auth is your job: add an `X-Hume-Api-Key` header.
  *
  * COST: `estimate.costUSD` prices the `utterances` text (not `context`) at
- * Hume's highest published character rate, $0.15 per 1,000 characters
- * (https://www.hume.ai/pricing), and then multiplies by `num_generations`.
+ * the selected version's highest published character rate — $0.15 per 1,000
+ * characters for Octave 1 and for an omitted `version`, $0.075 for
+ * `version: "2"` (./models.ts) — and then multiplies by `num_generations`.
  * That multiplication is a deliberate worst-case ceiling, NOT a documented
  * rate: Hume publishes a per-character price and says nothing anywhere about
  * how `num_generations` (max 5) is billed. Assume the true cost lies between

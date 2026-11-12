@@ -1325,9 +1325,61 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
  * every pack here is the shared kernel and vocabulary, not the adapters. A
  * pack that jumps well above its neighbours has acquired something structural,
  * not another model.
+ *
+ * ## These figures are not deterministic
+ *
+ * Found during the revana wave, and it changes how every number below should
+ * be read: **building one unchanged tree repeatedly, on one machine, gives
+ * different figures.** rolldown-plugin-dts settles which declarations share a
+ * chunk differently from one build to the next, and this walker counts a whole
+ * chunk when an entry touches any of it. The notes below call the artefact
+ * "chunking" and "platform-sensitive"; it is also run-to-run.
+ *
+ * Measured on macOS, in KiB. The commit before revana, four builds:
+ *
+ * | pack | lowest | highest |
+ * |---|---|---|
+ * | `image` | 1118.5 | 1155.0 |
+ * | `image-edit` | 634.3 | 744.2 |
+ * | `video` | 1024.7 | 1207.2 |
+ * | `upscale` | 463.4 | 548.9 |
+ * | `lipsync` | 465.9 | 551.3 |
+ * | `avatar` | 469.3 | 554.7 |
+ * | `sfx` | 431.2 | 526.5 — over its own 520 pin, on one build in four |
+ *
+ * With revana's adapters registered in all eight of its packs, ten builds of
+ * the one tree:
+ *
+ * | pack | lowest | most often | highest |
+ * |---|---|---|---|
+ * | `image` | 1212.7 | 1251.1 | 1354.7 |
+ * | `image-edit` | 717.4 | 841.5 | 841.5 |
+ * | `video` | 1172.8 | 1337.8 | 1337.8 |
+ * | `upscale` | 565.7 | 638.2 | 640.5 |
+ * | `lipsync` | 555.2 | 640.8 | 643.1 |
+ * | `avatar` | 563.4 | 645.5 | 647.8 |
+ *
+ * …and twice among the two dozen or so other builds of this wave, one layout
+ * much further out: rolldown placed a small pack's ENTRY declaration in the same
+ * chunk as `unmodel/image-edit`'s, so the walker counted the whole image-edit
+ * graph for it — `avatar` at 820.0 and `lipsync` at 808.6 (the latter on a
+ * tree where revana was not in the lipsync pack at all, which is what shows it
+ * is the layout and not the roster).
+ *
+ * What revana adds for certain is one chunk, read off the build: its
+ * `generation.d.ts` — the four generated shape tables and the wire types they
+ * narrow — 81.9 KiB, reached by every pack it joins, because eight addresses
+ * are one route and so one set of wire types.
+ *
+ * So the four pins this wave moved are the highest figure observed x 1.1, the
+ * layout above included, and each is **flagged for CI confirmation** per the
+ * Linux-figure rule in CLAUDE.md. The packs this wave does not touch keep
+ * their pins, `sfx`'s included.
  */
 const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
-  image: 1260,
+  // Bumped 1260 → 1490 by the revana wave: 1354.7 at the highest (see "These
+  // figures are not deterministic" above), up from a pre-revana high of 1155.0.
+  image: 1490,
   "image-edit": 1660,
   video: 1880,
   // The three fal-only packs, and the cheapest declarations in the table.
@@ -1354,7 +1406,11 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // runner, because rolldown-plugin-dts assigns one shared-vocabulary chunk to
   // a different side of the lipsync/avatar boundary per platform. 770 is the
   // Linux figure ×1.1; the number that matters is still the SPREAD test.
-  lipsync: 770,
+  //
+  // Bumped 770 → 890 by the revana wave: 643.1 on the usual layouts and 808.6
+  // on the one that co-locates this entry with image-edit's (see "These figures
+  // are not deterministic" above). 890 is that x 1.1.
+  lipsync: 890,
   // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
   // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
   // components — the 3D roster added `ModelUrls`, `BasicAnimations` and their
@@ -1386,14 +1442,23 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Re-checked on the finished wave, which is when the chunk boundary settles:
   // **543.0** measured, against lipsync's 539.6 — still within 0.7% of each
   // other, and 600 is measured x 1.1. The artefact reading holds; the pin stays.
-  avatar: 600,
+  //
+  // Bumped 600 → 905 by the revana wave: 647.8 on the usual layouts and 820.0
+  // on the one that co-locates this entry with image-edit's (see "These figures
+  // are not deterministic" above). 905 is that x 1.1.
+  avatar: 905,
   // Bumped 450 → 560 by the Topaz wave: 508.8 measured, the largest jump of the
   // three and the one with a real cause rather than a chunking artefact. Topaz
   // brings FIFTEEN rows whose `extras` are hand-transcribed per-model settings
   // tables — between eight and twenty-four typed dials each — so `tsc` has
   // fifteen distinct object types to instantiate where fal's ten share three
   // shapes. That is the declaration cost of the thing this provider exists for.
-  upscale: 560,
+  //
+  // Bumped 560 → 705 by the revana wave: 640.6 at the highest observed (see
+  // "These figures are not deterministic" above), up from a pre-revana high of
+  // 548.9. This entry was not seen on the image-edit layout; if CI shows it
+  // there, re-pin from that figure.
+  upscale: 705,
   // `unmodel/3d`: 534.1 measured. The most expensive of the four small packs
   // and the only one with two providers, which is most of the difference — the
   // `tripo3d` half brings four literal model ids, two quality ladders and its

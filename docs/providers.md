@@ -928,6 +928,70 @@ request states what it is priced by (Revana publishes no default resolution, dur
 exact answer. Language models carry their base token rates, and `revana.checkChat` reports the
 charge the response itself states (`usage.cost_usd`).
 
+**The unified refs — eight packs, one body.** Every media address has an adapter
+(`unmodel/revana/unified`), so `revana/<model>` is a ref in eight category packs:
+
+| pack | finishes in | models |
+|---|---|---|
+| `unmodel/video` | `revana.video` | 69 — every video model but the two views below |
+| `unmodel/lipsync` | `revana.lipsync` | 1 (`bytedance-lipsync`) |
+| `unmodel/avatar` | `revana.avatar` | 4 |
+| `unmodel/image` | `revana.image` | 56 — the picture models that can start from a prompt alone |
+| `unmodel/image-edit` | `revana.imageEdit` | 46 |
+| `unmodel/upscale` | `revana.upscale` | 1 (`recraft-crisp-upscale`) |
+| `unmodel/tts` | `revana.tts` | 4 |
+| `unmodel/music` | `revana.music` | 1 (`suno-v6`) |
+
+The per-model rows the packs narrow by — a model's listed clip lengths as an enum, its
+resolutions as canonical tiers, its shapes, its voice ids, its extras — are **generated** from
+the same catalog snapshot (`gen/<category>-params.gen.ts`, one per pack) and published by
+reference on `unmodel/revana/values`.
+
+The adapters compile and stop. Each canonical input is written to the field of the same meaning
+under `input`, and the address it finishes in answers — in the API's own sentence, at the
+canonical path — whether that combination, that value or that field is one the model offers.
+`unmodel/video` derives no route here: `revana/veo-3.1` with a first frame is image-to-video, a
+reference picture on it is `"veo-3.1" cannot take this combination of inputs. It takes: …`, and
+a picture beside a motion-control clip rides along exactly as it does on the wire. The three
+input schemas need no branch for the same reason — every field the vocabulary reaches has the
+same name in `ModelInput`, `SeedanceInput` and `NemesisInput`, and a field a schema lacks
+(`seed` on Seedance 2.5, `duration` on Nemesis) is refused by that schema's own unknown-key rule.
+A second copy of any of this in the adapter would be the second definition of valid §1 forbids.
+
+What the adapters do decide is only what is about the canonical vocabulary rather than the wire:
+
+- **A size tier maps to a listed resolution only when it is the same word ignoring case** —
+  `"4k"` is `"4K"`, the rule the API matches settings by. Nothing is mapped by meaning: Revana
+  does not publish how many lines `2K` is, so `1440p` reaches no model, and `2K`, `768p` and
+  `1MP` stay reachable in their own spelling through `providerOptions.revana.input.resolution`.
+- **A media reference is a public `https://` URL.** There is no base64 field, no `data:` URI and
+  no file id on the route, so inline bytes (and a `Blob`) are refused naming
+  `POST /v1/uploads`, which turns a local file into one.
+- **A picture is sized by shape and by tier; there is no pixel field.** `dimensions` and a `WxH`
+  `size` are sent as the shape they describe, with the `approximated_param` that always carries.
+
+**Declared gaps**, each naming what Revana does take: `n` on video (one generation is one clip);
+`outputFormat` everywhere and `outputDelivery` on pictures (no encoding or delivery field — the
+finished files are the `output.urls` of a poll); `strength` on edits (an edit is steered by
+`prompt` alone); `factor` on upscale (no multiplier field); `durationSeconds` and `seed` on music
+("It takes prompt, style, lyrics and instrumental"). Three are worth knowing before they are
+hit:
+
+- **A music request needs `style` or `lyrics`**, and the canonical vocabulary has a word for
+  neither. Both are per-model extras, and `music({ model: "revana/suno-v6", prompt })` alone is
+  refused by `revana.music` with the API's sentence. `prompt` is deliberately *not* written to
+  `style` to make it pass: they are two fields with two caps, and Revana says which is which.
+- **`dialogue` is not reachable from `unmodel/tts`.** It replaces `text` and `voice` ("not
+  both"), and `text` is the one word that vocabulary requires. It is `revana.tts`'s, by name.
+- **An upscale source is the still.** The model takes "input.image_url or input.video_url" —
+  two fields — and a canonical `{ url }` cannot say which medium is behind it, so every row is
+  `sources: ["image"]`; a clip is `revana.upscale`'s, by name.
+
+Route-level facts stay out of this layer exactly as they stay out of the one below it: a
+`negativePrompt` is sent and warned about, never refused, and a `prompt` is an extra on the
+lipsync and avatar rows rather than a requirement, although some of those models' routes were
+seen to want one.
+
 **What is not here, and why.**
 
 - `revana.chat` is **not** an `unmodel/chat` ref and has no `.toApi`. Both are derived from
@@ -972,16 +1036,16 @@ leaves rather than whole validators.
 |---|---|---|---|
 | `unmodel/chat` | `chat` | n/a — three dialect codecs, composed with all 32 concrete provider `chat` validators | 32: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
 | `unmodel/chat/factory` | `createChat` | the same three codecs, no registry | whichever provider validators you register: `createChat({ anthropic, openai })` |
-| `unmodel/image` | `image`, `createImage` | 17 | black-forest-labs, bria, bytedance, fal, google, ideogram, kling, krea, leonardo, luma, openai, recraft, reve, runway, stability, vidu, xai |
-| `unmodel/tts` | `tts`, `createTts` | 19 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume, inworld, lmnt, minimax, murf, openai, resemble, rime, smallest-ai, speechify, stepfun |
+| `unmodel/image` | `image`, `createImage` | 18 | black-forest-labs, bria, bytedance, fal, google, ideogram, kling, krea, leonardo, luma, openai, recraft, revana, reve, runway, stability, vidu, xai |
+| `unmodel/tts` | `tts`, `createTts` | 20 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume, inworld, lmnt, minimax, murf, openai, resemble, revana, rime, smallest-ai, speechify, stepfun |
 | `unmodel/stt` | `stt`, `createStt` | 13 | assemblyai, cartesia, deepgram, elevenlabs, fal, gladia, google, inworld, mistral, openai, revai, soniox, speechmatics |
-| `unmodel/video` | `video`, `createVideo` | 13 | alibaba, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu, xai |
-| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 5 | black-forest-labs, fal, ideogram, openai, recraft — the five whose primary editing route is *image + prompt, no mask* |
-| `unmodel/music` | `music`, `createMusic` | 5 | elevenlabs, fal, google, mureka, stability |
+| `unmodel/video` | `video`, `createVideo` | 15 | alibaba, atlascloud, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, revana, runway, vidu, xai |
+| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 6 | black-forest-labs, fal, ideogram, openai, recraft, revana — the six whose primary editing route is *image + prompt, no mask* |
+| `unmodel/music` | `music`, `createMusic` | 6 | elevenlabs, fal, google, mureka, revana, stability |
 | `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (1 model, `POST /v1/sound-generation`), fal (6 endpoints from five vendors, ElevenLabs' own among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
-| `unmodel/lipsync` | `lipsync`, `createLipsync` | 4 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
-| `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (the two engines that render raw image input — Avatar III does not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
-| `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (11 endpoints, seven taking a still and four taking a clip), topaz (15 models over two routes, stills only, multipart bodies) |
+| `unmodel/lipsync` | `lipsync`, `createLipsync` | 5 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), revana (1 curated model on the one route it serves every media model from), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
+| `unmodel/avatar` | `avatar`, `createAvatar` | 5 | fal (8 endpoints; the still-driven twin of lipsync), heygen (the two engines that render raw image input — Avatar III does not), revana (4 curated models, every one still-driven, with `prompt` as a per-model extra), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
+| `unmodel/upscale` | `upscale`, `createUpscale` | 3 | fal (11 endpoints, seven taking a still and four taking a clip), revana (1 model, a still, no multiplier), topaz (15 models over two routes, stills only, multipart bodies) |
 | `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (4 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
 | `unmodel/sts` | `sts`, `createSts` | 2 | elevenlabs (3 models, `POST /v1/speech-to-speech/{voice_id}`), hume (1 synthetic id, `POST /v0/tts/voice_conversion/file`) — the smallest pack in the library, the only one with no fal arm, and the only category where three of five words are REQUIRED. Both endpoints are `MULTIPART_ONLY`, so there is no `unified.sts` CLI entry |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
@@ -989,7 +1053,7 @@ leaves rather than whole validators.
 
 **Layout.** Each adapter lives in the provider's own directory as
 `unified-<category>.ts`, re-exported from a single `unified.ts` barrel published as
-`unmodel/<provider>/unified` (47 such subpaths). A provider serving more than one category
+`unmodel/<provider>/unified` (49 such subpaths). A provider serving more than one category
 therefore splits per category, so no pack pays for another category's schemas or catalogs.
 `test/bundle-budget.test.ts` asserts a pack can only reach a provider through that
 provider's uniformly-named endpoint module — which is what makes the address-vs-wire
@@ -1006,7 +1070,7 @@ no aggregate of provider wire types. All 76 entries emit an empty JavaScript mod
 `test/types-entries.test.ts` asserts against a real build alongside the completeness drift
 guard keyed on `src/cli-registry.ts`.
 
-**Values without a validator.** The 47 providers with a unified adapter also publish
+**Values without a validator.** The 49 providers with a unified adapter also publish
 `unmodel/<provider>/values`: the runtime twin of those types — `<CATEGORY>_MODEL_PARAMS`,
 `<CATEGORY>_MODELS` and `<CATEGORY>_FORMAT_SPEC` per category served, plus that provider's own
 published enums (voices, sizes, ratios, durations, codecs, languages) under their own names.

@@ -13,47 +13,19 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "step-1-32k": {
-    id: "step-1-32k",
-    name: "Step 1 (32K)",
-    attachment: false,
-    reasoning: false,
-    toolCall: true,
-    temperature: true,
-    openWeights: false,
-    knowledge: "2024-06",
-    releaseDate: "2025-01-01",
-    lastUpdated: "2026-02-13",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 32768, output: 32768, input: 32768 },
-    cost: { input: 2.05, output: 9.59, cacheRead: 0.41 },
-  },
-  "step-2-16k": {
-    id: "step-2-16k",
-    name: "Step 2 (16K)",
-    attachment: false,
-    reasoning: false,
-    toolCall: true,
-    temperature: true,
-    openWeights: false,
-    knowledge: "2024-06",
-    releaseDate: "2025-01-01",
-    lastUpdated: "2026-02-13",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 16384, output: 8192, input: 16384 },
-    cost: { input: 5.21, output: 16.44, cacheRead: 1.04 },
-  },
   "step-3.5-flash": {
     id: "step-3.5-flash",
     name: "Step 3.5 Flash",
+    family: "step",
     attachment: false,
     reasoning: true,
     toolCall: true,
+    structuredOutput: true,
     temperature: true,
     openWeights: true,
     knowledge: "2025-01",
     releaseDate: "2026-01-29",
-    lastUpdated: "2026-06-15",
+    lastUpdated: "2026-02-13",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 256000, output: 256000, input: 256000 },
     cost: { input: 0.1, output: 0.3, cacheRead: 0.02 },
@@ -61,9 +33,11 @@ export const models = {
   "step-3.5-flash-2603": {
     id: "step-3.5-flash-2603",
     name: "Step 3.5 Flash 2603",
+    family: "step",
     attachment: false,
     reasoning: true,
     toolCall: true,
+    structuredOutput: true,
     temperature: true,
     openWeights: true,
     knowledge: "2025-01",
@@ -79,14 +53,30 @@ export const models = {
     attachment: true,
     reasoning: true,
     toolCall: true,
+    structuredOutput: true,
     temperature: true,
     openWeights: true,
     knowledge: "2026-03-01",
     releaseDate: "2026-05-29",
-    lastUpdated: "2026-06-29",
+    lastUpdated: "2026-05-29",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 256000, output: 256000, input: 256000 },
-    cost: { input: 0.185, output: 1.11, cacheRead: 0.037 },
+    cost: { input: 0.2, output: 1.15, cacheRead: 0.04 },
+  },
+  "step-5-preview": {
+    id: "step-5-preview",
+    name: "Step 5 Preview",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-16",
+    lastUpdated: "2026-09-20",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1024000, output: 65536, input: 1024000 },
+    cost: { input: 1, output: 2.7, cacheRead: 0.1 },
   },
   "step-tts-2": {
     id: "step-tts-2",
@@ -106,7 +96,7 @@ export const models = {
     id: "stepaudio-2.5-asr",
     name: "StepAudio 2.5 ASR",
     family: "step",
-    attachment: false,
+    attachment: true,
     reasoning: false,
     toolCall: false,
     temperature: false,
@@ -133,7 +123,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type StepfunAiModelId = keyof typeof models;
-export type StepfunAiTextModelId = "step-1-32k" | "step-2-16k" | "step-3.5-flash" | "step-3.5-flash-2603" | "step-3.7-flash" | "stepaudio-2.5-asr";
+export type StepfunAiTextModelId = "step-3.5-flash" | "step-3.5-flash-2603" | "step-3.7-flash" | "step-5-preview" | "stepaudio-2.5-asr";
 export type StepfunAiImageModelId = never;
 export type StepfunAiAudioModelId = "step-tts-2" | "stepaudio-2.5-tts";
 export type StepfunAiVideoModelId = never;

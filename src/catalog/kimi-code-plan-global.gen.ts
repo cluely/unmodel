@@ -5,11 +5,11 @@
 import type { ModelInfo, ProviderInfo } from "../core/catalog-types";
 
 export const provider = {
-  id: "kimi-for-coding",
-  name: "Kimi For Coding",
+  id: "kimi-code-plan-global",
+  name: "Kimi For Coding (kimi.ai)",
   env: ["KIMI_API_KEY"],
-  doc: "https://www.kimi.com/code/docs/en/third-party-tools/other-coding-agents.html",
-  api: "https://api.kimi.com/coding/v1",
+  doc: "https://www.kimi.ai/code/docs/en/kimi-code/models.html",
+  api: "https://api.kimi.ai/coding/v1",
 } as const satisfies ProviderInfo;
 
 export const models = {
@@ -17,7 +17,7 @@ export const models = {
     id: "k3",
     name: "Kimi K3",
     family: "kimi-k3",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
@@ -33,7 +33,7 @@ export const models = {
     id: "k3-256k",
     name: "Kimi K3-256K",
     family: "kimi-k3",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
@@ -45,21 +45,51 @@ export const models = {
     limit: { context: 262144, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
-  "kimi-for-coding": {
-    id: "kimi-for-coding",
-    name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+  "k3.1-pro": {
+    id: "k3.1-pro",
+    name: "Kimi K3.1 Pro",
+    family: "kimi-k3",
     attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: false,
     openWeights: true,
-    knowledge: "2025-01",
-    releaseDate: "2026-06-12",
-    lastUpdated: "2026-06-12",
+    releaseDate: "2026-10-23",
+    lastUpdated: "2026-10-23",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 262144, output: 32768 },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
+  "k3.1-pro-highspeed": {
+    id: "k3.1-pro-highspeed",
+    name: "Kimi K3.1 Pro Highspeed",
+    family: "kimi-k3",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: true,
+    releaseDate: "2026-10-23",
+    lastUpdated: "2026-10-23",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
+  "kimi-for-coding": {
+    id: "kimi-for-coding",
+    name: "kimi-for-coding",
+    family: "kimi-k2",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: false,
+    openWeights: false,
+    releaseDate: "2026-09-11",
+    lastUpdated: "2026-09-11",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 32768 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
   "kimi-for-coding-highspeed": {
@@ -81,8 +111,8 @@ export const models = {
   },
 } as const satisfies Record<string, ModelInfo>;
 
-export type KimiForCodingModelId = keyof typeof models;
-export type KimiForCodingTextModelId = "k3" | "k3-256k" | "kimi-for-coding" | "kimi-for-coding-highspeed";
-export type KimiForCodingImageModelId = never;
-export type KimiForCodingAudioModelId = never;
-export type KimiForCodingVideoModelId = never;
+export type KimiCodePlanGlobalModelId = keyof typeof models;
+export type KimiCodePlanGlobalTextModelId = "k3" | "k3-256k" | "k3.1-pro" | "k3.1-pro-highspeed" | "kimi-for-coding" | "kimi-for-coding-highspeed";
+export type KimiCodePlanGlobalImageModelId = never;
+export type KimiCodePlanGlobalAudioModelId = never;
+export type KimiCodePlanGlobalVideoModelId = never;

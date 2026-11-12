@@ -2011,7 +2011,7 @@ chat({ model: "openai/gpt-5.2", messages: [], nativeTools: [{ provider: "openai"
   });
 });
 
-describe("unmodel/catalog/typed: the 175 providers with no subpath get completions", () => {
+describe("unmodel/catalog/typed: the 198 providers with no subpath get completions", () => {
   test("getModelTyped completes a provider's model ids; getModel still does not", () => {
     const typed = completionsAt(`import { getModelTyped } from "./src/catalog/typed.gen";
 getModelTyped("anthropic", "¦");`);

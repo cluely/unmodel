@@ -81,7 +81,6 @@ export const availability = {
   },
   "mistral-nemo": {
     "mistral": "mistral-nemo",
-    "novita-ai": { id: "mistralai/mistral-nemo", narrows: { context: 60288 } },
     "openrouter": "mistralai/mistral-nemo",
     "vercel": "mistral/mistral-nemo",
   },
@@ -109,7 +108,6 @@ export const availability = {
   },
   "pixtral-12b": {
     "mistral": "pixtral-12b",
-    "vercel": "mistral/pixtral-12b",
   },
   "pixtral-large-latest": {
     "mistral": "pixtral-large-latest",

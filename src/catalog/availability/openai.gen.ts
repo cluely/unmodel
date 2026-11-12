@@ -24,8 +24,6 @@ export const availability = {
   },
   "gpt-3.5-turbo": {
     "openai": "gpt-3.5-turbo",
-    "openrouter": "openai/gpt-3.5-turbo",
-    "vercel": "openai/gpt-3.5-turbo",
   },
   "gpt-4": {
     "openai": "gpt-4",
@@ -34,8 +32,6 @@ export const availability = {
   "gpt-4-turbo": {
     "azure": "gpt-4-turbo",
     "openai": "gpt-4-turbo",
-    "openrouter": "openai/gpt-4-turbo",
-    "vercel": "openai/gpt-4-turbo",
   },
   "gpt-4.1": {
     "azure": { id: "gpt-4.1", narrows: { drops: ["pdf"] } },
@@ -203,16 +199,15 @@ export const availability = {
   },
   "gpt-realtime-2.1": {
     "openai": "gpt-realtime-2.1",
+    "vercel": { id: "openai/gpt-realtime-2.1", narrows: { drops: ["image"] } },
   },
   "o1": {
     "azure": { id: "o1", narrows: { drops: ["pdf"] } },
     "openai": "o1",
-    "openrouter": "openai/o1",
     "vercel": "openai/o1",
   },
   "o1-pro": {
     "openai": "o1-pro",
-    "openrouter": "openai/o1-pro",
   },
   "o3": {
     "azure": { id: "o3", narrows: { drops: ["pdf"] } },
@@ -223,7 +218,6 @@ export const availability = {
   "o3-mini": {
     "azure": "o3-mini",
     "openai": "o3-mini",
-    "openrouter": "openai/o3-mini",
     "vercel": "openai/o3-mini",
   },
   "o3-pro": {
@@ -234,7 +228,6 @@ export const availability = {
   "o4-mini": {
     "azure": "o4-mini",
     "openai": "o4-mini",
-    "openrouter": "openai/o4-mini",
     "vercel": "openai/o4-mini",
   },
 } as const satisfies AvailabilityMap;

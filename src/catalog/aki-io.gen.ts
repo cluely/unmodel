@@ -13,9 +13,9 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "deepseek-v4-flash-0731-284b": {
-    id: "deepseek-v4-flash-0731-284b",
-    name: "DeepSeek V4 Flash 0731",
+  "deepseek-v4.1-flash-552b": {
+    id: "deepseek-v4.1-flash-552b",
+    name: "DeepSeek V4.1 Flash",
     family: "deepseek-flash",
     attachment: false,
     reasoning: true,
@@ -24,11 +24,11 @@ export const models = {
     temperature: true,
     openWeights: true,
     knowledge: "2025-05",
-    releaseDate: "2026-07-31",
-    lastUpdated: "2026-07-31",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 81920 },
-    cost: { input: 0.2, output: 0.5, cacheRead: 0.1 },
+    cost: { input: 0.280375, output: 1.1215, cacheRead: 0.11215 },
   },
   "gemma4-26b": {
     id: "gemma4-26b",
@@ -42,9 +42,25 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-04-02",
     lastUpdated: "2026-04-02",
-    modalities: { input: ["text", "image"], output: ["text"] },
+    modalities: { input: ["text"], output: ["text"] },
     limit: { context: 256000, output: 32768 },
-    cost: { input: 0.1, output: 0.5 },
+    cost: { input: 0.11215, output: 0.56075 },
+  },
+  "glm5.3-754b": {
+    id: "glm5.3-754b",
+    name: "GLM-5.3",
+    family: "glm",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 524288, output: 81920 },
+    cost: { input: 1.1215, output: 3.92525, cacheRead: 0.280375 },
   },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
@@ -56,28 +72,12 @@ export const models = {
     structuredOutput: true,
     temperature: true,
     openWeights: true,
+    knowledge: "2024-06",
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 128000, output: 32768 },
-    cost: { input: 0.15, output: 0.55 },
-  },
-  "kimi-k2.7-code-1100b": {
-    id: "kimi-k2.7-code-1100b",
-    name: "Kimi K2.7 Code",
-    family: "kimi-k2",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: false,
-    openWeights: true,
-    knowledge: "2025-01",
-    releaseDate: "2026-06-12",
-    lastUpdated: "2026-06-12",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262144, output: 81920 },
-    cost: { input: 0.86, output: 3, cacheRead: 0.18 },
+    cost: { input: 0.168225, output: 0.616825 },
   },
   "mistral4-119b": {
     id: "mistral4-119b",
@@ -91,9 +91,9 @@ export const models = {
     knowledge: "2025-06",
     releaseDate: "2026-03-16",
     lastUpdated: "2026-03-16",
-    modalities: { input: ["text", "image"], output: ["text"] },
+    modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 81920 },
-    cost: { input: 0.2, output: 0.6 },
+    cost: { input: 0.2243, output: 0.6729 },
   },
   "qwen3.6-35b": {
     id: "qwen3.6-35b",
@@ -107,9 +107,10 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-04-17",
     lastUpdated: "2026-04-17",
-    modalities: { input: ["text", "image"], output: ["text"] },
+    status: "deprecated",
+    modalities: { input: ["text"], output: ["text"] },
     limit: { context: 256000, output: 32768 },
-    cost: { input: 0.15, output: 0.5 },
+    cost: { input: 0.168225, output: 0.56075 },
   },
   "qwen3.8-27b": {
     id: "qwen3.8-27b",
@@ -123,14 +124,14 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-08-14",
     lastUpdated: "2026-08-14",
-    modalities: { input: ["text", "image"], output: ["text"] },
+    modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
-    cost: { input: 0.3, output: 2.2, cacheRead: 0.1 },
+    cost: { input: 0.33645, output: 2.4673, cacheRead: 0.11215 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type AkiIoModelId = keyof typeof models;
-export type AkiIoTextModelId = "deepseek-v4-flash-0731-284b" | "gemma4-26b" | "gpt-oss-120b" | "kimi-k2.7-code-1100b" | "mistral4-119b" | "qwen3.6-35b" | "qwen3.8-27b";
+export type AkiIoTextModelId = "deepseek-v4.1-flash-552b" | "gemma4-26b" | "glm5.3-754b" | "gpt-oss-120b" | "mistral4-119b" | "qwen3.6-35b" | "qwen3.8-27b";
 export type AkiIoImageModelId = never;
 export type AkiIoAudioModelId = never;
 export type AkiIoVideoModelId = never;

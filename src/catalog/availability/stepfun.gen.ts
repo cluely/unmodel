@@ -27,7 +27,6 @@ export const availability = {
   },
   "step-3.5-flash": {
     "huggingface": "stepfun-ai/Step-3.5-Flash",
-    "nvidia": "stepfun-ai/step-3.5-flash",
     "openrouter": "stepfun/step-3.5-flash",
     "stepfun": "step-3.5-flash",
   },
@@ -37,7 +36,7 @@ export const availability = {
   "step-3.7-flash": {
     "deepinfra": "stepfun-ai/Step-3.7-Flash",
     "huggingface": "stepfun-ai/Step-3.7-Flash",
-    "nvidia": { id: "stepfun-ai/step-3.7-flash", narrows: { drops: ["video"] } },
+    "novita-ai": "stepfun/step-3.7-flash",
     "openrouter": "stepfun/step-3.7-flash",
     "stepfun": "step-3.7-flash",
     "vercel": { id: "stepfun/step-3.7-flash", narrows: { drops: ["video"] } },

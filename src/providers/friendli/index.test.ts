@@ -8,7 +8,7 @@ describe("friendli", () => {
 
   test("a catalog model validates wire-pure", () => {
     const params = {
-      model: "deepseek-ai/DeepSeek-V3.2" as const,
+      model: "zai-org/GLM-5.3" as const,
       messages: [{ role: "user" as const, content: "hi" }],
     };
     expect(models[params.model]).toBeDefined();

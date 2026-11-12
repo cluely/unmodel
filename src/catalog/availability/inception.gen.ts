@@ -21,7 +21,6 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
 export const availability = {
   "mercury-2": {
     "inception": "mercury-2",
-    "openrouter": "inception/mercury-2",
     "vercel": "inception/mercury-2",
   },
   "mercury-edit-2": {

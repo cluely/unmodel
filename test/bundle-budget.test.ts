@@ -65,7 +65,7 @@ function splitProviders(): ReadonlySet<string> {
  * | anthropic | the flagship cross-dialect path: encoder + the openai-chat codec |
  * | groq | the leanest chat overlay — the floor everything else is measured against |
  * | google | gemini codec + the largest hand-written constraint tables |
- * | deepinfra | a fleet overlay that now pays for the gemini codec (`.toApi("google")`) |
+ * | deepinfra | a fleet overlay that pays for two codecs (`.toApi("google")`, `.toApi("anthropic")`) |
  * | openrouter | the ceiling: 2 codecs + the largest generated catalog and table |
  * | vercel | same shape as openrouter, second-largest catalog |
  *
@@ -128,18 +128,29 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    */
   groq: 138,
   google: 345, // 313.8 measured after the Lyria music surface (2026-08-24); same ~10% headroom.
-  /** Bumped 190 → 210: 191.8 measured, +4.4 for the `detail` mappings (see `anthropic`). */
-  deepinfra: 210,
+  /**
+   * Bumped 210 → 255 at the 2026-11-12 refresh: 232.1 measured. 211.9 of it is
+   * the old graph plus catalog growth; the other +20.2 is the anthropic codec,
+   * which the entry now owes because DeepInfra started serving
+   * `anthropic/claude-fable-5` and the generated availability table promises
+   * `.toApi("anthropic")` for it — the same codec openrouter and vercel carry.
+   * Earlier: 190 → 210, +4.4 for the `detail` mappings (see `anthropic`).
+   */
+  deepinfra: 255,
   /** Bumped 400 → 440: 401.9 measured, +4.8 for the `detail` mappings (see `anthropic`). */
   openrouter: 440,
   /**
-   * Bumped 355 → 390: 354.8 measured, +4.8 for the same `detail` mappings.
-   * This one did not fail — it landed 0.2 KiB under its pin — and is moved
+   * Bumped 390 → 450 at the 2026-11-12 refresh: 409.5 measured, all of it the
+   * gateway's own catalog and availability rows (+110 models, −54); no module
+   * joined the graph.
+   *
+   * Earlier: 355 → 390, 354.8 measured, +4.8 for the same `detail` mappings.
+   * That one did not fail — it landed 0.2 KiB under its pin — and was moved
    * anyway, because a budget with 0.06% headroom is a tripwire rather than a
    * budget and the next entry to touch a codec would trip it for a reason that
    * has nothing to do with that entry.
    */
-  vercel: 390,
+  vercel: 450,
   /**
    * fal at 474.9 KiB measured, pinned at 525.
    *
@@ -366,12 +377,13 @@ const CATALOG_DECLARATION_BUDGET_KIB = 8;
 
 /**
  * …and the opt-in entry's own ceiling, so the heavy half cannot grow unnoticed
- * either. 4498.2 KiB measured; 4950 leaves ~10% for catalog growth (the
+ * either. 5650.5 KiB measured; 6200 leaves ~10% for catalog growth (the
  * snapshot gains providers between releases, and each one lands here — the
- * refresh that took this past 4200 added 28 of them at once). Measured
- * identically on macOS and on a linux/amd64 build.
+ * refresh that took this past 4200 added 28 of them at once, and the
+ * 2026-11-12 one that took it past 4950 added another 28 while dropping 5).
+ * Measured identically on macOS and on a linux/amd64 build.
  */
-const TYPED_CATALOG_DECLARATION_BUDGET_KIB = 4950;
+const TYPED_CATALOG_DECLARATION_BUDGET_KIB = 6200;
 
 /**
  * Every category entry. All six ship a ready-made pack now, so each has its own

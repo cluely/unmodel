@@ -32,7 +32,7 @@ export const availability = {
     "google": "gemini-2.5-flash",
     "google-vertex": "gemini-2.5-flash",
     "openrouter": "google/gemini-2.5-flash",
-    "vercel": "google/gemini-2.5-flash",
+    "vercel": { id: "google/gemini-2.5-flash", narrows: { context: 1000000, drops: ["audio", "video"] } },
   },
   "gemini-2.5-flash-image": {
     "google": "gemini-2.5-flash-image",
@@ -50,7 +50,7 @@ export const availability = {
     "google": "gemini-2.5-pro",
     "google-vertex": "gemini-2.5-pro",
     "openrouter": "google/gemini-2.5-pro",
-    "vercel": "google/gemini-2.5-pro",
+    "vercel": { id: "google/gemini-2.5-pro", narrows: { drops: ["audio", "video"] } },
   },
   "gemini-3-flash-preview": {
     "google": "gemini-3-flash-preview",
@@ -65,7 +65,6 @@ export const availability = {
   },
   "gemini-3-pro-image-preview": {
     "google": "gemini-3-pro-image-preview",
-    "openrouter": { id: "google/gemini-3-pro-image-preview", narrows: { context: 65536 } },
   },
   "gemini-3.1-flash-image": {
     "google": "gemini-3.1-flash-image",
@@ -75,7 +74,6 @@ export const availability = {
   },
   "gemini-3.1-flash-image-preview": {
     "google": "gemini-3.1-flash-image-preview",
-    "openrouter": { id: "google/gemini-3.1-flash-image-preview", narrows: { drops: ["pdf"] } },
   },
   "gemini-3.1-flash-lite": {
     "google": "gemini-3.1-flash-lite",
@@ -134,10 +132,12 @@ export const availability = {
     "google": "gemini-3.8-flash",
     "google-vertex": "gemini-3.8-flash",
     "openrouter": "google/gemini-3.8-flash",
+    "vercel": { id: "google/gemini-3.8-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-flash-latest": {
     "google": "gemini-flash-latest",
     "google-vertex": "gemini-flash-latest",
+    "openrouter": "~google/gemini-flash-latest",
   },
   "gemini-flash-lite-latest": {
     "google": "gemini-flash-lite-latest",
@@ -148,9 +148,10 @@ export const availability = {
     "deepinfra": "google/gemma-4-26B-A4B-it",
     "google": "gemma-4-26b-a4b-it",
     "huggingface": "google/gemma-4-26B-A4B-it",
+    "novita-ai": "google/gemma-4-26b-a4b-it",
     "openrouter": "google/gemma-4-26b-a4b-it",
     "scaleway": { id: "gemma-4-26b-a4b-it", narrows: { context: 256000 } },
-    "siliconflow": { id: "google/gemma-4-26B-A4B-it", narrows: { drops: ["image"] } },
+    "siliconflow": "google/gemma-4-26B-A4B-it",
     "vercel": "google/gemma-4-26b-a4b-it",
   },
   "gemma-4-31b-it": {
@@ -158,9 +159,10 @@ export const availability = {
     "friendli": "google/gemma-4-31B-it",
     "google": "gemma-4-31b-it",
     "huggingface": "google/gemma-4-31B-it",
+    "novita-ai": "google/gemma-4-31b-it",
     "nvidia": { id: "google/gemma-4-31b-it", narrows: { context: 256000 } },
     "openrouter": "google/gemma-4-31b-it",
-    "siliconflow": { id: "google/gemma-4-31B-it", narrows: { drops: ["image"] } },
+    "siliconflow": "google/gemma-4-31B-it",
     "vercel": "google/gemma-4-31b-it",
   },
 } as const satisfies AvailabilityMap;

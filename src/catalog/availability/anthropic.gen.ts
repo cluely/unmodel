@@ -22,6 +22,7 @@ export const availability = {
   "claude-fable-5": {
     "amazon-bedrock": "anthropic.claude-fable-5",
     "anthropic": "claude-fable-5",
+    "deepinfra": "anthropic/claude-fable-5",
     "openrouter": "anthropic/claude-fable-5",
     "vercel": "anthropic/claude-fable-5",
   },

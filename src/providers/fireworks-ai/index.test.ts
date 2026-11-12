@@ -8,7 +8,7 @@ describe("fireworks-ai", () => {
 
   test("a catalog model validates wire-pure", () => {
     const params = {
-      model: "accounts/fireworks/models/gpt-oss-120b" as const,
+      model: "accounts/fireworks/models/kimi-k3" as const,
       messages: [{ role: "user" as const, content: "hi" }],
     };
     expect(models[params.model]).toBeDefined();

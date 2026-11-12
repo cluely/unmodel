@@ -3,6 +3,7 @@
  * validated against the models.dev `deepinfra` catalog.
  */
 import { createOpenAICompatible } from "../openai-compatible";
+import { decodeAnthropic } from "../anthropic/interop";
 import { decodeGemini } from "../google/interop";
 import { models, provider } from "../../catalog/deepinfra.gen";
 import type { DeepinfraTextModelId } from "../../catalog/deepinfra.gen";
@@ -19,13 +20,15 @@ const { chat, chatUrl, checkChat, estimateChatTokens } =
     baseUrl: DEEPINFRA_BASE_URL,
     catalog: models,
     availability,
-    // The gemini codec this overlay's availability data actually reaches:
-    // 2 Gemma rows are also served by google (gemini dialect), so `.toApi("google")`
-    // is in the generated type union and must have a decoder behind it —
-    // a promised edge with no codec throws `TranslationUnavailableError`.
-    // Import-graph rule 3: one codec module and its type-only wire imports,
-    // not google's validator, schema or catalog.
-    decoders: { gemini: decodeGemini },
+    // The two cross-dialect codecs this overlay's availability data actually
+    // reaches: 2 Gemma rows are also served by google (gemini dialect) and 1
+    // Claude row by anthropic (messages dialect), so `.toApi("google")` and
+    // `.toApi("anthropic")` are in the generated type union and must have a
+    // decoder behind them — a promised edge with no codec throws
+    // `TranslationUnavailableError`. Import-graph rule 3: the codec modules
+    // and their type-only wire imports, not anthropic's or google's
+    // validator, schema or catalog.
+    decoders: { "anthropic-messages": decodeAnthropic, gemini: decodeGemini },
   });
 
 /** POST target for deepinfra.chat. */

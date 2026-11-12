@@ -488,11 +488,7 @@ describe("against the real generated availability data", () => {
   test("gpt-oss-120b respells per target", () => {
     const cases: Array<[string, string, string]> = [
       ["cerebras", "gpt-oss-120b", "https://api.cerebras.ai/v1/chat/completions"],
-      [
-        "fireworks-ai",
-        "accounts/fireworks/models/gpt-oss-120b",
-        "https://api.fireworks.ai/inference/v1/chat/completions",
-      ],
+      ["togetherai", "openai/gpt-oss-120b", "https://api.together.ai/v1/chat/completions"],
       ["openrouter", "openai/gpt-oss-120b", "https://openrouter.ai/api/v1/chat/completions"],
     ];
 

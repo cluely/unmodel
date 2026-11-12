@@ -87,6 +87,27 @@ describe("bytedance.image happy path", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
+  test("Seedream 5.5 and 5.0 flash accept layer decomposition without a prompt", () => {
+    const flash = image.safe({
+      model: "dola-seedream-5-0-flash-260915",
+      image: "https://example.com/room.png",
+      layer_decomposition: true,
+      size: "auto",
+    });
+    expect(flash.ok).toBe(true);
+    if (flash.ok) expect(flash.warnings).toEqual([]);
+
+    const v55 = image.safe({
+      model: "dola-seedream-5-5-261028",
+      image: "https://example.com/room.png",
+      layer_decomposition: true,
+      layer_decomposition_options: { max_images: 12, text_recognition: true },
+      size: "auto",
+    });
+    expect(v55.ok).toBe(true);
+    if (v55.ok) expect(v55.warnings).toEqual([]);
+  });
+
   test("batch generation on Seedream 4.0 validates", () => {
     const r = image.safe({
       model: "seedream-4-0-250828",
@@ -143,7 +164,7 @@ describe("bytedance.image per-model param enforcement", () => {
     }
   });
 
-  test("layer decomposition and background are rejected outside Seedream 5.0 pro", () => {
+  test("layer decomposition and background are rejected outside Seedream 5.5 / 5.0 pro / 5.0 flash", () => {
     const r = safeUnchecked({
       model: "seedream-4-0-250828",
       prompt: "hi",
@@ -154,6 +175,96 @@ describe("bytedance.image per-model param enforcement", () => {
     if (!r.ok) {
       expect(r.errors.map((e) => e.path[0])).toContain("layer_decomposition");
       expect(r.errors.map((e) => e.path[0])).toContain("background");
+      expect(r.errors[0]?.message).toContain("Seedream 5.5 / 5.0 pro / 5.0 flash");
+    }
+  });
+
+  test("sequential generation and streaming are rejected on Seedream 5.5 and 5.0 flash", () => {
+    for (const model of ["dola-seedream-5-5-261028", "dola-seedream-5-0-flash-260915"]) {
+      const r = safeUnchecked({ model, prompt: "hi", sequential_image_generation: "auto", stream: true });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) {
+        expect(r.errors.map((e) => e.path[0]).sort()).toEqual(["sequential_image_generation", "stream"]);
+      }
+    }
+  });
+
+  test("fast prompt optimization is rejected on Seedream 5.5 and 5.0 flash", () => {
+    for (const model of ["dola-seedream-5-5-261028", "dola-seedream-5-0-flash-260915"]) {
+      const r = safeUnchecked({ model, prompt: "hi", optimize_prompt_options: { mode: "fast" } });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["optimize_prompt_options", "mode"]);
+      expect(safeUnchecked({ model, prompt: "hi", optimize_prompt_options: { mode: "standard" } }).ok).toBe(true);
+    }
+  });
+
+  test('`background: "auto"` is Seedream 5.5 only', () => {
+    const r = image.safe({ model: "dola-seedream-5-5-261028", prompt: "hi", background: "auto" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+    for (const model of ["dola-seedream-5-0-pro-260628", "dola-seedream-5-0-flash-260915"]) {
+      const refused = safeUnchecked({ model, prompt: "hi", background: "auto" });
+      expect(refused.ok, model).toBe(false);
+      if (!refused.ok) {
+        expect(refused.errors[0]?.code).toBe("invalid_enum_value");
+        expect(refused.errors[0]?.meta?.["allowed"]).toEqual(["transparent", "opaque"]);
+      }
+    }
+  });
+
+  test("safety_identifier is accepted on Seedream 5.5 / 5.0 pro / 5.0 flash, up to 64 characters", () => {
+    for (const model of [
+      "dola-seedream-5-5-261028",
+      "dola-seedream-5-0-pro-260628",
+      "dola-seedream-5-0-flash-260915",
+    ]) {
+      const r = safeUnchecked({ model, prompt: "hi", safety_identifier: "user-7f3a" });
+      expect(r.ok, model).toBe(true);
+      if (r.ok) expect(r.warnings, model).toEqual([]);
+    }
+    const long = safeUnchecked({
+      model: "dola-seedream-5-5-261028",
+      prompt: "hi",
+      safety_identifier: "u".repeat(65),
+    });
+    expect(long.ok).toBe(false);
+    if (!long.ok) expect(long.errors[0]?.path).toEqual(["safety_identifier"]);
+  });
+
+  test("layer_decomposition_options is Seedream 5.5 only and bounded to [2, 100]", () => {
+    const flash = safeUnchecked({
+      model: "dola-seedream-5-0-flash-260915",
+      image: "https://example.com/room.png",
+      layer_decomposition: true,
+      layer_decomposition_options: { max_images: 12 },
+    });
+    expect(flash.ok).toBe(false);
+    if (!flash.ok) {
+      expect(flash.errors[0]?.code).toBe("unsupported_param");
+      expect(flash.errors[0]?.message).toContain("Seedream 5.5 only");
+    }
+    for (const maxImages of [1, 101]) {
+      const r = safeUnchecked({
+        model: "dola-seedream-5-5-261028",
+        image: "https://example.com/room.png",
+        layer_decomposition: true,
+        layer_decomposition_options: { max_images: maxImages },
+      });
+      expect(r.ok, String(maxImages)).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
+    }
+  });
+
+  test("layer_decomposition_options without layer decomposition is reported as ignored", () => {
+    const r = safeUnchecked({
+      model: "dola-seedream-5-5-261028",
+      prompt: "hi",
+      layer_decomposition_options: { text_recognition: true },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => w.path[0])).toEqual(["layer_decomposition_options"]);
+      expect(r.warnings[0]?.meta?.["ignored"]).toBe(true);
     }
   });
 
@@ -239,7 +350,9 @@ describe("bytedance.image size rules", () => {
       sizes: readonly BytedanceImageSize[];
     }> = [
       // [921,600, 4,624,220] pixels.
+      { model: "dola-seedream-5-5-261028", sizes: ["1K", "1.5K", "2K", "1280x720", "2048x2048"] },
       { model: "dola-seedream-5-0-pro-260628", sizes: ["1K", "1.5K", "2K", "1280x720", "2048x2048"] },
+      { model: "dola-seedream-5-0-flash-260915", sizes: ["1K", "1.5K", "2K", "1280x720", "2048x2048"] },
       // [3,686,400, 16,777,216] pixels.
       { model: "seedream-5-0-260128", sizes: ["2K", "3K", "4K", "2560x1440", "4096x4096"] },
       { model: "seedream-5-0-lite-260128", sizes: ["2K", "3K", "4K", "2560x1440", "4096x4096"] },
@@ -342,6 +455,59 @@ describe("bytedance.image content rules", () => {
     }
   });
 
+  test("Seedream 5.5 makes RGBA from text and from several ordinary references", () => {
+    const text = image.safe({ model: "dola-seedream-5-5-261028", prompt: "a glass bottle", background: "transparent" });
+    expect(text.ok).toBe(true);
+    if (text.ok) expect(text.warnings).toEqual([]);
+    const refs = image.safe({
+      model: "dola-seedream-5-5-261028",
+      prompt: "the three products on one shelf",
+      image: ["https://x/a.jpg", "https://x/b.jpg", "https://x/c.jpg"],
+      background: "transparent",
+    });
+    expect(refs.ok).toBe(true);
+    // …while Seedream 5.0 flash, like 5.0 pro, takes exactly one alpha image.
+    const flash = safeUnchecked({
+      model: "dola-seedream-5-0-flash-260915",
+      prompt: "hi",
+      image: ["https://x/a.png", "https://x/b.png"],
+      background: "transparent",
+    });
+    expect(flash.ok).toBe(false);
+    if (!flash.ok) {
+      expect(flash.errors[0]?.path).toEqual(["background"]);
+      expect(flash.errors[0]?.message).toContain("exactly one input image");
+    }
+    // Transparent output stays PNG-only on 5.5.
+    const jpeg = safeUnchecked({
+      model: "dola-seedream-5-5-261028",
+      prompt: "hi",
+      background: "transparent",
+      output_format: "jpeg",
+    });
+    expect(jpeg.ok).toBe(false);
+    if (!jpeg.ok) expect(jpeg.errors[0]?.message).toContain("PNG-only");
+  });
+
+  test("background cannot ride with layer decomposition on Seedream 5.5 and 5.0 flash", () => {
+    for (const [model, background] of [
+      ["dola-seedream-5-5-261028", "auto"],
+      ["dola-seedream-5-0-flash-260915", "opaque"],
+    ] as const) {
+      const r = safeUnchecked({
+        model,
+        image: "https://example.com/room.png",
+        layer_decomposition: true,
+        background,
+      });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.code).toBe("unsupported_capability");
+        expect(r.errors[0]?.path).toEqual(["background"]);
+      }
+    }
+  });
+
   test("sequential options without auto are reported as ignored", () => {
     const r = safeUnchecked({
       model: "seedream-4-0-250828",
@@ -441,6 +607,51 @@ describe("bytedance.image cost estimation", () => {
     expect(
       imageCostUSD("dola-seedream-5-0-pro-260628", { size: "2K", layerDecomposition: true }),
     ).toBeCloseTo(0.045 * 17, 10);
+  });
+
+  test("Seedream 5.5 switches tier at 1536² × 1.05² pixels and bills every input image", () => {
+    const model = "dola-seedream-5-5-261028";
+    // Default size is 2K (4,194,304 px) → the high tier, which the catalog records.
+    expect(imageCostUSD(model, {})).toBeCloseTo(0.035, 10);
+    expect(imageModels[model].cost.perImage).toBe(0.035);
+    expect(imageCostUSD(model, { size: "1.5K" })).toBeCloseTo(0.02, 10);
+    // 1612² = 2,598,544 ≤ 2,601,123.84 < 1613² = 2,601,769.
+    expect(imageCostUSD(model, { size: "1612x1612" })).toBeCloseTo(0.02, 10);
+    expect(imageCostUSD(model, { size: "1613x1613" })).toBeCloseTo(0.035, 10);
+    // No free first image: three references bill 3 × 0.008.
+    expect(imageCostUSD(model, { size: "1K", inputImages: 3 })).toBeCloseTo(0.02 + 3 * 0.008, 10);
+    // Layer decomposition: `max_images` (default 30) images at the request's tier.
+    expect(
+      imageCostUSD(model, { size: "auto", layerDecomposition: true, inputImages: 1 }),
+    ).toBeCloseTo(0.035 * 30 + 0.008, 10);
+    expect(
+      imageCostUSD(model, { size: "1K", layerDecomposition: true, layerMaxImages: 5, inputImages: 1 }),
+    ).toBeCloseTo(0.02 * 5 + 0.008, 10);
+
+    const r = image.safe({
+      model,
+      image: "https://example.com/room.png",
+      layer_decomposition: true,
+      layer_decomposition_options: { max_images: 10 },
+      size: "1K",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.02 * 10 + 0.008, 10);
+  });
+
+  test("Seedream 5.0 flash is flat-rate and bills the base image plus every layer", () => {
+    const single = image.safe({ model: "dola-seedream-5-0-flash-260915", prompt: "hi", size: "1K" });
+    expect(single.ok).toBe(true);
+    if (single.ok) expect(single.estimate.costUSD).toBeCloseTo(0.018, 10);
+
+    // Input images are free; the worst case is one base image plus 16 layers.
+    const layers = image.safe({
+      model: "dola-seedream-5-0-flash-260915",
+      image: "https://example.com/room.png",
+      layer_decomposition: true,
+    });
+    expect(layers.ok).toBe(true);
+    if (layers.ok) expect(layers.estimate.costUSD).toBeCloseTo(0.018 * 17, 10);
   });
 
   test("maxCostUSD fails a batch that would overrun the budget", () => {

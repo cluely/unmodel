@@ -9,7 +9,8 @@
  * - OpenAI-images-flavoured but NOT OpenAI-shaped: the body carries `model`,
  *   `prompt`, `image`, `size`, `response_format`, `watermark` plus ModelArk's
  *   own `sequential_image_generation*`, `stream`, `output_format`,
- *   `background`, `layer_decomposition` and `optimize_prompt_options`. There
+ *   `background`, `layer_decomposition`, `layer_decomposition_options`,
+ *   `optimize_prompt_options` and `safety_identifier`. There
  *   is NO `n`, no `quality`, no `style` — and, on the current API, no `seed`
  *   and no `guidance_scale` (those were Seedream 3.0-era params and are not
  *   documented on this endpoint any more), so passing them earns an
@@ -48,8 +49,10 @@ import {
   IMAGE_RESPONSE_FORMATS,
   IMAGE_SIZE_ASPECT_RANGE,
   LAYER_DECOMPOSITION_INPUT_RULE,
+  LAYER_MAX_IMAGES_RANGE,
   MAX_IMAGES_RANGE,
   PROMPT_OPTIMIZE_MODES,
+  SAFETY_IDENTIFIER_MAX_LENGTH,
   SEQUENTIAL_IMAGE_GENERATION,
   SEQUENTIAL_TOTAL_IMAGES,
   imageConstraints,
@@ -89,15 +92,26 @@ export interface SequentialImageGenerationOptions {
 }
 
 /**
+ * Layer decomposition settings (`layer_decomposition_options`, Seedream 5.5).
+ * "Takes effect only when `layer_decomposition` is `true`."
+ */
+export interface LayerDecompositionOptions {
+  /** Total images returned, the base image included: 2–100. Default 30. */
+  max_images?: number;
+  /** Return rich-text OCR for the text layers. Default false. */
+  text_recognition?: boolean;
+}
+
+/**
  * `size` for image generation: a resolution KEYWORD or an explicit
  * `"<width>x<height>"`.
  *
  * The keyword arm is the union of every model's keywords — it is derived from
  * IMAGE_SIZE_KEYWORDS in ./constraints, which `ImageShapeRule` is typed
  * against, so it cannot drift from the per-model tables. Keywords are PER
- * MODEL and the runtime narrows them (`checkSize`): "1K" is Seedream 5.0 pro /
- * 4.0 only, "3K" is Seedream 5.0 lite only, and "auto" exists only in Seedream
- * 5.0 pro's layer-decomposition mode.
+ * MODEL and the runtime narrows them (`checkSize`): "1K" is Seedream 5.5 /
+ * 5.0 pro / 5.0 flash / 4.0 only, "3K" is Seedream 5.0 lite only, and "auto"
+ * exists only in layer-decomposition mode (Seedream 5.5 / 5.0 pro / 5.0 flash).
  *
  * The `"<width>x<height>"` arm is genuinely free-form — 1920x1080 and any
  * other explicit resolution is legal — because the API bounds it by rule
@@ -109,8 +123,8 @@ export type BytedanceImageSize = BytedanceImageSizeKeyword | (`${number}x${numbe
 
 interface ImageGenerationsCore {
   /**
-   * Text prompt. Required for image generation; optional only in Seedream
-   * 5.0 pro's layer decomposition mode.
+   * Text prompt. Required for image generation; optional only in layer
+   * decomposition mode (Seedream 5.5 / 5.0 pro / 5.0 flash).
    */
   prompt?: string;
   /** Reference image(s): HTTPS URL(s) or `data:image/<fmt>;base64,…`. */
@@ -123,22 +137,56 @@ interface ImageGenerationsCore {
   watermark?: boolean;
 }
 
-/** Seedream 5.0 pro: layer decomposition, transparent backgrounds, no batch. */
-export interface Seedream50ProBody extends ImageGenerationsCore {
-  model: "dola-seedream-5-0-pro-260628";
-  /** Decompose one input image into a base image plus up to 16 layers. */
+/** The Seedream 5.5 / 5.0 pro / 5.0 flash surface: layers, alpha, no batch. */
+interface Seedream5LayerFields extends ImageGenerationsCore {
+  /** Decompose one input image into a base image plus layers. */
   layer_decomposition?: boolean;
-  /** Output file format. Default "jpeg". */
+  /** Output file format. */
   output_format?: "png" | "jpeg";
-  /** Alpha channel control; "transparent" requires `output_format: "png"`. */
-  background?: "transparent" | "opaque";
-  optimize_prompt_options?: OptimizePromptOptions;
+  /** End-user id for abuse detection: a stable English string, ≤ 64 chars. */
+  safety_identifier?: string;
   /** Seedream 5.0 lite / 4.5 / 4.0 only. */
   sequential_image_generation?: never;
   /** Seedream 5.0 lite / 4.5 / 4.0 only. */
   sequential_image_generation_options?: never;
   /** Seedream 5.0 lite / 4.5 / 4.0 only. */
   stream?: never;
+}
+
+/**
+ * Seedream 5.5: RGBA from text or from up to 10 ordinary reference images,
+ * and layer decomposition into a base image plus up to 99 layers.
+ * `output_format` defaults to "png".
+ */
+export interface Seedream55Body extends Seedream5LayerFields {
+  model: "dola-seedream-5-5-261028";
+  layer_decomposition_options?: LayerDecompositionOptions;
+  /** Alpha channel control. Default "auto". Not with `layer_decomposition`. */
+  background?: "auto" | "transparent" | "opaque";
+  optimize_prompt_options?: StandardOnlyOptimizePromptOptions;
+}
+
+/**
+ * Seedream 5.0 pro: layer decomposition (a base image plus up to 16 layers),
+ * transparent backgrounds, no batch. `output_format` defaults to "jpeg".
+ */
+export interface Seedream50ProBody extends Seedream5LayerFields {
+  model: "dola-seedream-5-0-pro-260628";
+  /** Alpha channel control; "transparent" requires `output_format: "png"`. */
+  background?: "transparent" | "opaque";
+  optimize_prompt_options?: OptimizePromptOptions;
+  /** Seedream 5.5 only. */
+  layer_decomposition_options?: never;
+}
+
+/** Seedream 5.0 flash: the Seedream 5.0 pro surface with standard prompt mode only. */
+export interface Seedream50FlashBody extends Seedream5LayerFields {
+  model: "dola-seedream-5-0-flash-260915";
+  /** Alpha channel control; "transparent" requires `output_format: "png"`. */
+  background?: "transparent" | "opaque";
+  optimize_prompt_options?: StandardOnlyOptimizePromptOptions;
+  /** Seedream 5.5 only. */
+  layer_decomposition_options?: never;
 }
 
 interface Seedream50LiteFields extends ImageGenerationsCore {
@@ -151,10 +199,14 @@ interface Seedream50LiteFields extends ImageGenerationsCore {
   stream?: boolean;
   /** Seedream 5.0 lite documents standard mode only. */
   optimize_prompt_options?: StandardOnlyOptimizePromptOptions;
-  /** Seedream 5.0 pro only. */
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash only. */
   layer_decomposition?: never;
-  /** Seedream 5.0 pro only. */
+  /** Seedream 5.5 only. */
+  layer_decomposition_options?: never;
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash only. */
   background?: never;
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash only. */
+  safety_identifier?: never;
 }
 
 /** Seedream 5.0 lite, spelled as the Model list's primary id. */
@@ -174,12 +226,16 @@ export interface Seedream45Body extends ImageGenerationsCore {
   sequential_image_generation_options?: SequentialImageGenerationOptions;
   stream?: boolean;
   optimize_prompt_options?: StandardOnlyOptimizePromptOptions;
-  /** Seedream 5.0 pro / 5.0 lite only — this model always returns jpeg. */
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash / 5.0 lite only — this model always returns jpeg. */
   output_format?: never;
-  /** Seedream 5.0 pro only. */
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash only. */
   layer_decomposition?: never;
-  /** Seedream 5.0 pro only. */
+  /** Seedream 5.5 only. */
+  layer_decomposition_options?: never;
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash only. */
   background?: never;
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash only. */
+  safety_identifier?: never;
 }
 
 /** Seedream 4.0: batch generation, jpeg output only, standard + fast modes. */
@@ -189,12 +245,16 @@ export interface Seedream40Body extends ImageGenerationsCore {
   sequential_image_generation_options?: SequentialImageGenerationOptions;
   stream?: boolean;
   optimize_prompt_options?: OptimizePromptOptions;
-  /** Seedream 5.0 pro / 5.0 lite only — this model always returns jpeg. */
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash / 5.0 lite only — this model always returns jpeg. */
   output_format?: never;
-  /** Seedream 5.0 pro only. */
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash only. */
   layer_decomposition?: never;
-  /** Seedream 5.0 pro only. */
+  /** Seedream 5.5 only. */
+  layer_decomposition_options?: never;
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash only. */
   background?: never;
+  /** Seedream 5.5 / 5.0 pro / 5.0 flash only. */
+  safety_identifier?: never;
 }
 
 /**
@@ -213,7 +273,9 @@ export interface UnknownImageModelBody<Model extends string> {
  * id to opt into the loose arm: `ImageGenerationsBody<"ep-…">`.
  */
 export type ImageGenerationsBody<FutureModel extends string = never> =
+  | Seedream55Body
   | Seedream50ProBody
+  | Seedream50FlashBody
   | Seedream50Body
   | Seedream50LiteBody
   | Seedream45Body
@@ -221,7 +283,9 @@ export type ImageGenerationsBody<FutureModel extends string = never> =
   | UnknownImageModelBody<FutureModel>;
 
 export interface ImageBodyByModel {
+  "dola-seedream-5-5-261028": Seedream55Body;
   "dola-seedream-5-0-pro-260628": Seedream50ProBody;
+  "dola-seedream-5-0-flash-260915": Seedream50FlashBody;
   "seedream-5-0-260128": Seedream50Body;
   "seedream-5-0-lite-260128": Seedream50LiteBody;
   "seedream-4-5-251128": Seedream45Body;
@@ -248,6 +312,17 @@ const imageGenerationsSchema = z.looseObject({
   image: z.union([z.string(), z.array(z.string())]).optional(),
   size: z.string().optional(),
   layer_decomposition: z.boolean().optional(),
+  layer_decomposition_options: z
+    .looseObject({
+      max_images: z
+        .number()
+        .int()
+        .min(LAYER_MAX_IMAGES_RANGE.min, `max_images must be at least ${LAYER_MAX_IMAGES_RANGE.min}`)
+        .max(LAYER_MAX_IMAGES_RANGE.max, `max_images must be at most ${LAYER_MAX_IMAGES_RANGE.max}`)
+        .optional(),
+      text_recognition: z.boolean().optional(),
+    })
+    .optional(),
   optimize_prompt_options: z
     .looseObject({ mode: z.enum(PROMPT_OPTIMIZE_MODES).optional() })
     .optional(),
@@ -267,6 +342,7 @@ const imageGenerationsSchema = z.looseObject({
     .optional(),
   stream: z.boolean().optional(),
   watermark: z.boolean().optional(),
+  safety_identifier: z.string().max(SAFETY_IDENTIFIER_MAX_LENGTH).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -309,7 +385,7 @@ function checkPrompt(
     path: ["prompt"],
     model: params.model,
     message:
-      "`prompt` is required for image generation; it is optional only in Seedream 5.0 pro's layer decomposition mode (`layer_decomposition: true`).",
+      "`prompt` is required for image generation; it is optional only in layer decomposition mode (`layer_decomposition: true`, Seedream 5.5 / 5.0 pro / 5.0 flash).",
     meta: { source: IMAGE_API_SOURCE },
   });
 }
@@ -408,6 +484,16 @@ function checkImages(
   }
 
   const background = (params as AnyRecord)["background"];
+  if (layer && background != null && rule?.backgroundRefusedInLayerDecomposition === true) {
+    ctx.report({
+      code: "unsupported_capability",
+      path: ["background"],
+      model: params.model,
+      message:
+        '`background` cannot be combined with `layer_decomposition: true`: "Layer decomposition automatically generates transparent PNG layers. Do not pass `background` in this scenario; doing so returns an error."',
+      meta: { source: IMAGE_MODELS_SOURCE },
+    });
+  }
   if (background === "transparent") {
     if ((params as AnyRecord)["output_format"] === "jpeg") {
       ctx.report({
@@ -419,12 +505,12 @@ function checkImages(
         meta: { source: IMAGE_API_SOURCE },
       });
     }
-    if (count !== 1) {
+    if (rule?.transparentNeedsOneImage === true && count !== 1) {
       ctx.report({
         code: "unsupported_capability",
         path: ["background"],
         model: params.model,
-        message: `\`background\` is "supported only for image-to-image generation with exactly one input image that has an alpha channel"; got ${count} input images.`,
+        message: `\`background: "transparent"\` on "${params.model}" is "supported only for image-to-image generation with exactly one input image that has an alpha channel"; got ${count} input images. Seedream 5.5 also makes text-to-RGBA and RGBA from up to 10 ordinary reference images.`,
         meta: { count, source: IMAGE_API_SOURCE },
       });
     }
@@ -481,6 +567,25 @@ function checkSequential(
   }
 }
 
+/** `layer_decomposition_options` "takes effect only when `layer_decomposition` is `true`". */
+function checkLayerDecompositionOptions(
+  params: AnyImageGenerationsBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if ((params as AnyRecord)["layer_decomposition_options"] == null) return;
+  if (isLayerDecomposition(params)) return;
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["layer_decomposition_options"],
+    model: params.model,
+    message:
+      "`layer_decomposition_options` only takes effect when `layer_decomposition` is `true`; it is ignored otherwise.",
+    meta: { ignored: true, source: IMAGE_API_SOURCE },
+  });
+}
+
 /** `optimize_prompt_options.mode` — "fast" is not on every model. */
 function checkPromptOptimizeMode(
   params: AnyImageGenerationsBody,
@@ -514,6 +619,11 @@ function estimate(params: AnyImageGenerationsBody, info: ModelInfo | undefined) 
     typeof options === "object" && options !== null
       ? (options as AnyRecord)["max_images"]
       : undefined;
+  const layerOptions = record["layer_decomposition_options"];
+  const layerMaxImages =
+    typeof layerOptions === "object" && layerOptions !== null
+      ? (layerOptions as AnyRecord)["max_images"]
+      : undefined;
   const costUSD = imageCostUSD(params.model, {
     size: typeof record["size"] === "string" ? (record["size"] as string) : undefined,
     layerDecomposition: record["layer_decomposition"] === true,
@@ -522,6 +632,7 @@ function estimate(params: AnyImageGenerationsBody, info: ModelInfo | undefined) 
         ? (record["sequential_image_generation"] as string)
         : undefined,
     maxImages: typeof maxImages === "number" ? maxImages : undefined,
+    layerMaxImages: typeof layerMaxImages === "number" ? layerMaxImages : undefined,
     inputImages: imageCount(params),
     perImage: info?.cost?.perImage,
   });
@@ -553,7 +664,14 @@ const validator = createValidator<AnyImageGenerationsBody, unknown>({
   modelId: (params) => params.model,
   catalog: imageModels,
   constraints: imageConstraints,
-  checks: [checkPrompt, checkSize, checkImages, checkSequential, checkPromptOptimizeMode],
+  checks: [
+    checkPrompt,
+    checkSize,
+    checkImages,
+    checkSequential,
+    checkLayerDecompositionOptions,
+    checkPromptOptimizeMode,
+  ],
   estimate,
   finalize,
 });

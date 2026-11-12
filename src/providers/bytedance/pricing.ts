@@ -8,8 +8,10 @@
  * IMAGES bill per generated image, so the estimate is
  * `rate × number of images`, worst-cased where the request leaves the count
  * open: `sequential_image_generation: "auto"` bills for every image the model
- * decides to return, up to `max_images` (default 15), and Seedream 5.0 pro's
- * layer decomposition returns one base image plus up to 16 layers.
+ * decides to return, up to `max_images` (default 15); Seedream 5.0 pro /
+ * flash layer decomposition returns one base image plus up to 16 layers, and
+ * Seedream 5.5's returns up to `layer_decomposition_options.max_images`
+ * images (default 30) counting the base image.
  *
  * VIDEOS bill by token — `price = token unit price × tokens` with
  * `tokens = (input video duration + output video duration) × width × height ×
@@ -69,12 +71,44 @@ export const SEEDREAM_5_PRO_RATES = {
 /** "From the 2nd image: 0.003" — Seedream 5.0 pro input images. */
 export const SEEDREAM_5_PRO_INPUT_IMAGE_USD = 0.003;
 
-/** "one base image and up to 16 independently editable layers". */
+/**
+ * "one base image and up to 16 independently editable layers" — Seedream 5.0
+ * pro, and "Seedream 5.0 flash: Up to one base image and 16 layers." —
+ * https://docs.byteplus.com/docs/en/modelark/image-generation-api.md, 2026-11-12.
+ */
 export const MAX_DECOMPOSED_LAYERS = 16;
+
+/**
+ * Seedream 5.5's tier boundary, stated exactly: "921,600 ≤ P ≤ 1536² × 1.05²
+ * (2,601,123.84): $0.020 · 1536² × 1.05² (2,601,123.84) < P ≤ 2048² × 1.05²
+ * (4,624,220.16): $0.035" —
+ * https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+ */
+export const SEEDREAM_5_5_TIER_PIXELS = 1536 * 1536 * 1.05 * 1.05;
+
+/** Seedream 5.5 output-image rates (USD per generated image or layer). */
+export const SEEDREAM_5_5_RATES = { low: 0.02, high: 0.035 } as const;
+
+/**
+ * "|`dola-seedream-5-5-261028` |$0.008 |…" — every input image bills, no free
+ * first image: "Cost per request = Σ (each input image × input image unit
+ * price) + Σ (each output image × output image unit price at the applicable
+ * tier)" — https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+ */
+export const SEEDREAM_5_5_INPUT_IMAGE_USD = 0.008;
+
+/**
+ * `layer_decomposition_options.max_images` default: "Default: 30, which
+ * returns at most one base image and 29 layers." —
+ * https://docs.byteplus.com/docs/en/modelark/seedream-5-5.md, 2026-11-12.
+ */
+export const SEEDREAM_5_5_DEFAULT_LAYER_IMAGES = 30;
 
 /** Documented `size` default per image model (image generation scenario). */
 const DEFAULT_IMAGE_SIZE: Readonly<Record<string, string>> = {
+  "dola-seedream-5-5-261028": "2K",
   "dola-seedream-5-0-pro-260628": "2K",
+  "dola-seedream-5-0-flash-260915": "2K",
   "seedream-5-0-260128": "2048x2048",
   "seedream-5-0-lite-260128": "2048x2048",
   "seedream-4-5-251128": "2048x2048",
@@ -104,6 +138,8 @@ export interface ImagePricingFields {
   layerDecomposition?: boolean | undefined;
   sequential?: string | undefined;
   maxImages?: number | undefined;
+  /** `layer_decomposition_options.max_images` (Seedream 5.5). */
+  layerMaxImages?: number | undefined;
   /** Number of reference images supplied in `image`. */
   inputImages?: number;
   /** `cost.perImage` from the catalog — the fallback for flat-rate models. */
@@ -115,6 +151,22 @@ export interface ImagePricingFields {
  * rate is known for the model.
  */
 export function imageCostUSD(model: string, fields: ImagePricingFields): number | undefined {
+  if (model === "dola-seedream-5-5-261028") {
+    const pixels = outputPixels(model, fields.size);
+    // `size: "auto"` (layer decomposition) reads as no pixel count: worst case.
+    const high = pixels === undefined ? true : pixels > SEEDREAM_5_5_TIER_PIXELS;
+    const rate = high ? SEEDREAM_5_5_RATES.high : SEEDREAM_5_5_RATES.low;
+    const inputCost = (fields.inputImages ?? 0) * SEEDREAM_5_5_INPUT_IMAGE_USD;
+    // "In Seedream 5.5 and Seedream 5.0 pro layer decomposition, each layer in
+    // a single request may fall into a different resolution tier and is
+    // billed based on the actual generated output." — every image at the
+    // request's tier, up to `max_images`, is the worst case.
+    const outputs =
+      fields.layerDecomposition === true
+        ? (fields.layerMaxImages ?? SEEDREAM_5_5_DEFAULT_LAYER_IMAGES)
+        : 1;
+    return rate * outputs + inputCost;
+  }
   if (model === "dola-seedream-5-0-pro-260628") {
     const pixels = outputPixels(model, fields.size);
     const high = pixels === undefined ? true : pixels > SEEDREAM_5_PRO_TIER_PIXELS;
@@ -136,11 +188,14 @@ export function imageCostUSD(model: string, fields: ImagePricingFields): number 
 }
 
 /**
- * Worst-case number of billed output images: 1 unless sequential generation
- * is on, in which case the model may return up to `max_images` (default 15),
- * capped by "input reference images + generated images ≤ 15".
+ * Worst-case number of billed output images on a flat-rate model: the base
+ * image plus {@link MAX_DECOMPOSED_LAYERS} layers in layer decomposition
+ * (Seedream 5.0 flash), otherwise 1 unless sequential generation is on, in
+ * which case the model may return up to `max_images` (default 15), capped by
+ * "input reference images + generated images ≤ 15".
  */
 export function generatedImageCount(fields: ImagePricingFields): number {
+  if (fields.layerDecomposition === true) return 1 + MAX_DECOMPOSED_LAYERS;
   if (fields.sequential !== "auto") return 1;
   const requested = fields.maxImages ?? 15;
   const room = 15 - (fields.inputImages ?? 0);

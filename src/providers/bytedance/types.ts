@@ -46,7 +46,9 @@ import type { ContentGenerationTasksBody } from "./video";
 export type {
   BytedanceImageSize,
   ImageGenerationsBody,
+  Seedream55Body,
   Seedream50ProBody,
+  Seedream50FlashBody,
   Seedream50Body,
   Seedream50LiteBody,
   Seedream45Body,
@@ -55,6 +57,7 @@ export type {
   OptimizePromptOptions,
   StandardOnlyOptimizePromptOptions,
   SequentialImageGenerationOptions,
+  LayerDecompositionOptions,
 } from "./image";
 
 export type {

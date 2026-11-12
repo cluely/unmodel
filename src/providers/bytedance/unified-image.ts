@@ -56,8 +56,8 @@
  * - **`response_format`** is `"url" | "b64_json"` — *how the bytes reach you*.
  *   That is canonical `outputDelivery`, and every documented model has it.
  * - **`output_format`** is `"png" | "jpeg"` — *how the image is encoded*. That
- *   is canonical `outputFormat`, and only Seedream 5.0 pro and 5.0 lite have
- *   it; 4.5 and 4.0 always return JPEG and deny the param.
+ *   is canonical `outputFormat`, and only Seedream 5.5, 5.0 pro, 5.0 flash and
+ *   5.0 lite have it; 4.5 and 4.0 always return JPEG and deny the param.
  *
  * The deny rule and the enum list already say all of that, per model, in
  * `constraints.ts`, so the adapter sends the value and lets those tables
@@ -76,8 +76,8 @@
  * - `n: 1` maps **exactly** and emits nothing: `sequential_image_generation`
  *   defaults to `"disabled"`, which is one image.
  * - `n > 1` maps **approximately** and warns, naming the bound that was sent.
- * - `n > 1` on Seedream 5.0 pro is an error: that model denies the whole
- *   sequential family, so it makes exactly one image per request.
+ * - `n > 1` on Seedream 5.5 / 5.0 pro / 5.0 flash is an error: those models
+ *   deny the whole sequential family, so they make one image per request.
  *
  * # The declared gaps
  *
@@ -88,10 +88,12 @@
  * that must be refused instead.
  *
  * `watermark`, `background`, `layer_decomposition`,
- * `optimize_prompt_options` and the sequential-batch pair are ModelArk's own
- * knobs rather than canonical words, and are typed per model on
+ * `layer_decomposition_options`, `optimize_prompt_options`,
+ * `safety_identifier` and the sequential-batch pair are ModelArk's own knobs
+ * rather than canonical words, and are typed per model on
  * {@link BYTEDANCE_IMAGE_MODEL_PARAMS} — `background` on anything but Seedream
- * 5.0 pro is an `unsupported_param` naming the model that does take it.
+ * 5.5 / 5.0 pro / 5.0 flash is an `unsupported_param` naming the models that
+ * do take it.
  * `stream` stays out entirely: it changes how the response is *delivered*, not
  * what is generated, and `providerOptions.bytedance` reaches it.
  */
@@ -131,9 +133,10 @@ export type BytedanceImageResult = ReturnType<typeof imageValidator>;
  * Canonical tier → the keyword ModelArk spells it with.
  *
  * Only three of the five documented keywords are reachable from the canonical
- * vocabulary: `"1.5K"` (Seedream 5.0 pro) and `"3K"` (Seedream 5.0 lite) sit
- * between tiers, and inventing canonical names for them would put two words in
- * every provider's mouth to serve one. They stay reachable through
+ * vocabulary: `"1.5K"` (Seedream 5.5 / 5.0 pro / 5.0 flash) and `"3K"`
+ * (Seedream 5.0 lite) sit between tiers, and inventing canonical names for
+ * them would put two words in every provider's mouth to serve one. They stay
+ * reachable through
  * `providerOptions.bytedance.size`.
  */
 const KEYWORD_BY_TIER: Readonly<Record<ResolutionTier, string>> = {

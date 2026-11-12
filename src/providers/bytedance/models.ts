@@ -24,12 +24,14 @@
 // Pricing conversions (documented so the arithmetic never rots unexplained):
 // - IMAGE models bill per successfully generated image (Pricing → "Image
 //   generation models"), so `cost.perImage` is the documented USD/image.
-//   Seedream 5.0 pro is the one tiered row: 0.045/image at ≤ 2.61M output
-//   pixels (1K/1.5K) and 0.09/image above it (2K); layer decomposition is
-//   half that per layer (0.0225 / 0.045) and input images cost 0.003 each
-//   from the 2nd on. `perImage` records the *default* configuration
-//   (`size` defaults to `2K` → 0.09); ./pricing.ts resolves the real tier
-//   per request.
+//   Two rows are tiered by output pixels. Seedream 5.0 pro: 0.045/image at
+//   ≤ 2.61M output pixels (1K/1.5K) and 0.09/image above it (2K); layer
+//   decomposition is half that per layer (0.0225 / 0.045) and input images
+//   cost 0.003 each from the 2nd on. Seedream 5.5: 0.020/image at
+//   ≤ 1536² × 1.05² pixels and 0.035 above it, every layer billed as an
+//   image, every input image 0.008. `perImage` records the *default*
+//   configuration (`size` defaults to `2K` → the high tier); ./pricing.ts
+//   resolves the real tier per request.
 // - VIDEO models bill by token: `price = token unit price × tokens` with
 //   `tokens = (input video duration + output video duration) × width ×
 //   height × fps / 1024` (Pricing → "Video generation models"). A single
@@ -67,6 +69,26 @@ export const provider = {
  * https://docs.byteplus.com/en/docs/ModelArk/1330310#9df4d9fd
  */
 export const imageModels = {
+  "dola-seedream-5-5-261028": {
+    id: "dola-seedream-5-5-261028",
+    name: "Seedream 5.5",
+    family: "seedream",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    // The id-suffix convention (…-261028), as for every row here; BytePlus
+    // prints no launch date for this model.
+    releaseDate: "2026-10-28",
+    modalities: { input: ["text", "image"], output: ["image"] },
+    limit: { context: 0 },
+    // "|`dola-seedream-5-5-261028` |$0.008 |* 921,600 ≤ P ≤ 1536² × 1.05²
+    // (2,601,123.84): $0.020 · 1536² × 1.05² (2,601,123.84) < P ≤ 2048² ×
+    // 1.05² (4,624,220.16): $0.035 |" — the documented `size` default 2K
+    // (4,194,304 px) is the high tier. Input images bill 0.008 each.
+    // https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+    cost: { perImage: 0.035 },
+  },
   "dola-seedream-5-0-pro-260628": {
     id: "dola-seedream-5-0-pro-260628",
     name: "Seedream 5.0 pro",
@@ -82,6 +104,23 @@ export const imageModels = {
     // i.e. 2K, the documented `size` default). Layer decomposition halves
     // both; input images bill 0.003 each from the 2nd on. — Pricing 1544106
     cost: { perImage: 0.09 },
+  },
+  "dola-seedream-5-0-flash-260915": {
+    id: "dola-seedream-5-0-flash-260915",
+    name: "Seedream 5.0 flash",
+    family: "seedream",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2026-09-15",
+    modalities: { input: ["text", "image"], output: ["image"] },
+    limit: { context: 0 },
+    // "|`dola-seedream-5-0-flash-260915` |Free |$0.018 |" — input images
+    // free, 0.018 USD per output image at every size; a layer-decomposition
+    // request bills its base image and each layer.
+    // https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+    cost: { perImage: 0.018 },
   },
   "seedream-5-0-260128": {
     id: "seedream-5-0-260128",

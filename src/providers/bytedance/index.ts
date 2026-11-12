@@ -6,7 +6,9 @@ export {
 export type {
   BytedanceImageSize,
   ImageGenerationsBody,
+  Seedream55Body,
   Seedream50ProBody,
+  Seedream50FlashBody,
   Seedream50Body,
   Seedream50LiteBody,
   Seedream45Body,
@@ -15,6 +17,7 @@ export type {
   OptimizePromptOptions,
   StandardOnlyOptimizePromptOptions,
   SequentialImageGenerationOptions,
+  LayerDecompositionOptions,
 } from "./image";
 
 export {
@@ -63,6 +66,7 @@ export {
   PROMPT_OPTIMIZE_MODES,
   IMAGE_SIZE_KEYWORDS,
   MAX_IMAGES_RANGE,
+  LAYER_MAX_IMAGES_RANGE,
   SEQUENTIAL_TOTAL_IMAGES,
   IMAGE_INPUT_RULE,
   LAYER_DECOMPOSITION_INPUT_RULE,
@@ -98,6 +102,10 @@ export {
   SEEDREAM_5_PRO_RATES,
   SEEDREAM_5_PRO_TIER_PIXELS,
   SEEDREAM_5_PRO_INPUT_IMAGE_USD,
+  SEEDREAM_5_5_RATES,
+  SEEDREAM_5_5_TIER_PIXELS,
+  SEEDREAM_5_5_INPUT_IMAGE_USD,
+  SEEDREAM_5_5_DEFAULT_LAYER_IMAGES,
   MAX_DECOMPOSED_LAYERS,
 } from "./pricing";
 export type { ImagePricingFields, VideoPricingFields } from "./pricing";

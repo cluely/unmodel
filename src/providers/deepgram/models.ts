@@ -365,7 +365,6 @@ const ttsModels = {
   "aura-2-livia-it": aura2("aura-2-livia-it", "Aura-2 Livia (Italian)"),
   "aura-2-maia-it": aura2("aura-2-maia-it", "Aura-2 Maia (Italian)"),
   "aura-2-melia-it": aura2("aura-2-melia-it", "Aura-2 Melia (Italian)"),
-  "aura-2-perseo-it": aura2("aura-2-perseo-it", "Aura-2 Perseo (Italian)"),
   // Japanese (ja)
   "aura-2-ama-ja": aura2("aura-2-ama-ja", "Aura-2 Ama (Japanese)"),
   "aura-2-ebisu-ja": aura2("aura-2-ebisu-ja", "Aura-2 Ebisu (Japanese)"),

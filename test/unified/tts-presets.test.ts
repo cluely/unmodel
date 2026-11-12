@@ -36,9 +36,9 @@
  *
  * ## Why the sweep runs one model per distinct row
  *
- * Rows are shared wherever the wire is: Deepgram's 103 Aura voices are one
+ * Rows are shared wherever the wire is: Deepgram's 102 Aura voices are one
  * `/v1/speak` surface, and the table says so with one generated row. Running
- * the same seven codec cells 103 times would prove nothing the first pass does
+ * the same seven codec cells 102 times would prove nothing the first pass does
  * not, so the sweep is keyed by the row's *signature* — its lists and its extra
  * names — and a separate test asserts that every model an adapter serves has a
  * row, so nothing goes unrepresented.

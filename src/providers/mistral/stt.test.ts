@@ -176,8 +176,6 @@ describe("mistral.stt model gating", () => {
   test("the dated transcribe ids resolve to catalog entries", () => {
     expect(transcriptionModels["voxtral-mini-2602"]?.cost?.perAudioMinute).toBe(0.003);
     expect(transcriptionModels["voxtral-small-2507"]?.cost?.perAudioMinute).toBe(0.004);
-    // voxtral-mini-2507 is no longer priced by Mistral: no guessed rate.
-    expect(transcriptionModels["voxtral-mini-2507"]?.cost).toBeUndefined();
   });
 });
 
@@ -193,10 +191,10 @@ describe("mistral.stt media + cost", () => {
   });
 
   test("per-model audio caps are enforced", () => {
-    const miniLimit = TRANSCRIPTION_MAX_AUDIO_SECONDS["voxtral-mini-2507"] ?? 0;
+    const smallLimit = TRANSCRIPTION_MAX_AUDIO_SECONDS["voxtral-small-2507"] ?? 0;
     const tooLong = stt.safe(
-      { model: "voxtral-mini-2507", file_url: "https://example.com/a.mp3" },
-      { media: [{ path: ["file_url"], durationSeconds: miniLimit + 1 }] },
+      { model: "voxtral-small-2507", file_url: "https://example.com/a.mp3" },
+      { media: [{ path: ["file_url"], durationSeconds: smallLimit + 1 }] },
     );
     expect(tooLong.ok).toBe(false);
     if (!tooLong.ok) {
@@ -207,7 +205,7 @@ describe("mistral.stt media + cost", () => {
     // The same audio fits Voxtral Mini Transcribe 2's ~3 hour window.
     const fits = stt.safe(
       { model: "voxtral-mini-2602", file_url: "https://example.com/a.mp3" },
-      { media: [{ path: ["file_url"], durationSeconds: miniLimit + 1 }] },
+      { media: [{ path: ["file_url"], durationSeconds: smallLimit + 1 }] },
     );
     expect(fits.ok).toBe(true);
   });

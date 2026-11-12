@@ -16,7 +16,6 @@ import type { SttModelParamTable } from "../../core/unified/vocabulary/stt";
 export const MODELS = [
   "voxtral-mini-latest",
   "voxtral-mini-2602",
-  "voxtral-mini-2507",
   "voxtral-small-latest",
   "voxtral-small-2507",
   "voxtral-mini-transcribe-3-0",
@@ -28,7 +27,7 @@ export const MODELS = [
 ] as const;
 
 /**
- * The five pre-Voxtral 3 ids share one row, because they share one schema, and
+ * The four pre-Voxtral 3 ids share one row, because they share one schema, and
  * the one rule they carry (`timestamp_granularities` "is not compatible with
  * `language`") is a *combination* rule that applies to every id equally.
  *
@@ -63,7 +62,6 @@ export const VOXTRAL_3_ROW = {
 export const MISTRAL_STT_MODEL_PARAMS = {
   "voxtral-mini-latest": VOXTRAL_ROW,
   "voxtral-mini-2602": VOXTRAL_ROW,
-  "voxtral-mini-2507": VOXTRAL_ROW,
   "voxtral-small-latest": VOXTRAL_ROW,
   "voxtral-small-2507": VOXTRAL_ROW,
   "voxtral-mini-transcribe-3-0": VOXTRAL_3_ROW,

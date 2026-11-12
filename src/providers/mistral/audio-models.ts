@@ -3,7 +3,6 @@
 // `voxtral-small-2507`, with no audio pricing, and none of the transcribe-only
 // dated ids. Refresh from
 //   https://docs.mistral.ai/models/model-cards/voxtral-mini-transcribe-26-02           (voxtral-mini-2602)
-//   https://docs.mistral.ai/models/model-cards/voxtral-mini-transcribe-25-07           (voxtral-mini-2507)
 //   https://docs.mistral.ai/models/model-cards/voxtral-small-25-07                     (voxtral-small-2507)
 //   https://docs.mistral.ai/models/model-cards/voxtral-mini-transcribe-realtime-26-02  (realtime)
 //   https://docs.mistral.ai/models/voxtral-mini-transcribe-3-0                         (Voxtral Mini Transcribe 3)
@@ -17,8 +16,7 @@
 // below are the ones the pages carry alongside each EUR price
 // (voxtral-mini-2602 $0.003/min = €0.0026/min, realtime $0.006/min =
 // €0.0053/min, voxtral-small-2507 $0.004/min = €0.0035/min audio plus
-// $0.10/$0.40 per 1M tokens). voxtral-mini-2507 is absent from the current
-// pricing table, so it carries NO cost rather than a guessed one.
+// $0.10/$0.40 per 1M tokens).
 //
 // `limit.context: 0` for the transcribe-only models — they are not
 // token-windowed and the pipeline skips context checks. The real per-request
@@ -78,15 +76,6 @@ export const transcriptionSupplementModels = {
     name: "Voxtral Mini Transcribe 2",
     releaseDate: "2026-02-04",
     cost: { perAudioMinute: 0.003 },
-  },
-  "voxtral-mini-2507": {
-    ...TRANSCRIBE,
-    id: "voxtral-mini-2507",
-    name: "Voxtral Mini Transcribe",
-    releaseDate: "2025-07-15",
-    // Superseded by voxtral-mini-2602 and no longer priced on
-    // docs.mistral.ai/inference/pricing — no cost is recorded.
-    openWeights: true,
   },
   /**
    * Live transcription: served over the realtime WebSocket API (the Python
@@ -207,7 +196,6 @@ export const transcriptionModels: Record<string, ModelInfo> = {
 export const TRANSCRIPTION_MAX_AUDIO_SECONDS: Readonly<Record<string, number>> = {
   "voxtral-mini-latest": 3 * 60 * 60,
   "voxtral-mini-2602": 3 * 60 * 60,
-  "voxtral-mini-2507": 15 * 60,
   "voxtral-small-latest": 15 * 60,
   "voxtral-small-2507": 15 * 60,
 };
@@ -234,9 +222,9 @@ export const VOXTRAL_3_TRANSCRIPTION_MODEL_IDS = [
 
 /**
  * Model ids POST /v1/audio/transcriptions accepts. The endpoint docs name
- * `voxtral-mini-latest` ("via audio/transcriptions"), the OpenAPI examples add
- * `voxtral-mini-2507`, the max-audio-length FAQ covers the Voxtral Small
- * transcription path too, and the Voxtral 3 ids join them.
+ * `voxtral-mini-latest` ("via audio/transcriptions"), the max-audio-length FAQ
+ * covers Voxtral Mini Transcribe 2 and the Voxtral Small transcription path
+ * too, and the Voxtral 3 ids join them.
  */
 export const TRANSCRIPTION_MODEL_IDS: readonly string[] = [
   ...Object.keys(TRANSCRIPTION_MAX_AUDIO_SECONDS),

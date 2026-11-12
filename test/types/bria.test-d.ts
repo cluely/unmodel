@@ -23,8 +23,13 @@ function generateEnumTypeTests(): void {
   image({ prompt: "hi", aspect_ratio: "4:5", resolution: "1MP", output_type: "jpeg" });
   imageLite({ prompt: "hi", aspect_ratio: "9:16", output_type: "jpeg" });
 
-  // @ts-expect-error aspect_ratio is CLOSED — 21:9 is not one of the 9 values
+  // The full route takes Fibo 2's 21 ratios; lite takes nine of them.
   image({ prompt: "hi", aspect_ratio: "21:9" });
+  image({ prompt: "hi", aspect_ratio: "1:5" });
+  // @ts-expect-error aspect_ratio is CLOSED — 7:3 is not one of the 21 values
+  image({ prompt: "hi", aspect_ratio: "7:3" });
+  // @ts-expect-error the lite route's enum is nine values — no 21:9
+  imageLite({ prompt: "hi", aspect_ratio: "21:9" });
   // @ts-expect-error the empty string is not a ratio
   imageLite({ prompt: "hi", aspect_ratio: "" });
   // @ts-expect-error resolution is CLOSED — 1MP | 4MP
@@ -35,6 +40,13 @@ function generateEnumTypeTests(): void {
   image({ prompt: "hi", output_type: "webp" });
   // @ts-expect-error the empty string is not an output type
   image({ prompt: "hi", output_type: "" });
+
+  // style is CLOSED, and full-route only.
+  image({ prompt: "hi", style: "kodak_film" });
+  // @ts-expect-error style is CLOSED — kodak_film | hard_flash | hazy_dreamy | rough_realism
+  image({ prompt: "hi", style: "vintage" });
+  // @ts-expect-error the lite route has no style
+  imageLite({ prompt: "hi", style: "kodak_film" });
 
   // model_version keeps its escape hatch — model ids stay open on purpose.
   image({ prompt: "hi", model_version: "FIBO-next" });
@@ -49,6 +61,15 @@ function editEnumTypeTests(): void {
   imageEdit({ images: ["https://example.com/p.png"], instruction: "hi", output_type: "webp" });
   // @ts-expect-error the empty string is not an output type
   imageEdit({ images: ["https://example.com/p.png"], instruction: "hi", output_type: "" });
+
+  // aspect_ratio on the edit route is the same 21-value enum as generate.
+  imageEdit({
+    images: ["https://example.com/a.png", "https://example.com/b.png"],
+    instruction: "hi",
+    aspect_ratio: "21:9",
+  });
+  // @ts-expect-error aspect_ratio is CLOSED on the edit route too
+  imageEdit({ images: ["https://example.com/p.png"], instruction: "hi", aspect_ratio: "7:3" });
 }
 
 export { generateEnumTypeTests, editEnumTypeTests };

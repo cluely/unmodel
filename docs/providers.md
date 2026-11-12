@@ -144,7 +144,7 @@ whatever the wire calls it; a provider with more than one generation route quali
 extras (`imageCore`, `imageV4`, `imageFlux1`) and never the primary one. openai gpt-image +
 DALL·E (`image`, at /v1/images), google (Imagen 4 via `image` → `:predict`; Nano Banana /
 gemini-*-image via `chat`), black-forest-labs (FLUX.2 `image`, FLUX 1.x `imageFlux1`,
-Kontext — api.bfl.ai, `unmodel/black-forest-labs`), bria (`image` + `imageLite`, FIBO),
+Kontext — api.bfl.ai, `unmodel/black-forest-labs`), bria (`image` + `imageLite`, Fibo 2 / Fibo Lite),
 bytedance (`image`, Seedream on BytePlus ModelArk), kling (`image` + `imageOmni`), krea
 (`image`), leonardo (`image`, Lucid / Phoenix), recraft (`image`), ideogram (v3 `image` + v4
 `imageV4`), reve (`image` + `imageV2`), stability (Stable Image `image` / `imageCore` /

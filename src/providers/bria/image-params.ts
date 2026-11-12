@@ -11,7 +11,7 @@
 
 import { EXTRA } from "../../core/unified/derive";
 import type { ModelParamTable } from "../../core/unified/vocabulary/image";
-import { BRIA_ASPECT_RATIOS } from "./shared";
+import { BRIA_ASPECT_RATIOS, BRIA_LITE_ASPECT_RATIOS, type BriaStyle } from "./shared";
 
 /** The two generate rows in the catalog — the ref union for `bria/…`. */
 export const MODELS = ["FIBO", "FIBO-lite"] as const;
@@ -20,15 +20,16 @@ export const MODELS = ["FIBO", "FIBO-lite"] as const;
  * The two generate routes' per-model surface.
  *
  * Neither has a width/height field, so no `sizes` row exists and `size` types
- * as `never` — the nine-value `aspect_ratio` enum is the whole shape
- * vocabulary. The tier split is the interesting half and it is real: the full
- * route publishes `resolution: "1MP" | "4MP"`, and the lite route has no such
- * field at all, so its `tiers` is empty and `resolution` is a compile error
- * rather than a value with nowhere to go.
+ * as `never` — the `aspect_ratio` enum is the whole shape vocabulary, and it
+ * differs per route: Fibo 2 on the full route renders 21 ratios, the lite
+ * route nine of them. The tier split is the other half and it is
+ * real: the full route publishes `resolution: "1MP" | "4MP"`, and the lite
+ * route has no such field at all, so its `tiers` is empty and `resolution` is
+ * a compile error rather than a value with nowhere to go.
  *
- * `steps_num` is the same story one level down: 35–50 on the full route, and
- * an explicit `unsupported_param` on lite ("`steps_num` is not part of the
- * Fibo Lite request schema"). Declaring it on one row and not the other is
+ * `steps_num` and `style` are the same story one level down: full route only,
+ * and an explicit `unsupported_param` on lite ("`steps_num` is not part of the
+ * Fibo Lite request schema"). Declaring them on one row and not the other is
  * what makes that a compile error too.
  */
 export const BRIA_SHARED_EXTRAS = {
@@ -43,10 +44,10 @@ export const BRIA_IMAGE_MODEL_PARAMS = {
   FIBO: {
     ratios: BRIA_ASPECT_RATIOS,
     tiers: ["1k", "2k"],
-    extras: { steps_num: EXTRA as number, ...BRIA_SHARED_EXTRAS },
+    extras: { steps_num: EXTRA as number, style: EXTRA as BriaStyle, ...BRIA_SHARED_EXTRAS },
   },
   "FIBO-lite": {
-    ratios: BRIA_ASPECT_RATIOS,
+    ratios: BRIA_LITE_ASPECT_RATIOS,
     tiers: [],
     extras: BRIA_SHARED_EXTRAS,
   },

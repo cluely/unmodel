@@ -7,7 +7,14 @@ import {
 } from "./image";
 import { imageEdit, BRIA_IMAGE_EDIT_URL } from "./image-edit";
 import { models } from "./models";
-import { BRIA_ASPECT_RATIOS, BRIA_RESOLUTIONS, BRIA_OUTPUT_TYPES } from "./shared";
+import {
+  BRIA_ASPECT_RATIOS,
+  BRIA_FIBO2_ASPECT_RATIOS,
+  BRIA_LITE_ASPECT_RATIOS,
+  BRIA_RESOLUTIONS,
+  BRIA_OUTPUT_TYPES,
+  BRIA_STYLES,
+} from "./shared";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 
@@ -99,19 +106,98 @@ describe("bria.image", () => {
     }
   });
 
-  // These three enums are CLOSED in the bundled OpenAPI, so their param types
+  // These enums are CLOSED in the bundled OpenAPI, so their param types
   // dropped the `(string & {})` tail. Every arm they advertise must validate.
-  test("every BriaAspectRatio preset validates on both generate routes", () => {
-    // Keep in sync with BriaAspectRatio
+  test("every BriaAspectRatio preset validates on generate and edit", () => {
+    // Keep in sync with BriaAspectRatio — the 21-value enum both Fibo 2 routes share.
+    expect(BRIA_ASPECT_RATIOS).toHaveLength(21);
     for (const aspect_ratio of BRIA_ASPECT_RATIOS) {
       const full = image.safe({ prompt: "x", aspect_ratio });
       expect(full.ok, `generate should accept ${aspect_ratio}`).toBe(true);
       if (full.ok) expect(full.warnings, `${aspect_ratio} should be warning-free`).toEqual([]);
 
+      const edited = imageEdit.safe({
+        images: ["https://example.com/p.png", "https://example.com/q.png"],
+        instruction: "x",
+        aspect_ratio,
+      });
+      expect(edited.ok, `edit should accept ${aspect_ratio}`).toBe(true);
+      if (edited.ok) expect(edited.warnings, `${aspect_ratio} should be warning-free`).toEqual([]);
+    }
+  });
+
+  test("every BriaLiteAspectRatio preset validates on generate/lite", () => {
+    // Keep in sync with BriaLiteAspectRatio — the lite route's nine-value enum.
+    expect(BRIA_LITE_ASPECT_RATIOS).toHaveLength(9);
+    for (const aspect_ratio of BRIA_LITE_ASPECT_RATIOS) {
       const lite = imageLite.safe({ prompt: "x", aspect_ratio });
       expect(lite.ok, `generate/lite should accept ${aspect_ratio}`).toBe(true);
       if (lite.ok) expect(lite.warnings, `${aspect_ratio} should be warning-free`).toEqual([]);
     }
+  });
+
+  test("every BriaStyle preset validates with a text prompt", () => {
+    // Keep in sync with BriaStyle
+    for (const style of BRIA_STYLES) {
+      const r = image.safe({ prompt: "a woman reading on a city bus", style, seed: 5555 });
+      expect(r.ok, `style ${style} should validate`).toBe(true);
+      if (r.ok) expect(r.warnings, `${style} should be warning-free`).toEqual([]);
+    }
+    const unknown = generateUnchecked({ prompt: "x", style: "vintage" });
+    expect(unknown.ok).toBe(false);
+    if (!unknown.ok) expect(unknown.errors[0]?.code).toBe("invalid_enum_value");
+  });
+
+  test("style refuses structured_prompt, images and 4MP", () => {
+    for (const params of [
+      { structured_prompt: STRUCTURED_PROMPT, seed: 1, style: "kodak_film" },
+      { prompt: "x", images: ["https://example.com/ref.jpg"], style: "hard_flash" },
+      { prompt: "x", resolution: "4MP", style: "hazy_dreamy" },
+    ]) {
+      const r = generateUnchecked(params);
+      expect(r.ok, JSON.stringify(params)).toBe(false);
+      if (!r.ok) {
+        expect(r.errors.map((e) => e.path[0])).toEqual(["style"]);
+        expect(r.errors[0]?.message).toContain("422");
+      }
+    }
+  });
+
+  test("4MP is async-only", () => {
+    const r = generateUnchecked({ prompt: "x", resolution: "4MP", sync: true });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.path).toEqual(["sync"]);
+      expect(r.errors[0]?.message).toContain("asynchronous");
+    }
+
+    expect(image.safe({ prompt: "x", resolution: "4MP", sync: false }).ok).toBe(true);
+    expect(image.safe({ prompt: "x", resolution: "1MP", sync: true }).ok).toBe(true);
+  });
+
+  test("the twelve Fibo 2 ratios refuse 4MP, prompt+structured_prompt and prompt-less images", () => {
+    expect(BRIA_FIBO2_ASPECT_RATIOS).toHaveLength(12);
+    for (const params of [
+      { prompt: "x", aspect_ratio: "21:9", resolution: "4MP" },
+      { prompt: "x", structured_prompt: STRUCTURED_PROMPT, seed: 1, aspect_ratio: "2:1" },
+      { images: ["https://example.com/ref.jpg"], aspect_ratio: "1:5" },
+    ]) {
+      const r = generateUnchecked(params);
+      expect(r.ok, JSON.stringify(params)).toBe(false);
+      if (!r.ok) {
+        expect(r.errors.map((e) => e.path[0])).toEqual(["aspect_ratio"]);
+        expect(r.errors[0]?.message).toContain("only Fibo 2 renders");
+      }
+    }
+
+    // The same requests on one of the original nine ratios, and the Fibo 2
+    // ratios on the requests Fibo 2 serves, all validate.
+    expect(image.safe({ prompt: "x", aspect_ratio: "16:9", resolution: "4MP" }).ok).toBe(true);
+    expect(
+      image.safe({ images: ["https://example.com/ref.jpg"], prompt: "x", aspect_ratio: "21:9" }).ok,
+    ).toBe(true);
+    expect(image.safe({ structured_prompt: STRUCTURED_PROMPT, seed: 1, aspect_ratio: "9:21" }).ok)
+      .toBe(true);
   });
 
   test("every BriaResolution preset validates", () => {
@@ -146,7 +232,8 @@ describe("bria.image", () => {
   });
 
   test("enums and ranges are enforced", () => {
-    expect(generateUnchecked({ prompt: "x", aspect_ratio: "21:9" }).ok).toBe(false);
+    expect(generateUnchecked({ prompt: "x", aspect_ratio: "7:3" }).ok).toBe(false);
+    expect(image.safe({ prompt: "x", aspect_ratio: "21:9" }).ok).toBe(true);
     expect(generateUnchecked({ prompt: "x", resolution: "2MP" }).ok).toBe(false);
     expect(generateUnchecked({ prompt: "x", output_type: "webp" }).ok).toBe(false);
     expect(generateUnchecked({ prompt: "x", steps_num: 20 }).ok).toBe(false);
@@ -172,12 +259,22 @@ describe("bria.imageLite", () => {
   test("rejects the full route's extra knobs", () => {
     for (const params of [
       { prompt: "x", resolution: "4MP" },
+      { prompt: "x", style: "kodak_film" },
       { prompt: "x", negative_prompt: "blurry" },
       { prompt: "x", steps_num: 40 },
     ]) {
       const r = liteUnchecked(params);
       expect(r.ok).toBe(false);
       if (!r.ok) expect(r.errors[0]?.code).toBe("unsupported_param");
+    }
+  });
+
+  test("takes nine ratios; the twelve Fibo 2 ratios are refused by name", () => {
+    const r = liteUnchecked({ prompt: "x", aspect_ratio: "21:9" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_enum_value");
+      expect(r.errors[0]?.message).toContain("POST /v2/image/generate only");
     }
   });
 });
@@ -197,13 +294,47 @@ describe("bria.imageEdit", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.03, 10);
   });
 
-  test("images is required and must hold exactly one item", () => {
+  test("images is required and holds 1 to 4 items", () => {
     const missing = editUnchecked({ instruction: "x" });
     expect(missing.ok).toBe(false);
 
-    const two = editUnchecked({ images: ["a", "b"], instruction: "x" });
+    const empty = editUnchecked({ images: [], instruction: "x" });
+    expect(empty.ok).toBe(false);
+
+    // The spec's own multi_reference_3_images example, shortened.
+    const three = imageEdit.safe({
+      images: [
+        "https://labs-assets.bria.ai/sandbox-example-inputs/fibo2_edit_still_rock.jpg",
+        "https://labs-assets.bria.ai/sandbox-example-inputs/fibo2_edit_still_bottle.jpg",
+        "https://labs-assets.bria.ai/sandbox-example-inputs/fibo2_edit_still_logo.jpg",
+      ],
+      instruction: "luxury fragrance poster",
+    });
+    expect(three.ok).toBe(true);
+    if (three.ok) expect(three.warnings).toEqual([]);
+    expect(imageEdit.safe({ images: ["a", "b", "c", "d"], instruction: "x" }).ok).toBe(true);
+
+    const five = editUnchecked({ images: ["a", "b", "c", "d", "e"], instruction: "x" });
+    expect(five.ok).toBe(false);
+    if (!five.ok) expect(five.errors[0]?.message).toContain("1 to 4 images");
+  });
+
+  test("a mask needs a single-image request", () => {
+    expect(imageEdit.safe({ images: ["a"], mask: "m", instruction: "x" }).ok).toBe(true);
+    const two = editUnchecked({ images: ["a", "b"], mask: "m", instruction: "x" });
     expect(two.ok).toBe(false);
-    if (!two.ok) expect(two.errors[0]?.message).toContain("exactly one item");
+    if (!two.ok) {
+      expect(two.errors[0]?.path).toEqual(["mask"]);
+      expect(two.errors[0]?.message).toContain("exactly one item");
+    }
+  });
+
+  test("aspect_ratio is the 21-value enum", () => {
+    const v = imageEdit({ images: ["a", "b"], instruction: "x", aspect_ratio: "21:9" });
+    expect(v.aspect_ratio).toBe("21:9");
+    const r = editUnchecked({ images: ["a"], instruction: "x", aspect_ratio: "7:3" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_enum_value");
   });
 
   test("the edit route's step range is wider than the generate route's", () => {
@@ -233,6 +364,8 @@ describe("bria.imageEdit", () => {
 describe("bria catalog", () => {
   test("holds the three documented FIBO routes with published prices", () => {
     expect(Object.keys(models)).toEqual(["FIBO", "FIBO-lite", "FIBO-edit"]);
+    expect(models.FIBO.name).toBe("Fibo 2");
+    expect(models["FIBO-edit"].name).toBe("Fibo 2 Edit");
     expect(models.FIBO.cost.perImage).toBe(0.03);
     expect(models["FIBO-lite"].cost.perImage).toBe(0.02);
     expect(models["FIBO-edit"].cost.perImage).toBe(0.03);

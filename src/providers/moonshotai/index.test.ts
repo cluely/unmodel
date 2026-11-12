@@ -140,6 +140,26 @@ describe("fixed sampling (Model Parameter Reference)", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors.map((e) => [e.code, e.path])).toEqual([["unsupported_param", ["temperature"]]]);
   });
+
+  test("kimi-k2.6 takes 1.0 with thinking on and 0.6 with thinking off, nothing else", () => {
+    for (const temperature of [1, 0.6]) {
+      const r = chat.safe({ ...base, model: "kimi-k2.6", temperature });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+    const r = chat.safe({ ...base, model: "kimi-k2.6", temperature: 0.7 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => [e.code, e.path])).toEqual([["invalid_enum_value", ["temperature"]]]);
+      expect(r.errors[0]?.message).toContain("0.6");
+    }
+  });
+
+  test("kimi-k2.7-code keeps temperature fixed at 1.0", () => {
+    const r = chat.safe({ ...base, model: "kimi-k2.7-code", temperature: 0.6 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.map((e) => [e.code, e.path])).toEqual([["unsupported_param", ["temperature"]]]);
+  });
 });
 
 describe("tool_choice on the always-thinking K3 series", () => {

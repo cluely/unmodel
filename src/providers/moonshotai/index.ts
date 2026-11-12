@@ -1,8 +1,9 @@
 // unmodel/moonshotai — Moonshot AI (Kimi is the model family) chat over the
 // OpenAI-compatible dialect: POST https://api.moonshot.ai/v1/chat/completions.
 // Params mirror the wire format exactly; validation runs against the generated
-// moonshotai catalog. This is the international platform.moonshot.ai endpoint
-// (the China endpoint is the separate moonshotai-cn catalog).
+// moonshotai catalog. This is the international endpoint, documented at
+// https://platform.kimi.ai/docs (the China endpoint is the separate
+// moonshotai-cn catalog).
 
 import { createOpenAICompatible, type ChatCompletionsBodyBase } from "../openai-compatible";
 import type { PipelineContext } from "../../core/pipeline";
@@ -30,10 +31,10 @@ const VISION_GUIDE = "https://platform.kimi.ai/docs/guide/use-kimi-vision-model 
  *    returns an error, so do not pass it explicitly."
  *
  * Enums rather than deny rules: the fixed value itself is not "any other
- * value", so an explicit `top_p: 0.95` passes. `temperature` is fixed at 1.0,
- * which the dialect's catalog-driven `temperature: false` check already
- * enforces; `top_p` needs its row because its fixed value is not that check's
- * default of 1.
+ * value", so an explicit `top_p: 0.95` passes. `temperature` is fixed at 1.0
+ * on the K3 series and kimi-k2.7-code, which the dialect's catalog-driven
+ * `temperature: false` check already enforces; `top_p` needs its row because
+ * its fixed value is not that check's default of 1.
  */
 const FIXED_SAMPLING = {
   top_p: [0.95],
@@ -54,13 +55,18 @@ const chatConstraints = {
   "kimi-k3": { enums: FIXED_SAMPLING },
   "kimi-k2.7-code": { enums: FIXED_SAMPLING },
   "kimi-k2.7-code-highspeed": { enums: FIXED_SAMPLING },
-  "kimi-k2.6": { enums: FIXED_SAMPLING },
+  // "| `temperature` | Fixed at `1.0` | Fixed at `1.0` | Fixed at `1.0` with
+  // thinking on and `0.6` with thinking off |" — the catalog's boolean
+  // `temperature: false` cannot say 0.6, so the row lists both values. The
+  // pairing of 0.6 with `thinking.type: "disabled"` is not cross-checked.
+  "kimi-k2.6": { enums: { ...FIXED_SAMPLING, temperature: [1, 0.6] } },
 } as const satisfies Record<MoonshotaiTextModelId, EndpointConstraints>;
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
   createOpenAICompatible<MoonshotaiTextModelId, typeof availability, "moonshotai">({
     id: "moonshotai",
-    // https://platform.moonshot.ai/docs/api/chat
+    // https://platform.kimi.ai/docs/api/chat (models.dev's `provider.doc`
+    // still names platform.moonshot.ai/docs/api/chat, which 301s here).
     baseUrl: provider.api,
     catalog: models,
     availability,

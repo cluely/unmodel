@@ -8,7 +8,8 @@ import type { ValidateResult } from "../../core/result";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import {
   chatCompletionsChecks,
-  checkSamplingParams,
+  createSamplingParamsCheck,
+  type ChatCompletionsCheck,
   createChatCompletionsSchema,
   createChatEstimate,
   createChatFinalize,
@@ -286,20 +287,16 @@ function checkGpt6ChatRules(
  * params go through, as the API accepts them; on the two models whose enum
  * refuses `none` the exemption never engages.
  */
-function checkSamplingParamsOutsideEffortNone(
-  params: ChatCompletionsBody,
-  info: ModelInfo | undefined,
-  ctx: PipelineContext,
-): void {
-  if (gpt6RuleFor(params.model) !== undefined && params.reasoning_effort === "none") return;
-  checkSamplingParams(params, info, ctx);
+function exemptAtEffortNone(check: ChatCompletionsCheck): ChatCompletionsCheck {
+  return function checkSamplingParamsOutsideEffortNone(params, info, ctx) {
+    if (gpt6RuleFor(params.model) !== undefined && params.reasoning_effort === "none") return;
+    check(params, info, ctx);
+  };
 }
 
-/** The shared battery, order preserved, with `checkSamplingParams` swapped for the GPT-6-aware one. */
+/** The shared battery, order preserved, with its sampling slot wrapped in the GPT-6 `none` exemption. */
 function openaiChatChecks(spec: ChatConstraintSpec): readonly ChatCheck[] {
-  return chatCompletionsChecks(spec).map((check) =>
-    check === checkSamplingParams ? checkSamplingParamsOutsideEffortNone : check,
-  );
+  return chatCompletionsChecks(spec, exemptAtEffortNone(createSamplingParamsCheck(spec)));
 }
 
 // ---------------------------------------------------------------------------

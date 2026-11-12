@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1441 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1437 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -397,16 +397,12 @@ export const CHAT_MODEL_REFS = [
   "mistral/zai-glm-5-2",
   "mistral/zai-glm-5-3",
   "mistral/zai-glm-5-3-flash",
-  "moonshotai/kimi-k2-0711-preview",
-  "moonshotai/kimi-k2-0905-preview",
-  "moonshotai/kimi-k2-thinking",
-  "moonshotai/kimi-k2-thinking-turbo",
-  "moonshotai/kimi-k2-turbo-preview",
-  "moonshotai/kimi-k2.5",
   "moonshotai/kimi-k2.6",
   "moonshotai/kimi-k2.7-code",
   "moonshotai/kimi-k2.7-code-highspeed",
   "moonshotai/kimi-k3",
+  "moonshotai/kimi-k3.1-pro",
+  "moonshotai/kimi-k3.1-pro-highspeed",
   "nebius/MiniMaxAI/MiniMax-M3",
   "nebius/MiniMaxAI/MiniMax-M3.1-Flash",
   "nebius/NousResearch/Hermes-4-405B",

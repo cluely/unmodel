@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1441 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1437 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -435,16 +435,12 @@ export type ChatModelRef =
   | "mistral/zai-glm-5-2"
   | "mistral/zai-glm-5-3"
   | "mistral/zai-glm-5-3-flash"
-  | "moonshotai/kimi-k2-0711-preview"
-  | "moonshotai/kimi-k2-0905-preview"
-  | "moonshotai/kimi-k2-thinking"
-  | "moonshotai/kimi-k2-thinking-turbo"
-  | "moonshotai/kimi-k2-turbo-preview"
-  | "moonshotai/kimi-k2.5"
   | "moonshotai/kimi-k2.6"
   | "moonshotai/kimi-k2.7-code"
   | "moonshotai/kimi-k2.7-code-highspeed"
   | "moonshotai/kimi-k3"
+  | "moonshotai/kimi-k3.1-pro"
+  | "moonshotai/kimi-k3.1-pro-highspeed"
   | "nebius/MiniMaxAI/MiniMax-M3"
   | "nebius/MiniMaxAI/MiniMax-M3.1-Flash"
   | "nebius/NousResearch/Hermes-4-405B"

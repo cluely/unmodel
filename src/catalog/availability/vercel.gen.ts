@@ -820,7 +820,6 @@ export const availability = {
     "azure": "kimi-k2.5",
     "deepinfra": "moonshotai/Kimi-K2.5",
     "huggingface": "moonshotai/Kimi-K2.5",
-    "moonshotai": "kimi-k2.5",
     "novita-ai": "moonshotai/kimi-k2.5",
     "openrouter": "moonshotai/kimi-k2.5",
     "vercel": "moonshotai/kimi-k2.5",
@@ -872,12 +871,14 @@ export const availability = {
   "moonshotai/kimi-k3.1-pro": {
     "baseten": "moonshotai/Kimi-K3.1-Pro",
     "deepinfra": "moonshotai/Kimi-K3.1-Pro",
+    "moonshotai": "kimi-k3.1-pro",
     "novita-ai": "moonshotai/kimi-k3.1-pro",
     "openrouter": "moonshotai/kimi-k3.1-pro",
     "togetherai": "moonshotai/Kimi-K3.1-Pro",
     "vercel": "moonshotai/kimi-k3.1-pro",
   },
   "moonshotai/kimi-k3.1-pro-highspeed": {
+    "moonshotai": "kimi-k3.1-pro-highspeed",
     "novita-ai": "moonshotai/kimi-k3.1-pro-highspeed",
     "vercel": "moonshotai/kimi-k3.1-pro-highspeed",
   },

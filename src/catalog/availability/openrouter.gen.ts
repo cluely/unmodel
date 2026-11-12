@@ -741,7 +741,6 @@ export const availability = {
     "amazon-bedrock": { id: "moonshot.kimi-k2-thinking", narrows: { context: 262143 } },
     "google-vertex": { id: "moonshotai/kimi-k2-thinking-maas", endpoint: "google-vertex.chatMaas" },
     "huggingface": "moonshotai/Kimi-K2-Thinking",
-    "moonshotai": "kimi-k2-thinking",
     "novita-ai": "moonshotai/kimi-k2-thinking",
     "openrouter": "moonshotai/kimi-k2-thinking",
   },
@@ -749,7 +748,6 @@ export const availability = {
     "azure": "kimi-k2.5",
     "deepinfra": "moonshotai/Kimi-K2.5",
     "huggingface": "moonshotai/Kimi-K2.5",
-    "moonshotai": "kimi-k2.5",
     "novita-ai": "moonshotai/kimi-k2.5",
     "openrouter": "moonshotai/kimi-k2.5",
     "vercel": { id: "moonshotai/kimi-k2.5", narrows: { context: 256000 } },
@@ -793,6 +791,7 @@ export const availability = {
   "moonshotai/kimi-k3.1-pro": {
     "baseten": { id: "moonshotai/Kimi-K3.1-Pro", narrows: { context: 1000000, drops: ["video"] } },
     "deepinfra": { id: "moonshotai/Kimi-K3.1-Pro", narrows: { drops: ["video"] } },
+    "moonshotai": "kimi-k3.1-pro",
     "novita-ai": "moonshotai/kimi-k3.1-pro",
     "openrouter": "moonshotai/kimi-k3.1-pro",
     "togetherai": { id: "moonshotai/Kimi-K3.1-Pro", narrows: { drops: ["video"] } },

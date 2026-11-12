@@ -151,7 +151,6 @@ export const availability = {
     "amazon-bedrock": { id: "moonshot.kimi-k2-thinking", narrows: { context: 262143 } },
     "google-vertex": { id: "moonshotai/kimi-k2-thinking-maas", endpoint: "google-vertex.chatMaas" },
     "huggingface": "moonshotai/Kimi-K2-Thinking",
-    "moonshotai": "kimi-k2-thinking",
     "novita-ai": "moonshotai/kimi-k2-thinking",
     "openrouter": "moonshotai/kimi-k2-thinking",
   },

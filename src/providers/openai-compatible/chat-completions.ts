@@ -224,8 +224,45 @@ export function checkSamplingParams(
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
+  reportFixedSampling(params, info, ctx, []);
+}
+
+/** One check in the Chat Completions battery. */
+export type ChatCompletionsCheck = (
+  params: ChatCompletionsBodyBase,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+) => void;
+
+/**
+ * {@link checkSamplingParams} wired to a provider's constraint tables: a
+ * sampling param the model's table pins with an `enums` row is left to that
+ * row. Not every fixed-sampling model fixes the default — Kimi pins `top_p` at
+ * 0.95 and rejects 1 — so the table states the documented value and the
+ * pipeline's enum layer refuses everything else by name.
+ *
+ * Exported so a dialect whose exemptions depend on other params (OpenAI's
+ * GPT-6 at `reasoning_effort: "none"`) can wrap it and hand the wrapper to
+ * {@link chatCompletionsChecks} as its sampling slot.
+ */
+export function createSamplingParamsCheck(spec: ChatConstraintSpec): ChatCompletionsCheck {
+  return function checkPinnedSampling(params, info, ctx) {
+    const pinned = constraintsFor(spec, params.model).flatMap((constraints) =>
+      Object.keys(constraints.enums ?? {}),
+    );
+    reportFixedSampling(params, info, ctx, pinned);
+  };
+}
+
+function reportFixedSampling(
+  params: ChatCompletionsBodyBase,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+  pinned: readonly string[],
+): void {
   if (info === undefined || info.temperature !== false) return;
   for (const param of ["temperature", "top_p"] as const) {
+    if (pinned.includes(param)) continue;
     const value = params[param];
     // Fixed-sampling (reasoning) models still accept the documented default
     // explicitly: the API's own rejection reads "Unsupported value:
@@ -300,18 +337,23 @@ export function createInlineImagesCheck(
   };
 }
 
-/** The standard Chat Completions check battery, wired to a provider's constraint tables. */
+/**
+ * The standard Chat Completions check battery, wired to a provider's
+ * constraint tables. `sampling` fills the fixed-sampling slot; it defaults to
+ * {@link createSamplingParamsCheck} for the same spec, and a dialect that
+ * needs a different policy passes its own (usually a wrapper of the default)
+ * rather than swapping an element of the returned array.
+ */
 export function chatCompletionsChecks(
   spec: ChatConstraintSpec,
-): ReadonlyArray<
-  (params: ChatCompletionsBodyBase, info: ModelInfo | undefined, ctx: PipelineContext) => void
-> {
+  sampling: ChatCompletionsCheck = createSamplingParamsCheck(spec),
+): ReadonlyArray<ChatCompletionsCheck> {
   return [
     checkToolSupport,
     checkInputModalities,
     checkStructuredOutput,
     checkReasoningCapability,
-    checkSamplingParams,
+    sampling,
     checkOutputLimit,
     createInlineImagesCheck(spec),
   ];

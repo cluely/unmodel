@@ -91,6 +91,7 @@ export const availability = {
   "moonshotai/Kimi-K3.1-Pro": {
     "baseten": "moonshotai/Kimi-K3.1-Pro",
     "deepinfra": "moonshotai/Kimi-K3.1-Pro",
+    "moonshotai": "kimi-k3.1-pro",
     "novita-ai": "moonshotai/kimi-k3.1-pro",
     "openrouter": "moonshotai/kimi-k3.1-pro",
     "togetherai": "moonshotai/Kimi-K3.1-Pro",

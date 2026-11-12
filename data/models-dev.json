@@ -203690,213 +203690,9 @@
     ],
     "id": "moonshotai",
     "models": {
-      "kimi-k2-0711-preview": {
-        "attachment": false,
-        "cost": {
-          "cache_read": 0.15,
-          "input": 0.6,
-          "output": 2.5
-        },
-        "description": "Kimi model for long-context chat, coding, and agentic reasoning",
-        "family": "kimi-k2",
-        "id": "kimi-k2-0711-preview",
-        "knowledge": "2024-10",
-        "last_updated": "2025-07-14",
-        "limit": {
-          "context": 131072,
-          "output": 16384
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Kimi K2 0711",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2025-07-14",
-        "temperature": true,
-        "tool_call": true
-      },
-      "kimi-k2-0905-preview": {
-        "attachment": false,
-        "cost": {
-          "cache_read": 0.15,
-          "input": 0.6,
-          "output": 2.5
-        },
-        "description": "Kimi model for long-context chat, coding, and agentic reasoning",
-        "family": "kimi-k2",
-        "id": "kimi-k2-0905-preview",
-        "knowledge": "2024-10",
-        "last_updated": "2025-09-05",
-        "limit": {
-          "context": 262144,
-          "output": 262144
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Kimi K2 0905",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2025-09-05",
-        "temperature": true,
-        "tool_call": true
-      },
-      "kimi-k2-thinking": {
-        "attachment": false,
-        "cost": {
-          "cache_read": 0.15,
-          "input": 0.6,
-          "output": 2.5
-        },
-        "description": "Thinking Kimi model for slower research passes, planning, and hard technical questions",
-        "family": "kimi-thinking",
-        "id": "kimi-k2-thinking",
-        "interleaved": {
-          "field": "reasoning_content"
-        },
-        "knowledge": "2024-08",
-        "last_updated": "2025-11-06",
-        "limit": {
-          "context": 262144,
-          "output": 262144
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Kimi K2 Thinking",
-        "open_weights": true,
-        "reasoning": true,
-        "reasoning_options": [],
-        "release_date": "2025-11-06",
-        "temperature": true,
-        "tool_call": true
-      },
-      "kimi-k2-thinking-turbo": {
-        "attachment": false,
-        "cost": {
-          "cache_read": 0.15,
-          "input": 1.15,
-          "output": 8
-        },
-        "description": "Kimi reasoning model for long-horizon research, planning, and tool use",
-        "family": "kimi-thinking",
-        "id": "kimi-k2-thinking-turbo",
-        "interleaved": {
-          "field": "reasoning_content"
-        },
-        "knowledge": "2024-08",
-        "last_updated": "2025-11-06",
-        "limit": {
-          "context": 262144,
-          "output": 262144
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Kimi K2 Thinking Turbo",
-        "open_weights": true,
-        "reasoning": true,
-        "reasoning_options": [],
-        "release_date": "2025-11-06",
-        "temperature": true,
-        "tool_call": true
-      },
-      "kimi-k2-turbo-preview": {
-        "attachment": false,
-        "cost": {
-          "cache_read": 0.6,
-          "input": 2.4,
-          "output": 10
-        },
-        "description": "Fast Kimi model for responsive chat, coding help, and agent loops",
-        "family": "kimi-k2",
-        "id": "kimi-k2-turbo-preview",
-        "knowledge": "2024-10",
-        "last_updated": "2025-09-05",
-        "limit": {
-          "context": 262144,
-          "output": 262144
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Kimi K2 Turbo",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2025-09-05",
-        "temperature": true,
-        "tool_call": true
-      },
-      "kimi-k2.5": {
-        "attachment": true,
-        "cost": {
-          "cache_read": 0.1,
-          "input": 0.6,
-          "output": 3
-        },
-        "description": "Earlier Kimi frontier model for long-context agents, coding, and multimodal work",
-        "family": "kimi-k2",
-        "id": "kimi-k2.5",
-        "interleaved": {
-          "field": "reasoning_content"
-        },
-        "knowledge": "2025-01",
-        "last_updated": "2026-01",
-        "limit": {
-          "context": 262144,
-          "output": 262144
-        },
-        "modalities": {
-          "input": [
-            "text",
-            "image",
-            "video"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Kimi K2.5",
-        "open_weights": true,
-        "reasoning": true,
-        "reasoning_options": [
-          {
-            "type": "toggle"
-          }
-        ],
-        "release_date": "2026-01",
-        "structured_output": true,
-        "temperature": false,
-        "tool_call": true
-      },
       "kimi-k2.6": {
         "attachment": true,
+        "canonical_model_id": "moonshotai/kimi-k2.6",
         "cost": {
           "cache_read": 0.16,
           "input": 0.95,
@@ -203909,7 +203705,7 @@
           "field": "reasoning_content"
         },
         "knowledge": "2025-01",
-        "last_updated": "2026-04-21",
+        "last_updated": "2026-04-20",
         "limit": {
           "context": 262144,
           "output": 262144
@@ -203932,13 +203728,14 @@
             "type": "toggle"
           }
         ],
-        "release_date": "2026-04-21",
+        "release_date": "2026-04-20",
         "structured_output": true,
-        "temperature": true,
+        "temperature": false,
         "tool_call": true
       },
       "kimi-k2.7-code": {
         "attachment": true,
+        "canonical_model_id": "moonshotai/kimi-k2.7-code",
         "cost": {
           "cache_read": 0.19,
           "input": 0.95,
@@ -203977,6 +203774,7 @@
       },
       "kimi-k2.7-code-highspeed": {
         "attachment": true,
+        "canonical_model_id": "moonshotai/kimi-k2.7-code",
         "cost": {
           "cache_read": 0.38,
           "input": 1.9,
@@ -204015,8 +203813,10 @@
       },
       "kimi-k3": {
         "attachment": true,
+        "canonical_model_id": "moonshotai/kimi-k3",
         "cost": {
           "cache_read": 0.3,
+          "cache_write": 3,
           "input": 3,
           "output": 15
         },
@@ -204029,7 +203829,7 @@
         "last_updated": "2026-07-16",
         "limit": {
           "context": 1048576,
-          "output": 131072
+          "output": 1048576
         },
         "modalities": {
           "input": [
@@ -204046,9 +203846,6 @@
         "reasoning": true,
         "reasoning_options": [
           {
-            "type": "toggle"
-          },
-          {
             "type": "effort",
             "values": [
               "low",
@@ -204058,6 +203855,102 @@
           }
         ],
         "release_date": "2026-07-16",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
+      "kimi-k3.1-pro": {
+        "attachment": true,
+        "canonical_model_id": "moonshotai/kimi-k3.1-pro",
+        "cost": {
+          "cache_read": 0.2,
+          "cache_write": 2,
+          "input": 2,
+          "output": 10
+        },
+        "description": "Multimodal Kimi model with a 1M-token context window and always-on reasoning, for coding, 3D creation and financial research",
+        "family": "kimi-k3",
+        "id": "kimi-k3.1-pro",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
+        "last_updated": "2026-10-23",
+        "limit": {
+          "context": 1048576,
+          "output": 1048576
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Kimi K3.1 Pro",
+        "open_weights": true,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "high",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-10-23",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
+      "kimi-k3.1-pro-highspeed": {
+        "attachment": true,
+        "canonical_model_id": "moonshotai/kimi-k3.1-pro",
+        "cost": {
+          "cache_read": 0.2,
+          "cache_write": 4,
+          "input": 4,
+          "output": 20
+        },
+        "description": "Multimodal Kimi model with a 1M-token context window and always-on reasoning, for coding, 3D creation and financial research",
+        "family": "kimi-k3",
+        "id": "kimi-k3.1-pro-highspeed",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
+        "last_updated": "2026-10-23",
+        "limit": {
+          "context": 1048576,
+          "output": 1048576
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Kimi K3.1 Pro Highspeed",
+        "open_weights": true,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "high",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-10-23",
         "structured_output": true,
         "temperature": false,
         "tool_call": true

@@ -1765,6 +1765,11 @@ describe("unmodel/chat", () => {
       "src/catalog/availability/friendli.gen.ts",
       "src/catalog/availability/google.gen.ts",
       "src/catalog/availability/mistral.gen.ts",
+      // Not new bytes: this table was always in the graph, inlined into its
+      // importer with no region marker. It keeps its own region since
+      // moonshotai's index.ts declares constraint tables before the
+      // createOpenAICompatible call (measured 2026-11-12).
+      "src/catalog/availability/moonshotai.gen.ts",
       "src/catalog/availability/nebius.gen.ts",
       "src/catalog/availability/nvidia.gen.ts",
       "src/catalog/availability/openai.gen.ts",

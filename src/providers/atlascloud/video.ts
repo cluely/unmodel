@@ -171,6 +171,8 @@ interface NotWan {
 interface NotSeedance25 {
   /** Seedance 2.5 only. */
   output_format?: never;
+  /** Seedance 2.5 only. */
+  draft?: never;
   /** Seedance 2.5 reference-to-video only. */
   omni_reference_task_type?: never;
 }
@@ -221,6 +223,12 @@ interface Seedance25Shared
   return_last_frame?: boolean;
   /** `"mov"` encodes yuv444p for multi-round editing pipelines. Default `"mp4"`. */
   output_format?: AtlasOutputFormat;
+  /**
+   * "Generate a draft preview at 480p, overriding resolution. The response
+   * carries a draft_id for completing the draft at 1080p with
+   * bytedance/seedance-2.5/draft-complete within seven days." Default false.
+   */
+  draft?: boolean;
   /** Seedance 2.5's schemas declare no `seed`. */
   seed?: never;
 }
@@ -622,6 +630,7 @@ const videoSchema = z.looseObject({
   watermark: z.boolean().optional(),
   return_last_frame: z.boolean().optional(),
   output_format: z.enum(VIDEO_OUTPUT_FORMATS).optional(),
+  draft: z.boolean().optional(),
   omni_reference_task_type: z.enum(OMNI_REFERENCE_TASK_TYPES).optional(),
   bitrate_mode: z.enum(BITRATE_MODES).optional(),
   seed: z.number().int().min(VIDEO_SEED_RANGE.min).max(VIDEO_SEED_RANGE.max).optional(),

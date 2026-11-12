@@ -3,6 +3,12 @@
     "schemas": {
       "Input": {
         "properties": {
+          "draft": {
+            "default": false,
+            "description": "Generate a draft preview at 480p, overriding resolution. The response carries a draft_id for completing the draft at 1080p with bytedance/seedance-2.5/draft-complete within seven days. A draft is billed as a normal 480p render.",
+            "type": "boolean",
+            "x-ui-component": "switch"
+          },
           "duration": {
             "default": 5,
             "description": "Video duration in seconds (4-30), or -1 for the model to choose automatically. Video-EDITING prompts (operating on an input video) accept only -1: the output tracks the input video's length (may be ~0.4s shorter).",
@@ -98,7 +104,7 @@
             "type": "array"
           },
           "reference_images": {
-            "description": "Reference image URLs, Base64, or asset references (asset://<ASSET_ID>). Up to 30 images for character/style/scene references, video editing, or combined generation. Per-image limits: formats jpeg/png/webp/bmp/tiff/gif/heic/heif, aspect ratio (W/H) 0.4-2.5, width/height 300-6000px, size < 30MB. Images containing real human faces cannot be uploaded directly; use model-generated assets, preset digital characters, or authorized real-person assets.",
+            "description": "Reference image URLs, Base64, or asset references (asset://<ASSET_ID>). Up to 30 images for character/style/scene references, video editing, or combined generation. Per-image limits: formats jpeg/png/webp/bmp/tiff/gif/heic/heif, aspect ratio (W/H) 0.4-2.5, width/height 300-6000px, size < 30MB. Images of real people are supported: URL and Base64 inputs are automatically registered as assets before generation, so you don't need to upload assets yourself. Inputs still go through provider content review and can be rejected (for example, for copyright restrictions). Only use a real person's likeness if you have their authorization.",
             "items": {
               "type": "string"
             },
@@ -107,7 +113,7 @@
             "type": "array"
           },
           "reference_videos": {
-            "description": "Reference video URLs or asset references for multimodal reference, video editing, or extension. Up to 10 videos. Per-video limits: formats mp4/mov (H.264/H.265 + AAC/MP3), resolution 480p-4k, duration [2,30]s, aspect ratio (W/H) 0.4-2.5, width/height 300-6000px (W*H between 409,600 and 8,295,044), FPS [24,60], size <= 200MB. The combined duration of all reference videos must not exceed 30s per request. Videos containing real human faces cannot be uploaded directly; use model-generated assets, preset digital characters, or authorized real-person assets.",
+            "description": "Reference video URLs or asset references for multimodal reference, video editing, or extension. Up to 10 videos. Per-video limits: formats mp4/mov (H.264/H.265 + AAC/MP3), resolution 480p-4k, duration [2,30]s, aspect ratio (W/H) 0.4-2.5, width/height 300-6000px (W*H between 409,600 and 8,295,044), FPS [24,60], size <= 200MB. The combined duration of all reference videos must not exceed 30s per request. Videos of real people are supported: URL inputs are automatically registered as assets before generation, so you don't need to upload assets yourself. Inputs still go through provider content review and can be rejected (for example, for copyright restrictions). Only use a real person's likeness if you have their authorization.",
             "items": {
               "type": "string"
             },
@@ -161,7 +167,8 @@
           "generate_audio",
           "watermark",
           "return_last_frame",
-          "omni_reference_task_type"
+          "omni_reference_task_type",
+          "draft"
         ]
       },
       "PredictionData": {
@@ -173,6 +180,14 @@
           "created_at": {
             "description": "ISO timestamp of creation.",
             "format": "date-time",
+            "type": "string"
+          },
+          "draft": {
+            "description": "True when this task is a 480p draft render.",
+            "type": "boolean"
+          },
+          "draft_id": {
+            "description": "Pass as draft_id to bytedance/seedance-2.5/draft-complete to render the 1080p final (valid for 7 days).",
             "type": "string"
           },
           "has_nsfw_contents": {

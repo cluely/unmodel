@@ -21,10 +21,12 @@
  * field for the audio format — the output encoding is fixed.
  *
  * REALTIME IS A DIFFERENT API: `qwen3-tts-flash-realtime`,
- * `qwen-audio-3.0-tts-plus` and `qwen-audio-3.0-tts-flash` are WebSocket-only
- * (REALTIME_TTS_WSS_URL) and this validator rejects them — they are
- * catalogued in ./models.ts (`realtimeTtsModels`) so budgets and pickers can
- * see them, mirroring the ElevenLabs realtime precedent.
+ * `qwen-audio-3.0-tts-plus` and `qwen-audio-3.0-tts-flash` are served over
+ * WebSocket (REALTIME_TTS_WSS_URL) — the two Qwen-Audio-TTS ids also over
+ * HTTP at POST {base}/api/v1/services/audio/tts/SpeechSynthesizer
+ * (SPEECH_SYNTHESIZER_PATH), a different body — and this validator rejects
+ * them. They are catalogued in ./models.ts (`realtimeTtsModels`) so budgets
+ * and pickers can see them, mirroring the ElevenLabs realtime precedent.
  *
  * BEIJING-ONLY IDS: `qwen-tts`, `qwen-tts-latest` and the dated `qwen-tts-*`
  * snapshots exist only on the China (Beijing) deployment and bill per token;
@@ -52,6 +54,7 @@ import {
   ttsModels,
   TTS_MODEL_IDS,
   REALTIME_TTS_MODEL_IDS,
+  SPEECH_SYNTHESIZER_TTS_MODEL_IDS,
   TTS_MAX_CHARACTERS,
   LANGUAGE_TYPES,
   VOICES_BY_MODEL,
@@ -67,6 +70,8 @@ export { LANGUAGE_TYPES } from "./models";
 export type { AlibabaLanguageType } from "./models";
 
 const TTS_DOCS = "https://www.alibabacloud.com/help/en/model-studio/qwen-tts";
+const SPEECH_SYNTHESIZER_DOCS =
+  "https://www.alibabacloud.com/help/en/model-studio/qwen-audio-tts-http-api";
 
 /** Legacy international domain — see the BASE URL note above. */
 export const DEFAULT_BASE_URL = "https://dashscope-intl.aliyuncs.com";
@@ -88,6 +93,14 @@ export function ttsUrl(baseUrl: string = DEFAULT_BASE_URL): string {
  * `wss://{WorkspaceId}.{region}.maas.aliyuncs.com/api-ws/v1/inference`).
  */
 export const REALTIME_TTS_WSS_URL = "wss://dashscope-intl.aliyuncs.com/api-ws/v1/realtime";
+
+/**
+ * The Qwen-Audio-TTS HTTP route (NOT validated by unmodel): its body is
+ * `{ model, input: { text, voice, format?, sample_rate?, … } }`, not this
+ * route's. Singapore host: `https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com`.
+ * https://www.alibabacloud.com/help/en/model-studio/qwen-audio-tts-http-api
+ */
+export const SPEECH_SYNTHESIZER_PATH = "/api/v1/services/audio/tts/SpeechSynthesizer";
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror the raw JSON body exactly (snake_case).
@@ -136,6 +149,7 @@ const ttsSchema = z.looseObject({
 
 const TTS_MODEL_ID_SET = new Set<string>(TTS_MODEL_IDS);
 const REALTIME_TTS_MODEL_ID_SET = new Set<string>(REALTIME_TTS_MODEL_IDS);
+const SPEECH_SYNTHESIZER_TTS_MODEL_ID_SET = new Set<string>(SPEECH_SYNTHESIZER_TTS_MODEL_IDS);
 const LANGUAGE_TYPE_SET = new Set<string>(LANGUAGE_TYPES);
 
 function checkModelEnum(
@@ -145,12 +159,19 @@ function checkModelEnum(
 ): void {
   if (TTS_MODEL_ID_SET.has(params.model)) return;
   if (REALTIME_TTS_MODEL_ID_SET.has(params.model)) {
+    const http = SPEECH_SYNTHESIZER_TTS_MODEL_ID_SET.has(params.model);
     ctx.report({
       code: "invalid_enum_value",
       path: ["model"],
       model: params.model,
-      message: `"${params.model}" is a realtime (WebSocket-only) TTS model — POST ${TTS_PATH} cannot serve it. Open ${REALTIME_TTS_WSS_URL} instead, or pick one of ${TTS_MODEL_IDS.map((v) => JSON.stringify(v)).join(", ")}.`,
-      meta: { allowed: [...TTS_MODEL_IDS], value: params.model, source: TTS_DOCS },
+      message: http
+        ? `"${params.model}" is a Qwen-Audio-TTS model — POST ${TTS_PATH} cannot serve it. Send it to POST ${SPEECH_SYNTHESIZER_PATH} (HTTP, its own \`input\` body) or open ${REALTIME_TTS_WSS_URL}; neither route is validated by unmodel. Or pick one of ${TTS_MODEL_IDS.map((v) => JSON.stringify(v)).join(", ")} here.`
+        : `"${params.model}" is a realtime (WebSocket-only) TTS model — POST ${TTS_PATH} cannot serve it. Open ${REALTIME_TTS_WSS_URL} instead, or pick one of ${TTS_MODEL_IDS.map((v) => JSON.stringify(v)).join(", ")}.`,
+      meta: {
+        allowed: [...TTS_MODEL_IDS],
+        value: params.model,
+        source: http ? SPEECH_SYNTHESIZER_DOCS : TTS_DOCS,
+      },
     });
     return;
   }

@@ -29,9 +29,8 @@
  *   i2v/r2v/edit routes).
  * - PRICING: USD per second of output video, per resolution tier, from the
  *   Singapore tables of the model-pricing page (VIDEO_PRICE_PER_SECOND_USD).
- *   wan3.0-video publishes no international rate and produces no estimate;
  *   happyhorse-1.0-video-edit bills input+output duration the request does
- *   not carry, so it produces no estimate either.
+ *   not carry, so it produces no estimate.
  * - Auth is `Authorization: Bearer <DASHSCOPE_API_KEY>` — unmodel never
  *   touches keys; add the header yourself when fetching.
  */
@@ -220,8 +219,10 @@ const WAN3_RULE: AlibabaVideoModelRule = {
   },
   resolutions: ["480P", "720P", "1080P"],
   defaultResolution: "1080P",
-  // "adaptive" (the default) follows the input media.
-  ratios: ["adaptive", "16:9", "4:3", "1:1", "3:4", "9:16"],
+  // "adaptive (Default value) … 21:9 | 16:9 | 4:3 | 1:1 | 3:4 | 9:16"
+  // (reference last updated Oct 15, 2026, checked 2026-11-12); "adaptive"
+  // follows the input media.
+  ratios: ["adaptive", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
   defaultRatio: "adaptive",
   durations: WAN3_DURATIONS,
   defaultDuration: 5,
@@ -307,6 +308,12 @@ const WAN26_T2V_RULE: AlibabaVideoModelRule = {
   shotType: true,
 };
 
+/**
+ * HappyHorse 1.0 stays at 720P/1080P: the references list "480P, 720P, and
+ * 1080P" without splitting by generation, but the pricing page has a 480P row
+ * for the 1.1 generation only, so 1.0's 480P is unconfirmed. The 1.1 rules
+ * below add it.
+ */
 const HH_T2V_RULE: AlibabaVideoModelRule = {
   docs: HH_T2V_DOCS,
   promptMaxCharacters: 5000,
@@ -353,6 +360,17 @@ const HH_R2V_RULE: AlibabaVideoModelRule = {
   defaultDuration: 5,
   promptExtend: false,
 };
+
+/**
+ * The HappyHorse 1.1 tiers (checked 2026-11-12): t2v "The valid values are
+ * 480P, 720P, and 1080P. The default is 1080P", i2v "Allowed values: `480P`,
+ * `720P`, `1080P`; Default: `1080P`", r2v "Valid values: "480P", "720P",
+ * "1080P"; Default: "1080P"" — each priced at 480P on the pricing page.
+ */
+const HH_11_RESOLUTIONS: readonly AlibabaVideoResolution[] = ["480P", "720P", "1080P"];
+const HH_11_T2V_RULE: AlibabaVideoModelRule = { ...HH_T2V_RULE, resolutions: HH_11_RESOLUTIONS };
+const HH_11_I2V_RULE: AlibabaVideoModelRule = { ...HH_I2V_RULE, resolutions: HH_11_RESOLUTIONS };
+const HH_11_R2V_RULE: AlibabaVideoModelRule = { ...HH_R2V_RULE, resolutions: HH_11_RESOLUTIONS };
 
 /**
  * Every video model's protocol surface, from its own doc page. Missing key =
@@ -407,11 +425,11 @@ export const VIDEO_MODEL_RULES: Readonly<Record<string, AlibabaVideoModelRule>> 
     durations: [5],
     shotType: false,
   },
-  "happyhorse-1.1-t2v": HH_T2V_RULE,
+  "happyhorse-1.1-t2v": HH_11_T2V_RULE,
   "happyhorse-1.0-t2v": HH_T2V_RULE,
-  "happyhorse-1.1-i2v": HH_I2V_RULE,
+  "happyhorse-1.1-i2v": HH_11_I2V_RULE,
   "happyhorse-1.0-i2v": HH_I2V_RULE,
-  "happyhorse-1.1-r2v": HH_R2V_RULE,
+  "happyhorse-1.1-r2v": HH_11_R2V_RULE,
   "happyhorse-1.0-r2v": HH_R2V_RULE,
   "happyhorse-1.0-video-edit": {
     docs: HH_EDIT_DOCS,
@@ -431,17 +449,23 @@ export const VIDEO_MODEL_RULES: Readonly<Record<string, AlibabaVideoModelRule>> 
 
 // ---------------------------------------------------------------------------
 // Pricing — USD per second of output video, Singapore tables of the pricing
-// page (2026-08-24; the wan3.0-video-prime and wan2.7-r2v rows 2026-11-12).
-// wan3.0-video has no international row and is absent.
+// page (2026-08-24; the wan3.0 pair, wan2.7-r2v and HappyHorse 1.1 480P rows
+// 2026-11-12).
 // ---------------------------------------------------------------------------
 
 const WAN27_PRICE = { "720P": 0.1, "1080P": 0.15 } as const;
-const HH_11_PRICE = { "720P": 0.14, "1080P": 0.18 } as const;
+// "happyhorse-1.1-t2v | International | 480P | $0.07/second | 10 seconds |
+// 720P | $0.14/second | 1080P | $0.18/second" — the same rows for -i2v / -r2v.
+const HH_11_PRICE = { "480P": 0.07, "720P": 0.14, "1080P": 0.18 } as const;
 const HH_10_PRICE = { "720P": 0.14, "1080P": 0.24 } as const;
 
 export const VIDEO_PRICE_PER_SECOND_USD: Readonly<
   Record<string, Readonly<Partial<Record<AlibabaVideoResolution, number>>>>
 > = {
+  // "wan3.0-video | International | 480P | List price $0.05/second | … | 720P
+  // | List price $0.1/second | … | 1080P | List price $0.2/second" — list
+  // prices; the "(Limited-time 30% off)" promotion is not a catalog number.
+  "wan3.0-video": { "480P": 0.05, "720P": 0.1, "1080P": 0.2 },
   // "wan3.0-video-prime | International | 480P | $0.068/second | No free quota
   // | 720P | $0.14/second | 1080P | $0.28/second"
   "wan3.0-video-prime": { "480P": 0.068, "720P": 0.14, "1080P": 0.28 },
@@ -899,7 +923,7 @@ function checkParameters(
 // ---------------------------------------------------------------------------
 // Estimation — USD/second × requested (or default) duration, at the requested
 // (or default) resolution tier. Exact for every priced model; absent for
-// wan3.0-video (no published rate) and video-edit (input duration unknown).
+// video-edit (input duration unknown) and wan3 smart duration (-1).
 // ---------------------------------------------------------------------------
 
 /** The billing tier a request resolves to, or undefined off-protocol. */
@@ -992,9 +1016,8 @@ const validator = createValidator<VideoSynthesisParams, unknown>({
  * for a workspace-scoped host.
  *
  * Cost is USD/second × duration at the requested resolution tier (e.g.
- * happyhorse-1.1-t2v at 1080P/5s = $0.90); wan3.0-video publishes no
- * international rate and the video-edit route bills an input duration the
- * request does not carry, so neither produces an estimate.
+ * happyhorse-1.1-t2v at 1080P/5s = $0.90); the video-edit route bills an
+ * input duration the request does not carry, so it produces no estimate.
  *
  * ```ts
  * const params = alibaba.video({

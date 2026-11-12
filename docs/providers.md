@@ -76,8 +76,9 @@ deepgram (Aura 1/2), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave),
 lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
 resemble (`tts` + `ttsStream`), rime, smallest-ai,
 speechify (`tts` + `ttsStream`), stepfun (StepAudio 2.5), breezeblue (Breeze TTS 2),
-alibaba (Qwen3-TTS on DashScope; the realtime-WebSocket-only ids incl.
-qwen-audio-3.0-tts-plus are catalog rows the unary validator rejects by name),
+alibaba (Qwen3-TTS on DashScope; the realtime ids — WebSocket, and for
+qwen-audio-3.0-tts-plus/-flash also the HTTP SpeechSynthesizer route — are catalog
+rows the multimodal-generation validator rejects by name, naming the route that serves them),
 fal (23 hosted endpoints — ElevenLabs, MiniMax, Gemini TTS, Chatterbox, Inworld,
 xAI, Seed-Speech, Qwen-3 and nine Kokoro languages — behind one `fal.tts`).
 All nineteen also ship an adapter at `unmodel/<provider>/unified`, so `tts()` from

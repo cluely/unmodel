@@ -359,14 +359,12 @@ describe("alibaba.video parameters rules", () => {
     ).toBe(true);
   });
 
-  test("480P is wan3.0/wan2.5-tier only among the resolution models", () => {
-    const r = video.safe({
-      model: "happyhorse-1.1-t2v",
-      input: { prompt: "hi" },
-      parameters: { resolution: "480P" },
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.path).toEqual(["parameters", "resolution"]);
+  test("480P is a wan3.0 / HappyHorse 1.1 tier; wan2.7 and HappyHorse 1.0 refuse it", () => {
+    for (const model of ["wan2.7-t2v", "happyhorse-1.0-t2v"]) {
+      const r = video.safe({ model, input: { prompt: "hi" }, parameters: { resolution: "480P" } });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["parameters", "resolution"]);
+    }
     expect(
       video.safe({
         model: "wan3.0-video",
@@ -374,6 +372,34 @@ describe("alibaba.video parameters rules", () => {
         parameters: { resolution: "480P" },
       }).ok,
     ).toBe(true);
+    expect(
+      video.safe({
+        model: "happyhorse-1.1-t2v",
+        input: { prompt: "hi" },
+        parameters: { resolution: "480P" },
+      }).ok,
+    ).toBe(true);
+    expect(
+      video.safe({
+        model: "happyhorse-1.1-i2v",
+        input: { media: [{ type: "first_frame", url: IMAGE }] },
+        parameters: { resolution: "480P" },
+      }).ok,
+    ).toBe(true);
+    expect(
+      video.safe({
+        model: "happyhorse-1.1-r2v",
+        input: { prompt: "hi", media: [{ type: "reference_image", url: IMAGE }] },
+        parameters: { resolution: "480P" },
+      }).ok,
+    ).toBe(true);
+    expect(
+      video.safe({
+        model: "happyhorse-1.0-r2v",
+        input: { prompt: "hi", media: [{ type: "reference_image", url: IMAGE }] },
+        parameters: { resolution: "480P" },
+      }).ok,
+    ).toBe(false);
   });
 
   test("ratio is refused where the frame follows the input", () => {
@@ -399,6 +425,17 @@ describe("alibaba.video parameters rules", () => {
         parameters: { ratio: "21:9" },
       }).ok,
     ).toBe(false);
+    // wan3.0 documents 21:9 beside "adaptive"; 9:21 is not on its list.
+    for (const model of ["wan3.0-video", "wan3.0-video-prime"]) {
+      expect(
+        video.safe({ model, input: { prompt: "hi" }, parameters: { ratio: "21:9" } }).ok,
+        model,
+      ).toBe(true);
+      expect(
+        video.safe({ model, input: { prompt: "hi" }, parameters: { ratio: "9:21" } }).ok,
+        model,
+      ).toBe(false);
+    }
   });
 
   test("durations follow each model's documented values", () => {
@@ -522,8 +559,11 @@ describe("alibaba.video pricing (Singapore USD tables, 2026-08-24)", () => {
     expect(
       videoPriceUSD("wan2.7-r2v-2026-06-12", { resolution: "720P", duration: 10 }),
     ).toBeCloseTo(1, 10);
-    // No published international rate → no estimate.
-    expect(videoPriceUSD("wan3.0-video")).toBeUndefined();
+    // wan3.0-video at its list rates: $0.2/s 1080P (default), $0.05/s 480P.
+    expect(videoPriceUSD("wan3.0-video")).toBeCloseTo(1, 10);
+    expect(videoPriceUSD("wan3.0-video", { resolution: "480P", duration: 10 })).toBeCloseTo(0.5, 10);
+    // HappyHorse 1.1 prices 480P at $0.07/s.
+    expect(videoPriceUSD("happyhorse-1.1-i2v", { resolution: "480P" })).toBeCloseTo(0.35, 10);
     // Bills input+output duration the request does not carry → no estimate.
     expect(videoPriceUSD("happyhorse-1.0-video-edit")).toBeUndefined();
     // Smart duration prices at run time.
@@ -565,8 +605,14 @@ describe("alibaba.video pricing (Singapore USD tables, 2026-08-24)", () => {
     expect(videoModels["happyhorse-1.0-t2v"].cost?.perVideoSecond).toBeCloseTo(0.24, 10);
     expect(videoModels["wan3.0-video-prime"].cost?.perVideoSecond).toBeCloseTo(0.28, 10);
     expect(videoModels["wan2.7-r2v"].cost?.perVideoSecond).toBeCloseTo(0.15, 10);
-    // wan3.0-video has no published international rate, so no cost key at all.
-    expect("cost" in videoModels["wan3.0-video"]).toBe(false);
+    expect(videoModels["wan3.0-video"].cost?.perVideoSecond).toBeCloseTo(0.2, 10);
+  });
+
+  test("every catalogued video model produces an estimate unless its bill depends on the input", () => {
+    for (const model of Object.keys(videoModels)) {
+      if (model === "happyhorse-1.0-video-edit") continue;
+      expect(videoPriceUSD(model), model).toBeGreaterThan(0);
+    }
   });
 
   test("the throwing form throws UnmodelValidationError", () => {
@@ -599,6 +645,15 @@ describe("alibaba video through unmodel/video", () => {
     });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.params.input.media).toEqual([{ type: "reference_video", url: CLIP }]);
+  });
+
+  test("wan3.0 compiles aspectRatio 21:9 and HappyHorse 1.1 compiles 480p", () => {
+    const wide = unifiedVideo.safe({ model: "alibaba/wan3.0-video", prompt: "hi", aspectRatio: "21:9" });
+    expect(wide.ok).toBe(true);
+    if (wide.ok) expect(wide.params.parameters).toEqual({ ratio: "21:9" });
+    const low = unifiedVideo.safe({ model: "alibaba/happyhorse-1.1-t2v", prompt: "hi", resolution: "480p" });
+    expect(low.ok).toBe(true);
+    if (low.ok) expect(low.params.parameters).toEqual({ resolution: "480P" });
   });
 
   test("wan2.7-r2v compiles references and a video to reference media; a plain image is refused", () => {

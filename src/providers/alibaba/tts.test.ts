@@ -1,10 +1,19 @@
 import { describe, expect, test } from "bun:test";
-import { tts, ttsUrl, TTS_URL, DEFAULT_BASE_URL, REALTIME_TTS_WSS_URL, LANGUAGE_TYPES } from "./tts";
+import {
+  tts,
+  ttsUrl,
+  TTS_URL,
+  DEFAULT_BASE_URL,
+  REALTIME_TTS_WSS_URL,
+  SPEECH_SYNTHESIZER_PATH,
+  LANGUAGE_TYPES,
+} from "./tts";
 import {
   ttsModels,
   realtimeTtsModels,
   TTS_MODEL_IDS,
   REALTIME_TTS_MODEL_IDS,
+  SPEECH_SYNTHESIZER_TTS_MODEL_IDS,
   TTS_MAX_CHARACTERS,
   QWEN3_TTS_FLASH_VOICES,
 } from "./models";
@@ -81,6 +90,21 @@ describe("alibaba.tts model gate", () => {
         expect(r.errors[0]?.message).toContain(REALTIME_TTS_WSS_URL);
         expect(r.warnings.map((w) => w.code)).not.toContain("unknown_model");
       }
+    }
+  });
+
+  test("the Qwen-Audio-TTS ids name their HTTP SpeechSynthesizer route too", () => {
+    expect([...SPEECH_SYNTHESIZER_TTS_MODEL_IDS].sort()).toEqual([
+      "qwen-audio-3.0-tts-flash",
+      "qwen-audio-3.0-tts-plus",
+    ]);
+    for (const model of REALTIME_TTS_MODEL_IDS) {
+      const r = tts.safe({ model, input: { text: "x", voice: "Cherry" } });
+      expect(r.ok).toBe(false);
+      if (r.ok) continue;
+      const http = SPEECH_SYNTHESIZER_TTS_MODEL_IDS.includes(model);
+      expect(r.errors[0]?.message.includes(SPEECH_SYNTHESIZER_PATH), model).toBe(http);
+      expect(r.errors[0]?.message.includes("WebSocket-only"), model).toBe(!http);
     }
   });
 

@@ -53,6 +53,8 @@ const seconds = (from: number, to: number): readonly number[] =>
  * when it picks one of those.
  */
 export const WAN_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
+/** wan3.0 adds 21:9 to the wan ladder. */
+export const WAN3_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"] as const;
 export const HAPPYHORSE_RATIOS = [
   "16:9",
   "9:16",
@@ -116,7 +118,7 @@ const HAPPYHORSE_EDIT_EXTRAS = {
 const WAN3_ROW = {
   durations: seconds(2, 30),
   resolutions: ["480p", "720p", "1080p"],
-  ratios: WAN_RATIOS,
+  ratios: WAN3_RATIOS,
   extras: WAN3_EXTRAS,
 } as const;
 
@@ -159,6 +161,10 @@ const HH_I2V_ROW = {
   ratios: [],
   extras: HAPPYHORSE_EXTRAS,
 } as const;
+
+/** The 1.1 generation adds 480p (1.0 has no 480P price row). */
+const HH_11_T2V_ROW = { ...HH_T2V_ROW, resolutions: ["480p", "720p", "1080p"] } as const;
+const HH_11_I2V_ROW = { ...HH_I2V_ROW, resolutions: ["480p", "720p", "1080p"] } as const;
 
 export const ALIBABA_VIDEO_MODEL_PARAMS = {
   "wan3.0-video": WAN3_ROW,
@@ -208,11 +214,11 @@ export const ALIBABA_VIDEO_MODEL_PARAMS = {
     ratios: WAN_RATIOS,
     extras: WAN_OLD_EXTRAS,
   },
-  "happyhorse-1.1-t2v": HH_T2V_ROW,
+  "happyhorse-1.1-t2v": HH_11_T2V_ROW,
   "happyhorse-1.0-t2v": HH_T2V_ROW,
-  "happyhorse-1.1-i2v": HH_I2V_ROW,
+  "happyhorse-1.1-i2v": HH_11_I2V_ROW,
   "happyhorse-1.0-i2v": HH_I2V_ROW,
-  "happyhorse-1.1-r2v": HH_T2V_ROW,
+  "happyhorse-1.1-r2v": HH_11_T2V_ROW,
   "happyhorse-1.0-r2v": HH_T2V_ROW,
   // No duration param (output follows the input clip) and no ratio field.
   "happyhorse-1.0-video-edit": {

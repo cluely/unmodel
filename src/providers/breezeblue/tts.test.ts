@@ -6,7 +6,14 @@ import {
   TEXT_TO_SPEECH_BASE_URL,
   OUTPUT_FORMATS,
 } from "./tts";
-import { models, TTS_COST_PER_MILLION_CHARACTERS_USD } from "./models";
+import {
+  models,
+  BREEZEBLUE_MODEL_IDS,
+  TTS_COST_PER_MILLION_CHARACTERS_USD,
+  VOICE_LANGUAGE_CODES,
+} from "./models";
+import { BREEZEBLUE_TTS_MODEL_PARAMS, MODELS } from "./tts-params";
+import { tts as unifiedTts } from "../../unified/tts";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -73,7 +80,7 @@ describe("breezeblue.tts happy path", () => {
   });
 
   test("the minimal request — voice_id + text — passes with no warnings", () => {
-    // No default model_id is documented, so omitting it must not warn.
+    // An omitted model_id routes to a catalogued model, so it must not warn.
     const r = tts.safe({ voice_id: "voc_x", text: "Hello." });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
@@ -95,6 +102,71 @@ describe("breezeblue.tts happy path", () => {
     const b = tts({ voice_id: "voc_b", text: "b" });
     a.request.headers["xi-api-key"] = "leak";
     expect(b.request.headers["xi-api-key"]).toBeUndefined();
+  });
+});
+
+describe("breezeblue.tts model ids", () => {
+  test("breeze-tts-2-multilingual validates with no warnings and prices like its sibling", () => {
+    // The multilingual page's own example pairing: a non-en/zh language.
+    const r = tts.safe({
+      voice_id: "voc_xeh3w54cqvnp",
+      text: "a".repeat(1000),
+      model_id: "breeze-tts-2-multilingual",
+      language_code: "ar",
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([]);
+    const sibling = tts.safe({ voice_id: "voc_x", text: "a".repeat(1000), model_id: "breeze-tts-2" });
+    expect(sibling.ok).toBe(true);
+    if (sibling.ok) expect(r.estimate.costUSD).toBe(sibling.estimate.costUSD);
+  });
+
+  test("breeze-tts-2-preview — a documented alias — validates and prices without unknown_model", () => {
+    const r = tts.safe({ voice_id: "voc_x", text: "a".repeat(1000), model_id: "breeze-tts-2-preview" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([]);
+    expect(r.estimate.costUSD).toBeCloseTo((1000 * TTS_COST_PER_MILLION_CHARACTERS_USD) / 1e6, 10);
+  });
+
+  test("the alias is catalogued but not offered: pickers and refs name the formal ids", () => {
+    expect([...BREEZEBLUE_MODEL_IDS]).toEqual(["breeze-tts-2", "breeze-tts-2-multilingual"]);
+    expect([...MODELS]).toEqual([...BREEZEBLUE_MODEL_IDS]);
+    expect(Object.keys(models).sort()).toEqual([
+      "breeze-tts-2",
+      "breeze-tts-2-multilingual",
+      "breeze-tts-2-preview",
+    ]);
+  });
+});
+
+describe("breezeblue.tts routes an omitted model_id by language", () => {
+  // The resolved model is observable on any model-keyed issue; an over-budget
+  // finding names it, so a zero budget makes the routing visible.
+  function routedTo(params: Record<string, unknown>): string | undefined {
+    const r = safeUnchecked({ voice_id: "voc_x", text: "x", ...params }, { maxCostUSD: 0 });
+    return r.ok ? undefined : r.errors[0]?.model;
+  }
+
+  test('language_code "en" or "zh" selects breeze-tts-2', () => {
+    expect(routedTo({ language_code: "en" })).toBe("breeze-tts-2");
+    expect(routedTo({ language_code: "zh", model_id: null })).toBe("breeze-tts-2");
+  });
+
+  test("any other language, or none, selects breeze-tts-2-multilingual", () => {
+    expect(routedTo({ language_code: "ja" })).toBe("breeze-tts-2-multilingual");
+    expect(routedTo({})).toBe("breeze-tts-2-multilingual");
+    expect(routedTo({ language_code: null })).toBe("breeze-tts-2-multilingual");
+  });
+
+  test("routing matches the documented lower-case spellings only", () => {
+    // The docs do not say routing folds case, so "EN" is not assumed to.
+    expect(routedTo({ language_code: "EN" })).toBe("breeze-tts-2-multilingual");
+  });
+
+  test("an explicit model_id is never re-routed", () => {
+    expect(routedTo({ model_id: "breeze-tts-2", language_code: "ja" })).toBe("breeze-tts-2");
   });
 });
 
@@ -274,5 +346,46 @@ describe("breezeblue catalog", () => {
     expect(info.modalities.input).toEqual(["text"]);
     expect(info.modalities.output).toEqual(["audio"]);
     expect(info.cost?.perMillionCharacters).toBe(TTS_COST_PER_MILLION_CHARACTERS_USD);
+  });
+
+  test("the multilingual model and its alias are TTS-shaped, hosted-only rows", () => {
+    for (const id of ["breeze-tts-2-multilingual", "breeze-tts-2-preview"] as const) {
+      const info = models[id];
+      expect(info.family).toBe("breeze-tts");
+      expect(info.openWeights).toBe(false);
+      expect(info.limit.context).toBe(0);
+      expect(info.modalities.output).toEqual(["audio"]);
+      expect(info.cost.perMillionCharacters).toBe(TTS_COST_PER_MILLION_CHARACTERS_USD);
+    }
+  });
+
+  test("the Voice contract is the 51 codes of the multilingual table", () => {
+    expect(VOICE_LANGUAGE_CODES).toHaveLength(51);
+    expect(new Set(VOICE_LANGUAGE_CODES).size).toBe(51);
+    for (const code of VOICE_LANGUAGE_CODES) expect(code).toMatch(/^[a-z]{2}$/);
+  });
+});
+
+describe("breezeblue unified adapter (unmodel/tts)", () => {
+  test("breezeblue/breeze-tts-2-multilingual compiles to its own model_id", () => {
+    const params = unifiedTts({
+      model: "breezeblue/breeze-tts-2-multilingual",
+      text: "Olá.",
+      voice: "voc_demo",
+      language: "pt",
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      text: "Olá.",
+      model_id: "breeze-tts-2-multilingual",
+      language_code: "pt",
+    });
+  });
+
+  test("the multilingual row completes `language` from the Voice contract, by reference", () => {
+    expect(BREEZEBLUE_TTS_MODEL_PARAMS["breeze-tts-2-multilingual"].languages).toBe(
+      VOICE_LANGUAGE_CODES,
+    );
+    // breeze-tts-2 publishes no language list of its own.
+    expect("languages" in BREEZEBLUE_TTS_MODEL_PARAMS["breeze-tts-2"]).toBe(false);
   });
 });

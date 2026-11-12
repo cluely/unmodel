@@ -140,9 +140,12 @@ export interface TtsBody {
   /** Text to synthesize. Non-empty; billed per character after Unicode normalization. */
   text: string;
   /**
-   * "Optional model identifier to use for synthesis" — 1–120 chars. The only
-   * documented value is "breeze-tts-2"; live ids come from GET /v1/models.
-   * The docs name no default for an omitted `model_id`.
+   * "Model ID for speech generation. Selected automatically when omitted." —
+   * 1–120 chars. The documented values are "breeze-tts-2" and
+   * "breeze-tts-2-multilingual" (plus its compatibility alias
+   * "breeze-tts-2-preview"); live ids come from GET /v1/models. Omitted or
+   * null, the server routes by `language_code`: "en" or "zh" selects
+   * "breeze-tts-2", any other code — or none — "breeze-tts-2-multilingual".
    */
   model_id?: BreezeblueModelIdOrString | null;
   /**
@@ -299,11 +302,32 @@ function checkOutputFormat(
 }
 
 // ---------------------------------------------------------------------------
+// Model resolution — `model_id` is optional AND nullable on the wire, and an
+// omitted one is routed by language, per
+// https://docs.breezeblue.ai/guides/text-to-speech: "When `model_id` is
+// omitted, explicit `language_code: en` or `zh` selects `breeze-tts-2`; other
+// or omitted languages select `breeze-tts-2-multilingual`." Resolving it the
+// same way keeps the catalog-keyed checks running against the model that will
+// serve the request. The wire pattern admits upper case ("EN") and the docs
+// do not say whether routing folds case, so only the lower-case spellings the
+// sentence names route to `breeze-tts-2`.
+// ---------------------------------------------------------------------------
+
+const BILINGUAL_ROUTED_LANGUAGES = new Set<string>(["en", "zh"]);
+
+function routedModelId(params: TtsParams): string {
+  if (params.model_id != null) return params.model_id;
+  return params.language_code != null && BILINGUAL_ROUTED_LANGUAGES.has(params.language_code)
+    ? "breeze-tts-2"
+    : "breeze-tts-2-multilingual";
+}
+
+// ---------------------------------------------------------------------------
 // Estimation — billed "per character after Unicode normalization"
 // (https://docs.breezeblue.ai/concepts/pricing), at the account's PLAN rate,
 // not a per-model rate. The catalog row carries the Free-plan list price
 // ($40 / 1M characters — see models.ts for the four published tiers), and the
-// same constant prices a request whose `model_id` is omitted or unknown,
+// same constant prices a request whose `model_id` is not in the catalog,
 // because the meter is the endpoint's, not the model's. Treat `costUSD` as
 // the no-subscription list-price ceiling: Starter/Creator/Pro pay
 // $36/$32/$28 per 1M. `text.length` counts UTF-16 code units, which is the
@@ -410,10 +434,7 @@ function finalize(params: TtsParams): unknown {
 const validator = createValidator<TtsParams, unknown>({
   endpoint: "breezeblue.tts",
   schema,
-  // `model_id` is optional AND nullable on the wire, and BreezeBlue documents
-  // no default model for an omitted id — so an absent/null `model_id` skips
-  // model-keyed checks instead of assuming one (see models.ts, MODEL IDS).
-  modelId: (params) => params.model_id ?? undefined,
+  modelId: routedModelId,
   catalog: models,
   checks: [checkOutputFormat],
   estimate,

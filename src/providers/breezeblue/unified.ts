@@ -19,7 +19,8 @@
  * - **`language` → `language_code`** (ISO 639-1 primary subtag). Which codes
  *   a model serves is runtime data (GET /v1/models `languages`), so the
  *   two-letter shape is checked by the provider validator and the pairing is
- *   the API's to refuse.
+ *   the API's to refuse. `breeze-tts-2-multilingual`'s 51 documented codes
+ *   complete the canonical `language` — a completion, never a gate.
  * - **`delivery` stays off the canonical surface**: it selects the response
  *   contract (bytes vs 202 job), which the delivery spec describes; set it
  *   through `providerOptions.breezeblue` when you want the async job.

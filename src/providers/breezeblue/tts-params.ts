@@ -11,9 +11,14 @@
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
+import { VOICE_LANGUAGE_CODES } from "./models";
 
-/** The one published model id — the ref union for `breezeblue/…`. */
-export const MODELS = ["breeze-tts-2"] as const;
+/**
+ * The two published model ids — the ref union for `breezeblue/…`. The
+ * compatibility alias `breeze-tts-2-preview` is catalogued (it validates at
+ * `breezeblue.tts`) but not offered here: a ref names the formal id.
+ */
+export const MODELS = ["breeze-tts-2", "breeze-tts-2-multilingual"] as const;
 
 export const TTS_DOCS =
   "https://docs.breezeblue.ai/api-reference/text-to-speech/convert-text-to-speech";
@@ -62,13 +67,14 @@ export const CODECS = ["mp3", "flac", "pcm_s16le", "aac", "opus"] as const;
  * is transport (sync bytes vs async job) — it stays on
  * `providerOptions.breezeblue`.
  *
- * **No `languages` row.** The TTS `language_code` contract is only "two
- * ASCII letters" plus a runtime rule (the model must list the code in its
- * `supported_languages` — GET /v1/models); the 23-code list on
- * https://docs.breezeblue.ai/concepts/multilingual is the VOICE-metadata
- * contract, not this model's synthesis enum, so completing it here would be a
- * list with no authority behind it. (It is published for pickers as
- * `VOICE_LANGUAGE_CODES` on `unmodel/breezeblue/values`.)
+ * **`languages` on one row only.** The TTS `language_code` contract is only
+ * "two ASCII letters" plus a runtime rule (the model must list the code in
+ * its `supported_languages` — GET /v1/models). `breeze-tts-2-multilingual` is
+ * the one model with a published list — it "supports all 51 codes accepted by
+ * the Voice contract" (https://docs.breezeblue.ai/concepts/multilingual) — so
+ * its row completes `language` from `VOICE_LANGUAGE_CODES` by reference, open
+ * as every `languages` completion is. `breeze-tts-2` publishes no list, and
+ * completing it would be a list with no authority behind it.
  */
 export const TTS_EXTRAS = {
   instructions: EXTRA as string | null,
@@ -78,6 +84,11 @@ export const TTS_EXTRAS = {
 
 export const BREEZEBLUE_TTS_MODEL_PARAMS = {
   "breeze-tts-2": { codecs: CODECS, extras: TTS_EXTRAS },
+  "breeze-tts-2-multilingual": {
+    codecs: CODECS,
+    languages: VOICE_LANGUAGE_CODES,
+    extras: TTS_EXTRAS,
+  },
 } as const satisfies TtsModelParamTable;
 
 /**

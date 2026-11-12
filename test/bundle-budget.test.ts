@@ -556,8 +556,13 @@ const VOICE_DESIGN_PACK_BUDGET_KIB = 200;
  * and `core/unified/canonical-keys.ts` — the params vocabulary, moved out of
  * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
  * is +0.1 net against the kernel's own shrink.
+ *
+ * **Bumped 850 → 940 at the 2026-11-12 model wave**: 852.2 KiB measured when
+ * breezeblue's multilingual arm landed on top of the wave's other TTS rows
+ * (stepfun StepAudio 3, the Gemini 3.8 TTS hand rows, alibaba's retirements
+ * and re-routing). Rows and their per-model gates, no new edge into the pack.
  */
-const TTS_PACK_BUDGET_KIB = 850;
+const TTS_PACK_BUDGET_KIB = 940;
 
 /**
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —

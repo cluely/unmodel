@@ -90,7 +90,8 @@ types): openai (tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15), cart
 deepgram (Aura 1/2), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave), inworld,
 lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
 resemble (`tts` + `ttsStream`), rime, smallest-ai,
-speechify (`tts` + `ttsStream`), stepfun (StepAudio 3, StepAudio 2.5), breezeblue (Breeze TTS 2),
+speechify (`tts` + `ttsStream`), stepfun (StepAudio 3, StepAudio 2.5), breezeblue (Breeze TTS 2 and
+Breeze TTS 2 Multilingual),
 alibaba (Qwen3-TTS on DashScope; the realtime ids — WebSocket, and for
 qwen-audio-3.0-tts-plus/-flash also the HTTP SpeechSynthesizer route — are catalog
 rows the multimodal-generation validator rejects by name, naming the route that serves them),

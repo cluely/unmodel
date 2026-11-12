@@ -92,7 +92,6 @@ export type {
 export type {
   FluxFillParams,
   FluxFillBody,
-  FluxFillFinetunedBody,
   UnknownFluxFillBody,
   FluxExpandParams,
 } from "./image-edit-flux1";

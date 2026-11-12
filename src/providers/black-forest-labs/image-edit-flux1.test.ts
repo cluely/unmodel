@@ -46,21 +46,22 @@ describe("black-forest-labs.imageEditFill", () => {
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["image"]);
   });
 
-  test("the finetuned route requires finetune_id; the base route rejects it", () => {
-    const missing = safeFill({ model: "flux-pro-1.0-fill-finetuned", image: "x" });
-    expect(missing.ok).toBe(false);
-    if (!missing.ok) expect(missing.errors[0]?.path).toEqual(["finetune_id"]);
-
-    const ok = imageEditFill.safe({
-      model: "flux-pro-1.0-fill-finetuned",
+  test("fill takes no LoRA, and the refusal names where LoRAs run", () => {
+    const denied = safeFill({
+      model: "flux-pro-1.0-fill",
       image: "x",
       finetune_id: "my-lora",
+      finetune_strength: 1.1,
     });
-    expect(ok.ok).toBe(true);
-
-    const denied = safeFill({ model: "flux-pro-1.0-fill", image: "x", finetune_id: "my-lora" });
     expect(denied.ok).toBe(false);
-    if (!denied.ok) expect(denied.errors[0]?.code).toBe("unsupported_param");
+    if (!denied.ok) {
+      expect(denied.errors.map((e) => e.code)).toEqual(["unsupported_param", "unsupported_param"]);
+      expect(denied.errors[0]?.message).toContain("FLUX.2 [klein] `-finetuned` routes");
+    }
+    // Declared keys: the refusal is the only issue, not an unknown_param too.
+    const one = safeFill({ model: "flux-pro-1.0-fill", image: "x", finetune_id: "my-lora" });
+    expect(one.ok).toBe(false);
+    if (!one.ok) expect(one.warnings.map((w) => w.code)).toEqual([]);
   });
 
   test("an unknown fill model warns but validates", () => {

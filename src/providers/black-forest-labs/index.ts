@@ -125,7 +125,6 @@ export { imageEditFill, imageEditExpand, DEFAULT_EXPAND_MODEL_ID, FLUX_EXPAND_MA
 export type {
   FluxFillParams,
   FluxFillBody,
-  FluxFillFinetunedBody,
   UnknownFluxFillBody,
   FluxExpandParams,
 } from "./image-edit-flux1";

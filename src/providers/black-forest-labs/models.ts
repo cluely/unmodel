@@ -316,18 +316,6 @@ const flux1EditModels = {
     // 5 credits per image → $0.05 — docs.bfl.ml/quick_start/pricing
     cost: { perImage: 0.05 },
   },
-  "flux-pro-1.0-fill-finetuned": {
-    id: "flux-pro-1.0-fill-finetuned",
-    name: "FLUX.1 Fill [pro] (finetuned)",
-    family: "flux-1-tools",
-    attachment: true,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    modalities: { input: ["text", "image"], output: ["image"] },
-    limit: { context: 0 },
-    cost: { perImage: 0.05 },
-  },
   "flux-pro-1.0-expand": {
     id: "flux-pro-1.0-expand",
     name: "FLUX.1 Expand [pro]",

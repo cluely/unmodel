@@ -835,9 +835,17 @@
 			"types": "./dist/providers/revana/index.d.ts",
 			"default": "./dist/providers/revana/index.js"
 		},
+		"./revana/unified": {
+			"types": "./dist/providers/revana/unified.d.ts",
+			"default": "./dist/providers/revana/unified.js"
+		},
 		"./revana/types": {
 			"types": "./dist/providers/revana/types.d.ts",
 			"default": "./dist/providers/revana/types.js"
+		},
+		"./revana/values": {
+			"types": "./dist/providers/revana/values.d.ts",
+			"default": "./dist/providers/revana/values.js"
 		},
 		"./reve": {
 			"types": "./dist/providers/reve/index.d.ts",

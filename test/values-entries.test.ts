@@ -42,7 +42,7 @@ const DIST = join(ROOT, "dist");
 const PROVIDERS_DIR = join(ROOT, "src", "providers");
 
 /**
- * The 47 providers that ship a values entry: exactly those with a unified
+ * The 49 providers that ship a values entry: exactly those with a unified
  * adapter.
  *
  * Enumerated rather than only derived, so that a provider *losing* its entry
@@ -84,6 +84,7 @@ const PROVIDERS_WITH_VALUES: readonly string[] = [
   "recraft",
   "resemble",
   "revai",
+  "revana",
   "reve",
   "rime",
   "runway",
@@ -196,7 +197,7 @@ describe("values entries exist, one per provider with an adapter", () => {
   test("the enumerated list is exactly the set of providers with an adapter", () => {
     expect(DERIVED_PROVIDERS).toEqual([...PROVIDERS_WITH_VALUES]);
     // A rule that scans an empty set passes by saying nothing.
-    expect(PROVIDERS_WITH_VALUES.length).toBe(48);
+    expect(PROVIDERS_WITH_VALUES.length).toBe(49);
   });
 
   test("every one of them ships a values.ts, and no other provider does", () => {
@@ -376,7 +377,7 @@ describe("identity — the published table IS the adapter's table", () => {
       }
     }
     expect(drift).toEqual([]);
-    expect(found.size).toBe(19);
+    expect(found.size).toBe(20);
   });
 });
 

@@ -2216,6 +2216,44 @@ describe("unmodel/video (the third ready-made pack)", () => {
     expect(specifiers).toContain("./video");
   });
 
+  /**
+   * The same trap at revana, eight times over — and stated here, beside the
+   * rule it instantiates, although only one of the eight leaves is this pack's.
+   *
+   * Revana serves eight categories from ONE route, so its catalog (`models.ts`)
+   * is the union of five generated slices and its barrel (`index.ts`) is nine
+   * validators: one edge from any adapter leaf to either would put 237 catalog
+   * rows into a one-model pack. Each leaf reaches exactly the validator of the
+   * uniformly named file — which carries its own slice — and the import-free
+   * `-params` leaf `unmodel/revana/values` republishes.
+   */
+  test("none of revana's eight adapter leaves imports its catalog or its barrel (R1)", () => {
+    const categories = [
+      "video",
+      "image",
+      "image-edit",
+      "upscale",
+      "lipsync",
+      "avatar",
+      "tts",
+      "music",
+    ];
+    for (const category of categories) {
+      const leaf = readFileSync(
+        join(ROOT, "src", "providers", "revana", `unified-${category}.ts`),
+        "utf8",
+      );
+      const specifiers = [...leaf.matchAll(/from "(\.[^"]+)"/g)].map((m) => m[1] as string);
+      expect(specifiers, category).not.toContain("./models");
+      expect(specifiers, category).not.toContain("./index");
+      expect(specifiers, category).not.toContain(".");
+      expect(specifiers, category).not.toContain("./pricing");
+      // …and the positive half, so the assertion cannot pass on an empty file.
+      expect(specifiers, category).toContain(`./${category}`);
+      expect(specifiers, category).toContain(`./${category}-params`);
+    }
+  });
+
   test("its graph carries exactly two catalogs, and no availability or retarget layer", () => {
     const modules = sourceModulesOf(unifiedEntry("video"));
     expect(modules.filter((m) => m.startsWith("src/catalog/")).sort()).toEqual(VIDEO_PACK_CATALOGS);

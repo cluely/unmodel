@@ -1,0 +1,26 @@
+{
+  "ref": "revana/imagen-4",
+  "params": {
+    "model": "imagen-4",
+    "input": {
+      "prompt": "a lighthouse in fog",
+      "aspect_ratio": "1:1"
+    }
+  },
+  "url": "https://api.revana.si/v1/generations",
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "size"
+      ],
+      "meta": {
+        "width": 1024,
+        "height": 1024,
+        "ratio": "1:1",
+        "chosen": "1:1",
+        "distance": 0
+      }
+    }
+  ]
+}

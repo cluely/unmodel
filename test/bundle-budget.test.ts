@@ -625,8 +625,23 @@ const TTS_PACK_BUDGET_KIB = 850;
  * `createImage([…])` matters more than it did — a caller who wants two
  * providers should not pay for a queue in front of a thousand models. Pinned
  * at 1050, the usual ~10% over the measurement.
+ *
+ * **Bumped 1160 → 1305 by revana**, measured 1185.0 KiB (macOS), up from 1087.6,
+ * of which the new provider is 95.2 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks. Thirteen modules,
+ * and the split is the video pack's with the picture slice in place of the
+ * video one: the shared check battery (`checks.ts`, 27.1 — the SAME module the
+ * video pack carries, because every `revana.*` media address is one route), the
+ * 59 picture catalog rows (`gen/models-image.gen.ts`, 15.1), their shape rows
+ * (12.4) and listed prices (5.5), the 56 unified rows (6.9), the id lists
+ * (6.5), and 21.6 across the adapter, the estimate, the shared schema and
+ * factory, the route and the adapters' shared derivations.
+ *
+ * Fifty-six refs for 95 KiB against fal's twenty-eight for 172: Revana's rows
+ * narrow one body rather than each carrying a wire interface. 1305 is the
+ * measurement x 1.1.
  */
-const IMAGE_PACK_BUDGET_KIB = 1160;
+const IMAGE_PACK_BUDGET_KIB = 1305;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -763,6 +778,10 @@ const VIDEO_PACK_PROVIDERS: string[] = [
  * fal is the sixteenth and the one that moved the budget: it is a queue in
  * front of many vendors rather than a vendor, so it brings 28 endpoints and
  * their generated narrowing rows on its own.
+ *
+ * revana is the second router, reached through `revana/unified-image.ts` and
+ * the picture slice of its generated tables — never the video, speech or music
+ * ones the same route also serves (asserted below).
  */
 const IMAGE_PACK_PROVIDERS: string[] = [
   "black-forest-labs",
@@ -777,6 +796,7 @@ const IMAGE_PACK_PROVIDERS: string[] = [
   "luma",
   "openai",
   "recraft",
+  "revana",
   "reve",
   "runway",
   "stability",
@@ -2086,7 +2106,7 @@ describe("unmodel/image (the second ready-made pack)", () => {
    * someone imported `providers/<p>/index.ts` instead of the adapter leaf,
    * fails here in the diff that causes it.
    */
-  test("it reaches exactly the fifteen image providers, through their adapters", () => {
+  test("it reaches exactly the eighteen image providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("image"));
     expect(modules).toContain("src/unified/image.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -2125,6 +2145,16 @@ describe("unmodel/image (the second ready-made pack)", () => {
       expect(modules).toContain(`src/providers/${provider}/image.ts`);
     }
     expect(modules).toContain("src/providers/vidu/image-from-reference.ts");
+
+    // revana's split is by SLICE: the picture rows, and none of the video,
+    // speech, music or chat ones the same route also serves.
+    for (const slice of ["video", "tts", "music", "chat"]) {
+      expect(modules).not.toContain(`src/providers/revana/gen/models-${slice}.gen.ts`);
+    }
+    for (const slice of ["video", "tts", "music"]) {
+      expect(modules).not.toContain(`src/providers/revana/gen/shapes-${slice}.gen.ts`);
+    }
+    expect(modules).not.toContain("src/providers/revana/models.ts");
   });
 
   test("its graph carries exactly two catalogs, and no availability or retarget layer", () => {

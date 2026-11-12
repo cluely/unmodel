@@ -60,6 +60,7 @@ import { image as leonardo } from "../../src/providers/leonardo/unified";
 import { image as luma } from "../../src/providers/luma/unified-image";
 import { image as openai } from "../../src/providers/openai/unified";
 import { image as recraft } from "../../src/providers/recraft/unified-image";
+import { image as revana } from "../../src/providers/revana/unified-image";
 import { image as reve } from "../../src/providers/reve/unified";
 import { image as runway } from "../../src/providers/runway/unified-image";
 import { image as stability } from "../../src/providers/stability/unified-image";
@@ -113,6 +114,11 @@ interface Capability {
    * `null` only for an adapter whose models declare none.
    */
   extra: Readonly<Record<string, unknown>> | null;
+  /**
+   * The ref the extra is probed at, where the model this row profiles declares
+   * none but a sibling on the same adapter does.
+   */
+  extraRef?: string;
   /** Where that extra lands, when the route nests its params. */
   extraAt?: readonly string[];
   aspectRatio: Support;
@@ -503,6 +509,40 @@ const TABLE: Readonly<Record<string, Capability>> = {
     deliveryBase64: "derived",
     warns: ["dimensions"],
   },
+  /**
+   * A router whose body nests everything one level down (`input`), which is
+   * why both `at` cells name the same key: the shape is `input.aspect_ratio`
+   * and the tier is `input.resolution`.
+   *
+   * `nano-banana-pro` is profiled because it lists both a shape enum and all
+   * three canonical tiers. It declares no extra, and that is a fact about
+   * Revana's catalog rather than a hole in the row: `quality` is typed only
+   * where the catalog lists a model's tiers, and no model that lists quality
+   * tiers also lists resolutions. So the extra is probed at `gpt-image-1`.
+   *
+   * `negativePrompt` is `native` — sent, with a wire WARNING where no route
+   * took it. A route fact is never an error at this provider.
+   */
+  revana: {
+    ref: "revana/nano-banana-pro",
+    adapter: revana,
+    size: { class: "ratio-enum", at: "input" },
+    tier: "input",
+    sizeString: null,
+    extra: { quality: "high" },
+    extraRef: "revana/gpt-image-1",
+    extraAt: ["input"],
+    aspectRatio: "native",
+    dimensions: "derived",
+    resolution: "derived",
+    n: "native",
+    seed: "native",
+    negativePrompt: "native",
+    outputFormat: "declared",
+    deliveryUrl: "declared",
+    deliveryBase64: "declared",
+    warns: ["dimensions"],
+  },
 };
 
 /**
@@ -710,7 +750,8 @@ describe.each(rows)("%s", (provider, row) => {
         modelParams?: Readonly<Record<string, { extras?: Readonly<Record<string, unknown>> }>>;
       }
     ).modelParams;
-    const model = row.ref.slice(row.ref.indexOf("/") + 1);
+    const ref = row.extraRef ?? row.ref;
+    const model = ref.slice(ref.indexOf("/") + 1);
 
     if (row.extra === null) {
       for (const entry of Object.values(table ?? {})) {
@@ -730,7 +771,7 @@ describe.each(rows)("%s", (provider, row) => {
       ).toBe(true);
     }
 
-    const compiled = compile(row, row.extra as Partial<ImageParams>);
+    const compiled = compile({ ...row, ref }, row.extra as Partial<ImageParams>);
     expect(compiled, `${provider} could not compile its own extra`).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
 

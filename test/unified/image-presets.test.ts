@@ -59,6 +59,7 @@ import { image as leonardo } from "../../src/providers/leonardo/unified";
 import { image as luma } from "../../src/providers/luma/unified-image";
 import { image as openai } from "../../src/providers/openai/unified-image";
 import { image as recraft } from "../../src/providers/recraft/unified-image";
+import { image as revana } from "../../src/providers/revana/unified-image";
 import { image as reve } from "../../src/providers/reve/unified";
 import { image as runway } from "../../src/providers/runway/unified-image";
 import { image as stability } from "../../src/providers/stability/unified-image";
@@ -92,6 +93,7 @@ const IMAGE_ADAPTERS: readonly Adapter[] = [
   leonardo,
   krea,
   reve,
+  revana,
 ];
 
 const EDIT_ADAPTERS: readonly (Adapter & { readonly imageInputs: readonly string[] })[] = [

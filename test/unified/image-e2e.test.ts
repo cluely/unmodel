@@ -16,7 +16,7 @@ import { image as ideogramAdapter } from "../../src/providers/ideogram/unified-i
 import { image as openaiAdapter } from "../../src/providers/openai/unified";
 
 describe("the pack", () => {
-  test("registers exactly the seventeen image providers, sorted", () => {
+  test("registers exactly the eighteen image providers, sorted", () => {
     expect([...image.providers]).toEqual([
       "black-forest-labs",
       "bria",
@@ -34,6 +34,7 @@ describe("the pack", () => {
       "luma",
       "openai",
       "recraft",
+      "revana",
       "reve",
       "runway",
       "stability",
@@ -467,6 +468,128 @@ describe("`size`, the third spelling of one decision", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["size"] });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// revana — a shape and a tier under `input`, and no pixel field
+// ---------------------------------------------------------------------------
+
+describe("revana: a picture is sized by shape and by tier", () => {
+  const body = (params: Record<string, unknown>): unknown =>
+    JSON.parse(JSON.stringify(image(params as never)));
+
+  test("every canonical word lands under `input`, the tier in the catalog's spelling", () => {
+    expect(
+      body({
+        model: "revana/nano-banana-pro",
+        prompt: "a red fox in snow",
+        aspectRatio: "16:9",
+        resolution: "2k",
+        n: 2,
+        seed: 7,
+      }),
+    ).toEqual({
+      model: "nano-banana-pro",
+      input: {
+        prompt: "a red fox in snow",
+        aspect_ratio: "16:9",
+        resolution: "2K",
+        num_images: 2,
+        seed: 7,
+      },
+    });
+  });
+
+  test("a shape is sent in the catalog's own spelling — the API matches the list as strings", () => {
+    // `1.5:1` IS 3:2, and the API refuses it where `3:2` is listed.
+    expect(body({ model: "revana/gpt-image-1", prompt: "a fox", aspectRatio: "1.5:1" })).toEqual({
+      model: "gpt-image-1",
+      input: { prompt: "a fox", aspect_ratio: "3:2" },
+    });
+  });
+
+  test("a model that lists no shapes takes the ratio as written", () => {
+    expect(body({ model: "revana/ideogram-v3", prompt: "a fox", aspectRatio: "5:4" })).toEqual({
+      model: "ideogram-v3",
+      input: { prompt: "a fox", aspect_ratio: "5:4" },
+    });
+  });
+
+  test("pixels beside a tier are complementary here: the shape and the size both go", () => {
+    const result = image.safe({
+      model: "revana/nano-banana-pro",
+      prompt: "a fox",
+      dimensions: { width: 1920, height: 1080 },
+      resolution: "4k",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).toEqual({
+      model: "nano-banana-pro",
+      input: { prompt: "a fox", aspect_ratio: "16:9", resolution: "4K" },
+    });
+    expect(result.params.warnings.map((warning) => [warning.code, warning.path])).toEqual([
+      ["approximated_param", ["dimensions"]],
+    ]);
+  });
+
+  test("a tier the model does not list is refused, and its own sizes are named reachable", () => {
+    // `seedream-5.0-pro` lists 1K and 2K.
+    const result = image.safe({
+      model: "revana/seedream-5.0-pro",
+      prompt: "a fox",
+      resolution: "4k",
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({
+      code: "invalid_enum_value",
+      path: ["resolution"],
+      meta: { allowed: ["1k", "2k"], value: "4k" },
+    });
+    expect(result.errors[0]!.message).toContain("providerOptions.revana.input.resolution");
+  });
+
+  test("the model's own `max_images` is `revana.image`'s finding, at `n`", () => {
+    const result = image.safe({ model: "revana/imagen-4", prompt: "a fox", n: 5 });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["n"] });
+    expect(result.errors[0]!.message).toContain("must be 1 to 4");
+  });
+
+  test("`outputFormat` and `outputDelivery` are declared gaps that say what Revana does", () => {
+    const format = image.safe({ model: "revana/imagen-4", prompt: "a fox", outputFormat: "png" });
+    expect(format.ok).toBe(false);
+    if (format.ok) return;
+    expect(format.errors[0]).toMatchObject({ code: "unsupported_param", path: ["outputFormat"] });
+    expect(format.errors[0]!.message).toContain("`output.urls` lists the finished files");
+
+    const delivery = image.safe({ model: "revana/imagen-4", prompt: "a fox", outputDelivery: "url" });
+    expect(delivery.ok).toBe(false);
+    if (delivery.ok) return;
+    expect(delivery.errors[0]).toMatchObject({ code: "unsupported_param", path: ["outputDelivery"] });
+    expect(delivery.errors[0]!.message).toContain("queued `Generation`");
+  });
+
+  test("the upscaler is not an image ref: it warns, and `revana.image` says what it takes", () => {
+    const result = image.safe({ model: "revana/recraft-crisp-upscale", prompt: "a fox" } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.warnings.map((issue) => issue.code)).toEqual(["unknown_model"]);
+    expect(result.errors[0]!.message).toContain("It takes: `input.image_url`; `input.video_url`.");
+  });
+
+  test("the result is `revana.image`'s Validated, priced per picture", () => {
+    const request = { model: "revana/nano-banana-pro", prompt: "a fox", resolution: "4k", n: 2 } as const;
+    const params = image(request);
+    expect(params.request.url).toBe("https://api.revana.si/v1/generations");
+    expect(params.toSdk("revana")).toEqual(JSON.parse(JSON.stringify(params)));
+    // Two pictures at the listed 4K rate — what the quote endpoint answered
+    // for one (`test/fixtures/revana/quote-oracle.json`, `res-ok`), twice.
+    const safe = image.safe(request);
+    expect(safe.ok && safe.estimate?.costUSD).toBeCloseTo(0.16, 6);
   });
 });
 

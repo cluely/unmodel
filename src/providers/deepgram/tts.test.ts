@@ -84,6 +84,18 @@ describe("deepgram.tts model gate", () => {
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
 
+  test("a Flux TTS voice is refused by name and routed to /v2/speak", () => {
+    // flux-{voice}-{language} ids are served by /v2/speak alone (changelog
+    // 2026-08-12); the /v1/speak model enum lists the Aura voices only.
+    const r = tts.safe({ text: "hi", model: "flux-alexis-en" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("unsupported_capability");
+      expect(r.errors[0]?.path).toEqual(["model"]);
+      expect(r.errors[0]?.message).toContain("/v2/speak");
+    }
+  });
+
   test("omitted model falls back to the documented server default", () => {
     expect(models[DEFAULT_SPEAK_MODEL_ID].family).toBe("aura");
     const r = tts.safe({ text: "hi" });

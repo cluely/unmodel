@@ -47,7 +47,7 @@ import {
   LISTEN_ENCODINGS,
   type DeepgramRedact,
 } from "./stt";
-import { AUDIO_FORMATS, SPEAK_SPEED_MIN, SPEAK_SPEED_MAX } from "./tts";
+import { AUDIO_FORMATS, SPEAK_SPEED_MIN, SPEAK_SPEED_MAX, reportFluxOnSpeakV1 } from "./tts";
 import { models, TTS_MODEL_IDS, type DeepgramSttModelId, type DeepgramTtsModelId } from "./models";
 
 export const LISTEN_LIVE_URL = "wss://api.deepgram.com/v1/listen";
@@ -845,7 +845,7 @@ const TTS_MODEL_ID_SET = new Set<string>(TTS_MODEL_IDS);
  * The Deepgram catalog carries the STT ids alongside the Aura voices, so
  * without this gate `model: "nova-3"` would resolve and pass TTS validation
  * unremarked. Ids unknown to the catalog stay a warning — they may be new
- * voices.
+ * voices — except Flux ones, which belong to the /v2/speak socket.
  */
 function checkSpeakLiveModelKind(
   params: SpeakLiveParams,
@@ -853,7 +853,11 @@ function checkSpeakLiveModelKind(
   ctx: PipelineContext,
 ): void {
   const model = params.model ?? DEFAULT_SPEAK_LIVE_MODEL_ID;
-  if (info === undefined || TTS_MODEL_ID_SET.has(model)) return;
+  if (TTS_MODEL_ID_SET.has(model)) return;
+  if (info === undefined) {
+    reportFluxOnSpeakV1(model, ctx);
+    return;
+  }
   ctx.report({
     code: "unsupported_capability",
     path: ["model"],

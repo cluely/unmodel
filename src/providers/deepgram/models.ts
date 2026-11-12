@@ -28,11 +28,22 @@
 // characters — converted to ModelCost.perMillionCharacters by x1000):
 // - Aura-2: $0.030/1k characters → $30 per 1M characters.
 // - Aura-1: $0.0150/1k characters → $15 per 1M characters.
-// - Flux TTS ($0.0450/1k characters after its 2026-09-12 free period) is a
-//   SEPARATE /v2/speak surface with its own `flux-{voice}-en` model strings;
-//   it is not accepted by /v1/speak, so those voices are deliberately absent
-//   from this catalog (the flux-general-* entries below are the STT models of
-//   the same name, served by the /v2/listen WebSocket).
+// - Flux TTS is a SEPARATE /v2/speak surface (batch REST and WebSocket) with
+//   its own `flux-{voice}-{language}` model strings — "Flux TTS is served on
+//   the new `/v2/speak` endpoint … Aura and Aura-2 continue to be served on
+//   `/v1/speak` and are unchanged"
+//   (https://developers.deepgram.com/changelog/2026/8/12, read 2026-11-12) —
+//   priced "price":0.045 per "1,000 characters" (deepgram.com/pricing JSON-LD,
+//   read 2026-11-12). /v2/speak has no validator here, so those voices are
+//   deliberately absent from this catalog and ./tts refuses a flux-* id by
+//   name (the flux-general-* entries below are the STT models of the same
+//   name, served by the /v2/listen WebSocket).
+//
+// NOT CATALOGUED: Deepgram's LLMs (`think-fast`, `phonellm-mini-alpha-2-fp8`
+// at https://agent.deepgram.com/v1/think) — "Deepgram LLMs are available only
+// to current Deepgram contract customers enrolled in the Early Access program"
+// (https://developers.deepgram.com/docs/llm/models, read 2026-11-12). No
+// self-serve API, so they stay out of the library until one exists.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -77,6 +88,21 @@ const sttModels = {
   "nova-3-medical": {
     id: "nova-3-medical",
     name: "Nova-3 Medical",
+    family: "nova-3",
+    ...STT,
+  },
+  // "We have released `nova-3-pharma`, a new Nova-3 model purpose-built for
+  // pharmaceutical vocabulary" — "Supports both pre-recorded (batch) and
+  // real-time streaming transcription"; English only (`en`, `en-US`, `en-AU`,
+  // `en-CA`, `en-GB`, `en-IE`, `en-IN`, `en-NZ`)
+  // (https://developers.deepgram.com/changelog/2026/9/17 and
+  // models-languages-overview, read 2026-11-12). Family "nova-3", so keyterm
+  // prompting applies. No cost: deepgram.com/pricing (read 2026-11-12) prices
+  // Nova-3 Monolingual/Multilingual, Flux STT and Whisper Large only — no
+  // nova-3-pharma offer — so estimates return undefined.
+  "nova-3-pharma": {
+    id: "nova-3-pharma",
+    name: "Nova-3 Pharma",
     family: "nova-3",
     ...STT,
   },

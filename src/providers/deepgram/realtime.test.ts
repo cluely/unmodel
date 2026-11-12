@@ -231,7 +231,7 @@ describe("deepgram.listenLive cost estimation (STREAMING rates)", () => {
   });
 
   test("tiers without a published streaming rate estimate nothing", () => {
-    for (const model of ["nova-2", "whisper-medium", "nova-3-medical"]) {
+    for (const model of ["nova-2", "whisper-medium", "nova-3-medical", "nova-3-pharma"]) {
       const r = liveSafe({ model }, tenMinutes);
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
@@ -438,6 +438,18 @@ describe("deepgram.speakLive", () => {
       expect(r.errors[0]?.code).toBe("unsupported_capability");
       expect(r.errors[0]?.message).toContain(SPEAK_LIVE_URL);
     }
+  });
+
+  test("a Flux TTS voice is routed to the /v2/speak socket; a new Aura id only warns", () => {
+    const flux = speakLive.safe({ model: "flux-haley-en" });
+    expect(flux.ok).toBe(false);
+    if (!flux.ok) {
+      expect(flux.errors[0]?.code).toBe("unsupported_capability");
+      expect(flux.errors[0]?.message).toContain("wss://api.deepgram.com/v2/speak");
+    }
+    const aura = speakLive.safe({ model: "aura-3-thalia-en" });
+    expect(aura.ok).toBe(true);
+    if (aura.ok) expect(aura.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
 
   test("speed keeps its 0.7–1.5 bounds and warns on Aura-1 voices", () => {

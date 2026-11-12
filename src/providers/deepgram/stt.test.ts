@@ -7,6 +7,7 @@ import {
   REDACT_GROUPS,
 } from "./stt";
 import { models, NOVA_3_USD_PER_MINUTE } from "./models";
+import { DEEPGRAM_STT_MODEL_PARAMS, NOVA_3_ROW } from "./stt-params";
 
 describe("deepgram.stt wire split (body vs query string)", () => {
   test("remote audio: body is exactly {url}, options ride in .request.url", () => {
@@ -173,6 +174,24 @@ describe("deepgram.stt cost estimation", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
   });
 
+  test("nova-3-pharma validates warning-free as a Nova-3 model, with no published rate", () => {
+    // deepgram.com/pricing (2026-11-12) has no nova-3-pharma offer, so the row
+    // carries no cost and the estimate is undefined rather than guessed.
+    expect(models["nova-3-pharma"].family).toBe("nova-3");
+    expect("cost" in models["nova-3-pharma"]).toBe(false);
+    const r = stt.safe(
+      { url: "https://a.com/x.wav", model: "nova-3-pharma", language: "en-US", keyterm: "atorvastatin" },
+      tenMinutes,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeUndefined();
+    }
+    // The unified table gives it the Nova-3 row, keyterm included.
+    expect(DEEPGRAM_STT_MODEL_PARAMS["nova-3-pharma"]).toBe(NOVA_3_ROW);
+  });
+
   test("over_budget fires against the estimated cost", () => {
     const r = stt.safe(
       { url: "https://a.com/x.wav", model: "nova-3" },
@@ -195,7 +214,13 @@ describe("deepgram.stt per-model + pairing rules (doc audit 2026-08-13)", () => 
   });
 
   test("keyterm passes on every nova-3 variant and on unknown models", () => {
-    for (const model of ["nova-3", "nova-3-general", "nova-3-medical", "nova-4-general"]) {
+    for (const model of [
+      "nova-3",
+      "nova-3-general",
+      "nova-3-medical",
+      "nova-3-pharma",
+      "nova-4-general",
+    ]) {
       const r = stt.safe({ url: "https://a.com/x.wav", model, keyterm: "ketamine" });
       expect(r.ok).toBe(true);
     }

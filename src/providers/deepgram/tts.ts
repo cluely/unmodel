@@ -14,7 +14,9 @@
  *   aura-asteria-en, the server default.
  * - The voice IS the model: `model=aura-2-thalia-en` picks both. STT ids
  *   (nova-*, whisper-*, flux-*) resolve in the shared Deepgram catalog, so
- *   this endpoint gates on the TTS group and rejects them.
+ *   this endpoint gates on the TTS group and rejects them. Flux TTS voices
+ *   (`flux-{voice}-{language}`) are not in the catalog — they belong to
+ *   /v2/speak — and are refused by name rather than warned about as unknown.
  * - `encoding` decides which of `container` / `sample_rate` / `bit_rate` are
  *   configurable at all, and with which values — the documented "Audio Format
  *   Combinations" table is encoded in AUDIO_FORMATS below and checked whenever
@@ -182,7 +184,8 @@ const TTS_MODEL_ID_SET = new Set<string>(TTS_MODEL_IDS);
  * The Deepgram catalog carries STT ids (nova-*, whisper-*, flux-*) alongside
  * the Aura voices, so without this gate a transcription model would resolve
  * in the catalog and pass text-to-speech validation unremarked. Ids unknown to
- * the catalog stay a warning (`unknown_model`) — they may be new voices.
+ * the catalog stay a warning (`unknown_model`) — they may be new voices —
+ * except Flux ones, which reportFluxOnSpeakV1 refuses.
  */
 function checkSpeakModelKind(
   params: SpeakParams,
@@ -190,13 +193,41 @@ function checkSpeakModelKind(
   ctx: PipelineContext,
 ): void {
   const model = params.model ?? DEFAULT_SPEAK_MODEL_ID;
-  if (info === undefined || TTS_MODEL_ID_SET.has(model)) return;
+  if (TTS_MODEL_ID_SET.has(model)) return;
+  if (info === undefined) {
+    reportFluxOnSpeakV1(model, ctx);
+    return;
+  }
   ctx.report({
     code: "unsupported_capability",
     path: ["model"],
     model,
     message: `"${model}" is not a Deepgram text-to-speech voice; POST /v1/speak accepts the Aura and Aura-2 voices (e.g. "aura-2-thalia-en").`,
     meta: { source: TTS_MODELS_DOCS },
+  });
+}
+
+const FLUX_TTS_DOCS = "https://developers.deepgram.com/docs/flux-tts/overview";
+
+/**
+ * Flux TTS voices (`flux-{voice}-{language}`, e.g. `flux-alexis-en`) are a
+ * different endpoint, not more voices on this one: "Flux TTS is served on the
+ * new `/v2/speak` endpoint … Aura and Aura-2 continue to be served on
+ * `/v1/speak` and are unchanged"
+ * (https://developers.deepgram.com/changelog/2026/8/12, read 2026-11-12), and
+ * the /v1/speak `model` enum (SPEAK_DOCS) lists Aura ids alone. Both /v1/speak
+ * surfaces — this REST route and `./realtime`'s `speakLive` socket — call it
+ * for an id the catalog does not know, so a Flux voice is refused by name
+ * while a genuinely new Aura voice keeps its `unknown_model` warning.
+ */
+export function reportFluxOnSpeakV1(model: string, ctx: PipelineContext): void {
+  if (!model.startsWith("flux-")) return;
+  ctx.report({
+    code: "unsupported_capability",
+    path: ["model"],
+    model,
+    message: `"${model}" is a Flux model; /v1/speak serves the Aura and Aura-2 voices only (e.g. "aura-2-thalia-en"). Flux TTS voices (\`flux-{voice}-{language}\`) are served by /v2/speak — POST https://api.deepgram.com/v2/speak for batch, wss://api.deepgram.com/v2/speak for streaming.`,
+    meta: { source: FLUX_TTS_DOCS },
   });
 }
 

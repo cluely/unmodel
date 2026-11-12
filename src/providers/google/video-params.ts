@@ -18,9 +18,6 @@ import { VEO_PARAMETER_SPACE, type VeoParameterModelId } from "./video-constrain
  * `google/…` ref union, and the same list `videoModels` catalogs.
  */
 export const MODELS = [
-  "veo-3.1-generate-preview",
-  "veo-3.1-fast-generate-preview",
-  "veo-3.1-lite-generate-preview",
   "veo-3.0-generate-001",
   "veo-3.0-fast-generate-001",
   "veo-2.0-generate-001",
@@ -32,13 +29,13 @@ export const MODELS = [
  *
  * Three facts the wire tables carry and the vocabulary can now state up front:
  *
- * - **`durationSeconds`** is 4/6/8 across Veo 3.x, 5–8 on Veo 2 and 3–10 on
+ * - **`durationSeconds`** is 4/6/8 across Veo 3, 5–8 on Veo 2 and 3–10 on
  *   Omni. Closed enums, all three, so they narrow rather than staying `number`.
  * - **`resolution` does not exist on Veo 2.** `videoConstraints` denies it
  *   ("output is 720p"), which is exactly what `resolutions: []` says — the
  *   caller's `resolution` types as `never` and the mistake is caught before the
  *   request is built rather than after it is sent.
- * - **`4k` is Veo 3.x-minus-Lite.** Lite stops at 1080p and Omni at 720p.
+ * - **`4k` is Veo 3's.** Omni stops at 720p.
  *
  * What the rows deliberately do NOT say: `1080p` and `4k` on Veo 3.x also
  * require `duration: 8`, and `personGeneration: "allow_all"` is refused on an
@@ -91,9 +88,6 @@ export function rowOf<M extends VeoParameterModelId, E extends object>(
 }
 
 export const GOOGLE_VIDEO_MODEL_PARAMS = {
-  "veo-3.1-generate-preview": rowOf("veo-3.1-generate-preview", VEO_3_EXTRAS),
-  "veo-3.1-fast-generate-preview": rowOf("veo-3.1-fast-generate-preview", VEO_3_EXTRAS),
-  "veo-3.1-lite-generate-preview": rowOf("veo-3.1-lite-generate-preview", VEO_3_EXTRAS),
   "veo-3.0-generate-001": rowOf("veo-3.0-generate-001", VEO_3_EXTRAS),
   "veo-3.0-fast-generate-001": rowOf("veo-3.0-fast-generate-001", VEO_3_EXTRAS),
   "veo-2.0-generate-001": rowOf("veo-2.0-generate-001", {

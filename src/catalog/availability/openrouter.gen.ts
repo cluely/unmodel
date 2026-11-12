@@ -333,7 +333,7 @@ export const availability = {
     "openrouter": "google/gemini-3-flash-preview",
   },
   "google/gemini-3-pro-image": {
-    "google": "gemini-3-pro-image",
+    "google": { id: "gemini-3-pro-image", narrows: { context: 65536 } },
     "google-vertex": { id: "gemini-3-pro-image", narrows: { context: 65536 } },
     "openrouter": "google/gemini-3-pro-image",
     "vercel": { id: "google/gemini-3-pro-image", narrows: { context: 65536 } },
@@ -342,7 +342,7 @@ export const availability = {
     "openrouter": "google/gemini-3-pro-image-preview",
   },
   "google/gemini-3.1-flash-image": {
-    "google": { id: "gemini-3.1-flash-image", narrows: { context: 65536 } },
+    "google": "gemini-3.1-flash-image",
     "google-vertex": "gemini-3.1-flash-image",
     "openrouter": "google/gemini-3.1-flash-image",
     "vercel": "google/gemini-3.1-flash-image",
@@ -407,14 +407,17 @@ export const availability = {
     "vercel": { id: "google/gemini-3.8-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "google/gemini-4-argon": {
+    "google": "gemini-4-argon",
     "openrouter": "google/gemini-4-argon",
     "vercel": { id: "google/gemini-4-argon", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "google/gemini-4-carbon": {
+    "google": "gemini-4-carbon",
     "openrouter": "google/gemini-4-carbon",
     "vercel": { id: "google/gemini-4-carbon", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "google/gemini-4-hydrogen": {
+    "google": "gemini-4-hydrogen",
     "openrouter": "google/gemini-4-hydrogen",
     "vercel": { id: "google/gemini-4-hydrogen", narrows: { context: 1000000, drops: ["audio", "video"] } },
   },
@@ -1787,6 +1790,7 @@ export const availability = {
     "openrouter": "~google/gemini-flash-latest",
   },
   "~google/gemini-pro-latest": {
+    "google": "gemini-pro-latest",
     "openrouter": "~google/gemini-pro-latest",
   },
   "~moonshotai/kimi-latest": {

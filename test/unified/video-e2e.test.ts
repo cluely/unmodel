@@ -209,7 +209,7 @@ describe("a value a model cannot serve is refused, never approximated", () => {
   });
 
   test("a tier no provider in the category renders is refused everywhere it is asked", () => {
-    for (const model of ["luma/ray-2", "google/veo-3.1-generate-preview", "vidu/viduq3-pro"]) {
+    for (const model of ["luma/ray-2", "google/veo-3.0-generate-001", "vidu/viduq3-pro"]) {
       const result = video.safe({ model, prompt: "hi", resolution: "1440p" } as never);
       expect(result.ok, model).toBe(false);
       if (result.ok) continue;
@@ -222,7 +222,7 @@ describe("a value a model cannot serve is refused, never approximated", () => {
 
   test("a shape outside a provider's enum names that provider's list", () => {
     const result = video.safe({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "hi",
       aspectRatio: "4:3",
     } as never);
@@ -271,7 +271,7 @@ describe("a value a model cannot serve is refused, never approximated", () => {
 
   test("a URL at a bytes-only provider does the same, the other way round", () => {
     const result = video.safe({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "hi",
       image: { url: "https://example.com/a.png" },
     });
@@ -324,7 +324,7 @@ describe("the result is the provider's own Validated", () => {
 
   test("google: the SDK view re-nests what the wire body nests differently", () => {
     const params = video({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "a hummingbird in slow motion",
       duration: 8,
       aspectRatio: "9:16",
@@ -341,7 +341,7 @@ describe("the result is the provider's own Validated", () => {
       },
     });
     expect(params.toSdk("google")).toEqual({
-      model: "veo-3.1-generate-preview",
+      model: "veo-3.0-generate-001",
       prompt: "a hummingbird in slow motion",
       config: {
         numberOfVideos: 1,
@@ -370,7 +370,7 @@ describe("the result is the provider's own Validated", () => {
 describe("providerOptions", () => {
   test("deep-merges over the compiled body before validation", () => {
     const params = video({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "a hummingbird in slow motion",
       duration: 8,
       providerOptions: {
@@ -440,7 +440,7 @@ describe("providerOptions", () => {
 describe("bounds the adapter did not copy surface as the provider's own finding", () => {
   test("veo's 1080p-needs-8s pairing rule, reported at `duration`", () => {
     const result = video.safe({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "a fox",
       duration: 6,
       resolution: "1080p",

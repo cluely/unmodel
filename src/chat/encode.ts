@@ -278,7 +278,8 @@ function encodeNativeTool(
  * - `openai-chat`: `reasoning_effort` — `minimal | low | medium | high`.
  * - `anthropic-messages`: `output_config.effort` — `low | medium | high | xhigh | max`.
  *   No `minimal`.
- * - `gemini`: `thinkingConfig.thinkingLevel` — `MINIMAL | LOW | MEDIUM | HIGH`.
+ * - `gemini`: `thinkingConfig.thinkingLevel` — `MINIMAL | LOW | MEDIUM | HIGH | XHIGH`
+ *   (`XHIGH` is `gemini-4-hydrogen`'s; `google.chat` is the per-model arbiter).
  * - `bedrock-converse`: no codec in v1, so nothing consumes this; listed with
  *   the full union so adding the codec is a decision made there, not a
  *   silent clamp inherited from here.
@@ -286,7 +287,7 @@ function encodeNativeTool(
 const EFFORT_VOCABULARY: Readonly<Record<DialectId, ReadonlySet<ChatReasoningEffort>>> = {
   "openai-chat": new Set<ChatReasoningEffort>(["minimal", "low", "medium", "high"]),
   "anthropic-messages": new Set<ChatReasoningEffort>(["low", "medium", "high", "xhigh", "max"]),
-  gemini: new Set<ChatReasoningEffort>(["minimal", "low", "medium", "high"]),
+  gemini: new Set<ChatReasoningEffort>(["minimal", "low", "medium", "high", "xhigh"]),
   "bedrock-converse": new Set<ChatReasoningEffort>([
     "minimal",
     "low",

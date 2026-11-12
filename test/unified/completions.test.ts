@@ -2323,14 +2323,16 @@ if (report.finishReason === "¦") {}`);
   });
 
   test("a google report completes the Gemini finish reasons", () => {
-    // The nine literals that exist in google/check.ts (MAX_TOKENS plus the
-    // eight in FILTERED_FINISH_REASONS), plus STOP — the success value the
-    // checker does not branch on but every caller compares against.
+    // The ten literals that exist in google/check.ts (MAX_TOKENS, the
+    // long-decode CONTINUATION, plus the eight in FILTERED_FINISH_REASONS),
+    // plus STOP — the success value the checker does not branch on but every
+    // caller compares against.
     const entries = completionsAt(`import { checkChat } from "./src/providers/google";
 const report = checkChat({});
 if (report.finishReason === "¦") {}`);
     expect(entries.sort()).toEqual([
       "BLOCKLIST",
+      "CONTINUATION",
       "IMAGE_PROHIBITED_CONTENT",
       "IMAGE_RECITATION",
       "IMAGE_SAFETY",
@@ -2552,8 +2554,8 @@ chat({ model: "¦", contents: [] });`);
 // src/providers/google/video.test.ts. Before the per-model arm, every model
 // completed the same three resolutions and the same three person policies —
 // including Veo 2, which has no `resolution` parameter at all, and Omni, which
-// only ever produces 720p. Measured per model: resolution 3/3/3/3 before →
-// 3 / 2 / 0 / 1 after; personGeneration 3/3 before → 2 / 3 after.
+// only ever produces 720p. Measured per model: resolution 3/3/3 before →
+// 3 / 0 / 1 after; personGeneration 3/3 before → 2 / 3 after.
 // ---------------------------------------------------------------------------
 
 const VIDEO_PROBE = `import { video } from "./src/providers/google";
@@ -2568,8 +2570,7 @@ function veoParam(model: string, field: string, cursor = `"¦"`): string[] {
 
 describe("google.video: per-model parameter completions", () => {
   test("resolution is the model's own tier list", () => {
-    expect(veoParam("veo-3.1-generate-preview", "resolution")).toEqual(["720p", "1080p", "4k"]);
-    expect(veoParam("veo-3.1-lite-generate-preview", "resolution")).toEqual(["720p", "1080p"]);
+    expect(veoParam("veo-3.0-generate-001", "resolution")).toEqual(["720p", "1080p", "4k"]);
     expect(veoParam("gemini-omni-flash-preview", "resolution")).toEqual(["720p"]);
     // Veo 2 has no `resolution` parameter: the field types `never`, so there is
     // nothing to complete — the type states the deny the runtime reports.
@@ -2581,13 +2582,13 @@ describe("google.video: per-model parameter completions", () => {
     // that are numbers, which is the union the arm states.
     const numbers = (model: string): string[] =>
       veoParam(model, "durationSeconds", "¦").filter((entry) => /^\d+$/.test(entry));
-    expect(numbers("veo-3.1-generate-preview")).toEqual(["4", "6", "8"]);
+    expect(numbers("veo-3.0-generate-001")).toEqual(["4", "6", "8"]);
     expect(numbers("veo-2.0-generate-001")).toEqual(["5", "6", "7", "8"]);
     expect(numbers("gemini-omni-flash-preview")).toEqual(["3", "4", "5", "6", "7", "8", "9", "10"]);
   });
 
   test("personGeneration narrows only where Google publishes a list", () => {
-    expect(veoParam("veo-3.1-generate-preview", "personGeneration")).toEqual([
+    expect(veoParam("veo-3.0-generate-001", "personGeneration")).toEqual([
       "allow_all",
       "allow_adult",
     ]);

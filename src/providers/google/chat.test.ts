@@ -23,6 +23,7 @@ import type {
   GoogleImageSizeEnumName,
 } from "./wire";
 import { chatModels } from "./chat-tts-overlay";
+import { ttsModels } from "./tts-models";
 import { models } from "../../catalog/google.gen";
 import type { Issue } from "../../core/issues";
 import type { ValidateResult } from "../../core/result";
@@ -815,8 +816,14 @@ describe("generationConfig ranges and enums", () => {
     );
   });
 
-  test("thinkingLevel MINIMAL fails on the two models whose docs say it errors", () => {
-    for (const model of ["gemini-3.7-flash", "gemini-3.8-flash", "models/gemini-3.8-flash"]) {
+  test("thinkingLevel MINIMAL fails on the models whose docs say it errors", () => {
+    for (const model of [
+      "gemini-3.7-flash",
+      "gemini-3.8-flash",
+      "models/gemini-3.8-flash",
+      "gemini-4-argon",
+      "gemini-4-carbon",
+    ]) {
       const issue = expectError(
         chat.safe({
           model,
@@ -828,6 +835,16 @@ describe("generationConfig ranges and enums", () => {
       expect(issue.path).toEqual(["generationConfig", "thinkingConfig", "thinkingLevel"]);
       expect(issue.meta?.allowed).toEqual(["LOW", "MEDIUM", "HIGH"]);
     }
+    // Hydrogen is the one model whose "it accepts …" list carries XHIGH.
+    const hydrogen = expectError(
+      chat.safe({
+        model: "gemini-4-hydrogen",
+        contents: HELLO,
+        generationConfig: { thinkingConfig: { thinkingLevel: "MINIMAL" } },
+      }),
+      "invalid_enum_value",
+    );
+    expect(hydrogen.meta?.allowed).toEqual(["LOW", "MEDIUM", "HIGH", "XHIGH"]);
 
     // The levels those models do accept, and the generation that still takes
     // MINIMAL — the restriction is per-model, not per-family.
@@ -845,6 +862,60 @@ describe("generationConfig ranges and enums", () => {
         model: "gemini-3.6-flash",
         contents: HELLO,
         generationConfig: { thinkingConfig: { thinkingLevel: "MINIMAL" } },
+      }),
+    );
+  });
+
+  test("thinkingLevel XHIGH validates on gemini-4-hydrogen and is refused nowhere", () => {
+    // The thinking guide's own REST sample for Hydrogen sends the lower-case
+    // spelling; the check upper-cases before comparing.
+    for (const thinkingLevel of ["XHIGH", "xhigh"]) {
+      expectOk(
+        chat.safe({
+          model: "gemini-4-hydrogen",
+          contents: HELLO,
+          generationConfig: { thinkingConfig: { thinkingLevel } },
+        }),
+      );
+    }
+    // Documented on Hydrogen only, but no page says it errors elsewhere, so
+    // it is not refused on another model.
+    expectOk(
+      chat.safe({
+        model: "gemini-3.8-flash",
+        contents: HELLO,
+        generationConfig: { thinkingConfig: { thinkingLevel: "XHIGH" } },
+      }),
+    );
+  });
+
+  test("Gemini 4 refuses thinkingBudget and thinkingLevel together, not a budget alone", () => {
+    for (const model of ["gemini-4-argon", "gemini-4-carbon", "gemini-4-hydrogen", "models/gemini-4-carbon"]) {
+      const issue = expectError(
+        chat.safe({
+          model,
+          contents: HELLO,
+          generationConfig: { thinkingConfig: { thinkingBudget: 1024, thinkingLevel: "HIGH" } },
+        }),
+        "invalid_shape",
+      );
+      expect(issue.path).toEqual(["generationConfig", "thinkingConfig"]);
+      expect(issue.message).toContain("400");
+      // "If passed alone, it maps to the nearest `thinkingLevel` … and returns a warning."
+      expectOk(
+        chat.safe({
+          model,
+          contents: HELLO,
+          generationConfig: { thinkingConfig: { thinkingBudget: 1024 } },
+        }),
+      );
+    }
+    // The sentence is scoped "In Gemini 4 models"; Gemini 3 is left alone.
+    expectOk(
+      chat.safe({
+        model: "gemini-3.8-flash",
+        contents: HELLO,
+        generationConfig: { thinkingConfig: { thinkingBudget: 1024, thinkingLevel: "HIGH" } },
       }),
     );
   });
@@ -867,6 +938,142 @@ describe("generationConfig ranges and enums", () => {
 // ---------------------------------------------------------------------------
 // Nano Banana image generation through generateContent.
 // ---------------------------------------------------------------------------
+
+describe("Gemini 4: explicit caching, long decode and the continuation wire fields", () => {
+  test("cachedContent is refused on Carbon and Argon ('returns an error'), not on Hydrogen", () => {
+    for (const model of ["gemini-4-carbon", "gemini-4-argon"]) {
+      const issue = expectError(
+        chat.safe({ model, contents: HELLO, cachedContent: "cachedContents/abc123" }),
+        "unsupported_param",
+      );
+      expect(issue.path).toEqual(["cachedContent"]);
+      expect(issue.message).toContain("implicit caching");
+    }
+    // Hydrogen's page says "not supported" and never that the request errors.
+    expectOk(
+      chat.safe({
+        model: "gemini-4-hydrogen",
+        contents: HELLO,
+        cachedContent: "cachedContents/abc123",
+      }),
+    );
+  });
+
+  test("maxOutputTokens is bounded by the 1,048,576 long-decode ceiling, not the per-hop row", () => {
+    // The long-decode guide's own REST sample: 262144 to gemini-4-carbon,
+    // whose generated `limit.output` is the 32,768 per-hop default.
+    expect(models["gemini-4-carbon"].limit.output).toBe(32768);
+    for (const model of ["gemini-4-carbon", "gemini-4-argon", "gemini-4-hydrogen"]) {
+      expectOk(
+        chat.safe({ model, contents: HELLO, generationConfig: { maxOutputTokens: 262144 } }),
+      );
+      const issue = expectError(
+        chat.safe({ model, contents: HELLO, generationConfig: { maxOutputTokens: 1_048_577 } }),
+        "over_output_limit",
+      );
+      expect(issue.meta?.limit).toBe(1_048_576);
+    }
+    // Every other row keeps its catalog output limit as the bound.
+    expectError(
+      chat.safe({
+        model: "gemini-3.8-flash",
+        contents: HELLO,
+        generationConfig: { maxOutputTokens: models["gemini-3.8-flash"].limit.output! + 1 },
+      }),
+      "over_output_limit",
+    );
+  });
+
+  test("continuationToken and labels are known wire fields (no unknown_param)", () => {
+    const result = expectOk(
+      chat.safe({
+        model: "gemini-4-carbon",
+        contents: HELLO,
+        generationConfig: { maxOutputTokens: 262144 },
+        continuationToken: "opaque-token",
+        labels: { team: "research" },
+      }),
+    );
+    expect(result.warnings.some((w) => w.code === "unknown_param")).toBe(false);
+    const json = JSON.parse(JSON.stringify(result.params));
+    expect(json.continuationToken).toBe("opaque-token");
+    expect(json.labels).toEqual({ team: "research" });
+    // Like `store`, the token has no @google/genai config field and stays off the SDK view.
+    expect(result.params.toSdk("google")).not.toHaveProperty("continuationToken");
+  });
+});
+
+describe("the 2026-11 hand rows on google.chat", () => {
+  test("gemini-nano-banana-2.1 validates, prices, takes 1K/2K/4K and all 14 ratios, and no 512", () => {
+    const result = expectOk(
+      chat.safe({
+        model: "gemini-nano-banana-2.1",
+        contents: HELLO,
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"],
+          imageConfig: { aspectRatio: "1:8", imageSize: "4K" },
+        },
+      }),
+    );
+    expect(result.warnings.some((w) => w.code === "unknown_model")).toBe(false);
+    expect(result.estimate.costUSD).toBeGreaterThan(0);
+    const issue = expectError(
+      chat.safe({
+        model: "gemini-nano-banana-2.1",
+        contents: HELLO,
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"],
+          // @ts-expect-error — "(not supported on Gemini Nano Banana 2.1)".
+          imageConfig: { imageSize: "512" },
+        },
+      }),
+      "invalid_enum_value",
+    );
+    expect(issue.path).toEqual(["generationConfig", "imageConfig", "imageSize"]);
+    // Function calling carries a not-supported badge. (A runtime refusal only:
+    // the per-model type arms derive from the generated catalog, so a hand row
+    // keeps the wide arm.)
+    expectError(
+      chat.safe({ model: "gemini-nano-banana-2.1", contents: HELLO, tools: [{ googleSearch: {} }] }),
+      "unsupported_capability",
+    );
+  });
+
+  test("gemini-robotics-er-2-preview validates and prices", () => {
+    const result = expectOk(
+      chat.safe({
+        model: "gemini-robotics-er-2-preview",
+        contents: HELLO,
+        generationConfig: { thinkingConfig: { thinkingLevel: "MINIMAL" }, maxOutputTokens: 65536 },
+      }),
+    );
+    expect(result.warnings.some((w) => w.code === "unknown_model")).toBe(false);
+    expect(result.estimate.costUSD).toBeGreaterThan(0);
+    expect(chatModels["gemini-robotics-er-2-preview"].cost).toEqual({
+      input: 1,
+      output: 5,
+      cacheRead: 0.1,
+      inputAudio: 1,
+    });
+  });
+
+  test("the Gemini 3.8 TTS pair is served by google.chat too", () => {
+    for (const model of ["gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"] as const) {
+      const result = expectOk(
+        chat.safe({
+          model,
+          contents: [{ parts: [{ text: "Say hi." }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+          },
+        }),
+      );
+      expect(result.warnings.some((w) => w.code === "unknown_model")).toBe(false);
+      expect(chatModels[model]).toBe(ttsModels[model]);
+    }
+  });
+});
 
 describe("image generation config", () => {
   // Narrowed from `GoogleModality[]`: the per-model arms type

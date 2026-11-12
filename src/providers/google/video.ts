@@ -36,9 +36,7 @@
  * rules (1080p/4k need 8s; extension caps at 720p; image-driven modes forbid
  * personGeneration "allow_all"; lastFrame needs image; referenceImages need a
  * prompt). Docs-ambiguous quirks stay out of code: the feature table's "1080p
- * is 16:9-only on Veo 3" note conflicts with its parameters table, and
- * whether Veo 3.1 Lite takes referenceImages is stated both ways on the same
- * page — the ambiguous Lite case is treated PERMISSIVELY (no error), and the
+ * is 16:9-only on Veo 3" note conflicts with its parameters table, so the
  * 1080p/16:9 note is not enforced.
  *
  * `gemini-omni-flash-preview` is the one catalogued video-output model that is
@@ -457,18 +455,16 @@ function checkVideoModality(
   });
 }
 
-/** Instance features only some Veo generations support (docs feature table). */
-const REFERENCE_IMAGES_MODELS = new Set<string>([
-  "veo-3.1-generate-preview",
-  "veo-3.1-fast-generate-preview",
-  // The docs state Lite's referenceImages support both ways on one page;
-  // treated permissively per the header policy (no error on Lite).
-  "veo-3.1-lite-generate-preview",
-]);
-const VIDEO_EXTENSION_MODELS = new Set<string>([
-  "veo-3.1-generate-preview",
-  "veo-3.1-fast-generate-preview",
-]);
+/**
+ * Instance features only some Veo generations support (docs feature table).
+ * Reference images and video extension were Veo 3.1 features, and the Veo 3.1
+ * preview ids were shut down on October 22, 2026 (their model pages, verified
+ * 2026-11-12); the feature table lists neither for Veo 3 or Veo 2. Both sets
+ * are therefore empty today, and stay so the two checks below keep REFUSING
+ * the fields on every served model rather than silently accepting them.
+ */
+const REFERENCE_IMAGES_MODELS = new Set<string>();
+const VIDEO_EXTENSION_MODELS = new Set<string>();
 
 function checkInstanceFeatures(
   params: GenerateVideosBody,
@@ -487,7 +483,7 @@ function checkInstanceFeatures(
       code: "unsupported_capability",
       path: ["instances", 0, "referenceImages"],
       model,
-      message: `"${model}" does not support reference images; the Veo docs list them for Veo 3.1 and Veo 3.1 Fast only.`,
+      message: `"${model}" does not support reference images; the Veo docs listed them for Veo 3.1 and Veo 3.1 Fast only, and those ids were shut down on 2026-10-22.`,
       meta: { source: VEO_DOCS_URL },
     });
   }
@@ -496,7 +492,7 @@ function checkInstanceFeatures(
       code: "unsupported_capability",
       path: ["instances", 0, "video"],
       model,
-      message: `"${model}" does not support video extension; the Veo docs list it for Veo 3.1 and Veo 3.1 Fast only.`,
+      message: `"${model}" does not support video extension; the Veo docs listed it for Veo 3.1 and Veo 3.1 Fast only, and those ids were shut down on 2026-10-22.`,
       meta: { source: VEO_DOCS_URL },
     });
   }
@@ -679,16 +675,12 @@ const VEO_DEFAULT_DURATION_SECONDS = 8;
 
 /**
  * USD per second at non-720p resolutions where the rate differs from the
- * catalog's 720p rate. Veo 3.1: $0.60 at 4k. Fast: $0.12 at 1080p, $0.30 at
- * 4k. Lite: $0.08 at 1080p. Veo 3 Fast (deprecated) matches 3.1 Fast; Veo 3
- * standard and Veo 2 are flat-rate.
+ * catalog's 720p rate (Gemini API pricing page). Veo 3 Fast: $0.12 at 1080p,
+ * $0.30 at 4k; Veo 3 standard and Veo 2 are flat-rate.
  */
 export const VEO_RESOLUTION_RATE_OVERRIDES: Readonly<
   Partial<Record<string, Partial<Record<string, number>>>>
 > = {
-  "veo-3.1-generate-preview": { "4k": 0.6 },
-  "veo-3.1-fast-generate-preview": { "1080p": 0.12, "4k": 0.3 },
-  "veo-3.1-lite-generate-preview": { "1080p": 0.08 },
   "veo-3.0-fast-generate-001": { "1080p": 0.12, "4k": 0.3 },
 };
 
@@ -710,7 +702,7 @@ function estimate(params: GenerateVideosBody, info: ModelInfo | undefined, _ctx:
 
 /**
  * Endpoint URL for a model id. Accepts both the bare id
- * ("veo-3.1-generate-preview") and the REST-documented "models/…" form —
+ * ("veo-3.0-generate-001") and the REST-documented "models/…" form —
  * both yield the same URL.
  */
 export function generateVideosUrl(model: string): string {
@@ -822,7 +814,7 @@ const validator = createValidator<GenerateVideosBody, unknown>({
  *
  * ```ts
  * const params = google.video({
- *   model: "veo-3.1-generate-preview",
+ *   model: "veo-3.0-generate-001",
  *   instances: [{ prompt: "a hummingbird in slow motion" }],
  *   parameters: { aspectRatio: "16:9", durationSeconds: 8 },
  * });

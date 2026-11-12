@@ -88,8 +88,9 @@ behind `sonic-preview`), and ElevenLabs "v3 Conversational" is the realtime
 **Live — STT:** every provider addresses the route as `stt` — openai
 (gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
-deepgram, elevenlabs (Scribe), gladia, google (13 curated Gemini ids, 6 excluded by name and
-reason), inworld (base64 audio inline in the JSON body, no multipart route), mistral
+deepgram, elevenlabs (Scribe), gladia, google (20 curated Gemini ids including the dedicated
+`gemini-3.5-transcribe`, 5 excluded by name and reason), inworld (base64 audio inline in the
+JSON body, no multipart route), mistral
 (Voxtral), revai, soniox, speechmatics, fal (6 hosted endpoints — Wizper, fal's own
 speech-to-text + turbo, ElevenLabs Scribe v1/v2, Cohere Transcribe; the `/stream` variants are
 excluded by name as a socket surface). All thirteen also ship an adapter at
@@ -172,7 +173,9 @@ deepseek (Janus — weights only).
 
 ## Video / music wave
 
-**Video — live:** openai (Sora 2, `video` at /v1/videos), google (Veo, `video`),
+**Video — live:** openai (Sora 2, `video` at /v1/videos), google (Veo 2 / Veo 3, `video` —
+every served id is deprecated upstream since the Veo 3.1 previews shut down on 2026-10-22; the
+replacement, `gemini-omni-1.2-flash`, is an Interactions API model unmodel does not serve yet),
 bytedance (`video`, Seedance / Dreamina Seedance), kling (`video` /
 `videoFromImage` on `POST /v1/videos/*`, plus the EXPERIMENTAL path-addressed
 `videoV3` / `videoV3FromImage` / `videoOmni`), lightricks (LTX-2: `video` /
@@ -211,8 +214,8 @@ Several are also reachable as hosted routes on `unmodel/runway`
 **Excluded:** pika, genmo/haiper, sand-ai (MAGI-2 Preview is open weights on HF, no hosted
 API), skywork, sapiens-ai (no public API).
 **Music / audio — live:** elevenlabs (Eleven Music, `music`), stability (Stable Audio 2.x:
-`music` / `musicFromAudio` / `musicInpaint`), google (Lyria 3 Pro / Clip via the Gemini
-Interactions API, `music`), mureka (`music` at /v1/song/generate, `musicFromPrompt` at
+`music` / `musicFromAudio` / `musicInpaint`), google (Lyria 3.5 + Lyria 3 Pro / Clip via the
+Gemini Interactions API, `music`), mureka (`music` at /v1/song/generate, `musicFromPrompt` at
 /v1/song/easy-generate + `instrumental`, async create-then-poll, mureka-7.6…9.5), fal
 (`music`, 10 hosted endpoints — MiniMax Music
 3 / v2.6 / v2, ElevenLabs Music, Lyria 3 Pro + Lyria 2, Stable Audio 2.5 and 3 Medium,

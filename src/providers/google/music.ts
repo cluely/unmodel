@@ -222,6 +222,17 @@ export interface LyriaClipBody extends CreateMusicInteractionBase {
   response_format?: never;
 }
 
+/**
+ * Lyria 3.5: the current full-song model. Its page documents MP3 output and no
+ * page extends Pro's WAV option to it — nor says `response_format` errors — so
+ * the arm keeps the field (the runtime check bounds its values) and the unified
+ * row in ./music-params offers `mp3` only.
+ */
+export interface Lyria35Body extends CreateMusicInteractionBase {
+  model: "lyria-3.5";
+  response_format?: GoogleLyriaAudioResponseFormat;
+}
+
 /** Escape hatch for models unmodel doesn't know yet (unknown_model warning). */
 export interface UnknownLyriaBody<Model extends string> extends CreateMusicInteractionBase {
   model: FutureModelId<Model, keyof CreateMusicBodyByModel>;
@@ -233,11 +244,13 @@ export interface UnknownLyriaBody<Model extends string> extends CreateMusicInter
  * literal to opt into the loose arm: `CreateMusicInteractionBody<"lyria-4">`.
  */
 export type CreateMusicInteractionBody<FutureModel extends string = never> =
+  | Lyria35Body
   | LyriaProBody
   | LyriaClipBody
   | UnknownLyriaBody<FutureModel>;
 
 export interface CreateMusicBodyByModel {
+  "lyria-3.5": Lyria35Body;
   "lyria-3-pro-preview": LyriaProBody;
   "lyria-3-clip-preview": LyriaClipBody;
 }
@@ -318,7 +331,7 @@ function checkMusicModel(
       message:
         `"${model}" is realtime-only: it streams over the Live API WebSocket ` +
         `(@google/genai's \`ai.live.music.connect()\` / BidiGenerateMusic) and has no batch ` +
-        `REST surface — POST /v1beta/interactions serves lyria-3-pro-preview and ` +
+        `REST surface — POST /v1beta/interactions serves lyria-3.5, lyria-3-pro-preview and ` +
         `lyria-3-clip-preview.`,
       meta: { source: LYRIA_MUSIC_DOCS_URL },
     });

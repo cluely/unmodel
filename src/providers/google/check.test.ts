@@ -16,6 +16,17 @@ describe("finish reasons", () => {
     expect(report.warnings[0]!.meta?.kind).toBe("truncated");
   });
 
+  test("CONTINUATION -> continuation warning naming the token to resend", () => {
+    const report = checkChat({
+      candidates: [{ finishReason: "CONTINUATION", continuationToken: "opaque" }],
+    });
+    expect(report.finishReason).toBe("CONTINUATION");
+    expect(report.warnings).toHaveLength(1);
+    expect(report.warnings[0]!.code).toBe("over_output_limit");
+    expect(report.warnings[0]!.meta?.kind).toBe("continuation");
+    expect(report.warnings[0]!.message).toContain("continuationToken");
+  });
+
   test.each([
     "SAFETY",
     "RECITATION",

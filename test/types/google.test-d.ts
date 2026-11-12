@@ -130,7 +130,7 @@ chat({
 // ---------------------------------------------------------------------------
 
 const veo = video({
-  model: "veo-3.1-generate-preview",
+  model: "veo-3.0-generate-001",
   instances: [
     {
       prompt: "a hummingbird in slow motion",
@@ -156,7 +156,7 @@ expectAssignable<GenerateVideosParameters>(veo.toSdk("google"));
 // the wire literal needs the documented cast at the SDK call site, exactly
 // like the generateContent safety enums above.
 const veoWithReferences = video({
-  model: "veo-3.1-generate-preview",
+  model: "veo-3.0-generate-001",
   instances: [
     {
       prompt: "in this style",
@@ -173,7 +173,7 @@ expectAssignable<GenerateVideosParameters>(
 
 // Typo'd top-level keys are a compile error (ExactKeys guard).
 video({
-  model: "veo-3.1-generate-preview",
+  model: "veo-3.0-generate-001",
   instances: [{ prompt: "hi" }],
   // @ts-expect-error excess (typo'd) top-level key
   parametrs: { aspectRatio: "16:9" },
@@ -396,7 +396,7 @@ chat({
 // video: `seed` is a documented Veo 3 parameter (the SDK rejects it).
 expectAssignable<{ instances: unknown }>(
   video({
-    model: "veo-3.1-generate-preview",
+    model: "veo-3.0-generate-001",
     instances: [{ prompt: "a hummingbird" }],
     parameters: { seed: 42 },
   }),
@@ -440,7 +440,7 @@ geminiRouted.toApi("vercel");
 // ---------------------------------------------------------------------------
 
 const veoForApi = video({
-  model: "veo-3.1-generate-preview",
+  model: "veo-3.0-generate-001",
   instances: [{ prompt: "a hummingbird" }],
 });
 // @ts-expect-error — video declares no `.toApi` targets.
@@ -587,7 +587,7 @@ expectTrue<
   >
 >();
 
-// The four calls the wire used to accept while the unified layer refused them.
+// The calls the wire used to accept while the unified layer refused them.
 video({
   model: "veo-2.0-generate-001",
   instances: [{ prompt: "a hummingbird" }],
@@ -595,16 +595,10 @@ video({
   parameters: { resolution: "4k" },
 });
 video({
-  model: "veo-3.1-generate-preview",
+  model: "veo-3.0-generate-001",
   instances: [{ prompt: "a hummingbird" }],
   // @ts-expect-error `dont_allow` is Veo 2-only.
   parameters: { personGeneration: "dont_allow" },
-});
-video({
-  model: "veo-3.1-lite-generate-preview",
-  instances: [{ prompt: "a hummingbird" }],
-  // @ts-expect-error Lite stops at 1080p.
-  parameters: { resolution: "4k" },
 });
 video({
   model: "gemini-omni-flash-preview",
@@ -612,10 +606,10 @@ video({
   // @ts-expect-error Omni is 720p and 3-10s.
   parameters: { resolution: "1080p", durationSeconds: 20 },
 });
-// …and the same four facts, each on the model that DOES document them.
+// …and the same facts, each on the model that DOES document them.
 expectAssignable<{ instances: unknown }>(
   video({
-    model: "veo-3.1-generate-preview",
+    model: "veo-3.0-generate-001",
     instances: [{ prompt: "a hummingbird" }],
     parameters: { resolution: "4k", durationSeconds: 8, personGeneration: "allow_adult" },
   }),
@@ -655,7 +649,7 @@ expectAssignable<{ instances: unknown }>(
  * there is no second table to keep it honest and the runtime enum owns it
  * alone. Pinned so that stops being an accident.
  */
-expectTrue<Same<VeoParametersArm<"veo-3.1-generate-preview">["sampleCount"], number | undefined>>();
+expectTrue<Same<VeoParametersArm<"veo-3.0-generate-001">["sampleCount"], number | undefined>>();
 
 // ---------------------------------------------------------------------------
 // `checkChat`'s report: `finishReason` carries Gemini's own vocabulary
@@ -670,6 +664,8 @@ function googleReportTypeTests(): void {
   expectTrue<HasLiteralMember<typeof report.finishReason, "MAX_TOKENS">>();
   expectTrue<HasLiteralMember<typeof report.finishReason, "STOP">>();
   expectTrue<HasLiteralMember<GoogleFinishReason, "IMAGE_RECITATION">>();
+  // Gemini 4 long decode: the resumable-stop member the continuation branch reads.
+  expectTrue<HasLiteralMember<GoogleFinishReason, "CONTINUATION">>();
   // The truncation branch's literal, the eight filtered ones, and the success
   // value the checker does not branch on but every caller compares against.
   if (report.finishReason === "MAX_TOKENS") void 0;
@@ -710,11 +706,7 @@ type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B 
 expectTrue<
   Equals<
     ModelsWhereFalse<typeof googleCatalogModels, "temperature">,
-    | "gemini-embedding-001"
-    | "gemini-embedding-2"
-    | "veo-3.1-fast-generate-preview"
-    | "veo-3.1-generate-preview"
-    | "veo-3.1-lite-generate-preview"
+    "gemini-embedding-001" | "gemini-embedding-2"
   >
 >();
 expectTrue<

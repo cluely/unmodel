@@ -37,7 +37,7 @@ function expectOk<V>(result: ValidateResult<V>) {
 describe("wire purity", () => {
   test("model is stripped from the body and JSON output; URL carries it", () => {
     const validated = video({
-      model: "veo-3.1-generate-preview",
+      model: "veo-3.0-generate-001",
       instances: PROMPT,
       parameters: { aspectRatio: "16:9" },
     });
@@ -46,49 +46,49 @@ describe("wire purity", () => {
     expect("model" in json).toBe(false);
     expect(json).toEqual({ instances: PROMPT, parameters: { aspectRatio: "16:9" } });
     expect(validated.request.url).toBe(
-      "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning",
+      "https://generativelanguage.googleapis.com/v1beta/models/veo-3.0-generate-001:predictLongRunning",
     );
     expect(validated.request.method).toBe("POST");
     expect(validated.request.headers["content-type"]).toBe("application/json");
   });
 
   test("toSdk and request are non-enumerable but callable", () => {
-    const validated = video({ model: "veo-3.1-generate-preview", instances: PROMPT });
+    const validated = video({ model: "veo-3.0-generate-001", instances: PROMPT });
     expect(Object.getOwnPropertyDescriptor(validated, "toSdk")?.enumerable).toBe(false);
     expect(Object.getOwnPropertyDescriptor(validated, "request")?.enumerable).toBe(false);
     expect(typeof validated.toSdk).toBe("function");
   });
 
   test('a leading "models/" is stripped: both forms yield the same URL and catalog hit', () => {
-    const bare = video.safe({ model: "veo-3.1-generate-preview", instances: PROMPT });
+    const bare = video.safe({ model: "veo-3.0-generate-001", instances: PROMPT });
     const prefixed = video.safe({
-      model: "models/veo-3.1-generate-preview",
+      model: "models/veo-3.0-generate-001",
       instances: PROMPT,
     });
     if (!bare.ok || !prefixed.ok) throw new Error("expected both forms to validate");
     expect(prefixed.params.request.url).toBe(bare.params.request.url);
     expect(prefixed.params.request.url).toBe(
-      "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning",
+      "https://generativelanguage.googleapis.com/v1beta/models/veo-3.0-generate-001:predictLongRunning",
     );
     expect(prefixed.warnings.some((w) => w.code === "unknown_model")).toBe(false);
   });
 
   test("generateVideosUrl helper accepts both id forms", () => {
-    expect(generateVideosUrl("veo-3.1-generate-preview")).toBe(
-      `${GENERATE_VIDEOS_BASE_URL}/veo-3.1-generate-preview:predictLongRunning`,
+    expect(generateVideosUrl("veo-3.0-generate-001")).toBe(
+      `${GENERATE_VIDEOS_BASE_URL}/veo-3.0-generate-001:predictLongRunning`,
     );
-    expect(generateVideosUrl("models/veo-3.1-generate-preview")).toBe(
-      generateVideosUrl("veo-3.1-generate-preview"),
+    expect(generateVideosUrl("models/veo-3.0-generate-001")).toBe(
+      generateVideosUrl("veo-3.0-generate-001"),
     );
   });
 });
 
 describe("instances/parameters wire shape", () => {
   test("exactly one instance is required", () => {
-    expectError(video.safe({ model: "veo-3.1-generate-preview", instances: [] }), "invalid_shape");
+    expectError(video.safe({ model: "veo-3.0-generate-001", instances: [] }), "invalid_shape");
     expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: [{ prompt: "a" }, { prompt: "b" }],
       }),
       "invalid_shape",
@@ -97,7 +97,7 @@ describe("instances/parameters wire shape", () => {
 
   test("an instance needs at least one of prompt/image/video", () => {
     const issue = expectError(
-      video.safe({ model: "veo-3.1-generate-preview", instances: [{}] }),
+      video.safe({ model: "veo-3.0-generate-001", instances: [{}] }),
       "invalid_shape",
     );
     expect(issue.path).toEqual(["instances", 0]);
@@ -105,7 +105,7 @@ describe("instances/parameters wire shape", () => {
 
   test("image-to-video with bytesBase64Encoded passes and survives serialization", () => {
     const validated = video({
-      model: "veo-3.1-generate-preview",
+      model: "veo-3.0-generate-001",
       instances: [{ prompt: "animate this", image: { bytesBase64Encoded: PNG_1X1, mimeType: "image/png" } }],
     });
     const json = JSON.parse(JSON.stringify(validated));
@@ -116,7 +116,7 @@ describe("instances/parameters wire shape", () => {
     const ref = { image: { bytesBase64Encoded: PNG_1X1 }, referenceType: "asset" as const };
     expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: [{ prompt: "styled", referenceImages: [ref, ref, ref, ref] }],
       }),
       "invalid_shape",
@@ -126,7 +126,7 @@ describe("instances/parameters wire shape", () => {
   test("unknown top-level keys warn but pass through", () => {
     const result = expectOk(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: PROMPT,
         // @ts-expect-error deliberate typo to exercise the unknown-key warning
         parametrs: { aspectRatio: "16:9" },
@@ -139,7 +139,7 @@ describe("instances/parameters wire shape", () => {
 describe("toSdk mapping", () => {
   test("instances[0] and parameters re-shape into { model, prompt, image, config }", () => {
     const validated = video({
-      model: "veo-3.1-generate-preview",
+      model: "veo-3.0-generate-001",
       instances: [
         {
           prompt: "a hummingbird",
@@ -157,7 +157,7 @@ describe("toSdk mapping", () => {
       },
     });
     expect(validated.toSdk("google")).toEqual({
-      model: "veo-3.1-generate-preview",
+      model: "veo-3.0-generate-001",
       prompt: "a hummingbird",
       image: { imageBytes: PNG_1X1, mimeType: "image/png" },
       config: {
@@ -173,38 +173,46 @@ describe("toSdk mapping", () => {
   });
 
   test("video extension and referenceImages map to SDK names", () => {
-    const extension = video({
-      model: "veo-3.1-generate-preview",
-      instances: [
-        { prompt: "keep flying", video: { uri: "https://example.test/video.mp4", encoding: "video/mp4" } },
-      ],
-    });
+    // No served model takes either field since the Veo 3.1 shutdown, so the
+    // re-shape is exercised on an uncatalogued id: `unknown_model` skips the
+    // per-model feature gate, which is the arm a future model lands on.
+    const FUTURE = "veo-9.9-generate-preview";
+    const extension = expectOk(
+      video.safe({
+        model: FUTURE,
+        instances: [
+          { prompt: "keep flying", video: { uri: "https://example.test/video.mp4", encoding: "video/mp4" } },
+        ],
+      }),
+    ).params;
     expect(extension.toSdk("google")).toEqual({
-      model: "veo-3.1-generate-preview",
+      model: FUTURE,
       prompt: "keep flying",
       video: { uri: "https://example.test/video.mp4", mimeType: "video/mp4" },
     });
 
-    const referenced = video({
-      model: "veo-3.1-generate-preview",
-      instances: [
-        {
-          prompt: "in this style",
-          referenceImages: [{ image: { bytesBase64Encoded: PNG_1X1 }, referenceType: "asset" }],
-        },
-      ],
-    });
+    const referenced = expectOk(
+      video.safe({
+        model: FUTURE,
+        instances: [
+          {
+            prompt: "in this style",
+            referenceImages: [{ image: { bytesBase64Encoded: PNG_1X1 }, referenceType: "asset" }],
+          },
+        ],
+      }),
+    ).params;
     expect(referenced.toSdk("google")).toEqual({
-      model: "veo-3.1-generate-preview",
+      model: FUTURE,
       prompt: "in this style",
       config: { referenceImages: [{ image: { imageBytes: PNG_1X1 }, referenceType: "asset" }] },
     });
   });
 
   test("config is omitted when nothing feeds it", () => {
-    const validated = video({ model: "veo-3.1-generate-preview", instances: PROMPT });
+    const validated = video({ model: "veo-3.0-generate-001", instances: PROMPT });
     expect(validated.toSdk("google")).toEqual({
-      model: "veo-3.1-generate-preview",
+      model: "veo-3.0-generate-001",
       prompt: "a hummingbird in slow motion",
     });
   });
@@ -230,7 +238,7 @@ describe("per-model param constraints", () => {
   test("durationSeconds allow-lists differ: veo 3.x is 4/6/8, veo 2 is 5-8", () => {
     expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: PROMPT,
         // @ts-expect-error 5s is Veo 2's, not Veo 3.x's — now a compile error too.
         parameters: { durationSeconds: 5 },
@@ -258,7 +266,7 @@ describe("per-model param constraints", () => {
   test('personGeneration "dont_allow" is veo 2-only', () => {
     expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: PROMPT,
         // @ts-expect-error `dont_allow` is Veo 2-only; the Veo 3.x arm has two values.
         parameters: { personGeneration: "dont_allow" },
@@ -277,7 +285,7 @@ describe("per-model param constraints", () => {
   test("sampleCount is 1 on veo 3.x, up to 2 on veo 2", () => {
     expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: PROMPT,
         parameters: { sampleCount: 2 },
       }),
@@ -292,29 +300,29 @@ describe("per-model param constraints", () => {
     );
   });
 
-  test("veo 3.1 lite stops at 1080p; the standard model allows 4k", () => {
+  test("veo 3 allows 4k; omni stops at 720p", () => {
+    expectOk(
+      video.safe({
+        model: "veo-3.0-generate-001",
+        instances: PROMPT,
+        parameters: { resolution: "4k" },
+      }),
+    );
     expectError(
       video.safe({
-        model: "veo-3.1-lite-generate-preview",
+        model: "gemini-omni-flash-preview",
         instances: PROMPT,
-        // @ts-expect-error Lite stops at 1080p — the wire arm now says so too.
+        // @ts-expect-error Omni is 720p only — the wire arm says so too.
         parameters: { resolution: "4k" },
       }),
       "invalid_enum_value",
-    );
-    expectOk(
-      video.safe({
-        model: "veo-3.1-generate-preview",
-        instances: PROMPT,
-        parameters: { resolution: "4k" },
-      }),
     );
   });
 
   test("aspectRatio is 16:9 or 9:16 for every veo model", () => {
     const issue = expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: PROMPT,
         // @ts-expect-error deliberately invalid enum value
         parameters: { aspectRatio: "4:3" },
@@ -324,28 +332,26 @@ describe("per-model param constraints", () => {
     expect(issue.path).toEqual(["parameters", "aspectRatio"]);
   });
 
-  test("referenceImages and video extension are veo 3.1/3.1-fast features", () => {
+  test("referenceImages and video extension are refused on every served Veo id", () => {
+    // Both were Veo 3.1 features; the Veo 3.1 preview ids were shut down on
+    // 2026-10-22, and the message says so rather than naming a model to switch to.
     const ref = { image: { bytesBase64Encoded: PNG_1X1 }, referenceType: "asset" as const };
-    expectError(
-      video.safe({
-        model: "veo-2.0-generate-001",
-        instances: [{ prompt: "styled", referenceImages: [ref] }],
-      }),
-      "unsupported_capability",
-    );
-    expectError(
-      video.safe({
-        model: "veo-2.0-generate-001",
-        instances: [{ prompt: "extend", video: { uri: "https://example.test/v.mp4" } }],
-      }),
-      "unsupported_capability",
-    );
-    expectOk(
-      video.safe({
-        model: "veo-3.1-fast-generate-preview",
-        instances: [{ prompt: "styled", referenceImages: [ref] }],
-      }),
-    );
+    for (const model of ["veo-2.0-generate-001", "veo-3.0-fast-generate-001"]) {
+      const refs = expectError(
+        video.safe({ model, instances: [{ prompt: "styled", referenceImages: [ref] }] }),
+        "unsupported_capability",
+      );
+      expect(refs.path).toEqual(["instances", 0, "referenceImages"]);
+      expect(refs.message).toContain("2026-10-22");
+      const extension = expectError(
+        video.safe({
+          model,
+          instances: [{ prompt: "extend", video: { uri: "https://example.test/v.mp4" } }],
+        }),
+        "unsupported_capability",
+      );
+      expect(extension.path).toEqual(["instances", 0, "video"]);
+    }
   });
 });
 
@@ -353,7 +359,7 @@ describe("pairing rules", () => {
   test("1080p/4k require durationSeconds 8 on veo 3.x", () => {
     const issue = expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: PROMPT,
         parameters: { resolution: "1080p", durationSeconds: 4 },
       }),
@@ -363,7 +369,7 @@ describe("pairing rules", () => {
     // Omitted duration defaults to 8 server-side — no error.
     expectOk(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: PROMPT,
         parameters: { resolution: "1080p" },
       }),
@@ -373,7 +379,7 @@ describe("pairing rules", () => {
   test("video extension outputs 720p only", () => {
     const issue = expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: [{ prompt: "extend", video: { uri: "https://example.test/v.mp4" } }],
         parameters: { resolution: "1080p" },
       }),
@@ -385,7 +391,7 @@ describe("pairing rules", () => {
   test('image-driven generation forbids personGeneration "allow_all"', () => {
     expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: [{ prompt: "animate", image: { bytesBase64Encoded: PNG_1X1 } }],
         parameters: { personGeneration: "allow_all" },
       }),
@@ -394,7 +400,7 @@ describe("pairing rules", () => {
     // Text-to-video allow_all is fine.
     expectOk(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: PROMPT,
         parameters: { personGeneration: "allow_all" },
       }),
@@ -404,14 +410,14 @@ describe("pairing rules", () => {
   test("lastFrame requires image; referenceImages require a prompt", () => {
     expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: [{ prompt: "interpolate", lastFrame: { bytesBase64Encoded: PNG_1X1 } }],
       }),
       "invalid_shape",
     );
     expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: [
           {
             image: { bytesBase64Encoded: PNG_1X1 },
@@ -455,16 +461,27 @@ describe("model catalog", () => {
     }
   });
 
-  test("generated veo-3.1 entries carry supplemented per-second pricing", () => {
-    expect(videoModels["veo-3.1-generate-preview"]!.cost?.perVideoSecond).toBe(0.4);
-    expect(videoModels["veo-3.1-lite-generate-preview"]!.cost?.perVideoSecond).toBe(0.05);
+  test("the shut-down Veo 3.1 preview ids are gone from the catalog and the tables", () => {
+    for (const id of [
+      "veo-3.1-generate-preview",
+      "veo-3.1-fast-generate-preview",
+      "veo-3.1-lite-generate-preview",
+    ]) {
+      expect(videoModels[id]).toBeUndefined();
+      expect(Object.hasOwn(VEO_PARAMETER_SPACE, id)).toBe(false);
+      expect(Object.hasOwn(unifiedVideo.modelParams, id)).toBe(false);
+      // Not refused — a request to an uncatalogued id keeps the ordinary
+      // `unknown_model` path rather than a hand-written tombstone.
+      const result = expectOk(video.safe({ model: id, instances: PROMPT }));
+      expect(result.warnings.some((w) => w.code === "unknown_model")).toBe(true);
+    }
   });
 });
 
 describe("cost estimation", () => {
   test("worst case defaults: 8 seconds at the 720p rate", () => {
     const result = expectOk(
-      video.safe({ model: "veo-3.1-generate-preview", instances: PROMPT }),
+      video.safe({ model: "veo-3.0-generate-001", instances: PROMPT }),
     );
     expect(result.estimate?.costUSD).toBeCloseTo(8 * 0.4, 10);
   });
@@ -472,16 +489,16 @@ describe("cost estimation", () => {
   test("explicit duration and resolution override the defaults", () => {
     const fourK = expectOk(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-fast-generate-001",
         instances: PROMPT,
         parameters: { resolution: "4k", durationSeconds: 8 },
       }),
     );
-    expect(fourK.estimate?.costUSD).toBeCloseTo(8 * 0.6, 10);
+    expect(fourK.estimate?.costUSD).toBeCloseTo(8 * 0.3, 10);
 
     const short = expectOk(
       video.safe({
-        model: "veo-3.1-fast-generate-preview",
+        model: "veo-3.0-fast-generate-001",
         instances: PROMPT,
         parameters: { durationSeconds: 4 },
       }),
@@ -503,7 +520,7 @@ describe("cost estimation", () => {
   test("maxCostUSD enforces a budget", () => {
     expectError(
       video.safe(
-        { model: "veo-3.1-generate-preview", instances: PROMPT },
+        { model: "veo-3.0-generate-001", instances: PROMPT },
         { maxCostUSD: 1 },
       ),
       "over_budget",
@@ -544,7 +561,7 @@ describe("Veo 3 (deprecated) ids", () => {
     expect(result.estimate?.costUSD).toBeCloseTo(8 * 0.12, 10);
   });
 
-  test("reference images and extension stay Veo 3.1-only", () => {
+  test("video extension is refused on Veo 3 too", () => {
     expectError(
       video.safe({
         model: "veo-3.0-generate-001",
@@ -558,7 +575,7 @@ describe("Veo 3 (deprecated) ids", () => {
 describe("seed", () => {
   test('seed rides the wire body but is dropped by toSdk("google")', () => {
     const validated = video({
-      model: "veo-3.1-generate-preview",
+      model: "veo-3.0-generate-001",
       instances: PROMPT,
       parameters: { seed: 42, aspectRatio: "16:9" },
     });
@@ -572,10 +589,10 @@ describe("seed", () => {
 });
 
 describe("documented input caps", () => {
-  test("a Veo 3.1 prompt beyond the 1,024-token text-input limit reports over_context", () => {
+  test("a Veo 3 prompt beyond the 1,024-token text-input limit reports over_context", () => {
     const issue = expectError(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: [{ prompt: "word ".repeat(8000) }],
       }),
       "over_context",
@@ -584,19 +601,15 @@ describe("documented input caps", () => {
     expect(issue.meta?.limit).toBe(1024);
   });
 
-  test("the veo-3.1 catalog entries carry the documented 1,024-token input limit", () => {
-    for (const id of [
-      "veo-3.1-generate-preview",
-      "veo-3.1-fast-generate-preview",
-      "veo-3.1-lite-generate-preview",
-    ]) {
+  test("the veo-3.0 catalog entries carry the documented 1,024-token input limit", () => {
+    for (const id of ["veo-3.0-generate-001", "veo-3.0-fast-generate-001"]) {
       expect(videoModels[id]?.limit.input).toBe(1024);
       // Video models are not token-context models.
       expect(videoModels[id]?.limit.context).toBe(0);
     }
   });
 
-  test("Veo 2 caps input images at 20MB; Veo 3.1 has no documented image cap", () => {
+  test("Veo 2 caps input images at 20MB; Veo 3 has no documented image cap", () => {
     const big = "A".repeat(21 * 1024 * 1024);
     const issue = expectError(
       video.safe({
@@ -610,7 +623,7 @@ describe("documented input caps", () => {
 
     expectOk(
       video.safe({
-        model: "veo-3.1-generate-preview",
+        model: "veo-3.0-generate-001",
         instances: [
           { prompt: "hi", image: { bytesBase64Encoded: big, mimeType: "image/png" } },
         ],
@@ -717,7 +730,7 @@ describe("every catalogued video model is bounded", () => {
   );
 
   test("the catalog actually has video ids to check", () => {
-    expect(videoModelIds.length).toBeGreaterThanOrEqual(7);
+    expect(videoModelIds.length).toBeGreaterThanOrEqual(4);
     expect(videoModelIds).toContain(OMNI);
   });
 
@@ -771,7 +784,7 @@ describe("every catalogued video model is bounded", () => {
 // long as the endpoint existed, while `unmodel/video` — the surface that
 // compiles down to this one — refused the same fact at compile time, and
 // `videoConstraints` refused it at run time. Three descriptions of the same
-// seven models, and nothing compared them, which is exactly why it rotted
+// four models, and nothing compared them, which is exactly why it rotted
 // unnoticed. `VEO_PARAMETER_SPACE` is now the one the types are built from and
 // the one `./unified-video` reads; the assertions below tie it to the runtime
 // tables in BOTH directions, so a value added to either side alone fails here.
@@ -806,7 +819,7 @@ describe("per-model tables agree (types ↔ runtime ↔ unified)", () => {
     (VEO_PARAMETER_SPACE as Readonly<Record<string, VeoParameterSpace>>)[id]!;
 
   test("the table covers every model the endpoint bounds, and no other", () => {
-    expect(ids.length).toBe(7);
+    expect(ids.length).toBe(4);
     // Every id with a row is a model this endpoint actually serves…
     for (const id of ids) {
       expect(videoModels[id], `${id} is not in the endpoint's catalog`).toBeDefined();

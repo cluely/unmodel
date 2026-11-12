@@ -29,6 +29,10 @@ import {
 export * from "./image-constraints";
 export * from "./tts-constraints";
 export * from "./audio-constraints";
+// The thinking-level tables, on a fourth import-free leaf for the same reason:
+// `./tts-checks.ts` enforces them for all three generateContent surfaces and
+// may not reach this module.
+export * from "./thinking-constraints";
 
 const catalog: Record<string, ModelInfo> = models;
 
@@ -108,17 +112,48 @@ export const GEMINI_VIDEO_FORMATS = [
   "3gpp",
 ] as const;
 
+/** The Gemini 4 Carbon / Argon "what's new" pages — the explicit-caching refusal's source. */
+const GEMINI_4_CARBON_WHATS_NEW_URL = "https://ai.google.dev/gemini-api/docs/whats-new-gemini-4-carbon";
+const GEMINI_4_ARGON_WHATS_NEW_URL = "https://ai.google.dev/gemini-api/docs/whats-new-gemini-4-argon";
+
 /**
- * Per-model constraint table. Empty today: everything Google documents for
+ * "Explicit caching (`cachedContents` / `caches.create`) is not supported on
+ * Gemini 4 Carbon and returns an error." — and the identical sentence for
+ * Argon (both what's-new pages, 2026-11-12). `cachedContent` is a TOP-level
+ * body key, so the pipeline's generic Layer-3 pass applies this deny; implicit
+ * caching stays on, which is what the message points at.
+ *
+ * `gemini-4-hydrogen` is deliberately NOT here: its page says "does not support
+ * explicit caching … Remove `cached_content` fields from requests" but never
+ * that the request errors, and a refusal the API would have fulfilled is the
+ * one failure this library must not have.
+ */
+function explicitCachingDeny(whatsNewUrl: string): EndpointConstraints {
+  return {
+    deny: {
+      cachedContent: {
+        reason:
+          "explicit caching (`cachedContents` / `caches.create`) is not supported on Gemini 4 Carbon and Argon and returns an error; these models use implicit caching by default.",
+        source: whatsNewUrl,
+      },
+    },
+  };
+}
+
+/**
+ * Per-model constraint table. Everything else Google documents for
  * generateContent is family-wide (see the rules below), and per-model video
  * duration limits are only published in terms of context-window size.
  *
  * NOTE: the image/speech/generationConfig rules below are NOT expressed here
  * because they all target keys nested under `generationConfig`, which the
  * pipeline's generic Layer-3 pass (top-level keys only) never sees — they are
- * applied by dedicated checks in ./generate-content.
+ * applied by dedicated checks in ./chat and ./tts-checks.
  */
-export const chatConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {};
+export const chatConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+  "gemini-4-carbon": explicitCachingDeny(GEMINI_4_CARBON_WHATS_NEW_URL),
+  "gemini-4-argon": explicitCachingDeny(GEMINI_4_ARGON_WHATS_NEW_URL),
+};
 
 // ---------------------------------------------------------------------------
 // generationConfig — documented numeric ranges and enums.
@@ -148,37 +183,9 @@ export const GEMINI_MAX_STOP_SEQUENCES = 5;
  */
 export const GEMINI_RESPONSE_MODALITIES = ["TEXT", "IMAGE", "AUDIO"] as const;
 
-/**
- * `enum (ThinkingLevel)`. "Recommended for Gemini 3 or later models. Use with
- * earlier models results in an error."
- */
-export const GEMINI_THINKING_LEVELS = [
-  "THINKING_LEVEL_UNSPECIFIED",
-  "MINIMAL",
-  "LOW",
-  "MEDIUM",
-  "HIGH",
-] as const;
-
-/** The per-model "Levels Supported" table (verified 2026-09-02). */
-export const GEMINI_THINKING_DOCS_URL = "https://ai.google.dev/gemini-api/docs/thinking";
-
-/**
- * Models that reject `MINIMAL` even though the wire enum offers it: both model
- * pages carry "Note: `minimal` is not supported and returns an error", and the
- * thinking guide's table lists them as "low, medium, high".
- *
- * Kept to the two ids the docs say *return an error* for, rather than derived
- * from that table's omissions. Every other row states which levels are
- * supported and stays silent on what an unlisted one does, and a refusal the
- * API would have fulfilled is the one failure this library must not have —
- * `gemini-3.6-flash` and `gemini-3.5-flash` still take MINIMAL, so this is a
- * per-model fact and not a generation-wide one.
- */
-export const GEMINI_NO_MINIMAL_THINKING_MODEL_IDS = [
-  "gemini-3.7-flash",
-  "gemini-3.8-flash",
-] as const;
+// The `thinkingConfig` tables (GEMINI_THINKING_LEVELS, the per-model MINIMAL
+// and XHIGH lists, the Gemini 4 long-decode bound) live in
+// ./thinking-constraints.ts and are re-exported by the `export *` at the top.
 
 /** `enum (MediaResolution)`. */
 export const GEMINI_MEDIA_RESOLUTIONS = [
@@ -274,6 +281,12 @@ const GEMINI_IMAGE_CORE_RATIOS = [
  * - 2.5 Flash Image: 10 ratios, single fixed resolution — its table has no
  *   size columns and the guide's REST sample for it passes aspectRatio only,
  *   so `imageSize` is denied for it.
+ * - Nano Banana 2.1 (`gemini-nano-banana-2.1`, verified 2026-11-12): all 14
+ *   ratios — the guide's sample lists `"1:1","1:4","1:8","2:3","3:2","3:4",
+ *   "4:1","4:3","4:5","5:4","8:1","9:16","16:9","21:9"` and its "Nano Banana
+ *   2.1" table carries 1K / 2K / 4K columns — and NO 512: "Gemini 3.1 Flash
+ *   Image adds the smaller 512 (0.5K) resolution (not supported on Gemini Nano
+ *   Banana 2.1)."
  *
  * `-preview` ids share their GA sibling's table (the docs list only the GA id).
  *
@@ -307,6 +320,10 @@ export const GEMINI_IMAGE_MODEL_RULES = {
     imageSizes: ["1K", "2K", "4K"],
   },
   "gemini-2.5-flash-image": { aspectRatios: GEMINI_IMAGE_CORE_RATIOS },
+  "gemini-nano-banana-2.1": {
+    aspectRatios: GEMINI_IMAGE_ASPECT_RATIOS,
+    imageSizes: ["1K", "2K", "4K"],
+  },
 } as const satisfies Readonly<Partial<Record<string, GeminiImageRule>>>;
 
 /**
@@ -455,10 +472,10 @@ export const VEO_2_IMAGE_MAX_BYTES = 20 * 1024 * 1024;
  * Sources: the "Veo API parameters and specifications" table on VEO_DOCS_URL
  * (re-verified 2026-08-13).
  *
- * - `resolution`: Veo 2 has no resolution parameter at all. Veo 3.1 Lite
- *   stops at 1080p. For Veo 3 / Veo 3.1 (standard + fast) the parameters
- *   table lists 720p/1080p/4k — the page's feature-comparison table omits 4k
- *   for Veo 3; we allow the permissive superset to avoid false positives.
+ * - `resolution`: Veo 2 has no resolution parameter at all. For Veo 3
+ *   (standard + fast) the parameters table lists 720p/1080p/4k — the page's
+ *   feature-comparison table omits 4k for Veo 3; we allow the permissive
+ *   superset to avoid false positives.
  * - `durationSeconds`: Veo 3.x: 4, 6, or 8. Veo 2: the parameters table says
  *   5/6/8 while the feature table says "5-8 seconds" — permissive [5,6,7,8].
  * - `personGeneration`: Veo 3.x accepts allow_all (text-to-video/extension)
@@ -486,9 +503,6 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   },
   "veo-3.0-generate-001": { enums: { resolution: ["720p", "1080p", "4k"] } },
   "veo-3.0-fast-generate-001": { enums: { resolution: ["720p", "1080p", "4k"] } },
-  "veo-3.1-generate-preview": { enums: { resolution: ["720p", "1080p", "4k"] } },
-  "veo-3.1-fast-generate-preview": { enums: { resolution: ["720p", "1080p", "4k"] } },
-  "veo-3.1-lite-generate-preview": { enums: { resolution: ["720p", "1080p"] } },
   /**
    * The one catalogued video-output model that is NOT a Veo id. Its bounds
    * come from GEMINI_OMNI_FLASH_DOCS_URL / the omni guide, mapped onto this

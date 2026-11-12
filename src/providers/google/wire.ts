@@ -184,14 +184,17 @@ export interface GoogleSafetySetting {
 
 /**
  * `enum (ThinkingLevel)` — "Recommended for Gemini 3 or later models. Use with
- * earlier models results in an error."
+ * earlier models results in an error." `XHIGH` ("XHigh thinking level.") is
+ * documented on `gemini-4-hydrogen`; see GEMINI_THINKING_LEVELS in
+ * ./thinking-constraints for the per-model rules.
  */
 export type GoogleThinkingLevel =
   | "THINKING_LEVEL_UNSPECIFIED"
   | "MINIMAL"
   | "LOW"
   | "MEDIUM"
-  | "HIGH";
+  | "HIGH"
+  | "XHIGH";
 
 export interface GoogleThinkingConfig {
   includeThoughts?: boolean;
@@ -554,6 +557,20 @@ export interface GenerateContentBody {
    * has no equivalent config field (raw fetch keeps it).
    */
   store?: boolean;
+  /**
+   * Long decode (Gemini 4): "An opaque continuation token used to resume
+   * generation from a previous `GenerateContent` or `StreamGenerateContent`
+   * response that stopped with `finish_reason` set to `CONTINUATION`. Note
+   * that `contents` is mandatory and must identically replicate the prompt
+   * and conversation history from the initial request when continuation
+   * token is provided in a request." `maxOutputTokens` "is cumulative across
+   * continuation hops and must be monotonically increased or omitted." Like
+   * `store`, NOT carried into `.toSdk("google")`: the pinned @google/genai
+   * declares no such config field (raw fetch keeps it).
+   */
+  continuationToken?: string;
+  /** "Labels with user-defined metadata for the request." */
+  labels?: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -685,6 +702,8 @@ export const generateContentSchema = z
     cachedContent: z.string().optional(),
     serviceTier: z.string().optional(),
     store: z.boolean().optional(),
+    continuationToken: z.string().optional(),
+    labels: z.record(z.string(), z.string()).optional(),
   })
   .superRefine((value, refCtx) => {
     value.contents.forEach((content, i) => {

@@ -343,6 +343,16 @@ export interface GoogleTts31FlashBody extends GoogleTtsBodyBase {
   generationConfig: NarrowedTtsGenerationConfig<"gemini-3.1-flash-tts-preview">;
 }
 
+export interface GoogleTts38FlashBody extends GoogleTtsBodyBase {
+  model: "gemini-3.8-flash-tts";
+  generationConfig: NarrowedTtsGenerationConfig<"gemini-3.8-flash-tts">;
+}
+
+export interface GoogleTts38FlashLiteBody extends GoogleTtsBodyBase {
+  model: "gemini-3.8-flash-lite-tts";
+  generationConfig: NarrowedTtsGenerationConfig<"gemini-3.8-flash-lite-tts">;
+}
+
 /** Escape hatch for TTS models unmodel doesn't know yet (unknown_model warning). */
 export interface UnknownTtsBody<Model extends string> extends GoogleTtsBodyBase {
   model: FutureModelId<Model, GoogleTtsModelId>;
@@ -353,7 +363,7 @@ export interface UnknownTtsBody<Model extends string> extends GoogleTtsBodyBase 
 }
 
 /**
- * Closed over the three documented Gemini TTS models by default. Supply a
+ * Closed over the five documented Gemini TTS models by default. Supply a
  * future model literal to opt into the loose arm:
  * `GenerateTtsBody<"gemini-4-flash-tts">`.
  */
@@ -361,12 +371,16 @@ export type GenerateTtsBody<FutureModel extends string = never> =
   | GoogleTts25FlashBody
   | GoogleTts25ProBody
   | GoogleTts31FlashBody
+  | GoogleTts38FlashBody
+  | GoogleTts38FlashLiteBody
   | UnknownTtsBody<FutureModel>;
 
 export interface GenerateTtsBodyByModel {
   "gemini-2.5-flash-preview-tts": GoogleTts25FlashBody;
   "gemini-2.5-pro-preview-tts": GoogleTts25ProBody;
   "gemini-3.1-flash-tts-preview": GoogleTts31FlashBody;
+  "gemini-3.8-flash-tts": GoogleTts38FlashBody;
+  "gemini-3.8-flash-lite-tts": GoogleTts38FlashLiteBody;
 }
 
 /** Resolves a model id literal to its exact Tier-A arm. */

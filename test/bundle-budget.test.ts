@@ -786,8 +786,14 @@ const IMAGE_PACK_PROVIDERS: string[] = [
  * to be only because they carry a documented correction (32k context against
  * models.dev's 8192). `mistral.gen.ts` is here for the mirror-image reason: it
  * is supplemented, not replaced.
+ *
+ * **Bumped 715 → 790 at the 2026-11-12 model wave**: 722.4 KiB measured once
+ * google's slice landed. google.gen.ts itself shrank (22.4 → 22.1 KB); the
+ * growth is code — the import-free `google/thinking-constraints.ts` leaf the
+ * shared battery now enforces on `google.stt`, the Gemini 4 rules, and the
+ * `gemini-3.5-transcribe` curation.
  */
-const STT_PACK_BUDGET_KIB = 715;
+const STT_PACK_BUDGET_KIB = 790;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -1492,13 +1498,14 @@ describe("per-entry bundle budgets", () => {
    *
    * - **absent**, and each for real money: `google/chat.ts` (the validator the
    *   barrel's `checkChat` sits beside), `google/stt.ts`, `google/image.ts`,
-   *   `google/video.ts`, and every unified adapter;
-   * - **present, and named because it is not free**: `google/tts.ts` rides in
-   *   at ~12 KiB. Nothing imports it — `tts-check.ts` needs only
-   *   `./tts-models` — but rolldown emits those two modules as one chunk, so
-   *   the validator arrives with the three rows its cost estimate reads. A
-   *   chunking artifact rather than a graph edge, and pinned here so that if it
-   *   ever *stops* being one the diff says which.
+   *   `google/video.ts`, `google/tts.ts`, and every unified adapter;
+   * - `google/tts.ts` is named separately because it USED to ride in at ~12 KiB
+   *   as a chunking artifact: nothing imported it, but `tts-check.ts` needs
+   *   `./tts-models` and rolldown emitted those two modules as one chunk.
+   *   Since `google/chat-tts-overlay.ts` also imports `./tts-models` (for the
+   *   Gemini 3.8 TTS hand rows, 2026-11-12), the rows get a chunk of their own
+   *   and the validator no longer arrives with them. Pinned absent so that if
+   *   the artifact ever comes back the diff says which.
    */
   test("google-vertex reaches google's check helpers and none of its endpoints", () => {
     const modules = sourceModulesOf(entryFile("google-vertex"));
@@ -1515,8 +1522,8 @@ describe("per-entry bundle budgets", () => {
     expect(modules.filter((m) => /^src\/providers\/google\/unified/.test(m))).toEqual([]);
     expect(modules).not.toContain("src/providers/google/constraints.ts");
 
-    // The measured exception; see the note above.
-    expect(modules).toContain("src/providers/google/tts.ts");
+    // The former chunking artifact; see the note above.
+    expect(modules).not.toContain("src/providers/google/tts.ts");
   });
 });
 
@@ -1641,8 +1648,7 @@ describe("unmodel/chat", () => {
    *   the identical rules.
    *
    * `google/tts-models.ts` in the old list is `google/chat-tts-overlay.ts` in
-   * the new one — a rename, not a departure; `google/tts-models.ts` now names
-   * the dedicated surface's three hand rows and is deliberately NOT here.
+   * the new one — a rename, not a departure.
    *
    * **54 → 55 with the values entries**, and the one that joined is a *move*
    * rather than an addition: `google/image-constraints.ts` is the import-free
@@ -1651,8 +1657,15 @@ describe("unmodel/chat", () => {
    * riding along (26.1 → 3.6 KiB on a shaken one-import measurement).
    * `google/constraints.ts` re-exports every name, so those bytes were already
    * in this graph — inside `constraints.ts` — and this line is where they went.
+   *
+   * **55 → 57 with the Gemini 4 / 3.8 TTS wave (2026-11-12)**, both google's:
+   * `google/thinking-constraints.ts` is the import-free leaf the thinking
+   * tables moved to so `google/tts-checks.ts` can enforce the Gemini 4 rules
+   * for all three generateContent surfaces (bytes that were inside
+   * `constraints.ts`), and `google/tts-models.ts` is reached by the chat
+   * overlay for the two Gemini 3.8 TTS hand rows models.dev does not carry.
    */
-  test("its provider graph is exactly the enumerated 55 modules", () => {
+  test("its provider graph is exactly the enumerated 57 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
       "src/providers/alibaba/chat.ts",
@@ -1673,8 +1686,10 @@ describe("unmodel/chat", () => {
       "src/providers/google/image-constraints.ts",
       "src/providers/google/interop.ts",
       "src/providers/google/model-path.ts",
+      "src/providers/google/thinking-constraints.ts",
       "src/providers/google/tts-checks.ts",
       "src/providers/google/tts-constraints.ts",
+      "src/providers/google/tts-models.ts",
       "src/providers/google/veo-models.ts",
       "src/providers/google/wire.ts",
       "src/providers/groq/constraints.ts",

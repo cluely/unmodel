@@ -87,14 +87,21 @@ export const GEMINI_AUDIO_MIME_TYPES = [
 export type GeminiAudioMimeType = (typeof GEMINI_AUDIO_MIME_TYPES)[number];
 
 /**
- * The Gemini models `google.stt` curates for transcription: mainline
- * generateContent models whose catalog row is audio-in / text-out.
+ * The Gemini models `google.stt` curates for transcription: the mainline
+ * generateContent models whose catalog row is audio-in / text-out, plus the
+ * dedicated transcription model.
  *
  * Hand-curated rather than derived, and the drift test in `stt.test.ts` is
  * what keeps the hand off the scale: every id below must still be audio-in /
- * text-out in the generated catalog, and every audio-input id in that catalog
- * must appear either here or in {@link GEMINI_STT_EXCLUDED_IDS}. A codegen
- * refresh therefore has to CLASSIFY a new model, not absorb it.
+ * text-out in the catalog `google.stt` validates against (the generated rows
+ * plus ./stt-models), and every audio-input id in that catalog must appear
+ * either here or in {@link GEMINI_STT_EXCLUDED_IDS}. A codegen refresh
+ * therefore has to CLASSIFY a new model, not absorb it.
+ *
+ * `gemini-3.5-transcribe` is the one id with a HAND row (./stt-models): the
+ * transcribe guide's own REST sample posts to
+ * `models/gemini-3.5-transcribe:generateContent`, and models.dev does not
+ * carry it (2026-11-12).
  */
 export const GEMINI_STT_MODEL_IDS = [
   "gemini-2.5-flash",
@@ -107,11 +114,16 @@ export const GEMINI_STT_MODEL_IDS = [
   "gemini-3.1-pro-preview-customtools",
   "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
+  "gemini-3.5-transcribe",
   "gemini-3.6-flash",
   "gemini-3.7-flash",
   "gemini-3.8-flash",
+  "gemini-4-argon",
+  "gemini-4-carbon",
+  "gemini-4-hydrogen",
   "gemini-flash-latest",
   "gemini-flash-lite-latest",
+  "gemini-pro-latest",
 ] as const;
 
 /** One of the curated Gemini transcription model ids. */

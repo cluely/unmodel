@@ -59,21 +59,15 @@ export const availability = {
   },
   "gemini-3-pro-image": {
     "google": "gemini-3-pro-image",
-    "google-vertex": { id: "gemini-3-pro-image", narrows: { context: 65536 } },
+    "google-vertex": "gemini-3-pro-image",
     "openrouter": "google/gemini-3-pro-image",
-    "vercel": { id: "google/gemini-3-pro-image", narrows: { context: 65536 } },
-  },
-  "gemini-3-pro-image-preview": {
-    "google": "gemini-3-pro-image-preview",
+    "vercel": "google/gemini-3-pro-image",
   },
   "gemini-3.1-flash-image": {
     "google": "gemini-3.1-flash-image",
     "google-vertex": "gemini-3.1-flash-image",
     "openrouter": { id: "google/gemini-3.1-flash-image", narrows: { drops: ["video", "pdf"] } },
     "vercel": { id: "google/gemini-3.1-flash-image", narrows: { drops: ["video", "pdf"] } },
-  },
-  "gemini-3.1-flash-image-preview": {
-    "google": "gemini-3.1-flash-image-preview",
   },
   "gemini-3.1-flash-lite": {
     "google": "gemini-3.1-flash-lite",
@@ -134,6 +128,21 @@ export const availability = {
     "openrouter": "google/gemini-3.8-flash",
     "vercel": { id: "google/gemini-3.8-flash", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
+  "gemini-4-argon": {
+    "google": "gemini-4-argon",
+    "openrouter": "google/gemini-4-argon",
+    "vercel": { id: "google/gemini-4-argon", narrows: { context: 1000000, drops: ["video", "audio"] } },
+  },
+  "gemini-4-carbon": {
+    "google": "gemini-4-carbon",
+    "openrouter": "google/gemini-4-carbon",
+    "vercel": { id: "google/gemini-4-carbon", narrows: { context: 1000000, drops: ["video", "audio"] } },
+  },
+  "gemini-4-hydrogen": {
+    "google": "gemini-4-hydrogen",
+    "openrouter": "google/gemini-4-hydrogen",
+    "vercel": { id: "google/gemini-4-hydrogen", narrows: { context: 1000000, drops: ["video", "audio"] } },
+  },
   "gemini-flash-latest": {
     "google": "gemini-flash-latest",
     "google-vertex": "gemini-flash-latest",
@@ -142,6 +151,10 @@ export const availability = {
   "gemini-flash-lite-latest": {
     "google": "gemini-flash-lite-latest",
     "google-vertex": "gemini-flash-lite-latest",
+  },
+  "gemini-pro-latest": {
+    "google": "gemini-pro-latest",
+    "openrouter": "~google/gemini-pro-latest",
   },
   "gemma-4-26b-a4b-it": {
     "cloudflare-workers-ai": { id: "@cf/google/gemma-4-26b-a4b-it", narrows: { context: 256000 } },

@@ -254,13 +254,29 @@ describe("catalog and pricing", () => {
     expect(musicModels[LYRIA_REALTIME_MODEL_ID]).toBeDefined();
   });
 
-  test("flat per-song pricing: $0.04 Clip, $0.08 Pro", () => {
+  test("flat per-song pricing: $0.04 Clip, $0.08 Pro and Lyria 3.5", () => {
     expect(LYRIA_PRICE_PER_SONG_USD["lyria-3-clip-preview"]).toBe(0.04);
     expect(LYRIA_PRICE_PER_SONG_USD["lyria-3-pro-preview"]).toBe(0.08);
+    expect(LYRIA_PRICE_PER_SONG_USD["lyria-3.5"]).toBe(0.08);
     const clip = expectOk(music.safe({ model: "lyria-3-clip-preview", input: "hi" }));
     expect(clip.estimate.costUSD).toBeCloseTo(0.04, 10);
     const pro = expectOk(music.safe({ model: "lyria-3-pro-preview", input: "hi" }));
     expect(pro.estimate.costUSD).toBeCloseTo(0.08, 10);
+    const full = expectOk(music.safe({ model: "lyria-3.5", input: "hi" }));
+    expect(full.estimate.costUSD).toBeCloseTo(0.08, 10);
+  });
+
+  test("lyria-3.5 validates without unknown_model; its unified row offers MP3 only", () => {
+    const result = expectOk(
+      music.safe({
+        model: "lyria-3.5",
+        input: "an upbeat synth-pop song about autumn",
+        response_format: { type: "audio", mime_type: "audio/mp3" },
+      }),
+    );
+    expect(result.warnings.some((w) => w.code === "unknown_model")).toBe(false);
+    expect(GOOGLE_MUSIC_MODEL_PARAMS["lyria-3.5"].codecs).toEqual(["mp3"]);
+    expect(MODELS[0]).toBe("lyria-3.5");
   });
 });
 

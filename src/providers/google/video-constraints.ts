@@ -67,7 +67,7 @@ export interface VeoParameterSpace {
   readonly personGeneration?: readonly NonNullable<GoogleVeoParameters["personGeneration"]>[];
 }
 
-/** Veo 3 and Veo 3.1, standard and fast — one row, four ids. */
+/** Veo 3, standard and fast — one row, two ids. */
 export const VEO_3_SPACE = {
   durations: [4, 6, 8],
   resolutions: ["720p", "1080p", "4k"],
@@ -77,15 +77,6 @@ export const VEO_3_SPACE = {
 
 /** The rows. Every id `videoConstraints` / `videoFamilyRules` bound, and no other. */
 export const VEO_PARAMETER_SPACE = {
-  "veo-3.1-generate-preview": VEO_3_SPACE,
-  "veo-3.1-fast-generate-preview": VEO_3_SPACE,
-  /** Lite stops at 1080p — "Veo 3.1 Lite" column of the parameters table. */
-  "veo-3.1-lite-generate-preview": {
-    durations: [4, 6, 8],
-    resolutions: ["720p", "1080p"],
-    ratios: ["16:9", "9:16"],
-    personGeneration: ["allow_all", "allow_adult"],
-  },
   "veo-3.0-generate-001": VEO_3_SPACE,
   "veo-3.0-fast-generate-001": VEO_3_SPACE,
   /** No `resolution` parameter at all (output is 720p); the only family with `dont_allow`. */

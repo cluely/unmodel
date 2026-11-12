@@ -70,13 +70,15 @@ import {
   type GeminiAudioMimeType,
   type GeminiSttModelId,
 } from "./audio-constraints";
-import { checkGenerationCapabilities } from "./tts-checks";
-// The GENERATED catalog. Unlike `google.tts`, this surface makes NO doc
-// correction to any row — thirteen mainline models with nothing to restate —
-// and hand rows would be a second opinion on generated data. The curation that
-// *is* a judgement call lives in ./audio-constraints as two id lists, with a
-// drift test that forces a codegen refresh to classify rather than absorb.
-import { models as googleCatalogModels } from "../../catalog/google.gen";
+import { checkGenerationCapabilities, checkThinkingConfig } from "./tts-checks";
+// The GENERATED catalog plus ./stt-models. Unlike `google.tts`, this surface
+// makes NO doc correction to any generated row — the mainline models have
+// nothing to restate, and hand rows would be a second opinion on generated
+// data — so the supplement carries only ids models.dev lacks. The curation
+// that *is* a judgement call lives in ./audio-constraints as two id lists,
+// with a drift test that forces a codegen refresh to classify rather than
+// absorb.
+import { sttModels as googleCatalogModels } from "./stt-models";
 import type { GoogleContent, GoogleSafetySetting, GoogleServiceTier, GoogleThinkingConfig } from "./wire";
 
 export const GENERATE_STT_BASE_URL = GOOGLE_MODELS_BASE_URL;
@@ -176,6 +178,13 @@ export interface GoogleAudioTranscriptionConfig {
   wordTimestamp?: boolean;
   /** Label which speaker said what. There is no speaker-count field. */
   diarization?: boolean;
+  /**
+   * "Configures transcription mode. Supported values: `VERBATIM`, `SMART`." —
+   * the REST reference (2026-11-12). The transcribe guide: "Smart
+   * transcription (`mode: "SMART"`) is incompatible with `word_timestamp` and
+   * `diarization`" — stated as incompatible, not as an error, so not refused.
+   */
+  mode?: "VERBATIM" | "SMART";
 
   /** @deprecated Use `languageCodes`. @google/genai: "will be removed in a future version". */
   languageHints?: { languageCodes?: readonly string[] };
@@ -362,6 +371,7 @@ const schema = z.looseObject({
           customVocabulary: z.array(z.string()).optional(),
           wordTimestamp: z.boolean().optional(),
           diarization: z.boolean().optional(),
+          mode: z.string().optional(),
           adaptationPhrases: z.array(z.string()).optional(),
         })
         .optional(),
@@ -638,7 +648,11 @@ function checkVertexOnlyFields(
   });
 }
 
-/** T9 — temperature / thinkingConfig / maxOutputTokens against the catalog row. */
+/**
+ * T9 — temperature / thinkingConfig / maxOutputTokens against the catalog row,
+ * plus the per-model thinking rules (MINIMAL refusals, the Gemini 4
+ * budget-vs-level exclusivity) shared with `google.chat`.
+ */
 function checkCapabilities(
   params: AnyGenerateSttBody,
   info: ModelInfo | undefined,
@@ -651,6 +665,7 @@ function checkCapabilities(
     info,
     ctx,
   );
+  checkThinkingConfig(params.generationConfig, ["generationConfig"], params.model, ctx);
   const config = params.generationConfig;
   if (config === undefined || info === undefined) return;
   for (const key of ["responseSchema", "responseJsonSchema"] as const) {

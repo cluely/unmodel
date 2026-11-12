@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1435 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1437 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -265,9 +265,7 @@ export type ChatModelRef =
   | "google/gemini-2.5-pro"
   | "google/gemini-3-flash-preview"
   | "google/gemini-3-pro-image"
-  | "google/gemini-3-pro-image-preview"
   | "google/gemini-3.1-flash-image"
-  | "google/gemini-3.1-flash-image-preview"
   | "google/gemini-3.1-flash-lite"
   | "google/gemini-3.1-flash-lite-image"
   | "google/gemini-3.1-flash-lite-preview"
@@ -280,10 +278,14 @@ export type ChatModelRef =
   | "google/gemini-3.6-flash"
   | "google/gemini-3.7-flash"
   | "google/gemini-3.8-flash"
+  | "google/gemini-4-argon"
+  | "google/gemini-4-carbon"
+  | "google/gemini-4-hydrogen"
   | "google/gemini-embedding-001"
   | "google/gemini-embedding-2"
   | "google/gemini-flash-latest"
   | "google/gemini-flash-lite-latest"
+  | "google/gemini-pro-latest"
   | "google/gemma-4-26b-a4b-it"
   | "google/gemma-4-31b-it"
   | "google/lyria-3-clip-preview"

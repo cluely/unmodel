@@ -136,7 +136,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     n: "declared",
   },
   google: {
-    ref: "google/veo-3.1-generate-preview",
+    ref: "google/veo-3.0-generate-001",
     adapter: google,
     // Bytes, not a URL: `gcsUri` is Vertex-only, so this is the one provider
     // whose image probe is inline.
@@ -147,8 +147,10 @@ const TABLE: Readonly<Record<string, Capability>> = {
     aspectRatio: "native",
     imageFirst: "native",
     imageLast: "native",
-    imageReference: "native",
-    video: "native",
+    // Reference images and extension were Veo 3.1 features (shut down
+    // 2026-10-22); the endpoint refuses both on every served id by name.
+    imageReference: "refused",
+    video: "refused",
     negativePrompt: "native",
     seed: "native",
     n: "native",

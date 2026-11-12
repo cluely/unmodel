@@ -469,7 +469,7 @@ export const availability = {
     "vercel": "google/gemini-3-pro-image",
   },
   "google/gemini-3.1-flash-image": {
-    "google": { id: "gemini-3.1-flash-image", narrows: { context: 65536 } },
+    "google": "gemini-3.1-flash-image",
     "google-vertex": "gemini-3.1-flash-image",
     "openrouter": "google/gemini-3.1-flash-image",
     "vercel": "google/gemini-3.1-flash-image",
@@ -532,14 +532,17 @@ export const availability = {
     "vercel": "google/gemini-3.8-live-extended-thinking",
   },
   "google/gemini-4-argon": {
+    "google": "gemini-4-argon",
     "openrouter": "google/gemini-4-argon",
     "vercel": "google/gemini-4-argon",
   },
   "google/gemini-4-carbon": {
+    "google": "gemini-4-carbon",
     "openrouter": "google/gemini-4-carbon",
     "vercel": "google/gemini-4-carbon",
   },
   "google/gemini-4-hydrogen": {
+    "google": "gemini-4-hydrogen",
     "openrouter": "google/gemini-4-hydrogen",
     "vercel": "google/gemini-4-hydrogen",
   },

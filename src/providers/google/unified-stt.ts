@@ -93,9 +93,10 @@ import {
 import type { GoogleContent, GoogleThinkingConfig } from "./wire";
 import { GOOGLE_STT_MODEL_PARAMS, MODELS } from "./stt-params";
 
-/** The two extras that do not live directly under `generationConfig`. */
+/** The extras that do not live directly under `generationConfig`. */
 const EXTRA_NESTING: Readonly<Record<string, readonly string[]>> = {
   customVocabulary: ["generationConfig", "audioTranscriptionConfig"],
+  mode: ["generationConfig", "audioTranscriptionConfig"],
   systemInstruction: [],
 };
 

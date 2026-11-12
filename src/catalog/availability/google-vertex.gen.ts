@@ -70,7 +70,7 @@ export const availability = {
     "vercel": "google/gemini-3-pro-image",
   },
   "gemini-3.1-flash-image": {
-    "google": { id: "gemini-3.1-flash-image", narrows: { context: 65536 } },
+    "google": "gemini-3.1-flash-image",
     "google-vertex": "gemini-3.1-flash-image",
     "openrouter": { id: "google/gemini-3.1-flash-image", narrows: { drops: ["video", "pdf"] } },
     "vercel": { id: "google/gemini-3.1-flash-image", narrows: { drops: ["video", "pdf"] } },

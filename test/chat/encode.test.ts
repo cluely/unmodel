@@ -469,7 +469,8 @@ describe("reasoning", () => {
   /**
    * The effort vocabularies genuinely differ: OpenAI has `minimal` and no
    * `xhigh`/`max`, Anthropic has `xhigh`/`max` and no `minimal`, Gemini has
-   * `minimal` and no `xhigh`/`max`. The unified type is their **union**, so
+   * `minimal` and `xhigh` (Hydrogen's fourth level; `google.chat` is the
+   * per-model arbiter) but no `max`. The unified type is their **union**, so
    * every request is sayable and the encoder narrows — always towards *more*
    * thinking, never less, because dropping the level entirely would turn an
    * explicit "think hard" into silence.
@@ -491,7 +492,9 @@ describe("reasoning", () => {
     ["gemini", "low", "low", false],
     ["gemini", "medium", "medium", false],
     ["gemini", "high", "high", false],
-    ["gemini", "xhigh", "high", true],
+    ["gemini", "xhigh", "xhigh", false],
+    // `max` still collapses to `high`, not `xhigh`: `XHIGH` is Hydrogen's alone,
+    // and `HIGH` is the level every Gemini thinking model takes.
     ["gemini", "max", "high", true],
   ];
 

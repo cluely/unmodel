@@ -55,7 +55,7 @@ type PackRefs = UnifiedRef<
 
 expectAssignable<PackRefs>("openai/sora-2");
 expectAssignable<PackRefs>("openai/sora-2-pro");
-expectAssignable<PackRefs>("google/veo-3.1-generate-preview");
+expectAssignable<PackRefs>("google/veo-3.0-generate-001");
 expectAssignable<PackRefs>("luma/ray-2");
 // Both Kling route families are one provider, so both are in one union — the
 // id spelling is what selects the family at runtime.
@@ -120,7 +120,7 @@ function routeInputTests(): void {
   video({ model: "vidu/viduq3-turbo", prompt: "hi", image: [{ url, role: "reference" }] });
   // Inline bytes carry a media type, because half these providers need one to
   // build a `data:` URI and the other half take the bytes directly.
-  video({ model: "google/veo-3.1-generate-preview", prompt: "hi", image: { data: "AAAA", mimeType: "image/png" } });
+  video({ model: "google/veo-3.0-generate-001", prompt: "hi", image: { data: "AAAA", mimeType: "image/png" } });
   // A source clip is the fourth route, and its reference is URL or bytes.
   video({ model: "runway/aleph2", prompt: "hi", video: { url: "https://example.com/a.mp4" } });
   video({ model: "runway/aleph2", prompt: "hi", video: { data: "AAAA" } });
@@ -160,7 +160,7 @@ function resultTypeTests(): void {
   // @ts-expect-error — "google" is not one of openai.video's SDK targets.
   openai.toSdk("google");
 
-  const google = video({ model: "google/veo-3.1-generate-preview", prompt: "hi" });
+  const google = video({ model: "google/veo-3.0-generate-001", prompt: "hi" });
   // Veo's body nests the prompt in an instance and strips the model into the URL.
   expectAssignable<GoogleVeoInstance[]>(google.instances);
   expectTrue<IsNever<KeyIn<typeof google, "prompt">>>();
@@ -199,7 +199,7 @@ function providerOptionsTests(): void {
   // @ts-expect-error — google is not in THIS pack, even though it is in the full one.
   pair({ model: "openai/sora-2", prompt: "hi", providerOptions: { google: {} } });
   // @ts-expect-error — and its ref union is narrower too.
-  expectAssignable<UnifiedRef<typeof openaiVideo | typeof lumaVideo>>("google/veo-3.1-generate-preview");
+  expectAssignable<UnifiedRef<typeof openaiVideo | typeof lumaVideo>>("google/veo-3.0-generate-001");
 }
 
 // ---------------------------------------------------------------------------
@@ -282,9 +282,9 @@ function extrasNarrowingTests(): void {
   // @ts-expect-error — and the turbo rows have no `audio` at all.
   video({ model: "kling/kling-3.0-turbo", prompt: "hi", audio: "native" });
 
-  video({ model: "google/veo-3.1-generate-preview", prompt: "hi", personGeneration: "allow_adult" });
+  video({ model: "google/veo-3.0-generate-001", prompt: "hi", personGeneration: "allow_adult" });
   // @ts-expect-error — `dont_allow` is Veo 2's, and only Veo 2's.
-  video({ model: "google/veo-3.1-generate-preview", prompt: "hi", personGeneration: "dont_allow" });
+  video({ model: "google/veo-3.0-generate-001", prompt: "hi", personGeneration: "dont_allow" });
   video({ model: "google/veo-2.0-generate-001", prompt: "hi", personGeneration: "dont_allow" });
 
   video({ model: "lightricks/ltx-2-5-fast", prompt: "hi", fps: 48 });

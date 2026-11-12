@@ -28,11 +28,13 @@ export const LYRIA_MUSIC_DOCS_URL = "https://ai.google.dev/gemini-api/docs/music
 export const INTERACTIONS_API_DOCS_URL = "https://ai.google.dev/api/interactions-api";
 
 /**
- * The two batch Lyria ids the guide's model table documents — the `google/…`
- * refs. Pro first: it is the full-song model and the one with an output-format
- * control.
+ * The batch Lyria ids the guide's model table documents — the `google/…`
+ * refs. `lyria-3.5` first: it is the current full-song model (the
+ * deprecations page names it as `lyria-3-pro-preview`'s replacement,
+ * 2026-11-12); then Pro, the Lyria 3 full-song model with an output-format
+ * control; then Clip.
  */
-export const MODELS = ["lyria-3-pro-preview", "lyria-3-clip-preview"] as const;
+export const MODELS = ["lyria-3.5", "lyria-3-pro-preview", "lyria-3-clip-preview"] as const;
 
 /** A batch Lyria 3 model id. */
 export type GoogleLyriaModelId = (typeof MODELS)[number];
@@ -90,9 +92,14 @@ export const SHARED_EXTRAS = {
  * Per-model rows. The codec split is the guide's own: "This WAV format option
  * is available for Lyria 3 Pro only", and the model table lists no
  * output-format control for Clip at all — so Clip's row offers `mp3` (the
- * default it always emits) and nothing to switch.
+ * default it always emits) and nothing to switch. `lyria-3.5`'s model page
+ * (2026-11-12) documents its output as MP3 ("text+image → MP3 audio + lyrics;
+ * 44.1 kHz stereo") and no page extends the WAV option to it, so its row
+ * offers `mp3` only; the wire arm in ./music stays permissive about
+ * `response_format` because no page says the field errors there either.
  */
 export const GOOGLE_MUSIC_MODEL_PARAMS = {
+  "lyria-3.5": { codecs: ["mp3"], extras: SHARED_EXTRAS },
   "lyria-3-pro-preview": { codecs: ["mp3", "pcm_s16le"], extras: SHARED_EXTRAS },
   "lyria-3-clip-preview": { codecs: ["mp3"], extras: SHARED_EXTRAS },
 } as const satisfies MusicModelParamTable;

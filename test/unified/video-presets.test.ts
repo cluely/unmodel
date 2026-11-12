@@ -531,7 +531,7 @@ describe("every declared video preset is a value the provider accepts", () => {
 
     // Google's two extras nest under `parameters`, beside the compiled ones.
     const veo = video({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "hi",
       resolution: "720p",
       enhancePrompt: false,

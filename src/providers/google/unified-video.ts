@@ -8,9 +8,9 @@
  * `referenceImages` up to three assets to carry forward, and `video` a clip to
  * extend. So the route derivation this category defines
  * ({@link resolveVideoRoute}) maps onto *fields* here rather than onto URLs —
- * and the per-model half of it is real: reference images are Veo 3.1 and 3.1
- * Fast (and, ambiguously, Lite), extension is 3.1 and 3.1 Fast, and
- * `gemini-omni-flash-preview` is text-and-image only.
+ * and the per-model half of it is real: reference images and extension were
+ * Veo 3.1 features (shut down 2026-10-22), so every served model — Veo 3,
+ * Veo 2 and `gemini-omni-flash-preview` — is text-and-image only today.
  *
  * | canonical | wire | notes |
  * |---|---|---|
@@ -84,18 +84,16 @@ import {
 } from "./video";
 import { GOOGLE_VIDEO_MODEL_PARAMS, MODELS } from "./video-params";
 
-/** Reference images: Veo 3.1, 3.1 Fast, and Lite (documented both ways). */
-const REFERENCE_MODELS: ReadonlySet<string> = new Set([
-  "veo-3.1-generate-preview",
-  "veo-3.1-fast-generate-preview",
-  "veo-3.1-lite-generate-preview",
-]);
-
-/** Video extension: Veo 3.1 and Veo 3.1 Fast. */
-const EXTENSION_MODELS: ReadonlySet<string> = new Set([
-  "veo-3.1-generate-preview",
-  "veo-3.1-fast-generate-preview",
-]);
+/**
+ * Reference images and video extension were Veo 3.1 features, and the Veo 3.1
+ * preview ids were shut down on October 22, 2026 (their model pages, verified
+ * 2026-11-12). The Veo docs' feature table lists neither for Veo 3 or Veo 2,
+ * and Omni's own pages are silent, so no served model reaches the `reference`
+ * or `video` route today. The sets stay so the route derivation keeps its
+ * shape — and keeps refusing — rather than silently accepting either field.
+ */
+const REFERENCE_MODELS: ReadonlySet<string> = new Set();
+const EXTENSION_MODELS: ReadonlySet<string> = new Set();
 
 /** `parameters.resolution` — the three tiers the Veo parameters table lists. */
 const RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {

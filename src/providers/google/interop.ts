@@ -752,11 +752,17 @@ export function decodeGemini(ir: ChatIR, warn: Warn, ctx?: DecodeContext): Gemin
           : { thinkingLevel: s.reasoning.effort.toUpperCase(), ...includeThoughts };
     if (s.reasoning.mode === "effort") {
       const level = s.reasoning.effort.toUpperCase();
-      if (level !== "MINIMAL" && level !== "LOW" && level !== "MEDIUM" && level !== "HIGH") {
+      if (
+        level !== "MINIMAL" &&
+        level !== "LOW" &&
+        level !== "MEDIUM" &&
+        level !== "HIGH" &&
+        level !== "XHIGH"
+      ) {
         warn({
           code: "approximated_param",
           path: ["reasoning_effort"],
-          message: `\`reasoning_effort: "${s.reasoning.effort}"\` is not one of Gemini's thinking levels (MINIMAL, LOW, MEDIUM, HIGH); it was sent as "${level}" and the API may reject it.`,
+          message: `\`reasoning_effort: "${s.reasoning.effort}"\` is not one of Gemini's thinking levels (MINIMAL, LOW, MEDIUM, HIGH, XHIGH); it was sent as "${level}" and the API may reject it.`,
           meta: { effort: s.reasoning.effort },
         });
       }

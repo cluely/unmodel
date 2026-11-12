@@ -1169,10 +1169,22 @@ const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
 // voice_settings, engine) and two rows of a dozen extras each. HeyGen is most
 // of the delta and the schema is most of HeyGen — which is the shape of the
 // thing this pack is for.
-const LIPSYNC_PACK_BUDGET_KIB = 445;
+//
+// **Bumped 445 → 585 by revana**, measured 528.8 KiB (macOS), up from 426.1, of
+// which the new provider is 100.3 — read off the `//#region
+// src/providers/revana/*` blocks in this pack's own chunks. ONE model
+// (`bytedance-lipsync`) for a hundred kilobytes, and none of it is the adapter
+// (1.6 KiB) or its row (0.6): `revana.lipsync` is a narrower VIEW of
+// `revana.video` over the one route Revana serves every media model from
+// (decisions.md §4), so it carries the check battery every revana address
+// shares (`checks.ts`, 27.1) and the WHOLE video slice — its catalog rows
+// (19.0), their shape rows (19.4) and listed prices (8.2) — plus the id lists
+// (6.5) and 18.4 of estimate, schema, route and shared derivations. 585 is the
+// measurement x 1.1.
+const LIPSYNC_PACK_BUDGET_KIB = 585;
 
-/** The four providers `unmodel/lipsync`'s ready-made pack is allowed to reach. */
-const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
+/** The five providers `unmodel/lipsync`'s ready-made pack is allowed to reach. */
+const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "revana", "sync", "veed"];
 
 /**
  * `unmodel/avatar`'s budget: the same shape as its lipsync twin, 4.7 KiB
@@ -1202,10 +1214,20 @@ const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
 // `models.ts`. The 1.2 KiB between them is one adapter leaf and one params
 // leaf apiece. If the avatar pack ever picked up HeyGen's lipsync rows, this
 // is the number that would move.
-const AVATAR_PACK_BUDGET_KIB = 445;
+//
+// **Bumped 445 → 585 by revana**, measured 531.2 KiB (macOS), up from 427.5, of
+// which the new provider is 101.2. It stays within 2% of its lipsync twin and
+// for the reason it always has, one step further: the two packs now reach the
+// SAME FIVE providers, and at revana they reach the same view of the same video
+// slice — `checks.ts` (27.1), the video catalog rows (19.0), their shapes
+// (19.4) and prices (8.2). The 0.9 KiB between the two revana halves is one
+// adapter leaf (2.2 against 1.6), one address (1.4 against 1.3) and one
+// generated row table (0.8 against 0.6) apiece: four performance models here,
+// one there.
+const AVATAR_PACK_BUDGET_KIB = 585;
 
-/** The four providers `unmodel/avatar`'s ready-made pack is allowed to reach. */
-const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
+/** The five providers `unmodel/avatar`'s ready-made pack is allowed to reach. */
+const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "revana", "sync", "veed"];
 
 /**
  * `unmodel/upscale`'s budget: the third one-provider pack, and the heaviest of

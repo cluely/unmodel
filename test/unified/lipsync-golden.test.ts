@@ -131,6 +131,13 @@ describe.each(caseDirs)("golden lipsync/%s", (name) => {
         expect(fixture.url).toBe(`https://api.veed.io/v1/${model}`);
         return;
       }
+      if (provider === "revana") {
+        // sync.'s answer at a router: `model` is a real body field, at ONE url
+        // for every media model the provider serves.
+        expect(fixture.params["model"]).toBe(model);
+        expect(fixture.url).toBe("https://api.revana.si/v1/generations");
+        return;
+      }
       expect(provider).toBe("heygen");
       // One url per CATEGORY, and the id is spelled differently on the wire
       // from the way a ref spells it: `lipsync-speed` becomes `mode: "speed"`

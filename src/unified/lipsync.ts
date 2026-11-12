@@ -69,6 +69,7 @@ import type {
 } from "../core/unified/vocabulary/lipsync";
 import { lipsync as fal } from "../providers/fal/unified-lipsync";
 import { lipsync as heygen } from "../providers/heygen/unified-lipsync";
+import { lipsync as revana } from "../providers/revana/unified-lipsync";
 import { lipsync as sync } from "../providers/sync/unified-lipsync";
 import { lipsync as veed } from "../providers/veed/unified-lipsync";
 
@@ -93,8 +94,8 @@ export function createLipsync<A extends LipsyncAdapter>(
 }
 
 /**
- * Every lipsync adapter unmodel ships — four providers, and three of them are
- * vendors fal is reselling.
+ * Every lipsync adapter unmodel ships — five providers: fal, three vendors fal
+ * is reselling, and a second router.
  *
  * fal serves ten endpoints: sync.'s v2, v2/pro and v3, VEED's two generations,
  * LatentSync, Kling's lipsync route, PixVerse's, and HeyGen v3's precision and
@@ -134,9 +135,14 @@ export function createLipsync<A extends LipsyncAdapter>(
  * at all at VEED. Three shapes and an absence is not a vocabulary; see
  * `core/unified/vocabulary/lipsync.ts`.
  *
- * The cost of all four is pinned in `test/bundle-budget.test.ts`.
+ * Revana is the fifth provider and a fifth body: the same two URLs, one level
+ * down — `{ model, input: { video_url, audio_url } }` — on the one route it
+ * serves every media model from. Its roster is curated by hand, because its
+ * catalog files a lip-sync model as an ordinary video-to-video one.
+ *
+ * The cost of all five is pinned in `test/bundle-budget.test.ts`.
  */
-export const lipsync = createLipsync([fal, heygen, sync, veed]);
+export const lipsync = createLipsync([fal, heygen, sync, veed, revana]);
 
 export type {
   AnyLipsyncAdapter,

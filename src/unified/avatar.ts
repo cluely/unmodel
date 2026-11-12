@@ -69,6 +69,7 @@ import type {
 } from "../core/unified/vocabulary/avatar";
 import { avatar as fal } from "../providers/fal/unified-avatar";
 import { avatar as heygen } from "../providers/heygen/unified-avatar";
+import { avatar as revana } from "../providers/revana/unified-avatar";
 import { avatar as sync } from "../providers/sync/unified-avatar";
 import { avatar as veed } from "../providers/veed/unified-avatar";
 
@@ -93,7 +94,7 @@ export function createAvatar<A extends AvatarAdapter>(
 }
 
 /**
- * Every avatar adapter unmodel ships — four providers, and between them three
+ * Every avatar adapter unmodel ships — five providers, and between them three
  * different answers to what `{ data, mimeType }` means.
  *
  * fal serves eight endpoints: sync.'s image arm, ByteDance OmniHuman 1.5,
@@ -129,9 +130,14 @@ export function createAvatar<A extends AvatarAdapter>(
  * there structurally. Its `audio_url` does NOT have that arm, so one request
  * accepts bytes for the still and refuses them for the track.
  *
- * The cost of all four is pinned in `test/bundle-budget.test.ts`.
+ * Revana gives sync.'s and VEED's answer — it fetches every reference, so
+ * inline bytes are refused for the still and the track alike, naming its upload
+ * route — and serves four models that all take a still (`sources: ["image"]`).
+ * Its `prompt` is the per-model extra this category's vocabulary predicts.
+ *
+ * The cost of all five is pinned in `test/bundle-budget.test.ts`.
  */
-export const avatar = createAvatar([fal, heygen, sync, veed]);
+export const avatar = createAvatar([fal, heygen, sync, veed, revana]);
 
 export type {
   AnyAvatarAdapter,

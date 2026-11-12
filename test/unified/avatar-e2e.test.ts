@@ -23,8 +23,8 @@ const STILL = { url: "https://example.com/headshot.png" } as const;
 const VOICE = { url: "https://example.com/vo-french.wav" } as const;
 
 describe("the pack", () => {
-  test("registers exactly the four avatar providers", () => {
-    expect([...avatar.providers]).toEqual(["fal", "heygen", "sync", "veed"]);
+  test("registers exactly the five avatar providers", () => {
+    expect([...avatar.providers]).toEqual(["fal", "heygen", "revana", "sync", "veed"]);
   });
 
   test("a provider outside the pack is structural, not a validation error", () => {
@@ -473,6 +473,96 @@ describe("providerOptions", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors.some((error) => error.message.includes("1080p"))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// revana — a still and a sound, under `input`
+// ---------------------------------------------------------------------------
+
+describe("the result is Revana's own Validated, on the route every media model shares", () => {
+  test("the still, the track, a seed and the `prompt` extra land under `input`", () => {
+    const params = avatar({
+      model: "revana/kling-avatar-pro",
+      image: STILL,
+      audio: VOICE,
+      seed: 7,
+      prompt: "She speaks warmly to camera",
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "kling-avatar-pro",
+      input: {
+        image_url: STILL.url,
+        audio_url: VOICE.url,
+        seed: 7,
+        prompt: "She speaks warmly to camera",
+      },
+    });
+    expect(params.request.url).toBe("https://api.revana.si/v1/generations");
+    expect(params.toSdk("revana")).toEqual(JSON.parse(JSON.stringify(params)));
+    expect(params.warnings).toEqual([]);
+  });
+
+  test("a request with no `prompt` compiles clean — a route's need for one is not a rule here", () => {
+    // Revana's routes for these models were seen to refuse a promptless request
+    // ("needs prompt"). That is a fact about today's routes, which neither
+    // `revana.avatar` nor this adapter turns into an error or a warning; the
+    // extra is what a caller reaches for.
+    const result = avatar.safe({ model: "revana/omnihuman-2.0", image: STILL, audio: VOICE });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("the still is required, and its absence is the API's own sentence at `image`", () => {
+    const result = avatar.safe({ model: "revana/omnihuman-2.0", audio: VOICE } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_capability", path: ["image"] });
+    expect(result.errors[0]!.message).toContain("It takes: `input.image_url`.");
+  });
+
+  test("inline bytes are refused for the still and the track alike, naming the upload route", () => {
+    const result = avatar.safe({
+      model: "revana/omnihuman-2.0",
+      image: { data: "AAECAwQF", mimeType: "image/png" },
+      audio: { data: "BgcICQoL", mimeType: "audio/wav" },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["image"]],
+      ["unsupported_param", ["audio"]],
+    ]);
+    for (const issue of result.errors) {
+      expect(issue.message).toContain("POST https://api.revana.si/v1/uploads");
+    }
+  });
+
+  test("it ends in `revana.avatar`: any other Revana id is refused by that view, by name", () => {
+    for (const model of ["revana/veo-3.1", "revana/bytedance-lipsync", "revana/seedance-2.5"]) {
+      const result = avatar.safe({ model, image: STILL, audio: VOICE } as never);
+      expect(result.ok, model).toBe(false);
+      if (result.ok) continue;
+      expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+        ["unsupported_capability", ["model"]],
+      ]);
+      expect(result.errors[0]!.message).toContain("`revana.video` validates it");
+    }
+  });
+
+  test("a model's own `resolution` has no canonical word and rides on `providerOptions`", () => {
+    const params = avatar({
+      model: "revana/kling-avatar-pro",
+      image: STILL,
+      audio: VOICE,
+      providerOptions: { revana: { input: { resolution: "1080p" } } },
+    });
+    expect((params as unknown as { input: Record<string, unknown> }).input).toEqual({
+      image_url: STILL.url,
+      audio_url: VOICE.url,
+      resolution: "1080p",
+    });
   });
 });
 

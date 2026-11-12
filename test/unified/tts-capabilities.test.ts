@@ -353,7 +353,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     voice_id: "voc_demo",
     adapter: breezeblue,
     voice: "native",
-    speed: "unsupported",
+    speed: "native",
     language: "derived",
     format: { shape: "query", at: "output_format" },
     delivery: { kinds: ["bytes"], by: ["delivery"] },

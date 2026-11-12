@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   tts,
+  billableUnits,
   textToSpeechUrl,
   textToSpeechStreamUrl,
   TEXT_TO_SPEECH_BASE_URL,
@@ -10,6 +11,8 @@ import {
   models,
   BREEZEBLUE_MODEL_IDS,
   TTS_COST_PER_MILLION_CHARACTERS_USD,
+  TTS_DEFAULT_MAX_CHARACTERS,
+  TTS_MAX_CHARACTERS,
   VOICE_LANGUAGE_CODES,
 } from "./models";
 import { BREEZEBLUE_TTS_MODEL_PARAMS, MODELS } from "./tts-params";
@@ -245,24 +248,111 @@ describe("breezeblue.tts schema enforcement (OpenAPI bounds)", () => {
     }
   });
 
+  test("voice_settings.speed, volume and use_speaker_boost pass (TtsVoiceSettingsPayload)", () => {
+    const r = tts.safe({
+      voice_id: "voc_x",
+      text: "x",
+      voice_settings: { guidance_scale: 2, speed: 1.25, volume: 0.8, use_speaker_boost: true },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+    for (const voice_settings of [{ speed: 0.5 }, { speed: 2 }, { volume: 0.01 }, { volume: 2 }]) {
+      expect(tts.safe({ voice_id: "voc_x", text: "x", voice_settings }).ok).toBe(true);
+    }
+  });
+
+  test("speed outside 0.5–2.0 and volume outside 0.01–2.0 are refused at their paths", () => {
+    const cases = [
+      [{ speed: 0.49 }, "speed"],
+      [{ speed: 2.01 }, "speed"],
+      [{ volume: 0 }, "volume"],
+      [{ volume: 2.5 }, "volume"],
+    ] as const;
+    for (const [voice_settings, key] of cases) {
+      const r = safeUnchecked({ voice_id: "voc_x", text: "x", voice_settings });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["voice_settings", key]);
+    }
+  });
+
+  test("speed, volume and use_speaker_boost are not nullable (only guidance_scale is)", () => {
+    for (const voice_settings of [{ speed: null }, { volume: null }, { use_speaker_boost: null }]) {
+      expect(safeUnchecked({ voice_id: "voc_x", text: "x", voice_settings }).ok).toBe(false);
+    }
+  });
+
   test("delivery accepts only sync|async (wire pattern ^(sync|async)$)", () => {
     expect(safeUnchecked({ voice_id: "voc_x", text: "x", delivery: "batch" }).ok).toBe(false);
     expect(tts.safe({ voice_id: "voc_x", text: "x", delivery: "async" }).ok).toBe(true);
   });
 
-  test("an undocumented output_format is invalid_enum_value naming the six", () => {
-    const r = safeUnchecked({ voice_id: "voc_x", text: "x", output_format: "ogg" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.code).toBe("invalid_enum_value");
-      expect(r.errors[0]?.meta?.allowed).toEqual([...OUTPUT_FORMATS]);
+  test("an undocumented output_format is invalid_enum_value naming the fourteen", () => {
+    // `mp3_44100_128` is a profile shape BreezeBlue does not publish: every
+    // profile is 24 kHz.
+    for (const output_format of ["ogg", "mp3_44100_128", "mp3_24000", "opus_24000_96"]) {
+      const r = safeUnchecked({ voice_id: "voc_x", text: "x", output_format });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.code).toBe("invalid_enum_value");
+        expect(r.errors[0]?.meta?.allowed).toEqual([...OUTPUT_FORMATS]);
+      }
     }
   });
 
-  test("all six documented output formats pass", () => {
+  test("all fourteen documented output formats pass, profiles included", () => {
+    expect(OUTPUT_FORMATS).toHaveLength(14);
     for (const output_format of OUTPUT_FORMATS) {
       expect(tts.safe({ voice_id: "voc_x", text: "x", output_format }).ok).toBe(true);
     }
+    const v = tts({ voice_id: "voc_x", text: "x", output_format: "mp3_24000_128" });
+    expect(v.request.url).toBe(`${TEXT_TO_SPEECH_BASE_URL}/voc_x?output_format=mp3_24000_128`);
+  });
+});
+
+describe("breezeblue.tts text limit (1,000 default, 2,000 ceiling)", () => {
+  test("up to the 1,000-character default passes with no warning", () => {
+    const r = tts.safe({ voice_id: "voc_x", text: "a".repeat(TTS_DEFAULT_MAX_CHARACTERS) });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("1,001–2,000 characters WARN: only an approved account may send them", () => {
+    for (const length of [TTS_DEFAULT_MAX_CHARACTERS + 1, TTS_MAX_CHARACTERS]) {
+      const r = tts.safe({ voice_id: "voc_x", text: "a".repeat(length), model_id: "breeze-tts-2" });
+      expect(r.ok).toBe(true);
+      if (!r.ok) continue;
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]).toMatchObject({
+        code: "over_output_limit",
+        severity: "warning",
+        path: ["text"],
+        meta: { limitCharacters: 1000, maxCharacters: 2000, actualCharacters: length },
+      });
+    }
+  });
+
+  test("over 2,000 characters is an ERROR, on every catalogued id and an unknown one", () => {
+    for (const model_id of [...Object.keys(models), "breeze-tts-9", undefined]) {
+      const r = safeUnchecked({
+        voice_id: "voc_x",
+        text: "a".repeat(TTS_MAX_CHARACTERS + 1),
+        ...(model_id !== undefined && { model_id }),
+      });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]).toMatchObject({
+          code: "over_output_limit",
+          path: ["text"],
+          meta: { limitCharacters: 2000, actualCharacters: 2001 },
+        });
+      }
+    }
+  });
+
+  test("characters are code points: astral text is not double-counted", () => {
+    // 2,000 emoji are 4,000 UTF-16 units — still 2,000 characters.
+    const r = tts.safe({ voice_id: "voc_x", text: "😀".repeat(TTS_MAX_CHARACTERS) });
+    expect(r.ok).toBe(true);
   });
 });
 
@@ -311,25 +401,53 @@ describe("breezeblue.tts SDK view (@breeze.blue/sdk)", () => {
     expect(sdk.method).toBe("createJob");
     expect(sdk.options).toEqual({});
   });
+
+  test("all four voice settings reach the SDK's TtsVoiceSettings; a null guidance_scale does not", () => {
+    const v = tts({
+      voice_id: "voc_x",
+      text: "x",
+      voice_settings: { guidance_scale: null, speed: 1.5, volume: 0.5, use_speaker_boost: false },
+      output_format: "aac_24000_128",
+    });
+    const sdk = v.toSdk("breezeblue");
+    expect(sdk.request.voiceSettings).toEqual({ speed: 1.5, volume: 0.5, useSpeakerBoost: false });
+    expect(sdk.options).toEqual({ outputFormat: "aac_24000_128" });
+  });
+
+  test("voice_settings with only nulls sends no SDK voiceSettings", () => {
+    const v = tts({ voice_id: "voc_x", text: "x", voice_settings: { guidance_scale: null } });
+    expect("voiceSettings" in v.toSdk("breezeblue").request).toBe(false);
+  });
 });
 
-describe("breezeblue cost estimation (list-price ceiling)", () => {
-  test("prices at the published Free-plan $40 / 1M characters", () => {
+describe("breezeblue cost estimation", () => {
+  test("prices at the published $30 / 1M characters", () => {
     const r = tts.safe({ voice_id: "voc_x", text: "a".repeat(1000), model_id: "breeze-tts-2" });
     expect(r.ok).toBe(true);
-    // 1000 chars × $40 / 1_000_000 chars = $0.04.
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.04, 10);
+    // 1000 units × $30 / 1_000_000 units = $0.03.
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.03, 10);
   });
 
   test("an omitted model_id still gets an estimate — the meter is per character, not per model", () => {
     const r = tts.safe({ voice_id: "voc_x", text: "a".repeat(500) });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.02, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.015, 10);
+  });
+
+  test("Han, kana and Hangul bill two units — the pricing page's own example", () => {
+    // "`你好世界hello` is 9 characters, 4 of them CJK, so it bills 4 × 2 + 5 × 1 = 13 billable units".
+    expect(billableUnits("你好世界hello")).toBe(13);
+    expect(billableUnits("ひらがなカタカナ한국어")).toBe(22);
+    // CJK punctuation and emoji are one unit each; an emoji is one character, not two.
+    expect(billableUnits("。、「」😀")).toBe(5);
+    const r = tts.safe({ voice_id: "voc_x", text: "你好世界hello" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo((13 * 30) / 1e6, 12);
   });
 
   test("maxCostUSD enforces over_budget", () => {
     const r = tts.safe(
-      { voice_id: "voc_x", text: "a".repeat(10_000) },
+      { voice_id: "voc_x", text: "a".repeat(TTS_DEFAULT_MAX_CHARACTERS) },
       { maxCostUSD: 0.001 },
     );
     expect(r.ok).toBe(false);
@@ -338,14 +456,15 @@ describe("breezeblue cost estimation (list-price ceiling)", () => {
 });
 
 describe("breezeblue catalog", () => {
-  test("breeze-tts-2 is TTS-shaped, with no invented character cap", () => {
+  test("breeze-tts-2 is TTS-shaped, open-weight, with the 2,000-character ceiling", () => {
     const info = models["breeze-tts-2"];
     expect(info.limit.context).toBe(0);
-    // No per-request text cap is published anywhere — omitted, not guessed.
-    expect("characters" in info.limit).toBe(false);
+    expect(info.limit.characters).toBe(TTS_MAX_CHARACTERS);
+    expect(info.openWeights).toBe(true);
     expect(info.modalities.input).toEqual(["text"]);
     expect(info.modalities.output).toEqual(["audio"]);
     expect(info.cost?.perMillionCharacters).toBe(TTS_COST_PER_MILLION_CHARACTERS_USD);
+    expect(TTS_COST_PER_MILLION_CHARACTERS_USD).toBe(30);
   });
 
   test("the multilingual model and its alias are TTS-shaped, hosted-only rows", () => {
@@ -354,6 +473,7 @@ describe("breezeblue catalog", () => {
       expect(info.family).toBe("breeze-tts");
       expect(info.openWeights).toBe(false);
       expect(info.limit.context).toBe(0);
+      expect(info.limit.characters).toBe(TTS_MAX_CHARACTERS);
       expect(info.modalities.output).toEqual(["audio"]);
       expect(info.cost.perMillionCharacters).toBe(TTS_COST_PER_MILLION_CHARACTERS_USD);
     }
@@ -387,5 +507,81 @@ describe("breezeblue unified adapter (unmodel/tts)", () => {
     );
     // breeze-tts-2 publishes no language list of its own.
     expect("languages" in BREEZEBLUE_TTS_MODEL_PARAMS["breeze-tts-2"]).toBe(false);
+  });
+
+  const REF = "breezeblue/breeze-tts-2";
+  const TEXT = "The lamp is lit.";
+
+  function wireOf(params: unknown): { body: Record<string, unknown>; url: string } {
+    return {
+      body: JSON.parse(JSON.stringify(params)) as Record<string, unknown>,
+      url: (params as { request: { url: string } }).request.url,
+    };
+  }
+
+  test("`speed` compiles to voice_settings.speed, beside the nested extras", () => {
+    const { body } = wireOf(
+      unifiedTts({
+        model: REF,
+        text: TEXT,
+        voice: "voc_demo",
+        speed: 1.5,
+        guidance_scale: 3,
+        volume: 0.8,
+        use_speaker_boost: true,
+      }),
+    );
+    expect(body).toEqual({
+      text: TEXT,
+      model_id: "breeze-tts-2",
+      voice_settings: { speed: 1.5, guidance_scale: 3, volume: 0.8, use_speaker_boost: true },
+    });
+  });
+
+  test("an out-of-range `speed` is the provider's 0.5–2.0 finding, at `speed`", () => {
+    const result = unifiedTts.safe({ model: REF, text: TEXT, voice: "voc_demo", speed: 2.5 });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path: ["speed"] });
+    expect(result.errors[0]!.message).toContain("0.5 to 2.0");
+  });
+
+  test("a bitrate compiles to a 24 kHz profile; a bare codec stays bare", () => {
+    const cases = [
+      ["mp3", "mp3"],
+      [{ format: "mp3", bitrate: 64000 }, "mp3_24000_64"],
+      [{ format: "mp3", sampleRate: 24000, bitrate: 160000 }, "mp3_24000_160"],
+      [{ format: "aac", bitrate: 128000 }, "aac_24000_128"],
+      // MP3 has no rate-only profile; the bare name is already 24 kHz.
+      [{ format: "mp3", sampleRate: 24000 }, "mp3"],
+      [{ format: "pcm_s16le", container: "wav", sampleRate: 24000 }, "wav_24000"],
+      [{ format: "pcm_s16le", container: "raw", sampleRate: 24000 }, "pcm_24000"],
+      [{ format: "pcm_s16le", container: "raw" }, "pcm"],
+      [{ format: "flac", sampleRate: 24000 }, "flac_24000"],
+      ["opus", "opus"],
+    ] as const;
+    for (const [outputFormat, wire] of cases) {
+      const result = unifiedTts.safe({ model: REF, text: TEXT, voice: "voc_demo", outputFormat });
+      expect(result.ok, JSON.stringify(outputFormat)).toBe(true);
+      if (!result.ok) continue;
+      expect(result.warnings, JSON.stringify(outputFormat)).toEqual([]);
+      expect(new URL(wireOf(result.params).url).searchParams.get("output_format")).toBe(wire);
+    }
+  });
+
+  test("a rate or bitrate BreezeBlue does not publish is refused at `outputFormat`", () => {
+    const refused = [
+      [{ format: "mp3", sampleRate: 44100 }, "invalid_enum_value"],
+      [{ format: "mp3", bitrate: 192000 }, "invalid_enum_value"],
+      [{ format: "aac", bitrate: 96000 }, "invalid_enum_value"],
+      [{ format: "opus", bitrate: 96000 }, "unsupported_param"],
+      [{ format: "flac", bitrate: 128000 }, "unsupported_param"],
+    ] as const;
+    for (const [outputFormat, code] of refused) {
+      const result = unifiedTts.safe({ model: REF, text: TEXT, voice: "voc_demo", outputFormat });
+      expect(result.ok, JSON.stringify(outputFormat)).toBe(false);
+      if (result.ok) continue;
+      expect(result.errors[0]).toMatchObject({ code, path: ["outputFormat"] });
+    }
   });
 });

@@ -1482,6 +1482,7 @@ export const availability = {
     "novita-ai": "stepfun/step-5-preview",
     "nvidia": { id: "stepfun-ai/step-5-preview", narrows: { drops: ["video"] } },
     "openrouter": "stepfun/step-5-preview",
+    "stepfun": "step-5-preview",
     "vercel": { id: "stepfun/step-5-preview", narrows: { drops: ["video"] } },
   },
   "tencent/hunyuan-a13b-instruct": {

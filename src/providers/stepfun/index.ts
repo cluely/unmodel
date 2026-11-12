@@ -2,7 +2,8 @@
  * unmodel/stepfun — StepFun's (阶跃星辰) OpenAI-compatible Chat Completions
  * endpoint ("step-*" models), validated against the generated models.dev
  * catalog, plus the speech endpoint `stepfun.tts`
- * (POST https://api.stepfun.ai/v1/audio/speech, `stepaudio-2.5-tts`). Chat is
+ * (POST https://api.stepfun.ai/v1/audio/speech, `stepaudio-3-tts` and
+ * `stepaudio-2.5-tts`). Chat is
  * the first-party api.stepfun.com service — models.dev tracks the Hugging
  * Face org separately as "stepfun-ai".
  */

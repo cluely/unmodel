@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1444 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1443 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -1060,11 +1060,10 @@ export const CHAT_MODEL_REFS = [
   "siliconflow/zai-org/GLM-5.3",
   "siliconflow/zai-org/GLM-5.3-Flash",
   "siliconflow/zai-org/GLM-5V-Turbo",
-  "stepfun/step-1-32k",
-  "stepfun/step-2-16k",
   "stepfun/step-3.5-flash",
   "stepfun/step-3.5-flash-2603",
   "stepfun/step-3.7-flash",
+  "stepfun/step-5-preview",
   "stepfun/stepaudio-2.5-asr",
   "togetherai/LiquidAI/LFM2-24B-A2B",
   "togetherai/MiniMaxAI/MiniMax-M2.5",

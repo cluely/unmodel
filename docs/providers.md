@@ -35,7 +35,7 @@ provider — not their quality ranking.
 | cartesia | tts (Sonic, r6), stt (Ink) | native | **native** (TTS+STT live; realtime configs live) | ✋ | `ttsWebsocket` (generation message) + `sttWebsocket` (connection query set) |
 | inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT is inline base64 (no multipart); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
 | soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `stt` + `realtimeTranscription` config message |
-| stepfun | llm (r83), tts (r5), image-edit | openai-compatible | **oai-base** (chat live) + native `tts` (stepaudio-2.5-tts, live) | ✅ | speech is a hand catalog mirroring the generated rows |
+| stepfun | llm (r83), tts (r5), image-edit | openai-compatible | **oai-base** (chat live) + native `tts` (stepaudio-3-tts, stepaudio-2.5-tts, live) | ✅ | speech is a hand catalog mirroring the generated rows, plus `stepaudio-3-tts` by hand (not in models.dev yet) |
 
 ## Wave 2 — inference hosts & aggregators (all openai-compatible, all in models.dev → oai-base)
 
@@ -75,7 +75,7 @@ types): openai (tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15), cart
 deepgram (Aura 1/2), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave), inworld,
 lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
 resemble (`tts` + `ttsStream`), rime, smallest-ai,
-speechify (`tts` + `ttsStream`), stepfun (StepAudio 2.5), breezeblue (Breeze TTS 2),
+speechify (`tts` + `ttsStream`), stepfun (StepAudio 3, StepAudio 2.5), breezeblue (Breeze TTS 2),
 alibaba (Qwen3-TTS on DashScope; the realtime ids — WebSocket, and for
 qwen-audio-3.0-tts-plus/-flash also the HTTP SpeechSynthesizer route — are catalog
 rows the multimodal-generation validator rejects by name, naming the route that serves them),

@@ -213,6 +213,7 @@ export const availability = {
     "novita-ai": { id: "stepfun/step-5-preview", narrows: { context: 1000000 } },
     "nvidia": "stepfun-ai/step-5-preview",
     "openrouter": { id: "stepfun/step-5-preview", narrows: { context: 1000000 } },
+    "stepfun": { id: "step-5-preview", narrows: { context: 1000000 } },
     "vercel": "stepfun/step-5-preview",
   },
   "z-ai/glm-5.3": {

@@ -42,9 +42,9 @@ test("step-tts-2 mirrors its generated row except the cap and the deprecation", 
   expect(hand["limit"]).toEqual({ ...generated.limit, characters: SPEECH_MAX_INPUT_CHARACTERS });
   expect("characters" in generated.limit).toBe(false);
 
-  // Divergence 2: the mirror deprecates the id (the create-speech reference
-  // says the endpoint "Currently supports stepaudio-2.5-tts"); models.dev
-  // carries no status. If the generated row ever gains one, reconcile.
+  // Divergence 2: the mirror deprecates the id (the create-speech reference's
+  // enum is "stepaudio-3-tts and stepaudio-2.5-tts"); models.dev carries no
+  // status. If the generated row ever gains one, reconcile.
   expect(hand["status"]).toBe("deprecated");
   expect("status" in generated).toBe(false);
 
@@ -55,18 +55,34 @@ test("step-tts-2 mirrors its generated row except the cap and the deprecation", 
 });
 
 /**
- * The no-third-id guard: `StepfunAudioModelId` is the generated union of
- * audio-OUT stepfun ids, and the mirror must carry exactly that set — a new
- * speech id landing in models.dev must fail here rather than stay silently
- * unreachable from `stepfun.tts`'s catalog. (`stepaudio-2.5-asr` is audio-IN
- * and lives in `StepfunTextModelId`, so it is not this file's business.)
+ * The documented speech ids models.dev does not carry yet, each written out by
+ * hand in ./audio-models with its provenance. The day models.dev grows one,
+ * it must move to the mirrored rows above — the guard below fails until it
+ * does.
  */
-test("the mirror carries exactly the generated audio ids", () => {
+const HAND_ONLY_IDS = ["stepaudio-3-tts"];
+
+test("hand-only rows are absent from the generated catalog", () => {
+  for (const id of HAND_ONLY_IDS) {
+    expect(id in models, `${id} is in models.dev now — mirror its generated row`).toBe(false);
+    expect(id in speechModels).toBe(true);
+  }
+});
+
+/**
+ * The no-third-id guard: `StepfunAudioModelId` is the generated union of
+ * audio-OUT stepfun ids, and the mirror must carry exactly that set plus the
+ * documented hand-only rows — a new speech id landing in models.dev must fail
+ * here rather than stay silently unreachable from `stepfun.tts`'s catalog.
+ * (`stepaudio-2.5-asr` is audio-IN and lives in `StepfunTextModelId`, so it is
+ * not this file's business.)
+ */
+test("the mirror carries exactly the generated audio ids plus the hand-only rows", () => {
   const generatedAudioIds = Object.values(models)
     .filter((info) => (info.modalities.output as readonly string[]).includes("audio"))
     .map((info) => info.id)
     .sort();
-  expect(Object.keys(speechModels).sort()).toEqual(generatedAudioIds);
+  expect(Object.keys(speechModels).sort()).toEqual([...generatedAudioIds, ...HAND_ONLY_IDS].sort());
   // Pin the union the types promise, so a rename shows up by name.
   const pinned: StepfunAudioModelId[] = ["step-tts-2", "stepaudio-2.5-tts"];
   expect(generatedAudioIds).toEqual(pinned);

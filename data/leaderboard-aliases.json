@@ -305,8 +305,8 @@
       "refs": [
         "stepfun (catalog row step-tts-2, deprecated)"
       ],
-      "reason": "Catalogued, but StepFun's create-speech reference says the endpoint currently supports only stepaudio-2.5-tts, so the id is off the unified roster and warns when sent raw.",
-      "verified": "2026-08-25"
+      "reason": "Catalogued, but StepFun's create-speech reference names only stepaudio-3-tts and stepaudio-2.5-tts ('Currently supports `stepaudio-3-tts` and `stepaudio-2.5-tts`', https://platform.stepfun.ai/docs/en/api-reference/audio/create-audio.md, 2026-11-12), so the id is off the unified roster and warns when sent raw.",
+      "verified": "2026-11-12"
     },
     "image-to-video/midjourney-v1": {
       "name": "Midjourney V1",

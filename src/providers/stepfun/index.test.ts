@@ -22,6 +22,30 @@ describe("unmodel/stepfun", () => {
     }
   });
 
+  test("step-5-preview validates clean and prices from its catalog row", () => {
+    const r = chat.safe({
+      model: "step-5-preview",
+      messages: [{ role: "user", content: "hi" }],
+      max_tokens: 65536,
+      reasoning_effort: "high",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeGreaterThan(0);
+    }
+  });
+
+  test("step-5-preview: max_tokens past the 64k output limit is over_output_limit", () => {
+    const r = chat.safe({
+      model: "step-5-preview",
+      messages: [{ role: "user", content: "hi" }],
+      max_tokens: 65537,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.map((e) => e.code)).toContain("over_output_limit");
+  });
+
   test("unknown model warns and names the stepfun catalog", () => {
     const r = chat.safe({
       model: "step-99-turbo",

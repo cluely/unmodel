@@ -3,8 +3,10 @@
  *
  * Wire reference:
  * https://platform.stepfun.ai/docs/en/api-reference/audio/create-audio.md
- * (verified 2026-08-24), cross-checked against the model card
- * https://platform.stepfun.ai/docs/en/guides/models/stepaudio-2.5-tts.md.
+ * (verified 2026-08-24; model enum and instruction caps 2026-11-12),
+ * cross-checked against the model cards
+ * https://platform.stepfun.ai/docs/en/guides/models/stepaudio-2.5-tts.md and
+ * https://platform.stepfun.ai/docs/en/guides/models/stepaudio-3-tts.md.
  * Params mirror the wire body exactly.
  *
  * TWO DOMAINS: the international platform documents this route on
@@ -13,20 +15,21 @@
  * `api.stepfun.com` (the models.dev value). This module ships the documented
  * international URL; Step Plan callers swap the path via their own fetch.
  *
- * ONE MODEL: the reference is explicit — "Currently supports
- * `stepaudio-2.5-tts`". The generated catalog also carries `step-tts-2`
- * (2026-03-01), which is off that enum; sending it gets an
- * `invalid_enum_value` warning rather than a silent pass. The SSE/WebSocket
+ * TWO MODELS: the reference is explicit — "Currently supports
+ * `stepaudio-3-tts` and `stepaudio-2.5-tts`". The generated catalog also
+ * carries `step-tts-2` (2026-03-01), which is off that enum; sending it gets
+ * an `invalid_enum_value` warning rather than a silent pass. The SSE/WebSocket
  * streaming routes (`stream_format: "sse"` frames on this URL, and
  * wss://api.stepfun.ai/v1/realtime/audio) and the ASR routes
  * (POST /v1/audio/asr/sse — SSE-only, no batch variant) are not validated by
  * unmodel.
  *
  * CHARACTER CAPS: `input` "Maximum length is 1,000 characters" and
- * `instruction` (global steering prose) caps at 200 — the input cap is
+ * `instruction` (global steering prose) caps PER MODEL — "200 characters for
+ * `stepaudio-2.5-tts`, 500 characters for `stepaudio-3-tts`". The input cap is
  * reported as `over_output_limit` (unmodel has no character-specific issue
  * code; message and meta spell out characters, not tokens), the instruction
- * cap by the zod schema.
+ * cap as `invalid_shape` at `instruction`.
  *
  * VOICES: `voice` "supports both official voices and custom cloned voices" —
  * both are bare strings, so the field is never enum-checked; the seven
@@ -65,8 +68,18 @@ export const STEP_PLAN_AUDIO_SPEECH_URL = "https://api.stepfun.ai/step_plan/v1/a
 export const REALTIME_AUDIO_WS_URL =
   "wss://api.stepfun.ai/v1/realtime/audio?model=stepaudio-2.5-tts";
 
-/** "Maximum length: 200 characters" — the `instruction` cap. */
-export const MAX_INSTRUCTION_CHARACTERS = 200;
+/**
+ * The `instruction` cap, per model — "Maximum length: 200 characters for
+ * `stepaudio-2.5-tts`, 500 characters for `stepaudio-3-tts`" (create-speech
+ * reference, retrieved 2026-11-12; the China reference agrees:
+ * "`stepaudio-2.5-tts` 最大支持 200 个字符，`stepaudio-3-tts` 最大支持 500 个字符").
+ * The field is documented for these two models only, so an id off this table
+ * has no documented cap and is not checked.
+ */
+export const MAX_INSTRUCTION_CHARACTERS = {
+  "stepaudio-3-tts": 500,
+  "stepaudio-2.5-tts": 200,
+} as const satisfies Record<(typeof MODELS)[number], number>;
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror the raw JSON body exactly (snake_case).
@@ -89,7 +102,7 @@ export interface StepfunPronunciationRule {
 }
 
 export interface TtsBody {
-  /** The reference's enum is currently the single id "stepaudio-2.5-tts". */
+  /** The reference's enum is "stepaudio-3-tts" and "stepaudio-2.5-tts". */
   model: StepfunTtsModelId | (string & {});
   /** Text to synthesize; capped at 1,000 characters per request. Parenthesized spans are read as delivery instructions, not spoken. */
   input: string;
@@ -101,7 +114,7 @@ export interface TtsBody {
   speed?: number;
   /** Loudness multiplier, 0.1–2.0; default 1.0. */
   volume?: number;
-  /** Global natural-language delivery guidance; capped at 200 characters. */
+  /** Global natural-language delivery guidance; capped per model (see MAX_INSTRUCTION_CHARACTERS). */
   instruction?: string;
   /** Output sample rate (Hz); default 24000. */
   sample_rate?: StepfunSampleRate;
@@ -134,13 +147,7 @@ const schema = z.looseObject({
     .min(0.1, "volume must be between 0.1 and 2.0")
     .max(2, "volume must be between 0.1 and 2.0")
     .optional(),
-  instruction: z
-    .string()
-    .max(
-      MAX_INSTRUCTION_CHARACTERS,
-      `instruction is capped at ${MAX_INSTRUCTION_CHARACTERS} characters.`,
-    )
-    .optional(),
+  instruction: z.string().optional(),
   sample_rate: z
     .union([
       z.literal(8000),
@@ -163,9 +170,9 @@ const schema = z.looseObject({
 const DOCUMENTED_MODEL_ID_SET = new Set<string>(MODELS);
 
 /**
- * The reference's model enum is the single id `stepaudio-2.5-tts`. Anything
- * else — including the catalog's own `step-tts-2` — is off-enum and may be
- * refused, so it warns rather than passing silently (same policy as
+ * The reference's model enum is `stepaudio-3-tts` and `stepaudio-2.5-tts`.
+ * Anything else — including the catalog's own `step-tts-2` — is off-enum and
+ * may be refused, so it warns rather than passing silently (same policy as
  * cartesia's TTS_MODEL_IDS).
  */
 function checkModelId(params: TtsBody, _info: ModelInfo | undefined, ctx: PipelineContext): void {
@@ -177,6 +184,33 @@ function checkModelId(params: TtsBody, _info: ModelInfo | undefined, ctx: Pipeli
     model: params.model,
     message: `"${params.model}" is off the create-speech reference's model enum — it says "Currently supports ${MODELS.map((id) => `\`${id}\``).join(", ")}" — and may be refused.`,
     meta: { allowed: [...MODELS], value: params.model, source: CREATE_SPEECH_DOCS },
+  });
+}
+
+/**
+ * The per-model `instruction` cap — see {@link MAX_INSTRUCTION_CHARACTERS}.
+ * Counted in UTF-16 code units, as `input`'s cap is.
+ */
+function checkInstructionLength(
+  params: TtsBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (typeof params.instruction !== "string") return;
+  const caps: Readonly<Record<string, number>> = MAX_INSTRUCTION_CHARACTERS;
+  const limit = Object.hasOwn(caps, params.model) ? caps[params.model] : undefined;
+  if (limit === undefined) return;
+  const actual = params.instruction.length;
+  if (actual <= limit) return;
+  const documented = Object.entries(caps)
+    .map(([id, cap]) => `${id}: ${cap}`)
+    .join(", ");
+  ctx.report({
+    code: "invalid_shape",
+    path: ["instruction"],
+    model: params.model,
+    message: `\`instruction\` is ${actual} characters; ${params.model} caps it at ${limit} (documented caps — ${documented}).`,
+    meta: { limitCharacters: limit, actualCharacters: actual, source: CREATE_SPEECH_DOCS },
   });
 }
 
@@ -246,7 +280,7 @@ const validator = createValidator<TtsBody, unknown>({
   modelId: (params) => params.model,
   catalog: speechModels,
   constraints: {},
-  checks: [checkModelId, checkInputLength],
+  checks: [checkModelId, checkInputLength, checkInstructionLength],
   estimate,
   finalize,
 });

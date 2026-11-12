@@ -1182,12 +1182,11 @@ export const chatProfiles: ChatCatalog = {
     "zai-org/GLM-5V-Turbo": { attachment: true, reasoning: true, toolCall: true, temperature: true, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 200000, output: 131072 }, cost: { input: 1.2, output: 4, cacheRead: 0.24, cacheWrite: 0 } },
   },
   "stepfun": {
-    "step-1-32k": { attachment: false, reasoning: false, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 32768, output: 32768, input: 32768 }, cost: { input: 2.05, output: 9.59, cacheRead: 0.41 } },
-    "step-2-16k": { attachment: false, reasoning: false, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 16384, output: 8192, input: 16384 }, cost: { input: 5.21, output: 16.44, cacheRead: 1.04 } },
-    "step-3.5-flash": { attachment: false, reasoning: true, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 256000, output: 256000, input: 256000 }, cost: { input: 0.1, output: 0.3, cacheRead: 0.02 } },
-    "step-3.5-flash-2603": { attachment: false, reasoning: true, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 256000, output: 256000, input: 256000 }, cost: { input: 0.1, output: 0.3, cacheRead: 0.02 } },
-    "step-3.7-flash": { attachment: true, reasoning: true, toolCall: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO__TEXT, limit: { context: 256000, output: 256000, input: 256000 }, cost: { input: 0.185, output: 1.11, cacheRead: 0.037 } },
-    "stepaudio-2.5-asr": { attachment: false, reasoning: false, toolCall: false, temperature: false, modalities: M_AUDIO__TEXT, limit: { context: 0, output: 0 } },
+    "step-3.5-flash": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 256000, output: 256000, input: 256000 }, cost: { input: 0.10461, output: 0.31384, cacheRead: 0.02092 } },
+    "step-3.5-flash-2603": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 256000, output: 256000, input: 256000 }, cost: { input: 0.10461, output: 0.31384, cacheRead: 0.02092 } },
+    "step-3.7-flash": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO__TEXT, limit: { context: 256000, output: 256000, input: 256000 }, cost: { input: 0.20175, output: 1.21052, cacheRead: 0.04035 } },
+    "step-5-preview": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO__TEXT, limit: { context: 1000000, output: 65536, input: 1000000 }, cost: { input: 1.04613, output: 2.98895, cacheRead: 0.10461 } },
+    "stepaudio-2.5-asr": { attachment: true, reasoning: false, toolCall: false, temperature: false, modalities: M_AUDIO__TEXT, limit: { context: 0, output: 0 } },
   },
   "togetherai": {
     "LiquidAI/LFM2-24B-A2B": { attachment: false, reasoning: false, toolCall: false, temperature: true, status: "deprecated", modalities: M_TEXT__TEXT, limit: { context: 32768, output: 32768 }, cost: { input: 0.03, output: 0.12 } },

@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1444 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1443 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -1098,11 +1098,10 @@ export type ChatModelRef =
   | "siliconflow/zai-org/GLM-5.3"
   | "siliconflow/zai-org/GLM-5.3-Flash"
   | "siliconflow/zai-org/GLM-5V-Turbo"
-  | "stepfun/step-1-32k"
-  | "stepfun/step-2-16k"
   | "stepfun/step-3.5-flash"
   | "stepfun/step-3.5-flash-2603"
   | "stepfun/step-3.7-flash"
+  | "stepfun/step-5-preview"
   | "stepfun/stepaudio-2.5-asr"
   | "togetherai/LiquidAI/LFM2-24B-A2B"
   | "togetherai/MiniMaxAI/MiniMax-M2.5"

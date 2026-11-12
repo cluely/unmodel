@@ -508,6 +508,7 @@ export const availability = {
     "novita-ai": { id: "stepfun/step-5-preview", narrows: { context: 1000000 } },
     "nvidia": { id: "stepfun-ai/step-5-preview", narrows: { drops: ["video"] } },
     "openrouter": { id: "stepfun/step-5-preview", narrows: { context: 1000000 } },
+    "stepfun": { id: "step-5-preview", narrows: { context: 1000000 } },
     "vercel": { id: "stepfun/step-5-preview", narrows: { drops: ["video"] } },
   },
   "tencent/Hy3": {

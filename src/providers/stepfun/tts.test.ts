@@ -56,6 +56,23 @@ describe("stepfun.tts happy path", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
+  test("stepaudio-3-tts validates clean with every documented field", () => {
+    const r = tts.safe({
+      model: "stepaudio-3-tts",
+      input: "Hello from StepAudio 3.",
+      voice: "vibrant-youth",
+      response_format: "flac",
+      speed: 1.2,
+      volume: 1.5,
+      instruction: "Warm, unhurried, a little amused.",
+      sample_rate: 48000,
+      stream_format: "audio",
+      return_url: true,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
   test("every documented system voice passes", () => {
     for (const voice of SYSTEM_VOICES) {
       expect(tts.safe({ model: "stepaudio-2.5-tts", input: "x", voice }).ok).toBe(true);
@@ -75,7 +92,7 @@ describe("stepfun.tts happy path", () => {
   });
 });
 
-describe("stepfun.tts model enum (doc audit 2026-08-24)", () => {
+describe("stepfun.tts model enum (doc audit 2026-11-12)", () => {
   test("the catalog's step-tts-2 is off the documented enum — warns, does not error", () => {
     const r = tts.safe({ model: "step-tts-2", input: "x", voice: "v" });
     expect(r.ok).toBe(true);
@@ -83,7 +100,7 @@ describe("stepfun.tts model enum (doc audit 2026-08-24)", () => {
       const issue = r.warnings.find((w) => w.code === "invalid_enum_value");
       expect(issue?.path).toEqual(["model"]);
       expect(issue?.message).toContain("Currently supports");
-      expect(issue?.meta?.allowed).toEqual(["stepaudio-2.5-tts"]);
+      expect(issue?.meta?.allowed).toEqual(["stepaudio-3-tts", "stepaudio-2.5-tts"]);
     }
   });
 
@@ -123,15 +140,59 @@ describe("stepfun.tts character caps", () => {
     if (!r.ok) expect(r.errors.map((e) => e.code)).toContain("over_output_limit");
   });
 
-  test("instruction over 200 characters is rejected by the schema", () => {
-    const r = safeUnchecked({
+  test("the instruction caps are per model: 200 for stepaudio-2.5-tts, 500 for stepaudio-3-tts", () => {
+    expect(MAX_INSTRUCTION_CHARACTERS).toEqual({ "stepaudio-3-tts": 500, "stepaudio-2.5-tts": 200 });
+  });
+
+  test("stepaudio-2.5-tts: instruction over 200 characters is invalid_shape", () => {
+    const r = tts.safe({
       model: "stepaudio-2.5-tts",
       input: "x",
       voice: "v",
-      instruction: "a".repeat(MAX_INSTRUCTION_CHARACTERS + 1),
+      instruction: "a".repeat(201),
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.path).toEqual(["instruction"]);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_shape");
+      expect(r.errors[0]?.path).toEqual(["instruction"]);
+      expect(r.errors[0]?.message).toContain("stepaudio-3-tts: 500");
+      expect(r.errors[0]?.meta?.limitCharacters).toBe(200);
+    }
+    expect(
+      tts.safe({ model: "stepaudio-2.5-tts", input: "x", voice: "v", instruction: "a".repeat(200) }).ok,
+    ).toBe(true);
+  });
+
+  test("stepaudio-3-tts: a 300-character instruction passes, 501 is invalid_shape", () => {
+    const at300 = tts.safe({
+      model: "stepaudio-3-tts",
+      input: "x",
+      voice: "v",
+      instruction: "a".repeat(300),
+    });
+    expect(at300.ok).toBe(true);
+    if (at300.ok) expect(at300.warnings).toEqual([]);
+    expect(
+      tts.safe({ model: "stepaudio-3-tts", input: "x", voice: "v", instruction: "a".repeat(500) }).ok,
+    ).toBe(true);
+
+    const r = tts.safe({
+      model: "stepaudio-3-tts",
+      input: "x",
+      voice: "v",
+      instruction: "a".repeat(501),
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.path).toEqual(["instruction"]);
+      expect(r.errors[0]?.meta?.limitCharacters).toBe(500);
+      expect(r.errors[0]?.meta?.actualCharacters).toBe(501);
+    }
+  });
+
+  test("an id with no documented instruction cap is not capped", () => {
+    const r = tts.safe({ model: "step-tts-2", input: "x", voice: "v", instruction: "a".repeat(600) });
+    expect(r.ok).toBe(true);
   });
 
   test("the throwing form throws UnmodelValidationError", () => {
@@ -200,15 +261,33 @@ describe("stepfun cost estimation", () => {
       expect(r.warnings.some((w) => w.code === "over_budget")).toBe(false);
     }
   });
+
+  test("stepaudio-3-tts: contradictory published rates — no costUSD", () => {
+    // Model card "$0.36 / 10,000 characters" vs pricing page "$14.00 / 1M
+    // billable input text characters" (weighted counting) — see audio-models.ts.
+    expect("cost" in speechModels["stepaudio-3-tts"]).toBe(false);
+    const r = tts.safe(
+      { model: "stepaudio-3-tts", input: "a".repeat(500), voice: "v" },
+      { maxCostUSD: 0.0000001 },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+  });
 });
 
 describe("stepfun speech catalog", () => {
-  test("both rows are TTS-shaped with the 1,000-character cap layered on", () => {
+  test("every row is TTS-shaped with the 1,000-character cap layered on", () => {
     for (const info of Object.values(speechModels)) {
       expect(info.limit.characters).toBe(1000);
       expect(info.modalities.input).toEqual(["text"]);
       expect(info.modalities.output).toEqual(["audio"]);
     }
+  });
+
+  test("stepaudio-3-tts carries the endpoint cap like its siblings", () => {
+    const r = tts.safe({ model: "stepaudio-3-tts", input: "a".repeat(1001), voice: "v" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.limitCharacters).toBe(1000);
   });
 
   test("step-tts-2 is deprecated (off the current create-speech enum)", () => {

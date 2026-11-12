@@ -13,12 +13,13 @@ import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 
 /**
- * The one id the create-speech reference accepts today ("Currently supports
- * `stepaudio-2.5-tts`") — the ref union for `stepfun/…`. The generated
- * catalog also carries `step-tts-2`; it is off the documented enum, so it is
- * not offered here and ./tts.ts warns when it is sent raw.
+ * The ids the create-speech reference accepts today ("Currently supports
+ * `stepaudio-3-tts` and `stepaudio-2.5-tts`", retrieved 2026-11-12) — the ref
+ * union for `stepfun/…`. The generated catalog also carries `step-tts-2`; it
+ * is off the documented enum, so it is not offered here and ./tts.ts warns
+ * when it is sent raw.
  */
-export const MODELS = ["stepaudio-2.5-tts"] as const;
+export const MODELS = ["stepaudio-3-tts", "stepaudio-2.5-tts"] as const;
 
 export const CREATE_SPEECH_DOCS =
   "https://platform.stepfun.ai/docs/en/api-reference/audio/create-audio.md";
@@ -70,17 +71,18 @@ export const SYSTEM_VOICES = [
 ] as const;
 
 /**
- * One model, so the table is one row: the four codecs above plus the two
- * documented steering knobs a canonical word does not cover — `instruction`
- * ("global context natural language guidance", ≤200 characters) and `volume`
- * (0.1–2.0, default 1.0). `language` is deliberately absent from the wire:
- * the endpoint has no language field, and the model reads it off the text.
+ * The two documented steering knobs a canonical word does not cover —
+ * `instruction` ("Global natural-language guidance for the `stepaudio-2.5-tts`
+ * and `stepaudio-3-tts` models"; capped per model, see ./tts.ts) and `volume`
+ * (0.1–2.0, default 1.0). Both models take the same four codecs.
+ * `language` is deliberately absent from the wire: the endpoint has no
+ * language field, and the model reads it off the text.
  */
+const EXTRAS = { instruction: EXTRA as string, volume: EXTRA as number } as const;
+
 export const STEPFUN_TTS_MODEL_PARAMS = {
-  "stepaudio-2.5-tts": {
-    codecs: CODECS,
-    extras: { instruction: EXTRA as string, volume: EXTRA as number },
-  },
+  "stepaudio-3-tts": { codecs: CODECS, extras: EXTRAS },
+  "stepaudio-2.5-tts": { codecs: CODECS, extras: EXTRAS },
 } as const satisfies TtsModelParamTable;
 
 /**

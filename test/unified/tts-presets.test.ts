@@ -60,6 +60,7 @@ import { tts as minimax } from "../../src/providers/minimax/unified-tts";
 import { tts as murf } from "../../src/providers/murf/unified";
 import { tts as openai } from "../../src/providers/openai/unified-tts";
 import { tts as resemble } from "../../src/providers/resemble/unified";
+import { tts as revana } from "../../src/providers/revana/unified-tts";
 import { tts as rime } from "../../src/providers/rime/unified";
 import { tts as smallestAi } from "../../src/providers/smallest-ai/unified";
 import { tts as speechify } from "../../src/providers/speechify/unified";
@@ -90,6 +91,7 @@ const ADAPTERS: readonly Adapter[] = [
   // whose `voices` arrays are the whole reason a caller picks one over another.
   // Every one of those completions is compiled and validated here.
   fal,
+  revana,
 ];
 
 /** Every codec the vocabulary has — the pool an off-set neighbour comes from. */
@@ -134,7 +136,11 @@ function base(provider: string, ref: string): Record<string, unknown> {
   else if (provider === "fal") {
     const voice = falVoices(ref);
     if (voice !== undefined) params["voice"] = voice;
-  } else if (provider !== "deepgram") params["voice"] = "v1";
+  }
+  // Revana's voice is one of the model's own catalogued ids — `revana.tts`
+  // refuses any other — so its placeholder comes off the ref's row too.
+  else if (provider === "revana") params["voice"] = revanaVoice(ref);
+  else if (provider !== "deepgram") params["voice"] = "v1";
   if (provider === "cartesia") params["outputFormat"] = { format: "mp3", sampleRate: 44100 };
   return params;
 }
@@ -151,6 +157,12 @@ function base(provider: string, ref: string): Record<string, unknown> {
 function falVoices(ref: string): string | undefined {
   const rows = fal.modelParams as Readonly<Record<string, { voices?: readonly string[] }>>;
   return rows[ref.slice("fal/".length)]?.voices?.[0];
+}
+
+/** The first voice id this Revana model's own row publishes. */
+function revanaVoice(ref: string): string | undefined {
+  const rows = revana.modelParams as Readonly<Record<string, { voices?: readonly string[] }>>;
+  return rows[ref.slice("revana/".length)]?.voices?.[0];
 }
 
 interface Outcome {

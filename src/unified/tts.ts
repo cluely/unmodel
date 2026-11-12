@@ -86,6 +86,7 @@ import { tts as minimax } from "../providers/minimax/unified-tts";
 import { tts as murf } from "../providers/murf/unified";
 import { tts as openai } from "../providers/openai/unified-tts";
 import { tts as resemble } from "../providers/resemble/unified";
+import { tts as revana } from "../providers/revana/unified-tts";
 import { tts as rime } from "../providers/rime/unified";
 import { tts as smallestAi } from "../providers/smallest-ai/unified";
 import { tts as speechify } from "../providers/speechify/unified";
@@ -122,10 +123,10 @@ export function createTts<A extends TtsAdapter>(
  * and the return type of a call (each provider's own `Validated`). A generated
  * or dynamically-loaded registry would keep the first and lose the other two.
  *
- * The cost is honest and measured: importing this pulls in nineteen provider
+ * The cost is honest and measured: importing this pulls in twenty provider
  * validators, their schemas and their catalogs (pinned in
  * `test/bundle-budget.test.ts`). `createTts([…])` above is the way to pay
- * for two providers instead of nineteen.
+ * for two providers instead of twenty.
  *
  * fal is the nineteenth and it is not one provider's worth of surface: it is a
  * queue in front of ten vendors' speech models, so a single ref there reaches
@@ -135,6 +136,11 @@ export function createTts<A extends TtsAdapter>(
  * `fal/fal-ai/elevenlabs/tts/multilingual-v2` are the same model billed by two
  * different companies, and which one a caller wants is a business decision the
  * ref makes visible.
+ *
+ * Revana is the twentieth and a third way to reach those same ElevenLabs
+ * models: a router with one body for every media model, whose speech input
+ * names a voice by id and has no encoding field at all — `outputFormat` is the
+ * one canonical word it declares unsupported.
  */
 export const tts = createTts([
   openai,
@@ -156,6 +162,7 @@ export const tts = createTts([
   alibaba,
   inworld,
   fal,
+  revana,
 ]);
 
 export type {

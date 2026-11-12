@@ -1,0 +1,30 @@
+{
+  "ref": "revana/elevenlabs-v3",
+  "voice": "EkK5I93UQWFDigLMpZcX",
+  "params": {
+    "model": "elevenlabs-v3",
+    "input": {
+      "text": "The lighthouse keeper checked the lamp.",
+      "voice": "EkK5I93UQWFDigLMpZcX",
+      "language_code": "pt"
+    }
+  },
+  "url": "https://api.revana.si/v1/generations",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "warnings": [
+    {
+      "code": "approximated_param",
+      "path": [
+        "language"
+      ],
+      "meta": {
+        "requested": "pt-BR",
+        "achieved": "pt",
+        "dropped": "BR",
+        "source": "https://api.revana.si/v1/models"
+      }
+    }
+  ]
+}

@@ -557,8 +557,21 @@ const VOICE_DESIGN_PACK_BUDGET_KIB = 200;
  * and `core/unified/canonical-keys.ts` — the params vocabulary, moved out of
  * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
  * is +0.1 net against the kernel's own shrink.
+ *
+ * **Bumped 850 → 980 by revana**, measured 889.0 KiB (macOS), up from 825.0, of
+ * which the new provider is 62.1 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks. Four models, and
+ * the speech slice itself is small: the adapter (3.5), its generated rows with
+ * each model's voice ids and languages (3.5), and the speech catalog, shape
+ * and price tables (5.6 together). The rest is what every revana address
+ * carries because all of them are ONE route: the shared check battery
+ * (`checks.ts`, 27.1), the id lists (6.5), and 15.0 of estimate, schema, route
+ * and address derivations.
+ *
+ * The pin had 3% of headroom left before this wave (825.0 against 850), so 980
+ * is the measurement x 1.1 restored rather than the delta added on.
  */
-const TTS_PACK_BUDGET_KIB = 850;
+const TTS_PACK_BUDGET_KIB = 980;
 
 /**
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
@@ -1017,7 +1030,7 @@ const STS_PACK_PROVIDERS: string[] = ["elevenlabs", "hume"];
 /** The five providers `unmodel/music`'s ready-made pack is allowed to reach. */
 const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "fal", "google", "mureka", "stability"];
 
-/** The nineteen providers `unmodel/tts`'s ready-made pack is allowed to reach. */
+/** The twenty providers `unmodel/tts`'s ready-made pack is allowed to reach. */
 const TTS_PACK_PROVIDERS: string[] = [
   "alibaba",
   "breezeblue",
@@ -1034,6 +1047,7 @@ const TTS_PACK_PROVIDERS: string[] = [
   "murf",
   "openai",
   "resemble",
+  "revana",
   "rime",
   "smallest-ai",
   "speechify",

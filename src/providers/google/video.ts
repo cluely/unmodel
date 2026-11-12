@@ -39,13 +39,12 @@
  * is 16:9-only on Veo 3" note conflicts with its parameters table, so the
  * 1080p/16:9 note is not enforced.
  *
- * `gemini-omni-flash-preview` is the one catalogued video-output model that is
- * not a Veo id, so it carries its own entry (3-10s, 720p, 16:9 / 9:16 — see
- * GEMINI_OMNI_FLASH_DOCS_URL). Its native surface is the Interactions API, not
- * predictLongRunning, so only the `parameters` bounds map across; the
- * instance/pairing rules below stay `veo-`-gated. Any OTHER catalogued
- * video-output model with no constraints at all gets an explicit
- * `unsupported_capability` warning rather than validating anything.
+ * A catalogued video-output id Google has shut down (VIDEO_RETIRED_IDS in
+ * ./video-constraints — today `gemini-omni-flash-preview`, whose replacement
+ * is an Interactions API model) is refused by name with the reason and the
+ * replacement. Any OTHER catalogued video-output model with no constraints at
+ * all gets an explicit `unsupported_capability` warning rather than validating
+ * anything.
  */
 
 import { z } from "zod";
@@ -66,15 +65,20 @@ import type { GoogleVideoModelId } from "../../catalog/google.gen";
 // shared id normalization is a leaf, so this entry pays for Veo and nothing
 // else.
 import { GOOGLE_MODELS_BASE_URL, googleModelUrl, stripModelsPrefix } from "./model-path";
-import { videoConstraints, videoDocsUrl, videoFamilyRules, VEO_DOCS_URL } from "./constraints";
+import { videoConstraints, videoFamilyRules, VEO_DOCS_URL } from "./constraints";
 import { videoModels, type GoogleVeoSupplementModelId } from "./veo-models";
-import { VEO_PARAMETER_SPACE, type VeoParameterModelId } from "./video-constraints";
+import {
+  GOOGLE_DEPRECATIONS_URL,
+  VEO_PARAMETER_SPACE,
+  VIDEO_RETIRED_IDS,
+  type VeoParameterModelId,
+} from "./video-constraints";
 
 // Declared in `./video-constraints` — an import-free leaf — so that
 // `unmodel/google/values` and `./video-params.ts` can read the Veo parameter
 // space without this validator, its zod schema and `src/catalog/google.gen.ts`.
 // Re-exported here so every existing caller is unchanged.
-export { VEO_3_SPACE, VEO_PARAMETER_SPACE } from "./video-constraints";
+export { VEO_3_SPACE, VEO_PARAMETER_SPACE, VIDEO_RETIRED_IDS } from "./video-constraints";
 export type { VeoParameterModelId, VeoParameterSpace } from "./video-constraints";
 
 export const GENERATE_VIDEOS_BASE_URL = GOOGLE_MODELS_BASE_URL;
@@ -383,7 +387,7 @@ function checkVeoParameters(
   if (info === undefined) return;
   const record = (params.parameters ?? {}) as Record<string, unknown>;
   const model = params.model;
-  const source = videoDocsUrl(stripModelsPrefix(model));
+  const source = VEO_DOCS_URL;
   for (const constraints of constraintsFor(VIDEO_RULES, stripModelsPrefix(model))) {
     for (const [param, rule] of Object.entries(constraints.deny ?? {})) {
       if (record[param] != null) {
@@ -412,13 +416,36 @@ function checkVeoParameters(
 }
 
 /**
+ * A catalogued video-output id Google has shut down: refused by name, with the
+ * reason and the replacement, rather than validated against bounds for a model
+ * that no longer answers. The list is {@link VIDEO_RETIRED_IDS}.
+ */
+function checkRetiredModel(
+  params: GenerateVideosBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const id = stripModelsPrefix(params.model);
+  const reason = VIDEO_RETIRED_IDS[id];
+  if (reason === undefined) return;
+  ctx.report({
+    code: "unsupported_capability",
+    path: ["model"],
+    model: params.model,
+    message: `"${params.model}" is not served by google.video: ${reason}.`,
+    meta: { reason, source: GOOGLE_DEPRECATIONS_URL },
+  });
+}
+
+/**
  * Fails visibly when a catalogued video-output model has NO applicable
  * constraint entry at all. The deny/enum tables are per-model plus two
  * `veo-`-prefixed family rules, so a video model outside that prefix without
- * its own entry silently accepts any durationSeconds/aspectRatio/resolution/
- * sampleCount — which is exactly how `gemini-omni-flash-preview` slipped
- * through. A warning (not an error) keeps requests the API fulfils passing
- * while making the unchecked surface visible.
+ * its own entry would silently accept any durationSeconds/aspectRatio/
+ * resolution/sampleCount. A warning (not an error) keeps requests the API
+ * fulfils passing while making the unchecked surface visible. A retired id is
+ * already refused by {@link checkRetiredModel} and carries no bounds on
+ * purpose, so it is skipped here.
  */
 function checkParameterBoundsCoverage(
   params: GenerateVideosBody,
@@ -428,6 +455,7 @@ function checkParameterBoundsCoverage(
   if (info === undefined || !info.modalities.output.includes("video")) return;
   if (params.parameters === undefined) return;
   const id = stripModelsPrefix(params.model);
+  if (Object.hasOwn(VIDEO_RETIRED_IDS, id)) return;
   if (constraintsFor(VIDEO_RULES, id).length > 0) return;
   ctx.report({
     code: "unsupported_capability",
@@ -790,6 +818,7 @@ const validator = createValidator<GenerateVideosBody, unknown>({
   familyRules: videoFamilyRules,
   checks: [
     checkVideoModality,
+    checkRetiredModel,
     checkVeoParameters,
     checkParameterBoundsCoverage,
     checkInstanceFeatures,

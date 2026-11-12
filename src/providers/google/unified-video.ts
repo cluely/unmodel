@@ -9,8 +9,8 @@
  * extend. So the route derivation this category defines
  * ({@link resolveVideoRoute}) maps onto *fields* here rather than onto URLs —
  * and the per-model half of it is real: reference images and extension were
- * Veo 3.1 features (shut down 2026-10-22), so every served model — Veo 3,
- * Veo 2 and `gemini-omni-flash-preview` — is text-and-image only today.
+ * Veo 3.1 features (shut down 2026-10-22), so every served model — Veo 3 and
+ * Veo 2 — is text-and-image only today.
  *
  * | canonical | wire | notes |
  * |---|---|---|

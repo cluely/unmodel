@@ -48,6 +48,7 @@ export {
   GENERATE_VIDEOS_BASE_URL,
   VEO_PARAMETER_SPACE,
   VEO_RESOLUTION_RATE_OVERRIDES,
+  VIDEO_RETIRED_IDS,
   video,
   generateVideosUrl,
   type GenerateVideosBody,

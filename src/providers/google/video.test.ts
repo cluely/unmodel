@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   GENERATE_VIDEOS_BASE_URL,
   VEO_PARAMETER_SPACE,
+  VIDEO_RETIRED_IDS,
   video,
   generateVideosUrl,
   type GenerateVideosBody,
@@ -300,22 +301,13 @@ describe("per-model param constraints", () => {
     );
   });
 
-  test("veo 3 allows 4k; omni stops at 720p", () => {
+  test("veo 3 allows 4k", () => {
     expectOk(
       video.safe({
         model: "veo-3.0-generate-001",
         instances: PROMPT,
         parameters: { resolution: "4k" },
       }),
-    );
-    expectError(
-      video.safe({
-        model: "gemini-omni-flash-preview",
-        instances: PROMPT,
-        // @ts-expect-error Omni is 720p only — the wire arm says so too.
-        parameters: { resolution: "4k" },
-      }),
-      "invalid_enum_value",
     );
   });
 
@@ -649,89 +641,50 @@ describe("documented input caps", () => {
 });
 
 // ---------------------------------------------------------------------------
-// gemini-omni-flash-preview — the one catalogued video-output model that is
-// not a Veo id. Both `veo-`-prefixed family rules skip it, so before its own
-// constraints entry existed it accepted ANY parameters with zero warnings.
-// Docs: https://ai.google.dev/gemini-api/docs/models/gemini-omni-flash
-// ("Output video: 3s-10s (720p, 24 FPS)") and .../docs/omni (9:16 / 16:9).
+// Retired ids — catalogued video-output models Google has shut down. models.dev
+// still carries a row for each, so they are refused by name rather than left
+// to validate against a model that no longer answers.
 // ---------------------------------------------------------------------------
 
-const OMNI = "gemini-omni-flash-preview";
-const OMNI_DOCS = "https://ai.google.dev/gemini-api/docs/models/gemini-omni-flash";
+describe("retired video ids are refused by name", () => {
+  const retired = Object.keys(VIDEO_RETIRED_IDS);
 
-describe("gemini-omni-flash-preview parameter bounds", () => {
-  test("absurd parameters are rejected, not silently accepted", () => {
-    const result = video.safe({
-      model: OMNI,
-      instances: PROMPT,
-      parameters: {
-        durationSeconds: 10_000_000_000,
-        aspectRatio: "42:1",
-        resolution: "16k",
-        sampleCount: 99,
-      },
-    } as unknown as GenerateVideosBody);
-    expect(result.ok).toBe(false);
-    if (result.ok) throw new Error("expected validation failure");
-    expect(result.errors.map((e) => e.path.join("."))).toEqual([
-      "parameters.durationSeconds",
-      "parameters.aspectRatio",
-      "parameters.resolution",
-      "parameters.sampleCount",
-    ]);
-    // The Omni pages back these, not the Veo page.
-    for (const issue of result.errors) expect(issue.meta?.source).toBe(OMNI_DOCS);
-  });
-
-  test("the documented 3-10s window: both ends pass, 2s and 11s do not", () => {
-    // `as const`: the arm types Omni's `durationSeconds` as the integers 3-10,
-    // so a `number[]` loop variable no longer fits even for the valid ends.
-    for (const durationSeconds of [3, 10] as const) {
-      expectOk(video.safe({ model: OMNI, instances: PROMPT, parameters: { durationSeconds } }));
-    }
-    for (const durationSeconds of [2, 11] as const) {
-      const issue = expectError(
-        // @ts-expect-error 2s and 11s are outside the documented 3-10s window.
-        video.safe({ model: OMNI, instances: PROMPT, parameters: { durationSeconds } }),
-        "invalid_enum_value",
-      );
-      expect(issue.path).toEqual(["parameters", "durationSeconds"]);
-      expect(issue.meta?.allowed).toEqual([3, 4, 5, 6, 7, 8, 9, 10]);
+  test("the list is non-empty and every entry is still catalogued", () => {
+    expect(retired.length).toBeGreaterThanOrEqual(1);
+    for (const id of retired) {
+      expect(videoModels[id], `${id} is no longer in the catalog — drop it from VIDEO_RETIRED_IDS`).toBeDefined();
+      expect(VIDEO_RETIRED_IDS[id]?.length ?? 0).toBeGreaterThan(20);
     }
   });
 
-  test("720p / 16:9 / 9:16 / one video pass", () => {
-    expectOk(
-      video.safe({
-        model: OMNI,
-        instances: PROMPT,
-        parameters: { durationSeconds: 6, aspectRatio: "9:16", resolution: "720p", sampleCount: 1 },
-      }),
+  test.each(retired)("%s is refused with the reason and the replacement, not unknown_model", (id) => {
+    const issue = expectError(
+      video.safe({ model: id, instances: PROMPT, parameters: { durationSeconds: 4 } }),
+      "unsupported_capability",
     );
-    expectOk(
-      video.safe({
-        model: OMNI,
-        instances: PROMPT,
-        parameters: { aspectRatio: "16:9", resolution: "720p" },
-      }),
-    );
+    expect(issue.path).toEqual(["model"]);
+    expect(issue.message).toContain("shut down");
+    expect(issue.meta?.reason).toBe(VIDEO_RETIRED_IDS[id]);
+    const result = video.safe({ model: id, instances: PROMPT });
+    expect(result.warnings.some((w) => w.code === "unknown_model")).toBe(false);
+    // No bounds and no "no bounds encoded" warning either: the refusal is the answer.
+    expect(result.warnings.some((w) => w.code === "unsupported_capability")).toBe(false);
   });
 
-  test("the Veo-only instance and pairing rules stay off Omni", () => {
-    // 1080p/4k-need-8s, extension and referenceImages are veo- gated; Omni's
-    // own enums are what bound it.
-    expectOk(video.safe({ model: OMNI, instances: PROMPT, parameters: { durationSeconds: 4 } }));
+  test.each(retired)("%s has left every per-model table", (id) => {
+    expect(Object.hasOwn(VEO_PARAMETER_SPACE, id)).toBe(false);
+    expect(Object.hasOwn(unifiedVideo.modelParams, id)).toBe(false);
+    expect(video.constraintsFor(id)).toEqual([]);
   });
 });
 
 describe("every catalogued video model is bounded", () => {
-  const videoModelIds = Object.keys(videoModels).filter((id) =>
-    videoModels[id]!.modalities.output.includes("video"),
+  const videoModelIds = Object.keys(videoModels).filter(
+    (id) => videoModels[id]!.modalities.output.includes("video") && !Object.hasOwn(VIDEO_RETIRED_IDS, id),
   );
 
   test("the catalog actually has video ids to check", () => {
-    expect(videoModelIds.length).toBeGreaterThanOrEqual(4);
-    expect(videoModelIds).toContain(OMNI);
+    expect(videoModelIds.length).toBeGreaterThanOrEqual(3);
   });
 
   test.each(videoModelIds)("%s carries at least one constraints entry", (id) => {
@@ -750,12 +703,12 @@ describe("every catalogued video model is bounded", () => {
   });
 
   test("a future video model with no encoded bounds warns instead of failing open", () => {
-    // No shipped id hits the coverage gate any more, so stand a hypothetical
-    // one up in the merged catalog: a non-`veo-` id skips both family rules
-    // and has no entry of its own, exactly the shape that let Omni through.
+    // No shipped id hits the coverage gate, so stand a hypothetical one up in
+    // the merged catalog: a non-`veo-` id skips both family rules and has no
+    // entry of its own, exactly the shape a new non-Veo video id arrives in.
     const id = "unmodel-test-video-preview";
     videoModels[id] = {
-      ...videoModels[OMNI]!,
+      ...videoModels["veo-3.0-generate-001"]!,
       id,
       name: "Unmodel Test Video",
     };
@@ -819,21 +772,21 @@ describe("per-model tables agree (types ↔ runtime ↔ unified)", () => {
     (VEO_PARAMETER_SPACE as Readonly<Record<string, VeoParameterSpace>>)[id]!;
 
   test("the table covers every model the endpoint bounds, and no other", () => {
-    expect(ids.length).toBe(4);
+    expect(ids.length).toBe(3);
     // Every id with a row is a model this endpoint actually serves…
     for (const id of ids) {
       expect(videoModels[id], `${id} is not in the endpoint's catalog`).toBeDefined();
       expect(video.constraintsFor(id).length, `${id} has no runtime constraints`).toBeGreaterThan(0);
     }
-    // The two hand-written Veo supplements are in that catalog by construction.
+    // The hand-written Veo supplements are in that catalog by construction.
     for (const id of Object.keys(veoSupplementModels)) expect(ids).toContain(id);
     // …and every model this endpoint can actually generate with has a row, so
     // a new video-output id cannot arrive with runtime bounds and a silently
     // wide type. (`videoModels` is the whole google catalog plus the Veo
     // supplements — the video-output filter is the same one
-    // `checkVideoModality` applies.)
-    const generates = Object.entries(videoModels).filter(([, info]) =>
-      info.modalities.output.includes("video"),
+    // `checkVideoModality` applies; a retired id is refused by name instead.)
+    const generates = Object.entries(videoModels).filter(
+      ([id, info]) => info.modalities.output.includes("video") && !Object.hasOwn(VIDEO_RETIRED_IDS, id),
     );
     expect(generates.length).toBeGreaterThanOrEqual(ids.length);
     for (const [id] of generates) {
@@ -868,8 +821,8 @@ describe("per-model tables agree (types ↔ runtime ↔ unified)", () => {
     const published = rowOf(id).personGeneration;
     const allowed = enumsFor(id)["personGeneration"];
     if (published === undefined) {
-      // Omni: neither page publishes a list, so the runtime bounds nothing and
-      // the wire type keeps its documented union rather than inventing one.
+      // No published list, so the runtime bounds nothing and the wire type
+      // keeps its documented union rather than inventing one.
       expect(allowed).toBeUndefined();
       return;
     }

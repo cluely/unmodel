@@ -578,14 +578,8 @@ type PersonDrifted<M extends WithPublishedPersonGeneration> = Same<
 expectTrue<
   IsNever<{ [M in WithPublishedPersonGeneration]: PersonDrifted<M> }[WithPublishedPersonGeneration]>
 >();
-expectTrue<Same<WithPublishedPersonGeneration, Exclude<VeoParameterModelId, "gemini-omni-flash-preview">>>();
-expectTrue<Same<UnifiedVideoRows["gemini-omni-flash-preview"]["extras"]["personGeneration"], string>>();
-expectTrue<
-  Same<
-    NonNullable<VeoParametersArm<"gemini-omni-flash-preview">["personGeneration"]>,
-    "allow_all" | "allow_adult" | "dont_allow"
-  >
->();
+// Every served row publishes a list today, so the two sets coincide.
+expectTrue<Same<WithPublishedPersonGeneration, VeoParameterModelId>>();
 
 // The calls the wire used to accept while the unified layer refused them.
 video({
@@ -599,12 +593,6 @@ video({
   instances: [{ prompt: "a hummingbird" }],
   // @ts-expect-error `dont_allow` is Veo 2-only.
   parameters: { personGeneration: "dont_allow" },
-});
-video({
-  model: "gemini-omni-flash-preview",
-  instances: [{ prompt: "a hummingbird" }],
-  // @ts-expect-error Omni is 720p and 3-10s.
-  parameters: { resolution: "1080p", durationSeconds: 20 },
 });
 // …and the same facts, each on the model that DOES document them.
 expectAssignable<{ instances: unknown }>(
@@ -621,14 +609,6 @@ expectAssignable<{ instances: unknown }>(
     parameters: { personGeneration: "dont_allow", durationSeconds: 5, sampleCount: 2 },
   }),
 );
-expectAssignable<{ instances: unknown }>(
-  video({
-    model: "gemini-omni-flash-preview",
-    instances: [{ prompt: "a hummingbird" }],
-    parameters: { resolution: "720p", durationSeconds: 3 },
-  }),
-);
-
 /**
  * The degraded arm: a run-time model id has no row, so `parameters` keeps the
  * wide documented type — the same trade `unknown_model` makes at run time, and

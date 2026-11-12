@@ -109,7 +109,6 @@ export const GEMINI_STT_MODEL_IDS = [
   "gemini-2.5-pro",
   "gemini-3-flash-preview",
   "gemini-3.1-flash-lite",
-  "gemini-3.1-flash-lite-preview",
   "gemini-3.1-pro-preview",
   "gemini-3.1-pro-preview-customtools",
   "gemini-3.5-flash",
@@ -139,6 +138,12 @@ export type GeminiSttModelId = (typeof GEMINI_STT_MODEL_IDS)[number];
  * whether they picked a wrong model or hit a gap in unmodel.
  */
 export const GEMINI_STT_EXCLUDED_IDS: Readonly<Record<string, string>> = {
+  // https://ai.google.dev/gemini-api/docs/deprecations (2026-11-12):
+  // "`gemini-3.1-flash-lite-preview` — March 3, 2026 — May 25, 2026 —
+  // `gemini-3.1-flash-lite`". models.dev still carries the row (status
+  // deprecated), so it is excluded by name rather than merely absent.
+  "gemini-3.1-flash-lite-preview":
+    "it was shut down on May 25, 2026; its replacement is gemini-3.1-flash-lite, which this surface serves",
   "gemini-3.1-flash-live-preview":
     "it is a Live API model — its audio arrives over the bidiGenerateContent WebSocket, not this unary generateContent route",
   "gemini-3.5-live-translate-preview":

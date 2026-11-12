@@ -2553,9 +2553,9 @@ chat({ model: "¦", contents: [] });`);
 // This is the completion half of the drift invariant in
 // src/providers/google/video.test.ts. Before the per-model arm, every model
 // completed the same three resolutions and the same three person policies —
-// including Veo 2, which has no `resolution` parameter at all, and Omni, which
-// only ever produces 720p. Measured per model: resolution 3/3/3 before →
-// 3 / 0 / 1 after; personGeneration 3/3 before → 2 / 3 after.
+// including Veo 2, which has no `resolution` parameter at all. Measured per
+// model: resolution 3/3 before → 3 / 0 after; personGeneration 3/3 before →
+// 2 / 3 after.
 // ---------------------------------------------------------------------------
 
 const VIDEO_PROBE = `import { video } from "./src/providers/google";
@@ -2571,7 +2571,6 @@ function veoParam(model: string, field: string, cursor = `"¦"`): string[] {
 describe("google.video: per-model parameter completions", () => {
   test("resolution is the model's own tier list", () => {
     expect(veoParam("veo-3.0-generate-001", "resolution")).toEqual(["720p", "1080p", "4k"]);
-    expect(veoParam("gemini-omni-flash-preview", "resolution")).toEqual(["720p"]);
     // Veo 2 has no `resolution` parameter: the field types `never`, so there is
     // nothing to complete — the type states the deny the runtime reports.
     expect(veoParam("veo-2.0-generate-001", "resolution")).toEqual([]);
@@ -2584,7 +2583,6 @@ describe("google.video: per-model parameter completions", () => {
       veoParam(model, "durationSeconds", "¦").filter((entry) => /^\d+$/.test(entry));
     expect(numbers("veo-3.0-generate-001")).toEqual(["4", "6", "8"]);
     expect(numbers("veo-2.0-generate-001")).toEqual(["5", "6", "7", "8"]);
-    expect(numbers("gemini-omni-flash-preview")).toEqual(["3", "4", "5", "6", "7", "8", "9", "10"]);
   });
 
   test("personGeneration narrows only where Google publishes a list", () => {
@@ -2592,15 +2590,8 @@ describe("google.video: per-model parameter completions", () => {
       "allow_all",
       "allow_adult",
     ]);
-    // Veo 2 is the only family with `dont_allow`…
+    // Veo 2 is the only family with `dont_allow`.
     expect(veoParam("veo-2.0-generate-001", "personGeneration")).toEqual([
-      "allow_all",
-      "allow_adult",
-      "dont_allow",
-    ]);
-    // …and Omni publishes nothing, so the wire keeps its documented union
-    // rather than inventing a narrower one or widening to `string`.
-    expect(veoParam("gemini-omni-flash-preview", "personGeneration")).toEqual([
       "allow_all",
       "allow_adult",
       "dont_allow",

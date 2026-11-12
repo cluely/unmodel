@@ -288,7 +288,8 @@ const GEMINI_IMAGE_CORE_RATIOS = [
  *   Image adds the smaller 512 (0.5K) resolution (not supported on Gemini Nano
  *   Banana 2.1)."
  *
- * `-preview` ids share their GA sibling's table (the docs list only the GA id).
+ * Only ids the deprecations page lists as served have a row: the two image
+ * `-preview` ids shut down on 2026-06-25 and are gone from the catalog.
  *
  * `as const satisfies`, not `: Readonly<Partial<Record<string, GeminiImageRule>>>`:
  * the annotation type-checks the rows exactly the same way, but it also erases
@@ -303,19 +304,11 @@ export const GEMINI_IMAGE_MODEL_RULES = {
     aspectRatios: GEMINI_IMAGE_ASPECT_RATIOS,
     imageSizes: GEMINI_IMAGE_SIZES,
   },
-  "gemini-3.1-flash-image-preview": {
-    aspectRatios: GEMINI_IMAGE_ASPECT_RATIOS,
-    imageSizes: GEMINI_IMAGE_SIZES,
-  },
   "gemini-3.1-flash-lite-image": {
     aspectRatios: GEMINI_IMAGE_ASPECT_RATIOS,
     imageSizes: ["512", "1K"],
   },
   "gemini-3-pro-image": {
-    aspectRatios: GEMINI_IMAGE_CORE_RATIOS,
-    imageSizes: ["1K", "2K", "4K"],
-  },
-  "gemini-3-pro-image-preview": {
     aspectRatios: GEMINI_IMAGE_CORE_RATIOS,
     imageSizes: ["1K", "2K", "4K"],
   },
@@ -443,22 +436,7 @@ export const imageFamilyRules: readonly FamilyRule[] = [
 /** Veo docs backing every Veo constraint below. */
 export const VEO_DOCS_URL = "https://ai.google.dev/gemini-api/docs/veo";
 
-/**
- * Gemini Omni Flash — the non-Veo video-output model in the generated google
- * catalog. Two first-party pages bound it (both re-verified 2026-08-13):
- * - https://ai.google.dev/gemini-api/docs/models/gemini-omni-flash —
- *   "Output video: 3s-10s (720p, 24 FPS)"
- * - https://ai.google.dev/gemini-api/docs/omni — `"Set the aspect_ratio to
- *   "9:16" to create portrait videos."`, with 16:9 the landscape default;
- *   duration is "integers between 3 and 10, followed by 's'".
- */
-export const GEMINI_OMNI_FLASH_DOCS_URL =
-  "https://ai.google.dev/gemini-api/docs/models/gemini-omni-flash";
-
 const VEO_ASPECT_RATIOS = ["16:9", "9:16"] as const;
-
-/** "Output video: 3s-10s" → the integer seconds 3…10 (GEMINI_OMNI_FLASH_DOCS_URL). */
-const GEMINI_OMNI_FLASH_DURATIONS = [3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 /**
  * "Image input: Any image resolution and aspect ratio up to 20MB file size"
@@ -503,48 +481,17 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   },
   "veo-3.0-generate-001": { enums: { resolution: ["720p", "1080p", "4k"] } },
   "veo-3.0-fast-generate-001": { enums: { resolution: ["720p", "1080p", "4k"] } },
-  /**
-   * The one catalogued video-output model that is NOT a Veo id. Its bounds
-   * come from GEMINI_OMNI_FLASH_DOCS_URL / the omni guide, mapped onto this
-   * endpoint's `parameters` spellings:
-   * - `durationSeconds`: "Output video: 3s-10s" (the omni guide states the
-   *   same window as "integers between 3 and 10").
-   * - `resolution`: "(720p, 24 FPS)" — 720p is the only documented output.
-   * - `aspectRatio`: 16:9 (landscape, default) and 9:16 (portrait).
-   * - `sampleCount`: DOCUMENTED-UNCERTAINTY. Neither page publishes a
-   *   videos-per-request knob for Omni — its native surface is the
-   *   Interactions API, which returns one video per interaction and has no
-   *   multi-sample field at all. The conservative [1] is therefore an
-   *   inference, not a quote; it is the same value every Veo 3.x model carries
-   *   and it keeps an absurd `sampleCount` from validating silently. Widen it
-   *   the moment Google publishes a number.
-   */
-  "gemini-omni-flash-preview": {
-    enums: {
-      durationSeconds: [...GEMINI_OMNI_FLASH_DURATIONS],
-      aspectRatio: [...VEO_ASPECT_RATIOS],
-      resolution: ["720p"],
-      sampleCount: [1],
-    },
-  },
 };
 
 /**
- * Docs URL backing the `parameters` tables of a video model — used as
- * `meta.source` on the issues ./video raises, so an Omni issue does
- * not cite the Veo page.
- */
-export function videoDocsUrl(modelId: string): string {
-  return modelId.startsWith("gemini-omni-flash") ? GEMINI_OMNI_FLASH_DOCS_URL : VEO_DOCS_URL;
-}
-
-/**
  * NOTE: both rules below are PREFIX-matched on `veo-`, so they bound only the
- * Veo line. Non-Veo video models (today: `gemini-omni-flash-preview`) must
- * carry a per-model entry in `videoConstraints` above, and
- * ./video raises `unsupported_capability` for any catalogued
- * video-output id that ends up with no applicable constraints at all — so a
- * future non-Veo id fails visibly rather than validating anything.
+ * Veo line. A non-Veo video model must carry a per-model entry in
+ * `videoConstraints` above, and ./video raises `unsupported_capability` for
+ * any catalogued video-output id that ends up with no applicable constraints
+ * at all — so a future non-Veo id fails visibly rather than validating
+ * anything. The one catalogued non-Veo id today, `gemini-omni-flash-preview`,
+ * is shut down and refused by name instead (VIDEO_RETIRED_IDS in
+ * ./video-constraints).
  */
 export const videoFamilyRules: readonly FamilyRule[] = [
   {

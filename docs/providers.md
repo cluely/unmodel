@@ -88,8 +88,8 @@ behind `sonic-preview`), and ElevenLabs "v3 Conversational" is the realtime
 **Live — STT:** every provider addresses the route as `stt` — openai
 (gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
-deepgram, elevenlabs (Scribe), gladia, google (20 curated Gemini ids including the dedicated
-`gemini-3.5-transcribe`, 5 excluded by name and reason), inworld (base64 audio inline in the
+deepgram, elevenlabs (Scribe), gladia, google (19 curated Gemini ids including the dedicated
+`gemini-3.5-transcribe`, 6 excluded by name and reason), inworld (base64 audio inline in the
 JSON body, no multipart route), mistral
 (Voxtral), revai, soniox, speechmatics, fal (6 hosted endpoints — Wizper, fal's own
 speech-to-text + turbo, ElevenLabs Scribe v1/v2, Cohere Transcribe; the `/stream` variants are

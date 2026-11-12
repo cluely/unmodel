@@ -211,6 +211,28 @@ describe("cartesia.ttsWebsocket checks", () => {
     if (!r.ok) expect(r.errors.some((e) => e.code === "invalid_enum_value")).toBe(true);
   });
 
+  test("the socket shares the per-model language rules: Sonic 3.6 values, locale, never both", () => {
+    for (const language of ["or", "ur", "en-GB", "pt-BR"] as const) {
+      const r = ttsWebsocket.safe({ ...BASE, model_id: "sonic-3.6", language });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.map((w) => w.path[0])).toEqual(["model_id"]);
+    }
+    expect(ttsWebsocket.safe({ ...BASE, model_id: "sonic-3.6-2026-08-27", locale: "hi-IN" }).ok).toBe(true);
+
+    const earlier = safeUnchecked({ ...BASE, language: "ur" });
+    expect(earlier.ok).toBe(false);
+    if (!earlier.ok) {
+      expect(earlier.errors[0]?.path).toEqual(["language"]);
+      expect(String(earlier.errors[0]?.message)).toContain('"sonic-3.6"');
+    }
+    const both = safeUnchecked({ ...BASE, model_id: "sonic-3.6", language: "en", locale: "en-GB" });
+    expect(both.ok).toBe(false);
+    if (!both.ok) {
+      expect(both.errors[0]?.code).toBe("invalid_shape");
+      expect(both.errors[0]?.path).toEqual(["locale"]);
+    }
+  });
+
   test("the shared pronunciation-dictionary constraint applies to the socket", () => {
     expect(ttsWebsocket.safe({ ...BASE, pronunciation_dict_id: "dict_123" }).ok).toBe(true);
     const r = safeUnchecked({ ...BASE, model_id: "sonic-2", pronunciation_dict_id: "dict_123" });

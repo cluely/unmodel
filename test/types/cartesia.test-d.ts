@@ -26,6 +26,8 @@ import { tts, ttsWebsocket, stt, sttWebsocket } from "../../src/providers/cartes
 import type {
   CartesiaEmotion,
   CartesiaTtsLanguage,
+  CartesiaTtsLanguageFor,
+  CartesiaTtsLocale,
   CartesiaSttLanguage,
   CartesiaSttWebsocketLanguage,
 } from "../../src/providers/cartesia";
@@ -96,6 +98,55 @@ function ttsEnumTypeTests(): void {
   tts({ ...BYTES_BASE, model_id: "sonic-9-future" });
 }
 
+/**
+ * `language` / `locale` are closed PER MODEL: the same field takes a different
+ * list once `model_id` names a Sonic 3.6 id (`CartesiaTtsLanguageFor<M>`),
+ * which is what the per-model `checkLanguageFields` enforces at run time.
+ */
+function ttsPerModelLanguageTypeTests(): void {
+  const sonic36 = { ...BYTES_BASE, model_id: "sonic-3.6" } as const;
+
+  // LEGAL on Sonic 3.6: Odia, Urdu, and the regional locales, in either slot.
+  tts({ ...sonic36, language: "or" });
+  tts({ ...sonic36, language: "ur" });
+  tts({ ...sonic36, language: "pt-BR" });
+  tts({ ...sonic36, locale: "en-GB" });
+  tts({ ...BYTES_BASE, model_id: "sonic-3.6-2026-08-27", locale: "hi-IN" });
+  expectAssignable<CartesiaTtsLocale>("en-IN");
+  expectAssignable<CartesiaTtsLanguageFor<"sonic-3.6">>("ur-IN");
+
+  // ILLEGAL on Sonic 3.6: off its list, and locale codes are case-sensitive.
+  tts({
+    ...sonic36,
+    // @ts-expect-error "en-gb" — "Locale codes are case-sensitive."
+    locale: "en-gb",
+  });
+  tts({
+    ...sonic36,
+    // @ts-expect-error "cy" is not one of Sonic 3.6's 44 languages
+    language: "cy",
+  });
+
+  // ILLEGAL on an earlier model: the 3.6 additions are not in its 42.
+  tts({
+    ...BYTES_BASE,
+    // @ts-expect-error "or" is new in Sonic 3.6; sonic-3.5 takes the 42 codes
+    language: "or",
+  });
+  tts({
+    ...BYTES_BASE,
+    // @ts-expect-error a regional locale needs Sonic 3.6 or later
+    locale: "en-GB",
+  });
+  // @ts-expect-error "ur" is not a sonic-3.5 language
+  expectAssignable<CartesiaTtsLanguageFor<"sonic-3.5">>("ur");
+
+  // DEGRADED ARM: a `string`-typed id names no model, so every model's values
+  // compile and the run-time check holds the real id to its own list.
+  const runtimeId: string = "sonic-3.6";
+  tts({ ...BYTES_BASE, model_id: runtimeId, language: "or" });
+}
+
 /** The socket message carries the same two enums as POST /tts/bytes. */
 function ttsWebsocketEnumTypeTests(): void {
   const base = {
@@ -114,6 +165,9 @@ function ttsWebsocketEnumTypeTests(): void {
     // @ts-expect-error same closed 42-code enum as the REST body
     language: "pt-BR",
   });
+  // …and the same per-model widening on a Sonic 3.6 id.
+  ttsWebsocket({ ...base, model_id: "sonic-3.6", language: "pt-BR" });
+  ttsWebsocket({ ...base, model_id: "sonic-3.6", locale: "ur-IN" });
   ttsWebsocket({
     ...base,
     // @ts-expect-error same closed 58-label enum as the REST body
@@ -177,6 +231,7 @@ function sttWebsocketConsistencyTypeTests(): void {
 
 export {
   ttsEnumTypeTests,
+  ttsPerModelLanguageTypeTests,
   ttsWebsocketEnumTypeTests,
   sttEnumTypeTests,
   sttWebsocketConsistencyTypeTests,

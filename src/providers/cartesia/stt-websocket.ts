@@ -26,6 +26,10 @@
  *   scoped rather than refused, so a mismatch is reported as *ignored*
  *   (warning): `min_volume` and `max_silence_duration_secs` are "Used by
  *   `ink-whisper` models only", `keyterm` is "Used by `ink-2` models only".
+ *   `ink-preview`, realtime-only and on the socket's 2026-08-14 enum only,
+ *   sits on ink-2's side: "Used by `ink-2` and `ink-preview` only." for
+ *   `keyterm`, "Used by `ink-whisper` models only." for the silence knobs
+ *   (https://docs.cartesia.ai/api-reference/stt/websocket, 2026-11-12).
  * - `keyterm` is a REPEATED query param: "Repeat the `keyterm` query parameter
  *   to pass multiple values, up to 100 keyterms totaling 1200 characters. To
  *   boost one multi-word phrase, join the words with `%20`." The params object
@@ -137,30 +141,36 @@ const schema = z.looseObject({
 // without saying the socket refuses a connection that carries them.
 // ---------------------------------------------------------------------------
 
+const WHISPER_ONLY_KNOBS: EndpointConstraints = {
+  deny: {
+    min_volume: {
+      reason: "`min_volume` is used by `ink-whisper` models only",
+      source: STT_WEBSOCKET_DOCS,
+      ignored: true,
+    },
+    max_silence_duration_secs: {
+      reason: "`max_silence_duration_secs` is used by `ink-whisper` models only",
+      source: STT_WEBSOCKET_DOCS,
+      ignored: true,
+    },
+  },
+};
+
+const KEYTERM_MODELS_ONLY: EndpointConstraints = {
+  deny: {
+    keyterm: {
+      reason: "keyterm prompting is used by `ink-2` and `ink-preview` only",
+      source: STT_WEBSOCKET_DOCS,
+      ignored: true,
+    },
+  },
+};
+
 export const sttWebsocketConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
-  "ink-2": {
-    deny: {
-      min_volume: {
-        reason: "`min_volume` is used by `ink-whisper` models only",
-        source: STT_WEBSOCKET_DOCS,
-        ignored: true,
-      },
-      max_silence_duration_secs: {
-        reason: "`max_silence_duration_secs` is used by `ink-whisper` models only",
-        source: STT_WEBSOCKET_DOCS,
-        ignored: true,
-      },
-    },
-  },
-  "ink-whisper": {
-    deny: {
-      keyterm: {
-        reason: "keyterm prompting is used by `ink-2` models only",
-        source: STT_WEBSOCKET_DOCS,
-        ignored: true,
-      },
-    },
-  },
+  "ink-2": WHISPER_ONLY_KNOBS,
+  "ink-preview": WHISPER_ONLY_KNOBS,
+  "ink-whisper": KEYTERM_MODELS_ONLY,
+  "ink-whisper-2025-06-04": KEYTERM_MODELS_ONLY,
 };
 
 // ---------------------------------------------------------------------------

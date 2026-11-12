@@ -9,6 +9,7 @@ import {
 } from "./stt-websocket";
 import { CARTESIA_VERSION } from "./tts";
 import { stt } from "./stt";
+import { models } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -205,14 +206,70 @@ describe("cartesia.sttWebsocket checks and constraints", () => {
     if (onWhisper.ok) {
       const issue = onWhisper.warnings.find((w) => w.code === "unsupported_param");
       expect(issue?.path).toEqual(["keyterm"]);
-      expect(String(issue?.message)).toContain("`ink-2` models only");
+      expect(String(issue?.message)).toContain("`ink-2` and `ink-preview` only");
     }
   });
 
   test("constraintsFor exposes both sides of the inversion", () => {
     expect(sttWebsocket.constraintsFor("ink-2")[0]?.deny?.min_volume?.ignored).toBe(true);
     expect(sttWebsocket.constraintsFor("ink-whisper")[0]?.deny?.keyterm?.reason).toContain(
-      "`ink-2` models only",
+      "`ink-2` and `ink-preview` only",
     );
+  });
+});
+
+describe("cartesia.sttWebsocket ink-preview and the ink-whisper snapshot", () => {
+  test("ink-preview takes keyterm clean and warns only that it is off the 2026-03-01 enum", () => {
+    expect(models["ink-preview"].status).toBe("beta");
+    const r = sttWebsocket.safe({ ...BASE, model: "ink-preview", keyterm: ["Cartesia"] });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => w.code)).toEqual(["invalid_enum_value"]);
+      expect(r.warnings[0]?.path).toEqual(["model"]);
+      // Credits only, and no published rate for this model at all.
+      expect(r.estimate.costUSD).toBeUndefined();
+    }
+  });
+
+  test("ink-preview ignores the ink-whisper silence knobs, like ink-2", () => {
+    const r = sttWebsocket.safe({ ...BASE, model: "ink-preview", min_volume: 0.2, max_silence_duration_secs: 2 });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const ignored = r.warnings.filter((w) => w.code === "unsupported_param").map((w) => w.path?.[0]);
+      expect(ignored.sort()).toEqual(["max_silence_duration_secs", "min_volume"]);
+    }
+  });
+
+  test("ink-whisper-2025-06-04 takes the silence knobs and ignores keyterm, like ink-whisper", () => {
+    const knobs = sttWebsocket.safe({
+      ...BASE,
+      model: "ink-whisper-2025-06-04",
+      min_volume: 0.2,
+      max_silence_duration_secs: 2,
+    });
+    expect(knobs.ok).toBe(true);
+    if (knobs.ok) {
+      expect(knobs.warnings.map((w) => w.code)).toEqual(["invalid_enum_value"]);
+      expect(knobs.estimate.costUSD).toBeUndefined();
+    }
+    const keyterm = sttWebsocket.safe({ ...BASE, model: "ink-whisper-2025-06-04", keyterm: "Cartesia" });
+    expect(keyterm.ok).toBe(true);
+    if (keyterm.ok) {
+      const issue = keyterm.warnings.find((w) => w.code === "unsupported_param");
+      expect(issue?.path).toEqual(["keyterm"]);
+    }
+  });
+
+  test("batch /stt accepts the ink-whisper snapshot and refuses ink-preview", () => {
+    const file = new Blob(["x"]);
+    const snapshot = stt.safe({ file, model: "ink-whisper-2025-06-04" });
+    expect(snapshot.ok).toBe(true);
+    if (snapshot.ok) {
+      expect(snapshot.warnings).toEqual([]);
+      expect(snapshot.estimate.costUSD).toBeUndefined();
+    }
+    const preview = stt.safe({ file, model: "ink-preview" });
+    expect(preview.ok).toBe(false);
+    if (!preview.ok) expect(preview.errors[0]?.path).toEqual(["model"]);
   });
 });

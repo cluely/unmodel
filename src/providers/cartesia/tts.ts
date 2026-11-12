@@ -21,11 +21,14 @@
  * reported at *warning* severity, and illegitimate where it is reported at
  * *error* severity. `model_id` keeps its tail because a cataloged dated
  * snapshot (`sonic-3.5-2026-05-04`) is off-enum yet valid — `checkTtsModelKind`
- * reports it as a warning. `language` and `generation_config.emotion` have no
- * tail: `checkEnums` reports an off-enum value at the `invalid_enum_value`
- * default severity, which is *error*, so no value the tail admitted at compile
- * time was a value this module would accept at run time. Same shape as
- * `SttWebsocketParams.language` in ./stt-websocket, which already ships closed.
+ * reports it as a warning. `language`, `locale` and `generation_config.emotion`
+ * have no tail: `checkEnums` reports an off-list value at the
+ * `invalid_enum_value` default severity, which is *error*, so no value the tail
+ * admitted at compile time was a value this module would accept at run time.
+ * `language` / `locale` are closed PER MODEL ({@link CartesiaTtsLanguageFor}):
+ * the list is model-specific, so the type reads the same table the check does.
+ * Same shape as `SttWebsocketParams.language` in ./stt-websocket, which already
+ * ships closed.
  *
  * BREAKING (type-level only): `TtsBytesBody.language` and
  * `CartesiaGenerationConfig.emotion` are re-exported from ../cartesia and no
@@ -42,12 +45,24 @@ import type { ValidateEstimate, ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCharacterCostUSD } from "../../core/cost";
-import { CARTESIA_TTS_LANGUAGES, TTS_MODEL_IDS, models, type CartesiaTtsModelId } from "./models";
+import {
+  CARTESIA_TTS_LANGUAGES,
+  CARTESIA_TTS_LANGUAGES_BY_MODEL,
+  CARTESIA_TTS_LOCALES,
+  TTS_MODEL_IDS,
+  models,
+  type CartesiaTtsModelId,
+} from "./models";
 
 // Declared in `./models` — an import-free leaf — so that `unmodel/cartesia/values`
 // and the `*-params` table can read these without this validator, its zod schema
 // and its catalog. Re-exported here so every existing caller is unchanged.
-export { CARTESIA_TTS_LANGUAGES } from "./models";
+export {
+  CARTESIA_TTS_LANGUAGES,
+  CARTESIA_TTS_3_6_LANGUAGES,
+  CARTESIA_TTS_LOCALES,
+  CARTESIA_TTS_LANGUAGES_BY_MODEL,
+} from "./models";
 
 export const TTS_BYTES_URL = "https://api.cartesia.ai/tts/bytes";
 /**
@@ -145,26 +160,69 @@ export interface CartesiaGenerationConfig {
   emotion?: CartesiaEmotion;
 }
 
+/** The 42 bare codes every TTS id outside the Sonic 3.6 rows takes. */
 export type CartesiaTtsLanguage = (typeof CARTESIA_TTS_LANGUAGES)[number];
 
-export interface TtsBytesBody {
+/** The 56 regional locale codes (`en-GB`, `pt-BR`, …) — Sonic 3.6 or later only. */
+export type CartesiaTtsLocale = (typeof CARTESIA_TTS_LOCALES)[number];
+
+type LanguagesByModel = typeof CARTESIA_TTS_LANGUAGES_BY_MODEL;
+
+/**
+ * `model_id` input: the cataloged sonic ids plus the open tail (see the
+ * open-tail rule above), and the CONSTRAINT of the `M` the wire types are
+ * generic over. It carries the id literals rather than being a bare `string`
+ * so `model_id` keeps completing them.
+ */
+export type CartesiaTtsModelInput = CartesiaTtsModelId | (string & {});
+
+/**
+ * The `language` / `locale` values model `M` accepts — the type-level half of
+ * `checkLanguageFields`, read off the same
+ * {@link CARTESIA_TTS_LANGUAGES_BY_MODEL} table: a Sonic 3.6 id takes its 44
+ * base codes and 56 regional locales, every other id the 42 bare codes. A
+ * `string`-typed (runtime-built) id names no model, so it gets every model's
+ * values; the run-time check still holds the actual id to its own list.
+ */
+export type CartesiaTtsLanguageFor<M extends string> = string extends M
+  ? CartesiaTtsLanguage | LanguagesByModel[keyof LanguagesByModel][number]
+  : M extends keyof LanguagesByModel
+    ? LanguagesByModel[M][number]
+    : CartesiaTtsLanguage;
+
+/**
+ * The POST /tts/bytes body. `M` is the `model_id` literal, inferred at the call
+ * site so `language` / `locale` resolve to that model's own list
+ * ({@link CartesiaTtsLanguageFor}). It defaults to the whole
+ * {@link CartesiaTtsModelInput} union, so the plain `TtsBytesBody` takes every
+ * model's values.
+ */
+export interface TtsBytesBody<M extends CartesiaTtsModelInput = CartesiaTtsModelInput> {
   /**
    * Required by unmodel even though the wire defaults to sonic-3.5 when
    * omitted — every catalog check (char limits, pricing, deprecation) keys
    * on the model id. Documented deviation, same policy as openai.images.
    */
-  model_id: CartesiaTtsModelId | (string & {});
+  model_id: M;
   transcript: string;
   voice: CartesiaVoice;
   output_format: CartesiaOutputFormat;
   /**
-   * One of the 42 documented codes ({@link CARTESIA_TTS_LANGUAGES}). Closed for
-   * the same reason as `generation_config.emotion`: `checkEnums` reports an
-   * off-enum code as an *error*. Note this is the wire layer, so a BCP-47 tag
-   * like "pt-BR" is refused here by design — the unified layer normalizes it to
-   * "pt" before it reaches this type.
+   * One of the model's documented codes ({@link CartesiaTtsLanguageFor}):
+   * "Requesting a language a model does not support returns a 400 error".
+   * Closed for the same reason as `generation_config.emotion`: `checkEnums`
+   * reports an off-list code as an *error*. Note this is the wire layer, so a
+   * regional tag like "pt-BR" is refused here on every model but Sonic 3.6 —
+   * the unified layer normalizes it to "pt" before it reaches this type.
+   * "Deprecated — use `locale` instead on Sonic 3.6 and later." Interchangeable
+   * with `locale`: set one or the other, never both.
    */
-  language?: CartesiaTtsLanguage;
+  language?: CartesiaTtsLanguageFor<M>;
+  /**
+   * "Accepts exactly the same values as `language`; set one or the other,
+   * never both." Regional codes (`en-GB`) need Sonic 3.6 or later.
+   */
+  locale?: CartesiaTtsLanguageFor<M>;
   /** Pronunciation dictionary id — sonic-3 models and newer only. */
   pronunciation_dict_id?: string;
   generation_config?: CartesiaGenerationConfig;
@@ -219,6 +277,7 @@ const schema = z.looseObject({
   voice: z.looseObject({ mode: z.literal("id"), id: z.string() }),
   output_format: outputFormatSchema,
   language: z.string().optional(),
+  locale: z.string().optional(),
   pronunciation_dict_id: z.string().optional(),
   generation_config: z
     .looseObject({
@@ -281,26 +340,16 @@ function checkTranscriptLength(
   }
 }
 
-const LANGUAGE_SET = new Set<string>(CARTESIA_TTS_LANGUAGES);
 const EMOTION_SET = new Set<string>(CARTESIA_EMOTIONS);
 
 /**
- * `language` and `generation_config.emotion` are closed enums in the
- * tts/bytes reference (42 language codes, 58 emotion labels) — the SDK types
- * both as bare strings, so an unsupported value only surfaces as a 422 at
- * request time.
+ * `language` / `locale` and `generation_config.emotion` are closed lists — the
+ * languages per model ({@link checkLanguageFields}), the 58 emotion labels for
+ * every model. The SDK types all three as bare strings, so an unsupported
+ * value only surfaces as a 4xx at request time.
  */
 function checkEnums(params: TtsBytesBody, _info: ModelInfo | undefined, ctx: PipelineContext): void {
-  const language = params.language;
-  if (typeof language === "string" && !LANGUAGE_SET.has(language)) {
-    ctx.report({
-      code: "invalid_enum_value",
-      path: ["language"],
-      model: params.model_id,
-      message: `\`language\` must be one of the ${CARTESIA_TTS_LANGUAGES.length} documented codes; got ${JSON.stringify(language)}.`,
-      meta: { allowed: [...CARTESIA_TTS_LANGUAGES], value: language, source: TTS_BYTES_DOCS },
-    });
-  }
+  checkLanguageFields(params, TTS_BYTES_DOCS, ctx);
   const emotion = params.generation_config?.emotion;
   if (typeof emotion === "string" && !EMOTION_SET.has(emotion)) {
     ctx.report({
@@ -311,6 +360,69 @@ function checkEnums(params: TtsBytesBody, _info: ModelInfo | undefined, ctx: Pip
       meta: { allowed: [...CARTESIA_EMOTIONS], value: emotion, source: TTS_BYTES_DOCS },
     });
   }
+}
+
+const DEFAULT_LANGUAGE_SET: ReadonlySet<string> = new Set<string>(CARTESIA_TTS_LANGUAGES);
+const LANGUAGE_SETS = new Map<string, ReadonlySet<string>>(
+  Object.entries(CARTESIA_TTS_LANGUAGES_BY_MODEL).map(([id, values]) => [id, new Set<string>(values)]),
+);
+const SONIC_3_6_VALUES: ReadonlySet<string> = new Set<string>(
+  Object.values(CARTESIA_TTS_LANGUAGES_BY_MODEL).flat(),
+);
+const LOCALE_SET: ReadonlySet<string> = new Set<string>(CARTESIA_TTS_LOCALES);
+const SONIC_3_6_IDS = Object.keys(CARTESIA_TTS_LANGUAGES_BY_MODEL);
+
+/**
+ * The language rules POST /tts/bytes and the TTS socket share
+ * (Cartesia-Version 2026-03-01 references of both routes):
+ * - `language` and `locale` are one value in two slots: "Interchangeable with
+ *   `locale` — set one or the other, never both." / "Setting both returns a
+ *   400 error, even if the values match." Error.
+ * - Either slot takes the model's own list ("Supported languages are
+ *   model-specific." — {@link CARTESIA_TTS_LANGUAGES_BY_MODEL}, else the 42
+ *   codes): "Values not on the supported list return a 400 error — arbitrary
+ *   BCP-47 codes are rejected, not ignored." Error, naming the Sonic 3.6 ids
+ *   when the refused value is one of theirs.
+ */
+export function checkLanguageFields(
+  params: { model_id: string; language?: string | undefined; locale?: string | undefined },
+  source: string,
+  ctx: PipelineContext,
+): void {
+  const model = params.model_id;
+  if (params.language !== undefined && params.locale !== undefined) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["locale"],
+      model,
+      message:
+        "`language` and `locale` are interchangeable — set one or the other, never both " +
+        "(Cartesia returns a 400 when both are set, even if the values match).",
+      meta: { provided: ["language", "locale"], source },
+    });
+  }
+  const allowed = LANGUAGE_SETS.get(model) ?? DEFAULT_LANGUAGE_SET;
+  for (const field of ["language", "locale"] as const) {
+    const value = params[field];
+    if (typeof value !== "string" || allowed.has(value)) continue;
+    ctx.report({
+      code: "invalid_enum_value",
+      path: [field],
+      model,
+      message: `\`${field}\` must be one of the ${allowed.size} documented codes for "${model}"; got ${JSON.stringify(value)}.${sonic36Hint(value)}`,
+      meta: { allowed: [...allowed], value, source },
+    });
+  }
+}
+
+/** Names the models that DO take `value`, when only a Sonic 3.6 id does. */
+function sonic36Hint(value: string): string {
+  if (!SONIC_3_6_VALUES.has(value)) return "";
+  const ids = SONIC_3_6_IDS.map((id) => `"${id}"`).join(" or ");
+  if (!LOCALE_SET.has(value)) return ` ${JSON.stringify(value)} is a Sonic 3.6 language (${ids}).`;
+  const bare = value.slice(0, value.indexOf("-"));
+  const fallback = DEFAULT_LANGUAGE_SET.has(bare) ? `, or send the bare code "${bare}"` : "";
+  return ` Regional locale codes need Sonic 3.6 or later — use ${ids}${fallback}.`;
 }
 
 const TTS_MODEL_ID_SET = new Set<string>(TTS_MODEL_IDS);
@@ -420,12 +532,12 @@ const validator = createValidator<TtsBytesBody, Validated<TtsBytesBody, TtsSdkTa
  * ```
  */
 export const tts = validator as unknown as {
-  <T extends TtsBytesBody>(
-    params: T & ExactKeys<T, TtsBytesBody>,
+  <M extends CartesiaTtsModelInput, T extends TtsBytesBody<M>>(
+    params: T & TtsBytesBody<M> & ExactKeys<T, TtsBytesBody>,
     options?: ValidateOptions<T>,
   ): Validated<T, TtsSdkTargets<T>>;
-  safe<T extends TtsBytesBody>(
-    params: T & ExactKeys<T, TtsBytesBody>,
+  safe<M extends CartesiaTtsModelInput, T extends TtsBytesBody<M>>(
+    params: T & TtsBytesBody<M> & ExactKeys<T, TtsBytesBody>,
     options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, TtsSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];

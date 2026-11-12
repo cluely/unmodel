@@ -98,9 +98,8 @@ rows the multimodal-generation validator rejects by name, naming the route that 
 fal (23 hosted endpoints — ElevenLabs, MiniMax, Gemini TTS, Chatterbox, Inworld,
 xAI, Seed-Speech, Qwen-3 and nine Kokoro languages — behind one `fal.tts`).
 All nineteen also ship an adapter at `unmodel/<provider>/unified`, so `tts()` from
-`unmodel/tts` reaches them through one canonical vocabulary. Two leaderboard names that
-LOOK like gaps are not: Cartesia "Sonic 3.6" has no model id of its own (it is the beta
-behind `sonic-preview`), and ElevenLabs "v3 Conversational" is the realtime
+`unmodel/tts` reaches them through one canonical vocabulary. One leaderboard name that
+LOOKS like a gap is not: ElevenLabs "v3 Conversational" is the realtime
 `eleven_v3_conversational` (catalog row; Text-to-Dialogue WebSocket only).
 **Live — STT:** every provider addresses the route as `stt` — openai
 (gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/

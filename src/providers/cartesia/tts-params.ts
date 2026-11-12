@@ -12,10 +12,14 @@
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { CartesiaEmotion } from "./tts";
-import { CARTESIA_TTS_LANGUAGES } from "./models";
+import { CARTESIA_TTS_3_6_LANGUAGES, CARTESIA_TTS_LANGUAGES } from "./models";
 
-/** The sonic ids the `model_id` enum publishes — the ref union for `cartesia/…`. */
-export const MODELS = ["sonic-3.5", "sonic-3", "sonic-preview", "sonic-latest"] as const;
+/**
+ * The ref union for `cartesia/…`: the four ids the 2026-03-01 `model_id` enum
+ * publishes, plus `sonic-3.6` — GA since 2026-08-27 and off that enum, so it
+ * validates with the off-enum warning (see ./models).
+ */
+export const MODELS = ["sonic-3.6", "sonic-3.5", "sonic-3", "sonic-preview", "sonic-latest"] as const;
 
 export const TTS_BYTES_DOCS = "https://docs.cartesia.ai/api-reference/tts/bytes";
 
@@ -56,16 +60,19 @@ export const FORMAT: AudioFormatSpec = {
 };
 
 /**
- * Cartesia's per-model speech surface — one row, four times, and the languages
- * are the provider's own array rather than a copy of it.
+ * Cartesia's per-model speech surface — two rows, and the languages are the
+ * provider's own arrays rather than copies of them.
  *
- * All four served ids sit on one `/tts/bytes` schema with one `encoding` enum
- * and one 42-code `language` enum, and the only per-model rule in
- * `ttsConstraints` denies `pronunciation_dict_id` on `sonic-2` and
- * `sonic-turbo` — neither of which this adapter serves. So the row is shared,
- * and `languages` is {@link CARTESIA_TTS_LANGUAGES} by reference: the list an
- * editor offers and the list `checkEnums` refuses against are then the same
- * array, and cannot drift.
+ * All five served ids sit on one `/tts/bytes` schema with one `encoding` enum,
+ * and the only per-model rule in `ttsConstraints` denies
+ * `pronunciation_dict_id` on `sonic-2` and `sonic-turbo` — neither of which
+ * this adapter serves. What differs is the language list ("Supported languages
+ * are model-specific."): `sonic-3.6` speaks the 44 codes of
+ * {@link CARTESIA_TTS_3_6_LANGUAGES}, the other four the 42 of
+ * {@link CARTESIA_TTS_LANGUAGES}. Each row holds its array by reference, so the
+ * list an editor offers and the list `checkEnums` refuses against are the same
+ * array, and cannot drift. (Sonic 3.6's regional locales are not a row value:
+ * the unified `language` compiles to a primary subtag.)
  *
  * `generation_config`'s two non-canonical members ride in through
  * {@link GENERATION_CONFIG_NESTING}, beside the `speed` the adapter compiles
@@ -86,7 +93,11 @@ export const ROW = {
   extras: CARTESIA_TTS_EXTRAS,
 } as const;
 
+/** {@link ROW} with Sonic 3.6's 44 languages — the one field that differs. */
+export const ROW_3_6 = { ...ROW, languages: CARTESIA_TTS_3_6_LANGUAGES } as const;
+
 export const CARTESIA_TTS_MODEL_PARAMS = {
+  "sonic-3.6": ROW_3_6,
   "sonic-3.5": ROW,
   "sonic-3": ROW,
   "sonic-preview": ROW,

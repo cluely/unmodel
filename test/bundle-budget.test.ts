@@ -1385,6 +1385,10 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // `voice-design-*` chunk this walker counts for sfx — chunking, not a new
   // edge (sfx's own graph imports nothing from google). Pinned at ~1.10 of the
   // measurement.
+  //
+  // 526.5 measured, 2026-11-12 (macOS and linux/amd64 alike): the cartesia
+  // per-model language types regrouped the dts chunks, so sfx now pulls the
+  // tts/voice-design chunks instead of the image ones (516.7 before).
   sfx: 580,
   // `unmodel/sts`: 349.0 measured on macOS — the cheapest declaration in the
   // table by a wide margin, below `sfx`'s 442.4. Five canonical words, one

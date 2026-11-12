@@ -5,8 +5,11 @@ import {
   CARTESIA_VERSION,
   CARTESIA_EMOTIONS,
   CARTESIA_TTS_LANGUAGES,
+  CARTESIA_TTS_3_6_LANGUAGES,
+  CARTESIA_TTS_LOCALES,
+  CARTESIA_TTS_LANGUAGES_BY_MODEL,
 } from "./tts";
-import { UnmodelValidationError } from "../../core/issues";
+import { UnmodelValidationError, type IssueCode } from "../../core/issues";
 import { models, TTS_MODEL_IDS } from "./models";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -410,5 +413,106 @@ describe("cartesia.tts doc audit 2026-08-13", () => {
       expect(r.errors[0]?.code).toBe("unsupported_capability");
       expect(r.errors[0]?.path).toEqual(["model_id"]);
     }
+  });
+});
+
+describe("cartesia.tts Sonic 3.6 and the deprecated aliases (2026-11-12)", () => {
+  const WAV = { container: "wav" } as const;
+
+  test("each new id validates, off the 2026-03-01 enum, with no USD estimate", () => {
+    const expected: Record<string, IssueCode[]> = {
+      "sonic-3.6": ["invalid_enum_value"],
+      "sonic-3.6-2026-08-27": ["invalid_enum_value"],
+      "sonic-3-latest": ["deprecated_model", "invalid_enum_value"],
+      "sonic-3-preview": ["deprecated_model", "invalid_enum_value"],
+    };
+    for (const [id, codes] of Object.entries(expected)) {
+      expect(models[id as keyof typeof models]).toBeDefined();
+      const r = tts.safe({ model_id: id, transcript: "a".repeat(1000), voice: VOICE, output_format: WAV });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings.map((w) => w.code)).toEqual(codes);
+        expect(r.estimate.costUSD).toBeUndefined();
+      }
+    }
+  });
+
+  test("the list sizes are the documented ones: 44 base codes, 56 locales", () => {
+    expect(CARTESIA_TTS_3_6_LANGUAGES).toHaveLength(44);
+    expect(CARTESIA_TTS_3_6_LANGUAGES.slice(-2)).toEqual(["or", "ur"]);
+    expect(CARTESIA_TTS_LOCALES).toHaveLength(56);
+    expect(CARTESIA_TTS_LANGUAGES_BY_MODEL["sonic-3.6"]).toHaveLength(100);
+  });
+
+  test("a Sonic 3.6 id takes Odia, Urdu and every regional locale, in either slot", () => {
+    for (const model_id of ["sonic-3.6", "sonic-3.6-2026-08-27"] as const) {
+      for (const value of CARTESIA_TTS_LANGUAGES_BY_MODEL[model_id]) {
+        const base = { model_id, transcript: "x", voice: VOICE, output_format: WAV };
+        for (const r of [tts.safe({ ...base, language: value }), tts.safe({ ...base, locale: value })]) {
+          expect(r.ok).toBe(true);
+          if (r.ok) expect(r.warnings.map((w) => w.path[0])).toEqual(["model_id"]);
+        }
+      }
+    }
+  });
+
+  test("a Sonic 3.6 id still refuses what is off its list — locale codes are case-sensitive", () => {
+    for (const value of ["en-gb", "cy", "ar-SA"]) {
+      const r = safeUnchecked({ model_id: "sonic-3.6", transcript: "x", voice: VOICE, output_format: WAV, language: value });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        const issue = r.errors.find((e) => e.code === "invalid_enum_value");
+        expect(issue?.path).toEqual(["language"]);
+        expect(issue?.meta?.allowed).toHaveLength(100);
+      }
+    }
+  });
+
+  test("an earlier model refuses a Sonic 3.6 value and names the model that takes it", () => {
+    const odia = safeUnchecked({ model_id: "sonic-3.5", transcript: "x", voice: VOICE, output_format: WAV, language: "or" });
+    expect(odia.ok).toBe(false);
+    if (!odia.ok) {
+      expect(odia.errors[0]?.path).toEqual(["language"]);
+      expect(String(odia.errors[0]?.message)).toContain('"sonic-3.6"');
+    }
+    const british = safeUnchecked({ model_id: "sonic-3", transcript: "x", voice: VOICE, output_format: WAV, locale: "en-GB" });
+    expect(british.ok).toBe(false);
+    if (!british.ok) {
+      expect(british.errors[0]?.path).toEqual(["locale"]);
+      expect(String(british.errors[0]?.message)).toContain("need Sonic 3.6 or later");
+      expect(String(british.errors[0]?.message)).toContain('the bare code "en"');
+    }
+    // A bare code is fine in `locale` on every model.
+    expect(tts.safe({ model_id: "sonic-3.5", transcript: "x", voice: VOICE, output_format: WAV, locale: "en" }).ok).toBe(true);
+  });
+
+  test("language and locale together are refused, even when they match", () => {
+    const r = safeUnchecked({
+      model_id: "sonic-3.6",
+      transcript: "x",
+      voice: VOICE,
+      output_format: WAV,
+      language: "en",
+      locale: "en",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_shape");
+      expect(r.errors[0]?.path).toEqual(["locale"]);
+      expect(String(r.errors[0]?.message)).toContain("never both");
+    }
+  });
+
+  test("generation_config and pronunciation dictionaries stay open on Sonic 3.6", () => {
+    const r = tts.safe({
+      model_id: "sonic-3.6",
+      transcript: "x",
+      voice: VOICE,
+      output_format: WAV,
+      pronunciation_dict_id: "dict_123",
+      generation_config: { volume: 1.2, speed: 0.9, emotion: "calm" },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["invalid_enum_value"]);
   });
 });

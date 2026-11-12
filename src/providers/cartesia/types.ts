@@ -62,6 +62,8 @@ export type {
   CartesiaMp3BitRate,
   CartesiaGenerationConfig,
   CartesiaTtsLanguage,
+  CartesiaTtsLocale,
+  CartesiaTtsLanguageFor,
 } from "./tts";
 
 export type {

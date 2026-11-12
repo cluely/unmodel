@@ -1683,6 +1683,22 @@ tts({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: "v" },
     expect(entries).not.toContain("en-US");
   });
 
+  test("on a Sonic 3.6 id, language offers its 44 codes and 56 locales and nothing else", () => {
+    // The list is per model (`CartesiaTtsLanguageFor<M>`), so the same field
+    // completes a different, larger set once `model_id` names a 3.6 id.
+    for (const id of ["sonic-3.6", "sonic-3.6-2026-08-27"]) {
+      const entries = completionsAt(`${BYTES.replace('"sonic-3.5"', `"${id}"`)}language: "¦" });`);
+      expect(entries.length).toBe(100);
+      expect(entries).toContain("or");
+      expect(entries).toContain("ur");
+      expect(entries).toContain("pt-BR");
+      expect(entries).toContain("en-GB");
+      expect(entries).not.toContain("cy");
+      const locales = completionsAt(`${BYTES.replace('"sonic-3.5"', `"${id}"`)}locale: "¦" });`);
+      expect(locales.length).toBe(100);
+    }
+  });
+
   test("the socket message publishes the same two lists", () => {
     const SOCKET = `import { ttsWebsocket } from "./src/providers/cartesia";
 ttsWebsocket({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: "v" },
@@ -1718,7 +1734,11 @@ stt({ file: new Blob([]), model: "ink-whisper", language: "¦" });`);
     // the whole justification for the tail: `checkTtsModelKind` reports them
     // at *warning* severity, so refusing them at compile time would be wrong.
     for (const id of [
+      "sonic-3.6",
+      "sonic-3.6-2026-08-27",
       "sonic-3.5-2026-05-04",
+      "sonic-3-latest",
+      "sonic-3-preview",
       "sonic-2",
       "sonic-turbo",
       "sonic-3-2026-01-12",
@@ -1730,7 +1750,7 @@ stt({ file: new Blob([]), model: "ink-whisper", language: "¦" });`);
     ]) {
       expect(entries).toContain(id);
     }
-    expect(entries.length).toBe(13);
+    expect(entries.length).toBe(17);
     // A completion list cannot show the tail itself; that a *fourth* off-enum
     // id like "sonic-9-future" still compiles is pinned in
     // test/types/cartesia.test-d.ts, where this field alone has no

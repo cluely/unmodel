@@ -61,9 +61,9 @@ function cohereSdkTypeTests(): void {
 }
 
 // The ids `cohere.chat` completes are the overlay's, not models.dev's: Cohere's
-// own `north-small-translate-1.0` replaces the generated
-// `north-small-translate-09-2026`. Pinned whole, so a regen that moves an id
-// in or out surfaces here.
+// own `north-small-translate-1.0` and `north-mini-code-1.0` replace the
+// generated `north-small-translate-09-2026` and `north-mini-code-1-0`. Pinned
+// whole, so a regen that moves an id in or out surfaces here.
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
   ? true
   : false;
@@ -81,7 +81,7 @@ expectTrue<
     | "command-r-plus-08-2024"
     | "command-r7b-12-2024"
     | "command-r7b-arabic-02-2025"
-    | "north-mini-code-1-0"
+    | "north-mini-code-1.0"
     | "north-small-translate-1.0"
     | "tiny-aya-earth"
     | "tiny-aya-fire"

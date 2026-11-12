@@ -406,13 +406,52 @@ describe("cohere.chat tiny-aya", () => {
   });
 });
 
-describe("cohere.chat north-mini-code structured outputs", () => {
-  test("response_format json_object passes — the model page's card renders it active", () => {
+describe("cohere.chat north-mini-code-1.0", () => {
+  test("validates under Cohere's own id; json_object passes — the model page's card renders it active", () => {
     const result = chat.safe({
-      model: "north-mini-code-1-0",
+      model: "north-mini-code-1.0",
       messages: HI,
       response_format: { type: "json_object" },
     });
     expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings).toEqual([]);
+  });
+
+  test("models.dev's north-mini-code-1-0 spelling is not a Cohere id", () => {
+    const result = chat.safe({ model: "north-mini-code-1-0", messages: HI });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+
+  test("its catalog-backed checks run: max_tokens above the 64K output limit is refused", () => {
+    const result = chat.safe({ model: "north-mini-code-1.0", messages: HI, max_tokens: 64001 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors[0]?.code).toBe("over_output_limit");
+  });
+});
+
+describe("cohere.chat command a+/reasoning/translate/vision pricing", () => {
+  test("no costUSD — Cohere publishes no per-token rate its own pages agree on", () => {
+    for (const model of [
+      "command-a-plus-05-2026",
+      "command-a-reasoning-08-2025",
+      "command-a-translate-08-2025",
+      "command-a-vision-07-2025",
+    ]) {
+      const result = chat.safe({ model, messages: HI, max_tokens: 100 });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.warnings).toEqual([]);
+        expect(result.estimate.costUSD).toBeUndefined();
+      }
+    }
+  });
+
+  test("command-a-03-2025 keeps its published $2.50 / $10 rate", () => {
+    // "Pricing Input $ 2.5 / 1M tokens Output $ 10 / 1M tokens" —
+    // https://docs.cohere.com/docs/command-a (2026-11-12)
+    const result = chat.safe({ model: "command-a-03-2025", messages: HI, max_tokens: 1000 });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.estimate.costUSD).toBeGreaterThan(0.01);
   });
 });

@@ -43,6 +43,15 @@ describe("cohere.checkChat", () => {
     expect(report.costUSD).toBeCloseTo(0.15, 8);
   });
 
+  test("prices from the corrected chat catalog, not the raw generated rows", () => {
+    const usage = { billed_units: { input_tokens: 1000, output_tokens: 500 } };
+    // Cohere's model pages contradict the generated $2.50/$10: no costUSD.
+    expect(checkChat({ usage }, "command-a-vision-07-2025").costUSD).toBeUndefined();
+    // Cohere's own ids resolve; "free until rate limits are reached" prices at $0.
+    expect(checkChat({ usage }, "north-small-translate-1.0").costUSD).toBe(0);
+    expect(checkChat({ usage }, "north-mini-code-1.0").costUSD).toBe(0);
+  });
+
   test("cached_tokens maps to cachedInputTokens", () => {
     const report = checkChat({
       usage: { tokens: { input_tokens: 100, output_tokens: 10 }, cached_tokens: 40 },

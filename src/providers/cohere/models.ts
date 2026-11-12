@@ -2,6 +2,12 @@
 //   https://docs.cohere.com/docs/models                     (model table: ids, status, limits)
 //   https://docs.cohere.com/docs/north-small-translate-1.0  (model page: id, specifications, capabilities, pricing)
 //   https://docs.cohere.com/docs/north-mini-code-1.0        (model page: capabilities)
+//   https://docs.cohere.com/docs/command-a-plus             (model page: pricing)
+//   https://docs.cohere.com/docs/command-a-reasoning        (model page: pricing)
+//   https://docs.cohere.com/docs/command-a-translate        (model page: pricing)
+//   https://docs.cohere.com/docs/command-a-vision           (model page: pricing)
+//   https://cohere.com/pricing                              (pricing cards)
+//   https://docs.cohere.com/docs/cohere-on-openrouter       (id table)
 //   https://docs.cohere.com/changelog                       (release entries)
 // Verified 2026-11-12.
 //
@@ -39,7 +45,16 @@ const NORTH_SMALL_TRANSLATE_CONTEXT_TOKENS = 16000;
 // own canonical_model_id is `cohere/north-small-translate-1-0`. The validator
 // matches ids exactly, so the generated spelling would leave a real request at
 // `unknown_model`, skipping every capability check.
-const { "north-small-translate-09-2026": northSmallTranslate, ...served } = models;
+const {
+  "north-small-translate-09-2026": northSmallTranslate,
+  // Likewise models.dev's `north-mini-code-1-0` is Cohere's
+  // `north-mini-code-1.0` — "**Model Name**: `north-mini-code-1.0`"
+  // (changelog), "| `north-mini-code-1.0` | Live |" (model table), and the
+  // Cohere-on-OpenRouter table maps `cohere/north-mini-code:free` to
+  // `north-mini-code-1.0` (https://docs.cohere.com/docs/cohere-on-openrouter).
+  "north-mini-code-1-0": northMiniCode,
+  ...served
+} = models;
 
 /**
  * The catalog `cohere.chat` validates against: the generated cohere catalog
@@ -65,8 +80,33 @@ export const chatModels = {
   // Image Inputs, Safety Modes and Citations are the greyed ones) —
   // https://docs.cohere.com/docs/north-mini-code-1.0 (2026-11-12). Restating
   // it keeps `response_format: json_object` from a false refusal.
-  "north-mini-code-1-0": { ...served["north-mini-code-1-0"], structuredOutput: true },
+  "north-mini-code-1.0": { ...northMiniCode, id: "north-mini-code-1.0", structuredOutput: true },
+  // No cost. models.dev's $2.50 / $10.00 per 1M has one source, the
+  // cohere.com/pricing cards' `pricingRows` — which the same page contradicts:
+  // those rows also price Command R7B at "$$2.50 / 1 M tokens" for input and
+  // output, against its own `"inputPrice":0.0375 … "outputPrice":0.15` entry,
+  // and Command A+'s own entry there reads `"per":"Free"` with an API-key price
+  // of 0, while https://docs.cohere.com/v2/docs/how-does-cohere-pricing-work
+  // lists Command A+ among models "priced on a per-token basis" with no
+  // figure. Each model page says instead "For both trial keys and production
+  // keys, <model> is free until rate limits are reached" and sends production
+  // use elsewhere — "Command A+ can be used in production through Cohere's
+  // Model Vault", "Command A Reasoning can be used in production through
+  // Cohere's Model Vault", "To use Command A Translate in production, please
+  // reach out to sales", "To use Command A Vision in production, please reach
+  // out to sales" (2026-11-12). No page publishes a per-token rate, so
+  // estimates and checkChat report no costUSD rather than a contradicted one.
+  "command-a-plus-05-2026": withoutCost(served["command-a-plus-05-2026"]),
+  "command-a-reasoning-08-2025": withoutCost(served["command-a-reasoning-08-2025"]),
+  "command-a-translate-08-2025": withoutCost(served["command-a-translate-08-2025"]),
+  "command-a-vision-07-2025": withoutCost(served["command-a-vision-07-2025"]),
 } as const satisfies Record<string, ModelInfo>;
 
 /** Every model id `cohere.chat` knows — the keys of {@link chatModels}. */
 export type CohereChatModelId = keyof typeof chatModels;
+
+/** A generated row without its `cost` — for rates Cohere's own pages contradict. */
+function withoutCost<Row extends ModelInfo>(row: Row): Omit<Row, "cost"> {
+  const { cost: _contradicted, ...rest } = row;
+  return rest;
+}

@@ -1,0 +1,13 @@
+{
+  "ref": "revana/seedance-2.5",
+  "params": {
+    "model": "seedance-2.5",
+    "input": {
+      "prompt": "a drone shot over a fjord at sunrise",
+      "duration": 5,
+      "resolution": "720p",
+      "aspect_ratio": "9:16"
+    }
+  },
+  "url": "https://api.revana.si/v1/generations"
+}

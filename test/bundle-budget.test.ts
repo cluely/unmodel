@@ -697,8 +697,30 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  * id to pick instead of a 400 from Atlas.
  *
  * 1170 restores ~10% headroom, the same multiple every row in this file uses.
+ *
+ * **Bumped 1170 → 1305 by revana**, measured 1186.0 KiB (macOS), up from 1066.1,
+ * of which the new provider is 117.9 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks, as above. Thirteen
+ * modules arrive, and all but two of them are the WIRE layer the adapter ends
+ * in rather than the adapter:
+ *
+ * | module | KiB | what it is |
+ * |---|---|---|
+ * | `checks.ts` | 27.1 | the one check battery every `revana.*` media address shares (decisions.md §4) |
+ * | `gen/shapes-video.gen.ts` | 19.4 | what each of the 74 video models takes |
+ * | `gen/models-video.gen.ts` | 19.0 | their catalog rows, reached through the validator's `catalog:` |
+ * | `gen/video-params.gen.ts` | 11.0 | the 69 unified rows |
+ * | `gen/prices-video.gen.ts` | 8.2 | the listed rates the estimate reads |
+ * | `unified-video.ts` | 7.8 | the adapter |
+ * | `gen/ids.gen.ts` | 6.5 | every address's id list — the signpost a foreign id gets |
+ * | `pricing.ts`, `generation.ts`, `urls.ts`, `compile-input.ts`, `video.ts`, `addresses.ts` | 19.0 | the estimate, the shared schema and factory, the route, the adapters' shared derivations |
+ *
+ * The shape is fal's rather than Atlas's — one adapter, one schema, GENERATED
+ * rows — at a third of fal's cost per model, because Revana has one body for
+ * every model and its rows narrow that body instead of each carrying a wire
+ * interface. 1305 is the measurement × 1.1.
  */
-const VIDEO_PACK_BUDGET_KIB = 1170;
+const VIDEO_PACK_BUDGET_KIB = 1305;
 
 /**
  * The two generated catalogs this pack legitimately reaches.
@@ -711,7 +733,7 @@ const VIDEO_PACK_BUDGET_KIB = 1170;
  */
 const VIDEO_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog/openai.gen.ts"];
 
-/** The fourteen providers `unmodel/video`'s ready-made pack is allowed to reach. */
+/** The fifteen providers `unmodel/video`'s ready-made pack is allowed to reach. */
 const VIDEO_PACK_PROVIDERS: string[] = [
   "alibaba",
   "atlascloud",
@@ -724,6 +746,7 @@ const VIDEO_PACK_PROVIDERS: string[] = [
   "minimax",
   "openai",
   "pixverse",
+  "revana",
   "runway",
   "vidu",
   "xai",
@@ -2138,12 +2161,12 @@ describe("unmodel/image (the second ready-made pack)", () => {
 describe("unmodel/video (the third ready-made pack)", () => {
   /**
    * The composition assertion. This pack is the one where "exactly these
-   * providers" is doing the most work: seven of the fourteen also serve an image
+   * providers" is doing the most work: seven of the fifteen also serve an image
    * or speech surface, so an adapter that imported its provider's barrel instead
    * of the video leaf would drag a second category's validators and catalogs in
    * without changing a single import in `src/unified/video.ts`.
    */
-  test("it reaches exactly the fourteen video providers, through their adapters", () => {
+  test("it reaches exactly the fifteen video providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("video"));
     expect(modules).toContain("src/unified/video.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -2158,7 +2181,7 @@ describe("unmodel/video (the third ready-made pack)", () => {
     expect(providers).toEqual(VIDEO_PACK_PROVIDERS);
 
     // pixverse and lightricks serve video only, so their adapter is the
-    // unsuffixed leaf; the other twelve split per category. fal is the sharpest
+    // unsuffixed leaf; the other thirteen split per category. fal is the sharpest
     // case for the split in this pack: it serves FIVE categories, so a barrel
     // import here would drag its image, image-edit, lipsync and avatar
     // surfaces — validators, union schemas and generated rows — into a video
@@ -2183,6 +2206,17 @@ describe("unmodel/video (the third ready-made pack)", () => {
       // a provider except through a file with the uniform name.
       expect(modules).toContain(`src/providers/${provider}/video.ts`);
     }
+
+    // revana serves eight categories from ONE route, so its split is by SLICE
+    // rather than by endpoint module: `revana.video` carries the video rows,
+    // and none of the picture, speech or music ones the same body also serves.
+    for (const slice of ["image", "tts", "music", "chat"]) {
+      expect(modules).not.toContain(`src/providers/revana/gen/models-${slice}.gen.ts`);
+    }
+    for (const slice of ["image", "tts", "music"]) {
+      expect(modules).not.toContain(`src/providers/revana/gen/shapes-${slice}.gen.ts`);
+    }
+    expect(modules).not.toContain("src/providers/revana/models.ts");
   });
 
   /**

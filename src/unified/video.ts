@@ -17,10 +17,10 @@
  * `{ seconds: "5", size: "1280x720" }`; to `"kling/kling-v3"` and it compiles
  * to `{ duration: "5", mode: "pro", aspect_ratio: "16:9" }`. Add
  * `image: { url }` and it becomes an image-to-video request at whichever
- * provider the ref names — a different endpoint at five of the fourteen, a
+ * provider the ref names — a different endpoint at five of the fifteen, a
  * different field at the rest, and the same six words either way.
  *
- * `createVideo([…])` takes the adapters you name instead of all fourteen, and the
+ * `createVideo([…])` takes the adapters you name instead of all fifteen, and the
  * bundle then contains those providers and no others:
  *
  * ```ts
@@ -81,6 +81,7 @@ import { video as luma } from "../providers/luma/unified-video";
 import { video as minimax } from "../providers/minimax/unified-video";
 import { video as openai } from "../providers/openai/unified-video";
 import { video as pixverse } from "../providers/pixverse/unified";
+import { video as revana } from "../providers/revana/unified-video";
 import { video as runway } from "../providers/runway/unified-video";
 import { video as vidu } from "../providers/vidu/unified-video";
 import { video as xai } from "../providers/xai/unified-video";
@@ -123,7 +124,7 @@ export function createVideo<A extends VideoAdapter>(
  *
  * One adapter per provider, always — a ref resolves to exactly one, and
  * `createUnified` throws on a second claiming the same id. This is the category
- * where that matters most: six of these fourteen providers have more than one
+ * where that matters most: six of these fifteen providers have more than one
  * video route, Kling has five across two route families, and fal has thirty
  * behind a single address whose path is a parameter. Every one of them
  * dispatches inside `compile` — on the model id, on the inputs, or on both —
@@ -131,10 +132,10 @@ export function createVideo<A extends VideoAdapter>(
  * `image: { url }` instead of remembering which import turns a still into a
  * clip.
  *
- * The cost is honest and measured: importing this pulls in fourteen providers'
- * validators (twenty-three endpoint modules between them), their schemas and
+ * The cost is honest and measured: importing this pulls in fifteen providers'
+ * validators (twenty-four endpoint modules between them), their schemas and
  * their catalogs, pinned in `test/bundle-budget.test.ts`. `createVideo([…])`
- * above is the way to pay for two providers instead of fourteen.
+ * above is the way to pay for two providers instead of fifteen.
  *
  * fal and atlascloud are the two aggregators, and they are odd in opposite
  * ways. fal is one adapter over thirty-five endpoints, because at fal the route
@@ -145,6 +146,12 @@ export function createVideo<A extends VideoAdapter>(
  * and the task — so `bytedance/seedance-2.5/text-to-video` and
  * `.../image-to-video` are two REFS with two request schemas, and its `compile`
  * checks the caller's inputs against the route their ref already named.
+ *
+ * Revana is the third router and the plainest: one url, and one id per MODEL
+ * whatever it is asked to do — `revana/veo-3.1` with a first frame is
+ * image-to-video. Its `compile` therefore derives no route at all; the inputs
+ * go to the fields of the same meaning and `revana.video` answers, in the
+ * API's own sentence, whether that combination is one the model offers.
  */
 export const video = createVideo([
   openai,
@@ -161,6 +168,7 @@ export const video = createVideo([
   xai,
   alibaba,
   atlascloud,
+  revana,
 ]);
 
 export type {

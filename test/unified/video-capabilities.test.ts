@@ -53,6 +53,7 @@ import { video as luma } from "../../src/providers/luma/unified-video";
 import { video as minimax } from "../../src/providers/minimax/unified-video";
 import { video as openai } from "../../src/providers/openai/unified";
 import { video as pixverse } from "../../src/providers/pixverse/unified";
+import { video as revana } from "../../src/providers/revana/unified-video";
 import { video as runway } from "../../src/providers/runway/unified-video";
 import { video as vidu } from "../../src/providers/vidu/unified-video";
 import { video as xai } from "../../src/providers/xai/unified-video";
@@ -386,6 +387,41 @@ const TABLE: Readonly<Record<string, Capability>> = {
     // Veo 3.1 is the one family on Atlas with a `negative_prompt`, so a
     // provider-wide declaration would be false at three of the 23 refs.
     negativePrompt: "refused",
+    seed: "native",
+    n: "declared",
+  },
+  /**
+   * The third router, and the row with the fewest gaps in the table — for a
+   * reason that is about the WIRE rather than about this model.
+   *
+   * Revana has one url and one id per model: `kling-4.0` is the same ref
+   * whether it is handed a prompt, a first frame, references or a clip, so all
+   * four media cells are `native` on one row where Atlas needs four refs. The
+   * adapter writes each input to the field of the same meaning and
+   * `revana.video` decides whether the combination is one the model offers; on
+   * a model that offers fewer (`veo-3.1` has no reference arm) the same cell is
+   * refused by that validator, at `image` — `video-e2e` pins it.
+   *
+   * `negativePrompt` is `native` and that is the honest word: the field is
+   * sent, and `revana.video` adds a WARNING where no route took it when
+   * unmodel last asked. A route fact is never an error here.
+   *
+   * `kling-4.0` is chosen because its `durations` are a range (the probe's 8
+   * is inside it), its tiers include the default 1080p, and its tasks cover
+   * every input the vocabulary has.
+   */
+  revana: {
+    ref: "revana/kling-4.0",
+    adapter: revana,
+    duration: { support: "native", class: "number", at: "input.duration" },
+    size: { class: "tier-field", at: "input.resolution" },
+    resolution: "native",
+    aspectRatio: "native",
+    imageFirst: "native",
+    imageLast: "native",
+    imageReference: "native",
+    video: "native",
+    negativePrompt: "native",
     seed: "native",
     n: "declared",
   },

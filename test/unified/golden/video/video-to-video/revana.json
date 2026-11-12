@@ -1,0 +1,12 @@
+{
+  "ref": "revana/wan-3.0",
+  "params": {
+    "model": "wan-3.0",
+    "input": {
+      "prompt": "restyle the clip as a pencil sketch",
+      "video_url": "https://example.com/clip.mp4",
+      "duration": 5
+    }
+  },
+  "url": "https://api.revana.si/v1/generations"
+}

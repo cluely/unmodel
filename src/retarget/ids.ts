@@ -228,6 +228,7 @@ export const SDK_TARGET_IDS = [
   "recraft",
   "resemble",
   "revai",
+  "revana",
   "reve",
   "rime",
   "runway",

@@ -218,6 +218,8 @@ export default defineConfig({
     "providers/revai/unified": "src/providers/revai/unified.ts",
     "providers/revai/types": "src/providers/revai/types.ts",
     "providers/revai/values": "src/providers/revai/values.ts",
+    "providers/revana/index": "src/providers/revana/index.ts",
+    "providers/revana/types": "src/providers/revana/types.ts",
     "providers/reve/index": "src/providers/reve/index.ts",
     "providers/reve/unified": "src/providers/reve/unified.ts",
     "providers/reve/types": "src/providers/reve/types.ts",

@@ -69,12 +69,22 @@ export const REGISTRY = {
   // second wire ROUTE at one provider, and fal has one route with a variable
   // path.
   "fal.image": () => import("./providers/fal").then((m) => asCli(m.image)),
+  // Revana is the third one-url aggregator, and the one where even the MODEL is
+  // not the route: `POST /v1/generations` takes `{ model, input }` for every
+  // image, video, speech and music model, and a single id (`nano-banana-pro`)
+  // is text-to-image or an edit depending on `input` alone. Its eight media
+  // ids below are therefore category verbs over ONE route — `image`, `video`,
+  // `tts` and `music` between them serve every model, and `imageEdit`,
+  // `upscale`, `lipsync` and `avatar` are narrower views of the first two
+  // (docs/decisions.md §4). None is qualified, because there is no second path.
+  "revana.image": () => import("./providers/revana").then((m) => asCli(m.image)),
   "vidu.imageFromReference": () =>
     import("./providers/vidu").then((m) => asCli(m.imageFromReference)),
 
   // Image editing (URL/base64 image inputs — the multipart-only editors are
   // listed under MULTIPART_ONLY below)
   "fal.imageEdit": () => import("./providers/fal").then((m) => asCli(m.imageEdit)),
+  "revana.imageEdit": () => import("./providers/revana").then((m) => asCli(m.imageEdit)),
   "black-forest-labs.imageEditFill": () =>
     import("./providers/black-forest-labs").then((m) => asCli(m.imageEditFill)),
   "black-forest-labs.imageEditExpand": () =>
@@ -123,6 +133,10 @@ export const REGISTRY = {
   // fork is the model id (`bytedance/seedance-2.5/image-to-video`).
   "atlascloud.video": () =>
     import("./providers/atlascloud").then((m) => asCli(m.video)),
+  // No `revana.videoFromImage` either, for a stronger reason than Atlas's:
+  // there the model id names the task, here not even that — `veo-3.1` is one
+  // id whose `input.image_url` makes it image-to-video.
+  "revana.video": () => import("./providers/revana").then((m) => asCli(m.video)),
   "kling.video": () => import("./providers/kling").then((m) => asCli(m.video)),
   "kling.videoFromImage": () => import("./providers/kling").then((m) => asCli(m.videoFromImage)),
   // EXPERIMENTAL path-addressed family — uncorroborated routes, see
@@ -178,10 +192,12 @@ export const REGISTRY = {
   // (`/v3/lipsyncs` preserves a performance, `/v3/videos` invents one). Four
   // vendors, four wire shapes, two verbs — which is the point of the verbs.
   "fal.lipsync": () => import("./providers/fal").then((m) => asCli(m.lipsync)),
+  "revana.lipsync": () => import("./providers/revana").then((m) => asCli(m.lipsync)),
   "heygen.lipsync": () => import("./providers/heygen").then((m) => asCli(m.lipsync)),
   "sync.lipsync": () => import("./providers/sync").then((m) => asCli(m.lipsync)),
   "veed.lipsync": () => import("./providers/veed").then((m) => asCli(m.lipsync)),
   "fal.avatar": () => import("./providers/fal").then((m) => asCli(m.avatar)),
+  "revana.avatar": () => import("./providers/revana").then((m) => asCli(m.avatar)),
   "heygen.avatar": () => import("./providers/heygen").then((m) => asCli(m.avatar)),
   "sync.avatar": () => import("./providers/sync").then((m) => asCli(m.avatar)),
   "veed.avatar": () => import("./providers/veed").then((m) => asCli(m.avatar)),
@@ -202,6 +218,7 @@ export const REGISTRY = {
   // `stability.imageCore` and `ideogram.imageV4` do, and `unmodel/upscale`
   // hides the fork by picking the URL from the ref.
   "fal.upscale": () => import("./providers/fal").then((m) => asCli(m.upscale)),
+  "revana.upscale": () => import("./providers/revana").then((m) => asCli(m.upscale)),
   "topaz.upscale": () => import("./providers/topaz").then((m) => asCli(m.upscale)),
   "topaz.upscaleGenerative": () =>
     import("./providers/topaz").then((m) => asCli(m.upscaleGenerative)),
@@ -231,6 +248,7 @@ export const REGISTRY = {
   // made from (`musicFromAudio`) and what they do to a finished track
   // (`musicInpaint`), and both are multipart-only.
   "elevenlabs.music": () => import("./providers/elevenlabs").then((m) => asCli(m.music)),
+  "revana.music": () => import("./providers/revana").then((m) => asCli(m.music)),
   "fal.music": () => import("./providers/fal").then((m) => asCli(m.music)),
   "google.music": () => import("./providers/google").then((m) => asCli(m.music)),
   "mureka.music": () => import("./providers/mureka").then((m) => asCli(m.music)),
@@ -260,6 +278,7 @@ export const REGISTRY = {
   "google.tts": () => import("./providers/google").then((m) => asCli(m.tts)),
   "openai.tts": () => import("./providers/openai").then((m) => asCli(m.tts)),
   "elevenlabs.tts": () => import("./providers/elevenlabs").then((m) => asCli(m.tts)),
+  "revana.tts": () => import("./providers/revana").then((m) => asCli(m.tts)),
   "alibaba.tts": () => import("./providers/alibaba").then((m) => asCli(m.tts)),
   "cartesia.tts": () => import("./providers/cartesia").then((m) => asCli(m.tts)),
   // fal is an aggregator, so `fal.tts` is twenty-three vendors' speech routes
@@ -394,6 +413,7 @@ export const REGISTRY = {
 
   // OpenAI-compatible fleet overlays (chat completions dialect)
   "alibaba.chat": () => import("./providers/alibaba/chat").then((m) => asCli(m.chat)),
+  "revana.chat": () => import("./providers/revana/chat").then((m) => asCli(m.chat)),
   "baseten.chat": () => import("./providers/baseten").then((m) => asCli(m.chat)),
   "cerebras.chat": () => import("./providers/cerebras").then((m) => asCli(m.chat)),
   "deepinfra.chat": () => import("./providers/deepinfra").then((m) => asCli(m.chat)),

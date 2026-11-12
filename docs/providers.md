@@ -9,10 +9,11 @@ provider — not their quality ranking.
 - **native** — hand-written wire schemas, deep per-model constraints, own subpath (`unmodel/<id>`).
 - **oai-base** — thin named overlay on the shared OpenAI-compatible chat validator: base URL,
   catalog, and quirk constraints only. Own subpath, ~30 lines each.
-- **generated** — wire types, schemas, per-endpoint constraint data and catalog rows emitted by a
-  codegen from the provider's own published OpenAPI, over a committed snapshot. Behaviour (checks,
-  messages, estimates, docs) is still hand-written beside it. One provider so far: **fal** — see
-  [the fal.ai wave](#falai-wave--one-aggregator-ten-verbs).
+- **generated** — per-model constraint data and catalog rows (and, at fal, wire types and schemas)
+  emitted by a codegen from the provider's own published OpenAPI or catalog, over a committed
+  snapshot. Behaviour (checks, messages, estimates, docs) is still hand-written beside it. Two
+  providers: **fal** — see [the fal.ai wave](#falai-wave--one-aggregator-ten-verbs) — and
+  **revana** — see [the Revana wave](#revana-wave--one-router-nine-addresses).
 - **catalog-only** — model metadata available via `unmodel/catalog`; no request validator yet.
 - **excluded** — no public developer API today (noted; revisit when one ships).
 
@@ -869,6 +870,78 @@ Uncurated by decision, with reasons in `curation.json`: fal's `llm` category
 start a fine-tune rather than an inference request), `vision` (34 doing image-in/text-out, which
 `unmodel/chat` already owns), `3d` (53 — a 3D vocabulary on a single witness is a guess), and
 the ffmpeg / workflow-utils / subtitles plumbing.
+
+## Revana wave — one router, nine addresses
+
+Revana (https://revana.si) is a router: one key and one prepaid balance over image, video,
+speech, music and language models from two dozen makers, each served by the cheapest of several
+routes with automatic fallback. unmodel serves **all of it** — 138 media models and 99 language
+models at landing — on `unmodel/revana`. Tier: **generated** (media) + **oai-base** (chat).
+Research: [`docs/research/revana.md`](./research/revana.md).
+
+| address | route | serves |
+|---|---|---|
+| `revana.video` | `POST /v1/generations` | every `kind: "video"` model |
+| `revana.lipsync` | 〃 | the clip-and-sound video models — a view |
+| `revana.avatar` | 〃 | the still-and-sound video models — a view |
+| `revana.image` | 〃 | every `kind: "image"` model |
+| `revana.imageEdit` | 〃 | the image models that edit — a view |
+| `revana.upscale` | 〃 | the upscalers — a view |
+| `revana.tts` | 〃 | the speech models |
+| `revana.music` | 〃 | the music models |
+| `revana.chat` | `POST /v1/chat/completions` | every `kind: "text"` model |
+
+**Neither the route nor the model is the task.** fal puts the endpoint id in the URL; Atlas puts
+the task in the model id. Revana does neither: every media model posts `{ model, input }` to one
+path, and a single id is text-to-video or image-to-video depending on `input` alone. So the
+eight media ids are category verbs over ONE route (decisions.md §2), four of them wide and four
+of them narrower *views* that share the wide address's check battery and refuse nothing it
+accepts except what is not theirs (§4). There is no `revana.videoFromImage`: it would name
+neither a second path nor a second model.
+
+**Generated from the catalog, not the OpenAPI document.** Revana's OpenAPI declares one
+`ModelInput` for 135 models with `resolution`, `quality` and `aspect_ratio` as bare strings —
+"Which fields and values a model takes … are in /data/models.json". `scripts/codegen-revana.ts`
+lowers the keyless `GET /v1/models` (snapshotted at `data/revana/models.json`) into one shape
+table, one listed-price table and one catalog slice per wide address; `generation-wire.ts` types
+each model's `input` from its own row. `bun run codegen:revana` is offline and in the CI drift
+check; `codegen-revana-refresh.yml` re-fetches weekly, because the roster moved by eleven models
+during the afternoon this was researched. Two hand files carry what the catalog cannot say, every
+entry with a reason, a source and a date: `data/revana/curation.json` (which video models are the
+lipsync and avatar views; the routes not addressed) and `data/revana/overlays.json` (the fields
+each speech model takes, and which models take `negative_prompt`).
+
+**Model-level rules are errors; route-level ones are not.** Revana's API states two kinds of
+refusal, and words them differently: a fact about the model (`veo-3.1 takes no input.resolution`)
+and a fact about that day's routes (`No route for <id> can take this input (…)`). unmodel
+encodes the first and leaves the second alone — a route fact changes when a route is added, and
+a validator that refuses what the API then fulfils is the one failure this library must not
+have. The single route fact reported at all is `negative_prompt`, a documented field that all
+but two models' routes refuse, as a **warning**. Verified against the free quote endpoint for
+every model: 5,167 bodies, none refused by unmodel and accepted by the API.
+
+**The estimate is the listed price — a lower bound.** Revana charges the route that succeeds,
+and a backup route can cost more; what it adds is stated two ways on Revana's own pages, so no
+worst case is computed. `revanaCostUSD` answers the catalog's listed rate, and only when the
+request states what it is priced by (Revana publishes no default resolution, duration or audio).
+`REVANA_PRICING_CAVEAT` is the sentence to show beside it; `POST /v1/generations/quote` is the
+exact answer. Language models carry their base token rates, and `revana.checkChat` reports the
+charge the response itself states (`usage.cost_usd`).
+
+**What is not here, and why.**
+
+- `revana.chat` is **not** an `unmodel/chat` ref and has no `.toApi`. Both are derived from
+  models.dev, which does not carry Revana. It is reachable by name, wire-exact.
+- Revana publishes no per-model capability flags for language models, so the generated chat rows
+  state the endpoint's envelope (text and image in, function tools) rather than a per-model claim.
+- `POST /v1/queue/revana/{model_id}` — a fal-shaped second spelling of the same jobs — and the
+  undocumented `/v1/videos` are declined by name in `data/revana/curation.json`.
+- No response checker for generations: the POST answers a queued job, and the finished
+  `Generation` carries its own verdict and its own exact charge.
+
+Revana resells weights unmodel already reaches natively — `veo-3.1` is also `google.video`,
+`seedance-2.5` also `bytedance.video`, `elevenlabs-v3` also `elevenlabs.tts` — through a
+different body each time, and nothing is normalised between them (§1).
 
 ## LLM creators without a public API today (catalog-only or excluded)
 

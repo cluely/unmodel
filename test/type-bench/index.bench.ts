@@ -24,6 +24,7 @@ import { getProviderTyped } from "../../src/catalog/typed.gen";
 import { tts } from "../../src/unified/tts";
 import { image as falImage } from "../../src/providers/fal/image";
 import { video as klingVideo } from "../../src/providers/kling";
+import { video as revanaVideo } from "../../src/providers/revana/video";
 
 bench("chat: one unified call", () => {
   return chat.safe({
@@ -76,3 +77,29 @@ bench("media retarget: a native call carrying .toApi", () => {
     mode: "pro",
   });
 }).types([628, "instantiations"]);
+
+/**
+ * Revana: one `{ model, input }` call, typed from the model's own catalog row.
+ *
+ * Pinned because this is the surface with a known cliff. The request type is a
+ * conditional over 138 generated shape rows, and resolving it against the id
+ * UNION instead of the one id the call names makes TypeScript give up outright
+ * ("union type that is too complex to represent") — which is why
+ * `GenerationValidator` infers the id from `model` alone before it computes
+ * anything. A second inferred type parameter on that signature, or a helper
+ * that distributes over the ids, shows up here first.
+ *
+ * The number is high for a native call (fal's generated interfaces cost 472)
+ * and that is the price of typing from `typeof` tables instead of emitting an
+ * interface per model. Two spellings that look cheaper were measured at
+ * landing and are not: looking each id up in its own kind's table rather than
+ * in the intersection of the four (+10%), and a non-distributive request type
+ * (+44%). Emitting per-model interfaces from the generator is the lever left,
+ * if this ever needs to come down.
+ */
+bench("revana: a video call narrowed by its model's row", () => {
+  return revanaVideo.safe({
+    model: "veo-3.1",
+    input: { prompt: "a fox", resolution: "1080p", duration: 8, audio: true },
+  });
+}).types([21133, "instantiations"]);

@@ -690,8 +690,13 @@ describe("availability — real snapshot invariants", () => {
       if (hasDedicatedChat || usesFleetFactory) withChatValidator.push(entry.name);
     }
     // cohere's chat body is a fifth wire dialect with no translator in v1, so
-    // it is deliberately out of the availability scope.
-    const expected = withChatValidator.filter((id) => id !== "cohere").sort();
+    // it is deliberately out of the availability scope. revana is out for a
+    // different reason: availability is derived from models.dev, which does
+    // not carry it — its catalog is generated from Revana's own model list —
+    // so there is no cross-provider data to scope and `revana.chat` has no
+    // `.toApi`.
+    const outOfScope = ["cohere", "revana"];
+    const expected = withChatValidator.filter((id) => !outOfScope.includes(id)).sort();
     expect([...(REAL_OVERRIDES.providers as string[])].sort()).toEqual(expected);
   });
 

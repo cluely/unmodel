@@ -222,6 +222,31 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * 80 is 72.2 × 1.1, the same multiple as every row above.
    */
   atlascloud: 80,
+  /**
+   * `unmodel/revana` — 312.5 KiB measured at landing (macOS; an entry's
+   * transitive bytes, which has matched the Linux figure on every row above —
+   * re-pin from CI's number if it does not here).
+   *
+   * Large for one provider, and the reason is that it is one provider serving
+   * 237 models: every byte past the shared engine and the OpenAI-compatible
+   * chat validator is GENERATED data from Revana's own catalog —
+   *
+   * | what | roughly |
+   * |---|---|
+   * | five catalog slices (99 chat rows, 74 video, 59 image, 4 speech, 1 music) | 75 KiB |
+   * | four shape tables (what each model takes) | 35 KiB |
+   * | four listed-price tables | 15 KiB |
+   * | the voices, with names and descriptions | 6 KiB |
+   * | the check battery, the wire schema, the id lists, eight addresses | 50 KiB |
+   *
+   * — and all of it is here because this is the barrel. A caller who wants one
+   * address pays for one: each validator imports only its own slice, which is
+   * what the per-address split in `scripts/codegen-revana.ts` is for.
+   *
+   * It grows with Revana's roster, by design: the weekly refresh adds rows.
+   * 345 is 312.5 × 1.1, the same multiple as every row above.
+   */
+  revana: 345,
 
   /**
    * The six entries that carry the **media retarget seam** — `.toApi("fal")`.

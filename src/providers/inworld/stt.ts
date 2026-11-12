@@ -50,6 +50,8 @@ export const STT_TRANSCRIBE_URL = "https://api.inworld.ai/stt/v1/transcribe";
 export const TRANSCRIBE_DOCS =
   "https://docs.inworld.ai/api-reference/sttAPI/speechtotext/transcribe";
 export const STT_OVERVIEW_DOCS = "https://docs.inworld.ai/stt/overview";
+/** The routed-model roster, per-model endpoint table and vendor config blocks. */
+export const STT_THIRD_PARTY_DOCS = "https://docs.inworld.ai/stt/third-party";
 
 /**
  * "Sync transcription accepts audio files up to ~16 MB. The actual duration

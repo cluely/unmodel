@@ -6,9 +6,9 @@ import {
   TTS_STREAM_WS_URL,
   TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD,
 } from "./realtime";
-import { INWORLD_STT_AUDIO_ENCODINGS, INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS } from "./stt";
+import { stt, INWORLD_STT_AUDIO_ENCODINGS, INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS } from "./stt";
 import { INWORLD_SAMPLE_RATES_HERTZ } from "./tts";
-import { STT_STREAM_MODEL_IDS, STT_SYNC_MODEL_IDS } from "./models";
+import { sttModels, STT_STREAM_MODEL_IDS, STT_SYNC_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -154,6 +154,44 @@ describe("inworld.realtimeTranscribeConfig surface gates", () => {
         expect(r.errors[0]?.message).toContain("sync endpoint");
       }
     }
+  });
+
+  test("assemblyai/universal-3-5-pro is a catalogued, WebSocket-only, unpriced route", () => {
+    const r = realtimeTranscribeConfig.safe({
+      modelId: "assemblyai/universal-3-5-pro",
+      audioEncoding: "LINEAR16",
+      includeWordTimestamps: true,
+      enableSpeakerDiarization: true,
+      assemblyaiConfig: { maxTurnSilence: 1200, vadThreshold: 0.4 },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+    expect(sttModels["assemblyai/universal-3-5-pro"].family).toBe("assemblyai");
+    // The third-party per-hour column's tier is unstated — no cost, no estimate.
+    expect("cost" in sttModels["assemblyai/universal-3-5-pro"]).toBe(false);
+
+    const sync = stt.safe({
+      transcribeConfig: { modelId: "assemblyai/universal-3-5-pro", audioEncoding: "LINEAR16" },
+      audioData: { content: "AAAA" },
+    });
+    expect(sync.ok).toBe(false);
+    if (!sync.ok) expect(sync.errors[0]?.code).toBe("unsupported_capability");
+  });
+
+  test("a non-LINEAR16 encoding on the AssemblyAI / Soniox routes warns", () => {
+    for (const modelId of ["assemblyai/universal-3-5-pro", "soniox/stt-rt-v4"]) {
+      const r = realtimeTranscribeConfig.safe({ modelId, audioEncoding: "AUTO_DETECT" });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const warning = r.warnings.find((w) => w.path.join(".") === "audioEncoding");
+        expect(warning?.code).toBe("invalid_enum_value");
+        expect(warning?.meta?.expected).toBe("LINEAR16");
+      }
+    }
+    // inworld-stt-1 is not under that vendor note.
+    const own = realtimeTranscribeConfig.safe({ modelId: "inworld/inworld-stt-1", audioEncoding: "AUTO_DETECT" });
+    expect(own.ok).toBe(true);
+    if (own.ok) expect(own.warnings).toEqual([]);
   });
 
   test("every streaming model passes the availability gate", () => {

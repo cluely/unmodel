@@ -169,8 +169,13 @@ const sttModels = {
     ...STT,
     cost: { perAudioMinute: STT_1_USD_PER_MINUTE },
   },
-  // Routed vendors below. No Inworld-published USD list rate, so no `cost`:
-  // an estimate would be a guess at someone else's margin.
+  // Routed vendors below, all without `cost`. docs.inworld.ai/stt/third-party
+  // (2026-11-12) prints a per-hour row — "| Pricing (per hour) | [$0.10/hr]
+  // (https://inworld.ai/pricing) | $0.111/hr | $0.21/hr | $0.45/hr | $0.12/hr
+  // | $0.12/hr |" — but its inworld-stt-1 cell is $0.10/hr, which
+  // inworld.ai/pricing shows as a committed-plan rate ("STT 1 $0.15
+  // $0.10/hr"; On-Demand is $0.15/hr). The column's tier is unstated, so its
+  // figures cannot be read as On-Demand list prices.
   //
   // Groq — "100+ languages, recorded audio"; SYNC ONLY.
   "groq/whisper-large-v3": {
@@ -189,6 +194,17 @@ const sttModels = {
   "assemblyai/universal-streaming-english": {
     id: "assemblyai/universal-streaming-english",
     name: "Universal Streaming English (via AssemblyAI)",
+    family: "assemblyai",
+    ...STT,
+  },
+  // docs.inworld.ai/stt/third-party (2026-11-12): "| **Feature** |
+  // **inworld/inworld-stt-1** | **groq/whisper-large-v3** |
+  // **assemblyai/universal-3-5-pro** | …", "| Endpoint | Sync API +
+  // WebSocket | Sync API only | WebSocket only | …" and "| Languages | 30 … |
+  // 100+ (Whisper) | 18 languages | …". Cost omitted — see above.
+  "assemblyai/universal-3-5-pro": {
+    id: "assemblyai/universal-3-5-pro",
+    name: "Universal-3.5 Pro (via AssemblyAI)",
     family: "assemblyai",
     ...STT,
   },
@@ -314,6 +330,7 @@ export const STT_STREAM_MODEL_IDS = [
   "inworld/inworld-stt-1",
   "assemblyai/universal-streaming-multilingual",
   "assemblyai/universal-streaming-english",
+  "assemblyai/universal-3-5-pro",
   "assemblyai/u3-rt-pro",
   "assemblyai/whisper-rt",
   "soniox/stt-rt-v4",

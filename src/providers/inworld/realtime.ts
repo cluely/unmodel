@@ -56,8 +56,10 @@ import {
   checkTranscribeConfig,
   streamOnlyConfigShape,
   transcribeConfigShape,
+  sttVendorOf,
   INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS,
   STT_OVERVIEW_DOCS,
+  STT_THIRD_PARTY_DOCS,
   type InworldRealtimeTranscribeConfig,
 } from "./stt";
 import {
@@ -121,7 +123,10 @@ function checkStreamEncoding(
 ): void {
   const encoding = params.audioEncoding;
   const unsupported: readonly string[] = INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS;
-  if (!unsupported.includes(encoding)) return;
+  if (!unsupported.includes(encoding)) {
+    checkLinear16Route(params, ctx);
+    return;
+  }
   ctx.report({
     code: "invalid_enum_value",
     path: ["audioEncoding"],
@@ -132,6 +137,30 @@ function checkStreamEncoding(
       unsupported: [...INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS],
       source: STT_OVERVIEW_DOCS,
     },
+  });
+}
+
+/** Routed vendors whose STT_THIRD_PARTY_DOCS block says "audio must be `LINEAR16`". */
+const LINEAR16_ONLY_VENDORS: readonly string[] = ["assemblyai", "soniox"];
+
+/**
+ * The AssemblyAI and Soniox blocks of STT_THIRD_PARTY_DOCS each say
+ * "WebSocket streaming only; audio must be `LINEAR16`", while the WebSocket
+ * reference lists `AUTO_DETECT` (and the zero value) for every model without
+ * a per-vendor note. A warning, not an error: the two pages disagree, and
+ * the request may well be served.
+ */
+function checkLinear16Route(params: InworldRealtimeTranscribeConfig, ctx: PipelineContext): void {
+  const vendor = sttVendorOf(params.modelId);
+  if (vendor === undefined || !LINEAR16_ONLY_VENDORS.includes(vendor)) return;
+  if (params.audioEncoding === "LINEAR16") return;
+  ctx.report({
+    code: "invalid_enum_value",
+    severity: "warning",
+    path: ["audioEncoding"],
+    model: params.modelId,
+    message: `\`audioEncoding: "${params.audioEncoding}"\` on "${params.modelId}": Inworld documents the ${vendor} routes as "audio must be \`LINEAR16\`"; stream LINEAR16 and set \`sampleRateHertz\` to the audio's rate.`,
+    meta: { value: params.audioEncoding, expected: "LINEAR16", vendor, source: STT_THIRD_PARTY_DOCS },
   });
 }
 

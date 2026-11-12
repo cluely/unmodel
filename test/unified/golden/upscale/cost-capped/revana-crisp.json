@@ -1,0 +1,14 @@
+{
+  "ref": "revana/recraft-crisp-upscale",
+  "params": {
+    "model": "recraft-crisp-upscale",
+    "input": {
+      "image_url": "https://example.com/portrait.png"
+    },
+    "max_cost_usd": 0.05
+  },
+  "url": "https://api.revana.si/v1/generations",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

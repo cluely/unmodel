@@ -1227,11 +1227,27 @@ const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
  * transcription is the entire reason to have a native Topaz provider rather
  * than only fal's resale of three of its endpoints, so the kilobytes are the
  * feature.
+ *
+ * **Bumped 375 → 505 by revana**, measured 458.2 KiB (macOS), up from 368.8,
+ * of which the new provider is 86.8 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks. That is a great
+ * deal for ONE model, and the reason is a property of Revana's wire layer
+ * rather than of this adapter (2.0 KiB) or its one unified row (0.6):
+ * `revana.upscale` is a narrower VIEW of `revana.image` over the one route
+ * Revana serves every media model from (decisions.md §4), so it carries the
+ * check battery every address shares (`checks.ts`, 27.1) and the WHOLE picture
+ * slice — 59 catalog rows (15.1), their shape rows (12.4) and listed prices
+ * (5.5) — plus the id lists (6.5) and 17.6 of estimate, schema, route and
+ * shared derivations.
+ *
+ * The same shape recurs at every one-model revana pack (`lipsync`, `music`),
+ * and it is the number that would move if a view carried only its own rows.
+ * 505 is the measurement x 1.1.
  */
-const UPSCALE_PACK_BUDGET_KIB = 375;
+const UPSCALE_PACK_BUDGET_KIB = 505;
 
-/** The two providers `unmodel/upscale`'s ready-made pack is allowed to reach. */
-const UPSCALE_PACK_PROVIDERS: string[] = ["fal", "topaz"];
+/** The three providers `unmodel/upscale`'s ready-made pack is allowed to reach. */
+const UPSCALE_PACK_PROVIDERS: string[] = ["fal", "revana", "topaz"];
 
 /**
  * `unmodel/3d`'s budget: the first of the 2026 categories with TWO providers in
@@ -2744,6 +2760,18 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
  * changing a line in `src/unified/lipsync.ts`.
  */
 describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the packs with native halves)", () => {
+  /** The eight categories revana has an adapter leaf for. */
+  const REVANA_UNIFIED_CATEGORIES = [
+    "video",
+    "image",
+    "image-edit",
+    "upscale",
+    "lipsync",
+    "avatar",
+    "tts",
+    "music",
+  ];
+
   const CASES: Array<{
     name: string;
     providers: string[];
@@ -2845,6 +2873,21 @@ describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the packs with na
       expect(modules).not.toContain(`src/providers/${native.provider}/unified-${native.twin}.ts`);
       expect(modules).not.toContain(`src/providers/${native.provider}/${native.twin}.ts`);
       expect(modules).not.toContain(`src/providers/${native.provider}/${native.twin}-params.ts`);
+    }
+    // revana, where it is in the pack: eight categories from ONE route, so
+    // the split is the leaf, the view it ends in and that view's own generated
+    // rows — never the barrel, the merged catalog, or another category's leaf.
+    if (kase.providers.includes("revana")) {
+      expect(modules).toContain(`src/providers/revana/unified-${kase.name}.ts`);
+      expect(modules).toContain(`src/providers/revana/${kase.name}.ts`);
+      expect(modules).toContain(`src/providers/revana/gen/${kase.name}-params.gen.ts`);
+      expect(modules).not.toContain("src/providers/revana/unified.ts");
+      expect(modules).not.toContain("src/providers/revana/models.ts");
+      for (const category of REVANA_UNIFIED_CATEGORIES) {
+        if (category === kase.name) continue;
+        expect(modules).not.toContain(`src/providers/revana/unified-${category}.ts`);
+        expect(modules).not.toContain(`src/providers/revana/gen/${category}-params.gen.ts`);
+      }
     }
     if (kase.name === "upscale") {
       // Topaz serves one category, so `unified.ts` IS its adapter leaf — the

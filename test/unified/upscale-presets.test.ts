@@ -20,6 +20,7 @@
 import { describe, expect, test } from "bun:test";
 import { upscale } from "../../src/unified/upscale";
 import { upscale as fal } from "../../src/providers/fal/unified-upscale";
+import { upscale as revana } from "../../src/providers/revana/unified-upscale";
 import { upscale as topaz } from "../../src/providers/topaz/unified";
 import { TOPAZ_ENHANCE_GEN_MODELS } from "../../src/providers/topaz/shared";
 import { FAL_REQUIRED_PROBES } from "../../src/providers/fal/gen/endpoints.gen";
@@ -31,7 +32,8 @@ const INLINE_CLIP = { data: "AAECAwQF", mimeType: "video/mp4" } as const;
 
 const falRefs = fal.models.map((id) => `fal/${id}`);
 const topazRefs = topaz.models.map((id) => `topaz/${id}`);
-const refs = [...falRefs, ...topazRefs];
+const revanaRefs = revana.models.map((id) => `revana/${id}`);
+const refs = [...falRefs, ...topazRefs, ...revanaRefs];
 
 /** The bare model id a ref points at, and the provider it names. */
 const bare = (ref: string): string => ref.slice(ref.indexOf("/") + 1);
@@ -44,7 +46,7 @@ const providerOf = (ref: string): string => ref.slice(0, ref.indexOf("/"));
  * of it — but this sweep walks the roster at run time, so it needs the string
  * index the literal table deliberately does not have.
  */
-const ROWS = { ...fal.modelParams, ...topaz.modelParams } as Readonly<
+const ROWS = { ...fal.modelParams, ...topaz.modelParams, ...revana.modelParams } as Readonly<
   Record<
     string,
     {
@@ -61,7 +63,8 @@ const ROWS = { ...fal.modelParams, ...topaz.modelParams } as Readonly<
 test("the sweep covers the whole roster", () => {
   expect(falRefs).toHaveLength(11);
   expect(topazRefs).toHaveLength(15);
-  expect(refs).toHaveLength(26);
+  expect(revanaRefs).toHaveLength(1);
+  expect(refs).toHaveLength(27);
 });
 
 /**
@@ -108,7 +111,9 @@ describe.each(refs)("%s", (ref) => {
   test(
     provider === "fal"
       ? "compiles from inline bytes, with no warnings"
-      : "refuses inline bytes by name, naming the multipart field that takes them",
+      : provider === "revana"
+        ? "refuses inline bytes by name — it fetches every reference"
+        : "refuses inline bytes by name, naming the multipart field that takes them",
     () => {
       const result = upscale.safe({
         model: ref,
@@ -186,10 +191,13 @@ describe.each(refs)("%s", (ref) => {
     // and at Topaz it is a fact about which of the two ROUTES the model is on:
     // the nine generative models steer on a prompt and the six classic ones
     // have no field for it. Both read off data rather than transcribed here.
+    // At Revana it is a field of the one body every model shares, which
+    // `revana.upscale` accepts on every id — so it is sent there, always.
     const declared =
       provider === "fal"
         ? row?.textWire !== undefined
-        : (TOPAZ_ENHANCE_GEN_MODELS as readonly string[]).includes(id);
+        : provider === "revana" ||
+          (TOPAZ_ENHANCE_GEN_MODELS as readonly string[]).includes(id);
     const result = upscale.safe({
       model: ref,
       source: video ? CLIP : STILL,
@@ -216,10 +224,11 @@ test("the roster splits both ways, which is what the two narrowings are for", ()
   expect(factors.filter((list) => list === undefined).length).toBeGreaterThan(0);
   // …a closed SET at exactly one (`fal-ai/aura-sr`, whose only legal value is 4)…
   expect(factors.filter((list) => (list?.length ?? 0) > 0).length).toBe(1);
-  // …and NOTHING at sixteen: `fal-ai/recraft/upscale/crisp`, which picks its own
-  // output size, plus all fifteen Topaz models, which take an absolute one. Two
-  // different reasons to have no multiplier, and the adapters' messages say
+  // …and NOTHING at seventeen: `fal-ai/recraft/upscale/crisp`, which picks its
+  // own output size, all fifteen Topaz models, which take an absolute one, and
+  // Revana's one upscaler, whose request has no field that sizes the result.
+  // Different reasons to have no multiplier, and the adapters' messages say
   // which is which.
-  expect(factors.filter((list) => list?.length === 0).length).toBe(16);
+  expect(factors.filter((list) => list?.length === 0).length).toBe(17);
   expect(topazRefs.every((ref) => ROWS[bare(ref)]?.factors?.length === 0)).toBe(true);
 });

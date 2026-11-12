@@ -14,6 +14,14 @@
  * Same four assertions as every other golden tree otherwise: the body is exact,
  * the transport is exact, a non-`lossy-` case compiles with zero warnings, and
  * a `lossy-` case would commit every warning it produced.
+ *
+ * `cost-capped` is the one case whose canonical request carries a
+ * `providerOptions` block, and it names one provider because it is about that
+ * provider's wire: Revana's body is `{ model, input }` with the request's own
+ * dials (`max_cost_usd`) BESIDE `input` rather than inside it, and the escape
+ * hatch has to reach that outer level. It is also Revana's second case for a
+ * plainer reason — its one upscaler takes a source and nothing the other five
+ * cases add (no multiplier, no inline bytes).
  */
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
@@ -113,6 +121,14 @@ describe.each(caseDirs)("golden upscale/%s", (name) => {
         return;
       }
       const model = fixture.ref.slice(fixture.ref.indexOf("/") + 1);
+      if (fixture.ref.startsWith("revana/")) {
+        // Revana has ONE url for every media model, so nothing is chosen from
+        // the model at all: `model` is a real body field and the body is JSON.
+        expect(fixture.params["model"]).toBe(model);
+        expect(fixture.url).toBe("https://api.revana.si/v1/generations");
+        expect(fixture.headers).toEqual({ "content-type": "application/json" });
+        return;
+      }
       expect(fixture.params["model"]).toBe(model);
       expect(fixture.url).toMatch(/^https:\/\/api\.topazlabs\.com\/image\/v1\/enhance(-gen)?\/async$/);
       // Topaz's submit paths declare only `multipart/form-data`, so the headers

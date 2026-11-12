@@ -9,6 +9,7 @@ import { TRANSCRIPTION_MAX_FILE_BYTES } from "./constraints";
 import { transcriptionModels } from "./audio-models";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
+import type { ModelInfo } from "../../core/catalog-types";
 
 // Bypasses the Tier-A compile-time surface so runtime enforcement of
 // type-blocked params can be exercised.
@@ -71,6 +72,18 @@ describe("openai.stt per-model rules", () => {
       response_format: "verbose_json",
       timestamp_granularities: ["word", "segment"],
     });
+    expect(r.ok).toBe(true);
+    // The one warning is the row's own deprecation, not the params.
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+  });
+
+  test("the GPT-4o and Whisper rows are deprecated (removal 2027-02-26); gpt-transcribe is not", () => {
+    // "On August 26, 2026, we notified developers using `whisper-1`,
+    // `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`" — deprecations page, 2026-11-12.
+    for (const [id, info] of Object.entries<ModelInfo>(transcriptionModels)) {
+      expect(info.status, id).toBe(id === "gpt-transcribe" ? undefined : "deprecated");
+    }
+    const r = stt.safe({ model: "gpt-transcribe", file: audio() });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
   });

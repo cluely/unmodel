@@ -132,34 +132,15 @@ describe("openai.image happy path", () => {
     }
   });
 
-  test("chatgpt-image-latest is rejected on generations (it is an edits-only model)", () => {
-    // It IS in the shared images catalog (edits documents it), so unknown_model
-    // cannot fire — the endpoint gate has to report it.
-    expect(imagesModels["chatgpt-image-latest"]).toBeDefined();
-    const r = safeUnchecked({
-      model: "chatgpt-image-latest",
-      prompt: "hi",
-      size: "9999x1",
-      style: "vivid",
-      response_format: "url",
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "unsupported_capability");
-      expect(issue?.path).toEqual(["model"]);
-      expect(issue?.message).toContain("/v1/images/generations");
-      expect(String(issue?.meta?.source)).toContain("images/create");
-      expect(r.warnings.map((w) => w.code)).not.toContain("unknown_model");
-    }
-  });
-
-  test("the generations models the create reference lists are not gated", () => {
-    for (const model of ["dall-e-2", "gpt-image-1.5", "gpt-image-2"]) {
-      const r = safeUnchecked({ model, prompt: "hi" });
-      expect(
-        r.ok ? [] : r.errors.filter((e) => e.code === "unsupported_capability"),
-      ).toEqual([]);
-    }
+  test("chatgpt-image-latest is a documented generations model with the GPT Image 1 surface", () => {
+    // The create reference's model list ends "…and `chatgpt-image-latest`."
+    // (2026-11-12); the id is deprecated upstream, so that is the one warning.
+    const r = image.safe({ model: "chatgpt-image-latest", prompt: "hi", size: "1024x1536", quality: "high" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+    const oversize = safeUnchecked({ model: "chatgpt-image-latest", prompt: "hi", size: "1536x864" });
+    expect(oversize.ok).toBe(false);
+    if (!oversize.ok) expect(oversize.errors[0]?.code).toBe("invalid_enum_value");
   });
 
   test("deprecated gpt-image-1.5 warns", () => {

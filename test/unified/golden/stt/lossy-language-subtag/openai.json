@@ -28,5 +28,6 @@
         "source": "https://developers.openai.com/api/docs/api-reference/audio/createTranscription"
       }
     }
-  ]
+  ],
+  "issues": [{ "code": "deprecated_model", "path": ["model"] }]
 }

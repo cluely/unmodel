@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { createValidator, type PipelineContext } from "../../core/pipeline";
-import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
+import { createValidator } from "../../core/pipeline";
+import type { FutureModelId } from "../../core/catalog-types";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -78,21 +78,16 @@ export interface GptImage15Body extends GptImageBaseBody {
   model: "gpt-image-1.5";
 }
 
-// NOTE: chatgpt-image-latest deliberately has no Tier-A arm here: the
-// documented generations model list is "One of `dall-e-2`, `dall-e-3`, or a
-// GPT image model (`gpt-image-1`, `gpt-image-1-mini`, `gpt-image-1.5`,
-// `gpt-image-2`, or `gpt-image-2-2026-04-21`)" — chatgpt-image-latest appears
-// only on /v1/images/edits (see image-edit.ts). At the type level it falls
-// into the escape-hatch arm, but the catalog is shared with the edits
-// endpoint, where the id IS documented, so no `unknown_model` warning can
-// fire for it. checkEditsOnlyModel below is what makes the restriction
-// visible at runtime.
-//
-// NOTE: the create reference's `model` enum widget currently lists only
-// dall-e-2/dall-e-3/gpt-image-1/gpt-image-1-mini/gpt-image-1.5, but the SAME
-// page's `size` text documents `gpt-image-2` and `gpt-image-2-2026-04-21`
-// behavior, and the image-generation guide calls gpt-image-2 the current
-// generation model. The gpt-image-2 arms therefore stay (checked 2026-08-13).
+/**
+ * The create reference's model list (2026-11-12) is `gpt-image-1-mini`,
+ * `gpt-image-1.5`, `gpt-image-2`, `gpt-image-2-2026-04-21`, the four
+ * GPT-Image-2.5 ids, `gpt-image-2.6-sunburst`, `gpt-image-2.6-flare` "and
+ * `chatgpt-image-latest`" — so this id is a generations model with the GPT
+ * Image 1 surface, exactly as on edits.
+ */
+export interface ChatgptImageLatestBody extends GptImageBaseBody {
+  model: "chatgpt-image-latest";
+}
 
 export interface GptImage2Body extends Omit<GptImageBaseBody, "size"> {
   model: "gpt-image-2";
@@ -236,6 +231,7 @@ export interface UnknownImageModelBody<Model extends string> {
 export type ImagesBody<FutureModel extends string = never> =
   | GptImage1MiniBody
   | GptImage15Body
+  | ChatgptImageLatestBody
   | GptImage2Body
   | GptImage2SnapshotBody
   | GptImage25SunburstBody
@@ -251,6 +247,7 @@ export type ImagesBody<FutureModel extends string = never> =
 export interface ImagesBodyByModel {
   "gpt-image-1-mini": GptImage1MiniBody;
   "gpt-image-1.5": GptImage15Body;
+  "chatgpt-image-latest": ChatgptImageLatestBody;
   "gpt-image-2": GptImage2Body;
   "gpt-image-2-2026-04-21": GptImage2SnapshotBody;
   "gpt-image-2.5-sunburst": GptImage25SunburstBody;
@@ -276,13 +273,11 @@ type ImagesModelInput = keyof ImagesBodyByModel | (string & {});
 // Schema — the loose union of every param any model accepts; per-model
 // narrowing happens in constraints.ts (runtime) and the Tier-A arms (types).
 //
-// `model` is REQUIRED by unmodel even though the wire defaults it ("Defaults
-// to `dall-e-2` unless a parameter specific to the GPT image models is used"
-// — images/create): every per-model check here (prompt caps, size enums,
-// deny rules, the edits-only gate) keys on the model id, and silently
-// validating a request against dall-e-2 that OpenAI may route to a GPT image
-// model would be worse than asking for the id. Documented deviation, same
-// policy as cartesia.tts.
+// `model` is REQUIRED by unmodel, as the create reference itself now asks
+// ("Specify a model explicitly.", 2026-11-12): every per-model check here
+// (prompt caps, size enums, deny rules) keys on the model id, and validating
+// a model-less request against a guessed default would be worse than asking
+// for the id. Same policy as cartesia.tts.
 // ---------------------------------------------------------------------------
 
 const imageSchema = z.looseObject({
@@ -315,42 +310,6 @@ const imageSchema = z.looseObject({
   safety_identifier: z.string().max(128).nullable().optional(),
 });
 
-const IMAGES_CREATE_DOCS = "https://developers.openai.com/api/docs/api-reference/images/create";
-
-/**
- * Model ids the images catalog carries because /v1/images/edits documents
- * them, but which the create reference's `model` list does not name. They
- * cannot warn as `unknown_model` (the catalog is shared with the edits
- * endpoint), so the endpoint restriction is reported here instead.
- */
-const EDITS_ONLY_MODEL_IDS: ReadonlySet<string> = new Set(["chatgpt-image-latest"]);
-
-/** The create reference's `model` list, verbatim. */
-const GENERATIONS_MODEL_IDS = [
-  "dall-e-2",
-  "dall-e-3",
-  "gpt-image-1-mini",
-  "gpt-image-1.5",
-  "gpt-image-2",
-  "gpt-image-2-2026-04-21",
-] as const;
-
-function checkEditsOnlyModel(
-  params: AnyImagesBody,
-  _info: ModelInfo | undefined,
-  ctx: PipelineContext,
-): void {
-  const model = params.model;
-  if (typeof model !== "string" || !EDITS_ONLY_MODEL_IDS.has(model)) return;
-  ctx.report({
-    code: "unsupported_capability",
-    path: ["model"],
-    model,
-    message: `"${model}" is not a documented model for POST /v1/images/generations — the create reference lists ${GENERATIONS_MODEL_IDS.join(", ")}, and names "${model}" only under /v1/images/edits. Use \`imageEdit\` from "unmodel/openai" for it, or pick a generations model.`,
-    meta: { source: IMAGES_CREATE_DOCS, allowed: [...GENERATIONS_MODEL_IDS] },
-  });
-}
-
 /**
  * The one `.toSdk("openai")` target for this endpoint — the official
  * `openai` SDK's params are wire-shaped. Derived from the `sdk` literal in
@@ -377,7 +336,6 @@ const validator = createValidator<AnyImagesBody, unknown>({
   catalog: imagesModels,
   constraints: imageConstraints,
   checks: [
-    checkEditsOnlyModel,
     checkGptImage2Size,
     checkTransparentOutputFormat,
     checkGifAndSvgOutput,

@@ -82,6 +82,7 @@ export type {
   ImagesBody,
   GptImage1MiniBody,
   GptImage15Body,
+  ChatgptImageLatestBody,
   GptImage2Body,
   GptImage2Size,
   GptImage2SnapshotBody,

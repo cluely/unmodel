@@ -278,21 +278,40 @@ describe("unmodel/image-edit carries the same contract", () => {
     expect(result.params).toMatchObject({ background: "transparent", input_fidelity: "high" });
   });
 
-  test("`input_fidelity` is refused on the two models that reject it", () => {
-    for (const ref of ["openai/gpt-image-1-mini", "openai/gpt-image-2"]) {
-      const result = imageEdit.safe({
-        operation: "edit",
-        model: ref,
-        prompt: PROMPT,
-        image: { file: file() },
-        input_fidelity: "high",
-      } as never);
-      expect(result.ok, ref).toBe(false);
-      if (result.ok) continue;
-      expect(result.errors[0], ref).toMatchObject({
-        code: "unsupported_param",
-        path: ["input_fidelity"],
-      });
+  test("`input_fidelity` is refused on gpt-image-2 and narrowed to low on gpt-image-1-mini", () => {
+    // gpt-image-2 "processes every image input at high fidelity automatically"
+    // and rejects the param; gpt-image-1-mini "supports only `low`"
+    // (createEdit reference, 2026-11-12) — a value refusal, not a param one.
+    const fixedHigh = imageEdit.safe({
+      operation: "edit",
+      model: "openai/gpt-image-2",
+      prompt: PROMPT,
+      image: { file: file() },
+      input_fidelity: "high",
+    } as never);
+    expect(fixedHigh.ok).toBe(false);
+    if (!fixedHigh.ok) {
+      expect(fixedHigh.errors[0]).toMatchObject({ code: "unsupported_param", path: ["input_fidelity"] });
+    }
+
+    const miniLow = imageEdit.safe({
+      operation: "edit",
+      model: "openai/gpt-image-1-mini",
+      prompt: PROMPT,
+      image: { file: file() },
+      input_fidelity: "low",
+    } as never);
+    expect(miniLow.ok, miniLow.ok ? "" : JSON.stringify(miniLow.errors)).toBe(true);
+    const miniHigh = imageEdit.safe({
+      operation: "edit",
+      model: "openai/gpt-image-1-mini",
+      prompt: PROMPT,
+      image: { file: file() },
+      input_fidelity: "high",
+    } as never);
+    expect(miniHigh.ok).toBe(false);
+    if (!miniHigh.ok) {
+      expect(miniHigh.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["input_fidelity"] });
     }
   });
 

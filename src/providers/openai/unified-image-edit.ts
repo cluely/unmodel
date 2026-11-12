@@ -17,7 +17,7 @@
  *   not compile. The narrowing is the wire, not an opinion.
  * - **`size` is three vocabularies again**, decided entirely by the model id —
  *   the same split as `./unified-image`, minus `dall-e-3` (which is not an edit
- *   model) and plus `chatgpt-image-latest` (which is edit-only). The tables are
+ *   model). The tables are
  *   restated here rather than imported from the generation adapter, because
  *   importing across the two leaves would undo the split this file exists for;
  *   they are also not the *same* tables — `dall-e-2` accepts three sizes on this

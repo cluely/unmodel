@@ -84,9 +84,10 @@ export interface ChatCompletionsBodyOf<M extends string>
   reasoning_effort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | null;
   safety_identifier?: string | null;
   /**
-   * The chat/create reference documents `auto`, `default`, `flex`, `fast` and
-   * `priority` (checked 2026-08-13); `scale` is kept because the docs never
-   * state it is rejected — absence is not a documented denial.
+   * The chat/create reference and the openai-node SDK both list exactly these
+   * six — `'auto' | 'default' | 'flex' | 'scale' | 'priority' | 'fast'`
+   * (checked 2026-11-12). `ultrafast` is a Responses/Agents-only tier and is
+   * deliberately absent here.
    */
   service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | "fast" | null;
   store?: boolean | null;

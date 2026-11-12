@@ -95,10 +95,10 @@ interface GptImageEditBase {
 export interface GptImage1MiniEditBody extends GptImageEditBase {
   model: "gpt-image-1-mini";
   /**
-   * "This parameter is only supported for `gpt-image-1` and `gpt-image-1.5`
-   * and later models, unsupported for `gpt-image-1-mini`."
+   * "Supports `high` and `low` on `gpt-image-1.5`; `gpt-image-1-mini`
+   * supports only `low`." — createEdit reference, 2026-11-12.
    */
-  input_fidelity?: never;
+  input_fidelity?: "low" | null;
 }
 
 export interface GptImage15EditBody extends GptImageEditBase {
@@ -501,8 +501,8 @@ const validator = createValidator<AnyImageEditBody, unknown>({
 /**
  * Validates params for POST /v1/images/edits. Known models get their exact
  * per-model param surface at compile time (e.g. `input_fidelity` is a compile
- * error for gpt-image-2 and gpt-image-1-mini); unknown models fall back to a
- * loose arm with a runtime unknown_model warning.
+ * error for gpt-image-2, and anything but `low` is one for gpt-image-1-mini);
+ * unknown models fall back to a loose arm with a runtime unknown_model warning.
  *
  * This is a multipart endpoint: the validated output's enumerable props are
  * the validated params (including the image Blobs), and the raw-fetch path is

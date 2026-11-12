@@ -5,7 +5,7 @@
  *
  * Each directory under `golden/tts/` is one request. `canonical.json` holds
  * the words a caller writes; every other file is one provider's answer —
- * `{ ref, voice, params, url, headers, warnings? }`. The voice lives in the
+ * `{ ref, voice, params, url, headers, warnings?, issues? }`. The voice lives in the
  * per-provider file rather than in the canonical one because a voice id is the
  * single canonical field that genuinely cannot be shared: `"marin"` means
  * nothing to Cartesia and `"694f9389-…"` means nothing to OpenAI.
@@ -59,6 +59,8 @@ interface Fixture {
   headers: Record<string, string>;
   /** Required on `lossy-*` cases, forbidden elsewhere. */
   warnings?: ExpectedWarning[];
+  /** Issue-space warnings (`deprecated_model`, …) — a different channel. */
+  issues?: Array<{ code: string; path: Array<string | number> }>;
 }
 
 function readJson<T>(path: string): T {
@@ -123,9 +125,12 @@ describe.each(caseDirs)("golden speech/%s", (name) => {
         .warnings;
       expect(comparable(warnings)).toEqual(comparable(fixture.warnings ?? []));
       if (!lossy) expect(warnings).toEqual([]);
-      // Issue-space warnings (unknown_model and friends) are a separate
-      // channel; a golden request names a real model, so there are none.
-      expect(result.warnings).toEqual([]);
+      // Issue-space warnings are a separate channel with a separate meaning;
+      // pinned, so a provider that starts ignoring a param (or whose row goes
+      // deprecated) cannot do it quietly.
+      expect(
+        result.warnings.map((issue) => ({ code: String(issue.code), path: issue.path })),
+      ).toEqual(fixture.issues ?? []);
     });
   });
 });

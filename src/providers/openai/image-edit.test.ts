@@ -100,15 +100,22 @@ describe("openai.imageEdit per-model rules", () => {
     }
   });
 
-  test("input_fidelity is denied on gpt-image-1-mini", () => {
-    const r = safeUnchecked({
+  test("input_fidelity takes only low on gpt-image-1-mini", () => {
+    // "Supports `high` and `low` on `gpt-image-1.5`; `gpt-image-1-mini`
+    // supports only `low`." — createEdit reference, 2026-11-12.
+    const low = imageEdit.safe({ model: "gpt-image-1-mini", image: png(), prompt: "x", input_fidelity: "low" });
+    expect(low.ok).toBe(true);
+    const high = safeUnchecked({
       model: "gpt-image-1-mini",
       image: png(),
       prompt: "x",
-      input_fidelity: "low",
+      input_fidelity: "high",
     });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.path).toEqual(["input_fidelity"]);
+    expect(high.ok).toBe(false);
+    if (!high.ok) {
+      expect(high.errors[0]?.code).toBe("invalid_enum_value");
+      expect(high.errors[0]?.path).toEqual(["input_fidelity"]);
+    }
   });
 
   test("transparent background passes on gpt-image-2 — preview support, both ids", () => {

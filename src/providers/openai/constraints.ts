@@ -167,6 +167,10 @@ const GPT_IMAGE_26_ENUMS: EndpointConstraints["enums"] = {
 export const imageConstraints = {
   "gpt-image-1-mini": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_ENUMS },
   "gpt-image-1.5": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_ENUMS },
+  // The create reference's model list ends "…`gpt-image-2.6-flare`, and
+  // `chatgpt-image-latest`." (2026-11-12): a generations model with the GPT
+  // Image 1 surface, as on edits.
+  "chatgpt-image-latest": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_ENUMS },
   "gpt-image-2": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_2_ENUMS },
   "gpt-image-2-2026-04-21": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_2_ENUMS },
   "gpt-image-2.5-sunburst": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_25_ENUMS },
@@ -205,12 +209,24 @@ export const imageConstraints = {
 // ---------------------------------------------------------------------------
 
 /**
- * "This parameter is only supported for `gpt-image-1` and `gpt-image-1.5` and
- * later models, unsupported for `gpt-image-1-mini`." — createEdit reference.
+ * `input_fidelity` is a GPT image param; dall-e-2 has none. The createEdit
+ * reference (2026-11-12) scopes it as "Supports `high` and `low` on
+ * `gpt-image-1.5`; `gpt-image-1-mini` supports only `low`." — so
+ * gpt-image-1-mini is narrowed, not denied (see GPT_IMAGE_1_MINI_EDIT_ENUMS).
  */
 const INPUT_FIDELITY_UNSUPPORTED: DenyRule = {
   reason: "`input_fidelity` is not supported by this model",
   source: IMAGES_EDIT_DOCS,
+};
+
+/**
+ * "Supports `high` and `low` on `gpt-image-1.5`; `gpt-image-1-mini` supports
+ * only `low`." / "Defaults to `low` on supported models." — createEdit
+ * reference, read 2026-11-12.
+ */
+const GPT_IMAGE_1_MINI_EDIT_ENUMS: EndpointConstraints["enums"] = {
+  ...GPT_IMAGE_ENUMS,
+  input_fidelity: ["low"],
 };
 
 /**
@@ -281,8 +297,8 @@ const GPT_IMAGE_26_EDIT_ENUMS: EndpointConstraints["enums"] = {
  */
 export const imagesEditConstraints = {
   "gpt-image-1-mini": {
-    deny: { ...GPT_IMAGE_EDIT_DENIES, input_fidelity: INPUT_FIDELITY_UNSUPPORTED },
-    enums: GPT_IMAGE_ENUMS,
+    deny: GPT_IMAGE_EDIT_DENIES,
+    enums: GPT_IMAGE_1_MINI_EDIT_ENUMS,
     media: GPT_IMAGE_EDIT_MEDIA,
   },
   "gpt-image-1.5": { deny: GPT_IMAGE_EDIT_DENIES, enums: GPT_IMAGE_EDIT_ENUMS, media: GPT_IMAGE_EDIT_MEDIA },

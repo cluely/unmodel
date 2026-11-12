@@ -49,6 +49,7 @@ const FREEFORM_SIZE_MODELS: ReadonlySet<string> = new Set([
 const GPT_IMAGE_MODELS: ReadonlySet<string> = new Set([
   "gpt-image-1-mini",
   "gpt-image-1.5",
+  "chatgpt-image-latest",
   "gpt-image-2",
   "gpt-image-2-2026-04-21",
   "gpt-image-2.5-sunburst",

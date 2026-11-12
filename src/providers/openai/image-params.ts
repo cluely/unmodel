@@ -4,10 +4,10 @@
  *
  * A separate module from the two adapters because both routes serve most of
  * the same ids with *different* surfaces — `dall-e-2`'s edit `size` enum has
- * no `"auto"`, `chatgpt-image-latest` exists only on edits, `dall-e-3` only on
- * generations, and `input_fidelity` is an edits-only param that
- * `gpt-image-1-mini` and `gpt-image-2` both refuse — so the two tables want to
- * sit next to each other where the differences are readable.
+ * no `"auto"`, `dall-e-3` exists only on generations, and `input_fidelity` is
+ * an edits-only param that `gpt-image-1-mini` takes at `low` only and
+ * `gpt-image-2` refuses — so the two tables want to sit next to each other
+ * where the differences are readable.
  *
  * Every `size` list here is the value the wire modules already check against
  * (`GPT_IMAGE_2_SIZES` and friends in `./images-shared`), not a copy: the presets an
@@ -97,12 +97,21 @@ const DALL_E_2_EXTRAS = {
 
 /**
  * The edits route adds `input_fidelity`, and it is not universal:
- * gpt-image-1-mini has no such parameter, and gpt-image-2 "processes every
+ * gpt-image-1-mini "supports only `low`", and gpt-image-2 "processes every
  * image input at high fidelity automatically" and rejects it.
  */
 const GPT_IMAGE_EDIT_EXTRAS = {
   ...GPT_IMAGE_EXTRAS,
   input_fidelity: EXTRA as "high" | "low" | null,
+} as const;
+
+/**
+ * "Supports `high` and `low` on `gpt-image-1.5`; `gpt-image-1-mini` supports
+ * only `low`." — createEdit reference, 2026-11-12.
+ */
+const GPT_IMAGE_1_MINI_EDIT_EXTRAS = {
+  ...GPT_IMAGE_EXTRAS,
+  input_fidelity: EXTRA as "low" | null,
 } as const;
 
 /** The 2.5 / 2.6 edit rows keep `input_fidelity`: the createEdit reference narrows it only for the GPT Image 1 family. */
@@ -192,6 +201,11 @@ export const OPENAI_IMAGE_MODEL_PARAMS = {
     tiers: GPT_IMAGE_1_TIERS,
     extras: GPT_IMAGE_EXTRAS,
   },
+  "chatgpt-image-latest": {
+    sizes: GPT_IMAGE_1_SIZE_VALUES,
+    tiers: GPT_IMAGE_1_TIERS,
+    extras: GPT_IMAGE_EXTRAS,
+  },
   "dall-e-3": {
     sizes: DALL_E_3_SIZE_VALUES,
     tiers: GPT_IMAGE_1_TIERS,
@@ -231,7 +245,7 @@ export const OPENAI_IMAGE_EDIT_MODEL_PARAMS = {
   "gpt-image-1-mini": {
     sizes: GPT_IMAGE_1_SIZE_VALUES,
     tiers: GPT_IMAGE_1_TIERS,
-    extras: GPT_IMAGE_EXTRAS,
+    extras: GPT_IMAGE_1_MINI_EDIT_EXTRAS,
   },
   "chatgpt-image-latest": {
     sizes: GPT_IMAGE_1_SIZE_VALUES,
@@ -251,8 +265,8 @@ export const OPENAI_IMAGE_EDIT_MODEL_PARAMS = {
 // Model lists
 //
 // The two routes' ref unions, beside the tables they narrow: the generations
-// route serves dall-e-3 and the edits route serves chatgpt-image-latest, and
-// neither serves the other's, which is the whole reason there are two lists.
+// route serves dall-e-3 and the edits route does not, which is the whole
+// reason there are two lists.
 // ---------------------------------------------------------------------------
 
 /**
@@ -296,14 +310,14 @@ export const IMAGE_MODELS = [
   "gpt-image-2-2026-04-21",
   "gpt-image-1.5",
   "gpt-image-1-mini",
+  "chatgpt-image-latest",
   "dall-e-3",
   "dall-e-2",
 ] as const;
 
 /**
  * Every model `/v1/images/edits` documents — "One of `dall-e-2` or a GPT image
- * model". `dall-e-3` is deliberately absent; `chatgpt-image-latest` is
- * deliberately present, and is edit-only.
+ * model". `dall-e-3` is deliberately absent.
  */
 export const IMAGE_EDIT_MODELS = [
   "gpt-image-2.6-sunburst",

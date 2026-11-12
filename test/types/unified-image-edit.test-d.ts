@@ -324,7 +324,8 @@ function modelNarrowingTests(): void {
 
   // `input_fidelity` is an edits-only extra, and not on every model.
   imageEdit({ ...base, model: "openai/gpt-image-1.5", image: { file }, input_fidelity: "high" });
-  // @ts-expect-error — "unsupported for gpt-image-1-mini".
+  imageEdit({ ...base, model: "openai/gpt-image-1-mini", image: { file }, input_fidelity: "low" });
+  // @ts-expect-error — "`gpt-image-1-mini` supports only `low`".
   imageEdit({ ...base, model: "openai/gpt-image-1-mini", image: { file }, input_fidelity: "high" });
   // @ts-expect-error — gpt-image-2 processes every input at high fidelity.
   imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, input_fidelity: "low" });

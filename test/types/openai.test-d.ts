@@ -527,8 +527,14 @@ function imageEditTypeTests(): void {
   // @ts-expect-error — gpt-image-2 processes inputs at high fidelity; input_fidelity is fixed
   imageEdit({ model: "gpt-image-2", image: file, prompt: "x", input_fidelity: "low" });
 
-  // @ts-expect-error — input_fidelity is unsupported for gpt-image-1-mini
+  // gpt-image-1-mini "supports only `low`" for input_fidelity.
+  imageEdit({ model: "gpt-image-1-mini", image: file, prompt: "x", input_fidelity: "low" });
+  // @ts-expect-error — and therefore not high
   imageEdit({ model: "gpt-image-1-mini", image: file, prompt: "x", input_fidelity: "high" });
+  // chatgpt-image-latest is a generations model too, with the GPT Image 1 enum.
+  image({ model: "chatgpt-image-latest", prompt: "x", size: "1024x1536" });
+  // @ts-expect-error — the GPT Image 1 enum, not gpt-image-2's free-form sizes
+  image({ model: "chatgpt-image-latest", prompt: "x", size: "1536x864" });
 
   imageEdit({ model: "gpt-image-2", image: file, prompt: "x", background: "transparent" });
 

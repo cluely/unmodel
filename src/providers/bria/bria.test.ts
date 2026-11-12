@@ -40,14 +40,14 @@ describe("bria.image", () => {
     expect(Object.keys(v)).toEqual(["prompt", "aspect_ratio", "resolution", "steps_num"]);
   });
 
-  test("prices one image at the published FIBO rate", () => {
+  test("prices one image at the published Fibo rate", () => {
     const r = image.safe({ prompt: "x" });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.03, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.032, 10);
 
     const lite = imageLite.safe({ prompt: "x" });
     expect(lite.ok).toBe(true);
-    if (lite.ok) expect(lite.estimate.costUSD).toBeCloseTo(0.02, 10);
+    if (lite.ok) expect(lite.estimate.costUSD).toBeCloseTo(0.0288, 10);
 
     const budget = image.safe({ prompt: "x" }, { maxCostUSD: 0.02 });
     expect(budget.ok).toBe(false);
@@ -291,7 +291,8 @@ describe("bria.imageEdit", () => {
     expect(v.request.url).toBe(BRIA_IMAGE_EDIT_URL);
     expect(v.request.headers).toEqual({ "content-type": "application/json" });
     const r = imageEdit.safe({ images: ["https://example.com/p.png"], instruction: "x" });
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.03, 10);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.032, 10);
   });
 
   test("images is required and holds 1 to 4 items", () => {
@@ -366,8 +367,8 @@ describe("bria catalog", () => {
     expect(Object.keys(models)).toEqual(["FIBO", "FIBO-lite", "FIBO-edit"]);
     expect(models.FIBO.name).toBe("Fibo 2");
     expect(models["FIBO-edit"].name).toBe("Fibo 2 Edit");
-    expect(models.FIBO.cost.perImage).toBe(0.03);
-    expect(models["FIBO-lite"].cost.perImage).toBe(0.02);
-    expect(models["FIBO-edit"].cost.perImage).toBe(0.03);
+    expect(models.FIBO.cost.perImage).toBe(0.032);
+    expect(models["FIBO-lite"].cost.perImage).toBe(0.0288);
+    expect(models["FIBO-edit"].cost.perImage).toBe(0.032);
   });
 });

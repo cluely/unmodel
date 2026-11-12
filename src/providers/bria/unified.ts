@@ -13,8 +13,8 @@
  *
  * | ref | route | pipeline | per image |
  * |---|---|---|---|
- * | `bria/FIBO` | `/v2/image/generate` | Gemini 2.5 Flash VLM bridge + Fibo 2 | $0.03 |
- * | `bria/FIBO-lite` | `/v2/image/generate/lite` | open-source FIBO-VLM bridge + Fibo Lite | $0.02 |
+ * | `bria/FIBO` | `/v2/image/generate` | Gemini 2.5 Flash VLM bridge + Fibo 2 | $0.032 |
+ * | `bria/FIBO-lite` | `/v2/image/generate/lite` | open-source FIBO-VLM bridge + Fibo Lite | $0.0288 |
  *
  * `"FIBO-lite"` is an unmodel pseudo-id — the lite route's own `model_version`
  * enum is *also* `"FIBO"` — which is exactly why this adapter sends **no**

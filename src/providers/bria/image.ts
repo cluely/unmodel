@@ -446,7 +446,8 @@ const generateLiteValidator = createValidator<ImageGenerateLiteParams, unknown>(
  * speed-optimized Fibo Lite pipeline: open-source FIBO-VLM bridge + Fibo Lite).
  *
  * Same body as `image` minus `resolution`, `style`, `negative_prompt` and
- * `steps_num`, and with nine aspect ratios rather than Fibo 2's 21, at $0.02 instead of $0.03 per image.
+ * `steps_num`, and with nine aspect ratios rather than Fibo 2's 21, at $0.0288
+ * instead of $0.032 per image.
  *
  * ```ts
  * const params = bria.imageLite({ prompt: "a ring on a marble table" });

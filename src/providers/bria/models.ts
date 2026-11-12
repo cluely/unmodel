@@ -1,8 +1,12 @@
 // Hand-maintained — Bria is not in models.dev; refresh from
 //   https://docs.bria.ai/_bundle/image-generation.yaml (OpenAPI for /v2/image/generate[/lite]; ground truth)
 //   https://docs.bria.ai/_bundle/image-editing.yaml    (OpenAPI for /v2/image/edit and the editing routes)
-//   https://docs.bria.ai/image-generation              (rendered generation reference)
-//   https://docs.bria.ai/image-editing                 (rendered editing reference)
+//   https://docs.bria.ai/image-generation.md           (generation reference as Markdown)
+//   https://docs.bria.ai/image-editing.md              (editing reference as Markdown)
+//   (the rendered /image-generation and /image-editing pages are a JS app whose
+//   static HTML carries none of the parameter text; append `.md` to any docs
+//   page for its text — "Every page of these docs is available as Markdown by
+//   appending `.md` to its URL", https://docs.bria.ai/llms.txt, 2026-11-12)
 //   https://bria.ai/pricing                            ("API Price List" — per-call USD)
 //   https://docs.bria.ai/llms.txt                      (docs index)
 // Verified 2026-11-12.
@@ -28,17 +32,24 @@
 // lite route runs Fibo Lite.
 //
 // Pricing (https://bria.ai/pricing, "API Price List", per image; the platform
-// bills per API call with no per-request image count on these routes):
-//   Fibo $0.03 · Fibo Lite $0.02 · Fibo Edit $0.03 · Fibo Structured Prompt
-//   $0.02/call. (artificialanalysis quotes $40/1k for FIBO and FIBO Edit; that
-//   is their own measured figure, not Bria's published rate.)
+// bills per API call with no per-request image count on these routes), read
+// 2026-11-12: "Fibo | $0.032 / Image", "Fibo Lite | $0.0288 / Image",
+// "Fibo Edit | $0.032 / Image", "Fibo Structured Prompt | $0.02 / Call".
+// (artificialanalysis quotes $40/1k for FIBO and FIBO Edit; that is their own
+// measured figure, not Bria's published rate.)
 //
 // NOT modeled: `/v2/structured_prompt/generate[/lite]` and
 // `/v2/structured_prompt/generate_from_diff` (JSON-prompt authoring, $0.02 per
-// call), the ~20 specialized editing routes (`/v2/erase`, `/v2/expand`,
-// `/v2/remove_background`, …), tailored generation, product-shot and video
-// endpoints. Also not modeled: Bria 3.2 and the other v1 `/v1/text-to-image/…`
-// models — the current documentation exposes only the FIBO v2 surface.
+// call); their edit-side twin `/v2/structured_instruction/generate` ("It only
+// returns the JSON string and does not generate an image."; no price-list
+// row); the ~20 specialized editing routes, served under
+// `https://engine.prod.bria-api.com/v2/image/edit` (`/v2/image/edit/erase`,
+// `/v2/image/edit/expand`, `/v2/image/edit/remove_background`, …), among them
+// `/v2/image/edit/replace_background`, whose `mode: "fibo2"` is the one other
+// place Fibo 2 renders; tailored generation, product-shot and video
+// endpoints (all read 2026-11-12). Also not modeled: Bria 3.2 and the other
+// v1 `/v1/text-to-image/…` models — the current documentation exposes only
+// the FIBO v2 surface.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -71,7 +82,8 @@ export const models = {
     name: "Fibo 2",
     family: "fibo",
     limit: { context: 0 },
-    cost: { perImage: 0.03 },
+    // "Fibo | $0.032 / Image" — https://bria.ai/pricing, 2026-11-12.
+    cost: { perImage: 0.032 },
   },
   "FIBO-lite": {
     ...base,
@@ -79,7 +91,8 @@ export const models = {
     name: "Fibo Lite",
     family: "fibo",
     limit: { context: 0 },
-    cost: { perImage: 0.02 },
+    // "Fibo Lite | $0.0288 / Image" — https://bria.ai/pricing, 2026-11-12.
+    cost: { perImage: 0.0288 },
   },
   "FIBO-edit": {
     ...base,
@@ -88,11 +101,15 @@ export const models = {
     name: "Fibo 2 Edit",
     family: "fibo",
     limit: { context: 0 },
-    cost: { perImage: 0.03 },
+    // "Fibo Edit | $0.032 / Image" — https://bria.ai/pricing, 2026-11-12.
+    cost: { perImage: 0.032 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type BriaModelId = keyof typeof models;
 
-/** USD per call for `/v2/structured_prompt/generate[/lite]` — https://bria.ai/pricing. */
+/**
+ * USD per call for `/v2/structured_prompt/generate[/lite]` — "Fibo Structured
+ * Prompt | $0.02 / Call", https://bria.ai/pricing, 2026-11-12.
+ */
 export const BRIA_STRUCTURED_PROMPT_COST_USD = 0.02;

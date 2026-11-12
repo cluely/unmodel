@@ -28,9 +28,11 @@
  *   server still reads them.
  * - ASYNC BY DEFAULT (`sync: false`): the POST answers 202 with a `status_url`
  *   to poll, or set `webhook_url`. Polling is transport — out of scope.
- * - NOT modeled here: the ~20 task-specific editing routes (`/v2/erase`,
- *   `/v2/expand`, `/v2/gen_fill`, `/v2/remove_background`, `/v2/relight`, …),
- *   each with its own schema and price.
+ * - NOT modeled here: the ~20 task-specific editing routes under the editing
+ *   bundle's server `https://engine.prod.bria-api.com/v2/image/edit`
+ *   (`/v2/image/edit/erase`, `/v2/image/edit/expand`,
+ *   `/v2/image/edit/gen_fill`, `/v2/image/edit/remove_background`,
+ *   `/v2/image/edit/relight`, …), each with its own schema and price.
  * - Auth is an `api_token` header — unmodel never touches keys.
  */
 

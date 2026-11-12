@@ -132606,7 +132606,7 @@
   },
   "inception": {
     "api": "https://api.inceptionlabs.ai/v1/",
-    "doc": "https://platform.inceptionlabs.ai/docs",
+    "doc": "https://docs.inceptionlabs.ai/get-started/models",
     "env": [
       "INCEPTION_API_KEY"
     ],
@@ -132614,6 +132614,7 @@
     "models": {
       "mercury-2": {
         "attachment": false,
+        "canonical_model_id": "inception/mercury-2",
         "cost": {
           "cache_read": 0.025,
           "input": 0.25,
@@ -132654,18 +132655,105 @@
         "temperature": true,
         "tool_call": true
       },
+      "mercury-2.5": {
+        "attachment": false,
+        "canonical_model_id": "inception/mercury-2.5",
+        "cost": {
+          "cache_read": 0.02,
+          "input": 0.2,
+          "output": 0.75
+        },
+        "description": "Mercury 2.5 is the fastest reasoning LLM, and the latest diffusion LLM (dLLM) from Inception",
+        "family": "mercury",
+        "id": "mercury-2.5",
+        "knowledge": "2025-11-01",
+        "last_updated": "2026-09-08",
+        "limit": {
+          "context": 260000,
+          "output": 65536
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Mercury 2.5",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        ],
+        "release_date": "2026-09-08",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "mercury-3": {
+        "attachment": false,
+        "canonical_model_id": "inception/mercury-3",
+        "cost": {
+          "cache_read": 0.01,
+          "input": 0.1,
+          "output": 0.35
+        },
+        "description": "Inception's diffusion reasoning model for chat, multi-step problem solving, and tool use",
+        "family": "mercury",
+        "id": "mercury-3",
+        "last_updated": "2026-10-20",
+        "limit": {
+          "context": 1000000,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Mercury 3",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        ],
+        "release_date": "2026-10-16",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
       "mercury-edit-2": {
         "attachment": false,
+        "canonical_model_id": "inception/mercury-edit-2",
         "cost": {
           "cache_read": 0.025,
           "input": 0.25,
           "output": 0.75
         },
-        "description": "Reasoning model for deliberate analysis, multi-step problem solving, and tool use",
+        "description": "Code editing dLLM for autocomplete (FIM) and next-edit suggestions",
+        "family": "mercury",
         "id": "mercury-edit-2",
         "last_updated": "2026-03-30",
         "limit": {
-          "context": 128000,
+          "context": 32000,
           "output": 8192
         },
         "modalities": {
@@ -132678,9 +132766,9 @@
         },
         "name": "Mercury Edit 2",
         "open_weights": false,
-        "reasoning": true,
-        "reasoning_options": [],
+        "reasoning": false,
         "release_date": "2026-03-30",
+        "structured_output": false,
         "temperature": true,
         "tool_call": false
       }

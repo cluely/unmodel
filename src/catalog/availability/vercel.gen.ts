@@ -595,9 +595,11 @@ export const availability = {
     "vercel": "inception/mercury-2",
   },
   "inception/mercury-2.5": {
+    "inception": "mercury-2.5",
     "vercel": "inception/mercury-2.5",
   },
   "inception/mercury-3": {
+    "inception": "mercury-3",
     "vercel": "inception/mercury-3",
   },
   "inception/mercury-coder-small": {

@@ -23,6 +23,14 @@ export const availability = {
     "inception": "mercury-2",
     "vercel": "inception/mercury-2",
   },
+  "mercury-2.5": {
+    "inception": "mercury-2.5",
+    "vercel": "inception/mercury-2.5",
+  },
+  "mercury-3": {
+    "inception": "mercury-3",
+    "vercel": "inception/mercury-3",
+  },
   "mercury-edit-2": {
     "inception": "mercury-edit-2",
   },

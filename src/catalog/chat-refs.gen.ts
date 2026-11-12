@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1442 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1444 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -386,6 +386,8 @@ export type ChatModelRef =
   | "huggingface/zai-org/GLM-5.3"
   | "huggingface/zai-org/GLM-5.3-Flash"
   | "inception/mercury-2"
+  | "inception/mercury-2.5"
+  | "inception/mercury-3"
   | "inception/mercury-edit-2"
   | "longcat/LongCat-2.0"
   | "meta/muse-ember-1.0"

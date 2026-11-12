@@ -25,6 +25,18 @@
  * lists per address, the listed prices and the catalog rows. What a bad request
  * is told lives in `src/providers/revana/*.ts`, hand-written, once.
  *
+ * ## Two kinds of row, from the one snapshot
+ *
+ *   • `shapes-<address>.gen.ts` — the WIRE rows: what a model takes on
+ *     `POST /v1/generations`, in Revana's own spelling. The check battery and
+ *     the per-model body types read these.
+ *   • `<category>-params.gen.ts` — the UNIFIED rows: the same facts in the
+ *     canonical vocabulary (`"4k"` for the catalog's `"4K"`, a duration list
+ *     as an enum, an empty list where the model has no such field), which the
+ *     category packs (`unmodel/video`, `unmodel/tts`, …) narrow a
+ *     `revana/<model>` ref by. One file per category, because a category pack
+ *     must not pay for another category's roster.
+ *
  * ## Why the catalog and not the OpenAPI document
  *
  * `data/revana/openapi.json` is snapshotted for drift detection and is what
@@ -299,25 +311,39 @@ function mediaFields(model: MediaModel): MediaField[] {
 }
 
 class Vocabularies {
-  private readonly byName = new Map<string, string>();
+  private readonly arrays = new Map<string, string>();
+  private readonly objects = new Map<string, string>();
 
   /** A hoisted `as const` array, named by content so a new model renumbers nothing. */
   name(prefix: string, values: readonly (string | number)[]): string {
     const literal = `[${values.map((v) => JSON.stringify(v)).join(", ")}]`;
-    const name = `${prefix}_${contentHash(literal)}`;
-    const existing = this.byName.get(name);
-    if (existing !== undefined && existing !== literal) {
-      throw new Error(`vocabulary hash collision on ${name}`);
-    }
-    this.byName.set(name, literal);
-    return name;
+    return this.hoist(this.arrays, prefix, literal);
+  }
+
+  /**
+   * A hoisted `as const` object literal, named the same way. Kept apart from
+   * the arrays because an object may NAME one (`(typeof Q_1a2b3c)[number]`),
+   * so every array has to be declared first.
+   */
+  object(prefix: string, literal: string): string {
+    return this.hoist(this.objects, prefix, literal);
   }
 
   render(): string {
-    return [...this.byName.entries()]
-      .sort(([a], [b]) => (a < b ? -1 : 1))
+    return [this.arrays, this.objects]
+      .flatMap((byName) => [...byName.entries()].sort(([a], [b]) => (a < b ? -1 : 1)))
       .map(([name, literal]) => `const ${name} = ${literal} as const;`)
       .join("\n");
+  }
+
+  private hoist(byName: Map<string, string>, prefix: string, literal: string): string {
+    const name = `${prefix}_${contentHash(literal)}`;
+    const existing = byName.get(name);
+    if (existing !== undefined && existing !== literal) {
+      throw new Error(`vocabulary hash collision on ${name}`);
+    }
+    byName.set(name, literal);
+    return name;
   }
 }
 
@@ -505,6 +531,221 @@ function lowerChatRow(model: ChatModel): string {
 }
 
 // ---------------------------------------------------------------------------
+// Lowering — the unified rows
+// ---------------------------------------------------------------------------
+
+/**
+ * The canonical size words of `unmodel/video` and `unmodel/image`, restated
+ * because this script imports no source module. The emitted tables `satisfies`
+ * the kernel's own row types, so a word that is not one fails `tsc`.
+ */
+const VIDEO_TIERS = ["480p", "720p", "1080p", "1440p", "4k"] as const;
+const IMAGE_TIERS = ["1k", "2k", "4k"] as const;
+
+/** `16:9`, `19.5:9` — a shape. `auto`, `Auto` and `adaptive` mean "follow the input" and are not one. */
+const RATIO_SHAPE = /^\d+(\.\d+)?:\d+(\.\d+)?$/;
+
+type Overlays = z.infer<typeof overlaysSchema>;
+
+/**
+ * The canonical tiers a model can express, and the catalog's spelling of each.
+ *
+ * A tier maps to a listed resolution only when the two are the SAME WORD
+ * ignoring case — `"4k"` and `"4K"` — which is the rule the API itself matches
+ * `ModelInput` settings by ("4k" is "4K"). Nothing is mapped by meaning:
+ * Revana does not publish how many lines `2K` is, so `1440p` reaches no model
+ * and `2K`, `768p`, `1MP` and the rest stay reachable in their own spelling
+ * through `providerOptions.revana.input.resolution`.
+ *
+ * No list at all is a fact too ("<id> takes no input.resolution."): the tiers
+ * are then empty and there is no wire map.
+ */
+function tierFields(
+  listed: readonly string[] | undefined,
+  canonical: readonly string[],
+  keys: { tiers: string; wire: string },
+  vocab: Vocabularies,
+): string[] {
+  if (listed === undefined) return [`${keys.tiers}: []`];
+  const pairs = canonical.flatMap((tier) => {
+    const spelling = listed.find((value) => value.toLowerCase() === tier);
+    return spelling === undefined ? [] : [[tier, spelling] as const];
+  });
+  const tiers = pairs.map(([tier]) => tier);
+  const wire = pairs.map(([tier, spelling]) => `${quote(tier)}: ${quote(spelling)}`).join(", ");
+  return [
+    `${keys.tiers}: ${tiers.length === 0 ? "[]" : vocab.name("T", tiers)}`,
+    `${keys.wire}: ${vocab.object("W", pairs.length === 0 ? "{}" : `{ ${wire} }`)}`,
+  ];
+}
+
+/** The listed aspect ratios that are shapes, or nothing when the model lists none (free-form). */
+function ratioFields(listed: readonly string[] | undefined, vocab: Vocabularies): string[] {
+  if (listed === undefined) return [];
+  const shapes = listed.filter((value) => RATIO_SHAPE.test(value));
+  return [`ratios: ${shapes.length === 0 ? "[]" : vocab.name("A", shapes)}`];
+}
+
+/** `extras: X_…` — the per-model params the canonical vocabulary has no word for. */
+function extrasField(entries: readonly string[], vocab: Vocabularies): string[] {
+  return entries.length === 0 ? [] : [`extras: ${vocab.object("X", `{ ${entries.join(", ")} }`)}`];
+}
+
+/** `quality`, where the catalog lists the model's tiers; elsewhere it has no listed values to type. */
+function qualityExtra(model: MediaModel, vocab: Vocabularies): string[] {
+  const { qualities } = model.options;
+  return qualities === undefined ? [] : [`quality: EXTRA as (typeof ${vocab.name("Q", qualities)})[number]`];
+}
+
+/**
+ * A video row: the clip lengths, the canonical tiers, the shapes.
+ *
+ * `durations` is a list where the catalog lists one, ABSENT where it publishes
+ * a range (`duration` then stays the wide `number` and the range is checked on
+ * the way out) and EMPTY where the model "sets its own length". The Nemesis
+ * models are empty on both `durations` and `ratios` whatever the catalog says:
+ * `NemesisInput` has neither field ("the result keeps the clip's length and
+ * shape"), and the range their rows carry is the length of the clip they take.
+ */
+function lowerVideoParams(model: MediaModel, vocab: Vocabularies): string[] {
+  const o = model.options;
+  const nemesis = NEMESIS_IDS.includes(model.id);
+  const fields: string[] = [];
+  if (nemesis || o.durations === undefined) fields.push("durations: []");
+  else if (Array.isArray(o.durations)) fields.push(`durations: ${vocab.name("D", o.durations)}`);
+  fields.push(...tierFields(o.resolutions, VIDEO_TIERS, { tiers: "resolutions", wire: "resolutionWire" }, vocab));
+  fields.push(...(nemesis ? ["ratios: []"] : ratioFields(o.aspect_ratios, vocab)));
+
+  const extras: string[] = [];
+  if (o.audio === true) extras.push("audio: EXTRA as boolean");
+  if (o.guides) extras.push(`guide: EXTRA as (typeof ${vocab.name("G", o.guides)})[number]`);
+  if (o.sounds) extras.push(`sound: EXTRA as (typeof ${vocab.name("S", o.sounds)})[number]`);
+  if (o.roles) extras.push(`roles: EXTRA as readonly (typeof ${vocab.name("O", o.roles)})[number][]`);
+  return [...fields, ...extrasField(extras, vocab)];
+}
+
+function lowerImageParams(model: MediaModel, vocab: Vocabularies): string[] {
+  return [
+    ...ratioFields(model.options.aspect_ratios, vocab),
+    ...tierFields(model.options.resolutions, IMAGE_TIERS, { tiers: "tiers", wire: "tierWire" }, vocab),
+    ...extrasField(qualityExtra(model, vocab), vocab),
+  ];
+}
+
+/** An edit row has no tier: `unmodel/image-edit` has no `resolution` word. */
+function lowerImageEditParams(model: MediaModel, vocab: Vocabularies): string[] {
+  return [
+    ...ratioFields(model.options.aspect_ratios, vocab),
+    ...extrasField(qualityExtra(model, vocab), vocab),
+  ];
+}
+
+/**
+ * An upscale row: a still, and no multiplier.
+ *
+ * `sources` is `["image"]` although an upscaler's tasks take "input.image_url
+ * or input.video_url": a canonical `{ url }` does not say which of the two it
+ * is, Revana takes no inline bytes whose media type could, and so the unified
+ * ref carries the still. A clip is addressed on `revana.upscale` by name.
+ * `factors` is empty because `ModelInput` has no multiplier field.
+ */
+function lowerUpscaleParams(): string[] {
+  return ['sources: ["image"]', "factors: []"];
+}
+
+/**
+ * A lipsync or avatar row: what it animates, and the `prompt` neither
+ * vocabulary has a word for. `ModelInput.prompt` exists on every model, so it
+ * rides as an extra.
+ */
+function lowerPerformanceParams(source: "video" | "image", vocab: Vocabularies): string[] {
+  return [`sources: [${quote(source)}]`, ...extrasField(["prompt: EXTRA as string"], vocab)];
+}
+
+/**
+ * A speech row: the voice ids, the languages where the catalog lists any, and
+ * no codec — the speech input has no format field.
+ *
+ * `languages` is emitted only for a non-empty list. `[]` ("picks the language
+ * from the text") and absent (any code) both leave the canonical `language`
+ * wide, and the wire rows are what tell those two apart.
+ */
+function lowerTtsParams(model: MediaModel, vocab: Vocabularies, overlays: Overlays): string[] {
+  const o = model.options;
+  const fields = ["codecs: []"];
+  if (o.voices) fields.push(`voices: ${vocab.name("V", o.voices.map((voice) => voice.id))}`);
+  if (o.languages !== undefined && o.languages.length > 0) {
+    fields.push(`languages: ${vocab.name("L", o.languages)}`);
+  }
+  const takes = overlays.speechFields[model.id]?.fields ?? [];
+  const extras = (["stability", "similarity_boost"] as const)
+    .filter((field) => takes.includes(field))
+    .map((field) => `${field}: EXTRA as number`);
+  return [...fields, ...extrasField(extras, vocab)];
+}
+
+/** A music row: no codec, and the two fields a request needs one of. */
+function lowerMusicParams(vocab: Vocabularies): string[] {
+  return ["codecs: []", ...extrasField(["style: EXTRA as string", "lyrics: EXTRA as string"], vocab)];
+}
+
+interface ParamsSlice {
+  /** The file stem and the pack: `image-edit` → `image-edit-params.gen.ts`, `unmodel/image-edit`. */
+  readonly category: string;
+  /** The address the pack's adapter finishes in. */
+  readonly address: string;
+  /** The row type the table `satisfies`, and the module it is imported from. */
+  readonly rowType: string;
+  readonly rowModule: string;
+  readonly models: readonly MediaModel[];
+  lower(model: MediaModel, vocab: Vocabularies): string[];
+}
+
+const KERNEL_ROWS = "../../../core/unified/vocabulary/model-params";
+const PROVIDER_ROWS = "../param-types";
+
+function renderParams(slice: ParamsSlice): string {
+  const vocab = new Vocabularies();
+  const rows = slice.models.map((model) => {
+    const fields = slice.lower(model, vocab);
+    return `  ${quote(model.id)}: ${fields.length === 0 ? "{}" : `{ ${fields.join(", ")} }`},`;
+  });
+  const constant = slice.category.toUpperCase().replaceAll("-", "_");
+  const hoisted = vocab.render();
+  const usesExtra = hoisted.includes("EXTRA as ");
+  return [
+    HEADER,
+    `import type { ${slice.rowType} } from ${quote(slice.rowModule)};`,
+    "",
+    ...(usesExtra
+      ? [
+          "/**",
+          " * The value half of an `extras` entry: `undefined` at run time, the cast's type",
+          " * at compile time. Declared here rather than imported from",
+          " * `core/unified/derive`: a generated module is data, and a value import from",
+          " * the kernel would put it behind every `unmodel/revana/values` import.",
+          " */",
+          "const EXTRA: never = undefined as never;",
+          "",
+        ]
+      : []),
+    ...(hoisted === "" ? [] : [hoisted, ""]),
+    `/** The ids \`unmodel/${slice.category}\` addresses as \`revana/<id>\` — each one finishes in \`${slice.address}\`. */`,
+    `export const REVANA_${constant}_UNIFIED_MODELS = ${renderStringArray(slice.models.map((m) => m.id))} as const;`,
+    "",
+    "/**",
+    ` * What each of those models narrows in \`unmodel/${slice.category}\`'s vocabulary — the`,
+    " * catalog's `options`, lowered to canonical words. An EMPTY list is a fact (the",
+    " * model has no such field) and an ABSENT key leaves the canonical field wide.",
+    " */",
+    `export const REVANA_${constant}_UNIFIED_PARAMS = {`,
+    ...rows,
+    `} as const satisfies Record<string, ${slice.rowType}>;`,
+    "",
+  ].join("\n");
+}
+
+// ---------------------------------------------------------------------------
 // Emission
 // ---------------------------------------------------------------------------
 
@@ -680,6 +921,81 @@ export function generate(input: GenerateInput): Map<string, string> {
       ].join("\n"),
     );
   }
+
+  // One unified table PER CATEGORY PACK. The video roster leaves out the two
+  // curated views: a lip-sync or talking-avatar model needs `audio_url`, which
+  // `unmodel/video` has no word for, and its own pack addresses it. The image
+  // roster is the models that can start from a prompt alone, which is what
+  // `unmodel/image` asks of one.
+  const viewed = new Set([...lipsync, ...avatar]);
+  const pictures = (task: MediaTask): MediaModel[] => of("image").filter((m) => m.tasks.includes(task));
+  const params: ParamsSlice[] = [
+    {
+      category: "video",
+      address: "revana.video",
+      rowType: "RevanaVideoParamRow",
+      rowModule: PROVIDER_ROWS,
+      models: of("video").filter((m) => !viewed.has(m.id)),
+      lower: lowerVideoParams,
+    },
+    {
+      category: "image",
+      address: "revana.image",
+      rowType: "RevanaImageParamRow",
+      rowModule: PROVIDER_ROWS,
+      models: pictures("text_to_image"),
+      lower: lowerImageParams,
+    },
+    {
+      category: "image-edit",
+      address: "revana.imageEdit",
+      rowType: "ModelParams",
+      rowModule: KERNEL_ROWS,
+      models: pictures("image_to_image"),
+      lower: lowerImageEditParams,
+    },
+    {
+      category: "upscale",
+      address: "revana.upscale",
+      rowType: "UpscaleModelParams",
+      rowModule: KERNEL_ROWS,
+      models: withTask("upscale"),
+      lower: lowerUpscaleParams,
+    },
+    {
+      category: "lipsync",
+      address: "revana.lipsync",
+      rowType: "LipsyncModelParams",
+      rowModule: KERNEL_ROWS,
+      models: media.filter((m) => lipsync.includes(m.id)),
+      lower: (_model, vocab) => lowerPerformanceParams("video", vocab),
+    },
+    {
+      category: "avatar",
+      address: "revana.avatar",
+      rowType: "AvatarModelParams",
+      rowModule: KERNEL_ROWS,
+      models: media.filter((m) => avatar.includes(m.id)),
+      lower: (_model, vocab) => lowerPerformanceParams("image", vocab),
+    },
+    {
+      category: "tts",
+      address: "revana.tts",
+      rowType: "TtsModelParams",
+      rowModule: KERNEL_ROWS,
+      models: withTask("text_to_speech"),
+      lower: (model, vocab) => lowerTtsParams(model, vocab, overlays),
+    },
+    {
+      category: "music",
+      address: "revana.music",
+      rowType: "MusicModelParams",
+      rowModule: KERNEL_ROWS,
+      models: withTask("text_to_music"),
+      lower: (_model, vocab) => lowerMusicParams(vocab),
+    },
+  ];
+  for (const slice of params) files.set(`${slice.category}-params.gen.ts`, renderParams(slice));
 
   files.set(
     "ids.gen.ts",

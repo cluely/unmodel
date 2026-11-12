@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { chat, checkChat, CHAT_COMPLETIONS_URL } from "./index";
+import { chat, chatModels, checkChat, CHAT_COMPLETIONS_URL, models } from "./index";
 
 describe("unmodel/meta", () => {
   test("chat URL is the documented OpenAI-compatible endpoint", () => {
@@ -188,6 +188,35 @@ describe("meta.chat — endpoint-wide HTTP 400s", () => {
     const r = chat.safe({ model, messages: images(51) });
     expect(codes(r)).toEqual(["invalid_shape"]);
     expect(firstError(r)?.meta?.limit).toBe(50);
+  });
+});
+
+// "All take text, image, video, audio, and PDF input, return text, and have a
+// 1,048,576-token context window." — https://dev.meta.ai/docs/muse-spark
+// (checked 2026-11-12), said of every Spark version, 1.1 included.
+describe("meta.chat — muse-spark-1.1 audio input", () => {
+  test("an input_audio part validates on muse-spark-1.1", () => {
+    const r = chat.safe({
+      model: "muse-spark-1.1",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Transcribe this." },
+            { type: "input_audio", input_audio: { data: "UklGRiQAAABXQVZF", format: "wav" } },
+          ],
+        },
+      ],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("chatModels states the correction; models stays the generated row", () => {
+    expect(chatModels["muse-spark-1.1"].modalities.input).toContain("audio");
+    // Fails once models.dev lists audio for 1.1 — then delete the correction in ./index.ts.
+    expect(models["muse-spark-1.1"].modalities.input).not.toContain("audio");
+    expect(chatModels["muse-spark-1.2"]).toBe(models["muse-spark-1.2"]);
   });
 });
 

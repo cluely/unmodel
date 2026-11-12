@@ -100,6 +100,23 @@ const chatFamilyRules: readonly FamilyRule[] = [
   },
 ];
 
+/**
+ * The catalog `meta.chat` validates against: the generated rows, with one
+ * doc-sourced correction. models.dev lists muse-spark-1.1's input as
+ * text/image/pdf/video, but Meta's model page says of every Spark version
+ * "All take text, image, video, audio, and PDF input, return text, and have a
+ * 1,048,576-token context window." (https://dev.meta.ai/docs/muse-spark,
+ * checked 2026-11-12). Without it, an `input_audio` part on muse-spark-1.1 is
+ * refused as `unsupported_capability` although the API accepts it.
+ *
+ * `models` stays the generated table, untouched; this is the one to read for
+ * what `meta.chat` accepts.
+ */
+const chatModels = {
+  ...models,
+  "muse-spark-1.1": withAudioInput(models["muse-spark-1.1"]),
+} satisfies Record<string, ModelInfo>;
+
 const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   MetaTextModelId,
   typeof availability,
@@ -109,7 +126,7 @@ const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   // Documented OpenAI-compatible base URL (https://dev.meta.ai/docs,
   // checked 2026-08-13); matches the generated catalog's `api` field.
   baseUrl: "https://api.meta.ai/v1",
-  catalog: models,
+  catalog: chatModels,
   availability,
   familyRules: chatFamilyRules,
   extraChecks: [
@@ -124,7 +141,15 @@ const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
 /** POST https://api.meta.ai/v1/chat/completions */
 const CHAT_COMPLETIONS_URL = chatUrl;
 
-export { chat, checkChat, estimateChatTokens, CHAT_COMPLETIONS_URL, models, provider };
+export {
+  chat,
+  checkChat,
+  estimateChatTokens,
+  CHAT_COMPLETIONS_URL,
+  chatModels,
+  models,
+  provider,
+};
 export type {
   MetaModelId,
   MetaTextModelId,
@@ -137,6 +162,13 @@ export type {
 // src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot
 // name this entry's inferred result types without it (TS2742 / TS2883).
 export type * from "../../core/carriers";
+
+/** The row with `audio` among its inputs; a row that already lists it is returned as is. */
+function withAudioInput(info: ModelInfo): ModelInfo {
+  const { input, output } = info.modalities;
+  if (input.includes("audio")) return info;
+  return { ...info, modalities: { input: [...input, "audio"], output } };
+}
 
 /**
  * "Muse Spark is a reasoning model, so this is not supported — `logprobs:

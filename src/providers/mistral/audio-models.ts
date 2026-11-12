@@ -2,15 +2,17 @@
 // (src/catalog/mistral.gen.ts) carries the `voxtral-*-latest` aliases and
 // `voxtral-small-2507`, with no audio pricing, and none of the transcribe-only
 // dated ids. Refresh from
-//   https://docs.mistral.ai/models/model-cards/voxtral-mini-transcribe-26-02           (voxtral-mini-2602)
-//   https://docs.mistral.ai/models/model-cards/voxtral-small-25-07                     (voxtral-small-2507)
-//   https://docs.mistral.ai/models/model-cards/voxtral-mini-transcribe-realtime-26-02  (realtime)
-//   https://docs.mistral.ai/models/voxtral-mini-transcribe-3-0                         (Voxtral Mini Transcribe 3)
-//   https://docs.mistral.ai/models/voxtral-small-transcribe-3-0                        (Voxtral Small Transcribe 3)
-//   https://docs.mistral.ai/models/voxtral-mini-transcribe-realtime-3-0                (Voxtral Realtime 3)
-//   https://docs.mistral.ai/inference/pricing                                          (rates)
-//   https://docs.mistral.ai/studio/audio/speech_to_text/offline_transcription          (endpoint + per-model audio caps)
-// Verified 2026-08-13; the Voxtral 3 rows and the realtime alias 2026-11-12.
+//   https://docs.mistral.ai/models/voxtral-mini-transcribe-26-02                         (voxtral-mini-2602)
+//   https://docs.mistral.ai/models/voxtral-small-25-07                                   (voxtral-small-2507)
+//   https://docs.mistral.ai/models/voxtral-mini-transcribe-realtime-26-02                (realtime)
+//   https://docs.mistral.ai/models/voxtral-mini-transcribe-3-0                           (Voxtral Mini Transcribe 3)
+//   https://docs.mistral.ai/models/voxtral-small-transcribe-3-0                          (Voxtral Small Transcribe 3)
+//   https://docs.mistral.ai/models/voxtral-mini-transcribe-realtime-3-0                  (Voxtral Realtime 3)
+//   https://docs.mistral.ai/getting-started/models                                       (lifecycle dates)
+//   https://docs.mistral.ai/inference/pricing                                            (rates)
+//   https://docs.mistral.ai/studio/audio/deprecated/speech_to_text/offline_transcription (pre-Voxtral 3 endpoint + audio caps)
+// Verified 2026-08-13; the Voxtral 3 rows, the realtime alias and the
+// lifecycle statuses 2026-11-12.
 //
 // Pricing: the docs render EUR by default with a USD toggle; the USD figures
 // below are the ones the pages carry alongside each EUR price
@@ -68,13 +70,28 @@ const VOXTRAL_MINI_TRANSCRIBE_REALTIME_3 = {
   cost: { perAudioMinute: 0.008 },
 } as const;
 
+/**
+ * The Voxtral 2 generation, deprecated: "Voxtral Mini Transcribe 2 ↗ 26.02
+ * voxtral-mini-2602 10/31/2026 4/30/2027 Voxtral Mini Transcribe 3 Voxtral Mini
+ * Transcribe Realtime ↗ 26.02 voxtral-mini-transcribe-realtime-2602 10/31/2026
+ * 4/30/2027 Voxtral Mini Transcribe Realtime 3"
+ * (https://docs.mistral.ai/getting-started/models, 2026-11-12) — still served
+ * until the second date.
+ */
+const VOXTRAL_2 = { ...TRANSCRIBE, releaseDate: "2026-02-04", status: "deprecated" } as const;
+
+const VOXTRAL_MINI_TRANSCRIBE_REALTIME_2 = {
+  ...VOXTRAL_2,
+  name: "Voxtral Mini Transcribe Realtime",
+  cost: { perAudioMinute: 0.006 },
+} as const;
+
 /** Transcription ids the generated catalog lacks. */
 export const transcriptionSupplementModels = {
   "voxtral-mini-2602": {
-    ...TRANSCRIBE,
+    ...VOXTRAL_2,
     id: "voxtral-mini-2602",
     name: "Voxtral Mini Transcribe 2",
-    releaseDate: "2026-02-04",
     cost: { perAudioMinute: 0.003 },
   },
   /**
@@ -84,11 +101,8 @@ export const transcriptionSupplementModels = {
    * `transcription` rejects it.
    */
   "voxtral-mini-transcribe-realtime-2602": {
-    ...TRANSCRIBE,
+    ...VOXTRAL_MINI_TRANSCRIBE_REALTIME_2,
     id: "voxtral-mini-transcribe-realtime-2602",
-    name: "Voxtral Mini Transcribe Realtime",
-    releaseDate: "2026-02-04",
-    cost: { perAudioMinute: 0.006 },
   },
   /**
    * `"names":["voxtral-mini-transcribe-realtime-2602","voxtral-mini-realtime-latest"]`
@@ -96,11 +110,8 @@ export const transcriptionSupplementModels = {
    * page source, 2026-11-12): the realtime model above, under its alias.
    */
   "voxtral-mini-realtime-latest": {
-    ...TRANSCRIBE,
+    ...VOXTRAL_MINI_TRANSCRIBE_REALTIME_2,
     id: "voxtral-mini-realtime-latest",
-    name: "Voxtral Mini Transcribe Realtime",
-    releaseDate: "2026-02-04",
-    cost: { perAudioMinute: 0.006 },
   },
   /**
    * Voxtral Mini Transcribe 3 — "voxtral-mini-transcribe-3-0 +2 … Price i USD
@@ -162,8 +173,11 @@ export type MistralTranscriptionSupplementModelId = keyof typeof transcriptionSu
  * transcription endpoint documents, plus the ids above. If the generated file
  * ever grows real audio pricing, drop these overrides — they would shadow it.
  *
- * `voxtral-mini-latest` "runs Voxtral Mini Transcribe 2", so it is priced and
- * capped identically to `voxtral-mini-2602`. The two Voxtral Small ids are one
+ * `voxtral-mini-latest` "runs Voxtral Mini Transcribe 2" — the card lists
+ * `"names":["voxtral-mini-2602","voxtral-mini-latest"]`
+ * (https://docs.mistral.ai/models/voxtral-mini-transcribe-26-02, 2026-11-12) —
+ * so it is priced, capped and deprecated identically to `voxtral-mini-2602`.
+ * The two Voxtral Small ids are one
  * model (`"names":["voxtral-small-2507","voxtral-small-latest"]`), priced
  * "Voxtral Small ↗ $0.004 /Min $0.0004 /Min $0.4 /M Tokens" (pricing page,
  * 2026-11-12); their token rates are the generated ones.
@@ -172,6 +186,7 @@ export const transcriptionModels: Record<string, ModelInfo> = {
   ...models,
   "voxtral-mini-latest": {
     ...models["voxtral-mini-latest"],
+    status: "deprecated",
     cost: { perAudioMinute: 0.003 },
   },
   "voxtral-small-latest": {

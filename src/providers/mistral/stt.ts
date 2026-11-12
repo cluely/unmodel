@@ -4,7 +4,10 @@
  * Wire notes (verified 2026-08-13 against the OpenAPI document Mistral
  * publishes at https://docs.mistral.ai/openapi.yaml — the
  * `AudioTranscriptionRequest` schema — plus
- * https://docs.mistral.ai/studio/audio/speech_to_text/offline_transcription):
+ * https://docs.mistral.ai/studio/audio/deprecated/speech_to_text/offline_transcription;
+ * the Voxtral 3 rules and `speaker_references` against
+ * https://docs.mistral.ai/studio/audio/speech-to-text/transcribe-files on
+ * 2026-11-12):
  * - This is a multipart/form-data endpoint. The validated output's enumerable
  *   props are the validated params (including the `file` Blob) — do NOT
  *   JSON.stringify them. The raw-fetch path is `.request.url` +
@@ -50,8 +53,9 @@ export const AUDIO_TRANSCRIPTIONS_URL = "https://api.mistral.ai/v1/audio/transcr
 /** Multipart upload endpoint that yields the `file_id` accepted below. */
 export const FILES_URL = "https://api.mistral.ai/v1/files";
 
+/** The pre-Voxtral 3 transcription page, now under /deprecated/ (checked 2026-11-12). */
 const TRANSCRIPTION_DOCS =
-  "https://docs.mistral.ai/studio/audio/speech_to_text/offline_transcription";
+  "https://docs.mistral.ai/studio/audio/deprecated/speech_to_text/offline_transcription";
 
 /** The Voxtral 3 transcription reference (retrieved 2026-11-12). */
 const VOXTRAL_3_DOCS = "https://docs.mistral.ai/studio/audio/speech-to-text/transcribe-files";
@@ -64,6 +68,14 @@ const VOXTRAL_3_DOCS = "https://docs.mistral.ai/studio/audio/speech-to-text/tran
  * 2026-11-12), so the cap is not applied to those.
  */
 export const MAX_CONTEXT_BIAS_TERMS = 100;
+
+/**
+ * "Speaker references Up to 8 clips, 3 to 15 seconds each, with diarize set to
+ * true The request is rejected with a 400 error: "At most 8 speaker references
+ * are supported, got {n}"."
+ * (https://docs.mistral.ai/studio/audio/specs-and-limits/limits, 2026-11-12)
+ */
+export const MAX_SPEAKER_REFERENCES = 8;
 
 /** `file_url` is documented with `maxLength: 2083`. */
 export const MAX_FILE_URL_LENGTH = 2083;
@@ -91,9 +103,15 @@ export interface TranscriptionBody {
   /** Keep track of who is talking. */
   diarize?: boolean;
   /**
-   * Spellings to steer toward. Pre-Voxtral 3 ids: up to 100 words/phrases (no
-   * commas or whitespace inside a term). Voxtral 3: terms or free-form
-   * passages, no fixed count.
+   * Speaker name → base64 reference clip (WAV, Opus, MP3 or FLAC, 3–15 s) for
+   * speakers known to appear in the audio; at most 8, and `diarize` must be
+   * true. Sent as ONE form field holding the JSON object, which is how the
+   * Mistral SDK encodes it.
+   */
+  speaker_references?: Record<string, string>;
+  /**
+   * Spellings to steer toward: words, phrases, or (Voxtral 3) free-form
+   * passages. Pre-Voxtral 3 ids take up to 100; Voxtral 3 has no fixed count.
    */
   context_bias?: string[];
   /** Timestamps to include in the response. */
@@ -127,7 +145,8 @@ const schema = z
       .literal(false, "`stream: true` is a different operation; unmodel validates the non-streaming transcription endpoint.")
       .optional(),
     diarize: z.boolean().optional(),
-    // The per-model rules live in `checkContextBias`: they differ by generation.
+    speaker_references: z.record(z.string(), z.string()).optional(),
+    // The per-model cap lives in `checkContextBias`: it differs by generation.
     context_bias: z.array(z.string()).optional(),
     timestamp_granularities: z.array(z.enum(["segment", "word"])).optional(),
   })
@@ -227,12 +246,14 @@ function checkVoxtral3Diarization(
 }
 
 /**
- * The pre-Voxtral 3 term-list rules, applied only to the ids that page
- * documents (the {@link TRANSCRIPTION_MAX_AUDIO_SECONDS} keys, from the same
- * page's FAQ). Voxtral 3 entries "can be phrases with spaces, such as a full
- * product name, and free-form text works offline", with "no fixed number of
- * entries" (https://docs.mistral.ai/studio/audio/migrate-from-voxtral-2,
- * 2026-11-12).
+ * The pre-Voxtral 3 100-entry cap, applied only to the ids that page documents
+ * (the {@link TRANSCRIPTION_MAX_AUDIO_SECONDS} keys, from the same page's
+ * FAQ); Voxtral 3 has "no fixed number of entries"
+ * (https://docs.mistral.ai/studio/audio/migrate-from-voxtral-2, 2026-11-12).
+ * The entries themselves are unconstrained on every id: openapi.yaml types
+ * them as plain strings, and "Spaces, commas, and other punctuation are
+ * accepted"
+ * (https://docs.mistral.ai/studio/audio/speech-to-text/bias-context-and-vocabulary).
  */
 function checkContextBias(
   params: TranscriptionBody,
@@ -240,27 +261,48 @@ function checkContextBias(
   ctx: PipelineContext,
 ): void {
   const terms = params.context_bias;
-  if (!Array.isArray(terms)) return;
+  if (!Array.isArray(terms) || terms.length <= MAX_CONTEXT_BIAS_TERMS) return;
   if (!Object.hasOwn(TRANSCRIPTION_MAX_AUDIO_SECONDS, params.model)) return;
-  if (terms.length > MAX_CONTEXT_BIAS_TERMS) {
+  ctx.report({
+    code: "invalid_shape",
+    path: ["context_bias"],
+    model: params.model,
+    message: `context_bias accepts at most ${MAX_CONTEXT_BIAS_TERMS} words or phrases for "${params.model}"; got ${terms.length}.`,
+    meta: { limit: MAX_CONTEXT_BIAS_TERMS, source: TRANSCRIPTION_DOCS },
+  });
+}
+
+/**
+ * openapi.yaml: "speaker_references … When enabled, diarize must be true"
+ * ("Speaker references require diarization" is a 422), and at most
+ * {@link MAX_SPEAKER_REFERENCES} clips (a 400).
+ */
+function checkSpeakerReferences(
+  params: TranscriptionBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const references = params.speaker_references;
+  if (references === undefined) return;
+  if (params.diarize !== true) {
     ctx.report({
       code: "invalid_shape",
-      path: ["context_bias"],
+      path: ["speaker_references"],
       model: params.model,
-      message: `context_bias accepts at most ${MAX_CONTEXT_BIAS_TERMS} words or phrases for "${params.model}"; got ${terms.length}.`,
-      meta: { limit: MAX_CONTEXT_BIAS_TERMS, source: TRANSCRIPTION_DOCS },
+      message: "`speaker_references` requires `diarize: true`; without it the API returns a 422.",
+      meta: { source: VOXTRAL_3_DOCS },
     });
   }
-  terms.forEach((term, index) => {
-    if (/^[^,\s]+$/.test(term)) return;
+  const count = Object.keys(references).length;
+  if (count > MAX_SPEAKER_REFERENCES) {
     ctx.report({
       code: "invalid_shape",
-      path: ["context_bias", index],
+      path: ["speaker_references"],
       model: params.model,
-      message: `context_bias terms cannot contain commas or whitespace for "${params.model}".`,
-      meta: { source: TRANSCRIPTION_DOCS },
+      message: `\`speaker_references\` takes at most ${MAX_SPEAKER_REFERENCES} speakers; got ${count}.`,
+      meta: { limit: MAX_SPEAKER_REFERENCES, count, source: VOXTRAL_3_DOCS },
     });
-  });
+  }
 }
 
 function isVoxtral3(model: string): boolean {
@@ -353,7 +395,9 @@ function estimateTranscription(
  * values are dropped — null means "use the provider default", which multipart
  * expresses by omission. Array fields (`timestamp_granularities`,
  * `context_bias`) are repeated under their PLAIN name, with no `[]` suffix:
- * the docs' curl sends `-F "timestamp_granularities=segment"`.
+ * the docs' curl sends `-F "timestamp_granularities=segment"`. An object field
+ * (`speaker_references`) is one field holding its JSON — the SDK's
+ * `appendForm(body, "speaker_references", encodeJSON(…))`.
  */
 export function toFormData(params: TranscriptionBody): FormData {
   const form = new FormData();
@@ -417,6 +461,7 @@ const validator = createValidator<TranscriptionBody, unknown>({
     checkVoxtral3Timestamps,
     checkVoxtral3Diarization,
     checkContextBias,
+    checkSpeakerReferences,
     checkTranscriptionModel,
     checkAudioDuration,
   ],

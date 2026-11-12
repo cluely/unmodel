@@ -20,8 +20,16 @@
         "requested": "pt-BR",
         "achieved": "pt",
         "dropped": "BR",
-        "source": "https://docs.mistral.ai/studio/audio/speech_to_text/offline_transcription"
+        "source": "https://docs.mistral.ai/studio/audio/speech-to-text/transcribe-files"
       }
+    }
+  ],
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
     }
   ]
 }

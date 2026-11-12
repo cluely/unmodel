@@ -28,19 +28,26 @@ const LARGE_4 = { ...large4, openWeights: true } as const;
 
 /**
  * Mistral Medium 3.5, the row behind the documented `mistral-medium-latest`
- * alias. Its rates ($1.5 / $0.15 cached / $7.5) survive only on the archived
- * pricing page — "Mistral Medium 3.5 ↗ $1.5 $0.15 $7.5"
+ * alias, deprecated: "Mistral Medium 3.5 ↗ 26.04 mistral-medium-3-5 10/31/2026
+ * 4/30/2027 Mistral Large 4" (https://docs.mistral.ai/getting-started/models,
+ * 2026-11-12) — still served until the second date. Its rates ($1.5 / $0.15
+ * cached / $7.5) survive only on the archived pricing page — "Mistral Medium
+ * 3.5 ↗ $1.5 $0.15 $7.5"
  * (http://web.archive.org/web/20260915134103/https://docs.mistral.ai/inference/pricing);
  * the live page dropped the row when the model was deprecated.
  */
-const MEDIUM_3_5 = models["mistral-medium-latest"];
+const MEDIUM_3_5 = { ...models["mistral-medium-latest"], status: "deprecated" } as const;
 
 /**
- * Ministral 3 3B: "ministral-3b-2512 +1 … Context i 256k"
+ * Ministral 3 3B: "ministral-3b-2512 +1 … Context i 256k" and
+ * `"names":["ministral-3b-2512","ministral-3b-latest"]`
  * (https://docs.mistral.ai/models/ministral-3-3b-25-12, 2026-11-12). models.dev
- * carries 131072, which refuses valid 128k–256k prompts as `over_context`.
+ * carries 131072 on the dated id and 128000 on the alias, which refuse valid
+ * long prompts as `over_context`.
  */
+const MINISTRAL_3B_CONTEXT = 262_144;
 const MINISTRAL_3B = models["ministral-3b-2512"];
+const MINISTRAL_3B_LATEST = models["ministral-3b-latest"];
 
 /**
  * DeepSeek V4.1 Flash 1017 takes images: "A third-party open weight model from
@@ -56,17 +63,34 @@ const GLM_5_3 = models["zai-glm-5-3"];
 /** The overlaid rows alone — aliases and corrections, nothing restated. */
 const chatModelOverlay = {
   "mistral-large-4": LARGE_4,
-  /** `"names":["mistral-large-4","mistral-large-4-0","mistral-large-latest"]`. */
+  /**
+   * `"names":["mistral-large-4","mistral-large-4-0","mistral-large-latest"]` —
+   * the `-latest` alias serves Large 4, while models.dev carries Large 3's row
+   * under it (no reasoning, 262k, $0.5/$1.5), which would refuse
+   * `reasoning_effort: "high"` and misprice every call. Large 3 is only
+   * `"names":["mistral-large-2512"]`
+   * (https://docs.mistral.ai/models/mistral-large-3-25-12).
+   */
   "mistral-large-4-0": { ...LARGE_4, id: "mistral-large-4-0" },
+  "mistral-large-latest": { ...LARGE_4, id: "mistral-large-latest" },
+  /**
+   * "mistral-large-2512 Modalities Context 256k This model is deprecated. Use
+   * Mistral Large 4 for new integrations. Deprecation date 10/31/2026"
+   * (https://docs.mistral.ai/models/mistral-large-3-25-12, 2026-11-12); the
+   * models table retires it 4/30/2027.
+   */
+  "mistral-large-2512": { ...models["mistral-large-2512"], status: "deprecated" },
   /**
    * `"names":["mistral-medium-3-5","mistral-medium-3","mistral-medium-latest"]`
    * (https://docs.mistral.ai/models/mistral-medium-3-5-26-04, page source,
    * 2026-11-12), and the card reads "This model is deprecated. Use Mistral
    * Large 4 for new integrations. Deprecation date 10/31/2026" — it is served
-   * until 4/30/2027.
+   * until 4/30/2027. `mistral-medium-2604` is the same 26.04 snapshot.
    */
-  "mistral-medium-3-5": { ...MEDIUM_3_5, id: "mistral-medium-3-5", status: "deprecated" },
-  "mistral-medium-3": { ...MEDIUM_3_5, id: "mistral-medium-3", status: "deprecated" },
+  "mistral-medium-3-5": { ...MEDIUM_3_5, id: "mistral-medium-3-5" },
+  "mistral-medium-3": { ...MEDIUM_3_5, id: "mistral-medium-3" },
+  "mistral-medium-latest": MEDIUM_3_5,
+  "mistral-medium-2604": { ...models["mistral-medium-2604"], status: "deprecated" },
   /**
    * `"names":["ministral-14b-2512","ministral-14b-latest"]`
    * (https://docs.mistral.ai/models/ministral-3-14b-25-12, page source,
@@ -74,7 +98,14 @@ const chatModelOverlay = {
    * `"model": "ministral-14b-latest"`.
    */
   "ministral-14b-latest": { ...models["ministral-14b-2512"], id: "ministral-14b-latest" },
-  "ministral-3b-2512": { ...MINISTRAL_3B, limit: { ...MINISTRAL_3B.limit, context: 262_144 } },
+  "ministral-3b-2512": {
+    ...MINISTRAL_3B,
+    limit: { ...MINISTRAL_3B.limit, context: MINISTRAL_3B_CONTEXT },
+  },
+  "ministral-3b-latest": {
+    ...MINISTRAL_3B_LATEST,
+    limit: { ...MINISTRAL_3B_LATEST.limit, context: MINISTRAL_3B_CONTEXT },
+  },
   "deepseek-v4-1-flash-1017": {
     ...DEEPSEEK_V4_1_FLASH,
     modalities: { input: ["text", "image"], output: ["text"] },

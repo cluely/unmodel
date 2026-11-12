@@ -9,5 +9,13 @@
     "diarize": true
   },
   "url": "https://api.mistral.ai/v1/audio/transcriptions",
-  "headers": {}
+  "headers": {},
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
+  ]
 }

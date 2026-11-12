@@ -84,9 +84,19 @@ describe("mistral.chat — the 2026-11 models", () => {
     expect(chatModels["mistral-large-4-0"].openWeights).toBe(true);
   });
 
-  test("Ministral 3 3B carries its 256k window", () => {
+  test("Ministral 3 3B carries its 256k window, under both ids", () => {
     expect(chatModels["ministral-3b-2512"].limit.context).toBe(262_144);
+    expect(chatModels["ministral-3b-latest"].limit.context).toBe(262_144);
   });
+
+  test.each(["mistral-large-2512", "mistral-medium-latest", "mistral-medium-2604"])(
+    "%s is deprecated in favour of Mistral Large 4 and warns",
+    (model) => {
+      const r = chat.safe({ model, messages: hi });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+    },
+  );
 
   test("DeepSeek V4.1 Flash takes image parts", () => {
     const r = chat.safe({
@@ -106,7 +116,7 @@ describe("mistral.chat — the 2026-11 models", () => {
 });
 
 describe("mistral.chat reasoning_effort ladders", () => {
-  test.each(["mistral-large-4", "mistral-large-4-0"])(
+  test.each(["mistral-large-4", "mistral-large-4-0", "mistral-large-latest"])(
     "%s takes low/medium/high and refuses none",
     (model) => {
       for (const effort of ["low", "medium", "high"]) {
@@ -135,6 +145,15 @@ describe("mistral.chat reasoning_effort ladders", () => {
       }
     },
   );
+
+  test("mistral-large-latest is Large 4: a reasoning model with a 1M window at Large 4 rates", () => {
+    expect(chatModels["mistral-large-latest"].reasoning).toBe(true);
+    expect(chatModels["mistral-large-latest"].limit.context).toBe(1_048_576);
+    expect(millionEachUSD("mistral-large-latest")).toBeCloseTo(0.7 + 2.1, 10);
+    const r = chat.safe({ model: "mistral-large-latest", messages: hi, reasoning_effort: "high" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
 
   test("models without a documented ladder keep the whole enum", () => {
     expect(chat.safe({ model: "mistral-small-latest", messages: hi, reasoning_effort: "none" }).ok).toBe(true);

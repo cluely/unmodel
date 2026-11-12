@@ -36,9 +36,9 @@ export const MODELS = [
  * the two granularities the adapter maps.
  *
  * Two extras, and both are the sharp end of an adapter gap: `context_bias` is
- * the term list that `prompt` is *not* (its entries may contain neither commas
- * nor whitespace, so a sentence cannot be one), and `temperature` is the
- * sampling knob no canonical word covers.
+ * the vocabulary list the canonical `prompt` is not compiled into (a list of
+ * entries, not one prompt string), and `temperature` is the sampling knob no
+ * canonical word covers.
  */
 export const VOXTRAL_ROW = {
   timestamps: ["none", "word", "segment"],

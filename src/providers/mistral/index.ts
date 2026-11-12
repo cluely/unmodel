@@ -51,6 +51,7 @@ export {
   FILES_URL,
   MAX_CONTEXT_BIAS_TERMS,
   MAX_FILE_URL_LENGTH,
+  MAX_SPEAKER_REFERENCES,
 } from "./stt";
 export type { TranscriptionBody, MistralTimestampGranularity } from "./stt";
 

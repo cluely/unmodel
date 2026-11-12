@@ -26,7 +26,11 @@ export const MISTRAL_REASONING_DOC = "https://docs.mistral.ai/inference/conversa
  * `"names":["mistral-large-4","mistral-large-4-0","mistral-large-latest"]`
  * (https://docs.mistral.ai/models/mistral-large-4-0, page source, 2026-11-12).
  */
-export const LARGE_4_MODEL_IDS = ["mistral-large-4", "mistral-large-4-0"] as const;
+export const LARGE_4_MODEL_IDS = [
+  "mistral-large-4",
+  "mistral-large-4-0",
+  "mistral-large-latest",
+] as const;
 
 /**
  * Z.ai GLM 5.3 and its aliases — the card lists

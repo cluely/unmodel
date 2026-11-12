@@ -27,8 +27,7 @@ import type { SttAdapterFor, SttParamsFor } from "../../core/unified/vocabulary/
 import { stt as validator, type TranscriptionBody } from "./stt";
 import { MISTRAL_STT_MODEL_PARAMS, MODELS } from "./stt-params";
 
-const TRANSCRIPTION_DOCS =
-  "https://docs.mistral.ai/studio/audio/speech_to_text/offline_transcription";
+const TRANSCRIPTION_DOCS = "https://docs.mistral.ai/studio/audio/speech-to-text/transcribe-files";
 
 /** The wire params this adapter compiles to (multipart form fields). */
 export type MistralSttWire = TranscriptionBody;

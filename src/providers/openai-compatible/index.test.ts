@@ -252,6 +252,53 @@ describe("createOpenAICompatible catalog wiring", () => {
   });
 });
 
+describe("createOpenAICompatible fixedSampling", () => {
+  const fixedCatalog = {
+    "tiny-fixed": { ...catalog["tiny-chat"], id: "tiny-fixed", temperature: false },
+  } as const satisfies Record<string, ModelInfo>;
+  const body = {
+    model: "tiny-fixed",
+    messages: [userMessage("hi")],
+    temperature: 0.7,
+    top_p: 0.9,
+  };
+
+  test("by default a temperature: false model refuses temperature and top_p other than 1", () => {
+    const rejecting = createOpenAICompatible({
+      id: "acme",
+      baseUrl: "https://api.acme.dev/v1",
+      catalog: fixedCatalog,
+    });
+    const r = rejecting.chat.safe(body);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => [e.code, e.path])).toEqual([
+        ["unsupported_param", ["temperature"]],
+        ["unsupported_param", ["top_p"]],
+      ]);
+    }
+  });
+
+  test('"overridden" warns on temperature and leaves top_p ungated', () => {
+    const overriding = createOpenAICompatible({
+      id: "acme",
+      baseUrl: "https://api.acme.dev/v1",
+      catalog: fixedCatalog,
+      fixedSampling: "overridden",
+    });
+    const r = overriding.chat.safe(body);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => [w.code, w.severity, w.path])).toEqual([
+        ["unsupported_param", "warning", ["temperature"]],
+      ]);
+      expect(r.warnings[0]?.meta).toEqual({ ignored: true });
+    }
+    const untouched = overriding.chat.safe({ model: "tiny-fixed", messages: [userMessage("hi")] });
+    expect(untouched.ok && untouched.warnings).toEqual([]);
+  });
+});
+
 describe("createOpenAICompatible estimation", () => {
   test("estimate prices tokens from the provider catalog", () => {
     // "hello world!" = 12 chars -> 3 heuristic tokens, +4 message overhead.

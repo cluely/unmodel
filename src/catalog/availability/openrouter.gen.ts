@@ -532,7 +532,7 @@ export const availability = {
     "openrouter": "mancer/weaver",
   },
   "meituan/longcat-2.0": {
-    "longcat": { id: "LongCat-2.0", narrows: { context: 1000000 } },
+    "longcat": { id: "LongCat-2.0", narrows: { context: 1048576 } },
     "openrouter": "meituan/longcat-2.0",
     "siliconflow": "meituan-longcat/LongCat-2.0",
   },

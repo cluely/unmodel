@@ -24,6 +24,9 @@ export const availability = {
     "openrouter": "meituan/longcat-2.0",
     "siliconflow": "meituan-longcat/LongCat-2.0",
   },
+  "LongCat-2.5-Preview": {
+    "longcat": "LongCat-2.5-Preview",
+  },
 } as const satisfies AvailabilityMap;
 
 export type LongcatAvailability = typeof availability;

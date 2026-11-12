@@ -240,7 +240,7 @@ export const availability = {
     "siliconflow": "inclusionAI/Ling-flash-2.0",
   },
   "meituan-longcat/LongCat-2.0": {
-    "longcat": { id: "LongCat-2.0", narrows: { context: 1000000 } },
+    "longcat": { id: "LongCat-2.0", narrows: { context: 1048576 } },
     "openrouter": { id: "meituan/longcat-2.0", narrows: { context: 1048756 } },
     "siliconflow": "meituan-longcat/LongCat-2.0",
   },

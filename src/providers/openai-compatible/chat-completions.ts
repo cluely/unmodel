@@ -87,10 +87,28 @@ export type {
 
 export const DEFAULT_IMAGE_TOKENS = 1000;
 
-/** A provider's hand-written constraint tables for its chat endpoint. */
+/**
+ * What a provider's API does with a sampling value sent to a model whose
+ * catalog row says `temperature: false`. The flag only says sampling is fixed;
+ * APIs disagree about the consequence, and reading it wrong in one direction
+ * refuses requests the API fulfils.
+ *
+ * - `"rejected"` (the default): only the default value 1 is accepted for
+ *   `temperature` and `top_p`, anything else is a 400 — OpenAI's reasoning
+ *   models.
+ * - `"overridden"`: any `temperature` is accepted and replaced server-side
+ *   with the model's own setting, and `top_p` stays adjustable. A sent
+ *   `temperature` is therefore a warning (the value has no effect), never an
+ *   error, and `top_p` is not gated by the flag at all.
+ */
+export type FixedSampling = "rejected" | "overridden";
+
+/** A provider's hand-written constraint tables and dialect readings for its chat endpoint. */
 export interface ChatConstraintSpec {
   constraints?: Readonly<Partial<Record<string, EndpointConstraints>>>;
   familyRules?: readonly FamilyRule[];
+  /** What `temperature: false` means on this API; `"rejected"` when omitted. */
+  fixedSampling?: FixedSampling;
 }
 
 /**
@@ -241,11 +259,16 @@ export type ChatCompletionsCheck = (
  * 0.95 and rejects 1 — so the table states the documented value and the
  * pipeline's enum layer refuses everything else by name.
  *
+ * The spec's `fixedSampling` decides what the flag means at all: under
+ * `"overridden"` the API replaces the value instead of refusing it, so the
+ * check is {@link checkOverriddenTemperature} and nothing is pinned.
+ *
  * Exported so a dialect whose exemptions depend on other params (OpenAI's
  * GPT-6 at `reasoning_effort: "none"`) can wrap it and hand the wrapper to
  * {@link chatCompletionsChecks} as its sampling slot.
  */
 export function createSamplingParamsCheck(spec: ChatConstraintSpec): ChatCompletionsCheck {
+  if (spec.fixedSampling === "overridden") return checkOverriddenTemperature;
   return function checkPinnedSampling(params, info, ctx) {
     const pinned = constraintsFor(spec, params.model).flatMap((constraints) =>
       Object.keys(constraints.enums ?? {}),
@@ -278,6 +301,28 @@ function reportFixedSampling(
       });
     }
   }
+}
+
+/**
+ * The `fixedSampling: "overridden"` reading of `temperature: false`: the API
+ * fulfils the request and swaps the value for its own, so a sent `temperature`
+ * is worth surfacing but must not fail. `top_p` is deliberately not read.
+ */
+function checkOverriddenTemperature(
+  params: ChatCompletionsBodyBase,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (info === undefined || info.temperature !== false) return;
+  if (params.temperature === undefined || params.temperature === null) return;
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["temperature"],
+    model: params.model,
+    message: `\`temperature\` is overridden by the API for "${params.model}" (fixed sampling settings): the request is accepted, but the model's own setting replaces the value sent. \`top_p\` stays adjustable.`,
+    meta: { ignored: true },
+  });
 }
 
 export function checkOutputLimit(

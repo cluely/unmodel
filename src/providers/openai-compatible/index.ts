@@ -23,6 +23,7 @@ import {
   type ChatConstraintSpec,
   type ChatFinalizeSpec,
   type ChatSdkTargets,
+  type FixedSampling,
 } from "./chat-completions";
 import { createCheckChat, type ChatCompletionLike, type ChatFinishReason } from "./check";
 import type { ResponseReport } from "../../core/report";
@@ -123,6 +124,13 @@ export interface OpenAICompatibleConfigBase<
   constraints?: Readonly<Partial<Record<string, EndpointConstraints>>>;
   /** Pattern rules (reasoning families, endpoint-wide media limits etc.). */
   familyRules?: readonly FamilyRule[];
+  /**
+   * What this API does with a sampling value sent to a `temperature: false`
+   * model. Omitted means `"rejected"` (OpenAI's behaviour: anything but 1 is a
+   * 400); an overlay whose provider documents that it accepts and overrides
+   * the value declares `"overridden"`, with that page as provenance.
+   */
+  fixedSampling?: FixedSampling;
   /**
    * Extra static headers sent with every chat request — version pins, routing
    * hints, an `http-referer`.
@@ -299,6 +307,7 @@ export function createOpenAICompatible<
   const spec: ChatConstraintSpec = {
     ...(config.constraints !== undefined && { constraints: config.constraints }),
     ...(config.familyRules !== undefined && { familyRules: config.familyRules }),
+    ...(config.fixedSampling !== undefined && { fixedSampling: config.fixedSampling }),
   };
 
   const validator = createValidator<ChatCompletionsBodyBase, unknown>({
@@ -357,6 +366,7 @@ export type {
   ChatConstraintSpec,
   ChatFinalizeSpec,
   ChatSdkTargets,
+  FixedSampling,
   ChatCustomTool,
   ChatCustomToolCall,
   ChatDeveloperMessage,

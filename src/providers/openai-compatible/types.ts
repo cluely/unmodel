@@ -50,6 +50,7 @@ export type {
   ChatConstraintSpec,
   ChatFinalizeSpec,
   ChatSdkTargets,
+  FixedSampling,
   ChatCustomTool,
   ChatCustomToolCall,
   ChatDeveloperMessage,

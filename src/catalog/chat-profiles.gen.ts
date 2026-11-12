@@ -445,7 +445,8 @@ export const chatProfiles: ChatCatalog = {
     "mercury-edit-2": { attachment: false, reasoning: false, toolCall: false, structuredOutput: false, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 32000, output: 8192 }, cost: { input: 0.25, output: 0.75, cacheRead: 0.025 } },
   },
   "longcat": {
-    "LongCat-2.0": { attachment: false, reasoning: true, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 1000000, output: 131072 }, cost: { input: 0.75, output: 2.95, cacheRead: 0.015 } },
+    "LongCat-2.0": { attachment: false, reasoning: true, toolCall: true, temperature: false, modalities: M_TEXT__TEXT, limit: { context: 1048576, output: 131072 }, cost: { input: 0.3, output: 1.2, cacheRead: 0.006 } },
+    "LongCat-2.5-Preview": { attachment: true, reasoning: true, toolCall: true, temperature: false, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 1048576, output: 262144 }, cost: { input: 0.3, output: 1.2, cacheRead: 0.006 } },
   },
   "meta": {
     "muse-ember-1.0": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO_PDF_AUDIO__TEXT, limit: { context: 1048576, output: 524288 }, cost: { input: 0.1, output: 0.5, cacheRead: 0.004 } },

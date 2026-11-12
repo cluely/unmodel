@@ -23,6 +23,21 @@ const { chat, chatUrl, checkChat, estimateChatTokens } =
     baseUrl: "https://api.longcat.chat/openai/v1",
     catalog: models,
     availability,
+    // The catalog's `temperature: false` on LongCat rows means the value is
+    // fixed, not refused — no LongCat reference has ever said a value is
+    // rejected (checked 2026-11-12):
+    // - https://longcat.chat/platform/docs/api/model-params: "Fixed to 1.0
+    //   when thinking is enabled and 0.7 when thinking is disabled. Other
+    //   values are not rejected — they are overridden with the default for the
+    //   current thinking state." and top_p "0.95 (0, 1]" (adjustable);
+    // - LongCat-2.0, the flag's own source,
+    //   https://raw.githubusercontent.com/anomalyco/models.dev/dev/providers/longcat/models/LongCat-2.0.toml:
+    //   "temperature is fixed (1.0 with thinking on, 0.7 off) and other values
+    //   are overridden; top_p (0, 1] and top_k [-1, 100] are accepted";
+    // - LongCat-2.5-Preview, the one reference that documented it,
+    //   https://web.archive.org/web/20260925143949/https://longcat.chat/platform/docs/zh/api/chat:
+    //   "temperature number optional 采样温度，范围 0 ~ 1 。"
+    fixedSampling: "overridden",
   });
 
 /** POST https://api.longcat.chat/openai/v1/chat/completions */

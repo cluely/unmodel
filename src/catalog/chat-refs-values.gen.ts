@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1440 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1441 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -183,6 +183,7 @@ export const CHAT_MODEL_REFS = [
   "deepinfra/zai-org/GLM-5.2",
   "deepinfra/zai-org/GLM-5.3",
   "deepinfra/zai-org/GLM-5.3-Flash",
+  "deepseek/deepseek-flash",
   "deepseek/deepseek-v4-flash",
   "deepseek/deepseek-v4-flash-vision-exp",
   "deepseek/deepseek-v4-pro",

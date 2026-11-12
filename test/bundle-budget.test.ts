@@ -1761,6 +1761,7 @@ describe("unmodel/chat", () => {
       "src/catalog/availability/alibaba.gen.ts",
       "src/catalog/availability/anthropic.gen.ts",
       "src/catalog/availability/baseten.gen.ts",
+      "src/catalog/availability/deepseek.gen.ts",
       "src/catalog/availability/friendli.gen.ts",
       "src/catalog/availability/google.gen.ts",
       "src/catalog/availability/mistral.gen.ts",

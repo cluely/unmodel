@@ -62,7 +62,7 @@ export const availability = {
   "deepseek/deepseek-v4-pro": {
     "azure": { id: "deepseek-v4-pro", narrows: { context: 1000000 } },
     "deepinfra": "deepseek-ai/DeepSeek-V4-Pro",
-    "deepseek": { id: "deepseek-v4-pro", narrows: { context: 1000000 } },
+    "deepseek": "deepseek-v4-pro",
     "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
     "novita-ai": "deepseek/deepseek-v4-pro",
     "openrouter": "deepseek/deepseek-v4-pro",

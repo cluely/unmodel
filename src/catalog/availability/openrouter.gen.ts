@@ -218,7 +218,7 @@ export const availability = {
   "deepseek/deepseek-v4-flash": {
     "azure": { id: "deepseek-v4-flash", narrows: { context: 1000000 } },
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash",
-    "deepseek": { id: "deepseek-v4-flash", narrows: { context: 1000000 } },
+    "deepseek": "deepseek-v4-flash",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash",
     "openrouter": "deepseek/deepseek-v4-flash",
     "siliconflow": { id: "deepseek-ai/DeepSeek-V4-Flash", narrows: { context: 1000000 } },
@@ -239,7 +239,7 @@ export const availability = {
   },
   "deepseek/deepseek-v4-flash-vision-exp": {
     "deepinfra": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
-    "deepseek": { id: "deepseek-v4-flash-vision-exp", narrows: { context: 1000000 } },
+    "deepseek": "deepseek-v4-flash-vision-exp",
     "huggingface": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
     "openrouter": "deepseek/deepseek-v4-flash-vision-exp",
     "siliconflow": { id: "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp", narrows: { context: 1000000 } },
@@ -248,7 +248,7 @@ export const availability = {
   "deepseek/deepseek-v4-pro": {
     "azure": { id: "deepseek-v4-pro", narrows: { context: 1000000 } },
     "deepinfra": "deepseek-ai/DeepSeek-V4-Pro",
-    "deepseek": { id: "deepseek-v4-pro", narrows: { context: 1000000 } },
+    "deepseek": "deepseek-v4-pro",
     "huggingface": "deepseek-ai/DeepSeek-V4-Pro",
     "novita-ai": "deepseek/deepseek-v4-pro",
     "openrouter": "deepseek/deepseek-v4-pro",

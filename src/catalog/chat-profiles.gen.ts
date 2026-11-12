@@ -263,9 +263,10 @@ export const chatProfiles: ChatCatalog = {
     "zai-org/GLM-5.3-Flash": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO_PDF__TEXT, limit: { context: 1048576, output: 131072 }, cost: { input: 0.15, output: 0.5, cacheRead: 0.03 } },
   },
   "deepseek": {
-    "deepseek-v4-flash": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 1000000, output: 384000 }, cost: { input: 0.14, output: 0.28, cacheRead: 0.0028, reasoning: 0.28 } },
-    "deepseek-v4-flash-vision-exp": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, status: "beta", modalities: M_TEXT_IMAGE__TEXT, limit: { context: 1000000, output: 384000 }, cost: { input: 0.14, output: 0.28, cacheRead: 0.0028, reasoning: 0.28 } },
-    "deepseek-v4-pro": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 1000000, output: 384000 }, cost: { input: 0.435, output: 0.87, cacheRead: 0.003625, reasoning: 0.87 } },
+    "deepseek-flash": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 1048576, output: 393216 }, cost: { input: 0.15, output: 0.6, cacheRead: 0.003, reasoning: 0.6 } },
+    "deepseek-v4-flash": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, status: "deprecated", modalities: M_TEXT_IMAGE__TEXT, limit: { context: 1048576, output: 393216 }, cost: { input: 0.15, output: 0.6, cacheRead: 0.003, reasoning: 0.6 } },
+    "deepseek-v4-flash-vision-exp": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, status: "deprecated", modalities: M_TEXT_IMAGE__TEXT, limit: { context: 1048576, output: 393216 }, cost: { input: 0.15, output: 0.6, cacheRead: 0.003, reasoning: 0.6 } },
+    "deepseek-v4-pro": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 1048576, output: 393216 }, cost: { input: 0.66, output: 1.98, cacheRead: 0.022, reasoning: 1.98 } },
   },
   "fireworks-ai": {
     "accounts/fireworks/models/deepseek-v4p1-flash": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE__TEXT, limit: { context: 1000000, output: 384000 }, cost: { input: 0.3, output: 1.2, cacheRead: 0.006 } },

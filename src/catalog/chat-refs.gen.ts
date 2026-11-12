@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1440 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1441 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -221,6 +221,7 @@ export type ChatModelRef =
   | "deepinfra/zai-org/GLM-5.2"
   | "deepinfra/zai-org/GLM-5.3"
   | "deepinfra/zai-org/GLM-5.3-Flash"
+  | "deepseek/deepseek-flash"
   | "deepseek/deepseek-v4-flash"
   | "deepseek/deepseek-v4-flash-vision-exp"
   | "deepseek/deepseek-v4-pro"

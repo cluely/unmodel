@@ -15,9 +15,9 @@
  *   or Base64 PCM chunks under `stream: true`). Both are declared
  *   `unsupported` so the error is uniform and arrives before compile.
  *
- * Voices are a closed per-model list on this API (48 / 24 / 17 names), so the
- * rows narrow `voice` at compile time and the provider validator's checkVoice
- * enforces the same lists at run time.
+ * Voices are a closed per-model list on this API (48 names on
+ * qwen3-tts-flash), so the row narrows `voice` at compile time and the
+ * provider validator's checkVoice enforces the same list at run time.
  */
 import { applyExtras, resolveVoice, toPrimaryLanguage } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
@@ -49,8 +49,7 @@ export const tts = {
   unsupported: {
     speed:
       "the Qwen TTS request has no speaking-rate field (the realtime WebSocket API is where " +
-      "prosody controls live); adjust pacing through the text, or an Instruct-Flash " +
-      "`instructions` extra.",
+      "prosody controls live); adjust pacing through the text.",
     outputFormat:
       "the response encoding is fixed — a 24 kHz 16-bit mono WAV URL, or Base64 PCM chunks " +
       "when `stream: true` — there is no request field to pick a codec, container, sample " +
@@ -109,9 +108,7 @@ export const tts = {
       }
     }
 
-    applyExtras(input, ALIBABA_TTS_MODEL_PARAMS, body, ctx, {
-      nest: { instructions: ["input"], optimize_instructions: ["input"] },
-    });
+    applyExtras(input, ALIBABA_TTS_MODEL_PARAMS, body, ctx);
 
     return { params: body, validate: validator.safe as AlibabaTtsValidate };
   },

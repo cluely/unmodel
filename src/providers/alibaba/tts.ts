@@ -4,9 +4,8 @@
  *
  * Wire reference: https://www.alibabacloud.com/help/en/model-studio/qwen-tts
  * and https://www.alibabacloud.com/help/en/model-studio/qwen-tts-api
- * (verified 2026-08-24). Params mirror the wire body exactly:
- * `{ model, input: { text, voice, language_type?, instructions?,
- * optimize_instructions? }, stream? }`.
+ * (verified 2026-08-24; model list 2026-11-12). Params mirror the wire body
+ * exactly: `{ model, input: { text, voice, language_type? }, stream? }`.
  *
  * BASE URL: the qwen-tts page still documents the legacy international domain
  * `https://dashscope-intl.aliyuncs.com` for this route (TTS_URL); the model
@@ -22,8 +21,7 @@
  * field for the audio format — the output encoding is fixed.
  *
  * REALTIME IS A DIFFERENT API: `qwen3-tts-flash-realtime`,
- * `qwen3-tts-instruct-flash-realtime`, `qwen-audio-3.0-tts-plus` and
- * `qwen-audio-3.0-tts-flash` are WebSocket-only
+ * `qwen-audio-3.0-tts-plus` and `qwen-audio-3.0-tts-flash` are WebSocket-only
  * (REALTIME_TTS_WSS_URL) and this validator rejects them — they are
  * catalogued in ./models.ts (`realtimeTtsModels`) so budgets and pickers can
  * see them, mirroring the ElevenLabs realtime precedent.
@@ -32,11 +30,10 @@
  * snapshots exist only on the China (Beijing) deployment and bill per token;
  * they are not catalogued here (see ./models.ts).
  *
- * VOICES: the voice list page closes the `voice` enum per model family —
- * 48 voices on Qwen3-TTS-Flash (17 of them on the 2025-09-18 snapshot), 24 on
- * Qwen3-TTS-Instruct-Flash — including multi-word values ("Eldric Sage",
- * "Ono Anna", "Radio Gol") sent verbatim. checkVoice refuses off-list values
- * per model; refresh the lists from qwen-tts-voice-list when they grow.
+ * VOICES: the voice list page closes the `voice` enum — 48 voices on
+ * Qwen3-TTS-Flash, including multi-word values ("Eldric Sage", "Ono Anna",
+ * "Radio Gol") sent verbatim. checkVoice refuses off-list values per model;
+ * refresh the list from qwen-tts-voice-list when it grows.
  *
  * Auth is `Authorization: Bearer <DASHSCOPE_API_KEY>` — unmodel never touches
  * keys; add the header yourself when fetching.
@@ -56,7 +53,6 @@ import {
   TTS_MODEL_IDS,
   REALTIME_TTS_MODEL_IDS,
   TTS_MAX_CHARACTERS,
-  INSTRUCT_TTS_MODEL_ID_SET,
   LANGUAGE_TYPES,
   VOICES_BY_MODEL,
   type AlibabaLanguageType,
@@ -93,9 +89,6 @@ export function ttsUrl(baseUrl: string = DEFAULT_BASE_URL): string {
  */
 export const REALTIME_TTS_WSS_URL = "wss://dashscope-intl.aliyuncs.com/api-ws/v1/realtime";
 
-/** "Maximum length: 1,600 tokens" — `input.instructions` (Instruct-Flash). */
-export const INSTRUCTIONS_MAX_TOKENS = 1600;
-
 // ---------------------------------------------------------------------------
 // Wire types — mirror the raw JSON body exactly (snake_case).
 // ---------------------------------------------------------------------------
@@ -110,13 +103,6 @@ export interface AlibabaTtsInput {
    * language of the text."
    */
   language_type?: AlibabaLanguageType | (string & {});
-  /**
-   * Style/emotion instruction; Qwen3-TTS-Instruct-Flash models only.
-   * ≤1,600 tokens, Chinese and English only.
-   */
-  instructions?: string;
-  /** LLM-optimize `instructions` first; Instruct-Flash only. Default false. */
-  optimize_instructions?: boolean;
 }
 
 export interface TtsGenerationParams {
@@ -140,8 +126,6 @@ const ttsSchema = z.looseObject({
     text: z.string().min(1, "input.text must not be empty."),
     voice: z.string().min(1, "input.voice must not be empty."),
     language_type: z.string().optional(),
-    instructions: z.string().optional(),
-    optimize_instructions: z.boolean().optional(),
   }),
   stream: z.boolean().optional(),
 });
@@ -238,26 +222,6 @@ function checkVoice(
   });
 }
 
-/** `instructions` / `optimize_instructions` are Instruct-Flash-only fields. */
-function checkInstructions(
-  params: TtsGenerationParams,
-  info: ModelInfo | undefined,
-  ctx: PipelineContext,
-): void {
-  if (info === undefined) return;
-  if (INSTRUCT_TTS_MODEL_ID_SET.has(params.model)) return;
-  for (const field of ["instructions", "optimize_instructions"] as const) {
-    if (params.input?.[field] === undefined) continue;
-    ctx.report({
-      code: "unsupported_param",
-      path: ["input", field],
-      model: params.model,
-      message: `\`input.${field}\` applies only to the Qwen3-TTS-Instruct-Flash models; "${params.model}" does not accept it.`,
-      meta: { source: TTS_DOCS },
-    });
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Estimation — billed per input character (catalog cost.perMillionCharacters);
 // output audio is free.
@@ -308,7 +272,7 @@ const validator = createValidator<TtsGenerationParams, unknown>({
   // The realtime rows are in the catalog so a rejected realtime id draws the
   // targeted enum error alone, not an unknown_model warning beside it.
   catalog: { ...ttsModels, ...realtimeTtsModels },
-  checks: [checkModelEnum, checkTextLength, checkLanguageType, checkVoice, checkInstructions],
+  checks: [checkModelEnum, checkTextLength, checkLanguageType, checkVoice],
   estimate,
   finalize,
 });

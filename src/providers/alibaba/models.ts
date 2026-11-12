@@ -46,23 +46,20 @@
 //   it because the request does not carry either duration.
 // - TTS is quoted per 10,000 input characters (output audio is free):
 //   qwen3-tts-flash $0.10/10K → $10 per 1M characters ($0.10 / 10_000 ×
-//   1_000_000); qwen3-tts-instruct-flash $0.115/10K → $11.50/M;
-//   qwen3-tts-flash-realtime $0.13/10K → $13/M; qwen3-tts-instruct-flash-
-//   realtime $0.143/10K → $14.30/M; qwen-audio-3.0-tts-flash $0.15/10K →
-//   $15/M; qwen-audio-3.0-tts-plus $0.20/10K → $20/M.
+//   1_000_000); qwen3-tts-flash-realtime $0.13/10K → $13/M;
+//   qwen-audio-3.0-tts-flash $0.15/10K → $15/M; qwen-audio-3.0-tts-plus
+//   $0.20/10K → $20/M.
 //
 // `limit.context: 0` — none of these are token-context models (HAND_CATALOGS.md).
 // The Qwen3-TTS `text` cap ("600 characters") rides on `limit.characters`.
 
 import type { ModelInfo } from "../../core/catalog-types";
 
-/** "600 characters" — the Qwen3-TTS-Flash / -Instruct-Flash `input.text` cap. */
+/** "600 characters" — the Qwen3-TTS-Flash `input.text` cap. */
 export const TTS_MAX_CHARACTERS = 600;
 
 /** $0.10 per 10K characters → USD per 1M characters. */
 export const TTS_FLASH_PER_MILLION_CHARACTERS = 10;
-/** $0.115 per 10K characters → USD per 1M characters. */
-export const TTS_INSTRUCT_PER_MILLION_CHARACTERS = 11.5;
 
 /** Shared shape of every video catalog entry. */
 const VIDEO = {
@@ -308,7 +305,10 @@ const TTS = {
 
 /**
  * Model ids POST /api/v1/services/aigc/multimodal-generation/generation
- * accepts on the international platform (the unary HTTP TTS route).
+ * accepts on the international platform (the unary HTTP TTS route). The
+ * qwen-tts-api reference (last updated 2026-10-27, checked 2026-11-12) names
+ * `qwen3-tts-flash` as its only model id, and the qwen-tts page's Singapore
+ * Qwen3-TTS list is "qwen3-tts-flash".
  */
 export const ttsModels = {
   "qwen3-tts-flash": {
@@ -317,34 +317,6 @@ export const ttsModels = {
     family: "qwen3-tts",
     ...TTS,
     cost: { perMillionCharacters: TTS_FLASH_PER_MILLION_CHARACTERS },
-  },
-  "qwen3-tts-flash-2025-11-27": {
-    id: "qwen3-tts-flash-2025-11-27",
-    name: "Qwen3 TTS Flash (2025-11-27)",
-    family: "qwen3-tts",
-    ...TTS,
-    cost: { perMillionCharacters: TTS_FLASH_PER_MILLION_CHARACTERS },
-  },
-  "qwen3-tts-flash-2025-09-18": {
-    id: "qwen3-tts-flash-2025-09-18",
-    name: "Qwen3 TTS Flash (2025-09-18)",
-    family: "qwen3-tts",
-    ...TTS,
-    cost: { perMillionCharacters: TTS_FLASH_PER_MILLION_CHARACTERS },
-  },
-  "qwen3-tts-instruct-flash": {
-    id: "qwen3-tts-instruct-flash",
-    name: "Qwen3 TTS Instruct Flash",
-    family: "qwen3-tts-instruct",
-    ...TTS,
-    cost: { perMillionCharacters: TTS_INSTRUCT_PER_MILLION_CHARACTERS },
-  },
-  "qwen3-tts-instruct-flash-2026-01-26": {
-    id: "qwen3-tts-instruct-flash-2026-01-26",
-    name: "Qwen3 TTS Instruct Flash (2026-01-26)",
-    family: "qwen3-tts-instruct",
-    ...TTS,
-    cost: { perMillionCharacters: TTS_INSTRUCT_PER_MILLION_CHARACTERS },
   },
 } as const satisfies Record<string, ModelInfo>;
 
@@ -397,19 +369,6 @@ export const realtimeTtsModels = {
     limit: { context: 0 },
     // $0.13 per 10K characters → $13 per 1M characters.
     cost: { perMillionCharacters: 13 },
-  },
-  "qwen3-tts-instruct-flash-realtime": {
-    id: "qwen3-tts-instruct-flash-realtime",
-    name: "Qwen3 TTS Instruct Flash Realtime",
-    family: "qwen3-tts-instruct",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    modalities: { input: ["text"], output: ["audio"] },
-    limit: { context: 0 },
-    // $0.143 per 10K characters → $14.30 per 1M characters.
-    cost: { perMillionCharacters: 14.3 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
@@ -509,68 +468,11 @@ export const QWEN3_TTS_FLASH_VOICES = [
   "Kiki",
 ] as const;
 
-/** The 2025-09-18 snapshot serves 17 of the 48. */
-export const QWEN3_TTS_FLASH_2025_09_18_VOICES = [
-  "Cherry",
-  "Ethan",
-  "Nofish",
-  "Jennifer",
-  "Ryan",
-  "Katerina",
-  "Elias",
-  "Jada",
-  "Dylan",
-  "Li",
-  "Marcus",
-  "Roy",
-  "Peter",
-  "Sunny",
-  "Eric",
-  "Rocky",
-  "Kiki",
-] as const;
-
-export const QWEN3_TTS_INSTRUCT_FLASH_VOICES = [
-  "Cherry",
-  "Serena",
-  "Ethan",
-  "Chelsie",
-  "Momo",
-  "Vivian",
-  "Moon",
-  "Maia",
-  "Kai",
-  "Nofish",
-  "Bella",
-  "Eldric Sage",
-  "Mia",
-  "Mochi",
-  "Bellona",
-  "Vincent",
-  "Bunny",
-  "Neil",
-  "Elias",
-  "Arthur",
-  "Nini",
-  "Seren",
-  "Pip",
-  "Stella",
-] as const;
 
 /** Runtime lookup backing the TTS validator's checkVoice. */
 export const VOICES_BY_MODEL: Readonly<Partial<Record<string, readonly string[]>>> = {
   "qwen3-tts-flash": QWEN3_TTS_FLASH_VOICES,
-  "qwen3-tts-flash-2025-11-27": QWEN3_TTS_FLASH_VOICES,
-  "qwen3-tts-flash-2025-09-18": QWEN3_TTS_FLASH_2025_09_18_VOICES,
-  "qwen3-tts-instruct-flash": QWEN3_TTS_INSTRUCT_FLASH_VOICES,
-  "qwen3-tts-instruct-flash-2026-01-26": QWEN3_TTS_INSTRUCT_FLASH_VOICES,
 };
-
-/** The Instruct-Flash ids (`input.instructions` / `optimize_instructions`). */
-export const INSTRUCT_TTS_MODEL_ID_SET: ReadonlySet<string> = new Set([
-  "qwen3-tts-instruct-flash",
-  "qwen3-tts-instruct-flash-2026-01-26",
-]);
 
 export type AlibabaVideoGenerationModelId = keyof typeof videoModels;
 export type AlibabaTtsGenerationModelId = keyof typeof ttsModels;

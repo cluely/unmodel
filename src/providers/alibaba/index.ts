@@ -66,7 +66,6 @@ export {
   TTS_PATH,
   TTS_URL,
   REALTIME_TTS_WSS_URL,
-  INSTRUCTIONS_MAX_TOKENS,
   LANGUAGE_TYPES,
 } from "./tts";
 export type { TtsGenerationParams, AlibabaTtsInput, AlibabaLanguageType } from "./tts";
@@ -83,10 +82,7 @@ export {
   REALTIME_TTS_MODEL_IDS,
   TTS_MAX_CHARACTERS,
   TTS_FLASH_PER_MILLION_CHARACTERS,
-  TTS_INSTRUCT_PER_MILLION_CHARACTERS,
   QWEN3_TTS_FLASH_VOICES,
-  QWEN3_TTS_FLASH_2025_09_18_VOICES,
-  QWEN3_TTS_INSTRUCT_FLASH_VOICES,
   VOICES_BY_MODEL,
 } from "./models";
 export type {

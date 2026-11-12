@@ -7,8 +7,6 @@ import {
   REALTIME_TTS_MODEL_IDS,
   TTS_MAX_CHARACTERS,
   QWEN3_TTS_FLASH_VOICES,
-  QWEN3_TTS_FLASH_2025_09_18_VOICES,
-  QWEN3_TTS_INSTRUCT_FLASH_VOICES,
 } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
@@ -55,20 +53,6 @@ describe("alibaba.tts happy path", () => {
     expect(ttsUrl("https://ws-1.ap-southeast-1.maas.aliyuncs.com/")).toBe(
       "https://ws-1.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
     );
-  });
-
-  test("instructions pass on the Instruct-Flash pair", () => {
-    const r = tts.safe({
-      model: "qwen3-tts-instruct-flash",
-      input: {
-        text: "x",
-        voice: "Serena",
-        instructions: "Whisper, like telling a secret.",
-        optimize_instructions: true,
-      },
-    });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings).toEqual([]);
   });
 
   test("unknown top-level key warns", () => {
@@ -159,48 +143,16 @@ describe("alibaba.tts enums (doc audit 2026-08-24)", () => {
     }
   });
 
-  test("voices are a closed per-model list, multi-word names included", () => {
+  test("voices are a closed list, multi-word names included", () => {
     expect(
       tts.safe({ model: "qwen3-tts-flash", input: { text: "x", voice: "Eldric Sage" } }).ok,
     ).toBe(true);
-    expect(
-      tts.safe({ model: "qwen3-tts-instruct-flash", input: { text: "x", voice: "Eldric Sage" } })
-        .ok,
-    ).toBe(true);
-    // Jennifer exists on Flash but not on the Instruct pair.
-    const r = tts.safe({
-      model: "qwen3-tts-instruct-flash",
-      input: { text: "x", voice: "Jennifer" },
-    });
+    const r = tts.safe({ model: "qwen3-tts-flash", input: { text: "x", voice: "Alloy" } });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.errors[0]?.code).toBe("invalid_enum_value");
       expect(r.errors[0]?.path).toEqual(["input", "voice"]);
     }
-    // Momo joined after the 2025-09-18 snapshot.
-    expect(
-      tts.safe({ model: "qwen3-tts-flash-2025-09-18", input: { text: "x", voice: "Momo" } }).ok,
-    ).toBe(false);
-    expect(
-      tts.safe({ model: "qwen3-tts-flash", input: { text: "x", voice: "Momo" } }).ok,
-    ).toBe(true);
-  });
-
-  test("instructions are Instruct-Flash-only", () => {
-    const r = tts.safe({
-      model: "qwen3-tts-flash",
-      input: { text: "x", voice: "Cherry", instructions: "Sound cheerful." },
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.code).toBe("unsupported_param");
-      expect(r.errors[0]?.path).toEqual(["input", "instructions"]);
-    }
-    const opt = tts.safe({
-      model: "qwen3-tts-flash",
-      input: { text: "x", voice: "Cherry", optimize_instructions: true },
-    });
-    expect(opt.ok).toBe(false);
   });
 });
 
@@ -212,15 +164,6 @@ describe("alibaba.tts cost estimation", () => {
     });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.002, 10);
-  });
-
-  test("the Instruct pair prices at $11.50/1M characters", () => {
-    const r = tts.safe({
-      model: "qwen3-tts-instruct-flash",
-      input: { text: "a".repeat(200), voice: "Cherry" },
-    });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.0023, 10);
   });
 
   test("maxCostUSD enforces over_budget", () => {
@@ -258,16 +201,7 @@ describe("alibaba.tts catalog", () => {
     }
   });
 
-  test("the transcribed voice lists keep their documented sizes", () => {
+  test("the transcribed voice list keeps its documented size", () => {
     expect(QWEN3_TTS_FLASH_VOICES.length).toBe(48);
-    expect(QWEN3_TTS_FLASH_2025_09_18_VOICES.length).toBe(17);
-    expect(QWEN3_TTS_INSTRUCT_FLASH_VOICES.length).toBe(24);
-    // The snapshot subset is a subset of the current list.
-    for (const voice of QWEN3_TTS_FLASH_2025_09_18_VOICES) {
-      expect(QWEN3_TTS_FLASH_VOICES).toContain(voice);
-    }
-    for (const voice of QWEN3_TTS_INSTRUCT_FLASH_VOICES) {
-      expect(QWEN3_TTS_FLASH_VOICES).toContain(voice);
-    }
   });
 });

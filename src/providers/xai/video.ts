@@ -24,6 +24,9 @@
  *   matches the input, capped at 8.7 s); extensions take 2–10 s (default 6).
  * - `resolution` 480p/720p/1080p — 1080p is text-to-video and image-to-video
  *   only, and reference-to-video is capped at 720p.
+ * - grok-imagine-video-1.5-lite is text-to-video and image-to-video only: no
+ *   reference images, no voice references, no edits, no extensions
+ *   ({@link VIDEO_TEXT_IMAGE_ONLY_MODELS}).
  * - `model` is optional on the wire and xAI documents no server-side default,
  *   so an omitted model skips model-dependent checks and produces no estimate.
  * - Billing is per second of generated video (see ./models.ts).
@@ -75,6 +78,25 @@ export const DEFAULT_EXTENSION_DURATION = 6;
 
 /** "max 3 per request" — reference voices. */
 export const VIDEO_MAX_REFERENCE_AUDIOS = 3;
+
+const VIDEO_OVERVIEW = "https://docs.x.ai/developers/model-capabilities/video/overview";
+
+/**
+ * Models that serve text-to-video and image-to-video and nothing else: no
+ * `reference_images`, no `reference_audios`, and neither /v1/videos/edits nor
+ * /v1/videos/extensions. The capability matrix on
+ * https://docs.x.ai/developers/model-capabilities/video/overview (columns
+ * grok-imagine-video-1.5 | grok-imagine-video-1.5-lite | grok-imagine-video,
+ * 2026-11-12):
+ * "| Reference images | Yes: Up to 14 images, 15 s, 720p | Not supported | Yes: Up to 7 images, 10 s, 720p |",
+ * "| Voice references | Yes: Up to 3 voices | Not supported | Not supported |",
+ * "| Video editing | Not supported | Not supported | Yes: Source up to 8.7 s |",
+ * "| Video extension | Not supported | Not supported | Yes: Adds 2–10 s |".
+ */
+export const VIDEO_TEXT_IMAGE_ONLY_MODELS = ["grok-imagine-video-1.5-lite"] as const;
+
+/** The model the edit and extension capability pages name: "| Model | `grok-imagine-video` |". */
+const SOURCE_CLIP_MODEL = "grok-imagine-video";
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror the raw JSON body exactly (snake_case).
@@ -295,6 +317,60 @@ function checkGenerationInputs(
   }
 }
 
+const TEXT_IMAGE_ONLY_SET = new Set<string>(VIDEO_TEXT_IMAGE_ONLY_MODELS);
+
+/** Reference inputs on a model with no reference-to-video mode. */
+function checkReferenceSupport(
+  params: VideoGenerationsParams,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const model = params.model;
+  if (model === undefined || !TEXT_IMAGE_ONLY_SET.has(model)) return;
+  if (params.reference_images !== undefined) {
+    ctx.report({
+      code: "unsupported_capability",
+      path: ["reference_images"],
+      model,
+      message:
+        `${JSON.stringify(model)} serves text-to-video and image-to-video only; reference-to-video ` +
+        "(`reference_images`) is served by grok-imagine-video-1.5 (up to 14 images) and " +
+        "grok-imagine-video (up to 7).",
+      meta: { source: VIDEO_OVERVIEW },
+    });
+  }
+  if (params.reference_audios !== undefined) {
+    ctx.report({
+      code: "unsupported_capability",
+      path: ["reference_audios"],
+      model,
+      message:
+        `${JSON.stringify(model)} takes no voice references; \`reference_audios\` is served by ` +
+        "grok-imagine-video-1.5 (up to 3 voices).",
+      meta: { source: VIDEO_OVERVIEW },
+    });
+  }
+}
+
+/** /v1/videos/edits and /v1/videos/extensions on a model that has neither. */
+function sourceClipModelCheck(
+  route: "/v1/videos/edits" | "/v1/videos/extensions",
+): (params: { model?: string }, info: ModelInfo | undefined, ctx: PipelineContext) => void {
+  return function checkSourceClipModel(params, _info, ctx) {
+    const model = params.model;
+    if (model === undefined || !TEXT_IMAGE_ONLY_SET.has(model)) return;
+    ctx.report({
+      code: "unsupported_capability",
+      path: ["model"],
+      model,
+      message:
+        `${JSON.stringify(model)} serves text-to-video and image-to-video only; POST ${route} ` +
+        `is served by ${JSON.stringify(SOURCE_CLIP_MODEL)}.`,
+      meta: { source: VIDEO_OVERVIEW },
+    });
+  };
+}
+
 function checkGenerationDuration(
   params: VideoGenerationsParams,
   _info: ModelInfo | undefined,
@@ -439,7 +515,13 @@ const generationsValidator = createValidator<VideoGenerationsParams, unknown>({
   schema: generationsSchema,
   modelId: (params) => params.model,
   catalog: videoModels,
-  checks: [checkModelEnum, checkGenerationInputs, checkGenerationDuration, checkGenerationResolution],
+  checks: [
+    checkModelEnum,
+    checkGenerationInputs,
+    checkReferenceSupport,
+    checkGenerationDuration,
+    checkGenerationResolution,
+  ],
   estimate: estimateGeneration,
   promptPath: ["prompt"],
   finalize: finalizeTo(VIDEO_GENERATIONS_URL),
@@ -450,7 +532,7 @@ const editsValidator = createValidator<VideoEditsParams, unknown>({
   schema: editsSchema,
   modelId: (params) => params.model,
   catalog: videoModels,
-  checks: [checkModelEnum, checkEditInputs],
+  checks: [checkModelEnum, sourceClipModelCheck("/v1/videos/edits"), checkEditInputs],
   promptPath: ["prompt"],
   finalize: finalizeTo(VIDEO_EDITS_URL),
 });
@@ -460,7 +542,12 @@ const extensionsValidator = createValidator<VideoExtensionsParams, unknown>({
   schema: extensionsSchema,
   modelId: (params) => params.model,
   catalog: videoModels,
-  checks: [checkModelEnum, checkEditInputs, checkExtensionDuration],
+  checks: [
+    checkModelEnum,
+    sourceClipModelCheck("/v1/videos/extensions"),
+    checkEditInputs,
+    checkExtensionDuration,
+  ],
   estimate: estimateExtension,
   promptPath: ["prompt"],
   finalize: finalizeTo(VIDEO_EXTENSIONS_URL),

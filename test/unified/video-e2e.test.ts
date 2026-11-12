@@ -151,6 +151,28 @@ describe("route derivation", () => {
     expect(result.errors[0]).toMatchObject({ path: ["image"], meta: { route: "reference" } });
   });
 
+  test("the reference route is per model inside one provider (xai 1.5 vs 1.5-lite)", () => {
+    const reference = { image: [{ url: "https://example.com/a.png", role: "reference" as const }] };
+    expect(video.safe({ model: "xai/grok-imagine-video-1.5", prompt: "hi", ...reference }).ok).toBe(
+      true,
+    );
+    const lite = video.safe({ model: "xai/grok-imagine-video-1.5-lite", prompt: "hi", ...reference });
+    expect(lite.ok).toBe(false);
+    if (lite.ok) return;
+    expect(lite.errors[0]).toMatchObject({
+      code: "unsupported_capability",
+      path: ["image"],
+      meta: { route: "reference", routes: ["text", "image"] },
+    });
+    expect(
+      video.safe({
+        model: "xai/grok-imagine-video-1.5-lite",
+        prompt: "hi",
+        image: { url: "https://example.com/a.png" },
+      }).ok,
+    ).toBe(true);
+  });
+
   test("two images claiming one keyframe is a shape error, not a last-one-wins", () => {
     const result = video.safe({
       model: "kling/kling-v3",

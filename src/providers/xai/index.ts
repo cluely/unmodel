@@ -56,6 +56,7 @@ export {
   EXTENSION_MAX_DURATION,
   DEFAULT_EXTENSION_DURATION,
   VIDEO_MAX_REFERENCE_AUDIOS,
+  VIDEO_TEXT_IMAGE_ONLY_MODELS,
 } from "./video";
 export type {
   VideoGenerationsParams,
@@ -70,7 +71,8 @@ export type {
 
 // Hand-supplemented Imagine catalog (the generated `models` above is the TEXT
 // catalog plus cost-less Imagine rows; ./models adds the published per-image /
-// per-second rates and the grok-imagine-image-2.0 row models.dev lacks).
+// per-second rates and the grok-imagine-image-2.0 / -quality rows models.dev
+// lacks).
 export {
   imageModels,
   videoModels,
@@ -81,6 +83,7 @@ export {
   IMAGE_QUALITY_PER_IMAGE_USD,
   VIDEO_PER_SECOND_USD,
   VIDEO_1_5_PER_SECOND_USD,
+  VIDEO_1_5_LITE_PER_SECOND_USD,
 } from "./models";
 export type { XaiImageGenerationModelId, XaiVideoGenerationModelId } from "./models";
 

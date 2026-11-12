@@ -268,3 +268,74 @@ describe("xai.video pricing", () => {
     expect(UnmodelValidationError.isInstance(caught)).toBe(true);
   });
 });
+
+describe("grok-imagine-video-1.5-lite", () => {
+  const LITE = "grok-imagine-video-1.5-lite";
+
+  test("validates text- and image-to-video at every documented resolution", () => {
+    expect(video.safe({ model: LITE, prompt: "a fox in the snow" }).ok).toBe(true);
+    for (const resolution of VIDEO_RESOLUTIONS) {
+      const r = video.safe({ model: LITE, prompt: "hi", image: { url: IMAGE }, resolution });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("prices at the models page's $0.020 / sec", () => {
+    expect(videoModels[LITE].cost.perVideoSecond).toBe(0.02);
+    const r = video.safe({ model: LITE, prompt: "hi", duration: 10 });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.2, 10);
+  });
+
+  test("refuses reference images and voice references, naming the models that take them", () => {
+    const images = video.safe({ model: LITE, prompt: "hi", reference_images: [{ url: IMAGE }] });
+    expect(images.ok).toBe(false);
+    if (!images.ok) {
+      expect(images.errors.map((e) => [e.code, e.path])).toEqual([
+        ["unsupported_capability", ["reference_images"]],
+      ]);
+      expect(images.errors[0]?.message).toContain("grok-imagine-video-1.5");
+    }
+
+    const voices = video.safe({
+      model: LITE,
+      prompt: "hi",
+      reference_audios: [{ voice_id: "eve" }],
+    });
+    expect(voices.ok).toBe(false);
+    if (!voices.ok) {
+      expect(voices.errors.map((e) => [e.code, e.path])).toEqual([
+        ["unsupported_capability", ["reference_audios"]],
+      ]);
+    }
+
+    // The same inputs on 1.5 stay valid.
+    expect(
+      video.safe({
+        model: "grok-imagine-video-1.5",
+        prompt: "<AUDIO_0> narrates",
+        reference_images: [{ url: IMAGE }],
+        reference_audios: [{ voice_id: "eve" }],
+      }).ok,
+    ).toBe(true);
+  });
+
+  test("refuses the edit and extension routes, naming grok-imagine-video", () => {
+    const edit = videoEdit.safe({ model: LITE, prompt: "watercolor", video: { url: CLIP } });
+    expect(edit.ok).toBe(false);
+    if (!edit.ok) {
+      expect(edit.errors.map((e) => [e.code, e.path])).toEqual([
+        ["unsupported_capability", ["model"]],
+      ]);
+      expect(edit.errors[0]?.message).toContain('"grok-imagine-video"');
+    }
+    const extend = videoExtend.safe({ model: LITE, prompt: "keep going", video: { url: CLIP } });
+    expect(extend.ok).toBe(false);
+    if (!extend.ok) expect(extend.errors[0]?.code).toBe("unsupported_capability");
+
+    expect(
+      videoEdit.safe({ model: "grok-imagine-video", prompt: "watercolor", video: { url: CLIP } }).ok,
+    ).toBe(true);
+  });
+});

@@ -13,7 +13,7 @@
  * | `prompt` | `prompt` | rename; required on every mode of this wire |
  * | `model` (ref tail) | `model` | rename |
  * | `image` (role `first`) | `image.url` | {@link requireMediaUrl} — URL or file_id only |
- * | `image` (role `reference`) | `reference_images[].url` | same |
+ * | `image` (role `reference`) | `reference_images[].url` | same; no reference route on grok-imagine-video-1.5-lite |
  * | `image` (role `last`) | — | no wire field: {@link unsupportedSlot} |
  * | `duration` | `duration` | plain number; range 1–15 checked by the validator |
  * | `resolution` | `resolution` | identity — xAI spells `480p`/`720p`/`1080p` canonically |
@@ -51,11 +51,13 @@ import {
   toDurationNumber,
   toRatioEnum,
   unsupportedSlot,
+  type VideoRoute,
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { VideoAdapterFor, VideoParams } from "../../core/unified/vocabulary/video";
 import {
   video as validator,
+  VIDEO_TEXT_IMAGE_ONLY_MODELS,
   type VideoGenerationsParams,
   type XaiVideoAspectRatio,
   type XaiVideoResolution,
@@ -117,7 +119,7 @@ export const video = {
     ctx.take(
       resolveVideoRoute(
         input,
-        { model: ctx.model, routes: ["text", "image", "reference"], source: VIDEO_DOCS },
+        { model: ctx.model, routes: routesFor(ctx.model), source: VIDEO_DOCS },
         { path: ["image"], warn: ctx.warn },
       ),
     );
@@ -203,3 +205,13 @@ export const video = {
     return { params: body, validate: validator.safe };
   },
 } as const satisfies VideoAdapterFor<typeof XAI_VIDEO_MODEL_PARAMS, XaiVideoWire, XaiVideoResult>;
+
+/**
+ * The routes a model serves: grok-imagine-video-1.5-lite has no
+ * reference-to-video mode (./video's `VIDEO_TEXT_IMAGE_ONLY_MODELS`).
+ */
+function routesFor(model: string): readonly VideoRoute[] {
+  return (VIDEO_TEXT_IMAGE_ONLY_MODELS as readonly string[]).includes(model)
+    ? ["text", "image"]
+    : ["text", "image", "reference"];
+}

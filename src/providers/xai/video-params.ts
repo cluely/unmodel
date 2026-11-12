@@ -14,13 +14,17 @@ import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 import type { XaiReferenceAudio, XaiVideoOutput } from "./video";
 import type { XaiStorageOptions } from "./image";
 
-/** The two video ids on POST /v1/videos/generations — the `xai/…` ref union. */
-export const MODELS = ["grok-imagine-video", "grok-imagine-video-1.5"] as const;
+/** The three video ids on POST /v1/videos/generations — the `xai/…` ref union. */
+export const MODELS = [
+  "grok-imagine-video",
+  "grok-imagine-video-1.5",
+  "grok-imagine-video-1.5-lite",
+] as const;
 
 /**
- * One row for both ids: xAI documents a single request surface for the route
- * (the capability page's examples use grok-imagine-video-1.5; the models page
- * prices both), and nothing in the docs narrows a field per model.
+ * The row for grok-imagine-video and grok-imagine-video-1.5: xAI documents a
+ * single request surface for the route (the capability page's examples use
+ * grok-imagine-video-1.5; the models page prices both).
  *
  * `durations` is absent on purpose: the documented lengths are a *range*
  * (every integer from 1 to 15), which cannot be a list, so `duration` keeps
@@ -41,7 +45,25 @@ export const XAI_VIDEO_ROW = {
   },
 } as const;
 
+/**
+ * grok-imagine-video-1.5-lite: the same resolutions and ratios ("| Resolution
+ * | Yes: 480p, 720p, 1080p | Yes: 480p, 720p, 1080p | Yes: 480p, 720p |" on
+ * https://docs.x.ai/developers/model-capabilities/video/overview, 2026-11-12)
+ * without `reference_audios` — the same page's "| Voice references | Yes: Up
+ * to 3 voices | Not supported | Not supported |" row.
+ */
+export const XAI_VIDEO_LITE_ROW = {
+  resolutions: XAI_VIDEO_ROW.resolutions,
+  ratios: XAI_VIDEO_ROW.ratios,
+  extras: {
+    output: EXTRA as XaiVideoOutput,
+    storage_options: EXTRA as XaiStorageOptions,
+    user: EXTRA as string,
+  },
+} as const;
+
 export const XAI_VIDEO_MODEL_PARAMS = {
   "grok-imagine-video": XAI_VIDEO_ROW,
   "grok-imagine-video-1.5": XAI_VIDEO_ROW,
+  "grok-imagine-video-1.5-lite": XAI_VIDEO_LITE_ROW,
 } as const satisfies VideoModelParamTable;

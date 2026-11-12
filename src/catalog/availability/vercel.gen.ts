@@ -1341,6 +1341,7 @@ export const availability = {
   "spacexai/grok-4.7": {
     "openrouter": "x-ai/grok-4.7",
     "vercel": "spacexai/grok-4.7",
+    "xai": "grok-4.7",
   },
   "spacexai/grok-build-0.1": {
     "openrouter": "x-ai/grok-build-0.1",

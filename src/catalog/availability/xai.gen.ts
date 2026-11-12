@@ -45,6 +45,11 @@ export const availability = {
     "vercel": { id: "spacexai/grok-4.6", narrows: { drops: ["pdf"] } },
     "xai": "grok-4.6",
   },
+  "grok-4.7": {
+    "openrouter": "x-ai/grok-4.7",
+    "vercel": { id: "spacexai/grok-4.7", narrows: { drops: ["pdf"] } },
+    "xai": "grok-4.7",
+  },
   "grok-build-0.1": {
     "openrouter": "x-ai/grok-build-0.1",
     "vercel": { id: "spacexai/grok-build-0.1", narrows: { drops: ["pdf"] } },

@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1437 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1438 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -1474,6 +1474,7 @@ export type ChatModelRef =
   | "xai/grok-4.3"
   | "xai/grok-4.5"
   | "xai/grok-4.6"
+  | "xai/grok-4.7"
   | "xai/grok-build-0.1"
   | "zhipuai/glm-4.5"
   | "zhipuai/glm-4.5-air"

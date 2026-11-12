@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1437 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1438 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -1436,6 +1436,7 @@ export const CHAT_MODEL_REFS = [
   "xai/grok-4.3",
   "xai/grok-4.5",
   "xai/grok-4.6",
+  "xai/grok-4.7",
   "xai/grok-build-0.1",
   "zhipuai/glm-4.5",
   "zhipuai/glm-4.5-air",

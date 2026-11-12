@@ -1566,6 +1566,7 @@ export const chatProfiles: ChatCatalog = {
     "grok-4.3": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 1000000, output: 30000 }, cost: { input: 1.25, output: 2.5, cacheRead: 0.2 } },
     "grok-4.5": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 500000, output: 500000 }, cost: { input: 2, output: 6, cacheRead: 0.3 } },
     "grok-4.6": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 500000, output: 500000 }, cost: { input: 2, output: 6, cacheRead: 0.5 } },
+    "grok-4.7": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 500000, output: 500000 }, cost: { input: 2, output: 6, cacheRead: 0.5 } },
     "grok-build-0.1": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_PDF__TEXT, limit: { context: 256000, output: 256000 }, cost: { input: 1, output: 2, cacheRead: 0.2 } },
   },
   "zhipuai": {

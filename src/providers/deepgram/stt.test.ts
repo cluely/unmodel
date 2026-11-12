@@ -146,25 +146,33 @@ describe("deepgram.stt cost estimation", () => {
   // `string[]` and the coordinate's first segment is a key of the params.
   const tenMinutes = { media: [{ path: ["url"] as const, durationSeconds: 600 }] };
 
-  test("nova-3 monolingual: 10 min x the $0.0077/min PRE-RECORDED rate", () => {
-    // deepgram.com/pricing lists streaming and pre-recorded separately;
-    // /v1/listen is pre-recorded, so $0.0077/min (not the $0.0048 streaming
+  test("nova-3 monolingual: 10 min x the $0.0043/min PRE-RECORDED rate", () => {
+    // deepgram.com/pricing prices streaming and pre-recorded separately;
+    // /v1/listen is pre-recorded, so $0.0043/min (not the $0.0077 streaming
     // rate) is what a request here actually costs.
     expect(models["nova-3"].cost?.perAudioMinute).toBe(NOVA_3_USD_PER_MINUTE);
-    expect(NOVA_3_USD_PER_MINUTE).toBe(0.0077);
+    expect(NOVA_3_USD_PER_MINUTE).toBe(0.0043);
     const r = stt.safe({ url: "https://a.com/x.wav", model: "nova-3" }, tenMinutes);
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.077, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.043, 10);
   });
 
   test("nova-3 with language=multi bills the multilingual pre-recorded rate", () => {
-    expect(NOVA_3_MULTILINGUAL_USD_PER_MINUTE).toBe(0.0092);
+    expect(NOVA_3_MULTILINGUAL_USD_PER_MINUTE).toBe(0.0052);
     const r = stt.safe(
       { url: "https://a.com/x.wav", model: "nova-3", language: "multi" },
       tenMinutes,
     );
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.092, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.052, 10);
+  });
+
+  test("whisper-large bills $0.0048/min; the other Whisper sizes stay unpriced", () => {
+    expect(models["whisper-large"].cost?.perAudioMinute).toBe(0.0048);
+    const r = stt.safe({ url: "https://a.com/x.wav", model: "whisper-large" }, tenMinutes);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.048, 10);
+    expect("cost" in models["whisper-medium"]).toBe(false);
   });
 
   test("models without a published pre-recorded rate estimate no cost", () => {
@@ -229,6 +237,73 @@ describe("deepgram.stt per-model + pairing rules (doc audit 2026-08-13)", () => 
   test("keywords (the pre-Nova-3 feature) is never gated", () => {
     const r = stt.safe({ url: "https://a.com/x.wav", model: "nova-2", keywords: "snuffleupagus" });
     expect(r.ok).toBe(true);
+  });
+
+  test("language_hint passes on Nova-3 multilingual and repeats the key", () => {
+    const r = stt.safe({
+      url: "https://a.com/x.wav",
+      model: "nova-3",
+      language: "multi",
+      language_hint: ["en", "es"],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(new URL(r.params.request.url).searchParams.getAll("language_hint")).toEqual([
+        "en",
+        "es",
+      ]);
+    }
+  });
+
+  test("language_hint is refused without language=multi and off Nova-3", () => {
+    const monolingual = stt.safe({
+      url: "https://a.com/x.wav",
+      model: "nova-3",
+      language: "en",
+      language_hint: "es",
+    });
+    expect(monolingual.ok).toBe(false);
+    if (!monolingual.ok) {
+      expect(monolingual.errors[0]?.code).toBe("unsupported_param");
+      expect(monolingual.errors[0]?.path).toEqual(["language_hint"]);
+      expect(monolingual.errors[0]?.message).toContain('language: "multi"');
+    }
+
+    const nova2 = stt.safe({
+      url: "https://a.com/x.wav",
+      model: "nova-2",
+      language: "multi",
+      language_hint: "es",
+    });
+    expect(nova2.ok).toBe(false);
+    if (!nova2.ok) expect(nova2.errors[0]?.message).toContain('model: "nova-3"');
+  });
+
+  test("language_hint on another Nova-3 variant only warns (undocumented there)", () => {
+    const r = stt.safe({
+      url: "https://a.com/x.wav",
+      model: "nova-3-medical",
+      language: "multi",
+      language_hint: "es",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => w.code)).toEqual(["unsupported_param"]);
+      expect(r.warnings[0]?.path).toEqual(["language_hint"]);
+    }
+  });
+
+  test("redact_usage is a documented boolean on every model", () => {
+    const r = stt.safe({ url: "https://a.com/x.wav", model: "nova-2", redact_usage: true });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+    expect(
+      (stt.safe as unknown as (p: unknown) => ReturnType<typeof stt.safe>)({
+        url: "https://a.com/x.wav",
+        redact_usage: "yes",
+      }).ok,
+    ).toBe(false);
   });
 
   test("dictation without punctuate is an error; with punctuate it passes", () => {

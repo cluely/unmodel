@@ -29,7 +29,7 @@ export const MODELS = Object.keys(sttModels).filter((id) => !id.startsWith("flux
 >[];
 
 /**
- * Deepgram's per-model surface: 39 rows, one shared body of extras, and one key
+ * Deepgram's per-model surface: 39 rows, one shared body of extras, and two keys
  * that only four of them take.
  *
  * ## `timestamps`
@@ -50,6 +50,11 @@ export const MODELS = Object.keys(sttModels).filter((id) => !id.startsWith("flux
  * declared on the four `nova-3*` ids and refused by name elsewhere, naming
  * them; `keywords` is on every row, because that is the pre-Nova-3 answer the
  * provider's own message points at.
+ *
+ * `language_hint` rides the same row for the same reason: it "only applies
+ * when `language=multi`" and "Nova-2 does not support `language_hint`"
+ * (https://developers.deepgram.com/docs/nova-3-language-prompting, read
+ * 2026-11-12), so off Nova-3 it is refused rather than sent to be ignored.
  *
  * ## Why the table is built rather than written out
  *
@@ -102,13 +107,18 @@ export const LISTEN_EXTRAS = {
   // Account
   mip_opt_out: EXTRA as boolean,
   tag: EXTRA as string | string[],
+  redact_usage: EXTRA as boolean,
 } as const;
 
 export const TIMESTAMPS = ["word", "segment"] as const;
 
 export const NOVA_3_ROW = {
   timestamps: TIMESTAMPS,
-  extras: { ...LISTEN_EXTRAS, keyterm: EXTRA as string | string[] },
+  extras: {
+    ...LISTEN_EXTRAS,
+    keyterm: EXTRA as string | string[],
+    language_hint: EXTRA as string | string[],
+  },
 } as const;
 
 export const LISTEN_ROW = { timestamps: TIMESTAMPS, extras: LISTEN_EXTRAS } as const;
@@ -119,7 +129,7 @@ export const DEEPGRAM_STT_MODEL_PARAMS = Object.fromEntries(
   // The conditional mirrors the `startsWith` above, and it has to: a cast to
   // `Record<Model, NovaRow | ListenRow>` would give *every* id the union of
   // both rows, and `keyterm` would then resolve to `never` on all 39 — a green
-  // build with the one per-model fact in this table silently erased. Measured;
+  // build with the per-model facts in this table silently erased. Measured;
   // the same class of failure `AnyModelParamTable` documents.
   readonly [M in (typeof MODELS)[number]]: M extends `nova-3${string}`
     ? typeof NOVA_3_ROW

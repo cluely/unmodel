@@ -336,6 +336,10 @@ function extrasNarrowingTests(): void {
   // @ts-expect-error — keyterm prompting is the Nova-3 models'; others ignore it.
   stt({ model: "deepgram/nova-2", audio: { url }, keyterm: "unmodel" });
   stt({ model: "deepgram/nova-2", audio: { url }, keywords: "unmodel" });
+  stt({ model: "deepgram/nova-3", audio: { url }, language: "multi", language_hint: ["en", "es"] });
+  // @ts-expect-error — "Nova-2 does not support `language_hint`".
+  stt({ model: "deepgram/nova-2", audio: { url }, language: "multi", language_hint: "es" });
+  stt({ model: "deepgram/nova-2", audio: { url }, redact_usage: true });
 
   // AssemblyAI's two gated blocks point in opposite directions.
   stt({ model: "assemblyai/universal-3-5-pro", audio: { url }, temperature: 0.2 });

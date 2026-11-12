@@ -83,7 +83,11 @@ export type DeepgramSpeakContainer = (typeof SPEAK_CONTAINERS)[number];
 export const DEEPGRAM_SPEAK_SAMPLE_RATES = [8000, 16000, 22050, 24000, 32000, 48000] as const;
 export type DeepgramSpeakSampleRate = (typeof DEEPGRAM_SPEAK_SAMPLE_RATES)[number];
 
-/** Documented `speed` bounds — "Speed values outside the 0.7x–1.5x range will return an error." */
+/**
+ * Documented Aura `speed` bounds — "**Aura-2:** speed runs `0.7` - `1.5`" and
+ * outside it `{"err_code": "speed_out_of_range", "err_msg": "Speed must be
+ * between 0.7 and 1.5"}` (VOICE_CONTROLS_DOCS, read 2026-11-12).
+ */
 export const SPEAK_SPEED_MIN = 0.7;
 export const SPEAK_SPEED_MAX = 1.5;
 

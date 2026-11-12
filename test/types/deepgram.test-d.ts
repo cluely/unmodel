@@ -73,6 +73,18 @@ function listenTypeTests(): void {
   // Unknown model ids stay assignable through the (string & {}) escape.
   stt({ url: "https://example.com/a.wav", model: "nova-9-future" });
 
+  // Documented query params the shape carries (each was an ExactKeys error
+  // while it was missing): string-or-list `language_hint`, boolean `redact_usage`.
+  stt({
+    url: "https://example.com/a.wav",
+    model: "nova-3",
+    language: "multi",
+    language_hint: ["en", "es"],
+    redact_usage: true,
+  });
+  // @ts-expect-error redact_usage is a boolean
+  stt({ url: "https://example.com/a.wav", redact_usage: "true" });
+
   // safe() narrows to the same split shape.
   const result = stt.safe({ url: "https://example.com/a.wav", model: "nova-3" });
   if (result.ok) {
@@ -229,6 +241,8 @@ function realtimeSocketTypeTests(): void {
   listenFlux({ model: "flux-general-en", redact: "pci" });
   // Unknown (new) flux ids stay assignable through the (string & {}) escape.
   listenFlux({ model: "flux-general-de" });
+  listenFlux({ model: "flux-general-en", eot_threshold: 1.0, redact_usage: true });
+  listenLive({ model: "nova-3", language: "multi", language_hint: "es", redact_usage: true });
 
   const configure = fluxConfigure({
     type: "Configure",
@@ -240,6 +254,7 @@ function realtimeSocketTypeTests(): void {
   fluxConfigure({ type: "configure" });
   // @ts-expect-error the connection takes `keyterm`; the message takes `keyterms`
   fluxConfigure({ type: "Configure", keyterm: ["unmodel"] });
+  fluxConfigure({ type: "Configure", numerals: true, redact_usage: true });
 
   const tts = speakLive({ model: "aura-2-thalia-en", encoding: "mulaw", sample_rate: 8000 });
   expectAssignable<"GET">(tts.request.method);

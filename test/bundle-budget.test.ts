@@ -1389,6 +1389,10 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // 526.5 measured, 2026-11-12 (macOS and linux/amd64 alike): the cartesia
   // per-model language types regrouped the dts chunks, so sfx now pulls the
   // tts/voice-design chunks instead of the image ones (516.7 before).
+  //
+  // 526.5 measured, 2026-11-12 (macOS; 516.7 before): deepgram's new
+  // language_hint/redact_usage types moved a rolldown-plugin-dts chunk
+  // boundary — the graph swapped image chunks for tts ones, no deepgram in reach.
   sfx: 580,
   // `unmodel/sts`: 349.0 measured on macOS — the cheapest declaration in the
   // table by a wide margin, below `sfx`'s 442.4. Five canonical words, one

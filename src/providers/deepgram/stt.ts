@@ -62,6 +62,13 @@ export interface ListenParams {
   model?: DeepgramModelId | (string & {});
   /** BCP-47 language tag (default "en"); "multi" enables code-switching on Nova models. */
   language?: string;
+  /**
+   * Biases Nova-3 multilingual detection (`model=nova-3&language=multi`)
+   * toward these codes; repeats the key on the wire. Ignored with any other
+   * `language`, unsupported on Nova-2, and a code outside the Nova-3
+   * multilingual list fails with HTTP 400 (see checkLanguageHintScope).
+   */
+  language_hint?: string | string[];
   /** Model version (default "latest"). */
   version?: string;
   callback?: string;
@@ -99,6 +106,12 @@ export interface ListenParams {
    * union is autocomplete for the groups, not an exhaustive space.
    */
   redact?: DeepgramRedact | (string & {}) | boolean | Array<DeepgramRedact | (string & {})>;
+  /**
+   * Replaces user-supplied text params (`keyterm`, `keywords`, `replace`,
+   * `search`, `extra`, `custom_topic`, `custom_intent`) with `[REDACTED]` in
+   * this request's usage records. Does not affect the transcript. Default false.
+   */
+  redact_usage?: boolean;
   replace?: string | string[];
   search?: string | string[];
   sentiment?: boolean;
@@ -121,6 +134,7 @@ const schema = z.looseObject({
   url: z.string().optional(),
   model: z.string().optional(),
   language: z.string().optional(),
+  language_hint: stringOrList.optional(),
   version: z.string().optional(),
   callback: z.string().optional(),
   callback_method: z.string().optional(),
@@ -147,6 +161,7 @@ const schema = z.looseObject({
   profanity_filter: z.boolean().optional(),
   punctuate: z.boolean().optional(),
   redact: z.union([z.string(), z.boolean(), z.array(z.string())]).optional(),
+  redact_usage: z.boolean().optional(),
   replace: stringOrList.optional(),
   search: stringOrList.optional(),
   sentiment: z.boolean().optional(),
@@ -221,12 +236,14 @@ const DICTATION_DOCS = "https://developers.deepgram.com/docs/dictation";
 /**
  * The subset of the params both `/v1/listen` surfaces — this module's
  * pre-recorded POST and `./realtime`'s live WebSocket — spell identically, so
- * the two model/pairing checks below can be shared instead of copied. A check
+ * the model/pairing checks below can be shared instead of copied. A check
  * declared over this shape is assignable wherever a check over the fuller
  * params type is expected.
  */
 export interface SharedListenParams {
   model?: string;
+  language?: string;
+  language_hint?: unknown;
   keyterm?: unknown;
   dictation?: boolean;
   punctuate?: boolean;
@@ -278,6 +295,66 @@ export function checkDictationPairing(
   }
 }
 
+const LANGUAGE_HINT_DOCS = "https://developers.deepgram.com/docs/nova-3-language-prompting";
+
+/**
+ * The ids `language_hint` is documented for — "Nova-3 multilingual
+ * (`model=nova-3&language=multi`)" (LISTEN_DOCS, read 2026-11-12) — plus
+ * `nova-3-general`, the same general model under its long name.
+ */
+const LANGUAGE_HINT_MODELS: ReadonlySet<string> = new Set(["nova-3", "nova-3-general"]);
+
+/**
+ * "`language_hint` only applies when `language=multi`; with any other
+ * `language` value it is ignored. Nova-2 does not support `language_hint`"
+ * (LANGUAGE_HINT_DOCS, read 2026-11-12) — so a hint outside Nova-3
+ * multilingual is either a silent no-op or a 400, and both are refused. The
+ * other Nova-3 variants only warn: whether nova-3-medical's multilingual model
+ * takes hints is undocumented, and "a `language_hint` on a multilingual model
+ * that does not support hints now returns HTTP 400"
+ * (https://developers.deepgram.com/changelog/2026/11/10). Models unknown to
+ * the catalog are left alone.
+ */
+export function checkLanguageHintScope(
+  params: SharedListenParams,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.language_hint == null) return;
+  if (params.language !== "multi") {
+    const language = params.language === undefined ? "the default language" : `"${params.language}"`;
+    ctx.report({
+      code: "unsupported_param",
+      path: ["language_hint"],
+      model: params.model,
+      message: `\`language_hint\` only applies with \`language: "multi"\` on Nova-3; with ${language} Deepgram ignores it — set \`language: "multi"\` or drop the hint.`,
+      meta: { source: LANGUAGE_HINT_DOCS },
+    });
+    return;
+  }
+  if (info === undefined || params.model === undefined) return;
+  if (info.family !== "nova-3") {
+    ctx.report({
+      code: "unsupported_param",
+      path: ["language_hint"],
+      model: params.model,
+      message: `\`language_hint\` is a Nova-3 multilingual control; "${params.model}" does not support it — use \`model: "nova-3"\` with \`language: "multi"\`.`,
+      meta: { source: LANGUAGE_HINT_DOCS },
+    });
+    return;
+  }
+  if (!LANGUAGE_HINT_MODELS.has(params.model)) {
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["language_hint"],
+      model: params.model,
+      message: `\`language_hint\` is documented for \`model: "nova-3"\` with \`language: "multi"\`; whether "${params.model}" takes it is undocumented, and a multilingual model that does not support hints answers HTTP 400 INVALID_QUERY_PARAMETER.`,
+      meta: { source: LANGUAGE_HINT_DOCS },
+    });
+  }
+}
+
 /** Flux serves only the /v2/listen streaming WebSocket (MODELS_DOCS). */
 function checkFluxNotPreRecorded(
   params: ListenParams,
@@ -301,12 +378,13 @@ function checkFluxNotPreRecorded(
 
 /**
  * Nova-3 with `language=multi` bills at the multilingual PRE-RECORDED rate
- * ($0.0092/min) instead of the monolingual rate on the catalog entry
- * ($0.0077/min) — deepgram.com/pricing pay-as-you-go, checked 2026-08-13.
- * (The streaming column of the same table reads $0.0058 / $0.0048; this
- * endpoint is pre-recorded, so those rates do not apply here.)
+ * instead of the monolingual one on the catalog entry: "Speech-to-text: Nova-3
+ * Multilingual (Pre-recorded) — Pay as you go" … "price":0.0052
+ * (https://deepgram.com/pricing JSON-LD, read 2026-11-12). The streaming
+ * offers are separate and higher; this endpoint is pre-recorded, so they do
+ * not apply here.
  */
-export const NOVA_3_MULTILINGUAL_USD_PER_MINUTE = 0.0092;
+export const NOVA_3_MULTILINGUAL_USD_PER_MINUTE = 0.0052;
 
 function declaredDurationSeconds(media: MediaDeclaration[] | undefined): number | undefined {
   const exact = findMediaDeclaration(media, ["url"]);
@@ -394,7 +472,13 @@ const validator = createValidator<ListenParams, unknown>({
   schema,
   modelId: (params) => params.model,
   catalog: models,
-  checks: [checkQueryEnums, checkFluxNotPreRecorded, checkKeytermModel, checkDictationPairing],
+  checks: [
+    checkQueryEnums,
+    checkFluxNotPreRecorded,
+    checkKeytermModel,
+    checkLanguageHintScope,
+    checkDictationPairing,
+  ],
   estimate: estimateListen,
   finalize,
 });

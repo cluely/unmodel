@@ -43,6 +43,7 @@ import {
   withQuery,
   reportQueryEnums,
   checkKeytermModel,
+  checkLanguageHintScope,
   checkDictationPairing,
   LISTEN_ENCODINGS,
   type DeepgramRedact,
@@ -119,14 +120,20 @@ export type DeepgramLiveDiarizeModel = (typeof LISTEN_LIVE_DIARIZE_MODELS)[numbe
  */
 export const UTTERANCE_END_MIN_MS = 1000;
 
-// Rates below are read off https://deepgram.com/pricing (checked 2026-08-13),
-// whose speech-to-text table has SEPARATE streaming and pre-recorded columns —
+// Rates below are read off https://deepgram.com/pricing's JSON-LD offers
+// (read 2026-11-12), which price streaming and pre-recorded SEPARATELY —
 // these are the streaming ones, which is what a socket actually bills at.
 
-/** Nova-3 monolingual STREAMING pay-as-you-go rate: "$0.0048/min". */
-export const NOVA_3_STREAMING_USD_PER_MINUTE = 0.0048;
-/** Nova-3 `language=multi` STREAMING rate: "$0.0058/min". */
-export const NOVA_3_MULTILINGUAL_STREAMING_USD_PER_MINUTE = 0.0058;
+/**
+ * Nova-3 monolingual STREAMING pay-as-you-go rate: "Speech-to-text: Nova-3
+ * Monolingual (Streaming) — Pay as you go" … "price":0.0077.
+ */
+export const NOVA_3_STREAMING_USD_PER_MINUTE = 0.0077;
+/**
+ * Nova-3 `language=multi` STREAMING rate: "Speech-to-text: Nova-3
+ * Multilingual (Streaming) — Pay as you go" … "price":0.0092.
+ */
+export const NOVA_3_MULTILINGUAL_STREAMING_USD_PER_MINUTE = 0.0092;
 
 /**
  * Query params of the live STT socket. Compared with `ListenParams`, the
@@ -140,6 +147,12 @@ export interface ListenLiveParams {
   model?: DeepgramSttModelId | (string & {});
   /** BCP-47 language tag (default "en"); "multi" enables code-switching on Nova models. */
   language?: string;
+  /**
+   * Biases Nova-3 multilingual detection (`model=nova-3&language=multi`), as on
+   * the pre-recorded route; a code outside the Nova-3 multilingual list
+   * rejects the handshake with HTTP 400.
+   */
+  language_hint?: string | string[];
   /** Model version (default "latest"). */
   version?: string;
   callback?: string;
@@ -185,6 +198,8 @@ export interface ListenLiveParams {
    * `(string & {})` tail stays and unmodel runs no enum check on the field.
    */
   redact?: DeepgramRedact | (string & {}) | boolean | Array<DeepgramRedact | (string & {})>;
+  /** Replaces user-supplied text params with `[REDACTED]` in this session's usage records. Default false. */
+  redact_usage?: boolean;
   replace?: string | string[];
   /** Sample rate (Hz) of raw audio; required whenever `encoding` is. */
   sample_rate?: number;
@@ -205,6 +220,7 @@ const stringOrList = z.union([z.string(), z.array(z.string())]);
 const listenLiveSchema = z.looseObject({
   model: z.string().optional(),
   language: z.string().optional(),
+  language_hint: stringOrList.optional(),
   version: z.string().optional(),
   callback: z.string().optional(),
   callback_method: z.string().optional(),
@@ -226,6 +242,7 @@ const listenLiveSchema = z.looseObject({
   profanity_filter: z.boolean().optional(),
   punctuate: z.boolean().optional(),
   redact: z.union([z.string(), z.boolean(), z.array(z.string())]).optional(),
+  redact_usage: z.boolean().optional(),
   replace: stringOrList.optional(),
   sample_rate: z.number().int().positive().optional(),
   search: stringOrList.optional(),
@@ -335,10 +352,11 @@ function checkLiveRawAudio(
 
 /**
  * STREAMING rates, which are not the catalog's: `./models` carries Deepgram's
- * PRE-RECORDED prices ($0.0077/min for Nova-3), and quoting those for a socket
- * would overstate it by ~60%. Only the Nova-3 ids have a published streaming
- * rate; every other tier is "Contact Sales" on the pricing page, so they
- * estimate nothing rather than inventing a number.
+ * PRE-RECORDED prices ($0.0043/min for Nova-3), and quoting those for a socket
+ * would understate it by ~44% ("Pre-recorded runs lower", deepgram.com/pricing).
+ * Only the Nova-3 ids have a published streaming rate; every other tier has
+ * no offer on the pricing page, so they estimate nothing rather than inventing
+ * a number.
  */
 const LIVE_STREAMING_USD_PER_MINUTE: Readonly<Record<string, number>> = {
   "nova-3": NOVA_3_STREAMING_USD_PER_MINUTE,
@@ -389,6 +407,7 @@ const listenLiveValidator = createValidator<ListenLiveParams, unknown>({
     checkLiveQueryEnums,
     checkFluxRouting,
     checkKeytermModel,
+    checkLanguageHintScope,
     checkDictationPairing,
     checkUtteranceEndPairing,
     checkLiveRawAudio,
@@ -461,9 +480,14 @@ const RAW_FLUX_ENCODINGS: ReadonlySet<string> = new Set(["linear16", "linear32",
 export const FLUX_REDACT_VALUES = ["numbers", "aggressive_numbers"] as const;
 export type DeepgramFluxRedact = (typeof FLUX_REDACT_VALUES)[number];
 
-/** "eot_threshold — Valid values 0.5 to 0.9, default 0.7" (FLUX_THRESHOLD_DOCS). */
+/**
+ * "| `eot_threshold` | `0.5` - `1.0` | `0.7` |" (FLUX_THRESHOLD_DOCS, read
+ * 2026-11-12). "`1.0` = Fully suppresses natural `EndOfTurn` detection. You
+ * take ownership of turn endings with `ForceEndTurn`; the `eot_timeout_ms`
+ * backstop still applies."
+ */
 export const EOT_THRESHOLD_MIN = 0.5;
-export const EOT_THRESHOLD_MAX = 0.9;
+export const EOT_THRESHOLD_MAX = 1.0;
 export const EOT_THRESHOLD_DEFAULT = 0.7;
 /** "eager_eot_threshold — Valid values 0.3 to 0.9"; must be ≤ `eot_threshold`. */
 export const EAGER_EOT_THRESHOLD_MIN = 0.3;
@@ -499,6 +523,12 @@ export interface ListenFluxParams {
   numerals?: boolean;
   profanity_filter?: boolean;
   redact?: DeepgramFluxRedact | DeepgramFluxRedact[];
+  /**
+   * "Replaces keyterms and other user-supplied text with `[REDACTED]` in this
+   * connection's usage records, including keyterms sent in later Configure
+   * messages" (FLUX_DOCS). Default false.
+   */
+  redact_usage?: boolean;
   mip_opt_out?: boolean;
   tag?: string | string[];
 }
@@ -519,6 +549,7 @@ const listenFluxSchema = z.looseObject({
   numerals: z.boolean().optional(),
   profanity_filter: z.boolean().optional(),
   redact: z.union([z.string(), z.array(z.string())]).optional(),
+  redact_usage: z.boolean().optional(),
   mip_opt_out: z.boolean().optional(),
   tag: stringOrList.optional(),
 });
@@ -613,7 +644,7 @@ function checkFluxRawAudio(
 
 /**
  * Unlike `listenLive`, the catalog rate is the right one here: the flux-*
- * entries in `./models` carry Deepgram's STREAMING prices ($0.0065/min English,
+ * entries in `./models` carry Deepgram's STREAMING prices ($0.0077/min English,
  * $0.0078/min multilingual), because Flux has no pre-recorded route to price.
  */
 function estimateListenFlux(
@@ -712,6 +743,18 @@ export interface FluxConfigureMessage {
    */
   keyterms?: string[];
   language_hints?: string[];
+  /**
+   * Converts written numbers to numerals in transcripts sent after the update;
+   * the initial value is the `numerals` query param (FLUX_CONFIGURE_DOCS).
+   */
+  numerals?: boolean;
+  /**
+   * Redacts keyterms sent in this and later Configure messages from the usage
+   * records. "Does not redact keyterms in the connection URL; set the
+   * `redact_usage` query parameter for that. Once on, it stays on for the rest
+   * of the connection; `false` has no effect." (FLUX_DOCS)
+   */
+  redact_usage?: boolean;
 }
 
 const fluxConfigureSchema = z.looseObject({
@@ -729,6 +772,8 @@ const fluxConfigureSchema = z.looseObject({
     .optional(),
   keyterms: z.array(z.string()).max(FLUX_KEYTERMS_MAX).optional(),
   language_hints: z.array(z.string()).optional(),
+  numerals: z.boolean().optional(),
+  redact_usage: z.boolean().optional(),
 });
 
 function checkConfigureEagerEotOrdering(
@@ -774,11 +819,12 @@ const fluxConfigureValidator = createValidator<FluxConfigureMessage, unknown>({
 
 /**
  * Validates Flux's `Configure` CLIENT MESSAGE — the JSON you send on an open
- * /v2/listen socket to swap keyterms, language hints or end-of-turn thresholds
- * mid-stream. The result's enumerable properties are the message
- * (`socket.send(JSON.stringify(msg))`); `.request.url` names the socket it
- * belongs to. A rejected message "does NOT affect the stream", so validating
- * before sending is the only way to notice a bad one early.
+ * /v2/listen socket to swap keyterms, language hints, `numerals` or end-of-turn
+ * thresholds mid-stream, or to switch on `redact_usage`. The result's
+ * enumerable properties are the message (`socket.send(JSON.stringify(msg))`);
+ * `.request.url` names the socket it belongs to. A rejected message "does NOT
+ * affect the stream", so validating before sending is the only way to notice
+ * a bad one early.
  */
 export const fluxConfigure = fluxConfigureValidator as unknown as {
   <T extends FluxConfigureMessage>(

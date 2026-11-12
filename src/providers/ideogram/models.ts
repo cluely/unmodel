@@ -2,7 +2,9 @@
 //   https://developer.ideogram.ai/api-reference/api-reference/generate-v3 (endpoint + params)
 //   https://developer.ideogram.ai/openapi.json                            (authoritative schema)
 //   https://ideogram.ai/api-pricing/                                      (per-image USD pricing)
-// Verified 2026-08-13 (pricing page "Last revised August 6, 2025").
+//   https://ideogram.ai/api/usage-pricing/catalog                         (the pricing page's data, usd_micros)
+// Verified 2026-08-13 (pricing page "Last revised August 6, 2025"); the
+// custom-model rates verified 2026-11-12 against the catalog JSON.
 //
 // Catalog modeling: the Ideogram 3.0 generate endpoint has no `model` wire
 // param — the billable tier is selected by `rendering_speed` (FLASH / TURBO /
@@ -24,6 +26,10 @@
 // - With character reference (character_reference_images): 3.0 Turbo $0.10,
 //   3.0 Default $0.15, 3.0 Quality $0.20. No Flash-with-character-reference
 //   rate is published, so that combination gets no cost estimate.
+// - With a custom model (custom_model_uri, 3.0 generate only): 3.0 Custom
+//   Turbo $0.06, Custom Default $0.12, Custom Quality $0.18. No Flash
+//   custom-model API rate and no custom-model-with-character-reference rate is
+//   published, so those combinations get no cost estimate.
 // - A request with num_images > 1 costs num_images × the per-image rate.
 //
 // NOT modeled: the "Ideogram 4.0 with Gemini" rows ($0.20 for 1K/2K, $0.36
@@ -132,4 +138,23 @@ export const CHARACTER_REFERENCE_PER_IMAGE: Readonly<Partial<Record<string, numb
   TURBO: 0.1,
   DEFAULT: 0.15,
   QUALITY: 0.2,
+};
+
+/**
+ * USD per generated image when `custom_model_uri` selects a trained custom
+ * model (only `/v1/ideogram-v3/generate` takes the field), keyed by rendering
+ * speed. Source: https://ideogram.ai/api/usage-pricing/catalog, retrieved
+ * 2026-11-12 — the "Generation with a custom model" offerings
+ * `"label": "Ideogram 3.0 Custom Turbo" … "amount": 60000`,
+ * `"label": "Ideogram 3.0 Custom Default" … "amount": 120000`,
+ * `"label": "Ideogram 3.0 Custom Quality" … "amount": 180000` (usd_micros), and
+ * the billing entries `"billing_identifier": "api_ideogram_v3_custom_model_generation"`
+ * TURBO `"0.06"` / DEFAULT `"0.12"` / QUALITY `"0.18"`, which carry no route or
+ * API-version dimension. FLASH is absent because no API rate is published for
+ * it.
+ */
+export const CUSTOM_MODEL_PER_IMAGE: Readonly<Partial<Record<string, number>>> = {
+  TURBO: 0.06,
+  DEFAULT: 0.12,
+  QUALITY: 0.18,
 };

@@ -52,6 +52,7 @@ export {
   RENDERING_SPEED_TO_MODEL_ID,
   RENDERING_SPEED_TO_V4_MODEL_ID,
   CHARACTER_REFERENCE_PER_IMAGE,
+  CUSTOM_MODEL_PER_IMAGE,
 } from "./models";
 export type { IdeogramModelId } from "./models";
 

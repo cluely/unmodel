@@ -75,7 +75,7 @@ export const TRANSCRIPT_EXTRAS = {
   boost_param: EXTRA as string,
   keyterms_prompt: EXTRA as string[] | null,
   custom_spelling: EXTRA as Array<{ from: string[]; to: string }> | null,
-  speech_threshold: EXTRA as number,
+  speech_threshold: EXTRA as number | null,
   domain: EXTRA as AssemblyaiDomain | null,
   // Language detection — the half of the language decision `language` does not own
   language_detection: EXTRA as boolean,

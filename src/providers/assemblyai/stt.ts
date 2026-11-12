@@ -19,7 +19,7 @@ export const TRANSCRIPT_URL_EU = "https://api.eu.assemblyai.com/v2/transcript";
  */
 export const UPLOAD_URL = "https://api.assemblyai.com/v2/upload";
 
-const SUBMIT_DOCS = "https://www.assemblyai.com/docs/api-reference/transcripts/submit";
+const SUBMIT_DOCS = "https://www.assemblyai.com/docs/pre-recorded-audio/api-reference/transcripts/submit";
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror POST /v2/transcript exactly (verified against
@@ -28,8 +28,11 @@ const SUBMIT_DOCS = "https://www.assemblyai.com/docs/api-reference/transcripts/s
 
 export type AssemblyaiSpeechModel = AssemblyaiModelId | (string & {});
 
-/** The only documented `domain` value — Medical Mode (SUBMIT_DOCS). */
-export const ASSEMBLYAI_DOMAINS = ["medical-v1"] as const;
+/**
+ * The documented `domain` values — Medical Mode and Veterinary Mode (beta).
+ * SUBMIT_DOCS (2026-11-12): "enum: - medical-v1 - veterinary-v1 - null".
+ */
+export const ASSEMBLYAI_DOMAINS = ["medical-v1", "veterinary-v1"] as const;
 export type AssemblyaiDomain = (typeof ASSEMBLYAI_DOMAINS)[number];
 
 /**
@@ -52,6 +55,12 @@ export interface AssemblyaiSpeakerOptions {
   min_speakers_expected?: number | null;
   max_speakers_expected?: number | null;
   advanced_speaker_segmentation?: boolean | null;
+  /**
+   * Adds a 0–1 `speaker_confidence` to each word and utterance; default false
+   * (SUBMIT_DOCS, 2026-11-12: "When `true`, includes a `speaker_confidence`
+   * field per word and per utterance in the response.").
+   */
+  include_speaker_confidence?: boolean;
 }
 
 /** Documented fields of `language_detection_options` (SUBMIT_DOCS). */
@@ -66,6 +75,12 @@ export interface AssemblyaiLanguageDetectionOptions {
   code_switching_confidence_threshold?: number | null;
   /** Supported: "en_au", "en_uk"; at most one locale per base language. */
   localization?: string[] | null;
+  /**
+   * Default "error". "fallback" needs a specific `fallback_language`
+   * (SUBMIT_DOCS, 2026-11-12: "`fallback` requires `fallback_language` to be
+   * set to a specific language code; `auto` returns a `400`.").
+   */
+  on_no_speech_detected?: "error" | "fallback";
 }
 
 export interface TranscriptBody {
@@ -76,11 +91,20 @@ export interface TranscriptBody {
    * ["universal-3-5-pro", "universal-2"] when neither model field is sent.
    */
   speech_models?: AssemblyaiSpeechModel[];
-  /** Deprecated by AssemblyAI in favor of `speech_models`; still accepted. */
+  /**
+   * Deprecated predecessor of `speech_models`. AssemblyAI's changelog
+   * (2026-11-12): "Passing a current model name ( universal-2 ,
+   * universal-3-5-pro ) to the async speech_model field now returns a 400.
+   * Passing a legacy name ( best , nano , universal ) returns 200 but always
+   * routes to the default model." Pin a model with `speech_models`.
+   */
   speech_model?: AssemblyaiSpeechModel | null;
   /** Cannot be combined with `language_detection: true`. */
   language_code?: string | null;
-  /** For code-switching support; one of the values must be "en". */
+  /**
+   * Constrains code switching / detection to these languages. Must include
+   * "en" on Universal-2 only; Universal-3.5 Pro takes any set.
+   */
   language_codes?: string[] | null;
   /** Defaults to true when `language_code` is unspecified. */
   language_detection?: boolean;
@@ -146,18 +170,24 @@ export interface TranscriptBody {
   prompt?: string | null;
   /** 0.0–1.0; default 0 — Universal-3.5 Pro only. */
   temperature?: number;
-  /** Reject audio whose speech fraction is below this (0.0–1.0). */
-  speech_threshold?: number;
+  /** Reject audio whose speech fraction is below this (0.0–1.0); nullable. */
+  speech_threshold?: number | null;
   /**
-   * Deprecated by AssemblyAI (use LLM Gateway). Universal-2 only; requires
-   * `punctuate` and `format_text`, and conflicts with `auto_chapters`.
+   * Legacy Summarization — Universal-2 only; requires `punctuate` and
+   * `format_text`, and conflicts with `auto_chapters`. AssemblyAI's changelog
+   * (2026-11-12): "Starting October 20, 2026, requests using them will return
+   * errors." Its replacement is `speech_understanding.request`.
    */
   summarization?: boolean;
   summary_model?: "informative" | "catchy" | "conversational" | null;
   summary_type?: "gist" | "headline" | "paragraph" | "bullets" | "bullets_verbose" | null;
-  /** Deprecated by AssemblyAI. Universal-2 only; requires punctuation. */
+  /**
+   * Legacy Auto Chapters — Universal-2 only; requires punctuation. Errors from
+   * October 20, 2026 like `summarization`; its replacement is
+   * `speech_understanding.request`.
+   */
   auto_chapters?: boolean;
-  /** Only "medical-v1" is documented (Medical Mode). */
+  /** "medical-v1" (Medical Mode) or "veterinary-v1" (Veterinary Mode, beta). */
   domain?: AssemblyaiDomain | null;
   /** Universal-3.5 Pro only. */
   remove_audio_tags?: "all" | "speaker" | null;
@@ -186,6 +216,7 @@ const schema = z
         code_switching: z.boolean().nullable().optional(),
         code_switching_confidence_threshold: z.number().min(0).max(1).nullable().optional(),
         localization: z.array(z.string()).nullable().optional(),
+        on_no_speech_detected: z.enum(["error", "fallback"]).optional(),
       })
       .nullable()
       .optional(),
@@ -242,7 +273,8 @@ const schema = z
       .optional(),
     prompt: z.string().nullable().optional(),
     temperature: z.number().min(0).max(1).optional(),
-    speech_threshold: z.number().min(0).max(1).optional(),
+    // SUBMIT_DOCS (2026-11-12): "type: - number - 'null' … minimum: 0 maximum: 1".
+    speech_threshold: z.number().min(0).max(1).nullable().optional(),
     summarization: z.boolean().optional(),
     summary_model: z.enum(["informative", "catchy", "conversational"]).nullable().optional(),
     summary_type: z
@@ -353,12 +385,25 @@ const schema = z
       });
     }
 
-    // "Used for Code switching. One of the values specified must be `en`."
-    if (params.language_codes != null && !params.language_codes.includes("en")) {
+    // English is required on Universal-2 only: "These two-code,
+    // English-required limits apply to Universal-2 only." and "On
+    // Universal-3.5 Pro, `language_codes` accepts any number of languages, and
+    // English is **not** required"
+    // (https://www.assemblyai.com/docs/pre-recorded-audio/code-switching,
+    // 2026-11-12). SUBMIT_DOCS still reads "One of the values specified must be
+    // `en`." — stale against that guide and the 2026-09-11 changelog entry
+    // ("It takes any number of languages, and English is not required, for
+    // example ["es", "fr"]"), so only a Universal-2-only routing is checked.
+    if (
+      params.language_codes != null &&
+      !params.language_codes.includes("en") &&
+      effectiveModels(params).every((model) => model === "universal-2")
+    ) {
       ctx.addIssue({
         code: "custom",
         path: ["language_codes"],
-        message: '`language_codes` must include "en" (code switching is anchored on English).',
+        message:
+          '`language_codes` must include "en" on "universal-2" (its code switching is anchored on English); "universal-3-5-pro" takes any set of languages.',
       });
     }
 
@@ -413,7 +458,9 @@ function primaryModelId(params: TranscriptBody): string | undefined {
 }
 
 /** All models the request can route to, including the documented default. */
-function effectiveModels(params: TranscriptBody): readonly string[] {
+function effectiveModels(
+  params: Pick<TranscriptBody, "speech_models" | "speech_model">,
+): readonly string[] {
   if (params.speech_models !== undefined && params.speech_models.length > 0) {
     return params.speech_models;
   }
@@ -471,7 +518,7 @@ function checkUniversal2OnlyParams(
         code: "unsupported_param",
         path: [param],
         ...(routing[0] !== undefined && { model: routing[0] }),
-        message: `\`${param}\` is only supported by "universal-2"; this request routes to ${routing.map((m) => `"${m}"`).join(", ")}. AssemblyAI deprecated it in favour of the LLM Gateway.`,
+        message: `\`${param}\` is only supported by "universal-2"; this request routes to ${routing.map((m) => `"${m}"`).join(", ")}. AssemblyAI deprecated it in favour of \`speech_understanding.request\`.`,
         meta: { source: SUBMIT_DOCS },
       });
     }
@@ -539,7 +586,7 @@ function checkStaticEntities(
 
 const DOMAIN_SET = new Set<string>(ASSEMBLYAI_DOMAINS);
 
-/** `domain` is a single-value enum ("medical-v1"); the SDK types it as a string. */
+/** `domain` is a closed enum (ASSEMBLYAI_DOMAINS); the SDK types it as a string. */
 function checkDomain(
   params: TranscriptBody,
   _info: ModelInfo | undefined,

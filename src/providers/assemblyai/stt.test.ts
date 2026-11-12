@@ -230,9 +230,30 @@ describe("assemblyai.stt documented pairing rules (doc audit 2026-08-13)", () =>
     expect(stt.safe({ ...base, language_code: "de" }).ok).toBe(true);
   });
 
-  test('language_codes must include "en"', () => {
-    expect(stt.safe({ ...base, language_codes: ["de", "fr"] }).ok).toBe(false);
-    expect(stt.safe({ ...base, language_codes: ["en", "es"] }).ok).toBe(true);
+  test('language_codes must include "en" on a Universal-2-only routing (code-switching guide, 2026-11-12)', () => {
+    const u2 = stt.safe({ ...base, speech_models: ["universal-2"], language_codes: ["de", "fr"] });
+    expect(u2.ok).toBe(false);
+    if (!u2.ok) {
+      expect(u2.errors[0]?.path).toEqual(["language_codes"]);
+      expect(u2.errors[0]?.message).toContain('"universal-3-5-pro" takes any set of languages');
+    }
+    expect(
+      stt.safe({ ...base, speech_models: ["universal-2"], language_codes: ["en", "es"] }).ok,
+    ).toBe(true);
+    // "On Universal-3.5 Pro, `language_codes` accepts any number of languages,
+    // and English is **not** required" — the default routing heads with it.
+    expect(stt.safe({ ...base, language_codes: ["es", "fr"] }).ok).toBe(true);
+    expect(
+      stt.safe({ ...base, speech_models: ["universal-3-5-pro"], language_codes: ["es", "fr", "de"] })
+        .ok,
+    ).toBe(true);
+    // …and the unified `languages` reaches it.
+    const unified = unifiedStt({
+      model: "assemblyai/universal-3-5-pro",
+      audio: { url: AUDIO },
+      languages: ["es", "fr"],
+    });
+    expect(JSON.parse(JSON.stringify(unified))).toMatchObject({ language_codes: ["es", "fr"] });
   });
 });
 
@@ -326,15 +347,18 @@ describe("assemblyai.stt model-gated params (doc audit 2026-08-13)", () => {
     expect(stt.safe({ ...base, auto_chapters: true }).ok).toBe(true);
   });
 
-  test("domain accepts only the documented medical-v1", () => {
+  test("domain accepts the documented medical-v1 and veterinary-v1", () => {
     const bad = stt.safe as unknown as (p: unknown) => ReturnType<typeof stt.safe>;
     const r = bad({ ...base, domain: "legal-v1" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.errors[0]?.code).toBe("invalid_enum_value");
-      expect(r.errors[0]?.meta?.allowed).toEqual([...ASSEMBLYAI_DOMAINS]);
+      expect(r.errors[0]?.meta?.allowed).toEqual(["medical-v1", "veterinary-v1"]);
     }
     expect(stt.safe({ ...base, domain: "medical-v1" }).ok).toBe(true);
+    // Veterinary Mode (beta): "setting the `domain` parameter to `"veterinary-v1"`".
+    expect(stt.safe({ ...base, domain: "veterinary-v1" }).ok).toBe(true);
+    expect([...ASSEMBLYAI_DOMAINS]).toEqual(["medical-v1", "veterinary-v1"]);
   });
 });
 
@@ -455,5 +479,53 @@ describe("assemblyai catalog roster (model refresh 2026-11-12)", () => {
     expect(Object.keys(models).sort()).toEqual(roster);
     expect([...MODELS].sort() as string[]).toEqual(roster);
     expect(Object.keys(ASSEMBLYAI_STT_MODEL_PARAMS).sort()).toEqual(roster);
+  });
+});
+
+describe("assemblyai.stt request-schema corrections (submit reference, 2026-11-12)", () => {
+  const base = { audio_url: AUDIO } as const;
+
+  test("speech_threshold is nullable, and still bounded to 0..1", () => {
+    expect(stt.safe({ ...base, speech_threshold: null }).ok).toBe(true);
+    expect(stt.safe({ ...base, speech_threshold: 0.5 }).ok).toBe(true);
+    const r = stt.safe({ ...base, speech_threshold: 1.5 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["speech_threshold"]);
+  });
+
+  test("speaker_options.include_speaker_confidence is a typed field", () => {
+    const r = stt.safe({
+      ...base,
+      speaker_labels: true,
+      speaker_options: { include_speaker_confidence: true },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("language_detection_options.on_no_speech_detected takes error | fallback", () => {
+    expect(
+      stt.safe({
+        ...base,
+        language_detection_options: { on_no_speech_detected: "fallback", fallback_language: "en" },
+      }).ok,
+    ).toBe(true);
+    const bad = stt.safe as unknown as (p: unknown) => ReturnType<typeof stt.safe>;
+    const r = bad({ ...base, language_detection_options: { on_no_speech_detected: "skip" } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_shape");
+      expect(r.errors[0]?.path).toEqual(["language_detection_options", "on_no_speech_detected"]);
+    }
+  });
+
+  test("model-gate refusals cite the canonical submit reference", () => {
+    const r = stt.safe({ ...base, speech_models: ["universal-2"], temperature: 0.2 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.meta?.source).toBe(
+        "https://www.assemblyai.com/docs/pre-recorded-audio/api-reference/transcripts/submit",
+      );
+    }
   });
 });

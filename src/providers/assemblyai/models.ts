@@ -1,15 +1,24 @@
 // Hand-maintained — AssemblyAI is not in models.dev; refresh from
 // https://www.assemblyai.com/docs/getting-started/models,
 // https://www.assemblyai.com/docs/pre-recorded-audio/select-the-speech-model,
-// https://www.assemblyai.com/llms/models.md and
-// https://www.assemblyai.com/pricing (last checked 2026-08-13).
+// https://www.assemblyai.com/llms/models.md,
+// https://www.assemblyai.com/llms/pricing.md and
+// https://www.assemblyai.com/pricing (last checked 2026-11-12).
 //
-// STREAMING: the realtime WebSocket API reuses the SAME `speech_model` id as
-// batch (the streaming docs show `speech_model: "universal-3-5-pro"`), so
-// there is no separate id to catalogue; it is billed differently
-// ($0.45/hr for Universal-3.5 Pro Realtime, $0.15/hr for the
+// STREAMING: the realtime WebSocket API has ids of its own. "The
+// `speech_model` connection parameter lets you specify which model to use for
+// streaming transcription. It's optional; if omitted, the session defaults to
+// `universal-3-6-pro`."
+// (https://www.assemblyai.com/docs/streaming/select-the-speech-model,
+// 2026-11-12), beside `universal-3-5-pro` ("still supported for existing
+// integrations" — getting-started/models), `universal-streaming-english` and
+// `universal-streaming-multilingual`. `universal-3-6-pro` is NOT a
+// /v2/transcript id; the pre-recorded twin is `universal-3-6-pro-preview`.
+// Streaming "is billed per hour of **session duration**" ($0.45/hr for
+// Universal-3.6 Pro and Universal-3.5 Pro Realtime, $0.15/hr for the
 // Universal-Streaming English/Multilingual tiers). unmodel does not validate
-// that API, and the per-minute costs below are the PRE-RECORDED rates.
+// that API, nor the Sync and Dictation routes, so none of their ids is
+// catalogued, and the per-minute costs below are the PRE-RECORDED rates.
 //
 // NOT LISTED (deliberate): the suffixed realtime ids that appear on
 // third-party leaderboards — universal-3-5-pro-max-accuracy,
@@ -27,12 +36,16 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 /**
- * Unit conversions (assemblyai.com/pricing quotes per HOUR, checked
- * 2026-08-13; ModelCost.perAudioMinute is USD per MINUTE):
- * - Universal-3.5 Pro pre-recorded: $0.21/hr ÷ 60 = $0.0035/min.
- * - Universal-2 pre-recorded: $0.15/hr ÷ 60 = $0.0025/min.
+ * Unit conversions (rates are quoted per HOUR; ModelCost.perAudioMinute is
+ * USD per MINUTE). Both base rates re-checked 2026-11-12:
+ * - Universal-3.5 Pro pre-recorded — "| Universal-3.5 Pro |
+ *   `universal-3-5-pro` | **$0.21/hr** |" (https://www.assemblyai.com/llms/pricing.md):
+ *   $0.21/hr ÷ 60 = $0.0035/min.
+ * - Universal-2 pre-recorded — "Universal-2 … Supports 99 languages.
+ *   Exceptional accuracy at a lower price. $0.15 /hr"
+ *   (https://www.assemblyai.com/pricing): $0.15/hr ÷ 60 = $0.0025/min.
  * Add-ons (diarization +$0.02/hr, medical mode +$0.15/hr, PII redaction
- * +$0.08/hr, …) are NOT folded into estimates.
+ * +$0.08/hr, …; checked 2026-08-13) are NOT folded into estimates.
  */
 const U35_PRO_USD_PER_MINUTE = 0.21 / 60;
 const U2_USD_PER_MINUTE = 0.15 / 60;

@@ -32,7 +32,7 @@ import type { SttAdapterFor, SttParamsFor } from "../../core/unified/vocabulary/
 import { stt as validator, type TranscriptBody } from "./stt";
 import { ASSEMBLYAI_STT_MODEL_PARAMS, MODELS } from "./stt-params";
 
-const SUBMIT_DOCS = "https://www.assemblyai.com/docs/api-reference/transcripts/submit";
+const SUBMIT_DOCS = "https://www.assemblyai.com/docs/pre-recorded-audio/api-reference/transcripts/submit";
 
 /** The wire body this adapter compiles to. */
 export type AssemblyaiSttWire = TranscriptBody;

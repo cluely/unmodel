@@ -1,6 +1,7 @@
 // Hand-maintained — AssemblyAI is not in models.dev; refresh from
 // https://www.assemblyai.com/docs/getting-started/models,
-// https://www.assemblyai.com/docs/pre-recorded-audio/select-the-speech-model and
+// https://www.assemblyai.com/docs/pre-recorded-audio/select-the-speech-model,
+// https://www.assemblyai.com/llms/models.md and
 // https://www.assemblyai.com/pricing (last checked 2026-08-13).
 //
 // STREAMING: the realtime WebSocket API reuses the SAME `speech_model` id as
@@ -79,17 +80,10 @@ export const models = {
     ...STT,
     status: "beta",
   },
-  // Superseded by universal-3-5-pro: the API still accepts it but responds
-  // with an informational warning suggesting the newer model
-  // (assemblyai.com/changelog). No current price is published, so no cost.
-  "universal-3-pro": {
-    id: "universal-3-pro",
-    name: "Universal-3 Pro",
-    family: "universal",
-    ...STT,
-  },
-  // Deprecated per assemblyai.com/pricing ("migrate to `universal-3-pro`");
-  // no current price is published, so no cost.
+  // Deprecated: AssemblyAI's model reference lists "| `slam-1` | Deprecated |
+  // `universal-3-5-pro` (+ Medical Mode for medical use cases) |"
+  // (https://www.assemblyai.com/llms/models.md, 2026-11-12). No retirement
+  // notice exists and no current price is published, so no cost.
   "slam-1": {
     id: "slam-1",
     name: "Slam-1",

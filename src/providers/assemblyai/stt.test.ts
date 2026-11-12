@@ -12,7 +12,7 @@ import {
   STATIC_ENTITY_MAX_TERM_CHARACTERS,
 } from "./stt";
 import { models } from "./models";
-import { MODELS } from "./stt-params";
+import { ASSEMBLYAI_STT_MODEL_PARAMS, MODELS } from "./stt-params";
 import { stt as unifiedStt } from "../../unified/stt";
 
 const AUDIO = "https://cdn.assemblyai.com/upload/abc123";
@@ -446,5 +446,14 @@ describe("assemblyai.stt universal-3-6-pro-preview (model refresh 2026-11-12)", 
     const params = unifiedStt({ model: `assemblyai/${PREVIEW}`, audio: { url: AUDIO } });
     expect(JSON.parse(JSON.stringify(params))).toEqual({ audio_url: AUDIO, speech_models: [PREVIEW] });
     expect(params.warnings).toEqual([]);
+  });
+});
+
+describe("assemblyai catalog roster (model refresh 2026-11-12)", () => {
+  test("the catalog, the unified model list and the params table name the same ids", () => {
+    const roster: string[] = ["slam-1", "universal-2", "universal-3-5-pro", "universal-3-6-pro-preview"];
+    expect(Object.keys(models).sort()).toEqual(roster);
+    expect([...MODELS].sort() as string[]).toEqual(roster);
+    expect(Object.keys(ASSEMBLYAI_STT_MODEL_PARAMS).sort()).toEqual(roster);
   });
 });

@@ -13,14 +13,8 @@ import { EXTRA } from "../../core/unified/derive";
 import type { SttModelParamTable } from "../../core/unified/vocabulary/stt";
 import type { AssemblyaiDomain, AssemblyaiLanguageDetectionOptions } from "./stt";
 
-/** The five speech models AssemblyAI routes to — the `assemblyai/…` refs. */
-export const MODELS = [
-  "universal-3-5-pro",
-  "universal-2",
-  "universal-3-6-pro-preview",
-  "universal-3-pro",
-  "slam-1",
-] as const;
+/** The four speech models AssemblyAI routes to — the `assemblyai/…` refs. */
+export const MODELS = ["universal-3-5-pro", "universal-2", "universal-3-6-pro-preview", "slam-1"] as const;
 
 /**
  * AssemblyAI's per-model surface — the largest extras table in the library, and
@@ -44,9 +38,9 @@ export const MODELS = [
  * Pro model" and `temperature` "only takes effect on the Universal-3.5 Pro
  * model"; `summarization` and `auto_chapters` are "only supported for the
  * Universal-2 model" (and therefore `summary_model` / `summary_type`, which
- * are that feature's settings). `universal-3-6-pro-preview`, `universal-3-pro` and
- * `slam-1` get neither block — they are the ids the docs gate *both* features
- * away from, and their row is the shared body alone.
+ * are that feature's settings). `universal-3-6-pro-preview` and `slam-1` get
+ * neither block — they are the two ids the docs gate *both* features away
+ * from, and their row is the shared body alone.
  *
  * ## What is excluded, and why each one is
  *
@@ -140,6 +134,5 @@ export const ASSEMBLYAI_STT_MODEL_PARAMS = {
   // `universal-3-6-pro-preview`, and to false otherwise." — submit reference,
   // 2026-11-12); the extra is the same switch, only its default differs.
   "universal-3-6-pro-preview": SHARED_ROW,
-  "universal-3-pro": SHARED_ROW,
   "slam-1": SHARED_ROW,
 } as const satisfies SttModelParamTable;

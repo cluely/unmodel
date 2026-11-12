@@ -567,8 +567,8 @@ function checkKeytermsPrompt(
   const count = params.keyterms_prompt?.length ?? 0;
   if (count === 0) return;
   // The docs publish caps only for universal-3-5-pro (1,000) and
-  // universal-2 (200); other routings (universal-3-6-pro-preview,
-  // universal-3-pro, slam-1) have no documented cap, so they are not checked.
+  // universal-2 (200); other routings (universal-3-6-pro-preview, slam-1)
+  // have no documented cap, so they are not checked.
   const routing = effectiveModels(params);
   const capped = routing.includes("universal-3-5-pro")
     ? { cap: KEYTERMS_MAX_PRO, model: "universal-3-5-pro" }

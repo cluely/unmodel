@@ -27,7 +27,7 @@ provider — not their quality ranking.
 | anthropic | llm | native (the reference) | **native** (`chat`, the `/v1/messages` wire format — done) | ✅ | |
 | google | llm, image, video, tts, stt | native | **native** (`chat` + `tts` + `stt` + Imagen `image` + Veo `video` done) | ✅ | `tts` and `stt` are dedicated Tier-A surfaces — required AUDIO modality, XOR'd `speechConfig`, bounded speaker tuple, 78-language table, closed audio MIME set, typed `audioTranscriptionConfig`. Both post to `:generateContent`, which is also what `chat` serves, so the same ids stay valid there too — one shared check battery backs both surfaces |
 | xai (grok) | llm, image, video, stt | openai-compatible (+anthropic-compat) | **oai-base** (chat) + native `image`/`video`/`videoEdit`/`videoExtend` (Grok Imagine, live) | ✅ (`xai`) | |
-| groq | inference (chat + Whisper STT) | openai-compatible | **oai-base** (live) | ✅ | Whisper STT covered by speech wave via oai audio shape |
+| groq | inference (chat, Whisper STT, Orpheus TTS) | openai-compatible | **oai-base** (chat live) | ✅ | chat only. Groq also serves `/audio/transcriptions` + `/audio/translations` (Whisper) and `/audio/speech` (Orpheus); no unmodel validator covers them yet, so those ids are catalog rows only (checked 2026-11-12, https://console.groq.com/docs/speech-to-text, https://console.groq.com/docs/text-to-speech) |
 | cerebras | inference | openai-compatible | **oai-base** (live) | ✅ | |
 | openrouter | aggregator (400+ models) | openai-compatible | **oai-base** (live) | ✅ (349 models) | |
 | huggingface | aggregator (router.huggingface.co) | openai-compatible | **oai-base** (live) | ✅ | |

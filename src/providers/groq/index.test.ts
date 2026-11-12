@@ -83,6 +83,23 @@ describe("unmodel/groq", () => {
     if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_enum_value");
   });
 
+  test("qwen3.8-27b estimates each image at Groq's documented 2048 tokens", () => {
+    const r = chat.safe({
+      model: "qwen/qwen3.8-27b",
+      messages: [
+        { role: "user", content: [{ type: "image_url", image_url: { url: "https://example.com/a.png" } }] },
+      ],
+      max_completion_tokens: 100,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      // Message overhead (4) + 2048 per image, not the 1000-token default.
+      expect(r.estimate.inputTokens).toBe(2052);
+      // $0.80 / 1M input, $4.00 / 1M output (https://console.groq.com/docs/models).
+      expect(r.estimate.costUSD).toBeCloseTo((2052 * 0.8 + 100 * 4) / 1e6, 12);
+    }
+  });
+
   test("checkChat maps usage from a minimal response", () => {
     const report = checkChat({
       model: "llama-3.1-8b-instant",

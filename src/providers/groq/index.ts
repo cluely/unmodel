@@ -4,6 +4,7 @@
  * models.dev catalog.
  */
 import { createOpenAICompatible } from "../openai-compatible";
+import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, provider } from "../../catalog/groq.gen";
 import type { GroqTextModelId } from "../../catalog/groq.gen";
 import { availability } from "../../catalog/availability/groq.gen";
@@ -11,6 +12,16 @@ import { availability } from "../../catalog/availability/groq.gen";
 // against a `.toApi("groq")` from another provider without importing this
 // barrel. See ./constraints.ts.
 import { GROQ_OPENAI_COMPAT_DOC, chatFamilyRules } from "./constraints";
+
+// Per-model estimation constants. Only this validator's `estimate` reads them
+// (target-side re-validation runs deny/enum tables), so they stay here rather
+// than in the ./constraints leaf every retarget-bearing bundle imports.
+//
+// qwen/qwen3.8-27b: https://console.groq.com/docs/vision (checked 2026-11-12):
+// "Each image counts as 2048 input tokens."
+const chatConstraints = {
+  "qwen/qwen3.8-27b": { imageTokens: 2048 },
+} satisfies Partial<Record<GroqTextModelId, EndpointConstraints>>;
 
 const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   GroqTextModelId,
@@ -24,6 +35,7 @@ const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   baseUrl: "https://api.groq.com/openai/v1",
   catalog: models,
   availability,
+  constraints: chatConstraints,
   familyRules: chatFamilyRules,
   extraChecks: [
     // The same doc's fourth 400-field is nested, so the deny table can't

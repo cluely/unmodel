@@ -1,0 +1,10 @@
+{
+  "status": 422,
+  "body": {
+    "error": {
+      "code": "invalid_input",
+      "message": "input.resolution must be one of 720p, 1080p, 4K for veo-3.1.",
+      "request_id": "req_792e718160e62022801c"
+    }
+  }
+}

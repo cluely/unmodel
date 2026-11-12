@@ -1,0 +1,10 @@
+{
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "not_found",
+      "message": "No generation with this id.",
+      "request_id": "req_1bea674231cd64d3cb58"
+    }
+  }
+}

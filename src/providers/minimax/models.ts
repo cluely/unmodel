@@ -6,9 +6,11 @@
 //   https://platform.minimax.io/docs/api-reference/video-generation-t2v   (video model enums)
 //   https://platform.minimax.io/docs/api-reference/video-generation-i2v   (i2v-only models)
 //   https://platform.minimax.io/docs/api-reference/video-generation-v2-create (MiniMax-H3)
-//   https://platform.minimax.io/docs/guides/pricing-paygo           (USD list prices)
-// Verified 2026-08-13. This is the INTERNATIONAL platform (api.minimax.io);
-// the China platform is the separate minimax-cn catalog.
+//   https://platform.minimax.io/docs/pricing/overview               (USD list prices)
+// Verified 2026-08-13; the price page re-read 2026-11-12 (the old
+// /docs/guides/pricing-paygo address answers 308 to it). This is the
+// INTERNATIONAL platform (api.minimax.io); the China platform is the separate
+// minimax-cn catalog.
 //
 // Pricing conversions (documented so the arithmetic never rots unexplained):
 // - T2A is quoted directly per 1M characters: $100/M for the -hd tiers,
@@ -318,16 +320,23 @@ export const videoV2Models = {
  * TEXT catalog is generated — `src/catalog/minimax.gen.ts` — and is exported
  * from ./index as `models`; this one is exported there as `mediaModels`.
  */
-/** "$30 per 1M characters" — the voice-design preview-audio rate. */
-export const VOICE_DESIGN_PREVIEW_PER_MILLION_CHARACTERS = 30;
-
 /**
  * Voice creation — POST /v1/voice_clone (./voice-clone) and
  * POST /v1/voice_design (./voice-design). Neither wire has a model field:
  * both ids are SYNTHETIC route nouns so the validators have catalog
- * addresses. The design row carries the documented preview rate; cloning
- * publishes no per-request rate (only its optional preview is billed,
- * through the chosen speech model), so its `cost` is omitted.
+ * addresses. Neither row carries a `cost`, and estimates for both routes are
+ * `undefined`:
+ *
+ * - Design: MiniMax's two pages disagree on the preview rate. The voice-design
+ *   reference says "Generating preview audio incurs a fee of $30 per 1M
+ *   characters."; https://platform.minimax.io/docs/pricing/overview says "In-API
+ *   preview synthesis is billed at $60 / M characters." (both read 2026-11-12).
+ *   Its "$3 per voice" is "Charged when the designed voice is first used for
+ *   synthesis, not at generation time" — not a cost of this request either.
+ * - Cloning: "$1.5 per voice | Charged when the cloned voice is first used for
+ *   synthesis, not at cloning time. Preview characters are billed at the
+ *   selected preview model's rate." (pricing/overview, 2026-11-12) — again a
+ *   later synthesis's cost, not this request's.
  */
 export const voiceModels = {
   "voice-clone": {
@@ -349,7 +358,6 @@ export const voiceModels = {
     openWeights: false,
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
-    cost: { perMillionCharacters: VOICE_DESIGN_PREVIEW_PER_MILLION_CHARACTERS },
   },
 } as const satisfies Record<string, ModelInfo>;
 

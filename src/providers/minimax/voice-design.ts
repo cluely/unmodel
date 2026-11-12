@@ -12,9 +12,12 @@
  * - `voice_id` is an OPTIONAL caller-chosen handle here ("If not provided, a
  *   unique voice_id will be automatically created") — the reference
  *   publishes no grammar for it, so none is enforced.
- * - BILLING: "Generating preview audio incurs a fee of $30 per 1M
- *   characters" — priced on `preview_text` through the synthetic catalog
- *   row's `perMillionCharacters`.
+ * - BILLING: not estimated. This reference says "Generating preview audio
+ *   incurs a fee of $30 per 1M characters."; the pricing page says "In-API
+ *   preview synthesis is billed at $60 / M characters." (both 2026-11-12).
+ *   Contradicting pages publish no defensible rate, so the synthetic catalog
+ *   row carries no `cost` and the estimate is `undefined` — see `voiceModels`
+ *   in ./models.
  * - There is no model field. unmodel addresses the route through the
  *   synthetic catalog id `voice-design` (the route noun).
  * - Auth is an `Authorization: Bearer <api key>` header — unmodel never
@@ -36,7 +39,7 @@ export const VOICE_DESIGN_URL = "https://api.minimax.io/v1/voice_design";
 /**
  * Synthetic catalog id for this route — POST /v1/voice_design has no model
  * field, and MiniMax documents no model name for it, so the id is the route
- * noun. Its catalog row carries the documented $30/1M-character preview rate.
+ * noun. Its catalog row carries no `cost` (see the module header).
  */
 export const VOICE_DESIGN_MODEL_ID = "voice-design";
 
@@ -50,7 +53,7 @@ export const VOICE_DESIGN_PREVIEW_TEXT_MAX_CHARACTERS = 500;
 export interface VoiceDesignParams {
   /** The generative description of the voice to invent. No published bounds. */
   prompt: string;
-  /** What the preview speaks (≤500 chars); billed at $30/1M characters. */
+  /** What the preview speaks (≤500 chars); billed per character (rate unestimated). */
   preview_text: string;
   /**
    * "Custom voice ID for the generated voice. If not provided, a unique
@@ -76,8 +79,9 @@ const schema = z.looseObject({
 });
 
 // ---------------------------------------------------------------------------
-// Estimation — "$30 per 1M characters" on the preview text, carried by the
-// synthetic catalog row's perMillionCharacters.
+// Estimation — the preview text priced by the synthetic catalog row's
+// perMillionCharacters, which is absent while MiniMax's pages disagree on the
+// rate, so this answers `{}`.
 // ---------------------------------------------------------------------------
 
 function estimate(
@@ -113,7 +117,7 @@ const validator = createValidator<
   endpoint: "minimax.voiceDesign",
   schema,
   // No model field on this wire — the synthetic catalog id stands in so
-  // catalog-keyed machinery (including the preview rate) stays coherent.
+  // catalog-keyed machinery stays coherent.
   modelId: () => VOICE_DESIGN_MODEL_ID,
   catalog: mediaModels,
   estimate,
@@ -126,9 +130,10 @@ const validator = createValidator<
  *
  * The returned object's enumerable props are the exact fetch JSON body.
  * Single-phase: the response's `voice_id` is immediately usable for speech
- * synthesis (no save step), with a hex-encoded `trial_audio` preview billed
- * at $30 per 1M `preview_text` characters. `.toSdk("minimax")` returns the
- * body unchanged (no official JS SDK). Auth is your job: add
+ * synthesis (no save step), with a hex-encoded `trial_audio` preview. No cost
+ * is estimated: MiniMax publishes two different preview rates ($30 and $60 per
+ * 1M characters). `.toSdk("minimax")` returns the body unchanged (no official
+ * JS SDK). Auth is your job: add
  * `authorization: Bearer <MINIMAX_API_KEY>` when fetching.
  */
 export const voiceDesign = validator as unknown as {

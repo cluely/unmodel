@@ -6,7 +6,7 @@ import {
   VOICE_CLONE_TEXT_MAX_CHARACTERS,
 } from "./voice-clone";
 import { voiceDesign, VOICE_DESIGN_URL, VOICE_DESIGN_PREVIEW_TEXT_MAX_CHARACTERS } from "./voice-design";
-import { VOICE_DESIGN_PREVIEW_PER_MILLION_CHARACTERS } from "./models";
+import { voiceModels } from "./models";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 
@@ -148,16 +148,13 @@ describe("minimax.voiceDesign", () => {
     expect(v.request.headers["content-type"]).toBe("application/json");
   });
 
-  test("preview_text is billed at $30 per 1M characters", () => {
-    const preview = "a".repeat(500);
-    const r = voiceDesign.safe({ prompt: "desc", preview_text: preview });
+  test("the preview is not priced: MiniMax's pages publish $30 and $60 per 1M characters", () => {
+    // Contradicting pages → no `cost` on the row and an undefined estimate,
+    // never one of the two numbers.
+    expect("cost" in voiceModels["voice-design"]).toBe(false);
+    const r = voiceDesign.safe({ prompt: "desc", preview_text: "a".repeat(500) });
     expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.estimate.costUSD).toBeCloseTo(
-        (VOICE_DESIGN_PREVIEW_PER_MILLION_CHARACTERS * 500) / 1_000_000,
-        12,
-      );
-    }
+    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
   });
 
   test("preview_text over 500 characters is rejected; a caller-chosen voice_id passes", () => {

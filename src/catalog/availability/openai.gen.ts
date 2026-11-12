@@ -110,15 +110,9 @@ export const availability = {
     "openrouter": "openai/gpt-5.2",
     "vercel": "openai/gpt-5.2",
   },
-  "gpt-5.2-chat-latest": {
-    "openai": "gpt-5.2-chat-latest",
-  },
   "gpt-5.2-pro": {
     "openai": "gpt-5.2-pro",
     "openrouter": "openai/gpt-5.2-pro",
-  },
-  "gpt-5.3-chat-latest": {
-    "openai": "gpt-5.3-chat-latest",
   },
   "gpt-5.3-codex": {
     "azure": { id: "gpt-5.3-codex", narrows: { drops: ["pdf"] } },
@@ -189,6 +183,37 @@ export const availability = {
     "openai": "gpt-5.6-terra",
     "openrouter": "openai/gpt-5.6-terra",
     "vercel": "openai/gpt-5.6-terra",
+  },
+  "gpt-6-astra": {
+    "openai": "gpt-6-astra",
+    "openrouter": "openai/gpt-6-astra",
+    "vercel": "openai/gpt-6-astra",
+  },
+  "gpt-6-luna": {
+    "openai": "gpt-6-luna",
+    "openrouter": "openai/gpt-6-luna",
+    "vercel": "openai/gpt-6-luna",
+  },
+  "gpt-6-sol": {
+    "openai": "gpt-6-sol",
+    "openrouter": "openai/gpt-6-sol",
+    "vercel": "openai/gpt-6-sol",
+  },
+  "gpt-6.1-sol": {
+    "openai": "gpt-6.1-sol",
+    "openrouter": "openai/gpt-6.1-sol",
+    "vercel": "openai/gpt-6.1-sol",
+  },
+  "gpt-6.1-terra": {
+    "openai": "gpt-6.1-terra",
+    "openrouter": "openai/gpt-6.1-terra",
+    "vercel": "openai/gpt-6.1-terra",
+  },
+  "gpt-daybreak-blue-latest": {
+    "openai": "gpt-daybreak-blue-latest",
+  },
+  "gpt-daybreak-red-latest": {
+    "openai": "gpt-daybreak-red-latest",
   },
   "gpt-image-1-mini": {
     "openai": "gpt-image-1-mini",

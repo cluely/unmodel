@@ -59,7 +59,7 @@
  * their exact types and go on the wire verbatim.
  *
  * ```ts
- * imageEdit({ …, model: "openai/gpt-image-1",   background: "transparent" }); // ok
+ * imageEdit({ …, model: "openai/gpt-image-1.5",   background: "transparent" }); // ok
  * imageEdit({ …, model: "openai/gpt-image-2",   background: "transparent" }); // compile error
  * imageEdit({ …, model: "openai/gpt-image-1-mini", input_fidelity: "high" }); // compile error
  * ```

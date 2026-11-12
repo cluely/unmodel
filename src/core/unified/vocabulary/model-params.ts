@@ -7,7 +7,7 @@
  * enough there because a provider's routes agree about how audio arrives. The
  * image and video categories do not have that luxury: `gpt-image-2` takes a
  * free-form `size` up to 3840 px and a `background` that is `"opaque" | "auto"`,
- * while `gpt-image-1` — same provider, same endpoint — takes a three-value
+ * while `gpt-image-1.5` — same provider, same endpoint — takes a three-value
  * `size` enum and a `background` that also accepts `"transparent"`. One
  * adapter, two different request surfaces, and the difference is the model id.
  * Video is the same story twice over: `sora-2` renders 720p and `sora-2-pro`

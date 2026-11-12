@@ -8,6 +8,7 @@ import type { ValidateResult } from "../../core/result";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import {
   chatCompletionsChecks,
+  checkSamplingParams,
   createChatCompletionsSchema,
   createChatEstimate,
   createChatFinalize,
@@ -17,7 +18,15 @@ import {
 } from "../openai-compatible/chat-completions";
 import { models, type OpenaiTextModelId } from "../../catalog/openai.gen";
 import { availability } from "../../catalog/availability/openai.gen";
-import { chatFamilyRules, chatConstraints } from "./constraints";
+import {
+  chatFamilyRules,
+  chatConstraints,
+  gpt6ChatRules,
+  CHANGELOG_DOCS,
+  LATEST_MODEL_GUIDE_DOCS,
+  type Gpt6ChatModelId,
+  type Gpt6ChatRule,
+} from "./constraints";
 import type {
   ValidatorProviderCarrier,
   ValidatorResultKind,
@@ -92,7 +101,12 @@ export type NonChatModelId =
   | `gpt-realtime-${string}`
   // Codex models are served via /v1/responses only ("not supported with
   // Chat Completions" per the gpt-5-codex model docs).
-  | `${string}-codex${string}`;
+  | `${string}-codex${string}`
+  // The Daybreak aliases (`gpt-daybreak-blue-latest` → gpt-5.6-sol,
+  // `gpt-daybreak-red-latest` → gpt-5.6-cyber) are "| Chat Completions |
+  // `v1/chat/completions` | Not supported |" on both model pages (2026-11-12),
+  // and "Status: Deprecated" besides.
+  | `gpt-daybreak-${string}`;
 
 /** Chat-capable subset of the generated openai text-model union. */
 export type OpenaiChatModelId = Exclude<OpenaiTextModelId, NonChatModelId>;
@@ -143,6 +157,13 @@ const NON_CHAT_ROUTES: readonly NonChatRoute[] = [
     instead: undefined,
   },
   {
+    // `gpt-daybreak-blue-latest`, `gpt-daybreak-red-latest`: deprecated
+    // aliases of gpt-5.6-sol / gpt-5.6-cyber, Responses-only like codex.
+    match: /^gpt-daybreak-/,
+    route: "POST /v1/responses",
+    instead: undefined,
+  },
+  {
     match: /^text-embedding-/,
     route: "POST /v1/embeddings",
     instead: undefined,
@@ -163,8 +184,8 @@ const NON_CHAT_ROUTES: readonly NonChatRoute[] = [
  * Names the route a non-chat model is actually served on.
  *
  * Runs on the raw id before any catalog lookup, because the point is to answer
- * for ids the catalog *does* carry (models.dev files all nine as text-out) as
- * well as ones it does not.
+ * for ids the catalog *does* carry (models.dev files every one of them as
+ * text-out) as well as ones it does not.
  */
 function checkChatCompletionsRoute(
   params: ChatCompletionsBody,
@@ -193,6 +214,93 @@ function checkChatCompletionsRoute(
 
 /** Where the per-model "Endpoints" table lives — the page the message quotes. */
 const MODELS_DOCS_URL = "https://developers.openai.com/api/docs/models";
+
+// ---------------------------------------------------------------------------
+// GPT-6 value-conditional rules — the quotes live on `gpt6ChatRules` in
+// ./constraints.ts. Tool calling, logprobs and temperature/top_p each depend on
+// the model AND on `reasoning_effort`, which EndpointConstraints.deny cannot
+// express (it withdraws a param outright, so it would refuse `tools: []` and
+// `logprobs: false`). Absent or `null` effort is the server default `medium`.
+// ---------------------------------------------------------------------------
+
+type ChatCheck = (params: ChatCompletionsBody, info: ModelInfo | undefined, ctx: PipelineContext) => void;
+
+function gpt6RuleFor(model: string): Gpt6ChatRule | undefined {
+  return Object.hasOwn(gpt6ChatRules, model) ? gpt6ChatRules[model as Gpt6ChatModelId] : undefined;
+}
+
+function checkGpt6ChatRules(
+  params: ChatCompletionsBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const rule = gpt6RuleFor(params.model);
+  if (rule === undefined) return;
+  const atNone = params.reasoning_effort === "none";
+
+  const toolsPath =
+    params.tools !== undefined && params.tools.length > 0
+      ? "tools"
+      : params.functions !== undefined && params.functions.length > 0
+        ? "functions"
+        : undefined;
+  if (toolsPath !== undefined && !(rule.tools === "effort-none-only" && atNone)) {
+    ctx.report({
+      code: "unsupported_capability",
+      path: [toolsPath],
+      model: params.model,
+      message:
+        rule.tools === "responses-only"
+          ? `"${params.model}" does not support tool calling on POST /v1/chat/completions ("Tool calling requires the Responses API."); remove \`${toolsPath}\`, or send the request to /v1/responses yourself — unmodel has no validator for it.`
+          : `"${params.model}" supports tool calling on Chat Completions only with \`reasoning_effort: "none"\`; set it, or remove \`${toolsPath}\`.`,
+      meta: { rule: rule.tools, source: LATEST_MODEL_GUIDE_DOCS },
+    });
+  }
+
+  if (rule.logprobs === undefined || (rule.logprobs === "effort-none-only" && atNone)) return;
+  for (const param of ["logprobs", "top_logprobs"] as const) {
+    const value = params[param];
+    // `logprobs: false` asks for none and is not a request for log probabilities.
+    if (value === undefined || value === null || value === false) continue;
+    ctx.report({
+      code: "unsupported_param",
+      path: [param],
+      model: params.model,
+      message:
+        rule.logprobs === "unsupported"
+          ? `\`${param}\` is not supported by "${params.model}" (the model returns no log probabilities); remove it.`
+          : `\`${param}\` is accepted by "${params.model}" only with \`reasoning_effort: "none"\`; set it, or remove \`${param}\`.`,
+      meta: {
+        rule: rule.logprobs,
+        source: rule.logprobs === "unsupported" ? CHANGELOG_DOCS : LATEST_MODEL_GUIDE_DOCS,
+      },
+    });
+  }
+}
+
+/**
+ * The shared fixed-sampling check with the GPT-6 `none` exemption. The catalog
+ * says `temperature: false` for every GPT-6 row, which is right at every effort
+ * but `none`: "When reasoning effort is not `none`, remove `temperature`,
+ * `top_p`, and `top_logprobs`." (migration guide, 2026-11-12). At `none` the
+ * params go through, as the API accepts them; on the two models whose enum
+ * refuses `none` the exemption never engages.
+ */
+function checkSamplingParamsOutsideEffortNone(
+  params: ChatCompletionsBody,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (gpt6RuleFor(params.model) !== undefined && params.reasoning_effort === "none") return;
+  checkSamplingParams(params, info, ctx);
+}
+
+/** The shared battery, order preserved, with `checkSamplingParams` swapped for the GPT-6-aware one. */
+function openaiChatChecks(spec: ChatConstraintSpec): readonly ChatCheck[] {
+  return chatCompletionsChecks(spec).map((check) =>
+    check === checkSamplingParams ? checkSamplingParamsOutsideEffortNone : check,
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Schema — the shared dialect shape plus OpenAI-only top-level params, loose
@@ -258,7 +366,7 @@ const validator = createValidator<ChatCompletionsBody, unknown>({
   catalog: models,
   constraints: chatConstraints,
   familyRules: chatFamilyRules,
-  checks: [...chatCompletionsChecks(CHAT_CONSTRAINT_SPEC), checkChatCompletionsRoute],
+  checks: [...openaiChatChecks(CHAT_CONSTRAINT_SPEC), checkGpt6ChatRules, checkChatCompletionsRoute],
   estimate: createChatEstimate(CHAT_CONSTRAINT_SPEC),
   promptPath: ["messages"],
   finalize: createChatFinalize({

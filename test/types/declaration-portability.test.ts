@@ -131,7 +131,7 @@ export function askViaOpenRouter(prompt: string) {
 
 // The media substrate: per-model body maps (\`ImagesBodyByModel\` and friends)
 // used to be unexported, which no re-export elsewhere could reach.
-export const makeImage = (prompt: string) => openaiImage({ model: "gpt-image-1", prompt });
+export const makeImage = (prompt: string) => openaiImage({ model: "gpt-image-1.5", prompt });
 export const speak = (input: string) => openaiTts({ model: "gpt-4o-mini-tts", input, voice: "alloy" });
 export const makeVideo = (prompt: string) => openaiVideo({ model: "sora-2", prompt });
 export const makeImagen = (prompt: string) =>
@@ -140,7 +140,7 @@ export const makeImagen = (prompt: string) =>
 // The unified packs, whose results are the adapter's output rather than a
 // provider body.
 export const unifiedImageCall = (prompt: string) =>
-  unifiedImage({ model: "openai/gpt-image-1", prompt });
+  unifiedImage({ model: "openai/gpt-image-1.5", prompt });
 export const unifiedVideoCall = (prompt: string) =>
   unifiedVideo({ model: "openai/sora-2", prompt });
 export const unifiedSttCall = (url: string) =>

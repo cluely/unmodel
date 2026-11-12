@@ -80,12 +80,17 @@ export type {
 
 export type {
   ImagesBody,
-  GptImage1Body,
   GptImage1MiniBody,
   GptImage15Body,
   GptImage2Body,
   GptImage2Size,
   GptImage2SnapshotBody,
+  GptImage25SunburstBody,
+  GptImage25SunburstSnapshotBody,
+  GptImage25FlareBody,
+  GptImage25FlareSnapshotBody,
+  GptImage26SunburstBody,
+  GptImage26FlareBody,
   DallE2Body,
   DallE3Body,
   UnknownImageModelBody,
@@ -93,11 +98,16 @@ export type {
 
 export type {
   ImageEditBody,
-  GptImage1EditBody,
   GptImage1MiniEditBody,
   GptImage15EditBody,
   GptImage2EditBody,
   GptImage2SnapshotEditBody,
+  GptImage25SunburstEditBody,
+  GptImage25SunburstSnapshotEditBody,
+  GptImage25FlareEditBody,
+  GptImage25FlareSnapshotEditBody,
+  GptImage26SunburstEditBody,
+  GptImage26FlareEditBody,
   ChatgptImageLatestEditBody,
   DefaultImageEditBody,
   DallE2EditBody,
@@ -191,7 +201,15 @@ export type {
   ImagesResponseLike,
 } from "./check";
 
-export type { DallEModelId, GptImage2SnapshotId } from "./constraints";
+export type {
+  DallEModelId,
+  GptImage2SnapshotId,
+  GptImage25ModelId,
+  GptImage26ModelId,
+  Gpt6ChatModelId,
+  Gpt6ChatRule,
+  Gpt6ParamRule,
+} from "./constraints";
 
 export type {
   OpenaiModelId,

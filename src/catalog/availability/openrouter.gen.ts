@@ -1055,6 +1055,7 @@ export const availability = {
     "openrouter": "openai/gpt-5.6-terra-pro",
   },
   "openai/gpt-6-astra": {
+    "openai": "gpt-6-astra",
     "openrouter": "openai/gpt-6-astra",
     "vercel": "openai/gpt-6-astra",
   },
@@ -1062,6 +1063,7 @@ export const availability = {
     "openrouter": "openai/gpt-6-astra-pro",
   },
   "openai/gpt-6-luna": {
+    "openai": "gpt-6-luna",
     "openrouter": "openai/gpt-6-luna",
     "vercel": "openai/gpt-6-luna",
   },
@@ -1069,6 +1071,7 @@ export const availability = {
     "openrouter": "openai/gpt-6-luna-pro",
   },
   "openai/gpt-6-sol": {
+    "openai": "gpt-6-sol",
     "openrouter": "openai/gpt-6-sol",
     "vercel": "openai/gpt-6-sol",
   },
@@ -1076,6 +1079,7 @@ export const availability = {
     "openrouter": "openai/gpt-6-sol-pro",
   },
   "openai/gpt-6.1-sol": {
+    "openai": "gpt-6.1-sol",
     "openrouter": "openai/gpt-6.1-sol",
     "vercel": "openai/gpt-6.1-sol",
   },
@@ -1083,6 +1087,7 @@ export const availability = {
     "openrouter": "openai/gpt-6.1-sol-pro",
   },
   "openai/gpt-6.1-terra": {
+    "openai": "gpt-6.1-terra",
     "openrouter": "openai/gpt-6.1-terra",
     "vercel": "openai/gpt-6.1-terra",
   },

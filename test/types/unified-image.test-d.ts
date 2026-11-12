@@ -216,9 +216,9 @@ function sizeNarrowingTests(): void {
   image({ model: "openai/dall-e-3", prompt: "hi", size: "1792x1024" });
   // @ts-expect-error — three values, and this is not one of them.
   image({ model: "openai/dall-e-3", prompt: "hi", size: "1920x1080" });
-  // @ts-expect-error — nor is gpt-image-1's enum dall-e-3's.
-  image({ model: "openai/gpt-image-1", prompt: "hi", size: "1792x1024" });
-  image({ model: "openai/gpt-image-1", prompt: "hi", size: "1536x1024" });
+  // @ts-expect-error — nor is gpt-image-1.5's enum dall-e-3's.
+  image({ model: "openai/gpt-image-1.5", prompt: "hi", size: "1792x1024" });
+  image({ model: "openai/gpt-image-1.5", prompt: "hi", size: "1536x1024" });
 
   // A model whose API has no size field at all types `size` as `never`, so an
   // editor steers to `aspectRatio` — which is narrowed to Stability's nine.
@@ -232,8 +232,8 @@ function sizeNarrowingTests(): void {
 
   // `resolution` narrows to the tiers the model can actually reach.
   image({ model: "openai/gpt-image-2", prompt: "hi", resolution: "4k" });
-  // @ts-expect-error — the gpt-image-1 family's sizes are all about a megapixel.
-  image({ model: "openai/gpt-image-1", prompt: "hi", resolution: "2k" });
+  // @ts-expect-error — the gpt-image-1.5 family's sizes are all about a megapixel.
+  image({ model: "openai/gpt-image-1.5", prompt: "hi", resolution: "2k" });
   // @ts-expect-error — Imagen Fast has no `sampleImageSize` field at all.
   image({ model: "google/imagen-4.0-fast-generate-001", prompt: "hi", resolution: "1k" });
   image({ model: "google/imagen-4.0-generate-001", prompt: "hi", resolution: "2k" });
@@ -257,15 +257,15 @@ function extrasNarrowingTests(): void {
   image({ model: "openai/dall-e-3", prompt: "hi", quality: "hd" });
   // @ts-expect-error — and the same word on gpt-image-2 does not compile.
   image({ model: "openai/gpt-image-2", prompt: "hi", quality: "hd" });
-  image({ model: "openai/gpt-image-1", prompt: "hi", background: "transparent" });
+  image({ model: "openai/gpt-image-1.5", prompt: "hi", background: "transparent" });
   image({ model: "openai/gpt-image-2", prompt: "hi", background: "transparent" });
   image({ model: "openai/gpt-image-2", prompt: "hi", background: "opaque" });
   image({ model: "openai/gpt-image-2", prompt: "hi", background: null });
 
   // `style` exists on exactly one model on this endpoint.
   image({ model: "openai/dall-e-3", prompt: "hi", style: "vivid" });
-  // @ts-expect-error — not on gpt-image-1…
-  image({ model: "openai/gpt-image-1", prompt: "hi", style: "vivid" });
+  // @ts-expect-error — not on gpt-image-1.5…
+  image({ model: "openai/gpt-image-1.5", prompt: "hi", style: "vivid" });
   // @ts-expect-error — …and not on gpt-image-2 either.
   image({ model: "openai/gpt-image-2", prompt: "hi", style: "natural" });
   // @ts-expect-error — and a value outside dall-e-3's two is not a style.

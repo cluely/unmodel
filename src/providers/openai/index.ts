@@ -29,12 +29,17 @@ export type {
 export { image, IMAGES_GENERATIONS_URL } from "./image";
 export type {
   ImagesBody,
-  GptImage1Body,
   GptImage1MiniBody,
   GptImage15Body,
   GptImage2Body,
   GptImage2Size,
   GptImage2SnapshotBody,
+  GptImage25SunburstBody,
+  GptImage25SunburstSnapshotBody,
+  GptImage25FlareBody,
+  GptImage25FlareSnapshotBody,
+  GptImage26SunburstBody,
+  GptImage26FlareBody,
   DallE2Body,
   DallE3Body,
   UnknownImageModelBody,
@@ -53,11 +58,16 @@ export {
 } from "./image-edit";
 export type {
   ImageEditBody,
-  GptImage1EditBody,
   GptImage1MiniEditBody,
   GptImage15EditBody,
   GptImage2EditBody,
   GptImage2SnapshotEditBody,
+  GptImage25SunburstEditBody,
+  GptImage25SunburstSnapshotEditBody,
+  GptImage25FlareEditBody,
+  GptImage25FlareSnapshotEditBody,
+  GptImage26SunburstEditBody,
+  GptImage26FlareEditBody,
   ChatgptImageLatestEditBody,
   DefaultImageEditBody,
   DallE2EditBody,
@@ -193,6 +203,7 @@ export {
   transcriptionFamilyRules,
   chatConstraints,
   chatFamilyRules,
+  gpt6ChatRules,
   videoConstraints,
   SPEECH_RESPONSE_FORMATS,
   SPEECH_VOICES,
@@ -201,7 +212,15 @@ export {
   TRANSCRIPTION_FILE_FORMATS,
   TRANSCRIPTION_MAX_FILE_BYTES,
 } from "./constraints";
-export type { DallEModelId, GptImage2SnapshotId } from "./constraints";
+export type {
+  DallEModelId,
+  GptImage2SnapshotId,
+  GptImage25ModelId,
+  GptImage26ModelId,
+  Gpt6ChatModelId,
+  Gpt6ChatRule,
+  Gpt6ParamRule,
+} from "./constraints";
 
 export { models, provider } from "../../catalog/openai.gen";
 export type {

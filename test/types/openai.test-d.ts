@@ -170,10 +170,13 @@ function chatModelUnionTests(): void {
   expectTrue<IsNever<Extract<OpenaiChatModelId, "gpt-image-1.5">>>();
   expectTrue<IsNever<Extract<OpenaiChatModelId, "chatgpt-image-latest">>>();
   expectTrue<IsNever<Extract<OpenaiChatModelId, "gpt-realtime-2.1">>>();
+  expectTrue<IsNever<Extract<OpenaiChatModelId, `gpt-daybreak-${string}`>>>();
+  expectTrue<IsNever<Extract<OpenaiChatModelId, "gpt-daybreak-blue-latest">>>();
   // Chat-capable ids survive the exclusion.
   expectTrue<"gpt-4o" extends OpenaiChatModelId ? true : false>();
   expectTrue<"o3" extends OpenaiChatModelId ? true : false>();
   expectTrue<"gpt-5.6" extends OpenaiChatModelId ? true : false>();
+  expectTrue<"gpt-6-astra" extends OpenaiChatModelId ? true : false>();
 }
 
 function imagesTypeTests(): void {
@@ -221,6 +224,21 @@ function imagesTypeTests(): void {
   // Unknown models fall back to the loose escape arm.
   image({ model: "gpt-image-9", prompt: "x", some_future_param: true });
 
+  // GPT-Image-2.5 takes gpt-image-2's free-form sizes and the longer quality ladder.
+  image({ model: "gpt-image-2.5-sunburst", prompt: "x", quality: "max", size: "1536x864" });
+  image({ model: "gpt-image-2.5-flare-2026-09-08", prompt: "x", quality: "xhigh" });
+  // @ts-expect-error — xhigh is not on gpt-image-1.5's ladder
+  image({ model: "gpt-image-1.5", prompt: "x", quality: "xhigh" });
+  // @ts-expect-error — nor max on gpt-image-2's
+  image({ model: "gpt-image-2", prompt: "x", quality: "max" });
+  // GPT-Image-2.6 adds complexity and the gif / svg output formats.
+  image({ model: "gpt-image-2.6-sunburst", prompt: "x", complexity: "low", output_format: "gif", frame_count: 8 });
+  image({ model: "gpt-image-2.6-flare", prompt: "x", output_format: "svg", svg: { reasoning: { effort: "low" } } });
+  // @ts-expect-error — complexity is a 2.6 param
+  image({ model: "gpt-image-2.5-sunburst", prompt: "x", complexity: "low" });
+  // @ts-expect-error — gif output is a 2.6 format
+  image({ model: "gpt-image-2.5-sunburst", prompt: "x", output_format: "gif" });
+
   // gpt-image-2 accepts all three background values — transparent support is
   // in preview (images/create reference, checked 2026-08-31).
   image({ model: "gpt-image-2", prompt: "x", background: "auto" });
@@ -254,7 +272,7 @@ function imagesTypeTests(): void {
   void knownAsFuture;
 
   // @ts-expect-error — `style` is dall-e-3 only
-  image({ model: "gpt-image-1", prompt: "x", style: "vivid" });
+  image({ model: "gpt-image-1.5", prompt: "x", style: "vivid" });
 
   // @ts-expect-error — `response_format` is dall-e only; GPT image models always return base64
   image({ model: "gpt-image-1.5", prompt: "x", response_format: "url" });
@@ -266,7 +284,7 @@ function imagesTypeTests(): void {
   image({ model: "dall-e-3", prompt: "x", n: 2 });
 
   // @ts-expect-error — bogus top-level param on a known arm
-  image({ model: "gpt-image-1", prompt: "x", bogus_thing: 1 });
+  image({ model: "gpt-image-1.5", prompt: "x", bogus_thing: 1 });
 
   // @ts-expect-error — size outside the dall-e-2 set
   image({ model: "dall-e-2", prompt: "x", size: "1024x1536" });
@@ -490,14 +508,21 @@ function imageEditTypeTests(): void {
   expectAssignable<ImageEditParams>(edit.toSdk("openai"));
   expectAssignable<"gpt-image-1.5">(edit.model);
 
-  // model may be omitted (server default gpt-image-1.5).
-  imageEdit({ image: file, prompt: "x", input_fidelity: "low" });
+  // model may be omitted (server default gpt-image-2.5-sunburst), and the
+  // model-less body takes that arm: free-form size, markup, xhigh/max.
+  imageEdit({ image: file, prompt: "x", input_fidelity: "low", size: "1536x864", quality: "max" });
   // chatgpt-image-latest is an edit-only model id.
   imageEdit({ model: "chatgpt-image-latest", image: file, prompt: "x" });
   // gpt-image-2 takes free-form sizes.
   imageEdit({ model: "gpt-image-2", image: file, prompt: "x", size: "1536x864" });
   // Unknown models fall back to the loose escape arm.
   imageEdit({ model: "gpt-image-9", image: file, prompt: "x", some_future_param: true });
+
+  // GPT-Image-2.5 edits take markup, the longer ladder and free-form sizes.
+  imageEdit({ model: "gpt-image-2.5-sunburst", image: file, prompt: "x", markup: file, quality: "max", size: "1536x864" });
+  imageEdit({ model: "gpt-image-2.6-flare", image: file, prompt: "x", complexity: "high", output_format: "gif" });
+  // @ts-expect-error — markup is a GPT-Image-2.5+ param
+  imageEdit({ model: "gpt-image-1.5", image: file, prompt: "x", markup: file });
 
   // @ts-expect-error — gpt-image-2 processes inputs at high fidelity; input_fidelity is fixed
   imageEdit({ model: "gpt-image-2", image: file, prompt: "x", input_fidelity: "low" });
@@ -524,7 +549,7 @@ function imageEditTypeTests(): void {
   imageEdit(future);
 
   // @ts-expect-error — response_format is dall-e-2 only on this endpoint
-  imageEdit({ model: "gpt-image-1", image: file, prompt: "x", response_format: "url" });
+  imageEdit({ model: "gpt-image-1.5", image: file, prompt: "x", response_format: "url" });
 
   // @ts-expect-error — dall-e-2 takes exactly one image
   imageEdit({ model: "dall-e-2", image: [file, file], prompt: "x" });

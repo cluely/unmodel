@@ -47,11 +47,14 @@ describe("openai.imageEdit happy path", () => {
     expect({ ...v.toSdk("openai") }).toEqual({ ...v });
   });
 
-  test("model may be omitted (server default gpt-image-1.5)", () => {
-    const r = imageEdit.safe({ image: png(), prompt: "x", input_fidelity: "low" });
+  test("model may be omitted (server default gpt-image-2.5-sunburst)", () => {
+    // "Defaults to `gpt-image-2.5-sunburst`." — createEdit reference, 2026-11-12.
+    // The model-less body is checked against that id's rules: free-form size
+    // and the longer quality ladder pass, and no deprecation warning fires.
+    const r = imageEdit.safe({ image: png(), prompt: "x", input_fidelity: "low", size: "1536x864", quality: "max" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
-    expect(DEFAULT_IMAGE_EDIT_MODEL_ID).toBe("gpt-image-1.5");
+    expect(DEFAULT_IMAGE_EDIT_MODEL_ID).toBe("gpt-image-2.5-sunburst");
   });
 
   test("up to 16 images pass, 17 do not", () => {
@@ -142,7 +145,7 @@ describe("openai.imageEdit per-model rules", () => {
 
   test("response_format is denied on GPT image models", () => {
     const r = safeUnchecked({
-      model: "gpt-image-1",
+      model: "gpt-image-1.5",
       image: png(),
       prompt: "x",
       response_format: "url",
@@ -263,5 +266,67 @@ describe("openai.imageEdit toFormData", () => {
     expect(form.get("n")).toBe("2");
     expect(form.get("quality")).toBeNull();
     expect(form.get("mask")).toBeInstanceOf(Blob);
+  });
+});
+
+/** GPT-Image-2.5 / 2.6 on edits — createEdit reference and changelog, read 2026-11-12. */
+describe("openai.imageEdit GPT-Image-2.5 / 2.6", () => {
+  const IDS = [
+    "gpt-image-2.5-sunburst",
+    "gpt-image-2.5-sunburst-2026-09-08",
+    "gpt-image-2.5-flare",
+    "gpt-image-2.5-flare-2026-09-08",
+    "gpt-image-2.6-sunburst",
+    "gpt-image-2.6-flare",
+  ] as const;
+
+  test("every id edits with the free-form size, the longer ladder and input_fidelity", () => {
+    for (const model of IDS) {
+      const r = imageEdit.safe({
+        model,
+        image: png(),
+        prompt: "x",
+        size: "1536x864",
+        quality: "max",
+        input_fidelity: "high",
+      });
+      expect(r.ok, model).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("markup is accepted on 2.5 and 2.6 and cannot be combined with mask", () => {
+    expect(
+      imageEdit.safe({ model: "gpt-image-2.5-sunburst", image: png(), prompt: "x", markup: png() }).ok,
+    ).toBe(true);
+    expect(
+      imageEdit.safe({ model: "gpt-image-2.6-sunburst", image: png(), prompt: "x", markup: png() }).ok,
+    ).toBe(true);
+    const r = imageEdit.safe({
+      model: "gpt-image-2.5-flare",
+      image: png(),
+      prompt: "x",
+      markup: png(),
+      mask: png(),
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["markup"]);
+  });
+
+  test("GIF output refuses a mask; svg is sent as written on 2.6 edits", () => {
+    const gif = imageEdit.safe({
+      model: "gpt-image-2.6-flare",
+      image: png(),
+      prompt: "x",
+      output_format: "gif",
+      mask: png(),
+    });
+    expect(gif.ok).toBe(false);
+    if (!gif.ok) expect(gif.errors[0]?.path).toEqual(["mask"]);
+    // The edit reference lists svg and the guide says edits do not support it —
+    // two pages conflict and no 400 is on record, so the request goes as written.
+    expect(
+      imageEdit.safe({ model: "gpt-image-2.6-flare", image: png(), prompt: "x", output_format: "svg" }).ok,
+    ).toBe(true);
   });
 });

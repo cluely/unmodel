@@ -12,6 +12,21 @@ export type DallEModelId = "dall-e-2" | "dall-e-3";
 /** Dated snapshot of gpt-image-2 the API accepts; absent from models.dev. */
 export type GptImage2SnapshotId = "gpt-image-2-2026-04-21";
 
+/**
+ * The GPT-Image-2.5 Sunburst and Flare ids and their dated snapshots
+ * ("Default snapshot: `gpt-image-2.5-sunburst-2026-09-08`" /
+ * "`gpt-image-2.5-flare-2026-09-08`" on the model pages, 2026-11-12); absent
+ * from models.dev, hand-supplemented in ./images-models.ts.
+ */
+export type GptImage25ModelId =
+  | "gpt-image-2.5-sunburst"
+  | "gpt-image-2.5-sunburst-2026-09-08"
+  | "gpt-image-2.5-flare"
+  | "gpt-image-2.5-flare-2026-09-08";
+
+/** The GPT-Image-2.6 Sunburst and Flare ids (no dated snapshot); absent from models.dev. */
+export type GptImage26ModelId = "gpt-image-2.6-sunburst" | "gpt-image-2.6-flare";
+
 // ---------------------------------------------------------------------------
 // Images — doc URLs. Every rule below cites one of these.
 // ---------------------------------------------------------------------------
@@ -22,7 +37,34 @@ const IMAGE_GUIDE_DOCS = "https://developers.openai.com/api/docs/guides/image-ge
 
 const GPT_IMAGE_SIZES = ["auto", "1024x1024", "1536x1024", "1024x1536"] as const;
 const GPT_IMAGE_QUALITIES = ["auto", "low", "medium", "high"] as const;
+/**
+ * "`gpt-image-2.5-sunburst` and `gpt-image-2.5-flare`, including their
+ * `2026-09-08` snapshots, also support `xhigh` and `max`." — images/create
+ * reference. The image-generation guide extends the ladder to 2.6: "For the
+ * Sunburst and Flare models in both GPT-Image-2.6 and GPT-Image-2.5, the
+ * quality options are `low`, `medium`, `high`, `xhigh`, and `max`." (both
+ * read 2026-11-12; the reference names only 2.5, the guide names both — the
+ * permissive superset is kept).
+ */
+const GPT_IMAGE_25_QUALITIES = [...GPT_IMAGE_QUALITIES, "xhigh", "max"] as const;
 const GPT_IMAGE_OUTPUT_FORMATS = ["png", "jpeg", "webp"] as const;
+/**
+ * GPT-Image-2.6 adds animated and vector output: "Released GPT-Image-2.6
+ * Sunburst and GPT-Image-2.6 Flare for image generation and editing"
+ * (changelog, 2026-11-04) with `output_format` `gif` and `svg` on the
+ * images/create reference, read 2026-11-12. Both are access-gated ("Requires
+ * access to the GIF preview for the selected model." / "SVG output requires a
+ * supported image model and project access."), which a validator cannot see,
+ * so the formats are accepted and only their documented pairings are checked
+ * (checkGifAndSvgOutput in images-shared.ts).
+ */
+const GPT_IMAGE_26_OUTPUT_FORMATS = [...GPT_IMAGE_OUTPUT_FORMATS, "gif", "svg"] as const;
+/**
+ * "The supported complexity levels for Sunburst and Flare are `low`, `medium`,
+ * and `high`." / "If you omit `complexity`, both models use `high`." —
+ * image-generation guide, GPT-Image-2.6 section, read 2026-11-12.
+ */
+const GPT_IMAGE_26_COMPLEXITIES = ["low", "medium", "high"] as const;
 const GPT_IMAGE_MODERATIONS = ["low", "auto"] as const;
 const DALL_E_RESPONSE_FORMATS = ["url", "b64_json"] as const;
 const INPUT_FIDELITIES = ["high", "low"] as const;
@@ -91,18 +133,48 @@ const GPT_IMAGE_2_ENUMS: EndpointConstraints["enums"] = {
 };
 
 /**
+ * GPT-Image-2.5: gpt-image-2's surface (free-form `size`, checked by
+ * checkGptImage2Size — the create reference's free-form sentence names
+ * "`gpt-image-2`, `gpt-image-2-2026-04-21`, `gpt-image-2.5-sunburst` and
+ * `gpt-image-2.5-flare`, including their `2026-09-08` snapshots") with the
+ * wider quality ladder.
+ */
+const GPT_IMAGE_25_ENUMS: EndpointConstraints["enums"] = {
+  ...GPT_IMAGE_2_ENUMS,
+  quality: GPT_IMAGE_25_QUALITIES,
+};
+
+/**
+ * GPT-Image-2.6: the 2.5 surface plus `gif`/`svg` output and `complexity`.
+ * `size` carries no enum AND is not checked by checkGptImage2Size: the
+ * reference's free-form sentence stops at 2.5, and the guide's "Both models
+ * also support custom dimensions" sits in a section that names the 2.5 ids —
+ * an undocumented narrowing would false-positive, so 2.6 takes any string.
+ */
+const GPT_IMAGE_26_ENUMS: EndpointConstraints["enums"] = {
+  ...GPT_IMAGE_25_ENUMS,
+  output_format: GPT_IMAGE_26_OUTPUT_FORMATS,
+  complexity: GPT_IMAGE_26_COMPLEXITIES,
+};
+
+/**
  * Per-model constraint table for openai.image (POST /v1/images/generations),
  * audited param-by-param against the create API reference and the
- * image-generation guide on 2026-08-13. Enum narrowing and deny rules both
- * come from the documented per-model applicability notes; the deny reasons
- * quote them.
+ * image-generation guide on 2026-08-13 (GPT-Image-2.5 / 2.6 rows added
+ * 2026-11-12). Enum narrowing and deny rules both come from the documented
+ * per-model applicability notes; the deny reasons quote them.
  */
 export const imageConstraints = {
-  "gpt-image-1": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_ENUMS },
   "gpt-image-1-mini": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_ENUMS },
   "gpt-image-1.5": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_ENUMS },
   "gpt-image-2": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_2_ENUMS },
   "gpt-image-2-2026-04-21": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_2_ENUMS },
+  "gpt-image-2.5-sunburst": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_25_ENUMS },
+  "gpt-image-2.5-sunburst-2026-09-08": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_25_ENUMS },
+  "gpt-image-2.5-flare": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_25_ENUMS },
+  "gpt-image-2.5-flare-2026-09-08": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_25_ENUMS },
+  "gpt-image-2.6-sunburst": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_26_ENUMS },
+  "gpt-image-2.6-flare": { deny: GPT_IMAGE_DENIES, enums: GPT_IMAGE_26_ENUMS },
   "dall-e-2": {
     deny: { ...DALL_E_DENIES(IMAGES_CREATE_DOCS), style: STYLE_IS_DALL_E_3_ONLY },
     enums: {
@@ -122,7 +194,10 @@ export const imageConstraints = {
     },
   },
 } as const satisfies Partial<
-  Record<OpenaiImageModelId | DallEModelId | GptImage2SnapshotId, EndpointConstraints>
+  Record<
+    OpenaiImageModelId | DallEModelId | GptImage2SnapshotId | GptImage25ModelId | GptImage26ModelId,
+    EndpointConstraints
+  >
 >;
 
 // ---------------------------------------------------------------------------
@@ -177,13 +252,34 @@ const GPT_IMAGE_EDIT_DENIES: Record<string, DenyRule> = {
 };
 
 /**
+ * GPT-Image-2.5 / 2.6 on edits: the generations enums plus `input_fidelity`'s
+ * documented value set. The createEdit reference narrows `input_fidelity` only
+ * for the GPT Image 1 family ("Supports `high` and `low` on `gpt-image-1.5`;
+ * `gpt-image-1-mini` supports only `low`.", 2026-11-12) and says nothing for
+ * 2.5 / 2.6, so neither a deny nor a one-value enum would be documented here.
+ * `output_format` `svg` stays accepted on 2.6 edits: the edit reference lists
+ * it and documents the `svg` object, while the guide reads "The image edit
+ * endpoint does not support SVG output" — two pages conflict and no 400 is on
+ * record, so the request is sent as written.
+ */
+const GPT_IMAGE_25_EDIT_ENUMS: EndpointConstraints["enums"] = {
+  ...GPT_IMAGE_25_ENUMS,
+  input_fidelity: INPUT_FIDELITIES,
+};
+
+const GPT_IMAGE_26_EDIT_ENUMS: EndpointConstraints["enums"] = {
+  ...GPT_IMAGE_26_ENUMS,
+  input_fidelity: INPUT_FIDELITIES,
+};
+
+/**
  * Per-model constraint table for openai.imageEdit (POST /v1/images/edits),
  * audited against the createEdit API reference and the image-generation guide
- * on 2026-08-13. `dall-e-3` is deliberately absent: the endpoint documents
- * "One of `dall-e-2` or a GPT image model", so dall-e-3 is not an edit model.
+ * on 2026-08-13 (GPT-Image-2.5 / 2.6 rows added 2026-11-12). `dall-e-3` is
+ * deliberately absent: the endpoint documents "One of `dall-e-2` or a GPT
+ * image model", so dall-e-3 is not an edit model.
  */
 export const imagesEditConstraints = {
-  "gpt-image-1": { deny: GPT_IMAGE_EDIT_DENIES, enums: GPT_IMAGE_EDIT_ENUMS, media: GPT_IMAGE_EDIT_MEDIA },
   "gpt-image-1-mini": {
     deny: { ...GPT_IMAGE_EDIT_DENIES, input_fidelity: INPUT_FIDELITY_UNSUPPORTED },
     enums: GPT_IMAGE_ENUMS,
@@ -198,6 +294,36 @@ export const imagesEditConstraints = {
   "gpt-image-2-2026-04-21": {
     deny: { ...GPT_IMAGE_EDIT_DENIES, input_fidelity: INPUT_FIDELITY_FIXED_HIGH },
     enums: GPT_IMAGE_2_ENUMS,
+    media: GPT_IMAGE_EDIT_MEDIA,
+  },
+  "gpt-image-2.5-sunburst": {
+    deny: GPT_IMAGE_EDIT_DENIES,
+    enums: GPT_IMAGE_25_EDIT_ENUMS,
+    media: GPT_IMAGE_EDIT_MEDIA,
+  },
+  "gpt-image-2.5-sunburst-2026-09-08": {
+    deny: GPT_IMAGE_EDIT_DENIES,
+    enums: GPT_IMAGE_25_EDIT_ENUMS,
+    media: GPT_IMAGE_EDIT_MEDIA,
+  },
+  "gpt-image-2.5-flare": {
+    deny: GPT_IMAGE_EDIT_DENIES,
+    enums: GPT_IMAGE_25_EDIT_ENUMS,
+    media: GPT_IMAGE_EDIT_MEDIA,
+  },
+  "gpt-image-2.5-flare-2026-09-08": {
+    deny: GPT_IMAGE_EDIT_DENIES,
+    enums: GPT_IMAGE_25_EDIT_ENUMS,
+    media: GPT_IMAGE_EDIT_MEDIA,
+  },
+  "gpt-image-2.6-sunburst": {
+    deny: GPT_IMAGE_EDIT_DENIES,
+    enums: GPT_IMAGE_26_EDIT_ENUMS,
+    media: GPT_IMAGE_EDIT_MEDIA,
+  },
+  "gpt-image-2.6-flare": {
+    deny: GPT_IMAGE_EDIT_DENIES,
+    enums: GPT_IMAGE_26_EDIT_ENUMS,
     media: GPT_IMAGE_EDIT_MEDIA,
   },
   "chatgpt-image-latest": {
@@ -221,7 +347,10 @@ export const imagesEditConstraints = {
     media: DALL_E_2_EDIT_MEDIA,
   },
 } as const satisfies Partial<
-  Record<OpenaiImageModelId | "dall-e-2" | GptImage2SnapshotId, EndpointConstraints>
+  Record<
+    OpenaiImageModelId | "dall-e-2" | GptImage2SnapshotId | GptImage25ModelId | GptImage26ModelId,
+    EndpointConstraints
+  >
 >;
 
 // ---------------------------------------------------------------------------
@@ -561,11 +690,65 @@ export const videoConstraints = {
   "sora-2-pro-2025-10-06": { enums: SORA_PRO_ENUMS },
 } as const satisfies Partial<Record<SoraModelId, EndpointConstraints>>;
 
+// ---------------------------------------------------------------------------
+// Chat (POST /v1/chat/completions)
+// ---------------------------------------------------------------------------
+
+/** The GPT-6 migration guide — the page the per-model tool/sampling rules quote. */
+export const LATEST_MODEL_GUIDE_DOCS = "https://developers.openai.com/api/docs/guides/latest-model.md";
+export const CHANGELOG_DOCS = "https://developers.openai.com/api/docs/changelog";
+
 /**
- * Per-model constraint table for openai.chat. `stop` is rejected on the o3
- * and o4-mini reasoning models — SDK docstring and the live chat/create API
- * reference both read: "Not supported with latest reasoning models `o3` and
- * `o4-mini`." (openai@7.4.0, checked 2026-08-12).
+ * GPT-6 Astra and GPT-6.1 Sol: "`reasoning.effort` supports `low`, `medium`,
+ * `high`, `xhigh`, and `max`." (both model pages). `none` is a documented 400
+ * — "Setting `reasoning.effort` (Responses) or `reasoning_effort` (Chat
+ * Completions) to `none` returns HTTP 400." — and 6.1 Sol "does not support
+ * `none` or `minimal` and defaults to `medium`." (reasoning guide). `minimal`
+ * is absent from both pages' lists and the migration guide's advice is "If
+ * your existing request uses `minimal`, start with `low`". Read 2026-11-12.
+ */
+const GPT6_REASONING_EFFORTS_WITHOUT_NONE = ["low", "medium", "high", "xhigh", "max"] as const;
+
+/**
+ * GPT-6 Sol, GPT-6 Luna and GPT-6.1 Terra: "`reasoning.effort` supports
+ * `none`, `low`, `medium` (default), `high`, `xhigh`, and `max`." (each model
+ * page, 2026-11-12). No `minimal` on any of them.
+ */
+const GPT6_REASONING_EFFORTS = ["none", ...GPT6_REASONING_EFFORTS_WITHOUT_NONE] as const;
+
+/**
+ * "For `gpt-5.5`, `gpt-5.5-pro`, and future models, only `24h` is supported."
+ * — chat/create reference on `prompt_cache_retention` (itself "Deprecated. Use
+ * `prompt_cache_options.ttl` instead."), read 2026-11-12. Applied to the two
+ * ids the sentence names and to the models released after them.
+ */
+const PROMPT_CACHE_RETENTION_24H_ONLY = ["24h"] as const;
+
+const GPT6_WITHOUT_NONE_ENUMS: EndpointConstraints["enums"] = {
+  reasoning_effort: GPT6_REASONING_EFFORTS_WITHOUT_NONE,
+  prompt_cache_retention: PROMPT_CACHE_RETENTION_24H_ONLY,
+};
+
+const GPT6_ENUMS: EndpointConstraints["enums"] = {
+  reasoning_effort: GPT6_REASONING_EFFORTS,
+  prompt_cache_retention: PROMPT_CACHE_RETENTION_24H_ONLY,
+};
+
+const RETENTION_24H_ENUMS: EndpointConstraints["enums"] = {
+  prompt_cache_retention: PROMPT_CACHE_RETENTION_24H_ONLY,
+};
+
+/**
+ * Per-model constraint table for openai.chat.
+ *
+ * `stop` is rejected on the o3 and o4-mini reasoning models — SDK docstring
+ * and the live chat/create API reference both read: "Not supported with latest
+ * reasoning models `o3` and `o4-mini`." (openai@7.4.0, checked 2026-08-12).
+ *
+ * The GPT-6 rows narrow `reasoning_effort` to each model page's own list (see
+ * the constants above) and `prompt_cache_retention` to `24h`; their
+ * tool-calling, logprobs and sampling rules are value-conditional and live in
+ * {@link gpt6ChatRules}, enforced by checkGpt6ChatRules in ./chat.ts.
  */
 export const chatConstraints = {
   o3: {
@@ -588,7 +771,72 @@ export const chatConstraints = {
       },
     },
   },
+  "gpt-5.5": { enums: RETENTION_24H_ENUMS },
+  "gpt-5.6": { enums: RETENTION_24H_ENUMS },
+  "gpt-5.6-sol": { enums: RETENTION_24H_ENUMS },
+  "gpt-6-astra": { enums: GPT6_WITHOUT_NONE_ENUMS },
+  "gpt-6.1-sol": { enums: GPT6_WITHOUT_NONE_ENUMS },
+  "gpt-6-sol": { enums: GPT6_ENUMS },
+  "gpt-6-luna": { enums: GPT6_ENUMS },
+  "gpt-6.1-terra": { enums: GPT6_ENUMS },
 } as const satisfies Partial<Record<string, EndpointConstraints>>;
+
+/**
+ * How a GPT-6 model's Chat Completions surface treats a param family.
+ *
+ * - `"responses-only"` — never on this endpoint, whatever the effort: "Tool
+ *   calling requires the Responses API." (the GPT-6.1 Sol and Terra model
+ *   pages) and "Chat Completions does not support function calling with GPT-6
+ *   Astra or GPT-6.1 Sol." (reasoning guide).
+ * - `"unsupported"` — the model has no such feature at all: "GPT-6 Astra does
+ *   not support custom `temperature` or `top_p` values or log probabilities
+ *   (`logprobs`)." (changelog, 2026-09-03 entry).
+ * - `"effort-none-only"` — accepted exactly when `reasoning_effort` is `none`:
+ *   "GPT-6 Sol and GPT-6 Luna support function calling in Chat Completions only
+ *   with `reasoning_effort: \"none\"`." and, in the same paragraph, "When
+ *   reasoning effort is not `none`, remove `temperature`, `top_p`, and
+ *   `top_logprobs`." / "For Chat Completions, also remove `logprobs`."
+ *   (migration guide). The chat/create reference's own logprobs example is
+ *   `gpt-6-sol` at `reasoning_effort: "none"`.
+ *
+ * Absent or `null` effort is the server default `medium`, so it counts as
+ * "not none". All read 2026-11-12.
+ */
+export type Gpt6ParamRule = "responses-only" | "unsupported" | "effort-none-only";
+
+export interface Gpt6ChatRule {
+  /** `tools` (and the legacy `functions`). */
+  tools: Gpt6ParamRule;
+  /**
+   * `logprobs` / `top_logprobs`. Absent where no page names them for the model
+   * (GPT-6.1 Sol and Terra): the migration guide's sentence is generic there,
+   * and a rule inferred from a generic sentence would be an undocumented
+   * narrowing.
+   */
+  logprobs?: Gpt6ParamRule;
+}
+
+/**
+ * The value-conditional GPT-6 rules — a named table plus a dedicated check in
+ * ./chat.ts rather than {@link EndpointConstraints.deny}, which can only
+ * withdraw a param outright and would refuse `tools: []` or `logprobs: false`.
+ *
+ * `temperature` / `top_p` ride the catalog's `temperature: false` on every
+ * GPT-6 row; the one thing the catalog cannot say is the `none` exemption
+ * ("When reasoning effort is not `none`, remove `temperature`, `top_p`…"),
+ * which ./chat.ts applies to every id in this table. For GPT-6 Astra and
+ * GPT-6.1 Sol the exemption is moot — `none` is refused by their
+ * `reasoning_effort` enum first.
+ */
+export const gpt6ChatRules = {
+  "gpt-6-astra": { tools: "responses-only", logprobs: "unsupported" },
+  "gpt-6.1-sol": { tools: "responses-only" },
+  "gpt-6.1-terra": { tools: "responses-only" },
+  "gpt-6-sol": { tools: "effort-none-only", logprobs: "effort-none-only" },
+  "gpt-6-luna": { tools: "effort-none-only", logprobs: "effort-none-only" },
+} as const satisfies Record<string, Gpt6ChatRule>;
+
+export type Gpt6ChatModelId = keyof typeof gpt6ChatRules;
 
 /**
  * Chat rules for facts the catalog cannot express. The catalog already

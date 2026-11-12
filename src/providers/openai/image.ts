@@ -9,6 +9,7 @@ import { imagesModels } from "./images-models";
 import { imageConstraints } from "./constraints";
 import {
   checkPromptCharacterLimit,
+  checkGifAndSvgOutput,
   checkGptImage2Size,
   checkTransparentOutputFormat,
 } from "./images-shared";
@@ -69,10 +70,6 @@ interface GptImageBaseBody {
   style?: never;
 }
 
-export interface GptImage1Body extends GptImageBaseBody {
-  model: "gpt-image-1";
-}
-
 export interface GptImage1MiniBody extends GptImageBaseBody {
   model: "gpt-image-1-mini";
 }
@@ -111,6 +108,79 @@ export interface GptImage2Body extends Omit<GptImageBaseBody, "size"> {
 
 export interface GptImage2SnapshotBody extends Omit<GptImage2Body, "model"> {
   model: "gpt-image-2-2026-04-21";
+}
+
+/**
+ * GPT-Image-2.5 Sunburst and Flare (released 2026-09-08): gpt-image-2's
+ * surface — the create reference names them in the same free-form `size`
+ * sentence — with a longer quality ladder: "`gpt-image-2.5-sunburst` and
+ * `gpt-image-2.5-flare`, including their `2026-09-08` snapshots, also support
+ * `xhigh` and `max`." (images/create reference, read 2026-11-12).
+ */
+interface GptImage25BaseBody extends Omit<GptImage2Body, "model" | "quality"> {
+  quality?: "auto" | "low" | "medium" | "high" | "xhigh" | "max" | null;
+}
+
+export interface GptImage25SunburstBody extends GptImage25BaseBody {
+  model: "gpt-image-2.5-sunburst";
+}
+
+export interface GptImage25SunburstSnapshotBody extends GptImage25BaseBody {
+  model: "gpt-image-2.5-sunburst-2026-09-08";
+}
+
+export interface GptImage25FlareBody extends GptImage25BaseBody {
+  model: "gpt-image-2.5-flare";
+}
+
+export interface GptImage25FlareSnapshotBody extends GptImage25BaseBody {
+  model: "gpt-image-2.5-flare-2026-09-08";
+}
+
+/**
+ * GPT-Image-2.6 Sunburst and Flare (released 2026-11-04): the 2.5 surface plus
+ * the params the images/create reference and image-generation guide document
+ * for them (read 2026-11-12). `size` keeps the 2.5 type for autocomplete but
+ * is not held to the free-form bounds at runtime — no page states 2.6's size
+ * rules (see GPT_IMAGE_2_MODELS in images-shared.ts).
+ */
+interface GptImage26BaseBody extends Omit<GptImage25BaseBody, "output_format"> {
+  /**
+   * `gif` and `svg` are 2.6 additions, both access-gated ("Requires access to
+   * the GIF preview for the selected model." / "SVG output requires a supported
+   * image model and project access."). Their pairings — GIF: no streaming,
+   * partial images or custom compression; SVG: `n` must be 1, no streaming,
+   * partial images or compression — are enforced by checkGifAndSvgOutput.
+   */
+  output_format?: "png" | "jpeg" | "webp" | "gif" | "svg" | null;
+  /**
+   * "The supported complexity levels for Sunburst and Flare are `low`,
+   * `medium`, and `high`." / "If you omit `complexity`, both models use
+   * `high`." — image-generation guide.
+   */
+  complexity?: "low" | "medium" | "high" | null;
+  /**
+   * "Number of frames for GIF output. Accepts integers from 2 through 16.
+   * Defaults to 9 when omitted." Only with `output_format: "gif"`.
+   */
+  frame_count?: number | null;
+  /** Milliseconds per GIF frame, at least 20 (default 200). Only with `output_format: "gif"`. */
+  frame_duration_ms?: number | null;
+  /** SVG generation settings — the model that writes the markup and its reasoning effort. */
+  svg?: {
+    model?: string;
+    reasoning?: { effort?: "none" | "low" | "medium" | "high" | "xhigh" | "max" };
+  } | null;
+  /** Stable end-user identifier, at most 128 characters; the reference deprecates `user` in its favour. */
+  safety_identifier?: string | null;
+}
+
+export interface GptImage26SunburstBody extends GptImage26BaseBody {
+  model: "gpt-image-2.6-sunburst";
+}
+
+export interface GptImage26FlareBody extends GptImage26BaseBody {
+  model: "gpt-image-2.6-flare";
 }
 
 export interface DallE2Body {
@@ -164,21 +234,31 @@ export interface UnknownImageModelBody<Model extends string> {
  * Use `ImagesBody<string>` only when the id is genuinely runtime-discovered.
  */
 export type ImagesBody<FutureModel extends string = never> =
-  | GptImage1Body
   | GptImage1MiniBody
   | GptImage15Body
   | GptImage2Body
   | GptImage2SnapshotBody
+  | GptImage25SunburstBody
+  | GptImage25SunburstSnapshotBody
+  | GptImage25FlareBody
+  | GptImage25FlareSnapshotBody
+  | GptImage26SunburstBody
+  | GptImage26FlareBody
   | DallE2Body
   | DallE3Body
   | UnknownImageModelBody<FutureModel>;
 
 export interface ImagesBodyByModel {
-  "gpt-image-1": GptImage1Body;
   "gpt-image-1-mini": GptImage1MiniBody;
   "gpt-image-1.5": GptImage15Body;
   "gpt-image-2": GptImage2Body;
   "gpt-image-2-2026-04-21": GptImage2SnapshotBody;
+  "gpt-image-2.5-sunburst": GptImage25SunburstBody;
+  "gpt-image-2.5-sunburst-2026-09-08": GptImage25SunburstSnapshotBody;
+  "gpt-image-2.5-flare": GptImage25FlareBody;
+  "gpt-image-2.5-flare-2026-09-08": GptImage25FlareSnapshotBody;
+  "gpt-image-2.6-sunburst": GptImage26SunburstBody;
+  "gpt-image-2.6-flare": GptImage26FlareBody;
   "dall-e-2": DallE2Body;
   "dall-e-3": DallE3Body;
 }
@@ -220,6 +300,19 @@ const imageSchema = z.looseObject({
   stream: z.boolean().nullable().optional(),
   style: z.string().nullable().optional(),
   user: z.string().optional(),
+  // GPT-Image-2.6 additions (images/create reference, 2026-11-12); the
+  // per-model enum rows refuse them where a model's page does not list them.
+  complexity: z.string().nullable().optional(),
+  frame_count: z.number().int().min(2).max(16).nullable().optional(),
+  frame_duration_ms: z.number().int().min(20).nullable().optional(),
+  svg: z
+    .looseObject({
+      model: z.string().optional(),
+      reasoning: z.looseObject({ effort: z.string().optional() }).optional(),
+    })
+    .nullable()
+    .optional(),
+  safety_identifier: z.string().max(128).nullable().optional(),
 });
 
 const IMAGES_CREATE_DOCS = "https://developers.openai.com/api/docs/api-reference/images/create";
@@ -236,7 +329,6 @@ const EDITS_ONLY_MODEL_IDS: ReadonlySet<string> = new Set(["chatgpt-image-latest
 const GENERATIONS_MODEL_IDS = [
   "dall-e-2",
   "dall-e-3",
-  "gpt-image-1",
   "gpt-image-1-mini",
   "gpt-image-1.5",
   "gpt-image-2",
@@ -288,6 +380,7 @@ const validator = createValidator<AnyImagesBody, unknown>({
     checkEditsOnlyModel,
     checkGptImage2Size,
     checkTransparentOutputFormat,
+    checkGifAndSvgOutput,
     checkPromptCharacterLimit,
   ],
   // No token/cost estimate: image cost depends on generated output tokens,

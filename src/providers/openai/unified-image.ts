@@ -28,19 +28,35 @@ import { IMAGE_MODELS, OPENAI_IMAGE_MODEL_PARAMS } from "./image-params";
 const IMAGES_CREATE_DOCS = "https://developers.openai.com/api/docs/api-reference/images/create";
 const IMAGE_GUIDE_DOCS = "https://developers.openai.com/api/docs/guides/image-generation";
 
-/** The ids whose `size` is free-form rather than an enum. */
+/**
+ * The ids whose `size` is free-form rather than an enum — every row the table
+ * marks `sizeFreeform`. The 2.6 pair is here for construction only: a ratio
+ * compiles to a 16-px-grid size as on 2.5, and `openai.image` then holds the
+ * 2.5 ids to the documented bounds and the 2.6 ids to none.
+ */
 const FREEFORM_SIZE_MODELS: ReadonlySet<string> = new Set([
   "gpt-image-2",
   "gpt-image-2-2026-04-21",
+  "gpt-image-2.5-sunburst",
+  "gpt-image-2.5-sunburst-2026-09-08",
+  "gpt-image-2.5-flare",
+  "gpt-image-2.5-flare-2026-09-08",
+  "gpt-image-2.6-sunburst",
+  "gpt-image-2.6-flare",
 ]);
 
 /** The ids that always return base64 and have no `response_format`. */
 const GPT_IMAGE_MODELS: ReadonlySet<string> = new Set([
-  "gpt-image-1",
   "gpt-image-1-mini",
   "gpt-image-1.5",
   "gpt-image-2",
   "gpt-image-2-2026-04-21",
+  "gpt-image-2.5-sunburst",
+  "gpt-image-2.5-sunburst-2026-09-08",
+  "gpt-image-2.5-flare",
+  "gpt-image-2.5-flare-2026-09-08",
+  "gpt-image-2.6-sunburst",
+  "gpt-image-2.6-flare",
 ]);
 
 /**

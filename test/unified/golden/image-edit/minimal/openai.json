@@ -1,10 +1,10 @@
 {
-  "ref": "openai/gpt-image-1.5",
+  "ref": "openai/gpt-image-2.5-sunburst",
   "image": {
     "file": "@blob"
   },
   "params": {
-    "model": "gpt-image-1.5",
+    "model": "gpt-image-2.5-sunburst",
     "image": {
       "@blob": {
         "size": 64,

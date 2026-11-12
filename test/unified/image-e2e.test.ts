@@ -191,7 +191,7 @@ describe("providerOptions", () => {
 
   test("an override wins over the compiled value, and is validated like it", () => {
     const params = image({
-      model: "openai/gpt-image-1",
+      model: "openai/gpt-image-1.5",
       prompt: "a lighthouse in fog",
       aspectRatio: "1:1",
       providerOptions: { openai: { size: "1536x1024", quality: "high" } },
@@ -204,7 +204,7 @@ describe("providerOptions", () => {
 
   test("a block for another provider is ignored", () => {
     const params = image({
-      model: "openai/gpt-image-1",
+      model: "openai/gpt-image-1.5",
       prompt: "a lighthouse in fog",
       providerOptions: { google: { parameters: { personGeneration: "allow_all" } } },
     });
@@ -213,7 +213,7 @@ describe("providerOptions", () => {
 
   test("an override the provider rejects says where it came from", () => {
     const result = image.safe({
-      model: "openai/gpt-image-1",
+      model: "openai/gpt-image-1.5",
       prompt: "a lighthouse in fog",
       providerOptions: { openai: { size: "3000x3000" } },
     });
@@ -472,11 +472,11 @@ describe("`size`, the third spelling of one decision", () => {
 
 describe("the throwing form", () => {
   test("throws UnmodelValidationError labelled with the category", () => {
-    expect(() => image({ model: "openai/gpt-image-1", prompt: "hi", seed: 3 })).toThrow(
+    expect(() => image({ model: "openai/gpt-image-1.5", prompt: "hi", seed: 3 })).toThrow(
       UnmodelValidationError,
     );
     try {
-      image({ model: "openai/gpt-image-1", prompt: "hi", seed: 3 });
+      image({ model: "openai/gpt-image-1.5", prompt: "hi", seed: 3 });
     } catch (error) {
       expect((error as Error).message).toContain("unmodel/image");
       expect((error as UnmodelValidationError).issues[0]!.path).toEqual(["seed"]);

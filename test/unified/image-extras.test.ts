@@ -214,9 +214,9 @@ describe("the provider's own checks still run over an extra", () => {
     expect(result.errors[0]!.message).not.toContain("compiled from");
   });
 
-  test("and gpt-image-1 accepts it, because that model does", () => {
+  test("and gpt-image-1.5 accepts it, because that model does", () => {
     const result = image.safe({
-      model: "openai/gpt-image-1",
+      model: "openai/gpt-image-1.5",
       prompt: PROMPT,
       background: "transparent",
     } as never);

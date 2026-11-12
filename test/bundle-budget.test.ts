@@ -1031,8 +1031,12 @@ const TTS_PACK_PROVIDERS: string[] = [
  * rows — the IR the check battery narrows with, the unified rows a picker
  * renders, and 17 catalog rows — and this pack more than triples its model
  * count to get them. Pinned at 470, the usual ~10% over the measurement.
+ *
+ * 546.7 measured, 2026-11-12: six GPT-Image-2.5 / 2.6 Sunburst-Flare arms,
+ * constraint rows, hand catalog rows and the gif/svg/markup pairing checks on
+ * `openai.imageEdit`. Pinned at 600, ~10% over.
  */
-const IMAGE_EDIT_PACK_BUDGET_KIB = 530;
+const IMAGE_EDIT_PACK_BUDGET_KIB = 600;
 
 /**
  * The one generated catalog this pack legitimately reaches.

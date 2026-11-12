@@ -111,9 +111,9 @@ image({ model: "openai/gpt-image-2", prompt: "x", size: "¦" });`);
     for (const preset of GPT_IMAGE_2_SIZES) expect(entries).toContain(preset);
   });
 
-  test("gpt-image-1 (closed enum, no tail) completes exactly its values", () => {
+  test("gpt-image-1.5 (closed enum, no tail) completes exactly its values", () => {
     const entries = completionsAt(`import { image } from "./src/unified/image";
-image({ model: "openai/gpt-image-1", prompt: "x", size: "¦" });`);
+image({ model: "openai/gpt-image-1.5", prompt: "x", size: "¦" });`);
     expect(entries.sort()).toEqual(["1024x1024", "1024x1536", "1536x1024", "auto"]);
   });
 
@@ -144,7 +144,7 @@ image({ model: "stability/stable-image-ultra", prompt: "x", aspectRatio: "¦" })
 
   test("background offers all three values on every GPT image model", () => {
     const v1 = completionsAt(`import { image } from "./src/unified/image";
-image({ model: "openai/gpt-image-1", prompt: "x", background: "¦" });`);
+image({ model: "openai/gpt-image-1.5", prompt: "x", background: "¦" });`);
     expect(v1.sort()).toEqual(["auto", "opaque", "transparent"]);
     const v2 = completionsAt(`import { image } from "./src/unified/image";
 image({ model: "openai/gpt-image-2", prompt: "x", background: "¦" });`);

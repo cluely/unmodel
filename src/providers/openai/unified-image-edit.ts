@@ -59,19 +59,33 @@ const EDIT_ONLY = ["edit"] as const;
 const EDIT_DOCS = "https://developers.openai.com/api/docs/api-reference/images/createEdit";
 const IMAGE_GUIDE_DOCS = "https://developers.openai.com/api/docs/guides/image-generation";
 
-/** The ids whose `size` is free-form rather than an enum. */
+/**
+ * The ids whose `size` is free-form rather than an enum — every row the table
+ * marks `sizeFreeform` (see `./unified-image` for why the 2.6 pair is here).
+ */
 const FREEFORM_SIZE_MODELS: ReadonlySet<string> = new Set([
   "gpt-image-2",
   "gpt-image-2-2026-04-21",
+  "gpt-image-2.5-sunburst",
+  "gpt-image-2.5-sunburst-2026-09-08",
+  "gpt-image-2.5-flare",
+  "gpt-image-2.5-flare-2026-09-08",
+  "gpt-image-2.6-sunburst",
+  "gpt-image-2.6-flare",
 ]);
 
 /** The ids that always return base64 and take `output_format`. */
 const GPT_IMAGE_MODELS: ReadonlySet<string> = new Set([
-  "gpt-image-1",
   "gpt-image-1-mini",
   "gpt-image-1.5",
   "gpt-image-2",
   "gpt-image-2-2026-04-21",
+  "gpt-image-2.5-sunburst",
+  "gpt-image-2.5-sunburst-2026-09-08",
+  "gpt-image-2.5-flare",
+  "gpt-image-2.5-flare-2026-09-08",
+  "gpt-image-2.6-sunburst",
+  "gpt-image-2.6-flare",
   "chatgpt-image-latest",
 ]);
 

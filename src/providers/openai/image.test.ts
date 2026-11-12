@@ -65,7 +65,7 @@ describe("openai.image happy path", () => {
     // These params are typed `| null` and null means "use the default" on
     // the wire, so the enum layer must not reject it.
     const gpt = image.safe({
-      model: "gpt-image-1",
+      model: "gpt-image-1.5",
       prompt: "x",
       size: null,
       quality: null,
@@ -162,9 +162,9 @@ describe("openai.image happy path", () => {
     }
   });
 
-  test("deprecated gpt-image-1 warns", () => {
-    expect(models["gpt-image-1"].status).toBe("deprecated");
-    const r = image.safe({ model: "gpt-image-1", prompt: "x" });
+  test("deprecated gpt-image-1.5 warns", () => {
+    expect(models["gpt-image-1.5"].status).toBe("deprecated");
+    const r = image.safe({ model: "gpt-image-1.5", prompt: "x" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
@@ -201,7 +201,7 @@ describe("openai.image gpt-image-2 background (ground truth)", () => {
   test("transparent with png, webp, or the default format passes", () => {
     for (const output_format of ["png", "webp", undefined] as const) {
       const r = image.safe({
-        model: "gpt-image-1",
+        model: "gpt-image-1.5",
         prompt: "x",
         background: "transparent",
         ...(output_format === undefined ? {} : { output_format }),
@@ -231,7 +231,7 @@ describe("openai.image cross-model deny rules (documented applicability)", () =>
   });
 
   test("style outside dall-e-3 is unsupported_param", () => {
-    const r = safeUnchecked({ model: "gpt-image-1", prompt: "x", style: "vivid" });
+    const r = safeUnchecked({ model: "gpt-image-1.5", prompt: "x", style: "vivid" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["style"]);
   });
@@ -349,8 +349,8 @@ describe("openai.image gpt-image-2 free-form size rules", () => {
 });
 
 describe("openai.image enum narrowing", () => {
-  test("size outside the gpt-image-1 set is invalid_enum_value", () => {
-    const r = safeUnchecked({ model: "gpt-image-1", prompt: "x", size: "1792x1024" });
+  test("size outside the gpt-image-1.5 set is invalid_enum_value", () => {
+    const r = safeUnchecked({ model: "gpt-image-1.5", prompt: "x", size: "1792x1024" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       const issue = r.errors.find((e) => e.code === "invalid_enum_value");
@@ -375,7 +375,7 @@ describe("openai.image enum narrowing", () => {
   });
 
   test("invalid background value is an invalid_shape error from the schema", () => {
-    const r = safeUnchecked({ model: "gpt-image-1", prompt: "x", background: "blue" });
+    const r = safeUnchecked({ model: "gpt-image-1.5", prompt: "x", background: "blue" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
   });
@@ -426,5 +426,114 @@ describe("openai constraint provenance", () => {
         }
       }
     }
+  });
+});
+
+/**
+ * GPT-Image-2.5 (2026-09-08) and 2.6 (2026-11-04) Sunburst / Flare — hand rows
+ * in images-models.ts, every fact read off the create reference, the
+ * image-generation guide and the pricing page on 2026-11-12.
+ */
+describe("openai.image GPT-Image-2.5 / 2.6", () => {
+  const GPT_IMAGE_25_IDS = [
+    "gpt-image-2.5-sunburst",
+    "gpt-image-2.5-sunburst-2026-09-08",
+    "gpt-image-2.5-flare",
+    "gpt-image-2.5-flare-2026-09-08",
+  ] as const;
+  const GPT_IMAGE_26_IDS = ["gpt-image-2.6-sunburst", "gpt-image-2.6-flare"] as const;
+
+  test("every id validates clean and carries the documented rates", () => {
+    for (const id of [...GPT_IMAGE_25_IDS, ...GPT_IMAGE_26_IDS]) {
+      const r = image.safe({ model: id, prompt: "x" });
+      expect(r.ok, id).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+      // "$30 per million image output tokens, $5 per million text input tokens,
+      // and $1.25 per million cached text input tokens." — same mapping as the
+      // generated gpt-image-2 row.
+      expect(imagesModels[id]?.cost).toEqual({ input: 5, output: 30, cacheRead: 1.25 });
+      expect(imagesModels[id]?.limit.characters).toBe(32000);
+    }
+  });
+
+  test("quality xhigh and max are accepted on 2.5 and 2.6 and refused on earlier models", () => {
+    for (const id of [...GPT_IMAGE_25_IDS, ...GPT_IMAGE_26_IDS]) {
+      for (const quality of ["xhigh", "max"] as const) {
+        expect(image.safe({ model: id, prompt: "x", quality }).ok, `${id} ${quality}`).toBe(true);
+      }
+    }
+    for (const model of ["gpt-image-1.5", "gpt-image-2"]) {
+      const r = safeUnchecked({ model, prompt: "x", quality: "xhigh" });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_enum_value");
+    }
+  });
+
+  test("2.5 is held to the free-form size bounds; 2.6 is not", () => {
+    expect(image.safe({ model: "gpt-image-2.5-sunburst", prompt: "x", size: "1536x864" }).ok).toBe(true);
+    const r = image.safe({ model: "gpt-image-2.5-flare-2026-09-08", prompt: "x", size: "1000x1000" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.violations).toEqual(["divisible_by_16"]);
+    // No page states 2.6's size rules, so nothing is refused.
+    expect(image.safe({ model: "gpt-image-2.6-sunburst", prompt: "x", size: "1000x1000" }).ok).toBe(true);
+  });
+
+  test("complexity takes the three documented levels on 2.6", () => {
+    for (const complexity of ["low", "medium", "high"] as const) {
+      expect(image.safe({ model: "gpt-image-2.6-flare", prompt: "x", complexity }).ok).toBe(true);
+    }
+    const r = safeUnchecked({ model: "gpt-image-2.6-flare", prompt: "x", complexity: "ultra" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["complexity"]);
+  });
+
+  test("GIF controls pair with output_format gif, and gif is a 2.6 format", () => {
+    const gif = image.safe({
+      model: "gpt-image-2.6-sunburst",
+      prompt: "x",
+      output_format: "gif",
+      frame_count: 12,
+      frame_duration_ms: 100,
+    });
+    expect(gif.ok).toBe(true);
+
+    const stray = image.safe({ model: "gpt-image-2.6-sunburst", prompt: "x", frame_count: 12 });
+    expect(stray.ok).toBe(false);
+    if (!stray.ok) expect(stray.errors[0]?.path).toEqual(["frame_count"]);
+
+    const streamed = image.safe({
+      model: "gpt-image-2.6-sunburst",
+      prompt: "x",
+      output_format: "gif",
+      stream: true,
+      partial_images: 2,
+      output_compression: 50,
+    });
+    expect(streamed.ok).toBe(false);
+    if (!streamed.ok) {
+      expect(streamed.errors.map((e) => e.path[0]).sort()).toEqual([
+        "output_compression",
+        "partial_images",
+        "stream",
+      ]);
+    }
+
+    const on25 = safeUnchecked({ model: "gpt-image-2.5-sunburst", prompt: "x", output_format: "gif" });
+    expect(on25.ok).toBe(false);
+    if (!on25.ok) expect(on25.errors[0]?.code).toBe("invalid_enum_value");
+  });
+
+  test("SVG output requires n=1 and no streaming", () => {
+    const svg = image.safe({
+      model: "gpt-image-2.6-flare",
+      prompt: "x",
+      output_format: "svg",
+      n: 1,
+      svg: { reasoning: { effort: "low" } },
+    });
+    expect(svg.ok).toBe(true);
+    const r = image.safe({ model: "gpt-image-2.6-flare", prompt: "x", output_format: "svg", n: 2, stream: true });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.map((e) => e.path[0]).sort()).toEqual(["n", "stream"]);
   });
 });

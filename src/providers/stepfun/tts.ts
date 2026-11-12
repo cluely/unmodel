@@ -14,6 +14,21 @@
  * subscribers), while the generated chat catalog's OpenAI-compatible base is
  * `api.stepfun.com` (the models.dev value). This module ships the documented
  * international URL; Step Plan callers swap the path via their own fetch.
+ * The two domains' references describe different bodies: the China one
+ * (https://platform.stepfun.com/docs/zh/api-reference/audio/create-audio.md,
+ * 2026-11-12) has no top-level `language` and adds `text_normalization`,
+ * `voice_label` and `timestamp`, which the international one lacks. This
+ * module mirrors the international body; the China-only keys pass with an
+ * `unknown_param` warning.
+ *
+ * LANGUAGE: `language` is one of six codes — "Supported values: `zh`, `en`,
+ * `ja`, `ko`, `fr`, `es`. Japanese, Korean, French, and Spanish are in
+ * preview." — English when omitted. Which voice speaks which language is not
+ * checkable here: "Cloned voices can be used only with `language` omitted,
+ * `zh`, or `en`" (any other code with a cloned voice is `400 input_invalid`,
+ * https://platform.stepfun.ai/docs/en/api-reference/audio/create-voice.md),
+ * and a cloned id is an account-scoped string this module cannot tell from a
+ * system voice.
  *
  * TWO MODELS: the reference is explicit — "Currently supports
  * `stepaudio-3-tts` and `stepaudio-2.5-tts`". The generated catalog also
@@ -36,8 +51,10 @@
  * documented system ids are published as `SYSTEM_VOICES` (./tts-params) for
  * pickers.
  *
- * NO PRICE: no USD rate is published on the reachable English doc pages, so
- * there is no `cost` row and no `costUSD` estimate — see ./audio-models.ts.
+ * NO PRICE: StepFun bills speech by WEIGHTED characters that `input.length`
+ * cannot reproduce, and stepaudio-3-tts's published rates contradict each
+ * other, so there is no `cost` row and no `costUSD` estimate — see
+ * ./audio-models.ts.
  *
  * `.toSdk("stepfun")` is the identity: StepFun documents raw REST (its
  * examples drive the OpenAI SDK for chat only), so the body is already the
@@ -55,9 +72,9 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCharacterCostUSD } from "../../core/cost";
 import { speechModels, SPEECH_MAX_INPUT_CHARACTERS, type StepfunTtsModelId } from "./audio-models";
-import { CREATE_SPEECH_DOCS, MODELS, SAMPLE_RATES } from "./tts-params";
+import { CREATE_SPEECH_DOCS, LANGUAGES, MODELS, SAMPLE_RATES } from "./tts-params";
 
-export { SYSTEM_VOICES, SAMPLE_RATES } from "./tts-params";
+export { SYSTEM_VOICES, SAMPLE_RATES, LANGUAGES } from "./tts-params";
 export { SPEECH_MAX_INPUT_CHARACTERS } from "./audio-models";
 export type { StepfunTtsModelId } from "./audio-models";
 
@@ -92,6 +109,9 @@ export type StepfunResponseFormat = (typeof RESPONSE_FORMATS)[number];
 /** `sample_rate` (Hz) — default 24000. */
 export type StepfunSampleRate = (typeof SAMPLE_RATES)[number];
 
+/** `language` — English when omitted; ja/ko/fr/es are in preview. */
+export type StepfunLanguage = (typeof LANGUAGES)[number];
+
 /**
  * One `pronunciation_map` rule. The reference documents a single required
  * field, `tone`: "pronunciation mapping rules, separated by `/`" (its example
@@ -108,6 +128,8 @@ export interface TtsBody {
   input: string;
   /** System voice id (see SYSTEM_VOICES) or a cloned voice id. */
   voice: string;
+  /** Target language; English when omitted. A cloned voice takes only "zh" or "en". */
+  language?: StepfunLanguage;
   /** Output codec/container; default "mp3". */
   response_format?: StepfunResponseFormat;
   /** Speech rate multiplier, 0.5–2.0; default 1.0. */
@@ -136,6 +158,7 @@ const schema = z.looseObject({
   model: z.string(),
   input: z.string().min(1, "input must not be empty."),
   voice: z.string().min(1, "voice must not be empty."),
+  language: z.enum(LANGUAGES).optional(),
   response_format: z.enum(RESPONSE_FORMATS).optional(),
   speed: z
     .number()
@@ -238,9 +261,10 @@ function checkInputLength(
 }
 
 // ---------------------------------------------------------------------------
-// Estimation — no USD rate is published for StepFun speech, so this returns
-// `{}` today; `computeCharacterCostUSD` picks a rate up automatically if one
-// ever lands on the catalog row.
+// Estimation — no StepFun speech row carries a rate (weighted character
+// billing; see ./audio-models.ts), so this returns `{}` today;
+// `computeCharacterCostUSD` picks a rate up automatically if one ever lands on
+// the catalog row.
 // ---------------------------------------------------------------------------
 
 function estimate(

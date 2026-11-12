@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   tts,
   AUDIO_SPEECH_URL,
+  LANGUAGES,
   MAX_INSTRUCTION_CHARACTERS,
   SPEECH_MAX_INPUT_CHARACTERS,
   SYSTEM_VOICES,
@@ -83,6 +84,22 @@ describe("stepfun.tts happy path", () => {
     expect(tts.safe({ model: "stepaudio-2.5-tts", input: "x", voice: "voice-tone-abc123" }).ok).toBe(
       true,
     );
+  });
+
+  test("every documented language passes clean on both models", () => {
+    for (const model of ["stepaudio-3-tts", "stepaudio-2.5-tts"] as const) {
+      for (const language of LANGUAGES) {
+        const r = tts.safe({ model, input: "x", voice: "vibrant-youth", language });
+        expect(r.ok).toBe(true);
+        if (r.ok) expect(r.warnings).toEqual([]);
+      }
+    }
+  });
+
+  test("a language off the documented six is invalid_shape at language", () => {
+    const r = safeUnchecked({ model: "stepaudio-3-tts", input: "x", voice: "v", language: "de" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["language"]);
   });
 
   test("unknown top-level key warns", () => {
@@ -248,9 +265,10 @@ describe("stepfun.tts schema enforcement", () => {
 });
 
 describe("stepfun cost estimation", () => {
-  // Documents the sharp edge: no USD rate is published for StepFun speech, so
-  // there is no estimate and `maxCostUSD` cannot fire.
-  test("no published rate — no costUSD, and maxCostUSD does not fire", () => {
+  // Documents the sharp edge: StepFun bills speech by weighted characters
+  // `input.length` cannot reproduce, so no row carries a rate, there is no
+  // estimate and `maxCostUSD` cannot fire.
+  test("weighted character billing — no costUSD, and maxCostUSD does not fire", () => {
     const r = tts.safe(
       { model: "stepaudio-2.5-tts", input: "a".repeat(500), voice: "v" },
       { maxCostUSD: 0.0000001 },

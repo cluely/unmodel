@@ -90,6 +90,7 @@ export type {
   TtsBody,
   StepfunResponseFormat,
   StepfunSampleRate,
+  StepfunLanguage,
   StepfunPronunciationRule,
   StepfunTtsModelId,
 } from "./tts";

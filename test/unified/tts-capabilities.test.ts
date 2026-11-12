@@ -105,6 +105,11 @@ interface Capability {
   voice: Support;
   speed: Support;
   language: Support;
+  /**
+   * The language probe, where {@link PROBE_LANGUAGE} is off this provider's
+   * closed enum — so the row being tested is the mapping, not the list.
+   */
+  languageProbe?: string;
   /** Absent when the provider has no output-format field at all (alibaba: fixed WAV/PCM). */
   format?: { shape: FormatShape; at: string };
   /**
@@ -325,7 +330,9 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: stepfun,
     voice: "native",
     speed: "native",
-    language: "unsupported",
+    // Six codes (zh/en/ja/ko/fr/es) and no Portuguese, so "pt-BR" cannot probe it.
+    language: "derived",
+    languageProbe: "zh-CN",
     format: { shape: "codec", at: "response_format" },
     delivery: { kinds: ["bytes", "sse"], by: ["stream_format"] },
     probe: "mp3",
@@ -477,7 +484,12 @@ describe.each(rows)("%s", (provider, row) => {
   const scalars = [
     ["voice", row.voice, row.voice_id, {}],
     ["speed", row.speed, PROBE_SPEED, { speed: PROBE_SPEED }],
-    ["language", row.language, PROBE_LANGUAGE, { language: PROBE_LANGUAGE }],
+    [
+      "language",
+      row.language,
+      row.languageProbe ?? PROBE_LANGUAGE,
+      { language: row.languageProbe ?? PROBE_LANGUAGE },
+    ],
   ] as const;
 
   test.each(scalars)("%s is %s", (field, support, probe, extra) => {

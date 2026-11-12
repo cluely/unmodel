@@ -453,3 +453,39 @@ describe("google", () => {
     expect(result.errors.some((issue) => String(issue.message).includes("google.chat"))).toBe(true);
   });
 });
+
+describe("stepfun", () => {
+  test("`language` compiles to the wire's primary subtag, saying what it dropped", () => {
+    const result = tts.safe({
+      model: "stepfun/stepaudio-3-tts",
+      text: "你好。",
+      voice: "zixinnansheng",
+      language: "zh-CN",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).toMatchObject({
+      model: "stepaudio-3-tts",
+      language: "zh",
+    });
+    // Translation warnings ride on the compiled result; issue-space ones are separate.
+    const translation = (result.params as unknown as { warnings: { code: string; path: string[] }[] })
+      .warnings;
+    expect(translation.map((w) => `${w.code} @ ${w.path.join(".")}`)).toEqual([
+      "approximated_param @ language",
+    ]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("a language off the six codes is refused at `language`", () => {
+    const result = tts.safe({
+      model: "stepfun/stepaudio-2.5-tts",
+      text: "Hallo.",
+      voice: "vibrant-youth",
+      language: "de",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((e) => e.path.join("."))).toEqual(["language"]);
+  });
+});

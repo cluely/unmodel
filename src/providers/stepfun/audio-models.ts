@@ -14,10 +14,16 @@
 // and cross-check the mirrored fields against src/catalog/stepfun.gen.ts on
 // each codegen refresh. Verified 2026-08-24; stepaudio-3-tts 2026-11-12.
 //
-// PRICING: platform.stepfun.ai publishes no USD rate on the reachable
-// English doc pages for stepaudio-2.5-tts (the models.dev row carries none
-// either), so `cost` is deliberately omitted rather than guessed — cost
-// estimation returns no `costUSD` for StepFun speech.
+// PRICING: the pricing page publishes "stepaudio-2.5-tts | $85.00 / 1M
+// characters" and "step-tts-2 | $40.00 / 1M characters", but counts them by
+// weight — "one Chinese character counts as one character, two English
+// letters count as one character, and two punctuation marks count as one
+// character" (https://platform.stepfun.ai/docs/en/guides/pricing/details.md,
+// 2026-11-12). `ModelCost.perMillionCharacters` prices `input.length`, which
+// over-counts English text up to twice, so `cost` is deliberately omitted
+// rather than approximated (the models.dev rows carry none either) — cost
+// estimation returns no `costUSD` for StepFun speech. stepaudio-3-tts has its
+// own reason, on its row.
 //
 // `step-tts-2` is in the generated catalog (released 2026-03-01) but the
 // create-speech reference's model enum names only `stepaudio-3-tts` and

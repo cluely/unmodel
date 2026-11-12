@@ -1,8 +1,9 @@
 /**
  * `stepfun.chat` — StepFun's (阶跃星辰) OpenAI-compatible Chat Completions
  * endpoint ("step-*" models), validated against the generated models.dev
- * catalog. This is the first-party api.stepfun.com service — models.dev
- * tracks the Hugging Face org separately as "stepfun-ai".
+ * catalog. This is the first-party China platform, api.stepfun.com
+ * (models.dev's "stepfun"); models.dev's "stepfun-ai" is StepFun's
+ * international platform, api.stepfun.ai ("StepFun (Global)").
  *
  * A dedicated LEAF, not part of ../stepfun's barrel body, for the same reason
  * anthropic, google, openai, minimax and alibaba have one:

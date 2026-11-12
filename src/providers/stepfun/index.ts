@@ -3,9 +3,10 @@
  * endpoint ("step-*" models), validated against the generated models.dev
  * catalog, plus the speech endpoint `stepfun.tts`
  * (POST https://api.stepfun.ai/v1/audio/speech, `stepaudio-3-tts` and
- * `stepaudio-2.5-tts`). Chat is
- * the first-party api.stepfun.com service — models.dev tracks the Hugging
- * Face org separately as "stepfun-ai".
+ * `stepaudio-2.5-tts`). Chat is the first-party China platform,
+ * api.stepfun.com (models.dev's "stepfun"); models.dev's "stepfun-ai" is
+ * StepFun's international platform, api.stepfun.ai ("StepFun (Global)"),
+ * catalog-only in `unmodel/catalog`.
  */
 import { chat, chatUrl, checkChat, estimateChatTokens, models, provider } from "./chat";
 
@@ -30,12 +31,14 @@ export {
   SPEECH_MAX_INPUT_CHARACTERS,
   RESPONSE_FORMATS,
   SAMPLE_RATES,
+  LANGUAGES,
   SYSTEM_VOICES,
 } from "./tts";
 export type {
   TtsBody,
   StepfunResponseFormat,
   StepfunSampleRate,
+  StepfunLanguage,
   StepfunPronunciationRule,
   StepfunTtsModelId,
 } from "./tts";

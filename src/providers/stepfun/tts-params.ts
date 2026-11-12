@@ -28,6 +28,14 @@ export const CREATE_SPEECH_DOCS =
 export const SAMPLE_RATES = [8000, 16000, 22050, 24000, 48000] as const;
 
 /**
+ * `language` — "Target language; defaults to English when omitted. Supported
+ * values: `zh`, `en`, `ja`, `ko`, `fr`, `es`. Japanese, Korean, French, and
+ * Spanish are in preview." (create-speech reference, retrieved 2026-11-12).
+ * Documented on the endpoint, so every model takes the same six codes.
+ */
+export const LANGUAGES = ["zh", "en", "ja", "ko", "fr", "es"] as const;
+
+/**
  * `response_format` — a codec, with `pcm_s16le` split across two spellings:
  * `"wav"` for the containered stream (the canonical default) and `"pcm"` for
  * the bare one. Same samples, different header — neither is an approximation.
@@ -74,15 +82,14 @@ export const SYSTEM_VOICES = [
  * The two documented steering knobs a canonical word does not cover —
  * `instruction` ("Global natural-language guidance for the `stepaudio-2.5-tts`
  * and `stepaudio-3-tts` models"; capped per model, see ./tts.ts) and `volume`
- * (0.1–2.0, default 1.0). Both models take the same four codecs.
- * `language` is deliberately absent from the wire: the endpoint has no
- * language field, and the model reads it off the text.
+ * (0.1–2.0, default 1.0). Both models take the same four codecs and the
+ * endpoint's six {@link LANGUAGES}.
  */
 const EXTRAS = { instruction: EXTRA as string, volume: EXTRA as number } as const;
 
 export const STEPFUN_TTS_MODEL_PARAMS = {
-  "stepaudio-3-tts": { codecs: CODECS, extras: EXTRAS },
-  "stepaudio-2.5-tts": { codecs: CODECS, extras: EXTRAS },
+  "stepaudio-3-tts": { codecs: CODECS, languages: LANGUAGES, extras: EXTRAS },
+  "stepaudio-2.5-tts": { codecs: CODECS, languages: LANGUAGES, extras: EXTRAS },
 } as const satisfies TtsModelParamTable;
 
 /**

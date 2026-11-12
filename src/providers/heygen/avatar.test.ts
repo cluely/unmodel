@@ -10,7 +10,7 @@
  *
  * - `type` decides which visual source is REQUIRED and which is refused —
  *   HeyGen's own documented example error is exactly that mistake.
- * - Avatar III does not render raw image input.
+ * - Only Avatar IV renders raw image input.
  * - `expressiveness` is Avatar IV only and `motion_prompt` is not Avatar III;
  *   both are REJECTED rather than ignored.
  * - `script` and the audio fields are mutually exclusive; `voice_id` is
@@ -27,7 +27,10 @@ import { models, provider } from "./models";
 import {
   AVATAR_LOOKS_URL,
   HEYGEN_DEFAULT_ENGINE,
+  HEYGEN_ELEVENLABS_MODELS,
   HEYGEN_ENGINES,
+  HEYGEN_FISH_MODELS,
+  HEYGEN_IMAGE_ENGINES,
   HEYGEN_LIPSYNC_MODELS,
   HEYGEN_LIPSYNC_MODE_BY_MODEL,
   HEYGEN_LIPSYNC_STATUSES,
@@ -156,33 +159,45 @@ describe("the engine is the model, and an omitted one is a price decision", () =
     expect(HEYGEN_DEFAULT_ENGINE).toBe("avatar_iv");
   });
 
-  test("Avatar III does not render raw image input, and says which engines do", () => {
-    const result = avatar.safe({
+  test("only Avatar IV renders raw image input, and the refusal names it", () => {
+    // https://developers.heygen.com/models: "| Arbitrary image input | … | ✗ |
+    // ✓ | ✗ |" across Avatar V, Avatar IV and Avatar III.
+    expect([...HEYGEN_IMAGE_ENGINES]).toEqual(["avatar_iv"]);
+    for (const type of ["avatar_iii", "avatar_v"] as const) {
+      const result = avatar.safe({
+        type: "image",
+        image: STILL,
+        audio_url: VOICE,
+        engine: { type },
+      });
+      expect(result.ok, type).toBe(false);
+      if (result.ok) continue;
+      const issue = result.errors.find((error) => error.path.join(".") === "engine.type");
+      expect(issue?.code, type).toBe("unsupported_capability");
+      expect(issue?.message, type).toContain('"avatar_iv"');
+      expect(issue?.meta?.["allowed"], type).toEqual(["avatar_iv"]);
+      // …and both are perfectly happy on the catalogued-look arm.
+      const ok = avatar.safe({
+        type: "avatar",
+        avatar_id: "abc123",
+        audio_url: VOICE,
+        engine: { type },
+      });
+      expect(ok.ok, type).toBe(true);
+    }
+    const iv = avatar.safe({
       type: "image",
       image: STILL,
       audio_url: VOICE,
-      engine: { type: "avatar_iii" },
+      engine: { type: "avatar_iv" },
     });
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    const issue = result.errors.find((error) => error.path.join(".") === "engine.type");
-    expect(issue?.code).toBe("unsupported_capability");
-    expect(issue?.message).toContain("avatar_iv");
-    expect(issue?.message).toContain("avatar_v");
-    // …and it is perfectly happy on the catalogued-look arm.
-    const ok = avatar.safe({
-      type: "avatar",
-      avatar_id: "abc123",
-      audio_url: VOICE,
-      engine: { type: "avatar_iii" },
-    });
-    expect(ok.ok).toBe(true);
+    expect(iv.ok).toBe(true);
   });
 
   test("`expressiveness` and `motion_prompt` are REJECTED, not ignored", () => {
     const onV = avatar.safe({
-      type: "image",
-      image: STILL,
+      type: "avatar",
+      avatar_id: "abc123",
       audio_url: VOICE,
       engine: { type: "avatar_v" },
       expressiveness: "high",
@@ -224,6 +239,47 @@ describe("the engine is the model, and an omitted one is a price decision", () =
     expect(models.avatar_iii.cost?.perVideoSecond).toBe(0.0433);
     expect(models.avatar_iv.cost?.perVideoSecond).toBe(0.0667);
     expect(models.avatar_v.cost?.perVideoSecond).toBe(0.0667);
+  });
+});
+
+describe("voice_settings.engine_settings follows the spec's model enums", () => {
+  const SCRIPTED = {
+    type: "avatar",
+    avatar_id: "abc123",
+    script: "hello there",
+    voice_id: "v1",
+  } as const;
+
+  test("the models the spec still lists are accepted", () => {
+    const eleven = avatar.safe({
+      ...SCRIPTED,
+      voice_settings: { engine_settings: { engine_type: "elevenlabs", model: "eleven_v3" } },
+    });
+    expect(eleven.ok).toBe(true);
+    const fish = avatar.safe({
+      ...SCRIPTED,
+      voice_settings: { engine_settings: { engine_type: "fish", model: "s2-pro" } },
+    });
+    expect(fish.ok).toBe(true);
+  });
+
+  test("the models the spec dropped are refused", () => {
+    // `ElevenLabsEngineSettings.model` no longer lists `eleven_flash_v2_5`, and
+    // `FishEngineSettings.model` no longer lists `s1`.
+    expect(HEYGEN_ELEVENLABS_MODELS as readonly string[]).not.toContain("eleven_flash_v2_5");
+    expect(HEYGEN_FISH_MODELS as readonly string[]).not.toContain("s1");
+    const eleven = avatar.safe({
+      ...SCRIPTED,
+      voice_settings: {
+        engine_settings: { engine_type: "elevenlabs", model: "eleven_flash_v2_5" },
+      },
+    } as never);
+    expect(eleven.ok).toBe(false);
+    const fish = avatar.safe({
+      ...SCRIPTED,
+      voice_settings: { engine_settings: { engine_type: "fish", model: "s1" } },
+    } as never);
+    expect(fish.ok).toBe(false);
   });
 });
 

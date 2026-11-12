@@ -59,8 +59,8 @@ test("the sweep covers the whole roster", () => {
   expect(falRefs).toHaveLength(8);
   expect(syncRefs).toHaveLength(1);
   expect(veedRefs).toHaveLength(1);
-  expect(heygenRefs).toHaveLength(2);
-  expect(refs).toHaveLength(12);
+  expect(heygenRefs).toHaveLength(1);
+  expect(refs).toHaveLength(11);
 });
 
 /**

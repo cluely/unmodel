@@ -71,7 +71,7 @@
 // entry that would make the tts capability matrix look wider while telling a
 // caller nothing. It joins the day HeyGen publishes a voice roster or a second
 // engine. (`POST /v1/audio/text_to_speech` is the v1 spelling of the same
-// thing and is on the October 31, 2026 sunset list besides.)
+// thing and is past its October 31, 2026 sunset besides.)
 //
 // `type: "cinematic_avatar"` on `POST /v3/videos` — prompt-to-video, 4–15
 // seconds, $7.00 flat, backed by Seedance, with 1–3 avatar looks as visual
@@ -164,8 +164,8 @@ export const models = {
     modalities: avatarModality,
     limit: { context: 0 },
     cost: { perVideoSecond: 0.0433 },
-    // The one engine that does NOT render raw image input ("Not supported for
-    // raw image input (type: \"image\")"), and the one that reads neither
+    // Does NOT render raw image input ("Not supported for raw image input
+    // (type: \"image\")"), and the one engine that reads neither
     // `motion_prompt` nor `expressiveness`. Cheap, narrow, and a dedicated
     // photo-to-video pipeline.
   },
@@ -218,9 +218,10 @@ export const models = {
     cost: { perVideoSecond: 0.0667 },
     // Cross-reference-driven animation: it animates from a `digital_twin` look
     // in the same avatar group, optionally named with `reference_look_id`.
-    // Reads `motion_prompt` and REJECTS `expressiveness`. Check
-    // `supported_api_engines` on the look before naming it — eligibility is a
-    // property of the look, not of the account.
+    // Reads `motion_prompt` and REJECTS `expressiveness`. The `avatar` arm
+    // only — https://developers.heygen.com/models marks "Arbitrary image
+    // input" ✗ for it. Check `supported_api_engines` on the look before naming
+    // it — eligibility is a property of the look, not of the account.
   },
   /**
    * $0.0333 per second of output. Exact — `mode` is the only thing the price

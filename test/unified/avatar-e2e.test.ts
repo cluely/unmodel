@@ -59,10 +59,10 @@ describe("the pack", () => {
     expect(falAdapter.models).toHaveLength(8);
     expect(syncAdapter.models).toHaveLength(1);
     expect(veedAdapter.models).toHaveLength(1);
-    // Two of HeyGen's three engines: Avatar III is in the catalog and at the
-    // wire address and does not render raw image input, which is the arm this
-    // adapter compiles.
-    expect(heygenAdapter.models).toHaveLength(2);
+    // One of HeyGen's three engines: Avatar V and Avatar III are in the
+    // catalog and at the wire address and do not render raw image input, which
+    // is the arm this adapter compiles.
+    expect(heygenAdapter.models).toHaveLength(1);
     expect([...createAvatar([falAdapter]).providers]).toEqual(["fal"]);
     expect([...createAvatar([syncAdapter]).providers]).toEqual(["sync"]);
     expect([...createAvatar([veedAdapter]).providers]).toEqual(["veed"]);
@@ -258,7 +258,7 @@ describe("the result is HeyGen's own Validated, and the bytes go in structurally
 
   test("inline bytes become a base64 ARM, not a data: URI", () => {
     const result = avatar({
-      model: "heygen/avatar_v",
+      model: "heygen/avatar_iv",
       image: { data: "AAECAwQF", mimeType: "image/png" },
       audio: VOICE,
     });
@@ -278,30 +278,17 @@ describe("the result is HeyGen's own Validated, and the bytes go in structurally
     });
   });
 
-  test("the per-engine extras are disjoint, and the refusal names the takers", () => {
-    const ok = avatar({
-      model: "heygen/avatar_v",
-      image: STILL,
-      audio: VOICE,
-      reference_look_id: "look_abc",
-    });
-    // `reference_look_id` lives INSIDE Avatar V's own engine config, so the
-    // flat row key is nested back rather than sent at the root.
-    expect(JSON.parse(JSON.stringify(ok))).toMatchObject({
-      engine: { type: "avatar_v", reference_look_id: "look_abc" },
-    });
-
-    const wrong = avatar.safe({
-      model: "heygen/avatar_v",
-      image: STILL,
-      audio: VOICE,
-      expressiveness: "high",
-    } as never);
-    expect(wrong.ok).toBe(false);
-    if (wrong.ok) return;
-    const issue = wrong.errors.find((error) => error.path.join(".") === "expressiveness");
-    expect(issue?.code).toBe("unsupported_param");
-    expect(issue?.message).toContain("avatar_iv");
+  test("Avatar V is not on this arm, and the refusal names the engine that is", () => {
+    // HeyGen's engine comparison marks "Arbitrary image input" ✗ for Avatar V,
+    // so it is not on this roster. The ref still compiles — an unrostered id
+    // is a warning — and the validator refuses it by name.
+    const result = avatar.safe({ model: "heygen/avatar_v", image: STILL, audio: VOICE } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.warnings.map((issue) => issue.code)).toContain("unknown_model");
+    const issue = result.errors.find((error) => error.path.join(".") === "engine.type");
+    expect(issue?.code).toBe("unsupported_capability");
+    expect(issue?.message).toContain('"avatar_iv"');
   });
 
   test("it ends in the SAME validator the hand surface calls", () => {

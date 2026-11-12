@@ -292,7 +292,7 @@ const request = avatar({
 ```
 
 `image` narrows to the ref in three directions. Most routes animate a picture
-you supply, and there it is **required**. Two of the twelve animate a
+you supply, and there it is **required**. Two of the eleven animate a
 **catalogued performer** instead — `veed/avatars/audio-to-video` and
 `argil/avatars/audio-to-video` pick from a closed list of trained presenters and
 have no image field at all — and there it types as `never`:
@@ -360,14 +360,14 @@ Its `audio_url` does *not* have that arm, so one request accepts bytes for the
 still and refuses them for the track — an asymmetry that is HeyGen's, and the
 refusal says so rather than reading as a contradiction.
 
-Two of HeyGen's three engines are here. `avatar_iii` is in its catalog and at
-its wire address and not in this pack: its own engine config says it does not
-render raw image input, and this adapter compiles the raw-image arm. The
-catalogued-look arm (`type: "avatar"`, `avatar_id`) is wire-only for a typed
-reason rather than an oversight — an avatar row can say `image` is required,
-forbidden or unknown and never "optional", and `avatar_iv` and `avatar_v` serve
-both arms, so the pack compiles the one whose inputs a caller actually has (a
-HeyGen `avatar_id` is a look you first train, at $1.00, and discover at
+One of HeyGen's three engines is here. `avatar_v` and `avatar_iii` are in its
+catalog and at its wire address and not in this pack: HeyGen's engine
+comparison marks raw image input ✗ for both, and this adapter compiles the
+raw-image arm. The catalogued-look arm (`type: "avatar"`, `avatar_id`) is
+wire-only for a typed reason rather than an oversight — an avatar row can say
+`image` is required, forbidden or unknown and never "optional", and `avatar_iv`
+serves both arms, so the pack compiles the one whose inputs a caller actually
+has (a HeyGen `avatar_id` is a look you first train, at $1.00, and discover at
 `GET /v3/avatars/looks`; there is no published roster). Reach it directly:
 
 ```ts

@@ -333,8 +333,8 @@ array natively; `sync_mode` at the body root at fal against `options.sync_mode` 
 accepts inline bytes as a `data:` URI where sync. fetches URLs and asset ids only. Neither is a
 superset of the other.
 
-**Avatar — `avatar`, 12 refs across four providers.** A still in, the same audio in, a clip out.
-Eight at fal, one at sync., one at VEED, two at HeyGen. sync-lipsync
+**Avatar — `avatar`, 11 refs across four providers.** A still in, the same audio in, a clip out.
+Eight at fal, one at sync., one at VEED, one at HeyGen. sync-lipsync
 v3/image-to-video, ByteDance OmniHuman 1.5, Kling AI Avatar v2 standard and pro, EchoMimic v3,
 LongCat single-avatar, VEED Avatars, Argil Avatars. The split from lipsync is by INPUT rather
 than by vendor, which is why `fal-ai/sync-lipsync/v3` and
@@ -429,7 +429,7 @@ requires `avatar_id` and declares no `image`, `"image"` requires `image` and dec
 `avatar_id`, and both are `additionalProperties: false` — so the wrong field for the arm is a
 400, which is HeyGen's own documented example error ("Exactly one visual source required").
 Six more cross-field rules are stated in prose on individually-optional fields and checked here:
-Avatar III does not render raw image input; `expressiveness` is Avatar IV only and
+only Avatar IV renders raw image input; `expressiveness` is Avatar IV only and
 `motion_prompt` is not Avatar III, and HeyGen REJECTS both rather than ignoring them; `script`
 and the audio fields are mutually exclusive; `voice_id` is required with a script unless
 `avatar_id` supplies a default voice; `voice_settings` is silently ignored when the audio is
@@ -448,8 +448,8 @@ length follows the audio's.
 `request_in_progress` on an overlapping retry) and is worth using: renders are billed by the
 second. The self-serve concurrency ceiling is 10 in-flight jobs across video generation, Video
 Agent sessions and translations together, with a `Retry-After` on the 429; no per-endpoint RPM
-figures are published. v1 and v2 endpoints are supported until **October 31, 2026**, and nothing
-here is modelled on them.
+figures are published. v1 and v2 endpoints passed their **October 31, 2026** sunset and are being
+removed, and nothing here is modelled on them.
 
 **Not served, and why each one.** `POST /v3/voices/speech` — TTS, and the closest call in this
 wave. There is no model id on the wire at all (the engine is fixed to Starfish and stated only
@@ -459,7 +459,7 @@ and there is no output format, sample rate, codec or bitrate control — which i
 `unmodel/tts`'s vocabulary is made of. A `heygen.tts` would be a row that narrows nothing: a
 me-too entry widening the tts matrix while telling a caller less than every other row in it. It
 joins the day HeyGen publishes a voice roster or a second engine. (`POST /v1/audio/text_to_speech`
-is the v1 spelling of the same thing and is on the sunset list besides.)
+is the v1 spelling of the same thing and is past its sunset besides.)
 `type: "cinematic_avatar"` — a prompt-to-video model wearing an avatar route's URL: 4–15
 seconds, $7.00 flat, Seedance-backed, whose required fields are a `prompt` and an ARRAY of look
 ids and which takes no audio at all. `type: "studio"` — a `scenes` array of up to 50, which is a
@@ -934,7 +934,7 @@ leaves rather than whole validators.
 | `unmodel/music` | `music`, `createMusic` | 5 | elevenlabs, fal, google, mureka, stability |
 | `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (2 models, `POST /v1/sound-generation`), fal (6 endpoints from five vendors, ElevenLabs' own among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 4 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
-| `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (the two engines that render raw image input — Avatar III does not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
+| `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (`avatar_iv`, the one engine that renders raw image input — Avatar V and Avatar III do not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
 | `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (11 endpoints, seven taking a still and four taking a clip), topaz (15 models over two routes, stills only, multipart bodies) |
 | `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (4 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
 | `unmodel/sts` | `sts`, `createSts` | 2 | elevenlabs (3 models, `POST /v1/speech-to-speech/{voice_id}`), hume (1 synthetic id, `POST /v0/tts/voice_conversion/file`) — the smallest pack in the library, the only one with no fal arm, and the only category where three of five words are REQUIRED. Both endpoints are `MULTIPART_ONLY`, so there is no `unified.sts` CLI entry |
@@ -996,8 +996,8 @@ and is excluded rather than shipped thin; VEED's presenter library has no native
 (`POST /v1/avatars` is a real JSON 404), so `veed/fabric-1.0` is `sources: ["image"]` while the
 same vendor's `fal/veed/avatars/audio-to-video` is `sources: []`; and HeyGen's catalogued-look
 arm (`type: "avatar"`) is wire-only for a typed reason rather than an oversight — an avatar row
-can say `image` is required, forbidden or unknown and never "optional", and `avatar_iv` and
-`avatar_v` serve BOTH arms, so the pack compiles the one whose inputs a caller actually has.
+can say `image` is required, forbidden or unknown and never "optional", and `avatar_iv` serves
+BOTH arms, so the pack compiles the one whose inputs a caller actually has.
 
 **Researched and declined (native).** Two vendors were researched in the same rounds as the
 natives above, found to have real public APIs, and deliberately not implemented. Both are

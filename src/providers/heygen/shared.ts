@@ -153,12 +153,16 @@ export type HeygenEngineType = (typeof HEYGEN_ENGINES)[number];
 export const HEYGEN_DEFAULT_ENGINE: HeygenEngineType = "avatar_iv";
 
 /**
- * The engines that accept a RAW IMAGE (`type: "image"`).
+ * The engine that renders a RAW IMAGE (`type: "image"`): Avatar IV, alone.
  *
+ * HeyGen's engine comparison, https://developers.heygen.com/models (read
+ * 2026-11-12), across Avatar 6 | Avatar V | Avatar IV | Avatar III: "| Arbitrary
+ * image input | Through the Model API | ✗ | ✓ | ✗ |". The Talking Photo page,
+ * https://developers.heygen.com/image-to-video: "| Engine | Avatar IV |". And
  * `AvatarIIIEngineConfig`'s own description: "Not supported for raw image input
- * (`type: "image"`)." The other two serve both arms.
+ * (`type: "image"`)." Avatar V and Avatar III serve the `avatar` arm only.
  */
-export const HEYGEN_IMAGE_ENGINES = ["avatar_iv", "avatar_v"] as const;
+export const HEYGEN_IMAGE_ENGINES = ["avatar_iv"] as const;
 
 /**
  * The engines that read `expressiveness`.
@@ -300,12 +304,11 @@ export type HeygenVoiceEngine = (typeof HEYGEN_VOICE_ENGINES)[number];
 export const HEYGEN_ELEVENLABS_MODELS = [
   "eleven_multilingual_v2",
   "eleven_turbo_v2_5",
-  "eleven_flash_v2_5",
   "eleven_v3",
 ] as const;
 
-/** The Fish Audio models. Default `"s1"`. */
-export const HEYGEN_FISH_MODELS = ["s1", "s2-pro"] as const;
+/** The Fish Audio models. */
+export const HEYGEN_FISH_MODELS = ["s2-pro"] as const;
 
 /** `status` on `GET /v3/videos/{id}`. `completed` and `failed` are terminal. */
 export const HEYGEN_VIDEO_STATUSES = ["pending", "processing", "completed", "failed"] as const;
@@ -345,11 +348,13 @@ export const HEYGEN_IDEMPOTENCY_HEADER = "Idempotency-Key";
 export const HEYGEN_IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_\-:.]{1,255}$/;
 
 /**
- * The date HeyGen's v1 and v2 endpoints stop being supported.
+ * The date HeyGen's v1 and v2 endpoints passed their sunset.
  *
- * Per /docs/quick-start and the endpoint-version comparison. This provider
- * types v3 exclusively for that reason: `POST /v2/video/generate` and
- * `POST /v1/audio/text_to_speech` are both live today and both on the clock.
+ * https://developers.heygen.com/docs/quick-start (read 2026-11-12): "Those
+ * endpoints passed their October 31, 2026 sunset and are being removed. Calls
+ * to them may fail intermittently, so move to v3". This provider types v3
+ * exclusively; `POST /v2/video/generate` and `POST /v1/audio/text_to_speech`
+ * are retired.
  */
 export const HEYGEN_V1_V2_SUNSET = "2026-10-31";
 
@@ -457,7 +462,6 @@ export interface HeygenElevenLabsEngineSettings {
 /** Fish-Audio-backed voice tuning. */
 export interface HeygenFishEngineSettings {
   engine_type: "fish";
-  /** Default `"s1"`. */
   model?: (typeof HEYGEN_FISH_MODELS)[number] | null;
   /** 0…1. */
   stability?: number | null;
@@ -736,12 +740,14 @@ export function checkVisualSource(source: string) {
 }
 
 /**
- * Avatar III does not take a raw image, and says so on its own engine config.
+ * The raw-image arm renders on Avatar IV, and nowhere else.
  *
- * "Not supported for raw image input (`type: "image"`)." A hard refusal because
- * the fix is to change the engine (or the arm) rather than to drop a field —
- * and because Avatar III is the CHEAP engine, so a caller who lands here is
- * usually reaching for it on purpose.
+ * HeyGen's engine comparison marks "Arbitrary image input" ✗ for Avatar V and
+ * Avatar III, and Avatar III's own engine config says "Not supported for raw
+ * image input (`type: "image"`)" — see {@link HEYGEN_IMAGE_ENGINES}. A hard
+ * refusal because the fix is to change the engine (or the arm) rather than to
+ * drop a field — and because both engines serve photo avatars on the `avatar`
+ * arm, so a caller who lands here usually wants that engine on purpose.
  */
 export function checkEngineArm(source: string) {
   return (params: VideoParams, _info: unknown, ctx: PipelineContext): void => {
@@ -753,10 +759,11 @@ export function checkEngineArm(source: string) {
       path: ["engine", "type"],
       model: engine,
       message:
-        `"${engine}" does not render raw image input — its own engine config says "Not supported for ` +
-        `raw image input (type: \\"image\\")". The engines that do are ` +
-        `${HEYGEN_IMAGE_ENGINES.map((id) => `"${id}"`).join(" and ")}; to keep this engine, train the ` +
-        "picture into a photo avatar and name it with `avatar_id` on the `avatar` arm.",
+        `"${engine}" does not render raw image input (\`type: "image"\`) — HeyGen's engine comparison ` +
+        `marks "Arbitrary image input" ✗ for it. Talking Photo runs on ` +
+        `${HEYGEN_IMAGE_ENGINES.map((id) => `"${id}"`).join(" and ")}, which is also what an omitted ` +
+        `\`engine\` means; to keep "${engine}", train the picture into a photo avatar and name it with ` +
+        "`avatar_id` on the `avatar` arm.",
       meta: { source, allowed: [...HEYGEN_IMAGE_ENGINES] },
     });
   };

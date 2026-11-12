@@ -668,13 +668,13 @@ avatar({
    * Probe 5e — HeyGen's engine gate, which is the sharpest per-model narrowing
    * in either audio-driven category.
    *
-   * `expressiveness` is Avatar IV only and `reference_look_id` is Avatar V
-   * only, and the two engines are otherwise the same request. HeyGen REJECTS
-   * the wrong one rather than ignoring it, so this is a 400 saved rather than a
-   * silent no-op — but it is still a compile-time answer, which is the only
-   * kind that arrives before the money is spent.
+   * `expressiveness` is Avatar IV only and `reference_look_id` belongs to
+   * Avatar V's own engine config, which does not render this arm. HeyGen
+   * REJECTS the wrong one rather than ignoring it, so this is a 400 saved
+   * rather than a silent no-op — but it is still a compile-time answer, which
+   * is the only kind that arrives before the money is spent.
    */
-  test("probe 5e — the HeyGen engine gate is a squiggle, in both directions", () => {
+  test("probe 5e — the HeyGen engine gate is a squiggle", () => {
     const good = (model: string, extra: string): string =>
       `import { avatar } from "./src/unified/avatar";
 avatar({
@@ -684,20 +684,21 @@ avatar({
   ${extra},
 });`;
     expect(semanticErrorsIn(good("avatar_iv", 'expressiveness: "high"'))).toEqual([]);
-    expect(semanticErrorsIn(good("avatar_v", 'reference_look_id: "look_abc"'))).toEqual([]);
-    expect(semanticErrorsIn(good("avatar_v", 'expressiveness: "high"')).length).toBeGreaterThan(0);
     expect(
       semanticErrorsIn(good("avatar_iv", 'reference_look_id: "look_abc"')).length,
     ).toBeGreaterThan(0);
 
-    // Avatar III is in HeyGen's catalog and at its wire address and NOT in this
-    // pack, because it does not render raw image input. An unrostered ref
-    // degrades to the wide arm rather than failing — the roster-is-a-snapshot
-    // rule — so the absence shows up as `image` becoming optional.
-    expect(
-      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
-avatar({ model: "heygen/avatar_iii", audio: { url: "https://example.com/vo.wav" } });`),
-    ).toEqual([]);
+    // Avatar V and Avatar III are in HeyGen's catalog and at its wire address
+    // and NOT in this pack, because neither renders raw image input. An
+    // unrostered ref degrades to the wide arm rather than failing — the
+    // roster-is-a-snapshot rule — so the absence shows up as `image` becoming
+    // optional.
+    for (const engine of ["avatar_v", "avatar_iii"]) {
+      expect(
+        semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({ model: "heygen/${engine}", audio: { url: "https://example.com/vo.wav" } });`),
+      ).toEqual([]);
+    }
 
     // The lipsync half: the two ids are one wire field, so both complete the
     // same extras, and `enable_dynamic_duration` is a BOOLEAN rather than the

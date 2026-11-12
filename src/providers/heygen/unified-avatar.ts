@@ -34,12 +34,14 @@
  * engine out. A body compiled here never depends on a server-side default for
  * something that costs money.
  *
- * # Two rows where the wire address has three engines
+ * # One row where the wire address has three engines
  *
- * `avatar_iii` is absent because it does not render raw image input — its own
- * engine config says so — and this adapter compiles the raw-image arm. Which
- * arm, and why, is argued in `./avatar-params.ts`; the short version is that
- * the catalogued-look arm needs an `avatar_id` that is account-scoped and
+ * `avatar_iii` and `avatar_v` are absent because neither renders raw image
+ * input — HeyGen's engine comparison marks it ✗ for both — and this adapter
+ * compiles the raw-image arm. A `heygen/avatar_v` ref still reaches the
+ * validator with an `unknown_model` warning, and is refused there by name.
+ * Which arm, and why, is argued in `./avatar-params.ts`; the short version is
+ * that the catalogued-look arm needs an `avatar_id` that is account-scoped and
  * unpublishable, and that an avatar row can say "required", "forbidden" or
  * "unknown" about `image` but never "optional".
  *
@@ -50,9 +52,9 @@
  *
  * # There is no adapter-wide `unsupported`
  *
- * Risk R7. `expressiveness` exists at one of the two engines and
- * `reference_look_id` at the other; a provider-wide claim about either would be
- * false at half this roster. Every refusal comes off the row.
+ * Risk R7. `expressiveness` is Avatar IV's alone, and a provider-wide claim
+ * about it would be a claim about the engine rather than the vendor. Every
+ * refusal comes off the row.
  */
 
 import { applyExtras, requireMediaUrl } from "../../core/unified/derive";
@@ -70,11 +72,6 @@ export type HeygenAvatarResult = ReturnType<typeof validator>;
 
 /** See `fal/unified-image.ts`: `CompiledCall.validate` is not generic. */
 type HeygenAvatarValidate = CompiledCall<HeygenAvatarWire, HeygenAvatarResult>["validate"];
-
-/** `reference_look_id` is declared flat on the row and lives inside `engine`. */
-const NESTED_EXTRAS: Readonly<Record<string, readonly string[]>> = {
-  reference_look_id: ["engine"],
-};
 
 /** `data:image/png;base64,AAAA` → `["image/png", "AAAA"]`. */
 const DATA_URI = /^data:([^;,]*)(?:;[^,]*)*,(.*)$/s;
@@ -97,7 +94,7 @@ export const avatar = {
     const image = input.image;
     if (image === undefined) {
       // `AvatarModelNarrowing` already refuses this at the keystroke, because
-      // both rows say `sources: ["image"]`. This is the same refusal for
+      // the row says `sources: ["image"]`. This is the same refusal for
       // JavaScript callers and run-time-built refs.
       ctx.fail({
         code: "invalid_shape",
@@ -160,7 +157,7 @@ export const avatar = {
       });
     }
 
-    applyExtras(input, HEYGEN_AVATAR_MODEL_PARAMS, body, ctx, { nest: NESTED_EXTRAS });
+    applyExtras(input, HEYGEN_AVATAR_MODEL_PARAMS, body, ctx);
 
     return {
       params: body as unknown as HeygenAvatarWire,

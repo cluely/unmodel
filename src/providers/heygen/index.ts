@@ -84,9 +84,9 @@
  *
  * ## Versions
  *
- * v1 and v2 endpoints are supported until **October 31, 2026**
- * (`HEYGEN_V1_V2_SUNSET`). This provider types v3 exclusively; nothing here is
- * modelled on `POST /v2/video/generate`.
+ * v1 and v2 endpoints passed their **October 31, 2026** sunset
+ * (`HEYGEN_V1_V2_SUNSET`) and are being removed. This provider types v3
+ * exclusively; nothing here is modelled on `POST /v2/video/generate`.
  */
 
 export { avatar, avatarConstraints, HEYGEN_VIDEO_TYPES } from "./avatar";

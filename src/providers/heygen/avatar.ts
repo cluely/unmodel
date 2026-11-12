@@ -205,7 +205,7 @@ const avatarSchema = z.looseObject({
  * are declared once on the arm rather than per engine.
  *
  * The per-ENGINE narrowing that does exist — `expressiveness` at Avatar IV
- * only, `motion_prompt` not at Avatar III, raw image input not at Avatar III —
+ * only, `motion_prompt` not at Avatar III, raw image input at Avatar IV only —
  * is a `deny`-shaped rule whose useful message is "which engines DO take this",
  * which a deny table has nowhere to put. So it lives in
  * {@link checkEngineGatedFields} and {@link checkEngineArm}, and this table
@@ -270,7 +270,7 @@ const validator = createValidator<HeygenAvatarParams, unknown>({
   constraints: avatarConstraints,
   checks: [
     checkVisualSource(SOURCE),
-    checkEngineArm(`${DOCS_BASE}/avatar-iii`),
+    checkEngineArm(`${DOCS_BASE}/models`),
     checkEngineGatedFields(SOURCE),
     checkSpeechSource(SOURCE),
     checkTransparentOutput(SOURCE),

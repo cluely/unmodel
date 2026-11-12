@@ -5,7 +5,7 @@
  * fal the route is a parameter, so "which fields does this support" is a
  * per-ENDPOINT question.
  *
- * The row that earns this file is `image`. Ten of the twelve endpoints require
+ * The row that earns this file is `image`. Nine of the eleven endpoints require
  * a still; two — `veed/avatars` and `argil/avatars`, both reached through fal —
  * animate a catalogued presenter out of a closed enum and have no image field
  * at all. That is a three-valued cell (`required` / `forbidden` / …never
@@ -13,7 +13,7 @@
  * where a canonical word's REQUIREDNESS varies by model rather than its
  * support.
  *
- * Three of the twelve are native, and each adds something the fal rows cannot:
+ * Three of the eleven are native, and each adds something the fal rows cannot:
  *
  * - `sync/sync-3` is the same MODEL ID the lipsync table serves, at the same
  *   URL. Nothing separates the two calls but the tag on the input item; at fal
@@ -23,12 +23,11 @@
  *   library has no native endpoint (`POST /v1/avatars` is a 404). It is also
  *   the one route in the category that REQUIRES a word the vocabulary has not
  *   got.
- * - `heygen/avatar_iv` and `heygen/avatar_v` make `inline` a three-valued
- *   column: bytes are `derived` into a `data:` URI at fal, `unsupported` at
- *   sync. and VEED, and `structural` here — HeyGen's own `oneOf` has a
- *   `base64` arm, so the media type is a FIELD rather than a prefix. Its
- *   `audio_url` has no such arm, so one request accepts bytes for the still and
- *   refuses them for the track.
+ * - `heygen/avatar_iv` makes `inline` a three-valued column: bytes are
+ *   `derived` into a `data:` URI at fal, `unsupported` at sync. and VEED, and
+ *   `structural` here — HeyGen's own `oneOf` has a `base64` arm, so the media
+ *   type is a FIELD rather than a prefix. Its `audio_url` has no such arm, so
+ *   one request accepts bytes for the still and refuses them for the track.
  */
 import { describe, expect, test } from "bun:test";
 import type { AvatarParams } from "../../src/core/unified/vocabulary/avatar";
@@ -187,22 +186,12 @@ const TABLE: Readonly<Record<string, Capability>> = {
   },
 
   // ---- HeyGen, natively ---------------------------------------------------
-  // The two engines that render raw image input — Avatar III does not, by its
-  // own engine config, which is why it is in the catalog and not in this
-  // adapter. The still goes in STRUCTURALLY as base64 and the track cannot;
-  // that asymmetry is HeyGen's own and is the third answer in the `inline`
-  // column.
+  // The one engine that renders raw image input — Avatar V and Avatar III do
+  // not, which is why they are in the catalog and not in this adapter. The
+  // still goes in STRUCTURALLY as base64 and the track cannot; that asymmetry
+  // is HeyGen's own and is the third answer in the `inline` column.
   "heygen/avatar_iv": {
     ref: "heygen/avatar_iv",
-    url: "https://api.heygen.com/v3/videos",
-    imageAt: "image.url",
-    inline: "structural",
-    image: "required",
-    audio: { at: "audio_url", support: "native" },
-    seed: "unsupported",
-  },
-  "heygen/avatar_v": {
-    ref: "heygen/avatar_v",
     url: "https://api.heygen.com/v3/videos",
     imageAt: "image.url",
     inline: "structural",
@@ -280,10 +269,10 @@ test("the pack registers exactly four providers", () => {
  * field the type reads is the same one the adapter reads, so a drift between
  * "what compiles" and "what the editor offers" is not expressible.
  */
-test("ten endpoints take a still and two take a catalogued performer", () => {
+test("nine endpoints take a still and two take a catalogued performer", () => {
   const still = rows.filter(([, row]) => row.image === "required");
   const preset = rows.filter(([, row]) => row.image === "forbidden");
-  expect(still).toHaveLength(10);
+  expect(still).toHaveLength(9);
   expect(preset).toHaveLength(2);
   for (const [, row] of still) {
     expect([...(ROWS[bare(row.ref)]?.sources ?? [])]).toEqual(["image"]);

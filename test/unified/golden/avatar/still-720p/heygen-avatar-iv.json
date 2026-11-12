@@ -1,9 +1,9 @@
 {
-  "ref": "heygen/avatar_v",
+  "ref": "heygen/avatar_iv",
   "params": {
     "type": "image",
     "engine": {
-      "type": "avatar_v"
+      "type": "avatar_iv"
     },
     "image": {
       "type": "url",

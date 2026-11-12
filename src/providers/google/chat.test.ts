@@ -22,7 +22,7 @@ import type {
   GoogleImageAspectRatioEnumName,
   GoogleImageSizeEnumName,
 } from "./wire";
-import { chatModels } from "./chat-tts-overlay";
+import { GEMINI_25_FLASH_IMAGE_CONTEXT_TOKENS, chatModels } from "./chat-tts-overlay";
 import { ttsModels } from "./tts-models";
 import { models } from "../../catalog/google.gen";
 import type { Issue } from "../../core/issues";
@@ -675,12 +675,29 @@ describe("estimate and budget", () => {
   });
 
   test("over_context fires from the estimate", () => {
-    const context = models["gemini-2.5-flash-image"].limit.context;
+    // The overlay's doc-corrected window, not the generated row's.
+    const context = chatModels["gemini-2.5-flash-image"].limit.context;
     const result = chat.safe({
       model: "gemini-2.5-flash-image",
       contents: [{ role: "user", parts: [{ text: "x".repeat(context * 5) }] }],
     });
     expectError(result, "over_context");
+  });
+
+  test("gemini-2.5-flash-image takes its documented 65,536-token window, not models.dev's 32,768", () => {
+    // Both halves of the correction: the day the upstream row is fixed, this
+    // says so and the override retires.
+    expect(chatModels["gemini-2.5-flash-image"].limit.context).toBe(GEMINI_25_FLASH_IMAGE_CONTEXT_TOKENS);
+    expect(GEMINI_25_FLASH_IMAGE_CONTEXT_TOKENS).toBe(65536);
+    expect(models["gemini-2.5-flash-image"].limit.context).toBe(32768);
+    // ~40k tokens: over the generated 32,768, inside the documented 65,536.
+    const result = expectOk(
+      chat.safe({
+        model: "gemini-2.5-flash-image",
+        contents: [{ role: "user", parts: [{ text: "word ".repeat(40_000) }] }],
+      }),
+    );
+    expect(result.estimate.inputTokens).toBeGreaterThan(32768);
   });
 });
 
@@ -1055,6 +1072,27 @@ describe("the 2026-11 hand rows on google.chat", () => {
       cacheRead: 0.1,
       inputAudio: 1,
     });
+  });
+
+  test("the three preview TTS ids warn deprecated_model on google.chat (shutdown 2026-11-17)", () => {
+    for (const model of [
+      "gemini-2.5-flash-preview-tts",
+      "gemini-2.5-pro-preview-tts",
+      "gemini-3.1-flash-tts-preview",
+    ] as const) {
+      const result = expectOk(
+        chat.safe({
+          model,
+          contents: [{ parts: [{ text: "Say hi." }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+          },
+        }),
+      );
+      expect(result.warnings.some((w) => w.code === "deprecated_model")).toBe(true);
+      expect(chatModels[model]).toBe(ttsModels[model]);
+    }
   });
 
   test("the Gemini 3.8 TTS pair is served by google.chat too", () => {

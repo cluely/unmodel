@@ -1,60 +1,87 @@
 // Hand-maintained overlay on the generated google catalog — refresh from
 //   https://ai.google.dev/gemini-api/docs/generate-content/speech-generation
+//   https://ai.google.dev/gemini-api/docs/deprecations
 //   https://ai.google.dev/gemini-api/docs/pricing
 //   https://ai.google.dev/gemini-api/docs/models/<id>   (the hand rows below)
 //
 // Three kinds of entry ride on top of `src/catalog/google.gen.ts` here, and
 // each is a human reading a vendor page rather than models.dev:
 //
-// 1. The TTS context correction (2026-08-13): the speech-generation guide's
-//    Limitations section stated "A TTS session has a context window limit of
-//    32k tokens", while models.dev carries 8,192 for the TTS ids it lists. The
-//    docs win, so the merged catalog below re-states the limit; without this,
-//    a 20k-token transcript would trip a false over_context error.
-// 2. generateContent ids models.dev's google section does not carry at all
+// 1. The Gemini TTS rows from ./tts-models, for the ids models.dev carries.
+//    Those hand rows ARE the generated rows field for field (tts-models.test.ts
+//    asserts it) plus two documented corrections — the 32k TTS context window
+//    and the November 17, 2026 shutdown as `status: "deprecated"` — so taking
+//    the hand row wholesale is what makes `google.chat` and `google.tts` say
+//    the same thing about the same id.
+// 2. A doc-sourced `limit.context` for `gemini-2.5-flash-image`: its model page
+//    says 65,536 where models.dev carries 32,768, and the lower figure refused
+//    32k–65k-token prompts the API accepts.
+// 3. generateContent ids models.dev's google section does not carry at all
 //    (`chatSupplementModels`): the Gemini 3.8 TTS pair (mirrored from
-//    ./tts-models, the surface that owns them), Nano Banana 2.1 and Gemini
-//    Robotics-ER 2. Without a row `google.chat` validates them with an
-//    `unknown_model` warning, no per-model arm and no cost estimate.
+//    ./tts-models), Nano Banana 2.1 and Gemini Robotics-ER 2. Without a row
+//    `google.chat` validates them with an `unknown_model` warning, no
+//    per-model arm and no cost estimate.
 //
 // Everything else about the generated rows (pricing, modalities) is already
 // correct and is deliberately NOT restated.
 
 import type { ModelInfo } from "../../core/catalog-types";
 import { models } from "../../catalog/google.gen";
-import { GEMINI_TTS_CONTEXT_TOKENS, GEMINI_TTS_MODEL_IDS } from "./constraints";
-import { ttsModels } from "./tts-models";
+import { GEMINI_TTS_MODEL_IDS } from "./constraints";
+import { ttsModels, type GoogleTtsModelId } from "./tts-models";
 
 /** The generated rows, looked up by an id that may not be a key of theirs. */
 const generated: Readonly<Record<string, ModelInfo | undefined>> = models;
 
 /**
- * The generated TTS rows as this overlay states them — the generated row with
- * the doc-sourced context limit substituted.
+ * The hand TTS rows for the ids models.dev carries.
  *
  * Keys are OPTIONAL because the loop below guards: the type says exactly what
- * the guard does, so `chatModels` types those ids as "the generated row or
- * the overridden one" instead of pretending it knows which. A required mapped
- * type here would be the lie — `Record<string, ModelInfo>` was merely the
- * erasure.
+ * the guard does, so `chatModels` types those ids as "the generated row or the
+ * hand one" instead of pretending it knows which. A required mapped type here
+ * would be the lie — `Record<string, ModelInfo>` was merely the erasure.
  */
-type TtsModelOverrides = {
-  readonly [Id in (typeof GEMINI_TTS_MODEL_IDS)[number]]?: Omit<ModelInfo, "limit"> & {
-    limit: Omit<ModelInfo["limit"], "context"> & { context: typeof GEMINI_TTS_CONTEXT_TOKENS };
+type TtsModelOverrides = { readonly [Id in GoogleTtsModelId]?: (typeof ttsModels)[Id] };
+
+/** The doc-corrected TTS rows (32k context, deprecated status) for the ids models.dev carries. */
+export const ttsModelOverrides: TtsModelOverrides = Object.fromEntries(
+  GEMINI_TTS_MODEL_IDS.flatMap((id) => {
+    // Guard rather than assume: a TTS id models.dev does not carry (the 3.8
+    // pair today) is not an override of anything — its row arrives through
+    // `chatSupplementModels` below instead.
+    if (generated[id] === undefined) return [];
+    return [[id, ttsModels[id]]];
+  }),
+);
+
+/**
+ * "**Input token limit** 65,536 / **Output token limit** 32,768" —
+ * https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash-image
+ * (2026-11-12). models.dev carries `context: 32768`, which refuses a
+ * 32k–65k-token prompt the API accepts; `chat.test.ts` pins both halves so the
+ * correction retires the day the upstream row is fixed.
+ */
+export const GEMINI_25_FLASH_IMAGE_CONTEXT_TOKENS = 65536;
+
+type FlashImageOverride = {
+  readonly "gemini-2.5-flash-image"?: Omit<ModelInfo, "limit"> & {
+    limit: Omit<ModelInfo["limit"], "context"> & {
+      context: typeof GEMINI_25_FLASH_IMAGE_CONTEXT_TOKENS;
+    };
   };
 };
 
-/** Doc-sourced `limit.context` overrides for the Gemini TTS ids models.dev carries. */
-export const ttsModelOverrides: TtsModelOverrides = Object.fromEntries(
-  GEMINI_TTS_MODEL_IDS.flatMap((id) => {
-    const info = generated[id];
-    // Guard rather than assume: a TTS id models.dev does not carry (the 3.8
-    // pair today) has nothing to override here — its row arrives through
-    // `chatSupplementModels` below instead.
-    if (info === undefined) return [];
-    return [[id, { ...info, limit: { ...info.limit, context: GEMINI_TTS_CONTEXT_TOKENS } }]];
-  }),
-);
+/** The generated `gemini-2.5-flash-image` row with its documented context, or nothing if models.dev dropped the id. */
+function flashImageContextOverride(): FlashImageOverride {
+  const info = generated["gemini-2.5-flash-image"];
+  if (info === undefined) return {};
+  return {
+    "gemini-2.5-flash-image": {
+      ...info,
+      limit: { ...info.limit, context: GEMINI_25_FLASH_IMAGE_CONTEXT_TOKENS },
+    },
+  };
+}
 
 /**
  * generateContent ids absent from models.dev's google section (verified
@@ -135,8 +162,8 @@ export const chatSupplementModels = {
 
 /**
  * Catalog consumed by the generateContent validator: the generated google
- * catalog with the doc-sourced TTS context limits layered on top, plus the
- * hand rows above.
+ * catalog with the doc-corrected TTS rows and the Nano Banana context layered
+ * on top, plus the hand rows above.
  *
  * `as const satisfies`, not `: Record<string, ModelInfo>` — the annotation
  * type-checks exactly the same rows and then erases every one of them: `keyof`
@@ -146,14 +173,15 @@ export const chatSupplementModels = {
  * merely imprecise, it is underivable. `satisfies` keeps the check and the
  * literals both.
  *
- * The generated TTS ids type as a UNION of the generated row and the
- * overridden one, because `ttsModelOverrides` declares optional keys — which is
- * the same thing its guard does at run time. That is deliberately not
- * tightened by re-authoring those rows as literals here: it would trade a
- * runtime `unknown_model` for a build break the day models.dev drops an id.
+ * The overridden ids type as a UNION of the generated row and the corrected
+ * one, because the override tables declare optional keys — which is the same
+ * thing their guards do at run time. That is deliberately not tightened by
+ * re-authoring those rows as literals here: it would trade a runtime
+ * `unknown_model` for a build break the day models.dev drops an id.
  */
 export const chatModels = {
   ...models,
   ...ttsModelOverrides,
+  ...flashImageContextOverride(),
   ...chatSupplementModels,
 } as const satisfies Record<string, ModelInfo>;

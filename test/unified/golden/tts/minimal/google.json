@@ -1,5 +1,5 @@
 {
-  "ref": "google/gemini-2.5-flash-preview-tts",
+  "ref": "google/gemini-3.8-flash-tts",
   "voice": "Kore",
   "params": {
     "contents": [
@@ -12,6 +12,6 @@
       }
     }
   },
-  "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent",
+  "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-tts:generateContent",
   "headers": { "content-type": "application/json" }
 }

@@ -1363,10 +1363,13 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // in above this, re-pin from that number and say so here, per the
   // Linux-figure rule in CLAUDE.md.
   //
-  // 520 → 575: 521.2 measured (macOS, 2026-11-12). Not sfx's own declarations:
-  // the shared `request` chunk this entry touches carries the anthropic
-  // availability types, which grew with the four Claude 5.5 / Fable 5.2 ids.
-  sfx: 575,
+  // 527.3 measured (macOS), 2026-11-12: the google TTS hand rows gained a
+  // `status` and `google.chat`'s overlay now takes those rows wholesale, and
+  // rolldown-plugin-dts co-locates the grown row declarations in the
+  // `voice-design-*` chunk this walker counts for sfx — chunking, not a new
+  // edge (sfx's own graph imports nothing from google). Pinned at ~1.10 of the
+  // measurement.
+  sfx: 580,
   // `unmodel/sts`: 349.0 measured on macOS — the cheapest declaration in the
   // table by a wide margin, below `sfx`'s 442.4. Five canonical words, one
   // narrowed field, and four per-model rows whose largest member is a

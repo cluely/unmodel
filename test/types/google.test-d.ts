@@ -516,10 +516,15 @@ GEMINI_IMAGE_MODEL_RULES["gemini-9.9-flash-image"];
 
 // The catalog overlay keeps every generated row's flags…
 expectTrue<Same<(typeof chatModels)["gemini-2.5-flash"]["reasoning"], true>>();
-// …and states the overlay's own honest uncertainty for the three TTS ids: the
-// doc-sourced 32k when models.dev still lists the id, the generated 8192 when
-// the guard finds nothing to override.
-expectTrue<Same<(typeof chatModels)["gemini-3.1-flash-tts-preview"]["limit"]["context"], 8192 | 32768>>();
+// …and states the overlay's own honest uncertainty for the three mirrored TTS
+// ids: the hand row (doc-sourced 32k context, deprecated status) when
+// models.dev still lists the id, the generated row when the guard finds
+// nothing to override.
+type Row31 = (typeof chatModels)["gemini-3.1-flash-tts-preview"];
+expectTrue<Same<Row31["limit"]["context"], 8192 | 32768>>();
+expectTrue<Same<Extract<Row31, { status: string }>["status"], "deprecated">>();
+// The documented Nano Banana window beats models.dev's 32,768 the same way.
+expectTrue<Same<(typeof chatModels)["gemini-2.5-flash-image"]["limit"]["context"], 32768 | 65536>>();
 
 // ---------------------------------------------------------------------------
 // google.video: the wire arm is per model, and it AGREES with the unified table

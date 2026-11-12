@@ -15,12 +15,12 @@ const MIRRORED = GEMINI_TTS_MODEL_IDS.filter((id) => generated[id] !== undefined
 const HAND = GEMINI_TTS_MODEL_IDS.filter((id) => generated[id] === undefined);
 
 /**
- * The mirrored rows are the generated rows, field for field, with ONE
- * documented correction. Both halves are asserted, because only the pair is
- * meaningful: if models.dev is fixed upstream, the correction stops being a
- * correction and this test is where that shows up.
+ * The mirrored rows are the generated rows, field for field, with TWO
+ * documented corrections. Both halves of each are asserted, because only the
+ * pair is meaningful: if models.dev is fixed upstream, a correction stops being
+ * a correction and this test is where that shows up.
  */
-test("every mirrored row equals its generated row except the doc-corrected context", () => {
+test("every mirrored row equals its generated row except the two doc corrections", () => {
   expect(MIRRORED.length).toBeGreaterThanOrEqual(3);
   for (const id of MIRRORED) {
     const hand: Record<string, unknown> = ttsModels[id];
@@ -28,13 +28,17 @@ test("every mirrored row equals its generated row except the doc-corrected conte
     expect(row, `${id} vanished from the generated catalog`).toBeDefined();
     if (row === undefined) continue;
 
-    // The correction itself, and the fact that makes it one.
+    // Correction 1: the 32k context window, and the fact that makes it one.
     expect(hand["limit"]).toEqual({ ...row.limit, context: GEMINI_TTS_CONTEXT_TOKENS });
     expect(row.limit.context).toBe(8192);
     expect(GEMINI_TTS_CONTEXT_TOKENS).toBe(32768);
 
+    // Correction 2: the November 17, 2026 shutdown, which models.dev does not carry.
+    expect(hand["status"]).toBe("deprecated");
+    expect(row.status).toBeUndefined();
+
     // …and nothing else differs.
-    const { limit: _handLimit, ...handRest } = hand;
+    const { limit: _handLimit, status: _handStatus, ...handRest } = hand;
     const { limit: _genLimit, ...genRest } = row as unknown as Record<string, unknown>;
     expect(handRest).toEqual(genRest);
   }

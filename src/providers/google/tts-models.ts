@@ -10,14 +10,21 @@
 // carries field-for-field against `google.gen`, so "hand-written" cannot
 // quietly mean "out of date".
 //
-// The ONE deliberate difference on those three is `limit.context`. The
-// speech-generation guide's Limitations section stated "A TTS session has a
-// context window limit of 32k tokens", while models.dev carries 8,192 for all
-// three ids. The docs win: without the correction a 20k-token transcript would
-// trip a false over_context error. The drift test asserts BOTH halves — that
-// the hand rows say 32768 and that the generated rows still say 8192 — so the
-// day models.dev is fixed, the correction stops being real and the test says
-// so.
+// TWO deliberate differences on those three, and the drift test asserts BOTH
+// halves of each — what the hand rows say and what the generated rows still
+// say — so the day models.dev is fixed, a correction stops being real and the
+// test says so:
+// - `limit.context`: the speech-generation guide's Limitations section stated
+//   "A TTS session has a context window limit of 32k tokens", while models.dev
+//   carries 8,192 for all three ids. The docs win: without the correction a
+//   20k-token transcript would trip a false over_context error.
+// - `status: "deprecated"`: https://ai.google.dev/gemini-api/docs/deprecations
+//   (2026-11-12) lists all three with a shutdown date — "`gemini-3.1-flash-tts-preview`
+//   — February 26, 2026 — November 17, 2026 — `gemini-3.8-flash-tts` or
+//   `gemini-3.8-flash-lite-tts`", and the same November 17, 2026 row for
+//   `gemini-2.5-flash-preview-tts` and `gemini-2.5-pro-preview-tts` — while
+//   models.dev carries no status. A request to any of them gets a
+//   deprecated_model warning naming the vendor.
 //
 // The Gemini 3.8 TTS pair is not in models.dev at all (verified 2026-11-12), so
 // those two rows are transcribed from their model pages and the pricing page,
@@ -108,6 +115,8 @@ export const ttsModels = {
     knowledge: "2025-01",
     releaseDate: "2025-05-01",
     lastUpdated: "2025-05-01",
+    // Shutdown November 17, 2026 (deprecations page, 2026-11-12) — see the header.
+    status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: GEMINI_TTS_CONTEXT_TOKENS, output: 16384 },
     cost: { input: 0.5, output: 10 },
@@ -124,6 +133,8 @@ export const ttsModels = {
     knowledge: "2025-01",
     releaseDate: "2025-05-01",
     lastUpdated: "2025-05-01",
+    // Shutdown November 17, 2026 (deprecations page, 2026-11-12) — see the header.
+    status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: GEMINI_TTS_CONTEXT_TOKENS, output: 16384 },
     cost: { input: 1, output: 20 },
@@ -142,6 +153,8 @@ export const ttsModels = {
     knowledge: "2025-01",
     releaseDate: "2026-04-15",
     lastUpdated: "2026-04-15",
+    // Shutdown November 17, 2026 (deprecations page, 2026-11-12) — see the header.
+    status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: GEMINI_TTS_CONTEXT_TOKENS, output: 16384 },
     cost: { input: 1, output: 20 },

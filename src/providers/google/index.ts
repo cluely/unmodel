@@ -185,7 +185,12 @@ export {
   LYRIA_MUSIC_DOCS_URL,
   LYRIA_REALTIME_MODEL_ID,
 } from "./music-params";
-export { chatModels, chatSupplementModels, ttsModelOverrides } from "./chat-tts-overlay";
+export {
+  GEMINI_25_FLASH_IMAGE_CONTEXT_TOKENS,
+  chatModels,
+  chatSupplementModels,
+  ttsModelOverrides,
+} from "./chat-tts-overlay";
 export { sttModels, sttSupplementModels, type GoogleSttSupplementModelId } from "./stt-models";
 export {
   audioPromptTokens,

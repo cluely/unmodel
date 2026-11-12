@@ -735,6 +735,35 @@ describe("the Gemini 3.8 TTS pair (hand rows)", () => {
   });
 });
 
+describe("the November 17, 2026 shutdown of the preview TTS ids", () => {
+  test.each([MODEL, PRO, FLASH_31])("%s warns deprecated_model and names the vendor", (model) => {
+    const result = expectOk(
+      tts.safe({
+        model,
+        contents: HELLO,
+        generationConfig: { responseModalities: ["AUDIO"], speechConfig: KORE },
+      }),
+    );
+    const warning = warningOf(result, "deprecated_model");
+    expect(warning).toBeDefined();
+    expect(warning?.path).toEqual(["model"]);
+  });
+
+  test.each(["gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"] as const)(
+    "%s, the named replacement, does not",
+    (model) => {
+      const result = expectOk(
+        tts.safe({
+          model,
+          contents: HELLO,
+          generationConfig: { responseModalities: ["AUDIO"], speechConfig: KORE },
+        }),
+      );
+      expect(warningOf(result, "deprecated_model")).toBeUndefined();
+    },
+  );
+});
+
 describe("refusals", () => {
   test("a typo'd top-level key is a compile error and a runtime warning", () => {
     const result = tts.safe({

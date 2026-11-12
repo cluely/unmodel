@@ -23,13 +23,13 @@
  * caller away from. What it probes is a granularity the route cannot report,
  * and that is refused by name.
  *
- * ## Two required params, both per model
+ * ## One required param, per model
  *
- * `speechmatics/melia-1` "requires `language: "multi"`" and `gladia/solaria-3`
- * is single-language ("pass exactly one language"), so both carry one in the
- * probe base — the same trick `video-presets` uses for the routes whose schema
- * marks a field required with no default, and for the same reason: without it
- * the sweep would be measuring the missing field instead of the preset.
+ * `speechmatics/melia-1` "requires `language: "multi"`", so it carries one in
+ * the probe base — the same trick `video-presets` uses for the routes whose
+ * schema marks a field required with no default, and for the same reason:
+ * without it the sweep would be measuring the missing field instead of the
+ * preset.
  *
  * Every adapter in the pack is swept. That is newer than it looks: `inworld`
  * used to be skipped because its `audioInputs` was empty — the route takes
@@ -102,7 +102,6 @@ function audioFor(adapter: Adapter): Record<string, unknown> | undefined {
 /** Per-model params the route marks required with no server default. */
 const REQUIRED: Readonly<Record<string, Record<string, unknown>>> = {
   "speechmatics/melia-1": { language: "multi" },
-  "gladia/solaria-3": { language: "en" },
 };
 
 interface Outcome {

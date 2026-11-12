@@ -31,7 +31,6 @@ export {
   MODEL_IDS,
   DEFAULT_MODEL,
   SOLARIA_3_LANGUAGES,
-  REALTIME_USD_PER_MINUTE,
 } from "./models";
 export type { GladiaModelId } from "./models";
 

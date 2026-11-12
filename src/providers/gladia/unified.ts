@@ -90,7 +90,7 @@ export const stt = {
       });
     } else if (input.language !== undefined) {
       // Declared inside the branch, and for the *element* as well as the array:
-      // `checkModelLanguages` reports solaria-3's five-language limit at
+      // `checkSolaria3` reports solaria-3's five-language limit at
       // `language_config.languages.0`, and a rule declared only for the array
       // would leave that path unmapped — sending a caller who wrote `language`
       // to look for a wire field they have never seen.
@@ -103,8 +103,13 @@ export const stt = {
       );
       if (language !== undefined) body.language_config = { languages: [language] };
     } else if (input.languages !== undefined) {
-      // The plural word owns the same field when it is the one that was sent.
+      // The plural word owns the same field when it is the one that was sent,
+      // and every element of it, for the same reason: `checkSolaria3` reports
+      // each entry outside solaria-3's five at its own index.
       ctx.from(["language_config", "languages"], "languages");
+      for (const index of input.languages.keys()) {
+        ctx.from(["language_config", "languages", index], "languages");
+      }
       body.language_config = { languages: [...input.languages] };
     }
 

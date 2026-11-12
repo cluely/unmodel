@@ -47,6 +47,21 @@ function flux2TypeTests(): void {
   // klein arm: bare surface, 4 input images.
   image({ model: "flux-2-klein-4b", prompt: "hi", input_image_4: "x" });
 
+  // klein LoRA arms: the klein surface plus a required finetune_id.
+  image({
+    model: "flux-2-klein-9b-kv-bf16-finetuned",
+    prompt: "hi",
+    finetune_id: "org/my-lora",
+    finetune_strength: 0.8,
+    input_image_4: "x",
+  });
+  // @ts-expect-error finetune_id is required on the -finetuned routes
+  image({ model: "flux-2-klein-4b-finetuned", prompt: "hi" });
+  // @ts-expect-error only the klein -finetuned routes take a LoRA id
+  image({ model: "flux-2-klein-4b", prompt: "hi", finetune_id: "my-lora" });
+  // @ts-expect-error the LoRA routes keep klein's 4-image cap
+  image({ model: "flux-2-klein-9b-finetuned", prompt: "hi", finetune_id: "x", input_image_5: "y" });
+
   // Unknown models fall back to the loose escape-hatch arm.
   image({ model: "flux-9-mega", prompt: "hi", some_new_param: 1 });
 

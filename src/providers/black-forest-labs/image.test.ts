@@ -42,7 +42,8 @@ describe("black-forest-labs.image happy path", () => {
 
   test("each catalog model maps to its own route", () => {
     for (const id of Object.keys(models).filter((m) => m.startsWith("flux-2"))) {
-      const r = safeUnchecked({ model: id, prompt: "hi" });
+      const lora = id.endsWith("-finetuned") ? { finetune_id: "my-lora" } : {};
+      const r = safeUnchecked({ model: id, prompt: "hi", ...lora });
       expect(r.ok).toBe(true);
       if (r.ok) {
         const request = (r.params as { request: { url: string } }).request;
@@ -162,6 +163,54 @@ describe("black-forest-labs.image per-route param enforcement", () => {
     expect(r.ok).toBe(true);
   });
 
+  test("the klein LoRA routes take finetune_id and finetune_strength", () => {
+    const v = image({
+      model: "flux-2-klein-9b-kv-finetuned",
+      prompt: "a portrait in my style",
+      finetune_id: "org-123/my-lora",
+      finetune_strength: 0.8,
+      input_image_4: "d",
+    });
+    expect(v.request.url).toBe(`${BFL_API_BASE_URL}/v1/flux-2-klein-9b-kv-finetuned`);
+    expect(Object.keys(v)).toEqual(["prompt", "finetune_id", "finetune_strength", "input_image_4"]);
+    const r = image.safe({ model: "flux-2-klein-4b-finetuned", prompt: "hi", finetune_id: "x" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("the klein LoRA routes require finetune_id", () => {
+    const r = safeUnchecked({ model: "flux-2-klein-4b-finetuned", prompt: "hi" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_shape");
+      expect(r.errors[0]?.path).toEqual(["finetune_id"]);
+      expect(String(r.errors[0]?.meta?.source)).toContain("flux2_lora_inference");
+    }
+  });
+
+  test("the klein LoRA routes keep the klein schema's limits", () => {
+    const r = safeUnchecked({
+      model: "flux-2-klein-9b-finetuned",
+      prompt: "hi",
+      finetune_id: "x",
+      input_image_5: "e",
+      steps: 20,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.map((e) => e.path[0]).sort()).toEqual(["input_image_5", "steps"]);
+  });
+
+  test("LoRA params on a non-finetuned FLUX.2 route are unsupported_param", () => {
+    for (const model of ["flux-2-klein-4b", "flux-2-pro", "flux-2-flex"]) {
+      const r = safeUnchecked({ model, prompt: "hi", finetune_id: "x", finetune_strength: 1 });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors.map((e) => e.code)).toEqual(["unsupported_param", "unsupported_param"]);
+        expect(r.errors[0]?.message).toContain("flux-2-klein-4b-finetuned");
+      }
+    }
+  });
+
   test("constraintsFor exposes the deny table", () => {
     const deny = image.constraintsFor("flux-2-klein-4b")[0]?.deny;
     expect(deny?.input_image_5?.reason).toContain("at most 4 input images");
@@ -222,6 +271,22 @@ describe("black-forest-labs.image cost estimation", () => {
       const r = safeUnchecked({ model, prompt: "hi" });
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(price, 10);
+    }
+  });
+
+  test("the klein LoRA routes bill as their base route; BF16 has no stated base", () => {
+    const cases: Array<[string, number | undefined]> = [
+      ["flux-2-klein-4b-finetuned", 0.014],
+      ["flux-2-klein-9b-finetuned", 0.015],
+      ["flux-2-klein-9b-kv-finetuned", 0.015],
+      ["flux-2-klein-9b-kv-bf16-finetuned", undefined],
+    ];
+    for (const [model, price] of cases) {
+      const r = safeUnchecked({ model, prompt: "hi", finetune_id: "x" });
+      expect(r.ok).toBe(true);
+      if (!r.ok) continue;
+      if (price === undefined) expect(r.estimate.costUSD).toBeUndefined();
+      else expect(r.estimate.costUSD).toBeCloseTo(price, 10);
     }
   });
 

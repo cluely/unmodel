@@ -7,7 +7,7 @@
  *
  * ## What fal serves
  *
- * Five of BFL's eleven text-to-image routes, verified against fal's curated
+ * Five of BFL's fifteen text-to-image routes, verified against fal's curated
  * roster on 2026-08-25 (`data/fal/curation.json`; the drift guard in
  * `fal-target.test.ts` re-asserts every id here against `FAL_IMAGE_ENDPOINTS`).
  * Source pages under https://fal.ai/models/fal-ai/…/api
@@ -269,7 +269,11 @@ export const BFL_IMAGE_FAL_OVERLAP = {
   "flux-2-max": { endpoints: ["fal-ai/flux-2-max"], map: mapFlux2Max },
 } as const;
 
-/** The four FLUX.2 ids fal serves no matching checkpoint for. */
+/** A klein LoRA id names a finetune in your own BFL organization. */
+const KLEIN_LORA_REFUSAL =
+  "fal publishes no FLUX.2 klein row, and `finetune_id` names a LoRA uploaded to your BFL organization — no fal endpoint can load it.";
+
+/** The FLUX.2 ids fal serves no matching checkpoint for. */
 export const BFL_IMAGE_FAL_REFUSALS: Readonly<Record<string, string>> = Object.freeze({
   "flux-2-pro-preview": "fal serves no FLUX.2 pro preview row.",
   "flux-2-flex":
@@ -278,6 +282,10 @@ export const BFL_IMAGE_FAL_REFUSALS: Readonly<Record<string, string>> = Object.f
     "fal publishes no FLUX.2 klein row; `fal-ai/flux-2` is FLUX.2 [dev], a different checkpoint.",
   "flux-2-klein-9b-preview": "fal publishes no FLUX.2 klein row.",
   "flux-2-klein-4b": "fal publishes no FLUX.2 klein row.",
+  "flux-2-klein-4b-finetuned": KLEIN_LORA_REFUSAL,
+  "flux-2-klein-9b-finetuned": KLEIN_LORA_REFUSAL,
+  "flux-2-klein-9b-kv-finetuned": KLEIN_LORA_REFUSAL,
+  "flux-2-klein-9b-kv-bf16-finetuned": KLEIN_LORA_REFUSAL,
 });
 
 /** The type half of {@link BFL_IMAGE_FAL_OVERLAP}, derived from it. */

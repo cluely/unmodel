@@ -21,6 +21,15 @@
  *   `guidance`, `steps`, `input_image_blob_path` and up to 8 input images;
  *   klein (Flux2KleinInputs) has no upsampling/guidance/steps controls and at
  *   most 4 input images.
+ * - The klein LoRA routes (`flux-2-klein-4b-finetuned`,
+ *   `flux-2-klein-9b-finetuned`, `flux-2-klein-9b-kv-finetuned`,
+ *   `flux-2-klein-9b-kv-bf16-finetuned`) are absent from the OpenAPI and
+ *   documented at https://docs.bfl.ml/flux_2/flux2_lora_inference (verified
+ *   2026-11-12): "The request schema matches the underlying base endpoint,
+ *   with two added parameters: `finetune_id` and `finetune_strength`." So they
+ *   take Flux2KleinInputs plus a REQUIRED `finetune_id` and an optional
+ *   `finetune_strength` ("Defaults to `1.0`", no documented bounds — none are
+ *   enforced). The other FLUX.2 routes declare neither field.
  * - `width`/`height` carry ONE documented bound: `minimum: 64` (default 0 =
  *   automatic sizing). The FLUX.2 pages advertise "up to 4MP output" in prose
  *   but publish no maximum, no multiple-of rule and no aspect bound for these
@@ -35,7 +44,7 @@
  */
 
 import { z } from "zod";
-import { createValidator } from "../../core/pipeline";
+import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -96,8 +105,16 @@ interface Flux2CoreFields {
   webhook_secret?: string | null;
 }
 
+/** Every non-LoRA FLUX.2 route: Flux2Inputs/Flux2FlexInputs/Flux2KleinInputs. */
+interface NoFinetuneFields {
+  /** klein `-finetuned` routes only. */
+  finetune_id?: never;
+  /** klein `-finetuned` routes only. */
+  finetune_strength?: never;
+}
+
 /** pro/max routes (Flux2Inputs): `disable_pup`, up to 8 input images. */
-interface Flux2ProMaxFields extends Flux2CoreFields {
+interface Flux2ProMaxFields extends Flux2CoreFields, NoFinetuneFields {
   /**
    * pro/max apply prompt upsampling by default; set true to generate from
    * your prompt exactly as written.
@@ -130,7 +147,7 @@ export interface Flux2ProPreviewBody extends Flux2ProMaxFields {
 }
 
 /** flex route (Flux2FlexInputs): guidance/steps knobs, `prompt_upsampling`. */
-export interface Flux2FlexBody extends Flux2CoreFields {
+export interface Flux2FlexBody extends Flux2CoreFields, NoFinetuneFields {
   model: "flux-2-flex";
   /** Whether to use prompt upsampling. Default true. */
   prompt_upsampling?: boolean | null;
@@ -167,16 +184,48 @@ interface Flux2KleinFields extends Flux2CoreFields {
   input_image_8?: never;
 }
 
-export interface Flux2Klein9bBody extends Flux2KleinFields {
+export interface Flux2Klein9bBody extends Flux2KleinFields, NoFinetuneFields {
   model: "flux-2-klein-9b";
 }
 
-export interface Flux2Klein9bPreviewBody extends Flux2KleinFields {
+export interface Flux2Klein9bPreviewBody extends Flux2KleinFields, NoFinetuneFields {
   model: "flux-2-klein-9b-preview";
 }
 
-export interface Flux2Klein4bBody extends Flux2KleinFields {
+export interface Flux2Klein4bBody extends Flux2KleinFields, NoFinetuneFields {
   model: "flux-2-klein-4b";
+}
+
+/**
+ * klein LoRA routes: Flux2KleinInputs + the two LoRA fields
+ * (https://docs.bfl.ml/flux_2/flux2_lora_inference). One LoRA per request,
+ * and its base model must match the route.
+ */
+interface Flux2KleinFinetunedFields extends Flux2KleinFields {
+  /**
+   * REQUIRED. Name of an uploaded finetune available to your organization;
+   * `{owner_org_id}/{name}` for one shared with you.
+   */
+  finetune_id: string;
+  /** How strongly the LoRA is applied. Default 1.0. */
+  finetune_strength?: number;
+}
+
+export interface Flux2Klein4bFinetunedBody extends Flux2KleinFinetunedFields {
+  model: "flux-2-klein-4b-finetuned";
+}
+
+export interface Flux2Klein9bFinetunedBody extends Flux2KleinFinetunedFields {
+  model: "flux-2-klein-9b-finetuned";
+}
+
+export interface Flux2Klein9bKvFinetunedBody extends Flux2KleinFinetunedFields {
+  model: "flux-2-klein-9b-kv-finetuned";
+}
+
+/** BF16 precision; the LoRA must have been uploaded with BF16 selected. */
+export interface Flux2Klein9bKvBf16FinetunedBody extends Flux2KleinFinetunedFields {
+  model: "flux-2-klein-9b-kv-bf16-finetuned";
 }
 
 /** Escape hatch for routes unmodel doesn't know yet (unknown_model warning). */
@@ -198,6 +247,10 @@ export type Flux2Body<FutureModel extends string = never> =
   | Flux2Klein9bBody
   | Flux2Klein9bPreviewBody
   | Flux2Klein4bBody
+  | Flux2Klein4bFinetunedBody
+  | Flux2Klein9bFinetunedBody
+  | Flux2Klein9bKvFinetunedBody
+  | Flux2Klein9bKvBf16FinetunedBody
   | UnknownFlux2ModelBody<FutureModel>;
 
 export interface Flux2BodyByModel {
@@ -208,6 +261,10 @@ export interface Flux2BodyByModel {
   "flux-2-klein-9b": Flux2Klein9bBody;
   "flux-2-klein-9b-preview": Flux2Klein9bPreviewBody;
   "flux-2-klein-4b": Flux2Klein4bBody;
+  "flux-2-klein-4b-finetuned": Flux2Klein4bFinetunedBody;
+  "flux-2-klein-9b-finetuned": Flux2Klein9bFinetunedBody;
+  "flux-2-klein-9b-kv-finetuned": Flux2Klein9bKvFinetunedBody;
+  "flux-2-klein-9b-kv-bf16-finetuned": Flux2Klein9bKvBf16FinetunedBody;
 }
 
 /** Resolves a model id literal to its exact Tier-A arm. */
@@ -247,7 +304,38 @@ const flux2Schema = z.looseObject({
   output_format: z.enum(BFL_OUTPUT_FORMATS).nullable().optional(),
   webhook_url: z.string().min(1).max(2083).nullable().optional(),
   webhook_secret: z.string().nullable().optional(),
+  finetune_id: z.string().optional(),
+  finetune_strength: z.number().optional(),
 });
+
+// ---------------------------------------------------------------------------
+// Checks
+// ---------------------------------------------------------------------------
+
+const LORA_DOCS_URL = "https://docs.bfl.ml/flux_2/flux2_lora_inference";
+
+/**
+ * `finetune_id` is required on the klein `-finetuned` routes ("| `finetune_id`
+ * | string | Yes |"). Keyed on the suffix so a `-finetuned` route this catalog
+ * does not list yet is held to the same rule.
+ */
+function checkFinetuneId(
+  params: AnyFlux2Body,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (!params.model.endsWith("-finetuned")) return;
+  if ((params as { finetune_id?: unknown }).finetune_id != null) return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["finetune_id"],
+    model: params.model,
+    message:
+      `\`finetune_id\` is required by "${params.model}": the name of a LoRA uploaded to your ` +
+      "organization, or `{owner_org_id}/{name}` for one shared with you.",
+    meta: { source: LORA_DOCS_URL },
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Estimation — the documented 1MP text-to-image base price (see models.ts).
@@ -287,6 +375,7 @@ const validator = createValidator<AnyFlux2Body, unknown>({
   modelId: (params) => params.model,
   catalog: models,
   constraints: imageConstraints,
+  checks: [checkFinetuneId],
   estimate,
   finalize,
 });

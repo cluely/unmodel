@@ -68,6 +68,10 @@ export type {
   Flux2Klein9bBody,
   Flux2Klein9bPreviewBody,
   Flux2Klein4bBody,
+  Flux2Klein4bFinetunedBody,
+  Flux2Klein9bFinetunedBody,
+  Flux2Klein9bKvFinetunedBody,
+  Flux2Klein9bKvBf16FinetunedBody,
   UnknownFlux2ModelBody,
   BflOutputFormat,
 } from "./image";

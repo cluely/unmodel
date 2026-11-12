@@ -7,7 +7,9 @@
 // Every id below is a REAL BFL route (`POST https://api.bfl.ai/v1/{id}`) taken
 // from the OpenAPI `paths` list — the model is the route on this API, so the
 // catalog key doubles as the URL segment (including the `flux-tools/` prefix
-// on the FLUX tools routes).
+// on the FLUX tools routes). The one exception is the FLUX.2 [klein]
+// `-finetuned` LoRA family, which the OpenAPI omits and
+// https://docs.bfl.ml/flux_2/flux2_lora_inference documents.
 //
 // Pricing conversions (documented so the arithmetic never rots unexplained):
 // - FLUX.2 rates are megapixel-based, quoted "from $X/MP": the first output
@@ -23,7 +25,8 @@
 //   credits), FLUX.1 Fill [pro] 5 credits $0.05.
 // - Fine-tuned endpoints are "billed at the same rate as their base
 //   endpoints" during public beta, so the -finetuned rows copy their base
-//   route's price.
+//   route's price — except flux-2-klein-9b-kv-bf16-finetuned, whose base
+//   route no pricing page names.
 // - Routes with NO published price carry no `cost` (no estimate, no budget
 //   check): the `-preview` routes, `flux-dev`, `flux-pro-1.0-expand` and the
 //   whole `flux-tools/` family.
@@ -129,6 +132,84 @@ const flux2Models = {
     limit: { context: 0 },
     // from $0.014/MP — docs.bfl.ml/quick_start/pricing
     cost: { perImage: 0.014 },
+  },
+  // FLUX.2 [klein] LoRA routes — https://docs.bfl.ml/flux_2/flux2_lora_inference
+  // (2026-11-12). Docs-only: absent from the OpenAPI `paths`. "Each supported
+  // base model has a corresponding `-finetuned` endpoint. The request schema
+  // matches the underlying base endpoint, with two added parameters:
+  // `finetune_id` and `finetune_strength`." Beta status: "LoRA inference
+  // endpoints are in public beta. Pricing, parameters, and endpoint names may
+  // change before general availability." The base checkpoints are FLUX.2
+  // [klein], whose weights are published (see flux-2-klein-9b).
+  "flux-2-klein-4b-finetuned": {
+    id: "flux-2-klein-4b-finetuned",
+    name: "FLUX.2 [klein] 4B (finetuned)",
+    family: "flux-2",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    openWeights: true,
+    // "| `/v1/flux-2-klein-4b-finetuned` | FLUX.2 \[klein] 4B | FP8 |"
+    status: "beta",
+    modalities: { input: ["text", "image"], output: ["image"] },
+    limit: { context: 0 },
+    // Billed as its base route during the beta. https://bfl.ai/pricing
+    // (2026-11-12): "FLUX.2 [klein] 4B 1st MP $0.014 Add'l MP $0.001 Ref img
+    // $0.001 /MP".
+    cost: { perImage: 0.014 },
+  },
+  "flux-2-klein-9b-finetuned": {
+    id: "flux-2-klein-9b-finetuned",
+    name: "FLUX.2 [klein] 9B (finetuned)",
+    family: "flux-2",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    openWeights: true,
+    // "| `/v1/flux-2-klein-9b-finetuned` | FLUX.2 \[klein] 9B | FP8 |"
+    status: "beta",
+    modalities: { input: ["text", "image"], output: ["image"] },
+    limit: { context: 0 },
+    // Billed as its base route during the beta. https://bfl.ai/pricing
+    // (2026-11-12): "FLUX.2 [klein] 9B 1st MP $0.015 Add'l MP $0.002 Ref img
+    // $0.002 /MP".
+    cost: { perImage: 0.015 },
+  },
+  "flux-2-klein-9b-kv-finetuned": {
+    id: "flux-2-klein-9b-kv-finetuned",
+    name: "FLUX.2 [klein] 9B KV (finetuned)",
+    family: "flux-2",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    openWeights: true,
+    // KV-cached 9B, FP8. https://docs.bfl.ml/release-notes (2026-11-12):
+    // "`POST /v1/{base_model}-finetuned`, e.g. `/v1/flux-2-klein-9b-kv-finetuned`".
+    status: "beta",
+    modalities: { input: ["text", "image"], output: ["image"] },
+    limit: { context: 0 },
+    // https://docs.bfl.ml/quick_start/pricing (2026-11-12): "a request to
+    // `flux-2-klein-9b-kv-finetuned` costs the same as the equivalent
+    // `flux-2-klein-9b` request at the same resolution." → $0.015 first MP.
+    cost: { perImage: 0.015 },
+  },
+  "flux-2-klein-9b-kv-bf16-finetuned": {
+    id: "flux-2-klein-9b-kv-bf16-finetuned",
+    name: "FLUX.2 [klein] 9B KV BF16 (finetuned)",
+    family: "flux-2",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    openWeights: true,
+    // "BF16 is currently available only for `flux-2-klein-9b-kv` and maps to
+    // `/v1/flux-2-klein-9b-kv-bf16-finetuned`." The LoRA must be uploaded
+    // with BF16 selected.
+    status: "beta",
+    modalities: { input: ["text", "image"], output: ["image"] },
+    limit: { context: 0 },
+    // No cost: the docs pricing table maps only the FP8 kv route
+    // ("| `flux-2-klein-9b-kv-finetuned` | `flux-2-klein-9b` |") and no page
+    // states what the BF16 route bills as.
   },
 } as const satisfies Record<string, ModelInfo>;
 

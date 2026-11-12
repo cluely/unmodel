@@ -107,6 +107,18 @@ const BASE: Readonly<Record<string, Record<string, unknown>>> = {
   "black-forest-labs/flux-pro-1.1-ultra-finetuned": {
     providerOptions: { "black-forest-labs": { finetune_id: "my-lora" } },
   },
+  "black-forest-labs/flux-2-klein-4b-finetuned": {
+    providerOptions: { "black-forest-labs": { finetune_id: "my-lora" } },
+  },
+  "black-forest-labs/flux-2-klein-9b-finetuned": {
+    providerOptions: { "black-forest-labs": { finetune_id: "my-lora" } },
+  },
+  "black-forest-labs/flux-2-klein-9b-kv-finetuned": {
+    providerOptions: { "black-forest-labs": { finetune_id: "my-lora" } },
+  },
+  "black-forest-labs/flux-2-klein-9b-kv-bf16-finetuned": {
+    providerOptions: { "black-forest-labs": { finetune_id: "my-lora" } },
+  },
   "runway/gen4_image_turbo": {
     providerOptions: { runway: { referenceImages: [{ uri: "https://example.com/a.png" }] } },
   },

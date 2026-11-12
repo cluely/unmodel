@@ -1048,6 +1048,10 @@ const TTS_PACK_PROVIDERS: string[] = [
  * 546.7 measured, 2026-11-12: six GPT-Image-2.5 / 2.6 Sunburst-Flare arms,
  * constraint rows, hand catalog rows and the gif/svg/markup pairing checks on
  * `openai.imageEdit`. Pinned at 600, ~10% over.
+ *
+ * Then the black-forest-labs FLUX.2 [klein] `-finetuned` catalog rows and deny
+ * entries, reached through the shared BFL models/image chunk: 551.5 measured
+ * with both, still under the 600 pin.
  */
 const IMAGE_EDIT_PACK_BUDGET_KIB = 600;
 

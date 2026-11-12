@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { models } from "../../catalog/cohere.gen";
-import type { CohereTextModelId } from "../../catalog/cohere.gen";
+import { chatModels } from "./models";
+import type { CohereChatModelId } from "./models";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS } from "../../core/request";
 import type { ExactKeys, RequestMeta, Validated } from "../../core/request";
@@ -132,7 +132,7 @@ export interface CohereCitationOptions {
 }
 
 export interface ChatBody {
-  model: CohereTextModelId | (string & {});
+  model: CohereChatModelId | (string & {});
   messages: CohereChatMessage[];
   stream?: boolean;
   tools?: CohereTool[];
@@ -694,7 +694,7 @@ const validator = createValidator<ChatBody, unknown>({
   endpoint: "cohere.chat",
   schema,
   modelId: (params) => params.model,
-  catalog: models,
+  catalog: chatModels,
   checks: [validateCapabilities, validateResponseFormatCompatibility, validateImages],
   estimate: estimateChat,
   promptPath: ["messages"],

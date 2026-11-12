@@ -61502,6 +61502,11 @@
     "models": {
       "c4ai-aya-expanse-32b": {
         "attachment": false,
+        "canonical_model_id": "cohere/c4ai-aya-expanse-32b",
+        "cost": {
+          "input": 0.5,
+          "output": 1.5
+        },
         "description": "Open multilingual model optimized for generation across 23 languages",
         "id": "c4ai-aya-expanse-32b",
         "last_updated": "2024-10-24",
@@ -61521,35 +61526,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-10-24",
-        "temperature": true,
-        "tool_call": false
-      },
-      "c4ai-aya-expanse-8b": {
-        "attachment": false,
-        "description": "Compact open multilingual model optimized for generation across 23 languages",
-        "id": "c4ai-aya-expanse-8b",
-        "last_updated": "2024-10-24",
-        "limit": {
-          "context": 8000,
-          "output": 4000
-        },
-        "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Aya Expanse 8B",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2024-10-24",
+        "structured_output": false,
         "temperature": true,
         "tool_call": false
       },
       "c4ai-aya-vision-32b": {
         "attachment": true,
+        "canonical_model_id": "cohere/c4ai-aya-vision-32b",
         "description": "Open multilingual vision model for OCR, visual reasoning, and image question answering",
         "id": "c4ai-aya-vision-32b",
         "last_updated": "2025-05-14",
@@ -61570,36 +61553,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2025-03-04",
-        "temperature": true,
-        "tool_call": false
-      },
-      "c4ai-aya-vision-8b": {
-        "attachment": true,
-        "description": "Compact open multilingual vision model for OCR and visual question answering",
-        "id": "c4ai-aya-vision-8b",
-        "last_updated": "2025-05-14",
-        "limit": {
-          "context": 16000,
-          "output": 4000
-        },
-        "modalities": {
-          "input": [
-            "text",
-            "image"
-          ],
-          "output": [
-            "text"
-          ]
-        },
-        "name": "Aya Vision 8B",
-        "open_weights": true,
-        "reasoning": false,
-        "release_date": "2025-03-04",
+        "structured_output": false,
         "temperature": true,
         "tool_call": false
       },
       "command-a-03-2025": {
         "attachment": false,
+        "canonical_model_id": "cohere/command-a-03-2025",
         "cost": {
           "input": 2.5,
           "output": 10
@@ -61625,11 +61585,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2025-03-13",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "command-a-plus-05-2026": {
         "attachment": true,
+        "canonical_model_id": "cohere/command-a-plus-05-2026",
         "cost": {
           "input": 2.5,
           "output": 10
@@ -61671,6 +61633,7 @@
       },
       "command-a-reasoning-08-2025": {
         "attachment": false,
+        "canonical_model_id": "cohere/command-a-reasoning-08-2025",
         "cost": {
           "input": 2.5,
           "output": 10
@@ -61705,11 +61668,13 @@
           }
         ],
         "release_date": "2025-08-21",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "command-a-translate-08-2025": {
         "attachment": false,
+        "canonical_model_id": "cohere/command-a-translate-08-2025",
         "cost": {
           "input": 2.5,
           "output": 10
@@ -61735,11 +61700,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2025-08-28",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "command-a-vision-07-2025": {
         "attachment": true,
+        "canonical_model_id": "cohere/command-a-vision-07-2025",
         "cost": {
           "input": 2.5,
           "output": 10
@@ -61766,11 +61733,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2025-07-31",
+        "structured_output": true,
         "temperature": true,
         "tool_call": false
       },
       "command-r-08-2024": {
         "attachment": false,
+        "canonical_model_id": "cohere/command-r-08-2024",
         "cost": {
           "input": 0.15,
           "output": 0.6
@@ -61796,11 +61765,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-08-30",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "command-r-plus-08-2024": {
         "attachment": false,
+        "canonical_model_id": "cohere/command-r-plus-08-2024",
         "cost": {
           "input": 2.5,
           "output": 10
@@ -61826,11 +61797,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2024-08-30",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "command-r7b-12-2024": {
         "attachment": false,
+        "canonical_model_id": "cohere/command-r7b-12-2024",
         "cost": {
           "input": 0.0375,
           "output": 0.15
@@ -61839,7 +61812,7 @@
         "family": "command-r",
         "id": "command-r7b-12-2024",
         "knowledge": "2024-06-01",
-        "last_updated": "2024-12-02",
+        "last_updated": "2024-12-13",
         "limit": {
           "context": 128000,
           "output": 4000
@@ -61855,12 +61828,14 @@
         "name": "Command R7B",
         "open_weights": true,
         "reasoning": false,
-        "release_date": "2024-12-02",
+        "release_date": "2024-12-13",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "command-r7b-arabic-02-2025": {
         "attachment": false,
+        "canonical_model_id": "cohere/command-r7b-arabic-02-2025",
         "cost": {
           "input": 0.0375,
           "output": 0.15
@@ -61886,11 +61861,13 @@
         "open_weights": true,
         "reasoning": false,
         "release_date": "2025-02-27",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "north-mini-code-1-0": {
         "attachment": false,
+        "canonical_model_id": "cohere/north-mini-code-1-0",
         "cost": {
           "input": 0,
           "output": 0
@@ -61932,7 +61909,142 @@
           }
         ],
         "release_date": "2026-06-09",
-        "structured_output": true,
+        "structured_output": false,
+        "temperature": true,
+        "tool_call": true
+      },
+      "north-small-translate-09-2026": {
+        "attachment": false,
+        "canonical_model_id": "cohere/north-small-translate-1-0",
+        "cost": {
+          "input": 0,
+          "output": 0
+        },
+        "description": "Open-weight translation model for more than 50 languages and locale variants",
+        "family": "north",
+        "id": "north-small-translate-09-2026",
+        "last_updated": "2026-09-09",
+        "limit": {
+          "context": 32768,
+          "output": 16000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "North Small Translate",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2026-09-09",
+        "structured_output": false,
+        "temperature": true,
+        "tool_call": false
+      },
+      "tiny-aya-earth": {
+        "attachment": false,
+        "canonical_model_id": "cohere/tiny-aya-earth",
+        "description": "Compact multilingual model specialized for West Asian and African languages",
+        "id": "tiny-aya-earth",
+        "last_updated": "2026-02-17",
+        "limit": {
+          "context": 8000,
+          "output": 8000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Tiny Aya Earth",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2026-02-17",
+        "structured_output": false,
+        "temperature": true,
+        "tool_call": true
+      },
+      "tiny-aya-fire": {
+        "attachment": false,
+        "canonical_model_id": "cohere/tiny-aya-fire",
+        "description": "Compact multilingual model specialized for South Asian languages",
+        "id": "tiny-aya-fire",
+        "last_updated": "2026-02-17",
+        "limit": {
+          "context": 8000,
+          "output": 8000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Tiny Aya Fire",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2026-02-17",
+        "structured_output": false,
+        "temperature": true,
+        "tool_call": true
+      },
+      "tiny-aya-global": {
+        "attachment": false,
+        "canonical_model_id": "cohere/tiny-aya-global",
+        "description": "Compact multilingual model balanced across 70 languages and regions",
+        "id": "tiny-aya-global",
+        "last_updated": "2026-02-17",
+        "limit": {
+          "context": 8000,
+          "output": 8000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Tiny Aya Global",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2026-02-17",
+        "structured_output": false,
+        "temperature": true,
+        "tool_call": true
+      },
+      "tiny-aya-water": {
+        "attachment": false,
+        "canonical_model_id": "cohere/tiny-aya-water",
+        "description": "Compact multilingual model specialized for European and Asia-Pacific languages",
+        "id": "tiny-aya-water",
+        "last_updated": "2026-02-17",
+        "limit": {
+          "context": 8000,
+          "output": 8000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Tiny Aya Water",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2026-02-17",
+        "structured_output": false,
         "temperature": true,
         "tool_call": true
       }

@@ -64,6 +64,8 @@ export type {
 
 export type { ChatResponseLike, ChatUsageLike, CohereFinishReason } from "./check";
 
+export type { CohereChatModelId } from "./models";
+
 export type {
   CohereModelId,
   CohereTextModelId,

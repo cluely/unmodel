@@ -12,8 +12,13 @@
  * `toSdkParams` actually builds.
  */
 import { chat } from "../../src/providers/cohere";
-import type { CohereSdkMessage, CohereV2ChatRequest } from "../../src/providers/cohere";
-import { expectAssignable } from "./helpers";
+import type {
+  ChatBody,
+  CohereChatModelId,
+  CohereSdkMessage,
+  CohereV2ChatRequest,
+} from "../../src/providers/cohere";
+import { expectAssignable, expectTrue } from "./helpers";
 
 function cohereSdkTypeTests(): void {
   const v = chat({
@@ -54,5 +59,36 @@ function cohereSdkTypeTests(): void {
     message.tool_call_id;
   }
 }
+
+// The ids `cohere.chat` completes are the overlay's, not models.dev's: Cohere's
+// own `north-small-translate-1.0` replaces the generated
+// `north-small-translate-09-2026`. Pinned whole, so a regen that moves an id
+// in or out surfaces here.
+type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+  ? true
+  : false;
+expectTrue<
+  Equals<
+    CohereChatModelId,
+    | "c4ai-aya-expanse-32b"
+    | "c4ai-aya-vision-32b"
+    | "command-a-03-2025"
+    | "command-a-plus-05-2026"
+    | "command-a-reasoning-08-2025"
+    | "command-a-translate-08-2025"
+    | "command-a-vision-07-2025"
+    | "command-r-08-2024"
+    | "command-r-plus-08-2024"
+    | "command-r7b-12-2024"
+    | "command-r7b-arabic-02-2025"
+    | "north-mini-code-1-0"
+    | "north-small-translate-1.0"
+    | "tiny-aya-earth"
+    | "tiny-aya-fire"
+    | "tiny-aya-global"
+    | "tiny-aya-water"
+  >
+>();
+expectTrue<Equals<ChatBody["model"], CohereChatModelId | (string & {})>>();
 
 export { cohereSdkTypeTests };

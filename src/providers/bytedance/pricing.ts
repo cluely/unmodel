@@ -24,9 +24,6 @@
  *   duration of a remote URL, so estimates for omni-reference requests are a
  *   FLOOR. The 2.x models also apply a minimum token consumption in that case.
  * - Non-16:9 ratios shift the pixel count a little in either direction.
- *
- * The limited-time discounts on Seedance 2.0 fast/mini (to 2026-09-07) are
- * deliberately not modeled: the estimate is the list price.
  */
 
 import { VIDEO_FPS } from "./constraints";
@@ -37,25 +34,17 @@ import { parsePixelSize } from "./shared";
 // ---------------------------------------------------------------------------
 
 /**
- * Seedream 5.0 pro's tier boundary: "≤ 2.61 million pixels (1.5K or lower)"
- * bills 0.045/image, above it 0.09/image.
+ * Seedream 5.0 pro's tier boundary: "Single-image generation: P ≤ 2.61
+ * million (1.5K or lower): $0.045 · P > 2.61 million (higher than 1.5K):
+ * $0.09 · Layer decomposition: P ≤ 2.61 million (1.5K or lower): $0.0225 ·
+ * P > 2.61 million (higher than 1.5K): $0.045" —
+ * https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
  *
- * UNVERIFIED — do not change this number without a first-party source.
- * The quoted wording above is what was transcribed from the Pricing page
- * (https://docs.byteplus.com/en/docs/ModelArk/1544106) when this table was
- * written, but that page is a JS-rendered SPA: curl and WebFetch both retrieve
- * only the navigation shell, so the figure cannot be re-verified without a
- * browser. A reachable third-party summary contradicts it, putting the
- * boundary at 2,359,296 pixels — which is exactly 1536x1536, i.e. the `1.5K`
- * keyword itself, making it a plausible reading of the same "1.5K or lower"
- * parenthetical.
- *
- * Blast radius if 2,359,296 is the true boundary: only explicit `WxH` sizes
- * landing in the 2.36M–2.61M band are affected — they would estimate $0.045
- * where the real bill is $0.09 (and $0.0225 vs $0.045 per decomposed layer).
- * The `size`-keyword path is identical under both boundaries: 1.5K
- * (1536x1536 = 2,359,296) falls in the low tier either way, and 2K
- * (2048x2048 = 4,194,304) falls in the high tier either way.
+ * The page prints "2.61 million", not an exact pixel count; the Seedream 5.5
+ * row beside it states its own boundary exactly as 1536² × 1.05²
+ * (2,601,123.84). An explicit `WxH` size in the 2,601,124–2,610,000 band is
+ * therefore the one place this boundary could misplace a 5.0 pro estimate;
+ * every `size` keyword sits well clear of it.
  */
 export const SEEDREAM_5_PRO_TIER_PIXELS = 2_610_000;
 
@@ -211,8 +200,10 @@ export function generatedImageCount(fields: ImagePricingFields): number {
  * example prices divide exactly by 5.
  */
 const VIDEO_USD_PER_SECOND: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  // 0.514 / 1.156 USD per 5s video.
-  "dreamina-seedance-2-5-260628": { "480p": 0.103, "720p": 0.231 },
+  // "|Dreamina Seedance 2.5 |* $0.514 per video · $0.103 per second |*
+  // $1.156 per video · $0.231 per second |* $2.843 per video · $0.569 per
+  // second |" — https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+  "dreamina-seedance-2-5-260628": { "480p": 0.103, "720p": 0.231, "1080p": 0.569 },
   "dreamina-seedance-2-0-260128": { "480p": 0.07, "720p": 0.15, "1080p": 0.37, "4k": 0.78 },
   "dreamina-seedance-2-0-fast-260128": { "480p": 0.06, "720p": 0.12 },
   "dreamina-seedance-2-0-mini-260615": { "480p": 0.04, "720p": 0.08 },
@@ -243,13 +234,22 @@ export interface VideoPricingFields {
   resolution?: string | undefined;
   duration?: number | undefined;
   frames?: number | undefined;
+  /**
+   * A Dreamina Seedance 2.5 draft (`draft: true`) bills as an ordinary 480p
+   * video, so an omitted `resolution` prices at 480p: "Dreamina Seedance 2.5
+   * generates Draft videos at a fixed 480p resolution. The token consumption
+   * and token rate are the same as normal 480p videos." —
+   * https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+   */
+  draft?: boolean | undefined;
 }
 
 /** USD per second of output video for a model + request configuration. */
 export function videoUsdPerSecond(model: string, fields: VideoPricingFields): number | undefined {
   const table = VIDEO_USD_PER_SECOND[model];
   if (table === undefined) return undefined;
-  const resolution = fields.resolution ?? DEFAULT_RESOLUTION[model];
+  const resolution =
+    fields.resolution ?? (fields.draft === true ? "480p" : DEFAULT_RESOLUTION[model]);
   if (resolution === undefined) return undefined;
   return table[resolution];
 }

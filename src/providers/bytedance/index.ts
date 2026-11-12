@@ -84,6 +84,7 @@ export {
   IMAGE_MODELS_SOURCE,
   VIDEO_API_SOURCE,
   VIDEO_MODELS_SOURCE,
+  VIDEO_DRAFT_SOURCE,
 } from "./constraints";
 export type {
   BytedanceImageSizeKeyword,

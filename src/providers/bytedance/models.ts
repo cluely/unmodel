@@ -5,7 +5,12 @@
 //   https://docs.byteplus.com/en/docs/ModelArk/1520757  (Create a video generation task — request/response shape)
 //   https://docs.byteplus.com/en/docs/ModelArk/2298881  (Video generation tutorial — per-model capability matrix)
 //   https://docs.byteplus.com/en/docs/ModelArk/1824121  (Image generation tutorial — per-model capability matrix)
-// Verified 2026-08-13.
+//   https://docs.byteplus.com/en/docs/ModelArk/1350667  (Model deprecation notice)
+// Each numeric page redirects to a named one with a curl-readable markdown
+// copy at https://docs.byteplus.com/docs/en/modelark/<name>.md (model-list,
+// model-pricing, image-generation-api, create-video-generation-task-api,
+// video-generation-tutorial, image-generation-tutorial,
+// model-deprecation-notice). Verified 2026-11-12.
 //
 // This is the INTERNATIONAL platform (BytePlus ModelArk). The mainland
 // platform (Volcengine ModelArk, ark.cn-beijing.volces.com) is a separate host
@@ -224,7 +229,8 @@ export const videoModels = {
     limit: { context: 0 },
     // 720p (the documented `resolution` default) 16:9 without input video:
     // 1.156 USD per 5s video = 0.231 USD/s — Pricing 1544106 "Price examples".
-    // 480p is 0.103 USD/s; input video adds cost. ./pricing.ts picks the tier.
+    // 480p is 0.103 USD/s and 1080p 0.569 USD/s; input video adds cost.
+    // ./pricing.ts picks the tier.
     cost: { perVideoSecond: 0.231 },
   },
   "dreamina-seedance-2-0-260128": {
@@ -254,8 +260,7 @@ export const videoModels = {
     modalities: { input: ["text", "image", "audio", "video"], output: ["video"] },
     limit: { context: 0 },
     // 720p (default) 16:9 without input video: 0.12 USD/s (480p 0.06) —
-    // Pricing 1544106. A limited-time 25% discount runs to 2026-09-07; the
-    // catalog carries the list price.
+    // Pricing 1544106.
     cost: { perVideoSecond: 0.12 },
   },
   "dreamina-seedance-2-0-mini-260615": {
@@ -270,8 +275,7 @@ export const videoModels = {
     modalities: { input: ["text", "image", "audio", "video"], output: ["video"] },
     limit: { context: 0 },
     // 720p (default) 16:9 without input video: 0.08 USD/s (480p 0.04) —
-    // Pricing 1544106. A limited-time 60% discount runs to 2026-09-07; the
-    // catalog carries the list price.
+    // Pricing 1544106.
     cost: { perVideoSecond: 0.08 },
   },
   "seedance-1-0-pro-250528": {

@@ -28,7 +28,7 @@
  *
  * # What the endpoint's own tables answer for
  *
- * Which resolutions a model offers (2.5 stops at 720p, only 2.0 has 4K), what
+ * Which resolutions a model offers (2.5 stops at 1080p, only 2.0 has 4K), what
  * `duration` range it takes, whether it has `seed` at all, and whether it
  * accepts reference input are all in `videoConstraints` / `videoShapeRules`,
  * transcribed from the capability matrix. This adapter sends the params and

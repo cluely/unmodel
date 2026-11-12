@@ -9,11 +9,15 @@
  * - This is an ASYNC-JOB API: the POST returns `{ id }`. Poll
  *   `GET /api/v3/contents/generations/tasks/{id}` (transport, out of
  *   unmodel's scope — `contentGenerationTaskUrl(id)` builds it) or supply a
- *   `callback_url`. Task records live 7 days; result URLs expire after 24h.
+ *   `callback_url`. Task ids stay valid 7 days — draft task ids created at or
+ *   after 10:00 UTC+8 on 2026-10-28, 14 days — and result URLs expire after
+ *   24h (https://docs.byteplus.com/docs/en/modelark/create-video-generation-task-api.md,
+ *   2026-11-12: "Draft video task IDs: IDs created at or after 10:00 on
+ *   October 28, 2026 (UTC+8) are valid for 14 days.").
  * - `content` is a chat-style array: `{type:"text"}`, `{type:"image_url"}`,
- *   `{type:"video_url"}`, `{type:"audio_url"}` and the draft-mode
- *   `{type:"draft_task"}`. `role` selects the scenario — `first_frame` /
- *   `last_frame` (image-to-video) versus `reference_image` /
+ *   `{type:"video_url"}`, `{type:"audio_url"}` and Dreamina Seedance 2.5's
+ *   draft-mode `{type:"draft_task"}`. `role` selects the scenario —
+ *   `first_frame` / `last_frame` (image-to-video) versus `reference_image` /
  *   `reference_video` / `reference_audio` (omni reference); the docs state
  *   those scenarios "cannot be mixed", which is enforced here.
  * - Output specs (`resolution`, `ratio`, `duration`, `frames`, `seed`,
@@ -24,8 +28,8 @@
  *   an error"). unmodel validates the body fields; text commands ride inside
  *   `content[].text` untouched, so prefer the body form to get any checking
  *   at all.
- * - `duration: -1` means "the model picks the length" (2.x only)
- *   and `frames` (Seedance 1.0 only) takes precedence over `duration`.
+ * - `duration: -1` means "the model picks the length" (2.x only) and
+ *   `frames` (Seedance 1.0 only) takes precedence over `duration`.
  * - This route is AP-only: `eu-west-1` currently serves the chat and image
  *   APIs (https://docs.byteplus.com/en/docs/ModelArk/2191806).
  * - `model` also accepts a per-account Endpoint ID (`ep-…`), which cannot be
@@ -51,6 +55,7 @@ import {
   SAFETY_IDENTIFIER_MAX_LENGTH,
   SERVICE_TIERS,
   VIDEO_API_SOURCE,
+  VIDEO_DRAFT_SOURCE,
   VIDEO_IMAGE_INPUT_RULE,
   VIDEO_MODELS_SOURCE,
   VIDEO_OUTPUT_FORMATS,
@@ -115,7 +120,12 @@ export interface ArkAudioContent {
   role?: "reference_audio";
 }
 
-/** Draft mode: generate the final video from a draft task's id. */
+/**
+ * Dreamina Seedance 2.5 draft mode: generate the final video from a draft
+ * task's id. The final video reuses the draft's prompt, media, `duration`,
+ * `ratio`, `seed`, `generate_audio` and `omni_reference_task_type`, so none of
+ * them may be sent again, and `resolution` is required and `"1080p"`.
+ */
 export interface ArkDraftTaskContent {
   type: "draft_task";
   draft_task: { id: string };
@@ -131,7 +141,10 @@ export type ArkOmniContent =
 interface ContentGenerationTasksCore {
   /** POST target for the async result; ModelArk POSTs task status changes. */
   callback_url?: string;
-  /** Also return the generated video's last frame as a PNG. Default false. */
+  /**
+   * Also return the generated video's last frame — a jpeg at the video's
+   * pixel dimensions, without watermark. Default false.
+   */
   return_last_frame?: boolean;
   /** Task expiry in seconds, 3600–259200. Default 172800. */
   execution_expires_after?: number;
@@ -145,11 +158,15 @@ interface ContentGenerationTasksCore {
   watermark?: boolean;
 }
 
-/** Dreamina Seedance 2.5: omni reference (incl. audio-only), mp4/mov output. */
+/**
+ * Dreamina Seedance 2.5: omni reference (incl. audio-only), mp4/mov output,
+ * draft mode. A final video from a draft carries the `draft_task` item alone.
+ */
 export interface DreaminaSeedance25Body extends ContentGenerationTasksCore {
   model: "dreamina-seedance-2-5-260628";
-  content: ArkOmniContent[];
-  resolution?: "480p" | "720p";
+  content: ArkOmniContent[] | [ArkDraftTaskContent];
+  /** Default "720p". 1080p is 10-bit H.265/HEVC. */
+  resolution?: "480p" | "720p" | "1080p";
   /** Synchronized audio in the output. Default true. */
   generate_audio?: boolean;
   /** Queue priority 0–9. Default 0. */
@@ -166,8 +183,8 @@ export interface DreaminaSeedance25Body extends ContentGenerationTasksCore {
   camera_fixed?: never;
   /** Seedance 1.0 only. */
   frames?: never;
-  /** Not available on this model. */
-  draft?: never;
+  /** A 480p draft to finish later through a `draft_task` item. Default false. */
+  draft?: boolean;
 }
 
 interface Seedance20Fields extends ContentGenerationTasksCore {
@@ -188,11 +205,11 @@ interface Seedance20Fields extends ContentGenerationTasksCore {
   camera_fixed?: never;
   /** Seedance 1.0 only. */
   frames?: never;
-  /** Not available on this model. */
+  /** Dreamina Seedance 2.5 only. */
   draft?: never;
 }
 
-/** Dreamina Seedance 2.0 — the only Seedance with 1080p and 4K output. */
+/** Dreamina Seedance 2.0 — the only Seedance with 4K output. */
 export interface DreaminaSeedance20Body extends Seedance20Fields {
   model: "dreamina-seedance-2-0-260128";
   resolution?: "480p" | "720p" | "1080p" | "4k";
@@ -220,7 +237,7 @@ interface Seedance10Fields extends ContentGenerationTasksCore {
   service_tier?: "default" | "flex";
   /** Seedance 1.0 always outputs silent video. */
   generate_audio?: never;
-  /** Not available on this model. */
+  /** Dreamina Seedance 2.5 only. */
   draft?: never;
   /** Dreamina Seedance 2.5 / 2.0 series only. */
   priority?: never;
@@ -471,7 +488,7 @@ function checkContent(
   cap(tally.referenceAudio, rule.maxReferenceAudio, "reference audio clips", ["content"], "audio input is a Dreamina Seedance 2.5 / 2.0 series capability.");
   cap(tally.firstFrame, 1, "first-frame images", ["content"], "");
   cap(tally.lastFrame, rule.supportsLastFrame ? 1 : 0, "last-frame images", ["content"], "it supports first-frame image-to-video only.");
-  cap(tally.draftTask, 0, "draft task references", ["content"], "draft mode is not available on this model.");
+  cap(tally.draftTask, rule.supportsDraft ? 1 : 0, "draft task references", ["content"], "draft mode is a Dreamina Seedance 2.5 capability.");
 
   const frames = tally.firstFrame + tally.lastFrame;
   const references = tally.referenceImage + tally.referenceVideo + tally.referenceAudio;
@@ -639,15 +656,78 @@ function checkDraft(
 ): void {
   const record = params as AnyRecord;
   if (record["draft"] !== true) return;
-  const source = "https://docs.byteplus.com/en/docs/ModelArk/2298881#5acd28c8";
   const resolution = record["resolution"];
   if (typeof resolution === "string" && resolution !== "480p") {
     ctx.report({
       code: "invalid_enum_value",
       path: ["resolution"],
       model: params.model,
-      message: `draft mode generates 480p only ("using other resolutions will cause an error"); got ${JSON.stringify(resolution)}.`,
-      meta: { value: resolution, source },
+      message: `draft mode generates 480p only ("Only 480p Draft videos can be generated. Setting another resolution causes an error."); got ${JSON.stringify(resolution)}.`,
+      meta: { value: resolution, source: VIDEO_DRAFT_SOURCE },
+    });
+  }
+}
+
+/**
+ * Params a final video reuses from its draft: "Do not provide these
+ * parameters again. An error occurs even if their values match those used in
+ * the Draft task." (`seed` is on that list too, and is denied on Dreamina
+ * Seedance 2.5 outright.)
+ */
+const DRAFT_REUSED_PARAMS = ["duration", "ratio", "generate_audio", "omni_reference_task_type"] as const;
+
+/**
+ * A final video from a draft (`{type:"draft_task"}`): `resolution` is required
+ * and "only supports `1080p`", `draft` is omitted or false, and everything the
+ * draft fixed stays unsaid.
+ */
+function checkDraftTask(
+  params: AnyContentGenerationTasksBody,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (info === undefined || videoShapeRules[params.model]?.supportsDraft !== true) return;
+  if (tallyContent(params).draftTask === 0) return;
+  const record = params as AnyRecord;
+  const model = params.model;
+
+  const resolution = record["resolution"];
+  if (resolution !== "1080p") {
+    ctx.report({
+      code: resolution == null ? "invalid_shape" : "invalid_enum_value",
+      path: ["resolution"],
+      model,
+      message: `a final video from a draft needs \`resolution: "1080p"\` ("\`resolution\` is required and only supports \`1080p\`."); got ${JSON.stringify(resolution ?? null)}.`,
+      meta: { value: resolution, allowed: ["1080p"], source: VIDEO_DRAFT_SOURCE },
+    });
+  }
+  if (record["draft"] === true) {
+    ctx.report({
+      code: "unsupported_capability",
+      path: ["draft"],
+      model,
+      message: "a final video from a draft must omit `draft` or set it to `false`.",
+      meta: { source: VIDEO_DRAFT_SOURCE },
+    });
+  }
+  contentItems(params).forEach((item, index) => {
+    if (item["type"] === "draft_task") return;
+    ctx.report({
+      code: "unsupported_capability",
+      path: ["content", index],
+      model,
+      message: `a final video from a draft reuses the draft's prompt and media; send the \`draft_task\` item alone, not \`content[${index}]\` (${JSON.stringify(item["type"])}).`,
+      meta: { source: VIDEO_DRAFT_SOURCE },
+    });
+  });
+  for (const param of DRAFT_REUSED_PARAMS) {
+    if (record[param] == null) continue;
+    ctx.report({
+      code: "unsupported_param",
+      path: [param],
+      model,
+      message: `\`${param}\` is reused from the draft task and must not be sent again: "An error occurs even if their values match those used in the Draft task."`,
+      meta: { source: VIDEO_DRAFT_SOURCE },
     });
   }
 }
@@ -665,6 +745,7 @@ function estimate(params: AnyContentGenerationTasksBody, info: ModelInfo | undef
     resolution: typeof record["resolution"] === "string" ? (record["resolution"] as string) : undefined,
     duration: typeof record["duration"] === "number" ? (record["duration"] as number) : undefined,
     frames: typeof record["frames"] === "number" ? (record["frames"] as number) : undefined,
+    draft: record["draft"] === true,
   });
   return costUSD === undefined ? {} : { costUSD };
 }
@@ -694,7 +775,15 @@ const validator = createValidator<AnyContentGenerationTasksBody, unknown>({
   modelId: (params) => params.model,
   catalog: videoModels,
   constraints: videoConstraints,
-  checks: [checkContent, checkDuration, checkFrames, checkRatio, checkOmniTaskType, checkDraft],
+  checks: [
+    checkContent,
+    checkDuration,
+    checkFrames,
+    checkRatio,
+    checkOmniTaskType,
+    checkDraft,
+    checkDraftTask,
+  ],
   estimate,
   finalize,
 });

@@ -49,8 +49,8 @@ export const RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"] as const;
  *
  * The extras are the generation knobs, gated exactly as `constraints.ts` gates
  * them: `generate_audio` is denied on the 1.0 pros, `camera_fixed` on the 2.x
- * series, `frames` everywhere but the 1.0 pros, and `omni_reference_task_type`
- * everywhere but Dreamina 2.5. Transport
+ * series, `frames` everywhere but the 1.0 pros, and `draft` and
+ * `omni_reference_task_type` everywhere but Dreamina 2.5. Transport
  * (`callback_url`, `execution_expires_after`, `priority`, `service_tier`) and
  * `output_format` (which is the canonical `outputFormat`'s spelling on a
  * category that has no such word) stay on `providerOptions.bytedance`.
@@ -84,11 +84,12 @@ export const SEEDANCE_2_0_SMALL_ROW = {
 
 export const BYTEDANCE_VIDEO_MODEL_PARAMS = {
   "dreamina-seedance-2-5-260628": {
-    resolutions: ["480p", "720p"],
+    resolutions: ["480p", "720p", "1080p"],
     ratios: RATIOS,
     extras: {
       ...AUDIO_2X_EXTRAS,
       omni_reference_task_type: EXTRA as (typeof OMNI_REFERENCE_TASK_TYPES)[number],
+      draft: EXTRA as boolean,
     },
   },
   "dreamina-seedance-2-0-260128": {

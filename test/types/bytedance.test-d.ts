@@ -111,6 +111,24 @@ function videoBodyAliasTypeTests(): void {
     seed: 1,
   };
   void aliasedInvalid;
+
+  // Dreamina Seedance 2.5: 1080p, a 480p draft, and the final video from it.
+  video({ model: "dreamina-seedance-2-5-260628", content: [{ type: "text", text: "hi" }], resolution: "1080p" });
+  video({ model: "dreamina-seedance-2-5-260628", content: [{ type: "text", text: "hi" }], draft: true });
+  video({
+    model: "dreamina-seedance-2-5-260628",
+    content: [{ type: "draft_task", draft_task: { id: "cgt-123" } }],
+    resolution: "1080p",
+  });
+  // @ts-expect-error — draft mode is Dreamina Seedance 2.5's alone
+  video({ model: "dreamina-seedance-2-0-260128", content: [{ type: "text", text: "hi" }], draft: true });
+  video({
+    model: "dreamina-seedance-2-5-260628",
+    // @ts-expect-error — a final video carries the `draft_task` item alone
+    content: [{ type: "text", text: "hi" }, { type: "draft_task", draft_task: { id: "cgt-123" } }],
+    resolution: "1080p",
+  });
+
   const future: ContentGenerationTasksBody<"ep-20260101-video"> = {
     model: "ep-20260101-video",
     content: [{ type: "text", text: "hi" }],

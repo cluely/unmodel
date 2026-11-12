@@ -20,6 +20,8 @@ export const IMAGE_API_SOURCE = "https://docs.byteplus.com/en/docs/ModelArk/1541
 export const IMAGE_MODELS_SOURCE = "https://docs.byteplus.com/en/docs/ModelArk/1824121#9278b81b";
 export const VIDEO_API_SOURCE = "https://docs.byteplus.com/en/docs/ModelArk/1520757";
 export const VIDEO_MODELS_SOURCE = "https://docs.byteplus.com/en/docs/ModelArk/2298881#e7b4c498";
+/** Dreamina Seedance 2.5 draft mode: the 480p draft and the 1080p final video. */
+export const VIDEO_DRAFT_SOURCE = "https://docs.byteplus.com/docs/en/modelark/seedance-2-5.md";
 
 function denyTable(
   entries: Readonly<Record<string, string>>,
@@ -401,6 +403,8 @@ export interface VideoShapeRule {
   readonly supportsAdaptiveRatioForTextToVideo: boolean;
   /** Whether image-to-video forces `ratio: "adaptive"`. */
   readonly forcesAdaptiveRatioForImageToVideo: boolean;
+  /** Whether draft mode (`draft`, a `draft_task` content item) is documented. */
+  readonly supportsDraft: boolean;
 }
 
 const SEEDANCE_20_SHAPE: VideoShapeRule = {
@@ -416,6 +420,7 @@ const SEEDANCE_20_SHAPE: VideoShapeRule = {
   supportsAudioOnlyReference: false,
   supportsAdaptiveRatioForTextToVideo: true,
   forcesAdaptiveRatioForImageToVideo: false,
+  supportsDraft: false,
 };
 
 export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> = {
@@ -432,6 +437,9 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
     // "Automatically preserves the aspect ratio of the first-frame image →
     // Defaults to and only supports `adaptive`."
     forcesAdaptiveRatioForImageToVideo: true,
+    // `draft` / `draft_task` — "**Supported models:** `Dreamina Seedance 2.5`" —
+    // https://docs.byteplus.com/docs/en/modelark/create-video-generation-task-api.md, 2026-11-12.
+    supportsDraft: true,
   },
   "dreamina-seedance-2-0-260128": SEEDANCE_20_SHAPE,
   "dreamina-seedance-2-0-fast-260128": SEEDANCE_20_SHAPE,
@@ -450,6 +458,7 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
     // `adaptive`" for text-to-video (image-to-video does support it).
     supportsAdaptiveRatioForTextToVideo: false,
     forcesAdaptiveRatioForImageToVideo: false,
+    supportsDraft: false,
   },
   "seedance-1-0-pro-fast-251015": {
     minDuration: 2,
@@ -463,6 +472,7 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
     supportsAudioOnlyReference: false,
     supportsAdaptiveRatioForTextToVideo: false,
     forcesAdaptiveRatioForImageToVideo: false,
+    supportsDraft: false,
   },
 };
 
@@ -476,7 +486,7 @@ const FRAMES_ONLY = {
 } as const;
 
 const DRAFT_ONLY = {
-  draft: "draft mode is not available on this model",
+  draft: "draft mode is a Dreamina Seedance 2.5 capability",
 } as const;
 
 const SEEDANCE_25_ONLY = {
@@ -497,11 +507,11 @@ const AUDIO_ONLY = {
 const seedance2xDeny: Record<string, DenyRule> = {
   ...denyTable(LEGACY_ONLY, VIDEO_API_SOURCE),
   ...denyTable(FRAMES_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(DRAFT_ONLY, VIDEO_API_SOURCE),
 };
 
 const seedance20Deny: Record<string, DenyRule> = {
   ...seedance2xDeny,
+  ...denyTable(DRAFT_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_25_ONLY, VIDEO_API_SOURCE),
 };
 
@@ -519,7 +529,9 @@ export const videoConstraints: Readonly<
   "dreamina-seedance-2-5-260628": {
     deny: seedance2xDeny,
     enums: {
-      resolution: ["480p", "720p"],
+      // "Dreamina Seedance 2.5: Default `720p`; supports `480p`, `720p`, and
+      // `1080p`." — https://docs.byteplus.com/docs/en/modelark/create-video-generation-task-api.md, 2026-11-12.
+      resolution: ["480p", "720p", "1080p"],
       ratio: VIDEO_RATIOS,
       output_format: VIDEO_OUTPUT_FORMATS,
       omni_reference_task_type: OMNI_REFERENCE_TASK_TYPES,

@@ -13,11 +13,16 @@ import { heuristicTokenizer } from "../../core/tokens";
 import { TranslationUnavailableError } from "../../core/translate/errors";
 import { createToApi } from "../../core/translate/retarget";
 import type { ValidateResult } from "../../core/result";
+import { ERRORS_DOCS } from "./constraints";
 
 // Real catalog ids used throughout:
-//   claude-sonnet-4-5  — temperature ok, reasoning, 1M context, 64000 output
+//   claude-sonnet-4-5  — temperature ok, manual extended thinking, 200k context,
+//                        64000 output; deprecated (every call carries a warning)
+//   claude-sonnet-4-6  — temperature ok, 1M context, 128000 output, not deprecated
 //   claude-haiku-4-5   — 200k context, 64000 output
 //   claude-opus-5      — temperature: false (sampling params removed)
+//   claude-opus-5-5 / claude-sonnet-5-5 / claude-haiku-5-5 / claude-fable-5-2
+//                      — the Claude 5.5 / Fable 5.2 wave (rules in ./constraints.ts)
 
 const HI: MessagesBody["messages"] = [{ role: "user", content: "hi" }];
 
@@ -90,7 +95,7 @@ describe("anthropic.chat happy path", () => {
   });
 
   test("safe() succeeds with no warnings and an estimate", () => {
-    const result = chat.safe({ model: "claude-sonnet-4-5", max_tokens: 1000, messages: HI });
+    const result = chat.safe({ model: "claude-sonnet-4-6", max_tokens: 1000, messages: HI });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.warnings).toEqual([]);
@@ -603,7 +608,7 @@ describe("anthropic.chat catalog + constraints", () => {
 
   test("unknown top-level params warn and pass through", () => {
     const result = invalid({
-      model: "claude-sonnet-4-5",
+      model: "claude-sonnet-4-6",
       max_tokens: 100,
       messages: HI,
       brand_new_param: true,
@@ -873,7 +878,7 @@ describe("anthropic.chat image media rules", () => {
 
   test("URL and file image sources pass without byte inspection", () => {
     const result = chat.safe({
-      model: "claude-sonnet-4-5",
+      model: "claude-sonnet-4-6",
       max_tokens: 100,
       messages: [
         {
@@ -983,7 +988,7 @@ describe("anthropic.chat image media rules", () => {
 
     // 101 images are fine on a 1M-context model (cap 600).
     const bigContext = chat.safe({
-      model: "claude-sonnet-4-5",
+      model: "claude-sonnet-4-6",
       max_tokens: 100,
       messages: [{ role: "user", content: Array.from({ length: 101 }, () => image) }],
     });
@@ -1116,5 +1121,381 @@ describe("anthropic.chat constraintsFor", () => {
     const sonnet = chat.constraintsFor("claude-sonnet-4-5");
     expect(sonnet.some((c) => c.deny?.top_k !== undefined)).toBe(false);
     expect(sonnet.some((c) => c.imageTokens === 1568)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The Claude 5.5 / Fable 5.2 wave
+// ---------------------------------------------------------------------------
+
+const WAVE_IDS = ["claude-fable-5-2", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"] as const;
+
+describe("anthropic.chat wave: the new ids validate and price", () => {
+  // Output rate per 1M tokens (pricing page, 2026-11-12). The estimate is the
+  // output cost plus the handful of input tokens "hi" costs, so it sits in
+  // (outputCost, outputCost * 1.05).
+  const outputRates = [
+    ["claude-fable-5-2", 40],
+    ["claude-opus-5-5", 20],
+    ["claude-sonnet-5-5", 10],
+    ["claude-haiku-5-5", 0.5],
+  ] as const;
+
+  for (const [model, outputPerMillion] of outputRates) {
+    test(`${model} validates with no warnings and prices at its own rates`, () => {
+      const result = chat.safe({ model, max_tokens: 1000, messages: HI });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.warnings).toEqual([]);
+      const outputCost = (1000 * outputPerMillion) / 1_000_000;
+      expect(result.estimate.costUSD).toBeGreaterThan(outputCost);
+      expect(result.estimate.costUSD).toBeLessThan(outputCost * 1.05);
+    });
+  }
+
+  test("the new ids sit in the high-resolution vision tier (4784 tokens per image)", () => {
+    for (const model of WAVE_IDS) {
+      const withImage = chat.safe({ model, max_tokens: 10, messages: imageMessage(TINY_PNG) });
+      const textOnly = chat.safe({
+        model,
+        max_tokens: 10,
+        messages: [{ role: "user", content: [{ type: "text", text: "Describe this image." }] }],
+      });
+      expect(withImage.ok && textOnly.ok).toBe(true);
+      if (withImage.ok && textOnly.ok) {
+        expect((withImage.estimate.inputTokens ?? 0) - (textOnly.estimate.inputTokens ?? 0)).toBe(4784);
+      }
+    }
+  });
+
+  test("top_k and a non-default temperature are refused on the new ids; the defaults pass", () => {
+    for (const model of WAVE_IDS) {
+      const bad = invalid({ model, max_tokens: 16, messages: HI, top_k: 5, temperature: 0.5 });
+      expect(bad.ok).toBe(false);
+      if (!bad.ok) {
+        expect(bad.errors.map((e) => e.code)).toEqual(["unsupported_param", "unsupported_param"]);
+        expect(bad.errors.map((e) => e.path[0]).sort()).toEqual(["temperature", "top_k"]);
+      }
+      expect(chat.safe({ model, max_tokens: 16, messages: HI, temperature: 1, top_p: 0.99 }).ok).toBe(true);
+    }
+  });
+
+  test("claude-haiku-5-5 has no cost estimate above 100,000 prompt tokens (tiered pricing)", () => {
+    const long = chat.safe({
+      model: "claude-haiku-5-5",
+      max_tokens: 100,
+      messages: [{ role: "user", content: "word ".repeat(120_000) }],
+    });
+    expect(long.ok).toBe(true);
+    if (long.ok) {
+      expect(long.estimate.inputTokens).toBeGreaterThan(100_000);
+      expect(long.estimate.costUSD).toBeUndefined();
+    }
+    const short = chat.safe({ model: "claude-haiku-5-5", max_tokens: 100, messages: HI });
+    expect(short.ok && short.estimate.costUSD !== undefined).toBe(true);
+  });
+});
+
+describe("anthropic.chat wave: thinking", () => {
+  test("thinking disabled on claude-opus-5-5 and claude-fable-5-2 is refused at every effort", () => {
+    for (const model of ["claude-opus-5-5", "claude-fable-5-2"] as const) {
+      for (const effort of [undefined, "low", "high", "xhigh"] as const) {
+        const result = invalid({
+          model,
+          max_tokens: 16,
+          messages: HI,
+          thinking: { type: "disabled" },
+          output_config: effort === undefined ? undefined : { effort },
+        });
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.errors).toHaveLength(1);
+          expect(result.errors[0]?.code).toBe("unsupported_param");
+          expect(result.errors[0]?.path).toEqual(["thinking"]);
+          expect(result.errors[0]?.message).toContain("always on");
+        }
+      }
+    }
+  });
+
+  test("claude-opus-5-5 is not a snapshot of claude-opus-5: the always-on rule, not the effort cap", () => {
+    const result = invalid({
+      model: "claude-opus-5-5",
+      max_tokens: 16,
+      messages: HI,
+      thinking: { type: "disabled" },
+      output_config: { effort: "xhigh" },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]?.message).not.toContain('"high" or below');
+    }
+    // A dated snapshot does inherit its base id's rules.
+    const snapshot = invalid({
+      model: "claude-opus-5-5-20260922",
+      max_tokens: 16,
+      messages: HI,
+      thinking: { type: "disabled" },
+    });
+    expect(snapshot.ok).toBe(false);
+    if (!snapshot.ok) expect(snapshot.errors[0]?.path).toEqual(["thinking"]);
+  });
+
+  test("thinking disabled on claude-sonnet-5-5 is refused, naming between_tools", () => {
+    const result = invalid({
+      model: "claude-sonnet-5-5",
+      max_tokens: 16,
+      messages: HI,
+      thinking: { type: "disabled" },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]?.path).toEqual(["thinking"]);
+      expect(result.errors[0]?.message).toContain("between_tools");
+    }
+  });
+
+  test("between_tools on claude-sonnet-5-5 passes at effort high or below, refused at xhigh/max", () => {
+    expect(
+      chat.safe({ model: "claude-sonnet-5-5", max_tokens: 16, messages: HI, thinking: { type: "between_tools" } })
+        .ok,
+    ).toBe(true);
+    for (const effort of ["low", "medium", "high"] as const) {
+      const result = chat.safe({
+        model: "claude-sonnet-5-5",
+        max_tokens: 16,
+        messages: HI,
+        thinking: { type: "between_tools" },
+        output_config: { effort },
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.warnings).toEqual([]);
+    }
+    for (const effort of ["xhigh", "max"] as const) {
+      const result = chat.safe({
+        model: "claude-sonnet-5-5",
+        max_tokens: 16,
+        messages: HI,
+        thinking: { type: "between_tools" },
+        output_config: { effort },
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.path).toEqual(["thinking"]);
+        expect(result.errors[0]?.message).toContain(effort);
+      }
+    }
+  });
+
+  test("between_tools takes no other field", () => {
+    const result = invalid({
+      model: "claude-sonnet-5-5",
+      max_tokens: 16,
+      messages: HI,
+      thinking: { type: "between_tools", display: "summarized" },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]?.code).toBe("invalid_shape");
+      expect(result.errors[0]?.path).toEqual(["thinking", "display"]);
+    }
+  });
+
+  test("between_tools is refused on every other catalog model and left alone on unknown ids", () => {
+    for (const model of ["claude-opus-5-5", "claude-opus-5", "claude-sonnet-4-6"] as const) {
+      const result = invalid({ model, max_tokens: 16, messages: HI, thinking: { type: "between_tools" } });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.path).toEqual(["thinking"]);
+        expect(result.errors[0]?.message).toContain("claude-sonnet-5-5");
+      }
+    }
+    const unknown = chat.safe({
+      model: "claude-sonnet-7",
+      max_tokens: 16,
+      messages: HI,
+      thinking: { type: "between_tools" },
+    });
+    expect(unknown.ok).toBe(true);
+    if (unknown.ok) expect(unknown.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+
+  test("thinking disabled on claude-haiku-5-5 passes at effort high, refused at xhigh/max", () => {
+    const high = chat.safe({
+      model: "claude-haiku-5-5",
+      max_tokens: 16,
+      messages: HI,
+      thinking: { type: "disabled" },
+      output_config: { effort: "high" },
+    });
+    expect(high.ok).toBe(true);
+    for (const effort of ["xhigh", "max"] as const) {
+      const result = chat.safe({
+        model: "claude-haiku-5-5",
+        max_tokens: 16,
+        messages: HI,
+        thinking: { type: "disabled" },
+        output_config: { effort },
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.message).toContain('"high" or below');
+      }
+    }
+  });
+
+  test("manual extended thinking is refused on Claude 4.7+ and kept on 4.5/4.6", () => {
+    const thinking = { type: "enabled", budget_tokens: 2048 } as const;
+    for (const model of ["claude-opus-4-7", "claude-sonnet-5", "claude-opus-5-5", "claude-haiku-5-5"] as const) {
+      const result = invalid({ model, max_tokens: 4096, messages: HI, thinking });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.code).toBe("unsupported_param");
+        expect(result.errors[0]?.path).toEqual(["thinking"]);
+        expect(result.errors[0]?.message).toContain("adaptive");
+        expect(result.errors[0]?.meta?.source).toBe(ERRORS_DOCS);
+      }
+    }
+    for (const model of ["claude-sonnet-4-6", "claude-opus-4-5"] as const) {
+      expect(chat.safe({ model, max_tokens: 4096, messages: HI, thinking }).ok).toBe(true);
+    }
+  });
+});
+
+describe("anthropic.chat wave: tools, prefill, speed", () => {
+  const TOOL = { name: "f", input_schema: { type: "object" } } as const;
+
+  test("forced tool use is refused on opus-5-5, sonnet-5-5 and fable-5-2; haiku-5-5 keeps it", () => {
+    for (const model of ["claude-opus-5-5", "claude-sonnet-5-5", "claude-fable-5-2"] as const) {
+      const result = invalid({ model, max_tokens: 16, messages: HI, tools: [TOOL], tool_choice: { type: "any" } });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.path).toEqual(["tool_choice"]);
+        expect(result.errors[0]?.meta?.source).toBe(ERRORS_DOCS);
+      }
+    }
+    expect(
+      chat.safe({
+        model: "claude-haiku-5-5",
+        max_tokens: 16,
+        messages: HI,
+        tools: [TOOL],
+        tool_choice: { type: "any" },
+      }).ok,
+    ).toBe(true);
+  });
+
+  test("computer_20251124 / computer_20250124 are refused on the new ids; the toolset passes", () => {
+    for (const model of WAVE_IDS) {
+      for (const type of ["computer_20251124", "computer_20250124"]) {
+        const result = chat.safe({
+          model,
+          max_tokens: 16,
+          messages: HI,
+          tools: [{ type, name: "computer", display_width_px: 1024, display_height_px: 768 }],
+        });
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.errors).toHaveLength(1);
+          expect(result.errors[0]?.code).toBe("unsupported_param");
+          expect(result.errors[0]?.path).toEqual(["tools", 0, "type"]);
+          expect(result.errors[0]?.message).toContain("computer_toolset_20260801");
+        }
+      }
+      expect(
+        chat.safe({
+          model,
+          max_tokens: 16,
+          messages: HI,
+          tools: [{ type: "computer_toolset_20260801", name: "computer" }],
+        }).ok,
+      ).toBe(true);
+    }
+    // Older models keep the dated versions.
+    expect(
+      chat.safe({
+        model: "claude-opus-5",
+        max_tokens: 16,
+        messages: HI,
+        tools: [{ type: "computer_20251124", name: "computer" }],
+      }).ok,
+    ).toBe(true);
+  });
+
+  test("prefill is refused on Claude 4.6+ with thinking off or absent", () => {
+    const prefill: MessagesBody["messages"] = [
+      { role: "user", content: "Name the Greek sun god." },
+      { role: "assistant", content: "The answer is" },
+    ];
+    for (const model of ["claude-opus-5-5", "claude-sonnet-4-6", "claude-fable-5-2"] as const) {
+      const result = chat.safe({ model, max_tokens: 16, messages: prefill });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.code).toBe("unsupported_param");
+        expect(result.errors[0]?.path).toEqual(["messages", 1, "role"]);
+        expect(result.errors[0]?.message).toContain("prefill");
+      }
+    }
+    const off = chat.safe({
+      model: "claude-opus-4-6",
+      max_tokens: 16,
+      messages: prefill,
+      thinking: { type: "disabled" },
+    });
+    expect(off.ok).toBe(false);
+    // Thinking on: the wire schema's own prefill rule fires first, for every model.
+    const on = chat.safe({
+      model: "claude-opus-5-5",
+      max_tokens: 16,
+      messages: prefill,
+      thinking: { type: "adaptive" },
+    });
+    expect(on.ok).toBe(false);
+    if (!on.ok) expect(on.errors[0]?.code).toBe("invalid_shape");
+    // Claude 4.5 without thinking still prefills.
+    expect(chat.safe({ model: "claude-opus-4-5", max_tokens: 16, messages: prefill }).ok).toBe(true);
+  });
+
+  test('speed "fast": served on fable-5-2/opus-5-5/opus-5/opus-4-8, a warning on opus-4-6, refused elsewhere', () => {
+    for (const model of ["claude-fable-5-2", "claude-opus-5-5", "claude-opus-5", "claude-opus-4-8"] as const) {
+      const result = chat.safe({ model, max_tokens: 16, messages: HI, speed: "fast" });
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.warnings).toEqual([]);
+    }
+    const ignored = chat.safe({ model: "claude-opus-4-6", max_tokens: 16, messages: HI, speed: "fast" });
+    expect(ignored.ok).toBe(true);
+    if (ignored.ok) {
+      expect(ignored.warnings).toHaveLength(1);
+      expect(ignored.warnings[0]?.code).toBe("unsupported_param");
+      expect(ignored.warnings[0]?.path).toEqual(["speed"]);
+      expect(ignored.warnings[0]?.meta?.ignored).toBe(true);
+    }
+    for (const model of ["claude-sonnet-5-5", "claude-haiku-5-5", "claude-sonnet-4-6"] as const) {
+      const result = invalid({ model, max_tokens: 16, messages: HI, speed: "fast" });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.path).toEqual(["speed"]);
+        expect(result.errors[0]?.message).toContain("claude-opus-5-5");
+      }
+    }
+    // "standard" is always fine, and an unknown id is left alone.
+    expect(chat.safe({ model: "claude-sonnet-5-5", max_tokens: 16, messages: HI, speed: "standard" }).ok).toBe(true);
+    const unknown = chat.safe({ model: "claude-opus-9", max_tokens: 16, messages: HI, speed: "fast" });
+    expect(unknown.ok).toBe(true);
+    if (unknown.ok) expect(unknown.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+
+  test("speed rides on the exact wire body", () => {
+    const validated = chat({ model: "claude-opus-5-5", max_tokens: 16, messages: HI, speed: "fast" });
+    expect(Object.keys(validated).sort()).toEqual(["max_tokens", "messages", "model", "speed"]);
   });
 });

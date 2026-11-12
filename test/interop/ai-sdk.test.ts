@@ -19,8 +19,10 @@ import type { AiSdkChatOptions } from "../../src/core/translate/ai-sdk";
 
 describe("every chat endpoint family declares the target", () => {
   test("anthropic.chat", () => {
+    // A thinking budget needs a model that still takes one: Claude 4.7 and
+    // later refuse `thinking.type "enabled"`, and the arm says so at compile time.
     const options = anthropicChat({
-      model: "claude-opus-5",
+      model: "claude-sonnet-4-6",
       max_tokens: 4096,
       system: "Be brief.",
       messages: [{ role: "user", content: [{ type: "text", text: "Hello" }] }],

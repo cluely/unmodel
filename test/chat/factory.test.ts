@@ -102,12 +102,14 @@ describe("createChat", () => {
 describe("the ready entry and a narrow pack agree", () => {
   const PARITY = [
     {
-      model: "anthropic/claude-opus-5" as const,
+      // Sonnet 4.6 rather than a 4.7+ id: the budget compiles to
+      // `thinking.type "enabled"`, which Claude 4.7 and later refuse (and on a
+      // model that still takes one, temperature cannot ride beside thinking).
+      model: "anthropic/claude-sonnet-4-6" as const,
       system: "Be brief.",
       messages: [{ role: "user" as const, content: "hi" }],
       maxOutputTokens: 4096,
       reasoning: { budgetTokens: 2048 },
-      temperature: 1,
     },
     {
       model: "google/gemini-2.5-flash" as const,

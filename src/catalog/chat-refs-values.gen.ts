@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1428 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1432 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -72,18 +72,22 @@ export const CHAT_MODEL_REFS = [
   "alibaba/qwq-plus",
   "anthropic/claude-fable-5",
   "anthropic/claude-fable-5-1",
+  "anthropic/claude-fable-5-2",
   "anthropic/claude-haiku-4-5",
   "anthropic/claude-haiku-4-5-20251001",
+  "anthropic/claude-haiku-5-5",
   "anthropic/claude-opus-4-5",
   "anthropic/claude-opus-4-5-20251101",
   "anthropic/claude-opus-4-6",
   "anthropic/claude-opus-4-7",
   "anthropic/claude-opus-4-8",
   "anthropic/claude-opus-5",
+  "anthropic/claude-opus-5-5",
   "anthropic/claude-sonnet-4-5",
   "anthropic/claude-sonnet-4-5-20250929",
   "anthropic/claude-sonnet-4-6",
   "anthropic/claude-sonnet-5",
+  "anthropic/claude-sonnet-5-5",
   "baseten/deepseek-ai/DeepSeek-V4-Flash-0731",
   "baseten/deepseek-ai/DeepSeek-V4-Pro-0813",
   "baseten/deepseek-ai/DeepSeek-V4.1-Flash",

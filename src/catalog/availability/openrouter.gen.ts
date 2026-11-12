@@ -69,6 +69,7 @@ export const availability = {
     "vercel": "anthropic/claude-fable-5.1",
   },
   "anthropic/claude-fable-5.2": {
+    "anthropic": "claude-fable-5-2",
     "openrouter": "anthropic/claude-fable-5.2",
     "vercel": "anthropic/claude-fable-5.2",
   },
@@ -79,6 +80,7 @@ export const availability = {
     "vercel": "anthropic/claude-haiku-4.5",
   },
   "anthropic/claude-haiku-5.5": {
+    "anthropic": "claude-haiku-5-5",
     "openrouter": "anthropic/claude-haiku-5.5",
     "vercel": "anthropic/claude-haiku-5.5",
   },
@@ -115,12 +117,13 @@ export const availability = {
     "vercel": "anthropic/claude-opus-5",
   },
   "anthropic/claude-opus-5.5": {
+    "anthropic": "claude-opus-5-5",
     "openrouter": "anthropic/claude-opus-5.5",
     "vercel": "anthropic/claude-opus-5.5",
   },
   "anthropic/claude-sonnet-4.5": {
     "amazon-bedrock": { id: "anthropic.claude-sonnet-4-5-20250929-v1:0", narrows: { context: 200000 } },
-    "anthropic": "claude-sonnet-4-5",
+    "anthropic": { id: "claude-sonnet-4-5", narrows: { context: 200000 } },
     "openrouter": "anthropic/claude-sonnet-4.5",
     "vercel": "anthropic/claude-sonnet-4.5",
   },
@@ -137,6 +140,7 @@ export const availability = {
     "vercel": "anthropic/claude-sonnet-5",
   },
   "anthropic/claude-sonnet-5.5": {
+    "anthropic": "claude-sonnet-5-5",
     "openrouter": "anthropic/claude-sonnet-5.5",
     "vercel": "anthropic/claude-sonnet-5.5",
   },

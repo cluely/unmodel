@@ -41516,6 +41516,7 @@
       },
       "claude-fable-5-1": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-fable-5-1",
         "cost": {
           "cache_read": 0.25,
           "cache_write": 12.5,
@@ -41561,8 +41562,74 @@
         "temperature": false,
         "tool_call": true
       },
+      "claude-fable-5-2": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-fable-5-2",
+        "cost": {
+          "cache_read": 0.2,
+          "cache_write": 10,
+          "input": 8,
+          "output": 40
+        },
+        "description": "Claude model for demanding reasoning and long-horizon agentic work",
+        "experimental": {
+          "modes": {
+            "fast": {
+              "cost": {
+                "cache_read": 0.4,
+                "cache_write": 20,
+                "input": 16,
+                "output": 80
+              },
+              "provider": {
+                "body": {
+                  "speed": "fast"
+                }
+              }
+            }
+          }
+        },
+        "family": "claude-fable",
+        "id": "claude-fable-5-2",
+        "knowledge": "2026-06",
+        "last_updated": "2026-11-09",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Fable 5.2",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-11-09",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
       "claude-haiku-4-5": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-haiku-4-5",
         "cost": {
           "cache_read": 0.1,
           "cache_write": 1.25,
@@ -41643,8 +41710,72 @@
         "temperature": true,
         "tool_call": true
       },
+      "claude-haiku-5-5": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-haiku-5-5",
+        "cost": {
+          "cache_read": 0.01,
+          "cache_write": 0.125,
+          "input": 0.1,
+          "output": 0.5,
+          "tiers": [
+            {
+              "cache_read": 0.05,
+              "cache_write": 0.625,
+              "input": 0.5,
+              "output": 2.5,
+              "tier": {
+                "size": 100000,
+                "type": "context"
+              }
+            }
+          ]
+        },
+        "description": "Fast Claude model for responsive assistance, classification, and lightweight agents",
+        "family": "claude-haiku",
+        "id": "claude-haiku-5-5",
+        "knowledge": "2026-06",
+        "last_updated": "2026-10-07",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Haiku 5.5",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "toggle"
+          },
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-10-07",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
       "claude-opus-4-5": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-5",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
@@ -41907,6 +42038,7 @@
       },
       "claude-opus-5": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-5",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
@@ -41972,8 +42104,77 @@
         "temperature": false,
         "tool_call": true
       },
+      "claude-opus-5-5": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-5-5",
+        "cost": {
+          "cache_read": 0.2,
+          "cache_write": 5,
+          "input": 4,
+          "output": 20
+        },
+        "description": "Claude model for long-running agentic coding and knowledge work",
+        "experimental": {
+          "modes": {
+            "fast": {
+              "cost": {
+                "cache_read": 0.4,
+                "cache_write": 10,
+                "input": 8,
+                "output": 40
+              },
+              "provider": {
+                "body": {
+                  "speed": "fast"
+                },
+                "headers": {
+                  "anthropic-beta": "fast-mode-2026-02-01"
+                }
+              }
+            }
+          }
+        },
+        "family": "claude-opus",
+        "id": "claude-opus-5-5",
+        "knowledge": "2026-06",
+        "last_updated": "2026-09-22",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Opus 5.5",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-09-22",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
       "claude-sonnet-4-5": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-4-5",
         "cost": {
           "cache_read": 0.3,
           "cache_write": 3.75,
@@ -41986,7 +42187,7 @@
         "knowledge": "2025-07-31",
         "last_updated": "2025-09-29",
         "limit": {
-          "context": 1000000,
+          "context": 200000,
           "output": 64000
         },
         "modalities": {
@@ -42009,6 +42210,7 @@
           }
         ],
         "release_date": "2025-09-29",
+        "status": "deprecated",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
@@ -42027,7 +42229,7 @@
         "knowledge": "2025-07-31",
         "last_updated": "2025-09-29",
         "limit": {
-          "context": 1000000,
+          "context": 200000,
           "output": 64000
         },
         "modalities": {
@@ -42050,6 +42252,7 @@
           }
         ],
         "release_date": "2025-09-29",
+        "status": "deprecated",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
@@ -42150,6 +42353,54 @@
           }
         ],
         "release_date": "2026-06-29",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
+      "claude-sonnet-5-5": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-5-5",
+        "cost": {
+          "cache_read": 0.1,
+          "cache_write": 2.5,
+          "input": 2,
+          "output": 10
+        },
+        "description": "Fast Claude model for everyday coding, agents, and knowledge work",
+        "family": "claude-sonnet",
+        "id": "claude-sonnet-5-5",
+        "knowledge": "2026-06",
+        "last_updated": "2026-09-28",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Sonnet 5.5",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-09-28",
         "structured_output": true,
         "temperature": false,
         "tool_call": true

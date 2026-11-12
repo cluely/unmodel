@@ -83,8 +83,11 @@ expectTrue<ChatDialectOf<"openrouter/anthropic/claude-opus-5"> extends "openai-c
 // Per-dialect return bodies, against the official SDK param types
 // ---------------------------------------------------------------------------
 
+// Sonnet 4.6 rather than a 4.7+ id: a thinking budget compiles to
+// `thinking.type "enabled"`, which Claude 4.7 and later refuse — the provider
+// arm excludes it there, and the compiled body would collapse.
 const claude = chat({
-  model: "anthropic/claude-opus-5",
+  model: "anthropic/claude-sonnet-4-6",
   messages: [{ role: "user", content: "hi" }],
   maxOutputTokens: 4096,
   reasoning: { budgetTokens: 2048 },
@@ -142,9 +145,14 @@ type SdkComparable<
  * Fields whose wire type is a superset of the SDK's request type.
  * `messages` / `system` because a wire `TextBlock` may carry response-only
  * `citations`; `tools` because the wire union also covers Anthropic's
- * provider-defined server tools, which have no `input_schema`.
+ * provider-defined server tools, which have no `input_schema`; `thinking`
+ * because the wire union carries `{type: "between_tools"}` (Sonnet 5.5's
+ * thinking-off form, in the API reference and in `@anthropic-ai/sdk` from
+ * 0.137.0), which the 0.116.0 pinned here predates. The per-model arm still
+ * excludes it on every other id, which is why `claudeSync` below needs no such
+ * substitution.
  */
-type AnthropicReplace = "messages" | "system" | "tools";
+type AnthropicReplace = "messages" | "system" | "tools" | "thinking";
 /** Fields the dialect keeps wider than the SDK's own union. */
 type AnthropicOpen = "container" | "output_config";
 
@@ -163,7 +171,7 @@ declare const claudeSdk: SdkComparable<
 >;
 expectNotAny<ReturnType<typeof claude.toSdk<"anthropic">>>();
 expectAssignable<MessageCreateParams>(claudeSdk);
-expectAssignable<"claude-opus-5" | (string & {})>(claude.model);
+expectAssignable<"claude-sonnet-4-6" | (string & {})>(claude.model);
 expectAssignable<number>(claude.max_tokens);
 expectAssignable<MessageCreateParams["thinking"]>(claude.thinking);
 
@@ -491,7 +499,7 @@ gemini.toApi("openrouter");
 // ---------------------------------------------------------------------------
 
 expectAssignable<"anthropic">(claude.target);
-expectAssignable<"claude-opus-5">(claude.modelId);
+expectAssignable<"claude-sonnet-4-6">(claude.modelId);
 expectAssignable<"openrouter">(
   chat({ model: "openrouter/anthropic/claude-opus-5", messages: [] as never }).target,
 );

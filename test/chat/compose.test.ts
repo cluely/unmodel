@@ -33,7 +33,9 @@ import { chat as groqChat } from "../../src/providers/groq";
 describe("anthropic-messages", () => {
   test("a compiled Claude request validates against unmodel/anthropic", () => {
     const compiled = chat({
-      model: "anthropic/claude-opus-5",
+      // Sonnet 4.6 rather than a 4.7+ id: the budget below compiles to
+      // `thinking.type "enabled"`, which Claude 4.7 and later refuse.
+      model: "anthropic/claude-sonnet-4-6",
       messages: [
         { role: "user", content: "What is the capital of France?" },
         { role: "assistant", content: "Paris." },
@@ -51,7 +53,7 @@ describe("anthropic-messages", () => {
     const checked = anthropicChat.safe({ ...compiled });
     expect(checked.ok, JSON.stringify(checked)).toBe(true);
     if (!checked.ok) return;
-    expect(checked.params.model).toBe("claude-opus-5");
+    expect(checked.params.model).toBe("claude-sonnet-4-6");
     expect(checked.params.request.url).toBe(compiled.request.url);
   });
 

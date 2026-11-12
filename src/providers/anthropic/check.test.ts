@@ -102,6 +102,62 @@ describe("anthropic.checkChat", () => {
     expect("costUSD" in report).toBe(false);
   });
 
+  test("the Claude 5.5 wave prices at its own rates — sonnet-5-5 cache reads at $0.10, not Sonnet 5's $0.20", () => {
+    const opus = checkChat({
+      model: "claude-opus-5-5",
+      stop_reason: "end_turn",
+      usage: { input_tokens: 1000, output_tokens: 500, speed: "standard" },
+    });
+    // 1000*4/1M + 500*20/1M
+    expect(opus.costUSD).toBeCloseTo(0.004 + 0.01, 10);
+
+    const sonnet = checkChat({
+      model: "claude-sonnet-5-5",
+      stop_reason: "end_turn",
+      usage: { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 1_000_000 },
+    });
+    expect(sonnet.costUSD).toBeCloseTo(0.1, 10);
+  });
+
+  test("a fast-mode response has no costUSD: the catalog carries standard rates only", () => {
+    const report = checkChat({
+      model: "claude-opus-5-5",
+      stop_reason: "end_turn",
+      usage: { input_tokens: 1000, output_tokens: 500, speed: "fast" },
+    });
+    expect(report.costUSD).toBeUndefined();
+    expect(report.usage.inputTokens).toBe(1000);
+    expect(report.usage.outputTokens).toBe(500);
+  });
+
+  test("claude-haiku-5-5 is priced up to 100,000 prompt tokens (cache reads and writes included) and withheld above", () => {
+    const atThreshold = checkChat({
+      model: "claude-haiku-5-5",
+      stop_reason: "end_turn",
+      usage: {
+        input_tokens: 50_000,
+        output_tokens: 1000,
+        cache_read_input_tokens: 20_000,
+        cache_creation_input_tokens: 30_000,
+      },
+    });
+    // 50000*0.1/1M + 20000*0.01/1M + 30000*0.125/1M + 1000*0.5/1M
+    expect(atThreshold.costUSD).toBeCloseTo(0.005 + 0.0002 + 0.00375 + 0.0005, 10);
+
+    const over = checkChat({
+      model: "claude-haiku-5-5",
+      stop_reason: "end_turn",
+      usage: {
+        input_tokens: 50_001,
+        output_tokens: 1000,
+        cache_read_input_tokens: 20_000,
+        cache_creation_input_tokens: 30_000,
+      },
+    });
+    expect(over.costUSD).toBeUndefined();
+    expect(over.usage.totalTokens).toBe(101_001);
+  });
+
   test("dated -YYYY-MM-DD model ids also resolve via the shared catalog lookup", () => {
     const report = checkChat({
       model: "claude-opus-4-6-2026-02-04",

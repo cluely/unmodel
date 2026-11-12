@@ -317,8 +317,8 @@ export function encodeAnthropic(body: MessagesBody, warn: Warn): ChatIR {
     } else if (thinking.type === "disabled") {
       s.reasoning = { mode: "off" };
     } else {
-      // "adaptive" has no cross-dialect analogue: it is neither a budget nor
-      // an effort bucket, so it rides as an Anthropic-only param.
+      // "adaptive" and "between_tools" have no cross-dialect analogue: neither
+      // is a budget nor an effort bucket, so they ride as Anthropic-only params.
       putPassthrough(ir, DIALECT, "thinking", thinking);
     }
   }

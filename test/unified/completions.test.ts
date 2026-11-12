@@ -2017,7 +2017,8 @@ describe("unmodel/catalog/typed: the 198 providers with no subpath get completio
 getModelTyped("anthropic", "¦");`);
     expect(typed).toContain("claude-opus-5");
     expect(typed).toContain("claude-fable-5-1");
-    expect(typed.length).toBe(14);
+    expect(typed).toContain("claude-opus-5-5");
+    expect(typed.length).toBe(18);
 
     // The cheap entry is deliberately unchanged: its `catalog` is annotated,
     // which is what keeps `dist/catalog/index.d.ts` at ~4 KiB instead of
@@ -2087,11 +2088,24 @@ realtimeSession({ type: "realtime", audio: { input: { transcription: { model: "g
 });
 
 describe("anthropic.chat: per-model narrowing reaches the editor", () => {
-  test("thinking drops `disabled` on the model that always thinks", () => {
+  test("thinking completes exactly the values each generation accepts", () => {
+    // Always on (Fable 5, Fable 5.1, Fable 5.2, Opus 5.5): adaptive only —
+    // `disabled` is refused outright and `enabled` left with Claude 4.7.
     const fable = completionsAt(`import { chat } from "./src/providers/anthropic";
 chat({ model: "claude-fable-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
-    expect(fable.sort()).toEqual(["adaptive", "enabled"]);
+    expect(fable.sort()).toEqual(["adaptive"]);
 
+    // Sonnet 5.5's thinking-off form is `between_tools`, and only it has the value.
+    const sonnet55 = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "claude-sonnet-5-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
+    expect(sonnet55.sort()).toEqual(["adaptive", "between_tools"]);
+
+    // Claude 4.7+ with thinking off still allowed (Opus 5, Haiku 5.5, …).
+    const haiku55 = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "claude-haiku-5-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
+    expect(haiku55.sort()).toEqual(["adaptive", "disabled"]);
+
+    // Claude 4.5 keeps manual extended thinking.
     const opus45 = completionsAt(`import { chat } from "./src/providers/anthropic";
 chat({ model: "claude-opus-4-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
     expect(opus45.sort()).toEqual(["adaptive", "disabled", "enabled"]);

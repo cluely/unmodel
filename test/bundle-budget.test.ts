@@ -116,8 +116,13 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * anthropic is the smallest of the three bumps (+2.2) because it pays only
    * for its own decoder plus the openai-chat codec it already carried; the
    * openai-dialect fleet pays ~+2.9, and the two-codec entries ~+4.5.
+   *
+   * 165 → 185: 169.9 measured (macOS, 2026-11-12) for the Claude 5.5 /
+   * Fable 5.2 wave — the per-model id lists in `constraints.ts` and the
+   * between_tools / speed / prefill / computer-use / prompt-length-tier checks
+   * they drive in `chat.ts` and `check.ts`.
    */
-  anthropic: 165,
+  anthropic: 185,
   /**
    * Bumped 125 → 138 (125.9 measured) when `core/standard-schema.ts` joined
    * the four-layer engine: the pipeline's layer 1 now consumes any Standard
@@ -1347,7 +1352,11 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // already carry. **Flagged for CI confirmation**: if the Linux figure comes
   // in above this, re-pin from that number and say so here, per the
   // Linux-figure rule in CLAUDE.md.
-  sfx: 520,
+  //
+  // 520 → 575: 521.2 measured (macOS, 2026-11-12). Not sfx's own declarations:
+  // the shared `request` chunk this entry touches carries the anthropic
+  // availability types, which grew with the four Claude 5.5 / Fable 5.2 ids.
+  sfx: 575,
   // `unmodel/sts`: 349.0 measured on macOS — the cheapest declaration in the
   // table by a wide margin, below `sfx`'s 442.4. Five canonical words, one
   // narrowed field, and four per-model rows whose largest member is a

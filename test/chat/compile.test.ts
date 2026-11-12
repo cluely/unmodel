@@ -29,9 +29,11 @@ const PROMPT = "Explain retargeting.";
 const body = (result: object): Record<string, unknown> => ({ ...result });
 
 describe("the worked example", () => {
-  test("anthropic/claude-opus-5 compiles to the /v1/messages body, warning-free", () => {
+  test("anthropic/claude-sonnet-4-6 compiles to the /v1/messages body, warning-free", () => {
+    // Sonnet 4.6 rather than a 4.7+ id: a thinking budget compiles to
+    // `thinking.type "enabled"`, which Claude 4.7 and later refuse.
     const result = chat({
-      model: "anthropic/claude-opus-5",
+      model: "anthropic/claude-sonnet-4-6",
       messages: [{ role: "user", content: PROMPT }],
       reasoning: { budgetTokens: 2048 },
       maxOutputTokens: 4096,
@@ -41,7 +43,7 @@ describe("the worked example", () => {
     // `target` and `modelId` are all non-enumerable, so this deep-equals the
     // JSON that goes on the wire.
     expect(body(result)).toEqual({
-      model: "claude-opus-5",
+      model: "claude-sonnet-4-6",
       max_tokens: 4096,
       messages: [{ role: "user", content: [{ type: "text", text: PROMPT }] }],
       thinking: { type: "enabled", budget_tokens: 2048 },
@@ -53,7 +55,7 @@ describe("the worked example", () => {
     // approximated and nothing was dropped.
     expect(result.warnings).toEqual([]);
     expect(result.target).toBe("anthropic");
-    expect(result.modelId).toBe("claude-opus-5");
+    expect(result.modelId).toBe("claude-sonnet-4-6");
   });
 
   test("the same params with openai/gpt-5.2 compile to chat-completions", () => {
@@ -201,7 +203,8 @@ describe("toSdk", () => {
 
   test("ai-sdk is on every dialect and carries its own warnings", () => {
     const result = chat({
-      model: "anthropic/claude-opus-5",
+      // A budget needs a model that still takes one (Claude 4.7+ refuse `enabled`).
+      model: "anthropic/claude-sonnet-4-6",
       messages: [{ role: "user", content: "hi" }],
       maxOutputTokens: 2048,
       reasoning: { budgetTokens: 1024 },

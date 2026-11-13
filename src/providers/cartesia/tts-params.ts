@@ -64,9 +64,8 @@ export const FORMAT: AudioFormatSpec = {
  * provider's own arrays rather than copies of them.
  *
  * All five served ids sit on one `/tts/bytes` schema with one `encoding` enum,
- * and the only per-model rule in `ttsConstraints` denies
- * `pronunciation_dict_id` on `sonic-2` and `sonic-turbo` — neither of which
- * this adapter serves. What differs is the language list ("Supported languages
+ * and `ttsConstraints` denies nothing on any of them. What differs is the
+ * language list ("Supported languages
  * are model-specific."): `sonic-3.6` speaks the 44 codes of
  * {@link CARTESIA_TTS_3_6_LANGUAGES}, the other four the 42 of
  * {@link CARTESIA_TTS_LANGUAGES}. Each row holds its array by reference, so the

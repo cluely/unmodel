@@ -96,10 +96,10 @@ describe("cartesia.tts happy path", () => {
     }
   });
 
-  test("deprecated sonic-2 warns; beta sonic-preview does not", () => {
-    expect(models["sonic-2"].status).toBe("deprecated");
+  test("deprecated sonic-3-latest warns; beta sonic-preview does not", () => {
+    expect(models["sonic-3-latest"].status).toBe("deprecated");
     const deprecated = tts.safe({
-      model_id: "sonic-2",
+      model_id: "sonic-3-latest",
       transcript: "x",
       voice: VOICE,
       output_format: { container: "wav" },
@@ -243,23 +243,6 @@ describe("cartesia.tts schema enforcement", () => {
 });
 
 describe("cartesia.tts constraints", () => {
-  test("pronunciation_dict_id on sonic-2 is unsupported_param with reason + source", () => {
-    const r = safeUnchecked({
-      model_id: "sonic-2",
-      transcript: "x",
-      voice: VOICE,
-      output_format: { container: "wav" },
-      pronunciation_dict_id: "dict_123",
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.code).toBe("unsupported_param");
-      expect(r.errors[0]?.path).toEqual(["pronunciation_dict_id"]);
-      expect(r.errors[0]?.message).toContain("sonic-3 models and newer");
-      expect(String(r.errors[0]?.meta?.source)).toContain("docs.cartesia.ai");
-    }
-  });
-
   test("pronunciation_dict_id on sonic-3.5 passes", () => {
     const r = tts.safe({
       model_id: "sonic-3.5",
@@ -271,9 +254,20 @@ describe("cartesia.tts constraints", () => {
     expect(r.ok).toBe(true);
   });
 
-  test("constraintsFor exposes the deny rule", () => {
-    const deny = tts.constraintsFor("sonic-turbo")[0]?.deny?.pronunciation_dict_id;
-    expect(deny?.reason).toContain("sonic-3 models and newer");
+  test("every cataloged sonic id is Sonic 3 or later, so no per-model deny remains", () => {
+    const sonicIds = Object.keys(models).filter((id) => id.startsWith("sonic"));
+    expect(sonicIds.length).toBeGreaterThan(0);
+    for (const id of sonicIds) {
+      expect(tts.constraintsFor(id)).toEqual([]);
+      const r = tts.safe({
+        model_id: id,
+        transcript: "x",
+        voice: VOICE,
+        output_format: { container: "wav" },
+        pronunciation_dict_id: "dict_123",
+      });
+      expect(r.ok).toBe(true);
+    }
   });
 });
 

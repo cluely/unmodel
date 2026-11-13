@@ -7,7 +7,7 @@ import {
   TTS_WEBSOCKET_MAX_BUFFER_DELAY_MS_MAX,
 } from "./tts-websocket";
 import { CARTESIA_EMOTIONS, CARTESIA_TTS_LANGUAGES, CARTESIA_VERSION } from "./tts";
-import { TTS_MODEL_IDS } from "./models";
+import { models, TTS_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -233,15 +233,11 @@ describe("cartesia.ttsWebsocket checks", () => {
     }
   });
 
-  test("the shared pronunciation-dictionary constraint applies to the socket", () => {
+  test("the socket shares the REST per-model table, which denies nothing on a cataloged id", () => {
     expect(ttsWebsocket.safe({ ...BASE, pronunciation_dict_id: "dict_123" }).ok).toBe(true);
-    const r = safeUnchecked({ ...BASE, model_id: "sonic-2", pronunciation_dict_id: "dict_123" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "unsupported_param");
-      expect(issue?.path).toEqual(["pronunciation_dict_id"]);
-      expect(String(issue?.message)).toContain("sonic-3 models and newer");
-    }
-    expect(ttsWebsocket.constraintsFor("sonic-turbo")[0]?.deny?.pronunciation_dict_id).toBeDefined();
+    expect(ttsWebsocket.safe({ ...BASE, model_id: "sonic-3.6", pronunciation_dict_id: "dict_123" }).ok).toBe(
+      true,
+    );
+    for (const id of Object.keys(models)) expect(ttsWebsocket.constraintsFor(id)).toEqual([]);
   });
 });

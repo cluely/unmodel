@@ -21,8 +21,11 @@
 // pricing can be sourced for them. Also not listed: snapshots the
 // older-models page marks "Sunsetted" (sonic-2-2025-03-07,
 // sonic-turbo-2025-03-07, sonic-2024-12-12, sonic-2024-10-19 and the bare
-// `sonic` alias) — those ids no longer work at all, so carrying them would
-// only manufacture dead catalog rows. Likewise `ink-2-turn-detection-end_turn`:
+// `sonic` alias), and every id whose sunset date on
+// https://docs.cartesia.ai/build-with-cartesia/tts-models/api-changes has
+// passed ("Requests to sunsetted models will return an error.", 2026-11-12)
+// — those ids no longer work at all, so carrying them would only manufacture
+// dead catalog rows. Likewise `ink-2-turn-detection-end_turn`:
 // the realtime STT reference enumerates only `ink-2` and `ink-whisper` for
 // its `model` query param. Guessing an id would be worse than omitting it.
 //
@@ -189,37 +192,8 @@ export const models = {
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
   },
-  // sonic-2 / sonic-turbo are listed under "older models" on the models page
-  // and are absent from the Cartesia-Version 2026-03-01 tts/bytes model_id
-  // enum — marked deprecated so callers get a warning.
-  "sonic-2": {
-    id: "sonic-2",
-    name: "Sonic 2",
-    family: "sonic",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    status: "deprecated",
-    modalities: { input: ["text"], output: ["audio"] },
-    limit: { context: 0 },
-  },
-  "sonic-turbo": {
-    id: "sonic-turbo",
-    name: "Sonic Turbo",
-    family: "sonic",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    status: "deprecated",
-    modalities: { input: ["text"], output: ["audio"] },
-    limit: { context: 0 },
-  },
-  // Dated snapshots from the older-models page (2026-08-24). Only the ids the
-  // page still lists as working are here; the page's sunset lines — "sonic-2
-  // and all sonic-2-* snapshots will stop working after October 20, 2026",
-  // ditto sonic-turbo-* — mean every deprecated row below dies on 2026-10-20.
+  // Dated snapshot from the older-models page (2026-08-24); off the `model_id`
+  // enum, so it validates with a warning.
   "sonic-3-2026-01-12": {
     id: "sonic-3-2026-01-12",
     name: "Sonic 3 (2026-01-12 snapshot)",
@@ -229,71 +203,6 @@ export const models = {
     toolCall: false,
     openWeights: false,
     releaseDate: "2026-01-12",
-    modalities: { input: ["text"], output: ["audio"] },
-    limit: { context: 0 },
-  },
-  "sonic-3-2025-10-27": {
-    id: "sonic-3-2025-10-27",
-    name: "Sonic 3 (2025-10-27 snapshot)",
-    family: "sonic",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    releaseDate: "2025-10-27",
-    status: "deprecated",
-    modalities: { input: ["text"], output: ["audio"] },
-    limit: { context: 0 },
-  },
-  "sonic-2-2025-06-11": {
-    id: "sonic-2-2025-06-11",
-    name: "Sonic 2 (2025-06-11 snapshot)",
-    family: "sonic",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    releaseDate: "2025-06-11",
-    status: "deprecated",
-    modalities: { input: ["text"], output: ["audio"] },
-    limit: { context: 0 },
-  },
-  "sonic-2-2025-05-08": {
-    id: "sonic-2-2025-05-08",
-    name: "Sonic 2 (2025-05-08 snapshot)",
-    family: "sonic",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    releaseDate: "2025-05-08",
-    status: "deprecated",
-    modalities: { input: ["text"], output: ["audio"] },
-    limit: { context: 0 },
-  },
-  "sonic-2-2025-04-16": {
-    id: "sonic-2-2025-04-16",
-    name: "Sonic 2 (2025-04-16 snapshot)",
-    family: "sonic",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    releaseDate: "2025-04-16",
-    status: "deprecated",
-    modalities: { input: ["text"], output: ["audio"] },
-    limit: { context: 0 },
-  },
-  "sonic-turbo-2025-06-04": {
-    id: "sonic-turbo-2025-06-04",
-    name: "Sonic Turbo (2025-06-04 snapshot)",
-    family: "sonic",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    releaseDate: "2025-06-04",
-    status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
   },

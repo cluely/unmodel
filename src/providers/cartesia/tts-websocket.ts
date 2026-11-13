@@ -295,8 +295,7 @@ const validator = createValidator<TtsWebsocketMessage>({
   schema,
   modelId: (params) => params.model_id,
   catalog: models,
-  // Same per-model rule as POST /tts/bytes: pronunciation dictionaries are
-  // sonic-3 and newer.
+  // The same per-model table as POST /tts/bytes (see `ttsConstraints`).
   constraints: ttsConstraints,
   checks: [checkEnums, checkTtsModelKind],
   // No estimate: Cartesia publishes no USD rate (credits only — see models.ts),

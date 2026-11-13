@@ -293,24 +293,14 @@ const schema = z.looseObject({
 // Constraints
 // ---------------------------------------------------------------------------
 
-export const ttsConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
-  "sonic-2": {
-    deny: {
-      pronunciation_dict_id: {
-        reason: "pronunciation dictionaries are supported by sonic-3 models and newer only",
-        source: TTS_BYTES_DOCS,
-      },
-    },
-  },
-  "sonic-turbo": {
-    deny: {
-      pronunciation_dict_id: {
-        reason: "pronunciation dictionaries are supported by sonic-3 models and newer only",
-        source: TTS_BYTES_DOCS,
-      },
-    },
-  },
-};
+/**
+ * Per-model denies for POST /tts/bytes and the TTS socket. Empty: the two
+ * model-scoped fields — `pronunciation_dict_id` ("sonic-3 models and newer")
+ * and `generation_config` ("Available on `sonic-3` and `sonic-3.5`; not
+ * available on earlier models.") — are open on every cataloged sonic id,
+ * because every one of them is Sonic 3 or later.
+ */
+export const ttsConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {};
 
 // ---------------------------------------------------------------------------
 // Checks + estimation
@@ -433,7 +423,7 @@ const TTS_MODEL_ID_SET = new Set<string>(TTS_MODEL_IDS);
  * - Ink STT ids resolve in the shared catalog and would otherwise pass
  *   unremarked; POST /tts/bytes only serves the sonic family. Error.
  * - Cataloged sonic ids that are NOT in the endpoint's published `model_id`
- *   enum (dated snapshots, the "older models" sonic-2 / sonic-turbo) are
+ *   enum (`sonic-3.6`, the dated snapshots, the deprecated aliases) are
  *   off-enum: the docs neither list them for this endpoint nor say the
  *   endpoint refuses them, so this is a warning, not an error — same shape as
  *   the ElevenLabs allow-list gate, one severity down for the ambiguity.

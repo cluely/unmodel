@@ -16,6 +16,7 @@ import {
   INLINE_MEDIA_MAX_BYTES,
 } from "./audio-constraints";
 import { models } from "../../catalog/google.gen";
+import { sttModels, sttSupplementModels } from "./stt-models";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { Issue } from "../../core/issues";
 import type { ValidateResult } from "../../core/result";
@@ -26,11 +27,15 @@ const MODEL = "gemini-2.5-flash";
 const AUDIO_PATH = ["contents", 0, "parts", 1] as const;
 
 /**
- * The generated catalog with its literals widened, for the drift sweeps below.
- * `models` is `as const satisfies`, which is what makes the per-model arms in
- * ./stt derivable — and what stops a `string` id from indexing it.
+ * The catalog `google.stt` validates against — the generated rows plus the
+ * hand supplement — with its literals widened, for the drift sweeps below.
+ * `sttModels` is `as const satisfies`, which is what makes the per-model arms
+ * in ./stt derivable — and what stops a `string` id from indexing it.
  */
-const catalog: Record<string, ModelInfo> = models;
+const catalog: Record<string, ModelInfo> = sttModels;
+
+/** The generated catalog alone, for the supplement's stays-absent guard. */
+const generated: Readonly<Record<string, ModelInfo | undefined>> = models;
 
 const WAV = { mimeType: "audio/wav", data: "UklGRiQAAABXQVZF" } as const;
 
@@ -170,10 +175,154 @@ describe("T1 + T2: the model gates", () => {
     }
   });
 
-  test("all thirteen curated ids validate", () => {
+  test("every curated id validates without an unknown_model warning", () => {
     for (const model of GEMINI_STT_MODEL_IDS) {
-      expectOk(stt.safe({ model, ...BODY }));
+      // Widened: a union-typed `model` cannot pick one Tier-A arm.
+      const result = expectOk(stt.safe({ model: model as string, ...BODY }));
+      expect(warningOf(result, "unknown_model"), model).toBeUndefined();
     }
+  });
+
+  test("the Gemini 4 ids are curated and take the per-model thinking rules", () => {
+    for (const model of ["gemini-4-argon", "gemini-4-carbon", "gemini-4-hydrogen"] as const) {
+      expectOk(
+        stt.safe({
+          model,
+          ...BODY,
+          generationConfig: { thinkingConfig: { thinkingLevel: "LOW" } },
+        }),
+      );
+      // "Gemini 4 models … do not support `minimal`" — an error upstream.
+      const minimal = expectError(
+        stt.safe({
+          model,
+          ...BODY,
+          generationConfig: { thinkingConfig: { thinkingLevel: "MINIMAL" } },
+        }),
+        "invalid_enum_value",
+      );
+      expect(minimal.path).toEqual(["generationConfig", "thinkingConfig", "thinkingLevel"]);
+      // "sending `thinkingBudget` and `thinkingLevel` together returns a `400` error."
+      const pair = expectError(
+        stt.safe({
+          model,
+          ...BODY,
+          generationConfig: { thinkingConfig: { thinkingBudget: 1024, thinkingLevel: "HIGH" } },
+        }),
+        "invalid_shape",
+      );
+      expect(pair.path).toEqual(["generationConfig", "thinkingConfig"]);
+    }
+    // A budget alone is accepted upstream (mapped to a level with a warning).
+    expectOk(
+      stt.safe({
+        model: "gemini-4-carbon",
+        ...BODY,
+        generationConfig: { thinkingConfig: { thinkingBudget: 1024 } },
+      }),
+    );
+  });
+
+  test("gemini-3.5-transcribe: the hand row, SMART mode, no thinking, audio-priced", () => {
+    const result = expectOk(
+      stt.safe(
+        {
+          model: "gemini-3.5-transcribe",
+          ...BODY,
+          generationConfig: {
+            audioTranscriptionConfig: { mode: "SMART", languageCodes: ["en-US"] },
+          },
+        },
+        { media: [{ path: AUDIO_PATH, durationSeconds: 60 }] },
+      ),
+    );
+    expect(warningOf(result, "unknown_model")).toBeUndefined();
+    expect((result.params as { request: { url: string } }).request.url).toBe(
+      `${GENERATE_STT_BASE_URL}/gemini-3.5-transcribe:generateContent`,
+    );
+    // "$2.00 or $0.003/min (audio)": one minute is 1,920 audio tokens.
+    expect(result.estimate.costUSD).toBeCloseTo((60 * GEMINI_AUDIO_TOKENS_PER_SECOND * 2) / 1e6, 10);
+
+    // Thinking carries a not-supported badge on the model page.
+    const issue = expectError(
+      stt.safe({
+        model: "gemini-3.5-transcribe",
+        ...BODY,
+        generationConfig: {
+          // @ts-expect-error — `reasoning: false` on the transcribe row.
+          thinkingConfig: { thinkingBudget: 128 },
+        },
+      }),
+      "unsupported_capability",
+    );
+    expect(issue.path).toEqual(["generationConfig", "thinkingConfig"]);
+  });
+
+  test("gemini-3.5-transcribe states no structured-output answer — the page has no badge", () => {
+    expect(sttSupplementModels["gemini-3.5-transcribe"]).not.toHaveProperty("structuredOutput");
+    // Absent is "no answer", so a schema still passes.
+    expectOk(
+      stt.safe({
+        model: "gemini-3.5-transcribe",
+        ...BODY,
+        generationConfig: { responseSchema: { type: "OBJECT" } },
+      }),
+    );
+  });
+
+  describe("gemini-3.5-transcribe's 1-hour / 30-minute bound warns — the API truncates, it does not refuse", () => {
+    function transcribe(durationSeconds: number, asr?: { diarization?: boolean; wordTimestamp?: boolean }) {
+      return expectOk(
+        stt.safe(
+          {
+            model: "gemini-3.5-transcribe",
+            ...BODY,
+            generationConfig: { audioTranscriptionConfig: asr ?? {} },
+          },
+          { media: [{ path: AUDIO_PATH, durationSeconds }] },
+        ),
+      );
+    }
+
+    test("3600 s plain is silent; 3601 s warns", () => {
+      expect(warningOf(transcribe(3600), "media_duration_exceeded")).toBeUndefined();
+      const warning = warningOf(transcribe(3601), "media_duration_exceeded");
+      expect(warning?.severity).toBe("warning");
+      expect(warning?.path).toEqual([...AUDIO_PATH]);
+      expect(warning?.meta?.limit).toBe(3600);
+      expect(warning?.message).toContain("truncated at the limit");
+    });
+
+    test("with diarization or wordTimestamp the bound is 1800 s", () => {
+      expect(warningOf(transcribe(1800, { diarization: true }), "media_duration_exceeded")).toBeUndefined();
+      const warning = warningOf(transcribe(1801, { wordTimestamp: true }), "media_duration_exceeded");
+      expect(warning?.meta?.limit).toBe(1800);
+      expect(warningOf(transcribe(1801, { diarization: false }), "media_duration_exceeded")).toBeUndefined();
+    });
+
+    test("declared durations add up across audio parts — the cap is per request", () => {
+      const result = expectOk(
+        stt.safe(
+          { model: "gemini-3.5-transcribe", contents: [{ parts: [{ inlineData: WAV }, { inlineData: WAV }] }] },
+          {
+            media: [
+              { path: ["contents", 0, "parts", 0], durationSeconds: 2000 },
+              { path: ["contents", 0, "parts", 1], durationSeconds: 2000 },
+            ],
+          },
+        ),
+      );
+      const warning = warningOf(result, "media_duration_exceeded");
+      expect(warning?.path).toEqual(["contents", 0, "parts", 1]);
+      expect(warning?.meta?.durationSeconds).toBe(4000);
+    });
+
+    test("other models keep only the generic 9.5-hour cap", () => {
+      const result = expectOk(
+        stt.safe({ model: MODEL, ...BODY }, { media: [{ path: AUDIO_PATH, durationSeconds: 7200 }] }),
+      );
+      expect(warningOf(result, "media_duration_exceeded")).toBeUndefined();
+    });
   });
 
   test("an unknown model reaches the loose arm with unknown_model", () => {
@@ -188,12 +337,20 @@ describe("T1 + T2: the model gates", () => {
 // ---------------------------------------------------------------------------
 
 describe("curation drift", () => {
-  test("every curated id is still audio-in / text-out in the generated catalog", () => {
+  test("every curated id is still audio-in / text-out in the catalog", () => {
     for (const id of GEMINI_STT_MODEL_IDS) {
       const info = catalog[id];
-      expect(info, `${id} vanished from the generated catalog`).toBeDefined();
+      expect(info, `${id} vanished from the catalog`).toBeDefined();
       expect(info?.modalities.input as string[], id).toContain("audio");
       expect(info?.modalities.output as string[], id).toContain("text");
+    }
+  });
+
+  test("every hand-supplemented id stays absent from the generated catalog", () => {
+    expect(Object.keys(sttSupplementModels)).toEqual(["gemini-3.5-transcribe"]);
+    for (const id of Object.keys(sttSupplementModels)) {
+      expect(generated[id], `models.dev now tracks ${id} — reconcile the hand row`).toBeUndefined();
+      expect(GEMINI_STT_MODEL_IDS).toContain(id as (typeof GEMINI_STT_MODEL_IDS)[number]);
     }
   });
 

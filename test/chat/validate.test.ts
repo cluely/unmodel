@@ -30,6 +30,7 @@ import { describe, expect, test } from "bun:test";
 import { chat } from "../../src/chat/index";
 import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { UnmodelValidationError } from "../../src/core/issues";
+import type { ChatReasoningEffort } from "../../src/chat/types";
 
 const MESSAGES = [{ role: "user" as const, content: "hi" }];
 
@@ -291,6 +292,78 @@ describe("the compiled body terminates in the provider validator", () => {
     const issue = outcome.errors.find((candidate) => candidate.code === "over_context");
     expect(issue?.path).toEqual(["messages"]);
     expect(issue?.message).not.toContain("compiled from");
+  });
+});
+
+/**
+ * Reasoning effort narrows to the levels the TARGET MODEL documents, read off
+ * its provider validator's `reasoning_effort` row; a model with no row falls
+ * back to the dialect-wide set. Either way the provider validator still
+ * decides validity — this only decides what is compiled.
+ */
+describe("reasoning effort follows the target model's documented ladder", () => {
+  function compiledEffort(model: string, effort: ChatReasoningEffort) {
+    const outcome = chat.safe({ model, messages: MESSAGES, reasoning: { effort } });
+    expect(outcome.ok, `${model} ${effort}`).toBe(true);
+    if (!outcome.ok) throw new Error(JSON.stringify(outcome.errors));
+    const wire = (JSON.parse(JSON.stringify(outcome.params)) as { reasoning_effort?: string })
+      .reasoning_effort;
+    return { wire, losses: outcome.params.warnings.map((w) => w.code) };
+  }
+
+  test("GPT-6 takes xhigh and max verbatim, with no warning", () => {
+    for (const effort of ["xhigh", "max"] as const) {
+      expect(compiledEffort("openai/gpt-6-sol", effort)).toEqual({ wire: effort, losses: [] });
+    }
+  });
+
+  test("GPT-6 Astra has no minimal: it rises to low, named", () => {
+    expect(compiledEffort("openai/gpt-6-astra", "minimal")).toEqual({
+      wire: "low",
+      losses: ["approximated_param"],
+    });
+  });
+
+  test("a model with no ladder keeps the dialect fallback", () => {
+    expect(compiledEffort("openai/o3", "xhigh")).toEqual({
+      wire: "high",
+      losses: ["approximated_param"],
+    });
+  });
+
+  test("a ladder topping out at high still serves xhigh as high", () => {
+    expect(compiledEffort("mistral/mistral-large-4", "xhigh")).toEqual({
+      wire: "high",
+      losses: ["approximated_param"],
+    });
+  });
+
+  test("GLM-5.3's max is reachable, and xhigh rises to it", () => {
+    expect(compiledEffort("zhipuai/glm-5.3", "max")).toEqual({ wire: "max", losses: [] });
+    expect(compiledEffort("zhipuai/glm-5.3", "xhigh")).toEqual({
+      wire: "max",
+      losses: ["approximated_param"],
+    });
+  });
+
+  test("Gemini XHIGH off Hydrogen compiles, and google.chat's warning reaches the caller", () => {
+    const carbon = chat.safe({
+      model: "google/gemini-4-carbon",
+      messages: MESSAGES,
+      reasoning: { effort: "xhigh" },
+    });
+    expect(carbon.ok).toBe(true);
+    if (!carbon.ok) return;
+    expect(carbon.warnings.map((w) => [w.code, w.path])).toEqual([
+      ["invalid_enum_value", ["reasoning"]],
+    ]);
+    const hydrogen = chat.safe({
+      model: "google/gemini-4-hydrogen",
+      messages: MESSAGES,
+      reasoning: { effort: "xhigh" },
+    });
+    expect(hydrogen.ok).toBe(true);
+    if (hydrogen.ok) expect(hydrogen.warnings).toEqual([]);
   });
 });
 

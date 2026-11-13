@@ -26,22 +26,19 @@ import type { GoogleVeoParameters } from "./video";
 // WHERE THE VALUES COME FROM. Every list below is the one ./constraints
 // already transcribes for the RUNTIME check — `videoConstraints` (per model)
 // and `videoFamilyRules` (the `veo-`-prefixed families) — from the "Veo API
-// parameters and specifications" table on VEO_DOCS_URL and, for the one
-// non-Veo id, GEMINI_OMNI_FLASH_DOCS_URL. Two of them are deliberately
-// PERMISSIVE readings of pages that disagree with themselves, and stay that
-// way here so the type cannot refuse a request the check would allow:
-// Veo 2's `durationSeconds` (parameters table says 5/6/8, feature table says
-// "5-8") and Veo 3's `4k` (the feature-comparison table omits it).
+// parameters and specifications" table on VEO_DOCS_URL. Two of them are
+// deliberately PERMISSIVE readings of pages that disagree with themselves, and
+// stay that way here so the type cannot refuse a request the check would
+// allow: Veo 2's `durationSeconds` (parameters table says 5/6/8, feature table
+// says "5-8") and Veo 3's `4k` (the feature-comparison table omits it).
 //
 // WHERE THE DOCS ARE THE WEAKER SOURCE, said plainly rather than papered over:
 //
-// - `personGeneration` on `gemini-omni-flash-preview`. Google publishes no
-//   list for it — the Veo enum rules are `veo-`-prefix-gated and its own pages
-//   are silent — so the row carries no `personGeneration` at all and the field
-//   keeps the wide documented union. Narrowing it would be inventing an
-//   allowed-value space; widening it to `string` (which is what the unified
-//   row says, and correctly, because that row can only speak about what the
-//   *table* proves) would advertise values no page names.
+// - `personGeneration` is narrowed only where Google publishes a list. An
+//   ABSENT `personGeneration` on a row means no published list, so the field
+//   keeps the wide documented union: narrowing it would be inventing an
+//   allowed-value space; widening it to `string` would advertise values no
+//   page names. Every served row publishes one today.
 // - `sampleCount` is NOT narrowed. `videoConstraints` does bound it (1 on
 //   Veo 3.x, 1-2 on Veo 2), but the unified table has no row field for it, so
 //   there is nothing here to keep the two in step; the runtime enum owns it
@@ -67,7 +64,7 @@ export interface VeoParameterSpace {
   readonly personGeneration?: readonly NonNullable<GoogleVeoParameters["personGeneration"]>[];
 }
 
-/** Veo 3 and Veo 3.1, standard and fast — one row, four ids. */
+/** Veo 3, standard and fast — one row, two ids. */
 export const VEO_3_SPACE = {
   durations: [4, 6, 8],
   resolutions: ["720p", "1080p", "4k"],
@@ -77,15 +74,6 @@ export const VEO_3_SPACE = {
 
 /** The rows. Every id `videoConstraints` / `videoFamilyRules` bound, and no other. */
 export const VEO_PARAMETER_SPACE = {
-  "veo-3.1-generate-preview": VEO_3_SPACE,
-  "veo-3.1-fast-generate-preview": VEO_3_SPACE,
-  /** Lite stops at 1080p — "Veo 3.1 Lite" column of the parameters table. */
-  "veo-3.1-lite-generate-preview": {
-    durations: [4, 6, 8],
-    resolutions: ["720p", "1080p"],
-    ratios: ["16:9", "9:16"],
-    personGeneration: ["allow_all", "allow_adult"],
-  },
   "veo-3.0-generate-001": VEO_3_SPACE,
   "veo-3.0-fast-generate-001": VEO_3_SPACE,
   /** No `resolution` parameter at all (output is 720p); the only family with `dont_allow`. */
@@ -95,13 +83,45 @@ export const VEO_PARAMETER_SPACE = {
     ratios: ["16:9", "9:16"],
     personGeneration: ["allow_all", "allow_adult", "dont_allow"],
   },
-  /** "Output video: 3s-10s (720p, 24 FPS)"; 16:9 default, 9:16 portrait. */
-  "gemini-omni-flash-preview": {
-    durations: [3, 4, 5, 6, 7, 8, 9, 10],
-    resolutions: ["720p"],
-    ratios: ["16:9", "9:16"],
-  },
 } as const satisfies Readonly<Record<string, VeoParameterSpace>>;
 
 /** A model id {@link VEO_PARAMETER_SPACE} carries a row for. */
 export type VeoParameterModelId = keyof typeof VEO_PARAMETER_SPACE;
+
+/** The Gemini API deprecations page — the source every retirement below quotes. */
+export const GOOGLE_DEPRECATIONS_URL = "https://ai.google.dev/gemini-api/docs/deprecations";
+
+/** {@link VIDEO_RETIRED_IDS} with its literal keys, for {@link VideoRetiredModelId}. */
+const VIDEO_RETIRED = {
+  "gemini-omni-flash-preview":
+    "it was shut down on October 22, 2026; its replacement, gemini-omni-1.2-flash, is an Interactions API model unmodel does not serve yet",
+} as const satisfies Readonly<Record<string, string>>;
+
+/**
+ * Catalogued video-output ids Google has shut down, each with the reason the
+ * refusal quotes. models.dev still carries a row for each, so without this
+ * list a request would validate — with bounds — against a model that no longer
+ * answers. Listed rather than merely dropped from the tables, so the refusal
+ * can say why and name the replacement, and so the coverage tests in
+ * ./video.test.ts know which catalogued video id is allowed to have no bounds.
+ *
+ * The list holds models.dev-carried ids only. The hand-catalogued Veo 2 /
+ * Veo 3 / Veo 3 Fast rows in ./veo-models were shut down too, on 2026-06-30,
+ * but stay at `status: "deprecated"` until the owner decides the surface's
+ * future (the fork is recorded in that file's header): refusing them would
+ * refuse every id this surface serves.
+ *
+ * - `gemini-omni-flash-preview`: GOOGLE_DEPRECATIONS_URL (2026-11-12) —
+ *   "`gemini-omni-flash-preview` — June 30, 2026 — October 22, 2026 —
+ *   `gemini-omni-1.2-flash`"; its model page: "Shut down:
+ *   `gemini-omni-flash-preview`". The replacement is an Interactions API
+ *   model (every sample on the omni guide is `POST /v1beta/interactions`),
+ *   which this `:predictLongRunning` surface cannot carry.
+ */
+export const VIDEO_RETIRED_IDS: Readonly<Record<string, string>> = VIDEO_RETIRED;
+
+/**
+ * A retired id, by literal — subtracted from `GenerateVideosBody["model"]` so
+ * the editor never offers an id the runtime always refuses.
+ */
+export type VideoRetiredModelId = keyof typeof VIDEO_RETIRED;

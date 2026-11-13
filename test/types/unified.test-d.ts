@@ -50,9 +50,9 @@ import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helper
 // 1 · The vocabularies
 // ---------------------------------------------------------------------------
 
-expectAssignable<ImageParams>({ model: "openai/gpt-image-1", prompt: "a lighthouse" });
+expectAssignable<ImageParams>({ model: "openai/gpt-image-1.5", prompt: "a lighthouse" });
 expectAssignable<ImageParams>({
-  model: "openai/gpt-image-1",
+  model: "openai/gpt-image-1.5",
   prompt: "a lighthouse",
   aspectRatio: "16:9",
   resolution: "1k",
@@ -64,7 +64,7 @@ expectAssignable<ImageParams>({
   providerOptions: { openai: { style: "vivid" } },
 });
 expectAssignable<ImageParams>({
-  model: "openai/gpt-image-1",
+  model: "openai/gpt-image-1.5",
   prompt: "x",
   dimensions: { width: 1024, height: 768 },
 });
@@ -90,7 +90,7 @@ expectAssignable<ImageParams>({ model: "a/b", prompt: "x", aspecRatio: "16:9" })
 
 expectAssignable<ImageEditParams>({
   operation: "edit",
-  model: "openai/gpt-image-1",
+  model: "openai/gpt-image-1.5",
   prompt: "make it winter",
   image: { url: "https://example.com/a.png" },
   strength: 0.6,
@@ -188,9 +188,9 @@ expectAssignable<SttParamsFor<"url">>({ model: "a/b", audio: { fileId: "f" } });
 // Ref splitting, at the type level — first slash, never last
 // ---------------------------------------------------------------------------
 
-expectTrue<RefProvider<"openai/gpt-image-1"> extends "openai" ? true : false>();
+expectTrue<RefProvider<"openai/gpt-image-1.5"> extends "openai" ? true : false>();
 expectTrue<RefProvider<"hub/vendor/model-1"> extends "hub" ? true : false>();
-expectTrue<RefModel<"openai/gpt-image-1"> extends "gpt-image-1" ? true : false>();
+expectTrue<RefModel<"openai/gpt-image-1.5"> extends "gpt-image-1.5" ? true : false>();
 expectTrue<RefModel<"hub/vendor/model-1"> extends "vendor/model-1" ? true : false>();
 // A non-literal ref selects nothing rather than guessing.
 expectTrue<IsNever<RefProvider<string>>>();

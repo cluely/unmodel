@@ -5,7 +5,7 @@
  * import { image } from "unmodel/image";
  *
  * const req = image({
- *   model: "openai/gpt-image-1",
+ *   model: "openai/gpt-image-1.5",
  *   prompt: "a lighthouse in fog",
  *   aspectRatio: "16:9",
  *   resolution: "1k",
@@ -25,14 +25,14 @@
  *
  * The vocabulary is one shape for everyone; what one *model* accepts is not.
  * `gpt-image-2` takes a free-form `size` up to 3840 px and a `background` of
- * `"opaque" | "auto"`; `gpt-image-1` — same provider, same endpoint — takes a
+ * `"opaque" | "auto"`; `gpt-image-1.5` — same provider, same endpoint — takes a
  * three-value `size` enum and a `background` that also accepts
  * `"transparent"`. So each adapter carries a `modelParams` table keyed by bare
  * model id, and the ref selects a row:
  *
  * ```ts
  * image({ model: "openai/gpt-image-2", prompt, size: "3840x2160" });        // that model's presets
- * image({ model: "openai/gpt-image-1", prompt, background: "transparent" }); // ok
+ * image({ model: "openai/gpt-image-1.5", prompt, background: "transparent" }); // ok
  * image({ model: "openai/gpt-image-2", prompt, background: "transparent" }); // compile error
  * ```
  *
@@ -114,7 +114,7 @@ export type ImageAdapter = AnyImageAdapter;
  * The generic is on the *array element*, not on `ImageAdapter`, so the
  * adapters' literal `provider`, `as const` `models` and `as const`
  * `modelParams` survive inference — which is what makes `model:` autocomplete
- * `"openai/gpt-image-1"` rather than `string`, *and* what makes `size:`
+ * `"openai/gpt-image-1.5"` rather than `string`, *and* what makes `size:`
  * autocomplete that model's own presets. An unregistered *model* still compiles
  * and still runs: an unrecognised model id is a `unknown_model` **warning**,
  * because a model released after this snapshot must stay callable. An

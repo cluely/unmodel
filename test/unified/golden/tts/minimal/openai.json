@@ -9,5 +9,6 @@
   "url": "https://api.openai.com/v1/audio/speech",
   "headers": {
     "content-type": "application/json"
-  }
+  },
+  "issues": [{ "code": "deprecated_model", "path": ["model"] }]
 }

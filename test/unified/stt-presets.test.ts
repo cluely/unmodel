@@ -23,13 +23,13 @@
  * caller away from. What it probes is a granularity the route cannot report,
  * and that is refused by name.
  *
- * ## Two required params, both per model
+ * ## One required param, per model
  *
- * `speechmatics/melia-1` "requires `language: "multi"`" and `gladia/solaria-3`
- * is single-language ("pass exactly one language"), so both carry one in the
- * probe base — the same trick `video-presets` uses for the routes whose schema
- * marks a field required with no default, and for the same reason: without it
- * the sweep would be measuring the missing field instead of the preset.
+ * `speechmatics/melia-1` refuses the `"auto"` an omitted language compiles to
+ * ("Set `language` to `multi`"), so it carries one in the probe base — the same trick `video-presets` uses for the routes whose
+ * schema marks a field required with no default, and for the same reason:
+ * without it the sweep would be measuring the missing field instead of the
+ * preset.
  *
  * Every adapter in the pack is swept. That is newer than it looks: `inworld`
  * used to be skipped because its `audioInputs` was empty — the route takes
@@ -102,12 +102,14 @@ function audioFor(adapter: Adapter): Record<string, unknown> | undefined {
 /** Per-model params the route marks required with no server default. */
 const REQUIRED: Readonly<Record<string, Record<string, unknown>>> = {
   "speechmatics/melia-1": { language: "multi" },
-  "gladia/solaria-3": { language: "en" },
+  "speechmatics/oak-1": { language: "multi" },
 };
 
 interface Outcome {
   ok: boolean;
   errors: string[];
+  /** Issue-space warnings, as `code@path`, for the warn-only language cells. */
+  warnings: string[];
   wire: string;
 }
 
@@ -115,12 +117,15 @@ function run(ref: string, params: Record<string, unknown>): Outcome {
   const result = stt.safe({ model: ref, ...params } as never) as {
     ok: boolean;
     errors?: Array<{ code: string; path: Array<string | number>; message: string }>;
+    warnings?: Array<{ code: string; path: Array<string | number> }>;
     params?: { request?: unknown };
   };
+  const warnings = (result.warnings ?? []).map((i) => `${i.code}@${i.path.join(".")}`);
   if (!result.ok) {
     return {
       ok: false,
       wire: "",
+      warnings,
       errors: (result.errors ?? []).map((i) => `${i.code}@${i.path.join(".")}: ${i.message}`),
     };
   }
@@ -129,9 +134,25 @@ function run(ref: string, params: Record<string, unknown>): Outcome {
   return {
     ok: true,
     errors: [],
+    warnings,
     wire: JSON.stringify(result.params) + JSON.stringify(result.params?.request ?? {}),
   };
 }
+
+/**
+ * The refs whose off-list language is a **warning** rather than an error.
+ *
+ * Speechmatics' Melia 1 and Oak 1: the docs say "Set `language` to `multi`"
+ * and refuse `auto` and the pack codes by name, but no page says a single
+ * language code is rejected, so `checkMultilingual` warns on one. The library
+ * never fails a request the API may well fulfil, so the negative half of the
+ * completion claim is "compiles, and says so" here. Enumerated so another cell
+ * cannot join silently.
+ */
+const WARN_ONLY_LANGUAGES: ReadonlySet<string> = new Set([
+  "speechmatics/melia-1",
+  "speechmatics/oak-1",
+]);
 
 interface Cell {
   ref: string;
@@ -275,6 +296,12 @@ describe("every declared transcribe preset is a value the provider accepts", () 
       off,
       () => {
         const probe = run(ref, { ...base, language: off });
+        if (WARN_ONLY_LANGUAGES.has(ref)) {
+          if (!probe.ok) return `refused, but this ref only warns: ${probe.errors.join("; ")}`;
+          return probe.warnings.includes("invalid_enum_value@language")
+            ? ""
+            : `accepted in silence; warnings were ${JSON.stringify(probe.warnings)}`;
+        }
         if (probe.ok) return "accepted";
         return probe.errors.some((error) => error.includes("@language"))
           ? ""
@@ -331,15 +358,16 @@ describe("every declared transcribe preset is a value the provider accepts", () 
     expect(nova2.errors[0]).toMatchObject({ code: "unsupported_param", path: ["keyterm"] });
     expect(nova2.errors[0]!.message).toContain("nova-3");
 
-    // AssemblyAI's two gated blocks point in opposite directions.
+    // AssemblyAI's gated block is Universal-3.5 Pro's.
     const slam = stt.safe({
       model: "assemblyai/slam-1",
       audio: { url: "https://example.com/a.wav" },
-      summarization: true,
+      temperature: 0.2,
     } as never);
     expect(slam.ok).toBe(false);
     if (slam.ok) return;
-    expect(slam.errors[0]!.message).toContain("universal-2");
+    expect(slam.errors[0]).toMatchObject({ code: "unsupported_param", path: ["temperature"] });
+    expect(slam.errors[0]!.message).toContain("universal-3-5-pro");
   });
 
   test("nested extras land under their own wire prefix, beside the compiled params", () => {
@@ -357,19 +385,72 @@ describe("every declared transcribe preset is a value the provider accepts", () 
     });
     expect(assembly["advanced_speaker_segmentation"]).toBeUndefined();
 
-    // Speechmatics: the job config's own two levels, from one table.
+    // Speechmatics: the job config's own two levels, from one table. The
+    // language is pinned because an omitted one compiles to "auto", which the
+    // API rejects beside `output_locale`.
     const smx = stt({
       model: "speechmatics/enhanced",
       audio: { url: "https://example.com/a.wav" },
+      language: "en",
       domain: "medical",
       output_locale: "en-US",
       summarization_config: { summary_type: "bullets" },
     } as never) as unknown as Record<string, Record<string, unknown>>;
     expect(smx["transcription_config"]).toMatchObject({
+      language: "en",
       domain: "medical",
       output_locale: "en-US",
     });
     expect(smx["summarization_config"]).toEqual({ summary_type: "bullets" });
+    const detected = stt.safe({
+      model: "speechmatics/enhanced",
+      audio: { url: "https://example.com/a.wav" },
+      output_locale: "en-GB",
+    } as never);
+    expect(detected.ok).toBe(false);
+    if (!detected.ok) {
+      expect(detected.errors).toHaveLength(1);
+      expect(detected.errors[0]!.path).toEqual(["output_locale"]);
+      expect(detected.errors[0]!.message).toContain('`language: "auto"`');
+    }
+
+    // …including Standard's bilingual pack and Melia 1's per-language locales.
+    const pack = stt({
+      model: "speechmatics/standard",
+      audio: { url: "https://example.com/a.wav" },
+      language: "es",
+      domain: "bilingual-en",
+    } as never) as unknown as Record<string, Record<string, unknown>>;
+    expect(pack["transcription_config"]).toMatchObject({ language: "es", domain: "bilingual-en" });
+    const locales = stt({
+      model: "speechmatics/melia-1",
+      audio: { url: "https://example.com/a.wav" },
+      language: "multi",
+      output_locale: ["en-GB", "cmn-Hans"],
+    } as never) as unknown as Record<string, Record<string, unknown>>;
+    expect(locales["transcription_config"]?.["output_locale"]).toEqual(["en-GB", "cmn-Hans"]);
+    const medical = stt.safe({
+      model: "speechmatics/standard",
+      audio: { url: "https://example.com/a.wav" },
+      domain: "medical",
+    } as never);
+    expect(medical.ok).toBe(false);
+    if (!medical.ok) expect(medical.errors[0]!.message).toContain('requires `model: "enhanced"`');
+    // Entity detection reaches Oak 1's wire, with the pages' contradiction as a warning.
+    const entities = stt.safe({
+      model: "speechmatics/oak-1",
+      audio: { url: "https://example.com/a.wav" },
+      language: "multi",
+      enable_entities: true,
+    } as never);
+    expect(entities.ok).toBe(true);
+    if (entities.ok) {
+      expect(entities.warnings.map((w) => `${w.code}@${w.path.join(".")}`)).toEqual([
+        "unsupported_capability@enable_entities",
+      ]);
+      const wire = entities.params as unknown as Record<string, Record<string, unknown>>;
+      expect(wire["transcription_config"]?.["enable_entities"]).toBe(true);
+    }
 
     // Gladia: `code_switching` shares `language_config` with the compiled
     // language array rather than replacing it.

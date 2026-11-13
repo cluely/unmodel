@@ -97,4 +97,30 @@ describe("upstage — family-scoped denies", () => {
   test("does NOT fire on a model outside the family", () => {
     expect(retargetTo("upstage", "solar-pro4", { reasoning_effort: "low" }).result.ok).toBe(true);
   });
+
+  test("does NOT fire on solar-mini4, whose id only shares the family's prefix", () => {
+    expect(retargetTo("upstage", "solar-mini4", { reasoning_effort: "low" }).result.ok).toBe(true);
+    expect(
+      retargetTo("upstage", "solar-mini4-260922", { reasoning_effort: "low" }).result.ok,
+    ).toBe(true);
+  });
+});
+
+describe("zhipuai — family-scoped enum narrowing", () => {
+  test("fires on a GLM-5.3 id with a level the family does not have", () => {
+    const { result } = retargetTo("zhipuai", "glm-5.3-flashx", { reasoning_effort: "medium" });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]?.code).toBe("invalid_enum_value");
+    expect(result.errors[0]?.path).toEqual(["reasoning_effort"]);
+  });
+
+  test("passes the family's own levels", () => {
+    expect(retargetTo("zhipuai", "glm-5.3", { reasoning_effort: "max" }).result.ok).toBe(true);
+  });
+
+  test("does NOT fire on a model outside the family", () => {
+    expect(retargetTo("zhipuai", "glm-5.2", { reasoning_effort: "medium" }).result.ok).toBe(true);
+  });
 });

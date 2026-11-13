@@ -8,10 +8,11 @@
  * `resolveAudioInput` applies to the canonical object, one layer earlier and
  * in the caller's vocabulary.
  *
- * The pairing worth knowing about is not this adapter's: Voxtral documents
- * that `timestamp_granularities` "is not compatible with `language`". So a
- * request that pins a language *and* asks for word timings is rejected by
- * `mistral.stt`'s own `checkTimestampLanguage`, and the provenance
+ * The pairing worth knowing about is not this adapter's: the pre-Voxtral 3
+ * ids document that `timestamp_granularities` "is not compatible with
+ * `language`" (the Voxtral 3 pages document the two independently). So on
+ * those ids a request that pins a language *and* asks for timings is rejected
+ * by `mistral.stt`'s own `checkTimestampLanguage`, and the provenance
  * declared below is what makes that finding arrive at `timestamps` rather than
  * at a wire field the caller never wrote.
  */
@@ -27,8 +28,7 @@ import type { SttAdapterFor, SttParamsFor } from "../../core/unified/vocabulary/
 import { stt as validator, type TranscriptionBody } from "./stt";
 import { MISTRAL_STT_MODEL_PARAMS, MODELS } from "./stt-params";
 
-const TRANSCRIPTION_DOCS =
-  "https://docs.mistral.ai/studio/audio/speech_to_text/offline_transcription";
+const TRANSCRIPTION_DOCS = "https://docs.mistral.ai/studio/audio/speech-to-text/transcribe-files";
 
 /** The wire params this adapter compiles to (multipart form fields). */
 export type MistralSttWire = TranscriptionBody;
@@ -47,9 +47,9 @@ export const stt = {
       "POST /v1/audio/transcriptions takes one two-letter `language` and has no candidate-set " +
       "field; omit `language` to let Voxtral detect.",
     prompt:
-      "Voxtral takes no prose prompt — `context_bias` is a list of terms that may contain " +
-      "neither commas nor whitespace, so a sentence cannot be one; send it through " +
-      "`providerOptions.mistral`.",
+      "POST /v1/audio/transcriptions has no prompt field — its nearest feature is the " +
+      "`context_bias` list (vocabulary terms; on the Voxtral 3 ids, free-form passages too); " +
+      "send it through `providerOptions.mistral`.",
   },
   compile(
     input: SttParamsFor<"file" | "url" | "fileId">,

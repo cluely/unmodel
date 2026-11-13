@@ -15,8 +15,9 @@
  *   curl example sends `-F "image[]=@a.png" -F "image[]=@b.png"`); a single
  *   image rides as `image`. "For GPT image models ... You can provide up to
  *   16 images." / "For `dall-e-2`, you can only provide one image".
- * - `model` is optional: "Defaults to `gpt-image-1.5`" — model-dependent
- *   checks run against that id when none is given.
+ * - `model` is optional: "Defaults to `gpt-image-2.5-sunburst`." (createEdit
+ *   reference, 2026-11-12) — model-dependent checks run against that id when
+ *   none is given.
  * - `dall-e-3` is NOT an edit model ("One of `dall-e-2` or a GPT image
  *   model"), so it has no arm and only reaches the escape hatch.
  * - The endpoint's JSON variant (an `images` array of `{ file_id }` /
@@ -35,6 +36,7 @@ import { findMediaDeclaration, reportMediaIssues } from "../../core/media/check"
 import { imagesModels } from "./images-models";
 import { imagesEditConstraints } from "./constraints";
 import {
+  checkGifAndSvgOutput,
   checkGptImage2Size,
   checkTransparentOutputFormat,
   createPromptLimitCheck,
@@ -45,8 +47,8 @@ export const IMAGES_EDITS_URL = "https://api.openai.com/v1/images/edits";
 
 const EDIT_DOCS = "https://developers.openai.com/api/docs/api-reference/images/createEdit";
 
-/** "Defaults to `gpt-image-1.5`." — createEdit reference. */
-export const DEFAULT_IMAGE_EDIT_MODEL_ID = "gpt-image-1.5";
+/** "Defaults to `gpt-image-2.5-sunburst`." — createEdit reference, 2026-11-12. */
+export const DEFAULT_IMAGE_EDIT_MODEL_ID = "gpt-image-2.5-sunburst";
 
 /** "You can provide up to 16 images" (GPT image models). */
 export const MAX_EDIT_IMAGES = 16;
@@ -85,30 +87,36 @@ interface GptImageEditBase {
   quality?: "auto" | "low" | "medium" | "high" | null;
   size?: "auto" | "1024x1024" | "1536x1024" | "1024x1536" | null;
   stream?: boolean | null;
+  /**
+   * @deprecated Use `safety_identifier` — "Deprecated: use `safety_identifier`
+   * instead." (createEdit reference, 2026-11-13).
+   */
   user?: string;
+  /**
+   * Stable end-user identifier for safety monitoring, `maxLength: 128`; "A
+   * non-empty value takes precedence over the deprecated `user` parameter."
+   * Scoped to no model (createEdit reference, 2026-11-13).
+   */
+  safety_identifier?: string | null;
   /** dall-e-2 only — GPT image models always return base64. */
   response_format?: never;
-}
-
-export interface GptImage1EditBody extends GptImageEditBase {
-  model: "gpt-image-1";
 }
 
 export interface GptImage1MiniEditBody extends GptImageEditBase {
   model: "gpt-image-1-mini";
   /**
-   * "This parameter is only supported for `gpt-image-1` and `gpt-image-1.5`
-   * and later models, unsupported for `gpt-image-1-mini`."
+   * "Supports `high` and `low` on `gpt-image-1.5`; `gpt-image-1-mini`
+   * supports only `low`." — createEdit reference, 2026-11-12.
    */
-  input_fidelity?: never;
+  input_fidelity?: "low" | null;
 }
 
 export interface GptImage15EditBody extends GptImageEditBase {
   model: "gpt-image-1.5";
 }
 
-/** `model` omitted → the server defaults to gpt-image-1.5. */
-export interface DefaultImageEditBody extends GptImageEditBase {
+/** `model` omitted → the server defaults to gpt-image-2.5-sunburst, so the body takes that model's arm. */
+export interface DefaultImageEditBody extends GptImage25EditBase {
   model?: never;
 }
 
@@ -134,6 +142,74 @@ export interface GptImage2EditBody extends Omit<GptImageEditBase, "size"> {
 
 export interface GptImage2SnapshotEditBody extends Omit<GptImage2EditBody, "model"> {
   model: "gpt-image-2-2026-04-21";
+}
+
+/**
+ * GPT-Image-2.5 Sunburst and Flare on edits: gpt-image-2's free-form `size`,
+ * the longer quality ladder, and `markup`. `input_fidelity` stays open — the
+ * createEdit reference narrows it only for the GPT Image 1 family (read
+ * 2026-11-12).
+ */
+interface GptImage25EditBase extends Omit<GptImageEditBase, "size" | "quality"> {
+  size?: GptImage2Size | null;
+  quality?: "auto" | "low" | "medium" | "high" | "xhigh" | "max" | null;
+  /**
+   * A transparent overlay whose marks guide the edit — "Supports GPT Image
+   * 2.5." on the createEdit reference, extended to 2.6 by the 2026-11-04
+   * changelog ("Added markup-guided editing for supported GPT-Image-2.5 and
+   * GPT-Image-2.6 models."). "Must match that image's dimensions after
+   * orientation and contain transparent pixels." and "Cannot be combined with
+   * mask." — the latter is enforced by checkMarkupWithoutMask.
+   */
+  markup?: Blob;
+}
+
+export interface GptImage25SunburstEditBody extends GptImage25EditBase {
+  model: "gpt-image-2.5-sunburst";
+}
+
+export interface GptImage25SunburstSnapshotEditBody extends GptImage25EditBase {
+  model: "gpt-image-2.5-sunburst-2026-09-08";
+}
+
+export interface GptImage25FlareEditBody extends GptImage25EditBase {
+  model: "gpt-image-2.5-flare";
+}
+
+export interface GptImage25FlareSnapshotEditBody extends GptImage25EditBase {
+  model: "gpt-image-2.5-flare-2026-09-08";
+}
+
+/**
+ * GPT-Image-2.6 Sunburst and Flare on edits: the 2.5 edit surface plus the 2.6
+ * generation params (see GptImage26BaseBody in ./image.ts for each quote).
+ * `svg` output is kept here because the createEdit reference lists it and
+ * documents the `svg` object, although the guide says the edit endpoint does
+ * not support SVG output — no 400 is on record, so the request goes as written.
+ */
+interface GptImage26EditBase extends Omit<GptImage25EditBase, "output_format"> {
+  output_format?: "png" | "jpeg" | "webp" | "gif" | "svg" | null;
+  complexity?: "low" | "medium" | "high" | null;
+  frame_count?: number | null;
+  frame_duration_ms?: number | null;
+  /**
+   * `reasoning` is "optional object { effort } or null" and `effort` lists
+   * `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` (createEdit
+   * reference, 2026-11-13). `effort: null` is typed as on generations, where
+   * the reference documents it for the same object.
+   */
+  svg?: {
+    model?: string;
+    reasoning?: { effort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | null } | null;
+  } | null;
+}
+
+export interface GptImage26SunburstEditBody extends GptImage26EditBase {
+  model: "gpt-image-2.6-sunburst";
+}
+
+export interface GptImage26FlareEditBody extends GptImage26EditBase {
+  model: "gpt-image-2.6-flare";
 }
 
 export interface DallE2EditBody {
@@ -170,22 +246,32 @@ export interface UnknownImageEditModelBody<Model extends string> {
  * opt into the loose arm: `ImageEditBody<"gpt-image-9">`.
  */
 export type ImageEditBody<FutureModel extends string = never> =
-  | GptImage1EditBody
   | GptImage1MiniEditBody
   | GptImage15EditBody
   | GptImage2EditBody
   | GptImage2SnapshotEditBody
+  | GptImage25SunburstEditBody
+  | GptImage25SunburstSnapshotEditBody
+  | GptImage25FlareEditBody
+  | GptImage25FlareSnapshotEditBody
+  | GptImage26SunburstEditBody
+  | GptImage26FlareEditBody
   | ChatgptImageLatestEditBody
   | DefaultImageEditBody
   | DallE2EditBody
   | UnknownImageEditModelBody<FutureModel>;
 
 export interface ImageEditBodyByModel {
-  "gpt-image-1": GptImage1EditBody;
   "gpt-image-1-mini": GptImage1MiniEditBody;
   "gpt-image-1.5": GptImage15EditBody;
   "gpt-image-2": GptImage2EditBody;
   "gpt-image-2-2026-04-21": GptImage2SnapshotEditBody;
+  "gpt-image-2.5-sunburst": GptImage25SunburstEditBody;
+  "gpt-image-2.5-sunburst-2026-09-08": GptImage25SunburstSnapshotEditBody;
+  "gpt-image-2.5-flare": GptImage25FlareEditBody;
+  "gpt-image-2.5-flare-2026-09-08": GptImage25FlareSnapshotEditBody;
+  "gpt-image-2.6-sunburst": GptImage26SunburstEditBody;
+  "gpt-image-2.6-flare": GptImage26FlareEditBody;
   "chatgpt-image-latest": ChatgptImageLatestEditBody;
   "dall-e-2": DallE2EditBody;
 }
@@ -225,11 +311,53 @@ const imageEditSchema = z.looseObject({
   size: z.string().nullable().optional(),
   stream: z.boolean().nullable().optional(),
   user: z.string().optional(),
+  safety_identifier: z.string().max(128).nullable().optional(),
+  // GPT-Image-2.5 / 2.6 additions (createEdit reference, 2026-11-12). The
+  // Tier-A arms type them only where the reference, guide and changelog
+  // document them (`markup` on 2.5 / 2.6, the rest on 2.6). At runtime
+  // `output_format: "gif" | "svg"` is enum-refused on the pre-2.6 rows, so
+  // checkGifAndSvgOutput refuses `frame_count` / `frame_duration_ms` there too
+  // (both need gif). `complexity` and `svg` pass through on other models: no
+  // page scopes them to a model, so a runtime deny would be an undocumented
+  // narrowing. `markup` passes through as well — "Supports GPT Image 2.5."
+  // says where it works, and no 400 elsewhere is on record.
+  markup: blobSchema.optional(),
+  complexity: z.string().nullable().optional(),
+  frame_count: z.number().int().min(2).max(16).nullable().optional(),
+  frame_duration_ms: z.number().int().min(20).nullable().optional(),
+  svg: z
+    .looseObject({
+      model: z.string().optional(),
+      reasoning: z.looseObject({ effort: z.string().nullable().optional() }).nullable().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 // ---------------------------------------------------------------------------
 // Checks
 // ---------------------------------------------------------------------------
+
+/**
+ * "`markup` … Cannot be combined with mask." — createEdit reference, read
+ * 2026-11-12. Both are Blobs and both are optional, so the only conflict is
+ * their co-presence.
+ */
+function checkMarkupWithoutMask(
+  params: AnyImageEditBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const { markup, mask } = params as { markup?: unknown; mask?: unknown };
+  if (!(markup instanceof Blob) || !(mask instanceof Blob)) return;
+  ctx.report({
+    code: "unsupported_param",
+    path: ["markup"],
+    model: params.model ?? DEFAULT_IMAGE_EDIT_MODEL_ID,
+    message: "`markup` cannot be combined with `mask` — send one or the other.",
+    meta: { source: EDIT_DOCS },
+  });
+}
 
 const asBlobs = (image: unknown): Blob[] =>
   Array.isArray(image) ? image.filter((b): b is Blob => b instanceof Blob) : image instanceof Blob ? [image] : [];
@@ -319,6 +447,11 @@ function checkUploads(
 
 const checkPromptLimit = createPromptLimitCheck(DEFAULT_IMAGE_EDIT_MODEL_ID);
 
+/** The shared free-form size check, run against the documented server default when `model` is omitted. */
+function checkSize(params: AnyImageEditBody, info: ModelInfo | undefined, ctx: PipelineContext): void {
+  checkGptImage2Size({ ...params, model: params.model ?? DEFAULT_IMAGE_EDIT_MODEL_ID }, info, ctx);
+}
+
 // ---------------------------------------------------------------------------
 // Multipart body
 // ---------------------------------------------------------------------------
@@ -381,8 +514,10 @@ const validator = createValidator<AnyImageEditBody, unknown>({
   checks: [
     checkImageCount,
     checkUploads,
-    checkGptImage2Size,
+    checkMarkupWithoutMask,
+    checkSize,
     checkTransparentOutputFormat,
+    checkGifAndSvgOutput,
     checkPromptLimit,
   ],
   // No token/cost estimate: image cost depends on generated output tokens,
@@ -393,8 +528,8 @@ const validator = createValidator<AnyImageEditBody, unknown>({
 /**
  * Validates params for POST /v1/images/edits. Known models get their exact
  * per-model param surface at compile time (e.g. `input_fidelity` is a compile
- * error for gpt-image-2 and gpt-image-1-mini); unknown models fall back to a
- * loose arm with a runtime unknown_model warning.
+ * error for gpt-image-2, and anything but `low` is one for gpt-image-1-mini);
+ * unknown models fall back to a loose arm with a runtime unknown_model warning.
  *
  * This is a multipart endpoint: the validated output's enumerable props are
  * the validated params (including the image Blobs), and the raw-fetch path is

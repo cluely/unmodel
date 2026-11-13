@@ -3,18 +3,19 @@
  *
  * Wire reference:
  * https://docs.inworld.ai/api-reference/voiceAPI/voiceservice/clone-voice and
- * https://docs.inworld.ai/tts/voice-cloning (verified 2026-08-22).
+ * https://docs.inworld.ai/tts/instant-voice-cloning (verified 2026-11-12).
  *
  * - JSON with INLINE BASE64 audio: each `voiceSamples[].audioData` carries the
  *   recording's bytes base64-encoded, so — unlike the multipart clone routes
  *   at other providers — a plain JSON document expresses the whole request.
- * - Sample limits: "wav, mp3, webm", "4MB" per file, "as little as 3 seconds"
- *   useful, and a "30-second limit" after which audio "will be cut off …
- *   which can affect quality". The 4MB cap is checked from the base64 length;
- *   duration cannot be read from bytes and is not checked.
+ * - Sample limits: "Accepted formats: wav, mp3, webm. Maximum file size is
+ *   12MB." (the cloning guide and the CLI's "max 12MB"; the API reference
+ *   prints no byte cap), "as little as 3 seconds" useful, and a "30-second
+ *   limit" after which audio is trimmed. The 12MB cap is checked from the
+ *   base64 length; duration cannot be read from bytes and is not checked.
  * - LANGUAGE, TWICE: `languageCode` is the canonical BCP-47-shaped spelling,
- *   `langCode` the legacy 16-value enum — "Set at most one of `languageCode`
- *   or `langCode`", enforced here. `gender`/`ageGroup` "cannot be set at
+ *   `langCode` the legacy enum — "Set at most one of `languageCode` or
+ *   `langCode`", enforced here. `gender`/`ageGroup` "cannot be set at
  *   clone time" (UpdateVoice only), so they are deliberately absent.
  * - There is no model field. unmodel addresses the route through the
  *   synthetic catalog id `voice-clone` (the route noun — Inworld documents no
@@ -40,7 +41,7 @@ export const VOICES_CLONE_URL = "https://api.inworld.ai/voices/v1/voices:clone";
 
 const VOICE_CLONE_DOCS =
   "https://docs.inworld.ai/api-reference/voiceAPI/voiceservice/clone-voice";
-const VOICE_CLONING_GUIDE = "https://docs.inworld.ai/tts/voice-cloning";
+const VOICE_CLONING_GUIDE = "https://docs.inworld.ai/tts/instant-voice-cloning";
 
 /**
  * Synthetic catalog id for this route — POST voices:clone has no model
@@ -48,11 +49,14 @@ const VOICE_CLONING_GUIDE = "https://docs.inworld.ai/tts/voice-cloning";
  */
 export const VOICE_CLONE_MODEL_ID = "voice-clone";
 
-/** "4MB" per sample file (VOICE_CLONING_GUIDE). */
-export const VOICE_CLONE_MAX_SAMPLE_BYTES = 4 * 1024 * 1024;
+/** "Maximum file size is 12MB." per sample file (VOICE_CLONING_GUIDE, 2026-11-12). */
+export const VOICE_CLONE_MAX_SAMPLE_BYTES = 12 * 1024 * 1024;
 
 /**
- * The legacy `langCode` enum — the 16 documented values. New call sites
+ * The 16 `langCode` values the reference lists. Not the whole enum: "The full
+ * accepted set is much larger than the values listed here: every supported
+ * locale has an enum name (the locale with `-` replaced by `_`, uppercased —
+ * `en-GB` becomes `EN_GB`)" (VOICE_CLONE_DOCS, 2026-11-12). New call sites
  * should prefer the BCP-47 `languageCode` spelling.
  */
 export const INWORLD_LANG_CODES = [
@@ -84,7 +88,7 @@ export type InworldLangCode = (typeof INWORLD_LANG_CODES)[number];
 export interface InworldVoiceSample {
   /**
    * "Binary audio data for the sample (base64-encoded in JSON). Supports WAV
-   * and MP3 formats." (The guide also lists webm.) ≤4MB decoded; ≤30s used.
+   * and MP3 formats." (The guide also lists webm.) ≤12MB decoded; ≤30s used.
    */
   audioData: string;
   /**
@@ -174,23 +178,34 @@ export function checkLanguageExclusivity(
   });
 }
 
-/** The legacy enum is closed at its 16 documented values. */
+/**
+ * An enum name as the reference derives it: "the locale with `-` replaced by
+ * `_`, uppercased" — `EN_GB`, `VI`, `ES_419` — or `AUTO`.
+ */
+const LANG_CODE_NAME_PATTERN = /^[A-Z]{2,3}(_[A-Z0-9]{2,8})*$/;
+
+/**
+ * The legacy enum is OPEN — "every supported locale has an enum name" — so a
+ * value outside {@link INWORLD_LANG_CODES} is not refused. What is refused is
+ * a value that cannot be an enum name at all, such as a BCP-47 tag
+ * (`"en-US"`), which belongs in `languageCode`.
+ */
 export function checkLangCodeEnum(
   params: { langCode?: string },
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
   const code = params.langCode;
-  if (code === undefined || LANG_CODE_SET.has(code)) return;
+  if (code === undefined || LANG_CODE_SET.has(code) || LANG_CODE_NAME_PATTERN.test(code)) return;
   ctx.report({
     code: "invalid_enum_value",
     path: ["langCode"],
-    message: `\`langCode\` must be one of ${INWORLD_LANG_CODES.map((v) => JSON.stringify(v)).join(", ")}; got ${JSON.stringify(code)} — or use the BCP-47 \`languageCode\` instead.`,
+    message: `\`langCode\` takes an enum name — the locale with \`-\` replaced by \`_\`, uppercased ("EN_GB" for en-GB), or "AUTO"; got ${JSON.stringify(code)}. Send a BCP-47 tag as \`languageCode\` instead.`,
     meta: { allowed: [...INWORLD_LANG_CODES], value: code, source: VOICE_CLONE_DOCS },
   });
 }
 
-/** "4MB" per sample, checked from the base64 payload's decoded length. */
+/** "Maximum file size is 12MB" per sample, checked from the base64 payload's decoded length. */
 function checkSampleSizes(
   params: VoicesCloneBody,
   _info: ModelInfo | undefined,
@@ -203,7 +218,7 @@ function checkSampleSizes(
     ctx.report({
       code: "media_too_large",
       path: ["voiceSamples", index, "audioData"],
-      message: `voice sample ${index} decodes to ${bytes} bytes; Inworld caps cloning samples at ${VOICE_CLONE_MAX_SAMPLE_BYTES} bytes (4MB).`,
+      message: `voice sample ${index} decodes to ${bytes} bytes; Inworld caps cloning samples at ${VOICE_CLONE_MAX_SAMPLE_BYTES} bytes (12MB) — trim it to the 3–30 seconds cloning uses.`,
       meta: { bytes, limit: VOICE_CLONE_MAX_SAMPLE_BYTES, source: VOICE_CLONING_GUIDE },
     });
   });

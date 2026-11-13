@@ -38,9 +38,15 @@ export {
   type AtlasWanPrimeResolution,
   type AtlasWanResolution,
   type AtlasVeoResolution,
+  type AtlasVeoLiteResolution,
+  type AtlasDraftCompleteResolution,
+  type AtlasReferType,
+  type AtlasWanRefer,
+  type AtlasWanPrimeRefer,
   type Seedance25TextToVideoBody,
   type Seedance25ImageToVideoBody,
   type Seedance25ReferenceToVideoBody,
+  type Seedance25DraftCompleteBody,
   type Seedance20TextToVideoBody,
   type Seedance20ImageToVideoBody,
   type Seedance20ReferenceToVideoBody,
@@ -58,9 +64,16 @@ export {
   type Wan30PrimeImageToVideoBody,
   type Wan30TextToVideoBody,
   type Wan30ImageToVideoBody,
+  type Wan30ReferenceToVideoBody,
+  type Wan30PrimeReferenceToVideoBody,
   type Veo31TextToVideoBody,
   type Veo31ImageToVideoBody,
   type Veo31ReferenceToVideoBody,
+  type Veo31FastTextToVideoBody,
+  type Veo31FastImageToVideoBody,
+  type Veo31LiteTextToVideoBody,
+  type Veo31LiteImageToVideoBody,
+  type Veo31LiteStartEndFrameToVideoBody,
 } from "./video";
 
 export {
@@ -79,7 +92,9 @@ export {
   videoShapeRules,
   AUTO_DURATION,
   BITRATE_MODES,
+  DRAFT_COMPLETE_RESOLUTIONS,
   OMNI_REFERENCE_TASK_TYPES,
+  REFER_TYPES,
   SEEDANCE_15_ASPECT_RATIOS,
   SEEDANCE_15_FAST_RESOLUTIONS,
   SEEDANCE_15_RESOLUTIONS,
@@ -87,6 +102,7 @@ export {
   SEEDANCE_20_SMALL_RESOLUTIONS,
   SEEDANCE_25_RESOLUTIONS,
   VEO_ASPECT_RATIOS,
+  VEO_LITE_RESOLUTIONS,
   VEO_RESOLUTIONS,
   VIDEO_API_SOURCE,
   VIDEO_MODELS_SOURCE,
@@ -99,7 +115,7 @@ export {
   WAN_RATIOS,
   WAN_RESOLUTIONS,
 } from "./constraints";
-export type { VideoShapeRule } from "./constraints";
+export type { RefersRule, VideoShapeRule } from "./constraints";
 
 export {
   ATLASCLOUD_LISTED_BASE_PRICE_USD,

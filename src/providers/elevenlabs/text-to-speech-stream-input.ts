@@ -54,7 +54,12 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { models, TTS_MODEL_IDS, type ElevenlabsTtsModelId } from "./models";
+import {
+  models,
+  STREAM_INPUT_MODEL_IDS,
+  STREAM_INPUT_UNSERVED_MODEL_IDS,
+  type ElevenlabsStreamInputModelId,
+} from "./models";
 import { ttsConstraints } from "./constraints";
 import {
   TTS_OUTPUT_FORMATS,
@@ -76,7 +81,10 @@ export const STREAM_INPUT_WS_BASE_URL = "wss://api.elevenlabs.io/v1/text-to-spee
 const STREAM_INPUT_DOCS_URL =
   "https://elevenlabs.io/docs/api-reference/text-to-speech/v-1-text-to-speech-voice-id-stream-input";
 const CONVERT_DOCS_URL = "https://elevenlabs.io/docs/api-reference/text-to-speech/convert";
-const MODELS_DOCS_URL = "https://elevenlabs.io/docs/models";
+const MODELS_DOCS_URL = "https://elevenlabs.io/docs/overview/models";
+/** Where the socket's `eleven_v3` / `eleven_v4` refusal is published. */
+const REALTIME_TTS_GUIDE_URL =
+  "https://elevenlabs.io/docs/eleven-api/guides/how-to/websockets/realtime-tts";
 
 /** "Each item should be in the range 50-500" (STREAM_INPUT_DOCS_URL). */
 export const STREAM_INPUT_CHUNK_LENGTH_MIN = 50;
@@ -131,8 +139,12 @@ export interface StreamInputPronunciationDictionaryLocator {
 
 /** The documented query params of the stream-input socket. */
 export interface TextToSpeechStreamInputQuery {
-  /** "Identifier of the model that will be used"; no server default published. */
-  model_id?: ElevenlabsTtsModelId | (string & {});
+  /**
+   * "Identifier of the model that will be used"; no server default published.
+   * `eleven_v3` and `eleven_v4` are not served here — they stream over the
+   * Text to Dialogue WebSocket.
+   */
+  model_id?: ElevenlabsStreamInputModelId | (string & {});
   /**
    * ISO 639-1 code enforcing a language. "This parameter is not supported for
    * multilingual_v2 models" — reported via the shared TTS constraint table.
@@ -245,15 +257,17 @@ const schema = z.looseObject({
 // Checks
 // ---------------------------------------------------------------------------
 
-const TTS_MODEL_ID_SET = new Set<string>(TTS_MODEL_IDS);
+const STREAM_INPUT_MODEL_ID_SET = new Set<string>(STREAM_INPUT_MODEL_IDS);
 const OUTPUT_FORMAT_SET = new Set<string>(TTS_OUTPUT_FORMATS);
 
 /**
  * The catalog carries every documented ElevenLabs model id, including ones
  * served by other APIs (realtime STT, music, sound effects, speech-to-speech,
- * text-to-voice); the streaming TTS socket serves the same family the REST
- * convert endpoint does. Ids unknown to the catalog stay a warning — they may
- * be new TTS models.
+ * text-to-voice) and two text-to-speech ids this socket does not serve:
+ * "That endpoint does not support the `eleven_v3` or `eleven_v4` models"
+ * (REALTIME_TTS_GUIDE_URL). Those resolve in the catalog, so without this gate
+ * they would pass unremarked. Ids unknown to the catalog stay a warning — they
+ * may be new TTS models.
  */
 function checkTtsModelKind(
   params: TextToSpeechStreamInputParams,
@@ -261,13 +275,17 @@ function checkTtsModelKind(
   ctx: PipelineContext,
 ): void {
   const model = params.model_id;
-  if (model === undefined || info === undefined || TTS_MODEL_ID_SET.has(model)) return;
+  if (model === undefined || info === undefined || STREAM_INPUT_MODEL_ID_SET.has(model)) return;
+  const dialogue = STREAM_INPUT_UNSERVED_MODEL_IDS.includes(model);
   ctx.report({
     code: "unsupported_capability",
     path: ["model_id"],
     model,
-    message: `"${model}" is not a text-to-speech model; the stream-input WebSocket accepts ${TTS_MODEL_IDS.map((id) => `"${id}"`).join(", ")}.`,
-    meta: { allowed: [...TTS_MODEL_IDS], source: MODELS_DOCS_URL },
+    message: `"${model}" is not served by the stream-input WebSocket, which accepts ${STREAM_INPUT_MODEL_IDS.map((id) => `"${id}"`).join(", ")}.${dialogue ? ` "${model}" streams over the Text to Dialogue WebSocket (wss /v1/text-to-dialogue/stream-input) instead, which unmodel does not validate.` : ""}`,
+    meta: {
+      allowed: [...STREAM_INPUT_MODEL_IDS],
+      source: dialogue ? REALTIME_TTS_GUIDE_URL : MODELS_DOCS_URL,
+    },
   });
 }
 

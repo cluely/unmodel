@@ -60,9 +60,15 @@ export type {
   AtlasWanPrimeResolution,
   AtlasWanResolution,
   AtlasVeoResolution,
+  AtlasVeoLiteResolution,
+  AtlasDraftCompleteResolution,
+  AtlasReferType,
+  AtlasWanRefer,
+  AtlasWanPrimeRefer,
   Seedance25TextToVideoBody,
   Seedance25ImageToVideoBody,
   Seedance25ReferenceToVideoBody,
+  Seedance25DraftCompleteBody,
   Seedance20TextToVideoBody,
   Seedance20ImageToVideoBody,
   Seedance20ReferenceToVideoBody,
@@ -80,12 +86,19 @@ export type {
   Wan30PrimeImageToVideoBody,
   Wan30TextToVideoBody,
   Wan30ImageToVideoBody,
+  Wan30ReferenceToVideoBody,
+  Wan30PrimeReferenceToVideoBody,
   Veo31TextToVideoBody,
   Veo31ImageToVideoBody,
   Veo31ReferenceToVideoBody,
+  Veo31FastTextToVideoBody,
+  Veo31FastImageToVideoBody,
+  Veo31LiteTextToVideoBody,
+  Veo31LiteImageToVideoBody,
+  Veo31LiteStartEndFrameToVideoBody,
 } from "./video";
 
-export type { VideoShapeRule } from "./constraints";
+export type { RefersRule, VideoShapeRule } from "./constraints";
 
 export type { AtlascloudListedPrice } from "./pricing";
 

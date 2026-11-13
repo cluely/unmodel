@@ -28,9 +28,15 @@
  * cap; this is written down because it is the one thing about the dispatch a
  * caller cannot see from the canonical params alone.
  *
- * `durationSeconds`, `outputFormat` and `seed` are `unsupported`: no route has
- * a length, format or seed field — a finished choice reports its own
- * `duration` and ships fixed mp3/FLAC/WAV URLs.
+ * `durationSeconds` is a rename to the song route's `duration` — whole
+ * seconds, 120–300, "Supported only by mureka-9.5". The range and the
+ * per-model gate live in `mureka.music`'s own schema and constraints, so a
+ * length out of range or on another id surfaces that message remapped onto
+ * `durationSeconds`. The other two routes have no length field and refuse it
+ * here, naming the song route.
+ *
+ * `outputFormat` and `seed` are `unsupported`: no route has a format or seed
+ * field — a finished choice ships fixed mp3/FLAC/WAV URLs.
  *
  * All three routes are ASYNC: the validated request's response is a task
  * object, polled via `songQueryUrl(id)` (both sung routes share the poller) or
@@ -96,6 +102,11 @@ function compileSong(
   // `lyrics` is REQUIRED on this route; the placeholder is overwritten by the
   // caller's `lyrics` extra and its survival is the missing-lyrics signal.
   const body: SongGenerateBody = { lyrics: "", model: ctx.model, prompt: input.prompt };
+  ctx.from(["duration"], "durationSeconds");
+
+  // A rename: both units are seconds. The wire schema owns the integer and
+  // 120–300 checks, the constraints rows the mureka-9.5-only gate.
+  if (input.durationSeconds !== undefined) body.duration = input.durationSeconds;
 
   applyExtras(input, MUREKA_MUSIC_MODEL_PARAMS, body, ctx);
 
@@ -134,6 +145,7 @@ function compileInstrumental(
   ctx: CompileContext<MusicParams>,
 ): CompiledCall<MurekaMusicWire, MurekaMusicResult> {
   const body: InstrumentalGenerateBody = { model: ctx.model, prompt: input.prompt };
+  refuseDuration(input, ctx, "POST /v1/instrumental/generate", INSTRUMENTAL_DOCS);
 
   applyExtras(input, MUREKA_MUSIC_MODEL_PARAMS, body, ctx);
 
@@ -164,6 +176,7 @@ function compileFromPrompt(
   ctx: CompileContext<MusicParams>,
 ): CompiledCall<MurekaMusicWire, MurekaMusicResult> {
   const body: SongEasyGenerateBody = { model: ctx.model, prompt: input.prompt };
+  refuseDuration(input, ctx, "POST /v1/song/easy-generate", EASY_GENERATE_DOCS);
 
   applyExtras(input, MUREKA_MUSIC_MODEL_PARAMS, body, ctx);
 
@@ -190,6 +203,28 @@ function compileFromPrompt(
 }
 
 /**
+ * `durationSeconds` on a route with no length field. `SongGenerateReq` is the
+ * only Mureka body with `duration`, so the refusal names it and its one model.
+ */
+function refuseDuration(
+  input: MusicParams,
+  ctx: CompileContext<MusicParams>,
+  route: string,
+  source: string,
+): void {
+  if (input.durationSeconds === undefined) return;
+  ctx.fail({
+    code: "unsupported_param",
+    path: ["durationSeconds"],
+    message:
+      `${route} has no length field — Mureka's only one is \`duration\` on the song route ` +
+      "(POST /v1/song/generate: pass the `lyrics` extra), 120–300 seconds, mureka-9.5 only. " +
+      "Remove `durationSeconds` to let the model decide.",
+    meta: { value: input.durationSeconds, source },
+  });
+}
+
+/**
  * Whether the caller supplied the `lyrics` extra — the question that separates
  * the two sung routes. A per-model extra is by definition a key the canonical
  * vocabulary does not name, so it is read off the input rather than typed on
@@ -205,10 +240,6 @@ export const music = {
   models: MODELS,
   modelParams: MUREKA_MUSIC_MODEL_PARAMS,
   unsupported: {
-    durationSeconds:
-      "No Mureka generate route takes a length — /v1/song/generate, /v1/song/easy-generate and " +
-      "/v1/instrumental/generate all let the model decide, and each finished choice reports its " +
-      "own `duration` (milliseconds) in the task response.",
     outputFormat:
       "Mureka has no output-format field: every succeeded choice ships fixed URLs — mp3 `url` " +
       "plus lossless `flac_url` and `wav_url`, each valid for 30 days.",

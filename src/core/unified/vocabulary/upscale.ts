@@ -52,11 +52,11 @@
  * `extras`, typed from the endpoint's own wire interface, and get promoted the
  * day two providers spell the same idea the same way.
  *
- * `prompt` is here rather than there for the opposite reason: three of the ten
- * routes in this build steer on one, it means the same thing at all three (what
- * the added detail should be OF), and it is the same word `unmodel/image` and
- * `unmodel/video` already use. It is optional, and a route without one refuses
- * it by name.
+ * `prompt` is here rather than there for the opposite reason: three of the
+ * eleven routes in this build steer on one, it means the same thing at all
+ * three (what the added detail should be OF), and it is the same word
+ * `unmodel/image` and `unmodel/video` already use. It is optional, and a route
+ * without one refuses it by name.
  */
 import type { ExactKeys } from "../../request";
 import type { ValidateOptions } from "../../options";
@@ -143,8 +143,8 @@ export interface UpscaleParamsBase {
   /**
    * What the added detail should be of, where the route steers on one.
    *
-   * Optional and per-route: three of the ten endpoints in this build take a
-   * prompt and seven do not, so a route without one refuses it by name rather
+   * Optional and per-route: three of the eleven endpoints in this build take a
+   * prompt and eight do not, so a route without one refuses it by name rather
    * than dropping it.
    */
   prompt?: string;

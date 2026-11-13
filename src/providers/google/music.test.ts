@@ -122,13 +122,27 @@ describe("input blocks", () => {
   });
 });
 
-describe("response_format (WAV is Pro-only)", () => {
+describe("response_format (WAV on Lyria 3.5 and Pro, never on Clip)", () => {
   test("Pro takes the guide's bare { type: 'audio' } WAV switch", () => {
     expectOk(
       music.safe({
         model: "lyria-3-pro-preview",
         input: "hi",
         response_format: { type: "audio" },
+      }),
+    );
+  });
+
+  test("Lyria 3.5 takes the guide's WAV switch, bare and with the CLI sample's mime_type", () => {
+    // "For Lyria 3.5, you can also request the output in WAV format by setting
+    // the `response_format`" — REST sample `{ "type": "audio" }`, CLI sample
+    // `{"response_format":{"mime_type":"audio/wav"}}`.
+    expectOk(music.safe({ model: "lyria-3.5", input: "hi", response_format: { type: "audio" } }));
+    expectOk(
+      music.safe({
+        model: "lyria-3.5",
+        input: "hi",
+        response_format: { type: "audio", mime_type: "audio/wav" },
       }),
     );
   });
@@ -254,13 +268,29 @@ describe("catalog and pricing", () => {
     expect(musicModels[LYRIA_REALTIME_MODEL_ID]).toBeDefined();
   });
 
-  test("flat per-song pricing: $0.04 Clip, $0.08 Pro", () => {
+  test("flat per-song pricing: $0.04 Clip, $0.08 Pro and Lyria 3.5", () => {
     expect(LYRIA_PRICE_PER_SONG_USD["lyria-3-clip-preview"]).toBe(0.04);
     expect(LYRIA_PRICE_PER_SONG_USD["lyria-3-pro-preview"]).toBe(0.08);
+    expect(LYRIA_PRICE_PER_SONG_USD["lyria-3.5"]).toBe(0.08);
     const clip = expectOk(music.safe({ model: "lyria-3-clip-preview", input: "hi" }));
     expect(clip.estimate.costUSD).toBeCloseTo(0.04, 10);
     const pro = expectOk(music.safe({ model: "lyria-3-pro-preview", input: "hi" }));
     expect(pro.estimate.costUSD).toBeCloseTo(0.08, 10);
+    const full = expectOk(music.safe({ model: "lyria-3.5", input: "hi" }));
+    expect(full.estimate.costUSD).toBeCloseTo(0.08, 10);
+  });
+
+  test("lyria-3.5 validates without unknown_model; its unified row offers MP3 and WAV", () => {
+    const result = expectOk(
+      music.safe({
+        model: "lyria-3.5",
+        input: "an upbeat synth-pop song about autumn",
+        response_format: { type: "audio", mime_type: "audio/mp3" },
+      }),
+    );
+    expect(result.warnings.some((w) => w.code === "unknown_model")).toBe(false);
+    expect(GOOGLE_MUSIC_MODEL_PARAMS["lyria-3.5"].codecs).toEqual(["mp3", "pcm_s16le"]);
+    expect(MODELS[0]).toBe("lyria-3.5");
   });
 });
 
@@ -293,6 +323,20 @@ describe("unified adapter", () => {
       response_format: { type: "audio", mime_type: "audio/wav" },
       generation_config: { seed: 7 },
     });
+  });
+
+  test("outputFormat wav compiles to response_format on Lyria 3.5", () => {
+    const ctx = compileCtx();
+    const { params } = adapter.compile(
+      { model: "google/lyria-3.5", prompt: "hi", outputFormat: "pcm_s16le" },
+      ctx.make("lyria-3.5") as never,
+    );
+    expect(params).toEqual({
+      model: "lyria-3.5",
+      input: "hi",
+      response_format: { type: "audio", mime_type: "audio/wav" },
+    });
+    expect(ctx.warnings).toEqual([]);
   });
 
   test("outputFormat mp3 on Clip is a silent no-op — the model's own default", () => {

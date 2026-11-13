@@ -36,9 +36,9 @@
  *
  * ## Why the sweep runs one model per distinct row
  *
- * Rows are shared wherever the wire is: Deepgram's 103 Aura voices are one
+ * Rows are shared wherever the wire is: Deepgram's 102 Aura voices are one
  * `/v1/speak` surface, and the table says so with one generated row. Running
- * the same seven codec cells 103 times would prove nothing the first pass does
+ * the same seven codec cells 102 times would prove nothing the first pass does
  * not, so the sweep is keyed by the row's *signature* — its lists and its extra
  * names — and a separate test asserts that every model an adapter serves has a
  * row, so nothing goes unrepresented.
@@ -202,18 +202,33 @@ function run(ref: string, params: Record<string, unknown>): Outcome {
 }
 
 /**
- * The providers whose off-list language is a **warning** rather than an error.
+ * The providers (or single refs) whose off-list language is a **warning**
+ * rather than an error.
  *
- * One entry, and it is a documentary fact rather than a leniency: Gemini's
- * 78-row table is headed "Supported languages" and states which languages the
- * models *speak*, while the REST reference's own `languageCode` example
- * ("en-US") is a value that table does not carry. So `checkLanguageCode`
- * reports `invalid_enum_value` at `severity: "warning"` — the library never
- * fails a request the API may well fulfil — and the negative half of the
- * completion claim is asserted here as "compiles, and says so" rather than
- * "refused". Enumerated so a second provider cannot join it silently.
+ * Three entries, and each is a documentary fact rather than a leniency:
+ *
+ * - `google`: Gemini's 78-row table is headed "Supported languages" and states
+ *   which languages the models *speak*, while the REST reference's own
+ *   `languageCode` example ("en-US") is a value that table does not carry. So
+ *   `checkLanguageCode` reports `invalid_enum_value` at `severity: "warning"`.
+ * - `smallest-ai/lightning_v3.1`: the reference lists 20 codes for the base
+ *   pool but documents no 400 for the 11 it lists only under Pro, and from
+ *   2026-11-30 the id is served by Pro, which accepts all of them — so
+ *   `checkLanguagePool` warns. One ref, not the provider: its other rows'
+ *   off-list codes are outside the 32-code wire enum and are refused.
+ * - `smallest-ai/lightning_v3.1_pro_10_26`: the reference says to use `en`,
+ *   `es` or `hi` on the preview checkpoint but documents no 400 for another
+ *   code, so `checkPreviewCheckpointLanguage` warns.
+ *
+ * The library never fails a request the API may well fulfil, so the negative
+ * half of the completion claim is asserted here as "compiles, and says so"
+ * rather than "refused". Enumerated so another cell cannot join silently.
  */
-const WARN_ONLY_LANGUAGES: ReadonlySet<string> = new Set(["google"]);
+const WARN_ONLY_LANGUAGES: ReadonlySet<string> = new Set([
+  "google",
+  "smallest-ai/lightning_v3.1",
+  "smallest-ai/lightning_v3.1_pro_10_26",
+]);
 
 /**
  * The spellings a codec is tried in, in order.
@@ -381,7 +396,7 @@ describe("every declared speech preset is a value the provider accepts", () => {
       off,
       () => {
         const probe = run(ref, { ...base(provider, ref), language: off });
-        if (WARN_ONLY_LANGUAGES.has(provider)) {
+        if (WARN_ONLY_LANGUAGES.has(provider) || WARN_ONLY_LANGUAGES.has(ref)) {
           if (!probe.ok) return `refused, but this provider only warns: ${probe.errors.join("; ")}`;
           return probe.warnings.includes("invalid_enum_value@language")
             ? ""
@@ -453,7 +468,7 @@ describe("every declared speech preset is a value the provider accepts", () => {
     expect(result.errors[0]!.message).toContain("gpt-4o-mini-tts");
 
     // Rime's Coda denies all four Mist-family knobs, so its row has no extras
-    // at all and the message names the six ids that do.
+    // at all and the message names the three ids that do.
     const coda = tts.safe({
       model: "rime/coda",
       text: "hi",

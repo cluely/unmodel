@@ -14,6 +14,9 @@
  *   aspect ratio (see LUMA_VIDEO_DIMENSIONS in ./pricing.ts).
  * - `prompt` steers what gets generated into the new area; it defaults to ""
  *   server-side.
+ * - Input limits are per model: ray-2 accepts up to 10s, ray-flash-2 up to
+ *   30s, both up to 100 mb. unmodel cannot read a remote URL, so those ride
+ *   the constraint table as published metadata rather than enforced checks.
  * - Async job API: poll GET /generations/{id} or use `callback_url`.
  * - No cost estimate: reframe bills "same as cost of the models", and Luma
  *   publishes no per-second/per-generation USD rate for ray-2 / ray-flash-2
@@ -40,6 +43,19 @@ import {
 } from "./shared";
 
 export const REFRAME_VIDEO_URL = `${DREAM_MACHINE_BASE_URL}/generations/video/reframe`;
+
+/**
+ * Per-model input ceilings from
+ * https://docs.lumalabs.ai/docs/reframe-video-image (verified 2026-11-12):
+ * "| ray-2 | 10s | 100 mb |", "| ray-flash-2 | 30s | 100 mb |". "100 mb" is
+ * read as 100 MB decimal — the guide does not disambiguate MB from MiB. The
+ * limits are published metadata, not enforced checks: the request carries
+ * only a URL, which unmodel never fetches.
+ */
+export const videoReframeConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+  "ray-2": { media: { video: { maxDurationSeconds: 10, maxBytes: 100_000_000 } } },
+  "ray-flash-2": { media: { video: { maxDurationSeconds: 30, maxBytes: 100_000_000 } } },
+};
 
 export interface ReframeVideoParams extends LumaReframeGeometry {
   model: LumaVideoModelId | (string & {});
@@ -92,6 +108,7 @@ const validator = createValidator<ReframeVideoParams, unknown>({
   schema: videoReframeSchema,
   modelId: (params) => params.model,
   catalog: videoModels,
+  constraints: videoReframeConstraints,
   finalize,
 });
 

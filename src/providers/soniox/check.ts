@@ -6,7 +6,7 @@ import { models } from "./models";
 
 /**
  * Structural subset of a GET/POST /v1/transcriptions response
- * (https://soniox.com/docs/api-reference/stt/transcriptions/get_transcription).
+ * (https://docs.soniox.com/api-reference/stt/transcriptions/get_transcription).
  * The transcript text itself lives at GET /v1/transcriptions/{id}/transcript
  * and is not needed here.
  */

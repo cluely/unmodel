@@ -1,10 +1,10 @@
 {
-  "ref": "soniox/stt-async-v5",
+  "ref": "soniox/stt-async-v6",
   "audio": {
     "url": "https://example.com/interview.wav"
   },
   "params": {
-    "model": "stt-async-v5",
+    "model": "stt-async-v6",
     "audio_url": "https://example.com/interview.wav"
   },
   "url": "https://api.soniox.com/v1/transcriptions",

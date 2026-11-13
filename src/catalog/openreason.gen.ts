@@ -57,6 +57,7 @@ export const models = {
     structuredOutput: true,
     temperature: true,
     openWeights: true,
+    knowledge: "2024-06",
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },

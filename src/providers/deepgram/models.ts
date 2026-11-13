@@ -3,36 +3,59 @@
 // https://developers.deepgram.com/docs/tts-models (Aura voice ids),
 // https://developers.deepgram.com/reference/text-to-speech/speak-request
 //   (the `model` enum POST /v1/speak accepts — authoritative for TTS) and
-// https://deepgram.com/pricing (last checked 2026-08-13).
+// https://deepgram.com/pricing (last checked 2026-11-12).
 //
-// PRICING (pay-as-you-go, read off the pricing page's speech-to-text table;
-// already USD per minute, no unit conversion needed). The table has SEPARATE
-// streaming and pre-recorded columns — this catalog and `stt` are the
-// PRE-RECORDED (POST /v1/listen) surface, so the pre-recorded column is what
-// is encoded here:
-// - Nova-3 monolingual: $0.0077/min pre-recorded ($0.0048/min streaming).
-// - Nova-3 multilingual (`language=multi`): $0.0092/min pre-recorded
-//   ($0.0058/min streaming) — applied in transcribe.ts, since it is a request
-//   property, not a distinct model id.
-// - Flux (STREAMING-ONLY, /v2/listen WebSocket): $0.0065/min English,
-//   $0.0078/min multilingual. Kept in the catalog for completeness; the
-//   pre-recorded validator rejects flux-* models.
-// - Nova-2, Nova, Enhanced, Base, Whisper Cloud and nova-3-medical are no
-//   longer listed in the pricing table (it points at "Contact Sales" for
-//   them), so they carry NO cost and estimates return undefined rather than
-//   quoting a rate Deepgram no longer publishes.
-// Add-ons (diarization $0.0020/min, redaction $0.0020/min, entity detection
-// $0.0017/min, keyterm prompting $0.0013/min) are NOT folded into estimates.
+// PRICING (pay-as-you-go, read off the pricing page's schema.org JSON-LD
+// offers, which carry one "price" per mode and plan; already USD per minute,
+// no unit conversion needed). Streaming and pre-recorded are SEPARATE offers
+// — this catalog and `stt` are the PRE-RECORDED (POST /v1/listen) surface, so
+// the pre-recorded offer is what is encoded here (./realtime holds the
+// streaming ones):
+// - Nova-3 monolingual: "Speech-to-text: Nova-3 Monolingual (Pre-recorded) —
+//   Pay as you go" … "price":0.0043.
+// - Nova-3 multilingual (`language=multi`): "Speech-to-text: Nova-3
+//   Multilingual (Pre-recorded) — Pay as you go" … "price":0.0052 — applied
+//   in stt.ts, since it is a request property, not a distinct model id.
+// - Flux STT (STREAMING-ONLY, /v2/listen WebSocket): "Flux STT English
+//   (Streaming) — Pay as you go" … "price":0.0077 and "Flux STT Multilingual
+//   (Streaming) — Pay as you go" … "price":0.0078. Kept in the catalog for
+//   completeness; the pre-recorded validator rejects flux-* models.
+// - Whisper Large: "Speech-to-text: Whisper Large (Pre-recorded) — Pay as you
+//   go" … "price":0.0048. The page prices Whisper Large alone, so `whisper`
+//   and whisper-tiny/base/small/medium stay unpriced.
+// - Nova-2, Nova, Enhanced, Base, nova-3-medical and nova-3-pharma have no
+//   offer. The FAQ's "unchanged rates for existing deployments: Nova-2
+//   streaming $0.35 an hour, Enhanced $0.99, Base $0.87" is scoped to existing
+//   deployments and states no mode or unit for Enhanced and Base, so they carry
+//   NO cost and estimates return undefined rather than quoting a rate a new
+//   caller cannot get.
+// Add-ons are NOT folded into estimates: diarization ("Speaker Diarization
+// (Streaming) — Pay as you go" … "price":0.002; "Included" on pre-recorded),
+// redaction $0.0020/min, entity detection $0.0017/min, keyterm prompting
+// $0.0013/min.
 //
-// TTS PRICING (the pricing page's text-to-speech table, quoted per 1,000
-// characters — converted to ModelCost.perMillionCharacters by x1000):
-// - Aura-2: $0.030/1k characters → $30 per 1M characters.
-// - Aura-1: $0.0150/1k characters → $15 per 1M characters.
-// - Flux TTS ($0.0450/1k characters after its 2026-09-12 free period) is a
-//   SEPARATE /v2/speak surface with its own `flux-{voice}-en` model strings;
-//   it is not accepted by /v1/speak, so those voices are deliberately absent
-//   from this catalog (the flux-general-* entries below are the STT models of
-//   the same name, served by the /v2/listen WebSocket).
+// TTS PRICING (the pricing page's text-to-speech offers, quoted per "1,000
+// characters" — converted to ModelCost.perMillionCharacters by x1000):
+// - Aura-2: "Text-to-speech: Aura-2 — Pay as you go" … "price":0.03 → $30 per
+//   1M characters.
+// - Aura-1: "Text-to-speech: Aura-1 — Pay as you go" … "price":0.015 → $15 per
+//   1M characters.
+// - Flux TTS is a SEPARATE /v2/speak surface (batch REST and WebSocket) with
+//   its own `flux-{voice}-{language}` model strings — "Flux TTS is served on
+//   the new `/v2/speak` endpoint … Aura and Aura-2 continue to be served on
+//   `/v1/speak` and are unchanged"
+//   (https://developers.deepgram.com/changelog/2026/8/12, read 2026-11-12) —
+//   priced "price":0.045 per "1,000 characters" (deepgram.com/pricing JSON-LD,
+//   read 2026-11-12). /v2/speak has no validator here, so those voices are
+//   deliberately absent from this catalog and ./tts refuses a flux-* id by
+//   name (the flux-general-* entries below are the STT models of the same
+//   name, served by the /v2/listen WebSocket).
+//
+// NOT CATALOGUED: Deepgram's LLMs (`think-fast`, `phonellm-mini-alpha-2-fp8`
+// at https://agent.deepgram.com/v1/think) — "Deepgram LLMs are available only
+// to current Deepgram contract customers enrolled in the Early Access program"
+// (https://developers.deepgram.com/docs/llm/models, read 2026-11-12). No
+// self-serve API, so they stay out of the library until one exists.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -54,8 +77,12 @@ const STT = {
   limit: { context: 0 },
 } as const;
 
-/** Nova-3 pre-recorded pay-as-you-go rate (deepgram.com/pricing). */
-export const NOVA_3_USD_PER_MINUTE = 0.0077;
+/**
+ * Nova-3 PRE-RECORDED pay-as-you-go rate — "Speech-to-text: Nova-3
+ * Monolingual (Pre-recorded) — Pay as you go" … "price":0.0043, "unitText":
+ * "minute" (https://deepgram.com/pricing JSON-LD, read 2026-11-12).
+ */
+export const NOVA_3_USD_PER_MINUTE = 0.0043;
 
 /** Speech-to-text models — POST /v1/listen (pre-recorded) and /v2/listen (Flux). */
 const sttModels = {
@@ -73,10 +100,30 @@ const sttModels = {
     ...STT,
     cost: { perAudioMinute: NOVA_3_USD_PER_MINUTE },
   },
-  // English-only variant (en, en-US, en-AU, en-CA, en-GB, en-IE, en-IN, en-NZ).
+  // English (en, en-US, en-AU, en-CA, en-GB, en-IE, en-IN, en-NZ) plus
+  // `language=multi`: "The `nova-3-medical` model now supports multilingual
+  // transcription with `language=multi` … Dutch, English, French, German,
+  // Hindi, Italian, Japanese, Portuguese, Russian, and Spanish. Available for
+  // both batch and streaming." (https://developers.deepgram.com/changelog/2026/10/6,
+  // read 2026-11-12). No published rate.
   "nova-3-medical": {
     id: "nova-3-medical",
     name: "Nova-3 Medical",
+    family: "nova-3",
+    ...STT,
+  },
+  // "We have released `nova-3-pharma`, a new Nova-3 model purpose-built for
+  // pharmaceutical vocabulary" — "Supports both pre-recorded (batch) and
+  // real-time streaming transcription"; English only (`en`, `en-US`, `en-AU`,
+  // `en-CA`, `en-GB`, `en-IE`, `en-IN`, `en-NZ`)
+  // (https://developers.deepgram.com/changelog/2026/9/17 and
+  // models-languages-overview, read 2026-11-12). Family "nova-3", so keyterm
+  // prompting applies. No cost: deepgram.com/pricing (read 2026-11-12) prices
+  // Nova-3 Monolingual/Multilingual, Flux STT and Whisper Large only — no
+  // nova-3-pharma offer — so estimates return undefined.
+  "nova-3-pharma": {
+    id: "nova-3-pharma",
+    name: "Nova-3 Pharma",
     family: "nova-3",
     ...STT,
   },
@@ -160,16 +207,28 @@ const sttModels = {
     family: "whisper",
     ...STT,
   },
-  "whisper-large": { id: "whisper-large", name: "Whisper Cloud Large", family: "whisper", ...STT },
+  // "Speech-to-text: Whisper Large (Pre-recorded) — Pay as you go" …
+  // "price":0.0048 (https://deepgram.com/pricing JSON-LD, read 2026-11-12) —
+  // the one Whisper size the page prices.
+  "whisper-large": {
+    id: "whisper-large",
+    name: "Whisper Cloud Large",
+    family: "whisper",
+    ...STT,
+    cost: { perAudioMinute: 0.0048 },
+  },
   // Flux models are STREAMING-ONLY: they serve the /v2/listen WebSocket
   // ("The Flux model is accessed by the WebSocket protocol only"), not
-  // pre-recorded /v1/listen. Costs are the streaming pay-as-you-go rates.
+  // pre-recorded /v1/listen. Costs are the streaming pay-as-you-go rates:
+  // "Flux STT English (Streaming) — Pay as you go" … "price":0.0077 and "Flux
+  // STT Multilingual (Streaming) — Pay as you go" … "price":0.0078
+  // (https://deepgram.com/pricing JSON-LD, read 2026-11-12).
   "flux-general-en": {
     id: "flux-general-en",
     name: "Flux General (English)",
     family: "flux",
     ...STT,
-    cost: { perAudioMinute: 0.0065 },
+    cost: { perAudioMinute: 0.0077 },
   },
   "flux-general-multi": {
     id: "flux-general-multi",
@@ -203,7 +262,7 @@ const TTS = {
   openWeights: false,
   modalities: { input: ["text"], output: ["audio"] },
   // limit.context 0: TTS is not token-windowed (HAND_CATALOGS.md); the
-  // per-request cap is characters, which ./speak checks.
+  // per-request cap is characters, which ./tts checks.
   limit: { context: 0, characters: SPEAK_MAX_CHARACTERS },
 } as const;
 
@@ -339,7 +398,6 @@ const ttsModels = {
   "aura-2-livia-it": aura2("aura-2-livia-it", "Aura-2 Livia (Italian)"),
   "aura-2-maia-it": aura2("aura-2-maia-it", "Aura-2 Maia (Italian)"),
   "aura-2-melia-it": aura2("aura-2-melia-it", "Aura-2 Melia (Italian)"),
-  "aura-2-perseo-it": aura2("aura-2-perseo-it", "Aura-2 Perseo (Italian)"),
   // Japanese (ja)
   "aura-2-ama-ja": aura2("aura-2-ama-ja", "Aura-2 Ama (Japanese)"),
   "aura-2-ebisu-ja": aura2("aura-2-ebisu-ja", "Aura-2 Ebisu (Japanese)"),
@@ -356,7 +414,7 @@ export const models = {
 /**
  * Route-scoped catalogs. `models` is the whole provider (what the CLI and
  * catalog consumers want); an endpoint that must not resolve the other
- * modality's ids can validate against one of these instead — ./speak gates on
+ * modality's ids can validate against one of these instead — ./tts gates on
  * TTS_MODEL_IDS and reports an STT id as unsupported_capability.
  */
 export { sttModels, ttsModels };

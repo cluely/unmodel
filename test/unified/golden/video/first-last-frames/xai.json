@@ -1,0 +1,18 @@
+{
+  "ref": "xai/grok-imagine-video-1.5",
+  "params": {
+    "model": "grok-imagine-video-1.5",
+    "prompt": "the fox walks from one bank to the other",
+    "duration": 5,
+    "image": {
+      "url": "https://example.com/frame.png"
+    },
+    "last_frame": {
+      "url": "https://example.com/last.png"
+    }
+  },
+  "url": "https://api.x.ai/v1/videos/generations",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

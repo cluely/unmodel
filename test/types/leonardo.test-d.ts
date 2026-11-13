@@ -30,4 +30,55 @@ function generationsBodyAliasTypeTests(): void {
   void knownAsFuture;
 }
 
+function elementsArmTypeTests(): void {
+  // The Elements arm: Phoenix's keys plus transparency, the two Elements
+  // arrays and four more guidance kinds.
+  image({
+    model: "kino-xl",
+    parameters: {
+      prompt: "hi",
+      mode: "QUALITY",
+      contrast: "LOW",
+      transparency: true,
+      user_elements: [{ akUUID: "element-id", weight: 0.5 }],
+      guidances: { edge: [{ image: { id: "a" }, strength: "HIGH" }] },
+    },
+  });
+
+  // @ts-expect-error — the Elements models have no ULTRA mode
+  image({ model: "lightning-xl", parameters: { prompt: "hi", mode: "ULTRA" } });
+
+  // @ts-expect-error — transparency is Elements-only
+  image({ model: "phoenix-v1.0", parameters: { prompt: "hi", transparency: true } });
+
+  // @ts-expect-error — edge guidance is Elements-only
+  image({ model: "lucid-origin", parameters: { prompt: "hi", guidances: { edge: [] } } });
+}
+
+function guidanceScaleTypeTests(): void {
+  // Content guidance takes ULTRA everywhere; image references can be a URL or
+  // inline base64.
+  image({
+    model: "lucid-origin",
+    parameters: {
+      prompt: "hi",
+      guidances: {
+        content: [{ image: { type: "BASE64", data: "iVBORw0KGgo=" }, strength: "ULTRA" }],
+        style: [{ image: { type: "URL", url: "https://example.com/a.png" }, strength: "MAX" }],
+      },
+    },
+  });
+
+  image({
+    model: "phoenix-v1.0",
+    parameters: {
+      prompt: "hi",
+      // @ts-expect-error — character guidance stops at HIGH
+      guidances: { character: [{ image: { id: "a" }, strength: "ULTRA" }] },
+    },
+  });
+}
+
 void generationsBodyAliasTypeTests;
+void elementsArmTypeTests;
+void guidanceScaleTypeTests;

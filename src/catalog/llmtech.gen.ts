@@ -13,8 +13,8 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "unsloth/Qwen3.8-27B-NVFP4": {
-    id: "unsloth/Qwen3.8-27B-NVFP4",
+  "nvidia/Qwen3.8-27B-NVFP4": {
+    id: "nvidia/Qwen3.8-27B-NVFP4",
     name: "Qwen3.8 27B",
     family: "qwen",
     attachment: true,
@@ -32,7 +32,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type LlmtechModelId = keyof typeof models;
-export type LlmtechTextModelId = "unsloth/Qwen3.8-27B-NVFP4";
+export type LlmtechTextModelId = "nvidia/Qwen3.8-27B-NVFP4";
 export type LlmtechImageModelId = never;
 export type LlmtechAudioModelId = never;
 export type LlmtechVideoModelId = never;

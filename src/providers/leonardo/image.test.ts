@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { image, LEONARDO_GENERATIONS_URL } from "./image";
 import {
   LEONARDO_DEFAULT_STYLE_ID,
+  LEONARDO_DOCS_URL,
   LEONARDO_MODEL_RULES,
   LEONARDO_STYLE_LIMIT_DOCS_URL,
 } from "./model-rules";
@@ -13,6 +14,18 @@ const safeUnchecked = image.safe as unknown as (
   params: unknown,
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
+
+const ELEMENTS_MODELS = [
+  "kino-xl",
+  "anime-xl",
+  "portrait-perfect",
+  "stock-photography",
+  "illustrative-albedo",
+  "concept-art",
+  "lifelike-vision",
+  "graphic-design",
+  "lightning-xl",
+] as const;
 
 describe("leonardo.image happy path", () => {
   test("validates a Lucid Origin request and keeps model in the body", () => {
@@ -58,17 +71,220 @@ describe("leonardo.image happy path", () => {
     if (r.ok) expect(r.warnings.some((w) => w.code === "unknown_model")).toBe(true);
   });
 
-  test("the catalog holds only Leonardo's own image models", () => {
+  // remove-bg requires only `guidances` and the aurora upscalers
+  // `guidances` + `width` + `height`; neither schema has a `prompt` property.
+  test.each([
+    {
+      model: "remove-bg",
+      parameters: {
+        size: "full",
+        channels: "rgba",
+        quantity: 1,
+        guidances: { image_reference: [{ image: { id: "img", type: "UPLOADED" } }] },
+      },
+    },
+    {
+      model: "aurora-upscaler-precise",
+      parameters: {
+        width: 128,
+        height: 128,
+        quantity: 1,
+        upscale_mode: "detailed",
+        upscale_factor: 2,
+        guidances: { image_reference: [{ image: { id: "img", type: "GENERATED" } }] },
+      },
+    },
+  ])("an untabled model with no prompt ($model) is not refused", (body) => {
+    const r = safeUnchecked(body);
+    expect(r.ok, r.ok ? "" : JSON.stringify(r.errors)).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+
+  test("issues cite the canonical reference URL", () => {
+    expect(LEONARDO_DOCS_URL).toBe("https://docs.leonardo.ai/reference/creategeneration");
+    const r = safeUnchecked({ model: "lucid-origin", parameters: { prompt: "x", mode: "TURBO" } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.["source"]).toBe(LEONARDO_DOCS_URL);
+  });
+
+  test("the catalog holds the tabled image models, each with a rule", () => {
     expect(Object.keys(models)).toEqual([
       "lucid-origin",
       "lucid-realism",
       "phoenix-v1.0",
       "phoenix-v0.9",
+      ...ELEMENTS_MODELS,
     ]);
+    expect(Object.keys(LEONARDO_MODEL_RULES)).toEqual(Object.keys(models));
     // Leonardo publishes no public per-model rate — no cost, no estimate.
     for (const model of Object.values(models)) expect(model).not.toHaveProperty("cost");
     const r = image.safe({ model: "lucid-origin", parameters: { prompt: "x" } });
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+  });
+});
+
+describe("leonardo.image Elements models", () => {
+  test.each([...ELEMENTS_MODELS])("%s validates as a known model, with no cost estimate", (model) => {
+    const r = safeUnchecked({
+      model,
+      parameters: {
+        prompt: "a lighthouse in fog",
+        mode: "QUALITY",
+        negative_prompt: "blurry",
+        width: 1024,
+        height: 1536,
+        style_ids: [LEONARDO_MODEL_RULES[model]!.styleIds[0]],
+      },
+    });
+    expect(r.ok, r.ok ? "" : JSON.stringify(r.errors)).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([]);
+    expect(r.estimate.costUSD).toBeUndefined();
+  });
+
+  test("their mode is FAST or QUALITY — ULTRA is refused", () => {
+    const r = safeUnchecked({ model: "kino-xl", parameters: { prompt: "x", mode: "ULTRA" } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_enum_value");
+      expect(r.errors[0]?.meta?.["allowed"]).toEqual(["FAST", "QUALITY"]);
+    }
+  });
+
+  test("width tops out at 1584 on anime-xl but 1536 on kino-xl; height at 1536 on both", () => {
+    expect(
+      image.safe({ model: "anime-xl", parameters: { prompt: "x", width: 1584 } }).ok,
+    ).toBe(true);
+
+    const kino = safeUnchecked({ model: "kino-xl", parameters: { prompt: "x", width: 1584 } });
+    expect(kino.ok).toBe(false);
+    if (!kino.ok) expect(kino.errors[0]?.message).toContain("between 32 and 1536");
+
+    const tall = safeUnchecked({ model: "anime-xl", parameters: { prompt: "x", height: 1584 } });
+    expect(tall.ok).toBe(false);
+    if (!tall.ok) expect(tall.errors[0]?.path).toEqual(["parameters", "height"]);
+  });
+
+  test("the prompt cap is 9999 characters", () => {
+    expect(
+      image.safe({ model: "lightning-xl", parameters: { prompt: "a".repeat(9999) } }).ok,
+    ).toBe(true);
+    const long = safeUnchecked({
+      model: "lightning-xl",
+      parameters: { prompt: "a".repeat(10000) },
+    });
+    expect(long.ok).toBe(false);
+    if (!long.ok) expect(long.errors[0]?.message).toContain("9999");
+  });
+
+  test("transparency is a boolean, and an Elements-only key elsewhere", () => {
+    expect(
+      image.safe({ model: "graphic-design", parameters: { prompt: "x", transparency: true } }).ok,
+    ).toBe(true);
+
+    const notBoolean = safeUnchecked({
+      model: "graphic-design",
+      parameters: { prompt: "x", transparency: "yes" },
+    });
+    expect(notBoolean.ok).toBe(false);
+    if (!notBoolean.ok) expect(notBoolean.errors[0]?.path).toEqual(["parameters", "transparency"]);
+
+    // A warning, not a refusal: Phoenix's published `parameters` object is open
+    // (no `additionalProperties: false`), so the API may ignore the key.
+    const phoenix = safeUnchecked({
+      model: "phoenix-v1.0",
+      parameters: { prompt: "x", transparency: true },
+    });
+    expect(phoenix.ok).toBe(true);
+    const warning = phoenix.warnings.find((w) => w.path.join(".") === "parameters.transparency");
+    expect(warning?.code).toBe("unsupported_param");
+    expect(warning?.severity).toBe("warning");
+    expect(warning?.meta?.["models"]).toEqual([...ELEMENTS_MODELS]);
+  });
+
+  test("user_elements and platform_elements take at most 4 entries, weight ≥ 0", () => {
+    const four = [0, 1, 2, 3].map((i) => ({ akUUID: `element-${i}`, weight: 0.5 }));
+    expect(
+      image.safe({
+        model: "concept-art",
+        parameters: { prompt: "x", user_elements: four, platform_elements: four },
+      }).ok,
+    ).toBe(true);
+
+    const five = safeUnchecked({
+      model: "concept-art",
+      parameters: { prompt: "x", platform_elements: [...four, { weight: 1 }] },
+    });
+    expect(five.ok).toBe(false);
+    if (!five.ok) expect(five.errors[0]?.message).toContain("limited to 4 entries");
+
+    const negative = safeUnchecked({
+      model: "concept-art",
+      parameters: { prompt: "x", user_elements: [{ weight: -0.1 }] },
+    });
+    expect(negative.ok).toBe(false);
+    if (!negative.ok) {
+      expect(negative.errors[0]?.path).toEqual(["parameters", "user_elements", 0, "weight"]);
+    }
+  });
+
+  test("edge, pose, depth and text_image guidance are Elements-only", () => {
+    const guidances = {
+      edge: [{ image: { id: "a", type: "UPLOADED" as const }, strength: "LOW" as const }],
+      pose: [{ image: { id: "b" }, strength: "MID" as const }],
+      depth: [{ image: { id: "c" }, order: 0, strength: "HIGH" as const }],
+      text_image: [{ image: { id: "d" }, strength: "MID" as const }],
+    };
+    expect(
+      image.safe({ model: "lifelike-vision", parameters: { prompt: "x", guidances } }).ok,
+    ).toBe(true);
+
+    // A warning: Phoenix's published `guidances` object is open too.
+    const phoenix = safeUnchecked({
+      model: "phoenix-v1.0",
+      parameters: { prompt: "x", guidances: { edge: guidances.edge } },
+    });
+    expect(phoenix.ok).toBe(true);
+    const warning = phoenix.warnings.find((w) => w.code === "unsupported_param");
+    expect(warning?.severity).toBe("warning");
+    expect(warning?.path).toEqual(["parameters", "guidances", "edge"]);
+
+    const two = safeUnchecked({
+      model: "lifelike-vision",
+      parameters: { prompt: "x", guidances: { depth: [...guidances.depth, ...guidances.depth] } },
+    });
+    expect(two.ok).toBe(false);
+    if (!two.ok) expect(two.errors[0]?.message).toContain("limited to 1 reference");
+  });
+
+  test("each Elements model keeps its own style allowlist", () => {
+    // anime-xl's default style is not a stock-photography style.
+    const animeDefault = "b2a54a51-230b-4d4f-ad4e-8409bf58645f";
+    expect(LEONARDO_MODEL_RULES["anime-xl"]!.styleIds).toContain(animeDefault);
+    expect(
+      image.safe({ model: "anime-xl", parameters: { prompt: "x", style_ids: [animeDefault] } }).ok,
+    ).toBe(true);
+
+    const r = safeUnchecked({
+      model: "stock-photography",
+      parameters: { prompt: "x", style_ids: [animeDefault] },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_enum_value");
+      expect(r.errors[0]?.meta?.["allowed"]).toEqual([
+        "5bdc3f2a-1be6-4d1c-8e77-992a30824a2c",
+        "556c1ee5-ec38-42e8-955a-1e82dad0ffa1",
+      ]);
+    }
+  });
+
+  test("a Phoenix-and-Elements key on Lucid names every model that takes it", () => {
+    const r = safeUnchecked({ model: "lucid-realism", parameters: { prompt: "x", tiling: true } });
+    expect(r.ok).toBe(true);
+    const warning = r.warnings.find((w) => w.code === "unsupported_param");
+    expect(warning?.meta?.["models"]).toEqual(["phoenix-v1.0", "phoenix-v0.9", ...ELEMENTS_MODELS]);
+    expect(warning?.message).toContain('"kino-xl"');
   });
 });
 
@@ -115,16 +331,26 @@ describe("leonardo.image per-model dimensions", () => {
 });
 
 describe("leonardo.image per-model params", () => {
-  test("Phoenix-only params are rejected on the Lucid models", () => {
+  test("Phoenix-only params warn on the Lucid models, naming the takers", () => {
     const r = safeUnchecked({
       model: "lucid-origin",
       parameters: { prompt: "x", contrast: "HIGH" },
     });
+    expect(r.ok).toBe(true);
+    const warning = r.warnings.find((w) => w.code === "unsupported_param");
+    expect(warning?.severity).toBe("warning");
+    expect(warning?.path).toEqual(["parameters", "contrast"]);
+    expect(warning?.meta?.["models"]).toContain("phoenix-v1.0");
+    expect(warning?.message).toContain("may ignore it rather than reject it");
+  });
+
+  test("a caller can still make a sibling-model key an error", () => {
+    const r = safeUnchecked(
+      { model: "lucid-origin", parameters: { prompt: "x", contrast: "HIGH" } },
+      { severity: { unsupported_param: "error" } },
+    );
     expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.code).toBe("unsupported_param");
-      expect(r.errors[0]?.path).toEqual(["parameters", "contrast"]);
-    }
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["parameters", "contrast"]);
   });
 
   test("QUALITY mode is Phoenix-only", () => {
@@ -208,8 +434,12 @@ describe("leonardo.image style ids and guidances", () => {
         guidances: { image_to_image: [{ image: { id: "abc" }, strength: "MID" }] },
       },
     });
-    expect(lucid.ok).toBe(false);
-    if (!lucid.ok) expect(lucid.errors[0]?.code).toBe("unsupported_param");
+    expect(lucid.ok).toBe(true);
+    expect(lucid.warnings.find((w) => w.code === "unsupported_param")?.path).toEqual([
+      "parameters",
+      "guidances",
+      "image_to_image",
+    ]);
 
     expect(
       image.safe({
@@ -244,6 +474,28 @@ describe("leonardo.image style ids and guidances", () => {
     ]);
   });
 
+  test("content guidance takes ULTRA on every tabled model; character and image_to_image do not", () => {
+    for (const model of ["lucid-origin", "lucid-realism", "phoenix-v1.0", "phoenix-v0.9", "kino-xl"]) {
+      const r = safeUnchecked({
+        model,
+        parameters: {
+          prompt: "x",
+          guidances: { content: [{ image: { id: "a" }, strength: "ULTRA" }] },
+        },
+      });
+      expect(r.ok, model).toBe(true);
+    }
+
+    for (const kind of ["character", "image_to_image"]) {
+      const r = safeUnchecked({
+        model: "phoenix-v1.0",
+        parameters: { prompt: "x", guidances: { [kind]: [{ image: { id: "a" }, strength: "ULTRA" }] } },
+      });
+      expect(r.ok, kind).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.meta?.["allowed"]).toEqual(["LOW", "MID", "HIGH"]);
+    }
+  });
+
   test("Phoenix takes 4 style guidances, Lucid only 1", () => {
     const four = [0, 1, 2, 3].map((i) => ({ image: { id: `img-${i}` }, strength: "MID" as const }));
     expect(
@@ -276,6 +528,44 @@ describe("leonardo.image style ids and guidances", () => {
       "image",
       "type",
     ]);
+  });
+
+  test("an image reference can be a URL or inline base64 data", () => {
+    const r = image.safe({
+      model: "lucid-origin",
+      parameters: {
+        prompt: "x",
+        guidances: {
+          style: [{ image: { type: "URL", url: "https://example.com/a.png" }, strength: "MID" }],
+          content: [{ image: { type: "BASE64", data: "iVBORw0KGgo=" }, strength: "HIGH" }],
+        },
+      },
+    });
+    expect(r.ok, r.ok ? "" : JSON.stringify(r.errors)).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("INIT and GENERATION are off the published enum: passed through with a warning", () => {
+    for (const type of ["INIT", "GENERATION"] as const) {
+      const r = image.safe({
+        model: "phoenix-v1.0",
+        parameters: {
+          prompt: "x",
+          guidances: { image_to_image: [{ image: { id: "a", type }, strength: "MID" }] },
+        },
+      });
+      expect(r.ok, type).toBe(true);
+      if (!r.ok) continue;
+      const warning = r.warnings.find((w) => w.path.join(".").endsWith("image.type"));
+      expect(warning?.severity, type).toBe("warning");
+      expect(warning?.meta?.["allowed"], type).toEqual([
+        "UPLOADED",
+        "GENERATED",
+        "VARIATION",
+        "URL",
+        "BASE64",
+      ]);
+    }
   });
 
   test("a guidance entry without strength is reported", () => {

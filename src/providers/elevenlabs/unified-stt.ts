@@ -44,7 +44,9 @@ export const stt = {
   unsupported: {
     languages:
       "POST /v1/speech-to-text has no candidate-language list — `language_code` pins one language " +
-      "and omitting it detects, with nothing in between.",
+      "and omitting it detects, with nothing in between. scribe_v3's `secondary_language_codes` " +
+      "names languages spoken ALONGSIDE the pinned one, not a shortlist to detect from; it is an " +
+      "extra on that model's row.",
     prompt:
       "Scribe takes no prose prompt — `keyterms` is a list of terms capped at five words each, " +
       "which is a different thing; send it through `providerOptions.elevenlabs`.",

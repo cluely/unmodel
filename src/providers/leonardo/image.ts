@@ -2,9 +2,9 @@
  * Leonardo.Ai image generation —
  * POST https://cloud.leonardo.ai/api/rest/v2/generations
  *
- * Wire notes (verified 2026-08-13 against the OpenAPI v2 document embedded in
- * https://docs.leonardo.ai/reference/creategeneration-1 — fetch it as
- * `…/creategeneration-1.md` — plus the prose parameter tables on
+ * Wire notes (verified 2026-11-12 against the OpenAPI v2 document embedded in
+ * https://docs.leonardo.ai/reference/creategeneration — fetch it as
+ * `…/creategeneration.md` — plus the prose parameter tables on
  * https://docs.leonardo.ai/docs/lucid-origin and
  * https://docs.leonardo.ai/docs/phoenix):
  * - One endpoint, one body: `{ model, parameters, public? }`. `model` is a
@@ -18,23 +18,40 @@
  *   mode, up to 4 style guidances and the `character` / `image_to_image`
  *   guidance kinds, while the Lucid models accept only `style` and `content`
  *   (one each); every model has its own `style_ids` allowlist.
+ * - The nine Elements models (`kino-xl` … `lightning-xl`) take Phoenix's keys
+ *   plus `transparency`, `user_elements` and `platform_elements`, a FAST /
+ *   QUALITY mode with no ULTRA, a 1536-px height cap (width 1536 or 1584) and
+ *   four more guidance kinds: `edge`, `pose`, `depth`, `text_image`.
  * - Image-to-image and style/content/character transfer all ride in
  *   `parameters.guidances` — Leonardo has no separate img2img route on v2.
- *   Each guidance references an already-uploaded image by id (see
- *   https://docs.leonardo.ai/docs/how-to-upload-an-image-using-a-presigned-url),
- *   so there are no bytes for unmodel to inspect.
+ *   Each guidance references its image by `id` (uploaded — see
+ *   https://docs.leonardo.ai/docs/how-to-upload-an-image-using-a-presigned-url
+ *   — or generated), by `url` (`type: "URL"`), or inline as base64 `data`
+ *   (`type: "BASE64"`). unmodel checks the reference's `type`, not the bytes.
  * - `mode` (FAST / QUALITY / ULTRA) replaces the legacy `quality` knob: "Use
  *   this instead of `quality` for all proprietary models!". The
  *   artificialanalysis rows "Lucid Origin Ultra/Fast" and "Phoenix 1.0
  *   Ultra/Fast" are this parameter, not separate model ids.
  * - ASYNC-JOB API: the POST returns a generation id; fetch the images with
- *   `GET /v2/generations/{id}` or a webhook callback — transport, out of
- *   unmodel's scope.
+ *   the v1 `GET https://cloud.leonardo.ai/api/rest/v1/generations/{id}` ("Get
+ *   a Single Generation", https://docs.leonardo.ai/v1.0/reference/getgenerationbyid,
+ *   updatedAt 2026-06-03, read 2026-11-12) or a webhook callback — transport,
+ *   out of unmodel's scope. v2 publishes only `POST /generations` and
+ *   `POST /generationssync`; Leonardo's own v2 recipes poll
+ *   `rest/v1/generations/{id}`.
+ * - The 13 tabled arms leave `parameters` and `guidances` open (no
+ *   `additionalProperties: false`), so a key or guidance kind outside a
+ *   model's table is a warning, not an error — see LEONARDO_KNOWN_PARAMETERS.
  * - No cost estimate: Leonardo publishes no public per-model rate (see
  *   models.ts). The response's `cost` object is authoritative.
  * - Auth is an `Authorization: Bearer …` header — unmodel never touches keys.
- * - Leonardo ships official SDKs, but they take the same JSON body;
- *   `.toSdk("leonardo")` returns it unchanged.
+ * - No official SDK sends this body: both Leonardo SDKs
+ *   (https://docs.leonardo.ai/docs/leonardoai-official-sdks) target
+ *   `https://cloud.leonardo.ai/api/rest/v1` — github.com/Leonardo-Interactive/
+ *   leonardo-ts-sdk `src/lib/config.ts` reads `openapiDocVersion: "v1.0.0"`,
+ *   and leonardo-python-sdk's README `server_url="https://cloud.leonardo.ai/api/rest/v1"`
+ *   (checked 2026-11-12). `.toSdk("leonardo")` is a raw-body passthrough —
+ *   the JSON body unchanged, for your own client.
  */
 
 import { z } from "zod";
@@ -50,10 +67,13 @@ import {
   LEONARDO_CONTRASTS,
   LEONARDO_IMAGE_TYPES,
   LEONARDO_KNOWN_PARAMETERS,
+  LEONARDO_MAX_ELEMENTS,
   LEONARDO_MAX_STYLE_IDS,
   LEONARDO_MODEL_RULES,
   LEONARDO_PROMPT_ENHANCE,
   LEONARDO_STYLE_LIMIT_DOCS_URL,
+  LEONARDO_UNLISTED_IMAGE_TYPES,
+  type LeonardoContentStrength,
   type LeonardoContrast,
   type LeonardoGuidanceStrength,
   type LeonardoImageType,
@@ -66,17 +86,30 @@ export const LEONARDO_API_BASE_URL = "https://cloud.leonardo.ai/api/rest/v2";
 export const LEONARDO_GENERATIONS_URL = `${LEONARDO_API_BASE_URL}/generations`;
 
 // ---------------------------------------------------------------------------
-// Wire types — Tier A: one arm per Leonardo-owned image model, carrying exactly
+// Wire types — Tier A: one arm per tabled image model, carrying exactly
 // the `parameters` that model's schema documents. Params a model rejects are
 // typed `never` so they fail at compile time.
 // ---------------------------------------------------------------------------
 
-/** A reference to an image already stored in your Leonardo account. */
+/**
+ * A reference to an image: one stored in your Leonardo account (`id`), a URL,
+ * or inline base64 bytes.
+ */
 export interface LeonardoImageReference {
   /** UUID of the uploaded or generated image. */
   id?: string;
-  /** Image URL (enriched by the backend when the image is resolved). */
+  /**
+   * "Image URL or a base64 data URL. Required when type is URL. The backend
+   * enriches resolved image URLs."
+   */
   url?: string;
+  /** "Base64-encoded image bytes. Required when type is BASE64." */
+  data?: string;
+  /**
+   * The published enum is UPLOADED / GENERATED / VARIATION / URL / BASE64.
+   * `"INIT"` and `"GENERATION"` are off it and draw a warning at run time
+   * (LEONARDO_UNLISTED_IMAGE_TYPES).
+   */
   type?: LeonardoImageType;
   width?: number;
   height?: number;
@@ -90,17 +123,38 @@ export interface LeonardoStyleGuidance {
   strength: LeonardoStyleStrength;
 }
 
-/** Content / character guidance. */
+/** Content-transfer guidance — LOW / MID / HIGH / ULTRA. */
 export interface LeonardoContentGuidance {
+  image: LeonardoImageReference;
+  order?: number;
+  strength: LeonardoContentStrength;
+}
+
+/**
+ * Character guidance (Phoenix and Elements), and the edge, pose, depth and
+ * text-image kinds (Elements only) — the ordered kinds on the LOW / MID / HIGH
+ * scale.
+ */
+export interface LeonardoGuidance {
   image: LeonardoImageReference;
   order?: number;
   strength: LeonardoGuidanceStrength;
 }
 
-/** Image-to-image guidance (Phoenix only) — no `order` field. */
+/** Image-to-image guidance (Phoenix and Elements) — no `order` field. */
 export interface LeonardoImageToImageGuidance {
   image: LeonardoImageReference;
   strength: LeonardoGuidanceStrength;
+}
+
+/**
+ * One `user_elements` / `platform_elements` entry. The schema's items declare
+ * only `weight` (`"minimum": 0`) and no id key, so every other key passes
+ * through untyped rather than guessed.
+ */
+export interface LeonardoElement {
+  weight?: number;
+  [key: string]: unknown;
 }
 
 interface LeonardoCommonParameters {
@@ -116,7 +170,7 @@ interface LeonardoCommonParameters {
   quantity?: number;
   /** Preset style UUIDs — one per request, from the model's own allowlist. */
   style_ids?: string[];
-  /** Prompt enhancement. Default "AUTO". */
+  /** Prompt enhancement. Default "AUTO" on Lucid and Phoenix, "OFF" on the Elements models. */
   prompt_enhance?: LeonardoPromptEnhance;
 }
 
@@ -127,17 +181,31 @@ export interface LeonardoLucidParameters extends LeonardoCommonParameters {
   guidances?: {
     style?: LeonardoStyleGuidance[];
     content?: LeonardoContentGuidance[];
-    /** Phoenix only. */
+    /** Phoenix and Elements only. */
     character?: never;
-    /** Phoenix only. */
+    /** Phoenix and Elements only. */
     image_to_image?: never;
+    /** Elements only. */
+    edge?: never;
+    /** Elements only. */
+    pose?: never;
+    /** Elements only. */
+    depth?: never;
+    /** Elements only. */
+    text_image?: never;
   };
-  /** Phoenix only. */
+  /** Phoenix and Elements only. */
   contrast?: never;
-  /** Phoenix only. */
+  /** Phoenix and Elements only. */
   tiling?: never;
-  /** Phoenix only. */
+  /** Phoenix and Elements only. */
   negative_prompt?: never;
+  /** Elements only. */
+  transparency?: never;
+  /** Elements only. */
+  user_elements?: never;
+  /** Elements only. */
+  platform_elements?: never;
 }
 
 /** `parameters` for the Phoenix models. */
@@ -154,9 +222,63 @@ export interface LeonardoPhoenixParameters extends LeonardoCommonParameters {
     /** Phoenix accepts up to 4 style references. */
     style?: LeonardoStyleGuidance[];
     content?: LeonardoContentGuidance[];
-    character?: LeonardoContentGuidance[];
+    character?: LeonardoGuidance[];
     /** Starting image for image-to-image. */
     image_to_image?: LeonardoImageToImageGuidance[];
+    /** Elements only. */
+    edge?: never;
+    /** Elements only. */
+    pose?: never;
+    /** Elements only. */
+    depth?: never;
+    /** Elements only. */
+    text_image?: never;
+  };
+  /** Elements only. */
+  transparency?: never;
+  /** Elements only. */
+  user_elements?: never;
+  /** Elements only. */
+  platform_elements?: never;
+}
+
+/**
+ * `parameters` for nine tabled image models (`kino-xl` … `lightning-xl`):
+ * Phoenix's keys, a FAST / QUALITY mode with no ULTRA, four more guidance
+ * kinds, `transparency` and the two Elements arrays. "Elements" is unmodel's
+ * name for this shared shape, after those arrays — no vendor page names a
+ * family for these models.
+ */
+export interface LeonardoElementsParameters extends LeonardoCommonParameters {
+  /** Generation mode. Default "FAST" ("QUALITY" on portrait-perfect and stock-photography). */
+  mode?: "FAST" | "QUALITY";
+  /** Output contrast. Default "MEDIUM" ("LOW" on anime-xl). */
+  contrast?: LeonardoContrast;
+  /** Generate a seamlessly tiling image. */
+  tiling?: boolean;
+  /** Concepts to steer away from; ≤ 1000 characters. */
+  negative_prompt?: string;
+  /** "Whether the image can be generated with a transparent background". Default false. */
+  transparency?: boolean;
+  /** "An array of User Elements for image generation." At most 4. */
+  user_elements?: LeonardoElement[];
+  /** "An array of Platform Elements for image generation." At most 4. */
+  platform_elements?: LeonardoElement[];
+  guidances?: {
+    /** Up to 4 style references. */
+    style?: LeonardoStyleGuidance[];
+    content?: LeonardoContentGuidance[];
+    character?: LeonardoGuidance[];
+    /** Starting image for image-to-image. */
+    image_to_image?: LeonardoImageToImageGuidance[];
+    /** "Detects edges of any input image, and will use this to guide your image generation." */
+    edge?: LeonardoGuidance[];
+    /** "Detects the pose of any characters in an input image, …" */
+    pose?: LeonardoGuidance[];
+    /** "Detects the depth features of any input image, …" */
+    depth?: LeonardoGuidance[];
+    /** "Takes in white text on a black background, …" */
+    text_image?: LeonardoGuidance[];
   };
 }
 
@@ -185,6 +307,51 @@ export interface PhoenixV09Body extends LeonardoBodyBase {
   parameters: LeonardoPhoenixParameters;
 }
 
+export interface KinoXlBody extends LeonardoBodyBase {
+  model: "kino-xl";
+  parameters: LeonardoElementsParameters;
+}
+
+export interface AnimeXlBody extends LeonardoBodyBase {
+  model: "anime-xl";
+  parameters: LeonardoElementsParameters;
+}
+
+export interface PortraitPerfectBody extends LeonardoBodyBase {
+  model: "portrait-perfect";
+  parameters: LeonardoElementsParameters;
+}
+
+export interface StockPhotographyBody extends LeonardoBodyBase {
+  model: "stock-photography";
+  parameters: LeonardoElementsParameters;
+}
+
+export interface IllustrativeAlbedoBody extends LeonardoBodyBase {
+  model: "illustrative-albedo";
+  parameters: LeonardoElementsParameters;
+}
+
+export interface ConceptArtBody extends LeonardoBodyBase {
+  model: "concept-art";
+  parameters: LeonardoElementsParameters;
+}
+
+export interface LifelikeVisionBody extends LeonardoBodyBase {
+  model: "lifelike-vision";
+  parameters: LeonardoElementsParameters;
+}
+
+export interface GraphicDesignBody extends LeonardoBodyBase {
+  model: "graphic-design";
+  parameters: LeonardoElementsParameters;
+}
+
+export interface LightningXlBody extends LeonardoBodyBase {
+  model: "lightning-xl";
+  parameters: LeonardoElementsParameters;
+}
+
 /**
  * Escape hatch for the third-party and non-image models the same endpoint
  * routes (FLUX, Imagen, Seedream, Kling, Veo, …) — each has its own
@@ -197,7 +364,7 @@ export interface UnknownLeonardoModelBody<Model extends string> extends Leonardo
 }
 
 /**
- * Closed over Leonardo-owned models by default. Supply a third-party or future
+ * Closed over the tabled models by default. Supply a third-party or future
  * model literal to opt into the loose arm: `GenerationsBody<"flux-dev">`.
  */
 export type GenerationsBody<FutureModel extends string = never> =
@@ -205,6 +372,15 @@ export type GenerationsBody<FutureModel extends string = never> =
   | LucidRealismBody
   | PhoenixV1Body
   | PhoenixV09Body
+  | KinoXlBody
+  | AnimeXlBody
+  | PortraitPerfectBody
+  | StockPhotographyBody
+  | IllustrativeAlbedoBody
+  | ConceptArtBody
+  | LifelikeVisionBody
+  | GraphicDesignBody
+  | LightningXlBody
   | UnknownLeonardoModelBody<FutureModel>;
 
 export interface LeonardoBodyByModel {
@@ -212,6 +388,15 @@ export interface LeonardoBodyByModel {
   "lucid-realism": LucidRealismBody;
   "phoenix-v1.0": PhoenixV1Body;
   "phoenix-v0.9": PhoenixV09Body;
+  "kino-xl": KinoXlBody;
+  "anime-xl": AnimeXlBody;
+  "portrait-perfect": PortraitPerfectBody;
+  "stock-photography": StockPhotographyBody;
+  "illustrative-albedo": IllustrativeAlbedoBody;
+  "concept-art": ConceptArtBody;
+  "lifelike-vision": LifelikeVisionBody;
+  "graphic-design": GraphicDesignBody;
+  "lightning-xl": LightningXlBody;
 }
 
 /** Resolves a model id literal to its exact Tier-A arm. */
@@ -395,11 +580,14 @@ function checkGuidances(
   for (const [kind, entries] of Object.entries(value)) {
     const kindRule = rule.guidances[kind];
     if (kindRule === undefined) {
+      // A warning: this model's published `guidances` object is open (see
+      // LEONARDO_KNOWN_PARAMETERS), so the API may ignore the kind.
       ctx.report({
         code: "unsupported_param",
         path: ["parameters", "guidances", kind],
         model,
-        message: `\`guidances.${kind}\` is not a guidance kind "${model}" supports; it accepts ${Object.keys(rule.guidances).join(", ")}.`,
+        severity: "warning",
+        message: `\`guidances.${kind}\` is not a guidance kind "${model}" supports; it accepts ${Object.keys(rule.guidances).join(", ")}. It was passed through: the published schema does not mark "${model}"'s \`guidances\` as closed, so the API may ignore it rather than reject it.`,
         meta: { allowed: Object.keys(rule.guidances), source: LEONARDO_DOCS_URL },
       });
       continue;
@@ -445,16 +633,29 @@ function checkGuidances(
           meta: { source: LEONARDO_DOCS_URL },
         });
       } else {
+        // The spec's 5-value enum is wider than the prose tables'
+        // UPLOADED/GENERATED pair; unmodel enforces the wider one so it never
+        // rejects a value the schema accepts.
         const imageType = entry.image.type;
+        const typePath = [...path, "image", "type"];
         if (
+          typeof imageType === "string" &&
+          (LEONARDO_UNLISTED_IMAGE_TYPES as readonly string[]).includes(imageType)
+        ) {
+          ctx.report({
+            code: "invalid_enum_value",
+            path: typePath,
+            model,
+            severity: "warning",
+            message: `\`${typePath.join(".")}\` ${JSON.stringify(imageType)} is not in the published enum (${LEONARDO_IMAGE_TYPES.join(", ")}); it was passed through, but no page says whether the API still accepts it.`,
+            meta: { allowed: [...LEONARDO_IMAGE_TYPES], value: imageType, source: LEONARDO_DOCS_URL },
+          });
+        } else if (
           imageType != null &&
           (typeof imageType !== "string" ||
             !(LEONARDO_IMAGE_TYPES as readonly string[]).includes(imageType))
         ) {
-          // The spec's 5-value enum is wider than the prose tables'
-          // UPLOADED/GENERATED pair; unmodel enforces the wider one so it never
-          // rejects a value the schema accepts.
-          reportEnum(ctx, [...path, "image", "type"], imageType, LEONARDO_IMAGE_TYPES, model);
+          reportEnum(ctx, typePath, imageType, LEONARDO_IMAGE_TYPES, model);
         }
       }
       const strength = entry.strength;
@@ -471,6 +672,58 @@ function checkGuidances(
       }
     });
   }
+}
+
+/**
+ * `user_elements` / `platform_elements`: an array of at most
+ * LEONARDO_MAX_ELEMENTS entries. The items schema is only
+ * `{ properties: { weight: { minimum: 0 } } }` — no `type`, no `required` — so
+ * the one thing an entry can get wrong is a numeric `weight` below 0.
+ */
+function checkElements(
+  ctx: PipelineContext,
+  model: string,
+  key: "user_elements" | "platform_elements",
+  value: unknown,
+): void {
+  if (value == null) return;
+  const path = ["parameters", key];
+  if (!Array.isArray(value)) {
+    ctx.report({
+      code: "invalid_shape",
+      path,
+      model,
+      message: `\`parameters.${key}\` must be an array of Elements.`,
+      meta: { source: LEONARDO_DOCS_URL },
+    });
+    return;
+  }
+  if (value.length > LEONARDO_MAX_ELEMENTS) {
+    ctx.report({
+      code: "invalid_shape",
+      path,
+      model,
+      message: `\`parameters.${key}\` is limited to ${LEONARDO_MAX_ELEMENTS} entries for "${model}"; got ${value.length}.`,
+      meta: { limit: LEONARDO_MAX_ELEMENTS, count: value.length, source: LEONARDO_DOCS_URL },
+    });
+  }
+  value.forEach((entry, i) => {
+    if (!isRecord(entry) || typeof entry.weight !== "number" || entry.weight >= 0) return;
+    ctx.report({
+      code: "invalid_shape",
+      path: [...path, i, "weight"],
+      model,
+      message: `\`parameters.${key}[${i}].weight\` must be at least 0; got ${entry.weight}.`,
+      meta: { min: 0, value: entry.weight, source: LEONARDO_DOCS_URL },
+    });
+  });
+}
+
+/** The tabled models whose `parameters` schema has this key, in table order. */
+function modelsAccepting(key: string): string[] {
+  return Object.entries(LEONARDO_MODEL_RULES)
+    .filter(([, rule]) => rule.parameters.includes(key))
+    .map(([id]) => id);
 }
 
 function checkParameters(
@@ -492,16 +745,12 @@ function checkParameters(
   }
   if (rule === undefined) {
     // A third-party or non-image model: `parameters` follows that model's own
-    // schema, which unmodel does not table. `prompt` is the one field every
-    // documented arm requires.
-    if (parameters.prompt === undefined) {
-      ctx.report({
-        code: "invalid_shape",
-        path: ["parameters", "prompt"],
-        message: "`parameters.prompt` is required.",
-        meta: { source: LEONARDO_DOCS_URL },
-      });
-    }
+    // schema, which unmodel does not table — and not even `prompt` is common
+    // to them. remove-bg requires only `guidances`, both aurora upscalers
+    // `guidances` + `width` + `height`, rodin-v2 and bytedance/video-upscaler
+    // have no `prompt` property at all, and meshy/meshy-7's is optional
+    // ("Required without image references."). Nothing is checked here beyond
+    // `parameters` being an object; the unknown_model warning says so.
     return;
   }
 
@@ -525,16 +774,20 @@ function checkParameters(
     });
   }
 
-  // Params that belong to a sibling model (or nothing at all).
+  // Params that belong to a sibling model (or nothing at all). Both are
+  // warnings: this model's published `parameters` object is open (see
+  // LEONARDO_KNOWN_PARAMETERS), so the API may ignore the key.
   for (const key of Object.keys(parameters)) {
     if (rule.parameters.includes(key)) continue;
     if (LEONARDO_KNOWN_PARAMETERS.includes(key)) {
+      const takers = modelsAccepting(key);
       ctx.report({
         code: "unsupported_param",
         path: ["parameters", key],
         model,
-        message: `\`${key}\` is not part of "${model}"'s parameters schema; it belongs to another model on this endpoint (\`contrast\`, \`tiling\` and \`negative_prompt\` are Phoenix-only).`,
-        meta: { allowed: [...rule.parameters], source: LEONARDO_DOCS_URL },
+        severity: "warning",
+        message: `\`${key}\` is not part of "${model}"'s parameters schema; it belongs to other models on this endpoint: ${takers.map((id) => JSON.stringify(id)).join(", ")}. It was passed through: the published schema does not mark "${model}"'s \`parameters\` as closed, so the API may ignore it rather than reject it.`,
+        meta: { allowed: [...rule.parameters], models: takers, source: LEONARDO_DOCS_URL },
       });
     } else {
       ctx.report({
@@ -576,15 +829,21 @@ function checkParameters(
     reportEnum(ctx, ["parameters", "contrast"], contrast, LEONARDO_CONTRASTS, model);
   }
 
-  const tiling = parameters.tiling;
-  if (tiling != null && rule.parameters.includes("tiling") && typeof tiling !== "boolean") {
-    ctx.report({
-      code: "invalid_shape",
-      path: ["parameters", "tiling"],
-      model,
-      message: `\`parameters.tiling\` must be a boolean; got ${JSON.stringify(tiling)}.`,
-      meta: { source: LEONARDO_DOCS_URL },
-    });
+  for (const key of ["tiling", "transparency"] as const) {
+    const flag = parameters[key];
+    if (flag != null && rule.parameters.includes(key) && typeof flag !== "boolean") {
+      ctx.report({
+        code: "invalid_shape",
+        path: ["parameters", key],
+        model,
+        message: `\`parameters.${key}\` must be a boolean; got ${JSON.stringify(flag)}.`,
+        meta: { source: LEONARDO_DOCS_URL },
+      });
+    }
+  }
+
+  for (const key of ["user_elements", "platform_elements"] as const) {
+    if (rule.parameters.includes(key)) checkElements(ctx, model, key, parameters[key]);
   }
 
   const negativePrompt = parameters.negative_prompt;
@@ -626,10 +885,10 @@ function checkParameters(
 // ---------------------------------------------------------------------------
 
 /**
- * The one `.toSdk("leonardo")` target for this endpoint — Leonardo's SDK
- * takes wire-shaped params. Derived from the `sdk` literal in `finalize`; it
- * must stay an object type with no index signature, or `toSdk` would accept
- * any string.
+ * The one `.toSdk("leonardo")` target for this endpoint — the raw v2 body,
+ * unchanged (no official Leonardo SDK sends v2 bodies; see the module header).
+ * Derived from the `sdk` literal in `finalize`; it must stay an object type
+ * with no index signature, or `toSdk` would accept any string.
  */
 type LeonardoSdkTargets<B> = { leonardo: () => B };
 
@@ -658,15 +917,16 @@ const validator = createValidator<AnyGenerationsBody, unknown>({
  * Validates params for `POST https://cloud.leonardo.ai/api/rest/v2/generations`
  * (Leonardo.Ai image generation).
  *
- * Leonardo's own image models get their exact per-model `parameters` surface at
+ * The tabled image models get their exact per-model `parameters` surface at
  * compile time (e.g. `contrast` is a compile error for `lucid-origin`, and
- * `mode: "QUALITY"` only type-checks on Phoenix); the third-party models the
- * same endpoint routes fall back to a loose arm with a runtime unknown_model
- * warning.
+ * `mode: "QUALITY"` only type-checks on Phoenix and the Elements models); the
+ * third-party models the same endpoint routes fall back to a loose arm with a
+ * runtime unknown_model warning.
  *
  * The returned object's enumerable props are the exact fetch JSON body. The
- * POST returns a generation id — fetch the images with
- * `GET /v2/generations/{id}` or a webhook (transport, out of unmodel's scope).
+ * POST returns a generation id — fetch the images with the v1
+ * `GET https://cloud.leonardo.ai/api/rest/v1/generations/{id}` or a webhook
+ * (transport, out of unmodel's scope).
  * Auth is your job: add an `Authorization: Bearer …` header when fetching.
  *
  * ```ts

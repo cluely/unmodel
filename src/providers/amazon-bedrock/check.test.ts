@@ -84,6 +84,43 @@ describe("amazon-bedrock.checkChat", () => {
     expect(report.costUSD).toBeCloseTo(3, 6);
   });
 
+  test("Claude Opus 5.5 prices from its global row and its geo profile's", () => {
+    const usage = { inputTokens: 1_000_000, outputTokens: 0, totalTokens: 1_000_000 };
+    expect(checkChat({ usage }, "global.anthropic.claude-opus-5-5").costUSD).toBeCloseTo(4, 6);
+    expect(checkChat({ usage }, "us.anthropic.claude-opus-5-5").costUSD).toBeCloseTo(4.4, 6);
+  });
+
+  test("Haiku 5.5 prices up to 100,000 prompt tokens and withholds costUSD above", () => {
+    const below = checkChat(
+      { usage: { inputTokens: 50_000, outputTokens: 1000 } },
+      "us.anthropic.claude-haiku-5-5",
+    );
+    // 50k * $0.11/M + 1k * $0.55/M
+    expect(below.costUSD).toBeCloseTo(0.0055 + 0.00055, 10);
+
+    // 90k fresh + 5k cache reads + 10k cache writes = a 105k-token prompt.
+    const above = checkChat(
+      {
+        usage: {
+          inputTokens: 90_000,
+          cacheReadInputTokens: 5_000,
+          cacheWriteInputTokens: 10_000,
+          outputTokens: 1000,
+        },
+      },
+      "us.anthropic.claude-haiku-5-5",
+    );
+    expect(above.costUSD).toBeUndefined();
+    expect(above.usage.inputTokens).toBe(95_000);
+  });
+
+  test("GPT-6 Sol prices up to 272,000 prompt tokens and withholds costUSD above", () => {
+    const model = "global.openai.gpt-6-sol";
+    // 272k * $2/M
+    expect(checkChat({ usage: { inputTokens: 272_000, outputTokens: 0 } }, model).costUSD).toBeCloseTo(0.544, 10);
+    expect(checkChat({ usage: { inputTokens: 272_001, outputTokens: 0 } }, model).costUSD).toBeUndefined();
+  });
+
   test("no modelId → usage but no costUSD; never throws on junk", () => {
     const report = checkChat({ usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 } });
     expect(report.costUSD).toBeUndefined();

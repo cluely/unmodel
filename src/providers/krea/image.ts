@@ -4,7 +4,7 @@
  *
  * Wire notes (verified against https://api.krea.ai/openapi.json — the spec the
  * API itself serves — and https://www.krea.ai/docs/developers/krea-2/overview
- * on 2026-08-13):
+ * on 2026-11-12):
  * - There is no `model` body field: the model IS the route. unmodel takes
  *   `model` as a pseudo-param for catalog lookup, STRIPS it from the wire body
  *   and interpolates it into `.request.url`. One `image()` endpoint fn covers
@@ -15,7 +15,17 @@
  *   loose-schema convention. The Krea 2 request body ends
  *   `"required": ["prompt","aspect_ratio","resolution"], "additionalProperties":
  *   false` (identically on all three variant routes), so an unknown top-level
- *   key is a CERTAIN 400, not the silent no-op most providers give it.
+ *   key is a CERTAIN 422, not the silent no-op most providers give it.
+ *   https://www.krea.ai/docs/developers/errors-and-debugging (2026-11-12):
+ *   "Invalid JSON (`400`) and validation (`422`) use `{ "error" }`", the
+ *   unknown-key detail carrying `"code": "unrecognized_keys"`.
+ *   The served spec disagrees on the status: every /generate route's
+ *   `responses` lists `400: "The request body is invalid."` and no 422. That
+ *   is the spec's generic text — it puts the same text on 422 for
+ *   /export/3d. The errors page (announced in the 2026-10-27 changelog) is
+ *   the specific source and wins: it documents the `unrecognized_keys` 422
+ *   body, and the changelog's Krea 3 entry agrees: "Unsupported fields such
+ *   as `model`, `steps`, and `fast` return a `422` with `Unrecognized key`".
  *   Everywhere else unmodel keeps schemas loose and downgrades an unknown key
  *   to an `unknown_param` warning, on the reasoning that a param may simply be
  *   newer than the catalog; that reasoning does not hold against a closed
@@ -44,7 +54,18 @@
  *   either reject requests the guides bless or wave through values the schema
  *   rejects. `creativity` is the same story without consequences: the spec
  *   defaults it to `"low"`, the overview table says `"medium"`; the default is
- *   not cost-relevant, so unmodel only validates the value set.
+ *   not cost-relevant, so unmodel only validates the value set. The image URL
+ *   cap is contested the same way for data URIs. The spec gives `image_url`
+ *   and `image_style_references[].url` `"maxLength":1024,"format":"uri",
+ *   "description":"Can be an external URL, base64 data URI, or uploaded asset
+ *   URL."` (2026-11-13), and no whole image fits in 1024 characters as a data
+ *   URI. Yet Krea's guides send whole-file data URIs in these fields, and Zero
+ *   Data Retention — the `X-Api-Zero-Data-Retention` request header every K2
+ *   route declares — requires them (https://www.krea.ai/docs/developers/zdr,
+ *   2026-11-13): "Any URL provided, for example a style reference image, must
+ *   be a base64 data URI. Using an external URL would result in a `422`". So
+ *   an external or asset URL over 1024 characters is an error, and a data URI
+ *   over it is a warning.
  * - Auth is an `Authorization: Bearer …` header — unmodel never touches keys.
  * - Krea publishes an official JS SDK (`@krea-ai/sdk`), but it takes the same
  *   body under `{ input }`; `.toSdk("krea")` returns the wire body unchanged.
@@ -92,7 +113,21 @@ export const KREA_MAX_STYLE_REFERENCES = 10;
 /** `moodboards` is "currently limited to one moodboard" (`maxItems: 1`). */
 export const KREA_MAX_MOODBOARDS = 1;
 
-/** `maxLength` on every image URL field (`image_url`, style-reference `url`). */
+/**
+ * The served `moodboards[].id` pattern, copied verbatim from
+ * https://api.krea.ai/openapi.json (2026-11-13), identical on krea-2/medium,
+ * krea-2/large and krea-2/medium-turbo:
+ * `"id":{"type":"string","format":"uuid","pattern":"^([0-9a-fA-F]{8}-…)$"}`.
+ */
+export const KREA_MOODBOARD_ID_PATTERN =
+  /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/;
+
+/**
+ * `maxLength` on every image URL field (`image_url`, style-reference `url`) in
+ * the served spec. An external or asset URL over it is an error; a data URI
+ * over it only warns, because Krea's guides and Zero Data Retention send
+ * whole-file data URIs there (see the module JSDoc).
+ */
 export const KREA_MAX_IMAGE_URL_LENGTH = 1024;
 
 // ---------------------------------------------------------------------------
@@ -109,7 +144,10 @@ export interface KreaStyleRef {
 
 /** An image whose style is transferred onto the output. */
 export interface KreaImageStyleReference {
-  /** External URL, base64 data URI, or uploaded asset URL. REQUIRED, ≤ 1024 chars. */
+  /**
+   * External URL, base64 data URI, or uploaded asset URL. REQUIRED, ≤ 1024
+   * chars (a longer data URI warns — see `KREA_MAX_IMAGE_URL_LENGTH`).
+   */
   url: string;
   /** Style influence 0 (none) – 1 (maximum). Default 0.5. */
   strength?: number;
@@ -117,7 +155,7 @@ export interface KreaImageStyleReference {
 
 /** A moodboard built in the Krea webapp, referenced by id. */
 export interface KreaMoodboardRef {
-  /** Moodboard UUID (the `?share=<id>` value). REQUIRED. */
+  /** Moodboard UUID (the `?share=<id>` value), checked against `KREA_MOODBOARD_ID_PATTERN`. REQUIRED. */
   id: string;
   /** Moodboard influence 0–1. Default 0.23. */
   strength?: number;
@@ -132,9 +170,9 @@ export interface Krea2Params {
   /** Text prompt. REQUIRED. */
   prompt: string;
   /**
-   * Output aspect ratio. REQUIRED. CLOSED enum — the 8 values are the whole
-   * documented space, and the body is `additionalProperties: false`, so
-   * anything else is a certain 400 (no `(string & {})` escape hatch).
+   * Output aspect ratio. REQUIRED. CLOSED enum — the 9 values are the whole
+   * served space, and the body is `additionalProperties: false`, so
+   * anything else is a certain 422 (no `(string & {})` escape hatch).
    */
   aspect_ratio: KreaAspectRatio;
   /**
@@ -150,7 +188,7 @@ export interface Krea2Params {
   image_style_references?: KreaImageStyleReference[];
   /**
    * Prompt-expansion mode; `raw` disables expansion. CLOSED enum — the 4 values
-   * are the whole documented space, so anything else is a certain 400.
+   * are the whole documented space, so anything else is a certain 422.
    */
   creativity?: KreaCreativity;
   /** K2 Intensity slider, −100…100. 0 = neutral. */
@@ -161,7 +199,7 @@ export interface Krea2Params {
   movement?: number;
   /** Moodboard references (≤ 1). Selects the moodboard price tier. */
   moodboards?: KreaMoodboardRef[];
-  /** Source image for image-to-image; ≤ 1024 chars. */
+  /** Source image for image-to-image; ≤ 1024 chars (a longer data URI warns — see `KREA_MAX_IMAGE_URL_LENGTH`). */
   image_url?: string | null;
   /** Denoising strength 0–1 when `image_url` is set. Default 0.99. */
   strength?: number;
@@ -170,7 +208,7 @@ export interface Krea2Params {
 // ---------------------------------------------------------------------------
 // Schema — STRICT at the top level (see the module JSDoc: the Krea 2 request
 // schema is `additionalProperties: false`, so an unknown key is a guaranteed
-// 400 and unmodel refuses it here rather than warning). Nested item objects
+// 422 and unmodel refuses it here rather than warning). Nested item objects
 // stay loose: the spec leaves those open. Enum-ish fields stay z.string() so a
 // bad value reports invalid_enum_value from the checks.
 // ---------------------------------------------------------------------------
@@ -198,7 +236,7 @@ const krea2Schema = z.strictObject(
   {
     error: (issue) =>
       issue.code === "unrecognized_keys"
-        ? `${issue.keys.map((key) => `\`${key}\``).join(", ")} ${issue.keys.length === 1 ? "is not a Krea 2 body param" : "are not Krea 2 body params"}. The request schema Krea serves at ${OPENAPI_URL} is \`additionalProperties: false\`, so the API rejects the whole request with a 400 rather than ignoring the key — check the spelling.`
+        ? `${issue.keys.map((key) => `\`${key}\``).join(", ")} ${issue.keys.length === 1 ? "is not a Krea 2 body param" : "are not Krea 2 body params"}. The request schema Krea serves at ${OPENAPI_URL} is \`additionalProperties: false\`, so the API rejects the whole request with a 422 (\`unrecognized_keys\`) rather than ignoring the key — check the spelling.`
         : undefined,
   },
 );
@@ -338,6 +376,37 @@ function checkContestedStrength(
   }
 }
 
+/**
+ * The served 1024-char `maxLength` on an image URL field. Uncontested for an
+ * external or asset URL, so that is an error; contested for a data URI (see
+ * the module JSDoc), so that is a warning naming both sources. The scheme
+ * match ignores case, as URI schemes do (RFC 3986 §3.1).
+ */
+function checkImageUrlLength(
+  ctx: PipelineContext,
+  path: Array<string | number>,
+  value: string,
+): void {
+  if (value.length <= KREA_MAX_IMAGE_URL_LENGTH) return;
+  const label = path.join(".");
+  if (/^data:/i.test(value)) {
+    ctx.report({
+      code: "invalid_shape",
+      severity: "warning",
+      path,
+      message: `\`${label}\` is a ${value.length}-character data URI: the request schema Krea serves at ${OPENAPI_URL} caps this field at ${KREA_MAX_IMAGE_URL_LENGTH}, but Krea's guides send whole-file data URIs here and Zero Data Retention (X-Api-Zero-Data-Retention, https://www.krea.ai/docs/developers/zdr) requires them, so the API may reject it.`,
+      meta: { limit: KREA_MAX_IMAGE_URL_LENGTH, source: KREA_2_SCHEMA },
+    });
+    return;
+  }
+  ctx.report({
+    code: "invalid_shape",
+    path,
+    message: `\`${label}\` is ${value.length} characters; the request schema Krea serves at ${OPENAPI_URL} caps it at ${KREA_MAX_IMAGE_URL_LENGTH}. Upload the image via POST /assets and pass the returned asset URL, or send it as a base64 data URI (Zero Data Retention requires a data URI and refuses asset/external URLs with a 422).`,
+    meta: { limit: KREA_MAX_IMAGE_URL_LENGTH, source: KREA_2_SCHEMA },
+  });
+}
+
 function checkStyles(params: Krea2Params, _info: ModelInfo | undefined, ctx: PipelineContext): void {
   const styles = params.styles;
   if (!Array.isArray(styles)) return;
@@ -390,13 +459,8 @@ function checkStyleReferences(
           "each `image_style_references` entry requires a `url` (external URL, base64 data URI, or uploaded asset URL).",
         meta: { source: KREA_2_SCHEMA },
       });
-    } else if (ref.url.length > KREA_MAX_IMAGE_URL_LENGTH) {
-      ctx.report({
-        code: "invalid_shape",
-        path: ["image_style_references", i, "url"],
-        message: `\`image_style_references[${i}].url\` is ${ref.url.length} characters; the API caps it at ${KREA_MAX_IMAGE_URL_LENGTH}. Upload the image via POST /assets and pass the returned asset URL instead of an inline data URI.`,
-        meta: { limit: KREA_MAX_IMAGE_URL_LENGTH, source: KREA_2_SCHEMA },
-      });
+    } else {
+      checkImageUrlLength(ctx, ["image_style_references", i, "url"], ref.url);
     }
     checkContestedStrength(ctx, ["image_style_references", i, "strength"], ref.strength, {
       min: 0,
@@ -430,6 +494,13 @@ function checkMoodboards(
           "each `moodboards` entry requires an `id` — the moodboard UUID from its share URL (https://www.krea.ai/moodboards?share=<id>).",
         meta: { source: KREA_2_SCHEMA },
       });
+    } else if (!KREA_MOODBOARD_ID_PATTERN.test(board.id)) {
+      ctx.report({
+        code: "invalid_shape",
+        path: ["moodboards", i, "id"],
+        message: `\`moodboards[${i}].id\` must be the moodboard UUID, taken from its share URL (https://www.krea.ai/moodboards?share=<id>) or the API playground's moodboard list. Got ${JSON.stringify(board.id.slice(0, 40))}.`,
+        meta: { source: KREA_2_SCHEMA },
+      });
     }
     checkContestedStrength(ctx, ["moodboards", i, "strength"], board.strength, {
       min: 0,
@@ -444,14 +515,7 @@ function checkImageToImage(
   ctx: PipelineContext,
 ): void {
   const { image_url, strength } = params;
-  if (typeof image_url === "string" && image_url.length > KREA_MAX_IMAGE_URL_LENGTH) {
-    ctx.report({
-      code: "invalid_shape",
-      path: ["image_url"],
-      message: `\`image_url\` is ${image_url.length} characters; the API caps it at ${KREA_MAX_IMAGE_URL_LENGTH}. Upload the image via POST /assets and pass the returned asset URL instead of an inline data URI.`,
-      meta: { limit: KREA_MAX_IMAGE_URL_LENGTH, source: KREA_2_SCHEMA },
-    });
-  }
+  if (typeof image_url === "string") checkImageUrlLength(ctx, ["image_url"], image_url);
   checkRange(ctx, ["strength"], strength, 0, 1);
   if (strength != null && image_url == null) {
     ctx.report({
@@ -497,10 +561,12 @@ function estimate(params: Krea2Params, info: ModelInfo | undefined) {
 // ---------------------------------------------------------------------------
 
 /**
- * The one `.toSdk("krea")` target for this endpoint — Krea ships no official
- * JS SDK, so this is the wire body. Derived from the `sdk` literal in
- * `finalize`; it must stay an object type with no index signature, or
- * `toSdk` would accept any string.
+ * The one `.toSdk("krea")` target for this endpoint. The official
+ * `@krea-ai/sdk` (0.1.2, 2026-05-27) takes this same body as its generation
+ * `input`, so the target is the wire body unchanged. Its d.ts predates
+ * krea-2/medium-turbo and `3:4`, so it is not a source for this validator.
+ * Derived from the `sdk` literal in `finalize`; it must stay an object type
+ * with no index signature, or `toSdk` would accept any string.
  */
 type KreaSdkTargets<B> = { krea: () => B };
 
@@ -545,7 +611,7 @@ const validator = createValidator<Krea2Params, unknown>({
  *
  * Unlike most unmodel endpoints, an unknown top-level key is an ERROR here, not
  * a warning: Krea's request schema is `additionalProperties: false`, so the API
- * would answer a typo with a 400 (see the module JSDoc).
+ * would answer a typo with a 422 (see the module JSDoc).
  *
  * ```ts
  * const params = krea.image({

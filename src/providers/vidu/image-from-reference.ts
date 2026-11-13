@@ -1,8 +1,8 @@
 /**
  * Vidu Reference to Image — POST https://api.vidu.com/ent/v2/reference2image
  *
- * Wire notes (verified against https://platform.vidu.com/docs/reference-to-image
- * on 2026-08-13):
+ * Wire notes (verified 2026-08-13; the route is now documented at
+ * https://platform.vidu.com/docs/api-reference/image-generation):
  * - `model` and `prompt` are required; `prompt` caps at 2000 characters here
  *   (the video routes allow 5000).
  * - `images` is optional on `viduq2` (0–7 references — with none it is plain
@@ -23,7 +23,7 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { imageModels, type ViduImageModelId } from "./models";
 import {
-  DOCS_BASE,
+  IMAGE_DOCS,
   IMAGE_PROMPT_MAX_CHARS,
   VIDU_BASE_URL,
   VIDU_HEADERS,
@@ -34,7 +34,7 @@ import { imageCostUSD } from "./pricing";
 
 export const REFERENCE2IMAGE_URL = `${VIDU_BASE_URL}/reference2image`;
 
-const SOURCE = `${DOCS_BASE}/reference-to-image`;
+const SOURCE = IMAGE_DOCS;
 
 /** Aspect ratios per model — `viduq2` is the wider set. */
 export const IMAGE_ASPECT_RATIOS = {

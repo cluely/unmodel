@@ -157,9 +157,9 @@ describe("every declared music preset is a value the provider accepts", () => {
   }
 
   test("the sweep is not empty", () => {
-    expect(codecCells.length).toBe(24);
-    // 53 across ElevenLabs, Stability and fal, plus Revana's `style` and `lyrics`.
-    expect(extraCells.length).toBe(55);
+    expect(codecCells.length).toBe(29);
+    // 58 across ElevenLabs, Stability and fal, plus Revana's `style` and `lyrics`.
+    expect(extraCells.length).toBe(60);
   });
 
   test.each(codecCells)("music %s outputFormat %s", (_ref, _codec, probe) => {

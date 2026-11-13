@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { checkTranscription } from "./check";
 
 describe("elevenlabs.checkTranscription", () => {
-  test("prices actual usage from audio_duration_secs at $0.22/hour", () => {
+  test("prices actual usage from audio_duration_secs at $0.20/hour", () => {
     const report = checkTranscription(
       {
         language_code: "en",
@@ -13,15 +13,15 @@ describe("elevenlabs.checkTranscription", () => {
       { model: "scribe_v2" },
     );
     expect(report.warnings).toEqual([]);
-    expect(report.costUSD).toBeCloseTo(0.22, 10);
+    expect(report.costUSD).toBeCloseTo(0.2, 10);
   });
 
-  test("one minute of audio costs 0.22/60", () => {
+  test("one minute of audio costs 0.20/60", () => {
     const report = checkTranscription(
       { text: "hi", audio_duration_secs: 60 },
       { model: "scribe_v2" },
     );
-    expect(report.costUSD).toBeCloseTo(0.22 / 60, 10);
+    expect(report.costUSD).toBeCloseTo(0.2 / 60, 10);
   });
 
   test("multi-channel responses are billed per channel", () => {
@@ -32,7 +32,7 @@ describe("elevenlabs.checkTranscription", () => {
       },
       { model: "scribe_v2" },
     );
-    expect(report.costUSD).toBeCloseTo((0.22 / 60) * 2, 10);
+    expect(report.costUSD).toBeCloseTo((0.2 / 60) * 2, 10);
   });
 
   test("no model means no cost", () => {

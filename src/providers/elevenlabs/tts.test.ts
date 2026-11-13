@@ -7,6 +7,12 @@ import {
   TTS_OPTIMIZE_STREAMING_LATENCY_LEVELS,
   TTS_SPEED_MIN,
   TTS_SPEED_MAX,
+  TTS_STABILITY_MIN,
+  TTS_STABILITY_MAX,
+  TTS_SIMILARITY_BOOST_MIN,
+  TTS_SIMILARITY_BOOST_MAX,
+  TTS_CLONE_STRENGTH_MAX,
+  TTS_CLONE_STRENGTH_MIN,
 } from "./tts";
 import { models, TTS_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
@@ -94,7 +100,7 @@ describe("elevenlabs.tts happy path", () => {
   });
 
   test("unknown model warns but validates", () => {
-    const r = tts.safe({ voice_id: "abc123", text: "hi", model_id: "eleven_v4" });
+    const r = tts.safe({ voice_id: "abc123", text: "hi", model_id: "eleven_v9" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
@@ -113,6 +119,92 @@ describe("elevenlabs.tts happy path", () => {
       const unknown = r.warnings.find((w) => w.code === "unknown_param");
       expect(unknown?.path).toEqual(["brand_new_param"]);
     }
+  });
+});
+
+describe("elevenlabs.tts eleven_v4 (models refresh 2026-11-12)", () => {
+  test("validates clean on POST /v1/text-to-speech", () => {
+    const r = tts.safe({ voice_id: "abc123", text: "hi", model_id: "eleven_v4" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("prices at $0.08 per 1k characters", () => {
+    const r = tts.safe({ voice_id: "abc123", text: "x".repeat(1000), model_id: "eleven_v4" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.08, 10);
+  });
+
+  test("caps a request at 10,000 characters", () => {
+    expect(models.eleven_v4.limit.characters).toBe(10000);
+    const r = tts.safe({ voice_id: "abc123", text: "x".repeat(10001), model_id: "eleven_v4" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("over_output_limit");
+  });
+
+  test("voice_settings.clone_strength in 0–1 is accepted and reaches the SDK view", () => {
+    const v = tts({
+      voice_id: "abc123",
+      text: "hi",
+      model_id: "eleven_v4",
+      voice_settings: { clone_strength: TTS_CLONE_STRENGTH_MAX },
+    });
+    expect(v.voice_settings).toEqual({ clone_strength: 1 });
+    expect(v.toSdk("elevenlabs").request.voiceSettings).toEqual({ cloneStrength: 1 });
+    expect(
+      tts.safe({
+        voice_id: "abc123",
+        text: "hi",
+        model_id: "eleven_v4",
+        voice_settings: { clone_strength: TTS_CLONE_STRENGTH_MIN },
+      }).ok,
+    ).toBe(true);
+  });
+
+  test("voice_settings.clone_strength above 1 is refused", () => {
+    const r = tts.safe({
+      voice_id: "abc123",
+      text: "hi",
+      model_id: "eleven_v4",
+      voice_settings: { clone_strength: 1.5 },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["voice_settings", "clone_strength"]);
+  });
+});
+
+describe("elevenlabs.tts catalog corrections (models refresh 2026-11-12)", () => {
+  test("every multilingual-class row is $80 and every Flash/Turbo row $40 per 1M characters", () => {
+    for (const id of ["eleven_v4", "eleven_v3", "eleven_multilingual_v2"] as const) {
+      expect(models[id].cost.perMillionCharacters, id).toBe(80);
+    }
+    for (const id of [
+      "eleven_flash_v2_5",
+      "eleven_flash_v2",
+      "eleven_turbo_v2_5",
+      "eleven_turbo_v2",
+      "eleven_v3_conversational",
+    ] as const) {
+      expect(models[id].cost.perMillionCharacters, id).toBe(40);
+    }
+  });
+
+  test("eleven_multilingual_v1 carries its published 10,000-character cap", () => {
+    expect(models.eleven_multilingual_v1.limit.characters).toBe(10000);
+    const r = tts.safe({
+      voice_id: "abc123",
+      text: "x".repeat(10001),
+      model_id: "eleven_multilingual_v1",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("over_output_limit");
+  });
+
+  test("use_pvc_as_ivc accepts null (nullable, no default) and drops it from the SDK view", () => {
+    const v = tts({ voice_id: "abc123", text: "hi", use_pvc_as_ivc: null });
+    expect(v.use_pvc_as_ivc).toBeNull();
+    expect(v.toSdk("elevenlabs").request).toEqual({ text: "hi" });
+    expect(tts.safe({ voice_id: "abc123", text: "hi", use_pvc_as_ivc: true }).ok).toBe(true);
   });
 });
 
@@ -165,25 +257,25 @@ describe("elevenlabs.tts character limits", () => {
 });
 
 describe("elevenlabs.tts cost estimation", () => {
-  test("multilingual v2 class is $0.10 per 1k characters", () => {
-    // 1,000 chars × $100 / 1M chars = $0.10
+  test("multilingual v2 class is $0.08 per 1k characters", () => {
+    // 1,000 chars × $80 / 1M chars = $0.08
     const r = tts.safe({
       voice_id: "abc123",
       text: "x".repeat(1000),
       model_id: "eleven_multilingual_v2",
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.1, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.08, 10);
   });
 
-  test("flash class is $0.05 per 1k characters", () => {
+  test("flash class is $0.04 per 1k characters", () => {
     const r = tts.safe({
       voice_id: "abc123",
       text: "x".repeat(1000),
       model_id: "eleven_flash_v2_5",
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.05, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.04, 10);
   });
 
   test("maxCostUSD under the estimate is over_budget", () => {
@@ -191,13 +283,13 @@ describe("elevenlabs.tts cost estimation", () => {
       { voice_id: "abc123", text: "x".repeat(2000), model_id: "eleven_v3" },
       { maxCostUSD: 0.1 },
     );
-    // 2,000 chars × $100 / 1M = $0.20 > $0.10
+    // 2,000 chars × $80 / 1M = $0.16 > $0.10
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.code).toBe("over_budget");
   });
 
   test("unknown models carry no estimate", () => {
-    const r = tts.safe({ voice_id: "abc123", text: "hi", model_id: "eleven_v4" });
+    const r = tts.safe({ voice_id: "abc123", text: "hi", model_id: "eleven_v9" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
   });
@@ -376,7 +468,7 @@ describe("elevenlabs.tts voice_settings bounds (doc audit 2026-08-13)", () => {
       expect(issue?.path).toEqual(["voice_settings", "speed"]);
       expect(issue?.meta?.min).toBe(TTS_SPEED_MIN);
       expect(issue?.meta?.max).toBe(TTS_SPEED_MAX);
-      expect(String(issue?.meta?.source)).toContain("prompting/controls");
+      expect(String(issue?.meta?.source)).toContain("text-to-speech/best-practices");
     }
   });
 
@@ -387,14 +479,41 @@ describe("elevenlabs.tts voice_settings bounds (doc audit 2026-08-13)", () => {
     }
   });
 
-  test("stability/similarity_boost/style stay unconstrained (docs publish no bounds)", () => {
-    const r = tts.safe({
-      voice_id: "a",
-      text: "hi",
-      voice_settings: { stability: 1, similarity_boost: 0, style: 1 },
-    });
+  test("style stays unconstrained (no published bound)", () => {
+    const r = tts.safe({ voice_id: "a", text: "hi", voice_settings: { style: 1.5 } });
     expect(r.ok).toBe(true);
   });
+});
+
+// `{"anyOf":[{"type":"number","maximum":1.0,"minimum":0.0},{"type":"null"}]}` on
+// VoiceSettingsResponseModel, https://api.elevenlabs.io/openapi.json (2026-11-13).
+describe("elevenlabs.tts stability / similarity_boost bounds (openapi.json 2026-11-13)", () => {
+  const bounds = {
+    stability: [TTS_STABILITY_MIN, TTS_STABILITY_MAX],
+    similarity_boost: [TTS_SIMILARITY_BOOST_MIN, TTS_SIMILARITY_BOOST_MAX],
+  } as const;
+
+  for (const [key, [min, max]] of Object.entries(bounds)) {
+    test(`${key} accepts the schema's own bounds, 0 and 1`, () => {
+      expect([min, max]).toEqual([0, 1]);
+      for (const value of [min, max]) {
+        const r = tts.safe({ voice_id: "a", text: "hi", voice_settings: { [key]: value } });
+        expect(r.ok, `${key}: ${value}`).toBe(true);
+      }
+    });
+
+    test(`${key} just outside 0–1 is refused at its path`, () => {
+      for (const value of [-0.01, 1.01]) {
+        const r = tts.safe({ voice_id: "a", text: "hi", voice_settings: { [key]: value } });
+        expect(r.ok, `${key}: ${value}`).toBe(false);
+        if (!r.ok) {
+          expect(r.errors[0]?.code).toBe("invalid_shape");
+          expect(r.errors[0]?.path).toEqual(["voice_settings", key]);
+          expect(r.errors[0]?.message).toContain(`${key} must be between 0 and 1`);
+        }
+      }
+    });
+  }
 });
 
 describe("elevenlabs.tts model gating (doc audit 2026-08-13)", () => {

@@ -183,7 +183,18 @@ export type IRResponseFormat =
   | { kind: "json-schema"; name?: string; schema: Record<string, unknown>; strict?: boolean };
 
 export type IRReasoning =
-  | { mode: "budget"; budgetTokens: number }
+  | {
+      mode: "budget";
+      budgetTokens: number;
+      /**
+       * The caller's effort bucket, when they gave both (`unmodel/chat`'s
+       * `{ effort, budgetTokens }`) and it is in the target dialect's
+       * vocabulary. A decoder whose target *model* has no token budget (Claude
+       * 4.7+) says this instead of bucketing `budgetTokens`, so the portable
+       * spelling compiles warning-free there too.
+       */
+      effort?: string;
+    }
   | { mode: "effort"; effort: string }
   | { mode: "off" };
 
@@ -396,6 +407,25 @@ export function toolOutputToText(
       return texts.join("\n");
     }
   }
+}
+
+/** Budgets at or below this many tokens bucket to `low` effort. */
+const LOW_EFFORT_MAX_BUDGET = 2048;
+/** Budgets at or below this many tokens (and above the `low` cap) bucket to `medium`. */
+const MEDIUM_EFFORT_MAX_BUDGET = 8192;
+
+/**
+ * The one token-budget → effort-bucket table, for a decoder whose target
+ * takes an effort level and no budget (chat-completions' `reasoning_effort`,
+ * Claude 4.7+'s `output_config.effort`). No vendor publishes a mapping —
+ * Anthropic's migration guide says only "remove `budget_tokens`, set
+ * `thinking: {type: "adaptive"}`, and control reasoning depth with
+ * `output_config: {effort: ...}`" — so every caller warns
+ * `approximated_param` naming the bucket it chose.
+ */
+export function effortForBudget(budgetTokens: number): "low" | "medium" | "high" {
+  if (budgetTokens <= LOW_EFFORT_MAX_BUDGET) return "low";
+  return budgetTokens <= MEDIUM_EFFORT_MAX_BUDGET ? "medium" : "high";
 }
 
 /** An empty IR for a dialect, so encoders can build incrementally. */

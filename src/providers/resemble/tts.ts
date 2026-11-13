@@ -3,10 +3,14 @@
  *                         POST https://f.cluster.resemble.ai/stream     (`ttsStream`)
  *
  * Wire reference:
- * https://docs.resemble.ai/voice-generation/text-to-speech/synchronous and
- * https://docs.resemble.ai/voice-generation/text-to-speech/streaming-http
- * (verified 2026-08-13). Params mirror the wire bodies exactly.
+ * https://docs.resemble.ai/voice-generation/text-to-speech/synchronous,
+ * https://docs.resemble.ai/voice-generation/text-to-speech/streaming-http and
+ * their API references under https://docs.resemble.ai/api-reference/text-to-speech/
+ * (verified 2026-11-12). Params mirror the wire bodies exactly.
  *
+ * - CLOSED TO NEW CUSTOMERS. Resemble stopped selling voice generation on
+ *   2026-08-13 and keeps serving existing customers; these pages now live
+ *   under https://docs.resemble.ai/voice-archive. See models.ts.
  * - SYNTHESIS HOST ≠ API HOST. Resemble runs two origins: the REST API at
  *   `https://app.resemble.ai/api/v2` (projects, clips, voices) and the
  *   synthesis cluster at `https://f.cluster.resemble.ai`, which is what
@@ -18,11 +22,15 @@
  *   model associated with your `voice_uuid`, so you do not need to select a
  *   model in the request. … Do not pass it as a `model` field." These
  *   validators therefore resolve no model id: there is no catalog gate, no
- *   `unknown_model` warning, and no cost estimate (Resemble publishes no
- *   public per-unit TTS rate either — see models.ts).
- * - CHARACTER CAP: "Text or SSML to synthesize (≤ 2,000 characters)" on both
- *   routes. A breach is reported as `over_output_limit` — there is no
- *   character-specific issue code, so the message and meta
+ *   `unknown_model` warning, and no cost estimate (Resemble's per-second
+ *   rate depends on the caller's plan — see models.ts).
+ * - CHARACTER CAP, PER ROUTE. `/stream`: 2,000 on both of its pages ("max
+ *   2000 characters", "≤ 2,000 characters") — an error above 2,000.
+ *   `/synthesize`: its API reference says
+ *   "max 3,000 characters", its guide "≤ 2,000 characters" — an error above
+ *   3,000 and a warning between the two, so a request the reference says is
+ *   served is never refused. Both are reported as `over_output_limit` — there
+ *   is no character-specific issue code, so the message and meta
  *   ({ limitCharacters, actualCharacters }) spell out that the limit is in
  *   characters, not tokens.
  * - `precision` "Applies to WAV output", so pairing it with
@@ -42,7 +50,7 @@ import type { ValidateOptions } from "../../core/options";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import type { ValidateResult } from "../../core/result";
-import { models, RESEMBLE_MAX_CHARACTERS } from "./models";
+import { models, RESEMBLE_MAX_CHARACTERS, RESEMBLE_SYNTHESIZE_MAX_CHARACTERS } from "./models";
 
 export const SYNTHESIZE_URL = "https://f.cluster.resemble.ai/synthesize";
 export const SYNTHESIZE_STREAM_URL = "https://f.cluster.resemble.ai/stream";
@@ -50,6 +58,7 @@ export const SYNTHESIZE_STREAM_URL = "https://f.cluster.resemble.ai/stream";
 export const API_BASE_URL = "https://app.resemble.ai/api/v2";
 
 const SYNC_DOCS = "https://docs.resemble.ai/voice-generation/text-to-speech/synchronous";
+const SYNC_REFERENCE_DOCS = "https://docs.resemble.ai/api-reference/text-to-speech/synthesize";
 const STREAM_DOCS = "https://docs.resemble.ai/voice-generation/text-to-speech/streaming-http";
 
 /** "wav (default) or mp3." Synchronous route only. */
@@ -72,7 +81,10 @@ export type ResemblePrecision = (typeof PRECISIONS)[number];
 interface SynthesizeCommon {
   /** Voice identifier for synthesis; also selects the model (see module JSDoc). */
   voice_uuid: string;
-  /** "Text or SSML to synthesize (≤ 2,000 characters)." */
+  /**
+   * "Text or SSML to synthesize." At most 2,000 characters on `/stream`; on
+   * `/synthesize` the API reference says 3,000 and the guide 2,000.
+   */
   data: string;
   /** Project the resulting clip is stored under. */
   project_uuid?: string;
@@ -127,44 +139,69 @@ const synthesizeStreamSchema = z.looseObject(commonShape);
 // ---------------------------------------------------------------------------
 
 /**
- * Per-request character cap on `data`. The cap is documented at the endpoint
- * level and no model id is resolved for these routes, so the constant is the
- * only source. See module JSDoc for the issue-code decision.
+ * `/synthesize` cap on `data`. The caps are documented per route and no model
+ * id is resolved here, so the constants are the only source. The two pages
+ * disagree — API reference "max 3,000 characters", guide "≤ 2,000
+ * characters" — so only what both refuse is an error; the band between them
+ * is a warning naming both pages. See module JSDoc for the issue-code
+ * decision.
  */
-function checkCharacterLimit(
-  params: SynthesizeCommon,
+function checkSynthesizeLimit(
+  params: SynthesizeBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
-  source: string,
+): void {
+  const actual = params.data.length;
+  if (actual <= RESEMBLE_MAX_CHARACTERS) return;
+  if (actual > RESEMBLE_SYNTHESIZE_MAX_CHARACTERS) {
+    ctx.report({
+      code: "over_output_limit",
+      path: ["data"],
+      message: `\`data\` is ${actual} characters; Resemble caps a synchronous synthesis request at ${RESEMBLE_SYNTHESIZE_MAX_CHARACTERS} characters (this limit is in characters, not tokens). Split the input into multiple requests.`,
+      meta: {
+        limitCharacters: RESEMBLE_SYNTHESIZE_MAX_CHARACTERS,
+        actualCharacters: actual,
+        source: SYNC_REFERENCE_DOCS,
+      },
+    });
+    return;
+  }
+  ctx.report({
+    code: "over_output_limit",
+    severity: "warning",
+    path: ["data"],
+    message: `\`data\` is ${actual} characters: within the ${RESEMBLE_SYNTHESIZE_MAX_CHARACTERS}-character cap in Resemble's /synthesize API reference, but over the ${RESEMBLE_MAX_CHARACTERS} its synchronous guide states (this limit is in characters, not tokens). Keep it to ${RESEMBLE_MAX_CHARACTERS} characters to satisfy both pages.`,
+    meta: {
+      limitCharacters: RESEMBLE_MAX_CHARACTERS,
+      actualCharacters: actual,
+      source: SYNC_DOCS,
+      referenceLimitCharacters: RESEMBLE_SYNTHESIZE_MAX_CHARACTERS,
+      referenceSource: SYNC_REFERENCE_DOCS,
+    },
+  });
+}
+
+/**
+ * `/stream` cap on `data`: "max 2000 characters" (API reference) and "≤ 2,000
+ * characters; partial SSML support" (guide) agree, so a breach is an error.
+ */
+function checkStreamLimit(
+  params: SynthesizeStreamBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
 ): void {
   const actual = params.data.length;
   if (actual <= RESEMBLE_MAX_CHARACTERS) return;
   ctx.report({
     code: "over_output_limit",
     path: ["data"],
-    message: `\`data\` is ${actual} characters; Resemble caps a synthesis request at ${RESEMBLE_MAX_CHARACTERS} characters (this limit is in characters, not tokens). Split the input into multiple requests.`,
+    message: `\`data\` is ${actual} characters; Resemble caps a streaming synthesis request at ${RESEMBLE_MAX_CHARACTERS} characters (this limit is in characters, not tokens). Split the input into multiple requests, or use \`resemble.tts\`, whose API reference allows ${RESEMBLE_SYNTHESIZE_MAX_CHARACTERS}.`,
     meta: {
       limitCharacters: RESEMBLE_MAX_CHARACTERS,
       actualCharacters: actual,
-      source,
+      source: STREAM_DOCS,
     },
   });
-}
-
-function checkSynthesizeLimit(
-  params: SynthesizeBody,
-  info: ModelInfo | undefined,
-  ctx: PipelineContext,
-): void {
-  checkCharacterLimit(params, info, ctx, SYNC_DOCS);
-}
-
-function checkStreamLimit(
-  params: SynthesizeStreamBody,
-  info: ModelInfo | undefined,
-  ctx: PipelineContext,
-): void {
-  checkCharacterLimit(params, info, ctx, STREAM_DOCS);
 }
 
 /**

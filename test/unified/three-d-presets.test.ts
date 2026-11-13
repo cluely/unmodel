@@ -13,7 +13,7 @@
  * generated from fal's own OpenAPI `required` list minus everything fal
  * defaults. A hand-written list would be nineteen transcriptions to keep in
  * step with a weekly refresh, and the first one to go stale would turn a real
- * regression into a passing sweep. The four Tripo refs need no such probe:
+ * regression into a passing sweep. The five Tripo refs need no such probe:
  * their two routes require exactly `model` plus the one input, which the sweep
  * already writes.
  */
@@ -54,8 +54,8 @@ const ROWS = { ...fal.modelParams, ...tripo3d.modelParams } as Readonly<
 
 test("the sweep covers the whole roster, both providers", () => {
   expect(falRefs).toHaveLength(19);
-  expect(tripoRefs).toHaveLength(4);
-  expect(refs).toHaveLength(23);
+  expect(tripoRefs).toHaveLength(5);
+  expect(refs).toHaveLength(24);
 });
 
 /**

@@ -4,7 +4,7 @@
  * is `additionalProperties: false` with COMPLETE enums
  * (https://api.krea.ai/openapi.json), so `aspect_ratio`, `resolution` and
  * `creativity` carry no `(string & {})` escape hatch: a non-member is a
- * certain 400, and these tests pin that it is a compile error instead.
+ * certain 422, and these tests pin that it is a compile error instead.
  */
 import { image } from "../../src/providers/krea";
 import { expectAssignable } from "./helpers";
@@ -24,6 +24,8 @@ function krea2EnumTypeTests(): void {
   // Other arms of the closed spaces.
   image({ model: "krea-2/large", prompt: "hi", aspect_ratio: "2.35:1", resolution: "1K" });
   image({ model: "krea-2/medium-turbo", prompt: "hi", aspect_ratio: "9:16", resolution: "1K", creativity: "raw" });
+  // 3:4 is in the served enum on every variant route (openapi.json, 2026-11-12).
+  image({ model: "krea-2/medium", prompt: "hi", aspect_ratio: "3:4", resolution: "1K" });
 
   // @ts-expect-error aspect_ratio is a CLOSED enum — 21:9 is not a Krea 2 ratio
   image({ model: "krea-2/medium", prompt: "hi", aspect_ratio: "21:9", resolution: "1K" });

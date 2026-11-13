@@ -40,7 +40,7 @@ describe("revai.stt happy path", () => {
     const r = stt.safe({
       source_config: { url: MEDIA, auth_headers: { Authorization: "Bearer token" } },
       notification_config: { url: "https://example.com/hook" },
-      transcriber: "fusion",
+      transcriber: "machine",
       language: "en",
       metadata: "example metadata",
       delete_after_seconds: 2_592_000,
@@ -54,6 +54,14 @@ describe("revai.stt happy path", () => {
     });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("the deprecated low_cost and fusion transcribers validate with deprecated_model", () => {
+    for (const transcriber of ["low_cost", "fusion"] as const) {
+      const r = stt.safe({ source_config: { url: MEDIA }, transcriber });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+    }
   });
 
   test("unknown transcribers warn and name the revai catalog", () => {
@@ -112,6 +120,65 @@ describe("revai.stt documented ranges", () => {
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors).toHaveLength(2);
+  });
+
+  test("null is accepted, as unset, on every option the OpenAPI marks nullable", () => {
+    const r = stt.safe({
+      source_config: { url: MEDIA, auth_headers: null },
+      metadata: null,
+      callback_url: null,
+      notification_config: null,
+      delete_after_seconds: null,
+      transcriber: null,
+      rush: null,
+      test_mode: null,
+      segments_to_transcribe: null,
+      speaker_names: null,
+      skip_diarization: null,
+      skip_postprocessing: null,
+      skip_punctuation: null,
+      remove_disfluencies: null,
+      remove_atmospherics: null,
+      filter_profanity: null,
+      speaker_channels_count: null,
+      speakers_count: null,
+      diarization_type: null,
+      custom_vocabulary_id: null,
+      summarization_config: { model: null, type: null, prompt: "Any action items?" },
+      translation_config: { target_languages: [{ language: "es", model: null }] },
+      enable_multilingual: null,
+      language: null,
+      forced_alignment: null,
+    });
+    expect(r.ok).toBe(true);
+    // A null transcriber is the machine default and a null language is English.
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("null pairs with neither side of a mutual exclusion", () => {
+    const r = stt.safe({
+      source_config: null,
+      media_url: MEDIA,
+      notification_config: null,
+      callback_url: "https://example.com/legacy",
+      custom_vocabulary_id: null,
+      custom_vocabularies: [{ phrases: ["BLM"] }],
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  test("null is refused where the OpenAPI does not mark the option nullable", () => {
+    const r = stt.safe({
+      source_config: { url: MEDIA },
+      // @ts-expect-error `VerbatimField` carries no `nullable: true`.
+      verbatim: null,
+      // @ts-expect-error nor does `custom_vocabularies`.
+      custom_vocabularies: null,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => e.path.join("."))).toEqual(["verbatim", "custom_vocabularies"]);
+    }
   });
 
   test("unknown top-level keys pass through with a warning", () => {
@@ -193,6 +260,25 @@ describe("revai.stt transcriber scoping", () => {
     if (!r.ok) {
       expect(r.errors).toHaveLength(2);
       expect(r.errors[0]?.message).toContain("low-cost environment");
+      expect(r.errors[0]?.meta?.source).toBe(
+        "https://web.archive.org/web/20250601173112/https://docs.rev.ai/api/asynchronous/reference",
+      );
+    }
+  });
+
+  test("low_cost restrictions do not apply to non-English jobs, which ignore the transcriber", () => {
+    const r = stt.safe({
+      source_config: { url: MEDIA },
+      transcriber: "low_cost",
+      language: "es",
+      forced_alignment: true,
+      diarization_type: "premium",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model", "unsupported_param"]);
+      expect(r.warnings[1]?.path).toEqual(["transcriber"]);
+      expect(r.warnings[1]?.meta?.ignored).toBe(true);
     }
   });
 });
@@ -201,7 +287,7 @@ describe("revai.stt language scoping", () => {
   test("English-only params are rejected for non-English audio", () => {
     const r = stt.safe({
       source_config: { url: MEDIA },
-      language: "fr",
+      language: "de",
       filter_profanity: true,
       speaker_channels_count: 2,
     });
@@ -212,11 +298,26 @@ describe("revai.stt language scoping", () => {
         "speaker_channels_count",
       ]);
       expect(r.errors[0]?.message).toContain("non-English");
+      expect(r.errors[1]?.message).toContain('English, Spanish and French ("en", "en-us", "en-gb", "es", "fr")');
     }
   });
 
+  test("speaker_channels_count is available for Spanish and French", () => {
+    for (const language of ["es", "fr"]) {
+      const r = stt.safe({ source_config: { url: MEDIA }, language, speaker_channels_count: 2 });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("a null language is the English default", () => {
+    const r = stt.safe({ source_config: { url: MEDIA }, language: null, filter_profanity: true });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
   test("transcriber is reported as ignored for non-English requests", () => {
-    const r = stt.safe({ source_config: { url: MEDIA }, language: "de", transcriber: "fusion" });
+    const r = stt.safe({ source_config: { url: MEDIA }, language: "de", transcriber: "machine" });
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.warnings.map((w) => w.code)).toEqual(["unsupported_param"]);
@@ -266,32 +367,51 @@ describe("revai.stt media + cost", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.2, 10);
   });
 
-  test("low_cost halves the machine rate and fusion bills per minute", () => {
+  test("the deprecated low_cost and fusion have no published price, so no English estimate", () => {
     const declaration = { media: [{ path: ["source_config", "url"], durationSeconds: 3600 }] };
     const low = stt.safe({ source_config: { url: MEDIA }, transcriber: "low_cost" }, declaration);
     const fusion = stt.safe({ source_config: { url: MEDIA }, transcriber: "fusion" }, declaration);
-    if (low.ok) expect(low.estimate.costUSD).toBeCloseTo(0.1, 10);
-    if (fusion.ok) expect(fusion.estimate.costUSD).toBeCloseTo(60 * 0.005, 10);
+    expect(low.ok).toBe(true);
+    expect(fusion.ok).toBe(true);
+    if (low.ok) expect(low.estimate.costUSD).toBeUndefined();
+    if (fusion.ok) expect(fusion.estimate.costUSD).toBeUndefined();
   });
 
   test("non-English audio prices at the foreign-language rate, not the transcriber's", () => {
     const declaration = { media: [{ path: ["source_config", "url"], durationSeconds: 3600 }] };
     const spanish = stt.safe(
-      { source_config: { url: MEDIA }, transcriber: "low_cost", language: "es" },
+      { source_config: { url: MEDIA }, transcriber: "machine", language: "es" },
       declaration,
     );
     const english = stt.safe(
-      { source_config: { url: MEDIA }, transcriber: "low_cost", language: "en" },
+      { source_config: { url: MEDIA }, transcriber: "machine", language: "en" },
+      declaration,
+    );
+    // The transcriber is ignored for non-English audio, so a deprecated one
+    // with no catalog rate still bills at the foreign-language rate.
+    const unpriced = stt.safe(
+      { source_config: { url: MEDIA }, transcriber: "low_cost", language: "es" },
       declaration,
     );
     expect(spanish.ok).toBe(true);
     expect(english.ok).toBe(true);
-    if (spanish.ok && english.ok) {
-      // 60 minutes x ($0.30/hr ÷ 60) = $0.30, 3x Reverb Turbo's $0.10/hr.
+    expect(unpriced.ok).toBe(true);
+    if (spanish.ok && english.ok && unpriced.ok) {
+      // 60 minutes x ($0.30/hr ÷ 60) = $0.30, 1.5x Reverb's $0.20/hr.
       expect(spanish.estimate.costUSD).toBeCloseTo(0.3, 10);
-      expect(english.estimate.costUSD).toBeCloseTo(0.1, 10);
-      expect(spanish.estimate.costUSD ?? 0).toBeGreaterThan(english.estimate.costUSD ?? 0);
+      expect(english.estimate.costUSD).toBeCloseTo(0.2, 10);
+      expect(unpriced.estimate.costUSD).toBeCloseTo(0.3, 10);
     }
+  });
+
+  test("Spanish speaker channels multiply the foreign-language rate", () => {
+    const r = stt.safe(
+      { source_config: { url: MEDIA }, language: "es", speaker_channels_count: 2 },
+      { media: [{ path: ["source_config", "url"], durationSeconds: 3600 }] },
+    );
+    expect(r.ok).toBe(true);
+    // 2 channels x 60 minutes x ($0.30/hr ÷ 60) = $0.60.
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.6, 10);
   });
 
   test("a non-English job is blocked by a budget sized for the English rate", () => {

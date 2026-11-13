@@ -3,14 +3,15 @@
  * definitions behind https://kling.ai/document-api (the API-reference pages
  * render from Kling's own OpenAPI data) — verified 2026-08-13.
  *
- * TWO ROUTE FAMILIES. The corroborated one is `POST /v1/videos/text2video` /
+ * TWO ROUTE FAMILIES. One is `POST /v1/videos/text2video` /
  * `/v1/videos/image2video` with `model_name` in the BODY (`kling.video`
  * / `kling.videoFromImage`); the path-addressed one (`POST /text-to-video/
- * {model}`, `/omni-video/{model}`) was recovered from the doc site's JS bundle
- * and is corroborated by nothing, so it ships EXPERIMENTAL as
- * `kling.videoV3` / `kling.videoV3FromImage` / `kling.videoOmni`. The
- * constants below marked "current routes" belong to that experimental family;
- * ./models.ts records the full provenance of both.
+ * {model}`, `/omni-video/{model}`) was transcribed from the doc site's JS
+ * chunks and ships EXPERIMENTAL as `kling.videoV3` / `kling.videoV3FromImage`
+ * / `kling.videoOmni` — the API host answers the family with its own auth
+ * gate, but each model's path is doc-only. The constants below marked
+ * "current routes" belong to that family; ./models.ts records the full
+ * provenance of both.
  *
  * Base URL: "The API endpoint has been changed from https://api.klingai.com to
  * https://api-singapore.klingai.com" (docs/api/get-started/authentication);
@@ -22,9 +23,9 @@
  * credentials; add the header yourself when fetching.
  *
  * Every generation route is asynchronous: it responds with a task object and
- * you poll `GET /v1/videos/{route}/{task_id}` (the corroborated family) or
- * `GET /tasks` (the experimental path-addressed family — unverified, like the
- * routes it serves), or set `options.callback_url`.
+ * you poll `GET /v1/videos/{route}/{task_id}` (the `model_name` family) or
+ * `GET /tasks` (the path-addressed family — the API host answers it with the
+ * same auth gate as the routes it serves), or set `options.callback_url`.
  */
 
 import { z } from "zod";
@@ -42,9 +43,34 @@ export const KLING_HEADERS: Record<string, string> = JSON_HEADERS;
 
 export const DOCS_BASE = "https://kling.ai/document-api";
 
-/** `settings.aspect_ratio` — the same three values on every current route. */
+/**
+ * `aspect_ratio` on `/v1/videos/text2video`, and `settings.aspect_ratio` on
+ * every path-addressed route before Kling 4.0 — the same three values.
+ */
 export const KLING_ASPECT_RATIOS = ["16:9", "9:16", "1:1"] as const;
 export type KlingAspectRatio = (typeof KLING_ASPECT_RATIOS)[number];
+
+/**
+ * `settings.aspect_ratio` on Kling 4.0 / 4.0 Flash text-to-video: `21:9` joins
+ * the three. https://kling.ai/document-api/api/video/4-0/text-to-video
+ * (2026-11-12): `aspectRatio:{enum:["21:9","16:9","9:16","1:1"],default:"16:9"}`.
+ */
+export const KLING_4_ASPECT_RATIOS = ["21:9", "16:9", "9:16", "1:1"] as const;
+
+/**
+ * `settings.aspect_ratio` on Kling 4.0 / 4.0 Flash omni-video, which adds
+ * `adaptive` (read the shape off the prompt or the inputs).
+ * https://kling.ai/document-api/api/video/4-0/video-omni (2026-11-12):
+ * `aspectRatio:{enum:["21:9","16:9","9:16","1:1","adaptive"],default:"adaptive"`.
+ */
+export const KLING_4_OMNI_ASPECT_RATIOS = ["21:9", "16:9", "9:16", "1:1", "adaptive"] as const;
+
+/**
+ * `settings.aspect_ratio` on the path-addressed routes — autocomplete over
+ * every value any of them documents; each route's rule table narrows it per
+ * model (`21:9` is Kling 4.0's, `adaptive` is 4.0's omni route's).
+ */
+export type KlingSettingsAspectRatio = (typeof KLING_4_OMNI_ASPECT_RATIOS)[number];
 
 /** `settings.resolution` values across the current routes. */
 export const KLING_RESOLUTIONS = ["720p", "1080p", "4k"] as const;
@@ -74,7 +100,13 @@ export type KlingMode = (typeof KLING_MODES)[number];
 /** `sound` switch on `/v1/videos/*`. */
 export const KLING_SOUND = ["on", "off"] as const;
 
-/** Documented `prompt` ceiling on the current routes (recommended ≤ 2500). */
+/**
+ * The `prompt` ceiling the pre-4.0 text-to-video rows enforce (recommended
+ * ≤ 2500): "Maximum length: 3072 characters (recommended: ≤ 2500)." —
+ * https://kling.ai/document-api/api/video/3-0-omni/text-to-video and
+ * /3-0-turbo/text-to-video (2026-11-12). The 2.6 and 2.5-turbo pages print
+ * "Maximum length: 2500 characters." instead; their rows keep the looser 3072.
+ */
 export const PROMPT_MAX_CHARS = 3072;
 /** Documented `prompt` / `negative_prompt` ceiling on `/v1/videos/*`. */
 export const V1_PROMPT_MAX_CHARS = 2500;
@@ -110,10 +142,16 @@ export const optionsSchema = z.looseObject({
 // `contents` — the input collection on image-to-video and omni-video.
 // ---------------------------------------------------------------------------
 
-/** Every documented `contents[].type` across the current routes. */
+/**
+ * Every documented `contents[].type` across the current routes. `middle_frame`
+ * is Kling 4.0's: https://kling.ai/document-api/api/video/4-0/image-to-video
+ * (2026-11-12) — "Supports video generation from multiple keyframes, including
+ * first frame, middle frame and last frame, with up to 10 images per request."
+ */
 export const KLING_CONTENT_TYPES = [
   "prompt",
   "first_frame",
+  "middle_frame",
   "last_frame",
   "refer_image",
   "feature_video",
@@ -126,15 +164,23 @@ export type KlingContentType = (typeof KLING_CONTENT_TYPES)[number];
 
 /**
  * One input. `prompt` carries `text`; the frame/image/video types carry a
- * `url` (an HTTPS URL or base64); `element` carries `element_id` plus an `id`
- * you reference from the prompt. The schema stays loose because the per-type
- * field sets differ and Kling keeps adding types.
+ * `url` (an HTTPS URL or base64); `element` carries `element_id` and `voice`
+ * carries `voice_id`, each plus an `id` you reference from the prompt. The
+ * schema stays loose because the per-type field sets differ and Kling keeps
+ * adding types.
  */
 export interface KlingContent {
   type: KlingContentType | (string & {});
   text?: string;
   url?: string;
   element_id?: string;
+  /**
+   * The voice on a `voice` entry — returned by the Custom Voice API, or a
+   * system preset. https://kling.ai/document-api/api/video/4-0/video-omni
+   * (2026-11-12): `"voice_id": "string", // Voice ID, generated by the system,
+   * is returned through custom voice API; required`.
+   */
+  voice_id?: string;
   id?: string;
 }
 
@@ -143,15 +189,86 @@ export const contentSchema = z.looseObject({
   text: z.string().optional(),
   url: z.string().optional(),
   element_id: z.string().optional(),
+  voice_id: z.string().optional(),
   id: z.string().optional(),
 });
 
-/** Image inputs: .jpg/.jpeg/.png, ≤50MB, ≥300px per side, ratio 1:2.5–2.5:1. */
+/**
+ * Image inputs on the pre-4.0 path-addressed routes (3.0 / 3.0-turbo / 2.6 /
+ * 2.5-turbo image-to-video, 3.0-omni / O1 omni): .jpg/.jpeg/.png, ≤50MB,
+ * ≥300px per side, ratio 1:2.5–2.5:1. Kling 4.0 / 4.0 Flash cap images at
+ * 30MB ("The size of the image file cannot exceed 30MB.", kling-4-params,
+ * 2026-11-12). Not enforced.
+ */
 export const IMAGE_MAX_BYTES = 50 * 1024 * 1024;
 export const IMAGE_MIN_DIMENSION = 300;
 export const IMAGE_FORMATS = ["jpg", "jpeg", "png"] as const;
-/** Up to 3 Elements can be specified per task. */
+/** Up to 3 Elements can be specified per task — the cap a rule row inherits unless it states its own. */
 export const MAX_ELEMENTS = 3;
+
+/**
+ * The most Elements any documented case allows on the Kling 3.0 Omni and O1
+ * omni routes. https://kling.ai/document-api/api/video/3-0-omni/video-omni
+ * (2026-11-12): "When there is no reference video+only multi-image element,
+ * the sum of the number of reference pictures and multi-image element shall
+ * not exceed 7."; https://kling.ai/document-api/api/video/o1/video-omni: "No
+ * reference video: reference images + Elements ≤ 7." The tighter cases (3 with
+ * a first frame, 4 with a reference video, 3 video-character Elements) turn
+ * on an Element's kind, which an opaque `element_id` does not reveal, so only
+ * the ceiling is checked.
+ */
+export const OMNI_MAX_ELEMENTS = 7;
+
+/**
+ * The Kling 4.0 / 4.0 Flash omni-video Element cap.
+ * https://kling.ai/document-api/api/video/4-0/video-omni (2026-11-12): "Up to
+ * 7 Elements are supported, including no more than 3 video character
+ * Elements." Which Elements are video-character ones is not visible in a
+ * request (an `element_id` is opaque), so only the total is checked.
+ */
+export const KLING_4_MAX_ELEMENTS = 7;
+
+// ---------------------------------------------------------------------------
+// `prompt` length budgets.
+// ---------------------------------------------------------------------------
+
+/**
+ * A `prompt` length budget. Kling 4.0 states its cap per script — "Mixed input
+ * must satisfy E / 26000 + N / 11000 <= 1, where E is the number of English
+ * characters and N is the number of non-English characters" — and a plain
+ * character cap is the same budget with both sides equal.
+ */
+export interface PromptBudget {
+  /** Characters allowed when every character is English. */
+  readonly english: number;
+  /** Characters allowed when no character is English. */
+  readonly nonEnglish: number;
+}
+
+/** {@link PROMPT_MAX_CHARS} as a budget — the cap on the pre-4.0 text-to-video rows. */
+export const PROMPT_BUDGET_3072: PromptBudget = {
+  english: PROMPT_MAX_CHARS,
+  nonEnglish: PROMPT_MAX_CHARS,
+};
+
+/**
+ * Kling 4.0 / 4.0 Flash, on all three routes.
+ * https://kling.ai/document-api/api/video/4-0/text-to-video (2026-11-12):
+ * "English-only input supports up to 26,000 characters, and non-English-only
+ * input supports up to 11,000 characters. Mixed input must satisfy E / 26000 +
+ * N / 11000 <= 1".
+ */
+export const KLING_4_PROMPT_BUDGET: PromptBudget = { english: 26_000, nonEnglish: 11_000 };
+
+/**
+ * Letters outside the Latin script: the characters that are non-English under
+ * any reading of "English character", which the docs never define. Everything
+ * else — Latin letters with or without diacritics, digits, whitespace,
+ * punctuation, symbols — counts as English. That is the loosest classification
+ * the sentence allows, so the budget cannot refuse a prompt the API would take
+ * on a stricter reading.
+ */
+const NON_ENGLISH_LETTER = /[^\P{L}\p{Script=Latin}]/gu;
 
 // ---------------------------------------------------------------------------
 // Per-model route rules for the current (path-addressed) routes.
@@ -164,26 +281,57 @@ export interface RouteModelRules {
   readonly durations: readonly number[];
   /** Allowed `settings.audio` values; omitted when the model has no audio switch. */
   readonly audio?: readonly string[];
+  /**
+   * Whether `settings.audio: "original"` needs a `base_video` / `feature_video`
+   * entry and rules out `voice` entries (the omni rows that state it).
+   */
+  readonly originalAudioNeedsVideo?: boolean;
   /** Whether `settings.multi_shot` exists for this model. */
   readonly multiShot?: boolean;
   /** Allowed `contents[].type` values; omitted on text-to-video. */
   readonly contentTypes?: readonly string[];
+  /** Whether `contents` must carry a `first_frame` (image-to-video rows). */
+  readonly requireFirstFrame?: boolean;
+  /** The Element cap; {@link MAX_ELEMENTS} when omitted. */
+  readonly maxElements?: number;
+  /** The prompt's length budget; omitted where the route states none this table enforces. */
+  readonly prompt?: PromptBudget;
 }
 
 export type RouteRules = Readonly<Record<string, RouteModelRules>>;
 
-/** 3–15 and 3–10, the two documented duration ranges on the current routes. */
+/** 3–15 and 3–10, the two documented duration ranges on the 3.x / 2.x / O1 routes. */
 export const DURATIONS_3_15 = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const;
 export const DURATIONS_3_10 = [3, 4, 5, 6, 7, 8, 9, 10] as const;
 export const DURATIONS_5_10 = [5, 10] as const;
 
 /**
- * `settings.duration` in seconds — autocomplete over the widest documented
- * range (3–15s), of which `DURATIONS_3_10` and `DURATIONS_5_10` are subsets.
- * Each route's rule table narrows it per model at runtime (2.6 / 2.5-turbo
- * take only 5 or 10, kling-o1 tops out at 10).
+ * Kling 4.0 Flash: "Supports video generation from 3 to 20 seconds at 720P
+ * resolution." — https://kling.ai/document-api/updates/api (11/04/2026,
+ * retrieved 2026-11-12); the routes' `maxDuration:20`.
  */
-export type KlingDuration = (typeof DURATIONS_3_15)[number];
+export const DURATIONS_3_20 = [
+  3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+] as const;
+
+/**
+ * Kling 4.0: "duration accepts any integer between 3 and 30 seconds." —
+ * https://kling.ai/document-api/api/usage-guide/kling-4-0 (2026-11-12); the
+ * routes' `maxDuration:30`.
+ */
+export const DURATIONS_3_30 = [
+  3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
+  29, 30,
+] as const;
+
+/**
+ * `settings.duration` in seconds — autocomplete over the widest documented
+ * range (Kling 4.0's 3–30s), of which every other list here is a subset. Each
+ * route's rule table narrows it per model at runtime (2.6 / 2.5-turbo take
+ * only 5 or 10, kling-o1 tops out at 10, the 3.0 family at 15, 4.0 Flash at
+ * 20).
+ */
+export type KlingDuration = (typeof DURATIONS_3_30)[number];
 
 interface CurrentRouteParams {
   model: string;
@@ -320,13 +468,12 @@ export function checkSettings<P extends CurrentRouteParams>(
 
 /**
  * Enforces a route's `contents` rules: which entry types the model accepts,
- * that a first frame is present when the route needs one, and the Element cap.
+ * that a first frame is present when the model needs one, and its Element cap.
  */
 export function checkContents<P extends CurrentRouteParams>(
   route: string,
   table: RouteRules,
   source: string,
-  options: { requireFirstFrame?: boolean } = {},
 ): (params: P, info: ModelInfo | undefined, ctx: PipelineContext) => void {
   return (params, info, ctx) => {
     if (info === undefined) return;
@@ -356,40 +503,96 @@ export function checkContents<P extends CurrentRouteParams>(
       );
     });
 
-    if (elements > MAX_ELEMENTS) {
+    const maxElements = rules.maxElements ?? MAX_ELEMENTS;
+    if (elements > maxElements) {
       ctx.report({
         code: "invalid_shape",
         path: ["contents"],
         model: params.model,
-        message: `Up to ${MAX_ELEMENTS} Elements can be specified per task; got ${elements}.`,
-        meta: { max: MAX_ELEMENTS, count: elements, source },
+        message: `"${params.model}" takes up to ${maxElements} Elements per task on ${route}; got ${elements}.`,
+        meta: { max: maxElements, count: elements, source },
       });
     }
 
-    if (options.requireFirstFrame === true && !hasFirstFrame) {
+    if (rules.requireFirstFrame === true && !hasFirstFrame) {
       ctx.report({
         code: "invalid_shape",
         path: ["contents"],
         model: params.model,
         message: hasLastFrame
-          ? "`first_frame` is required on the image-to-video route — last-frame-only generation is not supported."
-          : "`contents` must include a `first_frame` entry on the image-to-video route.",
+          ? `\`first_frame\` is required by "${params.model}" on ${route} — last-frame-only generation is not supported.`
+          : `\`contents\` must include a \`first_frame\` entry for "${params.model}" on ${route}.`,
         meta: { source },
       });
     }
   };
 }
 
-/** `model_name` values this route accepts. */
-export const TEXT2VIDEO_MODELS = [
-  "kling-v1",
-  "kling-v1-6",
-  "kling-v2-master",
-  "kling-v2-1-master",
-  "kling-v2-5-turbo",
-  "kling-v2-6",
-  "kling-v3",
-] as const;
+/**
+ * Enforces a model's `prompt` budget — on the top-level `prompt` of
+ * text-to-video and on every `{ type: "prompt" }` entry's `text` in
+ * `contents`. Characters are counted as code points.
+ */
+export function checkPrompt<P extends CurrentRouteParams & { prompt?: string }>(
+  route: string,
+  table: RouteRules,
+  source: string,
+): (params: P, info: ModelInfo | undefined, ctx: PipelineContext) => void {
+  return (params, info, ctx) => {
+    if (info === undefined) return;
+    const budget = table[params.model]?.prompt;
+    if (budget === undefined) return;
+    if (typeof params.prompt === "string") {
+      reportOverBudget(ctx, ["prompt"], params.model, route, budget, params.prompt, source);
+    }
+    if (!Array.isArray(params.contents)) return;
+    params.contents.forEach((item, index) => {
+      if (typeof item !== "object" || item === null || item.type !== "prompt") return;
+      if (typeof item.text !== "string") return;
+      reportOverBudget(ctx, ["contents", index, "text"], params.model, route, budget, item.text, source);
+    });
+  };
+}
+
+function reportOverBudget(
+  ctx: PipelineContext,
+  path: Array<string | number>,
+  model: string,
+  route: string,
+  budget: PromptBudget,
+  text: string,
+  source: string,
+): void {
+  const total = [...text].length;
+  const nonEnglish = text.match(NON_ENGLISH_LETTER)?.length ?? 0;
+  const english = total - nonEnglish;
+  // E / english + N / nonEnglish <= 1, in integers so no rounding decides it.
+  if (english * budget.nonEnglish + nonEnglish * budget.english <= budget.english * budget.nonEnglish) {
+    return;
+  }
+  const message =
+    budget.english === budget.nonEnglish
+      ? `the prompt is ${total} characters; "${model}" takes up to ${budget.english} on ${route}.`
+      : `the prompt is over "${model}"'s length budget on ${route}: up to ${budget.english} ` +
+        `English-only or ${budget.nonEnglish} non-English-only characters, and mixed input must ` +
+        `satisfy E / ${budget.english} + N / ${budget.nonEnglish} <= 1 — got E = ${english}, ` +
+        `N = ${nonEnglish}.`;
+  ctx.report({
+    code: "invalid_shape",
+    path,
+    model,
+    message,
+    meta: { english, nonEnglish, budget: { ...budget }, source },
+  });
+}
+
+/**
+ * `model_name` values `POST /v1/videos/text2video` accepts.
+ * https://kling.ai/document-api/api/video/3-0-omni/text-to-video/legacy
+ * (2026-11-12): `{name:"model_name",type:"string",required:!0,...,
+ * enum:["kling-v2-5-turbo","kling-v2-6","kling-v3"]}`.
+ */
+export const TEXT2VIDEO_MODELS = ["kling-v2-5-turbo", "kling-v2-6", "kling-v3"] as const;
 
 /** Documented `aspect_ratio` values on the image routes. */
 export const KLING_IMAGE_ASPECT_RATIOS = [

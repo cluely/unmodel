@@ -1,8 +1,8 @@
 /**
  * Black Forest Labs FLUX.1 Tools editing —
- * POST https://api.bfl.ai/v1/flux-pro-1.0-fill (inpainting, + the
- * `-finetuned` variant) and POST https://api.bfl.ai/v1/flux-pro-1.0-expand
- * (border expansion / outpainting).
+ * POST https://api.bfl.ai/v1/flux-pro-1.0-fill (inpainting) and
+ * POST https://api.bfl.ai/v1/flux-pro-1.0-expand (border expansion /
+ * outpainting).
  *
  * Wire notes (verified against https://api.bfl.ai/openapi.json and
  * https://docs.bfl.ml/flux_1_fill on 2026-08-13):
@@ -18,7 +18,7 @@
  *   the image's dimensions — a rule the API validates server-side and unmodel
  *   cannot check from a base64 string). `expand` takes per-side pixel margins
  *   `top`/`bottom`/`left`/`right`, each 0–2048.
- * - `safety_tolerance` is 0–6 on these routes (FLUX.2 caps it at 5).
+ * - `safety_tolerance` is 0–6 on these routes (FLUX.2 goes to 7).
  * - ASYNC-JOB API: the POST returns `{ id, polling_url }`; polling
  *   `GET /v1/get_result` is transport — out of scope.
  * - Auth is an `x-key` header — unmodel never touches keys.
@@ -32,7 +32,7 @@ import type { ValidateResult } from "../../core/result";
 import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models } from "./models";
-import { bflModelUrl, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
+import { bflModelUrl, bflUserField, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
 
 const OPENAPI_URL = "https://api.bfl.ai/openapi.json";
 const FILL_SCHEMA_URL = `${OPENAPI_URL}#/components/schemas/FluxProFillInputs`;
@@ -66,6 +66,8 @@ interface FluxEditCoreFields {
   webhook_url?: string | null;
   /** Secret for webhook signature verification. */
   webhook_secret?: string | null;
+  /** Opaque end-user identifier from the calling platform: 1–256 chars, no NUL. */
+  user?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -83,18 +85,10 @@ interface FluxFillFields extends FluxEditCoreFields {
 
 export interface FluxFillBody extends FluxFillFields {
   model: "flux-pro-1.0-fill";
-  /** Only the `-finetuned` route takes a LoRA id. */
+  /** FluxProFillInputs takes no LoRA — the FLUX.2 [klein] `-finetuned` routes do. */
   finetune_id?: never;
-  /** Only the `-finetuned` route takes a LoRA strength. */
+  /** FluxProFillInputs takes no LoRA — the FLUX.2 [klein] `-finetuned` routes do. */
   finetune_strength?: never;
-}
-
-export interface FluxFillFinetunedBody extends FluxFillFields {
-  model: "flux-pro-1.0-fill-finetuned";
-  /** REQUIRED. LoRA name, or "org-id/lora-name" for a shared LoRA. */
-  finetune_id: string;
-  /** LoRA influence, 0–2. Default 1.1. */
-  finetune_strength?: number;
 }
 
 /** Escape hatch for fill-like routes unmodel doesn't know yet. */
@@ -110,12 +104,10 @@ export interface UnknownFluxFillBody<Model extends string> {
  */
 export type FluxFillParams<FutureModel extends string = never> =
   | FluxFillBody
-  | FluxFillFinetunedBody
   | UnknownFluxFillBody<FutureModel>;
 
 export interface FluxFillBodyByModel {
   "flux-pro-1.0-fill": FluxFillBody;
-  "flux-pro-1.0-fill-finetuned": FluxFillFinetunedBody;
 }
 
 type FluxFillArm<M extends string> = M extends keyof FluxFillBodyByModel
@@ -169,14 +161,16 @@ const editCoreShape = {
   safety_tolerance: z.number().int().min(0).max(6).optional(),
   webhook_url: z.string().min(1).max(2083).nullable().optional(),
   webhook_secret: z.string().nullable().optional(),
+  user: bflUserField,
 };
 
 const fillSchema = z.looseObject({
   ...editCoreShape,
   model: z.string(),
   mask: z.string().nullable().optional(),
-  finetune_id: z.string().optional(),
-  finetune_strength: z.number().min(0).max(2).optional(),
+  // Declared so `checkFillFinetuneUnsupported`, not unknown_param, answers.
+  finetune_id: z.unknown().optional(),
+  finetune_strength: z.unknown().optional(),
 });
 
 const expandMargin = z
@@ -200,42 +194,26 @@ const expandSchema = z.looseObject({
 // Checks
 // ---------------------------------------------------------------------------
 
-/** `finetune_id` is required on the `-finetuned` fill route. */
-function checkFillFinetuneId(
-  params: AnyFluxFillParams,
-  _info: ModelInfo | undefined,
-  ctx: PipelineContext,
-): void {
-  if (!params.model.endsWith("-finetuned")) return;
-  if ((params as { finetune_id?: unknown }).finetune_id != null) return;
-  ctx.report({
-    code: "invalid_shape",
-    path: ["finetune_id"],
-    model: params.model,
-    message: `\`finetune_id\` is required by "${params.model}".`,
-    meta: { source: `${OPENAPI_URL}#/components/schemas/FinetuneFluxProFillInputs` },
-  });
-}
-
 /**
- * `finetune_id`/`finetune_strength` belong to the finetuned route only —
- * denied here rather than in a constraint table because the base fill route
- * is one of only two arms and the message reads better with the alternative
- * route named.
+ * FluxProFillInputs declares no LoRA fields, and BFL's FLUX.1 Finetuning API
+ * has no migration path (https://docs.bfl.ml/release-notes, verified
+ * 2026-11-12: "No migration path available. Finetuning functionality will be
+ * discontinued."). Denied here rather than in a constraint table so the
+ * message can name where LoRAs do run.
  */
 function checkFillFinetuneUnsupported(
   params: AnyFluxFillParams,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
-  if (info === undefined || params.model.endsWith("-finetuned")) return;
+  if (info === undefined) return;
   for (const field of ["finetune_id", "finetune_strength"] as const) {
     if ((params as Record<string, unknown>)[field] == null) continue;
     ctx.report({
       code: "unsupported_param",
       path: [field],
       model: params.model,
-      message: `\`${field}\` is not supported by "${params.model}": LoRA params only exist on the flux-pro-1.0-fill-finetuned route (FinetuneFluxProFillInputs).`,
+      message: `\`${field}\` is not supported by "${params.model}": FLUX.1 Fill [pro] takes no LoRA (FluxProFillInputs). LoRAs run on the FLUX.2 [klein] \`-finetuned\` routes of \`blackForestLabs.image\`.`,
       meta: { source: FILL_SCHEMA_URL },
     });
   }
@@ -295,7 +273,7 @@ const fillValidator = createValidator<AnyFluxFillParams, unknown>({
   schema: fillSchema,
   modelId: (params) => params.model,
   catalog: models,
-  checks: [checkFillFinetuneId, checkFillFinetuneUnsupported],
+  checks: [checkFillFinetuneUnsupported],
   estimate,
   finalize,
 });
@@ -312,8 +290,8 @@ const expandValidator = createValidator<FluxExpandParams, unknown>({
 
 /**
  * Validates submit params for FLUX.1 Fill [pro] inpainting
- * (`POST https://api.bfl.ai/v1/flux-pro-1.0-fill` and its `-finetuned`
- * variant, 5 credits ≈ $0.05 per image).
+ * (`POST https://api.bfl.ai/v1/flux-pro-1.0-fill`, 5 credits ≈ $0.05 per
+ * image).
  *
  * `model` is a route selector, stripped from the body and interpolated into
  * `.request.url`; `.toSdk("black-forest-labs")` returns the wire body unchanged (BFL ships no

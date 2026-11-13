@@ -20,7 +20,6 @@ import {
   tts as validator,
   type InworldAudioConfig,
   type InworldAudioEncoding,
-  type InworldSampleRateHertz,
   type TtsVoiceBody,
 } from "./tts";
 import {
@@ -75,9 +74,7 @@ export const tts = {
           format.codec === "pcm_s16le" && format.container === "raw"
             ? "PCM"
             : (format.wire as InworldAudioEncoding);
-        if (format.sampleRate !== undefined) {
-          audioConfig.sampleRateHertz = format.sampleRate as InworldSampleRateHertz;
-        }
+        if (format.sampleRate !== undefined) audioConfig.sampleRateHertz = format.sampleRate;
         if (format.bitrate !== undefined) audioConfig.bitRate = format.bitrate;
       }
     }

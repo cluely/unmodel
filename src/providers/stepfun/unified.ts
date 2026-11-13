@@ -8,14 +8,26 @@
  * OpenAI). `pcm_s16le` has two wire spellings — `"wav"` when asked for in a
  * WAV container, `"pcm"` for the bare stream.
  *
- * No `language`: the endpoint has no language field at all — the model reads
- * it off the text (and off `instruction` prose). Declaring the gap makes the
- * kernel report it before compile.
+ * `language` → `language`, BCP-47 cut to its primary subtag
+ * (`toPrimaryLanguage` warns when a regional subtag is dropped). The wire
+ * takes six codes; one off that list rides through to the validator's enum,
+ * which refuses it naming the six.
  */
-import { applyExtras, resolveAudioFormat, resolveVoice, toSpeed } from "../../core/unified/derive";
+import {
+  applyExtras,
+  resolveAudioFormat,
+  resolveVoice,
+  toPrimaryLanguage,
+  toSpeed,
+} from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { TtsAdapterFor, TtsParams } from "../../core/unified/vocabulary/tts";
-import { tts as validator, type StepfunSampleRate, type TtsBody } from "./tts";
+import {
+  tts as validator,
+  type StepfunLanguage,
+  type StepfunSampleRate,
+  type TtsBody,
+} from "./tts";
 import {
   CREATE_SPEECH_DOCS,
   FORMAT,
@@ -39,12 +51,6 @@ export const tts = {
   models: MODELS,
   modelParams: STEPFUN_TTS_MODEL_PARAMS,
   delivery: STEPFUN_TTS_DELIVERY,
-  unsupported: {
-    language:
-      "POST /v1/audio/speech has no language field — stepaudio-2.5-tts reads the language off " +
-      "the text itself (and takes delivery direction as prose through `instruction`, an extra " +
-      "on this model).",
-  },
   compile(
     input: TtsParams,
     ctx: CompileContext<TtsParams>,
@@ -52,6 +58,7 @@ export const tts = {
     ctx.from(["input"], "text");
     ctx.from(["response_format"], "outputFormat");
     ctx.from(["sample_rate"], "outputFormat");
+    ctx.from(["language"], "language");
 
     const body: StepfunTtsWire = { model: ctx.model, input: input.text, voice: "" };
 
@@ -87,6 +94,18 @@ export const tts = {
     if (input.speed !== undefined) {
       const speed = ctx.take(toSpeed(input.speed, SPEED, { path: ["speed"], warn: ctx.warn }));
       if (speed !== undefined) body.speed = speed;
+    }
+
+    if (input.language !== undefined) {
+      const language = ctx.take(
+        toPrimaryLanguage(
+          input.language,
+          { path: ["language"], warn: ctx.warn },
+          { source: CREATE_SPEECH_DOCS },
+        ),
+      );
+      // An off-list subtag is sent as-is for the validator's enum to refuse.
+      if (language !== undefined) body.language = language as StepfunLanguage;
     }
 
     applyExtras(input, STEPFUN_TTS_MODEL_PARAMS, body, ctx);

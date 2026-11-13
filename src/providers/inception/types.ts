@@ -79,11 +79,10 @@ export type {
   ChatResponseFormat,
 } from "../openai-compatible/wire";
 
-export type {
-  ChatChoiceLike,
-  ChatCompletionLike,
-  ChatFinishReason,
-} from "../openai-compatible/check";
+export type { ChatChoiceLike, ChatFinishReason } from "../openai-compatible/check";
+
+// Widens the dialect's response shape with the top-level `warning` checkChat reads.
+export type { ChatCompletionLike } from "./index";
 
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.

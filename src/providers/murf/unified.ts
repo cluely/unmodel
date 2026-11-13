@@ -2,12 +2,13 @@
  * `unmodel/tts` → `murf.tts` / `murf.ttsStream` (POST
  * /v1/speech/generate and /v1/speech/stream).
  *
- * **The ref picks the route.** Murf spells its two models in two different
+ * **The ref picks the route.** Murf spells its models in two different
  * places: `/v1/speech/generate` selects Gen2 with `modelVersion: "GEN2"`, and
- * Falcon 2 is served *only* by `/v1/speech/stream` via `model: "falcon-2"`.
- * So `murf/gen2` compiles to the generate route and `murf/falcon-2` to the
- * streaming one — the alternative, sending Falcon 2 to `/v1/speech/generate`,
- * is an `invalid_enum_value` that no caller of a unified surface could act on.
+ * Falcon 2.1 is served *only* by `/v1/speech/stream` via `model: "falcon-2.1"`
+ * (or the earlier identifier `"falcon-2"`). So `murf/gen2` compiles to the
+ * generate route and `murf/falcon-2.1` / `murf/falcon-2` to the streaming one
+ * — the alternative, sending Falcon to `/v1/speech/generate`, is an
+ * `invalid_enum_value` that no caller of a unified surface could act on.
  *
  * **Speed is a signed percentage.** `rate` is "any integer between -50 and
  * 50", i.e. 0.5×–1.5× in whole percentage points, so `murfSpeed` rounds and
@@ -66,8 +67,8 @@ interface MurfDraft {
   locale?: string;
 }
 
-/** Falcon 2 lives on the streaming route and nowhere else. */
-const STREAM_ONLY_MODELS: ReadonlySet<string> = new Set(["falcon-2"]);
+/** Falcon lives on the streaming route and nowhere else. */
+const STREAM_ONLY_MODELS: ReadonlySet<string> = new Set(["falcon-2.1", "falcon-2"]);
 
 const CODECS: AudioFormatSpec["codecs"] = {
   mp3: "MP3",

@@ -62,7 +62,7 @@ export type {
   TopazSubjectDetection,
 } from "./shared";
 
-export type { TopazCostInputs, TopazPricingFamily } from "./pricing";
+export type { TopazCostInputs } from "./pricing";
 
 export type { TopazCatalogModelId } from "./models";
 

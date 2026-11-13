@@ -42,7 +42,8 @@ describe("hume.sts happy path", () => {
       include_timestamp_types: ["word", "phoneme"],
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings).toEqual([]);
+    // The one warning is the sunset (./models.ts), not a field.
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 
   test("a voice is referenced by id or by name, never both", () => {
@@ -76,6 +77,16 @@ describe("hume.sts synthetic model id", () => {
     expect(info.modalities.output).toEqual(["audio"]);
     // hume.ai/pricing publishes no rate for voice conversion — see ./models.ts.
     expect("cost" in info).toBe(false);
+  });
+
+  test("the row is deprecated — Hume retired the TTS API on 2026-11-13", () => {
+    expect(models["voice-conversion"].status).toBe("deprecated");
+    const r = sts.safe({ audio: clip() });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+      expect(r.warnings[0]?.path).toEqual(["model"]);
+    }
   });
 
   test("there is no estimate, because there is no published rate", () => {

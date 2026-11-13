@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { videoFromVideo, VIDEO_TO_VIDEO_URL } from "./video-from-video";
 import { RUNWAY_VERSION } from "./shared";
-import { videoFromVideoConstraints } from "./constraints";
+import { videoFromVideoConstraints, videoFromVideoRequired } from "./constraints";
 import { models } from "./models";
 import { videoCreditsPerSecond } from "./pricing";
 import type { ValidateOptions } from "../../core/options";
@@ -157,7 +157,7 @@ describe("runway.videoFromVideo per-model enums", () => {
 
   test("mode is a seedance2_5-only enum", () => {
     expect(
-      videoFromVideo.safe({ model: "seedance2_5", promptVideo: VIDEO, mode: "extend" }).ok,
+      videoFromVideo.safe({ model: "seedance2_5", promptVideo: VIDEO, promptText: "x", mode: "extend" }).ok,
     ).toBe(true);
 
     const wrongModel = safeUnchecked({ model: "seedance2", promptVideo: VIDEO, mode: "extend" });
@@ -294,7 +294,7 @@ describe("runway.videoFromVideo cost estimation", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
   });
 
-  test("seedance2 at a 720p ratio is 36 credits/second", () => {
+  test("seedance2 at a 720p ratio is 30 credits/second", () => {
     const r = videoFromVideo.safe({
       model: "seedance2",
       promptVideo: VIDEO,
@@ -302,7 +302,7 @@ describe("runway.videoFromVideo cost estimation", () => {
       ratio: "1280:720",
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(1.8, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(1.5, 10);
   });
 
   test("hailuo3 adds 2 credits per reference image", () => {
@@ -342,10 +342,11 @@ describe("runway.videoFromVideo documented enum coverage", () => {
     for (const [model, constraints] of Object.entries(videoFromVideoConstraints)) {
       const enums = constraints?.enums;
       if (enums === undefined) continue;
-      const base =
-        model === "aleph2"
-          ? { model, videoUri: VIDEO }
-          : { model, promptVideo: VIDEO, promptText: "hi" };
+      // Each arm's own input field, read off its required-params row.
+      const input = videoFromVideoRequired[model]?.includes("promptVideo")
+        ? { promptVideo: VIDEO }
+        : { videoUri: VIDEO };
+      const base = model === "aleph2" ? { model, ...input } : { model, ...input, promptText: "hi" };
       for (const param of ["ratio", "resolution", "targetAspectRatio"] as const) {
         for (const value of enums[param] ?? []) {
           const r = safeUnchecked({ ...base, [param]: value });
@@ -356,5 +357,210 @@ describe("runway.videoFromVideo documented enum coverage", () => {
         }
       }
     }
+  });
+});
+
+describe("runway.videoFromVideo — Kling O3 / 4.0 and Gemini Omni Flash 1.x arms", () => {
+  const TEXT = "make it snow";
+
+  test("Kling O3 edits a promptVideo; no duration, ratio or estimate", () => {
+    const r = safeUnchecked({
+      model: "klingO3_pro",
+      promptVideo: VIDEO,
+      promptText: TEXT,
+      references: IMAGE,
+      providerSettings: { keepOriginalSound: false },
+    });
+    expect(r.ok).toBe(true);
+    // "Kling O3 video-to-video is billed per second of the input video."
+    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+    const wrongField = safeUnchecked({ model: "klingO3_pro", videoUri: VIDEO, promptText: TEXT });
+    expect(wrongField.ok).toBe(false);
+    const duration = safeUnchecked({ model: "klingO3_pro", promptVideo: VIDEO, promptText: TEXT, duration: 5 });
+    expect(duration.ok).toBe(false);
+    if (!duration.ok) expect(duration.errors[0]).toMatchObject({ code: "unsupported_param", path: ["duration"] });
+  });
+
+  test("Kling O3 takes up to 4 reference images here", () => {
+    const five = safeUnchecked({
+      model: "klingO3_standard",
+      promptVideo: VIDEO,
+      promptText: TEXT,
+      references: Array(5).fill({ uri: IMAGE }),
+    });
+    expect(five.ok).toBe(false);
+    if (!five.ok) expect(five.errors[0]?.meta?.max).toBe(4);
+  });
+
+  test("kling_4 edits a videoUri with no duration; kling_4_flash takes one and prices", () => {
+    expect(safeUnchecked({ model: "kling_4", videoUri: VIDEO, promptText: TEXT, ratio: "auto_1080p" }).ok).toBe(true);
+    const k4 = safeUnchecked({ model: "kling_4", videoUri: VIDEO, promptText: TEXT, duration: 5 });
+    expect(k4.ok).toBe(false);
+    // 6.3 × 5 + 6.3 × max(input, 5) — the input term floored at the output:
+    // 63 credits, guides/pricing.md's own 5 s / 3 s example.
+    const flash = safeUnchecked({ model: "kling_4_flash", videoUri: VIDEO, promptText: TEXT, duration: 5 });
+    expect(flash.ok).toBe(true);
+    if (flash.ok) expect(flash.estimate.costUSD).toBeCloseTo(0.63, 10);
+  });
+
+  test('gemini_omni_flash_1.x take mode "edit", which needs duration "auto" on 1.2', () => {
+    const edit = safeUnchecked({
+      model: "gemini_omni_flash_1.2",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      mode: "edit",
+      duration: "auto",
+      resolution: "1080p",
+    });
+    expect(edit.ok).toBe(true);
+    // An edit bills the input's duration, which a URI does not carry.
+    if (edit.ok) expect(edit.estimate.costUSD).toBeUndefined();
+    const numeric = safeUnchecked({
+      model: "gemini_omni_flash_1.2",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      mode: "edit",
+      duration: 5,
+    });
+    expect(numeric.ok).toBe(false);
+    if (!numeric.ok) expect(numeric.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["duration"] });
+    expect(
+      safeUnchecked({ model: "gemini_omni_flash_1.1", videoUri: VIDEO, promptText: TEXT, mode: "edit" }).ok,
+    ).toBe(true);
+  });
+
+  test("gemini_omni_flash_1.2: extend and edit take no ratio, extend no references", () => {
+    const ratio = safeUnchecked({
+      model: "gemini_omni_flash_1.2",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      mode: "extend",
+      ratio: "1280:720",
+    });
+    expect(ratio.ok).toBe(false);
+    if (!ratio.ok) expect(ratio.errors[0]).toMatchObject({ code: "unsupported_param", path: ["ratio"] });
+    const refs = safeUnchecked({
+      model: "gemini_omni_flash_1.2",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      mode: "extend",
+      references: [{ uri: IMAGE }],
+    });
+    expect(refs.ok).toBe(false);
+    if (!refs.ok) expect(refs.errors[0]?.path).toEqual(["references"]);
+    // Reference mode (the default) takes both, and prices: 7 × 5 + 1 image.
+    const reference = safeUnchecked({
+      model: "gemini_omni_flash_1.2",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      ratio: "1280:720",
+      duration: 5,
+      references: [{ uri: IMAGE }],
+    });
+    expect(reference.ok).toBe(true);
+    if (reference.ok) expect(reference.estimate.costUSD).toBeCloseTo(0.36, 10);
+  });
+
+  test("gemini_omni_flash_1.1 has no resolution field", () => {
+    const r = safeUnchecked({
+      model: "gemini_omni_flash_1.1",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      resolution: "720p",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]).toMatchObject({ code: "unsupported_param", path: ["resolution"] });
+  });
+});
+
+describe("runway.videoFromVideo — corrected arms (2026-11-12)", () => {
+  test("the seedance2 / fast / mini arms take two reference videos here, not three", () => {
+    const clip = { type: "video", uri: VIDEO } as const;
+    expect(
+      safeUnchecked({ model: "seedance2", promptVideo: VIDEO, referenceVideos: [clip, clip] }).ok,
+    ).toBe(true);
+    const three = safeUnchecked({ model: "seedance2_mini", promptVideo: VIDEO, referenceVideos: [clip, clip, clip] });
+    expect(three.ok).toBe(false);
+    if (!three.ok) expect(three.errors[0]?.meta?.max).toBe(2);
+  });
+
+  test('seedance2_5 takes mode "edit", duration "auto" and mov output; seedance2 takes seed', () => {
+    expect(
+      safeUnchecked({
+        model: "seedance2_5",
+        promptVideo: VIDEO,
+        promptText: "make it snow",
+        mode: "edit",
+        duration: "auto",
+        outputFormat: "mov",
+      }).ok,
+    ).toBe(true);
+    expect(safeUnchecked({ model: "seedance2", promptVideo: VIDEO, seed: 3 }).ok).toBe(true);
+  });
+
+  test("aleph2 adds the 10-bit sdr_rec709_10bit output", () => {
+    expect(safeUnchecked({ model: "aleph2", videoUri: VIDEO, outputFormat: "sdr_rec709_10bit" }).ok).toBe(true);
+    const hdr = safeUnchecked({ model: "aleph2", videoUri: VIDEO, outputFormat: "hdr10" });
+    expect(hdr.ok).toBe(false);
+    if (!hdr.ok) expect(hdr.errors[0]?.code).toBe("invalid_enum_value");
+  });
+});
+
+describe("runway.videoFromVideo — seedance2_5 modes (guides/models.md, 2026-11-12)", () => {
+  const base = { model: "seedance2_5", promptVideo: VIDEO } as const;
+
+  test("extend and edit with their documented fields validate", () => {
+    // The guides/models.md edit example body.
+    const edit = videoFromVideo.safe({
+      ...base,
+      promptText: "Change the jacket to red leather",
+      mode: "edit",
+      duration: "auto",
+    });
+    expect(edit.ok).toBe(true);
+    if (edit.ok) expect(edit.warnings).toEqual([]);
+    expect(videoFromVideo.safe({ ...base, promptText: "keep walking", mode: "extend", duration: 5 }).ok).toBe(true);
+    // reference mode keeps ratio and duration.
+    expect(videoFromVideo.safe({ ...base, mode: "reference", ratio: "1280:720", duration: 5 }).ok).toBe(true);
+  });
+
+  test("extend and edit require promptText", () => {
+    for (const mode of ["extend", "edit"] as const) {
+      const r = videoFromVideo.safe({ ...base, mode, duration: "auto" });
+      expect(r.ok, mode).toBe(false);
+      if (!r.ok) expect(r.errors[0]).toMatchObject({ code: "invalid_shape", path: ["promptText"] });
+    }
+  });
+
+  test("extend and edit take no ratio", () => {
+    for (const mode of ["extend", "edit"] as const) {
+      const r = videoFromVideo.safe({ ...base, promptText: "x", mode, ratio: "1280:720", duration: "auto" });
+      expect(r.ok, mode).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]).toMatchObject({ code: "unsupported_param", path: ["ratio"] });
+        expect(r.errors[0]?.message).not.toContain("resolution");
+      }
+    }
+  });
+
+  test('edit requires duration "auto" — an omitted duration is the default 5', () => {
+    const five = videoFromVideo.safe({ ...base, promptText: "x", mode: "edit", duration: 5 });
+    expect(five.ok).toBe(false);
+    if (!five.ok) expect(five.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["duration"] });
+    const omitted = videoFromVideo.safe({ ...base, promptText: "x", mode: "edit" });
+    expect(omitted.ok).toBe(false);
+    if (!omitted.ok) expect(omitted.errors[0]?.meta?.value).toBe(5);
+  });
+
+  test("bitrate is seedance2's here too; a seedance2_5 draft refuses mov and bills 480p", () => {
+    expect(videoFromVideo.safe({ model: "seedance2", promptVideo: VIDEO, bitrate: "high" }).ok).toBe(true);
+    expect(safeUnchecked({ model: "aleph2", videoUri: VIDEO, bitrate: "high" }).ok).toBe(false);
+    const draft = videoFromVideo.safe({ ...base, ratio: "1920:1080", duration: 5, draft: true });
+    expect(draft.ok).toBe(true);
+    // 5 s × 20 cr/s; the input video's 10 cr/s are not estimable from a URL.
+    if (draft.ok) expect(draft.estimate.costUSD).toBeCloseTo(1, 10);
+    const mov = videoFromVideo.safe({ ...base, draft: true, outputFormat: "mov" });
+    expect(mov.ok).toBe(false);
+    if (!mov.ok) expect(mov.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["outputFormat"] });
   });
 });

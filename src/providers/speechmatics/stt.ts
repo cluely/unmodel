@@ -29,6 +29,48 @@
  *   (`wss://eu.rt.speechmatics.com/v2`), which unmodel does not validate.
  * - Alignment jobs (`type: "alignment"` + `alignment_config`) are a different
  *   product and are out of scope here; this validator models transcription.
+ *
+ * Re-verified 2026-11-12 against the same pages plus
+ * https://docs.speechmatics.com/speech-to-text/formatting.md,
+ * https://docs.speechmatics.com/speech-to-text/languages.md and
+ * https://docs.speechmatics.com/speech-to-text/batch/language-identification.md:
+ * - `output_locale` is `string | string[]`. The array — "one per language
+ *   present in the audio" — is carried by the formatting page, the models page
+ *   (Melia 1 and Oak 1: "On Batch, `output_locale` also accepts an array of
+ *   locales"), the Batch SaaS fix note of 2026-10-13 and the Melia 1 / Oak 1
+ *   container 1.13.0 notes. The API reference still types it `string`, as do
+ *   the Python (`Optional[str]`) and JS (`output_locale?: string`) batch SDKs;
+ *   those lag, and refusing the array would refuse a request the API
+ *   fulfils.
+ * - Entity detection on Melia 1 / Oak 1 contradicts between two vendor pages:
+ *   the models page says they "do not yet support" it, while
+ *   https://www.speechmatics.com/pricing.md lists
+ *   "| Entity detection | Pre-recorded | On request | Melia 1, Oak 1 |" and
+ *   "| PII reduction | Pre-recorded | On request | Melia 1, Oak 1 |". So
+ *   `enable_entities` on them is sent with a warning that names both pages,
+ *   and `entities_config`, `enable_redaction` and `redaction_config` carry no
+ *   per-model gate.
+ * - `language` on Melia 1 / Oak 1: the models page's instruction is "Set
+ *   `language` to `multi`", and the one value it says "returns an error" is
+ *   `auto`. The languages page lists what the two do not support — "the `auto`
+ *   option, the bilingual and multi-language pack codes, or translation" —
+ *   which leaves single language codes out, and the Python batch SDK's
+ *   `language_hints` docstring presumes one can be there: "Hints take
+ *   precedence over ``language``, so the transcript may not contain the
+ *   language named there. Applicable only for the next-gen models (e.g.
+ *   melia-1, oak-1)"
+ *   (https://raw.githubusercontent.com/speechmatics/speechmatics-python-sdk/main/sdk/batch/speechmatics/batch/_models.py).
+ *   So `auto` and the pack codes are refused, and any other value besides
+ *   `multi` is a warning.
+ * - `output_locale` is refused beside `language: "auto"`: "Output Locale is
+ *   currently not supported in combination with using Automatic Language
+ *   Identification. Jobs with this combination of features will be rejected."
+ *   (the language-identification page).
+ * - `additional_vocab` is capped at 20,000 entries: "If a job's custom
+ *   dictionary (`additional_vocab`) contains more than 20,000 items, the job
+ *   is rejected with an `HTTP 400 Bad Request`" (LIMITS_DOCS). The custom
+ *   dictionary page's "no more than 1000 words or phrases" is a performance
+ *   recommendation, not a limit, and is not enforced.
  */
 
 import { z } from "zod";
@@ -44,6 +86,11 @@ import { models, BATCH_HOSTS, type SpeechmaticsRegion } from "./models";
 
 const MODELS_DOCS = "https://docs.speechmatics.com/speech-to-text/models";
 const LIMITS_DOCS = "https://docs.speechmatics.com/speech-to-text/batch/limits";
+const FORMATTING_DOCS = "https://docs.speechmatics.com/speech-to-text/formatting";
+const LANGUAGES_DOCS = "https://docs.speechmatics.com/speech-to-text/languages";
+const LANGUAGE_ID_DOCS = "https://docs.speechmatics.com/speech-to-text/batch/language-identification";
+const API_REF = "https://docs.speechmatics.com/api-ref/batch/create-a-new-job";
+const PRICING_DOCS = "https://www.speechmatics.com/pricing.md";
 
 /** Builds the /v2/jobs URL for a Batch SaaS region. */
 export function jobsUrl(region: SpeechmaticsRegion = "eu1"): string {
@@ -58,6 +105,13 @@ export const JOBS_URL = jobsUrl("eu1");
  * (LIMITS_DOCS). Files above this must be submitted via `fetch_data.url`.
  */
 export const MAX_DATA_FILE_BYTES = 1_000_000_000;
+
+/**
+ * "If a job's custom dictionary (`additional_vocab`) contains more than 20,000
+ * items, the job is rejected with an `HTTP 400 Bad Request`" (LIMITS_DOCS,
+ * 2026-11-12).
+ */
+export const MAX_ADDITIONAL_VOCAB_ITEMS = 20_000;
 
 /** "the `standard` model is used" when `model` is not set (MODELS_DOCS). */
 export const DEFAULT_MODEL = "standard";
@@ -136,18 +190,44 @@ export interface SpeechmaticsSpeakerDiarizationConfig {
   speakers?: SpeechmaticsSpeaker[];
 }
 
+/** "Configuration for Advanced Entities Detection." */
+export interface SpeechmaticsEntitiesConfig {
+  /**
+   * "Must be set together with `enable_entities: true`." Returns entities such
+   * as names, dates of birth and card numbers, each with its own
+   * `entity_class`, instead of the default entity detection.
+   */
+  detect_advanced_entities?: boolean;
+}
+
+/** "Required, and only applied, when `enable_redaction` is true." */
+export interface SpeechmaticsRedactionConfig {
+  /**
+   * Groups (`pii`, `pci`, `health`, `gdpr`, `gdpr_sensitive`,
+   * `hipaa_safe_harbor`, `cpra`, `quebec_privacy_act`, `appi`,
+   * `appi_sensitive`) or specific entity types matched by their
+   * `entity_class` (e.g. `name_given`, `dob`); at least one, unique.
+   */
+  entity_classes?: string[];
+}
+
 export interface SpeechmaticsTranscriptionConfig {
-  /** ISO language code; `multi` for Melia 1, `auto` for language ID. */
+  /** ISO language code; `multi` for Melia 1 and Oak 1, `auto` for language ID. */
   language: string;
   /** Specialized variant of `language`, e.g. "medical" (Enhanced only). */
   domain?: string;
-  /** Locale for the transcription output, e.g. "en-US". */
-  output_locale?: string;
+  /**
+   * Locale for the transcription output, e.g. "en-US". On Batch, Melia 1 and
+   * Oak 1 also take an array, "one per language present in the audio"; "each
+   * locale in the array must belong to a different language". Rejected
+   * together with `language: "auto"`.
+   */
+  output_locale?: string | string[];
   /** Model to transcribe with; defaults to "standard". */
-  model?: "standard" | "enhanced" | "melia-1" | (string & {});
+  model?: "standard" | "enhanced" | "melia-1" | "oak-1" | (string & {});
   /** @deprecated Use `model`; kept for backward compatibility. */
-  operating_point?: "standard" | "enhanced" | "melia-1" | (string & {});
-  /** Custom dictionary. */
+  operating_point?: "standard" | "enhanced" | "melia-1" | "oak-1" | (string & {});
+  /** Custom dictionary; at most {@link MAX_ADDITIONAL_VOCAB_ITEMS} entries. */
   additional_vocab?: SpeechmaticsAdditionalVocabEntry[];
   punctuation_overrides?: SpeechmaticsPunctuationOverrides;
   /** "none" (default), "speaker", or "channel". */
@@ -156,18 +236,23 @@ export interface SpeechmaticsTranscriptionConfig {
   channel_diarization_labels?: string[];
   /** Include 'entity' objects (dates, numbers) with spoken/written forms. */
   enable_entities?: boolean;
+  entities_config?: SpeechmaticsEntitiesConfig;
+  /**
+   * Redact advanced entities throughout the transcript. "Must be set together
+   * with `redaction_config.entity_classes`. If `enable_entities` is true,
+   * `entities_config.detect_advanced_entities` must also be true".
+   */
+  enable_redaction?: boolean;
+  redaction_config?: SpeechmaticsRedactionConfig;
   /** Flexible endpointing: "fixed" or "flexible". */
   max_delay_mode?: "fixed" | "flexible";
   audio_filtering_config?: SpeechmaticsAudioFilteringConfig;
   transcript_filtering_config?: SpeechmaticsTranscriptFilteringConfig;
   speaker_diarization_config?: SpeechmaticsSpeakerDiarizationConfig;
-  /**
-   * Languages to bias multilingual detection toward (Melia 1). Documented in
-   * the "Language hints" section of
-   * https://docs.speechmatics.com/speech-to-text/batch/input rather than in
-   * the JobConfig table.
-   */
+  /** Languages expected in the audio, guiding multilingual transcription. */
   language_hints?: string[];
+  /** "Whether to treat the provided language hints as strict." */
+  language_hints_strict?: boolean;
 }
 
 export interface SpeechmaticsNotificationConfig {
@@ -249,11 +334,15 @@ const schema = z.looseObject({
   transcription_config: z.looseObject({
     language: z.string().min(1),
     domain: z.string().optional(),
-    output_locale: z.string().optional(),
+    output_locale: z.union([z.string(), z.array(z.string())]).optional(),
     model: z.string().optional(),
     operating_point: z.string().optional(),
     additional_vocab: z
       .array(z.looseObject({ content: z.string(), sounds_like: z.array(z.string()).optional() }))
+      .max(
+        MAX_ADDITIONAL_VOCAB_ITEMS,
+        "transcription_config.additional_vocab accepts at most 20,000 items; SaaS rejects larger dictionaries with HTTP 400 'Job rejected'.",
+      )
       .optional(),
     punctuation_overrides: z
       .looseObject({
@@ -266,6 +355,13 @@ const schema = z.looseObject({
       .array(z.string().regex(/^[A-Za-z0-9._]+$/, "channel_diarization_labels must match ^[A-Za-z0-9._]+$."))
       .optional(),
     enable_entities: z.boolean().optional(),
+    entities_config: z
+      .looseObject({ detect_advanced_entities: z.boolean().optional() })
+      .optional(),
+    enable_redaction: z.boolean().optional(),
+    redaction_config: z
+      .looseObject({ entity_classes: z.array(z.string()).min(1).optional() })
+      .optional(),
     max_delay_mode: z.enum(["fixed", "flexible"]).optional(),
     audio_filtering_config: z
       .looseObject({ volume_threshold: z.number().min(0).max(100).optional() })
@@ -292,6 +388,7 @@ const schema = z.looseObject({
       })
       .optional(),
     language_hints: z.array(z.string()).optional(),
+    language_hints_strict: z.boolean().optional(),
   }),
   fetch_data: z
     .looseObject({ url: z.string().min(1), auth_headers: z.array(z.string()).optional() })
@@ -392,14 +489,25 @@ function checkOperatingPoint(
   }
 }
 
-/** Config keys Melia 1 does not support, with the doc's own wording. */
-const MELIA_UNSUPPORTED: ReadonlyArray<{ path: Array<string | number>; feature: string }> = [
+/**
+ * The multilingual models, which share one Batch feature set: "On Batch,
+ * Melia 1 and Oak 1 match the Enhanced and Standard models for core
+ * transcription features [...] They do not yet support the following
+ * features" (MODELS_DOCS, 2026-11-12).
+ */
+const MULTILINGUAL_MODELS: ReadonlySet<string> = new Set(["melia-1", "oak-1"]);
+
+/**
+ * Config keys Melia 1 and Oak 1 do not support, with the doc's own wording.
+ * Entity detection is on the models page's list too, but is a warning instead
+ * (see {@link checkMultilingual}).
+ */
+const MULTILINGUAL_UNSUPPORTED: ReadonlyArray<{ path: Array<string | number>; feature: string }> = [
   { path: ["transcription_config", "additional_vocab"], feature: "custom dictionary" },
   {
     path: ["transcription_config", "transcript_filtering_config"],
     feature: "find and replace / profanity tagging",
   },
-  { path: ["transcription_config", "enable_entities"], feature: "entity detection" },
   { path: ["transcription_config", "audio_filtering_config"], feature: "audio filtering" },
   { path: ["translation_config"], feature: "translation" },
   { path: ["summarization_config"], feature: "summarization" },
@@ -419,39 +527,86 @@ function readPath(root: unknown, path: Array<string | number>): unknown {
 }
 
 /**
- * Melia 1's documented gaps (MODELS_DOCS): it "does not yet support" custom
- * vocabulary/formatting, entity detection, audio filtering, speaker
- * identification and every speech-intelligence add-on, and it requires
- * `language: "multi"` — "Melia 1 does not support the `auto` language value,
- * which returns an error."
+ * The `language` values Melia 1 and Oak 1 refuse by name: "Melia 1 and Oak 1
+ * do not support the `auto` option, the bilingual and multi-language pack
+ * codes, or translation" (LANGUAGES_DOCS, 2026-11-12), and of `auto`, "which
+ * returns an error" (MODELS_DOCS). The pack codes are that page's "Supported
+ * packs" table; its fifth pack is `es` plus a `domain`, not a code.
  */
-function checkMelia(config: JobConfig, _info: ModelInfo | undefined, ctx: PipelineContext): void {
-  if (resolveModel(config) !== "melia-1") return;
+const MULTILINGUAL_REFUSED_LANGUAGES: ReadonlySet<string> = new Set([
+  "auto",
+  "ar_en",
+  "en_ms",
+  "cmn_en",
+  "cmn_en_ms_ta",
+]);
+
+/**
+ * Melia 1's and Oak 1's documented gaps (MODELS_DOCS): they "do not yet
+ * support" custom vocabulary/formatting, entity detection, audio filtering,
+ * speaker identification and every speech-intelligence add-on. On `language`
+ * the docs say "Set `language` to `multi`": `auto` and the pack codes are
+ * refused, and a single language code, which no page documents for these
+ * models, is a warning. Entity detection is a warning too, because the pricing
+ * page lists it for exactly these two models.
+ */
+function checkMultilingual(
+  config: JobConfig,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const model = resolveModel(config);
+  if (!MULTILINGUAL_MODELS.has(model)) return;
   const tc = config.transcription_config;
 
-  if (tc?.language !== undefined && tc.language !== "multi") {
+  const language = tc?.language;
+  if (language !== undefined && language !== "multi") {
+    const refused = MULTILINGUAL_REFUSED_LANGUAGES.has(language);
     ctx.report({
-      code: tc.language === "auto" ? "invalid_enum_value" : "invalid_shape",
+      code: "invalid_enum_value",
+      ...(!refused && { severity: "warning" as const }),
       path: ["transcription_config", "language"],
-      model: "melia-1",
-      message: `melia-1 is a multilingual model and requires \`language: "multi"\`; got ${JSON.stringify(tc.language)}${tc.language === "auto" ? ' — "auto" returns an error for this model' : ""}.`,
-      meta: { allowed: ["multi"], value: tc.language, source: MODELS_DOCS },
+      model,
+      message:
+        language === "auto"
+          ? `${model} is a multilingual model: "auto" returns an error for this model; set \`language: "multi"\`.`
+          : refused
+            ? `${model} is a multilingual model and does not support the language pack code ${JSON.stringify(language)}; set \`language: "multi"\` — it switches between the pack's languages on its own.`
+            : `the ${model} docs say to set \`language: "multi"\`; a single language code (${JSON.stringify(language)}) is undocumented on this model and is sent as-is — to steer it toward a language, use \`language: "multi"\` with \`language_hints\`.`,
+      meta: {
+        allowed: ["multi"],
+        value: language,
+        source: refused && language !== "auto" ? LANGUAGES_DOCS : MODELS_DOCS,
+      },
     });
   }
 
-  for (const { path, feature } of MELIA_UNSUPPORTED) {
+  if (tc?.enable_entities === true) {
+    ctx.report({
+      code: "unsupported_capability",
+      severity: "warning",
+      path: ["transcription_config", "enable_entities"],
+      model,
+      message: `entity detection on ${model} contradicts between Speechmatics pages: the models page lists it among the features Melia 1 and Oak 1 "do not yet support", while the pricing page lists Entity detection for Melia 1 and Oak 1 (pre-recorded) at a list rate "On request"; sent as-is — confirm it is enabled on your account.`,
+      meta: { source: MODELS_DOCS, contradictedBy: PRICING_DOCS },
+    });
+  }
+
+  for (const { path, feature } of MULTILINGUAL_UNSUPPORTED) {
     if (readPath(config, path) == null) continue;
     ctx.report({
       code: "unsupported_capability",
       path,
-      model: "melia-1",
-      message: `\`${path.join(".")}\` (${feature}) is not supported by melia-1 yet; use "standard" or "enhanced".`,
+      model,
+      message: `\`${path.join(".")}\` (${feature}) is not supported by ${model} yet; use "standard" or "enhanced".`,
       meta: { source: MODELS_DOCS },
     });
   }
 
-  // Diarization itself works on Melia; SPEAKER IDENTIFICATION (labelled
-  // speakers / returned identifiers) does not.
+  // Diarization itself works on both; SPEAKER IDENTIFICATION (labelled
+  // speakers / returned identifiers) does not — "Not supported by Melia 1 and
+  // Oak 1", on both `get_speakers` and `speakers`
+  // (https://docs.speechmatics.com/api-ref/batch/create-a-new-job.md, 2026-11-12).
   const diarization = tc?.speaker_diarization_config;
   const identification =
     diarization?.speakers !== undefined || diarization?.get_speakers !== undefined;
@@ -459,9 +614,8 @@ function checkMelia(config: JobConfig, _info: ModelInfo | undefined, ctx: Pipeli
     ctx.report({
       code: "unsupported_capability",
       path: ["transcription_config", "speaker_diarization_config"],
-      model: "melia-1",
-      message:
-        "speaker identification (`speakers` / `get_speakers`) is not supported by melia-1 yet; plain speaker diarization is.",
+      model,
+      message: `speaker identification (\`speakers\` / \`get_speakers\`) is not supported by ${model} yet; plain speaker diarization is.`,
       meta: { source: MODELS_DOCS },
     });
   }
@@ -469,7 +623,10 @@ function checkMelia(config: JobConfig, _info: ModelInfo | undefined, ctx: Pipeli
 
 /**
  * "The Enhanced Medical model" is an Enhanced variant: `domain: "medical"` is
- * documented only alongside `model: "enhanced"` (MODELS_DOCS).
+ * documented only alongside `model: "enhanced"` (MODELS_DOCS). Oak 1 is the
+ * other medical model, selected by its id alone: "Oak 1 is a standalone model
+ * for healthcare audio. It is separate from the Enhanced Medical model"
+ * (MODELS_DOCS, 2026-11-12).
  */
 function checkMedicalDomain(
   config: JobConfig,
@@ -484,9 +641,135 @@ function checkMedicalDomain(
     code: "unsupported_capability",
     path: ["transcription_config", "domain"],
     model,
-    message: `\`domain: "medical"\` selects the Enhanced Medical model and requires \`model: "enhanced"\`; got "${model}".`,
+    message:
+      model === "oak-1"
+        ? '`domain: "medical"` selects the Enhanced Medical model and requires `model: "enhanced"`; oak-1 is itself the multilingual medical model — drop `domain`, or use `model: "enhanced"` for single-language medical audio.'
+        : `\`domain: "medical"\` selects the Enhanced Medical model and requires \`model: "enhanced"\`; got "${model}".`,
     meta: { source: MODELS_DOCS },
   });
+}
+
+/**
+ * "Output Locale is currently not supported in combination with using
+ * Automatic Language Identification. Jobs with this combination of features
+ * will be rejected." (LANGUAGE_ID_DOCS, 2026-11-12). And "Each locale in the
+ * array must belong to a different language. Passing two locales for the same
+ * language, for example `en-GB` and `en-US` together, is rejected."
+ * (FORMATTING_DOCS, 2026-11-12). A locale's language is its primary subtag:
+ * `cmn` in `cmn-Hans`.
+ */
+function checkOutputLocales(
+  config: JobConfig,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const tc = config.transcription_config;
+  if (tc?.language === "auto" && tc.output_locale !== undefined) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["transcription_config", "output_locale"],
+      model: resolveModel(config),
+      message:
+        '`output_locale` is rejected together with `language: "auto"` (automatic language identification); set a language or drop the locale.',
+      meta: { source: LANGUAGE_ID_DOCS },
+    });
+    return;
+  }
+  const locales = tc?.output_locale;
+  if (!Array.isArray(locales)) return;
+  const firstByLanguage = new Map<string, string>();
+  for (const [index, locale] of locales.entries()) {
+    const language = (locale.split("-")[0] ?? locale).toLowerCase();
+    const first = firstByLanguage.get(language);
+    if (first === undefined) {
+      firstByLanguage.set(language, locale);
+      continue;
+    }
+    ctx.report({
+      code: "invalid_shape",
+      path: ["transcription_config", "output_locale", index],
+      model: resolveModel(config),
+      message: `\`output_locale\` lists "${first}" and "${locale}", two locales of one language, which Speechmatics rejects; give one locale per language in the audio.`,
+      meta: { value: locale, conflictsWith: first, source: FORMATTING_DOCS },
+    });
+  }
+}
+
+/**
+ * The redaction and advanced-entity pairing rules (API_REF, 2026-11-12):
+ *
+ * - `enable_redaction` "Must be set together with
+ *   `redaction_config.entity_classes`", which is "Required, and only applied,
+ *   when `enable_redaction` is true".
+ * - "If `enable_entities` is true, `entities_config.detect_advanced_entities`
+ *   must also be true (redaction relies on advanced entity detection); if
+ *   `enable_entities` is false or omitted, `enable_redaction` can be used on
+ *   its own."
+ * - `detect_advanced_entities` "Must be set together with
+ *   `enable_entities: true`". A warning, not an error: no rejection is
+ *   documented, and the rule above lets redaction run without
+ *   `enable_entities`.
+ * - `entity_classes` is "`enum[]`≥ 1 items unique items". The schema holds the
+ *   minimum; each repeat is reported at its own index.
+ */
+function checkRedaction(
+  config: JobConfig,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const tc = config.transcription_config;
+  const model = resolveModel(config);
+  const classes = tc.redaction_config?.entity_classes;
+
+  if (tc.enable_redaction === true && classes === undefined) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["transcription_config", "redaction_config"],
+      model,
+      message:
+        '`enable_redaction: true` must be set together with `redaction_config.entity_classes`; name at least one group or entity class (e.g. "pii").',
+      meta: { source: API_REF },
+    });
+  }
+
+  const advanced = tc.entities_config?.detect_advanced_entities === true;
+  if (tc.enable_redaction === true && tc.enable_entities === true && !advanced) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["transcription_config", "entities_config", "detect_advanced_entities"],
+      model,
+      message:
+        "`enable_redaction` with `enable_entities: true` also needs `entities_config.detect_advanced_entities: true` (redaction relies on advanced entity detection); set it, or drop `enable_entities` to redact on its own.",
+      meta: { source: API_REF },
+    });
+  }
+
+  if (advanced && tc.enable_entities !== true) {
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["transcription_config", "entities_config", "detect_advanced_entities"],
+      model,
+      message:
+        "`entities_config.detect_advanced_entities` must be set together with `enable_entities: true`; without it, what the API does with the flag is undocumented.",
+      meta: { requires: "enable_entities", source: API_REF },
+    });
+  }
+
+  const seen = new Set<string>();
+  for (const [index, entityClass] of (classes ?? []).entries()) {
+    if (!seen.has(entityClass)) {
+      seen.add(entityClass);
+      continue;
+    }
+    ctx.report({
+      code: "invalid_shape",
+      path: ["transcription_config", "redaction_config", "entity_classes", index],
+      model,
+      message: `\`redaction_config.entity_classes\` lists ${JSON.stringify(entityClass)} more than once; its items must be unique.`,
+      meta: { value: entityClass, source: API_REF },
+    });
+  }
 }
 
 /** Audio paths a media declaration may be attached to, most specific first. */
@@ -569,7 +852,14 @@ const validator = createValidator<JobConfig, unknown>({
   schema,
   modelId: resolveModel,
   catalog: models,
-  checks: [checkOperatingPoint, checkMelia, checkMedicalDomain, checkDataFileSize],
+  checks: [
+    checkOperatingPoint,
+    checkMultilingual,
+    checkMedicalDomain,
+    checkOutputLocales,
+    checkRedaction,
+    checkDataFileSize,
+  ],
   // The audio arrives as a `data_file` FORM PART alongside this JSON config, so
   // a declaration addressed to it names a real coordinate that is not a key of
   // `JobConfig`. Same list `declaredAudio` reads, so the two cannot disagree.

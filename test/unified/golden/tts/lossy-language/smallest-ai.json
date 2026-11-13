@@ -9,8 +9,7 @@
   },
   "url": "https://api.smallest.ai/waves/v1/tts",
   "headers": {
-    "content-type": "application/json",
-    "accept": "audio/wav"
+    "content-type": "application/json"
   },
   "warnings": [
     {
@@ -22,7 +21,7 @@
         "requested": "pt-BR",
         "achieved": "pt",
         "dropped": "BR",
-        "source": "https://docs.smallest.ai/models/api-reference/text-to-speech/synthesize-speech"
+        "source": "https://docs.smallest.ai/api-reference/models/text-to-speech/synthesize-speech"
       }
     }
   ]

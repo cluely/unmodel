@@ -36,10 +36,12 @@
  *
  * | models | documented sizes | tier |
  * |---|---|---|
- * | `recraftv4_1`, `recraftv4_1_utility`, `recraftv4` | 1.03–1.18 MP around 1024² | `1k` |
- * | `recraftv4_1_pro`, `recraftv4_1_utility_pro`, `recraftv4_pro` | 4.13–4.72 MP around 2048² | `2k` |
+ * | `recraftv4_1`, `recraftv4_1_utility`, `recraftv4_1_flash`, `recraftv4`, `recraftv4_styles` | 1.03–1.18 MP around 1024² | `1k` |
+ * | `recraftv4_1_pro`, `recraftv4_1_utility_pro`, `recraftv4_pro`, `recraftv4_styles_pro` | 4.13–4.72 MP around 2048² | `2k` |
  * | `recraftv2`, `recraftv3` | 1.05–2.10 MP around 1024² | `1k` |
- * | the vector line, `recraft20b` | none — ratios only | *none* |
+ * | the vector line | none — ratios only | *none* |
+ *
+ * Each `_raster` alias renders at its base model's tier.
  *
  * So `resolution` is expressed **by choosing the model**, and the adapter's
  * job is to check that the model you chose actually delivers what you asked
@@ -47,8 +49,8 @@
  * request genuinely is 1k. A tier that does not match is an error naming the
  * Pro refs (or the standard ones) that do render at it, because silently
  * serving 1 MP for a `2k` request is the exact failure this surface exists to
- * prevent. On the vector models and `recraft20b` there is no pixel vocabulary
- * at all to check a tier against, so a tier there is `unsupported_param`.
+ * prevent. On the vector models there is no pixel vocabulary at all to check
+ * a tier against, so a tier there is `unsupported_param`.
  *
  * The V2/V3 row is the one worth squinting at: its table reaches 2.10 MP at
  * `2048x1024`, which sits exactly halfway between 1024² and 2048² in log
@@ -76,13 +78,9 @@
  * `style` / `style_id` / `text_layout`, which have no canonical spelling and
  * reach the body through `providerOptions.recraft`.
  *
- * `image_format` deserves one caveat, taken from the endpoint module's own
- * header: it is one of seven params Recraft's API accepts but its rendered
- * parameter table omits, and its value list survives from an earlier revision
- * of an internal spec document. The module types it and validates it, so the
- * adapter emits it — but a reader deciding whether to depend on
- * `outputFormat` here should know the provenance is thinner than the rest of
- * this table.
+ * `outputDelivery` maps onto two of `response_format`'s three values:
+ * `multipart` (a `multipart/form-data` answer) is not a canonical delivery,
+ * and stays reachable through `providerOptions.recraft`.
  *
  * There are **no provider-wide gaps**: every canonical field has a home on
  * this route, so `unsupported` is absent and every refusal below is
@@ -109,6 +107,7 @@ import {
   type RecraftCreativity,
   type RecraftImageFormat,
   type RecraftSize,
+  type RecraftStyleMatch,
   type RecraftSubstyle,
   type RecraftTextLayoutElement,
   type RecraftUpscaleMode,
@@ -121,24 +120,38 @@ const APPENDIX_DOCS = "https://www.recraft.ai/docs/api-reference/appendix";
 /**
  * The tier each raster model renders at, read off the appendix tables in
  * `image.ts` (`V4_STANDARD_SIZES`, `V4_PRO_SIZES`, `V2_V3_SIZES`) — the same
- * eight ids `SIZES_BY_MODEL` keys, because a model with a pixel table is
- * exactly a model whose pixel budget is documented.
+ * ids `SIZES_BY_MODEL` keys, because a model with a pixel table is exactly a
+ * model whose pixel budget is documented.
  *
- * Absent ids — the whole vector line and `recraft20b` — have no pixel
- * vocabulary at all, which is a different fact from "renders at another tier"
- * and gets a different message.
+ * Absent ids — the whole vector line — have no pixel vocabulary at all,
+ * which is a different fact from "renders at another tier" and gets a
+ * different message.
  */
 const KNOWN_MODELS: ReadonlySet<string> = new Set<string>(MODELS);
 
 const RENDERED_TIER: Readonly<Record<string, ResolutionTier>> = {
   recraftv4_1: "1k",
+  recraftv4_1_raster: "1k",
   recraftv4_1_utility: "1k",
+  recraftv4_1_utility_raster: "1k",
+  recraftv4_1_flash: "1k",
+  recraftv4_1_flash_raster: "1k",
   recraftv4: "1k",
+  recraftv4_raster: "1k",
+  recraftv4_styles: "1k",
+  recraftv4_styles_raster: "1k",
   recraftv4_1_pro: "2k",
+  recraftv4_1_pro_raster: "2k",
   recraftv4_1_utility_pro: "2k",
+  recraftv4_1_utility_pro_raster: "2k",
   recraftv4_pro: "2k",
+  recraftv4_pro_raster: "2k",
+  recraftv4_styles_pro: "2k",
+  recraftv4_styles_pro_raster: "2k",
   recraftv2: "1k",
+  recraftv2_raster: "1k",
   recraftv3: "1k",
+  recraftv3_raster: "1k",
 };
 
 /**
@@ -147,8 +160,10 @@ const RENDERED_TIER: Readonly<Record<string, ResolutionTier>> = {
  * message says so rather than listing nothing.
  */
 const REFS_BY_TIER: Readonly<Partial<Record<ResolutionTier, string>>> = {
-  "1k": '"recraftv4_1", "recraftv4_1_utility", "recraftv4", "recraftv3", "recraftv2"',
-  "2k": '"recraftv4_1_pro", "recraftv4_1_utility_pro", "recraftv4_pro"',
+  "1k":
+    '"recraftv4_1", "recraftv4_1_utility", "recraftv4_1_flash", "recraftv4", ' +
+    '"recraftv4_styles", "recraftv3", "recraftv2"',
+  "2k": '"recraftv4_1_pro", "recraftv4_1_utility_pro", "recraftv4_pro", "recraftv4_styles_pro"',
 };
 
 /**
@@ -158,8 +173,9 @@ const REFS_BY_TIER: Readonly<Partial<Record<ResolutionTier, string>>> = {
  * No `[key: string]: unknown` tail: `GenerationsParams` has no index
  * signature, so an open tail would make `ExactKeys` demand `never` for every
  * extra key and `recraft.image.safe` would stop being assignable. The rest of
- * the surface — `style`, `style_id`, `substyle`, `controls`, `text_layout`,
- * `upscale` and the three booleans — is declared per model on
+ * the surface — `style`, `style_id`, `style_reference_urls`, `style_match`,
+ * `substyle`, `controls`, `text_layout`, `upscale` and the three booleans — is
+ * declared per model on
  * {@link RECRAFT_IMAGE_MODEL_PARAMS} and named explicitly below.
  */
 export interface RecraftImageWire {
@@ -170,7 +186,7 @@ export interface RecraftImageWire {
   random_seed?: number;
   negative_prompt?: string;
   image_format?: RecraftImageFormat;
-  response_format?: "url" | "b64_json";
+  response_format?: "url" | "b64_json" | "multipart";
   // The per-model extras, spelled out rather than reached through an index
   // signature: `GenerationsParams` has none, and an open tail here would make
   // `ExactKeys` demand `never` for every key and stop `recraft.image.safe`
@@ -178,6 +194,8 @@ export interface RecraftImageWire {
   // `RECRAFT_IMAGE_MODEL_PARAMS`'s answer, not this type's.
   style?: string | null;
   style_id?: string | null;
+  style_reference_urls?: string[] | null;
+  style_match?: RecraftStyleMatch | null;
   substyle?: RecraftSubstyle | null;
   text_layout?: RecraftTextLayoutElement[] | null;
   controls?: RecraftControls | null;
@@ -264,7 +282,7 @@ export const image = {
           message:
             `\`resolution\` has no equivalent on "${ctx.model}": Recraft has no pixel-budget ` +
             `field, and the appendix attributes explicit sizes only to the raster models — the ` +
-            `vector line and "recraft20b" are documented with aspect ratios alone, so there is ` +
+            `vector line is documented with aspect ratios alone, so there is ` +
             `nothing to check a tier against. Drop \`resolution\`, or name the pixels with ` +
             `\`dimensions\` on a raster model.`,
           meta: { value: input.resolution, source: APPENDIX_DOCS },

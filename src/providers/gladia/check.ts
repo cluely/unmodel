@@ -52,10 +52,11 @@ const catalog: Record<string, ModelInfo> = models;
  * - An empty `full_transcript` on a finished job → a warning with
  *   `meta.kind: "empty_transcript"`.
  * - `finishReason` mirrors `status`.
- * - `costUSD` = billed seconds ÷ 60 x the catalog per-minute rate.
- *   `result.metadata.billing_time` wins when present (it is what Gladia
- *   charges for), else the audio duration. The model comes from
- *   `request_params.model`, defaulting to the documented solaria-1. STT
+ * - `costUSD` = billed seconds ÷ 60 x the catalog per-minute rate, so it is
+ *   absent while the Gladia rows carry no `cost` (Gladia prices in EUR only;
+ *   ./models says why). `result.metadata.billing_time` wins when present (it
+ *   is what Gladia charges for), else the audio duration. The model comes
+ *   from `request_params.model`, defaulting to the documented solaria-1. STT
  *   carries no token usage, so `usage` is always empty; audio-intelligence
  *   add-ons are billed on top and are not included.
  */

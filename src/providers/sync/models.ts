@@ -4,10 +4,14 @@
 //   https://sync.so/docs/models/lipsync                                (the roster, the per-model options matrix, the rates)
 //   https://sync.so/docs/models/sync-3                                 (image input, the sync-3-only capability)
 //   https://sync.so/docs/api-reference/guides/authentication           (x-api-key)
-//   https://sync.so/docs/api-reference/guides/rate-limits              (100/min create, 600/min poll, plan concurrency)
+//   https://sync.so/docs/api-reference/guides/rate-limits              (plan concurrency; no request-rate limit on generation)
+//   https://sync.so/docs/product/billing                               (per-frame billing, the 25-fps reference, dubbing + TTS rates)
 //   https://sync.so/pricing                                            (the per-tier discrete rates)
-// Verified 2026-08-25. Every docs route also serves raw Markdown at `<route>.md`,
-// which is what was read. A live roster is available at GET /v2/models.
+// Rows verified 2026-08-25; header, roster and exclusions re-verified
+// 2026-11-12. Every docs route also serves raw Markdown at `<route>.md`, which
+// is what was read. A live roster is available at GET /v2/models, which needs
+// an API key and "Returns active (non-deprecated) models the user has access
+// to, including any feature-flagged models enabled for their account".
 //
 // PRICING IS A RANGE, AND `ModelCost` HOLDS A NUMBER.
 // sync. publishes each model's rate as a band — "$0.04 — $0.05/sec" for
@@ -20,17 +24,29 @@
 // rows is therefore an upper bound, which is the right direction for one.
 //
 // The rate is per SECOND OF OUTPUT at 25 fps, and the output's duration is the
-// input's — which is why no endpoint here estimates. sync.'s own
-// POST /v2/analyze/cost takes the same body and returns the exact figure; see
-// `ANALYZE_COST_URL` in ./shared.ts.
+// input's — which is why no endpoint here estimates. It is a per-FRAME price
+// quoted per second: "Lip sync rates below are per-second equivalents at **25
+// output frames per second**, not flat prices per second at every frame rate.
+// The charge is the output frame count multiplied by the model's per-frame rate
+// for your plan." (/docs/product/billing, 2026-11-12) — so a 30 fps output costs
+// 20% more per second than the row says. Three charges are not on these rows
+// at all: `dubParams` dubbing ("Hobbyist / Creator $0.10/sec … lip sync is
+// charged separately") and a `{ type: "text" }` input's speech ("Hobbyist /
+// Creator $0.004/sec"), both per second of audio, and the reasoning pricing
+// `options.reasoning_enabled` adds, which no page publishes. sync.'s own
+// POST /v2/generations/estimate returns the figure for a model and a duration
+// you supply; see `ESTIMATE_COST_URL` in ./shared.ts.
 //
 // Model coverage: the five ids the curated spec's `Model` enum publishes, which
-// is also exactly what `@sync.so/sdk@0.3.0`'s `Model.d.ts` declares. The full
+// is also exactly what `@sync.so/sdk@0.4.0`'s `Model.d.ts` declares. The full
 // backend spec at https://sync.so/openapi.json adds `lipsync-2-mini` and
-// `appearence-1`; neither has a docs page, a published rate or an SDK type, so
-// unmodel does not type what it has not read.
+// `appearence-1`; neither has a docs page, a published rate or an SDK type
+// (re-verified 2026-11-12: both `/docs/models/<id>.md` routes answer "Page Not
+// Found"), so unmodel does not type what it has not read.
 //
-// Deliberately NOT served: `POST /v2/tts` and the `/v2/voices` clone surface.
+// Deliberately NOT served: `POST /v2/tts`, its asynchronous twin
+// `POST /v2/tts/jobs` ("Accepts the same body as POST /v2/tts" — curated spec,
+// 2026-11-12), and the `/v2/voices` clone surface.
 // They are an ElevenLabs passthrough — the request's own `provider.name` field
 // has one legal value, `"elevenlabs"` — and unmodel already carries ElevenLabs
 // natively at `unmodel/elevenlabs`, where the voice roster, the model ids and
@@ -39,9 +55,12 @@
 // (The `{ type: "text" }` INPUT item is a different thing and is served: there
 // the synthesis is a stage of the lipsync generation, not a product.)
 //
-// Also not served: `/v2/assets`, `/v2/projects` and `/v2/batch`. Assets and
-// projects are storage and organisation rather than generation — they mint the
-// `assetId` an input item may carry, which unmodel types, and nothing else.
+// Also not served: `/v2/assets`, `/v2/audio-trims`, `/v2/projects` and
+// `/v2/batch`. Assets, audio trims ("Prepare a new audio asset from the first
+// durationSeconds of an audio file" — curated spec, 2026-11-12) and projects
+// are storage, asset preparation and organisation rather than generation —
+// they mint the `assetId` an input item may carry, which unmodel types, and
+// nothing else.
 // Batch is a JSONL envelope around up to 500 copies of the body this provider
 // already validates; validating the envelope adds nothing the line-level
 // validator does not already say.

@@ -9,6 +9,8 @@ import {
   image,
   imageEdit,
   imageEditFill,
+  imageEditOutpainting,
+  imageEditErase,
   type Flux1Body,
   type Flux2Body,
   type FluxFillParams,
@@ -46,6 +48,25 @@ function flux2TypeTests(): void {
 
   // klein arm: bare surface, 4 input images.
   image({ model: "flux-2-klein-4b", prompt: "hi", input_image_4: "x" });
+
+  // klein LoRA arms: the klein surface plus a required finetune_id.
+  image({
+    model: "flux-2-klein-9b-kv-bf16-finetuned",
+    prompt: "hi",
+    finetune_id: "org/my-lora",
+    finetune_strength: 0.8,
+    input_image_4: "x",
+  });
+  // @ts-expect-error finetune_id is required on the -finetuned routes
+  image({ model: "flux-2-klein-4b-finetuned", prompt: "hi" });
+  // @ts-expect-error only the klein -finetuned routes take a LoRA id
+  image({ model: "flux-2-klein-4b", prompt: "hi", finetune_id: "my-lora" });
+  // @ts-expect-error the LoRA routes keep klein's 4-image cap
+  image({ model: "flux-2-klein-9b-finetuned", prompt: "hi", finetune_id: "x", input_image_5: "y" });
+
+  // `user` and the 0–7 tolerance are on every FLUX.2 schema.
+  image({ model: "flux-2-flex", prompt: "hi", user: "end-user-42", safety_tolerance: 7 });
+  image({ model: "flux-2-klein-4b", prompt: "hi", user: null });
 
   // Unknown models fall back to the loose escape-hatch arm.
   image({ model: "flux-9-mega", prompt: "hi", some_new_param: 1 });
@@ -88,6 +109,8 @@ function kontextTypeTests(): void {
   expectAssignable<{ prompt: string }>(v);
   expectAssignable<string>(JSON.stringify(v));
 
+  imageEdit({ model: "flux-kontext-max", prompt: "hi", user: "end-user-42" });
+
   // @ts-expect-error kontext sizes via aspect_ratio, not width
   imageEdit({ model: "flux-kontext-pro", prompt: "hi", width: 1024 });
   // @ts-expect-error ExactKeys rejects typo'd keys
@@ -109,10 +132,15 @@ function flux1TypeTests(): void {
   imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "16:9" });
   imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "1:2" });
   imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "7:3" });
+  imageFlux1({ model: "flux-dev", prompt: "hi", user: "end-user-42" });
+  imageEditFill({ model: "flux-pro-1.0-fill", image: "base64", user: "end-user-42" });
   // @ts-expect-error banana is not a ratio (was a bare `string`)
   imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "banana" });
   // @ts-expect-error the width/height routes do not take aspect_ratio at all
   imageFlux1({ model: "flux-dev", prompt: "hi", aspect_ratio: "16:9" });
+  imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", raw: true });
+  // @ts-expect-error raw mode is ultra-only — FinetuneFluxUltraInput declares no `raw`
+  imageFlux1({ model: "flux-pro-1.1-ultra-finetuned", prompt: "hi", finetune_id: "x", raw: true });
 
   // @ts-expect-error — aliasing cannot route flux-dev through the loose arm
   const aliasedInvalid: Flux1Body = {
@@ -144,4 +172,19 @@ function fluxFillBodyAliasTypeTests(): void {
   imageEditFill(future);
 }
 
-export { flux2TypeTests, kontextTypeTests, flux1TypeTests, fluxFillBodyAliasTypeTests };
+function fluxToolsTypeTests(): void {
+  imageEditOutpainting({ input_image: "x", width: 1024, height: 1024, user: "end-user-42" });
+  imageEditErase({ image: "a", mask: "b", seed: 1, webhook_url: "https://example.com/hook" });
+  // @ts-expect-error FluxOutpaintingInputs is closed and declares no seed
+  imageEditOutpainting({ input_image: "x", width: 1024, height: 1024, seed: 1 });
+  // @ts-expect-error no webhook delivery on outpainting — poll `polling_url`
+  imageEditOutpainting({ input_image: "x", width: 1024, height: 1024, webhook_url: "https://example.com/hook" });
+}
+
+export {
+  flux2TypeTests,
+  kontextTypeTests,
+  flux1TypeTests,
+  fluxFillBodyAliasTypeTests,
+  fluxToolsTypeTests,
+};

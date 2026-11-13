@@ -62,8 +62,11 @@ export const tts = {
   delivery: FISH_AUDIO_TTS_DELIVERY,
   unsupported: {
     language:
-      "POST /v1/tts has no language field — Fish Audio infers the language from the text and " +
-      "from the voice behind `reference_id`.",
+      "Fish Audio's `language` only picks the text-normalization rules (how numbers, dates " +
+      'and units are spelled out) and the word-timestamp language; it "is not passed to the ' +
+      'speech model and does not change the voice, accent or audio quality". The speech model ' +
+      "reads the language from the text and the voice behind `reference_id`. The wire field is " +
+      "reachable on `fishAudio.tts` (`unmodel/fish-audio`).",
   },
   compile(
     input: TtsParams,

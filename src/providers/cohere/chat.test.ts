@@ -6,9 +6,8 @@ import type { ChatBody } from "./chat";
 //   command-a-03-2025        — toolCall, no reasoning, 256k ctx, 8000 output, $2.5/$10 per M
 //   command-a-reasoning-08-2025 — reasoning: true
 //   command-r-08-2024        — 4000 output, $0.15/$0.6 per M
-//   c4ai-aya-expanse-8b      — toolCall: false, 8000 ctx
-//   c4ai-aya-vision-8b       — text+image input
-//   command-a-vision-07-2025 — text+image input
+//   c4ai-aya-vision-32b      — text+image input
+//   command-a-vision-07-2025 — text+image input, toolCall: false
 
 const HI: ChatBody["messages"] = [{ role: "user", content: "hi" }];
 
@@ -193,7 +192,9 @@ describe("cohere.chat shape", () => {
 
 describe("cohere.chat capabilities", () => {
   test("tools on a toolCall-less model is unsupported_capability", () => {
-    const result = chat.safe({ model: "c4ai-aya-expanse-8b", messages: HI, tools: [TOOL] });
+    // "Be aware that tool use isn't supported with this model." —
+    // https://docs.cohere.com/docs/command-a-vision (2026-11-12)
+    const result = chat.safe({ model: "command-a-vision-07-2025", messages: HI, tools: [TOOL] });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors[0]?.code).toBe("unsupported_capability");
@@ -295,7 +296,7 @@ describe("cohere.chat images", () => {
       image_url: { url: `data:image/png;base64,${TINY_PNG}` },
     };
     const result = chat.safe({
-      model: "c4ai-aya-vision-8b",
+      model: "c4ai-aya-vision-32b",
       messages: [{ role: "user", content: Array.from({ length: 21 }, () => image) }],
     });
     expect(result.ok).toBe(false);
@@ -309,7 +310,7 @@ describe("cohere.chat images", () => {
   test("a declared oversize URL image trips the 20MB total cap", () => {
     const result = chat.safe(
       {
-        model: "c4ai-aya-vision-8b",
+        model: "c4ai-aya-vision-32b",
         messages: [
           {
             role: "user",
@@ -326,5 +327,131 @@ describe("cohere.chat images", () => {
     if (!result.ok) {
       expect(result.errors.map((e) => e.code)).toContain("media_too_large");
     }
+  });
+});
+
+describe("cohere.chat north-small-translate-1.0", () => {
+  // https://docs.cohere.com/docs/north-small-translate-1.0 (2026-11-12): "Model
+  // ID north-small-translate-1.0", "Context Window: 16K tokens Max Output
+  // Tokens: 16K tokens", and a capability card with Reasoning, Image Inputs,
+  // Tool Use and Structured Outputs greyed out.
+  const NST = "north-small-translate-1.0";
+
+  test("validates under Cohere's own id and prices at the free tier's $0", () => {
+    const result = chat.safe({ model: NST, messages: HI, max_tokens: 16000 });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.warnings).toEqual([]);
+      expect(result.estimate.costUSD).toBe(0);
+    }
+  });
+
+  test("models.dev's north-small-translate-09-2026 spelling is not a Cohere id", () => {
+    const result = chat.safe({ model: "north-small-translate-09-2026", messages: HI });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+
+  test("max_tokens above the 16K output limit is over_output_limit", () => {
+    const result = chat.safe({ model: NST, messages: HI, max_tokens: 16001 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]?.code).toBe("over_output_limit");
+      expect(result.errors[0]?.meta).toEqual({ requested: 16001, limit: 16000 });
+    }
+  });
+
+  test("tools, thinking, json_object and image input are unsupported_capability", () => {
+    const image = {
+      type: "image_url" as const,
+      image_url: { url: `data:image/png;base64,${TINY_PNG}` },
+    };
+    const refusals: Array<[Partial<ChatBody>, Array<string | number>]> = [
+      [{ tools: [TOOL] }, ["tools"]],
+      [{ thinking: { type: "enabled" } }, ["thinking"]],
+      [{ response_format: { type: "json_object" } }, ["response_format"]],
+      [{ messages: [{ role: "user", content: [image] }] }, ["messages", 0, "content", 0]],
+    ];
+    for (const [overrides, path] of refusals) {
+      const result = chat.safe({ model: NST, messages: HI, ...overrides });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors[0]?.code).toBe("unsupported_capability");
+        expect(result.errors[0]?.path).toEqual(path);
+      }
+    }
+  });
+});
+
+describe("cohere.chat tiny-aya", () => {
+  test("the four instruction-tuned variants validate; no published price means no cost", () => {
+    // "The instruction-tuned Tiny Aya variants (`tiny-aya-global`,
+    // `tiny-aya-earth`, `tiny-aya-fire`, `tiny-aya-water`) are available on the
+    // Cohere API via the Chat endpoint." — https://docs.cohere.com/docs/tiny-aya
+    // (2026-11-12). cohere.com/pricing carries no rate for them.
+    for (const model of ["tiny-aya-global", "tiny-aya-earth", "tiny-aya-fire", "tiny-aya-water"]) {
+      const result = chat.safe({ model, messages: HI, max_tokens: 8000 });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.warnings).toEqual([]);
+        expect(result.estimate.costUSD).toBeUndefined();
+      }
+    }
+  });
+
+  test("max_tokens above the 8k output limit is over_output_limit", () => {
+    const result = chat.safe({ model: "tiny-aya-global", messages: HI, max_tokens: 8001 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors[0]?.code).toBe("over_output_limit");
+  });
+});
+
+describe("cohere.chat north-mini-code-1.0", () => {
+  test("validates under Cohere's own id; json_object passes — the model page's card renders it active", () => {
+    const result = chat.safe({
+      model: "north-mini-code-1.0",
+      messages: HI,
+      response_format: { type: "json_object" },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings).toEqual([]);
+  });
+
+  test("models.dev's north-mini-code-1-0 spelling is not a Cohere id", () => {
+    const result = chat.safe({ model: "north-mini-code-1-0", messages: HI });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+
+  test("its catalog-backed checks run: max_tokens above the 64K output limit is refused", () => {
+    const result = chat.safe({ model: "north-mini-code-1.0", messages: HI, max_tokens: 64001 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors[0]?.code).toBe("over_output_limit");
+  });
+});
+
+describe("cohere.chat command a+/reasoning/translate/vision pricing", () => {
+  test("no costUSD — Cohere publishes no per-token rate its own pages agree on", () => {
+    for (const model of [
+      "command-a-plus-05-2026",
+      "command-a-reasoning-08-2025",
+      "command-a-translate-08-2025",
+      "command-a-vision-07-2025",
+    ]) {
+      const result = chat.safe({ model, messages: HI, max_tokens: 100 });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.warnings).toEqual([]);
+        expect(result.estimate.costUSD).toBeUndefined();
+      }
+    }
+  });
+
+  test("command-a-03-2025 keeps its published $2.50 / $10 rate", () => {
+    // "Pricing Input $ 2.5 / 1M tokens Output $ 10 / 1M tokens" —
+    // https://docs.cohere.com/docs/command-a (2026-11-12)
+    const result = chat.safe({ model: "command-a-03-2025", messages: HI, max_tokens: 1000 });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.estimate.costUSD).toBeGreaterThan(0.01);
   });
 });

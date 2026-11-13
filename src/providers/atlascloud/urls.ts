@@ -31,14 +31,17 @@
  * ## The polling path has two documented spellings
  *
  * Atlas's per-model OpenAPI documents disagree with each other about where a
- * submitted job is read back from. The Seedance 2.x, Wan 3.0 and MiniMax
- * schemas declare `GET /api/v1/model/prediction/{request_id}`; the Seedance
- * v1.5 pro and Veo 3.1 schemas declare `GET /api/v1/model/result/{request_id}`
- * for the same envelope. The docs site documents only the first. Both are
- * exported rather than picked, because guessing which one a given model
- * answers on is exactly the kind of silent wrong turn a URL helper exists to
- * prevent — {@link predictionUrl} is the documented default and
- * {@link resultUrl} is the spelling those five schemas use.
+ * submitted job is read back from. The Seedance 2.x, Wan 3.0, Veo 3.1 Lite and
+ * MiniMax schemas declare `GET /api/v1/model/prediction/{request_id}`; the
+ * Seedance v1.5 pro, Veo 3.1 and Veo 3.1 Fast schemas declare
+ * `GET /api/v1/model/result/{request_id}` for the same envelope (and
+ * `google/veo3.1-lite/image-to-video` drops the slash:
+ * `/api/v1/model/prediction{request_id}`, read 2026-11-12). The docs site
+ * documents only the first. Both are exported rather than picked, because
+ * guessing which one a given model answers on is exactly the kind of silent
+ * wrong turn a URL helper exists to prevent — {@link predictionUrl} is the
+ * documented default and {@link resultUrl} is the spelling those nine schemas
+ * use.
  *
  * Polling itself is transport and stays out of unmodel's scope, the same call
  * `bytedance`, `minimax` and `vidu` make for their create-then-poll routes.
@@ -77,7 +80,7 @@ export function predictionUrl(id: string): string {
 
 /**
  * `GET /api/v1/model/result/{request_id}` — the same read-back, spelled the
- * way the Seedance v1.5 pro and Veo 3.1 schemas spell it. See the module
+ * way the Seedance v1.5 pro, Veo 3.1 and Veo 3.1 Fast schemas spell it. See the module
  * docstring: this is a documented disagreement inside Atlas's own OpenAPI set,
  * not a second API.
  */
@@ -87,7 +90,7 @@ export function resultUrl(id: string): string {
 
 /**
  * `GET https://api.atlascloud.ai/api/v1/models` — the keyless media catalog
- * (473 rows on 2026-08-26). `scripts/atlascloud-audit.ts` diffs it against
+ * (608 rows on 2026-11-12). `scripts/atlascloud-audit.ts` diffs it against
  * `data/atlascloud/curation.json`.
  */
 export const MODELS_CATALOG_URL = `${ATLASCLOUD_BASE_URL}/models`;

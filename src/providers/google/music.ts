@@ -23,9 +23,13 @@
  *   window admits `text` and `image` blocks only ("you can provide up to 10
  *   images alongside your text prompt"). Audio/video/document blocks are chat
  *   shapes on this shared route and have no documented meaning for Lyria.
- * - `response_format: { type: "audio", … }` switches Pro's output from the MP3
- *   default to WAV — "This WAV format option is available for Lyria 3 Pro
- *   only", so Clip's arm types it `never` and the runtime check says why.
+ * - `response_format: { type: "audio", … }` switches Lyria 3.5's and Pro's
+ *   output from the MP3 default to WAV — "For Lyria 3.5, you can also request
+ *   the output in WAV format by setting the `response_format`" (the guide,
+ *   retrieved 2026-11-13; as fetched 2026-08-24: "This WAV format option is
+ *   available for Lyria 3 Pro only"). The guide's model table lists Clip's
+ *   output as "MP3" alone, so Clip's arm types it `never` and the runtime
+ *   check says why.
  * - There are NO structured music knobs: no bpm/density/brightness/scale
  *   fields, no negative prompt, no duration field (Clip is fixed 30 s, Pro's
  *   ~2-minute length is steered "using prompt"). Those exist only on the
@@ -84,9 +88,10 @@ export function musicInteractionUrl(): string {
 
 // ---------------------------------------------------------------------------
 // Wire types — Tier A: one arm per documented model id. The only per-model
-// difference the guide states is `response_format`: "This WAV format option is
-// available for Lyria 3 Pro only", and its model table lists no output-format
-// control for Clip at all.
+// difference the guide states is `response_format`: "For Lyria 3.5, you can also
+// request the output in WAV format by setting the `response_format`" (retrieved
+// 2026-11-13; Pro's WAV option is the guide as fetched 2026-08-24), and its
+// model table lists Clip's output as "MP3" with no output-format control.
 // ---------------------------------------------------------------------------
 
 /** The image mime types the Interactions reference enumerates for image blocks. */
@@ -210,16 +215,28 @@ interface CreateMusicInteractionBase {
   response_mime_type?: never;
 }
 
-/** Pro: full songs, and the one arm with an output-format control. */
+/** Pro: full songs, with an MP3-or-WAV output-format control. */
 export interface LyriaProBody extends CreateMusicInteractionBase {
   model: "lyria-3-pro-preview";
   response_format?: GoogleLyriaAudioResponseFormat;
 }
 
-/** Clip: fixed 30-second MP3s. "This WAV format option is available for Lyria 3 Pro only." */
+/** Clip: fixed 30-second MP3s — the guide's model table lists its output as "MP3" alone. */
 export interface LyriaClipBody extends CreateMusicInteractionBase {
   model: "lyria-3-clip-preview";
   response_format?: never;
+}
+
+/**
+ * Lyria 3.5: the current full-song model. MP3 by default, WAV on request — the
+ * music guide (retrieved 2026-11-13): "By default, the Lyria 3.5 models
+ * generate audio in MP3 format. For Lyria 3.5, you can also request the output
+ * in WAV format by setting the `response_format`." The unified row in
+ * ./music-params offers both codecs.
+ */
+export interface Lyria35Body extends CreateMusicInteractionBase {
+  model: "lyria-3.5";
+  response_format?: GoogleLyriaAudioResponseFormat;
 }
 
 /** Escape hatch for models unmodel doesn't know yet (unknown_model warning). */
@@ -233,11 +250,13 @@ export interface UnknownLyriaBody<Model extends string> extends CreateMusicInter
  * literal to opt into the loose arm: `CreateMusicInteractionBody<"lyria-4">`.
  */
 export type CreateMusicInteractionBody<FutureModel extends string = never> =
+  | Lyria35Body
   | LyriaProBody
   | LyriaClipBody
   | UnknownLyriaBody<FutureModel>;
 
 export interface CreateMusicBodyByModel {
+  "lyria-3.5": Lyria35Body;
   "lyria-3-pro-preview": LyriaProBody;
   "lyria-3-clip-preview": LyriaClipBody;
 }
@@ -318,7 +337,7 @@ function checkMusicModel(
       message:
         `"${model}" is realtime-only: it streams over the Live API WebSocket ` +
         `(@google/genai's \`ai.live.music.connect()\` / BidiGenerateMusic) and has no batch ` +
-        `REST surface — POST /v1beta/interactions serves lyria-3-pro-preview and ` +
+        `REST surface — POST /v1beta/interactions serves lyria-3.5, lyria-3-pro-preview and ` +
         `lyria-3-clip-preview.`,
       meta: { source: LYRIA_MUSIC_DOCS_URL },
     });
@@ -394,7 +413,7 @@ function checkInputBlocks(
 }
 
 /**
- * `response_format`: Pro-only, audio-only, MP3-or-WAV, and `bit_rate` is for
+ * `response_format`: not on Clip, audio-only, MP3-or-WAV, and `bit_rate` is for
  * compressed formats. Also the single-turn refusal, which shares the check
  * because both are per-request wire facts with a documented quote behind them.
  */
@@ -427,7 +446,9 @@ function checkResponseFormat(
       model,
       message:
         `\`response_format\` is not supported by "${model}": Clip always emits 30-second ` +
-        `MP3s — "This WAV format option is available for Lyria 3 Pro only."`,
+        `MP3s — the guide's model table lists its output as "MP3", and the WAV option is ` +
+        `documented for Lyria 3.5: "For Lyria 3.5, you can also request the output in WAV ` +
+        `format by setting the \`response_format\`."`,
       meta: { source: LYRIA_MUSIC_DOCS_URL },
     });
     return;

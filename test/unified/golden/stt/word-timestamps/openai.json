@@ -17,5 +17,6 @@
     "response_format": "verbose_json"
   },
   "url": "https://api.openai.com/v1/audio/transcriptions",
-  "headers": {}
+  "headers": {},
+  "issues": [{ "code": "deprecated_model", "path": ["model"] }]
 }

@@ -1,0 +1,15 @@
+{
+  "ref": "xai/grok-imagine-video-1.5",
+  "params": {
+    "model": "grok-imagine-video-1.5",
+    "prompt": "the fox turns and walks into the snow",
+    "duration": 8,
+    "image": {
+      "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    }
+  },
+  "url": "https://api.x.ai/v1/videos/generations",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

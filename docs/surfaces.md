@@ -292,7 +292,7 @@ const request = avatar({
 ```
 
 `image` narrows to the ref in three directions. Most routes animate a picture
-you supply, and there it is **required**. Two of the twelve animate a
+you supply, and there it is **required**. Two of the eleven animate a
 **catalogued performer** instead — `veed/avatars/audio-to-video` and
 `argil/avatars/audio-to-video` pick from a closed list of trained presenters and
 have no image field at all — and there it types as `never`:
@@ -349,7 +349,7 @@ HeyGen brings the third answer to inline bytes:
 
 ```ts
 avatar({ model: "heygen/avatar_iv", image: { data, mimeType: "image/png" }, audio: { url } });
-// → {"type":"image","engine":{"type":"avatar_iv"},
+// → {"type":"image",
 //    "image":{"type":"base64","media_type":"image/png","data":"…"},"audio_url":"…"}
 ```
 
@@ -360,14 +360,14 @@ Its `audio_url` does *not* have that arm, so one request accepts bytes for the
 still and refuses them for the track — an asymmetry that is HeyGen's, and the
 refusal says so rather than reading as a contradiction.
 
-Two of HeyGen's three engines are here. `avatar_iii` is in its catalog and at
-its wire address and not in this pack: its own engine config says it does not
-render raw image input, and this adapter compiles the raw-image arm. The
-catalogued-look arm (`type: "avatar"`, `avatar_id`) is wire-only for a typed
-reason rather than an oversight — an avatar row can say `image` is required,
-forbidden or unknown and never "optional", and `avatar_iv` and `avatar_v` serve
-both arms, so the pack compiles the one whose inputs a caller actually has (a
-HeyGen `avatar_id` is a look you first train, at $1.00, and discover at
+One of HeyGen's three engines is here. `avatar_v` and `avatar_iii` are in its
+catalog and at its wire address and not in this pack: HeyGen's engine
+comparison marks raw image input ✗ for both, and this adapter compiles the
+raw-image arm. The catalogued-look arm (`type: "avatar"`, `avatar_id`) is
+wire-only for a typed reason rather than an oversight — an avatar row can say
+`image` is required, forbidden or unknown and never "optional", and `avatar_iv`
+serves both arms, so the pack compiles the one whose inputs a caller actually
+has (a HeyGen `avatar_id` is a look you first train, at $1.00, and discover at
 `GET /v3/avatars/looks`; there is no published roster). Reach it directly:
 
 ```ts
@@ -398,8 +398,8 @@ JSON.stringify(request);
 //    "prompt":"sharp fabric weave, natural skin texture"}
 ```
 
-Both narrowed fields are per model. `source` is a still at seven of the ten
-endpoints and a clip at three — `fal-ai/seedvr/upscale/image` and
+Both narrowed fields are per model. `source` is a still at seven of the eleven
+endpoints and a clip at four — `fal-ai/seedvr/upscale/image` and
 `fal-ai/seedvr/upscale/video` are one vendor's one product on two paths — and
 `factor` has three answers:
 
@@ -417,7 +417,7 @@ FLUX.
 Topaz Labs is the category's second provider, and at its own API the ROUTE
 follows the model rather than the input: two paths with disjoint model enums —
 `/enhance/async` for the six classic Gigapixel upscalers, `/enhance-gen/async`
-for the nine generative Wonder and Bloom ones — so the ref decides the url and
+for the twelve generative Wonder, Bloom and Detail ones — so the ref decides the url and
 there is nothing for the caller to say. The ids are Topaz's own product names,
 spaces and all.
 
@@ -446,7 +446,8 @@ to the `FormData`, and a hand-set content-type would break the request.
 (`output_width`, `output_height`) rather than a multiplier, and a multiplier is
 not derivable from a URL. The two refusals carry different messages because a
 caller can act differently on each. What Topaz brought the category is a
-second witness for `prompt` — nine of its fifteen models steer on one. The
+second witness for `prompt` — three of its eighteen models (`Redefine`,
+`Bloom 2`, `Bloom`) steer on one. The
 tuning dials stay per-model extras: they are absent from Topaz's own OpenAPI
 document and hand-transcribed here, and Topaz ignores a dial a model does not
 read rather than refusing it, so a wrong one is a silent no-op at the API and a
@@ -497,7 +498,7 @@ threeD({ model: "fal/fal-ai/hyper3d/rodin/v2.5", prompt, image: { url } });   //
 
 The third arm is not a hedge. `fal-ai/hyper3d/rodin/v2.5` publishes both fields
 and requires neither: the prompt steers an image-driven reconstruction and also
-stands alone. So do all four Tripo models, for a different reason — at the
+stands alone. So do all five Tripo models, for a different reason — at the
 native API the model id is the same string in both moods and the **route**
 forks, `POST /v3/generation/text-to-model` versus
 `POST /v3/generation/image-to-model`.
@@ -529,7 +530,7 @@ routes return one object per request.
 
 Two things about the wire are worth knowing before your first call. Tripo's
 `input` is one polymorphic string that accepts a `file_…` token, a public URL or
-a prior `task_…` id and **never inline bytes**, so a `{ data }` ref is refused
+a prior task's id (a bare UUID) and **never inline bytes**, so a `{ data }` ref is refused
 here naming `POST /v3/files` rather than compiled into a `data:` URI Tripo would
 reject. And seven of Tripo's parameters are gated on the model version —
 `v2.5-20250123` takes none of them — which is a compile error rather than a 4xx.
@@ -791,7 +792,7 @@ await fetch(request.request.url, {
 });
 ```
 
-The vocabulary carries the facts an invoice would otherwise teach. Fish Audio defaults new voices to **public**, so `visibility` is a param and the validator warns when you omit it. MiniMax requires a caller-chosen `voiceId` everyone else refuses. Per-sample `transcript`s exist wherever a wire field does. You get back the created voice's id, which `unmodel/tts` takes as `voice`. Managing stored voices is out of scope. Speechify's clone route (a consent challenge/response ceremony) is wire-only at `unmodel/speechify`.
+The vocabulary carries the facts an invoice would otherwise teach. `visibility` is a param because who can see a new voice is a privacy fact: Fish Audio and Cartesia both default to private, and Fish Audio downgrades a `"public"` request to private. MiniMax requires a caller-chosen `voiceId` everyone else refuses. Per-sample `transcript`s exist wherever a wire field does. You get back the created voice's id, which `unmodel/tts` takes as `voice`. Managing stored voices is out of scope. Speechify's clone route (a consent challenge/response ceremony) is wire-only at `unmodel/speechify`.
 
 ## Voice design
 

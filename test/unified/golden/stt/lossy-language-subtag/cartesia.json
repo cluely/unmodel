@@ -27,7 +27,7 @@
         "requested": "pt-BR",
         "achieved": "pt",
         "dropped": "BR",
-        "source": "https://docs.cartesia.ai/api-reference/stt/transcribe"
+        "source": "https://docs.cartesia.ai/2026-03-01/api-reference/stt/transcribe"
       }
     }
   ]

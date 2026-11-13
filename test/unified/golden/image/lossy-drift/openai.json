@@ -22,5 +22,13 @@
         "tier": "1k"
       }
     }
+  ],
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
   ]
 }

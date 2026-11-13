@@ -13,7 +13,7 @@ import type { TranslationWarning } from "../../src/core/translate/warnings";
 /**
  * The comparable core of an IR.
  *
- * Four things are deliberately ignored:
+ * Five things are deliberately ignored:
  *
  * - `source` — which dialect (or, for `unmodel/chat`, which *target*) wrote
  *   the IR. Never part of the request.
@@ -22,11 +22,27 @@ import type { TranslationWarning } from "../../src/core/translate/warnings";
  *   reason the availability tables exist.
  * - `settings.temperatureMax` — a property of the source dialect's scale
  *   (Anthropic 0–1, everyone else 0–2), not of the request.
+ * - `settings.reasoning.effort` beside a budget — the unified
+ *   `{ effort, budgetTokens }` keeps the caller's bucket for a target *model*
+ *   with no budget (Claude 4.7+), and a body for a model that takes the budget
+ *   has nowhere to write it.
  */
 export function convergent(ir: ChatIR): unknown {
   const { source: _source, passthrough: _passthrough, model: _model, settings, ...rest } = ir;
-  const { temperatureMax: _max, ...comparableSettings } = settings;
-  return { ...rest, settings: comparableSettings };
+  const { temperatureMax: _max, reasoning, ...comparableSettings } = settings;
+  return {
+    ...rest,
+    settings: {
+      ...comparableSettings,
+      ...(reasoning !== undefined && { reasoning: withoutCarriedEffort(reasoning) }),
+    },
+  };
+}
+
+function withoutCarriedEffort(reasoning: NonNullable<ChatIR["settings"]["reasoning"]>): unknown {
+  if (reasoning.mode !== "budget") return reasoning;
+  const { effort: _effort, ...budget } = reasoning;
+  return budget;
 }
 
 /** `{code, path, meta}` sorted stably, which is what the fixtures commit. */

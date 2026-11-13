@@ -13,8 +13,9 @@ import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { ElevenlabsPronunciationDictionaryLocator } from "./tts";
 
-/** The six text-to-speech model ids — the ref union for `elevenlabs/…`. */
+/** The seven text-to-speech model ids — the ref union for `elevenlabs/…`. */
 export const MODELS = [
+  "eleven_v4",
   "eleven_v3",
   "eleven_multilingual_v2",
   "eleven_flash_v2_5",
@@ -65,15 +66,19 @@ export const FORMAT: AudioFormatSpec = {
 };
 
 /**
- * ElevenLabs' per-model speech surface — one row, six times.
+ * ElevenLabs' per-model speech surface — one row six times, and one extra on
+ * the seventh.
  *
- * The six model ids share one endpoint, one schema and one `output_format`
+ * The seven model ids share one endpoint, one schema and one `output_format`
  * enum, and `constraints.ts` carries exactly one per-model rule
  * (`language_code` is a documented no-op on `eleven_multilingual_v2`) which is
  * a *warning* about a param the API accepts. So there is nothing here that
  * differs by model, and saying so with one shared row is the honest shape —
- * six divergent-looking literals would imply a distinction the wire does not
- * make.
+ * divergent-looking literals would imply a distinction the wire does not
+ * make. The one exception is {@link V4_ROW}: `voice_settings.clone_strength`
+ * "Applies only to professional voice clones fine-tuned for the selected v4
+ * model" (`VoiceSettings.cloneStrength`, elevenlabs-js 2.78.0, read
+ * 2026-11-12), so it completes on `eleven_v4` and nowhere else.
  *
  * `codecs` is `FORMAT.codecs`' key set, which is the composite enum's codec
  * half: `aac`, `flac` and the wider PCM widths are absent from
@@ -89,14 +94,14 @@ export const FORMAT: AudioFormatSpec = {
  *
  * `voice_settings` is a per-request override of the voice's stored settings,
  * and the adapter already writes `voice_settings.speed` there from the
- * canonical `speed`. Its four other members ride in as extras through
+ * canonical `speed`. Its other members (four, and `clone_strength` on v4) ride in as extras through
  * {@link VOICE_SETTINGS_NESTING}, so a caller writes `stability: 0.3` beside
  * `speed: 1.1` and both land in the same object — `applyExtras` merges into it
  * rather than replacing it, which is exactly why that merge exists.
  *
  * `pronunciation_dictionary_locators` is on the list even though the research
  * pass did not surface it: it is a documented, typed, generation-affecting body
- * field on every one of the six, and its two sibling providers (Cartesia's
+ * field on every one of the seven, and its two sibling providers (Cartesia's
  * `pronunciation_dict_id`, smallest.ai's `pronunciation_dicts`) expose theirs.
  *
  * Excluded on purpose: `output_format` and `voice_id` are canonical words'
@@ -118,7 +123,7 @@ export const TTS_EXTRAS = {
   next_request_ids: EXTRA as string[] | null,
   apply_text_normalization: EXTRA as "auto" | "on" | "off",
   apply_language_text_normalization: EXTRA as boolean,
-  use_pvc_as_ivc: EXTRA as boolean,
+  use_pvc_as_ivc: EXTRA as boolean | null,
 } as const;
 
 export const ROW = {
@@ -126,7 +131,14 @@ export const ROW = {
   extras: TTS_EXTRAS,
 } as const;
 
+/** {@link ROW} plus the v4-only Professional Voice Clone knob (→ `voice_settings.clone_strength`). */
+export const V4_ROW = {
+  codecs: ROW.codecs,
+  extras: { ...TTS_EXTRAS, clone_strength: EXTRA as number | null },
+} as const;
+
 export const ELEVENLABS_TTS_MODEL_PARAMS = {
+  eleven_v4: V4_ROW,
   eleven_v3: ROW,
   eleven_multilingual_v2: ROW,
   eleven_flash_v2_5: ROW,

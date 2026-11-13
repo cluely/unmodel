@@ -53,6 +53,8 @@ export type {
   SpeechmaticsReplacement,
   SpeechmaticsSpeaker,
   SpeechmaticsSpeakerDiarizationConfig,
+  SpeechmaticsEntitiesConfig,
+  SpeechmaticsRedactionConfig,
   SpeechmaticsNotificationConfig,
   SpeechmaticsTracking,
   SpeechmaticsOutputConfig,

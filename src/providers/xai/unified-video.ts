@@ -10,14 +10,14 @@
  *
  * | canonical | wire | class |
  * |---|---|---|
- * | `prompt` | `prompt` | rename; required on every mode of this wire |
+ * | `prompt` | `prompt` | rename; required for text-to-video only (the validator checks it) |
  * | `model` (ref tail) | `model` | rename |
- * | `image` (role `first`) | `image.url` | {@link requireMediaUrl} — URL or file_id only |
- * | `image` (role `reference`) | `reference_images[].url` | same |
- * | `image` (role `last`) | — | no wire field: {@link unsupportedSlot} |
+ * | `image` (role `first`) | `image.url` | {@link toMediaUri} — a URL, or inline bytes as a `data:` URL |
+ * | `image` (role `reference`) | `reference_images[].url` | same; no reference route on grok-imagine-video-1.5-lite |
+ * | `image` (role `last`) | `last_frame.url` | same; grok-imagine-video-1.5 only, else {@link unsupportedSlot} |
  * | `duration` | `duration` | plain number; range 1–15 checked by the validator |
  * | `resolution` | `resolution` | identity — xAI spells `480p`/`720p`/`1080p` canonically |
- * | `aspectRatio` | `aspect_ratio` | **S1** {@link toRatioEnum}, seven values |
+ * | `aspectRatio` | `aspect_ratio` | **S1** {@link toRatioEnum}, nine values |
  * | `video` | — | the edit/extend routes: `xai.videoEdit` / `xai.videoExtend` |
  * | `n`, `seed`, `negativePrompt` | — | declared gaps |
  *
@@ -36,26 +36,32 @@
  * `output`, `storage_options` and `user` have no canonical spelling in this
  * category and are the rows' extras.
  *
- * # Inline bytes do not travel
+ * # Inline bytes travel as data URLs
  *
- * The wire's media inputs are `{url}` or `{file_id}` objects; base64 data URIs
- * are not documented for this route. A `data:`-shaped canonical image is
- * therefore an error naming the fix (host it, or upload it for a `file_id`)
- * rather than a body the API 400s.
+ * The wire's media inputs are `{url}` or `{file_id}` objects, and `url` takes
+ * a data URL: the OpenAPI `ImageUrl` "Accepts a public URL, a base64-encoded
+ * data URL, or a file_id from the xAI Files API"
+ * (https://docs.x.ai/openapi.json, 2026-11-12). Canonical `{data, mimeType}`
+ * therefore compiles to `data:<mimeType>;base64,<data>`; bytes with no
+ * `mimeType` are an `invalid_shape` refusal from {@link toMediaUri}, never a
+ * guessed media type.
  */
 import {
   applyExtras,
-  requireMediaUrl,
   resolveImageSlots,
   resolveVideoRoute,
   toDurationNumber,
+  toMediaUri,
   toRatioEnum,
   unsupportedSlot,
+  type VideoRoute,
 } from "../../core/unified/derive";
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { VideoAdapterFor, VideoParams } from "../../core/unified/vocabulary/video";
 import {
   video as validator,
+  VIDEO_TEXT_IMAGE_ONLY_MODELS,
+  VIDEO_VOICE_AND_FRAME_MODELS,
   type VideoGenerationsParams,
   type XaiVideoAspectRatio,
   type XaiVideoResolution,
@@ -63,11 +69,6 @@ import {
 import { MODELS, XAI_VIDEO_MODEL_PARAMS, XAI_VIDEO_ROW } from "./video-params";
 
 const VIDEO_DOCS = "https://docs.x.ai/developers/model-capabilities/video/generation";
-
-/** The upload path named when inline bytes cannot travel. */
-const URL_HINT =
-  "xAI's video inputs take a public URL or a `file_id` from the xAI Files API; inline base64 is " +
-  "not documented on this route.";
 
 /** The wire body this adapter compiles to. */
 export type XaiVideoWire = VideoGenerationsParams;
@@ -95,29 +96,21 @@ export const video = {
   ): CompiledCall<XaiVideoWire, XaiVideoResult> {
     ctx.from(["image"], "image");
     ctx.from(["reference_images"], "image");
+    ctx.from(["last_frame"], "image");
     ctx.from(["aspect_ratio"], "aspectRatio");
 
-    // "Required for text-to-video (T2V) and reference-to-video (R2V)" — and
-    // the image-to-video examples all carry one too; the wire marks `prompt`
-    // required, so an absent one is reported here rather than as a zod error
-    // on an empty string this file invented.
-    if (input.prompt === undefined) {
-      ctx.fail({
-        code: "invalid_shape",
-        path: ["prompt"],
-        message:
-          "`prompt` is required on POST /v1/videos/generations — for image-to-video it describes " +
-          "the animation, so it cannot be omitted here.",
-        meta: { source: VIDEO_DOCS },
-      });
-    }
-
-    const body: XaiVideoWire = { model: ctx.model, prompt: input.prompt ?? "" };
+    // `prompt` is "required only for text-to-video"; the validator's own
+    // check answers a text-only request without one, so an absent prompt is
+    // simply not written.
+    const body: XaiVideoWire = {
+      model: ctx.model,
+      ...(input.prompt !== undefined && { prompt: input.prompt }),
+    };
 
     ctx.take(
       resolveVideoRoute(
         input,
-        { model: ctx.model, routes: ["text", "image", "reference"], source: VIDEO_DOCS },
+        { model: ctx.model, routes: routesFor(ctx.model), source: VIDEO_DOCS },
         { path: ["image"], warn: ctx.warn },
       ),
     );
@@ -175,23 +168,28 @@ export const video = {
     if (slots !== undefined) {
       const derive = { path: ["image"], warn: ctx.warn };
       if (slots.first !== undefined) {
-        const url = ctx.take(requireMediaUrl(slots.first, URL_HINT, derive));
+        const url = ctx.take(toMediaUri(slots.first, derive));
         if (url !== undefined) body.image = { url };
       }
       if (slots.last !== undefined) {
-        ctx.take(
-          unsupportedSlot(
-            "last",
-            ctx.model,
-            "the route has a first frame (`image`) and reference images, but no closing-frame field.",
-            derive,
-          ),
-        );
+        if (hasLastFrame(ctx.model)) {
+          const url = ctx.take(toMediaUri(slots.last, derive));
+          if (url !== undefined) body.last_frame = { url };
+        } else {
+          ctx.take(
+            unsupportedSlot(
+              "last",
+              ctx.model,
+              "a pinned last frame (`last_frame`) is served by grok-imagine-video-1.5 only.",
+              derive,
+            ),
+          );
+        }
       }
       if (slots.references.length > 0) {
         const references: { url: string }[] = [];
         for (const reference of slots.references) {
-          const url = ctx.take(requireMediaUrl(reference, URL_HINT, derive));
+          const url = ctx.take(toMediaUri(reference, derive));
           if (url !== undefined) references.push({ url });
         }
         if (references.length > 0) body.reference_images = references;
@@ -203,3 +201,26 @@ export const video = {
     return { params: body, validate: validator.safe };
   },
 } as const satisfies VideoAdapterFor<typeof XAI_VIDEO_MODEL_PARAMS, XaiVideoWire, XaiVideoResult>;
+
+/**
+ * The routes a model serves: grok-imagine-video-1.5-lite has no
+ * reference-to-video mode (./video's `VIDEO_TEXT_IMAGE_ONLY_MODELS`).
+ */
+function routesFor(model: string): readonly VideoRoute[] {
+  return (VIDEO_TEXT_IMAGE_ONLY_MODELS as readonly string[]).includes(model)
+    ? ["text", "image"]
+    : ["text", "image", "reference"];
+}
+
+/**
+ * Whether a model has `last_frame`: of the catalogued ids only
+ * grok-imagine-video-1.5 does (./video's `VIDEO_VOICE_AND_FRAME_MODELS`). An
+ * id outside the catalog (a documented alias, a newer model) is left to the
+ * validator, as {@link routesFor} leaves it.
+ */
+function hasLastFrame(model: string): boolean {
+  return (
+    (VIDEO_VOICE_AND_FRAME_MODELS as readonly string[]).includes(model) ||
+    !(MODELS as readonly string[]).includes(model)
+  );
+}

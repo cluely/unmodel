@@ -1,16 +1,26 @@
 // Hand-maintained — Vidu is not in models.dev; refresh from
-//   https://platform.vidu.com/docs/text-to-video       (text2video wire schema)
-//   https://platform.vidu.com/docs/image-to-video      (img2video wire schema)
-//   https://platform.vidu.com/docs/start-end-to-video  (start-end2video)
-//   https://platform.vidu.com/docs/reference-to-video  (reference2video, both forms)
-//   https://platform.vidu.com/docs/reference-to-image  (imageFromReference)
-//   https://platform.vidu.com/docs/pricing             (credit price + per-model rates)
-// Verified 2026-08-13.
+//   https://platform.vidu.com/docs/llms.txt  (index; append `.md` to any page for markdown)
+//   https://platform.vidu.com/docs/api-reference/video-models/{vidu-q4-preview,vidu-q3,vidu-q2,vidu-q1}/
+//     {text-to-video,image-to-video,start-end-to-video,reference-to-video}
+//     (one page per family and route; q4 has image-to-video and reference-to-video only)
+//   https://platform.vidu.com/docs/api-reference/image-generation  (imageFromReference)
+//   https://platform.vidu.com/docs/overview/pricing  (per-model credit rates)
+//   https://platform.vidu.com/docs/api-reference/updates  (model launches)
+//   https://platform.vidu.cn/docs/llms.txt  (CN mirror; fresher where the two disagree)
+// Verified 2026-08-13 unless a row cites its own date.
 //
 // Pricing conversion (documented so the arithmetic never rots unexplained):
-// "Credits are available for $0.005 each" (docs/pricing), and the same page
-// prints the USD column next to every credit rate — so USD = credits × 0.005
-// and the numbers below are the page's own USD figures, not derived ones.
+// the USD figures below are transcribed from https://platform.vidu.com/docs/pricing
+// (verified 2026-08-13), which printed a USD column next to every credit rate
+// ("Credits are available for $0.005 each, with applicable sales tax based on
+// your location.") — so USD = credits × 0.005 and the numbers are that page's
+// own USD figures, not derived ones. As of 2026-11-12 the page renders
+// "Document not found | Vidu API"; its last capture is
+// http://web.archive.org/web/20260920044216/https://platform.vidu.com/docs/pricing.
+// Its live replacement, https://platform.vidu.com/docs/overview/pricing
+// (2026-11-12), prices credits in RMB only ("| Credits | Price (RMB) |",
+// "| 1 | 0.03125 |"), and 0.03125 RMB is not $0.005, so no live page states
+// the USD figures below.
 //
 // Which rate a model carries here:
 //   - Q3 models bill a flat per-second rate that varies by resolution; the
@@ -25,6 +35,12 @@
 //     guess, so those models carry no `cost` and produce no estimate.
 //   - vidu2.0 is priced per generation by (route × duration × resolution)
 //     with no default resolution, so it carries no `cost` either.
+//   - viduq4-preview, viduq3-drama and viduq3-ad carry no `cost`: q4 is
+//     priced in credits on a page whose only credit price is RMB ("| Credits
+//     | Price (RMB) |", "| 1 | 0.03125 |" —
+//     https://platform.vidu.com/docs/overview/pricing, 2026-11-12), which
+//     yields no USD figure, and neither the EN nor the CN pricing page has a
+//     drama or ad row at all.
 //
 // Shared ids: `viduq1` and `viduq2` serve both the video routes and
 // `POST /ent/v2/reference2image`, so their entries carry both `video` and
@@ -41,15 +57,44 @@ import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 export const provider = {
   id: "vidu",
   name: "Vidu",
-  // Auth is `Authorization: Token <key>` — https://platform.vidu.com/docs/text-to-video
+  // Auth is `Authorization: Token <key>` —
+  // https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/text-to-video
   env: ["VIDU_API_KEY"],
   doc: "https://platform.vidu.com/docs",
 } as const satisfies ProviderInfo;
 
-/** USD per Vidu credit — https://platform.vidu.com/docs/pricing */
+/**
+ * USD per Vidu credit — "Credits are available for $0.005 each, with
+ * applicable sales tax based on your location." on the retired
+ * https://platform.vidu.com/docs/pricing, last captured at
+ * http://web.archive.org/web/20260920044216/https://platform.vidu.com/docs/pricing
+ * (read 2026-11-12). The live pricing page quotes credits in RMB only; see the
+ * header.
+ */
 export const CREDIT_USD = 0.005;
 
 export const videoModels = {
+  // img2video and reference2video — "2026/10/7 | [New Models]-Vidu Q4
+  // preview：More Authentic Performances" —
+  // https://platform.vidu.com/docs/api-reference/updates, 2026-11-12.
+  "viduq4-preview": {
+    id: "viduq4-preview",
+    name: "Vidu Q4 Preview",
+    family: "viduq4",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    // Audio in: reference2video's `sounds` ("Up to 0 to 3 audio files are
+    // supported for upload" —
+    // https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/reference-to-video,
+    // 2026-11-12).
+    modalities: { input: ["text", "image", "audio"], output: ["video"] },
+    limit: { context: 0 },
+    // "| - Reference-to-video - Image-to-video | Viduq4-preview | 3-16 seconds
+    // | 720p | 19credits/second |" — https://platform.vidu.com/docs/overview/pricing,
+    // 2026-11-12 — credits only, with no USD price on the page (see header).
+  },
   "viduq3-pro": {
     id: "viduq3-pro",
     name: "Vidu Q3 Pro",
@@ -113,11 +158,50 @@ export const videoModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    // reference2video only; does not support off_peak.
-    modalities: { input: ["text", "image"], output: ["video"] },
+    // reference2video only; does not support off_peak. Audio in: `sounds`
+    // ("Audio references support uploading 1 to 3 audio files." —
+    // https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video,
+    // 2026-11-12).
+    modalities: { input: ["text", "image", "audio"], output: ["video"] },
     limit: { context: 0 },
     // 24 credits/s at the default 720p ($0.12/s); 29 at 1080p.
     cost: { perVideoSecond: 0.12 },
+  },
+  // reference2video only, both forms — "`viduq3-drama`: An industry
+  // fine-tuned model designed for drama production. Supports **1-7** image
+  // inputs and durations of **2-16s**." —
+  // https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video,
+  // 2026-11-12.
+  "viduq3-drama": {
+    id: "viduq3-drama",
+    name: "Vidu Q3 Drama",
+    family: "viduq3",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    // Audio in: `sounds` on the images form (same page).
+    modalities: { input: ["text", "image", "audio"], output: ["video"] },
+    limit: { context: 0 },
+    // No published price: neither pricing page has a viduq3-drama row.
+  },
+  // reference2video only, images form — "`viduq3-ad`: An industry fine-tuned
+  // model designed for advertising. Supports 1-7 image inputs, durations of
+  // 3-15 seconds, and 720p or 1080p resolution." —
+  // https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video,
+  // 2026-11-12.
+  "viduq3-ad": {
+    id: "viduq3-ad",
+    name: "Vidu Q3 Ad",
+    family: "viduq3",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    // Audio in: `sounds` (same page).
+    modalities: { input: ["text", "image", "audio"], output: ["video"] },
+    limit: { context: 0 },
+    // No published price: neither pricing page has a viduq3-ad row.
   },
   viduq2: {
     id: "viduq2",

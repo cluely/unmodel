@@ -24,7 +24,9 @@ import type { ModelParamTable } from "../../core/unified/vocabulary/image";
  * promise a mapping nobody can check.
  */
 export const MODELS = [
+  "dola-seedream-5-5-261028",
   "dola-seedream-5-0-pro-260628",
+  "dola-seedream-5-0-flash-260915",
   "seedream-5-0-260128",
   "seedream-5-0-lite-260128",
   "seedream-4-5-251128",
@@ -57,12 +59,16 @@ export const MODELS = [
  * at all — a canonical ratio is *derived* into a `WxH` by `toSizeFreeform` —
  * so the wide ratio vocabulary is the honest one.
  *
- * The extras are ModelArk's own knobs, and the `PRO_ONLY` / `SEQUENTIAL_ONLY`
- * split in `./constraints.ts` is what the per-model rows below restate:
- * `background` and `layer_decomposition` are Seedream 5.0 pro's alone, the
- * sequential-batch family is everyone else's, and
- * `optimize_prompt_options.mode` narrows to `"standard"` on the three models
- * whose docs say fast mode is not supported.
+ * The extras are ModelArk's own knobs, and the `LAYERS_AND_ALPHA_ONLY` /
+ * `SEQUENTIAL_ONLY` split in `./constraints.ts` is what the per-model rows
+ * below restate: `background`, `layer_decomposition` and `safety_identifier`
+ * are Seedream 5.5 / 5.0 pro / 5.0 flash's, `layer_decomposition_options` is
+ * Seedream 5.5's alone, the sequential-batch family is everyone else's, and
+ * `optimize_prompt_options.mode` narrows to `"standard"` on every model but
+ * Seedream 5.0 pro and 4.0.
+ *
+ * Seedream 5.5 and 5.0 flash share Seedream 5.0 pro's keywords and pixel band
+ * ([921,600, 4,624,220]), so they share its preset list.
  */
 export const DOLA_SEEDREAM_5_0_PRO_SIZES = [
   "1K", "1.5K", "2K",
@@ -110,6 +116,8 @@ export const SEQUENTIAL_OPTIONS = EXTRA as { max_images?: number };
 
 export const STANDARD_ONLY = EXTRA as { mode?: "standard" };
 
+export const SAFETY_IDENTIFIER = EXTRA as string;
+
 export const SEQUENTIAL_EXTRAS = {
   watermark: WATERMARK,
   sequential_image_generation: SEQUENTIAL,
@@ -117,6 +125,19 @@ export const SEQUENTIAL_EXTRAS = {
 } as const;
 
 export const BYTEDANCE_IMAGE_MODEL_PARAMS = {
+  "dola-seedream-5-5-261028": {
+    sizes: DOLA_SEEDREAM_5_0_PRO_SIZES,
+    sizeFreeform: true,
+    tiers: ["1k", "2k"],
+    extras: {
+      watermark: WATERMARK,
+      background: EXTRA as "auto" | "transparent" | "opaque",
+      layer_decomposition: EXTRA as boolean,
+      layer_decomposition_options: EXTRA as { max_images?: number; text_recognition?: boolean },
+      optimize_prompt_options: STANDARD_ONLY,
+      safety_identifier: SAFETY_IDENTIFIER,
+    },
+  },
   "dola-seedream-5-0-pro-260628": {
     sizes: DOLA_SEEDREAM_5_0_PRO_SIZES,
     sizeFreeform: true,
@@ -126,6 +147,19 @@ export const BYTEDANCE_IMAGE_MODEL_PARAMS = {
       background: EXTRA as "transparent" | "opaque",
       layer_decomposition: EXTRA as boolean,
       optimize_prompt_options: EXTRA as { mode?: "standard" | "fast" },
+      safety_identifier: SAFETY_IDENTIFIER,
+    },
+  },
+  "dola-seedream-5-0-flash-260915": {
+    sizes: DOLA_SEEDREAM_5_0_PRO_SIZES,
+    sizeFreeform: true,
+    tiers: ["1k", "2k"],
+    extras: {
+      watermark: WATERMARK,
+      background: EXTRA as "transparent" | "opaque",
+      layer_decomposition: EXTRA as boolean,
+      optimize_prompt_options: STANDARD_ONLY,
+      safety_identifier: SAFETY_IDENTIFIER,
     },
   },
   "seedream-5-0-260128": {

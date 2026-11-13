@@ -96,6 +96,42 @@ describe("recraft.imageEdit", () => {
     ).toBe(true);
   });
 
+  test("the raster aliases validate and price like their base models", () => {
+    const r = imageEdit.safe({
+      image: png(),
+      prompt: "w",
+      strength: 0.2,
+      model: "recraftv4_1_pro_raster",
+      n: 2,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(0.42, 10);
+    }
+    const v3 = imageEdit.safe({
+      image: png(),
+      prompt: "w",
+      strength: 0.2,
+      model: "recraftv3_raster",
+      style: "Photorealism",
+    });
+    expect(v3.ok).toBe(true);
+  });
+
+  test("V4.1 Flash and the V4 Styles line are not image-to-image models", () => {
+    for (const model of ["recraftv4_1_flash", "recraftv4_1_flash_raster", "recraftv4_styles"]) {
+      const r = (imageEdit.safe as unknown as Unchecked)({
+        image: png(),
+        prompt: "w",
+        strength: 0.2,
+        model,
+      });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["model"]);
+    }
+  });
+
   test("costs the model's per-image rate × n", () => {
     const r = imageEdit.safe({
       image: png(),
@@ -108,7 +144,8 @@ describe("recraft.imageEdit", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.12, 10);
   });
 
-  test("inputs over 10 MB are media_too_large", () => {
+  test("inputs over 20 MB are media_too_large; a 15 MB input passes", () => {
+    expect(MAX_INPUT_IMAGE_BYTES).toBe(20 * 1024 * 1024);
     const r = (imageEdit.safe as unknown as Unchecked)({
       image: png(MAX_INPUT_IMAGE_BYTES + 1),
       prompt: "w",
@@ -116,6 +153,152 @@ describe("recraft.imageEdit", () => {
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors.some((e) => e.code === "media_too_large")).toBe(true);
+    expect(imageEdit.safe({ image: png(15 * 1024 * 1024), prompt: "w", strength: 0.2 }).ok).toBe(true);
+    expect(
+      imageEditInpaint.safe({ image: png(), mask: png(15 * 1024 * 1024), prompt: "w" }).ok,
+    ).toBe(true);
+  });
+
+  test("response_format takes url | b64_json | multipart on every route", () => {
+    expect(imageEdit.safe({ image: png(), prompt: "w", strength: 0.2, response_format: "multipart" }).ok)
+      .toBe(true);
+    expect(imageEditReplaceBackground.safe({ image: png(), prompt: "w", response_format: "multipart" }).ok)
+      .toBe(true);
+    const r = (imageEditInpaint.safe as unknown as Unchecked)({
+      image: png(),
+      mask: png(),
+      prompt: "w",
+      response_format: "hex",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.allowed).toEqual(["url", "b64_json", "multipart"]);
+  });
+});
+
+describe("image_format and style_match on every editing route", () => {
+  const routes = [
+    ["imageEdit", imageEdit.safe as unknown as Unchecked, { image: png(), prompt: "w", strength: 0.2 }],
+    ["imageEditInpaint", imageEditInpaint.safe as unknown as Unchecked, { image: png(), mask: png(), prompt: "w" }],
+    ["imageEditOutpaint", imageEditOutpaint.safe as unknown as Unchecked, { image: png(), prompt: "w", zoom_out_percentage: 20 }],
+    ["imageEditReplaceBackground", imageEditReplaceBackground.safe as unknown as Unchecked, { image: png(), prompt: "w" }],
+    [
+      "imageEditGenerateBackground",
+      imageEditGenerateBackground.safe as unknown as Unchecked,
+      { image: png(), mask: png(), prompt: "w" },
+    ],
+  ] as const;
+
+  test.each(routes)("%s takes image_format webp | png, warning-free, and refuses jpeg", (_name, safe, base) => {
+    for (const image_format of ["webp", "png"]) {
+      const r = safe({ ...base, image_format });
+      expect(r.ok, image_format).toBe(true);
+      expect(r.warnings, image_format).toEqual([]);
+    }
+    const jpeg = safe({ ...base, image_format: "jpeg" });
+    expect(jpeg.ok).toBe(false);
+    if (!jpeg.ok) {
+      expect(jpeg.errors.map((e) => `${e.code}@${e.path?.join(".")}`)).toEqual([
+        "invalid_enum_value@image_format",
+      ]);
+      expect(jpeg.errors[0]?.meta?.allowed).toEqual(["webp", "png"]);
+    }
+  });
+
+  test.each(routes)("%s takes style_match regular on V3, and refuses precise", (_name, safe, base) => {
+    const regular = safe({ ...base, model: "recraftv3", style_id: "abc", style_match: "regular" });
+    expect(regular.ok).toBe(true);
+    expect(regular.warnings).toEqual([]);
+    const precise = safe({ ...base, model: "recraftv3", style_id: "abc", style_match: "precise" });
+    expect(precise.ok).toBe(false);
+    if (!precise.ok) {
+      expect(precise.errors.map((e) => `${e.code}@${e.path?.join(".")}`)).toEqual([
+        "invalid_enum_value@style_match",
+      ]);
+    }
+  });
+
+  test("image_format is not refused on a vector model — the page says it is ignored there", () => {
+    const r = imageEdit.safe({
+      image: png(),
+      prompt: "w",
+      strength: 0.2,
+      model: "recraftv4_1_vector",
+      image_format: "png",
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe("recraft.imageEdit: the V3-only params refuse the V4 / V4.1 line", () => {
+  const base = { image: png(), prompt: "w", strength: 0.2 };
+  const codes = (r: ValidateResult<unknown>): string[] =>
+    r.ok ? [] : r.errors.map((e) => `${e.code}@${e.path?.join(".")}`);
+
+  test.each([
+    ["style_id", { style_id: "abc" }],
+    ["style", { style: "Photorealism" }],
+    ["style_match", { style_id: "abc", style_match: "regular" }],
+    ["negative_prompt", { negative_prompt: "people" }],
+    ["text_layout", { text_layout: [{ text: "hi", bbox: [[0, 0], [1, 0], [1, 1], [0, 1]] }] }],
+  ] as const)("recraftv4_1 + %s is unsupported_param", (param, extra) => {
+    const r = (imageEdit.safe as unknown as Unchecked)({ ...base, model: "recraftv4_1", ...extra });
+    expect(r.ok).toBe(false);
+    expect(codes(r)).toContain(`unsupported_param@${param}`);
+    if (!r.ok) {
+      const issue = r.errors.find((e) => e.path?.[0] === param);
+      expect(issue?.meta?.source).toBe("https://www.recraft.ai/docs/api-reference/tools/image-to-image");
+    }
+  });
+
+  test("a raster alias of the V4.1 line refuses negative_prompt too", () => {
+    const r = (imageEdit.safe as unknown as Unchecked)({
+      ...base,
+      model: "recraftv4_1_raster",
+      negative_prompt: "people",
+    });
+    expect(codes(r)).toEqual(["unsupported_param@negative_prompt"]);
+  });
+
+  test("controls.artistic_level / no_text are V3-only; colors stay open", () => {
+    const r = (imageEdit.safe as unknown as Unchecked)({
+      ...base,
+      model: "recraftv4_1",
+      controls: { artistic_level: 3, no_text: true },
+    });
+    expect(codes(r)).toEqual([
+      "unsupported_param@controls.artistic_level",
+      "unsupported_param@controls.no_text",
+    ]);
+    expect(
+      imageEdit.safe({ ...base, model: "recraftv4_1", controls: { colors: [{ rgb: [255, 0, 0] }] } }).ok,
+    ).toBe(true);
+    expect(imageEdit.safe({ ...base, model: "recraftv3", controls: { artistic_level: 3 } }).ok).toBe(true);
+  });
+
+  test("every V3 id keeps the style vocabulary", () => {
+    const raster = imageEdit.safe({ ...base, model: "recraftv3_raster", style_id: "abc", negative_prompt: "x" });
+    expect(raster.ok).toBe(true);
+    if (raster.ok) expect(raster.warnings).toEqual([]);
+    expect(imageEdit.safe({ ...base, model: "recraftv3_vector", style: "Vector art", text_layout: [] }).ok).toBe(
+      true,
+    );
+  });
+
+  test("with no model, a curated V3 style resolves to the V3 model that lists it", () => {
+    const raster = imageEdit.safe({ ...base, style: "Illustration", negative_prompt: "people" });
+    expect(raster.ok).toBe(true);
+    if (raster.ok) expect(raster.estimate.costUSD).toBeCloseTo(0.04, 10);
+    const vector = imageEdit.safe({ ...base, style: "Vector art" });
+    expect(vector.ok).toBe(true);
+    if (vector.ok) expect(vector.estimate.costUSD).toBeCloseTo(0.08, 10);
+    // …and without a style the default is recraftv4_1, which refuses the rest.
+    const bare = (imageEdit.safe as unknown as Unchecked)({ ...base, negative_prompt: "people" });
+    expect(codes(bare)).toEqual(["unsupported_param@negative_prompt"]);
+  });
+
+  test("an id the route refuses draws the model error alone", () => {
+    const r = (imageEdit.safe as unknown as Unchecked)({ ...base, model: "recraftv4_1_flash", style_id: "abc" });
+    expect(codes(r)).toEqual(["invalid_enum_value@model"]);
   });
 });
 
@@ -191,6 +374,24 @@ describe("recraft.imageEditInpaint / imageEditGenerateBackground", () => {
 
     expect(imageEditInpaint.safe({ image: png(), mask: png(), prompt: "w", model: "recraftv3_vector" }).ok)
       .toBe(true);
+  });
+
+  test("recraftv3_raster is accepted on every V3-only route and prices at the V3 rate", () => {
+    const inpaint = imageEditInpaint.safe({ image: png(), mask: png(), prompt: "w", model: "recraftv3_raster" });
+    expect(inpaint.ok).toBe(true);
+    if (inpaint.ok) {
+      expect(inpaint.warnings).toEqual([]);
+      expect(inpaint.estimate.costUSD).toBeCloseTo(0.04, 10);
+    }
+    expect(
+      imageEditGenerateBackground.safe({ image: png(), mask: png(), prompt: "w", model: "recraftv3_raster" }).ok,
+    ).toBe(true);
+    expect(
+      imageEditOutpaint.safe({ image: png(), prompt: "w", zoom_out_percentage: 20, model: "recraftv3_raster" }).ok,
+    ).toBe(true);
+    expect(imageEditReplaceBackground.safe({ image: png(), prompt: "w", model: "recraftv3_raster" }).ok).toBe(
+      true,
+    );
   });
 
   test("defaults to recraftv3, so the V3 prompt cap (1000) applies", () => {

@@ -73,20 +73,21 @@ export interface ChatCompletionsBodyOf<M extends string>
   prompt_cache_retention?: "in_memory" | "24h" | null;
   /**
    * "Currently supported values are `none`, `minimal`, `low`, `medium`,
-   * `high`, `xhigh`, and `max`." Re-verified 2026-08-13 against
+   * `high`, `xhigh`, and `max`." Re-verified 2026-11-12 against
    * https://developers.openai.com/api/docs/api-reference/chat/create. The
-   * same page adds "Not all reasoning models support every value. See the
-   * reasoning guide for model-specific support" WITHOUT enumerating which
-   * value each family takes, so there is deliberately no per-model
-   * `reasoning_effort` constraint — an undocumented narrowing would
-   * false-positive.
+   * same page adds "Not all reasoning models support every value." — the
+   * model pages enumerate, so each GPT-6 row in ./constraints.ts narrows this
+   * to its page's own list (`none` is a documented HTTP 400 on GPT-6 Astra and
+   * GPT-6.1 Sol). A model whose page states no list carries no narrowing: an
+   * undocumented one would false-positive.
    */
   reasoning_effort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | null;
   safety_identifier?: string | null;
   /**
-   * The chat/create reference documents `auto`, `default`, `flex`, `fast` and
-   * `priority` (checked 2026-08-13); `scale` is kept because the docs never
-   * state it is rejected — absence is not a documented denial.
+   * The chat/create reference and the openai-node SDK both list exactly these
+   * six — `'auto' | 'default' | 'flex' | 'scale' | 'priority' | 'fast'`
+   * (checked 2026-11-12). `ultrafast` is a Responses/Agents-only tier and is
+   * deliberately absent here.
    */
   service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | "fast" | null;
   store?: boolean | null;

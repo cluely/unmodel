@@ -29,6 +29,7 @@ import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helper
 type PackRefs = UnifiedRef<typeof elevenlabsSfx | typeof falSfx>;
 
 expectAssignable<PackRefs>("elevenlabs/eleven_text_to_sound_v2");
+expectAssignable<PackRefs>("elevenlabs/eleven_text_to_sound_v3");
 expectAssignable<PackRefs>("fal/fal-ai/elevenlabs/sound-effects/v2");
 expectAssignable<PackRefs>("fal/sonilo/v1.1/text-to-sound-effects");
 expectAssignable<PackRefs>("fal/cassetteai/sound-effects-generator");

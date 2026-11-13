@@ -52,8 +52,37 @@ function imageGenerationsArmTypeTests(): void {
   });
   // @ts-expect-error — batch generation is Seedream 5.0 lite / 4.5 / 4.0 only
   image({ model: "dola-seedream-5-0-pro-260628", prompt: "hi", stream: true });
-  // @ts-expect-error — layer decomposition is a Seedream 5.0 pro capability
+  // @ts-expect-error — layer decomposition is Seedream 5.5 / 5.0 pro / 5.0 flash only
   image({ model: "seedream-4-0-250828", prompt: "hi", layer_decomposition: true });
+
+  // Seedream 5.5: `background: "auto"`, RGBA from text, layer options, an end-user id.
+  image({ model: "dola-seedream-5-5-261028", prompt: "hi", background: "auto", safety_identifier: "u-1" });
+  image({
+    model: "dola-seedream-5-5-261028",
+    image: "https://example.com/a.png",
+    layer_decomposition: true,
+    layer_decomposition_options: { max_images: 12, text_recognition: true },
+  });
+  // @ts-expect-error — "auto" is Seedream 5.5's alone
+  image({ model: "dola-seedream-5-0-pro-260628", prompt: "hi", background: "auto" });
+  // @ts-expect-error — `layer_decomposition_options` is Seedream 5.5 only
+  image({ model: "dola-seedream-5-0-pro-260628", prompt: "hi", layer_decomposition_options: {} });
+  // @ts-expect-error — batch generation is Seedream 5.0 lite / 4.5 / 4.0 only
+  image({ model: "dola-seedream-5-5-261028", prompt: "hi", stream: true });
+
+  // Seedream 5.0 flash: the 5.0 pro surface, standard prompt mode only.
+  image({
+    model: "dola-seedream-5-0-flash-260915",
+    image: "https://example.com/a.png",
+    layer_decomposition: true,
+    output_format: "png",
+    safety_identifier: "u-1",
+  });
+  // @ts-expect-error — Seedream 5.0 flash documents standard mode only
+  image({ model: "dola-seedream-5-0-flash-260915", prompt: "hi", optimize_prompt_options: { mode: "fast" } });
+  image({ model: "dola-seedream-5-0-pro-260628", prompt: "hi", safety_identifier: "u-1" });
+  // @ts-expect-error — `safety_identifier` is Seedream 5.5 / 5.0 pro / 5.0 flash only
+  image({ model: "seedream-4-0-250828", prompt: "hi", safety_identifier: "u-1" });
 
   // Unknown ids (new releases, `ep-…` endpoint ids) fall into the loose arm,
   // where `size` is unconstrained because the model's table is unknown.
@@ -82,6 +111,24 @@ function videoBodyAliasTypeTests(): void {
     seed: 1,
   };
   void aliasedInvalid;
+
+  // Dreamina Seedance 2.5: 1080p, a 480p draft, and the final video from it.
+  video({ model: "dreamina-seedance-2-5-260628", content: [{ type: "text", text: "hi" }], resolution: "1080p" });
+  video({ model: "dreamina-seedance-2-5-260628", content: [{ type: "text", text: "hi" }], draft: true });
+  video({
+    model: "dreamina-seedance-2-5-260628",
+    content: [{ type: "draft_task", draft_task: { id: "cgt-123" } }],
+    resolution: "1080p",
+  });
+  // @ts-expect-error — draft mode is Dreamina Seedance 2.5's alone
+  video({ model: "dreamina-seedance-2-0-260128", content: [{ type: "text", text: "hi" }], draft: true });
+  video({
+    model: "dreamina-seedance-2-5-260628",
+    // @ts-expect-error — a final video carries the `draft_task` item alone
+    content: [{ type: "text", text: "hi" }, { type: "draft_task", draft_task: { id: "cgt-123" } }],
+    resolution: "1080p",
+  });
+
   const future: ContentGenerationTasksBody<"ep-20260101-video"> = {
     model: "ep-20260101-video",
     content: [{ type: "text", text: "hi" }],

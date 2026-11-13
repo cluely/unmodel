@@ -26,6 +26,10 @@ export const FLUX2_MODELS = [
   "flux-2-klein-9b",
   "flux-2-klein-9b-preview",
   "flux-2-klein-4b",
+  "flux-2-klein-4b-finetuned",
+  "flux-2-klein-9b-finetuned",
+  "flux-2-klein-9b-kv-finetuned",
+  "flux-2-klein-9b-kv-bf16-finetuned",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -82,8 +86,8 @@ export const MODELS = [...FLUX2_MODELS, ...FLUX1_MODELS] as const;
 // ---------------------------------------------------------------------------
 
 /**
- * Eleven generation routes, three sizing shapes and a `safety_tolerance` whose
- * *range* differs between the two generations — 0–5 on FLUX.2, 0–6 on FLUX.1
+ * Fifteen generation routes, three sizing shapes and a `safety_tolerance` whose
+ * *range* differs between the two generations — 0–7 on FLUX.2, 0–6 on FLUX.1
  * — which the endpoints' own schemas check and this table does not restate.
  *
  * **Sizes.** The FLUX.2 and FLUX.1 pixel routes take a free `width`/`height`
@@ -119,7 +123,7 @@ export const FLUX_1_SIZES = [
   "576x1344",
 ] as const;
 
-/** 0–5 on FLUX.2 and the tools routes, 0–6 on FLUX.1 — the schemas check it. */
+/** 0–7 on FLUX.2 and the tools routes, 0–6 on FLUX.1 — the schemas check it. */
 export const SAFETY_TOLERANCE = EXTRA as number;
 
 export const PROMPT_UPSAMPLING = EXTRA as boolean;
@@ -140,6 +144,20 @@ export const FLUX_2_KLEIN_ROW = {
   extras: { safety_tolerance: SAFETY_TOLERANCE },
 } as const;
 
+/**
+ * The klein LoRA routes: the klein surface plus the LoRA pair. `finetune_id`
+ * is required and has no canonical spelling, so a unified call supplies it as
+ * this extra or through `providerOptions["black-forest-labs"]`.
+ */
+export const FLUX_2_KLEIN_FINETUNED_ROW = {
+  ...FLUX_2_BASE,
+  extras: {
+    finetune_id: EXTRA as string,
+    finetune_strength: EXTRA as number,
+    safety_tolerance: SAFETY_TOLERANCE,
+  },
+} as const;
+
 export const BFL_IMAGE_MODEL_PARAMS = {
   "flux-2-pro": FLUX_2_PRO_ROW,
   "flux-2-max": FLUX_2_PRO_ROW,
@@ -156,6 +174,10 @@ export const BFL_IMAGE_MODEL_PARAMS = {
   "flux-2-klein-9b": FLUX_2_KLEIN_ROW,
   "flux-2-klein-9b-preview": FLUX_2_KLEIN_ROW,
   "flux-2-klein-4b": FLUX_2_KLEIN_ROW,
+  "flux-2-klein-4b-finetuned": FLUX_2_KLEIN_FINETUNED_ROW,
+  "flux-2-klein-9b-finetuned": FLUX_2_KLEIN_FINETUNED_ROW,
+  "flux-2-klein-9b-kv-finetuned": FLUX_2_KLEIN_FINETUNED_ROW,
+  "flux-2-klein-9b-kv-bf16-finetuned": FLUX_2_KLEIN_FINETUNED_ROW,
   "flux-pro-1.1": {
     ...FLUX_1_PIXEL_BASE,
     extras: { prompt_upsampling: PROMPT_UPSAMPLING, safety_tolerance: SAFETY_TOLERANCE },
@@ -182,7 +204,6 @@ export const BFL_IMAGE_MODEL_PARAMS = {
     extras: {
       finetune_id: EXTRA as string,
       finetune_strength: EXTRA as number,
-      raw: EXTRA as boolean,
       prompt_upsampling: PROMPT_UPSAMPLING,
       safety_tolerance: SAFETY_TOLERANCE,
     },

@@ -12,8 +12,8 @@
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { MusicModelParamTable } from "../../core/unified/vocabulary/music";
 
-/** The two music models — the ref union for `elevenlabs/…`. */
-export const MODELS = ["music_v2", "music_v1"] as const;
+/** The three music models — the ref union for `elevenlabs/…`. */
+export const MODELS = ["music_v2_5", "music_v2", "music_v1"] as const;
 
 export const MUSIC_DOCS = "https://elevenlabs.io/docs/api-reference/music/compose";
 
@@ -56,12 +56,12 @@ export const FORMAT: AudioFormatSpec = {
 };
 
 /**
- * The two music ids, which are wire-identical, and one shared row says so.
+ * The three music ids, which are wire-identical, and one shared row says so.
  *
- * `POST /v1/music` has no per-model constraint table at all: both ids go
+ * `POST /v1/music` has no per-model constraint table at all: all three ids go
  * through one validator, one `MUSIC_OUTPUT_FORMATS` enum and one schema. What
  * differs between them is the *shape* of `composition_plan` (`sections` on v1,
- * `chunks` on v2) and the `"auto"` output-format default — neither of which is
+ * `chunks` on v2 and v2.5) and the `"auto"` output-format default — neither of which is
  * a value-space difference a row can carry, and `composition_plan` is excluded
  * for the first of those reasons: one key whose type depends on the model id is
  * a discriminated union the extras mechanism has no way to express, and it is
@@ -90,6 +90,7 @@ export const ROW = {
 } as const;
 
 export const ELEVENLABS_MUSIC_MODEL_PARAMS = {
+  music_v2_5: ROW,
   music_v2: ROW,
   music_v1: ROW,
 } as const satisfies MusicModelParamTable;

@@ -33,6 +33,7 @@ import {
   TRIPO3D_HEADERS,
   checkFaceLimit,
   checkGenerateParts,
+  checkTextureVersion,
   checkPbrForcesTexture,
   checkVersionGatedParams,
   generationCommonSchema,
@@ -40,9 +41,11 @@ import {
   promptSchema,
   seedSchema,
   type Tripo3dCompression,
+  type Tripo3dExportOrientation,
   type Tripo3dGeometryQuality,
   type Tripo3dModelId,
   type Tripo3dTextureQuality,
+  type Tripo3dTextureVersion,
 } from "./shared";
 import { tripo3dCostUSD } from "./pricing";
 
@@ -53,7 +56,7 @@ const SOURCE = `${DOCS_BASE}/generation-text-to-model/standard`;
 export interface TextToModelParams {
   /** Required; up to 1024 characters. Describe shape, material, style and scale. */
   prompt: string;
-  /** Required. The dated model id — see `TRIPO3D_MODELS` on the alias conflict. */
+  /** Required. The dated model id — see `TRIPO3D_MODELS`. */
   model: Tripo3dModelId | (string & {});
   /** Up to 255 characters. */
   negative_prompt?: string;
@@ -69,22 +72,38 @@ export interface TextToModelParams {
   texture?: boolean;
   /** Defaults to **true**, and forces `texture` true. */
   pbr?: boolean;
-  /** v3.0+ and P1. `extreme` is 8K and costs extra credits. */
+  /** v3.0+, P1 and P2. `extreme` is 8K and costs extra credits. */
   texture_quality?: Tripo3dTextureQuality;
   /** v3.0+ only — `detailed` is Ultra mode. Must NOT be sent with v2.5. */
   geometry_quality?: Tripo3dGeometryQuality;
-  /** v3.0+ and P1. Scales the model to real-world metres. */
+  /** v3.0+, P1 and P2. Scales the model to real-world metres. */
   auto_size?: boolean;
-  /** v3.0+ only. Forces the output format to FBX; default face count 10,000. */
+  /** v3.0+ and P2. On the H series it forces FBX output; default face count 10,000. */
   quad?: boolean;
   /** v3.0+ only. Hand-crafted low-poly topology. */
   smart_low_poly?: boolean;
-  /** v3.0+ only. Editable segmented parts; requires texture/pbr/quad all false. */
+  /** v3.0+ only. Editable segmented parts; requires texture and pbr false, ignores quad. */
   generate_parts?: boolean;
-  /** v3.0+ and P1. `"geometry"` is meshopt compression. */
+  /** v3.0+, P1 and P2. `"geometry"` is meshopt compression. */
   compress?: Tripo3dCompression;
   /** Defaults to true. False is faster and smaller; UVs are done at texturing. */
   export_uv?: boolean;
+  /**
+   * Pins the texture model independently of `model`. Omitted, it derives
+   * `v2.5-20250123` from v2.5 geometry and `v3.0-20250812` from every other.
+   */
+  texture_version?: Tripo3dTextureVersion | (string & {});
+  /**
+   * Defaults to true: strips baked-in lighting from the reference before
+   * texturing. Only texture `v3.5-20260815` reads it; older versions ignore it.
+   */
+  delight?: boolean;
+  /**
+   * The exported mesh's forward axis; `+x` by default. Applies to this
+   * generation only — later post-processing may mis-orient it and still report
+   * `status: success`.
+   */
+  export_orientation?: Tripo3dExportOrientation;
 }
 
 const textToModelSchema = z.looseObject({
@@ -107,6 +126,7 @@ export const threeDConstraints = {
   "v3.0-20250812": {},
   "v2.5-20250123": {},
   "P1-20260311": {},
+  "P2-20260801": {},
 } as const satisfies Readonly<Partial<Record<string, EndpointConstraints>>>;
 
 function estimate(params: TextToModelParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
@@ -151,6 +171,7 @@ const validator = createValidator<TextToModelParams, unknown>({
   checks: [
     checkVersionGatedParams(SOURCE),
     checkGenerateParts(SOURCE),
+    checkTextureVersion(SOURCE),
     checkPbrForcesTexture(SOURCE),
     checkFaceLimit(SOURCE),
   ],

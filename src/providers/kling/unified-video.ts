@@ -11,9 +11,10 @@
  *
  * | model ids | family | duration | size | inputs |
  * |---|---|---|---|---|
- * | `kling-v1` … `kling-v3` | `/v1/videos/*` | `duration: "5"` — **a string** | `mode`: std / pro / 4k | `image`, `image_tail` |
+ * | `kling-v3`, `kling-v2-6`, `kling-v2-5-turbo` | `/v1/videos/*` | `duration: "5"` — **a string** | `mode`: std / pro / 4k | `image`, `image_tail` |
  * | `kling-3.0`, `-turbo`, `kling-2.6`, `kling-2.5-turbo` | `/text-to-video/{model}` | `settings.duration: 5` — a number | `settings.resolution` | `contents[]` |
  * | `kling-3.0-omni`, `kling-o1` | `/omni-video/{model}` | `settings.duration: 5` | `settings.resolution` | `contents[]`, incl. video |
+ * | `kling-4.0`, `kling-4.0-flash` | all three path routes — text and frames go to `/text-to-video` / `/image-to-video`; references, clips, `audio` and a shape beside frames to `/omni-video` | `settings.duration: 5` | `settings.resolution` | `contents[]` |
  *
  * The two duration encodings in one provider are why the canonical `duration`
  * is a plain number: `"5"` and `5` are the same request at two Kling routes,
@@ -22,8 +23,9 @@
  * The id spellings are the giveaway for which family a ref lands in —
  * `kling-v3` is the body-addressed route and `kling-3.0` the path-addressed
  * one — and that is Kling's own naming, recorded in `./models.ts` along with
- * the provenance of both families. The V3 family is uncorroborated: prefer the
- * `kling-v*` ids unless you have verified those routes against a live account.
+ * the provenance of both families. The V3 family is EXPERIMENTAL — the API
+ * host answers it, but each model's path is doc-only — and it is the only one
+ * serving Kling 4.0 / 4.0 Flash.
  *
  * # `mode` is a resolution with a different name
  *
@@ -40,10 +42,10 @@
  * - **A source clip** likewise: `base_video` is omni-only.
  * - **`aspect_ratio`** is absent from both image-driven routes — the frame
  *   sets the shape — so a shape passed with a first frame is refused rather
- *   than ignored.
+ *   than ignored, except on Kling 4.0 / 4.0 Flash, whose omni route takes it.
  * - **`negative_prompt`** is a `/v1/videos/*` field only; the V3 and omni
  *   `settings` objects have no equivalent, and this adapter says so per model
- *   rather than declaring a gap that is only true for six of the twelve ids.
+ *   rather than declaring a gap that is only true for the path-addressed ids.
  */
 import {
   applyExtras,
@@ -60,6 +62,7 @@ import {
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type {
   VideoAdapterFor,
+  VideoModelParamTable,
   VideoParams,
   VideoResolution,
 } from "../../core/unified/vocabulary/video";
@@ -77,15 +80,15 @@ import {
   videoV3FromImage as v3ImageValidator,
   type ImageToVideoV3Params,
 } from "./video-v3-from-image";
-import { videoOmni as omniValidator, type OmniVideoParams } from "./video-omni";
+import { OMNI_VIDEO_RULES, videoOmni as omniValidator, type OmniVideoParams } from "./video-omni";
 import { KLING_VIDEO_MODEL_PARAMS, MODELS } from "./video-params";
 
 const V1_SOURCE = `${DOCS_BASE}/apiReference/model/textToVideo`;
 const V3_SOURCE = `${DOCS_BASE}/api/video/3-0-omni/text-to-video`;
 const OMNI_SOURCE = `${DOCS_BASE}/api/video/3-0-omni/video-omni`;
 
-/** The two ids on the omni route. */
-const OMNI_MODELS: ReadonlySet<string> = new Set(["kling-3.0-omni", "kling-o1"]);
+/** The rows, widened for a lookup by a run-time id. */
+const ROWS: VideoModelParamTable = KLING_VIDEO_MODEL_PARAMS;
 
 /** `mode` on `/v1/videos/*` — "std = 720P, pro = 1080P, 4k = 4K". */
 const V1_MODES: Readonly<Partial<Record<VideoResolution, string>>> = {
@@ -133,11 +136,23 @@ export type KlingVideoResult =
 /** See the note on kling's image adapter: `validate` is contravariant. */
 type KlingValidate = CompiledCall<KlingVideoWire, KlingVideoResult>["validate"];
 
-/** Which family a ref lands in — the first of the two dispatch decisions. */
+/** Which family a request lands in — the first of the two dispatch decisions. */
 type Family = "v1" | "v3" | "omni";
 
-function familyOf(model: string): Family {
-  if (OMNI_MODELS.has(model)) return "omni";
+function familyOf(model: string, input: VideoParams): Family {
+  if (OMNI_VIDEO_RULES[model] !== undefined) {
+    // Kling 4.0 / 4.0 Flash are on the omni route AND the text and image ones:
+    // what those two can carry goes there, and only what nothing but omni takes
+    // goes to omni — references, clips, an `audio` the text or image row has
+    // no switch for, and a shape beside frames (image-to-video has no
+    // `settings.aspect_ratio`; omni's takes precedence over the first frame).
+    if (TEXT_TO_VIDEO_V3_RULES[model] === undefined) return "omni";
+    const route = videoRoute(input);
+    if (route !== "text" && route !== "image") return "omni";
+    const v3 = (route === "text" ? TEXT_TO_VIDEO_V3_RULES : IMAGE_TO_VIDEO_V3_RULES)[model];
+    if ("audio" in input && input.audio !== undefined && v3?.audio === undefined) return "omni";
+    return route === "image" && input.aspectRatio !== undefined ? "omni" : "v3";
+  }
   // `kling-v*` is the body-addressed family; `kling-3.0` and friends are the
   // path-addressed one. An id this snapshot has not seen has already drawn
   // `unknown_model`, and the corroborated family is the safer default.
@@ -146,9 +161,9 @@ function familyOf(model: string): Family {
 
 /** The routes a model serves, from its family and that family's rule table. */
 function routesFor(model: string, family: Family): readonly VideoRoute[] {
-  // Omni is the only family with a reference slot (`refer_image`) and the only
+  // Omni is the only route with a reference slot (`refer_image`) and the only
   // one that takes a clip (`base_video`).
-  if (family === "omni") return ["text", "image", "reference", "video"];
+  if (OMNI_VIDEO_RULES[model] !== undefined) return ["text", "image", "reference", "video"];
   // Every `/v1/videos/*` model has both a text2video and an image2video arm —
   // the two enums differ only in which extra ids the image route adds.
   if (family === "v1") return ["text", "image"];
@@ -175,7 +190,7 @@ export const video = {
     input: VideoParams,
     ctx: CompileContext<VideoParams>,
   ): CompiledCall<KlingVideoWire, KlingVideoResult> {
-    const family = familyOf(ctx.model);
+    const family = familyOf(ctx.model, input);
     const source = family === "omni" ? OMNI_SOURCE : family === "v3" ? V3_SOURCE : V1_SOURCE;
     const derived = ctx.take(
       resolveVideoRoute(
@@ -232,7 +247,7 @@ function compileV1(
   if (input.duration !== undefined) {
     // The one place in the category where seconds go out as a string. The
     // allowed list is this model's own row of the capability map, so the error
-    // names the durations `kling-v2-1` actually offers rather than the widest.
+    // names the durations `kling-v2-5-turbo` actually offers rather than the widest.
     const allowed = V1_MODEL_RULES[ctx.model]?.durations.map(Number);
     const duration = ctx.take(
       toDurationString(input.duration, allowed, { path: ["duration"], warn: ctx.warn }),
@@ -244,7 +259,7 @@ function compileV1(
     const mode = ctx.take(
       toTier(input.resolution, V1_MODES, { path: ["resolution"], warn: ctx.warn }),
     );
-    // Which modes this model has is `checkV1Support`'s business — `kling-v1`
+    // Which modes this model has is `checkV1Support`'s business — `kling-v2-6`
     // is std/pro only, and its message names them.
     if (mode !== undefined) body.mode = mode;
   }
@@ -398,8 +413,8 @@ function requirePrompt(ctx: CompileContext<VideoParams>, source: string): void {
     code: "invalid_shape",
     path: ["prompt"],
     message:
-      "`prompt` is required on this route (up to 3072 characters) — the path-addressed routes " +
-      "have no other text input.",
+      "`prompt` is required on this route — the path-addressed routes have no other text " +
+      "input.",
     meta: { source },
   });
 }
@@ -440,10 +455,12 @@ function compileSettings(
         meta: { source },
       });
     } else {
+      // The model's own shapes — `21:9` is Kling 4.0's — and the three every
+      // earlier route shares for an id this snapshot has no row for.
       const ratio = ctx.take(
         toRatioEnum(
           input.aspectRatio,
-          KLING_ASPECT_RATIOS,
+          ROWS[ctx.model]?.ratios ?? KLING_ASPECT_RATIOS,
           { source },
           { path: ["aspectRatio"], warn: ctx.warn },
         ),

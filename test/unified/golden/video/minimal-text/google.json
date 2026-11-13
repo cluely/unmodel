@@ -1,5 +1,5 @@
 {
-  "ref": "google/veo-3.1-generate-preview",
+  "ref": "google/veo-3.0-generate-001",
   "params": {
     "instances": [
       {
@@ -7,5 +7,6 @@
       }
     ]
   },
-  "url": "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning"
+  "url": "https://generativelanguage.googleapis.com/v1beta/models/veo-3.0-generate-001:predictLongRunning",
+  "issues": [{ "code": "deprecated_model", "path": ["model"] }]
 }

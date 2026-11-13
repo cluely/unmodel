@@ -6,7 +6,7 @@
  * render: the model ids per category, the per-model narrowing rows (which
  * extras each model takes), and sync.'s own published enums — the five
  * duration-mismatch strategies, the three `react-1` edit regions, the six
- * emotions, the five generation states, the 93 dubbing languages. It is the
+ * emotions, the five generation states, the 110 dubbing languages. It is the
  * value half of `unmodel/sync/types`, for the client-side validation and the
  * pickers a type cannot draw.
  *
@@ -25,9 +25,11 @@
  *   can branch on a code rather than on a message. Refresh it from the
  *   unauthenticated `GET https://api.sync.so/v2/errors`, which also carries a
  *   message and a suggested fix per code.
- * - `SYNC_TEMPERATURE_MODELS` / `SYNC_OCCLUSION_MODELS` / `SYNC_REACT_MODELS` —
- *   the option gate as data, so a form can grey out `temperature` when `sync-3`
- *   is selected rather than letting a user set a dial sync. will ignore.
+ * - `SYNC_TEMPERATURE_MODELS` / `SYNC_OCCLUSION_MODELS` /
+ *   `SYNC_REASONING_MODELS` / `SYNC_REACT_MODELS` / `SYNC_ACTIVE_SPEAKER_MODELS`
+ *   / `SYNC_SEGMENT_MODELS` — the option gate as data, so a form can grey out
+ *   `temperature` when `sync-3` is selected rather than letting a user set a
+ *   dial sync. will ignore.
  */
 
 export {
@@ -42,18 +44,26 @@ export {
 
 export {
   OUTPUT_FILE_NAME_MAX_CHARS,
+  SYNC_ACTIVE_SPEAKER_MODELS,
+  SYNC_BLENDING_MODES,
   SYNC_DUB_LANGUAGES,
   SYNC_DUB_SOURCE_LANGUAGES,
   SYNC_EMOTIONS,
   SYNC_ERROR_CODES,
   SYNC_GENERATION_STATUSES,
+  SYNC_IDEMPOTENCY_HEADER,
+  SYNC_IDEMPOTENCY_KEY_PATTERN,
   SYNC_IMAGE_MODELS,
+  SYNC_MAX_INPUTS,
+  SYNC_MAX_SEGMENTS,
   SYNC_MODELS,
   SYNC_MODEL_MODES,
   SYNC_MODEL_TYPES,
   SYNC_OCCLUSION_MODELS,
-  SYNC_RATE_LIMITS,
+  SYNC_OUTPUT_FORMATS,
   SYNC_REACT_MODELS,
+  SYNC_REASONING_MODELS,
+  SYNC_SEGMENT_MODELS,
   SYNC_SYNC_MODES,
   SYNC_TEMPERATURE_MODELS,
   SYNC_TTS_PROVIDERS,

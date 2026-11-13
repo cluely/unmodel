@@ -9,9 +9,10 @@
  * | wan3.0 | `resolution` + `ratio` | typed `media[]` (frames, refs, clips, audio) |
  * | wan2.7 t2v / HappyHorse | `resolution` + `ratio` | none / route-specific `media[]` |
  * | wan2.7 i2v | `resolution` only | `first_frame`/`last_frame`/`first_clip`/`driving_audio` |
+ * | wan2.7 r2v | `resolution` + `ratio` | `reference_image`/`reference_video`/`first_frame` |
  * | wan2.6 and earlier | one `size` string | none |
  *
- * All four compile from the same canonical request. The tier protocols map
+ * All of them compile from the same canonical request. The tier protocols map
  * exactly (`720p` → `"720P"` is a case change, not a loss). The legacy `size`
  * protocol is where the warnings live: a `size` string carries the tier AND
  * the shape, so `resolution` + `aspectRatio` pick one entry from the model's
@@ -88,10 +89,15 @@ const LEGACY_SIZES: Readonly<
   },
 };
 
+/** The wan3.0 pair (standard + prime) shares one request surface. */
+const WAN3_MODELS: ReadonlySet<string> = new Set(["wan3.0-video", "wan3.0-video-prime"]);
+
 /** The routes each model serves, from its own doc page. */
 function routesOf(model: string): readonly VideoRoute[] {
-  if (model === "wan3.0-video") return ["text", "image", "reference", "video"];
+  if (WAN3_MODELS.has(model)) return ["text", "image", "reference", "video"];
   if (model.startsWith("wan2.7-i2v")) return ["image", "video"];
+  // A reference video alone is a complete wan2.7-r2v request.
+  if (model.startsWith("wan2.7-r2v")) return ["reference", "video"];
   if (model.includes("-i2v")) return ["image"];
   if (model.includes("-r2v")) return ["reference"];
   if (model.includes("video-edit")) return ["video"];
@@ -100,7 +106,7 @@ function routesOf(model: string): readonly VideoRoute[] {
 
 /** The `media[].type` a canonical `video` input lands in, per model. */
 function videoMediaType(model: string): AlibabaVideoMediaType {
-  if (model === "wan3.0-video") return "reference_video";
+  if (WAN3_MODELS.has(model) || model.startsWith("wan2.7-r2v")) return "reference_video";
   if (model.includes("video-edit")) return "video";
   return "first_clip";
 }

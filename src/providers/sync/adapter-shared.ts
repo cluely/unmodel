@@ -35,7 +35,7 @@ export const ASSET_UPLOAD_HINT =
  * row, and half of sync.'s extras (`segments`, `dubParams`, `outputFileName`,
  * `webhookUrl`, `projectId`) are body-root fields while the other half are not.
  *
- * They are declared FLAT on the rows because that is how the same six dials are
+ * They are declared FLAT on the rows because that is how the same dials are
  * spelled at fal, which resells these very models with sync.'s `options`
  * flattened into its own schema. Agreeing on the name is what makes the two
  * routes to one model comparable.
@@ -46,5 +46,6 @@ export const OPTION_EXTRAS: Readonly<Record<string, readonly string[]>> = {
   prompt: ["options"],
   temperature: ["options"],
   occlusion_detection_enabled: ["options"],
+  reasoning_enabled: ["options"],
   active_speaker_detection: ["options"],
 };

@@ -47,13 +47,25 @@ export type {
   LucidRealismBody,
   PhoenixV1Body,
   PhoenixV09Body,
+  KinoXlBody,
+  AnimeXlBody,
+  PortraitPerfectBody,
+  StockPhotographyBody,
+  IllustrativeAlbedoBody,
+  ConceptArtBody,
+  LifelikeVisionBody,
+  GraphicDesignBody,
+  LightningXlBody,
   UnknownLeonardoModelBody,
   LeonardoLucidParameters,
   LeonardoPhoenixParameters,
+  LeonardoElementsParameters,
   LeonardoImageReference,
   LeonardoStyleGuidance,
   LeonardoContentGuidance,
+  LeonardoGuidance,
   LeonardoImageToImageGuidance,
+  LeonardoElement,
 } from "./image";
 
 export type {
@@ -64,6 +76,7 @@ export type {
   LeonardoContrast,
   LeonardoImageType,
   LeonardoStyleStrength,
+  LeonardoContentStrength,
   LeonardoGuidanceStrength,
 } from "./model-rules";
 

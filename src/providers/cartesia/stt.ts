@@ -1,7 +1,7 @@
 /**
  * Cartesia Batch Speech-to-Text (Ink) — POST https://api.cartesia.ai/stt
  *
- * Wire reference: https://docs.cartesia.ai/api-reference/stt/transcribe
+ * Wire reference: https://docs.cartesia.ai/2026-03-01/api-reference/stt/transcribe
  * (Cartesia-Version 2026-03-01, verified 2026-08-13). This endpoint is
  * multipart/form-data, not JSON: the params object holds the form fields
  * (with `file` as a Blob/File, or a string you resolve yourself), the
@@ -15,9 +15,10 @@
  * params object uses the bracket-less key `timestamp_granularities` and
  * `toFormData` appends each element under the bracketed name.
  *
- * The realtime STT WebSocket endpoints (wss:///stt/websocket and the
- * turn-detection variant), which are the only route to the `ink-2` model,
- * are not validated by unmodel.
+ * The realtime STT WebSocket (wss:///stt/websocket), the only route to the
+ * `ink-2` model, is validated by ./stt-websocket (`sttWebsocket`, the session
+ * config). Its turn-detection sibling (wss:///stt/turns/websocket) is not
+ * validated by unmodel.
  *
  * BREAKING (type-level only): `SttTranscribeParams.language` is closed to
  * {@link CartesiaSttLanguage} — it is re-exported from ../cartesia and no
@@ -44,7 +45,7 @@ export { CARTESIA_STT_LANGUAGES } from "./models";
 
 export const STT_TRANSCRIBE_URL = "https://api.cartesia.ai/stt";
 
-const STT_TRANSCRIBE_DOCS = "https://docs.cartesia.ai/api-reference/stt/transcribe";
+const STT_TRANSCRIBE_DOCS = "https://docs.cartesia.ai/2026-03-01/api-reference/stt/transcribe";
 
 // ---------------------------------------------------------------------------
 // Params — multipart form fields of POST /stt.
@@ -119,7 +120,7 @@ function checkBatchModel(
     code: "invalid_enum_value",
     path: ["model"],
     model,
-    message: `\`model\` must be "ink-whisper" for batch transcription (POST /stt); got ${JSON.stringify(model)}. Realtime-only models such as "ink-2" require the STT WebSocket endpoint, which unmodel does not validate.`,
+    message: `\`model\` must be "ink-whisper" for batch transcription (POST /stt); got ${JSON.stringify(model)}. Realtime-only models such as "ink-2" are served on wss://api.cartesia.ai/stt/websocket; validate that WebSocket session config with \`cartesia.sttWebsocket\`.`,
     meta: { allowed: ["ink-whisper"], value: model, source: STT_TRANSCRIBE_DOCS },
   });
 }
@@ -127,7 +128,7 @@ function checkBatchModel(
 const STT_LANGUAGE_SET = new Set<string>(CARTESIA_STT_LANGUAGES);
 
 /**
- * `language` is a closed 75-value enum in the transcribe reference; the SDK
+ * `language` is a closed 100-value enum in the transcribe reference; the SDK
  * types it as a bare string, so an unsupported code only fails at request
  * time.
  */
@@ -252,13 +253,14 @@ const validator = createValidator<
  * send `toFormData(validated)` as the fetch body instead. `.toSdk("cartesia")`
  * returns the params unchanged (note: `@cartesia/cartesia-js` passes the
  * file as a separate positional argument — re-shape at the call site if you
- * use the SDK). Auth is your job: add an `X-API-Key` header.
+ * use the SDK). Auth is your job: add an `Authorization: Bearer <api_key>`
+ * header.
  *
  * ```ts
  * const params = cartesia.stt({ file, model: "ink-whisper" });
  * await fetch(params.request.url, {
  *   method: params.request.method,
- *   headers: { ...params.request.headers, "X-API-Key": process.env.CARTESIA_API_KEY! },
+ *   headers: { ...params.request.headers, Authorization: `Bearer ${process.env.CARTESIA_API_KEY}` },
  *   body: toFormData(params),
  * });
  * ```

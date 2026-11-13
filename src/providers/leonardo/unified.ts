@@ -63,19 +63,26 @@
  * image of the mistake. It is documented here because it is the one thing about
  * this endpoint that surprises people, and it costs money.
  *
- * # Negative prompt is Phoenix-only, so it is a compile-time decision
+ * # Negative prompt depends on the model, so it is a compile-time decision
  *
- * `negative_prompt` (with a 1000-character cap) is in `PHOENIX_PARAMETERS` and
- * not in `LUCID_PARAMETERS`, and `checkParameters` reports a Lucid request
- * carrying it as `unsupported_param` — "it belongs to another model on this
- * endpoint". Because the answer depends on the model, it cannot go in
- * `unsupported` (which is model-blind); it is a `ctx.fail` naming the two
- * Phoenix ids that can serve it.
+ * `negative_prompt` (with a 1000-character cap) is in the Phoenix and Elements
+ * parameter lists and not in `LUCID_PARAMETERS`, and `checkParameters` warns
+ * on a Lucid request carrying it as `unsupported_param` — "it belongs to other
+ * models on this endpoint" (a warning, because the published schema leaves
+ * `parameters` open and the API may ignore the key). Here it is a refusal
+ * either way: a canonical field that cannot be delivered is a typed gap.
+ * Because the answer depends on the model, it cannot go in `unsupported`
+ * (which is model-blind); it is a `ctx.fail` naming every tabled id that can
+ * serve it.
  *
- * `seed` is a plain nested pass-through. `outputFormat` and `outputDelivery`
- * have no field anywhere on this endpoint — the POST returns a generation id
- * and you fetch the images from `GET /v2/generations/{id}` or a webhook — so
- * both are declared gaps.
+ * `seed` is a plain nested pass-through. `outputFormat` has no field on any
+ * tabled model's `parameters` — Leonardo picks the encoding — though some
+ * third-party arms on the endpoint carry `output_format` / `format`, which a
+ * caller reaches through `providerOptions.leonardo.parameters`.
+ * `outputDelivery` has no field anywhere on the endpoint: the POST returns a
+ * generation id and you fetch the images from the v1
+ * `GET https://cloud.leonardo.ai/api/rest/v1/generations/{id}` or a webhook.
+ * So both are declared gaps.
  */
 import {
   applyExtras,
@@ -122,11 +129,11 @@ function hasNegativePrompt(model: string): boolean {
  * `parameters` — the loose arm of Leonardo's per-model parameter objects.
  *
  * Loose because it is only ever the *compiled* subset: `mode`, `style_ids`,
- * `guidances` and the Phoenix extras are reachable through `providerOptions`
- * and are checked, per model, by `checkParameters`.
+ * `guidances` and the Phoenix and Elements extras are reachable through
+ * `providerOptions` and are checked, per model, by `checkParameters`.
  */
 export interface LeonardoImageWireParameters {
-  /** REQUIRED on every documented arm. */
+  /** Required on every tabled arm; always compiled from the canonical `prompt`. */
   prompt: string;
   /** Multiple of 8, within the model's own bounds. */
   width?: number;
@@ -135,7 +142,7 @@ export interface LeonardoImageWireParameters {
   /** 1–8. Leonardo's own default is 4. */
   quantity?: number;
   seed?: number;
-  /** Phoenix only; ≤ 1000 characters. */
+  /** Phoenix and Elements only; ≤ 1000 characters. */
   negative_prompt?: string;
   [key: string]: unknown;
 }
@@ -165,13 +172,17 @@ export const image = {
   modelParams: LEONARDO_IMAGE_MODEL_PARAMS,
   unsupported: {
     outputFormat:
-      "POST /v2/generations has no output-format field on any model's `parameters` schema — " +
-      "the encoding of a finished generation is Leonardo's to choose and is reported back on " +
-      "`GET /v2/generations/{id}`, so a format could only be dropped.",
+      "None of the tabled Leonardo image models (Lucid, Phoenix, kino-xl … lightning-xl) has an " +
+      "output-format field in its `parameters` schema on POST /v2/generations — Leonardo picks " +
+      "the encoding of a finished generation. Some third-party arms on the same endpoint do: " +
+      "seedream-5.0-pro and bytedance/seedream-5.0-flash take `output_format` (jpeg | png) and " +
+      "remove-bg takes `format` (png | jpg | webp). Set theirs through " +
+      "`providerOptions.leonardo.parameters`.",
     outputDelivery:
       "POST /v2/generations is an async-job API: it answers with a generation id, and the " +
-      "images come back from `GET /v2/generations/{id}` or a webhook callback. There is no " +
-      "delivery to choose — both of those are transport rather than request params.",
+      "images come back from the v1 `GET https://cloud.leonardo.ai/api/rest/v1/generations/{id}` " +
+      "or a webhook callback. There is no delivery to choose — both of those are transport " +
+      "rather than request params.",
   },
   compile(
     input: ImageParams,
@@ -243,15 +254,15 @@ export const image = {
       if (hasNegativePrompt(ctx.model)) {
         parameters.negative_prompt = input.negativePrompt;
       } else {
+        const takers = MODELS.filter(hasNegativePrompt);
         ctx.fail({
           code: "unsupported_param",
           path: ["negativePrompt"],
           message:
-            "`negative_prompt` is part of the Phoenix `parameters` schema only; " +
-            `"${ctx.model}" does not accept it (the API answers with a schema error, not a ` +
-            "silent ignore). Use leonardo/phoenix-v1.0 or leonardo/phoenix-v0.9, or describe " +
-            "what to avoid inside `prompt`.",
-          meta: { value: input.negativePrompt, source: LEONARDO_DOCS_URL },
+            `\`negative_prompt\` is not part of "${ctx.model}"'s \`parameters\` schema. Use one of ` +
+            `${takers.map((id) => `leonardo/${id}`).join(", ")}, or describe what to avoid ` +
+            "inside `prompt`.",
+          meta: { value: input.negativePrompt, models: takers, source: LEONARDO_DOCS_URL },
         });
       }
     }

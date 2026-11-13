@@ -81,7 +81,7 @@ const CASES: readonly Case[] = [
     extras: { contentModeration: { publicFigureThreshold: "low" } },
   },
   { ref: "kling/kling-v3", extras: { image_fidelity: 0.5, image_reference: "face" } },
-  { ref: "bria/FIBO", extras: { steps_num: 40, ip_signal: true } },
+  { ref: "bria/FIBO", extras: { steps_num: 40, ip_signal: true, style: "kodak_film" } },
   { ref: "leonardo/lucid-origin", extras: { prompt_enhance: "ON" }, at: ["parameters"] },
   {
     ref: "krea/krea-2/medium",
@@ -163,6 +163,7 @@ describe("an extra on a model that does not take it is refused", () => {
       ["kling/kling-image-o1", { image_fidelity: 0.5 }, "kling-v3"],
       ["bytedance/seedream-4-0-250828", { background: "transparent" }, "dola-seedream-5-0-pro"],
       ["bria/FIBO-lite", { steps_num: 40 }, "FIBO"],
+      ["bria/FIBO-lite", { style: "kodak_film" }, "FIBO"],
       ["leonardo/lucid-origin", { contrast: "HIGH" }, "phoenix-v1.0"],
       ["runway/gen4_image", { grounding: true }, "seedream5_pro"],
       ["reve/reve-v2-create", { test_time_scaling: 2 }, "reve-create@20250915"],
@@ -217,9 +218,9 @@ describe("the provider's own checks still run over an extra", () => {
     expect(result.errors[0]!.message).not.toContain("compiled from");
   });
 
-  test("and gpt-image-1 accepts it, because that model does", () => {
+  test("and gpt-image-1.5 accepts it, because that model does", () => {
     const result = image.safe({
-      model: "openai/gpt-image-1",
+      model: "openai/gpt-image-1.5",
       prompt: PROMPT,
       background: "transparent",
     } as never);
@@ -281,21 +282,40 @@ describe("unmodel/image-edit carries the same contract", () => {
     expect(result.params).toMatchObject({ background: "transparent", input_fidelity: "high" });
   });
 
-  test("`input_fidelity` is refused on the two models that reject it", () => {
-    for (const ref of ["openai/gpt-image-1-mini", "openai/gpt-image-2"]) {
-      const result = imageEdit.safe({
-        operation: "edit",
-        model: ref,
-        prompt: PROMPT,
-        image: { file: file() },
-        input_fidelity: "high",
-      } as never);
-      expect(result.ok, ref).toBe(false);
-      if (result.ok) continue;
-      expect(result.errors[0], ref).toMatchObject({
-        code: "unsupported_param",
-        path: ["input_fidelity"],
-      });
+  test("`input_fidelity` is refused on gpt-image-2 and narrowed to low on gpt-image-1-mini", () => {
+    // gpt-image-2 "processes every image input at high fidelity automatically"
+    // and rejects the param; gpt-image-1-mini "supports only `low`"
+    // (createEdit reference, 2026-11-12) — a value refusal, not a param one.
+    const fixedHigh = imageEdit.safe({
+      operation: "edit",
+      model: "openai/gpt-image-2",
+      prompt: PROMPT,
+      image: { file: file() },
+      input_fidelity: "high",
+    } as never);
+    expect(fixedHigh.ok).toBe(false);
+    if (!fixedHigh.ok) {
+      expect(fixedHigh.errors[0]).toMatchObject({ code: "unsupported_param", path: ["input_fidelity"] });
+    }
+
+    const miniLow = imageEdit.safe({
+      operation: "edit",
+      model: "openai/gpt-image-1-mini",
+      prompt: PROMPT,
+      image: { file: file() },
+      input_fidelity: "low",
+    } as never);
+    expect(miniLow.ok, miniLow.ok ? "" : JSON.stringify(miniLow.errors)).toBe(true);
+    const miniHigh = imageEdit.safe({
+      operation: "edit",
+      model: "openai/gpt-image-1-mini",
+      prompt: PROMPT,
+      image: { file: file() },
+      input_fidelity: "high",
+    } as never);
+    expect(miniHigh.ok).toBe(false);
+    if (!miniHigh.ok) {
+      expect(miniHigh.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["input_fidelity"] });
     }
   });
 

@@ -65,7 +65,7 @@ function splitProviders(): ReadonlySet<string> {
  * | anthropic | the flagship cross-dialect path: encoder + the openai-chat codec |
  * | groq | the leanest chat overlay — the floor everything else is measured against |
  * | google | gemini codec + the largest hand-written constraint tables |
- * | deepinfra | a fleet overlay that now pays for the gemini codec (`.toApi("google")`) |
+ * | deepinfra | a fleet overlay that pays for two codecs (`.toApi("google")`, `.toApi("anthropic")`) |
  * | openrouter | the ceiling: 2 codecs + the largest generated catalog and table |
  * | vercel | same shape as openrouter, second-largest catalog |
  *
@@ -116,8 +116,13 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * anthropic is the smallest of the three bumps (+2.2) because it pays only
    * for its own decoder plus the openai-chat codec it already carried; the
    * openai-dialect fleet pays ~+2.9, and the two-codec entries ~+4.5.
+   *
+   * 165 → 185: 169.9 measured (macOS, 2026-11-12) for the Claude 5.5 /
+   * Fable 5.2 wave — the per-model id lists in `constraints.ts` and the
+   * between_tools / speed / prefill / computer-use / prompt-length-tier checks
+   * they drive in `chat.ts` and `check.ts`.
    */
-  anthropic: 165,
+  anthropic: 185,
   /**
    * Bumped 125 → 138 (125.9 measured) when `core/standard-schema.ts` joined
    * the four-layer engine: the pipeline's layer 1 now consumes any Standard
@@ -125,21 +130,55 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * the one adapter ride in every pipeline-bearing graph (~1 KiB). groq was
    * already within a kilobyte of its pin, so the seam is what tipped it, not
    * what filled it.
+   *
+   * Bumped 138 → 152 at the 2026-11-12 model wave (138.5 measured): the shared
+   * Chat Completions battery every overlay carries grew (the sampling and
+   * image-locator slots, the role schemas, the per-model effort ladders) and
+   * groq added its Whisper route signpost on `groq.chat`. No module joined.
    */
-  groq: 138,
-  google: 345, // 313.8 measured after the Lyria music surface (2026-08-24); same ~10% headroom.
-  /** Bumped 190 → 210: 191.8 measured, +4.4 for the `detail` mappings (see `anthropic`). */
-  deepinfra: 210,
-  /** Bumped 400 → 440: 401.9 measured, +4.8 for the `detail` mappings (see `anthropic`). */
-  openrouter: 440,
+  groq: 152,
   /**
-   * Bumped 355 → 390: 354.8 measured, +4.8 for the same `detail` mappings.
-   * This one did not fail — it landed 0.2 KiB under its pin — and is moved
+   * Bumped 345 → 385 (348.0 measured, macOS, 2026-11-13). The tree was
+   * already at 343.5 after the 2026-11-12 wave — the Gemini 4 rules and the
+   * 3.8 TTS / 3.5 Transcribe / Lyria 3.5 / Nano Banana 2.1 hand rows — and
+   * the review fixes on top add `google.stt`'s gemini-3.5-transcribe duration
+   * warning, the `tools` gate in `google.chat` (SUPPORTED_BUILTIN_TOOLS where a page documents the built-ins, functionDeclarations elsewhere),
+   * and their quoted provenance (comments ship in the unminified chunks). No
+   * new module joined the graph. (313.8 after the Lyria music surface,
+   * 2026-08-24.)
+   */
+  google: 385,
+  /**
+   * Bumped 210 → 255 at the 2026-11-12 refresh: 232.1 measured. 211.9 of it is
+   * the old graph plus catalog growth; the other +20.2 is the anthropic codec,
+   * which the entry now owes because DeepInfra started serving
+   * `anthropic/claude-fable-5` and the generated availability table promises
+   * `.toApi("anthropic")` for it — the same codec openrouter and vercel carry.
+   * Earlier: 190 → 210, +4.4 for the `detail` mappings (see `anthropic`).
+   */
+  deepinfra: 255,
+  /**
+   * Bumped 400 → 440: 401.9 measured, +4.8 for the `detail` mappings (see `anthropic`).
+   *
+   * 440 → 480 (2026-11-13): 428.2 → 436.4 measured, +8.2 from the anthropic
+   * codec this entry carries for `.toApi("anthropic")` spelling reasoning per
+   * target model (see `CHAT_FACTORY_BUDGET_KIB` for the module breakdown).
+   * It still fit, by 0.8% — a tripwire rather than a budget, for the reason
+   * the `vercel` note gives. 480 is 436.4 × 1.1.
+   */
+  openrouter: 480,
+  /**
+   * Bumped 390 → 450 at the 2026-11-12 refresh: 409.5 measured, all of it the
+   * gateway's own catalog and availability rows (+110 models, −54); no module
+   * joined the graph.
+   *
+   * Earlier: 355 → 390, 354.8 measured, +4.8 for the same `detail` mappings.
+   * That one did not fail — it landed 0.2 KiB under its pin — and was moved
    * anyway, because a budget with 0.06% headroom is a tripwire rather than a
    * budget and the next entry to touch a codec would trip it for a reason that
    * has nothing to do with that entry.
    */
-  vercel: 390,
+  vercel: 450,
   /**
    * fal at 474.9 KiB measured, pinned at 525.
    *
@@ -181,16 +220,26 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * cross-field checks, a four-row hand catalog and a credit table. 46.4 KiB
    * measured — comparable to pixverse and vidu, and for the same reason: a
    * hand-written provider's weight is its prose and its checks, not a roster.
+   * 56.7 measured, 2026-11-12: P2, the texture-version check and its params.
    */
-  tripo3d: 55,
+  tripo3d: 62,
   /**
    * The native sync. provider: two validators on ONE url, a shared module of
    * enums, cross-field checks and two long hand catalogs (62 error codes, 93
    * dubbing languages), and a five-row model table. 62.0 KiB measured — the
    * heaviest hand provider in the tree, and the two catalogs are most of the
    * difference from tripo3d's 46.4.
+   *
+   * 78.9 measured, 2026-11-12: the error catalog grew to 135 codes and the
+   * dubbing enum to 110, and the segments/outputAudio/dialogueEdit checks and
+   * nine more typed options landed — data and checks, no new module.
+   *
+   * 86.4 measured, 2026-11-13 (macOS; the JS walk is platform-stable): the
+   * 101-input / 100-segment ceilings, react-1's speaker-selection and segments
+   * warnings with their two model lists, and the `Idempotency-Key` constants —
+   * checks and their quoted provenance, no new module.
    */
-  sync: 70,
+  sync: 95,
   /**
    * The native Topaz provider: two validators across two routes, a fifteen-row
    * per-model SETTINGS table that Topaz's own OpenAPI document does not
@@ -219,9 +268,11 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * a `cost` — which also keeps `pricing.ts` out of the video PACK entirely
    * (asserted below), since the validator declares no `estimate` to reach it.
    *
-   * 80 is 72.2 × 1.1, the same multiple as every row above.
+   * 89.0 measured, 2026-11-12: eight more per-model surfaces (Veo 3.1 Fast /
+   * Lite, Seedance 2.5 draft-complete, the Wan 3.0 reference routes); 98 is
+   * 89.0 × 1.1, the same multiple as every row above.
    */
-  atlascloud: 80,
+  atlascloud: 98,
   /**
    * `unmodel/revana` — 312.5 KiB measured at landing (macOS; an entry's
    * transitive bytes, which has matched the Linux figure on every row above —
@@ -308,13 +359,21 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * the voice-clone pack: `minimax/tts-check.ts` costs ~3 KiB because it reads
    * the catalog rates and never the validator's zod schema. Importing `./tts`
    * there would have dragged that schema into every graph reaching this barrel.
+   *
+   * **minimax 227 → 250 at the 2026-11-12 model wave (227.0 measured).** The
+   * barrel's own growth: the MiniMax-M3 / M3.1-Flash deny and enum tables and
+   * the three H3 rows on `minimax.videoV2` left it at the edge. The upstage
+   * slice then pushed it over by +0.6 KiB (226.5 → 227.0): the new JSDoc on
+   * `upstage/constraints.ts`, which `retarget/target-constraints.ts` inlines
+   * into the shared target-constraints chunk (unminified ESM ships the prose).
+   * No module joined the graph, and the generated chat-refs table is not in it.
    */
-  pixverse: 64,
+  pixverse: 71, // 64.4 measured, 2026-11-12: v6-max, webhook_id and the image-to-video template arm; ~10% headroom.
   lightricks: 68,
-  "black-forest-labs": 100,
+  "black-forest-labs": 111, // 100.9 measured, 2026-11-13 (97.4 before): the barrel's own growth, no new chunk — outpainting's 4 MP check and seed/webhook deny table, the ultra-finetuned `raw` deny, and their provenance JSDoc; ~10% headroom. macOS figure, flagged for CI confirmation.
   kling: 135,
   elevenlabs: 222,
-  minimax: 227,
+  minimax: 250,
 };
 
 /**
@@ -356,17 +415,35 @@ const MEDIA_RETARGET_MODULES = [
  * identically on macOS and on a linux/amd64 build, so this row is not one of
  * the platform-sensitive chunk pins (see the lipsync note below).
  *
+ * **Bumped 2040 → 2250 at the 2026-11-12 model wave**: 2043.4 KiB measured once
+ * the review fixes landed on the wave's catalogs — the per-model chat rules
+ * (GPT-6, Claude 5.5 / Fable 5.2, Gemini 4, Kimi K3/K3.1, GLM 5.3, Mistral
+ * Large 4, MiniMax M3.1, Muse), deepseek's and minimax's own wire leaves, and
+ * the per-target effort ladders `encodeChat` now reads. The catalogs and
+ * availability tables carry the rest. The chat graph's module enumeration
+ * names every module that joined.
+ *
  * Applications that need a narrow graph use `unmodel/chat/factory` below.
  */
-const CHAT_BUDGET_KIB = 2040;
+const CHAT_BUDGET_KIB = 2250;
 
 /**
  * Provider-free compiler/factory entry; 150.2 KiB measured, pinned at 158.
  * Bumped 150 → 158 when `core/standard-schema.ts` joined the engine (the
  * Standard Schema seam — see the groq note in BUDGET_KIB above); the entry
  * was at ~144 with ~4% headroom before the wave-1c growth plus the seam.
+ *
+ * **158 → 181** (2026-11-13): 155.7 → 164.2 KiB measured (macOS; JS chunks,
+ * not the platform-sensitive declaration ones), when the anthropic codec
+ * started spelling reasoning per target model. Module by module: +3.3
+ * `anthropic/model-ids.ts` (the Claude 4.7+ and Sonnet 5.5 id lists with
+ * their provenance, moved out of `constraints.ts`), +3.9 `anthropic/interop.ts`
+ * (budget → adaptive + effort, "off" → `between_tools`, mid-conversation
+ * system text hoisted rather than dropped), +0.9 `core/translate/ir.ts` (the
+ * shared budget → effort table both codecs now call), +0.3 `chat/encode.ts`.
+ * 181 is 164.2 × 1.1.
  */
-const CHAT_FACTORY_BUDGET_KIB = 158;
+const CHAT_FACTORY_BUDGET_KIB = 181;
 
 /**
  * `dist/chat/index.d.ts` on its own — declarations, not chunks.
@@ -377,8 +454,13 @@ const CHAT_FACTORY_BUDGET_KIB = 158;
  * `ChatValidator<ChatProviderValidatorRegistry>` — without the annotation
  * `const`-inference emits the whole 33-provider registry expansion twice, and
  * the second copy was 48% of the file. 455.0 KiB measured.
+ *
+ * 500.7 KiB measured, 2026-11-12: the google-vertex slice of that day's
+ * snapshot adds a google-vertex target to rows other providers' availability
+ * types carry inline here (glm-5.2, gemma-4-26b, gemini-4-*, grok-4.x); data,
+ * not code.
  */
-const CHAT_DECLARATION_BUDGET_KIB = 500;
+const CHAT_DECLARATION_BUDGET_KIB = 550;
 
 /**
  * `dist/catalog/index.d.ts` on its own, for the reason above and one specific
@@ -399,12 +481,13 @@ const CATALOG_DECLARATION_BUDGET_KIB = 8;
 
 /**
  * …and the opt-in entry's own ceiling, so the heavy half cannot grow unnoticed
- * either. 4498.2 KiB measured; 4950 leaves ~10% for catalog growth (the
+ * either. 5650.5 KiB measured; 6200 leaves ~10% for catalog growth (the
  * snapshot gains providers between releases, and each one lands here — the
- * refresh that took this past 4200 added 28 of them at once). Measured
- * identically on macOS and on a linux/amd64 build.
+ * refresh that took this past 4200 added 28 of them at once, and the
+ * 2026-11-12 one that took it past 4950 added another 28 while dropping 5).
+ * Measured identically on macOS and on a linux/amd64 build.
  */
-const TYPED_CATALOG_DECLARATION_BUDGET_KIB = 4950;
+const TYPED_CATALOG_DECLARATION_BUDGET_KIB = 6200;
 
 /**
  * Every category entry. All six ship a ready-made pack now, so each has its own
@@ -453,9 +536,10 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * the headroom is one small provider. Two accounting notes from the landing
  * measurement, both cuts rather than additions:
  *
- * - `inworld/audio-bytes.ts` exists because this pack's 4MB sample check
- *   needs `decodedBase64Bytes`, which lived inside `inworld/stt.ts` — a
- *   ~30 KiB transcription validator this pack has no other reason to carry.
+ * - `inworld/audio-bytes.ts` exists because this pack's per-sample byte cap
+ *   check (`VOICE_CLONE_MAX_SAMPLE_BYTES`) needs `decodedBase64Bytes`, which
+ *   lived inside `inworld/stt.ts` — a ~30 KiB transcription validator this
+ *   pack has no other reason to carry.
  *   The helper moved to an import-free leaf; measured, the move took the pack
  *   240.9 → 208.7.
  * - `minimax/tts.ts` was in this graph for one array (`T2A_LANGUAGE_BOOSTS`,
@@ -473,8 +557,16 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * asked for one anyway, and `core/unified/derive.ts` is in every media pack's
  * graph. 220.9 measured, which is the tightest headroom in this file and the
  * reason the pin moves rather than the code; 232 is measured x 1.05.
+ *
+ * Bumped 232 → 244 by the fish-audio visibility fix: `fish-audio/voice-clone.ts`
+ * gained the check that warns an explicit `visibility: "public"` is downgraded
+ * to private, and its cover-image check became a warning whose message says
+ * why. 230.7 → 232.4 measured, most of it the provenance those checks carry
+ * (JSDoc survives into dist). Measured on macOS; the JS figures in this file
+ * have proven platform-stable, so confirm against the Linux run. 244 is
+ * measured x 1.05.
  */
-const VOICE_CLONE_PACK_BUDGET_KIB = 232;
+const VOICE_CLONE_PACK_BUDGET_KIB = 244;
 
 /**
  * `unmodel/voice-design`'s budget: the kernel plus four design providers.
@@ -500,7 +592,7 @@ const VOICE_DESIGN_PACK_BUDGET_KIB = 200;
  * above. It is roughly twice what a "150–200 KiB" back-of-envelope suggested,
  * and the reason is worth writing down rather than rounding away: the fourteen
  * speech endpoints are validator-heavy rather than catalog-heavy (Deepgram
- * alone carries 105 Aura voices as catalog rows, and OpenAI's speech
+ * alone carries 102 Aura voices as catalog rows, and OpenAI's speech
  * constraints ride in the same 617-line table as its images and chat ones), so
  * the weight is code, not data. A caller who wants two providers builds their
  * own pack with `createTts([…])` and pays 40–60 KiB.
@@ -566,6 +658,10 @@ const VOICE_DESIGN_PACK_BUDGET_KIB = 200;
  * `kernel.ts` so `unmodel/values` could publish it without the kernel's chunk —
  * is +0.1 net against the kernel's own shrink.
  *
+ * **Bumped 850 → 940 at the 2026-11-12 model wave**: 852.2 KiB measured when
+ * breezeblue's multilingual arm landed on top of the wave's other TTS rows
+ * (stepfun StepAudio 3, the Gemini 3.8 TTS hand rows, alibaba's retirements
+ * and re-routing). Rows and their per-model gates, no new edge into the pack.
  * **Bumped 850 → 980 by revana**, measured 889.0 KiB (macOS), up from 825.0, of
  * which the new provider is 62.1 — read off the `//#region
  * src/providers/revana/*` blocks in this pack's own chunks. Four models, and
@@ -578,8 +674,12 @@ const VOICE_DESIGN_PACK_BUDGET_KIB = 200;
  *
  * The pin had 3% of headroom left before this wave (825.0 against 850), so 980
  * is the measurement x 1.1 restored rather than the delta added on.
+ *
+ * **Bumped to 1115 where the two land together** (2026-11-13 merge): 1014.2 KiB
+ * measured on macOS with revana's speech slice on top of the model wave's rows
+ * — both causes above, in one tree. 1115 is that × 1.1.
  */
-const TTS_PACK_BUDGET_KIB = 980;
+const TTS_PACK_BUDGET_KIB = 1115;
 
 /**
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
@@ -647,6 +747,14 @@ const TTS_PACK_BUDGET_KIB = 980;
  * providers should not pay for a queue in front of a thousand models. Pinned
  * at 1050, the usual ~10% over the measurement.
  *
+ * **Bumped 1160 → 1280 at the 2026-11-12 model wave**: 1163.9 KiB measured
+ * when recraft's sixteen rows landed on the wave's other image rows (OpenAI
+ * GPT-Image-2.5/2.6, the FLUX.2 [klein] `-finetuned` routes, Seedream 5.5 /
+ * 5.0 flash, Leonardo's Elements models). Catalog rows and their per-model
+ * gates; no module joined the pack.
+ *
+ * Runway's text_to_image arms then grew from 9 to 23 (their ratio enums, deny
+ * lists and rule tables): 1242.0 measured with everything, under the 1280 pin.
  * **Bumped 1160 → 1305 by revana**, measured 1185.0 KiB (macOS), up from 1087.6,
  * of which the new provider is 95.2 — read off the `//#region
  * src/providers/revana/*` blocks in this pack's own chunks. Thirteen modules,
@@ -661,8 +769,13 @@ const TTS_PACK_BUDGET_KIB = 980;
  * Fifty-six refs for 95 KiB against fal's twenty-eight for 172: Revana's rows
  * narrow one body rather than each carrying a wire interface. 1305 is the
  * measurement x 1.1.
+ *
+ * **Bumped to 1520 where the two land together** (2026-11-13 merge): 1383.3 KiB
+ * measured on macOS with revana's picture slice on top of the model wave's
+ * rows and runway's grown arms — both causes above, in one tree. 1520 is
+ * that × 1.1.
  */
-const IMAGE_PACK_BUDGET_KIB = 1305;
+const IMAGE_PACK_BUDGET_KIB = 1520;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -733,6 +846,12 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  *
  * 1170 restores ~10% headroom, the same multiple every row in this file uses.
  *
+ * **Bumped 1170 → 1335 at the 2026-11-12 model wave**: 1212.6 KiB measured
+ * once runway's 29 models landed (Kling 2.5–4.0, WAN 3.0, H3 Max, Gemini Omni
+ * and Grok Imagine Lite arms across `video` / `videoFromImage` /
+ * `videoFromVideo`, with their duration/ratio tables) on top of Kling 4.0,
+ * MiniMax H3, Vidu Q4, PixVerse v6-max and Atlas's Veo 3.1 rows. Hand rows
+ * and their gates; no module joined the pack.
  * **Bumped 1170 → 1305 by revana**, measured 1186.0 KiB (macOS), up from 1066.1,
  * of which the new provider is 117.9 — read off the `//#region
  * src/providers/revana/*` blocks in this pack's own chunks, as above. Thirteen
@@ -754,8 +873,12 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  * rows — at a third of fal's cost per model, because Revana has one body for
  * every model and its rows narrow that body instead of each carrying a wire
  * interface. 1305 is the measurement × 1.1.
+ *
+ * **Bumped to 1525 where the two land together** (2026-11-13 merge): 1387.4 KiB
+ * measured on macOS with revana's video slice on top of the model wave's rows
+ * — both causes above, in one tree. 1525 is that × 1.1.
  */
-const VIDEO_PACK_BUDGET_KIB = 1305;
+const VIDEO_PACK_BUDGET_KIB = 1525;
 
 /**
  * The two generated catalogs this pack legitimately reaches.
@@ -857,8 +980,14 @@ const IMAGE_PACK_PROVIDERS: string[] = [
  * to be only because they carry a documented correction (32k context against
  * models.dev's 8192). `mistral.gen.ts` is here for the mirror-image reason: it
  * is supplemented, not replaced.
+ *
+ * **Bumped 715 → 790 at the 2026-11-12 model wave**: 722.4 KiB measured once
+ * google's slice landed. google.gen.ts itself shrank (22.4 → 22.1 KB); the
+ * growth is code — the import-free `google/thinking-constraints.ts` leaf the
+ * shared battery now enforces on `google.stt`, the Gemini 4 rules, and the
+ * `gemini-3.5-transcribe` curation.
  */
-const STT_PACK_BUDGET_KIB = 715;
+const STT_PACK_BUDGET_KIB = 790;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -866,8 +995,8 @@ const STT_PACK_BUDGET_KIB = 715;
  * Both are load-bearing rather than leaked:
  *
  * - `mistral/audio-models.ts` supplements `src/catalog/mistral.gen.ts`, which
- *   carries only the `voxtral-*-latest` aliases and none of the dated
- *   transcription ids or the per-minute rates;
+ *   carries the `voxtral-*-latest` aliases and `voxtral-small-2507` but none of
+ *   the transcribe-only dated ids or the per-minute rates;
  * - `google/stt.ts` reads `src/catalog/google.gen.ts` **directly** — the one
  *   endpoint in the audio packs that does. It is the choice the STT budget's
  *   note above argues: thirteen curated ids with nothing to doc-correct, whose
@@ -1123,6 +1252,16 @@ const TTS_PACK_PROVIDERS: string[] = [
  * renders, and 17 catalog rows — and this pack more than triples its model
  * count to get them. Pinned at 470, the usual ~10% over the measurement.
  *
+ * 546.7 measured, 2026-11-12: six GPT-Image-2.5 / 2.6 Sunburst-Flare arms,
+ * constraint rows, hand catalog rows and the gif/svg/markup pairing checks on
+ * `openai.imageEdit`. Pinned at 600, ~10% over.
+ *
+ * Then the black-forest-labs FLUX.2 [klein] `-finetuned` catalog rows and deny
+ * entries, reached through the shared BFL models/image chunk: 551.5 measured
+ * with both, still under the 600 pin.
+ *
+ * Recraft's 16 new catalog rows (V4.1 Flash, V4 Styles, the `_raster`
+ * aliases) and 7 alias edit rows add to it, still under the 600 pin.
  * **Bumped 530 → 685 by revana**, measured 621.1 KiB (macOS), up from 526.5,
  * of which the new provider is 92.0 — read off the `//#region
  * src/providers/revana/*` blocks in this pack's own chunks. It is very nearly
@@ -1136,8 +1275,12 @@ const TTS_PACK_PROVIDERS: string[] = [
  *
  * Forty-six refs join for those 92 KiB, more than the other five providers
  * serve between them. 685 is the measurement x 1.1.
+ *
+ * **Bumped to 755 where the two land together** (2026-11-13 merge): 684.3 KiB
+ * measured on macOS — revana's picture slice on top of the wave's GPT-Image,
+ * FLUX.2 and Recraft rows, 0.7 KiB under revana's own pin. 755 is that × 1.1.
  */
-const IMAGE_EDIT_PACK_BUDGET_KIB = 685;
+const IMAGE_EDIT_PACK_BUDGET_KIB = 755;
 
 /**
  * The one generated catalog this pack legitimately reaches.
@@ -1210,6 +1353,10 @@ const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
 // of the delta and the schema is most of HeyGen — which is the shape of the
 // thing this pack is for.
 //
+// **Bumped 445 → 490 at the 2026-11-12 model wave**, 445.8 KiB measured: sync's
+// error catalog (62 → 135 codes) and dubbing enum (93 → 110) — the same DATA
+// described above — on top of heygen's and veed's corrections. No new module.
+//
 // **Bumped 445 → 585 by revana**, measured 528.8 KiB (macOS), up from 426.1, of
 // which the new provider is 100.3 — read off the `//#region
 // src/providers/revana/*` blocks in this pack's own chunks. ONE model
@@ -1221,7 +1368,11 @@ const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
 // (19.0), their shape rows (19.4) and listed prices (8.2) — plus the id lists
 // (6.5) and 18.4 of estimate, schema, route and shared derivations. 585 is the
 // measurement x 1.1.
-const LIPSYNC_PACK_BUDGET_KIB = 585;
+//
+// **Bumped to 635 where the two land together** (2026-11-13 merge): 574.8 KiB
+// measured on macOS — revana's video slice on top of sync's grown catalogs.
+// 635 is that x 1.1.
+const LIPSYNC_PACK_BUDGET_KIB = 635;
 
 /** The five providers `unmodel/lipsync`'s ready-made pack is allowed to reach. */
 const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "revana", "sync", "veed"];
@@ -1255,6 +1406,11 @@ const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "revana", "sync", "ve
 // leaf apiece. If the avatar pack ever picked up HeyGen's lipsync rows, this
 // is the number that would move.
 //
+// **Bumped 445 → 490 by the sync. review fixes**, 446.3 KiB measured (441.8
+// before; the lipsync twin 456.4 against its own 490): sync.'s `shared.ts`,
+// which both packs reach, gained the input ceiling, the react-1 gate lists and
+// the `Idempotency-Key` constants. No new module.
+//
 // **Bumped 445 → 585 by revana**, measured 531.2 KiB (macOS), up from 427.5, of
 // which the new provider is 101.2. It stays within 2% of its lipsync twin and
 // for the reason it always has, one step further: the two packs now reach the
@@ -1264,7 +1420,11 @@ const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "revana", "sync", "ve
 // adapter leaf (2.2 against 1.6), one address (1.4 against 1.3) and one
 // generated row table (0.8 against 0.6) apiece: four performance models here,
 // one there.
-const AVATAR_PACK_BUDGET_KIB = 585;
+//
+// **Bumped to 625 where the two land together** (2026-11-13 merge): 565.8 KiB
+// measured on macOS — revana's video slice on top of sync's review fixes;
+// still within 2% of the lipsync twin (574.8). 625 is that x 1.1.
+const AVATAR_PACK_BUDGET_KIB = 625;
 
 /** The five providers `unmodel/avatar`'s ready-made pack is allowed to reach. */
 const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "revana", "sync", "veed"];
@@ -1290,6 +1450,13 @@ const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "revana", "sync", "vee
  * than only fal's resale of three of its endpoints, so the kilobytes are the
  * feature.
  *
+ * **Bumped 375 → 415 at the 2026-11 Topaz review fixes**, measured 378.2 KiB
+ * on macOS against 374.7 before them, which had left 0.3 KiB of headroom. The
+ * +3.5 is provenance: a dated page quote beside every megapixel ceiling and
+ * every generative settings row, the `Recover 3` strength check and the
+ * `Redefine` creativity narrowing. 415 is measured × ~1.1, the usual slack.
+ * Flagged for CI confirmation; JS pins in this file have proven
+ * platform-stable, and if the Linux figure differs, re-pin from it.
  * **Bumped 375 → 505 by revana**, measured 458.2 KiB (macOS), up from 368.8,
  * of which the new provider is 86.8 — read off the `//#region
  * src/providers/revana/*` blocks in this pack's own chunks. That is a great
@@ -1305,8 +1472,12 @@ const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "revana", "sync", "vee
  * The same shape recurs at every one-model revana pack (`lipsync`, `music`),
  * and it is the number that would move if a view carried only its own rows.
  * 505 is the measurement x 1.1.
+ *
+ * **Bumped to 535 where the two land together** (2026-11-13 merge): 482.9 KiB
+ * measured on macOS — revana's picture slice on top of the Topaz review
+ * fixes' provenance. 535 is that × 1.1.
  */
-const UPSCALE_PACK_BUDGET_KIB = 505;
+const UPSCALE_PACK_BUDGET_KIB = 535;
 
 /** The three providers `unmodel/upscale`'s ready-made pack is allowed to reach. */
 const UPSCALE_PACK_PROVIDERS: string[] = ["fal", "revana", "topaz"];
@@ -1325,8 +1496,10 @@ const UPSCALE_PACK_PROVIDERS: string[] = ["fal", "revana", "topaz"];
  * and the credit table. Nothing structural: two adapter leaves, no merged
  * catalog, no retarget layer, and the same ~200 KiB kernel floor every media
  * pack pays.
+ *
+ * 388.0 measured, 2026-11-12: Tripo P2, the texture-version check and its params.
  */
-const THREE_D_PACK_BUDGET_KIB = 385;
+const THREE_D_PACK_BUDGET_KIB = 425;
 
 /** The two providers `unmodel/3d`'s ready-made pack is allowed to reach. */
 const THREE_D_PACK_PROVIDERS: string[] = ["fal", "tripo3d"];
@@ -1404,6 +1577,22 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
  * pack that jumps well above its neighbours has acquired something structural,
  * not another model.
  *
+ * **These figures are not deterministic.** rolldown-plugin-dts draws chunk
+ * boundaries differently from build to build, and this walker counts every
+ * chunk an entry's declaration reaches, so the same tree measures differently
+ * on consecutive builds. Five identical builds on 2026-11-12, after the model
+ * wave's image/avatar/upscale rows, gave image 1252.2–1355.8, avatar
+ * 482.7–567.2 and upscale 486.9–557.2 (video 1072.3–1292.8, tts 1153.0–1272.8).
+ * A pin is therefore set from the MAXIMUM of several builds, ~10% over it:
+ * image 1260 → 1495, avatar 600 → 625, upscale 560 → 615.
+ *
+ * A second pass once the whole wave had landed (five more builds, plus the
+ * outliers the replay itself hit) found single-build spikes well above the
+ * typical figure: lipsync 477.2–768.2, upscale 482.4–751.2, 3d 518.8–591.3. A
+ * spike is a whole shared chunk joining the walk, not drift, so the pin has to
+ * clear it: lipsync 770 → 845, upscale 615 → 830, 3d 590 → 650. The spread is
+ * the measurement's, not the code's — a walker that counted each declaration
+ * once regardless of chunking would let these pins tighten back.
  * ## These figures are not deterministic
  *
  * Found during the revana wave, and it changes how every number below should
@@ -1457,7 +1646,13 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
 const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Bumped 1260 → 1490 by the revana wave: 1354.7 at the highest (see "These
   // figures are not deterministic" above), up from a pre-revana high of 1155.0.
-  image: 1490,
+  // The 2026-11-12 model wave, measured apart, pinned 1495 from its own maximum.
+  //
+  // Bumped to 1650 where the two land together (2026-11-13 merge): five builds
+  // of the merged tree measured 1447.9–1497.4 on macOS, over BOTH sides' pins
+  // on two of them — revana's picture slice and the wave's rows in one graph.
+  // 1650 is the maximum x 1.1.
+  image: 1650,
   "image-edit": 1660,
   video: 1880,
   // The three fal-only packs, and the cheapest declarations in the table.
@@ -1487,7 +1682,13 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   //
   // Bumped 770 → 890 by the revana wave: 643.1 on the usual layouts and 808.6
   // on the one that co-locates this entry with image-edit's (see "These figures
-  // are not deterministic" above). 890 is that x 1.1.
+  // are not deterministic" above). 890 is that x 1.1. The 2026-11-12 model
+  // wave, measured apart, pinned 845 from its own spike (768.2).
+  //
+  // Where the two land together (2026-11-13 merge): five builds of the merged
+  // tree measured 593.9–679.4 on macOS, none on the co-locating layout. 890
+  // stays — the higher of the two spike-derived pins — because that layout is
+  // recorded by both sides and a merged graph can only make it larger.
   lipsync: 890,
   // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
   // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
@@ -1523,7 +1724,12 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   //
   // Bumped 600 → 905 by the revana wave: 647.8 on the usual layouts and 820.0
   // on the one that co-locates this entry with image-edit's (see "These figures
-  // are not deterministic" above). 905 is that x 1.1.
+  // are not deterministic" above). 905 is that x 1.1. The 2026-11-12 model
+  // wave, measured apart, pinned 625 from its own maximum (567.2).
+  //
+  // Where the two land together (2026-11-13 merge): five builds of the merged
+  // tree measured 600.6–686.0 on macOS, within 2% of the lipsync twin on each,
+  // none on the co-locating layout. 905 stays, for the reason lipsync's does.
   avatar: 905,
   // Bumped 450 → 560 by the Topaz wave: 508.8 measured, the largest jump of the
   // three and the one with a real cause rather than a chunking artefact. Topaz
@@ -1535,14 +1741,19 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Bumped 560 → 705 by the revana wave: 640.6 at the highest observed (see
   // "These figures are not deterministic" above), up from a pre-revana high of
   // 548.9. This entry was not seen on the image-edit layout; if CI shows it
-  // there, re-pin from that figure.
-  upscale: 705,
+  // there, re-pin from that figure. The 2026-11-12 model wave, measured apart,
+  // pinned 830 from its own spike (751.2).
+  //
+  // Where the two land together (2026-11-13 merge): five builds of the merged
+  // tree measured 582.5–668.1 on macOS. 830 stays — the wave's spike-derived
+  // pin, the higher of the two — for the reason lipsync's does.
+  upscale: 830,
   // `unmodel/3d`: 534.1 measured. The most expensive of the four small packs
   // and the only one with two providers, which is most of the difference — the
   // `tripo3d` half brings four literal model ids, two quality ladders and its
   // own wire interfaces. The other part is fal's nineteen endpoint interfaces,
   // where Trellis 2's thirty parameters are one declaration.
-  "3d": 590,
+  "3d": 650,
   tts: 2320,
   stt: 2450,
   music: 1360,
@@ -1561,7 +1772,12 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // already carry. **Flagged for CI confirmation**: if the Linux figure comes
   // in above this, re-pin from that number and say so here, per the
   // Linux-figure rule in CLAUDE.md.
-  sfx: 520,
+  //
+  // 590 after the 2026-11-12 model wave: google, cartesia, deepgram, elevenlabs and
+  // recraft each moved sfx by a few KiB on one build or another without a module
+  // joining its graph (sfx imports nothing from those providers) — the dts
+  // chunk boundaries move, see the header. Measured 462.7–535.3 over five builds.
+  sfx: 590,
   // `unmodel/sts`: 349.0 measured on macOS — the cheapest declaration in the
   // table by a wide margin, below `sfx`'s 442.4. Five canonical words, one
   // narrowed field, and four per-model rows whose largest member is a
@@ -1693,13 +1909,14 @@ describe("per-entry bundle budgets", () => {
    *
    * - **absent**, and each for real money: `google/chat.ts` (the validator the
    *   barrel's `checkChat` sits beside), `google/stt.ts`, `google/image.ts`,
-   *   `google/video.ts`, and every unified adapter;
-   * - **present, and named because it is not free**: `google/tts.ts` rides in
-   *   at ~12 KiB. Nothing imports it — `tts-check.ts` needs only
-   *   `./tts-models` — but rolldown emits those two modules as one chunk, so
-   *   the validator arrives with the three rows its cost estimate reads. A
-   *   chunking artifact rather than a graph edge, and pinned here so that if it
-   *   ever *stops* being one the diff says which.
+   *   `google/video.ts`, `google/tts.ts`, and every unified adapter;
+   * - `google/tts.ts` is named separately because it USED to ride in at ~12 KiB
+   *   as a chunking artifact: nothing imported it, but `tts-check.ts` needs
+   *   `./tts-models` and rolldown emitted those two modules as one chunk.
+   *   Since `google/chat-tts-overlay.ts` also imports `./tts-models` (for the
+   *   Gemini 3.8 TTS hand rows, 2026-11-12), the rows get a chunk of their own
+   *   and the validator no longer arrives with them. Pinned absent so that if
+   *   the artifact ever comes back the diff says which.
    */
   test("google-vertex reaches google's check helpers and none of its endpoints", () => {
     const modules = sourceModulesOf(entryFile("google-vertex"));
@@ -1716,8 +1933,8 @@ describe("per-entry bundle budgets", () => {
     expect(modules.filter((m) => /^src\/providers\/google\/unified/.test(m))).toEqual([]);
     expect(modules).not.toContain("src/providers/google/constraints.ts");
 
-    // The measured exception; see the note above.
-    expect(modules).toContain("src/providers/google/tts.ts");
+    // The former chunking artifact; see the note above.
+    expect(modules).not.toContain("src/providers/google/tts.ts");
   });
 });
 
@@ -1842,8 +2059,7 @@ describe("unmodel/chat", () => {
    *   the identical rules.
    *
    * `google/tts-models.ts` in the old list is `google/chat-tts-overlay.ts` in
-   * the new one — a rename, not a departure; `google/tts-models.ts` now names
-   * the dedicated surface's three hand rows and is deliberately NOT here.
+   * the new one — a rename, not a departure.
    *
    * **54 → 55 with the values entries**, and the one that joined is a *move*
    * rather than an addition: `google/image-constraints.ts` is the import-free
@@ -1852,19 +2068,65 @@ describe("unmodel/chat", () => {
    * riding along (26.1 → 3.6 KiB on a shaken one-import measurement).
    * `google/constraints.ts` re-exports every name, so those bytes were already
    * in this graph — inside `constraints.ts` — and this line is where they went.
+   *
+   * **55 → 59 with the 2026-11-12 model wave.** Two are google's:
+   * `google/thinking-constraints.ts` is the import-free leaf the thinking
+   * tables moved to so `google/tts-checks.ts` can enforce the Gemini 4 rules
+   * for all three generateContent surfaces (bytes that were inside
+   * `constraints.ts`), and `google/tts-models.ts` is reached by the chat
+   * overlay for the two Gemini 3.8 TTS hand rows models.dev does not carry.
+   *
+   * The other two are mistral's chat rules, and both are chat's own,
+   * not barrel leakage: `mistral/chat-models.ts` is the catalog `mistral.chat`
+   * now validates against (the vendor aliases and doc corrections models.dev
+   * lacks, layered on the generated catalog already in this graph), and
+   * `mistral/constraints.ts` is the type-only leaf holding the Large 4 / GLM 5.3
+   * `reasoning_effort` ladders — the groq/upstage pattern.
+   *
+   * **+1 (→ 60) with `minimax/constraints.ts`** (2026-11-12): the MiniMax-M3 /
+   * M3.1-Flash deny and enum tables, a types-only literal leaf imported by
+   * `minimax/chat.ts` — the groq/upstage shape, not barrel leakage.
+   *
+   * **+1 (→ 61) with zhipuai's GLM-5.3 rules** (61 measured, 2026-11-12):
+   * `zhipuai/constraints.ts` is the import-free enum leaf
+   * `retarget/target-constraints.ts` registers for `.toApi("zhipuai")`, the
+   * same shape as `groq/constraints.ts`. No catalog came with it.
+   *
+   * **+1 (→ 62) with `anthropic/model-ids.ts`** (2026-11-13): the import-free
+   * id lists the anthropic codec spells reasoning by, split out of
+   * `anthropic/constraints.ts` (which re-exports them) so the factory entry
+   * can carry them without the constraint tables. A move, not new data.
+   * **+1 (→ 62) with `deepseek/wire.ts`** (2026-11-13): the wire leaf that
+   * types and validates DeepSeek's own content parts and top-level params, so
+   * `deepseek.chat` stops refusing documented image shapes. It imports zod and
+   * the dialect's wire leaf only; no catalog came with it.
+   * **+1 (→ 62) with `minimax/wire.ts`** (2026-11-12): `minimax.chat`'s wire
+   * leaf — the `video_url` user part and `image_url.detail: "default"` the
+   * shared dialect refuses, as the schema `minimax/chat.ts` validates
+   * against. Chat's own, imported by the chat leaf, not barrel leakage.
+   * **+1 (→ 62) with `stepfun/constraints.ts`** (2026-11-12): the
+   * step-3.5-flash-2603 `reasoning_effort` ladder, a types-only literal leaf
+   * imported by `stepfun/chat.ts` — the groq/mistral shape, not barrel leakage.
+   *
+   * **+3 (→ 65) with revana** (2026-11-13): `revana/chat.ts`, its generated
+   * chat slice `revana/gen/models-chat.gen.ts` and `revana/urls.ts` — the
+   * oai-base shape every router in this graph has. No media slice came with
+   * it.
    */
-  test("its provider graph is exactly the enumerated 58 modules", () => {
+  test("its provider graph is exactly the enumerated 65 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
       "src/providers/alibaba/chat.ts",
       "src/providers/anthropic/chat.ts",
       "src/providers/anthropic/constraints.ts",
       "src/providers/anthropic/interop.ts",
+      "src/providers/anthropic/model-ids.ts",
       "src/providers/anthropic/wire.ts",
       "src/providers/baseten/index.ts",
       "src/providers/cerebras/index.ts",
       "src/providers/deepinfra/index.ts",
       "src/providers/deepseek/index.ts",
+      "src/providers/deepseek/wire.ts",
       "src/providers/fireworks-ai/index.ts",
       "src/providers/friendli/index.ts",
       "src/providers/google/audio-constraints.ts",
@@ -1874,8 +2136,10 @@ describe("unmodel/chat", () => {
       "src/providers/google/image-constraints.ts",
       "src/providers/google/interop.ts",
       "src/providers/google/model-path.ts",
+      "src/providers/google/thinking-constraints.ts",
       "src/providers/google/tts-checks.ts",
       "src/providers/google/tts-constraints.ts",
+      "src/providers/google/tts-models.ts",
       "src/providers/google/veo-models.ts",
       "src/providers/google/wire.ts",
       "src/providers/groq/constraints.ts",
@@ -1892,10 +2156,15 @@ describe("unmodel/chat", () => {
       // minimax media endpoint. The leaf pins chat's minimax cost to the chat
       // dialect + its two generated catalogs, permanently.
       "src/providers/minimax/chat.ts",
+      "src/providers/minimax/constraints.ts",
+      "src/providers/minimax/wire.ts",
       // Barrel leakage, measured: mistral's index re-exports its transcribe
       // endpoint. Deleting these three lines requires giving mistral a
       // `chat.ts` leaf, not loosening the assertion.
       "src/providers/mistral/audio-models.ts",
+      // Chat's own: the overlaid catalog and the reasoning_effort ladders.
+      "src/providers/mistral/chat-models.ts",
+      "src/providers/mistral/constraints.ts",
       "src/providers/mistral/index.ts",
       "src/providers/mistral/stt.ts",
       "src/providers/mistral/transcription-check.ts",
@@ -1919,10 +2188,12 @@ describe("unmodel/chat", () => {
       "src/providers/scaleway/index.ts",
       "src/providers/siliconflow/index.ts",
       "src/providers/stepfun/chat.ts",
+      "src/providers/stepfun/constraints.ts",
       "src/providers/togetherai/index.ts",
       "src/providers/upstage/index.ts",
       "src/providers/vercel/index.ts",
       "src/providers/xai/chat.ts",
+      "src/providers/zhipuai/constraints.ts",
       "src/providers/zhipuai/index.ts",
     ]);
   });
@@ -1937,16 +2208,35 @@ describe("unmodel/chat", () => {
       "src/catalog/availability/alibaba.gen.ts",
       "src/catalog/availability/anthropic.gen.ts",
       "src/catalog/availability/baseten.gen.ts",
+      "src/catalog/availability/deepseek.gen.ts",
       "src/catalog/availability/friendli.gen.ts",
       "src/catalog/availability/google.gen.ts",
+      "src/catalog/availability/meta.gen.ts",
+      // A region of its own because minimax/chat.ts's chunk holds a second
+      // module (constraints.ts); in a one-module chunk the bundler inlines this
+      // single-use table at its call site — the same bytes, unnamed.
+      "src/catalog/availability/minimax.gen.ts",
       "src/catalog/availability/mistral.gen.ts",
+      // Not new bytes: this table was always in the graph, inlined into its
+      // importer with no region marker. It keeps its own region since
+      // moonshotai's index.ts declares constraint tables before the
+      // createOpenAICompatible call (measured 2026-11-12).
+      "src/catalog/availability/moonshotai.gen.ts",
       "src/catalog/availability/nebius.gen.ts",
       "src/catalog/availability/nvidia.gen.ts",
       "src/catalog/availability/openai.gen.ts",
+      // Not new bytes either, for moonshotai's reason: perplexity's index.ts
+      // builds its content-chunk schema before the createOpenAICompatible
+      // call, so the table keeps its own region (measured 2026-11-13).
+      "src/catalog/availability/perplexity.gen.ts",
       "src/catalog/availability/scaleway.gen.ts",
       "src/catalog/availability/siliconflow.gen.ts",
       "src/catalog/availability/stepfun.gen.ts",
       "src/catalog/availability/xai.gen.ts",
+      // Not new bytes either, for moonshotai's reason: zhipuai's index.ts
+      // declares `chatModels` (its file-input correction) before the
+      // createOpenAICompatible call (measured 2026-11-13).
+      "src/catalog/availability/zhipuai.gen.ts",
     ]);
 
     const CHAT_TABLES = new Set([
@@ -2027,9 +2317,13 @@ describe("unmodel/chat/factory", () => {
     // Not "no endpoint validator" — *no provider module at all* beyond the
     // three codecs the compiler is made of. A catalog, a constraint table or a
     // wire schema arriving here would mean the narrow entry had quietly
-    // acquired a provider, which is the one thing it exists not to do.
+    // acquired a provider, which is the one thing it exists not to do. The
+    // one leaf beside them is the anthropic codec's import-free id lists
+    // (which models have no thinking budget, which say "off" as
+    // `between_tools`) — data the codec compiles by, not a table it checks.
     expect(modules.filter((m) => m.startsWith("src/providers/"))).toEqual([
       "src/providers/anthropic/interop.ts",
+      "src/providers/anthropic/model-ids.ts",
       "src/providers/google/interop.ts",
       "src/providers/openai-compatible/interop.ts",
     ]);

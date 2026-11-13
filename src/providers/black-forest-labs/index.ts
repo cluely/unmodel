@@ -94,6 +94,10 @@ export type {
   Flux2Klein9bBody,
   Flux2Klein9bPreviewBody,
   Flux2Klein4bBody,
+  Flux2Klein4bFinetunedBody,
+  Flux2Klein9bFinetunedBody,
+  Flux2Klein9bKvFinetunedBody,
+  Flux2Klein9bKvBf16FinetunedBody,
   UnknownFlux2ModelBody,
   BflOutputFormat,
 } from "./image";
@@ -121,7 +125,6 @@ export { imageEditFill, imageEditExpand, DEFAULT_EXPAND_MODEL_ID, FLUX_EXPAND_MA
 export type {
   FluxFillParams,
   FluxFillBody,
-  FluxFillFinetunedBody,
   UnknownFluxFillBody,
   FluxExpandParams,
 } from "./image-edit-flux1";
@@ -139,6 +142,7 @@ export {
   FLUX_DEBLUR_MODEL_ID,
   DEFAULT_VTO_MODEL_ID,
   FLUX_OUTPAINTING_MODES,
+  FLUX_OUTPAINTING_MAX_PIXELS,
   FLUX_ERASE_MAX_DILATE_PIXELS,
   FLUX_TOOLS_MIN_DIMENSION,
 } from "./image-edit-tools";
@@ -149,6 +153,15 @@ export type {
   FluxDeblurParams,
   FluxVtoParams,
 } from "./image-edit-tools";
+
+export {
+  BFL_MEGAPIXEL,
+  FLUX_OUTPAINTING_RATES,
+  FLUX_ERASE_RATE,
+  FLUX_DEBLUR_RATE,
+  outpaintingCostUSD,
+} from "./pricing";
+export type { BflMegapixelRate } from "./pricing";
 
 export { imageConstraints, imageFlux1Constraints } from "./constraints";
 

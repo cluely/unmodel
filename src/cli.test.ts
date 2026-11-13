@@ -358,7 +358,7 @@ test("validate unified.image compiles one canonical request through the ref's pr
 test("validate unified.image reports a provider gap at the canonical path", async () => {
   const { stderr, exitCode } = await runCli(
     ["validate", "unified.image"],
-    JSON.stringify({ model: "openai/gpt-image-1", prompt: "hi", seed: 7 }),
+    JSON.stringify({ model: "openai/gpt-image-1.5", prompt: "hi", seed: 7 }),
   );
   expect(exitCode).toBe(1);
   expect(stderr).toContain("unsupported_param");

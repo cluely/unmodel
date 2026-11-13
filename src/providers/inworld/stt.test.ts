@@ -6,6 +6,7 @@ import {
   INWORLD_STT_AUDIO_ENCODINGS,
   STT_MAX_AUDIO_BYTES,
   STT_TRANSCRIBE_URL,
+  TRANSCRIBE_DOCS,
 } from "./stt";
 import { sttModels, STT_1_USD_PER_MINUTE, STT_STREAM_MODEL_IDS, STT_SYNC_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
@@ -84,13 +85,36 @@ describe("inworld.stt happy path", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
-  test("every documented audioEncoding is accepted", () => {
+  test("every documented audioEncoding but the zero value is accepted", () => {
+    // The sync enum names three containers whose audio track is transcribed.
+    for (const container of ["MP4", "MXF", "WEBM"] as const) {
+      expect(INWORLD_STT_AUDIO_ENCODINGS).toContain(container);
+    }
     for (const audioEncoding of INWORLD_STT_AUDIO_ENCODINGS) {
+      if (audioEncoding === "AUDIO_ENCODING_UNSPECIFIED") continue;
       const r = safeUnchecked({
         transcribeConfig: { modelId: "inworld/inworld-stt-1", audioEncoding },
         audioData: AUDIO,
       });
       expect(r.ok).toBe(true);
+    }
+  });
+
+  test("the zero-value audioEncoding is refused (INVALID_ARGUMENT), naming the real encodings", () => {
+    // "AUDIO_ENCODING_UNSPECIFIED: Not specified. Will return [google.rpc.Code.INVALID_ARGUMENT]."
+    const r = stt.safe({
+      transcribeConfig: { modelId: "inworld/inworld-stt-1", audioEncoding: "AUDIO_ENCODING_UNSPECIFIED" },
+      audioData: AUDIO,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_enum_value");
+      expect(r.errors[0]?.path).toEqual(["transcribeConfig", "audioEncoding"]);
+      expect(r.errors[0]?.meta?.allowed).toEqual(
+        INWORLD_STT_AUDIO_ENCODINGS.filter((e) => e !== "AUDIO_ENCODING_UNSPECIFIED"),
+      );
+      expect(r.errors[0]?.meta?.source).toBe(TRANSCRIBE_DOCS);
+      expect(r.errors[0]?.message).toContain('"AUTO_DETECT"');
     }
   });
 
@@ -285,8 +309,9 @@ describe("inworld.stt router gates (doc audit 2026-08-13)", () => {
     }
   });
 
-  test("Voice Profile on a non-Inworld route is unsupported_capability", () => {
-    const r = safeUnchecked({
+  test("Voice Profile works on every route, third-party included", () => {
+    // "an Inworld platform feature that works with every STT model on the API".
+    const r = stt.safe({
       transcribeConfig: {
         modelId: "groq/whisper-large-v3",
         audioEncoding: "MP3",
@@ -294,15 +319,8 @@ describe("inworld.stt router gates (doc audit 2026-08-13)", () => {
       },
       audioData: AUDIO,
     });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.code).toBe("unsupported_capability");
-      expect(r.errors[0]?.path).toEqual([
-        "transcribeConfig",
-        "voiceProfileConfig",
-        "enableVoiceProfile",
-      ]);
-    }
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
   });
 
   test("enableVoiceProfile: false on another route is not reported", () => {
@@ -317,7 +335,7 @@ describe("inworld.stt router gates (doc audit 2026-08-13)", () => {
     expect(r.ok).toBe(true);
   });
 
-  test("word timestamps / diarization are not implemented on the Inworld route", () => {
+  test("word timestamps / diarization warn on the Inworld sync route (they take effect on the WebSocket)", () => {
     for (const key of ["includeWordTimestamps", "enableSpeakerDiarization"]) {
       const r = safeUnchecked({
         transcribeConfig: {
@@ -327,15 +345,16 @@ describe("inworld.stt router gates (doc audit 2026-08-13)", () => {
         },
         audioData: AUDIO,
       });
-      expect(r.ok).toBe(false);
-      if (!r.ok) {
-        expect(r.errors[0]?.code).toBe("unsupported_capability");
-        expect(r.errors[0]?.path).toEqual(["transcribeConfig", key]);
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings[0]?.code).toBe("unsupported_capability");
+        expect(r.warnings[0]?.path).toEqual(["transcribeConfig", key]);
+        expect(r.warnings[0]?.meta?.ignored).toBe(true);
       }
     }
   });
 
-  test("Groq is not named on either side of the timestamps sentence, so it stays permissive", () => {
+  test("Groq's word timestamps are a sync feature, so it stays permissive", () => {
     const r = safeUnchecked({
       transcribeConfig: {
         modelId: "groq/whisper-large-v3",
@@ -475,7 +494,7 @@ describe("inworld.stt cost estimation ($0.15/hr On-Demand)", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(STT_1_USD_PER_MINUTE, 12);
   });
 
-  test("routed vendors publish no Inworld list rate — no costUSD", () => {
+  test("routed vendors carry no On-Demand list rate — no costUSD", () => {
     const r = stt.safe({
       transcribeConfig: { modelId: "groq/whisper-large-v3", audioEncoding: "LINEAR16" },
       audioData: { content: base64OfBytes(96000) },

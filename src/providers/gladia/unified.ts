@@ -78,6 +78,13 @@ export const stt = {
     );
     if (audio?.kind === "url") body.audio_url = audio.url;
 
+    // The array belongs to `language` unless `languages` is the word sent:
+    // with neither word, `checkSolaria3` still warns at
+    // `language_config.languages` and asks for one pinned language, and an
+    // undeclared path would send a caller who wrote neither word to look for a
+    // wire field they have never seen. The `languages` branch re-declares it,
+    // and the later declaration wins.
+    ctx.from(["language_config", "languages"], "language");
     if (input.language !== undefined && input.languages !== undefined) {
       ctx.fail({
         code: "invalid_shape",
@@ -89,12 +96,9 @@ export const stt = {
         meta: { source: INIT_DOCS },
       });
     } else if (input.language !== undefined) {
-      // Declared inside the branch, and for the *element* as well as the array:
-      // `checkModelLanguages` reports solaria-3's five-language limit at
-      // `language_config.languages.0`, and a rule declared only for the array
-      // would leave that path unmapped — sending a caller who wrote `language`
-      // to look for a wire field they have never seen.
-      ctx.from(["language_config", "languages"], "language");
+      // The *element* needs its own declaration: `checkSolaria3` reports
+      // solaria-3's five-language limit at `language_config.languages.0`, and
+      // the array's declaration above leaves that path unmapped.
       ctx.from(["language_config", "languages", 0], "language");
       const language = ctx.take(
         toPrimaryLanguage(input.language, { path: ["language"], warn: ctx.warn }, {
@@ -103,8 +107,13 @@ export const stt = {
       );
       if (language !== undefined) body.language_config = { languages: [language] };
     } else if (input.languages !== undefined) {
-      // The plural word owns the same field when it is the one that was sent.
+      // The plural word owns the same field when it is the one that was sent,
+      // and every element of it, for the same reason: `checkSolaria3` reports
+      // each entry outside solaria-3's five at its own index.
       ctx.from(["language_config", "languages"], "languages");
+      for (const index of input.languages.keys()) {
+        ctx.from(["language_config", "languages", index], "languages");
+      }
       body.language_config = { languages: [...input.languages] };
     }
 

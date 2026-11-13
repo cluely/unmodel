@@ -20,8 +20,8 @@
  *
  * # There is no `seed`
  *
- * Not on the body, not under a nested object, not anywhere in VEED's ten
- * operations. So the canonical `seed` is refused by name rather than dropped.
+ * Not on the body, not under a nested object, not anywhere in VEED's
+ * document. So the canonical `seed` is refused by name rather than dropped.
  *
  * # Inline bytes are refused, not encoded
  *
@@ -85,7 +85,7 @@ export const lipsync = {
         code: "unsupported_param",
         path: ["seed"],
         message:
-          "VEED publishes no seed on any of its ten operations, so `seed` has nothing to become at " +
+          "VEED publishes no seed on any of its operations, so `seed` has nothing to become at " +
           `"${ctx.model}". \`Lipsync20Input\` is \`video_url\` and \`audio_url\` and is ` +
           "`additionalProperties: false`, so sending one anyway would be a 422 rather than an " +
           "ignored field.",

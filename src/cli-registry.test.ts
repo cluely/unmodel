@@ -873,8 +873,8 @@ test("the voice-conversion endpoints all use the uniform `sts` verb", () => {
  * reject, and the one that now shows both answers to "should a second route
  * qualify".
  *
- * `fal.upscale` is bare, over ten endpoints and two media, and there is NO
- * `fal.upscaleVideo`: three of the ten take a clip and seven take a still, and
+ * `fal.upscale` is bare, over eleven endpoints and two media, and there is NO
+ * `fal.upscaleVideo`: four of the eleven take a clip and seven take a still, and
  * that is a difference in what goes IN rather than in the route's shape.
  * `fal-ai/seedvr/upscale/image` and `fal-ai/seedvr/upscale/video` are one
  * vendor's one product on two paths behind one URL shape; qualifying the

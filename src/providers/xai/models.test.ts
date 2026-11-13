@@ -11,14 +11,16 @@ import {
 // refresh" instruction, made mechanical.
 import { models as generatedModels } from "../../catalog/xai.gen";
 
-/** The five snapshot-tracked Imagine ids the mirror carries, per route. */
+/** The four snapshot-tracked Imagine ids the mirror carries, per route. */
 const MIRRORED = [
   ["grok-imagine-image", imageModels],
-  ["grok-imagine-image-2.0", imageModels],
-  ["grok-imagine-image-quality", imageModels],
   ["grok-imagine-video", videoModels],
   ["grok-imagine-video-1.5", videoModels],
+  ["grok-imagine-video-1.5-lite", videoModels],
 ] as const;
+
+/** The Imagine ids xAI serves and models.dev does not track. */
+const HAND_ONLY = ["grok-imagine-image-2.0", "grok-imagine-image-quality"] as const;
 
 /**
  * Each mirrored row is the generated row, field for field, with ONE
@@ -47,10 +49,23 @@ test("every mirrored Imagine row equals its generated row except the added cost"
 });
 
 /**
+ * The truly hand rows exist only because models.dev does not track them. The
+ * day the generated catalog gains one, this fails and says so — the longhand
+ * row should then become a mirror.
+ */
+test("the hand-only Imagine rows stay absent from the generated catalog", () => {
+  for (const id of HAND_ONLY) {
+    expect(
+      (generatedModels as Record<string, unknown>)[id],
+      `models.dev now tracks ${id} — turn the hand row in ./models into a mirror`,
+    ).toBeUndefined();
+    expect(imageModels[id].limit.context).toBe(0);
+  }
+});
+
+/**
  * The docs-quoted rate for the id the capability guide recommends. Kept as its
- * own case because the generated row carries no cost at all: the mirror test
- * above proves the row matches, this one proves the rate is the documented
- * per-image price rather than whatever a refresh might invent.
+ * own case because no generated row exists to cross-check it against.
  */
 test("grok-imagine-image-2.0 carries the docs-quoted per-image rate", () => {
   expect(imageModels["grok-imagine-image-2.0"].cost).toEqual({
@@ -64,14 +79,14 @@ test("grok-imagine-image-2.0 carries the docs-quoted per-image rate", () => {
  * silently unreachable from `xai.image` / `xai.video`.
  */
 test("every image/video-emitting generated id appears in a mirror", () => {
-  const generatedImagine = Object.values(generatedModels)
+  const generatedImagine: string[] = Object.values(generatedModels)
     .filter((info) => {
       const output = info.modalities.output as readonly string[];
       return output.includes("image") || output.includes("video");
     })
     .map((info) => info.id)
     .sort();
-  const mirrored = MIRRORED.map(([id]) => id).sort();
+  const mirrored: string[] = MIRRORED.map(([id]) => id).sort();
   expect(generatedImagine).toEqual(mirrored);
 });
 

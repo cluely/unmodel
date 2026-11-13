@@ -58,20 +58,27 @@ export type FalPixverseV6 = FalVideoBodyById["fal-ai/pixverse/v6/text-to-video"]
 /**
  * `pixverse.video` params → `fal-ai/pixverse/v6/text-to-video`.
  *
- * Three hard refusals, and none of them is droppable:
+ * Four hard refusals, and none of them is droppable:
  *
  * - **`motion_mode`** — PixVerse's normal/fast motion tier. fal publishes no
- *   equivalent, and it is a *priced* tier on v4.5 and below, so silently
- *   losing it changes both the motion and the bill.
+ *   equivalent, so silently losing it changes the motion.
  * - **`camera_movement`** — a camera preset. fal's PixVerse row has no camera
  *   field at all (contrast `lightricks/ltx-2.5`, which does), and a dropped
  *   camera move produces a different video, not a lossier one.
  * - **`template_id`** — an id in *your* PixVerse account's activated-template
  *   list. It has no meaning on fal's account, so there is nothing to translate.
+ * - **`webhook_id`** — likewise account-scoped: "Optional ID of a Webhook
+ *   configured in the same account, not a callback URL"
+ *   (https://docs.platform.pixverse.ai/image-to-video-and-video-templates-13016633e0,
+ *   2026-11-12). fal's input schema for this endpoint
+ *   (`data/fal/openapi/fal-ai__pixverse__v6__text-to-video.json`) has no
+ *   webhook field, and dropping it would leave a callback-driven caller
+ *   waiting for a notification that never comes.
  *
- * `sound_effect_*` and `lip_sync_tts_*` never arrive: `checkModelGatedFields`
- * already refuses them on `v6` (they are "v5 and below"), so a mapping arm for
- * them would be dead code dressed as a guarantee.
+ * `sound_effect_*` and `lip_sync_tts_*` reach `v6` only as a `false` switch:
+ * `checkModelGatedFields` refuses every other value on `v6` (they are "v5 and
+ * below"), and `false` is the documented default, so this mapping drops it
+ * losslessly — an arm for them would be dead code dressed as a guarantee.
  *
  * The one check that is not a rename: fal documents a **2048-byte** cap on
  * `prompt` and `negative_prompt` while PixVerse's own cap is 5000 *characters*,
@@ -87,7 +94,7 @@ function mapV6(params: TextToVideoParams, ctx: MediaMapContext): FalPixverseV6 {
       ctx,
       ["motion_mode"],
       ENDPOINT,
-      "publishes no motion-tier field — and on PixVerse the motion mode is a priced tier, so losing it would change the motion and the bill",
+      "publishes no motion-tier field, so losing it would change the motion",
     );
   }
   if (params.camera_movement !== undefined) {
@@ -99,6 +106,14 @@ function mapV6(params: TextToVideoParams, ctx: MediaMapContext): FalPixverseV6 {
       ["template_id"],
       ENDPOINT,
       "has no template list — `template_id` names an activated template in your own PixVerse account and carries no meaning on fal's",
+    );
+  }
+  if (params.webhook_id !== undefined) {
+    refuseParam(
+      ctx,
+      ["webhook_id"],
+      ENDPOINT,
+      "has no webhook field — `webhook_id` names a webhook configured in your own PixVerse account, and dropping it would leave the request with no callback",
     );
   }
   return {
@@ -131,15 +146,19 @@ export const PIXVERSE_VIDEO_FAL_OVERLAP = {
 } as const;
 
 /**
- * The seven PixVerse ids fal does not serve, with the reason, so a caller who
+ * The eight PixVerse ids fal does not serve, with the reason, so a caller who
  * reaches for one is told *why* rather than told the model is unknown.
  *
- * `c1` is the one worth spelling out: it shares v6's per-second duration model
- * and wide ratio set, so it looks mappable — but fal serves no `c1` endpoint,
- * and routing a `c1` request to the v6 URL would swap the model, not the
- * transport.
+ * `c1` and `v6-max` are the ones worth spelling out: they share v6's
+ * per-second duration model and wide ratio set, so they look mappable — but
+ * fal serves no endpoint for either, and routing one to the v6 URL would swap
+ * the model, not the transport. V6 Max: both
+ * https://fal.ai/models/fal-ai/pixverse/v6-max/text-to-video/llms.txt and
+ * https://fal.ai/models/pixverse/v6-max/text-to-video/llms.txt answer HTTP 404
+ * (2026-11-12), and `data/fal/curation.json` names no v6-max endpoint.
  */
 export const PIXVERSE_VIDEO_FAL_REFUSALS: Readonly<Record<string, string>> = Object.freeze({
+  "v6-max": "fal serves no PixVerse V6 Max endpoint; routing a V6 Max request to the v6 URL would swap the model rather than the transport.",
   c1: "fal serves no PixVerse C1 endpoint; routing a C1 request to the v6 URL would swap the model rather than the transport.",
   "v5.6": "fal's curated PixVerse roster is v6 only.",
   "v5.5": "fal's curated PixVerse roster is v6 only.",

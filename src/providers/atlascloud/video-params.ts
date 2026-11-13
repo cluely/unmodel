@@ -14,7 +14,7 @@ import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 import { BITRATE_MODES, OMNI_REFERENCE_TASK_TYPES, VIDEO_OUTPUT_FORMATS } from "./constraints";
 
 /**
- * The twenty-three curated ids — the `atlascloud/…` ref union.
+ * The thirty ids `unmodel/video` reaches — the `atlascloud/…` ref union.
  *
  * These are Atlas's OWN ids, slashes and all, so a unified ref is
  * `"atlascloud/bytedance/seedance-2.5/text-to-video"` and splits on the FIRST
@@ -22,6 +22,11 @@ import { BITRATE_MODES, OMNI_REFERENCE_TASK_TYPES, VIDEO_OUTPUT_FORMATS } from "
  * id is Atlas's, not unmodel's: `bytedance/…` here means "the Seedance weights
  * as Atlas serves them", which is a different transport from `bytedance/…` the
  * unmodel provider.
+ *
+ * Every catalogued id but one: `bytedance/seedance-2.5/draft-complete` is
+ * wire-only. Its body is a `draft_id` and delivery options — no prompt, no
+ * media, nothing the canonical vocabulary has a word for — so it is reached at
+ * `atlascloud.video({ model: "bytedance/seedance-2.5/draft-complete", draft_id })`.
  */
 export const MODELS = [
   "bytedance/seedance-2.5/text-to-video",
@@ -47,6 +52,13 @@ export const MODELS = [
   "google/veo3.1/text-to-video",
   "google/veo3.1/image-to-video",
   "google/veo3.1/reference-to-video",
+  "google/veo3.1-fast/text-to-video",
+  "google/veo3.1-fast/image-to-video",
+  "google/veo3.1-lite/text-to-video",
+  "google/veo3.1-lite/image-to-video",
+  "google/veo3.1-lite/start-end-frame-to-video",
+  "alibaba/wan-3.0/reference-to-video",
+  "alibaba/wan-3.0-prime/reference-to-video",
 ] as const;
 
 /**
@@ -65,7 +77,7 @@ export const VEO_RATIOS_SHAPES = ["16:9", "9:16"] as const;
 const NO_RATIOS = [] as const;
 
 /**
- * The `-1` sentinel and why `durations` is absent on nineteen of these rows.
+ * The `-1` sentinel and why `durations` is absent on twenty-two of these rows.
  *
  * Atlas publishes `duration` as an ENUM on every family but Seedance v1.5 pro
  * — and the enums are long: `[-1, 4…30]` on Seedance 2.5, `[-1, 2…30]` on Wan
@@ -75,9 +87,10 @@ const NO_RATIOS = [] as const;
  * `duration` stays the wide `number`, and `checkDuration` in ./video.ts answers
  * with the model's own enum on the way out.
  *
- * Veo 3.1 is the exception worth having: a genuine three-member enum
- * (`8 | 4 | 6`, and `[8]` on the reference arm), short enough to be useful in
- * a picker and closed enough to be true.
+ * The Veo 3.1 family is the exception worth having: a genuine three-member
+ * enum (`8 | 4 | 6` on Veo 3.1 / 3.1 Fast, `4 | 6 | 8` on 3.1 Lite, and `[8]`
+ * on the reference arm), short enough to be useful in a picker and closed
+ * enough to be true.
  *
  * `duration: -1` ("let the model choose") is NOT in any list here, and cannot
  * be: the canonical `duration` is defined as "a positive number of seconds"
@@ -119,6 +132,14 @@ const WAN_EXTRAS = {
   audio: EXTRA as boolean,
 } as const;
 
+/** The reference routes add document / webpage parsing behind `enable_thinking`. */
+const WAN_REFERENCE_EXTRAS = {
+  ...WAN_EXTRAS,
+  enable_thinking: EXTRA as boolean,
+  file: EXTRA as string,
+  link: EXTRA as string,
+} as const;
+
 const VEO_EXTRAS = {
   generate_audio: EXTRA as boolean,
 } as const;
@@ -130,9 +151,12 @@ const SEEDANCE_15_TIERS = ["480p", "720p"] as const;
 const SEEDANCE_15_FAST_TIERS = ["720p"] as const;
 const WAN_TIERS = ["480p", "720p", "1080p", "1440p", "4k"] as const;
 const VEO_TIERS = ["720p", "1080p", "4k"] as const;
+const VEO_LITE_TIERS = ["720p", "1080p"] as const;
 
 /** Veo 3.1's `duration` enum, in the schema's own order. */
 const VEO_DURATIONS = [8, 4, 6] as const;
+/** Veo 3.1 Lite's, in its schemas' order. */
+const VEO_LITE_DURATIONS = [4, 6, 8] as const;
 
 /**
  * Atlas's per-model surface.
@@ -148,7 +172,9 @@ const VEO_DURATIONS = [8, 4, 6] as const;
  *
  * `1440p` and `4k` appear on the Seedance rows only via that ladder
  * (`1440p-sr`, `4k-esr`), which is why they are listed: the adapter maps the
- * canonical tier onto the spelling the model's own enum actually has.
+ * canonical tier onto the spelling the model's own enum actually has. Seedance
+ * 2.5's enum also lists native `4k`; canonical `4k` stays on `4k-esr` there
+ * (see the resolution note in ./unified-video.ts).
  */
 export const ATLASCLOUD_VIDEO_MODEL_PARAMS = {
   "bytedance/seedance-2.5/text-to-video": {
@@ -254,6 +280,16 @@ export const ATLASCLOUD_VIDEO_MODEL_PARAMS = {
     ratios: NO_RATIOS,
     extras: WAN_EXTRAS,
   },
+  "alibaba/wan-3.0/reference-to-video": {
+    resolutions: WAN_TIERS,
+    ratios: WAN_RATIOS_SHAPES,
+    extras: WAN_REFERENCE_EXTRAS,
+  },
+  "alibaba/wan-3.0-prime/reference-to-video": {
+    resolutions: WAN_TIERS,
+    ratios: WAN_RATIOS_SHAPES,
+    extras: WAN_REFERENCE_EXTRAS,
+  },
   "google/veo3.1/text-to-video": {
     durations: VEO_DURATIONS,
     resolutions: VEO_TIERS,
@@ -273,5 +309,34 @@ export const ATLASCLOUD_VIDEO_MODEL_PARAMS = {
     // The schema declares no `aspect_ratio` property on this route.
     ratios: NO_RATIOS,
     extras: VEO_EXTRAS,
+  },
+  "google/veo3.1-fast/text-to-video": {
+    durations: VEO_DURATIONS,
+    resolutions: VEO_TIERS,
+    ratios: VEO_RATIOS_SHAPES,
+    extras: VEO_EXTRAS,
+  },
+  "google/veo3.1-fast/image-to-video": {
+    durations: VEO_DURATIONS,
+    resolutions: VEO_TIERS,
+    ratios: VEO_RATIOS_SHAPES,
+    extras: VEO_EXTRAS,
+  },
+  // No extras: the Lite schemas declare no `generate_audio` ("Audio is always
+  // generated") and no `negative_prompt`.
+  "google/veo3.1-lite/text-to-video": {
+    durations: VEO_LITE_DURATIONS,
+    resolutions: VEO_LITE_TIERS,
+    ratios: VEO_RATIOS_SHAPES,
+  },
+  "google/veo3.1-lite/image-to-video": {
+    durations: VEO_LITE_DURATIONS,
+    resolutions: VEO_LITE_TIERS,
+    ratios: VEO_RATIOS_SHAPES,
+  },
+  "google/veo3.1-lite/start-end-frame-to-video": {
+    durations: VEO_LITE_DURATIONS,
+    resolutions: VEO_LITE_TIERS,
+    ratios: VEO_RATIOS_SHAPES,
   },
 } as const satisfies VideoModelParamTable;

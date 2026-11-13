@@ -2,14 +2,23 @@
  * PixVerse Text-to-Video — POST https://app-api.pixverse.ai/openapi/v2/video/text/generate
  *
  * Wire notes (verified against the request schema on
- * https://docs.platform.pixverse.ai/text-to-video-generation-13016634e0 on
- * 2026-08-13):
+ * https://docs.platform.pixverse.ai/text-to-video-13016634e0 on 2026-11-12):
  * - `prompt`, `model`, `aspect_ratio`, `duration` and `quality` are all
- *   required by the schema.
- * - `aspect_ratio` is wider on v6 / c1 (it adds 2:3, 3:2 and 21:9); `duration`
- *   is 1–15s on v6/c1 but a fixed value list below that; `generate_audio_switch`
- *   is v5.5+, `generate_multi_clip_switch` is v5.5/v6, and the sound-effect /
- *   lip-sync TTS fields are "v5 and below".
+ *   required by the schema; `seed`, `webhook_id`, `generate_audio_switch` and
+ *   `generate_multi_clip_switch` are the optional fields it lists.
+ * - `aspect_ratio` is wider on v6-max / v6 / c1 (it adds 2:3, 3:2 and 21:9);
+ *   `duration` is 1–15s on v6-max/v6/c1 but a fixed value list below that;
+ *   `generate_audio_switch` is v5.5+, `generate_multi_clip_switch` is v5.5/v6,
+ *   `template_id` is refused on v6-max, and the sound-effect / lip-sync TTS
+ *   fields are "v5 and below".
+ * - The schema does not list the sound-effect / lip-sync TTS fields,
+ *   `motion_mode`, `camera_movement` or `template_id`, and they stay typed:
+ *   the error-details page documents `MOTION_MODE_MODEL_UNSUPPORTED` and
+ *   `CAMERA_MOVEMENT_MODEL_UNSUPPORTED`
+ *   (https://docs.platform.pixverse.ai/error-details-2490131m0), and this
+ *   page's 2026-09-20 archive declared `lip_sync_tts_switch` as "Supported in
+ *   v5 models and below"
+ *   (https://web.archive.org/web/20260920044218/https://docs.platform.pixverse.ai/text-to-video-generation-13016634e0).
  * - Async: responds `{ ErrCode, ErrMsg, Resp: { video_id } }`; poll
  *   `GET /openapi/v2/video/result/{video_id}`.
  * - Headers: add `API-KEY` and a fresh `Ai-trace-id` UUID yourself — unmodel
@@ -44,21 +53,26 @@ import { videoCostUSD } from "./pricing";
 
 export const TEXT_TO_VIDEO_URL = `${PIXVERSE_BASE_URL}/video/text/generate`;
 
-const SOURCE = `${DOCS_BASE}/text-to-video-generation-13016634e0`;
+const SOURCE = `${DOCS_BASE}/text-to-video-13016634e0`;
 
 export interface TextToVideoParams {
   /** Required; up to 5000 characters. */
   prompt: string;
   model: PixverseModelId | (string & {});
-  /** Required. v6 / c1 also accept 2:3, 3:2 and 21:9. */
+  /** Required. v6-max / v6 / c1 also accept 2:3, 3:2 and 21:9. */
   aspect_ratio: PixverseAspectRatio;
-  /** Required. 1–15 on v6/c1; a fixed list on the older models. */
+  /** Required. 1–15 on v6-max/v6/c1; a fixed list on the older models. */
   duration: number;
   /** Required. */
   quality: PixverseQualityValue;
   /** 0 – 2147483647. */
   seed?: number;
-  /** Inline audio. v5.5 / v5.6 / v6 / c1 only; defaults to false. */
+  /**
+   * The id of a webhook configured in your PixVerse account — not a callback
+   * URL. Omit it when polling the task.
+   */
+  webhook_id?: string;
+  /** Inline audio. v5.5 / v5.6 / v6 / c1 / v6-max only; defaults to false. */
   generate_audio_switch?: boolean;
   /** Inline multi-clip output. v5.5 / v6 only; defaults to false. */
   generate_multi_clip_switch?: boolean;
@@ -73,13 +87,16 @@ export interface TextToVideoParams {
   /** v5 and below; an id from the Speech (Lipsync) TTS list endpoint. */
   lip_sync_tts_speaker_id?: string;
   /**
-   * Motion preset. Not in the schema table but sent in the official request
-   * examples and priced on the v4.5/v4/v3.5 credit table.
+   * Motion preset. Not in the schema; a model that lacks the mode answers
+   * `MOTION_MODE_MODEL_UNSUPPORTED`.
    */
   motion_mode?: PixverseMotionMode;
-  /** Camera preset, e.g. "zoom_in" — commented into the official example. */
+  /**
+   * Camera preset, e.g. "zoom_in". Not in the schema; a model that lacks the
+   * movement answers `CAMERA_MOVEMENT_MODEL_UNSUPPORTED`.
+   */
   camera_movement?: string;
-  /** An activated template id. */
+  /** An activated template id. Not on v6-max. */
   template_id?: number;
 }
 
@@ -90,6 +107,7 @@ const videoSchema = z.looseObject({
   duration: z.number().int(),
   quality: z.enum(PIXVERSE_QUALITIES),
   seed: seedSchema.optional(),
+  webhook_id: z.string().optional(),
   generate_audio_switch: z.boolean().optional(),
   generate_multi_clip_switch: z.boolean().optional(),
   sound_effect_switch: z.boolean().optional(),
@@ -102,8 +120,9 @@ const videoSchema = z.looseObject({
   template_id: z.number().int().optional(),
 });
 
-/** Per-model `aspect_ratio` narrowing — v6 and c1 get the wide set. */
+/** Per-model `aspect_ratio` narrowing — v6-max, v6 and c1 get the wide set. */
 export const videoConstraints = {
+  "v6-max": { enums: { aspect_ratio: WIDE_ASPECT_RATIOS } },
   v6: { enums: { aspect_ratio: WIDE_ASPECT_RATIOS } },
   c1: { enums: { aspect_ratio: WIDE_ASPECT_RATIOS } },
   "v5.6": { enums: { aspect_ratio: LEGACY_ASPECT_RATIOS } },
@@ -124,7 +143,6 @@ function estimate(params: TextToVideoParams, info: ModelInfo | undefined, _ctx: 
     ...(params.generate_multi_clip_switch !== undefined && {
       multiClip: params.generate_multi_clip_switch,
     }),
-    ...(params.motion_mode !== undefined && { motionMode: params.motion_mode }),
   });
   return costUSD === undefined ? {} : { costUSD };
 }

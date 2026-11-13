@@ -29,6 +29,23 @@ export const models = {
     limit: { context: 32768, output: 4096 },
     cost: { input: 0.15, output: 0.15 },
   },
+  "solar-mini4": {
+    id: "solar-mini4",
+    name: "Solar Mini 4",
+    family: "solar-mini",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2026-02",
+    releaseDate: "2026-09-22",
+    lastUpdated: "2026-09-22",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 524288, output: 131072 },
+    cost: { input: 0.1, output: 0.4, cacheRead: 0.01 },
+  },
   "solar-pro2": {
     id: "solar-pro2",
     name: "solar-pro2",
@@ -55,8 +72,8 @@ export const models = {
     temperature: true,
     openWeights: false,
     knowledge: "2025-03",
-    releaseDate: "2026-01",
-    lastUpdated: "2026-01",
+    releaseDate: "2026-01-26",
+    lastUpdated: "2026-03-23",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131072, output: 8192 },
     cost: { input: 0.25, output: 0.25 },
@@ -81,7 +98,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type UpstageModelId = keyof typeof models;
-export type UpstageTextModelId = "solar-mini" | "solar-pro2" | "solar-pro3" | "solar-pro4";
+export type UpstageTextModelId = "solar-mini" | "solar-mini4" | "solar-pro2" | "solar-pro3" | "solar-pro4";
 export type UpstageImageModelId = never;
 export type UpstageAudioModelId = never;
 export type UpstageVideoModelId = never;

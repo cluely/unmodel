@@ -60,7 +60,7 @@ describe("the pack", () => {
   });
 
   test("the two adapters are the pack, and each can be built alone", () => {
-    expect(elevenlabsAdapter.models).toHaveLength(1);
+    expect(elevenlabsAdapter.models).toHaveLength(2);
     expect(falAdapter.models).toHaveLength(6);
     expect([...createSfx([elevenlabsAdapter]).providers]).toEqual(["elevenlabs"]);
     expect([...createSfx([falAdapter]).providers]).toEqual(["fal"]);
@@ -258,6 +258,29 @@ describe("the same model, two ways", () => {
 });
 
 describe("the encoding", () => {
+  test("ElevenLabs 16-bit PCM compiles to a WAV file by default and to bare PCM on request", () => {
+    const wav = sfx.safe({
+      model: EL,
+      prompt: PROMPT,
+      outputFormat: { format: "pcm_s16le", sampleRate: 48000 },
+    });
+    expect(wav.ok, JSON.stringify(wav.ok ? [] : wav.errors)).toBe(true);
+    if (!wav.ok) return;
+    const wavUrl = (wav.params as unknown as { request: { url: string } }).request.url;
+    expect(wavUrl).toBe(`${SOUND_EFFECTS_URL}?output_format=wav_48000`);
+    expect(translationWarnings(wav.params)).toEqual([]);
+
+    const raw = sfx.safe({
+      model: EL,
+      prompt: PROMPT,
+      outputFormat: { format: "pcm_s16le", container: "raw", sampleRate: 16000 },
+    });
+    expect(raw.ok).toBe(true);
+    if (!raw.ok) return;
+    const rawUrl = (raw.params as unknown as { request: { url: string } }).request.url;
+    expect(rawUrl).toBe(`${SOUND_EFFECTS_URL}?output_format=pcm_16000`);
+  });
+
   test("a codec a route cannot emit is refused naming what it offers", () => {
     // ElevenLabs' composite has no FLAC arm.
     const result = sfx.safe({ model: EL, prompt: PROMPT, outputFormat: "flac" } as never);

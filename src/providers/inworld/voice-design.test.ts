@@ -49,20 +49,45 @@ describe("inworld.voiceDesign happy path", () => {
 });
 
 describe("inworld.voiceDesign documented bounds", () => {
-  test("designPrompt is bounded 30–250 characters", () => {
-    expect(voiceDesign.safe({ designPrompt: "too short", previewText: "hi." }).ok).toBe(false);
+  test("designPrompt is capped at 1000 characters", () => {
+    expect(VOICE_DESIGN_PROMPT_MAX_CHARACTERS).toBe(1000);
     expect(
-      voiceDesign.safe({
-        designPrompt: "a".repeat(VOICE_DESIGN_PROMPT_MAX_CHARACTERS + 1),
-        previewText: "hi.",
-      }).ok,
-    ).toBe(false);
-    expect(
-      voiceDesign.safe({
-        designPrompt: "a".repeat(VOICE_DESIGN_PROMPT_MIN_CHARACTERS),
-        previewText: "hi.",
-      }).ok,
+      voiceDesign.safe({ designPrompt: "a".repeat(VOICE_DESIGN_PROMPT_MAX_CHARACTERS), previewText: "hi." })
+        .ok,
     ).toBe(true);
+    const over = voiceDesign.safe({
+      designPrompt: "a".repeat(VOICE_DESIGN_PROMPT_MAX_CHARACTERS + 1),
+      previewText: "hi.",
+    });
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.path).toEqual(["designPrompt"]);
+    expect(voiceDesign.safe({ designPrompt: "", previewText: "hi." }).ok).toBe(false);
+  });
+
+  test("a designPrompt under 30 characters is served, with a warning", () => {
+    const short = voiceDesign.safe({ designPrompt: "too short", previewText: "hi." });
+    expect(short.ok).toBe(true);
+    if (short.ok) {
+      expect(short.warnings[0]?.path).toEqual(["designPrompt"]);
+      expect(short.warnings[0]?.meta?.min).toBe(VOICE_DESIGN_PROMPT_MIN_CHARACTERS);
+    }
+    const enough = voiceDesign.safe({
+      designPrompt: "a".repeat(VOICE_DESIGN_PROMPT_MIN_CHARACTERS),
+      previewText: "hi.",
+    });
+    expect(enough.ok).toBe(true);
+    if (enough.ok) expect(enough.warnings).toEqual([]);
+  });
+
+  test("designPromptMode takes the two documented modes", () => {
+    const verbatim = voiceDesign.safe({
+      designPrompt: PROMPT,
+      designPromptMode: "DESIGN_PROMPT_MODE_VERBATIM",
+      previewText: "hi.",
+    });
+    expect(verbatim.ok).toBe(true);
+    if (verbatim.ok) expect(verbatim.warnings).toEqual([]);
+    expect(safeUnchecked({ designPrompt: PROMPT, designPromptMode: "RAW", previewText: "hi." }).ok).toBe(false);
   });
 
   test("previewText must not be empty", () => {

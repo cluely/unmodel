@@ -20,18 +20,33 @@ export const models = {
     attachment: false,
     reasoning: true,
     toolCall: true,
-    temperature: true,
-    openWeights: false,
+    temperature: false,
+    openWeights: true,
     releaseDate: "2026-06-30",
     lastUpdated: "2026-06-30",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1000000, output: 131072 },
-    cost: { input: 0.75, output: 2.95, cacheRead: 0.015 },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.006 },
+  },
+  "LongCat-2.5-Preview": {
+    id: "LongCat-2.5-Preview",
+    name: "LongCat-2.5-Preview",
+    family: "longcat",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: false,
+    openWeights: false,
+    releaseDate: "2026-09-25",
+    lastUpdated: "2026-09-25",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 262144 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.006 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type LongcatModelId = keyof typeof models;
-export type LongcatTextModelId = "LongCat-2.0";
+export type LongcatTextModelId = "LongCat-2.0" | "LongCat-2.5-Preview";
 export type LongcatImageModelId = never;
 export type LongcatAudioModelId = never;
 export type LongcatVideoModelId = never;

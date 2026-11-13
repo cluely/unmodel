@@ -12,30 +12,27 @@
  * `FAL_VIDEO_ENDPOINTS`). Source page:
  * https://fal.ai/models/lightricks/ltx-2.5/text-to-video/pro/api
  *
- * That it is `ltx-2-5-pro` and not one of the other five ids is not read off
- * the path segment — it is read off the enums, which match that model's
- * support-matrix row and no other: `resolution` is `["720p","1080p"]` (only
- * `ltx-2-5-pro` caps at 1080p), `duration` is `[6,8,10]` (both `fast` rows
- * reach 20s), and `fps` is `[24,25,50]` (only `ltx-2-5-pro` drops 48). fal's
- * own catalog *name* for the row says "Fast"; the id routes, and the enums
- * settle it.
+ * That it is `ltx-2-5-pro` and not one of the other three ids is not read off
+ * the path segment — it is read off the enums: `duration` is `[6,8,10]` plus
+ * `"auto"`, and both `fast` rows reach 20s while LTX-2.3 has no automatic
+ * duration. fal's row is a strict SUBSET of `ltx-2-5-pro`'s LTX matrix —
+ * `resolution` `["720p","1080p"]`, `aspect_ratio` 16:9 / 9:16, `fps`
+ * `[24,25,50]` — so the 1440p and 4K tiers, the 1:1 / 3:2 / 2:3 shapes and
+ * 48fps that LTX serves on this model are refused below rather than mapped.
+ * fal's own catalog *name* for the row says "Fast"; the id routes, and the
+ * enums settle it.
  *
  * ## The one derivation
  *
  * LTX spells the output size as a single `WIDTHxHEIGHT` string; fal splits it
- * into `resolution` + `aspect_ratio`. For this model the four documented
- * strings are exactly `{720p, 1080p} × {16:9, 9:16}`, so the split is total —
- * every value round-trips, nothing is snapped, and the mapping stays
- * warning-free. A `${number}x${number}` outside the published tiers is refused
- * rather than rounded: the nearest tier is a different frame size and a
- * different price.
+ * into `resolution` + `aspect_ratio`. On the four strings fal's row covers —
+ * `{720p, 1080p} × {16:9, 9:16}` — the split is total: every value
+ * round-trips, nothing is snapped, and the mapping stays warning-free. Any
+ * other `WIDTHxHEIGHT` is refused rather than rounded: the nearest one fal
+ * serves is a different frame size and a different price.
  */
 import type { ApiRetargeter } from "../../core/request";
-import {
-  createMediaToApi,
-  refuseParam,
-  type MediaMapContext,
-} from "../../core/translate/media-retarget";
+import { createMediaToApi, type MediaMapContext } from "../../core/translate/media-retarget";
 import { FAL_MEDIA_TARGET } from "../../core/translate/media-endpoints";
 import type { FalVideoBodyById } from "../fal/interop";
 import { DEFAULT_FPS } from "./shared";
@@ -51,16 +48,20 @@ export type FalLtx25Pro = FalVideoBodyById["lightricks/ltx-2.5/text-to-video/pro
 
 const ENDPOINT = "lightricks/ltx-2.5/text-to-video/pro";
 
-/** fal's `maxLen` for this endpoint's prompt; LTX itself publishes no cap. */
+/**
+ * fal's `maxLen` for this endpoint's prompt. LTX's own schema carries the same
+ * cap: "prompt":{"type":"string","maxLength":5000 (https://docs.ltx.io/openapi.json,
+ * 2026-11-12).
+ */
 const PROMPT_MAX_CHARS = 5000;
 
 /**
  * `WIDTHxHEIGHT` → fal's `{ resolution, aspect_ratio }` pair.
  *
- * Only the four combinations `ltx-2-5-pro` actually serves are listed. The
- * 1440p and 4K strings are in `LTX_RESOLUTION_TIERS` for other models and are
- * absent here on purpose — a table that answered for them would be answering
- * for an endpoint fal does not publish.
+ * Only the four combinations fal's row serves are listed. The 1440p and 4K
+ * tiers and the 1:1 / 3:2 / 2:3 shapes are in `LTX_RESOLUTION_GRID` for LTX's
+ * own route and are absent here on purpose — a table that answered for them
+ * would be answering for an endpoint fal does not publish.
  */
 const RESOLUTION_SPLIT: Readonly<
   Record<string, { readonly resolution: "720p" | "1080p"; readonly aspect_ratio: "16:9" | "9:16" }>
@@ -84,11 +85,6 @@ const RESOLUTION_SPLIT: Readonly<
  *   model choose" — `ltx-2-5-pro` is in `AUTOMATIC_DURATION_MODELS` and fal's
  *   default is `"auto"` — but fal's enum has no `null` member, so the rename
  *   is required, not optional.
- *
- * `api_version` is refused rather than dropped: `"v1"` names LTX's
- * *synchronous* route, and fal's queue has no synchronous arm on this
- * endpoint. Answering a request for a blocking call with a queued job is a
- * different control flow, not a lossier one.
  */
 function mapLtx25Pro(params: TextToVideoParams, ctx: MediaMapContext): FalLtx25Pro {
   if (params.prompt.length > PROMPT_MAX_CHARS) {
@@ -96,17 +92,9 @@ function mapLtx25Pro(params: TextToVideoParams, ctx: MediaMapContext): FalLtx25P
       path: ["prompt"],
       message:
         `\`prompt\` is ${params.prompt.length} characters, over the ${PROMPT_MAX_CHARS}-character cap ` +
-        `${ENDPOINT} publishes. LTX itself sets no cap, so this is a limit the retarget introduces; ` +
-        "shorten the prompt — unmodel will not truncate it for you.",
+        `${ENDPOINT} publishes (LTX's own schema carries the same cap); shorten the prompt — ` +
+        "unmodel will not truncate it for you.",
     });
-  }
-  if (params.api_version === "v1") {
-    refuseParam(
-      ctx,
-      ["api_version"],
-      ENDPOINT,
-      'is a queue submit with no synchronous arm — `api_version: "v1"` asks LTX for a blocking call, which is a different control flow rather than a lossier one',
-    );
   }
   const split = Object.hasOwn(RESOLUTION_SPLIT, params.resolution)
     ? RESOLUTION_SPLIT[params.resolution]
@@ -154,7 +142,7 @@ export const LIGHTRICKS_VIDEO_FAL_OVERLAP = {
 } as const;
 
 /**
- * The five LTX ids fal does not serve, with the reason.
+ * The three LTX ids fal does not serve, with the reason.
  *
  * `ltx-2-5-fast` is the one a reader will reach for: it is the same generation
  * and the fal row's *display name* even says "Fast". The enums say otherwise —
@@ -163,11 +151,9 @@ export const LIGHTRICKS_VIDEO_FAL_OVERLAP = {
  */
 export const LIGHTRICKS_VIDEO_FAL_REFUSALS: Readonly<Record<string, string>> = Object.freeze({
   "ltx-2-5-fast":
-    "fal's single LTX row is ltx-2-5-pro: its duration enum stops at 10s and its fps enum omits 48, both of which ltx-2-5-fast serves. Routing there would swap the model, not the transport.",
+    "fal's single curated LTX row is ltx-2-5-pro: its duration enum stops at 10s and its fps enum omits 48, both of which ltx-2-5-fast serves. Routing there would swap the model, not the transport.",
   "ltx-2-3-pro": "fal's curated LTX roster is LTX-2.5 only.",
   "ltx-2-3-fast": "fal's curated LTX roster is LTX-2.5 only.",
-  "ltx-2-pro": "fal's curated LTX roster is LTX-2.5 only.",
-  "ltx-2-fast": "fal's curated LTX roster is LTX-2.5 only.",
 });
 
 /** The type half of {@link LIGHTRICKS_VIDEO_FAL_OVERLAP}, derived from it. */

@@ -2,7 +2,8 @@
  * HeyGen avatar video — POST https://api.heygen.com/v3/videos
  *
  * Wire notes (verified against https://developers.heygen.com/openapi/external-api.json
- * and https://developers.heygen.com/reference/create-video on 2026-08-25; note
+ * and https://developers.heygen.com/reference/create-video on 2026-08-25,
+ * re-verified 2026-11-12; note
  * that the OLD host's slug for this page, `docs.heygen.com/reference/create-an-avatar-video-v2`,
  * 404s at the new host — see `./shared.ts`):
  *
@@ -10,14 +11,16 @@
  *   `CreateVideoV3RequestBody` is a `oneOf` on `type` with four arms; unmodel
  *   serves two of them. `"avatar"` requires `avatar_id` (a look from your
  *   workspace) and declares no `image`; `"image"` requires `image` (url, asset
- *   id or inline base64) and declares no `avatar_id`. Both are
+ *   id or inline base64) and declares no `avatar_id` and no `engine`. Both are
  *   `additionalProperties: false`, so the wrong field for the arm is a 400 —
- *   {@link checkVisualSource} is the guard, and HeyGen's own documented example
- *   error is exactly that mistake.
+ *   {@link checkVisualSource} and {@link checkEngineArm} are the guards, and
+ *   HeyGen's own documented example error is exactly that mistake.
  * - **There is no `model` field.** `engine` is a second discriminated union
- *   (`avatar_iii`, `avatar_iv`, `avatar_v`) and it is OPTIONAL, defaulting to
- *   `avatar_iv`. Those three are what unmodel catalogs, because they are three
- *   products with three pages and a four-fold price spread — so `modelId` reads
+ *   (`avatar_iii`, `avatar_iv`, `avatar_v`), declared on the `"avatar"` arm
+ *   only and OPTIONAL there, defaulting to `avatar_iv`; the `"image"` arm
+ *   renders on Avatar IV and refuses the field, `null` and `avatar_iv`
+ *   included. Those three are what unmodel catalogs, because they are three
+ *   products with three pages and a twelve-fold price spread — so `modelId` reads
  *   `engine.type` and falls back to the documented default rather than to
  *   `unknown_model`.
  * - **The speech is a script OR a track, never both**, `voice_id` is required
@@ -30,6 +33,9 @@
  *   (Avatar IV and V). See {@link checkEngineGatedFields}.
  * - **`output_format: "webm"` rejects `background`** and applies background
  *   removal itself. See {@link checkTransparentOutput}.
+ * - **Every optional except `output_format` is nullable** — both arms type them
+ *   `anyOf: [T, {"type": "null"}]` with `"default": null`, so `null` is
+ *   accepted and read as absent by every check here.
  * - Async: **200** with `{ data: { video_id, status: "waiting" } }`; poll
  *   `GET /v3/videos/{video_id}` until `completed` or `failed`, then read
  *   `video_url` (plus `subtitle_url`, `captioned_video_url`, `thumbnail_url`,
@@ -82,6 +88,7 @@ import {
   checkVisualSource,
   engineOf,
   engineSchema,
+  outputUploadSchema,
   voiceSettingsSchema,
   watermarkSchema,
   type HeygenAspectRatio,
@@ -92,6 +99,7 @@ import {
   type HeygenExpressiveness,
   type HeygenFit,
   type HeygenOutputFormat,
+  type HeygenOutputUpload,
   type HeygenResolution,
   type HeygenVideoType,
   type HeygenVoiceSettings,
@@ -126,77 +134,82 @@ export interface HeygenAvatarParams {
   image?: HeygenAssetRef;
   /**
    * Which engine renders. **Optional, and omitting it means `avatar_iv`** —
-   * which is also a price decision, so unmodel's unified adapter always writes
-   * it out.
+   * which is also a price decision. Declared on the `"avatar"` arm only;
+   * refused on `"image"`, which renders on Avatar IV — every value, `null`
+   * included. This interface is flat across the two arms, so the refusal is a
+   * run-time issue at `engine` rather than a compile error.
    */
-  engine?: HeygenEngineConfig;
+  engine?: HeygenEngineConfig | null;
   /** Text for the avatar to speak. Mutually exclusive with the audio fields. */
-  script?: string;
+  script?: string | null;
   /** Required with `script`, unless `avatar_id` supplies its default voice. */
-  voice_id?: string;
+  voice_id?: string | null;
   /** A public URL of audio to lip-sync. Mutually exclusive with `script`. */
-  audio_url?: string;
+  audio_url?: string | null;
   /** An uploaded audio asset. Mutually exclusive with `script`. */
-  audio_asset_id?: string;
+  audio_asset_id?: string | null;
   /** Speed, pitch, volume, locale and engine tuning. Ignored for uploaded audio. */
-  voice_settings?: HeygenVoiceSettings;
+  voice_settings?: HeygenVoiceSettings | null;
   /** Display title in the HeyGen dashboard. */
-  title?: string;
+  title?: string | null;
   /** Destination folder. Omit, `null` or `""` puts the video at the workspace root. */
-  folder_id?: string;
+  folder_id?: string | null;
   /** `"720p" | "1080p" | "4k"`. 4K is not available on every engine and look. */
-  resolution?: HeygenResolution;
+  resolution?: HeygenResolution | null;
   /** Default `"16:9"`. `"auto"` preserves the source's ratio. */
-  aspect_ratio?: HeygenAspectRatio;
+  aspect_ratio?: HeygenAspectRatio | null;
   /** How the subject meets the canvas. Omitted lets HeyGen decide. */
-  fit?: HeygenFit;
+  fit?: HeygenFit | null;
   /** A solid colour or an image. **Rejected when `output_format` is `"webm"`.** */
-  background?: HeygenBackground;
+  background?: HeygenBackground | null;
   /** Video avatars must have been trained with matting enabled. */
-  remove_background?: boolean;
+  remove_background?: boolean | null;
   /** HeyGen POSTs the finished video here. */
-  callback_url?: string;
+  callback_url?: string | null;
   /** Echoed back in the webhook payload. */
-  callback_id?: string;
+  callback_id?: string | null;
+  /** Presigned PUT URLs HeyGen uploads the finished files to. Enabled workspaces only. */
+  output_upload?: HeygenOutputUpload | null;
   /** Enterprise-gated overlay. */
-  watermark?: HeygenWatermark;
+  watermark?: HeygenWatermark | null;
   /** A sidecar subtitle file is always produced; `style` burns captions in too. */
-  caption?: HeygenCaption;
+  caption?: HeygenCaption | null;
   /** Default `"mp4"`. `"webm"` returns an alpha channel and rejects `background`. */
   output_format?: HeygenOutputFormat;
   /** Pronunciation overrides for synthesized speech. `GET /v3/brand-glossaries`. */
-  brand_glossary_id?: string;
+  brand_glossary_id?: string | null;
   /** Body motion and gestures, in words. Avatar IV and V; photo-avatar rules apply. */
-  motion_prompt?: string;
+  motion_prompt?: string | null;
   /** Avatar IV only, photo avatars only. Defaults to `"low"`. */
-  expressiveness?: HeygenExpressiveness;
+  expressiveness?: HeygenExpressiveness | null;
 }
 
 const avatarSchema = z.looseObject({
   type: z.enum(HEYGEN_VIDEO_TYPES),
   avatar_id: z.string().optional(),
   image: assetRefSchema.optional(),
-  engine: engineSchema.optional(),
-  script: z.string().min(1).optional(),
-  voice_id: z.string().optional(),
-  audio_url: z.string().optional(),
-  audio_asset_id: z.string().optional(),
-  voice_settings: voiceSettingsSchema.optional(),
-  title: z.string().optional(),
-  folder_id: z.string().optional(),
-  resolution: z.enum(HEYGEN_RESOLUTIONS).optional(),
-  aspect_ratio: z.enum(HEYGEN_ASPECT_RATIOS).optional(),
-  fit: z.enum(HEYGEN_FITS).optional(),
-  background: backgroundSchema.optional(),
-  remove_background: z.boolean().optional(),
-  callback_url: z.string().optional(),
-  callback_id: z.string().optional(),
-  watermark: watermarkSchema.optional(),
-  caption: captionSchema.optional(),
+  engine: engineSchema.nullable().optional(),
+  script: z.string().min(1).nullable().optional(),
+  voice_id: z.string().nullable().optional(),
+  audio_url: z.string().nullable().optional(),
+  audio_asset_id: z.string().nullable().optional(),
+  voice_settings: voiceSettingsSchema.nullable().optional(),
+  title: z.string().nullable().optional(),
+  folder_id: z.string().nullable().optional(),
+  resolution: z.enum(HEYGEN_RESOLUTIONS).nullable().optional(),
+  aspect_ratio: z.enum(HEYGEN_ASPECT_RATIOS).nullable().optional(),
+  fit: z.enum(HEYGEN_FITS).nullable().optional(),
+  background: backgroundSchema.nullable().optional(),
+  remove_background: z.boolean().nullable().optional(),
+  callback_url: z.string().nullable().optional(),
+  callback_id: z.string().nullable().optional(),
+  output_upload: outputUploadSchema.nullable().optional(),
+  watermark: watermarkSchema.nullable().optional(),
+  caption: captionSchema.nullable().optional(),
   output_format: z.enum(HEYGEN_OUTPUT_FORMATS).optional(),
-  brand_glossary_id: z.string().min(1).optional(),
-  motion_prompt: z.string().optional(),
-  expressiveness: z.enum(HEYGEN_EXPRESSIVENESS).optional(),
+  brand_glossary_id: z.string().min(1).nullable().optional(),
+  motion_prompt: z.string().nullable().optional(),
+  expressiveness: z.enum(HEYGEN_EXPRESSIVENESS).nullable().optional(),
 });
 
 /**
@@ -205,11 +218,12 @@ const avatarSchema = z.looseObject({
  * are declared once on the arm rather than per engine.
  *
  * The per-ENGINE narrowing that does exist — `expressiveness` at Avatar IV
- * only, `motion_prompt` not at Avatar III, raw image input not at Avatar III —
- * is a `deny`-shaped rule whose useful message is "which engines DO take this",
- * which a deny table has nowhere to put. So it lives in
- * {@link checkEngineGatedFields} and {@link checkEngineArm}, and this table
- * declares the roster to the pipeline and the enums to `constraintsFor`.
+ * only, `motion_prompt` not at Avatar III — is a `deny`-shaped rule whose
+ * useful message is "which engines DO take this", which a deny table has
+ * nowhere to put. So it lives in {@link checkEngineGatedFields}; the raw-image
+ * arm's refusal of `engine` itself is keyed by arm, not engine, and lives in
+ * {@link checkEngineArm}. This table declares the roster to the pipeline and
+ * the enums to `constraintsFor`.
  */
 const ENGINE_ENUMS = {
   resolution: HEYGEN_RESOLUTIONS,
@@ -270,7 +284,7 @@ const validator = createValidator<HeygenAvatarParams, unknown>({
   constraints: avatarConstraints,
   checks: [
     checkVisualSource(SOURCE),
-    checkEngineArm(`${DOCS_BASE}/avatar-iii`),
+    checkEngineArm(SOURCE),
     checkEngineGatedFields(SOURCE),
     checkSpeechSource(SOURCE),
     checkTransparentOutput(SOURCE),

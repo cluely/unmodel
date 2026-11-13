@@ -20,6 +20,7 @@ import {
   imageEditInpaint,
   imageEditOutpaint,
   imageEditReplaceBackground,
+  imageEditGenerateBackground,
 } from "../../src/providers/recraft";
 import { expectAssignable } from "./helpers";
 
@@ -54,6 +55,11 @@ function generationsSizeTypeTests(): void {
 
   // null still means "let Recraft pick from the prompt".
   image({ prompt: "hi", size: null });
+
+  // `response_format` takes the documented third value.
+  image({ prompt: "hi", response_format: "multipart" });
+  // @ts-expect-error — not a `response_format` value.
+  image({ prompt: "hi", response_format: "hex" });
 }
 
 function outpaintSizeTypeTests(): void {
@@ -105,6 +111,21 @@ function generationsStyleTypeTests(): void {
   image({ prompt: "hi", model: "recraftv9-unreleased", style: "Kawaii" });
   image({ prompt: "hi", model: runtimeModel, style: "3D render" });
 
+  // A `_raster` alias carries its base model's curated list.
+  image({ prompt: "hi", model: "recraftv3_raster", style: "Photorealism" });
+  image({ prompt: "hi", model: "recraftv2_raster", style: "3D render" });
+  // @ts-expect-error — "3D render" is V2-only; recraftv3_raster is V3.
+  image({ prompt: "hi", model: "recraftv3_raster", style: "3D render" });
+
+  // Custom styles: `style_reference_urls` is a string array and `style_match`
+  // is the closed "regular" | "precise" | "flexible" enum.
+  image({ prompt: "hi", model: "recraftv4_styles", style_reference_urls: ["https://x/a.png"] });
+  image({ prompt: "hi", model: "recraftv4_styles", style_id: "abc", style_match: "precise" });
+  // @ts-expect-error — not a `style_match` value.
+  image({ prompt: "hi", model: "recraftv4_styles", style_id: "abc", style_match: "strict" });
+  // @ts-expect-error — references are URLs, not one string.
+  image({ prompt: "hi", model: "recraftv4_styles", style_reference_urls: "https://x/a.png" });
+
   // `substyle` stays globally open — no published style ↔ substyle pairing.
   image({ prompt: "hi", model: "recraftv3", substyle: "line_circuit" });
 
@@ -136,6 +157,40 @@ function editStyleTypeTests(): void {
 
   // Degraded arm: `model` omitted defaults server-side, so the pooled union stays.
   imageEdit({ image: imageBlob, prompt: "x", strength: 0.2, style: "3D render" });
+}
+
+/**
+ * `image_format` and `style_match` are on every editing route's page — both
+ * used to type as `never` here and draw `unknown_param` at run time.
+ */
+function editFormatAndStyleMatchTypeTests(): void {
+  const edited = imageEdit({ image: imageBlob, prompt: "x", strength: 0.2, image_format: "png" });
+  expectAssignable<"png">(edited.image_format);
+  imageEdit({
+    image: imageBlob,
+    prompt: "x",
+    strength: 0.2,
+    model: "recraftv3",
+    style_id: "abc",
+    style_match: "regular",
+  });
+  imageEditInpaint({ image: imageBlob, mask: imageBlob, prompt: "x", image_format: "webp", style_match: "regular" });
+  imageEditOutpaint({ image: imageBlob, prompt: "x", size: "3:2", image_format: "png", style_match: "regular" });
+  imageEditReplaceBackground({ image: imageBlob, prompt: "x", image_format: "png", style_match: "regular" });
+  imageEditGenerateBackground({
+    image: imageBlob,
+    mask: imageBlob,
+    prompt: "x",
+    image_format: "png",
+    style_match: "regular",
+  });
+  // `null` still means "the provider default".
+  imageEditInpaint({ image: imageBlob, mask: imageBlob, prompt: "x", image_format: null, style_match: null });
+
+  // @ts-expect-error — no JPEG container on the editing routes either.
+  imageEdit({ image: imageBlob, prompt: "x", strength: 0.2, image_format: "jpeg" });
+  // @ts-expect-error — `regular` is the one `style_match` these routes take.
+  imageEditInpaint({ image: imageBlob, mask: imageBlob, prompt: "x", style_match: "precise" });
 }
 
 /**
@@ -178,5 +233,6 @@ export {
   outpaintSizeTypeTests,
   generationsStyleTypeTests,
   editStyleTypeTests,
+  editFormatAndStyleMatchTypeTests,
   generationsSpecEnumTypeTests,
 };

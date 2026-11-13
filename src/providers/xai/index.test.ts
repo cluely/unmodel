@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { chat, checkChat, CHAT_COMPLETIONS_URL } from "./index";
+import { chat, checkChat, CHAT_COMPLETIONS_URL, models } from "./index";
 
 describe("unmodel/xai", () => {
   test("chat URL is the documented endpoint", () => {
@@ -64,5 +64,58 @@ describe("unmodel/xai", () => {
     expect(report.usage).toEqual({ inputTokens: 10, outputTokens: 5, totalTokens: 15 });
     expect(report.finishReason).toBe("stop");
     expect(report.warnings).toEqual([]);
+  });
+});
+
+describe("grok-4.7", () => {
+  test("validates with no warnings, including reasoning_effort xhigh", () => {
+    // "- **Reasoning efforts (supported):** `low`, `medium`, `high`, `xhigh`"
+    // — https://docs.x.ai/developers/models/grok-4.7 (2026-11-12).
+    const r = chat.safe({
+      model: "grok-4.7",
+      messages: [{ role: "user", content: "hi" }],
+      reasoning_effort: "xhigh",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("prices at $2.00 input / $0.50 cached / $6.00 output per 1M", () => {
+    // "| grok-4.7 (< 200k prompt tokens) | 500k | $2.00 | $0.50 | $6.00 |"
+    // — https://docs.x.ai/developers/models (2026-11-12).
+    expect(models["grok-4.7"].cost).toEqual({ input: 2, output: 6, cacheRead: 0.5 });
+    const report = checkChat({
+      model: "grok-4.7",
+      usage: { prompt_tokens: 1_000_000, completion_tokens: 1_000_000 },
+    });
+    expect(report.costUSD).toBeCloseTo(8, 10);
+  });
+
+  test("is a reasoning model: penalties and stop are refused", () => {
+    // "`presencePenalty`, `frequencyPenalty`, and `stop` cannot be used with
+    // reasoning models. Requests that include them return an error."
+    // — https://docs.x.ai/developers/model-capabilities/text/reasoning (2026-11-12).
+    const messages = [{ role: "user" as const, content: "hi" }];
+    const refused = [
+      chat.safe({ model: "grok-4.7", messages, frequency_penalty: 0.5 }),
+      chat.safe({ model: "grok-4.7", messages, presence_penalty: 0.5 }),
+      chat.safe({ model: "grok-4.7", messages, stop: ["END"] }),
+    ];
+    expect(
+      refused.map((r) => (r.ok ? [] : r.errors.map((e) => [e.code, ...e.path]))),
+    ).toEqual([
+      [["unsupported_param", "frequency_penalty"]],
+      [["unsupported_param", "presence_penalty"]],
+      [["unsupported_param", "stop"]],
+    ]);
+    // The cited page states the fact: "* `stop` (array | null) — (Not
+    // supported by reasoning models)".
+    for (const r of refused) {
+      if (!r.ok) {
+        expect(r.errors[0]?.meta?.source).toContain(
+          "https://docs.x.ai/developers/rest-api-reference/inference/chat-completions",
+        );
+      }
+    }
   });
 });

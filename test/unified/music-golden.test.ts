@@ -101,8 +101,11 @@ describe.each(caseDirs)("golden music/%s", (name) => {
         .warnings;
       expect(comparable(warnings)).toEqual(comparable(fixture.warnings ?? []));
       if (!lossy) expect(warnings).toEqual([]);
-      // A golden request names a real model, so the issue channel is empty.
-      expect(result.warnings).toEqual([]);
+      // A golden request names a real model, so the issue channel is empty —
+      // save the catalog's notice that a still-served model is deprecated
+      // (ElevenLabs' `music_v1` and `eleven_text_to_sound_v2`, both scheduled
+      // for removal in 2027), which says nothing about the mapping under test.
+      expect(result.warnings.filter((issue) => issue.code !== "deprecated_model")).toEqual([]);
     });
   });
 });

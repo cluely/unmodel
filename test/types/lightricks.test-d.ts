@@ -6,7 +6,7 @@
  * published support matrices, so these cases pin what the preset unions
  * autocomplete and what they still (deliberately) let through.
  */
-import { video, videoFromImage } from "../../src/providers/lightricks";
+import { video, videoFromAudio, videoFromImage } from "../../src/providers/lightricks";
 import type { LtxDuration, LtxFps, LtxResolution } from "../../src/providers/lightricks";
 import { expectAssignable } from "./helpers";
 
@@ -27,10 +27,10 @@ function videoTypeTests(): void {
   // orientations.
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 6 });
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "2160x3840", duration: 6 });
-  // Undocumented sizes stay legal — models absent from SUPPORT_MATRIX (the
-  // deprecated ltx-2-fast / ltx-2-pro) are not matrix-checked, so the union
-  // keeps a `${number}x${number}` tail rather than over-narrowing them.
-  video({ model: "ltx-2-pro", prompt: "hi", resolution: "1920x816", duration: 6 });
+  // Undocumented sizes stay legal — models absent from SUPPORT_MATRIX (an id
+  // newer than this build) are not matrix-checked, so the union keeps a
+  // `${number}x${number}` tail rather than over-narrowing them.
+  video({ model: "ltx-3", prompt: "hi", resolution: "1920x816", duration: 6 });
   // @ts-expect-error the empty string is not a "WIDTHxHEIGHT" (was a bare `string`)
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "", duration: 6 });
   // @ts-expect-error tier names are not the wire shape — resolutions are "WIDTHxHEIGHT"
@@ -42,16 +42,16 @@ function videoTypeTests(): void {
   // `null` is LTX-2.5's automatic duration (checked at runtime, not compile time).
   video({ model: "ltx-2-5-fast", prompt: "hi", resolution: "1280x720", duration: null });
   // No `@ts-expect-error` case for duration: the union keeps a `(number & {})`
-  // tail so the un-matrixed deprecated models stay callable, which means an
-  // off-matrix number still compiles and is caught at runtime by
-  // checkSupportMatrix instead.
-  video({ model: "ltx-2-pro", prompt: "hi", resolution: "1280x720", duration: 7 });
+  // tail so un-matrixed model ids stay callable, which means an off-matrix
+  // number still compiles and is caught at runtime by checkSupportMatrix
+  // instead.
+  video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 7 });
 
   // fps presets: the four values the matrices publish.
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 6, fps: 48 });
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 6, fps: 50 });
   // Same `(number & {})` reasoning as duration — no `@ts-expect-error` case.
-  video({ model: "ltx-2-pro", prompt: "hi", resolution: "1280x720", duration: 6, fps: 30 });
+  video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 6, fps: 30 });
 
   // @ts-expect-error ExactKeys rejects typo'd keys
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 6, fsp: 24 });
@@ -95,4 +95,24 @@ function videoFromImageTypeTests(): void {
   videoFromImage({ model: "ltx-2-3-pro", image_uri: IMG, prompt: "hi", resolution, duration, fps });
 }
 
-export { videoTypeTests, videoFromImageTypeTests };
+function videoFromAudioTypeTests(): void {
+  const AUDIO = "https://example.com/vo.mp3";
+  // The text-to-video resolution and fps unions ride this route too, with the
+  // frame fields text- and image-to-video take.
+  videoFromAudio({
+    audio_uri: AUDIO,
+    image_uri: IMG,
+    last_frame_uri: IMG,
+    model: "ltx-2-5-pro",
+    resolution: "1620x1080",
+    fps: 48,
+    camera_motion: "dolly_in",
+  });
+  videoFromAudio({ audio_uri: AUDIO, prompt: "hi", resolution: "1280x720" });
+  // @ts-expect-error "1080p" is a tier name, not a "WIDTHxHEIGHT"
+  videoFromAudio({ audio_uri: AUDIO, prompt: "hi", resolution: "1080p" });
+  // @ts-expect-error `camera_motion` is a closed enum
+  videoFromAudio({ audio_uri: AUDIO, prompt: "hi", camera_motion: "orbit" });
+}
+
+export { videoTypeTests, videoFromImageTypeTests, videoFromAudioTypeTests };

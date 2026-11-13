@@ -12,7 +12,7 @@
  * is generated from fal's own OpenAPI `required` list minus everything fal
  * defaults. A hand-written list would be ten transcriptions to keep in step
  * with a weekly refresh, and the first one to go stale would turn a real
- * regression into a passing sweep. Topaz's fifteen models need nothing beyond
+ * regression into a passing sweep. Topaz's eighteen models need nothing beyond
  * `source`, and two halves of the sweep FORK there: it takes no multiplier at
  * all (it states an absolute output size) and it refuses inline bytes (it reads
  * raw bytes only as a multipart file part, which `UpscaleSource` cannot carry).
@@ -22,7 +22,8 @@ import { upscale } from "../../src/unified/upscale";
 import { upscale as fal } from "../../src/providers/fal/unified-upscale";
 import { upscale as revana } from "../../src/providers/revana/unified-upscale";
 import { upscale as topaz } from "../../src/providers/topaz/unified";
-import { TOPAZ_ENHANCE_GEN_MODELS } from "../../src/providers/topaz/shared";
+import { TOPAZ_SETTINGS_BY_MODEL } from "../../src/providers/topaz/shared";
+import { models as topazModels } from "../../src/providers/topaz/models";
 import { FAL_REQUIRED_PROBES } from "../../src/providers/fal/gen/endpoints.gen";
 
 const STILL = { url: "https://example.com/portrait.png" } as const;
@@ -62,9 +63,9 @@ const ROWS = { ...fal.modelParams, ...topaz.modelParams, ...revana.modelParams }
 
 test("the sweep covers the whole roster", () => {
   expect(falRefs).toHaveLength(11);
-  expect(topazRefs).toHaveLength(15);
+  expect(topazRefs).toHaveLength(18);
   expect(revanaRefs).toHaveLength(1);
-  expect(refs).toHaveLength(27);
+  expect(refs).toHaveLength(30);
 });
 
 /**
@@ -95,6 +96,12 @@ describe.each(refs)("%s", (ref) => {
     Object.keys(options).length === 0 ? {} : { providerOptions: { [provider]: options } };
   const sourceWire = provider === "fal" ? (video ? "video_url" : "image_url") : "source_url";
 
+  // A row Topaz lists as Deprecated says so, once, as an issue warning — the
+  // one warning a clean request may carry.
+  const deprecated =
+    provider === "topaz" &&
+    (topazModels as Readonly<Record<string, { status?: string }>>)[id]?.status === "deprecated";
+
   test("compiles from a URL ref, with no warnings", () => {
     const result = upscale.safe({
       model: ref,
@@ -103,7 +110,7 @@ describe.each(refs)("%s", (ref) => {
     } as never);
     expect(result.ok, JSON.stringify(result.ok ? [] : result.errors)).toBe(true);
     if (!result.ok) return;
-    expect(result.warnings).toEqual([]);
+    expect(result.warnings.map((issue) => issue.code)).toEqual(deprecated ? ["deprecated_model"] : []);
     const params = result.params as unknown as { warnings: readonly unknown[] };
     expect(params.warnings).toEqual([]);
   });
@@ -188,16 +195,17 @@ describe.each(refs)("%s", (ref) => {
   test("`prompt` is accepted exactly where the route has one", () => {
     // `prompt` is CANONICAL here, so it never lives in a row's `extras` — at
     // fal it is the generated `textWire` (three of the ten endpoints have one),
-    // and at Topaz it is a fact about which of the two ROUTES the model is on:
-    // the nine generative models steer on a prompt and the six classic ones
-    // have no field for it. Both read off data rather than transcribed here.
+    // and at Topaz it is a fact about the model's own page: the settings row
+    // lists `prompt` at `Redefine`, `Bloom 2` and `Bloom`, and the other
+    // fifteen have no field for it. Both read off data rather than transcribed
+    // here.
     // At Revana it is a field of the one body every model shares, which
     // `revana.upscale` accepts on every id — so it is sent there, always.
     const declared =
       provider === "fal"
         ? row?.textWire !== undefined
         : provider === "revana" ||
-          (TOPAZ_ENHANCE_GEN_MODELS as readonly string[]).includes(id);
+          TOPAZ_SETTINGS_BY_MODEL[id]?.includes("prompt") === true;
     const result = upscale.safe({
       model: ref,
       source: video ? CLIP : STILL,
@@ -224,11 +232,11 @@ test("the roster splits both ways, which is what the two narrowings are for", ()
   expect(factors.filter((list) => list === undefined).length).toBeGreaterThan(0);
   // …a closed SET at exactly one (`fal-ai/aura-sr`, whose only legal value is 4)…
   expect(factors.filter((list) => (list?.length ?? 0) > 0).length).toBe(1);
-  // …and NOTHING at seventeen: `fal-ai/recraft/upscale/crisp`, which picks its
-  // own output size, all fifteen Topaz models, which take an absolute one, and
+  // …and NOTHING at twenty: `fal-ai/recraft/upscale/crisp`, which picks its
+  // own output size, all eighteen Topaz models, which take an absolute one, and
   // Revana's one upscaler, whose request has no field that sizes the result.
   // Different reasons to have no multiplier, and the adapters' messages say
   // which is which.
-  expect(factors.filter((list) => list?.length === 0).length).toBe(17);
+  expect(factors.filter((list) => list?.length === 0).length).toBe(20);
   expect(topazRefs.every((ref) => ROWS[bare(ref)]?.factors?.length === 0)).toBe(true);
 });

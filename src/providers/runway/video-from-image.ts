@@ -8,14 +8,16 @@
  * - The request body is a strict per-model union in the spec; unmodel keeps
  *   one loose shape and enforces per-model required fields, ratio/duration
  *   enums, and unsupported params via the constraint tables.
- * - The endpoint only starts a task and responds `{ id }`; polling
- *   GET /v1/tasks/{id} is out of unmodel's scope.
+ * - The endpoint only starts a task and responds `{ id, estimatedCost }`
+ *   (`estimatedCost.credits`: "The maximum credits this task may charge");
+ *   polling GET /v1/tasks/{id} is out of unmodel's scope.
  * - Per-model prompt-image rules ARE enforced: how many images the arm takes,
  *   whether each needs a `position`, and which positions are legal (most arms
- *   take exactly one image that must be `position: "first"`; veo3.1 takes up
- *   to two "first"/"last"; the seedance arms take an unbounded array).
- * - `promptText` is capped per model (1000 chars on the gen4/veo arms, 15000
- *   on seedance2_5) and enforced from the same table.
+ *   take exactly one image that must be `position: "first"`; veo3.1 and the
+ *   Kling 2.5 / 3.0 / O3 arms take up to two "first"/"last"; the seedance
+ *   arms take an unbounded array; kling_4 adds up to 8 `"middle"` frames).
+ * - `promptText` is capped per model (1000 chars on the gen4/veo arms, 26000
+ *   on kling_4) and enforced from the same table.
  * - Auth is `Authorization: Bearer <RUNWAYML_API_SECRET>` — unmodel never
  *   touches keys; add it yourself when fetching.
  */
@@ -37,6 +39,8 @@ import {
   MODELS_SOURCE,
   type RunwayVideoRatio,
   type RunwayVideoResolution,
+  type RunwayVideoOutputFormat,
+  VIDEO_OUTPUT_FORMATS,
 } from "./constraints";
 import {
   RUNWAY_BASE_URL,
@@ -47,10 +51,18 @@ import {
   promptImageCount,
   promptImageSchema,
   audioReferenceArraySchema,
+  videoReferenceArraySchema,
+  positionedReferencesSchema,
+  providerSettingsSchema,
+  cfgScaleSchema,
   contentModerationSchema,
   seedSchema,
+  videoDurationSchema,
   type RunwayPromptImage,
   type RunwayAudioReference,
+  type RunwayVideoReference,
+  type RunwayPositionedReference,
+  type RunwayProviderSettings,
   type RunwayContentModeration,
 } from "./shared";
 import { videoCostUSD } from "./pricing";
@@ -67,28 +79,61 @@ export interface ImageToVideoParams {
   model: RunwayVideoModelId | (string & {});
   /** Required by every model on this route: first frame / keyframes / refs. */
   promptImage: string | RunwayPromptImage[];
-  /** Prompt text; length caps vary per model (1000–15000 chars). */
+  /** Prompt text; length caps vary per model (1000–26000 chars). */
   promptText?: string;
-  /** Output ratio "W:H"; allowed values vary per model. */
+  /** Output ratio "W:H" (or `auto_<tier>`); allowed values vary per model. */
   ratio?: RunwayVideoRatio;
-  /** Output duration in seconds; allowed values vary per model. */
-  duration?: number;
-  /** gen4.5 / gen4_turbo only. Integer 0–4294967295. */
+  /**
+   * Output duration in seconds; allowed values vary per model. `"auto"` (the
+   * model chooses) on the gemini_omni_flash_1.x arms.
+   */
+  duration?: number | "auto";
+  /** gen4.5 / gen4_turbo / veo3.1 / seedance / h3_max only. Integer 0–4294967295. */
   seed?: number;
-  /** veo3.1 / veo3.1_fast / seedance models only. Defaults to true. */
+  /** veo3.1 / seedance / Kling 3.0 / O3 / wan3 arms only. */
   audio?: boolean;
   /** veo3.1 / veo3.1_fast only. */
   negativePrompt?: string;
-  /** hailuo3 / happyhorse_1_0 / grok_imagine_1_5 only. */
+  /** hailuo3 / happyhorse_1_0 / grok_imagine_1_5 / h3_max only. */
   resolution?: RunwayVideoResolution;
   /** gen4.5 / gen4_turbo only. */
   contentModeration?: RunwayContentModeration;
-  /** hailuo3 / seedance models only. */
+  /** hailuo3 / seedance / wan3 arms only. */
   referenceAudio?: RunwayAudioReference[];
-  /** gen4.5 only. */
-  outputFormat?: "mp4" | "prores" | "png_sequence";
-  /** gen4.5 only, with outputFormat "prores". */
+  /**
+   * Image references — Kling O3 (a bare URI, or items with an optional
+   * first/last `position`) and kling_4 / kling_4_flash (`{ uri }` items).
+   */
+  references?: string | RunwayPositionedReference[];
+  /** Video references — wan3 / kling_4 / kling_4_flash arms only. */
+  referenceVideos?: RunwayVideoReference[];
+  /** kling2.5_turbo_pro / Kling 3.0 only: 0–1, default 0.5. */
+  cfgScale?: number;
+  /** Kling 3.0 / O3 multishot settings. */
+  providerSettings?: Omit<RunwayProviderSettings, "keepOriginalSound">;
+  /** h3_max only. `"balanced"` is the default. */
+  promptExpansionMode?: "disabled" | "balanced" | "quality";
+  /**
+   * gen4.5 (mp4 / ProRes / PNG frames and nine 10-bit and HDR profiles) and
+   * seedance2_5 (mp4 | mov) only.
+   */
+  outputFormat?: RunwayVideoOutputFormat;
+  /** gen4.5 only, with outputFormat "prores" or "hdr_prores". */
   proresProfile?: "422" | "4444" | "422 Proxy" | "422 LT" | "422 HQ" | "4444 XQ";
+  /**
+   * seedance2 / seedance2_fast / seedance2_mini only. `"standard"` (the
+   * default) or `"high"`, which "keeps more detail with fewer compression
+   * artifacts, at a larger file size" — openapi.json, 2026-11-12. Both bill
+   * at the same rate.
+   */
+  bitrate?: "standard" | "high";
+  /**
+   * seedance2_5 only: "Generate a cheap 480p preview instead of a
+   * full-quality video", always `mp4` and billed at the 480p rate. Enhancing
+   * it to 1080p is a text_to_video request with `draftTaskId` —
+   * openapi.json, 2026-11-12.
+   */
+  draft?: boolean;
 }
 
 const videoFromImageSchema = z.looseObject({
@@ -96,15 +141,22 @@ const videoFromImageSchema = z.looseObject({
   promptImage: promptImageSchema,
   promptText: z.string().optional(),
   ratio: z.string().optional(),
-  duration: z.number().optional(),
+  duration: videoDurationSchema.optional(),
   seed: seedSchema.optional(),
   audio: z.boolean().optional(),
   negativePrompt: z.string().optional(),
   resolution: z.string().optional(),
   contentModeration: contentModerationSchema.optional(),
   referenceAudio: audioReferenceArraySchema.optional(),
-  outputFormat: z.enum(["mp4", "prores", "png_sequence"]).optional(),
+  references: positionedReferencesSchema.optional(),
+  referenceVideos: videoReferenceArraySchema.optional(),
+  cfgScale: cfgScaleSchema.optional(),
+  providerSettings: providerSettingsSchema.optional(),
+  promptExpansionMode: z.string().optional(),
+  outputFormat: z.enum(VIDEO_OUTPUT_FORMATS).optional(),
   proresProfile: z.enum(["422", "4444", "422 Proxy", "422 LT", "422 HQ", "4444 XQ"]).optional(),
+  bitrate: z.enum(["standard", "high"]).optional(),
+  draft: z.boolean().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -118,9 +170,14 @@ function estimate(params: ImageToVideoParams, info: ModelInfo | undefined, _ctx:
   if (params.model === "grok_imagine_1_5") {
     // 1 credit per image or audio reference, including the start frame.
     flatReferenceCount = promptImageCount(params.promptImage) + (params.referenceAudio?.length ?? 0);
-  } else if (params.model === "hailuo3") {
-    // 2 credits per reference image. hailuo3's promptImage takes up to 9
-    // entries here, so every entry is charged (worst case).
+  } else if (
+    params.model === "hailuo3" ||
+    params.model === "gemini_omni_flash_1.1" ||
+    params.model === "gemini_omni_flash_1.2"
+  ) {
+    // hailuo3: 2 credits per reference image (its promptImage takes up to 9
+    // entries here, so every entry is charged — worst case). The Gemini Omni
+    // Flash 1.x arms: 1 credit per keyframe, the start frame included.
     flatReferenceCount = promptImageCount(params.promptImage);
   }
   const costUSD = videoCostUSD({
@@ -130,10 +187,14 @@ function estimate(params: ImageToVideoParams, info: ModelInfo | undefined, _ctx:
     audio: params.audio,
     resolution: params.resolution,
     ratio: params.ratio,
+    inputVideo: (params.referenceVideos?.length ?? 0) > 0,
     flatReferenceCount,
-    // gemini_omni_flash image-to-video adds 1 credit for the first frame.
-    flatExtraCredits: params.model === "gemini_omni_flash" ? 1 : 0,
+    // gemini_omni_flash and grok_imagine_1_5_lite image-to-video add 1 credit
+    // for the first frame.
+    flatExtraCredits:
+      params.model === "gemini_omni_flash" || params.model === "grok_imagine_1_5_lite" ? 1 : 0,
     ...(params.outputFormat !== undefined && { outputFormat: params.outputFormat }),
+    ...(params.draft !== undefined && { draft: params.draft }),
   });
   return costUSD === undefined ? {} : { costUSD };
 }

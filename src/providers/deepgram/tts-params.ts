@@ -17,7 +17,7 @@ export const MEDIA_DOCS = "https://developers.deepgram.com/docs/tts-media-output
 
 /**
  * Every Aura and Aura-2 voice, read off the hand catalog rather than copied:
- * on this endpoint the model list *is* the voice list (all 105 of them), so
+ * on this endpoint the model list *is* the voice list (all 102 of them), so
  * the ref union, the `unknown_model` warning and the catalog cannot drift
  * apart. The cast is what keeps the *literal* ids — `Object.keys` widens to
  * `string[]`, which would collapse the ref union to `` `deepgram/${string}` ``
@@ -69,17 +69,17 @@ export const FORMAT: AudioFormatSpec = {
  * The per-model surface, which on this endpoint is *one* surface.
  *
  * `POST /v1/speak` takes the same seven encodings and the same two
- * non-canonical query params whichever of the 103 voices the ref names —
+ * non-canonical query params whichever of the 102 voices the ref names —
  * because here the model id selects a *voice*, and a voice does not change
  * which container the bytes come back in. So the row is built rather than
  * typed out: `Object.fromEntries` over the same `MODELS` array the ref union
  * comes from, so a voice added to the catalog gets a row automatically and the
- * two lists cannot fall out of step. (103 hand-written identical literals would
+ * two lists cannot fall out of step. (102 hand-written identical literals would
  * also imply, wrongly, that some of them differ.)
  *
  * The cast is what keeps the literal keys — `Object.fromEntries` widens to
  * `Record<string, …>`, which would make every row lookup miss and silently
- * degrade all 103 models to the wide vocabulary. `satisfies` then checks the
+ * degrade all 102 models to the wide vocabulary. `satisfies` then checks the
  * row itself, field by field.
  *
  * No `languages`: the language is baked into the voice, which is baked into the

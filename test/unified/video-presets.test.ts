@@ -21,9 +21,8 @@
  * ## Why a cell may try more than one route
  *
  * Video is the category where "which endpoint" is derived from the *inputs*,
- * and half these models are not on the text route at all — `kling-v2-1` is
- * image-to-video only, `runway/aleph2` video-to-video only, `vidu/viduq3` has
- * only a reference arm. A declared value is therefore asserted **reachable**:
+ * and half these models are not on the text route at all — `runway/aleph2`
+ * is video-to-video only, `vidu/viduq3` has only a reference arm. A declared value is therefore asserted **reachable**:
  * it must compile cleanly on at least one of the four route shapes. That is
  * the honest statement a per-model row can make about a provider whose fields
  * differ per route, and it is exactly how the tables were derived.
@@ -146,6 +145,7 @@ const FAL_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Object.from
  *
  * `images` is Veo 3.1's reference array and `image` is a first frame — the same
  * split `resolveImageSlots` reads, which is why the two map to different roles.
+ * A required `last_image` (Veo 3.1 Lite's start-end-frame route) is the pair.
  */
 const ATLASCLOUD_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Object.fromEntries(
   Object.entries(videoShapeRules).flatMap(([id, rule]) => {
@@ -153,6 +153,11 @@ const ATLASCLOUD_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Obje
     const params: Partial<VideoParams> = {};
     if (need.includes("images")) {
       (params as { image?: VideoParams["image"] }).image = [{ url: IMAGE_URL, role: "reference" }];
+    } else if (need.includes("last_image")) {
+      (params as { image?: VideoParams["image"] }).image = [
+        { url: IMAGE_URL },
+        { url: IMAGE_URL, role: "last" },
+      ];
     } else if (need.includes("image")) {
       (params as { image?: VideoParams["image"] }).image = { url: IMAGE_URL };
     }
@@ -180,13 +185,22 @@ const REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = {
   "runway/seedance2_5": { aspectRatio: "16:9" },
   "runway/grok_imagine_1_5": { aspectRatio: "16:9" },
   "runway/gemini_omni_flash": { aspectRatio: "16:9" },
+  // The Kling 3.0 / O3 text_to_video arms require `ratio`.
+  "runway/kling3.0_standard": { aspectRatio: "16:9" },
+  "runway/kling3.0_pro": { aspectRatio: "16:9" },
+  "runway/kling3.0_4k": { aspectRatio: "16:9" },
+  "runway/klingO3_standard": { aspectRatio: "16:9" },
+  "runway/klingO3_pro": { aspectRatio: "16:9" },
+  "runway/klingO3_4k": { aspectRatio: "16:9" },
   "minimax/MiniMax-H3": { duration: 6, resolution: "720p" },
+  "minimax/MiniMax-H3-Highspeed": { duration: 6, resolution: "720p" },
+  "minimax/MiniMax-H3-Lite": { duration: 6, resolution: "720p" },
+  "minimax/MiniMax-H3-Max": { duration: 6, resolution: "720p" },
   "lightricks/ltx-2-5-fast": { duration: 8, resolution: "1080p", aspectRatio: "16:9" },
   "lightricks/ltx-2-5-pro": { duration: 8, resolution: "1080p", aspectRatio: "16:9" },
   "lightricks/ltx-2-3-fast": { duration: 8, resolution: "1080p", aspectRatio: "16:9" },
   "lightricks/ltx-2-3-pro": { duration: 8, resolution: "1080p", aspectRatio: "16:9" },
-  "lightricks/ltx-2-fast": { duration: 8, resolution: "1080p", aspectRatio: "16:9" },
-  "lightricks/ltx-2-pro": { duration: 8, resolution: "1080p", aspectRatio: "16:9" },
+  "pixverse/v6-max": { duration: 5, resolution: "720p", aspectRatio: "16:9" },
   "pixverse/c1": { duration: 5, resolution: "720p", aspectRatio: "16:9" },
   "pixverse/v6": { duration: 5, resolution: "720p", aspectRatio: "16:9" },
   "pixverse/v5.6": { duration: 5, resolution: "720p", aspectRatio: "16:9" },
@@ -504,14 +518,14 @@ describe("every declared video preset is a value the provider accepts", () => {
    */
   test("an extra belonging to a sibling model is refused, naming the models that take it", () => {
     const result = video.safe({
-      model: "kling/kling-v3",
+      model: "kling/kling-v2-5-turbo",
       prompt: "hi",
-      cfg_scale: 0.5,
+      sound: "on",
     } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["cfg_scale"] });
-    expect(result.errors[0]!.message).toContain("kling-v1");
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["sound"] });
+    expect(result.errors[0]!.message).toContain("kling-v3");
   });
 
   test("a nested extra lands under its own wire prefix", () => {
@@ -519,7 +533,7 @@ describe("every declared video preset is a value the provider accepts", () => {
     // `watermark_info` is a body-root field on `/v1/videos/*` and lives under
     // `options` on the path-addressed routes, from one table.
     const v1 = video({
-      model: "kling/kling-v1",
+      model: "kling/kling-v3",
       prompt: "hi",
       watermark_info: { enabled: true },
     } as never) as unknown as Record<string, unknown>;
@@ -538,7 +552,7 @@ describe("every declared video preset is a value the provider accepts", () => {
 
     // Google's two extras nest under `parameters`, beside the compiled ones.
     const veo = video({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "hi",
       resolution: "720p",
       enhancePrompt: false,

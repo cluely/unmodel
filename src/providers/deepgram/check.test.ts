@@ -9,7 +9,7 @@ describe("deepgram.checkListen", () => {
       "nova-3",
     );
     expect(report.warnings).toEqual([]);
-    // 1 minute x the pre-recorded $0.0077/min rate.
+    // 1 minute x the pre-recorded $0.0043/min rate.
     expect(report.costUSD).toBeCloseTo(NOVA_3_USD_PER_MINUTE, 10);
   });
 

@@ -5,7 +5,12 @@
 //   https://docs.byteplus.com/en/docs/ModelArk/1520757  (Create a video generation task — request/response shape)
 //   https://docs.byteplus.com/en/docs/ModelArk/2298881  (Video generation tutorial — per-model capability matrix)
 //   https://docs.byteplus.com/en/docs/ModelArk/1824121  (Image generation tutorial — per-model capability matrix)
-// Verified 2026-08-13.
+//   https://docs.byteplus.com/en/docs/ModelArk/1350667  (Model deprecation notice)
+// Each numeric page redirects to a named one with a curl-readable markdown
+// copy at https://docs.byteplus.com/docs/en/modelark/<name>.md (model-list,
+// model-pricing, image-generation-api, create-video-generation-task-api,
+// video-generation-tutorial, image-generation-tutorial,
+// model-deprecation-notice). Verified 2026-11-12.
 //
 // This is the INTERNATIONAL platform (BytePlus ModelArk). The mainland
 // platform (Volcengine ModelArk, ark.cn-beijing.volces.com) is a separate host
@@ -24,22 +29,23 @@
 // Pricing conversions (documented so the arithmetic never rots unexplained):
 // - IMAGE models bill per successfully generated image (Pricing → "Image
 //   generation models"), so `cost.perImage` is the documented USD/image.
-//   Seedream 5.0 pro is the one tiered row: 0.045/image at ≤ 2.61M output
-//   pixels (1K/1.5K) and 0.09/image above it (2K); layer decomposition is
-//   half that per layer (0.0225 / 0.045) and input images cost 0.003 each
-//   from the 2nd on. `perImage` records the *default* configuration
-//   (`size` defaults to `2K` → 0.09); ./pricing.ts resolves the real tier
-//   per request.
+//   Two rows are tiered by output pixels. Seedream 5.0 pro: 0.045/image at
+//   ≤ 2.61M output pixels (1K/1.5K) and 0.09/image above it (2K); layer
+//   decomposition is half that per layer (0.0225 / 0.045) and input images
+//   cost 0.003 each from the 2nd on. Seedream 5.5: 0.020/image at
+//   ≤ 1536² × 1.05² pixels and 0.035 above it, every layer billed as an
+//   image, every input image 0.008. `perImage` records the *default*
+//   configuration (`size` defaults to `2K` → the high tier); ./pricing.ts
+//   resolves the real tier per request.
 // - VIDEO models bill by token: `price = token unit price × tokens` with
 //   `tokens = (input video duration + output video duration) × width ×
 //   height × fps / 1024` (Pricing → "Video generation models"). A single
 //   catalog number cannot express that, so `cost.perVideoSecond` carries the
 //   documented *price-example* rate for the model's DEFAULT resolution at
 //   16:9 with no input video (Pricing → "Price examples"), and ./pricing.ts
-//   re-derives the rate per resolution (and, for Seedance 1.5 pro, per
-//   `generate_audio`). Requests that feed a reference VIDEO bill for the
-//   input seconds too — unmodel cannot read the duration of a remote URL, so
-//   those estimates are a floor, not a quote.
+//   re-derives the rate per resolution. Requests that feed a reference VIDEO
+//   bill for the input seconds too — unmodel cannot read the duration of a
+//   remote URL, so those estimates are a floor, not a quote.
 //
 // Deliberately absent — the third deprecation batch (notified 2026-03-17,
 // deactivated 2026-05-13, https://docs.byteplus.com/en/docs/ModelArk/1350667)
@@ -67,6 +73,26 @@ export const provider = {
  * https://docs.byteplus.com/en/docs/ModelArk/1330310#9df4d9fd
  */
 export const imageModels = {
+  "dola-seedream-5-5-261028": {
+    id: "dola-seedream-5-5-261028",
+    name: "Seedream 5.5",
+    family: "seedream",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    // The id-suffix convention (…-261028), as for every row here; BytePlus
+    // prints no launch date for this model.
+    releaseDate: "2026-10-28",
+    modalities: { input: ["text", "image"], output: ["image"] },
+    limit: { context: 0 },
+    // "|`dola-seedream-5-5-261028` |$0.008 |* 921,600 ≤ P ≤ 1536² × 1.05²
+    // (2,601,123.84): $0.020 · 1536² × 1.05² (2,601,123.84) < P ≤ 2048² ×
+    // 1.05² (4,624,220.16): $0.035 |" — the documented `size` default 2K
+    // (4,194,304 px) is the high tier. Input images bill 0.008 each.
+    // https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+    cost: { perImage: 0.035 },
+  },
   "dola-seedream-5-0-pro-260628": {
     id: "dola-seedream-5-0-pro-260628",
     name: "Seedream 5.0 pro",
@@ -82,6 +108,23 @@ export const imageModels = {
     // i.e. 2K, the documented `size` default). Layer decomposition halves
     // both; input images bill 0.003 each from the 2nd on. — Pricing 1544106
     cost: { perImage: 0.09 },
+  },
+  "dola-seedream-5-0-flash-260915": {
+    id: "dola-seedream-5-0-flash-260915",
+    name: "Seedream 5.0 flash",
+    family: "seedream",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2026-09-15",
+    modalities: { input: ["text", "image"], output: ["image"] },
+    limit: { context: 0 },
+    // "|`dola-seedream-5-0-flash-260915` |Free |$0.018 |" — input images
+    // free, 0.018 USD per output image at every size; a layer-decomposition
+    // request bills its base image and each layer.
+    // https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+    cost: { perImage: 0.018 },
   },
   "seedream-5-0-260128": {
     id: "seedream-5-0-260128",
@@ -186,7 +229,8 @@ export const videoModels = {
     limit: { context: 0 },
     // 720p (the documented `resolution` default) 16:9 without input video:
     // 1.156 USD per 5s video = 0.231 USD/s — Pricing 1544106 "Price examples".
-    // 480p is 0.103 USD/s; input video adds cost. ./pricing.ts picks the tier.
+    // 480p is 0.103 USD/s and 1080p 0.569 USD/s; input video adds cost.
+    // ./pricing.ts picks the tier.
     cost: { perVideoSecond: 0.231 },
   },
   "dreamina-seedance-2-0-260128": {
@@ -216,8 +260,7 @@ export const videoModels = {
     modalities: { input: ["text", "image", "audio", "video"], output: ["video"] },
     limit: { context: 0 },
     // 720p (default) 16:9 without input video: 0.12 USD/s (480p 0.06) —
-    // Pricing 1544106. A limited-time 25% discount runs to 2026-09-07; the
-    // catalog carries the list price.
+    // Pricing 1544106.
     cost: { perVideoSecond: 0.12 },
   },
   "dreamina-seedance-2-0-mini-260615": {
@@ -232,24 +275,8 @@ export const videoModels = {
     modalities: { input: ["text", "image", "audio", "video"], output: ["video"] },
     limit: { context: 0 },
     // 720p (default) 16:9 without input video: 0.08 USD/s (480p 0.04) —
-    // Pricing 1544106. A limited-time 60% discount runs to 2026-09-07; the
-    // catalog carries the list price.
+    // Pricing 1544106.
     cost: { perVideoSecond: 0.08 },
-  },
-  "seedance-1-5-pro-251215": {
-    id: "seedance-1-5-pro-251215",
-    name: "Seedance 1.5 pro",
-    family: "seedance",
-    attachment: true,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    releaseDate: "2025-12-15",
-    modalities: { input: ["text", "image"], output: ["video"] },
-    limit: { context: 0 },
-    // 720p (default) 16:9 with audio (`generate_audio` defaults to true):
-    // 0.26 USD per 5s = 0.052 USD/s; silent halves it — Pricing 1544106.
-    cost: { perVideoSecond: 0.052 },
   },
   "seedance-1-0-pro-250528": {
     id: "seedance-1-0-pro-250528",

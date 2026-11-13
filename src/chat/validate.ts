@@ -73,6 +73,12 @@ export interface ChatOutcome {
 /** The provider-dependent end of the pipeline, supplied by `createChat()`. */
 export interface ChatProviderRuntime {
   has(provider: ChatProviderId): boolean;
+  /**
+   * The `reasoning_effort` values the provider validator's constraint table
+   * allows for this model, or `undefined` when it narrows none. The encoder
+   * narrows effort to them; validity is still decided by `validate`.
+   */
+  effortLevels(provider: ChatProviderId, modelId: string): readonly string[] | undefined;
   validate(
     provider: ChatProviderId,
     modelId: string,
@@ -179,7 +185,12 @@ export function runChat(
   // question "what did compiling this request cost?" — encoder losses and
   // decoder losses are indistinguishable from where the caller stands.
   const translation = createWarningSink(CHAT_ROUTE, endpoint.id);
-  const { ir, messageOrigin } = encodeChat(params, endpoint.dialect, translation.warn);
+  const { ir, messageOrigin } = encodeChat(
+    params,
+    endpoint.dialect,
+    translation.warn,
+    providers.effortLevels(classification.provider, ref.modelId),
+  );
   const input: ChatCompileInput = {
     ir,
     provider: ref.provider,

@@ -253,7 +253,7 @@ computeCharacterCostUSD(info?.cost, "The lighthouse is ready.".length); // 0.002
 
 Reach for those when you are pricing text you have not validated yet. For a request you are about to send, `estimate.costUSD` is already the answer, and it is the more correct one: it uses the basis the provider bills in, which is not always characters. Fish Audio prices UTF-8 bytes, so CJK costs about 3x what a `.length` estimator would report. Hume multiplies by `num_generations`. Gemini prices the full worst-case token ceiling.
 
-Two absences are deliberate and mean exactly what they say. `gpt-4o-mini-tts` is token-billed on audio tokens whose count is unknowable before the call, so it gets no per-call estimate rather than a guess. Cartesia bills in credits with no published USD rate, and Resemble publishes none either. In all three `estimate.costUSD === undefined` is the honest answer, not a bug; the rationale for each lives in that provider's `models.ts` docblock.
+Two absences are deliberate and mean exactly what they say. `gpt-4o-mini-tts` is token-billed on audio tokens whose count is unknowable before the call, so it gets no per-call estimate rather than a guess. Cartesia bills in credits with no published USD rate, and Resemble's per-second voice rate depends on the caller's plan and is no longer sold to new customers. In all three `estimate.costUSD === undefined` is the honest answer, not a bug; the rationale for each lives in that provider's `models.ts` docblock.
 
 ## Retarget chat
 
@@ -308,8 +308,9 @@ onFal.request.url; // https://queue.fal.run/fal-ai/kling-video/v2.5-turbo/pro/te
 onFal.warnings;    // []  ← empty means the mapping was exact
 onFal.toSdk("fal");// { input: { … } } for @fal-ai/client
 
-video({ model_name: "kling-v1", prompt: "…" }).toApi("fal");
-//                                             ~~~~~ TypeScript error: fal serves no Kling v1
+declare const fromConfig: string; // an id only known at run time
+video({ model_name: fromConfig, prompt: "…" }).toApi("fal");
+//                                             ~~~~~ TypeScript error: no verified fal mapping for it
 ```
 
 It is a different mechanism from chat's, not the same one widened, and the differences are the ones you will feel:

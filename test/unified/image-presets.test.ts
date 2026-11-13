@@ -111,11 +111,35 @@ const BASE: Readonly<Record<string, Record<string, unknown>>> = {
   "black-forest-labs/flux-pro-1.1-ultra-finetuned": {
     providerOptions: { "black-forest-labs": { finetune_id: "my-lora" } },
   },
+  "black-forest-labs/flux-2-klein-4b-finetuned": {
+    providerOptions: { "black-forest-labs": { finetune_id: "my-lora" } },
+  },
+  "black-forest-labs/flux-2-klein-9b-finetuned": {
+    providerOptions: { "black-forest-labs": { finetune_id: "my-lora" } },
+  },
+  "black-forest-labs/flux-2-klein-9b-kv-finetuned": {
+    providerOptions: { "black-forest-labs": { finetune_id: "my-lora" } },
+  },
+  "black-forest-labs/flux-2-klein-9b-kv-bf16-finetuned": {
+    providerOptions: { "black-forest-labs": { finetune_id: "my-lora" } },
+  },
   "runway/gen4_image_turbo": {
     providerOptions: { runway: { referenceImages: [{ uri: "https://example.com/a.png" }] } },
   },
   "vidu/viduq1": { providerOptions: { vidu: { images: ["https://example.com/a.png"] } } },
   "vidu/viduq2": { providerOptions: { vidu: { images: ["https://example.com/a.png"] } } },
+  // Recraft's V4 Styles line "always require[s] a style" — a `style_id` or
+  // style references — so a bare prompt is refused before sizing is observed.
+  ...Object.fromEntries(
+    [
+      "recraftv4_styles",
+      "recraftv4_styles_raster",
+      "recraftv4_styles_vector",
+      "recraftv4_styles_pro",
+      "recraftv4_styles_pro_raster",
+      "recraftv4_styles_pro_vector",
+    ].map((model) => [`recraft/${model}`, { style_id: "229b2a75-05e4-4580-85f9-b47ee521a00d" }]),
+  ),
   // fal's route-required params come from the generator, not from a reading of
   // the docs: `FAL_REQUIRED_PROBES` in `gen/endpoints.gen.ts` is each
   // endpoint's OpenAPI `required` list MINUS everything fal supplies a default

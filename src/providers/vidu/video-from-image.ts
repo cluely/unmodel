@@ -1,13 +1,15 @@
 /**
  * Vidu Image to Video — POST https://api.vidu.com/ent/v2/img2video
  *
- * Wire notes (verified against https://platform.vidu.com/docs/image-to-video on
- * 2026-08-13):
+ * Wire notes (verified 2026-08-13; the route is documented per family at
+ * https://platform.vidu.com/docs/api-reference/video-models/{vidu-q4-preview,vidu-q3,vidu-q2,vidu-q1}/image-to-video,
+ * and facts re-read there cite their own date):
  * - `model` and `images` are required; `images` takes exactly ONE start-frame
  *   image (public URL or base64 data URI, png/jpeg/jpg/webp, ≤50MB, aspect
  *   ratio between 1:4 and 4:1; the whole POST body must stay under 20MB).
  * - There is no `aspect_ratio` on this route — the input image sets it.
- * - `audio` defaults to false but to true on q3; `voice_id` only takes effect
+ * - `audio` defaults to false but to true on q3 and viduq4-preview (whose
+ *   `is_rec` also defaults to true); `voice_id` only takes effect
  *   when `audio` is true and is "not effective" on q3; `bgm` is unavailable on
  *   q3; `movement_amplitude` does not take effect on q2/q3. Ignored-by-the-API
  *   params warn rather than fail.
@@ -25,29 +27,41 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { videoModels, type ViduModelId } from "./models";
 import {
-  DOCS_BASE,
+  VIDEO_DOCS,
   VIDU_AUDIO_TYPES,
   VIDU_BASE_URL,
   VIDU_HEADERS,
   VIDU_MOVEMENT_AMPLITUDES,
   assetSchema,
   checkArrayLength,
+  checkPromptCap,
   checkRouteSupport,
   payloadSchema,
   promptSchema,
+  watermarkShape,
   type RouteSupport,
   type ViduAudioType,
   type ViduMovementAmplitude,
   type ViduResolution,
+  type ViduWatermarkParams,
 } from "./shared";
 import { videoCostUSD } from "./pricing";
 
 export const IMG2VIDEO_URL = `${VIDU_BASE_URL}/img2video`;
 
-const SOURCE = `${DOCS_BASE}/image-to-video`;
+const SOURCE = `${VIDEO_DOCS}/image-to-video`;
 
 /** Models with an img2video arm, and what each accepts. */
 export const IMG2VIDEO_SUPPORT: RouteSupport = {
+  // "Video Resolution.；Default: `720p`；Allowed values: `540p` / `720p` /
+  // `1080p` / `2K` / `4K`" and "Video duration.；Default: `5`；Allowed values:
+  // `3 - 16`" — https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/image-to-video,
+  // 2026-11-12. The EN model map's "1-16s selectable" is outvoted by both API
+  // references, both pricing pages and the CN model map ("可选 3～16S").
+  "viduq4-preview": {
+    resolutions: ["540p", "720p", "1080p", "2K", "4K"],
+    duration: { min: 3, max: 16 },
+  },
   "viduq3-pro-fast": { resolutions: ["720p", "1080p"], duration: { min: 1, max: 16 } },
   "viduq3-pro": { resolutions: ["540p", "720p", "1080p"], duration: { min: 1, max: 16 } },
   "viduq3-turbo": { resolutions: ["540p", "720p", "1080p"], duration: { min: 1, max: 16 } },
@@ -66,19 +80,23 @@ const IMAGE_COUNTS = Object.fromEntries(
   Object.keys(IMG2VIDEO_SUPPORT).map((model) => [model, { min: 1, max: 1 }]),
 );
 
-export interface Img2VideoParams {
+export interface Img2VideoParams extends ViduWatermarkParams {
   model: ViduModelId | (string & {});
   /** Exactly one start-frame image: public URL or base64 data URI. */
   images: string[];
-  /** Up to 5000 characters. Ignored when `is_rec` is true. */
+  /** Up to 20000 characters on q3 / q4, 5000 on q2 / q1. Ignored when `is_rec` is true. */
   prompt?: string;
   /** Voice character; only takes effect when `audio` is true. Not on q3. */
   voice_id?: string;
-  /** Let the model write the prompt. Adds 10 credits per task. */
+  /**
+   * Let the model write the prompt. Adds 10 credits per task. Defaults to
+   * true on viduq4-preview ("Default: `true`"), so pass `false` there to have
+   * `prompt` used.
+   */
   is_rec?: boolean;
   /** Background music. Default false; unavailable on q3. */
   bgm?: boolean;
-  /** Direct audio-video generation. Default false, but true on q3. */
+  /** Direct audio-video generation. Default false, but true on q3 and viduq4-preview. */
   audio?: boolean;
   /** Required when `audio` is true; defaults to "all". */
   audio_type?: ViduAudioType;
@@ -87,8 +105,8 @@ export interface Img2VideoParams {
   seed?: number;
   /**
    * Default "720p" (viduq1: "1080p"; vidu2.0 at 4s: "360p"). Autocomplete over
-   * every documented value; `IMG2VIDEO_SUPPORT` narrows it per model at
-   * runtime, and vidu2.0 narrows again by duration.
+   * every documented value (`2K` / `4K` are viduq4-preview's); `IMG2VIDEO_SUPPORT`
+   * narrows it per model at runtime, and vidu2.0 narrows again by duration.
    */
   resolution?: ViduResolution;
   /** Default "auto". Not effective on q2 / q3. */
@@ -114,6 +132,7 @@ const videoFromImageSchema = z.looseObject({
   movement_amplitude: z.enum(VIDU_MOVEMENT_AMPLITUDES).optional(),
   payload: payloadSchema.optional(),
   off_peak: z.boolean().optional(),
+  ...watermarkShape,
   callback_url: z.string().optional(),
 });
 
@@ -218,6 +237,7 @@ const validator = createValidator<Img2VideoParams, unknown>({
     checkRouteSupport("img2video", IMG2VIDEO_SUPPORT, SOURCE),
     checkArrayLength("images", IMAGE_COUNTS, SOURCE),
     checkVidu2Resolution,
+    checkPromptCap(SOURCE),
   ],
   estimate,
   finalize,

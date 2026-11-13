@@ -35,9 +35,10 @@
  *
  * ## What is deliberately NOT here
  *
- * **`POST /v2/tts` and the `/v2/voices` clone surface.** They are an ElevenLabs
- * passthrough — the request's own `provider.name` field has exactly one legal
- * value — and unmodel already carries ElevenLabs natively at
+ * **`POST /v2/tts`, its asynchronous twin `POST /v2/tts/jobs` ("Accepts the
+ * same body as POST /v2/tts"), and the `/v2/voices` clone surface.** They are
+ * an ElevenLabs passthrough — the request's own `provider.name` field has
+ * exactly one legal value — and unmodel already carries ElevenLabs natively at
  * `unmodel/elevenlabs`, with the real voice roster, the real model ids and the
  * real format controls rather than a two-field projection of them. A `sync.tts`
  * would be a worse ElevenLabs under another vendor's name. (The `{ type:
@@ -46,10 +47,11 @@
  * the finished generation hands back `synthesizedAudioUrl` so the same take can
  * be reused.)
  *
- * **`/v2/assets`, `/v2/projects` and `/v2/batch`.** Assets and projects are
- * storage and organisation rather than generation; they mint the `assetId` an
- * input item may carry, which is typed, and nothing else. Batch is a JSONL
- * envelope around up to 500 copies of the body this provider already validates.
+ * **`/v2/assets`, `/v2/audio-trims`, `/v2/projects` and `/v2/batch`.** Assets,
+ * audio trims and projects are storage, asset preparation and organisation
+ * rather than generation; they mint the `assetId` an input item may carry,
+ * which is typed, and nothing else. Batch is a JSONL envelope around up to 500
+ * copies of the body this provider already validates.
  *
  * ## Three things worth knowing before your first call
  *
@@ -59,17 +61,20 @@
  * item needs a `url` OR an `assetId`, which the spec encodes as an `anyOf` and
  * therefore leaves both fields individually optional.
  *
- * **Four of the six `options` are model-gated, and sync. IGNORES the ones a
- * model does not take** rather than refusing them. `temperature` on `sync-3`
+ * **Six of the fifteen `options` are model-gated, and sync. IGNORES the ones
+ * a model does not take** rather than refusing them. `temperature` on `sync-3`
  * and `model_mode` on anything but `react-1` are silent no-ops; unmodel reports
  * them as warnings, because refusing would reject a request the API honours.
+ * (`active_speaker_detection` and `segments` on `react-1` warn too, though
+ * its page says only that neither is supported.)
  *
  * **The POST answers a JOB, at 201.** Poll `GET /v2/generate/{id}` until
  * `status` is `COMPLETED`, `FAILED` or `REJECTED` — `REJECTED` means it never
  * ran — and branch on `errorCode`, not on the message text. The full catalog is
- * `SYNC_ERROR_CODES`, served live and unauthenticated at `ERRORS_URL`. Note
- * that the webhook payload spells the same field `error_code`; the two shapes
- * are not the same object.
+ * `SYNC_ERROR_CODES`, served live and unauthenticated at `ERRORS_URL`. The
+ * webhook payload carries the same `errorCode` but is a subset of the polled
+ * object (no `outputFileName`, `projectId` or `segments`); the two shapes are
+ * not the same object.
  */
 
 export { lipsync, lipsyncConstraints } from "./lipsync";
@@ -79,25 +84,33 @@ export { avatar, avatarConstraints } from "./avatar";
 export type { SyncAvatarInputItem, SyncAvatarParams } from "./avatar";
 
 export {
-  ANALYZE_COST_URL,
   DOCS_BASE,
   ERRORS_URL,
+  ESTIMATE_COST_URL,
   GENERATE_URL,
   MODELS_URL,
   OUTPUT_FILE_NAME_MAX_CHARS,
+  SYNC_ACTIVE_SPEAKER_MODELS,
   SYNC_BASE_URL,
+  SYNC_BLENDING_MODES,
   SYNC_DUB_LANGUAGES,
   SYNC_DUB_SOURCE_LANGUAGES,
   SYNC_EMOTIONS,
   SYNC_ERROR_CODES,
   SYNC_GENERATION_STATUSES,
+  SYNC_IDEMPOTENCY_HEADER,
+  SYNC_IDEMPOTENCY_KEY_PATTERN,
   SYNC_IMAGE_MODELS,
+  SYNC_MAX_INPUTS,
+  SYNC_MAX_SEGMENTS,
   SYNC_MODELS,
   SYNC_MODEL_MODES,
   SYNC_MODEL_TYPES,
   SYNC_OCCLUSION_MODELS,
-  SYNC_RATE_LIMITS,
+  SYNC_OUTPUT_FORMATS,
   SYNC_REACT_MODELS,
+  SYNC_REASONING_MODELS,
+  SYNC_SEGMENT_MODELS,
   SYNC_SYNC_MODES,
   SYNC_TEMPERATURE_MODELS,
   SYNC_TTS_PROVIDERS,
@@ -108,6 +121,8 @@ export type {
   SyncActiveSpeaker,
   SyncAudioInput,
   SyncAudioLikeInput,
+  SyncBlendingMode,
+  SyncDialogueEditReference,
   SyncDubLanguage,
   SyncDubParams,
   SyncDubSourceLanguage,
@@ -123,6 +138,8 @@ export type {
   SyncModelId,
   SyncModelMode,
   SyncModelType,
+  SyncOutputAudio,
+  SyncOutputFormat,
   SyncSegmentAudioInput,
   SyncSegmentOptionsOverride,
   SyncSyncMode,

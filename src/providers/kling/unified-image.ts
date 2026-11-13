@@ -5,7 +5,7 @@
  * # One adapter, two routes, and the ref decides
  *
  * Kling splits its image models across two endpoints with disjoint id spaces:
- * the Kolors/Kling Image family (`kling-v3` … `kling-v1`) lives on
+ * the Kolors/Kling Image family (`kling-v3`, `kling-v2-1`) lives on
  * `/v1/images/generations`, and the two Omni models (`kling-image-o1`,
  * `kling-v3-omni`) live on `/v1/images/omni-image`. Each route's validator is
  * scoped to its own catalog, so sending an Omni id to the first one earns an

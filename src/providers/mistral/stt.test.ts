@@ -4,6 +4,7 @@ import {
   toFormData,
   AUDIO_TRANSCRIPTIONS_URL,
   MAX_CONTEXT_BIAS_TERMS,
+  MAX_SPEAKER_REFERENCES,
 } from "./stt";
 import { TRANSCRIPTION_MAX_AUDIO_SECONDS, transcriptionModels } from "./audio-models";
 import { UnmodelValidationError } from "../../core/issues";
@@ -43,7 +44,8 @@ describe("mistral.stt happy path", () => {
       temperature: 0.2,
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings).toEqual([]);
+    // Voxtral Mini Transcribe 2 is deprecated (served until 2027-04-30).
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 
   test("unknown models warn and name the mistral catalog", () => {
@@ -75,7 +77,7 @@ describe("mistral.stt audio source rules", () => {
 
   test("unknown top-level keys pass through with a warning", () => {
     const r = stt.safe({
-      model: "voxtral-mini-latest",
+      model: "voxtral-mini-transcribe-3",
       file_id: "file-abc",
       // @ts-expect-error ExactKeys rejects params outside the wire shape.
       response_format: "verbose_json",
@@ -92,19 +94,22 @@ describe("mistral.stt audio source rules", () => {
 });
 
 describe("mistral.stt documented pairings", () => {
-  test("timestamp_granularities and language are incompatible", () => {
-    const r = stt.safe({
-      model: "voxtral-mini-latest",
-      file: audio(),
-      language: "en",
-      timestamp_granularities: ["word"],
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.path).toEqual(["timestamp_granularities"]);
-      expect(r.errors[0]?.message).toContain("not compatible with `language`");
-    }
-  });
+  test.each(["voxtral-mini-latest", "voxtral-mini-2602"])(
+    "timestamp_granularities and language are incompatible on %s",
+    (model) => {
+      const r = stt.safe({
+        model,
+        file: audio(),
+        language: "en",
+        timestamp_granularities: ["word"],
+      });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.path).toEqual(["timestamp_granularities"]);
+        expect(r.errors[0]?.message).toContain("not compatible with `language`");
+      }
+    },
+  );
 
   test("language alone and granularities alone both validate", () => {
     expect(stt.safe({ model: "voxtral-mini-latest", file: audio(), language: "fr" }).ok).toBe(
@@ -125,21 +130,22 @@ describe("mistral.stt documented pairings", () => {
     if (!r.ok) expect(r.errors[0]?.message).toContain("two-letter code");
   });
 
-  test("context_bias caps at 100 terms and rejects whitespace/commas", () => {
+  test("context_bias caps at 100 terms and takes phrases with spaces and commas", () => {
     const tooMany = stt.safe({
       model: "voxtral-mini-latest",
       file: audio(),
       context_bias: Array.from({ length: MAX_CONTEXT_BIAS_TERMS + 1 }, (_, i) => `term_${i}`),
     });
     expect(tooMany.ok).toBe(false);
+    if (!tooMany.ok) expect(tooMany.errors[0]?.message).toContain("at most 100");
 
-    const spaced = stt.safe({
+    // "Spaces, commas, and other punctuation are accepted".
+    const phrases = stt.safe({
       model: "voxtral-mini-latest",
       file: audio(),
-      context_bias: ["American people"],
+      context_bias: ["American people", "Alder Creek Design, Inc."],
     });
-    expect(spaced.ok).toBe(false);
-    if (!spaced.ok) expect(spaced.errors[0]?.message).toContain("whitespace");
+    expect(phrases.ok).toBe(true);
   });
 
   test("stream: true is rejected — that is the SSE operation", () => {
@@ -176,8 +182,6 @@ describe("mistral.stt model gating", () => {
   test("the dated transcribe ids resolve to catalog entries", () => {
     expect(transcriptionModels["voxtral-mini-2602"]?.cost?.perAudioMinute).toBe(0.003);
     expect(transcriptionModels["voxtral-small-2507"]?.cost?.perAudioMinute).toBe(0.004);
-    // voxtral-mini-2507 is no longer priced by Mistral: no guessed rate.
-    expect(transcriptionModels["voxtral-mini-2507"]?.cost).toBeUndefined();
   });
 });
 
@@ -193,10 +197,10 @@ describe("mistral.stt media + cost", () => {
   });
 
   test("per-model audio caps are enforced", () => {
-    const miniLimit = TRANSCRIPTION_MAX_AUDIO_SECONDS["voxtral-mini-2507"] ?? 0;
+    const smallLimit = TRANSCRIPTION_MAX_AUDIO_SECONDS["voxtral-small-2507"] ?? 0;
     const tooLong = stt.safe(
-      { model: "voxtral-mini-2507", file_url: "https://example.com/a.mp3" },
-      { media: [{ path: ["file_url"], durationSeconds: miniLimit + 1 }] },
+      { model: "voxtral-small-2507", file_url: "https://example.com/a.mp3" },
+      { media: [{ path: ["file_url"], durationSeconds: smallLimit + 1 }] },
     );
     expect(tooLong.ok).toBe(false);
     if (!tooLong.ok) {
@@ -207,7 +211,7 @@ describe("mistral.stt media + cost", () => {
     // The same audio fits Voxtral Mini Transcribe 2's ~3 hour window.
     const fits = stt.safe(
       { model: "voxtral-mini-2602", file_url: "https://example.com/a.mp3" },
-      { media: [{ path: ["file_url"], durationSeconds: miniLimit + 1 }] },
+      { media: [{ path: ["file_url"], durationSeconds: smallLimit + 1 }] },
     );
     expect(fits.ok).toBe(true);
   });
@@ -227,6 +231,196 @@ describe("mistral.stt media + cost", () => {
 
   test("throwing form raises UnmodelValidationError", () => {
     expect(() => stt({ model: "voxtral-mini-latest" })).toThrow(UnmodelValidationError);
+  });
+});
+
+describe("mistral.stt Voxtral 3", () => {
+  test.each([
+    ["voxtral-mini-transcribe-3-0", 0.0035],
+    ["voxtral-mini-transcribe-3", 0.0035],
+    ["voxtral-mini-transcribe-latest", 0.0035],
+    ["voxtral-small-transcribe-3-0", 0.004],
+    ["voxtral-small-transcribe-3", 0.004],
+    ["voxtral-small-transcribe-latest", 0.004],
+  ])("%s validates and prices at its card rate", (model, perMinute) => {
+    const r = stt.safe(
+      { model, file: audio() },
+      { media: [{ path: ["file"], durationSeconds: 600 }] },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(10 * perMinute, 10);
+    }
+  });
+
+  test("Voxtral 3 has no audio-length cap to enforce", () => {
+    const r = stt.safe(
+      { model: "voxtral-mini-transcribe-3", file: audio() },
+      { media: [{ path: ["file"], durationSeconds: 5 * 60 * 60 }] },
+    );
+    expect(r.ok).toBe(true);
+  });
+
+  test("segment timestamps are accepted, word timestamps are refused", () => {
+    expect(
+      stt.safe({
+        model: "voxtral-mini-transcribe-3",
+        file: audio(),
+        timestamp_granularities: ["segment"],
+      }).ok,
+    ).toBe(true);
+    const r = stt.safe({
+      model: "voxtral-small-transcribe-3",
+      file: audio(),
+      timestamp_granularities: ["word"],
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_enum_value");
+      expect(r.errors[0]?.path).toEqual(["timestamp_granularities"]);
+      expect(r.errors[0]?.message).toContain('accepts "segment"');
+    }
+  });
+
+  test("diarization needs segment timestamps", () => {
+    const bare = stt.safe({ model: "voxtral-mini-transcribe-3", file: audio(), diarize: true });
+    expect(bare.ok).toBe(false);
+    if (!bare.ok) {
+      expect(bare.errors[0]?.path).toEqual(["diarize"]);
+      expect(bare.errors[0]?.message).toContain('timestamp_granularities: ["segment"]');
+    }
+    expect(
+      stt.safe({
+        model: "voxtral-mini-transcribe-3",
+        file: audio(),
+        diarize: true,
+        timestamp_granularities: ["segment"],
+      }).ok,
+    ).toBe(true);
+    // The pairing is Voxtral 3's; Voxtral Mini Transcribe 2 diarizes without it.
+    expect(stt.safe({ model: "voxtral-mini-2602", file: audio(), diarize: true }).ok).toBe(true);
+  });
+
+  test("language and segment timestamps go together, diarized or not", () => {
+    // Only the pre-Voxtral 3 page states the timestamps-versus-language rule.
+    const timed = { model: "voxtral-mini-transcribe-3", file: audio(), language: "fr" } as const;
+    expect(stt.safe({ ...timed, timestamp_granularities: ["segment"] }).ok).toBe(true);
+    expect(
+      stt.safe({ ...timed, diarize: true, timestamp_granularities: ["segment"] }).ok,
+    ).toBe(true);
+  });
+
+  test("context_bias takes phrases and has no fixed count", () => {
+    const r = stt.safe({
+      model: "voxtral-mini-transcribe-3",
+      file: audio(),
+      context_bias: [
+        "Alder Creek Design",
+        "A call between two architects, about a cabin build.",
+        ...Array.from({ length: MAX_CONTEXT_BIAS_TERMS }, (_, i) => `term_${i}`),
+      ],
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  test.each([
+    "voxtral-mini-transcribe-realtime-3-0",
+    "voxtral-mini-transcribe-realtime-3",
+    "voxtral-mini-transcribe-realtime-latest",
+    "voxtral-mini-realtime-latest",
+  ])("the realtime id %s is rejected as websocket-only", (model) => {
+    const r = stt.safe({ model, file: audio() });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => e.code)).toEqual(["unsupported_capability"]);
+      expect(r.errors[0]?.message).toContain("WebSocket");
+      expect(r.warnings.map((w) => w.code)).not.toContain("unknown_model");
+    }
+  });
+
+  test("the realtime rows carry their per-minute rates", () => {
+    expect(transcriptionModels["voxtral-mini-transcribe-realtime-3"]?.cost?.perAudioMinute).toBe(0.008);
+    expect(transcriptionModels["voxtral-mini-realtime-latest"]?.cost?.perAudioMinute).toBe(0.006);
+  });
+});
+
+describe("mistral.stt speaker_references", () => {
+  const clip = "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
+
+  test("references validate alongside diarization", () => {
+    const r = stt.safe({
+      model: "voxtral-mini-transcribe-3",
+      file: audio(),
+      diarize: true,
+      timestamp_granularities: ["segment"],
+      speaker_references: { Alice: clip, Bob: clip },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("references without diarization are refused", () => {
+    const r = stt.safe({
+      model: "voxtral-mini-transcribe-3",
+      file: audio(),
+      speaker_references: { Alice: clip },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.path).toEqual(["speaker_references"]);
+      expect(r.errors[0]?.message).toContain("requires `diarize: true`");
+      expect(String(r.errors[0]?.meta?.source)).toContain("speech-to-text/diarize-speakers");
+    }
+  });
+
+  test("no id is refused them: Mistral names no model that lacks reference clips", () => {
+    const r = stt.safe({
+      model: "voxtral-mini-2602",
+      file: audio(),
+      diarize: true,
+      speaker_references: { Alice: clip },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+  });
+
+  test(`more than ${MAX_SPEAKER_REFERENCES} references are refused`, () => {
+    const references = Object.fromEntries(
+      Array.from({ length: MAX_SPEAKER_REFERENCES + 1 }, (_, i) => [`speaker_${i}`, clip]),
+    );
+    const r = stt.safe({
+      model: "voxtral-mini-transcribe-3",
+      file: audio(),
+      diarize: true,
+      timestamp_granularities: ["segment"],
+      speaker_references: references,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.message).toContain("at most 8 speakers; got 9");
+  });
+
+  test("the form carries them as one JSON field", () => {
+    const form = toFormData({
+      model: "voxtral-mini-transcribe-3",
+      file: audio(),
+      diarize: true,
+      speaker_references: { Alice: clip },
+    });
+    expect(form.getAll("speaker_references")).toEqual([JSON.stringify({ Alice: clip })]);
+  });
+});
+
+describe("mistral.stt deprecated Voxtral 2 ids", () => {
+  test.each(["voxtral-mini-2602", "voxtral-mini-latest"])("%s warns as deprecated", (model) => {
+    const r = stt.safe({ model, file: audio() });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+  });
+
+  test("the deprecated realtime ids carry the status too", () => {
+    expect(transcriptionModels["voxtral-mini-transcribe-realtime-2602"]?.status).toBe("deprecated");
+    expect(transcriptionModels["voxtral-mini-realtime-latest"]?.status).toBe("deprecated");
   });
 });
 

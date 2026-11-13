@@ -35,16 +35,16 @@ function memberPresence(): void {
   klingVideo({ model_name: "kling-v2-6", prompt: "hi", mode: "pro" }).toApi("fal");
   klingVideo({ model_name: "kling-v2-5-turbo", prompt: "hi", mode: "pro" }).toApi("fal");
 
-  // Not mapped: fal serves no Kling v1 generation, so the member is not on the
-  // type at all. This is the whole point of the bar.
-  const v1 = klingVideo({ model_name: "kling-v1", prompt: "hi" });
+  // Not mapped: an id with no overlap row has no member on the type at all.
+  // This is the whole point of the bar.
+  const unmapped = klingVideo({ model_name: "kling-v9", prompt: "hi" });
   // @ts-expect-error `.toApi` does not exist for a model with no overlap row
-  v1.toApi("fal");
+  unmapped.toApi("fal");
   // @ts-expect-error …and neither does the safe form
-  v1.toApiSafe("fal");
+  unmapped.toApiSafe("fal");
 
-  // An omitted `model_name` defaults to `kling-v1` server-side, and Kling's
-  // own wide arm is what an unnamed model gets — no overlap row, no member.
+  // An omitted `model_name` names no model, and Kling's own wide arm is what
+  // an unnamed model gets — no overlap row, no member.
   const unnamed = klingVideo({ prompt: "hi" });
   // @ts-expect-error an unnamed model has no hand-verified mapping
   unnamed.toApi("fal");
@@ -190,7 +190,7 @@ function unifiedResultsHaveNoMember(): void {
   // `MediaApiMember` resolves to `unknown` off the table, and intersecting
   // `unknown` is a no-op — so an unmapped model's result type is byte-identical
   // to what it was before this wave.
-  type Unmapped = ReturnType<typeof klingVideo<"kling-v1", { model_name: "kling-v1"; prompt: string }>>;
+  type Unmapped = ReturnType<typeof klingVideo<"kling-v9", { model_name: "kling-v9"; prompt: string }>>;
   expectTrue<IsNever<Extract<keyof Unmapped, "toApi">>>();
 }
 

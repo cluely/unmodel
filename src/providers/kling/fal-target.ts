@@ -19,10 +19,9 @@
  * | `kling-v2-6` | `pro` | `…/v2.6/pro/…` |
  * | `kling-v2-5-turbo` | `pro` | `…/v2.5-turbo/pro/…` |
  *
- * Six native ids have no fal endpoint at all (`kling-v1`, `kling-v1-5`,
- * `kling-v1-6`, `kling-v2-master`, `kling-v2-1`, `kling-v2-1-master`) — which
- * also takes `cfg_scale` and `camera_control` with them, since Kling permits
- * those only on the v1 generation.
+ * Those three are the `/v1/videos/*` routes' whole `model_name` enum, so no
+ * native id is left without a fal endpoint and `KLING_VIDEO_FAL_REFUSALS` is
+ * empty.
  *
  * ## `mode` is a path segment here, not a param
  *
@@ -123,14 +122,6 @@ function refuseUniversal(
       "has no client-supplied task id — fal answers with its own `request_id`, so a dropped `external_task_id` would leave your task lookup silently broken",
     );
   }
-  if (params.camera_control !== undefined) {
-    refuseParam(
-      ctx,
-      ["camera_control"],
-      endpoint,
-      "publishes no camera field on any Kling tier (Kling itself offers it on kling-v1 only, which fal does not serve)",
-    );
-  }
 }
 
 /** `prompt` is required on every fal Kling row; Kling's is optional. */
@@ -188,20 +179,12 @@ function requireFetchableFrame(
   return value;
 }
 
-/** Refuses the motion-brush, element and voice inputs fal's Kling rows lack. */
+/** Refuses the element and voice inputs fal's Kling rows lack. */
 function refuseImageOnlyExtras(
   params: ImageToVideoParams,
   ctx: MediaMapContext,
   endpoint: string,
 ): void {
-  if (params.static_mask !== undefined || params.dynamic_masks !== undefined) {
-    refuseParam(
-      ctx,
-      [params.static_mask !== undefined ? "static_mask" : "dynamic_masks"],
-      endpoint,
-      "has no motion-brush surface: no mask field and no trajectory field on any Kling row",
-    );
-  }
   if (params.element_list !== undefined) {
     refuseParam(
       ctx,
@@ -415,7 +398,6 @@ function mapV25Text(params: TextToVideoParams, ctx: MediaMapContext): FalKlingV2
     negative_prompt: params.negative_prompt ?? EMPTY_NEGATIVE_PROMPT,
     ...(duration !== undefined && { duration }),
     ...(params.aspect_ratio !== undefined && { aspect_ratio: params.aspect_ratio }),
-    ...(params.cfg_scale !== undefined && { cfg_scale: params.cfg_scale }),
   };
 }
 
@@ -430,7 +412,6 @@ function mapV26Text(params: TextToVideoParams, ctx: MediaMapContext): FalKlingV2
     generate_audio: audioSwitch(params.sound, true, ctx, endpoint) ?? false,
     ...(duration !== undefined && { duration }),
     ...(params.aspect_ratio !== undefined && { aspect_ratio: params.aspect_ratio }),
-    ...(params.cfg_scale !== undefined && { cfg_scale: params.cfg_scale }),
   };
 }
 
@@ -450,7 +431,6 @@ function mapV3Text(params: TextToVideoParams, ctx: MediaMapContext): FalKlingV3T
     ...(duration !== undefined && { duration }),
     ...(params.aspect_ratio !== undefined && { aspect_ratio: params.aspect_ratio }),
     ...(params.shot_type !== undefined && { shot_type: shotType(params.shot_type) }),
-    ...(params.cfg_scale !== undefined && { cfg_scale: params.cfg_scale }),
   } as FalKlingV3Text;
 }
 
@@ -522,7 +502,6 @@ function mapV25Image(params: ImageToVideoParams, ctx: MediaMapContext): FalKling
     ...(params.image_tail !== undefined && {
       tail_image_url: requireFetchableFrame(params.image_tail, ["image_tail"], ctx, endpoint),
     }),
-    ...(params.cfg_scale !== undefined && { cfg_scale: params.cfg_scale }),
   };
 }
 
@@ -531,10 +510,6 @@ function mapV26Image(params: ImageToVideoParams, ctx: MediaMapContext): FalKling
   refuseUniversal(params, ctx, endpoint);
   refuseImageOnlyExtras(params, ctx, endpoint);
   refuseV3OnlyFields(params, ctx, endpoint);
-  // The one row in the family without `cfg_scale`.
-  if (params.cfg_scale !== undefined) {
-    refuseParam(ctx, ["cfg_scale"], endpoint, "is the one fal Kling row that publishes no `cfg_scale`");
-  }
   const duration = requireDuration(params.duration, V25_V26_DURATIONS, ctx, endpoint);
   return {
     prompt: requirePrompt(params.prompt, ctx, endpoint),
@@ -568,7 +543,6 @@ function mapV3Image(params: ImageToVideoParams, ctx: MediaMapContext): FalKlingV
       end_image_url: requireFetchableFrame(params.image_tail, ["image_tail"], ctx, endpoint),
     }),
     ...(params.shot_type !== undefined && { shot_type: shotType(params.shot_type) }),
-    ...(params.cfg_scale !== undefined && { cfg_scale: params.cfg_scale }),
   } as FalKlingV3Image;
 }
 
@@ -597,23 +571,11 @@ export const KLING_VIDEO_FROM_IMAGE_FAL_OVERLAP = {
 } as const;
 
 /**
- * The six Kling ids fal serves no endpoint for, with the reason.
- *
- * Shared by both routes: the gap is a *model* gap, not a route gap. Worth
- * noting what goes with them — `cfg_scale` and `camera_control` are legal at
- * Kling only on the v1 generation, so refusing these ids is also what makes
- * those two params unreachable from typed code.
+ * The Kling ids fal serves no endpoint for, with the reason — none: every
+ * `model_name` the `/v1/videos/*` routes accept has a row above. Shared by
+ * both routes, because a gap here would be a *model* gap, not a route gap.
  */
-export const KLING_VIDEO_FAL_REFUSALS: Readonly<Record<string, string>> = Object.freeze({
-  "kling-v1":
-    "fal's curated Kling roster is 2.5-turbo, 2.6 and 3.0; it serves no v1 endpoint. (This is also why `camera_control` and `cfg_scale` are unreachable — Kling offers both on the v1 generation only.)",
-  "kling-v1-5": "fal's curated Kling roster is 2.5-turbo, 2.6 and 3.0; it serves no v1.5 endpoint.",
-  "kling-v1-6": "fal's curated Kling roster is 2.5-turbo, 2.6 and 3.0; it serves no v1.6 endpoint.",
-  "kling-v2-master":
-    "fal serves no Kling 2.0 Master endpoint; the nearest row, 2.5-turbo, is a different model.",
-  "kling-v2-1": "fal serves no Kling 2.1 endpoint.",
-  "kling-v2-1-master": "fal serves no Kling 2.1 Master endpoint.",
-});
+export const KLING_VIDEO_FAL_REFUSALS: Readonly<Record<string, string>> = Object.freeze({});
 
 /** The type half of {@link KLING_VIDEO_FAL_OVERLAP}, derived from it. */
 export type KlingVideoFalOverlap = {

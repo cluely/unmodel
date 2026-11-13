@@ -12,6 +12,7 @@ export {
   ACCEPT_VALUES,
   DEPRECATED_ACCEPT_ALIASES,
   MIST_V2_ACCEPT_VALUES,
+  MIST_V2_SSE_ACCEPT,
   LANGUAGES,
   MIST_LANGUAGES,
 } from "./tts";
@@ -23,7 +24,7 @@ export type {
   RimeLanguage,
 } from "./tts";
 
-export { models, provider, RIME_MODEL_IDS, ARCANA_MODEL_IDS } from "./models";
+export { models, provider, RIME_MODEL_IDS } from "./models";
 export type { RimeModelId, RimeTtsModelId } from "./models";
 
 // Declaration-portability carriers. One type-only line; see

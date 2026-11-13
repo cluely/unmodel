@@ -12,8 +12,8 @@
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { SfxModelParamTable } from "../../core/unified/vocabulary/sfx";
 
-/** The one sound-effects model — the ref union for `elevenlabs/…`. */
-export const MODELS = ["eleven_text_to_sound_v2"] as const;
+/** The two sound-effects models — the ref union for `elevenlabs/…`. */
+export const MODELS = ["eleven_text_to_sound_v3", "eleven_text_to_sound_v2"] as const;
 
 export const SFX_DOCS = "https://elevenlabs.io/docs/api-reference/text-to-sound-effects/convert";
 
@@ -29,14 +29,16 @@ export const SFX_DOCS = "https://elevenlabs.io/docs/api-reference/text-to-sound-
  *
  * PCM, μ-law and A-law are uncompressed, so the composite has no bitrate slot
  * for them; μ-law and A-law are bare telephony streams at 8 kHz with no
- * container of their own, which is what `"raw"` says.
+ * container of their own, which is what `"raw"` says. 16-bit PCM comes both
+ * bare (`pcm_<rate>`) and in a WAV header (`wav_<rate>`, at the same seven
+ * rates), the arrangement the TTS spec already has.
  */
 export const FORMAT: AudioFormatSpec = {
   codecs: { mp3: "mp3", opus: "opus", pcm_s16le: "pcm", pcm_mulaw: "ulaw", pcm_alaw: "alaw" },
   containers: {
     mp3: ["mp3"],
     opus: ["ogg"],
-    pcm_s16le: ["raw"],
+    pcm_s16le: ["wav", "raw"],
     pcm_mulaw: ["raw"],
     pcm_alaw: ["raw"],
   },
@@ -81,10 +83,11 @@ export const SFX_EXTRAS = {
 } as const;
 
 /**
- * The one sound-effects id, and the whole duration story on one row.
+ * The two sound-effects ids, and the whole duration story on one row they
+ * share: one endpoint, one schema, one `duration_seconds` bound for both.
  *
  * `durationRange` is `[0.5, 30]` — the widest ElevenLabs offers and, notably,
- * WIDER than the 22-second cap fal puts on the same model. `durationDefault` is
+ * WIDER than the 22-second cap fal puts on the v2 model. `durationDefault` is
  * deliberately absent: omitting the length here does not select a number, it
  * selects a behaviour ("we will guess the optimal duration using the prompt"),
  * so there is nothing to warn a caller they got.
@@ -99,5 +102,6 @@ export const ROW = {
 } as const;
 
 export const ELEVENLABS_SFX_MODEL_PARAMS = {
+  eleven_text_to_sound_v3: ROW,
   eleven_text_to_sound_v2: ROW,
 } as const satisfies SfxModelParamTable;

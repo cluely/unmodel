@@ -62,7 +62,7 @@ describe("luma.video happy path", () => {
       },
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings).toEqual([]);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 
   test("every LumaVideoDuration × LumaVideoResolution preset passes cleanly", () => {
@@ -71,16 +71,29 @@ describe("luma.video happy path", () => {
     // checkDuration / checkResolution, or the autocomplete would advertise
     // values the runtime reports as invalid_enum_value. "ray-2" is in this
     // route's catalog and every documented duration × resolution pair is legal
-    // on it, so the whole cross product is looped.
+    // on it, so the whole cross product is looped. Its one warning is the
+    // catalog's deprecated_model, which no param choice can clear.
     for (const duration of LUMA_VIDEO_DURATIONS) {
       for (const resolution of LUMA_VIDEO_RESOLUTIONS) {
         const r = video.safe({ model: "ray-2", prompt: "hi", duration, resolution });
         expect(r.ok, `preset ${duration} @ ${resolution} should validate`).toBe(true);
         if (r.ok) {
-          expect(r.warnings, `preset ${duration} @ ${resolution} should be warning-free`).toEqual(
-            [],
-          );
+          expect(
+            r.warnings.map((w) => w.code),
+            `preset ${duration} @ ${resolution} should warn only deprecated_model`,
+          ).toEqual(["deprecated_model"]);
         }
+      }
+    }
+  });
+
+  test("both Ray ids validate with a deprecated_model warning (retiring, still served)", () => {
+    for (const model of ["ray-2", "ray-flash-2"] as const) {
+      const r = video.safe({ model, prompt: "hi" });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+        expect(r.warnings[0]?.path).toEqual(["model"]);
       }
     }
   });
@@ -132,7 +145,9 @@ describe("luma.video enums and shape", () => {
       { severity: { invalid_enum_value: "warning" } },
     );
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["invalid_enum_value"]);
+    if (r.ok) {
+      expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model", "invalid_enum_value"]);
+    }
   });
 
   test("an aspect_ratio outside the documented set is invalid_shape", () => {

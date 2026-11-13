@@ -26,15 +26,15 @@
  *
  * | canonical | wire | notes |
  * |---|---|---|
- * | `prompt` | `prompt` | required on every text route and both Wan routes |
- * | `image` (first / last) | `image` / `last_image` | the `/image-to-video` ids |
- * | `image` (reference) | `reference_images` (Seedance) / `images` (Veo 3.1) | the `/reference-to-video` ids |
- * | `video` | `reference_videos` | Seedance 2.x reference routes only |
+ * | `prompt` | `prompt` | required on every text route and every Wan route |
+ * | `image` (first / last) | `image` / `last_image` | the `/image-to-video` ids and Veo 3.1 Lite's `/start-end-frame-to-video` |
+ * | `image` (reference) | `reference_images` (Seedance) / `images` (Veo 3.1) / `refers` items (Wan 3.0) | the `/reference-to-video` ids |
+ * | `video` | `reference_videos` (Seedance) / a `refers` item (Wan 3.0) | the Seedance 2.x and Wan 3.0 reference routes |
  * | `duration` | `duration` | plain seconds via `toDurationNumber`; per-model enums answer on the way out |
  * | `resolution` | `resolution` | **S6** — four spellings across four families, see below |
  * | `aspectRatio` | `ratio` **or** `aspect_ratio` | **S1**, minus `adaptive` |
  * | `seed` | `seed` | absent on Seedance 2.5; refused by name there |
- * | `negativePrompt` | `negative_prompt` | Veo 3.1 only; refused by name elsewhere |
+ * | `negativePrompt` | `negative_prompt` | Veo 3.1 / 3.1 Fast only; refused by name elsewhere |
  *
  * `adaptive` is filtered out of every ratio candidate list, exactly as
  * `bytedance/unified-video.ts` filters it: it is not a shape, it is the default
@@ -90,7 +90,13 @@
  * products and are priced differently"), and that is exactly why `atlascloud`
  * ships no cost estimate at all — see ./pricing.ts. A caller who wants a
  * specific rung names it on `providerOptions.atlascloud.resolution`, where the
- * eleven-member enum lives untranslated.
+ * twelve-member enum lives untranslated.
+ *
+ * Seedance 2.5 is the one exception to "the only way": its enum also lists a
+ * native `4k`, and canonical `4k` compiles to `4k-esr` there all the same.
+ * Native 4k and the enhanced rung are different products at different prices,
+ * and moving the canonical word from one to the other would change what an
+ * existing call buys; native 4k is `providerOptions.atlascloud.resolution: "4k"`.
  */
 import {
   applyExtras,
@@ -109,7 +115,12 @@ import type {
   VideoResolution,
 } from "../../core/unified/vocabulary/video";
 import { VIDEO_API_SOURCE } from "./constraints";
-import { video as validator, type AtlasMediaRef, type GenerateVideoBody } from "./video";
+import {
+  video as validator,
+  type AtlasMediaRef,
+  type AtlasReferType,
+  type GenerateVideoBody,
+} from "./video";
 import { ATLASCLOUD_VIDEO_MODEL_PARAMS, MODELS } from "./video-params";
 
 type TierMap = Readonly<Partial<Record<VideoResolution, string>>>;
@@ -150,6 +161,8 @@ const WAN_TIERS: TierMap = {
 };
 
 const VEO_TIERS: TierMap = { "720p": "720p", "1080p": "1080p", "4k": "4k" };
+/** "Veo 3.1 Lite does not support 4K." */
+const VEO_LITE_TIERS: TierMap = { "720p": "720p", "1080p": "1080p" };
 
 /** The shapes, per family — every list is the wire's enum minus `adaptive`. */
 const SEEDANCE_SHAPES = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
@@ -174,8 +187,11 @@ interface AtlasWireRow {
   /** The wire spelling of the shape field, or absent when there is none. */
   readonly ratioField?: "ratio" | "aspect_ratio";
   readonly ratios?: readonly string[];
-  /** Where a `role: "reference"` image goes. */
-  readonly referenceField?: "reference_images" | "images";
+  /**
+   * Where a `role: "reference"` image goes. `refers` is the Wan 3.0 reference
+   * routes' typed list, which takes the clip too: `{ url, type }` per item.
+   */
+  readonly referenceField?: "reference_images" | "images" | "refers";
   /** `seed` is absent from every Seedance 2.5 schema. */
   readonly seed: boolean;
   /** `negative_prompt` is Veo 3.1's alone. */
@@ -248,6 +264,12 @@ const veo = (routes: readonly VideoRoute[], extra: Partial<AtlasWireRow> = {}): 
 /** The shape field a route does not have, said once. */
 const NO_SHAPE = { ratioField: undefined, ratios: undefined } as const;
 
+/** Wan 3.0's reference routes put every reference, clip included, in `refers`. */
+const WAN_REFERS = { referenceField: "refers" } as const;
+
+/** Veo 3.1 Lite: no 4K and no `negative_prompt`. */
+const VEO_LITE = { resolutions: VEO_LITE_TIERS, negativePrompt: false } as const;
+
 const ROWS: Readonly<Partial<Record<string, AtlasWireRow>>> = {
   "bytedance/seedance-2.5/text-to-video": seedance25(TEXT, {}),
   // "…accepts only 'adaptive': the output preserves the source image's aspect
@@ -283,6 +305,11 @@ const ROWS: Readonly<Partial<Record<string, AtlasWireRow>>> = {
   "alibaba/wan-3.0-prime/image-to-video": wan(IMAGE, WAN_TIERS, NO_SHAPE),
   "alibaba/wan-3.0/text-to-video": wan(TEXT, WAN_TIERS),
   "alibaba/wan-3.0/image-to-video": wan(IMAGE, WAN_TIERS, NO_SHAPE),
+
+  // "Any mix of reference images …, reference videos … and reference audio" in
+  // ONE `refers` list — the clip joins it as `{ url, type: "video" }`.
+  "alibaba/wan-3.0/reference-to-video": wan(REFERENCE_AND_VIDEO, WAN_TIERS, WAN_REFERS),
+  "alibaba/wan-3.0-prime/reference-to-video": wan(REFERENCE_AND_VIDEO, WAN_TIERS, WAN_REFERS),
   "google/veo3.1/text-to-video": veo(TEXT),
   "google/veo3.1/image-to-video": veo(IMAGE),
   "google/veo3.1/reference-to-video": veo(REFERENCE, {
@@ -290,6 +317,11 @@ const ROWS: Readonly<Partial<Record<string, AtlasWireRow>>> = {
     // Its schema declares no `aspect_ratio` property (see ./constraints.ts).
     ...NO_SHAPE,
   }),
+  "google/veo3.1-fast/text-to-video": veo(TEXT),
+  "google/veo3.1-fast/image-to-video": veo(IMAGE),
+  "google/veo3.1-lite/text-to-video": veo(TEXT, VEO_LITE),
+  "google/veo3.1-lite/image-to-video": veo(IMAGE, VEO_LITE),
+  "google/veo3.1-lite/start-end-frame-to-video": veo(IMAGE, VEO_LITE),
 };
 
 /**
@@ -323,6 +355,7 @@ export interface AtlascloudVideoWire {
   images?: AtlasMediaRef[];
   reference_images?: AtlasMediaRef[];
   reference_videos?: AtlasMediaRef[];
+  refers?: Array<{ url: AtlasMediaRef; type: AtlasReferType }>;
   duration?: number;
   resolution?: string;
   ratio?: string;
@@ -390,25 +423,30 @@ export const video = {
         }
         if (references.length > 0) {
           ctx.from([field], "image");
-          body[field] = references;
+          if (field === "refers") body.refers = references.map((url) => ({ url, type: "image" }));
+          else body[field] = references;
         }
       }
     }
 
     if (input.video !== undefined) {
       const clip = ctx.take(toMediaUri(input.video, { path: ["video"], warn: ctx.warn }));
-      if (clip !== undefined) {
+      if (clip !== undefined && row.referenceField === "refers") {
+        const refers = body.refers ?? [];
+        ctx.from(["refers", refers.length], "video");
+        body.refers = [...refers, { url: clip, type: "video" }];
+      } else if (clip !== undefined) {
         ctx.from(["reference_videos"], "video");
         body.reference_videos = [clip];
       }
     }
 
     if (input.duration !== undefined) {
-      // The model's own row answers on the way out: nineteen of the
-      // twenty-three publish an enum too long to autocomplete (see
+      // The model's own row answers on the way out: twenty-two of the
+      // thirty publish an enum too long to autocomplete (see
       // ./video-params.ts) and `checkDuration` quotes it, including the `-1`
-      // sentinel rule. Veo 3.1's three-member enum IS declared, so it is
-      // passed here and refused at compile time as well.
+      // sentinel rule. The Veo family's three-member enums ARE declared, so
+      // they are passed here and refused at compile time as well.
       const allowed = ATLASCLOUD_VIDEO_MODEL_PARAMS[ctx.model as keyof typeof ATLASCLOUD_VIDEO_MODEL_PARAMS];
       const durations = (allowed as { durations?: readonly number[] } | undefined)?.durations;
       const duration = ctx.take(
@@ -458,7 +496,7 @@ export const video = {
         ctx.fail({
           code: "unsupported_param",
           path: ["negativePrompt"],
-          message: `"${ctx.model}" has no \`negative_prompt\` field — Veo 3.1 is the only family on Atlas with one; describe what to avoid inside \`prompt\`.`,
+          message: `"${ctx.model}" has no \`negative_prompt\` field — Veo 3.1 and Veo 3.1 Fast are the only models on Atlas with one; describe what to avoid inside \`prompt\`.`,
           meta: { source: VIDEO_API_SOURCE },
         });
       } else {
@@ -496,5 +534,5 @@ export const video = {
 // reaches it through `./video`, which is where a model id is looked up — and an
 // adapter leaf that imported it directly would be the barrel trap in miniature:
 // `unmodel/atlascloud/values` re-exports this file's tables for pickers, and
-// that entry must not pay for twenty-three catalog rows to render a dropdown.
+// that entry must not pay for thirty-one catalog rows to render a dropdown.
 // `./constraints` and `./video-params` are the import-free halves it may reach.

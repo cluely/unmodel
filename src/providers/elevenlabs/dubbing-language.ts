@@ -3,7 +3,8 @@
  * POST https://api.elevenlabs.io/v1/dubbing/project/{project_id}/language
  *
  * Wire notes (verified against `https://api.elevenlabs.io/openapi.json`
- * — `dubbing_language_create` — https://elevenlabs.io/docs/api-reference/dubbing/project/language/create
+ * — `dubbing_language_create` — the reference page at
+ * https://elevenlabs.io/docs/api-reference/dubbing/language-targets/create-language-target
  * and `@elevenlabs/elevenlabs-js@2.65.0`, on 2026-08-26):
  *
  * ## This is the call that spends the money
@@ -70,7 +71,7 @@ export function dubbingLanguageUrl(projectId: string): string {
 }
 
 const DUB_LANGUAGE_DOCS_URL =
-  "https://elevenlabs.io/docs/api-reference/dubbing/project/language/create";
+  "https://elevenlabs.io/docs/api-reference/dubbing/language-targets/create-language-target";
 
 /** "How strongly the dubbed speakers clone the source voices, 0 to 10." Default 7. */
 export const DUBBING_CLONING_STRENGTH_MIN = 0;

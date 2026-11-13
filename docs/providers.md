@@ -24,19 +24,19 @@ provider — not their quality ranking.
 
 | Provider | Categories | API style | Tier | models.dev | Notes |
 |---|---|---|---|---|---|
-| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + image + imageEdit + tts + stt + video + realtime session done) | ✅ | complete for the REST surface unmodel serves; `POST /v1/responses` is deliberately absent — see decisions.md §7. `openai.chat` warns on the nine catalog rows Chat Completions refuses (codex, embeddings, image, realtime) and names the route each is served on |
+| openai | llm, image, tts, stt, video (Sora) | native (the reference) | **native** (chat + image + imageEdit + tts + stt + video + realtime session done) | ✅ | complete for the REST surface unmodel serves; `POST /v1/responses` is deliberately absent — see decisions.md §7. `openai.chat` warns on the 17 catalog rows Chat Completions refuses (codex, pro, Daybreak, embeddings, image, realtime) and names the route each is served on |
 | anthropic | llm | native (the reference) | **native** (`chat`, the `/v1/messages` wire format — done) | ✅ | |
 | google | llm, image, video, tts, stt | native | **native** (`chat` + `tts` + `stt` + Imagen `image` + Veo `video` done) | ✅ | `tts` and `stt` are dedicated Tier-A surfaces — required AUDIO modality, XOR'd `speechConfig`, bounded speaker tuple, 78-language table, closed audio MIME set, typed `audioTranscriptionConfig`. Both post to `:generateContent`, which is also what `chat` serves, so the same ids stay valid there too — one shared check battery backs both surfaces |
 | xai (grok) | llm, image, video, stt | openai-compatible (+anthropic-compat) | **oai-base** (chat) + native `image`/`video`/`videoEdit`/`videoExtend` (Grok Imagine, live) | ✅ (`xai`) | |
-| groq | inference (chat + Whisper STT) | openai-compatible | **oai-base** (live) | ✅ | Whisper STT covered by speech wave via oai audio shape |
+| groq | inference (chat, Whisper STT, Orpheus TTS) | openai-compatible | **oai-base** (chat live) | ✅ | chat only. Groq also serves `/audio/transcriptions` + `/audio/translations` (Whisper) and `/audio/speech` (Orpheus); no unmodel validator covers them yet, so those ids are catalog rows only (checked 2026-11-12, https://console.groq.com/docs/speech-to-text, https://console.groq.com/docs/text-to-speech) |
 | cerebras | inference | openai-compatible | **oai-base** (live) | ✅ | |
-| openrouter | aggregator (400+ models) | openai-compatible | **oai-base** (live) | ✅ (349 models) | |
+| openrouter | aggregator (400+ models) | openai-compatible | **oai-base** (live) | ✅ | |
 | huggingface | aggregator (router.huggingface.co) | openai-compatible | **oai-base** (live) | ✅ | |
 | elevenlabs | tts (r11), stt (Scribe, r1), music, sfx, sts, dubbing | native | **native** (TTS+STT+music+sfx+sts+dubbing live; realtime configs live) | ✋ | per-character pricing; `textToSpeechStreamInput` + `speechToTextRealtime` validate the socket configs; `dub` + `dubLanguage` are wire-only (no `unmodel/dubbing` — see "Dubbing" below); `sts` (voice changer) is `MULTIPART_ONLY` — its `audio` is a required `Blob` |
 | cartesia | tts (Sonic, r6), stt (Ink) | native | **native** (TTS+STT live; realtime configs live) | ✋ | `ttsWebsocket` (generation message) + `sttWebsocket` (connection query set) |
-| inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT is inline base64 (no multipart); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
-| soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `stt` + `realtimeTranscription` config message |
-| stepfun | llm (r83), tts (r5), image-edit | openai-compatible | **oai-base** (chat live) + native `tts` (stepaudio-2.5-tts, live) | ✅ | speech is a hand catalog mirroring the generated rows |
+| inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT validates the JSON body (inline base64; the multipart variant is not described); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
+| soniox | stt (v6, r11) | native | **native** (STT live; realtime config live) | ✋ | async `stt` + `realtimeTranscription` config message |
+| stepfun | llm (r83), tts (r5) | openai-compatible | **oai-base** (chat live) + native `tts` (stepaudio-3-tts, stepaudio-2.5-tts, live) | ✅ | speech is a hand catalog mirroring the generated rows, plus `stepaudio-3-tts` by hand (not in models.dev yet); image generation/edit is gone — "`step-2x-large` and `step-image-edit-2` were retired on October 10, 2026" (platform.stepfun.ai pricing page, 2026-11-12); `stepaudio-2.5-asr` is served by `POST /v1/audio/asr/sse`, so `stepfun.chat` warns on it and `unmodel/chat` has no ref for it. Open owner decision: the documented `video_url` user content part ("include a `video_url` item along with your prompt in the `user` message", [video chat guide](https://platform.stepfun.ai/docs/en/guides/developer/video-chat.md); step-5-preview and step-3.7-flash, which "natively supports text, image, and video input" per the [step-5-preview model page](https://platform.stepfun.ai/docs/en/guides/models/step-5-preview.md), 2026-11-12) is refused today with `invalid_shape`. Accepting it needs either a `video_url` arm in the shared openai-compatible dialect, which `openai.chat` and `azure` also validate against, or a per-factory extra-part hook the factory does not have. It is the same gap as perplexity's, and openrouter, alibaba, zhipuai and moonshotai have video-input rows too |
 
 ## Wave 2 — inference hosts & aggregators (all openai-compatible, all in models.dev → oai-base)
 
@@ -53,6 +53,14 @@ Special cases — now **live as endpoint factories** (no provider-wide static UR
 format).
 Still catalog-only: **replicate** (native API — until a native validator lands).
 
+**Open question — Kimi K3 sampling on hosts (2026-11-12).** The hosts that resell the
+Kimi K3 series under `temperature: false` rows (deepinfra, fireworks-ai, huggingface,
+nebius, novita-ai, nvidia, togetherai, vercel) inherit the generic fixed-sampling rule —
+`top_p` 1 only — so they refuse `top_p: 0.95`, the value Moonshot fixes for the series
+("`top_p` | Fixed at `0.95`", https://platform.kimi.ai/docs/api/models-overview) and that
+`moonshotai.chat` and `alibaba.chat` pin. No host page states its own rule, so none is
+pinned until host-level evidence exists.
+
 ## Wave 2 — model creators with first-party OpenAI-compatible APIs (oai-base)
 
 **Live:** mistral, deepseek, moonshotai, alibaba, zhipuai, minimax, nvidia, perplexity,
@@ -67,30 +75,68 @@ routes on the same subpath (`minimax.tts` / `video` / `videoV2`,
 `mistral.stt`). **bytedance** is a separate native subpath for the BytePlus
 ModelArk image/video routes — the Doubao chat overlay above is still to do.
 
+**perplexity** addresses Sonar Chat Completions (`POST /chat/completions`, the documented
+alias of `/v1/sonar`), which the Agent API superseded but Perplexity still serves: "Sonar
+Chat Completions support ended on September 27, 2026. Synchronous and streaming requests
+keep working: they are being reformulated as Agent API requests"
+([migration overview](https://docs.perplexity.ai/docs/agent-api/migrate-from-sonar/overview),
+2026-11-12). All four sonar ids stay reachable and warn `deprecated_model`. Perplexity's
+suggested Agent API `effort` levels (the field that replaces `model` there): "`sonar` →
+`fast`, `sonar-pro` → `fast`, `sonar-reasoning-pro` → `low`, `sonar-deep-research` →
+`high`." ([migration how-to](https://docs.perplexity.ai/docs/agent-api/migrate-from-sonar/how-to),
+2026-11-12). User messages take the reference's `file_url` and `pdf_url` chunks and string
+`image_url` ([API reference](https://docs.perplexity.ai/api-reference/legacy/sonar-post),
+2026-11-12); its `video_url` chunk is shape-checked but refused `unsupported_capability` on
+every sonar row — none has video input, and the
+[media guide](https://docs.perplexity.ai/docs/legacy/sonar/media) documents none (2026-11-13).
+`checkChat` reports the billed `usage.cost.total_cost`. Open owner
+decisions: the Agent API (`POST /v1/agent`, Responses-shaped — decisions.md §7), the
+Embeddings and Decisions APIs (no unmodel surface takes either), and request-fee-aware
+pre-send estimates. **Excluded:** the Orchestrator API (`/orchestrator/v1`) — "Orchestrator
+API is in private preview." ([orchestrator models](https://docs.perplexity.ai/docs/orchestrator/models),
+2026-11-12).
+
+**upstage** addresses Chat Completions (`POST https://api.upstage.ai/v1/chat/completions`)
+for solar-pro4 and solar-mini4. Upstage retired the older Solar ids on October 30, 2026
+(KST): "Support ended for `solar-pro3` and all of its versions", with the same line for
+`solar-pro2` and `solar-mini` ([changelog](https://console.upstage.ai/docs/resources/changelog),
+2026-11-12). Replacements: `solar-pro4` for solar-pro3 and solar-pro2, `solar-mini4` for
+solar-mini. Upstage answers a retired id with 400 `invalid_request_body`, "a model that is
+invalid or no longer supported" ([error codes](https://console.upstage.ai/docs/resources/error-codes),
+2026-11-12). models.dev still carries the three rows with no `status`, so `upstage.chat`
+validates and prices them without a `deprecated_model` warning until upstream marks them
+deprecated; the one exception is `reasoning_effort` on the solar-mini family, still refused.
+Open owner decisions: a hand retired-ids refusal (google's `VIDEO_RETIRED_IDS` shape) and
+whether the solar-mini `reasoning_effort` deny retires with its model.
+
 ## Speech wave — TTS / STT (native APIs, hand-maintained catalogs ✋)
 
 **Live — TTS:** every provider addresses its synthesis route as `tts` (the address-vs-wire
 law — the wire spellings `/v1/text-to-speech/{voice_id}`, `/tts/bytes`, `/v1/speak`,
 `/v1/t2a_v2`, `/synthesize`, `:generateContent` survive only on the URL constants and wire
 types): openai (tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15), cartesia,
-deepgram (Aura 1/2), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave), inworld,
+deepgram (Aura 1/2 on `/v1/speak`), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave — deprecated;
+the API was retired 2026-11-13 and every route answers 404; see `hume.sts` below), inworld,
 lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
-resemble (`tts` + `ttsStream`), rime, smallest-ai,
-speechify (`tts` + `ttsStream`), stepfun (StepAudio 2.5), breezeblue (Breeze TTS 2),
-alibaba (Qwen3-TTS on DashScope; the realtime-WebSocket-only ids incl.
-qwen-audio-3.0-tts-plus are catalog rows the unary validator rejects by name),
+resemble (`tts` + `ttsStream`; closed to new customers since 2026-08-13, existing customers
+still served — see `src/providers/resemble/models.ts`), rime, smallest-ai,
+speechify (`tts` + `ttsStream`), stepfun (StepAudio 3, StepAudio 2.5), breezeblue (Breeze TTS 2 and
+Breeze TTS 2 Multilingual),
+alibaba (Qwen3-TTS on DashScope; the realtime ids — WebSocket, and for
+qwen-audio-3.0-tts-plus/-flash also the HTTP SpeechSynthesizer route — are catalog
+rows the multimodal-generation validator rejects by name, naming the route that serves them),
 fal (23 hosted endpoints — ElevenLabs, MiniMax, Gemini TTS, Chatterbox, Inworld,
 xAI, Seed-Speech, Qwen-3 and nine Kokoro languages — behind one `fal.tts`).
 All nineteen also ship an adapter at `unmodel/<provider>/unified`, so `tts()` from
-`unmodel/tts` reaches them through one canonical vocabulary. Two leaderboard names that
-LOOK like gaps are not: Cartesia "Sonic 3.6" has no model id of its own (it is the beta
-behind `sonic-preview`), and ElevenLabs "v3 Conversational" is the realtime
+`unmodel/tts` reaches them through one canonical vocabulary. One leaderboard name that
+LOOKS like a gap is not: ElevenLabs "v3 Conversational" is the realtime
 `eleven_v3_conversational` (catalog row; Text-to-Dialogue WebSocket only).
 **Live — STT:** every provider addresses the route as `stt` — openai
 (gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
-deepgram, elevenlabs (Scribe), gladia, google (13 curated Gemini ids, 6 excluded by name and
-reason), inworld (base64 audio inline in the JSON body, no multipart route), mistral
+deepgram, elevenlabs (Scribe), gladia, google (19 curated Gemini ids including the dedicated
+`gemini-3.5-transcribe`, 6 excluded by name and reason), inworld (base64 audio inline in the
+JSON body; its multipart variant is not validated), mistral
 (Voxtral), revai, soniox, speechmatics, fal (6 hosted endpoints — Wizper, fal's own
 speech-to-text + turbo, ElevenLabs Scribe v1/v2, Cohere Transcribe; the `/stream` variants are
 excluded by name as a socket surface). All thirteen also ship an adapter at
@@ -110,13 +156,24 @@ openai (`realtimeSession`), cartesia (`ttsWebsocket`, `sttWebsocket`), deepgram 
 `speechToTextRealtime`), inworld (`realtimeTranscribeConfig`, `realtimeVoiceContext`), soniox
 (`realtimeTranscription`).
 **Realtime still to do:** the streaming/live socket configs of assemblyai, gladia and
-speechmatics, plus Cartesia's sibling turn-detection socket (`/stt/turns/websocket`).
+speechmatics, plus Cartesia's sibling turn-detection socket (`/stt/turns/websocket`) and
+mistral's Voxtral realtime transcription socket (`/v1/audio/transcriptions/realtime` — its
+model ids are catalogued, and `mistral.stt` rejects them by name), and fish-audio's
+`transcribe-stream-1` (Preview, MessagePack-only `wss://api.fish.audio/v1/asr/realtime`).
 **TTS still to do (leaderboard order):** typecast,
 gradium, async, microsoft/azure, mistral (Voxtral TTS), boson-ai, neuphonic, amazon (Polly),
-nvidia (Magpie), zyphra. **Excluded (no public developer API):** VUI Labs (Luna TTS —
+nvidia (Magpie), zyphra; not on the leaderboard: soniox (`tts-rt-v2` on
+`POST https://tts-rt.soniox.com/tts` and the `wss://tts-rt.soniox.com/tts-websocket` socket,
+plus voice cloning on `POST /v1/voices`; "`tts-rt-v2` is available to all API customers",
+https://docs.soniox.com/tts/models, checked 2026-11-12). Also still to do: deepgram's Flux TTS `/v2/speak`
+(`POST https://api.deepgram.com/v2/speak` batch and the `wss://api.deepgram.com/v2/speak`
+socket, `flux-{voice}-{language}` voices, GA 2026-08-12 —
+https://developers.deepgram.com/docs/flux-tts/overview; `deepgram.tts` and
+`deepgram.speakLive` refuse `flux-*` voices by name). **Excluded (no public developer API):** VUI Labs (Luna TTS —
 contact-gated, no published docs).
 **STT still to do:** azure, smallest-ai, alibaba, deepinfra, xai, amazon,
-nvidia, gradium, reson8, modulate, cohere (stt).
+nvidia, gradium, reson8, modulate, cohere (stt), fish-audio (`transcribe-1-pro` and the deprecated
+`transcribe-1` on `POST /v1/asr`, model in a header, multipart or MessagePack).
 
 ## Image wave (native APIs unless noted)
 
@@ -125,10 +182,10 @@ whatever the wire calls it; a provider with more than one generation route quali
 extras (`imageCore`, `imageV4`, `imageFlux1`) and never the primary one. openai gpt-image +
 DALL·E (`image`, at /v1/images), google (Imagen 4 via `image` → `:predict`; Nano Banana /
 gemini-*-image via `chat`), black-forest-labs (FLUX.2 `image`, FLUX 1.x `imageFlux1`,
-Kontext — api.bfl.ai, `unmodel/black-forest-labs`), bria (`image` + `imageLite`, FIBO),
+Kontext — api.bfl.ai, `unmodel/black-forest-labs`), bria (`image` + `imageLite`, Fibo 2 / Fibo Lite),
 bytedance (`image`, Seedream on BytePlus ModelArk), kling (`image` + `imageOmni`), krea
-(`image`), leonardo (`image`, Lucid / Phoenix), recraft (`image`), ideogram (v3 `image` + v4
-`imageV4`), reve (`image` + `imageV2`), stability (Stable Image `image` / `imageCore` /
+(`image`), leonardo (`image`, Lucid / Phoenix / nine more image models — `kino-xl` …
+`lightning-xl` — that add `transparency` and the `user_elements` / `platform_elements` arrays), recraft (`image`), ideogram (v3 `image` + v4 `imageV4`), reve (`image` + `imageV2`), stability (Stable Image `image` / `imageCore` /
 `imageSd3`), luma (Photon `image`), runway (`image`), vidu (`imageFromReference`),
 xai (Grok Imagine `image` at /v1/images/generations), azure (Microsoft Foundry MAI-Image-2.5
 family via the `createAzure(endpoint)` factory — deployment-name model field, so wire
@@ -173,12 +230,21 @@ deepseek (Janus — weights only).
 
 ## Video / music wave
 
-**Video — live:** openai (Sora 2, `video` at /v1/videos), google (Veo, `video`),
+**Video — live:** openai (Sora 2, `video` at /v1/videos), google (`video` on
+:predictLongRunning — every served id is shut down upstream: Veo 2 / Veo 3 / Veo 3 Fast on
+2026-06-30, the Veo 3.1 previews and `gemini-omni-flash-preview` on 2026-10-22. The Veo 2 /
+Veo 3 ids still validate, with a `deprecated_model` warning, pending an owner decision on the
+surface (retire `google.video`, move Veo GA onto google-vertex, or wait to serve the
+replacement, `gemini-omni-1.2-flash` — an Interactions API model unmodel does not serve yet);
+`gemini-omni-flash-preview` is refused by name. Source: the deprecations page's Veo
+"Deprecated models" table, https://ai.google.dev/gemini-api/docs/deprecations, retrieved
+2026-11-12),
 bytedance (`video`, Seedance / Dreamina Seedance), kling (`video` /
 `videoFromImage` on `POST /v1/videos/*`, plus the EXPERIMENTAL path-addressed
-`videoV3` / `videoV3FromImage` / `videoOmni`), lightricks (LTX-2: `video` /
+`videoV3` / `videoV3FromImage` / `videoOmni` — the only family serving Kling 4.0 /
+4.0 Flash), lightricks (LTX-2.5 / LTX-2.3: `video` /
 `videoFromImage` / `videoFromAudio`), minimax (`video` Hailuo + `videoV2`
-MiniMax-H3), pixverse (`video` + `videoFromImage`), runway (`video` +
+MiniMax-H3 / -Highspeed / -Lite / -Max), pixverse (`video` + `videoFromImage`), runway (`video` +
 `videoFromImage` + `videoFromVideo`), luma (Ray, `video`, plus post-production
 `videoModify` / `videoReframe` / `videoUpscale` / `videoAddAudio`), vidu
 (`video` / `videoFromImage` / `videoFromReference`), alibaba (Wan 3.0/2.x + HappyHorse 1.x
@@ -187,8 +253,10 @@ on DashScope video-synthesis, async create-then-poll), xai (Grok Imagine `video`
 2.0/2.5, Kling v2.5-turbo/v2.6/v3, v3 motion-control and the o1/o3 video edits, MiniMax H3 +
 Hailuo-02 + Hailuo-2.3, Veo 3.1 and its fast / i2v / first-last / extend / reference arms, Wan
 v2.2/v2.7, LTX-2.5, PixVerse v6, Grok Imagine, Gemini Omni Flash, Light-X relight),
-atlascloud (`video`, 23 curated models on ONE url — Seedance 2.5 / 2.0 / 2.0-mini / 2.0-fast /
-v1.5-pro, Wan 3.0 + 3.0-prime, Veo 3.1; async create-then-poll, `ATLASCLOUD_API_KEY`).
+atlascloud (`video`, 31 curated models on ONE url — Seedance 2.5 (incl. the wire-only
+`draft-complete`) / 2.0 / 2.0-mini / 2.0-fast / v1.5-pro, Wan 3.0 + 3.0-prime (incl. their
+`refers` reference routes), Veo 3.1 / 3.1 Fast / 3.1 Lite; async create-then-poll,
+`ATLASCLOUD_API_KEY`).
 All fourteen are reachable
 through one canonical `video()` at `unmodel/video`.
 fal and atlascloud are the two providers here with **no** `videoFromImage`, for opposite
@@ -202,18 +270,20 @@ a second route (the argument is recorded in `src/cli-registry.test.ts`).
 Atlas resells weights unmodel already reaches: `bytedance/seedance-*` is also `bytedance.video`
 (ByteDance's own ModelArk) and `fal.video`, and `google/veo3.1/*` is also `google.video` and
 `fal.video` — three transports, three visibly different bodies, and no normalisation between
-them. **No `atlascloud` model ships a cost:** Atlas publishes no unit for its rates (its catalog
-carries a bare `base_price` on 335 of 337 media rows and its model page renders the same figure
-as a per-run price, a per-second rate and a per-1000-token rate), so the caveat ships instead —
-`ATLASCLOUD_PRICING_CAVEAT` on `unmodel/atlascloud`.
+them. **No `atlascloud` model ships a cost:** Atlas publishes no unit-bearing rate for them (no
+curated catalog row carries a `unit`, and its billing page says video pricing "Varies by model,
+duration, and resolution", so the model page's one per-second figure is the floor of an
+unpublished ladder), so the caveat ships instead — `ATLASCLOUD_PRICING_CAVEAT` on
+`unmodel/atlascloud`.
 Remaining (first-party APIs): tencent (HunyuanVideo).
 Several are also reachable as hosted routes on `unmodel/runway`
-(`hailuo3`, `seedance2*`, `gemini_omni_flash`, `grok_imagine_1_5`, `happyhorse_1_0`).
+(`hailuo3`, `h3_max`, `seedance2*`, `gemini_omni_flash*`, `grok_imagine_1_5*`,
+`happyhorse_1_0`, the Kling 2.5 / 3.0 / O3 / 4.0 arms, `wan3*`).
 **Excluded:** pika, genmo/haiper, sand-ai (MAGI-2 Preview is open weights on HF, no hosted
 API), skywork, sapiens-ai (no public API).
 **Music / audio — live:** elevenlabs (Eleven Music, `music`), stability (Stable Audio 2.x:
-`music` / `musicFromAudio` / `musicInpaint`), google (Lyria 3 Pro / Clip via the Gemini
-Interactions API, `music`), mureka (`music` at /v1/song/generate, `musicFromPrompt` at
+`music` / `musicFromAudio` / `musicInpaint`), google (Lyria 3.5 + Lyria 3 Pro / Clip via the
+Gemini Interactions API, `music`), mureka (`music` at /v1/song/generate, `musicFromPrompt` at
 /v1/song/easy-generate + `instrumental`, async create-then-poll, mureka-7.6…9.5), fal
 (`music`, 10 hosted endpoints — MiniMax Music
 3 / v2.6 / v2, ElevenLabs Music, Lyria 3 Pro + Lyria 2, Stable Audio 2.5 and 3 Medium,
@@ -293,12 +363,17 @@ wrong, so it is checked here.
 
 Pricing is per second of OUTPUT at 25 fps, and each rate is published as a band whose low end is
 a volume discount rather than an uncertainty: sync-3 $0.107–$0.133, lipsync-2 $0.04–$0.05,
-lipsync-2-pro $0.067–$0.083, lipsync-1.9.0-beta $0.02–$0.025, react-1 $0.133–$0.167.
+lipsync-2-pro $0.067–$0.083, lipsync-1.9.0-beta $0.02–$0.025, react-1 $0.133–$0.167. The charge
+is per output FRAME — "per-second equivalents at **25 output frames per second**, not flat prices
+per second at every frame rate" — so a 30 fps output costs 20% more per second, and dubbing,
+a `text` input's speech and the reasoning pass are billed on top. sync.'s own estimate endpoint
+(`ESTIMATE_COST_URL`) quotes a model and a duration you supply.
 
-Not served: `POST /v2/tts` and the `/v2/voices` clone surface, which are an ElevenLabs
-passthrough — unmodel carries ElevenLabs natively, with the real voice roster and the real
-format controls rather than a two-field projection of them — and `/v2/assets`, `/v2/projects`
-and `/v2/batch`, which are storage, organisation and an envelope rather than generation.
+Not served: `POST /v2/tts`, its asynchronous twin `POST /v2/tts/jobs` and the `/v2/voices` clone
+surface, which are an ElevenLabs passthrough — unmodel carries ElevenLabs natively, with the real
+voice roster and the real format controls rather than a two-field projection of them — and
+`/v2/assets`, `/v2/audio-trims`, `/v2/projects` and `/v2/batch`, which are storage, asset
+preparation, organisation and an envelope rather than generation.
 
 The overlap with fal is the comparison this pack exists to make cheap: four of fal's ten lipsync
 endpoints are sync.'s own models resold, so `lipsync({ model: "fal/fal-ai/sync-lipsync/v2", … })`
@@ -308,8 +383,8 @@ array natively; `sync_mode` at the body root at fal against `options.sync_mode` 
 accepts inline bytes as a `data:` URI where sync. fetches URLs and asset ids only. Neither is a
 superset of the other.
 
-**Avatar — `avatar`, 12 refs across four providers.** A still in, the same audio in, a clip out.
-Eight at fal, one at sync., one at VEED, two at HeyGen. sync-lipsync
+**Avatar — `avatar`, 11 refs across four providers.** A still in, the same audio in, a clip out.
+Eight at fal, one at sync., one at VEED, one at HeyGen. sync-lipsync
 v3/image-to-video, ByteDance OmniHuman 1.5, Kling AI Avatar v2 standard and pro, EchoMimic v3,
 LongCat single-avatar, VEED Avatars, Argil Avatars. The split from lipsync is by INPUT rather
 than by vendor, which is why `fal-ai/sync-lipsync/v3` and
@@ -329,10 +404,12 @@ because sync. catalogues no preset performers and publishes no field to name one
 `https://api.veed.io/v1`, JSON bodies, `Authorization: Bearer vp_…` (`VEED_API_KEY`), and two
 URLs with disjoint schemas: `POST /v1/lipsync-2.0` takes `{ video_url, audio_url }` and
 `POST /v1/fabric-1.0` takes `{ image_url, audio_url, resolution }`. Everything here comes from
-one publicly fetchable OpenAPI 3.1.0 document (`https://api.veed.io/openapi.json`, 10
-operations, 21 schemas) whose components are also served standalone at
-`/schemas/{Name}.json` — the same URL every response carries in its own `$schema`. There was no
-SDK tiebreak to run: VEED ships no client in any language.
+one publicly fetchable OpenAPI 3.1.0 document (`https://api.veed.io/openapi.json`, 18
+operations, 37 schemas, verified 2026-11-12) whose components are also served standalone at
+`/schemas/{Name}.json` — the same URL every response carries in its own `$schema`. VEED's
+official SDKs (npm `@veedstudio/sdk`, PyPI `veed`, Go `veed-sdk-go`) are generated from that
+document and lag it — `@veedstudio/sdk` 0.3.0's job types omit the `credits_charged` /
+`credits_estimated` fields the spec declares — so the spec stays the primary source.
 
 Three facts about that document decide the whole provider. **Every request schema is
 `additionalProperties: false`**, so an undeclared key is a 422 with no job created rather than a
@@ -350,16 +427,16 @@ Pricing is unusually good here: it is IN THE SPEC. Each submit operation carries
 `x-veed-pricing` extension with currency, unit, rounding and a `rates` array that may be
 conditioned on a request field — `{"rates":[{"amount":0.07}],"unit":"second","rounding":"exact"}`
 on lipsync, and the two-way `resolution` fork on fabric. So the rates unmodel carries change in
-the same diff as a schema change rather than drifting away from a marketing page. (Where the
-published numbers DO disagree, `https://www.veed.io/api` says Fabric is "$0.08–$0.20/sec"; the
-model page, the tools page and the machine-readable extension all say $0.08–$0.15, and the
-outlier is not followed.)
+the same diff as a schema change rather than drifting away from a marketing page.
+(`https://www.veed.io/api` prices Fabric up to $0.20/sec because it lists a "Fast" tier —
+480p $0.10, 720p $0.20 — that has no native route; its "Regular" rows are the native $0.08 and
+$0.15, matching `https://api.veed.io/pricing` and the extension.)
 
 Neither address estimates. The rate is per second of GENERATED video and the generated video's
 length is the input's, behind a URL unmodel never fetches; VEED publishes no pre-flight quote
 endpoint either.
 
-Not served: the `video-background-removal` family — three variants and six of VEED's ten
+Not served: the `video-background-removal` family — three variants and six of VEED's eighteen
 operations. It is a real, priced, publicly documented product that matches no category unmodel
 has (it mattes a subject out of a clip and returns a WebM with an alpha channel, or two files on
 h264), and a one-provider `matting` category read off a single witness is exactly what this
@@ -368,17 +445,23 @@ sells `veed/avatars/audio-to-video`, a library of trained presenters named by `a
 `POST /v1/avatars` answers a real JSON 404 — so the same vendor is a `sources: []` row at fal
 and a `sources: ["image"]` row here, two products that happen to share a name.
 
-⚠️ **Keys are not self-serve.** The docs, the schemas and the playground are fully public with
-no login, but every page's footer reads "API access is granted on request" and links to
-`https://www.veed.io/contact-sales`. That is a credential gate rather than a documentation gate,
-which is why the types here are as exact as any in the library and were nonetheless never
-exercised against a live key.
+Not yet served, and each a new endpoint address awaiting an owner decision: Dubbing
+(`/v1/dubbing` $0.11/sec, `/v1/dubbing-pro` $0.18/sec, of generated video — a third native
+dubbing witness beside `elevenlabs.dub` and HeyGen's declined video-translations route) and
+Clean Audio (`/v1/clean-audio`, `/v1/clean-audio-video`, $0.0125 per minute of input audio — no
+category and no second witness).
+
+**Keys are self-serve.** Create one in the workspace dashboard
+(`https://api.veed.io/docs/quickstart`); self-serve workspaces prepay credits, and sales is for
+Enterprise arrears billing, higher rate limits and volume pricing
+(`https://api.veed.io/docs/accounts`). The types here were transcribed from the spec and have
+not been exercised against a live key.
 
 **HeyGen — `heygen.avatar` and `heygen.lipsync`, 5 models.** Tier: **native**.
 `https://api.heygen.com/v3`, JSON bodies, `x-api-key: <HEYGEN_API_KEY>`, two URLs with two
-response shapes and two status enums. Typed from a 1.16 MB OpenAPI 3.1.0 document with 98 paths
-and 300 schemas — the most complete spec in this wave — curated hard down to the generation
-surface.
+response shapes and two status enums. Typed from a 1.96 MB OpenAPI 3.1.0 document with 136 paths
+and 517 schemas (2026-11-12) — the most complete spec in this wave — curated hard down to the
+generation surface.
 
 **Two traps this provider exists to have already walked into.** HeyGen serves TWO OpenAPI
 documents and both answer 200: `developers.heygen.com/openapi.yaml` is a v4.0.8 document with 52
@@ -393,29 +476,35 @@ rather than by rewriting the hostname.
 **There is no `model` field on either route, and both defaults are prices.** `POST /v3/videos`
 has an `engine` discriminated union — `avatar_iii`, `avatar_iv` (applied when `engine` is
 omitted), `avatar_v` — and those three are what unmodel catalogs, because they are three
-products with three documentation pages and a four-fold price spread. `POST /v3/lipsyncs` has
+products with three documentation pages and a twelve-fold price spread. `POST /v3/lipsyncs` has
 `mode: "speed" | "precision"` (default `"speed"`), two products with two pages and a 2× price
 difference, catalogued as `lipsync-speed` and `lipsync-precision` after HeyGen's own doc slugs.
-Both unified adapters write the wire value out explicitly on every call: a ref that names a
-price should not depend on a server-side default to get it.
+The unified lipsync adapter writes `mode` out on every call: a ref that names a price should not
+depend on a server-side default to get it. The unified avatar adapter compiles the `image` arm,
+which declares no `engine` and runs on Avatar IV — its one ref — so its body carries none.
 
 `POST /v3/videos` is a `oneOf` on `type` with four arms and unmodel serves two: `"avatar"`
 requires `avatar_id` and declares no `image`, `"image"` requires `image` and declares no
 `avatar_id`, and both are `additionalProperties: false` — so the wrong field for the arm is a
 400, which is HeyGen's own documented example error ("Exactly one visual source required").
 Six more cross-field rules are stated in prose on individually-optional fields and checked here:
-Avatar III does not render raw image input; `expressiveness` is Avatar IV only and
+only Avatar IV renders raw image input; `expressiveness` is Avatar IV only and
 `motion_prompt` is not Avatar III, and HeyGen REJECTS both rather than ignoring them; `script`
 and the audio fields are mutually exclusive; `voice_id` is required with a script unless
 `avatar_id` supplies a default voice; `voice_settings` is silently ignored when the audio is
 uploaded (a warning, because it is a no-op rather than a refusal); and `output_format: "webm"`
 rejects any `background` value.
 
-Pricing is public USD with no login, and two of the five rows carry a band because HeyGen's
-table is keyed by engine × AVATAR TYPE and the avatar type lives on the look rather than in the
-request: Avatar III $0.0167/sec (digital twin, studio) to $0.0433 (photo), Avatar IV $0.05
-(photo) to $0.0667, Avatar V $0.0667 exactly (digital twins only), lipsync speed $0.0333 and
-precision $0.0667 exactly. The rows carry the top of each band — an upper bound, which is the
+Pricing is USD behind a sign-in: the public `/docs/pricing` page is a 404, and
+`platform.heygen.com/pricing` shows the table only to a signed-in session. The rates ship as data
+in that platform's own catalog module (`platform.heygen.com/assets/catalogText-<hash>.js`, the
+hash rotating per deploy and every rate byte-identical across the three builds read on
+2026-11-12), which is what `src/providers/heygen/models.ts` quotes. The engine table is keyed by
+engine × AVATAR TYPE and the avatar type lives on the look rather than in the request: Avatar III
+$0.01/sec (Custom Video Avatar) to $0.0165 (Studio, Photo), Avatar IV $0.0385 (Photo) to $0.0805,
+Avatar V $0.12 for a Custom Video Avatar and no published rate for its other two look types,
+lipsync speed $0.014 and precision $0.029 exactly; "Rates apply to 720p and 1080p output", so 4K
+is unpriced. The Avatar III and IV rows carry the top of each band — an upper bound, which is the
 right direction for one. Nothing estimates: every rate is per second of output and the output's
 length follows the audio's.
 
@@ -423,8 +512,8 @@ length follows the audio's.
 `request_in_progress` on an overlapping retry) and is worth using: renders are billed by the
 second. The self-serve concurrency ceiling is 10 in-flight jobs across video generation, Video
 Agent sessions and translations together, with a `Retry-After` on the 429; no per-endpoint RPM
-figures are published. v1 and v2 endpoints are supported until **October 31, 2026**, and nothing
-here is modelled on them.
+figures are published. v1 and v2 endpoints passed their **October 31, 2026** sunset and are being
+removed, and nothing here is modelled on them.
 
 **Not served, and why each one.** `POST /v3/voices/speech` — TTS, and the closest call in this
 wave. There is no model id on the wire at all (the engine is fixed to Starfish and stated only
@@ -434,7 +523,7 @@ and there is no output format, sample rate, codec or bitrate control — which i
 `unmodel/tts`'s vocabulary is made of. A `heygen.tts` would be a row that narrows nothing: a
 me-too entry widening the tts matrix while telling a caller less than every other row in it. It
 joins the day HeyGen publishes a voice roster or a second engine. (`POST /v1/audio/text_to_speech`
-is the v1 spelling of the same thing and is on the sunset list besides.)
+is the v1 spelling of the same thing and is past its sunset besides.)
 `type: "cinematic_avatar"` — a prompt-to-video model wearing an avatar route's URL: 4–15
 seconds, $7.00 flat, Seedance-backed, whose required fields are a `prompt` and an ARRAY of look
 ids and which takes no audio at all. `type: "studio"` — a `scenes` array of up to 50, which is a
@@ -463,22 +552,25 @@ routes take a still and four take a clip, so `source` is narrowed per model and 
 modality is read off each endpoint's own response schema. `factor` is the one cross-vendor word, and it has
 three answers per model: a range, a closed set (AuraSR upscales by 4 or not at all), or absent.
 
-**Topaz Labs — `topaz.upscale` and `topaz.upscaleGenerative`, 15 models.** Tier: **native**.
+**Topaz Labs — `topaz.upscale` and `topaz.upscaleGenerative`, 18 models.** Tier: **native**.
 `https://api.topazlabs.com/image/v1`, `X-API-Key: <TOPAZ_API_KEY>`, and **multipart/form-data**
 bodies at both addresses: neither path declares a JSON arm, so even a request whose only input is
 a `source_url` is a form. `.request.headers` is empty — the boundary belongs to the `FormData` —
 and `.request.body` is `"form"`; post `topaz.toFormData(params)`. Two addresses because Topaz
 publishes two real urls with disjoint model enums and different dials, `POST /enhance/async` for
-the six classic Gigapixel (GAN) models and `POST /enhance-gen/async` for the nine generative
-Wonder and Bloom ones — the `stability.imageCore` / `ideogram.imageV4` shape. The ids are Topaz's
-own PRODUCT NAMES, spaces and all: `Standard V2`, `High Fidelity V2`, `Upscale High Fidelity V3`,
-`Low Resolution V2`, `CGI` and `Text Refine` on the classic route; `Redefine`, `Wonder`,
-`Wonder 2`, `Wonder 3`, `Wonder 3.5`, `Standard MAX`, `Recover 3`, `Bloom 2` and `Bloom Realism`
-on the generative one. So a ref reads `"topaz/Standard V2"`.
+the six classic Gigapixel (GAN) models and `POST /enhance-gen/async` for the twelve generative
+Wonder, Bloom and Detail ones — the `stability.imageCore` / `ideogram.imageV4` shape. The ids are
+Topaz's own PRODUCT NAMES, spaces and all: `Standard V2`, `High Fidelity V2`,
+`Upscale High Fidelity V3`, `Low Resolution V2`, `CGI` and `Text Refine` on the classic route;
+`Redefine`, `Wonder`, `Wonder 2`, `Wonder 3`, `Wonder 3.5`, `Wonder 4`, `Standard MAX`,
+`Recover 3`, `Detail`, `Bloom 2`, `Bloom Realism` and `Bloom` on the generative one. So a ref
+reads `"topaz/Standard V2"`.
 
-Pricing is credits, per output megapixel, `credits = ceil(outputMP / mpPerCredit)` — 24 MP per
-credit for the Gigapixel family, 4 for Wonder, 2 for Bloom — at $0.12 a credit pay-as-you-go
-($0.10 on Developer, $0.08 on Scale). Topaz bills the OUTPUT's pixel count and the request states
+Pricing is credits, per output megapixel, `credits = ceil(outputMP / mpPerCredit)` at the rate
+each model's page states (`MP_PER_CREDIT`, per model) — 24 MP per credit for the classic six and
+`Detail`, 8 for `Wonder 3`, `Wonder 3.5` and `Wonder 4`, 4 for `Redefine`, `Wonder`, `Wonder 2`,
+`Standard MAX` and `Recover 3`, 2 for the Bloom models — at $0.10 a credit, the highest published
+plan rate (Developer; Scale is $0.08). Topaz bills the OUTPUT's pixel count and the request states
 it, which makes this one of the few media providers whose estimate is EXACT; the other half of
 the same fact is that `output_width` and `output_height` are both optional, so a request that
 names neither (or only one) gets `undefined` rather than a guess.
@@ -487,7 +579,8 @@ Topaz has **no `factor`** — it states an absolute output size rather than a mu
 category's one cross-vendor word types as `never` at every Topaz ref. That is a DIFFERENT reason
 from `fal-ai/recraft/upscale/crisp`'s `never`, which has no multiplier because it chooses its own
 size, and the two therefore carry different messages. What Topaz did bring the category is a
-second witness for the canonical `prompt`: nine of its fifteen models steer on one.
+second witness for the canonical `prompt`: three of its eighteen models (`Redefine`, `Bloom 2`,
+`Bloom`) steer on one.
 
 The per-model tuning dials — `faceEnhancement`, `creativity`, `texture`, `denoise`, `strength`
 and the rest — are not in Topaz's published OpenAPI document, which types the whole space as
@@ -496,8 +589,9 @@ prose, and Topaz IGNORES a dial a model does not read rather than refusing it, s
 a silent no-op at the API and a warning here. That transcription is the whole argument for a
 native Topaz provider.
 
-Not served: the rest of the Image API — `/denoise`, `/sharpen`, `/sharpen-gen`, `/restore-gen`,
-`/lighting` and `/matting` clean, sharpen, relight or cut out a picture at the size it arrived,
+Not served: the rest of the Image API — `/denoise`, `/denoise-gen`, `/sharpen`, `/sharpen-gen`,
+`/restore-gen`, `/lighting` and `/matting` clean, sharpen, relight or cut out a picture at the size
+it arrived,
 and `/tool` ("Transparency Upscale") does enlarge but is a third route with a one-value enum,
 so it would be a third address rather than a model here. Nor the **Video API**, which is not a
 request but a five-step protocol (quote → accept → S3 multipart upload → complete-upload → poll)
@@ -528,8 +622,8 @@ have that arm, so one HeyGen request accepts bytes for the still and refuses the
 That asymmetry is the vendor's, and the refusal says so.
 
 **Two kinds of failure at VEED, and code that checks `res.ok` sees one of them.** A submit
-rejected at the HTTP layer creates no job and carries an eight-member `error.code`; a job that
-was ACCEPTED and then failed carries a seven-member, disjoint `result.error.code` and arrives
+rejected at the HTTP layer creates no job and carries a nine-member `error.code`; a job that
+was ACCEPTED and then failed carries an eight-member, disjoint `result.error.code` and arrives
 through the GET with a 200. Both vocabularies are exported from `unmodel/veed/values`.
 
 ## 3D wave — the first category with two witnesses
@@ -540,31 +634,36 @@ later; this one waited for one before shipping at all, because a 3D vocabulary r
 single vendor would have been that vendor's request schema with the field names changed. Two
 schemas in, `texture` already had five spellings and the output container four more.
 
-**Tripo — `tripo3d.threeD` and `tripo3d.threeDFromImage`, 4 models.** Tier: **native**.
+**Tripo — `tripo3d.threeD` and `tripo3d.threeDFromImage`, 5 models.** Tier: **native**.
 `https://openapi.tripo3d.ai/v3`, flat JSON, `Authorization: Bearer <TRIPO_API_KEY>`, one endpoint
-per operation. Models `v3.1-20260211`, `v3.0-20250812`, `v2.5-20250123` and the low-poly
-`P1-20260311` — the DATED ids every endpoint reference page and every `curl` example publishes.
-(Tripo's `models-and-versions` page names the same four `tripo-v3.1`, `tripo-v3.0`, `tripo-v2.5`
-and `tripo-p1`; the endpoint page is the per-route spec and is what the parameter's own enum is
-written on, so it wins. The aliases are plausibly accepted and that is not verified.) Two
+per operation. Models `v3.1-20260211`, `v3.0-20250812`, `v2.5-20250123`, the low-poly
+`P1-20260311` and its quad-capable successor `P2-20260801` — the DATED ids every endpoint
+reference page, every `curl` example and the `models-and-versions` roster publish. Two
 routes, both qualified the way `vidu.videoFromImage` is, because they are two URLs with
 different required fields. Not served: the mesh-processing surface (texture, convert, segment,
 decimate, rig, retarget) — mesh in, mesh out is a question no unmodel verb asks — and the
 text-to-image routes, which resell seedream, gemini and gpt-image that unmodel already carries
 from the vendors themselves.
 
-Three cross-field rules Tripo documents and unmodel checks, each of them a 4xx otherwise:
-seven parameters are gated on the model version and `v2.5-20250123` takes none of them;
-`generate_parts: true` requires `texture`, `pbr` and `quad` all false, and the first two DEFAULT
-to true; and the polycount ceiling moves with the model, with Ultra mode and with `quad`. A
-fourth is a heuristic: `input` is one polymorphic string that accepts a `file_…` token, a public
-URL or a prior `task_…` id, disambiguated by prefix and never inline bytes.
+Four cross-field rules Tripo documents and unmodel checks, each of them a 4xx otherwise:
+seven parameters are gated on the model version — `v2.5-20250123` takes none of them, P1 three
+and P2 four; `generate_parts: true` requires `texture` and `pbr` both false, and both DEFAULT
+to true (`quad` with it is ignored and `smart_low_poly` suppresses the parts — both warnings);
+`texture_quality: "fast"` requires `texture_version: "v3.5-20260815"`, which no model derives
+by default; and the polycount ceiling moves with the model, with Ultra mode and with `quad`
+(150,000 quads on the H series, 25,000 on P2). A fifth is a heuristic: `input` is one
+polymorphic string that accepts a `file_…` token, a public URL or a prior task's id (a bare
+UUID), and never inline bytes. `texture_version`, `delight` and `export_orientation` sit
+outside the version gate and every model takes them.
 
 Pricing is per task in credits at $0.01 each, and this is the rare media provider whose estimate
 is EXACT: the price is a pure function of the request body (base task type plus the add-ons the
-body switched on), with no duration to guess and no output pixel count to infer. The one
-exception is P1, whose credit table Tripo's pricing page renders client-side only — `undefined`
-rather than borrowing the H-series numbers, which are demonstrably different.
+body switched on), with no duration to guess and no output pixel count to infer. The P-Series
+figures (P1 30/40 text and 40/50 image, P2 100/110 on both, texture tiers +10/+20 on each) are
+read from the JS chunk that renders the pricing page's client-side P tab, whose H rows match
+the server-rendered ones exactly; P2's are also stated in Tripo's changelog. The one exception
+is P2 with `quad: true`, whose surcharge the P-Series tab does not publish — `undefined` rather
+than borrowing the H series' +5.
 
 **fal — `fal.threeD`, 19 endpoints.** Tripo H3.1 text/image, Tripo P1 text/image, Tripo v2.5
 image and multiview, Hunyuan3D 2.0 and turbo, Hunyuan 3D 3.1 Pro text/image and Rapid image,
@@ -601,12 +700,13 @@ a floor of **0.5** and takes a `loop` and a `prompt_influence`. Merging them wou
 the category floor from three seconds to half of one and put `instrumental?: boolean` on a door
 creak. Each route refuses the other's ids by name.
 
-**ElevenLabs — `elevenlabs.sfx`, 1 model.** Tier: **native**.
+**ElevenLabs — `elevenlabs.sfx`, 2 models** (`eleven_text_to_sound_v2`, `eleven_text_to_sound_v3`). Tier: **native**.
 `POST https://api.elevenlabs.io/v1/sound-generation`, JSON body, `xi-api-key` header. `text` is
 the only required field; `output_format` is a **query param** (the `/v1/music` placement, and
-the same trap: sending it in the body is a silent no-op) whose 21-member enum is NOT the music
-one — there is no 48 kHz MP3 arm here, so a shared constant would have accepted four values
-this endpoint rejects. The catalog row already existed and gains its $0.12-per-generated-minute
+the same trap: sending it in the body is a silent no-op) whose 28 values (the 21-member
+`AllowedOutputFormats` enum plus seven `wav_*` rates) are NOT the music list — there is no
+48 kHz MP3 arm here, so a shared constant would have accepted four values this endpoint
+rejects. `eleven_text_to_sound_v2` is the server default and deprecated, removal 2027-03-01. The catalog row already existed and gains its $0.12-per-generated-minute
 rate; the endpoint answers raw audio bytes plus a `character-cost` header, so there is no
 response checker.
 
@@ -708,11 +808,28 @@ draws down a character quota is documented nowhere, so `cost` is omitted and the
 returns `undefined` — "Unverifiable → caveat, never catalog". (The page's separate
 "Speech-to-speech" row is flagged `eviToggle` and belongs to EVI, the realtime product.)
 
+**Retired 2026-11-13 — every Hume row is `status: "deprecated"`.** Hume's changelog, last
+captured at `https://web.archive.org/web/20261003165626/https://dev.hume.ai/changelog` (read
+2026-11-12): "Hume is sunsetting the TTS and EVI APIs. Access ends November 13, 2026 at 12:01
+a.m. EST, and both APIs remain fully supported until then." The cutoff (05:01 UTC) has passed.
+Probed 2026-11-13, a `POST` to `/v0/tts`, `/v0/tts/file`, `/v0/tts/stream/json`,
+`/v0/tts/stream/file`, `/v0/tts/voice_conversion/file` or `/v0/tts/voice_conversion/json`, and a
+`GET` to `/v0/tts/voices`, all answer `404` with `sunset: Fri, 13 Nov 2026 05:01:00 GMT`,
+`deprecation: @1790899200` (2026-10-02) and the body "This API was retired on 2026-11-13 and is
+no longer available. For questions, contact assist@hume.ai." An unknown route answers a bare
+`404` with no body, so that message is the retirement and not a wrong path. Voice conversion
+answers the same retirement `404`, so `hume/voice-conversion` is retired with `hume/octave` and
+`hume/octave-2`. Every id still validates and warns only `deprecated_model`, so a `hume.tts` /
+`hume.sts` request that passes here is one Hume now refuses. The live docs and pricing URLs
+answer 308 to Hume's Audio Decisions docs; `src/providers/hume/models.ts` cites the archived
+captures. Removing `unmodel/hume` (which leaves `unmodel/sts` one witness) is an owner decision
+that was still open on 2026-11-13.
+
 **Excluded: cartesia — the route was SUNSET eleven days before this wave landed.**
-`docs.cartesia.ai/llms-full.txt`, from the deprecations page, lists
-`POST /voice-changer/bytes` and `POST /voice-changer/sse` in the "Breaking API changes" table —
-"These endpoints are being sunset. Requests after an endpoint's sunset date return an error." —
-replacement "—", sunset date **August 20, 2026** (fetched 2026-08-31). Both are also gone from
+`docs.cartesia.ai/build-with-cartesia/tts-models/api-changes` lists
+`POST /voice-changer/bytes` and `POST /voice-changer/sse` in its endpoint table —
+"These endpoints have been sunset. Requests after an endpoint's sunset date return an error."
+(2026-11-12) — replacement "—", sunset date **August 20, 2026** (first read 2026-08-31). Both are also gone from
 the api-reference index. `@cartesia/cartesia-js` 4.1.0, published 2026-08-26 (six days *after*
 the sunset), still ships an undeprecated `VoiceChanger` resource, and the OpenAPI spec is
 login-gated so the disagreement cannot be settled from outside — but the docs state the sunset
@@ -1079,17 +1196,17 @@ leaves rather than whole validators.
 | `unmodel/chat` | `chat` | n/a — three dialect codecs, composed with all 33 concrete provider `chat` validators | 33: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
 | `unmodel/chat/factory` | `createChat` | the same three codecs, no registry | whichever provider validators you register: `createChat({ anthropic, openai })` |
 | `unmodel/image` | `image`, `createImage` | 18 | black-forest-labs, bria, bytedance, fal, google, ideogram, kling, krea, leonardo, luma, openai, recraft, revana, reve, runway, stability, vidu, xai |
-| `unmodel/tts` | `tts`, `createTts` | 20 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume, inworld, lmnt, minimax, murf, openai, resemble, revana, rime, smallest-ai, speechify, stepfun |
+| `unmodel/tts` | `tts`, `createTts` | 20 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume (API retired 2026-11-13; every route answers 404), inworld, lmnt, minimax, murf, openai, resemble, revana, rime, smallest-ai, speechify, stepfun |
 | `unmodel/stt` | `stt`, `createStt` | 13 | assemblyai, cartesia, deepgram, elevenlabs, fal, gladia, google, inworld, mistral, openai, revai, soniox, speechmatics |
 | `unmodel/video` | `video`, `createVideo` | 15 | alibaba, atlascloud, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, revana, runway, vidu, xai |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 6 | black-forest-labs, fal, ideogram, openai, recraft, revana — the six whose primary editing route is *image + prompt, no mask* |
 | `unmodel/music` | `music`, `createMusic` | 6 | elevenlabs, fal, google, mureka, revana, stability |
-| `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (1 model, `POST /v1/sound-generation`), fal (6 endpoints from five vendors, ElevenLabs' own among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
+| `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (2 models, `POST /v1/sound-generation`), fal (6 endpoints from five vendors, ElevenLabs' own among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 5 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), revana (1 curated model on the one route it serves every media model from), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
-| `unmodel/avatar` | `avatar`, `createAvatar` | 5 | fal (8 endpoints; the still-driven twin of lipsync), heygen (the two engines that render raw image input — Avatar III does not), revana (4 curated models, every one still-driven, with `prompt` as a per-model extra), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
-| `unmodel/upscale` | `upscale`, `createUpscale` | 3 | fal (11 endpoints, seven taking a still and four taking a clip), revana (1 model, a still, no multiplier), topaz (15 models over two routes, stills only, multipart bodies) |
-| `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (4 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
-| `unmodel/sts` | `sts`, `createSts` | 2 | elevenlabs (3 models, `POST /v1/speech-to-speech/{voice_id}`), hume (1 synthetic id, `POST /v0/tts/voice_conversion/file`) — the smallest pack in the library, the only one with no fal arm, and the only category where three of five words are REQUIRED. Both endpoints are `MULTIPART_ONLY`, so there is no `unified.sts` CLI entry |
+| `unmodel/avatar` | `avatar`, `createAvatar` | 5 | fal (8 endpoints; the still-driven twin of lipsync), heygen (`avatar_iv`, the one engine that renders raw image input — Avatar V and Avatar III do not), revana (4 curated models, every one still-driven, with `prompt` as a per-model extra), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
+| `unmodel/upscale` | `upscale`, `createUpscale` | 3 | fal (11 endpoints, seven taking a still and four taking a clip), revana (1 model, a still, no multiplier), topaz (18 models over two routes, stills only, multipart bodies) |
+| `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (5 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
+| `unmodel/sts` | `sts`, `createSts` | 2 | elevenlabs (3 models, `POST /v1/speech-to-speech/{voice_id}`), hume (1 synthetic id, `POST /v0/tts/voice_conversion/file`; the API was retired 2026-11-13 and the route answers 404) — the smallest pack in the library, the only one with no fal arm, and the only category where three of five words are REQUIRED. Both endpoints are `MULTIPART_ONLY`, so there is no `unified.sts` CLI entry |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
 | `unmodel/voice-design` | `voiceDesign`, `createVoiceDesign` | 4 | elevenlabs, fish-audio, inworld, minimax — the unified surface is phase 1 (the generative call); the ElevenLabs/Inworld save steps are wire-only (`voiceDesignSave`, `voiceDesignPublish`) |
 
@@ -1120,7 +1237,7 @@ The tables are the **same objects** the adapter compiles with, which is why they
 import-free `<category>-params.ts` leaves that both read: one import from a values entry costs
 ~1 KiB (19.4 KiB at the worst, runway's) instead of the 30–82 KiB a validator would drag.
 `unmodel/values` is the canonical hub (the closed unions as arrays, `CANONICAL_KEY_LISTS`,
-`CHAT_PROVIDERS`) and `unmodel/values/chat-refs` carries the 1,506 chat refs on their own
+`CHAT_PROVIDERS`) and `unmodel/values/chat-refs` carries the 1,530 chat refs on their own
 subpath to keep the model list out of unrelated imports. `test/values-entries.test.ts` measures every export against a
 real build and asserts the tables by reference.
 
@@ -1148,8 +1265,8 @@ and is excluded rather than shipped thin; VEED's presenter library has no native
 (`POST /v1/avatars` is a real JSON 404), so `veed/fabric-1.0` is `sources: ["image"]` while the
 same vendor's `fal/veed/avatars/audio-to-video` is `sources: []`; and HeyGen's catalogued-look
 arm (`type: "avatar"`) is wire-only for a typed reason rather than an oversight — an avatar row
-can say `image` is required, forbidden or unknown and never "optional", and `avatar_iv` and
-`avatar_v` serve BOTH arms, so the pack compiles the one whose inputs a caller actually has.
+can say `image` is required, forbidden or unknown and never "optional", and `avatar_iv` serves
+BOTH arms, so the pack compiles the one whose inputs a caller actually has.
 
 **Researched and declined (native).** Two vendors were researched in the same rounds as the
 natives above, found to have real public APIs, and deliberately not implemented. Both are
@@ -1188,8 +1305,11 @@ Resemble's voice building is a create-then-upload-then-build multi-endpoint flow
 models.ts already catalogs unvalidated capabilities and this is one); Google's
 `voices:generateVoiceCloningKey` is allowlist-gated and returns an opaque key rather than a
 voice; smallest.ai's `add_voice` survives only in archived docs (the current docs describe
-cloning as console-only); OpenAI, Gemini, Deepgram, Murf and Rime publish no self-serve
-voice-creation endpoint at all.
+cloning as console-only); Murf's Instant Voice Cloning (`POST /v1/speech/voices/create`)
+"is available on the Enterprise plan only … until it has been turned on for yours, the
+voice cloning endpoints return `403`" (murf.ai/api/docs/voices-styles/instant-voice-cloning,
+2026-11-12), so it is not a public developer API; OpenAI, Gemini, Deepgram and Rime publish
+no self-serve voice-creation endpoint at all.
 
 **Dubbing — shipped as wire, declined as a category.** `elevenlabs.dub` (multipart,
 `POST /v1/dubbing/project`) and `elevenlabs.dubLanguage` (JSON,
@@ -1273,12 +1393,27 @@ generates no tokens) or that emits audio/video without tool calling (music, spee
 realtime voice) is dropped. Image-out rows are deliberately kept — `gemini-3-pro-image`
 really is a `google.chat` (`:generateContent`) request.
 
-Currently denied there, both for unverified wire surfaces:
+Currently denied there, each for a wire surface unmodel has not verified or has no
+module for:
 
-- `*  → azure:*claude*` — models.dev lists 11 Claude rows on Azure but records `api: null`,
-  and unmodel's Azure module is OpenAI-compatible only. The surface is unconfirmed.
+- `*  → azure:*claude*` — Azure serves Claude on the Anthropic Messages API
+  (`https://<resource>.services.ai.azure.com/anthropic/v1/messages`, plus `count_tokens`
+  and nothing else, per Microsoft's
+  [Claude-in-Foundry page](https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models),
+  ms.date 2026-09-21, checked 2026-11-13), and unmodel's Azure module has no Messages
+  surface. models.dev agrees: its 16 azure Claude rows carry a row-level `provider`
+  override (`@ai-sdk/anthropic`, `…/anthropic/v1`). `azure.chat` does not model that
+  route, yet a deployment named after a Claude row still resolves to that row there —
+  Microsoft documents no chat-completions route for Claude.
 - `*  → google-vertex:*claude*` — Vertex serves Claude through an Anthropic-shaped
   `rawPredict` route that unmodel has no module for.
+- `*  → google-vertex:mistral-*`, `*  → google-vertex:codestral-*` — Vertex serves
+  Mistral's models on `publishers/mistralai/models/{model}:rawPredict`, not
+  `:generateContent`, and unmodel has no module for that route either.
+
+Vertex's `xai/` Grok rows are not denied: Vertex serves them on the same OpenAI-compatible
+`endpoints/openapi/chat/completions` route as its `-maas` models, so their edges are
+labelled `google-vertex.chatMaas`.
 
 Not denied but worth knowing: `claude → openrouter` ships through the chat-completions
 dialect. Whether OpenRouter also exposes an Anthropic-compatible `/v1/messages` surface
@@ -1341,7 +1476,7 @@ guess.
 Stated normatively, and asserted by the goldens in `test/interop/media-retarget.test.ts`:
 
 - a param the target **cannot express** is an **error** naming the param, the fal endpoint and
-  the reason. It is never dropped and never warned — a dropped `camera_control` produces a
+  the reason. It is never dropped and never warned — a dropped `image_tail` produces a
   *different* video, not a lossier one;
 - a param the target expresses **approximately** (a value derived from two source fields, or a
   structure flattened) is exactly one `approximated_param` warning carrying `requested` and
@@ -1371,9 +1506,10 @@ here rather than in the code:
 
 - **Recraft is refused as a family.** fal's Recraft rows drop `num_images`, `seed` and
   `negative_prompt` entirely and speak the *legacy* `realistic_image/b_and_w` style vocabulary
-  that Recraft retired in favour of curated names, so 13 of 17 native ids have no endpoint and
-  the four that do would need an invented style-name translation table plus silently dropped
-  colour weights. Quality over count.
+  that Recraft retired in favour of curated names, so most native ids — the whole V4.1,
+  V4.1 Flash, V4 Styles and V2 lines — have no endpoint and the V3 / V4 ones that do would
+  need an invented style-name translation table plus silently dropped colour weights. Quality
+  over count.
 - **Ideogram is not shipped in this wave.** Its v3 shape maps well, but its `aspect_ratio`
   (a closed `WxH` ratio enum) has no field on fal's `fal-ai/ideogram/v3`, and synthesizing a
   pixel pair from a ratio is a guess about which pixels Ideogram would have chosen. The v4 arm

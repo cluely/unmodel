@@ -59,15 +59,25 @@ describe("fish-audio.voiceClone happy path", () => {
     expect(r.ok).toBe(true);
   });
 
-  test("omitting visibility warns about the public default", () => {
+  // "default": "private" — POST /model in openapi.json, 2026-11-12.
+  test("omitting visibility is clean: the wire defaults to private", () => {
     const r = voiceClone.safe(minimal());
     expect(r.ok).toBe(true);
-    if (r.ok) {
-      const warning = r.warnings.find((w) => w.path?.[0] === "visibility");
-      expect(warning?.code).toBe("invalid_shape");
-      expect(warning?.message).toContain('"public"');
-      expect(warning?.meta?.default).toBe("public");
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("voice_design_signatures validates as a string or an array", () => {
+    for (const voice_design_signatures of ["sig-0", ["sig-0", "sig-1"]]) {
+      const r = voiceClone.safe({ ...minimal(), voice_design_signatures });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
     }
+  });
+
+  test("a non-string voice_design_signatures is rejected", () => {
+    const r = safeUnchecked({ ...minimal(), voice_design_signatures: [1] });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path?.[0]).toBe("voice_design_signatures");
   });
 
   test("unknown top-level params warn", () => {
@@ -109,12 +119,16 @@ describe("fish-audio.voiceClone shape enforcement", () => {
     }
   });
 
-  test("an explicitly public model without a cover image is rejected", () => {
+  // "required if the model is public" vs "Public requests are downgraded to
+  // private" (openapi.json /model, 2026-11-12): whether the server refuses
+  // this body is undocumented, so it warns rather than refuses.
+  test("an explicitly public model without a cover image warns", () => {
     const r = voiceClone.safe({ ...minimal(), visibility: "public" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((i) => i.path?.[0] === "cover_image");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const issue = r.warnings.find((i) => i.path?.[0] === "cover_image");
       expect(issue?.code).toBe("invalid_shape");
+      expect(issue?.path).toEqual(["cover_image"]);
     }
   });
 
@@ -122,16 +136,39 @@ describe("fish-audio.voiceClone shape enforcement", () => {
     const r = voiceClone.safe({ ...minimal(), visibility: "public", cover_image: sample() });
     expect(r.ok).toBe(true);
   });
+
+  test('an explicit "public" warns that POST /model downgrades it to private', () => {
+    const r = voiceClone.safe({ ...minimal(), visibility: "public", cover_image: sample() });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]?.code).toBe("unsupported_param");
+      expect(r.warnings[0]?.path).toEqual(["visibility"]);
+      expect(r.warnings[0]?.meta?.ignored).toBe(true);
+      expect(r.warnings[0]?.meta?.applied).toBe("private");
+    }
+  });
+
+  test('"private", "unlist" and an omitted visibility draw no visibility warning', () => {
+    for (const visibility of ["private", "unlist", undefined] as const) {
+      const r = voiceClone.safe(
+        visibility === undefined ? minimal() : { ...minimal(), visibility },
+      );
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
 });
 
 describe("fish-audio.voiceCloneToFormData", () => {
-  test("repeats voices/texts/tags per item and stringifies scalars", () => {
+  test("repeats voices/texts/voice_design_signatures/tags per item and stringifies scalars", () => {
     const a = sample();
     const b = sample();
     const v = voiceClone({
       ...minimal(),
       voices: [a, b],
       texts: ["one", "two"],
+      voice_design_signatures: ["sig-a", "sig-b"],
       tags: ["x", "y"],
       visibility: "private",
       enhance_audio_quality: false,
@@ -139,6 +176,7 @@ describe("fish-audio.voiceCloneToFormData", () => {
     const form = voiceCloneToFormData(v);
     expect(form.getAll("voices")).toHaveLength(2);
     expect(form.getAll("texts")).toEqual(["one", "two"]);
+    expect(form.getAll("voice_design_signatures")).toEqual(["sig-a", "sig-b"]);
     expect(form.getAll("tags")).toEqual(["x", "y"]);
     expect(form.get("type")).toBe("tts");
     expect(form.get("train_mode")).toBe("fast");

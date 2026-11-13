@@ -61,6 +61,8 @@ describe("cartesia.stt batch model enforcement", () => {
       expect(r.errors[0]?.path).toEqual(["model"]);
       expect(r.errors[0]?.message).toContain("ink-whisper");
       expect(r.errors[0]?.message).toContain("WebSocket");
+      // The package ships that validator — the message names it.
+      expect(r.errors[0]?.message).toContain("`cartesia.sttWebsocket`");
     }
   });
 

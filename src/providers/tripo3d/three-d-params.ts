@@ -33,10 +33,12 @@ import { EXTRA } from "../../core/unified/derive";
 import type { ThreeDModelParamTable } from "../../core/unified/vocabulary/3d";
 import type {
   Tripo3dCompression,
+  Tripo3dExportOrientation,
   Tripo3dGeometryQuality,
   Tripo3dOrientation,
   Tripo3dTextureAlignment,
   Tripo3dTextureQuality,
+  Tripo3dTextureVersion,
 } from "./shared";
 
 /** Every id both generation routes accept — the `tripo3d/…` ref union. */
@@ -45,6 +47,7 @@ export const MODELS = [
   "v3.0-20250812",
   "v2.5-20250123",
   "P1-20260311",
+  "P2-20260801",
 ] as const;
 
 /** Both moods, on every model: the route follows the input, not the id. */
@@ -64,6 +67,13 @@ const COMMON_EXTRAS = {
   texture: EXTRA as boolean,
   pbr: EXTRA as boolean,
   export_uv: EXTRA as boolean,
+  /**
+   * Outside the version gate, on every model: the changelog documents
+   * `texture_version` on every generation endpoint "including P1 / P2".
+   */
+  texture_version: EXTRA as Tripo3dTextureVersion | (string & {}),
+  delight: EXTRA as boolean,
+  export_orientation: EXTRA as Tripo3dExportOrientation,
   /** Text route only; ignored by the image route, which has no such stage. */
   image_seed: EXTRA as number,
   /** Image route only. */
@@ -101,16 +111,34 @@ export const TRIPO3D_THREE_D_MODEL_PARAMS = {
     inputs: INPUTS,
     extras: COMMON_EXTRAS,
   },
-  // The low-poly series. Its endpoint pages declare `texture_quality`,
-  // `auto_size` and `compress` and do NOT declare the other four, so those four
+  // The low-poly series. Its endpoint pages declare `texture_quality` and
+  // `auto_size`, declare `quad` only as "**P2-20260801 only.**", and do not
+  // declare `geometry_quality`, `smart_low_poly` or `generate_parts`; the
+  // changelog states "P1 does not support `quad`, `smart_low_poly`,
+  // `generate_parts`, or `geometry_quality`." (read 2026-11-12). So those four
   // are off the row even though the copied "model ≥ v3.0" sentence on those
-  // pages would suggest otherwise. `face_limit` runs 50–20,000 here.
+  // pages would suggest otherwise. `compress` was on the P pages as read
+  // 2026-08-25 and is absent as read 2026-11-12; no page documents a refusal of
+  // it, so it stays allowed (see shared.ts). `face_limit` runs 50–20,000 here.
   "P1-20260311": {
     inputs: INPUTS,
     extras: {
       ...COMMON_EXTRAS,
       texture_quality: EXTRA as Tripo3dTextureQuality,
       auto_size: EXTRA as boolean,
+      compress: EXTRA as Tripo3dCompression,
+    },
+  },
+  // P1's three plus `quad`, which the P pages mark "**P2-20260801 only.**"
+  // (/en/docs/generation-text-to-model/p.md, read 2026-11-12). `face_limit`
+  // runs 48–50,000 here, 48–25,000 as quads.
+  "P2-20260801": {
+    inputs: INPUTS,
+    extras: {
+      ...COMMON_EXTRAS,
+      texture_quality: EXTRA as Tripo3dTextureQuality,
+      auto_size: EXTRA as boolean,
+      quad: EXTRA as boolean,
       compress: EXTRA as Tripo3dCompression,
     },
   },

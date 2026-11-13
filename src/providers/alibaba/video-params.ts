@@ -15,11 +15,14 @@ import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 /** Every video-synthesis model — the `alibaba/…` ref union. */
 export const MODELS = [
   "wan3.0-video",
+  "wan3.0-video-prime",
   "wan2.7-t2v",
   "wan2.7-t2v-2026-06-12",
   "wan2.7-t2v-2026-04-25",
   "wan2.7-i2v-2026-04-25",
   "wan2.7-i2v",
+  "wan2.7-r2v",
+  "wan2.7-r2v-2026-06-12",
   "wan2.6-t2v",
   "wan2.6-t2v-us",
   "wan2.5-t2v-preview",
@@ -50,6 +53,8 @@ const seconds = (from: number, to: number): readonly number[] =>
  * when it picks one of those.
  */
 export const WAN_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
+/** wan3.0 adds 21:9 to the wan ladder. */
+export const WAN3_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"] as const;
 export const HAPPYHORSE_RATIOS = [
   "16:9",
   "9:16",
@@ -74,6 +79,11 @@ const WAN27_T2V_EXTRAS = {
 } as const;
 
 const WAN27_I2V_EXTRAS = {
+  prompt_extend: EXTRA as boolean,
+  watermark: EXTRA as boolean,
+} as const;
+
+const WAN27_R2V_EXTRAS = {
   prompt_extend: EXTRA as boolean,
   watermark: EXTRA as boolean,
 } as const;
@@ -104,6 +114,14 @@ const HAPPYHORSE_EDIT_EXTRAS = {
   audio_setting: EXTRA as "auto" | "origin",
 } as const;
 
+/** wan3.0-video and wan3.0-video-prime share one request surface. */
+const WAN3_ROW = {
+  durations: seconds(2, 30),
+  resolutions: ["480p", "720p", "1080p"],
+  ratios: WAN3_RATIOS,
+  extras: WAN3_EXTRAS,
+} as const;
+
 const WAN27_T2V_ROW = {
   durations: seconds(2, 15),
   resolutions: ["720p", "1080p"],
@@ -117,6 +135,17 @@ const WAN27_I2V_ROW = {
   resolutions: ["720p", "1080p"],
   ratios: [],
   extras: WAN27_I2V_EXTRAS,
+} as const;
+
+/**
+ * Durations are the no-reference-video range; with a `video` reference the
+ * provider validator narrows them to 2–10 seconds.
+ */
+const WAN27_R2V_ROW = {
+  durations: seconds(2, 15),
+  resolutions: ["720p", "1080p"],
+  ratios: WAN_RATIOS,
+  extras: WAN27_R2V_EXTRAS,
 } as const;
 
 const HH_T2V_ROW = {
@@ -133,18 +162,20 @@ const HH_I2V_ROW = {
   extras: HAPPYHORSE_EXTRAS,
 } as const;
 
+/** The 1.1 generation adds 480p (1.0 has no 480P price row). */
+const HH_11_T2V_ROW = { ...HH_T2V_ROW, resolutions: ["480p", "720p", "1080p"] } as const;
+const HH_11_I2V_ROW = { ...HH_I2V_ROW, resolutions: ["480p", "720p", "1080p"] } as const;
+
 export const ALIBABA_VIDEO_MODEL_PARAMS = {
-  "wan3.0-video": {
-    durations: seconds(2, 30),
-    resolutions: ["480p", "720p", "1080p"],
-    ratios: WAN_RATIOS,
-    extras: WAN3_EXTRAS,
-  },
+  "wan3.0-video": WAN3_ROW,
+  "wan3.0-video-prime": WAN3_ROW,
   "wan2.7-t2v": WAN27_T2V_ROW,
   "wan2.7-t2v-2026-06-12": WAN27_T2V_ROW,
   "wan2.7-t2v-2026-04-25": WAN27_T2V_ROW,
   "wan2.7-i2v-2026-04-25": WAN27_I2V_ROW,
   "wan2.7-i2v": WAN27_I2V_ROW,
+  "wan2.7-r2v": WAN27_R2V_ROW,
+  "wan2.7-r2v-2026-06-12": WAN27_R2V_ROW,
   "wan2.6-t2v": {
     durations: seconds(2, 15),
     resolutions: ["720p", "1080p"],
@@ -183,11 +214,11 @@ export const ALIBABA_VIDEO_MODEL_PARAMS = {
     ratios: WAN_RATIOS,
     extras: WAN_OLD_EXTRAS,
   },
-  "happyhorse-1.1-t2v": HH_T2V_ROW,
+  "happyhorse-1.1-t2v": HH_11_T2V_ROW,
   "happyhorse-1.0-t2v": HH_T2V_ROW,
-  "happyhorse-1.1-i2v": HH_I2V_ROW,
+  "happyhorse-1.1-i2v": HH_11_I2V_ROW,
   "happyhorse-1.0-i2v": HH_I2V_ROW,
-  "happyhorse-1.1-r2v": HH_T2V_ROW,
+  "happyhorse-1.1-r2v": HH_11_T2V_ROW,
   "happyhorse-1.0-r2v": HH_T2V_ROW,
   // No duration param (output follows the input clip) and no ratio field.
   "happyhorse-1.0-video-edit": {

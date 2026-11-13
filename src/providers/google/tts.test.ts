@@ -678,6 +678,114 @@ describe("capabilities and estimation", () => {
 // ExactKeys + refusals
 // ---------------------------------------------------------------------------
 
+describe("the Gemini 3.8 TTS pair (hand rows)", () => {
+  test.each(["gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"] as const)(
+    "%s validates without unknown_model and is priced from its hand row",
+    (model) => {
+      const result = expectOk(
+        tts.safe({
+          model,
+          contents: HELLO,
+          generationConfig: { responseModalities: ["AUDIO"], speechConfig: KORE, maxOutputTokens: 1000 },
+        }),
+      );
+      expect(warningOf(result, "unknown_model")).toBeUndefined();
+      expect((result.params as { request: { url: string } }).request.url).toBe(
+        `${GENERATE_TTS_BASE_URL}/${model}:generateContent`,
+      );
+      // $0.50 per 1M text in, plus the audio-out rate on the worst-case 1,000 tokens.
+      const inputTokens = result.estimate?.inputTokens as number;
+      expect(result.estimate?.costUSD).toBeCloseTo(
+        (inputTokens * 0.5 + 1000 * ttsModels[model].cost!.output!) / 1e6,
+        10,
+      );
+    },
+  );
+
+  test("thinkingConfig is refused on both (Thinking: not supported)", () => {
+    const issue = expectError(
+      tts.safe({
+        model: "gemini-3.8-flash-tts",
+        contents: HELLO,
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: KORE,
+          // @ts-expect-error — thinkingConfig is `never` on the 3.8 arms.
+          thinkingConfig: { thinkingBudget: 128 },
+        },
+      }),
+      "unsupported_capability",
+    );
+    expect(issue.path).toEqual(["generationConfig", "thinkingConfig"]);
+  });
+
+  test("the guide's own 3.8 sample: `voiceConfig.voice` plus per-part `speechMetadata`", () => {
+    // speech-generation guide, generateContent REST sample (2026-11-13):
+    // `"parts": [{"text": …, "speech_metadata": {"style": …}}]` with
+    // `"speechConfig": {"voiceConfig": {"voice": "Kore"}}`; the REST reference
+    // also takes a stored `voice_xxx` id or a `voicekey_xxx` replication key.
+    for (const voice of ["Kore", "voice_abc123", "voicekey_abc123"]) {
+      const result = expectOk(
+        tts.safe({
+          model: "gemini-3.8-flash-tts",
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: "Have a wonderful day!", speechMetadata: { style: "cheerful and friendly" } }],
+            },
+          ],
+          generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { voice } } },
+        }),
+      );
+      expect(result.warnings).toEqual([]);
+    }
+  });
+
+  test("the rows carry the model pages' own 8,192-token input limit", () => {
+    for (const model of ["gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"] as const) {
+      expect(ttsModels[model].limit.context).toBe(8192);
+      const issue = expectError(
+        tts.safe({
+          model,
+          contents: [{ parts: [{ text: "word ".repeat(9000) }] }],
+          generationConfig: { responseModalities: ["AUDIO"], speechConfig: KORE },
+        }),
+        "over_context",
+      );
+      expect(issue.meta?.limit).toBe(8192);
+    }
+  });
+});
+
+describe("the November 17, 2026 shutdown of the preview TTS ids", () => {
+  test.each([MODEL, PRO, FLASH_31])("%s warns deprecated_model and names the vendor", (model) => {
+    const result = expectOk(
+      tts.safe({
+        model,
+        contents: HELLO,
+        generationConfig: { responseModalities: ["AUDIO"], speechConfig: KORE },
+      }),
+    );
+    const warning = warningOf(result, "deprecated_model");
+    expect(warning).toBeDefined();
+    expect(warning?.path).toEqual(["model"]);
+  });
+
+  test.each(["gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"] as const)(
+    "%s, the named replacement, does not",
+    (model) => {
+      const result = expectOk(
+        tts.safe({
+          model,
+          contents: HELLO,
+          generationConfig: { responseModalities: ["AUDIO"], speechConfig: KORE },
+        }),
+      );
+      expect(warningOf(result, "deprecated_model")).toBeUndefined();
+    },
+  );
+});
+
 describe("refusals", () => {
   test("a typo'd top-level key is a compile error and a runtime warning", () => {
     const result = tts.safe({

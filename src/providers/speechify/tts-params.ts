@@ -12,8 +12,14 @@
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 
-/** The four Simba rows — the ref union for `speechify/…`. */
-export const MODELS = ["simba-english", "simba-multilingual", "simba-3.0", "simba-3.2"] as const;
+/** The five Simba rows — the ref union for `speechify/…`. */
+export const MODELS = [
+  "simba-english",
+  "simba-multilingual",
+  "simba-3.0",
+  "simba-3.2",
+  "simba-3.5",
+] as const;
 
 export const SPEC_URL = "https://docs.speechify.ai/openapi/api-reference.json";
 
@@ -33,7 +39,7 @@ export const FORMAT: AudioFormatSpec = {
     pcm_mulaw: [8000],
     aac: [24000],
   },
-  bitrates: { mp3: [32000, 64000, 96000, 128000, 192000] },
+  bitrates: { mp3: [32000, 64000, 96000, 128000, 160000, 192000] },
   unavailable: { pcm_s16le: ["bitrate"], pcm_mulaw: ["bitrate"], aac: ["bitrate"] },
   defaultsByCodec: { pcm_mulaw: { sampleRate: 8000 } },
   source: SPEC_URL,
@@ -43,14 +49,25 @@ export const FORMAT: AudioFormatSpec = {
  * Speechify's per-model surface, and the one model whose language list is one
  * value long.
  *
- * `simba-3.2` is English only — the provider's `checkLanguage` refuses anything
- * that does not start `en`, citing the 400 it would otherwise return — so its
- * row says `languages: ["en"]` and an editor completes exactly that. The other
- * three carry no list: `simba-3.0`'s six extra locales and
- * `simba-multilingual`'s "30+" are documented in prose rather than as an enum,
- * and `checkLanguage` deliberately does not gate them ("the docs say 30+ and do
- * not enumerate"). A completion list with no authority behind it would be a
- * guess dressed as a capability.
+ * `simba-3.2` is English only — the provider's `checkModelLanguage` refuses
+ * anything that does not start `en`, citing the 400 it would otherwise return —
+ * so its row says `languages: ["en"]` and an editor completes exactly that. The
+ * other four carry no list. `simba-3.0` and `simba-3.5` both publish theirs as
+ * `languages` arrays in GET /v1/audio/models — 7 locales (en, de-DE, es-ES,
+ * es-MX, fr-FR, it-IT, pt-BR) and 48 primary subtags
+ * (docs.speechify.ai/build/guides/concepts/models, 2026-11-12) — but neither
+ * list is a gate: "Languages outside this list often still produce usable
+ * audio on `simba-3.0`, but they are not validated or officially supported",
+ * and for `simba-3.5` "A language outside this list is not rejected, but it is
+ * not validated either" (both
+ * docs.speechify.ai/build/guides/text-to-speech/language-support, 2026-11-12).
+ * A row's list promises that the provider check refuses or flags whatever the
+ * list leaves out (the tts-presets negative sweep holds every listed row to
+ * that), and `checkModelLanguage` deliberately reports nothing for these
+ * languages. `simba-english` and `simba-multilingual` are retired — absent
+ * from GET /v1/audio/models from API version `2026-09-21`, and "served by
+ * Simba 3.5, in every language" from 2026-11-21 (models page, 2026-11-12) —
+ * and are not gated either.
  *
  * The two extras are `options`' members, nested through
  * {@link OPTIONS_NESTING}: loudness normalization to −14 LUFS, and the
@@ -70,6 +87,7 @@ export const SPEECHIFY_TTS_MODEL_PARAMS = {
   "simba-multilingual": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
   "simba-3.0": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
   "simba-3.2": { codecs: CODECS, languages: ["en"], extras: SPEECHIFY_EXTRAS },
+  "simba-3.5": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
 } as const satisfies TtsModelParamTable;
 
 /**

@@ -4,7 +4,7 @@
  *
  * Most of the routing contract is `fal.image`'s (stripping, degradation,
  * `.toSdk`), asserted there and not repeated. What is asserted HERE is what is
- * particular to this address: FOUR of its ten endpoints publish a real `model`
+ * particular to this address: FIVE of its eleven endpoints publish a real `model`
  * body field naming a restoration NETWORK, the multiplier has two spellings
  * with five different ranges behind them, and the category is the one whose
  * output modality varies per endpoint.
@@ -55,11 +55,12 @@ describe("routing", () => {
 });
 
 describe("the `model` field that is not the route", () => {
-  test("`model` stays on the wire while `endpoint` routes, at all four", () => {
+  test("`model` stays on the wire while `endpoint` routes, at all five", () => {
     const cases: Array<[endpoint: string, model: string]> = [
       ["topaz/upscale/image/precision", "High Fidelity V3"],
       ["topaz/upscale/image/generative", "Wonder 3.5"],
       ["topaz/upscale/video/precision", "Proteus"],
+      ["topaz/upscale/video/generative", "Starlight HQ"],
       ["fal-ai/esrgan", "RealESRGAN_x4plus_anime_6B"],
     ];
     for (const [endpoint, model] of cases) {

@@ -7,7 +7,8 @@
 //   https://developers.openai.com/api/docs/guides/text-to-speech                   (per-model voice support)
 //   https://developers.openai.com/api/docs/guides/speech-to-text                   (per-model format/streaming support)
 //   https://developers.openai.com/api/docs/pricing                                 (rates)
-// Verified 2026-08-13.
+//   https://developers.openai.com/api/docs/deprecations                            (shutdown dates)
+// Verified 2026-08-13; deprecation statuses 2026-11-12.
 //
 // Pricing, copied verbatim from the pricing page:
 // - tts-1            "$15.00 / 1M characters"  → ModelCost.perMillionCharacters
@@ -22,6 +23,19 @@
 //   gpt-4o-transcribe-diarize "$0.006 / minute", Whisper "$0.006 / minute".
 // Dated snapshots bill at their family's rate (the pricing page lists
 // families, not snapshots).
+//
+// Deprecations (developers.openai.com/api/docs/deprecations, read 2026-11-12):
+// - Every v1/audio/speech model: "The following text-to-speech models are
+//   deprecated and will be removed from the API on January 6, 2027" — tts-1,
+//   tts-1-hd, gpt-4o-mini-tts and its snapshot. The named replacement,
+//   gpt-realtime-2.1-mini, is "| Speech generation | `v1/audio/speech` | Not
+//   supported |" on its model page, so no row replaces them here.
+// - The GPT-4o / Whisper transcription models: "On August 26, 2026, we notified
+//   developers using `whisper-1`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`"
+//   (and their snapshot and diarize variants) of removal on 2027-02-26. Of the
+//   named replacements only gpt-transcribe serves v1/audio/transcriptions —
+//   gpt-live-transcribe and gpt-realtime-whisper are realtime-transcription-
+//   session models ("| Transcription | `v1/audio/transcriptions` | Not supported |").
 
 import type { ModelInfo } from "../../core/catalog-types";
 
@@ -42,12 +56,14 @@ const SPEECH_BASE = {
   modalities: { input: ["text"], output: ["audio"] },
   // Speech is not context-window bound; `characters` carries the real cap.
   limit: { context: 0, characters: SPEECH_MAX_INPUT_CHARACTERS },
+  // Removal 2027-01-06 (see the header); every speech model carries it.
+  status: "deprecated",
 } as const;
 
 /**
  * The four ids POST /v1/audio/speech documents (`SpeechModel` in the
  * OpenAPI-generated openai@7.4.0 types, and the createTts reference's
- * allowed values).
+ * allowed values). All four are deprecated, removal 2027-01-06.
  */
 export const speechModels = {
   "tts-1": {
@@ -93,11 +109,18 @@ const TRANSCRIPTION_BASE = {
   limit: { context: 0 },
 } as const;
 
+/** The GPT-4o and Whisper transcription rows: removal 2027-02-26 (see the header). */
+const LEGACY_TRANSCRIPTION_BASE = {
+  ...TRANSCRIPTION_BASE,
+  status: "deprecated",
+} as const;
+
 /**
  * The six ids POST /v1/audio/transcriptions documents ("The options are
  * `gpt-transcribe`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`,
  * `gpt-4o-mini-transcribe-2025-12-15`, `whisper-1` (which is powered by our
  * open source Whisper V2 model), and `gpt-4o-transcribe-diarize`").
+ * gpt-transcribe is the one of them that outlives 2027-02-26.
  */
 export const transcriptionModels = {
   "gpt-transcribe": {
@@ -108,21 +131,21 @@ export const transcriptionModels = {
     cost: { perAudioMinute: 0.0045 },
   },
   "gpt-4o-transcribe": {
-    ...TRANSCRIPTION_BASE,
+    ...LEGACY_TRANSCRIPTION_BASE,
     id: "gpt-4o-transcribe",
     name: "GPT-4o Transcribe",
     family: "gpt-4o",
     cost: { perAudioMinute: 0.006 },
   },
   "gpt-4o-mini-transcribe": {
-    ...TRANSCRIPTION_BASE,
+    ...LEGACY_TRANSCRIPTION_BASE,
     id: "gpt-4o-mini-transcribe",
     name: "GPT-4o mini Transcribe",
     family: "gpt-4o",
     cost: { perAudioMinute: 0.003 },
   },
   "gpt-4o-mini-transcribe-2025-12-15": {
-    ...TRANSCRIPTION_BASE,
+    ...LEGACY_TRANSCRIPTION_BASE,
     id: "gpt-4o-mini-transcribe-2025-12-15",
     name: "GPT-4o mini Transcribe (2025-12-15)",
     family: "gpt-4o",
@@ -130,14 +153,14 @@ export const transcriptionModels = {
     cost: { perAudioMinute: 0.003 },
   },
   "gpt-4o-transcribe-diarize": {
-    ...TRANSCRIPTION_BASE,
+    ...LEGACY_TRANSCRIPTION_BASE,
     id: "gpt-4o-transcribe-diarize",
     name: "GPT-4o Transcribe Diarize",
     family: "gpt-4o",
     cost: { perAudioMinute: 0.006 },
   },
   "whisper-1": {
-    ...TRANSCRIPTION_BASE,
+    ...LEGACY_TRANSCRIPTION_BASE,
     id: "whisper-1",
     name: "Whisper (large-v2)",
     family: "whisper",

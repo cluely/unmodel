@@ -77,6 +77,7 @@ import {
 } from "./tts-checks";
 import { ttsModels, type GoogleTtsModelId } from "./tts-models";
 import type {
+  GooglePart,
   GoogleSafetySetting,
   GoogleServiceTier,
   GoogleSpeakerVoiceConfig,
@@ -108,6 +109,8 @@ export const GENERATE_TTS_BASE_URL = GOOGLE_MODELS_BASE_URL;
  */
 export interface GoogleTtsTextPart {
   text: string;
+  /** Per-part speaker and style — the 3.8 TTS guide's `speech_metadata` annotation. */
+  speechMetadata?: GooglePart["speechMetadata"];
   /** "TTS models can only receive text inputs" — send audio to `google.stt`. */
   inlineData?: never;
   /** "TTS models can only receive text inputs" — send audio to `google.stt`. */
@@ -140,7 +143,11 @@ export interface GoogleTtsContent {
  * fails to compile instead of only failing to validate.
  */
 export interface GoogleTtsSingleSpeakerConfig {
-  /** One of the 30 presets, via `prebuiltVoiceConfig.voiceName`. */
+  /**
+   * One of the 30 presets via `prebuiltVoiceConfig.voiceName`, or any speaker
+   * identifier — a preset name, a stored `voice_…` id, a `voicekey_…`
+   * replication key — via `voice`.
+   */
   voiceConfig?: GoogleVoiceConfig;
   multiSpeakerVoiceConfig?: never;
   /**
@@ -343,6 +350,16 @@ export interface GoogleTts31FlashBody extends GoogleTtsBodyBase {
   generationConfig: NarrowedTtsGenerationConfig<"gemini-3.1-flash-tts-preview">;
 }
 
+export interface GoogleTts38FlashBody extends GoogleTtsBodyBase {
+  model: "gemini-3.8-flash-tts";
+  generationConfig: NarrowedTtsGenerationConfig<"gemini-3.8-flash-tts">;
+}
+
+export interface GoogleTts38FlashLiteBody extends GoogleTtsBodyBase {
+  model: "gemini-3.8-flash-lite-tts";
+  generationConfig: NarrowedTtsGenerationConfig<"gemini-3.8-flash-lite-tts">;
+}
+
 /** Escape hatch for TTS models unmodel doesn't know yet (unknown_model warning). */
 export interface UnknownTtsBody<Model extends string> extends GoogleTtsBodyBase {
   model: FutureModelId<Model, GoogleTtsModelId>;
@@ -353,7 +370,7 @@ export interface UnknownTtsBody<Model extends string> extends GoogleTtsBodyBase 
 }
 
 /**
- * Closed over the three documented Gemini TTS models by default. Supply a
+ * Closed over the five documented Gemini TTS models by default. Supply a
  * future model literal to opt into the loose arm:
  * `GenerateTtsBody<"gemini-4-flash-tts">`.
  */
@@ -361,12 +378,16 @@ export type GenerateTtsBody<FutureModel extends string = never> =
   | GoogleTts25FlashBody
   | GoogleTts25ProBody
   | GoogleTts31FlashBody
+  | GoogleTts38FlashBody
+  | GoogleTts38FlashLiteBody
   | UnknownTtsBody<FutureModel>;
 
 export interface GenerateTtsBodyByModel {
   "gemini-2.5-flash-preview-tts": GoogleTts25FlashBody;
   "gemini-2.5-pro-preview-tts": GoogleTts25ProBody;
   "gemini-3.1-flash-tts-preview": GoogleTts31FlashBody;
+  "gemini-3.8-flash-tts": GoogleTts38FlashBody;
+  "gemini-3.8-flash-lite-tts": GoogleTts38FlashLiteBody;
 }
 
 /** Resolves a model id literal to its exact Tier-A arm. */
@@ -409,6 +430,7 @@ export type TtsSdkTargets<T extends AnyGenerateTtsBody = GenerateTtsBody> = {
 
 const voiceConfigSchema = z.looseObject({
   prebuiltVoiceConfig: z.looseObject({ voiceName: z.string().optional() }).optional(),
+  voice: z.string().optional(),
 });
 
 const schema = z.looseObject({

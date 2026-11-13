@@ -11,8 +11,10 @@
  * - `prompt` and `composition_plan` are mutually exclusive, and the plan's
  *   SHAPE is model-specific: `music_v1` takes the sections plan
  *   ({positive_global_styles, negative_global_styles, sections}) and
- *   `music_v2` takes the chunks plan ({chunks}) — "Using this field with any
- *   other model will result in an error" is the API's own wording for both.
+ *   `music_v2` / `music_v2_5` take the chunks plan ({chunks}) — "Composition
+ *   plan for the `music_v2` and `music_v2_5` models. Using this field with any
+ *   other model will result in an error" (MUSIC_OPENAPI_URL, 2026-11-12), and
+ *   the same sentence for `music_v1` and the sections plan.
  * - `music_length_ms` (3000–600000) and `force_instrumental` apply to
  *   prompt-based generation only; with a composition plan the section/chunk
  *   durations decide the length.
@@ -169,7 +171,7 @@ export interface ElevenlabsMusicChunk {
   conditioning_ref?: ElevenlabsMusicAudioRef | null;
 }
 
-/** A `music_v2` composition plan: up to 30 chunks. */
+/** A `music_v2` / `music_v2_5` composition plan: up to 30 chunks. */
 export interface ElevenlabsMusicChunksPlan {
   chunks: Array<ElevenlabsMusicChunk | ElevenlabsMusicAudioRef>;
 }
@@ -184,7 +186,8 @@ export interface MusicParams {
   prompt?: string | null;
   /**
    * A detailed composition plan. Shape is model-specific: sections for
-   * music_v1, chunks for music_v2. Cannot be combined with `prompt`.
+   * music_v1, chunks for music_v2 and music_v2_5. Cannot be combined with
+   * `prompt`.
    */
   composition_plan?: ElevenlabsCompositionPlan | null;
   /** Track length in ms (3000–600000). Prompt-based generation only. */
@@ -212,7 +215,8 @@ export interface MusicParams {
   use_phonetic_names?: boolean;
   /**
    * How strictly plan section durations are enforced. `music_v1` only —
-   * `music_v2` always enforces them and ignores this. Default true.
+   * `music_v2` and `music_v2_5` always enforce them and ignore this. Default
+   * true.
    */
   respect_sections_durations?: boolean;
   /** Store the generated song so it can be inpainted later. Default false. */
@@ -418,9 +422,19 @@ function checkPromptPlanExclusivity(
 }
 
 /**
- * Plan shape is model-specific — "Composition plan for the `music_v2` model.
- * Using this field with any other model will result in an error" (chunks) and
- * the same sentence for `music_v1` (sections).
+ * The ids that take the chunks plan and always enforce its durations —
+ * "Composition plan for the `music_v2` and `music_v2_5` models. Using this
+ * field with any other model will result in an error." and "for `music_v2` and
+ * `music_v2_5` section durations are always enforced and this is ignored"
+ * (MUSIC_OPENAPI_URL, 2026-11-12).
+ */
+const CHUNKS_PLAN_MODELS: readonly string[] = ["music_v2", "music_v2_5"];
+const CHUNKS_PLAN_MODELS_TEXT = CHUNKS_PLAN_MODELS.map((id) => `"${id}"`).join(" and ");
+
+/**
+ * Plan shape is model-specific — the chunks plan is for {@link CHUNKS_PLAN_MODELS}
+ * ("Using this field with any other model will result in an error") and the
+ * sections plan for `music_v1`, with the same sentence.
  */
 function checkPlanShapeMatchesModel(
   params: MusicParams,
@@ -430,13 +444,13 @@ function checkPlanShapeMatchesModel(
   const plan = params.composition_plan;
   if (plan == null) return;
   const model = params.model_id ?? DEFAULT_MUSIC_MODEL_ID;
-  if (isChunksPlan(plan) && model !== "music_v2") {
+  if (isChunksPlan(plan) && !CHUNKS_PLAN_MODELS.includes(model)) {
     ctx.report({
       code: "unsupported_param",
       path: ["composition_plan", "chunks"],
       model,
-      message: `A chunks composition plan is only accepted by "music_v2"; "${model}" takes the sections plan ({positive_global_styles, negative_global_styles, sections}).`,
-      meta: { source: MUSIC_DOCS_URL },
+      message: `A chunks composition plan is only accepted by ${CHUNKS_PLAN_MODELS_TEXT}; "${model}" takes the sections plan ({positive_global_styles, negative_global_styles, sections}).`,
+      meta: { source: MUSIC_OPENAPI_URL },
     });
   }
   if (isSectionsPlan(plan) && model !== "music_v1") {
@@ -453,8 +467,9 @@ function checkPlanShapeMatchesModel(
 /**
  * Params the API accepts and then ignores, which is worth surfacing but must
  * not fail a request the API fulfils — hence explicit warning severity:
- * - `respect_sections_durations` is "only applies to `music_v1`; for
- *   `music_v2` section durations are always enforced and this is ignored".
+ * - `respect_sections_durations` "only applies to `music_v1`; for `music_v2`
+ *   and `music_v2_5` section durations are always enforced and this is
+ *   ignored".
  * - `seed` is documented "Cannot be used in conjunction with prompt". The
  *   docs publish no error for the combination (unlike prompt +
  *   composition_plan, which they call out), so this stays a warning rather
@@ -468,15 +483,14 @@ function checkIgnoredParams(
   ctx: PipelineContext,
 ): void {
   const model = params.model_id ?? DEFAULT_MUSIC_MODEL_ID;
-  if (params.respect_sections_durations !== undefined && model === "music_v2") {
+  if (params.respect_sections_durations !== undefined && CHUNKS_PLAN_MODELS.includes(model)) {
     ctx.report({
       code: "unsupported_param",
       severity: "warning",
       path: ["respect_sections_durations"],
       model,
-      message:
-        '`respect_sections_durations` applies to "music_v1" only; "music_v2" always enforces plan section durations and ignores it.',
-      meta: { ignored: true, source: MUSIC_DOCS_URL },
+      message: `\`respect_sections_durations\` applies to "music_v1" only; "${model}" always enforces plan section durations and ignores it.`,
+      meta: { ignored: true, source: MUSIC_OPENAPI_URL },
     });
   }
   if (params.seed != null && params.prompt != null) {

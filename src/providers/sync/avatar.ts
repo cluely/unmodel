@@ -12,10 +12,10 @@
  *   translates it; a still has no audio to extract.
  *
  * Different required fields and two fields that cannot appear is a route fork
- * in everything but the path, which is why this is its own address. `@sync.so/sdk@0.3.0`
- * does not model image input at all (its `Input` union is `Video | Audio | Tts`
- * and it ships no `Image.d.ts`) — the curated OpenAPI document and sync-3's own
- * model page do, and a tiebreaker settles a disagreement rather than an absence.
+ * in everything but the path, which is why this is its own address. The image
+ * item is in the curated OpenAPI document, on sync-3's own model page and in
+ * `@sync.so/sdk@0.4.0` (`Input = Video | Image | Audio | Tts`, verified
+ * 2026-11-12).
  *
  * Wire notes:
  * - `{ type: "image", url }` or `{ type: "image", assetId }`. JPEG, PNG, WebP.
@@ -23,7 +23,10 @@
  * - `options.active_speaker_detection.auto_detect` is NOT SUPPORTED. For a
  *   still with several faces, point at one: `coordinates: [x, y]` in the
  *   image's native pixel space with `frame_number: 0`.
- * - Async and 201-then-poll, exactly as the clip route. `x-api-key` is yours.
+ * - Async and 201-then-poll, exactly as the clip route. `x-api-key` is yours,
+ *   and so is the optional `Idempotency-Key` — an identical unkeyed request
+ *   within 60 seconds answers 409 `DUPLICATE_SUBMISSION` (see
+ *   `SYNC_IDEMPOTENCY_HEADER`).
  */
 
 import { z } from "zod";
@@ -68,7 +71,7 @@ export interface SyncAvatarParams {
   /** Required. Exactly one `{ type: "image" }` item plus one audio or text item. */
   input: readonly SyncAvatarInputItem[];
   /**
-   * The six published dials, minus the two a still ignores in practice —
+   * The fifteen published dials, minus the two a still ignores in practice —
    * `sync_mode` (no duration to mismatch) and `auto_detect` (unsupported for
    * images). Both are still typed, and both are reported: see
    * `checkImageOptions`.

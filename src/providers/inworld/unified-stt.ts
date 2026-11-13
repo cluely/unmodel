@@ -3,9 +3,11 @@
  *
  * ## One input shape, and it is the base64 one
  *
- * Inworld takes its audio as **base64 inside the JSON body**
- * (`audioData.content`). There is no URL field, no multipart part and no file
- * API, so of the four canonical shapes only `{ data }` has somewhere to go:
+ * This adapter compiles to the endpoint's JSON body, which takes its audio as
+ * **base64** (`audioData.content`); the `multipart/form-data` variant of the
+ * same endpoint is a second body shape `inworld.stt` does not describe. There
+ * is no URL field and no file API, so of the four canonical shapes only
+ * `{ data }` has somewhere to go:
  *
  * - `{ url }` and `{ fileId }` have no wire field to compile *to*;
  * - `{ file }` has one in principle, and cannot reach it in practice: a `Blob`
@@ -85,7 +87,7 @@ export const stt = {
       resolveAudioInput(input.audio, ["data"], { path: ["audio"], warn: ctx.warn }, {
         source: TRANSCRIBE_DOCS,
         hint:
-          "POST /stt/v1/transcribe has no URL field, no multipart part and no file API — " +
+          "POST /stt/v1/transcribe has no URL field and no file API, and this route compiles to its JSON body — " +
           "`audioData.content` is base64 bytes.",
       }),
     );
@@ -112,8 +114,18 @@ export const stt = {
 
     if (input.timestamps !== undefined) {
       // A plain boolean, so `"none"` is expressible rather than an omission.
+      // The row's own granularities, because the wire accepts the flag on
+      // both sync models and only warns where it is ignored (see stt-params).
+      // An id outside the table has already drawn `unknown_model`, and
+      // model-dependent checks are skipped: it gets what the wire flag can say
+      // (`includeWordTimestamps`).
+      const row = isSyncModel(ctx.model) ? INWORLD_STT_MODEL_PARAMS[ctx.model] : undefined;
+      const offered =
+        row === undefined
+          ? (["word"] as const)
+          : row.timestamps.filter((granularity) => granularity !== "none");
       const granularity = ctx.take(
-        toTimestampGranularity(input.timestamps, ["word"], {
+        toTimestampGranularity(input.timestamps, offered, {
           path: ["timestamps"],
           warn: ctx.warn,
         }, { source: TRANSCRIBE_DOCS }),
@@ -135,3 +147,7 @@ export const stt = {
   InworldSttWire,
   InworldSttResult
 >;
+
+function isSyncModel(id: string): id is (typeof MODELS)[number] {
+  return (MODELS as readonly string[]).includes(id);
+}

@@ -2,20 +2,26 @@
  * Shared wire pieces for VEED's v1 API (`https://api.veed.io/v1/...`),
  * transcribed from the OpenAPI 3.1.0 document at
  * https://api.veed.io/openapi.json and the pages it backs —
- * https://api.veed.io/docs, https://api.veed.io/models/lipsync-2.0,
- * https://api.veed.io/models/fabric-1.0 and the schema browser at
- * https://api.veed.io/reference — verified 2026-08-25.
+ * https://api.veed.io/docs, the per-route references
+ * https://api.veed.io/docs/api/post-v1-lipsync-2-0 and
+ * https://api.veed.io/docs/api/post-v1-fabric-1-0, https://api.veed.io/pricing
+ * and the schema browser at https://api.veed.io/reference — verified
+ * 2026-11-12. https://api.veed.io/llms.txt indexes every page as Markdown
+ * ("append `.md` to a docs, pricing or schema page's URL for the same").
  *
  * ## One spec, and it is unusually complete
  *
- * VEED publishes a single unauthenticated OpenAPI 3.1.0 document (56 KB, 10
- * operations, 21 component schemas) whose `servers` is `https://api.veed.io`,
- * and it also serves every component as a standalone JSON Schema at
- * `https://api.veed.io/schemas/{Name}.json` — the same URL every response
- * carries in its own `$schema` field. There was nothing to reconcile here and
- * no SDK tiebreak to run: VEED ships no JavaScript client, and the spec answers
- * every question the docs raise. Where the numbers DO disagree is pricing, and
- * the disagreement is recorded in `./models.ts`.
+ * VEED publishes a single unauthenticated OpenAPI 3.1.0 document (118,485
+ * bytes, 18 operations, 37 component schemas) whose `servers` is
+ * `https://api.veed.io`, and it also serves every component as a standalone
+ * JSON Schema at `https://api.veed.io/schemas/{Name}.json` — the same URL every
+ * response carries in its own `$schema` field. The spec answers every question
+ * the docs raise, and it stays the primary source over VEED's official SDKs —
+ * npm `@veedstudio/sdk`, PyPI `veed` and Go `github.com/veedstudio/veed-sdk-go`
+ * — because those are generated from it and lag it: `@veedstudio/sdk` 0.3.0's
+ * job types omit the `credits_charged` / `credits_estimated` the spec declares
+ * on every job schema. Where the numbers DO disagree is pricing, and the
+ * disagreement is recorded in `./models.ts`.
  *
  * Two things in the spec are worth reading twice, because both are invisible in
  * a type:
@@ -41,13 +47,13 @@
  * answers 401, and the two 401s differ:
  *
  * ```text
- * no header   401 {"error":{"code":"unauthenticated","message":"missing or malformed Authorization header","request_id":"…"}}
- * bad key     401 {"error":{"code":"unauthenticated","message":"Invalid API key.","request_id":"…","details":[{"type":"api_key","reason":"api_key_invalid"}]}}
+ * no header   401 {"$schema":"https://api.veed.io/schemas/ErrorResponse.json","error":{"code":"unauthenticated","message":"missing or malformed Authorization header","request_id":"…"}}
+ * bad key     401 {"$schema":"https://api.veed.io/schemas/ErrorResponse.json","error":{"code":"unauthenticated","message":"Invalid API key.","request_id":"…","details":[{"type":"api_key","reason":"api_key_invalid"}]}}
  * ```
  *
  * One code, two messages, and only the second carries `details`. Branch on
  * `error.details[].reason` ({@link VEED_ERROR_REASONS}) rather than on the
- * message text. (Both probed live on 2026-08-25.)
+ * message text. (Both probed live on 2026-11-13.)
  *
  * ## Every generation is a job, and there are TWO ways to fail
  *
@@ -57,12 +63,12 @@
  * `x-veed-poll-interval-seconds`) until `COMPLETED` or `FAILED`, then read
  * `data.result.video.url`.
  *
- * ⚠️ A submit can be **rejected** at the HTTP layer (401/422/429/500 — no job
- * is created, and the body is {@link VeedErrorResponse}) or **accepted and then
- * fail** during rendering (`status: "FAILED"`, reported through the GET with a
- * {@link VeedJobErrorCode}, never as an HTTP error). Those are two different
- * error channels with two different code vocabularies, and code that only
- * checks `res.ok` sees half of them.
+ * ⚠️ A submit can be **rejected** at the HTTP layer (401/402/422/429/500 — no
+ * job is created, and the body is {@link VeedErrorResponse}) or **accepted and
+ * then fail** during rendering (`status: "FAILED"`, reported through the GET
+ * with a {@link VeedJobErrorCode}, never as an HTTP error). Those are two
+ * different error channels with two different code vocabularies, and code that
+ * only checks `res.ok` sees half of them.
  *
  * There are no webhooks: the document declares no `webhooks` key and no
  * callback field on any input schema. Polling is the whole protocol.
@@ -76,7 +82,12 @@ export const VEED_BASE_URL = "https://api.veed.io";
 
 export const VEED_HEADERS: Record<string, string> = JSON_HEADERS;
 
-/** The documentation root. Every model also has a page at `/models/<id>`. */
+/**
+ * The documentation root. Every operation has a reference page at
+ * `/docs/api/<method>-v1-<path>` with the path's dots as hyphens
+ * (`/docs/api/post-v1-fabric-1-0`), each also served as Markdown with a `.md`
+ * suffix.
+ */
 export const DOCS_BASE = "https://api.veed.io";
 
 /** `POST /v1/lipsync-2.0` — re-sync a clip to a new track. */
@@ -110,10 +121,12 @@ export function schemaUrl(name: string): string {
 
 /**
  * The two generation models unmodel serves, spelled exactly as they appear in
- * the path, in the docs URL and on the model page.
+ * the path and on the pricing page.
  *
- * VEED's "model garden" has a third family — `video-background-removal` in
- * three variants — which is deliberately not here; see `./models.ts`.
+ * VEED counts five models — "Every model is reached the same way, so what you
+ * learn here holds for all 5 of them" (https://api.veed.io/docs/concepts,
+ * 2026-11-12). The other three — Dubbing, Clean Audio and Video Background
+ * Removal — are not here; see `./models.ts`.
  */
 export const VEED_MODELS = ["lipsync-2.0", "fabric-1.0"] as const;
 export type VeedModelId = (typeof VEED_MODELS)[number];
@@ -139,7 +152,7 @@ export type VeedResolution = (typeof VEED_RESOLUTIONS)[number];
 /**
  * The states `GET /v1/<model>/{job_id}` reports.
  *
- * `CANCELLED` is in the enum on all three job schemas and there is no cancel
+ * `CANCELLED` is in the enum on all six job schemas and there is no cancel
  * endpoint in the document, so it is almost certainly unreachable through the
  * public API today — but it is in the union because it is in the spec, and a
  * `switch` that omits it would fall through the day VEED ships one.
@@ -153,13 +166,17 @@ export const VEED_TERMINAL_STATUSES = ["COMPLETED", "FAILED", "CANCELLED"] as co
 /**
  * `error.code` on an HTTP rejection — the SUBMIT channel.
  *
- * From `ErrorBody.code` in the spec. These describe why no job was created;
- * the reasons a created job later failed are {@link VEED_JOB_ERROR_CODES},
- * a disjoint vocabulary.
+ * From `ErrorBody.code` in the spec, in its order (verified 2026-11-12; the
+ * same nine on https://api.veed.io/docs/concepts). These describe why no job
+ * was created; the reasons a created job later failed are
+ * {@link VEED_JOB_ERROR_CODES}, a disjoint vocabulary. Mind the spelling on the
+ * money arm: an HTTP rejection says `insufficient_tokens`, while the detail
+ * reason and the job failure code say `insufficient_credits`.
  */
 export const VEED_ERROR_CODES = [
   "invalid_request",
   "unauthenticated",
+  "insufficient_tokens",
   "permission_denied",
   "not_found",
   "conflict",
@@ -172,17 +189,25 @@ export type VeedErrorCode = (typeof VEED_ERROR_CODES)[number];
 /**
  * `error.details[].reason` — the sub-reason behind an HTTP rejection.
  *
- * From `ErrorDetail.reason`. Four of the five are ways an API key can be
- * unusable, which is what makes this list worth branching on: `api_key_expired`
- * and `api_key_revoked` are operator problems, `api_key_invalid` is a typo, and
- * they all arrive as the same `unauthenticated` code with the same 401.
+ * From `ErrorDetail.reason`, in the spec's order (verified 2026-11-12). Five
+ * name an unusable API key and one an unusable OAuth token, which is what makes
+ * this list worth branching on: `api_key_expired` and `api_key_revoked` are
+ * operator problems, `api_key_invalid` is a typo, and those three and
+ * `api_key_inactive` arrive as the same `unauthenticated` code with the same
+ * 401. The rest are the balance (`insufficient_credits`), the model
+ * entitlement (`model_access_required`) and an unknown job id
+ * (`job_not_found`).
  */
 export const VEED_ERROR_REASONS = [
   "api_key_expired",
   "api_key_inactive",
   "api_key_invalid",
   "api_key_revoked",
+  "api_key_workspace_unavailable",
+  "insufficient_credits",
   "job_not_found",
+  "model_access_required",
+  "oauth_token_invalid",
 ] as const;
 export type VeedErrorReason = (typeof VEED_ERROR_REASONS)[number];
 
@@ -190,13 +215,17 @@ export type VeedErrorReason = (typeof VEED_ERROR_REASONS)[number];
  * `result.error.code` on a job that was accepted and then failed — the RENDER
  * channel.
  *
- * Identical across `JobErrorFabricErrorCode`, `JobErrorLipsync20ErrorCode` and
- * `JobErrorVideoBackgroundRemovalErrorCode`: VEED declares three separate
- * schemas with the same seven members, so one list serves every model here and
- * a divergence would show up as a spec diff rather than silently.
+ * Identical across all five `JobError*ErrorCode` schemas (`CleanAudio`,
+ * `Dubbing`, `Fabric`, `Lipsync20`, `VideoBackgroundRemoval`): VEED declares
+ * five separate schemas with the same eight members (verified 2026-11-12), so
+ * one list serves every model here and a divergence would show up as a spec
+ * diff rather than silently. `insufficient_credits` is "The balance ran out
+ * before the job could be paid for. Top up in the dashboard's Billing, then
+ * retry." (https://api.veed.io/docs/api/get-v1-fabric-1-0-job-id).
  *
- * `audio_too_long` is the one worth designing around — it is the only ceiling
- * VEED publishes anywhere, and it publishes no number for it.
+ * `audio_too_long` is the one worth designing around — VEED publishes no
+ * number for it on either route served here (its dubbing and clean-audio
+ * routes do state their ceilings).
  */
 export const VEED_JOB_ERROR_CODES = [
   "input_validation",
@@ -206,6 +235,7 @@ export const VEED_JOB_ERROR_CODES = [
   "transload_failed",
   "generation_failed",
   "timeout",
+  "insufficient_credits",
 ] as const;
 export type VeedJobErrorCode = (typeof VEED_JOB_ERROR_CODES)[number];
 
@@ -221,7 +251,12 @@ export type VeedJobErrorCode = (typeof VEED_JOB_ERROR_CODES)[number];
 export const VEED_RATE_LIMIT_CLASSES = ["read", "mutation", "ai-generation"] as const;
 export type VeedRateLimitClass = (typeof VEED_RATE_LIMIT_CLASSES)[number];
 
-/** How often the spec itself says to poll (`x-veed-poll-interval-seconds`). */
+/**
+ * How often the spec itself says to poll. `x-veed-poll-interval-seconds` is
+ * per submit operation, and it is 10 on both routes served here
+ * (`/v1/lipsync-2.0`, `/v1/fabric-1.0`; verified 2026-11-12) — VEED's dubbing
+ * and clean-audio routes advertise 15.
+ */
 export const VEED_POLL_INTERVAL_SECONDS = 10;
 
 /**
@@ -229,9 +264,9 @@ export const VEED_POLL_INTERVAL_SECONDS = 10;
  * including the one `ModelCost` has no room for.
  *
  * Transcribed from the `x-veed-pricing` extension on each submit operation in
- * https://api.veed.io/openapi.json, verified 2026-08-25. USD per second of
+ * https://api.veed.io/openapi.json, verified 2026-11-12. USD per second of
  * GENERATED video, `rounding: "exact"` — no minimum, and no rounding up to a
- * whole second.
+ * whole second. https://api.veed.io/pricing states the same rates.
  *
  * Fabric's rate is conditioned on `resolution`, which is a required request
  * field, so the exact rate for a request is always knowable; the output's
@@ -254,9 +289,12 @@ export const VEED_PRICING = {
  * - `X-Veed-Store-IO: "0" | "1"` (default `"1"`) — `"0"` keeps this request's
  *   and response's bodies out of your request logs. The switch to reach for
  *   when the media URLs are sensitive.
- * - `X-Veed-Media-Expiration-Seconds: number` (default 86400) — how long the
- *   signed URLs VEED hands back stay fetchable. One day by default, which is
- *   the number to raise if the result is archived rather than piped.
+ * - `X-Veed-Media-Expiration-Seconds: number` (default 86400, at most
+ *   2592000) — how long the signed URLs VEED hands back stay fetchable. One
+ *   day by default, which is the number to raise if the result is archived
+ *   rather than piped. After the window the URL answers `410 Gone`, and it is
+ *   not renewable: polling the job again returns the same, expired URL
+ *   (https://api.veed.io/docs/media-retention, 2026-11-12).
  */
 export const VEED_REQUEST_HEADERS = {
   storeIO: "X-Veed-Store-IO",
@@ -265,6 +303,17 @@ export const VEED_REQUEST_HEADERS = {
 
 /** The default of `X-Veed-Media-Expiration-Seconds`, in seconds (1 day). */
 export const VEED_MEDIA_EXPIRATION_DEFAULT_SECONDS = 86_400;
+
+/**
+ * The ceiling of `X-Veed-Media-Expiration-Seconds`, in seconds (30 days).
+ *
+ * A larger value is CAPPED, not refused, so nothing here rejects one — the
+ * spec's header schema is `{"default":86400,"format":"int32","maximum":2592000}`
+ * and its description reads "A value above the maximum is capped rather than
+ * rejected." https://api.veed.io/docs/media-retention (2026-11-12): "ask for
+ * longer and you get thirty days rather than an error".
+ */
+export const VEED_MEDIA_EXPIRATION_MAX_SECONDS = 2_592_000;
 
 // ---------------------------------------------------------------------------
 // Response shapes
@@ -306,15 +355,45 @@ export interface VeedJob {
   status: VeedJobStatus;
   result?: VeedVideoResult;
   error?: VeedJobError;
+  /**
+   * `int32`. "Credits quoted before the job ran. Present only on the response
+   * that created the job. This is an estimate, not the price: the charged
+   * amount can be higher or lower." VEED publishes no credits-to-USD
+   * conversion, so no cost is derived from it.
+   */
+  credits_estimated?: number;
+  /**
+   * `int32`. "Credits charged for the job. Present once the job is COMPLETED
+   * and the final charge is known."
+   */
+  credits_charged?: number;
 }
 
-/** Every 2xx body is `{ data }`, and every error body is `{ error }`. */
+/**
+ * Every 2xx body is `{ data }`, and every error body is `{ error }` — both
+ * beside an optional top-level `$schema`.
+ */
 export interface VeedJobResponse {
+  /**
+   * Read-only echo: "A URL to the JSON Schema for this object." (`format:
+   * uri`, not in `required`), e.g.
+   * `https://api.veed.io/schemas/ResourceFabricJob.json`.
+   */
+  $schema?: string;
   data: VeedJob;
 }
 
-/** The HTTP-layer failure envelope — 401, 422, 429, 500. */
+/**
+ * The HTTP-layer failure envelope — 401, 402, 422, 429 and 500 on a submit;
+ * 401, 404 (an unknown `job_id`), 422, 429 and 500 on a poll.
+ */
 export interface VeedErrorResponse {
+  /**
+   * Read-only echo: "A URL to the JSON Schema for this object." (`format:
+   * uri`, not in `required`), e.g.
+   * `https://api.veed.io/schemas/ErrorResponse.json`.
+   */
+  $schema?: string;
   error: {
     code: VeedErrorCode;
     message: string;
@@ -326,6 +405,8 @@ export interface VeedErrorResponse {
       field?: string;
       message?: string;
       retry_after_ms?: number;
+      /** Untyped in the spec (`"value": {}`). */
+      value?: unknown;
     }> | null;
   };
 }

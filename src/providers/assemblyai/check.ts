@@ -6,7 +6,8 @@ import { models } from "./models";
 
 /**
  * Structural subset of a GET /v2/transcript/{id} (or webhook-delivered)
- * transcript object (https://www.assemblyai.com/docs/api-reference/transcripts/get).
+ * transcript object
+ * (https://www.assemblyai.com/docs/pre-recorded-audio/api-reference/transcripts/get).
  */
 export interface TranscriptResponseLike {
   id?: string;
@@ -16,7 +17,16 @@ export interface TranscriptResponseLike {
   error?: string | null;
   /** Media duration in SECONDS (not ms); null until known. */
   audio_duration?: number | null;
-  /** Model the transcript ran on, echoed by the API. */
+  /**
+   * "The speech model that was actually used for the transcription." (GET
+   * reference, 2026-11-12) — what `checkTranscript` prices from.
+   */
+  speech_model_used?: string | null;
+  /**
+   * Deprecated echo of the request's singular `speech_model` (null in the GET
+   * reference's own example); priced from only when `speech_model_used` is
+   * absent.
+   */
   speech_model?: string | null;
   text?: string | null;
   confidence?: number | null;
@@ -74,8 +84,9 @@ const catalog: Record<string, ModelInfo> = models;
  *   `meta.kind: "empty_transcript"`.
  * - `finishReason` mirrors the terminal `status`.
  * - `costUSD` = audio_duration ÷ 60 minutes x the catalog per-minute rate for
- *   the echoed `speech_model`; undefined when the model or duration is
- *   unknown. Token usage does not apply to STT, so `usage` is always empty.
+ *   `speech_model_used` (else the deprecated `speech_model` echo); undefined
+ *   when the model, its rate or the duration is unknown. Token usage does not
+ *   apply to STT, so `usage` is always empty.
  */
 export function checkTranscript(
   res: TranscriptResponseLike,
@@ -103,7 +114,8 @@ export function checkTranscript(
     });
   }
 
-  const info = res.speech_model != null ? catalog[res.speech_model] : undefined;
+  const modelId = res.speech_model_used ?? res.speech_model;
+  const info = modelId != null ? catalog[modelId] : undefined;
   const costUSD =
     typeof res.audio_duration === "number"
       ? computeAudioMinutesCostUSD(info?.cost, minutesFromSeconds(res.audio_duration))

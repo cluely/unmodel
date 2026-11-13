@@ -4,6 +4,11 @@ import type { ModelInfo } from "../../core/catalog-types";
 import { resolveModelInfo } from "../../core/catalog-lookup";
 import { computeCostUSD } from "../../core/cost";
 import { models } from "../../catalog/anthropic.gen";
+import {
+  PROMPT_LENGTH_TIER_THRESHOLD,
+  PROMPT_LENGTH_TIERED_MODEL_IDS,
+  isListed,
+} from "./constraints";
 
 /** The `usage` object of a /v1/messages response. */
 export interface MessageUsage {
@@ -11,6 +16,8 @@ export interface MessageUsage {
   output_tokens?: number | null;
   cache_creation_input_tokens?: number | null;
   cache_read_input_tokens?: number | null;
+  /** Which speed served the request: `"fast"` under fast mode, otherwise `"standard"`. */
+  speed?: "standard" | "fast" | null;
 }
 
 /** Structural subset of a /v1/messages response — works with SDK and raw fetch shapes. */
@@ -117,13 +124,28 @@ export function checkChat(response: MessageLike): ResponseReport<AnthropicStopRe
     usage.totalTokens = (inputTokens ?? 0) + (cacheWriteTokens ?? 0) + (outputTokens ?? 0);
   }
 
+  // Two responses the catalog's standard rates cannot price, so no number:
+  // a fast-mode response (premium per-model rates — fast-mode docs: "Fast mode
+  // is priced at a multiplier on standard rates across the full context
+  // window"), and a prompt-length-tiered model above its threshold, where the
+  // prompt is every input token: "A request's prompt length counts all of its
+  // input tokens, including cache reads and cache writes." (pricing page).
+  const promptTokens = (inputTokens ?? 0) + (cacheWriteTokens ?? 0);
+  const unpriced =
+    raw.speed === "fast" ||
+    (model !== undefined &&
+      isListed(model, PROMPT_LENGTH_TIERED_MODEL_IDS) &&
+      promptTokens > PROMPT_LENGTH_TIER_THRESHOLD);
+
   const info = model === undefined ? undefined : resolveModelInfo(catalog, model);
-  const costUSD = computeCostUSD(info?.cost, {
-    inputTokens,
-    outputTokens,
-    cachedInputTokens,
-    cacheWriteTokens,
-  });
+  const costUSD = unpriced
+    ? undefined
+    : computeCostUSD(info?.cost, {
+        inputTokens,
+        outputTokens,
+        cachedInputTokens,
+        cacheWriteTokens,
+      });
 
   return {
     warnings,

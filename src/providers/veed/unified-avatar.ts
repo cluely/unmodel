@@ -103,7 +103,7 @@ export const avatar = {
         code: "unsupported_param",
         path: ["seed"],
         message:
-          "VEED publishes no seed on any of its ten operations, so `seed` has nothing to become at " +
+          "VEED publishes no seed on any of its operations, so `seed` has nothing to become at " +
           `"${ctx.model}". \`FabricInput\` is three fields and is \`additionalProperties: false\`, so ` +
           "sending one anyway would be a 422 rather than an ignored field.",
         meta: { source: SOURCE_URL },
@@ -136,7 +136,10 @@ export const avatar = {
           "without one is a 422 with no job created. Pass `resolution: \"480p\"` ($0.08 per second of " +
           'output) or `resolution: "720p"` ($0.15). unmodel does not choose for you here: the two are ' +
           "roughly a 2× difference on the bill.",
-        meta: { source: "https://api.veed.io/models/fabric-1.0", allowed: ["480p", "720p"] },
+        meta: {
+          source: "https://api.veed.io/docs/api/post-v1-fabric-1-0",
+          allowed: ["480p", "720p"],
+        },
       });
     }
 

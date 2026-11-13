@@ -14,14 +14,25 @@
  * optional `generationConfig`, `GoogleTtsBody` allows one part kind and
  * requires it. The shared thing is the RULE, not the shape it is read out of.
  *
- * Runtime imports are `./tts-constraints` (import-free) and `./wire` (for the
- * 30 preset voices, which are declared there because `voiceName` is typed from
- * them). Deliberately NOT `./constraints`: that module reads the generated
- * catalog, and `unmodel/tts`'s bundle budget asserts zero catalogs.
+ * Runtime imports are `./tts-constraints`, `./thinking-constraints` and
+ * `./model-path` (all import-free) and `./wire` (for the 30 preset voices,
+ * which are declared there because `voiceName` is typed from them).
+ * Deliberately NOT `./constraints`: that module reads the generated catalog,
+ * and `unmodel/tts`'s bundle budget asserts zero catalogs.
  */
 
 import type { PipelineContext } from "../../core/pipeline";
 import type { ModelInfo } from "../../core/catalog-types";
+import { stripModelsPrefix } from "./model-path";
+import {
+  GEMINI_4_MODEL_IDS,
+  GEMINI_LONG_DECODE_DOCS_URL,
+  GEMINI_LONG_DECODE_MAX_OUTPUT_TOKENS,
+  GEMINI_NO_MINIMAL_THINKING_MODEL_IDS,
+  GEMINI_THINKING_DOCS_URL,
+  GEMINI_THINKING_LEVELS,
+  GEMINI_XHIGH_THINKING_MODEL_IDS,
+} from "./thinking-constraints";
 import {
   GEMINI_AUDIO_OUTPUT_MIME_TYPES,
   GEMINI_COMPRESSED_AUDIO_MIME_TYPES,
@@ -64,10 +75,16 @@ export interface AudioResponseFormatLike {
   bitRate?: number | undefined;
 }
 
+/** `ThinkingConfig` as the checks read it — the two members the per-model rules bound. */
+export interface ThinkingConfigLike {
+  thinkingBudget?: number | undefined;
+  thinkingLevel?: string | undefined;
+}
+
 /** The `generationConfig` keys the shared capability triple reads. */
 export interface TtsCapabilityConfigLike {
   temperature?: number | undefined;
-  thinkingConfig?: unknown;
+  thinkingConfig?: ThinkingConfigLike | undefined;
   maxOutputTokens?: number | undefined;
 }
 
@@ -371,7 +388,10 @@ export function checkGenerationCapabilities(
     });
   }
 
-  const outputLimit = info.limit.output;
+  // Gemini 4: the catalog's `limit.output` is the per-hop default, and long
+  // decode takes `maxOutputTokens` up to 1,048,576 (see GEMINI_4_MODEL_IDS).
+  const longDecode = isGemini4Model(model);
+  const outputLimit = longDecode ? GEMINI_LONG_DECODE_MAX_OUTPUT_TOKENS : info.limit.output;
   if (
     config.maxOutputTokens !== undefined &&
     outputLimit !== undefined &&
@@ -382,8 +402,112 @@ export function checkGenerationCapabilities(
       code: "over_output_limit",
       path: [...basePath, "maxOutputTokens"],
       model,
-      message: `\`generationConfig.maxOutputTokens\` (${config.maxOutputTokens}) exceeds the ${outputLimit}-token output limit of "${model}".`,
-      meta: { limit: outputLimit, value: config.maxOutputTokens },
+      message: longDecode
+        ? `\`generationConfig.maxOutputTokens\` (${config.maxOutputTokens}) exceeds the ${outputLimit}-token long-decode ceiling of "${model}" ("Output can use up to 1,048,576 minus your input tokens").`
+        : `\`generationConfig.maxOutputTokens\` (${config.maxOutputTokens}) exceeds the ${outputLimit}-token output limit of "${model}".`,
+      meta: {
+        limit: outputLimit,
+        value: config.maxOutputTokens,
+        ...(longDecode && { source: GEMINI_LONG_DECODE_DOCS_URL }),
+      },
+    });
+  }
+}
+
+/** One of {@link GEMINI_4_MODEL_IDS}, in either id spelling. */
+function isGemini4Model(model: string): boolean {
+  return GEMINI_4_MODEL_IDS.includes(
+    stripModelsPrefix(model) as (typeof GEMINI_4_MODEL_IDS)[number],
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The per-model thinking rules — `thinkingLevel` MINIMAL, and the Gemini 4
+// budget-vs-level exclusivity
+// ---------------------------------------------------------------------------
+
+/**
+ * The `thinkingConfig` rules Google states per MODEL rather than per
+ * message, shared by `google.chat` and `google.stt` (the surfaces whose rows
+ * reason; `google.tts`'s rows carry `reasoning: false` and never reach them).
+ * All are by NAME, not by catalog row, so they hold for the `models/`-prefixed
+ * spelling too. Sources and quotes: ./thinking-constraints.
+ *
+ * - `MINIMAL` on a {@link GEMINI_NO_MINIMAL_THINKING_MODEL_IDS} id "returns an
+ *   error"; the refusal names the levels the model DOES take, with `XHIGH`
+ *   only where {@link GEMINI_XHIGH_THINKING_MODEL_IDS} says so.
+ * - `XHIGH` off {@link GEMINI_XHIGH_THINKING_MODEL_IDS} is a WARNING: it is
+ *   documented on those ids only, and no page says it errors elsewhere.
+ * - `thinkingBudget` AND `thinkingLevel` together on a {@link GEMINI_4_MODEL_IDS}
+ *   id "returns a `400` error". A budget alone is accepted upstream (mapped to
+ *   the nearest level with an API warning), so it is NOT refused here.
+ */
+export function checkThinkingConfig(
+  config: TtsCapabilityConfigLike | undefined,
+  basePath: Array<string | number>,
+  model: string,
+  ctx: PipelineContext,
+): void {
+  const thinking = config?.thinkingConfig;
+  if (thinking === undefined) return;
+  const id = stripModelsPrefix(model);
+  const { thinkingBudget, thinkingLevel } = thinking;
+  const takesXhigh = GEMINI_XHIGH_THINKING_MODEL_IDS.includes(
+    id as (typeof GEMINI_XHIGH_THINKING_MODEL_IDS)[number],
+  );
+
+  if (
+    thinkingLevel !== undefined &&
+    thinkingLevel.toUpperCase() === "MINIMAL" &&
+    GEMINI_NO_MINIMAL_THINKING_MODEL_IDS.includes(
+      id as (typeof GEMINI_NO_MINIMAL_THINKING_MODEL_IDS)[number],
+    )
+  ) {
+    const allowed = GEMINI_THINKING_LEVELS.filter(
+      (level) =>
+        level !== "MINIMAL" &&
+        level !== "THINKING_LEVEL_UNSPECIFIED" &&
+        (level !== "XHIGH" || takesXhigh),
+    );
+    ctx.report({
+      code: "invalid_enum_value",
+      path: [...basePath, "thinkingConfig", "thinkingLevel"],
+      model,
+      message: `\`generationConfig.thinkingConfig.thinkingLevel: "${thinkingLevel}"\` is not supported on "${model}" and returns an error; it accepts ${allowed.join(", ")}.`,
+      meta: { value: thinkingLevel, allowed: [...allowed], source: GEMINI_THINKING_DOCS_URL },
+    });
+  }
+
+  // A warning, never an error: `invalid_enum_value` at `severity: "warning"` is
+  // this module's spelling of "outside the documented set, and no page says it
+  // errors" (S10 argues it).
+  if (thinkingLevel !== undefined && thinkingLevel.toUpperCase() === "XHIGH" && !takesXhigh) {
+    ctx.report({
+      code: "invalid_enum_value",
+      severity: "warning",
+      path: [...basePath, "thinkingConfig", "thinkingLevel"],
+      model,
+      message:
+        `\`generationConfig.thinkingConfig.thinkingLevel: "${thinkingLevel}"\` is documented only on ` +
+        `${GEMINI_XHIGH_THINKING_MODEL_IDS.join(", ")}, not on "${model}". ` +
+        "No page says it returns an error there, so the request is not refused.",
+      meta: {
+        value: thinkingLevel,
+        documentedOn: [...GEMINI_XHIGH_THINKING_MODEL_IDS],
+        source: GEMINI_THINKING_DOCS_URL,
+      },
+    });
+  }
+
+  if (thinkingBudget !== undefined && thinkingLevel !== undefined && isGemini4Model(model)) {
+    ctx.report({
+      code: "invalid_shape",
+      path: [...basePath, "thinkingConfig"],
+      model,
+      message:
+        `\`generationConfig.thinkingConfig\` carries both \`thinkingBudget\` and \`thinkingLevel\`, which "${model}" refuses with a 400 — ` +
+        "send `thinkingLevel` alone (a `thinkingBudget` alone is accepted and mapped to the nearest level with an API warning).",
+      meta: { source: GEMINI_THINKING_DOCS_URL },
     });
   }
 }

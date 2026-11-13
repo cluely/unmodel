@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { tts, TTS_VOICE_URL, INWORLD_TTS_MAX_CHARACTERS } from "./tts";
+import { tts, TTS_VOICE_URL, INWORLD_SAMPLE_RATES_HERTZ, INWORLD_TTS_MAX_CHARACTERS } from "./tts";
 import { models, sttModels, ttsModels, voiceModels } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
@@ -48,27 +48,24 @@ describe("inworld.tts happy path", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
-  test("sampleRateHertz is a closed list, not a range", () => {
-    for (const rate of [8000, 16000, 22050, 24000, 32000, 44100, 48000]) {
-      const ok = safeUnchecked({
+  test("sampleRateHertz is an integer in [8000, 48000]; the common rates are not a closed list", () => {
+    // "Accepts values within the range [8000, 48000]. Common sample rates include: …"
+    for (const rate of [...INWORLD_SAMPLE_RATES_HERTZ, 8000, 11025, 12345, 48000]) {
+      const ok = tts.safe({ text: "x", voiceId: "v", modelId: "inworld-tts-2", audioConfig: { sampleRateHertz: rate } });
+      expect(ok.ok).toBe(true);
+    }
+    for (const rate of [7999, 48001, 16000.5]) {
+      const r = safeUnchecked({
         text: "x",
         voiceId: "v",
         modelId: "inworld-tts-2",
         audioConfig: { sampleRateHertz: rate },
       });
-      expect(ok.ok).toBe(true);
-    }
-    // In the documented [8000, 48000] range, but not a supported rate.
-    const r = safeUnchecked({
-      text: "x",
-      voiceId: "v",
-      modelId: "inworld-tts-2",
-      audioConfig: { sampleRateHertz: 12345 },
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.code).toBe("invalid_shape");
-      expect(r.errors[0]?.path).toEqual(["audioConfig", "sampleRateHertz"]);
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.code).toBe("invalid_shape");
+        expect(r.errors[0]?.path).toEqual(["audioConfig", "sampleRateHertz"]);
+      }
     }
   });
 
@@ -156,9 +153,18 @@ describe("inworld.tts schema enforcement", () => {
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["audioConfig", "sampleRateHertz"]);
   });
 
-  test("temperature 0 is invalid_shape (documented range (0, 2])", () => {
-    const r = safeUnchecked({ text: "x", voiceId: "v", modelId: "inworld-tts-2", temperature: 0 });
-    expect(r.ok).toBe(false);
+  test("temperature takes [0, 2]: 0 selects the default, so it passes", () => {
+    // "If 0 is provided, the default value will be used." — on a model that
+    // honours temperature, so no ignored-param warning rides along.
+    const zero = tts.safe({ text: "x", voiceId: "v", modelId: "inworld-tts-2-flash", temperature: 0 });
+    expect(zero.ok).toBe(true);
+    if (zero.ok) expect(zero.warnings).toEqual([]);
+    expect(tts.safe({ text: "x", voiceId: "v", modelId: "inworld-tts-2-flash", temperature: 2 }).ok).toBe(true);
+    for (const temperature of [-0.1, 2.1]) {
+      const r = safeUnchecked({ text: "x", voiceId: "v", modelId: "inworld-tts-2-flash", temperature });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["temperature"]);
+    }
   });
 
   test("speakingRate outside [0.5, 1.5] is invalid_shape", () => {
@@ -195,14 +201,13 @@ describe("inworld.tts cost estimation (On-Demand list rates)", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.025, 10);
   });
 
-  test("inworld-tts-1.5-max prices at $35/1M and mini at $15/1M", () => {
-    const max = tts.safe({ text: "a".repeat(2000), voiceId: "v", modelId: "inworld-tts-1.5-max" });
-    expect(max.ok).toBe(true);
-    if (max.ok) expect(max.estimate.costUSD).toBeCloseTo(0.07, 10);
-
-    const mini = tts.safe({ text: "a".repeat(2000), voiceId: "v", modelId: "inworld-tts-1.5-mini" });
-    expect(mini.ok).toBe(true);
-    if (mini.ok) expect(mini.estimate.costUSD).toBeCloseTo(0.03, 10);
+  test("the deprecated 1.5 ids are no longer priced on inworld.ai/pricing — no costUSD", () => {
+    for (const modelId of ["inworld-tts-1.5-max", "inworld-tts-1.5-mini"] as const) {
+      expect("cost" in models[modelId]).toBe(false);
+      const r = tts.safe({ text: "a".repeat(2000), voiceId: "v", modelId });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+    }
   });
 
   test("inworld-tts-2-flash prices at $15/1M characters", () => {
@@ -211,7 +216,7 @@ describe("inworld.tts cost estimation (On-Demand list rates)", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.015, 10);
   });
 
-  test("the discontinued 1.x ids are billed at their successor's rate — no costUSD", () => {
+  test("the discontinued 1.x ids are routed to an unnamed newer model — no costUSD", () => {
     for (const modelId of ["inworld-tts-1", "inworld-tts-1-max"]) {
       const r = tts.safe({ text: "a".repeat(1000), voiceId: "v", modelId });
       expect(r.ok).toBe(true);
@@ -251,15 +256,16 @@ describe("inworld catalog", () => {
   });
 });
 
-describe("inworld.tts per-model gates (doc audit 2026-08-13)", () => {
-  test("deliveryMode on a 1.x model is unsupported_param with the doc source", () => {
+describe("inworld.tts per-model gates (doc audit 2026-11-12)", () => {
+  test("deliveryMode on a 1.x model warns: the field is ignored there, the request is served", () => {
     for (const modelId of ["inworld-tts-1.5-max", "inworld-tts-1.5-mini", "inworld-tts-1", "inworld-tts-1-max"]) {
       const r = tts.safe({ text: "x", voiceId: "v", modelId, deliveryMode: "CREATIVE" });
-      expect(r.ok).toBe(false);
-      if (!r.ok) {
-        expect(r.errors[0]?.code).toBe("unsupported_param");
-        expect(r.errors[0]?.path).toEqual(["deliveryMode"]);
-        expect(String(r.errors[0]?.meta?.source)).toContain("synthesize-speech");
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const warning = r.warnings.find((w) => w.code === "unsupported_param");
+        expect(warning?.path).toEqual(["deliveryMode"]);
+        expect(warning?.meta?.ignored).toBe(true);
+        expect(String(warning?.meta?.source)).toContain("synthesize-speech");
       }
     }
   });
@@ -293,5 +299,117 @@ describe("inworld.tts per-model gates (doc audit 2026-08-13)", () => {
     expect(tts.constraintsFor("inworld-tts-1.5-max").at(0)?.deny?.deliveryMode?.reason).toContain(
       "inworld-tts-2",
     );
+  });
+});
+
+describe("inworld.tts request shapes: voiceId, voiceDesign, script", () => {
+  const script = {
+    utterances: [
+      { text: "Welcome to the planetarium.", voiceConfig: { voiceId: "Dennis", speakingRate: 0.9 } },
+      { text: "Look up.", voiceConfig: { voiceId: "Ashley", deliveryMode: "STABLE" as const } },
+    ],
+    voices: [{ voiceId: "Dennis", deliveryMode: "STABLE" as const }],
+  };
+
+  test("a script stands alone: no text, no voiceId; priced on the utterance texts", () => {
+    const r = tts.safe({ script, modelId: "inworld-tts-2", outputMode: "PER_UTTERANCE" });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      // "Usage counts the text across the script once": 27 + 8 characters at $25/1M.
+      expect(r.estimate.costUSD).toBeCloseTo((35 * 25) / 1_000_000, 12);
+    }
+  });
+
+  test("an inline voiceDesign replaces voiceId; its prompt is billed with the text", () => {
+    const designPrompt = "A warm, low-pitched narrator.";
+    const r = tts.safe({ text: "Hello.", voiceDesign: { designPrompt }, modelId: "inworld-tts-2" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(((6 + designPrompt.length) * 25) / 1_000_000, 12);
+  });
+
+  test("the shapes do not mix", () => {
+    const both = safeUnchecked({
+      text: "x",
+      voiceId: "v",
+      voiceDesign: { designPrompt: "A bright young voice." },
+      modelId: "inworld-tts-2",
+    });
+    expect(both.ok).toBe(false);
+    if (!both.ok) expect(both.errors[0]?.path).toEqual(["voiceDesign"]);
+
+    const scripted = safeUnchecked({ script, text: "x", modelId: "inworld-tts-2" });
+    expect(scripted.ok).toBe(false);
+    if (!scripted.ok) expect(scripted.errors.map((e) => e.path)).toEqual([["text"]]);
+
+    const voiceless = safeUnchecked({ text: "x", modelId: "inworld-tts-2" });
+    expect(voiceless.ok).toBe(false);
+    if (!voiceless.ok) expect(voiceless.errors[0]?.path).toEqual(["voiceId"]);
+
+    const textless = safeUnchecked({ voiceId: "v", modelId: "inworld-tts-2" });
+    expect(textless.ok).toBe(false);
+    if (!textless.ok) expect(textless.errors[0]?.path).toEqual(["text"]);
+
+    const perUtterance = safeUnchecked({
+      text: "x",
+      voiceId: "v",
+      modelId: "inworld-tts-2",
+      outputMode: "PER_UTTERANCE",
+    });
+    expect(perUtterance.ok).toBe(false);
+    if (!perUtterance.ok) expect(perUtterance.errors[0]?.path).toEqual(["outputMode"]);
+  });
+
+  test("the type says the same", () => {
+    // @ts-expect-error — "Set either `voiceId` or `voiceDesign`, not both."
+    tts.safe({ text: "x", voiceId: "v", voiceDesign: { designPrompt: "A bright voice." }, modelId: "inworld-tts-2" });
+    // @ts-expect-error — `script` "Replaces top-level `text`, `voiceId`, and `voiceDesign`".
+    tts.safe({ script, text: "x", modelId: "inworld-tts-2" });
+    // @ts-expect-error — "`PER_UTTERANCE` requires `script`."
+    tts.safe({ text: "x", voiceId: "v", modelId: "inworld-tts-2", outputMode: "PER_UTTERANCE" });
+  });
+
+  test("designPrompt is 7–1,024 characters, whitespace not counted toward the minimum", () => {
+    function at(designPrompt: string): ValidateResult<Record<string, unknown>> {
+      return safeUnchecked({ text: "x", voiceDesign: { designPrompt }, modelId: "inworld-tts-2" });
+    }
+    expect(at("A calm.").ok).toBe(true);
+    expect(at("a".repeat(1024)).ok).toBe(true);
+    expect(at("   Calm.   ").ok).toBe(false);
+    expect(at("a".repeat(1025)).ok).toBe(false);
+  });
+
+  test("a script holds 1–100 utterances and its texts share the 2,000-character cap", () => {
+    const utterance = { text: "x", voiceConfig: { voiceId: "v" } };
+    function scriptOf(count: number): ValidateResult<Record<string, unknown>> {
+      return safeUnchecked({
+        script: { utterances: Array.from({ length: count }, () => utterance) },
+        modelId: "inworld-tts-2",
+      });
+    }
+    expect(scriptOf(0).ok).toBe(false);
+    expect(scriptOf(100).ok).toBe(true);
+    expect(scriptOf(101).ok).toBe(false);
+
+    const long = { text: "a".repeat(1001), voiceConfig: { voiceId: "v" } };
+    const r = tts.safe({ script: { utterances: [long, long] }, modelId: "inworld-tts-2" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("over_output_limit");
+      expect(r.errors[0]?.path).toEqual(["script"]);
+      expect(r.errors[0]?.meta).toEqual({ limitCharacters: 2000, actualCharacters: 2002 });
+    }
+  });
+
+  test("per-utterance speakingRate is bounded to [0.5, 1.5]", () => {
+    function at(speakingRate: number): ValidateResult<Record<string, unknown>> {
+      return safeUnchecked({
+        script: { utterances: [{ text: "x", voiceConfig: { voiceId: "v", speakingRate } }] },
+        modelId: "inworld-tts-2",
+      });
+    }
+    expect(at(0.5).ok).toBe(true);
+    expect(at(1.5).ok).toBe(true);
+    expect(at(1.6).ok).toBe(false);
   });
 });

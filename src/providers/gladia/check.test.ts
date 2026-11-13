@@ -14,7 +14,7 @@ describe("gladia.checkPreRecorded", () => {
     expect(report.warnings[0]?.message).toContain("400");
   });
 
-  test("a finished job is priced from billing_time", () => {
+  test("a finished job carries no costUSD: Gladia prices in EUR only", () => {
     const report = checkPreRecorded({
       status: "done",
       request_params: { model: "solaria-1" },
@@ -24,17 +24,19 @@ describe("gladia.checkPreRecorded", () => {
       },
     });
     expect(report.warnings).toEqual([]);
-    // billing_time wins: 30 minutes x ($0.61/hr ÷ 60).
-    expect(report.costUSD).toBeCloseTo(30 * (0.61 / 60), 10);
+    expect(report.costUSD).toBeUndefined();
     expect(report.usage).toEqual({});
   });
 
-  test("audio_duration is the fallback and the default model still prices", () => {
-    const report = checkPreRecorded({
-      status: "done",
-      result: { metadata: { audio_duration: 600 }, transcription: { full_transcript: "hi" } },
-    });
-    expect(report.costUSD).toBeCloseTo(10 * (0.61 / 60), 10);
+  test("the default model and solaria-3 carry no costUSD either", () => {
+    for (const request_params of [undefined, { model: "solaria-3" }]) {
+      const report = checkPreRecorded({
+        status: "done",
+        request_params,
+        result: { metadata: { audio_duration: 600 }, transcription: { full_transcript: "hi" } },
+      });
+      expect(report.costUSD).toBeUndefined();
+    }
   });
 
   test("an empty transcript warns", () => {

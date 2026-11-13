@@ -70,8 +70,17 @@ interface Capability {
    */
   instrumentalProbe?: Partial<MusicParams>;
   durationSeconds: Support;
-  /** The wire field the duration lands in, and the factor applied to it. Absent when `durationSeconds` is unsupported. */
-  duration?: { at: string; perSecond: number };
+  /**
+   * The wire field the duration lands in, and the factor applied to it. Absent
+   * when `durationSeconds` is unsupported. `whole` marks a field that counts
+   * integers even at one unit per second (Mureka's `duration`).
+   */
+  duration?: { at: string; perSecond: number; whole?: boolean };
+  /**
+   * The length the duration probes use, when {@link PROBE_SECONDS} sits outside
+   * the provider's documented range — Mureka's song route takes 120–300 s.
+   */
+  probeSeconds?: number;
   instrumental: Support;
   seed: Support;
   /** Absent when the provider has no output-format field at all. */
@@ -108,7 +117,10 @@ const TABLE: Readonly<Record<string, Capability>> = {
     base: { lyrics: "[Verse]\nBrushed drums under a slow tide." } as Partial<MusicParams>,
     // … and the instrumental route refuses it, so that probe rides alone.
     instrumentalProbe: { instrumental: true },
-    durationSeconds: "unsupported",
+    // The song route's `duration`: whole seconds in [120, 300], mureka-9.5 only.
+    durationSeconds: "native",
+    duration: { at: "duration", perSecond: 1, whole: true },
+    probeSeconds: 180,
     // Three routes, no wire field: `instrumental: true` IS
     // /v1/instrumental/generate, and false-or-absent is one of the two sung
     // routes (see `instrumentalProbe`, and the `minimal` golden case for the
@@ -226,12 +238,13 @@ test("the table covers exactly the providers in the pack", () => {
 
 describe.each(rows)("%s", (provider, row) => {
   const instrumentalExtra = row.instrumentalProbe ?? { instrumental: true };
+  const probeSeconds = row.probeSeconds ?? PROBE_SECONDS;
   const scalars = [
     [
       "durationSeconds",
       row.durationSeconds,
-      PROBE_SECONDS,
-      { durationSeconds: PROBE_SECONDS },
+      probeSeconds,
+      { durationSeconds: probeSeconds },
       false,
     ],
     ["instrumental", row.instrumental, true, instrumentalExtra, row.instrumentalProbe !== undefined],
@@ -278,18 +291,19 @@ describe.each(rows)("%s", (provider, row) => {
       expect(row.durationSeconds).toBe("unsupported");
       return;
     }
-    const compiled = compile(row, { durationSeconds: PROBE_SECONDS });
+    const compiled = compile(row, { durationSeconds: probeSeconds });
     expect(compiled).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
-    expect(compiled.body[row.duration.at]).toBe(PROBE_SECONDS * row.duration.perSecond);
+    expect(compiled.body[row.duration.at]).toBe(probeSeconds * row.duration.perSecond);
   });
 
   test("a duration that is not a whole number of wire units is refused, not rounded", () => {
     if (row.duration === undefined) return;
     // 90.0005 s is 90000.5 ms — expressible at Stability (seconds are
-    // fractional there) and not at ElevenLabs, whose field counts integers.
-    const compiled = compile(row, { durationSeconds: 90.0005 });
-    if (row.duration.perSecond === 1) {
+    // fractional there) and not at ElevenLabs, whose field counts integers,
+    // nor at Mureka, whose seconds are integers.
+    const compiled = compile(row, { durationSeconds: probeSeconds + 0.0005 });
+    if (row.duration.perSecond === 1 && row.duration.whole !== true) {
       expect(compiled).not.toBeInstanceOf(Array);
       return;
     }

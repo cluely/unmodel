@@ -58,6 +58,12 @@ export {
   TTS_OPTIMIZE_STREAMING_LATENCY_LEVELS,
   TTS_SPEED_MIN,
   TTS_SPEED_MAX,
+  TTS_STABILITY_MIN,
+  TTS_STABILITY_MAX,
+  TTS_SIMILARITY_BOOST_MIN,
+  TTS_SIMILARITY_BOOST_MAX,
+  TTS_CLONE_STRENGTH_MIN,
+  TTS_CLONE_STRENGTH_MAX,
 } from "./tts";
 export type {
   TextToSpeechParams,
@@ -350,6 +356,7 @@ export {
   models,
   provider,
   TTS_MODEL_IDS,
+  STREAM_INPUT_MODEL_IDS,
   STT_MODEL_IDS,
   REALTIME_STT_MODEL_IDS,
   MUSIC_MODEL_IDS,
@@ -366,6 +373,7 @@ export {
 export type {
   ElevenlabsModelId,
   ElevenlabsTtsModelId,
+  ElevenlabsStreamInputModelId,
   ElevenlabsSttModelId,
   ElevenlabsRealtimeSttModelId,
   ElevenlabsMusicModelId,

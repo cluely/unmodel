@@ -1,16 +1,18 @@
 // Hand-maintained — Leonardo.Ai is not in models.dev; refresh from
-//   https://docs.leonardo.ai/reference/creategeneration-1 (OpenAPI v2 for POST /generations; ground truth)
-//   https://docs.leonardo.ai/docs/lucid-origin              (Lucid Origin param table + style ids)
-//   https://docs.leonardo.ai/docs/phoenix                   (Phoenix param table + style ids)
-//   https://docs.leonardo.ai/docs/payg-guide                (Pay-As-You-Go billing)
-//   https://docs.leonardo.ai/llms.txt                       (docs index)
-// Verified 2026-08-13.
+//   https://docs.leonardo.ai/reference/creategeneration (OpenAPI v2 for POST /generations; ground truth)
+//   https://docs.leonardo.ai/docs/lucid-origin            (Lucid Origin param table + style ids)
+//   https://docs.leonardo.ai/docs/phoenix                 (Phoenix param table + style ids)
+//   https://docs.leonardo.ai/docs/payg-guide              (Pay-As-You-Go billing)
+//   https://docs.leonardo.ai/llms.txt                     (docs index)
+// Verified 2026-11-12.
 //
-// Scope: Leonardo's own image models on the v2 generations endpoint. The same
-// endpoint routes ~60 third-party models (FLUX, Imagen, Ideogram, Seedream,
-// GPT Image, Kling, Veo, …) plus Leonardo's video/audio/3D models; those belong
-// to their own providers' catalogs and each carries a different `parameters`
-// schema, so they are deliberately absent here.
+// Scope: the image models on the v2 generations endpoint that no other
+// provider in unmodel serves — Lucid, Phoenix, and the nine Elements models
+// below. The same endpoint routes 74 more ids: third-party image, video and 3D
+// models (FLUX, Imagen, Ideogram, Seedream, GPT Image, Kling, Veo, …) plus the
+// Motion video, upscaler, background-removal and audio models. The third-party
+// ones belong to their own providers' catalogs, and every one carries a
+// different `parameters` schema, so they are deliberately absent here.
 //
 // NO PRICING IS RECORDED, on purpose. Leonardo bills API generations from a
 // US-dollar Pay-As-You-Go balance ("Each API generation deducts from this
@@ -33,7 +35,7 @@ export const provider = {
   id: "leonardo",
   name: "Leonardo.Ai",
   env: ["LEONARDO_API_KEY"],
-  doc: "https://docs.leonardo.ai/reference/creategeneration-1",
+  doc: "https://docs.leonardo.ai/reference/creategeneration",
   api: "https://cloud.leonardo.ai/api/rest/v2",
 } as const satisfies ProviderInfo;
 
@@ -73,6 +75,62 @@ export const models = {
     id: "phoenix-v0.9",
     name: "Phoenix 0.9",
     family: "phoenix",
+    limit: { context: 0 },
+  },
+
+  // The nine Elements models (model-rules.ts ELEMENTS_PARAMETERS). Each id is a
+  // discriminator key on https://docs.leonardo.ai/reference/creategeneration
+  // (read 2026-11-12) and each `name` is its schema's `title`, quoted below.
+  // They have no guide page, no vendor prefix and no `family`: no vendor page
+  // names who trained them or a lineage, so none is recorded. No cost, for the
+  // reason in the header.
+
+  // "kino-xl": "#/components/schemas/KinoXlGenerationRequest" — "title": "Cinematic Kino"
+  "kino-xl": { ...base, id: "kino-xl", name: "Cinematic Kino", limit: { context: 0 } },
+  // "anime-xl": "#/components/schemas/AnimeXlGenerationRequest" — "title": "Anime"
+  "anime-xl": { ...base, id: "anime-xl", name: "Anime", limit: { context: 0 } },
+  // "portrait-perfect": "#/components/schemas/PortraitPerfectGenerationRequest" — "title": "Portrait Perfect"
+  "portrait-perfect": {
+    ...base,
+    id: "portrait-perfect",
+    name: "Portrait Perfect",
+    limit: { context: 0 },
+  },
+  // "stock-photography": "#/components/schemas/StockPhotographyGenerationRequest" — "title": "Stock Photography"
+  "stock-photography": {
+    ...base,
+    id: "stock-photography",
+    name: "Stock Photography",
+    limit: { context: 0 },
+  },
+  // "illustrative-albedo": "#/components/schemas/IllustrativeAlbedoGenerationRequest" — "title": "Illustrative Albedo"
+  "illustrative-albedo": {
+    ...base,
+    id: "illustrative-albedo",
+    name: "Illustrative Albedo",
+    limit: { context: 0 },
+  },
+  // "concept-art": "#/components/schemas/ConceptArtGenerationRequest" — "title": "Concept Art"
+  "concept-art": { ...base, id: "concept-art", name: "Concept Art", limit: { context: 0 } },
+  // "lifelike-vision": "#/components/schemas/LifelikeVisionGenerationRequest" — "title": "Lifelike Vision"
+  "lifelike-vision": {
+    ...base,
+    id: "lifelike-vision",
+    name: "Lifelike Vision",
+    limit: { context: 0 },
+  },
+  // "graphic-design": "#/components/schemas/GraphicDesignGenerationRequest" — "title": "Graphic Design"
+  "graphic-design": {
+    ...base,
+    id: "graphic-design",
+    name: "Graphic Design",
+    limit: { context: 0 },
+  },
+  // "lightning-xl": "#/components/schemas/LightningXlGenerationRequest" — "title": "Leonardo Lightning"
+  "lightning-xl": {
+    ...base,
+    id: "lightning-xl",
+    name: "Leonardo Lightning",
     limit: { context: 0 },
   },
 } as const satisfies Record<string, ModelInfo>;

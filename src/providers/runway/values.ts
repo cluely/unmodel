@@ -33,4 +33,4 @@ export {
   SEEDANCE2_SMALL_RATIOS,
   TEXT_TO_VIDEO_MODELS,
   VIDEO_TO_VIDEO_MODELS,
-} from "./constraints";
+} from "./video-lists";

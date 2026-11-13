@@ -61,11 +61,11 @@ export const CODECS = ["mp3", "opus", "pcm_s16le", "pcm_alaw", "pcm_mulaw"] as c
 /**
  * The knobs `generationConfig` has that the vocabulary has no word for.
  *
- * All three are shared by the three models; `thinkingConfig` is not, and that
+ * All three are shared by the five models; `thinkingConfig` is not, and that
  * asymmetry is the reason this is a per-**model** table. `gemini-3.1-flash-tts-preview`
  * is the one reasoning TTS model — `ttsModels`' own `reasoning: true` flag says
  * so, `./tts.ts` states it in the type system as `thinkingConfig?: never` on the
- * other two arms, and `checkGenerationCapabilities` reports it at runtime. This
+ * other arms, and `checkGenerationCapabilities` reports it at runtime. This
  * row is that same fact a third time, in the one place a *unified* caller can
  * see it.
  *
@@ -86,6 +86,18 @@ export const SHARED_EXTRAS = {
 } as const;
 
 export const GOOGLE_TTS_MODEL_PARAMS = {
+  "gemini-3.8-flash-tts": {
+    codecs: CODECS,
+    languages: GEMINI_TTS_LANGUAGE_CODES,
+    voices: GEMINI_TTS_VOICES,
+    extras: SHARED_EXTRAS,
+  },
+  "gemini-3.8-flash-lite-tts": {
+    codecs: CODECS,
+    languages: GEMINI_TTS_LANGUAGE_CODES,
+    voices: GEMINI_TTS_VOICES,
+    extras: SHARED_EXTRAS,
+  },
   "gemini-3.1-flash-tts-preview": {
     codecs: CODECS,
     languages: GEMINI_TTS_LANGUAGE_CODES,

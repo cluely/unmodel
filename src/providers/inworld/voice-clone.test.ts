@@ -87,17 +87,30 @@ describe("inworld.voiceClone documented rules", () => {
     }
   });
 
-  test("an undocumented langCode is invalid_enum_value", () => {
-    const r = voiceClone.safe({ displayName: "n", voiceSamples: [SAMPLE], langCode: "SV_SE" });
+  test("langCode is an open enum: any locale's enum name passes", () => {
+    // "every supported locale has an enum name … `en-GB` becomes `EN_GB`".
+    for (const langCode of ["SV_SE", "EN_GB", "VI", "ES_419"]) {
+      const r = voiceClone.safe({ displayName: "n", voiceSamples: [SAMPLE], langCode });
+      expect(r.ok).toBe(true);
+    }
+  });
+
+  test("a langCode that cannot be an enum name is invalid_enum_value", () => {
+    const r = voiceClone.safe({ displayName: "n", voiceSamples: [SAMPLE], langCode: "en-US" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       const issue = r.errors.find((i) => i.code === "invalid_enum_value");
       expect(issue?.path).toEqual(["langCode"]);
+      expect(issue?.message).toContain("languageCode");
       expect(issue?.meta?.allowed).toEqual([...INWORLD_LANG_CODES]);
     }
   });
 
-  test("a sample over 4MB is media_too_large at its index", () => {
+  test("a sample over 12MB is media_too_large at its index", () => {
+    expect(VOICE_CLONE_MAX_SAMPLE_BYTES).toBe(12 * 1024 * 1024);
+    const underCap = "A".repeat(Math.floor((8 * 1024 * 1024) / 3) * 4);
+    expect(voiceClone.safe({ displayName: "n", voiceSamples: [{ audioData: underCap }] }).ok).toBe(true);
+
     const oversized = "A".repeat(Math.ceil((VOICE_CLONE_MAX_SAMPLE_BYTES + 1024) / 3) * 4);
     const r = voiceClone.safe({
       displayName: "n",

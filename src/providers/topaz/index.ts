@@ -11,8 +11,8 @@
  * - `upscale` — `POST /image/v1/enhance/async`, the Gigapixel family: six
  *   classic (GAN) models that enlarge what is already in the picture.
  * - `upscaleGenerative` — `POST /image/v1/enhance-gen/async`, the Wonder and
- *   Bloom families: nine diffusion models that ADD detail, steered by a prompt
- *   and a creativity dial.
+ *   Bloom families plus Detail: twelve diffusion models that ADD detail, three
+ *   of them (`Redefine`, `Bloom 2`, `Bloom`) steered by a prompt.
  *
  * Two addresses because Topaz publishes two paths with disjoint model enums and
  * different dials — a wire route fork, which is what a qualified address names.
@@ -53,9 +53,10 @@
  *
  * ## What is deliberately NOT here
  *
- * **The rest of the Image API.** `/denoise`, `/sharpen`, `/sharpen-gen`,
- * `/restore-gen` (dust and scratches), `/lighting` (relight, white balance,
- * colorize) and `/matting` (object matting, background removal) are separate
+ * **The rest of the Image API.** `/denoise`, `/denoise-gen` (Denoise Max),
+ * `/sharpen`, `/sharpen-gen`, `/restore-gen` (dust and scratches, Face Recovery
+ * V3), `/lighting` (relight, white balance, colorize, ImageHDR) and `/matting`
+ * (object matting, background removal) are separate
  * routes with their own model enums, and none of them upscales — they clean,
  * sharpen, relight or cut out a picture at the size it arrived. An `upscale`
  * verb that reached them would be an address that no longer names what the
@@ -128,14 +129,8 @@ export type {
   TopazSubjectDetection,
 } from "./shared";
 
-export {
-  CREDIT_USD,
-  MP_PER_CREDIT,
-  TOPAZ_PRICING_FAMILY,
-  topazCostUSD,
-  topazCredits,
-} from "./pricing";
-export type { TopazCostInputs, TopazPricingFamily } from "./pricing";
+export { CREDIT_USD, MP_PER_CREDIT, topazCostUSD, topazCredits } from "./pricing";
+export type { TopazCostInputs } from "./pricing";
 
 export { models, provider } from "./models";
 export type { TopazCatalogModelId } from "./models";

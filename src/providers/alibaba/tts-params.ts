@@ -14,30 +14,13 @@
 import { EXTRA } from "../../core/unified/derive";
 import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { AlibabaLanguageType } from "./models";
-import {
-  LANGUAGE_TYPES,
-  QWEN3_TTS_FLASH_2025_09_18_VOICES,
-  QWEN3_TTS_FLASH_VOICES,
-  QWEN3_TTS_INSTRUCT_FLASH_VOICES,
-} from "./models";
+import { LANGUAGE_TYPES, QWEN3_TTS_FLASH_VOICES } from "./models";
 
-export {
-  LANGUAGE_TYPES,
-  QWEN3_TTS_FLASH_VOICES,
-  QWEN3_TTS_FLASH_2025_09_18_VOICES,
-  QWEN3_TTS_INSTRUCT_FLASH_VOICES,
-  VOICES_BY_MODEL,
-} from "./models";
+export { LANGUAGE_TYPES, QWEN3_TTS_FLASH_VOICES, VOICES_BY_MODEL } from "./models";
 export type { AlibabaLanguageType } from "./models";
 
-/** The five unary (HTTP) TTS ids — the ref union for `alibaba/…`. */
-export const MODELS = [
-  "qwen3-tts-flash",
-  "qwen3-tts-flash-2025-11-27",
-  "qwen3-tts-flash-2025-09-18",
-  "qwen3-tts-instruct-flash",
-  "qwen3-tts-instruct-flash-2026-01-26",
-] as const;
+/** The unary (HTTP) TTS ids — the ref union for `alibaba/…`. */
+export const MODELS = ["qwen3-tts-flash"] as const;
 
 export const TTS_DOCS = "https://www.alibabacloud.com/help/en/model-studio/qwen-tts";
 
@@ -76,45 +59,17 @@ export const TTS_LANGUAGES = Object.keys(
  * the audio encoding — non-streaming answers a fixed WAV URL (24 kHz, 16-bit,
  * mono), streaming answers Base64 PCM — so a canonical `outputFormat` is not
  * expressible and the adapter declares it unsupported. `stream` is the one
- * shared extra (it flips the delivery, see ALIBABA_TTS_DELIVERY); the
- * Instruct rows add the instruction pair. Voices are a closed per-model list
- * on this API — 48 on the Flash pair, 17 on the 2025-09-18 snapshot, 24 on
- * the Instruct pair — so the rows narrow `voice` where almost every other
- * provider leaves it open.
+ * extra (it flips the delivery, see ALIBABA_TTS_DELIVERY). Voices are a
+ * closed list on this API — 48 on Qwen3-TTS-Flash — so the row narrows
+ * `voice` where almost every other provider leaves it open.
  */
-const FLASH_EXTRAS = { stream: EXTRA as boolean } as const;
-
-const INSTRUCT_EXTRAS = {
-  stream: EXTRA as boolean,
-  instructions: EXTRA as string,
-  optimize_instructions: EXTRA as boolean,
-} as const;
-
-const FLASH_ROW = {
-  codecs: [],
-  languages: TTS_LANGUAGES,
-  voices: QWEN3_TTS_FLASH_VOICES,
-  extras: FLASH_EXTRAS,
-} as const;
-
-const INSTRUCT_ROW = {
-  codecs: [],
-  languages: TTS_LANGUAGES,
-  voices: QWEN3_TTS_INSTRUCT_FLASH_VOICES,
-  extras: INSTRUCT_EXTRAS,
-} as const;
-
 export const ALIBABA_TTS_MODEL_PARAMS = {
-  "qwen3-tts-flash": FLASH_ROW,
-  "qwen3-tts-flash-2025-11-27": FLASH_ROW,
-  "qwen3-tts-flash-2025-09-18": {
+  "qwen3-tts-flash": {
     codecs: [],
     languages: TTS_LANGUAGES,
-    voices: QWEN3_TTS_FLASH_2025_09_18_VOICES,
-    extras: FLASH_EXTRAS,
+    voices: QWEN3_TTS_FLASH_VOICES,
+    extras: { stream: EXTRA as boolean },
   },
-  "qwen3-tts-instruct-flash": INSTRUCT_ROW,
-  "qwen3-tts-instruct-flash-2026-01-26": INSTRUCT_ROW,
 } as const satisfies TtsModelParamTable;
 
 /**

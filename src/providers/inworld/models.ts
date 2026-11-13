@@ -4,21 +4,24 @@
 // https://docs.inworld.ai/tts/tts-models,
 // https://docs.inworld.ai/api-reference/sttAPI/speechtotext/transcribe,
 // https://docs.inworld.ai/api-reference/sttAPI/speechtotext/transcribe-stream-websocket,
-// https://docs.inworld.ai/stt/overview, and https://inworld.ai/pricing
-// (last checked 2026-08-13).
+// https://docs.inworld.ai/stt/third-party (the routed-model roster and its
+// per-model endpoint table), and https://inworld.ai/pricing
+// (last checked 2026-11-12).
 //
 // PRICING: the published On-Demand (pay-as-you-go, no commitment) list prices
 // from inworld.ai/pricing — committed plans (Creator/Builder/Developer/
 // Growth/Enterprise) step down from there. TTS is quoted per 1M characters
 // and lands on `perMillionCharacters` unconverted. STT is quoted PER HOUR
-// ("STT 1: $0.15/hr") and `perAudioMinute` is per MINUTE, so it is the hourly
+// ("STT 1 $0.15/hr") and `perAudioMinute` is per MINUTE, so it is the hourly
 // rate / 60. Models without a published USD list price omit `cost` rather
 // than guess — Inworld's pricing table has exactly one STT row ("STT 1"), so
 // the routed third-party models (Groq/AssemblyAI/Soniox/Deepgram) carry no
-// rate here even though the API accepts their ids.
+// rate here even though the API accepts their ids. Its TTS rows are TTS-2 and
+// TTS-2 Flash alone, so the deprecated 1.x generations carry none either.
 //
-// LIMITS: the TTS synthesize endpoint documents "Maximum input of 2,000
-// characters" for `text`, encoded as `limit.characters`. `limit.context: 0`
+// LIMITS: the TTS synthesize endpoint documents "`text` accepts up to **2,000
+// UTF-16 code units** (JavaScript `text.length`)", encoded as
+// `limit.characters`. `limit.context: 0`
 // disables token-window checks — none of these are token models. STT has no
 // character limit; its cap is a ~16 MB request-body cap, which is a property
 // of the endpoint (see transcribe.ts), not of the model.
@@ -50,7 +53,7 @@ const ttsModels = {
     openWeights: false,
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0, characters: 2000 },
-    // On-Demand $25 / 1M characters (inworld.ai/pricing).
+    // On-Demand "TTS-2 $25/1M chars" (inworld.ai/pricing, 2026-11-12).
     cost: { perMillionCharacters: 25 },
   },
   // "Our fastest, most cost-efficient model" — 20ms TTFB (P90).
@@ -64,14 +67,15 @@ const ttsModels = {
     openWeights: false,
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0, characters: 2000 },
-    // On-Demand $15 / 1M characters — "Realtime TTS-2 Flash: $15/1M chars"
-    // (inworld.ai/pricing, re-checked 2026-08-13; the row was absent from an
-    // earlier reading of the page, which is why this cost is newer than the
-    // rest of the file).
+    // On-Demand "TTS-2 Flash $15/1M chars" (inworld.ai/pricing, 2026-11-12).
     cost: { perMillionCharacters: 15 },
   },
-  // Previous generation — deprecated in favor of inworld-tts-2, but the ids
-  // are still accepted (docs.inworld.ai/tts/tts-models).
+  // Previous generation — "Previous-generation models (`inworld-tts-1`,
+  // `inworld-tts-1-max`, `inworld-tts-1.5-max`, `inworld-tts-1.5-mini`) are
+  // deprecated and not recommended for new projects", but the 1.5 ids are
+  // still accepted (docs.inworld.ai/tts/tts-models, 2026-11-12). No `cost`:
+  // inworld.ai/pricing (2026-11-12) prints no 1.5 row, only TTS-2 and TTS-2
+  // Flash.
   "inworld-tts-1.5-max": {
     id: "inworld-tts-1.5-max",
     name: "TTS 1.5 Max",
@@ -83,8 +87,6 @@ const ttsModels = {
     status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0, characters: 2000 },
-    // On-Demand $35 / 1M characters (inworld.ai/pricing).
-    cost: { perMillionCharacters: 35 },
   },
   "inworld-tts-1.5-mini": {
     id: "inworld-tts-1.5-mini",
@@ -97,15 +99,14 @@ const ttsModels = {
     status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0, characters: 2000 },
-    // On-Demand $15 / 1M characters (inworld.ai/pricing).
-    cost: { perMillionCharacters: 15 },
   },
-  // Discontinued 2026-06-15 — requests are automatically routed to the 1.5
-  // successors (inworld-tts-1 → 1.5-mini, inworld-tts-1-max → 1.5-max), so
-  // the ids still resolve; billed at the successor's rate, cost omitted.
+  // "`inworld-tts-1` and `inworld-tts-1-max` were discontinued on **June 15,
+  // 2026**. Requests to those two models are automatically routed to newer
+  // models." (docs.inworld.ai/tts/tts-models, 2026-11-12.) The ids still
+  // resolve; the target model — and so the rate — is unnamed, so no `cost`.
   "inworld-tts-1": {
     id: "inworld-tts-1",
-    name: "TTS 1 (routed to TTS 1.5 Mini)",
+    name: "TTS 1",
     family: "inworld-tts-1",
     attachment: false,
     reasoning: false,
@@ -117,7 +118,7 @@ const ttsModels = {
   },
   "inworld-tts-1-max": {
     id: "inworld-tts-1-max",
-    name: "TTS 1 Max (routed to TTS 1.5 Max)",
+    name: "TTS 1 Max",
     family: "inworld-tts-1",
     attachment: false,
     reasoning: false,
@@ -153,8 +154,8 @@ const STT = {
 } as const;
 
 /**
- * On-Demand "STT 1: $0.15/hr" (inworld.ai/pricing) expressed per minute.
- * The only STT rate Inworld publishes in USD.
+ * On-Demand "STT 1 $0.15/hr" (inworld.ai/pricing, 2026-11-12) expressed per
+ * minute. The only STT row on Inworld's pricing page.
  */
 export const STT_1_USD_PER_MINUTE = 0.15 / 60;
 
@@ -169,8 +170,13 @@ const sttModels = {
     ...STT,
     cost: { perAudioMinute: STT_1_USD_PER_MINUTE },
   },
-  // Routed vendors below. No Inworld-published USD list rate, so no `cost`:
-  // an estimate would be a guess at someone else's margin.
+  // Routed vendors below, all without `cost`. docs.inworld.ai/stt/third-party
+  // (2026-11-12) prints a per-hour row — "| Pricing (per hour) | [$0.10/hr]
+  // (https://inworld.ai/pricing) | $0.111/hr | $0.21/hr | $0.45/hr | $0.12/hr
+  // | $0.12/hr |" — but its inworld-stt-1 cell is $0.10/hr, which
+  // inworld.ai/pricing shows as a committed-plan rate ("STT 1 $0.15
+  // $0.10/hr"; On-Demand is $0.15/hr). The column's tier is unstated, so its
+  // figures cannot be read as On-Demand list prices.
   //
   // Groq — "100+ languages, recorded audio"; SYNC ONLY.
   "groq/whisper-large-v3": {
@@ -192,8 +198,22 @@ const sttModels = {
     family: "assemblyai",
     ...STT,
   },
-  // "Sub-300ms latency multilingual"; the only model that takes
-  // `assemblyaiConfig.prompt` ("Universal-3 Pro only").
+  // docs.inworld.ai/stt/third-party (2026-11-12): "| **Feature** |
+  // **inworld/inworld-stt-1** | **groq/whisper-large-v3** |
+  // **assemblyai/universal-3-5-pro** | …", "| Endpoint | Sync API +
+  // WebSocket | Sync API only | WebSocket only | …" and "| Languages | 30 … |
+  // 100+ (Whisper) | 18 languages | …". Cost omitted — see above.
+  "assemblyai/universal-3-5-pro": {
+    id: "assemblyai/universal-3-5-pro",
+    name: "Universal-3.5 Pro (via AssemblyAI)",
+    family: "assemblyai",
+    ...STT,
+  },
+  // "Sub-300ms latency multilingual"; the model Inworld's assemblyaiConfig
+  // table names for `prompt` ("Universal-3 Pro Streaming only"). The same
+  // page's Realtime AssemblyAI example also sends a `prompt` to
+  // universal-3-5-pro (docs.inworld.ai/stt/third-party, 2026-11-13), so that
+  // route takes it with a warning — see checkTranscribeConfig in ./stt.
   "assemblyai/u3-rt-pro": {
     id: "assemblyai/u3-rt-pro",
     name: "Universal-3 Realtime Pro (via AssemblyAI)",
@@ -293,17 +313,12 @@ export type InworldSttModelId = keyof typeof sttModels;
 export type InworldSttVendor = "inworld" | "groq" | "assemblyai" | "soniox" | "deepgram";
 
 /**
- * Which STT models each endpoint serves. Straight from
- * docs.inworld.ai/stt/overview: "`inworld/inworld-stt-1` supports both Sync
- * API and WebSocket. All other models support either Sync API only (Groq) or
- * WebSocket only (AssemblyAI, Soniox, Deepgram)."
- *
- * Read deliberately literally: the transcribe API reference lists
- * `assemblyai/...`, `soniox/...` and `deepgram/...` ids under `modelId` too,
- * but it does so as "Examples" of the `{provider}/{model-name}` FORMAT, while
- * the overview makes a direct claim about endpoint availability. The overview
- * wins, and the sync validator reports a WebSocket-only id rather than
- * shipping a request that cannot be served.
+ * Which STT models each endpoint serves. Straight from the per-model table on
+ * docs.inworld.ai/stt/third-party (2026-11-12): "| Endpoint | Sync API +
+ * WebSocket | Sync API only | WebSocket only | WebSocket only | WebSocket only
+ * | WebSocket only |" against inworld-stt-1, groq/whisper-large-v3 and the
+ * AssemblyAI and Soniox ids. The sync validator reports a WebSocket-only id
+ * rather than shipping a request that cannot be served.
  */
 export const STT_SYNC_MODEL_IDS = [
   "inworld/inworld-stt-1",
@@ -314,6 +329,7 @@ export const STT_STREAM_MODEL_IDS = [
   "inworld/inworld-stt-1",
   "assemblyai/universal-streaming-multilingual",
   "assemblyai/universal-streaming-english",
+  "assemblyai/universal-3-5-pro",
   "assemblyai/u3-rt-pro",
   "assemblyai/whisper-rt",
   "soniox/stt-rt-v4",

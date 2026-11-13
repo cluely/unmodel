@@ -47,11 +47,22 @@ describe("openai.imageEdit happy path", () => {
     expect({ ...v.toSdk("openai") }).toEqual({ ...v });
   });
 
-  test("model may be omitted (server default gpt-image-1.5)", () => {
-    const r = imageEdit.safe({ image: png(), prompt: "x", input_fidelity: "low" });
+  test("model may be omitted (server default gpt-image-2.5-sunburst)", () => {
+    // "Defaults to `gpt-image-2.5-sunburst`." — createEdit reference, 2026-11-12.
+    // The model-less body is checked against that id's rules: free-form size
+    // and the longer quality ladder pass, and no deprecation warning fires.
+    const r = imageEdit.safe({ image: png(), prompt: "x", input_fidelity: "low", size: "1536x864", quality: "max" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
-    expect(DEFAULT_IMAGE_EDIT_MODEL_ID).toBe("gpt-image-1.5");
+    expect(DEFAULT_IMAGE_EDIT_MODEL_ID).toBe("gpt-image-2.5-sunburst");
+    // ...and the default's free-form size bounds hold without an explicit id.
+    const offGrid = imageEdit.safe({ image: png(), prompt: "x", size: "1000x1000" });
+    expect(offGrid.ok).toBe(false);
+    if (!offGrid.ok) {
+      expect(offGrid.errors[0]?.code).toBe("invalid_enum_value");
+      expect(offGrid.errors[0]?.path).toEqual(["size"]);
+      expect(offGrid.errors[0]?.model).toBe("gpt-image-2.5-sunburst");
+    }
   });
 
   test("up to 16 images pass, 17 do not", () => {
@@ -97,15 +108,22 @@ describe("openai.imageEdit per-model rules", () => {
     }
   });
 
-  test("input_fidelity is denied on gpt-image-1-mini", () => {
-    const r = safeUnchecked({
+  test("input_fidelity takes only low on gpt-image-1-mini", () => {
+    // "Supports `high` and `low` on `gpt-image-1.5`; `gpt-image-1-mini`
+    // supports only `low`." — createEdit reference, 2026-11-12.
+    const low = imageEdit.safe({ model: "gpt-image-1-mini", image: png(), prompt: "x", input_fidelity: "low" });
+    expect(low.ok).toBe(true);
+    const high = safeUnchecked({
       model: "gpt-image-1-mini",
       image: png(),
       prompt: "x",
-      input_fidelity: "low",
+      input_fidelity: "high",
     });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.path).toEqual(["input_fidelity"]);
+    expect(high.ok).toBe(false);
+    if (!high.ok) {
+      expect(high.errors[0]?.code).toBe("invalid_enum_value");
+      expect(high.errors[0]?.path).toEqual(["input_fidelity"]);
+    }
   });
 
   test("transparent background passes on gpt-image-2 — preview support, both ids", () => {
@@ -142,7 +160,7 @@ describe("openai.imageEdit per-model rules", () => {
 
   test("response_format is denied on GPT image models", () => {
     const r = safeUnchecked({
-      model: "gpt-image-1",
+      model: "gpt-image-1.5",
       image: png(),
       prompt: "x",
       response_format: "url",
@@ -263,5 +281,92 @@ describe("openai.imageEdit toFormData", () => {
     expect(form.get("n")).toBe("2");
     expect(form.get("quality")).toBeNull();
     expect(form.get("mask")).toBeInstanceOf(Blob);
+  });
+});
+
+/** GPT-Image-2.5 / 2.6 on edits — createEdit reference and changelog, read 2026-11-12. */
+describe("openai.imageEdit GPT-Image-2.5 / 2.6", () => {
+  const IDS = [
+    "gpt-image-2.5-sunburst",
+    "gpt-image-2.5-sunburst-2026-09-08",
+    "gpt-image-2.5-flare",
+    "gpt-image-2.5-flare-2026-09-08",
+    "gpt-image-2.6-sunburst",
+    "gpt-image-2.6-flare",
+  ] as const;
+
+  test("every id edits with the free-form size, the longer ladder and input_fidelity", () => {
+    for (const model of IDS) {
+      const r = imageEdit.safe({
+        model,
+        image: png(),
+        prompt: "x",
+        size: "1536x864",
+        quality: "max",
+        input_fidelity: "high",
+      });
+      expect(r.ok, model).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("markup is accepted on 2.5 and 2.6 and cannot be combined with mask", () => {
+    expect(
+      imageEdit.safe({ model: "gpt-image-2.5-sunburst", image: png(), prompt: "x", markup: png() }).ok,
+    ).toBe(true);
+    expect(
+      imageEdit.safe({ model: "gpt-image-2.6-sunburst", image: png(), prompt: "x", markup: png() }).ok,
+    ).toBe(true);
+    const r = imageEdit.safe({
+      model: "gpt-image-2.5-flare",
+      image: png(),
+      prompt: "x",
+      markup: png(),
+      mask: png(),
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["markup"]);
+  });
+
+  test("GIF output refuses a mask; svg is sent as written on 2.6 edits", () => {
+    const gif = imageEdit.safe({
+      model: "gpt-image-2.6-flare",
+      image: png(),
+      prompt: "x",
+      output_format: "gif",
+      mask: png(),
+    });
+    expect(gif.ok).toBe(false);
+    if (!gif.ok) expect(gif.errors[0]?.path).toEqual(["mask"]);
+    // The edit reference lists svg and the guide says edits do not support it —
+    // two pages conflict and no 400 is on record, so the request goes as written.
+    expect(
+      imageEdit.safe({ model: "gpt-image-2.6-flare", image: png(), prompt: "x", output_format: "svg" }).ok,
+    ).toBe(true);
+  });
+
+  test("svg.reasoning takes `minimal` and a null reasoning object", () => {
+    for (const reasoning of [{ effort: "minimal" as const }, null]) {
+      const r = imageEdit.safe({
+        model: "gpt-image-2.6-flare",
+        image: png(),
+        prompt: "x",
+        output_format: "svg",
+        svg: { model: "gpt-5", reasoning },
+      });
+      expect(r.ok, JSON.stringify(reasoning)).toBe(true);
+    }
+  });
+});
+
+describe("openai.imageEdit safety_identifier", () => {
+  // Scoped to no model on the createEdit reference, `maxLength: 128`.
+  test("a pre-2.6 model takes it, and 129 characters is refused", () => {
+    expect(
+      imageEdit.safe({ model: "gpt-image-2.5-flare", image: png(), prompt: "x", safety_identifier: "user-1234" }).ok,
+    ).toBe(true);
+    const r = imageEdit.safe({ model: "gpt-image-1.5", image: png(), prompt: "x", safety_identifier: "u".repeat(129) });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["safety_identifier"]);
   });
 });

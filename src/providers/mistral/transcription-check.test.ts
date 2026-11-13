@@ -29,6 +29,15 @@ describe("mistral.checkTranscription", () => {
     expect(report.costUSD).toBeCloseTo(0.003, 10);
   });
 
+  test("Voxtral Mini Transcribe 3 prices at $0.0035/min", () => {
+    const report = checkTranscription({
+      model: "voxtral-mini-transcribe-3",
+      text: "hi",
+      usage: { prompt_audio_seconds: 600 },
+    });
+    expect(report.costUSD).toBeCloseTo(0.035, 10);
+  });
+
   test("an empty transcript warns", () => {
     const report = checkTranscription({
       model: "voxtral-mini-2602",
@@ -43,9 +52,10 @@ describe("mistral.checkTranscription", () => {
     expect(
       checkTranscription({ model: "voxtral-mini-2699", usage: { prompt_audio_seconds: 60 } }).costUSD,
     ).toBeUndefined();
-    // voxtral-mini-2507 carries no published rate.
+    // A catalogued id with no per-minute rate (the TTS alias) prices nothing.
     expect(
-      checkTranscription({ model: "voxtral-mini-2507", usage: { prompt_audio_seconds: 60 } }).costUSD,
+      checkTranscription({ model: "voxtral-mini-tts-latest", usage: { prompt_audio_seconds: 60 } })
+        .costUSD,
     ).toBeUndefined();
     expect(checkTranscription({ model: "voxtral-mini-2602", text: "hi" }).costUSD).toBeUndefined();
   });

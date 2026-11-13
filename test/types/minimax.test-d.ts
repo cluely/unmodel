@@ -1,13 +1,78 @@
 /**
- * Type-level tests for the minimax provider's video routes. NOT run by
- * `bun test` — this file is only type-checked (`bun run check` / tsc
- * --noEmit). MiniMax ships no official JS SDK for these routes, so the tests
- * exercise the closed enum unions on the raw wire params.
+ * Type-level tests for the minimax provider's video routes and its chat
+ * content parts. NOT run by `bun test` — this file is only type-checked
+ * (`bun run check` / tsc --noEmit). MiniMax ships no official JS SDK for
+ * these routes, so the tests exercise the closed enum unions on the raw wire
+ * params.
  */
-import { video, videoV2, checkTts, MINIMAX_BASE_RESP_INFO } from "../../src/providers/minimax";
+import { chat, video, videoV2, checkTts, MINIMAX_BASE_RESP_INFO } from "../../src/providers/minimax";
+import { chat as groqChat } from "../../src/providers/groq";
+import { chat as unifiedChat } from "../../src/chat/index";
 import type { MinimaxBaseRespInfo } from "../../src/providers/minimax";
 import type { MinimaxV2ContentType, MinimaxV2Role } from "../../src/providers/minimax";
-import { expectAssignable } from "./helpers";
+import type { ChatBody } from "../../src/providers/minimax/types";
+import type { MinimaxTextModelId } from "../../src/catalog/minimax.gen";
+import type { ChatCompletionsBodyBase } from "../../src/providers/openai-compatible/wire";
+import { expectAssignable, expectNotNever } from "./helpers";
+
+/**
+ * `video_url` parts and `image_url.detail: "default"` are minimax's widening
+ * of the shared dialect (openapi-chat-openai.json `MessageContentPart`,
+ * 2026-11-12): the validator's parameter type takes them, the shared
+ * dialect's does not, and every shared-dialect body is still a minimax body
+ * (what `unmodel/chat` compiles for `minimax/…` refs).
+ */
+function chatContentPartTypeTests(): void {
+  chat({
+    model: "MiniMax-M3.1-Flash",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "describe" },
+          { type: "image_url", image_url: { url: "https://x/a.png", detail: "default", max_long_side_pixel: 1024 } },
+          { type: "video_url", video_url: { url: "mm_file://file_id", detail: "high", fps: 2 } },
+        ],
+      },
+    ],
+  });
+
+  const body = {
+    model: "MiniMax-M3",
+    messages: [{ role: "user", content: [{ type: "video_url", video_url: { url: "https://x/v.mp4" } }] }],
+  } satisfies ChatBody;
+  void body;
+
+  chat({
+    model: "MiniMax-M3",
+    messages: [
+      {
+        role: "user",
+        // @ts-expect-error — `auto` is not one of MiniMax's per-frame video levels.
+        content: [{ type: "video_url", video_url: { url: "https://x/v.mp4", detail: "auto" } }],
+      },
+    ],
+  });
+
+  groqChat({
+    model: "llama-3.3-70b-versatile",
+    messages: [
+      {
+        role: "user",
+        // @ts-expect-error — the shared dialect has no video part.
+        content: [{ type: "video_url", video_url: { url: "https://x/v.mp4" } }],
+      },
+    ],
+  });
+
+  expectAssignable<ChatBody>({} as ChatCompletionsBodyBase<MinimaxTextModelId>);
+
+  // The registry instantiates minimax's result kind against the compiled
+  // openai-chat body; the wider `Body` must not collapse it to `never`.
+  const compiled = unifiedChat({ model: "minimax/MiniMax-M3", messages: [{ role: "user", content: "hi" }] });
+  expectNotNever<typeof compiled>();
+  expectAssignable<string>(compiled.request.url);
+}
 
 function videoGenerationTypeTests(): void {
   // VIDEO_RESOLUTIONS is the complete documented set; per-model narrowing
@@ -48,10 +113,44 @@ function videoGenerationV2TypeTests(): void {
     ratio: "21:9",
   });
 
+  // The H3 variants are model literals, and 480P is on the route (theirs —
+  // MiniMax-H3 itself renders 768P/2K, which the runtime checks per model).
+  videoV2({
+    model: "MiniMax-H3-Highspeed",
+    content: [{ type: "text", text: "hi" }],
+    resolution: "480P",
+    duration: 6,
+    ratio: "16:9",
+  });
+  videoV2({
+    model: "MiniMax-H3-Lite",
+    content: [{ type: "text", text: "hi" }],
+    resolution: "768P",
+    duration: 4,
+    ratio: "9:16",
+  });
+  videoV2({
+    model: "MiniMax-H3-Max",
+    content: [{ type: "text", text: "hi" }],
+    resolution: "480P",
+    duration: 5,
+    ratio: "1:1",
+    extra: { prompt_expansion_mode: "quality" },
+  });
+  videoV2({
+    model: "MiniMax-H3-Max",
+    content: [{ type: "text", text: "hi" }],
+    resolution: "768P",
+    duration: 5,
+    ratio: "1:1",
+    // @ts-expect-error — "balance" is the misspelling the docs warn about; the mode is "balanced"
+    extra: { prompt_expansion_mode: "balance" },
+  });
+
   videoV2({
     model: "MiniMax-H3",
     content: [{ type: "text", text: "hi" }],
-    // @ts-expect-error — 768P and 2K are the whole documented set on this route
+    // @ts-expect-error — 480P, 768P and 2K are the whole documented set on this route
     resolution: "1080P",
     duration: 6,
     ratio: "16:9",
@@ -154,6 +253,7 @@ function baseRespInfoTypeTests(): void {
 }
 
 export {
+  chatContentPartTypeTests,
   videoGenerationTypeTests,
   videoGenerationV2TypeTests,
   videoV2ContentVocabularyTypeTests,

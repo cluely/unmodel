@@ -24,4 +24,4 @@ export {
   RIME_TTS_DELIVERY as TTS_DELIVERY,
 } from "./tts-params";
 
-export { ARCANA_MODEL_IDS, LANGUAGES, MIST_LANGUAGES, RIME_MODEL_IDS } from "./models";
+export { LANGUAGES, MIST_LANGUAGES, RIME_MODEL_IDS } from "./models";

@@ -22,6 +22,9 @@
  * caller never wrote. Doing it here means one table and warning paths in the
  * vocabulary the caller actually typed (`["reasoning", "effort"]`).
  *
+ * Where effort levels are per MODEL (Chat Completions), the caller also passes
+ * the model's ladder, read from its provider validator — never written here.
+ *
  * The other two target-conditional bits fall out of the same argument:
  * `providerOptions` has to know which bucket is the live one, and Gemini's
  * `stream` is a *method* (`:streamGenerateContent`), not a body flag, so the
@@ -273,12 +276,17 @@ function encodeNativeTool(
 // ---------------------------------------------------------------------------
 
 /**
- * Each dialect's effort vocabulary, verbatim.
+ * The effort levels each dialect is sent when the target model documents no
+ * ladder of its own — the fallback {@link narrowEffort} uses without one.
  *
- * - `openai-chat`: `reasoning_effort` — `minimal | low | medium | high`.
+ * - `openai-chat`: `reasoning_effort` — `minimal | low | medium | high`. Not the
+ *   wire, which is open: `xhigh`/`max` are per-model (GPT-6 takes both,
+ *   `gpt-5.5` only `xhigh`), so without a ladder either becomes `high`.
  * - `anthropic-messages`: `output_config.effort` — `low | medium | high | xhigh | max`.
  *   No `minimal`.
- * - `gemini`: `thinkingConfig.thinkingLevel` — `MINIMAL | LOW | MEDIUM | HIGH`.
+ * - `gemini`: `thinkingConfig.thinkingLevel` — `MINIMAL | LOW | MEDIUM | HIGH | XHIGH`
+ *   (`XHIGH` is documented on `gemini-4-hydrogen` only; `google.chat` warns
+ *   when it is sent to any other model, and does not refuse it).
  * - `bedrock-converse`: no codec in v1, so nothing consumes this; listed with
  *   the full union so adding the codec is a decision made there, not a
  *   silent clamp inherited from here.
@@ -286,7 +294,7 @@ function encodeNativeTool(
 const EFFORT_VOCABULARY: Readonly<Record<DialectId, ReadonlySet<ChatReasoningEffort>>> = {
   "openai-chat": new Set<ChatReasoningEffort>(["minimal", "low", "medium", "high"]),
   "anthropic-messages": new Set<ChatReasoningEffort>(["low", "medium", "high", "xhigh", "max"]),
-  gemini: new Set<ChatReasoningEffort>(["minimal", "low", "medium", "high"]),
+  gemini: new Set<ChatReasoningEffort>(["minimal", "low", "medium", "high", "xhigh"]),
   "bedrock-converse": new Set<ChatReasoningEffort>([
     "minimal",
     "low",
@@ -304,25 +312,55 @@ const HAS_BUDGET: ReadonlySet<DialectId> = new Set<DialectId>([
   "bedrock-converse",
 ]);
 
+/** The canonical effort scale, least thinking first. */
+const EFFORT_ORDER: readonly ChatReasoningEffort[] = [
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+];
+
 /**
- * Narrows an effort to what the target can say, in the only direction that is
- * safe: **towards more thinking, never less**. `xhigh`/`max` collapse to
- * `high` (the target's ceiling) and `minimal` rises to `low` (its floor). The
- * alternative — dropping the level and letting the model choose — turns an
- * explicit "think hard about this" into silence.
+ * Narrows an effort to what the target can say, preferring **more thinking,
+ * never less**. The alternative — dropping the level and letting the model
+ * choose — turns an explicit "think hard about this" into silence.
+ *
+ * With the target model's documented ladder (`modelLevels`, the provider
+ * validator's own enum row), a level on it is sent verbatim; otherwise the
+ * nearest level above it is sent, or the ladder's top when nothing is above.
+ * Without one, the dialect's {@link EFFORT_VOCABULARY} decides: `minimal`
+ * rises to `low` and `xhigh`/`max` become `high`.
  */
 function narrowEffort(
   effort: ChatReasoningEffort,
   dialect: DialectId,
   path: Array<string | number>,
   warn: Warn,
+  modelLevels: readonly string[] | undefined,
 ): string {
+  const ladder = EFFORT_ORDER.filter((level) => modelLevels?.includes(level) === true);
+  const top = ladder[ladder.length - 1];
+  if (top !== undefined) {
+    if (ladder.includes(effort)) return effort;
+    const rank = EFFORT_ORDER.indexOf(effort);
+    const above = ladder.find((level) => EFFORT_ORDER.indexOf(level) > rank);
+    const narrowed = above ?? top;
+    warn({
+      code: "approximated_param",
+      path,
+      message: `\`reasoning\` effort "${effort}" is not one of the target model's documented levels (${ladder.join(", ")}); it was mapped to "${narrowed}", ${above === undefined ? "its highest level" : "the nearest level above it"}.`,
+      meta: { from: effort, to: narrowed, dialect, levels: ladder },
+    });
+    return narrowed;
+  }
   if (EFFORT_VOCABULARY[dialect].has(effort)) return effort;
   const narrowed = effort === "minimal" ? "low" : "high";
   warn({
     code: "approximated_param",
     path,
-    message: `\`reasoning\` effort "${effort}" is not one of ${dialect}'s levels (${[...EFFORT_VOCABULARY[dialect]].join(", ")}); it was mapped to "${narrowed}", which is the closest this target can express.`,
+    message: `\`reasoning\` effort "${effort}" is not one of the levels ${dialect} is sent when the target model documents no ladder of its own (${[...EFFORT_VOCABULARY[dialect]].join(", ")}); it was mapped to "${narrowed}", the closest of them.`,
     meta: { from: effort, to: narrowed, dialect },
   });
   return narrowed;
@@ -336,33 +374,40 @@ function narrowEffort(
  * on every provider: dialects with a real token budget take the budget,
  * dialects without one take the bucket. **No warning**, because nothing was
  * approximated: each target got the more precise of the two controls it
- * actually has.
+ * actually has. The budget dialects carry the effort beside the budget,
+ * because "has a budget" is per model, not per dialect: anthropic-messages
+ * has none from Claude 4.7 on, and its decoder sends the effort there.
  */
 function encodeReasoning(
   reasoning: ChatReasoning,
   dialect: DialectId,
   warn: Warn,
+  modelLevels: readonly string[] | undefined,
 ): IRReasoning | undefined {
   if (reasoning === false || reasoning === "off") return { mode: "off" };
   if (typeof reasoning === "string") {
     // Shorthand: the caller wrote `reasoning: "high"`, so the warning path is
     // the param itself, not a field inside it.
-    return { mode: "effort", effort: narrowEffort(reasoning, dialect, ["reasoning"], warn) };
+    return {
+      mode: "effort",
+      effort: narrowEffort(reasoning, dialect, ["reasoning"], warn, modelLevels),
+    };
   }
   const hasEffort = "effort" in reasoning && reasoning.effort !== undefined;
   const hasBudget = "budgetTokens" in reasoning && reasoning.budgetTokens !== undefined;
   if (hasEffort && hasBudget) {
+    const effort = (reasoning as { effort: ChatReasoningEffort }).effort;
     return HAS_BUDGET.has(dialect)
-      ? { mode: "budget", budgetTokens: (reasoning as { budgetTokens: number }).budgetTokens }
-      : {
-          mode: "effort",
-          effort: narrowEffort(
-            (reasoning as { effort: ChatReasoningEffort }).effort,
-            dialect,
-            ["reasoning", "effort"],
-            warn,
-          ),
-        };
+      ? {
+          mode: "budget",
+          budgetTokens: (reasoning as { budgetTokens: number }).budgetTokens,
+          // Carried only when the dialect already says it, never narrowed: the
+          // decoder speaks it only on a target model with no budget, and a
+          // narrowing warning here would fire on every model that takes the
+          // budget instead. Off-vocabulary, that decoder buckets the budget.
+          ...(EFFORT_VOCABULARY[dialect].has(effort) && { effort }),
+        }
+      : { mode: "effort", effort: narrowEffort(effort, dialect, ["reasoning", "effort"], warn, modelLevels) };
   }
   if (hasBudget) {
     return { mode: "budget", budgetTokens: (reasoning as { budgetTokens: number }).budgetTokens };
@@ -375,6 +420,7 @@ function encodeReasoning(
         dialect,
         ["reasoning", "effort"],
         warn,
+        modelLevels,
       ),
     };
   }
@@ -416,9 +462,17 @@ export interface ChatEncoding {
  * @param warn the loss sink. Paths are in **unified** param space
  * (`["reasoning", "effort"]`, `["messages", 2, "content", 0]`) — the caller
  * never wrote a wire spelling and should never be shown one.
+ * @param effortLevels the target model's documented effort ladder, when its
+ * provider validator's constraint table has one; reasoning effort narrows to
+ * it instead of to the dialect-wide fallback.
  */
-export function encodeUnified(params: ChatParams, targetDialect: DialectId, warn: Warn): ChatIR {
-  return encodeChat(params, targetDialect, warn).ir;
+export function encodeUnified(
+  params: ChatParams,
+  targetDialect: DialectId,
+  warn: Warn,
+  effortLevels?: readonly string[],
+): ChatIR {
+  return encodeChat(params, targetDialect, warn, effortLevels).ir;
 }
 
 /** {@link encodeUnified}, plus the message-index map the wire-path tables need. */
@@ -426,6 +480,7 @@ export function encodeChat(
   params: ChatParams,
   targetDialect: DialectId,
   warn: Warn,
+  effortLevels?: readonly string[],
 ): ChatEncoding {
   const ref = parseModelRef(params.model);
   const ir = emptyIR(targetDialect, ref?.modelId ?? params.model);
@@ -606,7 +661,7 @@ export function encodeChat(
   }
 
   if (params.reasoning !== undefined) {
-    const reasoning = encodeReasoning(params.reasoning, targetDialect, warn);
+    const reasoning = encodeReasoning(params.reasoning, targetDialect, warn, effortLevels);
     if (reasoning !== undefined) s.reasoning = reasoning;
   }
 

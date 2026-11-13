@@ -257,7 +257,7 @@ function extrasNarrowingTests(): void {
   // everywhere and is refused at run time by the adapter that has no field for
   // it. That asymmetry is deliberate: the vocabulary is the same five words at
   // every provider, and which of them a route can honour is a run-time answer
-  // with a message. VEED publishes no seed on any of its ten operations.
+  // with a message. VEED publishes no seed on any of its operations.
   lipsync({ model: "veed/lipsync-2.0", source: URL_SOURCE, audio: URL_AUDIO, seed: 7 });
 
   // The REAL `model` wire field, on the one endpoint that has one — and the

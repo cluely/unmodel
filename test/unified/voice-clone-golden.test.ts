@@ -19,12 +19,6 @@
  * MiniMax has its own `caller-id*` cases and appears in no shared one. That
  * asymmetry is the vocabulary telling the truth about the wires, and the
  * matrix documents it rather than papering over it.
- *
- * ## The one standing issue-channel warning
- *
- * Fish Audio's wire validator warns whenever `visibility` is omitted (the
- * public-by-default footgun), so every fish fixture without an explicit
- * visibility pins that issue — the warning is the point, not noise.
  */
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
@@ -60,7 +54,7 @@ interface Fixture {
   headers: Record<string, string>;
   /** Required on `lossy-*` cases, forbidden elsewhere. */
   warnings?: ExpectedWarning[];
-  /** Issue-space warnings (fish's visibility-omitted footgun, …). */
+  /** Issue-space warnings — a separate channel from the compile warnings. */
   issues?: Array<{ code: string; path: Array<string | number> }>;
 }
 
@@ -149,7 +143,7 @@ describe.each(caseDirs)("golden voice-clone/%s", (name) => {
       expect(comparable(warnings)).toEqual(comparable(fixture.warnings ?? []));
       if (!lossy) expect(warnings).toEqual([]);
       // Issue-space warnings are a separate channel with a separate meaning;
-      // pinned, so fish's visibility footgun cannot disappear quietly.
+      // pinned, so a provider's wire warning cannot appear or vanish quietly.
       expect(
         result.warnings.map((issue) => ({ code: String(issue.code), path: issue.path })),
       ).toEqual(fixture.issues ?? []);

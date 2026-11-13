@@ -46,23 +46,6 @@ describe("lightricks.videoFromImage", () => {
     }
   });
 
-  test("last_frame_uri is rejected on the deprecated LTX-2 models", () => {
-    const r = videoFromImage.safe({
-      model: "ltx-2-pro",
-      image_uri: "https://example.com/a.png",
-      last_frame_uri: "https://example.com/b.png",
-      prompt: "hi",
-      resolution: "1280x720",
-      duration: 6,
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors.find((e) => e.code === "unsupported_param")?.path).toEqual([
-        "last_frame_uri",
-      ]);
-    }
-  });
-
   test("last_frame_uri cannot ride with automatic duration", () => {
     const r = videoFromImage.safe({
       model: "ltx-2-5-fast",
@@ -108,13 +91,14 @@ describe("lightricks.videoFromImage", () => {
 describe("lightricks.videoFromImage preset unions", () => {
   const IMG = "https://example.com/a.png";
 
-  test("every LtxResolution and LtxFps preset passes on ltx-2-3-pro", () => {
-    // Keep in sync with LtxResolution / LtxFps in shared.ts — ltx-2-3-pro is
-    // the model whose published matrix accepts all four tiers and all four
-    // frame rates at a 6s duration, so both unions are looped against it.
+  test("every LtxResolution and LtxFps preset passes on ltx-2-5-pro", () => {
+    // Keep in sync with LtxResolution / LtxFps in shared.ts — ltx-2-5-pro is
+    // a model whose published matrix accepts all four tiers in all five shapes
+    // and all four frame rates at a 6s duration, so both unions are looped
+    // against it.
     for (const resolution of LTX_RESOLUTIONS) {
       const r = videoFromImage.safe({
-        model: "ltx-2-3-pro",
+        model: "ltx-2-5-pro",
         image_uri: IMG,
         prompt: "hi",
         resolution,
@@ -126,7 +110,7 @@ describe("lightricks.videoFromImage preset unions", () => {
 
     for (const fps of LTX_FPS_VALUES) {
       const r = videoFromImage.safe({
-        model: "ltx-2-3-pro",
+        model: "ltx-2-5-pro",
         image_uri: IMG,
         prompt: "hi",
         resolution: "1920x1080",
@@ -157,6 +141,8 @@ describe("lightricks.videoFromImage preset unions", () => {
 });
 
 describe("lightricks.videoFromAudio", () => {
+  const AUDIO = "https://example.com/vo.mp3";
+
   test("wire-pure body and default model", () => {
     const v = videoFromAudio({
       audio_uri: "https://example.com/vo.mp3",
@@ -186,48 +172,104 @@ describe("lightricks.videoFromAudio", () => {
     if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
   });
 
-  test("resolution is 1080p-only here", () => {
-    const r = safeUnchecked({
-      audio_uri: "https://example.com/vo.mp3",
+  test("resolution follows the text-to-video matrix, per model", () => {
+    // 720p through 4K on every model with an arm; LTX-2.5 adds 1:1, 3:2, 2:3.
+    const cases = [
+      { model: "ltx-2-3-pro", resolution: "1280x720" },
+      { model: "ltx-2-3-pro", resolution: "2160x3840" },
+      { model: "ltx-2-5-pro", resolution: "3840x2160" },
+      { model: "ltx-2-5-fast", resolution: "1080x1080" },
+      { model: "ltx-2-5-pro", resolution: "2160x3240" },
+    ] as const;
+    for (const { model, resolution } of cases) {
+      const r = videoFromAudio.safe({ audio_uri: AUDIO, prompt: "hi", model, resolution });
+      expect(r.ok, `${model} ${resolution}`).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+    // The default model is LTX-2.3, which has only 16:9 and 9:16.
+    const square = videoFromAudio.safe({ audio_uri: AUDIO, prompt: "hi", resolution: "1080x1080" });
+    expect(square.ok).toBe(false);
+    if (!square.ok) {
+      const issue = square.errors.find((e) => e.code === "invalid_enum_value");
+      expect(issue?.path).toEqual(["resolution"]);
+      expect(issue?.model).toBe("ltx-2-3-pro");
+      expect(issue?.meta?.allowed).toContain("1280x720");
+    }
+  });
+
+  test("fps is checked against the matrix, at the default tier when resolution is omitted", () => {
+    const ok = videoFromAudio.safe({ audio_uri: AUDIO, prompt: "hi", model: "ltx-2-5-pro", fps: 48 });
+    expect(ok.ok).toBe(true);
+    const bad = safeUnchecked({ audio_uri: AUDIO, prompt: "hi", fps: 30 });
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) {
+      const issue = bad.errors.find((e) => e.code === "invalid_enum_value");
+      expect(issue?.path).toEqual(["fps"]);
+      expect(issue?.meta?.allowed).toEqual([24, 25, 48, 50]);
+      // Without an image the server default is exactly 1920x1080.
+      expect(issue?.meta?.resolution).toBe("1920x1080");
+      expect(issue?.message).toContain("at 1920x1080 ");
+    }
+  });
+
+  test("with an image and no resolution, the fps issue names the tier, not one orientation", () => {
+    // The server follows the image's orientation (1920x1080 or 1080x1920).
+    const bad = safeUnchecked({
+      audio_uri: AUDIO,
+      image_uri: "https://example.com/first.png",
       prompt: "hi",
-      resolution: "1280x720",
+      fps: 30,
+    });
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) {
+      const issue = bad.errors.find((e) => e.code === "invalid_enum_value");
+      expect(issue?.path).toEqual(["fps"]);
+      expect(issue?.meta?.allowed).toEqual([24, 25, 48, 50]);
+      expect(issue?.meta?.resolution).toBeUndefined();
+      expect(issue?.meta?.tier).toBe("1080p");
+      expect(issue?.message).not.toContain("at 1920x1080");
+      expect(issue?.message).toContain("1080x1920 for a portrait image");
+    }
+  });
+
+  test("ltx-2-3-fast gets the route refusal only, not a matrix one too", () => {
+    const r = safeUnchecked({ audio_uri: AUDIO, prompt: "hi", model: "ltx-2-3-fast", fps: 30 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.map((e) => e.code)).toEqual(["unsupported_capability"]);
+  });
+
+  test("last_frame_uri and camera_motion ride the wire", () => {
+    const v = videoFromAudio({
+      audio_uri: AUDIO,
+      image_uri: "https://example.com/first.png",
+      last_frame_uri: "https://example.com/last.png",
+      camera_motion: "jib_up",
+    });
+    expect(Object.keys(v)).toEqual(["audio_uri", "image_uri", "last_frame_uri", "camera_motion"]);
+  });
+
+  test("last_frame_uri requires image_uri", () => {
+    const r = videoFromAudio.safe({
+      audio_uri: AUDIO,
+      prompt: "hi",
+      last_frame_uri: "https://example.com/last.png",
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.path).toEqual(["resolution"]);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_shape");
+      expect(r.errors[0]?.path).toEqual(["last_frame_uri"]);
+    }
+  });
+
+  test("camera_motion is the closed enum", () => {
+    const r = safeUnchecked({ audio_uri: AUDIO, prompt: "hi", camera_motion: "orbit" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["camera_motion"]);
   });
 
   test("no cost estimate — billing follows the input audio", () => {
     const r = videoFromAudio.safe({ audio_uri: "https://example.com/vo.mp3", prompt: "hi" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
-  });
-});
-
-describe("lightricks.videoFromImage deprecated LTX-2 support matrix", () => {
-  // Same gap as text-to-video: both arms share `checkSupportMatrix`, so the
-  // deprecation-notice matrix has to bound `duration` on this route too.
-  test.each(["ltx-2-fast", "ltx-2-pro"])("%s rejects an absurd duration", (model) => {
-    const r = videoFromImage.safe({
-      model,
-      image_uri: "https://example.com/a.png",
-      prompt: "x",
-      duration: 10_000_000_000,
-      resolution: "1920x1080",
-    });
-    expect(r.ok).toBe(false);
-    if (r.ok) return;
-    expect(r.errors.find((e) => e.code === "invalid_enum_value")?.path).toEqual(["duration"]);
-  });
-
-  test.each(["ltx-2-fast", "ltx-2-pro"])("%s accepts a documented duration", (model) => {
-    const r = videoFromImage.safe({
-      model,
-      image_uri: "https://example.com/a.png",
-      prompt: "x",
-      duration: 8,
-      resolution: "1920x1080",
-    });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("deprecated_model");
   });
 });

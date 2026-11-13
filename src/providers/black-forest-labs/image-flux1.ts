@@ -15,11 +15,12 @@
  *     FluxDevInputs    (flux-dev)          width/height + steps + guidance 1.5–5
  *     FluxUltraInput   (flux-pro-1.1-ultra) aspect_ratio + raw +
  *                                          image_prompt_strength, NO width/height
- *     FinetuneFluxUltraInput (…-finetuned) FluxUltraInput + finetune_id/strength
+ *     FinetuneFluxUltraInput (…-finetuned) FluxUltraInput minus raw,
+ *                                          plus finetune_id/strength
  * - `width`/`height` on the two width/height routes are documented as
  *   "multiple of 32", 256–1440 — enforced at runtime (the multiple-of rule is
  *   not expressible in the wire type).
- * - `safety_tolerance` is 0–6 on all four routes (FLUX.2 caps it at 5).
+ * - `safety_tolerance` is 0–6 on all four routes (FLUX.2 goes to 7).
  * - `guidance` differs per route: 1.5–5 on flux-dev (FLUX.2 [flex] uses 1.5–10).
  * - ASYNC-JOB API: the POST returns `{ id, polling_url }`; polling
  *   `GET https://api.bfl.ai/v1/get_result?id=…` is transport — out of scope.
@@ -34,7 +35,7 @@ import type { ValidateResult } from "../../core/result";
 import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models } from "./models";
-import { bflModelUrl, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
+import { bflModelUrl, bflUserField, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
 import { checkAspectRatioRange, type BflAspectRatio } from "./aspect";
 import { imageFlux1Constraints } from "./constraints";
 
@@ -68,6 +69,8 @@ interface Flux1CoreFields {
   webhook_url?: string | null;
   /** Secret for webhook signature verification. */
   webhook_secret?: string | null;
+  /** Opaque end-user identifier from the calling platform: 1–256 chars, no NUL. */
+  user?: string | null;
 }
 
 /** Fields the two width/height routes reject (they size by pixels). */
@@ -139,6 +142,8 @@ export interface FluxUltraFinetunedBody extends FluxUltraFields {
   finetune_id: string;
   /** LoRA influence, 0–2. Default 1.2. */
   finetune_strength?: number;
+  /** Only flux-pro-1.1-ultra takes raw mode (FinetuneFluxUltraInput declares no `raw`). */
+  raw?: never;
 }
 
 /** Escape hatch for routes unmodel doesn't know yet (unknown_model warning). */
@@ -210,6 +215,7 @@ const flux1Schema = z.looseObject({
   finetune_strength: z.number().min(0).max(2).optional(),
   webhook_url: z.string().min(1).max(2083).nullable().optional(),
   webhook_secret: z.string().nullable().optional(),
+  user: bflUserField,
 });
 
 // ---------------------------------------------------------------------------

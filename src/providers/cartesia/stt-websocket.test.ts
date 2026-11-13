@@ -9,6 +9,7 @@ import {
 } from "./stt-websocket";
 import { CARTESIA_VERSION } from "./tts";
 import { stt } from "./stt";
+import { CARTESIA_STT_LANGUAGES, models } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -164,14 +165,35 @@ describe("cartesia.sttWebsocket checks and constraints", () => {
     }
   });
 
-  test("language is the single-value enum this socket publishes", () => {
-    expect(sttWebsocket.safe({ ...BASE, language: "en" }).ok).toBe(true);
-    const r = safeUnchecked({ ...BASE, language: "es" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "invalid_enum_value");
-      expect(issue?.path).toEqual(["language"]);
-      expect(issue?.meta?.allowed).toEqual(["en"]);
+  test("language never errors: en is clean everywhere, an ink-whisper code is clean on ink-whisper", () => {
+    // 2026-03-01 publishes enum [en] with no refusal sentence; the 2026-08-14
+    // reference and the troubleshooting page both say the socket takes more.
+    for (const model of ["ink-2", "ink-whisper", "ink-preview"] as const) {
+      const r = sttWebsocket.safe({ ...BASE, model, language: "en" });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.filter((w) => w.path[0] === "language")).toEqual([]);
+    }
+    for (const model of ["ink-whisper", "ink-whisper-2025-06-04"] as const) {
+      const r = sttWebsocket.safe({ ...BASE, model, language: "es" });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.filter((w) => w.path[0] === "language")).toEqual([]);
+    }
+  });
+
+  test("off-list language codes are warnings, never errors", () => {
+    const cases = [
+      ["ink-preview", "fr", ["en"]],
+      ["ink-2", "fr", ["en"]],
+      ["ink-whisper", "xx", [...CARTESIA_STT_LANGUAGES]],
+    ] as const;
+    for (const [model, language, allowed] of cases) {
+      const r = sttWebsocket.safe({ ...BASE, model, language });
+      expect(r.ok).toBe(true);
+      if (!r.ok) continue;
+      const issue = r.warnings.find((w) => w.path[0] === "language");
+      expect(issue?.code).toBe("invalid_enum_value");
+      expect(issue?.severity).toBe("warning");
+      expect(issue?.meta?.allowed).toEqual(allowed);
     }
   });
 
@@ -205,14 +227,70 @@ describe("cartesia.sttWebsocket checks and constraints", () => {
     if (onWhisper.ok) {
       const issue = onWhisper.warnings.find((w) => w.code === "unsupported_param");
       expect(issue?.path).toEqual(["keyterm"]);
-      expect(String(issue?.message)).toContain("`ink-2` models only");
+      expect(String(issue?.message)).toContain("`ink-2` and `ink-preview` only");
     }
   });
 
   test("constraintsFor exposes both sides of the inversion", () => {
     expect(sttWebsocket.constraintsFor("ink-2")[0]?.deny?.min_volume?.ignored).toBe(true);
     expect(sttWebsocket.constraintsFor("ink-whisper")[0]?.deny?.keyterm?.reason).toContain(
-      "`ink-2` models only",
+      "`ink-2` and `ink-preview` only",
     );
+  });
+});
+
+describe("cartesia.sttWebsocket ink-preview and the ink-whisper snapshot", () => {
+  test("ink-preview takes keyterm clean and warns only that it is off the 2026-03-01 enum", () => {
+    expect(models["ink-preview"].status).toBe("beta");
+    const r = sttWebsocket.safe({ ...BASE, model: "ink-preview", keyterm: ["Cartesia"] });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => w.code)).toEqual(["invalid_enum_value"]);
+      expect(r.warnings[0]?.path).toEqual(["model"]);
+      // Credits only, and no published rate for this model at all.
+      expect(r.estimate.costUSD).toBeUndefined();
+    }
+  });
+
+  test("ink-preview ignores the ink-whisper silence knobs, like ink-2", () => {
+    const r = sttWebsocket.safe({ ...BASE, model: "ink-preview", min_volume: 0.2, max_silence_duration_secs: 2 });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const ignored = r.warnings.filter((w) => w.code === "unsupported_param").map((w) => w.path?.[0]);
+      expect(ignored.sort()).toEqual(["max_silence_duration_secs", "min_volume"]);
+    }
+  });
+
+  test("ink-whisper-2025-06-04 takes the silence knobs and ignores keyterm, like ink-whisper", () => {
+    const knobs = sttWebsocket.safe({
+      ...BASE,
+      model: "ink-whisper-2025-06-04",
+      min_volume: 0.2,
+      max_silence_duration_secs: 2,
+    });
+    expect(knobs.ok).toBe(true);
+    if (knobs.ok) {
+      expect(knobs.warnings.map((w) => w.code)).toEqual(["invalid_enum_value"]);
+      expect(knobs.estimate.costUSD).toBeUndefined();
+    }
+    const keyterm = sttWebsocket.safe({ ...BASE, model: "ink-whisper-2025-06-04", keyterm: "Cartesia" });
+    expect(keyterm.ok).toBe(true);
+    if (keyterm.ok) {
+      const issue = keyterm.warnings.find((w) => w.code === "unsupported_param");
+      expect(issue?.path).toEqual(["keyterm"]);
+    }
+  });
+
+  test("batch /stt accepts the ink-whisper snapshot and refuses ink-preview", () => {
+    const file = new Blob(["x"]);
+    const snapshot = stt.safe({ file, model: "ink-whisper-2025-06-04" });
+    expect(snapshot.ok).toBe(true);
+    if (snapshot.ok) {
+      expect(snapshot.warnings).toEqual([]);
+      expect(snapshot.estimate.costUSD).toBeUndefined();
+    }
+    const preview = stt.safe({ file, model: "ink-preview" });
+    expect(preview.ok).toBe(false);
+    if (!preview.ok) expect(preview.errors[0]?.path).toEqual(["model"]);
   });
 });

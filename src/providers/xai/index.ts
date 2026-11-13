@@ -25,6 +25,7 @@ export {
   IMAGE_GENERATIONS_URL,
   IMAGE_ASPECT_RATIOS,
   IMAGE_RESOLUTIONS,
+  IMAGE_QUALITIES,
   IMAGE_RESPONSE_FORMATS,
   IMAGE_MAX_N,
 } from "./image";
@@ -32,8 +33,10 @@ export type {
   ImageGenerationsParams,
   XaiImageAspectRatio,
   XaiImageResolution,
+  XaiImageQuality,
   XaiImageResponseFormat,
   XaiStorageOptions,
+  XaiPublicUrlOptions,
 } from "./image";
 
 // --- Video (Grok Imagine, POST /v1/videos/*) --------------------------------
@@ -56,13 +59,19 @@ export {
   EXTENSION_MAX_DURATION,
   DEFAULT_EXTENSION_DURATION,
   VIDEO_MAX_REFERENCE_AUDIOS,
+  VIDEO_MAX_KEYFRAMES,
+  VIDEO_TEXT_IMAGE_ONLY_MODELS,
+  VIDEO_VOICE_AND_FRAME_MODELS,
+  VIDEO_REFERENCE_LIMITS,
 } from "./video";
 export type {
   VideoGenerationsParams,
   VideoEditsParams,
   VideoExtensionsParams,
+  XaiVideoPriceOptions,
   XaiMediaInput,
   XaiReferenceAudio,
+  XaiVideoKeyframe,
   XaiVideoOutput,
   XaiVideoResolution,
   XaiVideoAspectRatio,
@@ -70,7 +79,8 @@ export type {
 
 // Hand-supplemented Imagine catalog (the generated `models` above is the TEXT
 // catalog plus cost-less Imagine rows; ./models adds the published per-image /
-// per-second rates and the grok-imagine-image-2.0 row models.dev lacks).
+// per-second rates and the grok-imagine-image-2.0 / -quality rows models.dev
+// lacks).
 export {
   imageModels,
   videoModels,
@@ -81,6 +91,13 @@ export {
   IMAGE_QUALITY_PER_IMAGE_USD,
   VIDEO_PER_SECOND_USD,
   VIDEO_1_5_PER_SECOND_USD,
+  VIDEO_1_5_LITE_PER_SECOND_USD,
+  IMAGE_RATES,
+  IMAGE_MEDIUM_RATES,
+  VIDEO_RATES,
+  VIDEO_INPUT_IMAGE_USD,
+  IMAGE_MODEL_ALIASES,
+  VIDEO_MODEL_ALIASES,
 } from "./models";
 export type { XaiImageGenerationModelId, XaiVideoGenerationModelId } from "./models";
 

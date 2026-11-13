@@ -64,10 +64,21 @@ export const GPT_IMAGE_1_SIZE_VALUES = ["auto", "1024x1024", "1536x1024", "1024x
 export const DALL_E_3_SIZE_VALUES = ["1024x1024", "1792x1024", "1024x1792"] as const;
 export const DALL_E_2_SIZE_VALUES = ["256x256", "512x512", "1024x1024"] as const;
 
-/** The ids that accept free-form `WIDTHxHEIGHT` sizes. */
+/**
+ * The ids that accept free-form `WIDTHxHEIGHT` sizes — the create reference's
+ * free-form sentence names "`gpt-image-2`, `gpt-image-2-2026-04-21`,
+ * `gpt-image-2.5-sunburst` and `gpt-image-2.5-flare`, including their
+ * `2026-09-08` snapshots" (read 2026-11-12). The GPT-Image-2.6 ids are
+ * deliberately absent: no page states their size rules, so they are not held
+ * to these bounds (an undocumented narrowing would false-positive).
+ */
 export const GPT_IMAGE_2_MODELS: ReadonlySet<string> = new Set([
   "gpt-image-2",
   "gpt-image-2-2026-04-21",
+  "gpt-image-2.5-sunburst",
+  "gpt-image-2.5-sunburst-2026-09-08",
+  "gpt-image-2.5-flare",
+  "gpt-image-2.5-flare-2026-09-08",
 ]);
 
 // ---------------------------------------------------------------------------
@@ -168,6 +179,64 @@ export function checkTransparentOutputFormat(
       '`output_format: "jpeg"` does not support `background: "transparent"` — jpeg has no alpha channel; use `png` (the default) or `webp`.',
     meta: { value: "jpeg", allowed: ["png", "webp"], source: IMAGES_CREATE_DOCS },
   });
+}
+
+/**
+ * Enforces the GIF and SVG output pairings documented for GPT-Image-2.6 (both
+ * image routes, read 2026-11-12):
+ *   "Use `frame_count` and `frame_duration_ms` only with GIF output." (guide)
+ *   "GIF output does not support streaming, partial images, masks, or custom
+ *    output compression." (images/create reference)
+ *   "SVG generation requires n=1 and does not support streaming, partial
+ *    images, prompt_rewriter, or output_compression." (images/create reference)
+ * Keyed on `output_format`, not the model: an id whose `output_format` enum
+ * lacks `gif`/`svg` is already refused by the enum layer. `partial_images: 0`
+ * asks for no partials and is not a conflict.
+ */
+export function checkGifAndSvgOutput(
+  params: { model?: string },
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const record = params as Record<string, unknown>;
+  const format = record.output_format;
+  const model = typeof params.model === "string" ? { model: params.model } : {};
+  const refuse = (param: string, message: string): void => {
+    ctx.report({
+      code: "unsupported_param",
+      path: [param],
+      ...model,
+      message,
+      meta: { source: IMAGES_CREATE_DOCS, output_format: format },
+    });
+  };
+  const partials = typeof record.partial_images === "number" && record.partial_images > 0;
+
+  if (format !== "gif") {
+    for (const param of ["frame_count", "frame_duration_ms"] as const) {
+      if (record[param] != null) {
+        refuse(param, `\`${param}\` is only accepted with \`output_format: "gif"\` — "Use \`frame_count\` and \`frame_duration_ms\` only with GIF output."`);
+      }
+    }
+    if (format !== "svg") return;
+  }
+
+  const label = format === "gif" ? "GIF output" : "SVG output";
+  if (record.stream === true) refuse("stream", `${label} does not support streaming; remove \`stream\`.`);
+  if (partials) refuse("partial_images", `${label} does not support partial images; remove \`partial_images\` (or set it to 0).`);
+  if (record.output_compression != null) {
+    refuse("output_compression", `${label} does not support custom output compression; remove \`output_compression\`.`);
+  }
+  if (format === "gif" && record.mask != null) refuse("mask", "GIF output does not support masks; remove `mask`.");
+  if (format === "svg" && typeof record.n === "number" && record.n !== 1) {
+    ctx.report({
+      code: "invalid_enum_value",
+      path: ["n"],
+      ...model,
+      message: `\`n\` must be 1 with \`output_format: "svg"\` — "SVG generation requires n=1"; got ${record.n}.`,
+      meta: { allowed: [1], value: record.n, source: IMAGES_CREATE_DOCS },
+    });
+  }
 }
 
 /**

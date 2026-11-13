@@ -3,6 +3,8 @@ import {
   image,
   IMAGES_GENERATIONS_URL,
   DEFAULT_MODEL_ID,
+  DEFAULT_STYLE_REFERENCES_MODEL_ID,
+  STYLE_CREATION_USD,
   ASPECT_RATIOS,
   V4_STANDARD_SIZES,
   V4_PRO_SIZES,
@@ -84,8 +86,8 @@ describe("recraft.image happy path", () => {
 });
 
 describe("recraft.image styles", () => {
-  test("style on the default (V4.1) model is denied — styles are V2/V3 only", () => {
-    const r = image.safe({ prompt: "x", style: "Photorealism" });
+  test("a style no curated list holds lands on the default (V4.1) model, which denies it", () => {
+    const r = image.safe({ prompt: "x", style: "Not a curated style" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.errors[0]?.code).toBe("unsupported_param");
@@ -95,7 +97,14 @@ describe("recraft.image styles", () => {
     }
   });
 
-  test("style_id and negative_prompt are denied on V4 models", () => {
+  test("style_id validates on the V4 / V4.1 line; negative_prompt is still denied", () => {
+    // "Every V4 and V4.1 model (except V4.1 Flash) also accepts `style_id` or
+    // style references, at that model's own price." — V4 Styles page.
+    for (const model of ["recraftv4_pro", "recraftv4_1", "recraftv4_1_utility_vector"] as const) {
+      const ok = image.safe({ prompt: "x", model, style_id: "b9af225b-6b98-43d0-a4b3-16343641e852" });
+      expect(ok.ok, model).toBe(true);
+      if (ok.ok) expect(ok.warnings, model).toEqual([]);
+    }
     const r = image.safe({
       prompt: "x",
       model: "recraftv4_pro",
@@ -103,11 +112,26 @@ describe("recraft.image styles", () => {
       negative_prompt: "blurry",
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const paths = r.errors.map((e) => e.path[0]);
-      expect(paths).toContain("style_id");
-      expect(paths).toContain("negative_prompt");
-    }
+    if (!r.ok) expect(r.errors.map((e) => e.path[0])).toEqual(["negative_prompt"]);
+  });
+
+  test("with no model, a curated style picks its V3 / V2 model as the server does", () => {
+    // Recraft's own text_layout example: `{prompt, style: "Illustration", text_layout}`.
+    const layout = [{ text: "HI", bbox: [[0.3, 0.45], [0.6, 0.45], [0.6, 0.55], [0.3, 0.55]] }];
+    const v3 = image.safe({ prompt: "cute red panda with a sign", style: "Illustration", text_layout: layout });
+    expect(v3.ok).toBe(true);
+    if (v3.ok) expect(v3.estimate.costUSD).toBeCloseTo(0.04, 10);
+    const vector = image.safe({ prompt: "x", style: "Vector art" });
+    expect(vector.ok).toBe(true);
+    if (vector.ok) expect(vector.estimate.costUSD).toBeCloseTo(0.08, 10);
+    // "3D render" is on V2's list only: "to Recraft V2 otherwise".
+    const v2 = image.safe({ prompt: "x", style: "3D render" });
+    expect(v2.ok).toBe(true);
+    if (v2.ok) expect(v2.estimate.costUSD).toBeCloseTo(0.022, 10);
+    // Resolved to recraftv2, which denies text_layout.
+    const v2Layout = image.safe({ prompt: "x", style: "3D render", text_layout: layout });
+    expect(v2Layout.ok).toBe(false);
+    if (!v2Layout.ok) expect(v2Layout.errors[0]?.model).toBe("recraftv2");
   });
 
   test("a V3 style passes on recraftv3 but not on recraftv3_vector", () => {
@@ -161,16 +185,262 @@ describe("recraft.image styles", () => {
     expect(Object.keys(rules[0]?.deny ?? {}).sort()).toEqual([
       "negative_prompt",
       "style",
-      "style_id",
       "text_layout",
     ]);
-    expect(image.constraintsFor("recraftv3")).toEqual([]);
+    // V3 denies nothing; its one family rule narrows `style_match`.
+    const v3 = image.constraintsFor("recraftv3");
+    expect(v3.flatMap((rule) => Object.keys(rule.deny ?? {}))).toEqual([]);
+    expect(v3.map((rule) => rule.enums)).toEqual([{ style_match: ["regular"] }]);
   });
 
   test("every style-listed model exists in the catalog", () => {
     for (const modelId of Object.keys(STYLE_NAMES_BY_MODEL)) {
       expect(models[modelId as keyof typeof models]).toBeDefined();
     }
+  });
+});
+
+describe("recraft.image V4.1 Flash", () => {
+  test("validates and prices at $0.007 per image", () => {
+    const r = image.safe({ prompt: "x", model: "recraftv4_1_flash", n: 3, size: "1344x768" });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(0.021, 10);
+    }
+  });
+
+  test("takes the 1K size table and the 10,000-character prompt cap", () => {
+    const pro = image.safe({ prompt: "x", model: "recraftv4_1_flash", size: "2048x2048" });
+    expect(pro.ok).toBe(false);
+    if (!pro.ok) expect(pro.errors[0]?.meta?.allowed).toEqual([...V4_STANDARD_SIZES]);
+    expect(image.safe({ prompt: "y".repeat(10_000), model: "recraftv4_1_flash" }).ok).toBe(true);
+    expect(image.safe({ prompt: "y".repeat(10_001), model: "recraftv4_1_flash" }).ok).toBe(false);
+  });
+
+  test("refuses every style input, negative_prompt and text_layout", () => {
+    const r = safeUnchecked({
+      prompt: "x",
+      model: "recraftv4_1_flash",
+      style_id: "b9af225b-6b98-43d0-a4b3-16343641e852",
+      style_match: "flexible",
+      negative_prompt: "blurry",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => e.code)).toEqual(Array(3).fill("unsupported_param"));
+      expect(r.errors.map((e) => e.path[0])).toEqual(["style_id", "style_match", "negative_prompt"]);
+      expect(String(r.errors[0]?.meta?.source)).toContain("recraft-v4-1-flash");
+    }
+    const refs = image.safe({
+      prompt: "x",
+      model: "recraftv4_1_flash_raster",
+      style_reference_urls: ["https://example.com/ref.png"],
+    });
+    expect(refs.ok).toBe(false);
+    if (!refs.ok) expect(refs.errors[0]?.path).toEqual(["style_reference_urls"]);
+  });
+});
+
+describe("recraft.image V4 Styles", () => {
+  const STYLE_ID = "229b2a75-05e4-4580-85f9-b47ee521a00d";
+  const REFS = ["https://example.com/ref.png"];
+
+  test("a request with no style is refused, naming both ways to supply one", () => {
+    const r = image.safe({ prompt: "x", model: "recraftv4_styles" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_shape");
+      expect(r.errors[0]?.path).toEqual(["style_id"]);
+      expect(r.errors[0]?.message).toContain("`style_reference_urls`");
+    }
+  });
+
+  test("style_id validates at the per-image rate", () => {
+    const r = image.safe({ prompt: "x", model: "recraftv4_styles_pro", style_id: STYLE_ID, n: 2 });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(0.2, 10);
+    }
+  });
+
+  test("style references add the $0.005 style-creation charge once", () => {
+    const r = image.safe({
+      prompt: "x",
+      model: "recraftv4_styles_vector",
+      style_reference_urls: REFS,
+      n: 2,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(2 * 0.05 + STYLE_CREATION_USD, 10);
+    const proVector = image.safe({
+      prompt: "x",
+      model: "recraftv4_styles_pro_vector",
+      style_id: STYLE_ID,
+    });
+    expect(proVector.ok).toBe(true);
+    if (proVector.ok) expect(proVector.estimate.costUSD).toBeCloseTo(0.12, 10);
+  });
+
+  test("references with no model resolve to recraftv4_styles", () => {
+    const r = image.safe({ prompt: "x", style_reference_urls: REFS, size: "1024x1024" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.035 + STYLE_CREATION_USD, 10);
+    // recraftv4_styles takes the V4 style_match vocabulary, not V3's.
+    const regular = image.safe({ prompt: "x", style_reference_urls: REFS, style_match: "regular" });
+    expect(regular.ok).toBe(false);
+    if (!regular.ok) expect(regular.errors[0]?.model).toBe(DEFAULT_STYLE_REFERENCES_MODEL_ID);
+  });
+
+  test("style_id and style references together are refused", () => {
+    const r = image.safe({
+      prompt: "x",
+      model: "recraftv4_styles",
+      style_id: STYLE_ID,
+      style_reference_urls: REFS,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_shape");
+      expect(r.errors[0]?.path).toEqual(["style_reference_urls"]);
+    }
+  });
+
+  test("style_reference_urls holds 1 to 10 images", () => {
+    const eleven = Array.from({ length: 11 }, (_, i) => `https://example.com/${i}.png`);
+    expect(image.safe({ prompt: "x", model: "recraftv4_styles", style_reference_urls: eleven }).ok)
+      .toBe(false);
+    expect(image.safe({ prompt: "x", model: "recraftv4_styles", style_reference_urls: [] }).ok)
+      .toBe(false);
+  });
+
+  test("style_match takes flexible | precise; curated styles are refused", () => {
+    expect(
+      image.safe({ prompt: "x", model: "recraftv4_styles", style_id: STYLE_ID, style_match: "precise" })
+        .ok,
+    ).toBe(true);
+    const r = image.safe({
+      prompt: "x",
+      model: "recraftv4_styles",
+      style_id: STYLE_ID,
+      style_match: "regular",
+      negative_prompt: "blurry",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => [e.code, e.path[0]])).toEqual([
+        ["unsupported_param", "negative_prompt"],
+        ["invalid_enum_value", "style_match"],
+      ]);
+    }
+  });
+
+  test("the 1K / 2K size tables apply per variant", () => {
+    expect(
+      image.safe({ prompt: "x", model: "recraftv4_styles", style_id: STYLE_ID, size: "1344x768" }).ok,
+    ).toBe(true);
+    expect(
+      image.safe({ prompt: "x", model: "recraftv4_styles_pro", style_id: STYLE_ID, size: "2688x1536" })
+        .ok,
+    ).toBe(true);
+    expect(
+      image.safe({ prompt: "x", model: "recraftv4_styles_pro", style_id: STYLE_ID, size: "1344x768" })
+        .ok,
+    ).toBe(false);
+  });
+});
+
+describe("recraft.image _raster aliases", () => {
+  const ALIASES: ReadonlyArray<readonly [RecraftModelId, RecraftModelId]> = [
+    ["recraftv4_1_raster", "recraftv4_1"],
+    ["recraftv4_1_pro_raster", "recraftv4_1_pro"],
+    ["recraftv4_1_utility_raster", "recraftv4_1_utility"],
+    ["recraftv4_1_utility_pro_raster", "recraftv4_1_utility_pro"],
+    ["recraftv4_1_flash_raster", "recraftv4_1_flash"],
+    ["recraftv4_raster", "recraftv4"],
+    ["recraftv4_pro_raster", "recraftv4_pro"],
+    ["recraftv4_styles_raster", "recraftv4_styles"],
+    ["recraftv4_styles_pro_raster", "recraftv4_styles_pro"],
+    ["recraftv3_raster", "recraftv3"],
+    ["recraftv2_raster", "recraftv2"],
+  ];
+
+  test("every alias is cataloged with its base model's rate and prompt cap", () => {
+    for (const [alias, baseId] of ALIASES) {
+      const info: ModelInfo = models[alias];
+      const baseInfo: ModelInfo = models[baseId];
+      expect(info.cost?.perImage, alias).toBe(baseInfo.cost?.perImage);
+      expect(info.limit.characters, alias).toBe(baseInfo.limit.characters);
+      expect(image.constraintsFor(alias), alias).toEqual(image.constraintsFor(baseId));
+    }
+  });
+
+  test("every alias validates warning-free and prices like its base", () => {
+    for (const [alias, baseId] of ALIASES) {
+      const style = alias.startsWith("recraftv4_styles") ? { style_id: "abc" } : {};
+      const r = image.safe({ prompt: "x", model: alias, n: 2, ...style });
+      expect(r.ok, alias).toBe(true);
+      if (r.ok) {
+        expect(r.warnings, alias).toEqual([]);
+        const baseInfo: ModelInfo = models[baseId];
+        expect(r.estimate.costUSD, alias).toBeCloseTo(2 * (baseInfo.cost?.perImage ?? NaN), 10);
+      }
+    }
+  });
+
+  test("an alias takes its base model's size table", () => {
+    const v4 = image.safe({ prompt: "x", model: "recraftv4_1_raster", size: "1820x1024" });
+    expect(v4.ok).toBe(false);
+    if (!v4.ok) expect(v4.errors[0]?.meta?.allowed).toEqual([...V4_STANDARD_SIZES]);
+    expect(image.safe({ prompt: "x", model: "recraftv4_pro_raster", size: "2048x2048" }).ok).toBe(true);
+    expect(image.safe({ prompt: "x", model: "recraftv3_raster", size: "1820x1024" }).ok).toBe(true);
+  });
+
+  test("recraftv3_raster keeps V3's styles, controls and text_layout; recraftv2_raster V2's", () => {
+    const layout = [{ text: "HI", bbox: [[0.3, 0.45], [0.6, 0.45], [0.6, 0.55], [0.3, 0.55]] }];
+    expect(
+      image.safe({
+        prompt: "x",
+        model: "recraftv3_raster",
+        style: "Photorealism",
+        text_layout: layout,
+        controls: { artistic_level: 2, no_text: true },
+      }).ok,
+    ).toBe(true);
+    // @ts-expect-error — "Vector art" is a V3 Vector name; the alias is raster.
+    expect(image.safe({ prompt: "x", model: "recraftv3_raster", style: "Vector art" }).ok).toBe(false);
+    expect(image.safe({ prompt: "x", model: "recraftv2_raster", style: "3D render" }).ok).toBe(true);
+    const v2 = image.safe({ prompt: "x", model: "recraftv2_raster", text_layout: layout });
+    expect(v2.ok).toBe(false);
+    if (!v2.ok) expect(v2.errors[0]?.code).toBe("unsupported_param");
+  });
+});
+
+describe("recraft.image style_match", () => {
+  test("V2 / V3 take only regular", () => {
+    expect(image.safe({ prompt: "x", model: "recraftv3", style_id: "abc", style_match: "regular" }).ok)
+      .toBe(true);
+    const r = image.safe({ prompt: "x", model: "recraftv2_vector", style_id: "abc", style_match: "precise" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_enum_value");
+      expect(r.errors[0]?.meta?.allowed).toEqual(["regular"]);
+    }
+  });
+
+  test("the V4 / V4.1 line takes flexible | precise", () => {
+    expect(
+      image.safe({
+        prompt: "x",
+        model: "recraftv4_1",
+        style_reference_urls: ["https://example.com/ref.png"],
+        style_match: "flexible",
+      }).ok,
+    ).toBe(true);
+    const r = image.safe({ prompt: "x", model: "recraftv4_pro_vector", style_match: "regular" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.allowed).toEqual(["flexible", "precise"]);
   });
 });
 
@@ -268,14 +538,18 @@ describe("recraft.image shape and controls", () => {
     if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
   });
 
-  test("response_format is narrowed to url | b64_json", () => {
+  test("response_format is narrowed to url | b64_json | multipart", () => {
     const r = safeUnchecked({ prompt: "x", response_format: "hex" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.errors[0]?.code).toBe("invalid_enum_value");
       expect(r.errors[0]?.path).toEqual(["response_format"]);
+      expect(r.errors[0]?.meta?.allowed).toEqual(["url", "b64_json", "multipart"]);
     }
     expect(image.safe({ prompt: "x", response_format: "b64_json" }).ok).toBe(true);
+    // The Flash page recommends it; the endpoints doc: "Must be one of `url`, `b64_json` or `multipart`".
+    expect(image.safe({ prompt: "x", model: "recraftv4_1_flash", response_format: "multipart" }).ok)
+      .toBe(true);
   });
 
   test("controls.artistic_level and no_text are V3-only", () => {
@@ -407,25 +681,10 @@ describe("recraft.image cost estimation", () => {
     }
   });
 
-  test("recraft20b is a documented API id with no published price", () => {
-    const r = image.safe({ prompt: "x", model: "recraft20b" });
-    expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.warnings.map((w) => w.code)).not.toContain("unknown_model");
-      expect(r.estimate.costUSD).toBeUndefined();
-    }
-  });
-
-  test("catalog pricing sanity: every priced model has a per-image rate", () => {
+  test("catalog pricing sanity: every model has a per-image rate and a prompt cap", () => {
     for (const info of Object.values(models) as ModelInfo[]) {
-      // recraft20b is a documented API id with no published price and no
-      // published prompt cap, so cost/limit.characters are legitimately absent.
-      if (info.id !== "recraft20b") {
-        expect(info.cost?.perImage).toBeGreaterThan(0);
-        expect(info.limit.characters).toBeGreaterThan(0);
-      } else {
-        expect(info.cost).toBeUndefined();
-      }
+      expect(info.cost?.perImage, info.id).toBeGreaterThan(0);
+      expect(info.limit.characters, info.id).toBeGreaterThan(0);
       expect(info.limit.context).toBe(0);
     }
   });

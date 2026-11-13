@@ -1,8 +1,16 @@
 /**
  * Vidu pricing — https://platform.vidu.com/docs/pricing (verified 2026-08-13).
+ * As of 2026-11-12 that page renders "Document not found | Vidu API"; its last
+ * capture is
+ * http://web.archive.org/web/20260920044216/https://platform.vidu.com/docs/pricing.
  *
- * Credits cost $0.005 each and the pricing page prints a USD column beside
- * every credit rate, so the tables below are transcriptions, not conversions.
+ * Credits cost $0.005 each ("Credits are available for $0.005 each, with
+ * applicable sales tax based on your location." — same capture) and that page
+ * printed a USD column beside every credit rate, so the tables below are
+ * transcriptions, not conversions. The live
+ * https://platform.vidu.com/docs/overview/pricing (2026-11-12) prices credits
+ * in RMB only ("| Credits | Price (RMB) |", "| 1 | 0.03125 |"), so it is not
+ * the source of these USD tables (see ./models.ts).
  *
  * What is estimable from a request:
  *   - Q3 models: a flat per-second rate by (route × resolution), with an
@@ -19,6 +27,9 @@
  * rather than guessing. The page also notes two surcharges unmodel does not
  * model: `is_rec` adds 10 credits, and audio on img2video/reference2video
  * adds 15 credits on the Q2 family.
+ *
+ * Nor are viduq4-preview, viduq3-drama and viduq3-ad: q4 is priced in credits
+ * only, and the pricing pages have no drama or ad row (see ./models.ts).
  */
 
 /** The four generation routes that have their own price tables. */
@@ -84,11 +95,21 @@ const VIDU2_GENERATION: Readonly<Record<string, number>> = {
 
 /** Documented default resolution per model, used when `resolution` is omitted. */
 export const DEFAULT_RESOLUTION: Readonly<Record<string, string>> = {
+  // "Default: `720p`" on both q4 pages —
+  // https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/image-to-video,
+  // 2026-11-12. Unpriced (no USD rate), so no estimate reads it.
+  "viduq4-preview": "720p",
   "viduq3-pro": "720p",
   "viduq3-pro-fast": "720p",
   "viduq3-turbo": "720p",
   viduq3: "720p",
   "viduq3-mix": "720p",
+  // "`viduq3-drama` (2-15s): Default is 1080p" and "`viduq3-ad` (3-15
+  // seconds): Default is 720p" —
+  // https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video,
+  // 2026-11-12. Both unpriced.
+  "viduq3-drama": "1080p",
+  "viduq3-ad": "720p",
   viduq2: "720p",
   "viduq2-pro": "720p",
   "viduq2-pro-fast": "720p",
@@ -100,11 +121,17 @@ export const DEFAULT_RESOLUTION: Readonly<Record<string, string>> = {
 
 /** Documented default duration per model family (seconds). */
 export const DEFAULT_DURATION: Readonly<Record<string, number>> = {
+  // "Default: `5`" on both q4 pages (see DEFAULT_RESOLUTION).
+  "viduq4-preview": 5,
   "viduq3-pro": 5,
   "viduq3-pro-fast": 5,
   "viduq3-turbo": 5,
   viduq3: 5,
   "viduq3-mix": 5,
+  // "`viduq3-drama`: Default is 8s" and "`viduq3-ad`: Default is 5 seconds"
+  // (same page as DEFAULT_RESOLUTION's).
+  "viduq3-drama": 8,
+  "viduq3-ad": 5,
   viduq2: 5,
   "viduq2-pro": 5,
   "viduq2-pro-fast": 5,

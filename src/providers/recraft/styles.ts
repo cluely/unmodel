@@ -1,17 +1,21 @@
 /**
- * Curated style names per Recraft model, from the "List of Styles" section of
- * https://www.recraft.ai/docs/api-reference/styles (verified 2026-08-13).
+ * Curated style names per Recraft model, from the "List of curated styles"
+ * section of https://www.recraft.ai/docs/api-reference/styles (verified
+ * 2026-11-12).
  *
  * The current Recraft API takes a curated style NAME in the `style` param
  * (e.g. "Photorealism", "Vector art") — the old `style`/`substyle` enum pairs
  * (realistic_image / digital_illustration / ...) are gone from the docs.
- * Styles are only supported by V2 / V3 models ("Styles are not yet supported
- * for V4 models"), which the constraint table enforces; this module carries
- * the per-model name lists for the style ↔ model cross-check.
+ * Curated styles belong to the "V2 / V3 Styles" section ("The Recraft V2 / V3
+ * models come with a library of predefined curated styles"); the V4 line
+ * takes custom styles instead (`style_id` / style references), and the
+ * constraint table denies a curated `style` there. This module carries the
+ * per-model name lists for the style ↔ model cross-check.
  *
  * "Recraft V3 Raw" is absent from the categorized list but is documented as
- * Recraft V3's default style and as a valid `style` value in the same doc's
- * "Using of styles" section, so it is included for recraftv3.
+ * Recraft V3's default style ("Recraft V3: `Recraft V3 Raw`") and as a valid
+ * `style` value in the same doc's "V2 / V3 Styles" section, so it is included
+ * for recraftv3.
  */
 
 export const RECRAFT_V3_STYLES = [
@@ -178,7 +182,7 @@ export type RecraftStyleName =
   | (typeof RECRAFT_V2_VECTOR_STYLES)[number];
 
 /**
- * Curated style names keyed by the model ids that support styles at all.
+ * Curated style names keyed by the model ids that support curated styles.
  * Models absent from this map (the whole V4/V4.1 line) reject `style`, which
  * the constraint table reports as unsupported_param.
  *
@@ -192,8 +196,12 @@ export type RecraftStyleName =
  */
 export const STYLE_NAMES_BY_MODEL = {
   recraftv3: RECRAFT_V3_STYLES,
+  // The `_raster` aliases "behave exactly like the base names"
+  // (https://www.recraft.ai/docs/api-reference/models/overview, 2026-11-12).
+  recraftv3_raster: RECRAFT_V3_STYLES,
   recraftv3_vector: RECRAFT_V3_VECTOR_STYLES,
   recraftv2: RECRAFT_V2_STYLES,
+  recraftv2_raster: RECRAFT_V2_STYLES,
   recraftv2_vector: RECRAFT_V2_VECTOR_STYLES,
 } as const satisfies Readonly<Record<string, readonly string[]>>;
 

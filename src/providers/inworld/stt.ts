@@ -3,18 +3,20 @@
  *
  * Wire reference:
  * https://docs.inworld.ai/api-reference/sttAPI/speechtotext/transcribe
- * plus https://docs.inworld.ai/stt/overview (verified 2026-08-13). Params
+ * plus https://docs.inworld.ai/stt/third-party (verified 2026-11-12). Params
  * mirror `v1TranscribeSpeechRequest` exactly: a `transcribeConfig` object and
- * an `audioData` object carrying base64 audio. There is no multipart upload
- * surface and no file-id indirection — the bytes ride inline in the JSON body,
- * which is why the endpoint's cap is a request-size cap ("Sync transcription
- * accepts audio files up to ~16 MB") rather than a duration cap.
+ * an `audioData` object carrying base64 audio — the JSON body this validator
+ * describes. The endpoint also takes a `multipart/form-data` body ("a
+ * `transcribeConfig` part holding the same config as JSON, then a `file`
+ * part"); either way there is no file-id indirection, which is why the cap is
+ * a request-size cap ("The request, config and audio together, can be up to
+ * 16 MiB") rather than a duration cap.
  *
  * ROUTER, NOT A MODEL FAMILY: `transcribeConfig.modelId` is always
  * `{provider}/{model-name}` and most ids are third-party models Inworld
  * fronts. The sync endpoint serves only `inworld/inworld-stt-1` and
  * `groq/whisper-large-v3`; the rest are WebSocket-only and are reported here
- * (see STT_SYNC_MODEL_IDS in models.ts for the exact doc wording this reads).
+ * (see STT_SYNC_MODEL_IDS in models.ts for the exact doc table this reads).
  *
  * The realtime/streaming surface is the `transcribe:streamBidirectional`
  * WebSocket. Its FIRST FRAME is the same `transcribeConfig` object validated
@@ -50,12 +52,23 @@ export const STT_TRANSCRIBE_URL = "https://api.inworld.ai/stt/v1/transcribe";
 export const TRANSCRIBE_DOCS =
   "https://docs.inworld.ai/api-reference/sttAPI/speechtotext/transcribe";
 export const STT_OVERVIEW_DOCS = "https://docs.inworld.ai/stt/overview";
+/** The routed-model roster, per-model endpoint table and vendor config blocks. */
+export const STT_THIRD_PARTY_DOCS = "https://docs.inworld.ai/stt/third-party";
+/** The per-surface encoding table and the sync size cap. */
+export const STT_AUDIO_FORMATS_DOCS = "https://docs.inworld.ai/stt/audio-formats";
+/**
+ * The WebSocket reference. Defined here rather than in ./realtime because the
+ * shared config checks below cite it; ./realtime re-exports it.
+ */
+export const STT_WEBSOCKET_DOCS =
+  "https://docs.inworld.ai/api-reference/sttAPI/speechtotext/transcribe-stream-websocket";
 
 /**
- * "Sync transcription accepts audio files up to ~16 MB. The actual duration
- * depends on the encoding — for example, ~18 minutes of MP3 or ~8 minutes of
- * 16 kHz 16-bit WAV." (STT_OVERVIEW_DOCS.) The docs state it approximately;
- * unmodel enforces the round number, measured on the DECODED bytes rather
+ * "Sync transcription accepts audio files up to **~16 MB**. How much audio
+ * fits depends on the encoding: for example, ~18 minutes of MP3 or ~8 minutes
+ * of 16 kHz 16-bit WAV." (STT_AUDIO_FORMATS_DOCS, 2026-11-12.) The docs
+ * state it approximately; unmodel enforces the round number, measured on the
+ * DECODED bytes rather
  * than the base64 text (base64 inflates by 4/3, so measuring the encoded
  * string would reject files a third under the cap).
  */
@@ -74,11 +87,16 @@ export const STT_DEFAULT_CHANNELS = 1;
 // ---------------------------------------------------------------------------
 
 /**
- * The transcribe API reference lists `AUTO_DETECT, LINEAR16, MP3, OGG_OPUS,
- * FLAC`; the WebSocket reference lists the same set plus the proto zero value
- * `AUDIO_ENCODING_UNSPECIFIED`. The zero value is accepted on both (it is one
- * enum), so it is included here and the sync reference's omission is treated
- * as the table not bothering to print it.
+ * The transcribe API reference's enum: `"AUDIO_ENCODING_UNSPECIFIED",
+ * "AUTO_DETECT", "LINEAR16", "MP3", "OGG_OPUS", "FLAC", "MP4", "MXF",
+ * "WEBM"` (TRANSCRIBE_DOCS, 2026-11-12). Both references document the
+ * zero value as an error — "Not specified. Will return
+ * [google.rpc.Code.INVALID_ARGUMENT]" (sync), "Not specified. Will return an
+ * error." (STT_WEBSOCKET_DOCS); it is listed because it is a member of the
+ * wire enum, and `checkTranscribeConfig` refuses it on both surfaces, naming
+ * the encodings that work. `MP4`, `MXF` and `WEBM` name video / recording
+ * containers whose audio track is transcribed — "Not supported for streaming
+ * transcription".
  */
 export type InworldSttAudioEncoding =
   | "AUDIO_ENCODING_UNSPECIFIED"
@@ -86,7 +104,10 @@ export type InworldSttAudioEncoding =
   | "LINEAR16"
   | "MP3"
   | "OGG_OPUS"
-  | "FLAC";
+  | "FLAC"
+  | "MP4"
+  | "MXF"
+  | "WEBM";
 
 export const INWORLD_STT_AUDIO_ENCODINGS = [
   "AUDIO_ENCODING_UNSPECIFIED",
@@ -95,20 +116,29 @@ export const INWORLD_STT_AUDIO_ENCODINGS = [
   "MP3",
   "OGG_OPUS",
   "FLAC",
+  "MP4",
+  "MXF",
+  "WEBM",
 ] as const satisfies readonly InworldSttAudioEncoding[];
 
 /**
- * Encodings the WebSocket surface accepts. The overview says "WebSocket
- * streaming supports: LINEAR16 only"; the WebSocket reference's constraints
- * note says "Streaming transcription supports LINEAR16 and AUTO_DETECT;
- * MP3, OGG_OPUS, FLAC unsupported for streaming". Only the intersection —
- * the three formats BOTH pages call unsupported — is enforced, so the
- * disagreement about AUTO_DETECT never fails a legal request.
+ * Encodings the WebSocket surface cannot take. The audio-formats table
+ * (STT_AUDIO_FORMATS_DOCS, 2026-11-12) ticks only `LINEAR16` for WebSocket
+ * streaming — `AUTO_DETECT` included among the crosses — while the WebSocket
+ * reference's enum lists `AUTO_DETECT` and marks only `MP3`, `OGG_OPUS` and
+ * `FLAC` "Not supported for streaming transcription". Only the formats BOTH
+ * pages exclude are enforced, so the disagreement about AUTO_DETECT never
+ * fails a legal request. The three container encodings are sync-only by their
+ * own enum entries ("Not supported for streaming transcription"), and the
+ * WebSocket enum does not list them.
  */
 export const INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS = [
   "MP3",
   "OGG_OPUS",
   "FLAC",
+  "MP4",
+  "MXF",
+  "WEBM",
 ] as const satisfies readonly InworldSttAudioEncoding[];
 
 /** Groq-specific options; only legal with a `groq/...` model. */
@@ -121,8 +151,14 @@ export interface InworldGroqConfig {
 export interface InworldSttV1Config {
   /** Milliseconds of confident silence before the turn ends. */
   minEndOfTurnSilenceWhenConfident?: number;
-  /** Range [0.0, 1.0]; default 0.5. Set to 0 to disable server-side turn detection. */
+  /** Range [0.0, 1.0]; default 0.05. Set to 0 to disable server-side turn detection. */
   vadThreshold?: number;
+  /**
+   * Milliseconds; "Trailing silence that ends the turn even if end-of-turn
+   * confidence is insufficient", default 768, range 20–5000. Keep
+   * `minEndOfTurnSilenceWhenConfident` at or below it.
+   */
+  maxTurnSilence?: number;
 }
 
 /** AssemblyAI-specific options; only legal with an `assemblyai/...` model. */
@@ -133,7 +169,15 @@ export interface InworldAssemblyaiConfig {
   maxTurnSilence?: number;
   /** Range [0.0, 1.0]; default 0.5. */
   vadThreshold?: number;
-  /** Custom instructions — "Universal-3 Pro only" (assemblyai/u3-rt-pro). */
+  /**
+   * Custom instructions. Inworld's `assemblyaiConfig` table reads "Custom
+   * transcription instructions for the model. Universal-3 Pro Streaming
+   * only", while the same page's Realtime "Example: AssemblyAI" sends
+   * `"model": "assemblyai/universal-3-5-pro"` with a `"prompt"`
+   * (STT_THIRD_PARTY_DOCS, 2026-11-13). So it is clean on
+   * `assemblyai/u3-rt-pro`, a warning on `assemblyai/universal-3-5-pro`, and
+   * an error on every other route.
+   */
   prompt?: string;
 }
 
@@ -162,8 +206,9 @@ export interface InworldSonioxConfig {
 
 export interface InworldVoiceProfileConfig {
   /**
-   * Required when the object is present. Voice Profile (emotion, vocal style,
-   * accent, age, pitch) is an `inworld/inworld-stt-1` feature.
+   * Required when the object is present. Voice Profile (age, gender,
+   * emotion, vocal style, accent) "works with every STT model on the API —
+   * including third-party models".
    */
   enableVoiceProfile: boolean;
   /** Top labels returned per class; default 10. */
@@ -183,13 +228,13 @@ interface TranscribeConfigBase {
   numberOfChannels?: number;
   /** Silence duration before transcription stops. */
   inactivityTimeoutSeconds?: number;
-  /** Range [0.0, 1.0]; default 0.5. */
+  /** Range [0.0, 1.0]; default 0.4. Applies to streaming. */
   endOfTurnConfidenceThreshold?: number;
   /** Custom vocabulary / key terms — a soft bias, letters+digits+spaces only. */
   prompts?: string[];
-  /** Per-word timing; AssemblyAI / Soniox / Deepgram only. */
+  /** Per-word timing; on the sync route of `inworld/inworld-stt-1` it is a no-op. */
   includeWordTimestamps?: boolean;
-  /** Per-word speaker labels; AssemblyAI / Soniox / Deepgram only. */
+  /** Per-word speaker labels — "Applies to the WebSocket streaming endpoint". */
   enableSpeakerDiarization?: boolean;
   voiceProfileConfig?: InworldVoiceProfileConfig;
 }
@@ -256,6 +301,9 @@ const inworldSttV1ConfigSchema = z.looseObject({
   minEndOfTurnSilenceWhenConfident: z.number().int().min(0).optional(),
   // "vadThreshold … Range: [0.0, 1.0]; set to 0 to disable".
   vadThreshold: z.number().min(0).max(1).optional(),
+  // "| `inworldSttV1Config.maxTurnSilence` | integer (ms) | `768` | … Range:
+  // 20–5000 |" (https://docs.inworld.ai/stt/turn-detection, 2026-11-12).
+  maxTurnSilence: z.number().int().min(20).max(5000).optional(),
 });
 
 const assemblyaiConfigSchema = z.looseObject({
@@ -299,7 +347,7 @@ export const transcribeConfigShape = {
   sampleRateHertz: z.number().int().positive().optional(),
   numberOfChannels: z.number().int().positive().optional(),
   inactivityTimeoutSeconds: z.number().int().positive().optional(),
-  // "endOfTurnConfidenceThreshold … Range: [0.0, 1.0]" (default 0.5).
+  // "endOfTurnConfidenceThreshold … Range: [0.0, 1.0]. Default: 0.4."
   endOfTurnConfidenceThreshold: z.number().min(0).max(1).optional(),
   prompts: z.array(z.string().min(1)).optional(),
   includeWordTimestamps: z.boolean().optional(),
@@ -352,6 +400,12 @@ const VENDOR_CONFIG_KEYS = [
  */
 const REJECTED_PROMPT_CHARACTERS = ["#", "/", "@", "|"] as const;
 
+/** The AssemblyAI routes `assemblyaiConfig.prompt` reaches — see the gate in `checkTranscribeConfig`. */
+const ASSEMBLYAI_PROMPT_MODEL_IDS = [
+  "assemblyai/u3-rt-pro",
+  "assemblyai/universal-3-5-pro",
+] as const satisfies readonly InworldSttModelId[];
+
 export interface TranscribeConfigCheckOptions {
   /** Path prefix of the config inside the validated params. */
   path: Array<string | number>;
@@ -388,7 +442,28 @@ export function checkTranscribeConfig(
         options.surface === "sync"
           ? `"${modelId}" is served only by the Inworld STT WebSocket (transcribe:streamBidirectional); POST /stt/v1/transcribe accepts ${options.allowedModelIds.map((id) => `"${id}"`).join(", ")}.`
           : `"${modelId}" is served only by the sync endpoint (POST /stt/v1/transcribe); the transcribe:streamBidirectional WebSocket accepts ${options.allowedModelIds.map((id) => `"${id}"`).join(", ")}.`,
-      meta: { allowed: [...options.allowedModelIds], source: STT_OVERVIEW_DOCS },
+      meta: { allowed: [...options.allowedModelIds], source: STT_THIRD_PARTY_DOCS },
+    });
+  }
+
+  // The proto zero value is in both enums and documented as an error on both
+  // surfaces (see INWORLD_STT_AUDIO_ENCODINGS).
+  if (config.audioEncoding === "AUDIO_ENCODING_UNSPECIFIED") {
+    const excluded: readonly string[] =
+      options.surface === "sync" ? [] : INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS;
+    const allowed = INWORLD_STT_AUDIO_ENCODINGS.filter(
+      (encoding) => encoding !== "AUDIO_ENCODING_UNSPECIFIED" && !excluded.includes(encoding),
+    );
+    ctx.report({
+      code: "invalid_enum_value",
+      path: at("audioEncoding"),
+      model: modelId,
+      message: `\`audioEncoding: "AUDIO_ENCODING_UNSPECIFIED"\` is the proto zero value, documented as "Not specified" and rejected by the API; send ${allowed.map((encoding) => `"${encoding}"`).join(", ")}.`,
+      meta: {
+        value: config.audioEncoding,
+        allowed,
+        source: options.surface === "sync" ? TRANSCRIBE_DOCS : STT_WEBSOCKET_DOCS,
+      },
     });
   }
 
@@ -418,41 +493,59 @@ export function checkTranscribeConfig(
     }
   }
 
-  // "prompt … Custom instructions (Universal-3 Pro only)".
+  // `assemblyaiConfig.prompt`. STT_THIRD_PARTY_DOCS's table reads "| `prompt`
+  // | string | Custom transcription instructions for the model. Universal-3
+  // Pro Streaming only |", while the same page's Realtime "Example:
+  // AssemblyAI" sends `"model": "assemblyai/universal-3-5-pro"` with
+  // `"prompt": "Patient intake call. …"` (2026-11-13). AssemblyAI lists
+  // "Native prompting" for "Universal-3.6 Pro / 3.5 Pro Realtime"
+  // (https://www.assemblyai.com/docs/streaming/select-the-speech-model) and
+  // marks `prompt` "Not supported" on Universal Streaming
+  // (https://www.assemblyai.com/docs/streaming/migration-guides/universal-to-universal-3-5-pro-streaming),
+  // both 2026-11-13. The Pro line therefore takes it — universal-3-5-pro
+  // with a warning, because Inworld's own table names only the 3 generation —
+  // and every other route is refused.
   if (config.assemblyaiConfig?.prompt != null && modelId !== "assemblyai/u3-rt-pro") {
-    ctx.report({
-      code: "unsupported_param",
-      path: at("assemblyaiConfig", "prompt"),
-      model: modelId,
-      message: `\`assemblyaiConfig.prompt\` is documented as Universal-3 Pro only; use "assemblyai/u3-rt-pro" or drop the prompt.`,
-      meta: { allowed: ["assemblyai/u3-rt-pro"], source: STT_OVERVIEW_DOCS },
-    });
+    const path = at("assemblyaiConfig", "prompt");
+    const allowed = [...ASSEMBLYAI_PROMPT_MODEL_IDS];
+    if (modelId === "assemblyai/universal-3-5-pro") {
+      ctx.report({
+        code: "unsupported_param",
+        severity: "warning",
+        path,
+        model: modelId,
+        message: `\`assemblyaiConfig.prompt\` on "${modelId}": Inworld's assemblyaiConfig table reads "Universal-3 Pro Streaming only", while Inworld's own Realtime AssemblyAI example sends \`prompt\` with this model and AssemblyAI documents Universal-3.5 Pro Realtime as promptable; "assemblyai/u3-rt-pro" is the route the table names.`,
+        meta: { allowed, source: STT_THIRD_PARTY_DOCS },
+      });
+    } else {
+      ctx.report({
+        code: "unsupported_param",
+        path,
+        model: modelId,
+        message: `\`assemblyaiConfig.prompt\` is documented for the Universal-3 Pro streaming line only, and AssemblyAI documents \`prompt\` as not supported on Universal Streaming; use ${allowed.map((id) => `"${id}"`).join(" or ")}, or drop the prompt.`,
+        meta: { allowed, source: STT_THIRD_PARTY_DOCS },
+      });
+    }
   }
 
-  // Voice Profile is a first-party feature: the model table lists it against
-  // `inworld/inworld-stt-1` alone.
-  if (config.voiceProfileConfig?.enableVoiceProfile === true && vendor !== undefined && vendor !== "inworld") {
-    ctx.report({
-      code: "unsupported_capability",
-      path: at("voiceProfileConfig", "enableVoiceProfile"),
-      model: modelId,
-      message: `Voice Profile (emotion, vocal style, accent, age, pitch) is only produced by "inworld/inworld-stt-1"; "${modelId}" is routed to ${vendor}.`,
-      meta: { source: STT_OVERVIEW_DOCS },
-    });
-  }
+  // Voice Profile "works with every STT model on the API — including
+  // third-party models" (STT_THIRD_PARTY_DOCS), so it has no vendor gate.
 
-  // "Word timestamps & diarization: Available for AssemblyAI, Soniox,
-  // Deepgram; not yet for Inworld." Groq is not named on either side of that
-  // sentence, so only the vendor the docs exclude is reported.
-  if (vendor === "inworld") {
+  // Word timestamps and diarization reach `inworld/inworld-stt-1` on the
+  // WebSocket only: diarization "Applies to the WebSocket streaming endpoint"
+  // (TRANSCRIBE_DOCS) and the third-party comparison table marks that model's
+  // word timestamps "(streaming)". On sync the flags are accepted and nothing
+  // comes back — a warning, not an error.
+  if (vendor === "inworld" && options.surface === "sync") {
     for (const key of ["includeWordTimestamps", "enableSpeakerDiarization"] as const) {
       if (config[key] === true) {
         ctx.report({
           code: "unsupported_capability",
+          severity: "warning",
           path: at(key),
           model: modelId,
-          message: `\`${key}\` is not implemented for "${modelId}" yet (it is available on the AssemblyAI, Soniox and Deepgram routes); the field is accepted but no per-word data comes back.`,
-          meta: { source: STT_OVERVIEW_DOCS },
+          message: `\`${key}\` is accepted but ignored by "${modelId}" on POST /stt/v1/transcribe; it takes effect on the transcribe:streamBidirectional WebSocket.`,
+          meta: { source: key === "enableSpeakerDiarization" ? TRANSCRIBE_DOCS : STT_THIRD_PARTY_DOCS, ignored: true },
         });
       }
     }
@@ -492,7 +585,7 @@ function checkAudioSize(
     path: ["audioData", "content"],
     model: params.transcribeConfig.modelId,
     message: `audio decodes to ${bytes} bytes; the Inworld sync transcribe endpoint accepts audio files up to ~${STT_MAX_AUDIO_BYTES} bytes (16 MB) — stream longer audio over transcribe:streamBidirectional instead.`,
-    meta: { bytes, limit: STT_MAX_AUDIO_BYTES, source: STT_OVERVIEW_DOCS },
+    meta: { bytes, limit: STT_MAX_AUDIO_BYTES, source: STT_AUDIO_FORMATS_DOCS },
   });
 }
 

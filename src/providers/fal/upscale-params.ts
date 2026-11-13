@@ -9,7 +9,7 @@
  * Two fields matter here and both are per model. `sources` says whether the
  * route takes a still or a clip — and unlike the two performance categories,
  * where every row in a category agrees, this one genuinely splits: seven rows
- * say `["image"]` and three say `["video"]`. `factors` says what multipliers
+ * say `["image"]` and four say `["video"]`. `factors` says what multipliers
  * the route offers, with `[]` meaning it offers none at all.
  */
 

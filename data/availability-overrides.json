@@ -67,30 +67,47 @@
 
   "deny": [
     ["*:*", "azure:*claude*"],
-    ["*:*", "google-vertex:*claude*"]
+    ["*:*", "google-vertex:*claude*"],
+    ["*:*", "google-vertex:mistral-*"],
+    ["*:*", "google-vertex:codestral-*"]
   ],
 
   "$denyNotes": {
-    "azure:*claude*": "azure lists 11 claude-* models but models.dev records api: null for azure and unmodel's azure module is OpenAI-compatible only. Nobody has verified which wire surface Azure exposes Claude on, so these rows ship no edges in either direction rather than a guessed dialect.",
-    "google-vertex:*claude*": "Vertex serves Claude through an Anthropic-shaped rawPredict surface that unmodel has no module for (models.dev also carries a separate google-vertex-anthropic provider unmodel does not implement). Deny until that endpoint exists; the google-vertex.chatRawPredict surface rule in scripts/availability.ts is already in place for when it does."
+    "azure:*claude*": "Azure serves Claude on the Anthropic Messages API, not an OpenAI-compatible route. https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models (checked 2026-11-13) lists only \"Messages (`POST /v1/messages`)\" and \"Token counting (`POST /v1/messages/count_tokens`)\", and says \"The deployment endpoint follows the shape `https://<resource-name>.services.ai.azure.com/anthropic/v1/messages`\". models.dev agrees: its per-model azure claude-* rows carry provider.api `https://${AZURE_RESOURCE_NAME}.services.ai.azure.com/anthropic/v1` and npm `@ai-sdk/anthropic`, which codegen does not read. unmodel's azure module has no Messages surface (its chat endpoint is OpenAI chat-completions), so the 16 claude-* rows ship no edges until an azure Messages endpoint exists.",
+    "google-vertex:*claude*": "Vertex serves Claude through an Anthropic-shaped rawPredict surface that unmodel has no module for (models.dev also carries a separate google-vertex-anthropic provider unmodel does not implement). Deny until that endpoint exists; the google-vertex.chatRawPredict surface rule in scripts/availability.ts is already in place for when it does.",
+    "google-vertex:mistral-*, google-vertex:codestral-*": "Vertex serves Mistral's models (mistral-medium-3, mistral-small-2503, codestral-2 in the 2026-11-12 snapshot) on a publisher rawPredict route, not generateContent: https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/partner-models/mistral (checked 2026-11-12) documents \"POST https:// LOCATION -aiplatform.googleapis.com/v1/projects/ PROJECT_ID /locations/ LOCATION /publishers/mistralai/models/ MODEL :rawPredict\". unmodel has no module for that surface and these ids carry no -maas suffix, so without this pair the heuristic labels them google-vertex.chat (Gemini dialect, publishers/google URL). Deny until a mistralai rawPredict endpoint exists."
   },
 
   "force": [],
 
   "chatScopeExclude": [
+    "inception:mercury-edit-2",
+    "groq:whisper-*",
     "openai:chatgpt-image-*",
     "openai:gpt-image-*",
     "openai:gpt-realtime-*",
     "openai:*-codex",
     "openai:*-codex-*",
-    "openai:text-embedding-*"
+    "openai:*-pro",
+    "openai:gpt-daybreak-*",
+    "openai:text-embedding-*",
+    "mistral:mistral-embed",
+    "mistral:voxtral-mini-latest",
+    "stepfun:stepaudio-2.5-asr"
   ],
 
   "$chatScopeExcludeNotes": {
+    "inception:mercury-edit-2": "Served only on POST /v1/fim/completions and POST /v1/edit/completions — https://docs.inceptionlabs.ai/get-started/models lists \"| **Mercury Edit 2** | … | `v1/fim/completions` `v1/edit/completions` |\", and https://api.inceptionlabs.ai/v1/edit/completions/models gives it \"supported_endpoints\":[\"edit.completions\",\"fim.completions\"], while https://api.inceptionlabs.ai/v1/chat/completions/models omits it. POST /v1/chat/completions answers it 400 \"Value error, Model must be one of the following: mercury, mercury-2, mercury-2.5, mercury-3, …\" (checked 2026-11-13). models.dev files it as text-out, so without this entry the snapshot generates a chat ref that compiles to a 400. unmodel validates neither route; `checkChatRoute` in src/providers/inception/index.ts is the substrate twin. Substrate signpost warning, unified ref withdrawn.",
+    "groq:whisper-*": "Groq serves whisper-large-v3 and whisper-large-v3-turbo only on POST https://api.groq.com/openai/v1/audio/transcriptions and /audio/translations (turbo: transcriptions only, \"Translation Support | No\") — https://console.groq.com/docs/speech-to-text (checked 2026-11-12). models.dev files them as text-out with limit 448/448 (Whisper's decoder cap), which is how they reached the chat ref tables. unmodel has no validator for Groq's audio routes. Same treatment as codex: the substrate keeps accepting them with a signpost warning naming the route (`checkChatCompletionsRoute` in src/providers/groq/index.ts, pinned against this entry by its index.test.ts); only the unified ref is withdrawn.",
     "openai:*-codex, openai:*-codex-*": "gpt-5.3-codex and gpt-5.3-codex-spark are served by POST /v1/responses only — developers.openai.com/api/docs/models/gpt-5.3-codex lists \"Chat Completions | v1/chat/completions | Not supported\" (checked 2026-08-26). unmodel/chat compiles Chat Completions and has no /v1/responses validator (docs/decisions.md #7), so a ref for these compiled a body the API refuses. The substrate keeps accepting them with a signpost warning naming the route; only the unified ref is withdrawn.",
+    "openai:gpt-daybreak-*": "gpt-daybreak-blue-latest (alias of gpt-5.6-sol) and gpt-daybreak-red-latest (alias of gpt-5.6-cyber) are POST /v1/responses only — both model pages at developers.openai.com/api/docs/models/gpt-daybreak-{blue,red}-latest list \"Chat Completions | v1/chat/completions | Not supported\" and carry \"Status: Deprecated\" (checked 2026-11-12). models.dev files them as text-out with no status, so without this entry the 2026-11-12 snapshot generates a chat ref that compiles to a 400. Same treatment as codex: substrate signpost warning, unified ref withdrawn.",
+    "openai:*-pro": "gpt-5-pro, gpt-5.2-pro, gpt-5.4-pro, gpt-5.5-pro, o1-pro and o3-pro are POST /v1/responses only — every model page at developers.openai.com/api/docs/models/{gpt-5-pro,gpt-5.2-pro,gpt-5.4-pro,gpt-5.5-pro,o1-pro,o3-pro} lists \"| Chat Completions | `v1/chat/completions` | Not supported |\" beside \"| Responses | `v1/responses` | Supported |\", and the prose agrees: \"GPT-5.5 Pro is available for Responses API requests\", \"GPT-5.4 Pro is available in the Responses API only\", \"o3-pro is available in the Responses API only\" (checked 2026-11-12). models.dev files them as text-out, so each shipped as a chat ref that compiles to a 400. Same treatment as codex: substrate signpost warning (`/-pro(?:$|-)/`), unified ref withdrawn. Only the bare-suffix glob is listed: no snapshot id carries `-pro-`, and an inert `*-pro-*` entry would fail codegen.",
     "openai:text-embedding-*": "Embeddings answer POST /v1/embeddings. models.dev files them as text-out, which is how they reached a chat ref table at all. Note the availability half already drops them on the billing signal in scripts/availability.ts (`isChatRow`) — this list is what the weaker `isTextModel` in chatScope needs.",
     "openai:gpt-image-*, openai:chatgpt-image-*": "Image generation answers POST /v1/images/generations, which is `image` from unmodel/openai. They are text-out in models.dev because they accept and echo text.",
     "openai:gpt-realtime-*": "The realtime family answers the WebRTC/WebSocket realtime API, not chat/completions.",
-    "$scope": "This mirrors `NonChatModelId` in src/providers/openai/chat.ts, which states the same six families as a TYPE (so it can shape `OpenaiChatModelId`) and therefore cannot be read by codegen. `test/chat/refs.test.ts` asserts the two agree. `dall-e-*` is in the type and deliberately absent here: models.dev files DALL·E as image-out only, so `isTextModel` already excludes it and an entry would be inert — and inert entries fail codegen."
+    "mistral:mistral-embed": "An embeddings model: it answers POST /v1/embeddings — https://docs.mistral.ai/models/mistral-embed-23-12 lists \"Features Embeddings /v1/embeddings\" (checked 2026-11-12). models.dev files it as text-out (type \"embedding\"), which is how it reached a chat ref table at all.",
+    "mistral:voxtral-mini-latest": "Transcription only: the card lists `\"names\":[\"voxtral-mini-2602\",\"voxtral-mini-latest\"]` and features only \"Timestamps /v1/audio/transcriptions Transcriptions /v1/audio/transcriptions\" (https://docs.mistral.ai/models/voxtral-mini-transcribe-26-02, checked 2026-11-12) — that is `stt` from unmodel/mistral. The chat-capable Voxtral Mini 25.07 retired 5/31/2026 (https://docs.mistral.ai/getting-started/models); models.dev types the alias \"transcription\" and still files it as text-out.",
+    "stepfun:stepaudio-2.5-asr": "stepaudio-2.5-asr is speech recognition, served by \"POST https://api.stepfun.ai/v1/audio/asr/sse\" — the ASR reference \"Supports `stepaudio-3-asr-max` and `stepaudio-2.5-asr`\" (https://platform.stepfun.ai/docs/en/api-reference/audio/asr-sse.md, checked 2026-11-12), and its model page (https://platform.stepfun.ai/docs/en/guides/models/stepaudio-2.5-asr.md, checked 2026-11-12) names only that route and WSS /v1/realtime/asr/stream. models.dev files it audio-in/text-out, which is how it reached a chat ref table. unmodel has no validator for the ASR route. Same treatment as codex: `stepfun.chat` keeps accepting it with a signpost warning naming the route (NON_CHAT_ROUTES in src/providers/stepfun/chat.ts, pinned against this entry in src/providers/stepfun/index.test.ts); only the unified ref is withdrawn.",
+    "$scope": "The openai entries mirror `NonChatModelId` in src/providers/openai/chat.ts, which states the same eight families as a TYPE (so it can shape `OpenaiChatModelId`) and therefore cannot be read by codegen. `test/chat/refs.test.ts` asserts the two agree. `dall-e-*` is in the type and deliberately absent here: models.dev files DALL·E as image-out only, so `isTextModel` already excludes it and an entry would be inert — and inert entries fail codegen. The mistral entries are mistral's own: the two text-out rows models.dev types \"embedding\" and \"transcription\"."
   }
 }

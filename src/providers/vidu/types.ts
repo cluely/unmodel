@@ -67,6 +67,8 @@ export type {
   ViduMovementAmplitude,
   ViduResolution,
   ViduStyle,
+  ViduWatermarkParams,
+  ViduWatermarkPosition,
 } from "./shared";
 
 export type { ViduModelId, ViduImageModelId } from "./models";

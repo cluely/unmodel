@@ -53,10 +53,10 @@ import {
 import { video as validator, type TextToVideoParams } from "./video";
 import { MODELS, PIXVERSE_VIDEO_MODEL_PARAMS } from "./video-params";
 
-const SOURCE = `${DOCS_BASE}/text-to-video-generation-13016634e0`;
+const SOURCE = `${DOCS_BASE}/text-to-video-13016634e0`;
 
-/** v6 and c1 add 2:3, 3:2 and 21:9 to the legacy five. */
-const WIDE_RATIO_MODELS: ReadonlySet<string> = new Set(["v6", "c1"]);
+/** v6-max, v6 and c1 add 2:3, 3:2 and 21:9 to the legacy five. */
+const WIDE_RATIO_MODELS: ReadonlySet<string> = new Set(["v6-max", "v6", "c1"]);
 
 /** `quality` — the two documented tiers the canonical vocabulary names. */
 const QUALITIES: Readonly<Partial<Record<VideoResolution, PixverseQualityValue>>> = {
@@ -82,7 +82,7 @@ export const video = {
   modelParams: PIXVERSE_VIDEO_MODEL_PARAMS,
   unsupported: {
     image:
-      "POST /openapi/v2/video/image/generate takes `img_id`, an integer minted by " +
+      "POST /openapi/v2/video/img/generate takes `img_id`, an integer minted by " +
       "POST /openapi/v2/image/upload (a multipart request unmodel does not make) — a URL or " +
       "inline bytes cannot become one without that upload. Upload first, then call " +
       "`pixverse.videoFromImage` with the id you get back.",
@@ -140,7 +140,7 @@ export const video = {
       duration = filled("duration", DEFAULT_DURATION, "the shortest clip every model offers");
     } else {
       // No `allowed`: `checkDuration` in ./shared carries this model's own list
-      // (5/8, 5/8/10, or the 1–15 range on v6 and c1) plus the quality
+      // (5/8, 5/8/10, or the 1–15 range on v6-max, v6 and c1) plus the quality
       // exclusions, and answers on the way out at `duration`.
       duration = ctx.take(
         toDurationNumber(input.duration, undefined, { path: ["duration"], warn: ctx.warn }),

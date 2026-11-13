@@ -6,8 +6,13 @@ import {
   AUDIO_STREAM_URL,
   SPEECH_MAX_CHARACTERS,
   STREAM_MAX_CHARACTERS,
+  SPEECH_MAX_SENT_CHARACTERS,
+  STREAM_MAX_SENT_CHARACTERS,
   SPEECH_OUTPUT_FORMATS,
   STREAM_OUTPUT_FORMATS,
+  MAX_PRONUNCIATIONS,
+  PRONUNCIATION_LANGUAGES,
+  type SpeechifyPronunciation,
 } from "./tts";
 import { models, SPEECHIFY_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
@@ -52,6 +57,8 @@ describe("speechify.tts happy path", () => {
       audio_format: "wav",
       output_format: "wav_48000",
       options: { loudness_normalization: true, text_normalization: false },
+      pronunciations: [],
+      safety_identifier: "u_9f86d081884c7d65",
     });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
@@ -70,6 +77,21 @@ describe("speechify.tts happy path", () => {
     }
   });
 
+  test("simba-3.5, the recommended model, validates with no warning on both routes", () => {
+    const speech = tts.safe({ input: "x", voice_id: "v", model: "simba-3.5", language: "es-MX" });
+    expect(speech.ok).toBe(true);
+    if (speech.ok) expect(speech.warnings).toEqual([]);
+    const stream = ttsStream.safe({ input: "x", voice_id: "v", model: "simba-3.5" });
+    expect(stream.ok).toBe(true);
+    if (stream.ok) expect(stream.warnings).toEqual([]);
+  });
+
+  test('simba-3.5 does not gate languages outside its 48 ("not rejected")', () => {
+    const r = tts.safe({ input: "x", voice_id: "v", model: "simba-3.5", language: "et-EE" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
   test("omitting model resolves to the documented simba-3.0 default", () => {
     const r = tts.safe({ input: "x", voice_id: "v" });
     expect(r.ok).toBe(true);
@@ -84,7 +106,7 @@ describe("speechify.tts happy path", () => {
   });
 });
 
-describe("speechify character caps (2,000 speech / 20,000 stream)", () => {
+describe("speechify character caps (2,000 / 20,000 spoken; 20,000 / 32,000 as sent)", () => {
   test("speech over 2,000 characters is over_output_limit with character meta", () => {
     const input = "a".repeat(SPEECH_MAX_CHARACTERS + 1);
     const r = tts.safe({ input, voice_id: "v", model: "simba-3.2" });
@@ -95,7 +117,54 @@ describe("speechify character caps (2,000 speech / 20,000 stream)", () => {
       expect(r.errors[0]?.message).toContain("characters, not tokens");
       expect(r.errors[0]?.meta?.limitCharacters).toBe(2000);
       expect(r.errors[0]?.meta?.actualCharacters).toBe(2001);
+      expect(r.errors[0]?.meta?.counted).toBe("spoken");
     }
+  });
+
+  test("characters are code points: 2,000 emoji pass speech, 2,001 do not", () => {
+    // JavaScript's `length` counts each of these as two.
+    expect(tts.safe({ input: "😀".repeat(SPEECH_MAX_CHARACTERS), voice_id: "v" }).ok).toBe(true);
+    const r = tts.safe({ input: "😀".repeat(SPEECH_MAX_CHARACTERS + 1), voice_id: "v" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.actualCharacters).toBe(2001);
+  });
+
+  test("leading and trailing whitespace is not spoken, so it does not count", () => {
+    const input = `\n${"a".repeat(SPEECH_MAX_CHARACTERS)}\n`;
+    expect(tts.safe({ input, voice_id: "v" }).ok).toBe(true);
+  });
+
+  test("SSML tags do not count toward the spoken cap", () => {
+    // 2,000 spoken characters inside ~2,600 characters of markup.
+    const breaks = '<break time="1s"/>'.repeat(30);
+    const input = `<speak>${breaks}${"a".repeat(SPEECH_MAX_CHARACTERS)}</speak>`;
+    expect(input.length).toBeGreaterThan(SPEECH_MAX_CHARACTERS);
+    const r = tts.safe({ input, voice_id: "v", model: "simba-3.2" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+
+    const entities = "&amp;".repeat(SPEECH_MAX_CHARACTERS);
+    expect(tts.safe({ input: entities, voice_id: "v" }).ok).toBe(true);
+  });
+
+  test("the input as sent, markup included, caps at 20,000 on speech, 32,000 on stream", () => {
+    const tag = "<break/>";
+    const input = tag.repeat(SPEECH_MAX_SENT_CHARACTERS / tag.length + 1);
+    const speech = tts.safe({ input, voice_id: "v" });
+    expect(speech.ok).toBe(false);
+    if (!speech.ok) {
+      expect(speech.errors[0]?.code).toBe("over_output_limit");
+      expect(speech.errors[0]?.meta?.limitCharacters).toBe(20000);
+      expect(speech.errors[0]?.meta?.counted).toBe("sent");
+    }
+
+    // Over the speech ceiling, inside the stream one.
+    const long = `<speak>${"a".repeat(25000)}</speak>`;
+    expect(ttsStream.safe({ input: long, voice_id: "v" }).ok).toBe(true);
+    const overInput = `<speak>${"a".repeat(STREAM_MAX_SENT_CHARACTERS)}</speak>`;
+    const over = ttsStream.safe({ input: overInput, voice_id: "v" });
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.meta?.limitCharacters).toBe(32000);
   });
 
   test("speech at exactly 2,000 passes; the same text passes on stream", () => {
@@ -153,6 +222,17 @@ describe("speechify format rules (the two routes differ)", () => {
     }
   });
 
+  test("the 23 speech / 21 stream output formats include the two 160 kbps mp3s", () => {
+    expect(SPEECH_OUTPUT_FORMATS).toHaveLength(23);
+    expect(STREAM_OUTPUT_FORMATS).toHaveLength(21);
+    for (const output_format of ["mp3_22050_160", "mp3_24000_160"] as const) {
+      for (const model of ["simba-3.0", "simba-3.2", "simba-3.5"] as const) {
+        expect(tts.safe({ input: "x", voice_id: "v", model, output_format }).ok).toBe(true);
+        expect(ttsStream.safe({ input: "x", voice_id: "v", model, output_format }).ok).toBe(true);
+      }
+    }
+  });
+
   test("an unknown output_format is invalid_enum_value on both routes", () => {
     for (const run of [ttsUnchecked, streamUnchecked]) {
       const r = run({ input: "x", voice_id: "v", output_format: "flac_44100" });
@@ -196,13 +276,17 @@ describe("speechify.ttsStream Accept header", () => {
     expect((v as Record<string, unknown>).accept).toBeUndefined();
     expect(v.request.url).toBe(AUDIO_STREAM_URL);
     expect(v.request.headers.accept).toBe("audio/mpeg");
-    expect(v.toSdk("speechify")).toEqual({ input: "Hello", voice_id: "geffen_32", Accept: "audio/mpeg" });
+    // @speechify/api >= 4.0.0: client.audio.stream({ Accept?, body }).
+    expect(v.toSdk("speechify")).toEqual({
+      Accept: "audio/mpeg",
+      body: { input: "Hello", voice_id: "geffen_32" },
+    });
   });
 
   test("no accept means no accept header", () => {
     const v = ttsStream({ input: "Hello", voice_id: "v" });
     expect(v.request.headers.accept).toBeUndefined();
-    expect(v.toSdk("speechify")).toEqual({ input: "Hello", voice_id: "v" });
+    expect(v.toSdk("speechify")).toEqual({ body: { input: "Hello", voice_id: "v" } });
   });
 
   test("an undocumented accept value is invalid_enum_value", () => {
@@ -222,6 +306,29 @@ describe("speechify.ttsStream Accept header", () => {
   });
 });
 
+describe("speechify safety_identifier", () => {
+  test("a hash or opaque id passes on both routes", () => {
+    for (const safety_identifier of ["u_9f86d081884c7d65", "tenant:42|user/7+x=", "a".repeat(64)]) {
+      expect(tts.safe({ input: "x", voice_id: "v", safety_identifier }).ok).toBe(true);
+      expect(ttsStream.safe({ input: "x", voice_id: "v", safety_identifier }).ok).toBe(true);
+    }
+  });
+
+  test("an email address, a space or a 65th character is invalid_shape", () => {
+    for (const safety_identifier of ["ada@example.com", "user 7", "", "a".repeat(65)]) {
+      for (const run of [ttsUnchecked, streamUnchecked]) {
+        const r = run({ input: "x", voice_id: "v", safety_identifier });
+        expect(r.ok).toBe(false);
+        if (!r.ok) {
+          expect(r.errors[0]?.code).toBe("invalid_shape");
+          expect(r.errors[0]?.path).toEqual(["safety_identifier"]);
+          expect(r.errors[0]?.message).toContain("never an email address");
+        }
+      }
+    }
+  });
+});
+
 describe("speechify per-model gates (doc audit 2026-08-13)", () => {
   test("a non-English language on simba-3.2 is unsupported_capability", () => {
     const r = tts.safe({ input: "x", voice_id: "v", model: "simba-3.2", language: "fr-FR" });
@@ -230,6 +337,7 @@ describe("speechify per-model gates (doc audit 2026-08-13)", () => {
       expect(r.errors[0]?.code).toBe("unsupported_capability");
       expect(r.errors[0]?.path).toEqual(["language"]);
       expect(r.errors[0]?.message).toContain("English only");
+      expect(r.errors[0]?.message).toContain('"simba-3.5" (48 languages)');
     }
   });
 
@@ -253,11 +361,19 @@ describe("speechify per-model gates (doc audit 2026-08-13)", () => {
 });
 
 describe("speechify cost estimation (Starter list rate)", () => {
-  test("every model prices at $10/1M characters", () => {
-    for (const id of ["simba-3.2", "simba-3.0", "simba-multilingual", "simba-english"] as const) {
+  test("simba-3.0 and simba-3.2 price at $10/1M characters", () => {
+    for (const id of ["simba-3.2", "simba-3.0"] as const) {
       const r = tts.safe({ input: "a".repeat(1000), voice_id: "v", model: id });
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.01, 10);
+    }
+  });
+
+  test("simba-3.5 and the legacy pair it serves price at its $15/1M Starter list rate", () => {
+    for (const id of ["simba-3.5", "simba-multilingual", "simba-english"] as const) {
+      const r = ttsStream.safe({ input: "a".repeat(1000), voice_id: "v", model: id });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.015, 10);
     }
   });
 
@@ -284,7 +400,168 @@ describe("speechify catalog", () => {
       expect(info.limit.characters).toBe(20000);
       expect(info.modalities.input).toEqual(["text"]);
       expect(info.modalities.output).toEqual(["audio"]);
-      expect(info.cost?.perMillionCharacters).toBe(10);
+      const rate = id === "simba-3.0" || id === "simba-3.2" ? 10 : 15;
+      expect(info.cost?.perMillionCharacters).toBe(rate);
     }
+  });
+
+  test("the synthesis allow-list is the OpenAPI enum plus the legacy pair", () => {
+    expect([...SPEECHIFY_MODEL_IDS].sort()).toEqual([
+      "simba-3.0",
+      "simba-3.2",
+      "simba-3.5",
+      "simba-english",
+      "simba-multilingual",
+    ]);
+  });
+});
+
+describe("speechify pronunciations (simba-3.5)", () => {
+  const spanish = {
+    input: "Speechify en México.",
+    voice_id: "v",
+    model: "simba-3.5",
+    language: "es-MX",
+  } as const;
+
+  function onSimba35(pronunciations: SpeechifyPronunciation[]) {
+    return tts.safe({ ...spanish, pronunciations });
+  }
+
+  test("simba-3.5 applies them outside English, on both routes", () => {
+    const pronunciations = [
+      { text: "Speechify", ipa: "s p ˈiː tʃ ɪ f aɪ" },
+      { text: "México", alias: "Méjico", case_sensitive: true },
+    ];
+    const speech = onSimba35(pronunciations);
+    expect(speech.ok).toBe(true);
+    if (speech.ok) expect(speech.warnings).toEqual([]);
+    const stream = ttsStream.safe({ ...spanish, pronunciations });
+    expect(stream.ok).toBe(true);
+    if (stream.ok) expect(stream.warnings).toEqual([]);
+  });
+
+  test("an empty list is accepted by every model", () => {
+    for (const model of [...SPEECHIFY_MODEL_IDS, undefined]) {
+      const r = tts.safe({ input: "x", voice_id: "v", model, pronunciations: [] });
+      expect(r.ok).toBe(true);
+    }
+  });
+
+  test("simba-3.0, simba-3.2 and an omitted model refuse a non-empty list", () => {
+    const pronunciations = [{ text: "SaaS", alias: "sass" }];
+    for (const model of ["simba-3.0", "simba-3.2", undefined] as const) {
+      const r = tts.safe({ input: "SaaS", voice_id: "v", model, pronunciations });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.code).toBe("unsupported_capability");
+        expect(r.errors[0]?.path).toEqual(["pronunciations"]);
+        expect(r.errors[0]?.message).toContain('Use "simba-3.5"');
+      }
+    }
+    expect(PRONUNCIATION_LANGUAGES["simba-3.0"]).toEqual([]);
+    expect(PRONUNCIATION_LANGUAGES["simba-3.2"]).toEqual([]);
+  });
+
+  test('English on simba-3.5 warns ("not supported yet"); an omitted language does not', () => {
+    const pronunciations = [{ text: "SaaS", alias: "sass" }];
+    const english = ttsStream.safe({ ...spanish, language: "en-US", pronunciations });
+    expect(english.ok).toBe(true);
+    if (english.ok) {
+      expect(english.warnings.map((w) => `${w.code}@${w.path.join(".")}`)).toEqual([
+        "unsupported_capability@pronunciations",
+      ]);
+      expect(english.warnings[0]?.message).toContain("pronunciations_unsupported");
+    }
+    expect(PRONUNCIATION_LANGUAGES["simba-3.5"]).toHaveLength(47);
+    expect(PRONUNCIATION_LANGUAGES["simba-3.5"]).not.toContain("en" as never);
+
+    const { language: _omitted, ...voiceDecides } = spanish;
+    const r = tts.safe({ ...voiceDecides, pronunciations });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("the legacy Simba 1.6 ids publish no pronunciation languages and are not gated", () => {
+    const r = tts.safe({
+      input: "SaaS",
+      voice_id: "v",
+      model: "simba-english",
+      pronunciations: [{ text: "SaaS", alias: "sass" }],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+  });
+
+  test("more than 200 entries is invalid_shape", () => {
+    const entries = Array.from({ length: MAX_PRONUNCIATIONS + 1 }, (_, i) => ({
+      text: `word${i}`,
+      alias: "x",
+    }));
+    const r = onSimba35(entries);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_shape");
+      expect(r.errors[0]?.meta?.max).toBe(200);
+    }
+    expect(onSimba35(entries.slice(1)).ok).toBe(true);
+  });
+
+  test("an entry needs exactly one of ipa and alias", () => {
+    for (const entry of [{ text: "a" }, { text: "a", ipa: "a", alias: "b" }]) {
+      const r = ttsUnchecked({ ...spanish, pronunciations: [entry] });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.code).toBe("invalid_shape");
+        expect(r.errors[0]?.path).toEqual(["pronunciations", 0]);
+      }
+    }
+  });
+
+  test("an ipa entry's text is one word; an alias entry's may be a phrase", () => {
+    const phrase = onSimba35([{ text: "Nueva York", ipa: "n w e β a" }]);
+    expect(phrase.ok).toBe(false);
+    if (!phrase.ok) expect(phrase.errors[0]?.path).toEqual(["pronunciations", 0, "text"]);
+
+    expect(onSimba35([{ text: "Nueva York", alias: "Nueva Yor" }]).ok).toBe(true);
+    expect(onSimba35([{ text: "  ", alias: "x" }]).ok).toBe(false);
+  });
+
+  test("text is capped at 64 code points, alias at 160, ipa at 64 phones", () => {
+    // 128 UTF-16 units but 64 code points: inside the cap.
+    expect(onSimba35([{ text: "😀".repeat(64), alias: "x" }]).ok).toBe(true);
+    const sixtyFourPhones = Array.from({ length: 64 }, () => "a").join(" ");
+    expect(onSimba35([{ text: "a", ipa: sixtyFourPhones }]).ok).toBe(true);
+
+    const cases: Array<[SpeechifyPronunciation, string]> = [
+      [{ text: "a".repeat(65), alias: "x" }, "text"],
+      [{ text: "a", alias: "x".repeat(161) }, "alias"],
+      [{ text: "a", alias: "line\nbreak" }, "alias"],
+      [{ text: "a", ipa: Array.from({ length: 65 }, () => "a").join("|") }, "ipa"],
+      [{ text: "a", ipa: " | " }, "ipa"],
+    ];
+    for (const [entry, field] of cases) {
+      const r = onSimba35([entry]);
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["pronunciations", 0, field]);
+    }
+  });
+
+  test("a repeated text is refused unless both entries are case_sensitive", () => {
+    const repeated = onSimba35([
+      { text: "SaaS", alias: "sass" },
+      { text: "saas", alias: "sass" },
+    ]);
+    expect(repeated.ok).toBe(false);
+    if (!repeated.ok) {
+      expect(repeated.errors[0]?.path).toEqual(["pronunciations", 1, "text"]);
+      expect(repeated.errors[0]?.meta?.duplicateOf).toBe(0);
+    }
+
+    const distinct = onSimba35([
+      { text: "SaaS", alias: "sass", case_sensitive: true },
+      { text: "saas", alias: "sahs", case_sensitive: true },
+    ]);
+    expect(distinct.ok).toBe(true);
   });
 });

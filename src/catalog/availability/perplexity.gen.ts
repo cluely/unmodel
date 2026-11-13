@@ -30,12 +30,10 @@ export const availability = {
   "sonar-pro": {
     "openrouter": "perplexity/sonar-pro",
     "perplexity": "sonar-pro",
-    "vercel": "perplexity/sonar-pro",
   },
   "sonar-reasoning-pro": {
     "openrouter": "perplexity/sonar-reasoning-pro",
     "perplexity": "sonar-reasoning-pro",
-    "vercel": { id: "perplexity/sonar-reasoning-pro", narrows: { context: 127000 } },
   },
 } as const satisfies AvailabilityMap;
 

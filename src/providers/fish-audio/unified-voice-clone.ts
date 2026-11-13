@@ -7,11 +7,12 @@
  * sample carries a transcript, or none does, and a mix is refused at
  * `samples` naming the rule. ASR runs server-side when `texts` is omitted.
  *
- * `visibility` maps member-for-member (`"unlisted"` → Fish's `unlist`) and is
- * worth setting explicitly: the wire defaults to **public**, and the
- * validator's own omission warning rides through to the canonical path.
- * `cover_image` — required if the model is public — is an extra, so an
- * explicit `visibility: "public"` stays expressible.
+ * `visibility` maps member-for-member (`"unlisted"` → Fish's `unlist`). The
+ * wire defaults to "private", and "Public requests are downgraded to private;
+ * use the web publish flow to publish publicly." `cover_image` — "required if
+ * the model is public" — is an extra, so an explicit `visibility: "public"`
+ * stays expressible. The wire validator warns that it is downgraded, and
+ * warns again when it has no `cover_image`.
  *
  * `type: "tts"` and `train_mode: "fast"` are the wire's required consts; the
  * adapter writes them.

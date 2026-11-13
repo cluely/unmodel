@@ -50,7 +50,7 @@ describe("the pack", () => {
     expect(result.estimate.costUSD).toBe(0.01);
   });
 
-  test("minimax prices the preview text through the synthetic row", () => {
+  test("minimax leaves the preview unpriced: its pages publish two different rates", () => {
     const result = voiceDesign.safe({
       model: "minimax/voice-design",
       operation: "design",
@@ -59,7 +59,7 @@ describe("the pack", () => {
     } as never);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.estimate.costUSD).toBeCloseTo((30 * 500) / 1_000_000, 12);
+    expect(result.estimate.costUSD).toBeUndefined();
   });
 });
 
@@ -78,11 +78,11 @@ describe("bounds surface at canonical paths", () => {
     expect(issue?.meta?.["min"]).toBe(100);
   });
 
-  test("inworld: the 30–250 prompt window arrives at `prompt`", () => {
+  test("inworld: the 1000-character prompt cap arrives at `prompt`", () => {
     const result = voiceDesign.safe({
       model: "inworld/voice-design",
       operation: "design",
-      prompt: "too short",
+      prompt: "a".repeat(1001),
       previewText: SCRIPT,
     } as never);
     expect(result.ok).toBe(false);

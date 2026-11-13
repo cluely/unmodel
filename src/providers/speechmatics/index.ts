@@ -4,6 +4,7 @@ export {
   jobsUrl,
   JOBS_URL,
   MAX_DATA_FILE_BYTES,
+  MAX_ADDITIONAL_VOCAB_ITEMS,
   DEFAULT_MODEL,
   SUPPORTED_FILE_TYPES,
   resolveModel,
@@ -20,6 +21,8 @@ export type {
   SpeechmaticsReplacement,
   SpeechmaticsSpeaker,
   SpeechmaticsSpeakerDiarizationConfig,
+  SpeechmaticsEntitiesConfig,
+  SpeechmaticsRedactionConfig,
   SpeechmaticsNotificationConfig,
   SpeechmaticsTracking,
   SpeechmaticsOutputConfig,
@@ -41,6 +44,8 @@ export {
   MELIA_REGIONS,
   REALTIME_STANDARD_USD_PER_MINUTE,
   REALTIME_ENHANCED_USD_PER_MINUTE,
+  REALTIME_MELIA_USD_PER_MINUTE,
+  REALTIME_OAK_USD_PER_MINUTE,
 } from "./models";
 export type { SpeechmaticsModelId, SpeechmaticsRegion } from "./models";
 

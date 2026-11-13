@@ -10,7 +10,12 @@ export {
   GUIDANCE_SCALE_MIN,
   GUIDANCE_SCALE_MAX,
   DEFAULT_GUIDANCE_SCALE,
+  SPEED_MIN,
+  SPEED_MAX,
+  VOLUME_MIN,
+  VOLUME_MAX,
   MODEL_ID_MAX_LENGTH,
+  billableUnits,
 } from "./tts";
 export type {
   TtsBody,
@@ -32,6 +37,8 @@ export {
   BREEZEBLUE_MODEL_IDS,
   VOICE_LANGUAGE_CODES,
   TTS_COST_PER_MILLION_CHARACTERS_USD,
+  TTS_MAX_CHARACTERS,
+  TTS_DEFAULT_MAX_CHARACTERS,
 } from "./models";
 export type {
   BreezeblueModelId,

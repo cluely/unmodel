@@ -21,10 +21,10 @@
       "name": "Sonic 3.6",
       "status": "covered",
       "refs": [
-        "cartesia/sonic-preview"
+        "cartesia/sonic-3.6"
       ],
-      "reason": "No sonic-3.6 model id exists — Sonic 3.6 is the beta behind sonic-preview (docs.cartesia.ai, 2026-08-24).",
-      "verified": "2026-08-25"
+      "reason": "Sonic 3.6 is GA on its own id: \"generally available from August 27 on `sonic-3.6`\" (https://docs.cartesia.ai/changelog/2026, 2026-11-12).",
+      "verified": "2026-11-12"
     },
     "text-to-speech/qwen-audio-3-0-tts-plus": {
       "name": "Qwen-Audio-3.0-TTS-Plus",
@@ -303,10 +303,10 @@
       "name": "Step TTS 2 (Mar 2026)",
       "status": "partial",
       "refs": [
-        "stepfun (catalog row step-tts-2, deprecated)"
+        "stepfun (catalog row step-tts-2)"
       ],
-      "reason": "Catalogued, but StepFun's create-speech reference says the endpoint currently supports only stepaudio-2.5-tts, so the id is off the unified roster and warns when sent raw.",
-      "verified": "2026-08-25"
+      "reason": "Catalogued, but StepFun's Global create-speech reference names only stepaudio-3-tts and stepaudio-2.5-tts ('Currently supports `stepaudio-3-tts` and `stepaudio-2.5-tts`', https://platform.stepfun.ai/docs/en/api-reference/audio/create-audio.md, 2026-11-12), so the id is off the unified roster and warns when sent raw. Not deprecated: the China reference still lists it (https://platform.stepfun.com/docs/zh/api-reference/audio/create-audio.md, 2026-11-12).",
+      "verified": "2026-11-12"
     },
     "image-to-video/midjourney-v1": {
       "name": "Midjourney V1",

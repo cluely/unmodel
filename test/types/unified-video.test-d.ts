@@ -7,7 +7,7 @@
  *
  *  1. **The ref union comes from the ten adapters' `as const` model arrays.**
  *     `"kling/kling-v3"` and `"kling/kling-3.0"` are both in it — two route
- *     families, one provider, one union — while `"kling/kling-4.0"` is not,
+ *     families, one provider, one union — while `"kling/kling-9.9"` is not,
  *     and is still *callable*, because a model released after this snapshot
  *     must not need a library upgrade.
  *  2. **The input types carry the route derivation.** `image` is one tagged
@@ -56,15 +56,16 @@ type PackRefs = UnifiedRef<
 
 expectAssignable<PackRefs>("openai/sora-2");
 expectAssignable<PackRefs>("openai/sora-2-pro");
-expectAssignable<PackRefs>("google/veo-3.1-generate-preview");
+expectAssignable<PackRefs>("google/veo-3.0-generate-001");
 expectAssignable<PackRefs>("luma/ray-2");
 // Both Kling route families are one provider, so both are in one union — the
 // id spelling is what selects the family at runtime.
 expectAssignable<PackRefs>("kling/kling-v3");
 expectAssignable<PackRefs>("kling/kling-3.0");
 expectAssignable<PackRefs>("kling/kling-3.0-omni");
-// @ts-expect-error — a model no adapter declares is not in the union…
 expectAssignable<PackRefs>("kling/kling-4.0");
+// @ts-expect-error — a model no adapter declares is not in the union…
+expectAssignable<PackRefs>("kling/kling-9.9");
 // @ts-expect-error — …and neither is a provider from another category.
 expectAssignable<PackRefs>("elevenlabs/eleven_v3");
 
@@ -121,7 +122,7 @@ function routeInputTests(): void {
   video({ model: "vidu/viduq3-turbo", prompt: "hi", image: [{ url, role: "reference" }] });
   // Inline bytes carry a media type, because half these providers need one to
   // build a `data:` URI and the other half take the bytes directly.
-  video({ model: "google/veo-3.1-generate-preview", prompt: "hi", image: { data: "AAAA", mimeType: "image/png" } });
+  video({ model: "google/veo-3.0-generate-001", prompt: "hi", image: { data: "AAAA", mimeType: "image/png" } });
   // A source clip is the fourth route, and its reference is URL or bytes.
   video({ model: "runway/aleph2", prompt: "hi", video: { url: "https://example.com/a.mp4" } });
   video({ model: "runway/aleph2", prompt: "hi", video: { data: "AAAA" } });
@@ -161,7 +162,7 @@ function resultTypeTests(): void {
   // @ts-expect-error — "google" is not one of openai.video's SDK targets.
   openai.toSdk("google");
 
-  const google = video({ model: "google/veo-3.1-generate-preview", prompt: "hi" });
+  const google = video({ model: "google/veo-3.0-generate-001", prompt: "hi" });
   // Veo's body nests the prompt in an instance and strips the model into the URL.
   expectAssignable<GoogleVeoInstance[]>(google.instances);
   expectTrue<IsNever<KeyIn<typeof google, "prompt">>>();
@@ -200,7 +201,7 @@ function providerOptionsTests(): void {
   // @ts-expect-error — google is not in THIS pack, even though it is in the full one.
   pair({ model: "openai/sora-2", prompt: "hi", providerOptions: { google: {} } });
   // @ts-expect-error — and its ref union is narrower too.
-  expectAssignable<UnifiedRef<typeof openaiVideo | typeof lumaVideo>>("google/veo-3.1-generate-preview");
+  expectAssignable<UnifiedRef<typeof openaiVideo | typeof lumaVideo>>("google/veo-3.0-generate-001");
 }
 
 // ---------------------------------------------------------------------------
@@ -247,13 +248,17 @@ function sizeNarrowingTests(): void {
   video({ model: "openai/sora-2-pro", prompt: "hi", resolution: "1440p" });
   // @ts-expect-error — Veo 2 denies `parameters.resolution` outright.
   video({ model: "google/veo-2.0-generate-001", prompt: "hi", resolution: "720p" });
+  // `4k` is viduq4-preview's wire `4K`; no other Vidu model renders it.
+  video({ model: "vidu/viduq4-preview", prompt: "hi", image: { url: "https://e.com/a.png" }, resolution: "4k" });
+  // @ts-expect-error — viduq3 tops out at 1080p.
+  video({ model: "vidu/viduq3", prompt: "hi", image: { url: "https://e.com/a.png", role: "reference" }, resolution: "4k" });
 
   video({ model: "kling/kling-v3", prompt: "hi", aspectRatio: "16:9" });
   // @ts-expect-error — Kling's three shapes do not include 4:3.
   video({ model: "kling/kling-v3", prompt: "hi", aspectRatio: "4:3" });
-  // @ts-expect-error — and an image-only id has no aspect-ratio field at all.
-  video({ model: "kling/kling-v2-1", prompt: "hi", aspectRatio: "16:9" });
-  // @ts-expect-error — same for every Hailuo model on /v1/video_generation.
+  // Kling 4.0 adds 21:9.
+  video({ model: "kling/kling-4.0", prompt: "hi", aspectRatio: "21:9" });
+  // @ts-expect-error — a Hailuo model on /v1/video_generation has no aspect-ratio field at all.
   video({ model: "minimax/MiniMax-Hailuo-02", prompt: "hi", aspectRatio: "16:9" });
   // `MiniMax-H3` is the v2 route, which does have `ratio`.
   video({ model: "minimax/MiniMax-H3", prompt: "hi", aspectRatio: "21:9", duration: 6, resolution: "720p" });
@@ -266,14 +271,9 @@ function sizeNarrowingTests(): void {
 }
 
 function extrasNarrowingTests(): void {
-  video({ model: "kling/kling-v1-6", prompt: "hi", cfg_scale: 0.5 });
-  // @ts-expect-error — `cfg_scale` is kling-v1 / -v1-5 / -v1-6 only.
-  video({ model: "kling/kling-v3", prompt: "hi", cfg_scale: 0.5 });
-  // @ts-expect-error — and `camera_control` is `kling-v1` alone.
-  video({ model: "kling/kling-v1-6", prompt: "hi", camera_control: { type: "simple" } });
-  video({ model: "kling/kling-v1", prompt: "hi", camera_control: { type: "simple" } });
-
   video({ model: "kling/kling-v3", prompt: "hi", sound: "on" });
+  // @ts-expect-error — `sound` is kling-v3 / kling-v2-6 only.
+  video({ model: "kling/kling-v2-5-turbo", prompt: "hi", sound: "on" });
   // @ts-expect-error — an extra's own values are narrowed too.
   video({ model: "kling/kling-v3", prompt: "hi", sound: "loud" });
   // The path-addressed family spells it `settings.audio`, with a per-model set.
@@ -283,15 +283,18 @@ function extrasNarrowingTests(): void {
   // @ts-expect-error — and the turbo rows have no `audio` at all.
   video({ model: "kling/kling-3.0-turbo", prompt: "hi", audio: "native" });
 
-  video({ model: "google/veo-3.1-generate-preview", prompt: "hi", personGeneration: "allow_adult" });
+  video({ model: "google/veo-3.0-generate-001", prompt: "hi", personGeneration: "allow_adult" });
   // @ts-expect-error — `dont_allow` is Veo 2's, and only Veo 2's.
-  video({ model: "google/veo-3.1-generate-preview", prompt: "hi", personGeneration: "dont_allow" });
+  video({ model: "google/veo-3.0-generate-001", prompt: "hi", personGeneration: "dont_allow" });
   video({ model: "google/veo-2.0-generate-001", prompt: "hi", personGeneration: "dont_allow" });
 
   video({ model: "lightricks/ltx-2-5-fast", prompt: "hi", fps: 48 });
-  // @ts-expect-error — ltx-2-5-pro's matrix has no 48.
   video({ model: "lightricks/ltx-2-5-pro", prompt: "hi", fps: 48 });
-  video({ model: "lightricks/ltx-2-5-pro", prompt: "hi", fps: 50 });
+  // @ts-expect-error — no LTX matrix lists 30fps.
+  video({ model: "lightricks/ltx-2-5-pro", prompt: "hi", fps: 30 });
+  video({ model: "lightricks/ltx-2-5-pro", prompt: "hi", resolution: "4k", aspectRatio: "3:2" });
+  // @ts-expect-error — LTX-2.3 renders 16:9 and 9:16 only.
+  video({ model: "lightricks/ltx-2-3-pro", prompt: "hi", aspectRatio: "1:1" });
 
   video({ model: "bytedance/seedance-1-0-pro-250528", prompt: "hi", frames: 49 });
   // @ts-expect-error — `frames` is the Seedance 1.0 pros'; the 2.x arms deny it.
@@ -303,6 +306,11 @@ function extrasNarrowingTests(): void {
   // @ts-expect-error — a key no model on the ref'd provider takes is a typo.
   video({ model: "luma/ray-2", prompt: "hi", lop: true });
   video({ model: "luma/ray-2", prompt: "hi", loop: true });
+
+  video({ model: "pixverse/v6", prompt: "hi", template_id: 302325299692608 });
+  // @ts-expect-error — V6 Max takes no video templates ("Video Templates: Not supported").
+  video({ model: "pixverse/v6-max", prompt: "hi", template_id: 302325299692608 });
+  video({ model: "pixverse/v6-max", prompt: "hi", aspectRatio: "21:9", generate_audio_switch: true });
 }
 
 /**

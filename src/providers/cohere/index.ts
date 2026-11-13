@@ -37,10 +37,11 @@ export type {
 export { checkChat } from "./check";
 export type { ChatResponseLike, ChatUsageLike, CohereFinishReason } from "./check";
 
+export { chatModels } from "./models";
+export type { CohereChatModelId, CohereModelId, CohereTextModelId } from "./models";
+
 export { models, provider } from "../../catalog/cohere.gen";
 export type {
-  CohereModelId,
-  CohereTextModelId,
   CohereImageModelId,
   CohereAudioModelId,
   CohereVideoModelId,

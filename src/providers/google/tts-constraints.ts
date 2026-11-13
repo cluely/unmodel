@@ -26,8 +26,14 @@ import type { GeminiTtsVoiceName } from "./wire";
 export const GEMINI_TTS_DOCS_URL =
   "https://ai.google.dev/gemini-api/docs/generate-content/speech-generation";
 
-/** The three TTS model ids on the guide's "Supported models" table. */
+/**
+ * The Gemini TTS model ids: the 3.8 pair (changelog + model pages, 2026-11-12;
+ * absent from models.dev, so their rows are hand-written in ./tts-models) and
+ * the three preview ids on the guide's "Supported models" table.
+ */
 export const GEMINI_TTS_MODEL_IDS = [
+  "gemini-3.8-flash-tts",
+  "gemini-3.8-flash-lite-tts",
   "gemini-3.1-flash-tts-preview",
   "gemini-2.5-flash-preview-tts",
   "gemini-2.5-pro-preview-tts",

@@ -178,16 +178,16 @@ export type AnyVideoAdapter = AnyUnifiedAdapter<VideoParams> & {
  * the same open union `UnifiedInput` declares, for the same reason.
  *
  * `ModelExtras` appears twice, and both are load-bearing. In `ExactKeys` it
- * *admits* the model's extras as legal keys (without it, `cfg_scale` reads as
- * a typo); in `T`'s constraint it *types* them (without it, `cfg_scale` would
- * be `unknown` and a string would compile).
+ * *admits* the model's extras as legal keys (without it, `sound` reads as
+ * a typo); in `T`'s constraint it *types* them (without it, `sound` would
+ * be `unknown` and any string would compile).
  *
  * ```ts
  * video({ model: "openai/sora-2",  prompt, duration: 8 });          // ok
  * video({ model: "openai/sora-2",  prompt, duration: 7 });          // error
  * video({ model: "openai/sora-2",  prompt, resolution: "1080p" });  // error — pro only
- * video({ model: "kling/kling-v1-6", prompt, cfg_scale: 0.5 });     // ok
- * video({ model: "kling/kling-v3",   prompt, cfg_scale: 0.5 });     // error
+ * video({ model: "kling/kling-v3",   prompt, sound: "on" });        // ok
+ * video({ model: "kling/kling-v2-5-turbo", prompt, sound: "on" });  // error
  * ```
  */
 export interface VideoValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {

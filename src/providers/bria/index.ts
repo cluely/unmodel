@@ -16,6 +16,8 @@ export type {
 export {
   imageEdit,
   BRIA_IMAGE_EDIT_URL,
+  BRIA_EDIT_IMAGES_MIN,
+  BRIA_EDIT_IMAGES_MAX,
   BRIA_EDIT_MODEL_VERSIONS,
   BRIA_EDIT_GUIDANCE_SCALE_MIN,
   BRIA_EDIT_GUIDANCE_SCALE_MAX,
@@ -27,7 +29,10 @@ export type { ImageEditParams, BriaEditModelVersion } from "./image-edit";
 export {
   BRIA_API_BASE_URL,
   BRIA_ASPECT_RATIOS,
+  BRIA_LITE_ASPECT_RATIOS,
+  BRIA_FIBO2_ASPECT_RATIOS,
   BRIA_RESOLUTIONS,
+  BRIA_STYLES,
   BRIA_OUTPUT_TYPES,
   BRIA_INPUT_IMAGE_FORMATS,
   BRIA_GENERATION_SPEC_URL,
@@ -35,7 +40,9 @@ export {
 } from "./shared";
 export type {
   BriaAspectRatio,
+  BriaLiteAspectRatio,
   BriaResolution,
+  BriaStyle,
   BriaOutputType,
   BriaCommonParams,
 } from "./shared";

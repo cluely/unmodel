@@ -105,7 +105,16 @@ export type ContentBlock =
   | RedactedThinkingBlock;
 
 export interface MessageParam {
-  role: "user" | "assistant";
+  /**
+   * `"system"` is a mid-conversation system message (stable, no beta header)
+   * on Claude Fable 5 / 5.1 / 5.2, Opus 4.8 / 5 / 5.5, Sonnet 5.5 and Haiku
+   * 5.5 — not on Sonnet 5 or earlier models, which take the top-level `system`
+   * only. It cannot be `messages[0]` and cannot sit between a `tool_use` and
+   * its `tool_result` (both refused here); it must follow a user turn, or an
+   * assistant turn ending in a server tool result, and precede an assistant
+   * turn or end the array.
+   */
+  role: "user" | "assistant" | "system";
   content: string | ContentBlock[];
 }
 
@@ -139,10 +148,19 @@ export type ToolChoice =
   | { type: "tool"; name: string; disable_parallel_tool_use?: boolean }
   | { type: "none" };
 
+/**
+ * `between_tools` is Claude Sonnet 5.5's thinking-off form: no up-front
+ * thinking, the short updates written between tool calls returned as thinking
+ * blocks. It takes no other field (`display`, `budget_tokens` or
+ * `block_binding` beside it is a 400), is accepted at `output_config.effort`
+ * high or below, and every other model returns a 400 for it — rules that
+ * `anthropic.chat` enforces per model.
+ */
 export type ThinkingConfig =
   | { type: "enabled"; budget_tokens: number; display?: "summarized" | "omitted" | null }
   | { type: "disabled" }
-  | { type: "adaptive"; display?: "summarized" | "omitted" | null };
+  | { type: "adaptive"; display?: "summarized" | "omitted" | null }
+  | { type: "between_tools" };
 
 export interface MessagesBody {
   model: AnthropicModelId | (string & {});
@@ -170,6 +188,19 @@ export interface MessagesBody {
   cache_control?: CacheControlEphemeral | null;
   metadata?: { user_id?: string | null };
   service_tier?: "auto" | "standard_only";
+  /**
+   * Inference speed. `"fast"` (fast mode) delivers up to 2.5x higher output
+   * tokens per second at premium per-model rates. GA with no beta header on
+   * claude-fable-5-2 and claude-opus-5-5; claude-opus-5 (research preview)
+   * and claude-opus-4-8 (deprecated, removal 2026-11-30) need the
+   * `fast-mode-2026-02-01` anthropic-beta header, which unmodel's `.request`
+   * headers do not include. Every other catalog model returns an error
+   * (claude-opus-4-6 excepted: it runs at standard speed), which
+   * `anthropic.chat` reports. The response's `usage.speed` says which speed
+   * ran; `checkChat` returns no `costUSD` for a fast response because the
+   * catalog carries standard rates only.
+   */
+  speed?: "standard" | "fast" | null;
   output_config?: {
     effort?: "low" | "medium" | "high" | "xhigh" | "max";
     format?: Record<string, unknown>;
@@ -192,7 +223,8 @@ export interface MessagesBody {
    * headers do not include beta headers; add your own.
    */
   context_management?: Record<string, unknown>;
-  inference_geo?: string;
+  /** `null` means the workspace's default inference geography. */
+  inference_geo?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -203,7 +235,7 @@ export interface MessagesBody {
 const looseBlock = z.looseObject({ type: z.string() });
 
 const messageSchema = z.looseObject({
-  role: z.enum(["user", "assistant"]),
+  role: z.enum(["user", "assistant", "system"]),
   content: z.union([z.string(), z.array(looseBlock)]),
 });
 
@@ -233,16 +265,18 @@ export const messagesSchema = z
         z.looseObject({ type: z.literal("enabled"), budget_tokens: z.int() }),
         z.looseObject({ type: z.literal("disabled") }),
         z.looseObject({ type: z.literal("adaptive") }),
+        z.looseObject({ type: z.literal("between_tools") }),
       ])
       .optional(),
     cache_control: z.looseObject({ type: z.literal("ephemeral") }).nullable().optional(),
     metadata: z.looseObject({}).optional(),
     service_tier: z.enum(["auto", "standard_only"]).optional(),
+    speed: z.enum(["standard", "fast"]).nullable().optional(),
     output_config: z.looseObject({}).optional(),
     container: z.unknown().optional(),
     mcp_servers: z.array(z.looseObject({})).optional(),
     context_management: z.looseObject({}).optional(),
-    inference_geo: z.string().optional(),
+    inference_geo: z.string().nullable().optional(),
   })
   .superRefine((params, ctx) => {
     const first = params.messages[0];
@@ -272,6 +306,20 @@ export const messagesSchema = z
         path: ["thinking", "budget_tokens"],
         message: `thinking.budget_tokens (${params.thinking.budget_tokens}) must be less than max_tokens (${params.max_tokens}); thinking tokens count toward max_tokens. Exception: the interleaved-thinking beta header allows budgets above max_tokens — downgrade this check via options.severity if you send it.`,
       });
+    }
+
+    // between_tools is a bare `{type}`: "`between_tools` takes no other field:
+    // `display`, `budget_tokens`, or `block_binding` sent with it returns a
+    // 400 error" (thinking docs).
+    if (params.thinking?.type === "between_tools") {
+      for (const key of ["display", "budget_tokens", "block_binding"]) {
+        if (!(key in params.thinking)) continue;
+        ctx.addIssue({
+          code: "custom",
+          path: ["thinking", key],
+          message: `thinking.type "between_tools" takes no other field; remove \`${key}\` (the API returns a 400 when display, budget_tokens or block_binding is sent with it).`,
+        });
+      }
     }
 
     // max_tokens: 0 pre-warms the prompt cache; the API documents these

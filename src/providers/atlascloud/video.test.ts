@@ -23,6 +23,8 @@ import {
   videoShapeRules,
 } from "./constraints";
 import { MODELS } from "./video-params";
+import { video as unifiedAdapter } from "./unified-video";
+import { createVideo } from "../../unified/video";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -56,7 +58,7 @@ describe("the Atlas routes", () => {
     expect(predictionUrl("abc 1")).toBe(
       "https://api.atlascloud.ai/api/v1/model/prediction/abc%201",
     );
-    // Five of the twenty-three schemas declare `/model/result/{request_id}`
+    // Nine of the thirty-one schemas declare `/model/result/{request_id}`
     // instead; a helper that picked one would be guessing for the other family.
     expect(resultUrl("abc 1")).toBe("https://api.atlascloud.ai/api/v1/model/result/abc%201");
   });
@@ -477,12 +479,12 @@ describe("the shape field", () => {
 });
 
 // ---------------------------------------------------------------------------
-// `resolution` — the eleven-value ladder, and four spellings of one tier
+// `resolution` — the twelve-value ladder, and the spellings of one tier
 // ---------------------------------------------------------------------------
 
 describe("resolution", () => {
-  test("Seedance 2.5 publishes eleven values and every one of them validates", () => {
-    expect(SEEDANCE_25_RESOLUTIONS).toHaveLength(11);
+  test("Seedance 2.5 publishes twelve values and every one of them validates", () => {
+    expect(SEEDANCE_25_RESOLUTIONS).toHaveLength(12);
     for (const resolution of SEEDANCE_25_RESOLUTIONS) {
       expect(
         codes(safeUnchecked({ model: "bytedance/seedance-2.5/text-to-video", prompt: "p", resolution })),
@@ -499,9 +501,16 @@ describe("resolution", () => {
       .toEqual(["invalid_enum_value@resolution"]);
   });
 
-  test("native 4k is the full 2.0 model's alone", () => {
+  test("native 4k: the full 2.0 model and all three 2.5 routes, never 2.0 mini/fast", () => {
     expect(codes(safeUnchecked({ model: "bytedance/seedance-2.0/text-to-video", prompt: "p", resolution: "4k" })))
       .toEqual([]);
+    for (const body of [
+      { model: "bytedance/seedance-2.5/text-to-video", prompt: "p" },
+      { model: "bytedance/seedance-2.5/image-to-video", image: IMAGE_URL },
+      { model: "bytedance/seedance-2.5/reference-to-video", reference_images: [IMAGE_URL] },
+    ]) {
+      expect(codes(safeUnchecked({ ...body, resolution: "4k" })), body.model).toEqual([]);
+    }
     expect(codes(safeUnchecked({ model: "bytedance/seedance-2.0-mini/text-to-video", prompt: "p", resolution: "4k" })))
       .toEqual(["invalid_enum_value@resolution"]);
     expect(codes(safeUnchecked({ model: "bytedance/seedance-2.0-fast/text-to-video", prompt: "p", resolution: "4k" })))
@@ -666,15 +675,22 @@ describe("degradation", () => {
 // ---------------------------------------------------------------------------
 
 describe("the roster and its tables agree", () => {
-  test("every curated id has a catalog row, a shape rule, a constraint row and a params row", () => {
-    expect(MODELS).toHaveLength(23);
-    for (const id of MODELS) {
-      expect(videoModels[id as keyof typeof videoModels], `${id} catalog`).toBeDefined();
+  test("every curated id has a catalog row, a shape rule, a constraint row and a listed price", () => {
+    expect(Object.keys(models)).toHaveLength(31);
+    for (const id of Object.keys(models)) {
       expect(videoShapeRules[id], `${id} shape rule`).toBeDefined();
       expect(videoConstraints[id], `${id} constraints`).toBeDefined();
       expect(ATLASCLOUD_LISTED_BASE_PRICE_USD[id], `${id} listed price`).toBeDefined();
     }
-    expect(Object.keys(models).sort()).toEqual([...MODELS].sort());
+  });
+
+  test("`unmodel/video` reaches every catalogued id but the wire-only draft completion", () => {
+    expect(MODELS).toHaveLength(30);
+    for (const id of MODELS) {
+      expect(videoModels[id as keyof typeof videoModels], `${id} catalog`).toBeDefined();
+    }
+    const unreached = Object.keys(models).filter((id) => !(MODELS as readonly string[]).includes(id));
+    expect(unreached).toEqual(["bytedance/seedance-2.5/draft-complete"]);
   });
 
   test("the provider reads its key from ATLASCLOUD_API_KEY", () => {
@@ -689,11 +705,21 @@ describe("the roster and its tables agree", () => {
     for (const row of Object.values(videoModels)) {
       expect((row as { cost?: unknown }).cost, row.id).toBeUndefined();
     }
-    expect(ATLASCLOUD_PRICING_CAVEAT).toContain("per-run");
+    expect(ATLASCLOUD_PRICING_CAVEAT).toContain("Varies by model, duration, and resolution");
     expect(listedPrice("bytedance/seedance-2.5/text-to-video")).toEqual({
       actual: 0.134,
-      origin: 0.134,
-      discount: 100,
+      origin: 0.167,
+      discount: 80,
+    });
+    expect(listedPrice("bytedance/seedance-2.0/text-to-video")).toEqual({
+      actual: 0.09,
+      origin: 0.112,
+      discount: 80,
+    });
+    expect(listedPrice("bytedance/seedance-2.0-mini/text-to-video")).toEqual({
+      actual: 0.045,
+      origin: 0.056,
+      discount: 80,
     });
     expect(listedPrice("nope/nope")).toBeUndefined();
   });
@@ -710,5 +736,223 @@ describe("the roster and its tables agree", () => {
     const rules = video.constraintsFor("bytedance/seedance-2.5/reference-to-video");
     expect(rules).toHaveLength(1);
     expect(rules[0]!.enums?.["resolution"]).toEqual([...SEEDANCE_25_RESOLUTIONS]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Veo 3.1 Fast / Lite, Seedance 2.5 draft-complete, the Wan 3.0 reference routes
+// ---------------------------------------------------------------------------
+
+/** The unified pack with only this provider in it. */
+const unified = createVideo([unifiedAdapter]);
+
+/** A unified compile's wire body, or its issue codes when it fails. */
+function compile(params: Record<string, unknown>): Record<string, unknown> | string[] {
+  const result = (unified.safe as unknown as (p: unknown) => ValidateResult<unknown>)(params);
+  if (!result.ok) return result.errors.map((issue) => `${String(issue.code)}@${issue.path.join(".")}`);
+  return JSON.parse(JSON.stringify(result.params)) as Record<string, unknown>;
+}
+
+describe("Veo 3.1 Fast: Veo 3.1's schema under another id", () => {
+  test("it validates, and keeps Veo 3.1's 1080p/4k duration lock", () => {
+    expect(codes(safeUnchecked({ model: "google/veo3.1-fast/text-to-video", prompt: "p", resolution: "4k", duration: 8 })))
+      .toEqual([]);
+    const locked = safeUnchecked({
+      model: "google/veo3.1-fast/image-to-video",
+      prompt: "p",
+      image: IMAGE_URL,
+      resolution: "1080p",
+      duration: 4,
+    });
+    expect(codes(locked)).toEqual(["invalid_enum_value@duration"]);
+    if (locked.ok) return;
+    expect(locked.errors[0]!.message).toContain("When resolution is 1080p or 4k, duration must be 8");
+  });
+
+  test("its listed figure is Atlas's, unit-less, and no row carries a cost", () => {
+    expect(listedPrice("google/veo3.1-fast/text-to-video")).toEqual({ actual: 0.08, origin: 0.08, discount: 100 });
+    expect((videoModels["google/veo3.1-fast/text-to-video"] as { cost?: unknown }).cost).toBeUndefined();
+  });
+});
+
+describe("Veo 3.1 Lite: no 4K, no audio toggle, its own duration lock", () => {
+  test("720p and 1080p validate; 4k is not in its enum", () => {
+    expect(codes(safeUnchecked({ model: "google/veo3.1-lite/text-to-video", prompt: "p", resolution: "1080p", duration: 8 })))
+      .toEqual([]);
+    expect(codes(safeUnchecked({ model: "google/veo3.1-lite/text-to-video", prompt: "p", resolution: "4k" })))
+      .toEqual(["invalid_enum_value@resolution"]);
+  });
+
+  test("1080p locks `duration` to 8, quoted in Lite's own words", () => {
+    expect(codes(safeUnchecked({ model: "google/veo3.1-lite/text-to-video", prompt: "p", resolution: "720p", duration: 4 })))
+      .toEqual([]);
+    const locked = safeUnchecked({ model: "google/veo3.1-lite/text-to-video", prompt: "p", resolution: "1080p", duration: 6 });
+    expect(codes(locked)).toEqual(["invalid_enum_value@duration"]);
+    if (locked.ok) return;
+    expect(locked.errors[0]!.message).toContain("When resolution is 1080p, duration must be 8");
+  });
+
+  test("`generate_audio` and `negative_prompt` are refused by name", () => {
+    const audio = safeUnchecked({ model: "google/veo3.1-lite/text-to-video", prompt: "p", generate_audio: true });
+    expect(codes(audio)).toEqual(["unsupported_param@generate_audio"]);
+    if (!audio.ok) expect(audio.errors[0]!.message).toContain("Audio is always generated");
+    expect(codes(safeUnchecked({ model: "google/veo3.1-lite/text-to-video", prompt: "p", negative_prompt: "x" })))
+      .toEqual(["unsupported_param@negative_prompt"]);
+  });
+
+  test("the image route has no last frame and names the route that does", () => {
+    const result = safeUnchecked({
+      model: "google/veo3.1-lite/image-to-video",
+      prompt: "p",
+      image: IMAGE_URL,
+      last_image: IMAGE_URL,
+    });
+    expect(codes(result)).toEqual(["unsupported_param@last_image"]);
+    if (!result.ok) expect(result.errors[0]!.message).toContain("google/veo3.1-lite/start-end-frame-to-video");
+  });
+
+  test("the start-end-frame route requires both frames", () => {
+    expect(codes(safeUnchecked({
+      model: "google/veo3.1-lite/start-end-frame-to-video",
+      prompt: "p",
+      image: IMAGE_URL,
+      last_image: IMAGE_URL,
+    }))).toEqual([]);
+    expect(codes(safeUnchecked({ model: "google/veo3.1-lite/start-end-frame-to-video", prompt: "p", image: IMAGE_URL })))
+      .toEqual(["invalid_shape@last_image"]);
+  });
+
+  test("unmodel/video offers Lite's own lengths and tiers", () => {
+    expect(compile({ model: "atlascloud/google/veo3.1-lite/text-to-video", prompt: "p", duration: 4, resolution: "1080p" }))
+      .toEqual(["invalid_enum_value@duration"]);
+    expect(compile({ model: "atlascloud/google/veo3.1-lite/text-to-video", prompt: "p", resolution: "4k" }))
+      .toEqual(["invalid_enum_value@resolution"]);
+    expect(compile({ model: "atlascloud/google/veo3.1-lite/text-to-video", prompt: "p", duration: 6 })).toMatchObject({
+      model: "google/veo3.1-lite/text-to-video",
+      duration: 6,
+    });
+  });
+});
+
+describe("Seedance 2.5 draft-complete: a draft_id and delivery options, nothing else", () => {
+  const model = "bytedance/seedance-2.5/draft-complete";
+
+  test("`draft_id` is the one required field, and `4k` is the schema's", () => {
+    expect(codes(safeUnchecked({ model, draft_id: "pred_123" }))).toEqual([]);
+    expect(codes(safeUnchecked({ model, draft_id: "pred_123", resolution: "4k", output_format: "mov" })))
+      .toEqual([]);
+    expect(codes(safeUnchecked({ model }))).toEqual(["invalid_shape@draft_id"]);
+    expect(codes(safeUnchecked({ model, draft_id: "pred_123", resolution: "720p" })))
+      .toEqual(["invalid_enum_value@resolution"]);
+  });
+
+  test("what the draft already fixed is refused by name, once", () => {
+    const result = safeUnchecked({ model, draft_id: "pred_123", prompt: "p", duration: 5, seed: 1 });
+    expect(codes(result)).toEqual([
+      "unsupported_param@prompt",
+      "unsupported_param@duration",
+      "unsupported_param@seed",
+    ]);
+    if (result.ok) return;
+    expect(result.errors[0]!.message).toContain("do not send those fields again");
+  });
+
+  test("`draft_id` belongs to draft-complete alone", () => {
+    expect(codes(safeUnchecked({ model: "bytedance/seedance-2.5/text-to-video", prompt: "p", draft_id: "pred_123" })))
+      .toEqual(["unsupported_param@draft_id"]);
+  });
+
+  test("its listed figure is transcribed, unit-less", () => {
+    expect(listedPrice(model)).toEqual({ actual: 0.263, origin: 0.329, discount: 80 });
+  });
+});
+
+describe("Wan 3.0 reference-to-video: one typed `refers` list", () => {
+  const plain = "alibaba/wan-3.0/reference-to-video";
+  const prime = "alibaba/wan-3.0-prime/reference-to-video";
+
+  test("typed items validate on both routes", () => {
+    for (const model of [plain, prime]) {
+      expect(codes(safeUnchecked({
+        model,
+        prompt: "p",
+        refers: [{ url: IMAGE_URL, type: "image" }, { url: CLIP_URL, type: "video" }],
+        resolution: "1080p",
+        ratio: "adaptive",
+      })), model).toEqual([]);
+    }
+  });
+
+  test("`type` is required on plain Wan 3.0 and inferred on prime", () => {
+    const result = safeUnchecked({ model: plain, prompt: "p", refers: [{ url: IMAGE_URL }] });
+    expect(codes(result)).toEqual(["invalid_shape@refers.0.type"]);
+    if (!result.ok) expect(result.errors[0]!.message).toContain("explicit media type");
+    expect(codes(safeUnchecked({ model: prime, prompt: "p", refers: [{ url: IMAGE_URL }] }))).toEqual([]);
+  });
+
+  test("the caps: 20 items on both, and prime's per-kind limits", () => {
+    const images = (n: number): Array<{ url: string; type: string }> =>
+      Array.from({ length: n }, (_, i) => ({ url: `${IMAGE_URL}?${i}`, type: "image" }));
+    expect(codes(safeUnchecked({ model: plain, prompt: "p", refers: images(20) }))).toEqual([]);
+    expect(codes(safeUnchecked({ model: plain, prompt: "p", refers: images(21) })))
+      .toEqual(["unsupported_capability@refers"]);
+    expect(codes(safeUnchecked({ model: prime, prompt: "p", refers: images(10) }))).toEqual([]);
+    expect(codes(safeUnchecked({ model: prime, prompt: "p", refers: images(11) })))
+      .toEqual(["unsupported_capability@refers"]);
+  });
+
+  test("frames and the Seedance flat arrays are refused, naming `refers`", () => {
+    expect(codes(safeUnchecked({ model: plain, prompt: "p", image: IMAGE_URL })))
+      .toEqual(["unsupported_param@image"]);
+    const flat = safeUnchecked({ model: plain, prompt: "p", reference_images: [IMAGE_URL] });
+    expect(codes(flat)).toEqual(["unsupported_param@reference_images"]);
+    if (!flat.ok) expect(flat.errors[0]!.message).toContain("refers");
+  });
+
+  test("`refers` on any other route names the Wan reference ids", () => {
+    const result = safeUnchecked({
+      model: "bytedance/seedance-2.5/reference-to-video",
+      refers: [{ url: IMAGE_URL, type: "image" }],
+    });
+    expect(codes(result)).toEqual(["unsupported_param@refers"]);
+    if (!result.ok) expect(result.errors[0]!.message).toContain("alibaba/wan-3.0/reference-to-video");
+  });
+
+  test("`file` / `link` need thinking on — the prime route's default is on", () => {
+    expect(codes(safeUnchecked({ model: plain, prompt: "p", file: "https://example.com/brief.pdf", enable_thinking: true })))
+      .toEqual([]);
+    expect(codes(safeUnchecked({ model: plain, prompt: "p", file: "https://example.com/brief.pdf" })))
+      .toEqual(["invalid_shape@enable_thinking"]);
+    expect(codes(safeUnchecked({ model: prime, prompt: "p", link: "https://example.com/" }))).toEqual([]);
+    expect(codes(safeUnchecked({ model: prime, prompt: "p", link: "https://example.com/", enable_thinking: false })))
+      .toEqual(["invalid_shape@enable_thinking"]);
+  });
+
+  test("`file` and `link` are mutually exclusive", () => {
+    expect(codes(safeUnchecked({
+      model: prime,
+      prompt: "p",
+      file: "https://example.com/brief.pdf",
+      link: "https://example.com/",
+    }))).toEqual(["invalid_shape@link"]);
+  });
+
+  test("unmodel/video compiles reference images and the clip into `refers`", () => {
+    expect(compile({
+      model: `atlascloud/${plain}`,
+      prompt: "p",
+      image: [{ url: IMAGE_URL, role: "reference" }],
+      video: { url: CLIP_URL },
+      resolution: "4k",
+    })).toMatchObject({
+      model: plain,
+      refers: [{ url: IMAGE_URL, type: "image" }, { url: CLIP_URL, type: "video" }],
+      resolution: "4k-esr",
+    });
+  });
+
+  test("their listed figures are the text routes' own", () => {
+    expect(listedPrice(plain)).toEqual({ actual: 0.04, origin: 0.05, discount: 80 });
+    expect(listedPrice(prime)).toEqual({ actual: 0.061, origin: 0.068, discount: 90 });
   });
 });

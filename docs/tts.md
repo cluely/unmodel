@@ -5,6 +5,12 @@ canonical vocabulary deliberately hides: where the request goes, which header th
 credential rides in, where the audio comes back, and which endpoint quirks are silent
 no-ops rather than errors.
 
+The `hume` rows describe a retired API. Hume retired its TTS API on 2026-11-13 at 05:01 UTC.
+Probed that day, every `/v0/tts` route answers `404` with "This API was retired on
+2026-11-13 and is no longer available." `hume/*` refs still validate and warn only
+`deprecated_model`, so a request that passes here is one Hume refuses. The sources are in
+[`docs/providers.md`](providers.md).
+
 ## Why this file is split in two
 
 Three of these facts are already machine-readable and four are not, so the file is
@@ -47,7 +53,7 @@ every row because all twenty are JSON endpoints.
 | `fish-audio` | POST | `https://api.fish.audio/v1/tts` | `content-type: application/json`<br>`model: s2.1-pro` |
 | `murf` | POST | `https://api.murf.ai/v1/speech/generate` | `content-type: application/json` |
 | `resemble` | POST | `https://f.cluster.resemble.ai/synthesize` | `content-type: application/json` |
-| `smallest-ai` | POST | `https://api.smallest.ai/waves/v1/tts` | `accept: audio/wav`<br>`content-type: application/json` |
+| `smallest-ai` | POST | `https://api.smallest.ai/waves/v1/tts` | `content-type: application/json` |
 | `speechify` | POST | `https://api.speechify.ai/v1/audio/speech` | `content-type: application/json` |
 | `stepfun` | POST | `https://api.stepfun.ai/v1/audio/speech` | `content-type: application/json` |
 | `breezeblue` | POST | `https://api.breeze.blue/v1/text-to-speech/VOICE_ID` | `content-type: application/json` |
@@ -71,7 +77,7 @@ not of the endpoint, so it does not vary by route:
 | --- | --- | --- |
 | `openai` | `authorization` | `Bearer <key>` |
 | `elevenlabs` | `xi-api-key` | bare key |
-| `cartesia` | `X-API-Key` | bare key |
+| `cartesia` | `Authorization` | `Bearer <key>` |
 | `deepgram` | `Authorization` | `Token <key>` |
 | `google` | `x-goog-api-key` | bare key (or `?key=` on the URL) |
 | `hume` | `X-Hume-Api-Key` | bare key |
@@ -118,7 +124,7 @@ Three shapes: flat (one answer), `byRequestField` (one request field decides), a
 | `rime` | `RIME_TTS_DELIVERY` | flat: raw bytes |
 | `lmnt` | `LMNT_TTS_DELIVERY` | flat: raw bytes |
 | `fish-audio` | `FISH_AUDIO_TTS_DELIVERY` | flat: raw bytes |
-| `murf` | `MURF_TTS_DELIVERY` | by model — `gen2` answers JSON (base64 or URL, by `encodeAsBase64`), `falcon-2` answers bytes |
+| `murf` | `MURF_TTS_DELIVERY` | by model — `gen2` answers JSON (base64 or URL, by `encodeAsBase64`), `falcon-2.1` and `falcon-2` answer bytes |
 | `resemble` | `RESEMBLE_TTS_DELIVERY` | flat: base64 inside the JSON |
 | `smallest-ai` | `SMALLEST_TTS_DELIVERY` | flat: raw bytes |
 | `speechify` | `SPEECHIFY_TTS_DELIVERY` | flat: base64 inside the JSON |
@@ -196,18 +202,22 @@ provider where the voice *is* the model, so the model id is the voice picker.
 **Speechify — two routes that are not the same shape.** `audio_format` exists only on
 `/v1/audio/speech`; `output_format` is on both, but the streaming enum drops the `wav_*`
 values; `Accept` is a header on `/v1/audio/stream` and does not exist on `/v1/audio/speech`.
-The character cap differs too: 2,000 on speech, 20,000 on stream. Both counts include
-SSML tags.
+The character cap differs too: 2,000 spoken characters on speech, 20,000 on stream, counted
+in code points with SSML tags excluded, under a ceiling on the input as sent, markup
+included, of 20,000 and 32,000.
 
 **Cartesia — a dormant cap.** Cartesia documents no per-request `transcript` cap, so the
 `over_output_limit` check exists and never fires against the shipped catalog. It is
 wired rather than absent so a published cap becomes a catalog edit, not a code change.
 
-**Murf — regional routers.** Falcon 2 also publishes a global router
+**Murf — regional routers.** Falcon 2.1 also publishes a global router
 (`https://global.api.murf.ai/v1/speech/stream`) plus eleven regional hosts. `.request.url`
 targets the documented default host; swap the origin yourself if you route regionally.
 Note also the two model spellings across the two routes — `modelVersion: "GEN2"` on
-generate, `model: "falcon-2" | "gen2"` on stream — resolved against one catalog.
+generate, `model: "falcon-2.1"` on stream — resolved against one catalog. The stream route
+also accepts Falcon 2.1's earlier identifiers `falcon-2`, `falcon2` and `FALCON`, which
+price and validate as `falcon-2.1`. Gen2 is decommissioned on the stream route, so
+`model: "gen2"` there is an error naming `murf.tts`.
 
 **Fish Audio — `references` is MessagePack-only.** The endpoint accepts
 `application/json` or `application/msgpack` and unmodel finalizes to JSON. The field
@@ -229,15 +239,19 @@ the docs are explicit that streaming requests must not go to `app.resemble.ai`. 
 also no `model` field by design — the voice selects the model — so these validators
 resolve no model id, and therefore no catalog gate and no cost estimate.
 
-**Rime — the host is `users.rime.ai`.** Not `api.rime.ai`, which "serves internal
-infrastructure and returns 404 for TTS requests". Format is chosen with `Accept`, not a
-body field; and speed is direction-inverted across models (`timeScaleFactor` below 1.0
-is *faster*, `speedAlpha` above 1.0 is faster), which no validator can fix.
+**Rime — the validated route is `users.rime.ai/v1/rime-tts`.** It takes `modelId` in the
+body. Rime's docs now also send HTTP TTS to per-model hosts (`https://coda.api.rime.ai/`,
+`https://mist.api.rime.ai/`): "The host selects the model, so the body needs no
+`modelId`." Those hosts are a different contract and are not validated. Format is chosen
+with `Accept`, not a body field; and speed is direction-inverted across models
+(`timeScaleFactor` below 1.0 is *faster*, `speedAlpha` above 1.0 is faster), which no
+validator can fix.
 
-**Smallest AI — the budget can silently never fire.** A per-character list price is
-published for `lightning_v3.1_pro` only, and an omitted `model` resolves to the standard
-`lightning_v3.1` pool. So a request that leaves `model` out gets no `costUSD`, and a
-`maxCostUSD` budget has nothing to compare against.
+**Smallest AI — the budget can silently never fire.** Both pools publish a per-character
+rate, but an omitted `model` is picked from the voice (Pro catalog voices use
+`lightning_v3.1_pro`, all others `lightning_v3.1`), and the validator cannot see which pool a
+voice belongs to. So a request that leaves `model` out gets no `costUSD`, and a `maxCostUSD`
+budget has nothing to compare against — pin `model` to have it enforced.
 
 ## See also
 

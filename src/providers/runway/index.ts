@@ -26,8 +26,11 @@ export type {
   RunwayAudioReference,
   RunwayVideoReference,
   RunwayImageReference,
+  RunwayPositionedReference,
+  RunwayProviderSettings,
   RunwayContentModeration,
   ModelShapeRules,
+  PairingRule,
 } from "./shared";
 
 export {
@@ -43,11 +46,13 @@ export {
   TEXT_TO_VIDEO_MODELS,
   VIDEO_TO_VIDEO_MODELS,
   ALEPH2_TARGET_ASPECT_RATIOS,
+  RATIO_TIERS,
   IMAGE_TO_VIDEO_SOURCE,
   TEXT_TO_VIDEO_SOURCE,
   VIDEO_TO_VIDEO_SOURCE,
   TEXT_TO_IMAGE_SOURCE,
   MODELS_SOURCE,
+  INPUTS_SOURCE,
 } from "./constraints";
 export type {
   RunwayVideoRatio,
@@ -56,6 +61,8 @@ export type {
   RunwayImageRatio,
   RunwayImageQuality,
   RunwayImageOutputFormat,
+  RunwayRatioTier,
+  RunwayVideoOutputFormat,
 } from "./constraints";
 
 export {
@@ -63,10 +70,13 @@ export {
   videoCostUSD,
   imageCostUSD,
   NON_MP4_SURCHARGE_CREDITS_PER_SECOND,
+  HDR_SURCHARGE_CREDITS_PER_SECOND,
+  HDR_OVER_4MP_SURCHARGE_CREDITS_PER_SECOND,
 } from "./pricing";
 export type { VideoRoute } from "./pricing";
 
-// These endpoints respond with a bare task id ({ id }) — there is no
+// These endpoints respond with a task id and its credit reservation
+// ({ id, estimatedCost: { credits } } — openapi.json, 2026-11-12) — there is no
 // generation payload to check, so this provider ships no response checker.
 export { models, videoModels, imageModels, provider, CREDIT_USD } from "./models";
 export type { RunwayModelId, RunwayVideoModelId, RunwayImageModelId } from "./models";

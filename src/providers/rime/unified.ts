@@ -47,7 +47,7 @@ export type RimeTtsResult = ReturnType<typeof validator<RimeTtsWire>>;
 
 /**
  * The Mist generation whose speed field is `speedAlpha`. Everything else —
- * Coda, Mist v3, the Arcana line — uses `timeScaleFactor`.
+ * Coda and Mist v3 — uses `timeScaleFactor`.
  */
 const SPEED_ALPHA_MODELS: ReadonlySet<string> = new Set(["mistv2", "mist"]);
 
@@ -115,7 +115,7 @@ export const tts = {
       const language = ctx.take(
         toPrimaryLanguage(input.language, { path: ["language"], warn: ctx.warn }, { source: CODA_DOCS }),
       );
-      // Rime publishes both the 639-1 and the 639-2 spelling of its eight
+      // Rime publishes both the 639-1 and the 639-2 spelling of its ten
       // languages and gates them per model; its own enum is the authority.
       if (language !== undefined) body.lang = language as RimeLanguage;
     }

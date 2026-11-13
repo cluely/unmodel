@@ -24,6 +24,7 @@
  */
 import type { ChatIR, DecodeContext, IRMessage, IRPart, IRTextBlock } from "../../core/translate/ir";
 import {
+  effortForBudget,
   emptyIR,
   inferMediaTypeFromUrl,
   isAudioMediaType,
@@ -40,6 +41,7 @@ import type { Warn } from "../../core/translate/warnings";
 import type {
   ChatAssistantMessage,
   ChatCompletionsBodyBase,
+  ChatImagePart,
   ChatMessage,
   ChatTextPart,
   ChatTool,
@@ -110,10 +112,15 @@ function encodeUserPart(part: ChatUserContentPart, path: Array<string | number>,
       // IR carries the hint and the *target* decoder decides what it costs:
       // Gemini takes it as-is, Anthropic drops it by name, and OpenAI's own
       // decoder narrows `medium` (which only Gemini has) to `high`.
-      const detail = part.image_url.detail !== undefined ? { detail: part.image_url.detail } : {};
-      const parsed = parseDataUrl(part.image_url.url);
+      //
+      // A plain-string `image_url` is the other form perplexity's validator
+      // accepts for the same chunk; it carries no `detail`.
+      const image: ChatImagePart["image_url"] =
+        typeof part.image_url === "string" ? { url: part.image_url } : part.image_url;
+      const detail = image.detail !== undefined ? { detail: image.detail } : {};
+      const parsed = parseDataUrl(image.url);
       return parsed === undefined
-        ? { type: "media", data: { kind: "url", url: part.image_url.url }, ...detail, ...cache }
+        ? { type: "media", data: { kind: "url", url: image.url }, ...detail, ...cache }
         : {
             type: "media",
             mediaType: parsed.mediaType,
@@ -163,6 +170,18 @@ function encodeUserPart(part: ChatUserContentPart, path: Array<string | number>,
         path,
         message:
           "a `file` content part carries neither `file_data` nor `file_id`; there is nothing to translate, so it was dropped.",
+      });
+      return undefined;
+    }
+    default: {
+      // Not a dialect part: an overlay's own chunk, such as perplexity's
+      // `file_url`, `pdf_url` or `video_url`, that its validator accepts.
+      const kind = (part as { type: string }).type;
+      warn({
+        code: "dropped_content",
+        path,
+        message: `a \`${kind}\` content part is a provider's extension of the chat-completions dialect, with no translation into another dialect; it was dropped.`,
+        meta: { kind },
       });
       return undefined;
     }
@@ -255,7 +274,7 @@ export function encodeOpenAIChat(body: ChatCompletionsBodyBase, warn: Warn): Cha
         warn({
           code: "approximated_param",
           path: ["messages", index],
-          message: `the \`${message.role}\` message at index ${index} appears after a conversational turn; every other dialect keeps system text in a single leading slot, so it was moved to the front of the system prompt.`,
+          message: `the \`${message.role}\` message at index ${index} appears after a conversational turn; translation carries system text in one leading slot, so it was moved to the front of the system prompt.`,
         });
       }
       if (message.role === "developer") putPassthrough(ir, DIALECT, "__system_role", "developer");
@@ -768,7 +787,7 @@ export function decodeOpenAIChat(
   if (s.reasoning !== undefined) {
     if (s.reasoning.mode === "effort") body.reasoning_effort = s.reasoning.effort;
     else if (s.reasoning.mode === "budget") {
-      const effort = s.reasoning.budgetTokens <= 2048 ? "low" : s.reasoning.budgetTokens <= 8192 ? "medium" : "high";
+      const effort = effortForBudget(s.reasoning.budgetTokens);
       body.reasoning_effort = effort;
       warn({
         code: "approximated_param",

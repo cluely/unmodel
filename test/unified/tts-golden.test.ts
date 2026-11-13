@@ -5,7 +5,7 @@
  *
  * Each directory under `golden/tts/` is one request. `canonical.json` holds
  * the words a caller writes; every other file is one provider's answer —
- * `{ ref, voice, params, url, headers, warnings? }`. The voice lives in the
+ * `{ ref, voice, params, url, headers, warnings?, issues? }`. The voice lives in the
  * per-provider file rather than in the canonical one because a voice id is the
  * single canonical field that genuinely cannot be shared: `"marin"` means
  * nothing to Cartesia and `"694f9389-…"` means nothing to OpenAI.
@@ -31,9 +31,11 @@
  * The cases are chosen so that every audio-format *shape* is covered — a bare
  * codec (OpenAI, Murf, Hume), a composite string (ElevenLabs, Speechify), an
  * object (Cartesia, MiniMax), query params (Deepgram) and an `Accept` header
- * (Rime) — and so that both speed inversions appear: Rime's `timeScaleFactor`
- * on Coda and its `speedAlpha` on Mist v2, which are the same reciprocal in two
- * different fields.
+ * (Rime) — and so that Rime's speed inversion appears: `timeScaleFactor` on
+ * Coda and on Mist v3. Its `speedAlpha` twin on Mist v2, the same reciprocal in
+ * a different field, is pinned in `src/providers/rime/tts.test.ts` rather than
+ * here, because Rime retires `mistv2` on 2026-12-03
+ * (https://docs.rime.ai/docs/models).
  */
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
@@ -59,6 +61,8 @@ interface Fixture {
   headers: Record<string, string>;
   /** Required on `lossy-*` cases, forbidden elsewhere. */
   warnings?: ExpectedWarning[];
+  /** Issue-space warnings (`deprecated_model`, …) — a different channel. */
+  issues?: Array<{ code: string; path: Array<string | number> }>;
 }
 
 function readJson<T>(path: string): T {
@@ -123,9 +127,12 @@ describe.each(caseDirs)("golden speech/%s", (name) => {
         .warnings;
       expect(comparable(warnings)).toEqual(comparable(fixture.warnings ?? []));
       if (!lossy) expect(warnings).toEqual([]);
-      // Issue-space warnings (unknown_model and friends) are a separate
-      // channel; a golden request names a real model, so there are none.
-      expect(result.warnings).toEqual([]);
+      // Issue-space warnings are a separate channel with a separate meaning;
+      // pinned, so a provider that starts ignoring a param (or whose row goes
+      // deprecated) cannot do it quietly.
+      expect(
+        result.warnings.map((issue) => ({ code: String(issue.code), path: issue.path })),
+      ).toEqual(fixture.issues ?? []);
     });
   });
 });

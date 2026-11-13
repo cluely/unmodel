@@ -507,8 +507,8 @@ export const UNIFIED = {
   // CLI-usable rather than registered on principle.
   "unified.lipsync": () => import("./unified/lipsync").then((m) => asCli(m.lipsync)),
   "unified.avatar": () => import("./unified/avatar").then((m) => asCli(m.avatar)),
-  // Same reason, one category over: `source` is a reference at all ten upscale
-  // routes, whether it names a still or a clip.
+  // Same reason, one category over: `source` is a reference at all eleven
+  // upscale routes, whether it names a still or a clip.
   "unified.upscale": () => import("./unified/upscale").then((m) => asCli(m.upscale)),
   // The key keeps the category id, digit and all — `unified.3d`, not
   // `unified.threeD` — because these keys are category ids and `3d` is one.

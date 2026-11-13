@@ -240,19 +240,35 @@ interface SurfaceRule {
  * Rows that are *not* on their provider's default surface.
  *
  * google-vertex spans three: Gemini `generateContent` (the default), an
- * OpenAI-compatible chat surface for its `-maas` models, and an
- * Anthropic-shaped `rawPredict` surface for Claude. The Claude rule is
- * exercised by the codegen fixtures but produces nothing against the real
- * snapshot: v1 denies every Claude↔vertex edge because unmodel has no
+ * OpenAI-compatible chat surface for its `-maas` models and its `xai/` Grok
+ * rows, and an Anthropic-shaped `rawPredict` surface for Claude. The Claude
+ * rule is exercised by the codegen fixtures but produces nothing against the
+ * real snapshot: v1 denies every Claude↔vertex edge because unmodel has no
  * rawPredict module (see data/availability-overrides.json).
  *
- * azure deliberately has **no** rule. It also serves Claude, but on a wire
- * surface nobody has verified, so those rows are denied rather than labelled
- * with a guess.
+ * The Grok rule, from
+ * https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/partner-models/use-partner-models
+ * (2026-11-12): "Grok models use the OpenAI-compatible chat completions and
+ * Responses APIs, so the request path uses endpoints/openapi ." — the same
+ * `endpoints/openapi/chat/completions` route
+ * https://docs.cloud.google.com/vertex-ai/generative-ai/docs/maas/call-open-model-apis
+ * (2026-11-13) documents, whose body `model` is publisher-prefixed ("for
+ * example `openai/gpt-oss-120b-maas`"). The `xai/grok-*` ids are models.dev's
+ * google-vertex row ids, copied verbatim. No Vertex page shows a Grok request
+ * body (the Grok page says only "For Grok 4.7, use `grok-4.7`"), so the
+ * prefixed body spelling is unverified. No body carries it today:
+ * google-vertex.chatMaas is factory-configured and unmodel ships no MaaS
+ * module, so every retarget onto it is a structural refusal.
+ *
+ * azure deliberately has **no** rule. It serves Claude on the Anthropic
+ * Messages API (`…/anthropic/v1/messages`), which unmodel has no azure module
+ * for, so those rows are denied rather than labelled azure.chat (see
+ * data/availability-overrides.json).
  */
 const SURFACE_RULES: Readonly<Record<string, readonly SurfaceRule[]>> = {
   "google-vertex": [
     { match: /-maas$/, endpoint: "google-vertex.chatMaas" },
+    { match: /^xai\//, endpoint: "google-vertex.chatMaas" },
     { match: /claude/, endpoint: "google-vertex.chatRawPredict" },
   ],
 };

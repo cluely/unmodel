@@ -2,7 +2,8 @@
 // omni chat models (src/catalog/alibaba.gen.ts; its AlibabaVideoModelId union
 // is `never` and AlibabaAudioModelId names only the qwen-omni chat ids), so
 // the DashScope video-synthesis and Qwen-TTS ids live here. Refresh from
-//   https://www.alibabacloud.com/help/en/model-studio/wan3-video-generation-api-reference   (wan3.0-video)
+//   https://www.alibabacloud.com/help/en/model-studio/wan3-video-generation-api-reference   (wan3.0-video, wan3.0-video-prime)
+//   https://www.alibabacloud.com/help/en/model-studio/wan-video-to-video-api-reference      (wan2.7 r2v)
 //   https://www.alibabacloud.com/help/en/model-studio/text-to-video-api-reference           (wan t2v ids + protocols)
 //   https://www.alibabacloud.com/help/en/model-studio/image-to-video-general-api-reference  (wan2.7 i2v)
 //   https://www.alibabacloud.com/help/en/model-studio/happyhorse-text-to-video-api-reference
@@ -11,9 +12,11 @@
 //   https://www.alibabacloud.com/help/en/model-studio/happyhorse-video-edit-api-reference
 //   https://www.alibabacloud.com/help/en/model-studio/qwen-tts        (TTS endpoint + intl model list)
 //   https://www.alibabacloud.com/help/en/model-studio/qwen-tts-api    (TTS request/response reference)
-//   https://www.alibabacloud.com/help/en/model-studio/realtime-tts-user-guide (WebSocket-only TTS ids)
+//   https://www.alibabacloud.com/help/en/model-studio/realtime-tts-user-guide (realtime TTS ids)
+//   https://www.alibabacloud.com/help/en/model-studio/qwen-audio-tts-http-api (Qwen-Audio-TTS over HTTP)
 //   https://www.alibabacloud.com/help/en/model-studio/model-pricing   (USD list prices, Singapore tables)
-// (last checked 2026-08-24). This is the INTERNATIONAL platform; the China
+// (last checked 2026-08-24; the wan3.0 pair, wan2.7-r2v and HappyHorse 1.1
+// 480P rows 2026-11-12). This is the INTERNATIONAL platform; the China
 // (Beijing) deployment publishes different prices and extra ids.
 //
 // MODEL IDS: two of the video ids below — `wan2.7-t2v-2026-04-25` and
@@ -35,32 +38,29 @@
 //   the exact request from the full per-tier table in
 //   VIDEO_PRICE_PER_SECOND_USD. Reading `cost.perVideoSecond` alone therefore
 //   gives the default-configuration rate, not every configuration's rate.
-// - `wan3.0-video` has NO row in the international pricing tables (searched
-//   the whole Singapore section 2026-08-24), so it carries no `cost` rather
-//   than quoting fal-side marketing numbers Alibaba does not publish.
+// - `wan3.0-video` is priced at its LIST rate. The Singapore table marks each
+//   tier "(Limited-time 30% off)" without an end date; a temporary discount
+//   is not a catalog number, so estimates read high while it runs.
 // - `happyhorse-1.0-video-edit` bills input AND output video duration
 //   ("both input and output videos are billed by video duration"); its
 //   `perVideoSecond` is the output rate, and ./video produces no estimate for
 //   it because the request does not carry either duration.
 // - TTS is quoted per 10,000 input characters (output audio is free):
 //   qwen3-tts-flash $0.10/10K → $10 per 1M characters ($0.10 / 10_000 ×
-//   1_000_000); qwen3-tts-instruct-flash $0.115/10K → $11.50/M;
-//   qwen3-tts-flash-realtime $0.13/10K → $13/M; qwen3-tts-instruct-flash-
-//   realtime $0.143/10K → $14.30/M; qwen-audio-3.0-tts-flash $0.15/10K →
-//   $15/M; qwen-audio-3.0-tts-plus $0.20/10K → $20/M.
+//   1_000_000); qwen3-tts-flash-realtime $0.13/10K → $13/M;
+//   qwen-audio-3.0-tts-flash $0.15/10K → $15/M; qwen-audio-3.0-tts-plus
+//   $0.20/10K → $20/M.
 //
 // `limit.context: 0` — none of these are token-context models (HAND_CATALOGS.md).
 // The Qwen3-TTS `text` cap ("600 characters") rides on `limit.characters`.
 
 import type { ModelInfo } from "../../core/catalog-types";
 
-/** "600 characters" — the Qwen3-TTS-Flash / -Instruct-Flash `input.text` cap. */
+/** "600 characters" — the Qwen3-TTS-Flash `input.text` cap. */
 export const TTS_MAX_CHARACTERS = 600;
 
 /** $0.10 per 10K characters → USD per 1M characters. */
 export const TTS_FLASH_PER_MILLION_CHARACTERS = 10;
-/** $0.115 per 10K characters → USD per 1M characters. */
-export const TTS_INSTRUCT_PER_MILLION_CHARACTERS = 11.5;
 
 /** Shared shape of every video catalog entry. */
 const VIDEO = {
@@ -74,22 +74,42 @@ const VIDEO = {
 const T2V_MODALITIES = { input: ["text"], output: ["video"] } as const;
 const I2V_MODALITIES = { input: ["text", "image"], output: ["video"] } as const;
 const V2V_MODALITIES = { input: ["text", "image", "video"], output: ["video"] } as const;
+/** wan2.7-r2v also takes a `reference_voice` audio URL for timbre cloning. */
+const R2V_MODALITIES = { input: ["text", "image", "video", "audio"], output: ["video"] } as const;
 
 /**
  * Models POST /api/v1/services/aigc/video-generation/video-synthesis accepts
  * on the international platform. Each documents its own protocol (wan3 media
- * array / wan2.7 resolution+ratio / legacy `size` / happyhorse); ./video
- * encodes the differences in VIDEO_MODEL_RULES.
+ * array / wan2.7 resolution+ratio / wan2.7 i2v and r2v media arrays / legacy
+ * `size` / happyhorse); ./video encodes the differences in VIDEO_MODEL_RULES.
  */
 export const videoModels = {
   // Wan 3.0 all-in-one (t2v / i2v / r2v / v2v through one `media` array).
-  // No row in the international pricing tables → no `cost`.
+  // Pricing page, Singapore (2026-11-12): "wan3.0-video | International |
+  // 480P | List price $0.05/second | (Limited-time 30% off) | 30 seconds |
+  // 720P | List price $0.1/second | … | 1080P | List price $0.2/second" →
+  // default-config (1080P) list rate 0.2.
   "wan3.0-video": {
     id: "wan3.0-video",
     name: "Wan 3.0 Video",
     family: "wan3.0",
     ...VIDEO,
     modalities: { input: ["text", "image", "video", "audio"], output: ["video"] },
+    cost: { perVideoSecond: 0.2 },
+  },
+  // The high-speed wan3.0 tier, same request surface as wan3.0-video: "Model
+  // name. Valid values: | wan3.0-video-prime | : High-speed version with
+  // capabilities aligned to the standard version" (wan3 reference, checked
+  // 2026-11-12). Pricing page, Singapore (2026-11-12): "wan3.0-video-prime |
+  // International | 480P | $0.068/second | No free quota | 720P | $0.14/second
+  // | 1080P | $0.28/second" → default-config (1080P) rate 0.28.
+  "wan3.0-video-prime": {
+    id: "wan3.0-video-prime",
+    name: "Wan 3.0 Video Prime",
+    family: "wan3.0",
+    ...VIDEO,
+    modalities: { input: ["text", "image", "video", "audio"], output: ["video"] },
+    cost: { perVideoSecond: 0.28 },
   },
   // Wan 2.7 text-to-video ("new protocol": resolution + ratio).
   // $0.10/s at 720P, $0.15/s at 1080P (default) → default-config rate 0.15.
@@ -137,6 +157,28 @@ export const videoModels = {
     family: "wan2.7",
     ...VIDEO,
     modalities: V2V_MODALITIES,
+    cost: { perVideoSecond: 0.15 },
+  },
+  // Wan 2.7 reference-to-video (media array: reference_image / reference_video
+  // / first_frame, plus an optional `reference_voice` audio URL on a media
+  // entry). Pricing page, Singapore (2026-11-12): "wan2.7-r2v | International
+  // | Audio video | 720P | $0.10/second | No free quota | 1080P |
+  // $0.15/second", the same rows for wan2.7-r2v-2026-06-12 → default-config
+  // (1080P) rate 0.15.
+  "wan2.7-r2v": {
+    id: "wan2.7-r2v",
+    name: "Wan 2.7 R2V",
+    family: "wan2.7",
+    ...VIDEO,
+    modalities: R2V_MODALITIES,
+    cost: { perVideoSecond: 0.15 },
+  },
+  "wan2.7-r2v-2026-06-12": {
+    id: "wan2.7-r2v-2026-06-12",
+    name: "Wan 2.7 R2V (2026-06-12)",
+    family: "wan2.7",
+    ...VIDEO,
+    modalities: R2V_MODALITIES,
     cost: { perVideoSecond: 0.15 },
   },
   // Legacy protocol (`size` strings). $0.10/s 720P, $0.15/s 1080P (default
@@ -195,7 +237,8 @@ export const videoModels = {
     cost: { perVideoSecond: 0.1 },
   },
   // HappyHorse. $0.14/s 720P; 1080P (default) is $0.18/s on the 1.1
-  // generation and $0.24/s on the 1.0 generation.
+  // generation and $0.24/s on the 1.0 generation; 480P ($0.07/s) is priced on
+  // the 1.1 generation only.
   "happyhorse-1.1-t2v": {
     id: "happyhorse-1.1-t2v",
     name: "HappyHorse 1.1 T2V",
@@ -268,7 +311,10 @@ const TTS = {
 
 /**
  * Model ids POST /api/v1/services/aigc/multimodal-generation/generation
- * accepts on the international platform (the unary HTTP TTS route).
+ * accepts on the international platform (the unary HTTP TTS route). The
+ * qwen-tts-api reference (last updated 2026-10-27, checked 2026-11-12) names
+ * `qwen3-tts-flash` as its only model id, and the qwen-tts page's Singapore
+ * Qwen3-TTS list is "qwen3-tts-flash".
  */
 export const ttsModels = {
   "qwen3-tts-flash": {
@@ -278,45 +324,21 @@ export const ttsModels = {
     ...TTS,
     cost: { perMillionCharacters: TTS_FLASH_PER_MILLION_CHARACTERS },
   },
-  "qwen3-tts-flash-2025-11-27": {
-    id: "qwen3-tts-flash-2025-11-27",
-    name: "Qwen3 TTS Flash (2025-11-27)",
-    family: "qwen3-tts",
-    ...TTS,
-    cost: { perMillionCharacters: TTS_FLASH_PER_MILLION_CHARACTERS },
-  },
-  "qwen3-tts-flash-2025-09-18": {
-    id: "qwen3-tts-flash-2025-09-18",
-    name: "Qwen3 TTS Flash (2025-09-18)",
-    family: "qwen3-tts",
-    ...TTS,
-    cost: { perMillionCharacters: TTS_FLASH_PER_MILLION_CHARACTERS },
-  },
-  "qwen3-tts-instruct-flash": {
-    id: "qwen3-tts-instruct-flash",
-    name: "Qwen3 TTS Instruct Flash",
-    family: "qwen3-tts-instruct",
-    ...TTS,
-    cost: { perMillionCharacters: TTS_INSTRUCT_PER_MILLION_CHARACTERS },
-  },
-  "qwen3-tts-instruct-flash-2026-01-26": {
-    id: "qwen3-tts-instruct-flash-2026-01-26",
-    name: "Qwen3 TTS Instruct Flash (2026-01-26)",
-    family: "qwen3-tts-instruct",
-    ...TTS,
-    cost: { perMillionCharacters: TTS_INSTRUCT_PER_MILLION_CHARACTERS },
-  },
 } as const satisfies Record<string, ModelInfo>;
 
 /**
- * Realtime speech synthesis ids — WebSocket ONLY
+ * Realtime speech synthesis ids, served over WebSocket
  * (wss://dashscope-intl.aliyuncs.com/api-ws/v1/realtime on the legacy intl
  * domain; workspace-scoped hosts expose wss://{WorkspaceId}.{region}
- * .maas.aliyuncs.com/api-ws/v1/inference). Listed for catalog completeness,
- * and the unary text-to-speech validator rejects them because
+ * .maas.aliyuncs.com/api-ws/v1/inference). The two Qwen-Audio-TTS ids are
+ * ALSO served over HTTP at POST {base}/api/v1/services/audio/tts/SpeechSynthesizer
+ * (SPEECH_SYNTHESIZER_TTS_MODEL_IDS) — a different body from the
+ * multimodal-generation route. Listed for catalog completeness, and the unary
+ * text-to-speech validator rejects them because
  * POST /api/v1/services/aigc/multimodal-generation/generation cannot serve
- * them. unmodel does not build a WebSocket validator for this route.
- * Character caps are not documented per frame, so no `limit.characters`.
+ * them. unmodel builds no validator for the WebSocket or SpeechSynthesizer
+ * routes. Character caps are not documented per frame, so no
+ * `limit.characters`.
  */
 export const realtimeTtsModels = {
   "qwen-audio-3.0-tts-plus": {
@@ -357,19 +379,6 @@ export const realtimeTtsModels = {
     limit: { context: 0 },
     // $0.13 per 10K characters → $13 per 1M characters.
     cost: { perMillionCharacters: 13 },
-  },
-  "qwen3-tts-instruct-flash-realtime": {
-    id: "qwen3-tts-instruct-flash-realtime",
-    name: "Qwen3 TTS Instruct Flash Realtime",
-    family: "qwen3-tts-instruct",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: false,
-    modalities: { input: ["text"], output: ["audio"] },
-    limit: { context: 0 },
-    // $0.143 per 10K characters → $14.30 per 1M characters.
-    cost: { perMillionCharacters: 14.3 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
@@ -469,72 +478,15 @@ export const QWEN3_TTS_FLASH_VOICES = [
   "Kiki",
 ] as const;
 
-/** The 2025-09-18 snapshot serves 17 of the 48. */
-export const QWEN3_TTS_FLASH_2025_09_18_VOICES = [
-  "Cherry",
-  "Ethan",
-  "Nofish",
-  "Jennifer",
-  "Ryan",
-  "Katerina",
-  "Elias",
-  "Jada",
-  "Dylan",
-  "Li",
-  "Marcus",
-  "Roy",
-  "Peter",
-  "Sunny",
-  "Eric",
-  "Rocky",
-  "Kiki",
-] as const;
-
-export const QWEN3_TTS_INSTRUCT_FLASH_VOICES = [
-  "Cherry",
-  "Serena",
-  "Ethan",
-  "Chelsie",
-  "Momo",
-  "Vivian",
-  "Moon",
-  "Maia",
-  "Kai",
-  "Nofish",
-  "Bella",
-  "Eldric Sage",
-  "Mia",
-  "Mochi",
-  "Bellona",
-  "Vincent",
-  "Bunny",
-  "Neil",
-  "Elias",
-  "Arthur",
-  "Nini",
-  "Seren",
-  "Pip",
-  "Stella",
-] as const;
 
 /** Runtime lookup backing the TTS validator's checkVoice. */
 export const VOICES_BY_MODEL: Readonly<Partial<Record<string, readonly string[]>>> = {
   "qwen3-tts-flash": QWEN3_TTS_FLASH_VOICES,
-  "qwen3-tts-flash-2025-11-27": QWEN3_TTS_FLASH_VOICES,
-  "qwen3-tts-flash-2025-09-18": QWEN3_TTS_FLASH_2025_09_18_VOICES,
-  "qwen3-tts-instruct-flash": QWEN3_TTS_INSTRUCT_FLASH_VOICES,
-  "qwen3-tts-instruct-flash-2026-01-26": QWEN3_TTS_INSTRUCT_FLASH_VOICES,
 };
-
-/** The Instruct-Flash ids (`input.instructions` / `optimize_instructions`). */
-export const INSTRUCT_TTS_MODEL_ID_SET: ReadonlySet<string> = new Set([
-  "qwen3-tts-instruct-flash",
-  "qwen3-tts-instruct-flash-2026-01-26",
-]);
 
 export type AlibabaVideoGenerationModelId = keyof typeof videoModels;
 export type AlibabaTtsGenerationModelId = keyof typeof ttsModels;
-/** WebSocket-only TTS ids — not accepted by the unary HTTP endpoint. */
+/** Realtime TTS ids — not accepted by the multimodal-generation endpoint. */
 export type AlibabaRealtimeTtsModelId = keyof typeof realtimeTtsModels;
 export type AlibabaMediaModelId = keyof typeof models;
 
@@ -544,6 +496,19 @@ export const VIDEO_MODEL_IDS: readonly string[] = Object.keys(videoModels);
 export const TTS_MODEL_IDS: readonly string[] = Object.keys(ttsModels);
 /**
  * Runtime list backing the realtime rejection message — the inverse of
- * {@link TTS_MODEL_IDS}: these ids are WebSocket-only.
+ * {@link TTS_MODEL_IDS}: these ids are served over WebSocket (and, for
+ * {@link SPEECH_SYNTHESIZER_TTS_MODEL_IDS}, the SpeechSynthesizer route).
  */
 export const REALTIME_TTS_MODEL_IDS: readonly string[] = Object.keys(realtimeTtsModels);
+
+/**
+ * The realtime ids POST {base}/api/v1/services/audio/tts/SpeechSynthesizer
+ * also serves (non-streaming, or SSE with `X-DashScope-SSE: enable`). The
+ * qwen-audio-tts-http-api reference (checked 2026-11-12) names
+ * "qwen-audio-3.1-tts-plus, qwen-audio-3.1-tts-flash, qwen-audio-3.0-tts-plus,
+ * qwen-audio-3.0-tts-flash"; the two 3.1 ids are not catalogued here.
+ */
+export const SPEECH_SYNTHESIZER_TTS_MODEL_IDS: readonly string[] = [
+  "qwen-audio-3.0-tts-plus",
+  "qwen-audio-3.0-tts-flash",
+];

@@ -4,7 +4,7 @@ import type { ChatIR, DecodeContext } from "../../core/translate/ir";
 import type { TranslationWarning } from "../../core/translate/warnings";
 import { createWarningSink } from "../../core/translate/warnings";
 import { INVENTED_MAX_TOKENS, decodeAnthropic, encodeAnthropic } from "./interop";
-import type { MessagesBody } from "./wire";
+import type { MessagesBody, TextBlock } from "./wire";
 
 /**
  * The Anthropic-only surface and the two mappings that carry real risk: the
@@ -226,5 +226,117 @@ describe("passthrough", () => {
 
     expect(ir.settings.reasoning).toBeUndefined();
     expect(ir.passthrough?.["anthropic-messages"]?.["thinking"]).toEqual({ type: "adaptive" });
+  });
+});
+
+describe("mid-conversation system messages", () => {
+  test("are appended to the system prompt, and the lost position is named", () => {
+    const { ir, warnings } = encode(
+      claudeBody({
+        system: "You are helpful.",
+        messages: [
+          { role: "user", content: "Bonjour" },
+          { role: "system", content: "Answer in French from here on." },
+          { role: "user", content: "Quelle heure est-il ?" },
+        ],
+      }),
+    );
+
+    // Appended, not prepended: later system instructions take precedence.
+    expect(ir.system).toEqual([{ text: "You are helpful." }, { text: "Answer in French from here on." }]);
+    expect(ir.messages.map((m) => m.role)).toEqual(["user", "user"]);
+    expect(warnings.map((w) => ({ code: w.code, path: w.path }))).toEqual([
+      { code: "approximated_param", path: ["messages", 1] },
+    ]);
+    expect(warnings[0]?.message).toContain("applies from the start of the conversation");
+  });
+
+  test("carry text blocks with their cache breakpoint; any other block is dropped by name", () => {
+    const { ir, warnings } = encode(
+      claudeBody({
+        messages: [
+          { role: "user", content: "Bonjour" },
+          {
+            role: "system",
+            content: [
+              { type: "text", text: "Answer in French.", cache_control: { type: "ephemeral" } },
+              // `tool_addition` is a beta block the wire types leave open.
+              { type: "tool_addition" } as unknown as TextBlock,
+            ],
+          },
+          { role: "user", content: "Quelle heure est-il ?" },
+        ],
+      }),
+    );
+
+    expect(ir.system).toEqual([{ text: "Answer in French.", cache: { kind: "ephemeral" } }]);
+    expect(warnings.map((w) => ({ code: w.code, path: w.path }))).toEqual([
+      { code: "dropped_content", path: ["messages", 1, "content", 1] },
+      { code: "approximated_param", path: ["messages", 1] },
+    ]);
+  });
+});
+
+describe("reasoning is spelled per target model", () => {
+  const budget = (extra: { effort?: string } = {}): ChatIR => ({
+    ...IR,
+    settings: { maxOutputTokens: 4096, reasoning: { mode: "budget", budgetTokens: 2048, ...extra } },
+  });
+
+  test("a budget stays a budget on a model that takes one, the carried effort unused", () => {
+    const { body, warnings } = decode(budget({ effort: "high" }), { targetModelId: "claude-sonnet-4-6" });
+
+    expect(body.thinking).toEqual({ type: "enabled", budget_tokens: 2048 });
+    expect(body.output_config).toBeUndefined();
+    expect(warnings).toEqual([]);
+  });
+
+  test("Claude 4.7+ takes the carried effort with adaptive thinking, warning-free", () => {
+    for (const targetModelId of ["claude-opus-4-7", "claude-opus-5", "claude-opus-5-5-20261101"]) {
+      const { body, warnings } = decode(budget({ effort: "max" }), { targetModelId });
+      expect(body.thinking, targetModelId).toEqual({ type: "adaptive" });
+      expect(body.output_config, targetModelId).toEqual({ effort: "max" });
+      expect(warnings, targetModelId).toEqual([]);
+    }
+  });
+
+  test("a bare budget on Claude 4.7+ is bucketed, and the bucket is named", () => {
+    const { body, warnings } = decode(budget(), { targetModelId: "claude-sonnet-5" });
+
+    expect(body.thinking).toEqual({ type: "adaptive" });
+    expect(body.output_config).toEqual({ effort: "low" });
+    expect(warnings.map((w) => ({ code: w.code, path: w.path, meta: w.meta }))).toEqual([
+      {
+        code: "approximated_param",
+        path: ["thinking", "budget_tokens"],
+        meta: { budgetTokens: 2048, effort: "low" },
+      },
+    ]);
+  });
+
+  test("`display` survives onto adaptive thinking", () => {
+    const { ir } = encode(
+      claudeBody({ model: "claude-sonnet-4-6", thinking: { type: "enabled", budget_tokens: 2048, display: "summarized" } }),
+    );
+    expect(decode(ir, { targetModelId: "claude-opus-5" }).body.thinking).toEqual({
+      type: "adaptive",
+      display: "summarized",
+    });
+  });
+
+  test('"off" is `between_tools` on Sonnet 5.5 and `disabled` everywhere else', () => {
+    const off: ChatIR = { ...IR, settings: { maxOutputTokens: 64, reasoning: { mode: "off" } } };
+
+    const sonnet = decode(off, { targetModelId: "claude-sonnet-5-5" });
+    expect(sonnet.body.thinking).toEqual({ type: "between_tools" });
+    expect(sonnet.warnings.map((w) => ({ code: w.code, path: w.path, meta: w.meta }))).toEqual([
+      { code: "approximated_param", path: ["thinking"], meta: { from: "disabled", to: "between_tools" } },
+    ]);
+
+    for (const targetModelId of ["claude-haiku-5-5", "claude-sonnet-5", "claude-opus-4-5"]) {
+      const other = decode(off, { targetModelId });
+      expect(other.body.thinking, targetModelId).toEqual({ type: "disabled" });
+      expect(other.warnings, targetModelId).toEqual([]);
+    }
   });
 });

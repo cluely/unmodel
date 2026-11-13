@@ -12,10 +12,10 @@
 import { EXTRA } from "../../core/unified/derive";
 import type { SttModelParamTable } from "../../core/unified/vocabulary/stt";
 import { GEMINI_STT_MODEL_IDS } from "./audio-constraints";
-import type { GoogleSttGenerationConfigBase } from "./stt";
+import type { GoogleAudioTranscriptionConfig, GoogleSttGenerationConfigBase } from "./stt";
 import type { GoogleContent, GoogleThinkingConfig } from "./wire";
 
-/** The thirteen curated transcription ids — the `google/…` ref union. */
+/** The curated transcription ids — the `google/…` ref union. */
 export const MODELS = GEMINI_STT_MODEL_IDS;
 
 /**
@@ -30,22 +30,25 @@ export const MODELS = GEMINI_STT_MODEL_IDS;
 export const TIMESTAMPS = ["word", "none"] as const;
 
 /**
- * What a transcription request can carry that the vocabulary has no word for.
+ * What a transcription request can carry that the vocabulary has no word for,
+ * on the mainline Gemini rows.
  *
- * One object rather than thirteen literals, and the table below is built from
- * it, because the thirteen curated ids have **identical** capability flags in
- * the generated catalog — `temperature`, `reasoning` and `structuredOutput` are
- * all true on every one, and their output limits agree. Thirteen copies would
- * imply a distinction the catalog does not make; the drift test in
- * `stt.test.ts` is what keeps the curated list itself honest.
+ * One object rather than one per id, and the table below is built from it,
+ * because the curated mainline ids have **identical** capability flags in the
+ * generated catalog — `temperature`, `reasoning` and `structuredOutput` are
+ * all true on every one. Copies would imply a distinction the catalog does not
+ * make; the drift test in `stt.test.ts` is what keeps the curated list itself
+ * honest.
  *
- * `customVocabulary` nests one level deeper than the rest — it is an ASR knob,
- * not a generation one — and `systemInstruction` one level shallower, at the
- * body root. {@link EXTRA_NESTING} carries both exceptions.
+ * `customVocabulary` and `mode` nest one level deeper than the rest — they are
+ * ASR knobs, not generation ones — and `systemInstruction` one level
+ * shallower, at the body root. {@link EXTRA_NESTING} carries the exceptions.
  */
 export const STT_EXTRAS = {
   /** "Phrases that bias the ASR model toward specific terms (names, jargon)." */
   customVocabulary: EXTRA as readonly string[],
+  /** "Configures transcription mode. Supported values: `VERBATIM`, `SMART`." */
+  mode: EXTRA as NonNullable<GoogleAudioTranscriptionConfig["mode"]>,
   temperature: EXTRA as number,
   maxOutputTokens: EXTRA as number,
   /** Trades audio-token count against fidelity. */
@@ -66,15 +69,28 @@ export const STT_EXTRAS = {
 export const STT_ROW = { timestamps: TIMESTAMPS, extras: STT_EXTRAS } as const;
 
 /**
- * The thirteen rows, built from one.
+ * The dedicated transcription model's row: `gemini-3.5-transcribe` carries
+ * `reasoning: false` (its page's Thinking badge is not-supported), so
+ * `thinkingConfig` is not on offer — the same fact ./stt-models states as a
+ * flag and ./stt restates as `thinkingConfig?: never` on that arm.
+ */
+const { thinkingConfig: _noThinking, ...TRANSCRIBE_EXTRAS } = STT_EXTRAS;
+export const TRANSCRIBE_ROW = { timestamps: TIMESTAMPS, extras: TRANSCRIBE_EXTRAS } as const;
+
+/** The ids built from {@link STT_ROW}: every curated id except the transcribe model. */
+type MainlineSttModelId = Exclude<(typeof MODELS)[number], "gemini-3.5-transcribe">;
+
+/**
+ * The rows, built from two.
  *
  * The cast is a mapped type rather than `Record<GeminiSttModelId, typeof
  * STT_ROW>` for Deepgram's reason: only a mapped type over the id tuple keeps
  * each key a literal, and a lost literal is a silently dead narrowing with a
  * green build.
  */
-export const GOOGLE_STT_MODEL_PARAMS = Object.fromEntries(
-  MODELS.map((model) => [model, STT_ROW]),
-) as {
-  readonly [M in (typeof MODELS)[number]]: typeof STT_ROW;
+export const GOOGLE_STT_MODEL_PARAMS = {
+  ...(Object.fromEntries(
+    MODELS.filter((model) => model !== "gemini-3.5-transcribe").map((model) => [model, STT_ROW]),
+  ) as { readonly [M in MainlineSttModelId]: typeof STT_ROW }),
+  "gemini-3.5-transcribe": TRANSCRIBE_ROW,
 } satisfies SttModelParamTable;

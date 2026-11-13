@@ -139,6 +139,70 @@ describe("route derivation", () => {
     expect(url("kling/kling-3.0-omni", frame)).toBe(
       "https://api-singapore.klingai.com/omni-video/kling-3.0-omni",
     );
+    // Kling 4.0 is on all three path routes: text and keyframes stay on their
+    // own, and only what omni alone takes — references, clips — goes there.
+    const reference = { image: [{ url: "https://example.com/a.png", role: "reference" }] };
+    const clip = { video: { url: "https://example.com/clip.mp4" } };
+    expect(url("kling/kling-4.0")).toBe("https://api-singapore.klingai.com/text-to-video/kling-4.0");
+    expect(url("kling/kling-4.0", frame)).toBe(
+      "https://api-singapore.klingai.com/image-to-video/kling-4.0",
+    );
+    expect(url("kling/kling-4.0", reference)).toBe(
+      "https://api-singapore.klingai.com/omni-video/kling-4.0",
+    );
+    expect(url("kling/kling-4.0-flash", clip)).toBe(
+      "https://api-singapore.klingai.com/omni-video/kling-4.0-flash",
+    );
+  });
+
+  test("kling-4.0's omni-only settings send it to omni: `audio`, and a shape beside frames", () => {
+    const compile = (model: string, extra: Record<string, unknown> = {}) =>
+      video({ model, prompt: "a fox", ...extra } as never) as unknown as {
+        contents?: unknown[];
+        settings?: unknown;
+        request: { url: string };
+      };
+    const host = "https://api-singapore.klingai.com";
+    const frame = { image: { url: "https://example.com/a.png" } };
+    // Text-to-video and image-to-video have no audio switch on either id.
+    for (const model of ["kling-4.0", "kling-4.0-flash"]) {
+      const audio = compile(`kling/${model}`, { audio: "native" });
+      expect(audio.request.url).toBe(`${host}/omni-video/${model}`);
+      expect(audio.contents).toEqual([{ type: "prompt", text: "a fox" }]);
+      expect(audio.settings).toEqual({ audio: "native" });
+    }
+    // Image-to-video has no `settings.aspect_ratio`; omni's overrides the frame.
+    const shaped = compile("kling/kling-4.0", { ...frame, aspectRatio: "16:9" });
+    expect(shaped.request.url).toBe(`${host}/omni-video/kling-4.0`);
+    expect(shaped.contents).toEqual([
+      { type: "prompt", text: "a fox" },
+      { type: "first_frame", url: "https://example.com/a.png" },
+    ]);
+    expect(shaped.settings).toEqual({ aspect_ratio: "16:9" });
+    // Without either, text and frames stay on their own routes.
+    expect(compile("kling/kling-4.0").request.url).toBe(`${host}/text-to-video/kling-4.0`);
+    expect(compile("kling/kling-4.0", frame).request.url).toBe(`${host}/image-to-video/kling-4.0`);
+  });
+
+  test("kling-4.0 compiles its own shapes and durations", () => {
+    const params = video({
+      model: "kling/kling-4.0",
+      prompt: "a fox",
+      duration: 30,
+      aspectRatio: "21:9",
+      resolution: "1080p",
+    }) as unknown as Record<string, unknown>;
+    expect(params["settings"]).toEqual({ duration: 30, resolution: "1080p", aspect_ratio: "21:9" });
+
+    const older = video.safe({ model: "kling/kling-3.0", prompt: "a fox", aspectRatio: "21:9" } as never);
+    expect(older.ok).toBe(false);
+    if (older.ok) return;
+    expect(older.errors[0]).toMatchObject({ path: ["aspectRatio"] });
+
+    const flash = video.safe({ model: "kling/kling-4.0-flash", prompt: "a fox", duration: 21 });
+    expect(flash.ok).toBe(false);
+    if (flash.ok) return;
+    expect(flash.errors[0]!.path).toEqual(["duration"]);
   });
 
   test("a reference is a different route from a first frame, and says so where it is not one", () => {
@@ -150,6 +214,86 @@ describe("route derivation", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({ path: ["image"], meta: { route: "reference" } });
+  });
+
+  test("the reference route is per model inside one provider (xai 1.5 vs 1.5-lite)", () => {
+    const reference = { image: [{ url: "https://example.com/a.png", role: "reference" as const }] };
+    expect(video.safe({ model: "xai/grok-imagine-video-1.5", prompt: "hi", ...reference }).ok).toBe(
+      true,
+    );
+    const lite = video.safe({ model: "xai/grok-imagine-video-1.5-lite", prompt: "hi", ...reference });
+    expect(lite.ok).toBe(false);
+    if (lite.ok) return;
+    expect(lite.errors[0]).toMatchObject({
+      code: "unsupported_capability",
+      path: ["image"],
+      meta: { route: "reference", routes: ["text", "image"] },
+    });
+    expect(
+      video.safe({
+        model: "xai/grok-imagine-video-1.5-lite",
+        prompt: "hi",
+        image: { url: "https://example.com/a.png" },
+      }).ok,
+    ).toBe(true);
+  });
+
+  test("xai's closing frame is per model: last_frame on 1.5, refused elsewhere", () => {
+    const image = [
+      { url: "https://example.com/a.png" },
+      { url: "https://example.com/z.png", role: "last" as const },
+    ];
+    const params = video({ model: "xai/grok-imagine-video-1.5", prompt: "hi", image });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "grok-imagine-video-1.5",
+      prompt: "hi",
+      image: { url: "https://example.com/a.png" },
+      last_frame: { url: "https://example.com/z.png" },
+    });
+    for (const model of ["xai/grok-imagine-video", "xai/grok-imagine-video-1.5-lite"] as const) {
+      const refused = video.safe({ model, prompt: "hi", image });
+      expect(refused.ok, model).toBe(false);
+      if (refused.ok) continue;
+      expect(refused.errors[0]).toMatchObject({ code: "unsupported_param", path: ["image"] });
+      expect(refused.errors[0]!.message).toContain("grok-imagine-video-1.5");
+    }
+  });
+
+  test("xai's inline bytes compile to a data URL, and bytes with no type are refused", () => {
+    // "Accepts a public URL, a base64-encoded data URL, or a file_id from the
+    // xAI Files API." — OpenAPI ImageUrl (2026-11-12).
+    const params = video({
+      model: "xai/grok-imagine-video-1.5",
+      prompt: "hi",
+      image: [{ data: "iVBORw0KGgo=", mimeType: "image/png", role: "reference" }],
+    });
+    expect(JSON.parse(JSON.stringify(params))).toMatchObject({
+      reference_images: [{ url: "data:image/png;base64,iVBORw0KGgo=" }],
+    });
+    // The type requires `mimeType` beside `data`; an untyped caller can omit it.
+    const untyped = video.safe({
+      model: "xai/grok-imagine-video-1.5",
+      prompt: "hi",
+      image: { data: "iVBORw0KGgo=" },
+    } as never);
+    expect(untyped.ok).toBe(false);
+    if (untyped.ok) return;
+    expect(untyped.errors[0]).toMatchObject({ code: "invalid_shape", path: ["image"] });
+  });
+
+  test("xai's prompt is optional once the request carries an image", () => {
+    const params = video({
+      model: "xai/grok-imagine-video-1.5",
+      image: { url: "https://example.com/a.png" },
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "grok-imagine-video-1.5",
+      image: { url: "https://example.com/a.png" },
+    });
+    const textOnly = video.safe({ model: "xai/grok-imagine-video-1.5" });
+    expect(textOnly.ok).toBe(false);
+    if (textOnly.ok) return;
+    expect(textOnly.errors[0]).toMatchObject({ code: "invalid_shape", path: ["prompt"] });
   });
 
   test("two images claiming one keyframe is a shape error, not a last-one-wins", () => {
@@ -190,9 +334,9 @@ describe("a value a model cannot serve is refused, never approximated", () => {
   });
 
   test("the same miss at a provider whose bound is the endpoint's own table", () => {
-    // Nothing about kling-v2-1's 5-or-10 is copied into the adapter: the
+    // Nothing about kling-v2-5-turbo's 5-or-10 is copied into the adapter: the
     // capability map lives in `v1-routes.ts` and answers here, at `duration`.
-    const result = video.safe({ model: "kling/kling-v2-1", prompt: "hi", duration: 7 } as never);
+    const result = video.safe({ model: "kling/kling-v2-5-turbo", prompt: "hi", duration: 7 } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({ path: ["duration"], meta: { allowed: [5, 10] } });
@@ -210,7 +354,7 @@ describe("a value a model cannot serve is refused, never approximated", () => {
   });
 
   test("a tier no provider in the category renders is refused everywhere it is asked", () => {
-    for (const model of ["luma/ray-2", "google/veo-3.1-generate-preview", "vidu/viduq3-pro"]) {
+    for (const model of ["luma/ray-2", "google/veo-3.0-generate-001", "vidu/viduq3-pro"]) {
       const result = video.safe({ model, prompt: "hi", resolution: "1440p" } as never);
       expect(result.ok, model).toBe(false);
       if (result.ok) continue;
@@ -223,7 +367,7 @@ describe("a value a model cannot serve is refused, never approximated", () => {
 
   test("a shape outside a provider's enum names that provider's list", () => {
     const result = video.safe({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "hi",
       aspectRatio: "4:3",
     } as never);
@@ -259,6 +403,32 @@ describe("a value a model cannot serve is refused, never approximated", () => {
     });
   });
 
+  test("xai's classic model: no 1080p and no voice references, while 1.5 keeps both", () => {
+    // "`grok-imagine-video` supports up to 720p." and "| Voice references |
+    // Yes: Up to 3 voices | Not supported | Not supported |" (2026-11-12).
+    const tier = video.safe({
+      model: "xai/grok-imagine-video",
+      prompt: "hi",
+      resolution: "1080p",
+    } as never);
+    expect(tier.ok).toBe(false);
+    if (!tier.ok) {
+      expect(tier.errors[0]).toMatchObject({ code: "unsupported_capability", path: ["resolution"] });
+    }
+    const voices = { reference_audios: [{ voice_id: "eve" }] };
+    const classic = video.safe({
+      model: "xai/grok-imagine-video",
+      prompt: "<AUDIO_0> speaks",
+      ...voices,
+    } as never);
+    expect(classic.ok).toBe(false);
+    if (!classic.ok) {
+      expect(classic.errors[0]).toMatchObject({ code: "unsupported_param", path: ["reference_audios"] });
+    }
+    const params = video({ model: "xai/grok-imagine-video-1.5", prompt: "<AUDIO_0> speaks", ...voices });
+    expect(JSON.parse(JSON.stringify(params))).toMatchObject(voices);
+  });
+
   test("inline bytes at a URL-only provider name the gap rather than smuggling a data: URI", () => {
     const result = video.safe({
       model: "luma/ray-2",
@@ -272,7 +442,7 @@ describe("a value a model cannot serve is refused, never approximated", () => {
 
   test("a URL at a bytes-only provider does the same, the other way round", () => {
     const result = video.safe({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "hi",
       image: { url: "https://example.com/a.png" },
     });
@@ -325,7 +495,7 @@ describe("the result is the provider's own Validated", () => {
 
   test("google: the SDK view re-nests what the wire body nests differently", () => {
     const params = video({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "a hummingbird in slow motion",
       duration: 8,
       aspectRatio: "9:16",
@@ -342,7 +512,7 @@ describe("the result is the provider's own Validated", () => {
       },
     });
     expect(params.toSdk("google")).toEqual({
-      model: "veo-3.1-generate-preview",
+      model: "veo-3.0-generate-001",
       prompt: "a hummingbird in slow motion",
       config: {
         numberOfVideos: 1,
@@ -371,7 +541,7 @@ describe("the result is the provider's own Validated", () => {
 describe("providerOptions", () => {
   test("deep-merges over the compiled body before validation", () => {
     const params = video({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "a hummingbird in slow motion",
       duration: 8,
       providerOptions: {
@@ -441,7 +611,7 @@ describe("providerOptions", () => {
 describe("bounds the adapter did not copy surface as the provider's own finding", () => {
   test("veo's 1080p-needs-8s pairing rule, reported at `duration`", () => {
     const result = video.safe({
-      model: "google/veo-3.1-generate-preview",
+      model: "google/veo-3.0-generate-001",
       prompt: "a fox",
       duration: 6,
       resolution: "1080p",
@@ -477,10 +647,43 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     expect(result.errors[0]!.message).toContain("5 seconds");
   });
 
+  test("vidu's `4k` is viduq4-preview's wire `4K` on both of its routes, and no other model's", () => {
+    const url = "https://example.com/a.png";
+    for (const [role, route] of [
+      ["first", "img2video"],
+      ["reference", "reference2video"],
+    ] as const) {
+      const result = video.safe({
+        model: "vidu/viduq4-preview",
+        prompt: "a fox",
+        image: { url, role },
+        resolution: "4k",
+      });
+      expect(result.ok, role).toBe(true);
+      if (!result.ok) continue;
+      expect(result.warnings, role).toEqual([]);
+      const params = result.params as unknown as { resolution: string; request: { url: string } };
+      expect(params.request.url).toBe(`https://api.vidu.com/ent/v2/${route}`);
+      expect(params.resolution, role).toBe("4K");
+    }
+
+    const q3 = video.safe({
+      model: "vidu/viduq3",
+      prompt: "a fox",
+      image: { url, role: "reference" },
+      resolution: "4k",
+    } as never);
+    expect(q3.ok).toBe(false);
+    if (q3.ok) return;
+    // The endpoint answers, naming viduq3's own tiers.
+    expect(q3.errors[0]!.path).toEqual(["resolution"]);
+    expect(q3.errors[0]!.message).toContain('"viduq3" on reference2video');
+  });
+
   test("a model this snapshot has not seen keeps every route open", () => {
     // It has already drawn `unknown_model`; gating it against tables that do
     // not describe it would be a guess dressed as a check.
-    for (const model of ["runway/gen5", "vidu/viduq4", "kling/kling-4.0"]) {
+    for (const model of ["runway/gen5", "vidu/viduq4", "kling/kling-9.9"]) {
       const result = video.safe({
         model,
         prompt: "a fox",
@@ -499,6 +702,71 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["resolution"] });
     expect(result.errors[0]!.message).toContain("Pass `aspectRatio` alongside `resolution`");
+  });
+
+  test("a tier with no shape compiles to the model's own auto_<tier> token, exactly", () => {
+    const result = video.safe({
+      model: "runway/wan3",
+      prompt: "a fox",
+      resolution: "720p",
+      image: { url: "https://example.com/a.png" },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.params as unknown as Record<string, unknown>)["ratio"]).toBe("auto_720p");
+    expect(result.params.warnings).toEqual([]);
+  });
+
+  test("Runway's documented tiers pick the pair: kling_4's 1080p square is 1440:1440", () => {
+    const params = video({
+      model: "runway/kling_4",
+      prompt: "a fox",
+      resolution: "1080p",
+      aspectRatio: "1:1",
+    }) as unknown as Record<string, unknown>;
+    expect(params["ratio"]).toBe("1440:1440");
+  });
+
+  test("seedance2_fast / mini split their twelve sizes into 480p and 720p, and serve no 1080p", () => {
+    for (const model of ["runway/seedance2_fast", "runway/seedance2_mini"] as const) {
+      const square = (resolution: "480p" | "720p"): unknown =>
+        (video({ model, prompt: "a fox", resolution, aspectRatio: "1:1" }) as unknown as Record<string, unknown>)[
+          "ratio"
+        ];
+      expect(square("480p"), model).toBe("640:640");
+      expect(square("720p"), model).toBe("960:960");
+      const fullHd = video.safe({ model, prompt: "a fox", resolution: "1080p", aspectRatio: "1:1" } as never);
+      expect(fullHd.ok, model).toBe(false);
+      if (!fullHd.ok) {
+        expect(fullHd.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["resolution"] });
+      }
+    }
+  });
+
+  test("Gemini Omni Flash 1.x's 360p sizes have no canonical tier and are never picked", () => {
+    const plain = video({
+      model: "runway/gemini_omni_flash_1.2",
+      prompt: "a fox",
+      aspectRatio: "16:9",
+    }) as unknown as Record<string, unknown>;
+    expect(plain["ratio"]).toBe("1280:720");
+    const low = video.safe({
+      model: "runway/gemini_omni_flash_1.2",
+      prompt: "a fox",
+      resolution: "480p",
+      aspectRatio: "16:9",
+    } as never);
+    expect(low.ok).toBe(false);
+    if (low.ok) return;
+    expect(low.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["resolution"] });
+  });
+
+  test("h3_max's 768p answers a 720p request, and says so", () => {
+    const result = video.safe({ model: "runway/h3_max", prompt: "a fox", resolution: "720p" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.params as unknown as Record<string, unknown>)["resolution"]).toBe("768p");
+    expect(result.params.warnings.map((issue) => issue.code)).toEqual(["approximated_param"]);
   });
 
   test("a canonical-space failure stops before the provider validator runs", () => {

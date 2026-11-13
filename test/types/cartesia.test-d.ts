@@ -11,12 +11,14 @@
  *
  * `model_id` / `model` keep their tails: a cataloged dated snapshot
  * (`sonic-3.5-2026-05-04`, `ink-whisper-2026-01-01`) is off-enum yet valid, and
- * `checkTtsModelKind` / `checkBatchModel` say so with a warning. `language` and
- * `generation_config.emotion` have no tails: `checkEnums` / `checkLanguage`
- * refuse an off-enum value at `invalid_enum_value`'s default *error* severity,
- * so every value a tail admitted at compile time was a value the validator
- * would refuse at run time — the editor was silent about a call unmodel itself
- * rejects.
+ * `checkTtsModelKind` / `checkBatchModel` say so with a warning. `language` (on
+ * an id whose list is documented) and `generation_config.emotion` have no
+ * tails: `checkEnums` / `checkLanguage` refuse an off-enum value at
+ * `invalid_enum_value`'s default *error* severity, so every value a tail
+ * admitted at compile time was a value the validator would refuse at run time
+ * — the editor was silent about a call unmodel itself rejects. Where the check
+ * only warns — an alias whose backing model no page names, an uncataloged id,
+ * the realtime STT socket's `language` — the tail is back.
  *
  * The two headline cases below are the ones a caller actually types: `"pt-BR"`
  * (BCP-47 muscle memory on a field that takes bare ISO-639-1) and `"smug"` (an
@@ -26,6 +28,8 @@ import { tts, ttsWebsocket, stt, sttWebsocket } from "../../src/providers/cartes
 import type {
   CartesiaEmotion,
   CartesiaTtsLanguage,
+  CartesiaTtsLanguageFor,
+  CartesiaTtsLocale,
   CartesiaSttLanguage,
   CartesiaSttWebsocketLanguage,
 } from "../../src/providers/cartesia";
@@ -96,6 +100,90 @@ function ttsEnumTypeTests(): void {
   tts({ ...BYTES_BASE, model_id: "sonic-9-future" });
 }
 
+/**
+ * `language` / `locale` are closed PER MODEL: the same field takes a different
+ * list once `model_id` names a Sonic 3.6 id (`CartesiaTtsLanguageFor<M>`),
+ * which is what the per-model `checkLanguageFields` enforces at run time.
+ */
+function ttsPerModelLanguageTypeTests(): void {
+  const sonic36 = { ...BYTES_BASE, model_id: "sonic-3.6" } as const;
+
+  // LEGAL on Sonic 3.6: Odia, Urdu, and the regional locales, in either slot.
+  tts({ ...sonic36, language: "or" });
+  tts({ ...sonic36, language: "ur" });
+  tts({ ...sonic36, language: "pt-BR" });
+  tts({ ...sonic36, locale: "en-GB" });
+  tts({ ...BYTES_BASE, model_id: "sonic-3.6-2026-08-27", locale: "hi-IN" });
+  expectAssignable<CartesiaTtsLocale>("en-IN");
+  expectAssignable<CartesiaTtsLanguageFor<"sonic-3.6">>("ur-IN");
+
+  // ILLEGAL on Sonic 3.6: off its list, and locale codes are case-sensitive.
+  tts({
+    ...sonic36,
+    // @ts-expect-error "en-gb" — "Locale codes are case-sensitive."
+    locale: "en-gb",
+  });
+  tts({
+    ...sonic36,
+    // @ts-expect-error "cy" is not one of Sonic 3.6's 44 languages
+    language: "cy",
+  });
+  tts({
+    ...sonic36,
+    // @ts-expect-error "cy-GB" — a region on a base Sonic 3.6 does not speak
+    locale: "cy-GB",
+  });
+
+  // LEGAL on Sonic 3.6: an unlisted regional code on one of its bases — the
+  // table lists 56 locales, the changelog counts 61, so this is a warning.
+  tts({ ...sonic36, locale: "ar-SA" });
+  tts({ ...sonic36, language: "es-419" });
+
+  // LEGAL: the aliases whose backing model no page names, and an uncataloged
+  // id, take every documented value (the check only warns on them).
+  tts({ ...BYTES_BASE, model_id: "sonic-preview", locale: "en-GB" });
+  tts({ ...BYTES_BASE, model_id: "sonic-latest", language: "ur" });
+  tts({ ...BYTES_BASE, model_id: "sonic-3.7", language: "ur" });
+
+  // ILLEGAL on an earlier model: the 3.6 additions are not in its 42.
+  tts({
+    ...BYTES_BASE,
+    // @ts-expect-error "or" is new in Sonic 3.6; sonic-3.5 takes the 42 codes
+    language: "or",
+  });
+  tts({
+    ...BYTES_BASE,
+    // @ts-expect-error a regional locale needs Sonic 3.6 or later
+    locale: "en-GB",
+  });
+  // @ts-expect-error "ur" is not a sonic-3.5 language
+  expectAssignable<CartesiaTtsLanguageFor<"sonic-3.5">>("ur");
+
+  // DEGRADED ARM: a `string`-typed id names no model, so every model's values
+  // compile and the run-time check holds the real id to its own list.
+  const runtimeId: string = "sonic-3.6";
+  tts({ ...BYTES_BASE, model_id: runtimeId, language: "or" });
+}
+
+/**
+ * `normalization` is one model-independent union: `auto`, `off`, every base
+ * code and locale. A locale code on an earlier model is a run-time warning, so
+ * it compiles; only a value off the union is refused.
+ */
+function ttsNormalizationTypeTests(): void {
+  tts({ ...BYTES_BASE, normalization: "off" });
+  tts({ ...BYTES_BASE, normalization: "auto" });
+  tts({ ...BYTES_BASE, normalization: null });
+  tts({ ...BYTES_BASE, normalization: "en" });
+  tts({ ...BYTES_BASE, normalization: "en-IN" });
+  tts({ ...BYTES_BASE, model_id: "sonic-3.6", locale: "en-GB", normalization: "en-US" });
+  tts({
+    ...BYTES_BASE,
+    // @ts-expect-error "shouty" is not auto, off or a language/locale code
+    normalization: "shouty",
+  });
+}
+
 /** The socket message carries the same two enums as POST /tts/bytes. */
 function ttsWebsocketEnumTypeTests(): void {
   const base = {
@@ -113,6 +201,17 @@ function ttsWebsocketEnumTypeTests(): void {
     ...base,
     // @ts-expect-error same closed 42-code enum as the REST body
     language: "pt-BR",
+  });
+  // …and the same per-model widening on a Sonic 3.6 id and the aliases.
+  ttsWebsocket({ ...base, model_id: "sonic-3.6", language: "pt-BR" });
+  ttsWebsocket({ ...base, model_id: "sonic-3.6", locale: "ur-IN" });
+  ttsWebsocket({ ...base, model_id: "sonic-preview", locale: "en-GB" });
+  ttsWebsocket({ ...base, model_id: "sonic-3.7", language: "ur" });
+  ttsWebsocket({ ...base, normalization: "off" });
+  ttsWebsocket({
+    ...base,
+    // @ts-expect-error same normalization union as the REST body
+    normalization: "shouty",
   });
   ttsWebsocket({
     ...base,
@@ -158,26 +257,25 @@ function sttEnumTypeTests(): void {
 }
 
 /**
- * The precedent this whole item was made consistent with: the realtime STT
- * socket already shipped a closed `language` beside an open `model`.
+ * The realtime STT socket's `language` is open: the 2026-03-01 enum is `en`
+ * alone, but every other source says the socket takes more, so an off-list
+ * code is a run-time warning — and, by the open-tail rule, compiles.
  */
-function sttWebsocketConsistencyTypeTests(): void {
+function sttWebsocketLanguageTypeTests(): void {
   sttWebsocket({ model: "ink-whisper", encoding: "pcm_s16le", sample_rate: 16000, language: "en" });
   expectAssignable<CartesiaSttWebsocketLanguage>("en");
-  sttWebsocket({
-    model: "ink-2",
-    encoding: "pcm_s16le",
-    sample_rate: 16000,
-    // @ts-expect-error "en" is the only published value on this socket
-    language: "es",
-  });
-  // Open model id, closed language — the shape every cartesia surface now has.
+  expectAssignable<CartesiaSttWebsocketLanguage>("yue");
+  sttWebsocket({ model: "ink-whisper", encoding: "pcm_s16le", sample_rate: 16000, language: "es" });
+  sttWebsocket({ model: "ink-2", encoding: "pcm_s16le", sample_rate: 16000, language: "fr" });
+  // Open model id, open language.
   sttWebsocket({ model: "ink-whisper-2026-01-01", encoding: "pcm_s16le", sample_rate: 16000 });
 }
 
 export {
   ttsEnumTypeTests,
+  ttsPerModelLanguageTypeTests,
+  ttsNormalizationTypeTests,
   ttsWebsocketEnumTypeTests,
   sttEnumTypeTests,
-  sttWebsocketConsistencyTypeTests,
+  sttWebsocketLanguageTypeTests,
 };

@@ -43,7 +43,7 @@ function pngDataUri(width: number, height: number): string {
 describe("bytedance.video happy path", () => {
   test("returns the exact wire body plus request metadata", () => {
     const v = video({
-      model: "seedance-1-5-pro-251215",
+      model: "seedance-1-0-pro-250528",
       content: [{ type: "text", text: "The kitten is yawning at the camera." }],
       resolution: "720p",
       ratio: "16:9",
@@ -54,7 +54,7 @@ describe("bytedance.video happy path", () => {
     });
 
     expect(JSON.parse(JSON.stringify(v))).toEqual({
-      model: "seedance-1-5-pro-251215",
+      model: "seedance-1-0-pro-250528",
       content: [{ type: "text", text: "The kitten is yawning at the camera." }],
       resolution: "720p",
       ratio: "16:9",
@@ -110,7 +110,7 @@ describe("bytedance.video happy path", () => {
 
   test("unknown content types warn instead of failing", () => {
     const r = safeUnchecked({
-      model: "seedance-1-5-pro-251215",
+      model: "seedance-1-0-pro-250528",
       content: [TEXT, { type: "sticker_url", sticker_url: { url: "https://x/a.png" } }],
     });
     expect(r.ok).toBe(true);
@@ -121,14 +121,14 @@ describe("bytedance.video happy path", () => {
   });
 
   test("empty content fails the shape check", () => {
-    const r = safeUnchecked({ model: "seedance-1-5-pro-251215", content: [] });
+    const r = safeUnchecked({ model: "seedance-1-0-pro-250528", content: [] });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
   });
 
   test("a content item missing its payload fails", () => {
     const r = safeUnchecked({
-      model: "seedance-1-5-pro-251215",
+      model: "seedance-1-0-pro-250528",
       content: [{ type: "image_url" }],
     });
     expect(r.ok).toBe(false);
@@ -146,23 +146,38 @@ describe("bytedance.video happy path", () => {
 });
 
 describe("bytedance.video per-model param enforcement", () => {
-  test("seed / camera_fixed / draft are rejected on the 2.x models", () => {
+  test("seed / camera_fixed are rejected on the 2.x models", () => {
     const r = safeUnchecked({
       model: "dreamina-seedance-2-5-260628",
       content: [TEXT],
       seed: 7,
       camera_fixed: true,
-      draft: true,
     });
     expect(r.ok).toBe(false);
     if (!r.ok) {
-      expect(r.errors.map((e) => e.path[0]).sort()).toEqual(["camera_fixed", "draft", "seed"]);
+      expect(r.errors.map((e) => e.path[0]).sort()).toEqual(["camera_fixed", "seed"]);
       expect(r.errors.every((e) => e.code === "unsupported_param")).toBe(true);
     }
   });
 
+  test("draft is Dreamina Seedance 2.5 only", () => {
+    const r = safeUnchecked({ model: "dreamina-seedance-2-0-260128", content: [TEXT], draft: true });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("unsupported_param");
+      expect(r.errors[0]?.message).toContain("Dreamina Seedance 2.5 capability");
+    }
+    const v25 = video.safe({
+      model: "dreamina-seedance-2-5-260628",
+      content: [{ type: "text", text: "hi" }],
+      draft: true,
+    });
+    expect(v25.ok).toBe(true);
+    if (v25.ok) expect(v25.warnings).toEqual([]);
+  });
+
   test("frames is Seedance 1.0 only", () => {
-    const r = safeUnchecked({ model: "seedance-1-5-pro-251215", content: [TEXT], frames: 121 });
+    const r = safeUnchecked({ model: "dreamina-seedance-2-0-260128", content: [TEXT], frames: 121 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["frames"]);
     expect(safeUnchecked({ model: "seedance-1-0-pro-250528", content: [TEXT], frames: 121 }).ok).toBe(
@@ -206,6 +221,13 @@ describe("bytedance.video per-model param enforcement", () => {
     expect(
       safeUnchecked({ model: "dreamina-seedance-2-0-260128", content: [TEXT], resolution: "4k" }).ok,
     ).toBe(true);
+    // Dreamina Seedance 2.5 goes to 1080p, not 4K.
+    expect(
+      safeUnchecked({ model: "dreamina-seedance-2-5-260628", content: [TEXT], resolution: "1080p" }).ok,
+    ).toBe(true);
+    const v25 = safeUnchecked({ model: "dreamina-seedance-2-5-260628", content: [TEXT], resolution: "4k" });
+    expect(v25.ok).toBe(false);
+    if (!v25.ok) expect(v25.errors[0]?.meta?.["allowed"]).toEqual(["480p", "720p", "1080p"]);
     const fast = safeUnchecked({
       model: "dreamina-seedance-2-0-fast-260128",
       content: [TEXT],
@@ -238,12 +260,12 @@ describe("bytedance.video output-spec rules", () => {
       true,
     );
     const tooShort = safeUnchecked({
-      model: "seedance-1-5-pro-251215",
+      model: "dreamina-seedance-2-0-260128",
       content: [TEXT],
       duration: 2,
     });
     expect(tooShort.ok).toBe(false);
-    if (!tooShort.ok) expect(tooShort.errors[0]?.message).toContain("4–12 seconds");
+    if (!tooShort.ok) expect(tooShort.errors[0]?.message).toContain("4–15 seconds");
 
     const tooLong = safeUnchecked({
       model: "dreamina-seedance-2-0-260128",
@@ -256,10 +278,10 @@ describe("bytedance.video output-spec rules", () => {
     ).toBe(true);
   });
 
-  test("duration -1 is documented for 2.x and 1.5 pro only", () => {
-    expect(safeUnchecked({ model: "seedance-1-5-pro-251215", content: [TEXT], duration: -1 }).ok).toBe(
-      true,
-    );
+  test("duration -1 is documented for 2.x only", () => {
+    expect(
+      safeUnchecked({ model: "dreamina-seedance-2-0-260128", content: [TEXT], duration: -1 }).ok,
+    ).toBe(true);
     const legacy = safeUnchecked({
       model: "seedance-1-0-pro-250528",
       content: [TEXT],
@@ -320,9 +342,9 @@ describe("bytedance.video output-spec rules", () => {
 });
 
 describe("bytedance.video content rules", () => {
-  test("omni reference input is rejected on the 1.x models", () => {
+  test("omni reference input is rejected on the 1.0 models", () => {
     const r = safeUnchecked({
-      model: "seedance-1-5-pro-251215",
+      model: "seedance-1-0-pro-250528",
       content: [TEXT, IMAGE("reference_image"), VIDEO],
     });
     expect(r.ok).toBe(false);
@@ -377,19 +399,51 @@ describe("bytedance.video content rules", () => {
     );
   });
 
-  test("draft task references are Seedance 1.5 pro only", () => {
-    expect(
-      safeUnchecked({
-        model: "seedance-1-5-pro-251215",
-        content: [{ type: "draft_task", draft_task: { id: "cgt-123" } }],
-      }).ok,
-    ).toBe(true);
+  test("draft task references are Dreamina Seedance 2.5 only", () => {
+    const final = video.safe({
+      model: "dreamina-seedance-2-5-260628",
+      content: [{ type: "draft_task", draft_task: { id: "cgt-123" } }],
+      resolution: "1080p",
+      return_last_frame: true,
+      watermark: false,
+    });
+    expect(final.ok).toBe(true);
+    if (final.ok) expect(final.warnings).toEqual([]);
     const r = safeUnchecked({
       model: "seedance-1-0-pro-250528",
       content: [{ type: "draft_task", draft_task: { id: "cgt-123" } }],
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.message).toContain("draft mode is a Seedance 1.5 pro capability");
+    if (!r.ok) expect(r.errors[0]?.message).toContain("draft mode is a Dreamina Seedance 2.5 capability");
+  });
+
+  test("a final video from a draft needs 1080p and re-sends nothing the draft fixed", () => {
+    const DRAFT_TASK = { type: "draft_task", draft_task: { id: "cgt-123" } };
+    const missing = safeUnchecked({ model: "dreamina-seedance-2-5-260628", content: [DRAFT_TASK] });
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) {
+      expect(missing.errors.map((e) => [e.code, e.path[0]])).toEqual([["invalid_shape", "resolution"]]);
+    }
+
+    const r = safeUnchecked({
+      model: "dreamina-seedance-2-5-260628",
+      content: [TEXT, DRAFT_TASK],
+      resolution: "720p",
+      draft: true,
+      duration: 10,
+      ratio: "16:9",
+      generate_audio: false,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      const paths = r.errors.map((e) => e.path.join("."));
+      expect(paths).toContain("resolution");
+      expect(paths).toContain("draft");
+      expect(paths).toContain("content.0");
+      expect(paths).toContain("duration");
+      expect(paths).toContain("ratio");
+      expect(paths).toContain("generate_audio");
+    }
   });
 
   test("inline frame images are measured against the documented bounds", () => {
@@ -427,23 +481,23 @@ describe("bytedance.video content rules", () => {
     ).toBe(true);
   });
 
-  test("draft mode forces 480p and excludes flex + last-frame return", () => {
+  test("draft mode generates 480p only, and keeps the last-frame return", () => {
     const r = safeUnchecked({
-      model: "seedance-1-5-pro-251215",
+      model: "dreamina-seedance-2-5-260628",
       content: [TEXT],
       draft: true,
       resolution: "720p",
-      return_last_frame: true,
-      service_tier: "flex",
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors.map((e) => e.path[0]).sort()).toEqual([
-        "resolution",
-        "return_last_frame",
-        "service_tier",
-      ]);
-    }
+    if (!r.ok) expect(r.errors.map((e) => e.path[0])).toEqual(["resolution"]);
+    const ok = video.safe({
+      model: "dreamina-seedance-2-5-260628",
+      content: [{ type: "text", text: "hi" }],
+      draft: true,
+      resolution: "480p",
+      return_last_frame: true,
+    });
+    expect(ok.ok).toBe(true);
   });
 
   test("throwing form raises UnmodelValidationError", () => {
@@ -464,14 +518,21 @@ describe("bytedance.video cost estimation", () => {
       0.78,
       10,
     );
-    // Seedance 1.5 pro halves with silent output and applies the draft factor.
-    expect(videoUsdPerSecond("seedance-1-5-pro-251215", { generateAudio: false })).toBeCloseTo(
-      0.026,
-      10,
-    );
     expect(
-      videoUsdPerSecond("seedance-1-5-pro-251215", { resolution: "480p", draft: true }),
-    ).toBeCloseTo(0.024 * 0.6, 10);
+      videoUsdPerSecond("dreamina-seedance-2-5-260628", { resolution: "1080p" }),
+    ).toBeCloseTo(0.569, 10);
+  });
+
+  test("a Dreamina Seedance 2.5 draft prices as a normal 480p video", () => {
+    expect(videoUsdPerSecond("dreamina-seedance-2-5-260628", { draft: true })).toBeCloseTo(0.103, 10);
+    const r = video.safe({
+      model: "dreamina-seedance-2-5-260628",
+      content: [{ type: "text", text: "hi" }],
+      draft: true,
+      duration: 5,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.515, 10);
   });
 
   test("the estimate uses the documented duration default", () => {

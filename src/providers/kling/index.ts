@@ -35,12 +35,7 @@ export {
   MAX_ELEMENT_LIST,
   MAX_VOICE_LIST,
 } from "./video-from-image";
-export type {
-  ImageToVideoParams,
-  ImageToVideoArm,
-  KlingDynamicMask,
-  KlingTrajectoryPoint,
-} from "./video-from-image";
+export type { ImageToVideoParams, ImageToVideoArm } from "./video-from-image";
 
 /** What `model_name` may be: a catalogued id, or any string at run time. */
 type KlingVideoModelInput = KlingV1VideoModelId | (string & {});
@@ -52,10 +47,10 @@ type KlingVideoModelInput = KlingV1VideoModelId | (string & {});
  * this provider through `./unified-video.ts` → `./video` — pays nothing for a
  * seam it cannot call. See `core/translate/media-retarget.ts`.
  *
- * `.toApi` exists for the three ids fal serves (`kling-v3`, `kling-v2-6`,
- * `kling-v2-5-turbo`) and nowhere else; on the other six the member is simply
- * not on the type, which is the honest answer for a hand-written overlap
- * table. See `MediaApiMember` for why that differs from chat's permissive
+ * `.toApi` exists for the ids fal serves — `kling-v3`, `kling-v2-6`,
+ * `kling-v2-5-turbo`, the route's whole enum — and nowhere else; on a run-time
+ * or post-snapshot id the member is simply not on the type, which is the
+ * honest answer for a hand-written overlap table. See `MediaApiMember` for why that differs from chat's permissive
  * degradation.
  */
 export const video = withApiTarget(
@@ -98,9 +93,10 @@ export {
 } from "./fal-target";
 
 // EXPERIMENTAL — the path-addressed family (`POST /text-to-video/{model}`,
-// `/image-to-video/{model}`, `/omni-video/{model}`), recovered from the doc
-// site's JS bundle and corroborated by nothing. Each module carries the full
-// EXPERIMENTAL note; prefer `video` / `videoFromImage` above.
+// `/image-to-video/{model}`, `/omni-video/{model}`), transcribed from the doc
+// site's JS chunks; the API host answers the family, each model's path is
+// doc-only. Each module carries the full EXPERIMENTAL note. Kling 4.0 / 4.0
+// Flash are served here alone.
 export { videoV3, textToVideoV3Url, TEXT_TO_VIDEO_V3_RULES } from "./video-v3";
 export type { TextToVideoV3Params, TextToVideoV3Settings } from "./video-v3";
 
@@ -145,6 +141,8 @@ export {
   KLING_BASE_URL,
   KLING_CN_BASE_URL,
   KLING_ASPECT_RATIOS,
+  KLING_4_ASPECT_RATIOS,
+  KLING_4_OMNI_ASPECT_RATIOS,
   KLING_RESOLUTIONS,
   KLING_AUDIO_MODES,
   KLING_MODES,
@@ -155,6 +153,10 @@ export {
   SHOT_PROMPT_MAX_CHARS,
   MAX_SHOTS,
   MAX_ELEMENTS,
+  OMNI_MAX_ELEMENTS,
+  KLING_4_MAX_ELEMENTS,
+  PROMPT_BUDGET_3072,
+  KLING_4_PROMPT_BUDGET,
   IMAGE_MAX_BYTES,
   IMAGE_MIN_DIMENSION,
   IMAGE_FORMATS,
@@ -168,24 +170,15 @@ export type {
   KlingMode,
   KlingOptions,
   KlingResolution,
+  KlingSettingsAspectRatio,
   KlingWatermarkInfo,
+  PromptBudget,
   RouteModelRules,
   RouteRules,
 } from "./shared";
 
-export {
-  DEFAULT_V1_MODEL,
-  KLING_SHOT_TYPES,
-  KLING_CAMERA_TYPES,
-  KLING_CAMERA_AXES,
-  CAMERA_AXIS_MIN,
-  CAMERA_AXIS_MAX,
-  V1_MODEL_RULES,
-} from "./v1-routes";
+export { KLING_SHOT_TYPES, V1_MODEL_RULES } from "./v1-routes";
 export type {
-  KlingCameraConfig,
-  KlingCameraControl,
-  KlingCameraType,
   KlingShot,
   KlingShotType,
   KlingV1Duration,
@@ -206,11 +199,13 @@ export type { ImageMode, ImageCostInputs, VideoCostInputs } from "./pricing";
 // Every route responds with an async task object; unmodel validates requests
 // only, so this provider ships no response checker. Motion Control, Elements,
 // Avatar/TTS, lip sync, audio generation, video effects, outpainting, virtual
-// try-on, video extension, `POST /v1/images/multi-image2image` and the
-// account/asset endpoints are documented but not yet validated here.
-// `models` is the provider-wide view; four ids name both a video and an image
-// model, so it carries a merged dual-kind row for those. Reach for
-// `videoModels` / `imageModels` whenever one kind's rate is what you mean.
+// try-on, video extension, `POST /v1/videos/omni-video`,
+// `POST /v1/images/multi-image2image` and the account/asset endpoints are
+// documented but not yet validated here.
+// `models` is the provider-wide view; one catalogued id (`kling-v3`) names
+// both a video and an image model, so it carries a merged dual-kind row.
+// Reach for `videoModels` / `imageModels` whenever one kind's rate is what
+// you mean.
 export {
   models,
   videoModels,

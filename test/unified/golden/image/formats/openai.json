@@ -6,5 +6,13 @@
     "size": "1024x1024",
     "output_format": "png"
   },
-  "url": "https://api.openai.com/v1/images/generations"
+  "url": "https://api.openai.com/v1/images/generations",
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
+  ]
 }

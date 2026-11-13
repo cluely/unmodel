@@ -93,11 +93,22 @@ expectAssignable<MessagesBody["model"]>("claude-future-model");
 chat({ model: "claude-opus-4-6", max_tokens: 1, messages: [{ role: "user", content: "x" }] });
 chat({ model: "claude-future-model", max_tokens: 1, messages: [{ role: "user", content: "x" }] });
 
+// A mid-conversation system message is a wire role (refused as messages[0] at
+// run time); "developer" is OpenAI's spelling and not an Anthropic role.
+chat({
+  model: "claude-opus-5-5",
+  max_tokens: 1,
+  messages: [
+    { role: "user", content: "x" },
+    { role: "system", content: "Answer in French from here on." },
+  ],
+  inference_geo: null,
+});
 chat({
   model: "claude-sonnet-4-5",
   max_tokens: 1,
-  // @ts-expect-error — role must be "user" | "assistant".
-  messages: [{ role: "system", content: "x" }],
+  // @ts-expect-error — role must be "user" | "assistant" | "system".
+  messages: [{ role: "developer", content: "x" }],
 });
 
 chat({
@@ -211,13 +222,17 @@ expectTrue<
     FixedSampling,
     | "claude-fable-5"
     | "claude-fable-5-1"
+    | "claude-fable-5-2"
+    | "claude-haiku-5-5"
     | "claude-opus-4-7"
     | "claude-opus-4-8"
     | "claude-opus-5"
+    | "claude-opus-5-5"
     | "claude-sonnet-5"
+    | "claude-sonnet-5-5"
   >
 >();
-/** …and the deny table resolves to exactly the same six ids. */
+/** …and the deny table resolves to exactly the same ten ids. */
 expectTrue<Equals<FixedSampling, Extract<keyof typeof anthropicChatConstraints, string>>>();
 
 function anthropicPerModelTypeTests(): void {
@@ -254,6 +269,55 @@ function anthropicPerModelTypeTests(): void {
   // `top_p` is NOT narrowed — the rule is `>= 0.99`, and a numeric lower bound
   // has no honest literal type; `0.99 | 1` would refuse documented values.
   chat({ model: "claude-opus-5", max_tokens: 16, messages: [], top_p: 0.995 });
+
+  // The Claude 5.5 / Fable 5.2 wave: thinking always on…
+  // @ts-expect-error — opus-5.5 always thinks; `disabled` is excluded at every effort.
+  chat({ model: "claude-opus-5-5", max_tokens: 16, messages: [], thinking: { type: "disabled" } });
+  // @ts-expect-error — fable-5.2 always thinks too.
+  chat({ model: "claude-fable-5-2", max_tokens: 16, messages: [], thinking: { type: "disabled" } });
+  // …sonnet-5.5's thinking-off form is `between_tools`, and only sonnet-5.5 has it…
+  chat({ model: "claude-sonnet-5-5", max_tokens: 16, messages: [], thinking: { type: "between_tools" } });
+  // @ts-expect-error — sonnet-5.5 refuses `disabled`; send `between_tools`.
+  chat({ model: "claude-sonnet-5-5", max_tokens: 16, messages: [], thinking: { type: "disabled" } });
+  // @ts-expect-error — `between_tools` is a sonnet-5.5-only value.
+  chat({ model: "claude-opus-5-5", max_tokens: 16, messages: [], thinking: { type: "between_tools" } });
+  // @ts-expect-error — nor does a 4.6 model take it.
+  chat({ model: "claude-sonnet-4-6", max_tokens: 16, messages: [], thinking: { type: "between_tools" } });
+  // …manual extended thinking is gone on Claude 4.7+ (adaptive + effort replace it)…
+  // @ts-expect-error — `enabled` + budget_tokens returns a 400 on Claude 4.7 and later.
+  chat({ model: "claude-opus-5", max_tokens: 16, messages: [], thinking: { type: "enabled", budget_tokens: 1024 } });
+  // …and adaptive does not exist on Claude 4.5 and earlier (extended thinking only)…
+  // @ts-expect-error — `adaptive` returns a 400 on claude-sonnet-4-5.
+  chat({ model: "claude-sonnet-4-5", max_tokens: 16, messages: [], thinking: { type: "adaptive" } });
+  // @ts-expect-error — on its dated snapshot too.
+  chat({ model: "claude-haiku-4-5-20251001", max_tokens: 16, messages: [], thinking: { type: "adaptive" } });
+  chat({ model: "claude-sonnet-4-5", max_tokens: 2048, messages: [], thinking: { type: "enabled", budget_tokens: 1024 } });
+  chat({ model: "claude-sonnet-4-6", max_tokens: 16, messages: [], thinking: { type: "adaptive" } });
+  chat({ model: "claude-opus-5", max_tokens: 16, messages: [], thinking: { type: "disabled" } });
+  // …haiku-5.5 may turn thinking off (effort-capped at run time) and keeps forced tool use…
+  chat({
+    model: "claude-haiku-5-5",
+    max_tokens: 16,
+    messages: [],
+    thinking: { type: "disabled" },
+    tool_choice: { type: "any" },
+  });
+  // @ts-expect-error — opus-5.5 removed forced tool use.
+  chat({ model: "claude-opus-5-5", max_tokens: 16, messages: [], tool_choice: { type: "any" } });
+  // @ts-expect-error — so did sonnet-5.5 (`tool` as well as `any`).
+  chat({ model: "claude-sonnet-5-5", max_tokens: 16, messages: [], tool_choice: { type: "tool", name: "f" } });
+  // @ts-expect-error — and the sampling removal reaches the new ids through the deny table.
+  chat({ model: "claude-fable-5-2", max_tokens: 16, messages: [], top_k: 5 });
+  // …and fast mode is a per-model value: served, silently standard (a warning), or an error.
+  chat({ model: "claude-opus-5-5", max_tokens: 16, messages: [], speed: "fast" });
+  chat({ model: "claude-opus-4-6", max_tokens: 16, messages: [], speed: "fast" });
+  chat({ model: "claude-sonnet-5-5", max_tokens: 16, messages: [], speed: "standard" });
+  // @ts-expect-error — sonnet-5.5 has no fast mode; the API returns an error.
+  chat({ model: "claude-sonnet-5-5", max_tokens: 16, messages: [], speed: "fast" });
+
+  // A model released after this build keeps every value open, run-time ids too.
+  chat({ model: "claude-opus-9", max_tokens: 16, messages: [], thinking: { type: "between_tools" }, speed: "fast" });
+  chat({ model: runtimeModel, max_tokens: 16, messages: [], thinking: { type: "between_tools" }, speed: "fast" });
 
   // Degraded arms stay callable: a model id that only exists at run time, and
   // a model released after this build.

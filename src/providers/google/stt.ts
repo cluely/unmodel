@@ -70,19 +70,21 @@ import {
   type GeminiAudioMimeType,
   type GeminiSttModelId,
 } from "./audio-constraints";
-import { checkGenerationCapabilities } from "./tts-checks";
-// The GENERATED catalog. Unlike `google.tts`, this surface makes NO doc
-// correction to any row — thirteen mainline models with nothing to restate —
-// and hand rows would be a second opinion on generated data. The curation that
-// *is* a judgement call lives in ./audio-constraints as two id lists, with a
-// drift test that forces a codegen refresh to classify rather than absorb.
-import { models as googleCatalogModels } from "../../catalog/google.gen";
+import { checkGenerationCapabilities, checkThinkingConfig } from "./tts-checks";
+// The GENERATED catalog plus ./stt-models. Unlike `google.tts`, this surface
+// makes NO doc correction to any generated row — the mainline models have
+// nothing to restate, and hand rows would be a second opinion on generated
+// data — so the supplement carries only ids models.dev lacks. The curation
+// that *is* a judgement call lives in ./audio-constraints as two id lists,
+// with a drift test that forces a codegen refresh to classify rather than
+// absorb.
+import { sttModels as googleCatalogModels } from "./stt-models";
 import type { GoogleContent, GoogleSafetySetting, GoogleServiceTier, GoogleThinkingConfig } from "./wire";
 
 export const GENERATE_STT_BASE_URL = GOOGLE_MODELS_BASE_URL;
 
 // ---------------------------------------------------------------------------
-// Wire types — Tier A over the thirteen curated ids.
+// Wire types — Tier A over the curated ids (GEMINI_STT_MODEL_IDS).
 // ---------------------------------------------------------------------------
 
 /** Part kinds this surface refuses, spelled so the editor says which and why. */
@@ -176,6 +178,13 @@ export interface GoogleAudioTranscriptionConfig {
   wordTimestamp?: boolean;
   /** Label which speaker said what. There is no speaker-count field. */
   diarization?: boolean;
+  /**
+   * "Configures transcription mode. Supported values: `VERBATIM`, `SMART`." —
+   * the REST reference (2026-11-12). The transcribe guide: "Smart
+   * transcription (`mode: "SMART"`) is incompatible with `word_timestamp` and
+   * `diarization`" — stated as incompatible, not as an error, so not refused.
+   */
+  mode?: "VERBATIM" | "SMART";
 
   /** @deprecated Use `languageCodes`. @google/genai: "will be removed in a future version". */
   languageHints?: { languageCodes?: readonly string[] };
@@ -280,7 +289,7 @@ export interface UnknownSttBody<Model extends string> extends GoogleSttBodyBase 
 }
 
 /**
- * Closed over the thirteen curated Gemini transcription models by default.
+ * Closed over the curated Gemini transcription models (GEMINI_STT_MODEL_IDS) by default.
  * Supply a future model literal to opt into the loose arm:
  * `GenerateSttBody<"gemini-4-flash">`.
  */
@@ -362,6 +371,7 @@ const schema = z.looseObject({
           customVocabulary: z.array(z.string()).optional(),
           wordTimestamp: z.boolean().optional(),
           diarization: z.boolean().optional(),
+          mode: z.string().optional(),
           adaptationPhrases: z.array(z.string()).optional(),
         })
         .optional(),
@@ -470,10 +480,12 @@ function checkAudioInput(
 /**
  * T2 — the curation gate.
  *
- * Nineteen models in the generated catalog take audio input; thirteen of them
- * are mainline generateContent models this surface serves. The other six are
- * refused BY NAME with the reason, because "not supported" tells a caller
- * nothing about whether they picked the wrong model or hit a gap in unmodel.
+ * Every audio-input model in the catalog this surface validates against (the
+ * generated rows plus ./stt-models) is classified: the ids in
+ * GEMINI_STT_MODEL_IDS are served, and the rest are listed in
+ * GEMINI_STT_EXCLUDED_IDS and refused BY NAME with the reason, because "not
+ * supported" tells a caller nothing about whether they picked the wrong model
+ * or hit a gap in unmodel.
  *
  * An id in neither list and not in the catalog is left alone: the pipeline's
  * `unknown_model` warning already says model-dependent checks were skipped,
@@ -611,6 +623,62 @@ function checkAudioMedia(
   }
 }
 
+/** gemini-3.5-transcribe's own audio bounds, in seconds — see {@link checkTranscribeDuration}. */
+const TRANSCRIBE_MAX_SECONDS = 3600;
+const TRANSCRIBE_FEATURE_MAX_SECONDS = 1800;
+const TRANSCRIBE_MODEL_DOCS_URL = "https://ai.google.dev/gemini-api/docs/models/gemini-3.5-transcribe";
+const TRANSCRIBE_DOCS_URL = "https://ai.google.dev/gemini-api/docs/transcribe";
+
+/**
+ * T7, per model — gemini-3.5-transcribe processes "Up to 1 hour per request
+ * (up to 30 minutes when speaker diarization or word-level timestamps are
+ * enabled)" (TRANSCRIBE_MODEL_DOCS_URL, 2026-11-13).
+ *
+ * A WARNING, never an error: the guide's Limitations section says "Audio
+ * exceeding these limits is truncated at the limit while still returning a
+ * completed response" (TRANSCRIBE_DOCS_URL, 2026-11-13), so the request
+ * succeeds and refusing it would be a false refusal. "Per request", so the declared
+ * durations are summed across audio parts and the warning lands on the part
+ * where the running total crosses the bound. Undeclared durations are not
+ * guessed at, the same rule as {@link checkAudioMedia}.
+ */
+function checkTranscribeDuration(
+  params: AnyGenerateSttBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (stripModelsPrefix(params.model) !== "gemini-3.5-transcribe") return;
+  const asr = params.generationConfig?.audioTranscriptionConfig;
+  const limited = asr?.diarization === true || asr?.wordTimestamp === true;
+  const limit = limited ? TRANSCRIBE_FEATURE_MAX_SECONDS : TRANSCRIBE_MAX_SECONDS;
+
+  let total = 0;
+  for (const part of audioPartsOf(params)) {
+    total += findMediaDeclaration(ctx.options.media, part.path)?.durationSeconds ?? 0;
+    if (total <= limit) continue;
+    ctx.report({
+      code: "media_duration_exceeded",
+      severity: "warning",
+      path: part.path,
+      model: params.model,
+      message:
+        `audio is declared as ${total}s in total; gemini-3.5-transcribe processes up to ${limit}s per request` +
+        `${limited ? " with diarization or wordTimestamp enabled" : ""} — "Up to 1 hour per request (up to ` +
+        `30 minutes when speaker diarization or word-level timestamps are enabled)". Longer audio "is ` +
+        `truncated at the limit while still returning a completed response", so split the recording ` +
+        `into chunks of 30 minutes or less.`,
+      meta: {
+        durationSeconds: total,
+        limit,
+        truncated: true,
+        source: TRANSCRIBE_MODEL_DOCS_URL,
+        guide: TRANSCRIBE_DOCS_URL,
+      },
+    });
+    return;
+  }
+}
+
 /**
  * T8 — `displayName` on inlineData/fileData is a Vertex AI-only field, and
  * generativelanguage 400s on unknown fields. Top-level unknown-key detection
@@ -638,7 +706,11 @@ function checkVertexOnlyFields(
   });
 }
 
-/** T9 — temperature / thinkingConfig / maxOutputTokens against the catalog row. */
+/**
+ * T9 — temperature / thinkingConfig / maxOutputTokens against the catalog row,
+ * plus the per-model thinking rules (MINIMAL refusals, the Gemini 4
+ * budget-vs-level exclusivity) shared with `google.chat`.
+ */
 function checkCapabilities(
   params: AnyGenerateSttBody,
   info: ModelInfo | undefined,
@@ -651,6 +723,7 @@ function checkCapabilities(
     info,
     ctx,
   );
+  checkThinkingConfig(params.generationConfig, ["generationConfig"], params.model, ctx);
   const config = params.generationConfig;
   if (config === undefined || info === undefined) return;
   for (const key of ["responseSchema", "responseJsonSchema"] as const) {
@@ -763,6 +836,7 @@ const validator = createValidator<AnyGenerateSttBody, unknown>({
     checkCuratedModel,
     checkAudioParts,
     checkAudioMedia,
+    checkTranscribeDuration,
     checkVertexOnlyFields,
     checkCapabilities,
   ],

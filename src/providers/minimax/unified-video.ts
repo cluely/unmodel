@@ -1,18 +1,18 @@
 /**
  * `unmodel/video` → `minimax.video` (POST /v1/video_generation, Hailuo) and
- * `minimax.videoV2` (POST /v2/video_generation, MiniMax-H3).
+ * `minimax.videoV2` (POST /v2/video_generation, the MiniMax-H3 line).
  *
  * # Two API generations, and the model id picks one
  *
- * `MiniMax-H3` is the only model on the v2 route and no other model is on it,
- * so the dispatch is an id test rather than a capability table — and the two
- * routes are genuinely different APIs, not versions of one:
+ * The four `MiniMax-H3*` models are the whole v2 route and none of them is on
+ * v1, so the dispatch is an id test rather than a capability table — and the
+ * two routes are genuinely different APIs, not versions of one:
  *
  * | | v1 (`/v1/video_generation`) | v2 (`/v2/video_generation`) |
  * |---|---|---|
  * | inputs | `first_frame_image`, `last_frame_image`, `subject_reference` | one `content[]` array with roles |
- * | `duration` | optional, per model × resolution | **required**, 4–15 |
- * | `resolution` | optional, `512P`/`768P`/`1080P` | **required**, `768P`/`2K` |
+ * | `duration` | optional, per model × resolution | **required**, 4–15 (5–15 on `-Max`) |
+ * | `resolution` | optional, `512P`/`768P`/`1080P` | **required**, `768P`/`2K` on `MiniMax-H3`, `480P`/`768P` on the rest |
  * | shape | no field at all | `ratio`, 21:9 … 9:16 |
  *
  * Both halves compile from the same canonical request, and where v2 requires
@@ -27,7 +27,8 @@
  *
  * | canonical | wire | exact? |
  * |---|---|---|
- * | `480p` | `512P` (v1 only) | **no** — an `approximated_param` naming both |
+ * | `480p` | `512P` (v1) | **no** — an `approximated_param` naming both |
+ * | `480p` | `480P` (v2) | yes — case is not loss |
  * | `720p` | `768P` | **no** — an `approximated_param` naming both |
  * | `1080p` | `1080P` (v1 only) | yes — case is not loss |
  * | `1440p` | `2K` (v2 only) | yes — 2K *is* 1440 lines |
@@ -62,7 +63,7 @@ import type {
 } from "../../core/unified/vocabulary/video";
 import { video as v1Validator, type VideoGenerationParams } from "./video";
 import {
-  VIDEO_V2_DURATIONS,
+  VIDEO_V2_MODEL_IDS,
   VIDEO_V2_RATIOS,
   videoV2 as v2Validator,
   type MinimaxV2ContentItem,
@@ -73,9 +74,6 @@ import { MINIMAX_VIDEO_MODEL_PARAMS, MODELS } from "./video-params";
 const V1_DOCS = "https://platform.minimax.io/docs/api-reference/video-generation-t2v";
 const V2_DOCS = "https://platform.minimax.io/docs/api-reference/video-generation-v2-create";
 
-/** The one id on the v2 route. */
-const V2_MODEL = "MiniMax-H3";
-
 /** v1 `resolution`. `512P` and `768P` are approximations; `1080P` is exact. */
 const V1_RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
   "480p": "512P",
@@ -83,16 +81,21 @@ const V1_RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
   "1080p": "1080P",
 };
 
-/** v2 `resolution` — two values, one of them approximate. */
+/**
+ * v2 `resolution` across the route, one value approximate. Each model renders
+ * two of the three; `minimax.videoV2` refuses the third with that model's own
+ * pair.
+ */
 const V2_RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
+  "480p": "480P",
   "720p": "768P",
   "1440p": "2K",
 };
 
-/** The tiers whose wire value is a different number of lines, and what it is. */
-const APPROXIMATE_LINES: Readonly<Partial<Record<VideoResolution, number>>> = {
-  "480p": 512,
-  "720p": 768,
+/** The wire tiers that are a different number of lines from their canonical tier. */
+const APPROXIMATE_LINES: Readonly<Record<string, number>> = {
+  "512P": 512,
+  "768P": 768,
 };
 
 /** Models that accept a subject reference — the reference-to-video route on v1. */
@@ -149,7 +152,7 @@ export const video = {
     input: VideoParams,
     ctx: CompileContext<VideoParams>,
   ): CompiledCall<MinimaxVideoWire, MinimaxVideoResult> {
-    return ctx.model === V2_MODEL ? compileV2(input, ctx) : compileV1(input, ctx);
+    return VIDEO_V2_MODEL_IDS.includes(ctx.model) ? compileV2(input, ctx) : compileV1(input, ctx);
   },
 } as const satisfies VideoAdapterFor<
   typeof MINIMAX_VIDEO_MODEL_PARAMS,
@@ -159,8 +162,8 @@ export const video = {
 
 /**
  * Warns when a tier's wire value is a different number of lines from the one
- * the caller named. `1080P` and `2K` are the same size spelled differently, so
- * they pass through silently; `768P` and `512P` do not.
+ * the caller named. `480P`, `1080P` and `2K` are the same size spelled
+ * differently, so they pass through silently; `768P` and `512P` do not.
  */
 function warnLines(
   tier: VideoResolution,
@@ -168,7 +171,7 @@ function warnLines(
   ctx: CompileContext<VideoParams>,
   source: string,
 ): void {
-  const lines = APPROXIMATE_LINES[tier];
+  const lines = APPROXIMATE_LINES[wire];
   if (lines === undefined) return;
   ctx.warn({
     code: "approximated_param",
@@ -336,20 +339,22 @@ function compileV2(
 
   // `duration` and `resolution` are required by the v2 schema, and both decide
   // what the generation costs — so an omitted one is an error naming the
-  // documented values rather than a default this file invented.
+  // model's documented values rather than a default this file invented.
+  const row = MINIMAX_VIDEO_MODEL_PARAMS[ctx.model as keyof typeof MINIMAX_VIDEO_MODEL_PARAMS];
   let duration: number | undefined;
   if (input.duration === undefined) {
     ctx.fail({
       code: "invalid_shape",
       path: ["duration"],
       message:
-        "`duration` is required by POST /v2/video_generation (every integer 4–15 seconds is " +
-        "documented) and it is what the generation is billed by, so there is no default to fill.",
-      meta: { allowed: [...VIDEO_V2_DURATIONS], source: V2_DOCS },
+        `\`duration\` is required by POST /v2/video_generation (every integer ${row.durations[0]}–` +
+        `${row.durations[row.durations.length - 1]} seconds is documented for "${ctx.model}") and ` +
+        "it is what the generation is billed by, so there is no default to fill.",
+      meta: { allowed: [...row.durations], source: V2_DOCS },
     });
   } else {
     duration = ctx.take(
-      toDurationNumber(input.duration, [...VIDEO_V2_DURATIONS], {
+      toDurationNumber(input.duration, [...row.durations], {
         path: ["duration"],
         warn: ctx.warn,
       }),
@@ -358,13 +363,14 @@ function compileV2(
 
   let resolution: string | undefined;
   if (input.resolution === undefined) {
+    const tiers = row.resolutions.map((tier) => JSON.stringify(tier)).join(" or ");
     ctx.fail({
       code: "invalid_shape",
       path: ["resolution"],
       message:
-        '`resolution` is required by POST /v2/video_generation ("768P" or "2K") and the per-second ' +
-        "rate differs between them, so there is no default to fill.",
-      meta: { allowed: Object.keys(V2_RESOLUTIONS), source: V2_DOCS },
+        `\`resolution\` is required by POST /v2/video_generation (${tiers} on "${ctx.model}") ` +
+        "and the per-second rate differs between them, so there is no default to fill.",
+      meta: { allowed: [...row.resolutions], source: V2_DOCS },
     });
   } else {
     resolution = ctx.take(

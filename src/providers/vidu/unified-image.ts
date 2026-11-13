@@ -104,10 +104,10 @@ import {
   type ViduImageAspectRatio,
   type ViduImageResolution,
 } from "./image-from-reference";
-import { DOCS_BASE } from "./shared";
+import { IMAGE_DOCS } from "./shared";
 import { MODELS, VIDU_IMAGE_MODEL_PARAMS } from "./image-params";
 
-const SOURCE = `${DOCS_BASE}/reference-to-image`;
+const SOURCE = IMAGE_DOCS;
 
 /** The models whose `IMAGE_*` tables this file may index. */
 type ViduImageModel = keyof typeof IMAGE_ASPECT_RATIOS;

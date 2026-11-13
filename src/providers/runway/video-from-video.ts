@@ -2,25 +2,28 @@
  * Runway Video to Video — POST https://api.dev.runwayml.com/v1/video_to_video
  *
  * This is Runway's video-*editing* route: Aleph 2 (`aleph2`) restyles and
- * outpaints an existing clip, and the seedance / hailuo / gemini arms take an
- * input video plus references.
+ * outpaints an existing clip, and the seedance / hailuo / Kling / gemini arms
+ * take an input video plus references.
  *
  * Wire notes (verified against https://docs.dev.runwayml.com/openapi.json,
- * spec version 2024-11-06, on 2026-08-13):
+ * spec version 2024-11-06, on 2026-08-13; the Kling O3 / 4.0 and Gemini Omni
+ * Flash 1.x arms on 2026-11-12):
  * - Every request must send the `X-Runway-Version: 2024-11-06` header; it is
  *   included in `.request.headers`.
- * - The input video field is per model: `aleph2` and `gemini_omni_flash` take
- *   `videoUri`, every seedance/hailuo arm takes `promptVideo`. unmodel never
- *   rewrites wire params, so sending the wrong one is reported as an
- *   unsupported_param rather than silently renamed.
+ * - The input video field is per model: `aleph2`, `kling_4`, `kling_4_flash`
+ *   and the gemini_omni_flash arms take `videoUri`; every seedance / hailuo /
+ *   Kling O3 arm takes `promptVideo`. unmodel never rewrites wire params, so
+ *   sending the wrong one is reported as an unsupported_param rather than
+ *   silently renamed.
  * - `aleph2` alone takes `keyframes` (1–5 timed guidance images, each pinned
  *   either by absolute `seconds` or by fractional `at`, with an optional
  *   `range` edit window) and `targetAspectRatio` (expand/outpaint). Its
  *   `ratio` field is marked deprecated in the spec and carries no enum.
  * - `aleph2` has no `duration`: the output length follows the input video,
  *   which "must be 30 seconds or shorter".
- * - The endpoint only starts a task and responds `{ id }`; polling
- *   GET /v1/tasks/{id} is out of unmodel's scope.
+ * - The endpoint only starts a task and responds `{ id, estimatedCost }`
+ *   (`estimatedCost.credits`: "The maximum credits this task may charge");
+ *   polling GET /v1/tasks/{id} is out of unmodel's scope.
  * - Auth is `Authorization: Bearer <RUNWAYML_API_SECRET>` — unmodel never
  *   touches keys; add it yourself when fetching.
  */
@@ -43,6 +46,8 @@ import {
   type RunwayVideoRatio,
   type RunwayVideoResolution,
   type RunwayTargetAspectRatio,
+  type RunwayVideoOutputFormat,
+  VIDEO_OUTPUT_FORMATS,
 } from "./constraints";
 import {
   RUNWAY_BASE_URL,
@@ -52,14 +57,17 @@ import {
   checkShapeRules,
   audioReferenceArraySchema,
   videoReferenceArraySchema,
-  imageReferenceArraySchema,
+  positionedReferencesSchema,
+  editProviderSettingsSchema,
   contentModerationSchema,
   imageUriSchema,
   videoUriSchema,
   seedSchema,
+  videoDurationSchema,
   type RunwayAudioReference,
   type RunwayVideoReference,
-  type RunwayImageReference,
+  type RunwayPositionedReference,
+  type RunwayProviderSettings,
   type RunwayContentModeration,
 } from "./shared";
 import { videoCostUSD } from "./pricing";
@@ -89,40 +97,68 @@ export type RunwayVideoKeyframe =
 
 export interface VideoToVideoParams {
   model: RunwayVideoModelId | (string & {});
-  /** Input video — `aleph2` / `gemini_omni_flash` only. Must be ≤30s. */
+  /**
+   * Input video — `aleph2` / `kling_4` / `kling_4_flash` / the
+   * gemini_omni_flash arms. Must be ≤30s on aleph2.
+   */
   videoUri?: string;
-  /** Input video — seedance / hailuo arms only. */
+  /** Input video — seedance / hailuo / Kling O3 arms only. */
   promptVideo?: string;
-  /** Prompt text; length caps vary per model (1000–15000 chars). */
+  /** Prompt text; length caps vary per model (1000–26000 chars). */
   promptText?: string;
   /** `aleph2` only: 1–5 timed guidance images. */
   keyframes?: RunwayVideoKeyframe[];
   /** `aleph2` only: expand/outpaint target, e.g. "16:9". */
   targetAspectRatio?: RunwayTargetAspectRatio;
-  /** Output ratio "W:H"; allowed values vary per model. Deprecated on aleph2. */
+  /** Output ratio "W:H" (or `auto_<tier>`); allowed values vary per model. Deprecated on aleph2. */
   ratio?: RunwayVideoRatio;
-  /** Output duration in seconds; not a param of aleph2 / gemini_omni_flash. */
-  duration?: number;
-  /** `aleph2` only. Integer 0–4294967295. */
+  /**
+   * Output duration in seconds; not a param of aleph2 / gemini_omni_flash /
+   * Kling O3 / kling_4. `"auto"` on the gemini_omni_flash_1.x arms.
+   */
+  duration?: number | "auto";
+  /** `aleph2` / seedance arms only. Integer 0–4294967295. */
   seed?: number;
   /** seedance arms only. Defaults to true. */
   audio?: boolean;
-  /** `seedance2_5` only. */
-  mode?: "reference" | "extend";
-  /** `hailuo3` only. */
+  /** `seedance2_5` and the gemini_omni_flash_1.x arms. Defaults to `"reference"`. */
+  mode?: "reference" | "extend" | "edit";
+  /** `hailuo3` / `gemini_omni_flash_1.2` (extend and edit modes) only. */
   resolution?: RunwayVideoResolution;
   /** `aleph2` only. */
   contentModeration?: RunwayContentModeration;
-  /** Image references — seedance / hailuo / gemini_omni_flash arms. */
-  references?: RunwayImageReference[];
-  /** Video references — seedance / hailuo arms only. */
+  /**
+   * Image references — seedance / hailuo / Kling / gemini_omni_flash arms.
+   * Kling O3 also takes a bare URI and first/last `position`s.
+   */
+  references?: string | RunwayPositionedReference[];
+  /** Video references — seedance / hailuo / kling_4_flash arms only. */
   referenceVideos?: RunwayVideoReference[];
   /** Audio references — seedance / hailuo arms only. */
   referenceAudio?: RunwayAudioReference[];
-  /** `aleph2` only. Non-mp4 adds 5 credits per second of output. */
-  outputFormat?: "mp4" | "prores" | "png_sequence";
+  /** Kling O3 multishot / editing settings (`keepOriginalSound` defaults to true). */
+  providerSettings?: RunwayProviderSettings;
+  /**
+   * `aleph2` (mp4 / prores / png_sequence / sdr_rec709_10bit — non-mp4 adds a
+   * per-second surcharge) and `seedance2_5` (mp4 | mov) only.
+   */
+  outputFormat?: RunwayVideoOutputFormat;
   /** `aleph2` only, with outputFormat "prores". Defaults to "4444". */
   proresProfile?: "422" | "4444" | "422 Proxy" | "422 LT" | "422 HQ" | "4444 XQ";
+  /**
+   * seedance2 / seedance2_fast / seedance2_mini only. `"standard"` (the
+   * default) or `"high"`, which "keeps more detail with fewer compression
+   * artifacts, at a larger file size" — openapi.json, 2026-11-12. Both bill
+   * at the same rate.
+   */
+  bitrate?: "standard" | "high";
+  /**
+   * seedance2_5 only: "Generate a cheap 480p preview instead of a
+   * full-quality video", always `mp4` and billed at the 480p rate. Enhancing
+   * it to 1080p is a text_to_video request with `draftTaskId` —
+   * openapi.json, 2026-11-12.
+   */
+  draft?: boolean;
 }
 
 const keyframeRangeSchema = z.looseObject({
@@ -151,17 +187,20 @@ const videoFromVideoSchema = z.looseObject({
   keyframes: z.array(videoKeyframeSchema).optional(),
   targetAspectRatio: z.string().optional(),
   ratio: z.string().optional(),
-  duration: z.number().optional(),
+  duration: videoDurationSchema.optional(),
   seed: seedSchema.optional(),
   audio: z.boolean().optional(),
-  mode: z.enum(["reference", "extend"]).optional(),
+  mode: z.enum(["reference", "extend", "edit"]).optional(),
   resolution: z.string().optional(),
   contentModeration: contentModerationSchema.optional(),
-  references: imageReferenceArraySchema.optional(),
+  references: positionedReferencesSchema.optional(),
   referenceVideos: videoReferenceArraySchema.optional(),
   referenceAudio: audioReferenceArraySchema.optional(),
-  outputFormat: z.enum(["mp4", "prores", "png_sequence"]).optional(),
+  providerSettings: editProviderSettingsSchema.optional(),
+  outputFormat: z.enum(VIDEO_OUTPUT_FORMATS).optional(),
   proresProfile: z.enum(["422", "4444", "422 Proxy", "422 LT", "422 HQ", "4444 XQ"]).optional(),
+  bitrate: z.enum(["standard", "high"]).optional(),
+  draft: z.boolean().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -193,14 +232,25 @@ function checkKeyframeRanges(
 }
 
 // ---------------------------------------------------------------------------
-// Estimation — credits × $0.01. aleph2 and gemini_omni_flash have no
-// `duration` param, so those requests get no estimate (see ./pricing.ts).
+// Estimation — credits × $0.01. aleph2, gemini_omni_flash, Kling O3 and
+// kling_4 have no `duration` param here, so those requests get no estimate
+// (see ./pricing.ts).
 // ---------------------------------------------------------------------------
 
 function estimate(params: VideoToVideoParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
   if (info === undefined) return {};
-  // hailuo3 bills 2 credits per reference image on top of the per-second rate.
-  const flatReferenceCount = params.model === "hailuo3" ? (params.references?.length ?? 0) : 0;
+  // "Editing bills the input video's duration at the output rate" —
+  // gemini_omni_flash_1.2, guides/pricing.md, 2026-11-12. The input's length
+  // is unknown, so an edit gets no estimate on either 1.x arm.
+  if (params.model.startsWith("gemini_omni_flash_1.") && params.mode === "edit") return {};
+  // hailuo3 bills 2 credits per reference image on top of the per-second
+  // rate; the Gemini Omni Flash 1.x arms 1.
+  const flatReferenceCount =
+    params.model === "hailuo3" ||
+    params.model === "gemini_omni_flash_1.1" ||
+    params.model === "gemini_omni_flash_1.2"
+      ? (params.references?.length ?? 0)
+      : 0;
   const costUSD = videoCostUSD({
     model: params.model,
     route: "video_to_video",
@@ -208,8 +258,11 @@ function estimate(params: VideoToVideoParams, info: ModelInfo | undefined, _ctx:
     audio: params.audio,
     resolution: params.resolution,
     ratio: params.ratio,
+    // The source clip is an input video on every arm of this route.
+    inputVideo: true,
     flatReferenceCount,
     ...(params.outputFormat !== undefined && { outputFormat: params.outputFormat }),
+    ...(params.draft !== undefined && { draft: params.draft }),
   });
   return costUSD === undefined ? {} : { costUSD };
 }

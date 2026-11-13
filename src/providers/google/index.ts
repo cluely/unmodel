@@ -48,6 +48,7 @@ export {
   GENERATE_VIDEOS_BASE_URL,
   VEO_PARAMETER_SPACE,
   VEO_RESOLUTION_RATE_OVERRIDES,
+  VIDEO_RETIRED_IDS,
   video,
   generateVideosUrl,
   type GenerateVideosBody,
@@ -107,6 +108,8 @@ export {
   type GoogleTts25FlashBody,
   type GoogleTts25ProBody,
   type GoogleTts31FlashBody,
+  type GoogleTts38FlashBody,
+  type GoogleTts38FlashLiteBody,
   type GoogleTtsAudioResponseFormat,
   type GoogleTtsCompressedAudioFormat,
   type GoogleTtsContent,
@@ -163,12 +166,14 @@ export {
   type GoogleLyriaImageBlock,
   type GoogleLyriaInput,
   type GoogleLyriaTextBlock,
+  type Lyria35Body,
   type LyriaClipBody,
   type LyriaProBody,
   type UnknownLyriaBody,
 } from "./music";
 export {
   LYRIA_PRICE_PER_SONG_USD,
+  lyria35Model,
   lyriaRealtimeModel,
   musicModels,
   type GoogleLyriaModelId,
@@ -180,7 +185,13 @@ export {
   LYRIA_MUSIC_DOCS_URL,
   LYRIA_REALTIME_MODEL_ID,
 } from "./music-params";
-export { chatModels, ttsModelOverrides } from "./chat-tts-overlay";
+export {
+  GEMINI_25_FLASH_IMAGE_CONTEXT_TOKENS,
+  chatModels,
+  chatSupplementModels,
+  ttsModelOverrides,
+} from "./chat-tts-overlay";
+export { sttModels, sttSupplementModels, type GoogleSttSupplementModelId } from "./stt-models";
 export {
   audioPromptTokens,
   checkChat,

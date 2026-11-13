@@ -12,6 +12,8 @@ import { models } from "../../catalog/google.gen";
 export interface ChatResponseLike {
   candidates?: Array<{
     finishReason?: string;
+    /** Returned with `finishReason` CONTINUATION (Gemini 4 long decode); resend it to continue. */
+    continuationToken?: string;
     content?: {
       parts?: Array<{
         text?: string;
@@ -98,6 +100,7 @@ const FILTERED_FINISH_REASONS = new Set([
 export type GoogleFinishReason =
   | "STOP"
   | "MAX_TOKENS"
+  | "CONTINUATION"
   | "SAFETY"
   | "RECITATION"
   | "BLOCKLIST"
@@ -124,6 +127,11 @@ function modelInfoFor(modelVersion: string | undefined): ModelInfo | undefined {
  * Post-generation report for a generateContent response. Never throws.
  *
  * - `finishReason` MAX_TOKENS → truncation warning (`meta.kind: "truncated"`).
+ * - `finishReason` CONTINUATION (Gemini 4 long decode) → an incomplete-by-design
+ *   warning (`meta.kind: "continuation"`): "Token generation was stopped
+ *   because the response reached the per-request token limit, but generation
+ *   is not yet complete. The model response can be continued via a subsequent
+ *   request using the returned `continuation_token`."
  * - safety/recitation/prohibited-content finish reasons and
  *   `promptFeedback.blockReason` (prompt blocked; candidates empty) →
  *   filtering warnings (`meta.kind: "content_filtered"`). IssueCode has no
@@ -151,6 +159,15 @@ export function checkChat(response: ChatResponseLike): ResponseReport<GoogleFini
       message:
         "Response was truncated: generation stopped at the maxOutputTokens limit (finishReason MAX_TOKENS).",
       meta: { kind: "truncated", finishReason },
+    });
+  } else if (finishReason === "CONTINUATION") {
+    warnings.push({
+      severity: "warning",
+      code: "over_output_limit",
+      path: ["candidates", 0, "finishReason"],
+      message:
+        "Response is incomplete: generation stopped at the per-request token limit with more to come (finishReason CONTINUATION). Resend the same `contents` with `continuationToken` set to `candidates[0].continuationToken` to continue.",
+      meta: { kind: "continuation", finishReason },
     });
   } else if (finishReason !== undefined && FILTERED_FINISH_REASONS.has(finishReason)) {
     warnings.push({

@@ -35,6 +35,8 @@ describe("stability.music", () => {
     expect(v.request.method).toBe("POST");
     // Multipart: fetch derives the boundary from FormData; no static headers.
     expect(v.request.headers).toEqual({});
+    // The marker `toRequestInit` refuses on — a JSON body would send `{}` Blobs.
+    expect(v.request.body).toBe("form");
     expect(v.toSdk("stability")).toEqual({
       prompt: "A cheerful acoustic guitar loop in 3/4",
       duration: 20,
@@ -46,8 +48,8 @@ describe("stability.music", () => {
   test("stable-audio-2 credits follow 17 + 0.06 x steps", () => {
     expect(stableAudioCredits("stable-audio-2")).toBeCloseTo(20, 10);
     expect(stableAudioCredits("stable-audio-2", 100)).toBeCloseTo(23, 10);
-    expect(stableAudioCredits("stable-audio-2.5", 4)).toBe(20);
-    expect(stableAudioCredits("stable-audio-3")).toBe(26);
+    expect(stableAudioCredits("stable-audio-2.5", 4)).toBe(8);
+    expect(stableAudioCredits("stable-audio-3")).toBe(8);
     expect(stableAudioCredits("sd3.5-large")).toBeUndefined();
 
     const dflt = music.safe({ prompt: "hi" });
@@ -59,10 +61,10 @@ describe("stability.music", () => {
     if (hundred.ok) expect(hundred.estimate.costUSD).toBeCloseTo(23 * STABILITY_USD_PER_CREDIT, 10);
   });
 
-  test("stable-audio-2.5 is a flat 20 credits", () => {
+  test("stable-audio-2.5 is a flat 8 credits", () => {
     const r = music.safe({ prompt: "hi", model: "stable-audio-2.5", steps: 4 });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.2, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.08, 10);
   });
 
   test("steps bounds are per model", () => {
@@ -94,8 +96,9 @@ describe("stability.music", () => {
       expect(r.errors[0]?.code).toBe("invalid_enum_value");
       expect(r.errors[0]?.path).toEqual(["model"]);
     }
-    // …but it IS a catalogued Stability model.
+    // …but it IS a catalogued Stability model, with the shared 10,000-char prompt cap.
     expect(models["stable-audio-3"].family).toBe("stable-audio");
+    expect(models["stable-audio-3"].limit.characters).toBe(10000);
   });
 
   test("an off-catalog model warns unknown_model alongside the enum error", () => {
@@ -139,6 +142,7 @@ describe("stability.musicFromAudio", () => {
       strength: 0.6,
     });
     expect(v.request.url).toBe(STABLE_AUDIO_AUDIO_TO_AUDIO_URL);
+    expect(v.request.body).toBe("form");
     const form = toFormData(v);
     expect(form.get("prompt")).toBe("make it a jazz trio");
     expect(form.get("strength")).toBe("0.6");
@@ -185,9 +189,10 @@ describe("stability.musicInpaint", () => {
     });
     expect(Object.keys(v)).toEqual(["prompt", "audio", "mask_start", "mask_end"]);
     expect(v.request.url).toBe(STABLE_AUDIO_INPAINT_URL);
+    expect(v.request.body).toBe("form");
     const r = musicInpaint.safe({ prompt: "hi", audio: mp3Blob });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.2, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.08, 10);
   });
 
   test("steps follow the 2.5 bounds (4–8)", () => {

@@ -111,9 +111,9 @@ image({ model: "openai/gpt-image-2", prompt: "x", size: "¦" });`);
     for (const preset of GPT_IMAGE_2_SIZES) expect(entries).toContain(preset);
   });
 
-  test("gpt-image-1 (closed enum, no tail) completes exactly its values", () => {
+  test("gpt-image-1.5 (closed enum, no tail) completes exactly its values", () => {
     const entries = completionsAt(`import { image } from "./src/unified/image";
-image({ model: "openai/gpt-image-1", prompt: "x", size: "¦" });`);
+image({ model: "openai/gpt-image-1.5", prompt: "x", size: "¦" });`);
     expect(entries.sort()).toEqual(["1024x1024", "1024x1536", "1536x1024", "auto"]);
   });
 
@@ -144,7 +144,7 @@ image({ model: "stability/stable-image-ultra", prompt: "x", aspectRatio: "¦" })
 
   test("background offers all three values on every GPT image model", () => {
     const v1 = completionsAt(`import { image } from "./src/unified/image";
-image({ model: "openai/gpt-image-1", prompt: "x", background: "¦" });`);
+image({ model: "openai/gpt-image-1.5", prompt: "x", background: "¦" });`);
     expect(v1.sort()).toEqual(["auto", "opaque", "transparent"]);
     const v2 = completionsAt(`import { image } from "./src/unified/image";
 image({ model: "openai/gpt-image-2", prompt: "x", background: "¦" });`);
@@ -668,13 +668,13 @@ avatar({
    * Probe 5e — HeyGen's engine gate, which is the sharpest per-model narrowing
    * in either audio-driven category.
    *
-   * `expressiveness` is Avatar IV only and `reference_look_id` is Avatar V
-   * only, and the two engines are otherwise the same request. HeyGen REJECTS
-   * the wrong one rather than ignoring it, so this is a 400 saved rather than a
-   * silent no-op — but it is still a compile-time answer, which is the only
-   * kind that arrives before the money is spent.
+   * `expressiveness` is Avatar IV only and `reference_look_id` belongs to
+   * Avatar V's own engine config, which does not render this arm. HeyGen
+   * REJECTS the wrong one rather than ignoring it, so this is a 400 saved
+   * rather than a silent no-op — but it is still a compile-time answer, which
+   * is the only kind that arrives before the money is spent.
    */
-  test("probe 5e — the HeyGen engine gate is a squiggle, in both directions", () => {
+  test("probe 5e — the HeyGen engine gate is a squiggle", () => {
     const good = (model: string, extra: string): string =>
       `import { avatar } from "./src/unified/avatar";
 avatar({
@@ -684,20 +684,21 @@ avatar({
   ${extra},
 });`;
     expect(semanticErrorsIn(good("avatar_iv", 'expressiveness: "high"'))).toEqual([]);
-    expect(semanticErrorsIn(good("avatar_v", 'reference_look_id: "look_abc"'))).toEqual([]);
-    expect(semanticErrorsIn(good("avatar_v", 'expressiveness: "high"')).length).toBeGreaterThan(0);
     expect(
       semanticErrorsIn(good("avatar_iv", 'reference_look_id: "look_abc"')).length,
     ).toBeGreaterThan(0);
 
-    // Avatar III is in HeyGen's catalog and at its wire address and NOT in this
-    // pack, because it does not render raw image input. An unrostered ref
-    // degrades to the wide arm rather than failing — the roster-is-a-snapshot
-    // rule — so the absence shows up as `image` becoming optional.
-    expect(
-      semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
-avatar({ model: "heygen/avatar_iii", audio: { url: "https://example.com/vo.wav" } });`),
-    ).toEqual([]);
+    // Avatar V and Avatar III are in HeyGen's catalog and at its wire address
+    // and NOT in this pack, because neither renders raw image input. An
+    // unrostered ref degrades to the wide arm rather than failing — the
+    // roster-is-a-snapshot rule — so the absence shows up as `image` becoming
+    // optional.
+    for (const engine of ["avatar_v", "avatar_iii"]) {
+      expect(
+        semanticErrorsIn(`import { avatar } from "./src/unified/avatar";
+avatar({ model: "heygen/${engine}", audio: { url: "https://example.com/vo.wav" } });`),
+      ).toEqual([]);
+    }
 
     // The lipsync half: the two ids are one wire field, so both complete the
     // same extras, and `enable_dynamic_duration` is a BOOLEAN rather than the
@@ -791,7 +792,7 @@ upscale({ model: "fal/fal-ai/esrgan", source: { url: "https://x/a.png" }, creati
    * a different cause, and the pair is what makes the empty list a mechanism
    * rather than a special case.
    */
-  test("probe 4c — Topaz refuses `factor`, offers `prompt` on nine of fifteen", () => {
+  test("probe 4c — Topaz refuses `factor`, offers `prompt` on three of eighteen", () => {
     // No multiplier anywhere, on either route.
     for (const model of ["topaz/Standard V2", "topaz/Redefine"]) {
       expect(
@@ -801,8 +802,8 @@ upscale({ model: "${model}", source: { url: "https://x/a.png" }, factor: 2 });`)
       ).toBeGreaterThan(0);
     }
 
-    // `prompt` is the word Topaz DID bring, and it is a route fact: the nine
-    // generative models steer on one and the six classic ones have no field.
+    // `prompt` is the word Topaz DID bring, and it is a per-model fact: three
+    // generative models steer on one and the rest have no field.
     expect(
       semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
 upscale({ model: "topaz/Redefine", source: { url: "https://x/a.png" }, prompt: "a sailing boat" });`),
@@ -902,15 +903,15 @@ threeD({ model: "tripo3d/v3.1-20260211", image: { url: "https://x/a.png" } });`)
   });
 
   /**
-   * Probe 8 — the per-model extras at 23 refs across two providers, and the
+   * Probe 8 — the per-model extras at 24 refs across two providers, and the
    * version gate that makes one vendor's own roster disagree with itself.
    */
   test("probe 8 — the 3D extras complete from each route's own wire interface", () => {
-    // Tripo's `texture_quality` is a three-value ladder, and the editor offers
+    // Tripo's `texture_quality` is a four-value ladder, and the editor offers
     // exactly it — through the UNIFIED surface, where the ref carries the model.
     const quality = completionsAt(`import { threeD } from "./src/unified/3d";
 threeD({ model: "tripo3d/v3.1-20260211", prompt: "a chair", texture_quality: "¦" });`);
-    expect(quality.sort()).toEqual(["detailed", "extreme", "standard"]);
+    expect(quality.sort()).toEqual(["detailed", "extreme", "fast", "standard"]);
 
     // The legacy generation takes NONE of the version-gated seven, and that is
     // a compile squiggle rather than a 4xx — the sharpest per-model narrowing
@@ -1020,12 +1021,11 @@ video({ model: "minimax/MiniMax-Hailuo-02", prompt: "x", aspectRatio: "¦" });`)
 
   test("property names include the model's extras, and its extras only", () => {
     const entries = completionsAt(`import { video } from "./src/unified/video";
-video({ model: "kling/kling-v1", prompt: "x", ¦ });`);
-    for (const name of ["duration", "resolution", "aspectRatio", "cfg_scale", "camera_control"]) {
+video({ model: "kling/kling-v3", prompt: "x", ¦ });`);
+    for (const name of ["duration", "resolution", "aspectRatio", "sound", "multi_shot"]) {
       expect(entries).toContain(name);
     }
-    // `sound` is kling-v3's and `audio` the path-addressed family's.
-    expect(entries).not.toContain("sound");
+    // `audio` is the path-addressed family's.
     expect(entries).not.toContain("audio");
   });
 
@@ -1125,7 +1125,7 @@ tts({ model: "lmnt/blizzard", text: "x", language: "¦" });`);
    *     `filter((c): c is Exclude<L, "auto"> => …)`, which answers the same type
    *     for both calls whatever the predicate tests — so the 20-code base pool
    *     typed as all 31 and offered the eleven Pro-only codes its own validator
-   *     refuses.
+   *     warns about.
    *
    * The lists are asserted by *count* as well as by membership, because both
    * failures are "the list is a different size than the table says".
@@ -1683,6 +1683,43 @@ tts({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: "v" },
     expect(entries).not.toContain("en-US");
   });
 
+  test("on a Sonic 3.6 id, language offers its 44 codes and 56 locales and nothing else", () => {
+    // The list is per model (`CartesiaTtsLanguageFor<M>`), so the same field
+    // completes a different, larger set once `model_id` names a 3.6 id.
+    for (const id of ["sonic-3.6", "sonic-3.6-2026-08-27"]) {
+      const entries = completionsAt(`${BYTES.replace('"sonic-3.5"', `"${id}"`)}language: "¦" });`);
+      expect(entries.length).toBe(100);
+      expect(entries).toContain("or");
+      expect(entries).toContain("ur");
+      expect(entries).toContain("pt-BR");
+      expect(entries).toContain("en-GB");
+      expect(entries).not.toContain("cy");
+      const locales = completionsAt(`${BYTES.replace('"sonic-3.5"', `"${id}"`)}locale: "¦" });`);
+      expect(locales.length).toBe(100);
+    }
+  });
+
+  test("on an alias or an uncataloged id, language completes every documented value", () => {
+    // `sonic-preview` / `sonic-latest` (no page names their backing model) and
+    // an uncataloged id are OPEN — the check only warns on them — yet the open
+    // tail must not swallow the 100 documented values, nor the unlisted-locale
+    // template the 56 listed locales.
+    for (const id of ["sonic-preview", "sonic-latest", "sonic-3.7"]) {
+      const entries = completionsAt(`${BYTES.replace('"sonic-3.5"', `"${id}"`)}language: "¦" });`);
+      expect(entries.length).toBe(100);
+      expect(entries).toContain("ur");
+      expect(entries).toContain("en-GB");
+    }
+  });
+
+  test("normalization completes auto, off and every documented value on every model", () => {
+    const entries = completionsAt(`${BYTES}normalization: "¦" });`);
+    expect(entries.length).toBe(102);
+    expect(entries).toContain("auto");
+    expect(entries).toContain("off");
+    expect(entries).toContain("en-IN");
+  });
+
   test("the socket message publishes the same two lists", () => {
     const SOCKET = `import { ttsWebsocket } from "./src/providers/cartesia";
 ttsWebsocket({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: "v" },
@@ -1713,24 +1750,21 @@ stt({ file: new Blob([]), model: "ink-whisper", language: "¦" });`);
       expect(entries).toContain(id);
     }
     // ...plus the cataloged sonic ids that are OFF that enum and still
-    // valid — the dated snapshots and the "older models" rows (the 2026-08-24
-    // sweep added the older-models page's still-working dated ids). They are
-    // the whole justification for the tail: `checkTtsModelKind` reports them
-    // at *warning* severity, so refusing them at compile time would be wrong.
+    // valid — sonic-3.6, the dated snapshots and the deprecated aliases. They
+    // are the whole justification for the tail: `checkTtsModelKind` reports
+    // them at *warning* severity, so refusing them at compile time would be
+    // wrong.
     for (const id of [
+      "sonic-3.6",
+      "sonic-3.6-2026-08-27",
       "sonic-3.5-2026-05-04",
-      "sonic-2",
-      "sonic-turbo",
+      "sonic-3-latest",
+      "sonic-3-preview",
       "sonic-3-2026-01-12",
-      "sonic-3-2025-10-27",
-      "sonic-2-2025-06-11",
-      "sonic-2-2025-05-08",
-      "sonic-2-2025-04-16",
-      "sonic-turbo-2025-06-04",
     ]) {
       expect(entries).toContain(id);
     }
-    expect(entries.length).toBe(13);
+    expect(entries.length).toBe(10);
     // A completion list cannot show the tail itself; that a *fourth* off-enum
     // id like "sonic-9-future" still compiles is pinned in
     // test/types/cartesia.test-d.ts, where this field alone has no
@@ -1745,6 +1779,19 @@ tts({ model: "cartesia/sonic-3.5", text: "x", language: "¦" });`);
     // keeps normalizing "pt-BR" to "pt" for callers who type the regional tag.
     expect(entries).toContain("pt");
     expect(entries).toContain("en");
+    expect(entries).not.toContain("ur");
+  });
+
+  test("the unified alias rows complete Sonic 3.6's 44 languages", () => {
+    // `sonic-preview` / `sonic-latest` ride ROW_3_6: the wire never refuses a
+    // 3.6 value on them (sonic-latest warns), so the editor offers Odia and Urdu.
+    for (const ref of ["cartesia/sonic-3.6", "cartesia/sonic-preview", "cartesia/sonic-latest"]) {
+      const entries = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "${ref}", text: "x", language: "¦" });`);
+      expect(entries.length).toBe(44);
+      expect(entries).toContain("or");
+      expect(entries).toContain("ur");
+    }
   });
 });
 
@@ -1828,10 +1875,10 @@ image({ prompt: "x", model: m, style: "¦" });`);
   test("narrowing `style` did not disturb `model` or `size`", () => {
     // `M`'s constraint has to carry the model literals, and the callable must
     // not re-state `model` as an extra intersection arm — either mistake
-    // silently drops `model` from 17 completions to 1.
+    // silently drops `model` from every cataloged id to 1.
     const models = completionsAt(`import { image } from "./src/providers/recraft";
 image({ prompt: "x", model: "¦" });`);
-    expect(models.length).toBe(17);
+    expect(models.length).toBe(32);
     expect(models).toContain("recraftv3");
 
     const sizes = completionsAt(`import { image } from "./src/providers/recraft";
@@ -2011,13 +2058,14 @@ chat({ model: "openai/gpt-5.2", messages: [], nativeTools: [{ provider: "openai"
   });
 });
 
-describe("unmodel/catalog/typed: the 175 providers with no subpath get completions", () => {
+describe("unmodel/catalog/typed: the 198 providers with no subpath get completions", () => {
   test("getModelTyped completes a provider's model ids; getModel still does not", () => {
     const typed = completionsAt(`import { getModelTyped } from "./src/catalog/typed.gen";
 getModelTyped("anthropic", "¦");`);
     expect(typed).toContain("claude-opus-5");
     expect(typed).toContain("claude-fable-5-1");
-    expect(typed.length).toBe(14);
+    expect(typed).toContain("claude-opus-5-5");
+    expect(typed.length).toBe(18);
 
     // The cheap entry is deliberately unchanged: its `catalog` is annotated,
     // which is what keeps `dist/catalog/index.d.ts` at ~4 KiB instead of
@@ -2087,14 +2135,32 @@ realtimeSession({ type: "realtime", audio: { input: { transcription: { model: "g
 });
 
 describe("anthropic.chat: per-model narrowing reaches the editor", () => {
-  test("thinking drops `disabled` on the model that always thinks", () => {
+  test("thinking completes exactly the values each generation accepts", () => {
+    // Always on (Fable 5, Fable 5.1, Fable 5.2, Opus 5.5): adaptive only —
+    // `disabled` is refused outright and `enabled` left with Claude 4.7.
     const fable = completionsAt(`import { chat } from "./src/providers/anthropic";
 chat({ model: "claude-fable-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
-    expect(fable.sort()).toEqual(["adaptive", "enabled"]);
+    expect(fable.sort()).toEqual(["adaptive"]);
 
+    // Sonnet 5.5's thinking-off form is `between_tools`, and only it has the value.
+    const sonnet55 = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "claude-sonnet-5-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
+    expect(sonnet55.sort()).toEqual(["adaptive", "between_tools"]);
+
+    // Claude 4.7+ with thinking off still allowed (Opus 5, Haiku 5.5, …).
+    const haiku55 = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "claude-haiku-5-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
+    expect(haiku55.sort()).toEqual(["adaptive", "disabled"]);
+
+    // Claude 4.5 keeps manual extended thinking and never had adaptive.
     const opus45 = completionsAt(`import { chat } from "./src/providers/anthropic";
 chat({ model: "claude-opus-4-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
-    expect(opus45.sort()).toEqual(["adaptive", "disabled", "enabled"]);
+    expect(opus45.sort()).toEqual(["disabled", "enabled"]);
+
+    // Claude 4.6 has both modes (manual extended thinking deprecated there).
+    const sonnet46 = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "claude-sonnet-4-6", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
+    expect(sonnet46.sort()).toEqual(["adaptive", "disabled", "enabled"]);
   });
 
   test("the narrowed keys still complete — `never` refuses values, not names", () => {
@@ -2309,14 +2375,16 @@ if (report.finishReason === "¦") {}`);
   });
 
   test("a google report completes the Gemini finish reasons", () => {
-    // The nine literals that exist in google/check.ts (MAX_TOKENS plus the
-    // eight in FILTERED_FINISH_REASONS), plus STOP — the success value the
-    // checker does not branch on but every caller compares against.
+    // The ten literals that exist in google/check.ts (MAX_TOKENS, the
+    // long-decode CONTINUATION, plus the eight in FILTERED_FINISH_REASONS),
+    // plus STOP — the success value the checker does not branch on but every
+    // caller compares against.
     const entries = completionsAt(`import { checkChat } from "./src/providers/google";
 const report = checkChat({});
 if (report.finishReason === "¦") {}`);
     expect(entries.sort()).toEqual([
       "BLOCKLIST",
+      "CONTINUATION",
       "IMAGE_PROHIBITED_CONTENT",
       "IMAGE_RECITATION",
       "IMAGE_SAFETY",
@@ -2537,9 +2605,9 @@ chat({ model: "¦", contents: [] });`);
 // This is the completion half of the drift invariant in
 // src/providers/google/video.test.ts. Before the per-model arm, every model
 // completed the same three resolutions and the same three person policies —
-// including Veo 2, which has no `resolution` parameter at all, and Omni, which
-// only ever produces 720p. Measured per model: resolution 3/3/3/3 before →
-// 3 / 2 / 0 / 1 after; personGeneration 3/3 before → 2 / 3 after.
+// including Veo 2, which has no `resolution` parameter at all. Measured per
+// model: resolution 3/3 before → 3 / 0 after; personGeneration 3/3 before →
+// 2 / 3 after.
 // ---------------------------------------------------------------------------
 
 const VIDEO_PROBE = `import { video } from "./src/providers/google";
@@ -2554,9 +2622,7 @@ function veoParam(model: string, field: string, cursor = `"¦"`): string[] {
 
 describe("google.video: per-model parameter completions", () => {
   test("resolution is the model's own tier list", () => {
-    expect(veoParam("veo-3.1-generate-preview", "resolution")).toEqual(["720p", "1080p", "4k"]);
-    expect(veoParam("veo-3.1-lite-generate-preview", "resolution")).toEqual(["720p", "1080p"]);
-    expect(veoParam("gemini-omni-flash-preview", "resolution")).toEqual(["720p"]);
+    expect(veoParam("veo-3.0-generate-001", "resolution")).toEqual(["720p", "1080p", "4k"]);
     // Veo 2 has no `resolution` parameter: the field types `never`, so there is
     // nothing to complete — the type states the deny the runtime reports.
     expect(veoParam("veo-2.0-generate-001", "resolution")).toEqual([]);
@@ -2567,25 +2633,17 @@ describe("google.video: per-model parameter completions", () => {
     // that are numbers, which is the union the arm states.
     const numbers = (model: string): string[] =>
       veoParam(model, "durationSeconds", "¦").filter((entry) => /^\d+$/.test(entry));
-    expect(numbers("veo-3.1-generate-preview")).toEqual(["4", "6", "8"]);
+    expect(numbers("veo-3.0-generate-001")).toEqual(["4", "6", "8"]);
     expect(numbers("veo-2.0-generate-001")).toEqual(["5", "6", "7", "8"]);
-    expect(numbers("gemini-omni-flash-preview")).toEqual(["3", "4", "5", "6", "7", "8", "9", "10"]);
   });
 
   test("personGeneration narrows only where Google publishes a list", () => {
-    expect(veoParam("veo-3.1-generate-preview", "personGeneration")).toEqual([
+    expect(veoParam("veo-3.0-generate-001", "personGeneration")).toEqual([
       "allow_all",
       "allow_adult",
     ]);
-    // Veo 2 is the only family with `dont_allow`…
+    // Veo 2 is the only family with `dont_allow`.
     expect(veoParam("veo-2.0-generate-001", "personGeneration")).toEqual([
-      "allow_all",
-      "allow_adult",
-      "dont_allow",
-    ]);
-    // …and Omni publishes nothing, so the wire keeps its documented union
-    // rather than inventing a narrower one or widening to `string`.
-    expect(veoParam("gemini-omni-flash-preview", "personGeneration")).toEqual([
       "allow_all",
       "allow_adult",
       "dont_allow",
@@ -2596,6 +2654,12 @@ describe("google.video: per-model parameter completions", () => {
     const entries = completionsAt(`${VIDEO_PROBE}declare const model: string;
 video({ model, instances: [{ prompt: "x" }], parameters: { resolution: "¦" } });`);
     expect(entries).toEqual(["720p", "1080p", "4k"]);
+  });
+
+  test("the model list never offers a retired id the runtime refuses by name", () => {
+    const entries = completionsAt(`${VIDEO_PROBE}video({ model: "¦", instances: [{ prompt: "x" }] });`);
+    expect(entries).toContain("veo-3.0-generate-001");
+    expect(entries).not.toContain("gemini-omni-flash-preview");
   });
 });
 
@@ -2662,18 +2726,11 @@ image({ model: "openai/gpt-image-2", prompt: "x" }).¦`);
 // OWN parameters
 //
 // The completion half of the drift invariant in
-// src/providers/kling/video.test.ts. Before the per-model arm, every one of
-// the nine `/v1/videos/*` models completed the same three modes, the same
-// thirteen durations and the same two `sound` values — including
-// `kling-v2-master`, which is 1080P-only, and `kling-v2-5-turbo`, which runs 5
-// or 10 seconds and has no native audio at all. Measured per model:
-//   mode        3/3/3/3/3 before → 3 / 2 / 2 / 1 / 2 after
-//               (v3 / v2-6 / v2-5-turbo / v2-master / v1)
-//   duration   13/13/13/13/13 before → 13 / 8 / 2 / 2 / 2 after
-//   sound       2/2/2/2/2 before → 2 / 2 / 1 / 1 / 1 after
-// `aspect_ratio` is 3 before and 3 after on every model, deliberately: no
-// source bounds it per `model_name`, so it is the field this change does NOT
-// narrow.
+// src/providers/kling/video.test.ts: each `/v1/videos/*` model completes its
+// own modes, durations and `sound` values — `kling-v2-5-turbo` runs 5 or 10
+// seconds and has no native audio at all. `aspect_ratio` is the same three on
+// every model, deliberately: no source bounds it per `model_name`, so it is
+// the field the arm does NOT narrow.
 // ---------------------------------------------------------------------------
 
 const KLING_VIDEO_PROBE = `import { video, videoFromImage } from "./src/providers/kling";
@@ -2690,22 +2747,15 @@ describe("kling.video: per-model parameter completions", () => {
   test("mode is the model's own list (std = 720P, pro = 1080P, 4k = 4K)", () => {
     expect(klingParam("kling-v3", "mode")).toEqual(["std", "pro", "4k"]);
     expect(klingParam("kling-v2-6", "mode")).toEqual(["std", "pro"]);
-    expect(klingParam("kling-v1", "mode")).toEqual(["std", "pro"]);
-    // The master models are 1080P-only on the capability map — one entry, and
-    // it is the compile-time half of the `allowed: ["pro"]` the runtime reports.
-    expect(klingParam("kling-v2-master", "mode")).toEqual(["pro"]);
-    expect(klingParam("kling-v2-1-master", "mode")).toEqual(["pro"]);
+    expect(klingParam("kling-v2-5-turbo", "mode")).toEqual(["std", "pro"]);
   });
 
   test("duration is the model's own closed enum — seconds as strings", () => {
     expect(klingParam("kling-v3", "duration")).toEqual([
       "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
     ]);
-    expect(klingParam("kling-v2-6", "duration")).toEqual([
-      "3", "4", "5", "6", "7", "8", "9", "10",
-    ]);
+    expect(klingParam("kling-v2-6", "duration")).toEqual(["5", "10"]);
     expect(klingParam("kling-v2-5-turbo", "duration")).toEqual(["5", "10"]);
-    expect(klingParam("kling-v1", "duration")).toEqual(["5", "10"]);
   });
 
   test("sound offers \"on\" only where the model has native audio", () => {
@@ -2714,24 +2764,15 @@ describe("kling.video: per-model parameter completions", () => {
     // Not a denied key: `sound: "off"` is legal on every model and the run-time
     // check only refuses switching it ON, so the type offers exactly "off".
     expect(klingParam("kling-v2-5-turbo", "sound")).toEqual(["off"]);
-    expect(klingParam("kling-v1", "sound")).toEqual(["off"]);
   });
 
   test("aspect_ratio is NOT narrowed — the same three on every model", () => {
-    for (const model of ["kling-v3", "kling-v2-master", "kling-v1"]) {
+    for (const model of ["kling-v3", "kling-v2-6", "kling-v2-5-turbo"]) {
       expect(klingParam(model, "aspect_ratio")).toEqual(["16:9", "9:16", "1:1"]);
     }
   });
 
-  test("camera_control's shape completes on kling-v1 and nowhere else", () => {
-    // `never` off kling-v1, so the object literal has no contextual type and
-    // the field's own keys are not offered.
-    expect(klingParam("kling-v1", "camera_control", "{ ¦ }")).toEqual(["config", "type"]);
-    expect(klingParam("kling-v1-6", "camera_control", "{ ¦ }")).not.toContain("config");
-    expect(klingParam("kling-v2-6", "camera_control", "{ ¦ }")).not.toContain("config");
-  });
-
-  test("the image route narrows the same fields, over its two extra ids", () => {
+  test("the image route narrows the same fields", () => {
     const i2v = (model: string, field: string): string[] =>
       completionsAt(
         `${KLING_VIDEO_PROBE}videoFromImage({ model_name: "${model}", image: "u", prompt: "x", ${field}: "¦" });`,
@@ -2739,15 +2780,14 @@ describe("kling.video: per-model parameter completions", () => {
     expect(i2v("kling-v3", "duration")).toEqual([
       "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
     ]);
-    // The two image-to-video-only ids — absent from text2video entirely.
-    expect(i2v("kling-v2-1", "duration")).toEqual(["5", "10"]);
-    expect(i2v("kling-v1-5", "mode")).toEqual(["std", "pro"]);
+    expect(i2v("kling-v2-5-turbo", "duration")).toEqual(["5", "10"]);
+    expect(i2v("kling-v2-6", "mode")).toEqual(["std", "pro"]);
   });
 
   test("the degraded arms keep every documented value", () => {
-    // `model_name` is optional on this route, so an omitted one is a real
+    // `model_name` is optional in this body, so an omitted one is a real
     // caller shape — and nothing in the request names a model, so nothing is
-    // narrowed (the server default is kling-v1, but the request does not say so).
+    // narrowed.
     expect(completionsAt(`${KLING_VIDEO_PROBE}video({ prompt: "x", duration: "¦" });`)).toEqual([
       "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
     ]);

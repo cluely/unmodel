@@ -3,9 +3,11 @@
  * ("Prompt to song": "Generate song based on the input prompt and styles").
  *
  * Wire notes (transcribed from the OpenAPI document embedded in the docs
- * bundle behind https://platform.mureka.ai/docs/assets/chunks/theme.C4szLtM5.js
- * — the `operations/*.html` pages are client-rendered from it —
- * `SongEasyGenerateReq` on 2026-08-31):
+ * bundle behind
+ * https://platform.mureka.ai/docs/api/operations/post-v1-song-easy-generate.html
+ * — the `operations/*.html` pages are client-rendered from it, and the
+ * bundle's hashed chunk name rotates between builds — `SongEasyGenerateReq`,
+ * last checked 2026-11-12):
  *
  * - This is the route that writes the lyrics for you. `POST /v1/song/generate`
  *   REQUIRES hand-written `lyrics`; here you describe the song and Mureka
@@ -24,9 +26,11 @@
  * - `model` shares the song route's six-value enum, and the description
  *   narrows to "The mureka-o2 model does not support vocal_id input" — no
  *   `melody_id` clause, because this route has no `melody_id`.
- * - `lyrics`, `gender` and `melody_id` are ABSENT from this body. So is the
- *   `stream` field's "when the model is mureka-o1" carve-out that the two
- *   generate routes carry — this route's `stream` text states no model gate.
+ * - `lyrics`, `gender`, `melody_id` and `duration` are ABSENT from this body.
+ *   So is the "When the model is mureka-o1, this mode is not supported"
+ *   carve-out that `/v1/song/generate`'s `stream` field carries (the
+ *   instrumental route's `stream` has none either) — this route's `stream`
+ *   text states no model gate.
  * - The documented combination rules of `/v1/song/generate` do NOT reappear
  *   here: no field on `SongEasyGenerateReq` says it excludes another, so
  *   nothing is refused for combining `prompt`, `styles`, `reference_id` and
@@ -35,8 +39,11 @@
  *   with the SAME `GET /v1/song/query/{task_id}` — {@link songQueryUrl}.
  * - `n` and the billing note are the song route's: "Defaults to 2, maximum 3 …
  *   you will be charged based on the number of songs."
- * - NO cost estimate: no scrapable USD rate list (the PRICING note in
- *   ./models.ts has the full search trail), so `maxCostUSD` never fires here.
+ * - NO cost estimate: Mureka's rates are per generated song, and this route's
+ *   are the highest — "$0.3/song" for V7.6/O2/V8/V9 and "$ 0.5/song" for V9.5,
+ *   against $0.03–$0.15 on the lyrics route (the PRICING note in ./models.ts
+ *   has the sources). `ModelCost` has no per-song unit, so `maxCostUSD` never
+ *   fires here.
  * - Auth is `Authorization: Bearer <MUREKA_API_KEY>` — unmodel never touches
  *   keys; add the header yourself when fetching.
  *

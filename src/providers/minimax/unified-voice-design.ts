@@ -4,7 +4,7 @@
  * The single-phase design route: the response's `voice_id` is immediately
  * usable for synthesis — no save step. Two words map, the rest is refused:
  * `prompt` → `prompt` and `previewText` → `preview_text` (REQUIRED on this
- * wire, ≤500 chars and billed at $30/1M characters — a missing canonical one
+ * wire, ≤500 chars, and unpriced — see ./voice-design — a missing canonical one
  * compiles to `""` and the validator's non-empty check answers at the
  * canonical path). The optional caller-chosen `voice_id` rides as an extra —
  * on the design side only this provider takes a handle at all.

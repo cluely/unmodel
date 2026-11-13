@@ -43,7 +43,7 @@
  * |---|---|---|
  * | S1 | `toRatioEnum` | google, stability, luma, kling, vidu, bria, krea, reve, recraft, ideogram 3.0, runway |
  * | S2 | `toPixels` | black-forest-labs, leonardo |
- * | S3 | `toSizeEnum` | openai (dall-e / gpt-image-1), ideogram 4.0 |
+ * | S3 | `toSizeEnum` | openai (dall-e / gpt-image-1.5), ideogram 4.0 |
  * | S4 | `toSizeFreeform` | openai (gpt-image-2), bytedance |
  * | S5 | `toRatioString` | black-forest-labs' ultra route (`ratio-21x9`) |
  * | S6 | `toTier` | google, bria, kling, vidu, krea, bytedance, runway |

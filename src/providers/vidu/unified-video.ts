@@ -21,18 +21,23 @@
  * | canonical | wire | notes |
  * |---|---|---|
  * | `duration` | `duration` | plain seconds; per-model bounds on the way out |
- * | `resolution` | `resolution` | **S6** — `720p` / `1080p`, the two with canonical names |
+ * | `resolution` | `resolution` | **S6** — `720p` / `1080p`; `4k` → `4K` (viduq4-preview only) |
  * | `aspectRatio` | `aspect_ratio` | **S1**; absent from `img2video` — the frame does it |
  * | `image` (first) | `images: [uri]` | exactly one on every img2video arm |
  * | `image` (reference) | `images: [uri, …]` | 1–7 flat references |
  * | `video` | `videos: [uri]` | `viduq2-pro` only |
  * | `seed` | `seed` | |
  *
- * `360p` and `540p` are documented values with no canonical tier name, so they
- * are absent from the table below and reachable through
- * `providerOptions.vidu.resolution`; `480p`, `1440p` and `4k` are errors
- * naming what exists rather than a snap onto the nearest, which at 360p would
- * be a quarter of the pixels the caller asked for.
+ * `360p`, `540p` and viduq4-preview's `2K` are documented values with no
+ * canonical tier name, so they are absent from the table below and reachable
+ * through `providerOptions.vidu.resolution`; `480p` and `1440p` are errors
+ * naming the tiers this table maps rather than a snap onto the nearest, which
+ * at 360p would be a quarter of the pixels the caller asked for. `4k` compiles
+ * to `4K`, which only viduq4-preview's arms accept ("Allowed values: `540p` /
+ * `720p` / `1080p` / `2K` / `4K`" —
+ * https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/image-to-video
+ * and …/reference-to-video, 2026-11-13); every other model's endpoint check
+ * refuses it, naming that model's own tiers.
  *
  * `img2video` has no `aspect_ratio` at all — the start frame sets the frame —
  * so a shape passed with an image is an `unsupported_param` saying which of
@@ -55,7 +60,7 @@ import type {
   VideoParams,
   VideoResolution,
 } from "../../core/unified/vocabulary/video";
-import { DOCS_BASE, VIDU_ASPECT_RATIOS } from "./shared";
+import { VIDEO_DOCS, VIDU_ASPECT_RATIOS } from "./shared";
 import { TEXT2VIDEO_SUPPORT, video as textValidator, type Text2VideoParams } from "./video";
 import {
   IMG2VIDEO_SUPPORT,
@@ -70,12 +75,14 @@ import {
 import { MODELS, VIDU_VIDEO_MODEL_PARAMS } from "./video-params";
 
 /**
- * `resolution` — the two documented values the canonical tiers name. 360p and
- * 540p exist on the wire and have no canonical spelling; see the header.
+ * `resolution` — the documented values the canonical tiers name; `4K` is
+ * viduq4-preview's alone. 360p, 540p and q4's 2K exist on the wire and have no
+ * canonical spelling; see the header.
  */
 const RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
   "720p": "720p",
   "1080p": "1080p",
+  "4k": "4K",
 };
 
 /** The wire body of whichever of the three routes the inputs select. */
@@ -144,7 +151,7 @@ export const video = {
     const derived = ctx.take(
       resolveVideoRoute(
         input,
-        { model: ctx.model, routes: routesFor(ctx.model), source: `${DOCS_BASE}/text-to-video` },
+        { model: ctx.model, routes: routesFor(ctx.model), source: `${VIDEO_DOCS}/text-to-video` },
         { path: ["image"], warn: ctx.warn },
       ),
     );
@@ -152,7 +159,7 @@ export const video = {
     // body is still compiled (and never validated) so one pass reports
     // everything else wrong with the request too.
     const route = derived ?? videoRoute(input);
-    const source = `${DOCS_BASE}/${
+    const source = `${VIDEO_DOCS}/${
       route === "image" ? "image-to-video" : route === "text" ? "text-to-video" : "reference-to-video"
     }`;
 

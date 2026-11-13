@@ -12,8 +12,22 @@ import type { DenyRule, EndpointConstraints } from "../../core/constraint-types"
 
 const OPENAPI_URL = "https://api.bfl.ai/openapi.json";
 
+/**
+ * Params only the klein `-finetuned` LoRA routes declare
+ * (https://docs.bfl.ml/flux_2/flux2_lora_inference, verified 2026-11-12):
+ * Flux2Inputs, Flux2FlexInputs and Flux2KleinInputs carry neither.
+ */
+const FLUX2_LORA_ONLY =
+  "LoRA params only exist on the FLUX.2 [klein] `-finetuned` routes (flux-2-klein-4b-finetuned, flux-2-klein-9b-finetuned, flux-2-klein-9b-kv-finetuned, flux-2-klein-9b-kv-bf16-finetuned, plus the uncatalogued flux-2-klein-base-{4b,9b}-finetuned)";
+
+const FLUX2_FINETUNE_ONLY = {
+  finetune_id: FLUX2_LORA_ONLY,
+  finetune_strength: FLUX2_LORA_ONLY,
+} as const;
+
 /** Deny rules for the pro/max routes (Flux2Inputs schema). */
 const flux2ProMaxDeny: Record<string, DenyRule> = {
+  ...denyTable(FLUX2_FINETUNE_ONLY, "Flux2Inputs"),
   prompt_upsampling: {
     reason:
       "the pro/max routes upsample prompts by default and expose `disable_pup` to turn it off; `prompt_upsampling` only exists on flux-2-flex and the kontext routes",
@@ -35,6 +49,7 @@ const flux2ProMaxDeny: Record<string, DenyRule> = {
 
 /** Deny rules for the flex route (Flux2FlexInputs schema). */
 const flux2FlexDeny: Record<string, DenyRule> = {
+  ...denyTable(FLUX2_FINETUNE_ONLY, "Flux2FlexInputs"),
   disable_pup: {
     reason:
       "flux-2-flex controls prompt upsampling via `prompt_upsampling` (default true); `disable_pup` only exists on the flux-2-pro/max routes",
@@ -42,8 +57,12 @@ const flux2FlexDeny: Record<string, DenyRule> = {
   },
 };
 
-/** Deny rules for the klein routes (Flux2KleinInputs schema). */
-const flux2KleinDeny: Record<string, DenyRule> = {
+/**
+ * Deny rules for the klein routes (Flux2KleinInputs schema) — shared by the
+ * klein `-finetuned` LoRA routes, whose "request schema matches the
+ * underlying base endpoint".
+ */
+const flux2KleinSchemaDeny: Record<string, DenyRule> = {
   disable_pup: {
     reason: "the klein routes have no prompt-upsampling control (Flux2KleinInputs)",
     source: `${OPENAPI_URL}#/components/schemas/Flux2KleinInputs`,
@@ -82,6 +101,12 @@ const flux2KleinDeny: Record<string, DenyRule> = {
   },
 };
 
+/** The non-LoRA klein routes: Flux2KleinInputs, no finetune fields. */
+const flux2KleinDeny: Record<string, DenyRule> = {
+  ...flux2KleinSchemaDeny,
+  ...denyTable(FLUX2_FINETUNE_ONLY, "Flux2KleinInputs"),
+};
+
 export const imageConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   "flux-2-pro": { deny: flux2ProMaxDeny },
   "flux-2-max": { deny: flux2ProMaxDeny },
@@ -90,6 +115,10 @@ export const imageConstraints: Readonly<Partial<Record<string, EndpointConstrain
   "flux-2-klein-9b": { deny: flux2KleinDeny },
   "flux-2-klein-9b-preview": { deny: flux2KleinDeny },
   "flux-2-klein-4b": { deny: flux2KleinDeny },
+  "flux-2-klein-4b-finetuned": { deny: flux2KleinSchemaDeny },
+  "flux-2-klein-9b-finetuned": { deny: flux2KleinSchemaDeny },
+  "flux-2-klein-9b-kv-finetuned": { deny: flux2KleinSchemaDeny },
+  "flux-2-klein-9b-kv-bf16-finetuned": { deny: flux2KleinSchemaDeny },
 };
 
 // ---------------------------------------------------------------------------
@@ -99,7 +128,7 @@ export const imageConstraints: Readonly<Partial<Record<string, EndpointConstrain
 /** Params only the ultra routes (FluxUltraInput) declare. */
 const ULTRA_ONLY = {
   aspect_ratio: "only the flux-pro-1.1-ultra routes size by aspect ratio (FluxUltraInput); the width/height routes take pixel dimensions",
-  raw: "`raw` (candid-photography mode) only exists on the flux-pro-1.1-ultra routes (FluxUltraInput)",
+  raw: "`raw` (candid-photography mode) only exists on the flux-pro-1.1-ultra route (FluxUltraInput)",
   image_prompt_strength:
     "`image_prompt_strength` only exists on the flux-pro-1.1-ultra routes (FluxUltraInput)",
 } as const;
@@ -165,12 +194,21 @@ const fluxUltraDeny: Record<string, DenyRule> = {
   },
 };
 
-/** The finetuned ultra route is FluxUltraInput + finetune_id/strength. */
+/**
+ * The finetuned ultra route is FluxUltraInput minus `raw`, plus
+ * finetune_id/strength (FinetuneFluxUltraInput, verified 2026-11-12). Its
+ * schema is open, so an undeclared `raw` would be silently dropped.
+ */
 const fluxUltraFinetunedDeny: Record<string, DenyRule> = {
   width: fluxUltraDeny.width as DenyRule,
   height: fluxUltraDeny.height as DenyRule,
   steps: fluxUltraDeny.steps as DenyRule,
   guidance: fluxUltraDeny.guidance as DenyRule,
+  raw: {
+    reason:
+      "the finetuned ultra route (FinetuneFluxUltraInput) declares no `raw`; candid-photography mode only exists on flux-pro-1.1-ultra (FluxUltraInput)",
+    source: `${OPENAPI_URL}#/components/schemas/FinetuneFluxUltraInput`,
+  },
 };
 
 export const imageFlux1Constraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {

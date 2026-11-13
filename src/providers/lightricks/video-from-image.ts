@@ -1,6 +1,5 @@
 /**
- * LTX Image to Video — POST https://api.ltx.io/v2/image-to-video (async)
- * and POST https://api.ltx.io/v1/image-to-video (sync).
+ * LTX Image to Video — POST https://api.ltx.io/v2/image-to-video (async).
  *
  * Wire notes (verified against https://docs.ltx.io/openapi.json and
  * https://docs.ltx.io/models.md on 2026-08-13):
@@ -8,11 +7,9 @@
  *   REQUIRED by the spec; `duration` must be sent as `null` to use LTX-2.5's
  *   automatic duration.
  * - `last_frame_uri` turns the request into first-to-last-frame
- *   interpolation. It is not supported by the deprecated `ltx-2-fast` /
- *   `ltx-2-pro`, and "cannot be combined with `duration: null`" — a last
+ *   interpolation. It "cannot be combined with `duration: null`" — a last
  *   frame fixes where the clip ends, which requires a known length
  *   (https://docs.ltx.io/models/ltx-2-5.md).
- * - `api_version` is NOT a wire field (see ./text-to-video.ts).
  * - Auth is `Authorization: Bearer <LTX_API_KEY>`.
  */
 
@@ -25,16 +22,12 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type LightricksModelId } from "./models";
 import {
-  DEFAULT_API_VERSION,
-  LTX_API_VERSIONS,
   LTX_CAMERA_MOTIONS,
   LTX_HEADERS,
   MODELS_SOURCE,
-  OPENAPI_SOURCE,
   checkSupportMatrix,
   ltxUrl,
   uriSchema,
-  type LtxApiVersion,
   type LtxCameraMotion,
   type LtxDuration,
   type LtxFps,
@@ -45,10 +38,6 @@ import { videoCostUSD } from "./pricing";
 export const IMAGE_TO_VIDEO_ENDPOINT = "image-to-video";
 
 export const IMAGE_TO_VIDEO_URL = ltxUrl(IMAGE_TO_VIDEO_ENDPOINT);
-export const IMAGE_TO_VIDEO_V1_URL = ltxUrl(IMAGE_TO_VIDEO_ENDPOINT, "v1");
-
-/** Models with no `last_frame_uri` support — the deprecated LTX-2 pair. */
-export const NO_LAST_FRAME_MODELS = ["ltx-2-fast", "ltx-2-pro"] as const;
 
 export interface ImageToVideoParams {
   /** First frame: HTTPS URL, base64 data URI, or an upload `storage_uri`. */
@@ -67,8 +56,6 @@ export interface ImageToVideoParams {
   /** Last frame to interpolate to; incompatible with `duration: null`. */
   last_frame_uri?: string;
   camera_motion?: LtxCameraMotion;
-  /** NOT a wire field — picks `/v1` (sync) or `/v2` (async). Default "v2". */
-  api_version?: LtxApiVersion;
 }
 
 const videoFromImageSchema = z.looseObject({
@@ -81,24 +68,14 @@ const videoFromImageSchema = z.looseObject({
   generate_audio: z.boolean().optional(),
   last_frame_uri: uriSchema.optional(),
   camera_motion: z.enum(LTX_CAMERA_MOTIONS).optional(),
-  api_version: z.enum(LTX_API_VERSIONS).optional(),
 });
 
 function checkLastFrame(
   params: ImageToVideoParams,
-  info: ModelInfo | undefined,
+  _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
   if (params.last_frame_uri == null) return;
-  if (info !== undefined && (NO_LAST_FRAME_MODELS as readonly string[]).includes(params.model)) {
-    ctx.report({
-      code: "unsupported_param",
-      path: ["last_frame_uri"],
-      model: params.model,
-      message: `\`last_frame_uri\` is not supported by "${params.model}" (deprecated LTX-2); use ltx-2-3-* or ltx-2-5-*.`,
-      meta: { source: OPENAPI_SOURCE },
-    });
-  }
   if (params.duration === null) {
     ctx.report({
       code: "unsupported_param",
@@ -130,9 +107,9 @@ function estimate(params: ImageToVideoParams, info: ModelInfo | undefined, _ctx:
 type LightricksSdkTargets<B> = { lightricks: () => B };
 
 function finalize(params: ImageToVideoParams): unknown {
-  const { api_version, ...body } = params;
+  const body = { ...params };
   return toValidated(body, {
-    url: ltxUrl(IMAGE_TO_VIDEO_ENDPOINT, api_version ?? DEFAULT_API_VERSION),
+    url: IMAGE_TO_VIDEO_URL,
     method: "POST",
     headers: LTX_HEADERS,
   }, {
@@ -151,8 +128,7 @@ const validator = createValidator<ImageToVideoParams, unknown>({
 });
 
 /**
- * Validates raw wire params for LTX `POST /v2/image-to-video` (or `/v1` via
- * `api_version: "v1"`).
+ * Validates raw wire params for LTX `POST /v2/image-to-video`.
  *
  * ```ts
  * const params = lightricks.videoFromImage({
@@ -168,10 +144,10 @@ export const videoFromImage = validator as unknown as {
   <T extends ImageToVideoParams>(
     params: T & ExactKeys<T, ImageToVideoParams>,
     options?: ValidateOptions<T>,
-  ): Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>;
+  ): Validated<T, LightricksSdkTargets<T>>;
   safe<T extends ImageToVideoParams>(
     params: T & ExactKeys<T, ImageToVideoParams>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>>;
+  ): ValidateResult<Validated<T, LightricksSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

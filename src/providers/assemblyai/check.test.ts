@@ -27,6 +27,40 @@ describe("assemblyai.checkTranscript", () => {
     expect(report.usage).toEqual({});
   });
 
+  test("prices from speech_model_used, the model that actually ran (GET reference, 2026-11-12)", () => {
+    // A speech_models-pinned request: the deprecated `speech_model` echo is null.
+    const report = checkTranscript({
+      status: "completed",
+      speech_model: null,
+      speech_model_used: "universal-3-5-pro",
+      audio_duration: 3600,
+      text: "hello world",
+    });
+    // 60 minutes x ($0.21/hr ÷ 60) = $0.21.
+    expect(report.costUSD).toBeCloseTo(0.21, 10);
+
+    // speech_model_used wins over a disagreeing echo.
+    expect(
+      checkTranscript({
+        status: "completed",
+        speech_model: "universal-3-5-pro",
+        speech_model_used: "universal-2",
+        audio_duration: 3600,
+        text: "x",
+      }).costUSD,
+    ).toBeCloseTo(0.15, 10);
+
+    // An unpriced model (the beta preview) yields no cost rather than a guess.
+    expect(
+      checkTranscript({
+        status: "completed",
+        speech_model_used: "universal-3-6-pro-preview",
+        audio_duration: 3600,
+        text: "x",
+      }).costUSD,
+    ).toBeUndefined();
+  });
+
   test("completed with empty text warns empty_transcript", () => {
     const report = checkTranscript({ status: "completed", text: "" });
     expect(report.warnings).toHaveLength(1);

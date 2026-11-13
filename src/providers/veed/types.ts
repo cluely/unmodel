@@ -6,8 +6,8 @@
  * pinned, against a real build, by `test/types-entries.test.ts`.
  *
  * Reach for this entry when you want unmodel's doc-corrected request shapes at
- * compile time and are sending the request yourself — VEED ships no client
- * library, so `fetch` is what its own docs show too:
+ * compile time and are sending the request yourself — with `fetch`, or as the
+ * input to VEED's generated `@veedstudio/sdk`, which takes the same flat body:
  *
  * ```ts
  * import type { LipsyncBody } from "unmodel/veed/types";

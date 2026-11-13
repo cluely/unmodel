@@ -6,6 +6,7 @@ import { createAiSdkChat } from "../../core/translate/ai-sdk";
 import type { DialectId } from "../../core/translate/endpoints";
 import type { ChatIR } from "../../core/translate/ir";
 import { createToApi, type Decoder } from "../../core/translate/retarget";
+import type { Warn } from "../../core/translate/warnings";
 import { targetValidationFor } from "../../retarget/target-constraints";
 import { encodeOpenAIChat } from "./interop";
 import type { EndpointConstraints, FamilyRule } from "../../core/constraint-types";
@@ -87,10 +88,28 @@ export type {
 
 export const DEFAULT_IMAGE_TOKENS = 1000;
 
-/** A provider's hand-written constraint tables for its chat endpoint. */
+/**
+ * What a provider's API does with a sampling value sent to a model whose
+ * catalog row says `temperature: false`. The flag only says sampling is fixed;
+ * APIs disagree about the consequence, and reading it wrong in one direction
+ * refuses requests the API fulfils.
+ *
+ * - `"rejected"` (the default): only the default value 1 is accepted for
+ *   `temperature` and `top_p`, anything else is a 400 — OpenAI's reasoning
+ *   models.
+ * - `"overridden"`: any `temperature` is accepted and replaced server-side
+ *   with the model's own setting, and `top_p` stays adjustable. A sent
+ *   `temperature` is therefore a warning (the value has no effect), never an
+ *   error, and `top_p` is not gated by the flag at all.
+ */
+export type FixedSampling = "rejected" | "overridden";
+
+/** A provider's hand-written constraint tables and dialect readings for its chat endpoint. */
 export interface ChatConstraintSpec {
   constraints?: Readonly<Partial<Record<string, EndpointConstraints>>>;
   familyRules?: readonly FamilyRule[];
+  /** What `temperature: false` means on this API; `"rejected"` when omitted. */
+  fixedSampling?: FixedSampling;
 }
 
 /**
@@ -143,9 +162,14 @@ export function checkToolSupport(
   }
 }
 
-/** Input modality each non-text user content part kind requires. */
+/**
+ * Input modality each non-text user content part kind requires. `video_url`
+ * is not a shared-dialect part: only an overlay whose own schema admits it
+ * (minimax) ever reaches this check with one, and there the catalog decides.
+ */
 const PART_INPUT_MODALITY = {
   image_url: "image",
+  video_url: "video",
   input_audio: "audio",
   file: "pdf",
 } as const satisfies Record<string, Modality>;
@@ -224,8 +248,50 @@ export function checkSamplingParams(
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
+  reportFixedSampling(params, info, ctx, []);
+}
+
+/** One check in the Chat Completions battery. */
+export type ChatCompletionsCheck = (
+  params: ChatCompletionsBodyBase,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+) => void;
+
+/**
+ * {@link checkSamplingParams} wired to a provider's constraint tables: a
+ * sampling param the model's table pins with an `enums` row is left to that
+ * row. Not every fixed-sampling model fixes the default — Kimi pins `top_p` at
+ * 0.95 and rejects 1 — so the table states the documented value and the
+ * pipeline's enum layer refuses everything else by name.
+ *
+ * The spec's `fixedSampling` decides what the flag means at all: under
+ * `"overridden"` the API replaces the value instead of refusing it, so the
+ * check is {@link checkOverriddenTemperature} and nothing is pinned.
+ *
+ * Exported so a dialect whose exemptions depend on other params (OpenAI's
+ * GPT-6 at `reasoning_effort: "none"`) can wrap it and hand the wrapper to
+ * {@link chatCompletionsChecks} as its sampling slot.
+ */
+export function createSamplingParamsCheck(spec: ChatConstraintSpec): ChatCompletionsCheck {
+  if (spec.fixedSampling === "overridden") return checkOverriddenTemperature;
+  return function checkPinnedSampling(params, info, ctx) {
+    const pinned = constraintsFor(spec, params.model).flatMap((constraints) =>
+      Object.keys(constraints.enums ?? {}),
+    );
+    reportFixedSampling(params, info, ctx, pinned);
+  };
+}
+
+function reportFixedSampling(
+  params: ChatCompletionsBodyBase,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+  pinned: readonly string[],
+): void {
   if (info === undefined || info.temperature !== false) return;
   for (const param of ["temperature", "top_p"] as const) {
+    if (pinned.includes(param)) continue;
     const value = params[param];
     // Fixed-sampling (reasoning) models still accept the documented default
     // explicitly: the API's own rejection reads "Unsupported value:
@@ -241,6 +307,28 @@ export function checkSamplingParams(
       });
     }
   }
+}
+
+/**
+ * The `fixedSampling: "overridden"` reading of `temperature: false`: the API
+ * fulfils the request and swaps the value for its own, so a sent `temperature`
+ * is worth surfacing but must not fail. `top_p` is deliberately not read.
+ */
+function checkOverriddenTemperature(
+  params: ChatCompletionsBodyBase,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (info === undefined || info.temperature !== false) return;
+  if (params.temperature === undefined || params.temperature === null) return;
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["temperature"],
+    model: params.model,
+    message: `\`temperature\` is overridden by the API for "${params.model}" (fixed sampling settings): the request is accepted, but the model's own setting replaces the value sent. \`top_p\` stays adjustable.`,
+    meta: { ignored: true },
+  });
 }
 
 export function checkOutputLimit(
@@ -264,9 +352,21 @@ export function checkOutputLimit(
   }
 }
 
-/** Inline (data:-URL) + declared media enforcement against the spec's image rules. */
+/** An image a request carries — a `data:` URL or a remote one — and where it sits. */
+export interface ChatImageRef {
+  path: Array<string | number>;
+  url: string;
+}
+
+/**
+ * Inline (data:-URL) + declared media enforcement against the spec's image
+ * rules. `imagesOf` says where the body carries images: the dialect's are the
+ * `image_url` parts of user messages, and a provider whose parts differ passes
+ * its own locator.
+ */
 export function createInlineImagesCheck(
   spec: ChatConstraintSpec,
+  imagesOf: (params: ChatCompletionsBodyBase) => readonly ChatImageRef[] = userImageParts,
 ): (params: ChatCompletionsBodyBase, info: ModelInfo | undefined, ctx: PipelineContext) => void {
   return function checkInlineImages(params, _info, ctx) {
     const rules = constraintsFor(spec, params.model)
@@ -274,46 +374,72 @@ export function createInlineImagesCheck(
       .filter((rule) => rule !== undefined);
     if (rules.length === 0) return;
 
-    params.messages.forEach((message, messageIndex) => {
-      if (message.role !== "user" || !Array.isArray(message.content)) return;
-      message.content.forEach((part, partIndex) => {
-        if (part.type !== "image_url") return;
-        const path = ["messages", messageIndex, "content", partIndex];
-        // Inline data: URLs are sniffed from bytes; URL-referenced images can
-        // only be checked against the user's out-of-band declaration.
-        const bytes = part.image_url.url.startsWith("data:") ? toBytes(part.image_url.url) : undefined;
-        const sniffed = bytes === undefined ? undefined : sniffImage(bytes);
-        const declaration = findMediaDeclaration(ctx.options.media, path);
-        if (sniffed === undefined && declaration === undefined) return;
-        for (const rule of rules) {
-          reportMediaIssues(ctx, {
-            kind: "image",
-            rule,
-            path,
-            model: params.model,
-            ...(sniffed !== undefined && { sniffed }),
-            ...(declaration !== undefined && { declaration }),
-          });
-        }
-      });
-    });
+    for (const { path, url } of imagesOf(params)) {
+      // Inline data: URLs are sniffed from bytes; URL-referenced images can
+      // only be checked against the user's out-of-band declaration.
+      const bytes = url.startsWith("data:") ? toBytes(url) : undefined;
+      const sniffed = bytes === undefined ? undefined : sniffImage(bytes);
+      const declaration = findMediaDeclaration(ctx.options.media, path);
+      if (sniffed === undefined && declaration === undefined) continue;
+      for (const rule of rules) {
+        reportMediaIssues(ctx, {
+          kind: "image",
+          rule,
+          path,
+          model: params.model,
+          ...(sniffed !== undefined && { sniffed }),
+          ...(declaration !== undefined && { declaration }),
+        });
+      }
+    }
   };
 }
 
-/** The standard Chat Completions check battery, wired to a provider's constraint tables. */
+/** The dialect's images: the `image_url` parts of user messages. */
+function userImageParts(params: ChatCompletionsBodyBase): ChatImageRef[] {
+  const images: ChatImageRef[] = [];
+  params.messages.forEach((message, messageIndex) => {
+    if (message.role !== "user" || !Array.isArray(message.content)) return;
+    message.content.forEach((part, partIndex) => {
+      if (part.type !== "image_url") return;
+      images.push({ path: ["messages", messageIndex, "content", partIndex], url: part.image_url.url });
+    });
+  });
+  return images;
+}
+
+/**
+ * The slots of {@link chatCompletionsChecks} a provider may fill with its own
+ * policy. Each defaults to the shared check for the same spec.
+ */
+export interface ChatCompletionsCheckSlots {
+  /** Fixed sampling — {@link createSamplingParamsCheck}. */
+  sampling?: ChatCompletionsCheck;
+  /** Which content parts each model accepts — {@link checkInputModalities}. */
+  inputModalities?: ChatCompletionsCheck;
+  /** Inline and declared image media — {@link createInlineImagesCheck}. */
+  inlineImages?: ChatCompletionsCheck;
+}
+
+/**
+ * The standard Chat Completions check battery, wired to a provider's
+ * constraint tables. A provider that needs a different policy for one slot —
+ * OpenAI's GPT-6 sampling exemption, DeepSeek's own content parts — passes its
+ * own check (often a wrapper of the default) rather than swapping an element
+ * of the returned array, so the battery's members and order stay shared.
+ */
 export function chatCompletionsChecks(
   spec: ChatConstraintSpec,
-): ReadonlyArray<
-  (params: ChatCompletionsBodyBase, info: ModelInfo | undefined, ctx: PipelineContext) => void
-> {
+  slots: ChatCompletionsCheckSlots = {},
+): ReadonlyArray<ChatCompletionsCheck> {
   return [
     checkToolSupport,
-    checkInputModalities,
+    slots.inputModalities ?? checkInputModalities,
     checkStructuredOutput,
     checkReasoningCapability,
-    checkSamplingParams,
+    slots.sampling ?? createSamplingParamsCheck(spec),
     checkOutputLimit,
-    createInlineImagesCheck(spec),
+    slots.inlineImages ?? createInlineImagesCheck(spec),
   ];
 }
 
@@ -470,6 +596,15 @@ export interface ChatFinalizeSpec {
    * producing a wrong body.
    */
   decoders?: Readonly<Partial<Record<DialectId, Decoder<ChatIR>>>>;
+  /**
+   * The body → IR encoder behind `.toSdk("ai-sdk")` and every cross-dialect
+   * `.toApi` hop; {@link encodeOpenAIChat} when omitted. A provider whose
+   * validator admits content parts the dialect does not have (DeepSeek's flat
+   * `file` part, its images in system and tool messages) passes one that maps
+   * them onto the dialect first, so the codec never reads a part it was not
+   * written for.
+   */
+  encode?: (body: ChatCompletionsBodyBase, warn: Warn) => ChatIR;
 }
 
 /**
@@ -508,6 +643,7 @@ export function createChatFinalize(
 ): (params: ChatCompletionsBodyBase) => unknown {
   const { availability, request } = spec;
   const provider = spec.provider ?? (spec.endpoint.split(".")[0] as string);
+  const encode = spec.encode ?? encodeOpenAIChat;
   const toApi =
     availability === undefined
       ? undefined
@@ -516,14 +652,14 @@ export function createChatFinalize(
           endpoint: spec.endpoint,
           modelId: (body) => body.model,
           availability,
-          encode: encodeOpenAIChat,
+          encode,
           ...(spec.decoders !== undefined && { decoders: spec.decoders }),
           targetValidation: targetValidationFor,
         });
   const toAiSdk = createAiSdkChat<ChatCompletionsBodyBase>({
     endpoint: spec.endpoint,
     provider,
-    encode: encodeOpenAIChat,
+    encode,
   });
   return (params) => {
     const body = { ...params };

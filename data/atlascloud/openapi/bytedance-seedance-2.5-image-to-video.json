@@ -99,7 +99,8 @@
               "1080p-esr & 60fps",
               "1440p-sr",
               "1440p-esr",
-              "4k-esr"
+              "4k-esr",
+              "4k"
             ],
             "type": "string"
           },

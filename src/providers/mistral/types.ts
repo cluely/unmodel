@@ -42,7 +42,7 @@
 
 import type { TranscriptionBody } from "./stt";
 import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
-import type { MistralTextModelId } from "../../catalog/mistral.gen";
+import type { MistralChatModelId } from "./chat-models";
 
 export type {
   MistralModelId,
@@ -51,6 +51,8 @@ export type {
   MistralAudioModelId,
   MistralVideoModelId,
 } from "../../catalog/mistral.gen";
+
+export type { MistralChatModelId } from "./chat-models";
 
 export type { TranscriptionBody, MistralTimestampGranularity } from "./stt";
 
@@ -98,5 +100,5 @@ export type {
 // Pure type aliases: no rename, no runtime, no cost.
 // ---------------------------------------------------------------------------
 
-export type ChatBody<ModelId extends string = MistralTextModelId> = ChatCompletionsBodyBase<ModelId>;
+export type ChatBody<ModelId extends string = MistralChatModelId> = ChatCompletionsBodyBase<ModelId>;
 export type SttBody = TranscriptionBody;

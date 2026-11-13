@@ -39,7 +39,7 @@ import { models, VOICE_DESIGN_MODEL_IDS, type ElevenlabsVoiceDesignModelId } fro
 export const TEXT_TO_VOICE_DESIGN_URL = "https://api.elevenlabs.io/v1/text-to-voice/design";
 
 const VOICE_DESIGN_DOCS_URL = "https://elevenlabs.io/docs/api-reference/text-to-voice/design";
-const MODELS_DOCS_URL = "https://elevenlabs.io/docs/models";
+const MODELS_DOCS_URL = "https://elevenlabs.io/docs/overview/models";
 
 /**
  * Server-side default when `model_id` is omitted — VOICE_DESIGN_DOCS_URL

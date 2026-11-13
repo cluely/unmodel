@@ -3,7 +3,10 @@
  *
  * Ground truth: https://docs.bria.ai/_bundle/image-generation.yaml and
  * https://docs.bria.ai/_bundle/image-editing.yaml (the bundled OpenAPI
- * documents Bria's docs site serves). Verified 2026-08-13.
+ * documents Bria's docs site serves). Verified 2026-11-12, after
+ * POST /v2/image/generate and POST /v2/image/edit moved to Fibo 2 ("Image
+ * generation now runs on Fibo 2, with 12 more aspect ratios and no code
+ * changes." — https://docs.bria.ai/image-generation-overview.md).
  */
 
 import type { PipelineContext } from "../../core/pipeline";
@@ -13,8 +16,12 @@ export const BRIA_API_BASE_URL = "https://engine.prod.bria-api.com/v2";
 export const BRIA_GENERATION_SPEC_URL = "https://docs.bria.ai/_bundle/image-generation.yaml";
 export const BRIA_EDITING_SPEC_URL = "https://docs.bria.ai/_bundle/image-editing.yaml";
 
-/** `aspect_ratio` enum — identical on the generate and generate/lite routes. */
-export const BRIA_ASPECT_RATIOS = [
+/**
+ * `aspect_ratio` enum on POST /v2/image/generate/lite — the nine ratios every
+ * FIBO route renders. The lite requestBody's enum is exactly these nine
+ * (image-generation.yaml, read 2026-11-12).
+ */
+export const BRIA_LITE_ASPECT_RATIOS = [
   "1:1",
   "2:3",
   "3:2",
@@ -25,7 +32,50 @@ export const BRIA_ASPECT_RATIOS = [
   "9:16",
   "16:9",
 ] as const;
+export type BriaLiteAspectRatio = (typeof BRIA_LITE_ASPECT_RATIOS)[number];
+
+/**
+ * The twelve ratios only Fibo 2 renders: "16:10, 10:16, 2:1, 1:2, 21:9, 9:21,
+ * 3:1, 1:3, 4:1, 1:4, 5:1 and 1:5 are rendered by Fibo 2 and return 422 on a
+ * request it doesn't serve (4MP, `style_id`, a refinement with both `prompt`
+ * and a structured prompt, or reference images without a prompt)." —
+ * `aspect_ratio`, https://docs.bria.ai/_bundle/image-generation.yaml, read
+ * 2026-11-12.
+ */
+export const BRIA_FIBO2_ASPECT_RATIOS = [
+  "16:10",
+  "10:16",
+  "2:1",
+  "1:2",
+  "21:9",
+  "9:21",
+  "3:1",
+  "1:3",
+  "4:1",
+  "1:4",
+  "5:1",
+  "1:5",
+] as const;
+
+/**
+ * `aspect_ratio` enum on POST /v2/image/generate and POST /v2/image/edit: the
+ * nine lite ratios, then the twelve only Fibo 2 renders — the OpenAPI enum in
+ * full and in its own order on both routes (21 values, read 2026-11-12). The
+ * edit schema takes all 21 on single-image requests too ("Supported for both
+ * single-image and multi-reference requests."), although
+ * https://docs.bria.ai/whats-new/fibo-2.md pitches the twelve "for generation
+ * and for edits with two or more reference images".
+ */
+export const BRIA_ASPECT_RATIOS = [...BRIA_LITE_ASPECT_RATIOS, ...BRIA_FIBO2_ASPECT_RATIOS] as const;
 export type BriaAspectRatio = (typeof BRIA_ASPECT_RATIOS)[number];
+
+/**
+ * `style` enum — full generate route only (the lite requestBody has no
+ * `style`). "Photographic look for the generated image, rendered by Fibo 2
+ * from a text `prompt`." — image-generation.yaml, read 2026-11-12.
+ */
+export const BRIA_STYLES = ["kodak_film", "hard_flash", "hazy_dreamy", "rough_realism"] as const;
+export type BriaStyle = (typeof BRIA_STYLES)[number];
 
 /** `resolution` enum — full generate route only. */
 export const BRIA_RESOLUTIONS = ["1MP", "4MP"] as const;
@@ -162,16 +212,18 @@ export function checkStructuredJsonString(
 }
 
 /**
- * `images` is an array of URLs or base64 strings. The generate routes declare
- * `maxItems: 1` ("Currently supports a single image"), so an omitted or empty
- * array is fine there; the edit route requires the field and "must contain
- * exactly one item".
+ * `images` is an array of URLs or base64 strings, bounded per route by the
+ * OpenAPI's own `minItems` / `maxItems`: the generate routes declare
+ * `maxItems: 1` ("Currently supports a single image.") and no minimum, so an
+ * omitted or empty array is fine there; the edit route requires the field with
+ * `minItems: 1` / `maxItems: 4` ("**Accepts 1 to 4 images.**", read
+ * 2026-11-12).
  */
 export function checkBriaImages(
   ctx: PipelineContext,
   value: unknown,
   source: string,
-  cardinality: "at-most-one" | "exactly-one",
+  bounds: { minItems: number; maxItems: number },
 ): void {
   if (value == null) return;
   if (!Array.isArray(value)) {
@@ -183,17 +235,16 @@ export function checkBriaImages(
     });
     return;
   }
-  const tooMany = value.length > 1;
-  const tooFew = cardinality === "exactly-one" && value.length === 0;
-  if (tooMany || tooFew) {
+  const { minItems, maxItems } = bounds;
+  if (value.length < minItems || value.length > maxItems) {
     ctx.report({
       code: "invalid_shape",
       path: ["images"],
       message:
-        cardinality === "exactly-one"
-          ? `\`images\` must contain exactly one item; got ${value.length} entries.`
-          : `\`images\` currently supports a single image; got ${value.length} entries.`,
-      meta: { limit: 1, count: value.length, source },
+        maxItems === 1
+          ? `\`images\` currently supports a single image; got ${value.length} entries.`
+          : `\`images\` accepts ${minItems} to ${maxItems} images; got ${value.length} entries.`,
+      meta: { minItems, maxItems, count: value.length, source },
     });
   }
   value.forEach((image, i) => {

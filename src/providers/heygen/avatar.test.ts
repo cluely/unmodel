@@ -3,14 +3,15 @@
  * seven cross-field rules that are why this provider is validated rather than
  * passed through.
  *
- * HeyGen's spec is the most complete in this wave (98 paths, 300 schemas) and
+ * HeyGen's spec is the most complete in this wave (136 paths, 517 schemas) and
  * every one of these rules is stated in it and expressible in none of it: they
  * are `description` prose on fields that are all individually optional. Each is
  * a 400 or a silent no-op if broken.
  *
  * - `type` decides which visual source is REQUIRED and which is refused —
  *   HeyGen's own documented example error is exactly that mistake.
- * - Avatar III does not render raw image input.
+ * - The raw-image arm declares no `engine` (it renders on Avatar IV), so any
+ *   `engine` there is a 400.
  * - `expressiveness` is Avatar IV only and `motion_prompt` is not Avatar III;
  *   both are REJECTED rather than ignored.
  * - `script` and the audio fields are mutually exclusive; `voice_id` is
@@ -27,12 +28,16 @@ import { models, provider } from "./models";
 import {
   AVATAR_LOOKS_URL,
   HEYGEN_DEFAULT_ENGINE,
+  HEYGEN_ELEVENLABS_MODELS,
   HEYGEN_ENGINES,
+  HEYGEN_FISH_MODELS,
+  HEYGEN_IMAGE_ENGINES,
   HEYGEN_LIPSYNC_MODELS,
   HEYGEN_LIPSYNC_MODE_BY_MODEL,
   HEYGEN_LIPSYNC_STATUSES,
   HEYGEN_OPENAPI_URL,
   HEYGEN_VIDEO_STATUSES,
+  HEYGEN_VOICE_ENGINES,
   LIPSYNCS_URL,
   VIDEOS_URL,
   lipsyncUrl,
@@ -156,33 +161,43 @@ describe("the engine is the model, and an omitted one is a price decision", () =
     expect(HEYGEN_DEFAULT_ENGINE).toBe("avatar_iv");
   });
 
-  test("Avatar III does not render raw image input, and says which engines do", () => {
-    const result = avatar.safe({
-      type: "image",
-      image: STILL,
-      audio_url: VOICE,
-      engine: { type: "avatar_iii" },
-    });
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    const issue = result.errors.find((error) => error.path.join(".") === "engine.type");
-    expect(issue?.code).toBe("unsupported_capability");
-    expect(issue?.message).toContain("avatar_iv");
-    expect(issue?.message).toContain("avatar_v");
-    // …and it is perfectly happy on the catalogued-look arm.
-    const ok = avatar.safe({
-      type: "avatar",
-      avatar_id: "abc123",
-      audio_url: VOICE,
-      engine: { type: "avatar_iii" },
-    });
-    expect(ok.ok).toBe(true);
+  test("the raw-image arm declares no `engine`, so every value is refused", () => {
+    // `CreateVideoFromImage` (https://developers.heygen.com/openapi/external-api.json,
+    // 2026-11-13) is `additionalProperties: false` with no `engine` property;
+    // https://developers.heygen.com/image-to-video: "| Engine | Avatar IV |".
+    expect([...HEYGEN_IMAGE_ENGINES]).toEqual(["avatar_iv"]);
+    expect(avatar.safe({ type: "image", image: STILL, audio_url: VOICE }).ok).toBe(true);
+    for (const engine of [
+      { type: "avatar_iii" },
+      { type: "avatar_iv" },
+      { type: "avatar_v" },
+      null,
+    ] as const) {
+      const label = JSON.stringify(engine);
+      const result = avatar.safe({ type: "image", image: STILL, audio_url: VOICE, engine });
+      expect(result.ok, label).toBe(false);
+      if (result.ok) continue;
+      const issue = result.errors.find((error) => error.path.join(".") === "engine");
+      expect(issue?.code, label).toBe("unsupported_param");
+      expect(issue?.message, label).toContain("additionalProperties: false");
+      expect(issue?.message, label).toContain('type: "avatar", avatar_id');
+    }
+    // …and all three engines are perfectly happy on the catalogued-look arm.
+    for (const type of HEYGEN_ENGINES) {
+      const ok = avatar.safe({
+        type: "avatar",
+        avatar_id: "abc123",
+        audio_url: VOICE,
+        engine: { type },
+      });
+      expect(ok.ok, type).toBe(true);
+    }
   });
 
   test("`expressiveness` and `motion_prompt` are REJECTED, not ignored", () => {
     const onV = avatar.safe({
-      type: "image",
-      image: STILL,
+      type: "avatar",
+      avatar_id: "abc123",
       audio_url: VOICE,
       engine: { type: "avatar_v" },
       expressiveness: "high",
@@ -209,7 +224,6 @@ describe("the engine is the model, and an omitted one is a price decision", () =
       type: "image",
       image: STILL,
       audio_url: VOICE,
-      engine: { type: "avatar_iv" },
       expressiveness: "medium",
       motion_prompt: "gestures while speaking",
     });
@@ -218,12 +232,262 @@ describe("the engine is the model, and an omitted one is a price decision", () =
 
   test("the three engines are three catalog rows with three rates", () => {
     expect([...HEYGEN_ENGINES]).toEqual(["avatar_iii", "avatar_iv", "avatar_v"]);
-    // Avatar III is the cheap one by a factor of four at the low end of its
-    // band; the rows carry the TOP of each band because the avatar type is a
-    // property of the LOOK rather than of the request.
-    expect(models.avatar_iii.cost?.perVideoSecond).toBe(0.0433);
-    expect(models.avatar_iv.cost?.perVideoSecond).toBe(0.0667);
-    expect(models.avatar_v.cost?.perVideoSecond).toBe(0.0667);
+    // Avatar III is the cheap one — $0.01 a second for a Custom Video Avatar
+    // against Avatar V's $0.12. Avatar III and IV carry the TOP of their band
+    // because the avatar type is a property of the LOOK rather than of the
+    // request; Avatar V publishes one tier.
+    expect(models.avatar_iii.cost?.perVideoSecond).toBe(0.0165);
+    expect(models.avatar_iv.cost?.perVideoSecond).toBe(0.0805);
+    expect(models.avatar_v.cost?.perVideoSecond).toBe(0.12);
+  });
+
+  test("Avatar V takes `more_blinking` inside its engine config", () => {
+    const result = avatar.safe({
+      type: "avatar",
+      avatar_id: "abc123",
+      audio_url: VOICE,
+      engine: { type: "avatar_v", more_blinking: true },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toEqual([]);
+    expect(JSON.parse(JSON.stringify(result.params))).toHaveProperty("engine.more_blinking", true);
+
+    const wrong = avatar.safe({
+      type: "avatar",
+      avatar_id: "abc123",
+      audio_url: VOICE,
+      engine: { type: "avatar_v", more_blinking: "yes" },
+    } as never);
+    expect(wrong.ok).toBe(false);
+  });
+});
+
+describe("every optional the spec makes nullable takes `null`", () => {
+  test("the video route: null is accepted, and reads as absent", () => {
+    const result = avatar.safe({
+      type: "avatar",
+      avatar_id: "abc123",
+      audio_url: VOICE,
+      engine: null,
+      script: null,
+      voice_id: null,
+      audio_asset_id: null,
+      voice_settings: null,
+      title: null,
+      folder_id: null,
+      resolution: null,
+      aspect_ratio: null,
+      fit: null,
+      background: null,
+      remove_background: null,
+      callback_url: null,
+      callback_id: null,
+      output_upload: null,
+      watermark: null,
+      caption: null,
+      brand_glossary_id: null,
+      motion_prompt: null,
+      expressiveness: null,
+    });
+    expect(result.ok, JSON.stringify(result.ok ? [] : result.errors)).toBe(true);
+    if (!result.ok) return;
+    // A null `script` beside a track is not a second speech source, and a
+    // null `voice_settings` is not settings that will be ignored.
+    expect(result.warnings).toEqual([]);
+
+    // A null `background` is no background, so `webm` has nothing to reject;
+    // a null `expressiveness` is no expressiveness, so Avatar V has nothing to
+    // reject either.
+    expect(
+      avatar.safe({ type: "image", image: STILL, audio_url: VOICE, output_format: "webm", background: null })
+        .ok,
+    ).toBe(true);
+    expect(
+      avatar.safe({
+        type: "avatar",
+        avatar_id: "abc123",
+        audio_url: VOICE,
+        engine: { type: "avatar_v" },
+        expressiveness: null,
+      }).ok,
+    ).toBe(true);
+  });
+
+  test("the video route: `output_format` and `type` are not nullable", () => {
+    // `output_format` is `$ref VideoOutputFormat` with `"default": "mp4"`, not
+    // an `anyOf` with null; `type` is the discriminator.
+    expect(
+      avatar.safe({ type: "image", image: STILL, audio_url: VOICE, output_format: null } as never).ok,
+    ).toBe(false);
+    expect(avatar.safe({ type: null, image: STILL, audio_url: VOICE } as never).ok).toBe(false);
+  });
+
+  test("the lipsync route: its eight nullable optionals take null", () => {
+    const result = lipsync.safe({
+      video: CLIP,
+      audio: TRACK,
+      title: null,
+      callback_url: null,
+      callback_id: null,
+      keep_the_same_format: null,
+      start_time: null,
+      end_time: null,
+      fps_mode: null,
+      folder_id: null,
+    });
+    expect(result.ok, JSON.stringify(result.ok ? [] : result.errors)).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toEqual([]);
+    // A null `start_time` opens no window, so there is nothing to run backwards.
+    expect(lipsync.safe({ video: CLIP, audio: TRACK, start_time: null, end_time: 3 }).ok).toBe(true);
+  });
+
+  test("the lipsync route: `mode` and the booleans with a default are not nullable", () => {
+    expect(lipsync.safe({ video: CLIP, audio: TRACK, mode: null } as never).ok).toBe(false);
+    expect(lipsync.safe({ video: CLIP, audio: TRACK, enable_watermark: null } as never).ok).toBe(
+      false,
+    );
+  });
+});
+
+describe("`output_upload` sends the finished files to your own storage", () => {
+  test("a presigned target per file is accepted, with no unknown-key warning", () => {
+    const result = avatar.safe({
+      type: "image",
+      image: STILL,
+      audio_url: VOICE,
+      output_upload: {
+        video: {
+          url: "https://bucket.s3.amazonaws.com/out.mp4?X-Amz-Signature=abc",
+          headers: { "Content-Type": "video/mp4" },
+        },
+        captions: null,
+        thumbnail: { url: "https://bucket.s3.amazonaws.com/out.jpg?X-Amz-Signature=def" },
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("`video` is required and a target URL is at most 4096 characters", () => {
+    const missing = avatar.safe({
+      type: "image",
+      image: STILL,
+      audio_url: VOICE,
+      output_upload: { thumbnail: { url: "https://bucket.example.com/out.jpg" } },
+    } as never);
+    expect(missing.ok).toBe(false);
+    const long = avatar.safe({
+      type: "image",
+      image: STILL,
+      audio_url: VOICE,
+      output_upload: { video: { url: `https://bucket.example.com/${"a".repeat(4096)}` } },
+    });
+    expect(long.ok).toBe(false);
+  });
+});
+
+describe("voice_settings.engine_settings follows the spec's model enums", () => {
+  const SCRIPTED = {
+    type: "avatar",
+    avatar_id: "abc123",
+    script: "hello there",
+    voice_id: "v1",
+  } as const;
+
+  test("the models the spec still lists are accepted", () => {
+    const eleven = avatar.safe({
+      ...SCRIPTED,
+      voice_settings: { engine_settings: { engine_type: "elevenlabs", model: "eleven_v3" } },
+    });
+    expect(eleven.ok).toBe(true);
+    const fish = avatar.safe({
+      ...SCRIPTED,
+      voice_settings: { engine_settings: { engine_type: "fish", model: "s2-pro" } },
+    });
+    expect(fish.ok).toBe(true);
+  });
+
+  test("ElevenLabs v4 and Fish s2.1-pro are accepted", () => {
+    expect([...HEYGEN_ELEVENLABS_MODELS]).toContain("eleven_v4");
+    expect([...HEYGEN_FISH_MODELS]).toEqual(["s2.1-pro", "s2-pro"]);
+    const eleven = avatar.safe({
+      ...SCRIPTED,
+      voice_settings: {
+        engine_settings: { engine_type: "elevenlabs", model: "eleven_v4", stability: 0.3 },
+      },
+    });
+    expect(eleven.ok).toBe(true);
+    const fish = avatar.safe({
+      ...SCRIPTED,
+      voice_settings: { engine_settings: { engine_type: "fish", model: "s2.1-pro" } },
+    });
+    expect(fish.ok).toBe(true);
+  });
+
+  test("all seven discriminator values select an arm", () => {
+    expect([...HEYGEN_VOICE_ENGINES].sort()).toEqual([
+      "cartesia",
+      "elevenlabs",
+      "fish",
+      "heygen_voice",
+      "mockingbird",
+      "orca",
+      "starfish",
+    ]);
+    const arms = [
+      { engine_type: "cartesia", model: "sonic-3.6" },
+      { engine_type: "heygen_voice", model: "heygen-voice-1", similarity: "extra_high" },
+      // The legacy spelling of the same arm.
+      { engine_type: "orca", expressiveness: 0.4, pitch: -1.5, inflection: 1.2 },
+      { engine_type: "mockingbird" },
+    ] as const;
+    for (const engine_settings of arms) {
+      const result = avatar.safe({
+        ...SCRIPTED,
+        voice_settings: { locale: "en-US", engine_settings },
+      });
+      expect(result.ok, engine_settings.engine_type).toBe(true);
+    }
+  });
+
+  test("the new arms keep their own bounds", () => {
+    // Cartesia's model enum is ["sonic-3.6", "sonic-3.5"]; HeyGen Voice's
+    // `pitch` is −4…4 in steps of 0.5 and `similarity` a four-value enum.
+    for (const engine_settings of [
+      { engine_type: "cartesia", model: "sonic-2" },
+      { engine_type: "heygen_voice", pitch: 0.3 },
+      { engine_type: "heygen_voice", pitch: 4.5 },
+      { engine_type: "orca", similarity: "low" },
+      { engine_type: "heygen_voice", inflection: 0.2 },
+    ]) {
+      const result = avatar.safe({
+        ...SCRIPTED,
+        voice_settings: { engine_settings },
+      } as never);
+      expect(result.ok, JSON.stringify(engine_settings)).toBe(false);
+    }
+  });
+
+  test("the models the spec dropped are refused", () => {
+    // `ElevenLabsEngineSettings.model` no longer lists `eleven_flash_v2_5`, and
+    // `FishEngineSettings.model` no longer lists `s1`.
+    expect(HEYGEN_ELEVENLABS_MODELS as readonly string[]).not.toContain("eleven_flash_v2_5");
+    expect(HEYGEN_FISH_MODELS as readonly string[]).not.toContain("s1");
+    const eleven = avatar.safe({
+      ...SCRIPTED,
+      voice_settings: {
+        engine_settings: { engine_type: "elevenlabs", model: "eleven_flash_v2_5" },
+      },
+    } as never);
+    expect(eleven.ok).toBe(false);
+    const fish = avatar.safe({
+      ...SCRIPTED,
+      voice_settings: { engine_settings: { engine_type: "fish", model: "s1" } },
+    } as never);
+    expect(fish.ok).toBe(false);
   });
 });
 
@@ -323,8 +587,8 @@ describe("the lipsync route is its own product with its own lifecycle", () => {
     expect(HEYGEN_LIPSYNC_MODE_BY_MODEL["lipsync-speed"]).toBe("speed");
     expect(HEYGEN_LIPSYNC_MODE_BY_MODEL["lipsync-precision"]).toBe("precision");
     expect([...HEYGEN_LIPSYNC_MODELS]).toEqual(["lipsync-speed", "lipsync-precision"]);
-    expect(models["lipsync-speed"].cost?.perVideoSecond).toBe(0.0333);
-    expect(models["lipsync-precision"].cost?.perVideoSecond).toBe(0.0667);
+    expect(models["lipsync-speed"].cost?.perVideoSecond).toBe(0.014);
+    expect(models["lipsync-precision"].cost?.perVideoSecond).toBe(0.029);
   });
 
   test("the media fields have no inline arm here, and one does on the other route", () => {
@@ -394,7 +658,7 @@ describe("the lipsync route is its own product with its own lifecycle", () => {
 });
 
 describe("what this provider does not do", () => {
-  test("neither address estimates, though the price table is public USD", () => {
+  test("neither address estimates, though the rates are published in USD", () => {
     // Every rate is per second of OUTPUT and the output's length follows the
     // audio's; two of the three engine rates are BANDS keyed by avatar type,
     // which lives on the look rather than in the request.

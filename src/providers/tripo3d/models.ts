@@ -5,9 +5,12 @@
 //   https://developers.tripo3d.ai/en/docs/generation-image-to-model/p        (P-series image wire schema)
 //   https://developers.tripo3d.ai/en/docs/models-and-versions                (model roster)
 //   https://developers.tripo3d.ai/en/pricing                                 (credit tables + credit price)
+//   https://developers.tripo3d.ai/assets/PricingPage-<hash>.js               (P-Series figures; linked from /en/pricing)
 //   https://developers.tripo3d.ai/en/docs/billing                            (freeze/deduct/refund model)
-// Verified 2026-08-25. Every doc route also serves raw Markdown at `<route>.md`,
-// which is what was read.
+//   https://developers.tripo3d.ai/en/docs/changelog                          (P2 roster, limits and credits)
+// Verified 2026-08-25; the P2 row, the changelog and the P-Series credit
+// figures read 2026-11-12. Every doc route also serves raw Markdown at
+// `<route>.md`, which is what was read.
 //
 // Pricing conversion, documented so the arithmetic never rots unexplained:
 // Tripo bills in CREDITS and states the rate on the pricing page as
@@ -22,14 +25,12 @@
 // URL does not reveal) a Tripo generation's price is a pure function of the
 // request body — the base task type plus the add-ons the body switched on.
 //
-// The one exception is P1, and it is a gap rather than a decision: the pricing
-// page renders its H-Series table server-side and its P-Series and Splat-Series
-// tables only in the browser, so the P credit figures are not readable from the
-// published page. `tripo3dCostUSD` returns `undefined` for P1 rather than
-// borrowing the H numbers, which are demonstrably different (fal resells P1 at
-// twice the H rate).
+// The pricing page renders its H-Series table server-side and its P-Series
+// table only in the browser; the P figures are read from the JS chunk that
+// renders it, whose H rows match the server-rendered ones exactly. The one
+// estimate that declines is P2 with `quad: true` — see ./pricing.ts.
 //
-// Model coverage: all four ids the endpoint reference pages publish. Tripo's
+// Model coverage: all five ids the endpoint reference pages publish. Tripo's
 // text-to-image / image-to-image routes are deliberately NOT served — they
 // resell seedream, gemini and gpt-image, which unmodel already carries natively
 // from the vendors themselves, and a `tripo3d.image` would duplicate them under
@@ -110,8 +111,28 @@ export const models = {
     modalities: threeDModality,
     limit: { context: 0 },
     // The low-poly series: `face_limit` runs 50–20,000 here where the H series
-    // takes millions. Its credit table is browser-rendered only, so estimates
-    // for it return `undefined` — see the header.
+    // takes millions. 30/40 credits text, 40/50 image — see ./pricing.ts.
+  },
+  "P2-20260801": {
+    // https://developers.tripo3d.ai/en/docs/models-and-versions.md, read
+    // 2026-11-12: "| `P2-20260801` | P2, native quad topology; 48–50,000
+    // triangles or 48–25,000 quads | Game characters and props / Hard-surface
+    // assets / Real-time production pipelines |". The release date is the id's
+    // date suffix, under the changelog's "(2026-08)" heading. No `status`:
+    // Tripo's docs never call P2 a preview (only the SDK README does).
+    id: "P2-20260801",
+    name: "Tripo P2",
+    family: "tripo-p",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2026-08-01",
+    modalities: threeDModality,
+    limit: { context: 0 },
+    // The P series with quad output: `face_limit` runs 48–50,000 triangles, or
+    // 48–25,000 with `quad: true`. 100 credits bare, 110 textured on both
+    // routes — see ./pricing.ts.
   },
 } as const satisfies Record<string, ModelInfo>;
 

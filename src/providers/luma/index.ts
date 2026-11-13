@@ -38,10 +38,14 @@ export {
 } from "./video-modify";
 export type { ModifyVideoParams, LumaModifyMode } from "./video-modify";
 
-export { videoReframe, REFRAME_VIDEO_URL } from "./video-reframe";
+export { videoReframe, REFRAME_VIDEO_URL, videoReframeConstraints } from "./video-reframe";
 export type { ReframeVideoParams } from "./video-reframe";
 
-export { imageEditReframe, REFRAME_IMAGE_URL } from "./image-edit-reframe";
+export {
+  imageEditReframe,
+  REFRAME_IMAGE_URL,
+  imageEditReframeConstraints,
+} from "./image-edit-reframe";
 export type { ReframeImageParams } from "./image-edit-reframe";
 
 export { videoUpscale, upscaleUrl } from "./video-upscale";

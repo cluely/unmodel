@@ -547,7 +547,7 @@ describe("openai.chat constraintsFor", () => {
 /**
  * The substrate signpost, and the three-way agreement behind it.
  *
- * OpenAI serves nine ids in its own catalog on routes that are not
+ * OpenAI serves seventeen ids in its own catalog on routes that are not
  * /v1/chat/completions, and models.dev files every one of them as text-out —
  * so before this check they validated clean and addressed the chat endpoint.
  * The fact is stated three times because three consumers need it in three
@@ -562,10 +562,18 @@ describe("openai.chat constraintsFor", () => {
  * unified half: no `openai/…` chat ref survives that is not a chat model.
  */
 describe("openai.chat non-chat route signpost", () => {
-  /** The nine ids in the committed snapshot OpenAI does not serve here. */
+  /** The seventeen ids in the committed snapshot OpenAI does not serve here. */
   const NON_CHAT_IDS = [
     "gpt-5.3-codex",
     "gpt-5.3-codex-spark",
+    "gpt-5-pro",
+    "gpt-5.2-pro",
+    "gpt-5.4-pro",
+    "gpt-5.5-pro",
+    "o1-pro",
+    "o3-pro",
+    "gpt-daybreak-blue-latest",
+    "gpt-daybreak-red-latest",
     "text-embedding-3-large",
     "text-embedding-3-small",
     "text-embedding-ada-002",
@@ -606,6 +614,31 @@ describe("openai.chat non-chat route signpost", () => {
     expect(signpost?.message).toContain("unmodel has no validator");
   });
 
+  test("the Daybreak aliases are Responses-only too", () => {
+    // "| Chat Completions | `v1/chat/completions` | Not supported |" on both
+    // model pages (2026-11-12); models.dev files them as text-out with no status.
+    for (const id of ["gpt-daybreak-blue-latest", "gpt-daybreak-red-latest"] as const) {
+      const result = chat.safe({ model: id, messages: [userMessage("hi")] });
+      const signpost = result.warnings.find((issue) => issue.code === "unsupported_capability");
+      expect(signpost?.message, id).toContain("POST /v1/responses");
+    }
+  });
+
+  test("the pro models are Responses-only too", () => {
+    // "| Chat Completions | `v1/chat/completions` | Not supported |" on all six
+    // model pages (2026-11-12); "o3-pro is available in the Responses API only".
+    for (const id of ["gpt-5-pro", "gpt-5.2-pro", "gpt-5.4-pro", "gpt-5.5-pro", "o1-pro", "o3-pro"] as const) {
+      const result = chat.safe({ model: id, messages: [userMessage("hi")] });
+      const signpost = result.warnings.find((issue) => issue.code === "unsupported_capability");
+      expect(signpost?.message, id).toContain("POST /v1/responses");
+    }
+    // The suffix match is exact: a dated snapshot is caught, a `-pro…` word is not.
+    const snapshot = chat.safe({ model: "o3-pro-2025-06-10", messages: [userMessage("hi")] });
+    expect(snapshot.warnings.some((issue) => issue.code === "unsupported_capability")).toBe(true);
+    const lookalike = chat.safe({ model: "gpt-5-prompt-tuned", messages: [userMessage("hi")] });
+    expect(lookalike.warnings.some((issue) => issue.code === "unsupported_capability")).toBe(false);
+  });
+
   test("the image and realtime families point at the surface that does serve them", () => {
     const image = chat.safe({ model: "gpt-image-1.5", messages: [userMessage("hi")] });
     expect(
@@ -626,7 +659,7 @@ describe("openai.chat non-chat route signpost", () => {
     }
   });
 
-  test("the runtime table and `chatScopeExclude` name the same nine rows", async () => {
+  test("the runtime table and `chatScopeExclude` name the same seventeen rows", async () => {
     const overrides = (await Bun.file(
       new URL("../../../data/availability-overrides.json", import.meta.url).pathname,
     ).json()) as { chatScopeExclude: string[] };
@@ -657,5 +690,199 @@ describe("openai.chat non-chat route signpost", () => {
       .sort();
     expect(warnedByCheck).toEqual(excludedByData);
     expect(warnedByCheck).toEqual([...NON_CHAT_IDS].sort());
+  });
+});
+
+/**
+ * GPT-6 on Chat Completions. Every rule here quotes a model page, the
+ * reasoning guide or the GPT-6 migration guide (all read 2026-11-12); the
+ * value-conditional ones ride `gpt6ChatRules` in ./constraints.ts, the enum
+ * ones the `chatConstraints` rows beside it.
+ */
+describe("openai.chat GPT-6 rules", () => {
+  const GPT6_IDS = ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6.1-sol", "gpt-6.1-terra"] as const;
+  const tool = { type: "function" as const, function: { name: "lookup" } };
+
+  test("every GPT-6 id validates clean and prices from the catalog", () => {
+    const messages = [userMessage("hi")];
+    const tokens = estimateChatTokens({ messages });
+    for (const id of GPT6_IDS) {
+      const cost = catalog[id]?.cost;
+      expect(cost?.input, id).toBeGreaterThan(0);
+      const r = chat.safe({ model: id, messages, max_completion_tokens: 100 });
+      expect(r.ok, id).toBe(true);
+      if (!r.ok) continue;
+      expect(r.warnings).toEqual([]);
+      const expected = (tokens * (cost?.input ?? 0)) / 1e6 + (100 * (cost?.output ?? 0)) / 1e6;
+      expect(r.estimate.costUSD).toBeCloseTo(expected, 10);
+    }
+  });
+
+  test("reasoning_effort is narrowed to each model page's own list", () => {
+    // GPT-6 Astra and GPT-6.1 Sol: "`reasoning.effort` supports `low`, `medium`,
+    // `high`, `xhigh`, and `max`." — `none` "returns HTTP 400", `minimal` is absent.
+    for (const id of ["gpt-6-astra", "gpt-6.1-sol"] as const) {
+      for (const effort of ["none", "minimal"] as const) {
+        const r = chat.safe({ model: id, messages: [userMessage("hi")], reasoning_effort: effort });
+        expect(r.ok, `${id} ${effort}`).toBe(false);
+        if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_enum_value");
+      }
+      expect(chat.safe({ model: id, messages: [userMessage("hi")], reasoning_effort: "max" }).ok).toBe(true);
+    }
+    // GPT-6 Sol, Luna and GPT-6.1 Terra take `none`; none of them lists `minimal`.
+    for (const id of ["gpt-6-sol", "gpt-6-luna", "gpt-6.1-terra"] as const) {
+      expect(chat.safe({ model: id, messages: [userMessage("hi")], reasoning_effort: "none" }).ok, id).toBe(true);
+      expect(chat.safe({ model: id, messages: [userMessage("hi")], reasoning_effort: "minimal" }).ok, id).toBe(false);
+    }
+  });
+
+  test("tool calling requires the Responses API on Astra, 6.1 Sol and 6.1 Terra", () => {
+    for (const id of ["gpt-6-astra", "gpt-6.1-sol", "gpt-6.1-terra"] as const) {
+      const r = chat.safe({ model: id, messages: [userMessage("hi")], tools: [tool] });
+      expect(r.ok, id).toBe(false);
+      if (!r.ok) {
+        const issue = r.errors.find((e) => e.code === "unsupported_capability");
+        expect(issue?.path).toEqual(["tools"]);
+        expect(issue?.message).toContain("Responses API");
+      }
+    }
+    // Terra takes `none`, and its page's sentence is unconditional all the same.
+    const terra = chat.safe({
+      model: "gpt-6.1-terra",
+      messages: [userMessage("hi")],
+      reasoning_effort: "none",
+      tools: [tool],
+    });
+    expect(terra.ok).toBe(false);
+    // An empty tool list is not a tool-calling request.
+    expect(chat.safe({ model: "gpt-6-astra", messages: [userMessage("hi")], tools: [] }).ok).toBe(true);
+  });
+
+  test("Sol and Luna call tools only at reasoning_effort none", () => {
+    for (const id of ["gpt-6-sol", "gpt-6-luna"] as const) {
+      const atNone = chat.safe({
+        model: id,
+        messages: [userMessage("hi")],
+        reasoning_effort: "none",
+        tools: [tool],
+      });
+      expect(atNone.ok, id).toBe(true);
+      // Absent effort is the server default `medium`, which refuses.
+      const defaulted = chat.safe({ model: id, messages: [userMessage("hi")], tools: [tool] });
+      expect(defaulted.ok, id).toBe(false);
+      if (!defaulted.ok) expect(defaulted.errors[0]?.message).toContain('reasoning_effort: "none"');
+      const legacy = chat.safe({
+        model: id,
+        messages: [userMessage("hi")],
+        reasoning_effort: "high",
+        functions: [{ name: "lookup" }],
+      });
+      expect(legacy.ok, id).toBe(false);
+      if (!legacy.ok) expect(legacy.errors[0]?.path).toEqual(["functions"]);
+    }
+  });
+
+  test("log probabilities: never on Astra, only at none on Sol and Luna, unruled on 6.1", () => {
+    const astra = chat.safe({
+      model: "gpt-6-astra",
+      messages: [userMessage("hi")],
+      logprobs: true,
+      top_logprobs: 2,
+    });
+    expect(astra.ok).toBe(false);
+    if (!astra.ok) {
+      expect(astra.errors.map((e) => e.path[0]).sort()).toEqual(["logprobs", "top_logprobs"]);
+    }
+    // `logprobs: false` asks for none.
+    expect(chat.safe({ model: "gpt-6-astra", messages: [userMessage("hi")], logprobs: false }).ok).toBe(true);
+
+    // The chat/create reference's own example: gpt-6-sol at none with logprobs.
+    const solAtNone = chat.safe({
+      model: "gpt-6-sol",
+      messages: [userMessage("hi")],
+      reasoning_effort: "none",
+      logprobs: true,
+      top_logprobs: 2,
+    });
+    expect(solAtNone.ok).toBe(true);
+    const sol = chat.safe({
+      model: "gpt-6-sol",
+      messages: [userMessage("hi")],
+      reasoning_effort: "medium",
+      logprobs: true,
+    });
+    expect(sol.ok).toBe(false);
+
+    // No page names logprobs for GPT-6.1 Sol or Terra, so nothing is refused.
+    for (const id of ["gpt-6.1-sol", "gpt-6.1-terra"] as const) {
+      expect(chat.safe({ model: id, messages: [userMessage("hi")], logprobs: true }).ok, id).toBe(true);
+    }
+  });
+
+  test("temperature and top_p are accepted at reasoning_effort none and refused elsewhere", () => {
+    for (const id of ["gpt-6-sol", "gpt-6-luna", "gpt-6.1-terra"] as const) {
+      expect(catalog[id]?.temperature).toBe(false);
+      const atNone = chat.safe({
+        model: id,
+        messages: [userMessage("hi")],
+        reasoning_effort: "none",
+        temperature: 0.3,
+        top_p: 0.9,
+      });
+      expect(atNone.ok, id).toBe(true);
+      if (atNone.ok) expect(atNone.warnings).toEqual([]);
+      const r = chat.safe({ model: id, messages: [userMessage("hi")], temperature: 0.3 });
+      expect(r.ok, id).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["temperature"]);
+    }
+    // Astra never reaches `none`, so the catalog's fixed sampling stands.
+    const astra = chat.safe({
+      model: "gpt-6-astra",
+      messages: [userMessage("hi")],
+      reasoning_effort: "low",
+      temperature: 0.3,
+    });
+    expect(astra.ok).toBe(false);
+  });
+
+  test("prompt_cache_retention is 24h-only from gpt-5.5 on", () => {
+    // "For `gpt-5.5`, `gpt-5.5-pro`, and future models, only `24h` is supported."
+    // "Future models" is read off the catalog: every chat-served row released
+    // on or after gpt-5.5, so a new row cannot slip past the narrowing. The
+    // Responses-only rows (gpt-5.5-pro, Daybreak) are signposted instead.
+    const cut = catalog["gpt-5.5"]?.releaseDate ?? "";
+    const signposted = (id: string): boolean =>
+      chat
+        .safe({ model: id, messages: [userMessage("hi")] })
+        .warnings.some((issue) => issue.code === "unsupported_capability" && issue.path[0] === "model");
+    const ids = Object.keys(catalog)
+      .filter((id) => catalog[id]?.modalities.output.includes("text"))
+      .filter((id) => (catalog[id]?.releaseDate ?? "") >= cut && !signposted(id))
+      .sort();
+    expect(ids).toEqual([
+      "gpt-5.5",
+      "gpt-5.6",
+      "gpt-5.6-luna",
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6-sol",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+    ]);
+    for (const id of ids) {
+      expect(
+        chat.safe({ model: id, messages: [userMessage("hi")], prompt_cache_retention: "24h" }).ok,
+        id,
+      ).toBe(true);
+      const r = chat.safe({ model: id, messages: [userMessage("hi")], prompt_cache_retention: "in_memory" });
+      expect(r.ok, id).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_enum_value");
+    }
+    // Models before the sentence's cut keep both values.
+    expect(
+      chat.safe({ model: "gpt-5.4", messages: [userMessage("hi")], prompt_cache_retention: "in_memory" }).ok,
+    ).toBe(true);
   });
 });

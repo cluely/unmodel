@@ -1,14 +1,39 @@
 // Hand-maintained — Gladia is not in models.dev; refresh from
+//   https://api.gladia.io/openapi.json                         (the `model` enum + every request field)
 //   https://docs.gladia.io/api-reference/v2/pre-recorded/init  (model ids + per-model capabilities)
-//   https://www.gladia.io/pricing                              (per-hour rates)
-// (last checked 2026-08-13).
+//   https://docs.gladia.io/chapters/introduction/models        (the per-model comparison)
+//   https://docs.gladia.io/chapters/language/supported-languages
+//   https://www.gladia.io/pricing.md                           (plain-text, dated copy of /pricing)
+// (last checked 2026-11-12).
 //
-// The two ids below are the documented values of the `model` request field.
-// solaria-1 also backs the LIVE (WebSocket) API, which unmodel does not
-// validate; the per-minute rates here are the ASYNC (pre-recorded) Starter
-// rates. Realtime on the same plan is $0.75/hr, and the Growth plan drops
-// async to "as low as $0.20/hr" — commitment pricing that cannot be
-// catalogued per model.
+// The two ids below are the models the docs describe. solaria-1 also backs
+// the LIVE (WebSocket) API, which unmodel does not validate.
+//
+// PRICING: Gladia prices in EUR only, so `cost` is deliberately omitted and
+// cost estimation returns no `costUSD` for Gladia models. www.gladia.io/pricing.md
+// ("Last updated: 2026-11-03", fetched 2026-11-12) states "Currency: EUR" and
+// quotes per-model rates — "| Async rate | Solaria-1 · 0.27€/hr (0.0045€/min);
+// Solaria-3 · 0.16€/hr (0.0027€/min) | Custom |" and "| Real-time rate |
+// 0.68€/hr (0.0113€/min) | Custom |" — that drop automatically with monthly
+// volume ("Your hourly async rate drops as your monthly volume grows"), on a
+// prepaid wallet ("Gladia runs on a prepaid credit wallet."). The live page's
+// JSON-LD carries six offers, every one `"priceCurrency": "EUR"`, and no USD
+// figure or currency toggle exists anywhere on it. A USD rate would be an
+// exchange-rate guess, so none is catalogued. Should a USD rate return, note
+// that Gladia bills each distinct channel (OpenAPI `billing_time`: "Billed
+// duration in seconds (audio_duration * number_of_distinct_channels)"), so a
+// declared duration understates stereo audio whose channels differ.
+//
+// NOT LISTED (deliberate, checked 2026-11-12): `solaria-fusion`. It is the
+// third value of the OpenAPI `TranscriptionSupportedModels` enum
+// (["solaria-1","solaria-3","solaria-fusion"]) and of the SDK's generated
+// `PreRecordedV2TranscriptionModel` (@gladiaio/sdk 2.2.1), but no prose page,
+// price, changelog entry or docs/llms-full.txt line describes it — the Models
+// page says only "Set `model` to `"solaria-3"` or `"solaria-1"`". With no
+// languages, capabilities or rate to put on a row, it stays uncatalogued: it
+// still validates, with an `unknown_model` warning. Revisit when a Gladia page
+// documents it. (`solaria-3-fast` in the SDK is a passthrough fixture in
+// src/v2/live/client.start-session.test.ts, not a model.)
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -18,17 +43,6 @@ export const provider = {
   env: ["GLADIA_API_KEY"],
   doc: "https://docs.gladia.io",
 } as const satisfies ProviderInfo;
-
-/**
- * Unit conversion: gladia.io/pricing quotes "Async at $0.61 /hr" on the
- * Starter (pay-as-you-go) plan; `ModelCost.perAudioMinute` is USD per MINUTE,
- * so $0.61/hr ÷ 60 = $0.010166…/min. Both models bill at the same rate — the
- * pricing page prices the API, not the model.
- */
-const ASYNC_USD_PER_MINUTE = 0.61 / 60;
-
-/** "Real-time at $0.75 /hr" on the same plan — the live WebSocket API. */
-export const REALTIME_USD_PER_MINUTE = 0.75 / 60;
 
 /** Shared shape of every Gladia STT catalog entry. */
 const STT = {
@@ -49,14 +63,12 @@ export const models = {
     name: "Solaria-3",
     family: "solaria",
     ...STT,
-    cost: { perAudioMinute: ASYNC_USD_PER_MINUTE },
   },
   "solaria-1": {
     id: "solaria-1",
     name: "Solaria-1",
     family: "solaria",
     ...STT,
-    cost: { perAudioMinute: ASYNC_USD_PER_MINUTE },
   },
 } as const satisfies Record<string, ModelInfo>;
 
@@ -69,9 +81,10 @@ export const MODEL_IDS: readonly string[] = Object.keys(models);
 export const DEFAULT_MODEL = "solaria-1";
 
 /**
- * "Async (pre-recorded) only — not available for live transcription" and
- * "Single language only — pass exactly one language in
- * `language_config.languages` (no code switching)", with
- * "Languages: English, French, German, Spanish, Italian".
+ * solaria-3's languages. Every page agrees on the five: the endpoint page
+ * ("Languages: English, French, German, Spanish, Italian"), the Models page
+ * ("several from EN/FR/DE/ES/IT") and www.gladia.io/solaria-3 ("Optimized for
+ * EN, FR, DE, ES, IT"). How many of them one request may name is where the
+ * pages disagree — see `checkSolaria3` in ./stt.
  */
 export const SOLARIA_3_LANGUAGES = ["en", "fr", "de", "es", "it"] as const satisfies readonly string[];

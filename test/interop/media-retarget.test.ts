@@ -242,16 +242,17 @@ describe("kling.video → fal", () => {
     expect(result.errors[0]?.message).toContain("pro tier only");
   });
 
-  test("refused: a duration Kling serves and fal does not", () => {
-    const result = klingVideo({
-      model_name: "kling-v2-6",
-      prompt: "x",
-      mode: "pro",
-      duration: "8",
-    }).toApiSafe("fal");
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.errors[0]?.message).toContain('"5" or "10"');
+  test("exact: every duration Kling serves on 2.6 is one fal's row takes", () => {
+    // Kling's capability map gives kling-v2-6 "5s, 10s" — fal's own pair.
+    for (const duration of ["5", "10"] as const) {
+      const result = klingVideo({
+        model_name: "kling-v2-6",
+        prompt: "x",
+        mode: "pro",
+        duration,
+      }).toApiSafe("fal");
+      expect(result.ok, duration).toBe(true);
+    }
   });
 
   test("refused: watermark, callback and external task id, each by name", () => {
@@ -272,13 +273,6 @@ describe("kling.video → fal", () => {
     }
   });
 
-  test("refused: a model fal does not serve names the reason, not 'unknown'", () => {
-    const result = toApiSafeUntyped(klingVideo({ model_name: "kling-v1", prompt: "x" }));
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.errors[0]?.message).toContain("serves no v1 endpoint");
-    expect(result.errors[0]?.meta).toMatchObject({ structural: true });
-  });
 });
 
 describe("kling.videoFromImage → fal", () => {
@@ -309,12 +303,11 @@ describe("kling.videoFromImage → fal", () => {
     expect(wire(v3)).toMatchObject({ start_image_url: "https://example.com/first.png" });
   });
 
-  test("refused: bare base64, an end-frame-only request, and the motion brush", () => {
+  test("refused: bare base64, an end-frame-only request, and Elements", () => {
     const base = { model_name: "kling-v3", prompt: "x", mode: "pro" } as const;
     const cases: ReadonlyArray<[string, Record<string, unknown>]> = [
       ["image", { image: "iVBORw0KGgoAAAANSUhEUg==" }],
       ["image", { image_tail: "https://example.com/last.png" }],
-      ["static_mask", { image: "https://example.com/a.png", static_mask: "https://x/m.png" }],
       [
         "element_list",
         { image: "https://example.com/a.png", element_list: [{ element_id: "el_1" }] },
@@ -370,11 +363,12 @@ describe("pixverse.video → fal", () => {
     expect(result.errors[0]?.message).toContain("4000 UTF-8 bytes");
   });
 
-  test("refused: motion mode, camera movement and template id", () => {
+  test("refused: motion mode, camera movement, template id and webhook id", () => {
     for (const extra of [
       { motion_mode: "fast" },
       { camera_movement: "zoom_in" },
       { template_id: 302325299692608 },
+      { webhook_id: "replace-with-your-webhook-id" },
     ] as const) {
       const result = pixverseVideo({
         model: "v6",
@@ -426,16 +420,7 @@ describe("lightricks.video → fal", () => {
     expect(out.warnings).toEqual([]);
   });
 
-  test("refused: the synchronous route, and a model fal serves under a misleading name", () => {
-    const sync = lightricksVideo({
-      model: "ltx-2-5-pro",
-      prompt: "x",
-      resolution: "1280x720",
-      duration: 6,
-      api_version: "v1",
-    }).toApiSafe("fal");
-    expect(sync.ok).toBe(false);
-
+  test("refused: a model fal serves under a misleading name", () => {
     const fast = toApiSafeUntyped(
       lightricksVideo({ model: "ltx-2-5-fast", prompt: "x", resolution: "1280x720", duration: 6 }),
     );
@@ -673,6 +658,17 @@ describe("black-forest-labs → fal", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]?.message).toContain("loosen moderation");
+  });
+
+  test("refused: BFL's end-user id and FLUX.2's 6–7 tolerances have no fal field", () => {
+    const user = bflImageFlux1({ model: "flux-pro-1.1", prompt: "x", user: "u-1" }).toApiSafe("fal");
+    expect(user.ok).toBe(false);
+    if (!user.ok) expect(user.errors[0]?.path).toEqual(["user"]);
+
+    const seven = bflImage({ model: "flux-2-pro", prompt: "x", safety_tolerance: 7 }).toApiSafe(
+      "fal",
+    );
+    expect(seven.ok).toBe(false);
   });
 
   test("refused: webp, a lone dimension, and the two asymmetric flux-dev fields", () => {

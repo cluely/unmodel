@@ -301,7 +301,11 @@ describe("codegen: chat tables", () => {
     }
     expect(Object.keys(chatProfiles).length).toBe(33);
     // A vacuous exclusion list would make the filter above a no-op and this
-    // test a weaker version of what it replaced.
-    expect(removed).toBe(9);
+    // test a weaker version of what it replaced. Seventeen openai rows: codex ×2,
+    // pro ×6, Daybreak ×2, embeddings ×3, image ×3, realtime ×1; two mistral
+    // rows: mistral-embed, voxtral-mini-latest; inception's mercury-edit-2
+    // (FIM/edit only); and stepfun's stepaudio-2.5-asr (POST /v1/audio/asr/sse).
+    // Plus two groq Whisper rows (speech-to-text routes only).
+    expect(removed).toBe(23);
   });
 });

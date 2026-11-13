@@ -6,7 +6,7 @@
  *
  * ## What fal serves
  *
- * Three of ElevenLabs' seven TTS models, verified against fal's curated roster
+ * Three of ElevenLabs' eight TTS models, verified against fal's curated roster
  * on 2026-08-25 (`data/fal/curation.json`; the drift guard in
  * `fal-target.test.ts` re-asserts every id here against `FAL_TTS_ENDPOINTS`).
  * Source pages under https://fal.ai/models/fal-ai/elevenlabs/tts/…/api
@@ -142,7 +142,7 @@ function refuseUniversal(
       "publishes no language-specific normalization switch, and it changes how Japanese is read",
     );
   }
-  if (params.use_pvc_as_ivc !== undefined) {
+  if (params.use_pvc_as_ivc != null) {
     refuseParam(
       ctx,
       ["use_pvc_as_ivc"],
@@ -203,20 +203,25 @@ function noteNamespaceChange(
   });
 }
 
-/** Refuses a 0–1 setting fal bounds but ElevenLabs does not. */
-function unitRange(
+/**
+ * Refuses a `style` outside 0–1, which fal bounds and ElevenLabs does not.
+ *
+ * `stability` and `similarity_boost` need no guard here: fal's 0–1 is the
+ * bound `elevenlabs.tts`'s own schema already enforces (`TTS_STABILITY_MIN`…),
+ * and `.toApi` only hangs off a request that passed it.
+ */
+function styleRange(
   value: number | null | undefined,
-  key: "stability" | "similarity_boost" | "style",
   ctx: MediaMapContext,
   endpoint: string,
 ): number | undefined {
   if (value == null) return undefined;
   if (value >= 0 && value <= 1) return value;
   ctx.unsupported({
-    path: ["voice_settings", key],
+    path: ["voice_settings", "style"],
     message:
-      `\`voice_settings.${key}\` is ${value}; ${endpoint} bounds it to 0–1. ElevenLabs publishes no numeric ` +
-      "bounds for it, so unmodel enforces none on the source — but fal does, and the request would 422.",
+      `\`voice_settings.style\` is ${value}; ${endpoint} bounds it to 0–1. ElevenLabs publishes no numeric ` +
+      "bound for it, so unmodel enforces none on the source — but fal does, and the request would 422.",
   });
   return undefined;
 }
@@ -254,11 +259,10 @@ function mapElevenV3(params: TextToSpeechParams, ctx: MediaMapContext): FalEleve
       "publishes no continuity fields on the Eleven v3 row",
     );
   }
-  const stability = unitRange(settings?.stability, "stability", ctx, endpoint);
   return {
     text: requireText(params, ctx, endpoint),
     voice: params.voice_id,
-    ...(stability !== undefined && { stability }),
+    ...(settings?.stability != null && { stability: settings.stability }),
     ...(params.language_code != null && { language_code: params.language_code }),
     ...(params.apply_text_normalization !== undefined && {
       apply_text_normalization: params.apply_text_normalization,
@@ -282,9 +286,7 @@ function mapElevenFull(
   refuseUniversal(params, ctx, endpoint);
   noteNamespaceChange(params, ctx, endpoint);
   const settings = params.voice_settings;
-  const stability = unitRange(settings?.stability, "stability", ctx, endpoint);
-  const similarity = unitRange(settings?.similarity_boost, "similarity_boost", ctx, endpoint);
-  const style = unitRange(settings?.style, "style", ctx, endpoint);
+  const style = styleRange(settings?.style, ctx, endpoint);
   const speed = settings?.speed;
   if (speed != null && (speed < 0.7 || speed > 1.2)) {
     ctx.unsupported({
@@ -295,8 +297,8 @@ function mapElevenFull(
   return {
     text: requireText(params, ctx, endpoint),
     voice: params.voice_id,
-    ...(stability !== undefined && { stability }),
-    ...(similarity !== undefined && { similarity_boost: similarity }),
+    ...(settings?.stability != null && { stability: settings.stability }),
+    ...(settings?.similarity_boost != null && { similarity_boost: settings.similarity_boost }),
     ...(style !== undefined && { style }),
     ...(speed != null && speed >= 0.7 && speed <= 1.2 && { speed }),
     ...(params.previous_text != null && { previous_text: params.previous_text }),
@@ -329,8 +331,9 @@ export const ELEVENLABS_TTS_FAL_OVERLAP = {
   eleven_turbo_v2_5: { endpoints: ["fal-ai/elevenlabs/tts/turbo-v2.5"], map: mapTurboV25 },
 } as const;
 
-/** The four ElevenLabs TTS ids fal does not serve, with the reason. */
+/** The five ElevenLabs TTS ids fal does not serve, with the reason. */
 export const ELEVENLABS_TTS_FAL_REFUSALS: Readonly<Record<string, string>> = Object.freeze({
+  eleven_v4: "fal's curated ElevenLabs TTS roster is Eleven v3, Multilingual v2 and Turbo v2.5.",
   eleven_flash_v2_5:
     'fal serves no Flash v2.5 row. Turbo v2.5 is documented as "functionally equivalent" and carries the same rate, but it is a different model id producing different audio, and a retarget that swaps the model is not a retarget.',
   eleven_flash_v2: "fal's curated ElevenLabs TTS roster is Eleven v3, Multilingual v2 and Turbo v2.5.",

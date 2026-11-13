@@ -114,6 +114,14 @@ export interface GooglePart {
   mediaProcessing?: string;
   /** Custom client-side metadata associated with the part. */
   partMetadata?: Record<string, unknown>;
+  /**
+   * "Metadata applied to text parts to customize how they should be spoken or
+   * synthesized, such as specifying speaker identity or speaking style." — the
+   * REST reference (retrieved 2026-11-12). `speaker`: "Optional speaker name
+   * for multi-speaker synthesis."; `style`: "Optional style instruction for the
+   * speech synthesis."
+   */
+  speechMetadata?: { speaker?: string; style?: string };
 }
 
 /**
@@ -184,14 +192,17 @@ export interface GoogleSafetySetting {
 
 /**
  * `enum (ThinkingLevel)` — "Recommended for Gemini 3 or later models. Use with
- * earlier models results in an error."
+ * earlier models results in an error." `XHIGH` ("XHigh thinking level.") is
+ * documented on `gemini-4-hydrogen`; see GEMINI_THINKING_LEVELS in
+ * ./thinking-constraints for the per-model rules.
  */
 export type GoogleThinkingLevel =
   | "THINKING_LEVEL_UNSPECIFIED"
   | "MINIMAL"
   | "LOW"
   | "MEDIUM"
-  | "HIGH";
+  | "HIGH"
+  | "XHIGH";
 
 export interface GoogleThinkingConfig {
   includeThoughts?: boolean;
@@ -274,10 +285,10 @@ export type GeminiTtsVoiceName = (typeof GEMINI_TTS_VOICES)[number];
  * publishes the whole set (GEMINI_TTS_VOICES above) and ./chat already reports
  * an ERROR — `invalid_enum_value`, listing all 30 — for anything off it. There
  * is deliberately no `(string & {})` tail: `prebuiltVoiceConfig` is
- * preset-only by construction (a cloned or custom voice has no wire form on
- * this message at all), so a tail would advertise an allowed-value space
- * Google has not published and would silently switch the editor's completion
- * list off.
+ * preset-only by construction (custom, designed and replicated voices travel
+ * on `GoogleVoiceConfig.voice` instead), so a tail would advertise an
+ * allowed-value space Google has not published and would silently switch the
+ * editor's completion list off.
  *
  * NOTE the one asymmetry with the runtime: ./chat enforces the list only for
  * TTS ids (`enforceVoices`), while this type states it for every model, so a
@@ -289,9 +300,23 @@ export interface GooglePrebuiltVoiceConfig {
   voiceName?: GeminiTtsVoiceName;
 }
 
-/** `VoiceConfig` — a oneof whose only documented member is prebuiltVoiceConfig. */
+/**
+ * `VoiceConfig` — "Union field `voiceConfig` can be only one of the
+ * following": `prebuiltVoiceConfig` (the closed 30-name preset list) or
+ * `voice` (https://ai.google.dev/api/generate-content, retrieved 2026-11-12).
+ * Custom, designed and replicated voices travel on `voice`; the 3.8 TTS
+ * guide's own single-speaker sample sends `"voiceConfig": {"voice": "Kore"}`.
+ */
 export interface GoogleVoiceConfig {
   prebuiltVoiceConfig?: GooglePrebuiltVoiceConfig;
+  /**
+   * "The speaker identifier for synthesis. Supported formats: Speaker name for
+   * prebuilt voices (for example, `Orus` or `Kore`). Voice ID for stored voices
+   * (for example, `voice_xxx`). Voice replication key (for example,
+   * `voicekey_xxx`)." — the REST reference (retrieved 2026-11-12). Open
+   * `string`: stored ids and replication keys are caller-minted.
+   */
+  voice?: string;
 }
 
 /** `SpeakerVoiceConfig` — both fields are documented Required. */
@@ -554,6 +579,20 @@ export interface GenerateContentBody {
    * has no equivalent config field (raw fetch keeps it).
    */
   store?: boolean;
+  /**
+   * Long decode (Gemini 4): "An opaque continuation token used to resume
+   * generation from a previous `GenerateContent` or `StreamGenerateContent`
+   * response that stopped with `finish_reason` set to `CONTINUATION`. Note
+   * that `contents` is mandatory and must identically replicate the prompt
+   * and conversation history from the initial request when continuation
+   * token is provided in a request." `maxOutputTokens` "is cumulative across
+   * continuation hops and must be monotonically increased or omitted." Like
+   * `store`, NOT carried into `.toSdk("google")`: the pinned @google/genai
+   * declares no such config field (raw fetch keeps it).
+   */
+  continuationToken?: string;
+  /** "Labels with user-defined metadata for the request." */
+  labels?: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -613,6 +652,7 @@ const contentSchema = z.looseObject({
 
 const voiceConfigSchema = z.looseObject({
   prebuiltVoiceConfig: z.looseObject({ voiceName: z.string().optional() }).optional(),
+  voice: z.string().optional(),
 });
 
 /**
@@ -685,6 +725,8 @@ export const generateContentSchema = z
     cachedContent: z.string().optional(),
     serviceTier: z.string().optional(),
     store: z.boolean().optional(),
+    continuationToken: z.string().optional(),
+    labels: z.record(z.string(), z.string()).optional(),
   })
   .superRefine((value, refCtx) => {
     value.contents.forEach((content, i) => {

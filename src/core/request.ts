@@ -353,6 +353,20 @@ export const JSON_HEADERS: Record<string, string> = Object.freeze({
  */
 export const NO_HEADERS: Record<string, string> = Object.freeze({});
 
+const SLASH = 0x2f;
+
+/**
+ * `value` without its trailing `/` characters, for joining a caller-supplied
+ * base URL to a route. A scan rather than `replace(/\/+$/, "")`: that regex
+ * retries from every slash in a run that is not at the end, which is
+ * quadratic on input the caller controls.
+ */
+export function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === SLASH) end -= 1;
+  return value.slice(0, end);
+}
+
 /**
  * The non-enumerable members every validated / retargeted result carries.
  * They are exempt from `ExactKeys` because the documented composition idiom

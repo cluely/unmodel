@@ -60,7 +60,7 @@ describe("elevenlabs.stt happy path", () => {
   });
 
   test("unknown model warns but validates", () => {
-    const r = stt.safe({ model_id: "scribe_v3", file: audio });
+    const r = stt.safe({ model_id: "scribe_v9", file: audio });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
@@ -69,6 +69,76 @@ describe("elevenlabs.stt happy path", () => {
     const r = stt.safe({ model_id: "scribe_v1", file: audio });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+  });
+});
+
+describe("elevenlabs.stt new batch models (models refresh 2026-11-12)", () => {
+  test("scribe_v3 and scribe_v2_medical validate clean", () => {
+    for (const model_id of ["scribe_v3", "scribe_v2_medical"]) {
+      const r = stt.safe({ model_id, file: audio, no_verbatim: true });
+      expect(r.ok, model_id).toBe(true);
+      if (r.ok) expect(r.warnings, model_id).toEqual([]);
+    }
+  });
+
+  test("both price at $0.20 per hour of declared audio", () => {
+    for (const model_id of ["scribe_v3", "scribe_v2_medical"]) {
+      const r = stt.safe(
+        { model_id, file: audio },
+        { media: [{ path: ["file"], durationSeconds: 3600 }] },
+      );
+      expect(r.ok, model_id).toBe(true);
+      if (r.ok) expect(r.estimate.costUSD, model_id).toBeCloseTo(0.2, 10);
+    }
+  });
+
+  test("numbers_format and secondary_language_codes are accepted on scribe_v3", () => {
+    const v = stt({
+      model_id: "scribe_v3",
+      file: audio,
+      language_code: "en",
+      numbers_format: "digits",
+      secondary_language_codes: ["es", "fr"],
+    });
+    expect(v.toSdk("elevenlabs")).toMatchObject({
+      numbersFormat: "digits",
+      secondaryLanguageCodes: ["es", "fr"],
+    });
+    // "Repeat the form field once per language."
+    const form = toFormData(v);
+    expect(form.getAll("secondary_language_codes")).toEqual(["es", "fr"]);
+    expect(form.get("numbers_format")).toBe("digits");
+  });
+
+  test("numbers_format and secondary_language_codes are refused on every other batch model", () => {
+    for (const model_id of ["scribe_v2", "scribe_v2_medical", "scribe_v1"]) {
+      for (const extra of [
+        { numbers_format: "words" as const },
+        { secondary_language_codes: ["es"] },
+      ]) {
+        const r = stt.safe({ model_id, file: audio, ...extra });
+        const param = Object.keys(extra)[0];
+        expect(r.ok, `${model_id} ${param}`).toBe(false);
+        if (r.ok) continue;
+        const issue = r.errors.find((e) => e.path[0] === param);
+        expect(issue?.code).toBe("unsupported_param");
+        expect(issue?.message).toContain("scribe_v3");
+      }
+    }
+  });
+
+  test("an unknown numbers_format value is refused", () => {
+    expect(safeUnchecked({ model_id: "scribe_v3", file: audio, numbers_format: "roman" }).ok).toBe(
+      false,
+    );
+  });
+
+  test("scribe_v3_live is refused here and pointed at the realtime socket", () => {
+    const r = stt.safe({ model_id: "scribe_v3_live", file: audio });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.errors[0]?.code).toBe("unsupported_capability");
+    expect(r.errors[0]?.message).toContain("elevenlabs.speechToTextRealtime");
   });
 });
 
@@ -95,6 +165,26 @@ describe("elevenlabs.stt source exclusivity", () => {
   test("source_url alone passes", () => {
     const r = stt.safe({ model_id: "scribe_v2", source_url: "https://example.com/a.mp3" });
     expect(r.ok).toBe(true);
+  });
+});
+
+describe("elevenlabs.stt explicit nulls (models refresh 2026-11-12)", () => {
+  test("webhook_id, temperature and seed accept null, as the served spec types them", () => {
+    const r = stt.safe({
+      model_id: "scribe_v2",
+      file: audio,
+      webhook_id: null,
+      temperature: null,
+      seed: null,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([]);
+    // null = provider default → omitted from the form and the SDK view.
+    const form = toFormData(r.params);
+    expect(form.get("webhook_id")).toBeNull();
+    expect(form.get("temperature")).toBeNull();
+    expect(r.params.toSdk("elevenlabs")).toEqual({ modelId: "scribe_v2", file: audio });
   });
 });
 
@@ -172,22 +262,22 @@ describe("elevenlabs.stt enums and shape", () => {
 });
 
 describe("elevenlabs.stt cost estimation (declared duration)", () => {
-  test("declared durationSeconds prices at $0.22 per hour", () => {
+  test("declared durationSeconds prices at $0.20 per hour", () => {
     const r = stt.safe(
       { model_id: "scribe_v2", file: audio },
       { media: [{ path: ["file"], durationSeconds: 3600 }] },
     );
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.22, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.2, 10);
   });
 
-  test("10 minutes of audio costs 0.22/6", () => {
+  test("10 minutes of audio costs 0.20/6", () => {
     const r = stt.safe(
       { model_id: "scribe_v2", file: audio },
       { media: [{ path: ["file"], durationSeconds: 600 }] },
     );
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.22 / 6, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.2 / 6, 10);
   });
 
   test("no declaration means no estimate", () => {
@@ -278,11 +368,11 @@ describe("elevenlabs.toFormData", () => {
 });
 
 describe("elevenlabs.stt keyterm limits (doc audit 2026-08-13)", () => {
-  test("a keyterm of 50+ characters is invalid_shape with the doc source", () => {
+  test("a keyterm over 50 characters is invalid_shape with the doc source", () => {
     const r = stt.safe({
       model_id: "scribe_v2",
       file: audio,
-      keyterms: ["x".repeat(50)],
+      keyterms: ["x".repeat(51)],
     });
     expect(r.ok).toBe(false);
     if (!r.ok) {
@@ -292,8 +382,8 @@ describe("elevenlabs.stt keyterm limits (doc audit 2026-08-13)", () => {
     }
   });
 
-  test("49 characters is fine (the cap is exclusive: 'less than 50')", () => {
-    const r = stt.safe({ model_id: "scribe_v2", file: audio, keyterms: ["x".repeat(49)] });
+  test("exactly 50 characters is fine (the cap is inclusive: 'at most 50')", () => {
+    const r = stt.safe({ model_id: "scribe_v2", file: audio, keyterms: ["x".repeat(50)] });
     expect(r.ok).toBe(true);
   });
 
@@ -388,8 +478,8 @@ describe("elevenlabs.stt model gating (doc audit 2026-08-13)", () => {
     }
   });
 
-  test("scribe_v2_realtime is catalogued with its published $0.39/hr rate", () => {
-    expect(models.scribe_v2_realtime.cost.perAudioMinute).toBeCloseTo(0.39 / 60, 10);
+  test("scribe_v2_realtime is catalogued with its published $0.22/hr rate", () => {
+    expect(models.scribe_v2_realtime.cost.perAudioMinute).toBeCloseTo(0.22 / 60, 10);
   });
 });
 

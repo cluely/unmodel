@@ -156,9 +156,10 @@ export const VIDEO_MODEL_RULES: Readonly<Record<string, VideoModelRule>> = {
 
 /**
  * Flat USD list price of one finished video, keyed
- * model → resolution → duration, from the "Video" section of
- * https://platform.minimax.io/docs/guides/pricing-paygo. The 01 generation
- * publishes no rate, so it is absent and produces no estimate.
+ * model → resolution → duration, from the video "Legacy Models" table of
+ * https://platform.minimax.io/docs/pricing/overview (e.g. "| MiniMax-Hailuo-2.3
+ * | $0.28 per 768P, 6s video |"; every cell re-read 2026-11-12). The 01
+ * generation publishes no rate, so it is absent and produces no estimate.
  */
 export const VIDEO_PRICE_USD: Readonly<
   Record<string, Readonly<Record<string, Readonly<Record<number, number>>>>>

@@ -16,6 +16,7 @@ import {
   NOVA_3_MULTILINGUAL_STREAMING_USD_PER_MINUTE,
   FLUX_KEYTERMS_MAX,
   EOT_THRESHOLD_DEFAULT,
+  EOT_THRESHOLD_MAX,
 } from "./realtime";
 import { stt } from "./stt";
 import { models, NOVA_3_USD_PER_MINUTE } from "./models";
@@ -164,10 +165,17 @@ describe("deepgram.listenLive pairing + routing rules (doc audit 2026-08-13)", (
     }
   });
 
-  test("the shared /v1/listen checks apply here too (keyterm, dictation)", () => {
+  test("the shared /v1/listen checks apply here too (keyterm, language_hint, dictation)", () => {
     const keyterm = listenLive.safe({ model: "nova-2", keyterm: "ketamine" });
     expect(keyterm.ok).toBe(false);
     if (!keyterm.ok) expect(keyterm.errors[0]?.path).toEqual(["keyterm"]);
+
+    const hint = listenLive.safe({ model: "nova-3", language_hint: "es" });
+    expect(hint.ok).toBe(false);
+    if (!hint.ok) expect(hint.errors[0]?.path).toEqual(["language_hint"]);
+    expect(listenLive.safe({ model: "nova-3", language: "multi", language_hint: "es" }).ok).toBe(
+      true,
+    );
 
     const dictation = listenLive.safe({ model: "nova-3", dictation: true });
     expect(dictation.ok).toBe(false);
@@ -196,10 +204,12 @@ describe("deepgram.listenLive pairing + routing rules (doc audit 2026-08-13)", (
       interim_results: true,
       keyterm: ["ketamine"],
       keywords: ["snuffleupagus"],
+      language_hint: ["en", "es"],
       mip_opt_out: true,
       numerals: true,
       profanity_filter: true,
       redact: ["pci", "ssn"],
+      redact_usage: true,
       replace: ["horse:zebra"],
       search: ["flamingo"],
       smart_format: true,
@@ -213,25 +223,26 @@ describe("deepgram.listenLive pairing + routing rules (doc audit 2026-08-13)", (
 });
 
 describe("deepgram.listenLive cost estimation (STREAMING rates)", () => {
-  test("nova-3 bills the $0.0048/min streaming rate, not the catalog's pre-recorded one", () => {
-    expect(NOVA_3_STREAMING_USD_PER_MINUTE).toBe(0.0048);
+  test("nova-3 bills the $0.0077/min streaming rate, not the catalog's pre-recorded one", () => {
+    expect(NOVA_3_STREAMING_USD_PER_MINUTE).toBe(0.0077);
     expect(models["nova-3"].cost?.perAudioMinute).toBe(NOVA_3_USD_PER_MINUTE);
-    expect(NOVA_3_STREAMING_USD_PER_MINUTE).toBeLessThan(NOVA_3_USD_PER_MINUTE);
+    // "Pre-recorded runs lower" (deepgram.com/pricing).
+    expect(NOVA_3_STREAMING_USD_PER_MINUTE).toBeGreaterThan(NOVA_3_USD_PER_MINUTE);
 
     const r = listenLive.safe({ model: "nova-3" }, tenMinutes);
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.048, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.077, 10);
   });
 
   test("language=multi bills the multilingual streaming rate", () => {
-    expect(NOVA_3_MULTILINGUAL_STREAMING_USD_PER_MINUTE).toBe(0.0058);
+    expect(NOVA_3_MULTILINGUAL_STREAMING_USD_PER_MINUTE).toBe(0.0092);
     const r = listenLive.safe({ model: "nova-3", language: "multi" }, tenMinutes);
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.058, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.092, 10);
   });
 
   test("tiers without a published streaming rate estimate nothing", () => {
-    for (const model of ["nova-2", "whisper-medium", "nova-3-medical"]) {
+    for (const model of ["nova-2", "whisper-medium", "nova-3-medical", "nova-3-pharma"]) {
       const r = liveSafe({ model }, tenMinutes);
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
@@ -282,7 +293,12 @@ describe("deepgram.listenFlux", () => {
 
   test("end-of-turn thresholds carry their documented ranges", () => {
     expect(fluxSafe({ model: "flux-general-en", eot_threshold: 0.4 }).ok).toBe(false);
-    expect(fluxSafe({ model: "flux-general-en", eot_threshold: 0.95 }).ok).toBe(false);
+    expect(fluxSafe({ model: "flux-general-en", eot_threshold: 1.05 }).ok).toBe(false);
+    // "Valid Values: `0.5` to `1.0`" — 1.0 hands turn endings to ForceEndTurn.
+    expect(EOT_THRESHOLD_MAX).toBe(1.0);
+    expect(listenFlux.safe({ model: "flux-general-en", eot_threshold: 0.95 }).ok).toBe(true);
+    expect(listenFlux.safe({ model: "flux-general-en", eot_threshold: 1.0 }).ok).toBe(true);
+    expect(fluxSafe({ model: "flux-general-en", eager_eot_threshold: 0.95 }).ok).toBe(false);
     expect(fluxSafe({ model: "flux-general-en", eager_eot_threshold: 0.2 }).ok).toBe(false);
     expect(fluxSafe({ model: "flux-general-en", eot_timeout_ms: 400 }).ok).toBe(false);
     expect(fluxSafe({ model: "flux-general-en", eot_timeout_ms: 60_001 }).ok).toBe(false);
@@ -340,10 +356,18 @@ describe("deepgram.listenFlux", () => {
   });
 
   test("Flux prices from the catalog, whose flux rates are already streaming rates", () => {
-    expect(models["flux-general-en"].cost?.perAudioMinute).toBe(0.0065);
+    expect(models["flux-general-en"].cost?.perAudioMinute).toBe(0.0077);
+    expect(models["flux-general-multi"].cost?.perAudioMinute).toBe(0.0078);
     const r = listenFlux.safe({ model: "flux-general-en" }, tenMinutes);
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.065, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.077, 10);
+  });
+
+  test("redact_usage is a documented boolean on the Flux socket", () => {
+    const r = listenFlux.safe({ model: "flux-general-en", redact_usage: true });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+    expect(fluxSafe({ model: "flux-general-en", redact_usage: "on" }).ok).toBe(false);
   });
 });
 
@@ -373,6 +397,24 @@ describe("deepgram.fluxConfigure (the Configure client message)", () => {
     expect(fluxConfigure.safe({ type: "Configure", keyterms: [...terms, "one-too-many"] }).ok).toBe(
       false,
     );
+  });
+
+  test("eot_threshold accepts the documented 1.0 maximum mid-stream too", () => {
+    expect(fluxConfigure.safe({ type: "Configure", thresholds: { eot_threshold: 1.0 } }).ok).toBe(
+      true,
+    );
+    const over = unchecked(fluxConfigure.safe)({
+      type: "Configure",
+      thresholds: { eot_threshold: 1.1 },
+    });
+    expect(over.ok).toBe(false);
+  });
+
+  test("numerals and redact_usage are documented Configure fields", () => {
+    const r = fluxConfigure.safe({ type: "Configure", numerals: true, redact_usage: true });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+    expect(unchecked(fluxConfigure.safe)({ type: "Configure", numerals: "yes" }).ok).toBe(false);
   });
 
   test("threshold ordering is enforced inside `thresholds` too", () => {
@@ -438,6 +480,18 @@ describe("deepgram.speakLive", () => {
       expect(r.errors[0]?.code).toBe("unsupported_capability");
       expect(r.errors[0]?.message).toContain(SPEAK_LIVE_URL);
     }
+  });
+
+  test("a Flux TTS voice is routed to the /v2/speak socket; a new Aura id only warns", () => {
+    const flux = speakLive.safe({ model: "flux-haley-en" });
+    expect(flux.ok).toBe(false);
+    if (!flux.ok) {
+      expect(flux.errors[0]?.code).toBe("unsupported_capability");
+      expect(flux.errors[0]?.message).toContain("wss://api.deepgram.com/v2/speak");
+    }
+    const aura = speakLive.safe({ model: "aura-3-thalia-en" });
+    expect(aura.ok).toBe(true);
+    if (aura.ok) expect(aura.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
 
   test("speed keeps its 0.7–1.5 bounds and warns on Aura-1 voices", () => {

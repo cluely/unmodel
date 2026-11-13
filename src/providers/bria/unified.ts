@@ -13,8 +13,8 @@
  *
  * | ref | route | pipeline | per image |
  * |---|---|---|---|
- * | `bria/FIBO` | `/v2/image/generate` | Gemini 2.5 Flash VLM bridge + full FIBO | $0.03 |
- * | `bria/FIBO-lite` | `/v2/image/generate/lite` | open-source FIBO-VLM bridge + Fibo Lite | $0.02 |
+ * | `bria/FIBO` | `/v2/image/generate` | Gemini 2.5 Flash VLM bridge + Fibo 2 | $0.032 |
+ * | `bria/FIBO-lite` | `/v2/image/generate/lite` | open-source FIBO-VLM bridge + Fibo Lite | $0.0288 |
  *
  * `"FIBO-lite"` is an unmodel pseudo-id — the lite route's own `model_version`
  * enum is *also* `"FIBO"` — which is exactly why this adapter sends **no**
@@ -25,14 +25,17 @@
  * Bria's own `checkBriaEnum` reports it as an `invalid_enum_value` a caller can
  * demote with `options.severity` if Bria shipped it after this snapshot.
  *
- * # Size: a nine-value shape enum and a two-value pixel budget
+ * # Size: a per-route shape enum and a two-value pixel budget
  *
  * The two halves of the size decision are separate fields here, and only the
  * full route has both:
  *
- * - `aspect_ratio` — nine values (`BRIA_ASPECT_RATIOS`), identical on both
- *   routes. Pure **S1** ({@link toRatioEnum}); a shape outside the nine is an
- *   `invalid_enum_value`, never a snap.
+ * - `aspect_ratio` — 21 values on the full route (`BRIA_ASPECT_RATIOS`, Fibo
+ *   2) and nine of them on lite (`BRIA_LITE_ASPECT_RATIOS`). Pure **S1**
+ *   ({@link toRatioEnum}) against the ref's own list; a shape outside it is an
+ *   `invalid_enum_value`, never a snap. The twelve ratios only Fibo 2 renders
+ *   do not combine with 4MP, which `checkGenerate` refuses on the compiled
+ *   body rather than this adapter guessing a different shape.
  * - `resolution` — `"1MP" | "4MP"`, **full route only**. That maps onto the
  *   canonical tiers with an accuracy that is almost suspicious: `TIER_PIXELS`
  *   puts `1k` at 1,048,576 px (1024²) and `2k` at 4,194,304 px (2048²), i.e.
@@ -42,7 +45,7 @@
  *   which on an image API is the most expensive silent approximation there is.
  * - `dimensions` — there is no width/height field anywhere on these routes, so
  *   pixels become a shape through {@link pixelsToRatio}, which snaps to the
- *   nearest of the nine within 2% and **always warns**. The pixel *count* is
+ *   nearest of the route's ratios within 2% and **always warns**. The pixel *count* is
  *   not part of that: it lives in `resolution`, which is a canonical field of
  *   its own, so `{ dimensions: { width: 2048, height: 2048 }, resolution: "2k" }`
  *   expresses "4 MP square" with one warning for the shape and none for the
@@ -51,10 +54,10 @@
  *
  * # What the lite route costs
  *
- * `/v2/image/generate/lite` drops three fields — `resolution`,
- * `negative_prompt` and `steps_num` — and keeps everything else, `seed`
- * included (it is part of the shared `BriaCommonParams`, not of the full
- * route's extras). Setting `resolution` or `negativePrompt` against
+ * `/v2/image/generate/lite` drops four fields — `resolution`, `style`,
+ * `negative_prompt` and `steps_num` — and Fibo 2's twelve extra ratios, and
+ * keeps everything else, `seed` included (it is part of the shared
+ * `BriaCommonParams`, not of the full route's extras). Setting `resolution` or `negativePrompt` against
  * `bria/FIBO-lite` is therefore a **model-dependent** gap: it cannot go in
  * `unsupported`, which is provider-wide, so it is a `ctx.fail` inside
  * `compile`, in the same words `checkGenerateLite` uses when a hand-written
@@ -96,6 +99,7 @@ import {
 import {
   BRIA_ASPECT_RATIOS,
   BRIA_GENERATION_SPEC_URL,
+  BRIA_LITE_ASPECT_RATIOS,
   type BriaAspectRatio,
   type BriaResolution,
 } from "./shared";
@@ -187,6 +191,8 @@ export const image = {
     ctx: CompileContext<ImageParams>,
   ): CompiledCall<BriaImageWire, BriaImageResult> {
     const lite = ctx.model === LITE_MODEL_ID;
+    // An unknown id compiles to the full route, so it takes the full route's list.
+    const ratios = lite ? BRIA_LITE_ASPECT_RATIOS : BRIA_ASPECT_RATIOS;
     const body: BriaDraft = { prompt: input.prompt };
 
     // Known ids are routes, and the route is already in the URL; an unknown id
@@ -203,20 +209,20 @@ export const image = {
     const sizing = ctx.take(resolveSizing(input, { path: ["aspectRatio"], warn: ctx.warn }));
     if (sizing?.kind === "ratio") {
       const ratio = ctx.take(
-        toRatioEnum(sizing.aspectRatio, BRIA_ASPECT_RATIOS, { source: BRIA_GENERATION_SPEC_URL }, {
+        toRatioEnum(sizing.aspectRatio, ratios, { source: BRIA_GENERATION_SPEC_URL }, {
           path: ["aspectRatio"],
           warn: ctx.warn,
         }),
       );
-      // The value came out of BRIA_ASPECT_RATIOS itself; the cast only restores
-      // the literal type the derivation widened to `string`.
+      // The value came out of the route's own ratio list; the cast only
+      // restores the literal type the derivation widened to `string`.
       if (ratio !== undefined) body.aspect_ratio = ratio as BriaAspectRatio;
     } else if (sizing?.kind === "dimensions") {
       const wrote = sizingField(sizing);
       ctx.from(["aspect_ratio"], wrote);
       const { width, height } = sizing.dimensions;
       const ratio = ctx.take(
-        pixelsToRatio(width, height, BRIA_ASPECT_RATIOS, { path: [wrote], warn: ctx.warn }),
+        pixelsToRatio(width, height, ratios, { path: [wrote], warn: ctx.warn }),
       );
       if (ratio !== undefined) body.aspect_ratio = ratio as BriaAspectRatio;
     }
@@ -238,8 +244,8 @@ export const image = {
     }
 
     // `seed` is on `BriaCommonParams`, so it survives on the lite route too —
-    // the three fields lite drops are `resolution`, `negative_prompt` and
-    // `steps_num`, and this is not one of them.
+    // the four fields lite drops are `resolution`, `style`, `negative_prompt`
+    // and `steps_num`, and this is not one of them.
     if (input.seed !== undefined) body.seed = input.seed;
 
     if (input.outputFormat !== undefined) {

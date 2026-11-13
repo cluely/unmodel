@@ -6,12 +6,25 @@
 //   https://docs.lumalabs.ai/reference/creategeneration (the embedded OpenAPI
 //     definition, "Dream Machine API" version 1.1.0, is the wire contract these
 //     endpoints are transcribed from)
-// Verified 2026-08-13.
+//   https://docs.agents.lumalabs.ai/guides/videos/migration/ (where Luma
+//     announces the Ray retirements — see Status below)
+// Verified 2026-11-12.
 //
-// Model coverage: the whole Dream Machine API is these four ids. Every video
-// route (generate / modify / reframe) takes exactly ray-2 | ray-flash-2, and
-// every image route takes photon-1 | photon-flash-1, so no route needs its own
-// model-support table.
+// Model coverage: the public OpenAPI enumerates exactly these four ids. Every
+// video route (generate / modify / reframe) takes exactly ray-2 | ray-flash-2,
+// and every image route takes photon-1 | photon-flash-1, so no route needs its
+// own model-support table.
+//
+// Status: both Ray ids are `deprecated` and still served. The Agents migration
+// guide (https://docs.agents.lumalabs.ai/guides/videos/migration/, verified
+// 2026-11-12) is "for API customers using any of these retiring models: Ray 3
+// Ray 2 Ray 2 Flash …" and publishes no global date: "If you received a
+// deprecation notice, use the retirement date in that message as the cutoff
+// for your account. Legacy requests will continue to work during the notice
+// period". The named replacement, ray-3.2, is served by the separate Luma
+// Agents API (another host, key and request shape), not through these routes.
+// Photon carries no retirement notice on that guide or on
+// docs/image-generation.
 //
 // Pricing: no `cost` field, deliberately. Luma bills Dream Machine usage per
 // million pixels, not per second, per image or per token, and `ModelCost` has
@@ -20,14 +33,22 @@
 //     (ray-flash-2) — see ./pricing.ts, which encodes the rates, the 24fps the
 //     worked examples imply, and the aspect-ratio→pixel maps.
 //   - Plain generation, reframe, upscale and add-audio publish no USD rate at
-//     all; https://lumalabs.ai/api/pricing has moved on to the Luma Agents API
-//     models and lists nothing for these four ids.
+//     all; https://lumalabs.ai/api/pricing answers HTTP 308 to
+//     https://lumalabs.ai/api, which prices the Luma Agents API models in
+//     credits ("Prices are in credits") and lists no rate for these four ids.
 // Since a request carries only media URLs, unmodel cannot recover the pixel
 // count from the wire either — so these endpoints produce no cost estimate,
 // and ./pricing.ts exports the arithmetic for callers who know the dimensions.
 //
-// Ray 3 / Ray 3.2 and Uni 1 / Uni 1 Max are NOT available on the Dream Machine
-// API — they are exposed via the separate Luma Agents API
+// Ray 3 is not in the OpenAPI `VideoModel` enum (ray-2 | ray-flash-2), but
+// the migration guide above lists it among the retiring legacy models and its
+// legacy example sends it in this wire's body shape on "POST
+// .../generations/video": { "model": "ray-3", "prompt": …, "resolution":
+// "720p", "duration": "5s", "aspect_ratio": "16:9" } (verified 2026-11-12).
+// One example is not a published model list, so it is not cataloged here and
+// validates with unknown_model, never a refusal. Nor is it on the Agents API:
+// "legacy identifiers are not accepted by the new API". Ray 3.2 and Uni 1 /
+// Uni 1 Max exist only on the separate Luma Agents API
 // (https://docs.agents.lumalabs.ai, POST /v1/generations) and are out of scope
 // for this provider directory.
 
@@ -49,6 +70,7 @@ const videoModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
+    status: "deprecated",
     modalities: { input: ["text", "image"], output: ["video"] },
     limit: { context: 0 },
   },
@@ -59,6 +81,7 @@ const videoModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
+    status: "deprecated",
     modalities: { input: ["text", "image"], output: ["video"] },
     limit: { context: 0 },
   },

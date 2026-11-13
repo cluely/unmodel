@@ -43,7 +43,12 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { models, RENDERING_SPEED_TO_MODEL_ID, CHARACTER_REFERENCE_PER_IMAGE } from "./models";
+import {
+  models,
+  RENDERING_SPEED_TO_MODEL_ID,
+  CHARACTER_REFERENCE_PER_IMAGE,
+  CUSTOM_MODEL_PER_IMAGE,
+} from "./models";
 
 // Declared in `./constraints` — an import-free leaf — so that `unmodel/ideogram/values`
 // and the `*-params` table can read these without this validator, its zod schema
@@ -216,7 +221,7 @@ export interface GenerateParams {
   style_type?: IdeogramStyleType;
   /** Predefined artistic style preset. */
   style_preset?: IdeogramStylePreset;
-  /** "model/<model_name>/version/<version_name>"; resolves model + style. */
+  /** "model/<model_name>/version/<version_name>"; resolves model + style. Billed at the custom-model rate. */
   custom_model_uri?: string;
   /** Style reference images (JPEG/PNG/WebP, ≤ 25MB each, request ≤ 50MB). */
   style_reference_images?: Blob[];
@@ -501,16 +506,22 @@ function checkReferenceImageSizes(
 
 // ---------------------------------------------------------------------------
 // Estimation — billed per generated image; the rate depends on the rendering
-// speed (catalog cost.perImage) and jumps to the character-reference rate
-// when character_reference_images is used. No published rate exists for
-// FLASH + character reference, so that combination gets no estimate.
+// speed (catalog cost.perImage) and jumps to the custom-model rate when
+// custom_model_uri is set, or to the character-reference rate when
+// character_reference_images is used. No published rate exists for FLASH +
+// a custom model, FLASH + character reference, or a custom model with a
+// character reference, so those combinations get no estimate.
 // ---------------------------------------------------------------------------
 
 function estimate(params: GenerateParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
   const count = params.num_images ?? 1;
+  const speed = params.rendering_speed ?? "DEFAULT";
   const usesCharacterReference = (params.character_reference_images?.length ?? 0) > 0;
+  if (params.custom_model_uri != null) {
+    const rate = usesCharacterReference ? undefined : CUSTOM_MODEL_PER_IMAGE[speed];
+    return rate === undefined ? {} : { costUSD: rate * count };
+  }
   if (usesCharacterReference) {
-    const speed = params.rendering_speed ?? "DEFAULT";
     const rate = CHARACTER_REFERENCE_PER_IMAGE[speed];
     return rate === undefined ? {} : { costUSD: rate * count };
   }
@@ -629,8 +640,10 @@ const validator = createValidator<GenerateParams, unknown>({
  * when fetching.
  *
  * Cost estimation prices `num_images` × the per-image rate of the selected
- * `rendering_speed` (character-reference requests use the higher published
- * character-reference rate), enabling `maxCostUSD` enforcement.
+ * `rendering_speed` (`custom_model_uri` requests use the published
+ * custom-model rate and character-reference requests the published
+ * character-reference rate; a combination with no published rate gets no
+ * estimate), enabling `maxCostUSD` enforcement.
  */
 export const image = validator as unknown as {
   <T extends GenerateParams>(

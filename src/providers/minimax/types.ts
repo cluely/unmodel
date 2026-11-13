@@ -49,7 +49,7 @@ import type { VideoGenerationParams } from "./video";
 import type { VideoGenerationV2Params } from "./video-v2";
 import type { VoiceCloneParams } from "./voice-clone";
 import type { VoiceDesignParams } from "./voice-design";
-import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
+import type { MinimaxChatCompletionsBody } from "./wire";
 import type { MinimaxTextModelId } from "../../catalog/minimax.gen";
 
 export type {
@@ -86,6 +86,8 @@ export type {
   MinimaxVideoV2Resolution,
   MinimaxVideoV2Duration,
   MinimaxVideoV2Ratio,
+  MinimaxVideoV2Extra,
+  MinimaxVideoV2PromptExpansionMode,
 } from "./video-v2";
 
 export type {
@@ -105,9 +107,19 @@ export type {
   MinimaxVoiceModelId,
 } from "./models";
 
-// The OpenAI-compatible chat dialect this overlay speaks. The wire leaf is the
-// same one `minimax.chat` validates against, so what type-checks here is
-// what that validator accepts.
+// The OpenAI-compatible chat dialect this overlay speaks, and MiniMax's
+// widening of it (`video_url` user parts, `detail: "default"`). These wire
+// leaves are the ones `minimax.chat` validates against, so what type-checks
+// against `ChatBody` is what that validator accepts.
+export type {
+  MinimaxChatCompletionsBody,
+  MinimaxChatMessage,
+  MinimaxChatUserMessage,
+  MinimaxChatUserContentPart,
+  MinimaxChatImagePart,
+  MinimaxChatVideoPart,
+} from "./wire";
+
 export type {
   ChatCompletionsBodyBase,
   ChatMessage,
@@ -145,7 +157,7 @@ export type {
 // Pure type aliases: no rename, no runtime, no cost.
 // ---------------------------------------------------------------------------
 
-export type ChatBody<ModelId extends string = MinimaxTextModelId> = ChatCompletionsBodyBase<ModelId>;
+export type ChatBody<ModelId extends string = MinimaxTextModelId> = MinimaxChatCompletionsBody<ModelId>;
 export type TtsBody = T2aParams;
 export type VideoBody = VideoGenerationParams;
 export type VideoV2Body = VideoGenerationV2Params;

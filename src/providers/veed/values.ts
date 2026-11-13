@@ -4,9 +4,9 @@
  *
  * Every export here is a readonly (`as const`) array or table a browser can
  * render: the model ids per category, the per-model narrowing rows, VEED's own
- * published enums — the two Fabric resolutions, the four job states, the eight
- * HTTP error codes, the seven render-failure codes, the five key-status reasons
- * — and the rate table. It is the value half of `unmodel/veed/types`, for the
+ * published enums — the two Fabric resolutions, the four job states, the nine
+ * HTTP error codes, the eight render-failure codes, the nine error-detail
+ * reasons — and the rate table. It is the value half of `unmodel/veed/types`, for the
  * client-side validation and the pickers a type cannot draw.
  *
  * The category tables are **the same objects the adapters compile with** —
@@ -26,8 +26,10 @@
  * - `VEED_JOB_ERROR_CODES` — why an ACCEPTED job later failed. A disjoint
  *   vocabulary from `VEED_ERROR_CODES`, which is why a submit was rejected, and
  *   the pair is the thing to branch on rather than on message text.
- * - `VEED_ERROR_REASONS` — four ways an API key can be unusable, all of which
- *   arrive as the same `unauthenticated` code with the same 401.
+ * - `VEED_ERROR_REASONS` — the sub-reason behind an HTTP rejection: an
+ *   unusable key or token, the balance, the model entitlement, an unknown job.
+ *   Four of the key reasons arrive as the same `unauthenticated` code with the
+ *   same 401, so this is what tells them apart.
  */
 
 export {
@@ -49,6 +51,7 @@ export {
   VEED_JOB_ERROR_CODES,
   VEED_JOB_STATUSES,
   VEED_MEDIA_EXPIRATION_DEFAULT_SECONDS,
+  VEED_MEDIA_EXPIRATION_MAX_SECONDS,
   VEED_MODELS,
   VEED_POLL_INTERVAL_SECONDS,
   VEED_PRICING,

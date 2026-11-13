@@ -184,10 +184,15 @@ type PackRefs = UnifiedRef<
 expectAssignable<PackRefs>("openai/whisper-1");
 expectAssignable<PackRefs>("openai/gpt-4o-transcribe-diarize");
 expectAssignable<PackRefs>("assemblyai/universal-3-5-pro");
+expectAssignable<PackRefs>("assemblyai/universal-3-6-pro-preview");
 expectAssignable<PackRefs>("elevenlabs/scribe_v2");
+expectAssignable<PackRefs>("elevenlabs/scribe_v3");
+expectAssignable<PackRefs>("elevenlabs/scribe_v2_medical");
 expectAssignable<PackRefs>("soniox/stt-async-v5");
 // @ts-expect-error — a realtime-only model is not a batch ref…
 expectAssignable<PackRefs>("elevenlabs/scribe_v2_realtime");
+// @ts-expect-error — …nor is the other one…
+expectAssignable<PackRefs>("elevenlabs/scribe_v3_live");
 // @ts-expect-error — …and neither is a model no adapter declares.
 expectAssignable<PackRefs>("assemblyai/universal-9");
 
@@ -310,6 +315,12 @@ function timestampNarrowingTests(): void {
   // @ts-expect-error — same at Cartesia, whose array's only member is "word".
   stt({ model: "cartesia/ink-whisper", audio: { file }, timestamps: "character" });
   stt({ model: "cartesia/ink-whisper", audio: { file }, timestamps: "none" });
+
+  // Voxtral 3 dropped word timings; the earlier Voxtral ids keep them.
+  stt({ model: "mistral/voxtral-mini-transcribe-3", audio: { url }, timestamps: "segment" });
+  // @ts-expect-error — "timestamp_granularities accepts segment only, and word returns a 400 error".
+  stt({ model: "mistral/voxtral-mini-transcribe-3", audio: { url }, timestamps: "word" });
+  stt({ model: "mistral/voxtral-mini-latest", audio: { url }, timestamps: "word" });
 }
 
 function languageNarrowingTests(): void {
@@ -329,16 +340,24 @@ function extrasNarrowingTests(): void {
   // @ts-expect-error — keyterm prompting is the Nova-3 models'; others ignore it.
   stt({ model: "deepgram/nova-2", audio: { url }, keyterm: "unmodel" });
   stt({ model: "deepgram/nova-2", audio: { url }, keywords: "unmodel" });
+  stt({ model: "deepgram/nova-3", audio: { url }, language: "multi", language_hint: ["en", "es"] });
+  // @ts-expect-error — "Nova-2 does not support `language_hint`".
+  stt({ model: "deepgram/nova-2", audio: { url }, language: "multi", language_hint: "es" });
+  stt({ model: "deepgram/nova-2", audio: { url }, redact_usage: true });
 
-  // AssemblyAI's two gated blocks point in opposite directions.
+  // AssemblyAI's one gated block, and the retired legacy summary params.
   stt({ model: "assemblyai/universal-3-5-pro", audio: { url }, temperature: 0.2 });
   // @ts-expect-error — "Supported: Universal-3.5 Pro only".
   stt({ model: "assemblyai/universal-2", audio: { url }, temperature: 0.2 });
+  // @ts-expect-error — "the top-level `summarization` and `auto_chapters` options return errors since October 20, 2026".
   stt({ model: "assemblyai/universal-2", audio: { url }, summarization: true });
-  // @ts-expect-error — "Supported: Universal-2 only".
+  // @ts-expect-error — on every model.
   stt({ model: "assemblyai/universal-3-5-pro", audio: { url }, summarization: true });
-  // @ts-expect-error — and `slam-1` is gated away from both.
+  // @ts-expect-error — Auto Chapters with it.
   stt({ model: "assemblyai/slam-1", audio: { url }, auto_chapters: true });
+  stt({ model: "assemblyai/universal-3-6-pro-preview", audio: { url }, disfluencies: true });
+  // @ts-expect-error — the preview too: temperature "only takes effect on the Universal-3.5 Pro model".
+  stt({ model: "assemblyai/universal-3-6-pro-preview", audio: { url }, temperature: 0.2 });
 
   // Rev AI: human-only one way, machine-only the other, low-cost in between.
   stt({ model: "revai/human", audio: { url }, rush: true });
@@ -351,18 +370,38 @@ function extrasNarrowingTests(): void {
   // @ts-expect-error — and not "in the low-cost environment".
   stt({ model: "revai/low_cost", audio: { url }, diarization_type: "premium" });
 
-  // Speechmatics' Melia 1 "does not yet support" the intelligence add-ons.
+  // Speechmatics' Melia 1 and Oak 1 "do not yet support" the intelligence add-ons.
   stt({ model: "speechmatics/standard", audio: { url }, summarization_config: {} });
   // @ts-expect-error
   stt({ model: "speechmatics/melia-1", audio: { url }, language: "multi", summarization_config: {} });
-  // @ts-expect-error — `domain: "medical"` "requires `model: "enhanced"`".
+  stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi" });
+  // @ts-expect-error
+  stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi", summarization_config: {} });
+  // Standard takes `domain` as the free string the API reference types — the
+  // Spanish and English pack, or a field such as 'finance'…
+  stt({ model: "speechmatics/standard", audio: { url }, language: "es", domain: "bilingual-en" });
+  stt({ model: "speechmatics/standard", audio: { url }, language: "en", domain: "finance" });
+  // …so `domain: "medical"`, which "requires `model: "enhanced"`", compiles
+  // here and is refused at run time (test/unified/stt-presets.test.ts).
   stt({ model: "speechmatics/standard", audio: { url }, domain: "medical" });
+  // Entity detection rides Melia 1 and Oak 1 too; the wire validator warns.
+  stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi", enable_entities: true });
+  stt({ model: "speechmatics/melia-1", audio: { url }, language: "multi", output_locale: ["en-GB", "cmn-Hans"] });
+  // @ts-expect-error — Oak 1 is the medical model by its id; it takes no `domain`.
+  stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi", domain: "medical" });
   stt({ model: "speechmatics/enhanced", audio: { url }, domain: "medical" });
 
-  // ElevenLabs' one row difference.
+  // ElevenLabs' row differences.
   stt({ model: "elevenlabs/scribe_v2", audio: { url }, no_verbatim: true });
-  // @ts-expect-error — "Only supported with scribe_v2 model".
+  stt({ model: "elevenlabs/scribe_v2_medical", audio: { url }, no_verbatim: true });
+  // @ts-expect-error — "Supported by scribe_v2, scribe_v2_medical and scribe_v3".
   stt({ model: "elevenlabs/scribe_v1", audio: { url }, no_verbatim: true });
+  stt({ model: "elevenlabs/scribe_v3", audio: { url }, numbers_format: "words" });
+  stt({ model: "elevenlabs/scribe_v3", audio: { url }, secondary_language_codes: ["es"] });
+  // @ts-expect-error — "Both parameters are only supported by `scribe_v3`".
+  stt({ model: "elevenlabs/scribe_v2", audio: { url }, numbers_format: "words" });
+  // @ts-expect-error — …and the medical model is not scribe_v3 either.
+  stt({ model: "elevenlabs/scribe_v2_medical", audio: { url }, secondary_language_codes: ["es"] });
 
   // @ts-expect-error — a key no model on the ref'd provider takes is a typo.
   stt({ model: "mistral/voxtral-mini-latest", audio: { url }, contextbias: ["x"] });

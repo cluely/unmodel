@@ -97,28 +97,28 @@ export type {
   MinimaxVideoResolution,
 } from "./video";
 
-// --- Video V2 (MiniMax-H3) ------------------------------------------------
+// --- Video V2 (MiniMax-H3, -Highspeed, -Lite, -Max) ------------------------
 export {
   videoV2,
   videoV2QueryUrl,
   VIDEO_GENERATION_V2_URL,
   VIDEO_V2_QUERY_URL,
   VIDEO_V2_MODEL_IDS,
+  VIDEO_V2_MODEL_RULES,
   VIDEO_V2_RESOLUTIONS,
   VIDEO_V2_DURATIONS,
   VIDEO_V2_RATIOS,
+  VIDEO_V2_PROMPT_EXPANSION_MODES,
   VIDEO_V2_CONTENT_TYPES,
   VIDEO_V2_ROLES,
   VIDEO_V2_TEXT_MAX_CHARACTERS,
   VIDEO_V2_MAX_REFERENCE_IMAGES,
   VIDEO_V2_MAX_REFERENCE_VIDEOS,
   VIDEO_V2_MAX_REFERENCE_AUDIO,
-  VIDEO_V2_USD_PER_SECOND,
-  VIDEO_V2_FREE_IMAGES,
-  VIDEO_V2_USD_PER_EXTRA_IMAGE,
 } from "./video-v2";
 export type {
   VideoGenerationV2Params,
+  VideoV2ModelRule,
   MinimaxV2ContentItem,
   MinimaxV2ContentType,
   MinimaxV2Role,
@@ -126,6 +126,8 @@ export type {
   MinimaxVideoV2Resolution,
   MinimaxVideoV2Duration,
   MinimaxVideoV2Ratio,
+  MinimaxVideoV2Extra,
+  MinimaxVideoV2PromptExpansionMode,
 } from "./video-v2";
 
 // --- Voice creation (clone + design) ---------------------------------------
@@ -167,7 +169,6 @@ export {
   T2A_MAX_CHARACTERS,
   T2A_HD_PER_MILLION_CHARACTERS,
   T2A_TURBO_PER_MILLION_CHARACTERS,
-  VOICE_DESIGN_PREVIEW_PER_MILLION_CHARACTERS,
 } from "./models";
 export type {
   MinimaxMediaModelId,

@@ -12,12 +12,16 @@
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { CartesiaEmotion } from "./tts";
-import { CARTESIA_TTS_LANGUAGES } from "./models";
+import { CARTESIA_TTS_3_6_LANGUAGES, CARTESIA_TTS_LANGUAGES } from "./models";
 
-/** The sonic ids the `model_id` enum publishes — the ref union for `cartesia/…`. */
-export const MODELS = ["sonic-3.5", "sonic-3", "sonic-preview", "sonic-latest"] as const;
+/**
+ * The ref union for `cartesia/…`: the four ids the 2026-03-01 `model_id` enum
+ * publishes, plus `sonic-3.6` — GA since 2026-08-27 and off that enum, so it
+ * validates with the off-enum warning (see ./models).
+ */
+export const MODELS = ["sonic-3.6", "sonic-3.5", "sonic-3", "sonic-preview", "sonic-latest"] as const;
 
-export const TTS_BYTES_DOCS = "https://docs.cartesia.ai/api-reference/tts/bytes";
+export const TTS_BYTES_DOCS = "https://docs.cartesia.ai/2026-03-01/api-reference/tts/bytes";
 
 export const SAMPLE_RATES = [8000, 16000, 22050, 24000, 44100, 48000] as const;
 
@@ -56,16 +60,22 @@ export const FORMAT: AudioFormatSpec = {
 };
 
 /**
- * Cartesia's per-model speech surface — one row, four times, and the languages
- * are the provider's own array rather than a copy of it.
+ * Cartesia's per-model speech surface — two rows, and the languages are the
+ * provider's own arrays rather than copies of them.
  *
- * All four served ids sit on one `/tts/bytes` schema with one `encoding` enum
- * and one 42-code `language` enum, and the only per-model rule in
- * `ttsConstraints` denies `pronunciation_dict_id` on `sonic-2` and
- * `sonic-turbo` — neither of which this adapter serves. So the row is shared,
- * and `languages` is {@link CARTESIA_TTS_LANGUAGES} by reference: the list an
- * editor offers and the list `checkEnums` refuses against are then the same
- * array, and cannot drift.
+ * All five served ids sit on one `/tts/bytes` schema with one `encoding` enum,
+ * and `ttsConstraints` denies nothing on any of them. What differs is the
+ * language list ("Supported languages
+ * are model-specific."): `sonic-3.6` speaks the 44 codes of
+ * {@link CARTESIA_TTS_3_6_LANGUAGES}, and so do the two aliases whose backing
+ * model no page names (`sonic-preview` points at the Sonic 3.6 page; on
+ * `sonic-latest` `checkEnums` warns, never refuses, past the 42 — see
+ * CARTESIA_TTS_ALIAS_LANGUAGES in ./models); sonic-3.5 and sonic-3 speak the 42
+ * of {@link CARTESIA_TTS_LANGUAGES}. Each row holds its array by reference, so
+ * the list an editor offers and the list `checkEnums` checks against are the
+ * same array, and cannot drift. (Sonic 3.6's regional locales are not a row
+ * value: the unified `language` is open, and the adapter sends a listed
+ * regional tag as `locale` on the Sonic 3.6 ids.)
  *
  * `generation_config`'s two non-canonical members ride in through
  * {@link GENERATION_CONFIG_NESTING}, beside the `speed` the adapter compiles
@@ -86,17 +96,22 @@ export const ROW = {
   extras: CARTESIA_TTS_EXTRAS,
 } as const;
 
+/** {@link ROW} with Sonic 3.6's 44 languages — the one field that differs. */
+export const ROW_3_6 = { ...ROW, languages: CARTESIA_TTS_3_6_LANGUAGES } as const;
+
 export const CARTESIA_TTS_MODEL_PARAMS = {
+  "sonic-3.6": ROW_3_6,
   "sonic-3.5": ROW,
   "sonic-3": ROW,
-  "sonic-preview": ROW,
-  "sonic-latest": ROW,
+  "sonic-preview": ROW_3_6,
+  "sonic-latest": ROW_3_6,
 } as const satisfies TtsModelParamTable;
 
 /**
  * Raw audio bytes — POST /tts/bytes is named after its answer: "The response is
  * raw audio bytes, so there is no response checker for this endpoint"
- * (./tts.ts). The SSE and WebSocket variants are separate routes and unmodel
- * does not validate them, so nothing here flips.
+ * (./tts.ts). The SSE and WebSocket variants are separate routes (SSE is not
+ * validated; the WebSocket generation message is ./tts-websocket's), so nothing
+ * here flips.
  */
 export const CARTESIA_TTS_DELIVERY = { kind: "bytes" } as const satisfies TtsDeliverySpec;

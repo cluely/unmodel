@@ -2,30 +2,30 @@
  * Request-aware pricing for the BytePlus ModelArk generation routes.
  *
  * Source of truth: https://docs.byteplus.com/en/docs/ModelArk/1544106
- * ("Pricing"), verified 2026-08-13. Both routes bill only for successfully
- * generated output.
+ * ("Pricing"), verified 2026-08-13. The Seedream 5.5, Seedream 5.0 pro and
+ * Dreamina Seedance 2.5 figures were re-read on 2026-11-12 through its
+ * curl-readable copy, https://docs.byteplus.com/docs/en/modelark/model-pricing.md.
+ * Both routes bill only for successfully generated output.
  *
  * IMAGES bill per generated image, so the estimate is
  * `rate × number of images`, worst-cased where the request leaves the count
  * open: `sequential_image_generation: "auto"` bills for every image the model
- * decides to return, up to `max_images` (default 15), and Seedream 5.0 pro's
- * layer decomposition returns one base image plus up to 16 layers.
+ * decides to return, up to `max_images` (default 15); Seedream 5.0 pro /
+ * flash layer decomposition returns one base image plus up to 16 layers, and
+ * Seedream 5.5's returns up to `layer_decomposition_options.max_images`
+ * images (default 30) counting the base image.
  *
  * VIDEOS bill by token — `price = token unit price × tokens` with
  * `tokens = (input video duration + output video duration) × width × height ×
- * fps / 1024` — which makes the effective rate a function of resolution (and
- * of `generate_audio` on Seedance 1.5 pro, whose token rate doubles with
- * audio). The tables below carry the documented USD-per-second figures from
- * the "Price examples" section (16:9 output, no input video). Two things the
+ * fps / 1024` — which makes the effective rate a function of resolution. The
+ * tables below carry the documented USD-per-second figures from the "Price
+ * examples" section (16:9 output, no input video). Two things the
  * estimate therefore does NOT include, both documented here so the number is
  * never mistaken for a quote:
  * - Reference VIDEO input is billed as extra seconds; unmodel cannot read the
  *   duration of a remote URL, so estimates for omni-reference requests are a
  *   FLOOR. The 2.x models also apply a minimum token consumption in that case.
  * - Non-16:9 ratios shift the pixel count a little in either direction.
- *
- * The limited-time discounts on Seedance 2.0 fast/mini (to 2026-09-07) are
- * deliberately not modeled: the estimate is the list price.
  */
 
 import { VIDEO_FPS } from "./constraints";
@@ -36,25 +36,17 @@ import { parsePixelSize } from "./shared";
 // ---------------------------------------------------------------------------
 
 /**
- * Seedream 5.0 pro's tier boundary: "≤ 2.61 million pixels (1.5K or lower)"
- * bills 0.045/image, above it 0.09/image.
+ * Seedream 5.0 pro's tier boundary: "Single-image generation: P ≤ 2.61
+ * million (1.5K or lower): $0.045 · P > 2.61 million (higher than 1.5K):
+ * $0.09 · Layer decomposition: P ≤ 2.61 million (1.5K or lower): $0.0225 ·
+ * P > 2.61 million (higher than 1.5K): $0.045" —
+ * https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
  *
- * UNVERIFIED — do not change this number without a first-party source.
- * The quoted wording above is what was transcribed from the Pricing page
- * (https://docs.byteplus.com/en/docs/ModelArk/1544106) when this table was
- * written, but that page is a JS-rendered SPA: curl and WebFetch both retrieve
- * only the navigation shell, so the figure cannot be re-verified without a
- * browser. A reachable third-party summary contradicts it, putting the
- * boundary at 2,359,296 pixels — which is exactly 1536x1536, i.e. the `1.5K`
- * keyword itself, making it a plausible reading of the same "1.5K or lower"
- * parenthetical.
- *
- * Blast radius if 2,359,296 is the true boundary: only explicit `WxH` sizes
- * landing in the 2.36M–2.61M band are affected — they would estimate $0.045
- * where the real bill is $0.09 (and $0.0225 vs $0.045 per decomposed layer).
- * The `size`-keyword path is identical under both boundaries: 1.5K
- * (1536x1536 = 2,359,296) falls in the low tier either way, and 2K
- * (2048x2048 = 4,194,304) falls in the high tier either way.
+ * The page prints "2.61 million", not an exact pixel count; the Seedream 5.5
+ * row beside it states its own boundary exactly as 1536² × 1.05²
+ * (2,601,123.84). An explicit `WxH` size in the 2,601,124–2,610,000 band is
+ * therefore the one place this boundary could misplace a 5.0 pro estimate;
+ * every `size` keyword sits well clear of it.
  */
 export const SEEDREAM_5_PRO_TIER_PIXELS = 2_610_000;
 
@@ -69,12 +61,44 @@ export const SEEDREAM_5_PRO_RATES = {
 /** "From the 2nd image: 0.003" — Seedream 5.0 pro input images. */
 export const SEEDREAM_5_PRO_INPUT_IMAGE_USD = 0.003;
 
-/** "one base image and up to 16 independently editable layers". */
+/**
+ * "one base image and up to 16 independently editable layers" — Seedream 5.0
+ * pro, and "Seedream 5.0 flash: Up to one base image and 16 layers." —
+ * https://docs.byteplus.com/docs/en/modelark/image-generation-api.md, 2026-11-12.
+ */
 export const MAX_DECOMPOSED_LAYERS = 16;
+
+/**
+ * Seedream 5.5's tier boundary, stated exactly: "921,600 ≤ P ≤ 1536² × 1.05²
+ * (2,601,123.84): $0.020 · 1536² × 1.05² (2,601,123.84) < P ≤ 2048² × 1.05²
+ * (4,624,220.16): $0.035" —
+ * https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+ */
+export const SEEDREAM_5_5_TIER_PIXELS = 1536 * 1536 * 1.05 * 1.05;
+
+/** Seedream 5.5 output-image rates (USD per generated image or layer). */
+export const SEEDREAM_5_5_RATES = { low: 0.02, high: 0.035 } as const;
+
+/**
+ * "|`dola-seedream-5-5-261028` |$0.008 |…" — every input image bills, no free
+ * first image: "Cost per request = Σ (each input image × input image unit
+ * price) + Σ (each output image × output image unit price at the applicable
+ * tier)" — https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+ */
+export const SEEDREAM_5_5_INPUT_IMAGE_USD = 0.008;
+
+/**
+ * `layer_decomposition_options.max_images` default: "Default: 30, which
+ * returns at most one base image and 29 layers." —
+ * https://docs.byteplus.com/docs/en/modelark/seedream-5-5.md, 2026-11-12.
+ */
+export const SEEDREAM_5_5_DEFAULT_LAYER_IMAGES = 30;
 
 /** Documented `size` default per image model (image generation scenario). */
 const DEFAULT_IMAGE_SIZE: Readonly<Record<string, string>> = {
+  "dola-seedream-5-5-261028": "2K",
   "dola-seedream-5-0-pro-260628": "2K",
+  "dola-seedream-5-0-flash-260915": "2K",
   "seedream-5-0-260128": "2048x2048",
   "seedream-5-0-lite-260128": "2048x2048",
   "seedream-4-5-251128": "2048x2048",
@@ -104,6 +128,8 @@ export interface ImagePricingFields {
   layerDecomposition?: boolean | undefined;
   sequential?: string | undefined;
   maxImages?: number | undefined;
+  /** `layer_decomposition_options.max_images` (Seedream 5.5). */
+  layerMaxImages?: number | undefined;
   /** Number of reference images supplied in `image`. */
   inputImages?: number;
   /** `cost.perImage` from the catalog — the fallback for flat-rate models. */
@@ -115,6 +141,22 @@ export interface ImagePricingFields {
  * rate is known for the model.
  */
 export function imageCostUSD(model: string, fields: ImagePricingFields): number | undefined {
+  if (model === "dola-seedream-5-5-261028") {
+    const pixels = outputPixels(model, fields.size);
+    // `size: "auto"` (layer decomposition) reads as no pixel count: worst case.
+    const high = pixels === undefined ? true : pixels > SEEDREAM_5_5_TIER_PIXELS;
+    const rate = high ? SEEDREAM_5_5_RATES.high : SEEDREAM_5_5_RATES.low;
+    const inputCost = (fields.inputImages ?? 0) * SEEDREAM_5_5_INPUT_IMAGE_USD;
+    // "In Seedream 5.5 and Seedream 5.0 pro layer decomposition, each layer in
+    // a single request may fall into a different resolution tier and is
+    // billed based on the actual generated output." — every image at the
+    // request's tier, up to `max_images`, is the worst case.
+    const outputs =
+      fields.layerDecomposition === true
+        ? (fields.layerMaxImages ?? SEEDREAM_5_5_DEFAULT_LAYER_IMAGES)
+        : 1;
+    return rate * outputs + inputCost;
+  }
   if (model === "dola-seedream-5-0-pro-260628") {
     const pixels = outputPixels(model, fields.size);
     const high = pixels === undefined ? true : pixels > SEEDREAM_5_PRO_TIER_PIXELS;
@@ -136,11 +178,14 @@ export function imageCostUSD(model: string, fields: ImagePricingFields): number 
 }
 
 /**
- * Worst-case number of billed output images: 1 unless sequential generation
- * is on, in which case the model may return up to `max_images` (default 15),
- * capped by "input reference images + generated images ≤ 15".
+ * Worst-case number of billed output images on a flat-rate model: the base
+ * image plus {@link MAX_DECOMPOSED_LAYERS} layers in layer decomposition
+ * (Seedream 5.0 flash), otherwise 1 unless sequential generation is on, in
+ * which case the model may return up to `max_images` (default 15), capped by
+ * "input reference images + generated images ≤ 15".
  */
 export function generatedImageCount(fields: ImagePricingFields): number {
+  if (fields.layerDecomposition === true) return 1 + MAX_DECOMPOSED_LAYERS;
   if (fields.sequential !== "auto") return 1;
   const requested = fields.maxImages ?? 15;
   const room = 15 - (fields.inputImages ?? 0);
@@ -157,13 +202,13 @@ export function generatedImageCount(fields: ImagePricingFields): number {
  * example prices divide exactly by 5.
  */
 const VIDEO_USD_PER_SECOND: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  // 0.514 / 1.156 USD per 5s video.
-  "dreamina-seedance-2-5-260628": { "480p": 0.103, "720p": 0.231 },
+  // "|Dreamina Seedance 2.5 |* $0.514 per video · $0.103 per second |*
+  // $1.156 per video · $0.231 per second |* $2.843 per video · $0.569 per
+  // second |" — https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+  "dreamina-seedance-2-5-260628": { "480p": 0.103, "720p": 0.231, "1080p": 0.569 },
   "dreamina-seedance-2-0-260128": { "480p": 0.07, "720p": 0.15, "1080p": 0.37, "4k": 0.78 },
   "dreamina-seedance-2-0-fast-260128": { "480p": 0.06, "720p": 0.12 },
   "dreamina-seedance-2-0-mini-260615": { "480p": 0.04, "720p": 0.08 },
-  // Video with audio (`generate_audio` defaults to true); silent halves it.
-  "seedance-1-5-pro-251215": { "480p": 0.024, "720p": 0.052, "1080p": 0.116 },
   "seedance-1-0-pro-250528": { "480p": 0.024, "720p": 0.052, "1080p": 0.122 },
   "seedance-1-0-pro-fast-251015": { "480p": 0.01, "720p": 0.02, "1080p": 0.048 },
 };
@@ -174,7 +219,6 @@ const DEFAULT_RESOLUTION: Readonly<Record<string, string>> = {
   "dreamina-seedance-2-0-260128": "720p",
   "dreamina-seedance-2-0-fast-260128": "720p",
   "dreamina-seedance-2-0-mini-260615": "720p",
-  "seedance-1-5-pro-251215": "720p",
   "seedance-1-0-pro-250528": "1080p",
   "seedance-1-0-pro-fast-251015": "1080p",
 };
@@ -184,7 +228,6 @@ const DEFAULT_DURATION: Readonly<Record<string, number>> = {
   "dreamina-seedance-2-0-260128": 5,
   "dreamina-seedance-2-0-fast-260128": 5,
   "dreamina-seedance-2-0-mini-260615": 5,
-  "seedance-1-5-pro-251215": 5,
   "seedance-1-0-pro-250528": 5,
   "seedance-1-0-pro-fast-251015": 5,
 };
@@ -193,34 +236,24 @@ export interface VideoPricingFields {
   resolution?: string | undefined;
   duration?: number | undefined;
   frames?: number | undefined;
-  generateAudio?: boolean | undefined;
-  /** Draft mode (Seedance 1.5 pro) bills at a documented token factor. */
+  /**
+   * A Dreamina Seedance 2.5 draft (`draft: true`) bills as an ordinary 480p
+   * video, so an omitted `resolution` prices at 480p: "Dreamina Seedance 2.5
+   * generates Draft videos at a fixed 480p resolution. The token consumption
+   * and token rate are the same as normal 480p videos." —
+   * https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
+   */
   draft?: boolean | undefined;
 }
-
-/**
- * Seedance 1.5 pro draft-mode token conversion factors: "0.7 for silent
- * videos, 0.6 for audio videos" (1544106).
- */
-const DRAFT_FACTOR = { audio: 0.6, silent: 0.7 } as const;
 
 /** USD per second of output video for a model + request configuration. */
 export function videoUsdPerSecond(model: string, fields: VideoPricingFields): number | undefined {
   const table = VIDEO_USD_PER_SECOND[model];
   if (table === undefined) return undefined;
-  const resolution = fields.resolution ?? DEFAULT_RESOLUTION[model];
+  const resolution =
+    fields.resolution ?? (fields.draft === true ? "480p" : DEFAULT_RESOLUTION[model]);
   if (resolution === undefined) return undefined;
-  const rate = table[resolution];
-  if (rate === undefined) return undefined;
-
-  // Seedance 1.5 pro is the one model whose rate depends on audio: the table
-  // holds the with-audio rate (the documented default) and silent halves it.
-  const silent = fields.generateAudio === false;
-  const base = model === "seedance-1-5-pro-251215" && silent ? rate / 2 : rate;
-  if (model === "seedance-1-5-pro-251215" && fields.draft === true) {
-    return base * (silent ? DRAFT_FACTOR.silent : DRAFT_FACTOR.audio);
-  }
-  return base;
+  return table[resolution];
 }
 
 /**

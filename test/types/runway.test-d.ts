@@ -121,8 +121,12 @@ function sizingTypeTests(): void {
   image({ model: "gen4_image", promptText: "hi", ratio: "" });
   // @ts-expect-error quality is a closed four-step scale
   image({ model: "gpt_image_2", promptText: "hi", ratio: "2560:1440", quality: "ultra" });
-  // @ts-expect-error outputFormat is png | jpeg on this route
-  image({ model: "seedream5_pro", promptText: "hi", ratio: "auto_1k", outputFormat: "webp" });
+  // The route-wide union spans every arm's formats (webp on muse_image,
+  // gif / svg on the gpt_image_2_6 pair); each model's own slice is narrowed
+  // at runtime.
+  image({ model: "muse_image", promptText: "hi", ratio: "auto", outputFormat: "webp" });
+  // @ts-expect-error outputFormat is png | jpeg | webp | gif | svg on this route
+  image({ model: "seedream5_pro", promptText: "hi", ratio: "auto_1k", outputFormat: "bmp" });
 }
 
 export { textToVideoTypeTests, sizingTypeTests };

@@ -14,7 +14,7 @@
  * |---|---|---|
  * | reference input | one chat-style `content[]` array whose items carry a `role` | three FLAT string arrays: `reference_images` / `reference_videos` / `reference_audios` |
  * | route selection | one url, `model` names the model | one url, `model` names the model **and the route**: `bytedance/seedance-2.5/text-to-video` |
- * | Seedance 2.5 `resolution` | 2 values | **11** — the `-sr`/`-esr` upscale ladder up to `4k-esr` |
+ * | Seedance 2.5 `resolution` | 2 values | **12** — the `-sr`/`-esr` upscale ladder up to `4k-esr`, and native `4k` |
  * | Seedance 2.5 i2v `ratio` | the 7-member enum | `adaptive` only |
  *
  * `src/providers/bytedance/video.ts` is the same weights through ByteDance's own
@@ -36,14 +36,15 @@
  * The POST creates a prediction and answers
  * `{ code, message, data: { id, status, outputs } }`. Poll
  * `predictionUrl(id)` (see ./urls.ts, which also records the second spelling
- * five of these schemas use) until `status` leaves `processing`. Polling is
+ * nine of these schemas use) until `status` leaves `processing`. Polling is
  * transport and stays out of unmodel's scope.
  *
  * Auth is `Authorization: Bearer <ATLASCLOUD_API_KEY>` — unmodel never touches
  * keys; add the header yourself when fetching.
  *
- * Wire facts transcribed 2026-08-26 from the 23 committed snapshots in
- * `data/atlascloud/openapi/` and from https://www.atlascloud.ai/docs/models/video.
+ * Wire facts transcribed from the 31 committed snapshots in
+ * `data/atlascloud/openapi/` (each diffed canonically against its live
+ * document 2026-11-12) and from https://www.atlascloud.ai/docs/models/video.
  */
 
 import { z } from "zod";
@@ -57,7 +58,9 @@ import { videoModels } from "./models";
 import {
   AUTO_DURATION,
   BITRATE_MODES,
+  DRAFT_COMPLETE_RESOLUTIONS,
   OMNI_REFERENCE_TASK_TYPES,
+  REFER_TYPES,
   SEEDANCE_15_ASPECT_RATIOS,
   SEEDANCE_15_FAST_RESOLUTIONS,
   SEEDANCE_15_RESOLUTIONS,
@@ -65,6 +68,7 @@ import {
   SEEDANCE_20_SMALL_RESOLUTIONS,
   SEEDANCE_25_RESOLUTIONS,
   VEO_ASPECT_RATIOS,
+  VEO_LITE_RESOLUTIONS,
   VEO_RESOLUTIONS,
   VIDEO_API_SOURCE,
   VIDEO_OUTPUT_FORMATS,
@@ -97,7 +101,17 @@ export type AtlasMediaUrl = `https://${string}` | `http://${string}`;
 /** A `data:` URL — the prefixed spelling of the Base64 form. */
 export type AtlasMediaDataUrl = `data:${string}`;
 
-/** `asset://<ASSET_ID>` — an id from `POST /api/v1/model/uploadMedia`. */
+/**
+ * `asset://<atlas_asset_id>` — an id from Atlas's Asset Library
+ * (`POST https://console.atlascloud.ai/api/v1/sd/assets`, the console host,
+ * not api.atlascloud.ai), usable once the asset is `Active`. `uploadMedia`
+ * answers a temporary URL, not an asset id.
+ *
+ * > "Asset Library endpoints live on the console host, NOT on the inference
+ * > host where generation endpoints live." … "Once an asset reaches Active
+ * > status, it can be reused across many generation calls."
+ * — https://www.atlascloud.ai/models/bytedance/seedance-2.5/reference-to-video, read 2026-11-12
+ */
 export type AtlasAssetRef = `asset://${string}`;
 
 /** URL | Base64 | `asset://<ASSET_ID>`. */
@@ -131,6 +145,30 @@ export type AtlasSeedance15FastResolution = (typeof SEEDANCE_15_FAST_RESOLUTIONS
 export type AtlasWanPrimeResolution = (typeof WAN_PRIME_RESOLUTIONS)[number];
 export type AtlasWanResolution = (typeof WAN_RESOLUTIONS)[number];
 export type AtlasVeoResolution = (typeof VEO_RESOLUTIONS)[number];
+/** Veo 3.1 Lite — "Veo 3.1 Lite does not support 4K." */
+export type AtlasVeoLiteResolution = (typeof VEO_LITE_RESOLUTIONS)[number];
+/** `bytedance/seedance-2.5/draft-complete` — "1080p or 4k are native Seedance outputs." */
+export type AtlasDraftCompleteResolution = (typeof DRAFT_COMPLETE_RESOLUTIONS)[number];
+/** `refers[].type` on the Wan 3.0 reference routes. */
+export type AtlasReferType = (typeof REFER_TYPES)[number];
+
+/**
+ * One `refers` item on `alibaba/wan-3.0/reference-to-video`: "Each item
+ * requires a public URL and explicit media type."
+ */
+export interface AtlasWanRefer {
+  url: AtlasMediaRef;
+  type: AtlasReferType;
+}
+
+/**
+ * One `refers` item on `alibaba/wan-3.0-prime/reference-to-video`: "'type' is
+ * optional — inferred from the URL when omitted."
+ */
+export interface AtlasWanPrimeRefer {
+  url: AtlasMediaRef;
+  type?: AtlasReferType;
+}
 
 /** The frame fields — `/image-to-video` routes only. */
 interface NoFrames {
@@ -201,6 +239,23 @@ interface NoRatio {
   ratio?: never;
 }
 
+/** The Wan 3.0 reference routes' own fields. */
+interface NotWanReference {
+  /** Wan 3.0 reference-to-video only — the typed `{ url, type }` reference list. */
+  refers?: never;
+  /** Wan 3.0 reference-to-video only. */
+  enable_thinking?: never;
+  /** Wan 3.0 reference-to-video only. */
+  file?: never;
+  /** Wan 3.0 reference-to-video only. */
+  link?: never;
+}
+
+interface NotDraftComplete {
+  /** `bytedance/seedance-2.5/draft-complete` only. */
+  draft_id?: never;
+}
+
 // --- Seedance 2.5 ----------------------------------------------------------
 
 interface Seedance25Shared
@@ -208,6 +263,8 @@ interface Seedance25Shared
     NotSeedance15,
     NotWan,
     NotSeedance20,
+    NotWanReference,
+    NotDraftComplete,
     NoAspectRatio {
   /** Text prompt. Cite references in submission order with `@Image1`, `@Video1`, `@Audio1`. */
   prompt?: string;
@@ -278,6 +335,8 @@ interface Seedance20Shared
     NotSeedance15,
     NotWan,
     NotSeedance25,
+    NotWanReference,
+    NotDraftComplete,
     NoAspectRatio {
   /** Text prompt. "References like 'image 1', 'video 1' refer to inputs in order." */
   prompt?: string;
@@ -297,7 +356,7 @@ interface Seedance20Shared
   return_last_frame?: boolean;
 }
 
-/** The full 2.0 model is the only Seedance here with native `4k`. */
+/** The full 2.0 model is the only 2.0 tier with native `4k` (Seedance 2.5 has it too). */
 export interface Seedance20TextToVideoBody extends Seedance20Shared, NoFrames, NoReferenceArrays {
   model: "bytedance/seedance-2.0/text-to-video";
   prompt: string;
@@ -382,6 +441,8 @@ interface Seedance15Shared
     NotSeedance25,
     NotSeedance20,
     NotSeedance2x,
+    NotWanReference,
+    NotDraftComplete,
     NoRatio,
     NoReferenceArrays {
   prompt?: string;
@@ -423,16 +484,17 @@ export interface Seedance15ProImageToVideoFastBody extends Seedance15Shared {
 
 // --- Alibaba Wan 3.0 -------------------------------------------------------
 
-/** Wan spells the audio toggle `audio` and requires `prompt` on both routes. */
+/** Wan spells the audio toggle `audio` and requires `prompt` on every route. */
 interface WanShared
   extends NotVeo,
     NotSeedance15,
     NotSeedance25,
     NotSeedance20,
     NotSeedance2x,
+    NotDraftComplete,
     NoAspectRatio,
     NoReferenceArrays {
-  /** Required on both Wan routes. "up to 20000 characters". */
+  /** Required on every Wan route. "up to 20000 characters". */
   prompt: string;
   /** 2–30 seconds, or `-1` for "smart-duration". Default 5. */
   duration?: number;
@@ -444,14 +506,14 @@ interface WanShared
   generate_audio?: never;
 }
 
-export interface Wan30PrimeTextToVideoBody extends WanShared, NoFrames {
+export interface Wan30PrimeTextToVideoBody extends WanShared, NoFrames, NotWanReference {
   model: "alibaba/wan-3.0-prime/text-to-video";
-  /** UPPER-case `P`, unlike every other resolution enum on this provider. */
+  /** The same lower-case `-esr` ladder Wan 3.0 publishes. */
   resolution?: AtlasWanPrimeResolution;
   ratio?: AtlasWanRatio;
 }
 
-export interface Wan30PrimeImageToVideoBody extends WanShared {
+export interface Wan30PrimeImageToVideoBody extends WanShared, NotWanReference {
   model: "alibaba/wan-3.0-prime/image-to-video";
   /** "First frame of the video (strict first-frame mode). Public URL." */
   image: AtlasMediaRef;
@@ -461,19 +523,61 @@ export interface Wan30PrimeImageToVideoBody extends WanShared {
   ratio?: never;
 }
 
-export interface Wan30TextToVideoBody extends WanShared, NoFrames {
+export interface Wan30TextToVideoBody extends WanShared, NoFrames, NotWanReference {
   model: "alibaba/wan-3.0/text-to-video";
-  /** Lower-case, with an `-esr` enhancement ladder the prime tier lacks. */
+  /** Lower-case, with an `-esr` enhancement ladder. */
   resolution?: AtlasWanResolution;
   ratio?: AtlasWanRatio;
 }
 
-export interface Wan30ImageToVideoBody extends WanShared {
+export interface Wan30ImageToVideoBody extends WanShared, NotWanReference {
   model: "alibaba/wan-3.0/image-to-video";
   image: AtlasMediaRef;
   last_image?: AtlasMediaRef;
   resolution?: AtlasWanResolution;
   ratio?: never;
+}
+
+/**
+ * The two Wan 3.0 reference routes: references are ONE typed list, and "Reference
+ * mode is mutually exclusive with first/last-frame mode".
+ */
+interface WanReferenceShared extends WanShared, NoFrames {
+  /** Lower-case, with the `-esr` ladder — on the prime route too. */
+  resolution?: AtlasWanResolution;
+  /** `adaptive` lets "the model choose from the references". Default `"adaptive"`. */
+  ratio?: AtlasWanRatio;
+  /**
+   * A document to parse — "docx, doc, xlsx, xls, pptx, ppt, pdf, txt, key,
+   * pages, numbers, md; <= 100MB, <= 50 pages". Public URL; requires
+   * `enable_thinking`; mutually exclusive with `link`.
+   */
+  file?: string;
+  /** A public webpage to parse ("Only pages that need no login"); requires `enable_thinking`; mutually exclusive with `file`. */
+  link?: string;
+}
+
+export interface Wan30ReferenceToVideoBody extends WanReferenceShared {
+  model: "alibaba/wan-3.0/reference-to-video";
+  /** Up to 20 items, each `{ url, type }` — `type` is required on this route. */
+  refers?: AtlasWanRefer[];
+  /**
+   * "Enable deep thinking mode. Required when providing a file or link input
+   * (document / webpage parsing)." Default false.
+   */
+  enable_thinking?: boolean;
+}
+
+export interface Wan30PrimeReferenceToVideoBody extends WanReferenceShared {
+  model: "alibaba/wan-3.0-prime/reference-to-video";
+  /** Up to 20 items: ≤ 10 images, ≤ 5 videos (total ≤ 15 s), ≤ 5 audios (total ≤ 15 s). */
+  refers?: AtlasWanPrimeRefer[];
+  /**
+   * "Enable deep thinking mode. Required when providing a file or link input
+   * (document / webpage parsing)." Default true in the schema (the page's
+   * vendor table says false).
+   */
+  enable_thinking?: boolean;
 }
 
 // --- Google Veo 3.1 --------------------------------------------------------
@@ -484,9 +588,11 @@ interface VeoShared
     NotSeedance25,
     NotSeedance20,
     NotSeedance2x,
+    NotWanReference,
+    NotDraftComplete,
     NoRatio,
     NoReferenceArrays {
-  /** Required on all three Veo routes. */
+  /** Required on every Veo route. */
   prompt: string;
   /** 8, 4 or 6 seconds. Default 8. `1080p`/`4k` lock it to 8. */
   duration?: number;
@@ -525,6 +631,101 @@ export interface Veo31ReferenceToVideoBody extends VeoShared, NoFrames {
   aspect_ratio?: never;
 }
 
+/** Veo 3.1 Fast: each schema is its Veo 3.1 sibling's, `model` aside. */
+export interface Veo31FastTextToVideoBody extends VeoShared, NoFrames {
+  model: "google/veo3.1-fast/text-to-video";
+  aspect_ratio?: AtlasVeoAspectRatio;
+  images?: never;
+}
+
+export interface Veo31FastImageToVideoBody extends VeoShared {
+  model: "google/veo3.1-fast/image-to-video";
+  image: AtlasMediaRef;
+  last_image?: AtlasMediaRef;
+  aspect_ratio?: AtlasVeoAspectRatio;
+  images?: never;
+}
+
+/** Veo 3.1 Lite: no 4K, no audio toggle, no `negative_prompt`. */
+interface VeoLiteShared extends VeoShared {
+  /** 4, 6 or 8 seconds. Default 8. `1080p` locks it to 8. */
+  duration?: number;
+  /** Default `"720p"`. "Veo 3.1 Lite does not support 4K." */
+  resolution?: AtlasVeoLiteResolution;
+  /** No toggle: "Audio is always generated". */
+  generate_audio?: never;
+  /** The Lite schemas declare no `negative_prompt`. */
+  negative_prompt?: never;
+  aspect_ratio?: AtlasVeoAspectRatio;
+  images?: never;
+}
+
+export interface Veo31LiteTextToVideoBody extends VeoLiteShared, NoFrames {
+  model: "google/veo3.1-lite/text-to-video";
+}
+
+export interface Veo31LiteImageToVideoBody extends VeoLiteShared {
+  model: "google/veo3.1-lite/image-to-video";
+  /** "Input image up to 8MB per Veo 3.1 Lite limits." URL, data URL or raw Base64. */
+  image: AtlasMediaRef;
+  /** No last frame here — `google/veo3.1-lite/start-end-frame-to-video` takes one. */
+  last_image?: never;
+}
+
+export interface Veo31LiteStartEndFrameToVideoBody extends VeoLiteShared {
+  model: "google/veo3.1-lite/start-end-frame-to-video";
+  /** "Must be used together with last_image (lastFrame in the API)." ≤ 8 MB. */
+  image: AtlasMediaRef;
+  /** "Final frame for interpolation … Must be used together with image." ≤ 8 MB. */
+  last_image: AtlasMediaRef;
+}
+
+// --- Seedance 2.5 draft completion ------------------------------------------
+
+/**
+ * The second step of Seedance 2.5's draft mode: render the final of a draft
+ * made with `draft: true` on one of the three 2.5 routes. "The final is
+ * rendered at 1080p or 4k from the draft's own prompt, inputs, duration,
+ * aspect ratio, seed and audio settings; do not send those fields again. A
+ * draft can be completed any number of times within 7 days of its creation;
+ * each completion is a separate task."
+ */
+export interface Seedance25DraftCompleteBody
+  extends NoFrames,
+    NoReferenceArrays,
+    NotVeo,
+    NotSeedance15,
+    NotWan,
+    NotSeedance20,
+    NotWanReference,
+    NoAspectRatio {
+  model: "bytedance/seedance-2.5/draft-complete";
+  /** The draft's prediction id, returned as `draft_id` when the draft was generated. */
+  draft_id: string;
+  /** Default `"1080p"`. `4k` is in the schema; the model page says 1080p. */
+  resolution?: AtlasDraftCompleteResolution;
+  /** `"mov"` encodes yuv444p for multi-round editing pipelines. Default `"mp4"`. */
+  output_format?: AtlasOutputFormat;
+  /** Default false. */
+  watermark?: boolean;
+  /** Also return the clip's last frame as a separate image. Default false. */
+  return_last_frame?: boolean;
+  /** Inherited from the draft. */
+  prompt?: never;
+  /** Inherited from the draft. */
+  duration?: never;
+  /** Inherited from the draft. */
+  ratio?: never;
+  /** Inherited from the draft. */
+  generate_audio?: never;
+  /** Inherited from the draft. */
+  seed?: never;
+  /** This route completes a draft; the 2.5 generation routes make one. */
+  draft?: never;
+  /** Seedance 2.5 reference-to-video only. */
+  omni_reference_task_type?: never;
+}
+
 // --- The union -------------------------------------------------------------
 
 /** Escape hatch for ids unmodel has no arm for (new Atlas models). */
@@ -561,6 +762,14 @@ export type GenerateVideoBody<FutureModel extends string = never> =
   | Veo31TextToVideoBody
   | Veo31ImageToVideoBody
   | Veo31ReferenceToVideoBody
+  | Veo31FastTextToVideoBody
+  | Veo31FastImageToVideoBody
+  | Veo31LiteTextToVideoBody
+  | Veo31LiteImageToVideoBody
+  | Veo31LiteStartEndFrameToVideoBody
+  | Seedance25DraftCompleteBody
+  | Wan30ReferenceToVideoBody
+  | Wan30PrimeReferenceToVideoBody
   | UnknownVideoModelBody<FutureModel>;
 
 interface VideoBodyByModel {
@@ -587,6 +796,14 @@ interface VideoBodyByModel {
   "google/veo3.1/text-to-video": Veo31TextToVideoBody;
   "google/veo3.1/image-to-video": Veo31ImageToVideoBody;
   "google/veo3.1/reference-to-video": Veo31ReferenceToVideoBody;
+  "google/veo3.1-fast/text-to-video": Veo31FastTextToVideoBody;
+  "google/veo3.1-fast/image-to-video": Veo31FastImageToVideoBody;
+  "google/veo3.1-lite/text-to-video": Veo31LiteTextToVideoBody;
+  "google/veo3.1-lite/image-to-video": Veo31LiteImageToVideoBody;
+  "google/veo3.1-lite/start-end-frame-to-video": Veo31LiteStartEndFrameToVideoBody;
+  "bytedance/seedance-2.5/draft-complete": Seedance25DraftCompleteBody;
+  "alibaba/wan-3.0/reference-to-video": Wan30ReferenceToVideoBody;
+  "alibaba/wan-3.0-prime/reference-to-video": Wan30PrimeReferenceToVideoBody;
 }
 
 /** Resolves a model id literal to its exact Tier-A arm. */
@@ -634,6 +851,13 @@ const videoSchema = z.looseObject({
   omni_reference_task_type: z.enum(OMNI_REFERENCE_TASK_TYPES).optional(),
   bitrate_mode: z.enum(BITRATE_MODES).optional(),
   seed: z.number().int().min(VIDEO_SEED_RANGE.min).max(VIDEO_SEED_RANGE.max).optional(),
+  refers: z
+    .array(z.object({ url: z.string().min(1), type: z.enum(REFER_TYPES).optional() }))
+    .optional(),
+  enable_thinking: z.boolean().optional(),
+  file: z.string().min(1).optional(),
+  link: z.string().min(1).optional(),
+  draft_id: z.string().min(1).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -646,11 +870,12 @@ type AnyRecord = Record<string, unknown>;
  * The fields a model's own schema lists as `required`, minus `model` (which the
  * zod schema already demands).
  *
- * This is per-model rather than per-schema because Atlas's twenty-three
- * documents disagree: `prompt` is required on every text route and on both Wan
- * image routes, optional on the Seedance image routes ("Optional but
- * recommended"), and absent from the required list on the Seedance reference
- * routes — where the *references* are the input.
+ * This is per-model rather than per-schema because Atlas's documents
+ * disagree: `prompt` is required on every text route and on every Wan route,
+ * optional on the Seedance image routes ("Optional but recommended"), absent
+ * from the required list on the Seedance reference routes — where the
+ * *references* are the input — and absent altogether from Seedance 2.5
+ * draft-complete, which requires `draft_id` instead.
  */
 function checkRequired(
   params: AnyGenerateVideoBody,
@@ -687,6 +912,8 @@ function checkDuration(
   if (typeof duration !== "number" || info === undefined) return;
   const rule = videoShapeRules[params.model];
   if (rule === undefined) return;
+  // A route with no `duration` field at all: its deny rule already said so.
+  if (rule.durations?.length === 0) return;
 
   if (duration === AUTO_DURATION) {
     if (rule.allowsAutoDuration) return;
@@ -723,10 +950,12 @@ function checkDuration(
 }
 
 /**
- * Veo 3.1's `allOf` conditional, which is the one cross-field rule Atlas
- * expresses in JSON Schema rather than in prose:
+ * Veo's `allOf` conditional, which is the one cross-field rule Atlas
+ * expresses in JSON Schema rather than in prose — quoted per model, because
+ * the families state it differently:
  *
- * > "When resolution is 1080p or 4k, duration must be 8 (seconds)."
+ * > "When resolution is 1080p or 4k, duration must be 8 (seconds)." (Veo 3.1, 3.1 Fast)
+ * > "When resolution is 1080p, duration must be 8 (seconds)." (Veo 3.1 Lite)
  */
 function checkResolutionDuration(
   params: AnyGenerateVideoBody,
@@ -736,17 +965,18 @@ function checkResolutionDuration(
   if (info === undefined) return;
   const rule = videoShapeRules[params.model];
   const locked = rule?.durationLockedAtHighResolution;
-  if (locked === undefined) return;
+  const locking = rule?.lockingResolutions;
+  if (locked === undefined || locking === undefined) return;
   const record = params as AnyRecord;
   const resolution = record["resolution"];
   const duration = record["duration"];
-  if (resolution !== "1080p" && resolution !== "4k") return;
+  if (typeof resolution !== "string" || !locking.includes(resolution)) return;
   if (typeof duration !== "number" || locked.includes(duration)) return;
   ctx.report({
     code: "invalid_enum_value",
     path: ["duration"],
     model: params.model,
-    message: `"When resolution is 1080p or 4k, duration must be ${locked.join(" or ")} (seconds)." — got ${duration} at \`resolution: ${JSON.stringify(resolution)}\`.`,
+    message: `"When resolution is ${locking.join(" or ")}, duration must be ${locked.join(" or ")} (seconds)." — got ${duration} at \`resolution: ${JSON.stringify(resolution)}\`.`,
     meta: { allowed: [...locked], value: duration, source: VIDEO_API_SOURCE },
   });
 }
@@ -911,6 +1141,107 @@ function checkAdaptiveRatio(
 }
 
 /**
+ * `refers` on the Wan 3.0 reference routes: the array's `maxItems`, the
+ * per-item `type` plain Wan 3.0 requires, and the per-kind caps the prime
+ * route publishes in `x-media-limits`. An item without `type` on the prime
+ * route is "inferred from the URL", so it counts toward the total only — this
+ * check will not guess its kind.
+ */
+function checkRefers(
+  params: AnyGenerateVideoBody,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (info === undefined) return;
+  const refers = (params as AnyRecord)["refers"];
+  const rule = videoShapeRules[params.model]?.refers;
+  if (!Array.isArray(refers) || rule === undefined) return;
+
+  if (refers.length > rule.maxItems) {
+    ctx.report({
+      code: "unsupported_capability",
+      path: ["refers"],
+      model: params.model,
+      message: `"${params.model}" accepts at most ${rule.maxItems} \`refers\` items; got ${refers.length}.`,
+      meta: { count: refers.length, limit: rule.maxItems, source: VIDEO_API_SOURCE },
+    });
+  }
+
+  const perType = new Map<string, number>();
+  for (const [index, item] of refers.entries()) {
+    const type = (item as { type?: unknown }).type;
+    if (typeof type === "string") {
+      perType.set(type, (perType.get(type) ?? 0) + 1);
+      continue;
+    }
+    if (!rule.typeRequired) continue;
+    ctx.report({
+      code: "invalid_shape",
+      path: ["refers", index, "type"],
+      model: params.model,
+      message: `"${params.model}" requires \`type\` ("image", "video" or "audio") on every \`refers\` item: "Each item requires a public URL and explicit media type." The prime route, \`alibaba/wan-3.0-prime/reference-to-video\`, infers it from the URL.`,
+      meta: { source: VIDEO_API_SOURCE },
+    });
+  }
+
+  for (const [type, limit] of Object.entries(rule.maxPerType ?? {})) {
+    const count = perType.get(type) ?? 0;
+    if (count <= limit) continue;
+    ctx.report({
+      code: "unsupported_capability",
+      path: ["refers"],
+      model: params.model,
+      message: `"${params.model}" accepts at most ${limit} \`refers\` items of type "${type}"; got ${count}.`,
+      meta: { type, count, limit, source: VIDEO_API_SOURCE },
+    });
+  }
+}
+
+/**
+ * `file` and `link` on the Wan 3.0 reference routes, transcribed from their
+ * descriptions — the schema's `allOf` expresses them only as UI-hiding rules:
+ *
+ * > "Optional document input to parse (requires enable_thinking). … Mutually
+ * > exclusive with 'link'."
+ *
+ * An omitted `enable_thinking` takes the route's schema default
+ * (`enableThinkingDefault`), which is what the API applies.
+ */
+function checkThinkingInputs(
+  params: AnyGenerateVideoBody,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (info === undefined) return;
+  const rule = videoShapeRules[params.model];
+  if (rule?.enableThinkingDefault === undefined) return;
+  const record = params as AnyRecord;
+  const inputs = (["file", "link"] as const).filter((key) => record[key] !== undefined);
+  if (inputs.length === 0) return;
+
+  if (inputs.length > 1) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["link"],
+      model: params.model,
+      message: `\`file\` and \`link\` are mutually exclusive on "${params.model}": send a document or a webpage, not both.`,
+      meta: { source: VIDEO_API_SOURCE },
+    });
+  }
+
+  const thinking = record["enable_thinking"];
+  const enabled = typeof thinking === "boolean" ? thinking : rule.enableThinkingDefault;
+  if (enabled) return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["enable_thinking"],
+    model: params.model,
+    message: `\`${inputs[0]}\` requires \`enable_thinking: true\` on "${params.model}" ("Required when providing a file or link input"); ${typeof thinking === "boolean" ? "got false" : "its default is false"}.`,
+    meta: { source: VIDEO_API_SOURCE },
+  });
+}
+
+/**
  * The one `.toSdk("atlascloud")` target — Atlas ships no typed client SDK (its
  * GitHub org publishes an MCP server, a CLI and a ComfyUI node), so the target
  * is the wire body unchanged. Derived from the `sdk` literal in `finalize`.
@@ -939,6 +1270,8 @@ const validator = createValidator<AnyGenerateVideoBody, unknown>({
     checkReferences,
     checkOmniTaskType,
     checkAdaptiveRatio,
+    checkRefers,
+    checkThinkingInputs,
   ],
   finalize,
 });

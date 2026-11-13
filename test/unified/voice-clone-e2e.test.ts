@@ -158,7 +158,7 @@ describe("the category's own rules", () => {
     expect(issue?.message).toContain("`texts` array parallels `voices`");
   });
 
-  test("fish: omitting visibility surfaces the public-by-default warning", () => {
+  test("fish: omitting visibility is clean (the wire defaults to private)", () => {
     const result = voiceClone.safe({
       model: "fish-audio/fast",
       operation: "clone",
@@ -167,8 +167,42 @@ describe("the category's own rules", () => {
     } as never);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const warning = result.warnings.find((w) => w.path?.[0] === "visibility");
-    expect(warning?.message).toContain('"public"');
+    expect(result.warnings).toEqual([]);
+  });
+
+  test('fish: an explicit "public" compiles, warning at `visibility` that it is downgraded', () => {
+    const result = voiceClone.safe({
+      model: "fish-audio/fast",
+      operation: "clone",
+      name: "Narrator",
+      visibility: "public",
+      samples: [fileSample()],
+      cover_image: blob(),
+    } as never);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toMatchObject({
+      code: "unsupported_param",
+      path: ["visibility"],
+      meta: { ignored: true, applied: "private" },
+    });
+  });
+
+  test('fish: "public" without a cover image warns rather than refuses', () => {
+    const result = voiceClone.safe({
+      model: "fish-audio/fast",
+      operation: "clone",
+      name: "Narrator",
+      visibility: "public",
+      samples: [fileSample()],
+    } as never);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings.map((w) => [w.code, w.path?.[0]])).toEqual([
+      ["unsupported_param", "visibility"],
+      ["invalid_shape", "cover_image"],
+    ]);
   });
 
   test('cartesia: visibility "unlisted" is refused naming the two access values', () => {
@@ -200,7 +234,7 @@ describe("the category's own rules", () => {
   });
 
   test("inworld: an oversized base64 sample is media_too_large at its element", () => {
-    const oversized = "A".repeat(Math.ceil((4 * 1024 * 1024 + 1024) / 3) * 4);
+    const oversized = "A".repeat(Math.ceil((12 * 1024 * 1024 + 1024) / 3) * 4);
     const result = voiceClone.safe({
       model: "inworld/voice-clone",
       operation: "clone",

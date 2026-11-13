@@ -32,10 +32,12 @@ import type { ModelsWhereFalse } from "../../src/core/catalog-types";
 import { chatModels } from "../../src/providers/google/chat-tts-overlay";
 import type { GeminiTtsVoiceName } from "../../src/providers/google/wire";
 import type {
+  GenerateVideosBody,
   VeoParameterModelId,
   VeoParametersArm,
   VEO_PARAMETER_SPACE,
 } from "../../src/providers/google/video";
+import type { VideoRetiredModelId } from "../../src/providers/google/video-constraints";
 import { video as googleVideoAdapter } from "../../src/providers/google/unified-video";
 import { expectAssignable, expectTrue, type HasLiteralMember, type IsNever } from "./helpers";
 
@@ -130,7 +132,7 @@ chat({
 // ---------------------------------------------------------------------------
 
 const veo = video({
-  model: "veo-3.1-generate-preview",
+  model: "veo-3.0-generate-001",
   instances: [
     {
       prompt: "a hummingbird in slow motion",
@@ -156,7 +158,7 @@ expectAssignable<GenerateVideosParameters>(veo.toSdk("google"));
 // the wire literal needs the documented cast at the SDK call site, exactly
 // like the generateContent safety enums above.
 const veoWithReferences = video({
-  model: "veo-3.1-generate-preview",
+  model: "veo-3.0-generate-001",
   instances: [
     {
       prompt: "in this style",
@@ -173,7 +175,7 @@ expectAssignable<GenerateVideosParameters>(
 
 // Typo'd top-level keys are a compile error (ExactKeys guard).
 video({
-  model: "veo-3.1-generate-preview",
+  model: "veo-3.0-generate-001",
   instances: [{ prompt: "hi" }],
   // @ts-expect-error excess (typo'd) top-level key
   parametrs: { aspectRatio: "16:9" },
@@ -393,10 +395,37 @@ chat({
   },
 });
 
+// `voiceConfig.voice` — "Speaker name for prebuilt voices … Voice ID for stored
+// voices (`voice_xxx`) … Voice replication key (`voicekey_xxx`)" — types on both
+// surfaces, single- and multi-speaker, beside the guide's `speechMetadata`.
+googleTts({
+  model: "gemini-3.8-flash-tts",
+  contents: [{ parts: [{ text: "Have a wonderful day!", speechMetadata: { style: "cheerful" } }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],
+    speechConfig: { voiceConfig: { voice: "voice_abc123" } },
+  },
+});
+chat({
+  model: "gemini-3.8-flash-tts",
+  contents: [{ parts: [{ text: "Joe: hi\nJane: hello", speechMetadata: { speaker: "Joe" } }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],
+    speechConfig: {
+      multiSpeakerVoiceConfig: {
+        speakerVoiceConfigs: [
+          { speaker: "Joe", voiceConfig: { voice: "voicekey_abc123" } },
+          { speaker: "Jane", voiceConfig: { voice: "Kore" } },
+        ],
+      },
+    },
+  },
+});
+
 // video: `seed` is a documented Veo 3 parameter (the SDK rejects it).
 expectAssignable<{ instances: unknown }>(
   video({
-    model: "veo-3.1-generate-preview",
+    model: "veo-3.0-generate-001",
     instances: [{ prompt: "a hummingbird" }],
     parameters: { seed: 42 },
   }),
@@ -440,7 +469,7 @@ geminiRouted.toApi("vercel");
 // ---------------------------------------------------------------------------
 
 const veoForApi = video({
-  model: "veo-3.1-generate-preview",
+  model: "veo-3.0-generate-001",
   instances: [{ prompt: "a hummingbird" }],
 });
 // @ts-expect-error — video declares no `.toApi` targets.
@@ -516,10 +545,15 @@ GEMINI_IMAGE_MODEL_RULES["gemini-9.9-flash-image"];
 
 // The catalog overlay keeps every generated row's flags…
 expectTrue<Same<(typeof chatModels)["gemini-2.5-flash"]["reasoning"], true>>();
-// …and states the overlay's own honest uncertainty for the three TTS ids: the
-// doc-sourced 32k when models.dev still lists the id, the generated 8192 when
-// the guard finds nothing to override.
-expectTrue<Same<(typeof chatModels)["gemini-3.1-flash-tts-preview"]["limit"]["context"], 8192 | 32768>>();
+// …and states the overlay's own honest uncertainty for the three mirrored TTS
+// ids: the hand row (doc-sourced 32k context, deprecated status) when
+// models.dev still lists the id, the generated row when the guard finds
+// nothing to override.
+type Row31 = (typeof chatModels)["gemini-3.1-flash-tts-preview"];
+expectTrue<Same<Row31["limit"]["context"], 8192 | 32768>>();
+expectTrue<Same<Extract<Row31, { status: string }>["status"], "deprecated">>();
+// The documented Nano Banana window beats models.dev's 32,768 the same way.
+expectTrue<Same<(typeof chatModels)["gemini-2.5-flash-image"]["limit"]["context"], 32768 | 65536>>();
 
 // ---------------------------------------------------------------------------
 // google.video: the wire arm is per model, and it AGREES with the unified table
@@ -578,16 +612,15 @@ type PersonDrifted<M extends WithPublishedPersonGeneration> = Same<
 expectTrue<
   IsNever<{ [M in WithPublishedPersonGeneration]: PersonDrifted<M> }[WithPublishedPersonGeneration]>
 >();
-expectTrue<Same<WithPublishedPersonGeneration, Exclude<VeoParameterModelId, "gemini-omni-flash-preview">>>();
-expectTrue<Same<UnifiedVideoRows["gemini-omni-flash-preview"]["extras"]["personGeneration"], string>>();
-expectTrue<
-  Same<
-    NonNullable<VeoParametersArm<"gemini-omni-flash-preview">["personGeneration"]>,
-    "allow_all" | "allow_adult" | "dont_allow"
-  >
->();
+// Every served row publishes a list today, so the two sets coincide.
+expectTrue<Same<WithPublishedPersonGeneration, VeoParameterModelId>>();
 
-// The four calls the wire used to accept while the unified layer refused them.
+// A retired id (VIDEO_RETIRED_IDS) is never a named literal of the body's
+// `model` union: the runtime refuses it by name, so the editor must not offer it.
+expectTrue<IsNever<Extract<GenerateVideosBody["model"], VideoRetiredModelId>>>();
+expectTrue<HasLiteralMember<VideoRetiredModelId, "gemini-omni-flash-preview">>();
+
+// The calls the wire used to accept while the unified layer refused them.
 video({
   model: "veo-2.0-generate-001",
   instances: [{ prompt: "a hummingbird" }],
@@ -595,27 +628,15 @@ video({
   parameters: { resolution: "4k" },
 });
 video({
-  model: "veo-3.1-generate-preview",
+  model: "veo-3.0-generate-001",
   instances: [{ prompt: "a hummingbird" }],
   // @ts-expect-error `dont_allow` is Veo 2-only.
   parameters: { personGeneration: "dont_allow" },
 });
-video({
-  model: "veo-3.1-lite-generate-preview",
-  instances: [{ prompt: "a hummingbird" }],
-  // @ts-expect-error Lite stops at 1080p.
-  parameters: { resolution: "4k" },
-});
-video({
-  model: "gemini-omni-flash-preview",
-  instances: [{ prompt: "a hummingbird" }],
-  // @ts-expect-error Omni is 720p and 3-10s.
-  parameters: { resolution: "1080p", durationSeconds: 20 },
-});
-// …and the same four facts, each on the model that DOES document them.
+// …and the same facts, each on the model that DOES document them.
 expectAssignable<{ instances: unknown }>(
   video({
-    model: "veo-3.1-generate-preview",
+    model: "veo-3.0-generate-001",
     instances: [{ prompt: "a hummingbird" }],
     parameters: { resolution: "4k", durationSeconds: 8, personGeneration: "allow_adult" },
   }),
@@ -627,14 +648,6 @@ expectAssignable<{ instances: unknown }>(
     parameters: { personGeneration: "dont_allow", durationSeconds: 5, sampleCount: 2 },
   }),
 );
-expectAssignable<{ instances: unknown }>(
-  video({
-    model: "gemini-omni-flash-preview",
-    instances: [{ prompt: "a hummingbird" }],
-    parameters: { resolution: "720p", durationSeconds: 3 },
-  }),
-);
-
 /**
  * The degraded arm: a run-time model id has no row, so `parameters` keeps the
  * wide documented type — the same trade `unknown_model` makes at run time, and
@@ -655,7 +668,7 @@ expectAssignable<{ instances: unknown }>(
  * there is no second table to keep it honest and the runtime enum owns it
  * alone. Pinned so that stops being an accident.
  */
-expectTrue<Same<VeoParametersArm<"veo-3.1-generate-preview">["sampleCount"], number | undefined>>();
+expectTrue<Same<VeoParametersArm<"veo-3.0-generate-001">["sampleCount"], number | undefined>>();
 
 // ---------------------------------------------------------------------------
 // `checkChat`'s report: `finishReason` carries Gemini's own vocabulary
@@ -670,6 +683,8 @@ function googleReportTypeTests(): void {
   expectTrue<HasLiteralMember<typeof report.finishReason, "MAX_TOKENS">>();
   expectTrue<HasLiteralMember<typeof report.finishReason, "STOP">>();
   expectTrue<HasLiteralMember<GoogleFinishReason, "IMAGE_RECITATION">>();
+  // Gemini 4 long decode: the resumable-stop member the continuation branch reads.
+  expectTrue<HasLiteralMember<GoogleFinishReason, "CONTINUATION">>();
   // The truncation branch's literal, the eight filtered ones, and the success
   // value the checker does not branch on but every caller compares against.
   if (report.finishReason === "MAX_TOKENS") void 0;
@@ -710,11 +725,7 @@ type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B 
 expectTrue<
   Equals<
     ModelsWhereFalse<typeof googleCatalogModels, "temperature">,
-    | "gemini-embedding-001"
-    | "gemini-embedding-2"
-    | "veo-3.1-fast-generate-preview"
-    | "veo-3.1-generate-preview"
-    | "veo-3.1-lite-generate-preview"
+    "gemini-embedding-001" | "gemini-embedding-2"
   >
 >();
 expectTrue<
@@ -806,8 +817,31 @@ function googlePerModelTypeTests(): void {
     // @ts-expect-error — `temperature: false` in the catalog.
     generationConfig: { temperature: 0.5 },
   });
-  // @ts-expect-error — `toolCall: false` in the catalog.
-  chat({ model: "gemini-2.5-flash-image", contents: HI, tools: [{ googleSearch: {} }] });
+  chat({
+    model: "gemini-2.5-flash-image",
+    contents: HI,
+    // @ts-expect-error — `toolCall: false` in the catalog: function calling is `never`.
+    tools: [{ functionDeclarations: [{ name: "f" }] }],
+  });
+  // …but `toolCall` is function calling only: a built-in tool has no catalog
+  // flag, and Nano Banana 2 documents Search grounding beside a not-supported
+  // Function calling badge.
+  chat({ model: "gemini-3.1-flash-image", contents: HI, tools: [{ googleSearch: {} }] });
+  // `toolCall: false` too, but SUPPORTED_BUILTIN_TOOLS admits Google Search
+  // grounding: that one tool shape, and no other key beside it.
+  chat({ model: "gemini-3-pro-image", contents: HI, tools: [{ googleSearch: {} }] });
+  chat({
+    model: "gemini-3-pro-image",
+    contents: HI,
+    // @ts-expect-error — function calling is "not supported" on its page.
+    tools: [{ functionDeclarations: [{ name: "f" }] }],
+  });
+  chat({
+    model: "gemini-3-pro-image",
+    contents: HI,
+    // @ts-expect-error — code execution is "not supported" on its page.
+    tools: [{ googleSearch: {}, codeExecution: {} }],
+  });
 
   // --- everything that must NOT break --------------------------------------
   // A reasoning model still takes thinkingConfig, and a normal model still

@@ -10,7 +10,7 @@ import {
   STREAM_INPUT_INACTIVITY_TIMEOUT_DEFAULT,
   STREAM_INPUT_INACTIVITY_TIMEOUT_MAX,
 } from "./text-to-speech-stream-input";
-import { TTS_MODEL_IDS } from "./models";
+import { STREAM_INPUT_MODEL_IDS, TTS_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -63,8 +63,8 @@ describe("elevenlabs.textToSpeechStreamInput happy path", () => {
     expect(toInitializeConnectionMessage(config)).toEqual({ text: " " });
   });
 
-  test("every text-to-speech model id validates clean", () => {
-    for (const id of TTS_MODEL_IDS) {
+  test("every stream-input model id validates clean", () => {
+    for (const id of STREAM_INPUT_MODEL_IDS) {
       const r = textToSpeechStreamInput.safe({ voice_id: VOICE_ID, model_id: id });
       expect(r.ok).toBe(true);
       // eleven_turbo_* are deprecated in the catalog; that is the only warning.
@@ -171,6 +171,25 @@ describe("elevenlabs.textToSpeechStreamInput schema enforcement", () => {
       caught = error;
     }
     expect(UnmodelValidationError.isInstance(caught)).toBe(true);
+  });
+});
+
+describe("elevenlabs.textToSpeechStreamInput model gate (models refresh 2026-11-12)", () => {
+  test("the socket serves the TTS family minus eleven_v3 and eleven_v4", () => {
+    expect(STREAM_INPUT_MODEL_IDS).toEqual(
+      TTS_MODEL_IDS.filter((id) => id !== "eleven_v3" && id !== "eleven_v4"),
+    );
+  });
+
+  test("eleven_v3 and eleven_v4 are refused by name, pointing at Text to Dialogue", () => {
+    for (const id of ["eleven_v3", "eleven_v4"]) {
+      const r = safeUnchecked({ voice_id: VOICE_ID, model_id: id });
+      expect(r.ok, id).toBe(false);
+      if (r.ok) continue;
+      expect(r.errors[0]?.code).toBe("unsupported_capability");
+      expect(r.errors[0]?.message).toContain("Text to Dialogue");
+      expect(String(r.errors[0]?.meta?.source)).toContain("websockets/realtime-tts");
+    }
   });
 });
 

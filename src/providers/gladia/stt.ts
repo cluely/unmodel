@@ -1,10 +1,11 @@
 /**
  * Gladia pre-recorded (async) STT — POST https://api.gladia.io/v2/pre-recorded
  *
- * Wire notes (verified 2026-08-13 against the OpenAPI document embedded in
- * https://docs.gladia.io/api-reference/v2/pre-recorded/init, plus
+ * Wire notes (verified 2026-11-12 against the live OpenAPI document at
+ * https://api.gladia.io/openapi.json, which
+ * https://docs.gladia.io/api-reference/v2/pre-recorded/init renders, plus
  * https://docs.gladia.io/chapters/limits-and-specifications/supported-formats
- * and https://www.gladia.io/pricing):
+ * and https://www.gladia.io/pricing.md):
  * - JSON endpoint. `audio_url` is the only required field: either an external
  *   URL or the `audio_url` returned by POST /v2/upload ({@link UPLOAD_URL},
  *   multipart with a single `audio` part — see {@link toUploadFormData}).
@@ -14,16 +15,16 @@
  *   `<toggle>_config` object; the config is read only "if `<toggle>` is
  *   enabled", so a config without its flag is reported as a silently-ignored
  *   param.
- * - `model` selects the transcription model. It is documented on the endpoint
- *   page ("Pass `model` to choose the transcription model … `"solaria-3"` /
- *   `"solaria-1"`") and in the quickstart, but is still missing from the
- *   OpenAPI `InitTranscriptionRequest` properties on that same page — the
- *   prose is the authority here.
- * - Billing is per minute of audio. The wire body only references audio by
- *   URL, so declare the length via
- *   `options.media = [{ path: ["audio_url"], durationSeconds }]` to get a
- *   `costUSD` estimate, `maxCostUSD` enforcement, and the 135-minute cap.
- *   Audio-intelligence add-ons are billed on top and are NOT estimated.
+ * - `model` selects the transcription model: `InitTranscriptionRequest.model`
+ *   (`"default": "solaria-1"`) takes the `TranscriptionSupportedModels` enum
+ *   `["solaria-1", "solaria-3", "solaria-fusion"]`. ./models says why
+ *   `solaria-fusion` has no catalog row; it validates with an `unknown_model`
+ *   warning.
+ * - Gladia bills per hour of audio in EUR only, so the catalog carries no
+ *   `cost` (./models says why) and no `costUSD` estimate is produced. The wire
+ *   body only references audio by URL, so declare the length via
+ *   `options.media = [{ path: ["audio_url"], durationSeconds }]` to get the
+ *   135-minute cap enforced.
  * - Live transcription runs over the Gladia WebSocket API, which unmodel does
  *   not validate.
  */
@@ -44,6 +45,8 @@ export const PRE_RECORDED_URL = "https://api.gladia.io/v2/pre-recorded";
 export const UPLOAD_URL = "https://api.gladia.io/v2/upload";
 
 const INIT_DOCS = "https://docs.gladia.io/api-reference/v2/pre-recorded/init";
+const MODELS_DOCS = "https://docs.gladia.io/chapters/introduction/models";
+const OPENAPI = "https://api.gladia.io/openapi.json";
 const LIMITS_DOCS = "https://docs.gladia.io/chapters/limits-and-specifications/supported-formats";
 
 /**
@@ -107,7 +110,11 @@ export interface GladiaDiarizationConfig {
 export interface GladiaTranslationConfig {
   /** iso639-1 codes; at least one. */
   target_languages: string[];
-  /** "base" (default), "batch" or "enhanced". */
+  /**
+   * "base", "batch" or "enhanced". The OpenAPI `TranslationConfigDTO` gives
+   * the default as "batch"; the Translation guide says "(default: base)" and
+   * omits "batch" — the API reference is the one followed here.
+   */
   model?: "base" | "batch" | "enhanced";
   match_original_utterances?: boolean;
   lipsync?: boolean;
@@ -350,9 +357,28 @@ function checkCallbackUrl(
 }
 
 /**
- * solaria-3 is "Async (pre-recorded) only", covers "English, French, German,
- * Spanish, Italian" and is "Single language only — pass exactly one language
- * in `language_config.languages` (no code switching)" (INIT_DOCS).
+ * solaria-3 is "Async (pre-recorded) only" and covers "English, French,
+ * German, Spanish, Italian" (INIT_DOCS). Every Gladia page agrees on those
+ * five, so a language outside them is an error, reported at the entry that
+ * names it.
+ *
+ * How many languages one request may name is where the pages disagree, and
+ * that disagreement sets the severity. The endpoint page says "Single language
+ * only — pass exactly one language in `language_config.languages` (no code
+ * switching)"; the Models page says "You can pass languages in
+ * `language_config.languages` (for example `["fr"]`, or several from
+ * EN/FR/DE/ES/IT) so the model can pick among those covered languages"; the
+ * OpenAPI puts no per-model constraint on the array ("Otherwise, language will
+ * be auto-detected by the model."); and https://www.gladia.io/solaria-3 marks
+ * "Auto language detection" Supported for Solaria-3 (all fetched 2026-11-12).
+ * Refusing none or several would refuse a request the Models page, the OpenAPI
+ * and the product page all document, so it is a warning naming the shape every
+ * page accepts: one language.
+ *
+ * `code_switching: true` beside exactly one language is a warning as well —
+ * the OpenAPI says "If one language is set, this option will be ignored." With
+ * none or several it is an error: the endpoint page rules it out and the
+ * Models page says "With `"solaria-3"`, there is no code switching."
  */
 function checkSolaria3(
   params: PreRecordedBody,
@@ -360,42 +386,60 @@ function checkSolaria3(
   ctx: PipelineContext,
 ): void {
   if (params.model !== "solaria-3") return;
-  const languages = params.language_config?.languages;
+  const languages = params.language_config?.languages ?? [];
 
-  if (languages === undefined || languages.length !== 1) {
+  if (languages.length !== 1) {
+    const got = languages.length === 0 ? "no language" : `${languages.length} languages`;
     ctx.report({
       code: "unsupported_capability",
+      severity: "warning",
       path: ["language_config", "languages"],
       model: "solaria-3",
-      message: `solaria-3 is single-language: pass exactly one language in \`language_config.languages\`; got ${languages === undefined ? "none" : `${languages.length}`}.`,
-      meta: { allowed: [...SOLARIA_3_LANGUAGES], source: INIT_DOCS },
+      message:
+        `solaria-3 got ${got} in \`language_config.languages\`. Gladia's endpoint page says to ` +
+        `"pass exactly one language", while its Models page and OpenAPI let solaria-3 ` +
+        `auto-detect among ${SOLARIA_3_LANGUAGES.join(", ")}; pin one of them for the shape ` +
+        "every page documents.",
+      meta: { allowed: [...SOLARIA_3_LANGUAGES], source: INIT_DOCS, contradictedBy: MODELS_DOCS },
     });
-  } else {
-    const language = languages[0];
+  }
+
+  for (const [index, language] of languages.entries()) {
     // The widening cast is what lets `SOLARIA_3_LANGUAGES` stay `as const`:
     // its literals are read back by `unified.ts`'s per-model `languages` row,
     // and a `readonly string[]` there would widen the completion list to
     // `string`.
-    if (language !== undefined && !(SOLARIA_3_LANGUAGES as readonly string[]).includes(language)) {
-      ctx.report({
-        code: "invalid_enum_value",
-        path: ["language_config", "languages", 0],
-        model: "solaria-3",
-        message: `solaria-3 covers ${SOLARIA_3_LANGUAGES.join(", ")}; got ${JSON.stringify(language)}. Use solaria-1 for the full 100+ language coverage.`,
-        meta: { allowed: [...SOLARIA_3_LANGUAGES], value: language, source: INIT_DOCS },
-      });
-    }
-  }
-
-  if (params.language_config?.code_switching === true) {
+    if ((SOLARIA_3_LANGUAGES as readonly string[]).includes(language)) continue;
     ctx.report({
-      code: "unsupported_capability",
-      path: ["language_config", "code_switching"],
+      code: "invalid_enum_value",
+      path: ["language_config", "languages", index],
       model: "solaria-3",
-      message: "solaria-3 does not support code switching; use solaria-1 for multi-language audio.",
-      meta: { source: INIT_DOCS },
+      message: `solaria-3 covers ${SOLARIA_3_LANGUAGES.join(", ")}; got ${JSON.stringify(language)}. Use solaria-1 for the full 100+ language coverage.`,
+      meta: { allowed: [...SOLARIA_3_LANGUAGES], value: language, source: INIT_DOCS },
     });
   }
+
+  if (params.language_config?.code_switching !== true) return;
+  if (languages.length === 1) {
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["language_config", "code_switching"],
+      model: "solaria-3",
+      message:
+        "`language_config.code_switching` is ignored when one language is set, and solaria-3 " +
+        "does not code-switch; drop it, or use solaria-1 for multi-language audio.",
+      meta: { source: OPENAPI },
+    });
+    return;
+  }
+  ctx.report({
+    code: "unsupported_capability",
+    path: ["language_config", "code_switching"],
+    model: "solaria-3",
+    message: "solaria-3 does not support code switching; use solaria-1 for multi-language audio.",
+    meta: { source: INIT_DOCS },
+  });
 }
 
 /** Speaker-count bounds must be consistent with each other. */
@@ -512,9 +556,10 @@ const validator = createValidator<PreRecordedBody, unknown>({
  * `x-gladia-key: <GLADIA_API_KEY>`). Gladia's JS SDK takes wire-shaped params,
  * so `.toSdk("gladia")` returns the body unchanged.
  *
- * Cost estimation: declare the audio length via
- * `options.media = [{ path: ["audio_url"], durationSeconds }]` to get a
- * `costUSD` estimate and 135-minute cap enforcement.
+ * Declare the audio length via
+ * `options.media = [{ path: ["audio_url"], durationSeconds }]` to get the
+ * 135-minute cap enforced. No `costUSD` is estimated: Gladia prices in EUR
+ * only (see ./models).
  *
  * Live transcription runs over the Gladia WebSocket API and is not validated
  * by unmodel.

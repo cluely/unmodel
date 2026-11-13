@@ -90,6 +90,22 @@ describe("elevenlabs.sfx wire shape", () => {
     }
   });
 
+  test("the seven wav_* NonStreamingOutputFormats are accepted (2026-10-19 changelog)", () => {
+    const wav = SOUND_EFFECTS_OUTPUT_FORMATS.filter((format) => format.startsWith("wav_"));
+    expect(wav).toEqual([
+      "wav_8000",
+      "wav_16000",
+      "wav_22050",
+      "wav_24000",
+      "wav_32000",
+      "wav_44100",
+      "wav_48000",
+    ]);
+    const result = sfx.safe({ text: "hum", output_format: "wav_48000" });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.params.request.url).toBe(`${SOUND_EFFECTS_URL}?output_format=wav_48000`);
+  });
+
   test("every SOUND_EFFECTS_OUTPUT_FORMATS preset validates cleanly", () => {
     for (const format of SOUND_EFFECTS_OUTPUT_FORMATS) {
       const result = safeUnchecked({ text: "hum", output_format: format });
@@ -102,10 +118,18 @@ describe("elevenlabs.sfx wire shape", () => {
 });
 
 describe("elevenlabs.sfx model gate", () => {
-  test("the one sound-effects id passes, and it is the documented default", () => {
-    expect(SFX_MODEL_IDS).toEqual(["eleven_text_to_sound_v2"]);
+  test("both SFXModelId members pass, and v2 is the documented default", () => {
+    expect(SFX_MODEL_IDS).toEqual(["eleven_text_to_sound_v3", "eleven_text_to_sound_v2"]);
     expect(DEFAULT_SFX_MODEL_ID).toBe("eleven_text_to_sound_v2");
     expect(safeUnchecked({ text: "hum", model_id: DEFAULT_SFX_MODEL_ID }).ok).toBe(true);
+  });
+
+  test("eleven_text_to_sound_v3 validates clean, and `loop` rides on it", () => {
+    const result = sfx.safe({ text: "hum", loop: true, model_id: "eleven_text_to_sound_v3" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toEqual([]);
+    expect(result.params.model_id).toBe("eleven_text_to_sound_v3");
   });
 
   /**
@@ -124,19 +148,35 @@ describe("elevenlabs.sfx model gate", () => {
   });
 
   test("an id absent from the catalog only warns", () => {
-    const result = safeUnchecked({ text: "hum", model_id: "eleven_text_to_sound_v3" });
+    const result = safeUnchecked({ text: "hum", model_id: "eleven_text_to_sound_v9" });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.warnings.some((issue) => issue.code === "unknown_model")).toBe(true);
   });
 
-  test("`loop` on an unknown model warns without refusing", () => {
-    const result = safeUnchecked({ text: "hum", loop: true, model_id: "eleven_text_to_sound_v3" });
+  /**
+   * The served spec documents `loop` with no per-model restriction, so an
+   * unknown id carrying it draws the `unknown_model` warning and nothing more.
+   */
+  test("`loop` on an unknown model is not refused", () => {
+    const result = safeUnchecked({ text: "hum", loop: true, model_id: "eleven_text_to_sound_v9" });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const warning = result.warnings.find((issue) => issue.path[0] === "loop");
-    expect(warning?.code).toBe("unsupported_param");
+    expect(result.warnings.map((issue) => issue.code)).toEqual(["unknown_model"]);
     expect(safeUnchecked({ text: "hum", loop: true }).ok).toBe(true);
+  });
+});
+
+describe("elevenlabs.sfx deprecations (models refresh 2026-11-12)", () => {
+  test("eleven_text_to_sound_v2 is deprecated, and an omitted model_id (the server default) says so", () => {
+    expect(models.eleven_text_to_sound_v2.status).toBe("deprecated");
+    for (const params of [{ text: "hum", model_id: "eleven_text_to_sound_v2" }, { text: "hum" }]) {
+      const result = sfx.safe(params);
+      expect(result.ok).toBe(true);
+      if (!result.ok) continue;
+      expect(result.warnings.map((issue) => issue.code)).toEqual(["deprecated_model"]);
+      expect(result.warnings[0]?.model).toBe("eleven_text_to_sound_v2");
+    }
   });
 });
 
@@ -185,6 +225,20 @@ describe("elevenlabs.sfx cost estimation", () => {
     expect(models.eleven_text_to_sound_v2.cost).toEqual({
       perAudioMinute: SOUND_EFFECTS_PER_AUDIO_MINUTE,
     });
+    expect(models.eleven_text_to_sound_v3.cost).toEqual({
+      perAudioMinute: SOUND_EFFECTS_PER_AUDIO_MINUTE,
+    });
+  });
+
+  test("eleven_text_to_sound_v3 prices at the same $0.12 per generated minute", () => {
+    const result = sfx.safe({
+      text: "hum",
+      duration_seconds: 30,
+      model_id: "eleven_text_to_sound_v3",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.estimate.costUSD).toBeCloseTo(0.06, 10);
   });
 
   test("duration_seconds drives the estimate", () => {

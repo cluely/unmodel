@@ -69,7 +69,10 @@ export const sfx = {
         resolveAudioFormat(input.outputFormat, FORMAT, { path: ["outputFormat"], warn: ctx.warn }),
       );
       if (format !== undefined && format.sampleRate !== undefined) {
-        let composite = `${format.wire}_${format.sampleRate}`;
+        // 16-bit PCM in a WAV header is its own composite prefix (`wav_44100`).
+        const codec =
+          format.codec === "pcm_s16le" && format.container === "wav" ? "wav" : format.wire;
+        let composite = `${codec}_${format.sampleRate}`;
         if (format.bitrate !== undefined) {
           const kbps = ctx.take(
             bitsToKbps(format.bitrate, { path: ["outputFormat"], warn: ctx.warn }),

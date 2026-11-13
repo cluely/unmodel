@@ -29,8 +29,8 @@ export const MODELS = Object.keys(sttModels).filter((id) => !id.startsWith("flux
 >[];
 
 /**
- * Deepgram's per-model surface: 38 rows, one shared body of extras, and one key
- * that only three of them take.
+ * Deepgram's per-model surface: 39 rows, one shared body of extras, and two keys
+ * that only four of them take.
  *
  * ## `timestamps`
  *
@@ -47,13 +47,18 @@ export const MODELS = Object.keys(sttModels).filter((id) => !id.startsWith("flux
  * "Keyterm Prompting is available … using the Nova-3 Models" — and on any other
  * model Deepgram **accepts the parameter and ignores it**, which is the failure
  * mode that looks like a quality regression rather than a bad request. So it is
- * declared on the three `nova-3*` ids and refused by name elsewhere, naming
+ * declared on the four `nova-3*` ids and refused by name elsewhere, naming
  * them; `keywords` is on every row, because that is the pre-Nova-3 answer the
  * provider's own message points at.
  *
+ * `language_hint` rides the same row for the same reason: it "only applies
+ * when `language=multi`" and "Nova-2 does not support `language_hint`"
+ * (https://developers.deepgram.com/docs/nova-3-language-prompting, read
+ * 2026-11-12), so off Nova-3 it is refused rather than sent to be ignored.
+ *
  * ## Why the table is built rather than written out
  *
- * 38 identical literals would imply a distinction the endpoint does not make —
+ * 39 identical literals would imply a distinction the endpoint does not make —
  * one query surface serves every id — so the rows are generated from the same
  * `MODELS` array the ref union comes from, with the Nova-3 row swapped in by
  * family. The cast preserves the literal keys, which is what makes the lookup
@@ -102,13 +107,18 @@ export const LISTEN_EXTRAS = {
   // Account
   mip_opt_out: EXTRA as boolean,
   tag: EXTRA as string | string[],
+  redact_usage: EXTRA as boolean,
 } as const;
 
 export const TIMESTAMPS = ["word", "segment"] as const;
 
 export const NOVA_3_ROW = {
   timestamps: TIMESTAMPS,
-  extras: { ...LISTEN_EXTRAS, keyterm: EXTRA as string | string[] },
+  extras: {
+    ...LISTEN_EXTRAS,
+    keyterm: EXTRA as string | string[],
+    language_hint: EXTRA as string | string[],
+  },
 } as const;
 
 export const LISTEN_ROW = { timestamps: TIMESTAMPS, extras: LISTEN_EXTRAS } as const;
@@ -118,8 +128,8 @@ export const DEEPGRAM_STT_MODEL_PARAMS = Object.fromEntries(
 ) as {
   // The conditional mirrors the `startsWith` above, and it has to: a cast to
   // `Record<Model, NovaRow | ListenRow>` would give *every* id the union of
-  // both rows, and `keyterm` would then resolve to `never` on all 38 — a green
-  // build with the one per-model fact in this table silently erased. Measured;
+  // both rows, and `keyterm` would then resolve to `never` on all 39 — a green
+  // build with the per-model facts in this table silently erased. Measured;
   // the same class of failure `AnyModelParamTable` documents.
   readonly [M in (typeof MODELS)[number]]: M extends `nova-3${string}`
     ? typeof NOVA_3_ROW

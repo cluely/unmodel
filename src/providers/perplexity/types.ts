@@ -39,8 +39,8 @@
  * - `perplexity.chat` → `ChatBody`
  */
 
-import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
 import type { PerplexityTextModelId } from "../../catalog/perplexity.gen";
+import type { PerplexityChatCompletionsBody } from "./index";
 
 export type {
   PerplexityModelId,
@@ -79,15 +79,29 @@ export type {
   ChatResponseFormat,
 } from "../openai-compatible/wire";
 
+export type { ChatChoiceLike, ChatFinishReason } from "../openai-compatible/check";
+
+// Widens the dialect's response shape with the `usage` fields checkChat reads,
+// and its user content parts with the Sonar reference's chunks. The body is
+// the one `perplexity.chat` validates against, so what type-checks against
+// `ChatBody` is what that validator accepts.
 export type {
-  ChatChoiceLike,
   ChatCompletionLike,
-  ChatFinishReason,
-} from "../openai-compatible/check";
+  PerplexityChatCompletionsBody,
+  PerplexityChatMessage,
+  PerplexityChatUserMessage,
+  PerplexityUserContentPart,
+  ChatMessageContentImageChunk,
+  ChatMessageContentFileChunk,
+  ChatMessageContentPDFChunk,
+  ChatMessageContentVideoChunk,
+  VideoURL,
+} from "./index";
 
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.
 // Pure type aliases: no rename, no runtime, no cost.
 // ---------------------------------------------------------------------------
 
-export type ChatBody<ModelId extends string = PerplexityTextModelId> = ChatCompletionsBodyBase<ModelId>;
+export type ChatBody<ModelId extends string = PerplexityTextModelId> =
+  PerplexityChatCompletionsBody<ModelId>;

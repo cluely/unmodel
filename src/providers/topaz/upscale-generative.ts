@@ -1,9 +1,10 @@
 /**
  * Topaz generative upscale — POST https://api.topazlabs.com/image/v1/enhance-gen/async
  *
- * The Wonder and Bloom families: nine diffusion models that ADD detail rather
- * than recovering it, steered by a prompt and a creativity dial. The classic
- * half lives one route over at {@link ./upscale}, and the split is Topaz's own
+ * The Wonder and Bloom families, plus Detail: twelve diffusion models that ADD
+ * detail rather than recovering it, three of them (`Redefine`, `Bloom 2`,
+ * `Bloom`) steered by a prompt. The classic half lives one route over at
+ * {@link ./upscale}, and the split is Topaz's own
  * — two paths, two disjoint model enums, two different sets of dials. That is a
  * wire route fork, so it is a second address (`topaz.upscaleGenerative`) rather
  * than a parameter on the first.
@@ -16,8 +17,9 @@
  * union would hide.
  *
  * Wire notes (verified against the published OpenAPI 3.1.2 document and the
- * per-model pages under /image-models/wonder and /image-models/bloom on
- * 2026-08-25):
+ * per-model pages under
+ * /image-models/upscaling-and-enhancement/{generative,creative,precision} on
+ * 2026-08-25; the URLs re-checked 2026-11-13):
  *
  * - **multipart/form-data, always** — see `./upscale.ts`. Build the body with
  *   `toFormData` and let `fetch` derive the boundary.
@@ -26,10 +28,11 @@
  *   than imperative: "girl with red hair and blue eyes", not "change the girl's
  *   hair to red". `autoprompt: true` writes one for you and ignores whatever
  *   `prompt` said.
- * - `creativity` is an integer 1–9 (1–4 on `Bloom Realism`, which narrows a
- *   shared dial), `texture` 1–5.
- * - The MP ceilings here are much tighter than on the classic route — 128 MP at
- *   `Wonder`, 256 at `Redefine` — and `checkOutputMegapixels` knows them.
+ * - `creativity` is an integer: 1–9 at `Bloom 2` / `Bloom`, 1–6 at
+ *   `Redefine`, 1–4 at `Bloom Realism`. `texture` is 1–5.
+ * - The MP ceilings follow the model — 256 MP at `Redefine` and `Wonder`, as on
+ *   the classic route, and 384 out at `Standard MAX` and `Recover 3` — and
+ *   `checkOutputMegapixels` knows them.
  * - Headers: add `X-API-Key: <TOPAZ_API_KEY>` yourself.
  */
 
@@ -49,7 +52,6 @@ import {
   TOPAZ_ENHANCE_GEN_MODELS,
   TOPAZ_GRAIN_MODELS,
   TOPAZ_SUBJECT_DETECTION,
-  checkConditionalStrengths,
   checkModelSettings,
   checkOutputMegapixels,
   checkSource,
@@ -66,7 +68,11 @@ import { topazCostUSD } from "./pricing";
 
 export { ENHANCE_GEN_URL } from "./shared";
 
-const SOURCE = `${DOCS_BASE}/image-models/wonder`;
+/**
+ * The page that names this route's models across all three families —
+ * `Detail` is filed under Precision and the Bloom models under Creative.
+ */
+const SOURCE = `${DOCS_BASE}/image-models/upscaling-and-enhancement`;
 
 /** Every setting this route documents, in one list for the model-gate check. */
 const ENHANCE_GEN_SETTINGS = [
@@ -93,7 +99,12 @@ const ENHANCE_GEN_SETTINGS = [
   "outputWidth",
   "outputHeight",
   "colorPreservation",
+  "creativityBoost",
+  "facePreservation",
   "seed",
+  "colorCorrection",
+  "preDownscale",
+  "detailLevel",
 ] as const;
 
 export interface TopazUpscaleGenerativeParams extends TopazEnhanceGenSettings {
@@ -103,7 +114,7 @@ export interface TopazUpscaleGenerativeParams extends TopazEnhanceGenSettings {
   source_id?: string;
   /** A URL Topaz fetches. The spelling `unmodel/upscale` compiles to. */
   source_url?: string;
-  /** One of the nine generative models. Defaults to `"Redefine"` server-side. */
+  /** One of the twelve generative models. Defaults to `"Redefine"` server-side. */
   model?: TopazEnhanceGenModel | (string & {});
   /** 1–32000. */
   output_height?: number;
@@ -115,8 +126,12 @@ export interface TopazUpscaleGenerativeParams extends TopazEnhanceGenSettings {
   output_format?: TopazOutputFormat;
   /** JSON callback on every status change. */
   webhook_url?: string;
-  /** `Wonder 3`, `Wonder 3.5`. Coarser than `creativity`. */
-  enhancementStrength?: TopazEnhancementStrength;
+  /**
+   * `Wonder 3`, `Wonder 3.5`: a word, default `"high"` — coarser than
+   * `creativity`. `Recover 3`: a decimal 0–10, default 5.0 — “How much detail
+   * the model recovers.”
+   */
+  enhancementStrength?: TopazEnhancementStrength | number;
   /** `Wonder 3.5`, `Bloom 2`. Film-grain simulation. */
   grain?: boolean;
   grainDensity?: number;
@@ -135,10 +150,20 @@ export interface TopazUpscaleGenerativeParams extends TopazEnhanceGenSettings {
    */
   outputWidth?: number;
   outputHeight?: number;
-  /** `Bloom 2`. Keep the source's colours while new detail is added. */
+  /** `Bloom 2`, `Bloom`. Keep the source's colours while new detail is added. */
   colorPreservation?: boolean;
-  /** `Bloom 2` (default 2), `Bloom Realism` (1–2000, default 1). */
+  /** `Redefine` (default true), `Bloom` (default false). Increases the effect of `creativity`. */
+  creativityBoost?: boolean;
+  /** `Bloom`. Keeps faces close to the source. Default true. */
+  facePreservation?: boolean;
+  /** `Redefine` (default 1), `Bloom 2` (default 2), `Bloom Realism` (default 1), `Bloom` (default 1). */
   seed?: number;
+  /** `Wonder 2`. Colour correction after processing. Default true. */
+  colorCorrection?: boolean;
+  /** `Wonder 2`. Integer 1–4, default 1. Downscales the input first; helps very small sources. */
+  preDownscale?: number;
+  /** `Redefine`. Integer 1–5, default 1. Amount of fine detail added. */
+  detailLevel?: number;
 }
 
 const unitInterval = z.number().min(0).max(1);
@@ -155,7 +180,11 @@ const upscaleGenSchema = z.looseObject({
   denoise: unitInterval.optional(),
   detail: z.boolean().optional(),
   detailStrength: z.number().min(0).max(10).optional(),
-  enhancementStrength: z.enum(TOPAZ_ENHANCEMENT_STRENGTHS).optional(),
+  // A word at Wonder 3 / 3.5, a 0–10 decimal at Recover 3; the per-model enum
+  // below keeps the Wonders to their words.
+  enhancementStrength: z
+    .union([z.enum(TOPAZ_ENHANCEMENT_STRENGTHS), z.number().min(0).max(10)])
+    .optional(),
   grain: z.boolean().optional(),
   grainDensity: z.number().optional(),
   grainModel: z.enum(TOPAZ_GRAIN_MODELS).optional(),
@@ -166,7 +195,12 @@ const upscaleGenSchema = z.looseObject({
   outputWidth: z.number().int().optional(),
   outputHeight: z.number().int().optional(),
   colorPreservation: z.boolean().optional(),
+  creativityBoost: z.boolean().optional(),
+  facePreservation: z.boolean().optional(),
   seed: z.number().int().optional(),
+  colorCorrection: z.boolean().optional(),
+  preDownscale: z.number().int().min(1).max(4).optional(),
+  detailLevel: z.number().int().min(1).max(5).optional(),
 });
 
 const SUBJECT_ENUM = { subjectDetection: TOPAZ_SUBJECT_DETECTION } as Readonly<
@@ -179,7 +213,10 @@ const STRENGTH_ENUM = {
 } as Readonly<Record<string, readonly string[]>>;
 
 export const upscaleGenerativeConstraints = {
-  Redefine: { enums: SUBJECT_ENUM },
+  // `creativity` is 1–6 here. Verified 2026-11-12 on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/redefine.md:
+  // “| `creativity`      | `integer` | <p>Optional<br>Default: <code>3</code></p>    | `1` to `6`      |”.
+  Redefine: { enums: { ...SUBJECT_ENUM, creativity: [1, 2, 3, 4, 5, 6] } },
   Wonder: { enums: SUBJECT_ENUM },
   "Wonder 2": { enums: SUBJECT_ENUM },
   "Wonder 3": { enums: STRENGTH_ENUM },
@@ -187,10 +224,10 @@ export const upscaleGenerativeConstraints = {
   "Standard MAX": { enums: SUBJECT_ENUM },
   "Recover 3": { enums: SUBJECT_ENUM },
   "Bloom 2": { enums: SUBJECT_ENUM },
-  // The one per-model narrowing of a SHARED dial in this provider: the
-  // endpoint's own block documents `creativity` as 1–9 and Bloom Realism's page
-  // documents it as 1–4. `EndpointConstraints.enums` takes a closed list, and a
-  // range of integers is one when it is four long.
+  // The route schema's 1–9 is what the Bloom 2 and Bloom (1 Creative) pages
+  // document; Bloom Realism's page documents `creativity` as 1–4, and
+  // Redefine's (above) as 1–6. `EndpointConstraints.enums` takes a closed
+  // list, and a short range of integers is one.
   "Bloom Realism": { enums: { ...SUBJECT_ENUM, creativity: [1, 2, 3, 4] } },
 } as const satisfies Readonly<Partial<Record<string, EndpointConstraints>>>;
 
@@ -235,8 +272,8 @@ const validator = createValidator<TopazUpscaleGenerativeParams, unknown>({
   constraints: upscaleGenerativeConstraints,
   checks: [
     checkSource(SOURCE),
-    checkConditionalStrengths(SOURCE),
     checkModelSettings(SOURCE, ENHANCE_GEN_SETTINGS),
+    checkRecoverStrength,
     checkOutputMegapixels(SOURCE),
   ],
   estimate,
@@ -280,3 +317,34 @@ export const upscaleGenerative = validator as unknown as {
 
 /** Every model this address serves, for the adapter's route fork. */
 export const ENHANCE_GEN_MODELS = TOPAZ_ENHANCE_GEN_MODELS;
+
+const RECOVER_3_SOURCE = `${DOCS_BASE}/image-models/upscaling-and-enhancement/generative/recover-3.md`;
+
+/**
+ * `Recover 3` reads `enhancementStrength` as a number, never one of the
+ * Wonders' words.
+ *
+ * The route schema takes either spelling because the dial is a word at
+ * `Wonder 3` / `Wonder 3.5` and a decimal here, and the per-model enum keeps
+ * the Wonders on their words; this is the other direction. Verified 2026-11-12
+ * on recover-3.md: “| `enhancementStrength` | `decimal` |
+ * <p>Optional<br>Default: <code>5.0</code></p> | `0.0` to `10.0` |”, and the
+ * page names no word value. Keyed on the exact rostered id, so an unrostered
+ * or open-string model still passes.
+ */
+function checkRecoverStrength(
+  params: TopazUpscaleGenerativeParams,
+  _info: unknown,
+  ctx: PipelineContext,
+): void {
+  if (params.model !== "Recover 3" || typeof params.enhancementStrength !== "string") return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["enhancementStrength"],
+    model: "Recover 3",
+    message:
+      '`enhancementStrength` is a decimal 0.0–10.0 on "Recover 3" (default 5.0) — the words ' +
+      '"low" / "medium" / "high" are Wonder 3 and Wonder 3.5\'s spelling of the dial.',
+    meta: { source: RECOVER_3_SOURCE },
+  });
+}

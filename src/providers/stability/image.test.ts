@@ -49,6 +49,8 @@ describe("stability.image", () => {
     expect(v.request.method).toBe("POST");
     // Multipart: fetch must derive the boundary from FormData; no static headers.
     expect(v.request.headers).toEqual({});
+    // The marker `toRequestInit` refuses on — a JSON body would send `{}` Blobs.
+    expect(v.request.body).toBe("form");
     // No official JS SDK — toSdk("stability") returns the fields unchanged.
     expect(v.toSdk("stability")).toEqual({
       prompt: "a lighthouse at dawn",
@@ -115,6 +117,7 @@ describe("stability.imageCore", () => {
     expect(v.request.method).toBe("POST");
     // Multipart: fetch must derive the boundary from FormData; no static headers.
     expect(v.request.headers).toEqual({});
+    expect(v.request.body).toBe("form");
   });
 
   test("targets the core route and estimates 3 credits = $0.03", () => {
@@ -155,6 +158,7 @@ describe("stability.imageSd3", () => {
     const v = imageSd3({ prompt: "hi", model: "sd3.5-large-turbo" });
     expect(Object.keys(v)).toEqual(["prompt", "model"]);
     expect(v.request.url).toBe(STABLE_IMAGE_SD3_URL);
+    expect(v.request.body).toBe("form");
   });
 
   test("omitted model estimates the documented default (sd3.5-large, $0.065)", () => {

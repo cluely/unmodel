@@ -6,7 +6,7 @@
  * editor knows before the call is made:
  *
  *  1. **The ref union comes from the fourteen adapters' `as const` model
- *     arrays.** `"elevenlabs/eleven_v3"` is in it, `"elevenlabs/eleven_v4"` is
+ *     arrays.** `"elevenlabs/eleven_v4"` is in it, `"elevenlabs/eleven_v9"` is
  *     not — but an unregistered ref is still *callable*, because a model
  *     released after this snapshot must not need a library upgrade.
  *  2. **The result is the ref'd provider's own `Validated`.** OpenAI's has
@@ -42,13 +42,15 @@ type PackRefs = UnifiedRef<
   | typeof murfTts
 >;
 
+expectAssignable<PackRefs>("elevenlabs/eleven_v4");
 expectAssignable<PackRefs>("elevenlabs/eleven_v3");
 expectAssignable<PackRefs>("elevenlabs/eleven_flash_v2_5");
 expectAssignable<PackRefs>("openai/gpt-4o-mini-tts");
 expectAssignable<PackRefs>("cartesia/sonic-3.5");
 expectAssignable<PackRefs>("murf/falcon-2");
+expectAssignable<PackRefs>("murf/falcon-2.1");
 // @ts-expect-error — a model no adapter declares is not in the union…
-expectAssignable<PackRefs>("elevenlabs/eleven_v4");
+expectAssignable<PackRefs>("elevenlabs/eleven_v9");
 // @ts-expect-error — …and neither is a provider from another category.
 expectAssignable<PackRefs>("google/gemini-3-pro");
 
@@ -58,7 +60,7 @@ function refUnionTests(): void {
   tts({ model: "deepgram/aura-2-thalia-en", text: "hi" });
   // …but does not gate the call: a model newer than this snapshot still works
   // and draws a runtime `unknown_model` warning.
-  tts({ model: "elevenlabs/eleven_v4", text: "hi", voice: "v1" });
+  tts({ model: "elevenlabs/eleven_v9", text: "hi", voice: "v1" });
   // A provider with no adapter is a runtime structural error, not a type error:
   // the ref tail is `(string & {})`, deliberately.
   tts({ model: "sarvam/bulbul-v2", text: "hi" });
@@ -228,11 +230,15 @@ function extrasNarrowingTests(): void {
 
   // Rime's Coda denies all four Mist-family knobs, so its row declares none.
   tts({ model: "rime/mistv2", text: "hi", voice: "astra", noTextNormalization: true });
-  // @ts-expect-error — `noTextNormalization` is "mist/mistv2 only".
+  // @ts-expect-error — `noTextNormalization` was "mist/mistv2 only" (legacy reference, 2026-08-13).
   tts({ model: "rime/mistv3", text: "hi", voice: "astra", noTextNormalization: true });
   tts({ model: "rime/mistv3", text: "hi", voice: "astra", pauseBetweenBrackets: true });
   // @ts-expect-error — …which Coda does not have either.
   tts({ model: "rime/coda", text: "hi", voice: "astra", pauseBetweenBrackets: true });
+  // "`phonemizeBetweenBrackets` works on English Mist v3 only."
+  tts({ model: "rime/mistv3", text: "hi", voice: "astra", phonemizeBetweenBrackets: true });
+  // @ts-expect-error — "Coda and non-English Mist v3 ignore it."
+  tts({ model: "rime/coda", text: "hi", voice: "astra", phonemizeBetweenBrackets: true });
 
   // Inworld's two rules cross: `deliveryMode` is TTS-2's, `temperature` is not.
   tts({ model: "inworld/inworld-tts-2", text: "hi", voice: "v1", deliveryMode: "STABLE" });
@@ -245,6 +251,11 @@ function extrasNarrowingTests(): void {
   // @ts-expect-error — a key no model on the ref'd provider takes is a typo.
   tts({ model: "elevenlabs/eleven_v3", text: "hi", voice: "v1", stabilty: 0.3 });
   tts({ model: "elevenlabs/eleven_v3", text: "hi", voice: "v1", stability: 0.3 });
+  // `clone_strength` "Applies only to professional voice clones fine-tuned for
+  // the selected v4 model" — it completes on eleven_v4 and nowhere else.
+  tts({ model: "elevenlabs/eleven_v4", text: "hi", voice: "v1", clone_strength: 0.5 });
+  // @ts-expect-error — eleven_v3's row has no `clone_strength`.
+  tts({ model: "elevenlabs/eleven_v3", text: "hi", voice: "v1", clone_strength: 0.5 });
 }
 
 /**

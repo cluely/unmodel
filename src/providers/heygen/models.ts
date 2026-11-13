@@ -2,19 +2,20 @@
 //   https://developers.heygen.com/openapi/external-api.json   (OpenAPI 3.1.0 — the CURRENT one; see below)
 //   https://developers.heygen.com/reference/create-video      (POST /v3/videos)
 //   https://developers.heygen.com/reference/create-lipsync    (POST /v3/lipsyncs)
+//   https://developers.heygen.com/models                      (engine comparison: which engine takes which input)
 //   https://developers.heygen.com/avatar-iii                  (engine pages: iii, iv, v)
 //   https://developers.heygen.com/lipsync-speed               (and /lipsync-precision)
-//   https://developers.heygen.com/docs/pricing                (public USD, no login)
+//   https://platform.heygen.com/pricing                       (USD rates, sign-in required — see PRICING below)
 //   https://developers.heygen.com/docs/usage-limits           (10 concurrent jobs, 429 + Retry-After)
 //   https://developers.heygen.com/docs/quick-start            (x-api-key, v1/v2 sunset)
-// Verified 2026-08-25. Every docs route also serves raw Markdown at `<route>.md`,
-// which is what was read.
+// Verified 2026-08-25, re-verified 2026-11-12. Every docs route also serves raw
+// Markdown at `<route>.md`, which is what was read.
 //
 // TWO SPECS, AND THE WRONG ONE ALSO ANSWERS 200.
 // `${DOCS_BASE}/openapi.yaml` is a v4.0.8 document with 52 paths, all v1/v2 —
 // its only `/v3` path is `/v3/template/{id}` and it contains no `/v3/videos`.
-// `openapi/external-api.json` (1.16 MB, 98 paths, 300 schemas) is the current
-// one and is what this provider was typed against. See ./shared.ts.
+// `openapi/external-api.json` (1.96 MB, 136 paths, 517 schemas on 2026-11-12) is
+// the current one and is what this provider was typed against. See ./shared.ts.
 //
 // THE DOC HOST MOVED AND THE OLD SLUGS DID NOT SURVIVE IT.
 // docs.heygen.com 301s to developers.heygen.com, but the old canonical paths
@@ -26,22 +27,41 @@
 // Neither generation route has a `model` field. `POST /v3/videos` has an
 // `engine` discriminated union — `avatar_iii`, `avatar_iv` (the default when
 // omitted), `avatar_v` — and those three are separate products with separate
-// pages and a four-fold price spread, so they are three catalog ids under their
+// pages and a twelve-fold price spread, so they are three catalog ids under their
 // own wire spellings. `POST /v3/lipsyncs` has `mode: "speed" | "precision"`
 // (default "speed"), two products with two pages and a 2× price difference, so
 // they are two more, spelled the way HeyGen's own doc slugs spell them
 // (`/lipsync-speed`, `/lipsync-precision`). The wire values are recovered from
 // the ids in `finalize`, never the other way round.
 //
-// PRICING IS PUBLIC USD, AND TWO OF THE FIVE ROWS CARRY A BAND.
-// HeyGen's price table is keyed by ENGINE × AVATAR TYPE, and the avatar type is
-// a property of the `avatar_id` — it lives on `GET /v3/avatars/looks`, not in
-// the request — so two of the three engine rows have a rate that a request body
-// cannot settle. Following the sync. precedent, the row carries the TOP of the
-// band and the whole table is quoted above it: an estimate built from these
-// rows is an UPPER BOUND, which is the right direction for one. The two lipsync
-// rows are exact, because `mode` is the only thing their price depends on and
-// it is in the body.
+// PRICING IS USD BEHIND A SIGN-IN, AND IS READ FROM THE PLATFORM'S OWN DATA.
+// The public page is gone: https://developers.heygen.com/docs/pricing answers
+// 404 ("The requested page could not be found.", 2026-11-12), and
+// https://developers.heygen.com/llms.txt now reads "[Self-Serve
+// Pricing](https://platform.heygen.com/pricing): Per-operation API pricing and
+// credit packs. Sign in to the API dashboard at platform.heygen.com to see
+// current prices." That route renders a sign-in form for an anonymous session.
+// The rates themselves ship as data in the platform's catalog module —
+// https://platform.heygen.com/assets/catalogText-1niwFpkW.js, the module
+// https://platform.heygen.com/assets/index-BgfG1htF.js loads — and every rate
+// below is quoted from it (2026-11-12). They are byte-identical in the two
+// earlier builds, catalogText-mQHkbAZ4.js and catalogText-C39nvOfF.js, which
+// still answer 200. The file name is content-hashed and rotates with each
+// deploy: refresh by fetching https://platform.heygen.com/, following the
+// index module it loads, and reading the catalogText module that one names.
+//
+// The engine table is keyed by ENGINE × AVATAR TYPE (tiers labelled "Custom
+// Video Avatar", "Studio Avatar", "Photo Avatar"), and the avatar type is a
+// property of the `avatar_id` — it lives on `GET /v3/avatars/looks`, not in the
+// request — so an engine row has a rate a request body cannot settle.
+// Following the sync. precedent, `avatar_iii` and `avatar_iv` carry the TOP of
+// their band and the whole band is quoted above them: an estimate built from
+// them is an UPPER BOUND, which is the right direction for one. `avatar_v`
+// publishes one tier only; its row says what that does and does not cover.
+// The engine tiers share one note — "Rates apply to 720p and 1080p output."
+// (`pricing_avatar_resolution_note` in the index module) — so a 4K render has
+// no published rate at all. The two lipsync rows are exact, because `mode` is
+// the only thing their price depends on and it is in the body.
 //
 // NOTHING HERE ESTIMATES, and the reason is the same everywhere in this
 // category: every rate is per SECOND OF OUTPUT and the output's length follows
@@ -71,7 +91,7 @@
 // entry that would make the tts capability matrix look wider while telling a
 // caller nothing. It joins the day HeyGen publishes a voice roster or a second
 // engine. (`POST /v1/audio/text_to_speech` is the v1 spelling of the same
-// thing and is on the October 31, 2026 sunset list besides.)
+// thing and is past its October 31, 2026 sunset besides.)
 //
 // `type: "cinematic_avatar"` on `POST /v3/videos` — prompt-to-video, 4–15
 // seconds, $7.00 flat, backed by Seedance, with 1–3 avatar looks as visual
@@ -140,18 +160,23 @@ const clipModality = { input: ["audio", "video"], output: ["video"] } as const;
 
 export const models = {
   /**
-   * $0.0167 per second for a Digital Twin or Studio Avatar, $0.0433 for a Photo
-   * Avatar.
+   * $0.01 per second for a Custom Video Avatar, $0.0165 for a Studio Avatar or
+   * a Photo Avatar (720p and 1080p).
    *
-   * Source: https://developers.heygen.com/docs/pricing — verified 2026-08-25.
-   * Quote: “### Video Generation — Avatar III … | Digital Twin | \$0.0167 / sec
-   * | | Studio Avatar | \$0.0167 / sec | | Photo Avatar | \$0.0433 / sec |”
+   * Source: https://platform.heygen.com/assets/catalogText-1niwFpkW.js (the
+   * data behind https://platform.heygen.com/pricing) — verified 2026-11-12.
+   * Quote: “id:"avatar-iii",…,apiId:"avatar_iii",…tiers:[{id:"custom-video-avatar",
+   * labelKey:"pricing_tier_custom_video_avatar",usd:.01,unit:"second"},
+   * {id:"studio-avatar",labelKey:"pricing_tier_studio_avatar",usd:.0165,
+   * unit:"second"},{id:"photo-avatar",labelKey:"pricing_tier_photo_avatar",
+   * usd:.0165,unit:"second"}]”
    *
-   * The row carries $0.0433, the top of the band — the avatar type is a
+   * The row carries $0.0165, the top of the band — the avatar type is a
    * property of the look rather than of the request, so a body cannot settle
    * which rate applies, and an upper bound is the right kind of wrong. This is
-   * the cheap engine by a factor of four and it is the one to reach for when
-   * the look is a trained twin.
+   * the cheap engine — twelve times cheaper than Avatar V for the same Custom
+   * Video Avatar — and it is the one to reach for when the look is a trained
+   * twin.
    */
   avatar_iii: {
     id: "avatar_iii",
@@ -163,21 +188,25 @@ export const models = {
     openWeights: false,
     modalities: avatarModality,
     limit: { context: 0 },
-    cost: { perVideoSecond: 0.0433 },
-    // The one engine that does NOT render raw image input ("Not supported for
-    // raw image input (type: \"image\")"), and the one that reads neither
+    cost: { perVideoSecond: 0.0165 },
+    // Does NOT render raw image input ("Not supported for raw image input
+    // (type: \"image\")"), and the one engine that reads neither
     // `motion_prompt` nor `expressiveness`. Cheap, narrow, and a dedicated
     // photo-to-video pipeline.
   },
   /**
-   * $0.05 per second for a Photo Avatar, $0.0667 for a Digital Twin or Studio
-   * Avatar.
+   * $0.0385 per second for a Photo Avatar, $0.0805 for a Custom Video Avatar or
+   * a Studio Avatar (720p and 1080p).
    *
-   * Source: https://developers.heygen.com/docs/pricing — verified 2026-08-25.
-   * Quote: “### Video Generation — Avatar IV … | Photo Avatar | \$0.05 / sec |
-   * | Digital Twin | \$0.0667 / sec | | Studio Avatar | \$0.0667 / sec |”
+   * Source: https://platform.heygen.com/assets/catalogText-1niwFpkW.js —
+   * verified 2026-11-12. Quote: “id:"avatar-iv",…,apiId:"avatar_iv",…
+   * tiers:[{id:"photo-avatar",labelKey:"pricing_tier_photo_avatar",usd:.0385,
+   * unit:"second"},{id:"custom-video-avatar",
+   * labelKey:"pricing_tier_custom_video_avatar",usd:.0805,unit:"second"},
+   * {id:"studio-avatar",labelKey:"pricing_tier_studio_avatar",usd:.0805,
+   * unit:"second"}]”
    *
-   * The row carries $0.0667, the top of the band, for `avatar_iii`'s reason.
+   * The row carries $0.0805, the top of the band, for `avatar_iii`'s reason.
    */
   avatar_iv: {
     id: "avatar_iv",
@@ -189,21 +218,27 @@ export const models = {
     openWeights: false,
     modalities: avatarModality,
     limit: { context: 0 },
-    cost: { perVideoSecond: 0.0667 },
+    cost: { perVideoSecond: 0.0805 },
     // **The default**: `POST /v3/videos` runs this engine when `engine` is
-    // omitted, which is why unmodel writes the engine out on every request
-    // rather than leaving a four-fold price decision implicit. The only engine
-    // that reads `expressiveness`.
+    // omitted, and the only engine that renders the `image` arm, which
+    // declares no `engine` at all. The only engine that reads `expressiveness`.
   },
   /**
-   * $0.0667 per second. Digital Twins only, so this rate is EXACT.
+   * $0.12 per second for a Custom Video Avatar (720p and 1080p) — the one tier
+   * HeyGen publishes for this engine.
    *
-   * Source: https://developers.heygen.com/docs/pricing — verified 2026-08-25.
-   * Quote: “### Video Generation — Avatar V … Avatar V supports Digital Twins
-   * only. | Digital Twin | \$0.0667 / sec |”
+   * Source: https://platform.heygen.com/assets/catalogText-1niwFpkW.js —
+   * verified 2026-11-12. Quote: “id:"avatar-v",…,apiId:"avatar_v",…
+   * pricing:{kind:"metered",noteKey:"pricing_avatar_resolution_note",
+   * tiers:[{id:"custom-video-avatar",labelKey:"pricing_tier_custom_video_avatar",
+   * usd:.12,unit:"second"}]}”
    *
-   * The one engine row with a single number rather than a band, and it is
-   * single because the engine only serves one avatar type.
+   * NOT exact, and not a band either: the engine serves three look types —
+   * https://developers.heygen.com/avatar-v (2026-11-12): "`digital_twin`,
+   * `studio_avatar`, and `photo_avatar` looks that list `avatar_v` in
+   * `supported_api_engines`" — and the table prices one of them. The row
+   * carries the one published number; for a Studio or Photo Avatar look on this
+   * engine HeyGen publishes no rate.
    */
   avatar_v: {
     id: "avatar_v",
@@ -215,20 +250,24 @@ export const models = {
     openWeights: false,
     modalities: avatarModality,
     limit: { context: 0 },
-    cost: { perVideoSecond: 0.0667 },
+    cost: { perVideoSecond: 0.12 },
     // Cross-reference-driven animation: it animates from a `digital_twin` look
     // in the same avatar group, optionally named with `reference_look_id`.
-    // Reads `motion_prompt` and REJECTS `expressiveness`. Check
-    // `supported_api_engines` on the look before naming it — eligibility is a
-    // property of the look, not of the account.
+    // Reads `motion_prompt` and REJECTS `expressiveness`. The `avatar` arm
+    // only — https://developers.heygen.com/models marks "Arbitrary image
+    // input" ✗ for it. Check `supported_api_engines` on the look before naming
+    // it — eligibility is a property of the look, not of the account.
   },
   /**
-   * $0.0333 per second of output. Exact — `mode` is the only thing the price
+   * $0.014 per second of output. Exact — `mode` is the only thing the price
    * depends on and it is in the body.
    *
-   * Source: https://developers.heygen.com/docs/pricing — verified 2026-08-25.
-   * Quote: “### Lipsync | Mode | Rate | | Speed | \$0.0333 / sec | | Precision
-   * | \$0.0667 / sec |”
+   * Source: https://platform.heygen.com/assets/catalogText-1niwFpkW.js —
+   * verified 2026-11-12. Quote: “path:"/v3/lipsyncs"},
+   * docsUrl:"https://developers.heygen.com/lipsync-speed",icon:"voice",
+   * pricing:{kind:"metered",tiers:[{id:"speed",labelKey:"pricing_tier_speed",
+   * usd:.014,unit:"second"},{id:"precision",labelKey:"pricing_tier_precision",
+   * usd:.029,unit:"second"}]}”
    */
   "lipsync-speed": {
     id: "lipsync-speed",
@@ -240,15 +279,17 @@ export const models = {
     openWeights: false,
     modalities: clipModality,
     limit: { context: 0 },
-    cost: { perVideoSecond: 0.0333 },
+    cost: { perVideoSecond: 0.014 },
     // `mode: "speed"` on the wire, and what an omitted `mode` means.
     // https://developers.heygen.com/lipsync-speed
   },
   /**
-   * $0.0667 per second of output — twice the speed mode, exact for its reason.
+   * $0.029 per second of output — about twice the speed mode, exact for its
+   * reason.
    *
-   * Source: https://developers.heygen.com/docs/pricing — verified 2026-08-25.
-   * Quote: “| Precision | \$0.0667 / sec |”
+   * Source: https://platform.heygen.com/assets/catalogText-1niwFpkW.js —
+   * verified 2026-11-12. Quote: “{id:"precision",labelKey:"pricing_tier_precision",
+   * usd:.029,unit:"second"}”
    */
   "lipsync-precision": {
     id: "lipsync-precision",
@@ -260,7 +301,7 @@ export const models = {
     openWeights: false,
     modalities: clipModality,
     limit: { context: 0 },
-    cost: { perVideoSecond: 0.0667 },
+    cost: { perVideoSecond: 0.029 },
     // `mode: "precision"` on the wire — "higher quality, uses avatar
     // inference", which is why it costs what an avatar render costs.
     // https://developers.heygen.com/lipsync-precision

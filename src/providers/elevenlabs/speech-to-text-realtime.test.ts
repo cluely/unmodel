@@ -18,6 +18,53 @@ const safeUnchecked = speechToTextRealtime.safe as unknown as (
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
 
+describe("elevenlabs.speechToTextRealtime scribe_v3_live (models refresh 2026-11-12)", () => {
+  test("scribe_v3_live carries $0.22 per hour", () => {
+    expect(models.scribe_v3_live.cost.perAudioMinute).toBeCloseTo(0.22 / 60, 10);
+  });
+
+  test("turn_prediction and multilang_mode are accepted and reach the socket url", () => {
+    const session = speechToTextRealtime({
+      model_id: "scribe_v3_live",
+      commit_strategy: "turn_prediction",
+      multilang_mode: true,
+    });
+    const query = new URL(
+      speechToTextRealtimeUrl(session).replace("wss://", "https://"),
+    ).searchParams;
+    expect(query.get("commit_strategy")).toBe("turn_prediction");
+    expect(query.get("multilang_mode")).toBe("true");
+  });
+
+  test("scribe_v2_realtime refuses turn_prediction and multilang_mode: true", () => {
+    const r = speechToTextRealtime.safe({
+      model_id: "scribe_v2_realtime",
+      commit_strategy: "turn_prediction",
+      multilang_mode: true,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.errors.map((e) => e.path[0]).sort()).toEqual(["commit_strategy", "multilang_mode"]);
+    for (const issue of r.errors) {
+      expect(issue.code).toBe("unsupported_param");
+      expect(issue.message).toContain("scribe_v3_live");
+    }
+    // `false` is the documented default and stays legal everywhere.
+    expect(
+      speechToTextRealtime.safe({ model_id: "scribe_v2_realtime", multilang_mode: false }).ok,
+    ).toBe(true);
+  });
+
+  test("an unknown realtime id may take both — no refusal", () => {
+    const r = safeUnchecked({
+      model_id: "scribe_v9_live",
+      commit_strategy: "turn_prediction",
+      multilang_mode: true,
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
 describe("elevenlabs.speechToTextRealtime happy path", () => {
   test("returns the validated session config and builds the socket url", () => {
     const params = {
@@ -64,15 +111,16 @@ describe("elevenlabs.speechToTextRealtime happy path", () => {
   });
 
   test("every realtime model id validates clean and carries realtime pricing", () => {
-    expect(REALTIME_STT_MODEL_IDS).toEqual(["scribe_v2_realtime"]);
+    expect(REALTIME_STT_MODEL_IDS).toEqual(["scribe_v2_realtime", "scribe_v3_live"]);
     for (const id of REALTIME_STT_MODEL_IDS) {
       const r = speechToTextRealtime.safe({ model_id: id });
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.warnings).toEqual([]);
     }
-    // $0.39 per hour → per-minute rate, distinct from batch Scribe's $0.22/h.
+    // $0.22 per hour → per-minute rate, distinct from batch Scribe's $0.20/h.
     const realtime = models.scribe_v2_realtime.cost?.perAudioMinute;
-    expect(realtime).toBeCloseTo(0.39 / 60, 10);
+    expect(realtime).toBeCloseTo(0.22 / 60, 10);
+    expect(models.scribe_v3_live.cost.perAudioMinute).toBe(realtime);
     expect(realtime).not.toBe(models.scribe_v2.cost?.perAudioMinute);
   });
 
@@ -121,7 +169,7 @@ describe("elevenlabs.speechToTextRealtime schema enforcement", () => {
 
   // "Batch supports up to 1000 keyterms (50 characters each), while realtime
   // supports up to 50 keyterms (20 characters each)."
-  // https://elevenlabs.io/docs/capabilities/speech-to-text
+  // https://elevenlabs.io/docs/overview/capabilities/speech-to-text
   test("each keyterm is capped at the documented 20 characters", () => {
     expect(REALTIME_STT_KEYTERM_MAX_CHARACTERS).toBe(20);
 
@@ -135,7 +183,7 @@ describe("elevenlabs.speechToTextRealtime schema enforcement", () => {
       expect(issue?.path).toEqual(["keyterms", 0]);
       expect(issue?.meta?.limit).toBe(REALTIME_STT_KEYTERM_MAX_CHARACTERS);
       expect(issue?.meta?.actual).toBe(500);
-      expect(issue?.meta?.source).toBe("https://elevenlabs.io/docs/capabilities/speech-to-text");
+      expect(issue?.meta?.source).toBe("https://elevenlabs.io/docs/overview/capabilities/speech-to-text");
       // The offending term is named, not just its index.
       expect(issue?.message).toContain("500 characters");
     }

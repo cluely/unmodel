@@ -5,6 +5,9 @@ export {
   CARTESIA_VERSION,
   CARTESIA_EMOTIONS,
   CARTESIA_TTS_LANGUAGES,
+  CARTESIA_TTS_3_6_LANGUAGES,
+  CARTESIA_TTS_LOCALES,
+  CARTESIA_TTS_LANGUAGES_BY_MODEL,
 } from "./tts";
 export type {
   TtsBytesBody,
@@ -19,6 +22,8 @@ export type {
   CartesiaMp3BitRate,
   CartesiaGenerationConfig,
   CartesiaTtsLanguage,
+  CartesiaTtsLocale,
+  CartesiaTtsLanguageFor,
 } from "./tts";
 
 export {

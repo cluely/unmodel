@@ -41,7 +41,19 @@ describe("openai.tts happy path", () => {
   test("a custom voice object is accepted (and never enum-checked)", () => {
     const r = tts.safe({ model: "tts-1", input: "hi", voice: { id: "voice_1234" } });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings).toEqual([]);
+    // The one warning is the row's own deprecation, not the voice.
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+  });
+
+  test("every v1/audio/speech model is deprecated (removal 2027-01-06)", () => {
+    // "The following text-to-speech models are deprecated and will be removed
+    // from the API on January 6, 2027" — deprecations page, 2026-11-12.
+    for (const [id, info] of Object.entries(speechModels)) {
+      expect(info.status, id).toBe("deprecated");
+      const r = tts.safe({ model: id, input: "hi", voice: "alloy" });
+      expect(r.ok, id).toBe(true);
+      if (r.ok) expect(r.warnings.map((w) => w.code), id).toContain("deprecated_model");
+    }
   });
 
   test("unknown model falls back to the escape arm with a warning", () => {

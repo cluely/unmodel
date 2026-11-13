@@ -19,6 +19,10 @@ export {
   PITCH_MAX,
   VARIATION_MIN,
   VARIATION_MAX,
+  VOLUME_OFFSET_MIN,
+  VOLUME_OFFSET_MAX,
+  FALCON_STYLE,
+  PRONUNCIATION_TYPES,
 } from "./tts";
 export type {
   SpeechGenerateBody,
@@ -27,6 +31,8 @@ export type {
   MurfFormat,
   MurfGenerateSampleRate,
   MurfStreamSampleRate,
+  PronunciationDetail,
+  PronunciationDetailType,
 } from "./tts";
 
 // Only /v1/speech/generate has a checker — /v1/speech/stream returns audio bytes.
@@ -41,7 +47,7 @@ export {
   GENERATE_MODEL_IDS,
   GENERATE_MODEL_VERSIONS,
 } from "./models";
-export type { MurfModelId, MurfTtsModelId } from "./models";
+export type { MurfModelId, MurfTtsModelId, MurfStreamModelId } from "./models";
 
 // Declaration-portability carriers. One type-only line; see
 // src/core/carriers.ts for why a consumer that emits its own `.d.ts` cannot

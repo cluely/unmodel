@@ -8,6 +8,8 @@ import {
   INSTRUMENTAL_GENERATE_URL,
   LYRICS_MAX_CHARACTERS,
   PROMPT_MAX_CHARACTERS,
+  DURATION_MIN_SECONDS,
+  DURATION_MAX_SECONDS,
 } from "./music";
 import {
   musicFromPrompt,
@@ -219,6 +221,54 @@ describe("mureka.music per-model gates", () => {
   });
 });
 
+describe("mureka.music duration (SongGenerateReq, doc audit 2026-11-12)", () => {
+  test("mureka-9.5 takes a whole-second duration across [120, 300], typed", () => {
+    for (const duration of [DURATION_MIN_SECONDS, 180, DURATION_MAX_SECONDS]) {
+      const v = music({ lyrics: LYRICS, model: "mureka-9.5", duration });
+      expect(v.duration).toBe(duration);
+      expect(v.request.url).toBe(SONG_GENERATE_URL);
+    }
+    const r = music.safe({ lyrics: LYRICS, model: "mureka-9.5", duration: 180 });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("a length outside [120, 300] or a fractional one is refused at `duration`", () => {
+    for (const duration of [DURATION_MIN_SECONDS - 1, DURATION_MAX_SECONDS + 1, 9999, 180.5]) {
+      const r = music.safe({ lyrics: LYRICS, model: "mureka-9.5", duration });
+      expect(r.ok, String(duration)).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["duration"]);
+    }
+  });
+
+  test('"Supported only by mureka-9.5" — denied on the other four named ids', () => {
+    for (const model of ["mureka-7.6", "mureka-o2", "mureka-8", "mureka-9"] as const) {
+      const r = music.safe({ lyrics: LYRICS, model, duration: 180 });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) {
+        const issue = r.errors.find((e) => e.path[0] === "duration");
+        expect(issue?.code).toBe("unsupported_param");
+        expect(issue?.message).toContain("mureka-9.5");
+      }
+      expect(music.constraintsFor(model).at(0)?.deny?.duration?.source).toContain(
+        "post-v1-song-generate",
+      );
+    }
+  });
+
+  test("`auto` is not denied — the spec never says whether the alias honours it", () => {
+    const r = music.safe({ lyrics: LYRICS, model: "auto", duration: 180 });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("the instrumental route has no length field — an unknown param, warned", () => {
+    const r = safeInstrumentalUnchecked({ model: "mureka-9.5", duration: 180 });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("unknown_param");
+  });
+});
+
 describe("mureka.instrumental (POST /v1/instrumental/generate)", () => {
   test("happy path: wire-pure body, url, identity toSdk", () => {
     const params = { model: "auto" as const, prompt: "lo-fi, mellow, rainy afternoon" };
@@ -353,8 +403,8 @@ describe("mureka.musicFromPrompt (POST /v1/song/easy-generate)", () => {
     );
   });
 
-  test("melody_id and gender are absent from this body — unknown params, warned", () => {
-    for (const field of ["melody_id", "gender", "lyrics"] as const) {
+  test("melody_id, gender and duration are absent from this body — unknown params, warned", () => {
+    for (const field of ["melody_id", "gender", "lyrics", "duration"] as const) {
       const r = safeFromPromptUnchecked({ model: "auto", [field]: "x" });
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("unknown_param");
@@ -405,8 +455,9 @@ describe("mureka catalog", () => {
       expect(info.limit.context).toBe(0);
       expect(info.modalities.input).toEqual(["text"]);
       expect(info.modalities.output).toEqual(["audio"]);
-      // No published USD rate is scrapable (see the PRICING note in
-      // models.ts), so no row may carry a cost that maxCostUSD would trust.
+      // Mureka's rates are per generated song and per route (see the PRICING
+      // note in models.ts) — no ModelCost unit carries them, so no row may
+      // carry a cost that maxCostUSD would trust.
       expect("cost" in info).toBe(false);
     }
   });
@@ -446,11 +497,42 @@ describe("mureka unified music adapter", () => {
     expect(musicAdapter.category).toBe("music");
     expect(musicAdapter.provider).toBe("mureka");
     expect(([...musicAdapter.models] as string[]).sort()).toEqual(Object.keys(models).sort());
-    expect(Object.keys(musicAdapter.unsupported).sort()).toEqual([
-      "durationSeconds",
-      "outputFormat",
-      "seed",
-    ]);
+    expect(Object.keys(musicAdapter.unsupported).sort()).toEqual(["outputFormat", "seed"]);
+  });
+
+  test("durationSeconds is a rename to the song route's `duration` (seconds)", () => {
+    const { ctx, failures } = fakeCtx("mureka-9.5");
+    const call = musicAdapter.compile(
+      {
+        model: "mureka/mureka-9.5",
+        prompt: "synthwave",
+        lyrics: LYRICS,
+        durationSeconds: 180,
+      } as unknown as MusicParams,
+      ctx,
+    );
+    expect(failures).toEqual([]);
+    expect(call.params).toEqual({
+      lyrics: LYRICS,
+      model: "mureka-9.5",
+      prompt: "synthwave",
+      duration: 180,
+    });
+    expect(call.validate(call.params).ok).toBe(true);
+  });
+
+  test("durationSeconds fails on the two routes with no length field, naming the song route", () => {
+    for (const extra of [{}, { instrumental: true }]) {
+      const { ctx, failures } = fakeCtx("mureka-9.5");
+      const call = musicAdapter.compile(
+        { model: "mureka/mureka-9.5", prompt: "lo-fi", durationSeconds: 180, ...extra } as MusicParams,
+        ctx,
+      );
+      expect(failures.map((f) => f.path)).toEqual([["durationSeconds"]]);
+      expect(failures[0]?.message).toContain("POST /v1/song/generate");
+      expect(failures[0]?.message).toContain("mureka-9.5");
+      expect("duration" in call.params).toBe(false);
+    }
   });
 
   test("compiles to the song route by default, carrying lyrics from extras", () => {

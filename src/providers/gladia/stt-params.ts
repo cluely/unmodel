@@ -26,13 +26,14 @@ import type {
 export const MODELS = ["solaria-3", "solaria-1"] as const;
 
 /**
- * Gladia's two models, and the one that is single-language.
+ * Gladia's two models, and the one with a closed language list.
  *
- * `solaria-3` is "Async (pre-recorded) only … Single language only" and covers
- * "English, French, German, Spanish, Italian" — the same
- * {@link SOLARIA_3_LANGUAGES} array `checkModelLanguages` refuses against, by
- * reference. `solaria-1` covers "100+" languages with no published enum, so its
- * row carries no list rather than a guess.
+ * `solaria-3` is "Async (pre-recorded) only" and covers "English, French,
+ * German, Spanish, Italian" — the same {@link SOLARIA_3_LANGUAGES} array
+ * `checkSolaria3` refuses against, by reference. `solaria-1` covers "100+"
+ * languages with no list the row could trust (the OpenAPI
+ * `TranscriptionLanguageCodeEnum` lacks `wo`, which the supported-languages
+ * table lists), so its row carries no list rather than a guess.
  *
  * `code_switching` follows the same line: it is the multi-language switch, and
  * "solaria-3 does not support code switching", so it is on `solaria-1`'s row

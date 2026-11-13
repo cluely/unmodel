@@ -12,12 +12,12 @@
 import { EXTRA } from "../../core/unified/derive";
 import type { SttModelParamTable } from "../../core/unified/vocabulary/stt";
 
-/** The two batch Scribe models — the ref union for `elevenlabs/…`. */
-export const MODELS = ["scribe_v2", "scribe_v1"] as const;
+/** The four batch Scribe models — the ref union for `elevenlabs/…`. */
+export const MODELS = ["scribe_v3", "scribe_v2", "scribe_v2_medical", "scribe_v1"] as const;
 
 /**
  * Scribe's per-model surface: the category's only three-value `timestamps`
- * row, and one key `scribe_v1` does not have.
+ * row, and the keys some models have and others do not.
  *
  * `timestamps_granularity` is a scalar enum `none | word | character` whose
  * default is `"word"`, so `"none"` is a **value** here rather than an omission
@@ -25,8 +25,15 @@ export const MODELS = ["scribe_v2", "scribe_v1"] as const;
  * therefore belongs on the row. `"segment"` is the granularity this route does
  * not have, and it is a compile error naming the three it does.
  *
- * `no_verbatim` ("Only supported with scribe_v2 model", which
- * `speechToTextConstraints` denies on `scribe_v1`) is the one row difference.
+ * The row differences, each mirrored by a deny rule in
+ * `speechToTextConstraints`:
+ * - `no_verbatim` — "Supported by scribe_v2, scribe_v2_medical and scribe_v3"
+ *   (https://api.elevenlabs.io/openapi.json, 2026-11-12), so not on `scribe_v1`.
+ * - `numbers_format` and `secondary_language_codes` — "Both parameters are only
+ *   supported by `scribe_v3`"
+ *   (https://elevenlabs.io/docs/eleven-api/guides/how-to/speech-to-text/batch/number-and-language-options,
+ *   2026-11-12).
+ *
  * Everything else is shared: audio-event tagging, keyterm biasing, sampling,
  * multichannel handling, speaker-library lookups and the entity
  * detection/redaction trio.
@@ -39,8 +46,8 @@ export const MODELS = ["scribe_v2", "scribe_v1"] as const;
 export const SCRIBE_EXTRAS = {
   tag_audio_events: EXTRA as boolean,
   keyterms: EXTRA as string[],
-  temperature: EXTRA as number,
-  seed: EXTRA as number,
+  temperature: EXTRA as number | null,
+  seed: EXTRA as number | null,
   file_format: EXTRA as "pcm_s16le_16" | "other",
   additional_formats: EXTRA as Array<Record<string, unknown>>,
   diarization_threshold: EXTRA as number | null,
@@ -55,10 +62,18 @@ export const SCRIBE_EXTRAS = {
 
 export const TIMESTAMPS = ["none", "word", "character"] as const;
 
+const NO_VERBATIM_EXTRAS = { ...SCRIBE_EXTRAS, no_verbatim: EXTRA as boolean } as const;
+
 export const ELEVENLABS_STT_MODEL_PARAMS = {
-  scribe_v2: {
+  scribe_v3: {
     timestamps: TIMESTAMPS,
-    extras: { ...SCRIBE_EXTRAS, no_verbatim: EXTRA as boolean },
+    extras: {
+      ...NO_VERBATIM_EXTRAS,
+      numbers_format: EXTRA as "digits" | "words" | null,
+      secondary_language_codes: EXTRA as string[] | null,
+    },
   },
+  scribe_v2: { timestamps: TIMESTAMPS, extras: NO_VERBATIM_EXTRAS },
+  scribe_v2_medical: { timestamps: TIMESTAMPS, extras: NO_VERBATIM_EXTRAS },
   scribe_v1: { timestamps: TIMESTAMPS, extras: SCRIBE_EXTRAS },
 } as const satisfies SttModelParamTable;

@@ -28,6 +28,8 @@ import {
   type RefProblemKindOf,
 } from "../../src/chat/refs";
 import type { ChatModelRef, ChatProviderId } from "../../src/catalog/chat-refs.gen";
+import { CHAT_MODEL_REFS } from "../../src/catalog/chat-refs-values.gen";
+import { chat } from "../../src/chat/index";
 import type { OpenaiChatModelId } from "../../src/providers/openai/chat";
 import { ENDPOINTS, isFactoryEndpoint, resolveEndpoint } from "../../src/core/translate/endpoints";
 
@@ -64,6 +66,14 @@ type UnservableOpenaiRef = Exclude<
 >;
 const _noUnservableOpenaiRef: UnservableOpenaiRef[] = [];
 void _noUnservableOpenaiRef;
+
+// The same withdrawal for inception: mercury-edit-2 is text-out in models.dev,
+// but Inception serves it on /v1/fim/completions and /v1/edit/completions only
+// and POST /v1/chat/completions answers it 400 (2026-11-13). Fails `bun run
+// check` if the ref comes back.
+type IsNever<T> = [T] extends [never] ? true : false;
+const _noMercuryEditRef: IsNever<Extract<ChatModelRef, "inception/mercury-edit-2">> = true;
+void _noMercuryEditRef;
 
 describe("parseModelRef", () => {
   test("splits on the FIRST slash, so slashed model ids survive", () => {
@@ -228,6 +238,26 @@ describe("classifyModelRef", () => {
       const message = refProblemMessage(classification as RefProblem);
       expect(message.length, ref).toBeGreaterThan(60);
     }
+  });
+});
+
+describe("a ref `chatScopeExclude` withdraws", () => {
+  // classifyModelRef reads only the provider half, so it still answers
+  // "supported" for "inception/mercury-edit-2": the withdrawal lives in the
+  // ref tables, and the signpost in the substrate validator chat() ends in.
+  test("inception/mercury-edit-2 is not a ref, and sending it anyway warns", () => {
+    expect(CHAT_MODEL_REFS as readonly string[]).not.toContain("inception/mercury-edit-2");
+    expect(CHAT_MODEL_REFS as readonly string[]).toContain("inception/mercury-3");
+
+    const outcome = chat.safe({
+      model: "inception/mercury-edit-2",
+      messages: [{ role: "user", content: "hi" }],
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.warnings.map((w) => [w.code, w.path])).toEqual([
+      ["unsupported_capability", ["model"]],
+    ]);
   });
 });
 

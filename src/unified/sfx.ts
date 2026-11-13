@@ -99,10 +99,10 @@ export function createSfx<A extends SfxAdapter>(adapters: readonly A[]): SfxVali
 /**
  * Every sound-effect adapter unmodel ships — the specialist and the aggregator.
  *
- * `elevenlabs` is ElevenLabs' own `/v1/sound-generation`, one model; `fal`
- * serves six curated endpoints from five vendors behind it, ElevenLabs among
+ * `elevenlabs` is ElevenLabs' own `/v1/sound-generation`, two models; `fal`
+ * serves six curated endpoints from five vendors behind it, ElevenLabs' v2 among
  * them. They overlap on purpose, and the overlap is NARROWED rather than
- * mirrored: fal's resale of the same model caps the length at 22 seconds
+ * mirrored: fal's resale of that model caps the length at 22 seconds
  * instead of 30, moves `output_format` from the query string into the body,
  * caps the prompt at 450 characters and has no model field at all. That
  * comparison is exactly what `unmodel/sfx` exists to make cheap, and it is

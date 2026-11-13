@@ -14,6 +14,7 @@
  * ready-made provider registry, provider catalog or availability table. Each
  * supplied validator remains the terminal authority for its provider.
  */
+import type { EndpointConstraints } from "../core/constraint-types";
 import { UnmodelValidationError } from "../core/issues";
 import type { ValidateOptions } from "../core/options";
 import type { ExactKeys, Validated } from "../core/request";
@@ -53,12 +54,18 @@ import type { ChatParams } from "./types";
  * registry open. What it rules out is a validator that says it is some *other*
  * provider's. `createChat` closes the remaining gap at runtime by comparing
  * the key against the endpoint the validator reports.
+ *
+ * `constraintsFor` is optional for the same reason. Every validator built on
+ * `createValidator` has it, and the pack reads the model's `reasoning_effort`
+ * row through it so effort narrows to the levels that model documents; a
+ * validator without it narrows by dialect alone.
  */
 export type ChatProviderValidator<Provider extends string = string> = ((
   params: never,
   options?: ValidateOptions<never>,
 ) => object) & {
   safe: (params: never, options?: ValidateOptions<never>) => ValidateResult<object>;
+  constraintsFor?: (modelId: string) => readonly EndpointConstraints[];
 } & ValidatorProviderCarrier<Provider>;
 
 /** Provider id -> that provider's concrete chat validator. */
@@ -289,6 +296,17 @@ export interface ChatValidator<Registry extends ChatProviderRegistry> {
 function providerRuntime(registry: ChatProviderRegistry): ChatProviderRuntime {
   return {
     has: (provider) => registry[provider] !== undefined,
+    effortLevels(provider, modelId) {
+      // Every matching row is enforced, so the ladder is their intersection.
+      let levels: readonly string[] | undefined;
+      for (const constraints of registry[provider]?.constraintsFor?.(modelId) ?? []) {
+        const allowed = constraints.enums?.["reasoning_effort"];
+        if (allowed === undefined) continue;
+        const strings = allowed.filter((value): value is string => typeof value === "string");
+        levels = levels === undefined ? strings : levels.filter((value) => strings.includes(value));
+      }
+      return levels;
+    },
     validate(provider, modelId, body, options) {
       const validator = registry[provider];
       if (validator === undefined) {

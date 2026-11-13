@@ -1,10 +1,10 @@
 {
-  "ref": "soniox/stt-async-v5",
+  "ref": "soniox/stt-async-v6",
   "audio": {
     "url": "https://example.com/interview.wav"
   },
   "params": {
-    "model": "stt-async-v5",
+    "model": "stt-async-v6",
     "audio_url": "https://example.com/interview.wav",
     "language_hints": [
       "pt"
@@ -29,7 +29,7 @@
           ],
           "language_hints_strict": true
         },
-        "source": "https://soniox.com/docs/api-reference/stt/transcriptions/create_transcription"
+        "source": "https://docs.soniox.com/api-reference/stt/transcriptions/create_transcription"
       }
     }
   ]

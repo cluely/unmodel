@@ -3,12 +3,14 @@ import {
   realtimeTranscribeConfig,
   realtimeVoiceContext,
   STT_STREAM_WS_URL,
+  STT_WEBSOCKET_DOCS,
   TTS_STREAM_WS_URL,
   TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD,
+  TTS_STREAM_MAX_TEXT_CHARACTERS,
 } from "./realtime";
-import { INWORLD_STT_AUDIO_ENCODINGS, INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS } from "./stt";
+import { stt, INWORLD_STT_AUDIO_ENCODINGS, INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS } from "./stt";
 import { INWORLD_SAMPLE_RATES_HERTZ } from "./tts";
-import { STT_STREAM_MODEL_IDS, STT_SYNC_MODEL_IDS } from "./models";
+import { sttModels, STT_STREAM_MODEL_IDS, STT_SYNC_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -132,11 +134,29 @@ describe("inworld.realtimeTranscribeConfig surface gates", () => {
 
   test("the encodings both doc pages agree on are accepted", () => {
     const supported = INWORLD_STT_AUDIO_ENCODINGS.filter(
-      (e) => !(INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS as readonly string[]).includes(e),
+      (e) =>
+        e !== "AUDIO_ENCODING_UNSPECIFIED" &&
+        !(INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS as readonly string[]).includes(e),
     );
-    expect(supported).toEqual(["AUDIO_ENCODING_UNSPECIFIED", "AUTO_DETECT", "LINEAR16"]);
+    expect(supported).toEqual(["AUTO_DETECT", "LINEAR16"]);
     for (const audioEncoding of supported) {
       expect(safeTranscribe({ modelId: "inworld/inworld-stt-1", audioEncoding }).ok).toBe(true);
+    }
+  });
+
+  test("the zero-value encoding is refused (\"Will return an error\"), naming the socket's encodings", () => {
+    for (const modelId of ["inworld/inworld-stt-1", "assemblyai/u3-rt-pro", "soniox/stt-rt-v5"]) {
+      const r = safeTranscribe({ modelId, audioEncoding: "AUDIO_ENCODING_UNSPECIFIED" });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors).toHaveLength(1);
+        expect(r.errors[0]?.code).toBe("invalid_enum_value");
+        expect(r.errors[0]?.path).toEqual(["audioEncoding"]);
+        expect(r.errors[0]?.meta?.allowed).toEqual(["AUTO_DETECT", "LINEAR16"]);
+        expect(r.errors[0]?.meta?.source).toBe(STT_WEBSOCKET_DOCS);
+        // The LINEAR16-only vendor warning does not stack on top.
+        expect(r.warnings).toEqual([]);
+      }
     }
   });
 
@@ -156,13 +176,51 @@ describe("inworld.realtimeTranscribeConfig surface gates", () => {
     }
   });
 
+  test("assemblyai/universal-3-5-pro is a catalogued, WebSocket-only, unpriced route", () => {
+    const r = realtimeTranscribeConfig.safe({
+      modelId: "assemblyai/universal-3-5-pro",
+      audioEncoding: "LINEAR16",
+      includeWordTimestamps: true,
+      enableSpeakerDiarization: true,
+      assemblyaiConfig: { maxTurnSilence: 1200, vadThreshold: 0.4 },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+    expect(sttModels["assemblyai/universal-3-5-pro"].family).toBe("assemblyai");
+    // The third-party per-hour column's tier is unstated — no cost, no estimate.
+    expect("cost" in sttModels["assemblyai/universal-3-5-pro"]).toBe(false);
+
+    const sync = stt.safe({
+      transcribeConfig: { modelId: "assemblyai/universal-3-5-pro", audioEncoding: "LINEAR16" },
+      audioData: { content: "AAAA" },
+    });
+    expect(sync.ok).toBe(false);
+    if (!sync.ok) expect(sync.errors[0]?.code).toBe("unsupported_capability");
+  });
+
+  test("a non-LINEAR16 encoding on the AssemblyAI / Soniox routes warns", () => {
+    for (const modelId of ["assemblyai/universal-3-5-pro", "soniox/stt-rt-v4"]) {
+      const r = realtimeTranscribeConfig.safe({ modelId, audioEncoding: "AUTO_DETECT" });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const warning = r.warnings.find((w) => w.path.join(".") === "audioEncoding");
+        expect(warning?.code).toBe("invalid_enum_value");
+        expect(warning?.meta?.expected).toBe("LINEAR16");
+      }
+    }
+    // inworld-stt-1 is not under that vendor note.
+    const own = realtimeTranscribeConfig.safe({ modelId: "inworld/inworld-stt-1", audioEncoding: "AUTO_DETECT" });
+    expect(own.ok).toBe(true);
+    if (own.ok) expect(own.warnings).toEqual([]);
+  });
+
   test("every streaming model passes the availability gate", () => {
     for (const modelId of STT_STREAM_MODEL_IDS) {
       expect(realtimeTranscribeConfig.safe({ modelId, audioEncoding: "LINEAR16" }).ok).toBe(true);
     }
   });
 
-  test("assemblyaiConfig.prompt is Universal-3 Pro only", () => {
+  test("assemblyaiConfig.prompt is refused off the Universal-3 Pro streaming line", () => {
     const r = realtimeTranscribeConfig.safe({
       modelId: "assemblyai/universal-streaming-english",
       audioEncoding: "LINEAR16",
@@ -172,7 +230,35 @@ describe("inworld.realtimeTranscribeConfig surface gates", () => {
     if (!r.ok) {
       expect(r.errors[0]?.code).toBe("unsupported_param");
       expect(r.errors[0]?.path).toEqual(["assemblyaiConfig", "prompt"]);
-      expect(r.errors[0]?.meta?.allowed).toEqual(["assemblyai/u3-rt-pro"]);
+      expect(r.errors[0]?.meta?.allowed).toEqual(["assemblyai/u3-rt-pro", "assemblyai/universal-3-5-pro"]);
+    }
+  });
+
+  test("assemblyaiConfig.prompt is clean on u3-rt-pro", () => {
+    const r = realtimeTranscribeConfig.safe({
+      modelId: "assemblyai/u3-rt-pro",
+      audioEncoding: "LINEAR16",
+      assemblyaiConfig: { prompt: "Names: Guilherme" },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("assemblyaiConfig.prompt on universal-3-5-pro passes with one warning (the doc pages disagree)", () => {
+    // Inworld's table says "Universal-3 Pro Streaming only"; its own Realtime
+    // AssemblyAI example sends a prompt to this model.
+    const r = realtimeTranscribeConfig.safe({
+      modelId: "assemblyai/universal-3-5-pro",
+      audioEncoding: "LINEAR16",
+      assemblyaiConfig: { prompt: "Names: Guilherme" },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]?.code).toBe("unsupported_param");
+      expect(r.warnings[0]?.path).toEqual(["assemblyaiConfig", "prompt"]);
+      expect(r.warnings[0]?.meta?.allowed).toEqual(["assemblyai/u3-rt-pro", "assemblyai/universal-3-5-pro"]);
+      expect(r.warnings[0]?.meta?.source).toContain("docs.inworld.ai/stt/third-party");
     }
   });
 
@@ -189,22 +275,46 @@ describe("inworld.realtimeTranscribeConfig surface gates", () => {
     }
   });
 
-  test("Voice Profile and word timestamps follow the same per-route rules as the sync endpoint", () => {
-    const profile = safeTranscribe({
+  test("Voice Profile, word timestamps and diarization pass on every streaming route", () => {
+    const profile = realtimeTranscribeConfig.safe({
       modelId: "soniox/stt-rt-v5",
       audioEncoding: "LINEAR16",
       voiceProfileConfig: { enableVoiceProfile: true },
     });
-    expect(profile.ok).toBe(false);
-    if (!profile.ok) expect(profile.errors[0]?.code).toBe("unsupported_capability");
+    expect(profile.ok).toBe(true);
+    if (profile.ok) expect(profile.warnings).toEqual([]);
 
-    const timestamps = safeTranscribe({
+    // Diarization is "Experimental for `inworld/inworld-stt-1`" on the socket — served, not refused.
+    const timestamps = realtimeTranscribeConfig.safe({
       modelId: "inworld/inworld-stt-1",
       audioEncoding: "LINEAR16",
       includeWordTimestamps: true,
+      enableSpeakerDiarization: true,
     });
-    expect(timestamps.ok).toBe(false);
-    if (!timestamps.ok) expect(timestamps.errors[0]?.path).toEqual(["includeWordTimestamps"]);
+    expect(timestamps.ok).toBe(true);
+    if (timestamps.ok) expect(timestamps.warnings).toEqual([]);
+  });
+
+  test("inworldSttV1Config.maxTurnSilence is 20–5000 ms", () => {
+    function at(maxTurnSilence: number): ValidateResult<Record<string, unknown>> {
+      return safeTranscribe({
+        modelId: "inworld/inworld-stt-1",
+        audioEncoding: "LINEAR16",
+        inworldSttV1Config: { minEndOfTurnSilenceWhenConfident: 200, maxTurnSilence },
+      });
+    }
+    expect(at(20).ok).toBe(true);
+    expect(at(5000).ok).toBe(true);
+    expect(at(19).ok).toBe(false);
+    expect(at(5001).ok).toBe(false);
+  });
+
+  test("the sync-only container encodings are refused on the socket", () => {
+    for (const audioEncoding of ["MP4", "MXF", "WEBM"]) {
+      const r = safeTranscribe({ modelId: "inworld/inworld-stt-1", audioEncoding });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_enum_value");
+    }
   });
 
   test("sonioxConfig.maxEndpointDelayMs is bounded to [500, 5000]", () => {
@@ -324,8 +434,10 @@ describe("inworld.realtimeVoiceContext enums and bounds", () => {
     expect(safeContext({ voiceId: "Dennis", modelId: "" }).ok).toBe(false);
   });
 
-  test("bufferCharThreshold is capped at 1000", () => {
-    expect(safeContext(at({ bufferCharThreshold: 1 })).ok).toBe(true);
+  test("bufferCharThreshold takes 0–2000 (0 or omission selects 1000)", () => {
+    expect(TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD).toBe(2000);
+    expect(safeContext(at({ bufferCharThreshold: 0 })).ok).toBe(true);
+    expect(safeContext(at({ bufferCharThreshold: 1500 })).ok).toBe(true);
     expect(
       safeContext(at({ bufferCharThreshold: TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD })).ok,
     ).toBe(true);
@@ -333,10 +445,14 @@ describe("inworld.realtimeVoiceContext enums and bounds", () => {
     expect(over.ok).toBe(false);
     if (!over.ok) {
       expect(over.errors[0]?.path).toEqual(["bufferCharThreshold"]);
-      expect(over.errors[0]?.message).toContain("at most 1000");
+      expect(over.errors[0]?.message).toContain("at most 2000");
     }
-    expect(safeContext(at({ bufferCharThreshold: 0 })).ok).toBe(false);
+    expect(safeContext(at({ bufferCharThreshold: -1 })).ok).toBe(false);
     expect(safeContext(at({ bufferCharThreshold: 100.5 })).ok).toBe(false);
+  });
+
+  test("send_text frames carry up to 2,000 UTF-16 code units", () => {
+    expect(TTS_STREAM_MAX_TEXT_CHARACTERS).toBe(2000);
   });
 
   test("maxBufferDelayMs is a non-negative integer", () => {
@@ -345,7 +461,7 @@ describe("inworld.realtimeVoiceContext enums and bounds", () => {
     expect(safeContext(at({ maxBufferDelayMs: 12.5 })).ok).toBe(false);
   });
 
-  test("temperature keeps the REST range (0, 2]", () => {
+  test("temperature keeps the REST range [0, 2] (0 selects the default)", () => {
     // Reported (not rejected) on inworld-tts-2, where it is documented as
     // ignored — so the range itself is exercised on a 1.5 model.
     const on15 = (temperature: number): unknown => ({
@@ -353,26 +469,42 @@ describe("inworld.realtimeVoiceContext enums and bounds", () => {
       modelId: "inworld-tts-1.5-mini",
       temperature,
     });
+    // "If 0 is provided, the default value will be used."
+    expect(safeContext(on15(0)).ok).toBe(true);
     expect(safeContext(on15(0.01)).ok).toBe(true);
     expect(safeContext(on15(2)).ok).toBe(true);
-    expect(safeContext(on15(0)).ok).toBe(false);
+    expect(safeContext(on15(-0.1)).ok).toBe(false);
     expect(safeContext(on15(2.1)).ok).toBe(false);
   });
 
-  test("audioConfig reuses the REST bounds: closed sample-rate list, [0.5, 1.5] speakingRate", () => {
-    for (const sampleRateHertz of INWORLD_SAMPLE_RATES_HERTZ) {
+  test("audioConfig reuses the REST bounds: [8000, 48000] sample rate, [0.5, 1.5] speakingRate", () => {
+    for (const sampleRateHertz of [...INWORLD_SAMPLE_RATES_HERTZ, 12345]) {
       expect(safeContext(at({ audioConfig: { sampleRateHertz } })).ok).toBe(true);
     }
-    // Inside the "8000-48000" range this page prints, but not a supported rate.
-    const gap = safeContext(at({ audioConfig: { sampleRateHertz: 12345 } }));
-    expect(gap.ok).toBe(false);
-    if (!gap.ok) expect(gap.errors[0]?.path).toEqual(["audioConfig", "sampleRateHertz"]);
+    const over = safeContext(at({ audioConfig: { sampleRateHertz: 96000 } }));
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.path).toEqual(["audioConfig", "sampleRateHertz"]);
 
     expect(safeContext(at({ audioConfig: { speakingRate: 0.5 } })).ok).toBe(true);
     expect(safeContext(at({ audioConfig: { speakingRate: 1.5 } })).ok).toBe(true);
     expect(safeContext(at({ audioConfig: { speakingRate: 0.4 } })).ok).toBe(false);
     expect(safeContext(at({ audioConfig: { speakingRate: 1.6 } })).ok).toBe(false);
     expect(safeContext(at({ audioConfig: { audioEncoding: "AAC" } })).ok).toBe(false);
+  });
+
+  test("the socket's encoding enum also takes the zero value", () => {
+    const r = realtimeVoiceContext.safe({
+      voiceId: "v",
+      modelId: "inworld-tts-2",
+      audioConfig: { audioEncoding: "AUDIO_ENCODING_UNSPECIFIED" },
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  test("FLAC is refused on the socket: its enum, unlike REST's, does not list it", () => {
+    const r = safeContext(at({ audioConfig: { audioEncoding: "FLAC" } }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["audioConfig", "audioEncoding"]);
   });
 
   test("every documented enum member is accepted, and only those", () => {
@@ -391,11 +523,29 @@ describe("inworld.realtimeVoiceContext enums and bounds", () => {
       expect(r.ok).toBe(false);
       if (!r.ok) expect(r.errors[0]?.path).toEqual([field]);
     }
+
+    // `audioConfig.audioEncoding`, nested: the socket page's eight members.
+    const encodings = [
+      "AUDIO_ENCODING_UNSPECIFIED",
+      "LINEAR16",
+      "MP3",
+      "OGG_OPUS",
+      "ALAW",
+      "MULAW",
+      "PCM",
+      "WAV",
+    ] as const;
+    for (const audioEncoding of encodings) {
+      expect(safeContext(at({ audioConfig: { audioEncoding } })).ok).toBe(true);
+    }
+    const r = safeContext(at({ audioConfig: { audioEncoding: "NOPE" } }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["audioConfig", "audioEncoding"]);
   });
 });
 
 describe("inworld.realtimeVoiceContext per-model gates (shared with the REST table)", () => {
-  test("deliveryMode on a 1.x model is unsupported_param, exactly as on REST", () => {
+  test("deliveryMode on a 1.x model warns (ignored there), exactly as on REST", () => {
     for (const modelId of [
       "inworld-tts-1.5-max",
       "inworld-tts-1.5-mini",
@@ -403,10 +553,11 @@ describe("inworld.realtimeVoiceContext per-model gates (shared with the REST tab
       "inworld-tts-1-max",
     ]) {
       const r = realtimeVoiceContext.safe({ voiceId: "v", modelId, deliveryMode: "CREATIVE" });
-      expect(r.ok).toBe(false);
-      if (!r.ok) {
-        expect(r.errors[0]?.code).toBe("unsupported_param");
-        expect(r.errors[0]?.path).toEqual(["deliveryMode"]);
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const warning = r.warnings.find((w) => w.code === "unsupported_param");
+        expect(warning?.path).toEqual(["deliveryMode"]);
+        expect(warning?.meta?.ignored).toBe(true);
       }
     }
   });

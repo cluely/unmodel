@@ -190,7 +190,7 @@ export type AnyImageAdapter = AnyUnifiedAdapter<ImageParams> & {
  *
  * ```ts
  * image({ model: "openai/gpt-image-2", prompt, size: "3840x2160" });        // ok
- * image({ model: "openai/gpt-image-1", prompt, background: "transparent" }); // ok
+ * image({ model: "openai/gpt-image-1.5", prompt, background: "transparent" }); // ok
  * image({ model: "openai/gpt-image-2", prompt, background: "transparent" }); // error
  * image({ model: "openai/dall-e-3",    prompt, size: "1920x1080" });         // error
  * ```

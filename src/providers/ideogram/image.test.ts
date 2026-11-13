@@ -7,7 +7,12 @@ import {
   STYLE_PRESETS,
   ASPECT_RATIOS,
 } from "./image";
-import { models, RENDERING_SPEED_TO_MODEL_ID, CHARACTER_REFERENCE_PER_IMAGE } from "./models";
+import {
+  models,
+  RENDERING_SPEED_TO_MODEL_ID,
+  CHARACTER_REFERENCE_PER_IMAGE,
+  CUSTOM_MODEL_PER_IMAGE,
+} from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -305,6 +310,43 @@ describe("ideogram.image pricing", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
   });
 
+  test("custom-model requests use the published custom-model rate, not the base rate", () => {
+    const uri = "model/brand/version/v1";
+    const cases = [
+      ["TURBO", 0.06],
+      ["DEFAULT", 0.12],
+      ["QUALITY", 0.18],
+    ] as const;
+    for (const [speed, rate] of cases) {
+      const r = image.safe({ prompt: "x", rendering_speed: speed, num_images: 2, custom_model_uri: uri });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(rate * 2, 10);
+    }
+    // rendering_speed omitted → the server default DEFAULT.
+    const fallback = image.safe({ prompt: "x", custom_model_uri: uri });
+    expect(fallback.ok).toBe(true);
+    if (fallback.ok) expect(fallback.estimate.costUSD).toBeCloseTo(0.12, 10);
+  });
+
+  test("custom model with FLASH or a character reference has no published rate → no estimate", () => {
+    const flash = image.safe({
+      prompt: "x",
+      rendering_speed: "FLASH",
+      custom_model_uri: "model/brand/version/v1",
+    });
+    expect(flash.ok).toBe(true);
+    if (flash.ok) expect(flash.estimate.costUSD).toBeUndefined();
+
+    const withCharacter = image.safe({
+      prompt: "x",
+      rendering_speed: "DEFAULT",
+      custom_model_uri: "model/brand/version/v1",
+      character_reference_images: [kilobytes(1)],
+    });
+    expect(withCharacter.ok).toBe(true);
+    if (withCharacter.ok) expect(withCharacter.estimate.costUSD).toBeUndefined();
+  });
+
   test("maxCostUSD is enforced", () => {
     const r = image.safe(
       { prompt: "x", rendering_speed: "QUALITY", num_images: 8 }, // 8 × $0.09 = $0.72
@@ -320,9 +362,11 @@ describe("ideogram.image pricing", () => {
       expect(models[id].cost.perImage).toBeGreaterThan(0);
       if (speed !== "FLASH") {
         expect(CHARACTER_REFERENCE_PER_IMAGE[speed]).toBeGreaterThan(0);
+        expect(CUSTOM_MODEL_PER_IMAGE[speed]).toBeGreaterThan(models[id].cost.perImage);
       }
     }
     expect(CHARACTER_REFERENCE_PER_IMAGE.FLASH).toBeUndefined();
+    expect(CUSTOM_MODEL_PER_IMAGE.FLASH).toBeUndefined();
   });
 });
 

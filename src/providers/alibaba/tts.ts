@@ -4,9 +4,8 @@
  *
  * Wire reference: https://www.alibabacloud.com/help/en/model-studio/qwen-tts
  * and https://www.alibabacloud.com/help/en/model-studio/qwen-tts-api
- * (verified 2026-08-24). Params mirror the wire body exactly:
- * `{ model, input: { text, voice, language_type?, instructions?,
- * optimize_instructions? }, stream? }`.
+ * (verified 2026-08-24; model list 2026-11-12). Params mirror the wire body
+ * exactly: `{ model, input: { text, voice, language_type? }, stream? }`.
  *
  * BASE URL: the qwen-tts page still documents the legacy international domain
  * `https://dashscope-intl.aliyuncs.com` for this route (TTS_URL); the model
@@ -22,21 +21,21 @@
  * field for the audio format — the output encoding is fixed.
  *
  * REALTIME IS A DIFFERENT API: `qwen3-tts-flash-realtime`,
- * `qwen3-tts-instruct-flash-realtime`, `qwen-audio-3.0-tts-plus` and
- * `qwen-audio-3.0-tts-flash` are WebSocket-only
- * (REALTIME_TTS_WSS_URL) and this validator rejects them — they are
- * catalogued in ./models.ts (`realtimeTtsModels`) so budgets and pickers can
- * see them, mirroring the ElevenLabs realtime precedent.
+ * `qwen-audio-3.0-tts-plus` and `qwen-audio-3.0-tts-flash` are served over
+ * WebSocket (REALTIME_TTS_WSS_URL) — the two Qwen-Audio-TTS ids also over
+ * HTTP at POST {base}/api/v1/services/audio/tts/SpeechSynthesizer
+ * (SPEECH_SYNTHESIZER_PATH), a different body — and this validator rejects
+ * them. They are catalogued in ./models.ts (`realtimeTtsModels`) so budgets
+ * and pickers can see them, mirroring the ElevenLabs realtime precedent.
  *
  * BEIJING-ONLY IDS: `qwen-tts`, `qwen-tts-latest` and the dated `qwen-tts-*`
  * snapshots exist only on the China (Beijing) deployment and bill per token;
  * they are not catalogued here (see ./models.ts).
  *
- * VOICES: the voice list page closes the `voice` enum per model family —
- * 48 voices on Qwen3-TTS-Flash (17 of them on the 2025-09-18 snapshot), 24 on
- * Qwen3-TTS-Instruct-Flash — including multi-word values ("Eldric Sage",
- * "Ono Anna", "Radio Gol") sent verbatim. checkVoice refuses off-list values
- * per model; refresh the lists from qwen-tts-voice-list when they grow.
+ * VOICES: the voice list page closes the `voice` enum — 48 voices on
+ * Qwen3-TTS-Flash, including multi-word values ("Eldric Sage", "Ono Anna",
+ * "Radio Gol") sent verbatim. checkVoice refuses off-list values per model;
+ * refresh the list from qwen-tts-voice-list when it grows.
  *
  * Auth is `Authorization: Bearer <DASHSCOPE_API_KEY>` — unmodel never touches
  * keys; add the header yourself when fetching.
@@ -55,8 +54,8 @@ import {
   ttsModels,
   TTS_MODEL_IDS,
   REALTIME_TTS_MODEL_IDS,
+  SPEECH_SYNTHESIZER_TTS_MODEL_IDS,
   TTS_MAX_CHARACTERS,
-  INSTRUCT_TTS_MODEL_ID_SET,
   LANGUAGE_TYPES,
   VOICES_BY_MODEL,
   type AlibabaLanguageType,
@@ -71,6 +70,8 @@ export { LANGUAGE_TYPES } from "./models";
 export type { AlibabaLanguageType } from "./models";
 
 const TTS_DOCS = "https://www.alibabacloud.com/help/en/model-studio/qwen-tts";
+const SPEECH_SYNTHESIZER_DOCS =
+  "https://www.alibabacloud.com/help/en/model-studio/qwen-audio-tts-http-api";
 
 /** Legacy international domain — see the BASE URL note above. */
 export const DEFAULT_BASE_URL = "https://dashscope-intl.aliyuncs.com";
@@ -93,8 +94,13 @@ export function ttsUrl(baseUrl: string = DEFAULT_BASE_URL): string {
  */
 export const REALTIME_TTS_WSS_URL = "wss://dashscope-intl.aliyuncs.com/api-ws/v1/realtime";
 
-/** "Maximum length: 1,600 tokens" — `input.instructions` (Instruct-Flash). */
-export const INSTRUCTIONS_MAX_TOKENS = 1600;
+/**
+ * The Qwen-Audio-TTS HTTP route (NOT validated by unmodel): its body is
+ * `{ model, input: { text, voice, format?, sample_rate?, … } }`, not this
+ * route's. Singapore host: `https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com`.
+ * https://www.alibabacloud.com/help/en/model-studio/qwen-audio-tts-http-api
+ */
+export const SPEECH_SYNTHESIZER_PATH = "/api/v1/services/audio/tts/SpeechSynthesizer";
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror the raw JSON body exactly (snake_case).
@@ -110,13 +116,6 @@ export interface AlibabaTtsInput {
    * language of the text."
    */
   language_type?: AlibabaLanguageType | (string & {});
-  /**
-   * Style/emotion instruction; Qwen3-TTS-Instruct-Flash models only.
-   * ≤1,600 tokens, Chinese and English only.
-   */
-  instructions?: string;
-  /** LLM-optimize `instructions` first; Instruct-Flash only. Default false. */
-  optimize_instructions?: boolean;
 }
 
 export interface TtsGenerationParams {
@@ -140,8 +139,6 @@ const ttsSchema = z.looseObject({
     text: z.string().min(1, "input.text must not be empty."),
     voice: z.string().min(1, "input.voice must not be empty."),
     language_type: z.string().optional(),
-    instructions: z.string().optional(),
-    optimize_instructions: z.boolean().optional(),
   }),
   stream: z.boolean().optional(),
 });
@@ -152,6 +149,7 @@ const ttsSchema = z.looseObject({
 
 const TTS_MODEL_ID_SET = new Set<string>(TTS_MODEL_IDS);
 const REALTIME_TTS_MODEL_ID_SET = new Set<string>(REALTIME_TTS_MODEL_IDS);
+const SPEECH_SYNTHESIZER_TTS_MODEL_ID_SET = new Set<string>(SPEECH_SYNTHESIZER_TTS_MODEL_IDS);
 const LANGUAGE_TYPE_SET = new Set<string>(LANGUAGE_TYPES);
 
 function checkModelEnum(
@@ -161,12 +159,19 @@ function checkModelEnum(
 ): void {
   if (TTS_MODEL_ID_SET.has(params.model)) return;
   if (REALTIME_TTS_MODEL_ID_SET.has(params.model)) {
+    const http = SPEECH_SYNTHESIZER_TTS_MODEL_ID_SET.has(params.model);
     ctx.report({
       code: "invalid_enum_value",
       path: ["model"],
       model: params.model,
-      message: `"${params.model}" is a realtime (WebSocket-only) TTS model — POST ${TTS_PATH} cannot serve it. Open ${REALTIME_TTS_WSS_URL} instead, or pick one of ${TTS_MODEL_IDS.map((v) => JSON.stringify(v)).join(", ")}.`,
-      meta: { allowed: [...TTS_MODEL_IDS], value: params.model, source: TTS_DOCS },
+      message: http
+        ? `"${params.model}" is a Qwen-Audio-TTS model — POST ${TTS_PATH} cannot serve it. Send it to POST ${SPEECH_SYNTHESIZER_PATH} (HTTP, its own \`input\` body) or open ${REALTIME_TTS_WSS_URL}; neither route is validated by unmodel. Or pick one of ${TTS_MODEL_IDS.map((v) => JSON.stringify(v)).join(", ")} here.`
+        : `"${params.model}" is a realtime (WebSocket-only) TTS model — POST ${TTS_PATH} cannot serve it. Open ${REALTIME_TTS_WSS_URL} instead, or pick one of ${TTS_MODEL_IDS.map((v) => JSON.stringify(v)).join(", ")}.`,
+      meta: {
+        allowed: [...TTS_MODEL_IDS],
+        value: params.model,
+        source: http ? SPEECH_SYNTHESIZER_DOCS : TTS_DOCS,
+      },
     });
     return;
   }
@@ -238,26 +243,6 @@ function checkVoice(
   });
 }
 
-/** `instructions` / `optimize_instructions` are Instruct-Flash-only fields. */
-function checkInstructions(
-  params: TtsGenerationParams,
-  info: ModelInfo | undefined,
-  ctx: PipelineContext,
-): void {
-  if (info === undefined) return;
-  if (INSTRUCT_TTS_MODEL_ID_SET.has(params.model)) return;
-  for (const field of ["instructions", "optimize_instructions"] as const) {
-    if (params.input?.[field] === undefined) continue;
-    ctx.report({
-      code: "unsupported_param",
-      path: ["input", field],
-      model: params.model,
-      message: `\`input.${field}\` applies only to the Qwen3-TTS-Instruct-Flash models; "${params.model}" does not accept it.`,
-      meta: { source: TTS_DOCS },
-    });
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Estimation — billed per input character (catalog cost.perMillionCharacters);
 // output audio is free.
@@ -308,7 +293,7 @@ const validator = createValidator<TtsGenerationParams, unknown>({
   // The realtime rows are in the catalog so a rejected realtime id draws the
   // targeted enum error alone, not an unknown_model warning beside it.
   catalog: { ...ttsModels, ...realtimeTtsModels },
-  checks: [checkModelEnum, checkTextLength, checkLanguageType, checkVoice, checkInstructions],
+  checks: [checkModelEnum, checkTextLength, checkLanguageType, checkVoice],
   estimate,
   finalize,
 });

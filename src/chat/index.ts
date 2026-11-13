@@ -7,7 +7,7 @@
  * const req = chat({
  *   model: "anthropic/claude-opus-5",
  *   messages: [{ role: "user", content: "Explain retargeting." }],
- *   reasoning: { budgetTokens: 2048 },
+ *   reasoning: { effort: "high", budgetTokens: 2048 },
  *   maxOutputTokens: 4096,
  * });
  *

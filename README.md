@@ -308,8 +308,9 @@ onFal.request.url; // https://queue.fal.run/fal-ai/kling-video/v2.5-turbo/pro/te
 { ...onFal };      // { prompt: "A slow push-in…", negative_prompt: "", duration: "10" }
 onFal.warnings;    // []  ← empty means the mapping was exact
 
-video({ model_name: "kling-v1", prompt: "…" }).toApi("fal");
-//                                             ~~~~~ TypeScript error: fal serves no Kling v1
+declare const fromConfig: string; // an id only known at run time
+video({ model_name: fromConfig, prompt: "…" }).toApi("fal");
+//                                             ~~~~~ TypeScript error: no verified fal mapping for it
 ```
 
 Auth changes with the host — Kling takes `authorization: Bearer <key>`, fal takes `authorization: Key <FAL_KEY>`. A parameter fal cannot express is an error naming it, never a silent drop; a derived or snapped value is one warning. Six families across image, video and tts, with the mappings and the deliberate refusals in [docs/providers.md](docs/providers.md#media-retargeting--toapifal).

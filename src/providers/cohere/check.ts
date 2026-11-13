@@ -3,7 +3,7 @@ import type { ResponseReport, UsageReport } from "../../core/report";
 import type { ModelInfo } from "../../core/catalog-types";
 import { resolveModelInfo } from "../../core/catalog-lookup";
 import { computeCostUSD } from "../../core/cost";
-import { models } from "../../catalog/cohere.gen";
+import { chatModels } from "./models";
 
 /**
  * The `usage` object of a v2 chat response: `billed_units` are the counts
@@ -51,7 +51,7 @@ export type CohereFinishReason =
   | "TIMEOUT"
   | (string & {});
 
-const catalog = models as Record<string, ModelInfo>;
+const catalog = chatModels as Record<string, ModelInfo>;
 
 /**
  * Post-generation report for a v2 chat response: truncation/failure warnings,

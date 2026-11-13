@@ -4,13 +4,14 @@ export {
   TTS_URL,
   TTS_LIVE_URL,
   TTS_LIVE_WS_URL,
-  DEFAULT_MODEL_ID,
   MAX_CHARACTERS,
-  REQUIRED_ACCEPT,
   SAMPLE_RATES,
   OUTPUT_FORMATS,
   LANGUAGES,
   PRO_ONLY_LANGUAGES,
+  PREVIEW_CHECKPOINT_LANGUAGES,
+  DATE_FORMATS,
+  CONTENT_FILTER_ACTIONS,
 } from "./tts";
 export type {
   TtsBody,
@@ -18,6 +19,9 @@ export type {
   SmallestSampleRate,
   SmallestOutputFormat,
   SmallestLanguage,
+  SmallestDateFormat,
+  SmallestContentFilter,
+  SmallestContentFilterAction,
 } from "./tts";
 
 export { models, provider, SMALLEST_MODEL_IDS } from "./models";

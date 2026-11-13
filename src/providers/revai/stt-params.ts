@@ -19,7 +19,7 @@ import type {
   RevaiTranslationConfig,
 } from "./stt";
 
-/** The four transcribers — the ref union for `revai/…`. */
+/** The cataloged transcribers (`low_cost` and `fusion` deprecated) — the ref union for `revai/…`. */
 export const MODELS = ["machine", "low_cost", "fusion", "human"] as const;
 
 /**
@@ -38,8 +38,9 @@ export const MODELS = ["machine", "low_cost", "fusion", "human"] as const;
  *   `translation_config` are "not available for human transcription jobs", so
  *   they are on the three machine rows.
  * - **low cost** — `diarization_type` and `forced_alignment` are "not available
- *   in the low-cost environment", which is what separates `low_cost` from
- *   `machine` and `fusion`.
+ *   in the low-cost environment" (`checkLowCost` carries the quote and why it
+ *   has no live source), which is what separates `low_cost` from `machine` and
+ *   `fusion`.
  *
  * `timestamps: ["word"]` on every row: word timings ride on every Rev AI
  * transcript and there is no switch. `forced_alignment` is on the rows that

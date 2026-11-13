@@ -8,6 +8,7 @@ import {
   KREA_CREATIVITY_MODES,
 } from "./image";
 import { models, KREA_BILLING_TIERS } from "./models";
+import { image as unifiedImage } from "../../unified/image";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 
@@ -42,6 +43,8 @@ describe("krea.image happy path", () => {
       "krea-2/large",
       "krea-2/medium-turbo",
     ]);
+    // OpenAPI `"summary":"Krea 2 Turbo"` (2026-11-12); the route tail is unchanged.
+    expect(models["krea-2/medium-turbo"].name).toBe("Krea 2 Turbo");
   });
 
   test("an unknown route warns but still validates", () => {
@@ -91,6 +94,44 @@ describe("krea.image enums", () => {
       expect(r.ok, `creativity ${creativity} should validate`).toBe(true);
       if (r.ok) expect(r.warnings, `${creativity} should be warning-free`).toEqual([]);
     }
+  });
+
+  // https://api.krea.ai/openapi.json (2026-11-12), identical on all three variant
+  // routes: "enum":["1:1","4:3","3:2","16:9","2.35:1","4:5","3:4","2:3","9:16"].
+  test("aspect_ratio is the served nine-value enum, in served order", () => {
+    expect([...KREA_ASPECT_RATIOS]).toEqual([
+      "1:1",
+      "4:3",
+      "3:2",
+      "16:9",
+      "2.35:1",
+      "4:5",
+      "3:4",
+      "2:3",
+      "9:16",
+    ]);
+  });
+
+  test("3:4 validates on every variant route", () => {
+    for (const model of Object.keys(models) as Array<keyof typeof models>) {
+      const r = image.safe({ model, prompt: "x", aspect_ratio: "3:4", resolution: "1K" });
+      expect(r.ok, `${model} should accept 3:4`).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("unmodel/image sends 3:4 through, and 768x1024 lands on it exactly", () => {
+    const ratio = unifiedImage.safe({ model: "krea/krea-2/medium", prompt: "x", aspectRatio: "3:4" });
+    expect(ratio.ok, ratio.ok ? "" : JSON.stringify(ratio.errors)).toBe(true);
+    if (ratio.ok) expect(ratio.params.aspect_ratio).toBe("3:4");
+
+    const pixels = unifiedImage.safe({
+      model: "krea/krea-2/medium",
+      prompt: "x",
+      dimensions: { width: 768, height: 1024 },
+    });
+    expect(pixels.ok, pixels.ok ? "" : JSON.stringify(pixels.errors)).toBe(true);
+    if (pixels.ok) expect(pixels.params.aspect_ratio).toBe("3:4");
   });
 
   test("aspect_ratio is checked against the Krea 2 list", () => {
@@ -223,16 +264,66 @@ describe("krea.image ranges", () => {
     ]);
   });
 
-  test("an oversized data-URI style reference is reported", () => {
+  // The served spec caps both image URL fields at `maxLength: 1024`, but Krea's
+  // Zero Data Retention guide REQUIRES whole-file data URIs in them
+  // (https://www.krea.ai/docs/developers/zdr, 2026-11-13: "Any URL provided,
+  // for example a style reference image, must be a base64 data URI"). A long
+  // data URI is contested, so it warns; a long external URL is not, so it fails.
+  const BASE = { model: "krea-2/medium", prompt: "x", aspect_ratio: "1:1", resolution: "1K" };
+  const LONG_DATA_URI = `data:image/png;base64,${"A".repeat(1100)}`;
+  const LONG_HTTPS_URL = `https://example.com/${"a".repeat(1100)}.png`;
+
+  test("an oversized data-URI style reference warns, naming the cap and Zero Data Retention", () => {
+    const r = safeUnchecked({ ...BASE, image_style_references: [{ url: LONG_DATA_URI }] });
+    expect(r.ok, r.ok ? "" : JSON.stringify(r.errors)).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]?.code).toBe("invalid_shape");
+      expect(r.warnings[0]?.path).toEqual(["image_style_references", 0, "url"]);
+      expect(r.warnings[0]?.message).toContain("1024");
+      expect(r.warnings[0]?.message).toContain("Zero Data Retention");
+    }
+  });
+
+  test("an oversized data-URI image_url warns, naming the cap and Zero Data Retention", () => {
+    const r = safeUnchecked({ ...BASE, image_url: LONG_DATA_URI });
+    expect(r.ok, r.ok ? "" : JSON.stringify(r.errors)).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]?.code).toBe("invalid_shape");
+      expect(r.warnings[0]?.path).toEqual(["image_url"]);
+      expect(r.warnings[0]?.message).toContain("1024");
+      expect(r.warnings[0]?.message).toContain("Zero Data Retention");
+    }
+  });
+
+  test("an oversized https URL is refused on both image URL fields", () => {
+    const ref = safeUnchecked({ ...BASE, image_style_references: [{ url: LONG_HTTPS_URL }] });
+    expect(ref.ok).toBe(false);
+    if (!ref.ok) {
+      expect(ref.errors[0]?.path).toEqual(["image_style_references", 0, "url"]);
+      expect(ref.errors[0]?.message).toContain("1024");
+      expect(ref.errors[0]?.message).toContain("data URI");
+    }
+
+    const source = safeUnchecked({ ...BASE, image_url: LONG_HTTPS_URL });
+    expect(source.ok).toBe(false);
+    if (!source.ok) {
+      expect(source.errors[0]?.path).toEqual(["image_url"]);
+      expect(source.errors[0]?.message).toContain("1024");
+    }
+  });
+
+  test("a data URI at the 1024-char cap is warning-free", () => {
+    const atCap = `data:image/png;base64,${"A".repeat(1024 - "data:image/png;base64,".length)}`;
+    expect(atCap).toHaveLength(1024);
     const r = safeUnchecked({
-      model: "krea-2/medium",
-      prompt: "x",
-      aspect_ratio: "1:1",
-      resolution: "1K",
-      image_style_references: [{ url: `data:image/png;base64,${"A".repeat(1100)}` }],
+      ...BASE,
+      image_style_references: [{ url: atCap }],
+      image_url: atCap,
     });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.message).toContain("1024");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
   });
 
   test("moodboards are limited to one and require an id", () => {
@@ -256,6 +347,28 @@ describe("krea.image ranges", () => {
     if (!noId.ok) expect(noId.errors[0]?.path).toEqual(["moodboards", 0, "id"]);
   });
 
+  // https://api.krea.ai/openapi.json (2026-11-13), all three K2 routes:
+  // "id":{"type":"string","format":"uuid","pattern":"^([0-9a-fA-F]{8}-…)$"}.
+  test("a moodboard id must match the served UUID pattern", () => {
+    for (const id of ["not-a-uuid", ""]) {
+      const r = safeUnchecked({ ...BASE, moodboards: [{ id }] });
+      expect(r.ok, `${JSON.stringify(id)} should be refused`).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.code).toBe("invalid_shape");
+        expect(r.errors[0]?.path).toEqual(["moodboards", 0, "id"]);
+      }
+    }
+
+    for (const id of [
+      "1e51738c-7413-469e-93b6-ad50db460a1f",
+      "1E51738C-7413-469E-93B6-AD50DB460A1F",
+    ]) {
+      const r = safeUnchecked({ ...BASE, moodboards: [{ id }] });
+      expect(r.ok, `${id} should validate`).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
   test("strength without image_url is a warning, not an error", () => {
     const r = image.safe({
       model: "krea-2/medium",
@@ -271,7 +384,7 @@ describe("krea.image ranges", () => {
 
 // Krea 2's request schema is `additionalProperties: false`
 // (https://api.krea.ai/openapi.json → /generate/image/krea/krea-2/{variant}),
-// so an unknown key is a certain 400 and unmodel errors instead of warning.
+// so an unknown key is a certain 422 and unmodel errors instead of warning.
 describe("krea.image closed request schema", () => {
   test("an unknown top-level key is an error, not an unknown_param warning", () => {
     const r = safeUnchecked({
@@ -288,6 +401,9 @@ describe("krea.image closed request schema", () => {
       expect(r.errors[0]?.path).toEqual([]);
       expect(r.errors[0]?.message).toContain("num_images");
       expect(r.errors[0]?.message).toContain("additionalProperties: false");
+      // Validation failures are 422s on Krea (errors-and-debugging, 2026-11-12):
+      // "Invalid JSON (`400`) and validation (`422`)".
+      expect(r.errors[0]?.message).toContain("422 (`unrecognized_keys`)");
       expect(r.warnings.some((w) => w.code === "unknown_param")).toBe(false);
     }
   });

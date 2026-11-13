@@ -7,6 +7,8 @@ import {
   MAX_AUDIO_DURATION_SECONDS,
   MAX_AUDIO_BYTES,
 } from "./stt";
+import { stt as gladiaAdapter } from "./unified";
+import { createStt } from "../../unified/stt";
 import { UnmodelValidationError } from "../../core/issues";
 
 const AUDIO = "https://api.gladia.io/file/6c09400e-23d2-4bd2-be55-96a5ececfa3b";
@@ -165,47 +167,125 @@ describe("gladia.stt toggle pairing", () => {
 });
 
 describe("gladia.stt solaria-3 gates", () => {
-  test("solaria-3 requires exactly one language", () => {
+  test("one language validates cleanly", () => {
+    const r = stt.safe({
+      audio_url: AUDIO,
+      model: "solaria-3",
+      language_config: { languages: ["fr"] },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("no language or several warn, citing the page that disagrees", () => {
+    // The endpoint page says "pass exactly one language"; the Models page lets
+    // solaria-3 "pick among" several, and the OpenAPI auto-detects when none
+    // is set — so neither is refused.
     const none = stt.safe({ audio_url: AUDIO, model: "solaria-3" });
-    expect(none.ok).toBe(false);
-    if (!none.ok) expect(none.errors[0]?.message).toContain("single-language");
+    expect(none.ok).toBe(true);
+    if (none.ok) {
+      expect(none.warnings.map((w) => [w.code, w.path.join(".")])).toEqual([
+        ["unsupported_capability", "language_config.languages"],
+      ]);
+      expect(none.warnings[0]?.message).toContain("no language");
+      expect(none.warnings[0]?.meta?.contradictedBy).toBe(
+        "https://docs.gladia.io/chapters/introduction/models",
+      );
+    }
 
     const two = stt.safe({
       audio_url: AUDIO,
       model: "solaria-3",
       language_config: { languages: ["en", "fr"] },
     });
-    expect(two.ok).toBe(false);
-
-    const one = stt.safe({
-      audio_url: AUDIO,
-      model: "solaria-3",
-      language_config: { languages: ["fr"] },
-    });
-    expect(one.ok).toBe(true);
+    expect(two.ok).toBe(true);
+    if (two.ok) {
+      expect(two.warnings).toHaveLength(1);
+      expect(two.warnings[0]?.message).toContain("2 languages");
+    }
   });
 
-  test("solaria-3 rejects languages outside its five", () => {
-    const r = stt.safe({
+  test("solaria-3 rejects languages outside its five, at every entry", () => {
+    const one = stt.safe({
       audio_url: AUDIO,
       model: "solaria-3",
       language_config: { languages: ["ja"] },
     });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.code).toBe("invalid_enum_value");
-      expect(r.errors[0]?.message).toContain("solaria-1");
+    expect(one.ok).toBe(false);
+    if (!one.ok) {
+      expect(one.errors[0]?.code).toBe("invalid_enum_value");
+      expect(one.errors[0]?.message).toContain("solaria-1");
+    }
+
+    const later = stt.safe({
+      audio_url: AUDIO,
+      model: "solaria-3",
+      language_config: { languages: ["en", "ja"] },
+    });
+    expect(later.ok).toBe(false);
+    if (!later.ok) {
+      expect(later.errors.map((e) => [e.code, e.path.join(".")])).toEqual([
+        ["invalid_enum_value", "language_config.languages.1"],
+      ]);
+      expect(later.errors[0]?.message).toContain('"ja"');
     }
   });
 
-  test("solaria-3 rejects code switching", () => {
+  test("code switching beside one language is ignored, so it warns", () => {
+    // OpenAPI: "If one language is set, this option will be ignored."
     const r = stt.safe({
       audio_url: AUDIO,
       model: "solaria-3",
       language_config: { languages: ["en"], code_switching: true },
     });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => [w.code, w.path.join(".")])).toEqual([
+        ["unsupported_param", "language_config.code_switching"],
+      ]);
+      expect(r.warnings[0]?.message).toContain("ignored");
+    }
+  });
+
+  test("code switching across several languages is refused", () => {
+    const r = stt.safe({
+      audio_url: AUDIO,
+      model: "solaria-3",
+      language_config: { languages: ["en", "fr"], code_switching: true },
+    });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.message).toContain("code switching");
+  });
+
+  test("through unmodel/stt, each solaria-3 finding names the canonical word", () => {
+    const unified = createStt([gladiaAdapter]);
+    const audio = { url: AUDIO };
+
+    const none = unified.safe({ model: "gladia/solaria-3", audio });
+    expect(none.ok).toBe(true);
+    if (none.ok) {
+      expect(none.warnings.map((w) => [w.code, w.path.join(".")])).toEqual([
+        ["unsupported_capability", "language"],
+      ]);
+      expect(none.warnings[0]?.message).toContain("(compiled from `language_config.languages`)");
+    }
+
+    const several = unified.safe({ model: "gladia/solaria-3", audio, languages: ["en", "fr"] });
+    expect(several.ok).toBe(true);
+    if (several.ok) {
+      expect(several.warnings.map((w) => [w.code, w.path.join(".")])).toEqual([
+        ["unsupported_capability", "languages"],
+      ]);
+    }
+
+    const offList = unified.safe({ model: "gladia/solaria-3", audio, languages: ["en", "ja"] });
+    expect(offList.ok).toBe(false);
+    if (!offList.ok) {
+      expect(offList.errors.map((e) => [e.code, e.path.join(".")])).toEqual([
+        ["invalid_enum_value", "languages"],
+      ]);
+      expect(offList.errors[0]?.message).toContain("language_config.languages.1");
+    }
   });
 
   test("solaria-1 keeps code switching and multi-language configs", () => {
@@ -219,14 +299,15 @@ describe("gladia.stt solaria-3 gates", () => {
 });
 
 describe("gladia.stt media + cost", () => {
-  test("declared duration prices at the async per-minute rate", () => {
-    const r = stt.safe(
-      { audio_url: AUDIO },
-      { media: [{ path: ["audio_url"], durationSeconds: 3600 }] },
-    );
-    expect(r.ok).toBe(true);
-    // 60 minutes x ($0.61/hr ÷ 60) = $0.61.
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.61, 10);
+  test("a declared duration yields no costUSD: Gladia prices in EUR only", () => {
+    for (const model of ["solaria-1", "solaria-3"] as const) {
+      const r = stt.safe(
+        { audio_url: AUDIO, model, language_config: { languages: ["en"] } },
+        { media: [{ path: ["audio_url"], durationSeconds: 3600 }] },
+      );
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+    }
   });
 
   test("audio longer than 135 minutes is rejected", () => {
@@ -250,23 +331,19 @@ describe("gladia.stt media + cost", () => {
     if (!r.ok) expect(r.errors[0]?.code).toBe("media_too_large");
   });
 
-  test("maxCostUSD is enforced and no declaration means no estimate", () => {
-    const over = stt.safe(
+  test("maxCostUSD has no USD estimate to compare against", () => {
+    const capped = stt.safe(
       { audio_url: AUDIO },
       { media: [{ path: ["audio_url"], durationSeconds: 3600 }], maxCostUSD: 0.1 },
     );
-    expect(over.ok).toBe(false);
-    if (!over.ok) expect(over.errors[0]?.code).toBe("over_budget");
-
-    const bare = stt.safe({ audio_url: AUDIO });
-    expect(bare.ok).toBe(true);
-    if (bare.ok) expect(bare.estimate.costUSD).toBeUndefined();
+    expect(capped.ok).toBe(true);
+    if (capped.ok) expect(capped.estimate.costUSD).toBeUndefined();
   });
 
   test("throwing form raises UnmodelValidationError", () => {
-    expect(() => stt({ audio_url: AUDIO, model: "solaria-3" })).toThrow(
-      UnmodelValidationError,
-    );
+    expect(() =>
+      stt({ audio_url: AUDIO, model: "solaria-3", language_config: { languages: ["ja"] } }),
+    ).toThrow(UnmodelValidationError);
   });
 });
 

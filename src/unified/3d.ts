@@ -98,7 +98,7 @@ export function createThreeD<A extends ThreeDAdapter>(adapters: readonly A[]): T
  * Every 3D adapter unmodel ships — the aggregator and the specialist.
  *
  * fal serves nineteen curated endpoints from seven vendors behind it; `tripo3d`
- * is Tripo's own v3 API, four models across two routes. They overlap on purpose:
+ * is Tripo's own v3 API, five models across two routes. They overlap on purpose:
  * `tripo3d/h3.1/image-to-3d` at fal and `tripo3d/v3.1-20260211` here are the
  * same model reached two ways, which is exactly the comparison
  * `unmodel/3d` exists to make cheap. Where they disagree on a word — and they

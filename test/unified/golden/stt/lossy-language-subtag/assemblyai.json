@@ -24,7 +24,7 @@
         "requested": "pt-BR",
         "achieved": "pt",
         "dropped": "BR",
-        "source": "https://www.assemblyai.com/docs/api-reference/transcripts/submit"
+        "source": "https://www.assemblyai.com/docs/pre-recorded-audio/api-reference/transcripts/submit"
       }
     }
   ]

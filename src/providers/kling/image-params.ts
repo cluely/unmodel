@@ -28,10 +28,6 @@ import type { KlingWatermarkInfo } from "./shared";
 export const MODELS = [
   "kling-v3",
   "kling-v2-1",
-  "kling-v2-new",
-  "kling-v2",
-  "kling-v1-5",
-  "kling-v1",
   "kling-image-o1",
   "kling-v3-omni",
 ] as const;
@@ -84,10 +80,6 @@ export const KLING_OMNI_ROW = {
 export const KLING_IMAGE_MODEL_PARAMS = {
   "kling-v3": KLING_GENERATIONS_ROW,
   "kling-v2-1": KLING_GENERATIONS_ROW,
-  "kling-v2-new": KLING_GENERATIONS_ROW,
-  "kling-v2": KLING_GENERATIONS_ROW,
-  "kling-v1-5": KLING_GENERATIONS_ROW,
-  "kling-v1": KLING_GENERATIONS_ROW,
   "kling-image-o1": KLING_OMNI_ROW,
   "kling-v3-omni": KLING_OMNI_ROW,
 } as const satisfies ModelParamTable;

@@ -137,11 +137,12 @@ export interface VoiceSampleLimits {
 /**
  * Who can see the created voice.
  *
- * Canonical because it is a privacy fact, not a tuning knob: Fish defaults to
- * **public** ("shown in the discovery page") while Cartesia defaults to
- * private, and a caller who cannot say `visibility: "private"` portably would
- * have to learn that difference from an invoice. `"unlisted"` is the
- * canonical spelling of Fish's `unlist` — anyone with the link.
+ * Canonical because it is a privacy fact, not a tuning knob, and two wires
+ * carry it: Fish's `visibility` (`public` / `unlist` / `private`) and
+ * Cartesia's `access` (`public` / `private`). Both default to private; Fish
+ * also downgrades a `public` request to private ("use the web publish flow to
+ * publish publicly"). `"unlisted"` is the canonical spelling of Fish's
+ * `unlist` — anyone with the link.
  */
 export type VoiceVisibility = "private" | "unlisted" | "public";
 

@@ -6,8 +6,9 @@
  * /p on 2026-08-25):
  * - `input` and `model` are the only required fields.
  * - `input` is ONE polymorphic string and the API tells the three cases apart by
- *   PREFIX: a `file_…` token from `POST /v3/files`, a public http(s) URL, or a
- *   `task_…` id from an earlier image-generation task. "Choose exactly one."
+ *   SHAPE: a `file_…` token from `POST /v3/files`, a public http(s) URL, or the
+ *   task id (a bare UUID, per the page as re-read 2026-11-12) of an earlier
+ *   image-generation task. "Choose exactly one."
  *   PNG / JPEG / WebP, up to 20 MB, at least 256×256 recommended.
  * - No `image_seed` here — that seed pins the text-to-image stage the TEXT route
  *   runs, and this route has no such stage. `model_seed` and `texture_seed` are
@@ -40,16 +41,19 @@ import {
   ORIENTATIONS,
   checkFaceLimit,
   checkGenerateParts,
+  checkTextureVersion,
   checkImageInput,
   checkPbrForcesTexture,
   checkVersionGatedParams,
   generationCommonSchema,
   type Tripo3dCompression,
+  type Tripo3dExportOrientation,
   type Tripo3dGeometryQuality,
   type Tripo3dModelId,
   type Tripo3dOrientation,
   type Tripo3dTextureAlignment,
   type Tripo3dTextureQuality,
+  type Tripo3dTextureVersion,
 } from "./shared";
 import { tripo3dCostUSD } from "./pricing";
 
@@ -60,11 +64,12 @@ const SOURCE = `${DOCS_BASE}/generation-image-to-model/standard`;
 export interface ImageToModelParams {
   /**
    * Required. Exactly one of: a `file_…` token from `POST /v3/files`, a public
-   * http(s) URL, or a `task_…` id from a prior text-to-image / image-to-image
-   * task. The API disambiguates by prefix; there is no separate type field.
+   * http(s) URL, or the task id (a bare UUID) of a prior text-to-image /
+   * image-to-image task. The API tells them apart; there is no separate type
+   * field.
    */
   input: string;
-  /** Required. The dated model id — see `TRIPO3D_MODELS` on the alias conflict. */
+  /** Required. The dated model id — see `TRIPO3D_MODELS`. */
   model: Tripo3dModelId | (string & {});
   /** Enhances a low-resolution or low-quality input before generating. */
   enable_image_autofix?: boolean;
@@ -82,22 +87,38 @@ export interface ImageToModelParams {
   texture?: boolean;
   /** Defaults to **true**, and forces `texture` true. */
   pbr?: boolean;
-  /** v3.0+ and P1. `extreme` is 8K and costs extra credits. */
+  /** v3.0+, P1 and P2. `extreme` is 8K and costs extra credits. */
   texture_quality?: Tripo3dTextureQuality;
   /** v3.0+ only — `detailed` is Ultra mode. Must NOT be sent with v2.5. */
   geometry_quality?: Tripo3dGeometryQuality;
-  /** v3.0+ and P1. Scales the model to real-world metres. */
+  /** v3.0+, P1 and P2. Scales the model to real-world metres. */
   auto_size?: boolean;
-  /** v3.0+ only. Forces the output format to FBX; default face count 10,000. */
+  /** v3.0+ and P2. On the H series it forces FBX output; default face count 10,000. */
   quad?: boolean;
   /** v3.0+ only. Hand-crafted low-poly topology. */
   smart_low_poly?: boolean;
-  /** v3.0+ only. Editable segmented parts; requires texture/pbr/quad all false. */
+  /** v3.0+ only. Editable segmented parts; requires texture and pbr false, ignores quad. */
   generate_parts?: boolean;
-  /** v3.0+ and P1. `"geometry"` is meshopt compression. */
+  /** v3.0+, P1 and P2. `"geometry"` is meshopt compression. */
   compress?: Tripo3dCompression;
   /** Defaults to true. False is faster and smaller; UVs are done at texturing. */
   export_uv?: boolean;
+  /**
+   * Pins the texture model independently of `model`. Omitted, it derives
+   * `v2.5-20250123` from v2.5 geometry and `v3.0-20250812` from every other.
+   */
+  texture_version?: Tripo3dTextureVersion | (string & {});
+  /**
+   * Defaults to true: strips baked-in lighting from the reference before
+   * texturing. Only texture `v3.5-20260815` reads it; older versions ignore it.
+   */
+  delight?: boolean;
+  /**
+   * The exported mesh's forward axis; `+x` by default. Applies to this
+   * generation only — later post-processing may mis-orient it and still report
+   * `status: success`.
+   */
+  export_orientation?: Tripo3dExportOrientation;
 }
 
 const imageToModelSchema = z.looseObject({
@@ -145,6 +166,7 @@ const validator = createValidator<ImageToModelParams, unknown>({
     checkImageInput(SOURCE),
     checkVersionGatedParams(SOURCE),
     checkGenerateParts(SOURCE),
+    checkTextureVersion(SOURCE),
     checkPbrForcesTexture(SOURCE),
     checkFaceLimit(SOURCE),
   ],

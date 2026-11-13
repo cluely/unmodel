@@ -5,8 +5,8 @@
  * Every export here is a readonly (`as const`) array or table a browser can
  * render: the model ids, the per-model narrowing rows (which moods each model
  * reads and which extras it takes), and Tripo's own published enums — the two
- * quality ladders, the texture-alignment and orientation choices, the one
- * compression value. It is the value half of `unmodel/tripo3d/types`, for the
+ * quality ladders, the texture versions, the texture-alignment, orientation and
+ * export-axis choices, the one compression value. It is the value half of `unmodel/tripo3d/types`, for the
  * client-side validation and the pickers a type cannot draw.
  *
  * The category table is **the same object the adapter compiles with** —
@@ -33,12 +33,14 @@ export {
 
 export {
   COMPRESSIONS,
+  EXPORT_ORIENTATIONS,
   FACE_LIMITS,
   GATED_PARAMS_BY_MODEL,
   GEOMETRY_QUALITIES,
   ORIENTATIONS,
   TEXTURE_ALIGNMENTS,
   TEXTURE_QUALITIES,
+  TEXTURE_VERSIONS,
   TRIPO3D_MODELS,
   TRIPO3D_TASK_STATUSES,
   VERSION_GATED_PARAMS,

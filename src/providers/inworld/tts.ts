@@ -3,13 +3,21 @@
  *
  * Wire reference:
  * https://docs.inworld.ai/api-reference/ttsAPI/texttospeech/synthesize-speech
- * (verified 2026-08-13). Params mirror the wire body exactly. The streaming
+ * (verified 2026-11-12). Params mirror the wire body exactly. The streaming
  * variant (POST /tts/v1/voice:stream) takes the same body (plus an optional
  * `timestampTransportStrategy`) but returns NDJSON; unmodel finalizes to the
  * non-streaming URL only. The realtime WebSocket API is not validated.
  *
- * CHARACTER CAP: the endpoint documents "Maximum input of 2,000 characters"
- * for `text`. An over-long `text` is reported with issue code
+ * THREE WAYS TO NAME THE SPEECH: `text` + a stored `voiceId`, `text` + an
+ * ad-hoc `voiceDesign`, or a `script` of utterances that each carry their own
+ * voice — "Set either `voiceId` or `voiceDesign`, not both", and `script`
+ * "Replaces top-level `text`, `voiceId`, and `voiceDesign`". `TtsVoiceBody`
+ * is the union of those three shapes; `checkSpeechSource` re-states it for
+ * callers a type cannot reach.
+ *
+ * CHARACTER CAP: "`text` accepts up to **2,000 UTF-16 code units**
+ * (JavaScript `text.length`)", and "For scripts, the limit applies to the sum
+ * of the utterance texts." An over-long request is reported with issue code
  * `over_output_limit` — there is no character-specific issue code, so the
  * message and meta ({ limitCharacters, actualCharacters }) spell out that
  * the limit is in characters, not tokens.
@@ -35,7 +43,10 @@ export const TTS_VOICE_URL = "https://api.inworld.ai/tts/v1/voice";
 /** Streaming variant — same body; NDJSON response. Not what finalize targets. */
 export const TTS_VOICE_STREAM_URL = "https://api.inworld.ai/tts/v1/voice:stream";
 
-/** "Maximum input of 2,000 characters" — synthesize-speech API reference. */
+/**
+ * "`text` accepts up to **2,000 UTF-16 code units** (JavaScript
+ * `text.length`)" — synthesize-speech API reference.
+ */
 export const INWORLD_TTS_MAX_CHARACTERS = 2000;
 
 // ---------------------------------------------------------------------------
@@ -53,10 +64,10 @@ export type InworldAudioEncoding =
   | "WAV";
 
 /**
- * The seven rates the reference lists: "Accepts values within the range
- * [8000, 48000]. Supported sample rates are: 8000, 16000, 22050, 24000,
- * 32000, 44100, 48000." The range is a bound on that closed list, not a
- * continuum — rates inside the gaps 4xx (SYNTHESIZE_DOCS).
+ * The rates the reference calls common: "Accepts values within the range
+ * [8000, 48000]. Common sample rates include: 8000, 16000, 22050, 24000,
+ * 32000, 44100, 48000." (SYNTHESIZE_DOCS, 2026-11-12.) A list for pickers and
+ * autocomplete, not a bound — the bound is the range.
  */
 export const INWORLD_SAMPLE_RATES_HERTZ = [
   8000, 16000, 22050, 24000, 32000, 44100, 48000,
@@ -64,17 +75,22 @@ export const INWORLD_SAMPLE_RATES_HERTZ = [
 
 export type InworldSampleRateHertz = (typeof INWORLD_SAMPLE_RATES_HERTZ)[number];
 
+/** "Accepts values within the range [8000, 48000]." */
+const SAMPLE_RATE_MIN_HERTZ = 8000;
+const SAMPLE_RATE_MAX_HERTZ = 48000;
+
 export interface InworldAudioConfig {
   /** Default: "MP3". */
   audioEncoding?: InworldAudioEncoding;
   /**
-   * "Accepts values within the range [8000, 48000]. Supported sample rates
-   * are: 8000, 16000, 22050, 24000, 32000, 44100, 48000. … The default is
-   * 48,000." A rate the voice does not natively use is resampled; one the
-   * chosen encoding does not support "will fail the request and return an
-   * error".
+   * An integer in [8000, 48000]; {@link INWORLD_SAMPLE_RATES_HERTZ} are the
+   * common ones. "The request fails if the chosen encoding does not support
+   * the rate, or if the rate exceeds a known native output rate." "When
+   * omitted, the default is 8,000 Hz for `MULAW` and `ALAW`. For other
+   * encodings, it is 48,000 Hz, capped at the model's native output rate when
+   * known."
    */
-  sampleRateHertz?: InworldSampleRateHertz;
+  sampleRateHertz?: InworldSampleRateHertz | (number & {});
   /** Bits per second; compressed formats only; default 128000. */
   bitRate?: number;
   /** Range [0.5, 1.5]; default 1.0. */
@@ -103,18 +119,64 @@ export interface InworldSynthesisContext {
   [key: string]: unknown;
 }
 
-export interface TtsVoiceBody {
-  /** Maximum input of 2,000 characters. */
-  text: string;
-  /** Voice identifier, e.g. "Dennis". */
+/** `voiceDesign` — an ad-hoc voice described in words instead of a stored `voiceId`. */
+export interface InworldTtsVoiceDesign {
+  /**
+   * "Use 7–1,024 characters; leading and trailing whitespace does not count
+   * toward the minimum. This describes the voice; put the words to speak in
+   * `text`."
+   */
+  designPrompt: string;
+}
+
+/** A `script.voices[]` default, and the shape of each utterance's `voiceConfig`. */
+export interface InworldScriptVoiceConfig {
+  /** "Stored voice identifier, resolved in your workspace." */
   voiceId: string;
+  /**
+   * Range [0.5, 1.5]. "An utterance's value overrides its matching
+   * `script.voices` entry, which overrides `audioConfig.speakingRate`."
+   */
+  speakingRate?: number;
+  /** "Only supported by `inworld-tts-2`. The field is ignored on other models." */
+  deliveryMode?: InworldDeliveryMode;
+}
+
+export interface InworldScriptUtterance {
+  /** Text to synthesize for this utterance. */
+  text: string;
+  voiceConfig: InworldScriptVoiceConfig;
+}
+
+/** `script` — "Ordered utterances for TTS-2", 1–100 of them. */
+export interface InworldTtsScript {
+  /** Playback order; the text cap applies to the sum of their texts. */
+  utterances: InworldScriptUtterance[];
+  /** "Optional defaults keyed by unique voiceId." */
+  voices?: InworldScriptVoiceConfig[];
+}
+
+/**
+ * "Select one combined recording or separate utterance recordings. Omitted or
+ * `OUTPUT_MODE_UNSPECIFIED` means `COMBINED`. `PER_UTTERANCE` requires
+ * `script`."
+ */
+export type InworldOutputMode = "OUTPUT_MODE_UNSPECIFIED" | "COMBINED" | "PER_UTTERANCE";
+
+/** The fields every request shape shares. */
+interface TtsVoiceCommon {
   modelId: InworldTtsModelId | (string & {});
   audioConfig?: InworldAudioConfig;
   /** BCP-47 tag (e.g. "en-US"); auto-detected when omitted. */
   language?: string;
-  /** "Only supported by `inworld-tts-2`" — rejected on the 1.x generations. */
+  /** "Only supported by `inworld-tts-2`. The field is ignored on other models." */
   deliveryMode?: InworldDeliveryMode;
-  /** Range (0, 2]; default 1.0. Ignored by inworld-tts-2. */
+  /**
+   * "Defaults to 1.0. Accepts values between 0 (exclusive) and 2 (inclusive)."
+   * and, in the same paragraph, "If 0 is provided, the default value will be
+   * used." (SYNTHESIZE_DOCS, 2026-11-13) — so 0 is accepted, as a request for
+   * the default. Ignored by inworld-tts-2.
+   */
   temperature?: number;
   timestampType?: InworldTimestampType;
   applyTextNormalization?: InworldApplyTextNormalization;
@@ -123,6 +185,40 @@ export interface TtsVoiceBody {
   /** Previous requests supplied as generation context. */
   synthesisContext?: InworldSynthesisContext;
 }
+
+/** `text` spoken by a stored voice — the classic request. */
+export interface TtsVoiceTextBody extends TtsVoiceCommon {
+  /** At most 2,000 UTF-16 code units. */
+  text: string;
+  /** Voice identifier, e.g. "Dennis". */
+  voiceId: string;
+  voiceDesign?: never;
+  script?: never;
+  /** `PER_UTTERANCE` requires `script`. */
+  outputMode?: Exclude<InworldOutputMode, "PER_UTTERANCE">;
+}
+
+/** `text` spoken by a voice described inline — "Set either `voiceId` or `voiceDesign`, not both." */
+export interface TtsVoiceDesignBody extends TtsVoiceCommon {
+  /** At most 2,000 UTF-16 code units. */
+  text: string;
+  voiceDesign: InworldTtsVoiceDesign;
+  voiceId?: never;
+  script?: never;
+  /** `PER_UTTERANCE` requires `script`. */
+  outputMode?: Exclude<InworldOutputMode, "PER_UTTERANCE">;
+}
+
+/** A script — "Replaces top-level `text`, `voiceId`, and `voiceDesign`." */
+export interface TtsVoiceScriptBody extends TtsVoiceCommon {
+  script: InworldTtsScript;
+  text?: never;
+  voiceId?: never;
+  voiceDesign?: never;
+  outputMode?: InworldOutputMode;
+}
+
+export type TtsVoiceBody = TtsVoiceTextBody | TtsVoiceDesignBody | TtsVoiceScriptBody;
 
 // ---------------------------------------------------------------------------
 // Schema (loose: unknown keys pass through with a warning).
@@ -137,22 +233,66 @@ export const audioConfigSchema = z.looseObject({
   audioEncoding: z
     .enum(["LINEAR16", "MP3", "OGG_OPUS", "ALAW", "MULAW", "FLAC", "PCM", "WAV"])
     .optional(),
-  // Closed list, not a range — see INWORLD_SAMPLE_RATES_HERTZ.
-  sampleRateHertz: z.literal(INWORLD_SAMPLE_RATES_HERTZ).optional(),
+  sampleRateHertz: z
+    .number()
+    .int()
+    .min(SAMPLE_RATE_MIN_HERTZ)
+    .max(SAMPLE_RATE_MAX_HERTZ)
+    .optional(),
   bitRate: z.number().int().positive().optional(),
   speakingRate: z.number().min(0.5).max(1.5).optional(),
 });
 
-const schema = z.looseObject({
-  text: z.string().min(1, "text must not be empty."),
+/** "Use 7–1,024 characters; leading and trailing whitespace does not count toward the minimum." */
+const DESIGN_PROMPT_MIN_CHARACTERS = 7;
+const DESIGN_PROMPT_MAX_CHARACTERS = 1024;
+/** "Scripts accept **1–100 utterances**" (SCRIPT_DOCS). */
+const SCRIPT_MAX_UTTERANCES = 100;
+
+const deliveryModeSchema = z.enum(["DELIVERY_MODE_UNSPECIFIED", "STABLE", "BALANCED", "CREATIVE"]);
+
+const scriptVoiceConfigSchema = z.looseObject({
   voiceId: z.string().min(1, "voiceId must not be empty."),
+  // "Per-utterance controls are `voiceId`, `speakingRate` (0.5–1.5), and `deliveryMode`."
+  speakingRate: z.number().min(0.5).max(1.5).optional(),
+  deliveryMode: deliveryModeSchema.optional(),
+});
+
+const schema = z.looseObject({
+  text: z.string().min(1, "text must not be empty.").optional(),
+  voiceId: z.string().min(1, "voiceId must not be empty.").optional(),
+  voiceDesign: z
+    .looseObject({
+      designPrompt: z
+        .string()
+        .max(DESIGN_PROMPT_MAX_CHARACTERS, `designPrompt must be at most ${DESIGN_PROMPT_MAX_CHARACTERS} characters.`)
+        .refine(
+          (prompt) => prompt.trim().length >= DESIGN_PROMPT_MIN_CHARACTERS,
+          `designPrompt must be at least ${DESIGN_PROMPT_MIN_CHARACTERS} characters, not counting leading and trailing whitespace.`,
+        ),
+    })
+    .optional(),
+  script: z
+    .looseObject({
+      utterances: z
+        .array(
+          z.looseObject({
+            text: z.string().min(1, "utterance text must not be empty."),
+            voiceConfig: scriptVoiceConfigSchema,
+          }),
+        )
+        .min(1, "script.utterances must hold at least one utterance.")
+        .max(SCRIPT_MAX_UTTERANCES, `script.utterances holds at most ${SCRIPT_MAX_UTTERANCES} utterances.`),
+      voices: z.array(scriptVoiceConfigSchema).optional(),
+    })
+    .optional(),
+  outputMode: z.enum(["OUTPUT_MODE_UNSPECIFIED", "COMBINED", "PER_UTTERANCE"]).optional(),
   modelId: z.string(),
   audioConfig: audioConfigSchema.optional(),
   language: z.string().optional(),
-  deliveryMode: z
-    .enum(["DELIVERY_MODE_UNSPECIFIED", "STABLE", "BALANCED", "CREATIVE"])
-    .optional(),
-  temperature: z.number().gt(0).max(2).optional(),
+  deliveryMode: deliveryModeSchema.optional(),
+  // 0 is "the default value" (see TtsVoiceCommon.temperature).
+  temperature: z.number().min(0).max(2).optional(),
   timestampType: z.enum(["TIMESTAMP_TYPE_UNSPECIFIED", "WORD", "CHARACTER"]).optional(),
   applyTextNormalization: z
     .enum(["APPLY_TEXT_NORMALIZATION_UNSPECIFIED", "ON", "OFF"])
@@ -169,24 +309,26 @@ const schema = z.looseObject({
 
 const SYNTHESIZE_DOCS =
   "https://docs.inworld.ai/api-reference/ttsAPI/texttospeech/synthesize-speech";
+const SCRIPT_DOCS = "https://docs.inworld.ai/tts/capabilities/script-synthesis";
 
 const deliveryModeDeny = {
   deliveryMode: {
     reason:
-      '`deliveryMode` is documented as "Only supported by `inworld-tts-2`"; the 1.x generations ignore it, so the requested stability/creativity trade-off is not applied',
+      '`deliveryMode` is documented as "Only supported by `inworld-tts-2`. The field is ignored on other models.", so the requested stability/creativity trade-off is not applied',
     source: SYNTHESIZE_DOCS,
+    ignored: true,
   },
 } as const;
 
 /**
- * Two deliberately literal readings of the reference:
- * - `deliveryMode` is denied on the 1.x generations (documented as tts-2 only).
- *   `inworld-tts-2-flash` is left permissive: the docs name the generation,
- *   not the exact id, and flash is the same generation.
- * - `temperature` is flagged `ignored` on `inworld-tts-2`, where the reference
- *   says it is ignored: the request is accepted and fulfilled, so this is a
- *   warning about a silent no-op rather than an error. Only the exact id the
- *   docs name is covered.
+ * Two `ignored` rules — params the API accepts and drops, so each is a
+ * warning about a silent no-op rather than an error:
+ * - `deliveryMode` on the 1.x generations: "Only supported by
+ *   `inworld-tts-2`. The field is ignored on other models."
+ *   `inworld-tts-2-flash` is left without the warning: the docs name the
+ *   generation, and flash is the same generation.
+ * - `temperature` on `inworld-tts-2`: "Ignored on `inworld-tts-2`. Use
+ *   `deliveryMode` instead." Only the exact id the docs name is covered.
  */
 export const ttsConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   "inworld-tts-1.5-max": { deny: deliveryModeDeny },
@@ -210,9 +352,58 @@ export const ttsConstraints: Readonly<Partial<Record<string, EndpointConstraints
 // ---------------------------------------------------------------------------
 
 /**
- * Enforces the documented 2,000-character `text` cap. The cap is documented
- * at the endpoint level, so it applies even when the model id is unknown to
- * the catalog (see module JSDoc for the issue-code decision).
+ * Which of the three request shapes the body is, re-stated at runtime:
+ * `script` stands alone ("Replaces top-level `text`, `voiceId`, and
+ * `voiceDesign`"); without it, `text` is required ("Required without
+ * `script`") and exactly one of `voiceId` / `voiceDesign` names the voice
+ * ("Set either `voiceId` or `voiceDesign`, not both"). `outputMode:
+ * "PER_UTTERANCE"` "requires `script`".
+ */
+function checkSpeechSource(
+  params: TtsVoiceBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  function report(path: string, message: string, source: string = SYNTHESIZE_DOCS): void {
+    ctx.report({ code: "invalid_shape", path: [path], model: params.modelId, message, meta: { source } });
+  }
+
+  if (params.outputMode === "PER_UTTERANCE" && params.script === undefined) {
+    report("outputMode", '`outputMode: "PER_UTTERANCE"` requires `script`; without one, the response is a single COMBINED recording.');
+  }
+  if (params.script !== undefined) {
+    for (const key of ["text", "voiceId", "voiceDesign"] as const) {
+      if (params[key] !== undefined) {
+        report(
+          key,
+          `\`${key}\` is replaced by \`script\`; omit it and give each utterance its own \`text\` and \`voiceConfig.voiceId\`.`,
+          SCRIPT_DOCS,
+        );
+      }
+    }
+    return;
+  }
+  if (params.text === undefined) {
+    report("text", "`text` is required without `script`; send the words to speak, or a `script` of utterances.");
+  }
+  if (params.voiceId !== undefined && params.voiceDesign !== undefined) {
+    report("voiceDesign", "set either `voiceId` or `voiceDesign`, not both.");
+  } else if (params.voiceId === undefined && params.voiceDesign === undefined) {
+    report("voiceId", "name the voice: a stored `voiceId`, an inline `voiceDesign`, or a `script` whose utterances carry their own voices.");
+  }
+}
+
+/** The characters the text cap counts: `text`, or the sum of the script's utterance texts. */
+function spokenCharacters(params: TtsVoiceBody): number {
+  if (params.script === undefined) return params.text?.length ?? 0;
+  return params.script.utterances.reduce((sum, utterance) => sum + (utterance?.text?.length ?? 0), 0);
+}
+
+/**
+ * Enforces the documented 2,000-character cap on `text` — or, for a script,
+ * on "the sum of the utterance texts". The cap is documented at the endpoint
+ * level, so it applies even when the model id is unknown to the catalog (see
+ * module JSDoc for the issue-code decision).
  */
 function checkTextLength(
   params: TtsVoiceBody,
@@ -221,25 +412,32 @@ function checkTextLength(
 ): void {
   const limit = info?.limit.characters ?? INWORLD_TTS_MAX_CHARACTERS;
   if (limit <= 0) return;
-  const actual = params.text.length;
+  const actual = spokenCharacters(params);
   if (actual > limit) {
+    const what = params.script === undefined ? "text is" : "the script's utterance texts total";
     ctx.report({
       code: "over_output_limit",
-      path: ["text"],
+      path: [params.script === undefined ? "text" : "script"],
       model: params.modelId,
-      message: `text is ${actual} characters, over the ${limit}-character per-request limit of the Inworld TTS API (this limit is in characters, not tokens); split the input into multiple requests.`,
+      message: `${what} ${actual} characters, over the ${limit}-character per-request limit of the Inworld TTS API (this limit is in characters, not tokens); split the input into multiple requests.`,
       meta: { limitCharacters: limit, actualCharacters: actual },
     });
   }
 }
 
-/** TTS is billed per input character (On-Demand list rates — see models.ts). */
+/**
+ * TTS is billed per input character (On-Demand list rates — see models.ts):
+ * a script's "Usage counts the text across the script once" (SCRIPT_DOCS),
+ * and "A voice design prompt sent with a synthesis request counts once per
+ * request" (https://docs.inworld.ai/portal/billing, 2026-11-12).
+ */
 function estimateTts(
   params: TtsVoiceBody,
   info: ModelInfo | undefined,
   _ctx: PipelineContext,
 ): ValidateEstimate {
-  const costUSD = computeCharacterCostUSD(info?.cost, params.text.length);
+  const characters = spokenCharacters(params) + (params.voiceDesign?.designPrompt.length ?? 0);
+  const costUSD = computeCharacterCostUSD(info?.cost, characters);
   return costUSD === undefined ? {} : { costUSD };
 }
 
@@ -277,7 +475,7 @@ const validator = createValidator<TtsVoiceBody, Validated<TtsVoiceBody, TtsSdkTa
   modelId: (params) => params.modelId,
   catalog: models,
   constraints: ttsConstraints,
-  checks: [checkTextLength],
+  checks: [checkSpeechSource, checkTextLength],
   estimate: estimateTts,
   finalize,
 });

@@ -299,7 +299,7 @@ function modelNarrowingTests(): void {
   // time — see the note in `unified-image.test-d.ts`.
   imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, size: "1920x1080" });
   imageEdit({ ...base, model: "openai/gpt-image-1.5", image: { file }, size: "1536x1024" });
-  // @ts-expect-error — the gpt-image-1 family's enum is four values.
+  // @ts-expect-error — the gpt-image-1.5 family's enum is four values.
   imageEdit({ ...base, model: "openai/gpt-image-1.5", image: { file }, size: "1920x1080" });
   // @ts-expect-error — and dall-e-2's edit enum has no "auto".
   imageEdit({ ...base, model: "openai/dall-e-2", image: { file }, size: "auto" });
@@ -319,13 +319,14 @@ function modelNarrowingTests(): void {
   // `background` takes all three values on every GPT image model —
   // gpt-image-2's transparent support is in preview (createEdit reference,
   // checked 2026-08-31).
-  imageEdit({ ...base, model: "openai/gpt-image-1", image: { file }, background: "transparent" });
+  imageEdit({ ...base, model: "openai/gpt-image-1.5", image: { file }, background: "transparent" });
   imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, background: "transparent" });
   imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, background: "auto" });
 
   // `input_fidelity` is an edits-only extra, and not on every model.
   imageEdit({ ...base, model: "openai/gpt-image-1.5", image: { file }, input_fidelity: "high" });
-  // @ts-expect-error — "unsupported for gpt-image-1-mini".
+  imageEdit({ ...base, model: "openai/gpt-image-1-mini", image: { file }, input_fidelity: "low" });
+  // @ts-expect-error — "`gpt-image-1-mini` supports only `low`".
   imageEdit({ ...base, model: "openai/gpt-image-1-mini", image: { file }, input_fidelity: "high" });
   // @ts-expect-error — gpt-image-2 processes every input at high fidelity.
   imageEdit({ ...base, model: "openai/gpt-image-2", image: { file }, input_fidelity: "low" });
@@ -334,7 +335,13 @@ function modelNarrowingTests(): void {
   imageEdit({ ...base, model: "recraft/recraftv3", image: { file }, style: "Watercolor" });
   // @ts-expect-error — styles are not supported for the V4 / V4.1 line.
   imageEdit({ ...base, model: "recraft/recraftv4_1", image: { file }, style: "Watercolor" });
+  // @ts-expect-error — image to image takes `style_id` on V3 only ("V3 only.").
   imageEdit({ ...base, model: "recraft/recraftv4_1", image: { file }, style_id: "abc" });
+  imageEdit({ ...base, model: "recraft/recraftv3", image: { file }, style_id: "abc", style_match: "regular" });
+  // @ts-expect-error — `regular` is the one `style_match` image to image takes.
+  imageEdit({ ...base, model: "recraft/recraftv3_vector", image: { file }, style_id: "abc", style_match: "precise" });
+  // `outputFormat` compiles to imageToImage's `image_format`.
+  imageEdit({ ...base, model: "recraft/recraftv4_1", image: { file }, outputFormat: "png" });
 
   // Ideogram's remix form.
   imageEdit({ ...base, model: "ideogram/ideogram-3.0-quality", image: { file }, magic_prompt: "ON" });

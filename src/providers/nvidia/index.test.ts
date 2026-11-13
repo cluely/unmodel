@@ -8,7 +8,7 @@ describe("nvidia", () => {
 
   test("a catalog model validates wire-pure", () => {
     const params = {
-      model: "meta/llama-3.3-70b-instruct" as const,
+      model: "openai/gpt-oss-20b" as const,
       messages: [{ role: "user" as const, content: "hi" }],
     };
     expect(models[params.model]).toBeDefined();

@@ -106,6 +106,11 @@ interface Capability {
   voice: Support;
   speed: Support;
   language: Support;
+  /**
+   * The language probe, where {@link PROBE_LANGUAGE} is off this provider's
+   * closed enum — so the row being tested is the mapping, not the list.
+   */
+  languageProbe?: string;
   /** Absent when the provider has no output-format field at all (alibaba: fixed WAV/PCM). */
   format?: { shape: FormatShape; at: string };
   /**
@@ -326,7 +331,9 @@ const TABLE: Readonly<Record<string, Capability>> = {
     adapter: stepfun,
     voice: "native",
     speed: "native",
-    language: "unsupported",
+    // Six codes (zh/en/ja/ko/fr/es) and no Portuguese, so "pt-BR" cannot probe it.
+    language: "derived",
+    languageProbe: "zh-CN",
     format: { shape: "codec", at: "response_format" },
     delivery: { kinds: ["bytes", "sse"], by: ["stream_format"] },
     probe: "mp3",
@@ -347,7 +354,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     voice_id: "voc_demo",
     adapter: breezeblue,
     voice: "native",
-    speed: "unsupported",
+    speed: "native",
     language: "derived",
     format: { shape: "query", at: "output_format" },
     delivery: { kinds: ["bytes"], by: ["delivery"] },
@@ -502,7 +509,12 @@ describe.each(rows)("%s", (provider, row) => {
   const scalars = [
     ["voice", row.voice, row.voice_id, {}],
     ["speed", row.speed, PROBE_SPEED, { speed: PROBE_SPEED }],
-    ["language", row.language, PROBE_LANGUAGE, { language: PROBE_LANGUAGE }],
+    [
+      "language",
+      row.language,
+      row.languageProbe ?? PROBE_LANGUAGE,
+      { language: row.languageProbe ?? PROBE_LANGUAGE },
+    ],
   ] as const;
 
   test.each(scalars)("%s is %s", (field, support, probe, extra) => {
@@ -648,12 +660,13 @@ test("the eight providers whose delivery a request field moves are exactly these
 });
 
 test("murf is the one provider whose delivery the model ref decides", () => {
-  // `gen2` is served by /v1/speech/generate (JSON) and `falcon-2` by
+  // `gen2` is served by /v1/speech/generate (JSON) and the Falcon rows by
   // /v1/speech/stream (bytes), so the route — and the answer — is the ref's.
   const byModel = rows.filter(([, row]) => "byModel" in row.adapter.delivery);
   expect(byModel.map(([provider]) => provider)).toEqual(["murf"]);
   const spec = murf.delivery;
   expect(Object.keys(spec.byModel).sort()).toEqual([...murf.models].sort());
+  expect(spec.byModel["falcon-2.1"]).toEqual({ kind: "bytes" });
   expect(spec.byModel["falcon-2"]).toEqual({ kind: "bytes" });
 });
 

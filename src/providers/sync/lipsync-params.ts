@@ -20,8 +20,9 @@
  * ## The extras are sync.'s `options`, flattened
  *
  * `sync_mode`, `model_mode`, `prompt`, `temperature`,
- * `occlusion_detection_enabled` and `active_speaker_detection` live under
- * `options` on the wire and are declared flat here, with the adapter's
+ * `occlusion_detection_enabled`, `reasoning_enabled` and
+ * `active_speaker_detection` live under `options` on the wire and are declared
+ * flat here, with the adapter's
  * `applyExtras` nesting them back. Flat because that is how the same dials are
  * spelled at the other provider that serves this model — fal's
  * `fal-ai/sync-lipsync/v2` row declares a top-level `sync_mode` with the same
@@ -29,16 +30,22 @@
  * vendor, two providers, two nestings, one name: making the unified extra agree
  * with the name is what lets the two be compared at all.
  *
- * ## Four of the six extras are model-gated, and the row is the gate
+ * ## Six of the seven extras are model-gated, and the row is the gate
  *
  * `temperature` is on `lipsync-2` and `lipsync-2-pro` only (expressiveness is
  * native to `sync-3` and absent from the legacy model); `occlusion_detection_enabled`
  * is on those two and the legacy one but not `sync-3`, which detects
- * obstructions automatically; `model_mode` and `prompt` are `react-1` only.
+ * obstructions automatically; `reasoning_enabled` is on `lipsync-2-pro` alone
+ * (`sync-3` has it built in); `model_mode` and `prompt` are `react-1` only.
  * The matrix is published on https://sync.so/docs/models/lipsync — verified
- * 2026-08-25 — and sync. IGNORES an option a model does not take rather than
+ * 2026-11-12 — and sync. IGNORES an option a model does not take rather than
  * refusing it, which is why the wire-level check is a warning and this row is
  * where the refusal actually lives.
+ *
+ * `active_speaker_detection` — and the top-level `segments` — are on every
+ * model but `react-1`, whose page lists both among its limitations
+ * (https://sync.so/docs/models/react, verified 2026-11-12). The wire warns
+ * there too, since that page does not say whether either is ignored.
  */
 
 import { EXTRA } from "../../core/unified/derive";
@@ -67,8 +74,8 @@ const INPUTS = ["video"] as const;
 /**
  * The extras every lipsync model takes.
  *
- * `segments` and `dubParams` are here rather than under a canonical word for
- * the same reason: each is a whole request MODE with its own arity rule
+ * `segments` (below) and `dubParams` are extras rather than canonical words
+ * for the same reason: each is a whole request MODE with its own arity rule
  * (`segments` needs a `refId` on every voice input; `dubParams` forbids voice
  * inputs entirely), and neither has a second witness anywhere in the category.
  * The rules are checked by `sync.lipsync` itself once the extra lands.
@@ -76,10 +83,6 @@ const INPUTS = ["video"] as const;
 const COMMON_EXTRAS = {
   /** `options.sync_mode` — what to do when clip and track are different lengths. */
   sync_mode: EXTRA as SyncSyncMode,
-  /** `options.active_speaker_detection` — which face, when there are several. */
-  active_speaker_detection: EXTRA as SyncActiveSpeaker,
-  /** Several voices over one clip, each on its own time range. */
-  segments: EXTRA as readonly SyncGenerationSegment[],
   /** Translate the clip's OWN track and lip-sync to the result. */
   dubParams: EXTRA as SyncDubParams,
   /** Base filename for the output; sync. sanitizes it and appends `.mp4`. */
@@ -90,11 +93,23 @@ const COMMON_EXTRAS = {
   projectId: EXTRA as string,
 } as const;
 
+/**
+ * The two several-speaker extras, on every model but `react-1` — the quotes
+ * are on `SYNC_ACTIVE_SPEAKER_MODELS` and `SYNC_SEGMENT_MODELS`.
+ */
+const MULTI_SPEAKER_EXTRAS = {
+  /** `options.active_speaker_detection` — which face, when there are several. */
+  active_speaker_detection: EXTRA as SyncActiveSpeaker,
+  /** Several voices over one clip, each on its own time range. */
+  segments: EXTRA as readonly SyncGenerationSegment[],
+} as const;
+
 /** `lipsync-2` and `lipsync-2-pro`: the two models with both tuning dials. */
 const LIPSYNC_2_ROW = {
   sources: INPUTS,
   extras: {
     ...COMMON_EXTRAS,
+    ...MULTI_SPEAKER_EXTRAS,
     /** `options.temperature` — 0 least expressive, 1 most. Default 0.5. */
     temperature: EXTRA as number,
     /** `options.occlusion_detection_enabled` — slower, handles hands and mics. */
@@ -107,20 +122,33 @@ export const SYNC_LIPSYNC_MODEL_PARAMS = {
   // has a switch — the sharpest per-model narrowing this adapter has, and the
   // one a caller is most likely to trip over, because `temperature` reads like
   // a universal dial.
-  "sync-3": { sources: INPUTS, extras: COMMON_EXTRAS },
+  "sync-3": { sources: INPUTS, extras: { ...COMMON_EXTRAS, ...MULTI_SPEAKER_EXTRAS } },
   "lipsync-2": LIPSYNC_2_ROW,
-  "lipsync-2-pro": LIPSYNC_2_ROW,
+  "lipsync-2-pro": {
+    sources: INPUTS,
+    extras: {
+      ...LIPSYNC_2_ROW.extras,
+      /**
+       * `options.reasoning_enabled` — correct frames with artifacts, occlusions
+       * or extreme poses; slower, and priced at a rate sync. does not publish.
+       */
+      reasoning_enabled: EXTRA as boolean,
+    },
+  },
   "lipsync-1.9.0-beta": {
     sources: INPUTS,
     extras: {
       ...COMMON_EXTRAS,
+      ...MULTI_SPEAKER_EXTRAS,
       occlusion_detection_enabled: EXTRA as boolean,
     },
   },
   // The expressive model, and the only one that reads an emotion. `prompt` is
-  // an ENUM of six single words rather than a sentence — "Only single word
-  // emotions are supported at the moment" — which is why it is not the
-  // canonical `prompt` some other category would recognise.
+  // one of six single words rather than a sentence — "Currently supports
+  // single-word emotions only" (/models/react) — which is why it is not the
+  // canonical `prompt` some other category would recognise. The wire field is
+  // a plain string; the row keeps the six the page lists. No
+  // `MULTI_SPEAKER_EXTRAS`: the same page rules out both.
   "react-1": {
     sources: INPUTS,
     extras: {

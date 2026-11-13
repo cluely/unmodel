@@ -17,7 +17,7 @@ import type { ChatIR, DialectId } from "../../src/core/translate/ir";
 import type { TranslationWarning } from "../../src/core/translate/warnings";
 import { createWarningSink } from "../../src/core/translate/warnings";
 import { encodeUnified } from "../../src/chat/encode";
-import type { ChatParams, ChatReasoning } from "../../src/chat/types";
+import type { ChatParams, ChatReasoning, ChatReasoningEffort } from "../../src/chat/types";
 
 function encode(
   params: Partial<ChatParams>,
@@ -449,13 +449,17 @@ describe("reasoning", () => {
    */
   test("both given: budget wins where budgets exist, effort where they do not", () => {
     const reasoning: ChatReasoning = { effort: "high", budgetTokens: 8192 };
+    // The effort rides beside the budget for a target model with none
+    // (Claude 4.7+ on anthropic-messages); a budget model ignores it.
     expect(encode({ reasoning }, "anthropic-messages").ir.settings.reasoning).toEqual({
       mode: "budget",
       budgetTokens: 8192,
+      effort: "high",
     });
     expect(encode({ reasoning }, "gemini").ir.settings.reasoning).toEqual({
       mode: "budget",
       budgetTokens: 8192,
+      effort: "high",
     });
     expect(encode({ reasoning }, "openai-chat").ir.settings.reasoning).toEqual({
       mode: "effort",
@@ -466,13 +470,24 @@ describe("reasoning", () => {
     }
   });
 
+  test("both given: an effort outside a budget dialect's vocabulary is not carried, and not warned", () => {
+    // "minimal" is not Anthropic's; narrowing it would warn on every model
+    // that takes the budget, so the no-budget decoder buckets the budget instead.
+    const { ir, warnings } = encode({ reasoning: { effort: "minimal", budgetTokens: 4096 } }, "anthropic-messages");
+    expect(ir.settings.reasoning).toEqual({ mode: "budget", budgetTokens: 4096 });
+    expect(warnings).toEqual([]);
+  });
+
   /**
-   * The effort vocabularies genuinely differ: OpenAI has `minimal` and no
-   * `xhigh`/`max`, Anthropic has `xhigh`/`max` and no `minimal`, Gemini has
-   * `minimal` and no `xhigh`/`max`. The unified type is their **union**, so
-   * every request is sayable and the encoder narrows — always towards *more*
-   * thinking, never less, because dropping the level entirely would turn an
-   * explicit "think hard" into silence.
+   * The fallback, used when the target model documents no ladder of its own.
+   * The dialects genuinely differ: Anthropic has `xhigh`/`max` and no
+   * `minimal`, Gemini has `minimal` and `xhigh` (Hydrogen's fourth level, which
+   * `google.chat` warns about elsewhere) but no `max`. Chat Completions'
+   * `reasoning_effort` is open and its `xhigh`/`max` are per model, so without
+   * a ladder the safe set is `minimal`–`high`. The unified type is their
+   * **union**, so every request is sayable and the encoder narrows — always
+   * towards *more* thinking where it can, because dropping the level entirely
+   * would turn an explicit "think hard" into silence.
    */
   const MATRIX: ReadonlyArray<[DialectId, string, string, boolean]> = [
     ["openai-chat", "minimal", "minimal", false],
@@ -491,7 +506,9 @@ describe("reasoning", () => {
     ["gemini", "low", "low", false],
     ["gemini", "medium", "medium", false],
     ["gemini", "high", "high", false],
-    ["gemini", "xhigh", "high", true],
+    ["gemini", "xhigh", "xhigh", false],
+    // `max` still collapses to `high`, not `xhigh`: `XHIGH` is Hydrogen's alone,
+    // and `HIGH` is the level every Gemini thinking model takes.
     ["gemini", "max", "high", true],
   ];
 
@@ -503,6 +520,57 @@ describe("reasoning", () => {
       expect(warnings[0]?.code).toBe("approximated_param");
       expect(warnings[0]?.meta).toEqual({ from: effort, to: expected, dialect });
     }
+  });
+
+  /**
+   * With the target model's documented ladder (what `unmodel/chat` reads off
+   * the provider validator's `reasoning_effort` row): verbatim when listed,
+   * else the nearest level above, else the ladder's top — `none` and any
+   * non-canonical value on the row are not effort levels and are skipped.
+   */
+  const LADDER_MATRIX: ReadonlyArray<[readonly string[], string, string, boolean]> = [
+    [["none", "low", "medium", "high", "xhigh", "max"], "xhigh", "xhigh", false],
+    [["none", "low", "medium", "high", "xhigh", "max"], "max", "max", false],
+    [["low", "medium", "high", "xhigh", "max"], "minimal", "low", true],
+    [["low", "high", "max"], "medium", "high", true],
+    [["low", "high", "max"], "xhigh", "max", true],
+    [["low", "high", "max"], "max", "max", false],
+    [["low", "medium", "high"], "xhigh", "high", true],
+    [["low", "medium", "high"], "max", "high", true],
+    [["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"], "max", "max", false],
+  ];
+
+  test.each(LADDER_MATRIX)("ladder %p: effort %s → %s (warns: %p)", (levels, effort, expected, warns) => {
+    const sink = createWarningSink("unmodel/chat", "test");
+    const params: ChatParams = {
+      model: "openai/gpt-6-sol",
+      messages: [],
+      reasoning: { effort: effort as ChatReasoningEffort },
+    };
+    const ir = encodeUnified(params, "openai-chat", sink.warn, levels);
+    expect(ir.settings.reasoning).toEqual({ mode: "effort", effort: expected });
+    expect(sink.warnings.length).toBe(warns ? 1 : 0);
+    if (warns) {
+      const ladder = levels.filter((level) => level !== "none" && level !== "ultra");
+      expect(sink.warnings[0]?.code).toBe("approximated_param");
+      expect(sink.warnings[0]?.meta).toEqual({
+        from: effort,
+        to: expected,
+        dialect: "openai-chat",
+        levels: ladder,
+      });
+      expect(sink.warnings[0]?.message).toContain(ladder.join(", "));
+    }
+  });
+
+  test("a ladder with no effort level on it falls back to the dialect set", () => {
+    const sink = createWarningSink("unmodel/chat", "test");
+    const params: ChatParams = { model: "openai/gpt-5", messages: [], reasoning: "xhigh" };
+    expect(encodeUnified(params, "openai-chat", sink.warn, ["none"]).settings.reasoning).toEqual({
+      mode: "effort",
+      effort: "high",
+    });
+    expect(sink.warnings[0]?.meta).toEqual({ from: "xhigh", to: "high", dialect: "openai-chat" });
   });
 
   test("the warning path names where the caller wrote the effort", () => {

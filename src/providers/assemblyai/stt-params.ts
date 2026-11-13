@@ -14,11 +14,11 @@ import type { SttModelParamTable } from "../../core/unified/vocabulary/stt";
 import type { AssemblyaiDomain, AssemblyaiLanguageDetectionOptions } from "./stt";
 
 /** The four speech models AssemblyAI routes to — the `assemblyai/…` refs. */
-export const MODELS = ["universal-3-5-pro", "universal-2", "universal-3-pro", "slam-1"] as const;
+export const MODELS = ["universal-3-5-pro", "universal-2", "universal-3-6-pro-preview", "slam-1"] as const;
 
 /**
  * AssemblyAI's per-model surface — the largest extras table in the library, and
- * two model-gated blocks that point in opposite directions.
+ * one model-gated block.
  *
  * ## `timestamps: ["word"]`, with no `"none"`
  *
@@ -30,14 +30,20 @@ export const MODELS = ["universal-3-5-pro", "universal-2", "universal-3-pro", "s
  * there is no switch, so asking for none would be a request that says one thing
  * and gets another.
  *
- * ## The two gated blocks
+ * ## The gated block, and the retired one
  *
- * "Supported: Universal-3.5 Pro only" covers `temperature` and
- * `remove_audio_tags`; "Supported: Universal-2 only" covers `summarization` and
- * `auto_chapters` (and therefore `summary_model` / `summary_type`, which are
- * that feature's settings). `universal-3-pro` and `slam-1` get neither block —
- * they are the two ids the docs gate *both* features away from, and their row
- * is the shared body alone.
+ * The submit reference
+ * (https://www.assemblyai.com/docs/pre-recorded-audio/api-reference/transcripts/submit,
+ * 2026-11-12) says `remove_audio_tags` is "only supported for the Universal-3.5
+ * Pro model" and `temperature` "only takes effect on the Universal-3.5 Pro
+ * model", so those two sit on the `universal-3-5-pro` row alone; every other
+ * row is the shared body.
+ *
+ * The legacy `summarization` / `auto_chapters` (and `summary_model` /
+ * `summary_type`, that feature's settings) are on no row: "the top-level
+ * `summarization` and `auto_chapters` options return errors since October 20,
+ * 2026" (https://www.assemblyai.com/llms/models.md, last updated 2026-11-10),
+ * on every model. Their replacement, `speech_understanding`, is a shared extra.
  *
  * ## What is excluded, and why each one is
  *
@@ -53,11 +59,11 @@ export const MODELS = ["universal-3-5-pro", "universal-2", "universal-3-pro", "s
  *   on `providerOptions.assemblyai`.
  *
  * Several of these have documented dependencies (`redact_pii_audio` needs
- * `redact_pii: true`, `speaker_options` needs `speaker_labels: true`, and
- * `auto_chapters` cannot ride with `summarization`). Those are *combination*
- * rules rather than per-model ones, they are already checked by the provider's
- * own schema, and a per-model row is the wrong shape to hold them — so they
- * stay exactly where they are and surface as refusals, never as drops.
+ * `redact_pii: true`, and `speaker_options` needs `speaker_labels: true`).
+ * Those are *combination* rules rather than per-model ones, they are already
+ * checked by the provider's own schema, and a per-model row is the wrong shape
+ * to hold them — so they stay exactly where they are and surface as refusals,
+ * never as drops.
  */
 export const TRANSCRIPT_EXTRAS = {
   // Formatting
@@ -72,7 +78,7 @@ export const TRANSCRIPT_EXTRAS = {
   boost_param: EXTRA as string,
   keyterms_prompt: EXTRA as string[] | null,
   custom_spelling: EXTRA as Array<{ from: string[]; to: string }> | null,
-  speech_threshold: EXTRA as number,
+  speech_threshold: EXTRA as number | null,
   domain: EXTRA as AssemblyaiDomain | null,
   // Language detection — the half of the language decision `language` does not own
   language_detection: EXTRA as boolean,
@@ -116,16 +122,11 @@ export const ASSEMBLYAI_STT_MODEL_PARAMS = {
       remove_audio_tags: EXTRA as "all" | "speaker" | null,
     },
   },
-  "universal-2": {
-    timestamps: TIMESTAMPS,
-    extras: {
-      ...TRANSCRIPT_EXTRAS,
-      summarization: EXTRA as boolean,
-      summary_model: EXTRA as "informative" | "catchy" | "conversational" | null,
-      summary_type: EXTRA as "gist" | "headline" | "paragraph" | "bullets" | "bullets_verbose" | null,
-      auto_chapters: EXTRA as boolean,
-    },
-  },
-  "universal-3-pro": SHARED_ROW,
+  "universal-2": SHARED_ROW,
+  // `disfluencies` defaults to true when this id heads `speech_models`
+  // ("Defaults to true when the first `speech_models` entry is
+  // `universal-3-6-pro-preview`, and to false otherwise." — submit reference,
+  // 2026-11-12); the extra is the same switch, only its default differs.
+  "universal-3-6-pro-preview": SHARED_ROW,
   "slam-1": SHARED_ROW,
 } as const satisfies SttModelParamTable;

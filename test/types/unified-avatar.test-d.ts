@@ -50,10 +50,11 @@ expectAssignable<PackRefs>("veed/lipsync-2.0");
 // @ts-expect-error — VEED's presenter library is a fal-only product.
 expectAssignable<PackRefs>("veed/avatars");
 
-// HeyGen's two image-capable engines. Avatar III is in the catalog and at the
-// wire address and NOT here: its own engine config says it does not render raw
-// image input, and this adapter compiles the raw-image arm.
+// HeyGen's one image-capable engine. Avatar V and Avatar III are in the
+// catalog and at the wire address and NOT here: neither renders raw image
+// input, and this adapter compiles the raw-image arm.
 expectAssignable<PackRefs>("heygen/avatar_iv");
+// @ts-expect-error — HeyGen's engine comparison: "Arbitrary image input" ✗.
 expectAssignable<PackRefs>("heygen/avatar_v");
 // @ts-expect-error — "Not supported for raw image input (type: \"image\")".
 expectAssignable<PackRefs>("heygen/avatar_iii");
@@ -112,16 +113,8 @@ function imageArmTests(): void {
     resolution: "1080p",
   });
 
-  // HeyGen's per-engine extras are disjoint, in both directions.
+  // HeyGen's per-engine extra is Avatar IV's own.
   avatar({ model: "heygen/avatar_iv", image: URL_IMAGE, audio: URL_AUDIO, expressiveness: "high" });
-  avatar({
-    model: "heygen/avatar_v",
-    image: URL_IMAGE,
-    audio: URL_AUDIO,
-    reference_look_id: "look_abc",
-  });
-  // @ts-expect-error — `expressiveness` is REJECTED on Avatar V, not ignored.
-  avatar({ model: "heygen/avatar_v", image: URL_IMAGE, audio: URL_AUDIO, expressiveness: "high" });
   // @ts-expect-error — `reference_look_id` lives inside Avatar V's own engine config.
   avatar({ model: "heygen/avatar_iv", image: URL_IMAGE, audio: URL_AUDIO, reference_look_id: "x" });
 

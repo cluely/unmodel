@@ -10,9 +10,9 @@
  * Two more asymmetries worth naming:
  *
  * - **There is no `model` field.** `transcriber` selects the engine
- *   (`machine`, `low_cost`, `fusion`, `human`), so the ref compiles to it, and
- *   Rev AI's own `checkTranscriberScope` is what rejects the machine-only
- *   options on a human job.
+ *   (`machine`, `human`, and the deprecated `low_cost` and `fusion`), so the
+ *   ref compiles to it, and Rev AI's own `checkTranscriberScope` is what
+ *   rejects the machine-only options on a human job.
  * - **The audio URL is nested.** `source_config.url` is the current field;
  *   the flat `media_url` is deprecated, so this adapter writes the nested one
  *   and declares provenance for it, which is what makes "must be an http(s)

@@ -14,7 +14,7 @@ import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/voc
 import { LANGUAGES, MIST_LANGUAGES } from "./models";
 
 /** Every model id the catalog carries — the ref union for `rime/…`. */
-export const MODELS = ["coda", "mistv3", "mistv2", "mist", "arcanav3", "arcanav2", "arcana"] as const;
+export const MODELS = ["coda", "mistv3", "mistv2", "mist"] as const;
 
 export const CODA_DOCS = "https://docs.rime.ai/api-reference/coda/http";
 
@@ -43,19 +43,19 @@ export const FORMAT: AudioFormatSpec = {
  *
  * | | codecs | languages | extras |
  * |---|---|---|---|
- * | `coda`, `arcana*` | mp3, PCM, μ-law, **Opus** | all 16 spellings | *none* |
- * | `mistv3` | mp3, PCM, μ-law, **Opus** | the Mist 8 | inline speed, bracket pauses |
- * | `mistv2`, `mist` | mp3, PCM, μ-law | the Mist 8 | those two, plus phonemes and normalization |
+ * | `coda` | mp3, PCM, μ-law, **Opus** | all 20 spellings | *none* |
+ * | `mistv3` | mp3, PCM, μ-law, **Opus** | the Mist 8 | inline speed, bracket pauses, phonemes |
+ * | `mistv2`, `mist` | mp3, PCM, μ-law | the Mist 8 | those three, plus normalization |
  *
  * **Codecs.** "Opus and WAV arrived with Coda and Mist v3" — `checkAccept`
- * refuses anything outside `MIST_V2_ACCEPT_VALUES` on the two legacy ids, so
- * `opus` is off their row. `pcm_s16le` stays on it because the L16 spelling is
- * documented for them; it is reachable there as a *raw* stream only
+ * refuses any audio type outside `MIST_V2_ACCEPT_VALUES` on the two legacy
+ * ids, so `opus` is off their row. `pcm_s16le` stays on it because the L16
+ * spelling is documented for them; it is reachable there as a *raw* stream only
  * (`audio/wav` is not), which is a container fact the codec list does not
  * claim to carry and `resolveAudioFormat` reports at run time.
  *
  * **Languages** are the provider's own two arrays by reference —
- * {@link LANGUAGES} (both the 639-1 and the 639-2/3 spelling of eight
+ * {@link LANGUAGES} (both the 639-1 and the 639-2/3 spelling of ten
  * languages) and {@link MIST_LANGUAGES} — so `checkLanguage`'s allow-list and
  * the editor's completion list are literally the same value. The Mist
  * *generation* is what narrows, which is why `mistv3` has the eight while
@@ -74,21 +74,26 @@ export const MIST_EXTRAS = {
   inlineSpeedAlpha: EXTRA as string,
   /** Honour `<200>`-style angle-bracket pauses. */
   pauseBetweenBrackets: EXTRA as boolean,
+  /**
+   * Read phonemes written in `{curly}` brackets. "`phonemizeBetweenBrackets`
+   * works on English Mist v3 only. French, German, and Spanish requests
+   * ignore it." (https://docs.rime.ai/docs/migrate-legacy-mist, 2026-11-12)
+   */
+  phonemizeBetweenBrackets: EXTRA as boolean,
 } as const;
 
 export const LEGACY_MIST_EXTRAS = {
   ...MIST_EXTRAS,
-  /** Read phonemes written in `{curly}` brackets. */
-  phonemizeBetweenBrackets: EXTRA as boolean,
-  /** Skip text normalization. "mist/mistv2 only." */
+  /**
+   * Skip text normalization. Mist v2 and Mist v1 only: Rime's legacy reference
+   * (last verified 2026-08-13, since removed) marked it "mist/mistv2 only".
+   */
   noTextNormalization: EXTRA as boolean,
 } as const;
 
 export const MODERN_CODECS = ["mp3", "pcm_s16le", "pcm_mulaw", "opus"] as const;
 
 export const LEGACY_CODECS = ["mp3", "pcm_s16le", "pcm_mulaw"] as const;
-
-export const ARCANA_ROW = { codecs: MODERN_CODECS, languages: LANGUAGES } as const;
 
 export const LEGACY_MIST_ROW = {
   codecs: LEGACY_CODECS,
@@ -101,9 +106,6 @@ export const RIME_TTS_MODEL_PARAMS = {
   mistv3: { codecs: MODERN_CODECS, languages: MIST_LANGUAGES, extras: MIST_EXTRAS },
   mistv2: LEGACY_MIST_ROW,
   mist: LEGACY_MIST_ROW,
-  arcanav3: { ...ARCANA_ROW, extras: MIST_EXTRAS },
-  arcanav2: { ...ARCANA_ROW, extras: MIST_EXTRAS },
-  arcana: { ...ARCANA_ROW, extras: MIST_EXTRAS },
 } as const satisfies TtsModelParamTable;
 
 /**

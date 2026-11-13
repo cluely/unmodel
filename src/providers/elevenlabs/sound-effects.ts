@@ -13,22 +13,24 @@
  *   `/v1/music` uses, and the same trap: sending it in the JSON body is a
  *   silent no-op. It is stripped from the wire body and appended to
  *   `.request.url`. Default `mp3_44100_128`.
- * - The `AllowedOutputFormats` enum here is NOT the music one. It has 21
- *   members against music's 26: no `"auto"`, and no 48 kHz MP3 arm at all
- *   (`mp3_48000_128` and its siblings exist at `/v1/music` and not here). A
- *   single shared list would therefore accept four values this endpoint
- *   rejects, which is why the constant is declared per endpoint.
+ * - `output_format` is `anyOf[NonStreamingOutputFormats, AllowedOutputFormats]`
+ *   (2026-11-12): the seven `wav_*` values plus the 21-member
+ *   `AllowedOutputFormats` enum, which is NOT the music one — no `"auto"`, and
+ *   no 48 kHz MP3 arm at all (`mp3_48000_128` and its siblings exist at
+ *   `/v1/music` and not here). A single shared list would therefore accept
+ *   four values this endpoint rejects, which is why the constant is declared
+ *   per endpoint.
  * - `duration_seconds` is `anyOf[number, null]`, 0.5–30. **Absent (or explicit
  *   `null`) means the model guesses a length from the prompt** — the API's own
  *   words are "If set to None we will guess the optimal duration using the
  *   prompt" — which is a real behaviour rather than a default value, and is why
  *   the unified adapter warns about nothing when the caller omits it.
- * - `loop` is documented "Only available for the 'eleven_text_to_sound_v2
- *   model'", which is the only model the enum has; the sentence is a forward
- *   statement about future ids, so `checkSfxModelKind` is what enforces it.
+ * - `loop` is "Whether to create a sound effect that loops smoothly", default
+ *   false, with no per-model restriction on the served spec (2026-11-12).
  * - `prompt_influence` is 0–1, default 0.3.
- * - `model_id` is a one-member enum (`eleven_text_to_sound_v2`) that also
- *   serves as the server-side default.
+ * - `model_id` is the `SFXModelId` enum `eleven_text_to_sound_v2 |
+ *   eleven_text_to_sound_v3`, whose declared default is
+ *   `eleven_text_to_sound_v2` (SOUND_EFFECTS_OPENAPI_URL, 2026-11-12).
  * - The endpoint responds with raw audio bytes (`audio/mpeg`) plus a
  *   `character-cost` response header, not JSON, so there is no response checker
  *   for sound effects.
@@ -58,13 +60,16 @@ const SOUND_EFFECTS_OPENAPI_URL =
 /**
  * Server-side default when `model_id` is omitted — `"default":
  * "eleven_text_to_sound_v2"` on the `SFXModelId` component. Model-dependent
- * checks (the `loop` gate, cost) run against this model when none is given.
+ * checks (the model gate, cost) run against this model when none is given.
  */
 export const DEFAULT_SFX_MODEL_ID = "eleven_text_to_sound_v2";
 
 /**
  * `output_format` query values ("codec_sample_rate[_bitrate]") — the
- * `AllowedOutputFormats` component.
+ * `AllowedOutputFormats` component plus the seven `NonStreamingOutputFormats`
+ * WAV values, "`output_format` adds `wav_8000`, `wav_16000`, `wav_22050`,
+ * `wav_24000`, `wav_32000`, `wav_44100` and `wav_48000`"
+ * (https://elevenlabs.io/docs/changelog/2026/10/19, read 2026-11-12).
  *
  * **Not the same list `/v1/music` takes.** There is no `"auto"` here, and no
  * 48 kHz MP3 arm: `mp3_48000_128`, `mp3_48000_192`, `mp3_48000_240` and
@@ -94,6 +99,13 @@ export const SOUND_EFFECTS_OUTPUT_FORMATS = [
   "opus_48000_96",
   "opus_48000_128",
   "opus_48000_192",
+  "wav_8000",
+  "wav_16000",
+  "wav_22050",
+  "wav_24000",
+  "wav_32000",
+  "wav_44100",
+  "wav_48000",
 ] as const;
 export type ElevenlabsSoundEffectsOutputFormat = (typeof SOUND_EFFECTS_OUTPUT_FORMATS)[number];
 
@@ -111,10 +123,7 @@ export const SOUND_EFFECTS_PROMPT_INFLUENCE_MAX = 1;
 export interface SoundEffectsParams {
   /** The text that will get converted into a sound effect. REQUIRED. */
   text: string;
-  /**
-   * Generate an effect that loops smoothly. Default false, and documented
-   * "Only available for the 'eleven_text_to_sound_v2 model'".
-   */
+  /** "Whether to create a sound effect that loops smoothly." Default false. */
   loop?: boolean;
   /**
    * Length in seconds, 0.5–30. `null` (and absence) means the model guesses a
@@ -221,33 +230,6 @@ function checkSfxModelKind(
   });
 }
 
-/**
- * `loop` is documented "Only available for the 'eleven_text_to_sound_v2
- * model'". Today's enum has exactly that one member, so this fires only for a
- * model id the catalog does not know — which is the case the sentence is
- * about, and the reason it is checked rather than assumed away.
- *
- * Warning severity: the API states no rejection, so an unknown future id that
- * does support looping must not have its request refused here.
- */
-function checkLoopModel(
-  params: SoundEffectsParams,
-  _info: ModelInfo | undefined,
-  ctx: PipelineContext,
-): void {
-  if (params.loop !== true) return;
-  const model = params.model_id ?? DEFAULT_SFX_MODEL_ID;
-  if (SFX_MODEL_ID_SET.has(model)) return;
-  ctx.report({
-    code: "unsupported_param",
-    severity: "warning",
-    path: ["loop"],
-    model,
-    message: `\`loop\` is documented as available only for "${DEFAULT_SFX_MODEL_ID}"; "${model}" is not a sound-effects model this build knows.`,
-    meta: { ignored: true, source: SOUND_EFFECTS_DOCS_URL },
-  });
-}
-
 function checkOutputFormat(
   params: SoundEffectsParams,
   _info: ModelInfo | undefined,
@@ -344,7 +326,7 @@ const validator = createValidator<SoundEffectsParams, unknown>({
   // server-side default (eleven_text_to_sound_v2).
   modelId: (params) => params.model_id ?? DEFAULT_SFX_MODEL_ID,
   catalog: models,
-  checks: [checkSfxModelKind, checkLoopModel, checkOutputFormat],
+  checks: [checkSfxModelKind, checkOutputFormat],
   estimate,
   finalize,
 });

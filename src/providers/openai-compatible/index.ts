@@ -13,6 +13,7 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { AvailabilityMap } from "../../core/translate/availability-types";
 import type { EndpointConstraints, FamilyRule } from "../../core/constraint-types";
+import type { StandardSchemaV1 } from "../../core/standard-schema";
 import {
   chatCompletionsChecks,
   createChatCompletionsSchema,
@@ -23,6 +24,7 @@ import {
   type ChatConstraintSpec,
   type ChatFinalizeSpec,
   type ChatSdkTargets,
+  type FixedSampling,
 } from "./chat-completions";
 import { createCheckChat, type ChatCompletionLike, type ChatFinishReason } from "./check";
 import type { ResponseReport } from "../../core/report";
@@ -119,10 +121,27 @@ export interface OpenAICompatibleConfigBase<
    * everyone else pays nothing.
    */
   decoders?: ChatFinalizeSpec["decoders"];
+  /**
+   * The loose top-level body schema, for an overlay whose wire is wider than
+   * the shared dialect (minimax's `video_url` user content parts). Build it
+   * with `createChatCompletionsSchema(extraShape)` so the dialect's keys —
+   * and the pipeline's unknown-key warning, which reads them — carry over,
+   * and pass the matching body as the factory's `Body` type argument so the
+   * compile-time surface says what the schema accepts. Omitted → the shared
+   * dialect's schema.
+   */
+  schema?: StandardSchemaV1;
   /** Hand-written per-model constraint table for provider quirks. */
   constraints?: Readonly<Partial<Record<string, EndpointConstraints>>>;
   /** Pattern rules (reasoning families, endpoint-wide media limits etc.). */
   familyRules?: readonly FamilyRule[];
+  /**
+   * What this API does with a sampling value sent to a `temperature: false`
+   * model. Omitted means `"rejected"` (OpenAI's behaviour: anything but 1 is a
+   * 400); an overlay whose provider documents that it accepts and overrides
+   * the value declares `"overridden"`, with that page as provenance.
+   */
+  fixedSampling?: FixedSampling;
   /**
    * Extra static headers sent with every chat request — version pins, routing
    * hints, an `http-referer`.
@@ -192,18 +211,26 @@ export interface OpenAICompatibleChatResultKind<
     : never;
 }
 
+/**
+ * `Body` is the endpoint's own request type, and defaults to the dialect's. A
+ * provider that documents more than the dialect — DeepSeek's `thinking`, its
+ * own content parts — composes its validator from the shared pieces and names
+ * its body here, so the params it documents type-check. The result kind stays
+ * on the dialect body: that is what `unmodel/chat` compiles for every provider.
+ */
 export interface OpenAICompatibleChat<
   ModelId extends string = string,
   Avail extends AvailabilityMap = never,
   Provider extends string = string,
+  Body extends { model: string } = ChatCompletionsBodyBase<ModelId>,
 > extends ValidatorResultKindCarrier<OpenAICompatibleChatResultKind<ModelId, Avail>>,
     ValidatorProviderCarrier<Provider> {
-  <T extends ChatCompletionsBodyBase<ModelId>>(
-    params: T & ExactKeys<T, ChatCompletionsBodyBase<ModelId>>,
+  <T extends Body>(
+    params: T & ExactKeys<T, Body>,
     options?: ValidateOptions<T>,
   ): Validated<T, ChatSdkTargets<T>, Avail, T["model"] & string>;
-  safe<T extends ChatCompletionsBodyBase<ModelId>>(
-    params: T & ExactKeys<T, ChatCompletionsBodyBase<ModelId>>,
+  safe<T extends Body>(
+    params: T & ExactKeys<T, Body>,
     options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ChatSdkTargets<T>, Avail, T["model"] & string>>;
   constraintsFor(modelId: string): EndpointConstraints[];
@@ -214,6 +241,7 @@ export interface OpenAICompatibleProvider<
   Avail extends AvailabilityMap = never,
   Provider extends string = string,
   Catalog extends Record<string, ModelInfo> = Record<string, ModelInfo>,
+  Body extends { model: string } = ChatCompletionsBodyBase<ModelId>,
 > extends OpenAICompatibleCatalogCarrier<Catalog> {
   /**
    * Validates params for POST {baseUrl}/chat/completions. The result's
@@ -223,7 +251,7 @@ export interface OpenAICompatibleProvider<
    * that pass an `availability` table — `.toApi(provider)` retargets to any
    * provider that serves the same model, this one included (identity).
    */
-  chat: OpenAICompatibleChat<ModelId, Avail, Provider>;
+  chat: OpenAICompatibleChat<ModelId, Avail, Provider, Body>;
   /** {baseUrl}/chat/completions, or the configured `chatUrl` override verbatim. */
   chatUrl: string;
   /**
@@ -276,6 +304,11 @@ export interface OpenAICompatibleProvider<
  * request. `createChat` also re-checks it at runtime against the endpoint the
  * validator reports, so an unbranded third-party validator is still caught.
  *
+ * `Body` is the compile-time half of `config.schema`, and fifth for the same
+ * reason `Catalog` is fourth: an overlay on the shared dialect never writes
+ * it. One whose wire is wider (minimax) names it beside its schema, so the
+ * validator's parameter type and its runtime gate accept the same bodies.
+ *
  * ```ts
  * import { availability } from "../../catalog/availability/groq.gen";
  * createOpenAICompatible<GroqTextModelId, typeof availability, "groq">({
@@ -288,9 +321,10 @@ export function createOpenAICompatible<
   Avail extends AvailabilityMap = never,
   Provider extends string = string,
   const Catalog extends Record<string, ModelInfo> = Record<string, ModelInfo>,
+  Body extends { model: string } = ChatCompletionsBodyBase<ModelId>,
 >(
   config: OpenAICompatibleConfig<Avail, Catalog>,
-): OpenAICompatibleProvider<ModelId, Avail, Provider, Catalog> {
+): OpenAICompatibleProvider<ModelId, Avail, Provider, Catalog, Body> {
   const chatUrl =
     config.chatUrl !== undefined ? config.chatUrl : `${config.baseUrl}/chat/completions`;
   // One id for both the validator's issue labels and the retarget route
@@ -299,11 +333,12 @@ export function createOpenAICompatible<
   const spec: ChatConstraintSpec = {
     ...(config.constraints !== undefined && { constraints: config.constraints }),
     ...(config.familyRules !== undefined && { familyRules: config.familyRules }),
+    ...(config.fixedSampling !== undefined && { fixedSampling: config.fixedSampling }),
   };
 
   const validator = createValidator<ChatCompletionsBodyBase, unknown>({
     endpoint,
-    schema: createChatCompletionsSchema(),
+    schema: config.schema ?? createChatCompletionsSchema(),
     modelId: (params) => params.model,
     catalog: config.catalog,
     ...spec,
@@ -324,7 +359,7 @@ export function createOpenAICompatible<
   });
 
   return {
-    chat: validator as unknown as OpenAICompatibleChat<ModelId, Avail, Provider>,
+    chat: validator as unknown as OpenAICompatibleChat<ModelId, Avail, Provider, Body>,
     chatUrl,
     checkChat: createCheckChat(config.catalog, config.id),
     estimateChatTokens,
@@ -344,6 +379,7 @@ export {
   createChatEstimate,
   createChatFinalize,
   createInlineImagesCheck,
+  createSamplingParamsCheck,
   estimateChatTokens,
   imageTokensFor,
   messagesSchema,
@@ -354,9 +390,13 @@ export type {
   ChatAssistantMessage,
   ChatAudioPart,
   ChatCompletionsBodyBase,
+  ChatCompletionsCheck,
+  ChatCompletionsCheckSlots,
   ChatConstraintSpec,
   ChatFinalizeSpec,
+  ChatImageRef,
   ChatSdkTargets,
+  FixedSampling,
   ChatCustomTool,
   ChatCustomToolCall,
   ChatDeveloperMessage,

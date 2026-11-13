@@ -107,6 +107,21 @@ describe("black-forest-labs.imageFlux1 per-route param surfaces", () => {
     });
     expect(ok.ok).toBe(true);
   });
+
+  test("the finetuned ultra route rejects raw (FinetuneFluxUltraInput declares none)", () => {
+    const r = safeUnchecked({
+      model: "flux-pro-1.1-ultra-finetuned",
+      prompt: "hi",
+      finetune_id: "my-lora",
+      raw: true,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("unsupported_param");
+      expect(r.errors[0]?.path).toEqual(["raw"]);
+      expect(r.errors[0]?.meta?.source).toContain("FinetuneFluxUltraInput");
+    }
+  });
 });
 
 describe("black-forest-labs.imageFlux1 dimension rules", () => {
@@ -187,7 +202,7 @@ describe("black-forest-labs.imageFlux1 aspect_ratio and guidance bounds", () => 
     expect(over.ok).toBe(false);
   });
 
-  test("safety_tolerance goes to 6 on FLUX.1 (FLUX.2 caps at 5)", () => {
+  test("safety_tolerance goes to 6 on FLUX.1 (FLUX.2 goes to 7)", () => {
     expect(imageFlux1.safe({ model: "flux-dev", prompt: "hi", safety_tolerance: 6 }).ok).toBe(true);
     expect(safeUnchecked({ model: "flux-dev", prompt: "hi", safety_tolerance: 7 }).ok).toBe(false);
   });
@@ -201,9 +216,27 @@ describe("black-forest-labs.imageFlux1 cost estimation", () => {
     if (ultra.ok) expect(ultra.estimate.costUSD).toBeCloseTo(0.06, 10);
   });
 
-  test("flux-dev has no published price, so no estimate", () => {
+  test("flux-dev is $0.025 per image", () => {
     const r = imageFlux1.safe({ model: "flux-dev", prompt: "hi" });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.025, 10);
+  });
+});
+
+describe("black-forest-labs.imageFlux1 corrections", () => {
+  test("the FLUX.1 routes take the user field", () => {
+    const r = imageFlux1.safe({ model: "flux-pro-1.1", prompt: "hi", user: "end-user-42" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("the ultra finetuned route is served but deprecated", () => {
+    const r = imageFlux1.safe({
+      model: "flux-pro-1.1-ultra-finetuned",
+      prompt: "hi",
+      finetune_id: "my-lora",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 });

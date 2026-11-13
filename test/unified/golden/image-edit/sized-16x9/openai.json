@@ -15,5 +15,13 @@
     "size": "1360x768"
   },
   "url": "https://api.openai.com/v1/images/edits",
-  "headers": {}
+  "headers": {},
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
+  ]
 }

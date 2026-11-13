@@ -2,7 +2,7 @@
  * The flagship path, end to end: **a Claude request, retargeted to OpenRouter.**
  *
  * ```ts
- * const claude = anthropicChat({ model: "claude-opus-5", … });
+ * const claude = anthropicChat({ model: "claude-sonnet-4-6", … });
  * const routed = claude.toApi("openrouter");
  * ```
  *
@@ -52,8 +52,10 @@ import { availability as groqAvailability } from "../../src/catalog/availability
  * boundary costs — not a happy-path demo.
  */
 function claude() {
+  // Sonnet 4.6 rather than a 4.7+ id: the fixture sends a thinking budget, and
+  // Claude 4.7 and later refuse `thinking.type "enabled"`.
   return anthropicChat({
-    model: "claude-opus-5",
+    model: "claude-sonnet-4-6",
     max_tokens: 2048,
     system: [
       { type: "text", text: "You are a careful research assistant.", cache_control: { type: "ephemeral" } },
@@ -82,7 +84,7 @@ describe("claude → openrouter", () => {
     // Enumerable properties are exactly the fetch body — `.request`,
     // `.warnings` and `.target` all ride non-enumerably.
     expect(JSON.parse(JSON.stringify(routed))).toEqual({
-      model: "anthropic/claude-opus-5",
+      model: "anthropic/claude-sonnet-4.6",
       messages: [
         { role: "system", content: "You are a careful research assistant." },
         { role: "user", content: "Summarize today's AI news." },
@@ -162,7 +164,7 @@ describe("claude → openrouter", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.params.model).toBe("anthropic/claude-opus-5");
+      expect(result.params.model).toBe("anthropic/claude-sonnet-4.6");
       expect(result.params.request.url).toBe("https://openrouter.ai/api/v1/chat/completions");
     }
   });
@@ -174,7 +176,7 @@ describe("claude → openrouter", () => {
     if (!routed.ok) {
       expect(routed.errors[0]?.code).toBe("unsupported_capability");
       expect(routed.errors[0]?.message).toMatch(
-        /"claude-opus-5" is not served by cerebras according to the models\.dev catalog/,
+        /"claude-sonnet-4-6" is not served by cerebras according to the models\.dev catalog/,
       );
       // The message names what IS available, so the fix is one edit away.
       expect(routed.errors[0]?.message).toMatch(/openrouter/);
@@ -349,20 +351,30 @@ describe("re-validating against the target (the groq case)", () => {
   });
 
   test("a family rule that does not match the target model does not fire", () => {
-    // upstage's only deny is scoped to the solar-mini family. The one real
-    // edge into upstage lands on solar-pro4, so the rule must NOT apply —
-    // applying a family's denies to every model would reject requests the
-    // target accepts. (The matching half is exercised in
+    // upstage's only deny is scoped to the solar-mini family. The real edges
+    // into upstage land on solar-pro4 and solar-mini4, so the rule must NOT
+    // apply — applying a family's denies to every model (or to every id that
+    // merely starts with the family's name) would reject requests the target
+    // accepts. (The matching half is exercised in
     // src/retarget/target-constraints.test.ts, which does not depend on which
     // upstage models the catalog happens to carry.)
-    const routed = openrouterChat({
+    const pro = openrouterChat({
       model: "upstage/solar-pro4",
       messages: [{ role: "user", content: "hi" }],
       reasoning_effort: "low",
     }).toApi("upstage");
 
-    expect(routed.model).toBe("solar-pro4");
-    expect((routed as unknown as { reasoning_effort?: string }).reasoning_effort).toBe("low");
+    expect(pro.model).toBe("solar-pro4");
+    expect((pro as unknown as { reasoning_effort?: string }).reasoning_effort).toBe("low");
+
+    const mini = openrouterChat({
+      model: "upstage/solar-mini4",
+      messages: [{ role: "user", content: "hi" }],
+      reasoning_effort: "low",
+    }).toApi("upstage");
+
+    expect(mini.model).toBe("solar-mini4");
+    expect((mini as unknown as { reasoning_effort?: string }).reasoning_effort).toBe("low");
   });
 });
 

@@ -1,13 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { video, TEXT_TO_VIDEO_URL, TEXT_TO_VIDEO_V1_URL } from "./video";
+import { video, TEXT_TO_VIDEO_URL } from "./video";
 import {
   GENERATION_MODELS,
   LONG_DURATIONS,
-  LTX_2_DEPRECATION_SOURCE,
   LTX_FPS_VALUES,
   LTX_RESOLUTIONS,
+  RESOLUTION_SHAPES,
   SUPPORT_MATRIX,
 } from "./shared";
+import { LIGHTRICKS_VIDEO_MODEL_PARAMS, MODELS } from "./video-params";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 
@@ -30,16 +31,8 @@ describe("lightricks.video happy path", () => {
     expect(v.request.headers["content-type"]).toBe("application/json");
   });
 
-  test("api_version is stripped from the body and swaps the path", () => {
-    const v = video({
-      model: "ltx-2-3-fast",
-      prompt: "rain on a window",
-      resolution: "1280x720",
-      duration: 6,
-      api_version: "v1",
-    });
-    expect(Object.keys(v)).not.toContain("api_version");
-    expect(v.request.url).toBe(TEXT_TO_VIDEO_V1_URL);
+  test("the one generation route is the v2 job API", () => {
+    expect(TEXT_TO_VIDEO_URL).toBe("https://api.ltx.io/v2/text-to-video");
   });
 
   test("unknown model warns but validates", () => {
@@ -52,48 +45,67 @@ describe("lightricks.video happy path", () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
-
-  test("deprecated LTX-2 warns", () => {
-    const r = video.safe({
-      model: "ltx-2-pro",
-      prompt: "hi",
-      resolution: "1280x720",
-      duration: 6,
-    });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("deprecated_model");
-  });
 });
 
 describe("lightricks.video support matrix", () => {
-  test("ltx-2-5-pro tops out at 1080p", () => {
-    const r = video.safe({
-      model: "ltx-2-5-pro",
-      prompt: "hi",
-      resolution: "3840x2160",
-      duration: 6,
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "invalid_enum_value");
-      expect(issue?.path).toEqual(["resolution"]);
-      expect(issue?.meta?.allowed).toEqual(["1280x720", "720x1280", "1920x1080", "1080x1920"]);
+  test("ltx-2-5-pro reaches 1440p and 4K at 48fps", () => {
+    for (const resolution of ["2560x1440", "3840x2160", "2160x3840"] as const) {
+      const r = video.safe({ model: "ltx-2-5-pro", prompt: "hi", resolution, duration: 6, fps: 48 });
+      expect(r.ok, resolution).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
     }
   });
 
-  test("ltx-2-5-pro does not offer 48fps", () => {
-    const r = video.safe({
+  test("ltx-2-5-pro still caps at 10s and at the four published frame rates", () => {
+    const long = video.safe({ model: "ltx-2-5-pro", prompt: "hi", resolution: "3840x2160", duration: 12 });
+    expect(long.ok).toBe(false);
+    if (!long.ok) {
+      const issue = long.errors.find((e) => e.code === "invalid_enum_value");
+      expect(issue?.path).toEqual(["duration"]);
+      expect(issue?.meta?.allowed).toEqual([6, 8, 10]);
+    }
+    const fps = safeUnchecked({
       model: "ltx-2-5-pro",
       prompt: "hi",
       resolution: "1920x1080",
       duration: 6,
-      fps: 48,
+      fps: 30,
     });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "invalid_enum_value");
+    expect(fps.ok).toBe(false);
+    if (!fps.ok) {
+      const issue = fps.errors.find((e) => e.code === "invalid_enum_value");
       expect(issue?.path).toEqual(["fps"]);
-      expect(issue?.meta?.allowed).toEqual([24, 25, 50]);
+      expect(issue?.meta?.allowed).toEqual([24, 25, 48, 50]);
+    }
+  });
+
+  test("LTX-2.5 takes the 1:1, 3:2 and 2:3 sizes at every tier", () => {
+    for (const model of ["ltx-2-5-fast", "ltx-2-5-pro"] as const) {
+      for (const resolution of ["720x720", "1620x1080", "1440x2160", "3240x2160"] as const) {
+        const r = video.safe({ model, prompt: "hi", resolution, duration: 6 });
+        expect(r.ok, `${model} ${resolution}`).toBe(true);
+        if (r.ok) expect(r.warnings).toEqual([]);
+      }
+    }
+  });
+
+  test("LTX-2.3 refuses them, naming its 16:9 and 9:16 sizes", () => {
+    for (const model of ["ltx-2-3-fast", "ltx-2-3-pro"] as const) {
+      const r = video.safe({ model, prompt: "hi", resolution: "1080x1080", duration: 6 });
+      expect(r.ok, model).toBe(false);
+      if (r.ok) continue;
+      const issue = r.errors.find((e) => e.code === "invalid_enum_value");
+      expect(issue?.path).toEqual(["resolution"]);
+      expect(issue?.meta?.allowed).toEqual([
+        "1280x720",
+        "720x1280",
+        "1920x1080",
+        "1080x1920",
+        "2560x1440",
+        "1440x2560",
+        "3840x2160",
+        "2160x3840",
+      ]);
     }
   });
 
@@ -166,13 +178,13 @@ describe("lightricks.video support matrix", () => {
 
 describe("lightricks.video preset unions", () => {
   test("every LtxResolution preset passes on a model whose matrix covers them all", () => {
-    // Keep in sync with LtxResolution in shared.ts. ltx-2-3-pro is the one
-    // model whose published matrix accepts all four tiers (720p/1080p/1440p/4k,
-    // both orientations) at the default 24fps with a 6s duration, so the whole
-    // preset list is looped against it.
+    // Keep in sync with LtxResolution in shared.ts. LTX-2.5 renders all four
+    // tiers in all five shapes at the default 24fps with a 6s duration (LTX-2.3
+    // has only 16:9 and 9:16), so the whole preset list is looped against
+    // ltx-2-5-pro.
     for (const resolution of LTX_RESOLUTIONS) {
       const r = video.safe({
-        model: "ltx-2-3-pro",
+        model: "ltx-2-5-pro",
         prompt: "hi",
         resolution,
         duration: 6,
@@ -183,10 +195,10 @@ describe("lightricks.video preset unions", () => {
   });
 
   test("every LtxFps preset passes on a model whose matrix covers them all", () => {
-    // Keep in sync with LtxFps in shared.ts. ltx-2-3-pro publishes 24/25/48/50
-    // at every tier (ltx-2-5-pro omits 48, and the fast variants only reach
-    // 48/50 with the short durations), so it is the model that covers the
-    // whole union at one resolution × duration.
+    // Keep in sync with LtxFps in shared.ts. The pro variants publish
+    // 24/25/48/50 at every tier (the fast variants only reach 48/50 with the
+    // short durations), so ltx-2-3-pro covers the whole union at one
+    // resolution × duration.
     for (const fps of LTX_FPS_VALUES) {
       const r = video.safe({
         model: "ltx-2-3-pro",
@@ -239,6 +251,24 @@ describe("lightricks.video cost estimation", () => {
     if (fourK.ok) expect(fourK.estimate.costUSD).toBeCloseTo(3.2, 10); // $0.32/s
   });
 
+  test("ltx-2-5-pro prices its 1440p and 4K tiers", () => {
+    const qhd = video.safe({ model: "ltx-2-5-pro", prompt: "hi", resolution: "2560x1440", duration: 6 });
+    expect(qhd.ok).toBe(true);
+    if (qhd.ok) expect(qhd.estimate.costUSD).toBeCloseTo(1.5, 10); // $0.25/s
+    const fourK = video.safe({ model: "ltx-2-5-pro", prompt: "hi", resolution: "3840x2160", duration: 10 });
+    expect(fourK.ok).toBe(true);
+    if (fourK.ok) expect(fourK.estimate.costUSD).toBeCloseTo(3.9, 10); // $0.39/s
+  });
+
+  test("a 1:1, 3:2 or 2:3 size bills at its short side's tier", () => {
+    const square = video.safe({ model: "ltx-2-5-fast", prompt: "hi", resolution: "1080x1080", duration: 10 });
+    expect(square.ok).toBe(true);
+    if (square.ok) expect(square.estimate.costUSD).toBeCloseTo(1.3, 10); // 1080p, $0.13/s
+    const wide = video.safe({ model: "ltx-2-5-pro", prompt: "hi", resolution: "3240x2160", duration: 6 });
+    expect(wide.ok).toBe(true);
+    if (wide.ok) expect(wide.estimate.costUSD).toBeCloseTo(2.34, 10); // 4K, $0.39/s
+  });
+
   test("automatic duration produces no estimate", () => {
     const r = video.safe({
       model: "ltx-2-5-fast",
@@ -260,55 +290,10 @@ describe("lightricks.video cost estimation", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// The deprecated LTX-2 pair. Its matrix is published on
-// https://docs.ltx.io/ltx-2-deprecation.md, not on the models page; before it
-// was encoded these ids were absent from SUPPORT_MATRIX, so `duration` — a
-// REQUIRED field here — took any number with only a deprecated_model warning.
-// ---------------------------------------------------------------------------
-
-describe("lightricks.video deprecated LTX-2 support matrix", () => {
-  test.each(["ltx-2-fast", "ltx-2-pro"])("%s rejects an absurd duration", (model) => {
-    const r = video.safe({
-      model,
-      prompt: "x",
-      duration: 10_000_000_000,
-      resolution: "1920x1080",
-    });
-    expect(r.ok).toBe(false);
-    if (r.ok) return;
-    const issue = r.errors.find((e) => e.code === "invalid_enum_value");
-    expect(issue?.path).toEqual(["duration"]);
-    expect(issue?.meta?.allowed).toContain(10);
-    expect(issue?.meta?.source).toBe(LTX_2_DEPRECATION_SOURCE);
-  });
-
-  test.each(["ltx-2-fast", "ltx-2-pro"])("%s still accepts a documented duration", (model) => {
-    for (const duration of [6, 8, 10]) {
-      const r = video.safe({ model, prompt: "x", duration, resolution: "1920x1080" });
-      expect(r.ok).toBe(true);
-      if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("deprecated_model");
-    }
-  });
-
-  test("ltx-2-fast keeps its long window at 1080p; ltx-2-pro tops out at 10s", () => {
-    expect(
-      video.safe({ model: "ltx-2-fast", prompt: "x", duration: 20, resolution: "1920x1080" })
-        .ok,
-    ).toBe(true);
-    const pro = video.safe({
-      model: "ltx-2-pro",
-      prompt: "x",
-      duration: 20,
-      resolution: "1920x1080",
-    });
-    expect(pro.ok).toBe(false);
-    if (!pro.ok) expect(pro.errors.find((e) => e.code === "invalid_enum_value")?.meta?.allowed).toEqual([6, 8, 10]);
-  });
-
-  test("an off-matrix resolution and fps are rejected too", () => {
+describe("lightricks.video support matrix coverage", () => {
+  test("an off-matrix resolution and fps are rejected", () => {
     const res = safeUnchecked({
-      model: "ltx-2-pro",
+      model: "ltx-2-3-pro",
       prompt: "x",
       duration: 6,
       resolution: "99999x99999",
@@ -317,7 +302,7 @@ describe("lightricks.video deprecated LTX-2 support matrix", () => {
     if (!res.ok) expect(res.errors.find((e) => e.code === "invalid_enum_value")?.path).toEqual(["resolution"]);
 
     const fps = safeUnchecked({
-      model: "ltx-2-fast",
+      model: "ltx-2-3-fast",
       prompt: "x",
       duration: 6,
       resolution: "1920x1080",
@@ -330,6 +315,21 @@ describe("lightricks.video deprecated LTX-2 support matrix", () => {
   test("every documented model id is matrix-checked", () => {
     for (const model of GENERATION_MODELS) {
       expect(SUPPORT_MATRIX[model]).toBeDefined();
+      expect(RESOLUTION_SHAPES[model]).toBeDefined();
+    }
+  });
+
+  test("the unified rows say what the matrix enforces", () => {
+    // `unmodel/video` narrows `resolution` and `aspectRatio` from these rows at
+    // compile time; the endpoint enforces SUPPORT_MATRIX × RESOLUTION_SHAPES at
+    // run time. A row wider than the matrix offers a value the endpoint
+    // refuses; a narrower one hides a value LTX serves.
+    expect([...MODELS]).toEqual([...GENERATION_MODELS]);
+    for (const model of MODELS) {
+      const row = LIGHTRICKS_VIDEO_MODEL_PARAMS[model];
+      const tiers = new Set((SUPPORT_MATRIX[model] ?? []).flatMap((r) => r.tiers));
+      expect([...row.resolutions], model).toEqual([...tiers]);
+      expect([...row.ratios], model).toEqual([...(RESOLUTION_SHAPES[model] ?? [])]);
     }
   });
 });

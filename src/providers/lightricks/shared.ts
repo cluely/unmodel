@@ -1,9 +1,8 @@
 /**
  * Shared wire pieces for the LTX API, transcribed from
  * https://docs.ltx.io/openapi.json (OpenAPI 3.1, server https://api.ltx.io)
- * plus the published support matrices on https://docs.ltx.io/models/ltx-2-5.md,
- * https://docs.ltx.io/models/ltx-2-3.md and, for the deprecated LTX-2 pair,
- * https://docs.ltx.io/ltx-2-deprecation.md — verified 2026-08-13.
+ * plus the published support matrices on https://docs.ltx.io/models/ltx-2-5.md
+ * and https://docs.ltx.io/models/ltx-2-3.md — verified 2026-11-12.
  */
 
 import { z } from "zod";
@@ -12,8 +11,9 @@ import type { ModelInfo } from "../../core/catalog-types";
 import { JSON_HEADERS } from "../../core/request";
 import {
   LTX_RESOLUTIONS,
-  LTX_RESOLUTION_TIERS,
+  LTX_RESOLUTION_GRID,
   resolutionTier,
+  type LtxResolutionShape,
   type LtxResolutionTier,
 } from "./pricing";
 
@@ -26,19 +26,15 @@ export const MODELS_SOURCE = "https://docs.ltx.io/models";
 export const OPENAPI_SOURCE = "https://docs.ltx.io/openapi.json";
 
 /**
- * The two API generations. `v2` is the async job API (`POST /v2/<endpoint>`
- * returns `{ id }`; poll `GET /v2/<endpoint>/{id}`); `v1` is the synchronous
- * one. The request bodies are identical — only the path prefix differs — so
- * `api_version` is not a wire field: it is stripped from the body and only
- * selects `.request.url`.
+ * The generation route for an endpoint: the async job API (`POST
+ * /v2/<endpoint>` returns `{ id }`; poll `GET /v2/<endpoint>/{id}`). It is the
+ * only generation API LTX serves — "The V1 video generation endpoints listed
+ * below were retired on October 26, 2026 and return an error. Use the V2
+ * endpoints instead." (https://docs.ltx.io/migrate-v1-to-v2.md, 2026-11-12).
+ * Only the media upload route stays on `/v1/upload`.
  */
-export const LTX_API_VERSIONS = ["v1", "v2"] as const;
-export type LtxApiVersion = (typeof LTX_API_VERSIONS)[number];
-
-export const DEFAULT_API_VERSION: LtxApiVersion = "v2";
-
-export function ltxUrl(endpoint: string, apiVersion: LtxApiVersion = DEFAULT_API_VERSION): string {
-  return `${LTX_BASE_URL}/${apiVersion}/${endpoint}`;
+export function ltxUrl(endpoint: string): string {
+  return `${LTX_BASE_URL}/v2/${endpoint}`;
 }
 
 /** Models with a text-to-video and an image-to-video arm (models.md). */
@@ -47,19 +43,12 @@ export const GENERATION_MODELS = [
   "ltx-2-5-pro",
   "ltx-2-3-fast",
   "ltx-2-3-pro",
-  "ltx-2-fast",
-  "ltx-2-pro",
 ] as const;
 
 /** Models with an audio-to-video arm — `ltx-2-3-fast` has none. */
-export const AUDIO_TO_VIDEO_MODELS = [
-  "ltx-2-5-fast",
-  "ltx-2-5-pro",
-  "ltx-2-3-pro",
-  "ltx-2-pro",
-] as const;
+export const AUDIO_TO_VIDEO_MODELS = ["ltx-2-5-fast", "ltx-2-5-pro", "ltx-2-3-pro"] as const;
 
-/** `camera_motion` enum, shared by text-to-video and image-to-video. */
+/** `camera_motion` enum, shared by text-, image- and audio-to-video. */
 export const LTX_CAMERA_MOTIONS = [
   "dolly_in",
   "dolly_out",
@@ -78,8 +67,8 @@ export { LTX_RESOLUTIONS };
 
 /**
  * A `resolution`. The named presets are every value in the published tier
- * tables (720p/1080p/1440p/4k, landscape and portrait) — what a given model
- * accepts is narrower still and is enforced by `checkSupportMatrix`. The
+ * tables (720p/1080p/1440p/4k × 16:9, 9:16, 1:1, 3:2, 2:3) — what a given
+ * model accepts is narrower still and is enforced by `checkSupportMatrix`. The
  * `${number}x${number}` tail is deliberate: a model id newer than
  * `SUPPORT_MATRIX` is not matrix-checked, so a closed union would over-narrow
  * it — but non-size strings are still a compile error.
@@ -135,55 +124,43 @@ const FAST_MATRIX: readonly MatrixRow[] = [
   { tiers: ["1440p", "4k"], fps: [24, 25, 48, 50], durations: SHORT_DURATIONS },
 ];
 
-/** ltx-2-3-pro's row: every tier, every frame rate, the short window. */
-const PRO_2_3_MATRIX: readonly MatrixRow[] = [
+/** The pro row: every tier, every frame rate, the short window. */
+const PRO_MATRIX: readonly MatrixRow[] = [
   { tiers: ["720p", "1080p", "1440p", "4k"], fps: [24, 25, 48, 50], durations: SHORT_DURATIONS },
 ];
 
 /**
- * The deprecated LTX-2 pair. Its matrix is no longer on the models page but IS
- * published on https://docs.ltx.io/ltx-2-deprecation.md ("LTX-2 support
- * matrix … supported by LTX-2 until it is removed"), verified 2026-08-13:
- *
- *   ltx-2-fast  1080p@25 → 6,8,10,12,14,16,18,20 · 1080p@50 → 6,8,10
- *               1440p@25,50 → 6,8,10 · 4K@25,50 → 6,8,10
- *   ltx-2-pro   1080p/1440p/4K @25,50 → 6,8,10
- *   "Aspect ratio: 16:9 (landscape) only."
- *
- * That table is NARROWER than what the API accepts today: the same page states
- * LTX-2 "has been deprecated … Requests that specify an LTX-2 model are now
- * automatically served by LTX-2.3", so 720p and the 24/48fps rates its
- * replacement offers go through as well. Enforcing the LTX-2 table literally
- * would therefore reject requests the API fulfils — most obviously any request
- * that omits `fps` (OpenAPI `default: 24`, absent from the LTX-2 table). So we
- * enforce the UNION, which is exactly the replacement model's matrix
- * (`ltx-2-fast` → `ltx-2-3-fast`, `ltx-2-pro` → `ltx-2-3-pro`, per the
- * migration table on the same page). `duration` is bounded either way, which
- * is the point: before this, a required field on these ids took any number.
- */
-const LTX_2_FAST_MATRIX = FAST_MATRIX;
-const LTX_2_PRO_MATRIX = PRO_2_3_MATRIX;
-
-/**
- * Per-model support matrices — https://docs.ltx.io/models/ltx-2-5.md,
- * https://docs.ltx.io/models/ltx-2-3.md and, for the deprecated LTX-2 pair,
- * https://docs.ltx.io/ltx-2-deprecation.md. Every documented model id is
- * keyed here; a model absent from the table (an id newer than this file) is
- * not matrix-checked.
+ * Per-model support matrices — https://docs.ltx.io/models/ltx-2-5.md and
+ * https://docs.ltx.io/models/ltx-2-3.md. Every documented model id is keyed
+ * here; a model absent from the table (an id newer than this file) is not
+ * matrix-checked.
  */
 export const SUPPORT_MATRIX: Readonly<Record<string, readonly MatrixRow[]>> = {
   "ltx-2-5-fast": FAST_MATRIX,
   "ltx-2-3-fast": FAST_MATRIX,
-  // Pro tops out at 10s everywhere; ltx-2-5-pro also tops out at 1080p and
-  // does not offer 48fps (its table lists 24, 25, 50).
-  "ltx-2-5-pro": [{ tiers: ["720p", "1080p"], fps: [24, 25, 50], durations: SHORT_DURATIONS }],
-  "ltx-2-3-pro": PRO_2_3_MATRIX,
-  "ltx-2-fast": LTX_2_FAST_MATRIX,
-  "ltx-2-pro": LTX_2_PRO_MATRIX,
+  // models/ltx-2-5.md, 2026-11-12: "| **ltx-2-5-pro** | 720p | 24, 25, 48, 50
+  // | 6, 8, 10 |", and the same fps and durations at 1080p, 1440p and 4K.
+  "ltx-2-5-pro": PRO_MATRIX,
+  "ltx-2-3-pro": PRO_MATRIX,
 };
 
-/** Deprecation notice carrying the LTX-2 support matrix. */
-export const LTX_2_DEPRECATION_SOURCE = "https://docs.ltx.io/ltx-2-deprecation";
+const WIDESCREEN: readonly LtxResolutionShape[] = ["16:9", "9:16"];
+const EVERY_SHAPE: readonly LtxResolutionShape[] = ["16:9", "9:16", "1:1", "3:2", "2:3"];
+
+/**
+ * The `resolution` shapes each model renders, at every tier it reaches. LTX-2.5
+ * takes all five: "`ltx-2-5-fast` and `ltx-2-5-pro` now generate 1:1, 3:2, and
+ * 2:3 video at every resolution from 720p to 4K, on text-to-video,
+ * image-to-video, and audio-to-video." (https://docs.ltx.io/api-changelog/2026/10/12.md,
+ * 2026-11-12). LTX-2.3's resolution table has only the "16:9 (landscape) |
+ * 9:16 (portrait)" columns (https://docs.ltx.io/models/ltx-2-3.md).
+ */
+export const RESOLUTION_SHAPES: Readonly<Record<string, readonly LtxResolutionShape[]>> = {
+  "ltx-2-5-fast": EVERY_SHAPE,
+  "ltx-2-5-pro": EVERY_SHAPE,
+  "ltx-2-3-fast": WIDESCREEN,
+  "ltx-2-3-pro": WIDESCREEN,
+};
 
 /** Models whose `duration` may be `null` ("automatic duration"). */
 export const AUTOMATIC_DURATION_MODELS = ["ltx-2-5-fast", "ltx-2-5-pro"] as const;
@@ -191,6 +168,12 @@ export const AUTOMATIC_DURATION_MODELS = ["ltx-2-5-fast", "ltx-2-5-pro"] as cons
 interface MatrixParams {
   model: string;
   resolution?: string;
+  /**
+   * Names the resolution in fps/duration issues when `resolution` only stands
+   * in for its tier (a server default the request cannot pin down). When set,
+   * issue `meta` carries `tier` in place of `resolution`.
+   */
+  resolutionLabel?: string;
   fps?: number;
   duration?: number | null;
 }
@@ -199,14 +182,10 @@ function unique(values: readonly number[]): number[] {
   return [...new Set(values)].sort((a, b) => a - b);
 }
 
-/** Page publishing the matrix a model is checked against. */
-function matrixSource(model: string): string {
-  return model === "ltx-2-fast" || model === "ltx-2-pro" ? LTX_2_DEPRECATION_SOURCE : MODELS_SOURCE;
-}
-
 /**
- * Enforces the published resolution × fps × duration matrix for a model.
- * Unknown models and models with no published matrix are skipped.
+ * Enforces the published resolution × fps × duration matrix for a model, and
+ * the shapes it renders at those tiers. Unknown models and models with no
+ * published matrix are skipped.
  */
 export function checkSupportMatrix<P extends MatrixParams>(
   params: P,
@@ -215,28 +194,32 @@ export function checkSupportMatrix<P extends MatrixParams>(
 ): void {
   if (info === undefined) return;
   const rows = SUPPORT_MATRIX[params.model];
-  if (rows === undefined) return;
+  const shapes = RESOLUTION_SHAPES[params.model];
+  if (rows === undefined || shapes === undefined) return;
   const model = params.model;
-  const source = matrixSource(model);
+  const source = MODELS_SOURCE;
 
   const { resolution } = params;
   if (resolution === undefined) return;
   const tier = resolutionTier(resolution);
-  const allowedResolutions = rows.flatMap((row) =>
-    row.tiers.flatMap((t) => [...LTX_RESOLUTION_TIERS[t]]),
+  const tiers = [...new Set(rows.flatMap((row) => row.tiers))];
+  const allowedResolutions: string[] = tiers.flatMap((t) =>
+    shapes.map((shape) => LTX_RESOLUTION_GRID[t][shape]),
   );
-  if (tier === undefined || !rows.some((row) => row.tiers.includes(tier))) {
+  if (tier === undefined || !allowedResolutions.includes(resolution)) {
     ctx.report({
       code: "invalid_enum_value",
       path: ["resolution"],
       model,
-      message: `\`resolution\` must be one of ${[...new Set(allowedResolutions)].map((v) => JSON.stringify(v)).join(", ")} for "${model}"; got ${JSON.stringify(resolution)}.`,
-      meta: { allowed: [...new Set(allowedResolutions)], value: resolution, source },
+      message: `\`resolution\` must be one of ${allowedResolutions.map((v) => JSON.stringify(v)).join(", ")} for "${model}"; got ${JSON.stringify(resolution)}.`,
+      meta: { allowed: allowedResolutions, value: resolution, source },
     });
     return;
   }
 
   const tierRows = rows.filter((row) => row.tiers.includes(tier));
+  const resolutionText = params.resolutionLabel ?? resolution;
+  const resolutionMeta = params.resolutionLabel === undefined ? { resolution } : { tier };
   const fps = params.fps ?? DEFAULT_FPS;
   const allowedFps = unique(tierRows.flatMap((row) => [...row.fps]));
   if (!allowedFps.includes(fps)) {
@@ -244,8 +227,8 @@ export function checkSupportMatrix<P extends MatrixParams>(
       code: "invalid_enum_value",
       path: ["fps"],
       model,
-      message: `\`fps\` must be one of ${allowedFps.join(", ")} at ${resolution} for "${model}"; got ${fps}.`,
-      meta: { allowed: allowedFps, value: fps, resolution, source },
+      message: `\`fps\` must be one of ${allowedFps.join(", ")} at ${resolutionText} for "${model}"; got ${fps}.`,
+      meta: { allowed: allowedFps, value: fps, ...resolutionMeta, source },
     });
     return;
   }
@@ -272,11 +255,11 @@ export function checkSupportMatrix<P extends MatrixParams>(
       code: "invalid_enum_value",
       path: ["duration"],
       model,
-      message: `\`duration\` must be one of ${allowedDurations.join(", ")} seconds at ${resolution}/${fps}fps for "${model}"; got ${duration}.`,
+      message: `\`duration\` must be one of ${allowedDurations.join(", ")} seconds at ${resolutionText}/${fps}fps for "${model}"; got ${duration}.`,
       meta: {
         allowed: allowedDurations,
         value: duration,
-        resolution,
+        ...resolutionMeta,
         fps,
         source,
       },

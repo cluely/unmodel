@@ -5,13 +5,25 @@ export type {
   LucidRealismBody,
   PhoenixV1Body,
   PhoenixV09Body,
+  KinoXlBody,
+  AnimeXlBody,
+  PortraitPerfectBody,
+  StockPhotographyBody,
+  IllustrativeAlbedoBody,
+  ConceptArtBody,
+  LifelikeVisionBody,
+  GraphicDesignBody,
+  LightningXlBody,
   UnknownLeonardoModelBody,
   LeonardoLucidParameters,
   LeonardoPhoenixParameters,
+  LeonardoElementsParameters,
   LeonardoImageReference,
   LeonardoStyleGuidance,
   LeonardoContentGuidance,
+  LeonardoGuidance,
   LeonardoImageToImageGuidance,
+  LeonardoElement,
 } from "./image";
 
 export {
@@ -21,9 +33,12 @@ export {
   LEONARDO_PROMPT_ENHANCE,
   LEONARDO_CONTRASTS,
   LEONARDO_IMAGE_TYPES,
+  LEONARDO_UNLISTED_IMAGE_TYPES,
   LEONARDO_STYLE_STRENGTHS,
+  LEONARDO_CONTENT_STRENGTHS,
   LEONARDO_GUIDANCE_STRENGTHS,
   LEONARDO_MAX_STYLE_IDS,
+  LEONARDO_MAX_ELEMENTS,
   LEONARDO_DEFAULT_STYLE_ID,
   LEONARDO_KNOWN_PARAMETERS,
 } from "./model-rules";
@@ -35,12 +50,13 @@ export type {
   LeonardoContrast,
   LeonardoImageType,
   LeonardoStyleStrength,
+  LeonardoContentStrength,
   LeonardoGuidanceStrength,
 } from "./model-rules";
 
 // No response checker: POST /v2/generations returns a generation id, and
-// fetching the images (GET /v2/generations/{id}, or the webhook callback) is
-// transport — out of unmodel's scope.
+// fetching the images (the v1 GET https://cloud.leonardo.ai/api/rest/v1/generations/{id},
+// or the webhook callback) is transport — out of unmodel's scope.
 
 export { models, provider } from "./models";
 export type { LeonardoModelId } from "./models";

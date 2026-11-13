@@ -304,7 +304,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
 const IMPLIED_CELLS = ["assemblyai", "revai", "soniox", "speechmatics"];
 
 const PROBE_LANGUAGE = "pt-BR";
-/** Includes `"en"`, which AssemblyAI's `language_codes` requires. */
+/** Includes `"en"`: the assemblyai cell pins `universal-2`, the one routing whose `language_codes` must include English. */
 const PROBE_LANGUAGES = ["en", "pt-BR"];
 const PROBE_PROMPT = "Acme Corp, quarterly results";
 const AUDIO_KINDS: readonly AudioInputKind[] = ["file", "url", "fileId", "data"];
@@ -620,6 +620,31 @@ describe("inworld", () => {
   test("declares no `audio` gap at all any more", () => {
     expect(inworld.audioInputs).toEqual(["data"]);
     expect((inworld.unsupported as Record<string, unknown>)["audio"]).toBeUndefined();
+  });
+
+  /**
+   * An id outside the per-model table is an `unknown_model` warning and skips
+   * the model-dependent narrowing, exactly as `inworld.stt` treats it: the
+   * wire flag `includeWordTimestamps` can say `"word"`, so it compiles.
+   */
+  test("an unknown id gets the wire flag's granularity, not a refusal", () => {
+    const result = stt.safe({
+      model: "inworld/inworld/inworld-stt-2",
+      audio: { data: PROBE_BASE64 },
+      timestamps: "word",
+    } as never);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings.map((w) => w.code)).toContain("unknown_model");
+    expect(result.params).toMatchObject({ transcribeConfig: { includeWordTimestamps: true } });
+
+    // Granularities the boolean cannot express stay refused by name.
+    const segment = stt.safe({
+      model: "inworld/inworld/inworld-stt-2",
+      audio: { data: PROBE_BASE64 },
+      timestamps: "segment",
+    } as never);
+    expect(segment.ok).toBe(false);
   });
 });
 

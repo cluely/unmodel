@@ -192,7 +192,7 @@ describe("providerOptions", () => {
 
   test("an override wins over the compiled value, and is validated like it", () => {
     const params = image({
-      model: "openai/gpt-image-1",
+      model: "openai/gpt-image-1.5",
       prompt: "a lighthouse in fog",
       aspectRatio: "1:1",
       providerOptions: { openai: { size: "1536x1024", quality: "high" } },
@@ -205,7 +205,7 @@ describe("providerOptions", () => {
 
   test("a block for another provider is ignored", () => {
     const params = image({
-      model: "openai/gpt-image-1",
+      model: "openai/gpt-image-1.5",
       prompt: "a lighthouse in fog",
       providerOptions: { google: { parameters: { personGeneration: "allow_all" } } },
     });
@@ -214,7 +214,7 @@ describe("providerOptions", () => {
 
   test("an override the provider rejects says where it came from", () => {
     const result = image.safe({
-      model: "openai/gpt-image-1",
+      model: "openai/gpt-image-1.5",
       prompt: "a lighthouse in fog",
       providerOptions: { openai: { size: "3000x3000" } },
     });
@@ -273,6 +273,45 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     expect(result.errors[0]!.message).toEndWith("(compiled from `size`)");
   });
 
+  test("runway's per-model outputFormat enum, reported at `outputFormat`", () => {
+    // WebP reaches the wire — muse_image returns it — and seedream5_pro's own
+    // png/jpeg enum is what refuses it there.
+    const muse = image({
+      model: "runway/muse_image",
+      prompt: "a lighthouse in fog",
+      outputFormat: "webp",
+    }) as unknown as Record<string, unknown>;
+    expect(muse["outputFormat"]).toBe("webp");
+    const seedream = image.safe({
+      model: "runway/seedream5_pro",
+      prompt: "a lighthouse in fog",
+      outputFormat: "webp",
+    });
+    expect(seedream.ok).toBe(false);
+    if (seedream.ok) return;
+    expect(seedream.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["outputFormat"] });
+  });
+
+  test("runway's seedream5_lite takes freeform dimensions verbatim, inside its pixel range", () => {
+    const result = image.safe({
+      model: "runway/seedream5_lite",
+      prompt: "a lighthouse in fog",
+      dimensions: { width: 3000, height: 2000 },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.params as unknown as Record<string, unknown>)["ratio"]).toBe("3000:2000");
+    expect(result.params.warnings).toEqual([]);
+  });
+
+  test("runway's optional-ratio arms get no invented size when none was asked for", () => {
+    const result = image.safe({ model: "runway/ideogram_4_0", prompt: "a lighthouse in fog" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect("ratio" in (result.params as unknown as Record<string, unknown>)).toBe(false);
+    expect(result.params.warnings).toEqual([]);
+  });
+
   test("leonardo's per-model dimension cap, reported at `aspectRatio`", () => {
     // `as never`: Phoenix's `tiers` is `["1k", "2k"]`, so `"4k"` no longer
     // compiles — the narrowing catching this at the call site is the point,
@@ -287,6 +326,29 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     if (result.ok) return;
     expect(result.errors[0]!.path).toEqual(["aspectRatio"]);
     expect(result.errors[0]!.message).toContain("2048");
+  });
+
+  test("leonardo's negativePrompt reaches the models that take it, and names them where it cannot", () => {
+    const params = image({
+      model: "leonardo/kino-xl",
+      prompt: "a lighthouse in fog",
+      negativePrompt: "blurry",
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "kino-xl",
+      parameters: { prompt: "a lighthouse in fog", negative_prompt: "blurry" },
+    });
+
+    const refused = image.safe({
+      model: "leonardo/lucid-origin",
+      prompt: "a lighthouse in fog",
+      negativePrompt: "blurry",
+    });
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.errors[0]!.path).toEqual(["negativePrompt"]);
+    expect(refused.errors[0]!.message).toContain("leonardo/phoenix-v1.0");
+    expect(refused.errors[0]!.message).toContain("leonardo/kino-xl");
   });
 
   test("a canonical-space failure stops before the provider validator runs", () => {
@@ -595,11 +657,11 @@ describe("revana: a picture is sized by shape and by tier", () => {
 
 describe("the throwing form", () => {
   test("throws UnmodelValidationError labelled with the category", () => {
-    expect(() => image({ model: "openai/gpt-image-1", prompt: "hi", seed: 3 })).toThrow(
+    expect(() => image({ model: "openai/gpt-image-1.5", prompt: "hi", seed: 3 })).toThrow(
       UnmodelValidationError,
     );
     try {
-      image({ model: "openai/gpt-image-1", prompt: "hi", seed: 3 });
+      image({ model: "openai/gpt-image-1.5", prompt: "hi", seed: 3 });
     } catch (error) {
       expect((error as Error).message).toContain("unmodel/image");
       expect((error as UnmodelValidationError).issues[0]!.path).toEqual(["seed"]);

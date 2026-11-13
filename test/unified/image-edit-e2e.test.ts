@@ -204,6 +204,63 @@ describe("the result is the provider's own Validated", () => {
     });
   });
 
+  test("recraft: `outputFormat` compiles to `image_format`, and jpeg is refused naming webp / png", () => {
+    const png = imageEdit({
+      operation: "edit",
+      model: "recraft/recraftv4_1",
+      prompt: PROMPT,
+      image: { url: URL_IMAGE },
+      strength: 0.2,
+      outputFormat: "png",
+    });
+    expect(JSON.parse(JSON.stringify(png))).toEqual({
+      model: "recraftv4_1",
+      prompt: PROMPT,
+      strength: 0.2,
+      image_url: URL_IMAGE,
+      image_format: "png",
+    });
+
+    const jpeg = imageEdit.safe({
+      operation: "edit",
+      model: "recraft/recraftv4_1",
+      prompt: PROMPT,
+      image: { url: URL_IMAGE },
+      strength: 0.2,
+      outputFormat: "jpeg",
+    });
+    expect(jpeg.ok).toBe(false);
+    if (jpeg.ok) return;
+    expect(jpeg.errors.map((e) => `${e.code}@${e.path?.join(".")}`)).toEqual([
+      "invalid_enum_value@outputFormat",
+    ]);
+    expect(jpeg.errors[0]!.meta?.allowed).toEqual(["webp", "png"]);
+  });
+
+  test("recraft: the V4.1 row refuses `style_id`, which imageToImage takes on V3 only", () => {
+    const v4 = imageEdit.safe({
+      operation: "edit",
+      model: "recraft/recraftv4_1",
+      prompt: PROMPT,
+      image: { url: URL_IMAGE },
+      strength: 0.2,
+      style_id: "abc",
+    } as never);
+    expect(v4.ok).toBe(false);
+    if (!v4.ok) expect(v4.errors[0]!.path).toEqual(["style_id"]);
+
+    const v3 = imageEdit.safe({
+      operation: "edit",
+      model: "recraft/recraftv3",
+      prompt: PROMPT,
+      image: { url: URL_IMAGE },
+      strength: 0.2,
+      style_id: "abc",
+      style_match: "regular",
+    });
+    expect(v3.ok).toBe(true);
+  });
+
   test("an estimate rides through, from the provider's own cost model", () => {
     // Ideogram prices per image and per rendering speed, and the ref picked
     // both — so `n: 2` at the quality tier is two quality images.
@@ -268,7 +325,7 @@ describe("the provider's own checks reach the canonical path", () => {
     expect(result.ok).toBe(true);
   });
 
-  test("Ideogram's 25 MB cap and Recraft's 10 MB one, both at `image`", () => {
+  test("Ideogram's 25 MB cap and Recraft's 20 MB one, both at `image`", () => {
     const ideogram = imageEdit.safe({
       operation: "edit",
       model: "ideogram/ideogram-3.0-default",
@@ -282,7 +339,7 @@ describe("the provider's own checks reach the canonical path", () => {
       operation: "edit",
       model: "recraft/recraftv4_1",
       prompt: PROMPT,
-      image: { file: png(11 * 1024 * 1024) },
+      image: { file: png(21 * 1024 * 1024) },
       strength: 0.5,
     } as never);
     expect(recraft.ok).toBe(false);

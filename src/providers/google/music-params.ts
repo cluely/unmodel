@@ -28,11 +28,13 @@ export const LYRIA_MUSIC_DOCS_URL = "https://ai.google.dev/gemini-api/docs/music
 export const INTERACTIONS_API_DOCS_URL = "https://ai.google.dev/api/interactions-api";
 
 /**
- * The two batch Lyria ids the guide's model table documents — the `google/…`
- * refs. Pro first: it is the full-song model and the one with an output-format
- * control.
+ * The batch Lyria ids the guide's model table documents — the `google/…`
+ * refs. `lyria-3.5` first: it is the current full-song model (the
+ * deprecations page names it as `lyria-3-pro-preview`'s replacement,
+ * 2026-11-12); then Pro, the Lyria 3 full-song model with an output-format
+ * control; then Clip.
  */
-export const MODELS = ["lyria-3-pro-preview", "lyria-3-clip-preview"] as const;
+export const MODELS = ["lyria-3.5", "lyria-3-pro-preview", "lyria-3-clip-preview"] as const;
 
 /** A batch Lyria 3 model id. */
 export type GoogleLyriaModelId = (typeof MODELS)[number];
@@ -57,8 +59,11 @@ export const LYRIA_CLIP_DURATION_SECONDS = 30;
 
 /**
  * `response_format` (audio) — two canonical codecs, matching the only two
- * output formats the guide documents for Lyria 3: "MP3 (default)" and, on Pro,
- * WAV via `response_format: { type: "audio" }`.
+ * output formats the guide documents: MP3 by default, and WAV via
+ * `response_format: { type: "audio" }` on Lyria 3.5 ("For Lyria 3.5, you can
+ * also request the output in WAV format by setting the `response_format`",
+ * retrieved 2026-11-13) and on Pro (the guide as fetched 2026-08-24: "This
+ * WAV format option is available for Lyria 3 Pro only").
  *
  * WAV is spelled `pcm_s16le` in the canonical vocabulary (the same split
  * `./tts-params` documents: WAV is PCM in a container, not a sixth codec).
@@ -87,12 +92,17 @@ export const SHARED_EXTRAS = {
 } as const;
 
 /**
- * Per-model rows. The codec split is the guide's own: "This WAV format option
- * is available for Lyria 3 Pro only", and the model table lists no
- * output-format control for Clip at all — so Clip's row offers `mp3` (the
- * default it always emits) and nothing to switch.
+ * Per-model rows. The codec split is the guide's own (LYRIA_MUSIC_DOCS_URL,
+ * retrieved 2026-11-13): "By default, the Lyria 3.5 models generate audio in
+ * MP3 format. For Lyria 3.5, you can also request the output in WAV format by
+ * setting the `response_format`" — so `lyria-3.5` offers both — and its model
+ * table lists Clip's output as "MP3" with no output-format control, so Clip's
+ * row offers `mp3` (the default it always emits) and nothing to switch. Pro
+ * keeps both on the guide as fetched 2026-08-24: "This WAV format option is
+ * available for Lyria 3 Pro only".
  */
 export const GOOGLE_MUSIC_MODEL_PARAMS = {
+  "lyria-3.5": { codecs: ["mp3", "pcm_s16le"], extras: SHARED_EXTRAS },
   "lyria-3-pro-preview": { codecs: ["mp3", "pcm_s16le"], extras: SHARED_EXTRAS },
   "lyria-3-clip-preview": { codecs: ["mp3"], extras: SHARED_EXTRAS },
 } as const satisfies MusicModelParamTable;

@@ -18,7 +18,8 @@ import { models, provider } from "../../catalog/xai.gen";
 import type { XaiTextModelId } from "../../catalog/xai.gen";
 import { availability } from "../../catalog/availability/xai.gen";
 
-const XAI_API_REFERENCE = "https://docs.x.ai/docs/api-reference (checked 2026-08-13)";
+const XAI_API_REFERENCE =
+  "https://docs.x.ai/developers/rest-api-reference/inference/chat-completions (checked 2026-11-12)";
 
 /**
  * xAI's chat completions reference marks `frequency_penalty`, `presence_penalty`

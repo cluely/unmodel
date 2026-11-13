@@ -33,8 +33,8 @@ export function stripModelsPrefix(model: string): string {
 }
 
 /**
- * `("models/veo-3.1", "predictLongRunning")` →
- * `".../v1beta/models/veo-3.1:predictLongRunning"`.
+ * `("models/veo-3.0-generate-001", "predictLongRunning")` →
+ * `".../v1beta/models/veo-3.0-generate-001:predictLongRunning"`.
  *
  * The one place the `models/{id}:{method}` shape is written down, so a route
  * that spells it differently is a visible diff rather than a silent drift.

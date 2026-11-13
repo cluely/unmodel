@@ -54,7 +54,9 @@ export type { ImageEditParams, BriaEditModelVersion } from "./image-edit";
 
 export type {
   BriaAspectRatio,
+  BriaLiteAspectRatio,
   BriaResolution,
+  BriaStyle,
   BriaOutputType,
   BriaCommonParams,
 } from "./shared";

@@ -4,5 +4,13 @@
     "model": "ray-2",
     "prompt": "a drone shot over a fjord at sunrise"
   },
-  "url": "https://api.lumalabs.ai/dream-machine/v1/generations"
+  "url": "https://api.lumalabs.ai/dream-machine/v1/generations",
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
+  ]
 }

@@ -1331,12 +1331,16 @@ describe("cross-provider imports", () => {
       // list below is exactly the set the `every declared .toApi edge has a
       // codec` test in test/interop/retarget-e2e.test.ts derives from the data.
       "src/providers/cloudflare-workers-ai/index.ts", // → gemini
-      "src/providers/deepinfra/index.ts", // → gemini
+      "src/providers/deepinfra/index.ts", // → gemini + anthropic-messages
       "src/providers/friendli/index.ts", // → gemini
       "src/providers/huggingface/index.ts", // → gemini
       "src/providers/nvidia/index.ts", // → gemini
       "src/providers/scaleway/index.ts", // → gemini
       "src/providers/siliconflow/index.ts", // → gemini
+      // Its own dialect's codec, which every fleet graph already holds through
+      // chat-completions.ts: `.toSdk("ai-sdk")` maps DeepSeek's content parts
+      // onto the dialect and then calls it, so the edge costs no bytes.
+      "src/providers/deepseek/index.ts", // → openai-chat
     ]);
     const actual = new Set(
       FILES.filter((file) => under(file, "src/providers") && !isInterop(file)).filter((file) =>
@@ -1423,6 +1427,15 @@ describe("generated availability tables", () => {
 });
 
 describe("interop spokes", () => {
+  /**
+   * Import-free id leaves a codec may read as values, enumerated. The
+   * anthropic-messages codec spells reasoning per target model (Claude 4.7+
+   * has no budget; Sonnet 5.5's "off" is `between_tools`), and it sits in the
+   * provider-free `unmodel/chat/factory` graph, so it reads those lists from
+   * this leaf rather than from `constraints.ts` and its tables.
+   */
+  const INTEROP_ID_LEAVES = new Set(["src/providers/anthropic/model-ids.ts"]);
+
   // Future: src/providers/<p>/interop.ts holds the per-dialect codec. It may
   // see the hub and its own dialect; anything else is another provider's
   // bundle leaking into this one.
@@ -1435,7 +1448,7 @@ describe("interop spokes", () => {
         if (under(ref.target, "src/core/translate")) continue;
         if (providerOf(ref.target) === provider) {
           const basename = ref.target.slice(ref.target.lastIndexOf("/") + 1);
-          if (!ref.typeOnly && !PROVIDER_LEAF_BASENAMES.has(basename)) {
+          if (!ref.typeOnly && !PROVIDER_LEAF_BASENAMES.has(basename) && !INTEROP_ID_LEAVES.has(ref.target)) {
             violations.push(
               violation(
                 file,
@@ -1456,5 +1469,13 @@ describe("interop spokes", () => {
       }
     }
     expect(violations).toEqual([]);
+  });
+
+  test("the id leaves they read are import-free: type imports only", () => {
+    for (const leaf of INTEROP_ID_LEAVES) {
+      expect(FILES, leaf).toContain(leaf);
+      const valueImports = importsOf(leaf).filter((ref) => !ref.typeOnly);
+      expect(valueImports.map((ref) => ref.specifier), leaf).toEqual([]);
+    }
   });
 });

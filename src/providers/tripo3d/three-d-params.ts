@@ -111,10 +111,15 @@ export const TRIPO3D_THREE_D_MODEL_PARAMS = {
     inputs: INPUTS,
     extras: COMMON_EXTRAS,
   },
-  // The low-poly series. Its endpoint pages declare `texture_quality`,
-  // `auto_size` and `compress` and do NOT declare the other four, so those four
+  // The low-poly series. Its endpoint pages declare `texture_quality` and
+  // `auto_size`, declare `quad` only as "**P2-20260801 only.**", and do not
+  // declare `geometry_quality`, `smart_low_poly` or `generate_parts`; the
+  // changelog states "P1 does not support `quad`, `smart_low_poly`,
+  // `generate_parts`, or `geometry_quality`." (read 2026-11-12). So those four
   // are off the row even though the copied "model ≥ v3.0" sentence on those
-  // pages would suggest otherwise. `face_limit` runs 50–20,000 here.
+  // pages would suggest otherwise. `compress` was on the P pages as read
+  // 2026-08-25 and is absent as read 2026-11-12; no page documents a refusal of
+  // it, so it stays allowed (see shared.ts). `face_limit` runs 50–20,000 here.
   "P1-20260311": {
     inputs: INPUTS,
     extras: {

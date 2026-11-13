@@ -85,10 +85,12 @@ describe("the version gate", () => {
   });
 
   test("P1 takes three of the seven and refuses the other four", () => {
-    // The P endpoint pages declare texture_quality, auto_size and compress and
-    // do NOT declare geometry_quality, quad, smart_low_poly or generate_parts,
-    // even though the "model >= v3.0" sentence was copied onto them unchanged.
-    // The per-route parameter list is what this follows.
+    // The P endpoint pages declare texture_quality and auto_size, and quad only
+    // as "P2-20260801 only."; the changelog refuses quad, smart_low_poly,
+    // generate_parts and geometry_quality on P1, even though the "model >= v3.0"
+    // sentence was copied onto the P pages unchanged. compress stays because it
+    // was on the pages as read 2026-08-25 and no refusal of it is documented,
+    // not because the pages declare it today.
     expect(GATED_PARAMS_BY_MODEL["P1-20260311"]).toEqual([
       "texture_quality",
       "auto_size",
@@ -486,6 +488,44 @@ describe("catalog and pricing", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.estimate?.costUSD).toBeUndefined();
+  });
+
+  test("`generate_parts` beside `quad` or `smart_low_poly` declines: no rate for an ignored switch", () => {
+    // Tripo ignores `quad` and lets `smart_low_poly` suppress the parts; no page
+    // says whether the +5 or the +20 still bills, so stacking them is a guess.
+    const bareParts = {
+      task: "text_to_model",
+      model: "v3.1-20260211",
+      texture: false,
+      pbr: false,
+      generateParts: true,
+    } as const;
+    expect(tripo3dCostUSD({ ...bareParts, quad: true })).toBeUndefined();
+    expect(tripo3dCostUSD({ ...bareParts, smartLowPoly: true })).toBeUndefined();
+
+    const text = threeD.safe({
+      model: "v3.1-20260211",
+      prompt: PROMPT,
+      generate_parts: true,
+      texture: false,
+      pbr: false,
+      quad: true,
+    });
+    expect(text.ok).toBe(true);
+    if (!text.ok) return;
+    expect(text.estimate?.costUSD).toBeUndefined();
+
+    const image = threeDFromImage.safe({
+      model: "v3.0-20250812",
+      input: PHOTO,
+      generate_parts: true,
+      texture: false,
+      pbr: false,
+      smart_low_poly: true,
+    });
+    expect(image.ok).toBe(true);
+    if (!image.ok) return;
+    expect(image.estimate?.costUSD).toBeUndefined();
   });
 
   test("P1 is 30/40 credits text and 40/50 image, with the same texture add-ons", () => {

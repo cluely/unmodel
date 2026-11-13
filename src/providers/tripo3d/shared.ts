@@ -73,8 +73,15 @@ export const BALANCE_URL = `${TRIPO3D_BASE_URL}/account/balance`;
 /**
  * The task states `GET /v3/tasks/{task_id}` reports.
  *
- * `success` and `failed` are terminal; `cancelled` is terminal too and is
- * reached through the dashboard rather than through this API.
+ * `success`, `failed` and `cancelled` are terminal. Tripo says only that
+ * `cancelled` is "cancelled by user" and lists no cancel route among the v3
+ * endpoints (/en/docs/introduction). Polling loops should also stop on two
+ * legacy values outside this list — https://developers.tripo3d.ai/en/docs/task-query.md,
+ * read 2026-11-12: "Internally banned or expired tasks are usually
+ * represented as `failed`. If a legacy response returns `banned` or
+ * `expired`, treat either as terminal. Other values, such as `unknown`, may
+ * occur: use a bounded wait and investigate if the status persists; do not
+ * assume it is successful or terminal."
  */
 export const TRIPO3D_TASK_STATUSES = ["queued", "running", "success", "failed", "cancelled"] as const;
 export type Tripo3dTaskStatus = (typeof TRIPO3D_TASK_STATUSES)[number];

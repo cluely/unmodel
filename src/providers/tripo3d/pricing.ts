@@ -51,6 +51,15 @@
  * `l!=="p1"?…add-ons…:…p_series_note…`, and the P note prices only the base and
  * the texture tiers. A quad mesh is P2's headline feature and its surcharge is
  * unpublished, so the estimate is `undefined` rather than the H series' +5.
+ *
+ * `generate_parts: true` with `quad: true` or `smart_low_poly: true`.
+ * https://developers.tripo3d.ai/en/docs/generation-text-to-model/standard.md,
+ * read 2026-11-13: "`quad=true` — quad is ignored; the returned parts are
+ * triangle meshes." / "`smart_low_poly=true` — smart_low_poly takes precedence
+ * and parts are NOT produced." Neither that page, /en/docs/billing.md nor
+ * /en/pricing says whether the +5 Quad Mesh or the +20 Generate Parts is still
+ * charged when the API ignores or overrides the switch, so the estimate is
+ * `undefined` rather than the stacked sum.
  */
 
 import { CREDIT_USD } from "./models";
@@ -145,7 +154,8 @@ export interface Tripo3dCostInputs {
 
 /**
  * Credits Tripo will freeze for this request, or `undefined` for an unpriced
- * model or an add-on the model's table does not publish.
+ * model, an add-on the model's table does not publish, or `generateParts`
+ * beside a switch Tripo ignores or lets override it (`quad`, `smartLowPoly`).
  */
 export function tripo3dCredits(inputs: Tripo3dCostInputs): number | undefined {
   const table = CREDIT_TABLES[inputs.model];
@@ -158,6 +168,10 @@ export function tripo3dCredits(inputs: Tripo3dCostInputs): number | undefined {
   // that omits the field, which is most of them.
   const textured = inputs.pbr === true || inputs.texture !== false;
   let credits = textured ? base.textured : base.bare;
+
+  // Tripo ignores `quad` and suppresses the parts under `smart_low_poly`; no
+  // page says whether the ignored surcharge still bills (see the header).
+  if (inputs.generateParts === true && (inputs.quad === true || inputs.smartLowPoly === true)) return undefined;
 
   for (const addOn of addOnsSwitchedOn(inputs, textured)) {
     if (!table.addOns.includes(addOn)) return undefined;

@@ -24,6 +24,8 @@ tripo3d: three false refusals fixed, the texture-version parameters typed, and P
   back as triangles, and `smart_low_poly: true` warns that parts are not produced. Docs:
   "`quad=true` — quad is ignored; the returned parts are triangle meshes." /
   "`smart_low_poly=true` — smart_low_poly takes precedence and parts are NOT produced."
+  The cost estimate for either combination is now `undefined`, because Tripo publishes no
+  rate for a switch it ignores or lets override `generate_parts`.
 - **`tripo3d.threeDFromImage` accepts a prior task's id as `input`.** Task ids are bare UUIDs
   ("Example: `550e8400-e29b-41d4-a716-446655440000`",
   https://developers.tripo3d.ai/en/docs/generation-image-to-model/standard); the input check

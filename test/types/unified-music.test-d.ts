@@ -106,6 +106,11 @@ function codecNarrowingTests(): void {
   music({ model: "stability/stable-audio-2", prompt: "hi", outputFormat: "pcm_s16le" });
   // @ts-expect-error — `aac` has no composite spelling at ElevenLabs either.
   music({ model: "elevenlabs/music_v1", prompt: "hi", outputFormat: "aac" });
+  // Lyria 3.5 takes WAV: "For Lyria 3.5, you can also request the output in WAV
+  // format by setting the `response_format`." Clip's row is MP3 alone.
+  music({ model: "google/lyria-3.5", prompt: "hi", outputFormat: "pcm_s16le" });
+  // @ts-expect-error — Clip's output is "MP3" only.
+  music({ model: "google/lyria-3-clip-preview", prompt: "hi", outputFormat: "pcm_s16le" });
 
   // The object spelling narrows too — that is the one a caller reaches for when
   // the encoding matters, so leaving it wide would defeat the point.

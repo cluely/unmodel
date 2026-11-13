@@ -114,6 +114,14 @@ export interface GooglePart {
   mediaProcessing?: string;
   /** Custom client-side metadata associated with the part. */
   partMetadata?: Record<string, unknown>;
+  /**
+   * "Metadata applied to text parts to customize how they should be spoken or
+   * synthesized, such as specifying speaker identity or speaking style." — the
+   * REST reference (retrieved 2026-11-12). `speaker`: "Optional speaker name
+   * for multi-speaker synthesis."; `style`: "Optional style instruction for the
+   * speech synthesis."
+   */
+  speechMetadata?: { speaker?: string; style?: string };
 }
 
 /**
@@ -277,10 +285,10 @@ export type GeminiTtsVoiceName = (typeof GEMINI_TTS_VOICES)[number];
  * publishes the whole set (GEMINI_TTS_VOICES above) and ./chat already reports
  * an ERROR — `invalid_enum_value`, listing all 30 — for anything off it. There
  * is deliberately no `(string & {})` tail: `prebuiltVoiceConfig` is
- * preset-only by construction (a cloned or custom voice has no wire form on
- * this message at all), so a tail would advertise an allowed-value space
- * Google has not published and would silently switch the editor's completion
- * list off.
+ * preset-only by construction (custom, designed and replicated voices travel
+ * on `GoogleVoiceConfig.voice` instead), so a tail would advertise an
+ * allowed-value space Google has not published and would silently switch the
+ * editor's completion list off.
  *
  * NOTE the one asymmetry with the runtime: ./chat enforces the list only for
  * TTS ids (`enforceVoices`), while this type states it for every model, so a
@@ -292,9 +300,23 @@ export interface GooglePrebuiltVoiceConfig {
   voiceName?: GeminiTtsVoiceName;
 }
 
-/** `VoiceConfig` — a oneof whose only documented member is prebuiltVoiceConfig. */
+/**
+ * `VoiceConfig` — "Union field `voiceConfig` can be only one of the
+ * following": `prebuiltVoiceConfig` (the closed 30-name preset list) or
+ * `voice` (https://ai.google.dev/api/generate-content, retrieved 2026-11-12).
+ * Custom, designed and replicated voices travel on `voice`; the 3.8 TTS
+ * guide's own single-speaker sample sends `"voiceConfig": {"voice": "Kore"}`.
+ */
 export interface GoogleVoiceConfig {
   prebuiltVoiceConfig?: GooglePrebuiltVoiceConfig;
+  /**
+   * "The speaker identifier for synthesis. Supported formats: Speaker name for
+   * prebuilt voices (for example, `Orus` or `Kore`). Voice ID for stored voices
+   * (for example, `voice_xxx`). Voice replication key (for example,
+   * `voicekey_xxx`)." — the REST reference (retrieved 2026-11-12). Open
+   * `string`: stored ids and replication keys are caller-minted.
+   */
+  voice?: string;
 }
 
 /** `SpeakerVoiceConfig` — both fields are documented Required. */
@@ -630,6 +652,7 @@ const contentSchema = z.looseObject({
 
 const voiceConfigSchema = z.looseObject({
   prebuiltVoiceConfig: z.looseObject({ voiceName: z.string().optional() }).optional(),
+  voice: z.string().optional(),
 });
 
 /**

@@ -72,6 +72,7 @@ import {
   VEO_PARAMETER_SPACE,
   VIDEO_RETIRED_IDS,
   type VeoParameterModelId,
+  type VideoRetiredModelId,
 } from "./video-constraints";
 
 // Declared in `./video-constraints` — an import-free leaf — so that
@@ -199,7 +200,11 @@ export interface GoogleVeoParameters {
  * falls back to, and what the checks below are written against.
  */
 export interface GenerateVideosBody {
-  model: GoogleVideoModelId | GoogleVeoSupplementModelId | (string & {});
+  /** Retired ids (VIDEO_RETIRED_IDS) are subtracted: the runtime refuses them by name. */
+  model:
+    | Exclude<GoogleVideoModelId, VideoRetiredModelId>
+    | GoogleVeoSupplementModelId
+    | (string & {});
   /** Exactly one instance; use parameters.sampleCount for multiple videos. */
   instances: GoogleVeoInstance[];
   parameters?: GoogleVeoParameters;

@@ -132,9 +132,16 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * what filled it.
    */
   groq: 138,
-  // 313.8 measured after the Lyria music surface (2026-08-24); 345.3 after the
-  // 2026-11-12 model wave (Gemini 4 thinking rules, the 3.8 TTS and 3.5
-  // transcribe hand rows, Lyria 3.5, and the review fixes on top). ~10% headroom.
+  /**
+   * Bumped 345 → 385 (348.0 measured, macOS, 2026-11-13). The tree was
+   * already at 343.5 after the 2026-11-12 wave — the Gemini 4 rules and the
+   * 3.8 TTS / 3.5 Transcribe / Lyria 3.5 / Nano Banana 2.1 hand rows — and
+   * the review fixes on top add `google.stt`'s gemini-3.5-transcribe duration
+   * warning, the function-declaration-scoped `tools` gate in `google.chat`,
+   * and their quoted provenance (comments ship in the unminified chunks). No
+   * new module joined the graph. (313.8 after the Lyria music surface,
+   * 2026-08-24.)
+   */
   google: 385,
   /**
    * Bumped 210 → 255 at the 2026-11-12 refresh: 232.1 measured. 211.9 of it is

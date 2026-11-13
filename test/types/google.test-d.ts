@@ -32,10 +32,12 @@ import type { ModelsWhereFalse } from "../../src/core/catalog-types";
 import { chatModels } from "../../src/providers/google/chat-tts-overlay";
 import type { GeminiTtsVoiceName } from "../../src/providers/google/wire";
 import type {
+  GenerateVideosBody,
   VeoParameterModelId,
   VeoParametersArm,
   VEO_PARAMETER_SPACE,
 } from "../../src/providers/google/video";
+import type { VideoRetiredModelId } from "../../src/providers/google/video-constraints";
 import { video as googleVideoAdapter } from "../../src/providers/google/unified-video";
 import { expectAssignable, expectTrue, type HasLiteralMember, type IsNever } from "./helpers";
 
@@ -393,6 +395,33 @@ chat({
   },
 });
 
+// `voiceConfig.voice` — "Speaker name for prebuilt voices … Voice ID for stored
+// voices (`voice_xxx`) … Voice replication key (`voicekey_xxx`)" — types on both
+// surfaces, single- and multi-speaker, beside the guide's `speechMetadata`.
+googleTts({
+  model: "gemini-3.8-flash-tts",
+  contents: [{ parts: [{ text: "Have a wonderful day!", speechMetadata: { style: "cheerful" } }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],
+    speechConfig: { voiceConfig: { voice: "voice_abc123" } },
+  },
+});
+chat({
+  model: "gemini-3.8-flash-tts",
+  contents: [{ parts: [{ text: "Joe: hi\nJane: hello", speechMetadata: { speaker: "Joe" } }] }],
+  generationConfig: {
+    responseModalities: ["AUDIO"],
+    speechConfig: {
+      multiSpeakerVoiceConfig: {
+        speakerVoiceConfigs: [
+          { speaker: "Joe", voiceConfig: { voice: "voicekey_abc123" } },
+          { speaker: "Jane", voiceConfig: { voice: "Kore" } },
+        ],
+      },
+    },
+  },
+});
+
 // video: `seed` is a documented Veo 3 parameter (the SDK rejects it).
 expectAssignable<{ instances: unknown }>(
   video({
@@ -585,6 +614,11 @@ expectTrue<
 >();
 // Every served row publishes a list today, so the two sets coincide.
 expectTrue<Same<WithPublishedPersonGeneration, VeoParameterModelId>>();
+
+// A retired id (VIDEO_RETIRED_IDS) is never a named literal of the body's
+// `model` union: the runtime refuses it by name, so the editor must not offer it.
+expectTrue<IsNever<Extract<GenerateVideosBody["model"], VideoRetiredModelId>>>();
+expectTrue<HasLiteralMember<VideoRetiredModelId, "gemini-omni-flash-preview">>();
 
 // The calls the wire used to accept while the unified layer refused them.
 video({
@@ -783,8 +817,16 @@ function googlePerModelTypeTests(): void {
     // @ts-expect-error — `temperature: false` in the catalog.
     generationConfig: { temperature: 0.5 },
   });
-  // @ts-expect-error — `toolCall: false` in the catalog.
-  chat({ model: "gemini-2.5-flash-image", contents: HI, tools: [{ googleSearch: {} }] });
+  chat({
+    model: "gemini-2.5-flash-image",
+    contents: HI,
+    // @ts-expect-error — `toolCall: false` in the catalog: function calling is `never`.
+    tools: [{ functionDeclarations: [{ name: "f" }] }],
+  });
+  // …but `toolCall` is function calling only: a built-in tool has no catalog
+  // flag, and Nano Banana 2 documents Search grounding beside a not-supported
+  // Function calling badge.
+  chat({ model: "gemini-3.1-flash-image", contents: HI, tools: [{ googleSearch: {} }] });
 
   // --- everything that must NOT break --------------------------------------
   // A reasoning model still takes thinkingConfig, and a normal model still

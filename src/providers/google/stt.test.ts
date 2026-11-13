@@ -258,6 +258,73 @@ describe("T1 + T2: the model gates", () => {
     expect(issue.path).toEqual(["generationConfig", "thinkingConfig"]);
   });
 
+  test("gemini-3.5-transcribe states no structured-output answer — the page has no badge", () => {
+    expect(sttSupplementModels["gemini-3.5-transcribe"]).not.toHaveProperty("structuredOutput");
+    // Absent is "no answer", so a schema still passes.
+    expectOk(
+      stt.safe({
+        model: "gemini-3.5-transcribe",
+        ...BODY,
+        generationConfig: { responseSchema: { type: "OBJECT" } },
+      }),
+    );
+  });
+
+  describe("gemini-3.5-transcribe's 1-hour / 30-minute bound warns — the API truncates, it does not refuse", () => {
+    function transcribe(durationSeconds: number, asr?: { diarization?: boolean; wordTimestamp?: boolean }) {
+      return expectOk(
+        stt.safe(
+          {
+            model: "gemini-3.5-transcribe",
+            ...BODY,
+            generationConfig: { audioTranscriptionConfig: asr ?? {} },
+          },
+          { media: [{ path: AUDIO_PATH, durationSeconds }] },
+        ),
+      );
+    }
+
+    test("3600 s plain is silent; 3601 s warns", () => {
+      expect(warningOf(transcribe(3600), "media_duration_exceeded")).toBeUndefined();
+      const warning = warningOf(transcribe(3601), "media_duration_exceeded");
+      expect(warning?.severity).toBe("warning");
+      expect(warning?.path).toEqual([...AUDIO_PATH]);
+      expect(warning?.meta?.limit).toBe(3600);
+      expect(warning?.message).toContain("truncated at the limit");
+    });
+
+    test("with diarization or wordTimestamp the bound is 1800 s", () => {
+      expect(warningOf(transcribe(1800, { diarization: true }), "media_duration_exceeded")).toBeUndefined();
+      const warning = warningOf(transcribe(1801, { wordTimestamp: true }), "media_duration_exceeded");
+      expect(warning?.meta?.limit).toBe(1800);
+      expect(warningOf(transcribe(1801, { diarization: false }), "media_duration_exceeded")).toBeUndefined();
+    });
+
+    test("declared durations add up across audio parts — the cap is per request", () => {
+      const result = expectOk(
+        stt.safe(
+          { model: "gemini-3.5-transcribe", contents: [{ parts: [{ inlineData: WAV }, { inlineData: WAV }] }] },
+          {
+            media: [
+              { path: ["contents", 0, "parts", 0], durationSeconds: 2000 },
+              { path: ["contents", 0, "parts", 1], durationSeconds: 2000 },
+            ],
+          },
+        ),
+      );
+      const warning = warningOf(result, "media_duration_exceeded");
+      expect(warning?.path).toEqual(["contents", 0, "parts", 1]);
+      expect(warning?.meta?.durationSeconds).toBe(4000);
+    });
+
+    test("other models keep only the generic 9.5-hour cap", () => {
+      const result = expectOk(
+        stt.safe({ model: MODEL, ...BODY }, { media: [{ path: AUDIO_PATH, durationSeconds: 7200 }] }),
+      );
+      expect(warningOf(result, "media_duration_exceeded")).toBeUndefined();
+    });
+  });
+
   test("an unknown model reaches the loose arm with unknown_model", () => {
     const result = stt.safe({ model: "gemini-9-flash", ...BODY });
     expectOk(result);

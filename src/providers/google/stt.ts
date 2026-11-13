@@ -84,7 +84,7 @@ import type { GoogleContent, GoogleSafetySetting, GoogleServiceTier, GoogleThink
 export const GENERATE_STT_BASE_URL = GOOGLE_MODELS_BASE_URL;
 
 // ---------------------------------------------------------------------------
-// Wire types — Tier A over the thirteen curated ids.
+// Wire types — Tier A over the curated ids (GEMINI_STT_MODEL_IDS).
 // ---------------------------------------------------------------------------
 
 /** Part kinds this surface refuses, spelled so the editor says which and why. */
@@ -289,7 +289,7 @@ export interface UnknownSttBody<Model extends string> extends GoogleSttBodyBase 
 }
 
 /**
- * Closed over the thirteen curated Gemini transcription models by default.
+ * Closed over the curated Gemini transcription models (GEMINI_STT_MODEL_IDS) by default.
  * Supply a future model literal to opt into the loose arm:
  * `GenerateSttBody<"gemini-4-flash">`.
  */
@@ -480,10 +480,12 @@ function checkAudioInput(
 /**
  * T2 — the curation gate.
  *
- * Nineteen models in the generated catalog take audio input; thirteen of them
- * are mainline generateContent models this surface serves. The other six are
- * refused BY NAME with the reason, because "not supported" tells a caller
- * nothing about whether they picked the wrong model or hit a gap in unmodel.
+ * Every audio-input model in the catalog this surface validates against (the
+ * generated rows plus ./stt-models) is classified: the ids in
+ * GEMINI_STT_MODEL_IDS are served, and the rest are listed in
+ * GEMINI_STT_EXCLUDED_IDS and refused BY NAME with the reason, because "not
+ * supported" tells a caller nothing about whether they picked the wrong model
+ * or hit a gap in unmodel.
  *
  * An id in neither list and not in the catalog is left alone: the pipeline's
  * `unknown_model` warning already says model-dependent checks were skipped,
@@ -618,6 +620,62 @@ function checkAudioMedia(
       ...(declaration !== undefined && { declaration }),
       ...(part.encodedBytes !== undefined && { encodedBytes: part.encodedBytes }),
     });
+  }
+}
+
+/** gemini-3.5-transcribe's own audio bounds, in seconds — see {@link checkTranscribeDuration}. */
+const TRANSCRIBE_MAX_SECONDS = 3600;
+const TRANSCRIBE_FEATURE_MAX_SECONDS = 1800;
+const TRANSCRIBE_MODEL_DOCS_URL = "https://ai.google.dev/gemini-api/docs/models/gemini-3.5-transcribe";
+const TRANSCRIBE_DOCS_URL = "https://ai.google.dev/gemini-api/docs/transcribe";
+
+/**
+ * T7, per model — gemini-3.5-transcribe processes "Up to 1 hour per request
+ * (up to 30 minutes when speaker diarization or word-level timestamps are
+ * enabled)" (TRANSCRIBE_MODEL_DOCS_URL, 2026-11-13).
+ *
+ * A WARNING, never an error: the guide's Limitations section says "Audio
+ * exceeding these limits is truncated at the limit while still returning a
+ * completed response" (TRANSCRIBE_DOCS_URL, 2026-11-13), so the request
+ * succeeds and refusing it would be a false refusal. "Per request", so the declared
+ * durations are summed across audio parts and the warning lands on the part
+ * where the running total crosses the bound. Undeclared durations are not
+ * guessed at, the same rule as {@link checkAudioMedia}.
+ */
+function checkTranscribeDuration(
+  params: AnyGenerateSttBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (stripModelsPrefix(params.model) !== "gemini-3.5-transcribe") return;
+  const asr = params.generationConfig?.audioTranscriptionConfig;
+  const limited = asr?.diarization === true || asr?.wordTimestamp === true;
+  const limit = limited ? TRANSCRIBE_FEATURE_MAX_SECONDS : TRANSCRIBE_MAX_SECONDS;
+
+  let total = 0;
+  for (const part of audioPartsOf(params)) {
+    total += findMediaDeclaration(ctx.options.media, part.path)?.durationSeconds ?? 0;
+    if (total <= limit) continue;
+    ctx.report({
+      code: "media_duration_exceeded",
+      severity: "warning",
+      path: part.path,
+      model: params.model,
+      message:
+        `audio is declared as ${total}s in total; gemini-3.5-transcribe processes up to ${limit}s per request` +
+        `${limited ? " with diarization or wordTimestamp enabled" : ""} — "Up to 1 hour per request (up to ` +
+        `30 minutes when speaker diarization or word-level timestamps are enabled)". Longer audio "is ` +
+        `truncated at the limit while still returning a completed response", so split the recording ` +
+        `into chunks of 30 minutes or less.`,
+      meta: {
+        durationSeconds: total,
+        limit,
+        truncated: true,
+        source: TRANSCRIBE_MODEL_DOCS_URL,
+        guide: TRANSCRIBE_DOCS_URL,
+      },
+    });
+    return;
   }
 }
 
@@ -778,6 +836,7 @@ const validator = createValidator<AnyGenerateSttBody, unknown>({
     checkCuratedModel,
     checkAudioParts,
     checkAudioMedia,
+    checkTranscribeDuration,
     checkVertexOnlyFields,
     checkCapabilities,
   ],

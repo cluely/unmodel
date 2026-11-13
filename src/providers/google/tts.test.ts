@@ -719,6 +719,28 @@ describe("the Gemini 3.8 TTS pair (hand rows)", () => {
     expect(issue.path).toEqual(["generationConfig", "thinkingConfig"]);
   });
 
+  test("the guide's own 3.8 sample: `voiceConfig.voice` plus per-part `speechMetadata`", () => {
+    // speech-generation guide, generateContent REST sample (2026-11-13):
+    // `"parts": [{"text": …, "speech_metadata": {"style": …}}]` with
+    // `"speechConfig": {"voiceConfig": {"voice": "Kore"}}`; the REST reference
+    // also takes a stored `voice_xxx` id or a `voicekey_xxx` replication key.
+    for (const voice of ["Kore", "voice_abc123", "voicekey_abc123"]) {
+      const result = expectOk(
+        tts.safe({
+          model: "gemini-3.8-flash-tts",
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: "Have a wonderful day!", speechMetadata: { style: "cheerful and friendly" } }],
+            },
+          ],
+          generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { voice } } },
+        }),
+      );
+      expect(result.warnings).toEqual([]);
+    }
+  });
+
   test("the rows carry the model pages' own 8,192-token input limit", () => {
     for (const model of ["gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"] as const) {
       expect(ttsModels[model].limit.context).toBe(8192);

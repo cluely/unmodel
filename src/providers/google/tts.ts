@@ -77,6 +77,7 @@ import {
 } from "./tts-checks";
 import { ttsModels, type GoogleTtsModelId } from "./tts-models";
 import type {
+  GooglePart,
   GoogleSafetySetting,
   GoogleServiceTier,
   GoogleSpeakerVoiceConfig,
@@ -108,6 +109,8 @@ export const GENERATE_TTS_BASE_URL = GOOGLE_MODELS_BASE_URL;
  */
 export interface GoogleTtsTextPart {
   text: string;
+  /** Per-part speaker and style — the 3.8 TTS guide's `speech_metadata` annotation. */
+  speechMetadata?: GooglePart["speechMetadata"];
   /** "TTS models can only receive text inputs" — send audio to `google.stt`. */
   inlineData?: never;
   /** "TTS models can only receive text inputs" — send audio to `google.stt`. */
@@ -140,7 +143,11 @@ export interface GoogleTtsContent {
  * fails to compile instead of only failing to validate.
  */
 export interface GoogleTtsSingleSpeakerConfig {
-  /** One of the 30 presets, via `prebuiltVoiceConfig.voiceName`. */
+  /**
+   * One of the 30 presets via `prebuiltVoiceConfig.voiceName`, or any speaker
+   * identifier — a preset name, a stored `voice_…` id, a `voicekey_…`
+   * replication key — via `voice`.
+   */
   voiceConfig?: GoogleVoiceConfig;
   multiSpeakerVoiceConfig?: never;
   /**
@@ -423,6 +430,7 @@ export type TtsSdkTargets<T extends AnyGenerateTtsBody = GenerateTtsBody> = {
 
 const voiceConfigSchema = z.looseObject({
   prebuiltVoiceConfig: z.looseObject({ voiceName: z.string().optional() }).optional(),
+  voice: z.string().optional(),
 });
 
 const schema = z.looseObject({

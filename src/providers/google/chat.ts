@@ -90,6 +90,7 @@ import type {
   GoogleModality,
   GoogleSpeechConfig,
   GoogleThinkingConfig,
+  GoogleTool,
 } from "./wire";
 
 export type {
@@ -242,13 +243,25 @@ function checkCapabilities(params: GenerateContentBody, info: ModelInfo | undefi
   if (info === undefined) return;
   const model = params.model;
 
-  if (params.tools !== undefined && params.tools.length > 0 && !info.toolCall) {
-    ctx.report({
-      code: "unsupported_capability",
-      path: ["tools"],
-      model,
-      message: `"${model}" does not support tool/function calling; remove \`tools\`.`,
-    });
+  // `toolCall` is models.dev's `tool_call` — FUNCTION calling, nothing wider —
+  // so only a tool carrying `functionDeclarations` is refused. The built-in
+  // tools (googleSearch, urlContext, codeExecution, …) have no catalog flag:
+  // the Nano Banana model pages badge Function calling not-supported beside a
+  // supported "Grounding with Google Search", and the image-generation guide's
+  // REST sample posts `"tools": [{"google_search": {}}]` to
+  // `gemini-nano-banana-2.1:generateContent` (both retrieved 2026-11-13).
+  if (!info.toolCall) {
+    for (const [i, tool] of (params.tools ?? []).entries()) {
+      if (tool.functionDeclarations === undefined) continue;
+      ctx.report({
+        code: "unsupported_capability",
+        path: ["tools", i, "functionDeclarations"],
+        model,
+        message:
+          `"${model}" does not support function calling; remove \`tools[${i}].functionDeclarations\` ` +
+          `(built-in tools such as googleSearch are not covered by this check).`,
+      });
+    }
   }
 
   const config = params.generationConfig;
@@ -1015,8 +1028,10 @@ export type GenerateContentArm<M extends string> = Omit<
   "model" | "tools" | "generationConfig"
 > & {
   model: M;
+  // A `toolCall: false` model keeps its built-in tools (googleSearch, …) and
+  // loses only `functionDeclarations` — the runtime gate's exact scope.
   tools?: M extends ModelsWhereFalse<GoogleCatalog, "toolCall">
-    ? never
+    ? Array<Omit<GoogleTool, "functionDeclarations"> & { functionDeclarations?: never }>
     : GenerateContentBody["tools"];
   generationConfig?: NarrowedGenerationConfig<M>;
 };

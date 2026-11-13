@@ -24,8 +24,11 @@ export const sttSupplementModels = {
    * word-level timestamps are enabled)"; 85+ languages; diarization up to 8
    * speakers; custom vocabulary up to 1,000 terms; Thinking, context caching,
    * Batch, Flex and Priority carry not-supported badges — hence `reasoning:
-   * false` and no `cacheRead`. The transcribe guide's REST sample: `curl -X
-   * POST ".../v1beta/models/gemini-3.5-transcribe:generateContent"`.
+   * false` and no `cacheRead`. The page carries no Structured outputs badge
+   * either way (re-read 2026-11-13), so `structuredOutput` is absent — the
+   * tri-state "no answer", matching models.dev's vercel row for the same id,
+   * which carries no `structured_output` field. The transcribe guide's REST
+   * sample: `curl -X POST ".../v1beta/models/gemini-3.5-transcribe:generateContent"`.
    *
    * Pricing (pricing page, 2026-11-12): "$2.00 or $0.003/min (audio)" input,
    * "$12.00 or $0.002/min (text)" output. The page prices INPUT as audio only,
@@ -35,8 +38,11 @@ export const sttSupplementModels = {
    * High-accuracy, low-latency non-streaming speech-to-text".
    *
    * `limit.context: 0` — the pages state the cap as audio duration, not tokens
-   * (HAND_CATALOGS.md rule), so the pipeline's context-window check is skipped
-   * and the audio-duration bound stays with the audio MediaRule in ./stt.
+   * (HAND_CATALOGS.md rule), so the pipeline's context-window check is skipped.
+   * The 1-hour / 30-minute bound is `checkTranscribeDuration` in ./stt — a
+   * WARNING, because the guide says over-long audio "is truncated at the
+   * limit while still returning a completed response"; the audio MediaRule
+   * there carries only the generic 9.5-hour cap.
    */
   "gemini-3.5-transcribe": {
     id: "gemini-3.5-transcribe",
@@ -45,7 +51,6 @@ export const sttSupplementModels = {
     attachment: true,
     reasoning: false,
     toolCall: false,
-    structuredOutput: true,
     openWeights: false,
     releaseDate: "2026-08-26",
     lastUpdated: "2026-08-26",

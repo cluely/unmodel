@@ -203,9 +203,15 @@ deepseek (Janus — weights only).
 
 ## Video / music wave
 
-**Video — live:** openai (Sora 2, `video` at /v1/videos), google (Veo 2 / Veo 3, `video` —
-every served id is deprecated upstream since the Veo 3.1 previews shut down on 2026-10-22; the
-replacement, `gemini-omni-1.2-flash`, is an Interactions API model unmodel does not serve yet),
+**Video — live:** openai (Sora 2, `video` at /v1/videos), google (`video` on
+:predictLongRunning — every served id is shut down upstream: Veo 2 / Veo 3 / Veo 3 Fast on
+2026-06-30, the Veo 3.1 previews and `gemini-omni-flash-preview` on 2026-10-22. The Veo 2 /
+Veo 3 ids still validate, with a `deprecated_model` warning, pending an owner decision on the
+surface (retire `google.video`, move Veo GA onto google-vertex, or wait to serve the
+replacement, `gemini-omni-1.2-flash` — an Interactions API model unmodel does not serve yet);
+`gemini-omni-flash-preview` is refused by name. Source: the deprecations page's Veo
+"Deprecated models" table, https://ai.google.dev/gemini-api/docs/deprecations, retrieved
+2026-11-12),
 bytedance (`video`, Seedance / Dreamina Seedance), kling (`video` /
 `videoFromImage` on `POST /v1/videos/*`, plus the EXPERIMENTAL path-addressed
 `videoV3` / `videoV3FromImage` / `videoOmni` — the only family serving Kling 4.0 /

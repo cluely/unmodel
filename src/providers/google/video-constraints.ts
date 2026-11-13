@@ -91,6 +91,12 @@ export type VeoParameterModelId = keyof typeof VEO_PARAMETER_SPACE;
 /** The Gemini API deprecations page — the source every retirement below quotes. */
 export const GOOGLE_DEPRECATIONS_URL = "https://ai.google.dev/gemini-api/docs/deprecations";
 
+/** {@link VIDEO_RETIRED_IDS} with its literal keys, for {@link VideoRetiredModelId}. */
+const VIDEO_RETIRED = {
+  "gemini-omni-flash-preview":
+    "it was shut down on October 22, 2026; its replacement, gemini-omni-1.2-flash, is an Interactions API model unmodel does not serve yet",
+} as const satisfies Readonly<Record<string, string>>;
+
 /**
  * Catalogued video-output ids Google has shut down, each with the reason the
  * refusal quotes. models.dev still carries a row for each, so without this
@@ -99,6 +105,12 @@ export const GOOGLE_DEPRECATIONS_URL = "https://ai.google.dev/gemini-api/docs/de
  * can say why and name the replacement, and so the coverage tests in
  * ./video.test.ts know which catalogued video id is allowed to have no bounds.
  *
+ * The list holds models.dev-carried ids only. The hand-catalogued Veo 2 /
+ * Veo 3 / Veo 3 Fast rows in ./veo-models were shut down too, on 2026-06-30,
+ * but stay at `status: "deprecated"` until the owner decides the surface's
+ * future (the fork is recorded in that file's header): refusing them would
+ * refuse every id this surface serves.
+ *
  * - `gemini-omni-flash-preview`: GOOGLE_DEPRECATIONS_URL (2026-11-12) —
  *   "`gemini-omni-flash-preview` — June 30, 2026 — October 22, 2026 —
  *   `gemini-omni-1.2-flash`"; its model page: "Shut down:
@@ -106,7 +118,10 @@ export const GOOGLE_DEPRECATIONS_URL = "https://ai.google.dev/gemini-api/docs/de
  *   model (every sample on the omni guide is `POST /v1beta/interactions`),
  *   which this `:predictLongRunning` surface cannot carry.
  */
-export const VIDEO_RETIRED_IDS: Readonly<Record<string, string>> = {
-  "gemini-omni-flash-preview":
-    "it was shut down on October 22, 2026; its replacement, gemini-omni-1.2-flash, is an Interactions API model unmodel does not serve yet",
-};
+export const VIDEO_RETIRED_IDS: Readonly<Record<string, string>> = VIDEO_RETIRED;
+
+/**
+ * A retired id, by literal — subtracted from `GenerateVideosBody["model"]` so
+ * the editor never offers an id the runtime always refuses.
+ */
+export type VideoRetiredModelId = keyof typeof VIDEO_RETIRED;

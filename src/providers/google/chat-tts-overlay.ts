@@ -111,6 +111,14 @@ export const chatSupplementModels = {
    * generation guide's REST sample posts to
    * `/v1/models/gemini-nano-banana-2.1:generateContent`. The changelog
    * deprecates `gemini-3.1-flash-image` in its favour (no shutdown date).
+   *
+   * `toolCall: false` is FUNCTION calling only. The same page badges
+   * "Grounding with Google Search" supported (re-read 2026-11-13), and the
+   * image generation guide's Search-grounding REST sample posts `"tools":
+   * [{"google_search": {}}]` to that same `:generateContent` URL
+   * (https://ai.google.dev/gemini-api/docs/image-generation, 2026-11-13) — so
+   * ./chat refuses `functionDeclarations` on this row and leaves `googleSearch`
+   * alone.
    */
   "gemini-nano-banana-2.1": {
     id: "gemini-nano-banana-2.1",
@@ -139,9 +147,10 @@ export const chatSupplementModels = {
    * are the rates in force today and must move on 2027-01-01. Deprecations:
    * "July 30, 2026 — No shutdown date announced".
    *
-   * `toolCall: true` is the permissive reading: the model page states nothing
-   * about function calling, and `false` would refuse `tools` on a model whose
-   * page does not say it rejects them.
+   * Capabilities table on the same page ("Gemini Robotics ER 2 Preview" tab,
+   * re-read 2026-11-13): "Function calling Supported", "Structured outputs
+   * Supported", "Thinking Supported", "Live API Not supported" — hence
+   * `toolCall`, `structuredOutput` and `reasoning` are `true`.
    */
   "gemini-robotics-er-2-preview": {
     id: "gemini-robotics-er-2-preview",

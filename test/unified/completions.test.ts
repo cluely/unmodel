@@ -2621,6 +2621,12 @@ describe("google.video: per-model parameter completions", () => {
 video({ model, instances: [{ prompt: "x" }], parameters: { resolution: "¦" } });`);
     expect(entries).toEqual(["720p", "1080p", "4k"]);
   });
+
+  test("the model list never offers a retired id the runtime refuses by name", () => {
+    const entries = completionsAt(`${VIDEO_PROBE}video({ model: "¦", instances: [{ prompt: "x" }] });`);
+    expect(entries).toContain("veo-3.0-generate-001");
+    expect(entries).not.toContain("gemini-omni-flash-preview");
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -278,7 +278,34 @@ describe("capability checks (real catalog ids)", () => {
       tools: [{ functionDeclarations: [{ name: "f" }] }],
     });
     const issue = expectError(result, "unsupported_capability");
-    expect(issue.path).toEqual(["tools"]);
+    expect(issue.path).toEqual(["tools", 0, "functionDeclarations"]);
+  });
+
+  test("built-in tools pass on a toolCall: false model — the flag is function calling only", () => {
+    // gemini-3.1-flash-image's page badges Function calling not-supported and
+    // Grounding with Google Search supported; the arm types it, no cast.
+    expect(models["gemini-3.1-flash-image"].toolCall).toBe(false);
+    const result = expectOk(
+      chat.safe({
+        model: "gemini-3.1-flash-image",
+        contents: HELLO,
+        tools: [{ googleSearch: {} }],
+        generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+      }),
+    );
+    expect(result.warnings.some((w) => w.code === "unsupported_capability")).toBe(false);
+
+    // Mixed: only the entry carrying declarations is refused, at its own index.
+    const issue = expectError(
+      chat.safe({
+        model: "gemini-3.1-flash-image",
+        contents: HELLO,
+        // @ts-expect-error — `functionDeclarations` is `never` on a `toolCall: false` model.
+        tools: [{ googleSearch: {} }, { functionDeclarations: [{ name: "f" }] }],
+      }),
+      "unsupported_capability",
+    );
+    expect(issue.path).toEqual(["tools", 1, "functionDeclarations"]);
   });
 
   test("responseSchema on a model without structuredOutput", () => {
@@ -1054,13 +1081,24 @@ describe("the 2026-11 hand rows on google.chat", () => {
       "invalid_enum_value",
     );
     expect(issue.path).toEqual(["generationConfig", "imageConfig", "imageSize"]);
+    // Grounding with Google Search carries a supported badge, and the image
+    // guide's REST sample sends `"tools": [{"google_search": {}}]` here.
+    const grounded = expectOk(
+      chat.safe({ model: "gemini-nano-banana-2.1", contents: HELLO, tools: [{ googleSearch: {} }] }),
+    );
+    expect(grounded.warnings.some((w) => w.code === "unsupported_capability")).toBe(false);
     // Function calling carries a not-supported badge. (A runtime refusal only:
     // the per-model type arms derive from the generated catalog, so a hand row
     // keeps the wide arm.)
-    expectError(
-      chat.safe({ model: "gemini-nano-banana-2.1", contents: HELLO, tools: [{ googleSearch: {} }] }),
+    const declared = expectError(
+      chat.safe({
+        model: "gemini-nano-banana-2.1",
+        contents: HELLO,
+        tools: [{ functionDeclarations: [{ name: "f" }] }],
+      }),
       "unsupported_capability",
     );
+    expect(declared.path).toEqual(["tools", 0, "functionDeclarations"]);
   });
 
   test("gemini-robotics-er-2-preview validates and prices", () => {
@@ -1116,6 +1154,24 @@ describe("the 2026-11 hand rows on google.chat", () => {
       );
       expect(result.warnings.some((w) => w.code === "unknown_model")).toBe(false);
       expect(chatModels[model]).toBe(ttsModels[model]);
+    }
+  });
+
+  test("the 3.8 guide's `voiceConfig.voice` + `speechMetadata` sample, preset or stored id", () => {
+    for (const voice of ["Kore", "voice_abc123"]) {
+      const result = expectOk(
+        chat.safe({
+          model: "gemini-3.8-flash-tts",
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: "Have a wonderful day!", speechMetadata: { style: "cheerful and friendly" } }],
+            },
+          ],
+          generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { voice } } },
+        }),
+      );
+      expect(result.warnings).toEqual([]);
     }
   });
 });

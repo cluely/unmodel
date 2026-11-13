@@ -19,10 +19,12 @@
  *   out as written and any refusal is the API's to make.
  * - **`outputFormat`** compiles to `response_format` — `{ type: "audio" }`
  *   with `mime_type` `audio/mp3` or `audio/wav` (canonical `pcm_s16le` in its
- *   default WAV container). On Clip there is nothing to compile INTO: MP3 is
- *   the only output and the WAV option is "available for Lyria 3 Pro only", so
- *   a canonical `mp3` is a no-op and anything beyond it warns rather than
- *   sending a field the model refuses.
+ *   default WAV container). On Clip there is nothing to compile INTO: the
+ *   guide's model table lists its output as "MP3" alone, and the WAV option is
+ *   documented for Lyria 3.5 ("For Lyria 3.5, you can also request the output
+ *   in WAV format by setting the `response_format`", retrieved 2026-11-13) and
+ *   Pro, so a canonical `mp3` is a no-op and anything beyond it warns rather
+ *   than sending a field the model refuses.
  *
  * Image-conditioned generation ("up to 10 images alongside your text prompt")
  * stays wire-only on `google.music`, exactly as Stability's audio-conditioned
@@ -97,16 +99,17 @@ export const music = {
       if (format !== undefined) {
         if (ctx.model === "lyria-3-clip-preview") {
           // Nothing to emit: MP3 is Clip's only output and `response_format`
-          // is Pro-only, so a canonical `mp3` is the model's default restated.
-          // A rate or bitrate names a control Clip does not have.
+          // is not on its arm, so a canonical `mp3` is the model's default
+          // restated. A rate or bitrate names a control Clip does not have.
           if (format.codec !== "mp3" || format.sampleRate !== undefined || format.bitrate !== undefined) {
             ctx.warn({
               code: "dropped_param",
               path: ["outputFormat"],
               message:
                 "`outputFormat` is fixed on lyria-3-clip-preview: Clip always emits 30-second " +
-                'MP3s and takes no `response_format` — "This WAV format option is available ' +
-                'for Lyria 3 Pro only." The request goes out with the MP3 default.',
+                "MP3s (the guide's model table lists its output as \"MP3\") and takes no " +
+                "`response_format`; WAV is documented for google/lyria-3.5. The request goes " +
+                "out with the MP3 default.",
               meta: { param: "outputFormat" },
             });
           }

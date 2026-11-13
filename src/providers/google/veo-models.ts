@@ -19,6 +19,20 @@
 // was shut down on October 22, 2026", with `gemini-omni-1.2-flash` (an
 // Interactions API model) as the deprecations page's replacement.
 //
+// OPEN OWNER FORK (recorded 2026-11-12). June 30, 2026 is past, and the
+// deprecations page files all three rows below under Veo "Deprecated models" —
+// "Already-shutdown models and agents are listed under the Deprecated models …
+// sections" — so every id `google.video` serves is shut down (the Veo 3.1
+// previews followed on October 22, 2026, with `gemini-omni-flash-preview`,
+// which ./video-constraints refuses by name). The rows stay `deprecated`, not
+// refused, because refusing them retires the surface, and that is the owner's
+// call between three options: (1) retire `google.video` / the `unmodel/video`
+// google adapter; (2) move Veo GA onto google-vertex — the page's other named
+// replacement, "the GA models on the Gemini Enterprise Agent Platform";
+// (3) keep the surface until unmodel serves `gemini-omni-1.2-flash` on the
+// Interactions API. Until then the `deprecated_model` warning is all a caller
+// gets; docs/providers.md says the same.
+//
 // Pricing (Gemini API pricing page, USD per second of generated video):
 // - veo-2.0-generate-001: $0.35 flat.
 // - veo-3.0-generate-001: $0.40 flat; veo-3.0-fast-generate-001: $0.10 at

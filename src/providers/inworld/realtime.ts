@@ -7,7 +7,7 @@
  * `send_text`, `flush_context`, `closeStream`, reconnects — is transport and
  * stays out of unmodel's scope, exactly as with `openai.realtimeSession`.
  *
- * Two configs, one per surface (both verified 2026-08-13):
+ * Two configs, one per surface (both verified 2026-11-12):
  *
  * - `realtimeTranscribeConfig` — the `transcribeConfig` frame of
  *   `wss://api.inworld.ai/stt/v1/transcribe:streamBidirectional`
@@ -58,7 +58,7 @@ import {
   transcribeConfigShape,
   sttVendorOf,
   INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS,
-  STT_OVERVIEW_DOCS,
+  STT_AUDIO_FORMATS_DOCS,
   STT_THIRD_PARTY_DOCS,
   type InworldRealtimeTranscribeConfig,
 } from "./stt";
@@ -66,16 +66,22 @@ import {
   audioConfigSchema,
   ttsConstraints,
   type InworldAudioConfig,
+  type InworldAudioEncoding,
   type InworldApplyTextNormalization,
   type InworldDeliveryMode,
   type InworldTimestampType,
 } from "./tts";
 import { sttModels, ttsModels, STT_STREAM_MODEL_IDS, type InworldTtsModelId } from "./models";
 
-/** Bidirectional STT streaming; auth rides in an `authorization` query param. */
+/**
+ * Bidirectional STT streaming. "Server-side clients send `Authorization:
+ * Basic <INWORLD_API_KEY>` on the WebSocket upgrade request", and "Do not put
+ * tokens in URL query parameters" (STT_WEBSOCKET_DOCS); browsers, which cannot
+ * set that header, connect with a one-time token in the `bearer_` subprotocol.
+ */
 export const STT_STREAM_WS_URL = "wss://api.inworld.ai/stt/v1/transcribe:streamBidirectional";
 
-/** Bidirectional TTS streaming; one socket carries up to 5 contexts. */
+/** Bidirectional TTS streaming; one socket carries many independent contexts. */
 export const TTS_STREAM_WS_URL = "wss://api.inworld.ai/tts/v1/voice:streamBidirectional";
 
 export const TTS_WEBSOCKET_DOCS =
@@ -135,7 +141,7 @@ function checkStreamEncoding(
     meta: {
       value: encoding,
       unsupported: [...INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS],
-      source: STT_OVERVIEW_DOCS,
+      source: STT_AUDIO_FORMATS_DOCS,
     },
   });
 }
@@ -216,9 +222,10 @@ const transcribeConfigValidator = createValidator<InworldRealtimeTranscribeConfi
  *   language: "en",
  *   voiceProfileConfig: { enableVoiceProfile: true, topN: 5 },
  * });
- * const socket = new WebSocket(
- *   `${config.request.url}?authorization=${encodeURIComponent(`Basic ${key}`)}`,
- * );
+ * // Node `ws`: the key rides on the upgrade request, never in the URL.
+ * const socket = new WebSocket(config.request.url, {
+ *   headers: { Authorization: `Basic ${process.env.INWORLD_API_KEY!}` },
+ * });
  * socket.onopen = () => socket.send(JSON.stringify(config.toSdk("inworld")));
  * ```
  */
@@ -238,15 +245,14 @@ export const realtimeTranscribeConfig = transcribeConfigValidator as unknown as 
 // Realtime TTS — the `create` context config.
 // ---------------------------------------------------------------------------
 
-/** "Max 5 contexts per connection." */
-export const TTS_STREAM_MAX_CONTEXTS_PER_CONNECTION = 5;
-/** "Max 20 concurrent connections." */
-export const TTS_STREAM_MAX_CONNECTIONS = 20;
-/** `send_text.text` — "string (required, max 1000 characters)". */
-export const TTS_STREAM_MAX_TEXT_CHARACTERS = 1000;
-/** `bufferCharThreshold` — "integer ≤1000 (optional, default: 1000)". */
-export const TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD = 1000;
-/** "the session will automatically be closed after 10 minutes of inactivity". */
+/** `send_text.text` — "Maximum 2000 UTF-16 code units per message." */
+export const TTS_STREAM_MAX_TEXT_CHARACTERS = 2000;
+/**
+ * `bufferCharThreshold` — "Omission or 0 selects 1000; accepted values range
+ * from 0 to 2000."
+ */
+export const TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD = 2000;
+/** "the session will automatically be closed after 10 minutes of inactivity across any context". */
 export const TTS_STREAM_IDLE_TIMEOUT_MINUTES = 10;
 
 /**
@@ -260,6 +266,16 @@ export type InworldTimestampTransportStrategy =
   | "ASYNC";
 
 /**
+ * The socket's `audioConfig` — the REST object, whose encoding enum here also
+ * lists the proto zero value: `"AUDIO_ENCODING_UNSPECIFIED", "LINEAR16",
+ * "MP3", …` (TTS_WEBSOCKET_DOCS).
+ */
+export interface InworldVoiceContextAudioConfig extends Omit<InworldAudioConfig, "audioEncoding"> {
+  /** Default: "MP3". */
+  audioEncoding?: InworldAudioEncoding | "AUDIO_ENCODING_UNSPECIFIED";
+}
+
+/**
  * The `create` payload — Inworld's realtime TTS session config. The
  * `contextId` that rides ALONGSIDE it in the client frame is envelope, not
  * config: it is auto-generated when omitted and is how later `send_text` /
@@ -271,7 +287,7 @@ export interface InworldVoiceContextConfig {
   /** Voice identifier, e.g. "Dennis". */
   voiceId: string;
   modelId: InworldTtsModelId | (string & {});
-  audioConfig?: InworldAudioConfig;
+  audioConfig?: InworldVoiceContextAudioConfig;
   /** Range (0, 2]; default 1.0. Ignored by inworld-tts-2. */
   temperature?: number;
   /** Default "TIMESTAMP_TYPE_UNSPECIFIED". */
@@ -279,9 +295,8 @@ export interface InworldVoiceContextConfig {
   /** Milliseconds the server waits before flushing a partial buffer. */
   maxBufferDelayMs?: number;
   /**
-   * Characters that trigger an automatic flush; at most 1000, default 1000.
-   * "the buffer will automatically flush all text if the length of text is
-   * greater than 1000 characters".
+   * Characters that trigger an automatic flush — "Omission or 0 selects 1000;
+   * accepted values range from 0 to 2000."
    */
   bufferCharThreshold?: number;
   applyTextNormalization?: InworldApplyTextNormalization;
@@ -290,7 +305,7 @@ export interface InworldVoiceContextConfig {
   timestampTransportStrategy?: InworldTimestampTransportStrategy;
   /** BCP-47 tag (e.g. "en-US"); auto-detected when omitted. */
   language?: string;
-  /** "Only supported by `inworld-tts-2`" — rejected on the 1.x generations. */
+  /** "Only supported by `inworld-tts-2`. The field is ignored on other models." */
   deliveryMode?: InworldDeliveryMode;
 }
 
@@ -304,18 +319,22 @@ export interface RealtimeVoiceContextFrame<
 const voiceContextSchema = z.looseObject({
   voiceId: z.string().min(1, "voiceId must not be empty."),
   modelId: z.string().min(1, "modelId must not be empty."),
-  // Same object, same bounds as the REST body — including sampleRateHertz as
-  // a closed list rather than the "8000-48000" continuum this page prints
-  // (see INWORLD_SAMPLE_RATES_HERTZ in ./tts: the range is a bound ON that
-  // list, and rates inside its gaps 4xx).
-  audioConfig: audioConfigSchema.optional(),
+  // Same object, same bounds as the REST body, plus the zero-value encoding
+  // this page's enum lists.
+  audioConfig: audioConfigSchema
+    .extend({
+      audioEncoding: z
+        .enum(["AUDIO_ENCODING_UNSPECIFIED", "LINEAR16", "MP3", "OGG_OPUS", "ALAW", "MULAW", "FLAC", "PCM", "WAV"])
+        .optional(),
+    })
+    .optional(),
   temperature: z.number().gt(0).max(2).optional(),
   timestampType: z.enum(["TIMESTAMP_TYPE_UNSPECIFIED", "WORD", "CHARACTER"]).optional(),
   maxBufferDelayMs: z.number().int().min(0).optional(),
   bufferCharThreshold: z
     .number()
     .int()
-    .min(1)
+    .min(0)
     .max(
       TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD,
       `bufferCharThreshold must be at most ${TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD}.`,
@@ -364,8 +383,9 @@ const voiceContextValidator = createValidator<InworldVoiceContextConfig, unknown
   modelId: (params) => params.modelId,
   catalog: ttsModels,
   // The per-model gates are properties of the MODEL, not of the transport:
-  // `deliveryMode` is inworld-tts-2 only and `temperature` is ignored there
-  // on both surfaces, so the REST table is re-used rather than re-stated.
+  // `deliveryMode` is ignored off inworld-tts-2 and `temperature` is ignored
+  // on it, on both surfaces, so the REST table is re-used rather than
+  // re-stated.
   constraints: ttsConstraints,
   finalize: finalizeVoiceContext,
 });
@@ -377,10 +397,13 @@ const voiceContextValidator = createValidator<InworldVoiceContextConfig, unknown
  * `.request.url` is the socket to open (method `"GET"`: the handshake is an
  * HTTP upgrade, so there is no body).
  *
- * Connection-level limits the config itself cannot express are exported as
- * constants: {@link TTS_STREAM_MAX_CONTEXTS_PER_CONNECTION},
- * {@link TTS_STREAM_MAX_CONNECTIONS}, {@link TTS_STREAM_MAX_TEXT_CHARACTERS}
- * (per `send_text` frame) and {@link TTS_STREAM_IDLE_TIMEOUT_MINUTES}.
+ * Limits the config itself cannot express are exported as constants:
+ * {@link TTS_STREAM_MAX_TEXT_CHARACTERS} (per `send_text` frame) and
+ * {@link TTS_STREAM_IDLE_TIMEOUT_MINUTES}. Connection and context counts are
+ * plan-dependent, not constants: "Each active context counts as one
+ * concurrent generation", and concurrent connections are "set at 10× your
+ * concurrent generation limit"
+ * (https://docs.inworld.ai/resources/concurrency-limits, 2026-11-12).
  *
  * ```ts
  * const context = inworld.realtimeVoiceContext({

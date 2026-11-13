@@ -199,7 +199,7 @@ describe("the category's own rules", () => {
   });
 
   test("inworld: an oversized base64 sample is media_too_large at its element", () => {
-    const oversized = "A".repeat(Math.ceil((4 * 1024 * 1024 + 1024) / 3) * 4);
+    const oversized = "A".repeat(Math.ceil((12 * 1024 * 1024 + 1024) / 3) * 4);
     const result = voiceClone.safe({
       model: "inworld/voice-clone",
       operation: "clone",

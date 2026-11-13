@@ -40,7 +40,7 @@ export type InworldVoiceCloneWire = VoicesCloneBody;
 /** What a unified call to `inworld/voice-clone` returns. */
 export type InworldVoiceCloneResult = ReturnType<typeof validator<InworldVoiceCloneWire>>;
 
-/** At least one sample; the docs cap bytes (4MB) and seconds (30), not count. */
+/** At least one sample; the docs cap bytes (12MB) and seconds (30), not count. */
 const SAMPLE_LIMITS = { min: 1, max: Infinity } as const;
 
 /** The one operation this category serves today; see resolveOperation. */

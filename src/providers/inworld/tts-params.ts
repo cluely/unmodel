@@ -67,14 +67,16 @@ export const FORMAT: AudioFormatSpec = {
  * Inworld's per-model surface: one codec set, and a `ttsConstraints` table
  * read into three rows.
  *
- * `deliveryMode` is "Only supported by `inworld-tts-2`" — which in the deny
- * table means the two TTS-2 ids, since the 1.x generations are the ones it
- * denies — and `temperature` runs the other way: it is flagged `ignored` on
- * `inworld-tts-2`, where "the request is accepted but sampling is unaffected;
- * use `deliveryMode` to steer stability instead". So the flagship carries
- * `deliveryMode` and not `temperature`, the 1.x line carries `temperature` and
- * not `deliveryMode`, and `inworld-tts-2-flash` is the one id that carries
- * both. Two crossing per-model rules, stated once here and enforced again by
+ * `deliveryMode` is "Only supported by `inworld-tts-2`. The field is ignored
+ * on other models." — which in the deny table means the two TTS-2 ids, since
+ * it is the 1.x generations it flags `ignored` — and `temperature` runs the
+ * other way: it is flagged `ignored` on `inworld-tts-2`, where "the request
+ * is accepted but sampling is unaffected; use `deliveryMode` to steer
+ * stability instead". A param the API drops is refused by name here rather
+ * than compiled into a silent no-op, so the flagship carries `deliveryMode`
+ * and not `temperature`, the 1.x line carries `temperature` and not
+ * `deliveryMode`, and `inworld-tts-2-flash` is the one id that carries both.
+ * Two crossing per-model rules, stated once here and warned about again by
  * the provider for the callers a type cannot reach.
  *
  * No `languages`: `language` is BCP-47 with a region and passes through

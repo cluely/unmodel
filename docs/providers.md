@@ -33,7 +33,7 @@ provider — not their quality ranking.
 | huggingface | aggregator (router.huggingface.co) | openai-compatible | **oai-base** (live) | ✅ | |
 | elevenlabs | tts (r11), stt (Scribe, r1), music, sfx, sts, dubbing | native | **native** (TTS+STT+music+sfx+sts+dubbing live; realtime configs live) | ✋ | per-character pricing; `textToSpeechStreamInput` + `speechToTextRealtime` validate the socket configs; `dub` + `dubLanguage` are wire-only (no `unmodel/dubbing` — see "Dubbing" below); `sts` (voice changer) is `MULTIPART_ONLY` — its `audio` is a required `Blob` |
 | cartesia | tts (Sonic, r6), stt (Ink) | native | **native** (TTS+STT live; realtime configs live) | ✋ | `ttsWebsocket` (generation message) + `sttWebsocket` (connection query set) |
-| inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT is inline base64 (no multipart); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
+| inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT validates the JSON body (inline base64; the multipart variant is not described); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
 | soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `stt` + `realtimeTranscription` config message |
 | stepfun | llm (r83), tts (r5) | openai-compatible | **oai-base** (chat live) + native `tts` (stepaudio-3-tts, stepaudio-2.5-tts, live) | ✅ | speech is a hand catalog mirroring the generated rows, plus `stepaudio-3-tts` by hand (not in models.dev yet); image generation/edit is gone — "`step-2x-large` and `step-image-edit-2` were retired on October 10, 2026" (platform.stepfun.ai pricing page, 2026-11-12) |
 
@@ -107,7 +107,7 @@ LOOKS like a gap is not: ElevenLabs "v3 Conversational" is the realtime
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
 deepgram, elevenlabs (Scribe), gladia, google (19 curated Gemini ids including the dedicated
 `gemini-3.5-transcribe`, 6 excluded by name and reason), inworld (base64 audio inline in the
-JSON body, no multipart route), mistral
+JSON body; its multipart variant is not validated), mistral
 (Voxtral), revai, soniox, speechmatics, fal (6 hosted endpoints — Wizper, fal's own
 speech-to-text + turbo, ElevenLabs Scribe v1/v2, Cohere Transcribe; the `/stream` variants are
 excluded by name as a socket surface). All thirteen also ship an adapter at

@@ -78,11 +78,11 @@ describe("bounds surface at canonical paths", () => {
     expect(issue?.meta?.["min"]).toBe(100);
   });
 
-  test("inworld: the 30–250 prompt window arrives at `prompt`", () => {
+  test("inworld: the 1000-character prompt cap arrives at `prompt`", () => {
     const result = voiceDesign.safe({
       model: "inworld/voice-design",
       operation: "design",
-      prompt: "too short",
+      prompt: "a".repeat(1001),
       previewText: SCRIPT,
     } as never);
     expect(result.ok).toBe(false);

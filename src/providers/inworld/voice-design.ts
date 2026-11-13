@@ -3,15 +3,16 @@
  *
  * Wire reference:
  * https://docs.inworld.ai/api-reference/voiceAPI/voiceservice/design-voice
- * (verified 2026-08-22). Voice design is flagged a research preview by the
+ * (verified 2026-11-12). Voice design is flagged a research preview by the
  * docs — the schema may change.
  *
  * - This is phase 1 of a two-phase flow: the response's `previewVoices[]`
  *   are DRAFT voices (`voiceId` + base64 `previewAudio`); persisting one to
  *   the voice library is POST /voices/v1/voices/{voiceId}:publish — the
  *   `voiceDesignPublish` validator in ./voice-design-publish.
- * - `designPrompt` is bounded: "Between 30 and 250 characters. For best
- *   results, include age, gender, accent, pitch, pace, and tone."
+ * - `designPrompt` "Must be in English and up to 1000 characters;
+ *   descriptions under 30 rarely produce a useful voice." The 1000 cap is
+ *   enforced; the 30 is guidance, so a shorter prompt warns.
  *   `previewText` "must result in audio that is 1-30 seconds. (~50-400
  *   characters in English)" — a duration bound on the AUDIO, so the
  *   character range is guidance and only non-emptiness is enforced.
@@ -24,11 +25,12 @@
  */
 
 import { z } from "zod";
-import { createValidator } from "../../core/pipeline";
+import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { JSON_HEADERS, toValidated, type ExactKeys, type Validated } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { EndpointConstraints } from "../../core/constraint-types";
+import type { ModelInfo } from "../../core/catalog-types";
 import { models } from "./models";
 import {
   checkLangCodeEnum,
@@ -48,9 +50,10 @@ const VOICE_DESIGN_DOCS =
  */
 export const VOICE_DESIGN_MODEL_ID = "voice-design";
 
-/** "Between 30 and 250 characters." */
+/** "descriptions under 30 rarely produce a useful voice" — a recommendation, warned about. */
 export const VOICE_DESIGN_PROMPT_MIN_CHARACTERS = 30;
-export const VOICE_DESIGN_PROMPT_MAX_CHARACTERS = 250;
+/** "Must be in English and up to 1000 characters". */
+export const VOICE_DESIGN_PROMPT_MAX_CHARACTERS = 1000;
 /** "Between 1 and 3. Default is 1 if not provided." */
 export const VOICE_DESIGN_SAMPLES_MIN = 1;
 export const VOICE_DESIGN_SAMPLES_MAX = 3;
@@ -64,13 +67,22 @@ export interface InworldVoiceDesignConfig {
   numberOfSamples?: number;
 }
 
+/**
+ * "How `designPrompt` is interpreted": `ASSISTED` (the default) turns a
+ * free-text description into a voice profile; `VERBATIM` takes the profile
+ * as given, "as `key: value` lines".
+ */
+export type InworldDesignPromptMode = "DESIGN_PROMPT_MODE_ASSISTED" | "DESIGN_PROMPT_MODE_VERBATIM";
+
 export interface VoicesDesignBody {
   /**
-   * The generative description of the voice to invent — "Between 30 and 250
-   * characters. For best results, include age, gender, accent, pitch, pace,
-   * and tone."
+   * The generative description of the voice to invent — "up to 1000
+   * characters; descriptions under 30 rarely produce a useful voice. For best
+   * results, include age, gender, accent, pitch, pace, and tone."
    */
   designPrompt: string;
+  /** Default "DESIGN_PROMPT_MODE_ASSISTED". */
+  designPromptMode?: InworldDesignPromptMode;
   /**
    * What the draft candidates speak — "Must result in audio that is 1-30
    * seconds. (~50-400 characters in English)".
@@ -93,14 +105,12 @@ export interface VoicesDesignBody {
 const schema = z.looseObject({
   designPrompt: z
     .string()
-    .min(
-      VOICE_DESIGN_PROMPT_MIN_CHARACTERS,
-      `designPrompt must be between ${VOICE_DESIGN_PROMPT_MIN_CHARACTERS} and ${VOICE_DESIGN_PROMPT_MAX_CHARACTERS} characters`,
-    )
+    .min(1, "designPrompt must not be empty")
     .max(
       VOICE_DESIGN_PROMPT_MAX_CHARACTERS,
-      `designPrompt must be between ${VOICE_DESIGN_PROMPT_MIN_CHARACTERS} and ${VOICE_DESIGN_PROMPT_MAX_CHARACTERS} characters`,
+      `designPrompt must be at most ${VOICE_DESIGN_PROMPT_MAX_CHARACTERS} characters`,
     ),
+  designPromptMode: z.enum(["DESIGN_PROMPT_MODE_ASSISTED", "DESIGN_PROMPT_MODE_VERBATIM"]).optional(),
   previewText: z.string().min(1, "previewText must not be empty"),
   languageCode: z.string().optional(),
   langCode: z.string().optional(),
@@ -115,6 +125,23 @@ const schema = z.looseObject({
     })
     .optional(),
 });
+
+/** "descriptions under 30 rarely produce a useful voice" — served, so a warning. */
+function checkPromptLength(
+  params: VoicesDesignBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const length = params.designPrompt.length;
+  if (length === 0 || length >= VOICE_DESIGN_PROMPT_MIN_CHARACTERS) return;
+  ctx.report({
+    code: "invalid_shape",
+    severity: "warning",
+    path: ["designPrompt"],
+    message: `designPrompt is ${length} characters; Inworld notes "descriptions under ${VOICE_DESIGN_PROMPT_MIN_CHARACTERS} rarely produce a useful voice" — describe age, gender, accent, pitch, pace and tone.`,
+    meta: { min: VOICE_DESIGN_PROMPT_MIN_CHARACTERS, actual: length, source: VOICE_DESIGN_DOCS },
+  });
+}
 
 // No estimate: inworld.ai/pricing publishes no rate for voice design (a
 // research preview).
@@ -150,7 +177,7 @@ const validator = createValidator<
   // catalog-keyed machinery stays coherent (see module JSDoc).
   modelId: () => VOICE_DESIGN_MODEL_ID,
   catalog: models,
-  checks: [checkLanguageExclusivity, checkLangCodeEnum],
+  checks: [checkLanguageExclusivity, checkLangCodeEnum, checkPromptLength],
   finalize,
 });
 

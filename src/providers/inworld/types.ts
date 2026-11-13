@@ -55,6 +55,9 @@ import type { VoicesPublishBody } from "./voice-design-publish";
 
 export type {
   TtsVoiceBody,
+  TtsVoiceTextBody,
+  TtsVoiceDesignBody,
+  TtsVoiceScriptBody,
   InworldAudioConfig,
   InworldAudioEncoding,
   InworldSampleRateHertz,
@@ -62,6 +65,11 @@ export type {
   InworldTimestampType,
   InworldApplyTextNormalization,
   InworldSynthesisContext,
+  InworldTtsVoiceDesign,
+  InworldTtsScript,
+  InworldScriptUtterance,
+  InworldScriptVoiceConfig,
+  InworldOutputMode,
 } from "./tts";
 
 export type {
@@ -81,6 +89,7 @@ export type {
 
 export type {
   InworldTimestampTransportStrategy,
+  InworldVoiceContextAudioConfig,
   InworldVoiceContextConfig,
   RealtimeTranscribeFrame,
   RealtimeVoiceContextFrame,
@@ -93,7 +102,7 @@ export type {
   InworldLangCode,
 } from "./voice-clone";
 
-export type { VoicesDesignBody, InworldVoiceDesignConfig } from "./voice-design";
+export type { VoicesDesignBody, InworldDesignPromptMode, InworldVoiceDesignConfig } from "./voice-design";
 
 export type { VoicesPublishBody } from "./voice-design-publish";
 

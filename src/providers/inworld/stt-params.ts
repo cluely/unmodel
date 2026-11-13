@@ -30,21 +30,22 @@ export const MODELS = ["inworld/inworld-stt-1", "groq/whisper-large-v3"] as cons
  *
  * ## `timestamps`
  *
- * `inworld/inworld-stt-1` gets `["none"]`. "Word timestamps & diarization:
- * Available for AssemblyAI, Soniox, Deepgram; **not yet for Inworld**" — and
- * the field is "accepted but no per-word data comes back", which is the
- * accepted-and-ignored case, so `timestamps: "word"` is refused by name there.
- * Groq is named on neither side of that sentence, so `groq/whisper-large-v3`
- * keeps `["none", "word"]`, exactly as the provider's own check does.
+ * `inworld/inworld-stt-1` gets `["none"]` on this sync route. The
+ * third-party comparison table marks that model's word timestamps
+ * "(streaming)" and Groq's "(sync)" (https://docs.inworld.ai/stt/third-party,
+ * 2026-11-12): on POST /stt/v1/transcribe the flag is accepted and ignored,
+ * so `timestamps: "word"` is refused by name there, and the provider's own
+ * check warns about it. `groq/whisper-large-v3` keeps `["none", "word"]`.
  *
  * ## The vendor blocks
  *
  * `transcribeConfig` carries at most one provider block and it must match the
  * model's vendor — `inworldSttV1Config` for `inworld/…`, `groqConfig` for
  * `groq/…` — so each row declares its own and refuses the other by name.
- * `voiceProfileConfig` goes the same way: "Voice Profile … is only produced by
- * `inworld/inworld-stt-1`". All three are whole typed objects rather than
- * flattened members, because `voiceProfileConfig.enableVoiceProfile` is
+ * `voiceProfileConfig` is on both rows: Voice Profile "works with every STT
+ * model on the API — including third-party models". All three are whole
+ * typed objects rather than flattened members, because
+ * `voiceProfileConfig.enableVoiceProfile` is
  * *required* when the object is present and the two turn-taking blocks share
  * member names (`minEndOfTurnSilenceWhenConfident`, `vadThreshold`) with the
  * streaming surface's AssemblyAI block.
@@ -72,6 +73,10 @@ export const INWORLD_STT_MODEL_PARAMS = {
   },
   "groq/whisper-large-v3": {
     timestamps: ["none", "word"],
-    extras: { ...SHARED_EXTRAS, groqConfig: EXTRA as InworldGroqConfig },
+    extras: {
+      ...SHARED_EXTRAS,
+      voiceProfileConfig: EXTRA as InworldVoiceProfileConfig,
+      groqConfig: EXTRA as InworldGroqConfig,
+    },
   },
 } as const satisfies SttModelParamTable;

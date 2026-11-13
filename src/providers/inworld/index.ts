@@ -9,6 +9,9 @@ export {
 } from "./tts";
 export type {
   TtsVoiceBody,
+  TtsVoiceTextBody,
+  TtsVoiceDesignBody,
+  TtsVoiceScriptBody,
   InworldAudioConfig,
   InworldAudioEncoding,
   InworldSampleRateHertz,
@@ -16,6 +19,11 @@ export type {
   InworldTimestampType,
   InworldApplyTextNormalization,
   InworldSynthesisContext,
+  InworldTtsVoiceDesign,
+  InworldTtsScript,
+  InworldScriptUtterance,
+  InworldScriptVoiceConfig,
+  InworldOutputMode,
 } from "./tts";
 
 export {
@@ -59,12 +67,11 @@ export {
   TTS_WEBSOCKET_DOCS,
   TTS_STREAM_IDLE_TIMEOUT_MINUTES,
   TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD,
-  TTS_STREAM_MAX_CONNECTIONS,
-  TTS_STREAM_MAX_CONTEXTS_PER_CONNECTION,
   TTS_STREAM_MAX_TEXT_CHARACTERS,
 } from "./realtime";
 export type {
   InworldTimestampTransportStrategy,
+  InworldVoiceContextAudioConfig,
   InworldVoiceContextConfig,
   RealtimeTranscribeFrame,
   RealtimeVoiceContextFrame,
@@ -95,7 +102,7 @@ export {
   VOICE_DESIGN_SAMPLES_MIN,
   VOICE_DESIGN_SAMPLES_MAX,
 } from "./voice-design";
-export type { VoicesDesignBody, InworldVoiceDesignConfig } from "./voice-design";
+export type { VoicesDesignBody, InworldDesignPromptMode, InworldVoiceDesignConfig } from "./voice-design";
 
 export {
   voiceDesignPublish,

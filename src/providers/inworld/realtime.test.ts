@@ -5,6 +5,7 @@ import {
   STT_STREAM_WS_URL,
   TTS_STREAM_WS_URL,
   TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD,
+  TTS_STREAM_MAX_TEXT_CHARACTERS,
 } from "./realtime";
 import { stt, INWORLD_STT_AUDIO_ENCODINGS, INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS } from "./stt";
 import { INWORLD_SAMPLE_RATES_HERTZ } from "./tts";
@@ -227,22 +228,46 @@ describe("inworld.realtimeTranscribeConfig surface gates", () => {
     }
   });
 
-  test("Voice Profile and word timestamps follow the same per-route rules as the sync endpoint", () => {
-    const profile = safeTranscribe({
+  test("Voice Profile, word timestamps and diarization pass on every streaming route", () => {
+    const profile = realtimeTranscribeConfig.safe({
       modelId: "soniox/stt-rt-v5",
       audioEncoding: "LINEAR16",
       voiceProfileConfig: { enableVoiceProfile: true },
     });
-    expect(profile.ok).toBe(false);
-    if (!profile.ok) expect(profile.errors[0]?.code).toBe("unsupported_capability");
+    expect(profile.ok).toBe(true);
+    if (profile.ok) expect(profile.warnings).toEqual([]);
 
-    const timestamps = safeTranscribe({
+    // Diarization is "Experimental for `inworld/inworld-stt-1`" on the socket — served, not refused.
+    const timestamps = realtimeTranscribeConfig.safe({
       modelId: "inworld/inworld-stt-1",
       audioEncoding: "LINEAR16",
       includeWordTimestamps: true,
+      enableSpeakerDiarization: true,
     });
-    expect(timestamps.ok).toBe(false);
-    if (!timestamps.ok) expect(timestamps.errors[0]?.path).toEqual(["includeWordTimestamps"]);
+    expect(timestamps.ok).toBe(true);
+    if (timestamps.ok) expect(timestamps.warnings).toEqual([]);
+  });
+
+  test("inworldSttV1Config.maxTurnSilence is 20–5000 ms", () => {
+    function at(maxTurnSilence: number): ValidateResult<Record<string, unknown>> {
+      return safeTranscribe({
+        modelId: "inworld/inworld-stt-1",
+        audioEncoding: "LINEAR16",
+        inworldSttV1Config: { minEndOfTurnSilenceWhenConfident: 200, maxTurnSilence },
+      });
+    }
+    expect(at(20).ok).toBe(true);
+    expect(at(5000).ok).toBe(true);
+    expect(at(19).ok).toBe(false);
+    expect(at(5001).ok).toBe(false);
+  });
+
+  test("the sync-only container encodings are refused on the socket", () => {
+    for (const audioEncoding of ["MP4", "MXF", "WEBM"]) {
+      const r = safeTranscribe({ modelId: "inworld/inworld-stt-1", audioEncoding });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_enum_value");
+    }
   });
 
   test("sonioxConfig.maxEndpointDelayMs is bounded to [500, 5000]", () => {
@@ -362,8 +387,10 @@ describe("inworld.realtimeVoiceContext enums and bounds", () => {
     expect(safeContext({ voiceId: "Dennis", modelId: "" }).ok).toBe(false);
   });
 
-  test("bufferCharThreshold is capped at 1000", () => {
-    expect(safeContext(at({ bufferCharThreshold: 1 })).ok).toBe(true);
+  test("bufferCharThreshold takes 0–2000 (0 or omission selects 1000)", () => {
+    expect(TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD).toBe(2000);
+    expect(safeContext(at({ bufferCharThreshold: 0 })).ok).toBe(true);
+    expect(safeContext(at({ bufferCharThreshold: 1500 })).ok).toBe(true);
     expect(
       safeContext(at({ bufferCharThreshold: TTS_STREAM_MAX_BUFFER_CHAR_THRESHOLD })).ok,
     ).toBe(true);
@@ -371,10 +398,14 @@ describe("inworld.realtimeVoiceContext enums and bounds", () => {
     expect(over.ok).toBe(false);
     if (!over.ok) {
       expect(over.errors[0]?.path).toEqual(["bufferCharThreshold"]);
-      expect(over.errors[0]?.message).toContain("at most 1000");
+      expect(over.errors[0]?.message).toContain("at most 2000");
     }
-    expect(safeContext(at({ bufferCharThreshold: 0 })).ok).toBe(false);
+    expect(safeContext(at({ bufferCharThreshold: -1 })).ok).toBe(false);
     expect(safeContext(at({ bufferCharThreshold: 100.5 })).ok).toBe(false);
+  });
+
+  test("send_text frames carry up to 2,000 UTF-16 code units", () => {
+    expect(TTS_STREAM_MAX_TEXT_CHARACTERS).toBe(2000);
   });
 
   test("maxBufferDelayMs is a non-negative integer", () => {
@@ -397,20 +428,28 @@ describe("inworld.realtimeVoiceContext enums and bounds", () => {
     expect(safeContext(on15(2.1)).ok).toBe(false);
   });
 
-  test("audioConfig reuses the REST bounds: closed sample-rate list, [0.5, 1.5] speakingRate", () => {
-    for (const sampleRateHertz of INWORLD_SAMPLE_RATES_HERTZ) {
+  test("audioConfig reuses the REST bounds: [8000, 48000] sample rate, [0.5, 1.5] speakingRate", () => {
+    for (const sampleRateHertz of [...INWORLD_SAMPLE_RATES_HERTZ, 12345]) {
       expect(safeContext(at({ audioConfig: { sampleRateHertz } })).ok).toBe(true);
     }
-    // Inside the "8000-48000" range this page prints, but not a supported rate.
-    const gap = safeContext(at({ audioConfig: { sampleRateHertz: 12345 } }));
-    expect(gap.ok).toBe(false);
-    if (!gap.ok) expect(gap.errors[0]?.path).toEqual(["audioConfig", "sampleRateHertz"]);
+    const over = safeContext(at({ audioConfig: { sampleRateHertz: 96000 } }));
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.path).toEqual(["audioConfig", "sampleRateHertz"]);
 
     expect(safeContext(at({ audioConfig: { speakingRate: 0.5 } })).ok).toBe(true);
     expect(safeContext(at({ audioConfig: { speakingRate: 1.5 } })).ok).toBe(true);
     expect(safeContext(at({ audioConfig: { speakingRate: 0.4 } })).ok).toBe(false);
     expect(safeContext(at({ audioConfig: { speakingRate: 1.6 } })).ok).toBe(false);
     expect(safeContext(at({ audioConfig: { audioEncoding: "AAC" } })).ok).toBe(false);
+  });
+
+  test("the socket's encoding enum also takes the zero value", () => {
+    const r = realtimeVoiceContext.safe({
+      voiceId: "v",
+      modelId: "inworld-tts-2",
+      audioConfig: { audioEncoding: "AUDIO_ENCODING_UNSPECIFIED" },
+    });
+    expect(r.ok).toBe(true);
   });
 
   test("every documented enum member is accepted, and only those", () => {
@@ -433,7 +472,7 @@ describe("inworld.realtimeVoiceContext enums and bounds", () => {
 });
 
 describe("inworld.realtimeVoiceContext per-model gates (shared with the REST table)", () => {
-  test("deliveryMode on a 1.x model is unsupported_param, exactly as on REST", () => {
+  test("deliveryMode on a 1.x model warns (ignored there), exactly as on REST", () => {
     for (const modelId of [
       "inworld-tts-1.5-max",
       "inworld-tts-1.5-mini",
@@ -441,10 +480,11 @@ describe("inworld.realtimeVoiceContext per-model gates (shared with the REST tab
       "inworld-tts-1-max",
     ]) {
       const r = realtimeVoiceContext.safe({ voiceId: "v", modelId, deliveryMode: "CREATIVE" });
-      expect(r.ok).toBe(false);
-      if (!r.ok) {
-        expect(r.errors[0]?.code).toBe("unsupported_param");
-        expect(r.errors[0]?.path).toEqual(["deliveryMode"]);
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const warning = r.warnings.find((w) => w.code === "unsupported_param");
+        expect(warning?.path).toEqual(["deliveryMode"]);
+        expect(warning?.meta?.ignored).toBe(true);
       }
     }
   });

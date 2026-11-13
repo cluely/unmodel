@@ -1,9 +1,10 @@
 /**
  * `unmodel/voice-design` → `inworld.voiceDesign` (POST /voices/v1/voices:design).
  *
- * A research preview, and the strictest prompt window in the pack:
- * `designPrompt` is bounded 30–250 characters (English), enforced by the
- * validator's schema and surfacing at the canonical `prompt`. `previewText`
+ * A research preview: `designPrompt` is English and at most 1000
+ * characters, enforced by the validator's schema and surfacing at the
+ * canonical `prompt` (under 30 is served but warned about — "descriptions
+ * under 30 rarely produce a useful voice"). `previewText`
  * is REQUIRED on this wire — a missing canonical one compiles to `""` and the
  * validator's non-empty check answers at the canonical path — and `n` maps to
  * `voiceDesignConfig.numberOfSamples` (1–3).

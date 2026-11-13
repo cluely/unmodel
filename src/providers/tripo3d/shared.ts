@@ -93,6 +93,10 @@ export const TRIPO3D_MODELS = [
   "v3.0-20250812",
   "v2.5-20250123",
   "P1-20260311",
+  // https://developers.tripo3d.ai/en/docs/changelog.md, read 2026-11-12:
+  // "`POST /v3/generation/text-to-model`, `image-to-model`, and
+  // `multiview-to-model` now accept `model=P2-20260801` (an upgrade of P1)."
+  "P2-20260801",
 ] as const;
 export type Tripo3dModelId = (typeof TRIPO3D_MODELS)[number];
 
@@ -131,10 +135,18 @@ export const NEGATIVE_PROMPT_MAX_CHARS = 255;
  * v2.5").
  *
  * P1 is the case the sentence does not describe, because it was copied onto the
- * P-series pages unchanged. The P endpoint reference declares `texture_quality`,
- * `auto_size` and `compress` and does NOT declare `geometry_quality`, `quad`,
- * `smart_low_poly` or `generate_parts` — so the per-route parameter list is
- * what this table follows, not the copied sentence.
+ * P-series pages unchanged. The P endpoint reference, as read 2026-08-25,
+ * declares `texture_quality`, `auto_size` and `compress` and does NOT declare
+ * `geometry_quality`, `quad`, `smart_low_poly` or `generate_parts` — so the
+ * per-route parameter list is what this table follows, not the copied
+ * sentence.
+ *
+ * P2 follows the same P pages and adds `quad`, which they mark "**P2-20260801
+ * only.**" (/en/docs/generation-text-to-model/p.md, read 2026-11-12); the
+ * changelog states the converse for P1: "Sending `quad=true` with P1 returns
+ * `400`; switch to P2 or remove the field." `compress` is not on the P pages as
+ * read 2026-11-12 and no page documents a refusal of it, so P2 keeps it for
+ * parity with P1 rather than refusing a request the API may fulfil.
  */
 export const VERSION_GATED_PARAMS = [
   "texture_quality",
@@ -152,25 +164,34 @@ export const GATED_PARAMS_BY_MODEL: Readonly<Record<string, readonly string[]>> 
   "v3.0-20250812": VERSION_GATED_PARAMS,
   "v2.5-20250123": [],
   "P1-20260311": ["texture_quality", "auto_size", "compress"],
+  "P2-20260801": ["texture_quality", "auto_size", "quad", "compress"],
 };
+
+export const QUAD_FACE_LIMIT = 150_000;
 
 /**
  * The polycount ceiling per model, triangles unless `quad` is set.
  *
  * Ultra mode (`geometry_quality: "detailed"`) raises the H-series ceilings to
  * 2,000,000; the numbers here are the standard-mode ones, and a request above
- * them is refused naming the model. Quad meshes cap at 150,000 whichever H
- * model asked, and `smart_low_poly` overrides everything with a fixed 500–20,000
+ * them is refused naming the model. `quad` is the cap a quad mesh gets on the
+ * models that take `quad` — 150,000 whichever H model asked, 25,000 on P2 —
+ * and `smart_low_poly` overrides everything with a fixed 500–20,000
  * (500–10,000 for quads) "regardless of model version".
  */
-export const FACE_LIMITS: Readonly<Record<string, { min: number; max: number; ultra?: number }>> = {
-  "v3.1-20260211": { min: 1, max: 1_500_000, ultra: 2_000_000 },
-  "v3.0-20250812": { min: 1, max: 1_000_000, ultra: 2_000_000 },
+export const FACE_LIMITS: Readonly<
+  Record<string, { min: number; max: number; ultra?: number; quad?: number }>
+> = {
+  "v3.1-20260211": { min: 1, max: 1_500_000, ultra: 2_000_000, quad: QUAD_FACE_LIMIT },
+  "v3.0-20250812": { min: 1, max: 1_000_000, ultra: 2_000_000, quad: QUAD_FACE_LIMIT },
   "v2.5-20250123": { min: 1, max: 500_000 },
   "P1-20260311": { min: 50, max: 20_000 },
+  // https://developers.tripo3d.ai/en/docs/generation-text-to-model/p.md, read
+  // 2026-11-12: "`P2-20260801` triangle: **48 – 50,000**; with `quad=true`:
+  // **48 – 25,000**". The changelog repeats it: "triangle 48–50,000; with
+  // `quad=true`, 48–25,000. Omitted = adaptive."
+  "P2-20260801": { min: 48, max: 50_000, quad: 25_000 },
 };
-
-export const QUAD_FACE_LIMIT = 150_000;
 export const SMART_LOW_POLY_FACE_LIMIT = { min: 500, max: 20_000 } as const;
 export const SMART_LOW_POLY_QUAD_FACE_LIMIT = { min: 500, max: 10_000 } as const;
 
@@ -313,11 +334,12 @@ export function checkPbrForcesTexture(source: string) {
  * The polycount ceiling, which depends on the model AND on three switches.
  *
  * `smart_low_poly` replaces the model's range with a fixed one "regardless of
- * model version", `quad` caps the H series at 150,000, and Ultra mode
- * (`geometry_quality: "detailed"`) raises the H ceilings to 2,000,000 — so the
- * effective bound is computed rather than looked up. Precedence is the order
- * the docs state the overrides in: `smart_low_poly` wins over everything,
- * `quad` over the plain ceiling.
+ * model version", `quad` caps the mesh at the model's own quad ceiling (150,000
+ * on the H series, 25,000 on P2), and Ultra mode (`geometry_quality:
+ * "detailed"`) raises the H ceilings to 2,000,000 — so the effective bound is
+ * computed rather than looked up. Precedence is the order the docs state the
+ * overrides in: `smart_low_poly` wins over everything, `quad` over the plain
+ * ceiling.
  */
 export function checkFaceLimit(source: string) {
   return (params: GenerationParams, _info: unknown, ctx: PipelineContext): void => {
@@ -336,9 +358,9 @@ export function checkFaceLimit(source: string) {
     if (params.smart_low_poly === true) {
       bound = params.quad === true ? SMART_LOW_POLY_QUAD_FACE_LIMIT : SMART_LOW_POLY_FACE_LIMIT;
       why = "`smart_low_poly: true`, which fixes the range regardless of model version";
-    } else if (params.quad === true && ceiling > QUAD_FACE_LIMIT) {
-      bound = { min: model.min, max: QUAD_FACE_LIMIT };
-      why = "`quad: true`, which caps the mesh at 150,000 quads";
+    } else if (params.quad === true && model.quad !== undefined && ceiling > model.quad) {
+      bound = { min: model.min, max: model.quad };
+      why = `\`quad: true\` on "${params.model}", which caps the mesh at ${model.quad} quads`;
     }
 
     if (value >= bound.min && value <= bound.max) return;

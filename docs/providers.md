@@ -584,10 +584,11 @@ later; this one waited for one before shipping at all, because a 3D vocabulary r
 single vendor would have been that vendor's request schema with the field names changed. Two
 schemas in, `texture` already had five spellings and the output container four more.
 
-**Tripo — `tripo3d.threeD` and `tripo3d.threeDFromImage`, 4 models.** Tier: **native**.
+**Tripo — `tripo3d.threeD` and `tripo3d.threeDFromImage`, 5 models.** Tier: **native**.
 `https://openapi.tripo3d.ai/v3`, flat JSON, `Authorization: Bearer <TRIPO_API_KEY>`, one endpoint
-per operation. Models `v3.1-20260211`, `v3.0-20250812`, `v2.5-20250123` and the low-poly
-`P1-20260311` — the DATED ids every endpoint reference page and every `curl` example publishes.
+per operation. Models `v3.1-20260211`, `v3.0-20250812`, `v2.5-20250123`, the low-poly
+`P1-20260311` and its quad-capable successor `P2-20260801` — the DATED ids every endpoint
+reference page and every `curl` example publishes.
 (Tripo's `models-and-versions` page names the same four `tripo-v3.1`, `tripo-v3.0`, `tripo-v2.5`
 and `tripo-p1`; the endpoint page is the per-route spec and is what the parameter's own enum is
 written on, so it wins. The aliases are plausibly accepted and that is not verified.) Two
@@ -598,17 +599,20 @@ text-to-image routes, which resell seedream, gemini and gpt-image that unmodel a
 from the vendors themselves.
 
 Three cross-field rules Tripo documents and unmodel checks, each of them a 4xx otherwise:
-seven parameters are gated on the model version and `v2.5-20250123` takes none of them;
-`generate_parts: true` requires `texture`, `pbr` and `quad` all false, and the first two DEFAULT
-to true; and the polycount ceiling moves with the model, with Ultra mode and with `quad`. A
-fourth is a heuristic: `input` is one polymorphic string that accepts a `file_…` token, a public
-URL or a prior `task_…` id, disambiguated by prefix and never inline bytes.
+seven parameters are gated on the model version — `v2.5-20250123` takes none of them, P1 three
+and P2 four; `generate_parts: true` requires `texture`, `pbr` and `quad` all false, and the
+first two DEFAULT to true; and the polycount ceiling moves with the model, with Ultra mode and
+with `quad` (150,000 quads on the H series, 25,000 on P2). A fourth is a heuristic: `input` is
+one polymorphic string that accepts a `file_…` token, a public URL or a prior `task_…` id,
+disambiguated by prefix and never inline bytes.
 
 Pricing is per task in credits at $0.01 each, and this is the rare media provider whose estimate
 is EXACT: the price is a pure function of the request body (base task type plus the add-ons the
-body switched on), with no duration to guess and no output pixel count to infer. The one
-exception is P1, whose credit table Tripo's pricing page renders client-side only — `undefined`
-rather than borrowing the H-series numbers, which are demonstrably different.
+body switched on), with no duration to guess and no output pixel count to infer. Two
+exceptions: P1, whose credit table Tripo's pricing page renders client-side only and no served
+doc page states — `undefined` rather than borrowing the H-series numbers, which are demonstrably
+different; and P2 with `quad: true`, whose surcharge the P-Series tab does not publish. P2's own
+figures (100 credits bare, 110/120/130 by texture tier) are stated in Tripo's changelog.
 
 **fal — `fal.threeD`, 19 endpoints.** Tripo H3.1 text/image, Tripo P1 text/image, Tripo v2.5
 image and multiview, Hunyuan3D 2.0 and turbo, Hunyuan 3D 3.1 Pro text/image and Rapid image,
@@ -965,7 +969,7 @@ leaves rather than whole validators.
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 4 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
 | `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (`avatar_iv`, the one engine that renders raw image input — Avatar V and Avatar III do not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
 | `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (11 endpoints, seven taking a still and four taking a clip), topaz (18 models over two routes, stills only, multipart bodies) |
-| `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (4 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
+| `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (5 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
 | `unmodel/sts` | `sts`, `createSts` | 2 | elevenlabs (3 models, `POST /v1/speech-to-speech/{voice_id}`), hume (1 synthetic id, `POST /v0/tts/voice_conversion/file`) — the smallest pack in the library, the only one with no fal arm, and the only category where three of five words are REQUIRED. Both endpoints are `MULTIPART_ONLY`, so there is no `unified.sts` CLI entry |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
 | `unmodel/voice-design` | `voiceDesign`, `createVoiceDesign` | 4 | elevenlabs, fish-audio, inworld, minimax — the unified surface is phase 1 (the generative call); the ElevenLabs/Inworld save steps are wire-only (`voiceDesignSave`, `voiceDesignPublish`) |

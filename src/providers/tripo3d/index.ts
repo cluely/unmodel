@@ -7,9 +7,9 @@
  * ## What is here
  *
  * Both generation routes: `threeD` (`POST /v3/generation/text-to-model`) and
- * `threeDFromImage` (`POST /v3/generation/image-to-model`), across four models —
- * `v3.1-20260211`, `v3.0-20250812`, `v2.5-20250123` and the low-poly
- * `P1-20260311`. Tripo's mesh-processing surface (texture, convert, segment,
+ * `threeDFromImage` (`POST /v3/generation/image-to-model`), across five models —
+ * `v3.1-20260211`, `v3.0-20250812`, `v2.5-20250123`, the low-poly
+ * `P1-20260311` and its quad-capable successor `P2-20260801`. Tripo's mesh-processing surface (texture, convert, segment,
  * decimate, rig, retarget) takes a MESH and returns one, which no unmodel verb
  * describes; its text-to-image routes resell seedream, gemini and gpt-image,
  * which unmodel already carries from the vendors themselves.
@@ -22,9 +22,9 @@
  *
  * **Seven parameters are gated on the model version.** `texture_quality`,
  * `geometry_quality`, `auto_size`, `quad`, `smart_low_poly`, `generate_parts`
- * and `compress` are v3.0-and-up; `v2.5-20250123` takes none of them and P1
- * takes three. Sending one to a model that does not take it is a 4xx, and
- * `checkVersionGatedParams` names which models do.
+ * and `compress` are v3.0-and-up; `v2.5-20250123` takes none of them, P1
+ * takes three and P2 four. Sending one to a model that does not take it is a
+ * 4xx, and `checkVersionGatedParams` names which models do.
  *
  * **The POST answers a TASK, and `code` carries the error.** A submit returns
  * `{ code: 0, data: { task_id } }`; poll `GET /v3/tasks/{task_id}` until
@@ -72,8 +72,13 @@ export type {
   Tripo3dTextureQuality,
 } from "./shared";
 
-export { ADD_ON_CREDITS, BASE_CREDITS, tripo3dCostUSD, tripo3dCredits } from "./pricing";
-export type { Tripo3dCostInputs, Tripo3dTaskType } from "./pricing";
+export { ADD_ON_CREDITS, CREDIT_TABLES, tripo3dCostUSD, tripo3dCredits } from "./pricing";
+export type {
+  Tripo3dAddOn,
+  Tripo3dCostInputs,
+  Tripo3dCreditTable,
+  Tripo3dTaskType,
+} from "./pricing";
 
 export { CREDIT_USD, models, provider } from "./models";
 export type { Tripo3dCatalogModelId } from "./models";

@@ -58,7 +58,12 @@ export type {
   Tripo3dTextureQuality,
 } from "./shared";
 
-export type { Tripo3dCostInputs, Tripo3dTaskType } from "./pricing";
+export type {
+  Tripo3dAddOn,
+  Tripo3dCostInputs,
+  Tripo3dCreditTable,
+  Tripo3dTaskType,
+} from "./pricing";
 
 export type { Tripo3dCatalogModelId } from "./models";
 

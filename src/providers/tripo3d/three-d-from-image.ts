@@ -82,19 +82,19 @@ export interface ImageToModelParams {
   texture?: boolean;
   /** Defaults to **true**, and forces `texture` true. */
   pbr?: boolean;
-  /** v3.0+ and P1. `extreme` is 8K and costs extra credits. */
+  /** v3.0+, P1 and P2. `extreme` is 8K and costs extra credits. */
   texture_quality?: Tripo3dTextureQuality;
   /** v3.0+ only — `detailed` is Ultra mode. Must NOT be sent with v2.5. */
   geometry_quality?: Tripo3dGeometryQuality;
-  /** v3.0+ and P1. Scales the model to real-world metres. */
+  /** v3.0+, P1 and P2. Scales the model to real-world metres. */
   auto_size?: boolean;
-  /** v3.0+ only. Forces the output format to FBX; default face count 10,000. */
+  /** v3.0+ and P2. On the H series it forces FBX output; default face count 10,000. */
   quad?: boolean;
   /** v3.0+ only. Hand-crafted low-poly topology. */
   smart_low_poly?: boolean;
   /** v3.0+ only. Editable segmented parts; requires texture/pbr/quad all false. */
   generate_parts?: boolean;
-  /** v3.0+ and P1. `"geometry"` is meshopt compression. */
+  /** v3.0+, P1 and P2. `"geometry"` is meshopt compression. */
   compress?: Tripo3dCompression;
   /** Defaults to true. False is faster and smaller; UVs are done at texturing. */
   export_uv?: boolean;

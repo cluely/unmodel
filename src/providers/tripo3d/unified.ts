@@ -4,9 +4,9 @@
  * # The route follows the input, not the model id
  *
  * This is the shape that makes Tripo the category's second witness rather than
- * a second copy of the first. At fal the same four Tripo models are eight
- * endpoint ids — `tripo3d/h3.1/text-to-3d` and `tripo3d/h3.1/image-to-3d` and so
- * on — and each row names one mood. Here `model: "v3.1-20260211"` is the same
+ * a second copy of the first. At fal a Tripo model is a separate endpoint id
+ * per mood — `tripo3d/h3.1/text-to-3d` and `tripo3d/h3.1/image-to-3d` and so
+ * on — so each row names one mood. Here `model: "v3.1-20260211"` is the same
  * string whichever mood you are in, and the URL is chosen by whether the caller
  * wrote `prompt` or `image`:
  *

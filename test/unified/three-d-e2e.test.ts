@@ -53,7 +53,7 @@ describe("the pack", () => {
 
   test("the two adapters are the pack, and each can be built alone", () => {
     expect(falAdapter.models).toHaveLength(19);
-    expect(tripoAdapter.models).toHaveLength(4);
+    expect(tripoAdapter.models).toHaveLength(5);
     expect([...createThreeD([falAdapter]).providers]).toEqual(["fal"]);
     expect([...createThreeD([tripoAdapter]).providers]).toEqual(["tripo3d"]);
   });

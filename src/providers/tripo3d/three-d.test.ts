@@ -98,6 +98,32 @@ describe("the version gate", () => {
     expect(threeD.safe({ model: "P1-20260311", prompt: PROMPT, quad: true }).ok).toBe(false);
   });
 
+  test("P2 takes P1's three plus `quad`, and refuses the other three", () => {
+    // The P pages mark `quad` "P2-20260801 only." and declare neither
+    // geometry_quality, smart_low_poly nor generate_parts.
+    expect(GATED_PARAMS_BY_MODEL["P2-20260801"]).toEqual([
+      "texture_quality",
+      "auto_size",
+      "quad",
+      "compress",
+    ]);
+    expect(
+      threeD.safe({ model: "P2-20260801", prompt: PROMPT, quad: true, texture_quality: "detailed" })
+        .ok,
+    ).toBe(true);
+    for (const extra of [
+      { geometry_quality: "detailed" },
+      { smart_low_poly: true },
+      { generate_parts: true, texture: false, pbr: false },
+    ] as const) {
+      const bad = threeD.safe({ model: "P2-20260801", prompt: PROMPT, ...extra });
+      expect(bad.ok, Object.keys(extra)[0]).toBe(false);
+      if (bad.ok) continue;
+      const issue = bad.errors.find((i) => i.code === "unsupported_param");
+      expect(issue?.message).toContain("P2-20260801");
+    }
+  });
+
   test("both H3 models take all seven", () => {
     for (const model of ["v3.1-20260211", "v3.0-20250812"] as const) {
       expect(GATED_PARAMS_BY_MODEL[model]).toEqual([...VERSION_GATED_PARAMS]);
@@ -203,6 +229,30 @@ describe("the polycount ceiling", () => {
     ).toBe(true);
   });
 
+  test("P2 runs 48–50,000 triangles", () => {
+    for (const [face_limit, ok] of [[48, true], [50_000, true], [47, false], [50_001, false]] as const) {
+      const result = threeD.safe({ model: "P2-20260801", prompt: PROMPT, face_limit });
+      expect(result.ok, `${face_limit}`).toBe(ok);
+    }
+  });
+
+  test("`quad` caps P2 at its own 25,000, not the H series' 150,000", () => {
+    expect(
+      threeD.safe({ model: "P2-20260801", prompt: PROMPT, quad: true, face_limit: 25_000 }).ok,
+    ).toBe(true);
+    const bad = threeDFromImage.safe({
+      model: "P2-20260801",
+      input: PHOTO,
+      quad: true,
+      face_limit: 30_000,
+    });
+    expect(bad.ok).toBe(false);
+    if (bad.ok) return;
+    const issue = bad.errors.find((i) => i.path?.[0] === "face_limit");
+    expect(issue?.message).toContain("25000");
+    expect(issue?.message).toContain("P2-20260801");
+  });
+
   test("`quad` caps the H series at 150,000", () => {
     const bad = threeD.safe({
       model: "v3.1-20260211",
@@ -271,6 +321,31 @@ describe("catalog and pricing", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.estimate?.costUSD).toBeCloseTo(0.2, 8);
+  });
+
+  test("P2 is 100 credits bare and 110 textured on both routes, with P1's texture add-ons", () => {
+    const p2 = { model: "P2-20260801" } as const;
+    expect(tripo3dCredits({ ...p2, task: "text_to_model", texture: false, pbr: false })).toBe(100);
+    expect(tripo3dCredits({ ...p2, task: "text_to_model" })).toBe(110);
+    expect(tripo3dCredits({ ...p2, task: "image_to_model", texture: false, pbr: false })).toBe(100);
+    expect(tripo3dCredits({ ...p2, task: "image_to_model" })).toBe(110);
+    expect(tripo3dCredits({ ...p2, task: "text_to_model", textureQuality: "detailed" })).toBe(120);
+    expect(tripo3dCredits({ ...p2, task: "image_to_model", textureQuality: "extreme" })).toBe(130);
+
+    const result = threeDFromImage.safe({ ...p2, input: PHOTO });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.estimate?.costUSD).toBeCloseTo(1.1, 8);
+  });
+
+  test("P2 with `quad` declines: the P tab publishes no quad surcharge", () => {
+    // The H series' "Quad Mesh +5" is rendered only off the P tab; borrowing it
+    // for P2's headline feature would be a guess.
+    expect(tripo3dCostUSD({ task: "text_to_model", model: "P2-20260801", quad: true })).toBeUndefined();
+    const result = threeD.safe({ model: "P2-20260801", prompt: PROMPT, quad: true });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.estimate?.costUSD).toBeUndefined();
   });
 
   test("P1 declines rather than borrowing the H numbers", () => {

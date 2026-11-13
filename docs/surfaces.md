@@ -497,7 +497,7 @@ threeD({ model: "fal/fal-ai/hyper3d/rodin/v2.5", prompt, image: { url } });   //
 
 The third arm is not a hedge. `fal-ai/hyper3d/rodin/v2.5` publishes both fields
 and requires neither: the prompt steers an image-driven reconstruction and also
-stands alone. So do all four Tripo models, for a different reason — at the
+stands alone. So do all five Tripo models, for a different reason — at the
 native API the model id is the same string in both moods and the **route**
 forks, `POST /v3/generation/text-to-model` versus
 `POST /v3/generation/image-to-model`.

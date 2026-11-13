@@ -903,7 +903,7 @@ threeD({ model: "tripo3d/v3.1-20260211", image: { url: "https://x/a.png" } });`)
   });
 
   /**
-   * Probe 8 — the per-model extras at 23 refs across two providers, and the
+   * Probe 8 — the per-model extras at 24 refs across two providers, and the
    * version gate that makes one vendor's own roster disagree with itself.
    */
   test("probe 8 — the 3D extras complete from each route's own wire interface", () => {

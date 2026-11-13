@@ -33,6 +33,7 @@ expectAssignable<PackRefs>("fal/meshy/v7/text-to-3d");
 expectAssignable<PackRefs>("fal/hitem3d/hi3d/v3.0/image-to-3d");
 expectAssignable<PackRefs>("tripo3d/v3.1-20260211");
 expectAssignable<PackRefs>("tripo3d/P1-20260311");
+expectAssignable<PackRefs>("tripo3d/P2-20260801");
 // @ts-expect-error — the multiview route needs two views; `image` is one reference.
 expectAssignable<PackRefs>("fal/tripo3d/h3.1/multiview-to-3d");
 // @ts-expect-error — mesh-in / mesh-out is a different question; see curation.json.

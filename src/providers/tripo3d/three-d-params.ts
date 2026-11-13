@@ -45,6 +45,7 @@ export const MODELS = [
   "v3.0-20250812",
   "v2.5-20250123",
   "P1-20260311",
+  "P2-20260801",
 ] as const;
 
 /** Both moods, on every model: the route follows the input, not the id. */
@@ -111,6 +112,19 @@ export const TRIPO3D_THREE_D_MODEL_PARAMS = {
       ...COMMON_EXTRAS,
       texture_quality: EXTRA as Tripo3dTextureQuality,
       auto_size: EXTRA as boolean,
+      compress: EXTRA as Tripo3dCompression,
+    },
+  },
+  // P1's three plus `quad`, which the P pages mark "**P2-20260801 only.**"
+  // (/en/docs/generation-text-to-model/p.md, read 2026-11-12). `face_limit`
+  // runs 48–50,000 here, 48–25,000 as quads.
+  "P2-20260801": {
+    inputs: INPUTS,
+    extras: {
+      ...COMMON_EXTRAS,
+      texture_quality: EXTRA as Tripo3dTextureQuality,
+      auto_size: EXTRA as boolean,
+      quad: EXTRA as boolean,
       compress: EXTRA as Tripo3dCompression,
     },
   },

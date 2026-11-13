@@ -62,6 +62,8 @@ const inputSchema = z.looseObject({
   aspect_ratio: z.string().optional(),
   duration: z.number().int().min(1).max(300).optional(),
   audio: z.boolean().optional(),
+  // `audio` under fal's name — taken by the API's validator, in no published schema.
+  generate_audio: z.boolean().optional(),
   quality: z.string().optional(),
   seed: z.number().int().min(0).max(MAX_SEED).optional(),
   num_images: z.number().int().min(1).max(10).optional(),

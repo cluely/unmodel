@@ -70,6 +70,14 @@ describe("revanaCostUSD", () => {
     expect(revanaCostUSD({ unit: "per_second", usd: 0.05 }, shape, { duration: 10 })).toBe(0.5);
   });
 
+  test("`generate_audio` picks the `+audio` rate exactly as `audio` does", () => {
+    const price: RevanaListedPrice = { unit: "per_second", usd: { "720p": 0.2, "720p+audio": 0.4 } };
+    const shape: RevanaModelShape = { ...VIDEO, resolutions: ["720p"] };
+    expect(revanaCostUSD(price, shape, { resolution: "720p", duration: 8, generate_audio: true })).toBe(3.2);
+    expect(revanaCostUSD(price, shape, { resolution: "720p", duration: 8, generate_audio: false })).toBe(1.6);
+    expect(revanaCostUSD(price, shape, { resolution: "720p", duration: 8 })).toBeUndefined();
+  });
+
   test("pictures are priced per picture, `num_images` and `n` alike", () => {
     expect(revanaCostUSD({ unit: "per_image", usd: 0.05 }, IMAGE, {})).toBe(0.05);
     expect(revanaCostUSD({ unit: "per_image", usd: 0.05 }, IMAGE, { num_images: 3 })).toBe(0.15);

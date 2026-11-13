@@ -38,6 +38,7 @@
  * eleven-character speech request at $0.12 per 1,000 characters quotes $0.01.
  */
 
+import { admittedInput } from "./admitted";
 import type { RevanaListedPrice, RevanaModelShape, RevanaRate } from "./shape-types";
 
 /** Where the rates were read. */
@@ -149,9 +150,10 @@ function spokenCharacters(input: Readonly<Record<string, unknown>>): number | un
 export function revanaCostUSD(
   price: RevanaListedPrice | undefined,
   shape: RevanaModelShape | undefined,
-  input: Readonly<Record<string, unknown>>,
+  sent: Readonly<Record<string, unknown>>,
 ): number | undefined {
   if (price === undefined || shape === undefined || price.billed !== undefined) return undefined;
+  const input = admittedInput(sent);
 
   const key = typeof price.usd === "number" ? undefined : settingKey(price.usd, shape, input);
   const usd = rateAt(price.usd, key);

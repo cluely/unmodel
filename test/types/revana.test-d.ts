@@ -47,8 +47,13 @@ function videoTypeTests(): void {
   video({ model: "veo-3.1", input: { prompt: "a", duration: 5 } });
   // @ts-expect-error — veo-3.1 has no reference-to-video and no clip input.
   video({ model: "veo-3.1", input: { prompt: "a", video_url: VID } });
-  // @ts-expect-error — pictures have a count; videos do not.
+  // @ts-expect-error — one clip per request: only a count of one is taken.
   video({ model: "veo-3.1", input: { prompt: "a", num_images: 2 } });
+  video({ model: "veo-3.1", input: { prompt: "a", num_images: 1 } });
+  // `audio` under its second name, with the same per-model type.
+  video({ model: "veo-3.1", input: { prompt: "a", generate_audio: true } });
+  // @ts-expect-error — kling-2.5-turbo-pro makes no sound, under either name.
+  video({ model: "kling-2.5-turbo-pro", input: { prompt: "a", generate_audio: true } });
   // @ts-expect-error — a speech field on a video model.
   video({ model: "veo-3.1", input: { prompt: "a", voice: "EkK5I93UQWFDigLMpZcX" } });
   // @ts-expect-error — a typo inside `input` is caught, not only at the top level.

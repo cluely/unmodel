@@ -134,6 +134,12 @@ function warnings(model: string, input: Record<string, unknown>): string[] {
     .map((issue) => `${issue.code}@${issue.path.join(".")}`);
 }
 
+/** The sentence of each error. */
+function messages(model: string, input: Record<string, unknown>): string[] {
+  const result = safe({ model, input });
+  return result.ok ? [] : result.errors.map((issue) => issue.message);
+}
+
 const IMG = "https://example.com/a.png";
 const VID = "https://example.com/a.mp4";
 const AUD = "https://example.com/a.mp3";
@@ -313,6 +319,52 @@ describe("picture count", () => {
     expect(errors("t2i-only", { prompt: "a", n: 2, num_images: 2 })).toEqual(["invalid_shape@input.n"]);
     expect(errors("t2v-i2v", { prompt: "a", num_images: 2 })).toEqual(["unsupported_param@input.num_images"]);
     expect(errors("upscaler", { image_url: IMG, num_images: 2 })).toEqual(["unsupported_param@input.num_images"]);
+    expect(errors("upscaler", { image_url: IMG, n: 2 })).toEqual(["unsupported_param@input.n"]);
+  });
+
+  test("a count of ONE is taken by every model, whatever it makes", () => {
+    for (const field of ["num_images", "n"]) {
+      expect(errors("t2v-i2v", { prompt: "a", [field]: 1 })).toEqual([]);
+      expect(errors("upscaler", { image_url: IMG, [field]: 1 })).toEqual([]);
+      expect(errors("narrator", { text: "hi", [field]: 1 })).toEqual([]);
+      expect(errors("songwriter", { style: "folk", [field]: 1 })).toEqual([]);
+    }
+    expect(errors("narrator", { text: "hi", num_images: 2 })).toEqual(["unsupported_param@input.num_images"]);
+    expect(errors("songwriter", { style: "folk", n: 2 })).toEqual(["unsupported_param@input.n"]);
+    expect(errors("t2v-i2v", { prompt: "a", num_images: 1, n: 1 })).toEqual(["invalid_shape@input.n"]);
+    expect(messages("songwriter", { style: "folk", n: 2 })[0]).toContain("makes sound");
+  });
+});
+
+describe("`generate_audio` — `audio` under its second name", () => {
+  test("is checked as `audio` and reported as what was sent", () => {
+    expect(errors("t2v-i2v", { prompt: "a", generate_audio: true })).toEqual([]);
+    expect(errors("ranged-video", { prompt: "a", generate_audio: false })).toEqual([]);
+    expect(errors("ranged-video", { prompt: "a", generate_audio: true })).toEqual([
+      "unsupported_capability@input.generate_audio",
+    ]);
+    expect(messages("ranged-video", { prompt: "a", generate_audio: true })[0]).toContain("`input.generate_audio`");
+    expect(errors("t2i-only", { prompt: "a", generate_audio: true })).toEqual(["unsupported_capability@input.generate_audio"]);
+    expect(errors("narrator", { text: "hi", generate_audio: true })).toEqual(["unsupported_param@input.generate_audio"]);
+    expect(errors("songwriter", { style: "folk", generate_audio: true })).toEqual(["unsupported_param@input.generate_audio"]);
+    expect(warnings("t2v-i2v", { prompt: "a", generate_audio: true })).toEqual([]);
+  });
+
+  test("both names at once is refused, even when they agree", () => {
+    expect(errors("t2v-i2v", { prompt: "a", generate_audio: true, audio: true })).toEqual([
+      "invalid_shape@input.generate_audio",
+    ]);
+  });
+
+  test("SeedanceInput takes it; NemesisInput has no `audio` under either name", () => {
+    expect(errors("seedance-2.5", { prompt: "a", generate_audio: true })).toEqual([]);
+    expect(errors("nemesis", { video_url: VID, image_urls: [IMG], generate_audio: true })).toEqual([
+      "unsupported_param@input.generate_audio",
+    ]);
+  });
+
+  test("a non-boolean is the wire schema's to refuse", () => {
+    expect(errors("t2v-i2v", { prompt: "a", generate_audio: "true" })).toEqual(["invalid_shape@input.generate_audio"]);
   });
 });
 

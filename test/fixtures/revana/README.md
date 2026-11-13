@@ -32,7 +32,7 @@ Each row is one body and what the API said about it:
 - `quoted_usd` — on a `200`.
 
 `src/providers/revana/oracle.test.ts` replays every row through unmodel's
-validators. It is a sample — twenty-two models out of 138, chosen to cover each
+validators. It is a sample — twenty-five models out of 138, chosen to cover each
 rule — of a run that asked the same questions of all of them
 (`docs/research/revana.md`, "Verification").
 

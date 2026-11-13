@@ -149,11 +149,12 @@ interface NoVisualFields {
   aspect_ratio?: never;
   duration?: never;
   audio?: never;
+  generate_audio?: never;
   quality?: never;
   seed?: never;
-  /** "input.num_images is for picture models". */
-  num_images?: never;
-  n?: never;
+  /** One output per request: "input.num_images is for picture models; <id> makes sound." */
+  num_images?: 1;
+  n?: 1;
   /** "task … is for video models". */
   task?: never;
 }
@@ -203,11 +204,16 @@ export interface VideoModelInput<S> extends VisualInput<S>, NoAudioModelFields {
   duration?: DurationOf<S>;
   /** "Generate sound, on models that offer it. Changes the price on some models." */
   audio?: AudioOf<S>;
+  /** {@link ModelInput.generate_audio} — `audio` under its second name. */
+  generate_audio?: AudioOf<S>;
   /** "Also accepted as input.task." Send it once: "task and input.task disagree" is a 422. */
   task?: GenerationTask;
-  /** "input.num_images is for picture models; <id> makes videos." */
-  num_images?: never;
-  n?: never;
+  /**
+   * One clip per request: a count of one is taken, and above it the API
+   * answers "input.num_images is for picture models; <id> makes videos."
+   */
+  num_images?: 1;
+  n?: 1;
 }
 
 /** `ModelInput` on a `kind: "image"` model. */
@@ -227,6 +233,8 @@ export interface ImageModelInput<S> extends VisualInput<S>, NoAudioModelFields {
   duration?: never;
   /** "<id> does not make sound; leave input.audio out." `false` is accepted. */
   audio?: false;
+  /** {@link ModelInput.generate_audio} — `audio` under its second name. */
+  generate_audio?: false;
   /** "task … is for video models; <id> makes pictures." */
   task?: never;
 }
@@ -333,6 +341,13 @@ export interface ModelInput {
   aspect_ratio?: string;
   duration?: number;
   audio?: boolean;
+  /**
+   * `audio`, under the name fal gives it. In no schema Revana publishes — its
+   * queue page mentions it once ("`generate_audio` maps to `audio`") — and
+   * taken by both routes on every model that takes `audio` (2026-11-12). Send
+   * one of the two: both is a 422.
+   */
+  generate_audio?: boolean;
   quality?: string;
   seed?: number;
   num_images?: number;
@@ -373,6 +388,8 @@ export interface SeedanceInput {
   aspect_ratio?: "16:9" | "9:16" | "1:1" | "4:3" | "3:4" | "21:9" | "adaptive";
   /** Default false. */
   audio?: boolean;
+  /** {@link ModelInput.generate_audio} — `audio` under its second name. */
+  generate_audio?: boolean;
   /**
    * "exact first frame". "image_url cannot be combined with reference media;
    * use input.image_urls for a looser visual reference."

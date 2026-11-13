@@ -35,6 +35,7 @@
  */
 
 import type { PipelineContext } from "../../core/pipeline";
+import { admittedInput } from "./admitted";
 import type { RevanaMediaField, RevanaModelShape, RevanaSpeechField } from "./shape-types";
 
 /** The generation API reference; `meta.source` on every finding below. */
@@ -65,6 +66,9 @@ const SPEECH_FIELDS = [
 ] as const satisfies readonly RevanaSpeechField[];
 
 const MUSIC_FIELDS = ["lyrics", "style", "instrumental"] as const;
+
+/** One field under two names; a count of one is taken by every `ModelInput` model. */
+const COUNT_FIELDS: readonly string[] = ["num_images", "n"];
 
 /** What a picture or video `ModelInput` may carry besides media. */
 const VISUAL_FIELDS: readonly string[] = [
@@ -153,6 +157,27 @@ export interface RevanaCheckSpec {
 interface Scope {
   readonly model: string;
   readonly ctx: PipelineContext;
+  /** Fields the caller sent under their second name: `{ audio: "generate_audio" }`. */
+  readonly spelled: Readonly<Record<string, string>>;
+}
+
+type Finding = Parameters<PipelineContext["report"]>[0];
+
+/**
+ * Reports one finding in the caller's own words.
+ *
+ * Every rule below is written once, about the field's first name. A field
+ * sent under its second name (`generate_audio`) is checked as the first and
+ * reported as the one the caller typed, here rather than in every message.
+ */
+function emit(scope: Scope, finding: Finding): void {
+  let path = finding.path ?? [];
+  let message = finding.message;
+  for (const [field, sent] of Object.entries(scope.spelled)) {
+    if (path[0] === "input" && path[1] === field) path = ["input", sent, ...path.slice(2)];
+    message = message.replaceAll(`\`input.${field}\``, `\`input.${sent}\``);
+  }
+  scope.ctx.report({ ...finding, path, message });
 }
 
 function fail(
@@ -162,7 +187,7 @@ function fail(
   message: string,
   meta: Record<string, unknown> = {},
 ): void {
-  scope.ctx.report({
+  emit(scope, {
     code,
     path: ["input", field],
     model: scope.model,
@@ -199,7 +224,7 @@ function quoted(values: readonly (string | number)[]): string {
 function reportUnknownKeys(scope: Scope, input: Input, known: readonly string[]): void {
   for (const key of Object.keys(input)) {
     if (known.includes(key)) continue;
-    scope.ctx.report({
+    emit(scope, {
       code: "unknown_param",
       path: ["input", key],
       model: scope.model,
@@ -231,7 +256,7 @@ function checkMediaUrls(scope: Scope, input: Input, fields: readonly string[]): 
     const urls = Array.isArray(value) ? value : value === undefined ? [] : [value];
     urls.forEach((url, index) => {
       if (typeof url !== "string" || url.startsWith("https://")) return;
-      scope.ctx.report({
+      emit(scope, {
         code: "invalid_shape",
         path: Array.isArray(value) ? ["input", field, index] : ["input", field],
         model: scope.model,
@@ -252,7 +277,7 @@ function checkTask(scope: Scope, params: Input, input: Input, kind: RevanaModelS
   const top = params["task"];
   const nested = input["task"];
   if (top !== undefined && nested !== undefined && top !== nested) {
-    scope.ctx.report({
+    emit(scope, {
       code: "invalid_shape",
       path: ["input", "task"],
       model: scope.model,
@@ -265,7 +290,7 @@ function checkTask(scope: Scope, params: Input, input: Input, kind: RevanaModelS
   if (task === undefined) return;
   const path = top !== undefined ? ["task"] : ["input", "task"];
   if (kind !== "video") {
-    scope.ctx.report({
+    emit(scope, {
       code: "unsupported_param",
       path,
       model: scope.model,
@@ -275,7 +300,7 @@ function checkTask(scope: Scope, params: Input, input: Input, kind: RevanaModelS
     return;
   }
   if (!has(input, "video_url")) {
-    scope.ctx.report({
+    emit(scope, {
       code: "invalid_shape",
       path: ["input", "video_url"],
       model: scope.model,
@@ -530,43 +555,50 @@ function checkAudioToggle(scope: Scope, input: Input, shape: RevanaModelShape): 
   fail(scope, "unsupported_capability", "audio", `"${scope.model}" does not make sound; leave \`input.audio\` out.`);
 }
 
+/**
+ * `num_images` / `n` on any `ModelInput` model — pictures, videos, sound.
+ *
+ * ONE is what every model makes, and the API takes a count of one wherever it
+ * takes `ModelInput`: `num_images: 1` on a video model, an upscaler, a speech
+ * or a music model all priced normally (2026-11-12). Only a count above one
+ * is a question about the model.
+ */
 function checkImageCount(scope: Scope, input: Input, shape: RevanaModelShape): void {
-  for (const field of ["num_images", "n"] as const) {
-    if (!has(input, field)) continue;
-    if (shape.kind !== "image") {
-      fail(
-        scope,
-        "unsupported_param",
-        field,
-        `\`input.${field}\` is for picture models; "${scope.model}" makes videos. Send one request per output.`,
-        { source: REVANA_API_SOURCE },
-      );
-      return;
-    }
-  }
-  if (isUpscaler(shape) && (has(input, "num_images") || has(input, "n"))) {
-    fail(
-      scope,
-      "unsupported_param",
-      has(input, "num_images") ? "num_images" : "n",
-      `\`input.num_images\` does not apply to an upscale; "${scope.model}" returns one picture for each picture sent.`,
-      { source: REVANA_API_SOURCE },
-    );
-    return;
-  }
   if (has(input, "num_images") && has(input, "n")) {
     fail(scope, "invalid_shape", "n", "`input.num_images` and `input.n` are the same field; send one.", {
       source: REVANA_API_SOURCE,
     });
     return;
   }
-  const count = input["num_images"] ?? input["n"];
-  if (typeof count !== "number" || shape.maxImages === undefined || count <= shape.maxImages) return;
+  const field = has(input, "num_images") ? "num_images" : "n";
+  const count = input[field];
+  if (typeof count !== "number" || count === 1) return;
+  if (shape.kind !== "image") {
+    fail(
+      scope,
+      "unsupported_param",
+      field,
+      `\`input.${field}\` is for picture models; "${scope.model}" makes ${shape.kind === "video" ? "videos" : "sound"}. Send one request per output.`,
+      { source: REVANA_API_SOURCE },
+    );
+    return;
+  }
+  if (isUpscaler(shape)) {
+    fail(
+      scope,
+      "unsupported_param",
+      field,
+      `\`input.${field}\` does not apply to an upscale; "${scope.model}" returns one picture for each picture sent.`,
+      { source: REVANA_API_SOURCE },
+    );
+    return;
+  }
+  if (shape.maxImages === undefined || count <= shape.maxImages) return;
   fail(
     scope,
     "invalid_enum_value",
-    has(input, "num_images") ? "num_images" : "n",
-    `\`input.num_images\` must be 1 to ${shape.maxImages} for "${scope.model}"; got ${count}.`,
+    field,
+    `\`input.${field}\` must be 1 to ${shape.maxImages} for "${scope.model}"; got ${count}.`,
     { min: 1, max: shape.maxImages, value: count },
   );
 }
@@ -577,7 +609,7 @@ function checkImageCount(scope: Scope, input: Input, shape: RevanaModelShape): v
  */
 function checkNegativePrompt(scope: Scope, input: Input, shape: RevanaModelShape): void {
   if (!has(input, "negative_prompt") || shape.negativePrompt === true) return;
-  scope.ctx.report({
+  emit(scope, {
     code: "unsupported_param",
     severity: "warning",
     path: ["input", "negative_prompt"],
@@ -612,7 +644,7 @@ function describeSpeechFields(shape: RevanaModelShape): string {
 
 function checkVoice(scope: Scope, voice: unknown, shape: RevanaModelShape, path: (string | number)[]): void {
   if (typeof voice !== "string" || shape.voices === undefined || shape.voices.includes(voice)) return;
-  scope.ctx.report({
+  emit(scope, {
     code: "invalid_enum_value",
     path,
     model: scope.model,
@@ -626,7 +658,7 @@ function checkVoice(scope: Scope, voice: unknown, shape: RevanaModelShape, path:
 function checkSpeech(scope: Scope, input: Input, shape: RevanaModelShape): void {
   const takes: readonly string[] = shape.speechFields ?? SPEECH_FIELDS;
   for (const key of Object.keys(input)) {
-    if (key === "prompt" || takes.includes(key)) continue;
+    if (key === "prompt" || takes.includes(key) || COUNT_FIELDS.includes(key)) continue;
     if (!MODEL_INPUT_FIELDS.includes(key)) continue;
     fail(
       scope,
@@ -639,6 +671,7 @@ function checkSpeech(scope: Scope, input: Input, shape: RevanaModelShape): void 
     );
   }
   reportUnknownKeys(scope, input, MODEL_INPUT_FIELDS);
+  checkImageCount(scope, input, shape);
 
   const dialogue = takes.includes("dialogue") ? input["dialogue"] : undefined;
   if (dialogue !== undefined) {
@@ -701,9 +734,10 @@ function checkSpeech(scope: Scope, input: Input, shape: RevanaModelShape): void 
 
 const MUSIC_TAKES: readonly string[] = ["prompt", ...MUSIC_FIELDS];
 
-function checkMusic(scope: Scope, input: Input): void {
+function checkMusic(scope: Scope, input: Input, shape: RevanaModelShape): void {
   for (const key of Object.keys(input)) {
-    if (MUSIC_TAKES.includes(key) || !MODEL_INPUT_FIELDS.includes(key)) continue;
+    if (MUSIC_TAKES.includes(key) || COUNT_FIELDS.includes(key)) continue;
+    if (!MODEL_INPUT_FIELDS.includes(key)) continue;
     fail(
       scope,
       "unsupported_param",
@@ -713,6 +747,7 @@ function checkMusic(scope: Scope, input: Input): void {
     );
   }
   reportUnknownKeys(scope, input, MODEL_INPUT_FIELDS);
+  checkImageCount(scope, input, shape);
   refusesEmptyPrompt(scope, input);
 
   if (!has(input, "style") && !has(input, "lyrics")) {
@@ -841,7 +876,7 @@ function checkNemesis(scope: Scope, input: Input, shape: RevanaModelShape): void
   if (Array.isArray(roles)) {
     roles.forEach((role, index) => {
       if (typeof role !== "string" || shape.roles === undefined || shape.roles.includes(role)) return;
-      scope.ctx.report({
+      emit(scope, {
         code: "invalid_enum_value",
         path: ["input", "roles", index],
         model: scope.model,
@@ -880,7 +915,7 @@ function checkNemesis(scope: Scope, input: Input, shape: RevanaModelShape): void
  */
 function checkView(scope: Scope, input: Input, view: RevanaView, endpoint: string): boolean {
   if (!view.ids.includes(scope.model)) {
-    scope.ctx.report({
+    emit(scope, {
       code: "unsupported_capability",
       path: ["model"],
       model: scope.model,
@@ -905,7 +940,7 @@ function checkView(scope: Scope, input: Input, view: RevanaView, endpoint: strin
 function signpost(scope: Scope, endpoint: string, elsewhere: RevanaCheckSpec["elsewhere"]): void {
   for (const [address, ids] of Object.entries(elsewhere)) {
     if (!ids.includes(scope.model)) continue;
-    scope.ctx.report({
+    emit(scope, {
       code: "unsupported_capability",
       severity: "warning",
       path: ["model"],
@@ -928,8 +963,13 @@ export function runGenerationChecks(
   ctx: PipelineContext,
 ): void {
   const model = params["model"] as string;
-  const input = params["input"] as Input;
-  const scope: Scope = { model, ctx };
+  const sent = params["input"] as Input;
+  const input = admittedInput(sent);
+  const scope: Scope = {
+    model,
+    ctx,
+    spelled: has(sent, "generate_audio") && !has(sent, "audio") ? { audio: "generate_audio" } : {},
+  };
 
   const shape = Object.hasOwn(spec.shapes, model) ? spec.shapes[model] : undefined;
   if (shape === undefined) {
@@ -938,10 +978,15 @@ export function runGenerationChecks(
   }
   if (spec.view !== undefined && !checkView(scope, input, spec.view, ctx.endpoint)) return;
 
+  if (has(sent, "generate_audio") && has(sent, "audio")) {
+    fail(scope, "invalid_shape", "generate_audio", "`input.generate_audio` and `input.audio` are the same field; send one.", {
+      source: REVANA_API_SOURCE,
+    });
+  }
   checkTask(scope, params, input, shape.kind);
   if (model === SEEDANCE_25) checkSeedance(scope, input, shape);
   else if (NEMESIS_MODELS.includes(model)) checkNemesis(scope, input, shape);
   else if (shape.kind !== "audio") checkVisual(scope, input, shape);
   else if (shape.tasks.includes("text_to_speech")) checkSpeech(scope, input, shape);
-  else checkMusic(scope, input);
+  else checkMusic(scope, input, shape);
 }

@@ -299,7 +299,7 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * the three H3 rows on `minimax.videoV2`; the shared generated chat-refs
    * table every barrel reaches is what crossed the line, not a new edge.
    */
-  pixverse: 64,
+  pixverse: 71, // 64.4 measured, 2026-11-12: v6-max, webhook_id and the image-to-video template arm; ~10% headroom.
   lightricks: 68,
   "black-forest-labs": 100,
   kling: 135,

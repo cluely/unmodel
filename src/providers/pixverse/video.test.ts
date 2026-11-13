@@ -181,7 +181,7 @@ describe("pixverse v6-max", () => {
     expect(text.ok).toBe(true);
     if (text.ok) {
       expect(text.warnings).toEqual([]);
-      expect(text.estimate.costUSD).toBeCloseTo(0.55, 10); // 11 cr/s × 5
+      expect(text.estimate.costUSD).toBeCloseTo(55 / 225, 10); // 11 cr/s × 5
     }
 
     const image = videoFromImage.safe({
@@ -195,7 +195,7 @@ describe("pixverse v6-max", () => {
     expect(image.ok).toBe(true);
     if (image.ok) {
       expect(image.warnings).toEqual([]);
-      expect(image.estimate.costUSD).toBeCloseTo(1.4, 10); // 28 cr/s × 5
+      expect(image.estimate.costUSD).toBeCloseTo(140 / 225, 10); // 28 cr/s × 5
     }
   });
 
@@ -266,7 +266,8 @@ describe("pixverse.video cost estimation", () => {
       duration: 5,
     });
     expect(silent.ok).toBe(true);
-    if (silent.ok) expect(silent.estimate.costUSD).toBeCloseTo(0.45, 10); // 9 cr/s × 5
+    // 9 cr/s × 5 at "225 Credits = USD 1" — the page's own "US$0.040/s" × 5.
+    if (silent.ok) expect(silent.estimate.costUSD).toBeCloseTo(45 / 225, 10);
 
     const withAudio = video.safe({
       model: "v6",
@@ -277,7 +278,7 @@ describe("pixverse.video cost estimation", () => {
       generate_audio_switch: true,
     });
     expect(withAudio.ok).toBe(true);
-    if (withAudio.ok) expect(withAudio.estimate.costUSD).toBeCloseTo(0.6, 10); // 12 cr/s × 5
+    if (withAudio.ok) expect(withAudio.estimate.costUSD).toBeCloseTo(60 / 225, 10); // 12 cr/s × 5
   });
 
   test("v5.5 uses the fixed per-generation table, incl. the multi-clip column", () => {
@@ -289,7 +290,7 @@ describe("pixverse.video cost estimation", () => {
       duration: 8,
     });
     expect(single.ok).toBe(true);
-    if (single.ok) expect(single.estimate.costUSD).toBeCloseTo(1.2, 10); // 120 credits
+    if (single.ok) expect(single.estimate.costUSD).toBeCloseTo(120 / 225, 10); // 120 credits
 
     const multi = video.safe({
       model: "v5.5",
@@ -301,10 +302,24 @@ describe("pixverse.video cost estimation", () => {
       generate_multi_clip_switch: true,
     });
     expect(multi.ok).toBe(true);
-    if (multi.ok) expect(multi.estimate.costUSD).toBeCloseTo(1.6, 10); // 160 credits
+    if (multi.ok) expect(multi.estimate.costUSD).toBeCloseTo(160 / 225, 10); // 160 credits
+  });
+
+  test("v5.6 at 5 seconds adds a flat 45 credits for audio", () => {
+    const r = video.safe({
+      model: "v5.6",
+      prompt: "hi",
+      aspect_ratio: "16:9",
+      quality: "720p",
+      duration: 5,
+      generate_audio_switch: true,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(90 / 225, 10); // "**90 Credits**<br>US$0.400"
   });
 
   test("over-budget is reported", () => {
+    // 18 cr/s × 15 = 270 credits = $1.20.
     const r = video.safe(
       { model: "v6", prompt: "hi", aspect_ratio: "16:9", quality: "1080p", duration: 15 },
       { maxCostUSD: 1 },
@@ -327,7 +342,7 @@ describe("pixverse.videoFromImage", () => {
     expect(Object.keys(v)).toEqual(["model", "img_id", "prompt", "quality", "duration"]);
   });
 
-  test("img_ids needs a template_id", () => {
+  test("img_ids needs a template_id, which then stands in for img_id", () => {
     const r = videoFromImage.safe({
       model: "v6",
       img_id: 1,
@@ -340,39 +355,93 @@ describe("pixverse.videoFromImage", () => {
     if (!r.ok) {
       expect(r.errors.find((e) => e.code === "unsupported_param")?.path).toEqual(["img_ids"]);
     }
+    // A multi-image template takes the ordered `img_ids` and no `img_id`.
+    const template = videoFromImage.safe({
+      model: "v6",
+      img_ids: [1, 2],
+      template_id: 302325299692608,
+      prompt: "hi",
+      quality: "720p",
+      duration: 5,
+    });
+    expect(template.ok).toBe(true);
+    if (template.ok) expect(template.warnings).toEqual([]);
+  });
+
+  test("img_id is required when there is no template_id", () => {
+    // @ts-expect-error — without `template_id`, the type requires `img_id` too.
+    const r = videoFromImage.safe({ model: "v6", prompt: "hi", quality: "720p", duration: 5 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      const issue = r.errors.find((e) => e.code === "invalid_shape");
+      expect(issue?.path).toEqual(["img_id"]);
+      expect(issue?.message).toContain("POST /openapi/v2/image/upload");
+    }
+  });
+
+  test("prompt is capped at 2048 characters, not text-to-video's 5000", () => {
+    const base = { model: "v6", img_id: 1, quality: "720p", duration: 5 } as const;
+    expect(videoFromImage.safe({ ...base, prompt: "a".repeat(2048) }).ok).toBe(true);
+    const over = videoFromImage.safe({ ...base, prompt: "a".repeat(2049) });
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.path).toEqual(["prompt"]);
     expect(
-      videoFromImage.safe({
+      video.safe({
         model: "v6",
-        img_id: 1,
-        img_ids: [1, 2],
-        template_id: 302325299692608,
-        prompt: "hi",
+        prompt: "a".repeat(2049),
+        aspect_ratio: "16:9",
         quality: "720p",
         duration: 5,
       }).ok,
     ).toBe(true);
   });
 
-  test("v4.5 motion_mode picks the fast credit column", () => {
-    const normal = videoFromImage.safe({
-      model: "v4.5",
-      img_id: 1,
-      prompt: "hi",
-      quality: "720p",
-      duration: 5,
-    });
-    expect(normal.ok).toBe(true);
-    if (normal.ok) expect(normal.estimate.costUSD).toBeCloseTo(0.6, 10); // 60 credits
+  test("lip_sync_switch is typed and v5-and-below only", () => {
+    const base = { img_id: 1, prompt: "hi", quality: "720p", duration: 5 } as const;
+    const legacy = videoFromImage.safe({ ...base, model: "v5", lip_sync_switch: true });
+    expect(legacy.ok).toBe(true);
+    if (legacy.ok) expect(legacy.warnings).toEqual([]);
 
-    const fast = videoFromImage.safe({
-      model: "v4.5",
+    const modern = videoFromImage.safe({ ...base, model: "v6", lip_sync_switch: true });
+    expect(modern.ok).toBe(false);
+    if (!modern.ok) {
+      const issue = modern.errors.find((e) => e.code === "unsupported_param");
+      expect(issue?.path).toEqual(["lip_sync_switch"]);
+      expect(issue?.meta?.supported).toEqual(["v5", "v4.5", "v4", "v3.5"]);
+    }
+  });
+
+  test("v4.5 / v4 / v3.5 have no published rate, so no estimate", () => {
+    for (const model of ["v4.5", "v4", "v3.5"] as const) {
+      const r = videoFromImage.safe({ model, img_id: 1, prompt: "hi", quality: "720p", duration: 5 });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+    }
+  });
+});
+
+describe("webhook_id", () => {
+  test("is a typed field on both routes", () => {
+    const text = video.safe({
+      model: "v6",
+      prompt: "hi",
+      aspect_ratio: "16:9",
+      quality: "720p",
+      duration: 5,
+      webhook_id: "replace-with-your-webhook-id",
+    });
+    expect(text.ok).toBe(true);
+    if (text.ok) expect(text.warnings).toEqual([]);
+
+    const image = videoFromImage.safe({
+      model: "v6",
       img_id: 1,
       prompt: "hi",
       quality: "720p",
       duration: 5,
-      motion_mode: "fast",
+      webhook_id: "replace-with-your-webhook-id",
     });
-    expect(fast.ok).toBe(true);
-    if (fast.ok) expect(fast.estimate.costUSD).toBeCloseTo(1.2, 10); // 120 credits
+    expect(image.ok).toBe(true);
+    if (image.ok) expect(image.warnings).toEqual([]);
   });
 });

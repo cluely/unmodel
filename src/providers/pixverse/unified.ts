@@ -53,7 +53,7 @@ import {
 import { video as validator, type TextToVideoParams } from "./video";
 import { MODELS, PIXVERSE_VIDEO_MODEL_PARAMS } from "./video-params";
 
-const SOURCE = `${DOCS_BASE}/text-to-video-generation-13016634e0`;
+const SOURCE = `${DOCS_BASE}/text-to-video-13016634e0`;
 
 /** v6-max, v6 and c1 add 2:3, 3:2 and 21:9 to the legacy five. */
 const WIDE_RATIO_MODELS: ReadonlySet<string> = new Set(["v6-max", "v6", "c1"]);

@@ -1,28 +1,35 @@
 // Hand-maintained — PixVerse is not in models.dev; refresh from
-//   https://docs.platform.pixverse.ai/text-to-video-generation-13016634e0  (t2v wire schema)
-//   https://docs.platform.pixverse.ai/image-to-video-generation-13016633e0 (i2v wire schema)
-//   https://docs.platform.pixverse.ai/pricing-796039m0                     (credit tables + credit price)
-//   https://docs.platform.pixverse.ai/model-overview-2140345m0             (model roster)
-//   https://docs.platform.pixverse.ai/capability-matrix-2144288m0          (per-model capabilities)
-//   https://docs.platform.pixverse.ai/v6-2056814m0                         (V6 parameter matrix)
-// Verified 2026-08-13.
+//   https://docs.platform.pixverse.ai/text-to-video-13016634e0                    (t2v wire schema)
+//   https://docs.platform.pixverse.ai/image-to-video-and-video-templates-13016633e0 (i2v wire schema)
+//   https://docs.platform.pixverse.ai/pixverse-api-pricing-2394995m0              (credit tables + USD rate)
+//   https://docs.platform.pixverse.ai/model-capability-map-2394982m0              (roster + per-model capabilities)
+//   https://docs.platform.pixverse.ai/changelog-2394996m0                         (model releases)
+// Verified 2026-11-12. Append `.md` to any of them for the raw OpenAPI YAML and
+// tables; a rendered fetch drops table cells.
 //
 // Pricing conversion (documented so the arithmetic never rots unexplained):
-// PixVerse bills in credits, and its credit packs are all priced at exactly
-// $0.01 per credit — $10/1,000, $50/5,000, $100/10,000, $500/50,000,
-// $2,000/200,000 and $5,000/500,000 (docs/pricing, "Buy Credits Video Unit
-// Price"). So USD = credits × 0.01.
+// PixVerse bills in credits and publishes one USD reference rate, "225 Credits
+// = USD 1; 1 Credit ≈ USD 0.004444", computing every USD cell on its pricing
+// page as "total Credits ÷ 225". So USD = credits ÷ 225. The same page warns
+// "Plans, volume agreements, promotions, and free allowances may change your
+// effective cost", so an estimate is the vendor's reference price, not your
+// bill (https://docs.platform.pixverse.ai/pixverse-api-pricing-2394995m0,
+// 2026-11-12).
 //
 // Why most entries carry no `cost`: `quality` is a REQUIRED request field with
 // no documented default, and the credit rate is a function of it —
 //   - v6-max / v6 / c1 bill PER SECOND: 6–22 credits/s (v6-max), 5–18 (v6) or
 //     6–19 (c1) silent, 9–28 / 7–23 / 8–24 with audio, by quality tier.
-//   - v5.6 / v5.5 / v5 / v4.5 / v4 / v3.5 bill PER GENERATION by
-//     quality × duration (× audio, × multi-clip, × motion_mode), which
-//     `ModelCost` has no unit for at all.
+//   - v5.6 / v5.5 / v5 bill PER GENERATION by quality × duration (× audio,
+//     × multi-clip), which `ModelCost` has no unit for at all.
 // A single number would therefore have to pick a tier and lie about the rest,
 // so the full tables live in ./pricing.ts and the endpoints estimate per
 // request.
+//
+// v4.5 / v4 / v3.5 have no published rate: the pricing page prices C1, V6,
+// V6 Max, V5.6, V5.5 and V5 only and says "Legacy-model availability depends
+// on the active endpoint and your account" (2026-11-12). They stay catalogued,
+// because both routes' `model` enums still list them, and estimate nothing.
 //
 // Model coverage vs. the artificialanalysis census: PixVerse V6, V5.6, V5.5,
 // V5 and V4.5 are all documented `model` values and all appear below, together
@@ -44,13 +51,18 @@ import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 export const provider = {
   id: "pixverse",
   name: "PixVerse",
-  // Auth is an `API-KEY` header — https://docs.platform.pixverse.ai/how-to-get-api-key-882968m0
+  // Auth is an `API-KEY` header — https://docs.platform.pixverse.ai/start-here-2394989m0
+  // (2026-11-12): "| `API-KEY` | Yes | API Key used for authentication |".
   env: ["PIXVERSE_API_KEY"],
   doc: "https://docs.platform.pixverse.ai/",
 } as const satisfies ProviderInfo;
 
-/** USD per PixVerse credit — https://docs.platform.pixverse.ai/pricing-796039m0 */
-export const CREDIT_USD = 0.01;
+/**
+ * USD per PixVerse credit, the vendor's reference rate —
+ * https://docs.platform.pixverse.ai/pixverse-api-pricing-2394995m0 (2026-11-12):
+ * "225 Credits = USD 1; 1 Credit ≈ USD 0.004444."
+ */
+export const CREDIT_USD = 1 / 225;
 
 const videoModality = { input: ["text", "image"], output: ["video"] } as const;
 
@@ -132,7 +144,6 @@ export const models = {
     openWeights: false,
     modalities: videoModality,
     limit: { context: 0 },
-    // Per generation, 45–120 credits by quality × motion_mode × duration.
   },
   v4: {
     id: "v4",

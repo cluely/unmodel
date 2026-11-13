@@ -2,9 +2,9 @@
  * Shared wire pieces for the PixVerse OpenAPI v2 routes
  * (`https://app-api.pixverse.ai/openapi/v2/...`), transcribed from the API
  * reference schemas on
- * https://docs.platform.pixverse.ai/text-to-video-generation-13016634e0 and
- * /image-to-video-generation-13016633e0, plus the per-model matrices on
- * /v6-2056814m0 and /capability-matrix-2144288m0 — verified 2026-08-13.
+ * https://docs.platform.pixverse.ai/text-to-video-13016634e0 and
+ * /image-to-video-and-video-templates-13016633e0, plus the per-model columns
+ * of /model-capability-map-2394982m0 — verified 2026-11-12.
  *
  * Headers: every request needs `API-KEY` (your key) and `Ai-trace-id` (a fresh
  * UUID per request) alongside `Content-Type`. Neither can live in
@@ -62,17 +62,25 @@ export const WIDE_ASPECT_RATIOS = [
 export type PixverseAspectRatio = (typeof WIDE_ASPECT_RATIOS)[number];
 
 /**
- * `motion_mode`. The field is absent from the JSON schema tables but is sent
- * uncommented in the official image-to-video request example and priced as a
- * column of the v4.5/v4/v3.5 credit table
- * (https://docs.platform.pixverse.ai/pricing-796039m0), so it is typed here
- * rather than left to pass through as an unknown param.
+ * `motion_mode`. Neither route's schema lists the field, but the API still
+ * reads it: the error-details page documents "`MOTION_MODE_MODEL_UNSUPPORTED`
+ * | The selected model does not support this motion mode."
+ * (https://docs.platform.pixverse.ai/error-details-2490131m0, 2026-11-12). So
+ * it is typed here rather than left to pass through as an unknown param.
  */
 export const PIXVERSE_MOTION_MODES = ["normal", "fast"] as const;
 export type PixverseMotionMode = (typeof PIXVERSE_MOTION_MODES)[number];
 
-/** Documented `prompt` ceiling. */
+/** Documented text-to-video `prompt` ceiling: "prompt: type: string maxLength: 5000". */
 export const PROMPT_MAX_CHARS = 5000;
+
+/**
+ * Documented image-to-video `prompt` ceiling: "prompt: type: string
+ * description: Generation prompt. maxLength: 2048"
+ * (https://docs.platform.pixverse.ai/image-to-video-and-video-templates-13016633e0,
+ * 2026-11-12).
+ */
+export const IMAGE_PROMPT_MAX_CHARS = 2048;
 
 /** Documented `seed` range. */
 export const SEED_MIN = 0;
@@ -80,6 +88,7 @@ export const SEED_MAX = 2_147_483_647;
 
 export const seedSchema = z.number().int().min(SEED_MIN).max(SEED_MAX);
 export const promptSchema = z.string().max(PROMPT_MAX_CHARS);
+export const imagePromptSchema = z.string().max(IMAGE_PROMPT_MAX_CHARS);
 
 /**
  * Models that bill (and are documented) per second, with 1–15s durations.
@@ -123,15 +132,23 @@ export const NO_TEMPLATE_MODELS = ["v6-max"] as const;
 /** The models the capability map lists as template-capable, named by the refusal. */
 const TEMPLATE_MODELS = ["c1", "v6", "v5.6", "v5"] as const;
 
-/** Models that accept the sound-effect and lip-sync TTS fields ("v5 and below"). */
+/**
+ * Models that accept the sound-effect and lip-sync fields ("v5 and below").
+ * `lip_sync_switch` joins them on image-to-video: that schema declares it as a
+ * "Legacy Lipsync option; applicable only when supported", and its 2026-05-14
+ * archive read "Set to true if you want to enable this feature. Default is
+ * false. (v3.5/v4/v4.5/v5)"
+ * (https://web.archive.org/web/20260514194912/https://docs.platform.pixverse.ai/image-to-video-generation-13016633e0).
+ */
 export const LEGACY_AUDIO_MODELS = ["v5", "v4.5", "v4", "v3.5"] as const;
 
 /**
  * Allowed `duration` values per model.
  *
- * "v3.5/v4/v4.5 : 5/8 (v3.5 1080p cannot use 8); v5 : 5/8; v5.5/v5.6 : 5/8/10
- * (1080p cannot use 10); v6/c1 : 1~15" — the schema's own `duration`
- * description. v6-max/v6/c1 take any integer in the range, so they are
+ * "C1/V6: 1-15; V5.5/V5.6: 5, 8, or 10; older models: 5 or 8. Do not use
+ * unsupported duration/quality combinations." — the image-to-video schema's
+ * own `duration` description (2026-11-12); the capability map gives V6 Max
+ * "1-15 seconds" too. v6-max/v6/c1 take any integer in the range, so they are
  * expressed as bounds instead of a value list.
  */
 export const DURATIONS: Readonly<Record<string, readonly number[]>> = {
@@ -145,7 +162,13 @@ export const DURATIONS: Readonly<Record<string, readonly number[]>> = {
 
 export const PER_SECOND_DURATION = { min: 1, max: 15 } as const;
 
-/** Quality × duration combinations the docs call out as unavailable. */
+/**
+ * Quality × duration combinations the docs call out as unavailable. The
+ * image-to-video schema's `anyOf` carries a `not` arm for `duration: 10` at
+ * `quality: 1080p` and another for `duration: 8` at 1080p, and the pricing page
+ * marks the V5.6 and V5.5 "10 seconds" rows "Not supported" at 1080p (both
+ * 2026-11-12).
+ */
 const QUALITY_DURATION_EXCLUSIONS: ReadonlyArray<{
   models: readonly string[];
   quality: string;
@@ -235,12 +258,13 @@ export function checkModelGatedFields<P extends { model: string }>(
       fields: [
         "sound_effect_switch",
         "sound_effect_content",
+        "lip_sync_switch",
         "lip_sync_tts_switch",
         "lip_sync_tts_content",
         "lip_sync_tts_speaker_id",
       ],
       models: LEGACY_AUDIO_MODELS,
-      label: "the v5-and-below sound-effect / lip-sync TTS fields",
+      label: "the v5-and-below sound-effect / lip-sync fields",
     },
   ];
   return (params, info, ctx) => {

@@ -2,18 +2,28 @@
  * PixVerse Image-to-Video — POST https://app-api.pixverse.ai/openapi/v2/video/img/generate
  *
  * Wire notes (verified against the request schema on
- * https://docs.platform.pixverse.ai/image-to-video-generation-13016633e0 on
- * 2026-08-13):
- * - `duration`, `img_id`, `model`, `prompt` and `quality` are required.
- *   `img_id` comes from `POST /openapi/v2/image/upload` (multipart, field
- *   `image`); `img_ids` is the multi-image variant and is only for multi-image
- *   templates.
- * - There is no `aspect_ratio` here — the input image sets it (confirmed by
- *   the V6 parameter matrix, which marks aspect_ratio ❌ for i2v).
+ * https://docs.platform.pixverse.ai/image-to-video-and-video-templates-13016633e0
+ * on 2026-11-12):
+ * - `duration`, `model`, `prompt` and `quality` are required, and the image
+ *   field follows the schema's `anyOf`: "Normal image generation requires
+ *   img_id" (and sends no `template_id`), while a template task sends
+ *   `template_id` plus "the image field and count required by that template
+ *   (img_id or ordered img_ids)". `img_id` comes from
+ *   `POST /openapi/v2/image/upload` (multipart, field `image`).
+ * - `prompt` is capped at 2048 characters here, against 5000 on text-to-video.
+ * - There is no `aspect_ratio` here — the input image sets it, and the schema
+ *   has no such property.
  * - The same version gates as text-to-video apply: `generate_audio_switch` is
  *   v5.5+, `generate_multi_clip_switch` is v5.5/v6, `template_id` is refused on
- *   v6-max, and the sound-effect / lip-sync TTS fields are "v5 and below" (or
+ *   v6-max, and the sound-effect / lip-sync fields are "v5 and below" (or
  *   with a `template_id`).
+ * - `motion_mode`, `camera_movement`, `negative_prompt` and
+ *   `lip_sync_tts_switch` are not in the schema and stay typed; the
+ *   error-details page's `MOTION_MODE_MODEL_UNSUPPORTED` and
+ *   `CAMERA_MOVEMENT_MODEL_UNSUPPORTED` show the API reads the first two, and
+ *   this page's 2026-05-14 archive carried `lip_sync_tts_switch` (commented
+ *   out) in its request example
+ *   (https://web.archive.org/web/20260514194912/https://docs.platform.pixverse.ai/image-to-video-generation-13016633e0).
  * - Headers: add `API-KEY` and a fresh `Ai-trace-id` UUID yourself.
  */
 
@@ -33,7 +43,7 @@ import {
   PIXVERSE_QUALITIES,
   checkDuration,
   checkModelGatedFields,
-  promptSchema,
+  imagePromptSchema,
   seedSchema,
   type PixverseMotionMode,
   type PixverseQualityValue,
@@ -42,12 +52,11 @@ import { videoCostUSD } from "./pricing";
 
 export const IMAGE_TO_VIDEO_URL = `${PIXVERSE_BASE_URL}/video/img/generate`;
 
-const SOURCE = `${DOCS_BASE}/image-to-video-generation-13016633e0`;
+const SOURCE = `${DOCS_BASE}/image-to-video-and-video-templates-13016633e0`;
 
-export interface ImageToVideoParams {
-  /** Required. From `POST /openapi/v2/image/upload`. */
-  img_id: number;
-  /** Required; up to 5000 characters. */
+/** The fields every image-to-video request carries, whichever image field it sends. */
+interface ImageToVideoFields {
+  /** Required; up to 2048 characters. */
   prompt: string;
   model: PixverseModelId | (string & {});
   /** Required. 1–15 on v6-max/v6/c1; a fixed list on the older models. */
@@ -56,10 +65,13 @@ export interface ImageToVideoParams {
   quality: PixverseQualityValue;
   /** 0 – 2147483647. */
   seed?: number;
-  /** Multi-image templates only, e.g. `[123, 456]`. */
+  /**
+   * The id of a webhook configured in your PixVerse account — not a callback
+   * URL. Omit it when polling the task.
+   */
+  webhook_id?: string;
+  /** A multi-image template's ordered image ids, e.g. `[123, 456]`; sent instead of `img_id`. */
   img_ids?: number[];
-  /** An activated template id. Not on v6-max. */
-  template_id?: number;
   /** Inline audio. v5.5 / v5.6 / v6 / c1 / v6-max only; defaults to false. */
   generate_audio_switch?: boolean;
   /** Inline multi-clip output. v5.5 / v6 only; defaults to false. */
@@ -67,31 +79,64 @@ export interface ImageToVideoParams {
   /** v5 and below, or with a `template_id`. */
   sound_effect_switch?: boolean;
   sound_effect_content?: string;
+  /** The lip-sync switch, as this schema spells it. v5 and below. */
+  lip_sync_switch?: boolean;
+  /** The lip-sync switch, as text-to-video spells it. v5 and below. */
   lip_sync_tts_switch?: boolean;
   /** Roughly 140 UTF-8 characters. */
   lip_sync_tts_content?: string;
   lip_sync_tts_speaker_id?: string;
-  /** Motion preset; sent uncommented in the official request example. */
+  /**
+   * Motion preset. Not in the schema; a model that lacks the mode answers
+   * `MOTION_MODE_MODEL_UNSUPPORTED`.
+   */
   motion_mode?: PixverseMotionMode;
-  /** Camera preset, e.g. "zoom_in". */
+  /**
+   * Camera preset, e.g. "zoom_in". Not in the schema; a model that lacks the
+   * movement answers `CAMERA_MOVEMENT_MODEL_UNSUPPORTED`.
+   */
   camera_movement?: string;
   /** Terms to steer the generation away from. */
   negative_prompt?: string;
 }
 
+/** Ordinary image-to-video: one uploaded image, and no template. */
+interface ImageToVideoFromImage extends ImageToVideoFields {
+  /** Required. From `POST /openapi/v2/image/upload`. */
+  img_id: number;
+  template_id?: never;
+}
+
+/** A template task: the template decides which image field it takes, and how many. */
+interface ImageToVideoFromTemplate extends ImageToVideoFields {
+  /** An activated template id. Not on v6-max. */
+  template_id: number;
+  /** A single-image template's image. A multi-image template takes `img_ids` instead. */
+  img_id?: number;
+}
+
+/**
+ * The request body, as the schema's `anyOf` shapes it: `img_id` without
+ * `template_id`, or `template_id` with whichever image field its template
+ * takes.
+ */
+export type ImageToVideoParams = ImageToVideoFromImage | ImageToVideoFromTemplate;
+
 const videoFromImageSchema = z.looseObject({
-  img_id: z.number().int(),
-  prompt: promptSchema,
+  img_id: z.number().int().optional(),
+  prompt: imagePromptSchema,
   model: z.string(),
   duration: z.number().int(),
   quality: z.enum(PIXVERSE_QUALITIES),
   seed: seedSchema.optional(),
+  webhook_id: z.string().optional(),
   img_ids: z.array(z.number().int()).optional(),
   template_id: z.number().int().optional(),
   generate_audio_switch: z.boolean().optional(),
   generate_multi_clip_switch: z.boolean().optional(),
   sound_effect_switch: z.boolean().optional(),
   sound_effect_content: z.string().optional(),
+  lip_sync_switch: z.boolean().optional(),
   lip_sync_tts_switch: z.boolean().optional(),
   lip_sync_tts_content: z.string().optional(),
   lip_sync_tts_speaker_id: z.string().optional(),
@@ -99,6 +144,26 @@ const videoFromImageSchema = z.looseObject({
   camera_movement: z.string().optional(),
   negative_prompt: z.string().optional(),
 });
+
+/**
+ * The first arm of the schema's `anyOf`: without a `template_id`, `img_id` is
+ * required ("Uploaded image ID. Required for ordinary image generation.").
+ */
+function checkImageId(
+  params: ImageToVideoParams,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.img_id != null || params.template_id != null) return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["img_id"],
+    model: params.model,
+    message:
+      "`img_id` is required unless `template_id` is set — upload the image with POST /openapi/v2/image/upload and pass the id it returns, or name the template this request fills.",
+    meta: { source: SOURCE },
+  });
+}
 
 /**
  * `img_ids` is documented as "only for multi-image templates", so it needs a
@@ -132,7 +197,6 @@ function estimate(params: ImageToVideoParams, info: ModelInfo | undefined, _ctx:
     ...(params.generate_multi_clip_switch !== undefined && {
       multiClip: params.generate_multi_clip_switch,
     }),
-    ...(params.motion_mode !== undefined && { motionMode: params.motion_mode }),
   });
   return costUSD === undefined ? {} : { costUSD };
 }
@@ -161,7 +225,7 @@ const validator = createValidator<ImageToVideoParams, unknown>({
   schema: videoFromImageSchema,
   modelId: (params) => params.model,
   catalog: models,
-  checks: [checkDuration(SOURCE), checkModelGatedFields(SOURCE), checkMultiImage],
+  checks: [checkDuration(SOURCE), checkModelGatedFields(SOURCE), checkImageId, checkMultiImage],
   estimate,
   finalize,
 });

@@ -363,11 +363,12 @@ describe("pixverse.video → fal", () => {
     expect(result.errors[0]?.message).toContain("4000 UTF-8 bytes");
   });
 
-  test("refused: motion mode, camera movement and template id", () => {
+  test("refused: motion mode, camera movement, template id and webhook id", () => {
     for (const extra of [
       { motion_mode: "fast" },
       { camera_movement: "zoom_in" },
       { template_id: 302325299692608 },
+      { webhook_id: "replace-with-your-webhook-id" },
     ] as const) {
       const result = pixverseVideo({
         model: "v6",
